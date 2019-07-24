@@ -49,6 +49,7 @@ import FCore;
 protected
 import List;
 import Error;
+import SCodeUtil;
 
 public
 type Name = FCore.Name;
@@ -223,8 +224,8 @@ algorithm
     // The first modifier has no binding, use the binding from the second.
     case (SCode.NAMEMOD(mod = mod1), SCode.NAMEMOD(mod = mod2), _, _)
       equation
-        info1 = SCode.getModifierInfo(mod1);
-        info2 = SCode.getModifierInfo(mod2);
+        info1 = SCodeUtil.getModifierInfo(mod1);
+        info2 = SCodeUtil.getModifierInfo(mod2);
         scope = printModScope(inModScope);
         name = stringDelimitList(listReverse(inElementName), ".");
         Error.addMultiSourceMessage(Error.DUPLICATE_MODIFICATIONS,

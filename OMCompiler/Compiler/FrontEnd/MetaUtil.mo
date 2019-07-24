@@ -50,6 +50,7 @@ import Flags;
 import List;
 import MetaModelica.Dangerous;
 import Lookup;
+import SCodeUtil;
 import Types;
 
 public function createMetaClassesInProgram
@@ -306,7 +307,7 @@ algorithm
     case (ClassInf.META_UNIONTYPE(typeVars=typeVars), SCode.PARTS())
       algorithm
         p := AbsynUtil.makeFullyQualified(inState.path);
-        names := SCode.elementNames(list(e for e guard match e case SCode.CLASS(restriction=SCode.R_METARECORD()) then true; else false; end match in inClassDef.elementLst));
+        names := SCodeUtil.elementNames(list(e for e guard match e case SCode.CLASS(restriction=SCode.R_METARECORD()) then true; else false; end match in inClassDef.elementLst));
         paths := list(AbsynUtil.suffixPath(p, n) for n in names);
         b := listLength(paths)==1;
         if b then

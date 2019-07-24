@@ -62,6 +62,7 @@ import NFFunction.TypedNamedArg;
 import NFInstNode.CachedData;
 import NFTyping.ExpOrigin;
 import Prefixes = NFPrefixes;
+import SCodeUtil;
 import TypeCheck = NFTypeCheck;
 import Typing = NFTyping;
 import Util;
@@ -355,8 +356,8 @@ uniontype Call
     typed_args := matchedFunc.args;
 
     args := {};
-	// if is impure, make it a parameter expression
-	// see https://trac.openmodelica.org/OpenModelica/ticket/5133
+  // if is impure, make it a parameter expression
+  // see https://trac.openmodelica.org/OpenModelica/ticket/5133
     var := if Function.isImpure(func) or Function.isOMImpure(func)
            then Variability.PARAMETER
            else Variability.CONSTANT;
@@ -517,9 +518,9 @@ uniontype Call
   algorithm
     isConstructor := match call
       case UNTYPED_CALL()
-        then SCode.isRecord(InstNode.definition(ComponentRef.node(call.ref)));
+        then SCodeUtil.isRecord(InstNode.definition(ComponentRef.node(call.ref)));
       case TYPED_CALL()
-        then SCode.isRecord(InstNode.definition(call.fn.node));
+        then SCodeUtil.isRecord(InstNode.definition(call.fn.node));
       else false;
     end match;
   end isRecordConstructor;

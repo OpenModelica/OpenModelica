@@ -75,6 +75,7 @@ protected import List;
 protected import Lookup;
 protected import Patternm;
 protected import PrefixUtil;
+import SCodeUtil;
 protected import Static;
 protected import Types;
 protected import Util;
@@ -249,7 +250,7 @@ algorithm
       algorithm
         failure(_ := ClassInf.trans(inState,ClassInf.FOUND_EQUATION()));
         s := ClassInf.printStateStr(inState);
-        Error.addSourceMessage(Error.EQUATION_TRANSITION_FAILURE, {s}, SCode.equationFileInfo(inEEquation));
+        Error.addSourceMessage(Error.EQUATION_TRANSITION_FAILURE, {s}, SCodeUtil.equationFileInfo(inEEquation));
       then
         fail();
 
@@ -259,7 +260,7 @@ algorithm
       algorithm
         true := errorCount == Error.getNumErrorMessages();
         s := "\n" + SCodeDump.equationStr(inEEquation);
-        Error.addSourceMessage(Error.EQUATION_GENERIC_FAILURE, {s}, SCode.equationFileInfo(inEEquation));
+        Error.addSourceMessage(Error.EQUATION_GENERIC_FAILURE, {s}, SCodeUtil.equationFileInfo(inEEquation));
       then
         fail();
 
@@ -403,7 +404,7 @@ algorithm
           // A branch was selected, instantiate it.
           (outCache, outEnv, outIH, outDae, outSets, outState, outGraph) :=
             Inst.instList(outCache, inEnv, inIH, inPrefix, inSets, inState,
-              if SCode.isInitial(inInitial) then instEInitialEquation else instEEquation,
+              if SCodeUtil.isInitial(inInitial) then instEInitialEquation else instEEquation,
               eql, inImpl, alwaysUnroll, inGraph);
         else
           (outCache, expl) := PrefixUtil.prefixExpList(outCache, inEnv, inIH, expl, inPrefix);
@@ -412,7 +413,7 @@ algorithm
           source := makeEqSource(info, inEnv, inPrefix, inFlattenOp);
 
           // Instantiate all branches.
-          if SCode.isInitial(inInitial) then
+          if SCodeUtil.isInitial(inInitial) then
             (outCache, outEnv, outIH, outState, ell) :=
               instInitialIfEqBranches(outCache, inEnv, inIH, inPrefix, inState, branches, inImpl);
             (outCache, outEnv, outIH, outState, el) :=
@@ -433,7 +434,7 @@ algorithm
 
     case SCode.EQ_WHEN(info = info)
       algorithm
-        if SCode.isInitial(inInitial) then
+        if SCodeUtil.isInitial(inInitial) then
           Error.addSourceMessageAndFail(Error.INITIAL_WHEN, {}, info);
         end if;
 
@@ -469,7 +470,7 @@ algorithm
           (outCache, exp, DAE.PROP(type_ = DAE.T_ARRAY(ty = ty), constFlag = c)) :=
             Static.elabExp(outCache, inEnv, range_aexp, inImpl, true, inPrefix, info);
         else
-          iter_crefs := SCode.findIteratorIndexedCrefsInEEquations(
+          iter_crefs := SCodeUtil.findIteratorIndexedCrefsInEEquations(
             inEEquation.eEquationLst, inEEquation.index);
           (exp, DAE.PROP(type_ = DAE.T_ARRAY(ty = ty), constFlag = c), outCache) :=
             Static.deduceIterationRange(inEEquation.index, iter_crefs, inEnv, outCache, info);
@@ -514,7 +515,7 @@ algorithm
             inEEquation.level, inImpl, DAE.T_ASSERTIONLEVEL, "assert", "level", 3, info);
 
         source := makeEqSource(info, inEnv, inPrefix, inFlattenOp);
-        if SCode.isInitial(inInitial) then
+        if SCodeUtil.isInitial(inInitial) then
           outDae := DAE.DAE({DAE.INITIAL_ASSERT(cond_exp, msg_exp, level_exp, source)});
         else
           outDae := DAE.DAE({DAE.ASSERT(cond_exp, msg_exp, level_exp, source)});
@@ -528,7 +529,7 @@ algorithm
             inEEquation.message, inImpl, DAE.T_STRING_DEFAULT, "terminate", "message", 1, info);
 
         source := makeEqSource(info, inEnv, inPrefix, inFlattenOp);
-        if SCode.isInitial(inInitial) then
+        if SCodeUtil.isInitial(inInitial) then
           outDae := DAE.DAE({DAE.INITIAL_TERMINATE(msg_exp, source)});
         else
           outDae := DAE.DAE({DAE.TERMINATE(msg_exp, source)});
@@ -1248,7 +1249,7 @@ algorithm
 
       (outCache, _, _, dae, outSets, ci_state, outGraph) :=
         Inst.instList(outCache, env, inIH, inPrefix, outSets, ci_state,
-          if SCode.isInitial(inInitial) then instEInitialEquation else instEEquation,
+          if SCodeUtil.isInitial(inInitial) then instEInitialEquation else instEEquation,
           inEquations, inImplicit, alwaysUnroll, outGraph);
 
       daes := dae :: daes;
@@ -1709,7 +1710,7 @@ algorithm
         true = Expression.dimensionKnown(dim);
         true = Expression.isRange(lhs) or Expression.isRange(rhs) or Expression.isReduction(lhs) or Expression.isReduction(rhs);
         ds = Types.getDimensions(tp);
-        b = SCode.isInitial(initial_);
+        b = SCodeUtil.isInitial(initial_);
         elt = if b then DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source) else DAE.ARRAY_EQUATION(ds, lhs, rhs, source);
         source = ElementSource.addSymbolicTransformationFlattenedEqs(source, elt);
         elt = if b then DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source) else DAE.ARRAY_EQUATION(ds, lhs, rhs, source);
@@ -1880,7 +1881,7 @@ algorithm
     (outCache, range, prop) :=
       Static.elabExp(inCache, inEnv, arange, inImpl, true, inPrefix, info);
   else
-    iter_crefs := SCode.findIteratorIndexedCrefsInStatements(body, iterator);
+    iter_crefs := SCodeUtil.findIteratorIndexedCrefsInStatements(body, iterator);
     (range, prop, outCache) :=
       Static.deduceIterationRange(iterator, iter_crefs, inEnv, inCache, info);
   end if;
@@ -2072,7 +2073,7 @@ algorithm
       equation
         failure(_ = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM()));
         s = ClassInf.printStateStr(ci_state);
-        info = SCode.getStatementInfo(stmt);
+        info = SCodeUtil.getStatementInfo(stmt);
         Error.addSourceMessage(Error.ALGORITHM_TRANSITION_FAILURE, {s}, info);
       then fail();
 
@@ -2455,7 +2456,7 @@ algorithm
           DAE.CASE({}, NONE(), {}, else_branch, SOME(DAE.TUPLE({})), info, 0, info)
         };
 
-        exp := DAE.MATCHEXPRESSION(if SCode.commentHasBooleanNamedAnnotation(inStatement.comment, "__OpenModelica_stackOverflowCheckpoint") then DAE.TRY_STACKOVERFLOW() else DAE.MATCHCONTINUE(), {}, {}, {}, cases,
+        exp := DAE.MATCHEXPRESSION(if SCodeUtil.commentHasBooleanNamedAnnotation(inStatement.comment, "__OpenModelica_stackOverflowCheckpoint") then DAE.TRY_STACKOVERFLOW() else DAE.MATCHCONTINUE(), {}, {}, {}, cases,
           DAE.T_NORETCALL_DEFAULT);
       then
         {DAE.STMT_NORETCALL(exp, source)};
@@ -2464,7 +2465,7 @@ algorithm
   else
     true := num_errors == Error.getNumErrorMessages();
     Error.addSourceMessageAndFail(Error.STATEMENT_GENERIC_FAILURE,
-      {SCodeDump.statementStr(inStatement)}, SCode.getStatementInfo(inStatement));
+      {SCodeDump.statementStr(inStatement)}, SCodeUtil.getStatementInfo(inStatement));
   end try;
 end instStatement;
 
@@ -4228,7 +4229,7 @@ algorithm
     // Non-flow and Non-stream type Parameters and constants generate assert statements
     case (cache,env,ih,sets,pre,c1,_,t1,_,c2,_,t2,_,DAE.POTENTIAL(),_,_,graph,_)
       equation
-        true = SCode.isParameterOrConst(vt1) and SCode.isParameterOrConst(vt2) ;
+        true = SCodeUtil.isParameterOrConst(vt1) and SCodeUtil.isParameterOrConst(vt2) ;
         true = Types.basicType(Types.arrayElementType(t1));
         true = Types.basicType(Types.arrayElementType(t2));
 
@@ -4805,7 +4806,7 @@ algorithm
     case SCode.ALG_WHEN_A(branches = (exp, algs)::_ , info = info)
       equation
         true = AbsynUtil.expContainsInitial(exp);
-        true = SCode.algorithmsContainReinit(algs);
+        true = SCodeUtil.algorithmsContainReinit(algs);
         Error.addSourceMessage(Error.REINIT_IN_WHEN_INITIAL, {}, info);
       then false;
 
@@ -4867,7 +4868,7 @@ algorithm
     case SCode.EQ_WHEN(condition = exp, eEquationLst = el, info = info)
       equation
         true = AbsynUtil.expContainsInitial(exp);
-        true = SCode.equationsContainReinit(el);
+        true = SCodeUtil.equationsContainReinit(el);
         Error.addSourceMessage(Error.REINIT_IN_WHEN_INITIAL, {}, info);
       then
         false;
@@ -5006,7 +5007,7 @@ algorithm
       equation
         true = numError == Error.getNumErrorMessages();
         failure(Static.elabExp(cache,env,value,impl,true,pre,info));
-        str = Dump.unparseAlgorithmStr(SCode.statementToAlgorithmItem(alg));
+        str = Dump.unparseAlgorithmStr(SCodeUtil.statementToAlgorithmItem(alg));
         Error.addSourceMessage(Error.ASSIGN_RHS_ELABORATION,{str},info);
       then fail();
   end matchcontinue;
@@ -5323,7 +5324,7 @@ algorithm
     (outCache, range, prop) :=
       Static.elabExp(inCache, inEnv, arange, inImpl, true, inPrefix, info);
   else
-    iter_crefs := SCode.findIteratorIndexedCrefsInStatements(body, iterator);
+    iter_crefs := SCodeUtil.findIteratorIndexedCrefsInStatements(body, iterator);
     (range, prop, outCache) :=
       Static.deduceIterationRange(iterator, iter_crefs, inEnv, inCache, info);
   end if;
@@ -5429,7 +5430,7 @@ algorithm
         (_, DAE.ATTR(parallelism = prl),_,_,_,_,_,_,_) = Lookup.lookupVar(inCache, inEnv, cref);
 
         // is it parglobal var?
-        isParglobal = SCode.parallelismEqual(prl, SCode.PARGLOBAL());
+        isParglobal = SCodeUtil.parallelismEqual(prl, SCode.PARGLOBAL());
 
         // Now the iterator is already removed. No need for this.
         // is it the iterator of the parfor loop(implicitly declared)?

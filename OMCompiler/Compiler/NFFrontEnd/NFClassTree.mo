@@ -48,6 +48,7 @@ protected
   import List;
   import Lookup = NFLookup;
   import SCodeDump;
+  import SCodeUtil;
   import NFInstNode.InstNodeType;
 
 public
@@ -288,7 +289,7 @@ public
 
               // If the class is an element redeclare, add an entry in the duplicate
               // tree so we can check later that it actually redeclares something.
-              if SCode.isElementRedeclare(e) or SCode.isClassExtends(e) then
+              if SCodeUtil.isElementRedeclare(e) or SCodeUtil.isClassExtends(e) then
                 dups := DuplicateTree.add(dups, e.name, DuplicateTree.newRedeclare(lentry));
               end if;
             then
@@ -2023,7 +2024,7 @@ public
             if listEmpty(entry.children) then
               node := Mutable.access(node_ptr);
 
-              if SCode.isClassExtends(InstNode.definition(node)) then
+              if SCodeUtil.isClassExtends(InstNode.definition(node)) then
                 Error.addSourceMessage(Error.CLASS_EXTENDS_TARGET_NOT_FOUND,
                   {InstNode.name(node)}, InstNode.info(node));
               else
@@ -2131,7 +2132,7 @@ public
       SCode.ClassDef def;
     algorithm
       if InstNode.isOnlyOuter(outerCls) then
-        def := SCode.getClassDef(InstNode.definition(outerCls));
+        def := SCodeUtil.getClassDef(InstNode.definition(outerCls));
 
         () := match def
           // Outer short class definition without mod is ok.

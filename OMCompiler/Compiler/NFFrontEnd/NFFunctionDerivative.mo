@@ -40,6 +40,7 @@ encapsulated uniontype NFFunctionDerivative
 
 protected
   import SCodeDump;
+  import SCodeUtil;
   import Inst = NFInst;
   import Typing = NFTyping;
   import TypeCheck = NFTypeCheck;
@@ -160,10 +161,10 @@ protected
 
       case SCode.Element.CLASS(classDef = SCode.ClassDef.PARTS(
           externalDecl = SOME(SCode.ExternalDecl.EXTERNALDECL(annotation_ = SOME(ann)))))
-        then SCode.lookupNamedAnnotations(ann, "derivative");
+        then SCodeUtil.lookupNamedAnnotations(ann, "derivative");
 
       case SCode.Element.CLASS(cmt = SCode.Comment.COMMENT(annotation_ = SOME(ann)))
-        then SCode.lookupNamedAnnotations(ann, "derivative");
+        then SCodeUtil.lookupNamedAnnotations(ann, "derivative");
 
       else {};
     end match;
@@ -257,7 +258,7 @@ protected
         else
           algorithm
             Error.addStrictMessage(Error.INVALID_FUNCTION_DERIVATIVE_ATTR,
-              {id + (if SCode.isEmptyMod(mod) then "" else " = " + SCodeDump.printModStr(mod))}, info);
+              {id + (if SCodeUtil.isEmptyMod(mod) then "" else " = " + SCodeDump.printModStr(mod))}, info);
           then
             ();
 

@@ -7,6 +7,7 @@ if true then /* Suppress output */
     // "../Util/MessagePack.mo", // TODO: Add once we bootstrapped omc, maybe
     "../Util/File.mo",
     "../FrontEnd/Absyn.mo",
+    "../FrontEnd/AbsynToSCode.mo",
     "../FrontEnd/AbsynUtil.mo",
     "../FrontEnd/Algorithm.mo",
     "../FrontEnd/BackendInterface.mo",

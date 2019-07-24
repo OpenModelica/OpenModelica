@@ -67,6 +67,7 @@ protected import Flags;
 protected import Debug;
 protected import DAEUtil;
 protected import PrefixUtil;
+import SCodeUtil;
 protected import Types;
 protected import InstSection;
 protected import ValuesUtil;
@@ -250,7 +251,7 @@ public function instStartBindingExp
   input SCode.Variability inVariability;
   output DAE.StartValue outStartValue;
 algorithm
-  if SCode.isConstant(inVariability) then
+  if SCodeUtil.isConstant(inVariability) then
     outStartValue := NONE();
   else
     // When instantiating arrays, the array type is passed.

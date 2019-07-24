@@ -58,6 +58,7 @@ import Inline;
 import List;
 import Lookup;
 import PrefixUtil;
+import AbsynToSCode;
 import SCodeUtil;
 import Static;
 import Types;
@@ -222,9 +223,9 @@ algorithm
          path = AbsynUtil.joinPaths(path, Absyn.IDENT(str1));
 
          (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,recordEnv,path);
-         true = SCode.isOperator(operatorCl);
+         true = SCodeUtil.isOperator(operatorCl);
 
-         operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
+         operNames = AbsynToSCode.getListofQualOperatorFuncsfromOperator(operatorCl);
          (cache,types as _::_) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {});
 
          (cache,SOME((exp,prop))) = Static.elabCallArgs3(cache,env,types,path,{absexp1},{},inImpl,inPre,inInfo);
@@ -277,9 +278,9 @@ algorithm
         path = AbsynUtil.joinPaths(path, Absyn.IDENT(str1));
 
         (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,recordEnv,path);
-        true = SCode.isOperator(operatorCl);
+        true = SCodeUtil.isOperator(operatorCl);
 
-        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
+        operNames = AbsynToSCode.getListofQualOperatorFuncsfromOperator(operatorCl);
         (cache,types as _::_) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {});
 
         (cache,SOME((daeExp,prop))) = Static.elabCallArgs3(cache,env,types,path,exp1::restargs,nargs,inImpl,inPre,inInfo);
@@ -1378,9 +1379,9 @@ algorithm
   else
     // check if the operator is defined. i.e overloaded
     (cache,operatorCl,operEnv) := Lookup.lookupClass(cache,env,path);
-    true := SCode.isOperator(operatorCl);
+    true := SCodeUtil.isOperator(operatorCl);
     // get the list of functions in the operator. !! there can be multiple options
-    paths := SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
+    paths := AbsynToSCode.getListofQualOperatorFuncsfromOperator(operatorCl);
     (cache,funcs) := Lookup.lookupFunctionsListInEnv(cache, operEnv, paths, info, {});
     funcs := List.select2(funcs, if opName=="'constructor'" or opName=="'0'" then checkOperatorFunctionOutput else checkOperatorFunctionOneOutput, scalarType,info);
     tree2 := AvlTreePathOperatorTypes.add(tree2, path, funcs);

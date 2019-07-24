@@ -47,6 +47,7 @@ protected
 import NFBinding.Binding;
 import ComplexType = NFComplexType;
 import System;
+import SCodeUtil;
 
 public
 
@@ -641,9 +642,9 @@ uniontype Class
     output Boolean isEncapsulated;
   algorithm
     isEncapsulated := match cls
-      case PARTIAL_CLASS() then SCode.encapsulatedBool(cls.prefixes.encapsulatedPrefix);
-      case EXPANDED_CLASS() then SCode.encapsulatedBool(cls.prefixes.encapsulatedPrefix);
-      case EXPANDED_DERIVED() then SCode.encapsulatedBool(cls.prefixes.encapsulatedPrefix);
+      case PARTIAL_CLASS() then SCodeUtil.encapsulatedBool(cls.prefixes.encapsulatedPrefix);
+      case EXPANDED_CLASS() then SCodeUtil.encapsulatedBool(cls.prefixes.encapsulatedPrefix);
+      case EXPANDED_DERIVED() then SCodeUtil.encapsulatedBool(cls.prefixes.encapsulatedPrefix);
       else false;
     end match;
   end isEncapsulated;
@@ -682,7 +683,7 @@ uniontype Class
     if Restriction.isOperatorRecord(restriction(cls)) then
       try
         op_node := lookupElement(name, cls);
-        hasOperator := SCode.isOperator(InstNode.definition(op_node));
+        hasOperator := SCodeUtil.isOperator(InstNode.definition(op_node));
       else
         hasOperator := false;
       end try;

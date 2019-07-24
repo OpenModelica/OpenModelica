@@ -67,8 +67,9 @@ type Scope = FCore.Scope;
 
 protected
 import List;
-import SCodeUtil;
+import AbsynToSCode;
 import SCodeDump;
+import SCodeUtil;
 import Util;
 import FMod;
 
@@ -129,7 +130,7 @@ algorithm
 
     case (_, _, _, g)
       equation
-        cls = SCodeUtil.expandEnumerationClass(inClass);
+        cls = AbsynToSCode.expandEnumerationClass(inClass);
         SCode.CLASS(name = name, classDef = cdef) = cls;
         (g, n) = FGraph.node(g, name, {inParentRef}, FCore.CL(cls, Prefix.NOPRE(), DAE.NOMOD(), inKind, FCore.VAR_UNTYPED()));
         nr = FNode.toRef(n);
@@ -1147,7 +1148,7 @@ protected
   SCode.EEquation equ;
 algorithm
   SCode.EQUATION(equ) := inEquation;
-  (_, (_, (_, _, outGraph))) := SCode.traverseEEquations(equ, (analyseEEquationTraverser, (inParentRef, inKind, inGraph)));
+  (_, (_, (_, _, outGraph))) := SCodeUtil.traverseEEquations(equ, (analyseEEquationTraverser, (inParentRef, inKind, inGraph)));
 end analyseEquation;
 
 protected function analyseEEquationTraverser
@@ -1168,21 +1169,21 @@ algorithm
     case ((equf as SCode.EQ_FOR(index = iter_name), (ref, k, g)))
       equation
         g = addIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, ref, k, g);
-        (equ, (_, _, g)) = SCode.traverseEEquationExps(equf, traverseExp, (ref, k, g));
+        (equ, (_, _, g)) = SCodeUtil.traverseEEquationExps(equf, traverseExp, (ref, k, g));
       then
         ((equ, (ref, k, g)));
 
     case ((equr as SCode.EQ_REINIT(cref = Absyn.CREF(componentRef = cref1)), (ref, k, g)))
       equation
         g = analyseCref(cref1, ref, k, g);
-        (equ, (_, _, g)) = SCode.traverseEEquationExps(equr, traverseExp, (ref, k, g));
+        (equ, (_, _, g)) = SCodeUtil.traverseEEquationExps(equr, traverseExp, (ref, k, g));
       then
         ((equ, (ref, k, g)));
 
     case ((equ, (ref, k, g)))
       equation
-        _ = SCode.getEEquationInfo(equ);
-        (equ, (_, _, g)) = SCode.traverseEEquationExps(equ, traverseExp, (ref, k, g));
+        _ = SCodeUtil.getEEquationInfo(equ);
+        (equ, (_, _, g)) = SCodeUtil.traverseEEquationExps(equ, traverseExp, (ref, k, g));
       then
         ((equ, (ref, k, g)));
 
@@ -1222,7 +1223,7 @@ protected function analyseStatement
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  (_, (_, (_, _, outGraph))) := SCode.traverseStatements(inStatement,
+  (_, (_, (_, _, outGraph))) := SCodeUtil.traverseStatements(inStatement,
     (analyseStatementTraverser, (inParentRef, inKind, inGraph)));
 end analyseStatement;
 
@@ -1244,21 +1245,21 @@ algorithm
     case ((stmt as SCode.ALG_FOR(index = iter_name), (ref, k, g)))
       equation
         g = addIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, ref, k, g);
-        (_, (_, _, g)) = SCode.traverseStatementExps(stmt, traverseExp, (ref, k, g));
+        (_, (_, _, g)) = SCodeUtil.traverseStatementExps(stmt, traverseExp, (ref, k, g));
       then
         ((stmt, (ref, k, g)));
 
      case ((stmt as SCode.ALG_PARFOR(index = iter_name), (ref, k, g)))
       equation
         g = addIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, ref, k, g);
-        (_, (_, _, g)) = SCode.traverseStatementExps(stmt, traverseExp, (ref, k, g));
+        (_, (_, _, g)) = SCodeUtil.traverseStatementExps(stmt, traverseExp, (ref, k, g));
       then
         ((stmt, (ref, k, g)));
 
     case ((stmt, (ref, k, g)))
       equation
-        _ = SCode.getStatementInfo(stmt);
-        (_, (_, _, g)) = SCode.traverseStatementExps(stmt, traverseExp, (ref, k, g));
+        _ = SCodeUtil.getStatementInfo(stmt);
+        (_, (_, _, g)) = SCodeUtil.traverseStatementExps(stmt, traverseExp, (ref, k, g));
       then
         ((stmt, (ref, k, g)));
 
@@ -1384,7 +1385,7 @@ algorithm
     case (Absyn.ELEMENTITEM(element = element)::rest, _, _, g)
       equation
         // Translate the element item to a SCode element.
-        el = SCodeUtil.translateElement(element, SCode.PROTECTED());
+        el = AbsynToSCode.translateElement(element, SCode.PROTECTED());
         g = List.fold2(el, mkElementNode, inParentRef, inKind, g);
         g = addMatchScope_helper(rest, inParentRef, inKind, g);
       then

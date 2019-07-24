@@ -103,6 +103,7 @@ import StackOverflow;
 import System;
 import Static;
 import SCode;
+import SCodeUtil;
 import Settings;
 import SymbolTable;
 import Tpl;
@@ -1278,7 +1279,7 @@ algorithm
         scodeP := SymbolTable.getSCode();
         elts := match FBuiltin.getElementWithPathCheckBuiltin(scodeP, className)
           case SCode.CLASS(classDef=SCode.PARTS(elementLst=elts)) then elts;
-          case cl equation Error.addSourceMessage(Error.INTERNAL_ERROR, {AbsynUtil.pathString(className) + " does not contain SCode.PARTS"}, SCode.elementInfo(cl)); then fail();
+          case cl equation Error.addSourceMessage(Error.INTERNAL_ERROR, {AbsynUtil.pathString(className) + " does not contain SCode.PARTS"}, SCodeUtil.elementInfo(cl)); then fail();
         end match;
         tys := {};
         for elt in elts loop
@@ -1313,8 +1314,8 @@ algorithm
     case (cache,_,"checkInterfaceOfPackages",{Values.CODE(Absyn.C_TYPENAME(path)),Values.ARRAY(valueLst=vals)},_)
       equation
         sp = SymbolTable.getSCode();
-        cl = SCode.getElementWithPath(sp,path);
-        interfaceTypeAssoc = List.map1(vals, getInterfaceTypeAssocElt, SCode.elementInfo(cl));
+        cl = SCodeUtil.getElementWithPath(sp,path);
+        interfaceTypeAssoc = List.map1(vals, getInterfaceTypeAssocElt, SCodeUtil.elementInfo(cl));
         interfaceType = getInterfaceType(cl, interfaceTypeAssoc);
         List.map1_0(sp, verifyInterfaceType, interfaceType);
       then (cache,Values.BOOL(true));
@@ -1325,7 +1326,7 @@ algorithm
     case (cache,_,"generateSeparateCodeDependenciesMakefile",{Values.STRING(filename),Values.STRING(prefix),Values.STRING(suffix)},_)
       equation
         sp = SymbolTable.getSCode();
-        names = List.filterMap(sp,SCode.getElementName);
+        names = List.filterMap(sp,SCodeUtil.getElementName);
         deps = Graph.buildGraph(names,buildDependencyGraphPublicImports,sp);
         strs = List.map3(sp,writeModuleDepends,prefix,suffix,deps);
         System.writeFile(filename,stringDelimitList(strs,"\n"));
@@ -1337,10 +1338,10 @@ algorithm
     case (cache,_,"generateSeparateCodeDependencies",{Values.STRING(suffix)},_)
       equation
         sp = SymbolTable.getSCode();
-        names = List.filterMap(sp,SCode.getElementName);
+        names = List.filterMap(sp,SCodeUtil.getElementName);
 
         deps = Graph.buildGraph(names,buildDependencyGraph,sp);
-        namesPublic = List.map(List.select(sp, containsPublicInterface), SCode.getElementName);
+        namesPublic = List.map(List.select(sp, containsPublicInterface), SCodeUtil.getElementName);
         namesChanged = List.filterMap1(sp,getChangedClass,suffix);
         hashSetString = HashSetString.emptyHashSet();
         hashSetString = List.fold(namesChanged,BaseHashSet.add,hashSetString);
@@ -1379,7 +1380,7 @@ algorithm
         sp = SymbolTable.getSCode();
         name = getTypeNameIdent(v);
         setGlobalRoot(Global.instOnlyForcedFunctions,SOME(true));
-        cl = List.getMemberOnTrue(name, sp, SCode.isClassNamed);
+        cl = List.getMemberOnTrue(name, sp, SCodeUtil.isClassNamed);
         (cache,env) = generateFunctions(cache,env,p,sp,{cl},b);
         setGlobalRoot(Global.instOnlyForcedFunctions,NONE());
       then (cache,Values.BOOL(true));
@@ -1388,7 +1389,7 @@ algorithm
       equation
         sp = SymbolTable.getSCode();
         name = getTypeNameIdent(v);
-        failure(_ = List.getMemberOnTrue(name, sp, SCode.isClassNamed));
+        failure(_ = List.getMemberOnTrue(name, sp, SCodeUtil.isClassNamed));
         Error.addMessage(Error.LOOKUP_ERROR, {name,"<TOP>"});
       then fail();
 
@@ -2219,7 +2220,7 @@ algorithm
       algorithm
         cache := if cleanCache then FCore.emptyCache() else cache;
 
-        if SCode.isPartial(cl) then
+        if SCodeUtil.isPartial(cl) then
           paths := {};
           pathsMetarecord := {};
         else
@@ -2273,7 +2274,7 @@ protected
 algorithm
   SCode.CLASS(name=name) := elt;
   path := AbsynUtil.joinPaths(pathPrefix, Absyn.IDENT(name));
-  paths := if SCode.isFunction(elt) then path::acc else acc;
+  paths := if SCodeUtil.isFunction(elt) then path::acc else acc;
   pathsMetarecord := match elt
     case SCode.CLASS(restriction=SCode.R_METARECORD()) then path::accMetarecord;
     else accMetarecord;
@@ -2295,7 +2296,7 @@ protected
 algorithm
   skip := match cl
     case SCode.CLASS(classDef=SCode.CLASS_EXTENDS()) then false;
-    case SCode.CLASS(classDef=SCode.PARTS(elementLst=eltsTmp)) then not List.exist(eltsTmp, SCode.isElementExtendsOrClassExtends);
+    case SCode.CLASS(classDef=SCode.PARTS(elementLst=eltsTmp)) then not List.exist(eltsTmp, SCodeUtil.isElementExtendsOrClassExtends);
     else true;
   end match;
   if not skip then
@@ -2313,7 +2314,7 @@ algorithm
   // Failed to instantiate the class; perhaps due to being a function
   // that cannot be instantiated using model restrictions.
   elts := match cl
-    case SCode.CLASS(classDef=SCode.PARTS(elementLst=elts)) then list(e for e guard (not SCode.isPartial(e)) and SCode.isClass(e) in elts);
+    case SCode.CLASS(classDef=SCode.PARTS(elementLst=elts)) then list(e for e guard (not SCodeUtil.isPartial(e)) and SCodeUtil.isClass(e) in elts);
     else {};
   end match;
 end getNonPartialElementsForInstantiatedClass;
@@ -2743,13 +2744,13 @@ algorithm
     case (SCode.CLASS(restriction=SCode.R_METARECORD(moved=true)),_) then ();
     case (SCode.CLASS(cmt=SCode.COMMENT(annotation_=SOME(ann))),name::_)
       equation
-        (Absyn.STRING(str),info) = SCode.getNamedAnnotation(ann,"__OpenModelica_Interface");
+        (Absyn.STRING(str),info) = SCodeUtil.getNamedAnnotation(ann,"__OpenModelica_Interface");
         Error.assertionOrAddSourceMessage(listMember(str, expected), Error.MISMATCHING_INTERFACE_TYPE, {str,name}, info);
       then ();
     else
       equation
         print(SCodeDump.unparseElementStr(elt)+"\n");
-        Error.addSourceMessage(Error.MISSING_INTERFACE_TYPE,{},SCode.elementInfo(elt));
+        Error.addSourceMessage(Error.MISSING_INTERFACE_TYPE,{},SCodeUtil.elementInfo(elt));
       then fail();
   end matchcontinue;
 end verifyInterfaceType;
@@ -2767,12 +2768,12 @@ algorithm
       SourceInfo info;
     case (SCode.CLASS(cmt=SCode.COMMENT(annotation_=SOME(ann))),_)
       equation
-        (Absyn.STRING(str),_) = SCode.getNamedAnnotation(ann,"__OpenModelica_Interface");
+        (Absyn.STRING(str),_) = SCodeUtil.getNamedAnnotation(ann,"__OpenModelica_Interface");
         it = Util.assoc(str,assoc);
       then it;
     else
       equation
-        Error.addSourceMessage(Error.MISSING_INTERFACE_TYPE,{},SCode.elementInfo(elt));
+        Error.addSourceMessage(Error.MISSING_INTERFACE_TYPE,{},SCodeUtil.elementInfo(elt));
       then fail();
   end matchcontinue;
 end getInterfaceType;
@@ -2808,8 +2809,8 @@ algorithm
       list<SCode.Element> elts;
     case (_,_)
       equation
-        SCode.CLASS(classDef=SCode.PARTS(elementLst=elts)) = List.getMemberOnTrue(name, sp, SCode.isClassNamed);
-        (_,_,_,elts,_) = SCode.partitionElements(elts);
+        SCode.CLASS(classDef=SCode.PARTS(elementLst=elts)) = List.getMemberOnTrue(name, sp, SCodeUtil.isClassNamed);
+        (_,_,_,elts,_) = SCodeUtil.partitionElements(elts);
       then List.map(elts, importDepenency);
   end match;
 end buildDependencyGraph;
@@ -2824,8 +2825,8 @@ algorithm
       list<SCode.Element> elts;
     case (_,_)
       equation
-        SCode.CLASS(classDef=SCode.PARTS(elementLst=elts)) = List.getMemberOnTrue(name, sp, SCode.isClassNamed);
-        elts = List.select(elts,SCode.elementIsPublicImport);
+        SCode.CLASS(classDef=SCode.PARTS(elementLst=elts)) = List.getMemberOnTrue(name, sp, SCodeUtil.isClassNamed);
+        elts = List.select(elts,SCodeUtil.elementIsPublicImport);
       then List.map(elts, importDepenency);
   end match;
 end buildDependencyGraphPublicImports;
@@ -2926,7 +2927,7 @@ algorithm
       then List.exist(elts, containsPublicInterface2);
     else
       equation
-        name = SCode.elementName(elt);
+        name = SCodeUtil.elementName(elt);
         name = "CevalScript.containsPublicInterface failed: " + name;
         Error.addMessage(Error.INTERNAL_ERROR, {name});
       then fail();
@@ -2969,7 +2970,7 @@ algorithm
       then List.exist1(elts, containsImport2, visibility);
     else
       equation
-        name = SCode.elementName(elt);
+        name = SCodeUtil.elementName(elt);
         name = "CevalScript.containsPublicInterface failed: " + name;
         Error.addMessage(Error.INTERNAL_ERROR, {name});
       then fail();
@@ -3015,7 +3016,7 @@ algorithm
       SourceInfo info;
     case (SCode.CLASS(name=name, classDef=SCode.PARTS(elementLst=elts), info = SOURCEINFO()),_,_,_)
       equation
-        protectedDepends = List.map(List.select(elts,SCode.elementIsProtectedImport),importDepenency);
+        protectedDepends = List.map(List.select(elts,SCodeUtil.elementIsProtectedImport),importDepenency);
         protectedDepends = List.select(protectedDepends, isNotBuiltinImport);
         _::allDepends = Graph.allReachableNodes((name::protectedDepends,{}),deps,stringEq);
         allDepends = List.map1r(allDepends, stringAppend, prefix);
@@ -3024,7 +3025,7 @@ algorithm
       then str;
     case (SCode.CLASS(name=name, classDef=SCode.PARTS(elementLst=elts), info=info),_,_,_)
       algorithm
-        protectedDepends := List.map(List.select(elts,SCode.elementIsProtectedImport),importDepenency);
+        protectedDepends := List.map(List.select(elts,SCodeUtil.elementIsProtectedImport),importDepenency);
         protectedDepends := List.select(protectedDepends, isNotBuiltinImport);
         allDepends := list(Util.tuple21(e) for e in deps);
         for d in protectedDepends loop

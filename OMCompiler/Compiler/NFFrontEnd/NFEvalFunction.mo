@@ -54,6 +54,7 @@ import ModelicaExternalC;
 import System;
 import NFTyping.ExpOrigin;
 import SCode;
+import SCodeUtil;
 import NFPrefixes.Variability;
 import EvalFunctionExt = NFEvalFunctionExt;
 import NFCeval.EvalTarget;
@@ -867,7 +868,7 @@ protected
 algorithm
   if isSome(extAnnotation) then
     SOME(ann) := extAnnotation;
-    oexp := SCode.getModifierBinding(SCode.lookupNamedAnnotation(ann, "Library"));
+    oexp := SCodeUtil.getModifierBinding(SCodeUtil.lookupNamedAnnotation(ann, "Library"));
 
     if isSome(oexp) then
       isKnown := isKnownLibraryExp(Util.getOption(oexp));

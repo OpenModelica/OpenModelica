@@ -64,8 +64,9 @@ protected import Lookup;
 protected import Mod;
 protected import Util;
 protected import SCodeDump;
+import SCodeUtil;
 protected import ErrorExt;
-protected import SCodeUtil;
+protected import AbsynToSCode;
 protected import Global;
 //protected import System;
 
@@ -182,8 +183,8 @@ algorithm
           (outCache, cenv, outIH) := InstUtil.addClassdefsToEnv(outCache, cenv,
             outIH, inPrefix, cdef_els, inImpl, SOME(mod));
 
-          rest_els := SCodeUtil.addRedeclareAsElementsToExtends(rest_els,
-            list(e for e guard(SCodeUtil.isRedeclareElement(e)) in rest_els));
+          rest_els := AbsynToSCode.addRedeclareAsElementsToExtends(rest_els,
+            list(e for e guard(AbsynToSCode.isRedeclareElement(e)) in rest_els));
 
           outMod := Mod.elabUntypedMod(emod, Mod.EXTENDS(el.baseClassPath));
           outMod := Mod.merge(mod, outMod, "", false);
@@ -235,7 +236,7 @@ algorithm
       case SCode.COMPONENT()
         algorithm
           // Keep only constants if partial inst, otherwise keep all components.
-          if SCode.isConstant(SCode.attrVariability(el.attributes)) or not inPartialInst then
+          if SCodeUtil.isConstant(SCodeUtil.attrVariability(el.attributes)) or not inPartialInst then
             outElements := (el, DAE.NOMOD(), false) :: outElements;
           end if;
         then
@@ -328,7 +329,7 @@ protected function updateElementListVisibility
 algorithm
   outElements := match inVisibility
     case SCode.PUBLIC() then inElements;
-    else list(SCode.makeElementProtected(e) for e in inElements);
+    else list(SCodeUtil.makeElementProtected(e) for e in inElements);
   end match;
 end updateElementListVisibility;
 
@@ -363,7 +364,7 @@ protected
   list<tuple<SCode.Element, DAE.Mod, Boolean>> elts;
   list<SCode.Element> cdefelts, tmpelts, extendselts;
 algorithm
-  extendselts := List.map(inExtendsElementLst, SCodeUtil.expandEnumerationClass);
+  extendselts := List.map(inExtendsElementLst, AbsynToSCode.expandEnumerationClass);
   //fprintln(Flags.DEBUG,"instExtendsAndClassExtendsList: " + inClassName);
   (outCache,outEnv,outIH,outMod,elts,outNormalEqs,outInitialEqs,outNormalAlgs,outInitialAlgs,outComments):=
   instExtendsAndClassExtendsList2(inCache,inEnv,inIH,inMod,inPrefix,extendselts,inClassExtendsElementLst,inElementsFromExtendsScope,inState,inClassName,inImpl,isPartialInst);
@@ -445,7 +446,7 @@ algorithm
         Debug.traceln("- Inst.instClassExtendsList failed " + name);
         Debug.traceln("  Candidate classes: ");
         els = List.map(compelts, Util.tuple31);
-        names = List.map(els, SCode.elementName);
+        names = List.map(els, SCodeUtil.elementName);
         Debug.traceln(stringDelimitList(names, ","));
       then fail();
 
@@ -512,7 +513,7 @@ algorithm
 
         classDef = SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,inCons2,clats,externalDecl2);
         compelt = SCode.CLASS(name2,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,classDef,comment2,info2);
-        vis2 = SCode.prefixesVisibility(prefixes2);
+        vis2 = SCodeUtil.prefixesVisibility(prefixes2);
         elt = SCode.EXTENDS(Absyn.IDENT(name2),vis2,mods,NONE(),info1);
         classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,clats,externalDecl1);
         elt = SCode.CLASS(name1, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classDef, comment1, info1);
@@ -535,7 +536,7 @@ algorithm
 
         classDef = SCode.DERIVED(derivedTySpec, derivedMod, attrs);
         compelt = SCode.CLASS(name2,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,classDef,comment2,info2);
-        vis2 = SCode.prefixesVisibility(prefixes2);
+        vis2 = SCodeUtil.prefixesVisibility(prefixes2);
         elt = SCode.EXTENDS(Absyn.IDENT(name2),vis2,mods,NONE(),info1);
         classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,{},externalDecl1);
         elt = SCode.CLASS(name1, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classDef, comment1, info1);
@@ -663,7 +664,7 @@ algorithm
         // fprintln(Flags.INST_TRACE, "DERIVED: " + FGraph.printGraphPathStr(env) + " el: " + SCodeDump.unparseElementStr(inClass) + " mods: " + Mod.printModStr(mod));
         (cache, c, cenv) = Lookup.lookupClass(cache, env, tp, SOME(info));
         dmod = InstUtil.chainRedeclares(mod, dmod);
-        // false = AbsynUtil.pathEqual(FGraph.getGraphName(env),FGraph.getGraphName(cenv)) and SCode.elementEqual(c,inClass);
+        // false = AbsynUtil.pathEqual(FGraph.getGraphName(env),FGraph.getGraphName(cenv)) and SCodeUtil.elementEqual(c,inClass);
         // modifiers should be evaluated in the current scope for derived!
         //daeDMOD = Mod.elabUntypedMod(dmod, Mod.DERIVED(tp));
         (cache,daeDMOD) = Mod.elabMod(cache, env, ih, pre, dmod, impl, Mod.DERIVED(tp), info);
@@ -676,7 +677,7 @@ algorithm
 
     case (cache,env,ih,mod,pre,SCode.CLASS(name=n, prefixes = prefixes, classDef = SCode.ENUMERATION(enumLst), cmt = cmt, info = info),impl,_,false)
       equation
-        c = SCodeUtil.expandEnumeration(n, enumLst, prefixes, cmt, info);
+        c = AbsynToSCode.expandEnumeration(n, enumLst, prefixes, cmt, info);
         (cache,env,ih,elt,eq,ieq,alg,ialg,mod,outComments) = instDerivedClassesWork(cache, env, ih, mod, pre, c, impl,info, numIter >= Global.recursionDepthLimit, numIter+1);
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg,mod,outComments);
@@ -703,7 +704,7 @@ protected function noImportElements
   input list<SCode.Element> inElements;
   output list<SCode.Element> outElements;
 algorithm
-  outElements := list(e for e guard(not SCode.elementIsImport(e)) in inElements);
+  outElements := list(e for e guard(not SCodeUtil.elementIsImport(e)) in inElements);
 end noImportElements;
 
 protected function updateComponentsAndClassdefs
@@ -767,8 +768,8 @@ algorithm
         DAE.REDECL(element = comp, mod = cmod) = Mod.lookupCompModification(inMod, el.name);
         mod_rest = inMod; //mod_rest = Mod.removeMod(inMod, id);
         cmod = Mod.merge(cmod, mod, el.name, false);
-        comp = SCode.mergeWithOriginal(comp, el);
-        // comp2 = SCode.renameElement(comp2, id);
+        comp = SCodeUtil.mergeWithOriginal(comp, el);
+        // comp2 = SCodeUtil.renameElement(comp2, id);
       then
         ((comp, cmod, b), mod_rest);
 
@@ -1360,7 +1361,7 @@ algorithm
     else
       equation
         Error.addInternalError(getInstanceName() + " failed: " +
-          Dump.unparseAlgorithmStr(SCode.statementToAlgorithmItem(inStmt)), sourceInfo());
+          Dump.unparseAlgorithmStr(SCodeUtil.statementToAlgorithmItem(inStmt)), sourceInfo());
       then fail();
   end matchcontinue;
 end fixStatement;
@@ -1561,7 +1562,7 @@ algorithm
         (_,c,denv) = Lookup.lookupClassIdent(arrayGet(cache,1),env,id);
         // isOutside = FGraph.graphPrefixOf(denv, env);
         // id might come from named import, make sure you use the actual class name!
-        id = SCode.getElementName(c);
+        id = SCodeUtil.getElementName(c);
         //fprintln(Flags.DEBUG,"Got env " + intString(listLength(env)));
         denv = FGraph.openScope(denv,SCode.ENCAPSULATED(),id,NONE());
         cref = AbsynUtil.crefReplaceFirstIdent(cref,FGraph.getGraphName(denv));

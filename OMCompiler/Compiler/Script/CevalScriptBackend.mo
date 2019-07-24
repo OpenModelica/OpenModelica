@@ -105,6 +105,7 @@ import System;
 import StaticScript;
 import SCode;
 import SCodeUtil;
+import AbsynToSCode;
 import Settings;
 import SimulationResults;
 import StringUtil;
@@ -802,7 +803,7 @@ algorithm
       equation
         sp = SymbolTable.getSCode();
         (sp, _) = NFSCodeFlatten.flattenClassInProgram(path, sp);
-        sp = SCode.removeBuiltinsFromTopScope(sp);
+        sp = SCodeUtil.removeBuiltinsFromTopScope(sp);
         paths = Interactive.getSCodeClassNamesRecursive(sp);
         // paths = bcallret2(sort, List.sort, paths, AbsynUtil.pathGe, paths);
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
@@ -3297,7 +3298,7 @@ algorithm
         // add also the graphics annotations if we are using the NF_API
         if Flags.isSet(Flags.NF_API) then
           placementProgram := Interactive.modelicaAnnotationProgram(Config.getAnnotationVersion());
-          graphicProgramSCode := SCodeUtil.translateAbsyn2SCode(placementProgram);
+          graphicProgramSCode := AbsynToSCode.translateAbsyn2SCode(placementProgram);
           scodeP := listAppend(scode_builtin, SymbolTable.getSCode());
           scodeP := listAppend(scodeP, graphicProgramSCode);
         end if;
@@ -7365,10 +7366,10 @@ algorithm
   scodeP := SymbolTable.getSCode();
   (scodeP, env) := NFSCodeFlatten.flattenClassInProgram(classpath, scodeP);
   (NFSCodeEnv.CLASS(cls=SCode.CLASS(cmt=cmt)),_,_) := NFSCodeLookup.lookupClassName(classpath, env, AbsynUtil.dummyInfo);
-  scodeP := SCode.removeBuiltinsFromTopScope(scodeP);
+  scodeP := SCodeUtil.removeBuiltinsFromTopScope(scodeP);
 
   if stripAnnotations or stripComments then
-    scodeP := SCode.stripCommentsFromProgram(scodeP, stripAnnotations, stripComments);
+    scodeP := SCodeUtil.stripCommentsFromProgram(scodeP, stripAnnotations, stripComments);
   end if;
 
   str := SCodeDump.programStr(scodeP,SCodeDump.defaultOptions);
@@ -7565,7 +7566,7 @@ algorithm
       equation
         lineProgram = Interactive.modelicaAnnotationProgram(Config.getAnnotationVersion());
         fargs = Interactive.createFuncargsFromElementargs(mod);
-        p_1 = SCodeUtil.translateAbsyn2SCode(lineProgram);
+        p_1 = AbsynToSCode.translateAbsyn2SCode(lineProgram);
         (cache,env) = Inst.makeEnvFromProgram(p_1);
         (_,newexp,prop) = StaticScript.elabGraphicsExp(cache,env, Absyn.CALL(Absyn.CREF_IDENT(annName,{}),fargs), false,Prefix.NOPRE(), sourceInfo()) "impl" ;
         (cache, newexp, prop) = Ceval.cevalIfConstant(cache, env, newexp, prop, false, sourceInfo());

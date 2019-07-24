@@ -55,6 +55,7 @@ import NFEnvExtends;
 import NFSCodeFlattenRedeclare;
 import NFSCodeLookup;
 import NFSCodeCheck;
+import AbsynToSCode;
 import SCodeUtil;
 import System;
 
@@ -1188,7 +1189,7 @@ algorithm
     case (Absyn.ELEMENTITEM(element = element), _)
       equation
         // Translate the element item to a SCode element.
-        el = SCodeUtil.translateElement(element, SCode.PROTECTED());
+        el = AbsynToSCode.translateElement(element, SCode.PROTECTED());
         env = List.fold(el, extendEnvWithElement, inEnv);
       then
         env;
@@ -1751,7 +1752,7 @@ algorithm
     else
       equation
         el = getRedeclarationElement(inRedeclare);
-        (name, info) = SCode.elementNameInfo(el);
+        (name, info) = SCodeUtil.elementNameInfo(el);
       then
         (name, info);
 

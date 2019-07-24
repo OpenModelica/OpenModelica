@@ -66,6 +66,7 @@ import Mod;
 import Error;
 import ComponentReference;
 import Types;
+import SCodeUtil;
 
 public
 type Name = FCore.Name;
@@ -1059,8 +1060,8 @@ algorithm
     case (_, DAE.TYPES_VAR(name = n),c,_,_,_)
       equation
         // maks sure the element name and the DAE.TYPES_VAR name is the same!
-        false = stringEq(n, SCode.elementName(c));
-        Error.addCompilerError("FGraph.mkComponentNode: The component name: " + SCode.elementName(c) + " is not the same as its DAE.TYPES_VAR: " + n + "\n");
+        false = stringEq(n, SCodeUtil.elementName(c));
+        Error.addCompilerError("FGraph.mkComponentNode: The component name: " + SCodeUtil.elementName(c) + " is not the same as its DAE.TYPES_VAR: " + n + "\n");
       then
         fail();
 
@@ -1068,7 +1069,7 @@ algorithm
     case (g, v as DAE.TYPES_VAR(name = n),c,m,i,cg)
       equation
         // make sure the element name and the DAE.TYPES_VAR name is the same!
-        true = stringEq(n, SCode.elementName(c));
+        true = stringEq(n, SCodeUtil.elementName(c));
         r = lastScopeRef(g);
         g = FGraphBuildEnv.mkCompNode(c, r, FCore.USERDEFINED(), g);
         // update the var too!
@@ -1287,7 +1288,7 @@ algorithm
     case (r::_, _)
       equation
         true = FNode.isRefClass(r);
-        restr = SCode.getClassRestriction(FNode.getElement(FNode.fromRef(r)));
+        restr = SCodeUtil.getClassRestriction(FNode.getElement(FNode.fromRef(r)));
         true = valueEq(restrictionToScopeType(restr), inScopeType);
       then
         true;
@@ -1327,7 +1328,7 @@ algorithm
       FCore.ScopeType st;
 
     case r :: _ guard(FNode.isRefClass(r))
-      then SCode.getClassRestriction(FNode.getElement(FNode.fromRef(r)));
+      then SCodeUtil.getClassRestriction(FNode.getElement(FNode.fromRef(r)));
 
     case r :: _
       algorithm
@@ -1564,7 +1565,7 @@ algorithm
       equation
         c = inTargetClass;
         gclass = inTargetClassEnv;
-        targetClassName = SCode.elementName(c);
+        targetClassName = SCodeUtil.elementName(c);
 
         (newTargetClassName, crefPrefix) = mkVersionName(inSourceEnv, inSourceName, inPrefix, inMod, inTargetClassEnv, targetClassName);
 
@@ -1579,7 +1580,7 @@ algorithm
       equation
         c = inTargetClass;
         gclass = inTargetClassEnv;
-        targetClassName = SCode.elementName(c);
+        targetClassName = SCodeUtil.elementName(c);
 
         (newTargetClassName, crefPrefix) = mkVersionName(inSourceEnv, inSourceName, inPrefix, inMod, inTargetClassEnv, targetClassName);
 
@@ -1599,7 +1600,7 @@ algorithm
 
         // change class name (so unqualified references to the same class reach the original element
         FCore.CL(e = c) = FNode.refData(classRef);
-        c = SCode.setClassName(newTargetClassName, c);
+        c = SCodeUtil.setClassName(newTargetClassName, c);
         classRef = updateClassElement(classRef, c, crefPrefix, inMod, FCore.CLS_INSTANCE(targetClassName) /* FCore.CLS_UNTYPED() */, empty());
         // parent the classRef
         FNode.addChildRef(targetClassParentRef, newTargetClassName, classRef);
@@ -1620,7 +1621,7 @@ algorithm
     else
       equation
         c = inTargetClass;
-        targetClassName = SCode.elementName(c);
+        targetClassName = SCodeUtil.elementName(c);
         (newTargetClassName,_) = mkVersionName(inSourceEnv, inSourceName, inPrefix, inMod, inTargetClassEnv, targetClassName);
 
         Error.addCompilerWarning(
@@ -1655,7 +1656,7 @@ algorithm
     /*
     case (_, _, _, _, _, _, _)
       equation
-        print(AbsynUtil.pathString(PrefixUtil.prefixToPath(inPrefix)) + " S:" + getGraphNameStr(inSourceEnv) + "/" + inSourceName + " ||| " + "T:" + getGraphNameStr(inTargetClassEnv) + "/" + SCode.elementName(inTargetClass) + "\n");
+        print(AbsynUtil.pathString(PrefixUtil.prefixToPath(inPrefix)) + " S:" + getGraphNameStr(inSourceEnv) + "/" + inSourceName + " ||| " + "T:" + getGraphNameStr(inTargetClassEnv) + "/" + SCodeUtil.elementName(inTargetClass) + "\n");
       then
         fail();*/
 
@@ -1672,7 +1673,7 @@ algorithm
         true = Config.acceptMetaModelicaGrammar() or
                isTargetClassBuiltin(inTargetClassEnv, inTargetClass) or
                inFunctionScope(inSourceEnv) or
-               SCode.isOperatorRecord(inTargetClass);
+               SCodeUtil.isOperatorRecord(inTargetClass);
       then
         (inTargetClassEnv, inTargetClass, inIH);
 
@@ -1702,7 +1703,7 @@ algorithm
     local Ref r;
     case (_, _)
       equation
-        r = FNode.child(lastScopeRef(inGraph), SCode.elementName(inClass));
+        r = FNode.child(lastScopeRef(inGraph), SCodeUtil.elementName(inClass));
         yes = FNode.isRefBasicType(r) or FNode.isRefBuiltin(r);
       then
         yes;
@@ -1963,7 +1964,7 @@ algorithm
     node := match node
       case FCore.N(data = data as FCore.CL(e = el))
         algorithm
-          el := SCode.makeClassPartial(el);
+          el := SCodeUtil.makeClassPartial(el);
           data.e := el;
           node.data := data;
         then
@@ -1984,7 +1985,7 @@ protected
 algorithm
   try
     FCore.N(data = FCore.CL(e = el)) := FNode.fromRef(lastScopeRef(inEnv));
-    outIsPartial := SCode.isPartial(el);
+    outIsPartial := SCodeUtil.isPartial(el);
   else
     outIsPartial := false;
   end try;

@@ -54,6 +54,7 @@ import FGraph;
 import FGraphStream;
 import Config;
 import Flags;
+import SCodeUtil;
 
 public
 type Name = FCore.Name;
@@ -358,8 +359,8 @@ algorithm
   if Config.acceptMetaModelicaGrammar() then
     dummy := newRef;
   else
-    info1 := SCode.elementInfo(FNode.getElementFromRef(newRef));
-    info2 := SCode.elementInfo(FNode.getElementFromRef(oldRef));
+    info1 := SCodeUtil.elementInfo(FNode.getElementFromRef(newRef));
+    info2 := SCodeUtil.elementInfo(FNode.getElementFromRef(oldRef));
     Error.addMultiSourceMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS, {name}, {info2, info1});
     fail();
   end if;
@@ -825,7 +826,7 @@ public function isDerived
 algorithm
   b := match(inNode)
     local SCode.Element e;
-    case FCore.N(data = FCore.CL(e = e)) then SCode.isDerivedClass(e);
+    case FCore.N(data = FCore.CL(e = e)) then SCodeUtil.isDerivedClass(e);
     else false;
   end match;
 end isDerived;
@@ -929,7 +930,7 @@ algorithm
   b := match(inNode)
     local
       SCode.Element e;
-    case FCore.N(data = FCore.CL(e = e)) guard SCode.isFunction(e) or SCode.isOperator(e)
+    case FCore.N(data = FCore.CL(e = e)) guard SCodeUtil.isFunction(e) or SCodeUtil.isOperator(e)
       then true;
     else false;
   end match;
@@ -942,7 +943,7 @@ algorithm
   b := match(inNode)
     local
       SCode.Element e;
-    case FCore.N(data = FCore.CL(e = e)) guard SCode.isRecord(e)
+    case FCore.N(data = FCore.CL(e = e)) guard SCodeUtil.isRecord(e)
       then true;
     else false;
   end match;

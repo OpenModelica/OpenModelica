@@ -52,6 +52,7 @@ protected import Flags;
 protected import List;
 protected import NFSCodeLookup;
 protected import System;
+import SCodeUtil;
 
 protected type Item = NFSCodeEnv.Item;
 protected type Extends = NFSCodeEnv.Extends;
@@ -91,7 +92,7 @@ algorithm
         env = NFSCodeEnv.enterFrame(cls_env, inEnv);
 
         (cdef, cls_env :: env) = flattenClassDef(cdef, env, info);
-        cls = SCode.setElementClassDefinition(cdef, inClass);
+        cls = SCodeUtil.setElementClassDefinition(cdef, inClass);
         item = NFSCodeEnv.newClassItem(cls, {cls_env}, cls_ty);
         env = NFSCodeEnv.updateItemInEnv(item, env, name);
       then
@@ -101,7 +102,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeFlattenImports.flattenClass failed on " +
-          SCode.elementName(inClass) + " in " + NFSCodeEnv.getEnvName(inEnv));
+          SCodeUtil.elementName(inClass) + " in " + NFSCodeEnv.getEnvName(inEnv));
       then
         fail();
   end matchcontinue;
@@ -331,7 +332,7 @@ protected
   SCode.EEquation equ;
 algorithm
   SCode.EQUATION(equ) := inEquation;
-  (equ, _) := SCode.traverseEEquations(equ, (flattenEEquationTraverser, inEnv));
+  (equ, _) := SCodeUtil.traverseEEquations(equ, (flattenEEquationTraverser, inEnv));
   outEquation := SCode.EQUATION(equ);
 end flattenEquation;
 
@@ -352,7 +353,7 @@ algorithm
     case ((equ as SCode.EQ_FOR(index = iter_name, info = info), env))
       equation
         env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        (equ, _) = SCode.traverseEEquationExps(equ, traverseExp, (env, info));
+        (equ, _) = SCodeUtil.traverseEEquationExps(equ, traverseExp, (env, info));
       then
         ((equ, env));
 
@@ -361,14 +362,14 @@ algorithm
       equation
         cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
         equ = SCode.EQ_REINIT(crefExp, exp, cmt, info);
-        (equ, _) = SCode.traverseEEquationExps(equ, traverseExp, (env, info));
+        (equ, _) = SCodeUtil.traverseEEquationExps(equ, traverseExp, (env, info));
       then
         ((equ, env));
 
     case ((equ, env))
       equation
-        info = SCode.getEEquationInfo(equ);
-        (equ, _) = SCode.traverseEEquationExps(equ, traverseExp, (env, info));
+        info = SCodeUtil.getEEquationInfo(equ);
+        (equ, _) = SCodeUtil.traverseEEquationExps(equ, traverseExp, (env, info));
       then
         ((equ, env));
 
@@ -414,7 +415,7 @@ protected function flattenStatement
   input Env inEnv;
   output SCode.Statement outStatement;
 algorithm
-  (outStatement, _) := SCode.traverseStatements(inStatement, (flattenStatementTraverser, inEnv));
+  (outStatement, _) := SCodeUtil.traverseStatements(inStatement, (flattenStatementTraverser, inEnv));
 end flattenStatement;
 
 protected function flattenStatementTraverser
@@ -431,21 +432,21 @@ algorithm
     case ((stmt as SCode.ALG_FOR(index = iter_name, info = info), env))
       equation
         env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        (stmt, _) = SCode.traverseStatementExps(stmt, traverseExp, (env, info));
+        (stmt, _) = SCodeUtil.traverseStatementExps(stmt, traverseExp, (env, info));
       then
         ((stmt, env));
 
     case ((stmt as SCode.ALG_PARFOR(index = iter_name, info = info), env))
       equation
         env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        (stmt, _) = SCode.traverseStatementExps(stmt, traverseExp, (env, info));
+        (stmt, _) = SCodeUtil.traverseStatementExps(stmt, traverseExp, (env, info));
       then
         ((stmt, env));
 
     case ((stmt, env))
       equation
-        info = SCode.getStatementInfo(stmt);
-        (stmt, _) = SCode.traverseStatementExps(stmt, traverseExp, (env, info));
+        info = SCodeUtil.getStatementInfo(stmt);
+        (stmt, _) = SCodeUtil.traverseStatementExps(stmt, traverseExp, (env, info));
       then
         ((stmt, env));
 

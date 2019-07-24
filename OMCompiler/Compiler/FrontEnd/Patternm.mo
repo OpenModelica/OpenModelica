@@ -75,6 +75,7 @@ import InstUtil;
 import List;
 import Lookup;
 import MetaModelica.Dangerous;
+import AbsynToSCode;
 import SCodeUtil;
 import Static;
 import System;
@@ -368,7 +369,7 @@ algorithm
     case (cache,_,Absyn.CREF(Absyn.CREF_IDENT(id,{})),ty2,_,_)
       algorithm
         (cache,DAE.TYPES_VAR(ty = ty1, attributes = attr as DAE.ATTR(variability=variability)),_,_,_,_) := Lookup.lookupIdent(cache,env,id);
-        if SCode.isParameterOrConst(variability) then
+        if SCodeUtil.isParameterOrConst(variability) then
           Error.addSourceMessage(Error.PATTERN_VAR_NOT_VARIABLE, {id, SCodeDump.unparseVariability(variability)}, info);
           fail();
         end if;
@@ -2081,7 +2082,7 @@ algorithm
         (elabPatterns2, cache) = addPatternAliasesList(elabPatterns, inputAliases, cache, inEnv);
         (_, env) = traversePatternList(elabPatterns2, addEnvKnownAsBindings, env);
         eqAlgs = Static.fromEquationsToAlgAssignments(cp);
-        algs = SCodeUtil.translateClassdefAlgorithmitems(eqAlgs);
+        algs = AbsynToSCode.translateClassdefAlgorithmitems(eqAlgs);
         (cache,body) = InstSection.instStatements(cache, env, InnerOuter.emptyInstHierarchy, pre, ClassInf.FUNCTION(Absyn.IDENT("match"), false), algs, ElementSource.addElementSourceFileInfo(DAE.emptyElementSource,patternInfo), SCode.NON_INITIAL(), true, InstTypes.neverUnroll);
         (cache,body,elabResult,resultInfo,resType) = elabResultExp(cache,env,body,result,impl,performVectorization,pre,resultInfo);
         (cache,dPatternGuard) = elabPatternGuard(cache,env,patternGuard,impl,performVectorization,pre,patternInfo);
@@ -2519,10 +2520,10 @@ algorithm
         env2 = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), scopeName,NONE());
 
         // Tranform declarations such as Real x,y; to Real x; Real y;
-        ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());
+        ld2 = AbsynToSCode.translateEitemlist(ld, SCode.PROTECTED());
 
         // Filter out the components (just to be sure)
-        true = List.applyAndFold1(ld2, boolAnd, SCode.isComponentWithDirection, Absyn.BIDIR(), true);
+        true = List.applyAndFold1(ld2, boolAnd, SCodeUtil.isComponentWithDirection, Absyn.BIDIR(), true);
         ((cache,b)) = List.fold1(ld2, checkLocalShadowing, env, (cache,false));
         ld2 = if b then {} else ld2;
 
@@ -2538,7 +2539,7 @@ algorithm
           DAE.NOMOD(), Prefix.NOPRE(), dummyFunc, ld_mod, {},
           impl, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, true);
 
-        names = List.map(ld2, SCode.elementName);
+        names = List.map(ld2, SCodeUtil.elementName);
         declsTree = AvlSetString.addList(AvlSetString.new(), names);
 
         res = if b then NONE() else SOME((env2,dae1,declsTree));
@@ -2546,8 +2547,8 @@ algorithm
 
     case (cache,_,ld,_,_,_)
       equation
-        ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());
-        (ld2 as _::_) = List.filterOnTrue(ld2, SCode.isNotComponent);
+        ld2 = AbsynToSCode.translateEitemlist(ld, SCode.PROTECTED());
+        (ld2 as _::_) = List.filterOnTrue(ld2, SCodeUtil.isNotComponent);
         str = stringDelimitList(List.map1(ld2, SCodeDump.unparseElementStr, SCodeDump.defaultOptions),", ");
         Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
       then (cache,NONE());
@@ -2555,11 +2556,11 @@ algorithm
     case (cache,_,ld,_,_,_)
       equation
         // Tranform declarations such as Real x,y; to Real x; Real y;
-        ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());
+        ld2 = AbsynToSCode.translateEitemlist(ld, SCode.PROTECTED());
 
         // Filter out the components (just to be sure)
-        ld3 = List.select1(ld2, SCode.isComponentWithDirection, Absyn.INPUT());
-        ld4 = List.select1(ld2, SCode.isComponentWithDirection, Absyn.OUTPUT());
+        ld3 = List.select1(ld2, SCodeUtil.isComponentWithDirection, Absyn.INPUT());
+        ld4 = List.select1(ld2, SCodeUtil.isComponentWithDirection, Absyn.OUTPUT());
         (ld2 as _::_) = listAppend(ld3,ld4); // I don't care that this is slow; it's just for error message generation
         str = stringDelimitList(List.map1(ld2, SCodeDump.unparseElementStr, SCodeDump.defaultOptions),", ");
         Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);

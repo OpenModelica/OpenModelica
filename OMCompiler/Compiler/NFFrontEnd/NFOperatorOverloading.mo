@@ -45,6 +45,7 @@ protected
   import NFBinding.Binding;
   import Expression = NFExpression;
   import NFCall.Call;
+  import SCodeUtil;
 
 public
   function instConstructor
@@ -123,7 +124,7 @@ public
   function checkOperatorRestrictions
     input InstNode operatorNode;
   algorithm
-    if not SCode.isElementEncapsulated(InstNode.definition(operatorNode)) then
+    if not SCodeUtil.isElementEncapsulated(InstNode.definition(operatorNode)) then
       Error.addSourceMessage(Error.OPERATOR_NOT_ENCAPSULATED,
         {AbsynUtil.pathString(InstNode.scopePath(operatorNode, includeRoot = true))},
         InstNode.info(operatorNode));

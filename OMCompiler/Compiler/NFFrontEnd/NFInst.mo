@@ -76,6 +76,7 @@ import Typing = NFTyping;
 import ExecStat.{execStat,execStatReset};
 import SCodeDump;
 import SCodeUtil;
+import AbsynToSCode;
 import System;
 import NFCall.Call;
 import Absyn.Path;
@@ -239,7 +240,7 @@ end makeTopNode;
 function markBuiltinTypeNodes
   input output InstNode node;
 algorithm
-  if SCode.hasBooleanNamedAnnotationInClass(InstNode.definition(node), "__OpenModelica_builtin") then
+  if SCodeUtil.hasBooleanNamedAnnotationInClass(InstNode.definition(node), "__OpenModelica_builtin") then
     node := InstNode.setNodeType(InstNodeType.BUILTIN_CLASS(), node);
   end if;
 end markBuiltinTypeNodes;
@@ -270,7 +271,7 @@ protected
   Type ty;
   Class.Prefixes prefs;
 algorithm
-  Error.assertion(SCode.elementIsClass(definition), getInstanceName() + " got non-class element", sourceInfo());
+  Error.assertion(SCodeUtil.elementIsClass(definition), getInstanceName() + " got non-class element", sourceInfo());
   SCode.CLASS(classDef = cdef) := definition;
   prefs := instClassPrefixes(definition);
 
@@ -285,9 +286,9 @@ algorithm
         // Give a warning if the class extends is not declared as a redeclare.
         // This was not clarified until Modelica 3.4, so for now we just treat
         // all class extends like redeclares and give a warning about it.
-        if not SCode.isElementRedeclare(definition) then
+        if not SCodeUtil.isElementRedeclare(definition) then
           Error.addSourceMessage(Error.CLASS_EXTENDS_MISSING_REDECLARE,
-            {SCode.elementName(definition)}, SCode.elementInfo(definition));
+            {SCodeUtil.elementName(definition)}, SCodeUtil.elementInfo(definition));
         end if;
       then
         Class.fromSCode(ce_cdef.elementLst, true, scope, prefs);
@@ -404,7 +405,7 @@ algorithm
     end if;
 
     cls_tree := ClassTree.expand(cls_tree);
-    res := Restriction.fromSCode(SCode.getClassRestriction(def));
+    res := Restriction.fromSCode(SCodeUtil.getClassRestriction(def));
     cls := Class.EXPANDED_CLASS(cls_tree, mod, prefs, res);
     node := InstNode.updateClass(cls, node);
   end if;
@@ -491,7 +492,7 @@ algorithm
   for base in baseClasses loop
     i := i + 1;
 
-    if SCode.isElementReplaceable(InstNode.definition(base)) then
+    if SCodeUtil.isElementReplaceable(InstNode.definition(base)) then
       // The path might contain several classes with the same name, so mark the
       // class in the path string to make it clear which one we mean.
       if listLength(baseClasses) > 1 then
@@ -592,13 +593,13 @@ algorithm
         // destructor.
         for cls in tree.classes loop
           () := match InstNode.name(cls)
-            case "constructor" guard SCode.isFunction(InstNode.definition(cls))
+            case "constructor" guard SCodeUtil.isFunction(InstNode.definition(cls))
               algorithm
                 constructor := cls;
               then
                 ();
 
-            case "destructor" guard SCode.isFunction(InstNode.definition(cls))
+            case "destructor" guard SCodeUtil.isFunction(InstNode.definition(cls))
               algorithm
                 destructor := cls;
               then
@@ -672,7 +673,7 @@ algorithm
   dims := list(Dimension.RAW_DIM(d) for d in AbsynUtil.typeSpecDimensions(ty));
   mod := Class.getModifier(cls);
 
-  res := Restriction.fromSCode(SCode.getClassRestriction(element));
+  res := Restriction.fromSCode(SCodeUtil.getClassRestriction(element));
   cls := Class.EXPANDED_DERIVED(ext_node, mod, listArray(dims), prefs, attrs, res);
   node := InstNode.updateClass(cls, node);
   node := InstNode.setNodeType(InstNodeType.DERIVED_CLASS(InstNode.nodeType(node)), node);
@@ -1249,7 +1250,7 @@ algorithm
   prefs := mergeRedeclaredClassPrefixes(Class.getPrefixes(orig_cls),
     Class.getPrefixes(rdcl_cls), redeclareNode);
 
-  if SCode.isClassExtends(InstNode.definition(redeclareNode)) then
+  if SCodeUtil.isClassExtends(InstNode.definition(redeclareNode)) then
     orig_node := expand(originalNode);
     orig_cls := InstNode.getClass(orig_node);
 
@@ -1258,7 +1259,7 @@ algorithm
       // if the redeclaring class is empty.
       case (_, Class.PARTIAL_CLASS()) guard Class.isBuiltin(orig_cls)
         algorithm
-          if not SCode.isEmptyClassDef(SCode.getClassDef(InstNode.definition(redeclareNode))) then
+          if not SCodeUtil.isEmptyClassDef(SCodeUtil.getClassDef(InstNode.definition(redeclareNode))) then
             // Class extends of a builtin type is only allowed if the extending class is empty,
             // otherwise it violates the rules of extending a builtin type.
             Error.addSourceMessage(Error.BUILTIN_EXTENDS_INVALID_ELEMENTS,
@@ -1389,8 +1390,8 @@ algorithm
 
     Modifier.REDECLARE(element = rdcl_node, mod = outer_mod) := outer_mod;
 
-    cc_smod := SCode.getConstrainingMod(def);
-    if not SCode.isEmptyMod(cc_smod) then
+    cc_smod := SCodeUtil.getConstrainingMod(def);
+    if not SCodeUtil.isEmptyMod(cc_smod) then
       name := InstNode.name(node);
       cc_mod := Modifier.create(cc_smod, name, ModifierScope.COMPONENT(name), {}, parent);
     end if;
@@ -1629,7 +1630,7 @@ function checkOuterComponentMod
   input InstNode node;
 algorithm
   if not Modifier.isEmpty(mod) and
-     AbsynUtil.isOnlyOuter(SCode.prefixesInnerOuter(SCode.elementPrefixes(component))) then
+     AbsynUtil.isOnlyOuter(SCodeUtil.prefixesInnerOuter(SCodeUtil.elementPrefixes(component))) then
     Error.addSourceMessage(Error.OUTER_ELEMENT_MOD,
       {Modifier.toString(mod, printName = false), InstNode.name(node)}, InstNode.info(node));
     fail();
@@ -1669,8 +1670,8 @@ algorithm
         var := Prefixes.variabilityFromSCode(compAttr.variability);
         dir := Prefixes.directionFromSCode(compAttr.direction);
         io  := Prefixes.innerOuterFromSCode(compPrefs.innerOuter);
-        fin := SCode.finalBool(compPrefs.finalPrefix);
-        redecl := SCode.redeclareBool(compPrefs.redeclarePrefix);
+        fin := SCodeUtil.finalBool(compPrefs.finalPrefix);
+        redecl := SCodeUtil.redeclareBool(compPrefs.redeclarePrefix);
         repl := Replaceable.NOT_REPLACEABLE();
       then
         Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, fin, redecl, repl);
@@ -2084,7 +2085,7 @@ algorithm
         // A type must extend a basic type.
         if arrayLength(exts) == 1 then
           ty := Type.COMPLEX(node, ComplexType.EXTENDS_TYPE(exts[1]));
-        elseif SCode.hasBooleanNamedAnnotationInClass(InstNode.definition(node), "__OpenModelica_builtinType") then
+        elseif SCodeUtil.hasBooleanNamedAnnotationInClass(InstNode.definition(node), "__OpenModelica_builtinType") then
           ty := Type.COMPLEX(node, ComplexType.CLASS());
         else
           Error.addSourceMessage(Error.MISSING_TYPE_BASETYPE,
@@ -2186,7 +2187,7 @@ protected
   list<String> inputs;
   list<String> fields;
 algorithm
-  cls_node := if SCode.isOperatorRecord(InstNode.definition(node))
+  cls_node := if SCodeUtil.isOperatorRecord(InstNode.definition(node))
     then InstNode.classScope(node) else InstNode.classScope(InstNode.getDerivedNode(node));
   fields := list(InstNode.name(c) for c in Record.collectRecordParams(cls_node));
   ty := ComplexType.RECORD(cls_node, fields);
@@ -2223,7 +2224,7 @@ algorithm
       algorithm
         InstNode.cacheInitFunc(node);
 
-        if SCode.isOperatorRecord(InstNode.definition(node)) then
+        if SCodeUtil.isOperatorRecord(InstNode.definition(node)) then
           OperatorOverloading.instConstructor(
             InstNode.scopePath(node, includeRoot = true), node, InstNode.info(node));
         else
@@ -3178,7 +3179,7 @@ algorithm
       // If the component's class has a missingInnerMessage annotation, use it
       // to give a diagnostic message.
       try
-        Absyn.STRING(str) := SCode.getElementNamedAnnotation(
+        Absyn.STRING(str) := SCodeUtil.getElementNamedAnnotation(
           InstNode.definition(InstNode.classScope(n)), "missingInnerMessage");
         Error.addSourceMessage(Error.MISSING_INNER_MESSAGE, {System.unescapedString(str)}, InstNode.info(n));
       else

@@ -66,6 +66,7 @@ import ExpressionDump;
 import ExpressionSimplify;
 import Flags;
 import List;
+import SCodeUtil;
 import System;
 import Types;
 import Util;
@@ -1535,7 +1536,7 @@ protected
   SCode.Variability var;
 algorithm
   DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var)) := inVar;
-  outIsParamOrConst := SCode.isParameterOrConst(var);
+  outIsParamOrConst := SCodeUtil.isParameterOrConst(var);
 end isParamOrConstVar;
 
 public function isNotParamOrConstVar
@@ -3469,7 +3470,7 @@ algorithm
     case ((ht,_),DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),comment=SOME(comment)),pv)
       equation
         SCode.COMMENT(annotation_=SOME(anno)) = comment;
-        true = SCode.hasBooleanNamedAnnotation(anno,"Evaluate");
+        true = SCodeUtil.hasBooleanNamedAnnotation(anno,"Evaluate");
         e1 = evaluateParameter(e,pv);
         ht1 = BaseHashTable.add((cr,e1),ht);
       then

@@ -65,6 +65,7 @@ protected import FGraph;
 protected import FNode;
 protected import Debug;
 protected import SCodeDump;
+import SCodeUtil;
 protected import Util;
 protected import Config;
 protected import DAEUtil;
@@ -110,8 +111,8 @@ algorithm
       equation
         className = FNode.refName(FGraph.lastScopeRef(env)); // The external object classname is in top frame of environment.
         checkExternalObjectMod(inMod, className);
-        destr = SCode.getExternalObjectDestructor(els);
-        constr = SCode.getExternalObjectConstructor(els);
+        destr = SCodeUtil.getExternalObjectDestructor(els);
+        constr = SCodeUtil.getExternalObjectConstructor(els);
         env = FGraph.mkClassNode(env, destr, Prefix.NOPRE(), inMod);
         env = FGraph.mkClassNode(env, constr, Prefix.NOPRE(), inMod);
         (cache,ih) = instantiateExternalObjectDestructor(cache,env,ih,destr);
@@ -347,11 +348,11 @@ algorithm
     // normal functions
     case (cache,env,ih,mod,pre,SCode.CLASS(classDef=cd, prefixes=SCode.PREFIXES(visibility=visibility), partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(funcRest),info = info),inst_dims,_)
       equation
-        false = SCode.isExternalFunctionRestriction(funcRest);
-        isImpure = SCode.isImpureFunctionRestriction(funcRest);
+        false = SCodeUtil.isExternalFunctionRestriction(funcRest);
+        isImpure = SCodeUtil.isImpureFunctionRestriction(funcRest);
 
         // if we're not MetaModelica set it to non-partial
-        c = if Config.acceptMetaModelicaGrammar() then inClass else SCode.setClassPartialPrefix(SCode.NOT_PARTIAL(), inClass);
+        c = if Config.acceptMetaModelicaGrammar() then inClass else SCodeUtil.setClassPartialPrefix(SCode.NOT_PARTIAL(), inClass);
         cs = if instFunctionTypeOnly then InstTypes.TYPE_CALL() else InstTypes.INNER_CALL();
         //print("1 Prefix: " + PrefixUtil.printPrefixStr(pre) + " path: " + n + "\n");
         (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,_,_,_) =
@@ -374,7 +375,7 @@ algorithm
         // set the source of this element
         source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre);
         inlineType = InstUtil.commentIsInlineFunc(cmt);
-        partialPrefixBool = SCode.partialBool(partialPrefix);
+        partialPrefixBool = SCodeUtil.partialBool(partialPrefix);
 
         daeElts = InstUtil.optimizeFunctionCheckForLocals(fpath,daeElts,NONE(),{},{},{});
         InstUtil.checkFunctionDefUse(daeElts,info);
@@ -416,7 +417,7 @@ algorithm
 
         // set the source of this element
         source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre);
-        partialPrefixBool = SCode.partialBool(partialPrefix);
+        partialPrefixBool = SCodeUtil.partialBool(partialPrefix);
         InstUtil.checkExternalFunction(daeElts,extdecl,AbsynUtil.pathString(fpath));
       then
         (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_EXT(daeElts,extdecl)::derFuncs,ty1,visibility,partialPrefixBool,isImpure,DAE.NO_INLINE(),source,SOME(cmt))});
@@ -654,7 +655,7 @@ algorithm
         // print("instOvl: " + AbsynUtil.pathString(fn) + "\n");
         (cache,(c as SCode.CLASS(restriction=rest)),cenv) =
            Lookup.lookupClass(cache, env, fn, SOME(inInfo));
-        true = SCode.isFunctionRestriction(rest);
+        true = SCodeUtil.isFunctionRestriction(rest);
 
         (cache,env,ih,resfns1) = implicitFunctionInstantiation2(inCache, cenv, inIH, DAE.NOMOD(), pre, c, {}, false);
         (cache,env,ih,resfns2) = instOverloadedFunctions(cache,env,ih,pre,fns, inInfo);
@@ -811,11 +812,11 @@ algorithm
       case(_, _, _)
         equation
           (_,recordCl,recordEnv) = Lookup.lookupClass(inCache, inEnv, inPath);
-          true = SCode.isRecord(recordCl);
+          true = SCodeUtil.isRecord(recordCl);
 
-          name = SCode.getElementName(recordCl);
+          name = SCodeUtil.getElementName(recordCl);
           newName = FGraph.getInstanceOriginalName(recordEnv, name);
-          recordCl = SCode.setClassName(newName, recordCl);
+          recordCl = SCodeUtil.setClassName(newName, recordCl);
 
           (cache,_,_,_,_,_,recType,_,_,_) = Inst.instClass(inCache,recordEnv, InnerOuter.emptyInstHierarchy,
             UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), recordCl,
@@ -823,7 +824,7 @@ algorithm
 
           DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo) = recType;
 
-          vars = Types.filterRecordComponents(vars, SCode.elementInfo(recordCl));
+          vars = Types.filterRecordComponents(vars, SCodeUtil.elementInfo(recordCl));
           (inputs,locals) = List.extractOnTrue(vars, Types.isModifiableTypesVar);
           inputs = List.map(inputs,Types.setVarDefaultInput);
           locals = List.map(locals,Types.setVarProtected);

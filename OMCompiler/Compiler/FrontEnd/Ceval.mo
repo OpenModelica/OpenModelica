@@ -81,6 +81,7 @@ protected import ModelicaExternalC;
 protected import Prefix;
 protected import Print;
 protected import SCode;
+import SCodeUtil;
 protected import Static;
 protected import System;
 protected import Types;
@@ -4332,7 +4333,7 @@ algorithm
     case (_, _, _, DAE.ATTR(variability=variability), _, _, _, _, _, _, _, _, _, _)
       equation
         // We might try to ceval variables in reduction scope... but it can't be helped since we do things in a ***** way in Inst/Static
-        true = SCode.isParameterOrConst(variability) or inImpl or FGraph.inForLoopScope(inEnv);
+        true = SCodeUtil.isParameterOrConst(variability) or inImpl or FGraph.inForLoopScope(inEnv);
         false = crefEqualValue(inCref, inBinding);
         (cache, v) = cevalCrefBinding(inCache, inEnv, inCref, inBinding, inImpl, inMsg, numIter);
         // print("Eval cref: " + ComponentReference.printComponentRefStr(inCref) + "\n  in scope " + FGraph.printGraphPathStr(inEnv) + "\n");

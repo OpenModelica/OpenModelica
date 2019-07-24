@@ -71,7 +71,7 @@ import Matching;
 import MathematicaDump;
 import Print;
 import SCode;
-import SCodeUtil;
+import AbsynToSCode;
 import Sorting;
 import SymbolTable;
 import System;
@@ -2194,7 +2194,7 @@ algorithm
   case(_,_,_)
     equation
       System.realtimeTick(ClockIndexes.RT_CLOCK_UNCERTAINTIES);
-      p_1 = SCodeUtil.translateAbsyn2SCode(p);
+      p_1 = AbsynToSCode.translateAbsyn2SCode(p);
       (cache,graph,_,dae) = Inst.instantiateClass(icache,InnerOuter.emptyInstHierarchy,p_1,className);
       _ = System.realtimeTock(ClockIndexes.RT_CLOCK_UNCERTAINTIES);
       System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);

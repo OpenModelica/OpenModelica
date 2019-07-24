@@ -48,8 +48,8 @@ encapsulated package Absyn
 
   mo\'s constructors are primarily used by (Parser/Modelica.g).
 
-  When the AST has been built, it is normally used by SCode.mo in order to
-  build the SCode (See SCode.mo). It is also possile to send the AST do
+  When the AST has been built, it is normally used by SCodeUtil.mo in order to
+  build the SCode (See SCodeUtil.mo). It is also possile to send the AST do
   the unparser (Dump.mo) in order to print it.
 
   For details regarding the abstract syntax tree, check out the grammar in

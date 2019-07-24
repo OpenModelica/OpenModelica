@@ -47,6 +47,7 @@ import FLookup;
 
 protected
 import SCode;
+import SCodeUtil;
 import FGraphBuild;
 import List;
 import ClassInf;
@@ -126,8 +127,8 @@ algorithm
         true = FNode.isRefExtends(r);
         false = FNode.isRefDerived(r);
         FCore.EX(e = e) = FNode.refData(r);
-        p = SCode.getBaseClassPath(e);
-        _ = SCode.elementInfo(e);
+        p = SCodeUtil.getBaseClassPath(e);
+        _ = SCodeUtil.elementInfo(e);
         (g, rr) = FLookup.name(g, r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption);
         g = FGraphBuild.mkRefNode(FNode.refNodeName, {rr}, r, g);
       then
@@ -139,8 +140,8 @@ algorithm
         true = FNode.isRefExtends(r);
         false = FNode.isRefDerived(r);
         FCore.EX(e = e) = FNode.refData(r);
-        p = SCode.getBaseClassPath(e);
-        _ = SCode.elementInfo(e);
+        p = SCodeUtil.getBaseClassPath(e);
+        _ = SCodeUtil.elementInfo(e);
         failure((_, _) = FLookup.name(g, r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption));
         print("FResolve.ext_one: baseclass: " + AbsynUtil.pathString(p) +
               " not found in: " + FNode.toPathStr(FNode.fromRef(r)) +"!\n");
@@ -283,7 +284,7 @@ algorithm
       equation
         true = FNode.isRefComponent(r);
         FCore.CO(e = e) = FNode.refData(r);
-        Absyn.TPATH(p, _) = SCode.getComponentTypeSpec(e);
+        Absyn.TPATH(p, _) = SCodeUtil.getComponentTypeSpec(e);
         (g, rr) = FLookup.name(g, r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption);
         // print("Resolving ty: " + AbsynUtil.pathString(p) + " -> " + FNode.toStr(FNode.fromRef(rr)) + "\n");
         g = FGraphBuild.mkRefNode(FNode.refNodeName, {rr}, r, g);
@@ -295,7 +296,7 @@ algorithm
       equation
         true = FNode.isRefComponent(r);
         FCore.CO(e = e) = FNode.refData(r);
-        Absyn.TPATH(p, _) = SCode.getComponentTypeSpec(e);
+        Absyn.TPATH(p, _) = SCodeUtil.getComponentTypeSpec(e);
         failure((_, _) = FLookup.name(g, r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption));
         print("FResolve.ty_one: component type path: " + AbsynUtil.pathString(p) +
               " not found in: " + FNode.toPathStr(FNode.fromRef(r)) +"!\n");
@@ -679,7 +680,7 @@ algorithm
       equation
         true = FNode.isRefRedeclare(r);
         true = (FNode.isRefClass(r) and (not FNode.isRefClassExtends(r))) or FNode.isRefComponent(r);
-        id = SCode.elementName(FNode.getElement(FNode.fromRef(r)));
+        id = SCodeUtil.elementName(FNode.getElement(FNode.fromRef(r)));
         // get the parent where the extends are!
         p::_ = FNode.parents(FNode.fromRef(r));
         // search ONLY in extends!
@@ -693,7 +694,7 @@ algorithm
       equation
         true = FNode.isRefRedeclare(r);
         true = (FNode.isRefClass(r) and (not FNode.isRefClassExtends(r))) or FNode.isRefComponent(r);
-        id = SCode.elementName(FNode.getElement(FNode.fromRef(r)));
+        id = SCodeUtil.elementName(FNode.getElement(FNode.fromRef(r)));
         // get the parent where the extends are!
         p::_ = FNode.parents(FNode.fromRef(r));
         // search ONLY in extends!

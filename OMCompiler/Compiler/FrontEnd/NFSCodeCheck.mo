@@ -49,6 +49,7 @@ protected import Error;
 protected import Flags;
 protected import NFInstDump;
 protected import SCodeDump;
+import SCodeUtil;
 
 import NFSCodeEnv.EnvTree;
 
@@ -473,7 +474,7 @@ algorithm
         NFSCodeEnv.FRAME(clsAndVars = tree) :: _)
       equation
         NFSCodeEnv.CLASS(cls = el) = EnvTree.get(tree, cls_name);
-        true = SCode.isFunction(el);
+        true = SCodeUtil.isFunction(el);
       then
         ();
 
@@ -536,7 +537,7 @@ algorithm
 
     case (NFSCodeEnv.CLASS(cls = SCode.CLASS(restriction = res)), _, _)
       equation
-        true = SCode.isInstantiableClassRestriction(res);
+        true = SCodeUtil.isInstantiableClassRestriction(res);
       then
         ();
 

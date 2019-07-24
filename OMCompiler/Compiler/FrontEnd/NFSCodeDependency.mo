@@ -56,6 +56,7 @@ protected import NFSCodeCheck;
 protected import NFSCodeFlattenRedeclare;
 protected import NFSCodeLookup;
 protected import SCodeDump;
+import SCodeUtil;
 protected import System;
 protected import Util;
 
@@ -582,11 +583,11 @@ algorithm
     case (SCode.ENUMERATION(), _, _, _, _) then ();
     case (SCode.OVERLOAD(pathLst = paths), _, _, _, _)
       algorithm
-	    if not Config.synchronousFeaturesAllowed() and AbsynUtil.pathFirstIdent(listHead(paths)) == "OMC_NO_CLOCK" then
+      if not Config.synchronousFeaturesAllowed() and AbsynUtil.pathFirstIdent(listHead(paths)) == "OMC_NO_CLOCK" then
           List.map2_0({listHead(paths)},analyseClass,inEnv,inInfo);
-		else
-		  List.map2_0(paths,analyseClass,inEnv,inInfo);
-		end if;
+    else
+      List.map2_0(paths,analyseClass,inEnv,inInfo);
+    end if;
       then ();
     case (SCode.PDER(), _, _, _, _) then ();
 
@@ -765,7 +766,7 @@ algorithm
 
     case (SCode.CLASS(), _)
       equation
-        false = SCode.isElementRedeclare(inClass);
+        false = SCodeUtil.isElementRedeclare(inClass);
       then ();
 
     case (SCode.CLASS(), _)
@@ -908,7 +909,7 @@ algorithm
         // analyseItemIfRedeclares(repls, ty_item, ty_env);
         analyseModifier(mods, inEnv, ty_env, info);
         analyseOptExp(cond_exp, inEnv, info);
-        analyseConstrainClass(SCode.replaceableOptConstraint(SCode.prefixesReplaceable(prefixes)), inEnv, info);
+        analyseConstrainClass(SCodeUtil.replaceableOptConstraint(SCodeUtil.prefixesReplaceable(prefixes)), inEnv, info);
       then
         inExtends;
 
@@ -946,7 +947,7 @@ algorithm
     case (SCode.CLASS(name = name, restriction=res, info = info), _, _, SCode.R_OPERATOR())
       equation
         // Allowing external functions to be used operator functions
-        true = SCode.isFunctionOrExtFunctionRestriction(res);
+        true = SCodeUtil.isFunctionOrExtFunctionRestriction(res);
         analyseClass(Absyn.IDENT(name), inEnv, info);
       then
         inExtends;
@@ -954,7 +955,7 @@ algorithm
     //operators should only contain function definitions
     case (SCode.CLASS(name = name, restriction = res, info = info), _, _, SCode.R_OPERATOR())
       equation
-        false = SCode.isFunctionOrExtFunctionRestriction(res);
+        false = SCodeUtil.isFunctionOrExtFunctionRestriction(res);
         str = SCodeDump.restrString(res);
         Error.addSourceMessage(Error.OPERATOR_FUNCTION_EXPECTED, {name, str}, info);
       then
@@ -1006,7 +1007,7 @@ algorithm
 
     case (_, SCode.ATTR(variability = var), NFSCodeEnv.FRAME(clsAndVars = cls_and_vars) :: _, _)
       equation
-        true = SCode.isParameterOrConst(var);
+        true = SCodeUtil.isParameterOrConst(var);
         NFSCodeEnv.VAR(isUsed = SOME(is_used)) =
           EnvTree.get(cls_and_vars, inName);
         Mutable.update(is_used, true);
@@ -1131,7 +1132,7 @@ algorithm
         restriction = restr, info = info), _, _)
       equation
         analyseClassDef(cdef, restr, inEnv, true, info);
-        analyseConstrainClass(SCode.replaceableOptConstraint(SCode.prefixesReplaceable(prefixes)), inEnv, info);
+        analyseConstrainClass(SCodeUtil.replaceableOptConstraint(SCodeUtil.prefixesReplaceable(prefixes)), inEnv, info);
       then
         ();
 
@@ -1649,7 +1650,7 @@ protected
   SCode.EEquation equ;
 algorithm
   SCode.EQUATION(equ) := inEquation;
-  (_, _) := SCode.traverseEEquations(equ, (analyseEEquationTraverser, inEnv));
+  (_, _) := SCodeUtil.traverseEEquations(equ, (analyseEEquationTraverser, inEnv));
 end analyseEquation;
 
 protected function analyseEEquationTraverser
@@ -1668,21 +1669,21 @@ algorithm
     case ((equ as SCode.EQ_FOR(index = iter_name, info = info), env))
       equation
         env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        (equ, _) = SCode.traverseEEquationExps(equ, traverseExp, (env, info));
+        (equ, _) = SCodeUtil.traverseEEquationExps(equ, traverseExp, (env, info));
       then
         ((equ, env));
 
     case ((equ as SCode.EQ_REINIT(cref = Absyn.CREF(componentRef = cref1), info = info), env))
       equation
         analyseCref(cref1, env, info);
-        (equ, _) = SCode.traverseEEquationExps(equ, traverseExp, (env, info));
+        (equ, _) = SCodeUtil.traverseEEquationExps(equ, traverseExp, (env, info));
       then
         ((equ, env));
 
     case ((equ, env))
       equation
-        info = SCode.getEEquationInfo(equ);
-        (equ, _) = SCode.traverseEEquationExps(equ, traverseExp, (env, info));
+        info = SCodeUtil.getEEquationInfo(equ);
+        (equ, _) = SCodeUtil.traverseEEquationExps(equ, traverseExp, (env, info));
       then
         ((equ, env));
 
@@ -1716,7 +1717,7 @@ protected function analyseStatement
   input SCode.Statement inStatement;
   input Env inEnv;
 algorithm
-  (_, _) := SCode.traverseStatements(inStatement,
+  (_, _) := SCodeUtil.traverseStatements(inStatement,
     (analyseStatementTraverser, inEnv));
 end analyseStatement;
 
@@ -1736,21 +1737,21 @@ algorithm
     case ((stmt as SCode.ALG_FOR(index = iter_name, info = info), env))
       equation
         env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        (_, _) = SCode.traverseStatementExps(stmt, traverseExp, (env, info));
+        (_, _) = SCodeUtil.traverseStatementExps(stmt, traverseExp, (env, info));
       then
         ((stmt, env));
 
      case ((stmt as SCode.ALG_PARFOR(index = iter_name,  info = info), env))
       equation
         env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        (_, _) = SCode.traverseStatementExps(stmt, traverseExp, (env, info));
+        (_, _) = SCodeUtil.traverseStatementExps(stmt, traverseExp, (env, info));
       then
         ((stmt, env));
 
     case ((stmt, env))
       equation
-        info = SCode.getStatementInfo(stmt);
-        (_, _) = SCode.traverseStatementExps(stmt, traverseExp, (env, info));
+        info = SCodeUtil.getStatementInfo(stmt);
+        (_, _) = SCodeUtil.traverseStatementExps(stmt, traverseExp, (env, info));
       then
         ((stmt, env));
 
@@ -1848,7 +1849,7 @@ algorithm
 
     case (SCode.CLASS(name = cls_name, info = info), NFSCodeEnv.USERDEFINED(), _)
       equation
-        true = SCode.isElementRedeclare(inClass);
+        true = SCodeUtil.isElementRedeclare(inClass);
         _ :: env = inEnv;
         item = NFSCodeEnv.CLASS(inClass, NFSCodeEnv.emptyEnv, inClassType);
         (item, _) = NFSCodeLookup.lookupRedeclaredClassByItem(item, env, info);
@@ -1984,7 +1985,7 @@ algorithm
     case (SCode.CLASS(name, prefixes, ep, pp, res, cdef, cmt, info), _, _, _, _, _)
       equation
         // TODO! FIXME! add cc to the used classes!
-        _ = SCode.replaceableOptConstraint(SCode.prefixesReplaceable(prefixes));
+        _ = SCodeUtil.replaceableOptConstraint(SCodeUtil.prefixesReplaceable(prefixes));
         // Check if the class is used.
         item = EnvTree.get(inClsAndVars, name);
         true = checkClassUsed(item, cdef);
