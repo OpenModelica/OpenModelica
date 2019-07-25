@@ -1151,10 +1151,14 @@ function isClassdef
   input Absyn.Element inElement;
   output Boolean b;
 end isClassdef;
-function getElementItemsInClassPart
-  input Absyn.ClassPart inClassPart;
-  output list<Absyn.ElementItem> outElements;
-end getElementItemsInClassPart;
+  function getElementItemsInClassPart
+    input Absyn.ClassPart inClassPart;
+    output list<Absyn.ElementItem> outElements;
+  end getElementItemsInClassPart;
+  function complexIsCref
+    input Absyn.Exp inExp;
+    output Boolean b;
+  end complexIsCref;
 end AbsynUtil;
 
 package SCodeUtil

@@ -4215,14 +4215,37 @@ algorithm
 end isCref;
 
 public function isTuple
-  input Exp inExp;
-  output Boolean outIsTuple;
+  input Exp exp;
+  output Boolean b;
 algorithm
-  outIsTuple := match inExp
-    case TUPLE() then true;
+  b := match exp
+    case TUPLE(__) then true;
     else false;
   end match;
 end isTuple;
+
+public function allFieldsAreCrefs
+  "@author: johti
+   Returns true if all fields are crefs"
+  input list<Exp> expLst;
+  output Boolean b;
+algorithm
+  b := List.mapAllValueBool(expLst, complexIsCref, true);
+end allFieldsAreCrefs;
+
+public function complexIsCref
+  " @author: johti
+    Returns true if everything contained
+    in the tuple or a cons cell is a constant reference."
+  input Exp inExp;
+  output Boolean b;
+algorithm
+  b := match inExp
+    case TUPLE(__) then allFieldsAreCrefs(inExp.expressions);
+    case CONS(__) then complexIsCref(inExp.head) and complexIsCref(inExp.rest);
+    case _ then isCref(inExp);
+  end match;
+end complexIsCref;
 
 public function isDerCref
   input Exp exp;
@@ -6282,6 +6305,7 @@ algorithm
   end matchcontinue;
 end traverseInnerClassElements;
 
+
 protected function traverseInnerClassElementspec
 " Helperfunction to traverseInnerClassElements"
   input Absyn.ElementSpec inElementSpec;
@@ -6290,7 +6314,6 @@ protected function traverseInnerClassElementspec
   input Type_a inArg;
   input Boolean inVisitProtected "visit protected elts";
   output tuple<Absyn.ElementSpec, Option<Absyn.Path>, Type_a> outTpl;
-
   partial function FuncType
     input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTpl;
     output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTpl;

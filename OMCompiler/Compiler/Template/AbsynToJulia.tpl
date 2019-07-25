@@ -237,7 +237,7 @@ end dumpReturnTypeJL;
 
 template dumpReturnStrJL(list<ElementItem> outputs, Context context)
 ::=
-match MMToJuliaUtil.filterOnDirection(outputs, MMToJuliaUtil.makeOutputDirection())
+match listReverse(MMToJuliaUtil.filterOnDirection(outputs, MMToJuliaUtil.makeOutputDirection()))
   case {} then ""
   case L as H::{} then
   '<%(L |> e => dumpElementItemRaw(e, defaultDumpOptions, context); separator=", ")%>'
@@ -681,14 +681,14 @@ match alg
     let lhs_str = dumpLhsExp(assignComponent, makeFunctionContext("listMatchAssign"))
     let rhs_str = dumpExp(value, context)
     /* Somtimes assignments are used as assertions. There are probably more cases...*/
-    match assignComponent
-      case  CREF(__) then '<%lhs_str%> = <%rhs_str%>'
-      case  TUPLE(__) then '<%lhs_str%> = <%rhs_str%>'
-      /* Lets do a crazy oneliner :)) */
-      case  CONS(__) then '@match <%lhs_str%> = listHead(<%rhs_str%>), listRest(<%rhs_str%>)'
-      case  CALL(__) then '@match <%lhs_str%> = <%rhs_str%>'
-      /*Otherwise used as assert it seems like*/
-      else  '@assert <%lhs_str%> == (<%rhs_str%>)'
+    if AbsynUtil.complexIsCref(assignComponent) then
+      match assignComponent
+      case CONS(__) then
+        '@match <%lhs_str%> = <%rhs_str%>'
+      else
+        '<%lhs_str%> = <%rhs_str%>'
+    else
+      '@match <%lhs_str%> = <%rhs_str%>'
   case ALG_IF(__) then
     let if_str = dumpAlgorithmBranch(ifExp, trueBranch, "if", context)
     let elseif_str = (elseIfAlgorithmBranch |> (c, b) =>
@@ -935,13 +935,7 @@ match exp
   case CONS(__) then
     let head_str = dumpExp(head, context)
     let rest_str = dumpExp(rest, context)
-    /* There is one special case in match expression where we need to construct a tuple instead of a cons */
-    match context
-      case FUNCTION(__) then
-        match retValsStr
-          case "listMatchAssign" then '<%head_str%>, <%rest_str%>'
-          else '<%head_str%> <| <%rest_str%>'
-      else '<%head_str%> <| <%rest_str%>'
+    '<%head_str%> <| <%rest_str%>'
   case MATCHEXP(__) then dumpMatchExp(exp)
   case LIST(__) then
     let list_str = (exps |> e => dumpExp(e, context) ;separator=", ")
@@ -1034,7 +1028,7 @@ end dumpNamedArgPattern3;
 template dumpLhsExp(Absyn.Exp lhs, Context context)
 ::=
 match lhs
-  case IFEXP(__) then '(<%dumpExp(lhs, context)%>)'
+  case IFEXP(__) then '<%dumpExp(lhs, context)%>'
   else dumpExp(lhs, context)
 end dumpLhsExp;
 
