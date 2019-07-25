@@ -5868,7 +5868,7 @@ public function isEmptyMod
   output Boolean isEmpty;
 algorithm
   isEmpty := match mod
-    case Mod.NOMOD() then true;
+    case NOMOD() then true;
     else false;
   end match;
 end isEmptyMod;
