@@ -1,4 +1,4 @@
-#= TODO add docstring=#
+
 module TestAlgorithms
 #= We might fail here already =#
 include("../OutputAlgorithms/Algorithms.jl")
