@@ -1865,7 +1865,7 @@ algorithm
       then
          countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
 
-    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst, residualequations=tornEqs, innerEquations= innerEquations), linear = true)::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
+    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=vlst, residualequations=tornEqs, innerEquations= innerEquations), linear = true)::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
       equation
         comp = listHead(inComps);
         eqns = BackendEquation.getEqnsFromEqSystem(isyst);
@@ -1887,7 +1887,7 @@ algorithm
         compInfo = BackendDAE.TORN_ANALYSE(comp,torn,other,listLength(tornEqs));
       then
          countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
-    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=tornEqs, innerEquations = innerEquations), linear = false)::rest,_,BackendDAE.SHARED(),_)
+    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(residualequations=tornEqs, innerEquations = innerEquations), linear = false)::rest,_,BackendDAE.SHARED(),_)
       equation
         comp = listHead(inComps);
         eqns = BackendEquation.getEqnsFromEqSystem(isyst);
@@ -5657,7 +5657,7 @@ algorithm
       warningList = listAllIterationVariables2(rest, inVars);
     then warning::warningList;
 
-    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst), NONE(), linear=linear)::rest, _) equation
+    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=vlst), casualTearingSet=NONE(), linear=linear)::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       false = listEmpty(varlst);
 
@@ -5666,7 +5666,7 @@ algorithm
       warningList = listAllIterationVariables2(rest, inVars);
     then warning::warningList;
 
-    case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst), SOME(BackendDAE.TEARINGSET(tearingvars=vlst2)), linear=linear)::rest, _) equation
+    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=vlst), casualTearingSet=SOME(BackendDAE.TEARINGSET(tearingvars=vlst2)), linear=linear)::rest, _) equation
       vlst = List.unique(listAppend(vlst,vlst2));
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       false = listEmpty(varlst);

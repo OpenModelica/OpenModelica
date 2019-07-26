@@ -3315,7 +3315,7 @@ algorithm
     //------------------------
     // MetaModelica extension
     case (cache, env, _, pre, cl as SCode.CLASS(name = id, info=info,
-                                       classDef = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT(),_,arrayDim = ad))),
+                                       classDef = SCode.DERIVED(typeSpec = Absyn.TCOMPLEX(path = Absyn.IDENT(), arrayDim = ad))),
           dims,impl)
       equation
         true=Config.acceptMetaModelicaGrammar();
@@ -3349,7 +3349,7 @@ algorithm
     // Derived classes with restriction type, e.g. type Point = Real[3];
     case (cache, env, ih, pre,
       SCode.CLASS(name = id,restriction = SCode.R_TYPE(),info=info,
-                            classDef = SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod)),
+                            classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod)),
           dims, impl)
       equation
         (cache,cl,cenv) = Lookup.lookupClass(cache, env, cn, SOME(info));
@@ -4539,11 +4539,11 @@ algorithm
   (inputVar,cond) := match(m)
   local
     DAE.Exp e;
-  case(DAE.NAMEMOD(inputVar,mod = DAE.MOD(binding = SOME(DAE.TYPED(modifierAsExp=e)))))
+  case(DAE.NAMEMOD(ident = inputVar,mod = DAE.MOD(binding = SOME(DAE.TYPED(modifierAsExp=e)))))
     then (inputVar,DAE.NO_DERIVATIVE(e));
-  case(DAE.NAMEMOD(inputVar,mod = DAE.MOD(binding = NONE())))
+  case(DAE.NAMEMOD(ident = inputVar,mod = DAE.MOD(binding = NONE())))
     then (inputVar,DAE.NO_DERIVATIVE(DAE.ICONST(1)));
-  case(DAE.NAMEMOD(inputVar,mod = DAE.MOD(binding = NONE()))) // zeroderivative
+  case(DAE.NAMEMOD(ident = inputVar,mod = DAE.MOD(binding = NONE()))) // zeroderivative
     then (inputVar,DAE.ZERO_DERIVATIVE());
 
   else ("",DAE.ZERO_DERIVATIVE());
@@ -5670,11 +5670,11 @@ public function getStateSelectFromExpOption
 algorithm
   outDAEStateSelectOption:=
   match (inExpExpOption)
-    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("StateSelect", path = Absyn.IDENT("never"))))) then SOME(DAE.NEVER());
-    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("StateSelect", path = Absyn.IDENT("avoid"))))) then SOME(DAE.AVOID());
-    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("StateSelect", path = Absyn.IDENT("default"))))) then SOME(DAE.DEFAULT());
-    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("StateSelect", path = Absyn.IDENT("prefer"))))) then SOME(DAE.PREFER());
-    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("StateSelect", path = Absyn.IDENT("always"))))) then SOME(DAE.ALWAYS());
+    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED(name = "StateSelect", path = Absyn.IDENT("never"))))) then SOME(DAE.NEVER());
+    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED(name = "StateSelect", path = Absyn.IDENT("avoid"))))) then SOME(DAE.AVOID());
+    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED(name = "StateSelect", path = Absyn.IDENT("default"))))) then SOME(DAE.DEFAULT());
+    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED(name = "StateSelect", path = Absyn.IDENT("prefer"))))) then SOME(DAE.PREFER());
+    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED(name = "StateSelect", path = Absyn.IDENT("always"))))) then SOME(DAE.ALWAYS());
     else NONE();
   end match;
 end getStateSelectFromExpOption;

@@ -9895,7 +9895,7 @@ algorithm
         res;
 
     // adrpo: handle the case for model extends baseClassName end baseClassName;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName, _, _, parts = parts)),env)
+  case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName=baseClassName, parts = parts)),env)
       equation
         (_,_,cenv) = Lookup.lookupClassIdent(FCore.emptyCache(), env, baseClassName, SOME(inClass.info));
         SOME(envpath) = FGraph.getScopePath(cenv);

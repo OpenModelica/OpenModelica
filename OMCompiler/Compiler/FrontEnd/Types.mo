@@ -3050,23 +3050,23 @@ algorithm
       Boolean result;
       list<DAE.Var> vars;
 
-    case DAE.T_REAL(varLst = DAE.TYPES_VAR("fixed",binding = DAE.VALBOUND(valBound = Values.BOOL(fixed)))::_) then fixed;
-    case DAE.T_REAL(varLst = DAE.TYPES_VAR("fixed",binding = DAE.EQBOUND(evaluatedExp = SOME(Values.BOOL(fixed))))::_) then fixed;
-    case DAE.T_REAL(varLst = DAE.TYPES_VAR("fixed",binding = DAE.EQBOUND(exp = DAE.BCONST(fixed)))::_) then fixed;
+    case DAE.T_REAL(varLst = DAE.TYPES_VAR(name = "fixed",binding = DAE.VALBOUND(valBound = Values.BOOL(fixed)))::_) then fixed;
+    case DAE.T_REAL(varLst = DAE.TYPES_VAR(name = "fixed",binding = DAE.EQBOUND(evaluatedExp = SOME(Values.BOOL(fixed))))::_) then fixed;
+    case DAE.T_REAL(varLst = DAE.TYPES_VAR(name = "fixed",binding = DAE.EQBOUND(exp = DAE.BCONST(fixed)))::_) then fixed;
     case DAE.T_REAL(varLst = _::vars) equation
       fixed = getFixedVarAttribute(DAE.T_REAL(vars));
     then fixed;
 
-    case DAE.T_INTEGER(varLst = DAE.TYPES_VAR("fixed",binding = DAE.VALBOUND(valBound = Values.BOOL(fixed)))::_) then fixed;
-    case DAE.T_INTEGER(varLst = DAE.TYPES_VAR("fixed",binding = DAE.EQBOUND(evaluatedExp = SOME(Values.BOOL(fixed))))::_) then fixed;
-    case DAE.T_INTEGER(varLst = DAE.TYPES_VAR("fixed",binding = DAE.EQBOUND(exp = DAE.BCONST(fixed)))::_) then fixed;
+    case DAE.T_INTEGER(varLst = DAE.TYPES_VAR(name = "fixed",binding = DAE.VALBOUND(valBound = Values.BOOL(fixed)))::_) then fixed;
+    case DAE.T_INTEGER(varLst = DAE.TYPES_VAR(name = "fixed",binding = DAE.EQBOUND(evaluatedExp = SOME(Values.BOOL(fixed))))::_) then fixed;
+    case DAE.T_INTEGER(varLst = DAE.TYPES_VAR(name = "fixed",binding = DAE.EQBOUND(exp = DAE.BCONST(fixed)))::_) then fixed;
     case DAE.T_INTEGER(varLst = _::vars) equation
       fixed = getFixedVarAttribute(DAE.T_INTEGER(vars));
     then fixed;
 
-    case DAE.T_BOOL(varLst = DAE.TYPES_VAR("fixed",binding = DAE.VALBOUND(valBound = Values.BOOL(fixed)))::_) then fixed;
-    case DAE.T_BOOL(varLst = DAE.TYPES_VAR("fixed",binding = DAE.EQBOUND(evaluatedExp = SOME(Values.BOOL(fixed))))::_) then fixed;
-    case DAE.T_BOOL(varLst = DAE.TYPES_VAR("fixed",binding = DAE.EQBOUND(exp = DAE.BCONST(fixed)))::_) then fixed;
+    case DAE.T_BOOL(varLst = DAE.TYPES_VAR(name = "fixed",binding = DAE.VALBOUND(valBound = Values.BOOL(fixed)))::_) then fixed;
+    case DAE.T_BOOL(varLst = DAE.TYPES_VAR(name = "fixed",binding = DAE.EQBOUND(evaluatedExp = SOME(Values.BOOL(fixed))))::_) then fixed;
+    case DAE.T_BOOL(varLst = DAE.TYPES_VAR(name = "fixed",binding = DAE.EQBOUND(exp = DAE.BCONST(fixed)))::_) then fixed;
     case DAE.T_BOOL(varLst = _::vars) equation
       fixed = getFixedVarAttribute(DAE.T_BOOL(vars));
     then fixed;

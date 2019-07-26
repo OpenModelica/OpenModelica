@@ -713,7 +713,7 @@ algorithm
         then ("equation system with analytic Jacobian:\n", vlst);
       case BackendDAE.EQUATIONSYSTEM(vars = vlst, jacType = BackendDAE.JAC_NO_ANALYTIC())
         then ("equation system without analytic Jacobian:\n", vlst);
-      case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars = vlst), linear = false)
+      case BackendDAE.TORNSYSTEM(strictTearingSet = BackendDAE.TEARINGSET(tearingvars = vlst), linear = false)
         then ("torn nonlinear equation system:\n", vlst);
       // If the component is none of these types, do nothing.
       else ("", {});
@@ -2485,12 +2485,12 @@ algorithm
       startExp = BackendVariable.varStartValue(var);
       parameters = Expression.getAllCrefs(startExp);
 
-	    if not min(AvlSetCR.hasKey(allPrimaryParameters, p) for p in parameters) then
-	      eqn = BackendDAE.EQUATION(Expression.crefExp(startCR), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
-	      eqns = BackendEquation.add(eqn, eqns);
+      if not min(AvlSetCR.hasKey(allPrimaryParameters, p) for p in parameters) then
+        eqn = BackendDAE.EQUATION(Expression.crefExp(startCR), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+        eqns = BackendEquation.add(eqn, eqns);
 
         vars = BackendVariable.addVar(startVar, vars);
-	    end if;
+      end if;
 
       preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
       preVar = BackendVariable.copyVarNewName(preCR, var);

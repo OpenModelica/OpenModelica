@@ -1263,12 +1263,12 @@ algorithm
 
     // tuple-tuple assignments are split into one equation for each tuple
     // element, i.e. (i1, i2) = (4, 6) => i1 = 4; i2 = 6;
-    case DAE.EQUATION(DAE.TUPLE(explst), DAE.TUPLE(explst1), source = source)
+    case DAE.EQUATION(DAE.TUPLE(explst), DAE.TUPLE(explst1), source)
       equation
         eqns = lowerTupleAssignment(explst,explst1,source,functionTree,inEquations);
       then
         (eqns,inREquations,inIEquations);
-    case DAE.INITIALEQUATION(DAE.TUPLE(explst), DAE.TUPLE(explst1), source = source)
+    case DAE.INITIALEQUATION(DAE.TUPLE(explst), DAE.TUPLE(explst1), source)
       equation
         eqns = lowerTupleAssignment(explst,explst1,source,functionTree,inIEquations);
       then

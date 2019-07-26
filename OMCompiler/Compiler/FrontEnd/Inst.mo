@@ -2185,7 +2185,7 @@ algorithm
 
     // This rule describes how to instantiate class definition derived from an enumeration
     case (cache,env,ih,store,mods,pre,_,_,
-          SCode.DERIVED(Absyn.TPATH(path = cn,arrayDim = ad),modifications = mod,attributes=DA),
+          SCode.DERIVED(typeSpec=Absyn.TPATH(path = cn,arrayDim = ad),modifications = mod,attributes=DA),
           re,vis,_,_,inst_dims,impl,callscope,graph,_,_,_,_,_)
       equation
         false = Mutable.access(stopInst);
@@ -2222,7 +2222,7 @@ algorithm
 
     // This rule describes how to instantiate a derived class definition from basic types
     case (cache,env,ih,store,mods,pre,ci_state,_,
-          SCode.DERIVED(Absyn.TPATH(path = cn,arrayDim = ad),modifications = mod,attributes=DA),
+          SCode.DERIVED(typeSpec=Absyn.TPATH(path = cn,arrayDim = ad),modifications = mod,attributes=DA),
           re,vis,_,_,inst_dims,impl,callscope,graph,_,_,_,_,_)
       equation
         false = Mutable.access(stopInst);
@@ -2330,7 +2330,7 @@ algorithm
 
     // This rule describes how to instantiate a derived class definition with array dims
     case (cache,env,ih,store,mods,pre,ci_state,_,
-          SCode.DERIVED(Absyn.TPATH(path = cn,arrayDim = ad),modifications = mod,attributes=DA),
+          SCode.DERIVED(typeSpec=Absyn.TPATH(path = cn,arrayDim = ad),modifications = mod,attributes=DA),
           re,vis,_,_,inst_dims,impl,callscope,graph,_,_,_,_,_)
       equation
         false = Mutable.access(stopInst);
@@ -2360,7 +2360,7 @@ algorithm
 
     // MetaModelica extension
     case (_,_,_,_,mods,_,_,_,
-          SCode.DERIVED(Absyn.TCOMPLEX(),modifications = mod),
+          SCode.DERIVED(typeSpec=Absyn.TCOMPLEX(),modifications = mod),
           _,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
@@ -2369,7 +2369,7 @@ algorithm
       then fail();
 
     case (cache,env,ih,store,mods,pre,_,_,
-          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("list"),{tSpec},NONE()),modifications = mod, attributes=DA),
+          SCode.DERIVED(typeSpec=Absyn.TCOMPLEX(Absyn.IDENT("list"),{tSpec},NONE()),modifications = mod, attributes=DA),
           _,_,_,_,inst_dims,impl,_,graph,_,_,_,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
@@ -2384,7 +2384,7 @@ algorithm
       then (cache,env,ih,store,DAE.emptyDae,csets,ClassInf.META_LIST(Absyn.IDENT("")),{},bc,oDA,NONE(),graph);
 
     case (cache,env,ih,store,mods,pre,_,_,
-          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("Option"),{tSpec},NONE()),modifications = mod, attributes=DA),
+          SCode.DERIVED(typeSpec=Absyn.TCOMPLEX(Absyn.IDENT("Option"),{tSpec},NONE()),modifications = mod, attributes=DA),
           _,_,_,_,inst_dims,impl,_,graph,_,_,_,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
@@ -2398,7 +2398,7 @@ algorithm
       then (cache,env,ih,store,DAE.emptyDae,csets,ClassInf.META_OPTION(Absyn.IDENT("")),{},bc,oDA,NONE(),graph);
 
     case (cache,env,ih,store,mods,pre,_,_,
-          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("tuple"),tSpecs,NONE()),modifications = mod, attributes=DA),
+          SCode.DERIVED(typeSpec=Absyn.TCOMPLEX(Absyn.IDENT("tuple"),tSpecs,NONE()),modifications = mod, attributes=DA),
           _,_,_,_,inst_dims,impl,_,graph,_,_,_,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
@@ -2411,7 +2411,7 @@ algorithm
       then (cache,env,ih,store,DAE.emptyDae,csets,ClassInf.META_TUPLE(Absyn.IDENT("")),{},bc,oDA,NONE(),graph);
 
     case (cache,env,ih,store,mods,pre,_,_,
-          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("array"),{tSpec},NONE()),modifications = mod, attributes=DA),
+          SCode.DERIVED(typeSpec=Absyn.TCOMPLEX(Absyn.IDENT("array"),{tSpec},NONE()),modifications = mod, attributes=DA),
           _,_,_,_,inst_dims,impl,_,graph,_,_,_,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
@@ -2424,7 +2424,7 @@ algorithm
       then (cache,env,ih,store,DAE.emptyDae,csets,ClassInf.META_ARRAY(Absyn.IDENT(className)),{},bc,oDA,NONE(),graph);
 
     case (cache,env,ih,store,mods,pre,_,_,
-          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},NONE()),modifications = mod, attributes=DA),
+          SCode.DERIVED(typeSpec=Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},NONE()),modifications = mod, attributes=DA),
           _,_,_,_,inst_dims,impl,_,graph,_,_,_,_,_)
       equation
         // true = Config.acceptMetaModelicaGrammar(); // We use this for builtins also
@@ -2445,7 +2445,7 @@ algorithm
       then fail();
 
     case (cache,env,ih,store,mods,pre,ci_state,_,
-          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT(str),tSpecs,NONE()),modifications = mod, attributes=DA),
+          SCode.DERIVED(typeSpec=Absyn.TCOMPLEX(Absyn.IDENT(str),tSpecs,NONE()),modifications = mod, attributes=DA),
           re,vis,partialPrefix,encapsulatedPrefix,inst_dims,impl,_,graph,_,_,_,_,_)
       equation
         str = Util.assoc(str,{("List","list"),("Tuple","tuple"),("Array","array")});
@@ -2454,7 +2454,7 @@ algorithm
       then (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,oty,optDerAttr,outEqualityConstraint,outGraph);
 
     case (cache,env,ih,store,mods,pre,_,_,
-          SCode.DERIVED(Absyn.TCOMPLEX(cn,tSpecs,NONE()),modifications = mod, attributes=DA),
+          SCode.DERIVED(typeSpec=Absyn.TCOMPLEX(cn,tSpecs,NONE()),modifications = mod, attributes=DA),
           _,_,_,_,inst_dims,impl,_,graph,_,_,_,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();

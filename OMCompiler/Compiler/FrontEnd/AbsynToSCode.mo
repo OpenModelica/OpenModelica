@@ -1219,7 +1219,7 @@ algorithm
       algorithm
         xs_1 := {};
         for comp in inElementSpec4.components loop
-          Absyn.COMPONENTITEM(Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment, condition=cond) := comp;
+          Absyn.COMPONENTITEM(component=Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment, condition=cond) := comp;
           // TODO: Improve performance by iterating over all elements at once instead of creating a new Absyn.COMPONENTS in each step...
           checkTypeSpec(t,info);
           // fprintln(Flags.TRANSLATE, "translating component: " + n + " final: " + SCodeUtil.finalStr(SCodeUtil.boolFinal(finalPrefix)));

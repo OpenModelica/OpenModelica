@@ -178,7 +178,7 @@ algorithm
       then
         NONE();
 
-    case (_,DAE.TYPES_VAR(name,binding=binding)::_,_,_,bind_name)
+    case (_,DAE.TYPES_VAR(name=name,binding=binding)::_,_,_,bind_name)
       equation
         true = stringEq(name, bind_name);
       then
@@ -498,9 +498,9 @@ protected function getUncertainFromExpOption
   output Option<DAE.Uncertainty> out;
 algorithm
   out := match (expOption)
-    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("Uncertainty", path = Absyn.IDENT("given"))))) then SOME(DAE.GIVEN());
-    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("Uncertainty", path = Absyn.IDENT("sought"))))) then SOME(DAE.SOUGHT());
-    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("Uncertainty", path = Absyn.IDENT("refine"))))) then SOME(DAE.REFINE());
+    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED(name = "Uncertainty", path = Absyn.IDENT("given"))))) then SOME(DAE.GIVEN());
+    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED(name = "Uncertainty", path = Absyn.IDENT("sought"))))) then SOME(DAE.SOUGHT());
+    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED(name = "Uncertainty", path = Absyn.IDENT("refine"))))) then SOME(DAE.REFINE());
     else NONE();
   end match;
 end getUncertainFromExpOption;

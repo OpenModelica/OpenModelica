@@ -617,13 +617,13 @@ algorithm
         tmpsetcVars := rewriteIndex(tmpsetcVars, 0);
         tmpSimVars.dataReconSetcVars := tmpsetcVars;
         modelInfo.vars := tmpSimVars;
-                   
+
         //add the input vars for dataReconciliation
        ((tmpdatareconinputvars, _)) :=  BackendVariable.traverseBackendDAEVars(datareconinputvars, traversingdlowvarToSimvar, ({}, emptyVars));
         tmpdatareconinputvars := rewriteIndex(listReverse(tmpdatareconinputvars), 0);
         tmpSimVars.dataReconinputVars := tmpdatareconinputvars;
-        modelInfo.vars := tmpSimVars;  
-                   
+        modelInfo.vars := tmpSimVars;
+
         // set varInfo nsetcvars
         varInfo := modelInfo.varInfo;
         varInfo.numSetcVars := listLength(tmpsetcVars);
@@ -3289,7 +3289,7 @@ algorithm
       then (equations_, equations_, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpBackendMapping);
 
     // TORNSYSTEM
-    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.TORNSYSTEM(strictTearingSet, casualTearingSet, linear=b, mixedSystem=mixedSystem))
+    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.TORNSYSTEM(strictTearingSet=strictTearingSet, casualTearingSet=casualTearingSet, linear=b, mixedSystem=mixedSystem))
       equation
         if Flags.isSet(Flags.GRAPHML) then
           BackendDump.dumpBipartiteGraphStrongComponent1(inComp,BackendEquation.equationList(eqns),BackendVariable.varList(vars), SOME(BackendDAEUtil.getFunctions(ishared)),"BIPARITEGRPAH_TS_"+intString(iuniqueEqIndex));
@@ -10925,7 +10925,7 @@ algorithm
       BackendDAE.Constraints cons;
       BackendDAE.EquationAttributes eqAttr;
 
-    case (SimCode.SES_RESIDUAL(index, exp, source, eqAttr=eqAttr), _, a) equation
+    case (SimCode.SES_RESIDUAL(index, exp, source, eqAttr), _, a) equation
       (exp_, a) = func(exp, a);
       if referenceEq(exp,exp_) then
         eq_ = eq;
@@ -10934,7 +10934,7 @@ algorithm
       end if;
     then (eq_, a);
 
-    case (SimCode.SES_SIMPLE_ASSIGN(index, cr, exp, source, eqAttr=eqAttr), _, a) equation
+    case (SimCode.SES_SIMPLE_ASSIGN(index, cr, exp, source, eqAttr), _, a) equation
       (exp_, a) = func(exp, a);
       if referenceEq(exp,exp_) then
         eq_ = eq;
@@ -10943,7 +10943,7 @@ algorithm
       end if;
     then (eq_, a);
 
-    case (SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index, cr, exp, source, cons, eqAttr=eqAttr), _, a) equation
+    case (SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index, cr, exp, source, cons, eqAttr), _, a) equation
       (exp_, a) = func(exp, a);
       if referenceEq(exp,exp_) then
         eq_ = eq;
@@ -10952,7 +10952,7 @@ algorithm
       end if;
     then (eq_, a);
 
-    case (SimCode.SES_ARRAY_CALL_ASSIGN(index, leftexp, exp, source, eqAttr=eqAttr), _, a) equation
+    case (SimCode.SES_ARRAY_CALL_ASSIGN(index, leftexp, exp, source, eqAttr), _, a) equation
       (leftexp, a) = func(leftexp, a);
       (exp, a) = func(exp, a);
     then (SimCode.SES_ARRAY_CALL_ASSIGN(index, leftexp, exp, source, eqAttr), a);

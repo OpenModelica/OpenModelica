@@ -849,11 +849,11 @@ algorithm
       list<tuple<String,String>> userBrokenTplLst;
 
     // deal with empty connection graph
-    case (GRAPH(_, definiteRoots = {}, potentialRoots = {}, uniqueRoots = {}, branches = {}, connections = {}), _)
+    case (GRAPH(definiteRoots = {}, potentialRoots = {}, uniqueRoots = {}, branches = {}, connections = {}), _)
       then ({}, {}, {});
 
     // we have something in the connection graph
-    case (GRAPH(_, definiteRoots = definiteRoots, potentialRoots = potentialRoots, uniqueRoots = uniqueRoots,
+    case (GRAPH(definiteRoots = definiteRoots, potentialRoots = potentialRoots, uniqueRoots = uniqueRoots,
                    branches = branches, connections = connections), _)
       equation
         // reverse the conenction list to have them as in the model

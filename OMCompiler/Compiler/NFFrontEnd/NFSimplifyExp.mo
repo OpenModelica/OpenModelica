@@ -347,7 +347,7 @@ algorithm
       Dimension dim;
       list<Dimension> dims;
 
-    case Expression.SIZE(exp, dimIndex = SOME(index))
+    case Expression.SIZE(exp, SOME(index))
       algorithm
         index := simplify(index);
 
