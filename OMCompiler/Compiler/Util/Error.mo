@@ -1032,6 +1032,8 @@ public constant Message UNBOUND_PARAMETER_EVALUATE_TRUE = MESSAGE(594, TRANSLATI
   Util.gettext("Parameter %s has annotation(Evaluate=true) and no binding."));
 public constant Message FMI_URI_RESOLVE = MESSAGE(595, TRANSLATION(), WARNING(),
   Util.gettext("Could not resolve URI (%s) at compile-time; copying all loaded packages into the FMU"));
+public constant Message PATTERN_MIXED_POS_NAMED = MESSAGE(596, TRANSLATION(), WARNING(),
+  Util.gettext("Call to %s contains mixed positional and mixed arguments."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
