@@ -729,7 +729,7 @@ match alg
   case ALG_BREAK(__) then "break"
   case ALG_FAILURE(__) then
     let arg_str = if equ then dumpAlgorithmItems(equ, context) else "..."
-    'throw("<%arg_str%>")'
+      '@shouldFail <%arg_str%>'
   case ALG_TRY(__) then
     let arg1 = dumpAlgorithmItems(body, context)
     let arg2 = dumpAlgorithmItems(elseBody, context)
