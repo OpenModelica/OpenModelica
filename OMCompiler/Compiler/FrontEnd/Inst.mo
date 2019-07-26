@@ -137,6 +137,7 @@ import Global;
 import HashTable;
 import HashTable5;
 import InstHashTable;
+import InstMeta;
 import InstSection;
 import InstBinding;
 import InstVar;
@@ -145,7 +146,6 @@ import InstUtil;
 import InstExtends;
 import List;
 import Lookup;
-import MetaUtil;
 import Mutable;
 import OperatorOverloading;
 import PrefixUtil;
@@ -2172,7 +2172,7 @@ algorithm
         // Search for equalityConstraint
         eqConstraint = InstUtil.equalityConstraint(env5, els, info);
         ci_state6 = if isSome(ed) then ClassInf.assertTrans(ci_state6,ClassInf.FOUND_EXT_DECL(),info) else ci_state6;
-        (cache,oty) = MetaUtil.fixUniontype(cache, env5, ci_state6, inClassDef6);
+        (cache,oty) = InstMeta.fixUniontype(cache, env5, ci_state6, inClassDef6);
         _ = match oty
           case SOME(ty as DAE.T_METAUNIONTYPE(typeVars=_::_))
             algorithm
@@ -2464,7 +2464,7 @@ algorithm
         (cache,(SCode.CLASS(name=cn2,restriction=SCode.R_UNIONTYPE(typeVars=typeVars),classDef=classDef)),cenv) = Lookup.lookupClass(cache, env, cn, SOME(info));
         (cache,fq_class) = makeFullyQualifiedIdent(cache,cenv,cn2);
         new_ci_state = ClassInf.META_UNIONTYPE(fq_class, typeVars);
-        (cache,SOME(ty as DAE.T_METAUNIONTYPE())) = MetaUtil.fixUniontype(cache, env, new_ci_state, classDef);
+        (cache,SOME(ty as DAE.T_METAUNIONTYPE())) = InstMeta.fixUniontype(cache, env, new_ci_state, classDef);
         (cache,_,ih,tys,csets,oDA) = instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{}, inSets,info);
         tys = list(Types.boxIfUnboxedType(t) for t in tys);
         if not (listLength(tys)==listLength(typeVars)) then

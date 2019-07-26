@@ -39,6 +39,7 @@ if true then /* Suppress output */
     "../FrontEnd/InstBinding.mo",
     "../FrontEnd/InstFunction.mo",
     "../FrontEnd/InstHashTable.mo",
+    "../FrontEnd/InstMeta.mo",
     "../FrontEnd/InstUtil.mo",
     "../FrontEnd/InstExtends.mo",
     "../FrontEnd/InstSection.mo",

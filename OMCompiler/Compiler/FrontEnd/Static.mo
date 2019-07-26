@@ -62,19 +62,23 @@ encapsulated package Static
   The elaboration also contain function deoverloading which will be added to Modelica in the future."
 
 import Absyn;
-import AbsynUtil;
 import DAE;
 import FCore;
-import FGraph;
-import FNode;
-import MetaUtil;
 import Prefix;
 import SCode;
-import AbsynToSCode;
-import Util;
 import Values;
 
 protected
+
+import AbsynToSCode;
+import AbsynUtil;
+import FGraph;
+import FNode;
+import InstMeta;
+import MetaUtil;
+import Util;
+
+
 constant Integer SLOT_NOT_EVALUATED = 0;
 constant Integer SLOT_EVALUATING = 1;
 constant Integer SLOT_EVALUATED = 2;
@@ -728,7 +732,7 @@ algorithm
         (expl, DAE.PROP(ty, c)) := elabArray(expl, props, inPrefix, inInfo); // type-checking the array
         arr_ty := DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(listLength(expl))});
         exp := DAE.ARRAY(Types.simplifyType(arr_ty), not Types.isArray(ty), expl);
-        MetaUtil.checkArrayType(ty);
+        InstMeta.checkArrayType(ty);
         exp := elabMatrixToMatrixExp(exp);
       then
         (exp, DAE.PROP(arr_ty, c));
