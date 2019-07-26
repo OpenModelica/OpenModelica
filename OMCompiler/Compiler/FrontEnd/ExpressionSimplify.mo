@@ -1036,7 +1036,7 @@ algorithm
       then DAE.MATRIX(tp,n,mexps_1);
 
     // simplify record constructor from one to another
-    case (_,DAE.CALL(p1,exps,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p2)))),DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p3)))
+    case (_,DAE.CALL(p1,exps,DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p2)))),DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p3)))
       guard AbsynUtil.pathEqual(p1,p2) "It is a record constructor since it has the same path called as its output type"
       then DAE.CALL(p3,exps,DAE.CALL_ATTR(tp,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 

@@ -1464,8 +1464,8 @@ algorithm
 
     case (_, DAE.ARRAY(
         DAE.T_ARRAY(ty = ty, dims = DAE.DIM_INTEGER(dim) :: dims),
-        scalar = scalar,
-        array = expl))
+        scalar,
+        expl))
       equation
         dim = dim + 1;
         dims = DAE.DIM_INTEGER(dim) :: dims;
@@ -9214,20 +9214,20 @@ algorithm
       ComponentRef cr1,cr2;
       list<DAE.Exp> ae1,ae2;
     case (DAE.ICONST(integer = i1),DAE.ICONST(integer = i2)) then (i1 == i2);
-    case (DAE.UNARY(DAE.UMINUS(_),exp=DAE.ICONST(integer = i1)),DAE.ICONST(integer = i2))
+    case (DAE.UNARY(DAE.UMINUS(_),DAE.ICONST(integer = i1)),DAE.ICONST(integer = i2))
       equation
         i1 = - i1;
       then (i1 == i2);
-    case (DAE.ICONST(integer = i1),DAE.UNARY(DAE.UMINUS(_),exp=DAE.ICONST(integer = i2)))
+    case (DAE.ICONST(integer = i1),DAE.UNARY(DAE.UMINUS(_),DAE.ICONST(integer = i2)))
       equation
         i2 = - i2;
       then (i1 == i2);
     case (DAE.RCONST(real = r1),DAE.RCONST(real = r2)) then (r1 == r2);
-    case (DAE.UNARY(DAE.UMINUS(_),exp=DAE.RCONST(real = r1)),DAE.RCONST(real = r2))
+    case (DAE.UNARY(DAE.UMINUS(_),DAE.RCONST(real = r1)),DAE.RCONST(real = r2))
       equation
         r1 = - r1;
       then (r1 == r2);
-    case (DAE.RCONST(real = r1),DAE.UNARY(DAE.UMINUS(_),exp=DAE.RCONST(real = r2)))
+    case (DAE.RCONST(real = r1),DAE.UNARY(DAE.UMINUS(_),DAE.RCONST(real = r2)))
       equation
         r2 = - r2;
       then (r1 == r2);

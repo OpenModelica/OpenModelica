@@ -2656,7 +2656,7 @@ algorithm
       Option<BackendDAE.TearingSet> optCasualTearingSet;
 
       // generate symbolic jacobian for a torn system
-      case (BackendDAE.TORNSYSTEM(strictTearingset, optCasualTearingSet, linear=linear, mixedSystem=mixedSystem), _, _, _)
+      case (BackendDAE.TORNSYSTEM(strictTearingset, optCasualTearingSet, linear, mixedSystem), _, _, _)
         equation
           // generate generic jacobian backend dae
           (jacobian, shared) = calculateTearingSetJacobian(inVars, inEqns, strictTearingset, inShared, linear);

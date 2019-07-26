@@ -191,7 +191,7 @@ algorithm
         // strongComponent is a linear tornSystem
         true = listLength(compsIn) >= compIdx;
         comp = listGet(compsIn,compIdx);
-        BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars = tvarIdcs, residualequations = resEqIdcs, innerEquations = innerEquations), linear = linear) = comp;
+        BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars = tvarIdcs, residualequations = resEqIdcs, innerEquations = innerEquations), linear = linear) = comp;
         true = linear;
         true = intLe(listLength(tvarIdcs),Flags.getConfigInt(Flags.PARTLINTORN));
         //print("LINEAR TORN SYSTEM OF SIZE "+intString(listLength(tvarIdcs))+"\n");

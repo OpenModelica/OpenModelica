@@ -624,7 +624,7 @@ algorithm
     then (BackendDAEUtil.clearEqSyst(syst), shared);
 
     case ( syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), shared,
-           (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=eindex, tearingvars=vindx), linear=linear)) )
+           (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(residualequations=eindex, tearingvars=vindx), linear=linear)) )
     guard l2p_all or (if l2p_l then linear else not linear)
     algorithm
       (eqns, vars, shared) := res2Con(eqns, vars, eindex, vindx, shared);
