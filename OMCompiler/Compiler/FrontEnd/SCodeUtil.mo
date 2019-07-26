@@ -38,6 +38,7 @@ import SCode;
 
 protected
 
+import Absyn;
 import Error;
 import List;
 import Util;
