@@ -3,9 +3,8 @@ Note that outcommented files have been change by me manually
 The reason being is that the Julia JIT is a bit greedy and loops on circular
 dependencies :(
 */
-
+setCommandLineOptions("-g=MetaModelica");getErrorString();
 //Translating Absyn, to generate a syntax tree
-// setCommandLineOptions("-g=MetaModelica");getErrorString();
 // loadFile("Compiler/FrontEnd/Absyn.mo");getErrorString();
 // writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Absyn.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
 // deleteClass(Absyn);getErrorString();
@@ -16,10 +15,36 @@ dependencies :(
 // deleteClass(AbsynUtil);getErrorString();
 
 // Translating SCode
-// setCommandLineOptions("-g=MetaModelica");getErrorString();
-// loadFile("Compiler/FrontEnd/SCode.mo");getErrorString();
-// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/SCode.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
-// deleteClass(SCode);getErrorString();
+setCommandLineOptions("-g=MetaModelica");getErrorString();
+loadFile("Compiler/FrontEnd/SCode.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/SCode.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(SCode);getErrorString();
+
+//Translating SCodeUtil
+// loadFile("Compiler/FrontEnd/SCodeUtil.mo");getErrorString();
+// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/SCodeUtil.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+// deleteClass(SCodeUtil);getErrorString();
+
+//Translate Absyn to SCode
+loadFile("Compiler/FrontEnd/AbsynToSCode.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/AbsynToSCode.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(AbsynToSCode);getErrorString();
+
+
+//Getting INSTHASHTABLE
+// loadFile("Compiler/FrontEnd/InstHashTable.mo");getErrorString();
+// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/InstHashTable.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+// deleteClass(InstHashTable);getErrorString();
+
+//Connect
+// loadFile("Compiler/FrontEnd/Connect.mo");getErrorString();
+// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Connect.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+// deleteClass(Conncet);getErrorString();
+
+//SCodeDump
+loadFile("Compiler/FrontEnd/SCodeDump.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/SCodeDump.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(SCodeDump);getErrorString();
 
 
 // setCommandLineOptions("-g=MetaModelica");getErrorString();
@@ -29,14 +54,9 @@ dependencies :(
 
 //For Dump
 // setCommandLineOptions("-g=MetaModelica");getErrorString();
-// loadFile("Compiler/FrontEnd/Dump.mo");getErrorString();
-// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Dump.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
-// deleteClass(Dump);getErrorString();
-
-//Translating SCodeUtil
-// loadFile("Compiler/FrontEnd/SCodeUtil.mo");getErrorString();
-// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/SCodeUtil.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
-// deleteClass(SCodeUtil);getErrorString();
+loadFile("Compiler/FrontEnd/Dump.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Dump.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(Dump);getErrorString();
 
 // loadFile("Compiler/Util/List.mo");getErrorString();
 // writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/List.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
