@@ -54,9 +54,9 @@ deleteClass(SCodeDump);getErrorString();
 
 //For Dump
 // setCommandLineOptions("-g=MetaModelica");getErrorString();
-loadFile("Compiler/FrontEnd/Dump.mo");getErrorString();
-writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Dump.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
-deleteClass(Dump);getErrorString();
+// loadFile("Compiler/FrontEnd/Dump.mo");getErrorString();
+// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Dump.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+// deleteClass(Dump);getErrorString();
 
 // loadFile("Compiler/Util/List.mo");getErrorString();
 // writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/List.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
@@ -126,9 +126,9 @@ deleteClass(Print);getErrorString();
 // writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/System.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
 // deleteClass(System);getErrorString();
 
-loadFile("Compiler/Util/ErrorExt.mo");getErrorString();
-writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/ErrorExt.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
-deleteClass(ErrorExt);getErrorString();
+// loadFile("Compiler/Util/ErrorExt.mo");getErrorString();
+// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/ErrorExt.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+// deleteClass(ErrorExt);getErrorString();
 
 // loadFile("Compiler/Util/File.mo");getErrorString();
 // writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/File.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
@@ -146,6 +146,11 @@ deleteClass(AbsynDumpTpl);getErrorString();
 loadFile("Compiler/Global/Global.mo");getErrorString();
 writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Global.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
 deleteClass(Global);getErrorString();
+
+
+loadFile("Compiler/Template/SCodeDumpTpl.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/SCodeDumpTpl.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(SCodeDumpTpl);getErrorString();
 
 // loadFile("Compiler/Util/StringUtil.mo");getErrorString();
 // writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/StringUtil.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();

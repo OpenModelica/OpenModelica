@@ -782,7 +782,7 @@
                    nil()  => begin
                     list()
                   end
-                  
+
                   Absyn.EQUATIONS(contents = eql) <| rest  => begin
                       eql_1 = translateEquations(eql, false)
                       eqs = translateClassdefEquations(rest)
@@ -2243,7 +2243,7 @@
                   (NONE(), _)  => begin
                     NONE()
                   end
-                  
+
                   (SOME(exp), _)  => begin
                       exp = prefixUnqualifiedCrefsFromExp(exp, prefix)
                     SOME(exp)
