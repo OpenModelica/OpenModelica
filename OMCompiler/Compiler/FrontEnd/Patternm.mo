@@ -474,6 +474,11 @@ algorithm
       FCore.Cache cache;
       Boolean allWild;
 
+    case (_,_,_,Absyn.FUNCTIONARGS(_::_,_::_),_,_,_)
+      algorithm
+        Error.addSourceMessage(Error.PATTERN_MIXED_POS_NAMED, {AbsynUtil.pathString(callPath)}, info);
+      then fail();
+
     case (cache,_,_,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,_,_)
       algorithm
         (cache,_,_) :=
