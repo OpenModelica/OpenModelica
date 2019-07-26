@@ -117,6 +117,8 @@ if true then /* Suppress output */
 
 // "Template";
     "../Template/AbsynDumpTpl.mo",
+    "../Template/AbsynJLDumpTpl.mo",
+    "../Template/AbsynToJulia.mo",
     "../Template/CodegenCFunctions.mo",
     "../Template/CodegenUtil.mo",
     "../Template/DAEDumpTpl.mo",

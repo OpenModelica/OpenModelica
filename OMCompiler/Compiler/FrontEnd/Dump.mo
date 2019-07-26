@@ -1932,6 +1932,13 @@ algorithm
   end match;
 end dumpPath;
 
+protected function printPathStr "Print a Path."
+  input Absyn.Path p;
+  output String s;
+algorithm
+  s := AbsynUtil.pathString(p);
+end printPathStr;
+
 public function printExp "This function prints a complete expression to the Print buffer."
   input Absyn.Exp inExp;
 algorithm

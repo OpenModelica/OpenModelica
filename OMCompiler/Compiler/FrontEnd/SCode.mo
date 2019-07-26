@@ -213,6 +213,8 @@ uniontype ClassDef
 
 end ClassDef;
 
+public constant Comment noComment = COMMENT(NONE(),NONE());
+
 public
 uniontype Comment
 
@@ -222,10 +224,6 @@ uniontype Comment
   end COMMENT;
 
 end Comment;
-
-
-public constant Comment noComment = COMMENT(NONE(),NONE());
-
 
 // stefan
 public
@@ -2188,23 +2186,6 @@ algorithm
     else false;
   end match;
 end isClass;
-
-public function isFunctionOutput
-  input Element inElement;
-  output Boolean isOutput;
-algorithm
-  isOutput := match inElement
-    case COMPONENT(attributes=ATTR(direction=Absyn.OUTPUT(__))) then true;
-    else false;
-  end match;
-end isFunctionOutput;
-
-public function getOutputElements
-  input list<Element> inElements;
-  output list<Element> outElements;
-algorithm
-  outElements := List.filterOnTrue(inElements, isFunctionOutput);
-end getOutputElements;
 
 public function foldEEquations<ArgT>
   "Calls the given function on the equation and all its subequations, and
@@ -5889,7 +5870,7 @@ public function isEmptyMod
   output Boolean isEmpty;
 algorithm
   isEmpty := match mod
-    case NOMOD() then true;
+    case Mod.NOMOD() then true;
     else false;
   end match;
 end isEmptyMod;
