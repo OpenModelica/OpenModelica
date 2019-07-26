@@ -52,7 +52,7 @@ import ErrorExt
 
 import Global
 
-import List
+import MetaModelica.ListUtil
 
 import Print
 

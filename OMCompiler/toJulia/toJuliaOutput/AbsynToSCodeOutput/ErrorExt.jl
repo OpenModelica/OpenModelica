@@ -2,6 +2,8 @@
 
 
     using MetaModelica
+    #= ExportAll is not good practice but it makes it so that we do not have to write export after each function :( =#
+    using ExportAll
 
          #= /*
          * This file is part of OpenModelica.
@@ -39,43 +41,28 @@
             #= Defined in the runtime =#
         end
 
-        function addSourceMessage(id::Error.ErrorID, msg_type::Error.MessageType, msg_severity::Error.Severity, sline::ModelicaInteger, scol::ModelicaInteger, eline::ModelicaInteger, ecol::ModelicaInteger, read_only::Bool, filename::String, msg::String, tokens::List)
+        function addSourceMessage(id::Error.ErrorID, msg_type::Error.MessageType, msg_severity::Error.Severity, sline::ModelicaInteger, scol::ModelicaInteger, eline::ModelicaInteger, ecol::ModelicaInteger, read_only::Bool, filename::String, msg::String, tokens::IList)
             #= Defined in the runtime =#
         end
 
         function printMessagesStr(warningsAsErrors::Bool = false)::String
-              local outString::String
-
-            #= Defined in the runtime =#
-          outString
+          ""
         end
 
         function getNumMessages()::ModelicaInteger
-              local num::ModelicaInteger
-
-            #= Defined in the runtime =#
-          num
+          0
         end
 
         function getNumErrorMessages()::ModelicaInteger
-              local num::ModelicaInteger
-
-            #= Defined in the runtime =#
-          num
+          0
         end
 
         function getNumWarningMessages()::ModelicaInteger
-              local num::ModelicaInteger
-
-            #= Defined in the runtime =#
-          num
+          0
         end
 
-        function getMessages()::List
-              local res::List
-
-            #= Defined in the runtime =#
-          res
+        function getMessages()::IList
+          0
         end
 
         function clearMessages()
@@ -84,10 +71,7 @@
 
          #= Used to rollback/delete checkpoints without considering the identifier. Used to reset the error messages after a stack overflow exception. =#
         function getNumCheckpoints()::ModelicaInteger
-              local n::ModelicaInteger
-
-            #= Defined in the runtime =#
-          n
+          0
         end
 
          #= Used to rollback/delete checkpoints without considering the identifier. Used to reset the error messages after a stack overflow exception. =#
@@ -131,20 +115,20 @@
          #= rolls back error messages until the latest checkpoint,
         returning all error messages added since that point in time. A unique identifier for the checkpoint must be provided
         The application will exit with return code -1 if this identifier does not match. =#
-        function popCheckPoint(id::String #= unique identifier =#)::List
-              local handles::List #= opaque pointers; you MUST pass them back or memory is leaked =#
+        function popCheckPoint(id::String #= unique identifier =#)::IList
+              local handles::IList #= opaque pointers; you MUST pass them back or memory is leaked =#
 
             #= Defined in the runtime =#
           handles #= opaque pointers; you MUST pass them back or memory is leaked =#
         end
 
          #= Pushes stored pointers back to the error stack. =#
-        function pushMessages(handles::List #= opaque pointers from popCheckPoint =#)
+        function pushMessages(handles::IList #= opaque pointers from popCheckPoint =#)
             #= Defined in the runtime =#
         end
 
          #= Pushes stored pointers back to the error stack. =#
-        function freeMessages(handles::List #= opaque pointers from popCheckPoint =#)
+        function freeMessages(handles::IList #= opaque pointers from popCheckPoint =#)
             #= Defined in the runtime =#
         end
 
@@ -153,10 +137,7 @@
           You can use it to rollBack/delete a checkpoint, but you're
           not sure that it exists (due to MetaModelica backtracking). =#
         function isTopCheckpoint(id::String #= unique identifier =#)::Bool
-              local isThere::Bool #= tells us if the checkpoint exists (true) or doesn't (false) =#
-
-            #= Defined in the runtime =#
-          isThere #= tells us if the checkpoint exists (true) or doesn't (false) =#
+          false
         end
 
         function setShowErrorMessages(inShow::Bool)
@@ -172,4 +153,6 @@
             #= Defined in the runtime =#
         end
 
+    #= So that we can use wildcard imports and named imports when they do occur. Not good Julia practice =#
+    @exportAll()
   end

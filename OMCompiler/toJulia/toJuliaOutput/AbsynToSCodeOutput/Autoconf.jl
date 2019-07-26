@@ -2,6 +2,8 @@
 
 
     using MetaModelica
+    #= ExportAll is not good practice but it makes it so that we do not have to write export after each function :( =#
+    using ExportAll
 
          haveBStatic = true::Bool
          bstatic = if haveBStatic
@@ -14,7 +16,7 @@
              else
                ""
              end::String
-         configureCommandLine = "Configured 2019-07-03 16:13:02 using arguments:  '--disable-option-checking' '--prefix=/home/johti17/OpenModelica/build' 'CC=clang-9' 'CXX=clang++-9' '--without-omc' '--with-ombuilddir=/home/johti17/OpenModelica/build' '--cache-file=/dev/null' '--srcdir=.'"::String
+         configureCommandLine = "Configured 2019-07-26 11:09:56 using arguments:  '--disable-option-checking' '--prefix=/home/johti17/OpenModelica/build' '--with-omc=/~/OpenModelica/build/bin/omc' 'CC=clang-9' 'CXX=clang++-9' '--with-ombuilddir=/home/johti17/OpenModelica/build' '--cache-file=/dev/null' '--srcdir=.'"::String
          os = "linux"::String
          make = "make"::String
          exeExt = ""::String
@@ -31,7 +33,9 @@
              else
                ""
              end::String
-         systemLibs = list("-lomcruntime", "-lexpat", "-lsqlite3", "-llpsolve55", corbaLibs, "-lomcgc", hwloc)::List
+         systemLibs = list("-lomcruntime", "-lexpat", "-lsqlite3", "-llpsolve55", corbaLibs, "-lomcgc", hwloc)::IList
          triple = "x86_64-linux-gnu"::String
 
+    #= So that we can use wildcard imports and named imports when they do occur. Not good Julia practice =#
+    @exportAll()
   end

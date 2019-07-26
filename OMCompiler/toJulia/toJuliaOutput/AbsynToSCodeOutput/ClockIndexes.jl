@@ -2,6 +2,8 @@
 
 
     using MetaModelica
+    #= ExportAll is not good practice but it makes it so that we do not have to write export after each function :( =#
+    using ExportAll
 
          #= /*
          * This file is part of OpenModelica.
@@ -72,6 +74,8 @@
 
          RT_CLOCK_FINST = 26::ModelicaInteger
 
-         buildModelClocks = list(RT_CLOCK_BUILD_MODEL, RT_CLOCK_SIMULATE_TOTAL, RT_CLOCK_TEMPLATES, RT_CLOCK_LINEARIZE, RT_CLOCK_SIMCODE, RT_CLOCK_BACKEND, RT_CLOCK_FRONTEND)::List
+         buildModelClocks = list(RT_CLOCK_BUILD_MODEL, RT_CLOCK_SIMULATE_TOTAL, RT_CLOCK_TEMPLATES, RT_CLOCK_LINEARIZE, RT_CLOCK_SIMCODE, RT_CLOCK_BACKEND, RT_CLOCK_FRONTEND)::IList
 
+    #= So that we can use wildcard imports and named imports when they do occur. Not good Julia practice =#
+    @exportAll()
   end

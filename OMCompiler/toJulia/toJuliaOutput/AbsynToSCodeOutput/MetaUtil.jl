@@ -45,7 +45,7 @@ module MetaUtil
            with the uniontype name. =#
         function createMetaClassesInProgram(inProgram::Absyn.Program)::Absyn.Program
           #=TODO=#
-          outProgram
+          inProgram
         end
 
          #= Takes a class, and if it's a uniontype it converts all records inside it into

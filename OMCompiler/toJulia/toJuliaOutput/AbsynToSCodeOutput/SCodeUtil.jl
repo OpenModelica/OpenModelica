@@ -1,3162 +1,6699 @@
-module SCodeUtil
+  module SCodeUtil
 
 
-using MetaModelica
+    using MetaModelica
+    #= ExportAll is not good practice but it makes it so that we do not have to write export after each function :( =#
+    using ExportAll
+    #= Necessary to write declarations for your uniontypes until Julia adds support for mutually recursive types =#
 
-#= /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http:www.ida.liu.se/projects/OpenModelica or
-* http:www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http:www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/ =#
 
-import Absyn
-import AbsynUtil
-import SCode
-import Flags
-import List
-import MetaUtil
-import System
-import Util
-import MetaModelica.Dangerous
-#=  Constant expression for AssertionLevel.error.
-=#
-Lst = MetaModelica.List
+    FilterFunc = Function
 
-ASSERTION_LEVEL_ERROR = Absyn.CREF(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_QUAL("AssertionLevel", list(), Absyn.CREF_IDENT("error", list()))))::Absyn.Exp
+    FoldFunc = Function
 
-#= This function takes an Absyn.Program
-and constructs a SCode.Program from it.
-This particular version of translate tries to fix any uniontypes
-in the inProgram before translating further. This should probably
-be moved into Parser.parse since you have to modify the tree every
-single time you translate... =#
-function translateAbsyn2SCode(inProgram::Absyn.Program)::SCode.Program
-  local outProgram::SCode.Program
+    FoldFunc = Function
 
-  outProgram = begin
-    local spInitial::SCode.Program
-    local sp::SCode.Program
-    local inClasses::Lst
-    local initialClasses::Lst
-    @match inProgram begin
-      _  => begin
-        @match Absyn.PROGRAM(inClasses) = MetaUtil.createMetaClassesInProgram(inProgram)
-      sp = list(translateClass(c) for c in inClasses)
-      sp
-      end
-    end
-  end
-  #=  adrpo: TODO! FIXME! disable function caching for now as some tests fail.
-  =#
-  #=  setGlobalRoot(Ceval.cevalHashIndex, Ceval.emptyCevalHashTable());
-  =#
-  #=  set the external flag that signals the presence of inner/outer components in the model
-  =#
-  #=  set the external flag that signals the presence of expandable connectors in the model
-  =#
-  #=  set the external flag that signals the presence of overconstrained connectors in the model
-  =#
-  #=  set the external flag that signals the presence of expandable connectors in the model
-  =#
-  #=  translate given absyn to scode.
-  =#
-  #=  adrpo: note that WE DO NOT NEED to add initial functions to the program
-  =#
-  #=         as they are already part of the initialEnv done by Builtin.initialGraph
-  =#
-  outProgram
-end
+    FoldFunc = Function
 
-function translateClass(inClass::Absyn.Class)::SCode.Element
-  local outClass::SCode.Element
+    TraverseFunc = Function
 
-  outClass = translateClass2(inClass, 0)
-  outClass
-end
+    TraverseFunc = Function
 
-#= This functions converts an Absyn.Class to a SCode.Class. =#
-function translateClass2(inClass::Absyn.Class, inNumMessages::ModelicaInteger)::SCode.Element
-  local outClass::SCode.Element
+    TraverseFunc = Function
 
-  outClass = begin
-    local d_1::SCode.ClassDef
-    local r_1::SCode.Restriction
-    local c::Absyn.Class
-    local n::String
-    local p::Bool
-    local f::Bool
-    local e::Bool
-    local r::Absyn.Restriction
-    local d::Absyn.ClassDef
-    local file_info::SourceInfo
-    local scodeClass::SCode.Element
-    local sFin::SCode.Final
-    local sEnc::SCode.Encapsulated
-    local sPar::SCode.Partial
-    local cmt::SCode.Comment
-    @matchcontinue (inClass, inNumMessages) begin
-      (Absyn.CLASS(name = n, partialPrefix = p, finalPrefix = f, encapsulatedPrefix = e, restriction = r, body = d, info = file_info), _)  => begin
-        c,
-        r_1 = translateRestriction(c, r)
-        (d_1, cmt) = translateClassdef(d, file_info, r_1)
-        sFin = SCode.boolFinal(f)
-        sEnc = SCode.boolEncapsulated(e)
-        sPar = SCode.boolPartial(p)
-        scodeClass = SCode.CLASS(n, SCode.PREFIXES(SCode.PUBLIC(), SCode.NOT_REDECLARE(), sFin, Absyn.NOT_INNER_OUTER(), SCode.NOT_REPLACEABLE()), sEnc, sPar, r_1, d_1, cmt, file_info)
-        scodeClass
-      end
+    TraverseFunc = Function
 
-      (Absyn.CLASS(name = n, info = file_info), _)  => begin
-        @assert true == (intEq(0, inNumMessages))
-        n = "SCodeUtil.translateClass2 failed: " + n
-        fail()
-      end
-    end
-  end
-  #=  fprint(Flags.TRANSLATE, \"Translating class:\" + n + \"\\n\");
-  =#
-  #=  uniontype will not get translated!
-  =#
-  #=  here we set only final as is a top level class!
-  =#
-  #=  Print out an internal error msg only if no other errors have already
-  =#
-  #=  been printed.
-  =#
-  outClass
-end
+    TraverseFunc = Function
 
-#= mahge: FIX HERE. Check for proper input and output
-=#
-#= declarations in operators according to the specifications.
-=#
+    TraverseFunc = Function
 
-function translateOperatorDef(inClassDef::Absyn.ClassDef, operatorName::Absyn.Ident, info::SourceInfo)::Tuple{SCode.Comment, SCode.ClassDef}
-  local cmt::SCode.Comment
-  local outOperDef::SCode.ClassDef
+    TraverseFunc = Function
 
-  (outOperDef, cmt) = begin
-    local cmtString::Option
-    local els::Lst
-    local anns::Lst
-    local parts::Lst
-    local scodeCmt::Option
-    local opName::SCode.Ident
-    local aann::Lst
-    local ann::Option
-    @match (inClassDef, operatorName, info) begin
-      (Absyn.PARTS(parts, aann, cmtString), _, _)  => begin
-        els = translateClassdefElements(parts)
-        cmt = translateCommentList(aann, cmtString)
-        (SCode.PARTS(els, list(), list(), list(), list(), list(), list(), NONE()), cmt)
-      end
+    TraverseFunc = Function
 
-      _  => begin
-        println("Error")
-        fail()
-      end
-    end
-  end
-  (cmt, outOperDef)
-end
+    TraverseFunc = Function
 
-function getOperatorGivenName(inOperatorFunction::SCode.Element)::Absyn.Path
-  local outName::Absyn.Path
+    TraverseFunc = Function
 
-  outName = begin
-    local name::SCode.Ident
-    @match inOperatorFunction begin
-      SCode.CLASS(name, _, _, _, SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()), _, _, _)  => begin
-        Absyn.IDENT(name)
-      end
-    end
-  end
-  outName
-end
+    TraverseFunc = Function
 
-function getOperatorQualName(inOperatorFunction::SCode.Element, operName::SCode.Ident)::SCode.Path
-  local outName::SCode.Path
+    TraverseFunc = Function
 
-  outName = begin
-    local name::SCode.Ident
-    local opname::SCode.Ident
-    @match (inOperatorFunction, operName) begin
-      (SCode.CLASS(name, _, _, _, SCode.R_FUNCTION(_), _, _, _), opname)  => begin
-        AbsynUtil.joinPaths(Absyn.IDENT(opname), Absyn.IDENT(name))
-      end
-    end
-  end
-  outName
-end
+    TraverseFunc = Function
 
-function getListofQualOperatorFuncsfromOperator(inOperator::SCode.Element)::Lst
-  local outNames::Lst
+    TraverseFunc = Function
 
-  outNames = begin
-    local els::Lst
-    local opername::SCode.Ident
-    local names::Lst
-    #= If operator get the list of functions in it.
-    =#
-    @match inOperator begin
-      SCode.CLASS(opername, _, _, _, SCode.R_OPERATOR(), SCode.PARTS(elementLst = els), _, _)  => begin
-        names = List.map1(els, getOperatorQualName, opername)
-        names
-      end
+    TraverseFunc = Function
 
-      SCode.CLASS(opername, _, _, _, SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()), _, _, _)  => begin
-        names = list(Absyn.IDENT(opername))
-        names
-      end
-    end
-  end
-  #= If operator function return its name
-  =#
-  outNames
-end
+    TraverseFunc = Function
 
-function translatePurity(inPurity::Absyn.FunctionPurity)::Bool
-  local outPurity::Bool
-  outPurity = begin
-    @match inPurity begin
-      Absyn.IMPURE()  => begin
-        true
-      end
-      _  => begin
-        false
-      end
-    end
-  end
-  outPurity
-end
+    TraverseFunc = Function
 
-#=  Changed to public! krsta
-=#
+    TraverseFunc = Function
 
-#= Convert a class restriction. =#
-function translateRestriction(inClass::Absyn.Class, inRestriction::Absyn.Restriction)::SCode.Restriction
-  local outRestriction::SCode.Restriction
+         #= /*
+         * This file is part of OpenModelica.
+         *
+         * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+         * c/o Linköpings universitet, Department of Computer and Information Science,
+         * SE-58183 Linköping, Sweden.
+         *
+         * All rights reserved.
+         *
+         * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
+         * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+         * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+         * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+         * ACCORDING TO RECIPIENTS CHOICE.
+         *
+         * The OpenModelica software and the Open Source Modelica
+         * Consortium (OSMC) Public License (OSMC-PL) are obtained
+         * from OSMC, either from the above address,
+         * from the URLs: http:www.ida.liu.se/projects/OpenModelica or
+         * http:www.openmodelica.org, and in the OpenModelica distribution.
+         * GNU version 3 is obtained from: http:www.gnu.org/copyleft/gpl.html.
+         *
+         * This program is distributed WITHOUT ANY WARRANTY; without
+         * even the implied warranty of  MERCHANTABILITY or FITNESS
+         * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+         * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+         *
+         * See the full OSMC Public License conditions for more details.
+         *
+         */ =#
+        import SCode
 
-  outRestriction = begin
-    local d::Absyn.Class
-    local name::Absyn.Path
-    local index::ModelicaInteger
-    local singleton::Bool
-    local isImpure::Bool
-    local moved::Bool
-    local purity::Absyn.FunctionPurity
-    local typeVars::Lst
-    #=  ?? Only normal functions can have 'external'
-    =#
-    @match (inClass, inRestriction) begin
-      (d, Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(purity)))  => begin
-        isImpure = translatePurity(purity)
-        if containsExternalFuncDecl(d)
-          SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure))
-        else
-          SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(isImpure))
-        end
-      end
+        import Absyn
+        import Error
+        import MetaModelica.ListUtil
+        import Util
 
-      (_, Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION()))  => begin
-        SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION())
-      end
+        Argument = polymorphic
 
-      (_, Absyn.R_FUNCTION(Absyn.FR_PARALLEL_FUNCTION()))  => begin
-        SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION())
-      end
+         #= Removes all submodifiers from the Mod. =#
+        function stripSubmod(inMod::SCode.Mod)::SCode.Mod
+              local outMod::SCode.Mod
 
-      (_, Absyn.R_FUNCTION(Absyn.FR_KERNEL_FUNCTION()))  => begin
-        SCode.R_FUNCTION(SCode.FR_KERNEL_FUNCTION())
-      end
-
-      (_, Absyn.R_CLASS())  => begin
-        SCode.R_CLASS()
-      end
-
-      (_, Absyn.R_OPTIMIZATION())  => begin
-        SCode.R_OPTIMIZATION()
-      end
-
-      (_, Absyn.R_MODEL())  => begin
-        SCode.R_MODEL()
-      end
-
-      (_, Absyn.R_RECORD())  => begin
-        SCode.R_RECORD(false)
-      end
-
-      (_, Absyn.R_OPERATOR_RECORD())  => begin
-        SCode.R_RECORD(true)
-      end
-
-      (_, Absyn.R_BLOCK())  => begin
-        SCode.R_BLOCK()
-      end
-
-      (_, Absyn.R_CONNECTOR())  => begin
-        SCode.R_CONNECTOR(false)
-      end
-
-      (_, Absyn.R_EXP_CONNECTOR())  => begin
-        System.setHasExpandableConnectors(true)
-        SCode.R_CONNECTOR(true)
-      end
-
-      (_, Absyn.R_OPERATOR())  => begin
-        SCode.R_OPERATOR()
-      end
-
-      (_, Absyn.R_TYPE())  => begin
-        SCode.R_TYPE()
-      end
-
-      (_, Absyn.R_PACKAGE())  => begin
-        SCode.R_PACKAGE()
-      end
-
-      (_, Absyn.R_ENUMERATION())  => begin
-        SCode.R_ENUMERATION()
-      end
-
-      (_, Absyn.R_PREDEFINED_INTEGER())  => begin
-        SCode.R_PREDEFINED_INTEGER()
-      end
-
-      (_, Absyn.R_PREDEFINED_REAL())  => begin
-        SCode.R_PREDEFINED_REAL()
-      end
-
-      (_, Absyn.R_PREDEFINED_STRING())  => begin
-        SCode.R_PREDEFINED_STRING()
-      end
-
-      (_, Absyn.R_PREDEFINED_BOOLEAN())  => begin
-        SCode.R_PREDEFINED_BOOLEAN()
-      end
-
-      (_, Absyn.R_PREDEFINED_CLOCK())  => begin
-        SCode.R_PREDEFINED_CLOCK()
-      end
-
-      (_, Absyn.R_PREDEFINED_ENUMERATION())  => begin
-        SCode.R_PREDEFINED_ENUMERATION()
-      end
-
-      (_, Absyn.R_METARECORD(name, index, singleton, moved, typeVars))  => begin
-        SCode.R_METARECORD(name, index, singleton, moved, typeVars)
-      end
-
-      (Absyn.CLASS(Absyn.PARTS(typeVars)), Absyn.R_UNIONTYPE())  => begin
-        SCode.R_UNIONTYPE(typeVars)
-      end
-
-      (_, Absyn.R_UNIONTYPE())  => begin
-        SCode.R_UNIONTYPE(list())
-      end
-    end
-  end
-  #=  BTH
-  =#
-  #= MetaModelica extension, added by x07simbj
-  =#
-  #= /*MetaModelica extension added by x07simbj */ =#
-  #= /*MetaModelica extension added by x07simbj */ =#
-  outRestriction
-end
-
-#= Returns true if the Absyn.Class contains an external function declaration. =#
-function containsExternalFuncDecl(inClass::Absyn.Class)::Bool
-  local outBoolean::Bool
-
-  outBoolean = begin
-    local res::Bool
-    local b::Bool
-    local c::Bool
-    local d::Bool
-    local a::String
-    local e::Absyn.Restriction
-    local rest::Lst
-    local cmt::Option
-    local file_info::SourceInfo
-    local ann::Lst
-    @match inClass begin
-      Absyn.CLASS(Absyn.PARTS(classParts = Absyn.EXTERNAL() <| _))  => begin
-        true
-      end
-
-      Absyn.CLASS(a, b, c, d, e, Absyn.PARTS(_ <| rest, cmt, ann), file_info)  => begin
-        containsExternalFuncDecl(Absyn.CLASS(a, b, c, d, e, Absyn.PARTS(list(), list(), rest, ann, cmt), file_info))
-      end
-
-      Absyn.CLASS(Absyn.CLASS_EXTENDS(parts = Absyn.EXTERNAL() <| _))  => begin
-        true
-      end
-
-      Absyn.CLASS(a, b, c, d, e, Absyn.CLASS_EXTENDS(_ <| rest, cmt, ann), file_info)  => begin
-        containsExternalFuncDecl(Absyn.CLASS(a, b, c, d, e, Absyn.PARTS(list(), list(), rest, ann, cmt), file_info))
-      end
-
-      _  => begin
-        false
-      end
-    end
-  end
-  #= /* adrpo: handling also the case model extends X external ... end X; */ =#
-  #= /* adrpo: handling also the case model extends X external ... end X; */ =#
-  outBoolean
-end
-
-#= @author: adrpo
-translates from Absyn.ElementAttributes to SCode.Attributes =#
-function translateAttributes(inEA::Absyn.ElementAttributes, extraArrayDim::Absyn.ArrayDim)::SCode.Attributes
-  local outA::SCode.Attributes
-
-  outA = begin
-    local f::Bool
-    local s::Bool
-    local v::Absyn.Variability
-    local p::Absyn.Parallelism
-    local adim::Absyn.ArrayDim
-    local extraADim::Absyn.ArrayDim
-    local dir::Absyn.Direction
-    local fi::Absyn.IsField
-    local ct::SCode.ConnectorType
-    local sp::SCode.Parallelism
-    local sv::SCode.Variability
-    @match (inEA, extraArrayDim) begin
-      (Absyn.ATTR(f, s, p, v, dir, fi, adim), extraADim)  => begin
-        ct = translateConnectorType(f, s)
-        sv = translateVariability(v)
-        sp = translateParallelism(p)
-        adim = listAppend(extraADim, adim)
-        SCode.ATTR(adim, ct, sp, sv, dir, fi)
-      end
-    end
-  end
-  outA
-end
-
-function translateConnectorType(inFlow::Bool, inStream::Bool)::SCode.ConnectorType
-  local outType::SCode.ConnectorType
-
-  outType = begin
-    @match (inFlow, inStream) begin
-      (false, false)  => begin
-        SCode.POTENTIAL()
-      end
-
-      (true, false)  => begin
-        SCode.FLOW()
-      end
-
-      (false, true)  => begin
-        SCode.STREAM()
-      end
-
-      (true, true)  => begin
-        fail()
-      end
-    end
-  end
-  #=  Both flow and stream is not allowed by the grammar, so this shouldn't be
-  =#
-  #=  possible.
-  =#
-  outType
-end
-
-#= This function converts an Absyn.ClassDef to a SCode.ClassDef.
-For the DERIVED case, the conversion is fairly trivial, but for
-the PARTS case more work is needed.
-The result contains separate lists for:
-elements, equations and algorithms, which are mixed in the input.
-LS: Divided the translateClassdef into separate functions for collecting the different parts =#
-function translateClassdef(inClassDef::Absyn.ClassDef, info::SourceInfo, re::SCode.Restriction)::Tuple{SCode.Comment, SCode.ClassDef}
-  local outComment::SCode.Comment
-  local outClassDef::SCode.ClassDef
-
-  (outClassDef, outComment) = begin
-    local mod::SCode.Mod
-    local t::Absyn.TypeSpec
-    local attr::Absyn.ElementAttributes
-    local a::Lst
-    local cmod::Lst
-    local cmt::Option
-    local cmtString::Option
-    local els::Lst
-    local tvels::Lst
-    local anns::Lst
-    local eqs::Lst
-    local initeqs::Lst
-    local als::Lst
-    local initals::Lst
-    local cos::Lst
-    local decl::Option
-    local parts::Lst
-    local vars::Lst
-    local lst_1::Lst
-    local lst::Lst
-    local scodeCmt::SCode.Comment
-    local path::Absyn.Path
-    local pathLst::Lst
-    local typeVars::Lst
-    local scodeAttr::SCode.Attributes
-    local classAttrs::Lst
-    local ann::Lst
-    @match (inClassDef, info) begin
-      (Absyn.DERIVED(t, attr, a, cmt), _)  => begin
-        checkTypeSpec(t, info)
-        mod = translateMod(SOME(Absyn.CLASSMOD(a, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info) #= TODO: attributes of derived classes =#
-        scodeAttr = translateAttributes(attr, list())
-        scodeCmt = translateComment(cmt)
-        (SCode.DERIVED(t, mod, scodeAttr), scodeCmt)
-      end
-
-      (Absyn.PARTS(typeVars, classAttrs, parts, ann, cmtString), _)  => begin
-        typeVars = begin
-          @match re begin
-            SCode.R_METARECORD()  => begin
-              List.union(typeVars, re.typeVars)
-            end
-
-            SCode.R_UNIONTYPE()  => begin
-              List.union(typeVars, re.typeVars)
-            end
-
-            _  => begin
-              typeVars
-            end
-          end
-        end
-        tvels = List.map1(typeVars, makeTypeVarElement, info)
-        els = translateClassdefElements(parts)
-        els = listAppend(tvels, els)
-        eqs = translateClassdefEquations(parts)
-        initeqs = translateClassdefInitialequations(parts)
-        als = translateClassdefAlgorithms(parts)
-        initals = translateClassdefInitialalgorithms(parts)
-        cos = translateClassdefConstraints(parts)
-        scodeCmt = translateCommentList(ann, cmtString)
-        decl = translateClassdefExternaldecls(parts)
-        decl = translateAlternativeExternalAnnotation(decl, scodeCmt)
-        (SCode.PARTS(els, eqs, initeqs, als, initals, cos, classAttrs, decl), scodeCmt)
-      end
-
-      (Absyn.ENUMERATION(Absyn.ENUMLITERALS(lst), cmt), _)  => begin
-        lst_1 = translateEnumlist(lst)
-        scodeCmt = translateComment(cmt)
-        (SCode.ENUMERATION(lst_1), scodeCmt)
-      end
-
-      (Absyn.ENUMERATION(Absyn.ENUM_COLON(), cmt), _)  => begin
-        scodeCmt = translateComment(cmt)
-        (SCode.ENUMERATION(list()), scodeCmt)
-      end
-
-      (Absyn.OVERLOAD(pathLst, cmt), _)  => begin
-        scodeCmt = translateComment(cmt)
-        (SCode.OVERLOAD(pathLst), scodeCmt)
-      end
-
-      (Absyn.CLASS_EXTENDS(cmod, ann, cmtString, parts), _)  => begin
-        els = translateClassdefElements(parts)
-        eqs = translateClassdefEquations(parts)
-        initeqs = translateClassdefInitialequations(parts)
-        als = translateClassdefAlgorithms(parts)
-        initals = translateClassdefInitialalgorithms(parts)
-        cos = translateClassdefConstraints(parts)
-        mod = translateMod(SOME(Absyn.CLASSMOD(cmod, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), AbsynUtil.dummyInfo)
-        scodeCmt = translateCommentList(ann, cmtString)
-        decl = translateClassdefExternaldecls(parts)
-        decl = translateAlternativeExternalAnnotation(decl, scodeCmt)
-        (SCode.CLASS_EXTENDS(mod, SCode.PARTS(els, eqs, initeqs, als, initals, cos, list(), decl)), scodeCmt)
-      end
-
-      (Absyn.PDER(path, vars, cmt), _)  => begin
-        scodeCmt = translateComment(cmt)
-        (SCode.PDER(path, vars), scodeCmt)
-      end
-
-      _  => begin
-        println("Error")
-        fail()
-      end
-    end
-  end
-  #=  fprintln(Flags.TRANSLATE, \"translating derived class: \" + Dump.unparseTypeSpec(t));
-  =#
-  #=  fprintln(Flags.TRANSLATE, \"translating class parts\");
-  =#
-  #=  fprintln(Flags.TRANSLATE, \"translating enumerations\");
-  =#
-  #=  fprintln(Flags.TRANSLATE, \"translating enumeration of ':'\");
-  =#
-  #=  fprintln(Flags.TRANSLATE, \"translating overloaded\");
-  =#
-  #=  fprintln(Flags.TRANSLATE \"translating model extends \" + name + \" ... end \" + name + \";\");
-  =#
-  #=  fprintln(Flags.TRANSLATE, \"translating pder( \" + AbsynUtil.pathString(path) + \", vars)\");
-  =#
-  (outComment, outClassDef)
-end
-
-#= first class annotation instead, since it is very common that an element
-annotation is used for this purpose.
-For instance, instead of external \\\"C\\\" annotation(Library=\\\"foo.lib\\\";
-it says external \\\"C\\\" ; annotation(Library=\\\"foo.lib\\\"; =#
-function translateAlternativeExternalAnnotation(decl::Option, comment::SCode.Comment)::Option
-  local outDecl::Option
-
-  outDecl = begin
-    local name::Option
-    local l::Option
-    local out::Option
-    local a::Lst
-    local ann1::Option
-    local ann2::Option
-    local ann::Option
-    #=  none
-    =#
-    @match (decl, comment) begin
-      (NONE(), _)  => begin
-        NONE()
-      end
-
-      (SOME(SCode.EXTERNALDECL(name, l, out, a, ann1)), SCode.COMMENT(annotation_ = ann2))  => begin
-        ann = mergeSCodeOptAnn(ann1, ann2)
-        SOME(SCode.EXTERNALDECL(name, l, out, a, ann))
-      end
-    end
-  end
-  #=  Else, merge
-  =#
-  outDecl
-end
-
-function mergeSCodeAnnotationsFromParts(part::Absyn.ClassPart, inMod::Option)::Option
-  local outMod::Option
-
-  outMod = begin
-    local aann::Absyn.Annotation
-    local ann::Option
-    local rest::Lst
-    @match (part, inMod) begin
-      (Absyn.EXTERNAL(_, SOME(aann)), _)  => begin
-        ann = translateAnnotation(aann)
-        ann = mergeSCodeOptAnn(ann, inMod)
-        ann
-      end
-
-      (Absyn.PUBLIC(_ <| rest), _)  => begin
-        mergeSCodeAnnotationsFromParts(Absyn.PUBLIC(rest), inMod)
-      end
-
-      (Absyn.PROTECTED(_ <| rest), _)  => begin
-        mergeSCodeAnnotationsFromParts(Absyn.PROTECTED(rest), inMod)
-      end
-
-      _  => begin
-        inMod
-      end
-    end
-  end
-  outMod
-end
-
-#= Convert an EnumLiteral list to an Ident list.
-Comments are lost. =#
-function translateEnumlist(inAbsynEnumLiteralLst::Lst)::Lst
-  local outEnumLst::Lst
-
-  outEnumLst = begin
-    local res::Lst
-    local id::String
-    local cmtOpt::Option
-    local cmt::SCode.Comment
-    local rest::Lst
-    @match inAbsynEnumLiteralLst begin
-      nil()  => begin
-        list()
-      end
-
-      Absyn.ENUMLITERAL(id, cmtOpt) <| rest  => begin
-        cmt = translateComment(cmtOpt)
-        res = translateEnumlist(rest)
-        SCode.ENUM(id, cmt) <| res
-      end
-    end
-  end
-  outEnumLst
-end
-
-#= Convert an Absyn.ClassPart list to an Element list. =#
-function translateClassdefElements(inAbsynClassPartLst::Lst)::Lst
-  local outElementLst::Lst
-
-  outElementLst = begin
-    local els::Lst
-    local es_1::Lst
-    local els_1::Lst
-    local es::Lst
-    local rest::Lst
-    @match inAbsynClassPartLst begin
-      nil()  => begin
-        list()
-      end
-
-      Absyn.PUBLIC(contents = es) <| rest  => begin
-        es_1 = translateEitemlist(es, SCode.PUBLIC())
-        els = translateClassdefElements(rest)
-        els = listAppend(es_1, els)
-        els
-      end
-
-      Absyn.PROTECTED(contents = es) <| rest  => begin
-        es_1 = translateEitemlist(es, SCode.PROTECTED())
-        els = translateClassdefElements(rest)
-        els = listAppend(es_1, els)
-        els
-      end
-
-      _ <| rest  => begin
-        translateClassdefElements(rest)
-      end
-    end
-  end
-  #= /* ignore all other than PUBLIC and PROTECTED, i.e. elements */ =#
-  outElementLst
-end
-
-#= Convert an Absyn.ClassPart list to an Equation list. =#
-function translateClassdefEquations(inAbsynClassPartLst::Lst)::Lst
-  local outEquationLst::Lst
-
-  outEquationLst = begin
-    local eqs::Lst
-    local eql_1::Lst
-    local eqs_1::Lst
-    local eql::Lst
-    local rest::Lst
-    @match inAbsynClassPartLst begin
-      nil()  => begin
-        list()
-      end
-
-      Absyn.EQUATIONS(eql) <| rest  => begin
-        eql_1 = translateEquations(eql, false)
-        eqs = translateClassdefEquations(rest)
-        eqs_1 = listAppend(eqs, eql_1)
-        eqs_1
-      end
-
-      _ <| rest  => begin
-        eqs = translateClassdefEquations(rest)
-        eqs
-      end
-    end
-  end
-  #= /* ignore everthing other than equations */ =#
-  outEquationLst
-end
-
-#= Convert an Absyn.ClassPart list to an initial Equation list. =#
-function translateClassdefInitialequations(inAbsynClassPartLst::Lst)::Lst
-  local outEquationLst::Lst
-
-  outEquationLst = begin
-    local eqs::Lst
-    local eql_1::Lst
-    local eqs_1::Lst
-    local eql::Lst
-    local rest::Lst
-    @match inAbsynClassPartLst begin
-      nil()  => begin
-        list()
-      end
-
-      Absyn.INITIALEQUATIONS(eql) <| rest  => begin
-        eql_1 = translateEquations(eql, true)
-        eqs = translateClassdefInitialequations(rest)
-        eqs_1 = listAppend(eqs, eql_1)
-        eqs_1
-      end
-
-      _ <| rest  => begin
-        eqs = translateClassdefInitialequations(rest)
-        eqs
-      end
-    end
-  end
-  #= /* ignore everthing other than equations */ =#
-  outEquationLst
-end
-
-#= Convert an Absyn.ClassPart list to an Algorithm list. =#
-function translateClassdefAlgorithms(inAbsynClassPartLst::Lst)::Lst
-  local outAlgorithmLst::Lst
-
-  outAlgorithmLst = begin
-    local als::Lst
-    local als_1::Lst
-    local al_1::Lst
-    local al::Lst
-    local rest::Lst
-    local cp::Absyn.ClassPart
-    @match inAbsynClassPartLst begin
-      nil()  => begin
-        list()
-      end
-
-      Absyn.ALGORITHMS(al) <| rest  => begin
-        al_1 = translateClassdefAlgorithmitems(al)
-        als = translateClassdefAlgorithms(rest)
-        als_1 = SCode.ALGORITHM(al_1) <| als
-        als_1
-      end
-
-      cp <| rest  => begin
-        throw("Absyn.ALGORITHMS() = cp")
-        als = translateClassdefAlgorithms(rest)
-        als
-      end
-
-      _  => begin
-        @assert true == (Flags.isSet(Flags.FAILTRACE))
-        println("- SCodeUtil.translateClassdefAlgorithms failed\n")
-        fail()
-      end
-    end
-  end
-  #= /* ignore everthing other than algorithms */ =#
-  outAlgorithmLst
-end
-
-#= Convert an Absyn.ClassPart list to an Constraint list. =#
-function translateClassdefConstraints(inAbsynClassPartLst::Lst)::Lst
-  local outConstraintLst::Lst
-
-  outConstraintLst = begin
-    local cos::Lst
-    local cos_1::Lst
-    local consts::Lst
-    local rest::Lst
-    local cp::Absyn.ClassPart
-    @match inAbsynClassPartLst begin
-      nil()  => begin
-        list()
-      end
-
-      Absyn.CONSTRAINTS(consts) <| rest  => begin
-        cos = translateClassdefConstraints(rest)
-        cos_1 = SCode.CONSTRAINTS(consts) <| cos
-        cos_1
-      end
-
-      cp <| rest  => begin
-        throw("Absyn.CONSTRAINTS() = cp")
-        cos = translateClassdefConstraints(rest)
-        cos
-      end
-
-      _  => begin
-        @assert true == (Flags.isSet(Flags.FAILTRACE))
-        println("- SCodeUtil.translateClassdefConstraints failed\n")
-        fail()
-      end
-    end
-  end
-  #= /* ignore everthing other than Constraints */ =#
-  outConstraintLst
-end
-
-#= Convert an Absyn.ClassPart list to an initial Algorithm list. =#
-function translateClassdefInitialalgorithms(inAbsynClassPartLst::Lst)::Lst
-  local outAlgorithmLst::Lst
-
-  outAlgorithmLst = begin
-    local als::Lst
-    local als_1::Lst
-    local stmts::Lst
-    local al::Lst
-    local rest::Lst
-    @match inAbsynClassPartLst begin
-      nil()  => begin
-        list()
-      end
-
-      Absyn.INITIALALGORITHMS(al) <| rest  => begin
-        stmts = translateClassdefAlgorithmitems(al)
-        als = translateClassdefInitialalgorithms(rest)
-        als_1 = SCode.ALGORITHM(stmts) <| als
-        als_1
-      end
-
-      _ <| rest  => begin
-        als = translateClassdefInitialalgorithms(rest)
-        als
-      end
-    end
-  end
-  #= /* ignore everthing other than algorithms */ =#
-  outAlgorithmLst
-end
-
-function translateClassdefAlgorithmitems(inStatements::Lst)::Lst
-  local outStatements::Lst
-
-  outStatements = list(translateClassdefAlgorithmItem(stmt) for stmt in inStatements if AbsynUtil.isAlgorithmItem(stmt))
-  outStatements
-end
-
-#= Translates an Absyn algorithm (statement) into SCode statement. =#
-function translateClassdefAlgorithmItem(inAlgorithm::Absyn.AlgorithmItem)::SCode.Statement
-  local outStatement::SCode.Statement
-
-  local absynComment::Option
-  local comment::SCode.Comment
-  local info::SourceInfo
-  local alg::Absyn.Algorithm
-
-  @match Absyn.ALGORITHMITEM(alg, absynComment, info) = inAlgorithm
-  (comment, info) = translateCommentWithLineInfoChanges(absynComment, info)
-  outStatement = begin
-    local body::Lst
-    local else_body::Lst
-    local branches::Lst
-    local iter_name::String
-    local iter_range::Option
-    local stmt::SCode.Statement
-    local e1::Absyn.Exp
-    local e2::Absyn.Exp
-    local e3::Absyn.Exp
-    local cr::Absyn.ComponentRef
-    @match alg begin
-      Absyn.ALG_ASSIGN()  => begin
-        SCode.ALG_ASSIGN(alg.assignComponent, alg.value, comment, info)
-      end
-
-      Absyn.ALG_IF()  => begin
-        body = translateClassdefAlgorithmitems(alg.trueBranch)
-        else_body = translateClassdefAlgorithmitems(alg.elseBranch)
-        branches = translateAlgBranches(alg.elseIfAlgorithmBranch)
-        SCode.ALG_IF(alg.ifExp, body, branches, else_body, comment, info)
-      end
-
-      Absyn.ALG_FOR()  => begin
-        body = translateClassdefAlgorithmitems(alg.forBody)
-        #=  Convert for-loops with multiple iterators into nested for-loops.
-        =#
-        for i in listReverse(alg.iterators)
-          (iter_name, iter_range) = translateIterator(i, info)
-          body = list(SCode.ALG_FOR(iter_name, iter_range, body, comment, info))
-        end
-        listHead(body)
-      end
-
-      Absyn.ALG_PARFOR()  => begin
-        body = translateClassdefAlgorithmitems(alg.parforBody)
-        #=  Convert for-loops with multiple iterators into nested for-loops.
-        =#
-        for i in listReverse(alg.iterators)
-          (iter_name, iter_range) = translateIterator(i, info)
-          body = list(SCode.ALG_PARFOR(iter_name, iter_range, body, comment, info))
-        end
-        listHead(body)
-      end
-
-      Absyn.ALG_WHILE()  => begin
-        body = translateClassdefAlgorithmitems(alg.whileBody)
-        SCode.ALG_WHILE(alg.boolExpr, body, comment, info)
-      end
-
-      Absyn.ALG_WHEN_A()  => begin
-        branches = translateAlgBranches((alg.boolExpr, alg.whenBody) <| alg.elseWhenAlgorithmBranch)
-        SCode.ALG_WHEN_A(branches, comment, info)
-      end
-
-      Absyn.ALG_NORETCALL(Absyn.CREF_IDENT(name = "assert"), Absyn.FUNCTIONARGS((e1 <| e2 <| nil()), nil()))  => begin
-        SCode.ALG_ASSERT(e1, e2, ASSERTION_LEVEL_ERROR, comment, info)
-      end
-
-      Absyn.ALG_NORETCALL(Absyn.CREF_IDENT(name = "assert"), Absyn.FUNCTIONARGS((e1 <| e2 <| e3 <| nil()), nil()))  => begin
-        SCode.ALG_ASSERT(e1, e2, e3, comment, info)
-      end
-
-      Absyn.ALG_NORETCALL(Absyn.CREF_IDENT(name = "assert"), Absyn.FUNCTIONARGS((e1 <| e2 <| nil()), Absyn.NAMEDARG("level", e3) <|  nil()))  => begin
-        SCode.ALG_ASSERT(e1, e2, e3, comment, info)
-      end
-
-      Absyn.ALG_NORETCALL(Absyn.CREF_IDENT(name = "terminate"), Absyn.FUNCTIONARGS((e1 <| nil()), nil()))  => begin
-        SCode.ALG_TERMINATE(e1, comment, info)
-      end
-
-      Absyn.ALG_NORETCALL(Absyn.CREF_IDENT(name = "reinit"), Absyn.FUNCTIONARGS((e1 <| e2 <| nil()), nil()))  => begin
-        SCode.ALG_REINIT(e1, e2, comment, info)
-      end
-
-      Absyn.ALG_NORETCALL()  => begin
-        #=  assert(condition, message)
-        =#
-        #=  assert(condition, message, level)
-        =#
-        #=  assert(condition, message, level = arg)
-        =#
-        e1 = Absyn.CALL(alg.functionCall, alg.functionArgs)
-        SCode.ALG_NORETCALL(e1, comment, info)
-      end
-
-      Absyn.ALG_FAILURE()  => begin
-        body = translateClassdefAlgorithmitems(alg.equ)
-        SCode.ALG_FAILURE(body, comment, info)
-      end
-
-      Absyn.ALG_TRY()  => begin
-        body = translateClassdefAlgorithmitems(alg.body)
-        else_body = translateClassdefAlgorithmitems(alg.elseBody)
-        SCode.ALG_TRY(body, else_body, comment, info)
-      end
-
-      Absyn.ALG_RETURN()  => begin
-        SCode.ALG_RETURN(comment, info)
-      end
-
-      Absyn.ALG_BREAK()  => begin
-        SCode.ALG_BREAK(comment, info)
-      end
-
-      Absyn.ALG_CONTINUE()  => begin
-        SCode.ALG_CONTINUE(comment, info)
-      end
-
-      _  => begin
-        println("Error")
-        fail()
-      end
-    end
-  end
-  outStatement
-end
-
-#= Translates the elseif or elsewhen branches from Absyn to SCode form. =#
-function translateAlgBranches(inBranches::Lst)::Lst
-  local outBranches::Lst
-
-  local condition::Absyn.Exp
-  local body::Lst
-
-  outBranches = list(begin
-                     @match branch begin
-                     (condition, body)  => begin
-                     (condition, translateClassdefAlgorithmitems(body))
-                     end
-                     end
-                     end for branch in inBranches)
-  outBranches
-end
-
-#= Converts an Absyn.ClassPart list to an SCode.ExternalDecl option.
-The list should only contain one external declaration, so pick the first one. =#
-function translateClassdefExternaldecls(inAbsynClassPartLst::Lst)::Option
-  local outAbsynExternalDeclOption::Option
-
-  outAbsynExternalDeclOption = begin
-    local res::Option
-    local rest::Lst
-    local fn_name::Option
-    local lang::Option
-    local output_::Option
-    local args::Lst
-    local aann::Option
-    local sann::Option
-    @match inAbsynClassPartLst begin
-      Absyn.EXTERNAL(externalDecl = Absyn.EXTERNALDECL(fn_name, lang, output_, args, aann)) <| _  => begin
-        sann = translateAnnotationOpt(aann)
-        SOME(SCode.EXTERNALDECL(fn_name, lang, output_, args, sann))
-      end
-
-      _ <| rest  => begin
-        res = translateClassdefExternaldecls(rest)
-        res
-      end
-
-      nil()  => begin
-        NONE()
-      end
-    end
-  end
-  outAbsynExternalDeclOption
-end
-
-#= This function converts a list of Absyn.ElementItem to a list of SCode.Element.
-The boolean argument flags whether the elements are protected.
-Annotations are not translated, i.e. they are removed when converting to SCode. =#
-function translateEitemlist(inAbsynElementItemLst::Lst, inVisibility::SCode.Visibility = SCode.PUBLIC())::Lst
-  local outElementLst::Lst
-
-  local l::Lst = list()
-  local es::Lst = inAbsynElementItemLst
-  local ei::Absyn.ElementItem
-  local vis::SCode.Visibility
-  local e::Absyn.Element
-
-  for ei in es
-    _ = begin
-      local e_1::Lst
-      @match ei begin
-        Absyn.ELEMENTITEM(e)  => begin
-          e_1 = translateElement(e, inVisibility)
-          l = List.append_reverse(e_1, l)
-          ()
-        end
-        _  => begin
-          ()
-        end
-      end
-    end
-  end
-  #=  fprintln(Flags.TRANSLATE, \"translating element: \" + Dump.unparseElementStr(1, e));
-  =#
-  outElementLst = Dangerous.listReverseInPlace(l)
-  outElementLst
-end
-
-#=  stefan
-=#
-
-#= translates an Absyn.Annotation into an SCode.Annotation =#
-function translateAnnotation(inAnnotation::Absyn.Annotation)::Option
-  local outAnnotation::Option
-
-  outAnnotation = begin
-    local args::Lst
-    local m::SCode.Mod
-    @match inAnnotation begin
-      Absyn.ANNOTATION(nil())  => begin
-        NONE()
-      end
-
-      Absyn.ANNOTATION(args)  => begin
-        m = translateMod(SOME(Absyn.CLASSMOD(args, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), AbsynUtil.dummyInfo)
-        if SCode.isEmptyMod(m)
-          NONE()
-        else
-          SOME(SCode.ANNOTATION(m))
-        end
-      end
-    end
-  end
-  outAnnotation
-end
-
-function translateAnnotationOpt(absynAnnotation::Option)::Option
-  local scodeAnnotation::Option
-
-  scodeAnnotation = begin
-    local ann::Absyn.Annotation
-    @match absynAnnotation begin
-      SOME(ann)  => begin
-        translateAnnotation(ann)
-      end
-      _  => begin
-        NONE()
-      end
-    end
-  end
-  scodeAnnotation
-end
-
-#= This function converts an Absyn.Element to a list of SCode.Element.
-The original element may declare several components at once, and
-those are separated to several declarations in the result. =#
-function translateElement(inElement::Absyn.Element, inVisibility::SCode.Visibility)::Lst
-  local outElementLst::Lst
-  outElementLst = begin
-    local es::Lst
-    local f::Bool
-    local repl::Option
-    local s::Absyn.ElementSpec
-    local io::Absyn.InnerOuter
-    local info::SourceInfo
-    local cc::Option
-    local expOpt::Option
-    local weightOpt::Option
-    local args::Lst
-    local name::String
-    local vis::SCode.Visibility
-    @match (inElement, inVisibility) begin
-      (Absyn.ELEMENT(cc, f, io, repl, s, info), vis)  => begin
-        es = translateElementspec(cc, f, io, repl, vis, s, info)
-        es
-      end
-      (Absyn.DEFINEUNIT(name, args), vis)  => begin
-        expOpt = translateDefineunitParam(args, "exp")
-        weightOpt = translateDefineunitParam2(args, "weight")
-        list(SCode.DEFINEUNIT(name, vis, expOpt, weightOpt))
-      end
-    end
-  end
-  outElementLst
-end
-
-#=  help function to translateElement =#
-function translateDefineunitParam(inArgs::Lst, inArg::String)::Option
-  local expOpt::Option
-
-  expOpt = begin
-    local str::String
-    local name::String
-    local arg::String
-    local args::Lst
-    @matchcontinue (inArgs, inArg) begin
-      (Absyn.NAMEDARG(name, Absyn.STRING(str)) <| _, arg)  => begin
-        @assert true == (name == arg)
-        SOME(str)
-      end
-
-      ( nil(), _)  => begin
-        NONE()
-      end
-
-      (_ <| args, arg)  => begin
-        translateDefineunitParam(args, arg)
-      end
-    end
-  end
-  expOpt
-end
-
-#=  help function to translateElement =#
-function translateDefineunitParam2(inArgs::Lst, inArg::String)::Option
-  local weightOpt::Option
-
-  weightOpt = begin
-    local name::String
-    local arg::String
-    local s::String
-    local r::ModelicaReal
-    local args::Lst
-    @matchcontinue (inArgs, inArg) begin
-      (Absyn.NAMEDARG(name, Absyn.REAL(s)) <| _, arg)  => begin
-        @assert true == (name == arg)
-        r = System.stringReal(s)
-        SOME(r)
-      end
-
-      ( nil(), _)  => begin
-        NONE()
-      end
-
-      (_ <| args, arg)  => begin
-        translateDefineunitParam2(args, arg)
-      end
-    end
-  end
-  weightOpt
-end
-
-#= This function turns an Absyn.ElementSpec to a list of SCode.Element.
-The boolean arguments say if the element is final and protected, respectively. =#
-function translateElementspec(cc::Option, finalPrefix::Bool, io::Absyn.InnerOuter, inRedeclareKeywords::Option, inVisibility::SCode.Visibility, inElementSpec4::Absyn.ElementSpec, inInfo::SourceInfo)::Lst
-  local outElementLst::Lst
-
-  outElementLst = begin
-    local de_1::SCode.ClassDef
-    local re_1::SCode.Restriction
-    local rp::Bool
-    local pa::Bool
-    local fi::Bool
-    local e::Bool
-    local repl_1::Bool
-    local fl::Bool
-    local st::Bool
-    local redecl::Bool
-    local repl::Option
-    local cl::Absyn.Class
-    local n::String
-    local re::Absyn.Restriction
-    local de::Absyn.ClassDef
-    local mod::SCode.Mod
-    local args::Lst
-    local xs_1::Lst
-    local prl1::SCode.Parallelism
-    local var1::SCode.Variability
-    local tot_dim::Lst
-    local ad::Lst
-    local d::Lst
-    local attr::Absyn.ElementAttributes
-    local di::Absyn.Direction
-    local isf::Absyn.IsField
-    local t::Absyn.TypeSpec
-    local m::Option
-    local comment::Option
-    local cmt::SCode.Comment
-    local xs::Lst
-    local imp::Absyn.Import
-  local cond::Option
-    local path::Absyn.Path
-    local absann::Absyn.Annotation
-    local ann::Option
-    local variability::Absyn.Variability
-    local parallelism::Absyn.Parallelism
-    local i::SourceInfo
-    local info::SourceInfo
-    local cls::SCode.Element
-    local sRed::SCode.Redeclare
-    local sFin::SCode.Final
-    local sRep::SCode.Replaceable
-    local sEnc::SCode.Encapsulated
-    local sPar::SCode.Partial
-    local vis::SCode.Visibility
-    local ct::SCode.ConnectorType
-    local prefixes::SCode.Prefixes
-    local scc::Option
-    @match (cc, finalPrefix, io, inRedeclareKeywords, inVisibility, inElementSpec4, inInfo) begin
-      (_, _, _, repl, vis, Absyn.CLASSDEF(rp, Absyn.CLASS(n, pa, e, Absyn.R_OPERATOR(), de, i)), _)  => begin
-        (de_1, cmt) = translateOperatorDef(de, n, i)
-        (_, redecl) = translateRedeclarekeywords(repl)
-        sRed = SCode.boolRedeclare(redecl)
-        sFin = SCode.boolFinal(finalPrefix)
-        scc = translateConstrainClass(cc)
-        sRep = if rp
-          SCode.REPLACEABLE(scc)
-        else
-          SCode.NOT_REPLACEABLE()
-        end
-        sEnc = SCode.boolEncapsulated(e)
-        sPar = SCode.boolPartial(pa)
-        cls = SCode.CLASS(n, SCode.PREFIXES(vis, sRed, sFin, io, sRep), sEnc, sPar, SCode.R_OPERATOR(), de_1, cmt, i)
-        list(cls)
-      end
-
-      (_, _, _, repl, vis, Absyn.CLASSDEF(rp, Absyn.CLASS(n, pa, e, re, de, i)), _)  => begin
-        cl = Absyn.CLASS(n, pa, e, re, de, i)
-        re_1 = translateRestriction(cl, re)
-        (de_1, cmt) = translateClassdef(de, i, re_1)
-        (_, redecl) = translateRedeclarekeywords(repl)
-        sRed = SCode.boolRedeclare(redecl)
-        sFin = SCode.boolFinal(finalPrefix)
-        scc = translateConstrainClass(cc)
-        sRep = if rp
-          SCode.REPLACEABLE(scc)
-        else
-          SCode.NOT_REPLACEABLE()
-        end
-        sEnc = SCode.boolEncapsulated(e)
-        sPar = SCode.boolPartial(pa)
-        cls = SCode.CLASS(n, SCode.PREFIXES(vis, sRed, sFin, io, sRep), sEnc, sPar, re_1, de_1, cmt, i)
-        list(cls)
-      end
-
-      (_, _, _, _, vis, Absyn.EXTENDS(path, args, NONE()), info)  => begin
-        mod = translateMod(SOME(Absyn.CLASSMOD(args, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), AbsynUtil.dummyInfo)
-        list(SCode.EXTENDS(path, vis, mod, NONE(), info))
-      end
-
-      (_, _, _, _, vis, Absyn.EXTENDS(path, args, SOME(absann)), info)  => begin
-        mod = translateMod(SOME(Absyn.CLASSMOD(args, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), AbsynUtil.dummyInfo)
-        ann = translateAnnotation(absann)
-        list(SCode.EXTENDS(path, vis, mod, ann, info))
-      end
-
-      (_, _, _, _, _, Absyn.COMPONENTS(components =  nil()), _)  => begin
-        list()
-      end
-
-      (_, _, _, repl, vis, Absyn.COMPONENTS(Absyn.ATTR(fl, st, parallelism, variability, di, isf, ad), t), info)  => begin
-        attributes = Absyn.ATTR(fl, st, parallelism, variability, di, isf, ad)
-        #=  fprintln(Flags.TRANSLATE, \"translating local class: \" + n);
-        =#
-        #=  uniontype will not get translated!
-        =#
-        #=  fprintln(Flags.TRANSLATE, \"translating extends: \" + AbsynUtil.pathString(n));
-        =#
-        #=  fprintln(Flags.TRANSLATE, \"translating extends: \" + AbsynUtil.pathString(n));
-        =#
-        xs_1 = list()
-        for comp in inElementSpec4.components
-          @match Absyn.COMPONENTITEM(Absyn.COMPONENT(n, d, m), comment, cond) = comp
-          checkTypeSpec(t, info)
-          setHasInnerOuterDefinitionsHandler(io)
-          setHasStreamConnectorsHandler(st)
-          mod = translateMod(m, SCode.NOT_FINAL(), SCode.NOT_EACH(), info)
-          prl1 = translateParallelism(parallelism)
-          var1 = translateVariability(variability)
-          tot_dim = listAppend(d, ad)
-          (repl_1, redecl) = translateRedeclarekeywords(repl)
-          (cmt, info) = translateCommentWithLineInfoChanges(comment, info)
-          sFin = SCode.boolFinal(finalPrefix)
-          sRed = SCode.boolRedeclare(redecl)
-          scc = translateConstrainClass(cc)
-          sRep = if repl_1
-            SCode.REPLACEABLE(scc)
-          else
-            SCode.NOT_REPLACEABLE()
-          end
-          ct = translateConnectorType(fl, st)
-          prefixes = SCode.PREFIXES(vis, sRed, sFin, io, sRep)
-          xs_1 = begin
-            #=  TODO: Improve performance by iterating over all elements at once instead of creating a new Absyn.COMPONENTS in each step...
-            =#
-            #=  fprintln(Flags.TRANSLATE, \"translating component: \" + n + \" final: \" + SCode.finalStr(SCode.boolFinal(finalPrefix)));
-            =#
-            #=  signal the external flag that we have inner/outer definitions
-            =#
-            #=  signal the external flag that we have stream connectors
-            =#
-            #=  PR. This adds the arraydimension that may be specified together with the type of the component.
-            =#
-            local attr1::SCode.Attributes
-            local attr2::SCode.Attributes
-            local mod2::SCode.Mod
-            local inName::String
-            @match di begin
-              Absyn.INPUT_OUTPUT() where (! Flags.isSet(Flags.SKIP_INPUT_OUTPUT_SYNTACTIC_SUGAR))  => begin
-                inName = "in_" + n
-                attr1 = SCode.ATTR(tot_dim, ct, prl1, var1, Absyn.INPUT(), isf)
-                attr2 = SCode.ATTR(tot_dim, ct, prl1, var1, Absyn.OUTPUT(), isf)
-                mod2 = SCode.MOD(SCode.FINAL(), SCode.NOT_EACH(), list(), SOME(Absyn.CREF(Absyn.CREF_IDENT(inName, list()))), info)
-                SCode.COMPONENT(n, prefixes, attr2, t, mod2, cmt, cond, info) <| SCode.COMPONENT(inName, prefixes, attr1, t, mod, cmt, cond, info) <| xs_1
+              outMod = begin
+                  local fp::SCode.Final
+                  local ep::SCode.Each
+                  local binding::Option
+                  local info::SourceInfo
+                @match inMod begin
+                  SCode.MOD(fp, ep, _, binding, info)  => begin
+                    SCode.MOD(fp, ep, list(), binding, info)
+                  end
+
+                  _  => begin
+                      inMod
+                  end
+                end
               end
-
-              _  => begin
-                SCode.COMPONENT(n, prefixes, SCode.ATTR(tot_dim, ct, prl1, var1, di, isf), t, mod, cmt, cond, info) <| xs_1
-              end
-            end
-          end
+          outMod
         end
-        xs_1 = Dangerous.listReverseInPlace(xs_1)
-        xs_1
-      end
 
-(_, _, _, _, vis, Absyn.IMPORT(imp, info), _)  => begin
-  xs_1 = translateImports(imp, vis, info)
-  xs_1
-end
+         #= Removes submods from a modifier based on a filter function. =#
+        function filterSubMods(mod::SCode.Mod, filter::FilterFunc)::SCode.Mod
 
-_  => begin
-  println("Error")
-  fail()
-end
-end
-end
-#=  fprintln(Flags.TRANSLATE, \"translating import: \" + Dump.unparseImportStr(imp));
-=#
-outElementLst
-end
 
-#= Used to handle group imports, i.e. A.B.C.{x=a,b} =#
-function translateImports(imp::Absyn.Import, visibility::SCode.Visibility, info::SourceInfo)::Lst
-  local elts::Lst
-
-  elts = begin
-    local name::String
-    local p::Absyn.Path
-    local groups::Lst
-    #= /* Maybe these should give warnings? I don't know. See https:trac.modelica.org/Modelica/ticket/955 */ =#
-    @match (imp, visibility, info) begin
-      (Absyn.NAMED_IMPORT(name, Absyn.FULLYQUALIFIED(p)), _, _)  => begin
-        translateImports(Absyn.NAMED_IMPORT(name, p), visibility, info)
-      end
-
-      (Absyn.QUAL_IMPORT(Absyn.FULLYQUALIFIED(p)), _, _)  => begin
-        translateImports(Absyn.QUAL_IMPORT(p), visibility, info)
-      end
-
-      (Absyn.UNQUAL_IMPORT(Absyn.FULLYQUALIFIED(p)), _, _)  => begin
-        translateImports(Absyn.UNQUAL_IMPORT(p), visibility, info)
-      end
-
-      (Absyn.GROUP_IMPORT(p, groups), _, _)  => begin
-        List.map3(groups, translateGroupImport, p, visibility, info)
-      end
-
-      _  => begin
-        list(SCode.IMPORT(imp, visibility, info))
-      end
-    end
-  end
-  elts
-end
-
-#= Used to handle group imports, i.e. A.B.C.{x=a,b} =#
-function translateGroupImport(gimp::Absyn.GroupImport, prefix::Absyn.Path, visibility::SCode.Visibility, info::SourceInfo)::SCode.Element
-  local elt::SCode.Element
-
-  elt = begin
-    local name::String
-    local rename::String
-    local path::Absyn.Path
-    local vis::SCode.Visibility
-    @match (gimp, prefix, visibility, info) begin
-      (Absyn.GROUP_IMPORT_NAME(name), _, vis, _)  => begin
-        path = AbsynUtil.joinPaths(prefix, Absyn.IDENT(name))
-        SCode.IMPORT(Absyn.QUAL_IMPORT(path), vis, info)
-      end
-
-      (Absyn.GROUP_IMPORT_RENAME(rename, name), _, vis, _)  => begin
-        path = AbsynUtil.joinPaths(prefix, Absyn.IDENT(name))
-        SCode.IMPORT(Absyn.NAMED_IMPORT(rename, path), vis, info)
-      end
-    end
-  end
-  elt
-end
-
-#= @author: adrpo
-This function will set the external flag that signals
-that a model has inner/outer component definitions =#
-function setHasInnerOuterDefinitionsHandler(io::Absyn.InnerOuter)
-  _ = begin
-    @match io begin
-      Absyn.NOT_INNER_OUTER()  => begin
-        ()
-      end
-
-      _  => begin
-        System.setHasInnerOuterDefinitions(true)
-        ()
-      end
-    end
-  end
-  #=  no inner outer!
-  =#
-  #=  has inner, outer or innerouter components
-  =#
-end
-
-#= @author: adrpo
-This function will set the external flag that signals
-that a model has stream connectors =#
-function setHasStreamConnectorsHandler(streamPrefix::Bool)
-  _ = begin
-    @match streamPrefix begin
-      false  => begin
-        ()
-      end
-
-      true  => begin
-        System.setHasStreamConnectors(true)
-        ()
-      end
-    end
-  end
-  #=  no stream prefix
-  =#
-  #=  has stream prefix
-  =#
-end
-
-#= author: PA
-For now, translate to bool, replaceable. =#
-function translateRedeclarekeywords(inRedeclKeywords::Option)::Tuple{Bool, Bool}
-  local outIsRedeclared::Bool
-  local outIsReplaceable::Bool
-
-  (outIsReplaceable, outIsRedeclared) = begin
-    @match inRedeclKeywords begin
-      SOME(Absyn.REDECLARE())  => begin
-        (false, true)
-      end
-
-      SOME(Absyn.REPLACEABLE())  => begin
-        (true, false)
-      end
-
-      SOME(Absyn.REDECLARE_REPLACEABLE())  => begin
-        (true, true)
-      end
-
-      _  => begin
-        (false, false)
-      end
-    end
-  end
-  (outIsRedeclared, outIsReplaceable)
-end
-
-function translateConstrainClass(inConstrainClass::Option)::Option
-  local outConstrainClass::Option
-
-  outConstrainClass = begin
-    local cc_path::Absyn.Path
-    local eltargs::Lst
-    local cmt::Option
-    local cc_cmt::SCode.Comment
-    local mod::Absyn.Modification
-    local cc_mod::SCode.Mod
-    @match inConstrainClass begin
-      SOME(Absyn.CONSTRAINCLASS(Absyn.EXTENDS(cc_path, eltargs), cmt))  => begin
-        mod = Absyn.CLASSMOD(eltargs, Absyn.NOMOD())
-        cc_mod = translateMod(SOME(mod), SCode.NOT_FINAL(), SCode.NOT_EACH(), AbsynUtil.dummyInfo)
-        cc_cmt = translateComment(cmt)
-        SOME(SCode.CONSTRAINCLASS(cc_path, cc_mod, cc_cmt))
-      end
-
-      _  => begin
-        NONE()
-      end
-    end
-  end
-  outConstrainClass
-end
-
-#= Converts an Absyn.Parallelism to SCode.Parallelism. =#
-function translateParallelism(inParallelism::Absyn.Parallelism)::SCode.Parallelism
-  local outParallelism::SCode.Parallelism
-
-  outParallelism = begin
-    @match inParallelism begin
-      Absyn.PARGLOBAL()  => begin
-        SCode.PARGLOBAL()
-      end
-
-      Absyn.PARLOCAL()  => begin
-        SCode.PARLOCAL()
-      end
-
-      Absyn.NON_PARALLEL()  => begin
-        SCode.NON_PARALLEL()
-      end
-    end
-  end
-  outParallelism
-end
-
-#= Converts an Absyn.Variability to SCode.Variability. =#
-function translateVariability(inVariability::Absyn.Variability)::SCode.Variability
-  local outVariability::SCode.Variability
-
-  outVariability = begin
-    @match inVariability begin
-      Absyn.VAR()  => begin
-        SCode.VAR()
-      end
-
-      Absyn.DISCRETE()  => begin
-        SCode.DISCRETE()
-      end
-
-      Absyn.PARAM()  => begin
-        SCode.PARAM()
-      end
-
-      Absyn.CONST()  => begin
-        SCode.CONST()
-      end
-    end
-  end
-  outVariability
-end
-
-#= This function transforms a list of Absyn.Equation to a list of
-SCode.Equation, by applying the translateEquation function to each
-equation. =#
-function translateEquations(inAbsynEquationItemLst::Lst, inIsInitial::Bool)::Lst
-  local outEquationLst::Lst
-
-  outEquationLst = list(begin
-                        local com::SCode.Comment
-                        local info::SourceInfo
-                        @match eq begin
-                        Absyn.EQUATIONITEM()  => begin
-                        (com, info) = translateCommentWithLineInfoChanges(eq.comment, eq.info)
-                        SCode.EQUATION(translateEquation(eq.equation_, com, info, inIsInitial))
-                        end
-                        end
-                        end for eq in inAbsynEquationItemLst if begin
-                        @match eq begin
-                        Absyn.EQUATIONITEM()  => begin
-                        true
+              mod = begin
+                @match mod begin
+                  SCode.MOD(__)  => begin
+                      mod.subModLst = list(m for m in mod.subModLst if filter(m))
+                    begin
+                      @match mod begin
+                        SCode.MOD(subModLst =  nil(), binding = NONE())  => begin
+                          SCode.NOMOD()
                         end
 
                         _  => begin
-                        false
+                            mod
                         end
+                      end
+                    end
+                  end
+
+                  _  => begin
+                      mod
+                  end
+                end
+              end
+          mod
+        end
+
+         #= Return the Element with the name given as first argument from the Class. =#
+        function getElementNamed(inIdent::SCode.Ident, inClass::SCode.Element)::SCode.Element
+              local outElement::SCode.Element
+
+              outElement = begin
+                  local elt::SCode.Element
+                  local id::String
+                  local elts::IList
+                @match (inIdent, inClass) begin
+                  (id, SCode.CLASS(classDef = SCode.PARTS(elementLst = elts)))  => begin
+                      elt = getElementNamedFromElts(id, elts)
+                    elt
+                  end
+
+                  (id, SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = SCode.PARTS(elementLst = elts))))  => begin
+                      elt = getElementNamedFromElts(id, elts)
+                    elt
+                  end
+                end
+              end
+               #= /* adrpo: handle also the case model extends X then X; */ =#
+          outElement
+        end
+
+         #= Helper function to getElementNamed. =#
+        function getElementNamedFromElts(inIdent::SCode.Ident, inElementLst::IList)::SCode.Element
+              local outElement::SCode.Element
+
+              outElement = begin
+                  local elt::SCode.Element
+                  local comp::SCode.Element
+                  local cdef::SCode.Element
+                  local id2::String
+                  local id1::String
+                  local xs::IList
+                @matchcontinue (inIdent, inElementLst) begin
+                  (id2, comp && SCode.COMPONENT(name = id1) <| _)  => begin
+                      @match true = stringEq(id1, id2)
+                    comp
+                  end
+
+                  (id2, SCode.COMPONENT(name = id1) <| xs)  => begin
+                      @match false = stringEq(id1, id2)
+                      elt = getElementNamedFromElts(id2, xs)
+                    elt
+                  end
+
+                  (id2, SCode.CLASS(name = id1) <| xs)  => begin
+                      @match false = stringEq(id1, id2)
+                      elt = getElementNamedFromElts(id2, xs)
+                    elt
+                  end
+
+                  (id2, SCode.EXTENDS(__) <| xs)  => begin
+                      elt = getElementNamedFromElts(id2, xs)
+                    elt
+                  end
+
+                  (id2, cdef && SCode.CLASS(name = id1) <| _)  => begin
+                      @match true = stringEq(id1, id2)
+                    cdef
+                  end
+
+                  (id2, _ <| xs)  => begin
+                      elt = getElementNamedFromElts(id2, xs)
+                    elt
+                  end
+                end
+              end
+               #=  Try next.
+               =#
+          outElement
+        end
+
+         #=
+        Author BZ, 2009-01
+        check if an element is of type EXTENDS or not. =#
+        function isElementExtends(ele::SCode.Element)::Bool
+              local isExtend::Bool
+
+              isExtend = begin
+                @match ele begin
+                  SCode.EXTENDS(__)  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          isExtend
+        end
+
+         #= Check if an element extends another class. =#
+        function isElementExtendsOrClassExtends(ele::SCode.Element)::Bool
+              local isExtend::Bool
+
+              isExtend = begin
+                @match ele begin
+                  SCode.EXTENDS(__)  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          isExtend
+        end
+
+         #=
+        check if an element is not of type CLASS_EXTENDS. =#
+        function isNotElementClassExtends(ele::SCode.Element)::Bool
+              local isExtend::Bool
+
+              isExtend = begin
+                @match ele begin
+                  SCode.CLASS(classDef = SCode.CLASS_EXTENDS(__))  => begin
+                    false
+                  end
+
+                  _  => begin
+                      true
+                  end
+                end
+              end
+          isExtend
+        end
+
+         #= Returns true if Variability indicates a parameter or constant. =#
+        function isParameterOrConst(inVariability::SCode.Variability)::Bool
+              local outBoolean::Bool
+
+              outBoolean = begin
+                @match inVariability begin
+                  SCode.PARAM(__)  => begin
+                    true
+                  end
+
+                  SCode.CONST(__)  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outBoolean
+        end
+
+         #= Returns true if Variability is constant, otherwise false =#
+        function isConstant(inVariability::SCode.Variability)::Bool
+              local outBoolean::Bool
+
+              outBoolean = begin
+                @match inVariability begin
+                  SCode.CONST(__)  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outBoolean
+        end
+
+         #= Counts the number of ClassParts of a Class. =#
+        function countParts(inClass::SCode.Element)::ModelicaInteger
+              local outInteger::ModelicaInteger
+
+              outInteger = begin
+                  local res::ModelicaInteger
+                  local elts::IList
+                @matchcontinue inClass begin
+                  SCode.CLASS(classDef = SCode.PARTS(elementLst = elts))  => begin
+                      res = listLength(elts)
+                    res
+                  end
+
+                  SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = SCode.PARTS(elementLst = elts)))  => begin
+                      res = listLength(elts)
+                    res
+                  end
+
+                  _  => begin
+                      0
+                  end
+                end
+              end
+               #= /* adrpo: handle also model extends X ... parts ... end X; */ =#
+          outInteger
+        end
+
+         #= Return a string list of all component names of a class. =#
+        function componentNames(inClass::SCode.Element)::IList
+              local outStringLst::IList
+
+              outStringLst = begin
+                  local res::IList
+                  local elts::IList
+                @match inClass begin
+                  SCode.CLASS(classDef = SCode.PARTS(elementLst = elts))  => begin
+                      res = componentNamesFromElts(elts)
+                    res
+                  end
+
+                  SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = SCode.PARTS(elementLst = elts)))  => begin
+                      res = componentNamesFromElts(elts)
+                    res
+                  end
+
+                  _  => begin
+                      list()
+                  end
+                end
+              end
+               #= /* adrpo: handle also the case model extends X end X;*/ =#
+          outStringLst
+        end
+
+         #= Helper function to componentNames. =#
+        function componentNamesFromElts(inElements::IList)::IList
+              local outComponentNames::IList
+
+              outComponentNames = ListUtil.filterMap(inElements, componentName)
+          outComponentNames
+        end
+
+        function componentName(inComponent::SCode.Element)::String
+              local outName::String
+
+              @match SCode.COMPONENT(name = outName) = inComponent
+          outName
+        end
+
+         #= retrieves the element info =#
+        function elementInfo(e::SCode.Element)::SourceInfo
+              local info::SourceInfo
+
+              info = begin
+                  local i::SourceInfo
+                @match e begin
+                  SCode.COMPONENT(info = i)  => begin
+                    i
+                  end
+
+                  SCode.CLASS(info = i)  => begin
+                    i
+                  end
+
+                  SCode.EXTENDS(info = i)  => begin
+                    i
+                  end
+
+                  SCode.IMPORT(info = i)  => begin
+                    i
+                  end
+
+                  _  => begin
+                      AbsynUtil.dummyInfo
+                  end
+                end
+              end
+          info
+        end
+
+         #=  =#
+        function elementName(e::SCode.Element)::String
+              local s::String
+
+              s = begin
+                @match e begin
+                  SCode.COMPONENT(name = s)  => begin
+                    s
+                  end
+
+                  SCode.CLASS(name = s)  => begin
+                    s
+                  end
+                end
+              end
+          s
+        end
+
+        function elementNameInfo(inElement::SCode.Element)::Tuple{String, SourceInfo}
+              local outInfo::SourceInfo
+              local outName::String
+
+              (outName, outInfo) = begin
+                  local name::String
+                  local info::SourceInfo
+                @match inElement begin
+                  SCode.COMPONENT(name = name, info = info)  => begin
+                    (name, info)
+                  end
+
+                  SCode.CLASS(name = name, info = info)  => begin
+                    (name, info)
+                  end
+                end
+              end
+          (outName, outInfo)
+        end
+
+         #= Gets all elements that have an element name from the list =#
+        function elementNames(elts::IList)::IList
+              local names::IList
+
+              names = ListUtil.fold(elts, elementNamesWork, list())
+          names
+        end
+
+         #= Gets all elements that have an element name from the list =#
+        function elementNamesWork(e::SCode.Element, acc::IList)::IList
+              local out::IList
+
+              out = begin
+                  local s::String
+                @match (e, acc) begin
+                  (SCode.COMPONENT(name = s), _)  => begin
+                    s <| acc
+                  end
+
+                  (SCode.CLASS(name = s), _)  => begin
+                    s <| acc
+                  end
+
+                  _  => begin
+                      acc
+                  end
+                end
+              end
+          out
+        end
+
+        function renameElement(inElement::SCode.Element, inName::String)::SCode.Element
+              local outElement::SCode.Element
+
+              outElement = begin
+                  local pf::SCode.Prefixes
+                  local ep::SCode.Encapsulated
+                  local pp::SCode.Partial
+                  local res::SCode.Restriction
+                  local cdef::SCode.ClassDef
+                  local i::SourceInfo
+                  local attr::SCode.Attributes
+                  local ty::Absyn.TypeSpec
+                  local mod::SCode.Mod
+                  local cmt::SCode.Comment
+                  local cond::Option
+                @match (inElement, inName) begin
+                  (SCode.CLASS(_, pf, ep, pp, res, cdef, cmt, i), _)  => begin
+                    SCode.CLASS(inName, pf, ep, pp, res, cdef, cmt, i)
+                  end
+
+                  (SCode.COMPONENT(_, pf, attr, ty, mod, cmt, cond, i), _)  => begin
+                    SCode.COMPONENT(inName, pf, attr, ty, mod, cmt, cond, i)
+                  end
+                end
+              end
+          outElement
+        end
+
+        function elementNameEqual(inElement1::SCode.Element, inElement2::SCode.Element)::Bool
+              local outEqual::Bool
+
+              outEqual = begin
+                @match (inElement1, inElement2) begin
+                  (SCode.CLASS(__), SCode.CLASS(__))  => begin
+                    inElement1.name == inElement2.name
+                  end
+
+                  (SCode.COMPONENT(__), SCode.COMPONENT(__))  => begin
+                    inElement1.name == inElement2.name
+                  end
+
+                  (SCode.DEFINEUNIT(__), SCode.DEFINEUNIT(__))  => begin
+                    inElement1.name == inElement2.name
+                  end
+
+                  (SCode.EXTENDS(__), SCode.EXTENDS(__))  => begin
+                    AbsynUtil.pathEqual(inElement1.baseClassPath, inElement2.baseClassPath)
+                  end
+
+                  (SCode.IMPORT(__), SCode.IMPORT(__))  => begin
+                    AbsynUtil.importEqual(inElement1.imp, inElement2.imp)
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outEqual
+        end
+
+         #=  =#
+        function enumName(e::SCode.Enum)::String
+              local s::String
+
+              s = begin
+                @match e begin
+                  SCode.ENUM(literal = s)  => begin
+                    s
+                  end
+                end
+              end
+          s
+        end
+
+         #= Return true if Class is a record. =#
+        function isRecord(inClass::SCode.Element)::Bool
+              local outBoolean::Bool
+
+              outBoolean = begin
+                @match inClass begin
+                  SCode.CLASS(restriction = SCode.R_RECORD(__))  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outBoolean
+        end
+
+         #= Return true if Class is a operator record. =#
+        function isOperatorRecord(inClass::SCode.Element)::Bool
+              local outBoolean::Bool
+
+              outBoolean = begin
+                @match inClass begin
+                  SCode.CLASS(restriction = SCode.R_RECORD(true))  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outBoolean
+        end
+
+         #= Return true if Class is a function. =#
+        function isFunction(inClass::SCode.Element)::Bool
+              local outBoolean::Bool
+
+              outBoolean = begin
+                @match inClass begin
+                  SCode.CLASS(restriction = SCode.R_FUNCTION(__))  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outBoolean
+        end
+
+         #= Return true if restriction is a function. =#
+        function isFunctionRestriction(inRestriction::SCode.Restriction)::Bool
+              local outBoolean::Bool
+
+              outBoolean = begin
+                @match inRestriction begin
+                  SCode.R_FUNCTION(__)  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outBoolean
+        end
+
+         #= restriction is function or external function.
+          Otherwise false is returned. =#
+        function isFunctionOrExtFunctionRestriction(r::SCode.Restriction)::Bool
+              local res::Bool
+
+              res = begin
+                @match r begin
+                  SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(__))  => begin
+                    true
+                  end
+
+                  SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(__))  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          res
+        end
+
+         #= restriction is operator or operator function.
+          Otherwise false is returned. =#
+        function isOperator(el::SCode.Element)::Bool
+              local res::Bool
+
+              res = begin
+                @match el begin
+                  SCode.CLASS(restriction = SCode.R_OPERATOR(__))  => begin
+                    true
+                  end
+
+                  SCode.CLASS(restriction = SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION(__)))  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          res
+        end
+
+         #= Returns the class name of a Class. =#
+        function className(inClass::SCode.Element)::String
+              local outName::String
+
+              @match SCode.CLASS(name = outName) = inClass
+          outName
+        end
+
+         #= author: PA
+          Sets the partial attribute of a Class =#
+        function classSetPartial(inClass::SCode.Element, inPartial::SCode.Partial)::SCode.Element
+              local outClass::SCode.Element
+
+              outClass = begin
+                  local id::String
+                  local enc::SCode.Encapsulated
+                  local partialPrefix::SCode.Partial
+                  local restr::SCode.Restriction
+                  local def::SCode.ClassDef
+                  local info::SourceInfo
+                  local prefixes::SCode.Prefixes
+                  local cmt::SCode.Comment
+                @match (inClass, inPartial) begin
+                  (SCode.CLASS(name = id, prefixes = prefixes, encapsulatedPrefix = enc, restriction = restr, classDef = def, cmt = cmt, info = info), partialPrefix)  => begin
+                    SCode.CLASS(id, prefixes, enc, partialPrefix, restr, def, cmt, info)
+                  end
+                end
+              end
+          outClass
+        end
+
+         #= returns true if two elements are equal,
+          i.e. for a component have the same type,
+          name, and attributes, etc. =#
+        function elementEqual(element1::SCode.Element, element2::SCode.Element)::Bool
+              local equal::Bool
+
+              equal = begin
+                  local name1::SCode.Ident
+                  local name2::SCode.Ident
+                  local prefixes1::SCode.Prefixes
+                  local prefixes2::SCode.Prefixes
+                  local en1::SCode.Encapsulated
+                  local en2::SCode.Encapsulated
+                  local p1::SCode.Partial
+                  local p2::SCode.Partial
+                  local restr1::SCode.Restriction
+                  local restr2::SCode.Restriction
+                  local attr1::SCode.Attributes
+                  local attr2::SCode.Attributes
+                  local mod1::SCode.Mod
+                  local mod2::SCode.Mod
+                  local tp1::Absyn.TypeSpec
+                  local tp2::Absyn.TypeSpec
+                  local im1::Absyn.Import
+                  local im2::Absyn.Import
+                  local path1::Absyn.Path
+                  local path2::Absyn.Path
+                  local os1::Option
+                  local os2::Option
+                  local or1::Option
+                  local or2::Option
+                  local cond1::Option
+                  local cond2::Option
+                  local cd1::SCode.ClassDef
+                  local cd2::SCode.ClassDef
+                @matchcontinue (element1, element2) begin
+                  (SCode.CLASS(name1, prefixes1, en1, p1, restr1, cd1, _, _), SCode.CLASS(name2, prefixes2, en2, p2, restr2, cd2, _, _))  => begin
+                      @match true = stringEq(name1, name2)
+                      @match true = prefixesEqual(prefixes1, prefixes2)
+                      @match true = valueEq(en1, en2)
+                      @match true = valueEq(p1, p2)
+                      @match true = restrictionEqual(restr1, restr2)
+                      @match true = classDefEqual(cd1, cd2)
+                    true
+                  end
+
+                  (SCode.COMPONENT(name1, prefixes1, attr1, tp1, mod1, _, cond1, _), SCode.COMPONENT(name2, prefixes2, attr2, tp2, mod2, _, cond2, _))  => begin
+                      equality(cond1, cond2)
+                      @match true = stringEq(name1, name2)
+                      @match true = prefixesEqual(prefixes1, prefixes2)
+                      @match true = attributesEqual(attr1, attr2)
+                      @match true = modEqual(mod1, mod2)
+                      @match true = AbsynUtil.typeSpecEqual(tp1, tp2)
+                    true
+                  end
+
+                  (SCode.EXTENDS(path1, _, mod1, _, _), SCode.EXTENDS(path2, _, mod2, _, _))  => begin
+                      @match true = AbsynUtil.pathEqual(path1, path2)
+                      @match true = modEqual(mod1, mod2)
+                    true
+                  end
+
+                  (SCode.IMPORT(imp = im1), SCode.IMPORT(imp = im2))  => begin
+                      @match true = AbsynUtil.importEqual(im1, im2)
+                    true
+                  end
+
+                  (SCode.DEFINEUNIT(name1, _, os1, or1), SCode.DEFINEUNIT(name2, _, os2, or2))  => begin
+                      @match true = stringEq(name1, name2)
+                      equality(os1, os2)
+                      equality(or1, or2)
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+               #=  otherwise false
+               =#
+          equal
+        end
+
+         #=  stefan
+         =#
+
+         #= returns true if 2 annotations are equal =#
+        function annotationEqual(annotation1::SCode.Annotation, annotation2::SCode.Annotation)::Bool
+              local equal::Bool
+
+              local mod1::SCode.Mod
+              local mod2::SCode.Mod
+
+              @match SCode.ANNOTATION(modification = mod1) = annotation1
+              @match SCode.ANNOTATION(modification = mod2) = annotation2
+              equal = modEqual(mod1, mod2)
+          equal
+        end
+
+         #= Returns true if two Restriction's are equal. =#
+        function restrictionEqual(restr1::SCode.Restriction, restr2::SCode.Restriction)::Bool
+              local equal::Bool
+
+              equal = begin
+                  local funcRest1::SCode.FunctionRestriction
+                  local funcRest2::SCode.FunctionRestriction
+                @match (restr1, restr2) begin
+                  (SCode.R_CLASS(__), SCode.R_CLASS(__))  => begin
+                    true
+                  end
+
+                  (SCode.R_OPTIMIZATION(__), SCode.R_OPTIMIZATION(__))  => begin
+                    true
+                  end
+
+                  (SCode.R_MODEL(__), SCode.R_MODEL(__))  => begin
+                    true
+                  end
+
+                  (SCode.R_RECORD(true), SCode.R_RECORD(true))  => begin
+                    true
+                  end
+
+                  (SCode.R_RECORD(false), SCode.R_RECORD(false))  => begin
+                    true
+                  end
+
+                  (SCode.R_BLOCK(__), SCode.R_BLOCK(__))  => begin
+                    true
+                  end
+
+                  (SCode.R_CONNECTOR(true), SCode.R_CONNECTOR(true))  => begin
+                    true
+                  end
+
+                  (SCode.R_CONNECTOR(false), SCode.R_CONNECTOR(false))  => begin
+                    true
+                  end
+
+                  (SCode.R_OPERATOR(__), SCode.R_OPERATOR(__))  => begin
+                    true
+                  end
+
+                  (SCode.R_TYPE(__), SCode.R_TYPE(__))  => begin
+                    true
+                  end
+
+                  (SCode.R_PACKAGE(__), SCode.R_PACKAGE(__))  => begin
+                    true
+                  end
+
+                  (SCode.R_FUNCTION(funcRest1), SCode.R_FUNCTION(funcRest2))  => begin
+                    funcRestrictionEqual(funcRest1, funcRest2)
+                  end
+
+                  (SCode.R_ENUMERATION(__), SCode.R_ENUMERATION(__))  => begin
+                    true
+                  end
+
+                  (SCode.R_PREDEFINED_INTEGER(__), SCode.R_PREDEFINED_INTEGER(__))  => begin
+                    true
+                  end
+
+                  (SCode.R_PREDEFINED_REAL(__), SCode.R_PREDEFINED_REAL(__))  => begin
+                    true
+                  end
+
+                  (SCode.R_PREDEFINED_STRING(__), SCode.R_PREDEFINED_STRING(__))  => begin
+                    true
+                  end
+
+                  (SCode.R_PREDEFINED_BOOLEAN(__), SCode.R_PREDEFINED_BOOLEAN(__))  => begin
+                    true
+                  end
+
+                  (SCode.R_PREDEFINED_CLOCK(__), SCode.R_PREDEFINED_CLOCK(__))  => begin
+                    true
+                  end
+
+                  (SCode.R_PREDEFINED_ENUMERATION(__), SCode.R_PREDEFINED_ENUMERATION(__))  => begin
+                    true
+                  end
+
+                  (SCode.R_UNIONTYPE(__), SCode.R_UNIONTYPE(__))  => begin
+                    min(@do_threaded_for t1 == t2 (t1, t2) (restr1.typeVars, restr2.typeVars))
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+               #=  operator record
+               =#
+               #=  expandable connectors
+               =#
+               #=  non expandable connectors
+               =#
+               #=  operator
+               =#
+               #=  BTH
+               =#
+          equal
+        end
+
+        function funcRestrictionEqual(funcRestr1::SCode.FunctionRestriction, funcRestr2::SCode.FunctionRestriction)::Bool
+              local equal::Bool
+
+              equal = begin
+                  local b1::Bool
+                  local b2::Bool
+                @match (funcRestr1, funcRestr2) begin
+                  (SCode.FR_NORMAL_FUNCTION(b1), SCode.FR_NORMAL_FUNCTION(b2))  => begin
+                    boolEq(b1, b2)
+                  end
+
+                  (SCode.FR_EXTERNAL_FUNCTION(b1), SCode.FR_EXTERNAL_FUNCTION(b2))  => begin
+                    boolEq(b1, b2)
+                  end
+
+                  (SCode.FR_OPERATOR_FUNCTION(__), SCode.FR_OPERATOR_FUNCTION(__))  => begin
+                    true
+                  end
+
+                  (SCode.FR_RECORD_CONSTRUCTOR(__), SCode.FR_RECORD_CONSTRUCTOR(__))  => begin
+                    true
+                  end
+
+                  (SCode.FR_PARALLEL_FUNCTION(__), SCode.FR_PARALLEL_FUNCTION(__))  => begin
+                    true
+                  end
+
+                  (SCode.FR_KERNEL_FUNCTION(__), SCode.FR_KERNEL_FUNCTION(__))  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          equal
+        end
+
+        function enumEqual(e1::SCode.Enum, e2::SCode.Enum)::Bool
+              local isEqual::Bool
+
+              isEqual = begin
+                  local s1::String
+                  local s2::String
+                  local b1::Bool
+                @match (e1, e2) begin
+                  (SCode.ENUM(s1, _), SCode.ENUM(s2, _))  => begin
+                      b1 = stringEq(s1, s2)
+                    b1
+                  end
+                end
+              end
+               #=  ignore comments here.
+               =#
+          isEqual
+        end
+
+         #= Returns true if Two ClassDef's are equal =#
+        function classDefEqual(cdef1::SCode.ClassDef, cdef2::SCode.ClassDef)::Bool
+              local equal::Bool
+
+              equal = begin
+                  local elts1::IList
+                  local elts2::IList
+                  local eqns1::IList
+                  local eqns2::IList
+                  local ieqns1::IList
+                  local ieqns2::IList
+                  local algs1::IList
+                  local algs2::IList
+                  local ialgs1::IList
+                  local ialgs2::IList
+                  local cons1::IList
+                  local cons2::IList
+                  local attr1::SCode.Attributes
+                  local attr2::SCode.Attributes
+                  local tySpec1::Absyn.TypeSpec
+                  local tySpec2::Absyn.TypeSpec
+                  local p1::Absyn.Path
+                  local p2::Absyn.Path
+                  local mod1::SCode.Mod
+                  local mod2::SCode.Mod
+                  local elst1::IList
+                  local elst2::IList
+                  local ilst1::IList
+                  local ilst2::IList
+                  local clsttrs1::IList
+                  local clsttrs2::IList
+                @match (cdef1, cdef2) begin
+                  (SCode.PARTS(elts1, eqns1, ieqns1, algs1, ialgs1, _, _, _), SCode.PARTS(elts2, eqns2, ieqns2, algs2, ialgs2, _, _, _))  => begin
+                      ListUtil.threadMapAllValue(elts1, elts2, elementEqual, true)
+                      ListUtil.threadMapAllValue(eqns1, eqns2, equationEqual, true)
+                      ListUtil.threadMapAllValue(ieqns1, ieqns2, equationEqual, true)
+                      ListUtil.threadMapAllValue(algs1, algs2, algorithmEqual, true)
+                      ListUtil.threadMapAllValue(ialgs1, ialgs2, algorithmEqual, true)
+                    true
+                  end
+
+                  (SCode.DERIVED(tySpec1, mod1, attr1), SCode.DERIVED(tySpec2, mod2, attr2))  => begin
+                      @match true = AbsynUtil.typeSpecEqual(tySpec1, tySpec2)
+                      @match true = modEqual(mod1, mod2)
+                      @match true = attributesEqual(attr1, attr2)
+                    true
+                  end
+
+                  (SCode.ENUMERATION(elst1), SCode.ENUMERATION(elst2))  => begin
+                      ListUtil.threadMapAllValue(elst1, elst2, enumEqual, true)
+                    true
+                  end
+
+                  (SCode.CLASS_EXTENDS(mod1, SCode.PARTS(elts1, eqns1, ieqns1, algs1, ialgs1, _, _, _)), SCode.CLASS_EXTENDS(mod2, SCode.PARTS(elts2, eqns2, ieqns2, algs2, ialgs2, _, _, _)))  => begin
+                      ListUtil.threadMapAllValue(elts1, elts2, elementEqual, true)
+                      ListUtil.threadMapAllValue(eqns1, eqns2, equationEqual, true)
+                      ListUtil.threadMapAllValue(ieqns1, ieqns2, equationEqual, true)
+                      ListUtil.threadMapAllValue(algs1, algs2, algorithmEqual, true)
+                      ListUtil.threadMapAllValue(ialgs1, ialgs2, algorithmEqual, true)
+                      @match true = modEqual(mod1, mod2)
+                    true
+                  end
+
+                  (SCode.PDER(_, ilst1), SCode.PDER(_, ilst2))  => begin
+                      ListUtil.threadMapAllValue(ilst1, ilst2, stringEq, true)
+                    true
+                  end
+
+                  _  => begin
+                      fail()
+                  end
+                end
+              end
+               #= /* adrpo: TODO! FIXME! are these below really needed??!!
+                   as far as I can tell we handle all the cases.
+                  case(cdef1, cdef2)
+                    equation
+                      equality(cdef1=cdef2);
+                    then true;
+
+                  case(cdef1, cdef2)
+                    equation
+                      failure(equality(cdef1=cdef2));
+                    then false;*/ =#
+          equal
+        end
+
+         #= Returns true if two Option<ArrayDim> are equal =#
+        function arraydimOptEqual(adopt1::Option, adopt2::Option)::Bool
+              local equal::Bool
+
+              equal = begin
+                  local lst1::IList
+                  local lst2::IList
+                  local blst::IList
+                @matchcontinue (adopt1, adopt2) begin
+                  (NONE(), NONE())  => begin
+                    true
+                  end
+
+                  (SOME(lst1), SOME(lst2))  => begin
+                      ListUtil.threadMapAllValue(lst1, lst2, subscriptEqual, true)
+                    true
+                  end
+
+                  (SOME(_), SOME(_))  => begin
+                    false
+                  end
+                end
+              end
+               #=  oth. false
+               =#
+          equal
+        end
+
+         #= Returns true if two Absyn.Subscript are equal =#
+        function subscriptEqual(sub1::Absyn.Subscript, sub2::Absyn.Subscript)::Bool
+              local equal::Bool
+
+              equal = begin
+                  local e1::Absyn.Exp
+                  local e2::Absyn.Exp
+                @match (sub1, sub2) begin
+                  (Absyn.NOSUB(__), Absyn.NOSUB(__))  => begin
+                    true
+                  end
+
+                  (Absyn.SUBSCRIPT(e1), Absyn.SUBSCRIPT(e2))  => begin
+                    AbsynUtil.expEqual(e1, e2)
+                  end
+                end
+              end
+          equal
+        end
+
+         #= Returns true if two Algorithm's are equal. =#
+        function algorithmEqual(alg1::SCode.AlgorithmSection, alg2::SCode.AlgorithmSection)::Bool
+              local equal::Bool
+
+              equal = begin
+                  local a1::IList
+                  local a2::IList
+                @matchcontinue (alg1, alg2) begin
+                  (SCode.ALGORITHM(a1), SCode.ALGORITHM(a2))  => begin
+                      ListUtil.threadMapAllValue(a1, a2, algorithmEqual2, true)
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+               #=  false otherwise!
+               =#
+          equal
+        end
+
+         #= Returns true if two Absyn.Algorithm are equal. =#
+        function algorithmEqual2(ai1::SCode.Statement, ai2::SCode.Statement)::Bool
+              local equal::Bool
+
+              equal = begin
+                  local alg1::Absyn.Algorithm
+                  local alg2::Absyn.Algorithm
+                  local a1::SCode.Statement
+                  local a2::SCode.Statement
+                  local cr1::Absyn.ComponentRef
+                  local cr2::Absyn.ComponentRef
+                  local e1::Absyn.Exp
+                  local e2::Absyn.Exp
+                  local e11::Absyn.Exp
+                  local e12::Absyn.Exp
+                  local e21::Absyn.Exp
+                  local e22::Absyn.Exp
+                  local b1::Bool
+                  local b2::Bool
+                @matchcontinue (ai1, ai2) begin
+                  (SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(cr1), value = e1), SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(cr2), value = e2))  => begin
+                      b1 = AbsynUtil.crefEqual(cr1, cr2)
+                      b2 = AbsynUtil.expEqual(e1, e2)
+                      equal = boolAnd(b1, b2)
+                    equal
+                  end
+
+                  (SCode.ALG_ASSIGN(assignComponent = e11 && Absyn.TUPLE(_), value = e12), SCode.ALG_ASSIGN(assignComponent = e21 && Absyn.TUPLE(_), value = e22))  => begin
+                      b1 = AbsynUtil.expEqual(e11, e21)
+                      b2 = AbsynUtil.expEqual(e12, e22)
+                      equal = boolAnd(b1, b2)
+                    equal
+                  end
+
+                  (a1, a2)  => begin
+                      @match Absyn.ALGORITHMITEM(algorithm_ = alg1) = statementToAlgorithmItem(a1)
+                      @match Absyn.ALGORITHMITEM(algorithm_ = alg2) = statementToAlgorithmItem(a2)
+                      equality(alg1, alg2)
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+               #=  base it on equality for now as the ones below are not implemented!
+               =#
+               #=  Don't compare comments and line numbers
+               =#
+               #=  maybe replace failure/equality with these:
+               =#
+               #= case(Absyn.ALG_IF(_,_,_,_),Absyn.ALG_IF(_,_,_,_)) then false;  TODO: SCode.ALG_IF
+               =#
+               #= case (Absyn.ALG_FOR(_,_),Absyn.ALG_FOR(_,_)) then false;  TODO: SCode.ALG_FOR
+               =#
+               #= case (Absyn.ALG_WHILE(_,_),Absyn.ALG_WHILE(_,_)) then false;  TODO: SCode.ALG_WHILE
+               =#
+               #= case(Absyn.ALG_WHEN_A(_,_,_),Absyn.ALG_WHEN_A(_,_,_)) then false; TODO: SCode.ALG_WHILE
+               =#
+               #= case (Absyn.ALG_NORETCALL(_,_),Absyn.ALG_NORETCALL(_,_)) then false; TODO: SCode.ALG_NORETCALL
+               =#
+          equal
+        end
+
+         #= Returns true if two equations are equal. =#
+        function equationEqual(eqn1::SCode.Equation, eqn2::SCode.Equation)::Bool
+              local equal::Bool
+
+              local eq1::SCode.EEquation
+              local eq2::SCode.EEquation
+
+              @match SCode.EQUATION(eEquation = eq1) = eqn1
+              @match SCode.EQUATION(eEquation = eq2) = eqn2
+              equal = equationEqual2(eq1, eq2)
+          equal
+        end
+
+         #= Helper function to equationEqual =#
+        function equationEqual2(eq1::SCode.EEquation, eq2::SCode.EEquation)::Bool
+              local equal::Bool
+
+              equal = begin
+                  local tb1::IList
+                  local tb2::IList
+                  local cond1::Absyn.Exp
+                  local cond2::Absyn.Exp
+                  local ifcond1::IList
+                  local ifcond2::IList
+                  local e11::Absyn.Exp
+                  local e12::Absyn.Exp
+                  local e21::Absyn.Exp
+                  local e22::Absyn.Exp
+                  local exp1::Absyn.Exp
+                  local exp2::Absyn.Exp
+                  local c1::Absyn.Exp
+                  local c2::Absyn.Exp
+                  local m1::Absyn.Exp
+                  local m2::Absyn.Exp
+                  local e1::Absyn.Exp
+                  local e2::Absyn.Exp
+                  local cr11::Absyn.ComponentRef
+                  local cr12::Absyn.ComponentRef
+                  local cr21::Absyn.ComponentRef
+                  local cr22::Absyn.ComponentRef
+                  local cr1::Absyn.ComponentRef
+                  local cr2::Absyn.ComponentRef
+                  local id1::Absyn.Ident
+                  local id2::Absyn.Ident
+                  local fb1::IList
+                  local fb2::IList
+                  local eql1::IList
+                  local eql2::IList
+                  local elst1::IList
+                  local elst2::IList
+                @matchcontinue (eq1, eq2) begin
+                  (SCode.EQ_IF(condition = ifcond1, thenBranch = tb1, elseBranch = fb1), SCode.EQ_IF(condition = ifcond2, thenBranch = tb2, elseBranch = fb2))  => begin
+                      @match true = equationEqual22(tb1, tb2)
+                      ListUtil.threadMapAllValue(fb1, fb2, equationEqual2, true)
+                      ListUtil.threadMapAllValue(ifcond1, ifcond2, AbsynUtil.expEqual, true)
+                    true
+                  end
+
+                  (SCode.EQ_EQUALS(expLeft = e11, expRight = e12), SCode.EQ_EQUALS(expLeft = e21, expRight = e22))  => begin
+                      @match true = AbsynUtil.expEqual(e11, e21)
+                      @match true = AbsynUtil.expEqual(e12, e22)
+                    true
+                  end
+
+                  (SCode.EQ_PDE(expLeft = e11, expRight = e12, domain = cr1), SCode.EQ_PDE(expLeft = e21, expRight = e22, domain = cr2))  => begin
+                      @match true = AbsynUtil.expEqual(e11, e21)
+                      @match true = AbsynUtil.expEqual(e12, e22)
+                      @match true = AbsynUtil.crefEqual(cr1, cr2)
+                    true
+                  end
+
+                  (SCode.EQ_CONNECT(crefLeft = cr11, crefRight = cr12), SCode.EQ_CONNECT(crefLeft = cr21, crefRight = cr22))  => begin
+                      @match true = AbsynUtil.crefEqual(cr11, cr21)
+                      @match true = AbsynUtil.crefEqual(cr12, cr22)
+                    true
+                  end
+
+                  (SCode.EQ_FOR(index = id1, range = SOME(exp1), eEquationLst = eql1), SCode.EQ_FOR(index = id2, range = SOME(exp2), eEquationLst = eql2))  => begin
+                      ListUtil.threadMapAllValue(eql1, eql2, equationEqual2, true)
+                      @match true = AbsynUtil.expEqual(exp1, exp2)
+                      @match true = stringEq(id1, id2)
+                    true
+                  end
+
+                  (SCode.EQ_FOR(index = id1, range = NONE(), eEquationLst = eql1), SCode.EQ_FOR(index = id2, range = NONE(), eEquationLst = eql2))  => begin
+                      ListUtil.threadMapAllValue(eql1, eql2, equationEqual2, true)
+                      @match true = stringEq(id1, id2)
+                    true
+                  end
+
+                  (SCode.EQ_WHEN(condition = cond1, eEquationLst = elst1), SCode.EQ_WHEN(condition = cond2, eEquationLst = elst2))  => begin
+                      ListUtil.threadMapAllValue(elst1, elst2, equationEqual2, true)
+                      @match true = AbsynUtil.expEqual(cond1, cond2)
+                    true
+                  end
+
+                  (SCode.EQ_ASSERT(condition = c1, message = m1), SCode.EQ_ASSERT(condition = c2, message = m2))  => begin
+                      @match true = AbsynUtil.expEqual(c1, c2)
+                      @match true = AbsynUtil.expEqual(m1, m2)
+                    true
+                  end
+
+                  (SCode.EQ_REINIT(__), SCode.EQ_REINIT(__))  => begin
+                      @match true = AbsynUtil.expEqual(eq1.cref, eq2.cref)
+                      @match true = AbsynUtil.expEqual(eq1.expReinit, eq2.expReinit)
+                    true
+                  end
+
+                  (SCode.EQ_NORETCALL(exp = e1), SCode.EQ_NORETCALL(exp = e2))  => begin
+                      @match true = AbsynUtil.expEqual(e1, e2)
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+               #=  TODO: elsewhen not checked yet.
+               =#
+               #=  otherwise false
+               =#
+          equal
+        end
+
+         #= Author BZ
+         Helper function for equationEqual2, does compare list<list<equation>> (else ifs in ifequations.) =#
+        function equationEqual22(inTb1::IList, inTb2::IList)::Bool
+              local bOut::Bool
+
+              bOut = begin
+                  local tb_1::IList
+                  local tb_2::IList
+                  local tb1::IList
+                  local tb2::IList
+                @matchcontinue (inTb1, inTb2) begin
+                  ( nil(),  nil())  => begin
+                    true
+                  end
+
+                  (_,  nil())  => begin
+                    false
+                  end
+
+                  ( nil(), _)  => begin
+                    false
+                  end
+
+                  (tb_1 <| tb1, tb_2 <| tb2)  => begin
+                      ListUtil.threadMapAllValue(tb_1, tb_2, equationEqual2, true)
+                      @match true = equationEqual22(tb1, tb2)
+                    true
+                  end
+
+                  (_ <| _, _ <| _)  => begin
+                    false
+                  end
+                end
+              end
+          bOut
+        end
+
+         #= Return true if two Mod:s are equal =#
+        function modEqual(mod1::SCode.Mod, mod2::SCode.Mod)::Bool
+              local equal::Bool
+
+              equal = begin
+                  local f1::SCode.Final
+                  local f2::SCode.Final
+                  local each1::SCode.Each
+                  local each2::SCode.Each
+                  local submodlst1::IList
+                  local submodlst2::IList
+                  local e1::Absyn.Exp
+                  local e2::Absyn.Exp
+                  local elt1::SCode.Element
+                  local elt2::SCode.Element
+                @matchcontinue (mod1, mod2) begin
+                  (SCode.MOD(f1, each1, submodlst1, SOME(e1), _), SCode.MOD(f2, each2, submodlst2, SOME(e2), _))  => begin
+                      @match true = valueEq(f1, f2)
+                      @match true = eachEqual(each1, each2)
+                      @match true = subModsEqual(submodlst1, submodlst2)
+                      @match true = AbsynUtil.expEqual(e1, e2)
+                    true
+                  end
+
+                  (SCode.MOD(f1, each1, submodlst1, NONE(), _), SCode.MOD(f2, each2, submodlst2, NONE(), _))  => begin
+                      @match true = valueEq(f1, f2)
+                      @match true = eachEqual(each1, each2)
+                      @match true = subModsEqual(submodlst1, submodlst2)
+                    true
+                  end
+
+                  (SCode.NOMOD(__), SCode.NOMOD(__))  => begin
+                    true
+                  end
+
+                  (SCode.REDECL(f1, each1, elt1), SCode.REDECL(f2, each2, elt2))  => begin
+                      @match true = valueEq(f1, f2)
+                      @match true = eachEqual(each1, each2)
+                      @match true = elementEqual(elt1, elt2)
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          equal
+        end
+
+         #= Return true if two subModifier lists are equal =#
+        function subModsEqual(inSubModLst1::IList, inSubModLst2::IList)::Bool
+              local equal::Bool
+
+              equal = begin
+                  local id1::SCode.Ident
+                  local id2::SCode.Ident
+                  local mod1::SCode.Mod
+                  local mod2::SCode.Mod
+                  local ss1::IList
+                  local ss2::IList
+                  local subModLst1::IList
+                  local subModLst2::IList
+                @matchcontinue (inSubModLst1, inSubModLst2) begin
+                  ( nil(),  nil())  => begin
+                    true
+                  end
+
+                  (SCode.NAMEMOD(id1, mod1) <| subModLst1, SCode.NAMEMOD(id2, mod2) <| subModLst2)  => begin
+                      @match true = stringEq(id1, id2)
+                      @match true = modEqual(mod1, mod2)
+                      @match true = subModsEqual(subModLst1, subModLst2)
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          equal
+        end
+
+         #= Returns true if two subscript lists are equal =#
+        function subscriptsEqual(inSs1::IList, inSs2::IList)::Bool
+              local equal::Bool
+
+              equal = begin
+                  local e1::Absyn.Exp
+                  local e2::Absyn.Exp
+                  local ss1::IList
+                  local ss2::IList
+                @matchcontinue (inSs1, inSs2) begin
+                  ( nil(),  nil())  => begin
+                    true
+                  end
+
+                  (Absyn.NOSUB(__) <| ss1, Absyn.NOSUB(__) <| ss2)  => begin
+                    subscriptsEqual(ss1, ss2)
+                  end
+
+                  (Absyn.SUBSCRIPT(e1) <| ss1, Absyn.SUBSCRIPT(e2) <| ss2)  => begin
+                      @match true = AbsynUtil.expEqual(e1, e2)
+                      @match true = subscriptsEqual(ss1, ss2)
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          equal
+        end
+
+         #= Returns true if two Atributes are equal =#
+        function attributesEqual(attr1::SCode.Attributes, attr2::SCode.Attributes)::Bool
+              local equal::Bool
+
+              equal = begin
+                  local prl1::SCode.Parallelism
+                  local prl2::SCode.Parallelism
+                  local var1::SCode.Variability
+                  local var2::SCode.Variability
+                  local ct1::SCode.ConnectorType
+                  local ct2::SCode.ConnectorType
+                  local ad1::Absyn.ArrayDim
+                  local ad2::Absyn.ArrayDim
+                  local dir1::Absyn.Direction
+                  local dir2::Absyn.Direction
+                  local if1::Absyn.IsField
+                  local if2::Absyn.IsField
+                @matchcontinue (attr1, attr2) begin
+                  (SCode.ATTR(ad1, ct1, prl1, var1, dir1, if1), SCode.ATTR(ad2, ct2, prl2, var2, dir2, if2))  => begin
+                      @match true = arrayDimEqual(ad1, ad2)
+                      @match true = valueEq(ct1, ct2)
+                      @match true = parallelismEqual(prl1, prl2)
+                      @match true = variabilityEqual(var1, var2)
+                      @match true = AbsynUtil.directionEqual(dir1, dir2)
+                      @match true = AbsynUtil.isFieldEqual(if1, if2)
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          equal
+        end
+
+         #= Returns true if two Parallelism prefixes are equal =#
+        function parallelismEqual(prl1::SCode.Parallelism, prl2::SCode.Parallelism)::Bool
+              local equal::Bool
+
+              equal = begin
+                @match (prl1, prl2) begin
+                  (SCode.PARGLOBAL(__), SCode.PARGLOBAL(__))  => begin
+                    true
+                  end
+
+                  (SCode.PARLOCAL(__), SCode.PARLOCAL(__))  => begin
+                    true
+                  end
+
+                  (SCode.NON_PARALLEL(__), SCode.NON_PARALLEL(__))  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          equal
+        end
+
+         #= Returns true if two Variablity prefixes are equal =#
+        function variabilityEqual(var1::SCode.Variability, var2::SCode.Variability)::Bool
+              local equal::Bool
+
+              equal = begin
+                @match (var1, var2) begin
+                  (SCode.VAR(__), SCode.VAR(__))  => begin
+                    true
+                  end
+
+                  (SCode.DISCRETE(__), SCode.DISCRETE(__))  => begin
+                    true
+                  end
+
+                  (SCode.PARAM(__), SCode.PARAM(__))  => begin
+                    true
+                  end
+
+                  (SCode.CONST(__), SCode.CONST(__))  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          equal
+        end
+
+         #= Return true if two arraydims are equal =#
+        function arrayDimEqual(iad1::Absyn.ArrayDim, iad2::Absyn.ArrayDim)::Bool
+              local equal::Bool
+
+              equal = begin
+                  local e1::Absyn.Exp
+                  local e2::Absyn.Exp
+                  local ad1::Absyn.ArrayDim
+                  local ad2::Absyn.ArrayDim
+                @matchcontinue (iad1, iad2) begin
+                  ( nil(),  nil())  => begin
+                    true
+                  end
+
+                  (Absyn.NOSUB(__) <| ad1, Absyn.NOSUB(__) <| ad2)  => begin
+                      @match true = arrayDimEqual(ad1, ad2)
+                    true
+                  end
+
+                  (Absyn.SUBSCRIPT(e1) <| ad1, Absyn.SUBSCRIPT(e2) <| ad2)  => begin
+                      @match true = AbsynUtil.expEqual(e1, e2)
+                      @match true = arrayDimEqual(ad1, ad2)
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          equal
+        end
+
+         #= Sets the restriction of a SCode Class =#
+        function setClassRestriction(r::SCode.Restriction, cl::SCode.Element)::SCode.Element
+              local outCl::SCode.Element
+
+              outCl = begin
+                  local parts::SCode.ClassDef
+                  local p::SCode.Partial
+                  local e::SCode.Encapsulated
+                  local id::SCode.Ident
+                  local info::SourceInfo
+                  local prefixes::SCode.Prefixes
+                  local oldR::SCode.Restriction
+                  local cmt::SCode.Comment
+                   #=  check if restrictions are equal, so you can return the same thing!
+                   =#
+                @matchcontinue (r, cl) begin
+                  (_, SCode.CLASS(restriction = oldR))  => begin
+                      @match true = restrictionEqual(r, oldR)
+                    cl
+                  end
+
+                  (_, SCode.CLASS(id, prefixes, e, p, _, parts, cmt, info))  => begin
+                    SCode.CLASS(id, prefixes, e, p, r, parts, cmt, info)
+                  end
+                end
+              end
+               #=  not equal, change
+               =#
+          outCl
+        end
+
+         #= Sets the name of a SCode Class =#
+        function setClassName(name::SCode.Ident, cl::SCode.Element)::SCode.Element
+              local outCl::SCode.Element
+
+              outCl = begin
+                  local parts::SCode.ClassDef
+                  local p::SCode.Partial
+                  local e::SCode.Encapsulated
+                  local info::SourceInfo
+                  local prefixes::SCode.Prefixes
+                  local r::SCode.Restriction
+                  local id::SCode.Ident
+                  local cmt::SCode.Comment
+                   #=  check if restrictions are equal, so you can return the same thing!
+                   =#
+                @matchcontinue (name, cl) begin
+                  (_, SCode.CLASS(name = id))  => begin
+                      @match true = stringEqual(name, id)
+                    cl
+                  end
+
+                  (_, SCode.CLASS(_, prefixes, e, p, r, parts, cmt, info))  => begin
+                    SCode.CLASS(name, prefixes, e, p, r, parts, cmt, info)
+                  end
+                end
+              end
+               #=  not equal, change
+               =#
+          outCl
+        end
+
+        function makeClassPartial(inClass::SCode.Element)::SCode.Element
+              local outClass::SCode.Element = inClass
+
+              outClass = begin
+                @match outClass begin
+                  SCode.CLASS(partialPrefix = SCode.NOT_PARTIAL(__))  => begin
+                      outClass.partialPrefix = SCode.PARTIAL()
+                    outClass
+                  end
+
+                  _  => begin
+                      outClass
+                  end
+                end
+              end
+          outClass
+        end
+
+         #= Sets the partial prefix of a SCode Class =#
+        function setClassPartialPrefix(partialPrefix::SCode.Partial, cl::SCode.Element)::SCode.Element
+              local outCl::SCode.Element
+
+              outCl = begin
+                  local parts::SCode.ClassDef
+                  local e::SCode.Encapsulated
+                  local id::SCode.Ident
+                  local info::SourceInfo
+                  local restriction::SCode.Restriction
+                  local prefixes::SCode.Prefixes
+                  local oldPartialPrefix::SCode.Partial
+                  local cmt::SCode.Comment
+                   #=  check if partial prefix are equal, so you can return the same thing!
+                   =#
+                @matchcontinue (partialPrefix, cl) begin
+                  (_, SCode.CLASS(partialPrefix = oldPartialPrefix))  => begin
+                      @match true = valueEq(partialPrefix, oldPartialPrefix)
+                    cl
+                  end
+
+                  (_, SCode.CLASS(id, prefixes, e, _, restriction, parts, cmt, info))  => begin
+                    SCode.CLASS(id, prefixes, e, partialPrefix, restriction, parts, cmt, info)
+                  end
+                end
+              end
+               #=  not the same, change
+               =#
+          outCl
+        end
+
+        function findIteratorIndexedCrefsInEEquations(inEqs::IList, inIterator::String, inCrefs::IList = list())::IList
+              local outCrefs::IList
+
+              outCrefs = ListUtil.fold1(inEqs, findIteratorIndexedCrefsInEEquation, inIterator, inCrefs)
+          outCrefs
+        end
+
+        function findIteratorIndexedCrefsInEEquation(inEq::SCode.EEquation, inIterator::String, inCrefs::IList = list())::IList
+              local outCrefs::IList
+
+              outCrefs = foldEEquationsExps(inEq, (inIterator) -> AbsynUtil.findIteratorIndexedCrefs(inIterator = inIterator), inCrefs)
+          outCrefs
+        end
+
+        function findIteratorIndexedCrefsInStatements(inStatements::IList, inIterator::String, inCrefs::IList = list())::IList
+              local outCrefs::IList
+
+              outCrefs = ListUtil.fold1(inStatements, findIteratorIndexedCrefsInStatement, inIterator, inCrefs)
+          outCrefs
+        end
+
+        function findIteratorIndexedCrefsInStatement(inStatement::SCode.Statement, inIterator::String, inCrefs::IList = list())::IList
+              local outCrefs::IList
+
+              outCrefs = foldStatementsExps(inStatement, (inIterator) -> AbsynUtil.findIteratorIndexedCrefs(inIterator = inIterator), inCrefs)
+          outCrefs
+        end
+
+         #= Filters out the components from the given list of elements, as well as their names. =#
+        function filterComponents(inElements::IList)::Tuple{IList, IList}
+              local outComponentNames::IList
+              local outComponents::IList
+
+              (outComponents, outComponentNames) = ListUtil.map_2(inElements, filterComponents2)
+          (outComponents, outComponentNames)
+        end
+
+        function filterComponents2(inElement::SCode.Element)::Tuple{SCode.Element, String}
+              local outName::String
+              local outComponent::SCode.Element
+
+              @match SCode.COMPONENT(name = outName) = inElement
+              outComponent = inElement
+          (outComponent, outName)
+        end
+
+         #= This function returns the components from a class =#
+        function getClassComponents(cl::SCode.Element)::Tuple{IList, IList}
+              local compNames::IList
+              local compElts::IList
+
+              (compElts, compNames) = begin
+                  local elts::IList
+                  local comps::IList
+                  local names::IList
+                @match cl begin
+                  SCode.CLASS(classDef = SCode.PARTS(elementLst = elts))  => begin
+                      (comps, names) = filterComponents(elts)
+                    (comps, names)
+                  end
+
+                  SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = SCode.PARTS(elementLst = elts)))  => begin
+                      (comps, names) = filterComponents(elts)
+                    (comps, names)
+                  end
+                end
+              end
+          (compElts, compNames)
+        end
+
+         #= This function returns the components from a class =#
+        function getClassElements(cl::SCode.Element)::IList
+              local elts::IList
+
+              elts = begin
+                @match cl begin
+                  SCode.CLASS(classDef = SCode.PARTS(elementLst = elts))  => begin
+                    elts
+                  end
+
+                  SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = SCode.PARTS(elementLst = elts)))  => begin
+                    elts
+                  end
+
+                  _  => begin
+                      list()
+                  end
+                end
+              end
+          elts
+        end
+
+         #= Creates an EnumType element from an enumeration literal and an optional
+          comment. =#
+        function makeEnumType(inEnum::SCode.Enum, inInfo::SourceInfo)::SCode.Element
+              local outEnumType::SCode.Element
+
+              local literal::String
+              local comment::SCode.Comment
+
+              @match SCode.ENUM(literal = literal, comment = comment) = inEnum
+              checkValidEnumLiteral(literal, inInfo)
+              outEnumType = SCode.COMPONENT(literal, SCode.defaultPrefixes, SCode.defaultConstAttr, Absyn.TPATH(Absyn.IDENT("EnumType"), NONE()), SCode.NOMOD(), comment, NONE(), inInfo)
+          outEnumType
+        end
+
+         #= Returns the more constant of two Variabilities
+           (considers VAR() < DISCRETE() < PARAM() < CONST()),
+           similarly to Types.constOr. =#
+        function variabilityOr(inConst1::SCode.Variability, inConst2::SCode.Variability)::SCode.Variability
+              local outConst::SCode.Variability
+
+              outConst = begin
+                @match (inConst1, inConst2) begin
+                  (SCode.CONST(__), _)  => begin
+                    SCode.CONST()
+                  end
+
+                  (_, SCode.CONST(__))  => begin
+                    SCode.CONST()
+                  end
+
+                  (SCode.PARAM(__), _)  => begin
+                    SCode.PARAM()
+                  end
+
+                  (_, SCode.PARAM(__))  => begin
+                    SCode.PARAM()
+                  end
+
+                  (SCode.DISCRETE(__), _)  => begin
+                    SCode.DISCRETE()
+                  end
+
+                  (_, SCode.DISCRETE(__))  => begin
+                    SCode.DISCRETE()
+                  end
+
+                  _  => begin
+                      SCode.VAR()
+                  end
+                end
+              end
+          outConst
+        end
+
+         #= Transforms SCode.Statement back to Absyn.AlgorithmItem. Discards the comment.
+        Only to be used to unparse statements again. =#
+        function statementToAlgorithmItem(stmt::SCode.Statement)::Absyn.AlgorithmItem
+              local algi::Absyn.AlgorithmItem
+
+              algi = begin
+                  local functionCall::Absyn.ComponentRef
+                  local assignComponent::Absyn.Exp
+                  local boolExpr::Absyn.Exp
+                  local value::Absyn.Exp
+                  local iterator::String
+                  local range::Option
+                  local functionArgs::Absyn.FunctionArgs
+                  local info::SourceInfo
+                  local conditions::IList
+                  local stmtsList::IList
+                  local body::IList
+                  local trueBranch::IList
+                  local elseBranch::IList
+                  local branches::IList
+                  local comment::Option
+                  local algs1::IList
+                  local algs2::IList
+                  local algsLst::IList
+                  local abranches::IList
+                @match stmt begin
+                  SCode.ALG_ASSIGN(assignComponent, value, _, info)  => begin
+                    Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(assignComponent, value), NONE(), info)
+                  end
+
+                  SCode.ALG_IF(boolExpr, trueBranch, branches, elseBranch, _, info)  => begin
+                      algs1 = ListUtil.map(trueBranch, statementToAlgorithmItem)
+                      conditions = ListUtil.map(branches, Util.tuple21)
+                      stmtsList = ListUtil.map(branches, Util.tuple22)
+                      algsLst = ListUtil.mapList(stmtsList, statementToAlgorithmItem)
+                      abranches = ListUtil.threadTuple(conditions, algsLst)
+                      algs2 = ListUtil.map(elseBranch, statementToAlgorithmItem)
+                    Absyn.ALGORITHMITEM(Absyn.ALG_IF(boolExpr, algs1, abranches, algs2), NONE(), info)
+                  end
+
+                  SCode.ALG_FOR(iterator, range, body, _, info)  => begin
+                      algs1 = ListUtil.map(body, statementToAlgorithmItem)
+                    Absyn.ALGORITHMITEM(Absyn.ALG_FOR(list(Absyn.ITERATOR(iterator, NONE(), range)), algs1), NONE(), info)
+                  end
+
+                  SCode.ALG_PARFOR(iterator, range, body, _, info)  => begin
+                      algs1 = ListUtil.map(body, statementToAlgorithmItem)
+                    Absyn.ALGORITHMITEM(Absyn.ALG_PARFOR(list(Absyn.ITERATOR(iterator, NONE(), range)), algs1), NONE(), info)
+                  end
+
+                  SCode.ALG_WHILE(boolExpr, body, _, info)  => begin
+                      algs1 = ListUtil.map(body, statementToAlgorithmItem)
+                    Absyn.ALGORITHMITEM(Absyn.ALG_WHILE(boolExpr, algs1), NONE(), info)
+                  end
+
+                  SCode.ALG_WHEN_A(branches, _, info)  => begin
+                      @match boolExpr <| conditions = ListUtil.map(branches, Util.tuple21)
+                      stmtsList = ListUtil.map(branches, Util.tuple22)
+                      @match algs1 <| algsLst = ListUtil.mapList(stmtsList, statementToAlgorithmItem)
+                      abranches = ListUtil.threadTuple(conditions, algsLst)
+                    Absyn.ALGORITHMITEM(Absyn.ALG_WHEN_A(boolExpr, algs1, abranches), NONE(), info)
+                  end
+
+                  SCode.ALG_ASSERT(__)  => begin
+                    Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("assert", list()), Absyn.FUNCTIONARGS(list(stmt.condition, stmt.message, stmt.level), list())), NONE(), stmt.info)
+                  end
+
+                  SCode.ALG_TERMINATE(__)  => begin
+                    Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("terminate", list()), Absyn.FUNCTIONARGS(list(stmt.message), list())), NONE(), stmt.info)
+                  end
+
+                  SCode.ALG_REINIT(__)  => begin
+                    Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("reinit", list()), Absyn.FUNCTIONARGS(list(stmt.cref, stmt.newValue), list())), NONE(), stmt.info)
+                  end
+
+                  SCode.ALG_NORETCALL(Absyn.CALL(function_ = functionCall, functionArgs = functionArgs), _, info)  => begin
+                    Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(functionCall, functionArgs), NONE(), info)
+                  end
+
+                  SCode.ALG_RETURN(_, info)  => begin
+                    Absyn.ALGORITHMITEM(Absyn.ALG_RETURN(), NONE(), info)
+                  end
+
+                  SCode.ALG_BREAK(_, info)  => begin
+                    Absyn.ALGORITHMITEM(Absyn.ALG_BREAK(), NONE(), info)
+                  end
+
+                  SCode.ALG_CONTINUE(_, info)  => begin
+                    Absyn.ALGORITHMITEM(Absyn.ALG_CONTINUE(), NONE(), info)
+                  end
+
+                  SCode.ALG_FAILURE(body, _, info)  => begin
+                      algs1 = ListUtil.map(body, statementToAlgorithmItem)
+                    Absyn.ALGORITHMITEM(Absyn.ALG_FAILURE(algs1), NONE(), info)
+                  end
+                end
+              end
+          algi
+        end
+
+        function equationFileInfo(eq::SCode.EEquation)::SourceInfo
+              local info::SourceInfo
+
+              info = begin
+                @match eq begin
+                  SCode.EQ_IF(info = info)  => begin
+                    info
+                  end
+
+                  SCode.EQ_EQUALS(info = info)  => begin
+                    info
+                  end
+
+                  SCode.EQ_PDE(info = info)  => begin
+                    info
+                  end
+
+                  SCode.EQ_CONNECT(info = info)  => begin
+                    info
+                  end
+
+                  SCode.EQ_FOR(info = info)  => begin
+                    info
+                  end
+
+                  SCode.EQ_WHEN(info = info)  => begin
+                    info
+                  end
+
+                  SCode.EQ_ASSERT(info = info)  => begin
+                    info
+                  end
+
+                  SCode.EQ_TERMINATE(info = info)  => begin
+                    info
+                  end
+
+                  SCode.EQ_REINIT(info = info)  => begin
+                    info
+                  end
+
+                  SCode.EQ_NORETCALL(info = info)  => begin
+                    info
+                  end
+                end
+              end
+          info
+        end
+
+         #= Checks if a Mod is empty (or only an equality binding is present) =#
+        function emptyModOrEquality(mod::SCode.Mod)::Bool
+              local b::Bool
+
+              b = begin
+                @match mod begin
+                  SCode.NOMOD(__)  => begin
+                    true
+                  end
+
+                  SCode.MOD(subModLst =  nil())  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          b
+        end
+
+        function isComponentWithDirection(elt::SCode.Element, dir1::Absyn.Direction)::Bool
+              local b::Bool
+
+              b = begin
+                  local dir2::Absyn.Direction
+                @match (elt, dir1) begin
+                  (SCode.COMPONENT(attributes = SCode.ATTR(direction = dir2)), _)  => begin
+                    AbsynUtil.directionEqual(dir1, dir2)
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          b
+        end
+
+        function isComponent(elt::SCode.Element)::Bool
+              local b::Bool
+
+              b = begin
+                @match elt begin
+                  SCode.COMPONENT(__)  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          b
+        end
+
+        function isNotComponent(elt::SCode.Element)::Bool
+              local b::Bool
+
+              b = begin
+                @match elt begin
+                  SCode.COMPONENT(__)  => begin
+                    false
+                  end
+
+                  _  => begin
+                      true
+                  end
+                end
+              end
+          b
+        end
+
+        function isClassOrComponent(inElement::SCode.Element)::Bool
+              local outIsClassOrComponent::Bool
+
+              outIsClassOrComponent = begin
+                @match inElement begin
+                  SCode.CLASS(__)  => begin
+                    true
+                  end
+
+                  SCode.COMPONENT(__)  => begin
+                    true
+                  end
+                end
+              end
+          outIsClassOrComponent
+        end
+
+        function isClass(inElement::SCode.Element)::Bool
+              local outIsClass::Bool
+
+              outIsClass = begin
+                @match inElement begin
+                  SCode.CLASS(__)  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outIsClass
+        end
+
+         #= Calls the given function on the equation and all its subequations, and
+           updates the argument for each call. =#
+        ArgT = Any
+        function foldEEquations(inEquation::SCode.EEquation, inFunc::FoldFunc, inArg::ArgT)::ArgT
+              local outArg::ArgT
+
+              outArg = inFunc(inEquation, inArg)
+              outArg = begin
+                  local eql::IList
+                @match inEquation begin
+                  SCode.EQ_IF(__)  => begin
+                      outArg = ListUtil.foldList1(inEquation.thenBranch, foldEEquations, inFunc, outArg)
+                    ListUtil.fold1(inEquation.elseBranch, foldEEquations, inFunc, outArg)
+                  end
+
+                  SCode.EQ_FOR(__)  => begin
+                    ListUtil.fold1(inEquation.eEquationLst, foldEEquations, inFunc, outArg)
+                  end
+
+                  SCode.EQ_WHEN(__)  => begin
+                      outArg = ListUtil.fold1(inEquation.eEquationLst, foldEEquations, inFunc, outArg)
+                      for branch in inEquation.elseBranches
+                        (_, eql) = branch
+                        outArg = ListUtil.fold1(eql, foldEEquations, inFunc, outArg)
+                      end
+                    outArg
+                  end
+                end
+              end
+          outArg
+        end
+
+         #= Calls the given function on all expressions inside the equation, and updates
+           the argument for each call. =#
+        ArgT = Any
+        function foldEEquationsExps(inEquation::SCode.EEquation, inFunc::FoldFunc, inArg::ArgT)::ArgT
+              local outArg::ArgT = inArg
+
+              outArg = begin
+                  local exp::Absyn.Exp
+                  local eql::IList
+                @match inEquation begin
+                  SCode.EQ_IF(__)  => begin
+                      outArg = ListUtil.fold(inEquation.condition, inFunc, outArg)
+                      outArg = ListUtil.foldList1(inEquation.thenBranch, foldEEquationsExps, inFunc, outArg)
+                    ListUtil.fold1(inEquation.elseBranch, foldEEquationsExps, inFunc, outArg)
+                  end
+
+                  SCode.EQ_EQUALS(__)  => begin
+                      outArg = inFunc(inEquation.expLeft, outArg)
+                      outArg = inFunc(inEquation.expRight, outArg)
+                    outArg
+                  end
+
+                  SCode.EQ_PDE(__)  => begin
+                      outArg = inFunc(inEquation.expLeft, outArg)
+                      outArg = inFunc(inEquation.expRight, outArg)
+                    outArg
+                  end
+
+                  SCode.EQ_CONNECT(__)  => begin
+                      outArg = inFunc(Absyn.CREF(inEquation.crefLeft), outArg)
+                      outArg = inFunc(Absyn.CREF(inEquation.crefRight), outArg)
+                    outArg
+                  end
+
+                  SCode.EQ_FOR(__)  => begin
+                      if isSome(inEquation.range)
+                        @match SOME(exp) = inEquation.range
+                        outArg = inFunc(exp, outArg)
+                      end
+                    ListUtil.fold1(inEquation.eEquationLst, foldEEquationsExps, inFunc, outArg)
+                  end
+
+                  SCode.EQ_WHEN(__)  => begin
+                      outArg = ListUtil.fold1(inEquation.eEquationLst, foldEEquationsExps, inFunc, outArg)
+                      for branch in inEquation.elseBranches
+                        (exp, eql) = branch
+                        outArg = inFunc(exp, outArg)
+                        outArg = ListUtil.fold1(eql, foldEEquationsExps, inFunc, outArg)
+                      end
+                    outArg
+                  end
+
+                  SCode.EQ_ASSERT(__)  => begin
+                      outArg = inFunc(inEquation.condition, outArg)
+                      outArg = inFunc(inEquation.message, outArg)
+                      outArg = inFunc(inEquation.level, outArg)
+                    outArg
+                  end
+
+                  SCode.EQ_TERMINATE(__)  => begin
+                    inFunc(inEquation.message, outArg)
+                  end
+
+                  SCode.EQ_REINIT(__)  => begin
+                      outArg = inFunc(inEquation.cref, outArg)
+                      outArg = inFunc(inEquation.expReinit, outArg)
+                    outArg
+                  end
+
+                  SCode.EQ_NORETCALL(__)  => begin
+                    inFunc(inEquation.exp, outArg)
+                  end
+                end
+              end
+          outArg
+        end
+
+         #= Calls the given function on all expressions inside the statement, and updates
+           the argument for each call. =#
+        ArgT = Any
+        function foldStatementsExps(inStatement::SCode.Statement, inFunc::FoldFunc, inArg::ArgT)::ArgT
+              local outArg::ArgT = inArg
+
+              outArg = begin
+                  local exp::Absyn.Exp
+                  local stmts::IList
+                @match inStatement begin
+                  SCode.ALG_ASSIGN(__)  => begin
+                      outArg = inFunc(inStatement.assignComponent, outArg)
+                      outArg = inFunc(inStatement.value, outArg)
+                    outArg
+                  end
+
+                  SCode.ALG_IF(__)  => begin
+                      outArg = inFunc(inStatement.boolExpr, outArg)
+                      outArg = ListUtil.fold1(inStatement.trueBranch, foldStatementsExps, inFunc, outArg)
+                      for branch in inStatement.elseIfBranch
+                        (exp, stmts) = branch
+                        outArg = inFunc(exp, outArg)
+                        outArg = ListUtil.fold1(stmts, foldStatementsExps, inFunc, outArg)
+                      end
+                    outArg
+                  end
+
+                  SCode.ALG_FOR(__)  => begin
+                      if isSome(inStatement.range)
+                        @match SOME(exp) = inStatement.range
+                        outArg = inFunc(exp, outArg)
+                      end
+                    ListUtil.fold1(inStatement.forBody, foldStatementsExps, inFunc, outArg)
+                  end
+
+                  SCode.ALG_PARFOR(__)  => begin
+                      if isSome(inStatement.range)
+                        @match SOME(exp) = inStatement.range
+                        outArg = inFunc(exp, outArg)
+                      end
+                    ListUtil.fold1(inStatement.parforBody, foldStatementsExps, inFunc, outArg)
+                  end
+
+                  SCode.ALG_WHILE(__)  => begin
+                      outArg = inFunc(inStatement.boolExpr, outArg)
+                    ListUtil.fold1(inStatement.whileBody, foldStatementsExps, inFunc, outArg)
+                  end
+
+                  SCode.ALG_WHEN_A(__)  => begin
+                      for branch in inStatement.branches
+                        (exp, stmts) = branch
+                        outArg = inFunc(exp, outArg)
+                        outArg = ListUtil.fold1(stmts, foldStatementsExps, inFunc, outArg)
+                      end
+                    outArg
+                  end
+
+                  SCode.ALG_ASSERT(__)  => begin
+                      outArg = inFunc(inStatement.condition, outArg)
+                      outArg = inFunc(inStatement.message, outArg)
+                      outArg = inFunc(inStatement.level, outArg)
+                    outArg
+                  end
+
+                  SCode.ALG_TERMINATE(__)  => begin
+                    inFunc(inStatement.message, outArg)
+                  end
+
+                  SCode.ALG_REINIT(__)  => begin
+                      outArg = inFunc(inStatement.cref, outArg)
+                    inFunc(inStatement.newValue, outArg)
+                  end
+
+                  SCode.ALG_NORETCALL(__)  => begin
+                    inFunc(inStatement.exp, outArg)
+                  end
+
+                  SCode.ALG_FAILURE(__)  => begin
+                    ListUtil.fold1(inStatement.stmts, foldStatementsExps, inFunc, outArg)
+                  end
+
+                  SCode.ALG_TRY(__)  => begin
+                      outArg = ListUtil.fold1(inStatement.body, foldStatementsExps, inFunc, outArg)
+                    ListUtil.fold1(inStatement.elseBody, foldStatementsExps, inFunc, outArg)
+                  end
+
+                  SCode.ALG_RETURN(__)  => begin
+                    outArg
+                  end
+
+                  SCode.ALG_BREAK(__)  => begin
+                    outArg
+                  end
+
+                  SCode.ALG_CONTINUE(__)  => begin
+                    outArg
+                  end
+                end
+              end
+               #=  No else case, to make this function break if a new statement is added to SCode.
+               =#
+          outArg
+        end
+
+         #= Traverses a list of SCode.EEquations, calling traverseEEquations on each SCode.EEquation
+          in the list. =#
+        function traverseEEquationsList(inEEquations::IList, inTuple::Tuple)::Tuple{IList, Tuple}
+              local outTuple::Tuple
+              local outEEquations::IList
+
+              (outEEquations, outTuple) = ListUtil.mapFold(inEEquations, traverseEEquations, inTuple)
+          (outEEquations, outTuple)
+        end
+
+         #= Traverses an SCode.EEquation. For each SCode.EEquation it finds it calls the given
+          function with the SCode.EEquation and an extra argument which is passed along. =#
+        function traverseEEquations(inEEquation::SCode.EEquation, inTuple::Tuple)::Tuple{SCode.EEquation, Tuple}
+              local outTuple::Tuple
+              local outEEquation::SCode.EEquation
+
+              local traverser::TraverseFunc
+              local arg::Argument
+              local eq::SCode.EEquation
+
+              (traverser, arg) = inTuple
+              (eq, arg) = traverser((inEEquation, arg))
+              (outEEquation, outTuple) = traverseEEquations2(eq, (traverser, arg))
+          (outEEquation, outTuple)
+        end
+
+         #= Helper function to traverseEEquations, does the actual traversing. =#
+        function traverseEEquations2(inEEquation::SCode.EEquation, inTuple::Tuple)::Tuple{SCode.EEquation, Tuple}
+              local outTuple::Tuple
+              local outEEquation::SCode.EEquation
+
+              (outEEquation, outTuple) = begin
+                  local tup::Tuple
+                  local e1::Absyn.Exp
+                  local oe1::Option
+                  local expl1::IList
+                  local then_branch::IList
+                  local else_branch::IList
+                  local eql::IList
+                  local else_when::IList
+                  local comment::SCode.Comment
+                  local info::SourceInfo
+                  local index::SCode.Ident
+                @match (inEEquation, inTuple) begin
+                  (SCode.EQ_IF(expl1, then_branch, else_branch, comment, info), tup)  => begin
+                      (then_branch, tup) = ListUtil.mapFold(then_branch, traverseEEquationsList, tup)
+                      (else_branch, tup) = traverseEEquationsList(else_branch, tup)
+                    (SCode.EQ_IF(expl1, then_branch, else_branch, comment, info), tup)
+                  end
+
+                  (SCode.EQ_FOR(index, oe1, eql, comment, info), tup)  => begin
+                      (eql, tup) = traverseEEquationsList(eql, tup)
+                    (SCode.EQ_FOR(index, oe1, eql, comment, info), tup)
+                  end
+
+                  (SCode.EQ_WHEN(e1, eql, else_when, comment, info), tup)  => begin
+                      (eql, tup) = traverseEEquationsList(eql, tup)
+                      (else_when, tup) = ListUtil.mapFold(else_when, traverseElseWhenEEquations, tup)
+                    (SCode.EQ_WHEN(e1, eql, else_when, comment, info), tup)
+                  end
+
+                  _  => begin
+                      (inEEquation, inTuple)
+                  end
+                end
+              end
+          (outEEquation, outTuple)
+        end
+
+         #= Traverses all SCode.EEquations in an else when branch, calling the given function
+          on each SCode.EEquation. =#
+        function traverseElseWhenEEquations(inElseWhen::Tuple, inTuple::Tuple)::Tuple{Tuple, Tuple}
+              local outTuple::Tuple
+              local outElseWhen::Tuple
+
+              local exp::Absyn.Exp
+              local eql::IList
+
+              (exp, eql) = inElseWhen
+              (eql, outTuple) = traverseEEquationsList(eql, inTuple)
+              outElseWhen = (exp, eql)
+          (outElseWhen, outTuple)
+        end
+
+         #= Traverses a list of SCode.EEquations, calling the given function on each Absyn.Exp
+          it encounters. =#
+        function traverseEEquationListExps(inEEquations::IList, traverser::TraverseFunc, inArg::Argument)::Tuple{IList, Argument}
+              local outArg::Argument
+              local outEEquations::IList
+
+              (outEEquations, outArg) = ListUtil.map1Fold(inEEquations, traverseEEquationExps, traverser, inArg)
+          (outEEquations, outArg)
+        end
+
+         #= Traverses an SCode.EEquation, calling the given function on each Absyn.Exp it
+          encounters. This funcion is intended to be used together with
+          traverseEEquations, and does NOT descend into sub-EEquations. =#
+        function traverseEEquationExps(inEEquation::SCode.EEquation, inFunc::TraverseFunc, inArg::Argument)::Tuple{SCode.EEquation, Argument}
+              local outArg::Argument
+              local outEEquation::SCode.EEquation
+
+              (outEEquation, outArg) = begin
+                  local traverser::TraverseFunc
+                  local arg::Argument
+                  local tup::Tuple
+                  local e1::Absyn.Exp
+                  local e2::Absyn.Exp
+                  local e3::Absyn.Exp
+                  local expl1::IList
+                  local then_branch::IList
+                  local else_branch::IList
+                  local eql::IList
+                  local else_when::IList
+                  local comment::SCode.Comment
+                  local info::SourceInfo
+                  local cr1::Absyn.ComponentRef
+                  local cr2::Absyn.ComponentRef
+                  local domain::Absyn.ComponentRef
+                  local index::SCode.Ident
+                @match (inEEquation, inFunc, inArg) begin
+                  (SCode.EQ_IF(expl1, then_branch, else_branch, comment, info), traverser, arg)  => begin
+                      (expl1, arg) = AbsynUtil.traverseExpList(expl1, traverser, arg)
+                    (SCode.EQ_IF(expl1, then_branch, else_branch, comment, info), arg)
+                  end
+
+                  (SCode.EQ_EQUALS(e1, e2, comment, info), traverser, arg)  => begin
+                      (e1, arg) = traverser(e1, arg)
+                      (e2, arg) = traverser(e2, arg)
+                    (SCode.EQ_EQUALS(e1, e2, comment, info), arg)
+                  end
+
+                  (SCode.EQ_PDE(e1, e2, domain, comment, info), traverser, arg)  => begin
+                      (e1, arg) = traverser(e1, arg)
+                      (e2, arg) = traverser(e2, arg)
+                    (SCode.EQ_PDE(e1, e2, domain, comment, info), arg)
+                  end
+
+                  (SCode.EQ_CONNECT(cr1, cr2, comment, info), _, _)  => begin
+                      (cr1, arg) = traverseComponentRefExps(cr1, inFunc, inArg)
+                      (cr2, arg) = traverseComponentRefExps(cr2, inFunc, arg)
+                    (SCode.EQ_CONNECT(cr1, cr2, comment, info), arg)
+                  end
+
+                  (SCode.EQ_FOR(index, SOME(e1), eql, comment, info), traverser, arg)  => begin
+                      (e1, arg) = traverser(e1, arg)
+                    (SCode.EQ_FOR(index, SOME(e1), eql, comment, info), arg)
+                  end
+
+                  (SCode.EQ_WHEN(e1, eql, else_when, comment, info), traverser, arg)  => begin
+                      (e1, arg) = traverser(e1, arg)
+                      (else_when, arg) = ListUtil.map1Fold(else_when, traverseElseWhenExps, traverser, arg)
+                    (SCode.EQ_WHEN(e1, eql, else_when, comment, info), arg)
+                  end
+
+                  (SCode.EQ_ASSERT(e1, e2, e3, comment, info), traverser, arg)  => begin
+                      (e1, arg) = traverser(e1, arg)
+                      (e2, arg) = traverser(e2, arg)
+                      (e3, arg) = traverser(e3, arg)
+                    (SCode.EQ_ASSERT(e1, e2, e3, comment, info), arg)
+                  end
+
+                  (SCode.EQ_TERMINATE(e1, comment, info), traverser, arg)  => begin
+                      (e1, arg) = traverser(e1, arg)
+                    (SCode.EQ_TERMINATE(e1, comment, info), arg)
+                  end
+
+                  (SCode.EQ_REINIT(e1, e2, comment, info), traverser, _)  => begin
+                      (e1, arg) = traverser(e1, inArg)
+                      (e2, arg) = traverser(e2, arg)
+                    (SCode.EQ_REINIT(e1, e2, comment, info), arg)
+                  end
+
+                  (SCode.EQ_NORETCALL(e1, comment, info), traverser, arg)  => begin
+                      (e1, arg) = traverser(e1, arg)
+                    (SCode.EQ_NORETCALL(e1, comment, info), arg)
+                  end
+
+                  _  => begin
+                      (inEEquation, inArg)
+                  end
+                end
+              end
+          (outEEquation, outArg)
+        end
+
+         #= Traverses the subscripts of a component reference and calls the given
+          function on the subscript expressions. =#
+        function traverseComponentRefExps(inCref::Absyn.ComponentRef, inFunc::TraverseFunc, inArg::Argument)::Tuple{Absyn.ComponentRef, Argument}
+              local outArg::Argument
+              local outCref::Absyn.ComponentRef
+
+              (outCref, outArg) = begin
+                  local name::Absyn.Ident
+                  local subs::IList
+                  local cr::Absyn.ComponentRef
+                  local arg::Argument
+                @match (inCref, inFunc, inArg) begin
+                  (Absyn.CREF_FULLYQUALIFIED(componentRef = cr), _, _)  => begin
+                      (cr, arg) = traverseComponentRefExps(cr, inFunc, inArg)
+                    (AbsynUtil.crefMakeFullyQualified(cr), arg)
+                  end
+
+                  (Absyn.CREF_QUAL(name = name, subscripts = subs, componentRef = cr), _, _)  => begin
+                      (cr, arg) = traverseComponentRefExps(cr, inFunc, inArg)
+                      (subs, arg) = ListUtil.map1Fold(subs, traverseSubscriptExps, inFunc, arg)
+                    (Absyn.CREF_QUAL(name, subs, cr), arg)
+                  end
+
+                  (Absyn.CREF_IDENT(name = name, subscripts = subs), _, _)  => begin
+                      (subs, arg) = ListUtil.map1Fold(subs, traverseSubscriptExps, inFunc, inArg)
+                    (Absyn.CREF_IDENT(name, subs), arg)
+                  end
+
+                  (Absyn.WILD(__), _, _)  => begin
+                    (inCref, inArg)
+                  end
+                end
+              end
+          (outCref, outArg)
+        end
+
+         #= Calls the given function on the subscript expression. =#
+        function traverseSubscriptExps(inSubscript::Absyn.Subscript, inFunc::TraverseFunc, inArg::Argument)::Tuple{Absyn.Subscript, Argument}
+              local outArg::Argument
+              local outSubscript::Absyn.Subscript
+
+              (outSubscript, outArg) = begin
+                  local sub_exp::Absyn.Exp
+                  local traverser::TraverseFunc
+                  local arg::Argument
+                @match (inSubscript, inFunc, inArg) begin
+                  (Absyn.SUBSCRIPT(subscript = sub_exp), traverser, arg)  => begin
+                      (sub_exp, arg) = traverser(sub_exp, arg)
+                    (Absyn.SUBSCRIPT(sub_exp), arg)
+                  end
+
+                  (Absyn.NOSUB(__), _, _)  => begin
+                    (inSubscript, inArg)
+                  end
+                end
+              end
+          (outSubscript, outArg)
+        end
+
+         #= Traverses the expressions in an else when branch, and calls the given
+          function on the expressions. =#
+        function traverseElseWhenExps(inElseWhen::Tuple, traverser::TraverseFunc, inArg::Argument)::Tuple{Tuple, Argument}
+              local outArg::Argument
+              local outElseWhen::Tuple
+
+              local exp::Absyn.Exp
+              local eql::IList
+
+              (exp, eql) = inElseWhen
+              (exp, outArg) = traverser(exp, inArg)
+              outElseWhen = (exp, eql)
+          (outElseWhen, outArg)
+        end
+
+         #= Calls the given function on the value expression associated with a named
+          function argument. =#
+        function traverseNamedArgExps(inArg::Absyn.NamedArg, inTuple::Tuple)::Tuple{Absyn.NamedArg, Tuple}
+              local outTuple::Tuple
+              local outArg::Absyn.NamedArg
+
+              local traverser::TraverseFunc
+              local arg::Argument
+              local name::Absyn.Ident
+              local value::Absyn.Exp
+
+              (traverser, arg) = inTuple
+              @match Absyn.NAMEDARG(argName = name, argValue = value) = inArg
+              (value, arg) = traverser(value, arg)
+              outArg = Absyn.NAMEDARG(name, value)
+              outTuple = (traverser, arg)
+          (outArg, outTuple)
+        end
+
+         #= Calls the given function on the expression associated with a for iterator. =#
+        function traverseForIteratorExps(inIterator::Absyn.ForIterator, inFunc::TraverseFunc, inArg::Argument)::Tuple{Absyn.ForIterator, Argument}
+              local outArg::Argument
+              local outIterator::Absyn.ForIterator
+
+              (outIterator, outArg) = begin
+                  local traverser::TraverseFunc
+                  local arg::Argument
+                  local ident::Absyn.Ident
+                  local guardExp::Absyn.Exp
+                  local range::Absyn.Exp
+                @match (inIterator, inFunc, inArg) begin
+                  (Absyn.ITERATOR(ident, NONE(), NONE()), _, arg)  => begin
+                    (Absyn.ITERATOR(ident, NONE(), NONE()), arg)
+                  end
+
+                  (Absyn.ITERATOR(ident, NONE(), SOME(range)), traverser, arg)  => begin
+                      (range, arg) = traverser(range, arg)
+                    (Absyn.ITERATOR(ident, NONE(), SOME(range)), arg)
+                  end
+
+                  (Absyn.ITERATOR(ident, SOME(guardExp), SOME(range)), traverser, arg)  => begin
+                      (guardExp, arg) = traverser(guardExp, arg)
+                      (range, arg) = traverser(range, arg)
+                    (Absyn.ITERATOR(ident, SOME(guardExp), SOME(range)), arg)
+                  end
+
+                  (Absyn.ITERATOR(ident, SOME(guardExp), NONE()), traverser, arg)  => begin
+                      (guardExp, arg) = traverser(guardExp, arg)
+                    (Absyn.ITERATOR(ident, SOME(guardExp), NONE()), arg)
+                  end
+                end
+              end
+          (outIterator, outArg)
+        end
+
+         #= Calls traverseStatement on each statement in the given list. =#
+        function traverseStatementsList(inStatements::IList, inTuple::Tuple)::Tuple{IList, Tuple}
+              local outTuple::Tuple
+              local outStatements::IList
+
+              (outStatements, outTuple) = ListUtil.mapFold(inStatements, traverseStatements, inTuple)
+          (outStatements, outTuple)
+        end
+
+         #= Traverses all statements in the given statement in a top-down approach where
+          the given function is applied to each statement found, beginning with the given
+          statement. =#
+        function traverseStatements(inStatement::SCode.Statement, inTuple::Tuple)::Tuple{SCode.Statement, Tuple}
+              local outTuple::Tuple
+              local outStatement::SCode.Statement
+
+              local traverser::TraverseFunc
+              local arg::Argument
+              local stmt::SCode.Statement
+
+              (traverser, arg) = inTuple
+              (stmt, arg) = traverser((inStatement, arg))
+              (outStatement, outTuple) = traverseStatements2(stmt, (traverser, arg))
+          (outStatement, outTuple)
+        end
+
+         #= Helper function to traverseStatements. Goes through each statement contained
+          in the given statement and calls traverseStatements on them. =#
+        function traverseStatements2(inStatement::SCode.Statement, inTuple::Tuple)::Tuple{SCode.Statement, Tuple}
+              local outTuple::Tuple
+              local outStatement::SCode.Statement
+
+              (outStatement, outTuple) = begin
+                  local traverser::TraverseFunc
+                  local arg::Argument
+                  local tup::Tuple
+                  local e::Absyn.Exp
+                  local stmts1::IList
+                  local stmts2::IList
+                  local branches::IList
+                  local comment::SCode.Comment
+                  local info::SourceInfo
+                  local iter::String
+                  local range::Option
+                @match (inStatement, inTuple) begin
+                  (SCode.ALG_IF(e, stmts1, branches, stmts2, comment, info), tup)  => begin
+                      (stmts1, tup) = traverseStatementsList(stmts1, tup)
+                      (branches, tup) = ListUtil.mapFold(branches, traverseBranchStatements, tup)
+                      (stmts2, tup) = traverseStatementsList(stmts2, tup)
+                    (SCode.ALG_IF(e, stmts1, branches, stmts2, comment, info), tup)
+                  end
+
+                  (SCode.ALG_FOR(iter, range, stmts1, comment, info), tup)  => begin
+                      (stmts1, tup) = traverseStatementsList(stmts1, tup)
+                    (SCode.ALG_FOR(iter, range, stmts1, comment, info), tup)
+                  end
+
+                  (SCode.ALG_PARFOR(iter, range, stmts1, comment, info), tup)  => begin
+                      (stmts1, tup) = traverseStatementsList(stmts1, tup)
+                    (SCode.ALG_PARFOR(iter, range, stmts1, comment, info), tup)
+                  end
+
+                  (SCode.ALG_WHILE(e, stmts1, comment, info), tup)  => begin
+                      (stmts1, tup) = traverseStatementsList(stmts1, tup)
+                    (SCode.ALG_WHILE(e, stmts1, comment, info), tup)
+                  end
+
+                  (SCode.ALG_WHEN_A(branches, comment, info), tup)  => begin
+                      (branches, tup) = ListUtil.mapFold(branches, traverseBranchStatements, tup)
+                    (SCode.ALG_WHEN_A(branches, comment, info), tup)
+                  end
+
+                  (SCode.ALG_FAILURE(stmts1, comment, info), tup)  => begin
+                      (stmts1, tup) = traverseStatementsList(stmts1, tup)
+                    (SCode.ALG_FAILURE(stmts1, comment, info), tup)
+                  end
+
+                  _  => begin
+                      (inStatement, inTuple)
+                  end
+                end
+              end
+          (outStatement, outTuple)
+        end
+
+         #= Helper function to traverseStatements2. Calls traverseStatement each
+          statement in a given branch. =#
+        function traverseBranchStatements(inBranch::Tuple, inTuple::Tuple)::Tuple{Tuple, Tuple}
+              local outTuple::Tuple
+              local outBranch::Tuple
+
+              local exp::Absyn.Exp
+              local stmts::IList
+
+              (exp, stmts) = inBranch
+              (stmts, outTuple) = traverseStatementsList(stmts, inTuple)
+              outBranch = (exp, stmts)
+          (outBranch, outTuple)
+        end
+
+         #= Traverses a list of statements and calls the given function on each
+          expression found. =#
+        function traverseStatementListExps(inStatements::IList, inFunc::TraverseFunc, inArg::Argument)::Tuple{IList, Argument}
+              local outArg::Argument
+              local outStatements::IList
+
+              (outStatements, outArg) = ListUtil.map1Fold(inStatements, traverseStatementExps, inFunc, inArg)
+          (outStatements, outArg)
+        end
+
+         #= Applies the given function to each expression in the given statement. This
+          function is intended to be used together with traverseStatements, and does NOT
+          descend into sub-statements. =#
+        function traverseStatementExps(inStatement::SCode.Statement, inFunc::TraverseFunc, inArg::Argument)::Tuple{SCode.Statement, Argument}
+              local outArg::Argument
+              local outStatement::SCode.Statement
+
+              (outStatement, outArg) = begin
+                  local traverser::TraverseFunc
+                  local arg::Argument
+                  local tup::Tuple
+                  local iterator::String
+                  local e1::Absyn.Exp
+                  local e2::Absyn.Exp
+                  local e3::Absyn.Exp
+                  local stmts1::IList
+                  local stmts2::IList
+                  local branches::IList
+                  local comment::SCode.Comment
+                  local info::SourceInfo
+                  local cref::Absyn.ComponentRef
+                @match (inStatement, inFunc, inArg) begin
+                  (SCode.ALG_ASSIGN(e1, e2, comment, info), traverser, arg)  => begin
+                      (e1, arg) = traverser(e1, arg)
+                      (e2, arg) = traverser(e2, arg)
+                    (SCode.ALG_ASSIGN(e1, e2, comment, info), arg)
+                  end
+
+                  (SCode.ALG_IF(e1, stmts1, branches, stmts2, comment, info), traverser, arg)  => begin
+                      (e1, arg) = traverser(e1, arg)
+                      (branches, arg) = ListUtil.map1Fold(branches, traverseBranchExps, traverser, arg)
+                    (SCode.ALG_IF(e1, stmts1, branches, stmts2, comment, info), arg)
+                  end
+
+                  (SCode.ALG_FOR(iterator, SOME(e1), stmts1, comment, info), traverser, arg)  => begin
+                      (e1, arg) = traverser(e1, arg)
+                    (SCode.ALG_FOR(iterator, SOME(e1), stmts1, comment, info), arg)
+                  end
+
+                  (SCode.ALG_PARFOR(iterator, SOME(e1), stmts1, comment, info), traverser, arg)  => begin
+                      (e1, arg) = traverser(e1, arg)
+                    (SCode.ALG_PARFOR(iterator, SOME(e1), stmts1, comment, info), arg)
+                  end
+
+                  (SCode.ALG_WHILE(e1, stmts1, comment, info), traverser, arg)  => begin
+                      (e1, arg) = traverser(e1, arg)
+                    (SCode.ALG_WHILE(e1, stmts1, comment, info), arg)
+                  end
+
+                  (SCode.ALG_WHEN_A(branches, comment, info), traverser, arg)  => begin
+                      (branches, arg) = ListUtil.map1Fold(branches, traverseBranchExps, traverser, arg)
+                    (SCode.ALG_WHEN_A(branches, comment, info), arg)
+                  end
+
+                  (SCode.ALG_ASSERT(__), traverser, arg)  => begin
+                      (e1, arg) = traverser(inStatement.condition, arg)
+                      (e2, arg) = traverser(inStatement.message, arg)
+                      (e3, arg) = traverser(inStatement.level, arg)
+                    (SCode.ALG_ASSERT(e1, e2, e3, inStatement.comment, inStatement.info), arg)
+                  end
+
+                  (SCode.ALG_TERMINATE(__), traverser, arg)  => begin
+                      (e1, arg) = traverser(inStatement.message, arg)
+                    (SCode.ALG_TERMINATE(e1, inStatement.comment, inStatement.info), arg)
+                  end
+
+                  (SCode.ALG_REINIT(__), traverser, arg)  => begin
+                      (e1, arg) = traverser(inStatement.cref, arg)
+                      (e2, arg) = traverser(inStatement.newValue, arg)
+                    (SCode.ALG_REINIT(e1, e2, inStatement.comment, inStatement.info), arg)
+                  end
+
+                  (SCode.ALG_NORETCALL(e1, comment, info), traverser, arg)  => begin
+                      (e1, arg) = traverser(e1, arg)
+                    (SCode.ALG_NORETCALL(e1, comment, info), arg)
+                  end
+
+                  _  => begin
+                      (inStatement, inArg)
+                  end
+                end
+              end
+          (outStatement, outArg)
+        end
+
+         #= Calls the given function on each expression found in an if or when branch. =#
+        function traverseBranchExps(inBranch::Tuple, traverser::TraverseFunc, inArg::Argument)::Tuple{Tuple, Argument}
+              local outArg::Argument
+              local outBranch::Tuple
+
+              local arg::Argument
+              local exp::Absyn.Exp
+              local stmts::IList
+
+              (exp, stmts) = inBranch
+              (exp, outArg) = traverser(exp, inArg)
+              outBranch = (exp, stmts)
+          (outBranch, outArg)
+        end
+
+        function elementIsClass(el::SCode.Element)::Bool
+              local b::Bool
+
+              b = begin
+                @match el begin
+                  SCode.CLASS(__)  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          b
+        end
+
+        function elementIsImport(inElement::SCode.Element)::Bool
+              local outIsImport::Bool
+
+              outIsImport = begin
+                @match inElement begin
+                  SCode.IMPORT(__)  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outIsImport
+        end
+
+        function elementIsPublicImport(el::SCode.Element)::Bool
+              local b::Bool
+
+              b = begin
+                @match el begin
+                  SCode.IMPORT(visibility = SCode.PUBLIC(__))  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          b
+        end
+
+        function elementIsProtectedImport(el::SCode.Element)::Bool
+              local b::Bool
+
+              b = begin
+                @match el begin
+                  SCode.IMPORT(visibility = SCode.PROTECTED(__))  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          b
+        end
+
+        function getElementClass(el::SCode.Element)::SCode.Element
+              local cl::SCode.Element
+
+              cl = begin
+                @match el begin
+                  SCode.CLASS(__)  => begin
+                    el
+                  end
+
+                  _  => begin
+                      fail()
+                  end
+                end
+              end
+          cl
+        end
+
+         knownExternalCFunctions = list("sin", "cos", "tan", "asin", "acos", "atan", "atan2", "sinh", "cosh", "tanh", "exp", "log", "log10", "sqrt")::IList
+
+        function isBuiltinFunction(cl::SCode.Element, inVars::IList, outVars::IList)::String
+              local name::String
+
+              name = begin
+                  local outVar1::String
+                  local outVar2::String
+                  local argsStr::IList
+                  local args::IList
+                @match (cl, inVars, outVars) begin
+                  (SCode.CLASS(name = name, restriction = SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(__)), classDef = SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(funcName = NONE(), lang = SOME("builtin"))))), _, _)  => begin
+                    name
+                  end
+
+                  (SCode.CLASS(restriction = SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(__)), classDef = SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(funcName = SOME(name), lang = SOME("builtin"))))), _, _)  => begin
+                    name
+                  end
+
+                  (SCode.CLASS(name = name, restriction = SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION(__)), classDef = SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(funcName = NONE(), lang = SOME("builtin"))))), _, _)  => begin
+                    name
+                  end
+
+                  (SCode.CLASS(restriction = SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION(__)), classDef = SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(funcName = SOME(name), lang = SOME("builtin"))))), _, _)  => begin
+                    name
+                  end
+
+                  (SCode.CLASS(restriction = SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(__)), classDef = SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(funcName = SOME(name), lang = SOME("C"), output_ = SOME(Absyn.CREF_IDENT(outVar2,  nil())), args = args)))), _, outVar1 <|  nil())  => begin
+                      @match true = listMember(name, knownExternalCFunctions)
+                      @match true = outVar2 == outVar1
+                      argsStr = ListUtil.mapMap(args, AbsynUtil.expCref, AbsynUtil.crefIdent)
+                      equality(argsStr, inVars)
+                    name
+                  end
+
+                  (SCode.CLASS(name = name, restriction = SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(__)), classDef = SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(funcName = NONE(), lang = SOME("C"))))), _, _)  => begin
+                      @match true = listMember(name, knownExternalCFunctions)
+                    name
+                  end
+                end
+              end
+          name
+        end
+
+         #= Extracts the SourceInfo from an SCode.EEquation. =#
+        function getEEquationInfo(inEEquation::SCode.EEquation)::SourceInfo
+              local outInfo::SourceInfo
+
+              outInfo = begin
+                  local info::SourceInfo
+                @match inEEquation begin
+                  SCode.EQ_IF(info = info)  => begin
+                    info
+                  end
+
+                  SCode.EQ_EQUALS(info = info)  => begin
+                    info
+                  end
+
+                  SCode.EQ_PDE(info = info)  => begin
+                    info
+                  end
+
+                  SCode.EQ_CONNECT(info = info)  => begin
+                    info
+                  end
+
+                  SCode.EQ_FOR(info = info)  => begin
+                    info
+                  end
+
+                  SCode.EQ_WHEN(info = info)  => begin
+                    info
+                  end
+
+                  SCode.EQ_ASSERT(info = info)  => begin
+                    info
+                  end
+
+                  SCode.EQ_TERMINATE(info = info)  => begin
+                    info
+                  end
+
+                  SCode.EQ_REINIT(info = info)  => begin
+                    info
+                  end
+
+                  SCode.EQ_NORETCALL(info = info)  => begin
+                    info
+                  end
+                end
+              end
+          outInfo
+        end
+
+         #= Extracts the SourceInfo from a Statement. =#
+        function getStatementInfo(inStatement::SCode.Statement)::SourceInfo
+              local outInfo::SourceInfo
+
+              outInfo = begin
+                @match inStatement begin
+                  SCode.ALG_ASSIGN(__)  => begin
+                    inStatement.info
+                  end
+
+                  SCode.ALG_IF(__)  => begin
+                    inStatement.info
+                  end
+
+                  SCode.ALG_FOR(__)  => begin
+                    inStatement.info
+                  end
+
+                  SCode.ALG_PARFOR(__)  => begin
+                    inStatement.info
+                  end
+
+                  SCode.ALG_WHILE(__)  => begin
+                    inStatement.info
+                  end
+
+                  SCode.ALG_WHEN_A(__)  => begin
+                    inStatement.info
+                  end
+
+                  SCode.ALG_ASSERT(__)  => begin
+                    inStatement.info
+                  end
+
+                  SCode.ALG_TERMINATE(__)  => begin
+                    inStatement.info
+                  end
+
+                  SCode.ALG_REINIT(__)  => begin
+                    inStatement.info
+                  end
+
+                  SCode.ALG_NORETCALL(__)  => begin
+                    inStatement.info
+                  end
+
+                  SCode.ALG_RETURN(__)  => begin
+                    inStatement.info
+                  end
+
+                  SCode.ALG_BREAK(__)  => begin
+                    inStatement.info
+                  end
+
+                  SCode.ALG_FAILURE(__)  => begin
+                    inStatement.info
+                  end
+
+                  SCode.ALG_TRY(__)  => begin
+                    inStatement.info
+                  end
+
+                  SCode.ALG_CONTINUE(__)  => begin
+                    inStatement.info
+                  end
+
+                  _  => begin
+                        Error.addInternalError("SCodeUtil.getStatementInfo failed", sourceInfo())
+                      AbsynUtil.dummyInfo
+                  end
+                end
+              end
+          outInfo
+        end
+
+         #= Adds a given element to a class definition. Only implemented for PARTS. =#
+        function addElementToClass(inElement::SCode.Element, inClassDef::SCode.Element)::SCode.Element
+              local outClassDef::SCode.Element
+
+              local cdef::SCode.ClassDef
+
+              @match SCode.CLASS(classDef = cdef) = inClassDef
+              cdef = addElementToCompositeClassDef(inElement, cdef)
+              outClassDef = setElementClassDefinition(cdef, inClassDef)
+          outClassDef
+        end
+
+         #= Adds a given element to a PARTS class definition. =#
+        function addElementToCompositeClassDef(inElement::SCode.Element, inClassDef::SCode.ClassDef)::SCode.ClassDef
+              local outClassDef::SCode.ClassDef
+
+              local el::IList
+              local nel::IList
+              local iel::IList
+              local nal::IList
+              local ial::IList
+              local nco::IList
+              local ed::Option
+              local clsattrs::IList
+
+              @match SCode.PARTS(el, nel, iel, nal, ial, nco, clsattrs, ed) = inClassDef
+              outClassDef = SCode.PARTS(inElement <| el, nel, iel, nal, ial, nco, clsattrs, ed)
+          outClassDef
+        end
+
+        function setElementClassDefinition(inClassDef::SCode.ClassDef, inElement::SCode.Element)::SCode.Element
+              local outElement::SCode.Element
+
+              local n::SCode.Ident
+              local pf::SCode.Prefixes
+              local pp::SCode.Partial
+              local ep::SCode.Encapsulated
+              local r::SCode.Restriction
+              local i::SourceInfo
+              local cmt::SCode.Comment
+
+              @match SCode.CLASS(n, pf, ep, pp, r, _, cmt, i) = inElement
+              outElement = SCode.CLASS(n, pf, ep, pp, r, inClassDef, cmt, i)
+          outElement
+        end
+
+         #= returns true for PUBLIC and false for PROTECTED =#
+        function visibilityBool(inVisibility::SCode.Visibility)::Bool
+              local bVisibility::Bool
+
+              bVisibility = begin
+                @match inVisibility begin
+                  SCode.PUBLIC(__)  => begin
+                    true
+                  end
+
+                  SCode.PROTECTED(__)  => begin
+                    false
+                  end
+                end
+              end
+          bVisibility
+        end
+
+         #= returns for PUBLIC true and for PROTECTED false =#
+        function boolVisibility(inBoolVisibility::Bool)::SCode.Visibility
+              local outVisibility::SCode.Visibility
+
+              outVisibility = begin
+                @match inBoolVisibility begin
+                  true  => begin
+                    SCode.PUBLIC()
+                  end
+
+                  false  => begin
+                    SCode.PROTECTED()
+                  end
+                end
+              end
+          outVisibility
+        end
+
+        function visibilityEqual(inVisibility1::SCode.Visibility, inVisibility2::SCode.Visibility)::Bool
+              local outEqual::Bool
+
+              outEqual = begin
+                @match (inVisibility1, inVisibility2) begin
+                  (SCode.PUBLIC(__), SCode.PUBLIC(__))  => begin
+                    true
+                  end
+
+                  (SCode.PROTECTED(__), SCode.PROTECTED(__))  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outEqual
+        end
+
+        function eachBool(inEach::SCode.Each)::Bool
+              local bEach::Bool
+
+              bEach = begin
+                @match inEach begin
+                  SCode.EACH(__)  => begin
+                    true
+                  end
+
+                  SCode.NOT_EACH(__)  => begin
+                    false
+                  end
+                end
+              end
+          bEach
+        end
+
+        function boolEach(inBoolEach::Bool)::SCode.Each
+              local outEach::SCode.Each
+
+              outEach = begin
+                @match inBoolEach begin
+                  true  => begin
+                    SCode.EACH()
+                  end
+
+                  false  => begin
+                    SCode.NOT_EACH()
+                  end
+                end
+              end
+          outEach
+        end
+
+        function prefixesRedeclare(inPrefixes::SCode.Prefixes)::SCode.Redeclare
+              local outRedeclare::SCode.Redeclare
+
+              @match SCode.PREFIXES(redeclarePrefix = outRedeclare) = inPrefixes
+          outRedeclare
+        end
+
+        function prefixesSetRedeclare(inPrefixes::SCode.Prefixes, inRedeclare::SCode.Redeclare)::SCode.Prefixes
+              local outPrefixes::SCode.Prefixes
+
+              local v::SCode.Visibility
+              local f::SCode.Final
+              local io::Absyn.InnerOuter
+              local rp::SCode.Replaceable
+
+              @match SCode.PREFIXES(v, _, f, io, rp) = inPrefixes
+              outPrefixes = SCode.PREFIXES(v, inRedeclare, f, io, rp)
+          outPrefixes
+        end
+
+        function prefixesSetReplaceable(inPrefixes::SCode.Prefixes, inReplaceable::SCode.Replaceable)::SCode.Prefixes
+              local outPrefixes::SCode.Prefixes
+
+              local v::SCode.Visibility
+              local f::SCode.Final
+              local io::Absyn.InnerOuter
+              local rd::SCode.Redeclare
+
+              @match SCode.PREFIXES(v, rd, f, io, _) = inPrefixes
+              outPrefixes = SCode.PREFIXES(v, rd, f, io, inReplaceable)
+          outPrefixes
+        end
+
+        function redeclareBool(inRedeclare::SCode.Redeclare)::Bool
+              local bRedeclare::Bool
+
+              bRedeclare = begin
+                @match inRedeclare begin
+                  SCode.REDECLARE(__)  => begin
+                    true
+                  end
+
+                  SCode.NOT_REDECLARE(__)  => begin
+                    false
+                  end
+                end
+              end
+          bRedeclare
+        end
+
+        function boolRedeclare(inBoolRedeclare::Bool)::SCode.Redeclare
+              local outRedeclare::SCode.Redeclare
+
+              outRedeclare = begin
+                @match inBoolRedeclare begin
+                  true  => begin
+                    SCode.REDECLARE()
+                  end
+
+                  false  => begin
+                    SCode.NOT_REDECLARE()
+                  end
+                end
+              end
+          outRedeclare
+        end
+
+        function replaceableBool(inReplaceable::SCode.Replaceable)::Bool
+              local bReplaceable::Bool
+
+              bReplaceable = begin
+                @match inReplaceable begin
+                  SCode.REPLACEABLE(__)  => begin
+                    true
+                  end
+
+                  SCode.NOT_REPLACEABLE(__)  => begin
+                    false
+                  end
+                end
+              end
+          bReplaceable
+        end
+
+        function replaceableOptConstraint(inReplaceable::SCode.Replaceable)::Option
+              local outOptConstrainClass::Option
+
+              outOptConstrainClass = begin
+                  local cc::Option
+                @match inReplaceable begin
+                  SCode.REPLACEABLE(cc)  => begin
+                    cc
+                  end
+
+                  SCode.NOT_REPLACEABLE(__)  => begin
+                    NONE()
+                  end
+                end
+              end
+          outOptConstrainClass
+        end
+
+        function boolReplaceable(inBoolReplaceable::Bool, inOptConstrainClass::Option)::SCode.Replaceable
+              local outReplaceable::SCode.Replaceable
+
+              outReplaceable = begin
+                @match (inBoolReplaceable, inOptConstrainClass) begin
+                  (true, _)  => begin
+                    SCode.REPLACEABLE(inOptConstrainClass)
+                  end
+
+                  (false, SOME(_))  => begin
+                      print("Ignoring constraint class because replaceable prefix is not present!\n")
+                    SCode.NOT_REPLACEABLE()
+                  end
+
+                  (false, _)  => begin
+                    SCode.NOT_REPLACEABLE()
+                  end
+                end
+              end
+          outReplaceable
+        end
+
+        function encapsulatedBool(inEncapsulated::SCode.Encapsulated)::Bool
+              local bEncapsulated::Bool
+
+              bEncapsulated = begin
+                @match inEncapsulated begin
+                  SCode.ENCAPSULATED(__)  => begin
+                    true
+                  end
+
+                  SCode.NOT_ENCAPSULATED(__)  => begin
+                    false
+                  end
+                end
+              end
+          bEncapsulated
+        end
+
+        function boolEncapsulated(inBoolEncapsulated::Bool)::SCode.Encapsulated
+              local outEncapsulated::SCode.Encapsulated
+
+              outEncapsulated = begin
+                @match inBoolEncapsulated begin
+                  true  => begin
+                    SCode.ENCAPSULATED()
+                  end
+
+                  false  => begin
+                    SCode.NOT_ENCAPSULATED()
+                  end
+                end
+              end
+          outEncapsulated
+        end
+
+        function partialBool(inPartial::SCode.Partial)::Bool
+              local bPartial::Bool
+
+              bPartial = begin
+                @match inPartial begin
+                  SCode.PARTIAL(__)  => begin
+                    true
+                  end
+
+                  SCode.NOT_PARTIAL(__)  => begin
+                    false
+                  end
+                end
+              end
+          bPartial
+        end
+
+        function boolPartial(inBoolPartial::Bool)::SCode.Partial
+              local outPartial::SCode.Partial
+
+              outPartial = begin
+                @match inBoolPartial begin
+                  true  => begin
+                    SCode.PARTIAL()
+                  end
+
+                  false  => begin
+                    SCode.NOT_PARTIAL()
+                  end
+                end
+              end
+          outPartial
+        end
+
+        function prefixesFinal(inPrefixes::SCode.Prefixes)::SCode.Final
+              local outFinal::SCode.Final
+
+              @match SCode.PREFIXES(finalPrefix = outFinal) = inPrefixes
+          outFinal
+        end
+
+        function finalBool(inFinal::SCode.Final)::Bool
+              local bFinal::Bool
+
+              bFinal = begin
+                @match inFinal begin
+                  SCode.FINAL(__)  => begin
+                    true
+                  end
+
+                  SCode.NOT_FINAL(__)  => begin
+                    false
+                  end
+                end
+              end
+          bFinal
+        end
+
+        function finalEqual(inFinal1::SCode.Final, inFinal2::SCode.Final)::Bool
+              local bFinal::Bool
+
+              bFinal = begin
+                @match (inFinal1, inFinal2) begin
+                  (SCode.FINAL(__), SCode.FINAL(__))  => begin
+                    true
+                  end
+
+                  (SCode.NOT_FINAL(__), SCode.NOT_FINAL(__))  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          bFinal
+        end
+
+        function boolFinal(inBoolFinal::Bool)::SCode.Final
+              local outFinal::SCode.Final
+
+              outFinal = begin
+                @match inBoolFinal begin
+                  true  => begin
+                    SCode.FINAL()
+                  end
+
+                  false  => begin
+                    SCode.NOT_FINAL()
+                  end
+                end
+              end
+          outFinal
+        end
+
+        function connectorTypeEqual(inConnectorType1::SCode.ConnectorType, inConnectorType2::SCode.ConnectorType)::Bool
+              local outEqual::Bool
+
+              outEqual = begin
+                @match (inConnectorType1, inConnectorType2) begin
+                  (SCode.POTENTIAL(__), SCode.POTENTIAL(__))  => begin
+                    true
+                  end
+
+                  (SCode.FLOW(__), SCode.FLOW(__))  => begin
+                    true
+                  end
+
+                  (SCode.STREAM(__), SCode.STREAM(__))  => begin
+                    true
+                  end
+                end
+              end
+          outEqual
+        end
+
+        function potentialBool(inConnectorType::SCode.ConnectorType)::Bool
+              local outPotential::Bool
+
+              outPotential = begin
+                @match inConnectorType begin
+                  SCode.POTENTIAL(__)  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outPotential
+        end
+
+        function flowBool(inConnectorType::SCode.ConnectorType)::Bool
+              local outFlow::Bool
+
+              outFlow = begin
+                @match inConnectorType begin
+                  SCode.FLOW(__)  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outFlow
+        end
+
+        function boolFlow(inBoolFlow::Bool)::SCode.ConnectorType
+              local outFlow::SCode.ConnectorType
+
+              outFlow = begin
+                @match inBoolFlow begin
+                  true  => begin
+                    SCode.FLOW()
+                  end
+
+                  _  => begin
+                      SCode.POTENTIAL()
+                  end
+                end
+              end
+          outFlow
+        end
+
+        function streamBool(inStream::SCode.ConnectorType)::Bool
+              local bStream::Bool
+
+              bStream = begin
+                @match inStream begin
+                  SCode.STREAM(__)  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          bStream
+        end
+
+        function boolStream(inBoolStream::Bool)::SCode.ConnectorType
+              local outStream::SCode.ConnectorType
+
+              outStream = begin
+                @match inBoolStream begin
+                  true  => begin
+                    SCode.STREAM()
+                  end
+
+                  _  => begin
+                      SCode.POTENTIAL()
+                  end
+                end
+              end
+          outStream
+        end
+
+        function mergeAttributesFromClass(inAttributes::SCode.Attributes, inClass::SCode.Element)::SCode.Attributes
+              local outAttributes::SCode.Attributes
+
+              outAttributes = begin
+                  local cls_attr::SCode.Attributes
+                  local attr::SCode.Attributes
+                @match (inAttributes, inClass) begin
+                  (_, SCode.CLASS(classDef = SCode.DERIVED(attributes = cls_attr)))  => begin
+                      @match SOME(attr) = mergeAttributes(inAttributes, SOME(cls_attr))
+                    attr
+                  end
+
+                  _  => begin
+                      inAttributes
+                  end
+                end
+              end
+          outAttributes
+        end
+
+         #= @author: adrpo
+         Function that is used with Derived classes,
+         merge the derived Attributes with the optional Attributes returned from ~instClass~. =#
+        function mergeAttributes(ele::SCode.Attributes, oEle::Option)::Option
+              local outoEle::Option
+
+              outoEle = begin
+                  local p1::SCode.Parallelism
+                  local p2::SCode.Parallelism
+                  local p::SCode.Parallelism
+                  local v1::SCode.Variability
+                  local v2::SCode.Variability
+                  local v::SCode.Variability
+                  local d1::Absyn.Direction
+                  local d2::Absyn.Direction
+                  local d::Absyn.Direction
+                  local isf1::Absyn.IsField
+                  local isf2::Absyn.IsField
+                  local isf::Absyn.IsField
+                  local ad1::Absyn.ArrayDim
+                  local ad2::Absyn.ArrayDim
+                  local ad::Absyn.ArrayDim
+                  local ct1::SCode.ConnectorType
+                  local ct2::SCode.ConnectorType
+                  local ct::SCode.ConnectorType
+                @match (ele, oEle) begin
+                  (_, NONE())  => begin
+                    SOME(ele)
+                  end
+
+                  (SCode.ATTR(ad1, ct1, p1, v1, d1, isf1), SOME(SCode.ATTR(_, ct2, p2, v2, d2, isf2)))  => begin
+                      ct = propagateConnectorType(ct1, ct2)
+                      p = propagateParallelism(p1, p2)
+                      v = propagateVariability(v1, v2)
+                      d = propagateDirection(d1, d2)
+                      isf = propagateIsField(isf1, isf2)
+                      ad = ad1
+                    SOME(SCode.ATTR(ad, ct, p, v, d, isf))
+                  end
+                end
+              end
+               #=  TODO! CHECK if ad1 == ad2!
+               =#
+          outoEle
+        end
+
+        function prefixesVisibility(inPrefixes::SCode.Prefixes)::SCode.Visibility
+              local outVisibility::SCode.Visibility
+
+              @match SCode.PREFIXES(visibility = outVisibility) = inPrefixes
+          outVisibility
+        end
+
+        function prefixesSetVisibility(inPrefixes::SCode.Prefixes, inVisibility::SCode.Visibility)::SCode.Prefixes
+              local outPrefixes::SCode.Prefixes
+
+              local rd::SCode.Redeclare
+              local f::SCode.Final
+              local io::Absyn.InnerOuter
+              local rp::SCode.Replaceable
+
+              @match SCode.PREFIXES(_, rd, f, io, rp) = inPrefixes
+              outPrefixes = SCode.PREFIXES(inVisibility, rd, f, io, rp)
+          outPrefixes
+        end
+
+         #= Returns true if two each attributes are equal =#
+        function eachEqual(each1::SCode.Each, each2::SCode.Each)::Bool
+              local equal::Bool
+
+              equal = begin
+                @match (each1, each2) begin
+                  (SCode.NOT_EACH(__), SCode.NOT_EACH(__))  => begin
+                    true
+                  end
+
+                  (SCode.EACH(__), SCode.EACH(__))  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          equal
+        end
+
+         #= Returns true if two replaceable attributes are equal =#
+        function replaceableEqual(r1::SCode.Replaceable, r2::SCode.Replaceable)::Bool
+              local equal::Bool
+
+              equal = begin
+                  local p1::Absyn.Path
+                  local p2::Absyn.Path
+                  local m1::SCode.Mod
+                  local m2::SCode.Mod
+                @matchcontinue (r1, r2) begin
+                  (SCode.NOT_REPLACEABLE(__), SCode.NOT_REPLACEABLE(__))  => begin
+                    true
+                  end
+
+                  (SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(constrainingClass = p1, modifier = m1))), SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(constrainingClass = p2, modifier = m2))))  => begin
+                      @match true = AbsynUtil.pathEqual(p1, p2)
+                      @match true = modEqual(m1, m2)
+                    true
+                  end
+
+                  (SCode.REPLACEABLE(NONE()), SCode.REPLACEABLE(NONE()))  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          equal
+        end
+
+         #= Returns true if two prefixes are equal =#
+        function prefixesEqual(prefixes1::SCode.Prefixes, prefixes2::SCode.Prefixes)::Bool
+              local equal::Bool
+
+              equal = begin
+                  local v1::SCode.Visibility
+                  local v2::SCode.Visibility
+                  local rd1::SCode.Redeclare
+                  local rd2::SCode.Redeclare
+                  local f1::SCode.Final
+                  local f2::SCode.Final
+                  local io1::Absyn.InnerOuter
+                  local io2::Absyn.InnerOuter
+                  local rpl1::SCode.Replaceable
+                  local rpl2::SCode.Replaceable
+                @matchcontinue (prefixes1, prefixes2) begin
+                  (SCode.PREFIXES(v1, rd1, f1, io1, rpl1), SCode.PREFIXES(v2, rd2, f2, io2, rpl2))  => begin
+                      @match true = valueEq(v1, v2)
+                      @match true = valueEq(rd1, rd2)
+                      @match true = valueEq(f1, f2)
+                      @match true = AbsynUtil.innerOuterEqual(io1, io2)
+                      @match true = replaceableEqual(rpl1, rpl2)
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          equal
+        end
+
+         #= Returns the replaceable part =#
+        function prefixesReplaceable(prefixes::SCode.Prefixes)::SCode.Replaceable
+              local repl::SCode.Replaceable
+
+              @match SCode.PREFIXES(replaceablePrefix = repl) = prefixes
+          repl
+        end
+
+        function elementPrefixes(inElement::SCode.Element)::SCode.Prefixes
+              local outPrefixes::SCode.Prefixes
+
+              outPrefixes = begin
+                  local pf::SCode.Prefixes
+                @match inElement begin
+                  SCode.CLASS(prefixes = pf)  => begin
+                    pf
+                  end
+
+                  SCode.COMPONENT(prefixes = pf)  => begin
+                    pf
+                  end
+                end
+              end
+          outPrefixes
+        end
+
+        function isElementReplaceable(inElement::SCode.Element)::Bool
+              local isReplaceable::Bool
+
+              local pf::SCode.Prefixes
+
+              pf = elementPrefixes(inElement)
+              isReplaceable = replaceableBool(prefixesReplaceable(pf))
+          isReplaceable
+        end
+
+        function isElementRedeclare(inElement::SCode.Element)::Bool
+              local isRedeclare::Bool
+
+              local pf::SCode.Prefixes
+
+              pf = elementPrefixes(inElement)
+              isRedeclare = redeclareBool(prefixesRedeclare(pf))
+          isRedeclare
+        end
+
+        function prefixesInnerOuter(inPrefixes::SCode.Prefixes)::Absyn.InnerOuter
+              local outInnerOuter::Absyn.InnerOuter
+
+              @match SCode.PREFIXES(innerOuter = outInnerOuter) = inPrefixes
+          outInnerOuter
+        end
+
+        function prefixesSetInnerOuter(prefixes::SCode.Prefixes, innerOuter::Absyn.InnerOuter)::SCode.Prefixes
+
+
+              prefixes.innerOuter = innerOuter
+          prefixes
+        end
+
+        function removeAttributeDimensions(inAttributes::SCode.Attributes)::SCode.Attributes
+              local outAttributes::SCode.Attributes
+
+              local ct::SCode.ConnectorType
+              local v::SCode.Variability
+              local p::SCode.Parallelism
+              local d::Absyn.Direction
+              local isf::Absyn.IsField
+
+              @match SCode.ATTR(_, ct, p, v, d, isf) = inAttributes
+              outAttributes = SCode.ATTR(list(), ct, p, v, d, isf)
+          outAttributes
+        end
+
+        function setAttributesDirection(attributes::SCode.Attributes, direction::Absyn.Direction)::SCode.Attributes
+
+
+              attributes.direction = direction
+          attributes
+        end
+
+         #= Return the variability attribute from Attributes =#
+        function attrVariability(attr::SCode.Attributes)::SCode.Variability
+              local var::SCode.Variability
+
+              var = begin
+                  local v::SCode.Variability
+                @match attr begin
+                  SCode.ATTR(variability = v)  => begin
+                    v
+                  end
+                end
+              end
+          var
+        end
+
+        function setAttributesVariability(attributes::SCode.Attributes, variability::SCode.Variability)::SCode.Attributes
+
+
+              attributes.variability = variability
+          attributes
+        end
+
+        function isDerivedClassDef(inClassDef::SCode.ClassDef)::Bool
+              local isDerived::Bool
+
+              isDerived = begin
+                @match inClassDef begin
+                  SCode.DERIVED(__)  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          isDerived
+        end
+
+        function isConnector(inRestriction::SCode.Restriction)::Bool
+              local isConnector::Bool
+
+              isConnector = begin
+                @match inRestriction begin
+                  SCode.R_CONNECTOR(__)  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          isConnector
+        end
+
+        function removeBuiltinsFromTopScope(inProgram::SCode.Program)::SCode.Program
+              local outProgram::SCode.Program
+
+              outProgram = ListUtil.filterOnTrue(inProgram, isNotBuiltinClass)
+          outProgram
+        end
+
+        function isNotBuiltinClass(inClass::SCode.Element)::Bool
+              local b::Bool
+
+              b = begin
+                @match inClass begin
+                  SCode.CLASS(classDef = SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(lang = SOME("builtin")))))  => begin
+                    false
+                  end
+
+                  _  => begin
+                      true
+                  end
+                end
+              end
+          b
+        end
+
+         #= Returns the annotation with the given name in the element, or fails if no
+           such annotation could be found. =#
+        function getElementNamedAnnotation(element::SCode.Element, name::String)::Absyn.Exp
+              local exp::Absyn.Exp
+
+              local ann::SCode.Annotation
+
+              ann = begin
+                @match element begin
+                  SCode.EXTENDS(ann = SOME(ann))  => begin
+                    ann
+                  end
+
+                  SCode.CLASS(cmt = SCode.COMMENT(annotation_ = SOME(ann)))  => begin
+                    ann
+                  end
+
+                  SCode.COMPONENT(comment = SCode.COMMENT(annotation_ = SOME(ann)))  => begin
+                    ann
+                  end
+                end
+              end
+              exp = getNamedAnnotation(ann, name)
+          exp
+        end
+
+         #= Checks if the given annotation contains an entry with the given name with the
+           value true. =#
+        function getNamedAnnotation(inAnnotation::SCode.Annotation, inName::String)::Tuple{Absyn.Exp, SourceInfo}
+              local info::SourceInfo
+              local exp::Absyn.Exp
+
+              local submods::IList
+
+              @match SCode.ANNOTATION(modification = SCode.MOD(subModLst = submods)) = inAnnotation
+              @match SCode.NAMEMOD(mod = SCode.MOD(info = info, binding = SOME(exp))) = ListUtil.find1(submods, hasNamedAnnotation, inName)
+          (exp, info)
+        end
+
+         #= Checks if a submod has the same name as the given name, and if its binding
+           in that case is true. =#
+        function hasNamedAnnotation(inSubMod::SCode.SubMod, inName::String)::Bool
+              local outIsMatch::Bool
+
+              outIsMatch = begin
+                  local id::String
+                @match (inSubMod, inName) begin
+                  (SCode.NAMEMOD(ident = id, mod = SCode.MOD(binding = SOME(_))), _)  => begin
+                    stringEq(id, inName)
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outIsMatch
+        end
+
+         #= Returns the modifier with the given name if it can be found in the
+           annotation, otherwise an empty modifier. =#
+        function lookupNamedAnnotation(ann::SCode.Annotation, name::String)::SCode.Mod
+              local mod::SCode.Mod
+
+              local submods::IList
+              local id::String
+
+              mod = begin
+                @match ann begin
+                  SCode.Annotation.ANNOTATION(modification = SCode.MOD(subModLst = submods))  => begin
+                      for sm in submods
+                        @match SCode.SubMod.NAMEMOD(id, mod) = sm
+                        if id == name
+                          return
                         end
-                        end)
-  outEquationLst
-end
+                      end
+                    SCode.NOMOD()
+                  end
 
-#= Helper function to translateEquations =#
-function translateEEquations(inAbsynEquationItemLst::Lst, inIsInitial::Bool)::Lst
-  local outEEquationLst::Lst
-
-  outEEquationLst = begin
-    local e_1::SCode.EEquation
-    local es_1::Lst
-    local e::Absyn.Equation
-    local es::Lst
-    local acom::Option
-    local com::SCode.Comment
-    local info::SourceInfo
-    @match (inAbsynEquationItemLst, inIsInitial) begin
-      ( nil(), _)  => begin
-        list()
-      end
-
-      (Absyn.EQUATIONITEM(e, acom, info) <| es, _)  => begin
-        (com, info) = translateCommentWithLineInfoChanges(acom, info)
-        e_1 = translateEquation(e, com, info, inIsInitial)
-        es_1 = translateEEquations(es, inIsInitial)
-        e_1 <| es_1
-      end
-
-      (Absyn.EQUATIONITEMCOMMENT() <| es, _)  => begin
-        translateEEquations(es, inIsInitial)
-      end
-    end
-  end
-  #=  fprintln(Flags.TRANSLATE, \"translating equation: \" + Dump.unparseEquationStr(0, e));
-  =#
-  outEEquationLst
-end
-
-#= turns an Absyn.Comment into an SCode.Comment =#
-function translateCommentWithLineInfoChanges(inComment::Option, inInfo::SourceInfo)::Tuple{SourceInfo, SCode.Comment}
-  local outInfo::SourceInfo
-  local outComment::SCode.Comment
-
-  outComment = translateComment(inComment)
-  outInfo = getInfoAnnotationOrDefault(outComment, inInfo)
-  (outInfo, outComment)
-end
-
-#= Replaces the file info if there is an annotation __OpenModelica_FileInfo=(\\\"fileName\\\",line). Should be improved. =#
-function getInfoAnnotationOrDefault(comment::SCode.Comment, default::SourceInfo)::SourceInfo
-  local info::SourceInfo
-
-  info = begin
-    local lst::Lst
-    @match (comment, default) begin
-      (SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(lst)))), _)  => begin
-        getInfoAnnotationOrDefault2(lst, default)
-      end
-
-      _  => begin
-        default
-      end
-    end
-  end
-  info
-end
-
-function getInfoAnnotationOrDefault2(lst::Lst, default::SourceInfo)::SourceInfo
-  local info::SourceInfo
-
-  info = begin
-    local rest::Lst
-    local fileName::String
-    local line::ModelicaInteger
-    @match (lst, default) begin
-      ( nil(), _)  => begin
-        default
-      end
-
-      (SCode.NAMEMOD(ident = "__OpenModelica_FileInfo", mod = SCode.MOD(binding = SOME(Absyn.TUPLE(Absyn.STRING(fileName) <| Absyn.INTEGER(line) <|  nil())))) <| _, _)  => begin
-        SOURCEINFO(fileName, false, line, 0, line, 0, 0.0)
-      end
-
-      (_ <| rest, _)  => begin
-        getInfoAnnotationOrDefault2(rest, default)
-      end
-    end
-  end
-  info
-end
-
-#= turns an Absyn.Comment into an SCode.Comment =#
-function translateComment(inComment::Option)::SCode.Comment
-  local outComment::SCode.Comment
-
-  outComment = begin
-    local absann::Option
-    local ann::Option
-    local ostr::Option
-    @match inComment begin
-      NONE()  => begin
-        SCode.noComment
-      end
-
-      SOME(Absyn.COMMENT(absann, ostr))  => begin
-        ann = translateAnnotationOpt(absann)
-        ostr = Util.applyOption(ostr, System.unescapedString)
-        SCode.COMMENT(ann, ostr)
-      end
-    end
-  end
-  outComment
-end
-
-#= turns an Absyn.Comment into an SCode.Comment =#
-function translateCommentList(inAnns::Lst, inString::Option)::SCode.Comment
-  local outComment::SCode.Comment
-
-  outComment = begin
-    local absann::Absyn.Annotation
-    local anns::Lst
-    local ann::Option
-    local ostr::Option
-    @match (inAnns, inString) begin
-      ( nil(), _)  => begin
-        SCode.COMMENT(NONE(), inString)
-      end
-
-      (absann <|  nil(), _)  => begin
-        ann = translateAnnotation(absann)
-        ostr = Util.applyOption(inString, "Unscaped string")
-        SCode.COMMENT(ann, ostr)
-      end
-
-      (absann <| anns, _)  => begin
-        absann = List.fold(anns, AbsynUtil.mergeAnnotations, absann)
-        ann = translateAnnotation(absann)
-        ostr = Util.applyOption(inString, "Unescaped string")
-        SCode.COMMENT(ann, ostr)
-      end
-    end
-  end
-  outComment
-end
-
-#= turns an Absyn.Comment into an SCode.Annotation + string =#
-function translateCommentSeparate(inComment::Option)::Tuple{Option, Option}
-  local outStr::Option
-  local outAnn::Option
-
-  (outAnn, outStr) = begin
-    local absann::Absyn.Annotation
-    local ann::Option
-    local str::String
-    @match inComment begin
-      NONE()  => begin
-        (NONE(), NONE())
-      end
-
-      SOME(Absyn.COMMENT(NONE(), NONE()))  => begin
-        (NONE(), NONE())
-      end
-
-      SOME(Absyn.COMMENT(NONE(), SOME(str)))  => begin
-        (NONE(), SOME(str))
-      end
-
-      SOME(Absyn.COMMENT(SOME(absann), NONE()))  => begin
-        ann = translateAnnotation(absann)
-        (ann, NONE())
-      end
-
-      SOME(Absyn.COMMENT(SOME(absann), SOME(str)))  => begin
-        ann = translateAnnotation(absann)
-        (ann, SOME(str))
-      end
-    end
-  end
-  (outStr, outAnn)
-end
-
-function translateEquation(inEquation::Absyn.Equation, inComment::SCode.Comment, inInfo::SourceInfo, inIsInitial::Bool)::SCode.EEquation
-  local outEEquation::SCode.EEquation
-
-  outEEquation = begin
-    local exp::Absyn.Exp
-    local e1::Absyn.Exp
-    local e2::Absyn.Exp
-    local e3::Absyn.Exp
-    local abody::Lst
-    local else_branch::Lst
-    local body::Lst
-    local branches::Lst
-    local iter_name::String
-    local iter_range::Option
-    local eq::SCode.EEquation
-    local conditions::Lst
-    local bodies::Lst
-    local cr::Absyn.ComponentRef
-    @match inEquation begin
-      Absyn.EQ_IF()  => begin
-        body = translateEEquations(inEquation.equationTrueItems, inIsInitial)
-        (conditions, bodies) = List.map1_2(inEquation.elseIfBranches, translateEqBranch, inIsInitial)
-        conditions = inEquation.ifExp <| conditions
-        else_branch = translateEEquations(inEquation.equationElseItems, inIsInitial)
-        SCode.EQ_IF(conditions, body <| bodies, else_branch, inComment, inInfo)
-      end
-
-      Absyn.EQ_WHEN_E()  => begin
-        body = translateEEquations(inEquation.whenEquations, inIsInitial)
-        (conditions, bodies) = List.map1_2(inEquation.elseWhenEquations, translateEqBranch, inIsInitial)
-        branches = list(@do_threaded_for (c, b) (c, b) (conditions, bodies))
-        SCode.EQ_WHEN(inEquation.whenExp, body, branches, inComment, inInfo)
-      end
-
-      Absyn.EQ_EQUALS()  => begin
-        SCode.EQ_EQUALS(inEquation.leftSide, inEquation.rightSide, inComment, inInfo)
-      end
-
-      Absyn.EQ_PDE()  => begin
-        SCode.EQ_PDE(inEquation.leftSide, inEquation.rightSide, inEquation.domain, inComment, inInfo)
-      end
-
-      Absyn.EQ_CONNECT()  => begin
-        if inIsInitial
-          println("Error")
-        end
-        SCode.EQ_CONNECT(inEquation.connector1, inEquation.connector2, inComment, inInfo)
-      end
-
-      Absyn.EQ_FOR()  => begin
-        body = translateEEquations(inEquation.forEquations, inIsInitial)
-        #=  Convert for-loops with multiple iterators into nested for-loops.
-        =#
-        for i in listReverse(inEquation.iterators)
-          (iter_name, iter_range) = translateIterator(i, inInfo)
-          body = list(SCode.EQ_FOR(iter_name, iter_range, body, inComment, inInfo))
-        end
-        listHead(body)
-      end
-
-      Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT(name = "assert"), functionArgs = Absyn.FUNCTIONARGS(args = e1 <| e2 <|  nil(), argNames =  nil()))  => begin
-        SCode.EQ_ASSERT(e1, e2, ASSERTION_LEVEL_ERROR, inComment, inInfo)
-      end
-
-      Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT(name = "assert"), functionArgs = Absyn.FUNCTIONARGS(args = e1 <| e2 <| e3 <|  nil(), argNames =  nil()))  => begin
-        SCode.EQ_ASSERT(e1, e2, e3, inComment, inInfo)
-      end
-
-      Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT(name = "assert"), functionArgs = Absyn.FUNCTIONARGS(args = e1 <| e2 <|  nil(), argNames = Absyn.NAMEDARG("level", e3) <|  nil()))  => begin
-        SCode.EQ_ASSERT(e1, e2, e3, inComment, inInfo)
-      end
-
-      Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT(name = "terminate"), functionArgs = Absyn.FUNCTIONARGS(args = e1 <|  nil(), argNames =  nil()))  => begin
-        SCode.EQ_TERMINATE(e1, inComment, inInfo)
-      end
-
-      Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT(name = "reinit"), functionArgs = Absyn.FUNCTIONARGS(args = e1 <| e2 <|  nil(), argNames =  nil()))  => begin
-        SCode.EQ_REINIT(e1, e2, inComment, inInfo)
-      end
-
-      Absyn.EQ_NORETCALL()  => begin
-        SCode.EQ_NORETCALL(Absyn.CALL(inEquation.functionName, inEquation.functionArgs), inComment, inInfo)
-      end
-
-      _  => begin
-        #=  assert(condition, message)
-        =#
-        #=  assert(condition, message, level)
-        =#
-        #=  assert(condition, message, level = arg)
-        =#
-        #=  terminate(message)
-        =#
-        #=  reinit(cref, exp)
-        =#
-        #=  Other nonreturning calls. assert, terminate and reinit with the wrong
-        =#
-        #=  number of arguments is also turned into a noretcall, since it's
-        =#
-        #=  preferable to handle the error during instantation instead of here.
-        =#
-        println("Error")
-        fail()
-      end
-    end
-  end
-  outEEquation
-end
-
-function translateEqBranch(inBranch::Tuple, inIsInitial::Bool)::Tuple{List, Absyn.Exp}
-  local outBody::Lst
-  local outCondition::Absyn.Exp
-
-  local body::Lst
-
-  (outCondition, body) = inBranch
-  outBody = translateEEquations(body, inIsInitial)
-  (outBody, outCondition)
-end
-
-function translateIterator(inIterator::Absyn.ForIterator, inInfo::SourceInfo)::Tuple{Option, String}
-  local outRange::Option
-  local outName::String
-
-  local guard_exp::Option
-
-  @match Absyn.ITERATOR(outName, guard_exp, outRange) = inIterator
-  if isSome(guard_exp)
-    println("Error")
-  end
-  (outRange, outName)
-end
-
-#= function: translateElementAddinfo =#
-function translateElementAddinfo(elem::SCode.Element, nfo::SourceInfo)::SCode.Element
-  local oelem::SCode.Element
-
-  oelem = begin
-    local a1::SCode.Ident
-    local a2::Absyn.InnerOuter
-    local a3::Bool
-    local a4::Bool
-    local a5::Bool
-    local rd::Bool
-    local a6::SCode.Attributes
-    local a7::Absyn.TypeSpec
-    local a8::SCode.Mod
-    local a10::SCode.Comment
-    local a11::Option
-    local a13::Option
-    local p::SCode.Prefixes
-    @matchcontinue (elem, nfo) begin
-      (SCode.COMPONENT(a1, p, a6, a7, a8, a10, a11, _), _)  => begin
-        SCode.COMPONENT(a1, p, a6, a7, a8, a10, a11, nfo)
-      end
-
-      _  => begin
-        elem
-      end
-    end
-  end
-  oelem
-end
-
-#= /* Modification management */ =#
-
-#= Builds an SCode.Mod from an Absyn.Modification. =#
-function translateMod(inMod::Option, finalPrefix::SCode.Final, eachPrefix::SCode.Each, info::SourceInfo)::SCode.Mod
-  local outMod::SCode.Mod
-
-  local args::Lst
-  local eqmod::Absyn.EqMod
-  local subs::Lst
-  local binding::Option
-
-  (args, eqmod) = begin
-    @match inMod begin
-      SOME(Absyn.CLASSMOD(args, eqmod))  => begin
-        (args, eqmod)
-      end
-
-      _  => begin
-        (list(), Absyn.NOMOD())
-      end
-    end
-  end
-  subs = if listEmpty(args)
-    list()
-  else
-    translateArgs(args)
-  end
-  binding = begin
-    @match eqmod begin
-      Absyn.EQMOD()  => begin
-        SOME(eqmod.exp)
-      end
-
-      _  => begin
-        NONE()
-      end
-    end
-  end
-  outMod = begin
-    @match (subs, binding, finalPrefix, eachPrefix) begin
-      ( nil(), NONE(), SCode.NOT_FINAL(), SCode.NOT_EACH())  => begin
-        SCode.NOMOD()
-      end
-
-      _  => begin
-        SCode.MOD(finalPrefix, eachPrefix, subs, binding, info)
-      end
-    end
-  end
-  outMod
-end
-
-function translateArgs(args::Lst)::Lst
-  local subMods::Lst = list()
-
-  local smod::SCode.Mod
-  local elem::SCode.Element
-  local sub::SCode.SubMod
-
-  for arg in args
-    subMods = begin
-      @match arg begin
-        Absyn.MODIFICATION()  => begin
-          smod = translateMod(arg.modification, SCode.boolFinal(arg.finalPrefix), translateEach(arg.eachPrefix), arg.info)
-          if ! SCode.isEmptyMod(smod)
-            sub = translateSub(arg.path, smod, arg.info)
-            subMods = sub <| subMods
-          end
-          subMods
+                  _  => begin
+                      SCode.NOMOD()
+                  end
+                end
+              end
+          mod
         end
 
-        Absyn.REDECLARATION()  => begin
-          @assert list(elem) == (translateElementspec(arg.constrainClass, arg.finalPrefix, Absyn.NOT_INNER_OUTER(), SOME(arg.redeclareKeywords), SCode.PUBLIC(), arg.elementSpec, arg.info))
-          sub = SCode.NAMEMOD(AbsynUtil.elementSpecName(arg.elementSpec), SCode.REDECL(SCode.boolFinal(arg.finalPrefix), translateEach(arg.eachPrefix), elem))
-          sub <| subMods
+         #= Returns a list of modifiers with the given name found in the annotation. =#
+        function lookupNamedAnnotations(ann::SCode.Annotation, name::String)::IList
+              local mods::IList = list()
+
+              local submods::IList
+              local id::String
+              local mod::SCode.Mod
+
+              mods = begin
+                @match ann begin
+                  SCode.Annotation.ANNOTATION(modification = SCode.MOD(subModLst = submods))  => begin
+                      for sm in submods
+                        @match SCode.SubMod.NAMEMOD(id, mod) = sm
+                        if id == name
+                          mods = mod <| mods
+                        end
+                      end
+                    mods
+                  end
+
+                  _  => begin
+                      list()
+                  end
+                end
+              end
+          mods
         end
-      end
-    end
-  end
-  subMods = listReverse(subMods)
-  subMods
-end
 
-#= This function converts a Absyn.ComponentRef plus a list
-of modifications into a number of nested SCode.SUBMOD. =#
-function translateSub(inPath::Absyn.Path, inMod::SCode.Mod, info::SourceInfo)::SCode.SubMod
-  local outSubMod::SCode.SubMod
-
-  outSubMod = begin
-    local i::String
-    local path::Absyn.Path
-    local mod::SCode.Mod
-    local sub::SCode.SubMod
-    #=  Then the normal rules
-    =#
-    @match (inPath, inMod, info) begin
-      (Absyn.IDENT(i), mod, _)  => begin
-        SCode.NAMEMOD(i, mod)
-      end
-
-      (Absyn.QUALIFIED(i, path), mod, _)  => begin
-        sub = translateSub(path, mod, info)
-        mod = SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), list(sub), NONE(), info)
-        SCode.NAMEMOD(i, mod)
-      end
-    end
-  end
-  outSubMod
-end
-
-#= @author: adrpo
-this function translates a SCode.Mod into Absyn.NamedArg
-and prefixes all *LOCAL* expressions with the given prefix.
-Example:
-Input:
-prefix       : world
-modifications: (gravityType  = gravityType, g  = g * Modelica.Math.Vectors.normalize(n), mue  = mue)
-Gives:
-namedArgs:     (gravityType  = world.gravityType, g  = world.g * Modelica.Math.Vectors.normalize(world.n), mue  = world.mue) =#
-function translateSCodeModToNArgs(prefix::String #= given prefix, example: world =#, mod::SCode.Mod #= given modifications =#)::Lst
-  local namedArgs::Lst #= the resulting named arguments =#
-
-  namedArgs = begin
-    local nArgs::Lst
-    local subModLst::Lst
-    @match (prefix, mod) begin
-      (_, SCode.MOD(subModLst))  => begin
-        nArgs = translateSubModToNArgs(prefix, subModLst)
-        nArgs
-      end
-    end
-  end
-  namedArgs #= the resulting named arguments =#
-end
-
-#= @author: adrpo
-this function translates a SCode.SubMod into Absyn.NamedArg
-and prefixes all *LOCAL* expressions with the given prefix. =#
-function translateSubModToNArgs(prefix::String #= given prefix, example: world =#, subMods::Lst #= given sub modifications =#)::Lst
-  local namedArgs::Lst #= the resulting named arguments =#
-
-  namedArgs = begin
-    local nArgs::Lst
-    local subModLst::Lst
-    local exp::Absyn.Exp
-    local ident::SCode.Ident
-    #=  deal with the empty list
-    =#
-    @match (prefix, subMods) begin
-      (_,  nil())  => begin
-        list()
-      end
-
-      (_, SCode.NAMEMOD(ident, SCode.MOD(binding = SOME(exp))) <| subModLst)  => begin
-        nArgs = translateSubModToNArgs(prefix, subModLst)
-        exp = prefixUnqualifiedCrefsFromExp(exp, prefix)
-        Absyn.NAMEDARG(ident, exp) <| nArgs
-      end
-    end
-  end
-  #=  deal with named modifiers
-  =#
-  namedArgs #= the resulting named arguments =#
-end
-
-function prefixTuple(expTuple::Tuple, prefix::String)::Tuple
-  local prefixedExpTuple::Tuple
-
-  prefixedExpTuple = begin
-    local e1::Absyn.Exp
-    local e2::Absyn.Exp
-    @match (expTuple, prefix) begin
-      ((e1, e2), _)  => begin
-        e1 = prefixUnqualifiedCrefsFromExp(e1, prefix)
-        e2 = prefixUnqualifiedCrefsFromExp(e2, prefix)
-        (e1, e2)
-      end
-    end
-  end
-  prefixedExpTuple
-end
-
-function prefixUnqualifiedCrefsFromExpOpt(inExpOpt::Option, prefix::String)::Option
-  local outExpOpt::Option
-
-  outExpOpt = begin
-    local exp::Absyn.Exp
-    @match (inExpOpt, prefix) begin
-      (NONE(), _)  => begin
-        NONE()
-      end
-
-      (SOME(exp), _)  => begin
-        exp = prefixUnqualifiedCrefsFromExp(exp, prefix)
-        SOME(exp)
-      end
-    end
-  end
-  outExpOpt
-end
-
-function prefixUnqualifiedCrefsFromExpLst(inExpLst::Lst, prefix::String)::Lst
-  local outExpLst::Lst
-
-  outExpLst = begin
-    local exp::Absyn.Exp
-    local rest::Lst
-    @match (inExpLst, prefix) begin
-      ( nil(), _)  => begin
-        list()
-      end
-
-      (exp <| rest, _)  => begin
-        exp = prefixUnqualifiedCrefsFromExp(exp, prefix)
-        rest = prefixUnqualifiedCrefsFromExpLst(rest, prefix)
-        exp <| rest
-      end
-    end
-  end
-  outExpLst
-end
-
-function prefixFunctionArgs(inFunctionArgs::Absyn.FunctionArgs, prefix::String)::Absyn.FunctionArgs
-  local outFunctionArgs::Absyn.FunctionArgs
-
-  outFunctionArgs = begin
-    local args::Lst #= args =#
-    local argNames::Lst #= argNames =#
-    @match (inFunctionArgs, prefix) begin
-      (Absyn.FUNCTIONARGS(args, argNames), _)  => begin
-        args = prefixUnqualifiedCrefsFromExpLst(args, prefix)
-        Absyn.FUNCTIONARGS(args, argNames)
-      end
-    end
-  end
-  outFunctionArgs
-end
-
-function prefixUnqualifiedCrefsFromExp(exp::Absyn.Exp, prefix::String)::Absyn.Exp
-  local prefixedExp::Absyn.Exp
-
-  prefixedExp = begin
-    local s::SCode.Ident
-    local c::Absyn.ComponentRef
-    local fcn::Absyn.ComponentRef
-    local e1::Absyn.Exp
-    local e2::Absyn.Exp
-    local e1a::Absyn.Exp
-    local e2a::Absyn.Exp
-    local e::Absyn.Exp
-    local t::Absyn.Exp
-    local f::Absyn.Exp
-    local start::Absyn.Exp
-    local stop::Absyn.Exp
-    local cond::Absyn.Exp
-    local op::Absyn.Operator
-    local lst::Lst
-    local args::Absyn.FunctionArgs
-    local es::Lst
-    local matchType::Absyn.MatchType
-    local head::Absyn.Exp
-    local rest::Absyn.Exp
-    local inputExp::Absyn.Exp
-    local localDecls::Lst
-    local cases::Lst
-    local comment::Option
-    local esLstLst::Lst
-    local expOpt::Option
-    #=  deal with basic types
-    =#
-    @matchcontinue (exp, prefix) begin
-      (Absyn.INTEGER(_), _)  => begin
-        exp
-      end
-
-      (Absyn.REAL(_), _)  => begin
-        exp
-      end
-
-      (Absyn.STRING(_), _)  => begin
-        exp
-      end
-
-      (Absyn.BOOL(_), _)  => begin
-        exp
-      end
-
-      (Absyn.CREF(Absyn.CREF_QUAL()), _)  => begin
-        exp
-      end
-
-      (Absyn.CREF(Absyn.CREF_IDENT()), _)  => begin
-        c = Absyn.CREF_IDENT()
-        e = AbsynUtil.crefExp(Absyn.CREF_QUAL(prefix, list(), c))
-      end
-
-      (Absyn.BINARY(e1, op, e2), _)  => begin
-        e1a = prefixUnqualifiedCrefsFromExp(e1, prefix)
-        e2a = prefixUnqualifiedCrefsFromExp(e2, prefix)
-        Absyn.BINARY(e1a, op, e2a)
-      end
-
-      (Absyn.UNARY(op = op, exp = e), _)  => begin
-        e = prefixUnqualifiedCrefsFromExp(e, prefix)
-        Absyn.UNARY(op, e)
-      end
-
-      (Absyn.LBINARY(exp1 = e1, op = op, exp2 = e2), _)  => begin
-        e1a = prefixUnqualifiedCrefsFromExp(e1, prefix)
-        e2a = prefixUnqualifiedCrefsFromExp(e2, prefix)
-        Absyn.LBINARY(e1a, op, e2a)
-      end
-
-      (Absyn.LUNARY(op = op, exp = e), _)  => begin
-        e = prefixUnqualifiedCrefsFromExp(e, prefix)
-        Absyn.LUNARY(op, e)
-      end
-
-      (Absyn.RELATION(exp1 = e1, op = op, exp2 = e2), _)  => begin
-        e1a = prefixUnqualifiedCrefsFromExp(e1, prefix)
-        e2a = prefixUnqualifiedCrefsFromExp(e2, prefix)
-        Absyn.RELATION(e1a, op, e2a)
-      end
-
-      (Absyn.IFEXP(ifExp = cond, trueBranch = t, elseBranch = f, elseIfBranch = lst), _)  => begin
-        cond = prefixUnqualifiedCrefsFromExp(cond, prefix)
-        t = prefixUnqualifiedCrefsFromExp(t, prefix)
-        f = prefixUnqualifiedCrefsFromExp(f, prefix)
-        lst = List.map1(lst, prefixTuple, prefix)
-        Absyn.IFEXP(cond, t, f, lst)
-      end
-
-      (Absyn.CALL(function_ = fcn, functionArgs = args), _)  => begin
-        args = prefixFunctionArgs(args, prefix)
-        Absyn.CALL(fcn, args)
-      end
-
-      (Absyn.PARTEVALFUNCTION(function_ = fcn, functionArgs = args), _)  => begin
-        args = prefixFunctionArgs(args, prefix)
-        Absyn.PARTEVALFUNCTION(fcn, args)
-      end
-
-      (Absyn.ARRAY(arrayExp = es), _)  => begin
-        es = List.map1(es, prefixUnqualifiedCrefsFromExp, prefix)
-        Absyn.ARRAY(es)
-      end
-
-      (Absyn.TUPLE(expressions = es), _)  => begin
-        es = List.map1(es, prefixUnqualifiedCrefsFromExp, prefix)
-        Absyn.TUPLE(es)
-      end
-
-      (Absyn.MATRIX(matrix = esLstLst), _)  => begin
-        esLstLst = List.map1(esLstLst, prefixUnqualifiedCrefsFromExpLst, prefix)
-        Absyn.MATRIX(esLstLst)
-      end
-
-      (Absyn.RANGE(start = start, step = expOpt, stop = stop), _)  => begin
-        start = prefixUnqualifiedCrefsFromExp(start, prefix)
-        expOpt = prefixUnqualifiedCrefsFromExpOpt(expOpt, prefix)
-        stop = prefixUnqualifiedCrefsFromExp(stop, prefix)
-        Absyn.RANGE(start, expOpt, stop)
-      end
-
-      (Absyn.END(), _)  => begin
-        exp
-      end
-
-      (Absyn.LIST(es), _)  => begin
-        es = List.map1(es, prefixUnqualifiedCrefsFromExp, prefix)
-        Absyn.LIST(es)
-      end
-
-      (Absyn.CONS(head, rest), _)  => begin
-        head = prefixUnqualifiedCrefsFromExp(head, prefix)
-        rest = prefixUnqualifiedCrefsFromExp(rest, prefix)
-        Absyn.CONS(head, rest)
-      end
-
-      (Absyn.AS(s, rest), _)  => begin
-        rest = prefixUnqualifiedCrefsFromExp(rest, prefix)
-        Absyn.AS(s, rest)
-      end
-
-      (Absyn.MATCHEXP(matchType, inputExp, localDecls, cases, comment), _)  => begin
-        Absyn.MATCHEXP(matchType, inputExp, localDecls, cases, comment)
-      end
-
-      _  => begin
-        exp
-      end
-    end
-  end
-  #=  do NOT prefix if you have qualified component references
-  =#
-  #=  do prefix if you have simple component references
-  =#
-  #=  binary
-  =#
-  #=  unary
-  =#
-  #=  binary logical
-  =#
-  #=  unary logical
-  =#
-  #=  relations
-  =#
-  #=  if expressions
-  =#
-  #=  TODO! fixme, prefix these also.
-  =#
-  #=  calls
-  =#
-  #=  partial evaluated functions
-  =#
-  #=  arrays
-  =#
-  #=  tuples
-  =#
-  #=  matrix
-  =#
-#=  range
-  =#
-#=  end
-=#
-#=  MetaModelica expressions!
-=#
-#=  cons
-=#
-#=  as
-=#
-#=  matchexp
-=#
-#=  something else, just return the expression
-=#
-prefixedExp
-end
-
-#= Gets the Absyn.Import from an SCode.Element (fails if the element is not SCode.IMPORT) =#
-function getImportFromElement(elt::SCode.Element)::Absyn.Import
-  local imp::Absyn.Import
-  @match elt = SCode.IMPORT(imp)
-  imp
-end
-
-function makeTypeVarElement(str::String, info::SourceInfo)::SCode.Element
-  local elt::SCode.Element
-
-  local cd::SCode.ClassDef
-  local ts::Absyn.TypeSpec
-
-  ts = Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"), list(Absyn.TPATH(Absyn.IDENT("Any"), NONE())), NONE())
-  cd = SCode.DERIVED(ts, SCode.NOMOD(), SCode.ATTR(list(), SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(), Absyn.NONFIELD()))
-  elt = SCode.CLASS(str, SCode.PREFIXES(SCode.PUBLIC(), SCode.NOT_REDECLARE(), SCode.FINAL(), Absyn.NOT_INNER_OUTER(), SCode.NOT_REPLACEABLE()), SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(), cd, SCode.noComment, info)
-  elt
-end
-
-function translateEach(inAEach::Absyn.Each)::SCode.Each
-  local outSEach::SCode.Each
-
-  outSEach = begin
-    @match inAEach begin
-      Absyn.EACH()  => begin
-        SCode.EACH()
-      end
-
-      Absyn.NON_EACH()  => begin
-        SCode.NOT_EACH()
-      end
-    end
-  end
-  outSEach
-end
-
-#= get the redeclare-as-element elements =#
-function isRedeclareElement(element::SCode.Element)::Bool
-  local isElement::Bool
-
-  isElement = begin
-    @match element begin
-      SCode.COMPONENT(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE()))  => begin
-        true
-      end
-
-      SCode.CLASS(classDef = SCode.CLASS_EXTENDS())  => begin
-        false
-      end
-
-      SCode.CLASS(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE()))  => begin
-        true
-      end
-
-      _  => begin
-        false
-      end
-    end
-  end
-  #=  redeclare-as-element component
-  =#
-  #=  not redeclare class extends
-  =#
-  #=  redeclare-as-element class!, not class extends
-  =#
-  isElement
-end
-
-#= add the redeclare-as-element elements to extends =#
-function addRedeclareAsElementsToExtends(inElements::Lst, redeclareElements::Lst)::Lst
-  local outExtendsElements::Lst
-
-  outExtendsElements = begin
-    local el::SCode.Element
-    local redecls::Lst
-    local rest::Lst
-    local out::Lst
-    local baseClassPath::Absyn.Path
-    local visibility::SCode.Visibility
-    local mod::SCode.Mod
-    local ann::Option #= the extends annotation =#
-    local info::SourceInfo
-    local redeclareMod::SCode.Mod
-    local submods::Lst
-    #=  empty, return the same
-    =#
-    @matchcontinue (inElements, redeclareElements) begin
-      (_,  nil())  => begin
-        inElements
-      end
-
-      ( nil(), _)  => begin
-        list()
-      end
-
-      (SCode.EXTENDS(baseClassPath, visibility, mod, ann, info) <| rest, redecls)  => begin
-        submods = makeElementsIntoSubMods(SCode.NOT_FINAL(), SCode.NOT_EACH(), redecls)
-        redeclareMod = SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), submods, NONE(), info)
-        mod = mergeSCodeMods(redeclareMod, mod)
-        out = addRedeclareAsElementsToExtends(rest, redecls)
-        SCode.EXTENDS(baseClassPath, visibility, mod, ann, info) <| out
-      end
-
-      (SCode.EXTENDS() <| _, redecls)  => begin
-        el,
-        print("- SCodeUtil.addRedeclareAsElementsToExtends failed on:\next\n")
-        fail()
-      end
-
-      (el <| rest, redecls)  => begin
-        out = addRedeclareAsElementsToExtends(rest, redecls)
-        el <| out
-      end
-    end
-  end
-  #=  empty elements
-  =#
-  #=  we got some
-  =#
-  #=  failure
-  =#
-  #=  ignore non-extends
-  =#
-  outExtendsElements
-end
-
-function mergeSCodeMods(inModOuter::SCode.Mod, inModInner::SCode.Mod)::SCode.Mod
-  local outMod::SCode.Mod
-
-  outMod = begin
-    local f1::SCode.Final
-    local f2::SCode.Final
-    local e1::SCode.Each
-    local e2::SCode.Each
-    local subMods1::Lst
-    local subMods2::Lst
-    local b1::Option
-    local b2::Option
-    local info::SourceInfo
-    #=  inner is NOMOD
-    =#
-    @matchcontinue (inModOuter, inModInner) begin
-      (_, SCode.NOMOD())  => begin
-        inModOuter
-      end
-
-      (SCode.MOD(f1, e1, subMods1, b1, info), SCode.MOD(_, _, subMods2, b2, _))  => begin
-        subMods2 = listAppend(subMods1, subMods2)
-        b1 = if isSome(b1)
-          b1
-        else
-          b2
+        function hasBooleanNamedAnnotationInClass(inClass::SCode.Element, namedAnnotation::String)::Bool
+              local hasAnn::Bool
+
+              hasAnn = begin
+                  local ann::SCode.Annotation
+                @match (inClass, namedAnnotation) begin
+                  (SCode.CLASS(cmt = SCode.COMMENT(annotation_ = SOME(ann))), _)  => begin
+                    hasBooleanNamedAnnotation(ann, namedAnnotation)
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          hasAnn
         end
-        SCode.MOD(f1, e1, subMods2, b1, info)
-      end
 
-      _  => begin
-        print("SCodeUtil.mergeSCodeMods failed on:\nouterMod: ")
-        fail()
-      end
-    end
-  end
-  #=  both are redeclarations
-  =#
-  #= case (SCode.REDECL(f1, e1, redecls), SCode.REDECL(f2, e2, els))
-  =#
-  #=   equation
-  =#
-  #=     els = listAppend(redecls, els);
-  =#
-  #=   then
-  =#
-  #=     SCode.REDECL(f2, e2, els);
-  =#
-  #=  inner is mod
-  =#
-  #= case (SCode.REDECL(f1, e1, redecls), SCode.MOD(f2, e2, subMods, b, info))
-  =#
-  #=   equation
-  =#
-  #=      we need to make each redcls element into a submod!
-  =#
-  #=     newSubMods = makeElementsIntoSubMods(f1, e1, redecls);
-  =#
-  #=     newSubMods = listAppend(newSubMods, subMods);
-  =#
-  #=   then
-  =#
-  #=     SCode.MOD(f2, e2, newSubMods, b, info);
-  =#
-  #=  failure
-  =#
-  outMod
-end
+        function hasBooleanNamedAnnotationInComponent(inComponent::SCode.Element, namedAnnotation::String)::Bool
+              local hasAnn::Bool
 
-function mergeSCodeOptAnn(inModOuter::Option, inModInner::Option)::Option
-  local outMod::Option
+              hasAnn = begin
+                  local ann::SCode.Annotation
+                @match (inComponent, namedAnnotation) begin
+                  (SCode.COMPONENT(comment = SCode.COMMENT(annotation_ = SOME(ann))), _)  => begin
+                    hasBooleanNamedAnnotation(ann, namedAnnotation)
+                  end
 
-  outMod = begin
-    local mod1::SCode.Mod
-    local mod2::SCode.Mod
-    local mod::SCode.Mod
-    @match (inModOuter, inModInner) begin
-      (NONE(), _)  => begin
-        inModInner
-      end
-
-      (_, NONE())  => begin
-        inModOuter
-      end
-
-      (SOME(SCode.ANNOTATION(mod1)), SOME(SCode.ANNOTATION(mod2)))  => begin
-        mod = mergeSCodeMods(mod1, mod2)
-        SOME(SCode.ANNOTATION(mod))
-      end
-    end
-  end
-  outMod
-end
-
-#= transform elements into submods with named mods =#
-function makeElementsIntoSubMods(inFinal::SCode.Final, inEach::SCode.Each, inElements::Lst)::Lst
-  local outSubMods::Lst
-
-  outSubMods = begin
-    local el::SCode.Element
-    local rest::Lst
-    local f::SCode.Final
-    local e::SCode.Each
-    local n::SCode.Ident
-    local newSubMods::Lst
-    #=  empty
-    =#
-    @matchcontinue (inFinal, inEach, inElements) begin
-      (_, _,  nil())  => begin
-        list()
-      end
-
-      (f, e, SCode.CLASS(classDef = SCode.CLASS_EXTENDS()) <| rest)  => begin
-        el,
-        print("- SCodeUtil.makeElementsIntoSubMods ignoring class-extends redeclare-as-element: \n")
-        newSubMods = makeElementsIntoSubMods(f, e, rest)
-        newSubMods
-      end
-
-      (f, e, SCode.COMPONENT(name = n) <| rest)  => begin
-        el,
-        newSubMods = makeElementsIntoSubMods(f, e, rest)
-        SCode.NAMEMOD(n, SCode.REDECL(f, e, el)) <| newSubMods
-      end
-
-      (f, e, SCode.CLASS(name = n) <| rest)  => begin
-        el,
-        newSubMods = makeElementsIntoSubMods(f, e, rest)
-        SCode.NAMEMOD(n, SCode.REDECL(f, e, el)) <| newSubMods
-      end
-
-      (f, e, el <| rest)  => begin
-        print("- SCodeUtil.makeElementsIntoSubMods ignoring redeclare-as-element redeclaration: \n")
-        newSubMods = makeElementsIntoSubMods(f, e, rest)
-        newSubMods
-      end
-    end
-  end
-  #=  class extends, error!
-  =#
-  #=  print an error here
-  =#
-  #=  recurse
-  =#
-  #=  component
-  =#
-  #=  recurse
-  =#
-  #=  class
-  =#
-  #=  recurse
-  =#
-  #=  rest
-  =#
-  #=  print an error here
-  =#
-  #=  recurse
-  =#
-  outSubMods
-end
-
-#= @author: adrpo
-keeps the constant binding and if not returns none =#
-function constantBindingOrNone(inBinding::Option)::Option
-  local outBinding::Option
-
-  outBinding = begin
-    local e::Absyn.Exp
-    #=  keep it
-    =#
-    @matchcontinue inBinding begin
-      SOME(e)  => begin
-        @assert list() == (AbsynUtil.getCrefFromExp(e, true, true))
-        inBinding
-      end
-
-      _  => begin
-        NONE()
-      end
-    end
-  end
-  #=  else
-  =#
-  outBinding
-end
-
-#= @author: adrpo
-keeps the redeclares and removes all non-constant bindings!
-if onlyRedeclare is true then bindings are removed completely! =#
-function removeNonConstantBindingsKeepRedeclares(inMod::SCode.Mod, onlyRedeclares::Bool)::SCode.Mod
-  local outMod::SCode.Mod
-
-  outMod = begin
-    local sl::Lst
-    local fp::SCode.Final
-    local ep::SCode.Each
-    local i::SourceInfo
-    local binding::Option
-    @matchcontinue (inMod, onlyRedeclares) begin
-      (SCode.MOD(fp, ep, sl, binding, i), _)  => begin
-        binding = if onlyRedeclares
-          NONE()
-        else
-          constantBindingOrNone(binding)
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          hasAnn
         end
-        sl = removeNonConstantBindingsKeepRedeclaresFromSubMod(sl, onlyRedeclares)
-        SCode.MOD(fp, ep, sl, binding, i)
-      end
 
-      (SCode.REDECL(), _)  => begin
-        inMod
-      end
+         #= check if the named annotation is present and has value true =#
+        function optCommentHasBooleanNamedAnnotation(comm::Option, annotationName::String)::Bool
+              local outB::Bool
 
-      _  => begin
-        inMod
-      end
-    end
-  end
-  outMod
-end
+              outB = begin
+                  local ann::SCode.Annotation
+                @match (comm, annotationName) begin
+                  (SOME(SCode.COMMENT(annotation_ = SOME(ann))), _)  => begin
+                    hasBooleanNamedAnnotation(ann, annotationName)
+                  end
 
-#= @author: adrpo
-removes the non-constant bindings in submods and keeps the redeclares =#
-function removeNonConstantBindingsKeepRedeclaresFromSubMod(inSl::Lst, onlyRedeclares::Bool)::Lst
-  local outSl::Lst
-
-  outSl = begin
-    local n::String
-    local sl::Lst
-    local rest::Lst
-    local m::SCode.Mod
-    local ssl::Lst
-    @match (inSl, onlyRedeclares) begin
-      ( nil(), _)  => begin
-        list()
-      end
-
-      (SCode.NAMEMOD(n, m) <| rest, _)  => begin
-        m = removeNonConstantBindingsKeepRedeclares(m, onlyRedeclares)
-        sl = removeNonConstantBindingsKeepRedeclaresFromSubMod(rest, onlyRedeclares)
-        SCode.NAMEMOD(n, m) <| sl
-      end
-    end
-  end
-  outSl
-end
-
-#= @author: adrpo
-remove the binding that contains a cref =#
-function removeReferenceInBinding(inBinding::Option, inCref::Absyn.ComponentRef)::Option
-  local outBinding::Option
-
-  outBinding = begin
-    local e::Absyn.Exp
-    local crlst1::Lst
-    local crlst2::Lst
-    #=  if cref is not present keep the binding!
-    =#
-    @matchcontinue inBinding begin
-      SOME(e)  => begin
-        crlst1 = AbsynUtil.getCrefFromExp(e, true, true)
-        crlst2 = AbsynUtil.removeCrefFromCrefs(crlst1, inCref)
-        @assert true == (intEq(listLength(crlst1), listLength(crlst2)))
-        inBinding
-      end
-
-      _  => begin
-        NONE()
-      end
-    end
-  end
-  #=  else
-  =#
-  outBinding
-end
-
-#= @author: adrpo
-remove the self reference from mod! =#
-function removeSelfReferenceFromMod(inMod::SCode.Mod, inCref::Absyn.ComponentRef)::SCode.Mod
-  local outMod::SCode.Mod
-
-  outMod = begin
-    local sl::Lst
-    local fp::SCode.Final
-    local ep::SCode.Each
-    local i::SourceInfo
-    local binding::Option
-    @matchcontinue (inMod, inCref) begin
-      (SCode.MOD(fp, ep, sl, binding, i), _)  => begin
-        binding = removeReferenceInBinding(binding, inCref)
-        sl = removeSelfReferenceFromSubMod(sl, inCref)
-        SCode.MOD(fp, ep, sl, binding, i)
-      end
-
-      (SCode.REDECL(), _)  => begin
-        inMod
-      end
-
-      _  => begin
-        inMod
-      end
-    end
-  end
-  outMod
-end
-
-#= @author: adrpo
-removes the self references from a submod =#
-function removeSelfReferenceFromSubMod(inSl::Lst, inCref::Absyn.ComponentRef)::Lst
-  local outSl::Lst
-
-  outSl = begin
-    local n::String
-    local sl::Lst
-    local rest::Lst
-    local m::SCode.Mod
-    local ssl::Lst
-    @match (inSl, inCref) begin
-      ( nil(), _)  => begin
-        list()
-      end
-
-      (SCode.NAMEMOD(n, m) <| rest, _)  => begin
-        m = removeSelfReferenceFromMod(m, inCref)
-        sl = removeSelfReferenceFromSubMod(rest, inCref)
-        SCode.NAMEMOD(n, m) <| sl
-      end
-    end
-  end
-  outSl
-end
-
-function getConstrainedByModifiers(inPrefixes::SCode.Prefixes)::SCode.Mod
-  local outMod::SCode.Mod
-
-  outMod = begin
-    local m::SCode.Mod
-    @match inPrefixes begin
-      SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(modifier = m))))  => begin
-        m
-      end
-
-      _  => begin
-        SCode.NOMOD()
-      end
-    end
-  end
-  outMod
-end
-
-function expandEnumerationSubMod(inSubMod::SCode.SubMod, inChanged::Bool)::Tuple{Bool, SCode.SubMod}
-  local outChanged::Bool
-  local outSubMod::SCode.SubMod
-
-  (outSubMod, outChanged) = begin
-    local mod::SCode.Mod
-    local mod1::SCode.Mod
-    local ident::SCode.Ident
-    @match inSubMod begin
-      SCode.NAMEMOD(ident = ident, mod = mod)  => begin
-        mod1 = expandEnumerationMod(mod)
-        if referenceEq(mod, mod1)
-          (inSubMod, inChanged)
-        else
-          (SCode.NAMEMOD(ident, mod1), true)
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outB
         end
-      end
 
-      _  => begin
-        (inSubMod, inChanged)
-      end
-    end
-  end
-  (outChanged, outSubMod)
-end
+         #= check if the named annotation is present and has value true =#
+        function commentHasBooleanNamedAnnotation(comm::SCode.Comment, annotationName::String)::Bool
+              local outB::Bool
 
-function expandEnumerationMod(inMod::SCode.Mod)::SCode.Mod
-  local outMod::SCode.Mod
+              outB = begin
+                  local ann::SCode.Annotation
+                @match (comm, annotationName) begin
+                  (SCode.COMMENT(annotation_ = SOME(ann)), _)  => begin
+                    hasBooleanNamedAnnotation(ann, annotationName)
+                  end
 
-  local f::SCode.Final
-  local e::SCode.Each
-  local el::SCode.Element
-  local el1::SCode.Element
-  local submod::Lst
-  local binding::Option
-  local info::SourceInfo
-  local changed::Bool
-
-  outMod = begin
-    @match inMod begin
-      SCode.REDECL(f, e, el)  => begin
-        el1 = expandEnumerationClass(el)
-        if referenceEq(el, el1)
-          inMod
-        else
-          SCode.REDECL(f, e, el1)
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outB
         end
-      end
 
-      SCode.MOD(f, e, submod, binding, info)  => begin
-        (submod, changed) = List.mapFold(submod, expandEnumerationSubMod, false)
-        if changed
-          SCode.MOD(f, e, submod, binding, info)
-        else
-          inMod
+         #= Checks if the given annotation contains an entry with the given name with the
+           value true. =#
+        function hasBooleanNamedAnnotation(inAnnotation::SCode.Annotation, inName::String)::Bool
+              local outHasEntry::Bool
+
+              local submods::IList
+
+              @match SCode.ANNOTATION(modification = SCode.MOD(subModLst = submods)) = inAnnotation
+              outHasEntry = ListUtil.exist1(submods, hasBooleanNamedAnnotation2, inName)
+          outHasEntry
         end
-      end
 
-      _  => begin
-        inMod
-      end
-    end
-  end
-  outMod
-end
+         #= Checks if a submod has the same name as the given name, and if its binding
+           in that case is true. =#
+        function hasBooleanNamedAnnotation2(inSubMod::SCode.SubMod, inName::String)::Bool
+              local outIsMatch::Bool
 
-#= @author: PA, adrpo
-this function expands the enumeration from a list into a class with components
-if the class is not an enumeration is kept as it is =#
-function expandEnumerationClass(inElement::SCode.Element)::SCode.Element
-  local outElement::SCode.Element
+              outIsMatch = begin
+                  local id::String
+                @match inSubMod begin
+                  SCode.NAMEMOD(ident = id, mod = SCode.MOD(binding = SOME(Absyn.BOOL(value = true))))  => begin
+                    stringEq(id, inName)
+                  end
 
-  outElement = begin
-    local n::SCode.Ident
-    local l::Lst
-    local cmt::SCode.Comment
-    local info::SourceInfo
-    local c::SCode.Element
-    local prefixes::SCode.Prefixes
-    local m::SCode.Mod
-    local m1::SCode.Mod
-    local p::Absyn.Path
-    local v::SCode.Visibility
-    local ann::Option
-    @match inElement begin
-      SCode.CLASS(name = n, restriction = SCode.R_TYPE(), prefixes = prefixes, classDef = SCode.ENUMERATION(enumLst = l), cmt = cmt, info = info)  => begin
-        c = expandEnumeration(n, l, prefixes, cmt, info)
-        c
-      end
-
-      SCode.EXTENDS(baseClassPath = p, visibility = v, modifications = m, ann = ann, info = info)  => begin
-        m1 = expandEnumerationMod(m)
-        if referenceEq(m, m1)
-          inElement
-        else
-          SCode.EXTENDS(p, v, m1, ann, info)
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outIsMatch
         end
-      end
 
-      _  => begin
-        inElement
-      end
-    end
-  end
-  outElement
-end
+         #= @author: adrpo
+         returns true if annotation(Evaluate = true) is present,
+         otherwise false =#
+        function getEvaluateAnnotation(inCommentOpt::Option)::Bool
+              local evalIsTrue::Bool
 
-#= author: PA
-This function takes an Ident and list of strings, and returns an enumeration class. =#
-function expandEnumeration(n::SCode.Ident, l::Lst, prefixes::SCode.Prefixes, cmt::SCode.Comment, info::SourceInfo)::SCode.Element
-  local outClass::SCode.Element
+              evalIsTrue = begin
+                  local ann::SCode.Annotation
+                @match inCommentOpt begin
+                  SOME(SCode.COMMENT(annotation_ = SOME(ann)))  => begin
+                    hasBooleanNamedAnnotation(ann, "Evaluate")
+                  end
 
-  outClass = SCode.CLASS(n, prefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_ENUMERATION(), makeEnumParts(l, info), cmt, info)
-  outClass
-end
-
-function makeEnumParts(inEnumLst::Lst, info::SourceInfo)::SCode.ClassDef
-  local classDef::SCode.ClassDef
-
-  classDef = SCode.PARTS(makeEnumComponents(inEnumLst, info), list(), list(), list(), list(), list(), list(), NONE())
-  classDef
-end
-
-#= Translates a list of Enums to a list of elements of type EnumType. =#
-function makeEnumComponents(inEnumLst::Lst, info::SourceInfo)::Lst
-  local outSCodeElementLst::Lst
-
-  outSCodeElementLst = List.map1(inEnumLst, SCode.makeEnumType, info)
-  outSCodeElementLst
-end
-
-function checkTypeSpec(ts::Absyn.TypeSpec, info::SourceInfo)
-  _ = begin
-    local tss::Lst
-    local ts2::Absyn.TypeSpec
-    local str::String
-    @match (ts, info) begin
-      (Absyn.TPATH(), _)  => begin
-        ()
-      end
-
-      (Absyn.TCOMPLEX(Absyn.IDENT("tuple"), ts2 <|  nil()), _)  => begin
-        str = AbsynUtil.typeSpecString(ts)
-        println("Error")
-        checkTypeSpec(ts2, info)
-        ()
-      end
-
-      (Absyn.TCOMPLEX(Absyn.IDENT("tuple"), tss), _)  => begin
-        @assert listLength(tss) >= 2
-        List.map1_0(tss, checkTypeSpec, info)
-        ()
-      end
-
-      (Absyn.TCOMPLEX(ts2 <|  nil()), _)  => begin
-        checkTypeSpec(ts2, info)
-        ()
-      end
-
-      (Absyn.TCOMPLEX(tss), _)  => begin
-        if listMember(ts.path, list(Absyn.IDENT("list"), Absyn.IDENT("List"), Absyn.IDENT("array"), Absyn.IDENT("Array"), Absyn.IDENT("polymorphic"), Absyn.IDENT("Option")))
-          str = AbsynUtil.typeSpecString(ts)
-          println("Error")
-          List.map1_0(tss, checkTypeSpec, info)
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          evalIsTrue
         end
-        ()
-      end
-    end
+
+        function getInlineTypeAnnotationFromCmt(inComment::SCode.Comment)::Option
+              local outAnnotation::Option
+
+              outAnnotation = begin
+                  local ann::SCode.Annotation
+                @match inComment begin
+                  SCode.COMMENT(annotation_ = SOME(ann))  => begin
+                    getInlineTypeAnnotation(ann)
+                  end
+
+                  _  => begin
+                      NONE()
+                  end
+                end
+              end
+          outAnnotation
+        end
+
+        function getInlineTypeAnnotation(inAnnotation::SCode.Annotation)::Option
+              local outAnnotation::Option
+
+              outAnnotation = begin
+                  local submods::IList
+                  local inline_mod::SCode.SubMod
+                  local fp::SCode.Final
+                  local ep::SCode.Each
+                  local info::SourceInfo
+                @matchcontinue inAnnotation begin
+                  SCode.ANNOTATION(SCode.MOD(fp, ep, submods, _, info))  => begin
+                      inline_mod = ListUtil.find(submods, isInlineTypeSubMod)
+                    SOME(SCode.ANNOTATION(SCode.MOD(fp, ep, list(inline_mod), NONE(), info)))
+                  end
+
+                  _  => begin
+                      NONE()
+                  end
+                end
+              end
+          outAnnotation
+        end
+
+        function isInlineTypeSubMod(inSubMod::SCode.SubMod)::Bool
+              local outIsInlineType::Bool
+
+              outIsInlineType = begin
+                @match inSubMod begin
+                  SCode.NAMEMOD(ident = "Inline")  => begin
+                    true
+                  end
+
+                  SCode.NAMEMOD(ident = "LateInline")  => begin
+                    true
+                  end
+
+                  SCode.NAMEMOD(ident = "InlineAfterIndexReduction")  => begin
+                    true
+                  end
+                end
+              end
+          outIsInlineType
+        end
+
+        function appendAnnotationToComment(inAnnotation::SCode.Annotation, inComment::SCode.Comment)::SCode.Comment
+              local outComment::SCode.Comment
+
+              outComment = begin
+                  local cmt::Option
+                  local fp::SCode.Final
+                  local ep::SCode.Each
+                  local mods1::IList
+                  local mods2::IList
+                  local b::Option
+                  local info::SourceInfo
+                @match (inAnnotation, inComment) begin
+                  (_, SCode.COMMENT(NONE(), cmt))  => begin
+                    SCode.COMMENT(SOME(inAnnotation), cmt)
+                  end
+
+                  (SCode.ANNOTATION(modification = SCode.MOD(subModLst = mods1)), SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(fp, ep, mods2, b, info))), cmt))  => begin
+                      mods2 = listAppend(mods1, mods2)
+                    SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(fp, ep, mods2, b, info))), cmt)
+                  end
+                end
+              end
+          outComment
+        end
+
+        function getModifierInfo(inMod::SCode.Mod)::SourceInfo
+              local outInfo::SourceInfo
+
+              outInfo = begin
+                  local info::SourceInfo
+                  local el::SCode.Element
+                @match inMod begin
+                  SCode.MOD(info = info)  => begin
+                    info
+                  end
+
+                  SCode.REDECL(element = el)  => begin
+                    elementInfo(el)
+                  end
+
+                  _  => begin
+                      AbsynUtil.dummyInfo
+                  end
+                end
+              end
+          outInfo
+        end
+
+        function getModifierBinding(inMod::SCode.Mod)::Option
+              local outBinding::Option
+
+              outBinding = begin
+                  local binding::Absyn.Exp
+                @match inMod begin
+                  SCode.MOD(binding = SOME(binding))  => begin
+                    SOME(binding)
+                  end
+
+                  _  => begin
+                      NONE()
+                  end
+                end
+              end
+          outBinding
+        end
+
+        function getComponentCondition(element::SCode.Element)::Option
+              local condition::Option
+
+              condition = begin
+                @match element begin
+                  SCode.COMPONENT(__)  => begin
+                    element.condition
+                  end
+
+                  _  => begin
+                      NONE()
+                  end
+                end
+              end
+          condition
+        end
+
+        function removeComponentCondition(inElement::SCode.Element)::SCode.Element
+              local outElement::SCode.Element
+
+              local name::SCode.Ident
+              local pf::SCode.Prefixes
+              local attr::SCode.Attributes
+              local ty::Absyn.TypeSpec
+              local mod::SCode.Mod
+              local cmt::SCode.Comment
+              local info::SourceInfo
+
+              @match SCode.COMPONENT(name, pf, attr, ty, mod, cmt, _, info) = inElement
+              outElement = SCode.COMPONENT(name, pf, attr, ty, mod, cmt, NONE(), info)
+          outElement
+        end
+
+         #= Returns true if the given element is an element with the inner prefix,
+           otherwise false. =#
+        function isInnerComponent(inElement::SCode.Element)::Bool
+              local outIsInner::Bool
+
+              outIsInner = begin
+                  local io::Absyn.InnerOuter
+                @match inElement begin
+                  SCode.COMPONENT(prefixes = SCode.PREFIXES(innerOuter = io))  => begin
+                    AbsynUtil.isInner(io)
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outIsInner
+        end
+
+        function makeElementProtected(inElement::SCode.Element)::SCode.Element
+              local outElement::SCode.Element
+
+              outElement = begin
+                  local name::SCode.Ident
+                  local attr::SCode.Attributes
+                  local ty::Absyn.TypeSpec
+                  local mod::SCode.Mod
+                  local cmt::SCode.Comment
+                  local cnd::Option
+                  local info::SourceInfo
+                  local rdp::SCode.Redeclare
+                  local fp::SCode.Final
+                  local io::Absyn.InnerOuter
+                  local rpp::SCode.Replaceable
+                  local bc::SCode.Path
+                  local ann::Option
+                @match inElement begin
+                  SCode.COMPONENT(prefixes = SCode.PREFIXES(visibility = SCode.PROTECTED(__)))  => begin
+                    inElement
+                  end
+
+                  SCode.COMPONENT(name, SCode.PREFIXES(_, rdp, fp, io, rpp), attr, ty, mod, cmt, cnd, info)  => begin
+                    SCode.COMPONENT(name, SCode.PREFIXES(SCode.PROTECTED(), rdp, fp, io, rpp), attr, ty, mod, cmt, cnd, info)
+                  end
+
+                  SCode.EXTENDS(visibility = SCode.PROTECTED(__))  => begin
+                    inElement
+                  end
+
+                  SCode.EXTENDS(bc, _, mod, ann, info)  => begin
+                    SCode.EXTENDS(bc, SCode.PROTECTED(), mod, ann, info)
+                  end
+
+                  _  => begin
+                      inElement
+                  end
+                end
+              end
+          outElement
+        end
+
+        function isElementPublic(inElement::SCode.Element)::Bool
+              local outIsPublic::Bool
+
+              outIsPublic = visibilityBool(prefixesVisibility(elementPrefixes(inElement)))
+          outIsPublic
+        end
+
+        function isElementProtected(inElement::SCode.Element)::Bool
+              local outIsProtected::Bool
+
+              outIsProtected = ! visibilityBool(prefixesVisibility(elementPrefixes(inElement)))
+          outIsProtected
+        end
+
+        function isElementEncapsulated(inElement::SCode.Element)::Bool
+              local outIsEncapsulated::Bool
+
+              outIsEncapsulated = begin
+                @match inElement begin
+                  SCode.CLASS(encapsulatedPrefix = SCode.ENCAPSULATED(__))  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outIsEncapsulated
+        end
+
+         #= replace the element in program at the specified path (includes the element name).
+         if the element does not exist at that location then it fails.
+         this function will fail if any of the path prefixes
+         to the element are not found in the given program =#
+        function replaceOrAddElementInProgram(inProgram::SCode.Program, inElement::SCode.Element, inClassPath::Absyn.Path)::SCode.Program
+              local outProgram::SCode.Program
+
+              outProgram = begin
+                  local sp::SCode.Program
+                  local c::SCode.Element
+                  local e::SCode.Element
+                  local p::Absyn.Path
+                  local i::Absyn.Ident
+                @match (inProgram, inElement, inClassPath) begin
+                  (_, _, Absyn.QUALIFIED(i, p))  => begin
+                      e = getElementWithId(inProgram, i)
+                      sp = getElementsFromElement(inProgram, e)
+                      sp = replaceOrAddElementInProgram(sp, inElement, p)
+                      e = replaceElementsInElement(inProgram, e, sp)
+                      sp = replaceOrAddElementWithId(inProgram, e, i)
+                    sp
+                  end
+
+                  (_, _, Absyn.IDENT(i))  => begin
+                      sp = replaceOrAddElementWithId(inProgram, inElement, i)
+                    sp
+                  end
+
+                  (_, _, Absyn.FULLYQUALIFIED(p))  => begin
+                      sp = replaceOrAddElementInProgram(inProgram, inElement, p)
+                    sp
+                  end
+                end
+              end
+          outProgram
+        end
+
+         #= replace the class in program at the specified id.
+         if the class does not exist at that location then is is added =#
+        function replaceOrAddElementWithId(inProgram::SCode.Program, inElement::SCode.Element, inId::SCode.Ident)::SCode.Program
+              local outProgram::SCode.Program
+
+              outProgram = begin
+                  local sp::SCode.Program
+                  local rest::SCode.Program
+                  local c::SCode.Element
+                  local e::SCode.Element
+                  local p::Absyn.Path
+                  local i::Absyn.Ident
+                  local n::Absyn.Ident
+                @matchcontinue (inProgram, inElement, inId) begin
+                  (SCode.CLASS(name = n) <| rest, _, i)  => begin
+                      @match true = stringEq(n, i)
+                    inElement <| rest
+                  end
+
+                  (SCode.COMPONENT(name = n) <| rest, _, i)  => begin
+                      @match true = stringEq(n, i)
+                    inElement <| rest
+                  end
+
+                  (SCode.EXTENDS(baseClassPath = p) <| rest, _, i)  => begin
+                      @match true = stringEq(AbsynUtil.pathString(p), i)
+                    inElement <| rest
+                  end
+
+                  (e <| rest, _, i)  => begin
+                      sp = replaceOrAddElementWithId(rest, inElement, i)
+                    e <| sp
+                  end
+
+                  ( nil(), _, _)  => begin
+                      sp = list(inElement)
+                    sp
+                  end
+                end
+              end
+               #=  not found, add it
+               =#
+          outProgram
+        end
+
+        function getElementsFromElement(inProgram::SCode.Program, inElement::SCode.Element)::SCode.Program
+              local outProgram::SCode.Program
+
+              outProgram = begin
+                  local els::SCode.Program
+                  local e::SCode.Element
+                  local p::Absyn.Path
+                  local i::Absyn.Ident
+                   #=  a class with parts
+                   =#
+                @match (inProgram, inElement) begin
+                  (_, SCode.CLASS(classDef = SCode.PARTS(elementLst = els)))  => begin
+                    els
+                  end
+
+                  (_, SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = SCode.PARTS(elementLst = els))))  => begin
+                    els
+                  end
+
+                  (_, SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = p))))  => begin
+                      e = getElementWithPath(inProgram, p)
+                      els = getElementsFromElement(inProgram, e)
+                    els
+                  end
+                end
+              end
+               #=  a class extends
+               =#
+               #=  a derived class
+               =#
+          outProgram
+        end
+
+         #= replaces elements in element, it will search for elements pointed by derived =#
+        function replaceElementsInElement(inProgram::SCode.Program, inElement::SCode.Element, inElements::SCode.Program)::SCode.Element
+              local outElement::SCode.Element
+
+              outElement = begin
+                  local els::SCode.Program
+                  local e::SCode.Element
+                  local p::Absyn.Path
+                  local i::Absyn.Ident
+                  local name::SCode.Ident #= the name of the class =#
+                  local prefixes::SCode.Prefixes #= the common class or component prefixes =#
+                  local encapsulatedPrefix::SCode.Encapsulated #= the encapsulated prefix =#
+                  local partialPrefix::SCode.Partial #= the partial prefix =#
+                  local restriction::SCode.Restriction #= the restriction of the class =#
+                  local classDef::SCode.ClassDef #= the class specification =#
+                  local info::SourceInfo #= the class information =#
+                  local cmt::SCode.Comment
+                   #=  a class with parts, non derived
+                   =#
+                @matchcontinue (inProgram, inElement, inElements) begin
+                  (_, SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, cmt, info), _)  => begin
+                      @match (classDef, NONE()) = replaceElementsInClassDef(inProgram, classDef, inElements)
+                    SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, cmt, info)
+                  end
+
+                  (_, SCode.CLASS(classDef = classDef), _)  => begin
+                      @match (classDef, SOME(e)) = replaceElementsInClassDef(inProgram, classDef, inElements)
+                    e
+                  end
+                end
+              end
+               #=  a class derived
+               =#
+          outElement
+        end
+
+         #= replaces the elements in class definition.
+         if derived a SOME(element) is returned,
+         otherwise the modified class def and NONE() =#
+        function replaceElementsInClassDef(inProgram::SCode.Program, classDef::SCode.ClassDef, inElements::SCode.Program)::Tuple{SCode.ClassDef, Option}
+              local outElementOpt::Option
+
+
+              outElementOpt = begin
+                  local e::SCode.Element
+                  local p::Absyn.Path
+                  local composition::SCode.ClassDef
+                   #=  a derived class
+                   =#
+                @match classDef begin
+                  SCode.DERIVED(typeSpec = Absyn.TPATH(path = p))  => begin
+                      e = getElementWithPath(inProgram, p)
+                      e = replaceElementsInElement(inProgram, e, inElements)
+                    SOME(e)
+                  end
+
+                  SCode.PARTS(__)  => begin
+                       #=  a parts
+                       =#
+                      classDef.elementLst = inElements
+                    NONE()
+                  end
+
+                  SCode.CLASS_EXTENDS(composition = composition)  => begin
+                       #=  a class extends
+                       =#
+                      (composition, outElementOpt) = replaceElementsInClassDef(inProgram, composition, inElements)
+                      if isNone(outElementOpt)
+                        classDef.composition = composition
+                      end
+                    outElementOpt
+                  end
+                end
+              end
+          (classDef, outElementOpt)
+        end
+
+         #= returns the element from the program having the name as the id.
+         if the element does not exist it fails =#
+        function getElementWithId(inProgram::SCode.Program, inId::String)::SCode.Element
+              local outElement::SCode.Element
+
+              outElement = begin
+                  local sp::SCode.Program
+                  local rest::SCode.Program
+                  local c::SCode.Element
+                  local e::SCode.Element
+                  local p::Absyn.Path
+                  local i::Absyn.Ident
+                  local n::Absyn.Ident
+                @match (inProgram, inId) begin
+                  (e && SCode.CLASS(name = n) <| _, i) where (stringEq(n, i))  => begin
+                    e
+                  end
+
+                  (e && SCode.COMPONENT(name = n) <| _, i) where (stringEq(n, i))  => begin
+                    e
+                  end
+
+                  (e && SCode.EXTENDS(baseClassPath = p) <| _, i) where (stringEq(AbsynUtil.pathString(p), i))  => begin
+                    e
+                  end
+
+                  (_ <| rest, i)  => begin
+                    getElementWithId(rest, i)
+                  end
+                end
+              end
+          outElement
+        end
+
+         #= returns the element from the program having the name as the id.
+         if the element does not exist it fails =#
+        function getElementWithPath(inProgram::SCode.Program, inPath::Absyn.Path)::SCode.Element
+              local outElement::SCode.Element
+
+              outElement = begin
+                  local sp::SCode.Program
+                  local rest::SCode.Program
+                  local c::SCode.Element
+                  local e::SCode.Element
+                  local p::Absyn.Path
+                  local i::Absyn.Ident
+                  local n::Absyn.Ident
+                @match (inProgram, inPath) begin
+                  (_, Absyn.FULLYQUALIFIED(p))  => begin
+                    getElementWithPath(inProgram, p)
+                  end
+
+                  (_, Absyn.IDENT(i))  => begin
+                      e = getElementWithId(inProgram, i)
+                    e
+                  end
+
+                  (_, Absyn.QUALIFIED(i, p))  => begin
+                      e = getElementWithId(inProgram, i)
+                      sp = getElementsFromElement(inProgram, e)
+                      e = getElementWithPath(sp, p)
+                    e
+                  end
+                end
+              end
+          outElement
+        end
+
+         #=  =#
+        function getElementName(e::SCode.Element)::String
+              local s::String
+
+              s = begin
+                  local p::Absyn.Path
+                @match e begin
+                  SCode.COMPONENT(name = s)  => begin
+                    s
+                  end
+
+                  SCode.CLASS(name = s)  => begin
+                    s
+                  end
+
+                  SCode.EXTENDS(baseClassPath = p)  => begin
+                    AbsynUtil.pathString(p)
+                  end
+                end
+              end
+          s
+        end
+
+         #= @auhtor: adrpo
+         set the base class path in extends =#
+        function setBaseClassPath(inE::SCode.Element, inBcPath::Absyn.Path)::SCode.Element
+              local outE::SCode.Element
+
+              local bc::SCode.Path
+              local v::SCode.Visibility
+              local m::SCode.Mod
+              local a::Option
+              local i::SourceInfo
+
+              @match SCode.EXTENDS(bc, v, m, a, i) = inE
+              outE = SCode.EXTENDS(inBcPath, v, m, a, i)
+          outE
+        end
+
+         #= @auhtor: adrpo
+         return the base class path in extends =#
+        function getBaseClassPath(inE::SCode.Element)::Absyn.Path
+              local outBcPath::Absyn.Path
+
+              local bc::SCode.Path
+              local v::SCode.Visibility
+              local m::SCode.Mod
+              local a::Option
+              local i::SourceInfo
+
+              @match SCode.EXTENDS(baseClassPath = outBcPath) = inE
+          outBcPath
+        end
+
+         #= @auhtor: adrpo
+         set the typespec path in component =#
+        function setComponentTypeSpec(inE::SCode.Element, inTypeSpec::Absyn.TypeSpec)::SCode.Element
+              local outE::SCode.Element
+
+              local n::SCode.Ident
+              local pr::SCode.Prefixes
+              local atr::SCode.Attributes
+              local ts::Absyn.TypeSpec
+              local cmt::SCode.Comment
+              local cnd::Option
+              local bc::SCode.Path
+              local v::SCode.Visibility
+              local m::SCode.Mod
+              local a::Option
+              local i::SourceInfo
+
+              @match SCode.COMPONENT(n, pr, atr, ts, m, cmt, cnd, i) = inE
+              outE = SCode.COMPONENT(n, pr, atr, inTypeSpec, m, cmt, cnd, i)
+          outE
+        end
+
+         #= @auhtor: adrpo
+         get the typespec path in component =#
+        function getComponentTypeSpec(inE::SCode.Element)::Absyn.TypeSpec
+              local outTypeSpec::Absyn.TypeSpec
+
+              @match SCode.COMPONENT(typeSpec = outTypeSpec) = inE
+          outTypeSpec
+        end
+
+         #= @auhtor: adrpo
+         set the modification in component =#
+        function setComponentMod(inE::SCode.Element, inMod::SCode.Mod)::SCode.Element
+              local outE::SCode.Element
+
+              local n::SCode.Ident
+              local pr::SCode.Prefixes
+              local atr::SCode.Attributes
+              local ts::Absyn.TypeSpec
+              local cmt::SCode.Comment
+              local cnd::Option
+              local bc::SCode.Path
+              local v::SCode.Visibility
+              local m::SCode.Mod
+              local a::Option
+              local i::SourceInfo
+
+              @match SCode.COMPONENT(n, pr, atr, ts, m, cmt, cnd, i) = inE
+              outE = SCode.COMPONENT(n, pr, atr, ts, inMod, cmt, cnd, i)
+          outE
+        end
+
+         #= @auhtor: adrpo
+         get the modification in component =#
+        function getComponentMod(inE::SCode.Element)::SCode.Mod
+              local outMod::SCode.Mod
+
+              @match SCode.COMPONENT(modifications = outMod) = inE
+          outMod
+        end
+
+        function isDerivedClass(inClass::SCode.Element)::Bool
+              local isDerived::Bool
+
+              isDerived = begin
+                @match inClass begin
+                  SCode.CLASS(classDef = SCode.DERIVED(__))  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          isDerived
+        end
+
+        function isClassExtends(cls::SCode.Element)::Bool
+              local isCE::Bool
+
+              isCE = begin
+                @match cls begin
+                  SCode.CLASS(classDef = SCode.CLASS_EXTENDS(__))  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          isCE
+        end
+
+         #= @auhtor: adrpo
+         set the base class path in extends =#
+        function setDerivedTypeSpec(inE::SCode.Element, inTypeSpec::Absyn.TypeSpec)::SCode.Element
+              local outE::SCode.Element
+
+              local n::SCode.Ident
+              local pr::SCode.Prefixes
+              local atr::SCode.Attributes
+              local ep::SCode.Encapsulated
+              local pp::SCode.Partial
+              local res::SCode.Restriction
+              local cd::SCode.ClassDef
+              local i::SourceInfo
+              local ts::Absyn.TypeSpec
+              local ann::Option
+              local cmt::SCode.Comment
+              local m::SCode.Mod
+
+              @match SCode.CLASS(n, pr, ep, pp, res, cd, cmt, i) = inE
+              @match SCode.DERIVED(ts, m, atr) = cd
+              cd = SCode.DERIVED(inTypeSpec, m, atr)
+              outE = SCode.CLASS(n, pr, ep, pp, res, cd, cmt, i)
+          outE
+        end
+
+         #= @auhtor: adrpo
+         set the base class path in extends =#
+        function getDerivedTypeSpec(inE::SCode.Element)::Absyn.TypeSpec
+              local outTypeSpec::Absyn.TypeSpec
+
+              @match SCode.CLASS(classDef = SCode.DERIVED(typeSpec = outTypeSpec)) = inE
+          outTypeSpec
+        end
+
+         #= @auhtor: adrpo
+         set the base class path in extends =#
+        function getDerivedMod(inE::SCode.Element)::SCode.Mod
+              local outMod::SCode.Mod
+
+              @match SCode.CLASS(classDef = SCode.DERIVED(modifications = outMod)) = inE
+          outMod
+        end
+
+        function setClassPrefixes(inPrefixes::SCode.Prefixes, cl::SCode.Element)::SCode.Element
+              local outCl::SCode.Element
+
+              outCl = begin
+                  local parts::SCode.ClassDef
+                  local e::SCode.Encapsulated
+                  local id::SCode.Ident
+                  local info::SourceInfo
+                  local restriction::SCode.Restriction
+                  local prefixes::SCode.Prefixes
+                  local pp::SCode.Partial
+                  local cmt::SCode.Comment
+                   #=  not the same, change
+                   =#
+                @match (inPrefixes, cl) begin
+                  (_, SCode.CLASS(id, _, e, pp, restriction, parts, cmt, info))  => begin
+                    SCode.CLASS(id, inPrefixes, e, pp, restriction, parts, cmt, info)
+                  end
+                end
+              end
+          outCl
+        end
+
+        function makeEquation(inEEq::SCode.EEquation)::SCode.Equation
+              local outEq::SCode.Equation
+
+              outEq = SCode.EQUATION(inEEq)
+          outEq
+        end
+
+        function getClassDef(inClass::SCode.Element)::SCode.ClassDef
+              local outCdef::SCode.ClassDef
+
+              outCdef = begin
+                @match inClass begin
+                  SCode.CLASS(classDef = outCdef)  => begin
+                    outCdef
+                  end
+                end
+              end
+          outCdef
+        end
+
+         #= @author:
+         returns true if equations contains reinit =#
+        function equationsContainReinit(inEqs::IList)::Bool
+              local hasReinit::Bool
+
+              hasReinit = begin
+                  local b::Bool
+                @match inEqs begin
+                  _  => begin
+                      b = ListUtil.applyAndFold(inEqs, boolOr, equationContainReinit, false)
+                    b
+                  end
+                end
+              end
+          hasReinit
+        end
+
+         #= @author:
+         returns true if equation contains reinit =#
+        function equationContainReinit(inEq::SCode.EEquation)::Bool
+              local hasReinit::Bool
+
+              hasReinit = begin
+                  local b::Bool
+                  local eqs::IList
+                  local eqs_lst::IList
+                  local tpl_el::IList
+                @match inEq begin
+                  SCode.EQ_REINIT(__)  => begin
+                    true
+                  end
+
+                  SCode.EQ_WHEN(eEquationLst = eqs, elseBranches = tpl_el)  => begin
+                      b = equationsContainReinit(eqs)
+                      eqs_lst = ListUtil.map(tpl_el, Util.tuple22)
+                      b = ListUtil.applyAndFold(eqs_lst, boolOr, equationsContainReinit, b)
+                    b
+                  end
+
+                  SCode.EQ_IF(thenBranch = eqs_lst, elseBranch = eqs)  => begin
+                      b = equationsContainReinit(eqs)
+                      b = ListUtil.applyAndFold(eqs_lst, boolOr, equationsContainReinit, b)
+                    b
+                  end
+
+                  SCode.EQ_FOR(eEquationLst = eqs)  => begin
+                      b = equationsContainReinit(eqs)
+                    b
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          hasReinit
+        end
+
+         #= @author:
+         returns true if statements contains reinit =#
+        function algorithmsContainReinit(inAlgs::IList)::Bool
+              local hasReinit::Bool
+
+              hasReinit = begin
+                  local b::Bool
+                @match inAlgs begin
+                  _  => begin
+                      b = ListUtil.applyAndFold(inAlgs, boolOr, algorithmContainReinit, false)
+                    b
+                  end
+                end
+              end
+          hasReinit
+        end
+
+         #= @author:
+         returns true if statement contains reinit =#
+        function algorithmContainReinit(inAlg::SCode.Statement)::Bool
+              local hasReinit::Bool
+
+              hasReinit = begin
+                  local b::Bool
+                  local b1::Bool
+                  local b2::Bool
+                  local b3::Bool
+                  local algs::IList
+                  local algs1::IList
+                  local algs2::IList
+                  local algs_lst::IList
+                  local tpl_alg::IList
+                @match inAlg begin
+                  SCode.ALG_REINIT(__)  => begin
+                    true
+                  end
+
+                  SCode.ALG_WHEN_A(branches = tpl_alg)  => begin
+                      algs_lst = ListUtil.map(tpl_alg, Util.tuple22)
+                      b = ListUtil.applyAndFold(algs_lst, boolOr, algorithmsContainReinit, false)
+                    b
+                  end
+
+                  SCode.ALG_IF(trueBranch = algs1, elseIfBranch = tpl_alg, elseBranch = algs2)  => begin
+                      b1 = algorithmsContainReinit(algs1)
+                      algs_lst = ListUtil.map(tpl_alg, Util.tuple22)
+                      b2 = ListUtil.applyAndFold(algs_lst, boolOr, algorithmsContainReinit, b1)
+                      b3 = algorithmsContainReinit(algs2)
+                      b = boolOr(b1, boolOr(b2, b3))
+                    b
+                  end
+
+                  SCode.ALG_FOR(forBody = algs)  => begin
+                      b = algorithmsContainReinit(algs)
+                    b
+                  end
+
+                  SCode.ALG_WHILE(whileBody = algs)  => begin
+                      b = algorithmsContainReinit(algs)
+                    b
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          hasReinit
+        end
+
+        function getClassPartialPrefix(inElement::SCode.Element)::SCode.Partial
+              local outPartial::SCode.Partial
+
+              @match SCode.CLASS(partialPrefix = outPartial) = inElement
+          outPartial
+        end
+
+        function getClassRestriction(inElement::SCode.Element)::SCode.Restriction
+              local outRestriction::SCode.Restriction
+
+              @match SCode.CLASS(restriction = outRestriction) = inElement
+          outRestriction
+        end
+
+        function isRedeclareSubMod(inSubMod::SCode.SubMod)::Bool
+              local outIsRedeclare::Bool
+
+              outIsRedeclare = begin
+                @match inSubMod begin
+                  SCode.NAMEMOD(mod = SCode.REDECL(__))  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outIsRedeclare
+        end
+
+        function componentMod(inElement::SCode.Element)::SCode.Mod
+              local outMod::SCode.Mod
+
+              outMod = begin
+                  local mod::SCode.Mod
+                @match inElement begin
+                  SCode.COMPONENT(modifications = mod)  => begin
+                    mod
+                  end
+
+                  _  => begin
+                      SCode.NOMOD()
+                  end
+                end
+              end
+          outMod
+        end
+
+        function elementMod(inElement::SCode.Element)::SCode.Mod
+              local outMod::SCode.Mod
+
+              outMod = begin
+                  local mod::SCode.Mod
+                @match inElement begin
+                  SCode.COMPONENT(modifications = mod)  => begin
+                    mod
+                  end
+
+                  SCode.CLASS(classDef = SCode.DERIVED(modifications = mod))  => begin
+                    mod
+                  end
+
+                  SCode.CLASS(classDef = SCode.CLASS_EXTENDS(modifications = mod))  => begin
+                    mod
+                  end
+
+                  SCode.EXTENDS(modifications = mod)  => begin
+                    mod
+                  end
+                end
+              end
+          outMod
+        end
+
+         #= Sets the modifier of an element, or fails if the element is not capable of
+           having a modifier. =#
+        function setElementMod(inElement::SCode.Element, inMod::SCode.Mod)::SCode.Element
+              local outElement::SCode.Element
+
+              outElement = begin
+                  local n::SCode.Ident
+                  local pf::SCode.Prefixes
+                  local attr::SCode.Attributes
+                  local ty::Absyn.TypeSpec
+                  local cmt::SCode.Comment
+                  local cnd::Option
+                  local i::SourceInfo
+                  local ep::SCode.Encapsulated
+                  local pp::SCode.Partial
+                  local res::SCode.Restriction
+                  local cdef::SCode.ClassDef
+                  local bc::Absyn.Path
+                  local vis::SCode.Visibility
+                  local ann::Option
+                @match (inElement, inMod) begin
+                  (SCode.COMPONENT(n, pf, attr, ty, _, cmt, cnd, i), _)  => begin
+                    SCode.COMPONENT(n, pf, attr, ty, inMod, cmt, cnd, i)
+                  end
+
+                  (SCode.CLASS(n, pf, ep, pp, res, cdef, cmt, i), _)  => begin
+                      cdef = setClassDefMod(cdef, inMod)
+                    SCode.CLASS(n, pf, ep, pp, res, cdef, cmt, i)
+                  end
+
+                  (SCode.EXTENDS(bc, vis, _, ann, i), _)  => begin
+                    SCode.EXTENDS(bc, vis, inMod, ann, i)
+                  end
+                end
+              end
+          outElement
+        end
+
+        function setClassDefMod(inClassDef::SCode.ClassDef, inMod::SCode.Mod)::SCode.ClassDef
+              local outClassDef::SCode.ClassDef
+
+              outClassDef = begin
+                  local bc::SCode.Ident
+                  local cdef::SCode.ClassDef
+                  local ty::Absyn.TypeSpec
+                  local attr::SCode.Attributes
+                @match (inClassDef, inMod) begin
+                  (SCode.DERIVED(ty, _, attr), _)  => begin
+                    SCode.DERIVED(ty, inMod, attr)
+                  end
+
+                  (SCode.CLASS_EXTENDS(_, cdef), _)  => begin
+                    SCode.CLASS_EXTENDS(inMod, cdef)
+                  end
+                end
+              end
+          outClassDef
+        end
+
+        function isBuiltinElement(inElement::SCode.Element)::Bool
+              local outIsBuiltin::Bool
+
+              outIsBuiltin = begin
+                  local ann::SCode.Annotation
+                @match inElement begin
+                  SCode.CLASS(classDef = SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(lang = SOME("builtin")))))  => begin
+                    true
+                  end
+
+                  SCode.CLASS(cmt = SCode.COMMENT(annotation_ = SOME(ann)))  => begin
+                    hasBooleanNamedAnnotation(ann, "__OpenModelica_builtin")
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outIsBuiltin
+        end
+
+        function partitionElements(inElements::IList)::Tuple{IList, IList, IList, IList, IList}
+              local outDefineUnits::IList
+              local outImports::IList
+              local outExtends::IList
+              local outClasses::IList
+              local outComponents::IList
+
+              (outComponents, outClasses, outExtends, outImports, outDefineUnits) = partitionElements2(inElements, list(), list(), list(), list(), list())
+          (outComponents, outClasses, outExtends, outImports, outDefineUnits)
+        end
+
+        function partitionElements2(inElements::IList, inComponents::IList, inClasses::IList, inExtends::IList, inImports::IList, inDefineUnits::IList)::Tuple{IList, IList, IList, IList, IList}
+              local outDefineUnits::IList
+              local outImports::IList
+              local outExtends::IList
+              local outClasses::IList
+              local outComponents::IList
+
+              (outComponents, outClasses, outExtends, outImports, outDefineUnits) = begin
+                  local el::SCode.Element
+                  local rest_el::IList
+                  local comp::IList
+                  local cls::IList
+                  local ext::IList
+                  local imp::IList
+                  local def::IList
+                @match (inElements, inComponents, inClasses, inExtends, inImports, inDefineUnits) begin
+                  (el && SCode.COMPONENT(__) <| rest_el, comp, cls, ext, imp, def)  => begin
+                      (comp, cls, ext, imp, def) = partitionElements2(rest_el, el <| comp, cls, ext, imp, def)
+                    (comp, cls, ext, imp, def)
+                  end
+
+                  (el && SCode.CLASS(__) <| rest_el, comp, cls, ext, imp, def)  => begin
+                      (comp, cls, ext, imp, def) = partitionElements2(rest_el, comp, el <| cls, ext, imp, def)
+                    (comp, cls, ext, imp, def)
+                  end
+
+                  (el && SCode.EXTENDS(__) <| rest_el, comp, cls, ext, imp, def)  => begin
+                      (comp, cls, ext, imp, def) = partitionElements2(rest_el, comp, cls, el <| ext, imp, def)
+                    (comp, cls, ext, imp, def)
+                  end
+
+                  (el && SCode.IMPORT(__) <| rest_el, comp, cls, ext, imp, def)  => begin
+                      (comp, cls, ext, imp, def) = partitionElements2(rest_el, comp, cls, ext, el <| imp, def)
+                    (comp, cls, ext, imp, def)
+                  end
+
+                  (el && SCode.DEFINEUNIT(__) <| rest_el, comp, cls, ext, imp, def)  => begin
+                      (comp, cls, ext, imp, def) = partitionElements2(rest_el, comp, cls, ext, imp, el <| def)
+                    (comp, cls, ext, imp, def)
+                  end
+
+                  ( nil(), comp, cls, ext, imp, def)  => begin
+                    (listReverse(comp), listReverse(cls), listReverse(ext), listReverse(imp), listReverse(def))
+                  end
+                end
+              end
+          (outComponents, outClasses, outExtends, outImports, outDefineUnits)
+        end
+
+        function isExternalFunctionRestriction(inRestr::SCode.FunctionRestriction)::Bool
+              local isExternal::Bool
+
+              isExternal = begin
+                @match inRestr begin
+                  SCode.FR_EXTERNAL_FUNCTION(__)  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          isExternal
+        end
+
+        function isImpureFunctionRestriction(inRestr::SCode.FunctionRestriction)::Bool
+              local isExternal::Bool
+
+              isExternal = begin
+                @match inRestr begin
+                  SCode.FR_EXTERNAL_FUNCTION(true)  => begin
+                    true
+                  end
+
+                  SCode.FR_NORMAL_FUNCTION(true)  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          isExternal
+        end
+
+        function isRestrictionImpure(inRestr::SCode.Restriction, hasZeroOutputPreMSL3_2::Bool)::Bool
+              local isExternal::Bool
+
+              isExternal = begin
+                @match (inRestr, hasZeroOutputPreMSL3_2) begin
+                  (SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(true)), _)  => begin
+                    true
+                  end
+
+                  (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(true)), _)  => begin
+                    true
+                  end
+
+                  (SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(false)), false)  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          isExternal
+        end
+
+        function setElementVisibility(inElement::SCode.Element, inVisibility::SCode.Visibility)::SCode.Element
+              local outElement::SCode.Element
+
+              outElement = begin
+                  local name::SCode.Ident
+                  local prefs::SCode.Prefixes
+                  local attr::SCode.Attributes
+                  local ty::Absyn.TypeSpec
+                  local mod::SCode.Mod
+                  local cmt::SCode.Comment
+                  local cond::Option
+                  local info::SourceInfo
+                  local ep::SCode.Encapsulated
+                  local pp::SCode.Partial
+                  local res::SCode.Restriction
+                  local cdef::SCode.ClassDef
+                  local bc::Absyn.Path
+                  local ann::Option
+                  local imp::Absyn.Import
+                  local unit::Option
+                  local weight::Option
+                @match (inElement, inVisibility) begin
+                  (SCode.COMPONENT(name, prefs, attr, ty, mod, cmt, cond, info), _)  => begin
+                      prefs = prefixesSetVisibility(prefs, inVisibility)
+                    SCode.COMPONENT(name, prefs, attr, ty, mod, cmt, cond, info)
+                  end
+
+                  (SCode.CLASS(name, prefs, ep, pp, res, cdef, cmt, info), _)  => begin
+                      prefs = prefixesSetVisibility(prefs, inVisibility)
+                    SCode.CLASS(name, prefs, ep, pp, res, cdef, cmt, info)
+                  end
+
+                  (SCode.EXTENDS(bc, _, mod, ann, info), _)  => begin
+                    SCode.EXTENDS(bc, inVisibility, mod, ann, info)
+                  end
+
+                  (SCode.IMPORT(imp, _, info), _)  => begin
+                    SCode.IMPORT(imp, inVisibility, info)
+                  end
+
+                  (SCode.DEFINEUNIT(name, _, unit, weight), _)  => begin
+                    SCode.DEFINEUNIT(name, inVisibility, unit, weight)
+                  end
+                end
+              end
+          outElement
+        end
+
+         #= Returns true if the given element is a class with the given name, otherwise false. =#
+        function isClassNamed(inName::SCode.Ident, inClass::SCode.Element)::Bool
+              local outIsNamed::Bool
+
+              outIsNamed = begin
+                  local name::SCode.Ident
+                @match (inName, inClass) begin
+                  (_, SCode.CLASS(name = name))  => begin
+                    stringEq(inName, name)
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outIsNamed
+        end
+
+         #= Returns the comment of an element. =#
+        function getElementComment(inElement::SCode.Element)::Option
+              local outComment::Option
+
+              outComment = begin
+                  local cmt::SCode.Comment
+                  local cdef::SCode.ClassDef
+                @match inElement begin
+                  SCode.COMPONENT(comment = cmt)  => begin
+                    SOME(cmt)
+                  end
+
+                  SCode.CLASS(cmt = cmt)  => begin
+                    SOME(cmt)
+                  end
+
+                  _  => begin
+                      NONE()
+                  end
+                end
+              end
+          outComment
+        end
+
+         #= Removes the annotation from a comment. =#
+        function stripAnnotationFromComment(inComment::Option)::Option
+              local outComment::Option
+
+              outComment = begin
+                  local str::Option
+                  local cmt::Option
+                @match inComment begin
+                  SOME(SCode.COMMENT(_, str))  => begin
+                    SOME(SCode.COMMENT(NONE(), str))
+                  end
+
+                  _  => begin
+                      NONE()
+                  end
+                end
+              end
+          outComment
+        end
+
+        function isOverloadedFunction(inElement::SCode.Element)::Bool
+              local isOverloaded::Bool
+
+              isOverloaded = begin
+                @match inElement begin
+                  SCode.CLASS(classDef = SCode.OVERLOAD(__))  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          isOverloaded
+        end
+
+         #= @author: adrpo
+         this function merges the original declaration with the redeclared declaration, see 7.3.2 in Spec.
+         - modifiers from the constraining class on derived classes are merged into the new declaration
+         - modifiers from the original derived classes are merged into the new declaration
+         - if the original declaration has no constraining type the derived declaration is used
+         - prefixes and attributes are merged
+         same with components
+         TODO! how about non-short class definitions with constrained by with modifications? =#
+        function mergeWithOriginal(inNew::SCode.Element, inOld::SCode.Element)::SCode.Element
+              local outNew::SCode.Element
+
+              outNew = begin
+                  local n::SCode.Element
+                  local o::SCode.Element
+                  local name1::SCode.Ident
+                  local name2::SCode.Ident
+                  local prefixes1::SCode.Prefixes
+                  local prefixes2::SCode.Prefixes
+                  local en1::SCode.Encapsulated
+                  local en2::SCode.Encapsulated
+                  local p1::SCode.Partial
+                  local p2::SCode.Partial
+                  local restr1::SCode.Restriction
+                  local restr2::SCode.Restriction
+                  local attr1::SCode.Attributes
+                  local attr2::SCode.Attributes
+                  local mod1::SCode.Mod
+                  local mod2::SCode.Mod
+                  local tp1::Absyn.TypeSpec
+                  local tp2::Absyn.TypeSpec
+                  local im1::Absyn.Import
+                  local im2::Absyn.Import
+                  local path1::Absyn.Path
+                  local path2::Absyn.Path
+                  local os1::Option
+                  local os2::Option
+                  local or1::Option
+                  local or2::Option
+                  local cond1::Option
+                  local cond2::Option
+                  local cd1::SCode.ClassDef
+                  local cd2::SCode.ClassDef
+                  local cm::SCode.Comment
+                  local i::SourceInfo
+                  local mCCNew::SCode.Mod
+                  local mCCOld::SCode.Mod
+                   #=  for functions return the new one!
+                   =#
+                @matchcontinue (inNew, inOld) begin
+                  (_, _)  => begin
+                      @match true = isFunction(inNew)
+                    inNew
+                  end
+
+                  (SCode.CLASS(name1, prefixes1, en1, p1, restr1, cd1, cm, i), SCode.CLASS(_, prefixes2, _, _, _, cd2, _, _))  => begin
+                      mCCNew = getConstrainedByModifiers(prefixes1)
+                      mCCOld = getConstrainedByModifiers(prefixes2)
+                      cd1 = mergeClassDef(cd1, cd2, mCCNew, mCCOld)
+                      prefixes1 = propagatePrefixes(prefixes2, prefixes1)
+                      n = SCode.CLASS(name1, prefixes1, en1, p1, restr1, cd1, cm, i)
+                    n
+                  end
+
+                  _  => begin
+                      inNew
+                  end
+                end
+              end
+          outNew
+        end
+
+        function getConstrainedByModifiers(inPrefixes::SCode.Prefixes)::SCode.Mod
+              local outMod::SCode.Mod
+
+              outMod = begin
+                  local m::SCode.Mod
+                @match inPrefixes begin
+                  SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(modifier = m))))  => begin
+                    m
+                  end
+
+                  _  => begin
+                      SCode.NOMOD()
+                  end
+                end
+              end
+          outMod
+        end
+
+         #= @author: adrpo
+         see mergeWithOriginal =#
+        function mergeClassDef(inNew::SCode.ClassDef, inOld::SCode.ClassDef, inCCModNew::SCode.Mod, inCCModOld::SCode.Mod)::SCode.ClassDef
+              local outNew::SCode.ClassDef
+
+              outNew = begin
+                  local n::SCode.ClassDef
+                  local o::SCode.ClassDef
+                  local ts1::Absyn.TypeSpec
+                  local ts2::Absyn.TypeSpec
+                  local m1::SCode.Mod
+                  local m2::SCode.Mod
+                  local a1::SCode.Attributes
+                  local a2::SCode.Attributes
+                @match (inNew, inOld, inCCModNew, inCCModOld) begin
+                  (SCode.DERIVED(ts1, m1, a1), SCode.DERIVED(_, m2, a2), _, _)  => begin
+                      m2 = mergeModifiers(m2, inCCModOld)
+                      m1 = mergeModifiers(m1, inCCModNew)
+                      m2 = mergeModifiers(m1, m2)
+                      a2 = propagateAttributes(a2, a1)
+                      n = SCode.DERIVED(ts1, m2, a2)
+                    n
+                  end
+                end
+              end
+          outNew
+        end
+
+        function mergeModifiers(inNewMod::SCode.Mod, inOldMod::SCode.Mod)::SCode.Mod
+              local outMod::SCode.Mod
+
+              outMod = begin
+                  local f1::SCode.Final
+                  local f2::SCode.Final
+                  local e1::SCode.Each
+                  local e2::SCode.Each
+                  local sl1::IList
+                  local sl2::IList
+                  local sl::IList
+                  local b1::Option
+                  local b2::Option
+                  local b::Option
+                  local i1::SourceInfo
+                  local i2::SourceInfo
+                  local m::SCode.Mod
+                @matchcontinue (inNewMod, inOldMod) begin
+                  (_, SCode.NOMOD(__))  => begin
+                    inNewMod
+                  end
+
+                  (SCode.NOMOD(__), _)  => begin
+                    inOldMod
+                  end
+
+                  (SCode.REDECL(__), _)  => begin
+                    inNewMod
+                  end
+
+                  (SCode.MOD(f1, e1, sl1, b1, i1), SCode.MOD(f2, e2, sl2, b2, _))  => begin
+                      b = mergeBindings(b1, b2)
+                      sl = mergeSubMods(sl1, sl2)
+                      if referenceEq(b, b1) && referenceEq(sl, sl1)
+                        m = inNewMod
+                      elseif referenceEq(b, b2) && referenceEq(sl, sl2) && valueEq(f1, f2) && valueEq(e1, e2)
+                        m = inOldMod
+                      else
+                        m = SCode.MOD(f1, e1, sl, b, i1)
+                      end
+                    m
+                  end
+
+                  _  => begin
+                      inNewMod
+                  end
+                end
+              end
+          outMod
+        end
+
+        function mergeBindings(inNew::Option, inOld::Option)::Option
+              local outBnd::Option
+
+              outBnd = begin
+                @match (inNew, inOld) begin
+                  (SOME(_), _)  => begin
+                    inNew
+                  end
+
+                  (NONE(), _)  => begin
+                    inOld
+                  end
+                end
+              end
+          outBnd
+        end
+
+        function mergeSubMods(inNew::IList, inOld::IList)::IList
+              local outSubs::IList
+
+              outSubs = begin
+                  local sl::IList
+                  local rest::IList
+                  local old::IList
+                  local s::SCode.SubMod
+                @matchcontinue (inNew, inOld) begin
+                  ( nil(), _)  => begin
+                    inOld
+                  end
+
+                  (s <| rest, _)  => begin
+                      old = removeSub(s, inOld)
+                      sl = mergeSubMods(rest, old)
+                    s <| sl
+                  end
+
+                  _  => begin
+                      inNew
+                  end
+                end
+              end
+          outSubs
+        end
+
+        function removeSub(inSub::SCode.SubMod, inOld::IList)::IList
+              local outSubs::IList
+
+              outSubs = begin
+                  local rest::IList
+                  local id1::SCode.Ident
+                  local id2::SCode.Ident
+                  local idxs1::IList
+                  local idxs2::IList
+                  local s::SCode.SubMod
+                @matchcontinue (inSub, inOld) begin
+                  (_,  nil())  => begin
+                    inOld
+                  end
+
+                  (SCode.NAMEMOD(ident = id1), SCode.NAMEMOD(ident = id2) <| rest)  => begin
+                      @match true = stringEqual(id1, id2)
+                    rest
+                  end
+
+                  (_, s <| rest)  => begin
+                      rest = removeSub(inSub, rest)
+                    s <| rest
+                  end
+                end
+              end
+          outSubs
+        end
+
+        function mergeComponentModifiers(inNewComp::SCode.Element, inOldComp::SCode.Element)::SCode.Element
+              local outComp::SCode.Element
+
+              outComp = begin
+                  local n1::SCode.Ident
+                  local n2::SCode.Ident
+                  local p1::SCode.Prefixes
+                  local p2::SCode.Prefixes
+                  local a1::SCode.Attributes
+                  local a2::SCode.Attributes
+                  local t1::Absyn.TypeSpec
+                  local t2::Absyn.TypeSpec
+                  local m1::SCode.Mod
+                  local m2::SCode.Mod
+                  local m::SCode.Mod
+                  local c1::SCode.Comment
+                  local c2::SCode.Comment
+                  local cnd1::Option
+                  local cnd2::Option
+                  local i1::SourceInfo
+                  local i2::SourceInfo
+                  local c::SCode.Element
+                @match (inNewComp, inOldComp) begin
+                  (SCode.COMPONENT(n1, p1, a1, t1, m1, c1, cnd1, i1), SCode.COMPONENT(_, _, _, _, m2, _, _, _))  => begin
+                      m = mergeModifiers(m1, m2)
+                      c = SCode.COMPONENT(n1, p1, a1, t1, m, c1, cnd1, i1)
+                    c
+                  end
+                end
+              end
+          outComp
+        end
+
+        function propagateAttributes(inOriginalAttributes::SCode.Attributes, inNewAttributes::SCode.Attributes, inNewTypeIsArray::Bool = false)::SCode.Attributes
+              local outNewAttributes::SCode.Attributes
+
+              local dims1::Absyn.ArrayDim
+              local dims2::Absyn.ArrayDim
+              local ct1::SCode.ConnectorType
+              local ct2::SCode.ConnectorType
+              local prl1::SCode.Parallelism
+              local prl2::SCode.Parallelism
+              local var1::SCode.Variability
+              local var2::SCode.Variability
+              local dir1::Absyn.Direction
+              local dir2::Absyn.Direction
+              local if1::Absyn.IsField
+              local if2::Absyn.IsField
+
+              @match SCode.ATTR(dims1, ct1, prl1, var1, dir1, if1) = inOriginalAttributes
+              @match SCode.ATTR(dims2, ct2, prl2, var2, dir2, if2) = inNewAttributes
+               #=  If the new component has an array type, don't propagate the old dimensions.
+               =#
+               #=  E.g. type Real3 = Real[3];
+               =#
+               #=       replaceable Real x[:];
+               =#
+               #=       comp(redeclare Real3 x) => Real[3] x
+               =#
+              if ! inNewTypeIsArray
+                dims2 = propagateArrayDimensions(dims1, dims2)
+              end
+              ct2 = propagateConnectorType(ct1, ct2)
+              prl2 = propagateParallelism(prl1, prl2)
+              var2 = propagateVariability(var1, var2)
+              dir2 = propagateDirection(dir1, dir2)
+              if2 = propagateIsField(if1, if2)
+              outNewAttributes = SCode.ATTR(dims2, ct2, prl2, var2, dir2, if2)
+          outNewAttributes
+        end
+
+        function propagateArrayDimensions(inOriginalDims::Absyn.ArrayDim, inNewDims::Absyn.ArrayDim)::Absyn.ArrayDim
+              local outNewDims::Absyn.ArrayDim
+
+              outNewDims = begin
+                @match (inOriginalDims, inNewDims) begin
+                  (_,  nil())  => begin
+                    inOriginalDims
+                  end
+
+                  _  => begin
+                      inNewDims
+                  end
+                end
+              end
+          outNewDims
+        end
+
+        function propagateConnectorType(inOriginalConnectorType::SCode.ConnectorType, inNewConnectorType::SCode.ConnectorType)::SCode.ConnectorType
+              local outNewConnectorType::SCode.ConnectorType
+
+              outNewConnectorType = begin
+                @match (inOriginalConnectorType, inNewConnectorType) begin
+                  (_, SCode.POTENTIAL(__))  => begin
+                    inOriginalConnectorType
+                  end
+
+                  _  => begin
+                      inNewConnectorType
+                  end
+                end
+              end
+          outNewConnectorType
+        end
+
+        function propagateParallelism(inOriginalParallelism::SCode.Parallelism, inNewParallelism::SCode.Parallelism)::SCode.Parallelism
+              local outNewParallelism::SCode.Parallelism
+
+              outNewParallelism = begin
+                @match (inOriginalParallelism, inNewParallelism) begin
+                  (_, SCode.NON_PARALLEL(__))  => begin
+                    inOriginalParallelism
+                  end
+
+                  _  => begin
+                      inNewParallelism
+                  end
+                end
+              end
+          outNewParallelism
+        end
+
+        function propagateVariability(inOriginalVariability::SCode.Variability, inNewVariability::SCode.Variability)::SCode.Variability
+              local outNewVariability::SCode.Variability
+
+              outNewVariability = begin
+                @match (inOriginalVariability, inNewVariability) begin
+                  (_, SCode.VAR(__))  => begin
+                    inOriginalVariability
+                  end
+
+                  _  => begin
+                      inNewVariability
+                  end
+                end
+              end
+          outNewVariability
+        end
+
+        function propagateDirection(inOriginalDirection::Absyn.Direction, inNewDirection::Absyn.Direction)::Absyn.Direction
+              local outNewDirection::Absyn.Direction
+
+              outNewDirection = begin
+                @match (inOriginalDirection, inNewDirection) begin
+                  (_, Absyn.BIDIR(__))  => begin
+                    inOriginalDirection
+                  end
+
+                  _  => begin
+                      inNewDirection
+                  end
+                end
+              end
+          outNewDirection
+        end
+
+        function propagateIsField(inOriginalIsField::Absyn.IsField, inNewIsField::Absyn.IsField)::Absyn.IsField
+              local outNewIsField::Absyn.IsField
+
+              outNewIsField = begin
+                @matchcontinue (inOriginalIsField, inNewIsField) begin
+                  (_, Absyn.NONFIELD(__))  => begin
+                    inOriginalIsField
+                  end
+
+                  _  => begin
+                      inNewIsField
+                  end
+                end
+              end
+          outNewIsField
+        end
+
+        function propagateAttributesVar(inOriginalVar::SCode.Element, inNewVar::SCode.Element, inNewTypeIsArray::Bool)::SCode.Element
+              local outNewVar::SCode.Element
+
+              local name::SCode.Ident
+              local pref1::SCode.Prefixes
+              local pref2::SCode.Prefixes
+              local attr1::SCode.Attributes
+              local attr2::SCode.Attributes
+              local ty::Absyn.TypeSpec
+              local mod::SCode.Mod
+              local cmt::SCode.Comment
+              local cond::Option
+              local info::SourceInfo
+
+              @match SCode.COMPONENT(prefixes = pref1, attributes = attr1) = inOriginalVar
+              @match SCode.COMPONENT(name, pref2, attr2, ty, mod, cmt, cond, info) = inNewVar
+              pref2 = propagatePrefixes(pref1, pref2)
+              attr2 = propagateAttributes(attr1, attr2, inNewTypeIsArray)
+              outNewVar = SCode.COMPONENT(name, pref2, attr2, ty, mod, cmt, cond, info)
+          outNewVar
+        end
+
+        function propagateAttributesClass(inOriginalClass::SCode.Element, inNewClass::SCode.Element)::SCode.Element
+              local outNewClass::SCode.Element
+
+              local name::SCode.Ident
+              local pref1::SCode.Prefixes
+              local pref2::SCode.Prefixes
+              local ep::SCode.Encapsulated
+              local pp::SCode.Partial
+              local res::SCode.Restriction
+              local cdef::SCode.ClassDef
+              local cmt::SCode.Comment
+              local info::SourceInfo
+
+              @match SCode.CLASS(prefixes = pref1) = inOriginalClass
+              @match SCode.CLASS(name, pref2, ep, pp, res, cdef, cmt, info) = inNewClass
+              pref2 = propagatePrefixes(pref1, pref2)
+              outNewClass = SCode.CLASS(name, pref2, ep, pp, res, cdef, cmt, info)
+          outNewClass
+        end
+
+        function propagatePrefixes(inOriginalPrefixes::SCode.Prefixes, inNewPrefixes::SCode.Prefixes)::SCode.Prefixes
+              local outNewPrefixes::SCode.Prefixes
+
+              local vis1::SCode.Visibility
+              local vis2::SCode.Visibility
+              local io1::Absyn.InnerOuter
+              local io2::Absyn.InnerOuter
+              local rdp::SCode.Redeclare
+              local fp::SCode.Final
+              local rpp::SCode.Replaceable
+
+              @match SCode.PREFIXES(visibility = vis1, innerOuter = io1) = inOriginalPrefixes
+              @match SCode.PREFIXES(vis2, rdp, fp, io2, rpp) = inNewPrefixes
+              io2 = propagatePrefixInnerOuter(io1, io2)
+              outNewPrefixes = SCode.PREFIXES(vis2, rdp, fp, io2, rpp)
+          outNewPrefixes
+        end
+
+        function propagatePrefixInnerOuter(inOriginalIO::Absyn.InnerOuter, inIO::Absyn.InnerOuter)::Absyn.InnerOuter
+              local outIO::Absyn.InnerOuter
+
+              outIO = begin
+                @match (inOriginalIO, inIO) begin
+                  (_, Absyn.NOT_INNER_OUTER(__))  => begin
+                    inOriginalIO
+                  end
+
+                  _  => begin
+                      inIO
+                  end
+                end
+              end
+          outIO
+        end
+
+         #= Return true if Class is a partial. =#
+        function isPackage(inClass::SCode.Element)::Bool
+              local outBoolean::Bool
+
+              outBoolean = begin
+                @match inClass begin
+                  SCode.CLASS(restriction = SCode.R_PACKAGE(__))  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outBoolean
+        end
+
+         #= Return true if Class is a partial. =#
+        function isPartial(inClass::SCode.Element)::Bool
+              local outBoolean::Bool
+
+              outBoolean = begin
+                @match inClass begin
+                  SCode.CLASS(partialPrefix = SCode.PARTIAL(__))  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outBoolean
+        end
+
+         #= Return true if the given element is allowed in a package, i.e. if it's a
+           constant or non-component element. Otherwise returns false. =#
+        function isValidPackageElement(inElement::SCode.Element)::Bool
+              local outIsValid::Bool
+
+              outIsValid = begin
+                @match inElement begin
+                  SCode.COMPONENT(attributes = SCode.ATTR(variability = SCode.CONST(__)))  => begin
+                    true
+                  end
+
+                  SCode.COMPONENT(__)  => begin
+                    false
+                  end
+
+                  _  => begin
+                      true
+                  end
+                end
+              end
+          outIsValid
+        end
+
+         #= returns true if a Class fulfills the requirements of an external object =#
+        function classIsExternalObject(cl::SCode.Element)::Bool
+              local res::Bool
+
+              res = begin
+                  local els::IList
+                @match cl begin
+                  SCode.CLASS(classDef = SCode.PARTS(elementLst = els))  => begin
+                    isExternalObject(els)
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          res
+        end
+
+         #= Returns true if the element list fulfills the condition of an External Object.
+        An external object extends the builtinClass ExternalObject, and has two local
+        functions, destructor and constructor.  =#
+        function isExternalObject(els::IList)::Bool
+              local res::Bool
+
+              res = begin
+                @matchcontinue els begin
+                  _  => begin
+                      @match 3 = listLength(els)
+                      @match true = hasExtendsOfExternalObject(els)
+                      @match true = hasExternalObjectDestructor(els)
+                      @match true = hasExternalObjectConstructor(els)
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          res
+        end
+
+         #= returns true if element list contains 'extends ExternalObject;' =#
+        function hasExtendsOfExternalObject(inEls::IList)::Bool
+              local res::Bool
+
+              res = begin
+                  local els::IList
+                  local path::Absyn.Path
+                @match inEls begin
+                   nil()  => begin
+                    false
+                  end
+
+                  SCode.EXTENDS(baseClassPath = path) <| _ where (AbsynUtil.pathEqual(path, Absyn.IDENT("ExternalObject")))  => begin
+                    true
+                  end
+
+                  _ <| els  => begin
+                    hasExtendsOfExternalObject(els)
+                  end
+                end
+              end
+          res
+        end
+
+         #= returns true if element list contains 'function destructor .. end destructor' =#
+        function hasExternalObjectDestructor(inEls::IList)::Bool
+              local res::Bool
+
+              res = begin
+                  local els::IList
+                @match inEls begin
+                  SCode.CLASS(name = "destructor") <| _  => begin
+                    true
+                  end
+
+                  _ <| els  => begin
+                    hasExternalObjectDestructor(els)
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          res
+        end
+
+         #= returns true if element list contains 'function constructor ... end constructor' =#
+        function hasExternalObjectConstructor(inEls::IList)::Bool
+              local res::Bool
+
+              res = begin
+                  local els::IList
+                @match inEls begin
+                  SCode.CLASS(name = "constructor") <| _  => begin
+                    true
+                  end
+
+                  _ <| els  => begin
+                    hasExternalObjectConstructor(els)
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          res
+        end
+
+         #= returns the class 'function destructor .. end destructor' from element list =#
+        function getExternalObjectDestructor(inEls::IList)::SCode.Element
+              local cl::SCode.Element
+
+              cl = begin
+                  local els::IList
+                @match inEls begin
+                  cl && SCode.CLASS(name = "destructor") <| _  => begin
+                    cl
+                  end
+
+                  _ <| els  => begin
+                    getExternalObjectDestructor(els)
+                  end
+                end
+              end
+          cl
+        end
+
+         #= returns the class 'function constructor ... end constructor' from element list =#
+        function getExternalObjectConstructor(inEls::IList)::SCode.Element
+              local cl::SCode.Element
+
+              cl = begin
+                  local els::IList
+                @match inEls begin
+                  cl && SCode.CLASS(name = "constructor") <| _  => begin
+                    cl
+                  end
+
+                  _ <| els  => begin
+                    getExternalObjectConstructor(els)
+                  end
+                end
+              end
+          cl
+        end
+
+        function isInstantiableClassRestriction(inRestriction::SCode.Restriction)::Bool
+              local outIsInstantiable::Bool
+
+              outIsInstantiable = begin
+                @match inRestriction begin
+                  SCode.R_CLASS(__)  => begin
+                    true
+                  end
+
+                  SCode.R_MODEL(__)  => begin
+                    true
+                  end
+
+                  SCode.R_RECORD(__)  => begin
+                    true
+                  end
+
+                  SCode.R_BLOCK(__)  => begin
+                    true
+                  end
+
+                  SCode.R_CONNECTOR(__)  => begin
+                    true
+                  end
+
+                  SCode.R_TYPE(__)  => begin
+                    true
+                  end
+
+                  SCode.R_ENUMERATION(__)  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outIsInstantiable
+        end
+
+        function isInitial(inInitial::SCode.Initial)::Bool
+              local isIn::Bool
+
+              isIn = begin
+                @match inInitial begin
+                  SCode.INITIAL(__)  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          isIn
+        end
+
+         #= check if the restrictions are the same for redeclared classes =#
+        function checkSameRestriction(inResNew::SCode.Restriction, inResOrig::SCode.Restriction, inInfoNew::SourceInfo, inInfoOrig::SourceInfo)::Tuple{SCode.Restriction, SourceInfo}
+              local outInfo::SourceInfo
+              local outRes::SCode.Restriction
+
+              (outRes, outInfo) = begin
+                @match (inResNew, inResOrig, inInfoNew, inInfoOrig) begin
+                  (_, _, _, _)  => begin
+                    (inResNew, inInfoNew)
+                  end
+                end
+              end
+               #=  todo: check if the restrictions are the same for redeclared classes
+               =#
+          (outRes, outInfo)
+        end
+
+         #= @auhtor: adrpo
+         set the name of the component =#
+        function setComponentName(inE::SCode.Element, inName::SCode.Ident)::SCode.Element
+              local outE::SCode.Element
+
+              local n::SCode.Ident
+              local pr::SCode.Prefixes
+              local atr::SCode.Attributes
+              local ts::Absyn.TypeSpec
+              local cmt::SCode.Comment
+              local cnd::Option
+              local bc::SCode.Path
+              local v::SCode.Visibility
+              local m::SCode.Mod
+              local a::Option
+              local i::SourceInfo
+
+              @match SCode.COMPONENT(n, pr, atr, ts, m, cmt, cnd, i) = inE
+              outE = SCode.COMPONENT(inName, pr, atr, ts, m, cmt, cnd, i)
+          outE
+        end
+
+        function isArrayComponent(inElement::SCode.Element)::Bool
+              local outIsArray::Bool
+
+              outIsArray = begin
+                @match inElement begin
+                  SCode.COMPONENT(attributes = SCode.ATTR(arrayDims = _ <| _))  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          outIsArray
+        end
+
+        function isEmptyMod(mod::SCode.Mod)::Bool
+              local isEmpty::Bool
+
+              isEmpty = begin
+                @match mod begin
+                  SCode.NOMOD(__)  => begin
+                    true
+                  end
+
+                  _  => begin
+                      false
+                  end
+                end
+              end
+          isEmpty
+        end
+
+        function getConstrainingMod(element::SCode.Element)::SCode.Mod
+              local mod::SCode.Mod
+
+              mod = begin
+                @match element begin
+                  SCode.CLASS(prefixes = SCode.Prefixes.PREFIXES(replaceablePrefix = SCode.Replaceable.REPLACEABLE(cc = SOME(SCode.CONSTRAINCLASS(modifier = mod)))))  => begin
+                    mod
+                  end
+
+                  SCode.CLASS(classDef = SCode.ClassDef.DERIVED(modifications = mod))  => begin
+                    mod
+                  end
+
+                  SCode.COMPONENT(prefixes = SCode.Prefixes.PREFIXES(replaceablePrefix = SCode.Replaceable.REPLACEABLE(cc = SOME(SCode.CONSTRAINCLASS(modifier = mod)))))  => begin
+                    mod
+                  end
+
+                  SCode.COMPONENT(modifications = mod)  => begin
+                    mod
+                  end
+
+                  _  => begin
+                      SCode.NOMOD()
+                  end
+                end
+              end
+          mod
+        end
+
+        function isEmptyClassDef(cdef::SCode.ClassDef)::Bool
+              local isEmpty::Bool
+
+              isEmpty = begin
+                @match cdef begin
+                  SCode.PARTS(__)  => begin
+                    listEmpty(cdef.elementLst) && listEmpty(cdef.normalEquationLst) && listEmpty(cdef.initialEquationLst) && listEmpty(cdef.normalAlgorithmLst) && listEmpty(cdef.initialAlgorithmLst) && isNone(cdef.externalDecl)
+                  end
+
+                  SCode.CLASS_EXTENDS(__)  => begin
+                    isEmptyClassDef(cdef.composition)
+                  end
+
+                  SCode.ENUMERATION(__)  => begin
+                    listEmpty(cdef.enumLst)
+                  end
+
+                  _  => begin
+                      true
+                  end
+                end
+              end
+          isEmpty
+        end
+
+         #= Strips all annotations and/or comments from a program. =#
+        function stripCommentsFromProgram(program::SCode.Program, stripAnnotations::Bool, stripComments::Bool)::SCode.Program
+
+
+              program = list(stripCommentsFromElement(e, stripAnnotations, stripComments) for e in program)
+          program
+        end
+
+        function stripCommentsFromElement(element::SCode.Element, stripAnn::Bool, stripCmt::Bool)::SCode.Element
+
+
+              () = begin
+                @match element begin
+                  SCode.EXTENDS(__)  => begin
+                      if stripAnn
+                        element.ann = NONE()
+                      end
+                      element.modifications = stripCommentsFromMod(element.modifications, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.CLASS(__)  => begin
+                      element.classDef = stripCommentsFromClassDef(element.classDef, stripAnn, stripCmt)
+                      element.cmt = stripCommentsFromComment(element.cmt, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.COMPONENT(__)  => begin
+                      element.modifications = stripCommentsFromMod(element.modifications, stripAnn, stripCmt)
+                      element.comment = stripCommentsFromComment(element.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  _  => begin
+                      ()
+                  end
+                end
+              end
+          element
+        end
+
+        function stripCommentsFromMod(mod::SCode.Mod, stripAnn::Bool, stripCmt::Bool)::SCode.Mod
+
+
+              () = begin
+                @match mod begin
+                  SCode.MOD(__)  => begin
+                      mod.subModLst = list(stripCommentsFromSubMod(m, stripAnn, stripCmt) for m in mod.subModLst)
+                    ()
+                  end
+
+                  SCode.Mod.REDECL(__)  => begin
+                      mod.element = stripCommentsFromElement(mod.element, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  _  => begin
+                      ()
+                  end
+                end
+              end
+          mod
+        end
+
+        function stripCommentsFromSubMod(submod::SCode.SubMod, stripAnn::Bool, stripCmt::Bool)::SCode.SubMod
+
+
+              submod.mod = stripCommentsFromMod(submod.mod, stripAnn, stripCmt)
+          submod
+        end
+
+        function stripCommentsFromClassDef(cdef::SCode.ClassDef, stripAnn::Bool, stripCmt::Bool)::SCode.ClassDef
+
+
+              cdef = begin
+                  local el::IList
+                  local eql::IList
+                  local ieql::IList
+                  local alg::IList
+                  local ialg::IList
+                  local ext::Option
+                @match cdef begin
+                  SCode.ClassDef.PARTS(__)  => begin
+                      el = list(stripCommentsFromElement(e, stripAnn, stripCmt) for e in cdef.elementLst)
+                      eql = list(stripCommentsFromEquation(eq, stripAnn, stripCmt) for eq in cdef.normalEquationLst)
+                      ieql = list(stripCommentsFromEquation(ieq, stripAnn, stripCmt) for ieq in cdef.initialEquationLst)
+                      alg = list(stripCommentsFromAlgorithm(a, stripAnn, stripCmt) for a in cdef.normalAlgorithmLst)
+                      ialg = list(stripCommentsFromAlgorithm(ia, stripAnn, stripCmt) for ia in cdef.initialAlgorithmLst)
+                      ext = stripCommentsFromExternalDecl(cdef.externalDecl, stripAnn, stripCmt)
+                    SCode.ClassDef.PARTS(el, eql, ieql, alg, ialg, cdef.constraintLst, cdef.clsattrs, ext)
+                  end
+
+                  SCode.ClassDef.CLASS_EXTENDS(__)  => begin
+                      cdef.modifications = stripCommentsFromMod(cdef.modifications, stripAnn, stripCmt)
+                      cdef.composition = stripCommentsFromClassDef(cdef.composition, stripAnn, stripCmt)
+                    cdef
+                  end
+
+                  SCode.ClassDef.DERIVED(__)  => begin
+                      cdef.modifications = stripCommentsFromMod(cdef.modifications, stripAnn, stripCmt)
+                    cdef
+                  end
+
+                  SCode.ClassDef.ENUMERATION(__)  => begin
+                      cdef.enumLst = list(stripCommentsFromEnum(e, stripAnn, stripCmt) for e in cdef.enumLst)
+                    cdef
+                  end
+
+                  _  => begin
+                      cdef
+                  end
+                end
+              end
+          cdef
+        end
+
+        function stripCommentsFromEnum(enum::SCode.Enum, stripAnn::Bool, stripCmt::Bool)::SCode.Enum
+
+
+              enum.comment = stripCommentsFromComment(enum.comment, stripAnn, stripCmt)
+          enum
+        end
+
+        function stripCommentsFromComment(cmt::SCode.Comment, stripAnn::Bool, stripCmt::Bool)::SCode.Comment
+
+
+              if stripAnn
+                cmt.annotation_ = NONE()
+              end
+              if stripCmt
+                cmt.comment = NONE()
+              end
+          cmt
+        end
+
+        function stripCommentsFromExternalDecl(extDecl::Option, stripAnn::Bool, stripCmt::Bool)::Option
+
+
+              local ext_decl::SCode.ExternalDecl
+
+              if isSome(extDecl) && stripAnn
+                @match SOME(ext_decl) = extDecl
+                ext_decl.annotation_ = NONE()
+                extDecl = SOME(ext_decl)
+              end
+          extDecl
+        end
+
+        function stripCommentsFromEquation(eq::SCode.Equation, stripAnn::Bool, stripCmt::Bool)::SCode.Equation
+
+
+              eq.eEquation = stripCommentsFromEEquation(eq.eEquation, stripAnn, stripCmt)
+          eq
+        end
+
+        function stripCommentsFromEEquation(eq::SCode.EEquation, stripAnn::Bool, stripCmt::Bool)::SCode.EEquation
+
+
+              () = begin
+                @match eq begin
+                  SCode.EEquation.EQ_IF(__)  => begin
+                      eq.thenBranch = list(list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in branch) for branch in eq.thenBranch)
+                      eq.elseBranch = list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in eq.elseBranch)
+                      eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.EEquation.EQ_EQUALS(__)  => begin
+                      eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.EEquation.EQ_PDE(__)  => begin
+                      eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.EEquation.EQ_CONNECT(__)  => begin
+                      eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.EEquation.EQ_FOR(__)  => begin
+                      eq.eEquationLst = list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in eq.eEquationLst)
+                      eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.EEquation.EQ_WHEN(__)  => begin
+                      eq.eEquationLst = list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in eq.eEquationLst)
+                      eq.elseBranches = list(stripCommentsFromWhenEqBranch(b, stripAnn, stripCmt) for b in eq.elseBranches)
+                      eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.EEquation.EQ_ASSERT(__)  => begin
+                      eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.EEquation.EQ_TERMINATE(__)  => begin
+                      eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.EEquation.EQ_REINIT(__)  => begin
+                      eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.EEquation.EQ_NORETCALL(__)  => begin
+                      eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
+                    ()
+                  end
+                end
+              end
+          eq
+        end
+
+        function stripCommentsFromWhenEqBranch(branch::Tuple, stripAnn::Bool, stripCmt::Bool)::Tuple
+
+
+              local cond::Absyn.Exp
+              local body::IList
+
+              (cond, body) = branch
+              body = list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in body)
+              branch = (cond, body)
+          branch
+        end
+
+        function stripCommentsFromAlgorithm(alg::SCode.AlgorithmSection, stripAnn::Bool, stripCmt::Bool)::SCode.AlgorithmSection
+
+
+              alg.statements = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in alg.statements)
+          alg
+        end
+
+        function stripCommentsFromStatement(stmt::SCode.Statement, stripAnn::Bool, stripCmt::Bool)::SCode.Statement
+
+
+              () = begin
+                @match stmt begin
+                  SCode.Statement.ALG_ASSIGN(__)  => begin
+                      stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.Statement.ALG_IF(__)  => begin
+                      stmt.trueBranch = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.trueBranch)
+                      stmt.elseIfBranch = list(stripCommentsFromStatementBranch(b, stripAnn, stripCmt) for b in stmt.elseIfBranch)
+                      stmt.elseBranch = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.elseBranch)
+                      stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.Statement.ALG_FOR(__)  => begin
+                      stmt.forBody = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.forBody)
+                      stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.Statement.ALG_PARFOR(__)  => begin
+                      stmt.parforBody = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.parforBody)
+                      stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.Statement.ALG_WHILE(__)  => begin
+                      stmt.whileBody = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.whileBody)
+                      stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.Statement.ALG_WHEN_A(__)  => begin
+                      stmt.branches = list(stripCommentsFromStatementBranch(b, stripAnn, stripCmt) for b in stmt.branches)
+                      stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.Statement.ALG_ASSERT(__)  => begin
+                      stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.Statement.ALG_TERMINATE(__)  => begin
+                      stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.Statement.ALG_REINIT(__)  => begin
+                      stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.Statement.ALG_NORETCALL(__)  => begin
+                      stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.Statement.ALG_RETURN(__)  => begin
+                      stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.Statement.ALG_BREAK(__)  => begin
+                      stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.Statement.ALG_FAILURE(__)  => begin
+                      stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.Statement.ALG_TRY(__)  => begin
+                      stmt.body = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.body)
+                      stmt.elseBody = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.elseBody)
+                      stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
+                    ()
+                  end
+
+                  SCode.Statement.ALG_CONTINUE(__)  => begin
+                      stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
+                    ()
+                  end
+                end
+              end
+          stmt
+        end
+
+        function stripCommentsFromStatementBranch(branch::Tuple, stripAnn::Bool, stripCmt::Bool)::Tuple
+
+
+              local cond::Absyn.Exp
+              local body::IList
+
+              (cond, body) = branch
+              body = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in body)
+              branch = (cond, body)
+          branch
+        end
+
+        function checkValidEnumLiteral(inLiteral::String, inInfo::SourceInfo)
+              if listMember(inLiteral, list("quantity", "min", "max", "start", "fixed"))
+                Error.addSourceMessage(Error.INVALID_ENUM_LITERAL, list(inLiteral), inInfo)
+                fail()
+              end
+        end
+
+    #= So that we can use wildcard imports and named imports when they do occur. Not good Julia practice =#
+    @exportAll()
   end
-end
-
-#= @author: adrpo
-redeclare T x where the original type has array dimensions
-but the redeclare doesn't. Keep the original array dimensions then =#
-function mergeDimensions(fromRedeclare::SCode.Attributes, fromOriginal::SCode.Attributes)::SCode.Attributes
-  local result::SCode.Attributes
-
-  result = begin
-    local ad1::Absyn.ArrayDim
-    local ad2::Absyn.ArrayDim
-    local ct1::SCode.ConnectorType
-    local ct2::SCode.ConnectorType
-    local p1::SCode.Parallelism
-    local p2::SCode.Parallelism
-    local v1::SCode.Variability
-    local v2::SCode.Variability
-    local d1::Absyn.Direction
-    local d2::Absyn.Direction
-    local if1::Absyn.IsField
-    @matchcontinue (fromRedeclare, fromOriginal) begin
-      (SCode.ATTR( nil(), ct1, p1, v1, d1, if1), SCode.ATTR(ad2, _, _, _, _, _))  => begin
-        SCode.ATTR(ad2, ct1, p1, v1, d1, if1)
-      end
-      _  => begin
-        fromRedeclare
-      end
-    end
-  end
-  result
-end
-
-end

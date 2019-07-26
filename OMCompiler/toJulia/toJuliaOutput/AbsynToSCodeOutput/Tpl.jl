@@ -21,7 +21,7 @@ import Debug
 import Error
 import File
 import Flags
-import List
+import MetaModelica.ListUtil
 import Print
 import StackOverflow
 import StringUtil

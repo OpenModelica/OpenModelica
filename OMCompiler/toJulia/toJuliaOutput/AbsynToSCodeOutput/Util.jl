@@ -94,7 +94,7 @@
         import Autoconf
         import ClockIndexes
         import Global
-        import List
+        import MetaModelica.ListUtil
         import Print
         import System
 

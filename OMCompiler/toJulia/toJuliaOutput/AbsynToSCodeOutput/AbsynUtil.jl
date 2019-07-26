@@ -139,7 +139,7 @@ using Absyn
 
 import Flags
 
-import List
+import MetaModelica.ListUtil
 
 import System
 

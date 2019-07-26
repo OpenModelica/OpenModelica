@@ -2,6 +2,8 @@
 
 
     using MetaModelica
+    #= ExportAll is not good practice but it makes it so that we do not have to write export after each function :( =#
+    using ExportAll
 
         import Tpl
 
@@ -17,12 +19,12 @@
 
         import Flags
 
-        function lm_8(in_txt::Tpl.Text, in_items::List, in_a_options::Dump.DumpOptions)::Tpl.Text
+        function lm_8(in_txt::Tpl.Text, in_items::IList, in_a_options::Dump.DumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local a_options::Dump.DumpOptions
                   local i_cls::Absyn.Class
                 @match (in_txt, in_items, in_a_options) begin
@@ -47,7 +49,7 @@
               out_txt = begin
                   local txt::Tpl.Text
                   local a_options::Dump.DumpOptions
-                  local i_classes::List
+                  local i_classes::IList
                   local i_within__::Absyn.Within
                   local l_cls__str::Tpl.Text
                   local l_within__str::Tpl.Text
@@ -90,7 +92,7 @@
                   local i_path::Absyn.Path
                   local l_path__str::Tpl.Text
                 @match (in_txt, in_a_within) begin
-                  (txt, Absyn.TOP())  => begin
+                  (txt, Absyn.TOP(__))  => begin
                     txt
                   end
 
@@ -125,8 +127,7 @@
                   local l_pref__str::Tpl.Text
                   local l_res__str::Tpl.Text
                 @match (in_txt, in_a_cls, in_a_final__str, in_a_redecl__str, in_a_repl__str, in_a_io__str) begin
-                  (txt, Absyn.CLASS(restriction = i_restriction), a_final__str, a_redecl__str, a_repl__str, a_io__str)  => begin
-                    i_cls,
+                  (txt, i_cls && Absyn.CLASS(restriction = i_restriction), a_final__str, a_redecl__str, a_repl__str, a_io__str)  => begin
                       l_res__str = dumpRestriction(Tpl.emptyTxt, i_restriction)
                       l_pref__str = dumpClassPrefixes(Tpl.emptyTxt, i_cls, a_final__str, a_redecl__str, a_repl__str, a_io__str)
                       txt = Tpl.writeText(txt, l_pref__str)
@@ -158,8 +159,7 @@
                   local l_body__str::Tpl.Text
                   local l_header__str::Tpl.Text
                 @match (in_txt, in_a_cls, in_a_final__str, in_a_redecl__str, in_a_repl__str, in_a_io__str, in_a_options) begin
-                  (txt, Absyn.CLASS(body = i_body, name = i_name), a_final__str, a_redecl__str, a_repl__str, a_io__str, a_options)  => begin
-                    i_cls,
+                  (txt, i_cls && Absyn.CLASS(body = i_body, name = i_name), a_final__str, a_redecl__str, a_repl__str, a_io__str, a_options)  => begin
                       l_header__str = dumpClassHeader(Tpl.emptyTxt, i_cls, a_final__str, a_redecl__str, a_repl__str, a_io__str)
                       l_body__str = dumpClassDef(Tpl.emptyTxt, i_body, i_name, a_options)
                       txt = Tpl.writeText(txt, l_header__str)
@@ -176,12 +176,12 @@
           out_txt
         end
 
-        function lm_14(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_14(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_typevar::String
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -199,12 +199,12 @@
           out_txt
         end
 
-        function fun_15(in_txt::Tpl.Text, in_a_typeVars::List)::Tpl.Text
+        function fun_15(in_txt::Tpl.Text, in_a_typeVars::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local i_typeVars::List
+                  local i_typeVars::IList
                 @match (in_txt, in_a_typeVars) begin
                   (txt,  nil())  => begin
                     txt
@@ -223,12 +223,12 @@
           out_txt
         end
 
-        function lm_16(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_16(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_a::Absyn.Annotation
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -246,12 +246,12 @@
           out_txt
         end
 
-        function lm_17(in_txt::Tpl.Text, in_items::List, in_a_options::Dump.DumpOptions)::Tpl.Text
+        function lm_17(in_txt::Tpl.Text, in_items::IList, in_a_options::Dump.DumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local a_options::Dump.DumpOptions
                   local x_idx::ModelicaInteger
                   local i_class__part::Absyn.ClassPart
@@ -293,12 +293,12 @@
           out_txt
         end
 
-        function lm_19(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_19(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_arg::Absyn.ElementArg
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -316,12 +316,12 @@
           out_txt
         end
 
-        function fun_20(in_txt::Tpl.Text, in_a_arguments::List)::Tpl.Text
+        function fun_20(in_txt::Tpl.Text, in_a_arguments::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local i_arguments::List
+                  local i_arguments::IList
                 @match (in_txt, in_a_arguments) begin
                   (txt,  nil())  => begin
                     txt
@@ -340,12 +340,12 @@
           out_txt
         end
 
-        function lm_21(in_txt::Tpl.Text, in_items::List, in_a_options::Dump.DumpOptions)::Tpl.Text
+        function lm_21(in_txt::Tpl.Text, in_items::IList, in_a_options::Dump.DumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local a_options::Dump.DumpOptions
                   local x_idx::ModelicaInteger
                   local i_class__part::Absyn.ClassPart
@@ -366,12 +366,12 @@
           out_txt
         end
 
-        function lm_22(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_22(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_mod::Absyn.ElementArg
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -389,12 +389,12 @@
           out_txt
         end
 
-        function fun_23(in_txt::Tpl.Text, in_a_modifications::List)::Tpl.Text
+        function fun_23(in_txt::Tpl.Text, in_a_modifications::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local i_modifications::List
+                  local i_modifications::IList
                 @match (in_txt, in_a_modifications) begin
                   (txt,  nil())  => begin
                     txt
@@ -413,12 +413,12 @@
           out_txt
         end
 
-        function lm_24(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_24(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_a::Absyn.Annotation
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -457,12 +457,12 @@
           out_txt
         end
 
-        function lm_26(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_26(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_fn::Absyn.Path
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -480,12 +480,12 @@
           out_txt
         end
 
-        function lm_27(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_27(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_var::Absyn.Ident
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -510,32 +510,32 @@
                   local txt::Tpl.Text
                   local a_cls__name::String
                   local a_options::Dump.DumpOptions
-                  local i_vars::List
+                  local i_vars::IList
                   local i_functionName::Absyn.Path
-                  local i_functionNames::List
+                  local i_functionNames::IList
                   local i_enumLiterals::Absyn.EnumDef
                   local i_baseClassName::Absyn.Ident
-                  local i_modifications::List
-                  local i_parts::List
+                  local i_modifications::IList
+                  local i_parts::IList
                   local i_comment_1::Option
-                  local i_arguments::List
+                  local i_arguments::IList
                   local i_typeSpec::Absyn.TypeSpec
                   local i_attributes::Absyn.ElementAttributes
-                  local i_classParts::List
+                  local i_classParts::IList
                   local i_comment::Option
-                  local i_ann::List
-                  local i_typeVars::List
+                  local i_ann::IList
+                  local i_typeVars::IList
                   local l_vars__str::Tpl.Text
                   local l_fn__str::Tpl.Text
                   local l_funcs__str::Tpl.Text
                   local l_enum__str::Tpl.Text
-                  local ret_8::List
+                  local ret_8::IList
                   local l_mod__str::Tpl.Text
                   local l_ty__str::Tpl.Text
                   local l_attr__str::Tpl.Text
                   local l_body__str::Tpl.Text
                   local l_cmt__str::Tpl.Text
-                  local ret_2::List
+                  local ret_2::IList
                   local l_ann__str::Tpl.Text
                   local l_tvs__str::Tpl.Text
                 @match (in_txt, in_a_cdef, in_a_cls__name, in_a_options) begin
@@ -621,7 +621,7 @@
                       l_funcs__str = Tpl.popIter(l_funcs__str)
                       l_cmt__str = dumpCommentOpt(Tpl.emptyTxt, i_comment_1)
                       txt = Tpl.writeStr(txt, a_cls__name)
-                      txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = overload("))
+                      txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = $overload("))
                       txt = Tpl.writeText(txt, l_funcs__str)
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"))
                       txt = Tpl.writeText(txt, l_cmt__str)
@@ -650,12 +650,12 @@
           out_txt
         end
 
-        function lm_29(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_29(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_lit::Absyn.EnumLiteral
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -678,7 +678,7 @@
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local i_enumLiterals::List
+                  local i_enumLiterals::IList
                 @match (in_txt, in_a_enum__def) begin
                   (txt, Absyn.ENUMLITERALS(enumLiterals = i_enumLiterals))  => begin
                       txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()))
@@ -687,7 +687,7 @@
                     txt
                   end
 
-                  (txt, Absyn.ENUM_COLON())  => begin
+                  (txt, Absyn.ENUM_COLON(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING(":"))
                     txt
                   end
@@ -811,31 +811,31 @@
               out_txt = begin
                   local txt::Tpl.Text
                 @match (in_txt, in_a_functionRestriction) begin
-                  (txt, Absyn.FR_NORMAL_FUNCTION(purity = Absyn.IMPURE()))  => begin
+                  (txt, Absyn.FR_NORMAL_FUNCTION(purity = Absyn.IMPURE(__)))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("impure "))
                     txt
                   end
 
-                  (txt, Absyn.FR_NORMAL_FUNCTION(purity = Absyn.PURE()))  => begin
+                  (txt, Absyn.FR_NORMAL_FUNCTION(purity = Absyn.PURE(__)))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("pure "))
                     txt
                   end
 
-                  (txt, Absyn.FR_NORMAL_FUNCTION(purity = Absyn.NO_PURITY()))  => begin
+                  (txt, Absyn.FR_NORMAL_FUNCTION(purity = Absyn.NO_PURITY(__)))  => begin
                     txt
                   end
 
-                  (txt, Absyn.FR_OPERATOR_FUNCTION())  => begin
+                  (txt, Absyn.FR_OPERATOR_FUNCTION(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("operator "))
                     txt
                   end
 
-                  (txt, Absyn.FR_PARALLEL_FUNCTION())  => begin
+                  (txt, Absyn.FR_PARALLEL_FUNCTION(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("parallel "))
                     txt
                   end
 
-                  (txt, Absyn.FR_KERNEL_FUNCTION())  => begin
+                  (txt, Absyn.FR_KERNEL_FUNCTION(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("kernel "))
                     txt
                   end
@@ -848,12 +848,12 @@
           out_txt
         end
 
-        function lm_37(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_37(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_tv::String
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -871,12 +871,12 @@
           out_txt
         end
 
-        function fun_38(in_txt::Tpl.Text, in_a_typeVars::List)::Tpl.Text
+        function fun_38(in_txt::Tpl.Text, in_a_typeVars::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local i_typeVars::List
+                  local i_typeVars::IList
                 @match (in_txt, in_a_typeVars) begin
                   (txt,  nil())  => begin
                     txt
@@ -900,51 +900,51 @@
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local i_typeVars::List
+                  local i_typeVars::IList
                   local i_functionRestriction::Absyn.FunctionRestriction
                   local l_prefix__str::Tpl.Text
                 @match (in_txt, in_a_restriction) begin
-                  (txt, Absyn.R_CLASS())  => begin
+                  (txt, Absyn.R_CLASS(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("class"))
                     txt
                   end
 
-                  (txt, Absyn.R_OPTIMIZATION())  => begin
+                  (txt, Absyn.R_OPTIMIZATION(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("optimization"))
                     txt
                   end
 
-                  (txt, Absyn.R_MODEL())  => begin
+                  (txt, Absyn.R_MODEL(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("model"))
                     txt
                   end
 
-                  (txt, Absyn.R_RECORD())  => begin
+                  (txt, Absyn.R_RECORD(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("record"))
                     txt
                   end
 
-                  (txt, Absyn.R_BLOCK())  => begin
+                  (txt, Absyn.R_BLOCK(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("block"))
                     txt
                   end
 
-                  (txt, Absyn.R_CONNECTOR())  => begin
+                  (txt, Absyn.R_CONNECTOR(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("connector"))
                     txt
                   end
 
-                  (txt, Absyn.R_EXP_CONNECTOR())  => begin
+                  (txt, Absyn.R_EXP_CONNECTOR(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("expandable connector"))
                     txt
                   end
 
-                  (txt, Absyn.R_TYPE())  => begin
+                  (txt, Absyn.R_TYPE(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("type"))
                     txt
                   end
 
-                  (txt, Absyn.R_PACKAGE())  => begin
+                  (txt, Absyn.R_PACKAGE(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("package"))
                     txt
                   end
@@ -956,47 +956,47 @@
                     txt
                   end
 
-                  (txt, Absyn.R_OPERATOR())  => begin
+                  (txt, Absyn.R_OPERATOR(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("operator"))
                     txt
                   end
 
-                  (txt, Absyn.R_OPERATOR_RECORD())  => begin
+                  (txt, Absyn.R_OPERATOR_RECORD(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("operator record"))
                     txt
                   end
 
-                  (txt, Absyn.R_ENUMERATION())  => begin
+                  (txt, Absyn.R_ENUMERATION(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("enumeration"))
                     txt
                   end
 
-                  (txt, Absyn.R_PREDEFINED_INTEGER())  => begin
+                  (txt, Absyn.R_PREDEFINED_INTEGER(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("Integer"))
                     txt
                   end
 
-                  (txt, Absyn.R_PREDEFINED_REAL())  => begin
+                  (txt, Absyn.R_PREDEFINED_REAL(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("Real"))
                     txt
                   end
 
-                  (txt, Absyn.R_PREDEFINED_STRING())  => begin
+                  (txt, Absyn.R_PREDEFINED_STRING(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("String"))
                     txt
                   end
 
-                  (txt, Absyn.R_PREDEFINED_BOOLEAN())  => begin
+                  (txt, Absyn.R_PREDEFINED_BOOLEAN(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("Boolean"))
                     txt
                   end
 
-                  (txt, Absyn.R_PREDEFINED_ENUMERATION())  => begin
+                  (txt, Absyn.R_PREDEFINED_ENUMERATION(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("enumeration(:)"))
                     txt
                   end
 
-                  (txt, Absyn.R_UNIONTYPE())  => begin
+                  (txt, Absyn.R_UNIONTYPE(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("uniontype"))
                     txt
                   end
@@ -1007,7 +1007,7 @@
                     txt
                   end
 
-                  (txt, Absyn.R_UNKNOWN())  => begin
+                  (txt, Absyn.R_UNKNOWN(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("*unknown*"))
                     txt
                   end
@@ -1039,12 +1039,12 @@
           out_txt
         end
 
-        function lm_41(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_41(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_exp::Absyn.Exp
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -1062,12 +1062,12 @@
           out_txt
         end
 
-        function lm_42(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_42(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_eq::Absyn.EquationItem
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -1085,12 +1085,12 @@
           out_txt
         end
 
-        function lm_43(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_43(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_eq::Absyn.EquationItem
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -1108,12 +1108,12 @@
           out_txt
         end
 
-        function lm_44(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_44(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_eq::Absyn.AlgorithmItem
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -1131,12 +1131,12 @@
           out_txt
         end
 
-        function lm_45(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_45(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_eq::Absyn.AlgorithmItem
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -1259,12 +1259,12 @@
           out_txt
         end
 
-        function lm_51(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_51(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_arg::Absyn.Exp
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -1282,13 +1282,13 @@
           out_txt
         end
 
-        function fun_52(in_txt::Tpl.Text, in_a_args::List, in_a_fn__str::Tpl.Text)::Tpl.Text
+        function fun_52(in_txt::Tpl.Text, in_a_args::IList, in_a_fn__str::Tpl.Text)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
                   local a_fn__str::Tpl.Text
-                  local i_args::List
+                  local i_args::IList
                 @match (in_txt, in_a_args, in_a_fn__str) begin
                   (txt,  nil(), a_fn__str)  => begin
                       txt = fun_50(txt, a_fn__str)
@@ -1315,7 +1315,7 @@
                   local txt::Tpl.Text
                   local a_ann__str::Tpl.Text
                   local i_annotation__::Option
-                  local i_args::List
+                  local i_args::IList
                   local i_output__::Option
                   local i_lang::Option
                   local i_funcName::Option
@@ -1362,10 +1362,10 @@
                   local a_options::Dump.DumpOptions
                   local i_externalDecl::Absyn.ExternalDecl
                   local i_annotation__::Option
-                  local i_contents_3::List
-                  local i_contents_2::List
-                  local i_contents_1::List
-                  local i_contents::List
+                  local i_contents_3::IList
+                  local i_contents_2::IList
+                  local i_contents_1::IList
+                  local i_contents::IList
                   local l_ann__str::Tpl.Text
                   local l_el__str::Tpl.Text
                   local l_section__str::Tpl.Text
@@ -1519,7 +1519,7 @@
           out_txt
         end
 
-        function dumpElementItems(in_txt::Tpl.Text, in_a_items::List, in_a_prevSpacing::String, in_a_first::Bool, in_a_options::Dump.DumpOptions)::Tpl.Text
+        function dumpElementItems(in_txt::Tpl.Text, in_a_items::IList, in_a_prevSpacing::String, in_a_first::Bool, in_a_options::Dump.DumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
@@ -1527,7 +1527,7 @@
                   local a_prevSpacing::String
                   local a_first::Bool
                   local a_options::Dump.DumpOptions
-                  local i_rest__items::List
+                  local i_rest__items::IList
                   local i_item::Absyn.ElementItem
                   local l_post__spacing::Tpl.Text
                   local l_rest__str::Tpl.Text
@@ -1757,12 +1757,12 @@
           out_txt
         end
 
-        function lm_68(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_68(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_arg::Absyn.NamedArg
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -1779,12 +1779,12 @@
           out_txt
         end
 
-        function fun_69(in_txt::Tpl.Text, in_a_args::List)::Tpl.Text
+        function fun_69(in_txt::Tpl.Text, in_a_args::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local i_args::List
+                  local i_args::IList
                 @match (in_txt, in_a_args) begin
                   (txt,  nil())  => begin
                     txt
@@ -1862,7 +1862,7 @@
                   local i_string::String
                   local i_optName::Option
                   local i_name::Absyn.Ident
-                  local i_args::List
+                  local i_args::IList
                   local i_constrainClass::Option
                   local i_specification::Absyn.ElementSpec
                   local i_innerOuter::Absyn.InnerOuter
@@ -1877,8 +1877,7 @@
                   local ret_1::Bool
                   local ret_0::Bool
                 @match (in_txt, in_a_elem, in_a_options) begin
-                  (txt, Absyn.ELEMENT(info = i_info, finalPrefix = i_finalPrefix, redeclareKeywords = i_redeclareKeywords, innerOuter = i_innerOuter, specification = i_specification, constrainClass = i_constrainClass), a_options)  => begin
-                    i_elem,
+                  (txt, i_elem && Absyn.ELEMENT(info = i_info, finalPrefix = i_finalPrefix, redeclareKeywords = i_redeclareKeywords, innerOuter = i_innerOuter, specification = i_specification, constrainClass = i_constrainClass), a_options)  => begin
                       ret_0 = Dump.boolUnparseFileFromInfo(i_info, a_options)
                       ret_1 = AbsynUtil.isClassdef(i_elem)
                       ret_2 = boolNot(ret_1)
@@ -1969,12 +1968,12 @@
           out_txt
         end
 
-        function lm_75(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_75(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_earg::Absyn.ElementArg
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -1997,7 +1996,7 @@
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local i_elementArgs::List
+                  local i_elementArgs::IList
                   local ret_1::Tpl.StringToken
                   local txt_0::Tpl.Text
                 @match (in_txt, in_a_ann) begin
@@ -2217,7 +2216,7 @@
               out_txt = begin
                   local txt::Tpl.Text
                 @match (in_txt, in_a_each) begin
-                  (txt, Absyn.EACH())  => begin
+                  (txt, Absyn.EACH(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("each "))
                     txt
                   end
@@ -2255,12 +2254,12 @@
               out_txt = begin
                   local txt::Tpl.Text
                 @match (in_txt, in_a_redecl) begin
-                  (txt, Absyn.REDECLARE())  => begin
+                  (txt, Absyn.REDECLARE(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("redeclare "))
                     txt
                   end
 
-                  (txt, Absyn.REDECLARE_REPLACEABLE())  => begin
+                  (txt, Absyn.REDECLARE_REPLACEABLE(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("redeclare "))
                     txt
                   end
@@ -2279,12 +2278,12 @@
               out_txt = begin
                   local txt::Tpl.Text
                 @match (in_txt, in_a_repl) begin
-                  (txt, Absyn.REPLACEABLE())  => begin
+                  (txt, Absyn.REPLACEABLE(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("replaceable "))
                     txt
                   end
 
-                  (txt, Absyn.REDECLARE_REPLACEABLE())  => begin
+                  (txt, Absyn.REDECLARE_REPLACEABLE(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("replaceable "))
                     txt
                   end
@@ -2303,17 +2302,17 @@
               out_txt = begin
                   local txt::Tpl.Text
                 @match (in_txt, in_a_io) begin
-                  (txt, Absyn.INNER())  => begin
+                  (txt, Absyn.INNER(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("inner "))
                     txt
                   end
 
-                  (txt, Absyn.OUTER())  => begin
+                  (txt, Absyn.OUTER(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("outer "))
                     txt
                   end
 
-                  (txt, Absyn.INNER_OUTER())  => begin
+                  (txt, Absyn.INNER_OUTER(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("inner outer "))
                     txt
                   end
@@ -2326,12 +2325,12 @@
           out_txt
         end
 
-        function lm_89(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_89(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_earg::Absyn.ElementArg
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -2349,12 +2348,12 @@
           out_txt
         end
 
-        function fun_90(in_txt::Tpl.Text, in_a_elementArgLst::List)::Tpl.Text
+        function fun_90(in_txt::Tpl.Text, in_a_elementArgLst::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local i_elementArgLst::List
+                  local i_elementArgLst::IList
                 @match (in_txt, in_a_elementArgLst) begin
                   (txt,  nil())  => begin
                     txt
@@ -2379,7 +2378,7 @@
               out_txt = begin
                   local txt::Tpl.Text
                   local i_eqMod::Absyn.EqMod
-                  local i_elementArgLst::List
+                  local i_elementArgLst::IList
                   local l_eq__str::Tpl.Text
                   local l_arg__str::Tpl.Text
                 @match (in_txt, in_a_mod) begin
@@ -2421,12 +2420,12 @@
           out_txt
         end
 
-        function lm_93(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_93(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_earg::Absyn.ElementArg
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -2466,12 +2465,12 @@
           out_txt
         end
 
-        function lm_95(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_95(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_comp::Absyn.ComponentItem
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -2500,11 +2499,11 @@
                   local a_io::String
                   local a_options::Dump.DumpOptions
                   local i_import__::Absyn.Import
-                  local i_components::List
+                  local i_components::IList
                   local i_attributes::Absyn.ElementAttributes
                   local i_typeSpec::Absyn.TypeSpec
                   local i_annotationOpt::Option
-                  local i_elementArg::List
+                  local i_elementArg::IList
                   local i_path::Absyn.Path
                   local i_class__::Absyn.Class
                   local l_imp__str::Tpl.Text
@@ -2658,17 +2657,17 @@
               out_txt = begin
                   local txt::Tpl.Text
                 @match (in_txt, in_a_par) begin
-                  (txt, Absyn.PARGLOBAL())  => begin
+                  (txt, Absyn.PARGLOBAL(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("parglobal "))
                     txt
                   end
 
-                  (txt, Absyn.PARLOCAL())  => begin
+                  (txt, Absyn.PARLOCAL(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("parlocal "))
                     txt
                   end
 
-                  (txt, Absyn.NON_PARALLEL())  => begin
+                  (txt, Absyn.NON_PARALLEL(__))  => begin
                     txt
                   end
 
@@ -2686,11 +2685,11 @@
               out_txt = begin
                   local txt::Tpl.Text
                 @match (in_txt, in_a_isField) begin
-                  (txt, Absyn.NONFIELD())  => begin
+                  (txt, Absyn.NONFIELD(__))  => begin
                     txt
                   end
 
-                  (txt, Absyn.FIELD())  => begin
+                  (txt, Absyn.FIELD(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("field "))
                     txt
                   end
@@ -2709,21 +2708,21 @@
               out_txt = begin
                   local txt::Tpl.Text
                 @match (in_txt, in_a_var) begin
-                  (txt, Absyn.VAR())  => begin
+                  (txt, Absyn.VAR(__))  => begin
                     txt
                   end
 
-                  (txt, Absyn.DISCRETE())  => begin
+                  (txt, Absyn.DISCRETE(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("discrete "))
                     txt
                   end
 
-                  (txt, Absyn.PARAM())  => begin
+                  (txt, Absyn.PARAM(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("parameter "))
                     txt
                   end
 
-                  (txt, Absyn.CONST())  => begin
+                  (txt, Absyn.CONST(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("constant "))
                     txt
                   end
@@ -2742,21 +2741,21 @@
               out_txt = begin
                   local txt::Tpl.Text
                 @match (in_txt, in_a_dir) begin
-                  (txt, Absyn.BIDIR())  => begin
+                  (txt, Absyn.BIDIR(__))  => begin
                     txt
                   end
 
-                  (txt, Absyn.INPUT())  => begin
+                  (txt, Absyn.INPUT(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("input "))
                     txt
                   end
 
-                  (txt, Absyn.OUTPUT())  => begin
+                  (txt, Absyn.OUTPUT(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("output "))
                     txt
                   end
 
-                  (txt, Absyn.INPUT_OUTPUT())  => begin
+                  (txt, Absyn.INPUT_OUTPUT(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("input output "))
                     txt
                   end
@@ -2789,12 +2788,12 @@
           out_txt
         end
 
-        function lm_105(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_105(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_e::Absyn.ElementArg
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -2812,12 +2811,12 @@
           out_txt
         end
 
-        function fun_106(in_txt::Tpl.Text, in_a_el::List)::Tpl.Text
+        function fun_106(in_txt::Tpl.Text, in_a_el::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local i_el::List
+                  local i_el::IList
                 @match (in_txt, in_a_el) begin
                   (txt,  nil())  => begin
                     txt
@@ -2842,7 +2841,7 @@
               out_txt = begin
                   local txt::Tpl.Text
                   local i_comment::Option
-                  local i_el::List
+                  local i_el::IList
                   local i_p::Absyn.Path
                   local l_cmt__str::Tpl.Text
                   local l_el__str::Tpl.Text
@@ -2972,12 +2971,12 @@
           out_txt
         end
 
-        function lm_112(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_112(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_group::Absyn.GroupImport
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -3000,7 +2999,7 @@
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local i_groups::List
+                  local i_groups::IList
                   local i_prefix::Absyn.Path
                   local i_path::Absyn.Path
                   local i_name::Absyn.Ident
@@ -3110,12 +3109,12 @@
           out_txt
         end
 
-        function lm_116(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_116(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_eq::Absyn.EquationItem
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -3133,7 +3132,7 @@
           out_txt
         end
 
-        function dumpEquationItems(txt::Tpl.Text, a_eql::List)::Tpl.Text
+        function dumpEquationItems(txt::Tpl.Text, a_eql::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()))
@@ -3142,13 +3141,13 @@
           out_txt
         end
 
-        function lm_118(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_118(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
-                  local i_b::List
+                  local rest::IList
+                  local i_b::IList
                   local i_c::Absyn.Exp
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -3189,13 +3188,13 @@
           out_txt
         end
 
-        function lm_120(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_120(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
-                  local i_b::List
+                  local rest::IList
+                  local i_b::IList
                   local i_c::Absyn.Exp
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -3221,19 +3220,19 @@
                   local i_equ::Absyn.EquationItem
                   local i_functionArgs::Absyn.FunctionArgs
                   local i_functionName::Absyn.ComponentRef
-                  local i_elseWhenEquations::List
-                  local i_whenEquations::List
+                  local i_elseWhenEquations::IList
+                  local i_whenEquations::IList
                   local i_whenExp::Absyn.Exp
-                  local i_forEquations::List
+                  local i_forEquations::IList
                   local i_iterators::Absyn.ForIterators
                   local i_connector2::Absyn.ComponentRef
                   local i_connector1::Absyn.ComponentRef
                   local i_domain::Absyn.ComponentRef
                   local i_rightSide::Absyn.Exp
                   local i_leftSide::Absyn.Exp
-                  local i_equationElseItems::List
-                  local i_elseIfBranches::List
-                  local i_equationTrueItems::List
+                  local i_equationElseItems::IList
+                  local i_elseIfBranches::IList
+                  local i_equationTrueItems::IList
                   local i_ifExp::Absyn.Exp
                   local l_eq__str::Tpl.Text
                   local l_args__str::Tpl.Text
@@ -3354,12 +3353,12 @@
           out_txt
         end
 
-        function lm_122(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_122(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_eq::Absyn.EquationItem
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -3377,7 +3376,7 @@
           out_txt
         end
 
-        function dumpEquationBranch(txt::Tpl.Text, a_cond::Absyn.Exp, a_body::List, a_header::String)::Tpl.Text
+        function dumpEquationBranch(txt::Tpl.Text, a_cond::Absyn.Exp, a_body::IList, a_header::String)::Tpl.Text
               local out_txt::Tpl.Text
 
               local l_body__str::Tpl.Text
@@ -3397,12 +3396,12 @@
           out_txt
         end
 
-        function lm_124(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_124(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_alg::Absyn.AlgorithmItem
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -3420,7 +3419,7 @@
           out_txt
         end
 
-        function dumpAlgorithmItems(txt::Tpl.Text, a_algs::List)::Tpl.Text
+        function dumpAlgorithmItems(txt::Tpl.Text, a_algs::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()))
@@ -3466,13 +3465,13 @@
           out_txt
         end
 
-        function lm_127(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_127(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
-                  local i_b::List
+                  local rest::IList
+                  local i_b::IList
                   local i_c::Absyn.Exp
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -3513,13 +3512,13 @@
           out_txt
         end
 
-        function lm_129(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_129(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
-                  local i_b::List
+                  local rest::IList
+                  local i_b::IList
                   local i_c::Absyn.Exp
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -3537,12 +3536,12 @@
           out_txt
         end
 
-        function fun_130(in_txt::Tpl.Text, in_a_equ::List)::Tpl.Text
+        function fun_130(in_txt::Tpl.Text, in_a_equ::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local i_equ::List
+                  local i_equ::IList
                 @match (in_txt, in_a_equ) begin
                   (txt,  nil())  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("..."))
@@ -3563,21 +3562,21 @@
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local i_elseBody::List
-                  local i_body::List
-                  local i_equ::List
+                  local i_elseBody::IList
+                  local i_body::IList
+                  local i_equ::IList
                   local i_functionArgs::Absyn.FunctionArgs
                   local i_functionCall::Absyn.ComponentRef
-                  local i_elseWhenAlgorithmBranch::List
-                  local i_whenBody::List
-                  local i_whileBody::List
+                  local i_elseWhenAlgorithmBranch::IList
+                  local i_whenBody::IList
+                  local i_whileBody::IList
                   local i_boolExpr::Absyn.Exp
-                  local i_parforBody::List
-                  local i_forBody::List
+                  local i_parforBody::IList
+                  local i_forBody::IList
                   local i_iterators::Absyn.ForIterators
-                  local i_elseBranch::List
-                  local i_elseIfAlgorithmBranch::List
-                  local i_trueBranch::List
+                  local i_elseBranch::IList
+                  local i_elseIfAlgorithmBranch::IList
+                  local i_trueBranch::IList
                   local i_ifExp::Absyn.Exp
                   local i_value::Absyn.Exp
                   local i_assignComponent::Absyn.Exp
@@ -3683,12 +3682,12 @@
                     txt
                   end
 
-                  (txt, Absyn.ALG_RETURN())  => begin
+                  (txt, Absyn.ALG_RETURN(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("return"))
                     txt
                   end
 
-                  (txt, Absyn.ALG_BREAK())  => begin
+                  (txt, Absyn.ALG_BREAK(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("break"))
                     txt
                   end
@@ -3718,7 +3717,7 @@
                     txt
                   end
 
-                  (txt, Absyn.ALG_CONTINUE())  => begin
+                  (txt, Absyn.ALG_CONTINUE(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("continue"))
                     txt
                   end
@@ -3731,12 +3730,12 @@
           out_txt
         end
 
-        function lm_132(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_132(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_eq::Absyn.AlgorithmItem
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -3754,7 +3753,7 @@
           out_txt
         end
 
-        function dumpAlgorithmBranch(txt::Tpl.Text, a_cond::Absyn.Exp, a_body::List, a_header::String, a_exec__str::String)::Tpl.Text
+        function dumpAlgorithmBranch(txt::Tpl.Text, a_cond::Absyn.Exp, a_body::IList, a_header::String, a_exec__str::String)::Tpl.Text
               local out_txt::Tpl.Text
 
               local l_body__str::Tpl.Text
@@ -3881,12 +3880,12 @@
           out_txt
         end
 
-        function lm_138(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_138(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_ty::Absyn.TypeSpec
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -3909,7 +3908,7 @@
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local i_typeSpecs::List
+                  local i_typeSpecs::IList
                   local i_arrayDim::Option
                   local i_path::Absyn.Path
                   local l_ty__str::Tpl.Text
@@ -3966,12 +3965,12 @@
           out_txt
         end
 
-        function lm_141(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_141(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_s::Absyn.Subscript
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -3989,12 +3988,12 @@
           out_txt
         end
 
-        function dumpSubscripts(in_txt::Tpl.Text, in_a_subscripts::List)::Tpl.Text
+        function dumpSubscripts(in_txt::Tpl.Text, in_a_subscripts::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local i_subscripts::List
+                  local i_subscripts::IList
                   local l_sub__str::Tpl.Text
                 @match (in_txt, in_a_subscripts) begin
                   (txt,  nil())  => begin
@@ -4022,7 +4021,7 @@
                   local txt::Tpl.Text
                   local i_subscript::Absyn.Exp
                 @match (in_txt, in_a_subscript) begin
-                  (txt, Absyn.NOSUB())  => begin
+                  (txt, Absyn.NOSUB(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING(":"))
                     txt
                   end
@@ -4040,12 +4039,12 @@
           out_txt
         end
 
-        function lm_144(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_144(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_e::Absyn.Exp
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -4063,12 +4062,12 @@
           out_txt
         end
 
-        function lm_145(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_145(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_e::Absyn.Exp
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -4086,13 +4085,13 @@
           out_txt
         end
 
-        function lm_146(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_146(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
-                  local i_row::List
+                  local rest::IList
+                  local i_row::IList
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
                     txt
@@ -4111,12 +4110,12 @@
           out_txt
         end
 
-        function lm_147(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_147(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_e::Absyn.Exp
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -4134,12 +4133,12 @@
           out_txt
         end
 
-        function lm_148(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_148(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_e::Absyn.Exp
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -4163,17 +4162,17 @@
               out_txt = begin
                   local txt::Tpl.Text
                   local i_index::Absyn.Exp
-                  local i_exps::List
+                  local i_exps::IList
                   local i_rest::Absyn.Exp
                   local i_head::Absyn.Exp
                   local i_id::Absyn.Ident
                   local i_code::Absyn.CodeNode
-                  local i_expressions::List
+                  local i_expressions::IList
                   local i_stop::Absyn.Exp
                   local i_step::Absyn.Exp
                   local i_start::Absyn.Exp
-                  local i_matrix::List
-                  local i_arrayExp::List
+                  local i_matrix::IList
+                  local i_arrayExp::IList
                   local i_function__::Absyn.ComponentRef
                   local i_functionArgs::Absyn.FunctionArgs
                   local i_exp::Absyn.Exp
@@ -4230,8 +4229,7 @@
                     txt
                   end
 
-                  (txt, Absyn.BINARY(exp1 = i_exp1, exp2 = i_exp2, op = i_op))  => begin
-                    i_e,
+                  (txt, i_e && Absyn.BINARY(exp1 = i_exp1, exp2 = i_exp2, op = i_op))  => begin
                       l_lhs__str = dumpOperand(Tpl.emptyTxt, i_exp1, i_e, true)
                       l_rhs__str = dumpOperand(Tpl.emptyTxt, i_exp2, i_e, false)
                       l_op__str = dumpOperator(Tpl.emptyTxt, i_op)
@@ -4243,8 +4241,7 @@
                     txt
                   end
 
-                  (txt, Absyn.UNARY(exp = i_exp, op = i_op))  => begin
-                    i_e,
+                  (txt, i_e && Absyn.UNARY(exp = i_exp, op = i_op))  => begin
                       l_exp__str = dumpOperand(Tpl.emptyTxt, i_exp, i_e, false)
                       l_op__str = dumpOperator(Tpl.emptyTxt, i_op)
                       txt = Tpl.writeText(txt, l_op__str)
@@ -4252,8 +4249,7 @@
                     txt
                   end
 
-                  (txt, Absyn.LBINARY(exp1 = i_exp1, exp2 = i_exp2, op = i_op))  => begin
-                    i_e,
+                  (txt, i_e && Absyn.LBINARY(exp1 = i_exp1, exp2 = i_exp2, op = i_op))  => begin
                       l_lhs__str = dumpOperand(Tpl.emptyTxt, i_exp1, i_e, true)
                       l_rhs__str = dumpOperand(Tpl.emptyTxt, i_exp2, i_e, false)
                       l_op__str = dumpOperator(Tpl.emptyTxt, i_op)
@@ -4265,8 +4261,7 @@
                     txt
                   end
 
-                  (txt, Absyn.LUNARY(exp = i_exp, op = i_op))  => begin
-                    i_e,
+                  (txt, i_e && Absyn.LUNARY(exp = i_exp, op = i_op))  => begin
                       l_exp__str = dumpOperand(Tpl.emptyTxt, i_exp, i_e, false)
                       l_op__str = dumpOperator(Tpl.emptyTxt, i_op)
                       txt = Tpl.writeText(txt, l_op__str)
@@ -4275,8 +4270,7 @@
                     txt
                   end
 
-                  (txt, Absyn.RELATION(exp1 = i_exp1, exp2 = i_exp2, op = i_op))  => begin
-                    i_e,
+                  (txt, i_e && Absyn.RELATION(exp1 = i_exp1, exp2 = i_exp2, op = i_op))  => begin
                       l_lhs__str = dumpOperand(Tpl.emptyTxt, i_exp1, i_e, true)
                       l_rhs__str = dumpOperand(Tpl.emptyTxt, i_exp2, i_e, false)
                       l_op__str = dumpOperator(Tpl.emptyTxt, i_op)
@@ -4288,13 +4282,12 @@
                     txt
                   end
 
-                  (txt, Absyn.IFEXP(ifExp = _))  => begin
-                    i_exp,
+                  (txt, i_exp && Absyn.IFEXP(ifExp = _))  => begin
                       txt = dumpIfExp(txt, i_exp)
                     txt
                   end
 
-                  (txt, Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "\array"), functionArgs = i_functionArgs))  => begin
+                  (txt, Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "\$array"), functionArgs = i_functionArgs))  => begin
                       l_args__str = dumpFunctionArgs(Tpl.emptyTxt, i_functionArgs)
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("{"))
                       txt = Tpl.writeText(txt, l_args__str)
@@ -4343,8 +4336,7 @@
                     txt
                   end
 
-                  (txt, Absyn.RANGE(step = SOME(i_step), start = i_start, stop = i_stop))  => begin
-                    i_e,
+                  (txt, i_e && Absyn.RANGE(step = SOME(i_step), start = i_start, stop = i_stop))  => begin
                       l_start__str = dumpOperand(Tpl.emptyTxt, i_start, i_e, false)
                       l_step__str = dumpOperand(Tpl.emptyTxt, i_step, i_e, false)
                       l_stop__str = dumpOperand(Tpl.emptyTxt, i_stop, i_e, false)
@@ -4356,8 +4348,7 @@
                     txt
                   end
 
-                  (txt, Absyn.RANGE(step = NONE(), start = i_start, stop = i_stop))  => begin
-                    i_e,
+                  (txt, i_e && Absyn.RANGE(step = NONE(), start = i_start, stop = i_stop))  => begin
                       l_start__str = dumpOperand(Tpl.emptyTxt, i_start, i_e, false)
                       l_stop__str = dumpOperand(Tpl.emptyTxt, i_stop, i_e, false)
                       txt = Tpl.writeText(txt, l_start__str)
@@ -4376,13 +4367,13 @@
                     txt
                   end
 
-                  (txt, Absyn.END())  => begin
+                  (txt, Absyn.END(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("end"))
                     txt
                   end
 
                   (txt, Absyn.CODE(code = i_code))  => begin
-                      txt = Tpl.writeTok(txt, Tpl.ST_STRING("Code("))
+                      txt = Tpl.writeTok(txt, Tpl.ST_STRING("$Code("))
                       txt = dumpCodeNode(txt, i_code)
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"))
                     txt
@@ -4405,8 +4396,7 @@
                     txt
                   end
 
-                  (txt, Absyn.MATCHEXP(matchTy = _))  => begin
-                    i_exp,
+                  (txt, i_exp && Absyn.MATCHEXP(matchTy = _))  => begin
                       txt = dumpMatchExp(txt, i_exp)
                     txt
                   end
@@ -4444,8 +4434,7 @@
                   local txt::Tpl.Text
                   local i_lhs::Absyn.Exp
                 @match (in_txt, in_a_lhs) begin
-                  (txt, Absyn.IFEXP(ifExp = _))  => begin
-                    i_lhs,
+                  (txt, i_lhs && Absyn.IFEXP(ifExp = _))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("("))
                       txt = dumpExp(txt, i_lhs)
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"))
@@ -4501,7 +4490,7 @@
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local i_elseIfBranch::List
+                  local i_elseIfBranch::IList
                   local i_elseBranch::Absyn.Exp
                   local i_trueBranch::Absyn.Exp
                   local i_ifExp::Absyn.Exp
@@ -4533,12 +4522,12 @@
           out_txt
         end
 
-        function lm_154(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_154(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_branch::Absyn.Exp
                   local i_cond::Absyn.Exp
                   local l_branch__str::Tpl.Text
@@ -4566,7 +4555,7 @@
           out_txt
         end
 
-        function dumpElseIfExp(txt::Tpl.Text, a_else__if::List)::Tpl.Text
+        function dumpElseIfExp(txt::Tpl.Text, a_else__if::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()))
@@ -4640,8 +4629,8 @@
                   local i_modification::Absyn.Modification
                   local i_exp::Absyn.Exp
                   local i_element::Absyn.Element
-                  local i_algorithmItemLst::List
-                  local i_equationItemLst::List
+                  local i_algorithmItemLst::IList
+                  local i_equationItemLst::IList
                   local i_boolean::Bool
                   local i_componentRef::Absyn.ComponentRef
                   local i_path::Absyn.Path
@@ -4715,12 +4704,12 @@
           out_txt
         end
 
-        function lm_160(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_160(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_c::Absyn.Case
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -4744,8 +4733,8 @@
               out_txt = begin
                   local txt::Tpl.Text
                   local i_comment::Option
-                  local i_cases::List
-                  local i_localDecls::List
+                  local i_cases::IList
+                  local i_localDecls::IList
                   local i_inputExp::Absyn.Exp
                   local i_matchTy::Absyn.MatchType
                   local l_cmt__str::Tpl.Text
@@ -4792,12 +4781,12 @@
               out_txt = begin
                   local txt::Tpl.Text
                 @match (in_txt, in_a_match__type) begin
-                  (txt, Absyn.MATCH())  => begin
+                  (txt, Absyn.MATCH(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("match"))
                     txt
                   end
 
-                  (txt, Absyn.MATCHCONTINUE())  => begin
+                  (txt, Absyn.MATCHCONTINUE(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("matchcontinue"))
                     txt
                   end
@@ -4810,12 +4799,12 @@
           out_txt
         end
 
-        function lm_163(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_163(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_decl::Absyn.ElementItem
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -4833,12 +4822,12 @@
           out_txt
         end
 
-        function dumpMatchLocals(in_txt::Tpl.Text, in_a_locals::List)::Tpl.Text
+        function dumpMatchLocals(in_txt::Tpl.Text, in_a_locals::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local i_locals::List
+                  local i_locals::IList
                 @match (in_txt, in_a_locals) begin
                   (txt,  nil())  => begin
                     txt
@@ -4860,12 +4849,12 @@
           out_txt
         end
 
-        function lm_165(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_165(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_eq::Absyn.EquationItem
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -4883,12 +4872,12 @@
           out_txt
         end
 
-        function lm_166(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_166(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_alg::Absyn.AlgorithmItem
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -4911,8 +4900,8 @@
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local i_algs::List
-                  local i_eql::List
+                  local i_algs::IList
+                  local i_eql::IList
                 @match (in_txt, in_a_cp) begin
                   (txt, Absyn.EQUATIONS(contents =  nil()))  => begin
                     txt
@@ -5084,117 +5073,117 @@
               out_txt = begin
                   local txt::Tpl.Text
                 @match (in_txt, in_a_op) begin
-                  (txt, Absyn.ADD())  => begin
+                  (txt, Absyn.ADD(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("+"))
                     txt
                   end
 
-                  (txt, Absyn.SUB())  => begin
+                  (txt, Absyn.SUB(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("-"))
                     txt
                   end
 
-                  (txt, Absyn.MUL())  => begin
+                  (txt, Absyn.MUL(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("*"))
                     txt
                   end
 
-                  (txt, Absyn.DIV())  => begin
+                  (txt, Absyn.DIV(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("/"))
                     txt
                   end
 
-                  (txt, Absyn.POW())  => begin
+                  (txt, Absyn.POW(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("^"))
                     txt
                   end
 
-                  (txt, Absyn.UPLUS())  => begin
+                  (txt, Absyn.UPLUS(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("+"))
                     txt
                   end
 
-                  (txt, Absyn.UMINUS())  => begin
+                  (txt, Absyn.UMINUS(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("-"))
                     txt
                   end
 
-                  (txt, Absyn.ADD_EW())  => begin
+                  (txt, Absyn.ADD_EW(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING(".+"))
                     txt
                   end
 
-                  (txt, Absyn.SUB_EW())  => begin
+                  (txt, Absyn.SUB_EW(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING(".-"))
                     txt
                   end
 
-                  (txt, Absyn.MUL_EW())  => begin
+                  (txt, Absyn.MUL_EW(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING(".*"))
                     txt
                   end
 
-                  (txt, Absyn.DIV_EW())  => begin
+                  (txt, Absyn.DIV_EW(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("./"))
                     txt
                   end
 
-                  (txt, Absyn.POW_EW())  => begin
+                  (txt, Absyn.POW_EW(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING(".^"))
                     txt
                   end
 
-                  (txt, Absyn.UPLUS_EW())  => begin
+                  (txt, Absyn.UPLUS_EW(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING(".+"))
                     txt
                   end
 
-                  (txt, Absyn.UMINUS_EW())  => begin
+                  (txt, Absyn.UMINUS_EW(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING(".-"))
                     txt
                   end
 
-                  (txt, Absyn.AND())  => begin
+                  (txt, Absyn.AND(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("and"))
                     txt
                   end
 
-                  (txt, Absyn.OR())  => begin
+                  (txt, Absyn.OR(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("or"))
                     txt
                   end
 
-                  (txt, Absyn.NOT())  => begin
+                  (txt, Absyn.NOT(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("not"))
                     txt
                   end
 
-                  (txt, Absyn.LESS())  => begin
+                  (txt, Absyn.LESS(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("<"))
                     txt
                   end
 
-                  (txt, Absyn.LESSEQ())  => begin
+                  (txt, Absyn.LESSEQ(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("<="))
                     txt
                   end
 
-                  (txt, Absyn.GREATER())  => begin
+                  (txt, Absyn.GREATER(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING(">"))
                     txt
                   end
 
-                  (txt, Absyn.GREATEREQ())  => begin
+                  (txt, Absyn.GREATEREQ(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING(">="))
                     txt
                   end
 
-                  (txt, Absyn.EQUAL())  => begin
+                  (txt, Absyn.EQUAL(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("=="))
                     txt
                   end
 
-                  (txt, Absyn.NEQUAL())  => begin
+                  (txt, Absyn.NEQUAL(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("<>"))
                     txt
                   end
@@ -5232,7 +5221,7 @@
               out_txt = begin
                   local txt::Tpl.Text
                   local i_componentRef::Absyn.ComponentRef
-                  local i_subscripts::List
+                  local i_subscripts::IList
                   local i_name::Absyn.Ident
                   local ret_0::Bool
                 @match (in_txt, in_a_cref) begin
@@ -5256,13 +5245,13 @@
                     txt
                   end
 
-                  (txt, Absyn.WILD())  => begin
+                  (txt, Absyn.WILD(__))  => begin
                       ret_0 = Config.acceptMetaModelicaGrammar()
                       txt = fun_173(txt, ret_0)
                     txt
                   end
 
-                  (txt, Absyn.ALLWILD())  => begin
+                  (txt, Absyn.ALLWILD(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("__"))
                     txt
                   end
@@ -5275,12 +5264,12 @@
           out_txt
         end
 
-        function lm_175(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_175(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_arg::Absyn.Exp
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -5298,12 +5287,12 @@
           out_txt
         end
 
-        function lm_176(in_txt::Tpl.Text, in_items::List)::Tpl.Text
+        function lm_176(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::List
+                  local rest::IList
                   local i_narg::Absyn.NamedArg
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -5321,7 +5310,7 @@
           out_txt
         end
 
-        function fun_177(in_txt::Tpl.Text, in_a_argNames::List)::Tpl.Text
+        function fun_177(in_txt::Tpl.Text, in_a_argNames::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
@@ -5340,12 +5329,12 @@
           out_txt
         end
 
-        function fun_178(in_txt::Tpl.Text, in_a_args__str::Tpl.Text, in_a_argNames::List)::Tpl.Text
+        function fun_178(in_txt::Tpl.Text, in_a_args__str::Tpl.Text, in_a_argNames::IList)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local a_argNames::List
+                  local a_argNames::IList
                 @match (in_txt, in_a_args__str, in_a_argNames) begin
                   (txt, Tpl.MEM_TEXT(tokens =  nil()), _)  => begin
                     txt
@@ -5389,7 +5378,7 @@
               out_txt = begin
                   local txt::Tpl.Text
                 @match (in_txt, in_a_iterType) begin
-                  (txt, Absyn.THREAD())  => begin
+                  (txt, Absyn.THREAD(__))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("threaded "))
                     txt
                   end
@@ -5410,8 +5399,8 @@
                   local i_iterType::Absyn.ReductionIterType
                   local i_iterators::Absyn.ForIterators
                   local i_exp::Absyn.Exp
-                  local i_argNames::List
-                  local i_args::List
+                  local i_argNames::IList
+                  local i_args::IList
                   local l_iter__str::Tpl.Text
                   local l_exp__str::Tpl.Text
                   local l_separator::Tpl.Text
@@ -5590,4 +5579,6 @@
           out_txt
         end
 
+    #= So that we can use wildcard imports and named imports when they do occur. Not good Julia practice =#
+    @exportAll()
   end
