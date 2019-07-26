@@ -102,7 +102,7 @@ match class
     let partial_str = if partialPrefix then "abstract" else ""
     let class_type_str = dumpClassType(restriction)
     let cdef_str1 = dumpClassDef(parts, packageContext, options)
-    let forwardDeclarations = dumpSCodeElements(SCodeUtil.translateClassdefElements(parts.classParts))
+    let forwardDeclarations = dumpSCodeElements(AbsynToSCode.translateClassdefElements(parts.classParts))
     let inform  = if forwardDeclarations then
                     '#= Necessary to write declarations for your uniontypes until Julia adds support for mutually recursive types =#'
                   else ''
@@ -1260,7 +1260,7 @@ end dumpForIteratorName;
 
 template dumpOutputsJL(list<ElementItem> elements)
 ::=
-  let outputStr = (elements |> e => dumpTypeSpecOpt(AbsynUtil.getTypeSpecFromElementItemOpt(e), functionContext) ;separator=", ")
+  let outputStr = (listReverse(elements) |> e => dumpTypeSpecOpt(AbsynUtil.getTypeSpecFromElementItemOpt(e), functionContext) ;separator=", ")
   '<%outputStr%>'
 end dumpOutputsJL;
 

@@ -608,7 +608,7 @@ algorithm
   end match;
 end translateEnumlist;
 
-protected function translateClassdefElements
+public function translateClassdefElements
 "Convert an Absyn.ClassPart list to an Element list."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<SCode.Element> outElementLst;

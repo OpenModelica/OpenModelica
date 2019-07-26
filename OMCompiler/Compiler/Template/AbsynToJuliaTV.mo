@@ -1161,7 +1161,7 @@ end isClassdef;
   end complexIsCref;
 end AbsynUtil;
 
-package SCodeUtil
+package AbsynToSCode
   function translateAbsyn2SCode
     input Absyn.Program inProgram;
     output SCode.Program outProgram;
@@ -1170,7 +1170,7 @@ package SCodeUtil
     input list<Absyn.ClassPart> inAbsynClassPartLst;
     output list<SCode.Element> outElementLst;
   end translateClassdefElements;
-end SCodeUtil;
+end AbsynToSCode;
 
 package SCode
   type Program = list<SCode.Element>;
