@@ -21,9 +21,9 @@ writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/SCode.jl", OpenModelica.Scri
 deleteClass(SCode);getErrorString();
 
 //Translating SCodeUtil
-// loadFile("Compiler/FrontEnd/SCodeUtil.mo");getErrorString();
-// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/SCodeUtil.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
-// deleteClass(SCodeUtil);getErrorString();
+loadFile("Compiler/FrontEnd/SCodeUtil.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/SCodeUtil.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(SCodeUtil);getErrorString();
 
 //Translate Absyn to SCode
 loadFile("Compiler/FrontEnd/AbsynToSCode.mo");getErrorString();
