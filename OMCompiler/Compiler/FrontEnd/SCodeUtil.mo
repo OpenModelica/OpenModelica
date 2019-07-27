@@ -1,3 +1,4 @@
+
 /*
  * This file is part of OpenModelica.
  *
@@ -3362,10 +3363,10 @@ protected
   String id;
 algorithm
   mod := match ann
-    case SCode.Annotation.ANNOTATION(modification = SCode.MOD(subModLst = submods))
+    case SCode.ANNOTATION(modification = SCode.MOD(subModLst = submods))
       algorithm
         for sm in submods loop
-          SCode.SubMod.NAMEMOD(id, mod) := sm;
+          SCode.NAMEMOD(id, mod) := sm;
 
           if id == name then
             return;
@@ -3389,10 +3390,10 @@ protected
   SCode.Mod mod;
 algorithm
   mods := match ann
-    case SCode.Annotation.ANNOTATION(modification = SCode.MOD(subModLst = submods))
+    case SCode.ANNOTATION(modification = SCode.MOD(subModLst = submods))
       algorithm
         for sm in submods loop
-          SCode.SubMod.NAMEMOD(id, mod) := sm;
+          SCode.NAMEMOD(id, mod) := sm;
 
           if id == name then
             mods := mod :: mods;
@@ -5286,7 +5287,7 @@ algorithm
   mod := match element
     case SCode.CLASS(prefixes = SCode.Prefixes.PREFIXES(replaceablePrefix =
       SCode.Replaceable.REPLACEABLE(cc = SOME(SCode.CONSTRAINCLASS(modifier = mod))))) then mod;
-    case SCode.CLASS(classDef = SCode.ClassDef.DERIVED(modifications = mod)) then mod;
+    case SCode.CLASS(classDef = SCode.DERIVED(modifications = mod)) then mod;
     case SCode.COMPONENT(prefixes = SCode.Prefixes.PREFIXES(replaceablePrefix =
       SCode.Replaceable.REPLACEABLE(cc = SOME(SCode.CONSTRAINCLASS(modifier = mod))))) then mod;
     case SCode.COMPONENT(modifications = mod) then mod;
@@ -5368,7 +5369,7 @@ algorithm
       then
         ();
 
-    case SCode.Mod.REDECL()
+    case SCode.REDECL()
       algorithm
         mod.element := stripCommentsFromElement(mod.element, stripAnn, stripCmt);
       then
@@ -5398,7 +5399,7 @@ algorithm
       list<SCode.AlgorithmSection> alg, ialg;
       Option<SCode.ExternalDecl> ext;
 
-    case SCode.ClassDef.PARTS()
+    case SCode.PARTS()
       algorithm
         el := list(stripCommentsFromElement(e, stripAnn, stripCmt) for e in cdef.elementLst);
         eql := list(stripCommentsFromEquation(eq, stripAnn, stripCmt) for eq in cdef.normalEquationLst);
@@ -5407,22 +5408,22 @@ algorithm
         ialg := list(stripCommentsFromAlgorithm(ia, stripAnn, stripCmt) for ia in cdef.initialAlgorithmLst);
         ext := stripCommentsFromExternalDecl(cdef.externalDecl, stripAnn, stripCmt);
       then
-        SCode.ClassDef.PARTS(el, eql, ieql, alg, ialg, cdef.constraintLst, cdef.clsattrs, ext);
+        SCode.PARTS(el, eql, ieql, alg, ialg, cdef.constraintLst, cdef.clsattrs, ext);
 
-    case SCode.ClassDef.CLASS_EXTENDS()
+    case SCode.CLASS_EXTENDS()
       algorithm
         cdef.modifications := stripCommentsFromMod(cdef.modifications, stripAnn, stripCmt);
         cdef.composition := stripCommentsFromClassDef(cdef.composition, stripAnn, stripCmt);
       then
         cdef;
 
-    case SCode.ClassDef.DERIVED()
+    case SCode.DERIVED()
       algorithm
         cdef.modifications := stripCommentsFromMod(cdef.modifications, stripAnn, stripCmt);
       then
         cdef;
 
-    case SCode.ClassDef.ENUMERATION()
+    case SCode.ENUMERATION()
       algorithm
         cdef.enumLst := list(stripCommentsFromEnum(e, stripAnn, stripCmt) for e in cdef.enumLst);
       then
@@ -5482,7 +5483,7 @@ function stripCommentsFromEEquation
   input Boolean stripCmt;
 algorithm
   () := match eq
-    case SCode.EEquation.EQ_IF()
+    case SCode.EQ_IF()
       algorithm
         eq.thenBranch := list(
             list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in branch)
@@ -5492,32 +5493,32 @@ algorithm
       then
         ();
 
-    case SCode.EEquation.EQ_EQUALS()
+    case SCode.EQ_EQUALS()
       algorithm
         eq.comment := stripCommentsFromComment(eq.comment, stripAnn, stripCmt);
       then
         ();
 
-    case SCode.EEquation.EQ_PDE()
+    case SCode.EQ_PDE()
       algorithm
         eq.comment := stripCommentsFromComment(eq.comment, stripAnn, stripCmt);
       then
         ();
 
-    case SCode.EEquation.EQ_CONNECT()
+    case SCode.EQ_CONNECT()
       algorithm
         eq.comment := stripCommentsFromComment(eq.comment, stripAnn, stripCmt);
       then
         ();
 
-    case SCode.EEquation.EQ_FOR()
+    case SCode.EQ_FOR()
       algorithm
         eq.eEquationLst := list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in eq.eEquationLst);
         eq.comment := stripCommentsFromComment(eq.comment, stripAnn, stripCmt);
       then
         ();
 
-    case SCode.EEquation.EQ_WHEN()
+    case SCode.EQ_WHEN()
       algorithm
         eq.eEquationLst := list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in eq.eEquationLst);
         eq.elseBranches := list(stripCommentsFromWhenEqBranch(b, stripAnn, stripCmt) for b in eq.elseBranches);
@@ -5525,25 +5526,25 @@ algorithm
       then
         ();
 
-    case SCode.EEquation.EQ_ASSERT()
+    case SCode.EQ_ASSERT()
       algorithm
         eq.comment := stripCommentsFromComment(eq.comment, stripAnn, stripCmt);
       then
         ();
 
-    case SCode.EEquation.EQ_TERMINATE()
+    case SCode.EQ_TERMINATE()
       algorithm
         eq.comment := stripCommentsFromComment(eq.comment, stripAnn, stripCmt);
       then
         ();
 
-    case SCode.EEquation.EQ_REINIT()
+    case SCode.EQ_REINIT()
       algorithm
         eq.comment := stripCommentsFromComment(eq.comment, stripAnn, stripCmt);
       then
         ();
 
-    case SCode.EEquation.EQ_NORETCALL()
+    case SCode.EQ_NORETCALL()
       algorithm
         eq.comment := stripCommentsFromComment(eq.comment, stripAnn, stripCmt);
       then
@@ -5579,13 +5580,13 @@ function stripCommentsFromStatement
   input Boolean stripCmt;
 algorithm
   () := match stmt
-    case SCode.Statement.ALG_ASSIGN()
+    case SCode.ALG_ASSIGN()
       algorithm
         stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
       then
         ();
 
-    case SCode.Statement.ALG_IF()
+    case SCode.ALG_IF()
       algorithm
         stmt.trueBranch := list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.trueBranch);
         stmt.elseIfBranch := list(stripCommentsFromStatementBranch(b, stripAnn, stripCmt) for b in stmt.elseIfBranch);
@@ -5594,28 +5595,28 @@ algorithm
       then
         ();
 
-    case SCode.Statement.ALG_FOR()
+    case SCode.ALG_FOR()
       algorithm
         stmt.forBody := list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.forBody);
         stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
       then
         ();
 
-    case SCode.Statement.ALG_PARFOR()
+    case SCode.ALG_PARFOR()
       algorithm
         stmt.parforBody := list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.parforBody);
         stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
       then
         ();
 
-    case SCode.Statement.ALG_WHILE()
+    case SCode.ALG_WHILE()
       algorithm
         stmt.whileBody := list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.whileBody);
         stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
       then
         ();
 
-    case SCode.Statement.ALG_WHEN_A()
+    case SCode.ALG_WHEN_A()
       algorithm
         stmt.branches := list(stripCommentsFromStatementBranch(b, stripAnn, stripCmt) for b in stmt.branches);
         stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
@@ -5628,43 +5629,43 @@ algorithm
       then
         ();
 
-    case SCode.Statement.ALG_TERMINATE()
+    case SCode.ALG_TERMINATE()
       algorithm
         stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
       then
         ();
 
-    case SCode.Statement.ALG_REINIT()
+    case SCode.ALG_REINIT()
       algorithm
         stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
       then
         ();
 
-    case SCode.Statement.ALG_NORETCALL()
+    case SCode.ALG_NORETCALL()
       algorithm
         stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
       then
         ();
 
-    case SCode.Statement.ALG_RETURN()
+    case SCode.ALG_RETURN()
       algorithm
         stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
       then
         ();
 
-    case SCode.Statement.ALG_BREAK()
+    case SCode.ALG_BREAK()
       algorithm
         stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
       then
         ();
 
-    case SCode.Statement.ALG_FAILURE()
+    case SCode.ALG_FAILURE()
       algorithm
         stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
       then
         ();
 
-    case SCode.Statement.ALG_TRY()
+    case SCode.ALG_TRY()
       algorithm
         stmt.body := list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.body);
         stmt.elseBody := list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.elseBody);
@@ -5672,7 +5673,7 @@ algorithm
       then
         ();
 
-    case SCode.Statement.ALG_CONTINUE()
+    case SCode.ALG_CONTINUE()
       algorithm
         stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
       then

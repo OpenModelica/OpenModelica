@@ -782,6 +782,7 @@ match path
       case "list" then 'IList'
       case "array" then 'MArray'
       case "tuple" then 'Tuple'
+      case "polymorphic" then 'Any'
       else '<%name%>'
   else
     AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path.")
