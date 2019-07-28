@@ -172,14 +172,14 @@
                        moved::Bool
                        #=  true if moved outside uniontype, otherwise false.
                        =#
-                       typeVars::IList
+                       typeVars::List{String}
               end
 
                #= /* added by x07simbj */ =#
 
               @Record R_UNIONTYPE begin
 
-                       typeVars::IList
+                       typeVars::List{String}
               end
 
                #= /* added by simbj */ =#
@@ -224,8 +224,8 @@
 
                        finalPrefix #= final prefix =#::Final
                        eachPrefix #= each prefix =#::Each
-                       subModLst::IList
-                       binding::Option
+                       subModLst::List{SubMod}
+                       binding::Option{Absyn.Exp}
                        info::SourceInfo
               end
 
@@ -252,7 +252,7 @@
               end
          end
 
-        Program = IList  #= - Programs
+        Program = List{Element}  #= - Programs
         As in the AST, a program is simply a list of class definitions. =#
 
           #= Enum, which is a name in an enumeration and an optional Comment. =#
@@ -283,14 +283,14 @@
          @Uniontype ClassDef begin
               @Record PARTS begin
 
-                       elementLst #= the list of elements =#::IList
-                       normalEquationLst #= the list of equations =#::IList
-                       initialEquationLst #= the list of initial equations =#::IList
-                       normalAlgorithmLst #= the list of algorithms =#::IList
-                       initialAlgorithmLst #= the list of initial algorithms =#::IList
-                       constraintLst #= the list of constraints =#::IList
-                       clsattrs #= the list of class attributes. Currently for Optimica extensions =#::IList
-                       externalDecl #= used by external functions =#::Option
+                       elementLst #= the list of elements =#::List{Element}
+                       normalEquationLst #= the list of equations =#::List{Equation}
+                       initialEquationLst #= the list of initial equations =#::List{Equation}
+                       normalAlgorithmLst #= the list of algorithms =#::List{AlgorithmSection}
+                       initialAlgorithmLst #= the list of initial algorithms =#::List{AlgorithmSection}
+                       constraintLst #= the list of constraints =#::List{ConstraintSection}
+                       clsattrs #= the list of class attributes. Currently for Optimica extensions =#::List{Absyn.NamedArg}
+                       externalDecl #= used by external functions =#::Option{ExternalDecl}
               end
 
               @Record CLASS_EXTENDS begin
@@ -308,26 +308,26 @@
 
               @Record ENUMERATION begin
 
-                       enumLst #= if the list is empty it means :, the supertype of all enumerations =#::IList
+                       enumLst #= if the list is empty it means :, the supertype of all enumerations =#::List{Enum}
               end
 
               @Record OVERLOAD begin
 
-                       pathLst #= the path lists =#::IList
+                       pathLst #= the path lists =#::List{Absyn.Path}
               end
 
               @Record PDER begin
 
                        functionPath #= function name =#::Absyn.Path
-                       derivedVariables #= derived variables =#::IList
+                       derivedVariables #= derived variables =#::List{Ident}
               end
          end
 
          @Uniontype Comment begin
               @Record COMMENT begin
 
-                       annotation_::Option
-                       comment::Option
+                       annotation_::Option{Annotation}
+                       comment::Option{String}
               end
          end
 
@@ -346,11 +346,11 @@
          @Uniontype ExternalDecl begin
               @Record EXTERNALDECL begin
 
-                       funcName #= The name of the external function =#::Option
-                       lang #= Language of the external function =#::Option
-                       output_ #= output parameter as return value =#::Option
-                       args #= only positional arguments, i.e. expression list =#::IList
-                       annotation_::Option
+                       funcName #= The name of the external function =#::Option{Ident}
+                       lang #= Language of the external function =#::Option{String}
+                       output_ #= output parameter as return value =#::Option{Absyn.ComponentRef}
+                       args #= only positional arguments, i.e. expression list =#::List{Absyn.Exp}
+                       annotation_::Option{Annotation}
               end
          end
 
@@ -368,9 +368,9 @@
          @Uniontype EEquation begin
               @Record EQ_IF begin
 
-                       condition #= conditional =#::IList
-                       thenBranch #= the true (then) branch =#::IList
-                       elseBranch #= the false (else) branch =#::IList
+                       condition #= conditional =#::List{Absyn.Exp}
+                       thenBranch #= the true (then) branch =#::List{List{EEquation}}
+                       elseBranch #= the false (else) branch =#::List{EEquation}
                        comment::Comment
                        info::SourceInfo
               end
@@ -403,8 +403,8 @@
               @Record EQ_FOR begin
 
                        index #= the index name =#::Ident
-                       range #= the range of the index =#::Option
-                       eEquationLst #= the equation list =#::IList
+                       range #= the range of the index =#::Option{Absyn.Exp}
+                       eEquationLst #= the equation list =#::List{EEquation}
                        comment::Comment
                        info::SourceInfo
               end
@@ -412,8 +412,8 @@
               @Record EQ_WHEN begin
 
                        condition #= the when condition =#::Absyn.Exp
-                       eEquationLst #= the equation list =#::IList
-                       elseBranches #= the elsewhen expression and equation list =#::IList
+                       eEquationLst #= the equation list =#::List{EEquation}
+                       elseBranches #= the elsewhen expression and equation list =#::List{Tuple{Absyn.Exp, List{EEquation}}}
                        comment::Comment
                        info::SourceInfo
               end
@@ -458,14 +458,14 @@
          @Uniontype AlgorithmSection begin
               @Record ALGORITHM begin
 
-                       statements #= the algorithm statements =#::IList
+                       statements #= the algorithm statements =#::List{Statement}
               end
          end
 
          @Uniontype ConstraintSection begin
               @Record CONSTRAINTS begin
 
-                       constraints::IList
+                       constraints::List{Absyn.Exp}
               end
          end
 
@@ -482,9 +482,9 @@
               @Record ALG_IF begin
 
                        boolExpr::Absyn.Exp
-                       trueBranch::IList
-                       elseIfBranch::IList
-                       elseBranch::IList
+                       trueBranch::List{Statement}
+                       elseIfBranch::List{Tuple{Absyn.Exp, List{Statement}}}
+                       elseBranch::List{Statement}
                        comment::Comment
                        info::SourceInfo
               end
@@ -492,8 +492,8 @@
               @Record ALG_FOR begin
 
                        index #= the index name =#::Ident
-                       range #= the range of the index =#::Option
-                       forBody #= forBody =#::IList
+                       range #= the range of the index =#::Option{Absyn.Exp}
+                       forBody #= forBody =#::List{Statement}
                        comment::Comment
                        info::SourceInfo
               end
@@ -501,8 +501,8 @@
               @Record ALG_PARFOR begin
 
                        index #= the index name =#::Ident
-                       range #= the range of the index =#::Option
-                       parforBody #= parallel for loop body =#::IList
+                       range #= the range of the index =#::Option{Absyn.Exp}
+                       parforBody #= parallel for loop body =#::List{Statement}
                        comment::Comment
                        info::SourceInfo
               end
@@ -510,14 +510,14 @@
               @Record ALG_WHILE begin
 
                        boolExpr #= boolExpr =#::Absyn.Exp
-                       whileBody #= whileBody =#::IList
+                       whileBody #= whileBody =#::List{Statement}
                        comment::Comment
                        info::SourceInfo
               end
 
               @Record ALG_WHEN_A begin
 
-                       branches::IList
+                       branches::List{Tuple{Absyn.Exp, List{Statement}}}
                        comment::Comment
                        info::SourceInfo
               end
@@ -570,15 +570,15 @@
 
               @Record ALG_FAILURE begin
 
-                       stmts::IList
+                       stmts::List{Statement}
                        comment::Comment
                        info::SourceInfo
               end
 
               @Record ALG_TRY begin
 
-                       body::IList
-                       elseBody::IList
+                       body::List{Statement}
+                       elseBody::List{Statement}
                        comment::Comment
                        info::SourceInfo
               end
@@ -628,7 +628,7 @@
          @Uniontype Replaceable begin
               @Record REPLACEABLE begin
 
-                       cc #= the constraint class =#::Option
+                       cc #= the constraint class =#::Option{ConstrainClass}
               end
 
               @Record NOT_REPLACEABLE begin
@@ -726,7 +726,7 @@
                        baseClassPath #= the extends path =#::Path
                        visibility #= the protected/public prefix =#::Visibility
                        modifications #= the modifications applied to the base class =#::Mod
-                       ann #= the extends annotation =#::Option
+                       ann #= the extends annotation =#::Option{Annotation}
                        info #= the extends info =#::SourceInfo
               end
 
@@ -750,7 +750,7 @@
                        typeSpec #= the type specification =#::Absyn.TypeSpec
                        modifications #= the modifications to be applied to the component =#::Mod
                        comment #= this if for extraction of comments and annotations from Absyn =#::Comment
-                       condition #= the conditional declaration of a component =#::Option
+                       condition #= the conditional declaration of a component =#::Option{Absyn.Exp}
                        info #= this is for line and column numbers, also file name. =#::SourceInfo
               end
 
@@ -758,8 +758,8 @@
 
                        name::Ident
                        visibility #= the protected/public prefix =#::Visibility
-                       exp #= the unit expression =#::Option
-                       weight #= the weight =#::Option
+                       exp #= the unit expression =#::Option{String}
+                       weight #= the weight =#::Option{ModelicaReal}
               end
          end
 

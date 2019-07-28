@@ -25,24 +25,24 @@
 
         import AbsynDumpTpl
 
-        function dumpProgram(txt::Tpl.Text, a_program::IList, a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function dumpProgram(txt::Tpl.Text, a_program::List{SCode.Element}, a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = dumpElements(txt, a_program, false, a_options)
           out_txt
         end
 
-        function dumpElements(txt::Tpl.Text, a_elements::IList, a_indent::Bool, a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function dumpElements(txt::Tpl.Text, a_elements::List{SCode.Element}, a_indent::Bool, a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
-              local ret_0::IList
+              local ret_0::List{SCode.Element}
 
               ret_0 = SCodeDump.filterElements(a_elements, a_options)
               out_txt = dumpElements2(txt, ret_0, a_indent, a_options)
           out_txt
         end
 
-        function dumpElements2(txt::Tpl.Text, a_elements::IList, a_indent::Bool, a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function dumpElements2(txt::Tpl.Text, a_elements::List{SCode.Element}, a_indent::Bool, a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               local ret_2::Util.StatefulBoolean
@@ -56,12 +56,12 @@
           out_txt
         end
 
-        function fun_14(in_txt::Tpl.Text, in_mArg::Bool, in_a_prevSpacing::MArray, in_a_spacing::Tpl.Text)::Tpl.Text
+        function fun_14(in_txt::Tpl.Text, in_mArg::Bool, in_a_prevSpacing::Array{Bool}, in_a_spacing::Tpl.Text)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local a_prevSpacing::MArray
+                  local a_prevSpacing::Array{Bool}
                   local a_spacing::Tpl.Text
                   local ret_0::Bool
                 @match (in_txt, in_mArg, in_a_prevSpacing, in_a_spacing) begin
@@ -79,12 +79,12 @@
           out_txt
         end
 
-        function fun_15(in_txt::Tpl.Text, in_a_vis__str::Tpl.Text, in_a_inPublicSection::MArray)::Tpl.Text
+        function fun_15(in_txt::Tpl.Text, in_a_vis__str::Tpl.Text, in_a_inPublicSection::Array{Bool})::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local a_inPublicSection::MArray
+                  local a_inPublicSection::Array{Bool}
                   local ret_1::Bool
                   local ret_0::Bool
                 @match (in_txt, in_a_vis__str, in_a_inPublicSection) begin
@@ -103,12 +103,12 @@
           out_txt
         end
 
-        function fun_16(in_txt::Tpl.Text, in_a_spacing::Tpl.Text, in_a_prevSpacing::MArray)::Tpl.Text
+        function fun_16(in_txt::Tpl.Text, in_a_spacing::Tpl.Text, in_a_prevSpacing::Array{Bool})::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local a_prevSpacing::MArray
+                  local a_prevSpacing::Array{Bool}
                   local i_spacing::Tpl.Text
                 @match (in_txt, in_a_spacing, in_a_prevSpacing) begin
                   (txt, Tpl.MEM_TEXT(tokens =  nil()), a_prevSpacing)  => begin
@@ -126,13 +126,13 @@
           out_txt
         end
 
-        function fun_17(in_txt::Tpl.Text, in_mArg::Bool, in_a_spacing::Tpl.Text, in_a_prevSpacing::MArray)::Tpl.Text
+        function fun_17(in_txt::Tpl.Text, in_mArg::Bool, in_a_spacing::Tpl.Text, in_a_prevSpacing::Array{Bool})::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
                   local a_spacing::Tpl.Text
-                  local a_prevSpacing::MArray
+                  local a_prevSpacing::Array{Bool}
                 @match (in_txt, in_mArg, in_a_spacing, in_a_prevSpacing) begin
                   (txt, false, _, a_prevSpacing)  => begin
                       Util.setStatefulBoolean(a_prevSpacing, false)
@@ -186,17 +186,17 @@
           out_txt
         end
 
-        function lm_19(in_txt::Tpl.Text, in_items::IList, in_a_indent::Bool, in_a_numElements::ModelicaInteger, in_a_inPublicSection::MArray, in_a_options::SCodeDump.SCodeDumpOptions, in_a_prevSpacing::MArray)::Tpl.Text
+        function lm_19(in_txt::Tpl.Text, in_items::List{SCode.Element}, in_a_indent::Bool, in_a_numElements::ModelicaInteger, in_a_inPublicSection::Array{Bool}, in_a_options::SCodeDump.SCodeDumpOptions, in_a_prevSpacing::Array{Bool})::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::IList
+                  local rest::List{SCode.Element}
                   local a_indent::Bool
                   local a_numElements::ModelicaInteger
-                  local a_inPublicSection::MArray
+                  local a_inPublicSection::Array{Bool}
                   local a_options::SCodeDump.SCodeDumpOptions
-                  local a_prevSpacing::MArray
+                  local a_prevSpacing::Array{Bool}
                   local x_i1::ModelicaInteger
                   local i_el::SCode.Element
                   local ret_10::Bool
@@ -238,7 +238,7 @@
           out_txt
         end
 
-        function dumpElements3(txt::Tpl.Text, a_elements::IList, a_numElements::ModelicaInteger, a_prevSpacing::MArray, a_indent::Bool, a_inPublicSection::MArray, a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function dumpElements3(txt::Tpl.Text, a_elements::List{SCode.Element}, a_numElements::ModelicaInteger, a_prevSpacing::Array{Bool}, a_indent::Bool, a_inPublicSection::Array{Bool}, a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(1, NONE(), NONE(), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()))
@@ -582,7 +582,7 @@
               out_txt = begin
                   local txt::Tpl.Text
                   local a_options::SCodeDump.SCodeDumpOptions
-                  local i_ann::Option
+                  local i_ann::Option{SCode.Annotation}
                   local i_modifications::SCode.Mod
                   local i_visibility::SCode.Visibility
                   local i_baseClassPath::SCode.Path
@@ -708,12 +708,12 @@
           out_txt
         end
 
-        function fun_37(in_txt::Tpl.Text, in_a_options::SCodeDump.SCodeDumpOptions, in_a_p_normalAlgorithmLst::IList)::Tpl.Text
+        function fun_37(in_txt::Tpl.Text, in_a_options::SCodeDump.SCodeDumpOptions, in_a_p_normalAlgorithmLst::List{SCode.AlgorithmSection})::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local a_p_normalAlgorithmLst::IList
+                  local a_p_normalAlgorithmLst::List{SCode.AlgorithmSection}
                   local i_options::SCodeDump.SCodeDumpOptions
                 @match (in_txt, in_a_options, in_a_p_normalAlgorithmLst) begin
                   (txt, i_options && SCodeDump.OPTIONS(stripAlgorithmSections = false), a_p_normalAlgorithmLst)  => begin
@@ -729,12 +729,12 @@
           out_txt
         end
 
-        function fun_38(in_txt::Tpl.Text, in_a_options::SCodeDump.SCodeDumpOptions, in_a_p_initialAlgorithmLst::IList)::Tpl.Text
+        function fun_38(in_txt::Tpl.Text, in_a_options::SCodeDump.SCodeDumpOptions, in_a_p_initialAlgorithmLst::List{SCode.AlgorithmSection})::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local a_p_initialAlgorithmLst::IList
+                  local a_p_initialAlgorithmLst::List{SCode.AlgorithmSection}
                   local i_options::SCodeDump.SCodeDumpOptions
                 @match (in_txt, in_a_options, in_a_p_initialAlgorithmLst) begin
                   (txt, i_options && SCodeDump.OPTIONS(stripAlgorithmSections = false), a_p_initialAlgorithmLst)  => begin
@@ -750,12 +750,12 @@
           out_txt
         end
 
-        function lm_39(in_txt::Tpl.Text, in_items::IList, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function lm_39(in_txt::Tpl.Text, in_items::List{SCode.Enum}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::IList
+                  local rest::List{SCode.Enum}
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_enum::SCode.Enum
                 @match (in_txt, in_items, in_a_options) begin
@@ -774,13 +774,13 @@
           out_txt
         end
 
-        function fun_40(in_txt::Tpl.Text, in_a_enumLst::IList, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function fun_40(in_txt::Tpl.Text, in_a_enumLst::List{SCode.Enum}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
                   local a_options::SCodeDump.SCodeDumpOptions
-                  local i_enumLst::IList
+                  local i_enumLst::List{SCode.Enum}
                 @match (in_txt, in_a_enumLst, in_a_options) begin
                   (txt,  nil(), _)  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING(":"))
@@ -798,12 +798,12 @@
           out_txt
         end
 
-        function lm_41(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
+        function lm_41(in_txt::Tpl.Text, in_items::List{SCode.Ident})::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::IList
+                  local rest::List{SCode.Ident}
                   local i_it::SCode.Ident
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -821,12 +821,12 @@
           out_txt
         end
 
-        function lm_42(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
+        function lm_42(in_txt::Tpl.Text, in_items::List{Absyn.Path})::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::IList
+                  local rest::List{Absyn.Path}
                   local i_path::Absyn.Path
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -850,20 +850,20 @@
               out_txt = begin
                   local txt::Tpl.Text
                   local a_options::SCodeDump.SCodeDumpOptions
-                  local i_pathLst::IList
-                  local i_derivedVariables::IList
+                  local i_pathLst::List{Absyn.Path}
+                  local i_derivedVariables::List{SCode.Ident}
                   local i_functionPath::Absyn.Path
-                  local i_enumLst::IList
+                  local i_enumLst::List{SCode.Enum}
                   local i_attributes::SCode.Attributes
                   local i_typeSpec::Absyn.TypeSpec
                   local i_composition::SCode.ClassDef
                   local i_modifications::SCode.Mod
-                  local i_p_externalDecl::Option
-                  local i_p_initialAlgorithmLst::IList
-                  local i_p_normalAlgorithmLst::IList
-                  local i_initialEquationLst::IList
-                  local i_normalEquationLst::IList
-                  local i_elementLst::IList
+                  local i_p_externalDecl::Option{SCode.ExternalDecl}
+                  local i_p_initialAlgorithmLst::List{SCode.AlgorithmSection}
+                  local i_p_normalAlgorithmLst::List{SCode.AlgorithmSection}
+                  local i_initialEquationLst::List{SCode.Equation}
+                  local i_normalEquationLst::List{SCode.Equation}
+                  local i_elementLst::List{SCode.Element}
                   local l_func__str::Tpl.Text
                   local l_enum__str::Tpl.Text
                   local l_attr__str::Tpl.Text
@@ -1081,7 +1081,7 @@
               out_txt = begin
                   local txt::Tpl.Text
                   local a_options::SCodeDump.SCodeDumpOptions
-                  local i_comment::Option
+                  local i_comment::Option{String}
                 @match (in_txt, in_a_comment, in_a_options) begin
                   (txt, SCode.COMMENT(comment = i_comment), a_options)  => begin
                       txt = dumpCommentStr(txt, i_comment, a_options)
@@ -1102,7 +1102,7 @@
               out_txt = begin
                   local txt::Tpl.Text
                   local a_options::SCodeDump.SCodeDumpOptions
-                  local i_annotation__::Option
+                  local i_annotation__::Option{SCode.Annotation}
                 @match (in_txt, in_a_comment, in_a_options) begin
                   (txt, SCode.COMMENT(annotation_ = i_annotation__), a_options)  => begin
                       txt = dumpAnnotationOpt(txt, i_annotation__, a_options)
@@ -1159,7 +1159,7 @@
           out_txt
         end
 
-        function fun_52(in_txt::Tpl.Text, in_a_condition::Option)::Tpl.Text
+        function fun_52(in_txt::Tpl.Text, in_a_condition::Option{Absyn.Exp})::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
@@ -1191,7 +1191,7 @@
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_name::SCode.Ident
                   local i_comment::SCode.Comment
-                  local i_condition::Option
+                  local i_condition::Option{Absyn.Exp}
                   local i_modifications::SCode.Mod
                   local i_typeSpec::Absyn.TypeSpec
                   local i_attributes::SCode.Attributes
@@ -1237,7 +1237,7 @@
           out_txt
         end
 
-        function fun_54(in_txt::Tpl.Text, in_a_exp::Option)::Tpl.Text
+        function fun_54(in_txt::Tpl.Text, in_a_exp::Option{String})::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
@@ -1259,7 +1259,7 @@
           out_txt
         end
 
-        function fun_55(in_txt::Tpl.Text, in_a_weight::Option)::Tpl.Text
+        function fun_55(in_txt::Tpl.Text, in_a_weight::Option{ModelicaReal})::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
@@ -1358,8 +1358,8 @@
               out_txt = begin
                   local txt::Tpl.Text
                   local i_name::SCode.Ident
-                  local i_weight::Option
-                  local i_exp::Option
+                  local i_weight::Option{ModelicaReal}
+                  local i_exp::Option{String}
                   local i_visibility::SCode.Visibility
                   local l_pe::Tpl.Text
                   local l_pb::Tpl.Text
@@ -1419,12 +1419,12 @@
           out_txt
         end
 
-        function lm_62(in_txt::Tpl.Text, in_items::IList, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function lm_62(in_txt::Tpl.Text, in_items::List{SCode.Equation}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::IList
+                  local rest::List{SCode.Equation}
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_eq::SCode.Equation
                 @match (in_txt, in_items, in_a_options) begin
@@ -1443,14 +1443,14 @@
           out_txt
         end
 
-        function dumpEquations(in_txt::Tpl.Text, in_a_equations::IList, in_a_label::String, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function dumpEquations(in_txt::Tpl.Text, in_a_equations::List{SCode.Equation}, in_a_label::String, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
                   local a_label::String
                   local a_options::SCodeDump.SCodeDumpOptions
-                  local i_equations::IList
+                  local i_equations::List{SCode.Equation}
                 @match (in_txt, in_a_equations, in_a_label, in_a_options) begin
                   (txt,  nil(), _, _)  => begin
                     txt
@@ -1619,12 +1619,12 @@
           out_txt
         end
 
-        function lm_66(in_txt::Tpl.Text, in_items::IList, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function lm_66(in_txt::Tpl.Text, in_items::List{SCode.EEquation}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::IList
+                  local rest::List{SCode.EEquation}
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_e::SCode.EEquation
                 @match (in_txt, in_items, in_a_options) begin
@@ -1643,12 +1643,12 @@
           out_txt
         end
 
-        function lm_67(in_txt::Tpl.Text, in_items::IList, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function lm_67(in_txt::Tpl.Text, in_items::List{SCode.EEquation}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::IList
+                  local rest::List{SCode.EEquation}
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_e::SCode.EEquation
                 @match (in_txt, in_items, in_a_options) begin
@@ -1667,13 +1667,13 @@
           out_txt
         end
 
-        function fun_68(in_txt::Tpl.Text, in_a_elseBranch::IList, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function fun_68(in_txt::Tpl.Text, in_a_elseBranch::List{SCode.EEquation}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
                   local a_options::SCodeDump.SCodeDumpOptions
-                  local i_elseBranch::IList
+                  local i_elseBranch::List{SCode.EEquation}
                 @match (in_txt, in_a_elseBranch, in_a_options) begin
                   (txt,  nil(), _)  => begin
                     txt
@@ -1699,10 +1699,10 @@
               out_txt = begin
                   local txt::Tpl.Text
                   local a_options::SCodeDump.SCodeDumpOptions
-                  local i_elseBranch::IList
-                  local i_elseif__branches::IList
-                  local i_elseif__conds::IList
-                  local i_if__branch::IList
+                  local i_elseBranch::List{SCode.EEquation}
+                  local i_elseif__branches::List{List{SCode.EEquation}}
+                  local i_elseif__conds::List{Absyn.Exp}
+                  local i_if__branch::List{SCode.EEquation}
                   local i_if__cond::Absyn.Exp
                   local l_else__str::Tpl.Text
                   local l_elseif__str::Tpl.Text
@@ -1739,12 +1739,12 @@
           out_txt
         end
 
-        function lm_70(in_txt::Tpl.Text, in_items::IList, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function lm_70(in_txt::Tpl.Text, in_items::List{SCode.EEquation}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::IList
+                  local rest::List{SCode.EEquation}
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_e::SCode.EEquation
                 @match (in_txt, in_items, in_a_options) begin
@@ -1763,16 +1763,16 @@
           out_txt
         end
 
-        function fun_71(in_txt::Tpl.Text, in_a_branches::IList, in_a_rest__conds::IList, in_a_options::SCodeDump.SCodeDumpOptions, in_a_cond::Absyn.Exp)::Tpl.Text
+        function fun_71(in_txt::Tpl.Text, in_a_branches::List{List{SCode.EEquation}}, in_a_rest__conds::List{Absyn.Exp}, in_a_options::SCodeDump.SCodeDumpOptions, in_a_cond::Absyn.Exp)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local a_rest__conds::IList
+                  local a_rest__conds::List{Absyn.Exp}
                   local a_options::SCodeDump.SCodeDumpOptions
                   local a_cond::Absyn.Exp
-                  local i_rest__branches::IList
-                  local i_branch::IList
+                  local i_rest__branches::List{List{SCode.EEquation}}
+                  local i_branch::List{SCode.EEquation}
                   local l_rest__str::Tpl.Text
                   local l_branch__str::Tpl.Text
                   local l_cond__str::Tpl.Text
@@ -1802,14 +1802,14 @@
           out_txt
         end
 
-        function dumpElseIfEEquation(in_txt::Tpl.Text, in_a_condition::IList, in_a_branches::IList, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function dumpElseIfEEquation(in_txt::Tpl.Text, in_a_condition::List{Absyn.Exp}, in_a_branches::List{List{SCode.EEquation}}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local a_branches::IList
+                  local a_branches::List{List{SCode.EEquation}}
                   local a_options::SCodeDump.SCodeDumpOptions
-                  local i_rest__conds::IList
+                  local i_rest__conds::List{Absyn.Exp}
                   local i_cond::Absyn.Exp
                 @match (in_txt, in_a_condition, in_a_branches, in_a_options) begin
                   (txt, i_cond <| i_rest__conds, a_branches, a_options)  => begin
@@ -1825,12 +1825,12 @@
           out_txt
         end
 
-        function lm_73(in_txt::Tpl.Text, in_items::IList, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function lm_73(in_txt::Tpl.Text, in_items::List{SCode.EEquation}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::IList
+                  local rest::List{SCode.EEquation}
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_e::SCode.EEquation
                 @match (in_txt, in_items, in_a_options) begin
@@ -1849,12 +1849,12 @@
           out_txt
         end
 
-        function lm_74(in_txt::Tpl.Text, in_items::IList, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function lm_74(in_txt::Tpl.Text, in_items::List{SCode.EEquation}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::IList
+                  local rest::List{SCode.EEquation}
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_e::SCode.EEquation
                 @match (in_txt, in_items, in_a_options) begin
@@ -1881,7 +1881,7 @@
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_index::SCode.Ident
                   local i_comment::SCode.Comment
-                  local i_eEquationLst::IList
+                  local i_eEquationLst::List{SCode.EEquation}
                   local i_range::Absyn.Exp
                   local l_cmt__str::Tpl.Text
                   local l_eq__str::Tpl.Text
@@ -1934,12 +1934,12 @@
           out_txt
         end
 
-        function lm_76(in_txt::Tpl.Text, in_items::IList, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function lm_76(in_txt::Tpl.Text, in_items::List{SCode.EEquation}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::IList
+                  local rest::List{SCode.EEquation}
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_e::SCode.EEquation
                 @match (in_txt, in_items, in_a_options) begin
@@ -1958,12 +1958,12 @@
           out_txt
         end
 
-        function lm_77(in_txt::Tpl.Text, in_items::IList, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function lm_77(in_txt::Tpl.Text, in_items::List{SCode.EEquation}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::IList
+                  local rest::List{SCode.EEquation}
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_e::SCode.EEquation
                 @match (in_txt, in_items, in_a_options) begin
@@ -1982,14 +1982,14 @@
           out_txt
         end
 
-        function lm_78(in_txt::Tpl.Text, in_items::IList, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function lm_78(in_txt::Tpl.Text, in_items::List{Tuple{Absyn.Exp, List{SCode.EEquation}}}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::IList
+                  local rest::List{Tuple{Absyn.Exp, List{SCode.EEquation}}}
                   local a_options::SCodeDump.SCodeDumpOptions
-                  local i_else__body::IList
+                  local i_else__body::List{SCode.EEquation}
                   local i_else__cond::Absyn.Exp
                   local l_else__body__str::Tpl.Text
                   local l_else__cond__str::Tpl.Text
@@ -2025,8 +2025,8 @@
                   local txt::Tpl.Text
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_comment::SCode.Comment
-                  local i_elseBranches::IList
-                  local i_eEquationLst::IList
+                  local i_elseBranches::List{Tuple{Absyn.Exp, List{SCode.EEquation}}}
+                  local i_eEquationLst::List{SCode.EEquation}
                   local i_condition::Absyn.Exp
                   local l_cmt__str::Tpl.Text
                   local l_else__str::Tpl.Text
@@ -2090,12 +2090,12 @@
           out_txt
         end
 
-        function lm_81(in_txt::Tpl.Text, in_items::IList, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function lm_81(in_txt::Tpl.Text, in_items::List{SCode.AlgorithmSection}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::IList
+                  local rest::List{SCode.AlgorithmSection}
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_al::SCode.AlgorithmSection
                 @match (in_txt, in_items, in_a_options) begin
@@ -2114,14 +2114,14 @@
           out_txt
         end
 
-        function dumpAlgorithmSections(in_txt::Tpl.Text, in_a_algorithms::IList, in_a_label::String, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function dumpAlgorithmSections(in_txt::Tpl.Text, in_a_algorithms::List{SCode.AlgorithmSection}, in_a_label::String, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
                   local a_label::String
                   local a_options::SCodeDump.SCodeDumpOptions
-                  local i_algorithms::IList
+                  local i_algorithms::List{SCode.AlgorithmSection}
                 @match (in_txt, in_a_algorithms, in_a_label, in_a_options) begin
                   (txt,  nil(), _, _)  => begin
                     txt
@@ -2148,7 +2148,7 @@
               out_txt = begin
                   local txt::Tpl.Text
                   local a_options::SCodeDump.SCodeDumpOptions
-                  local i_statements::IList
+                  local i_statements::List{SCode.Statement}
                 @match (in_txt, in_a_algorithm, in_a_options) begin
                   (txt, SCode.ALGORITHM(statements = i_statements), a_options)  => begin
                       txt = dumpStatements(txt, i_statements, a_options)
@@ -2163,12 +2163,12 @@
           out_txt
         end
 
-        function lm_84(in_txt::Tpl.Text, in_items::IList, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function lm_84(in_txt::Tpl.Text, in_items::List{SCode.Statement}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::IList
+                  local rest::List{SCode.Statement}
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_s::SCode.Statement
                 @match (in_txt, in_items, in_a_options) begin
@@ -2187,7 +2187,7 @@
           out_txt
         end
 
-        function dumpStatements(txt::Tpl.Text, a_statements::IList, a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function dumpStatements(txt::Tpl.Text, a_statements::List{SCode.Statement}, a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()))
@@ -2350,9 +2350,9 @@
                   local txt::Tpl.Text
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_comment::SCode.Comment
-                  local i_elseBranch::IList
-                  local i_elseIfBranch::IList
-                  local i_trueBranch::IList
+                  local i_elseBranch::List{SCode.Statement}
+                  local i_elseIfBranch::List{Tuple{Absyn.Exp, List{SCode.Statement}}}
+                  local i_trueBranch::List{SCode.Statement}
                   local i_boolExpr::Absyn.Exp
                   local l_cmt__str::Tpl.Text
                   local l_else__branch__str::Tpl.Text
@@ -2394,14 +2394,14 @@
           out_txt
         end
 
-        function lm_88(in_txt::Tpl.Text, in_items::IList, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function lm_88(in_txt::Tpl.Text, in_items::List{Tuple{Absyn.Exp, List{SCode.Statement}}}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::IList
+                  local rest::List{Tuple{Absyn.Exp, List{SCode.Statement}}}
                   local a_options::SCodeDump.SCodeDumpOptions
-                  local i_body::IList
+                  local i_body::List{SCode.Statement}
                   local i_cond::Absyn.Exp
                   local l_body__str::Tpl.Text
                   local l_cond__str::Tpl.Text
@@ -2428,7 +2428,7 @@
           out_txt
         end
 
-        function dumpElseIfStatements(txt::Tpl.Text, a_else__if::IList, a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function dumpElseIfStatements(txt::Tpl.Text, a_else__if::List{Tuple{Absyn.Exp, List{SCode.Statement}}}, a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()))
@@ -2445,7 +2445,7 @@
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_index::String
                   local i_comment::SCode.Comment
-                  local i_forBody::IList
+                  local i_forBody::List{SCode.Statement}
                   local i_e::Absyn.Exp
                   local l_cmt__str::Tpl.Text
                   local l_body__str::Tpl.Text
@@ -2501,7 +2501,7 @@
                   local txt::Tpl.Text
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_comment::SCode.Comment
-                  local i_whileBody::IList
+                  local i_whileBody::List{SCode.Statement}
                   local i_boolExpr::Absyn.Exp
                   local l_cmt__str::Tpl.Text
                   local l_body__str::Tpl.Text
@@ -2530,14 +2530,14 @@
           out_txt
         end
 
-        function lm_92(in_txt::Tpl.Text, in_items::IList, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function lm_92(in_txt::Tpl.Text, in_items::List{Tuple{Absyn.Exp, List{SCode.Statement}}}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::IList
+                  local rest::List{Tuple{Absyn.Exp, List{SCode.Statement}}}
                   local a_options::SCodeDump.SCodeDumpOptions
-                  local i_ew__body::IList
+                  local i_ew__body::List{SCode.Statement}
                   local i_ew__cond::Absyn.Exp
                   local l_ew__body__str::Tpl.Text
                   local l_ew__cond__str::Tpl.Text
@@ -2571,8 +2571,8 @@
                   local txt::Tpl.Text
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_comment::SCode.Comment
-                  local i_elsewhens::IList
-                  local i_when__body::IList
+                  local i_elsewhens::List{Tuple{Absyn.Exp, List{SCode.Statement}}}
+                  local i_when__body::List{SCode.Statement}
                   local i_when__cond::Absyn.Exp
                   local l_cmt__str::Tpl.Text
                   local l_elsewhen__str::Tpl.Text
@@ -2615,8 +2615,8 @@
               out_txt = begin
                   local txt::Tpl.Text
                   local a_options::SCodeDump.SCodeDumpOptions
-                  local i_elseBody::IList
-                  local i_body::IList
+                  local i_elseBody::List{SCode.Statement}
+                  local i_body::List{SCode.Statement}
                   local i_comment::SCode.Comment
                   local l_algs2::Tpl.Text
                   local l_algs1::Tpl.Text
@@ -3031,12 +3031,12 @@
           out_txt
         end
 
-        function lm_108(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
+        function lm_108(in_txt::Tpl.Text, in_items::List{String})::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::IList
+                  local rest::List{String}
                   local i_tv::String
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -3054,12 +3054,12 @@
           out_txt
         end
 
-        function fun_109(in_txt::Tpl.Text, in_a_typeVars::IList)::Tpl.Text
+        function fun_109(in_txt::Tpl.Text, in_a_typeVars::List{String})::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local i_typeVars::IList
+                  local i_typeVars::List{String}
                 @match (in_txt, in_a_typeVars) begin
                   (txt,  nil())  => begin
                     txt
@@ -3083,7 +3083,7 @@
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local i_typeVars::IList
+                  local i_typeVars::List{String}
                 @match (in_txt, in_a_restriction) begin
                   (txt, SCode.R_UNIONTYPE(typeVars = i_typeVars))  => begin
                       txt = fun_109(txt, i_typeVars)
@@ -3174,12 +3174,12 @@
           out_txt
         end
 
-        function lm_114(in_txt::Tpl.Text, in_items::IList, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function lm_114(in_txt::Tpl.Text, in_items::List{SCode.SubMod}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::IList
+                  local rest::List{SCode.SubMod}
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_submod::SCode.SubMod
                 @match (in_txt, in_items, in_a_options) begin
@@ -3198,13 +3198,13 @@
           out_txt
         end
 
-        function fun_115(in_txt::Tpl.Text, in_a_subModLst::IList, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function fun_115(in_txt::Tpl.Text, in_a_subModLst::List{SCode.SubMod}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
                   local a_options::SCodeDump.SCodeDumpOptions
-                  local i_subModLst::IList
+                  local i_subModLst::List{SCode.SubMod}
                 @match (in_txt, in_a_subModLst, in_a_options) begin
                   (txt,  nil(), _)  => begin
                     txt
@@ -3229,8 +3229,8 @@
               out_txt = begin
                   local txt::Tpl.Text
                   local a_options::SCodeDump.SCodeDumpOptions
-                  local i_subModLst::IList
-                  local i_binding::Option
+                  local i_subModLst::List{SCode.SubMod}
+                  local i_binding::Option{Absyn.Exp}
                   local l_submod__str::Tpl.Text
                   local l_binding__str::Tpl.Text
                 @match (in_txt, in_a_modifier, in_a_options) begin
@@ -3250,12 +3250,12 @@
           out_txt
         end
 
-        function lm_117(in_txt::Tpl.Text, in_items::IList, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function lm_117(in_txt::Tpl.Text, in_items::List{SCode.SubMod}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::IList
+                  local rest::List{SCode.SubMod}
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_submod::SCode.SubMod
                 @match (in_txt, in_items, in_a_options) begin
@@ -3302,8 +3302,8 @@
               out_txt = begin
                   local txt::Tpl.Text
                   local a_options::SCodeDump.SCodeDumpOptions
-                  local i_subModLst::IList
-                  local i_binding::Option
+                  local i_subModLst::List{SCode.SubMod}
+                  local i_binding::Option{Absyn.Exp}
                   local l_submod__str::Tpl.Text
                   local l_text::Tpl.Text
                   local l_binding__str::Tpl.Text
@@ -3385,7 +3385,7 @@
           out_txt
         end
 
-        function dumpModifierBinding(in_txt::Tpl.Text, in_a_binding::Option)::Tpl.Text
+        function dumpModifierBinding(in_txt::Tpl.Text, in_a_binding::Option{Absyn.Exp})::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
@@ -3720,7 +3720,7 @@
           out_txt
         end
 
-        function dumpAnnotationOpt(in_txt::Tpl.Text, in_a_annotation::Option, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function dumpAnnotationOpt(in_txt::Tpl.Text, in_a_annotation::Option{SCode.Annotation}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
@@ -3818,7 +3818,7 @@
           out_txt
         end
 
-        function dumpExternalDeclOpt(in_txt::Tpl.Text, in_a_externalDecl::Option, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function dumpExternalDeclOpt(in_txt::Tpl.Text, in_a_externalDecl::Option{SCode.ExternalDecl}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
@@ -3839,7 +3839,7 @@
           out_txt
         end
 
-        function fun_139(in_txt::Tpl.Text, in_a_funcName::Option)::Tpl.Text
+        function fun_139(in_txt::Tpl.Text, in_a_funcName::Option{SCode.Ident})::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
@@ -3859,12 +3859,12 @@
           out_txt
         end
 
-        function lm_140(in_txt::Tpl.Text, in_items::IList)::Tpl.Text
+        function lm_140(in_txt::Tpl.Text, in_items::List{Absyn.Exp})::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local rest::IList
+                  local rest::List{Absyn.Exp}
                   local i_arg::Absyn.Exp
                 @match (in_txt, in_items) begin
                   (txt,  nil())  => begin
@@ -3908,7 +3908,7 @@
           out_txt
         end
 
-        function fun_142(in_txt::Tpl.Text, in_a_lang::Option)::Tpl.Text
+        function fun_142(in_txt::Tpl.Text, in_a_lang::Option{String})::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
@@ -3932,7 +3932,7 @@
           out_txt
         end
 
-        function fun_143(in_txt::Tpl.Text, in_a_output__::Option)::Tpl.Text
+        function fun_143(in_txt::Tpl.Text, in_a_output__::Option{Absyn.ComponentRef})::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
@@ -3961,11 +3961,11 @@
               out_txt = begin
                   local txt::Tpl.Text
                   local a_options::SCodeDump.SCodeDumpOptions
-                  local i_output__::Option
-                  local i_annotation__::Option
-                  local i_lang::Option
-                  local i_args::IList
-                  local i_funcName::Option
+                  local i_output__::Option{Absyn.ComponentRef}
+                  local i_annotation__::Option{SCode.Annotation}
+                  local i_lang::Option{String}
+                  local i_args::List{Absyn.Exp}
+                  local i_funcName::Option{SCode.Ident}
                   local l_output__str::Tpl.Text
                   local l_ann__str::Tpl.Text
                   local l_lang__str::Tpl.Text
@@ -4051,7 +4051,7 @@
           out_txt
         end
 
-        function dumpCommentOpt(in_txt::Tpl.Text, in_a_comment::Option, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function dumpCommentOpt(in_txt::Tpl.Text, in_a_comment::Option{SCode.Comment}, in_a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
@@ -4078,8 +4078,8 @@
               out_txt = begin
                   local txt::Tpl.Text
                   local a_options::SCodeDump.SCodeDumpOptions
-                  local i_comment::Option
-                  local i_annotation__::Option
+                  local i_comment::Option{String}
+                  local i_annotation__::Option{SCode.Annotation}
                   local l_cmt__str::Tpl.Text
                   local l_ann__str::Tpl.Text
                 @match (in_txt, in_a_comment, in_a_options) begin
@@ -4099,7 +4099,7 @@
           out_txt
         end
 
-        function fun_150(in_txt::Tpl.Text, in_a_comment::Option)::Tpl.Text
+        function fun_150(in_txt::Tpl.Text, in_a_comment::Option{String})::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
@@ -4124,12 +4124,12 @@
           out_txt
         end
 
-        function fun_151(in_txt::Tpl.Text, in_a_options::SCodeDump.SCodeDumpOptions, in_a_comment::Option)::Tpl.Text
+        function fun_151(in_txt::Tpl.Text, in_a_options::SCodeDump.SCodeDumpOptions, in_a_comment::Option{String})::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = begin
                   local txt::Tpl.Text
-                  local a_comment::Option
+                  local a_comment::Option{String}
                 @match (in_txt, in_a_options, in_a_comment) begin
                   (txt, SCodeDump.OPTIONS(stripStringComments = false), a_comment)  => begin
                       txt = fun_150(txt, a_comment)
@@ -4144,7 +4144,7 @@
           out_txt
         end
 
-        function dumpCommentStr(txt::Tpl.Text, a_comment::Option, a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
+        function dumpCommentStr(txt::Tpl.Text, a_comment::Option{String}, a_options::SCodeDump.SCodeDumpOptions)::Tpl.Text
               local out_txt::Tpl.Text
 
               out_txt = fun_151(txt, a_options, a_comment)

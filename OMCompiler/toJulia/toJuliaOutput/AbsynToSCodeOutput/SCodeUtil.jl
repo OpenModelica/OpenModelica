@@ -84,11 +84,12 @@
         import SCode
 
         import Absyn
+        import AbsynUtil
         import Error
         import MetaModelica.ListUtil
         import Util
 
-        Argument = polymorphic
+        Argument = Any
 
          #= Removes all submodifiers from the Mod. =#
         function stripSubmod(inMod::SCode.Mod)::SCode.Mod
@@ -97,7 +98,7 @@
               outMod = begin
                   local fp::SCode.Final
                   local ep::SCode.Each
-                  local binding::Option
+                  local binding::Option{Absyn.Exp}
                   local info::SourceInfo
                 @match inMod begin
                   SCode.MOD(fp, ep, _, binding, info)  => begin
@@ -148,7 +149,7 @@
               outElement = begin
                   local elt::SCode.Element
                   local id::String
-                  local elts::IList
+                  local elts::List{SCode.Element}
                 @match (inIdent, inClass) begin
                   (id, SCode.CLASS(classDef = SCode.PARTS(elementLst = elts)))  => begin
                       elt = getElementNamedFromElts(id, elts)
@@ -166,7 +167,7 @@
         end
 
          #= Helper function to getElementNamed. =#
-        function getElementNamedFromElts(inIdent::SCode.Ident, inElementLst::IList)::SCode.Element
+        function getElementNamedFromElts(inIdent::SCode.Ident, inElementLst::List{SCode.Element})::SCode.Element
               local outElement::SCode.Element
 
               outElement = begin
@@ -175,7 +176,7 @@
                   local cdef::SCode.Element
                   local id2::String
                   local id1::String
-                  local xs::IList
+                  local xs::List{SCode.Element}
                 @matchcontinue (inIdent, inElementLst) begin
                   (id2, comp && SCode.COMPONENT(name = id1) <| _)  => begin
                       @match true = stringEq(id1, id2)
@@ -318,7 +319,7 @@
 
               outInteger = begin
                   local res::ModelicaInteger
-                  local elts::IList
+                  local elts::List{SCode.Element}
                 @matchcontinue inClass begin
                   SCode.CLASS(classDef = SCode.PARTS(elementLst = elts))  => begin
                       res = listLength(elts)
@@ -340,12 +341,12 @@
         end
 
          #= Return a string list of all component names of a class. =#
-        function componentNames(inClass::SCode.Element)::IList
-              local outStringLst::IList
+        function componentNames(inClass::SCode.Element)::List{String}
+              local outStringLst::List{String}
 
               outStringLst = begin
-                  local res::IList
-                  local elts::IList
+                  local res::List{String}
+                  local elts::List{SCode.Element}
                 @match inClass begin
                   SCode.CLASS(classDef = SCode.PARTS(elementLst = elts))  => begin
                       res = componentNamesFromElts(elts)
@@ -367,8 +368,8 @@
         end
 
          #= Helper function to componentNames. =#
-        function componentNamesFromElts(inElements::IList)::IList
-              local outComponentNames::IList
+        function componentNamesFromElts(inElements::List{SCode.Element})::List{String}
+              local outComponentNames::List{String}
 
               outComponentNames = ListUtil.filterMap(inElements, componentName)
           outComponentNames
@@ -451,16 +452,16 @@
         end
 
          #= Gets all elements that have an element name from the list =#
-        function elementNames(elts::IList)::IList
-              local names::IList
+        function elementNames(elts::List{SCode.Element})::List{String}
+              local names::List{String}
 
               names = ListUtil.fold(elts, elementNamesWork, list())
           names
         end
 
          #= Gets all elements that have an element name from the list =#
-        function elementNamesWork(e::SCode.Element, acc::IList)::IList
-              local out::IList
+        function elementNamesWork(e::SCode.Element, acc::List{String})::List{String}
+              local out::List{String}
 
               out = begin
                   local s::String
@@ -495,7 +496,7 @@
                   local ty::Absyn.TypeSpec
                   local mod::SCode.Mod
                   local cmt::SCode.Comment
-                  local cond::Option
+                  local cond::Option{Absyn.Exp}
                 @match (inElement, inName) begin
                   (SCode.CLASS(_, pf, ep, pp, res, cdef, cmt, i), _)  => begin
                     SCode.CLASS(inName, pf, ep, pp, res, cdef, cmt, i)
@@ -732,12 +733,12 @@
                   local im2::Absyn.Import
                   local path1::Absyn.Path
                   local path2::Absyn.Path
-                  local os1::Option
-                  local os2::Option
-                  local or1::Option
-                  local or2::Option
-                  local cond1::Option
-                  local cond2::Option
+                  local os1::Option{String}
+                  local os2::Option{String}
+                  local or1::Option{ModelicaReal}
+                  local or2::Option{ModelicaReal}
+                  local cond1::Option{Absyn.Exp}
+                  local cond2::Option{Absyn.Exp}
                   local cd1::SCode.ClassDef
                   local cd2::SCode.ClassDef
                 @matchcontinue (element1, element2) begin
@@ -974,18 +975,18 @@
               local equal::Bool
 
               equal = begin
-                  local elts1::IList
-                  local elts2::IList
-                  local eqns1::IList
-                  local eqns2::IList
-                  local ieqns1::IList
-                  local ieqns2::IList
-                  local algs1::IList
-                  local algs2::IList
-                  local ialgs1::IList
-                  local ialgs2::IList
-                  local cons1::IList
-                  local cons2::IList
+                  local elts1::List{SCode.Element}
+                  local elts2::List{SCode.Element}
+                  local eqns1::List{SCode.Equation}
+                  local eqns2::List{SCode.Equation}
+                  local ieqns1::List{SCode.Equation}
+                  local ieqns2::List{SCode.Equation}
+                  local algs1::List{SCode.AlgorithmSection}
+                  local algs2::List{SCode.AlgorithmSection}
+                  local ialgs1::List{SCode.AlgorithmSection}
+                  local ialgs2::List{SCode.AlgorithmSection}
+                  local cons1::List{SCode.ConstraintSection}
+                  local cons2::List{SCode.ConstraintSection}
                   local attr1::SCode.Attributes
                   local attr2::SCode.Attributes
                   local tySpec1::Absyn.TypeSpec
@@ -994,12 +995,12 @@
                   local p2::Absyn.Path
                   local mod1::SCode.Mod
                   local mod2::SCode.Mod
-                  local elst1::IList
-                  local elst2::IList
-                  local ilst1::IList
-                  local ilst2::IList
-                  local clsttrs1::IList
-                  local clsttrs2::IList
+                  local elst1::List{SCode.Enum}
+                  local elst2::List{SCode.Enum}
+                  local ilst1::List{SCode.Ident}
+                  local ilst2::List{SCode.Ident}
+                  local clsttrs1::List{Absyn.NamedArg}
+                  local clsttrs2::List{Absyn.NamedArg}
                 @match (cdef1, cdef2) begin
                   (SCode.PARTS(elts1, eqns1, ieqns1, algs1, ialgs1, _, _, _), SCode.PARTS(elts2, eqns2, ieqns2, algs2, ialgs2, _, _, _))  => begin
                       ListUtil.threadMapAllValue(elts1, elts2, elementEqual, true)
@@ -1057,13 +1058,13 @@
         end
 
          #= Returns true if two Option<ArrayDim> are equal =#
-        function arraydimOptEqual(adopt1::Option, adopt2::Option)::Bool
+        function arraydimOptEqual(adopt1::Option{Absyn.ArrayDim}, adopt2::Option{Absyn.ArrayDim})::Bool
               local equal::Bool
 
               equal = begin
-                  local lst1::IList
-                  local lst2::IList
-                  local blst::IList
+                  local lst1::List{Absyn.Subscript}
+                  local lst2::List{Absyn.Subscript}
+                  local blst::List{Bool}
                 @matchcontinue (adopt1, adopt2) begin
                   (NONE(), NONE())  => begin
                     true
@@ -1109,8 +1110,8 @@
               local equal::Bool
 
               equal = begin
-                  local a1::IList
-                  local a2::IList
+                  local a1::List{SCode.Statement}
+                  local a2::List{SCode.Statement}
                 @matchcontinue (alg1, alg2) begin
                   (SCode.ALGORITHM(a1), SCode.ALGORITHM(a2))  => begin
                       ListUtil.threadMapAllValue(a1, a2, algorithmEqual2, true)
@@ -1210,12 +1211,12 @@
               local equal::Bool
 
               equal = begin
-                  local tb1::IList
-                  local tb2::IList
+                  local tb1::List{List{SCode.EEquation}}
+                  local tb2::List{List{SCode.EEquation}}
                   local cond1::Absyn.Exp
                   local cond2::Absyn.Exp
-                  local ifcond1::IList
-                  local ifcond2::IList
+                  local ifcond1::List{Absyn.Exp}
+                  local ifcond2::List{Absyn.Exp}
                   local e11::Absyn.Exp
                   local e12::Absyn.Exp
                   local e21::Absyn.Exp
@@ -1236,12 +1237,12 @@
                   local cr2::Absyn.ComponentRef
                   local id1::Absyn.Ident
                   local id2::Absyn.Ident
-                  local fb1::IList
-                  local fb2::IList
-                  local eql1::IList
-                  local eql2::IList
-                  local elst1::IList
-                  local elst2::IList
+                  local fb1::List{SCode.EEquation}
+                  local fb2::List{SCode.EEquation}
+                  local eql1::List{SCode.EEquation}
+                  local eql2::List{SCode.EEquation}
+                  local elst1::List{SCode.EEquation}
+                  local elst2::List{SCode.EEquation}
                 @matchcontinue (eq1, eq2) begin
                   (SCode.EQ_IF(condition = ifcond1, thenBranch = tb1, elseBranch = fb1), SCode.EQ_IF(condition = ifcond2, thenBranch = tb2, elseBranch = fb2))  => begin
                       @match true = equationEqual22(tb1, tb2)
@@ -1319,14 +1320,14 @@
 
          #= Author BZ
          Helper function for equationEqual2, does compare list<list<equation>> (else ifs in ifequations.) =#
-        function equationEqual22(inTb1::IList, inTb2::IList)::Bool
+        function equationEqual22(inTb1::List{List{SCode.EEquation}}, inTb2::List{List{SCode.EEquation}})::Bool
               local bOut::Bool
 
               bOut = begin
-                  local tb_1::IList
-                  local tb_2::IList
-                  local tb1::IList
-                  local tb2::IList
+                  local tb_1::List{SCode.EEquation}
+                  local tb_2::List{SCode.EEquation}
+                  local tb1::List{List{SCode.EEquation}}
+                  local tb2::List{List{SCode.EEquation}}
                 @matchcontinue (inTb1, inTb2) begin
                   ( nil(),  nil())  => begin
                     true
@@ -1363,8 +1364,8 @@
                   local f2::SCode.Final
                   local each1::SCode.Each
                   local each2::SCode.Each
-                  local submodlst1::IList
-                  local submodlst2::IList
+                  local submodlst1::List{SCode.SubMod}
+                  local submodlst2::List{SCode.SubMod}
                   local e1::Absyn.Exp
                   local e2::Absyn.Exp
                   local elt1::SCode.Element
@@ -1405,7 +1406,7 @@
         end
 
          #= Return true if two subModifier lists are equal =#
-        function subModsEqual(inSubModLst1::IList, inSubModLst2::IList)::Bool
+        function subModsEqual(inSubModLst1::List{SCode.SubMod}, inSubModLst2::List{SCode.SubMod})::Bool
               local equal::Bool
 
               equal = begin
@@ -1413,10 +1414,10 @@
                   local id2::SCode.Ident
                   local mod1::SCode.Mod
                   local mod2::SCode.Mod
-                  local ss1::IList
-                  local ss2::IList
-                  local subModLst1::IList
-                  local subModLst2::IList
+                  local ss1::List{SCode.Subscript}
+                  local ss2::List{SCode.Subscript}
+                  local subModLst1::List{SCode.SubMod}
+                  local subModLst2::List{SCode.SubMod}
                 @matchcontinue (inSubModLst1, inSubModLst2) begin
                   ( nil(),  nil())  => begin
                     true
@@ -1438,14 +1439,14 @@
         end
 
          #= Returns true if two subscript lists are equal =#
-        function subscriptsEqual(inSs1::IList, inSs2::IList)::Bool
+        function subscriptsEqual(inSs1::List{SCode.Subscript}, inSs2::List{SCode.Subscript})::Bool
               local equal::Bool
 
               equal = begin
                   local e1::Absyn.Exp
                   local e2::Absyn.Exp
-                  local ss1::IList
-                  local ss2::IList
+                  local ss1::List{SCode.Subscript}
+                  local ss2::List{SCode.Subscript}
                 @matchcontinue (inSs1, inSs2) begin
                   ( nil(),  nil())  => begin
                     true
@@ -1705,38 +1706,38 @@
           outCl
         end
 
-        function findIteratorIndexedCrefsInEEquations(inEqs::IList, inIterator::String, inCrefs::IList = list())::IList
-              local outCrefs::IList
+        function findIteratorIndexedCrefsInEEquations(inEqs::List{SCode.EEquation}, inIterator::String, inCrefs::List{AbsynUtil.IteratorIndexedCref} = list())::List{AbsynUtil.IteratorIndexedCref}
+              local outCrefs::List{AbsynUtil.IteratorIndexedCref}
 
               outCrefs = ListUtil.fold1(inEqs, findIteratorIndexedCrefsInEEquation, inIterator, inCrefs)
           outCrefs
         end
 
-        function findIteratorIndexedCrefsInEEquation(inEq::SCode.EEquation, inIterator::String, inCrefs::IList = list())::IList
-              local outCrefs::IList
+        function findIteratorIndexedCrefsInEEquation(inEq::SCode.EEquation, inIterator::String, inCrefs::List{AbsynUtil.IteratorIndexedCref} = list())::List{AbsynUtil.IteratorIndexedCref}
+              local outCrefs::List{AbsynUtil.IteratorIndexedCref}
 
               outCrefs = foldEEquationsExps(inEq, (inIterator) -> AbsynUtil.findIteratorIndexedCrefs(inIterator = inIterator), inCrefs)
           outCrefs
         end
 
-        function findIteratorIndexedCrefsInStatements(inStatements::IList, inIterator::String, inCrefs::IList = list())::IList
-              local outCrefs::IList
+        function findIteratorIndexedCrefsInStatements(inStatements::List{SCode.Statement}, inIterator::String, inCrefs::List{AbsynUtil.IteratorIndexedCref} = list())::List{AbsynUtil.IteratorIndexedCref}
+              local outCrefs::List{AbsynUtil.IteratorIndexedCref}
 
               outCrefs = ListUtil.fold1(inStatements, findIteratorIndexedCrefsInStatement, inIterator, inCrefs)
           outCrefs
         end
 
-        function findIteratorIndexedCrefsInStatement(inStatement::SCode.Statement, inIterator::String, inCrefs::IList = list())::IList
-              local outCrefs::IList
+        function findIteratorIndexedCrefsInStatement(inStatement::SCode.Statement, inIterator::String, inCrefs::List{AbsynUtil.IteratorIndexedCref} = list())::List{AbsynUtil.IteratorIndexedCref}
+              local outCrefs::List{AbsynUtil.IteratorIndexedCref}
 
               outCrefs = foldStatementsExps(inStatement, (inIterator) -> AbsynUtil.findIteratorIndexedCrefs(inIterator = inIterator), inCrefs)
           outCrefs
         end
 
          #= Filters out the components from the given list of elements, as well as their names. =#
-        function filterComponents(inElements::IList)::Tuple{IList, IList}
-              local outComponentNames::IList
-              local outComponents::IList
+        function filterComponents(inElements::List{SCode.Element})::Tuple{List{SCode.Element}, List{String}}
+              local outComponentNames::List{String}
+              local outComponents::List{SCode.Element}
 
               (outComponents, outComponentNames) = ListUtil.map_2(inElements, filterComponents2)
           (outComponents, outComponentNames)
@@ -1752,14 +1753,14 @@
         end
 
          #= This function returns the components from a class =#
-        function getClassComponents(cl::SCode.Element)::Tuple{IList, IList}
-              local compNames::IList
-              local compElts::IList
+        function getClassComponents(cl::SCode.Element)::Tuple{List{SCode.Element}, List{String}}
+              local compNames::List{String}
+              local compElts::List{SCode.Element}
 
               (compElts, compNames) = begin
-                  local elts::IList
-                  local comps::IList
-                  local names::IList
+                  local elts::List{SCode.Element}
+                  local comps::List{SCode.Element}
+                  local names::List{String}
                 @match cl begin
                   SCode.CLASS(classDef = SCode.PARTS(elementLst = elts))  => begin
                       (comps, names) = filterComponents(elts)
@@ -1776,8 +1777,8 @@
         end
 
          #= This function returns the components from a class =#
-        function getClassElements(cl::SCode.Element)::IList
-              local elts::IList
+        function getClassElements(cl::SCode.Element)::List{SCode.Element}
+              local elts::List{SCode.Element}
 
               elts = begin
                 @match cl begin
@@ -1862,20 +1863,20 @@
                   local boolExpr::Absyn.Exp
                   local value::Absyn.Exp
                   local iterator::String
-                  local range::Option
+                  local range::Option{Absyn.Exp}
                   local functionArgs::Absyn.FunctionArgs
                   local info::SourceInfo
-                  local conditions::IList
-                  local stmtsList::IList
-                  local body::IList
-                  local trueBranch::IList
-                  local elseBranch::IList
-                  local branches::IList
-                  local comment::Option
-                  local algs1::IList
-                  local algs2::IList
-                  local algsLst::IList
-                  local abranches::IList
+                  local conditions::List{Absyn.Exp}
+                  local stmtsList::List{List{SCode.Statement}}
+                  local body::List{SCode.Statement}
+                  local trueBranch::List{SCode.Statement}
+                  local elseBranch::List{SCode.Statement}
+                  local branches::List{Tuple{Absyn.Exp, List{SCode.Statement}}}
+                  local comment::Option{SCode.Comment}
+                  local algs1::List{Absyn.AlgorithmItem}
+                  local algs2::List{Absyn.AlgorithmItem}
+                  local algsLst::List{List{Absyn.AlgorithmItem}}
+                  local abranches::List{Tuple{Absyn.Exp, List{Absyn.AlgorithmItem}}}
                 @match stmt begin
                   SCode.ALG_ASSIGN(assignComponent, value, _, info)  => begin
                     Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(assignComponent, value), NONE(), info)
@@ -2116,7 +2117,7 @@
 
               outArg = inFunc(inEquation, inArg)
               outArg = begin
-                  local eql::IList
+                  local eql::List{SCode.EEquation}
                 @match inEquation begin
                   SCode.EQ_IF(__)  => begin
                       outArg = ListUtil.foldList1(inEquation.thenBranch, foldEEquations, inFunc, outArg)
@@ -2148,7 +2149,7 @@
 
               outArg = begin
                   local exp::Absyn.Exp
-                  local eql::IList
+                  local eql::List{SCode.EEquation}
                 @match inEquation begin
                   SCode.EQ_IF(__)  => begin
                       outArg = ListUtil.fold(inEquation.condition, inFunc, outArg)
@@ -2225,7 +2226,7 @@
 
               outArg = begin
                   local exp::Absyn.Exp
-                  local stmts::IList
+                  local stmts::List{SCode.Statement}
                 @match inStatement begin
                   SCode.ALG_ASSIGN(__)  => begin
                       outArg = inFunc(inStatement.assignComponent, outArg)
@@ -2323,9 +2324,9 @@
 
          #= Traverses a list of SCode.EEquations, calling traverseEEquations on each SCode.EEquation
           in the list. =#
-        function traverseEEquationsList(inEEquations::IList, inTuple::Tuple)::Tuple{IList, Tuple}
-              local outTuple::Tuple
-              local outEEquations::IList
+        function traverseEEquationsList(inEEquations::List{SCode.EEquation}, inTuple::Tuple{TraverseFunc, Argument})::Tuple{List{SCode.EEquation}, Tuple{TraverseFunc, Argument}}
+              local outTuple::Tuple{TraverseFunc, Argument}
+              local outEEquations::List{SCode.EEquation}
 
               (outEEquations, outTuple) = ListUtil.mapFold(inEEquations, traverseEEquations, inTuple)
           (outEEquations, outTuple)
@@ -2333,8 +2334,8 @@
 
          #= Traverses an SCode.EEquation. For each SCode.EEquation it finds it calls the given
           function with the SCode.EEquation and an extra argument which is passed along. =#
-        function traverseEEquations(inEEquation::SCode.EEquation, inTuple::Tuple)::Tuple{SCode.EEquation, Tuple}
-              local outTuple::Tuple
+        function traverseEEquations(inEEquation::SCode.EEquation, inTuple::Tuple{TraverseFunc, Argument})::Tuple{SCode.EEquation, Tuple{TraverseFunc, Argument}}
+              local outTuple::Tuple{TraverseFunc, Argument}
               local outEEquation::SCode.EEquation
 
               local traverser::TraverseFunc
@@ -2348,19 +2349,19 @@
         end
 
          #= Helper function to traverseEEquations, does the actual traversing. =#
-        function traverseEEquations2(inEEquation::SCode.EEquation, inTuple::Tuple)::Tuple{SCode.EEquation, Tuple}
-              local outTuple::Tuple
+        function traverseEEquations2(inEEquation::SCode.EEquation, inTuple::Tuple{TraverseFunc, Argument})::Tuple{SCode.EEquation, Tuple{TraverseFunc, Argument}}
+              local outTuple::Tuple{TraverseFunc, Argument}
               local outEEquation::SCode.EEquation
 
               (outEEquation, outTuple) = begin
-                  local tup::Tuple
+                  local tup::Tuple{TraverseFunc, Argument}
                   local e1::Absyn.Exp
-                  local oe1::Option
-                  local expl1::IList
-                  local then_branch::IList
-                  local else_branch::IList
-                  local eql::IList
-                  local else_when::IList
+                  local oe1::Option{Absyn.Exp}
+                  local expl1::List{Absyn.Exp}
+                  local then_branch::List{List{SCode.EEquation}}
+                  local else_branch::List{SCode.EEquation}
+                  local eql::List{SCode.EEquation}
+                  local else_when::List{Tuple{Absyn.Exp, List{SCode.EEquation}}}
                   local comment::SCode.Comment
                   local info::SourceInfo
                   local index::SCode.Ident
@@ -2392,12 +2393,12 @@
 
          #= Traverses all SCode.EEquations in an else when branch, calling the given function
           on each SCode.EEquation. =#
-        function traverseElseWhenEEquations(inElseWhen::Tuple, inTuple::Tuple)::Tuple{Tuple, Tuple}
-              local outTuple::Tuple
-              local outElseWhen::Tuple
+        function traverseElseWhenEEquations(inElseWhen::Tuple{Absyn.Exp, List{SCode.EEquation}}, inTuple::Tuple{TraverseFunc, Argument})::Tuple{Tuple{Absyn.Exp, List{SCode.EEquation}}, Tuple{TraverseFunc, Argument}}
+              local outTuple::Tuple{TraverseFunc, Argument}
+              local outElseWhen::Tuple{Absyn.Exp, List{SCode.EEquation}}
 
               local exp::Absyn.Exp
-              local eql::IList
+              local eql::List{SCode.EEquation}
 
               (exp, eql) = inElseWhen
               (eql, outTuple) = traverseEEquationsList(eql, inTuple)
@@ -2407,9 +2408,9 @@
 
          #= Traverses a list of SCode.EEquations, calling the given function on each Absyn.Exp
           it encounters. =#
-        function traverseEEquationListExps(inEEquations::IList, traverser::TraverseFunc, inArg::Argument)::Tuple{IList, Argument}
+        function traverseEEquationListExps(inEEquations::List{SCode.EEquation}, traverser::TraverseFunc, inArg::Argument)::Tuple{List{SCode.EEquation}, Argument}
               local outArg::Argument
-              local outEEquations::IList
+              local outEEquations::List{SCode.EEquation}
 
               (outEEquations, outArg) = ListUtil.map1Fold(inEEquations, traverseEEquationExps, traverser, inArg)
           (outEEquations, outArg)
@@ -2425,15 +2426,15 @@
               (outEEquation, outArg) = begin
                   local traverser::TraverseFunc
                   local arg::Argument
-                  local tup::Tuple
+                  local tup::Tuple{TraverseFunc, Argument}
                   local e1::Absyn.Exp
                   local e2::Absyn.Exp
                   local e3::Absyn.Exp
-                  local expl1::IList
-                  local then_branch::IList
-                  local else_branch::IList
-                  local eql::IList
-                  local else_when::IList
+                  local expl1::List{Absyn.Exp}
+                  local then_branch::List{List{SCode.EEquation}}
+                  local else_branch::List{SCode.EEquation}
+                  local eql::List{SCode.EEquation}
+                  local else_when::List{Tuple{Absyn.Exp, List{SCode.EEquation}}}
                   local comment::SCode.Comment
                   local info::SourceInfo
                   local cr1::Absyn.ComponentRef
@@ -2514,7 +2515,7 @@
 
               (outCref, outArg) = begin
                   local name::Absyn.Ident
-                  local subs::IList
+                  local subs::List{Absyn.Subscript}
                   local cr::Absyn.ComponentRef
                   local arg::Argument
                 @match (inCref, inFunc, inArg) begin
@@ -2567,12 +2568,12 @@
 
          #= Traverses the expressions in an else when branch, and calls the given
           function on the expressions. =#
-        function traverseElseWhenExps(inElseWhen::Tuple, traverser::TraverseFunc, inArg::Argument)::Tuple{Tuple, Argument}
+        function traverseElseWhenExps(inElseWhen::Tuple{Absyn.Exp, List{SCode.EEquation}}, traverser::TraverseFunc, inArg::Argument)::Tuple{Tuple{Absyn.Exp, List{SCode.EEquation}}, Argument}
               local outArg::Argument
-              local outElseWhen::Tuple
+              local outElseWhen::Tuple{Absyn.Exp, List{SCode.EEquation}}
 
               local exp::Absyn.Exp
-              local eql::IList
+              local eql::List{SCode.EEquation}
 
               (exp, eql) = inElseWhen
               (exp, outArg) = traverser(exp, inArg)
@@ -2582,8 +2583,8 @@
 
          #= Calls the given function on the value expression associated with a named
           function argument. =#
-        function traverseNamedArgExps(inArg::Absyn.NamedArg, inTuple::Tuple)::Tuple{Absyn.NamedArg, Tuple}
-              local outTuple::Tuple
+        function traverseNamedArgExps(inArg::Absyn.NamedArg, inTuple::Tuple{TraverseFunc, Argument})::Tuple{Absyn.NamedArg, Tuple{TraverseFunc, Argument}}
+              local outTuple::Tuple{TraverseFunc, Argument}
               local outArg::Absyn.NamedArg
 
               local traverser::TraverseFunc
@@ -2636,9 +2637,9 @@
         end
 
          #= Calls traverseStatement on each statement in the given list. =#
-        function traverseStatementsList(inStatements::IList, inTuple::Tuple)::Tuple{IList, Tuple}
-              local outTuple::Tuple
-              local outStatements::IList
+        function traverseStatementsList(inStatements::List{SCode.Statement}, inTuple::Tuple{TraverseFunc, Argument})::Tuple{List{SCode.Statement}, Tuple{TraverseFunc, Argument}}
+              local outTuple::Tuple{TraverseFunc, Argument}
+              local outStatements::List{SCode.Statement}
 
               (outStatements, outTuple) = ListUtil.mapFold(inStatements, traverseStatements, inTuple)
           (outStatements, outTuple)
@@ -2647,8 +2648,8 @@
          #= Traverses all statements in the given statement in a top-down approach where
           the given function is applied to each statement found, beginning with the given
           statement. =#
-        function traverseStatements(inStatement::SCode.Statement, inTuple::Tuple)::Tuple{SCode.Statement, Tuple}
-              local outTuple::Tuple
+        function traverseStatements(inStatement::SCode.Statement, inTuple::Tuple{TraverseFunc, Argument})::Tuple{SCode.Statement, Tuple{TraverseFunc, Argument}}
+              local outTuple::Tuple{TraverseFunc, Argument}
               local outStatement::SCode.Statement
 
               local traverser::TraverseFunc
@@ -2663,22 +2664,22 @@
 
          #= Helper function to traverseStatements. Goes through each statement contained
           in the given statement and calls traverseStatements on them. =#
-        function traverseStatements2(inStatement::SCode.Statement, inTuple::Tuple)::Tuple{SCode.Statement, Tuple}
-              local outTuple::Tuple
+        function traverseStatements2(inStatement::SCode.Statement, inTuple::Tuple{TraverseFunc, Argument})::Tuple{SCode.Statement, Tuple{TraverseFunc, Argument}}
+              local outTuple::Tuple{TraverseFunc, Argument}
               local outStatement::SCode.Statement
 
               (outStatement, outTuple) = begin
                   local traverser::TraverseFunc
                   local arg::Argument
-                  local tup::Tuple
+                  local tup::Tuple{TraverseFunc, Argument}
                   local e::Absyn.Exp
-                  local stmts1::IList
-                  local stmts2::IList
-                  local branches::IList
+                  local stmts1::List{SCode.Statement}
+                  local stmts2::List{SCode.Statement}
+                  local branches::List{Tuple{Absyn.Exp, List{SCode.Statement}}}
                   local comment::SCode.Comment
                   local info::SourceInfo
                   local iter::String
-                  local range::Option
+                  local range::Option{Absyn.Exp}
                 @match (inStatement, inTuple) begin
                   (SCode.ALG_IF(e, stmts1, branches, stmts2, comment, info), tup)  => begin
                       (stmts1, tup) = traverseStatementsList(stmts1, tup)
@@ -2722,12 +2723,12 @@
 
          #= Helper function to traverseStatements2. Calls traverseStatement each
           statement in a given branch. =#
-        function traverseBranchStatements(inBranch::Tuple, inTuple::Tuple)::Tuple{Tuple, Tuple}
-              local outTuple::Tuple
-              local outBranch::Tuple
+        function traverseBranchStatements(inBranch::Tuple{Absyn.Exp, List{SCode.Statement}}, inTuple::Tuple{TraverseFunc, Argument})::Tuple{Tuple{Absyn.Exp, List{SCode.Statement}}, Tuple{TraverseFunc, Argument}}
+              local outTuple::Tuple{TraverseFunc, Argument}
+              local outBranch::Tuple{Absyn.Exp, List{SCode.Statement}}
 
               local exp::Absyn.Exp
-              local stmts::IList
+              local stmts::List{SCode.Statement}
 
               (exp, stmts) = inBranch
               (stmts, outTuple) = traverseStatementsList(stmts, inTuple)
@@ -2737,9 +2738,9 @@
 
          #= Traverses a list of statements and calls the given function on each
           expression found. =#
-        function traverseStatementListExps(inStatements::IList, inFunc::TraverseFunc, inArg::Argument)::Tuple{IList, Argument}
+        function traverseStatementListExps(inStatements::List{SCode.Statement}, inFunc::TraverseFunc, inArg::Argument)::Tuple{List{SCode.Statement}, Argument}
               local outArg::Argument
-              local outStatements::IList
+              local outStatements::List{SCode.Statement}
 
               (outStatements, outArg) = ListUtil.map1Fold(inStatements, traverseStatementExps, inFunc, inArg)
           (outStatements, outArg)
@@ -2755,14 +2756,14 @@
               (outStatement, outArg) = begin
                   local traverser::TraverseFunc
                   local arg::Argument
-                  local tup::Tuple
+                  local tup::Tuple{TraverseFunc, Argument}
                   local iterator::String
                   local e1::Absyn.Exp
                   local e2::Absyn.Exp
                   local e3::Absyn.Exp
-                  local stmts1::IList
-                  local stmts2::IList
-                  local branches::IList
+                  local stmts1::List{SCode.Statement}
+                  local stmts2::List{SCode.Statement}
+                  local branches::List{Tuple{Absyn.Exp, List{SCode.Statement}}}
                   local comment::SCode.Comment
                   local info::SourceInfo
                   local cref::Absyn.ComponentRef
@@ -2831,13 +2832,13 @@
         end
 
          #= Calls the given function on each expression found in an if or when branch. =#
-        function traverseBranchExps(inBranch::Tuple, traverser::TraverseFunc, inArg::Argument)::Tuple{Tuple, Argument}
+        function traverseBranchExps(inBranch::Tuple{Absyn.Exp, List{SCode.Statement}}, traverser::TraverseFunc, inArg::Argument)::Tuple{Tuple{Absyn.Exp, List{SCode.Statement}}, Argument}
               local outArg::Argument
-              local outBranch::Tuple
+              local outBranch::Tuple{Absyn.Exp, List{SCode.Statement}}
 
               local arg::Argument
               local exp::Absyn.Exp
-              local stmts::IList
+              local stmts::List{SCode.Statement}
 
               (exp, stmts) = inBranch
               (exp, outArg) = traverser(exp, inArg)
@@ -2930,16 +2931,16 @@
           cl
         end
 
-         knownExternalCFunctions = list("sin", "cos", "tan", "asin", "acos", "atan", "atan2", "sinh", "cosh", "tanh", "exp", "log", "log10", "sqrt")::IList
+         knownExternalCFunctions = list("sin", "cos", "tan", "asin", "acos", "atan", "atan2", "sinh", "cosh", "tanh", "exp", "log", "log10", "sqrt")::List{String}
 
-        function isBuiltinFunction(cl::SCode.Element, inVars::IList, outVars::IList)::String
+        function isBuiltinFunction(cl::SCode.Element, inVars::List{String}, outVars::List{String})::String
               local name::String
 
               name = begin
                   local outVar1::String
                   local outVar2::String
-                  local argsStr::IList
-                  local args::IList
+                  local argsStr::List{String}
+                  local args::List{Absyn.Exp}
                 @match (cl, inVars, outVars) begin
                   (SCode.CLASS(name = name, restriction = SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(__)), classDef = SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(funcName = NONE(), lang = SOME("builtin"))))), _, _)  => begin
                     name
@@ -3116,14 +3117,14 @@
         function addElementToCompositeClassDef(inElement::SCode.Element, inClassDef::SCode.ClassDef)::SCode.ClassDef
               local outClassDef::SCode.ClassDef
 
-              local el::IList
-              local nel::IList
-              local iel::IList
-              local nal::IList
-              local ial::IList
-              local nco::IList
-              local ed::Option
-              local clsattrs::IList
+              local el::List{SCode.Element}
+              local nel::List{SCode.Equation}
+              local iel::List{SCode.Equation}
+              local nal::List{SCode.AlgorithmSection}
+              local ial::List{SCode.AlgorithmSection}
+              local nco::List{SCode.ConstraintSection}
+              local ed::Option{SCode.ExternalDecl}
+              local clsattrs::List{Absyn.NamedArg}
 
               @match SCode.PARTS(el, nel, iel, nal, ial, nco, clsattrs, ed) = inClassDef
               outClassDef = SCode.PARTS(inElement <| el, nel, iel, nal, ial, nco, clsattrs, ed)
@@ -3321,11 +3322,11 @@
           bReplaceable
         end
 
-        function replaceableOptConstraint(inReplaceable::SCode.Replaceable)::Option
-              local outOptConstrainClass::Option
+        function replaceableOptConstraint(inReplaceable::SCode.Replaceable)::Option{SCode.ConstrainClass}
+              local outOptConstrainClass::Option{SCode.ConstrainClass}
 
               outOptConstrainClass = begin
-                  local cc::Option
+                  local cc::Option{SCode.ConstrainClass}
                 @match inReplaceable begin
                   SCode.REPLACEABLE(cc)  => begin
                     cc
@@ -3339,7 +3340,7 @@
           outOptConstrainClass
         end
 
-        function boolReplaceable(inBoolReplaceable::Bool, inOptConstrainClass::Option)::SCode.Replaceable
+        function boolReplaceable(inBoolReplaceable::Bool, inOptConstrainClass::Option{SCode.ConstrainClass})::SCode.Replaceable
               local outReplaceable::SCode.Replaceable
 
               outReplaceable = begin
@@ -3620,8 +3621,8 @@
          #= @author: adrpo
          Function that is used with Derived classes,
          merge the derived Attributes with the optional Attributes returned from ~instClass~. =#
-        function mergeAttributes(ele::SCode.Attributes, oEle::Option)::Option
-              local outoEle::Option
+        function mergeAttributes(ele::SCode.Attributes, oEle::Option{SCode.Attributes})::Option{SCode.Attributes}
+              local outoEle::Option{SCode.Attributes}
 
               outoEle = begin
                   local p1::SCode.Parallelism
@@ -3963,7 +3964,7 @@
               local info::SourceInfo
               local exp::Absyn.Exp
 
-              local submods::IList
+              local submods::List{SCode.SubMod}
 
               @match SCode.ANNOTATION(modification = SCode.MOD(subModLst = submods)) = inAnnotation
               @match SCode.NAMEMOD(mod = SCode.MOD(info = info, binding = SOME(exp))) = ListUtil.find1(submods, hasNamedAnnotation, inName)
@@ -3995,14 +3996,14 @@
         function lookupNamedAnnotation(ann::SCode.Annotation, name::String)::SCode.Mod
               local mod::SCode.Mod
 
-              local submods::IList
+              local submods::List{SCode.SubMod}
               local id::String
 
               mod = begin
                 @match ann begin
-                  SCode.Annotation.ANNOTATION(modification = SCode.MOD(subModLst = submods))  => begin
+                  SCode.ANNOTATION(modification = SCode.MOD(subModLst = submods))  => begin
                       for sm in submods
-                        @match SCode.SubMod.NAMEMOD(id, mod) = sm
+                        @match SCode.NAMEMOD(id, mod) = sm
                         if id == name
                           return
                         end
@@ -4019,18 +4020,18 @@
         end
 
          #= Returns a list of modifiers with the given name found in the annotation. =#
-        function lookupNamedAnnotations(ann::SCode.Annotation, name::String)::IList
-              local mods::IList = list()
+        function lookupNamedAnnotations(ann::SCode.Annotation, name::String)::List{SCode.Mod}
+              local mods::List{SCode.Mod} = list()
 
-              local submods::IList
+              local submods::List{SCode.SubMod}
               local id::String
               local mod::SCode.Mod
 
               mods = begin
                 @match ann begin
-                  SCode.Annotation.ANNOTATION(modification = SCode.MOD(subModLst = submods))  => begin
+                  SCode.ANNOTATION(modification = SCode.MOD(subModLst = submods))  => begin
                       for sm in submods
-                        @match SCode.SubMod.NAMEMOD(id, mod) = sm
+                        @match SCode.NAMEMOD(id, mod) = sm
                         if id == name
                           mods = mod <| mods
                         end
@@ -4083,7 +4084,7 @@
         end
 
          #= check if the named annotation is present and has value true =#
-        function optCommentHasBooleanNamedAnnotation(comm::Option, annotationName::String)::Bool
+        function optCommentHasBooleanNamedAnnotation(comm::Option{SCode.Comment}, annotationName::String)::Bool
               local outB::Bool
 
               outB = begin
@@ -4125,7 +4126,7 @@
         function hasBooleanNamedAnnotation(inAnnotation::SCode.Annotation, inName::String)::Bool
               local outHasEntry::Bool
 
-              local submods::IList
+              local submods::List{SCode.SubMod}
 
               @match SCode.ANNOTATION(modification = SCode.MOD(subModLst = submods)) = inAnnotation
               outHasEntry = ListUtil.exist1(submods, hasBooleanNamedAnnotation2, inName)
@@ -4155,7 +4156,7 @@
          #= @author: adrpo
          returns true if annotation(Evaluate = true) is present,
          otherwise false =#
-        function getEvaluateAnnotation(inCommentOpt::Option)::Bool
+        function getEvaluateAnnotation(inCommentOpt::Option{SCode.Comment})::Bool
               local evalIsTrue::Bool
 
               evalIsTrue = begin
@@ -4173,8 +4174,8 @@
           evalIsTrue
         end
 
-        function getInlineTypeAnnotationFromCmt(inComment::SCode.Comment)::Option
-              local outAnnotation::Option
+        function getInlineTypeAnnotationFromCmt(inComment::SCode.Comment)::Option{SCode.Annotation}
+              local outAnnotation::Option{SCode.Annotation}
 
               outAnnotation = begin
                   local ann::SCode.Annotation
@@ -4191,11 +4192,11 @@
           outAnnotation
         end
 
-        function getInlineTypeAnnotation(inAnnotation::SCode.Annotation)::Option
-              local outAnnotation::Option
+        function getInlineTypeAnnotation(inAnnotation::SCode.Annotation)::Option{SCode.Annotation}
+              local outAnnotation::Option{SCode.Annotation}
 
               outAnnotation = begin
-                  local submods::IList
+                  local submods::List{SCode.SubMod}
                   local inline_mod::SCode.SubMod
                   local fp::SCode.Final
                   local ep::SCode.Each
@@ -4239,12 +4240,12 @@
               local outComment::SCode.Comment
 
               outComment = begin
-                  local cmt::Option
+                  local cmt::Option{String}
                   local fp::SCode.Final
                   local ep::SCode.Each
-                  local mods1::IList
-                  local mods2::IList
-                  local b::Option
+                  local mods1::List{SCode.SubMod}
+                  local mods2::List{SCode.SubMod}
+                  local b::Option{Absyn.Exp}
                   local info::SourceInfo
                 @match (inAnnotation, inComment) begin
                   (_, SCode.COMMENT(NONE(), cmt))  => begin
@@ -4283,8 +4284,8 @@
           outInfo
         end
 
-        function getModifierBinding(inMod::SCode.Mod)::Option
-              local outBinding::Option
+        function getModifierBinding(inMod::SCode.Mod)::Option{Absyn.Exp}
+              local outBinding::Option{Absyn.Exp}
 
               outBinding = begin
                   local binding::Absyn.Exp
@@ -4301,8 +4302,8 @@
           outBinding
         end
 
-        function getComponentCondition(element::SCode.Element)::Option
-              local condition::Option
+        function getComponentCondition(element::SCode.Element)::Option{Absyn.Exp}
+              local condition::Option{Absyn.Exp}
 
               condition = begin
                 @match element begin
@@ -4363,14 +4364,14 @@
                   local ty::Absyn.TypeSpec
                   local mod::SCode.Mod
                   local cmt::SCode.Comment
-                  local cnd::Option
+                  local cnd::Option{Absyn.Exp}
                   local info::SourceInfo
                   local rdp::SCode.Redeclare
                   local fp::SCode.Final
                   local io::Absyn.InnerOuter
                   local rpp::SCode.Replaceable
                   local bc::SCode.Path
-                  local ann::Option
+                  local ann::Option{SCode.Annotation}
                 @match inElement begin
                   SCode.COMPONENT(prefixes = SCode.PREFIXES(visibility = SCode.PROTECTED(__)))  => begin
                     inElement
@@ -4581,8 +4582,8 @@
          #= replaces the elements in class definition.
          if derived a SOME(element) is returned,
          otherwise the modified class def and NONE() =#
-        function replaceElementsInClassDef(inProgram::SCode.Program, classDef::SCode.ClassDef, inElements::SCode.Program)::Tuple{SCode.ClassDef, Option}
-              local outElementOpt::Option
+        function replaceElementsInClassDef(inProgram::SCode.Program, classDef::SCode.ClassDef, inElements::SCode.Program)::Tuple{SCode.ClassDef, Option{SCode.Element}}
+              local outElementOpt::Option{SCode.Element}
 
 
               outElementOpt = begin
@@ -4718,7 +4719,7 @@
               local bc::SCode.Path
               local v::SCode.Visibility
               local m::SCode.Mod
-              local a::Option
+              local a::Option{SCode.Annotation}
               local i::SourceInfo
 
               @match SCode.EXTENDS(bc, v, m, a, i) = inE
@@ -4734,7 +4735,7 @@
               local bc::SCode.Path
               local v::SCode.Visibility
               local m::SCode.Mod
-              local a::Option
+              local a::Option{SCode.Annotation}
               local i::SourceInfo
 
               @match SCode.EXTENDS(baseClassPath = outBcPath) = inE
@@ -4751,11 +4752,11 @@
               local atr::SCode.Attributes
               local ts::Absyn.TypeSpec
               local cmt::SCode.Comment
-              local cnd::Option
+              local cnd::Option{Absyn.Exp}
               local bc::SCode.Path
               local v::SCode.Visibility
               local m::SCode.Mod
-              local a::Option
+              local a::Option{SCode.Annotation}
               local i::SourceInfo
 
               @match SCode.COMPONENT(n, pr, atr, ts, m, cmt, cnd, i) = inE
@@ -4782,11 +4783,11 @@
               local atr::SCode.Attributes
               local ts::Absyn.TypeSpec
               local cmt::SCode.Comment
-              local cnd::Option
+              local cnd::Option{Absyn.Exp}
               local bc::SCode.Path
               local v::SCode.Visibility
               local m::SCode.Mod
-              local a::Option
+              local a::Option{SCode.Annotation}
               local i::SourceInfo
 
               @match SCode.COMPONENT(n, pr, atr, ts, m, cmt, cnd, i) = inE
@@ -4851,7 +4852,7 @@
               local cd::SCode.ClassDef
               local i::SourceInfo
               local ts::Absyn.TypeSpec
-              local ann::Option
+              local ann::Option{SCode.Annotation}
               local cmt::SCode.Comment
               local m::SCode.Mod
 
@@ -4925,7 +4926,7 @@
 
          #= @author:
          returns true if equations contains reinit =#
-        function equationsContainReinit(inEqs::IList)::Bool
+        function equationsContainReinit(inEqs::List{SCode.EEquation})::Bool
               local hasReinit::Bool
 
               hasReinit = begin
@@ -4947,9 +4948,9 @@
 
               hasReinit = begin
                   local b::Bool
-                  local eqs::IList
-                  local eqs_lst::IList
-                  local tpl_el::IList
+                  local eqs::List{SCode.EEquation}
+                  local eqs_lst::List{List{SCode.EEquation}}
+                  local tpl_el::List{Tuple{Absyn.Exp, List{SCode.EEquation}}}
                 @match inEq begin
                   SCode.EQ_REINIT(__)  => begin
                     true
@@ -4983,7 +4984,7 @@
 
          #= @author:
          returns true if statements contains reinit =#
-        function algorithmsContainReinit(inAlgs::IList)::Bool
+        function algorithmsContainReinit(inAlgs::List{SCode.Statement})::Bool
               local hasReinit::Bool
 
               hasReinit = begin
@@ -5008,11 +5009,11 @@
                   local b1::Bool
                   local b2::Bool
                   local b3::Bool
-                  local algs::IList
-                  local algs1::IList
-                  local algs2::IList
-                  local algs_lst::IList
-                  local tpl_alg::IList
+                  local algs::List{SCode.Statement}
+                  local algs1::List{SCode.Statement}
+                  local algs2::List{SCode.Statement}
+                  local algs_lst::List{List{SCode.Statement}}
+                  local tpl_alg::List{Tuple{Absyn.Exp, List{SCode.Statement}}}
                 @match inAlg begin
                   SCode.ALG_REINIT(__)  => begin
                     true
@@ -5137,7 +5138,7 @@
                   local attr::SCode.Attributes
                   local ty::Absyn.TypeSpec
                   local cmt::SCode.Comment
-                  local cnd::Option
+                  local cnd::Option{Absyn.Exp}
                   local i::SourceInfo
                   local ep::SCode.Encapsulated
                   local pp::SCode.Partial
@@ -5145,7 +5146,7 @@
                   local cdef::SCode.ClassDef
                   local bc::Absyn.Path
                   local vis::SCode.Visibility
-                  local ann::Option
+                  local ann::Option{SCode.Annotation}
                 @match (inElement, inMod) begin
                   (SCode.COMPONENT(n, pf, attr, ty, _, cmt, cnd, i), _)  => begin
                     SCode.COMPONENT(n, pf, attr, ty, inMod, cmt, cnd, i)
@@ -5207,32 +5208,32 @@
           outIsBuiltin
         end
 
-        function partitionElements(inElements::IList)::Tuple{IList, IList, IList, IList, IList}
-              local outDefineUnits::IList
-              local outImports::IList
-              local outExtends::IList
-              local outClasses::IList
-              local outComponents::IList
+        function partitionElements(inElements::List{SCode.Element})::Tuple{List{SCode.Element}, List{SCode.Element}, List{SCode.Element}, List{SCode.Element}, List{SCode.Element}}
+              local outDefineUnits::List{SCode.Element}
+              local outImports::List{SCode.Element}
+              local outExtends::List{SCode.Element}
+              local outClasses::List{SCode.Element}
+              local outComponents::List{SCode.Element}
 
               (outComponents, outClasses, outExtends, outImports, outDefineUnits) = partitionElements2(inElements, list(), list(), list(), list(), list())
           (outComponents, outClasses, outExtends, outImports, outDefineUnits)
         end
 
-        function partitionElements2(inElements::IList, inComponents::IList, inClasses::IList, inExtends::IList, inImports::IList, inDefineUnits::IList)::Tuple{IList, IList, IList, IList, IList}
-              local outDefineUnits::IList
-              local outImports::IList
-              local outExtends::IList
-              local outClasses::IList
-              local outComponents::IList
+        function partitionElements2(inElements::List{SCode.Element}, inComponents::List{SCode.Element}, inClasses::List{SCode.Element}, inExtends::List{SCode.Element}, inImports::List{SCode.Element}, inDefineUnits::List{SCode.Element})::Tuple{List{SCode.Element}, List{SCode.Element}, List{SCode.Element}, List{SCode.Element}, List{SCode.Element}}
+              local outDefineUnits::List{SCode.Element}
+              local outImports::List{SCode.Element}
+              local outExtends::List{SCode.Element}
+              local outClasses::List{SCode.Element}
+              local outComponents::List{SCode.Element}
 
               (outComponents, outClasses, outExtends, outImports, outDefineUnits) = begin
                   local el::SCode.Element
-                  local rest_el::IList
-                  local comp::IList
-                  local cls::IList
-                  local ext::IList
-                  local imp::IList
-                  local def::IList
+                  local rest_el::List{SCode.Element}
+                  local comp::List{SCode.Element}
+                  local cls::List{SCode.Element}
+                  local ext::List{SCode.Element}
+                  local imp::List{SCode.Element}
+                  local def::List{SCode.Element}
                 @match (inElements, inComponents, inClasses, inExtends, inImports, inDefineUnits) begin
                   (el && SCode.COMPONENT(__) <| rest_el, comp, cls, ext, imp, def)  => begin
                       (comp, cls, ext, imp, def) = partitionElements2(rest_el, el <| comp, cls, ext, imp, def)
@@ -5340,17 +5341,17 @@
                   local ty::Absyn.TypeSpec
                   local mod::SCode.Mod
                   local cmt::SCode.Comment
-                  local cond::Option
+                  local cond::Option{Absyn.Exp}
                   local info::SourceInfo
                   local ep::SCode.Encapsulated
                   local pp::SCode.Partial
                   local res::SCode.Restriction
                   local cdef::SCode.ClassDef
                   local bc::Absyn.Path
-                  local ann::Option
+                  local ann::Option{SCode.Annotation}
                   local imp::Absyn.Import
-                  local unit::Option
-                  local weight::Option
+                  local unit::Option{String}
+                  local weight::Option{ModelicaReal}
                 @match (inElement, inVisibility) begin
                   (SCode.COMPONENT(name, prefs, attr, ty, mod, cmt, cond, info), _)  => begin
                       prefs = prefixesSetVisibility(prefs, inVisibility)
@@ -5398,8 +5399,8 @@
         end
 
          #= Returns the comment of an element. =#
-        function getElementComment(inElement::SCode.Element)::Option
-              local outComment::Option
+        function getElementComment(inElement::SCode.Element)::Option{SCode.Comment}
+              local outComment::Option{SCode.Comment}
 
               outComment = begin
                   local cmt::SCode.Comment
@@ -5422,12 +5423,12 @@
         end
 
          #= Removes the annotation from a comment. =#
-        function stripAnnotationFromComment(inComment::Option)::Option
-              local outComment::Option
+        function stripAnnotationFromComment(inComment::Option{SCode.Comment})::Option{SCode.Comment}
+              local outComment::Option{SCode.Comment}
 
               outComment = begin
-                  local str::Option
-                  local cmt::Option
+                  local str::Option{String}
+                  local cmt::Option{SCode.Comment}
                 @match inComment begin
                   SOME(SCode.COMMENT(_, str))  => begin
                     SOME(SCode.COMMENT(NONE(), str))
@@ -5492,12 +5493,12 @@
                   local im2::Absyn.Import
                   local path1::Absyn.Path
                   local path2::Absyn.Path
-                  local os1::Option
-                  local os2::Option
-                  local or1::Option
-                  local or2::Option
-                  local cond1::Option
-                  local cond2::Option
+                  local os1::Option{String}
+                  local os2::Option{String}
+                  local or1::Option{ModelicaReal}
+                  local or2::Option{ModelicaReal}
+                  local cond1::Option{Absyn.Exp}
+                  local cond2::Option{Absyn.Exp}
                   local cd1::SCode.ClassDef
                   local cd2::SCode.ClassDef
                   local cm::SCode.Comment
@@ -5583,12 +5584,12 @@
                   local f2::SCode.Final
                   local e1::SCode.Each
                   local e2::SCode.Each
-                  local sl1::IList
-                  local sl2::IList
-                  local sl::IList
-                  local b1::Option
-                  local b2::Option
-                  local b::Option
+                  local sl1::List{SCode.SubMod}
+                  local sl2::List{SCode.SubMod}
+                  local sl::List{SCode.SubMod}
+                  local b1::Option{Absyn.Exp}
+                  local b2::Option{Absyn.Exp}
+                  local b::Option{Absyn.Exp}
                   local i1::SourceInfo
                   local i2::SourceInfo
                   local m::SCode.Mod
@@ -5626,8 +5627,8 @@
           outMod
         end
 
-        function mergeBindings(inNew::Option, inOld::Option)::Option
-              local outBnd::Option
+        function mergeBindings(inNew::Option{Absyn.Exp}, inOld::Option{Absyn.Exp})::Option{Absyn.Exp}
+              local outBnd::Option{Absyn.Exp}
 
               outBnd = begin
                 @match (inNew, inOld) begin
@@ -5643,13 +5644,13 @@
           outBnd
         end
 
-        function mergeSubMods(inNew::IList, inOld::IList)::IList
-              local outSubs::IList
+        function mergeSubMods(inNew::List{SCode.SubMod}, inOld::List{SCode.SubMod})::List{SCode.SubMod}
+              local outSubs::List{SCode.SubMod}
 
               outSubs = begin
-                  local sl::IList
-                  local rest::IList
-                  local old::IList
+                  local sl::List{SCode.SubMod}
+                  local rest::List{SCode.SubMod}
+                  local old::List{SCode.SubMod}
                   local s::SCode.SubMod
                 @matchcontinue (inNew, inOld) begin
                   ( nil(), _)  => begin
@@ -5670,15 +5671,15 @@
           outSubs
         end
 
-        function removeSub(inSub::SCode.SubMod, inOld::IList)::IList
-              local outSubs::IList
+        function removeSub(inSub::SCode.SubMod, inOld::List{SCode.SubMod})::List{SCode.SubMod}
+              local outSubs::List{SCode.SubMod}
 
               outSubs = begin
-                  local rest::IList
+                  local rest::List{SCode.SubMod}
                   local id1::SCode.Ident
                   local id2::SCode.Ident
-                  local idxs1::IList
-                  local idxs2::IList
+                  local idxs1::List{SCode.Subscript}
+                  local idxs2::List{SCode.Subscript}
                   local s::SCode.SubMod
                 @matchcontinue (inSub, inOld) begin
                   (_,  nil())  => begin
@@ -5716,8 +5717,8 @@
                   local m::SCode.Mod
                   local c1::SCode.Comment
                   local c2::SCode.Comment
-                  local cnd1::Option
-                  local cnd2::Option
+                  local cnd1::Option{Absyn.Exp}
+                  local cnd2::Option{Absyn.Exp}
                   local i1::SourceInfo
                   local i2::SourceInfo
                   local c::SCode.Element
@@ -5883,7 +5884,7 @@
               local ty::Absyn.TypeSpec
               local mod::SCode.Mod
               local cmt::SCode.Comment
-              local cond::Option
+              local cond::Option{Absyn.Exp}
               local info::SourceInfo
 
               @match SCode.COMPONENT(prefixes = pref1, attributes = attr1) = inOriginalVar
@@ -6013,7 +6014,7 @@
               local res::Bool
 
               res = begin
-                  local els::IList
+                  local els::List{SCode.Element}
                 @match cl begin
                   SCode.CLASS(classDef = SCode.PARTS(elementLst = els))  => begin
                     isExternalObject(els)
@@ -6030,7 +6031,7 @@
          #= Returns true if the element list fulfills the condition of an External Object.
         An external object extends the builtinClass ExternalObject, and has two local
         functions, destructor and constructor.  =#
-        function isExternalObject(els::IList)::Bool
+        function isExternalObject(els::List{SCode.Element})::Bool
               local res::Bool
 
               res = begin
@@ -6052,11 +6053,11 @@
         end
 
          #= returns true if element list contains 'extends ExternalObject;' =#
-        function hasExtendsOfExternalObject(inEls::IList)::Bool
+        function hasExtendsOfExternalObject(inEls::List{SCode.Element})::Bool
               local res::Bool
 
               res = begin
-                  local els::IList
+                  local els::List{SCode.Element}
                   local path::Absyn.Path
                 @match inEls begin
                    nil()  => begin
@@ -6076,11 +6077,11 @@
         end
 
          #= returns true if element list contains 'function destructor .. end destructor' =#
-        function hasExternalObjectDestructor(inEls::IList)::Bool
+        function hasExternalObjectDestructor(inEls::List{SCode.Element})::Bool
               local res::Bool
 
               res = begin
-                  local els::IList
+                  local els::List{SCode.Element}
                 @match inEls begin
                   SCode.CLASS(name = "destructor") <| _  => begin
                     true
@@ -6099,11 +6100,11 @@
         end
 
          #= returns true if element list contains 'function constructor ... end constructor' =#
-        function hasExternalObjectConstructor(inEls::IList)::Bool
+        function hasExternalObjectConstructor(inEls::List{SCode.Element})::Bool
               local res::Bool
 
               res = begin
-                  local els::IList
+                  local els::List{SCode.Element}
                 @match inEls begin
                   SCode.CLASS(name = "constructor") <| _  => begin
                     true
@@ -6122,11 +6123,11 @@
         end
 
          #= returns the class 'function destructor .. end destructor' from element list =#
-        function getExternalObjectDestructor(inEls::IList)::SCode.Element
+        function getExternalObjectDestructor(inEls::List{SCode.Element})::SCode.Element
               local cl::SCode.Element
 
               cl = begin
-                  local els::IList
+                  local els::List{SCode.Element}
                 @match inEls begin
                   cl && SCode.CLASS(name = "destructor") <| _  => begin
                     cl
@@ -6141,11 +6142,11 @@
         end
 
          #= returns the class 'function constructor ... end constructor' from element list =#
-        function getExternalObjectConstructor(inEls::IList)::SCode.Element
+        function getExternalObjectConstructor(inEls::List{SCode.Element})::SCode.Element
               local cl::SCode.Element
 
               cl = begin
-                  local els::IList
+                  local els::List{SCode.Element}
                 @match inEls begin
                   cl && SCode.CLASS(name = "constructor") <| _  => begin
                     cl
@@ -6244,11 +6245,11 @@
               local atr::SCode.Attributes
               local ts::Absyn.TypeSpec
               local cmt::SCode.Comment
-              local cnd::Option
+              local cnd::Option{Absyn.Exp}
               local bc::SCode.Path
               local v::SCode.Visibility
               local m::SCode.Mod
-              local a::Option
+              local a::Option{SCode.Annotation}
               local i::SourceInfo
 
               @match SCode.COMPONENT(n, pr, atr, ts, m, cmt, cnd, i) = inE
@@ -6299,7 +6300,7 @@
                     mod
                   end
 
-                  SCode.CLASS(classDef = SCode.ClassDef.DERIVED(modifications = mod))  => begin
+                  SCode.CLASS(classDef = SCode.DERIVED(modifications = mod))  => begin
                     mod
                   end
 
@@ -6395,7 +6396,7 @@
                     ()
                   end
 
-                  SCode.Mod.REDECL(__)  => begin
+                  SCode.REDECL(__)  => begin
                       mod.element = stripCommentsFromElement(mod.element, stripAnn, stripCmt)
                     ()
                   end
@@ -6419,35 +6420,35 @@
 
 
               cdef = begin
-                  local el::IList
-                  local eql::IList
-                  local ieql::IList
-                  local alg::IList
-                  local ialg::IList
-                  local ext::Option
+                  local el::List{SCode.Element}
+                  local eql::List{SCode.Equation}
+                  local ieql::List{SCode.Equation}
+                  local alg::List{SCode.AlgorithmSection}
+                  local ialg::List{SCode.AlgorithmSection}
+                  local ext::Option{SCode.ExternalDecl}
                 @match cdef begin
-                  SCode.ClassDef.PARTS(__)  => begin
+                  SCode.PARTS(__)  => begin
                       el = list(stripCommentsFromElement(e, stripAnn, stripCmt) for e in cdef.elementLst)
                       eql = list(stripCommentsFromEquation(eq, stripAnn, stripCmt) for eq in cdef.normalEquationLst)
                       ieql = list(stripCommentsFromEquation(ieq, stripAnn, stripCmt) for ieq in cdef.initialEquationLst)
                       alg = list(stripCommentsFromAlgorithm(a, stripAnn, stripCmt) for a in cdef.normalAlgorithmLst)
                       ialg = list(stripCommentsFromAlgorithm(ia, stripAnn, stripCmt) for ia in cdef.initialAlgorithmLst)
                       ext = stripCommentsFromExternalDecl(cdef.externalDecl, stripAnn, stripCmt)
-                    SCode.ClassDef.PARTS(el, eql, ieql, alg, ialg, cdef.constraintLst, cdef.clsattrs, ext)
+                    SCode.PARTS(el, eql, ieql, alg, ialg, cdef.constraintLst, cdef.clsattrs, ext)
                   end
 
-                  SCode.ClassDef.CLASS_EXTENDS(__)  => begin
+                  SCode.CLASS_EXTENDS(__)  => begin
                       cdef.modifications = stripCommentsFromMod(cdef.modifications, stripAnn, stripCmt)
                       cdef.composition = stripCommentsFromClassDef(cdef.composition, stripAnn, stripCmt)
                     cdef
                   end
 
-                  SCode.ClassDef.DERIVED(__)  => begin
+                  SCode.DERIVED(__)  => begin
                       cdef.modifications = stripCommentsFromMod(cdef.modifications, stripAnn, stripCmt)
                     cdef
                   end
 
-                  SCode.ClassDef.ENUMERATION(__)  => begin
+                  SCode.ENUMERATION(__)  => begin
                       cdef.enumLst = list(stripCommentsFromEnum(e, stripAnn, stripCmt) for e in cdef.enumLst)
                     cdef
                   end
@@ -6479,7 +6480,7 @@
           cmt
         end
 
-        function stripCommentsFromExternalDecl(extDecl::Option, stripAnn::Bool, stripCmt::Bool)::Option
+        function stripCommentsFromExternalDecl(extDecl::Option{SCode.ExternalDecl}, stripAnn::Bool, stripCmt::Bool)::Option{SCode.ExternalDecl}
 
 
               local ext_decl::SCode.ExternalDecl
@@ -6504,57 +6505,57 @@
 
               () = begin
                 @match eq begin
-                  SCode.EEquation.EQ_IF(__)  => begin
+                  SCode.EQ_IF(__)  => begin
                       eq.thenBranch = list(list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in branch) for branch in eq.thenBranch)
                       eq.elseBranch = list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in eq.elseBranch)
                       eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
                     ()
                   end
 
-                  SCode.EEquation.EQ_EQUALS(__)  => begin
+                  SCode.EQ_EQUALS(__)  => begin
                       eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
                     ()
                   end
 
-                  SCode.EEquation.EQ_PDE(__)  => begin
+                  SCode.EQ_PDE(__)  => begin
                       eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
                     ()
                   end
 
-                  SCode.EEquation.EQ_CONNECT(__)  => begin
+                  SCode.EQ_CONNECT(__)  => begin
                       eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
                     ()
                   end
 
-                  SCode.EEquation.EQ_FOR(__)  => begin
+                  SCode.EQ_FOR(__)  => begin
                       eq.eEquationLst = list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in eq.eEquationLst)
                       eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
                     ()
                   end
 
-                  SCode.EEquation.EQ_WHEN(__)  => begin
+                  SCode.EQ_WHEN(__)  => begin
                       eq.eEquationLst = list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in eq.eEquationLst)
                       eq.elseBranches = list(stripCommentsFromWhenEqBranch(b, stripAnn, stripCmt) for b in eq.elseBranches)
                       eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
                     ()
                   end
 
-                  SCode.EEquation.EQ_ASSERT(__)  => begin
+                  SCode.EQ_ASSERT(__)  => begin
                       eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
                     ()
                   end
 
-                  SCode.EEquation.EQ_TERMINATE(__)  => begin
+                  SCode.EQ_TERMINATE(__)  => begin
                       eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
                     ()
                   end
 
-                  SCode.EEquation.EQ_REINIT(__)  => begin
+                  SCode.EQ_REINIT(__)  => begin
                       eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
                     ()
                   end
 
-                  SCode.EEquation.EQ_NORETCALL(__)  => begin
+                  SCode.EQ_NORETCALL(__)  => begin
                       eq.comment = stripCommentsFromComment(eq.comment, stripAnn, stripCmt)
                     ()
                   end
@@ -6563,11 +6564,11 @@
           eq
         end
 
-        function stripCommentsFromWhenEqBranch(branch::Tuple, stripAnn::Bool, stripCmt::Bool)::Tuple
+        function stripCommentsFromWhenEqBranch(branch::Tuple{Absyn.Exp, List{SCode.EEquation}}, stripAnn::Bool, stripCmt::Bool)::Tuple{Absyn.Exp, List{SCode.EEquation}}
 
 
               local cond::Absyn.Exp
-              local body::IList
+              local body::List{SCode.EEquation}
 
               (cond, body) = branch
               body = list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in body)
@@ -6587,12 +6588,12 @@
 
               () = begin
                 @match stmt begin
-                  SCode.Statement.ALG_ASSIGN(__)  => begin
+                  SCode.ALG_ASSIGN(__)  => begin
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
                     ()
                   end
 
-                  SCode.Statement.ALG_IF(__)  => begin
+                  SCode.ALG_IF(__)  => begin
                       stmt.trueBranch = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.trueBranch)
                       stmt.elseIfBranch = list(stripCommentsFromStatementBranch(b, stripAnn, stripCmt) for b in stmt.elseIfBranch)
                       stmt.elseBranch = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.elseBranch)
@@ -6600,25 +6601,25 @@
                     ()
                   end
 
-                  SCode.Statement.ALG_FOR(__)  => begin
+                  SCode.ALG_FOR(__)  => begin
                       stmt.forBody = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.forBody)
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
                     ()
                   end
 
-                  SCode.Statement.ALG_PARFOR(__)  => begin
+                  SCode.ALG_PARFOR(__)  => begin
                       stmt.parforBody = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.parforBody)
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
                     ()
                   end
 
-                  SCode.Statement.ALG_WHILE(__)  => begin
+                  SCode.ALG_WHILE(__)  => begin
                       stmt.whileBody = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.whileBody)
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
                     ()
                   end
 
-                  SCode.Statement.ALG_WHEN_A(__)  => begin
+                  SCode.ALG_WHEN_A(__)  => begin
                       stmt.branches = list(stripCommentsFromStatementBranch(b, stripAnn, stripCmt) for b in stmt.branches)
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
                     ()
@@ -6629,44 +6630,44 @@
                     ()
                   end
 
-                  SCode.Statement.ALG_TERMINATE(__)  => begin
+                  SCode.ALG_TERMINATE(__)  => begin
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
                     ()
                   end
 
-                  SCode.Statement.ALG_REINIT(__)  => begin
+                  SCode.ALG_REINIT(__)  => begin
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
                     ()
                   end
 
-                  SCode.Statement.ALG_NORETCALL(__)  => begin
+                  SCode.ALG_NORETCALL(__)  => begin
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
                     ()
                   end
 
-                  SCode.Statement.ALG_RETURN(__)  => begin
+                  SCode.ALG_RETURN(__)  => begin
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
                     ()
                   end
 
-                  SCode.Statement.ALG_BREAK(__)  => begin
+                  SCode.ALG_BREAK(__)  => begin
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
                     ()
                   end
 
-                  SCode.Statement.ALG_FAILURE(__)  => begin
+                  SCode.ALG_FAILURE(__)  => begin
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
                     ()
                   end
 
-                  SCode.Statement.ALG_TRY(__)  => begin
+                  SCode.ALG_TRY(__)  => begin
                       stmt.body = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.body)
                       stmt.elseBody = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.elseBody)
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
                     ()
                   end
 
-                  SCode.Statement.ALG_CONTINUE(__)  => begin
+                  SCode.ALG_CONTINUE(__)  => begin
                       stmt.comment = stripCommentsFromComment(stmt.comment, stripAnn, stripCmt)
                     ()
                   end
@@ -6675,11 +6676,11 @@
           stmt
         end
 
-        function stripCommentsFromStatementBranch(branch::Tuple, stripAnn::Bool, stripCmt::Bool)::Tuple
+        function stripCommentsFromStatementBranch(branch::Tuple{Absyn.Exp, List{SCode.Statement}}, stripAnn::Bool, stripCmt::Bool)::Tuple{Absyn.Exp, List{SCode.Statement}}
 
 
               local cond::Absyn.Exp
-              local body::IList
+              local body::List{SCode.Statement}
 
               (cond, body) = branch
               body = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in body)

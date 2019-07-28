@@ -36,25 +36,25 @@
          *
          */ =#
 
-        function initialize(fileSuffix::String = "")::Option
-              local zmqSocket::Option
+        function initialize(fileSuffix::String = "")::Option{ModelicaInteger}
+              local zmqSocket::Option{ModelicaInteger}
 
             #= Defined in the runtime =#
           zmqSocket
         end
 
-        function handleRequest(zmqSocket::Option)::String
+        function handleRequest(zmqSocket::Option{ModelicaInteger})::String
               local request::String
 
             #= Defined in the runtime =#
           request
         end
 
-        function sendReply(zmqSocket::Option, reply::String)
+        function sendReply(zmqSocket::Option{ModelicaInteger}, reply::String)
             #= Defined in the runtime =#
         end
 
-        function close(zmqSocket::Option)
+        function close(zmqSocket::Option{ModelicaInteger})
             #= Defined in the runtime =#
         end
 
