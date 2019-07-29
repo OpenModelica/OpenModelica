@@ -25,7 +25,7 @@ match program
       let ix = tmpTick()
       let res = dumpClass(&preText, cls, options)
       let &preText += 'tmp<%ix%> = <%res%><%\n%>'
-      'tmp<%ix%>, ')
+      'tmp<%ix%>' ; separator = ", ")
     <<
     PROGRAM(list(<%cls_str%>), <%within_str%>)<%\n%>
     >>
