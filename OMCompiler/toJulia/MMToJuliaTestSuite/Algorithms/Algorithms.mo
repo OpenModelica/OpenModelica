@@ -74,6 +74,27 @@ algorithm
   complexNumbers := arrayList(A);
 end createTestArray2;
 
+function split
+  input array<Complex> A;
+  input Integer start;
+  input Integer stop;
+protected
+  array<Complex> tmp;
+  Integer middle;
+algorithm
+  middle := intDiv(stop - start,2);
+  tmp := arrayCreate(middle+1,COMPLEX(0,0));
+  for i in 1:middle loop
+    arrayUpdate(tmp,i,arrayGet(A,start + i * 2));
+  end for;
+  for i in 1:middle loop
+    arrayUpdate(A,start + i,arrayGet(A,start + i * 2 - 1));
+  end for;
+  for i in 1:middle loop
+    arrayUpdate(A,start + i + middle,arrayGet(tmp,i));
+  end for;
+end split;
+
 function FFT
   input array<Complex> A;
   input Integer start;
