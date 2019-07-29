@@ -918,6 +918,14 @@ package System
     input String inString;
     output String outString;
   end trimWhitespace;
+
+  function tmpTick
+    output Integer tickNo;
+  end tmpTick;
+
+  function tmpTickReset
+    input Integer start;
+  end tmpTickReset;
 end System;
 
 package Tpl
@@ -939,6 +947,5 @@ package Flags
     output Boolean outValue;
   end getConfigBool;
 end Flags;
-
 
 end AbsynDumpTV;
