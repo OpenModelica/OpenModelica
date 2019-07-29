@@ -1047,8 +1047,11 @@ public function escapeModelicaStringToJLString
   input String modelicaString;
   output String cString;
 algorithm
-  // C cannot handle newline in string constants
-  cString := System.stringReplace(modelicaString, "$", "\\$");
+  //TODO. Do this the proper way. We just remove all the dollars for now
+  cString := System.stringReplace(modelicaString, "$", "");
+  cString := System.stringReplace(cString, "\"", "");
+  cString := System.stringReplace(cString, "\"", "");
+  cString := System.stringReplace(cString, "\"\"", "");
   cString := System.escapedString(cString,true);
 end escapeModelicaStringToJLString;
 

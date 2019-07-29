@@ -881,6 +881,11 @@ function escapeModelicaStringToCString
   output String cString;
 end escapeModelicaStringToCString;
 
+function escapeModelicaStringToJLString
+  input String modelicaString;
+  output String cString;
+end escapeModelicaStringToJLString;
+
 end Util;
 
 package Config

@@ -1014,7 +1014,7 @@ template dumpNamedArgPattern2(Absyn.NamedArg narg)
 ::=
 match narg
   case NAMEDARG(__) then
-    '<%argName%>'
+    "<%argName%>"
 end dumpNamedArgPattern2;
 
 

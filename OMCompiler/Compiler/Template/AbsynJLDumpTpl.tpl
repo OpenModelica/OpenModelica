@@ -10,6 +10,9 @@ template dump(Absyn.Program program)
   let &preText = buffer ""
   let res = dump2(&preText, program, defaultDumpOptions)
   <<
+  using Absyn
+  using MetaModelica
+
   <%preText%>
   <%res%>
   >>
@@ -69,17 +72,17 @@ match cdef
   case DERIVED(__) then
     let attr_str = dumpElementAttr(&preText, attributes)
     let ty_str = dumpTypeSpec(&preText, typeSpec)
-    let arg_str = '(<%(arguments |> arg => dumpElementArg(&preText, arg) ;separator=", ")%>)'
+    let arg_str = '<%(arguments |> arg => dumpElementArg(&preText, arg) ;separator=", ")%>'
     let cmt_str = dumpCommentOpt(&preText, comment)
     'DERIVED(<%ty_str%>, <%attr_str%>, list(<%arg_str%>), <%cmt_str%>)'
   case CLASS_EXTENDS(__) then
     let body_str = (parts |> class_part hasindex idx =>
       dumpClassPart(&preText, class_part, options) ;separator=", ")
     let mod_str = if modifications then
-      '(<%(modifications |> mod => dumpElementArg(&preText, mod) ;separator=", ")%>)'
+      '<%(modifications |> mod => dumpElementArg(&preText, mod) ;separator=", ")%>'
     let cmt_str = dumpStringCommentOption(comment)
     let ann_str = (listReverse(ann) |> a => dumpAnnotation(&preText, a) ;separator=", ")
-    'CLASS_EXTENDS(<%baseClassName%>, list(<%mod_str%>), <%cmt_str%>, list(<%body_str%>), list(<%ann_str%>))'
+    'CLASS_EXTENDS("<%baseClassName%>", list(<%mod_str%>), <%cmt_str%>, list(<%body_str%>), list(<%ann_str%>))'
   case ENUMERATION(__) then
     let enum_str = dumpEnumDef(&preText, enumLiterals)
     let cmt_str = dumpCommentOpt(&preText, comment)
@@ -105,7 +108,7 @@ template dumpEnumLiteral(Text &preText, Absyn.EnumLiteral lit)
 match lit
   case ENUMLITERAL(__) then
     let cmt_str = dumpCommentOpt(&preText, comment)
-    'ENUMLITERAL(<%literal%>, <%cmt_str%>)'
+    'ENUMLITERAL("<%literal%>", <%cmt_str%>)'
 end dumpEnumLiteral;
 
 
@@ -172,8 +175,8 @@ match class_part
     let ann_str = match annotation_ case SOME(ann) then 'SOME(<%dumpAnnotation(&preText, ann)%>)' else 'NONE()'
     match externalDecl
       case EXTERNALDECL(__) then
-        let fn_str = match funcName case SOME(fn) then 'SOME(<%fn%>)' else 'NONE()'
-        let lang_str = match lang case SOME(l) then 'SOME(1)' else 'NONE()'
+        let fn_str = match funcName case SOME(fn) then 'SOME("<%fn%>")' else 'NONE()'
+        let lang_str = match lang case SOME(l) then 'SOME("<%l%>")' else 'NONE()'
         let output_str = match output_ case SOME(o) then 'SOME(<%dumpCref(&preText, o)%>)' else 'NONE()'
         let args_str = (args |> arg => dumpExp(&preText,  arg) ;separator=", ")
         let ann2_str = dumpAnnotationOptSpace(&preText, annotation_)
@@ -207,7 +210,7 @@ template dumpAnnotationOpt(Text &preText, Option<Absyn.Annotation> oann)
 end dumpAnnotationOpt;
 
 template dumpAnnotationOptSpace(Text &preText, Option<Absyn.Annotation> oann)
-::= match oann case SOME(ann) then 'SOME(dumpAnnotation(&preText, ann))' else 'NONE()'
+::= match oann case SOME(ann) then 'SOME(<%dumpAnnotation(&preText, ann)%>)' else 'NONE()'
 end dumpAnnotationOptSpace;
 
 template dumpComment(Text &preText, Absyn.Comment cmt)
@@ -235,7 +238,7 @@ match earg
     let each_str = dumpEach(eachPrefix)
     let final_str = dumpFinal(finalPrefix)
     let redecl_str = dumpRedeclare(redeclareKeywords)
-    let elem_str = dumpElementSpec(&preText, elementSpec, final_str, "", "", "", defaultDumpOptions)
+    let elem_str = dumpElementSpec(&preText, elementSpec, defaultDumpOptions)
     let cc_str = match constrainClass case SOME(cc) then 'SOME(<%dumpConstrainClass(&preText, cc)%>)' else 'NONE()'
     let info_str = dumpInfo(info)
     'REDECLARATION(<%final_str%>, <%redecl_str%>, <%each_str%>, <%elem_str%>, <%cc_str%>, <%info_str%>)'
@@ -253,6 +256,7 @@ template dumpRedeclare(Absyn.RedeclareKeywords redecl)
 ::=
 match redecl
   case REDECLARE() then "REDECLARE()"
+  case REPLACEABLE then "REPLACEABLE()"
   case REDECLARE_REPLACEABLE() then "REDECLARE_REPLACEABLE()"
 end dumpRedeclare;
 
@@ -291,8 +295,7 @@ template dumpEqMod(Text &preText, Absyn.EqMod eqmod)
     "NOMOD()"
 end dumpEqMod;
 
-template dumpElementSpec(Text &preText, Absyn.ElementSpec elem, String final, String redecl,
-    String repl, String io, DumpOptions options)
+template dumpElementSpec(Text &preText, Absyn.ElementSpec elem, DumpOptions options)
 ::=
 match elem
   case CLASSDEF(__) then
@@ -367,11 +370,9 @@ end dumpElementAttrDim;
 template dumpConstrainClass(Text &preText, Absyn.ConstrainClass cc)
 ::=
 match cc
-  case CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path = p, elementArg = el)) then
-    let path_str = dumpPath(p)
-    let el_str = if el then '(<%(el |> e => dumpElementArg(&preText, e) ;separator=", ")%>)'
+  case CONSTRAINCLASS(__) then
     let cmt_str = dumpCommentOpt(&preText, comment)
-    'CONSTRAINCLASS(<%path_str%>, list(<%el_str%>), <%cmt_str%>)'
+    'CONSTRAINCLASS(<%dumpElementSpec(&preText, elementSpec, defaultDumpOptions)%>, <%cmt_str%>)'
 end dumpConstrainClass;
 
 template dumpComponentItem(Text &preText, Absyn.ComponentItem comp)
@@ -392,7 +393,7 @@ match comp
   case COMPONENT(__) then
     let dim_str = dumpSubscripts(&preText, arrayDim)
     let mod_str = match modification case SOME(mod) then 'SOME(<%dumpModification(&preText, mod)%>)' else 'NONE()'
-    'COMPONENT("<%Util.escapeModelicaStringToCString(name)%>", <%dim_str%>, <%mod_str%>)'
+    'COMPONENT("<%Util.escapeModelicaStringToJLString(name)%>", <%dim_str%>, <%mod_str%>)'
 end dumpComponent;
 
 template dumpComponentCondition(Text &preText, Option<Absyn.ComponentCondition> cond)
@@ -402,8 +403,8 @@ end dumpComponentCondition;
 template dumpImport(Absyn.Import imp)
 ::=
 match imp
-  case NAMED_IMPORT(__) then 'NAMED_IMPORT("<%Util.escapeModelicaStringToCString(name)%>", <%dumpPath(path)%>)'
-  case QUAL_IMPORT(__) then 'QUAL_IMPORT(dumpPath(path))'
+  case NAMED_IMPORT(__) then 'NAMED_IMPORT("<%Util.escapeModelicaStringToJLString(name)%>", <%dumpPath(path)%>)'
+  case QUAL_IMPORT(__) then 'QUAL_IMPORT(<%dumpPath(path)%>)'
   case UNQUAL_IMPORT(__) then 'UNQUAL_IMPORT(<%dumpPath(path)%>)'
   case GROUP_IMPORT(__) then
     let prefix_str = dumpPath(prefix)
@@ -414,15 +415,15 @@ end dumpImport;
 template dumpGroupImport(Absyn.GroupImport gimp)
 ::=
 match gimp
-  case GROUP_IMPORT_NAME(__) then 'GROUP_IMPORT_NAME("<%Util.escapeModelicaStringToCString(name)%>")'
-  case GROUP_IMPORT_RENAME(__) then 'GROUP_IMPORT_RENAME("<%Util.escapeModelicaStringToCString(rename)%>", "<%Util.escapeModelicaStringToCString(name)%>")'
+  case GROUP_IMPORT_NAME(__) then 'GROUP_IMPORT_NAME("<%Util.escapeModelicaStringToJLString(name)%>")'
+  case GROUP_IMPORT_RENAME(__) then 'GROUP_IMPORT_RENAME("<%Util.escapeModelicaStringToJLString(rename)%>", "<%Util.escapeModelicaStringToJLString(name)%>")'
 end dumpGroupImport;
 
 template dumpElementItem(Text &preText, Absyn.ElementItem eitem, DumpOptions options)
 ::=
 match eitem
   case ELEMENTITEM(__) then 'ELEMENTITEM(<%dumpElement(&preText, element, options)%>)'
-  case LEXER_COMMENT(__) then 'LEXER_COMMENT("<%System.trimWhitespace(comment)%>")'
+  case LEXER_COMMENT(__) then 'LEXER_COMMENT("<%Util.escapeModelicaStringToJLString(System.trimWhitespace(comment))%>")'
 end dumpElementItem;
 
 template dumpElement(Text &preText, Absyn.Element elem, DumpOptions options)
@@ -434,13 +435,13 @@ match elem
     let redecl_str = match redeclareKeywords case SOME(re) then 'SOME(<%dumpRedeclare(re)%>)' else 'NONE()'
     let repl_str = match redeclareKeywords case SOME(re) then 'SOME(<%dumpReplaceable(re)%>)' else 'NONE()'
     let io_str = dumpInnerOuter(innerOuter)
-    let ec_str = dumpElementSpec(&preText, specification, final_str, redecl_str, repl_str, io_str, options)
+    let ec_str = dumpElementSpec(&preText, specification, options)
     let cc_str = match constrainClass case SOME(cc) then 'SOME(<%dumpConstrainClass(&preText, cc)%>)' else 'NONE()'
     let info_str = dumpInfo(info)
     'ELEMENT(<%finalPrefix%>, <%redecl_str%>, <%io_str%>, <%ec_str%>, <%info_str%>, <%cc_str%>)'
   case DEFINEUNIT(__) then
     let args_str = if args then '<%(args |> arg => dumpNamedArg(&preText, arg))%>'
-    'DEFINEUNIT("<%Util.escapeModelicaStringToCString(name)%>", list(<%args_str%>))'
+    'DEFINEUNIT("<%Util.escapeModelicaStringToJLString(name)%>", list(<%args_str%>))'
   case TEXT(__) then
     if boolUnparseFileFromInfo(info, options) then
     let name_str = match optName case SOME(name) then 'SOME(name)' else 'NONE()'
@@ -457,7 +458,7 @@ match eq
     let cmt_str = dumpCommentOpt(&preText, comment)
     let info_str = dumpInfo(info)
     'EQUATIONITEM(<%eq_str%>, <%cmt_str%>, <%info_str%>)'
-  case EQUATIONITEMCOMMENT(__) then 'EQUATIONITEMCOMMENT("<%System.trimWhitespace(comment)%>")'
+  case EQUATIONITEMCOMMENT(__) then 'EQUATIONITEMCOMMENT("<%Util.escapeModelicaStringToJLString(System.trimWhitespace(comment))%>")'
 end dumpEquationItem;
 
 template dumpEquationItems(Text &preText, list<Absyn.EquationItem> eql)
@@ -490,7 +491,7 @@ match eq
   case EQ_FOR(__) then
     let iter_str = dumpForIterators(&preText, iterators)
     let body_str = dumpEquationItems(&preText, forEquations)
-    'EQ_FOR(<%iter_str%>, list(<%body_str%>))'
+    'EQ_FOR(list(<%iter_str%>), list(<%body_str%>))'
   case EQ_WHEN_E(__) then
     let when_str = dumpExp(&preText, whenExp)
     let elsewhen_eqs_str = (elseWhenEquations |> (c, b) =>
@@ -536,28 +537,28 @@ match alg
     let if_str = dumpExp(&preText, ifExp)
     let true_branch = dumpAlgorithmItems(&preText, trueBranch)
     let else_if_alg_branch = (elseIfAlgorithmBranch |> (c, b) =>
-        '(<%dumpExp(&preText, c)%>, list(<%dumpAlgorithmItems(&preText, b)%>))' ;separator=", ")
+        '(<%dumpExp(&preText, c)%>, <%dumpAlgorithmItems(&preText, b)%>)' ;separator=", ")
     let else_branch_str = dumpAlgorithmItems(&preText, elseBranch)
     let else_branch = dumpAlgorithmItems(&preText, elseBranch)
       'ALG_IF(<%if_str%>, <%true_branch%>, list(<%else_if_alg_branch%>), <%else_branch%>)'
   case ALG_FOR(__) then
     let iter_str = dumpForIterators(&preText, iterators)
     let body_str = dumpAlgorithmItems(&preText, forBody)
-    'ALG_FOR(<%iter_str%>, <%body_str%>)'
+    'ALG_FOR(list(<%iter_str%>), <%body_str%>)'
   case ALG_PARFOR(__) then
     let iter_str = dumpForIterators(&preText, iterators)
     let body_str = dumpAlgorithmItems(&preText, parforBody)
-    'ALG_PARFOR(<%iter_str%>, <%body_str%>)'
+    'ALG_PARFOR(list(<%iter_str%>), <%body_str%>)'
   case ALG_WHILE(__) then
     'ALG_WHILE(<%dumpExp(&preText, boolExpr)%>, <%dumpAlgorithmItems(&preText, whileBody)%>)'
   case ALG_WHEN_A(__) then
     let ewab = (elseWhenAlgorithmBranch |> (c, b) =>
-        '(<%dumpExp(&preText, c)%>, list(<%dumpAlgorithmItems(&preText, b)%>))' ;separator=", ")
-    'ALG_WHEN_A(<%dumpExp(&preText, boolExpr)%>, <%dumpAlgorithmItems(&preText, whenBody)%>, <%ewab%>)'
+        '(<%dumpExp(&preText, c)%>, <%dumpAlgorithmItems(&preText, b)%>)' ;separator=", ")
+    'ALG_WHEN_A(<%dumpExp(&preText, boolExpr)%>, <%dumpAlgorithmItems(&preText, whenBody)%>, list(<%ewab%>))'
   case ALG_NORETCALL(__) then
     let name_str = dumpCref(&preText, functionCall)
     let args_str = dumpFunctionArgs(&preText, functionArgs)
-    'ALG_NORETCALL("<%name_str%>", <%args_str%>)'
+    'ALG_NORETCALL(<%name_str%>, <%args_str%>)'
   case ALG_RETURN(__) then 'ALG_RETURN()'
   case ALG_BREAK(__) then 'ALG_BREAK()'
   case ALG_FAILURE(__) then
@@ -574,11 +575,11 @@ match path
     'FULLYQUALIFIED(<%dumpPath(path)%>)'
   case QUALIFIED(__) then
     if (Flags.getConfigBool(Flags.MODELICA_OUTPUT)) then
-    'QUALIFIED("<%Util.escapeModelicaStringToCString(name)%>", <%dumpPath(path)%>)'
+    'QUALIFIED("<%Util.escapeModelicaStringToJLString(name)%>", <%dumpPath(path)%>)'
     else
-    'IDENT("<%Util.escapeModelicaStringToCString(name)%>")'
+    'IDENT("<%Util.escapeModelicaStringToJLString(name)%>")'
   case IDENT(__) then
-    'IDENT("<%Util.escapeModelicaStringToCString(name)%>")'
+    'IDENT("<%Util.escapeModelicaStringToJLString(name)%>")'
   else
     errorMsg("SCodeDump.dumpPath: Unknown path.")
 end dumpPath;
@@ -632,9 +633,9 @@ template dumpExp(Text &preText, Absyn.Exp exp)
 ::=
 match exp
   case INTEGER(__) then 'INTEGER(<%value%>)'
-  case REAL(__) then 'REAL("<%value%>q")'
+  case REAL(__) then 'REAL("<%value%>")'
   case CREF(__) then 'CREF(<%dumpCref(&preText, componentRef)%>)'
-  case STRING(__) then 'STRING("<%Util.escapeModelicaStringToCString(value)%>")'
+  case STRING(__) then 'STRING("<%Util.escapeModelicaStringToJLString(value)%>")'
   case BOOL(__) then 'BOOL(<%value%>)'
   case e as BINARY(__) then
     let lhs_str = dumpOperand(&preText, exp1, e, true)
@@ -662,7 +663,7 @@ match exp
   case IFEXP(__) then dumpIfExp(&preText, exp)
   case CALL(function_=Absyn.CREF_IDENT(name="$array")) then
     let args_str = dumpFunctionArgs(&preText, functionArgs)
-    'CALL(CREF_IDENT("<%Util.escapeModelicaStringToCString("array")%>") ,list(<%args_str%>))'
+    'CALL(CREF_IDENT("<%Util.escapeModelicaStringToJLString("array")%>", list()) ,<%args_str%>)'
   case CALL(__) then
     let func_str = dumpCref(&preText, function_)
     let args_str = dumpFunctionArgs(&preText, functionArgs)
@@ -742,7 +743,7 @@ end dumpElseIfExp;
 template dumpCodeNode(Text &preText, Absyn.CodeNode code)
 ::=
 match code
-  case C_TYPENAME(__) then 'C_TYPENAME(dumpPath(path))'
+  case C_TYPENAME(__) then 'C_TYPENAME(<%dumpPath(path)%>)'
   case C_VARIABLENAME(__) then 'C_VARIABLENAME(dumpCref(componentRef))'
   case C_CONSTRAINTSECTION(__) then
     let initial_str = if boolean then "true" else "false"
@@ -851,8 +852,8 @@ end dumpOperator;
 template dumpCref(Text &preText, Absyn.ComponentRef cref)
 ::=
 match cref
-  case CREF_QUAL(__) then 'CREF_QUAL("<%Util.escapeModelicaStringToCString(name)%>", <%dumpSubscripts(&preText, subscripts)%>, <%dumpCref(&preText, componentRef)%>)'
-  case CREF_IDENT(__) then 'CREF_IDENT("<%Util.escapeModelicaStringToCString(name)%>", <%dumpSubscripts(&preText, subscripts)%>)'
+  case CREF_QUAL(__) then 'CREF_QUAL("<%Util.escapeModelicaStringToJLString(name)%>", <%dumpSubscripts(&preText, subscripts)%>, <%dumpCref(&preText, componentRef)%>)'
+  case CREF_IDENT(__) then 'CREF_IDENT("<%Util.escapeModelicaStringToJLString(name)%>", <%dumpSubscripts(&preText, subscripts)%>)'
   case CREF_FULLYQUALIFIED(__) then 'CREF_FULLYQUALIFIED(<%dumpCref(&preText, componentRef)%>)'
   case WILD(__) then if Config.acceptMetaModelicaGrammar() then "WILD()" else "WILD()"
   case ALLWILD(__) then 'ALLWILD()'
@@ -869,11 +870,11 @@ match args
     let exp_str = dumpExp(&preText, exp)
     let iter_str = (iterators |> i => dumpForIterator(&preText, i) ;separator=", ")
     let iter_type_str = match iterType case THREAD() then "THREAD()" else "COMBINE()"
-    'FOR_ITER_FARG(<%exp_str%>, <%iter_type_str%>,<%iter_str%>)'
+    'FOR_ITER_FARG(<%exp_str%>, <%iter_type_str%>, list(<%iter_str%>))'
 end dumpFunctionArgs;
 
 template dumpNamedArg(Text &preText, Absyn.NamedArg narg)
-::= match narg case NAMEDARG(__) then 'NAMEDARG(<%argName%>, <%dumpExp(&preText, argValue)%>)'
+::= match narg case NAMEDARG(__) then 'NAMEDARG("<%argName%>", <%dumpExp(&preText, argValue)%>)'
 end dumpNamedArg;
 
 template dumpForIterators(Text &preText, Absyn.ForIterators iters)
@@ -885,7 +886,7 @@ template dumpForIterator(Text &preText, Absyn.ForIterator iterator)
 match iterator case ITERATOR(__) then
   let ge = match guardExp case SOME(x) then 'SOME(<%dumpExp(&preText, x)%>)' else 'NONE()'
   let re = match range case SOME(x) then 'SOME(<%dumpExp(&preText, x)%>)' else 'NONE()'
-  'ITERATOR("<%Util.escapeModelicaStringToCString(name)%>", <%ge%>, <%re%>)'
+  'ITERATOR("<%Util.escapeModelicaStringToJLString(name)%>", <%ge%>, <%re%>)'
 end dumpForIterator;
 
 template errorMsg(String errMessage)
