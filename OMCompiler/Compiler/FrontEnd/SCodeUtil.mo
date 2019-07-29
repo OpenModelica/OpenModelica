@@ -39,6 +39,7 @@ import SCode;
 
 protected
 import Absyn;
+import AbsynUtil;
 import Error;
 import List;
 import Util;

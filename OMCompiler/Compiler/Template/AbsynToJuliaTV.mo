@@ -1161,6 +1161,15 @@ end isClassdef;
   end complexIsCref;
 end AbsynUtil;
 
+package Util
+
+function escapeModelicaStringToJLString
+  input String modelicaString;
+  output String cString;
+end escapeModelicaStringToJLString;
+
+end Util;
+
 package AbsynToSCode
   function translateAbsyn2SCode
     input Absyn.Program inProgram;

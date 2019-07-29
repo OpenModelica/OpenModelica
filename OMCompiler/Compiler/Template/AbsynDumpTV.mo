@@ -874,6 +874,15 @@ package AbsynUtil
   end isClassdef;
 end AbsynUtil;
 
+package Util
+
+function escapeModelicaStringToCString
+  input String modelicaString;
+  output String cString;
+end escapeModelicaStringToCString;
+
+end Util;
+
 package Config
   function acceptMetaModelicaGrammar
     output Boolean outBoolean;

@@ -779,8 +779,8 @@ match path
       case "Real" then 'ModelicaReal'
       case "Integer" then 'ModelicaInteger'
       case "Boolean" then 'Bool'
-      case "list" then 'IList'
-      case "array" then 'MArray'
+      case "list" then 'List'
+      case "array" then 'Array'
       case "tuple" then 'Tuple'
       case "polymorphic" then 'Any'
       else '<%name%>'
@@ -817,7 +817,7 @@ match typeSpec
     let path_str = dumpPathJL(path)
     let ty_str = (typeSpecs |> ty => dumpTypeSpec(ty, context) ;separator=", ")
     let arraydim_str = dumpArrayDimOpt(arrayDim, context)
-    '<%path_str%><%arraydim_str%>'
+    '<%path_str%>{<%ty_str%>}<%arraydim_str%>'
 end dumpTypeSpec;
 
 template dumpArrayDimOptTypeSpec(Option<Absyn.ArrayDim> arraydim, Context context)
@@ -857,7 +857,7 @@ match exp
   case INTEGER(__) then value
   case REAL(__) then value
   case CREF(__) then dumpCref(componentRef, context)
-  case STRING(__) then ('"<%value; absIndent=0%>"')
+  case STRING(__) then ("<%Util.escapeModelicaStringToJLString(value)%>")
   case BOOL(__) then value
   case e as BINARY(__) then
     let lhs_str = dumpOperand(exp1, e, true, context)

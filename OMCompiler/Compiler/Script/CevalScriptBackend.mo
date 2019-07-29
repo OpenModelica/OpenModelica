@@ -39,6 +39,7 @@ encapsulated package CevalScriptBackend
 // public imports
 import Absyn;
 import AbsynUtil;
+import AbsynJLDumpTpl;
 import BackendDAE;
 import Ceval;
 import DAE;
@@ -3095,6 +3096,11 @@ algorithm
     case (cache,_,"toJulia",{},_)
       algorithm
         str := Tpl.tplString(AbsynToJulia.dumpProgram, SymbolTable.getAbsyn());
+      then (cache,Values.STRING(str));
+
+    case (cache,_,"interactiveDumpAbsynToJL",{},_)
+      algorithm
+        str := Tpl.tplString(AbsynJLDumpTpl.dump, SymbolTable.getAbsyn());
       then (cache,Values.STRING(str));
 
     case (cache,_,"relocateFunctions",_,_)

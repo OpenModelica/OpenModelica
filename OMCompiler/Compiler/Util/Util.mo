@@ -1043,6 +1043,15 @@ algorithm
   cString := System.escapedString(modelicaString,true);
 end escapeModelicaStringToCString;
 
+public function escapeModelicaStringToJLString
+  input String modelicaString;
+  output String cString;
+algorithm
+  // C cannot handle newline in string constants
+  cString := System.stringReplace(modelicaString, "$", "\\$");
+  cString := System.escapedString(cString,true);
+end escapeModelicaStringToJLString;
+
 public function escapeModelicaStringToXmlString
   input String modelicaString;
   output String xmlString;

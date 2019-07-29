@@ -34,6 +34,54 @@ protected
 import List;
 import Absyn;
 import AbsynUtil;
+import Util;
+import DoubleEndedList;
+import Global;
+
+
+function createGenericTypes
+  input String ty;
+protected
+  DoubleEndedList<String> genericTypes = DoubleEndedList.fromList({});
+algorithm
+  setGlobalRoot(Global.MMToJLListIndex, SOME(genericTypes));
+end createGenericTypes;
+
+function addGenericType
+  input String ty;
+protected
+  DoubleEndedList<String> genericTypes;
+algorithm
+  genericTypes := getGlobalRoot(Global.MMToJLListIndex);
+  DoubleEndedList.push_back(genericTypes, ty);
+end addGenericType;
+
+function clearGenericTypes
+protected
+  DoubleEndedList<String> genericTypes;
+algorithm
+  genericTypes := getGlobalRoot(Global.MMToJLListIndex);
+  {} := DoubleEndedList.toListAndClear(genericTypes);
+end clearGenericTypes;
+
+function isGenericType
+  input String str;
+  output Boolean b = false;
+protected
+  list<String> tmpLst;
+  DoubleEndedList<String> genericTypes;
+algorithm
+  genericTypes := getGlobalRoot(Global.MMToJLListIndex);
+  tmpLst := DoubleEndedList.toListNoCopyNoClear(genericTypes);
+  for i in tmpLst loop
+    if i == str then
+      b := true;
+      break;
+    end if;
+  end for;
+  genericTypes := DoubleEndedList.fromList(tmpLst);
+end isGenericType;
+
 public
 uniontype Context
 
@@ -131,7 +179,6 @@ function makeBDirection
 algorithm
   direction := Absyn.BIDIR();
 end makeBDirection;
-
 
 function isFunctionContext
   input Context givenCTX;
