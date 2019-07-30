@@ -168,6 +168,7 @@ public constant Integer METAMODELICA = 2;
 public constant Integer PARMODELICA = 3;
 public constant Integer OPTIMICA = 4;
 public constant Integer PDEMODELICA = 5;
+constant Util.TranslatableContent collapseArrayExpressionsText = Util.gettext("Simplifies {x[1],x[2],x[3]} → x for arrays of whole variable references (simplifies code generation).");
 
 // DEBUG FLAGS
 public
@@ -1255,8 +1256,6 @@ constant ConfigFlag MATRIX_FORMAT = CONFIG_FLAG(75, "matrixFormat",
 constant ConfigFlag PARTLINTORN = CONFIG_FLAG(76, "partlintorn",
   NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
   Util.gettext("Sets the limit for partitionin of linear torn systems."));
-
-constant Util.TranslatableContent collapseArrayExpressionsText = Util.gettext("Simplifies {x[1],x[2],x[3]} → x for arrays of whole variable references (simplifies code generation).");
 
 constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(77, "initOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({

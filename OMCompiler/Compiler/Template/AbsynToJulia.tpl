@@ -101,7 +101,13 @@ match class
     let enc_str = if encapsulatedPrefix then "" /*Should we use a macro here?*/ else ""
     let partial_str = if partialPrefix then "abstract" else ""
     let class_type_str = dumpClassType(restriction)
-    let cdef_str1 = dumpClassDef(parts, packageContext, options)
+    let cdef_str1 = match restriction
+      case R_PACKAGE(__) then
+        dumpClassDef(parts, packageContext, options)
+      case R_RECORD(__) then
+        dumpClassDef(parts, makeUniontypeContext(""), options)
+      else
+       dumpClassDef(parts, context, options)
     let forwardDeclarations = dumpSCodeElements(AbsynToSCode.translateClassdefElements(parts.classParts))
     let inform  = if forwardDeclarations then
                     '#= Necessary to write declarations for your uniontypes until Julia adds support for mutually recursive types =#'
@@ -803,9 +809,7 @@ end dumpTypeSpecOpt;
 
 template dumpTypeSpec(Absyn.TypeSpec typeSpec, Context context)
 "
-  Dumps the type specification. We currently ignore complex types.
-  Possible to implement by declaring unique T for each parameter T1, T2,T3 and so on
-  might not be needed. I hope :(
+  Dumps the type specification
 "
 ::=
 match typeSpec
@@ -820,10 +824,11 @@ match typeSpec
     /* For input context/Function context we use special Julia syntax to allow covariance (ML style typing) */
     let isFunc = match context
                    case FUNCTION(__) then "func"
-                   case INPUT_CONTEXT(__) then "func"
+                   case INPUT_CONTEXT(__) then "iofunc"
+                   case PACKAGE(__) then "PACKAGE"
                    else ""
    if isFunc then
-     '<%path_str%>{<:<%ty_str%>}<%arraydim_str%>'
+     '<%path_str%>{<:<%ty_str%>}<%arraydim_str%> #=The context is <%isFunc%>=#'
    else
      '<%path_str%>{<%ty_str%>}<%arraydim_str%>'
 end dumpTypeSpec;
