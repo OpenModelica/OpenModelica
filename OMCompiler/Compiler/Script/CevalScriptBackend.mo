@@ -3399,7 +3399,7 @@ algorithm
       list<String> libs;
       String file_dir, fileNamePrefix;
       Absyn.Program p;
-      Flags.Flags flags;
+      Flags.Flag flags;
       String commandLineOptions;
       list<String> args;
       Boolean haveAnnotation;
@@ -3461,7 +3461,7 @@ algorithm
       list<String> libs;
       String file_dir, fileNamePrefix;
       Absyn.Program p;
-      Flags.Flags flags;
+      Flags.Flag flags;
       String commandLineOptions;
       list<String> args;
       Boolean haveAnnotation;

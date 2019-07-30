@@ -138,7 +138,7 @@ public uniontype FlagVisibility
   record EXTERNAL "An external flag that is visible to the user." end EXTERNAL;
 end FlagVisibility;
 
-public uniontype Flags
+public uniontype Flag
   "The structure which stores the flags."
   record FLAGS
     array<Boolean> debugFlags;
@@ -146,7 +146,7 @@ public uniontype Flags
   end FLAGS;
 
   record NO_FLAGS end NO_FLAGS;
-end Flags;
+end Flag;
 
 public uniontype ValidOptions
   "Specifies valid options for a flag."
@@ -1646,7 +1646,7 @@ end new;
 
 public function saveFlags
   "Saves the flags with setGlobalRoot."
-  input Flags inFlags;
+  input Flag inFlags;
 algorithm
   setGlobalRoot(Global.flagsIndex, inFlags);
 end saveFlags;
@@ -1669,7 +1669,7 @@ public function loadFlags
   "Loads the flags with getGlobalRoot. Creates a new flags structure if it
    hasn't been created yet."
   input Boolean initialize = true;
-  output Flags flags;
+  output Flag flags;
 protected
   array<Boolean> debug_flags;
   array<FlagData> config_flags;
@@ -1691,7 +1691,7 @@ end loadFlags;
 
 public function backupFlags
   "Creates a copy of the existing flags."
-  output Flags outFlags;
+  output Flag outFlags;
 protected
   array<Boolean> debug_flags;
   array<FlagData> config_flags;
@@ -1768,7 +1768,7 @@ public function set
 protected
   array<Boolean> debug_flags;
   array<FlagData> config_flags;
-  Flags flags;
+  Flag flags;
 algorithm
   FLAGS(debug_flags, config_flags) := loadFlags();
   (debug_flags, outOldValue) := updateDebugFlagArray(debug_flags, inValue, inFlag);
@@ -1781,7 +1781,7 @@ public function isSet
   output Boolean outValue;
 protected
   array<Boolean> debug_flags;
-  Flags flags;
+  Flag flags;
   Integer index;
 algorithm
   DEBUG_FLAG(index = index) := inFlag;
@@ -1842,7 +1842,7 @@ public function readArgs
   input list<String> inArgs;
   output list<String> outArgs = {};
 protected
-  Flags flags;
+  Flag flags;
   Integer numError;
   String arg;
   list<String> rest_args = inArgs;
@@ -1873,7 +1873,7 @@ protected function readArg
   "Reads a single command line argument. Returns true if the argument was not
   consumed, otherwise false."
   input String inArg;
-  input Flags inFlags;
+  input Flag inFlags;
   output Boolean outConsumed;
 protected
   String flagtype;
@@ -1926,7 +1926,7 @@ end readArg;
 protected function parseFlag
   "Parses a single flag."
   input String inFlag;
-  input Flags inFlags;
+  input Flag inFlags;
   input String inFlagPrefix = "";
 protected
   String flag;
@@ -1941,7 +1941,7 @@ protected function parseConfigFlag
   "Tries to look up the flag with the given name, and set it to the given value."
   input String inFlag;
   input list<String> inValues;
-  input Flags inFlags;
+  input Flag inFlags;
   input String inFlagPrefix;
 protected
   ConfigFlag config_flag;
@@ -2001,7 +2001,7 @@ protected function evaluateConfigFlag
   "Evaluates a given flag and it's arguments."
   input ConfigFlag inFlag;
   input list<String> inValues;
-  input Flags inFlags;
+  input Flag inFlags;
 algorithm
   _ := match(inFlag, inFlags)
     local
@@ -2364,7 +2364,7 @@ public function setConfigValue
 protected
   array<Boolean> debug_flags;
   array<FlagData> config_flags;
-  Flags flags;
+  Flag flags;
 algorithm
   flags := loadFlags();
   FLAGS(debug_flags, config_flags) := flags;
@@ -2430,7 +2430,7 @@ public function getConfigValue
 protected
   array<FlagData> config_flags;
   Integer index;
-  Flags flags;
+  Flag flags;
   String name;
 algorithm
   CONFIG_FLAG(name = name, index = index) := inFlag;
@@ -3122,7 +3122,7 @@ function unparseFlags
    values that differ from the default. The format of each string is flag=value."
   output list<String> flagStrings = {};
 protected
-  Flags flags;
+  Flag flags;
   array<Boolean> debug_flags;
   array<FlagData> config_flags;
   String name;
