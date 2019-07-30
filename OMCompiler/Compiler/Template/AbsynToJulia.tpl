@@ -817,7 +817,15 @@ match typeSpec
     let path_str = dumpPathJL(path)
     let ty_str = (typeSpecs |> ty => dumpTypeSpec(ty, context) ;separator=", ")
     let arraydim_str = dumpArrayDimOpt(arrayDim, context)
-    '<%path_str%>{<%ty_str%>}<%arraydim_str%>'
+    /* For input context/Function context we use special Julia syntax to allow covariance (ML style typing) */
+    let isFunc = match context
+                   case FUNCTION(__) then "func"
+                   case INPUT_CONTEXT(__) then "func"
+                   else ""
+   if isFunc then
+     '<%path_str%>{<:<%ty_str%>}<%arraydim_str%>'
+   else
+     '<%path_str%>{<%ty_str%>}<%arraydim_str%>'
 end dumpTypeSpec;
 
 template dumpArrayDimOptTypeSpec(Option<Absyn.ArrayDim> arraydim, Context context)
@@ -857,7 +865,7 @@ match exp
   case INTEGER(__) then value
   case REAL(__) then value
   case CREF(__) then dumpCref(componentRef, context)
-  case STRING(__) then ("<%Util.escapeModelicaStringToJLString(value)%>")
+  case STRING(__) then '"<%Util.escapeModelicaStringToJLString(value)%>"'
   case BOOL(__) then value
   case e as BINARY(__) then
     let lhs_str = dumpOperand(exp1, e, true, context)
@@ -952,7 +960,7 @@ match exp
   case INTEGER(__) then value
   case REAL(__) then value
   case CREF(__) then dumpCref(componentRef, functionContext /*Only occurs in fc*/)
-  case STRING(__) then ('"<%stringReplace(value,"$","\\$"); absIndent=0%>"')
+  case STRING(__) then ('"<%stringReplace(value,"\$","\\$"); absIndent=0%>"')
   case BOOL(__) then value
   case ARRAY(arrayExp=exps)
   case LIST(__)
