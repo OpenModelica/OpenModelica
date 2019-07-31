@@ -473,6 +473,9 @@ template daeExpBinary(Exp exp1, Operator op, Exp exp2, Exp origExp)
   case GREATEREQ(__) then '(<%daeExp(exp1)%>)>=(<%daeExp(exp2)%>)'
   case LESS(__) then '(<%daeExp(exp1)%>)<(<%daeExp(exp2)%>)'
 
+  case EQUAL(__) then '(<%daeExp(exp1)%>)==(<%daeExp(exp2)%>)'
+  case NEQUAL(__) then '(<%daeExp(exp1)%>)!=(<%daeExp(exp2)%>)'
+
   else error(sourceInfo(), 'daeExpBinary: Not supporting operator? <%ExpressionDumpTpl.dumpExp(origExp,"\"")%>')
 end daeExpBinary;
 
