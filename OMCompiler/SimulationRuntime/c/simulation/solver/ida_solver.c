@@ -421,6 +421,16 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
       warningStreamPrint(LOG_STDOUT, 1, "Symbolic Jacobians are currently not supported by DAE Mode. Switch back to numerical Jacobian!");
       idaData->jacobianMethod = COLOREDNUMJAC;
     }
+    if(idaData->jacobianMethod == SYMJAC)
+    {
+      warningStreamPrint(LOG_STDOUT, 1, "Symbolic Jacobians without coloring are currently not supported by IDA. Colored symbolical Jacobian will be used.");
+      idaData->jacobianMethod = COLOREDSYMJAC;
+    }
+    if(idaData->jacobianMethod == NUMJAC)
+    {
+      warningStreamPrint(LOG_STDOUT, 1, "Numerical Jacobians without coloring are currently not supported by IDA. Colored numerical Jacobian will be used.");
+      idaData->jacobianMethod = COLOREDNUMJAC;
+    }
     if(idaData->jacobianMethod == JAC_UNKNOWN)
     {
       if (ACTIVE_WARNING_STREAM(LOG_SOLVER))
