@@ -46,7 +46,7 @@
          #= printing with newline. =#
         function traceln(str::String)
               Print.printErrorBuf(str)
-              Print.printErrorBuf("\n")
+              Print.printErrorBuf("\\n")
         end
 
     #= So that we can use wildcard imports and named imports when they do occur. Not good Julia practice =#

@@ -838,19 +838,14 @@
          #= Because list() requires escape-sequences to be in the AST, we need to be
         able to unescape them in some places of the code. =#
         function escapedString(unescapedString::String, unescapeNewline::Bool)::String
-              local escapedString::String
-
-            #= Defined in the runtime =#
-          escapedString
+          unescapedString
         end
 
          #= Because list() requires escape-sequences to be in the AST, we need to be
         able to unescape them in some places of the code. =#
         function unescapedString(escapedString::String)::String
               local unescapedString::String
-
-            #= Defined in the runtime =#
-          unescapedString
+          escapedString
         end
 
          #= Calculates the C string length of the input, if the input was used as a string

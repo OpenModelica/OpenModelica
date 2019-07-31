@@ -167,7 +167,7 @@
         end
 
          #= Helper function to getElementNamed. =#
-        function getElementNamedFromElts(inIdent::SCode.Ident, inElementLst::List{SCode.Element})::SCode.Element
+        function getElementNamedFromElts(inIdent::SCode.Ident, inElementLst::List{<:Union{<:SCode.Element, Nil{Any}}})::SCode.Element
               local outElement::SCode.Element
 
               outElement = begin
@@ -368,7 +368,7 @@
         end
 
          #= Helper function to componentNames. =#
-        function componentNamesFromElts(inElements::List{SCode.Element})::List{String}
+        function componentNamesFromElts(inElements::List{<:Union{<:SCode.Element, Nil{Any}}})::List{String}
               local outComponentNames::List{String}
 
               outComponentNames = ListUtil.filterMap(inElements, componentName)
@@ -452,7 +452,7 @@
         end
 
          #= Gets all elements that have an element name from the list =#
-        function elementNames(elts::List{SCode.Element})::List{String}
+        function elementNames(elts::List{<:Union{<:SCode.Element, Nil{Any}}})::List{String}
               local names::List{String}
 
               names = ListUtil.fold(elts, elementNamesWork, list())
@@ -460,7 +460,7 @@
         end
 
          #= Gets all elements that have an element name from the list =#
-        function elementNamesWork(e::SCode.Element, acc::List{String})::List{String}
+        function elementNamesWork(e::SCode.Element, acc::List{<:Union{<:String, Nil{Any}}})::List{String}
               local out::List{String}
 
               out = begin
@@ -1058,7 +1058,7 @@
         end
 
          #= Returns true if two Option<ArrayDim> are equal =#
-        function arraydimOptEqual(adopt1::Option{Absyn.ArrayDim}, adopt2::Option{Absyn.ArrayDim})::Bool
+        function arraydimOptEqual(adopt1::Option{<:Absyn.ArrayDim}, adopt2::Option{<:Absyn.ArrayDim})::Bool
               local equal::Bool
 
               equal = begin
@@ -1320,7 +1320,7 @@
 
          #= Author BZ
          Helper function for equationEqual2, does compare list<list<equation>> (else ifs in ifequations.) =#
-        function equationEqual22(inTb1::List{List{SCode.EEquation}}, inTb2::List{List{SCode.EEquation}})::Bool
+        function equationEqual22(inTb1::List{<:Union{<:List{<:Union{<:SCode.EEquation, Nil{Any}}}, Nil{Any}}}, inTb2::List{<:Union{<:List{<:Union{<:SCode.EEquation, Nil{Any}}}, Nil{Any}}})::Bool
               local bOut::Bool
 
               bOut = begin
@@ -1406,7 +1406,7 @@
         end
 
          #= Return true if two subModifier lists are equal =#
-        function subModsEqual(inSubModLst1::List{SCode.SubMod}, inSubModLst2::List{SCode.SubMod})::Bool
+        function subModsEqual(inSubModLst1::List{<:Union{<:SCode.SubMod, Nil{Any}}}, inSubModLst2::List{<:Union{<:SCode.SubMod, Nil{Any}}})::Bool
               local equal::Bool
 
               equal = begin
@@ -1439,7 +1439,7 @@
         end
 
          #= Returns true if two subscript lists are equal =#
-        function subscriptsEqual(inSs1::List{SCode.Subscript}, inSs2::List{SCode.Subscript})::Bool
+        function subscriptsEqual(inSs1::List{<:Union{<:SCode.Subscript, Nil{Any}}}, inSs2::List{<:Union{<:SCode.Subscript, Nil{Any}}})::Bool
               local equal::Bool
 
               equal = begin
@@ -1706,28 +1706,28 @@
           outCl
         end
 
-        function findIteratorIndexedCrefsInEEquations(inEqs::List{SCode.EEquation}, inIterator::String, inCrefs::List{AbsynUtil.IteratorIndexedCref} = list())::List{AbsynUtil.IteratorIndexedCref}
+        function findIteratorIndexedCrefsInEEquations(inEqs::List{<:Union{<:SCode.EEquation, Nil{Any}}}, inIterator::String, inCrefs::List{<:Union{<:AbsynUtil.IteratorIndexedCref, Nil{Any}}} = list())::List{AbsynUtil.IteratorIndexedCref}
               local outCrefs::List{AbsynUtil.IteratorIndexedCref}
 
               outCrefs = ListUtil.fold1(inEqs, findIteratorIndexedCrefsInEEquation, inIterator, inCrefs)
           outCrefs
         end
 
-        function findIteratorIndexedCrefsInEEquation(inEq::SCode.EEquation, inIterator::String, inCrefs::List{AbsynUtil.IteratorIndexedCref} = list())::List{AbsynUtil.IteratorIndexedCref}
+        function findIteratorIndexedCrefsInEEquation(inEq::SCode.EEquation, inIterator::String, inCrefs::List{<:Union{<:AbsynUtil.IteratorIndexedCref, Nil{Any}}} = list())::List{AbsynUtil.IteratorIndexedCref}
               local outCrefs::List{AbsynUtil.IteratorIndexedCref}
 
               outCrefs = foldEEquationsExps(inEq, (inIterator) -> AbsynUtil.findIteratorIndexedCrefs(inIterator = inIterator), inCrefs)
           outCrefs
         end
 
-        function findIteratorIndexedCrefsInStatements(inStatements::List{SCode.Statement}, inIterator::String, inCrefs::List{AbsynUtil.IteratorIndexedCref} = list())::List{AbsynUtil.IteratorIndexedCref}
+        function findIteratorIndexedCrefsInStatements(inStatements::List{<:Union{<:SCode.Statement, Nil{Any}}}, inIterator::String, inCrefs::List{<:Union{<:AbsynUtil.IteratorIndexedCref, Nil{Any}}} = list())::List{AbsynUtil.IteratorIndexedCref}
               local outCrefs::List{AbsynUtil.IteratorIndexedCref}
 
               outCrefs = ListUtil.fold1(inStatements, findIteratorIndexedCrefsInStatement, inIterator, inCrefs)
           outCrefs
         end
 
-        function findIteratorIndexedCrefsInStatement(inStatement::SCode.Statement, inIterator::String, inCrefs::List{AbsynUtil.IteratorIndexedCref} = list())::List{AbsynUtil.IteratorIndexedCref}
+        function findIteratorIndexedCrefsInStatement(inStatement::SCode.Statement, inIterator::String, inCrefs::List{<:Union{<:AbsynUtil.IteratorIndexedCref, Nil{Any}}} = list())::List{AbsynUtil.IteratorIndexedCref}
               local outCrefs::List{AbsynUtil.IteratorIndexedCref}
 
               outCrefs = foldStatementsExps(inStatement, (inIterator) -> AbsynUtil.findIteratorIndexedCrefs(inIterator = inIterator), inCrefs)
@@ -1735,7 +1735,7 @@
         end
 
          #= Filters out the components from the given list of elements, as well as their names. =#
-        function filterComponents(inElements::List{SCode.Element})::Tuple{List{SCode.Element}, List{String}}
+        function filterComponents(inElements::List{<:Union{<:SCode.Element, Nil{Any}}})::Tuple{List{SCode.Element}, List{String}}
               local outComponentNames::List{String}
               local outComponents::List{SCode.Element}
 
@@ -2324,7 +2324,7 @@
 
          #= Traverses a list of SCode.EEquations, calling traverseEEquations on each SCode.EEquation
           in the list. =#
-        function traverseEEquationsList(inEEquations::List{SCode.EEquation}, inTuple::Tuple{TraverseFunc, Argument})::Tuple{List{SCode.EEquation}, Tuple{TraverseFunc, Argument}}
+        function traverseEEquationsList(inEEquations::List{<:Union{<:SCode.EEquation, Nil{Any}}}, inTuple::Tuple{<:TraverseFunc, Argument})::Tuple{List{SCode.EEquation}, Tuple{TraverseFunc, Argument}}
               local outTuple::Tuple{TraverseFunc, Argument}
               local outEEquations::List{SCode.EEquation}
 
@@ -2334,7 +2334,7 @@
 
          #= Traverses an SCode.EEquation. For each SCode.EEquation it finds it calls the given
           function with the SCode.EEquation and an extra argument which is passed along. =#
-        function traverseEEquations(inEEquation::SCode.EEquation, inTuple::Tuple{TraverseFunc, Argument})::Tuple{SCode.EEquation, Tuple{TraverseFunc, Argument}}
+        function traverseEEquations(inEEquation::SCode.EEquation, inTuple::Tuple{<:TraverseFunc, Argument})::Tuple{SCode.EEquation, Tuple{TraverseFunc, Argument}}
               local outTuple::Tuple{TraverseFunc, Argument}
               local outEEquation::SCode.EEquation
 
@@ -2349,7 +2349,7 @@
         end
 
          #= Helper function to traverseEEquations, does the actual traversing. =#
-        function traverseEEquations2(inEEquation::SCode.EEquation, inTuple::Tuple{TraverseFunc, Argument})::Tuple{SCode.EEquation, Tuple{TraverseFunc, Argument}}
+        function traverseEEquations2(inEEquation::SCode.EEquation, inTuple::Tuple{<:TraverseFunc, Argument})::Tuple{SCode.EEquation, Tuple{TraverseFunc, Argument}}
               local outTuple::Tuple{TraverseFunc, Argument}
               local outEEquation::SCode.EEquation
 
@@ -2393,7 +2393,7 @@
 
          #= Traverses all SCode.EEquations in an else when branch, calling the given function
           on each SCode.EEquation. =#
-        function traverseElseWhenEEquations(inElseWhen::Tuple{Absyn.Exp, List{SCode.EEquation}}, inTuple::Tuple{TraverseFunc, Argument})::Tuple{Tuple{Absyn.Exp, List{SCode.EEquation}}, Tuple{TraverseFunc, Argument}}
+        function traverseElseWhenEEquations(inElseWhen::Tuple{<:Absyn.Exp, List{<:Union{<:SCode.EEquation, Nil{Any}}}}, inTuple::Tuple{<:TraverseFunc, Argument})::Tuple{Tuple{Absyn.Exp, List{SCode.EEquation}}, Tuple{TraverseFunc, Argument}}
               local outTuple::Tuple{TraverseFunc, Argument}
               local outElseWhen::Tuple{Absyn.Exp, List{SCode.EEquation}}
 
@@ -2408,7 +2408,7 @@
 
          #= Traverses a list of SCode.EEquations, calling the given function on each Absyn.Exp
           it encounters. =#
-        function traverseEEquationListExps(inEEquations::List{SCode.EEquation}, traverser::TraverseFunc, inArg::Argument)::Tuple{List{SCode.EEquation}, Argument}
+        function traverseEEquationListExps(inEEquations::List{<:Union{<:SCode.EEquation, Nil{Any}}}, traverser::TraverseFunc, inArg::Argument)::Tuple{List{SCode.EEquation}, Argument}
               local outArg::Argument
               local outEEquations::List{SCode.EEquation}
 
@@ -2568,7 +2568,7 @@
 
          #= Traverses the expressions in an else when branch, and calls the given
           function on the expressions. =#
-        function traverseElseWhenExps(inElseWhen::Tuple{Absyn.Exp, List{SCode.EEquation}}, traverser::TraverseFunc, inArg::Argument)::Tuple{Tuple{Absyn.Exp, List{SCode.EEquation}}, Argument}
+        function traverseElseWhenExps(inElseWhen::Tuple{<:Absyn.Exp, List{<:Union{<:SCode.EEquation, Nil{Any}}}}, traverser::TraverseFunc, inArg::Argument)::Tuple{Tuple{Absyn.Exp, List{SCode.EEquation}}, Argument}
               local outArg::Argument
               local outElseWhen::Tuple{Absyn.Exp, List{SCode.EEquation}}
 
@@ -2583,7 +2583,7 @@
 
          #= Calls the given function on the value expression associated with a named
           function argument. =#
-        function traverseNamedArgExps(inArg::Absyn.NamedArg, inTuple::Tuple{TraverseFunc, Argument})::Tuple{Absyn.NamedArg, Tuple{TraverseFunc, Argument}}
+        function traverseNamedArgExps(inArg::Absyn.NamedArg, inTuple::Tuple{<:TraverseFunc, Argument})::Tuple{Absyn.NamedArg, Tuple{TraverseFunc, Argument}}
               local outTuple::Tuple{TraverseFunc, Argument}
               local outArg::Absyn.NamedArg
 
@@ -2637,7 +2637,7 @@
         end
 
          #= Calls traverseStatement on each statement in the given list. =#
-        function traverseStatementsList(inStatements::List{SCode.Statement}, inTuple::Tuple{TraverseFunc, Argument})::Tuple{List{SCode.Statement}, Tuple{TraverseFunc, Argument}}
+        function traverseStatementsList(inStatements::List{<:Union{<:SCode.Statement, Nil{Any}}}, inTuple::Tuple{<:TraverseFunc, Argument})::Tuple{List{SCode.Statement}, Tuple{TraverseFunc, Argument}}
               local outTuple::Tuple{TraverseFunc, Argument}
               local outStatements::List{SCode.Statement}
 
@@ -2648,7 +2648,7 @@
          #= Traverses all statements in the given statement in a top-down approach where
           the given function is applied to each statement found, beginning with the given
           statement. =#
-        function traverseStatements(inStatement::SCode.Statement, inTuple::Tuple{TraverseFunc, Argument})::Tuple{SCode.Statement, Tuple{TraverseFunc, Argument}}
+        function traverseStatements(inStatement::SCode.Statement, inTuple::Tuple{<:TraverseFunc, Argument})::Tuple{SCode.Statement, Tuple{TraverseFunc, Argument}}
               local outTuple::Tuple{TraverseFunc, Argument}
               local outStatement::SCode.Statement
 
@@ -2664,7 +2664,7 @@
 
          #= Helper function to traverseStatements. Goes through each statement contained
           in the given statement and calls traverseStatements on them. =#
-        function traverseStatements2(inStatement::SCode.Statement, inTuple::Tuple{TraverseFunc, Argument})::Tuple{SCode.Statement, Tuple{TraverseFunc, Argument}}
+        function traverseStatements2(inStatement::SCode.Statement, inTuple::Tuple{<:TraverseFunc, Argument})::Tuple{SCode.Statement, Tuple{TraverseFunc, Argument}}
               local outTuple::Tuple{TraverseFunc, Argument}
               local outStatement::SCode.Statement
 
@@ -2723,7 +2723,7 @@
 
          #= Helper function to traverseStatements2. Calls traverseStatement each
           statement in a given branch. =#
-        function traverseBranchStatements(inBranch::Tuple{Absyn.Exp, List{SCode.Statement}}, inTuple::Tuple{TraverseFunc, Argument})::Tuple{Tuple{Absyn.Exp, List{SCode.Statement}}, Tuple{TraverseFunc, Argument}}
+        function traverseBranchStatements(inBranch::Tuple{<:Absyn.Exp, List{<:Union{<:SCode.Statement, Nil{Any}}}}, inTuple::Tuple{<:TraverseFunc, Argument})::Tuple{Tuple{Absyn.Exp, List{SCode.Statement}}, Tuple{TraverseFunc, Argument}}
               local outTuple::Tuple{TraverseFunc, Argument}
               local outBranch::Tuple{Absyn.Exp, List{SCode.Statement}}
 
@@ -2738,7 +2738,7 @@
 
          #= Traverses a list of statements and calls the given function on each
           expression found. =#
-        function traverseStatementListExps(inStatements::List{SCode.Statement}, inFunc::TraverseFunc, inArg::Argument)::Tuple{List{SCode.Statement}, Argument}
+        function traverseStatementListExps(inStatements::List{<:Union{<:SCode.Statement, Nil{Any}}}, inFunc::TraverseFunc, inArg::Argument)::Tuple{List{SCode.Statement}, Argument}
               local outArg::Argument
               local outStatements::List{SCode.Statement}
 
@@ -2832,7 +2832,7 @@
         end
 
          #= Calls the given function on each expression found in an if or when branch. =#
-        function traverseBranchExps(inBranch::Tuple{Absyn.Exp, List{SCode.Statement}}, traverser::TraverseFunc, inArg::Argument)::Tuple{Tuple{Absyn.Exp, List{SCode.Statement}}, Argument}
+        function traverseBranchExps(inBranch::Tuple{<:Absyn.Exp, List{<:Union{<:SCode.Statement, Nil{Any}}}}, traverser::TraverseFunc, inArg::Argument)::Tuple{Tuple{Absyn.Exp, List{SCode.Statement}}, Argument}
               local outArg::Argument
               local outBranch::Tuple{Absyn.Exp, List{SCode.Statement}}
 
@@ -2931,9 +2931,9 @@
           cl
         end
 
-         knownExternalCFunctions = list("sin", "cos", "tan", "asin", "acos", "atan", "atan2", "sinh", "cosh", "tanh", "exp", "log", "log10", "sqrt")::List{String}
+         knownExternalCFunctions = list("sin", "cos", "tan", "asin", "acos", "atan", "atan2", "sinh", "cosh", "tanh", "exp", "log", "log10", "sqrt")::List
 
-        function isBuiltinFunction(cl::SCode.Element, inVars::List{String}, outVars::List{String})::String
+        function isBuiltinFunction(cl::SCode.Element, inVars::List{<:Union{<:String, Nil{Any}}}, outVars::List{<:Union{<:String, Nil{Any}}})::String
               local name::String
 
               name = begin
@@ -3340,7 +3340,7 @@
           outOptConstrainClass
         end
 
-        function boolReplaceable(inBoolReplaceable::Bool, inOptConstrainClass::Option{SCode.ConstrainClass})::SCode.Replaceable
+        function boolReplaceable(inBoolReplaceable::Bool, inOptConstrainClass::Option{<:SCode.ConstrainClass})::SCode.Replaceable
               local outReplaceable::SCode.Replaceable
 
               outReplaceable = begin
@@ -3350,7 +3350,7 @@
                   end
 
                   (false, SOME(_))  => begin
-                      print("Ignoring constraint class because replaceable prefix is not present!\n")
+                      print("Ignoring constraint class because replaceable prefix is not present!\\n")
                     SCode.NOT_REPLACEABLE()
                   end
 
@@ -3621,7 +3621,7 @@
          #= @author: adrpo
          Function that is used with Derived classes,
          merge the derived Attributes with the optional Attributes returned from ~instClass~. =#
-        function mergeAttributes(ele::SCode.Attributes, oEle::Option{SCode.Attributes})::Option{SCode.Attributes}
+        function mergeAttributes(ele::SCode.Attributes, oEle::Option{<:SCode.Attributes})::Option{SCode.Attributes}
               local outoEle::Option{SCode.Attributes}
 
               outoEle = begin
@@ -4084,7 +4084,7 @@
         end
 
          #= check if the named annotation is present and has value true =#
-        function optCommentHasBooleanNamedAnnotation(comm::Option{SCode.Comment}, annotationName::String)::Bool
+        function optCommentHasBooleanNamedAnnotation(comm::Option{<:SCode.Comment}, annotationName::String)::Bool
               local outB::Bool
 
               outB = begin
@@ -4156,7 +4156,7 @@
          #= @author: adrpo
          returns true if annotation(Evaluate = true) is present,
          otherwise false =#
-        function getEvaluateAnnotation(inCommentOpt::Option{SCode.Comment})::Bool
+        function getEvaluateAnnotation(inCommentOpt::Option{<:SCode.Comment})::Bool
               local evalIsTrue::Bool
 
               evalIsTrue = begin
@@ -4926,7 +4926,7 @@
 
          #= @author:
          returns true if equations contains reinit =#
-        function equationsContainReinit(inEqs::List{SCode.EEquation})::Bool
+        function equationsContainReinit(inEqs::List{<:Union{<:SCode.EEquation, Nil{Any}}})::Bool
               local hasReinit::Bool
 
               hasReinit = begin
@@ -4984,7 +4984,7 @@
 
          #= @author:
          returns true if statements contains reinit =#
-        function algorithmsContainReinit(inAlgs::List{SCode.Statement})::Bool
+        function algorithmsContainReinit(inAlgs::List{<:Union{<:SCode.Statement, Nil{Any}}})::Bool
               local hasReinit::Bool
 
               hasReinit = begin
@@ -5208,7 +5208,7 @@
           outIsBuiltin
         end
 
-        function partitionElements(inElements::List{SCode.Element})::Tuple{List{SCode.Element}, List{SCode.Element}, List{SCode.Element}, List{SCode.Element}, List{SCode.Element}}
+        function partitionElements(inElements::List{<:Union{<:SCode.Element, Nil{Any}}})::Tuple{List{SCode.Element}, List{SCode.Element}, List{SCode.Element}, List{SCode.Element}, List{SCode.Element}}
               local outDefineUnits::List{SCode.Element}
               local outImports::List{SCode.Element}
               local outExtends::List{SCode.Element}
@@ -5219,7 +5219,7 @@
           (outComponents, outClasses, outExtends, outImports, outDefineUnits)
         end
 
-        function partitionElements2(inElements::List{SCode.Element}, inComponents::List{SCode.Element}, inClasses::List{SCode.Element}, inExtends::List{SCode.Element}, inImports::List{SCode.Element}, inDefineUnits::List{SCode.Element})::Tuple{List{SCode.Element}, List{SCode.Element}, List{SCode.Element}, List{SCode.Element}, List{SCode.Element}}
+        function partitionElements2(inElements::List{<:Union{<:SCode.Element, Nil{Any}}}, inComponents::List{<:Union{<:SCode.Element, Nil{Any}}}, inClasses::List{<:Union{<:SCode.Element, Nil{Any}}}, inExtends::List{<:Union{<:SCode.Element, Nil{Any}}}, inImports::List{<:Union{<:SCode.Element, Nil{Any}}}, inDefineUnits::List{<:Union{<:SCode.Element, Nil{Any}}})::Tuple{List{SCode.Element}, List{SCode.Element}, List{SCode.Element}, List{SCode.Element}, List{SCode.Element}}
               local outDefineUnits::List{SCode.Element}
               local outImports::List{SCode.Element}
               local outExtends::List{SCode.Element}
@@ -5423,7 +5423,7 @@
         end
 
          #= Removes the annotation from a comment. =#
-        function stripAnnotationFromComment(inComment::Option{SCode.Comment})::Option{SCode.Comment}
+        function stripAnnotationFromComment(inComment::Option{<:SCode.Comment})::Option{SCode.Comment}
               local outComment::Option{SCode.Comment}
 
               outComment = begin
@@ -5627,7 +5627,7 @@
           outMod
         end
 
-        function mergeBindings(inNew::Option{Absyn.Exp}, inOld::Option{Absyn.Exp})::Option{Absyn.Exp}
+        function mergeBindings(inNew::Option{<:Absyn.Exp}, inOld::Option{<:Absyn.Exp})::Option{Absyn.Exp}
               local outBnd::Option{Absyn.Exp}
 
               outBnd = begin
@@ -5644,7 +5644,7 @@
           outBnd
         end
 
-        function mergeSubMods(inNew::List{SCode.SubMod}, inOld::List{SCode.SubMod})::List{SCode.SubMod}
+        function mergeSubMods(inNew::List{<:Union{<:SCode.SubMod, Nil{Any}}}, inOld::List{<:Union{<:SCode.SubMod, Nil{Any}}})::List{SCode.SubMod}
               local outSubs::List{SCode.SubMod}
 
               outSubs = begin
@@ -5671,7 +5671,7 @@
           outSubs
         end
 
-        function removeSub(inSub::SCode.SubMod, inOld::List{SCode.SubMod})::List{SCode.SubMod}
+        function removeSub(inSub::SCode.SubMod, inOld::List{<:Union{<:SCode.SubMod, Nil{Any}}})::List{SCode.SubMod}
               local outSubs::List{SCode.SubMod}
 
               outSubs = begin
@@ -6031,7 +6031,7 @@
          #= Returns true if the element list fulfills the condition of an External Object.
         An external object extends the builtinClass ExternalObject, and has two local
         functions, destructor and constructor.  =#
-        function isExternalObject(els::List{SCode.Element})::Bool
+        function isExternalObject(els::List{<:Union{<:SCode.Element, Nil{Any}}})::Bool
               local res::Bool
 
               res = begin
@@ -6053,7 +6053,7 @@
         end
 
          #= returns true if element list contains 'extends ExternalObject;' =#
-        function hasExtendsOfExternalObject(inEls::List{SCode.Element})::Bool
+        function hasExtendsOfExternalObject(inEls::List{<:Union{<:SCode.Element, Nil{Any}}})::Bool
               local res::Bool
 
               res = begin
@@ -6077,7 +6077,7 @@
         end
 
          #= returns true if element list contains 'function destructor .. end destructor' =#
-        function hasExternalObjectDestructor(inEls::List{SCode.Element})::Bool
+        function hasExternalObjectDestructor(inEls::List{<:Union{<:SCode.Element, Nil{Any}}})::Bool
               local res::Bool
 
               res = begin
@@ -6100,7 +6100,7 @@
         end
 
          #= returns true if element list contains 'function constructor ... end constructor' =#
-        function hasExternalObjectConstructor(inEls::List{SCode.Element})::Bool
+        function hasExternalObjectConstructor(inEls::List{<:Union{<:SCode.Element, Nil{Any}}})::Bool
               local res::Bool
 
               res = begin
@@ -6123,7 +6123,7 @@
         end
 
          #= returns the class 'function destructor .. end destructor' from element list =#
-        function getExternalObjectDestructor(inEls::List{SCode.Element})::SCode.Element
+        function getExternalObjectDestructor(inEls::List{<:Union{<:SCode.Element, Nil{Any}}})::SCode.Element
               local cl::SCode.Element
 
               cl = begin
@@ -6142,7 +6142,7 @@
         end
 
          #= returns the class 'function constructor ... end constructor' from element list =#
-        function getExternalObjectConstructor(inEls::List{SCode.Element})::SCode.Element
+        function getExternalObjectConstructor(inEls::List{<:Union{<:SCode.Element, Nil{Any}}})::SCode.Element
               local cl::SCode.Element
 
               cl = begin
@@ -6480,7 +6480,7 @@
           cmt
         end
 
-        function stripCommentsFromExternalDecl(extDecl::Option{SCode.ExternalDecl}, stripAnn::Bool, stripCmt::Bool)::Option{SCode.ExternalDecl}
+        function stripCommentsFromExternalDecl(extDecl::Option{<:SCode.ExternalDecl}, stripAnn::Bool, stripCmt::Bool)::Option{SCode.ExternalDecl}
 
 
               local ext_decl::SCode.ExternalDecl
@@ -6564,7 +6564,7 @@
           eq
         end
 
-        function stripCommentsFromWhenEqBranch(branch::Tuple{Absyn.Exp, List{SCode.EEquation}}, stripAnn::Bool, stripCmt::Bool)::Tuple{Absyn.Exp, List{SCode.EEquation}}
+        function stripCommentsFromWhenEqBranch(branch::Tuple{<:Absyn.Exp, List{<:Union{<:SCode.EEquation, Nil{Any}}}}, stripAnn::Bool, stripCmt::Bool)::Tuple{Absyn.Exp, List{SCode.EEquation}}
 
 
               local cond::Absyn.Exp
@@ -6676,7 +6676,7 @@
           stmt
         end
 
-        function stripCommentsFromStatementBranch(branch::Tuple{Absyn.Exp, List{SCode.Statement}}, stripAnn::Bool, stripCmt::Bool)::Tuple{Absyn.Exp, List{SCode.Statement}}
+        function stripCommentsFromStatementBranch(branch::Tuple{<:Absyn.Exp, List{<:Union{<:SCode.Statement, Nil{Any}}}}, stripAnn::Bool, stripCmt::Bool)::Tuple{Absyn.Exp, List{SCode.Statement}}
 
 
               local cond::Absyn.Exp

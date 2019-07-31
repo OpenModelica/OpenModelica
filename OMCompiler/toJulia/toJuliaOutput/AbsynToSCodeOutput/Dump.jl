@@ -121,21 +121,21 @@
               printExp(exp)
               str = Print.getString()
               print(str)
-              print("--------------------\n")
+              print("--------------------\\n")
         end
 
          #= Prints a program, i.e. the whole AST, to the Print buffer. =#
         function dump(inProgram::Absyn.Program)
               _ = begin
-                  local cs::IList
+                  local cs::List{<:Absyn.Class}
                   local w::Absyn.Within
                 @match inProgram begin
                   Absyn.PROGRAM(classes = cs, within_ = w)  => begin
-                      Print.printBuf("Absyn.PROGRAM([\n")
+                      Print.printBuf("Absyn.PROGRAM([\\n")
                       printList(cs, printClass, ", ")
                       Print.printBuf("],")
                       dumpWithin(w)
-                      Print.printBuf(")\n")
+                      Print.printBuf(")\\n")
                     ()
                   end
                 end
@@ -157,7 +157,7 @@
         end
 
          #= Prettyprints a list of classes =#
-        function unparseClassList(inClasses::IList)::String
+        function unparseClassList(inClasses::List{<:Absyn.Class})::String
               local outString::String
 
               outString = Tpl.tplString2(AbsynDumpTpl.dump, Absyn.PROGRAM(inClasses, Absyn.TOP()), defaultDumpOptions)
@@ -193,7 +193,7 @@
                   Absyn.WITHIN(path = p)  => begin
                       Print.printBuf("Absyn.WITHIN(")
                       dumpPath(p)
-                      Print.printBuf("\n")
+                      Print.printBuf("\\n")
                     ()
                   end
                 end
@@ -230,7 +230,7 @@
         end
 
          #= Prettyprints a Comment. =#
-        function unparseCommentOption(inComment::Option)::String
+        function unparseCommentOption(inComment::Option{<:Absyn.Comment})::String
               local outString::String
 
               outString = Tpl.tplString(AbsynDumpTpl.dumpCommentOpt, inComment)
@@ -238,11 +238,11 @@
         end
 
          #= Prints a Comment to the Print buffer. =#
-        function dumpCommentOption(inAbsynCommentOption::Option)
+        function dumpCommentOption(inAbsynCommentOption::Option{<:Absyn.Comment})
               _ = begin
                   local str::String
                   local cmt::String
-                  local annopt::Option
+                  local annopt::Option{<:Absyn.Annotation}
                 @match inAbsynCommentOption begin
                   NONE()  => begin
                       Print.printBuf("NONE()")
@@ -252,7 +252,7 @@
                   SOME(Absyn.COMMENT(annopt, SOME(cmt)))  => begin
                       Print.printBuf("SOME(Absyn.COMMENT(")
                       dumpAnnotationOption(annopt)
-                      str = stringAppendList(list("SOME(\"", cmt, "\")))"))
+                      str = stringAppendList(list("SOME(\\", cmt, "\\)))"))
                       Print.printBuf(str)
                     ()
                   end
@@ -268,9 +268,9 @@
         end
 
          #= Dumps an annotation option to the Print buffer. =#
-        function dumpAnnotationOption(inAbsynAnnotationOption::Option)
+        function dumpAnnotationOption(inAbsynAnnotationOption::Option{<:Absyn.Annotation})
               _ = begin
-                  local mod::IList
+                  local mod::List{<:Absyn.ElementArg}
                 @match inAbsynAnnotationOption begin
                   NONE()  => begin
                       Print.printBuf("NONE()")
@@ -289,30 +289,30 @@
 
          #= Prints enumeration literals, each consisting of an
           identifier and an optional comment to the Print buffer. =#
-        function printEnumliterals(lst::IList)
+        function printEnumliterals(lst::List{<:Absyn.EnumLiteral})
               Print.printBuf("[")
               printEnumliterals2(lst)
               Print.printBuf("]")
         end
 
          #= Helper function to printEnumliterals =#
-        function printEnumliterals2(inAbsynEnumLiteralLst::IList)
+        function printEnumliterals2(inAbsynEnumLiteralLst::List{<:Absyn.EnumLiteral})
               _ = begin
                   local str::String
                   local str2::String
-                  local optcmt::Option
-                  local optcmt2::Option
+                  local optcmt::Option{<:Absyn.Comment}
+                  local optcmt2::Option{<:Absyn.Comment}
                   local a::Absyn.EnumLiteral
-                  local b::IList
+                  local b::List{<:Absyn.EnumLiteral}
                 @matchcontinue inAbsynEnumLiteralLst begin
                    nil()  => begin
                     ()
                   end
 
                   Absyn.ENUMLITERAL(literal = str, comment = optcmt) <| a <| b  => begin
-                      Print.printBuf("Absyn.ENUMLITERAL(\"")
+                      Print.printBuf("Absyn.ENUMLITERAL(\\")
                       Print.printBuf(str)
-                      Print.printBuf("\",")
+                      Print.printBuf("\\,")
                       dumpCommentOption(optcmt)
                       Print.printBuf("), ")
                       printEnumliterals2(a <| b)
@@ -320,13 +320,13 @@
                   end
 
                   Absyn.ENUMLITERAL(literal = str, comment = optcmt) <| Absyn.ENUMLITERAL(literal = str2, comment = optcmt2) <|  nil()  => begin
-                      Print.printBuf("Absyn.ENUMLITERAL(\"")
+                      Print.printBuf("Absyn.ENUMLITERAL(\\")
                       Print.printBuf(str)
-                      Print.printBuf("\",")
+                      Print.printBuf("\\,")
                       dumpCommentOption(optcmt)
-                      Print.printBuf("), Absyn.ENUMLITERAL(\"")
+                      Print.printBuf("), Absyn.ENUMLITERAL(\\")
                       Print.printBuf(str2)
-                      Print.printBuf("\",")
+                      Print.printBuf("\\,")
                       dumpCommentOption(optcmt2)
                       Print.printBuf(")")
                     ()
@@ -359,9 +359,9 @@
                   local ecol::ModelicaInteger
                 @match inInfo begin
                   SOURCEINFO(fileName = filename, isReadOnly = isReadOnly, lineNumberStart = sline, columnNumberStart = scol, lineNumberEnd = eline, columnNumberEnd = ecol)  => begin
-                      Print.printBuf("SOURCEINFO(\"")
+                      Print.printBuf("SOURCEINFO(\\")
                       Print.printBuf(filename)
-                      Print.printBuf("\", ")
+                      Print.printBuf("\\, ")
                       printBool(isReadOnly)
                       Print.printBuf(", ")
                       s1 = intString(sline)
@@ -407,7 +407,7 @@
                       s3 = intString(scol)
                       s4 = intString(eline)
                       s5 = intString(ecol)
-                      str = stringAppendList(list("SOURCEINFO(\"", filename, "\", ", s1, ", ", s2, ", ", s3, ", ", s4, ", ", s5, ")\n"))
+                      str = stringAppendList(list("SOURCEINFO(\\", filename, "\\, ", s1, ", ", s2, ", ", s3, ", ", s4, ", ", s5, ")\\n"))
                     str
                   end
                 end
@@ -428,9 +428,9 @@
                   local info::SourceInfo
                 @match inClass begin
                   Absyn.CLASS(name = n, partialPrefix = p, finalPrefix = f, encapsulatedPrefix = e, restriction = r, body = cdef, info = info)  => begin
-                      Print.printBuf("Absyn.CLASS(\"")
+                      Print.printBuf("Absyn.CLASS(\\")
                       Print.printBuf(n)
-                      Print.printBuf("\", ")
+                      Print.printBuf("\\, ")
                       printBool(p)
                       Print.printBuf(", ")
                       printBool(f)
@@ -442,7 +442,7 @@
                       printClassdef(cdef)
                       Print.printBuf(", ")
                       printInfo(info)
-                      Print.printBuf(")\n")
+                      Print.printBuf(")\\n")
                     ()
                   end
                 end
@@ -452,16 +452,16 @@
          #= Prints a ClassDef to the Print buffer. =#
         function printClassdef(inClassDef::Absyn.ClassDef)
               _ = begin
-                  local parts::IList
-                  local commentStr::Option
-                  local comment::Option
+                  local parts::List{<:Absyn.ClassPart}
+                  local commentStr::Option{<:String}
+                  local comment::Option{<:Absyn.Comment}
                   local s::String
                   local baseClassName::String
                   local tspec::Absyn.TypeSpec
                   local attr::Absyn.ElementAttributes
-                  local earg::IList
-                  local modifications::IList
-                  local enumlst::IList
+                  local earg::List{<:Absyn.ElementArg}
+                  local modifications::List{<:Absyn.ElementArg}
+                  local enumlst::List{<:Absyn.EnumLiteral}
                 @match inClassDef begin
                   Absyn.PARTS(classParts = parts, comment = commentStr)  => begin
                       Print.printBuf("Absyn.PARTS([")
@@ -665,9 +665,9 @@
         end
 
          #= Prints a class modification to a print buffer. =#
-        function printClassModification(inAbsynElementArgLst::IList)
+        function printClassModification(inAbsynElementArgLst::List{<:Absyn.ElementArg})
               _ = begin
-                  local l::IList
+                  local l::List{<:Absyn.ElementArg}
                 @matchcontinue inAbsynElementArgLst begin
                    nil()  => begin
                     ()
@@ -688,8 +688,8 @@
               _ = begin
                   local f::Bool
                   local each_::Absyn.Each
-                  local optm::Option
-                  local optcmt::Option
+                  local optm::Option{<:Absyn.Modification}
+                  local optcmt::Option{<:String}
                   local keywords::Absyn.RedeclareKeywords
                   local spec::Absyn.ElementSpec
                   local p::Absyn.Path
@@ -758,12 +758,12 @@
          #= Prints the ClassPart to the Print buffer. =#
         function printClassPart(inClassPart::Absyn.ClassPart)
               _ = begin
-                  local el::IList
-                  local eqs::IList
+                  local el::List{<:Absyn.ElementItem}
+                  local eqs::List{<:Absyn.EquationItem}
                    #=  list<Absyn.ConstraintItem> constr;
                    =#
-                  local algs::IList
-                  local exps::IList
+                  local algs::List{<:Absyn.AlgorithmItem}
+                  local exps::List{<:Absyn.Exp}
                   local edecl::Absyn.ExternalDecl
                 @match inClassPart begin
                   Absyn.PUBLIC(contents = el)  => begin
@@ -833,9 +833,9 @@
                   local expstr::String
                   local str::String
                   local lang::String
-                  local id::Option
-                  local cref::Option
-                  local exps::IList
+                  local id::Option{<:String}
+                  local cref::Option{<:Absyn.ComponentRef}
+                  local exps::List{<:Absyn.Exp}
                 @match inExternalDecl begin
                   Absyn.EXTERNALDECL(funcName = id, lang = NONE(), output_ = cref, args = exps)  => begin
                       idstr = Util.getOptionOrDefault(id, "")
@@ -850,7 +850,7 @@
                       idstr = Util.getOptionOrDefault(id, "")
                       crefstr = getOptionStr(cref, printComponentRefStr)
                       expstr = printListStr(exps, printExpStr, ",")
-                      str = stringAppendList(list(idstr, ", \"", lang, "\", ", crefstr, ", (", expstr, ")"))
+                      str = stringAppendList(list(idstr, ", \\", lang, "\\, ", crefstr, ", (", expstr, ")"))
                       Print.printBuf(str)
                     ()
                   end
@@ -859,18 +859,18 @@
         end
 
          #= Print a list of ElementItems to the Print buffer. =#
-        function printElementitems(elts::IList)
+        function printElementitems(elts::List{<:Absyn.ElementItem})
               Print.printBuf("[")
               printElementitems2(elts)
               Print.printBuf("]")
         end
 
          #= Helper function to printElementitems =#
-        function printElementitems2(inAbsynElementItemLst::IList)
+        function printElementitems2(inAbsynElementItemLst::List{<:Absyn.ElementItem})
               _ = begin
                   local e::Absyn.Element
                   local a::Absyn.Annotation
-                  local els::IList
+                  local els::List{<:Absyn.ElementItem}
                 @matchcontinue inAbsynElementItemLst begin
                    nil()  => begin
                     ()
@@ -892,7 +892,7 @@
                   end
 
                   _  => begin
-                      Print.printBuf("Error Dump.printElementitems2\n")
+                      Print.printBuf("Error Dump.printElementitems2\\n")
                     ()
                   end
                 end
@@ -902,7 +902,7 @@
          #= Prints an annotation to the Print buffer. =#
         function printAnnotation(inAnnotation::Absyn.Annotation)
               _ = begin
-                  local mod::IList
+                  local mod::List{<:Absyn.ElementArg}
                 @match inAnnotation begin
                   Absyn.ANNOTATION(elementArgs = mod)  => begin
                       Print.printBuf("ANNOTATION(")
@@ -939,7 +939,7 @@
         end
 
          #= Prettyprint an annotation. =#
-        function unparseAnnotationOption(inAbsynAnnotation::Option)::String
+        function unparseAnnotationOption(inAbsynAnnotation::Option{<:Absyn.Annotation})::String
               local outString::String
 
               outString = begin
@@ -964,7 +964,7 @@
         function printElement(inElement::Absyn.Element)
               _ = begin
                   local finalPrefix::Bool
-                  local repl::Option
+                  local repl::Option{<:Absyn.RedeclareKeywords}
                   local inout::Absyn.InnerOuter
                   local name::String
                   local text::String
@@ -1001,11 +1001,11 @@
 
                   Absyn.TEXT(optName = SOME(name), string = text, info = info)  => begin
                       Print.printBuf("Absyn.TEXT(")
-                      Print.printBuf("SOME(\"")
+                      Print.printBuf("SOME(\\")
                       Print.printBuf(name)
-                      Print.printBuf("\"), \"")
+                      Print.printBuf("\\), \\")
                       Print.printBuf(text)
-                      Print.printBuf("\", ")
+                      Print.printBuf("\\, ")
                       printInfo(info)
                       Print.printBuf(")")
                     ()
@@ -1013,9 +1013,9 @@
 
                   Absyn.TEXT(optName = NONE(), string = text, info = info)  => begin
                       Print.printBuf("Absyn.TEXT(")
-                      Print.printBuf("NONE, \"")
+                      Print.printBuf("NONE, \\")
                       Print.printBuf(text)
-                      Print.printBuf("\", ")
+                      Print.printBuf("\\, ")
                       printInfo(info)
                       Print.printBuf(")")
                     ()
@@ -1085,11 +1085,11 @@
                   local repl::Bool
                   local cl::Absyn.Class
                   local p::Absyn.Path
-                  local l::IList
+                  local l::List{<:Absyn.ElementArg}
                   local s::String
                   local attr::Absyn.ElementAttributes
                   local t::Absyn.TypeSpec
-                  local cs::IList
+                  local cs::List{<:Absyn.ComponentItem}
                   local i::Absyn.Import
                   local ann::Absyn.Annotation
                 @matchcontinue inElementSpec begin
@@ -1153,7 +1153,7 @@
               _ = begin
                   local i::String
                   local p::Absyn.Path
-                  local groups::IList
+                  local groups::List{<:Absyn.GroupImport}
                 @match inImport begin
                   Absyn.NAMED_IMPORT(name = i, path = p)  => begin
                       Print.printBuf(i)
@@ -1227,7 +1227,7 @@
                   local par::Absyn.Parallelism
                   local var::Absyn.Variability
                   local dir::Absyn.Direction
-                  local adim::IList
+                  local adim::List{<:Absyn.Subscript}
                 @matchcontinue inElementAttributes begin
                   Absyn.ATTR(flowPrefix = fl, streamPrefix = st, parallelism = par, variability = var, direction = dir, arrayDim = adim)  => begin
                       Print.printBuf("Absyn.ATTR(")
@@ -1408,13 +1408,13 @@
         function printComponent(inComponent::Absyn.Component)
               _ = begin
                   local n::String
-                  local a::IList
-                  local m::Option
+                  local a::List{<:Absyn.Subscript}
+                  local m::Option{<:Absyn.Modification}
                 @match inComponent begin
                   Absyn.COMPONENT(name = n, arrayDim = a, modification = m)  => begin
-                      Print.printBuf("Absyn.COMPONENT(\"")
+                      Print.printBuf("Absyn.COMPONENT(\\")
                       Print.printBuf(n)
-                      Print.printBuf("\",")
+                      Print.printBuf("\\,")
                       printArraydim(a)
                       Print.printBuf(", ")
                       printOption(m, printModification)
@@ -1429,8 +1429,8 @@
         function printComponentitem(inComponentItem::Absyn.ComponentItem)
               _ = begin
                   local c::Absyn.Component
-                  local optcond::Option
-                  local optcmt::Option
+                  local optcond::Option{<:Absyn.Exp}
+                  local optcmt::Option{<:Absyn.Comment}
                 @match inComponentItem begin
                   Absyn.COMPONENTITEM(component = c, comment = optcmt)  => begin
                       Print.printBuf("Absyn.COMPONENTITEM(")
@@ -1445,7 +1445,7 @@
         end
 
          #= Prints a ComponentCondition option to a string. =#
-        function unparseComponentCondition(inComponentCondition::Option)::String
+        function unparseComponentCondition(inComponentCondition::Option{<:Absyn.ComponentCondition})::String
               local outString::String
 
               outString = Tpl.tplString(AbsynDumpTpl.dumpComponentCondition, inComponentCondition)
@@ -1455,9 +1455,9 @@
          #=
           Prints an ArrayDim option to the Print buffer.
          =#
-        function printArraydimOpt(inAbsynArrayDimOption::Option)
+        function printArraydimOpt(inAbsynArrayDimOption::Option{<:Absyn.ArrayDim})
               _ = begin
-                  local s::IList
+                  local s::List{<:Absyn.Subscript}
                 @match inAbsynArrayDimOption begin
                   NONE()  => begin
                       Print.printBuf("NONE()")
@@ -1539,7 +1539,7 @@
          #=
           Prints a Modification option to the Print buffer.
          =#
-        function printOptModification(inAbsynModificationOption::Option)
+        function printOptModification(inAbsynModificationOption::Option{<:Absyn.Modification})
               _ = begin
                   local m::Absyn.Modification
                 @match inAbsynModificationOption begin
@@ -1562,7 +1562,7 @@
          =#
         function printModification(inModification::Absyn.Modification)
               _ = begin
-                  local l::IList
+                  local l::List{<:Absyn.ElementArg}
                   local e::Absyn.EqMod
                 @matchcontinue inModification begin
                   Absyn.CLASSMOD(elementArgLst = l, eqMod = e)  => begin
@@ -1585,9 +1585,9 @@
          #=
           Helper relaton to print_modification.
          =#
-        function printMod1(inAbsynElementArgLst::IList)
+        function printMod1(inAbsynElementArgLst::List{<:Absyn.ElementArg})
               _ = begin
-                  local l::IList
+                  local l::List{<:Absyn.ElementArg}
                 @matchcontinue inAbsynElementArgLst begin
                    nil()  => begin
                     ()
@@ -1678,10 +1678,10 @@
                   local e::Absyn.Exp
                   local e1::Absyn.Exp
                   local e2::Absyn.Exp
-                  local tb::IList
-                  local fb::IList
-                  local el::IList
-                  local eb::IList
+                  local tb::List{<:Absyn.EquationItem}
+                  local fb::List{<:Absyn.EquationItem}
+                  local el::List{<:Absyn.EquationItem}
+                  local eb::List{<:Tuple{<:Absyn.Exp, List{<:Absyn.EquationItem}}}
                   local iterators::Absyn.ForIterators
                   local equItem::Absyn.EquationItem
                   local cr::Absyn.ComponentRef
@@ -1769,7 +1769,7 @@
                   Absyn.EQUATIONITEM(equation_ = eq)  => begin
                       Print.printBuf("EQUATIONITEM(")
                       printEquation(eq)
-                      Print.printBuf(", <comment>)\n")
+                      Print.printBuf(", <comment>)\\n")
                     ()
                   end
                 end
@@ -1801,7 +1801,7 @@
         end
 
          #= Prettyprints and EquationItem list to a string. =#
-        function unparseEquationItemStrLst(inEquationItems::IList, inSeparator::String)::String
+        function unparseEquationItemStrLst(inEquationItems::List{<:Absyn.EquationItem}, inSeparator::String)::String
               local outString::String
 
               outString = stringDelimitList(ListUtil.map(inEquationItems, unparseEquationItemStr), inSeparator)
@@ -1809,9 +1809,9 @@
         end
 
          #= Prints an Elseif branch to the Print buffer. =#
-        function printEqElseif(inElseIfBranch::Tuple)
+        function printEqElseif(inElseIfBranch::Tuple{<:Absyn.Exp, List{<:Absyn.EquationItem}})
               local e::Absyn.Exp
-              local el::IList
+              local el::List{<:Absyn.EquationItem}
 
               (e, el) = inElseIfBranch
               Print.printBuf(" ELSEIF ")
@@ -1831,7 +1831,7 @@
                   Absyn.ALGORITHMITEM(algorithm_ = alg)  => begin
                       Print.printBuf("ALGORITHMITEM(")
                       printAlgorithm(alg)
-                      Print.printBuf(")\n")
+                      Print.printBuf(")\\n")
                     ()
                   end
                 end
@@ -1845,11 +1845,11 @@
                   local exp::Absyn.Exp
                   local e::Absyn.Exp
                   local assignComp::Absyn.Exp
-                  local tb::IList
-                  local fb::IList
-                  local el::IList
-                  local al::IList
-                  local eb::IList
+                  local tb::List{<:Absyn.AlgorithmItem}
+                  local fb::List{<:Absyn.AlgorithmItem}
+                  local el::List{<:Absyn.AlgorithmItem}
+                  local al::List{<:Absyn.AlgorithmItem}
+                  local eb::List{<:Tuple{<:Absyn.Exp, List{<:Absyn.AlgorithmItem}}}
                   local iterators::Absyn.ForIterators
                   local algItem::Absyn.AlgorithmItem
                   local fargs::Absyn.FunctionArgs
@@ -1955,7 +1955,7 @@
         end
 
          #= Prettyprints an AlgorithmItem list to a string. =#
-        function unparseAlgorithmStrLst(inAlgorithmItems::IList, inSeparator::String)::String
+        function unparseAlgorithmStrLst(inAlgorithmItems::List{<:Absyn.AlgorithmItem}, inSeparator::String)::String
               local outString::String
 
               outString = stringDelimitList(ListUtil.map(inAlgorithmItems, unparseAlgorithmStr), inSeparator)
@@ -1971,9 +1971,9 @@
         end
 
          #= Prints an algorithm elseif branch to the Print buffer. =#
-        function printAlgElseif(inElseIfBranch::Tuple)
+        function printAlgElseif(inElseIfBranch::Tuple{<:Absyn.Exp, List{<:Absyn.AlgorithmItem}})
               local e::Absyn.Exp
-              local el::IList
+              local el::List{<:Absyn.AlgorithmItem}
 
               (e, el) = inElseIfBranch
               Print.printBuf(" ELSEIF ")
@@ -1988,22 +1988,22 @@
         function printComponentRef(inComponentRef::Absyn.ComponentRef)
               _ = begin
                   local s::String
-                  local subs::IList
+                  local subs::List{<:Absyn.Subscript}
                   local cr::Absyn.ComponentRef
                 @match inComponentRef begin
                   Absyn.CREF_IDENT(name = s, subscripts = subs)  => begin
-                      Print.printBuf("Absyn.CREF_IDENT(\"")
+                      Print.printBuf("Absyn.CREF_IDENT(\\")
                       Print.printBuf(s)
-                      Print.printBuf("\", ")
+                      Print.printBuf("\\, ")
                       printSubscripts(subs)
                       Print.printBuf(")")
                     ()
                   end
 
                   Absyn.CREF_QUAL(name = s, subscripts = subs, componentRef = cr)  => begin
-                      Print.printBuf("Absyn.CREF_QUAL(\"")
+                      Print.printBuf("Absyn.CREF_QUAL(\\")
                       Print.printBuf(s)
-                      Print.printBuf("\", ")
+                      Print.printBuf("\\, ")
                       printSubscripts(subs)
                       Print.printBuf(",")
                       printComponentRef(cr)
@@ -2027,9 +2027,9 @@
         end
 
          #= Prints a Subscript to the Print buffer. =#
-        function printSubscripts(inAbsynSubscriptLst::IList)
+        function printSubscripts(inAbsynSubscriptLst::List{<:Absyn.Subscript})
               _ = begin
-                  local l::IList
+                  local l::List{<:Absyn.Subscript}
                 @matchcontinue inAbsynSubscriptLst begin
                    nil()  => begin
                       Print.printBuf("[]")
@@ -2057,7 +2057,7 @@
                   local crs::String
                   local s_2::String
                   local s_3::String
-                  local subs::IList
+                  local subs::List{<:Absyn.Subscript}
                   local cr::Absyn.ComponentRef
                 @match inComponentRef begin
                   Absyn.CREF_IDENT(name = s, subscripts = subs)  => begin
@@ -2098,14 +2098,14 @@
         end
 
          #= Prettyprint a Subscript list to a string. =#
-        function printSubscriptsStr(inAbsynSubscriptLst::IList)::String
+        function printSubscriptsStr(inAbsynSubscriptLst::List{<:Absyn.Subscript})::String
               local outString::String
 
               outString = begin
                   local s::String
                   local s_1::String
                   local s_2::String
-                  local l::IList
+                  local l::List{<:Absyn.Subscript}
                 @matchcontinue inAbsynSubscriptLst begin
                    nil()  => begin
                     ""
@@ -2137,16 +2137,16 @@
                   local path::Absyn.Path
                 @match inPath begin
                   Absyn.IDENT(name = str)  => begin
-                      Print.printBuf("Absyn.IDENT(\"")
+                      Print.printBuf("Absyn.IDENT(\\")
                       Print.printBuf(str)
-                      Print.printBuf("\")")
+                      Print.printBuf("\\)")
                     ()
                   end
 
                   Absyn.QUALIFIED(name = str, path = path)  => begin
-                      Print.printBuf("Absyn.QUALIFIED(\"")
+                      Print.printBuf("Absyn.QUALIFIED(\\")
                       Print.printBuf(str)
-                      Print.printBuf("\",")
+                      Print.printBuf("\\,")
                       dumpPath(path)
                       Print.printBuf(")")
                     ()
@@ -2181,18 +2181,18 @@
                   local stop::Absyn.Exp
                   local step::Absyn.Exp
                   local op::Absyn.Operator
-                  local lst::IList
+                  local lst::List{<:Tuple{<:Absyn.Exp, Absyn.Exp}}
                   local args::Absyn.FunctionArgs
-                  local es::IList
+                  local es::List{<:Absyn.Exp}
                   local matchType::Absyn.MatchType
                   local head::Absyn.Exp
                   local rest::Absyn.Exp
                   local inputExp::Absyn.Exp
                   local cond::Absyn.Exp
-                  local localDecls::IList
-                  local cases::IList
-                  local comment::Option
-                  local esLst::IList
+                  local localDecls::List{<:Absyn.ElementItem}
+                  local cases::List{<:Absyn.Case}
+                  local comment::Option{<:String}
+                  local esLst::List{<:List{<:Absyn.Exp}}
                 @matchcontinue inExp begin
                   Absyn.INTEGER(value = i)  => begin
                       s = intString(i)
@@ -2217,9 +2217,9 @@
                   end
 
                   Absyn.STRING(value = s)  => begin
-                      Print.printBuf("Absyn.STRING(\"")
+                      Print.printBuf("Absyn.STRING(\\")
                       Print.printBuf(s)
-                      Print.printBuf("\")")
+                      Print.printBuf("\\)")
                     ()
                   end
 
@@ -2426,8 +2426,8 @@
          =#
         function printFunctionArgs(inFunctionArgs::Absyn.FunctionArgs)
               _ = begin
-                  local expargs::IList
-                  local nargs::IList
+                  local expargs::List{<:Absyn.Exp}
+                  local nargs::List{<:Absyn.NamedArg}
                   local exp::Absyn.Exp
                   local iterators::Absyn.ForIterators
                 @match inFunctionArgs begin
@@ -2491,8 +2491,8 @@
                   local str::String
                   local estr::String
                   local istr::String
-                  local expargs::IList
-                  local nargs::IList
+                  local expargs::List{<:Absyn.Exp}
+                  local nargs::List{<:Absyn.NamedArg}
                   local exp::Absyn.Exp
                   local iterators::Absyn.ForIterators
                 @matchcontinue inFunctionArgs begin
@@ -2630,7 +2630,7 @@
          #=
           Print an Expression list to the Print buffer.
          =#
-        function printRow(es::IList)
+        function printRow(es::List{<:Absyn.Exp})
               printListDebug("print_row", es, printExp, ",")
         end
 
@@ -2928,7 +2928,7 @@
 
         Prints a list of expressions to a string
          =#
-        function printExpLstStr(expl::IList)::String
+        function printExpLstStr(expl::List{<:Absyn.Exp})::String
               local outString::String
 
               outString = stringDelimitList(ListUtil.map(expl, printExpStr), ", ")
@@ -2953,8 +2953,9 @@
           outString
         end
 
-         #= Same as printList, except it returns a string instead of printing =#
-        function printListStr(inTypeALst::IList, inFuncTypeTypeAToString::FuncTypeType_aToString, inString::String)::String
+       #= Same as printList, except it returns a string instead of printing =#
+       Type_a = Any
+        function printListStr(inTypeALst::List{<:Type_a}, inFuncTypeTypeAToString::FuncTypeType_aToString, inString::String)::String
               local outString::String
 
               outString = begin
@@ -2965,7 +2966,7 @@
                   local sep::String
                   local h::Type_a
                   local r::FuncTypeType_aToString
-                  local t::IList
+                  local t::List{<:Type_a}
                 @matchcontinue (inTypeALst, inFuncTypeTypeAToString, inString) begin
                   ( nil(), _, _)  => begin
                     ""
@@ -3352,7 +3353,7 @@
          #=
           Prints an option value given a print function.
          =#
-        function printOption(inTypeAOption::Option, inFuncTypeTypeATo::FuncTypeType_aTo)
+        function printOption(inTypeAOption::Option{<:Type_a}, inFuncTypeTypeATo::FuncTypeType_aTo)
               _ = begin
                   local x::Type_a
                   local r::FuncTypeType_aTo
@@ -3375,14 +3376,14 @@
          #=
           Prints a list of values given a print function and a caller string.
          =#
-        function printListDebug(inString1::String, inTypeALst2::IList, inFuncTypeTypeATo3::FuncTypeType_aTo, inString4::String)
+        function printListDebug(inString1::String, inTypeALst2::List{<:Type_a}, inFuncTypeTypeATo3::FuncTypeType_aTo, inString4::String)
               _ = begin
                   local caller::String
                   local s1::String
                   local sep::String
                   local h::Type_a
                   local r::FuncTypeType_aTo
-                  local rest::IList
+                  local rest::List{<:Type_a}
                 @match (inString1, inTypeALst2, inFuncTypeTypeATo3, inString4) begin
                   (_,  nil(), _, _)  => begin
                     ()
@@ -3407,11 +3408,11 @@
          #=
           Prints a list of values given a print function.
          =#
-        function printList(inTypeALst::IList, inFuncTypeTypeATo::FuncTypeType_aTo, inString::String)
+        function printList(inTypeALst::List{<:Type_a}, inFuncTypeTypeATo::FuncTypeType_aTo, inString::String)
               _ = begin
                   local h::Type_a
                   local r::FuncTypeType_aTo
-                  local t::IList
+                  local t::List{<:Type_a}
                   local sep::String
                 @matchcontinue (inTypeALst, inFuncTypeTypeATo, inString) begin
                   ( nil(), _, _)  => begin
@@ -3435,7 +3436,7 @@
 
          #= a value to a string.
          =#
-        function getStringList(inTypeALst::IList, inFuncTypeTypeAToString::FuncTypeType_aToString, inString::String)::String
+        function getStringList(inTypeALst::List{<:Type_a}, inFuncTypeTypeAToString::FuncTypeType_aToString, inString::String)::String
               local outString::String
 
               outString = begin
@@ -3446,7 +3447,7 @@
                   local sep::String
                   local h::Type_a
                   local r::FuncTypeType_aToString
-                  local t::IList
+                  local t::List{<:Type_a}
                 @matchcontinue (inTypeALst, inFuncTypeTypeAToString, inString) begin
                   ( nil(), _, _)  => begin
                     ""
@@ -3479,7 +3480,7 @@
          #= Retrieve the string from a string option.
           If NONE() return empty string.
          =#
-        function getOptionStr(inTypeAOption::Option, inFuncTypeTypeAToString::FuncTypeType_aToString)::String
+        function getOptionStr(inTypeAOption::Option{<:Type_a}, inFuncTypeTypeAToString::FuncTypeType_aToString)::String
               local outString::String
 
               outString = begin
@@ -3503,7 +3504,7 @@
          #= Retrieve the string from a string option.
           If NONE() return default string.
          =#
-        function getOptionStrDefault(inTypeAOption::Option, inFuncTypeTypeAToString::FuncTypeType_aToString, inString::String)::String
+        function getOptionStrDefault(inTypeAOption::Option{<:Type_a}, inFuncTypeTypeAToString::FuncTypeType_aToString, inString::String)::String
               local outString::String
 
               outString = begin
@@ -3529,7 +3530,7 @@
           Get option string value using a function translating the value to a string
           and concatenate with an additional suffix string.
          =#
-        function getOptionWithConcatStr(inTypeAOption::Option, inFuncTypeTypeAToString::FuncTypeType_aToString, inString::String)::String
+        function getOptionWithConcatStr(inTypeAOption::Option{<:Type_a}, inFuncTypeTypeAToString::FuncTypeType_aToString, inString::String)::String
               local outString::String
 
               outString = begin
@@ -3557,7 +3558,7 @@
          #=
           Print a string comment option on the Print buffer
          =#
-        function printStringCommentOption(inStringOption::Option)
+        function printStringCommentOption(inStringOption::Option{<:String})
               _ = begin
                   local str::String
                   local s::String
@@ -3568,7 +3569,7 @@
                   end
 
                   SOME(s)  => begin
-                      str = stringAppendList(list("SOME(\"", s, "\")"))
+                      str = stringAppendList(list("SOME(\\", s, "\\)"))
                       Print.printBuf(str)
                     ()
                   end
@@ -3647,15 +3648,15 @@
 
         function getAstAsCorbaString(program::Absyn.Program)
               _ = begin
-                  local classes::IList
+                  local classes::List{<:Absyn.Class}
                   local within_::Absyn.Within
                 @match program begin
                   Absyn.PROGRAM(classes = classes, within_ = within_)  => begin
-                      Print.printBuf("record Absyn.PROGRAM\nclasses = ")
-                      printListAsCorbaString(classes, printClassAsCorbaString, ",\n")
-                      Print.printBuf(",\nwithin_ = ")
+                      Print.printBuf("record Absyn.PROGRAM\\nclasses = ")
+                      printListAsCorbaString(classes, printClassAsCorbaString, ",\\n")
+                      Print.printBuf(",\\nwithin_ = ")
                       printWithinAsCorbaString(within_)
-                      Print.printBuf("\nend Absyn.PROGRAM;")
+                      Print.printBuf("\\nend Absyn.PROGRAM;")
                     ()
                   end
                 end
@@ -3668,25 +3669,25 @@
                   local p::Absyn.Path
                 @match inPath begin
                   Absyn.QUALIFIED(name = s, path = p)  => begin
-                      Print.printBuf("record Absyn.QUALIFIED name = \"")
+                      Print.printBuf("record Absyn.QUALIFIED name = \\")
                       Print.printBuf(s)
-                      Print.printBuf("\", path = ")
+                      Print.printBuf("\\, path = ")
                       printPathAsCorbaString(p)
                       Print.printBuf(" end Absyn.QUALIFIED;")
                     ()
                   end
 
                   Absyn.IDENT(name = s)  => begin
-                      Print.printBuf("record Absyn.IDENT name = \"")
+                      Print.printBuf("record Absyn.IDENT name = \\")
                       Print.printBuf(s)
-                      Print.printBuf("\" end Absyn.IDENT;")
+                      Print.printBuf("\\ end Absyn.IDENT;")
                     ()
                   end
 
                   Absyn.FULLYQUALIFIED(path = p)  => begin
-                      Print.printBuf("record Absyn.FULLYQUALIFIED path = \"")
+                      Print.printBuf("record Absyn.FULLYQUALIFIED path = \\")
                       printPathAsCorbaString(p)
-                      Print.printBuf("\" end Absyn.FULLYQUALIFIED;")
+                      Print.printBuf("\\ end Absyn.FULLYQUALIFIED;")
                     ()
                   end
                 end
@@ -3697,12 +3698,12 @@
               _ = begin
                   local s::String
                   local p::Absyn.ComponentRef
-                  local subscripts::IList
+                  local subscripts::List{<:Absyn.Subscript}
                 @match cref begin
                   Absyn.CREF_QUAL(name = s, subscripts = subscripts, componentRef = p)  => begin
-                      Print.printBuf("record Absyn.CREF_QUAL name = \"")
+                      Print.printBuf("record Absyn.CREF_QUAL name = \\")
                       Print.printBuf(s)
-                      Print.printBuf("\", subscripts = ")
+                      Print.printBuf("\\, subscripts = ")
                       printListAsCorbaString(subscripts, printSubscriptAsCorbaString, ",")
                       Print.printBuf(", componentRef = ")
                       printComponentRefAsCorbaString(p)
@@ -3711,9 +3712,9 @@
                   end
 
                   Absyn.CREF_IDENT(name = s, subscripts = subscripts)  => begin
-                      Print.printBuf("record Absyn.CREF_IDENT name = \"")
+                      Print.printBuf("record Absyn.CREF_IDENT name = \\")
                       Print.printBuf(s)
-                      Print.printBuf("\", subscripts = ")
+                      Print.printBuf("\\, subscripts = ")
                       printListAsCorbaString(subscripts, printSubscriptAsCorbaString, ",")
                       Print.printBuf(" end Absyn.CREF_IDENT;")
                     ()
@@ -3762,9 +3763,9 @@
                   local info::SourceInfo
                 @match cl begin
                   Absyn.CLASS(name, partialPrefix, finalPrefix, encapsulatedPrefix, restriction, body, info)  => begin
-                      Print.printBuf("record Absyn.CLASS name = \"")
+                      Print.printBuf("record Absyn.CLASS name = \\")
                       Print.printBuf(name)
-                      Print.printBuf("\", partialPrefix = ")
+                      Print.printBuf("\\, partialPrefix = ")
                       Print.printBuf(boolString(partialPrefix))
                       Print.printBuf(", finalPrefix = ")
                       Print.printBuf(boolString(finalPrefix))
@@ -3799,9 +3800,9 @@
                   local lastModified::ModelicaReal
                 @match info begin
                   SOURCEINFO(fileName, isReadOnly, lineNumberStart, columnNumberStart, lineNumberEnd, columnNumberEnd, lastModified)  => begin
-                      Print.printBuf("record SOURCEINFO fileName = \"")
+                      Print.printBuf("record SOURCEINFO fileName = \\")
                       Print.printBuf(fileName)
-                      Print.printBuf("\", isReadOnly = ")
+                      Print.printBuf("\\, isReadOnly = ")
                       Print.printBuf(boolString(isReadOnly))
                       Print.printBuf(", lineNumberStart = ")
                       Print.printBuf(intString(lineNumberStart))
@@ -3827,21 +3828,21 @@
 
         function printClassDefAsCorbaString(classDef::Absyn.ClassDef)
               _ = begin
-                  local classParts::IList
-                  local optString::Option
+                  local classParts::List{<:Absyn.ClassPart}
+                  local optString::Option{<:String}
                   local typeSpec::Absyn.TypeSpec
                   local attributes::Absyn.ElementAttributes
-                  local arguments::IList
-                  local modifications::IList
-                  local comment::Option
+                  local arguments::List{<:Absyn.ElementArg}
+                  local modifications::List{<:Absyn.ElementArg}
+                  local comment::Option{<:Absyn.Comment}
                   local enumLiterals::Absyn.EnumDef
-                  local functionNames::IList
+                  local functionNames::List{<:Absyn.Path}
                   local baseClassName::String
                   local functionName::Absyn.Path
-                  local typeVars::IList
-                  local vars::IList
-                  local classAttrs::IList
-                  local ann::IList
+                  local typeVars::List{<:String}
+                  local vars::List{<:String}
+                  local classAttrs::List{<:Absyn.NamedArg}
+                  local ann::List{<:Absyn.Annotation}
                 @match classDef begin
                   Absyn.PARTS(typeVars, _, classParts, ann, optString)  => begin
                       Print.printBuf("record Absyn.PARTS typeVars = {")
@@ -3888,9 +3889,9 @@
                   end
 
                   Absyn.CLASS_EXTENDS(baseClassName, modifications, optString, classParts, ann)  => begin
-                      Print.printBuf("record Absyn.CLASS_EXTENDS baseClassName = \"")
+                      Print.printBuf("record Absyn.CLASS_EXTENDS baseClassName = \\")
                       Print.printBuf(baseClassName)
-                      Print.printBuf("\", modifications = ")
+                      Print.printBuf("\\, modifications = ")
                       printListAsCorbaString(modifications, printElementArgAsCorbaString, ",")
                       Print.printBuf(", comment = ")
                       printStringCommentOption(optString)
@@ -3923,7 +3924,7 @@
 
         function printEnumDefAsCorbaString(enumDef::Absyn.EnumDef)
               _ = begin
-                  local enumLiterals::IList
+                  local enumLiterals::List{<:Absyn.EnumLiteral}
                 @match enumDef begin
                   Absyn.ENUMLITERALS(enumLiterals)  => begin
                       Print.printBuf("record Absyn.ENUMLITERALS enumLiterals = ")
@@ -3948,12 +3949,12 @@
         function printEnumLiteralAsCorbaString(enumLit::Absyn.EnumLiteral)
               _ = begin
                   local literal::String
-                  local comment::Option
+                  local comment::Option{<:Absyn.Comment}
                 @match enumLit begin
                   Absyn.ENUMLITERAL(literal, comment)  => begin
-                      Print.printBuf("record Absyn.ENUMLITERAL literal = \"")
+                      Print.printBuf("record Absyn.ENUMLITERAL literal = \\")
                       Print.printBuf(literal)
-                      Print.printBuf("\", comment = ")
+                      Print.printBuf("\\, comment = ")
                       printOption(comment, printCommentAsCorbaString)
                       Print.printBuf("end Absyn.ENUMLITERAL;")
                     ()
@@ -4146,56 +4147,56 @@
 
         function printClassPartAsCorbaString(classPart::Absyn.ClassPart)
               _ = begin
-                  local contents::IList
-                  local eqContents::IList
-                  local algContents::IList
+                  local contents::List{<:Absyn.ElementItem}
+                  local eqContents::List{<:Absyn.EquationItem}
+                  local algContents::List{<:Absyn.AlgorithmItem}
                   local externalDecl::Absyn.ExternalDecl
-                  local annotation_::Option
+                  local annotation_::Option{<:Absyn.Annotation}
                 @match classPart begin
                   Absyn.PUBLIC(contents)  => begin
-                      Print.printBuf("\nrecord Absyn.PUBLIC contents = ")
+                      Print.printBuf("\\nrecord Absyn.PUBLIC contents = ")
                       printListAsCorbaString(contents, printElementItemAsCorbaString, ",")
                       Print.printBuf(" end Absyn.PUBLIC;")
                     ()
                   end
 
                   Absyn.PROTECTED(contents)  => begin
-                      Print.printBuf("\nrecord Absyn.PROTECTED contents = ")
+                      Print.printBuf("\\nrecord Absyn.PROTECTED contents = ")
                       printListAsCorbaString(contents, printElementItemAsCorbaString, ",")
                       Print.printBuf(" end Absyn.PROTECTED;")
                     ()
                   end
 
                   Absyn.EQUATIONS(eqContents)  => begin
-                      Print.printBuf("\nrecord Absyn.EQUATIONS contents = ")
+                      Print.printBuf("\\nrecord Absyn.EQUATIONS contents = ")
                       printListAsCorbaString(eqContents, printEquationItemAsCorbaString, ",")
                       Print.printBuf(" end Absyn.EQUATIONS;")
                     ()
                   end
 
                   Absyn.INITIALEQUATIONS(eqContents)  => begin
-                      Print.printBuf("\nrecord Absyn.INITIALEQUATIONS contents = ")
+                      Print.printBuf("\\nrecord Absyn.INITIALEQUATIONS contents = ")
                       printListAsCorbaString(eqContents, printEquationItemAsCorbaString, ",")
                       Print.printBuf(" end Absyn.INITIALEQUATIONS;")
                     ()
                   end
 
                   Absyn.ALGORITHMS(algContents)  => begin
-                      Print.printBuf("\nrecord Absyn.ALGORITHMS contents = ")
+                      Print.printBuf("\\nrecord Absyn.ALGORITHMS contents = ")
                       printListAsCorbaString(algContents, printAlgorithmItemAsCorbaString, ",")
                       Print.printBuf(" end Absyn.ALGORITHMS;")
                     ()
                   end
 
                   Absyn.INITIALALGORITHMS(algContents)  => begin
-                      Print.printBuf("\nrecord Absyn.INITIALALGORITHMS contents = ")
+                      Print.printBuf("\\nrecord Absyn.INITIALALGORITHMS contents = ")
                       printListAsCorbaString(algContents, printAlgorithmItemAsCorbaString, ",")
                       Print.printBuf(" end Absyn.INITIALALGORITHMS;")
                     ()
                   end
 
                   Absyn.EXTERNAL(externalDecl, annotation_)  => begin
-                      Print.printBuf("\nrecord Absyn.EXTERNAL externalDecl = ")
+                      Print.printBuf("\\nrecord Absyn.EXTERNAL externalDecl = ")
                       printExternalDeclAsCorbaString(externalDecl)
                       Print.printBuf(", annotation_ = ")
                       printOption(annotation_, printAnnotationAsCorbaString)
@@ -4213,11 +4214,11 @@
 
         function printExternalDeclAsCorbaString(decl::Absyn.ExternalDecl)
               _ = begin
-                  local funcName::Option
-                  local lang::Option
-                  local output_::Option
-                  local args::IList
-                  local annotation_::Option
+                  local funcName::Option{<:String}
+                  local lang::Option{<:String}
+                  local output_::Option{<:Absyn.ComponentRef}
+                  local args::List{<:Absyn.Exp}
+                  local annotation_::Option{<:Absyn.Annotation}
                 @match decl begin
                   Absyn.EXTERNALDECL(funcName, lang, output_, args, annotation_)  => begin
                       Print.printBuf("record Absyn.EXTERNALDECL funcName = ")
@@ -4256,9 +4257,9 @@
                   end
 
                   Absyn.LEXER_COMMENT(cmt)  => begin
-                      Print.printBuf("record Absyn.ELEMENTITEM element = \"")
+                      Print.printBuf("record Absyn.ELEMENTITEM element = \\")
                       Print.printBuf(cmt)
-                      Print.printBuf("\" end Absyn.ELEMENTITEM;")
+                      Print.printBuf("\\ end Absyn.ELEMENTITEM;")
                     ()
                   end
 
@@ -4273,18 +4274,18 @@
         function printElementAsCorbaString(el::Absyn.Element)
               _ = begin
                   local finalPrefix::Bool
-                  local redeclareKeywords::Option
+                  local redeclareKeywords::Option{<:Absyn.RedeclareKeywords}
                   local innerOuter::Absyn.InnerOuter
                   local name::String
                   local string::String
                   local specification::Absyn.ElementSpec
                   local info::SourceInfo
-                  local constrainClass::Option
-                  local args::IList
-                  local optName::Option
+                  local constrainClass::Option{<:Absyn.ConstrainClass}
+                  local args::List{<:Absyn.NamedArg}
+                  local optName::Option{<:String}
                 @match el begin
                   Absyn.ELEMENT(finalPrefix, redeclareKeywords, innerOuter, specification, info, constrainClass)  => begin
-                      Print.printBuf("\nrecord Absyn.ELEMENT finalPrefix = ")
+                      Print.printBuf("\\nrecord Absyn.ELEMENT finalPrefix = ")
                       Print.printBuf(boolString(finalPrefix))
                       Print.printBuf(",redeclareKeywords = ")
                       printOption(redeclareKeywords, printRedeclareKeywordsAsCorbaString)
@@ -4301,20 +4302,20 @@
                   end
 
                   Absyn.DEFINEUNIT(name, args)  => begin
-                      Print.printBuf("\nrecord Absyn.DEFINEUNIT name = \"")
+                      Print.printBuf("\\nrecord Absyn.DEFINEUNIT name = \\")
                       Print.printBuf(name)
-                      Print.printBuf("\", args = ")
+                      Print.printBuf("\\, args = ")
                       printListAsCorbaString(args, printNamedArg, ",")
                       Print.printBuf(" end Absyn.DEFINEUNIT;")
                     ()
                   end
 
                   Absyn.TEXT(optName, string, info)  => begin
-                      Print.printBuf("\nrecord Absyn.TEXT optName = ")
+                      Print.printBuf("\\nrecord Absyn.TEXT optName = ")
                       printStringCommentOption(optName)
-                      Print.printBuf(", string = \"")
+                      Print.printBuf(", string = \\")
                       Print.printBuf(string)
-                      Print.printBuf("\", info = ")
+                      Print.printBuf("\\, info = ")
                       printInfoAsCorbaString(info)
                       Print.printBuf(" end Absyn.TEXT;")
                     ()
@@ -4378,7 +4379,7 @@
         function printConstrainClassAsCorbaString(constrainClass::Absyn.ConstrainClass)
               _ = begin
                   local elementSpec::Absyn.ElementSpec
-                  local comment::Option
+                  local comment::Option{<:Absyn.Comment}
                 @match constrainClass begin
                   Absyn.CONSTRAINCLASS(elementSpec, comment)  => begin
                       Print.printBuf("record Absyn.CONSTRAINCLASS elementSpec = ")
@@ -4397,12 +4398,12 @@
                   local replaceable_::Bool
                   local class_::Absyn.Class
                   local import_::Absyn.Import
-                  local comment::Option
+                  local comment::Option{<:Absyn.Comment}
                   local attributes::Absyn.ElementAttributes
                   local typeSpec::Absyn.TypeSpec
-                  local components::IList
-                  local annotationOpt::Option
-                  local elementArg::IList
+                  local components::List{<:Absyn.ComponentItem}
+                  local annotationOpt::Option{<:Absyn.Annotation}
+                  local elementArg::List{<:Absyn.ElementArg}
                   local path::Absyn.Path
                   local info::SourceInfo
                 @match spec begin
@@ -4454,8 +4455,8 @@
         function printComponentItemAsCorbaString(componentItem::Absyn.ComponentItem)
               _ = begin
                   local component::Absyn.Component
-                  local condition::Option
-                  local comment::Option
+                  local condition::Option{<:Absyn.ComponentCondition}
+                  local comment::Option{<:Absyn.Comment}
                 @match componentItem begin
                   Absyn.COMPONENTITEM(component, condition, comment)  => begin
                       Print.printBuf("record Absyn.COMPONENTITEM component = ")
@@ -4475,12 +4476,12 @@
               _ = begin
                   local name::String
                   local arrayDim::Absyn.ArrayDim
-                  local modification::Option
+                  local modification::Option{<:Absyn.Modification}
                 @match component begin
                   Absyn.COMPONENT(name, arrayDim, modification)  => begin
-                      Print.printBuf("record Absyn.COMPONENT name = \"")
+                      Print.printBuf("record Absyn.COMPONENT name = \\")
                       Print.printBuf(name)
-                      Print.printBuf("\", arrayDim = ")
+                      Print.printBuf("\\, arrayDim = ")
                       printArrayDimAsCorbaString(arrayDim)
                       Print.printBuf(", modification = ")
                       printOption(modification, printModificationAsCorbaString)
@@ -4493,7 +4494,7 @@
 
         function printModificationAsCorbaString(mod::Absyn.Modification)
               _ = begin
-                  local elementArgLst::IList
+                  local elementArgLst::List{<:Absyn.ElementArg}
                   local eqMod::Absyn.EqMod
                 @match mod begin
                   Absyn.CLASSMOD(elementArgLst, eqMod)  => begin
@@ -4533,12 +4534,12 @@
         function printEquationItemAsCorbaString(el::Absyn.EquationItem)
               _ = begin
                   local equation_::Absyn.Equation
-                  local comment::Option
+                  local comment::Option{<:Absyn.Comment}
                   local annotation_::Absyn.Annotation
                   local info::SourceInfo
                 @match el begin
                   Absyn.EQUATIONITEM(equation_, comment, info)  => begin
-                      Print.printBuf("\nrecord Absyn.EQUATIONITEM equation_ = ")
+                      Print.printBuf("\\nrecord Absyn.EQUATIONITEM equation_ = ")
                       printEquationAsCorbaString(equation_)
                       Print.printBuf(", comment = ")
                       printOption(comment, printCommentAsCorbaString)
@@ -4557,17 +4558,17 @@
                   local leftSide::Absyn.Exp
                   local rightSide::Absyn.Exp
                   local whenExp::Absyn.Exp
-                  local elseIfBranches::IList
-                  local elseWhenEquations::IList
+                  local elseIfBranches::List{<:Tuple{<:Absyn.Exp, List{<:Absyn.EquationItem}}}
+                  local elseWhenEquations::List{<:Tuple{<:Absyn.Exp, List{<:Absyn.EquationItem}}}
                   local connector1::Absyn.ComponentRef
                   local connector2::Absyn.ComponentRef
                   local functionName::Absyn.ComponentRef
                   local cr::Absyn.ComponentRef
                   local iterators::Absyn.ForIterators
-                  local equationTrueItems::IList
-                  local equationElseItems::IList
-                  local forEquations::IList
-                  local whenEquations::IList
+                  local equationTrueItems::List{<:Absyn.EquationItem}
+                  local equationElseItems::List{<:Absyn.EquationItem}
+                  local forEquations::List{<:Absyn.EquationItem}
+                  local whenEquations::List{<:Absyn.EquationItem}
                   local functionArgs::Absyn.FunctionArgs
                   local equ::Absyn.EquationItem
                 @match eq begin
@@ -4655,12 +4656,12 @@
         function printAlgorithmItemAsCorbaString(el::Absyn.AlgorithmItem)
               _ = begin
                   local algorithm_::Absyn.Algorithm
-                  local comment::Option
+                  local comment::Option{<:Absyn.Comment}
                   local annotation_::Absyn.Annotation
                   local info::SourceInfo
                 @match el begin
                   Absyn.ALGORITHMITEM(algorithm_, comment, info)  => begin
-                      Print.printBuf("\nrecord Absyn.ALGORITHMITEM algorithm_ = ")
+                      Print.printBuf("\\nrecord Absyn.ALGORITHMITEM algorithm_ = ")
                       printAlgorithmAsCorbaString(algorithm_)
                       Print.printBuf(", comment = ")
                       printOption(comment, printCommentAsCorbaString)
@@ -4679,16 +4680,16 @@
                   local value::Absyn.Exp
                   local ifExp::Absyn.Exp
                   local boolExpr::Absyn.Exp
-                  local elseIfAlgorithmBranch::IList
-                  local elseWhenAlgorithmBranch::IList
-                  local trueBranch::IList
-                  local elseBranch::IList
-                  local forBody::IList
-                  local whileBody::IList
-                  local whenBody::IList
-                  local tryBody::IList
-                  local catchBody::IList
-                  local body::IList
+                  local elseIfAlgorithmBranch::List{<:Tuple{<:Absyn.Exp, List{<:Absyn.AlgorithmItem}}}
+                  local elseWhenAlgorithmBranch::List{<:Tuple{<:Absyn.Exp, List{<:Absyn.AlgorithmItem}}}
+                  local trueBranch::List{<:Absyn.AlgorithmItem}
+                  local elseBranch::List{<:Absyn.AlgorithmItem}
+                  local forBody::List{<:Absyn.AlgorithmItem}
+                  local whileBody::List{<:Absyn.AlgorithmItem}
+                  local whenBody::List{<:Absyn.AlgorithmItem}
+                  local tryBody::List{<:Absyn.AlgorithmItem}
+                  local catchBody::List{<:Absyn.AlgorithmItem}
+                  local body::List{<:Absyn.AlgorithmItem}
                   local iterators::Absyn.ForIterators
                   local functionCall::Absyn.ComponentRef
                   local functionArgs::Absyn.FunctionArgs
@@ -4782,25 +4783,25 @@
               end
         end
 
-        function printAlgorithmBranchAsCorbaString(inBranch::Tuple)
+        function printAlgorithmBranchAsCorbaString(inBranch::Tuple{<:Absyn.Exp, List{<:Absyn.AlgorithmItem}})
               printTupleAsCorbaString(inBranch, printExpAsCorbaString, printAlgorithmItemListAsCorbaString)
         end
 
-        function printAlgorithmItemListAsCorbaString(inLst::IList)
+        function printAlgorithmItemListAsCorbaString(inLst::List{<:Absyn.AlgorithmItem})
               printListAsCorbaString(inLst, printAlgorithmItemAsCorbaString, ",")
         end
 
-        function printEquationBranchAsCorbaString(inBranch::Tuple)
+        function printEquationBranchAsCorbaString(inBranch::Tuple{<:Absyn.Exp, List{<:Absyn.EquationItem}})
               printTupleAsCorbaString(inBranch, printExpAsCorbaString, printEquationItemListAsCorbaString)
         end
 
-        function printEquationItemListAsCorbaString(inLst::IList)
+        function printEquationItemListAsCorbaString(inLst::List{<:Absyn.EquationItem})
               printListAsCorbaString(inLst, printEquationItemAsCorbaString, ",")
         end
 
         function printAnnotationAsCorbaString(annotation_::Absyn.Annotation)
               _ = begin
-                  local elementArgs::IList
+                  local elementArgs::List{<:Absyn.ElementArg}
                 @match annotation_ begin
                   Absyn.ANNOTATION(elementArgs)  => begin
                       Print.printBuf("record Absyn.ANNOTATION elementArgs = ")
@@ -4814,8 +4815,8 @@
 
         function printCommentAsCorbaString(inComment::Absyn.Comment)
               _ = begin
-                  local annotation_::Option
-                  local comment::Option
+                  local annotation_::Option{<:Absyn.Annotation}
+                  local comment::Option{<:String}
                 @match inComment begin
                   Absyn.COMMENT(annotation_, comment)  => begin
                       Print.printBuf("record Absyn.COMMENT annotation_ = ")
@@ -4832,8 +4833,8 @@
         function printTypeSpecAsCorbaString(typeSpec::Absyn.TypeSpec)
               _ = begin
                   local path::Absyn.Path
-                  local arrayDim::Option
-                  local typeSpecs::IList
+                  local arrayDim::Option{<:Absyn.ArrayDim}
+                  local typeSpecs::List{<:Absyn.TypeSpec}
                 @match typeSpec begin
                   Absyn.TPATH(path, arrayDim)  => begin
                       Print.printBuf("record Absyn.TPATH path = ")
@@ -4887,9 +4888,9 @@
                   local path::Absyn.Path
                 @match import_ begin
                   Absyn.NAMED_IMPORT(name, path)  => begin
-                      Print.printBuf("record Absyn.NAMED_IMPORT name = \"")
+                      Print.printBuf("record Absyn.NAMED_IMPORT name = \\")
                       Print.printBuf(name)
-                      Print.printBuf("\", path = ")
+                      Print.printBuf("\\, path = ")
                       printPathAsCorbaString(path)
                       Print.printBuf(" end Absyn.NAMED_IMPORT;")
                     ()
@@ -5034,11 +5035,11 @@
               _ = begin
                   local finalPrefix::Bool
                   local eachPrefix::Absyn.Each
-                  local modification::Option
-                  local comment::Option
+                  local modification::Option{<:Absyn.Modification}
+                  local comment::Option{<:String}
                   local redeclareKeywords::Absyn.RedeclareKeywords
                   local elementSpec::Absyn.ElementSpec
-                  local constrainClass::Option
+                  local constrainClass::Option{<:Absyn.ConstrainClass}
                   local info::SourceInfo
                   local p::Absyn.Path
                 @match arg begin
@@ -5081,8 +5082,8 @@
 
         function printFunctionArgsAsCorbaString(fargs::Absyn.FunctionArgs)
               _ = begin
-                  local args::IList
-                  local argNames::IList
+                  local args::List{<:Absyn.Exp}
+                  local argNames::List{<:Absyn.NamedArg}
                   local exp::Absyn.Exp
                   local iterators::Absyn.ForIterators
                 @match fargs begin
@@ -5110,13 +5111,13 @@
         function printForIteratorAsCorbaString(iter::Absyn.ForIterator)
               _ = begin
                   local id::String
-                  local guardExp::Option
-                  local range::Option
+                  local guardExp::Option{<:Absyn.Exp}
+                  local range::Option{<:Absyn.Exp}
                 @match iter begin
                   Absyn.ITERATOR(id, guardExp, range)  => begin
-                      Print.printBuf("record Absyn.ITERATOR name = \"")
+                      Print.printBuf("record Absyn.ITERATOR name = \\")
                       Print.printBuf(id)
-                      Print.printBuf("\", guardExp = ")
+                      Print.printBuf("\\, guardExp = ")
                       printOption(guardExp, printExpAsCorbaString)
                       Print.printBuf(", range = ")
                       printOption(range, printExpAsCorbaString)
@@ -5133,9 +5134,9 @@
                   local argValue::Absyn.Exp
                 @match arg begin
                   Absyn.NAMEDARG(argName, argValue)  => begin
-                      Print.printBuf("record Absyn.NAMEDARG argName = \"")
+                      Print.printBuf("record Absyn.NAMEDARG argName = \\")
                       Print.printBuf(argName)
-                      Print.printBuf("\", argValue = ")
+                      Print.printBuf("\\, argValue = ")
                       printExpAsCorbaString(argValue)
                       Print.printBuf(" end Absyn.NAMEDARG;")
                     ()
@@ -5165,17 +5166,17 @@
                   local head::Absyn.Exp
                   local rest::Absyn.Exp
                   local inputExp::Absyn.Exp
-                  local step::Option
+                  local step::Option{<:Absyn.Exp}
                   local op::Absyn.Operator
-                  local arrayExp::IList
-                  local expressions::IList
-                  local matrix::IList
-                  local elseIfBranch::IList
+                  local arrayExp::List{<:Absyn.Exp}
+                  local expressions::List{<:Absyn.Exp}
+                  local matrix::List{<:List{<:Absyn.Exp}}
+                  local elseIfBranch::List{<:Tuple{<:Absyn.Exp, Absyn.Exp}}
                   local code::Absyn.CodeNode
                   local matchTy::Absyn.MatchType
-                  local localDecls::IList
-                  local cases::IList
-                  local comment::Option
+                  local localDecls::List{<:Absyn.ElementItem}
+                  local cases::List{<:Absyn.Case}
+                  local comment::Option{<:String}
                 @match inExp begin
                   Absyn.INTEGER(value = i)  => begin
                       Print.printBuf("record Absyn.INTEGER value = ")
@@ -5199,9 +5200,9 @@
                   end
 
                   Absyn.STRING(value = s)  => begin
-                      Print.printBuf("record Absyn.STRING value = \"")
+                      Print.printBuf("record Absyn.STRING value = \\")
                       Print.printBuf(s)
-                      Print.printBuf("\" end Absyn.STRING;")
+                      Print.printBuf("\\ end Absyn.STRING;")
                     ()
                   end
 
@@ -5339,9 +5340,9 @@
                   end
 
                   Absyn.AS(id, exp)  => begin
-                      Print.printBuf("record Absyn.AS id = \"")
+                      Print.printBuf("record Absyn.AS id = \\")
                       Print.printBuf(id)
-                      Print.printBuf("\", exp = ")
+                      Print.printBuf("\\, exp = ")
                       printExpAsCorbaString(exp)
                       Print.printBuf(" end Absyn.AS;")
                     ()
@@ -5362,9 +5363,9 @@
                       Print.printBuf(", inputExp = ")
                       printExpAsCorbaString(inputExp)
                       Print.printBuf(", localDecls = ")
-                      printListAsCorbaString(localDecls, printElementItemAsCorbaString, ",\n")
+                      printListAsCorbaString(localDecls, printElementItemAsCorbaString, ",\\n")
                       Print.printBuf(", cases = ")
-                      printListAsCorbaString(cases, printCaseAsCorbaString, ",\n")
+                      printListAsCorbaString(cases, printCaseAsCorbaString, ",\\n")
                       Print.printBuf(", comment = ")
                       printStringCommentOption(comment)
                       Print.printBuf(" end Absyn.MATCHEXP;")
@@ -5394,14 +5395,14 @@
         function printCaseAsCorbaString(case_::Absyn.Case)
               _ = begin
                   local pattern::Absyn.Exp
-                  local patternGuard::Option
+                  local patternGuard::Option{<:Absyn.Exp}
                   local patternInfo::SourceInfo
                   local info::SourceInfo
                   local resultInfo::SourceInfo
-                  local localDecls::IList
+                  local localDecls::List{<:Absyn.ElementItem}
                   local classPart::Absyn.ClassPart
                   local result::Absyn.Exp
-                  local comment::Option
+                  local comment::Option{<:String}
                 @match case_ begin
                   Absyn.CASE(pattern, patternGuard, patternInfo, localDecls, classPart, result, resultInfo, comment, info)  => begin
                       Print.printBuf("record Absyn.CASE pattern = ")
@@ -5451,8 +5452,8 @@
                   local path::Absyn.Path
                   local componentRef::Absyn.ComponentRef
                   local boolean::Bool
-                  local equationItemLst::IList
-                  local algorithmItemLst::IList
+                  local equationItemLst::List{<:Absyn.EquationItem}
+                  local algorithmItemLst::List{<:Absyn.AlgorithmItem}
                   local element::Absyn.Element
                   local exp::Absyn.Exp
                   local modification::Absyn.Modification
@@ -5513,17 +5514,18 @@
               end
         end
 
-        function printListExpAsCorbaString(inLst::IList)
+        function printListExpAsCorbaString(inLst::List{<:Absyn.Exp})
               printListAsCorbaString(inLst, printExpAsCorbaString, ",")
         end
 
-        function printListAsCorbaString(inTypeALst::IList, inFuncTypeTypeATo::FuncTypeType_aTo, inString::String)
+        function printListAsCorbaString(inTypeALst::List{<:Type_a}, inFuncTypeTypeATo::FuncTypeType_aTo, inString::String)
               Print.printBuf("{")
               printList(inTypeALst, inFuncTypeTypeATo, inString)
               Print.printBuf("}")
         end
 
-        function printTupleAsCorbaString(inTpl::Tuple, fnA::FuncTypeType_a, fnB::FuncTypeType_b)
+        Type_b = Any
+        function printTupleAsCorbaString(inTpl::Tuple{<:Type_a, <:Type_b}, fnA::FuncTypeType_a, fnB::FuncTypeType_b)
               _ = begin
                   local a::Type_a
                   local b::Type_b
@@ -5672,17 +5674,43 @@
               end
         end
 
-        function printTupleExpExpAsCorbaString(tpl::Tuple)
+        function printTupleExpExpAsCorbaString(tpl::Tuple{<:Absyn.Exp, Absyn.Exp})
               printTupleAsCorbaString(tpl, printExpAsCorbaString, printExpAsCorbaString)
         end
 
         function printStringAsCorbaString(s::String)
-              Print.printBuf("\"")
+              Print.printBuf("\\")
               Print.printBuf(s)
-              Print.printBuf("\"")
+              Print.printBuf("\\")
         end
 
-        function writePath(file, path::Absyn.Path, escape::Escape = Escape.None, delimiter::String = ".", initialDot::Bool = true)
+        function writePath(file::File.FILE, path::Absyn.Path, escape::Escape = Escape.None, delimiter::String = ".", initialDot::Bool = true)
+              local p::Absyn.Path = path
+
+              while true
+                p = begin
+                  @match p begin
+                    Absyn.IDENT(__)  => begin
+                        File.writeEscape(file, p.name, escape)
+                        return
+                      fail()
+                    end
+
+                    Absyn.QUALIFIED(__)  => begin
+                        File.writeEscape(file, p.name, escape)
+                        File.writeEscape(file, delimiter, escape)
+                      p.path
+                    end
+
+                    Absyn.FULLYQUALIFIED(__)  => begin
+                        if initialDot
+                          File.writeEscape(file, delimiter, escape)
+                        end
+                      p.path
+                    end
+                  end
+                end
+              end
         end
 
     #= So that we can use wildcard imports and named imports when they do occur. Not good Julia practice =#

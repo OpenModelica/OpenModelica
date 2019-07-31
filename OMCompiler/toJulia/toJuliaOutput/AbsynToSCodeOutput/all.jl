@@ -29,4 +29,10 @@ BouncingBall = PROGRAM(list(CLASS("BouncingBall", false, false ,false, R_MODEL()
 
 AbsynToSCode.translateAbsyn2SCode(BouncingBall)
 
+println("Using the AST")
+using Modelica_Standard_Library_AST
+println("Hello\n")
+@time AbsynToSCode.translateAbsyn2SCode(Modelica_Standard_Library_AST.Program)
+@time AbsynToSCode.translateAbsyn2SCode(Modelica_Standard_Library_AST.Program)
+println("Goodbye")
 #include("./Util.jl")

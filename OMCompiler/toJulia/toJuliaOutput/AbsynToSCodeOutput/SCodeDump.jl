@@ -119,7 +119,7 @@
               local outString::String
 
               outString = begin
-                  local comment::Option{String}
+                  local comment::Option{<:String}
                 @match inComment begin
                   SCode.COMMENT(comment = comment)  => begin
                     Tpl.tplString2(SCodeDumpTpl.dumpCommentStr, comment, options)
@@ -138,7 +138,7 @@
               local outString::String
 
               outString = begin
-                  local annotation_::Option{SCode.Annotation}
+                  local annotation_::Option{<:SCode.Annotation}
                 @match (inComment, options) begin
                   (SCode.COMMENT(annotation_ = annotation_), _)  => begin
                     Tpl.tplString2(SCodeDumpTpl.dumpAnnotationOpt, annotation_, options)
@@ -700,8 +700,8 @@
           str
         end
 
-        function filterElements(elements::List{SCode.Element}, options::SCodeDumpOptions)::List{SCode.Element}
-              local outElements::List{SCode.Element}
+        function filterElements(elements::List{<:SCode.Element}, options::SCodeDumpOptions)::List{<:SCode.Element}
+              local outElements::List{<:SCode.Element}
 
               outElements = ListUtil.select1(elements, filterElement, options)
           outElements

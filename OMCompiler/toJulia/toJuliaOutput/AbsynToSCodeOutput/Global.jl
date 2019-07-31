@@ -66,6 +66,7 @@
          optionSimCode = 24::ModelicaInteger
          interactiveCache = 25::ModelicaInteger
          isInStream = 26::ModelicaInteger
+         MMToJLListIndex = 27::ModelicaInteger
          #=  indexes in System.tick
          =#
          #=  ----------------------

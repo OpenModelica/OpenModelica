@@ -252,7 +252,7 @@
               end
          end
 
-        Program = List{Element}  #= - Programs
+        Program = List  #= - Programs
         As in the AST, a program is simply a list of class definitions. =#
 
           #= Enum, which is a name in an enumeration and an optional Comment. =#
