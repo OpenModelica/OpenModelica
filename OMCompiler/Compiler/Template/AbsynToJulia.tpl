@@ -809,7 +809,11 @@ end dumpTypeSpecOpt;
 
 template dumpTypeSpec(Absyn.TypeSpec typeSpec, Context context)
 "
-  Dumps the type specification
+Dumps the type specification:
+
+TODO add several <: for the different types. Not important at the present time.
+
+TODO: Any types should not have the <: syntax
 "
 ::=
 match typeSpec
@@ -823,14 +827,33 @@ match typeSpec
     let arraydim_str = dumpArrayDimOpt(arrayDim, context)
     /* For input context/Function context we use special Julia syntax to allow covariance (ML style typing) */
     let isFunc = match context
-                   case FUNCTION(__) then "func"
                    case INPUT_CONTEXT(__) then "iofunc"
-                   case PACKAGE(__) then "PACKAGE"
                    else ""
+    let isPackage  = match context
+                       case PACKAGE(__) then "package"
+                       else ""
+   /* We must treat lists in a special way */
+   let ty_str2 =
+      match path_str
+        /* Yes. Ride the crazy train... Julia <3 */
+        case "List" then '{<:<%ty_str%>}'
+        else '{<:<%ty_str%>}'
+   let isList =
+     match path_str
+       case "List" then "L"
+       else ""
+   let res =
+     if isList then
+       'Union{<%path_str%><%ty_str2%>, Nil{Any}}<%arraydim_str%>'
+     else
+       '<%path_str%><%ty_str2%><%arraydim_str%>'
    if isFunc then
-     '<%path_str%>{<:<%ty_str%>}<%arraydim_str%> #=The context is <%isFunc%>=#'
+       '<%res%>'
    else
-     '<%path_str%>{<%ty_str%>}<%arraydim_str%>'
+     if isPackage then
+       '<%path_str%>'
+     else
+       '<%path_str%>{<%ty_str%>}<%arraydim_str%>'
 end dumpTypeSpec;
 
 template dumpArrayDimOptTypeSpec(Option<Absyn.ArrayDim> arraydim, Context context)
@@ -917,7 +940,10 @@ match exp
     '(<%args2_str%>) -> <%func_str%>(<%args_str%>)'
   case ARRAY(__) /*MM grammar changing behaviour... Remember to change this IF regular arrays would occur... Probably not used so can be ignored */ then
     let array_str = (arrayExp |> e => dumpExp(e, context) ;separator=", ")
-    'list(<%array_str%>)'
+    if array_str then
+      'list(<%array_str%>)'
+    else
+      'nil()'
   case MATRIX(__) then
     let matrix_str = (matrix |> row =>
         (row |> e => dumpExp(e, context) ;separator=", ") ;separator="; ")
@@ -975,9 +1001,19 @@ match exp
   case CALL(function_=function_ as CREF_IDENT(name=id)) then
     let args_str = dumpFunctionArgsPattern(functionArgs)
     let func_str = (match id
-    case "list" then "IList"
-    else dumpCref(function_, functionContext))
-    '<%func_str%>(<%args_str%>)'
+      case "list" then "List"
+      else dumpCref(function_, functionContext))
+    if args_str then
+      '<%func_str%>(<%args_str%>)'
+    else
+      /*We have a wildcard*/
+      let isNone = match func_str
+        case "NONE" then "NONE"
+        else ""
+      if isNone then
+       '<%func_str%>()'
+      else
+        '<%func_str%>(__)'
   case CALL(__) then
     let func_str = dumpCref(function_, functionContext)
     let args_str = dumpFunctionArgsPattern(functionArgs)
