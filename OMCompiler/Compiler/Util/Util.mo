@@ -1043,6 +1043,18 @@ algorithm
   cString := System.escapedString(modelicaString,true);
 end escapeModelicaStringToCString;
 
+public function escapeModelicaStringToJLString
+  input String modelicaString;
+  output String cString;
+algorithm
+  //TODO. Do this the proper way. We just remove all the dollars for now
+  cString := System.stringReplace(modelicaString, "$", "");
+  cString := System.stringReplace(cString, "\"", "");
+  cString := System.stringReplace(cString, "\"", "");
+  cString := System.stringReplace(cString, "\"\"", "");
+  cString := System.escapedString(cString,true);
+end escapeModelicaStringToJLString;
+
 public function escapeModelicaStringToXmlString
   input String modelicaString;
   output String xmlString;

@@ -364,7 +364,7 @@ protected function translateAttributes
 "@author: adrpo
  translates from Absyn.ElementAttributes to SCode.Attributes"
   input Absyn.ElementAttributes inEA;
-  input Absyn.ArrayDim extraArrayDim;
+  input list<Absyn.Subscript> extraArrayDim;
   output SCode.Attributes outA;
 algorithm
   outA := match(inEA,extraArrayDim)
@@ -608,7 +608,7 @@ algorithm
   end match;
 end translateEnumlist;
 
-protected function translateClassdefElements
+public function translateClassdefElements
 "Convert an Absyn.ClassPart list to an Element list."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<SCode.Element> outElementLst;
@@ -1803,7 +1803,7 @@ algorithm
 
       case Absyn.REDECLARATION()
         algorithm
-          {elem} := translateElementspec(arg.constrainClass, arg.finalPrefix,
+          elem::{} := translateElementspec(arg.constrainClass, arg.finalPrefix,
             Absyn.NOT_INNER_OUTER(), SOME(arg.redeclareKeywords), SCode.PUBLIC(),
             arg.elementSpec, arg.info);
 

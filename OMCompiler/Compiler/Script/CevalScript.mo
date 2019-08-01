@@ -1263,6 +1263,17 @@ algorithm
       then
         (cache,Values.BOOL(false));
 
+    case (cache,_,"generateJuliaHeader",{Values.STRING(filename)},_)
+      equation
+        str = Tpl.tplString(Unparsing.programExternalHeaderJulia, SymbolTable.getSCode());
+        System.writeFile(filename,str);
+      then
+        (cache,Values.BOOL(true));
+
+    case (cache,_,"generateJuliaHeader",_,_)
+      then
+        (cache,Values.BOOL(false));
+
     case (cache,env,"generateCode",{Values.CODE(Absyn.C_TYPENAME(path))},_)
       equation
         (cache,Util.SUCCESS()) = Static.instantiateDaeFunction(cache, env, path, false, NONE(), true);

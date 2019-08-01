@@ -67,6 +67,7 @@ constant Integer operatorOverloadingCache = 23;
 constant Integer optionSimCode = 24;
 constant Integer interactiveCache = 25;
 constant Integer isInStream = 26;
+constant Integer MMToJLListIndex = 27;
 
 // indexes in System.tick
 // ----------------------

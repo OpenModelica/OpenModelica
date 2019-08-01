@@ -294,6 +294,7 @@ package Absyn
     record EQUATIONITEM
       Equation equation_;
       Option<Comment> comment;
+      builtin.SourceInfo info;
     end EQUATIONITEM;
 
     record EQUATIONITEMCOMMENT
@@ -305,6 +306,7 @@ package Absyn
     record ALGORITHMITEM
       Algorithm algorithm_;
       Option<Comment> comment;
+      builtin.SourceInfo info;
     end ALGORITHMITEM;
 
     record ALGORITHMITEMCOMMENT
@@ -423,6 +425,7 @@ package Absyn
 
     record EQMOD
       Exp exp;
+      builtin.SourceInfo info;
     end EQMOD;
   end EqMod;
 
@@ -433,6 +436,7 @@ package Absyn
       Path path;
       Option<Modification> modification;
       Option<String> comment;
+      builtin.SourceInfo info;
     end MODIFICATION;
 
     record REDECLARATION
@@ -441,6 +445,7 @@ package Absyn
       Each eachPrefix;
       ElementSpec elementSpec;
       Option<ConstrainClass> constrainClass;
+      builtin.SourceInfo info;
     end REDECLARATION;
   end ElementArg;
 
@@ -869,6 +874,20 @@ package AbsynUtil
   end isClassdef;
 end AbsynUtil;
 
+package Util
+
+function escapeModelicaStringToCString
+  input String modelicaString;
+  output String cString;
+end escapeModelicaStringToCString;
+
+function escapeModelicaStringToJLString
+  input String modelicaString;
+  output String cString;
+end escapeModelicaStringToJLString;
+
+end Util;
+
 package Config
   function acceptMetaModelicaGrammar
     output Boolean outBoolean;
@@ -904,6 +923,14 @@ package System
     input String inString;
     output String outString;
   end trimWhitespace;
+
+  function tmpTick
+    output Integer tickNo;
+  end tmpTick;
+
+  function tmpTickReset
+    input Integer start;
+  end tmpTickReset;
 end System;
 
 package Tpl
@@ -925,6 +952,5 @@ package Flags
     output Boolean outValue;
   end getConfigBool;
 end Flags;
-
 
 end AbsynDumpTV;

@@ -38,7 +38,6 @@ encapsulated package Array
 
 protected
 import MetaModelica.Dangerous.{arrayGetNoBoundsChecking, arrayUpdateNoBoundsChecking, arrayCreateNoInit};
-import Error;
 
 public
 function mapNoCopy<T>
@@ -880,7 +879,6 @@ protected
 algorithm
   arrLength := arrayLength(inArr1);
   if not intEq(arrLength,arrayLength(inArr2)) then
-    Error.addMessage(Error.DIFFERENT_DIM_SIZE_IN_ARGUMENTS, {"array","Array.isEqual"});
     fail();
   end if;
   for i in 1:arrLength loop
