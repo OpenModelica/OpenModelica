@@ -23,6 +23,7 @@ public:
     : ResultsPolicy((globalSettings.getEndTime()-globalSettings.getStartTime())/globalSettings.gethOutput(), globalSettings.getResultsFileName())
     , _globalSettings(globalSettings)
     , _dim(dim)
+   ,_last_write_time(0.0)
   {
   }
 
@@ -113,6 +114,8 @@ public:
   };
   virtual void write(const all_vars_time_t& v_list,const neg_all_vars_t& neg_v_list)
   {
+     //store current time
+      _last_write_time = get<3>(v_list);
       ResultsPolicy:: write(v_list,neg_v_list);
   };
  virtual write_data_t& getFreeContainer()
@@ -125,6 +128,10 @@ public:
      ResultsPolicy::addContainerToWriteQueue(container);
  }
 
+ virtual double waitForResults()
+ {
+     return _last_write_time;
+ }
 
 
 private:
@@ -133,5 +140,6 @@ private:
 
   IGlobalSettings& _globalSettings;
   size_t _dim;
+  double _last_write_time;
 };
 /** @} */ // end of core

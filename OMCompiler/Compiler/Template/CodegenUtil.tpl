@@ -72,6 +72,7 @@ template getGeneralTarget(String str)
   case "msvc12"
   case "msvc13"
   case "msvc15"
+  case "msvc19"
   then "msvc"
   else str
 end getGeneralTarget;

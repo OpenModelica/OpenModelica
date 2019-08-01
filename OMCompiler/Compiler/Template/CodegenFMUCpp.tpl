@@ -150,7 +150,7 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
     virtual ~<%lastIdentOfPath(modelInfo.name)%>WriteOutput() {}
 
     virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT) {}
-    virtual IHistory* getHistory() {return NULL;}
+    virtual shared_ptr<IHistory> getHistory() {return NULL;}
 
    protected:
     void initialize() {}

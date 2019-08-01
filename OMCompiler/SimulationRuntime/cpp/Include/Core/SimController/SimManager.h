@@ -58,7 +58,7 @@ private:
     shared_ptr<IStepEvent> _step_event_system;
 
     int* _sampleCycles;
-
+    bool _interrupt;
     #ifdef RUNTIME_PROFILING
     std::vector<MeasureTimeData*> *measureTimeFunctionsArray;
     MeasureTimeValues *runSimStartValues, *runSimEndValues, *initSimStartValues, *initSimEndValues;

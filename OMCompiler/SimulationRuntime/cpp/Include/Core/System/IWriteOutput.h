@@ -23,6 +23,6 @@ public:
 
   /// Output routine (to be called by the solver after every successful integration step)
   virtual void writeOutput(const OUTPUT command = UNDEF_OUTPUT) = 0;
-  virtual IHistory* getHistory() = 0;
+  virtual shared_ptr<IHistory> getHistory() = 0;
 };
 /** @} */ // end of coreSystem

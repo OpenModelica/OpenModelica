@@ -164,5 +164,6 @@ public:
   virtual void write(const all_vars_time_t& v_list,const neg_all_vars_t& neg_v_list) = 0;
   virtual void addContainerToWriteQueue(const write_data_t& container) = 0;
   virtual write_data_t& getFreeContainer() =0;
+  virtual double waitForResults() = 0;
 };
 /** @} */ // end of dataexchange

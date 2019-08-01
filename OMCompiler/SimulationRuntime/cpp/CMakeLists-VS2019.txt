@@ -28,7 +28,7 @@
 #     if the equation systems of a FMU should be solved with sundials solvers      -DFMU_SUNDIALS=ON [default: OFF]
 #     if the logger should be completely disabled or used                          -DUSE_LOGGER=OFF [default: ON]
 #     specify target platform for compilation                                      -DPLATFORM=<dynamic, static or platform triple> [default: "dynamic"]
-#     use Klu sparse liner solver                                                    -DUSE_KLU [default: OFF]
+#     use Klu sparse liner solver 												   -DUSE_KLU [default: OFF]
 #     use NOX non linear solver from trilinos library                              -DUSE_TRILINOS [default: OFF]
 #     Example: "cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo" to create statically linked libraries
 #
@@ -92,8 +92,6 @@ OPTION(TRILINOS_ROOT "TRILINOS ROOT" "")
 OPTION(USE_CPP_03 "USE_CPP_03" OFF)
 OPTION(USE_ZEROMQ "USE zeromq and cppzmq" ON)
 OPTION(USE_PRECOMPILEDHEADER  OFF)
-OPTION(USE_MINPACK ON)
-
 #Set Variables
 SET(MODELICAEXTERNALCDIR  "${CMAKE_SOURCE_DIR}/../../3rdParty/ModelicaExternalC/C-Sources")
 
@@ -345,10 +343,10 @@ set(Boost_DEBUG 1)
     SET(BOOST_ROOT $ENV{OMDEV}"/tools/mingw64/include")
   ELSE()
     IF(MSVC_VERSION GREATER 1700)
-      SET(BOOST_ROOT $ENV{OMDEV}"/lib/3rdParty/boost-1_59/")
-      #SET(Boost_COMPILER  "-vc142")
+      SET(BOOST_ROOT "D:\\ESS12\\ESS12_OMC-ZeroMQ\\3rdParty\\boost")
+      SET(Boost_COMPILER  "-vc142")
     ELSE(MSVC_VERSION GREATER 1700)
-      SET(BOOST_ROOT $ENV{OMDEV}"/lib/3rdParty/boost-1_55/")
+        SET(BOOST_ROOT "D:\\ESS12\\ESS12_OMC-ZeroMQ\\3rdParty\\boost")
     ENDIF(MSVC_VERSION GREATER 1700)
   ENDIF(IS_MINGW32)
   MESSAGE(STATUS "Boost root:")
@@ -400,20 +398,16 @@ ELSE(MSVC)
     SET(CMinpack_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/build")
 ENDIF(MSVC)
 
+FIND_PATH(CMINPACK_INCLUDE_DIR cminpack.h
+          HINTS ${CMinpack_Path}
+          PATH_SUFFIXES include include/cminpack include/cminpack-1 ..)
 
-IF(USE_MINPACK)
-    FIND_PATH(CMINPACK_INCLUDE_DIR cminpack.h
-              HINTS ${CMinpack_Path}
-              PATH_SUFFIXES include include/cminpack include/cminpack-1 ..)
+FIND_LIBRARY(CMINPACK_LIBRARY
+             NAMES cminpack
+             HINTS ${CMinpack_Path}
+             PATH_SUFFIXES lib lib64)
 
-    FIND_LIBRARY(CMINPACK_LIBRARY
-                 NAMES cminpack
-                 HINTS ${CMinpack_Path}
-                 PATH_SUFFIXES lib lib64)
-
-    INCLUDE_DIRECTORIES(${CMINPACK_INCLUDE_DIR})
-
-ENDIF(USE_MINPACK)
+INCLUDE_DIRECTORIES(${CMINPACK_INCLUDE_DIR})
 
 # Find Intel TBB
 FIND_PACKAGE(TBB)
@@ -564,35 +558,32 @@ IF(USE_SUNDIALS)
   MESSAGE(STATUS "${SUNDIALS_LIBRARY_RELEASE_HOME}")
 
 
-    SET(SUNDIALS_INCLUDE_DIR "${SUNDIALS_INLCUDE_HOME}")
-  IF (NOT EXISTS "${SUNDIALS_INLCUDE_HOME}/cvode/cvode.h")
+  FIND_PATH(SUNDIALS_INCLUDE_DIR cvode/cvode.h PATHS ${SUNDIALS_INLCUDE_HOME})
+  IF (NOT SUNDIALS_INCLUDE_DIR)
     MESSAGE(FATAL_ERROR "Could not find Sundials; compile omc first")
+  ELSE(NOT SUNDIALS_INCLUDE_DIR)
+    INCLUDE_DIRECTORIES(${SUNDIALS_INCLUDE_DIR})
+    # Extract the version number from sundials_config.h
+    FIND_PATH(SUNDIALS_CONFIG_FILE "sundials_config.h" ${SUNDIALS_INCLUDE_DIR} "${SUNDIALS_INCLUDE_DIR}/sundials")
+    SET(SUNDIALS_CONFIG_FILE "${SUNDIALS_CONFIG_FILE}/sundials_config.h")
+    FILE(READ "${SUNDIALS_CONFIG_FILE}" SUNDIALS_CONFIG_FILE_CONTENT)
+    STRING(REGEX MATCH "#define SUNDIALS_PACKAGE_VERSION .([0-9]+)\\.([0-9]+)\\.([0-9]+)." SUNDIALS_CONFIG_FILE_CONTENT ${SUNDIALS_CONFIG_FILE_CONTENT})
+    STRING(REGEX REPLACE "#define SUNDIALS_PACKAGE_VERSION .([0-9]+)\\.([0-9]+)\\.([0-9]+)." "\\1;\\2;\\3" SUNDIALS_CONFIG_FILE_VERSION ${SUNDIALS_CONFIG_FILE_CONTENT})
+    LIST(GET SUNDIALS_CONFIG_FILE_VERSION 0 SUNDIALS_MAJOR_VERSION)
+    IF(SUNDIALS_MAJOR_VERSION)
+      ADD_DEFINITIONS("-DSUNDIALS_MAJOR_VERSION=${SUNDIALS_MAJOR_VERSION}")
+    ELSE()
+      MESSAGE(FATAL_ERROR "Could not determine sundials version")
+    ENDIF()
+    LIST(GET SUNDIALS_CONFIG_FILE_VERSION 1 SUNDIALS_MINOR_VERSION)
+    IF(SUNDIALS_MINOR_VERSION)
+      ADD_DEFINITIONS("-DSUNDIALS_MINOR_VERSION=${SUNDIALS_MINOR_VERSION}")
+    ELSE()
+      MESSAGE(FATAL_ERROR "Could not determine sundials version")
+    ENDIF()
+    LIST(GET SUNDIALS_CONFIG_FILE_VERSION 2 SUNDIALS_PATCH_VERSION)
+    MESSAGE(STATUS "Using sundials ${SUNDIALS_MAJOR_VERSION}.${SUNDIALS_MINOR_VERSION}.${SUNDIALS_PATCH_VERSION}")
   ENDIF()
-  INCLUDE_DIRECTORIES(${SUNDIALS_INCLUDE_DIR})
-  # Extract the version number from sundials_config.h
-  SET(SUNDIALS_CONFIG_FILE "${SUNDIALS_INCLUDE_DIR}/sundials/sundials_config.h")
-  IF(NOT EXISTS "${SUNDIALS_CONFIG_FILE}")
-    MESSAGE(FATAL_ERROR "Could not find sundials_config.h")
-  ENDIF()
-  FILE(READ "${SUNDIALS_CONFIG_FILE}" SUNDIALS_CONFIG_FILE_CONTENT)
-  MESSAGE(STATUS "Found config file ${SUNDIALS_CONFIG_FILE}")
-  STRING(REGEX MATCH "#define SUNDIALS_PACKAGE_VERSION .([0-9]+)\\.([0-9]+)\\.([0-9]+)." SUNDIALS_CONFIG_FILE_CONTENT ${SUNDIALS_CONFIG_FILE_CONTENT})
-  STRING(REGEX REPLACE "#define SUNDIALS_PACKAGE_VERSION .([0-9]+)\\.([0-9]+)\\.([0-9]+)." "\\1;\\2;\\3" SUNDIALS_CONFIG_FILE_VERSION ${SUNDIALS_CONFIG_FILE_CONTENT})
-  LIST(GET SUNDIALS_CONFIG_FILE_VERSION 0 SUNDIALS_MAJOR_VERSION)
-  IF(SUNDIALS_MAJOR_VERSION)
-    ADD_DEFINITIONS("-DSUNDIALS_MAJOR_VERSION=${SUNDIALS_MAJOR_VERSION}")
-  ELSE()
-    MESSAGE(FATAL_ERROR "Could not determine sundials version")
-  ENDIF()
-  LIST(GET SUNDIALS_CONFIG_FILE_VERSION 1 SUNDIALS_MINOR_VERSION)
-  IF(SUNDIALS_MINOR_VERSION)
-    ADD_DEFINITIONS("-DSUNDIALS_MINOR_VERSION=${SUNDIALS_MINOR_VERSION}")
-  ELSE()
-    MESSAGE(FATAL_ERROR "Could not determine sundials version")
-  ENDIF()
-  LIST(GET SUNDIALS_CONFIG_FILE_VERSION 2 SUNDIALS_PATCH_VERSION)
-  MESSAGE(STATUS "Using sundials ${SUNDIALS_MAJOR_VERSION}.${SUNDIALS_MINOR_VERSION}.${SUNDIALS_PATCH_VERSION}")
-
 
   FIND_LIBRARY(SUNDIALS_NVECSERIAL_LIB "sundials_nvecserial" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} $ENV{SUNDIALS_ROOT}/lib)
   IF(NOT SUNDIALS_NVECSERIAL_LIB)
@@ -898,12 +889,10 @@ add_subdirectory(Solver/Newton)
 
 if(NOT FMU_TARGET)
   # add more algebraic loop solvers
-  add_subdirectory(Solver/Broyden)
-  if(USE_MINPACK)
-    add_subdirectory(Solver/Hybrj)
-  endif(USE_MINPACK)
+  #TRM add_subdirectory(Solver/Broyden)
+  #TRM add_subdirectory(Solver/Hybrj)<
   add_subdirectory(Solver/UmfPack)
-  add_subdirectory(Solver/Peer)
+  #TRM add_subdirectory(Solver/Peer)
   add_subdirectory(Solver/LinearSolver)
   # add simulation solvers
   add_subdirectory(Solver/Euler)
