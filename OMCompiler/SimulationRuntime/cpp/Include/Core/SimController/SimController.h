@@ -5,12 +5,15 @@
  */
 #include <Core/SimController/SimManager.h>
 #include <Core/SimController/ISimController.h>
-
+#if defined(USE_ZEROMQ)
+#include <thread>
+#include <Core/SimController/threading/Communicator.h>
+#endif //USE_ZEROMQ
 class SimController : public ISimController,
                       public SimControllerPolicy
 {
 public:
-    SimController(PATH library_path, PATH modelicasystem_path);
+    SimController(PATH library_path, PATH modelicasystem_path,bool startZeroMQ=false);
     virtual ~SimController();
 
     virtual weak_ptr<IMixedSystem> LoadSystem(string modelLib,string modelKey);
@@ -18,6 +21,7 @@ public:
       /// Stops the simulation
     virtual void Stop();
     virtual void Start(SimSettings simsettings, string modelKey);
+
     virtual shared_ptr<IMixedSystem> getSystem(string modelname);
     virtual shared_ptr<ISimObjects> getSimObjects();
     virtual void StartReduceDAE(SimSettings simsettings,string modelPath, string modelKey,bool loadMSL, bool loadPackage);
@@ -26,10 +30,12 @@ public:
 private:
     void initialize(PATH library_path, PATH modelicasystem_path);
     bool _initialized;
+    bool _startZeroMQ;
     shared_ptr<Configuration> _config;
     std::map<string, shared_ptr<IMixedSystem> > _systems;
-
-
+#if defined(USE_ZEROMQ)
+    shared_ptr < Communicator> _communicator;
+#endif //USE_ZEROMQ
 
     // for real-time usage (VxWorks and BODAS)
     //removed, has to be released after simulation run, see SimController.Start

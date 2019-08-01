@@ -1,14 +1,19 @@
 cmake_minimum_required(VERSION 2.8.9)
 
 project(${NewtonName})
-
-add_library(${NewtonName} Newton.cpp NewtonSettings.cpp FactoryExport)
-
+IF(DGESV_FOUND)
+ include_directories (${DGESV_INCLUDE_DIR})
+ add_library(${NewtonName} Newton.cpp NewtonSettings.cpp FactoryExport ${DGESV_SRCS})
+ target_link_libraries(${NewtonName}  ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${ModelicaName})
+ELSE()
+ add_library(${NewtonName} Newton.cpp NewtonSettings.cpp FactoryExport)
+ target_link_libraries(${NewtonName}  ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES}  ${ModelicaName})
+ENDIF(DGESV_FOUND)
 if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${NewtonName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 endif(NOT BUILD_SHARED_LIBS)
 
-target_link_libraries(${NewtonName}  ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES}  ${ModelicaName})
+
 add_precompiled_header(${NewtonName} Include/Core/Modelica.h)
 
 install(FILES $<TARGET_PDB_FILE:${NewtonName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)

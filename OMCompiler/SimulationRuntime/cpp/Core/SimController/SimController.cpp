@@ -23,17 +23,27 @@
 
 
 
+
 #if defined(OMC_BUILD) || defined(SIMSTER_BUILD)
 #include "LibrariesConfig.h"
 #endif
 
 
-SimController::SimController(PATH library_path, PATH modelicasystem_path)
+SimController::SimController(PATH library_path, PATH modelicasystem_path,bool startZeroMQ)
     : SimControllerPolicy(library_path, modelicasystem_path, library_path)
     , _initialized(false)
+    ,_startZeroMQ(startZeroMQ)
+
 {
     _config = shared_ptr<Configuration>(new Configuration(_library_path, _config_path, modelicasystem_path));
     _sim_objects = shared_ptr<ISimObjects>(new SimObjects(_library_path,modelicasystem_path,_config->getGlobalSettings().get()));
+#if defined(USE_ZEROMQ)
+    if(startZeroMQ)
+    {
+    _communicator = shared_ptr < Communicator>(new Communicator());
+    }
+#endif //USE_ZEROMQ  
+
 
     #ifdef RUNTIME_PROFILING
     measuredFunctionStartValues = NULL;
@@ -131,21 +141,27 @@ shared_ptr<IMixedSystem> SimController::getSystem(string modelname)
  {
      _simMgr->runSimulation();
  }
+
+
+
 void SimController::Start(SimSettings simsettings, string modelKey)
 {
-    try
-    {
-        #ifdef RUNTIME_PROFILING
+
+ shared_ptr<IMixedSystem> mixedsystem;
+ shared_ptr<IGlobalSettings> global_settings;
+try
+{
+#ifdef RUNTIME_PROFILING
         MEASURETIME_REGION_DEFINE(simControllerInitializeHandler, "SimControllerInitialize");
         MEASURETIME_REGION_DEFINE(simControllerSolveInitialSystemHandler, "SimControllerSolveInitialSystem");
-        if(MeasureTime::getInstance() != NULL)
+        if (MeasureTime::getInstance() != NULL)
         {
             MEASURETIME_START(measuredFunctionStartValues, simControllerInitializeHandler, "CVodeWriteOutput");
         }
-        #endif
-        shared_ptr<IMixedSystem> mixedsystem = getSystem(modelKey);
+#endif
+        mixedsystem = getSystem(modelKey);
 
-        shared_ptr<IGlobalSettings> global_settings = _config->getGlobalSettings();
+        global_settings = _config->getGlobalSettings();
 
         global_settings->setStartTime(simsettings.start_time);
         global_settings->setEndTime(simsettings.end_time);
@@ -164,7 +180,7 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         global_settings->setInputPath(simsettings.inputPath);
         global_settings->setOutputPath(simsettings.outputPath);
 
-        /*shared_ptr<SimManager>*/ _simMgr = shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));
+       _simMgr = shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));
 
         ISolverSettings* solver_settings = _config->getSolverSettings();
         solver_settings->setLowerLimit(simsettings.lower_limit);
@@ -172,62 +188,85 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         solver_settings->setUpperLimit(simsettings.upper_limit);
         solver_settings->setRTol(simsettings.tolerance);
         solver_settings->setATol(simsettings.tolerance);
-        #ifdef RUNTIME_PROFILING
-        if(MeasureTime::getInstance() != NULL)
+#ifdef RUNTIME_PROFILING
+        if (MeasureTime::getInstance() != NULL)
         {
             MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[0], simControllerInitializeHandler);
             measuredFunctionStartValues->reset();
             measuredFunctionEndValues->reset();
             MEASURETIME_START(measuredFunctionStartValues, simControllerSolveInitialSystemHandler, "SolveInitialSystem");
         }
-        #endif
+#endif
 
         _simMgr->initialize();
 
-        #ifdef RUNTIME_PROFILING
-        if(MeasureTime::getInstance() != NULL)
+}
+catch (ModelicaSimulationError& ex)
+{
+    string error = add_error_info(string("Simulation failed for ") + simsettings.outputfile_name, ex.what(), ex.getErrorID());
+    throw ModelicaSimulationError(SIMMANAGER, error, "", ex.isSuppressed());
+}
+
+if(_startZeroMQ)
+{
+    #if defined(USE_ZEROMQ)
+   _communicator->startThreads(_simMgr, global_settings, mixedsystem, _sim_objects, modelKey);
+  _communicator->waitForAllThreads(120);
+   #elif defined(USE_ZEROMQ)
+   throw ModelicaSimulationError(SIMMANAGER, "ZeroMQ is not enabled", "", ex.isSuppressed());
+  #endif
+}
+else
+{
+    try
+    {
+#ifdef RUNTIME_PROFILING
+        if (MeasureTime::getInstance() != NULL)
         {
             MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[1], simControllerSolveInitialSystemHandler);
-            MeasureTime::addResultContentBlock(mixedsystem->getModelName(),"simController",measureTimeFunctionsArray);
+            MeasureTime::addResultContentBlock(mixedsystem->getModelName(), "simController", measureTimeFunctionsArray);
         }
-        #endif
+#endif
 
         _simMgr->runSimulation();
 
-		if(global_settings->getOutputFormat() == BUFFER)
-		{
-			shared_ptr<IWriteOutput> writeoutput_system = dynamic_pointer_cast<IWriteOutput>(mixedsystem);
+        if (global_settings->getOutputFormat() == BUFFER)
+        {
+            shared_ptr<IWriteOutput> writeoutput_system = dynamic_pointer_cast<IWriteOutput>(mixedsystem);
 
-			shared_ptr<ISimData> simData = _sim_objects->getSimData(modelKey);
-			simData->clearResults();
-			//get history object to query simulation results
-			IHistory* history = writeoutput_system->getHistory();
-			//simulation results (output variables)
-			ublas::matrix<double> Ro;
-			//query simulation result outputs
-			history->getOutputResults(Ro);
-			vector<string> output_names;
-			history->getOutputNames(output_names);
-			int j=0;
+            shared_ptr<ISimData> simData = _sim_objects->getSimData(modelKey);
+            simData->clearResults();
+            //get history object to query simulation results
+            shared_ptr<IHistory> history = writeoutput_system->getHistory();
+            //simulation results (output variables)
+            ublas::matrix<double> Ro;
+            //query simulation result outputs
+            history->getOutputResults(Ro);
+            vector<string> output_names;
+            history->getOutputNames(output_names);
+            int j = 0;
 
-			FOREACH(string& name, output_names)
-			{
-				ublas::vector<double> o_j;
-				o_j = ublas::row(Ro,j);
-				simData->addOutputResults(name,o_j);
-				j++;
-			}
+            FOREACH(string & name, output_names)
+            {
+                ublas::vector<double> o_j;
+                o_j = ublas::row(Ro, j);
+                simData->addOutputResults(name, o_j);
+                j++;
+            }
 
-			vector<double> time_values = history->getTimeEntries();
-			simData->addTimeEntries(time_values);
-		}
+            vector<double> time_values = history->getTimeEntries();
+            simData->addTimeEntries(time_values);
+        }
     }
-    catch(ModelicaSimulationError & ex)
+    catch (ModelicaSimulationError& ex)
     {
-        string error = add_error_info(string("Simulation failed for ") + simsettings.outputfile_name,ex.what(),ex.getErrorID());
+        string error = add_error_info(string("Simulation failed for ") + simsettings.outputfile_name, ex.what(), ex.getErrorID());
         throw ModelicaSimulationError(SIMMANAGER, error, "", ex.isSuppressed());
     }
 }
+      
+}
+
 
 void SimController::StartReduceDAE(SimSettings simsettings,string modelPath, string modelKey,bool loadMSL, bool loadPackage)
 {

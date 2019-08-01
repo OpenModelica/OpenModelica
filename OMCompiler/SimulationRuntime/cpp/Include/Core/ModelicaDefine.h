@@ -69,27 +69,7 @@ typedef double coshRetType;
   #endif
 #endif
 
-// Visual C++ 2015 by default does not link the CRT if the entry point is overriden. Force linking. Macros according to
-    //  "MSDN — Predefined Macros"; library names according to "Visual C++ Team Blog — Introducing the Universal CRT".
-    #if _MSC_VER >= 1900
-    #       if _DEBUG
-    #               if _DLL
-    #                       pragma comment(lib, "vcruntimed")
-    #                       pragma comment(lib, "ucrtd")
-    #               else
-    #                       pragma comment(lib, "libvcruntimed")
-    #                       pragma comment(lib, "libucrtd")
-    #               endif
-    #       else
-    #               if _DLL
-    #                       pragma comment(lib, "vcruntime")
-    #                       pragma comment(lib, "ucrt")
-    #               else
-    #                       pragma comment(lib, "libvcruntime")
-    #                       pragma comment(lib, "libucrt")
-    #               endif
-    #       endif
-    #endif
+
 
 
 /** @} */ // end of core

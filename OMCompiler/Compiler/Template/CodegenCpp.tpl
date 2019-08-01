@@ -355,7 +355,7 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
 
     /// Output routine (to be called by the solver after every successful integration step)
     virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT);
-    virtual IHistory* getHistory();
+    virtual shared_ptr<IHistory> getHistory();
 
   protected:
     void initialize();
@@ -712,7 +712,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        : <%lastIdentOfPath(modelInfo.name)%>StateSelection(globalSettings, simObjects)
    {
 
-
+      _writeOutput = getSimObjects()->LoadWriter(<%numAlgvars(modelInfo)%> + <%numAliasvars(modelInfo)%> + 2*<%numStatevars(modelInfo)%>).lock();
 
    }
 
@@ -727,16 +727,16 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    }
 
-   IHistory* <%lastIdentOfPath(modelInfo.name)%>WriteOutput::getHistory()
+   shared_ptr<IHistory> <%lastIdentOfPath(modelInfo.name)%>WriteOutput::getHistory()
    {
-     return _writeOutput.get();
+     return _writeOutput;
    }
 
    void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::initialize()
    {
       if(getGlobalSettings()->getOutputPointType()!= OPT_NONE)
       {
-        _writeOutput = getSimObjects()->LoadWriter(<%numAlgvars(modelInfo)%> + <%numAliasvars(modelInfo)%> + 2*<%numStatevars(modelInfo)%>).lock();
+        
     _writeOutput->init();
         _writeOutput->clear();
       }
@@ -3122,10 +3122,10 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /ZI enable Edit and Continue debug info
   CDFLAGS = /ZI
   !IF "$(PCH_FILE)" == ""
-  LDSYSTEMFLAGS=  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/debug"  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib OMCppDataExchange.lib  OMCppOMCFactory.lib <%timeMeasureLink%> WSock32.lib Ws2_32.lib
+  LDSYSTEMFLAGS=  /link /DLL  /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/debug"  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib OMCppDataExchange.lib  OMCppOMCFactory.lib <%timeMeasureLink%> WSock32.lib Ws2_32.lib
   LDMAINFLAGS=/link /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc" OMCppOMCFactory.lib OMCppModelicaUtilities.lib  <%timeMeasureLink%> /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
   !ELSE
-  LDSYSTEMFLAGS=  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/debug"  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib OMCppDataExchange.lib  OMCppOMCFactory.lib $(PCH_LIB) <%timeMeasureLink%> WSock32.lib Ws2_32.lib
+  LDSYSTEMFLAGS=  /link /DLL  /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/debug"  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib OMCppDataExchange.lib  OMCppOMCFactory.lib $(PCH_LIB) <%timeMeasureLink%> WSock32.lib Ws2_32.lib
   LDMAINFLAGS=/link /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc" OMCppOMCFactory.lib OMCppModelicaUtilities.lib $(PCH_LIB) <%timeMeasureLink%> /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
   !ENDIF
   # lib names should not be appended with a d just switch to lib/omc/cpp

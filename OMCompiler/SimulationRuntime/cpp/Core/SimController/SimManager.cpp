@@ -30,6 +30,7 @@ SimManager::SimManager(shared_ptr<IMixedSystem> system, Configuration* config)
   , _continueSimulation(false)
   , _writeFinalState   (false)
   ,_checkTimeout(false)
+    , _interrupt(false)
 {
     _solver = _config->createSelectedSolver(system.get());
     _initialization = shared_ptr<Initialization>(new Initialization(dynamic_pointer_cast<ISystemInitialization>(_mixed_system), _solver));
@@ -115,7 +116,7 @@ void SimManager::initialize()
 
     _tStart = _config->getGlobalSettings()->getStartTime();
     _tEnd = _config->getGlobalSettings()->getEndTime();
-
+    _interrupt = false;
     LOGGER_WRITE("SimManager: Start initialization",LC_INIT,LL_DEBUG);
     LOGGER_STATUS_STARTING(_tStart, _tEnd);
 
@@ -307,6 +308,8 @@ void SimManager::stopSimulation()
 {
     if (_solver)
         _solver->stop();
+    _interrupt = true;
+  
 }
 
 void SimManager::SetCheckTimeout(bool checkTimeout)
@@ -517,9 +520,9 @@ void SimManager::runSingleProcess()
     startTime = endTime = _tStart;
     bool user_stop = false;
 
-    while (_continueSimulation)
+    while (_continueSimulation && !_interrupt)
     {
-        while (closestTimeEvent <= _tEnd)
+        while ((closestTimeEvent <= _tEnd) && !_interrupt)
         {
 
             // Set start time, end time, initial step size
@@ -536,25 +539,33 @@ void SimManager::runSingleProcess()
             }
             //prepare next step, starting from last endTime
             startTime = endTime;
-            if (_dimtimeevent)
+            if (_dimtimeevent && !_interrupt)
             {
               // Find all time events at the current time and compute next one
               closestTimeEvent = _timeevent_system->computeNextTimeEvents(startTime);
               _timeevent_system->computeTimeEventConditions(startTime);
 
-              _event_system->getZeroFunc(zeroVal_new);
-              for (int i = 0; i < _dimZeroFunc; i++)
+              if (!_interrupt)
               {
-                _events[i] = bool(zeroVal_new[i]);
+                  _event_system->getZeroFunc(zeroVal_new);
+                  for (int i = 0; i < _dimZeroFunc; i++)
+                  {
+                      _events[i] = bool(zeroVal_new[i]);
+                  }
               }
-              //handleSystemEvents calls evaluateAll() at some point and evaluates the sampler conditions
-              _mixed_system->handleSystemEvents(_events);
-              // Reset time-events after the evaluation in handleSystemEvents
-              _timeevent_system->resetTimeConditions();
-
-              //evaluate all to finish the step
-              _cont_system->evaluateAll(IContinuous::CONTINUOUS);
-              _event_system->saveAll();
+              if (!_interrupt)
+              {
+                  //handleSystemEvents calls evaluateAll() at some point and evaluates the sampler conditions
+                  _mixed_system->handleSystemEvents(_events);
+                  // Reset time-events after the evaluation in handleSystemEvents
+                  _timeevent_system->resetTimeConditions();
+              }
+              if (!_interrupt)
+              {
+                  //evaluate all to finish the step
+                  _cont_system->evaluateAll(IContinuous::CONTINUOUS);
+                  _event_system->saveAll();
+              }
             }
 
             user_stop = (_solver->getSolverStatus() & ISolver::USER_STOP);
@@ -562,7 +573,7 @@ void SimManager::runSingleProcess()
               break;
         }  // end for time events
 
-        if (abs(_tEnd - endTime) > _config->getSimControllerSettings()->dTendTol && !user_stop)
+        if (abs(_tEnd - endTime) > _config->getSimControllerSettings()->dTendTol && !user_stop && !_interrupt)
         {
             startTime = endTime;
             _solver->setStartTime(startTime);
@@ -602,7 +613,7 @@ void SimManager::runSingleProcess()
             _tStart = _tEnd;
             _tEnd += _H;
 
-            if (_dimtimeevent)
+            if (_dimtimeevent && !_interrupt)
             {
                 if (zeroVal_new)
                 {
@@ -623,9 +634,13 @@ void SimManager::runSingleProcess()
             }
         }
 
-    }  // end while continue
-    _step_event_system->setTerminal(true);
-    _cont_system->evaluateAll(IContinuous::CONTINUOUS); //Is this really necessary? The solver should have already calculated the "final time point"
+    }
+    // end while continue
+    if (!_interrupt)
+    {
+        _step_event_system->setTerminal(true);
+        _cont_system->evaluateAll(IContinuous::CONTINUOUS); //Is this really necessary? The solver should have already calculated the "final time point"
+    }
     LOGGER_STATUS("Finished", endTime, 0.0);
     if (zeroVal_new)
         delete[] zeroVal_new;

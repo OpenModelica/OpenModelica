@@ -67,6 +67,11 @@ IF(NOT OMCGC_LIB)
   MESSAGE(FATAL_ERROR "Could not find omcgc library!")
 ENDIF(NOT OMCGC_LIB)
 
+IF(MSVC)
+# add these lines to generate export library to link in visual studio the dll to a other library
+include(GenerateExportHeader)
+generate_export_header(mylibrary)
+ENDIF(MSVC)
 #add necessary definitions
 ADD_DEFINITIONS(-DIMPORT_INTO=1)
 ADD_DEFINITIONS(-DBUILDING_OMC_DLL)

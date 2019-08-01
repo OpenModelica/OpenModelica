@@ -471,25 +471,29 @@ void Cvode::CVodeCore()
 	bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == OPT_ALL);
 	bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == OPT_NONE);
 
-	while ((_solverStatus & ISolver::CONTINUE) && !_interrupt)
+	while ((_solverStatus & ISolver::CONTINUE) && !isInterrupted())
 	{
-		_cv_rt = CVode(_cvodeMem, _tEnd, _CV_y, &_tCurrent, CV_ONE_STEP);
+	    _cv_rt = CVode(_cvodeMem, _tEnd, _CV_y, &_tCurrent, CV_ONE_STEP);
 
-		_idid = CVodeGetNumSteps(_cvodeMem, &_locStps);
-		if (_idid != CV_SUCCESS)
-			throw ModelicaSimulationError(SOLVER, "CVodeGetNumSteps failed. The cvode mem pointer is NULL");
-
-		_idid = CVodeGetLastStep(_cvodeMem, &_h);
-		if (_idid != CV_SUCCESS)
-			throw ModelicaSimulationError(SOLVER, "CVodeGetLastStep failed. The cvode mem pointer is NULL");
-
+        if (!isInterrupted())
+        {
+            _idid = CVodeGetNumSteps(_cvodeMem, &_locStps);
+            if (_idid != CV_SUCCESS)
+                throw ModelicaSimulationError(SOLVER, "CVodeGetNumSteps failed. The cvode mem pointer is NULL");
+        }
+        if (writeOutput && !isInterrupted())
+        {
+            _idid = CVodeGetLastStep(_cvodeMem, &_h);
+            if (_idid != CV_SUCCESS)
+                throw ModelicaSimulationError(SOLVER, "CVodeGetLastStep failed. The cvode mem pointer is NULL");
+        }
 		//set completed step to system and check if terminate was called
 		if (_continuous_system->stepCompleted(_tCurrent))
 			_solverStatus = DONE;
 
 		//Check if there was at least one output-point within the last solver interval
 		//  -> Write output if true
-		if (writeOutput)
+		if (writeOutput && !isInterrupted())
 		{
 
 			try
@@ -524,12 +528,14 @@ void Cvode::CVodeCore()
 			MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[5], cvodeStepCompletedHandler);
 		}
 #endif
-
-		// Perform state selection
-		bool state_selection = stateSelection();
-		if (state_selection)
-			_continuous_system->getContinuousStates(_z);
-
+        bool state_selection = false;
+        if (!isInterrupted())
+        {
+            // Perform state selection
+            state_selection = stateSelection();
+            if (state_selection)
+                _continuous_system->getContinuousStates(_z);
+        }
 		_zeroFound = false;
 
 		// Check if step was successful
@@ -585,7 +591,7 @@ void Cvode::CVodeCore()
 			//        _tCurrent
 
 			// Write the values of (P1)
-			if (writeEventOutput)
+			if (writeEventOutput && !isInterrupted())
 			{
 
 				try
@@ -602,13 +608,14 @@ void Cvode::CVodeCore()
 
 				writeToFile(0, _tCurrent, _h);
 			}
+            if (!isInterrupted())
+            {
+                _idid = CVodeGetRootInfo(_cvodeMem, _zeroSign);
 
-			_idid = CVodeGetRootInfo(_cvodeMem, _zeroSign);
-
-			for (int i = 0; i < _dimZeroFunc; i++)
-				_events[i] = bool(_zeroSign[i]);
-
-			if (_mixed_system->handleSystemEvents(_events))
+                for (int i = 0; i < _dimZeroFunc; i++)
+                    _events[i] = bool(_zeroSign[i]);
+            }
+			if (_mixed_system->handleSystemEvents(_events)&& !isInterrupted())
 			{
 				// State variables were reinitialized, thus we have to give these values to the cvode-solver
 				// Take care about the memory regions, _z is the same like _CV_y
@@ -625,11 +632,12 @@ void Cvode::CVodeCore()
 				_continuous_system->evaluateAll(IContinuous::CONTINUOUS);
 				writeToFile(0, _tCurrent, _h);
 			}
-
-			_idid = CVodeReInit(_cvodeMem, _tCurrent, _CV_y);
-			if (_idid < 0)
-				throw ModelicaSimulationError(SOLVER, "CVode::ReInit()");
-
+            if (!isInterrupted())
+            {
+                _idid = CVodeReInit(_cvodeMem, _tCurrent, _CV_y);
+                if (_idid < 0)
+                    throw ModelicaSimulationError(SOLVER, "CVode::ReInit()");
+            }
 			// Der Eventzeitpunkt kann auf der Endzeit liegen (Time-Events). In diesem Fall wird der Solver beendet, da CVode sonst eine interne Warnung schmeißt
 			if (_tCurrent == _tEnd)
 				_cv_rt = CV_TSTOP_RETURN;
@@ -641,7 +649,7 @@ void Cvode::CVodeCore()
 		++_outStps;
 		_tLastSuccess = _tCurrent;
 
-		if (_cv_rt == CV_TSTOP_RETURN)
+		if ((_cv_rt == CV_TSTOP_RETURN)&&!isInterrupted())
 		{
 			_time_system->setTime(_tEnd);
 			//Solver has finished calculation - calculate the final values
