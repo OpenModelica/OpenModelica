@@ -40,13 +40,9 @@ import MetaModelica_Lexer; /* Makes all tokens defined, imported in OptiMo_Lexer
 //import OptiMo_Lexer;  /* Makes all tokens defined */
 
 @includes {
-  #include <stdlib.h>
-  #include <stdio.h>
-  #include <errno.h>
-  #include <time.h>
-
-  #include "ModelicaParserCommon.h"
-  #include "errorext.h"
+  #define false 0
+  #define true 1
+  #define token_to_scon(tok) mmc_mk_scon((char*)tok->getText(tok)->chars)
 
   #define ModelicaParserException 100
   #define ModelicaLexerException  200
@@ -62,13 +58,30 @@ __info->offset2 = _offset2; \
 EXCEPTION->custom = __info; \
 goto rule ## func ## Ex; }}
 
-  #define false 0
-  #define true 1
+  typedef struct fileinfo_struct {
+    int line1;
+    int line2;
+    int offset1;
+    int offset2;
+  } fileinfo;
+
+  #include <stdlib.h>
+  #include <stdio.h>
+  #include <errno.h>
+  #include <time.h>
+
+  #include "ModelicaParserCommon.h"
+
+  #define make_redeclare_keywords(replaceable,redeclare) (((replaceable) && (redeclare)) ? Absyn__REDECLARE_5fREPLACEABLE : ((replaceable) ? Absyn__REPLACEABLE : ((redeclare) ? Absyn__REDECLARE : NULL)))
+  #define make_inner_outer(i,o) (i && o ? Absyn__INNER_5fOUTER : i ? Absyn__INNER : o ? Absyn__OUTER : Absyn__NOT_5fINNER_5fOUTER)
+
+  #if !defined(OMJULIA)
+
+  #include "errorext.h"
+
   #define or_nil(x) (x != 0 ? x : mmc_mk_nil())
   #define mmc_mk_some_or_none(x) (x ? mmc_mk_some(x) : mmc_mk_none())
   #define mmc_mk_tuple2(x1,x2) mmc_mk_box2(0,x1,x2)
-  #define make_redeclare_keywords(replaceable,redeclare) (((replaceable) && (redeclare)) ? Absyn__REDECLARE_5fREPLACEABLE : ((replaceable) ? Absyn__REPLACEABLE : ((redeclare) ? Absyn__REDECLARE : NULL)))
-  #define make_inner_outer(i,o) (i && o ? Absyn__INNER_5fOUTER : i ? Absyn__INNER : o ? Absyn__OUTER : Absyn__NOT_5fINNER_5fOUTER)
 #if 0
   /* Enable if you don't want to generate the tree */
   void* mmc_mk_box_eat_all(int ix, ...);
@@ -93,25 +106,29 @@ goto rule ## func ## Ex; }}
   #undef MMC_STRUCTHDR
   #define MMC_STRUCTHDR(x,y) 0
 #endif
-  #define token_to_scon(tok) mmc_mk_scon((char*)tok->getText(tok)->chars)
   #define NYI(void) fprintf(stderr, "NYI \%s \%s:\%d\n", __FUNCTION__, __FILE__, __LINE__); exit(1);
 
   #define PARSER_INFO(start) ((void*) SourceInfo__SOURCEINFO(ModelicaParser_filename_OMC, mmc_mk_bcon(ModelicaParser_readonly), mmc_mk_icon(start->line), mmc_mk_icon(start->line == 1 ? start->charPosition+2 : start->charPosition+1), mmc_mk_icon(LT(1)->line), mmc_mk_icon(LT(1)->charPosition+1), ModelicaParser_timeStamp))
-  typedef struct fileinfo_struct {
-    int line1;
-    int line2;
-    int offset1;
-    int offset2;
-  } fileinfo;
   #if !defined(OMC_GENERATE_RELOCATABLE_CODE) || defined(OMC_BOOTSTRAPPING)
   modelica_boolean omc_AbsynUtil_isDerCref(threadData_t* threadData, void* exp);
   #else
   modelica_boolean (*omc_AbsynUtil_isDerCref)(threadData_t* threadData, void* exp);
   #endif
+
+  #define isCref(X) (MMC_GETHDR(X) == MMC_STRUCTHDR(1+1, Absyn__CREF_3dBOX1))
+  #define isPath(X) MMC_GETHDR(X) == MMC_STRUCTHDR(2+1, Absyn__TPATH_3dBOX2)
+
+  #else
+  /* Julia */
+  #define PARSER_INFO(start) ((void*) SourceInfo__SOURCEINFO(mmc_mk_scon("dummyFile"), MMC_TRUE, mmc_mk_icon(start->line), mmc_mk_icon(start->line == 1 ? start->charPosition+2 : start->charPosition+1), mmc_mk_icon(LT(1)->line), mmc_mk_icon(LT(1)->charPosition+1), mmc_mk_rcon(0.0)))
+  #define isCref(X) jl_typeis(X, Absyn_Exp_CREF_type)
+  #define isPath(X) jl_typeis(X, Absyn_TypeSpec_TPATH_type)
+  #endif
 }
 
 @members
 {
+  #if !defined(OMJULIA)
   #include "meta_modelica.h"
   #include "OpenModelicaBootstrappingHeader.h"
   parser_members members;
@@ -119,6 +136,10 @@ goto rule ## func ## Ex; }}
   #if defined(OMC_BOOTSTRAPPING)
   #endif
   #define ARRAY_REDUCTION_NAME "\$array"
+  #else /* Julia */
+  #include "OpenModelicaJuliaHeader.h"
+  #include "MetaModelicaJuliaLayer.h"
+  #endif
 }
 
 /*------------------------------------------------------------------
@@ -496,11 +517,17 @@ component_clause returns [void* ast]
   tp=type_prefix path=type_specifier clst=component_list
     {
       // Take the last (array subscripts) from type and move it to ATTR
-      if (MMC_GETHDR($path.ast) == MMC_STRUCTHDR(2+1, Absyn__TPATH_3dBOX2)) // is TPATH(path, arr)
+      if (isPath($path.ast)) // is TPATH(path, arr)
       {
+      #if !defined(OMJULIA)
         struct mmc_struct *p = (struct mmc_struct*)MMC_UNTAGPTR($path.ast);
         ar_option = p->data[1+UNBOX_OFFSET];  // get the array option
         p->data[1+UNBOX_OFFSET] = mmc_mk_none();  // replace the array with nothing
+      #else
+        /* Are these things OK? */
+        ar_option = jl_data_ptr($path.ast)[2];
+        jl_data_ptr($path.ast)[2] = jl_nothing;
+      #endif
       }
       else if (MMC_GETHDR($path.ast) == MMC_STRUCTHDR(3+1, Absyn__TCOMPLEX_3dBOX3))
       {
@@ -882,7 +909,7 @@ assign_clause_a returns [void* ast]
       {
         modelicaParserAssert(eq == 0,"Algorithms can not contain equations ('='), use assignments (':=') instead", assign_clause_a, $eq->line, $eq->charPosition+1, $eq->line, $eq->charPosition+2);
         {
-          int looks_like_cref = (MMC_GETHDR(e1) == MMC_STRUCTHDR(1+1, Absyn__CREF_3dBOX1));
+          int looks_like_cref = isCref(e1);
           int looks_like_call = ((MMC_GETHDR(e1) == MMC_STRUCTHDR(1+1, Absyn__TUPLE_3dBOX1)) && (MMC_GETHDR(e2.ast) == MMC_STRUCTHDR(2+1, Absyn__CALL_3dBOX2)));
           int looks_like_der_cr = !looks_like_cref && !looks_like_call && omc_AbsynUtil_isDerCref(ModelicaParser_threadData, e1);
           modelicaParserAssert(eq != 0 || metamodelica_enabled() || looks_like_cref || looks_like_call || looks_like_der_cr,

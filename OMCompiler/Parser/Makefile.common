@@ -79,6 +79,19 @@ else
 Parser_omc.o: $(HFILES) parse.c lookupTokenName.c
 endif
 
+libomparse-julia.so: MetaModelicaJuliaLayer.o Parser_jl.o Modelica_3_Lexer.jl.o ModelicaParser.jl.o
+OpenModelicaJuliaHeader.h: ../Compiler/FrontEnd/Absyn.mo ../Compiler/Script/GlobalScript.mo ../Compiler/FrontEnd/Values.mo ../Compiler/Util/Error.mo ../Compiler/Util/Util.mo ../Compiler/Util/FMI.mo GenerateJLHeader.mos
+	$(OMBUILDDIR)/bin/omc -g=MetaModelica GenerateJLHeader.mos > $@.log || (cat $@.log && false)
+	@mv $@.new $@
+Parser_jl.o: Parser_jl.c $(HFILES) lookupTokenName.c OpenModelicaJuliaHeader.h MetaModelicaJuliaLayer.h
+	$(CC) -c -o $@ $< `eval echo \`julia-config.jl --cflags\`` -I$(ANTLR) -I$(ANTLR)/include -I. -DOMJULIA=1
+Modelica_3_Lexer.jl.o: Modelica_3_Lexer.c Modelica_3_Lexer.h Modelica_3_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h $(ANTLR)/antlr3config.h OpenModelicaJuliaHeader.h MetaModelicaJuliaLayer.h
+	$(CC) -c -o $@ $< `eval echo \`julia-config.jl --cflags\`` -I$(ANTLR) -I$(ANTLR)/include -I. -DOMJULIA=1
+ModelicaParser.jl.o: ModelicaParser.c $(HFILES) OpenModelicaJuliaHeader.h MetaModelicaJuliaLayer.h
+	$(CC) -c -o $@ $< `eval echo \`julia-config.jl --cflags\`` -I$(ANTLR) -I$(ANTLR)/include -I. -DOMJULIA=1
+MetaModelicaJuliaLayer.o: MetaModelicaJuliaLayer.c MetaModelicaJuliaLayer.h
+	$(CC) -c -o $@ $< `eval echo \`julia-config.jl --cflags\`` -I$(ANTLR) -I$(ANTLR)/include -I. -DOMJULIA=1
+
 $(OBJS) : $(HFILES)
 
 libomparse.a: $(OBJS)

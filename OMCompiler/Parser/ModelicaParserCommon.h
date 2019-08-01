@@ -36,12 +36,16 @@
 extern "C" {
 #endif
 
-#include "systemimpl.h"
-#include <pthread.h>
+#if !defined(OMJULIA)
 
+#include "systemimpl.h"
 #define UNBOX_OFFSET 1
 
-DLLDirection extern pthread_key_t modelicaParserKey;
+#endif
+
+#include <pthread.h>
+
+extern pthread_key_t modelicaParserKey;
 
 #define omc_first_comment ((parser_members*)pthread_getspecific(modelicaParserKey))->first_comment
 #define ModelicaParser_filename_OMC ((parser_members*)pthread_getspecific(modelicaParserKey))->filename_OMC
@@ -66,7 +70,9 @@ typedef struct antlr_members_struct {
   int readonly;
   int flags;
   int langStd;
+#if !defined(OMJULIA)
   threadData_t *threadData;
+#endif
 } parser_members;
 
 #define PARSE_MODELICA        0

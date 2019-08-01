@@ -1292,6 +1292,13 @@ external "builtin";
 annotation(preferredView="text");
 end generateHeader;
 
+function generateJuliaHeader
+  input String fileName;
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text");
+end generateJuliaHeader;
+
 function generateSeparateCode
   input TypeName className;
   input Boolean cleanCache = false "If true, the cache is reset between each generated package. This conserves memory at the cost of speed.";
@@ -2143,7 +2150,7 @@ function saveTotalModel "Save the className model in a single file, together wit
    which loads className and all the other needed classes into memory.
    This is useful to allow third parties to run a certain model (e.g. for debugging)
    without worrying about all the library dependencies.
-   Please note that SaveTotal file is not a valid Modelica .mo file according to the 
+   Please note that SaveTotal file is not a valid Modelica .mo file according to the
    specification, and cannot be loaded in OMEdit - it can only be loaded with loadFile()."
   input String fileName;
   input TypeName className;
