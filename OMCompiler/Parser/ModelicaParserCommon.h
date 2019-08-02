@@ -41,11 +41,15 @@ extern "C" {
 #include "systemimpl.h"
 #define UNBOX_OFFSET 1
 
+#else
+
+#define DLLDirection /* nothing */
+
 #endif
 
 #include <pthread.h>
 
-extern pthread_key_t modelicaParserKey;
+DLLDirection extern pthread_key_t modelicaParserKey;
 
 #define omc_first_comment ((parser_members*)pthread_getspecific(modelicaParserKey))->first_comment
 #define ModelicaParser_filename_OMC ((parser_members*)pthread_getspecific(modelicaParserKey))->filename_OMC

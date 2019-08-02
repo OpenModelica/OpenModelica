@@ -37,6 +37,11 @@
 
 #define bool int
 
+#if defined(_WIN32)
+#include <winsock2.h>
+#undef PURE
+#endif
+
 #include <Modelica_3_Lexer.h>
 #include <ModelicaParser.h>
 #include <antlr3intstream.h>
