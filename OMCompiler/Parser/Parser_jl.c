@@ -52,6 +52,14 @@
 #include "MetaModelicaJuliaLayer.h"
 #include "OpenModelicaJuliaHeader.h"
 
+pthread_once_t parser_once_create_key = PTHREAD_ONCE_INIT;
+pthread_key_t modelicaParserKey;
+
+static void make_key()
+{
+  pthread_key_create(&modelicaParserKey,NULL);
+}
+
 static void lexNoRecover(pANTLR3_LEXER lexer)
 {
   pANTLR3_INT_STREAM inputStream = (pANTLR3_INT_STREAM) NULL;
@@ -266,10 +274,10 @@ static void* parseStream(pANTLR3_INPUT_STREAM input)
   void* lxr = 0;
   void* res = NULL;
 
+  jl_gc_enable(0);
+
   OpenModelica_initMetaModelicaJuliaLayer();
   OpenModelica_initAbsynReferences();
-
-  jl_gc_enable(0);
 
   lxr = Modelica_3_LexerNew(input);
   if (lxr == NULL ) { fprintf(stderr, "Unable to create the lexer due to malloc() failure1\n"); fflush(stderr); exit(ANTLR3_ERR_NOMEM); }
@@ -297,7 +305,7 @@ static void* parseStream(pANTLR3_INPUT_STREAM input)
   res = psr->stored_definition(psr);
 
   if (ModelicaParser_lexerError || pLexer->rec->state->failed || psr->pParser->rec->state->failed) { // Some parts of the AST are NULL if errors are used...
-    res = NULL;
+    res = jl_nothing;
   }
 
   psr->free(psr);
@@ -314,14 +322,27 @@ static void* parseStream(pANTLR3_INPUT_STREAM input)
   return res;
 }
 
-static jl_value_t* parseFile(const char* fileName)
+jl_value_t* parseFile(jl_value_t *fileName)
 {
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;
 
-  fName  = (pANTLR3_UINT8)fileName;
-  input  = antlr3AsciiFileStreamNew(fName);
+  parser_members members;
+
+  pthread_once(&parser_once_create_key,make_key);
+  pthread_setspecific(modelicaParserKey,&members);
+
+  jl_gc_enable(0);
+
+  members.encoding = "UTF-8";
+  members.filename_C = fileName;
+  members.filename_C_testsuiteFriendly = fileName;
+  members.flags = 0;
+  members.readonly = 1;
   omc_first_comment = 0;
+
+  fName  = (pANTLR3_UINT8)jl_string_data(fileName);
+  input  = antlr3AsciiFileStreamNew(fName);
   if ( input == NULL ) {
     return jl_nothing;
   }

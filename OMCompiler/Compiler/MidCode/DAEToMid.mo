@@ -288,7 +288,7 @@ algorithm
     SCode.Visibility visibility;
     SourceInfo info;
 
-  case SimCodeFunction.FUNCTION(name, outVars, functionArguments, variableDeclarations, body, visibility, info)
+  case SimCodeFunction.FUNCTION(name, outVars, functionArguments, variableDeclarations, body, _, _)
   algorithm
     labelFirst := GenBlockId();
     path := name;
@@ -685,11 +685,11 @@ algorithm
   algorithm
     varExp := RValueToVar(ExpToMid(exp.exp, state), state);
   then MidCode.METAFIELD(varExp, exp.ix, Types.complicateType(exp.ty));
-  case DAE.CAST(ty, exp1)
+  case DAE.CAST(_, exp1)
   algorithm
     varExp := RValueToVar(ExpToMid(exp1, state), state);
   then MidCode.UNARYOP(MidCode.MOVE(), varExp); //TODO: return type?
-  case DAE.LUNARY(operator, exp1)
+  case DAE.LUNARY(_, exp1)
   algorithm
     varExp := RValueToVar(ExpToMid(exp1, state), state);
   then MidCode.UNARYOP(MidCode.NOT(), varExp);
@@ -1430,12 +1430,12 @@ algorithm
       // All patterns have been matched. Fall through to what happens on succesful match.
     then ();
 
-    case (scrutinee,DAE.PAT_WILD()) :: restMatches
+    case (_,DAE.PAT_WILD()) :: restMatches
     algorithm
       patternToMidCode2(matches = restMatches, state=state, assignBlock=assignBlock, labelNoMatch=labelNoMatch);
     then ();
 
-    case (scrutinee,DAE.PAT_AS(id=id,ty=NONE(),attr=_,pat=pattern)) :: restMatches
+    case (scrutinee,DAE.PAT_AS(id=id,ty=NONE(),pat=pattern)) :: restMatches
     algorithm
       ty := RValueType(MidCode.VARIABLE(scrutinee));
       midvar := MidCode.VAR(id, ty, false);
@@ -1443,7 +1443,7 @@ algorithm
       patternToMidCode2(matches = (scrutinee, pattern) :: restMatches, state=state, assignBlock=assignBlock, labelNoMatch=labelNoMatch);
     then ();
 
-    case (scrutinee,DAE.PAT_AS(id=id,ty=SOME(ty),attr=_,pat=pattern)) :: restMatches
+    case (scrutinee,DAE.PAT_AS(id=id,ty=SOME(ty),pat=pattern)) :: restMatches
     algorithm
       // ty=SOME(_) means that the contained value needs unboxing
       midvar := MidCode.VAR(id, ty, false);

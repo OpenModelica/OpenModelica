@@ -1387,7 +1387,7 @@ algorithm
       then
         (inEquations,inREquations,eqns);
 
-    case DAE.FOR_EQUATION(iter = s, range = e1, equations = eqnslst, source = source)
+    case DAE.FOR_EQUATION(iter = s, range = e1, equations = eqnslst)
       equation
         // create one backend for-equation for each equation element in the loop
         (eqns, reqns, ieqns) = lowerEqns(eqnslst, functionTree, {}, {}, {}, inInitialization);

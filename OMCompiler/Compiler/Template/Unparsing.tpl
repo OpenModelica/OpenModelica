@@ -147,6 +147,7 @@ template programExternalHeaderJulia(SCode.Program program)
   <<
   /* Automatically generated header for external MetaModelica functions */
   #include <julia.h>
+  #include <assert.h>
   #ifdef __cplusplus
   extern "C" {
   #endif
@@ -155,7 +156,6 @@ template programExternalHeaderJulia(SCode.Program program)
   void OpenModelica_initAbsynReferences()
   {
     /* Note: These values may be garbage collected away? Call this before each file is parsed? */
-    jl_eval_string("import Absyn");
     <%buf2%>
   }
   #else
@@ -172,12 +172,37 @@ end programExternalHeaderJulia;
 
 template classExternalHeaderJulia(Text &buf1, Text &buf2, SCode.Element cl, String pack)
 ::=
-match cl case c as SCode.CLASS(classDef=p as SCode.PARTS(__)) then (p.elementLst |> elt => elementExternalHeaderJulia(&buf1,&buf2,elt,c.name))
+match cl case c as SCode.CLASS(__) then
+  let &buf2 +=
+    <<
+    jl_module_t* <%c.name%>;
+    assert((<%c.name%> = (jl_module_t *) jl_eval_string("<%c.name%>")));<%\n%>
+    >>
+  classExternalHeaderJuliaWork(&buf1,&buf2,cl,pack)
 end classExternalHeaderJulia;
+
+template classExternalHeaderJuliaWork(Text &buf1, Text &buf2, SCode.Element cl, String pack)
+::=
+match cl case c as SCode.CLASS(classDef=p as SCode.PARTS(__)) then
+  (p.elementLst |> elt => elementExternalHeaderJulia(&buf1,&buf2,elt,c.name))
+end classExternalHeaderJuliaWork;
 
 template elementExternalHeaderJulia(Text &buf1, Text &buf2, SCode.Element elt, String pack)
 ::=
 match elt
+  case c as SCode.CLASS(restriction=r as SCode.R_UNIONTYPE(__),classDef=p as SCode.PARTS(__))
+    then
+      let omcname='<%pack%>_<%c.name%>'
+      let &buf1 +=
+        <<
+        jl_value_t *<%omcname%> = NULL;
+        <%\n%>
+        >>
+      let &buf2 +=
+        <<
+        assert((<%omcname%> = jl_get_global(<%pack%>, jl_symbol("<%c.name%>"))));<%\n%>
+        >>
+      'extern jl_value_t *<%omcname%>;<%\n%>'
   case c as SCode.CLASS(restriction=r as SCode.R_METARECORD(moved = true),classDef=p as SCode.PARTS(__))
     then
       let fields1=(p.elementLst |> SCode.COMPONENT(__) => name; separator=",")
@@ -188,14 +213,14 @@ match elt
       let fullname='<%pack%>__<%stringReplace(c.name,"_","_5f")%>'
       let &buf1 +=
         <<
-        extern jl_function_t *<%omcname%> = NULL;
-        extern jl_value_t *<%omcname%>_type = NULL;
+        jl_function_t *<%omcname%> = NULL;
+        jl_value_t *<%omcname%>_type = NULL;
         <%\n%>
         >>
       let &buf2 +=
         <<
-        <%omcname%> = jl_get_function(jl_base_module, "<%funcName%>");
-        <%omcname%>_type = jl_get_global(jl_base_module, symbol("<%funcName%>"));<%\n%>
+        assert((<%omcname%> = jl_get_function(<%pack%>, "<%c.name%>")));
+        assert((<%omcname%>_type = jl_get_global(<%pack%>, jl_symbol("<%c.name%>"))));<%\n%>
         >>
       <<
       extern jl_function_t *<%omcname%>;
@@ -220,7 +245,7 @@ match elt
       %>
       <%\n%>
       >>
-  case SCode.CLASS(__) then classExternalHeaderJulia(&buf1,&buf2,elt,pack)
+  case SCode.CLASS(__) then classExternalHeaderJuliaWork(&buf1,&buf2,elt,pack)
 end elementExternalHeaderJulia;
 
 annotation(__OpenModelica_Interface="backend");

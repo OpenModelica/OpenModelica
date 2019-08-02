@@ -2734,18 +2734,18 @@ algorithm
     then aliasRecord(cr, vlst, elst, (cr1, cr2, e1, e2, false)::inTpls);
 
     // a = -b
-    case (_, DAE.TYPES_VAR(name=ident, ty=ty)::vlst, (e2 as DAE.UNARY(op as DAE.UMINUS(ty1), DAE.CREF(componentRef = cr2)))::elst, _) equation
+    case (_, DAE.TYPES_VAR(name=ident, ty=ty)::vlst, (e2 as DAE.UNARY(op as DAE.UMINUS(_), DAE.CREF(componentRef = cr2)))::elst, _) equation
       cr1 = ComponentReference.crefPrependIdent(cr, ident, {}, ty);
       e1 = DAE.UNARY(op, DAE.CREF(cr1, ty));
     then aliasRecord(cr, vlst, elst, (cr1, cr2, e1, e2, true)::inTpls);
 
-    case (_, DAE.TYPES_VAR(name=ident, ty=ty)::vlst, (e2 as DAE.UNARY(op as DAE.UMINUS_ARR(ty1), DAE.CREF(componentRef = cr2)))::elst, _) equation
+    case (_, DAE.TYPES_VAR(name=ident, ty=ty)::vlst, (e2 as DAE.UNARY(op as DAE.UMINUS_ARR(_), DAE.CREF(componentRef = cr2)))::elst, _) equation
       cr1 = ComponentReference.crefPrependIdent(cr, ident, {}, ty);
       e1 = DAE.UNARY(op, DAE.CREF(cr1, ty));
     then aliasRecord(cr, vlst, elst, (cr1, cr2, e1, e2, true)::inTpls);
 
     // a = not b
-    case (_, DAE.TYPES_VAR(name=ident, ty=ty)::vlst, (e2 as DAE.LUNARY(op as DAE.NOT(ty1), DAE.CREF(componentRef = cr2)))::elst, _) equation
+    case (_, DAE.TYPES_VAR(name=ident, ty=ty)::vlst, (e2 as DAE.LUNARY(op as DAE.NOT(_), DAE.CREF(componentRef = cr2)))::elst, _) equation
       cr1 = ComponentReference.crefPrependIdent(cr, ident, {}, ty);
       e1 = DAE.LUNARY(op, DAE.CREF(cr1, ty));
     then aliasRecord(cr, vlst, elst, (cr1, cr2, e1, e2, true)::inTpls);
