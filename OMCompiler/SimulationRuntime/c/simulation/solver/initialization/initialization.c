@@ -267,6 +267,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   {
     long step;
     char buffer[4096];
+    double lambda;
 
     infoStreamPrint(LOG_INIT, 0, "Global homotopy with equidistant step size started.");
 
@@ -277,9 +278,10 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       sprintf(buffer, "%s_equidistant_global_homotopy.csv", mData->modelFilePrefix);
       infoStreamPrint(LOG_INIT, 0, "The homotopy path will be exported to %s.", buffer);
       pFile = omc_fopen(buffer, "wt");
-      fprintf(pFile, "\"sep=%s\"\n%s", sep, "\"lambda\"");
-      for(i=0; i<mData->nVariablesReal; ++i)
+      fprintf(pFile, "\"lambda\"");
+      for(i=0; i<mData->nVariablesReal; ++i) {
         fprintf(pFile, "%s\"%s\"", sep, mData->realVarsData[i].info.name);
+      }
       fprintf(pFile, "\n");
     }
 #endif
@@ -288,10 +290,13 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     for(step=0; step<init_lambda_steps; ++step)
     {
       data->simulationInfo->lambda = ((double)step)/(init_lambda_steps-1);
-      infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g", data->simulationInfo->lambda);
+      lambda = data->simulationInfo->lambda;
+      infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g", lambda);
 
-      if(data->simulationInfo->lambda > 1.0) {
+      if(data->simulationInfo->lambda > 1.0)
+      {
         data->simulationInfo->lambda = 1.0;
+        lambda = 1.0;
       }
 
       if(0 == step)
@@ -299,12 +304,12 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       else
         data->callback->functionInitialEquations(data, threadData);
 
-      infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g done\n---------------------------", data->simulationInfo->lambda);
+      infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g done\n---------------------------", lambda);
 
 #if !defined(OMC_NO_FILESYSTEM)
       if(ACTIVE_STREAM(LOG_INIT))
       {
-        fprintf(pFile, "%.16g", data->simulationInfo->lambda);
+        fprintf(pFile, "%.16g", lambda);
         for(i=0; i<mData->nVariablesReal; ++i)
           fprintf(pFile, "%s%.16g", sep, data->localData[0]->realVars[i]);
         fprintf(pFile, "\n");

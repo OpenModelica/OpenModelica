@@ -647,13 +647,13 @@ readFile("homotopy4_solver_system.log"); remove("homotopy4_solver_system.log");
 // LOG_INIT          | info    | homotopy process
 // |                 | |       | ---------------------------
 // LOG_INIT          | info    | homotopy parameter lambda = 0
-// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// LOG_INIT          | info    | homotopy parameter lambda = 0 done
 // |                 | |       | ---------------------------
 // LOG_INIT          | info    | homotopy parameter lambda = 0.333333
-// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// LOG_INIT          | info    | homotopy parameter lambda = 0.333333 done
 // |                 | |       | ---------------------------
 // LOG_INIT          | info    | homotopy parameter lambda = 0.666667
-// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// LOG_INIT          | info    | homotopy parameter lambda = 0.666667 done
 // |                 | |       | ---------------------------
 // LOG_INIT          | info    | homotopy parameter lambda = 1
 // LOG_INIT          | info    | homotopy parameter lambda = 1 done
@@ -736,13 +736,13 @@ readFile("homotopy4_solver_system.log"); remove("homotopy4_solver_system.log");
 // LOG_INIT          | info    | homotopy process
 // |                 | |       | ---------------------------
 // LOG_INIT          | info    | homotopy parameter lambda = 0
-// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// LOG_INIT          | info    | homotopy parameter lambda = 0 done
 // |                 | |       | ---------------------------
 // LOG_INIT          | info    | homotopy parameter lambda = 0.333333
-// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// LOG_INIT          | info    | homotopy parameter lambda = 0.333333 done
 // |                 | |       | ---------------------------
 // LOG_INIT          | info    | homotopy parameter lambda = 0.666667
-// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// LOG_INIT          | info    | homotopy parameter lambda = 0.666667 done
 // |                 | |       | ---------------------------
 // LOG_INIT          | info    | homotopy parameter lambda = 1
 // LOG_INIT          | info    | homotopy parameter lambda = 1 done
@@ -825,13 +825,13 @@ readFile("homotopy4_solver_system.log"); remove("homotopy4_solver_system.log");
 // LOG_INIT          | info    | homotopy process
 // |                 | |       | ---------------------------
 // LOG_INIT          | info    | homotopy parameter lambda = 0
-// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// LOG_INIT          | info    | homotopy parameter lambda = 0 done
 // |                 | |       | ---------------------------
 // LOG_INIT          | info    | homotopy parameter lambda = 0.333333
-// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// LOG_INIT          | info    | homotopy parameter lambda = 0.333333 done
 // |                 | |       | ---------------------------
 // LOG_INIT          | info    | homotopy parameter lambda = 0.666667
-// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// LOG_INIT          | info    | homotopy parameter lambda = 0.666667 done
 // |                 | |       | ---------------------------
 // LOG_INIT          | info    | homotopy parameter lambda = 1
 // LOG_INIT          | info    | homotopy parameter lambda = 1 done
@@ -914,13 +914,13 @@ readFile("homotopy4_solver_system.log"); remove("homotopy4_solver_system.log");
 // LOG_INIT          | info    | homotopy process
 // |                 | |       | ---------------------------
 // LOG_INIT          | info    | homotopy parameter lambda = 0
-// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// LOG_INIT          | info    | homotopy parameter lambda = 0 done
 // |                 | |       | ---------------------------
 // LOG_INIT          | info    | homotopy parameter lambda = 0.333333
-// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// LOG_INIT          | info    | homotopy parameter lambda = 0.333333 done
 // |                 | |       | ---------------------------
 // LOG_INIT          | info    | homotopy parameter lambda = 0.666667
-// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// LOG_INIT          | info    | homotopy parameter lambda = 0.666667 done
 // |                 | |       | ---------------------------
 // LOG_INIT          | info    | homotopy parameter lambda = 1
 // LOG_INIT          | info    | homotopy parameter lambda = 1 done
@@ -1003,13 +1003,13 @@ readFile("homotopy4_solver_system.log"); remove("homotopy4_solver_system.log");
 // LOG_INIT          | info    | homotopy process
 // |                 | |       | ---------------------------
 // LOG_INIT          | info    | homotopy parameter lambda = 0
-// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// LOG_INIT          | info    | homotopy parameter lambda = 0 done
 // |                 | |       | ---------------------------
 // LOG_INIT          | info    | homotopy parameter lambda = 0.333333
-// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// LOG_INIT          | info    | homotopy parameter lambda = 0.333333 done
 // |                 | |       | ---------------------------
 // LOG_INIT          | info    | homotopy parameter lambda = 0.666667
-// LOG_INIT          | info    | homotopy parameter lambda = 1 done
+// LOG_INIT          | info    | homotopy parameter lambda = 0.666667 done
 // |                 | |       | ---------------------------
 // LOG_INIT          | info    | homotopy parameter lambda = 1
 // LOG_INIT          | info    | homotopy parameter lambda = 1 done
