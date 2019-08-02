@@ -175,7 +175,7 @@ algorithm
       BackendDAE.EqSystem syst;
       DAE.FunctionTree functionTree;
 
-    case BackendDAE.DAE(eqs=(BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=orderedEqs))::{}, shared=BackendDAE.SHARED(functionTree=_)) equation
+    case BackendDAE.DAE(eqs=(BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=orderedEqs))::{}, shared=BackendDAE.SHARED()) equation
       //true = Flags.isSet(Flags.CHECK_BACKEND_DAE);
       //Check for correct size
       nVars = BackendVariable.varsSize(vars);

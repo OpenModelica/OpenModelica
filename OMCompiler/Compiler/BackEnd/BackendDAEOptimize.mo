@@ -198,7 +198,7 @@ algorithm
        ret;
 
     //positiveMax(cref, eps) = cref where cref >= 0
-    case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e, expr}) guard Expression.isPositiveOrZero(e)
+    case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e, _}) guard Expression.isPositiveOrZero(e)
     then e;
 
     // e.g. positiveMax(cref, eps) = max(cref,eps) = eps where cref < 0

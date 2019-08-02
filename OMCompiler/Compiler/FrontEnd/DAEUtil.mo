@@ -6588,7 +6588,7 @@ algorithm
 
     case ({},_) then acc;
 
-    case ((e as DAE.COMP(dAElist = celts))::rest,_)
+    case ((DAE.COMP(dAElist = celts))::rest,_)
       algorithm
         a := getParameters(celts, acc);
         a := getParameters(rest, a);

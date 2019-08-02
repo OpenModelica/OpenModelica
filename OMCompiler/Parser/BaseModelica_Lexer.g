@@ -192,6 +192,7 @@ IDENT;
   #if !defined(OMJULIA)
   #include "errorext.h"
   #else
+  #include "MetaModelicaJuliaLayer.h"
   #endif
 }
 

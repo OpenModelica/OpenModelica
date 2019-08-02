@@ -1323,7 +1323,7 @@ algorithm
     case (cache,_,"buildModelFMU", _,_)
       then (cache,Values.STRING(""));
 
-    case (cache,env,"buildEncryptedPackage", {Values.CODE(Absyn.C_TYPENAME(className)),Values.BOOL(b)},_)
+    case (cache,_,"buildEncryptedPackage", {Values.CODE(Absyn.C_TYPENAME(className)),Values.BOOL(b)},_)
       algorithm
         p := SymbolTable.getAbsyn();
         b1 := buildEncryptedPackage(className, b, p);
@@ -1359,7 +1359,7 @@ algorithm
       then
         (cache,ret_val);
 
-    case (cache,env,"translateGraphics",{Values.CODE(Absyn.C_TYPENAME(className))},_)
+    case (cache,_,"translateGraphics",{Values.CODE(Absyn.C_TYPENAME(className))},_)
       then (cache,translateGraphics(className, msg));
 
     case (cache,_,"setPlotCommand",{Values.STRING(_)},_)
@@ -1461,7 +1461,7 @@ algorithm
         //Flags.set(Flags.WRITE_TO_BUFFER,true);
         List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-        (b,cache,compileDir,executable,_,_,initfilename,_,_,vals) = buildModel(cache,env, vals, msg);
+        (b,cache,_,executable,_,_,initfilename,_,_,vals) = buildModel(cache,env, vals, msg);
       then
         (cache,ValuesUtil.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")}));
 
@@ -1477,11 +1477,11 @@ algorithm
         if listLength(vals)<>13 then
           Error.addInternalError("reduceTerms expected 13 arguments", sourceInfo());
         end if;
-        v=listGet(vals,13);
+        _ =listGet(vals,13);
         vals=listDelete(vals,13);
         /* labelstoCancel; doesn't do anything */
 
-        (b,cache,compileDir,executable,_,_,initfilename,_,_) = buildModel(cache,env, vals, msg);
+        (b,cache,_,executable,_,_,initfilename,_,_) = buildModel(cache,env, vals, msg);
       then
         (cache,ValuesUtil.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")}));
     case(cache,env,"buildOpenTURNSInterface",vals,_)
@@ -3288,7 +3288,7 @@ algorithm
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
         str = AbsynUtil.pathString(className);
-        (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, SymbolTable.getAbsyn(), true);
+        (Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, SymbolTable.getAbsyn(), true);
         re = AbsynUtil.restrString(restriction);
         Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (AbsynUtil.isFunctionRestriction(restriction) or AbsynUtil.isPackageRestriction(restriction)),
           Error.INST_INVALID_RESTRICTION,{str,re},AbsynUtil.dummyInfo);
@@ -3329,7 +3329,7 @@ algorithm
         false = Flags.isSet(Flags.SCODE_INST);
         str = AbsynUtil.pathString(className);
         p = SymbolTable.getAbsyn();
-        (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p, true);
+        (Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p, true);
         re = AbsynUtil.restrString(restriction);
         Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (AbsynUtil.isFunctionRestriction(restriction) or AbsynUtil.isPackageRestriction(restriction)),
           Error.INST_INVALID_RESTRICTION,{str,re},AbsynUtil.dummyInfo);
@@ -7846,7 +7846,7 @@ algorithm
       list<Absyn.NamedArg> namedArgs;
       list<String> initialState;
 
-    case Absyn.EQ_NORETCALL(functionArgs = Absyn.FUNCTIONARGS(args = expArgs, argNames = _))
+    case Absyn.EQ_NORETCALL(functionArgs = Absyn.FUNCTIONARGS(args = expArgs))
       equation
         initialState = List.map(expArgs, Dump.printExpStr);
       then
