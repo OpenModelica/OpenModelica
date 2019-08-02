@@ -5,6 +5,8 @@ extern jl_function_t* omc_jl_some;
 extern jl_function_t* omc_jl_cons;
 extern jl_function_t* omc_jl_sourceinfo;
 extern jl_function_t* omc_jl_listReverse;
+extern jl_function_t* omc_jl_tuple2;
+extern jl_function_t* omc_jl_AbsynUtil_isDerCref;
 
 static inline jl_value_t* mmc_mk_some_or_none(jl_value_t *value) {
   return value ? jl_call1(omc_jl_some, value) : jl_nothing;
@@ -18,7 +20,7 @@ static inline jl_value_t* mmc_mk_scon(const char *str) {
   return jl_cstr_to_string(str);
 }
 
-static inline jl_value_t* mmc_mk_cons(jl_value_t* head, jl_value_t* tail) {
+static inline jl_value_t* __mmc_mk_cons(jl_value_t* head, jl_value_t* tail) {
   return jl_call2(omc_jl_cons, head, tail);
 }
 
@@ -27,6 +29,9 @@ static inline jl_value_t* SourceInfo__SOURCEINFO(jl_value_t* fileName, jl_value_
   jl_value_t *vals[7] = {fileName,isReadOnly,lineNumberStart,columnNumberStart,lineNumberEnd,columnNumberEnd,lastModification};
   return jl_call(omc_jl_sourceinfo, vals, 7);
 }
+
+#define omc_AbsynUtil_isDerCref(IGNORE, X) (X ? jl_call1(omc_jl_AbsynUtil_isDerCref, X) : jl_nothing)
+#define mmc_mk_tuple2(x1,x2) (jl_call2(omc_jl_tuple2, x1, x2))
 
 #define MMC_TRUE jl_true
 #define MMC_FALSE jl_false

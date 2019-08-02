@@ -79,7 +79,11 @@ else
 Parser_omc.o: $(HFILES) parse.c lookupTokenName.c
 endif
 
-libomparse-julia.so: MetaModelicaJuliaLayer.o Parser_jl.o Modelica_3_Lexer.jl.o ModelicaParser.jl.o
+libomparse-julia.a: MetaModelicaJuliaLayer.o Parser_jl.o Modelica_3_Lexer.jl.o ModelicaParser.jl.o
+	rm -f $@
+	ar -ru $@ MetaModelicaJuliaLayer.o Parser_jl.o Modelica_3_Lexer.jl.o ModelicaParser.jl.o
+	ranlib $@
+
 OpenModelicaJuliaHeader.h: ../Compiler/FrontEnd/Absyn.mo ../Compiler/Script/GlobalScript.mo ../Compiler/FrontEnd/Values.mo ../Compiler/Util/Error.mo ../Compiler/Util/Util.mo ../Compiler/Util/FMI.mo GenerateJLHeader.mos
 	$(OMBUILDDIR)/bin/omc -g=MetaModelica GenerateJLHeader.mos > $@.log || (cat $@.log && false)
 	@mv $@.new $@
