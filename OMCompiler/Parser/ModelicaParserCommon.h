@@ -44,6 +44,7 @@ extern "C" {
 #else
 
 #define DLLDirection /* nothing */
+#include <julia.h>
 
 #endif
 
@@ -69,8 +70,13 @@ typedef struct antlr_members_struct {
   long first_comment;
   void* filename_OMC;
   void* timestamp;
+#if !defined(OMJULIA)
   const char* filename_C;
   const char* filename_C_testsuiteFriendly;
+#else
+  jl_value_t* filename_C;
+  jl_value_t* filename_C_testsuiteFriendly;
+#endif
   int readonly;
   int flags;
   int langStd;

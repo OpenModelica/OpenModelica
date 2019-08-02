@@ -106,7 +106,7 @@ goto rule ## func ## Ex; }}
   #undef MMC_STRUCTHDR
   #define MMC_STRUCTHDR(x,y) 0
 #endif
-  
+
   #define NYI(void) fprintf(stderr, "NYI \%s \%s:\%d\n", __FUNCTION__, __FILE__, __LINE__); exit(1);
 
   #define PARSER_INFO(start) ((void*) SourceInfo__SOURCEINFO(ModelicaParser_filename_OMC, mmc_mk_bcon(ModelicaParser_readonly), mmc_mk_icon(start->line), mmc_mk_icon(start->line == 1 ? start->charPosition+2 : start->charPosition+1), mmc_mk_icon(LT(1)->line), mmc_mk_icon(LT(1)->charPosition+1), ModelicaParser_timeStamp))
@@ -122,9 +122,10 @@ goto rule ## func ## Ex; }}
   #define isTuple(X) (MMC_GETHDR(X) == MMC_STRUCTHDR(1+1, Absyn__TUPLE_3dBOX1))
   #define isCall(X) (MMC_GETHDR(X) == MMC_STRUCTHDR(2+1, Absyn__CALL_3dBOX2))
   #define isNotNil(X) (MMC_NILHDR != MMC_GETHDR(X))
+  #define mmc_mk_cons_typed(T,head,tail) mmc_mk_cons(head,tail)
 
   #else
-  
+
   /* Julia */
   #define PARSER_INFO(start) ((void*) SourceInfo__SOURCEINFO(mmc_mk_scon("dummyFile"), MMC_TRUE, mmc_mk_icon(start->line), mmc_mk_icon(start->line == 1 ? start->charPosition+2 : start->charPosition+1), mmc_mk_icon(LT(1)->line), mmc_mk_icon(LT(1)->charPosition+1), mmc_mk_rcon(0.0)))
   #define isCref(X) jl_typeis(X, Absyn_Exp_CREF_type)
@@ -132,7 +133,7 @@ goto rule ## func ## Ex; }}
   #define isComplex(X) jl_typeis(X, Absyn_TypeSpec_TCOMPLEX_type)
   #define isTuple(X) jl_typeis(X, Absyn_Exp_TUPLE_type)
   #define isCall(X) jl_typeis(X, Absyn_Exp_CALL_type)
-  #define isNotNil(X) (X)
+  #define isNotNil(X) !listEmpty(X)
   #define mmc_mk_cons(X, Y) (__mmc_mk_cons((jl_value_t *)X, (jl_value_t *)Y))
   #define GlobalScript__IALG(X) NULL
   #define GlobalScript__IEXP(X, Y) NULL
@@ -143,7 +144,7 @@ goto rule ## func ## Ex; }}
 @members
 {
   #define ARRAY_REDUCTION_NAME "\$array"
-  
+
   #if !defined(OMJULIA)
   #include "meta_modelica.h"
   #include "OpenModelicaBootstrappingHeader.h"
@@ -180,7 +181,7 @@ class_definition_list returns [void* ast]
 @init{ f = NULL; cd.ast = NULL; cl = NULL; } :
   ((f=FINAL)? cd=class_definition[f != NULL] SEMICOLON) cl=class_definition_list?
     {
-      ast = mmc_mk_cons(cd.ast, or_nil(cl));
+      ast = mmc_mk_cons_typed(Absyn_Class, cd.ast, or_nil(cl));
     }
   ;
 
@@ -310,7 +311,7 @@ name_list returns [void* ast]
 @init { n = 0; nl = 0; } :
   n=name_path (COMMA nl=name_list)?
     {
-      ast = mmc_mk_cons(n, or_nil(nl));
+      ast = mmc_mk_cons_typed(Absyn_Path, n, or_nil(nl));
     }
   ;
 
@@ -328,7 +329,7 @@ enumeration returns [void* ast]
 
 enum_list returns [void* ast]
 @init { e = 0; el = 0; } :
-  e=enumeration_literal ( COMMA el=enum_list )? { ast = mmc_mk_cons(e, or_nil(el)); }
+  e=enumeration_literal ( COMMA el=enum_list )? { ast = mmc_mk_cons_typed(Absyn_EnumLiteral, e, or_nil(el)); }
   ;
 
 enumeration_literal returns [void* ast]
@@ -340,8 +341,8 @@ composition returns [void* ast, void* ann]
 @init { $ann = mmc_mk_nil(); el = 0; els = 0; a = 0; } :
   el=element_list[&$ann] els=composition2[&$ann] (a=annotation SEMICOLON)?
   {
-    $ast = mmc_mk_cons(Absyn__PUBLIC(el),els);
-    $ann = a ? mmc_mk_cons(a,$ann) : $ann;
+    $ast = mmc_mk_cons_typed(Absyn_ClassPart, Absyn__PUBLIC(el), els);
+    $ann = a ? mmc_mk_cons_typed(Absyn_Annotation, a, $ann) : $ann;
   }
   ;
 
@@ -540,8 +541,8 @@ component_clause returns [void* ast]
         p->data[1+UNBOX_OFFSET] = mmc_mk_none();  // replace the array with nothing
       #else
         /* Are these things OK? */
-        ar_option = jl_data_ptr($path.ast)[2];
-        jl_data_ptr($path.ast)[2] = jl_nothing;
+        ar_option = jl_data_ptr($path.ast)[1];
+        jl_data_ptr($path.ast)[1] = jl_nothing;
       #endif
       }
       else if (isComplex($path.ast))
@@ -552,8 +553,8 @@ component_clause returns [void* ast]
         p->data[2+UNBOX_OFFSET] = mmc_mk_none();  // replace the array with nothing
       #else
         /* Are these things OK? */
-        ar_option = jl_data_ptr($path.ast)[3];
-        jl_data_ptr($path.ast)[3] = jl_nothing;
+        ar_option = jl_data_ptr($path.ast)[2];
+        jl_data_ptr($path.ast)[2] = jl_nothing;
       #endif
       }
       else
@@ -583,7 +584,7 @@ component_clause returns [void* ast]
         }
         else // is SOME(arr)
         {
-          arr = jl_data_ptr(ar_option)[1];
+          arr = jl_data_ptr(ar_option)[0];
         }
       }
       #endif
@@ -967,8 +968,8 @@ assign_clause_a returns [void* ast]
           struct mmc_struct *p = (struct mmc_struct*)MMC_UNTAGPTR(e1);
           $ast = Absyn__ALG_5fNORETCALL(p->data[0+UNBOX_OFFSET],p->data[1+UNBOX_OFFSET]);
         #else
-          $ast = Absyn__ALG_5fNORETCALL(jl_data_ptr(e1)[1],jl_data_ptr(e1)[2]);
-        #endif 
+          $ast = Absyn__ALG_5fNORETCALL(jl_data_ptr(e1)[0],jl_data_ptr(e1)[1]);
+        #endif
         }
       }
     )
@@ -988,14 +989,14 @@ equality_or_noretcall_equation returns [void* ast]
       }
     | {LA(1) != EQUALS && LA(1) != ASSIGN}? /* It has to be a CALL */
        {
-         
+
          modelicaParserAssert(isCall(e1),"A singleton expression in an equation section is required to be a function call", equality_or_noretcall_equation, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
          {
          #if !defined(OMJULIA)
            struct mmc_struct *p = (struct mmc_struct*)MMC_UNTAGPTR(e1);
            $ast = Absyn__EQ_5fNORETCALL(p->data[0+UNBOX_OFFSET],p->data[1+UNBOX_OFFSET]);
          #else
-           $ast = Absyn__ALG_5fNORETCALL(jl_data_ptr(e1)[1],jl_data_ptr(e1)[2]);
+           $ast = Absyn__EQ_5fNORETCALL(jl_data_ptr(e1)[0],jl_data_ptr(e1)[1]);
          #endif
          }
        }
@@ -1348,7 +1349,7 @@ primary returns [void* ast]
 
       errno = 0;
       l = strtol(chars,&endptr,10);
-      
+
 #if !defined(OMJULIA)
       args[0] = chars;
       args[1] = MMC_SIZE_INT == 8 ? "OpenModelica (64-bit) only supports 63"
@@ -1566,7 +1567,7 @@ for_or_expression_list returns [void* ast, int isFor]
 for_or_expression_list2 returns [void* ast]
 @init{ e.ast = 0; el = 0; } :
     {LA(2) == EQUALS}? { ast = mmc_mk_nil(); }
-  | e=expression[1] (COMMA el=for_or_expression_list2)? { ast = mmc_mk_cons(e.ast, or_nil(el)); }
+  | e=expression[1] (COMMA el=for_or_expression_list2)? { ast = mmc_mk_cons_typed(Absyn_Exp, e.ast, or_nil(el)); }
   ;
 
 named_arguments returns [void* ast]

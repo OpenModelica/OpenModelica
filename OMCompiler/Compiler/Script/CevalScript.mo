@@ -2565,7 +2565,7 @@ algorithm
         (cache, newval);
 
     // not in CF list, we have a symbol table, generate function and update symtab
-    case (cache,env,(DAE.CALL(path = funcpath,attr = DAE.CALL_ATTR(ty=ty, builtin = false))),vallst,_, msg, _)
+    case (cache,env,(DAE.CALL(path = funcpath,attr = DAE.CALL_ATTR( builtin = false))),vallst,_, msg, _)
       guard (bIsCompleteFunction and Flags.isSet(Flags.GEN)) // yeha! we have a symboltable!
       algorithm
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
@@ -2595,7 +2595,7 @@ algorithm
         end if;
 
         // p = Interactive.updateProgram(Absyn.PROGRAM({Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(funcRest),body,info)},w,ts), p);
-        f := AbsynUtil.getFileNameFromInfo(info);
+        _ := AbsynUtil.getFileNameFromInfo(info);
 
         if Flags.isSet(Flags.DYN_LOAD) then
           print("[dynload]: [SOME SYMTAB] not in in CF list [finished]: " +
