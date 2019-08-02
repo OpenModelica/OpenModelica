@@ -1,1069 +1,1230 @@
 /* Automatically generated header for external MetaModelica functions */
 #include <julia.h>
+#include <assert.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
 #ifdef ADD_METARECORD_DEFINITIONS
-extern jl_function_t *Absyn_ForIterator_ITERATOR = NULL;
-extern jl_value_t *Absyn_ForIterator_ITERATOR_type = NULL;
+jl_value_t *Absyn_ForIterator = NULL;
 
-extern jl_function_t *Absyn_Program_PROGRAM = NULL;
-extern jl_value_t *Absyn_Program_PROGRAM_type = NULL;
+jl_function_t *Absyn_ForIterator_ITERATOR = NULL;
+jl_value_t *Absyn_ForIterator_ITERATOR_type = NULL;
 
-extern jl_function_t *Absyn_Within_TOP = NULL;
-extern jl_value_t *Absyn_Within_TOP_type = NULL;
+jl_value_t *Absyn_Program = NULL;
 
-extern jl_function_t *Absyn_Within_WITHIN = NULL;
-extern jl_value_t *Absyn_Within_WITHIN_type = NULL;
+jl_function_t *Absyn_Program_PROGRAM = NULL;
+jl_value_t *Absyn_Program_PROGRAM_type = NULL;
 
-extern jl_function_t *Absyn_Class_CLASS = NULL;
-extern jl_value_t *Absyn_Class_CLASS_type = NULL;
+jl_value_t *Absyn_Within = NULL;
 
-extern jl_function_t *Absyn_ClassDef_PDER = NULL;
-extern jl_value_t *Absyn_ClassDef_PDER_type = NULL;
+jl_function_t *Absyn_Within_TOP = NULL;
+jl_value_t *Absyn_Within_TOP_type = NULL;
 
-extern jl_function_t *Absyn_ClassDef_CLASS__EXTENDS = NULL;
-extern jl_value_t *Absyn_ClassDef_CLASS__EXTENDS_type = NULL;
+jl_function_t *Absyn_Within_WITHIN = NULL;
+jl_value_t *Absyn_Within_WITHIN_type = NULL;
 
-extern jl_function_t *Absyn_ClassDef_OVERLOAD = NULL;
-extern jl_value_t *Absyn_ClassDef_OVERLOAD_type = NULL;
+jl_value_t *Absyn_Class = NULL;
 
-extern jl_function_t *Absyn_ClassDef_ENUMERATION = NULL;
-extern jl_value_t *Absyn_ClassDef_ENUMERATION_type = NULL;
+jl_function_t *Absyn_Class_CLASS = NULL;
+jl_value_t *Absyn_Class_CLASS_type = NULL;
 
-extern jl_function_t *Absyn_ClassDef_DERIVED = NULL;
-extern jl_value_t *Absyn_ClassDef_DERIVED_type = NULL;
+jl_value_t *Absyn_ClassDef = NULL;
 
-extern jl_function_t *Absyn_ClassDef_PARTS = NULL;
-extern jl_value_t *Absyn_ClassDef_PARTS_type = NULL;
+jl_function_t *Absyn_ClassDef_PDER = NULL;
+jl_value_t *Absyn_ClassDef_PDER_type = NULL;
 
-extern jl_function_t *Absyn_TypeSpec_TCOMPLEX = NULL;
-extern jl_value_t *Absyn_TypeSpec_TCOMPLEX_type = NULL;
+jl_function_t *Absyn_ClassDef_CLASS__EXTENDS = NULL;
+jl_value_t *Absyn_ClassDef_CLASS__EXTENDS_type = NULL;
 
-extern jl_function_t *Absyn_TypeSpec_TPATH = NULL;
-extern jl_value_t *Absyn_TypeSpec_TPATH_type = NULL;
+jl_function_t *Absyn_ClassDef_OVERLOAD = NULL;
+jl_value_t *Absyn_ClassDef_OVERLOAD_type = NULL;
 
-extern jl_function_t *Absyn_EnumDef_ENUM__COLON = NULL;
-extern jl_value_t *Absyn_EnumDef_ENUM__COLON_type = NULL;
+jl_function_t *Absyn_ClassDef_ENUMERATION = NULL;
+jl_value_t *Absyn_ClassDef_ENUMERATION_type = NULL;
 
-extern jl_function_t *Absyn_EnumDef_ENUMLITERALS = NULL;
-extern jl_value_t *Absyn_EnumDef_ENUMLITERALS_type = NULL;
+jl_function_t *Absyn_ClassDef_DERIVED = NULL;
+jl_value_t *Absyn_ClassDef_DERIVED_type = NULL;
 
-extern jl_function_t *Absyn_EnumLiteral_ENUMLITERAL = NULL;
-extern jl_value_t *Absyn_EnumLiteral_ENUMLITERAL_type = NULL;
+jl_function_t *Absyn_ClassDef_PARTS = NULL;
+jl_value_t *Absyn_ClassDef_PARTS_type = NULL;
 
-extern jl_function_t *Absyn_ClassPart_EXTERNAL = NULL;
-extern jl_value_t *Absyn_ClassPart_EXTERNAL_type = NULL;
+jl_value_t *Absyn_TypeSpec = NULL;
 
-extern jl_function_t *Absyn_ClassPart_INITIALALGORITHMS = NULL;
-extern jl_value_t *Absyn_ClassPart_INITIALALGORITHMS_type = NULL;
+jl_function_t *Absyn_TypeSpec_TCOMPLEX = NULL;
+jl_value_t *Absyn_TypeSpec_TCOMPLEX_type = NULL;
 
-extern jl_function_t *Absyn_ClassPart_ALGORITHMS = NULL;
-extern jl_value_t *Absyn_ClassPart_ALGORITHMS_type = NULL;
+jl_function_t *Absyn_TypeSpec_TPATH = NULL;
+jl_value_t *Absyn_TypeSpec_TPATH_type = NULL;
 
-extern jl_function_t *Absyn_ClassPart_INITIALEQUATIONS = NULL;
-extern jl_value_t *Absyn_ClassPart_INITIALEQUATIONS_type = NULL;
+jl_value_t *Absyn_EnumDef = NULL;
 
-extern jl_function_t *Absyn_ClassPart_EQUATIONS = NULL;
-extern jl_value_t *Absyn_ClassPart_EQUATIONS_type = NULL;
+jl_function_t *Absyn_EnumDef_ENUM__COLON = NULL;
+jl_value_t *Absyn_EnumDef_ENUM__COLON_type = NULL;
 
-extern jl_function_t *Absyn_ClassPart_CONSTRAINTS = NULL;
-extern jl_value_t *Absyn_ClassPart_CONSTRAINTS_type = NULL;
+jl_function_t *Absyn_EnumDef_ENUMLITERALS = NULL;
+jl_value_t *Absyn_EnumDef_ENUMLITERALS_type = NULL;
 
-extern jl_function_t *Absyn_ClassPart_PROTECTED = NULL;
-extern jl_value_t *Absyn_ClassPart_PROTECTED_type = NULL;
+jl_value_t *Absyn_EnumLiteral = NULL;
 
-extern jl_function_t *Absyn_ClassPart_PUBLIC = NULL;
-extern jl_value_t *Absyn_ClassPart_PUBLIC_type = NULL;
+jl_function_t *Absyn_EnumLiteral_ENUMLITERAL = NULL;
+jl_value_t *Absyn_EnumLiteral_ENUMLITERAL_type = NULL;
 
-extern jl_function_t *Absyn_ElementItem_LEXER__COMMENT = NULL;
-extern jl_value_t *Absyn_ElementItem_LEXER__COMMENT_type = NULL;
+jl_value_t *Absyn_ClassPart = NULL;
 
-extern jl_function_t *Absyn_ElementItem_ELEMENTITEM = NULL;
-extern jl_value_t *Absyn_ElementItem_ELEMENTITEM_type = NULL;
+jl_function_t *Absyn_ClassPart_EXTERNAL = NULL;
+jl_value_t *Absyn_ClassPart_EXTERNAL_type = NULL;
 
-extern jl_function_t *Absyn_Element_TEXT = NULL;
-extern jl_value_t *Absyn_Element_TEXT_type = NULL;
+jl_function_t *Absyn_ClassPart_INITIALALGORITHMS = NULL;
+jl_value_t *Absyn_ClassPart_INITIALALGORITHMS_type = NULL;
 
-extern jl_function_t *Absyn_Element_DEFINEUNIT = NULL;
-extern jl_value_t *Absyn_Element_DEFINEUNIT_type = NULL;
+jl_function_t *Absyn_ClassPart_ALGORITHMS = NULL;
+jl_value_t *Absyn_ClassPart_ALGORITHMS_type = NULL;
 
-extern jl_function_t *Absyn_Element_ELEMENT = NULL;
-extern jl_value_t *Absyn_Element_ELEMENT_type = NULL;
+jl_function_t *Absyn_ClassPart_INITIALEQUATIONS = NULL;
+jl_value_t *Absyn_ClassPart_INITIALEQUATIONS_type = NULL;
 
-extern jl_function_t *Absyn_ConstrainClass_CONSTRAINCLASS = NULL;
-extern jl_value_t *Absyn_ConstrainClass_CONSTRAINCLASS_type = NULL;
+jl_function_t *Absyn_ClassPart_EQUATIONS = NULL;
+jl_value_t *Absyn_ClassPart_EQUATIONS_type = NULL;
 
-extern jl_function_t *Absyn_ElementSpec_COMPONENTS = NULL;
-extern jl_value_t *Absyn_ElementSpec_COMPONENTS_type = NULL;
+jl_function_t *Absyn_ClassPart_CONSTRAINTS = NULL;
+jl_value_t *Absyn_ClassPart_CONSTRAINTS_type = NULL;
 
-extern jl_function_t *Absyn_ElementSpec_IMPORT = NULL;
-extern jl_value_t *Absyn_ElementSpec_IMPORT_type = NULL;
+jl_function_t *Absyn_ClassPart_PROTECTED = NULL;
+jl_value_t *Absyn_ClassPart_PROTECTED_type = NULL;
 
-extern jl_function_t *Absyn_ElementSpec_EXTENDS = NULL;
-extern jl_value_t *Absyn_ElementSpec_EXTENDS_type = NULL;
+jl_function_t *Absyn_ClassPart_PUBLIC = NULL;
+jl_value_t *Absyn_ClassPart_PUBLIC_type = NULL;
 
-extern jl_function_t *Absyn_ElementSpec_CLASSDEF = NULL;
-extern jl_value_t *Absyn_ElementSpec_CLASSDEF_type = NULL;
+jl_value_t *Absyn_ElementItem = NULL;
 
-extern jl_function_t *Absyn_InnerOuter_NOT__INNER__OUTER = NULL;
-extern jl_value_t *Absyn_InnerOuter_NOT__INNER__OUTER_type = NULL;
+jl_function_t *Absyn_ElementItem_LEXER__COMMENT = NULL;
+jl_value_t *Absyn_ElementItem_LEXER__COMMENT_type = NULL;
 
-extern jl_function_t *Absyn_InnerOuter_INNER__OUTER = NULL;
-extern jl_value_t *Absyn_InnerOuter_INNER__OUTER_type = NULL;
+jl_function_t *Absyn_ElementItem_ELEMENTITEM = NULL;
+jl_value_t *Absyn_ElementItem_ELEMENTITEM_type = NULL;
 
-extern jl_function_t *Absyn_InnerOuter_OUTER = NULL;
-extern jl_value_t *Absyn_InnerOuter_OUTER_type = NULL;
+jl_value_t *Absyn_Element = NULL;
 
-extern jl_function_t *Absyn_InnerOuter_INNER = NULL;
-extern jl_value_t *Absyn_InnerOuter_INNER_type = NULL;
+jl_function_t *Absyn_Element_TEXT = NULL;
+jl_value_t *Absyn_Element_TEXT_type = NULL;
 
-extern jl_function_t *Absyn_Import_GROUP__IMPORT = NULL;
-extern jl_value_t *Absyn_Import_GROUP__IMPORT_type = NULL;
+jl_function_t *Absyn_Element_DEFINEUNIT = NULL;
+jl_value_t *Absyn_Element_DEFINEUNIT_type = NULL;
 
-extern jl_function_t *Absyn_Import_UNQUAL__IMPORT = NULL;
-extern jl_value_t *Absyn_Import_UNQUAL__IMPORT_type = NULL;
+jl_function_t *Absyn_Element_ELEMENT = NULL;
+jl_value_t *Absyn_Element_ELEMENT_type = NULL;
 
-extern jl_function_t *Absyn_Import_QUAL__IMPORT = NULL;
-extern jl_value_t *Absyn_Import_QUAL__IMPORT_type = NULL;
+jl_value_t *Absyn_ConstrainClass = NULL;
 
-extern jl_function_t *Absyn_Import_NAMED__IMPORT = NULL;
-extern jl_value_t *Absyn_Import_NAMED__IMPORT_type = NULL;
+jl_function_t *Absyn_ConstrainClass_CONSTRAINCLASS = NULL;
+jl_value_t *Absyn_ConstrainClass_CONSTRAINCLASS_type = NULL;
 
-extern jl_function_t *Absyn_GroupImport_GROUP__IMPORT__RENAME = NULL;
-extern jl_value_t *Absyn_GroupImport_GROUP__IMPORT__RENAME_type = NULL;
+jl_value_t *Absyn_ElementSpec = NULL;
 
-extern jl_function_t *Absyn_GroupImport_GROUP__IMPORT__NAME = NULL;
-extern jl_value_t *Absyn_GroupImport_GROUP__IMPORT__NAME_type = NULL;
+jl_function_t *Absyn_ElementSpec_COMPONENTS = NULL;
+jl_value_t *Absyn_ElementSpec_COMPONENTS_type = NULL;
 
-extern jl_function_t *Absyn_ComponentItem_COMPONENTITEM = NULL;
-extern jl_value_t *Absyn_ComponentItem_COMPONENTITEM_type = NULL;
+jl_function_t *Absyn_ElementSpec_IMPORT = NULL;
+jl_value_t *Absyn_ElementSpec_IMPORT_type = NULL;
 
-extern jl_function_t *Absyn_Component_COMPONENT = NULL;
-extern jl_value_t *Absyn_Component_COMPONENT_type = NULL;
+jl_function_t *Absyn_ElementSpec_EXTENDS = NULL;
+jl_value_t *Absyn_ElementSpec_EXTENDS_type = NULL;
 
-extern jl_function_t *Absyn_EquationItem_EQUATIONITEMCOMMENT = NULL;
-extern jl_value_t *Absyn_EquationItem_EQUATIONITEMCOMMENT_type = NULL;
+jl_function_t *Absyn_ElementSpec_CLASSDEF = NULL;
+jl_value_t *Absyn_ElementSpec_CLASSDEF_type = NULL;
 
-extern jl_function_t *Absyn_EquationItem_EQUATIONITEM = NULL;
-extern jl_value_t *Absyn_EquationItem_EQUATIONITEM_type = NULL;
+jl_value_t *Absyn_InnerOuter = NULL;
 
-extern jl_function_t *Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT = NULL;
-extern jl_value_t *Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT_type = NULL;
+jl_function_t *Absyn_InnerOuter_NOT__INNER__OUTER = NULL;
+jl_value_t *Absyn_InnerOuter_NOT__INNER__OUTER_type = NULL;
 
-extern jl_function_t *Absyn_AlgorithmItem_ALGORITHMITEM = NULL;
-extern jl_value_t *Absyn_AlgorithmItem_ALGORITHMITEM_type = NULL;
+jl_function_t *Absyn_InnerOuter_INNER__OUTER = NULL;
+jl_value_t *Absyn_InnerOuter_INNER__OUTER_type = NULL;
 
-extern jl_function_t *Absyn_Equation_EQ__FAILURE = NULL;
-extern jl_value_t *Absyn_Equation_EQ__FAILURE_type = NULL;
+jl_function_t *Absyn_InnerOuter_OUTER = NULL;
+jl_value_t *Absyn_InnerOuter_OUTER_type = NULL;
 
-extern jl_function_t *Absyn_Equation_EQ__NORETCALL = NULL;
-extern jl_value_t *Absyn_Equation_EQ__NORETCALL_type = NULL;
+jl_function_t *Absyn_InnerOuter_INNER = NULL;
+jl_value_t *Absyn_InnerOuter_INNER_type = NULL;
 
-extern jl_function_t *Absyn_Equation_EQ__WHEN__E = NULL;
-extern jl_value_t *Absyn_Equation_EQ__WHEN__E_type = NULL;
+jl_value_t *Absyn_Import = NULL;
 
-extern jl_function_t *Absyn_Equation_EQ__FOR = NULL;
-extern jl_value_t *Absyn_Equation_EQ__FOR_type = NULL;
+jl_function_t *Absyn_Import_GROUP__IMPORT = NULL;
+jl_value_t *Absyn_Import_GROUP__IMPORT_type = NULL;
 
-extern jl_function_t *Absyn_Equation_EQ__CONNECT = NULL;
-extern jl_value_t *Absyn_Equation_EQ__CONNECT_type = NULL;
+jl_function_t *Absyn_Import_UNQUAL__IMPORT = NULL;
+jl_value_t *Absyn_Import_UNQUAL__IMPORT_type = NULL;
 
-extern jl_function_t *Absyn_Equation_EQ__PDE = NULL;
-extern jl_value_t *Absyn_Equation_EQ__PDE_type = NULL;
+jl_function_t *Absyn_Import_QUAL__IMPORT = NULL;
+jl_value_t *Absyn_Import_QUAL__IMPORT_type = NULL;
 
-extern jl_function_t *Absyn_Equation_EQ__EQUALS = NULL;
-extern jl_value_t *Absyn_Equation_EQ__EQUALS_type = NULL;
+jl_function_t *Absyn_Import_NAMED__IMPORT = NULL;
+jl_value_t *Absyn_Import_NAMED__IMPORT_type = NULL;
 
-extern jl_function_t *Absyn_Equation_EQ__IF = NULL;
-extern jl_value_t *Absyn_Equation_EQ__IF_type = NULL;
+jl_value_t *Absyn_GroupImport = NULL;
 
-extern jl_function_t *Absyn_Algorithm_ALG__CONTINUE = NULL;
-extern jl_value_t *Absyn_Algorithm_ALG__CONTINUE_type = NULL;
+jl_function_t *Absyn_GroupImport_GROUP__IMPORT__RENAME = NULL;
+jl_value_t *Absyn_GroupImport_GROUP__IMPORT__RENAME_type = NULL;
 
-extern jl_function_t *Absyn_Algorithm_ALG__TRY = NULL;
-extern jl_value_t *Absyn_Algorithm_ALG__TRY_type = NULL;
+jl_function_t *Absyn_GroupImport_GROUP__IMPORT__NAME = NULL;
+jl_value_t *Absyn_GroupImport_GROUP__IMPORT__NAME_type = NULL;
 
-extern jl_function_t *Absyn_Algorithm_ALG__FAILURE = NULL;
-extern jl_value_t *Absyn_Algorithm_ALG__FAILURE_type = NULL;
+jl_value_t *Absyn_ComponentItem = NULL;
 
-extern jl_function_t *Absyn_Algorithm_ALG__BREAK = NULL;
-extern jl_value_t *Absyn_Algorithm_ALG__BREAK_type = NULL;
+jl_function_t *Absyn_ComponentItem_COMPONENTITEM = NULL;
+jl_value_t *Absyn_ComponentItem_COMPONENTITEM_type = NULL;
 
-extern jl_function_t *Absyn_Algorithm_ALG__RETURN = NULL;
-extern jl_value_t *Absyn_Algorithm_ALG__RETURN_type = NULL;
+jl_value_t *Absyn_Component = NULL;
 
-extern jl_function_t *Absyn_Algorithm_ALG__NORETCALL = NULL;
-extern jl_value_t *Absyn_Algorithm_ALG__NORETCALL_type = NULL;
+jl_function_t *Absyn_Component_COMPONENT = NULL;
+jl_value_t *Absyn_Component_COMPONENT_type = NULL;
 
-extern jl_function_t *Absyn_Algorithm_ALG__WHEN__A = NULL;
-extern jl_value_t *Absyn_Algorithm_ALG__WHEN__A_type = NULL;
+jl_value_t *Absyn_EquationItem = NULL;
 
-extern jl_function_t *Absyn_Algorithm_ALG__WHILE = NULL;
-extern jl_value_t *Absyn_Algorithm_ALG__WHILE_type = NULL;
+jl_function_t *Absyn_EquationItem_EQUATIONITEMCOMMENT = NULL;
+jl_value_t *Absyn_EquationItem_EQUATIONITEMCOMMENT_type = NULL;
 
-extern jl_function_t *Absyn_Algorithm_ALG__PARFOR = NULL;
-extern jl_value_t *Absyn_Algorithm_ALG__PARFOR_type = NULL;
+jl_function_t *Absyn_EquationItem_EQUATIONITEM = NULL;
+jl_value_t *Absyn_EquationItem_EQUATIONITEM_type = NULL;
 
-extern jl_function_t *Absyn_Algorithm_ALG__FOR = NULL;
-extern jl_value_t *Absyn_Algorithm_ALG__FOR_type = NULL;
+jl_value_t *Absyn_AlgorithmItem = NULL;
 
-extern jl_function_t *Absyn_Algorithm_ALG__IF = NULL;
-extern jl_value_t *Absyn_Algorithm_ALG__IF_type = NULL;
+jl_function_t *Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT = NULL;
+jl_value_t *Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT_type = NULL;
 
-extern jl_function_t *Absyn_Algorithm_ALG__ASSIGN = NULL;
-extern jl_value_t *Absyn_Algorithm_ALG__ASSIGN_type = NULL;
+jl_function_t *Absyn_AlgorithmItem_ALGORITHMITEM = NULL;
+jl_value_t *Absyn_AlgorithmItem_ALGORITHMITEM_type = NULL;
 
-extern jl_function_t *Absyn_Modification_CLASSMOD = NULL;
-extern jl_value_t *Absyn_Modification_CLASSMOD_type = NULL;
+jl_value_t *Absyn_Equation = NULL;
 
-extern jl_function_t *Absyn_EqMod_EQMOD = NULL;
-extern jl_value_t *Absyn_EqMod_EQMOD_type = NULL;
+jl_function_t *Absyn_Equation_EQ__FAILURE = NULL;
+jl_value_t *Absyn_Equation_EQ__FAILURE_type = NULL;
 
-extern jl_function_t *Absyn_EqMod_NOMOD = NULL;
-extern jl_value_t *Absyn_EqMod_NOMOD_type = NULL;
+jl_function_t *Absyn_Equation_EQ__NORETCALL = NULL;
+jl_value_t *Absyn_Equation_EQ__NORETCALL_type = NULL;
 
-extern jl_function_t *Absyn_ElementArg_REDECLARATION = NULL;
-extern jl_value_t *Absyn_ElementArg_REDECLARATION_type = NULL;
+jl_function_t *Absyn_Equation_EQ__WHEN__E = NULL;
+jl_value_t *Absyn_Equation_EQ__WHEN__E_type = NULL;
 
-extern jl_function_t *Absyn_ElementArg_MODIFICATION = NULL;
-extern jl_value_t *Absyn_ElementArg_MODIFICATION_type = NULL;
+jl_function_t *Absyn_Equation_EQ__FOR = NULL;
+jl_value_t *Absyn_Equation_EQ__FOR_type = NULL;
 
-extern jl_function_t *Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE = NULL;
-extern jl_value_t *Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE_type = NULL;
+jl_function_t *Absyn_Equation_EQ__CONNECT = NULL;
+jl_value_t *Absyn_Equation_EQ__CONNECT_type = NULL;
 
-extern jl_function_t *Absyn_RedeclareKeywords_REPLACEABLE = NULL;
-extern jl_value_t *Absyn_RedeclareKeywords_REPLACEABLE_type = NULL;
+jl_function_t *Absyn_Equation_EQ__PDE = NULL;
+jl_value_t *Absyn_Equation_EQ__PDE_type = NULL;
 
-extern jl_function_t *Absyn_RedeclareKeywords_REDECLARE = NULL;
-extern jl_value_t *Absyn_RedeclareKeywords_REDECLARE_type = NULL;
+jl_function_t *Absyn_Equation_EQ__EQUALS = NULL;
+jl_value_t *Absyn_Equation_EQ__EQUALS_type = NULL;
 
-extern jl_function_t *Absyn_Each_NON__EACH = NULL;
-extern jl_value_t *Absyn_Each_NON__EACH_type = NULL;
+jl_function_t *Absyn_Equation_EQ__IF = NULL;
+jl_value_t *Absyn_Equation_EQ__IF_type = NULL;
 
-extern jl_function_t *Absyn_Each_EACH = NULL;
-extern jl_value_t *Absyn_Each_EACH_type = NULL;
+jl_value_t *Absyn_Algorithm = NULL;
 
-extern jl_function_t *Absyn_ElementAttributes_ATTR = NULL;
-extern jl_value_t *Absyn_ElementAttributes_ATTR_type = NULL;
+jl_function_t *Absyn_Algorithm_ALG__CONTINUE = NULL;
+jl_value_t *Absyn_Algorithm_ALG__CONTINUE_type = NULL;
 
-extern jl_function_t *Absyn_IsField_FIELD = NULL;
-extern jl_value_t *Absyn_IsField_FIELD_type = NULL;
+jl_function_t *Absyn_Algorithm_ALG__TRY = NULL;
+jl_value_t *Absyn_Algorithm_ALG__TRY_type = NULL;
 
-extern jl_function_t *Absyn_IsField_NONFIELD = NULL;
-extern jl_value_t *Absyn_IsField_NONFIELD_type = NULL;
+jl_function_t *Absyn_Algorithm_ALG__FAILURE = NULL;
+jl_value_t *Absyn_Algorithm_ALG__FAILURE_type = NULL;
 
-extern jl_function_t *Absyn_Parallelism_NON__PARALLEL = NULL;
-extern jl_value_t *Absyn_Parallelism_NON__PARALLEL_type = NULL;
+jl_function_t *Absyn_Algorithm_ALG__BREAK = NULL;
+jl_value_t *Absyn_Algorithm_ALG__BREAK_type = NULL;
 
-extern jl_function_t *Absyn_Parallelism_PARLOCAL = NULL;
-extern jl_value_t *Absyn_Parallelism_PARLOCAL_type = NULL;
+jl_function_t *Absyn_Algorithm_ALG__RETURN = NULL;
+jl_value_t *Absyn_Algorithm_ALG__RETURN_type = NULL;
 
-extern jl_function_t *Absyn_Parallelism_PARGLOBAL = NULL;
-extern jl_value_t *Absyn_Parallelism_PARGLOBAL_type = NULL;
+jl_function_t *Absyn_Algorithm_ALG__NORETCALL = NULL;
+jl_value_t *Absyn_Algorithm_ALG__NORETCALL_type = NULL;
 
-extern jl_function_t *Absyn_FlowStream_NOT__FLOW__STREAM = NULL;
-extern jl_value_t *Absyn_FlowStream_NOT__FLOW__STREAM_type = NULL;
+jl_function_t *Absyn_Algorithm_ALG__WHEN__A = NULL;
+jl_value_t *Absyn_Algorithm_ALG__WHEN__A_type = NULL;
 
-extern jl_function_t *Absyn_FlowStream_STREAM = NULL;
-extern jl_value_t *Absyn_FlowStream_STREAM_type = NULL;
+jl_function_t *Absyn_Algorithm_ALG__WHILE = NULL;
+jl_value_t *Absyn_Algorithm_ALG__WHILE_type = NULL;
 
-extern jl_function_t *Absyn_FlowStream_FLOW = NULL;
-extern jl_value_t *Absyn_FlowStream_FLOW_type = NULL;
+jl_function_t *Absyn_Algorithm_ALG__PARFOR = NULL;
+jl_value_t *Absyn_Algorithm_ALG__PARFOR_type = NULL;
 
-extern jl_function_t *Absyn_Variability_CONST = NULL;
-extern jl_value_t *Absyn_Variability_CONST_type = NULL;
+jl_function_t *Absyn_Algorithm_ALG__FOR = NULL;
+jl_value_t *Absyn_Algorithm_ALG__FOR_type = NULL;
 
-extern jl_function_t *Absyn_Variability_PARAM = NULL;
-extern jl_value_t *Absyn_Variability_PARAM_type = NULL;
+jl_function_t *Absyn_Algorithm_ALG__IF = NULL;
+jl_value_t *Absyn_Algorithm_ALG__IF_type = NULL;
 
-extern jl_function_t *Absyn_Variability_DISCRETE = NULL;
-extern jl_value_t *Absyn_Variability_DISCRETE_type = NULL;
+jl_function_t *Absyn_Algorithm_ALG__ASSIGN = NULL;
+jl_value_t *Absyn_Algorithm_ALG__ASSIGN_type = NULL;
 
-extern jl_function_t *Absyn_Variability_VAR = NULL;
-extern jl_value_t *Absyn_Variability_VAR_type = NULL;
+jl_value_t *Absyn_Modification = NULL;
 
-extern jl_function_t *Absyn_Direction_INPUT__OUTPUT = NULL;
-extern jl_value_t *Absyn_Direction_INPUT__OUTPUT_type = NULL;
+jl_function_t *Absyn_Modification_CLASSMOD = NULL;
+jl_value_t *Absyn_Modification_CLASSMOD_type = NULL;
 
-extern jl_function_t *Absyn_Direction_BIDIR = NULL;
-extern jl_value_t *Absyn_Direction_BIDIR_type = NULL;
+jl_value_t *Absyn_EqMod = NULL;
 
-extern jl_function_t *Absyn_Direction_OUTPUT = NULL;
-extern jl_value_t *Absyn_Direction_OUTPUT_type = NULL;
+jl_function_t *Absyn_EqMod_EQMOD = NULL;
+jl_value_t *Absyn_EqMod_EQMOD_type = NULL;
 
-extern jl_function_t *Absyn_Direction_INPUT = NULL;
-extern jl_value_t *Absyn_Direction_INPUT_type = NULL;
+jl_function_t *Absyn_EqMod_NOMOD = NULL;
+jl_value_t *Absyn_EqMod_NOMOD_type = NULL;
 
-extern jl_function_t *Absyn_Exp_DOT = NULL;
-extern jl_value_t *Absyn_Exp_DOT_type = NULL;
+jl_value_t *Absyn_ElementArg = NULL;
 
-extern jl_function_t *Absyn_Exp_LIST = NULL;
-extern jl_value_t *Absyn_Exp_LIST_type = NULL;
+jl_function_t *Absyn_ElementArg_REDECLARATION = NULL;
+jl_value_t *Absyn_ElementArg_REDECLARATION_type = NULL;
 
-extern jl_function_t *Absyn_Exp_MATCHEXP = NULL;
-extern jl_value_t *Absyn_Exp_MATCHEXP_type = NULL;
+jl_function_t *Absyn_ElementArg_MODIFICATION = NULL;
+jl_value_t *Absyn_ElementArg_MODIFICATION_type = NULL;
 
-extern jl_function_t *Absyn_Exp_CONS = NULL;
-extern jl_value_t *Absyn_Exp_CONS_type = NULL;
+jl_value_t *Absyn_RedeclareKeywords = NULL;
 
-extern jl_function_t *Absyn_Exp_AS = NULL;
-extern jl_value_t *Absyn_Exp_AS_type = NULL;
+jl_function_t *Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE = NULL;
+jl_value_t *Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE_type = NULL;
 
-extern jl_function_t *Absyn_Exp_CODE = NULL;
-extern jl_value_t *Absyn_Exp_CODE_type = NULL;
+jl_function_t *Absyn_RedeclareKeywords_REPLACEABLE = NULL;
+jl_value_t *Absyn_RedeclareKeywords_REPLACEABLE_type = NULL;
 
-extern jl_function_t *Absyn_Exp_END = NULL;
-extern jl_value_t *Absyn_Exp_END_type = NULL;
+jl_function_t *Absyn_RedeclareKeywords_REDECLARE = NULL;
+jl_value_t *Absyn_RedeclareKeywords_REDECLARE_type = NULL;
 
-extern jl_function_t *Absyn_Exp_TUPLE = NULL;
-extern jl_value_t *Absyn_Exp_TUPLE_type = NULL;
+jl_value_t *Absyn_Each = NULL;
 
-extern jl_function_t *Absyn_Exp_RANGE = NULL;
-extern jl_value_t *Absyn_Exp_RANGE_type = NULL;
+jl_function_t *Absyn_Each_NON__EACH = NULL;
+jl_value_t *Absyn_Each_NON__EACH_type = NULL;
 
-extern jl_function_t *Absyn_Exp_MATRIX = NULL;
-extern jl_value_t *Absyn_Exp_MATRIX_type = NULL;
+jl_function_t *Absyn_Each_EACH = NULL;
+jl_value_t *Absyn_Each_EACH_type = NULL;
 
-extern jl_function_t *Absyn_Exp_ARRAY = NULL;
-extern jl_value_t *Absyn_Exp_ARRAY_type = NULL;
+jl_value_t *Absyn_ElementAttributes = NULL;
 
-extern jl_function_t *Absyn_Exp_PARTEVALFUNCTION = NULL;
-extern jl_value_t *Absyn_Exp_PARTEVALFUNCTION_type = NULL;
+jl_function_t *Absyn_ElementAttributes_ATTR = NULL;
+jl_value_t *Absyn_ElementAttributes_ATTR_type = NULL;
 
-extern jl_function_t *Absyn_Exp_CALL = NULL;
-extern jl_value_t *Absyn_Exp_CALL_type = NULL;
+jl_value_t *Absyn_IsField = NULL;
 
-extern jl_function_t *Absyn_Exp_IFEXP = NULL;
-extern jl_value_t *Absyn_Exp_IFEXP_type = NULL;
+jl_function_t *Absyn_IsField_FIELD = NULL;
+jl_value_t *Absyn_IsField_FIELD_type = NULL;
 
-extern jl_function_t *Absyn_Exp_RELATION = NULL;
-extern jl_value_t *Absyn_Exp_RELATION_type = NULL;
+jl_function_t *Absyn_IsField_NONFIELD = NULL;
+jl_value_t *Absyn_IsField_NONFIELD_type = NULL;
 
-extern jl_function_t *Absyn_Exp_LUNARY = NULL;
-extern jl_value_t *Absyn_Exp_LUNARY_type = NULL;
+jl_value_t *Absyn_Parallelism = NULL;
 
-extern jl_function_t *Absyn_Exp_LBINARY = NULL;
-extern jl_value_t *Absyn_Exp_LBINARY_type = NULL;
+jl_function_t *Absyn_Parallelism_NON__PARALLEL = NULL;
+jl_value_t *Absyn_Parallelism_NON__PARALLEL_type = NULL;
 
-extern jl_function_t *Absyn_Exp_UNARY = NULL;
-extern jl_value_t *Absyn_Exp_UNARY_type = NULL;
+jl_function_t *Absyn_Parallelism_PARLOCAL = NULL;
+jl_value_t *Absyn_Parallelism_PARLOCAL_type = NULL;
 
-extern jl_function_t *Absyn_Exp_BINARY = NULL;
-extern jl_value_t *Absyn_Exp_BINARY_type = NULL;
+jl_function_t *Absyn_Parallelism_PARGLOBAL = NULL;
+jl_value_t *Absyn_Parallelism_PARGLOBAL_type = NULL;
 
-extern jl_function_t *Absyn_Exp_BOOL = NULL;
-extern jl_value_t *Absyn_Exp_BOOL_type = NULL;
+jl_value_t *Absyn_FlowStream = NULL;
 
-extern jl_function_t *Absyn_Exp_STRING = NULL;
-extern jl_value_t *Absyn_Exp_STRING_type = NULL;
+jl_function_t *Absyn_FlowStream_NOT__FLOW__STREAM = NULL;
+jl_value_t *Absyn_FlowStream_NOT__FLOW__STREAM_type = NULL;
 
-extern jl_function_t *Absyn_Exp_CREF = NULL;
-extern jl_value_t *Absyn_Exp_CREF_type = NULL;
+jl_function_t *Absyn_FlowStream_STREAM = NULL;
+jl_value_t *Absyn_FlowStream_STREAM_type = NULL;
 
-extern jl_function_t *Absyn_Exp_REAL = NULL;
-extern jl_value_t *Absyn_Exp_REAL_type = NULL;
+jl_function_t *Absyn_FlowStream_FLOW = NULL;
+jl_value_t *Absyn_FlowStream_FLOW_type = NULL;
 
-extern jl_function_t *Absyn_Exp_INTEGER = NULL;
-extern jl_value_t *Absyn_Exp_INTEGER_type = NULL;
+jl_value_t *Absyn_Variability = NULL;
 
-extern jl_function_t *Absyn_Case_ELSE = NULL;
-extern jl_value_t *Absyn_Case_ELSE_type = NULL;
+jl_function_t *Absyn_Variability_CONST = NULL;
+jl_value_t *Absyn_Variability_CONST_type = NULL;
 
-extern jl_function_t *Absyn_Case_CASE = NULL;
-extern jl_value_t *Absyn_Case_CASE_type = NULL;
+jl_function_t *Absyn_Variability_PARAM = NULL;
+jl_value_t *Absyn_Variability_PARAM_type = NULL;
 
-extern jl_function_t *Absyn_MatchType_MATCHCONTINUE = NULL;
-extern jl_value_t *Absyn_MatchType_MATCHCONTINUE_type = NULL;
+jl_function_t *Absyn_Variability_DISCRETE = NULL;
+jl_value_t *Absyn_Variability_DISCRETE_type = NULL;
 
-extern jl_function_t *Absyn_MatchType_MATCH = NULL;
-extern jl_value_t *Absyn_MatchType_MATCH_type = NULL;
+jl_function_t *Absyn_Variability_VAR = NULL;
+jl_value_t *Absyn_Variability_VAR_type = NULL;
 
-extern jl_function_t *Absyn_CodeNode_C__MODIFICATION = NULL;
-extern jl_value_t *Absyn_CodeNode_C__MODIFICATION_type = NULL;
+jl_value_t *Absyn_Direction = NULL;
 
-extern jl_function_t *Absyn_CodeNode_C__EXPRESSION = NULL;
-extern jl_value_t *Absyn_CodeNode_C__EXPRESSION_type = NULL;
+jl_function_t *Absyn_Direction_INPUT__OUTPUT = NULL;
+jl_value_t *Absyn_Direction_INPUT__OUTPUT_type = NULL;
 
-extern jl_function_t *Absyn_CodeNode_C__ELEMENT = NULL;
-extern jl_value_t *Absyn_CodeNode_C__ELEMENT_type = NULL;
+jl_function_t *Absyn_Direction_BIDIR = NULL;
+jl_value_t *Absyn_Direction_BIDIR_type = NULL;
 
-extern jl_function_t *Absyn_CodeNode_C__ALGORITHMSECTION = NULL;
-extern jl_value_t *Absyn_CodeNode_C__ALGORITHMSECTION_type = NULL;
+jl_function_t *Absyn_Direction_OUTPUT = NULL;
+jl_value_t *Absyn_Direction_OUTPUT_type = NULL;
 
-extern jl_function_t *Absyn_CodeNode_C__EQUATIONSECTION = NULL;
-extern jl_value_t *Absyn_CodeNode_C__EQUATIONSECTION_type = NULL;
+jl_function_t *Absyn_Direction_INPUT = NULL;
+jl_value_t *Absyn_Direction_INPUT_type = NULL;
 
-extern jl_function_t *Absyn_CodeNode_C__CONSTRAINTSECTION = NULL;
-extern jl_value_t *Absyn_CodeNode_C__CONSTRAINTSECTION_type = NULL;
+jl_value_t *Absyn_Exp = NULL;
 
-extern jl_function_t *Absyn_CodeNode_C__VARIABLENAME = NULL;
-extern jl_value_t *Absyn_CodeNode_C__VARIABLENAME_type = NULL;
+jl_function_t *Absyn_Exp_DOT = NULL;
+jl_value_t *Absyn_Exp_DOT_type = NULL;
 
-extern jl_function_t *Absyn_CodeNode_C__TYPENAME = NULL;
-extern jl_value_t *Absyn_CodeNode_C__TYPENAME_type = NULL;
+jl_function_t *Absyn_Exp_LIST = NULL;
+jl_value_t *Absyn_Exp_LIST_type = NULL;
 
-extern jl_function_t *Absyn_FunctionArgs_FOR__ITER__FARG = NULL;
-extern jl_value_t *Absyn_FunctionArgs_FOR__ITER__FARG_type = NULL;
+jl_function_t *Absyn_Exp_MATCHEXP = NULL;
+jl_value_t *Absyn_Exp_MATCHEXP_type = NULL;
 
-extern jl_function_t *Absyn_FunctionArgs_FUNCTIONARGS = NULL;
-extern jl_value_t *Absyn_FunctionArgs_FUNCTIONARGS_type = NULL;
+jl_function_t *Absyn_Exp_CONS = NULL;
+jl_value_t *Absyn_Exp_CONS_type = NULL;
 
-extern jl_function_t *Absyn_ReductionIterType_THREAD = NULL;
-extern jl_value_t *Absyn_ReductionIterType_THREAD_type = NULL;
+jl_function_t *Absyn_Exp_AS = NULL;
+jl_value_t *Absyn_Exp_AS_type = NULL;
 
-extern jl_function_t *Absyn_ReductionIterType_COMBINE = NULL;
-extern jl_value_t *Absyn_ReductionIterType_COMBINE_type = NULL;
+jl_function_t *Absyn_Exp_CODE = NULL;
+jl_value_t *Absyn_Exp_CODE_type = NULL;
 
-extern jl_function_t *Absyn_NamedArg_NAMEDARG = NULL;
-extern jl_value_t *Absyn_NamedArg_NAMEDARG_type = NULL;
+jl_function_t *Absyn_Exp_END = NULL;
+jl_value_t *Absyn_Exp_END_type = NULL;
 
-extern jl_function_t *Absyn_Operator_NEQUAL = NULL;
-extern jl_value_t *Absyn_Operator_NEQUAL_type = NULL;
+jl_function_t *Absyn_Exp_TUPLE = NULL;
+jl_value_t *Absyn_Exp_TUPLE_type = NULL;
 
-extern jl_function_t *Absyn_Operator_EQUAL = NULL;
-extern jl_value_t *Absyn_Operator_EQUAL_type = NULL;
+jl_function_t *Absyn_Exp_RANGE = NULL;
+jl_value_t *Absyn_Exp_RANGE_type = NULL;
 
-extern jl_function_t *Absyn_Operator_GREATEREQ = NULL;
-extern jl_value_t *Absyn_Operator_GREATEREQ_type = NULL;
+jl_function_t *Absyn_Exp_MATRIX = NULL;
+jl_value_t *Absyn_Exp_MATRIX_type = NULL;
 
-extern jl_function_t *Absyn_Operator_GREATER = NULL;
-extern jl_value_t *Absyn_Operator_GREATER_type = NULL;
+jl_function_t *Absyn_Exp_ARRAY = NULL;
+jl_value_t *Absyn_Exp_ARRAY_type = NULL;
 
-extern jl_function_t *Absyn_Operator_LESSEQ = NULL;
-extern jl_value_t *Absyn_Operator_LESSEQ_type = NULL;
+jl_function_t *Absyn_Exp_PARTEVALFUNCTION = NULL;
+jl_value_t *Absyn_Exp_PARTEVALFUNCTION_type = NULL;
 
-extern jl_function_t *Absyn_Operator_LESS = NULL;
-extern jl_value_t *Absyn_Operator_LESS_type = NULL;
+jl_function_t *Absyn_Exp_CALL = NULL;
+jl_value_t *Absyn_Exp_CALL_type = NULL;
 
-extern jl_function_t *Absyn_Operator_NOT = NULL;
-extern jl_value_t *Absyn_Operator_NOT_type = NULL;
+jl_function_t *Absyn_Exp_IFEXP = NULL;
+jl_value_t *Absyn_Exp_IFEXP_type = NULL;
 
-extern jl_function_t *Absyn_Operator_OR = NULL;
-extern jl_value_t *Absyn_Operator_OR_type = NULL;
+jl_function_t *Absyn_Exp_RELATION = NULL;
+jl_value_t *Absyn_Exp_RELATION_type = NULL;
 
-extern jl_function_t *Absyn_Operator_AND = NULL;
-extern jl_value_t *Absyn_Operator_AND_type = NULL;
+jl_function_t *Absyn_Exp_LUNARY = NULL;
+jl_value_t *Absyn_Exp_LUNARY_type = NULL;
 
-extern jl_function_t *Absyn_Operator_UMINUS__EW = NULL;
-extern jl_value_t *Absyn_Operator_UMINUS__EW_type = NULL;
+jl_function_t *Absyn_Exp_LBINARY = NULL;
+jl_value_t *Absyn_Exp_LBINARY_type = NULL;
 
-extern jl_function_t *Absyn_Operator_UPLUS__EW = NULL;
-extern jl_value_t *Absyn_Operator_UPLUS__EW_type = NULL;
+jl_function_t *Absyn_Exp_UNARY = NULL;
+jl_value_t *Absyn_Exp_UNARY_type = NULL;
 
-extern jl_function_t *Absyn_Operator_POW__EW = NULL;
-extern jl_value_t *Absyn_Operator_POW__EW_type = NULL;
+jl_function_t *Absyn_Exp_BINARY = NULL;
+jl_value_t *Absyn_Exp_BINARY_type = NULL;
 
-extern jl_function_t *Absyn_Operator_DIV__EW = NULL;
-extern jl_value_t *Absyn_Operator_DIV__EW_type = NULL;
+jl_function_t *Absyn_Exp_BOOL = NULL;
+jl_value_t *Absyn_Exp_BOOL_type = NULL;
 
-extern jl_function_t *Absyn_Operator_MUL__EW = NULL;
-extern jl_value_t *Absyn_Operator_MUL__EW_type = NULL;
+jl_function_t *Absyn_Exp_STRING = NULL;
+jl_value_t *Absyn_Exp_STRING_type = NULL;
 
-extern jl_function_t *Absyn_Operator_SUB__EW = NULL;
-extern jl_value_t *Absyn_Operator_SUB__EW_type = NULL;
+jl_function_t *Absyn_Exp_CREF = NULL;
+jl_value_t *Absyn_Exp_CREF_type = NULL;
 
-extern jl_function_t *Absyn_Operator_ADD__EW = NULL;
-extern jl_value_t *Absyn_Operator_ADD__EW_type = NULL;
+jl_function_t *Absyn_Exp_REAL = NULL;
+jl_value_t *Absyn_Exp_REAL_type = NULL;
 
-extern jl_function_t *Absyn_Operator_UMINUS = NULL;
-extern jl_value_t *Absyn_Operator_UMINUS_type = NULL;
+jl_function_t *Absyn_Exp_INTEGER = NULL;
+jl_value_t *Absyn_Exp_INTEGER_type = NULL;
 
-extern jl_function_t *Absyn_Operator_UPLUS = NULL;
-extern jl_value_t *Absyn_Operator_UPLUS_type = NULL;
+jl_value_t *Absyn_Case = NULL;
 
-extern jl_function_t *Absyn_Operator_POW = NULL;
-extern jl_value_t *Absyn_Operator_POW_type = NULL;
+jl_function_t *Absyn_Case_ELSE = NULL;
+jl_value_t *Absyn_Case_ELSE_type = NULL;
 
-extern jl_function_t *Absyn_Operator_DIV = NULL;
-extern jl_value_t *Absyn_Operator_DIV_type = NULL;
+jl_function_t *Absyn_Case_CASE = NULL;
+jl_value_t *Absyn_Case_CASE_type = NULL;
 
-extern jl_function_t *Absyn_Operator_MUL = NULL;
-extern jl_value_t *Absyn_Operator_MUL_type = NULL;
+jl_value_t *Absyn_MatchType = NULL;
 
-extern jl_function_t *Absyn_Operator_SUB = NULL;
-extern jl_value_t *Absyn_Operator_SUB_type = NULL;
+jl_function_t *Absyn_MatchType_MATCHCONTINUE = NULL;
+jl_value_t *Absyn_MatchType_MATCHCONTINUE_type = NULL;
 
-extern jl_function_t *Absyn_Operator_ADD = NULL;
-extern jl_value_t *Absyn_Operator_ADD_type = NULL;
+jl_function_t *Absyn_MatchType_MATCH = NULL;
+jl_value_t *Absyn_MatchType_MATCH_type = NULL;
 
-extern jl_function_t *Absyn_Subscript_SUBSCRIPT = NULL;
-extern jl_value_t *Absyn_Subscript_SUBSCRIPT_type = NULL;
+jl_value_t *Absyn_CodeNode = NULL;
 
-extern jl_function_t *Absyn_Subscript_NOSUB = NULL;
-extern jl_value_t *Absyn_Subscript_NOSUB_type = NULL;
+jl_function_t *Absyn_CodeNode_C__MODIFICATION = NULL;
+jl_value_t *Absyn_CodeNode_C__MODIFICATION_type = NULL;
 
-extern jl_function_t *Absyn_ComponentRef_ALLWILD = NULL;
-extern jl_value_t *Absyn_ComponentRef_ALLWILD_type = NULL;
+jl_function_t *Absyn_CodeNode_C__EXPRESSION = NULL;
+jl_value_t *Absyn_CodeNode_C__EXPRESSION_type = NULL;
 
-extern jl_function_t *Absyn_ComponentRef_WILD = NULL;
-extern jl_value_t *Absyn_ComponentRef_WILD_type = NULL;
+jl_function_t *Absyn_CodeNode_C__ELEMENT = NULL;
+jl_value_t *Absyn_CodeNode_C__ELEMENT_type = NULL;
 
-extern jl_function_t *Absyn_ComponentRef_CREF__IDENT = NULL;
-extern jl_value_t *Absyn_ComponentRef_CREF__IDENT_type = NULL;
+jl_function_t *Absyn_CodeNode_C__ALGORITHMSECTION = NULL;
+jl_value_t *Absyn_CodeNode_C__ALGORITHMSECTION_type = NULL;
 
-extern jl_function_t *Absyn_ComponentRef_CREF__QUAL = NULL;
-extern jl_value_t *Absyn_ComponentRef_CREF__QUAL_type = NULL;
+jl_function_t *Absyn_CodeNode_C__EQUATIONSECTION = NULL;
+jl_value_t *Absyn_CodeNode_C__EQUATIONSECTION_type = NULL;
 
-extern jl_function_t *Absyn_ComponentRef_CREF__FULLYQUALIFIED = NULL;
-extern jl_value_t *Absyn_ComponentRef_CREF__FULLYQUALIFIED_type = NULL;
+jl_function_t *Absyn_CodeNode_C__CONSTRAINTSECTION = NULL;
+jl_value_t *Absyn_CodeNode_C__CONSTRAINTSECTION_type = NULL;
 
-extern jl_function_t *Absyn_Path_FULLYQUALIFIED = NULL;
-extern jl_value_t *Absyn_Path_FULLYQUALIFIED_type = NULL;
+jl_function_t *Absyn_CodeNode_C__VARIABLENAME = NULL;
+jl_value_t *Absyn_CodeNode_C__VARIABLENAME_type = NULL;
 
-extern jl_function_t *Absyn_Path_IDENT = NULL;
-extern jl_value_t *Absyn_Path_IDENT_type = NULL;
+jl_function_t *Absyn_CodeNode_C__TYPENAME = NULL;
+jl_value_t *Absyn_CodeNode_C__TYPENAME_type = NULL;
 
-extern jl_function_t *Absyn_Path_QUALIFIED = NULL;
-extern jl_value_t *Absyn_Path_QUALIFIED_type = NULL;
+jl_value_t *Absyn_FunctionArgs = NULL;
 
-extern jl_function_t *Absyn_Restriction_R__UNKNOWN = NULL;
-extern jl_value_t *Absyn_Restriction_R__UNKNOWN_type = NULL;
+jl_function_t *Absyn_FunctionArgs_FOR__ITER__FARG = NULL;
+jl_value_t *Absyn_FunctionArgs_FOR__ITER__FARG_type = NULL;
 
-extern jl_function_t *Absyn_Restriction_R__METARECORD = NULL;
-extern jl_value_t *Absyn_Restriction_R__METARECORD_type = NULL;
+jl_function_t *Absyn_FunctionArgs_FUNCTIONARGS = NULL;
+jl_value_t *Absyn_FunctionArgs_FUNCTIONARGS_type = NULL;
 
-extern jl_function_t *Absyn_Restriction_R__UNIONTYPE = NULL;
-extern jl_value_t *Absyn_Restriction_R__UNIONTYPE_type = NULL;
+jl_value_t *Absyn_ReductionIterType = NULL;
 
-extern jl_function_t *Absyn_Restriction_R__PREDEFINED__CLOCK = NULL;
-extern jl_value_t *Absyn_Restriction_R__PREDEFINED__CLOCK_type = NULL;
+jl_function_t *Absyn_ReductionIterType_THREAD = NULL;
+jl_value_t *Absyn_ReductionIterType_THREAD_type = NULL;
 
-extern jl_function_t *Absyn_Restriction_R__PREDEFINED__ENUMERATION = NULL;
-extern jl_value_t *Absyn_Restriction_R__PREDEFINED__ENUMERATION_type = NULL;
+jl_function_t *Absyn_ReductionIterType_COMBINE = NULL;
+jl_value_t *Absyn_ReductionIterType_COMBINE_type = NULL;
 
-extern jl_function_t *Absyn_Restriction_R__PREDEFINED__BOOLEAN = NULL;
-extern jl_value_t *Absyn_Restriction_R__PREDEFINED__BOOLEAN_type = NULL;
+jl_value_t *Absyn_NamedArg = NULL;
 
-extern jl_function_t *Absyn_Restriction_R__PREDEFINED__STRING = NULL;
-extern jl_value_t *Absyn_Restriction_R__PREDEFINED__STRING_type = NULL;
+jl_function_t *Absyn_NamedArg_NAMEDARG = NULL;
+jl_value_t *Absyn_NamedArg_NAMEDARG_type = NULL;
 
-extern jl_function_t *Absyn_Restriction_R__PREDEFINED__REAL = NULL;
-extern jl_value_t *Absyn_Restriction_R__PREDEFINED__REAL_type = NULL;
+jl_value_t *Absyn_Operator = NULL;
 
-extern jl_function_t *Absyn_Restriction_R__PREDEFINED__INTEGER = NULL;
-extern jl_value_t *Absyn_Restriction_R__PREDEFINED__INTEGER_type = NULL;
+jl_function_t *Absyn_Operator_NEQUAL = NULL;
+jl_value_t *Absyn_Operator_NEQUAL_type = NULL;
 
-extern jl_function_t *Absyn_Restriction_R__ENUMERATION = NULL;
-extern jl_value_t *Absyn_Restriction_R__ENUMERATION_type = NULL;
+jl_function_t *Absyn_Operator_EQUAL = NULL;
+jl_value_t *Absyn_Operator_EQUAL_type = NULL;
 
-extern jl_function_t *Absyn_Restriction_R__OPERATOR__RECORD = NULL;
-extern jl_value_t *Absyn_Restriction_R__OPERATOR__RECORD_type = NULL;
+jl_function_t *Absyn_Operator_GREATEREQ = NULL;
+jl_value_t *Absyn_Operator_GREATEREQ_type = NULL;
 
-extern jl_function_t *Absyn_Restriction_R__OPERATOR = NULL;
-extern jl_value_t *Absyn_Restriction_R__OPERATOR_type = NULL;
+jl_function_t *Absyn_Operator_GREATER = NULL;
+jl_value_t *Absyn_Operator_GREATER_type = NULL;
 
-extern jl_function_t *Absyn_Restriction_R__FUNCTION = NULL;
-extern jl_value_t *Absyn_Restriction_R__FUNCTION_type = NULL;
+jl_function_t *Absyn_Operator_LESSEQ = NULL;
+jl_value_t *Absyn_Operator_LESSEQ_type = NULL;
 
-extern jl_function_t *Absyn_Restriction_R__PACKAGE = NULL;
-extern jl_value_t *Absyn_Restriction_R__PACKAGE_type = NULL;
+jl_function_t *Absyn_Operator_LESS = NULL;
+jl_value_t *Absyn_Operator_LESS_type = NULL;
 
-extern jl_function_t *Absyn_Restriction_R__TYPE = NULL;
-extern jl_value_t *Absyn_Restriction_R__TYPE_type = NULL;
+jl_function_t *Absyn_Operator_NOT = NULL;
+jl_value_t *Absyn_Operator_NOT_type = NULL;
 
-extern jl_function_t *Absyn_Restriction_R__EXP__CONNECTOR = NULL;
-extern jl_value_t *Absyn_Restriction_R__EXP__CONNECTOR_type = NULL;
+jl_function_t *Absyn_Operator_OR = NULL;
+jl_value_t *Absyn_Operator_OR_type = NULL;
 
-extern jl_function_t *Absyn_Restriction_R__CONNECTOR = NULL;
-extern jl_value_t *Absyn_Restriction_R__CONNECTOR_type = NULL;
+jl_function_t *Absyn_Operator_AND = NULL;
+jl_value_t *Absyn_Operator_AND_type = NULL;
 
-extern jl_function_t *Absyn_Restriction_R__BLOCK = NULL;
-extern jl_value_t *Absyn_Restriction_R__BLOCK_type = NULL;
+jl_function_t *Absyn_Operator_UMINUS__EW = NULL;
+jl_value_t *Absyn_Operator_UMINUS__EW_type = NULL;
 
-extern jl_function_t *Absyn_Restriction_R__RECORD = NULL;
-extern jl_value_t *Absyn_Restriction_R__RECORD_type = NULL;
+jl_function_t *Absyn_Operator_UPLUS__EW = NULL;
+jl_value_t *Absyn_Operator_UPLUS__EW_type = NULL;
 
-extern jl_function_t *Absyn_Restriction_R__MODEL = NULL;
-extern jl_value_t *Absyn_Restriction_R__MODEL_type = NULL;
+jl_function_t *Absyn_Operator_POW__EW = NULL;
+jl_value_t *Absyn_Operator_POW__EW_type = NULL;
 
-extern jl_function_t *Absyn_Restriction_R__OPTIMIZATION = NULL;
-extern jl_value_t *Absyn_Restriction_R__OPTIMIZATION_type = NULL;
+jl_function_t *Absyn_Operator_DIV__EW = NULL;
+jl_value_t *Absyn_Operator_DIV__EW_type = NULL;
 
-extern jl_function_t *Absyn_Restriction_R__CLASS = NULL;
-extern jl_value_t *Absyn_Restriction_R__CLASS_type = NULL;
+jl_function_t *Absyn_Operator_MUL__EW = NULL;
+jl_value_t *Absyn_Operator_MUL__EW_type = NULL;
 
-extern jl_function_t *Absyn_FunctionPurity_NO__PURITY = NULL;
-extern jl_value_t *Absyn_FunctionPurity_NO__PURITY_type = NULL;
+jl_function_t *Absyn_Operator_SUB__EW = NULL;
+jl_value_t *Absyn_Operator_SUB__EW_type = NULL;
 
-extern jl_function_t *Absyn_FunctionPurity_IMPURE = NULL;
-extern jl_value_t *Absyn_FunctionPurity_IMPURE_type = NULL;
+jl_function_t *Absyn_Operator_ADD__EW = NULL;
+jl_value_t *Absyn_Operator_ADD__EW_type = NULL;
 
-extern jl_function_t *Absyn_FunctionPurity_PURE = NULL;
-extern jl_value_t *Absyn_FunctionPurity_PURE_type = NULL;
+jl_function_t *Absyn_Operator_UMINUS = NULL;
+jl_value_t *Absyn_Operator_UMINUS_type = NULL;
 
-extern jl_function_t *Absyn_FunctionRestriction_FR__KERNEL__FUNCTION = NULL;
-extern jl_value_t *Absyn_FunctionRestriction_FR__KERNEL__FUNCTION_type = NULL;
+jl_function_t *Absyn_Operator_UPLUS = NULL;
+jl_value_t *Absyn_Operator_UPLUS_type = NULL;
 
-extern jl_function_t *Absyn_FunctionRestriction_FR__PARALLEL__FUNCTION = NULL;
-extern jl_value_t *Absyn_FunctionRestriction_FR__PARALLEL__FUNCTION_type = NULL;
+jl_function_t *Absyn_Operator_POW = NULL;
+jl_value_t *Absyn_Operator_POW_type = NULL;
 
-extern jl_function_t *Absyn_FunctionRestriction_FR__OPERATOR__FUNCTION = NULL;
-extern jl_value_t *Absyn_FunctionRestriction_FR__OPERATOR__FUNCTION_type = NULL;
+jl_function_t *Absyn_Operator_DIV = NULL;
+jl_value_t *Absyn_Operator_DIV_type = NULL;
 
-extern jl_function_t *Absyn_FunctionRestriction_FR__NORMAL__FUNCTION = NULL;
-extern jl_value_t *Absyn_FunctionRestriction_FR__NORMAL__FUNCTION_type = NULL;
+jl_function_t *Absyn_Operator_MUL = NULL;
+jl_value_t *Absyn_Operator_MUL_type = NULL;
 
-extern jl_function_t *Absyn_Annotation_ANNOTATION = NULL;
-extern jl_value_t *Absyn_Annotation_ANNOTATION_type = NULL;
+jl_function_t *Absyn_Operator_SUB = NULL;
+jl_value_t *Absyn_Operator_SUB_type = NULL;
 
-extern jl_function_t *Absyn_Comment_COMMENT = NULL;
-extern jl_value_t *Absyn_Comment_COMMENT_type = NULL;
+jl_function_t *Absyn_Operator_ADD = NULL;
+jl_value_t *Absyn_Operator_ADD_type = NULL;
 
-extern jl_function_t *Absyn_ExternalDecl_EXTERNALDECL = NULL;
-extern jl_value_t *Absyn_ExternalDecl_EXTERNALDECL_type = NULL;
+jl_value_t *Absyn_Subscript = NULL;
 
-extern jl_function_t *Absyn_Ref_RIM = NULL;
-extern jl_value_t *Absyn_Ref_RIM_type = NULL;
+jl_function_t *Absyn_Subscript_SUBSCRIPT = NULL;
+jl_value_t *Absyn_Subscript_SUBSCRIPT_type = NULL;
 
-extern jl_function_t *Absyn_Ref_RTS = NULL;
-extern jl_value_t *Absyn_Ref_RTS_type = NULL;
+jl_function_t *Absyn_Subscript_NOSUB = NULL;
+jl_value_t *Absyn_Subscript_NOSUB_type = NULL;
 
-extern jl_function_t *Absyn_Ref_RCR = NULL;
-extern jl_value_t *Absyn_Ref_RCR_type = NULL;
+jl_value_t *Absyn_ComponentRef = NULL;
 
-extern jl_function_t *Absyn_Msg_NO__MSG = NULL;
-extern jl_value_t *Absyn_Msg_NO__MSG_type = NULL;
+jl_function_t *Absyn_ComponentRef_ALLWILD = NULL;
+jl_value_t *Absyn_ComponentRef_ALLWILD_type = NULL;
 
-extern jl_function_t *Absyn_Msg_MSG = NULL;
-extern jl_value_t *Absyn_Msg_MSG_type = NULL;
+jl_function_t *Absyn_ComponentRef_WILD = NULL;
+jl_value_t *Absyn_ComponentRef_WILD_type = NULL;
+
+jl_function_t *Absyn_ComponentRef_CREF__IDENT = NULL;
+jl_value_t *Absyn_ComponentRef_CREF__IDENT_type = NULL;
+
+jl_function_t *Absyn_ComponentRef_CREF__QUAL = NULL;
+jl_value_t *Absyn_ComponentRef_CREF__QUAL_type = NULL;
+
+jl_function_t *Absyn_ComponentRef_CREF__FULLYQUALIFIED = NULL;
+jl_value_t *Absyn_ComponentRef_CREF__FULLYQUALIFIED_type = NULL;
+
+jl_value_t *Absyn_Path = NULL;
+
+jl_function_t *Absyn_Path_FULLYQUALIFIED = NULL;
+jl_value_t *Absyn_Path_FULLYQUALIFIED_type = NULL;
+
+jl_function_t *Absyn_Path_IDENT = NULL;
+jl_value_t *Absyn_Path_IDENT_type = NULL;
+
+jl_function_t *Absyn_Path_QUALIFIED = NULL;
+jl_value_t *Absyn_Path_QUALIFIED_type = NULL;
+
+jl_value_t *Absyn_Restriction = NULL;
+
+jl_function_t *Absyn_Restriction_R__UNKNOWN = NULL;
+jl_value_t *Absyn_Restriction_R__UNKNOWN_type = NULL;
+
+jl_function_t *Absyn_Restriction_R__METARECORD = NULL;
+jl_value_t *Absyn_Restriction_R__METARECORD_type = NULL;
+
+jl_function_t *Absyn_Restriction_R__UNIONTYPE = NULL;
+jl_value_t *Absyn_Restriction_R__UNIONTYPE_type = NULL;
+
+jl_function_t *Absyn_Restriction_R__PREDEFINED__CLOCK = NULL;
+jl_value_t *Absyn_Restriction_R__PREDEFINED__CLOCK_type = NULL;
+
+jl_function_t *Absyn_Restriction_R__PREDEFINED__ENUMERATION = NULL;
+jl_value_t *Absyn_Restriction_R__PREDEFINED__ENUMERATION_type = NULL;
+
+jl_function_t *Absyn_Restriction_R__PREDEFINED__BOOLEAN = NULL;
+jl_value_t *Absyn_Restriction_R__PREDEFINED__BOOLEAN_type = NULL;
+
+jl_function_t *Absyn_Restriction_R__PREDEFINED__STRING = NULL;
+jl_value_t *Absyn_Restriction_R__PREDEFINED__STRING_type = NULL;
+
+jl_function_t *Absyn_Restriction_R__PREDEFINED__REAL = NULL;
+jl_value_t *Absyn_Restriction_R__PREDEFINED__REAL_type = NULL;
+
+jl_function_t *Absyn_Restriction_R__PREDEFINED__INTEGER = NULL;
+jl_value_t *Absyn_Restriction_R__PREDEFINED__INTEGER_type = NULL;
+
+jl_function_t *Absyn_Restriction_R__ENUMERATION = NULL;
+jl_value_t *Absyn_Restriction_R__ENUMERATION_type = NULL;
+
+jl_function_t *Absyn_Restriction_R__OPERATOR__RECORD = NULL;
+jl_value_t *Absyn_Restriction_R__OPERATOR__RECORD_type = NULL;
+
+jl_function_t *Absyn_Restriction_R__OPERATOR = NULL;
+jl_value_t *Absyn_Restriction_R__OPERATOR_type = NULL;
+
+jl_function_t *Absyn_Restriction_R__FUNCTION = NULL;
+jl_value_t *Absyn_Restriction_R__FUNCTION_type = NULL;
+
+jl_function_t *Absyn_Restriction_R__PACKAGE = NULL;
+jl_value_t *Absyn_Restriction_R__PACKAGE_type = NULL;
+
+jl_function_t *Absyn_Restriction_R__TYPE = NULL;
+jl_value_t *Absyn_Restriction_R__TYPE_type = NULL;
+
+jl_function_t *Absyn_Restriction_R__EXP__CONNECTOR = NULL;
+jl_value_t *Absyn_Restriction_R__EXP__CONNECTOR_type = NULL;
+
+jl_function_t *Absyn_Restriction_R__CONNECTOR = NULL;
+jl_value_t *Absyn_Restriction_R__CONNECTOR_type = NULL;
+
+jl_function_t *Absyn_Restriction_R__BLOCK = NULL;
+jl_value_t *Absyn_Restriction_R__BLOCK_type = NULL;
+
+jl_function_t *Absyn_Restriction_R__RECORD = NULL;
+jl_value_t *Absyn_Restriction_R__RECORD_type = NULL;
+
+jl_function_t *Absyn_Restriction_R__MODEL = NULL;
+jl_value_t *Absyn_Restriction_R__MODEL_type = NULL;
+
+jl_function_t *Absyn_Restriction_R__OPTIMIZATION = NULL;
+jl_value_t *Absyn_Restriction_R__OPTIMIZATION_type = NULL;
+
+jl_function_t *Absyn_Restriction_R__CLASS = NULL;
+jl_value_t *Absyn_Restriction_R__CLASS_type = NULL;
+
+jl_value_t *Absyn_FunctionPurity = NULL;
+
+jl_function_t *Absyn_FunctionPurity_NO__PURITY = NULL;
+jl_value_t *Absyn_FunctionPurity_NO__PURITY_type = NULL;
+
+jl_function_t *Absyn_FunctionPurity_IMPURE = NULL;
+jl_value_t *Absyn_FunctionPurity_IMPURE_type = NULL;
+
+jl_function_t *Absyn_FunctionPurity_PURE = NULL;
+jl_value_t *Absyn_FunctionPurity_PURE_type = NULL;
+
+jl_value_t *Absyn_FunctionRestriction = NULL;
+
+jl_function_t *Absyn_FunctionRestriction_FR__KERNEL__FUNCTION = NULL;
+jl_value_t *Absyn_FunctionRestriction_FR__KERNEL__FUNCTION_type = NULL;
+
+jl_function_t *Absyn_FunctionRestriction_FR__PARALLEL__FUNCTION = NULL;
+jl_value_t *Absyn_FunctionRestriction_FR__PARALLEL__FUNCTION_type = NULL;
+
+jl_function_t *Absyn_FunctionRestriction_FR__OPERATOR__FUNCTION = NULL;
+jl_value_t *Absyn_FunctionRestriction_FR__OPERATOR__FUNCTION_type = NULL;
+
+jl_function_t *Absyn_FunctionRestriction_FR__NORMAL__FUNCTION = NULL;
+jl_value_t *Absyn_FunctionRestriction_FR__NORMAL__FUNCTION_type = NULL;
+
+jl_value_t *Absyn_Annotation = NULL;
+
+jl_function_t *Absyn_Annotation_ANNOTATION = NULL;
+jl_value_t *Absyn_Annotation_ANNOTATION_type = NULL;
+
+jl_value_t *Absyn_Comment = NULL;
+
+jl_function_t *Absyn_Comment_COMMENT = NULL;
+jl_value_t *Absyn_Comment_COMMENT_type = NULL;
+
+jl_value_t *Absyn_ExternalDecl = NULL;
+
+jl_function_t *Absyn_ExternalDecl_EXTERNALDECL = NULL;
+jl_value_t *Absyn_ExternalDecl_EXTERNALDECL_type = NULL;
+
+jl_value_t *Absyn_Ref = NULL;
+
+jl_function_t *Absyn_Ref_RIM = NULL;
+jl_value_t *Absyn_Ref_RIM_type = NULL;
+
+jl_function_t *Absyn_Ref_RTS = NULL;
+jl_value_t *Absyn_Ref_RTS_type = NULL;
+
+jl_function_t *Absyn_Ref_RCR = NULL;
+jl_value_t *Absyn_Ref_RCR_type = NULL;
+
+jl_value_t *Absyn_Msg = NULL;
+
+jl_function_t *Absyn_Msg_NO__MSG = NULL;
+jl_value_t *Absyn_Msg_NO__MSG_type = NULL;
+
+jl_function_t *Absyn_Msg_MSG = NULL;
+jl_value_t *Absyn_Msg_MSG_type = NULL;
 
 void OpenModelica_initAbsynReferences()
 {
   /* Note: These values may be garbage collected away? Call this before each file is parsed? */
-  jl_eval_string("import Absyn");
-  Absyn_ForIterator_ITERATOR = jl_get_function(jl_base_module, "Absyn.ForIterator");
-  Absyn_ForIterator_ITERATOR_type = jl_get_global(jl_base_module, symbol("Absyn.ForIterator"));
-  Absyn_Program_PROGRAM = jl_get_function(jl_base_module, "Absyn.Program");
-  Absyn_Program_PROGRAM_type = jl_get_global(jl_base_module, symbol("Absyn.Program"));
-  Absyn_Within_TOP = jl_get_function(jl_base_module, "Absyn.Within");
-  Absyn_Within_TOP_type = jl_get_global(jl_base_module, symbol("Absyn.Within"));
-  Absyn_Within_WITHIN = jl_get_function(jl_base_module, "Absyn.Within");
-  Absyn_Within_WITHIN_type = jl_get_global(jl_base_module, symbol("Absyn.Within"));
-  Absyn_Class_CLASS = jl_get_function(jl_base_module, "Absyn.Class");
-  Absyn_Class_CLASS_type = jl_get_global(jl_base_module, symbol("Absyn.Class"));
-  Absyn_ClassDef_PDER = jl_get_function(jl_base_module, "Absyn.ClassDef");
-  Absyn_ClassDef_PDER_type = jl_get_global(jl_base_module, symbol("Absyn.ClassDef"));
-  Absyn_ClassDef_CLASS__EXTENDS = jl_get_function(jl_base_module, "Absyn.ClassDef");
-  Absyn_ClassDef_CLASS__EXTENDS_type = jl_get_global(jl_base_module, symbol("Absyn.ClassDef"));
-  Absyn_ClassDef_OVERLOAD = jl_get_function(jl_base_module, "Absyn.ClassDef");
-  Absyn_ClassDef_OVERLOAD_type = jl_get_global(jl_base_module, symbol("Absyn.ClassDef"));
-  Absyn_ClassDef_ENUMERATION = jl_get_function(jl_base_module, "Absyn.ClassDef");
-  Absyn_ClassDef_ENUMERATION_type = jl_get_global(jl_base_module, symbol("Absyn.ClassDef"));
-  Absyn_ClassDef_DERIVED = jl_get_function(jl_base_module, "Absyn.ClassDef");
-  Absyn_ClassDef_DERIVED_type = jl_get_global(jl_base_module, symbol("Absyn.ClassDef"));
-  Absyn_ClassDef_PARTS = jl_get_function(jl_base_module, "Absyn.ClassDef");
-  Absyn_ClassDef_PARTS_type = jl_get_global(jl_base_module, symbol("Absyn.ClassDef"));
-  Absyn_TypeSpec_TCOMPLEX = jl_get_function(jl_base_module, "Absyn.TypeSpec");
-  Absyn_TypeSpec_TCOMPLEX_type = jl_get_global(jl_base_module, symbol("Absyn.TypeSpec"));
-  Absyn_TypeSpec_TPATH = jl_get_function(jl_base_module, "Absyn.TypeSpec");
-  Absyn_TypeSpec_TPATH_type = jl_get_global(jl_base_module, symbol("Absyn.TypeSpec"));
-  Absyn_EnumDef_ENUM__COLON = jl_get_function(jl_base_module, "Absyn.EnumDef");
-  Absyn_EnumDef_ENUM__COLON_type = jl_get_global(jl_base_module, symbol("Absyn.EnumDef"));
-  Absyn_EnumDef_ENUMLITERALS = jl_get_function(jl_base_module, "Absyn.EnumDef");
-  Absyn_EnumDef_ENUMLITERALS_type = jl_get_global(jl_base_module, symbol("Absyn.EnumDef"));
-  Absyn_EnumLiteral_ENUMLITERAL = jl_get_function(jl_base_module, "Absyn.EnumLiteral");
-  Absyn_EnumLiteral_ENUMLITERAL_type = jl_get_global(jl_base_module, symbol("Absyn.EnumLiteral"));
-  Absyn_ClassPart_EXTERNAL = jl_get_function(jl_base_module, "Absyn.ClassPart");
-  Absyn_ClassPart_EXTERNAL_type = jl_get_global(jl_base_module, symbol("Absyn.ClassPart"));
-  Absyn_ClassPart_INITIALALGORITHMS = jl_get_function(jl_base_module, "Absyn.ClassPart");
-  Absyn_ClassPart_INITIALALGORITHMS_type = jl_get_global(jl_base_module, symbol("Absyn.ClassPart"));
-  Absyn_ClassPart_ALGORITHMS = jl_get_function(jl_base_module, "Absyn.ClassPart");
-  Absyn_ClassPart_ALGORITHMS_type = jl_get_global(jl_base_module, symbol("Absyn.ClassPart"));
-  Absyn_ClassPart_INITIALEQUATIONS = jl_get_function(jl_base_module, "Absyn.ClassPart");
-  Absyn_ClassPart_INITIALEQUATIONS_type = jl_get_global(jl_base_module, symbol("Absyn.ClassPart"));
-  Absyn_ClassPart_EQUATIONS = jl_get_function(jl_base_module, "Absyn.ClassPart");
-  Absyn_ClassPart_EQUATIONS_type = jl_get_global(jl_base_module, symbol("Absyn.ClassPart"));
-  Absyn_ClassPart_CONSTRAINTS = jl_get_function(jl_base_module, "Absyn.ClassPart");
-  Absyn_ClassPart_CONSTRAINTS_type = jl_get_global(jl_base_module, symbol("Absyn.ClassPart"));
-  Absyn_ClassPart_PROTECTED = jl_get_function(jl_base_module, "Absyn.ClassPart");
-  Absyn_ClassPart_PROTECTED_type = jl_get_global(jl_base_module, symbol("Absyn.ClassPart"));
-  Absyn_ClassPart_PUBLIC = jl_get_function(jl_base_module, "Absyn.ClassPart");
-  Absyn_ClassPart_PUBLIC_type = jl_get_global(jl_base_module, symbol("Absyn.ClassPart"));
-  Absyn_ElementItem_LEXER__COMMENT = jl_get_function(jl_base_module, "Absyn.ElementItem");
-  Absyn_ElementItem_LEXER__COMMENT_type = jl_get_global(jl_base_module, symbol("Absyn.ElementItem"));
-  Absyn_ElementItem_ELEMENTITEM = jl_get_function(jl_base_module, "Absyn.ElementItem");
-  Absyn_ElementItem_ELEMENTITEM_type = jl_get_global(jl_base_module, symbol("Absyn.ElementItem"));
-  Absyn_Element_TEXT = jl_get_function(jl_base_module, "Absyn.Element");
-  Absyn_Element_TEXT_type = jl_get_global(jl_base_module, symbol("Absyn.Element"));
-  Absyn_Element_DEFINEUNIT = jl_get_function(jl_base_module, "Absyn.Element");
-  Absyn_Element_DEFINEUNIT_type = jl_get_global(jl_base_module, symbol("Absyn.Element"));
-  Absyn_Element_ELEMENT = jl_get_function(jl_base_module, "Absyn.Element");
-  Absyn_Element_ELEMENT_type = jl_get_global(jl_base_module, symbol("Absyn.Element"));
-  Absyn_ConstrainClass_CONSTRAINCLASS = jl_get_function(jl_base_module, "Absyn.ConstrainClass");
-  Absyn_ConstrainClass_CONSTRAINCLASS_type = jl_get_global(jl_base_module, symbol("Absyn.ConstrainClass"));
-  Absyn_ElementSpec_COMPONENTS = jl_get_function(jl_base_module, "Absyn.ElementSpec");
-  Absyn_ElementSpec_COMPONENTS_type = jl_get_global(jl_base_module, symbol("Absyn.ElementSpec"));
-  Absyn_ElementSpec_IMPORT = jl_get_function(jl_base_module, "Absyn.ElementSpec");
-  Absyn_ElementSpec_IMPORT_type = jl_get_global(jl_base_module, symbol("Absyn.ElementSpec"));
-  Absyn_ElementSpec_EXTENDS = jl_get_function(jl_base_module, "Absyn.ElementSpec");
-  Absyn_ElementSpec_EXTENDS_type = jl_get_global(jl_base_module, symbol("Absyn.ElementSpec"));
-  Absyn_ElementSpec_CLASSDEF = jl_get_function(jl_base_module, "Absyn.ElementSpec");
-  Absyn_ElementSpec_CLASSDEF_type = jl_get_global(jl_base_module, symbol("Absyn.ElementSpec"));
-  Absyn_InnerOuter_NOT__INNER__OUTER = jl_get_function(jl_base_module, "Absyn.InnerOuter");
-  Absyn_InnerOuter_NOT__INNER__OUTER_type = jl_get_global(jl_base_module, symbol("Absyn.InnerOuter"));
-  Absyn_InnerOuter_INNER__OUTER = jl_get_function(jl_base_module, "Absyn.InnerOuter");
-  Absyn_InnerOuter_INNER__OUTER_type = jl_get_global(jl_base_module, symbol("Absyn.InnerOuter"));
-  Absyn_InnerOuter_OUTER = jl_get_function(jl_base_module, "Absyn.InnerOuter");
-  Absyn_InnerOuter_OUTER_type = jl_get_global(jl_base_module, symbol("Absyn.InnerOuter"));
-  Absyn_InnerOuter_INNER = jl_get_function(jl_base_module, "Absyn.InnerOuter");
-  Absyn_InnerOuter_INNER_type = jl_get_global(jl_base_module, symbol("Absyn.InnerOuter"));
-  Absyn_Import_GROUP__IMPORT = jl_get_function(jl_base_module, "Absyn.Import");
-  Absyn_Import_GROUP__IMPORT_type = jl_get_global(jl_base_module, symbol("Absyn.Import"));
-  Absyn_Import_UNQUAL__IMPORT = jl_get_function(jl_base_module, "Absyn.Import");
-  Absyn_Import_UNQUAL__IMPORT_type = jl_get_global(jl_base_module, symbol("Absyn.Import"));
-  Absyn_Import_QUAL__IMPORT = jl_get_function(jl_base_module, "Absyn.Import");
-  Absyn_Import_QUAL__IMPORT_type = jl_get_global(jl_base_module, symbol("Absyn.Import"));
-  Absyn_Import_NAMED__IMPORT = jl_get_function(jl_base_module, "Absyn.Import");
-  Absyn_Import_NAMED__IMPORT_type = jl_get_global(jl_base_module, symbol("Absyn.Import"));
-  Absyn_GroupImport_GROUP__IMPORT__RENAME = jl_get_function(jl_base_module, "Absyn.GroupImport");
-  Absyn_GroupImport_GROUP__IMPORT__RENAME_type = jl_get_global(jl_base_module, symbol("Absyn.GroupImport"));
-  Absyn_GroupImport_GROUP__IMPORT__NAME = jl_get_function(jl_base_module, "Absyn.GroupImport");
-  Absyn_GroupImport_GROUP__IMPORT__NAME_type = jl_get_global(jl_base_module, symbol("Absyn.GroupImport"));
-  Absyn_ComponentItem_COMPONENTITEM = jl_get_function(jl_base_module, "Absyn.ComponentItem");
-  Absyn_ComponentItem_COMPONENTITEM_type = jl_get_global(jl_base_module, symbol("Absyn.ComponentItem"));
-  Absyn_Component_COMPONENT = jl_get_function(jl_base_module, "Absyn.Component");
-  Absyn_Component_COMPONENT_type = jl_get_global(jl_base_module, symbol("Absyn.Component"));
-  Absyn_EquationItem_EQUATIONITEMCOMMENT = jl_get_function(jl_base_module, "Absyn.EquationItem");
-  Absyn_EquationItem_EQUATIONITEMCOMMENT_type = jl_get_global(jl_base_module, symbol("Absyn.EquationItem"));
-  Absyn_EquationItem_EQUATIONITEM = jl_get_function(jl_base_module, "Absyn.EquationItem");
-  Absyn_EquationItem_EQUATIONITEM_type = jl_get_global(jl_base_module, symbol("Absyn.EquationItem"));
-  Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT = jl_get_function(jl_base_module, "Absyn.AlgorithmItem");
-  Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT_type = jl_get_global(jl_base_module, symbol("Absyn.AlgorithmItem"));
-  Absyn_AlgorithmItem_ALGORITHMITEM = jl_get_function(jl_base_module, "Absyn.AlgorithmItem");
-  Absyn_AlgorithmItem_ALGORITHMITEM_type = jl_get_global(jl_base_module, symbol("Absyn.AlgorithmItem"));
-  Absyn_Equation_EQ__FAILURE = jl_get_function(jl_base_module, "Absyn.Equation");
-  Absyn_Equation_EQ__FAILURE_type = jl_get_global(jl_base_module, symbol("Absyn.Equation"));
-  Absyn_Equation_EQ__NORETCALL = jl_get_function(jl_base_module, "Absyn.Equation");
-  Absyn_Equation_EQ__NORETCALL_type = jl_get_global(jl_base_module, symbol("Absyn.Equation"));
-  Absyn_Equation_EQ__WHEN__E = jl_get_function(jl_base_module, "Absyn.Equation");
-  Absyn_Equation_EQ__WHEN__E_type = jl_get_global(jl_base_module, symbol("Absyn.Equation"));
-  Absyn_Equation_EQ__FOR = jl_get_function(jl_base_module, "Absyn.Equation");
-  Absyn_Equation_EQ__FOR_type = jl_get_global(jl_base_module, symbol("Absyn.Equation"));
-  Absyn_Equation_EQ__CONNECT = jl_get_function(jl_base_module, "Absyn.Equation");
-  Absyn_Equation_EQ__CONNECT_type = jl_get_global(jl_base_module, symbol("Absyn.Equation"));
-  Absyn_Equation_EQ__PDE = jl_get_function(jl_base_module, "Absyn.Equation");
-  Absyn_Equation_EQ__PDE_type = jl_get_global(jl_base_module, symbol("Absyn.Equation"));
-  Absyn_Equation_EQ__EQUALS = jl_get_function(jl_base_module, "Absyn.Equation");
-  Absyn_Equation_EQ__EQUALS_type = jl_get_global(jl_base_module, symbol("Absyn.Equation"));
-  Absyn_Equation_EQ__IF = jl_get_function(jl_base_module, "Absyn.Equation");
-  Absyn_Equation_EQ__IF_type = jl_get_global(jl_base_module, symbol("Absyn.Equation"));
-  Absyn_Algorithm_ALG__CONTINUE = jl_get_function(jl_base_module, "Absyn.Algorithm");
-  Absyn_Algorithm_ALG__CONTINUE_type = jl_get_global(jl_base_module, symbol("Absyn.Algorithm"));
-  Absyn_Algorithm_ALG__TRY = jl_get_function(jl_base_module, "Absyn.Algorithm");
-  Absyn_Algorithm_ALG__TRY_type = jl_get_global(jl_base_module, symbol("Absyn.Algorithm"));
-  Absyn_Algorithm_ALG__FAILURE = jl_get_function(jl_base_module, "Absyn.Algorithm");
-  Absyn_Algorithm_ALG__FAILURE_type = jl_get_global(jl_base_module, symbol("Absyn.Algorithm"));
-  Absyn_Algorithm_ALG__BREAK = jl_get_function(jl_base_module, "Absyn.Algorithm");
-  Absyn_Algorithm_ALG__BREAK_type = jl_get_global(jl_base_module, symbol("Absyn.Algorithm"));
-  Absyn_Algorithm_ALG__RETURN = jl_get_function(jl_base_module, "Absyn.Algorithm");
-  Absyn_Algorithm_ALG__RETURN_type = jl_get_global(jl_base_module, symbol("Absyn.Algorithm"));
-  Absyn_Algorithm_ALG__NORETCALL = jl_get_function(jl_base_module, "Absyn.Algorithm");
-  Absyn_Algorithm_ALG__NORETCALL_type = jl_get_global(jl_base_module, symbol("Absyn.Algorithm"));
-  Absyn_Algorithm_ALG__WHEN__A = jl_get_function(jl_base_module, "Absyn.Algorithm");
-  Absyn_Algorithm_ALG__WHEN__A_type = jl_get_global(jl_base_module, symbol("Absyn.Algorithm"));
-  Absyn_Algorithm_ALG__WHILE = jl_get_function(jl_base_module, "Absyn.Algorithm");
-  Absyn_Algorithm_ALG__WHILE_type = jl_get_global(jl_base_module, symbol("Absyn.Algorithm"));
-  Absyn_Algorithm_ALG__PARFOR = jl_get_function(jl_base_module, "Absyn.Algorithm");
-  Absyn_Algorithm_ALG__PARFOR_type = jl_get_global(jl_base_module, symbol("Absyn.Algorithm"));
-  Absyn_Algorithm_ALG__FOR = jl_get_function(jl_base_module, "Absyn.Algorithm");
-  Absyn_Algorithm_ALG__FOR_type = jl_get_global(jl_base_module, symbol("Absyn.Algorithm"));
-  Absyn_Algorithm_ALG__IF = jl_get_function(jl_base_module, "Absyn.Algorithm");
-  Absyn_Algorithm_ALG__IF_type = jl_get_global(jl_base_module, symbol("Absyn.Algorithm"));
-  Absyn_Algorithm_ALG__ASSIGN = jl_get_function(jl_base_module, "Absyn.Algorithm");
-  Absyn_Algorithm_ALG__ASSIGN_type = jl_get_global(jl_base_module, symbol("Absyn.Algorithm"));
-  Absyn_Modification_CLASSMOD = jl_get_function(jl_base_module, "Absyn.Modification");
-  Absyn_Modification_CLASSMOD_type = jl_get_global(jl_base_module, symbol("Absyn.Modification"));
-  Absyn_EqMod_EQMOD = jl_get_function(jl_base_module, "Absyn.EqMod");
-  Absyn_EqMod_EQMOD_type = jl_get_global(jl_base_module, symbol("Absyn.EqMod"));
-  Absyn_EqMod_NOMOD = jl_get_function(jl_base_module, "Absyn.EqMod");
-  Absyn_EqMod_NOMOD_type = jl_get_global(jl_base_module, symbol("Absyn.EqMod"));
-  Absyn_ElementArg_REDECLARATION = jl_get_function(jl_base_module, "Absyn.ElementArg");
-  Absyn_ElementArg_REDECLARATION_type = jl_get_global(jl_base_module, symbol("Absyn.ElementArg"));
-  Absyn_ElementArg_MODIFICATION = jl_get_function(jl_base_module, "Absyn.ElementArg");
-  Absyn_ElementArg_MODIFICATION_type = jl_get_global(jl_base_module, symbol("Absyn.ElementArg"));
-  Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE = jl_get_function(jl_base_module, "Absyn.RedeclareKeywords");
-  Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE_type = jl_get_global(jl_base_module, symbol("Absyn.RedeclareKeywords"));
-  Absyn_RedeclareKeywords_REPLACEABLE = jl_get_function(jl_base_module, "Absyn.RedeclareKeywords");
-  Absyn_RedeclareKeywords_REPLACEABLE_type = jl_get_global(jl_base_module, symbol("Absyn.RedeclareKeywords"));
-  Absyn_RedeclareKeywords_REDECLARE = jl_get_function(jl_base_module, "Absyn.RedeclareKeywords");
-  Absyn_RedeclareKeywords_REDECLARE_type = jl_get_global(jl_base_module, symbol("Absyn.RedeclareKeywords"));
-  Absyn_Each_NON__EACH = jl_get_function(jl_base_module, "Absyn.Each");
-  Absyn_Each_NON__EACH_type = jl_get_global(jl_base_module, symbol("Absyn.Each"));
-  Absyn_Each_EACH = jl_get_function(jl_base_module, "Absyn.Each");
-  Absyn_Each_EACH_type = jl_get_global(jl_base_module, symbol("Absyn.Each"));
-  Absyn_ElementAttributes_ATTR = jl_get_function(jl_base_module, "Absyn.ElementAttributes");
-  Absyn_ElementAttributes_ATTR_type = jl_get_global(jl_base_module, symbol("Absyn.ElementAttributes"));
-  Absyn_IsField_FIELD = jl_get_function(jl_base_module, "Absyn.IsField");
-  Absyn_IsField_FIELD_type = jl_get_global(jl_base_module, symbol("Absyn.IsField"));
-  Absyn_IsField_NONFIELD = jl_get_function(jl_base_module, "Absyn.IsField");
-  Absyn_IsField_NONFIELD_type = jl_get_global(jl_base_module, symbol("Absyn.IsField"));
-  Absyn_Parallelism_NON__PARALLEL = jl_get_function(jl_base_module, "Absyn.Parallelism");
-  Absyn_Parallelism_NON__PARALLEL_type = jl_get_global(jl_base_module, symbol("Absyn.Parallelism"));
-  Absyn_Parallelism_PARLOCAL = jl_get_function(jl_base_module, "Absyn.Parallelism");
-  Absyn_Parallelism_PARLOCAL_type = jl_get_global(jl_base_module, symbol("Absyn.Parallelism"));
-  Absyn_Parallelism_PARGLOBAL = jl_get_function(jl_base_module, "Absyn.Parallelism");
-  Absyn_Parallelism_PARGLOBAL_type = jl_get_global(jl_base_module, symbol("Absyn.Parallelism"));
-  Absyn_FlowStream_NOT__FLOW__STREAM = jl_get_function(jl_base_module, "Absyn.FlowStream");
-  Absyn_FlowStream_NOT__FLOW__STREAM_type = jl_get_global(jl_base_module, symbol("Absyn.FlowStream"));
-  Absyn_FlowStream_STREAM = jl_get_function(jl_base_module, "Absyn.FlowStream");
-  Absyn_FlowStream_STREAM_type = jl_get_global(jl_base_module, symbol("Absyn.FlowStream"));
-  Absyn_FlowStream_FLOW = jl_get_function(jl_base_module, "Absyn.FlowStream");
-  Absyn_FlowStream_FLOW_type = jl_get_global(jl_base_module, symbol("Absyn.FlowStream"));
-  Absyn_Variability_CONST = jl_get_function(jl_base_module, "Absyn.Variability");
-  Absyn_Variability_CONST_type = jl_get_global(jl_base_module, symbol("Absyn.Variability"));
-  Absyn_Variability_PARAM = jl_get_function(jl_base_module, "Absyn.Variability");
-  Absyn_Variability_PARAM_type = jl_get_global(jl_base_module, symbol("Absyn.Variability"));
-  Absyn_Variability_DISCRETE = jl_get_function(jl_base_module, "Absyn.Variability");
-  Absyn_Variability_DISCRETE_type = jl_get_global(jl_base_module, symbol("Absyn.Variability"));
-  Absyn_Variability_VAR = jl_get_function(jl_base_module, "Absyn.Variability");
-  Absyn_Variability_VAR_type = jl_get_global(jl_base_module, symbol("Absyn.Variability"));
-  Absyn_Direction_INPUT__OUTPUT = jl_get_function(jl_base_module, "Absyn.Direction");
-  Absyn_Direction_INPUT__OUTPUT_type = jl_get_global(jl_base_module, symbol("Absyn.Direction"));
-  Absyn_Direction_BIDIR = jl_get_function(jl_base_module, "Absyn.Direction");
-  Absyn_Direction_BIDIR_type = jl_get_global(jl_base_module, symbol("Absyn.Direction"));
-  Absyn_Direction_OUTPUT = jl_get_function(jl_base_module, "Absyn.Direction");
-  Absyn_Direction_OUTPUT_type = jl_get_global(jl_base_module, symbol("Absyn.Direction"));
-  Absyn_Direction_INPUT = jl_get_function(jl_base_module, "Absyn.Direction");
-  Absyn_Direction_INPUT_type = jl_get_global(jl_base_module, symbol("Absyn.Direction"));
-  Absyn_Exp_DOT = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_DOT_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_LIST = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_LIST_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_MATCHEXP = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_MATCHEXP_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_CONS = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_CONS_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_AS = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_AS_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_CODE = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_CODE_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_END = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_END_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_TUPLE = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_TUPLE_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_RANGE = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_RANGE_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_MATRIX = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_MATRIX_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_ARRAY = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_ARRAY_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_PARTEVALFUNCTION = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_PARTEVALFUNCTION_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_CALL = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_CALL_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_IFEXP = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_IFEXP_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_RELATION = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_RELATION_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_LUNARY = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_LUNARY_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_LBINARY = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_LBINARY_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_UNARY = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_UNARY_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_BINARY = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_BINARY_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_BOOL = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_BOOL_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_STRING = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_STRING_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_CREF = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_CREF_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_REAL = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_REAL_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Exp_INTEGER = jl_get_function(jl_base_module, "Absyn.Exp");
-  Absyn_Exp_INTEGER_type = jl_get_global(jl_base_module, symbol("Absyn.Exp"));
-  Absyn_Case_ELSE = jl_get_function(jl_base_module, "Absyn.Case");
-  Absyn_Case_ELSE_type = jl_get_global(jl_base_module, symbol("Absyn.Case"));
-  Absyn_Case_CASE = jl_get_function(jl_base_module, "Absyn.Case");
-  Absyn_Case_CASE_type = jl_get_global(jl_base_module, symbol("Absyn.Case"));
-  Absyn_MatchType_MATCHCONTINUE = jl_get_function(jl_base_module, "Absyn.MatchType");
-  Absyn_MatchType_MATCHCONTINUE_type = jl_get_global(jl_base_module, symbol("Absyn.MatchType"));
-  Absyn_MatchType_MATCH = jl_get_function(jl_base_module, "Absyn.MatchType");
-  Absyn_MatchType_MATCH_type = jl_get_global(jl_base_module, symbol("Absyn.MatchType"));
-  Absyn_CodeNode_C__MODIFICATION = jl_get_function(jl_base_module, "Absyn.CodeNode");
-  Absyn_CodeNode_C__MODIFICATION_type = jl_get_global(jl_base_module, symbol("Absyn.CodeNode"));
-  Absyn_CodeNode_C__EXPRESSION = jl_get_function(jl_base_module, "Absyn.CodeNode");
-  Absyn_CodeNode_C__EXPRESSION_type = jl_get_global(jl_base_module, symbol("Absyn.CodeNode"));
-  Absyn_CodeNode_C__ELEMENT = jl_get_function(jl_base_module, "Absyn.CodeNode");
-  Absyn_CodeNode_C__ELEMENT_type = jl_get_global(jl_base_module, symbol("Absyn.CodeNode"));
-  Absyn_CodeNode_C__ALGORITHMSECTION = jl_get_function(jl_base_module, "Absyn.CodeNode");
-  Absyn_CodeNode_C__ALGORITHMSECTION_type = jl_get_global(jl_base_module, symbol("Absyn.CodeNode"));
-  Absyn_CodeNode_C__EQUATIONSECTION = jl_get_function(jl_base_module, "Absyn.CodeNode");
-  Absyn_CodeNode_C__EQUATIONSECTION_type = jl_get_global(jl_base_module, symbol("Absyn.CodeNode"));
-  Absyn_CodeNode_C__CONSTRAINTSECTION = jl_get_function(jl_base_module, "Absyn.CodeNode");
-  Absyn_CodeNode_C__CONSTRAINTSECTION_type = jl_get_global(jl_base_module, symbol("Absyn.CodeNode"));
-  Absyn_CodeNode_C__VARIABLENAME = jl_get_function(jl_base_module, "Absyn.CodeNode");
-  Absyn_CodeNode_C__VARIABLENAME_type = jl_get_global(jl_base_module, symbol("Absyn.CodeNode"));
-  Absyn_CodeNode_C__TYPENAME = jl_get_function(jl_base_module, "Absyn.CodeNode");
-  Absyn_CodeNode_C__TYPENAME_type = jl_get_global(jl_base_module, symbol("Absyn.CodeNode"));
-  Absyn_FunctionArgs_FOR__ITER__FARG = jl_get_function(jl_base_module, "Absyn.FunctionArgs");
-  Absyn_FunctionArgs_FOR__ITER__FARG_type = jl_get_global(jl_base_module, symbol("Absyn.FunctionArgs"));
-  Absyn_FunctionArgs_FUNCTIONARGS = jl_get_function(jl_base_module, "Absyn.FunctionArgs");
-  Absyn_FunctionArgs_FUNCTIONARGS_type = jl_get_global(jl_base_module, symbol("Absyn.FunctionArgs"));
-  Absyn_ReductionIterType_THREAD = jl_get_function(jl_base_module, "Absyn.ReductionIterType");
-  Absyn_ReductionIterType_THREAD_type = jl_get_global(jl_base_module, symbol("Absyn.ReductionIterType"));
-  Absyn_ReductionIterType_COMBINE = jl_get_function(jl_base_module, "Absyn.ReductionIterType");
-  Absyn_ReductionIterType_COMBINE_type = jl_get_global(jl_base_module, symbol("Absyn.ReductionIterType"));
-  Absyn_NamedArg_NAMEDARG = jl_get_function(jl_base_module, "Absyn.NamedArg");
-  Absyn_NamedArg_NAMEDARG_type = jl_get_global(jl_base_module, symbol("Absyn.NamedArg"));
-  Absyn_Operator_NEQUAL = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_NEQUAL_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Operator_EQUAL = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_EQUAL_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Operator_GREATEREQ = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_GREATEREQ_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Operator_GREATER = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_GREATER_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Operator_LESSEQ = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_LESSEQ_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Operator_LESS = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_LESS_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Operator_NOT = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_NOT_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Operator_OR = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_OR_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Operator_AND = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_AND_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Operator_UMINUS__EW = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_UMINUS__EW_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Operator_UPLUS__EW = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_UPLUS__EW_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Operator_POW__EW = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_POW__EW_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Operator_DIV__EW = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_DIV__EW_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Operator_MUL__EW = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_MUL__EW_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Operator_SUB__EW = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_SUB__EW_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Operator_ADD__EW = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_ADD__EW_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Operator_UMINUS = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_UMINUS_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Operator_UPLUS = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_UPLUS_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Operator_POW = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_POW_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Operator_DIV = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_DIV_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Operator_MUL = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_MUL_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Operator_SUB = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_SUB_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Operator_ADD = jl_get_function(jl_base_module, "Absyn.Operator");
-  Absyn_Operator_ADD_type = jl_get_global(jl_base_module, symbol("Absyn.Operator"));
-  Absyn_Subscript_SUBSCRIPT = jl_get_function(jl_base_module, "Absyn.Subscript");
-  Absyn_Subscript_SUBSCRIPT_type = jl_get_global(jl_base_module, symbol("Absyn.Subscript"));
-  Absyn_Subscript_NOSUB = jl_get_function(jl_base_module, "Absyn.Subscript");
-  Absyn_Subscript_NOSUB_type = jl_get_global(jl_base_module, symbol("Absyn.Subscript"));
-  Absyn_ComponentRef_ALLWILD = jl_get_function(jl_base_module, "Absyn.ComponentRef");
-  Absyn_ComponentRef_ALLWILD_type = jl_get_global(jl_base_module, symbol("Absyn.ComponentRef"));
-  Absyn_ComponentRef_WILD = jl_get_function(jl_base_module, "Absyn.ComponentRef");
-  Absyn_ComponentRef_WILD_type = jl_get_global(jl_base_module, symbol("Absyn.ComponentRef"));
-  Absyn_ComponentRef_CREF__IDENT = jl_get_function(jl_base_module, "Absyn.ComponentRef");
-  Absyn_ComponentRef_CREF__IDENT_type = jl_get_global(jl_base_module, symbol("Absyn.ComponentRef"));
-  Absyn_ComponentRef_CREF__QUAL = jl_get_function(jl_base_module, "Absyn.ComponentRef");
-  Absyn_ComponentRef_CREF__QUAL_type = jl_get_global(jl_base_module, symbol("Absyn.ComponentRef"));
-  Absyn_ComponentRef_CREF__FULLYQUALIFIED = jl_get_function(jl_base_module, "Absyn.ComponentRef");
-  Absyn_ComponentRef_CREF__FULLYQUALIFIED_type = jl_get_global(jl_base_module, symbol("Absyn.ComponentRef"));
-  Absyn_Path_FULLYQUALIFIED = jl_get_function(jl_base_module, "Absyn.Path");
-  Absyn_Path_FULLYQUALIFIED_type = jl_get_global(jl_base_module, symbol("Absyn.Path"));
-  Absyn_Path_IDENT = jl_get_function(jl_base_module, "Absyn.Path");
-  Absyn_Path_IDENT_type = jl_get_global(jl_base_module, symbol("Absyn.Path"));
-  Absyn_Path_QUALIFIED = jl_get_function(jl_base_module, "Absyn.Path");
-  Absyn_Path_QUALIFIED_type = jl_get_global(jl_base_module, symbol("Absyn.Path"));
-  Absyn_Restriction_R__UNKNOWN = jl_get_function(jl_base_module, "Absyn.Restriction");
-  Absyn_Restriction_R__UNKNOWN_type = jl_get_global(jl_base_module, symbol("Absyn.Restriction"));
-  Absyn_Restriction_R__METARECORD = jl_get_function(jl_base_module, "Absyn.Restriction");
-  Absyn_Restriction_R__METARECORD_type = jl_get_global(jl_base_module, symbol("Absyn.Restriction"));
-  Absyn_Restriction_R__UNIONTYPE = jl_get_function(jl_base_module, "Absyn.Restriction");
-  Absyn_Restriction_R__UNIONTYPE_type = jl_get_global(jl_base_module, symbol("Absyn.Restriction"));
-  Absyn_Restriction_R__PREDEFINED__CLOCK = jl_get_function(jl_base_module, "Absyn.Restriction");
-  Absyn_Restriction_R__PREDEFINED__CLOCK_type = jl_get_global(jl_base_module, symbol("Absyn.Restriction"));
-  Absyn_Restriction_R__PREDEFINED__ENUMERATION = jl_get_function(jl_base_module, "Absyn.Restriction");
-  Absyn_Restriction_R__PREDEFINED__ENUMERATION_type = jl_get_global(jl_base_module, symbol("Absyn.Restriction"));
-  Absyn_Restriction_R__PREDEFINED__BOOLEAN = jl_get_function(jl_base_module, "Absyn.Restriction");
-  Absyn_Restriction_R__PREDEFINED__BOOLEAN_type = jl_get_global(jl_base_module, symbol("Absyn.Restriction"));
-  Absyn_Restriction_R__PREDEFINED__STRING = jl_get_function(jl_base_module, "Absyn.Restriction");
-  Absyn_Restriction_R__PREDEFINED__STRING_type = jl_get_global(jl_base_module, symbol("Absyn.Restriction"));
-  Absyn_Restriction_R__PREDEFINED__REAL = jl_get_function(jl_base_module, "Absyn.Restriction");
-  Absyn_Restriction_R__PREDEFINED__REAL_type = jl_get_global(jl_base_module, symbol("Absyn.Restriction"));
-  Absyn_Restriction_R__PREDEFINED__INTEGER = jl_get_function(jl_base_module, "Absyn.Restriction");
-  Absyn_Restriction_R__PREDEFINED__INTEGER_type = jl_get_global(jl_base_module, symbol("Absyn.Restriction"));
-  Absyn_Restriction_R__ENUMERATION = jl_get_function(jl_base_module, "Absyn.Restriction");
-  Absyn_Restriction_R__ENUMERATION_type = jl_get_global(jl_base_module, symbol("Absyn.Restriction"));
-  Absyn_Restriction_R__OPERATOR__RECORD = jl_get_function(jl_base_module, "Absyn.Restriction");
-  Absyn_Restriction_R__OPERATOR__RECORD_type = jl_get_global(jl_base_module, symbol("Absyn.Restriction"));
-  Absyn_Restriction_R__OPERATOR = jl_get_function(jl_base_module, "Absyn.Restriction");
-  Absyn_Restriction_R__OPERATOR_type = jl_get_global(jl_base_module, symbol("Absyn.Restriction"));
-  Absyn_Restriction_R__FUNCTION = jl_get_function(jl_base_module, "Absyn.Restriction");
-  Absyn_Restriction_R__FUNCTION_type = jl_get_global(jl_base_module, symbol("Absyn.Restriction"));
-  Absyn_Restriction_R__PACKAGE = jl_get_function(jl_base_module, "Absyn.Restriction");
-  Absyn_Restriction_R__PACKAGE_type = jl_get_global(jl_base_module, symbol("Absyn.Restriction"));
-  Absyn_Restriction_R__TYPE = jl_get_function(jl_base_module, "Absyn.Restriction");
-  Absyn_Restriction_R__TYPE_type = jl_get_global(jl_base_module, symbol("Absyn.Restriction"));
-  Absyn_Restriction_R__EXP__CONNECTOR = jl_get_function(jl_base_module, "Absyn.Restriction");
-  Absyn_Restriction_R__EXP__CONNECTOR_type = jl_get_global(jl_base_module, symbol("Absyn.Restriction"));
-  Absyn_Restriction_R__CONNECTOR = jl_get_function(jl_base_module, "Absyn.Restriction");
-  Absyn_Restriction_R__CONNECTOR_type = jl_get_global(jl_base_module, symbol("Absyn.Restriction"));
-  Absyn_Restriction_R__BLOCK = jl_get_function(jl_base_module, "Absyn.Restriction");
-  Absyn_Restriction_R__BLOCK_type = jl_get_global(jl_base_module, symbol("Absyn.Restriction"));
-  Absyn_Restriction_R__RECORD = jl_get_function(jl_base_module, "Absyn.Restriction");
-  Absyn_Restriction_R__RECORD_type = jl_get_global(jl_base_module, symbol("Absyn.Restriction"));
-  Absyn_Restriction_R__MODEL = jl_get_function(jl_base_module, "Absyn.Restriction");
-  Absyn_Restriction_R__MODEL_type = jl_get_global(jl_base_module, symbol("Absyn.Restriction"));
-  Absyn_Restriction_R__OPTIMIZATION = jl_get_function(jl_base_module, "Absyn.Restriction");
-  Absyn_Restriction_R__OPTIMIZATION_type = jl_get_global(jl_base_module, symbol("Absyn.Restriction"));
-  Absyn_Restriction_R__CLASS = jl_get_function(jl_base_module, "Absyn.Restriction");
-  Absyn_Restriction_R__CLASS_type = jl_get_global(jl_base_module, symbol("Absyn.Restriction"));
-  Absyn_FunctionPurity_NO__PURITY = jl_get_function(jl_base_module, "Absyn.FunctionPurity");
-  Absyn_FunctionPurity_NO__PURITY_type = jl_get_global(jl_base_module, symbol("Absyn.FunctionPurity"));
-  Absyn_FunctionPurity_IMPURE = jl_get_function(jl_base_module, "Absyn.FunctionPurity");
-  Absyn_FunctionPurity_IMPURE_type = jl_get_global(jl_base_module, symbol("Absyn.FunctionPurity"));
-  Absyn_FunctionPurity_PURE = jl_get_function(jl_base_module, "Absyn.FunctionPurity");
-  Absyn_FunctionPurity_PURE_type = jl_get_global(jl_base_module, symbol("Absyn.FunctionPurity"));
-  Absyn_FunctionRestriction_FR__KERNEL__FUNCTION = jl_get_function(jl_base_module, "Absyn.FunctionRestriction");
-  Absyn_FunctionRestriction_FR__KERNEL__FUNCTION_type = jl_get_global(jl_base_module, symbol("Absyn.FunctionRestriction"));
-  Absyn_FunctionRestriction_FR__PARALLEL__FUNCTION = jl_get_function(jl_base_module, "Absyn.FunctionRestriction");
-  Absyn_FunctionRestriction_FR__PARALLEL__FUNCTION_type = jl_get_global(jl_base_module, symbol("Absyn.FunctionRestriction"));
-  Absyn_FunctionRestriction_FR__OPERATOR__FUNCTION = jl_get_function(jl_base_module, "Absyn.FunctionRestriction");
-  Absyn_FunctionRestriction_FR__OPERATOR__FUNCTION_type = jl_get_global(jl_base_module, symbol("Absyn.FunctionRestriction"));
-  Absyn_FunctionRestriction_FR__NORMAL__FUNCTION = jl_get_function(jl_base_module, "Absyn.FunctionRestriction");
-  Absyn_FunctionRestriction_FR__NORMAL__FUNCTION_type = jl_get_global(jl_base_module, symbol("Absyn.FunctionRestriction"));
-  Absyn_Annotation_ANNOTATION = jl_get_function(jl_base_module, "Absyn.Annotation");
-  Absyn_Annotation_ANNOTATION_type = jl_get_global(jl_base_module, symbol("Absyn.Annotation"));
-  Absyn_Comment_COMMENT = jl_get_function(jl_base_module, "Absyn.Comment");
-  Absyn_Comment_COMMENT_type = jl_get_global(jl_base_module, symbol("Absyn.Comment"));
-  Absyn_ExternalDecl_EXTERNALDECL = jl_get_function(jl_base_module, "Absyn.ExternalDecl");
-  Absyn_ExternalDecl_EXTERNALDECL_type = jl_get_global(jl_base_module, symbol("Absyn.ExternalDecl"));
-  Absyn_Ref_RIM = jl_get_function(jl_base_module, "Absyn.Ref");
-  Absyn_Ref_RIM_type = jl_get_global(jl_base_module, symbol("Absyn.Ref"));
-  Absyn_Ref_RTS = jl_get_function(jl_base_module, "Absyn.Ref");
-  Absyn_Ref_RTS_type = jl_get_global(jl_base_module, symbol("Absyn.Ref"));
-  Absyn_Ref_RCR = jl_get_function(jl_base_module, "Absyn.Ref");
-  Absyn_Ref_RCR_type = jl_get_global(jl_base_module, symbol("Absyn.Ref"));
-  Absyn_Msg_NO__MSG = jl_get_function(jl_base_module, "Absyn.Msg");
-  Absyn_Msg_NO__MSG_type = jl_get_global(jl_base_module, symbol("Absyn.Msg"));
-  Absyn_Msg_MSG = jl_get_function(jl_base_module, "Absyn.Msg");
-  Absyn_Msg_MSG_type = jl_get_global(jl_base_module, symbol("Absyn.Msg"));
+  jl_module_t* Absyn;
+  assert((Absyn = (jl_module_t *) jl_eval_string("Absyn")));
+  assert((Absyn_ForIterator = jl_get_global(Absyn, jl_symbol("ForIterator"))));
+  assert((Absyn_ForIterator_ITERATOR = jl_get_function(Absyn, "ITERATOR")));
+  assert((Absyn_ForIterator_ITERATOR_type = jl_get_global(Absyn, jl_symbol("ITERATOR"))));
+  assert((Absyn_Program = jl_get_global(Absyn, jl_symbol("Program"))));
+  assert((Absyn_Program_PROGRAM = jl_get_function(Absyn, "PROGRAM")));
+  assert((Absyn_Program_PROGRAM_type = jl_get_global(Absyn, jl_symbol("PROGRAM"))));
+  assert((Absyn_Within = jl_get_global(Absyn, jl_symbol("Within"))));
+  assert((Absyn_Within_TOP = jl_get_function(Absyn, "TOP")));
+  assert((Absyn_Within_TOP_type = jl_get_global(Absyn, jl_symbol("TOP"))));
+  assert((Absyn_Within_WITHIN = jl_get_function(Absyn, "WITHIN")));
+  assert((Absyn_Within_WITHIN_type = jl_get_global(Absyn, jl_symbol("WITHIN"))));
+  assert((Absyn_Class = jl_get_global(Absyn, jl_symbol("Class"))));
+  assert((Absyn_Class_CLASS = jl_get_function(Absyn, "CLASS")));
+  assert((Absyn_Class_CLASS_type = jl_get_global(Absyn, jl_symbol("CLASS"))));
+  assert((Absyn_ClassDef = jl_get_global(Absyn, jl_symbol("ClassDef"))));
+  assert((Absyn_ClassDef_PDER = jl_get_function(Absyn, "PDER")));
+  assert((Absyn_ClassDef_PDER_type = jl_get_global(Absyn, jl_symbol("PDER"))));
+  assert((Absyn_ClassDef_CLASS__EXTENDS = jl_get_function(Absyn, "CLASS_EXTENDS")));
+  assert((Absyn_ClassDef_CLASS__EXTENDS_type = jl_get_global(Absyn, jl_symbol("CLASS_EXTENDS"))));
+  assert((Absyn_ClassDef_OVERLOAD = jl_get_function(Absyn, "OVERLOAD")));
+  assert((Absyn_ClassDef_OVERLOAD_type = jl_get_global(Absyn, jl_symbol("OVERLOAD"))));
+  assert((Absyn_ClassDef_ENUMERATION = jl_get_function(Absyn, "ENUMERATION")));
+  assert((Absyn_ClassDef_ENUMERATION_type = jl_get_global(Absyn, jl_symbol("ENUMERATION"))));
+  assert((Absyn_ClassDef_DERIVED = jl_get_function(Absyn, "DERIVED")));
+  assert((Absyn_ClassDef_DERIVED_type = jl_get_global(Absyn, jl_symbol("DERIVED"))));
+  assert((Absyn_ClassDef_PARTS = jl_get_function(Absyn, "PARTS")));
+  assert((Absyn_ClassDef_PARTS_type = jl_get_global(Absyn, jl_symbol("PARTS"))));
+  assert((Absyn_TypeSpec = jl_get_global(Absyn, jl_symbol("TypeSpec"))));
+  assert((Absyn_TypeSpec_TCOMPLEX = jl_get_function(Absyn, "TCOMPLEX")));
+  assert((Absyn_TypeSpec_TCOMPLEX_type = jl_get_global(Absyn, jl_symbol("TCOMPLEX"))));
+  assert((Absyn_TypeSpec_TPATH = jl_get_function(Absyn, "TPATH")));
+  assert((Absyn_TypeSpec_TPATH_type = jl_get_global(Absyn, jl_symbol("TPATH"))));
+  assert((Absyn_EnumDef = jl_get_global(Absyn, jl_symbol("EnumDef"))));
+  assert((Absyn_EnumDef_ENUM__COLON = jl_get_function(Absyn, "ENUM_COLON")));
+  assert((Absyn_EnumDef_ENUM__COLON_type = jl_get_global(Absyn, jl_symbol("ENUM_COLON"))));
+  assert((Absyn_EnumDef_ENUMLITERALS = jl_get_function(Absyn, "ENUMLITERALS")));
+  assert((Absyn_EnumDef_ENUMLITERALS_type = jl_get_global(Absyn, jl_symbol("ENUMLITERALS"))));
+  assert((Absyn_EnumLiteral = jl_get_global(Absyn, jl_symbol("EnumLiteral"))));
+  assert((Absyn_EnumLiteral_ENUMLITERAL = jl_get_function(Absyn, "ENUMLITERAL")));
+  assert((Absyn_EnumLiteral_ENUMLITERAL_type = jl_get_global(Absyn, jl_symbol("ENUMLITERAL"))));
+  assert((Absyn_ClassPart = jl_get_global(Absyn, jl_symbol("ClassPart"))));
+  assert((Absyn_ClassPart_EXTERNAL = jl_get_function(Absyn, "EXTERNAL")));
+  assert((Absyn_ClassPart_EXTERNAL_type = jl_get_global(Absyn, jl_symbol("EXTERNAL"))));
+  assert((Absyn_ClassPart_INITIALALGORITHMS = jl_get_function(Absyn, "INITIALALGORITHMS")));
+  assert((Absyn_ClassPart_INITIALALGORITHMS_type = jl_get_global(Absyn, jl_symbol("INITIALALGORITHMS"))));
+  assert((Absyn_ClassPart_ALGORITHMS = jl_get_function(Absyn, "ALGORITHMS")));
+  assert((Absyn_ClassPart_ALGORITHMS_type = jl_get_global(Absyn, jl_symbol("ALGORITHMS"))));
+  assert((Absyn_ClassPart_INITIALEQUATIONS = jl_get_function(Absyn, "INITIALEQUATIONS")));
+  assert((Absyn_ClassPart_INITIALEQUATIONS_type = jl_get_global(Absyn, jl_symbol("INITIALEQUATIONS"))));
+  assert((Absyn_ClassPart_EQUATIONS = jl_get_function(Absyn, "EQUATIONS")));
+  assert((Absyn_ClassPart_EQUATIONS_type = jl_get_global(Absyn, jl_symbol("EQUATIONS"))));
+  assert((Absyn_ClassPart_CONSTRAINTS = jl_get_function(Absyn, "CONSTRAINTS")));
+  assert((Absyn_ClassPart_CONSTRAINTS_type = jl_get_global(Absyn, jl_symbol("CONSTRAINTS"))));
+  assert((Absyn_ClassPart_PROTECTED = jl_get_function(Absyn, "PROTECTED")));
+  assert((Absyn_ClassPart_PROTECTED_type = jl_get_global(Absyn, jl_symbol("PROTECTED"))));
+  assert((Absyn_ClassPart_PUBLIC = jl_get_function(Absyn, "PUBLIC")));
+  assert((Absyn_ClassPart_PUBLIC_type = jl_get_global(Absyn, jl_symbol("PUBLIC"))));
+  assert((Absyn_ElementItem = jl_get_global(Absyn, jl_symbol("ElementItem"))));
+  assert((Absyn_ElementItem_LEXER__COMMENT = jl_get_function(Absyn, "LEXER_COMMENT")));
+  assert((Absyn_ElementItem_LEXER__COMMENT_type = jl_get_global(Absyn, jl_symbol("LEXER_COMMENT"))));
+  assert((Absyn_ElementItem_ELEMENTITEM = jl_get_function(Absyn, "ELEMENTITEM")));
+  assert((Absyn_ElementItem_ELEMENTITEM_type = jl_get_global(Absyn, jl_symbol("ELEMENTITEM"))));
+  assert((Absyn_Element = jl_get_global(Absyn, jl_symbol("Element"))));
+  assert((Absyn_Element_TEXT = jl_get_function(Absyn, "TEXT")));
+  assert((Absyn_Element_TEXT_type = jl_get_global(Absyn, jl_symbol("TEXT"))));
+  assert((Absyn_Element_DEFINEUNIT = jl_get_function(Absyn, "DEFINEUNIT")));
+  assert((Absyn_Element_DEFINEUNIT_type = jl_get_global(Absyn, jl_symbol("DEFINEUNIT"))));
+  assert((Absyn_Element_ELEMENT = jl_get_function(Absyn, "ELEMENT")));
+  assert((Absyn_Element_ELEMENT_type = jl_get_global(Absyn, jl_symbol("ELEMENT"))));
+  assert((Absyn_ConstrainClass = jl_get_global(Absyn, jl_symbol("ConstrainClass"))));
+  assert((Absyn_ConstrainClass_CONSTRAINCLASS = jl_get_function(Absyn, "CONSTRAINCLASS")));
+  assert((Absyn_ConstrainClass_CONSTRAINCLASS_type = jl_get_global(Absyn, jl_symbol("CONSTRAINCLASS"))));
+  assert((Absyn_ElementSpec = jl_get_global(Absyn, jl_symbol("ElementSpec"))));
+  assert((Absyn_ElementSpec_COMPONENTS = jl_get_function(Absyn, "COMPONENTS")));
+  assert((Absyn_ElementSpec_COMPONENTS_type = jl_get_global(Absyn, jl_symbol("COMPONENTS"))));
+  assert((Absyn_ElementSpec_IMPORT = jl_get_function(Absyn, "IMPORT")));
+  assert((Absyn_ElementSpec_IMPORT_type = jl_get_global(Absyn, jl_symbol("IMPORT"))));
+  assert((Absyn_ElementSpec_EXTENDS = jl_get_function(Absyn, "EXTENDS")));
+  assert((Absyn_ElementSpec_EXTENDS_type = jl_get_global(Absyn, jl_symbol("EXTENDS"))));
+  assert((Absyn_ElementSpec_CLASSDEF = jl_get_function(Absyn, "CLASSDEF")));
+  assert((Absyn_ElementSpec_CLASSDEF_type = jl_get_global(Absyn, jl_symbol("CLASSDEF"))));
+  assert((Absyn_InnerOuter = jl_get_global(Absyn, jl_symbol("InnerOuter"))));
+  assert((Absyn_InnerOuter_NOT__INNER__OUTER = jl_get_function(Absyn, "NOT_INNER_OUTER")));
+  assert((Absyn_InnerOuter_NOT__INNER__OUTER_type = jl_get_global(Absyn, jl_symbol("NOT_INNER_OUTER"))));
+  assert((Absyn_InnerOuter_INNER__OUTER = jl_get_function(Absyn, "INNER_OUTER")));
+  assert((Absyn_InnerOuter_INNER__OUTER_type = jl_get_global(Absyn, jl_symbol("INNER_OUTER"))));
+  assert((Absyn_InnerOuter_OUTER = jl_get_function(Absyn, "OUTER")));
+  assert((Absyn_InnerOuter_OUTER_type = jl_get_global(Absyn, jl_symbol("OUTER"))));
+  assert((Absyn_InnerOuter_INNER = jl_get_function(Absyn, "INNER")));
+  assert((Absyn_InnerOuter_INNER_type = jl_get_global(Absyn, jl_symbol("INNER"))));
+  assert((Absyn_Import = jl_get_global(Absyn, jl_symbol("Import"))));
+  assert((Absyn_Import_GROUP__IMPORT = jl_get_function(Absyn, "GROUP_IMPORT")));
+  assert((Absyn_Import_GROUP__IMPORT_type = jl_get_global(Absyn, jl_symbol("GROUP_IMPORT"))));
+  assert((Absyn_Import_UNQUAL__IMPORT = jl_get_function(Absyn, "UNQUAL_IMPORT")));
+  assert((Absyn_Import_UNQUAL__IMPORT_type = jl_get_global(Absyn, jl_symbol("UNQUAL_IMPORT"))));
+  assert((Absyn_Import_QUAL__IMPORT = jl_get_function(Absyn, "QUAL_IMPORT")));
+  assert((Absyn_Import_QUAL__IMPORT_type = jl_get_global(Absyn, jl_symbol("QUAL_IMPORT"))));
+  assert((Absyn_Import_NAMED__IMPORT = jl_get_function(Absyn, "NAMED_IMPORT")));
+  assert((Absyn_Import_NAMED__IMPORT_type = jl_get_global(Absyn, jl_symbol("NAMED_IMPORT"))));
+  assert((Absyn_GroupImport = jl_get_global(Absyn, jl_symbol("GroupImport"))));
+  assert((Absyn_GroupImport_GROUP__IMPORT__RENAME = jl_get_function(Absyn, "GROUP_IMPORT_RENAME")));
+  assert((Absyn_GroupImport_GROUP__IMPORT__RENAME_type = jl_get_global(Absyn, jl_symbol("GROUP_IMPORT_RENAME"))));
+  assert((Absyn_GroupImport_GROUP__IMPORT__NAME = jl_get_function(Absyn, "GROUP_IMPORT_NAME")));
+  assert((Absyn_GroupImport_GROUP__IMPORT__NAME_type = jl_get_global(Absyn, jl_symbol("GROUP_IMPORT_NAME"))));
+  assert((Absyn_ComponentItem = jl_get_global(Absyn, jl_symbol("ComponentItem"))));
+  assert((Absyn_ComponentItem_COMPONENTITEM = jl_get_function(Absyn, "COMPONENTITEM")));
+  assert((Absyn_ComponentItem_COMPONENTITEM_type = jl_get_global(Absyn, jl_symbol("COMPONENTITEM"))));
+  assert((Absyn_Component = jl_get_global(Absyn, jl_symbol("Component"))));
+  assert((Absyn_Component_COMPONENT = jl_get_function(Absyn, "COMPONENT")));
+  assert((Absyn_Component_COMPONENT_type = jl_get_global(Absyn, jl_symbol("COMPONENT"))));
+  assert((Absyn_EquationItem = jl_get_global(Absyn, jl_symbol("EquationItem"))));
+  assert((Absyn_EquationItem_EQUATIONITEMCOMMENT = jl_get_function(Absyn, "EQUATIONITEMCOMMENT")));
+  assert((Absyn_EquationItem_EQUATIONITEMCOMMENT_type = jl_get_global(Absyn, jl_symbol("EQUATIONITEMCOMMENT"))));
+  assert((Absyn_EquationItem_EQUATIONITEM = jl_get_function(Absyn, "EQUATIONITEM")));
+  assert((Absyn_EquationItem_EQUATIONITEM_type = jl_get_global(Absyn, jl_symbol("EQUATIONITEM"))));
+  assert((Absyn_AlgorithmItem = jl_get_global(Absyn, jl_symbol("AlgorithmItem"))));
+  assert((Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT = jl_get_function(Absyn, "ALGORITHMITEMCOMMENT")));
+  assert((Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT_type = jl_get_global(Absyn, jl_symbol("ALGORITHMITEMCOMMENT"))));
+  assert((Absyn_AlgorithmItem_ALGORITHMITEM = jl_get_function(Absyn, "ALGORITHMITEM")));
+  assert((Absyn_AlgorithmItem_ALGORITHMITEM_type = jl_get_global(Absyn, jl_symbol("ALGORITHMITEM"))));
+  assert((Absyn_Equation = jl_get_global(Absyn, jl_symbol("Equation"))));
+  assert((Absyn_Equation_EQ__FAILURE = jl_get_function(Absyn, "EQ_FAILURE")));
+  assert((Absyn_Equation_EQ__FAILURE_type = jl_get_global(Absyn, jl_symbol("EQ_FAILURE"))));
+  assert((Absyn_Equation_EQ__NORETCALL = jl_get_function(Absyn, "EQ_NORETCALL")));
+  assert((Absyn_Equation_EQ__NORETCALL_type = jl_get_global(Absyn, jl_symbol("EQ_NORETCALL"))));
+  assert((Absyn_Equation_EQ__WHEN__E = jl_get_function(Absyn, "EQ_WHEN_E")));
+  assert((Absyn_Equation_EQ__WHEN__E_type = jl_get_global(Absyn, jl_symbol("EQ_WHEN_E"))));
+  assert((Absyn_Equation_EQ__FOR = jl_get_function(Absyn, "EQ_FOR")));
+  assert((Absyn_Equation_EQ__FOR_type = jl_get_global(Absyn, jl_symbol("EQ_FOR"))));
+  assert((Absyn_Equation_EQ__CONNECT = jl_get_function(Absyn, "EQ_CONNECT")));
+  assert((Absyn_Equation_EQ__CONNECT_type = jl_get_global(Absyn, jl_symbol("EQ_CONNECT"))));
+  assert((Absyn_Equation_EQ__PDE = jl_get_function(Absyn, "EQ_PDE")));
+  assert((Absyn_Equation_EQ__PDE_type = jl_get_global(Absyn, jl_symbol("EQ_PDE"))));
+  assert((Absyn_Equation_EQ__EQUALS = jl_get_function(Absyn, "EQ_EQUALS")));
+  assert((Absyn_Equation_EQ__EQUALS_type = jl_get_global(Absyn, jl_symbol("EQ_EQUALS"))));
+  assert((Absyn_Equation_EQ__IF = jl_get_function(Absyn, "EQ_IF")));
+  assert((Absyn_Equation_EQ__IF_type = jl_get_global(Absyn, jl_symbol("EQ_IF"))));
+  assert((Absyn_Algorithm = jl_get_global(Absyn, jl_symbol("Algorithm"))));
+  assert((Absyn_Algorithm_ALG__CONTINUE = jl_get_function(Absyn, "ALG_CONTINUE")));
+  assert((Absyn_Algorithm_ALG__CONTINUE_type = jl_get_global(Absyn, jl_symbol("ALG_CONTINUE"))));
+  assert((Absyn_Algorithm_ALG__TRY = jl_get_function(Absyn, "ALG_TRY")));
+  assert((Absyn_Algorithm_ALG__TRY_type = jl_get_global(Absyn, jl_symbol("ALG_TRY"))));
+  assert((Absyn_Algorithm_ALG__FAILURE = jl_get_function(Absyn, "ALG_FAILURE")));
+  assert((Absyn_Algorithm_ALG__FAILURE_type = jl_get_global(Absyn, jl_symbol("ALG_FAILURE"))));
+  assert((Absyn_Algorithm_ALG__BREAK = jl_get_function(Absyn, "ALG_BREAK")));
+  assert((Absyn_Algorithm_ALG__BREAK_type = jl_get_global(Absyn, jl_symbol("ALG_BREAK"))));
+  assert((Absyn_Algorithm_ALG__RETURN = jl_get_function(Absyn, "ALG_RETURN")));
+  assert((Absyn_Algorithm_ALG__RETURN_type = jl_get_global(Absyn, jl_symbol("ALG_RETURN"))));
+  assert((Absyn_Algorithm_ALG__NORETCALL = jl_get_function(Absyn, "ALG_NORETCALL")));
+  assert((Absyn_Algorithm_ALG__NORETCALL_type = jl_get_global(Absyn, jl_symbol("ALG_NORETCALL"))));
+  assert((Absyn_Algorithm_ALG__WHEN__A = jl_get_function(Absyn, "ALG_WHEN_A")));
+  assert((Absyn_Algorithm_ALG__WHEN__A_type = jl_get_global(Absyn, jl_symbol("ALG_WHEN_A"))));
+  assert((Absyn_Algorithm_ALG__WHILE = jl_get_function(Absyn, "ALG_WHILE")));
+  assert((Absyn_Algorithm_ALG__WHILE_type = jl_get_global(Absyn, jl_symbol("ALG_WHILE"))));
+  assert((Absyn_Algorithm_ALG__PARFOR = jl_get_function(Absyn, "ALG_PARFOR")));
+  assert((Absyn_Algorithm_ALG__PARFOR_type = jl_get_global(Absyn, jl_symbol("ALG_PARFOR"))));
+  assert((Absyn_Algorithm_ALG__FOR = jl_get_function(Absyn, "ALG_FOR")));
+  assert((Absyn_Algorithm_ALG__FOR_type = jl_get_global(Absyn, jl_symbol("ALG_FOR"))));
+  assert((Absyn_Algorithm_ALG__IF = jl_get_function(Absyn, "ALG_IF")));
+  assert((Absyn_Algorithm_ALG__IF_type = jl_get_global(Absyn, jl_symbol("ALG_IF"))));
+  assert((Absyn_Algorithm_ALG__ASSIGN = jl_get_function(Absyn, "ALG_ASSIGN")));
+  assert((Absyn_Algorithm_ALG__ASSIGN_type = jl_get_global(Absyn, jl_symbol("ALG_ASSIGN"))));
+  assert((Absyn_Modification = jl_get_global(Absyn, jl_symbol("Modification"))));
+  assert((Absyn_Modification_CLASSMOD = jl_get_function(Absyn, "CLASSMOD")));
+  assert((Absyn_Modification_CLASSMOD_type = jl_get_global(Absyn, jl_symbol("CLASSMOD"))));
+  assert((Absyn_EqMod = jl_get_global(Absyn, jl_symbol("EqMod"))));
+  assert((Absyn_EqMod_EQMOD = jl_get_function(Absyn, "EQMOD")));
+  assert((Absyn_EqMod_EQMOD_type = jl_get_global(Absyn, jl_symbol("EQMOD"))));
+  assert((Absyn_EqMod_NOMOD = jl_get_function(Absyn, "NOMOD")));
+  assert((Absyn_EqMod_NOMOD_type = jl_get_global(Absyn, jl_symbol("NOMOD"))));
+  assert((Absyn_ElementArg = jl_get_global(Absyn, jl_symbol("ElementArg"))));
+  assert((Absyn_ElementArg_REDECLARATION = jl_get_function(Absyn, "REDECLARATION")));
+  assert((Absyn_ElementArg_REDECLARATION_type = jl_get_global(Absyn, jl_symbol("REDECLARATION"))));
+  assert((Absyn_ElementArg_MODIFICATION = jl_get_function(Absyn, "MODIFICATION")));
+  assert((Absyn_ElementArg_MODIFICATION_type = jl_get_global(Absyn, jl_symbol("MODIFICATION"))));
+  assert((Absyn_RedeclareKeywords = jl_get_global(Absyn, jl_symbol("RedeclareKeywords"))));
+  assert((Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE = jl_get_function(Absyn, "REDECLARE_REPLACEABLE")));
+  assert((Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE_type = jl_get_global(Absyn, jl_symbol("REDECLARE_REPLACEABLE"))));
+  assert((Absyn_RedeclareKeywords_REPLACEABLE = jl_get_function(Absyn, "REPLACEABLE")));
+  assert((Absyn_RedeclareKeywords_REPLACEABLE_type = jl_get_global(Absyn, jl_symbol("REPLACEABLE"))));
+  assert((Absyn_RedeclareKeywords_REDECLARE = jl_get_function(Absyn, "REDECLARE")));
+  assert((Absyn_RedeclareKeywords_REDECLARE_type = jl_get_global(Absyn, jl_symbol("REDECLARE"))));
+  assert((Absyn_Each = jl_get_global(Absyn, jl_symbol("Each"))));
+  assert((Absyn_Each_NON__EACH = jl_get_function(Absyn, "NON_EACH")));
+  assert((Absyn_Each_NON__EACH_type = jl_get_global(Absyn, jl_symbol("NON_EACH"))));
+  assert((Absyn_Each_EACH = jl_get_function(Absyn, "EACH")));
+  assert((Absyn_Each_EACH_type = jl_get_global(Absyn, jl_symbol("EACH"))));
+  assert((Absyn_ElementAttributes = jl_get_global(Absyn, jl_symbol("ElementAttributes"))));
+  assert((Absyn_ElementAttributes_ATTR = jl_get_function(Absyn, "ATTR")));
+  assert((Absyn_ElementAttributes_ATTR_type = jl_get_global(Absyn, jl_symbol("ATTR"))));
+  assert((Absyn_IsField = jl_get_global(Absyn, jl_symbol("IsField"))));
+  assert((Absyn_IsField_FIELD = jl_get_function(Absyn, "FIELD")));
+  assert((Absyn_IsField_FIELD_type = jl_get_global(Absyn, jl_symbol("FIELD"))));
+  assert((Absyn_IsField_NONFIELD = jl_get_function(Absyn, "NONFIELD")));
+  assert((Absyn_IsField_NONFIELD_type = jl_get_global(Absyn, jl_symbol("NONFIELD"))));
+  assert((Absyn_Parallelism = jl_get_global(Absyn, jl_symbol("Parallelism"))));
+  assert((Absyn_Parallelism_NON__PARALLEL = jl_get_function(Absyn, "NON_PARALLEL")));
+  assert((Absyn_Parallelism_NON__PARALLEL_type = jl_get_global(Absyn, jl_symbol("NON_PARALLEL"))));
+  assert((Absyn_Parallelism_PARLOCAL = jl_get_function(Absyn, "PARLOCAL")));
+  assert((Absyn_Parallelism_PARLOCAL_type = jl_get_global(Absyn, jl_symbol("PARLOCAL"))));
+  assert((Absyn_Parallelism_PARGLOBAL = jl_get_function(Absyn, "PARGLOBAL")));
+  assert((Absyn_Parallelism_PARGLOBAL_type = jl_get_global(Absyn, jl_symbol("PARGLOBAL"))));
+  assert((Absyn_FlowStream = jl_get_global(Absyn, jl_symbol("FlowStream"))));
+  assert((Absyn_FlowStream_NOT__FLOW__STREAM = jl_get_function(Absyn, "NOT_FLOW_STREAM")));
+  assert((Absyn_FlowStream_NOT__FLOW__STREAM_type = jl_get_global(Absyn, jl_symbol("NOT_FLOW_STREAM"))));
+  assert((Absyn_FlowStream_STREAM = jl_get_function(Absyn, "STREAM")));
+  assert((Absyn_FlowStream_STREAM_type = jl_get_global(Absyn, jl_symbol("STREAM"))));
+  assert((Absyn_FlowStream_FLOW = jl_get_function(Absyn, "FLOW")));
+  assert((Absyn_FlowStream_FLOW_type = jl_get_global(Absyn, jl_symbol("FLOW"))));
+  assert((Absyn_Variability = jl_get_global(Absyn, jl_symbol("Variability"))));
+  assert((Absyn_Variability_CONST = jl_get_function(Absyn, "CONST")));
+  assert((Absyn_Variability_CONST_type = jl_get_global(Absyn, jl_symbol("CONST"))));
+  assert((Absyn_Variability_PARAM = jl_get_function(Absyn, "PARAM")));
+  assert((Absyn_Variability_PARAM_type = jl_get_global(Absyn, jl_symbol("PARAM"))));
+  assert((Absyn_Variability_DISCRETE = jl_get_function(Absyn, "DISCRETE")));
+  assert((Absyn_Variability_DISCRETE_type = jl_get_global(Absyn, jl_symbol("DISCRETE"))));
+  assert((Absyn_Variability_VAR = jl_get_function(Absyn, "VAR")));
+  assert((Absyn_Variability_VAR_type = jl_get_global(Absyn, jl_symbol("VAR"))));
+  assert((Absyn_Direction = jl_get_global(Absyn, jl_symbol("Direction"))));
+  assert((Absyn_Direction_INPUT__OUTPUT = jl_get_function(Absyn, "INPUT_OUTPUT")));
+  assert((Absyn_Direction_INPUT__OUTPUT_type = jl_get_global(Absyn, jl_symbol("INPUT_OUTPUT"))));
+  assert((Absyn_Direction_BIDIR = jl_get_function(Absyn, "BIDIR")));
+  assert((Absyn_Direction_BIDIR_type = jl_get_global(Absyn, jl_symbol("BIDIR"))));
+  assert((Absyn_Direction_OUTPUT = jl_get_function(Absyn, "OUTPUT")));
+  assert((Absyn_Direction_OUTPUT_type = jl_get_global(Absyn, jl_symbol("OUTPUT"))));
+  assert((Absyn_Direction_INPUT = jl_get_function(Absyn, "INPUT")));
+  assert((Absyn_Direction_INPUT_type = jl_get_global(Absyn, jl_symbol("INPUT"))));
+  assert((Absyn_Exp = jl_get_global(Absyn, jl_symbol("Exp"))));
+  assert((Absyn_Exp_DOT = jl_get_function(Absyn, "DOT")));
+  assert((Absyn_Exp_DOT_type = jl_get_global(Absyn, jl_symbol("DOT"))));
+  assert((Absyn_Exp_LIST = jl_get_function(Absyn, "LIST")));
+  assert((Absyn_Exp_LIST_type = jl_get_global(Absyn, jl_symbol("LIST"))));
+  assert((Absyn_Exp_MATCHEXP = jl_get_function(Absyn, "MATCHEXP")));
+  assert((Absyn_Exp_MATCHEXP_type = jl_get_global(Absyn, jl_symbol("MATCHEXP"))));
+  assert((Absyn_Exp_CONS = jl_get_function(Absyn, "CONS")));
+  assert((Absyn_Exp_CONS_type = jl_get_global(Absyn, jl_symbol("CONS"))));
+  assert((Absyn_Exp_AS = jl_get_function(Absyn, "AS")));
+  assert((Absyn_Exp_AS_type = jl_get_global(Absyn, jl_symbol("AS"))));
+  assert((Absyn_Exp_CODE = jl_get_function(Absyn, "CODE")));
+  assert((Absyn_Exp_CODE_type = jl_get_global(Absyn, jl_symbol("CODE"))));
+  assert((Absyn_Exp_END = jl_get_function(Absyn, "END")));
+  assert((Absyn_Exp_END_type = jl_get_global(Absyn, jl_symbol("END"))));
+  assert((Absyn_Exp_TUPLE = jl_get_function(Absyn, "TUPLE")));
+  assert((Absyn_Exp_TUPLE_type = jl_get_global(Absyn, jl_symbol("TUPLE"))));
+  assert((Absyn_Exp_RANGE = jl_get_function(Absyn, "RANGE")));
+  assert((Absyn_Exp_RANGE_type = jl_get_global(Absyn, jl_symbol("RANGE"))));
+  assert((Absyn_Exp_MATRIX = jl_get_function(Absyn, "MATRIX")));
+  assert((Absyn_Exp_MATRIX_type = jl_get_global(Absyn, jl_symbol("MATRIX"))));
+  assert((Absyn_Exp_ARRAY = jl_get_function(Absyn, "ARRAY")));
+  assert((Absyn_Exp_ARRAY_type = jl_get_global(Absyn, jl_symbol("ARRAY"))));
+  assert((Absyn_Exp_PARTEVALFUNCTION = jl_get_function(Absyn, "PARTEVALFUNCTION")));
+  assert((Absyn_Exp_PARTEVALFUNCTION_type = jl_get_global(Absyn, jl_symbol("PARTEVALFUNCTION"))));
+  assert((Absyn_Exp_CALL = jl_get_function(Absyn, "CALL")));
+  assert((Absyn_Exp_CALL_type = jl_get_global(Absyn, jl_symbol("CALL"))));
+  assert((Absyn_Exp_IFEXP = jl_get_function(Absyn, "IFEXP")));
+  assert((Absyn_Exp_IFEXP_type = jl_get_global(Absyn, jl_symbol("IFEXP"))));
+  assert((Absyn_Exp_RELATION = jl_get_function(Absyn, "RELATION")));
+  assert((Absyn_Exp_RELATION_type = jl_get_global(Absyn, jl_symbol("RELATION"))));
+  assert((Absyn_Exp_LUNARY = jl_get_function(Absyn, "LUNARY")));
+  assert((Absyn_Exp_LUNARY_type = jl_get_global(Absyn, jl_symbol("LUNARY"))));
+  assert((Absyn_Exp_LBINARY = jl_get_function(Absyn, "LBINARY")));
+  assert((Absyn_Exp_LBINARY_type = jl_get_global(Absyn, jl_symbol("LBINARY"))));
+  assert((Absyn_Exp_UNARY = jl_get_function(Absyn, "UNARY")));
+  assert((Absyn_Exp_UNARY_type = jl_get_global(Absyn, jl_symbol("UNARY"))));
+  assert((Absyn_Exp_BINARY = jl_get_function(Absyn, "BINARY")));
+  assert((Absyn_Exp_BINARY_type = jl_get_global(Absyn, jl_symbol("BINARY"))));
+  assert((Absyn_Exp_BOOL = jl_get_function(Absyn, "BOOL")));
+  assert((Absyn_Exp_BOOL_type = jl_get_global(Absyn, jl_symbol("BOOL"))));
+  assert((Absyn_Exp_STRING = jl_get_function(Absyn, "STRING")));
+  assert((Absyn_Exp_STRING_type = jl_get_global(Absyn, jl_symbol("STRING"))));
+  assert((Absyn_Exp_CREF = jl_get_function(Absyn, "CREF")));
+  assert((Absyn_Exp_CREF_type = jl_get_global(Absyn, jl_symbol("CREF"))));
+  assert((Absyn_Exp_REAL = jl_get_function(Absyn, "REAL")));
+  assert((Absyn_Exp_REAL_type = jl_get_global(Absyn, jl_symbol("REAL"))));
+  assert((Absyn_Exp_INTEGER = jl_get_function(Absyn, "INTEGER")));
+  assert((Absyn_Exp_INTEGER_type = jl_get_global(Absyn, jl_symbol("INTEGER"))));
+  assert((Absyn_Case = jl_get_global(Absyn, jl_symbol("Case"))));
+  assert((Absyn_Case_ELSE = jl_get_function(Absyn, "ELSE")));
+  assert((Absyn_Case_ELSE_type = jl_get_global(Absyn, jl_symbol("ELSE"))));
+  assert((Absyn_Case_CASE = jl_get_function(Absyn, "CASE")));
+  assert((Absyn_Case_CASE_type = jl_get_global(Absyn, jl_symbol("CASE"))));
+  assert((Absyn_MatchType = jl_get_global(Absyn, jl_symbol("MatchType"))));
+  assert((Absyn_MatchType_MATCHCONTINUE = jl_get_function(Absyn, "MATCHCONTINUE")));
+  assert((Absyn_MatchType_MATCHCONTINUE_type = jl_get_global(Absyn, jl_symbol("MATCHCONTINUE"))));
+  assert((Absyn_MatchType_MATCH = jl_get_function(Absyn, "MATCH")));
+  assert((Absyn_MatchType_MATCH_type = jl_get_global(Absyn, jl_symbol("MATCH"))));
+  assert((Absyn_CodeNode = jl_get_global(Absyn, jl_symbol("CodeNode"))));
+  assert((Absyn_CodeNode_C__MODIFICATION = jl_get_function(Absyn, "C_MODIFICATION")));
+  assert((Absyn_CodeNode_C__MODIFICATION_type = jl_get_global(Absyn, jl_symbol("C_MODIFICATION"))));
+  assert((Absyn_CodeNode_C__EXPRESSION = jl_get_function(Absyn, "C_EXPRESSION")));
+  assert((Absyn_CodeNode_C__EXPRESSION_type = jl_get_global(Absyn, jl_symbol("C_EXPRESSION"))));
+  assert((Absyn_CodeNode_C__ELEMENT = jl_get_function(Absyn, "C_ELEMENT")));
+  assert((Absyn_CodeNode_C__ELEMENT_type = jl_get_global(Absyn, jl_symbol("C_ELEMENT"))));
+  assert((Absyn_CodeNode_C__ALGORITHMSECTION = jl_get_function(Absyn, "C_ALGORITHMSECTION")));
+  assert((Absyn_CodeNode_C__ALGORITHMSECTION_type = jl_get_global(Absyn, jl_symbol("C_ALGORITHMSECTION"))));
+  assert((Absyn_CodeNode_C__EQUATIONSECTION = jl_get_function(Absyn, "C_EQUATIONSECTION")));
+  assert((Absyn_CodeNode_C__EQUATIONSECTION_type = jl_get_global(Absyn, jl_symbol("C_EQUATIONSECTION"))));
+  assert((Absyn_CodeNode_C__CONSTRAINTSECTION = jl_get_function(Absyn, "C_CONSTRAINTSECTION")));
+  assert((Absyn_CodeNode_C__CONSTRAINTSECTION_type = jl_get_global(Absyn, jl_symbol("C_CONSTRAINTSECTION"))));
+  assert((Absyn_CodeNode_C__VARIABLENAME = jl_get_function(Absyn, "C_VARIABLENAME")));
+  assert((Absyn_CodeNode_C__VARIABLENAME_type = jl_get_global(Absyn, jl_symbol("C_VARIABLENAME"))));
+  assert((Absyn_CodeNode_C__TYPENAME = jl_get_function(Absyn, "C_TYPENAME")));
+  assert((Absyn_CodeNode_C__TYPENAME_type = jl_get_global(Absyn, jl_symbol("C_TYPENAME"))));
+  assert((Absyn_FunctionArgs = jl_get_global(Absyn, jl_symbol("FunctionArgs"))));
+  assert((Absyn_FunctionArgs_FOR__ITER__FARG = jl_get_function(Absyn, "FOR_ITER_FARG")));
+  assert((Absyn_FunctionArgs_FOR__ITER__FARG_type = jl_get_global(Absyn, jl_symbol("FOR_ITER_FARG"))));
+  assert((Absyn_FunctionArgs_FUNCTIONARGS = jl_get_function(Absyn, "FUNCTIONARGS")));
+  assert((Absyn_FunctionArgs_FUNCTIONARGS_type = jl_get_global(Absyn, jl_symbol("FUNCTIONARGS"))));
+  assert((Absyn_ReductionIterType = jl_get_global(Absyn, jl_symbol("ReductionIterType"))));
+  assert((Absyn_ReductionIterType_THREAD = jl_get_function(Absyn, "THREAD")));
+  assert((Absyn_ReductionIterType_THREAD_type = jl_get_global(Absyn, jl_symbol("THREAD"))));
+  assert((Absyn_ReductionIterType_COMBINE = jl_get_function(Absyn, "COMBINE")));
+  assert((Absyn_ReductionIterType_COMBINE_type = jl_get_global(Absyn, jl_symbol("COMBINE"))));
+  assert((Absyn_NamedArg = jl_get_global(Absyn, jl_symbol("NamedArg"))));
+  assert((Absyn_NamedArg_NAMEDARG = jl_get_function(Absyn, "NAMEDARG")));
+  assert((Absyn_NamedArg_NAMEDARG_type = jl_get_global(Absyn, jl_symbol("NAMEDARG"))));
+  assert((Absyn_Operator = jl_get_global(Absyn, jl_symbol("Operator"))));
+  assert((Absyn_Operator_NEQUAL = jl_get_function(Absyn, "NEQUAL")));
+  assert((Absyn_Operator_NEQUAL_type = jl_get_global(Absyn, jl_symbol("NEQUAL"))));
+  assert((Absyn_Operator_EQUAL = jl_get_function(Absyn, "EQUAL")));
+  assert((Absyn_Operator_EQUAL_type = jl_get_global(Absyn, jl_symbol("EQUAL"))));
+  assert((Absyn_Operator_GREATEREQ = jl_get_function(Absyn, "GREATEREQ")));
+  assert((Absyn_Operator_GREATEREQ_type = jl_get_global(Absyn, jl_symbol("GREATEREQ"))));
+  assert((Absyn_Operator_GREATER = jl_get_function(Absyn, "GREATER")));
+  assert((Absyn_Operator_GREATER_type = jl_get_global(Absyn, jl_symbol("GREATER"))));
+  assert((Absyn_Operator_LESSEQ = jl_get_function(Absyn, "LESSEQ")));
+  assert((Absyn_Operator_LESSEQ_type = jl_get_global(Absyn, jl_symbol("LESSEQ"))));
+  assert((Absyn_Operator_LESS = jl_get_function(Absyn, "LESS")));
+  assert((Absyn_Operator_LESS_type = jl_get_global(Absyn, jl_symbol("LESS"))));
+  assert((Absyn_Operator_NOT = jl_get_function(Absyn, "NOT")));
+  assert((Absyn_Operator_NOT_type = jl_get_global(Absyn, jl_symbol("NOT"))));
+  assert((Absyn_Operator_OR = jl_get_function(Absyn, "OR")));
+  assert((Absyn_Operator_OR_type = jl_get_global(Absyn, jl_symbol("OR"))));
+  assert((Absyn_Operator_AND = jl_get_function(Absyn, "AND")));
+  assert((Absyn_Operator_AND_type = jl_get_global(Absyn, jl_symbol("AND"))));
+  assert((Absyn_Operator_UMINUS__EW = jl_get_function(Absyn, "UMINUS_EW")));
+  assert((Absyn_Operator_UMINUS__EW_type = jl_get_global(Absyn, jl_symbol("UMINUS_EW"))));
+  assert((Absyn_Operator_UPLUS__EW = jl_get_function(Absyn, "UPLUS_EW")));
+  assert((Absyn_Operator_UPLUS__EW_type = jl_get_global(Absyn, jl_symbol("UPLUS_EW"))));
+  assert((Absyn_Operator_POW__EW = jl_get_function(Absyn, "POW_EW")));
+  assert((Absyn_Operator_POW__EW_type = jl_get_global(Absyn, jl_symbol("POW_EW"))));
+  assert((Absyn_Operator_DIV__EW = jl_get_function(Absyn, "DIV_EW")));
+  assert((Absyn_Operator_DIV__EW_type = jl_get_global(Absyn, jl_symbol("DIV_EW"))));
+  assert((Absyn_Operator_MUL__EW = jl_get_function(Absyn, "MUL_EW")));
+  assert((Absyn_Operator_MUL__EW_type = jl_get_global(Absyn, jl_symbol("MUL_EW"))));
+  assert((Absyn_Operator_SUB__EW = jl_get_function(Absyn, "SUB_EW")));
+  assert((Absyn_Operator_SUB__EW_type = jl_get_global(Absyn, jl_symbol("SUB_EW"))));
+  assert((Absyn_Operator_ADD__EW = jl_get_function(Absyn, "ADD_EW")));
+  assert((Absyn_Operator_ADD__EW_type = jl_get_global(Absyn, jl_symbol("ADD_EW"))));
+  assert((Absyn_Operator_UMINUS = jl_get_function(Absyn, "UMINUS")));
+  assert((Absyn_Operator_UMINUS_type = jl_get_global(Absyn, jl_symbol("UMINUS"))));
+  assert((Absyn_Operator_UPLUS = jl_get_function(Absyn, "UPLUS")));
+  assert((Absyn_Operator_UPLUS_type = jl_get_global(Absyn, jl_symbol("UPLUS"))));
+  assert((Absyn_Operator_POW = jl_get_function(Absyn, "POW")));
+  assert((Absyn_Operator_POW_type = jl_get_global(Absyn, jl_symbol("POW"))));
+  assert((Absyn_Operator_DIV = jl_get_function(Absyn, "DIV")));
+  assert((Absyn_Operator_DIV_type = jl_get_global(Absyn, jl_symbol("DIV"))));
+  assert((Absyn_Operator_MUL = jl_get_function(Absyn, "MUL")));
+  assert((Absyn_Operator_MUL_type = jl_get_global(Absyn, jl_symbol("MUL"))));
+  assert((Absyn_Operator_SUB = jl_get_function(Absyn, "SUB")));
+  assert((Absyn_Operator_SUB_type = jl_get_global(Absyn, jl_symbol("SUB"))));
+  assert((Absyn_Operator_ADD = jl_get_function(Absyn, "ADD")));
+  assert((Absyn_Operator_ADD_type = jl_get_global(Absyn, jl_symbol("ADD"))));
+  assert((Absyn_Subscript = jl_get_global(Absyn, jl_symbol("Subscript"))));
+  assert((Absyn_Subscript_SUBSCRIPT = jl_get_function(Absyn, "SUBSCRIPT")));
+  assert((Absyn_Subscript_SUBSCRIPT_type = jl_get_global(Absyn, jl_symbol("SUBSCRIPT"))));
+  assert((Absyn_Subscript_NOSUB = jl_get_function(Absyn, "NOSUB")));
+  assert((Absyn_Subscript_NOSUB_type = jl_get_global(Absyn, jl_symbol("NOSUB"))));
+  assert((Absyn_ComponentRef = jl_get_global(Absyn, jl_symbol("ComponentRef"))));
+  assert((Absyn_ComponentRef_ALLWILD = jl_get_function(Absyn, "ALLWILD")));
+  assert((Absyn_ComponentRef_ALLWILD_type = jl_get_global(Absyn, jl_symbol("ALLWILD"))));
+  assert((Absyn_ComponentRef_WILD = jl_get_function(Absyn, "WILD")));
+  assert((Absyn_ComponentRef_WILD_type = jl_get_global(Absyn, jl_symbol("WILD"))));
+  assert((Absyn_ComponentRef_CREF__IDENT = jl_get_function(Absyn, "CREF_IDENT")));
+  assert((Absyn_ComponentRef_CREF__IDENT_type = jl_get_global(Absyn, jl_symbol("CREF_IDENT"))));
+  assert((Absyn_ComponentRef_CREF__QUAL = jl_get_function(Absyn, "CREF_QUAL")));
+  assert((Absyn_ComponentRef_CREF__QUAL_type = jl_get_global(Absyn, jl_symbol("CREF_QUAL"))));
+  assert((Absyn_ComponentRef_CREF__FULLYQUALIFIED = jl_get_function(Absyn, "CREF_FULLYQUALIFIED")));
+  assert((Absyn_ComponentRef_CREF__FULLYQUALIFIED_type = jl_get_global(Absyn, jl_symbol("CREF_FULLYQUALIFIED"))));
+  assert((Absyn_Path = jl_get_global(Absyn, jl_symbol("Path"))));
+  assert((Absyn_Path_FULLYQUALIFIED = jl_get_function(Absyn, "FULLYQUALIFIED")));
+  assert((Absyn_Path_FULLYQUALIFIED_type = jl_get_global(Absyn, jl_symbol("FULLYQUALIFIED"))));
+  assert((Absyn_Path_IDENT = jl_get_function(Absyn, "IDENT")));
+  assert((Absyn_Path_IDENT_type = jl_get_global(Absyn, jl_symbol("IDENT"))));
+  assert((Absyn_Path_QUALIFIED = jl_get_function(Absyn, "QUALIFIED")));
+  assert((Absyn_Path_QUALIFIED_type = jl_get_global(Absyn, jl_symbol("QUALIFIED"))));
+  assert((Absyn_Restriction = jl_get_global(Absyn, jl_symbol("Restriction"))));
+  assert((Absyn_Restriction_R__UNKNOWN = jl_get_function(Absyn, "R_UNKNOWN")));
+  assert((Absyn_Restriction_R__UNKNOWN_type = jl_get_global(Absyn, jl_symbol("R_UNKNOWN"))));
+  assert((Absyn_Restriction_R__METARECORD = jl_get_function(Absyn, "R_METARECORD")));
+  assert((Absyn_Restriction_R__METARECORD_type = jl_get_global(Absyn, jl_symbol("R_METARECORD"))));
+  assert((Absyn_Restriction_R__UNIONTYPE = jl_get_function(Absyn, "R_UNIONTYPE")));
+  assert((Absyn_Restriction_R__UNIONTYPE_type = jl_get_global(Absyn, jl_symbol("R_UNIONTYPE"))));
+  assert((Absyn_Restriction_R__PREDEFINED__CLOCK = jl_get_function(Absyn, "R_PREDEFINED_CLOCK")));
+  assert((Absyn_Restriction_R__PREDEFINED__CLOCK_type = jl_get_global(Absyn, jl_symbol("R_PREDEFINED_CLOCK"))));
+  assert((Absyn_Restriction_R__PREDEFINED__ENUMERATION = jl_get_function(Absyn, "R_PREDEFINED_ENUMERATION")));
+  assert((Absyn_Restriction_R__PREDEFINED__ENUMERATION_type = jl_get_global(Absyn, jl_symbol("R_PREDEFINED_ENUMERATION"))));
+  assert((Absyn_Restriction_R__PREDEFINED__BOOLEAN = jl_get_function(Absyn, "R_PREDEFINED_BOOLEAN")));
+  assert((Absyn_Restriction_R__PREDEFINED__BOOLEAN_type = jl_get_global(Absyn, jl_symbol("R_PREDEFINED_BOOLEAN"))));
+  assert((Absyn_Restriction_R__PREDEFINED__STRING = jl_get_function(Absyn, "R_PREDEFINED_STRING")));
+  assert((Absyn_Restriction_R__PREDEFINED__STRING_type = jl_get_global(Absyn, jl_symbol("R_PREDEFINED_STRING"))));
+  assert((Absyn_Restriction_R__PREDEFINED__REAL = jl_get_function(Absyn, "R_PREDEFINED_REAL")));
+  assert((Absyn_Restriction_R__PREDEFINED__REAL_type = jl_get_global(Absyn, jl_symbol("R_PREDEFINED_REAL"))));
+  assert((Absyn_Restriction_R__PREDEFINED__INTEGER = jl_get_function(Absyn, "R_PREDEFINED_INTEGER")));
+  assert((Absyn_Restriction_R__PREDEFINED__INTEGER_type = jl_get_global(Absyn, jl_symbol("R_PREDEFINED_INTEGER"))));
+  assert((Absyn_Restriction_R__ENUMERATION = jl_get_function(Absyn, "R_ENUMERATION")));
+  assert((Absyn_Restriction_R__ENUMERATION_type = jl_get_global(Absyn, jl_symbol("R_ENUMERATION"))));
+  assert((Absyn_Restriction_R__OPERATOR__RECORD = jl_get_function(Absyn, "R_OPERATOR_RECORD")));
+  assert((Absyn_Restriction_R__OPERATOR__RECORD_type = jl_get_global(Absyn, jl_symbol("R_OPERATOR_RECORD"))));
+  assert((Absyn_Restriction_R__OPERATOR = jl_get_function(Absyn, "R_OPERATOR")));
+  assert((Absyn_Restriction_R__OPERATOR_type = jl_get_global(Absyn, jl_symbol("R_OPERATOR"))));
+  assert((Absyn_Restriction_R__FUNCTION = jl_get_function(Absyn, "R_FUNCTION")));
+  assert((Absyn_Restriction_R__FUNCTION_type = jl_get_global(Absyn, jl_symbol("R_FUNCTION"))));
+  assert((Absyn_Restriction_R__PACKAGE = jl_get_function(Absyn, "R_PACKAGE")));
+  assert((Absyn_Restriction_R__PACKAGE_type = jl_get_global(Absyn, jl_symbol("R_PACKAGE"))));
+  assert((Absyn_Restriction_R__TYPE = jl_get_function(Absyn, "R_TYPE")));
+  assert((Absyn_Restriction_R__TYPE_type = jl_get_global(Absyn, jl_symbol("R_TYPE"))));
+  assert((Absyn_Restriction_R__EXP__CONNECTOR = jl_get_function(Absyn, "R_EXP_CONNECTOR")));
+  assert((Absyn_Restriction_R__EXP__CONNECTOR_type = jl_get_global(Absyn, jl_symbol("R_EXP_CONNECTOR"))));
+  assert((Absyn_Restriction_R__CONNECTOR = jl_get_function(Absyn, "R_CONNECTOR")));
+  assert((Absyn_Restriction_R__CONNECTOR_type = jl_get_global(Absyn, jl_symbol("R_CONNECTOR"))));
+  assert((Absyn_Restriction_R__BLOCK = jl_get_function(Absyn, "R_BLOCK")));
+  assert((Absyn_Restriction_R__BLOCK_type = jl_get_global(Absyn, jl_symbol("R_BLOCK"))));
+  assert((Absyn_Restriction_R__RECORD = jl_get_function(Absyn, "R_RECORD")));
+  assert((Absyn_Restriction_R__RECORD_type = jl_get_global(Absyn, jl_symbol("R_RECORD"))));
+  assert((Absyn_Restriction_R__MODEL = jl_get_function(Absyn, "R_MODEL")));
+  assert((Absyn_Restriction_R__MODEL_type = jl_get_global(Absyn, jl_symbol("R_MODEL"))));
+  assert((Absyn_Restriction_R__OPTIMIZATION = jl_get_function(Absyn, "R_OPTIMIZATION")));
+  assert((Absyn_Restriction_R__OPTIMIZATION_type = jl_get_global(Absyn, jl_symbol("R_OPTIMIZATION"))));
+  assert((Absyn_Restriction_R__CLASS = jl_get_function(Absyn, "R_CLASS")));
+  assert((Absyn_Restriction_R__CLASS_type = jl_get_global(Absyn, jl_symbol("R_CLASS"))));
+  assert((Absyn_FunctionPurity = jl_get_global(Absyn, jl_symbol("FunctionPurity"))));
+  assert((Absyn_FunctionPurity_NO__PURITY = jl_get_function(Absyn, "NO_PURITY")));
+  assert((Absyn_FunctionPurity_NO__PURITY_type = jl_get_global(Absyn, jl_symbol("NO_PURITY"))));
+  assert((Absyn_FunctionPurity_IMPURE = jl_get_function(Absyn, "IMPURE")));
+  assert((Absyn_FunctionPurity_IMPURE_type = jl_get_global(Absyn, jl_symbol("IMPURE"))));
+  assert((Absyn_FunctionPurity_PURE = jl_get_function(Absyn, "PURE")));
+  assert((Absyn_FunctionPurity_PURE_type = jl_get_global(Absyn, jl_symbol("PURE"))));
+  assert((Absyn_FunctionRestriction = jl_get_global(Absyn, jl_symbol("FunctionRestriction"))));
+  assert((Absyn_FunctionRestriction_FR__KERNEL__FUNCTION = jl_get_function(Absyn, "FR_KERNEL_FUNCTION")));
+  assert((Absyn_FunctionRestriction_FR__KERNEL__FUNCTION_type = jl_get_global(Absyn, jl_symbol("FR_KERNEL_FUNCTION"))));
+  assert((Absyn_FunctionRestriction_FR__PARALLEL__FUNCTION = jl_get_function(Absyn, "FR_PARALLEL_FUNCTION")));
+  assert((Absyn_FunctionRestriction_FR__PARALLEL__FUNCTION_type = jl_get_global(Absyn, jl_symbol("FR_PARALLEL_FUNCTION"))));
+  assert((Absyn_FunctionRestriction_FR__OPERATOR__FUNCTION = jl_get_function(Absyn, "FR_OPERATOR_FUNCTION")));
+  assert((Absyn_FunctionRestriction_FR__OPERATOR__FUNCTION_type = jl_get_global(Absyn, jl_symbol("FR_OPERATOR_FUNCTION"))));
+  assert((Absyn_FunctionRestriction_FR__NORMAL__FUNCTION = jl_get_function(Absyn, "FR_NORMAL_FUNCTION")));
+  assert((Absyn_FunctionRestriction_FR__NORMAL__FUNCTION_type = jl_get_global(Absyn, jl_symbol("FR_NORMAL_FUNCTION"))));
+  assert((Absyn_Annotation = jl_get_global(Absyn, jl_symbol("Annotation"))));
+  assert((Absyn_Annotation_ANNOTATION = jl_get_function(Absyn, "ANNOTATION")));
+  assert((Absyn_Annotation_ANNOTATION_type = jl_get_global(Absyn, jl_symbol("ANNOTATION"))));
+  assert((Absyn_Comment = jl_get_global(Absyn, jl_symbol("Comment"))));
+  assert((Absyn_Comment_COMMENT = jl_get_function(Absyn, "COMMENT")));
+  assert((Absyn_Comment_COMMENT_type = jl_get_global(Absyn, jl_symbol("COMMENT"))));
+  assert((Absyn_ExternalDecl = jl_get_global(Absyn, jl_symbol("ExternalDecl"))));
+  assert((Absyn_ExternalDecl_EXTERNALDECL = jl_get_function(Absyn, "EXTERNALDECL")));
+  assert((Absyn_ExternalDecl_EXTERNALDECL_type = jl_get_global(Absyn, jl_symbol("EXTERNALDECL"))));
+  assert((Absyn_Ref = jl_get_global(Absyn, jl_symbol("Ref"))));
+  assert((Absyn_Ref_RIM = jl_get_function(Absyn, "RIM")));
+  assert((Absyn_Ref_RIM_type = jl_get_global(Absyn, jl_symbol("RIM"))));
+  assert((Absyn_Ref_RTS = jl_get_function(Absyn, "RTS")));
+  assert((Absyn_Ref_RTS_type = jl_get_global(Absyn, jl_symbol("RTS"))));
+  assert((Absyn_Ref_RCR = jl_get_function(Absyn, "RCR")));
+  assert((Absyn_Ref_RCR_type = jl_get_global(Absyn, jl_symbol("RCR"))));
+  assert((Absyn_Msg = jl_get_global(Absyn, jl_symbol("Msg"))));
+  assert((Absyn_Msg_NO__MSG = jl_get_function(Absyn, "NO_MSG")));
+  assert((Absyn_Msg_NO__MSG_type = jl_get_global(Absyn, jl_symbol("NO_MSG"))));
+  assert((Absyn_Msg_MSG = jl_get_function(Absyn, "MSG")));
+  assert((Absyn_Msg_MSG_type = jl_get_global(Absyn, jl_symbol("MSG"))));
 }
 #else
 void OpenModelica_initAbsynReferences();
 #endif
+extern jl_value_t *Absyn_ForIterator;
 extern jl_function_t *Absyn_ForIterator_ITERATOR;
 extern jl_function_t *Absyn_ForIterator_ITERATOR_type;
 static inline jl_value_t* Absyn__ITERATOR(jl_value_t *name,jl_value_t *guardExp,jl_value_t *range) {
   return jl_call3(Absyn_ForIterator_ITERATOR, name, guardExp, range);
 }
 
+extern jl_value_t *Absyn_Program;
 extern jl_function_t *Absyn_Program_PROGRAM;
 extern jl_function_t *Absyn_Program_PROGRAM_type;
 static inline jl_value_t* Absyn__PROGRAM(jl_value_t *classes,jl_value_t *within_) {
   return jl_call2(Absyn_Program_PROGRAM, classes, within_);
 }
 
+extern jl_value_t *Absyn_Within;
 extern jl_function_t *Absyn_Within_TOP;
 extern jl_function_t *Absyn_Within_TOP_type;
 #define Absyn__TOP jl_call0(Absyn_Within_TOP)
@@ -1074,6 +1235,7 @@ static inline jl_value_t* Absyn__WITHIN(jl_value_t *path) {
   return jl_call1(Absyn_Within_WITHIN, path);
 }
 
+extern jl_value_t *Absyn_Class;
 extern jl_function_t *Absyn_Class_CLASS;
 extern jl_function_t *Absyn_Class_CLASS_type;
 static inline jl_value_t* Absyn__CLASS(jl_value_t *name,jl_value_t *partialPrefix,jl_value_t *finalPrefix,jl_value_t *encapsulatedPrefix,jl_value_t *restriction,jl_value_t *body,jl_value_t *info) {
@@ -1081,6 +1243,7 @@ static inline jl_value_t* Absyn__CLASS(jl_value_t *name,jl_value_t *partialPrefi
   return jl_call(Absyn_Class_CLASS, values, 7);
 }
 
+extern jl_value_t *Absyn_ClassDef;
 extern jl_function_t *Absyn_ClassDef_PDER;
 extern jl_function_t *Absyn_ClassDef_PDER_type;
 static inline jl_value_t* Absyn__PDER(jl_value_t *functionName,jl_value_t *vars,jl_value_t *comment) {
@@ -1120,6 +1283,7 @@ static inline jl_value_t* Absyn__PARTS(jl_value_t *typeVars,jl_value_t *classAtt
   return jl_call(Absyn_ClassDef_PARTS, values, 5);
 }
 
+extern jl_value_t *Absyn_TypeSpec;
 extern jl_function_t *Absyn_TypeSpec_TCOMPLEX;
 extern jl_function_t *Absyn_TypeSpec_TCOMPLEX_type;
 static inline jl_value_t* Absyn__TCOMPLEX(jl_value_t *path,jl_value_t *typeSpecs,jl_value_t *arrayDim) {
@@ -1132,6 +1296,7 @@ static inline jl_value_t* Absyn__TPATH(jl_value_t *path,jl_value_t *arrayDim) {
   return jl_call2(Absyn_TypeSpec_TPATH, path, arrayDim);
 }
 
+extern jl_value_t *Absyn_EnumDef;
 extern jl_function_t *Absyn_EnumDef_ENUM__COLON;
 extern jl_function_t *Absyn_EnumDef_ENUM__COLON_type;
 #define Absyn__ENUM_5fCOLON jl_call0(Absyn_EnumDef_ENUM__COLON)
@@ -1142,12 +1307,14 @@ static inline jl_value_t* Absyn__ENUMLITERALS(jl_value_t *enumLiterals) {
   return jl_call1(Absyn_EnumDef_ENUMLITERALS, enumLiterals);
 }
 
+extern jl_value_t *Absyn_EnumLiteral;
 extern jl_function_t *Absyn_EnumLiteral_ENUMLITERAL;
 extern jl_function_t *Absyn_EnumLiteral_ENUMLITERAL_type;
 static inline jl_value_t* Absyn__ENUMLITERAL(jl_value_t *literal,jl_value_t *comment) {
   return jl_call2(Absyn_EnumLiteral_ENUMLITERAL, literal, comment);
 }
 
+extern jl_value_t *Absyn_ClassPart;
 extern jl_function_t *Absyn_ClassPart_EXTERNAL;
 extern jl_function_t *Absyn_ClassPart_EXTERNAL_type;
 static inline jl_value_t* Absyn__EXTERNAL(jl_value_t *externalDecl,jl_value_t *annotation_) {
@@ -1196,6 +1363,7 @@ static inline jl_value_t* Absyn__PUBLIC(jl_value_t *contents) {
   return jl_call1(Absyn_ClassPart_PUBLIC, contents);
 }
 
+extern jl_value_t *Absyn_ElementItem;
 extern jl_function_t *Absyn_ElementItem_LEXER__COMMENT;
 extern jl_function_t *Absyn_ElementItem_LEXER__COMMENT_type;
 static inline jl_value_t* Absyn__LEXER_5fCOMMENT(jl_value_t *comment) {
@@ -1208,6 +1376,7 @@ static inline jl_value_t* Absyn__ELEMENTITEM(jl_value_t *element) {
   return jl_call1(Absyn_ElementItem_ELEMENTITEM, element);
 }
 
+extern jl_value_t *Absyn_Element;
 extern jl_function_t *Absyn_Element_TEXT;
 extern jl_function_t *Absyn_Element_TEXT_type;
 static inline jl_value_t* Absyn__TEXT(jl_value_t *optName,jl_value_t *string,jl_value_t *info) {
@@ -1227,12 +1396,14 @@ static inline jl_value_t* Absyn__ELEMENT(jl_value_t *finalPrefix,jl_value_t *red
   return jl_call(Absyn_Element_ELEMENT, values, 6);
 }
 
+extern jl_value_t *Absyn_ConstrainClass;
 extern jl_function_t *Absyn_ConstrainClass_CONSTRAINCLASS;
 extern jl_function_t *Absyn_ConstrainClass_CONSTRAINCLASS_type;
 static inline jl_value_t* Absyn__CONSTRAINCLASS(jl_value_t *elementSpec,jl_value_t *comment) {
   return jl_call2(Absyn_ConstrainClass_CONSTRAINCLASS, elementSpec, comment);
 }
 
+extern jl_value_t *Absyn_ElementSpec;
 extern jl_function_t *Absyn_ElementSpec_COMPONENTS;
 extern jl_function_t *Absyn_ElementSpec_COMPONENTS_type;
 static inline jl_value_t* Absyn__COMPONENTS(jl_value_t *attributes,jl_value_t *typeSpec,jl_value_t *components) {
@@ -1257,6 +1428,7 @@ static inline jl_value_t* Absyn__CLASSDEF(jl_value_t *replaceable_,jl_value_t *c
   return jl_call2(Absyn_ElementSpec_CLASSDEF, replaceable_, class_);
 }
 
+extern jl_value_t *Absyn_InnerOuter;
 extern jl_function_t *Absyn_InnerOuter_NOT__INNER__OUTER;
 extern jl_function_t *Absyn_InnerOuter_NOT__INNER__OUTER_type;
 #define Absyn__NOT_5fINNER_5fOUTER jl_call0(Absyn_InnerOuter_NOT__INNER__OUTER)
@@ -1273,6 +1445,7 @@ extern jl_function_t *Absyn_InnerOuter_INNER;
 extern jl_function_t *Absyn_InnerOuter_INNER_type;
 #define Absyn__INNER jl_call0(Absyn_InnerOuter_INNER)
 
+extern jl_value_t *Absyn_Import;
 extern jl_function_t *Absyn_Import_GROUP__IMPORT;
 extern jl_function_t *Absyn_Import_GROUP__IMPORT_type;
 static inline jl_value_t* Absyn__GROUP_5fIMPORT(jl_value_t *prefix,jl_value_t *groups) {
@@ -1297,6 +1470,7 @@ static inline jl_value_t* Absyn__NAMED_5fIMPORT(jl_value_t *name,jl_value_t *pat
   return jl_call2(Absyn_Import_NAMED__IMPORT, name, path);
 }
 
+extern jl_value_t *Absyn_GroupImport;
 extern jl_function_t *Absyn_GroupImport_GROUP__IMPORT__RENAME;
 extern jl_function_t *Absyn_GroupImport_GROUP__IMPORT__RENAME_type;
 static inline jl_value_t* Absyn__GROUP_5fIMPORT_5fRENAME(jl_value_t *rename,jl_value_t *name) {
@@ -1309,18 +1483,21 @@ static inline jl_value_t* Absyn__GROUP_5fIMPORT_5fNAME(jl_value_t *name) {
   return jl_call1(Absyn_GroupImport_GROUP__IMPORT__NAME, name);
 }
 
+extern jl_value_t *Absyn_ComponentItem;
 extern jl_function_t *Absyn_ComponentItem_COMPONENTITEM;
 extern jl_function_t *Absyn_ComponentItem_COMPONENTITEM_type;
 static inline jl_value_t* Absyn__COMPONENTITEM(jl_value_t *component,jl_value_t *condition,jl_value_t *comment) {
   return jl_call3(Absyn_ComponentItem_COMPONENTITEM, component, condition, comment);
 }
 
+extern jl_value_t *Absyn_Component;
 extern jl_function_t *Absyn_Component_COMPONENT;
 extern jl_function_t *Absyn_Component_COMPONENT_type;
 static inline jl_value_t* Absyn__COMPONENT(jl_value_t *name,jl_value_t *arrayDim,jl_value_t *modification) {
   return jl_call3(Absyn_Component_COMPONENT, name, arrayDim, modification);
 }
 
+extern jl_value_t *Absyn_EquationItem;
 extern jl_function_t *Absyn_EquationItem_EQUATIONITEMCOMMENT;
 extern jl_function_t *Absyn_EquationItem_EQUATIONITEMCOMMENT_type;
 static inline jl_value_t* Absyn__EQUATIONITEMCOMMENT(jl_value_t *comment) {
@@ -1333,6 +1510,7 @@ static inline jl_value_t* Absyn__EQUATIONITEM(jl_value_t *equation_,jl_value_t *
   return jl_call3(Absyn_EquationItem_EQUATIONITEM, equation_, comment, info);
 }
 
+extern jl_value_t *Absyn_AlgorithmItem;
 extern jl_function_t *Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT;
 extern jl_function_t *Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT_type;
 static inline jl_value_t* Absyn__ALGORITHMITEMCOMMENT(jl_value_t *comment) {
@@ -1345,6 +1523,7 @@ static inline jl_value_t* Absyn__ALGORITHMITEM(jl_value_t *algorithm_,jl_value_t
   return jl_call3(Absyn_AlgorithmItem_ALGORITHMITEM, algorithm_, comment, info);
 }
 
+extern jl_value_t *Absyn_Equation;
 extern jl_function_t *Absyn_Equation_EQ__FAILURE;
 extern jl_function_t *Absyn_Equation_EQ__FAILURE_type;
 static inline jl_value_t* Absyn__EQ_5fFAILURE(jl_value_t *equ) {
@@ -1394,6 +1573,7 @@ static inline jl_value_t* Absyn__EQ_5fIF(jl_value_t *ifExp,jl_value_t *equationT
   return jl_call(Absyn_Equation_EQ__IF, values, 4);
 }
 
+extern jl_value_t *Absyn_Algorithm;
 extern jl_function_t *Absyn_Algorithm_ALG__CONTINUE;
 extern jl_function_t *Absyn_Algorithm_ALG__CONTINUE_type;
 #define Absyn__ALG_5fCONTINUE jl_call0(Absyn_Algorithm_ALG__CONTINUE)
@@ -1461,12 +1641,14 @@ static inline jl_value_t* Absyn__ALG_5fASSIGN(jl_value_t *assignComponent,jl_val
   return jl_call2(Absyn_Algorithm_ALG__ASSIGN, assignComponent, value);
 }
 
+extern jl_value_t *Absyn_Modification;
 extern jl_function_t *Absyn_Modification_CLASSMOD;
 extern jl_function_t *Absyn_Modification_CLASSMOD_type;
 static inline jl_value_t* Absyn__CLASSMOD(jl_value_t *elementArgLst,jl_value_t *eqMod) {
   return jl_call2(Absyn_Modification_CLASSMOD, elementArgLst, eqMod);
 }
 
+extern jl_value_t *Absyn_EqMod;
 extern jl_function_t *Absyn_EqMod_EQMOD;
 extern jl_function_t *Absyn_EqMod_EQMOD_type;
 static inline jl_value_t* Absyn__EQMOD(jl_value_t *exp,jl_value_t *info) {
@@ -1477,6 +1659,7 @@ extern jl_function_t *Absyn_EqMod_NOMOD;
 extern jl_function_t *Absyn_EqMod_NOMOD_type;
 #define Absyn__NOMOD jl_call0(Absyn_EqMod_NOMOD)
 
+extern jl_value_t *Absyn_ElementArg;
 extern jl_function_t *Absyn_ElementArg_REDECLARATION;
 extern jl_function_t *Absyn_ElementArg_REDECLARATION_type;
 static inline jl_value_t* Absyn__REDECLARATION(jl_value_t *finalPrefix,jl_value_t *redeclareKeywords,jl_value_t *eachPrefix,jl_value_t *elementSpec,jl_value_t *constrainClass,jl_value_t *info) {
@@ -1491,6 +1674,7 @@ static inline jl_value_t* Absyn__MODIFICATION(jl_value_t *finalPrefix,jl_value_t
   return jl_call(Absyn_ElementArg_MODIFICATION, values, 6);
 }
 
+extern jl_value_t *Absyn_RedeclareKeywords;
 extern jl_function_t *Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE;
 extern jl_function_t *Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE_type;
 #define Absyn__REDECLARE_5fREPLACEABLE jl_call0(Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE)
@@ -1503,6 +1687,7 @@ extern jl_function_t *Absyn_RedeclareKeywords_REDECLARE;
 extern jl_function_t *Absyn_RedeclareKeywords_REDECLARE_type;
 #define Absyn__REDECLARE jl_call0(Absyn_RedeclareKeywords_REDECLARE)
 
+extern jl_value_t *Absyn_Each;
 extern jl_function_t *Absyn_Each_NON__EACH;
 extern jl_function_t *Absyn_Each_NON__EACH_type;
 #define Absyn__NON_5fEACH jl_call0(Absyn_Each_NON__EACH)
@@ -1511,6 +1696,7 @@ extern jl_function_t *Absyn_Each_EACH;
 extern jl_function_t *Absyn_Each_EACH_type;
 #define Absyn__EACH jl_call0(Absyn_Each_EACH)
 
+extern jl_value_t *Absyn_ElementAttributes;
 extern jl_function_t *Absyn_ElementAttributes_ATTR;
 extern jl_function_t *Absyn_ElementAttributes_ATTR_type;
 static inline jl_value_t* Absyn__ATTR(jl_value_t *flowPrefix,jl_value_t *streamPrefix,jl_value_t *parallelism,jl_value_t *variability,jl_value_t *direction,jl_value_t *isField,jl_value_t *arrayDim) {
@@ -1518,6 +1704,7 @@ static inline jl_value_t* Absyn__ATTR(jl_value_t *flowPrefix,jl_value_t *streamP
   return jl_call(Absyn_ElementAttributes_ATTR, values, 7);
 }
 
+extern jl_value_t *Absyn_IsField;
 extern jl_function_t *Absyn_IsField_FIELD;
 extern jl_function_t *Absyn_IsField_FIELD_type;
 #define Absyn__FIELD jl_call0(Absyn_IsField_FIELD)
@@ -1526,6 +1713,7 @@ extern jl_function_t *Absyn_IsField_NONFIELD;
 extern jl_function_t *Absyn_IsField_NONFIELD_type;
 #define Absyn__NONFIELD jl_call0(Absyn_IsField_NONFIELD)
 
+extern jl_value_t *Absyn_Parallelism;
 extern jl_function_t *Absyn_Parallelism_NON__PARALLEL;
 extern jl_function_t *Absyn_Parallelism_NON__PARALLEL_type;
 #define Absyn__NON_5fPARALLEL jl_call0(Absyn_Parallelism_NON__PARALLEL)
@@ -1538,6 +1726,7 @@ extern jl_function_t *Absyn_Parallelism_PARGLOBAL;
 extern jl_function_t *Absyn_Parallelism_PARGLOBAL_type;
 #define Absyn__PARGLOBAL jl_call0(Absyn_Parallelism_PARGLOBAL)
 
+extern jl_value_t *Absyn_FlowStream;
 extern jl_function_t *Absyn_FlowStream_NOT__FLOW__STREAM;
 extern jl_function_t *Absyn_FlowStream_NOT__FLOW__STREAM_type;
 #define Absyn__NOT_5fFLOW_5fSTREAM jl_call0(Absyn_FlowStream_NOT__FLOW__STREAM)
@@ -1550,6 +1739,7 @@ extern jl_function_t *Absyn_FlowStream_FLOW;
 extern jl_function_t *Absyn_FlowStream_FLOW_type;
 #define Absyn__FLOW jl_call0(Absyn_FlowStream_FLOW)
 
+extern jl_value_t *Absyn_Variability;
 extern jl_function_t *Absyn_Variability_CONST;
 extern jl_function_t *Absyn_Variability_CONST_type;
 #define Absyn__CONST jl_call0(Absyn_Variability_CONST)
@@ -1566,6 +1756,7 @@ extern jl_function_t *Absyn_Variability_VAR;
 extern jl_function_t *Absyn_Variability_VAR_type;
 #define Absyn__VAR jl_call0(Absyn_Variability_VAR)
 
+extern jl_value_t *Absyn_Direction;
 extern jl_function_t *Absyn_Direction_INPUT__OUTPUT;
 extern jl_function_t *Absyn_Direction_INPUT__OUTPUT_type;
 #define Absyn__INPUT_5fOUTPUT jl_call0(Absyn_Direction_INPUT__OUTPUT)
@@ -1582,6 +1773,7 @@ extern jl_function_t *Absyn_Direction_INPUT;
 extern jl_function_t *Absyn_Direction_INPUT_type;
 #define Absyn__INPUT jl_call0(Absyn_Direction_INPUT)
 
+extern jl_value_t *Absyn_Exp;
 extern jl_function_t *Absyn_Exp_DOT;
 extern jl_function_t *Absyn_Exp_DOT_type;
 static inline jl_value_t* Absyn__DOT(jl_value_t *exp,jl_value_t *index) {
@@ -1726,6 +1918,7 @@ static inline jl_value_t* Absyn__INTEGER(jl_value_t *value) {
   return jl_call1(Absyn_Exp_INTEGER, value);
 }
 
+extern jl_value_t *Absyn_Case;
 extern jl_function_t *Absyn_Case_ELSE;
 extern jl_function_t *Absyn_Case_ELSE_type;
 static inline jl_value_t* Absyn__ELSE(jl_value_t *localDecls,jl_value_t *classPart,jl_value_t *result,jl_value_t *resultInfo,jl_value_t *comment,jl_value_t *info) {
@@ -1740,6 +1933,7 @@ static inline jl_value_t* Absyn__CASE(jl_value_t *pattern,jl_value_t *patternGua
   return jl_call(Absyn_Case_CASE, values, 9);
 }
 
+extern jl_value_t *Absyn_MatchType;
 extern jl_function_t *Absyn_MatchType_MATCHCONTINUE;
 extern jl_function_t *Absyn_MatchType_MATCHCONTINUE_type;
 #define Absyn__MATCHCONTINUE jl_call0(Absyn_MatchType_MATCHCONTINUE)
@@ -1748,6 +1942,7 @@ extern jl_function_t *Absyn_MatchType_MATCH;
 extern jl_function_t *Absyn_MatchType_MATCH_type;
 #define Absyn__MATCH jl_call0(Absyn_MatchType_MATCH)
 
+extern jl_value_t *Absyn_CodeNode;
 extern jl_function_t *Absyn_CodeNode_C__MODIFICATION;
 extern jl_function_t *Absyn_CodeNode_C__MODIFICATION_type;
 static inline jl_value_t* Absyn__C_5fMODIFICATION(jl_value_t *modification) {
@@ -1796,6 +1991,7 @@ static inline jl_value_t* Absyn__C_5fTYPENAME(jl_value_t *path) {
   return jl_call1(Absyn_CodeNode_C__TYPENAME, path);
 }
 
+extern jl_value_t *Absyn_FunctionArgs;
 extern jl_function_t *Absyn_FunctionArgs_FOR__ITER__FARG;
 extern jl_function_t *Absyn_FunctionArgs_FOR__ITER__FARG_type;
 static inline jl_value_t* Absyn__FOR_5fITER_5fFARG(jl_value_t *exp,jl_value_t *iterType,jl_value_t *iterators) {
@@ -1808,6 +2004,7 @@ static inline jl_value_t* Absyn__FUNCTIONARGS(jl_value_t *args,jl_value_t *argNa
   return jl_call2(Absyn_FunctionArgs_FUNCTIONARGS, args, argNames);
 }
 
+extern jl_value_t *Absyn_ReductionIterType;
 extern jl_function_t *Absyn_ReductionIterType_THREAD;
 extern jl_function_t *Absyn_ReductionIterType_THREAD_type;
 #define Absyn__THREAD jl_call0(Absyn_ReductionIterType_THREAD)
@@ -1816,12 +2013,14 @@ extern jl_function_t *Absyn_ReductionIterType_COMBINE;
 extern jl_function_t *Absyn_ReductionIterType_COMBINE_type;
 #define Absyn__COMBINE jl_call0(Absyn_ReductionIterType_COMBINE)
 
+extern jl_value_t *Absyn_NamedArg;
 extern jl_function_t *Absyn_NamedArg_NAMEDARG;
 extern jl_function_t *Absyn_NamedArg_NAMEDARG_type;
 static inline jl_value_t* Absyn__NAMEDARG(jl_value_t *argName,jl_value_t *argValue) {
   return jl_call2(Absyn_NamedArg_NAMEDARG, argName, argValue);
 }
 
+extern jl_value_t *Absyn_Operator;
 extern jl_function_t *Absyn_Operator_NEQUAL;
 extern jl_function_t *Absyn_Operator_NEQUAL_type;
 #define Absyn__NEQUAL jl_call0(Absyn_Operator_NEQUAL)
@@ -1914,6 +2113,7 @@ extern jl_function_t *Absyn_Operator_ADD;
 extern jl_function_t *Absyn_Operator_ADD_type;
 #define Absyn__ADD jl_call0(Absyn_Operator_ADD)
 
+extern jl_value_t *Absyn_Subscript;
 extern jl_function_t *Absyn_Subscript_SUBSCRIPT;
 extern jl_function_t *Absyn_Subscript_SUBSCRIPT_type;
 static inline jl_value_t* Absyn__SUBSCRIPT(jl_value_t *subscript) {
@@ -1924,6 +2124,7 @@ extern jl_function_t *Absyn_Subscript_NOSUB;
 extern jl_function_t *Absyn_Subscript_NOSUB_type;
 #define Absyn__NOSUB jl_call0(Absyn_Subscript_NOSUB)
 
+extern jl_value_t *Absyn_ComponentRef;
 extern jl_function_t *Absyn_ComponentRef_ALLWILD;
 extern jl_function_t *Absyn_ComponentRef_ALLWILD_type;
 #define Absyn__ALLWILD jl_call0(Absyn_ComponentRef_ALLWILD)
@@ -1950,6 +2151,7 @@ static inline jl_value_t* Absyn__CREF_5fFULLYQUALIFIED(jl_value_t *componentRef)
   return jl_call1(Absyn_ComponentRef_CREF__FULLYQUALIFIED, componentRef);
 }
 
+extern jl_value_t *Absyn_Path;
 extern jl_function_t *Absyn_Path_FULLYQUALIFIED;
 extern jl_function_t *Absyn_Path_FULLYQUALIFIED_type;
 static inline jl_value_t* Absyn__FULLYQUALIFIED(jl_value_t *path) {
@@ -1968,6 +2170,7 @@ static inline jl_value_t* Absyn__QUALIFIED(jl_value_t *name,jl_value_t *path) {
   return jl_call2(Absyn_Path_QUALIFIED, name, path);
 }
 
+extern jl_value_t *Absyn_Restriction;
 extern jl_function_t *Absyn_Restriction_R__UNKNOWN;
 extern jl_function_t *Absyn_Restriction_R__UNKNOWN_type;
 #define Absyn__R_5fUNKNOWN jl_call0(Absyn_Restriction_R__UNKNOWN)
@@ -2061,6 +2264,7 @@ extern jl_function_t *Absyn_Restriction_R__CLASS;
 extern jl_function_t *Absyn_Restriction_R__CLASS_type;
 #define Absyn__R_5fCLASS jl_call0(Absyn_Restriction_R__CLASS)
 
+extern jl_value_t *Absyn_FunctionPurity;
 extern jl_function_t *Absyn_FunctionPurity_NO__PURITY;
 extern jl_function_t *Absyn_FunctionPurity_NO__PURITY_type;
 #define Absyn__NO_5fPURITY jl_call0(Absyn_FunctionPurity_NO__PURITY)
@@ -2073,6 +2277,7 @@ extern jl_function_t *Absyn_FunctionPurity_PURE;
 extern jl_function_t *Absyn_FunctionPurity_PURE_type;
 #define Absyn__PURE jl_call0(Absyn_FunctionPurity_PURE)
 
+extern jl_value_t *Absyn_FunctionRestriction;
 extern jl_function_t *Absyn_FunctionRestriction_FR__KERNEL__FUNCTION;
 extern jl_function_t *Absyn_FunctionRestriction_FR__KERNEL__FUNCTION_type;
 #define Absyn__FR_5fKERNEL_5fFUNCTION jl_call0(Absyn_FunctionRestriction_FR__KERNEL__FUNCTION)
@@ -2091,18 +2296,21 @@ static inline jl_value_t* Absyn__FR_5fNORMAL_5fFUNCTION(jl_value_t *purity) {
   return jl_call1(Absyn_FunctionRestriction_FR__NORMAL__FUNCTION, purity);
 }
 
+extern jl_value_t *Absyn_Annotation;
 extern jl_function_t *Absyn_Annotation_ANNOTATION;
 extern jl_function_t *Absyn_Annotation_ANNOTATION_type;
 static inline jl_value_t* Absyn__ANNOTATION(jl_value_t *elementArgs) {
   return jl_call1(Absyn_Annotation_ANNOTATION, elementArgs);
 }
 
+extern jl_value_t *Absyn_Comment;
 extern jl_function_t *Absyn_Comment_COMMENT;
 extern jl_function_t *Absyn_Comment_COMMENT_type;
 static inline jl_value_t* Absyn__COMMENT(jl_value_t *annotation_,jl_value_t *comment) {
   return jl_call2(Absyn_Comment_COMMENT, annotation_, comment);
 }
 
+extern jl_value_t *Absyn_ExternalDecl;
 extern jl_function_t *Absyn_ExternalDecl_EXTERNALDECL;
 extern jl_function_t *Absyn_ExternalDecl_EXTERNALDECL_type;
 static inline jl_value_t* Absyn__EXTERNALDECL(jl_value_t *funcName,jl_value_t *lang,jl_value_t *output_,jl_value_t *args,jl_value_t *annotation_) {
@@ -2110,6 +2318,7 @@ static inline jl_value_t* Absyn__EXTERNALDECL(jl_value_t *funcName,jl_value_t *l
   return jl_call(Absyn_ExternalDecl_EXTERNALDECL, values, 5);
 }
 
+extern jl_value_t *Absyn_Ref;
 extern jl_function_t *Absyn_Ref_RIM;
 extern jl_function_t *Absyn_Ref_RIM_type;
 static inline jl_value_t* Absyn__RIM(jl_value_t *im) {
@@ -2128,6 +2337,7 @@ static inline jl_value_t* Absyn__RCR(jl_value_t *cr) {
   return jl_call1(Absyn_Ref_RCR, cr);
 }
 
+extern jl_value_t *Absyn_Msg;
 extern jl_function_t *Absyn_Msg_NO__MSG;
 extern jl_function_t *Absyn_Msg_NO__MSG_type;
 #define Absyn__NO_5fMSG jl_call0(Absyn_Msg_NO__MSG)
