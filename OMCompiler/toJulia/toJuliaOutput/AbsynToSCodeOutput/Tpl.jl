@@ -222,7 +222,7 @@
                    #= should not happen, tokens must have at least one element
                    =#
                 @match (inText, inToken) begin
-                  (txt, ST_BLOCK(tokens =  nil()))  => begin
+                  (txt, ST_BLOCK(tokens =  nil))  => begin
                     txt
                   end
 
@@ -256,15 +256,15 @@
                    #= to ensure invariant being able to check emptiness only through the tokens (list) emtiness
                    =#
                 @match (inText, inTextToWrite) begin
-                  (txt, MEM_TEXT(tokens =  nil()))  => begin
+                  (txt, MEM_TEXT(tokens =  nil))  => begin
                     txt
                   end
 
-                  (MEM_TEXT(tokens = toks, blocksStack = blstack), MEM_TEXT(tokens = txttoks, blocksStack =  nil()))  => begin
+                  (MEM_TEXT(tokens = toks, blocksStack = blstack), MEM_TEXT(tokens = txttoks, blocksStack =  nil))  => begin
                     MEM_TEXT(ST_BLOCK(txttoks, BT_TEXT()) <| toks, blstack)
                   end
 
-                  (FILE_TEXT(), MEM_TEXT(tokens = txttoks, blocksStack =  nil()))  => begin
+                  (FILE_TEXT(), MEM_TEXT(tokens = txttoks, blocksStack =  nil))  => begin
                       for tok in listReverse(txttoks)
                         writeTok(inText, tok)
                       end
@@ -295,7 +295,7 @@
                   local lschars::List{<:String}
                   local isline::Bool
                 @match (inText, inChars) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -376,7 +376,7 @@
                   local chars::List{<:String}
                   local isline::Bool
                 @match inChars begin
-                   nil()  => begin
+                   nil  => begin
                     (list(), list(), false)
                   end
 
@@ -404,7 +404,7 @@
                    #= empty - nothing
                    =#
                 @match inText begin
-                  txt && MEM_TEXT(tokens =  nil())  => begin
+                  txt && MEM_TEXT(tokens =  nil)  => begin
                     txt
                   end
 
@@ -601,7 +601,7 @@
                    #= when nothing was put, just pop tokens from the stack and no block output
                    =#
                 @match txt begin
-                  MEM_TEXT(tokens =  nil(), blocksStack = (stacktoks, _) <| blstack)  => begin
+                  MEM_TEXT(tokens =  nil, blocksStack = (stacktoks, _) <| blstack)  => begin
                     MEM_TEXT(stacktoks, blstack)
                   end
 
@@ -740,11 +740,11 @@
                    #= nothing was iterated, pop only the stacked tokens
                    =#
                 @match txt begin
-                  MEM_TEXT(tokens =  nil(), blocksStack = ( nil(), _) <| (stacktoks, _) <| blstack)  => begin
+                  MEM_TEXT(tokens =  nil, blocksStack = ( nil, _) <| (stacktoks, _) <| blstack)  => begin
                     MEM_TEXT(stacktoks, blstack)
                   end
 
-                  MEM_TEXT(tokens =  nil(), blocksStack = (itertoks, blType) <| (stacktoks, _) <| blstack)  => begin
+                  MEM_TEXT(tokens =  nil, blocksStack = (itertoks, blType) <| (stacktoks, _) <| blstack)  => begin
                     MEM_TEXT(ST_BLOCK(itertoks, blType) <| stacktoks, blstack)
                   end
 
@@ -788,16 +788,16 @@
                    #= empty iteration segment and 'empty' option is NONE(), so do nothing
                    =#
                 @match txt begin
-                  txt && MEM_TEXT(tokens =  nil(), blocksStack = (_, BT_ITER(options = ITER_OPTIONS(empty = NONE()))) <| _)  => begin
+                  txt && MEM_TEXT(tokens =  nil, blocksStack = (_, BT_ITER(options = ITER_OPTIONS(empty = NONE()))) <| _)  => begin
                     txt
                   end
 
-                  MEM_TEXT(tokens =  nil(), blocksStack = (itertoks, bt && BT_ITER(options = ITER_OPTIONS(empty = SOME(emptok)), index0 = i0)) <| blstack)  => begin
+                  MEM_TEXT(tokens =  nil, blocksStack = (itertoks, bt && BT_ITER(options = ITER_OPTIONS(empty = SOME(emptok)), index0 = i0)) <| blstack)  => begin
                       arrayUpdate(i0, 1, arrayGet(i0, 1) + 1)
                     MEM_TEXT(list(), (emptok <| itertoks, bt) <| blstack)
                   end
 
-                  MEM_TEXT(tokens = tok <|  nil(), blocksStack = (itertoks, bt && BT_ITER(index0 = i0)) <| blstack)  => begin
+                  MEM_TEXT(tokens = tok <|  nil, blocksStack = (itertoks, bt && BT_ITER(index0 = i0)) <| blstack)  => begin
                       arrayUpdate(i0, 1, arrayGet(i0, 1) + 1)
                     MEM_TEXT(list(), (tok <| itertoks, bt) <| blstack)
                   end
@@ -938,7 +938,7 @@
               _ = begin
                   local toks::Tokens
                 @match inText begin
-                  MEM_TEXT(tokens = toks, blocksStack =  nil())  => begin
+                  MEM_TEXT(tokens = toks, blocksStack =  nil)  => begin
                       (_, _) = tokensString(listReverse(toks), 0, true, 0)
                     ()
                   end
@@ -1137,7 +1137,7 @@
                   local isstart::Bool
                   local hasNL::Bool
                 @match (inStringList, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent) begin
-                  ( nil(), _, isstart, aind)  => begin
+                  ( nil, _, isstart, aind)  => begin
                     (aind, isstart, aind)
                   end
 
@@ -1201,7 +1201,7 @@
                   local strLst::List{<:String}
                   local hasNL::Bool
                 @match (inStringList, nchars, isstart, aind) begin
-                  ( nil(), _, isstart, aind)  => begin
+                  ( nil, _, isstart, aind)  => begin
                     (aind, isstart, aind)
                   end
 
@@ -1378,7 +1378,7 @@
                     (nchars, isstart, aind)
                   end
 
-                  (BT_ITER(),  nil(), nchars, isstart, aind)  => begin
+                  (BT_ITER(),  nil, nchars, isstart, aind)  => begin
                     (nchars, isstart, aind)
                   end
 
@@ -1460,7 +1460,7 @@
                   local aind::ModelicaInteger
                   local isstart::Bool
                 @match (inTokens, inSeparator, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent) begin
-                  ( nil(), _, pos, isstart, _)  => begin
+                  ( nil, _, pos, isstart, _)  => begin
                     (pos, isstart)
                   end
 
@@ -1522,7 +1522,7 @@
                   local wwidth::ModelicaInteger
                   local isstart::Bool
                 @match (inTokens, inActualIndex, inAlignNum, inAlignSeparator, inWrapWidth, inWrapSeparator, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent) begin
-                  ( nil(), _, _, _, _, _, pos, isstart, _)  => begin
+                  ( nil, _, _, _, _, _, pos, isstart, _)  => begin
                     (pos, isstart)
                   end
 
@@ -1726,7 +1726,7 @@
                     (nchars, isstart, aind)
                   end
 
-                  (BT_ITER(),  nil(), nchars, isstart, aind)  => begin
+                  (BT_ITER(),  nil, nchars, isstart, aind)  => begin
                     (nchars, isstart, aind)
                   end
 
@@ -1808,7 +1808,7 @@
                   local aind::ModelicaInteger
                   local isstart::Bool
                 @match (inTokens, inSeparator, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent) begin
-                  ( nil(), _, pos, isstart, _)  => begin
+                  ( nil, _, pos, isstart, _)  => begin
                     (pos, isstart)
                   end
 
@@ -1870,7 +1870,7 @@
                   local wwidth::ModelicaInteger
                   local isstart::Bool
                 @match (inTokens, inActualIndex, inAlignNum, inAlignSeparator, inWrapWidth, inWrapSeparator, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent) begin
-                  ( nil(), _, _, _, _, _, pos, isstart, _)  => begin
+                  ( nil, _, _, _, _, _, pos, isstart, _)  => begin
                     (pos, isstart)
                   end
 
@@ -1963,11 +1963,11 @@
                   local toks::Tokens
                   local txttoks::Tokens
                 @match inText begin
-                  MEM_TEXT(tokens =  nil())  => begin
+                  MEM_TEXT(tokens =  nil)  => begin
                     ST_STRING("")
                   end
 
-                  MEM_TEXT(tokens = txttoks, blocksStack =  nil())  => begin
+                  MEM_TEXT(tokens = txttoks, blocksStack =  nil)  => begin
                     ST_BLOCK(txttoks, BT_TEXT())
                   end
 

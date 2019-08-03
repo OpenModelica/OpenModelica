@@ -30,7 +30,7 @@
                   local a_options::Dump.DumpOptions
                   local i_cls::Absyn.Class
                 @match (in_txt, in_items, in_a_options) begin
-                  (txt,  nil(), _)  => begin
+                  (txt,  nil, _)  => begin
                     txt
                   end
 
@@ -56,7 +56,7 @@
                   local l_cls__str::Tpl.Text
                   local l_within__str::Tpl.Text
                 @match (in_txt, in_a_program, in_a_options) begin
-                  (txt, Absyn.PROGRAM(classes =  nil()), _)  => begin
+                  (txt, Absyn.PROGRAM(classes =  nil), _)  => begin
                     txt
                   end
 
@@ -186,7 +186,7 @@
                   local rest::List{<:String}
                   local i_typevar::String
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -208,7 +208,7 @@
                   local txt::Tpl.Text
                   local i_typeVars::List{<:String}
                 @match (in_txt, in_a_typeVars) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -233,7 +233,7 @@
                   local rest::List{<:Absyn.Annotation}
                   local i_a::Absyn.Annotation
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -258,7 +258,7 @@
                   local x_idx::ModelicaInteger
                   local i_class__part::Absyn.ClassPart
                 @match (in_txt, in_items, in_a_options) begin
-                  (txt,  nil(), _)  => begin
+                  (txt,  nil, _)  => begin
                     txt
                   end
 
@@ -281,7 +281,7 @@
                   local txt::Tpl.Text
                   local i_ann__str::Tpl.Text
                 @match (in_txt, in_a_ann__str) begin
-                  (txt, Tpl.MEM_TEXT(tokens =  nil()))  => begin
+                  (txt, Tpl.MEM_TEXT(tokens =  nil))  => begin
                     txt
                   end
 
@@ -303,7 +303,7 @@
                   local rest::List{<:Absyn.ElementArg}
                   local i_arg::Absyn.ElementArg
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -325,7 +325,7 @@
                   local txt::Tpl.Text
                   local i_arguments::List{<:Absyn.ElementArg}
                 @match (in_txt, in_a_arguments) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -352,7 +352,7 @@
                   local x_idx::ModelicaInteger
                   local i_class__part::Absyn.ClassPart
                 @match (in_txt, in_items, in_a_options) begin
-                  (txt,  nil(), _)  => begin
+                  (txt,  nil, _)  => begin
                     txt
                   end
 
@@ -376,7 +376,7 @@
                   local rest::List{<:Absyn.ElementArg}
                   local i_mod::Absyn.ElementArg
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -398,7 +398,7 @@
                   local txt::Tpl.Text
                   local i_modifications::List{<:Absyn.ElementArg}
                 @match (in_txt, in_a_modifications) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -423,7 +423,7 @@
                   local rest::List{<:Absyn.Annotation}
                   local i_a::Absyn.Annotation
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -445,7 +445,7 @@
                   local txt::Tpl.Text
                   local i_ann__str::Tpl.Text
                 @match (in_txt, in_a_ann__str) begin
-                  (txt, Tpl.MEM_TEXT(tokens =  nil()))  => begin
+                  (txt, Tpl.MEM_TEXT(tokens =  nil))  => begin
                     txt
                   end
 
@@ -467,7 +467,7 @@
                   local rest::List{<:Absyn.Path}
                   local i_fn::Absyn.Path
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -490,7 +490,7 @@
                   local rest::List{<:Absyn.Ident}
                   local i_var::Absyn.Ident
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -660,7 +660,7 @@
                   local rest::List{<:Absyn.EnumLiteral}
                   local i_lit::Absyn.EnumLiteral
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -858,7 +858,7 @@
                   local rest::List{<:String}
                   local i_tv::String
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -880,7 +880,7 @@
                   local txt::Tpl.Text
                   local i_typeVars::List{<:String}
                 @match (in_txt, in_a_typeVars) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -1049,7 +1049,7 @@
                   local rest::List{<:Absyn.Exp}
                   local i_exp::Absyn.Exp
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -1072,7 +1072,7 @@
                   local rest::List{<:Absyn.EquationItem}
                   local i_eq::Absyn.EquationItem
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -1095,7 +1095,7 @@
                   local rest::List{<:Absyn.EquationItem}
                   local i_eq::Absyn.EquationItem
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -1118,7 +1118,7 @@
                   local rest::List{<:Absyn.AlgorithmItem}
                   local i_eq::Absyn.AlgorithmItem
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -1141,7 +1141,7 @@
                   local rest::List{<:Absyn.AlgorithmItem}
                   local i_eq::Absyn.AlgorithmItem
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -1248,7 +1248,7 @@
               out_txt = begin
                   local txt::Tpl.Text
                 @match (in_txt, in_a_fn__str) begin
-                  (txt, Tpl.MEM_TEXT(tokens =  nil()))  => begin
+                  (txt, Tpl.MEM_TEXT(tokens =  nil))  => begin
                     txt
                   end
 
@@ -1269,7 +1269,7 @@
                   local rest::List{<:Absyn.Exp}
                   local i_arg::Absyn.Exp
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -1292,7 +1292,7 @@
                   local a_fn__str::Tpl.Text
                   local i_args::List{<:Absyn.Exp}
                 @match (in_txt, in_a_args, in_a_fn__str) begin
-                  (txt,  nil(), a_fn__str)  => begin
+                  (txt,  nil, a_fn__str)  => begin
                       txt = fun_51(txt, a_fn__str)
                     txt
                   end
@@ -1488,7 +1488,7 @@
                   local txt::Tpl.Text
                   local a_spacing::Tpl.Text
                 @match (in_txt, in_a_rest__str, in_a_spacing) begin
-                  (txt, Tpl.MEM_TEXT(tokens =  nil()), _)  => begin
+                  (txt, Tpl.MEM_TEXT(tokens =  nil), _)  => begin
                     txt
                   end
 
@@ -1508,7 +1508,7 @@
                   local txt::Tpl.Text
                   local i_rest__str::Tpl.Text
                 @match (in_txt, in_a_rest__str) begin
-                  (txt, Tpl.MEM_TEXT(tokens =  nil()))  => begin
+                  (txt, Tpl.MEM_TEXT(tokens =  nil))  => begin
                     txt
                   end
 
@@ -1767,7 +1767,7 @@
                   local rest::List{<:Absyn.NamedArg}
                   local i_arg::Absyn.NamedArg
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -1788,7 +1788,7 @@
                   local txt::Tpl.Text
                   local i_args::List{<:Absyn.NamedArg}
                 @match (in_txt, in_a_args) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -1978,7 +1978,7 @@
                   local rest::List{<:Absyn.ElementArg}
                   local i_earg::Absyn.ElementArg
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -2002,7 +2002,7 @@
                   local ret_1::Tpl.StringToken
                   local txt_0::Tpl.Text
                 @match (in_txt, in_a_ann) begin
-                  (txt, Absyn.ANNOTATION(elementArgs =  nil()))  => begin
+                  (txt, Absyn.ANNOTATION(elementArgs =  nil))  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("annotation()"))
                     txt
                   end
@@ -2335,7 +2335,7 @@
                   local rest::List{<:Absyn.ElementArg}
                   local i_earg::Absyn.ElementArg
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -2357,7 +2357,7 @@
                   local txt::Tpl.Text
                   local i_elementArgLst::List{<:Absyn.ElementArg}
                 @match (in_txt, in_a_elementArgLst) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -2430,7 +2430,7 @@
                   local rest::List{<:Absyn.ElementArg}
                   local i_earg::Absyn.ElementArg
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -2452,7 +2452,7 @@
                   local txt::Tpl.Text
                   local i_args__str::Tpl.Text
                 @match (in_txt, in_a_args__str) begin
-                  (txt, Tpl.MEM_TEXT(tokens =  nil()))  => begin
+                  (txt, Tpl.MEM_TEXT(tokens =  nil))  => begin
                     txt
                   end
 
@@ -2475,7 +2475,7 @@
                   local rest::List{<:Absyn.ComponentItem}
                   local i_comp::Absyn.ComponentItem
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -2798,7 +2798,7 @@
                   local rest::List{<:Absyn.ElementArg}
                   local i_e::Absyn.ElementArg
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -2820,7 +2820,7 @@
                   local txt::Tpl.Text
                   local i_el::List{<:Absyn.ElementArg}
                 @match (in_txt, in_a_el) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -2981,7 +2981,7 @@
                   local rest::List{<:Absyn.GroupImport}
                   local i_group::Absyn.GroupImport
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -3119,7 +3119,7 @@
                   local rest::List{<:Absyn.EquationItem}
                   local i_eq::Absyn.EquationItem
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -3152,7 +3152,7 @@
                   local i_b::List{<:Absyn.EquationItem}
                   local i_c::Absyn.Exp
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -3174,7 +3174,7 @@
                   local txt::Tpl.Text
                   local i_else__branch__str::Tpl.Text
                 @match (in_txt, in_a_else__branch__str) begin
-                  (txt, Tpl.MEM_TEXT(tokens =  nil()))  => begin
+                  (txt, Tpl.MEM_TEXT(tokens =  nil))  => begin
                     txt
                   end
 
@@ -3199,7 +3199,7 @@
                   local i_b::List{<:Absyn.EquationItem}
                   local i_c::Absyn.Exp
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -3363,7 +3363,7 @@
                   local rest::List{<:Absyn.EquationItem}
                   local i_eq::Absyn.EquationItem
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -3406,7 +3406,7 @@
                   local rest::List{<:Absyn.AlgorithmItem}
                   local i_alg::Absyn.AlgorithmItem
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -3476,7 +3476,7 @@
                   local i_b::List{<:Absyn.AlgorithmItem}
                   local i_c::Absyn.Exp
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -3498,7 +3498,7 @@
                   local txt::Tpl.Text
                   local i_else__branch__str::Tpl.Text
                 @match (in_txt, in_a_else__branch__str) begin
-                  (txt, Tpl.MEM_TEXT(tokens =  nil()))  => begin
+                  (txt, Tpl.MEM_TEXT(tokens =  nil))  => begin
                     txt
                   end
 
@@ -3523,7 +3523,7 @@
                   local i_b::List{<:Absyn.AlgorithmItem}
                   local i_c::Absyn.Exp
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -3545,7 +3545,7 @@
                   local txt::Tpl.Text
                   local i_equ::List{<:Absyn.AlgorithmItem}
                 @match (in_txt, in_a_equ) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("..."))
                     txt
                   end
@@ -3740,7 +3740,7 @@
                   local rest::List{<:Absyn.AlgorithmItem}
                   local i_eq::Absyn.AlgorithmItem
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -3890,7 +3890,7 @@
                   local rest::List{<:Absyn.TypeSpec}
                   local i_ty::Absyn.TypeSpec
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -3975,7 +3975,7 @@
                   local rest::List{<:Absyn.Subscript}
                   local i_s::Absyn.Subscript
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -3998,7 +3998,7 @@
                   local i_subscripts::List{<:Absyn.Subscript}
                   local l_sub__str::Tpl.Text
                 @match (in_txt, in_a_subscripts) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -4049,7 +4049,7 @@
                   local rest::List{<:Absyn.Exp}
                   local i_e::Absyn.Exp
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -4072,7 +4072,7 @@
                   local rest::List{<:Absyn.Exp}
                   local i_e::Absyn.Exp
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -4095,7 +4095,7 @@
                   local rest::List{<:List{<:Absyn.Exp}}
                   local i_row::List{<:Absyn.Exp}
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -4120,7 +4120,7 @@
                   local rest::List{<:Absyn.Exp}
                   local i_e::Absyn.Exp
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -4143,7 +4143,7 @@
                   local rest::List{<:Absyn.Exp}
                   local i_e::Absyn.Exp
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -4535,7 +4535,7 @@
                   local l_branch__str::Tpl.Text
                   local l_cond__str::Tpl.Text
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -4714,7 +4714,7 @@
                   local rest::List{<:Absyn.Case}
                   local i_c::Absyn.Case
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -4809,7 +4809,7 @@
                   local rest::List{<:Absyn.ElementItem}
                   local i_decl::Absyn.ElementItem
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -4831,7 +4831,7 @@
                   local txt::Tpl.Text
                   local i_locals::List{<:Absyn.ElementItem}
                 @match (in_txt, in_a_locals) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -4859,7 +4859,7 @@
                   local rest::List{<:Absyn.EquationItem}
                   local i_eq::Absyn.EquationItem
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -4882,7 +4882,7 @@
                   local rest::List{<:Absyn.AlgorithmItem}
                   local i_alg::Absyn.AlgorithmItem
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -4905,7 +4905,7 @@
                   local i_algs::List{<:Absyn.AlgorithmItem}
                   local i_eql::List{<:Absyn.EquationItem}
                 @match (in_txt, in_a_cp) begin
-                  (txt, Absyn.EQUATIONS(contents =  nil()))  => begin
+                  (txt, Absyn.EQUATIONS(contents =  nil))  => begin
                     txt
                   end
 
@@ -4919,7 +4919,7 @@
                     txt
                   end
 
-                  (txt, Absyn.ALGORITHMS(contents =  nil()))  => begin
+                  (txt, Absyn.ALGORITHMS(contents =  nil))  => begin
                     txt
                   end
 
@@ -4970,7 +4970,7 @@
                   local txt::Tpl.Text
                   local a_result__str::Tpl.Text
                 @match (in_txt, in_a_eql__str, in_a_result__str) begin
-                  (txt, Tpl.MEM_TEXT(tokens =  nil()), a_result__str)  => begin
+                  (txt, Tpl.MEM_TEXT(tokens =  nil), a_result__str)  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("then "))
                       txt = Tpl.writeText(txt, a_result__str)
                     txt
@@ -4995,7 +4995,7 @@
                   local txt::Tpl.Text
                   local a_result__str::Tpl.Text
                 @match (in_txt, in_a_eql__str, in_a_result__str) begin
-                  (txt, Tpl.MEM_TEXT(tokens =  nil()), a_result__str)  => begin
+                  (txt, Tpl.MEM_TEXT(tokens =  nil), a_result__str)  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("then "))
                       txt = Tpl.writeText(txt, a_result__str)
                     txt
@@ -5274,7 +5274,7 @@
                   local rest::List{<:Absyn.Exp}
                   local i_arg::Absyn.Exp
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -5297,7 +5297,7 @@
                   local rest::List{<:Absyn.NamedArg}
                   local i_narg::Absyn.NamedArg
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -5318,7 +5318,7 @@
               out_txt = begin
                   local txt::Tpl.Text
                 @match (in_txt, in_a_argNames) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -5338,7 +5338,7 @@
                   local txt::Tpl.Text
                   local a_argNames::List{<:Absyn.NamedArg}
                 @match (in_txt, in_a_args__str, in_a_argNames) begin
-                  (txt, Tpl.MEM_TEXT(tokens =  nil()), _)  => begin
+                  (txt, Tpl.MEM_TEXT(tokens =  nil), _)  => begin
                     txt
                   end
 
@@ -5359,7 +5359,7 @@
                   local rest::Absyn.ForIterators
                   local i_i::Absyn.ForIterator
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -5475,7 +5475,7 @@
                   local rest::Absyn.ForIterators
                   local i_i::Absyn.ForIterator
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 

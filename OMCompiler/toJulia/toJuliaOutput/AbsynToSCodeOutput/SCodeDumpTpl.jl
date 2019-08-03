@@ -88,7 +88,7 @@
                   local ret_1::Bool
                   local ret_0::Bool
                 @match (in_txt, in_a_vis__str, in_a_inPublicSection) begin
-                  (txt, Tpl.MEM_TEXT(tokens =  nil()), _)  => begin
+                  (txt, Tpl.MEM_TEXT(tokens =  nil), _)  => begin
                     txt
                   end
 
@@ -111,7 +111,7 @@
                   local a_prevSpacing::Array{<:Bool}
                   local i_spacing::Tpl.Text
                 @match (in_txt, in_a_spacing, in_a_prevSpacing) begin
-                  (txt, Tpl.MEM_TEXT(tokens =  nil()), a_prevSpacing)  => begin
+                  (txt, Tpl.MEM_TEXT(tokens =  nil), a_prevSpacing)  => begin
                       Util.setStatefulBoolean(a_prevSpacing, false)
                     txt
                   end
@@ -211,7 +211,7 @@
                   local l_pre__spacing::Tpl.Text
                   local l_spacing::Tpl.Text
                 @match (in_txt, in_items, in_a_indent, in_a_numElements, in_a_inPublicSection, in_a_options, in_a_prevSpacing) begin
-                  (txt,  nil(), _, _, _, _, _)  => begin
+                  (txt,  nil, _, _, _, _, _)  => begin
                     txt
                   end
 
@@ -759,7 +759,7 @@
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_enum::SCode.Enum
                 @match (in_txt, in_items, in_a_options) begin
-                  (txt,  nil(), _)  => begin
+                  (txt,  nil, _)  => begin
                     txt
                   end
 
@@ -782,7 +782,7 @@
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_enumLst::List{<:SCode.Enum}
                 @match (in_txt, in_a_enumLst, in_a_options) begin
-                  (txt,  nil(), _)  => begin
+                  (txt,  nil, _)  => begin
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING(":"))
                     txt
                   end
@@ -806,7 +806,7 @@
                   local rest::List{<:SCode.Ident}
                   local i_it::SCode.Ident
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -829,7 +829,7 @@
                   local rest::List{<:Absyn.Path}
                   local i_path::Absyn.Path
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -984,7 +984,7 @@
               out_txt = begin
                   local txt::Tpl.Text
                 @match (in_txt, in_a_annstr) begin
-                  (txt, Tpl.MEM_TEXT(tokens =  nil()))  => begin
+                  (txt, Tpl.MEM_TEXT(tokens =  nil))  => begin
                     txt
                   end
 
@@ -1320,7 +1320,7 @@
               out_txt = begin
                   local txt::Tpl.Text
                 @match (in_txt, in_a_args__str) begin
-                  (txt, Tpl.MEM_TEXT(tokens =  nil()))  => begin
+                  (txt, Tpl.MEM_TEXT(tokens =  nil))  => begin
                     txt
                   end
 
@@ -1339,7 +1339,7 @@
               out_txt = begin
                   local txt::Tpl.Text
                 @match (in_txt, in_a_args__str) begin
-                  (txt, Tpl.MEM_TEXT(tokens =  nil()))  => begin
+                  (txt, Tpl.MEM_TEXT(tokens =  nil))  => begin
                     txt
                   end
 
@@ -1428,7 +1428,7 @@
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_eq::SCode.Equation
                 @match (in_txt, in_items, in_a_options) begin
-                  (txt,  nil(), _)  => begin
+                  (txt,  nil, _)  => begin
                     txt
                   end
 
@@ -1452,7 +1452,7 @@
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_equations::List{<:SCode.Equation}
                 @match (in_txt, in_a_equations, in_a_label, in_a_options) begin
-                  (txt,  nil(), _, _)  => begin
+                  (txt,  nil, _, _)  => begin
                     txt
                   end
 
@@ -1628,7 +1628,7 @@
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_e::SCode.EEquation
                 @match (in_txt, in_items, in_a_options) begin
-                  (txt,  nil(), _)  => begin
+                  (txt,  nil, _)  => begin
                     txt
                   end
 
@@ -1652,7 +1652,7 @@
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_e::SCode.EEquation
                 @match (in_txt, in_items, in_a_options) begin
-                  (txt,  nil(), _)  => begin
+                  (txt,  nil, _)  => begin
                     txt
                   end
 
@@ -1675,7 +1675,7 @@
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_elseBranch::List{<:SCode.EEquation}
                 @match (in_txt, in_a_elseBranch, in_a_options) begin
-                  (txt,  nil(), _)  => begin
+                  (txt,  nil, _)  => begin
                     txt
                   end
 
@@ -1748,7 +1748,7 @@
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_e::SCode.EEquation
                 @match (in_txt, in_items, in_a_options) begin
-                  (txt,  nil(), _)  => begin
+                  (txt,  nil, _)  => begin
                     txt
                   end
 
@@ -1834,7 +1834,7 @@
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_e::SCode.EEquation
                 @match (in_txt, in_items, in_a_options) begin
-                  (txt,  nil(), _)  => begin
+                  (txt,  nil, _)  => begin
                     txt
                   end
 
@@ -1858,7 +1858,7 @@
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_e::SCode.EEquation
                 @match (in_txt, in_items, in_a_options) begin
-                  (txt,  nil(), _)  => begin
+                  (txt,  nil, _)  => begin
                     txt
                   end
 
@@ -1943,7 +1943,7 @@
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_e::SCode.EEquation
                 @match (in_txt, in_items, in_a_options) begin
-                  (txt,  nil(), _)  => begin
+                  (txt,  nil, _)  => begin
                     txt
                   end
 
@@ -1967,7 +1967,7 @@
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_e::SCode.EEquation
                 @match (in_txt, in_items, in_a_options) begin
-                  (txt,  nil(), _)  => begin
+                  (txt,  nil, _)  => begin
                     txt
                   end
 
@@ -1994,7 +1994,7 @@
                   local l_else__body__str::Tpl.Text
                   local l_else__cond__str::Tpl.Text
                 @match (in_txt, in_items, in_a_options) begin
-                  (txt,  nil(), _)  => begin
+                  (txt,  nil, _)  => begin
                     txt
                   end
 
@@ -2099,7 +2099,7 @@
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_al::SCode.AlgorithmSection
                 @match (in_txt, in_items, in_a_options) begin
-                  (txt,  nil(), _)  => begin
+                  (txt,  nil, _)  => begin
                     txt
                   end
 
@@ -2123,7 +2123,7 @@
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_algorithms::List{<:SCode.AlgorithmSection}
                 @match (in_txt, in_a_algorithms, in_a_label, in_a_options) begin
-                  (txt,  nil(), _, _)  => begin
+                  (txt,  nil, _, _)  => begin
                     txt
                   end
 
@@ -2172,7 +2172,7 @@
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_s::SCode.Statement
                 @match (in_txt, in_items, in_a_options) begin
-                  (txt,  nil(), _)  => begin
+                  (txt,  nil, _)  => begin
                     txt
                   end
 
@@ -2311,7 +2311,7 @@
                     txt
                   end
 
-                  (txt, SCode.ALG_FAILURE(stmts = i_stmt <|  nil(), comment = i_comment), a_options)  => begin
+                  (txt, SCode.ALG_FAILURE(stmts = i_stmt <|  nil, comment = i_comment), a_options)  => begin
                       l_cmt__str = dumpComment(Tpl.emptyTxt, i_comment, a_options)
                       txt = Tpl.writeTok(txt, Tpl.ST_STRING("failure("))
                       txt = dumpStatement(txt, i_stmt, a_options)
@@ -2406,7 +2406,7 @@
                   local l_body__str::Tpl.Text
                   local l_cond__str::Tpl.Text
                 @match (in_txt, in_items, in_a_options) begin
-                  (txt,  nil(), _)  => begin
+                  (txt,  nil, _)  => begin
                     txt
                   end
 
@@ -2542,7 +2542,7 @@
                   local l_ew__body__str::Tpl.Text
                   local l_ew__cond__str::Tpl.Text
                 @match (in_txt, in_items, in_a_options) begin
-                  (txt,  nil(), _)  => begin
+                  (txt,  nil, _)  => begin
                     txt
                   end
 
@@ -3039,7 +3039,7 @@
                   local rest::List{<:String}
                   local i_tv::String
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -3061,7 +3061,7 @@
                   local txt::Tpl.Text
                   local i_typeVars::List{<:String}
                 @match (in_txt, in_a_typeVars) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -3183,7 +3183,7 @@
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_submod::SCode.SubMod
                 @match (in_txt, in_items, in_a_options) begin
-                  (txt,  nil(), _)  => begin
+                  (txt,  nil, _)  => begin
                     txt
                   end
 
@@ -3206,7 +3206,7 @@
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_subModLst::List{<:SCode.SubMod}
                 @match (in_txt, in_a_subModLst, in_a_options) begin
-                  (txt,  nil(), _)  => begin
+                  (txt,  nil, _)  => begin
                     txt
                   end
 
@@ -3259,7 +3259,7 @@
                   local a_options::SCodeDump.SCodeDumpOptions
                   local i_submod::SCode.SubMod
                 @match (in_txt, in_items, in_a_options) begin
-                  (txt,  nil(), _)  => begin
+                  (txt,  nil, _)  => begin
                     txt
                   end
 
@@ -3281,7 +3281,7 @@
                   local txt::Tpl.Text
                   local i_text::Tpl.Text
                 @match (in_txt, in_a_text) begin
-                  (txt, Tpl.MEM_TEXT(tokens =  nil()))  => begin
+                  (txt, Tpl.MEM_TEXT(tokens =  nil))  => begin
                     txt
                   end
 
@@ -3748,7 +3748,7 @@
                   local txt::Tpl.Text
                   local i_modifStr::Tpl.Text
                 @match (in_txt, in_a_modifStr) begin
-                  (txt, Tpl.MEM_TEXT(tokens =  nil()))  => begin
+                  (txt, Tpl.MEM_TEXT(tokens =  nil))  => begin
                     txt
                   end
 
@@ -3793,7 +3793,7 @@
                   local txt::Tpl.Text
                   local i_annstr::Tpl.Text
                 @match (in_txt, in_a_annstr) begin
-                  (txt, Tpl.MEM_TEXT(tokens =  nil()))  => begin
+                  (txt, Tpl.MEM_TEXT(tokens =  nil))  => begin
                     txt
                   end
 
@@ -3867,7 +3867,7 @@
                   local rest::List{<:Absyn.Exp}
                   local i_arg::Absyn.Exp
                 @match (in_txt, in_items) begin
-                  (txt,  nil())  => begin
+                  (txt,  nil)  => begin
                     txt
                   end
 
@@ -3890,7 +3890,7 @@
                   local a_func__args__str::Tpl.Text
                   local i_func__name__str::Tpl.Text
                 @match (in_txt, in_a_func__name__str, in_a_func__args__str) begin
-                  (txt, Tpl.MEM_TEXT(tokens =  nil()), _)  => begin
+                  (txt, Tpl.MEM_TEXT(tokens =  nil), _)  => begin
                     txt
                   end
 

@@ -100,40 +100,40 @@
         import Print
         import System
 
-         dummyInfo = SOURCEINFO("", false, 0, 0, 0, 0, 0.0)::SourceInfo
+         const dummyInfo = SOURCEINFO("", false, 0, 0, 0, 0, 0.0)::SourceInfo
 
-         derivativeNamePrefix = "DER"::String
+         const derivativeNamePrefix = "DER"::String
 
-         pointStr = "P"::String
+         const pointStr = "P"::String
 
-         leftBraketStr = "lB"::String
+         const leftBraketStr = "lB"::String
 
-         rightBraketStr = "rB"::String
+         const rightBraketStr = "rB"::String
 
-         leftParStr = "lP"::String
+         const leftParStr = "lP"::String
 
-         rightParStr = "rP"::String
+         const rightParStr = "rP"::String
 
-         commaStr = "c"::String
+         const commaStr = "c"::String
 
-         appostrophStr = "a"::String
+         const appostrophStr = "a"::String
 
-         replaceStringPatterns = list(REPLACEPATTERN(".", pointStr), REPLACEPATTERN("[", leftBraketStr), REPLACEPATTERN("]", rightBraketStr), REPLACEPATTERN("(", leftParStr), REPLACEPATTERN(")", rightParStr), REPLACEPATTERN(",", commaStr), REPLACEPATTERN("'", appostrophStr))::List{<:ReplacePattern}
+         const replaceStringPatterns = list(REPLACEPATTERN(".", pointStr), REPLACEPATTERN("[", leftBraketStr), REPLACEPATTERN("]", rightBraketStr), REPLACEPATTERN("(", leftParStr), REPLACEPATTERN(")", rightParStr), REPLACEPATTERN(",", commaStr), REPLACEPATTERN("'", appostrophStr))::List
 
          #= Author: BZ =#
-        function isIntGreater(lhs::ModelicaInteger, rhs::ModelicaInteger)::Bool
+        function isIntGreater(lhs::ModelicaInteger, rhs::ModelicaInteger) ::Bool
               local b::Bool = lhs > rhs
           b
         end
 
          #= Author: BZ =#
-        function isRealGreater(lhs::ModelicaReal, rhs::ModelicaReal)::Bool
+        function isRealGreater(lhs::ModelicaReal, rhs::ModelicaReal) ::Bool
               local b::Bool = lhs > rhs
           b
         end
 
          #= If operating system is Linux/Unix, return a './', otherwise return empty string =#
-        function linuxDotSlash()::String
+        function linuxDotSlash() ::String
               local str::String
 
               str = Autoconf.os
@@ -148,11 +148,11 @@
          #= author: x02lucpo
           Extracts the flagvalue from an argument list:
           flagValue('-s',{'-d','hej','-s','file'}) => 'file' =#
-        function flagValue(flag::String, arguments::List{<:String})::String
+        function flagValue(flag::String, arguments::List{<:String}) ::String
               local flagVal::String
 
               local arg::String
-              local rest::List{<:String} = arguments
+              local rest::List{String} = arguments
 
               while ! listEmpty(rest)
                 @match arg <| rest = rest
@@ -170,7 +170,7 @@
 
          #= Selects the first non-empty string from a list of strings.
            Returns an empty string if no such string exists. =#
-        function selectFirstNonEmptyString(inStrings::List{<:String})::String
+        function selectFirstNonEmptyString(inStrings::List{<:String}) ::String
               local outResult::String
 
               for e in inStrings
@@ -186,8 +186,7 @@
          #=   Function could used with List.sort to sort a
           List as list< tuple<Integer, Type_a> > by first argument.
            =#
-        T = Any
-        function compareTupleIntGt(inTplA::Tuple{<:ModelicaInteger, T}, inTplB::Tuple{<:ModelicaInteger, T})::Bool
+        function compareTupleIntGt(inTplA::Tuple{ModelicaInteger, T}, inTplB::Tuple{ModelicaInteger, T})  where {T}
               local res::Bool
 
               local a::ModelicaInteger
@@ -202,8 +201,7 @@
          #=   Function could used with List.sort to sort a
           List as list< tuple<Integer, Type_a> > by first argument.
            =#
-        T = Any
-        function compareTupleIntLt(inTplA::Tuple{<:ModelicaInteger, T}, inTplB::Tuple{<:ModelicaInteger, T})::Bool
+        function compareTupleIntLt(inTplA::Tuple{ModelicaInteger, T}, inTplB::Tuple{ModelicaInteger, T})  where {T}
               local res::Bool
 
               local a::ModelicaInteger
@@ -218,8 +216,7 @@
          #=   Function could used with List.sort to sort a
           List as list< tuple<Type_a,Integer> > by second argument.
            =#
-        T = Any
-        function compareTuple2IntGt(inTplA::Tuple{<:T, ModelicaInteger}, inTplB::Tuple{<:T, ModelicaInteger})::Bool
+        function compareTuple2IntGt(inTplA::Tuple{T, ModelicaInteger}, inTplB::Tuple{T, ModelicaInteger})  where {T}
               local res::Bool
 
               local a::ModelicaInteger
@@ -234,8 +231,7 @@
          #=   Function could used with List.sort to sort a
           List as list< tuple<Type_a,Integer> > by second argument.
            =#
-        T = Any
-        function compareTuple2IntLt(inTplA::Tuple{<:T, ModelicaInteger}, inTplB::Tuple{<:T, ModelicaInteger})::Bool
+        function compareTuple2IntLt(inTplA::Tuple{T, ModelicaInteger}, inTplB::Tuple{T, ModelicaInteger})  where {T}
               local res::Bool
 
               local a::ModelicaInteger
@@ -249,9 +245,7 @@
 
          #= Takes a tuple of two values and returns the first value.
            Example: tuple21(('a', 1)) => 'a' =#
-        T1 = Any
-        T2 = Any
-        function tuple21(inTuple::Tuple{<:T1, T2})::T1
+        function tuple21(inTuple::Tuple{T1, T2})  where {T1, T2}
               local outValue::T1
 
               (outValue, _) = inTuple
@@ -260,9 +254,7 @@
 
          #= Takes a tuple of two values and returns the second value.
            Example: tuple22(('a',1)) => 1 =#
-        T1 = Any
-        T2 = Any
-        function tuple22(inTuple::Tuple{<:T1, T2})::T2
+        function tuple22(inTuple::Tuple{T1, T2})  where {T1, T2}
               local outValue::T2
 
               (_, outValue) = inTuple
@@ -271,9 +263,7 @@
 
          #= Takes an option tuple of two values and returns the second value.
            Example: optTuple22(SOME('a',1)) => 1 =#
-        T1 = Any
-        T2 = Any
-        function optTuple22(inTuple::Option{<:Tuple{<:T1, T2}})::T2
+        function optTuple22(inTuple::Option{Tuple{T1, T2}})  where {T1, T2}
               local outValue::T2
 
               @match SOME((_, outValue)) = inTuple
@@ -282,11 +272,8 @@
 
          #= Takes a tuple of three values and returns the tuple of the two first values.
            Example: tuple312(('a',1,2)) => ('a',1) =#
-        T1 = Any
-        T2 = Any
-        T3 = Any
-        function tuple312(inTuple::Tuple{<:T1, T2, T3})::Tuple{<:T1, T2}
-              local outTuple::Tuple{<:T1, T2}
+        function tuple312(inTuple::Tuple{T1, T2, T3})  where {T1, T2, T3}
+              local outTuple::Tuple{T1, T2}
 
               local e1::T1
               local e2::T2
@@ -298,10 +285,7 @@
 
          #= Takes a tuple of three values and returns the first value.
            Example: tuple31(('a',1,2)) => 'a' =#
-        T1 = Any
-        T2 = Any
-        T3 = Any
-        function tuple31(inValue::Tuple{<:T1, T2, T3})::T1
+        function tuple31(inValue::Tuple{T1, T2, T3})  where {T1, T2, T3}
               local outValue::T1
 
               (outValue, _, _) = inValue
@@ -310,10 +294,7 @@
 
          #= Takes a tuple of three values and returns the second value.
            Example: tuple32(('a',1,2)) => 1 =#
-        T1 = Any
-        T2 = Any
-        T3 = Any
-        function tuple32(inValue::Tuple{<:T1, T2, T3})::T2
+        function tuple32(inValue::Tuple{T1, T2, T3})  where {T1, T2, T3}
               local outValue::T2
 
               (_, outValue, _) = inValue
@@ -322,140 +303,84 @@
 
          #= Takes a tuple of three values and returns the first value.
            Example: tuple33(('a',1,2)) => 2 =#
-        T1 = Any
-        T2 = Any
-        T3 = Any
-        function tuple33(inValue::Tuple{<:T1, T2, T3})::T3
+        function tuple33(inValue::Tuple{T1, T2, T3})  where {T1, T2, T3}
               local outValue::T3
 
               (_, _, outValue) = inValue
           outValue
         end
 
-        T1 = Any
-        T2 = Any
-        T3 = Any
-        T4 = Any
-        function tuple41(inTuple::Tuple{<:T1, T2, T3, T4})::T1
+        function tuple41(inTuple::Tuple{T1, T2, T3, T4})  where {T1, T2, T3, T4}
               local outValue::T1
 
               (outValue, _, _, _) = inTuple
           outValue
         end
 
-        T1 = Any
-        T2 = Any
-        T3 = Any
-        T4 = Any
-        function tuple42(inTuple::Tuple{<:T1, T2, T3, T4})::T2
+        function tuple42(inTuple::Tuple{T1, T2, T3, T4})  where {T1, T2, T3, T4}
               local outValue::T2
 
               (_, outValue, _, _) = inTuple
           outValue
         end
 
-        T1 = Any
-        T2 = Any
-        T3 = Any
-        T4 = Any
-        function tuple43(inTuple::Tuple{<:T1, T2, T3, T4})::T3
+        function tuple43(inTuple::Tuple{T1, T2, T3, T4})  where {T1, T2, T3, T4}
               local outValue::T3
 
               (_, _, outValue, _) = inTuple
           outValue
         end
 
-        T1 = Any
-        T2 = Any
-        T3 = Any
-        T4 = Any
-        function tuple44(inTuple::Tuple{<:T1, T2, T3, T4})::T4
+        function tuple44(inTuple::Tuple{T1, T2, T3, T4})  where {T1, T2, T3, T4}
               local outValue::T4
 
               (_, _, _, outValue) = inTuple
           outValue
         end
 
-        T1 = Any
-        T2 = Any
-        T3 = Any
-        T4 = Any
-        T5 = Any
-        function tuple51(inTuple::Tuple{<:T1, T2, T3, T4, T5})::T1
+        function tuple51(inTuple::Tuple{T1, T2, T3, T4, T5})  where {T1, T2, T3, T4, T5}
               local outValue::T1
 
               (outValue, _, _, _, _) = inTuple
           outValue
         end
 
-        T1 = Any
-        T2 = Any
-        T3 = Any
-        T4 = Any
-        T5 = Any
-        function tuple52(inTuple::Tuple{<:T1, T2, T3, T4, T5})::T2
+        function tuple52(inTuple::Tuple{T1, T2, T3, T4, T5})  where {T1, T2, T3, T4, T5}
               local outValue::T2
 
               (_, outValue, _, _, _) = inTuple
           outValue
         end
 
-        T1 = Any
-        T2 = Any
-        T3 = Any
-        T4 = Any
-        T5 = Any
-        function tuple53(inTuple::Tuple{<:T1, T2, T3, T4, T5})::T3
+        function tuple53(inTuple::Tuple{T1, T2, T3, T4, T5})  where {T1, T2, T3, T4, T5}
               local outValue::T3
 
               (_, _, outValue, _, _) = inTuple
           outValue
         end
 
-        T1 = Any
-        T2 = Any
-        T3 = Any
-        T4 = Any
-        T5 = Any
-        function tuple54(inTuple::Tuple{<:T1, T2, T3, T4, T5})::T4
+        function tuple54(inTuple::Tuple{T1, T2, T3, T4, T5})  where {T1, T2, T3, T4, T5}
               local outValue::T4
 
               (_, _, _, outValue, _) = inTuple
           outValue
         end
 
-        T1 = Any
-        T2 = Any
-        T3 = Any
-        T4 = Any
-        T5 = Any
-        function tuple55(inTuple::Tuple{<:T1, T2, T3, T4, T5})::T5
+        function tuple55(inTuple::Tuple{T1, T2, T3, T4, T5})  where {T1, T2, T3, T4, T5}
               local outValue::T5
 
               (_, _, _, _, outValue) = inTuple
           outValue
         end
 
-        T1 = Any
-        T2 = Any
-        T3 = Any
-        T4 = Any
-        T5 = Any
-        T6 = Any
-        function tuple61(inTuple::Tuple{<:T1, T2, T3, T4, T5, T6})::T1
+        function tuple61(inTuple::Tuple{T1, T2, T3, T4, T5, T6})  where {T1, T2, T3, T4, T5, T6}
               local outValue::T1
 
               (outValue, _, _, _, _, _) = inTuple
           outValue
         end
 
-        T1 = Any
-        T2 = Any
-        T3 = Any
-        T4 = Any
-        T5 = Any
-        T6 = Any
-        function tuple62(inTuple::Tuple{<:T1, T2, T3, T4, T5, T6})::T2
+        function tuple62(inTuple::Tuple{T1, T2, T3, T4, T5, T6})  where {T1, T2, T3, T4, T5, T6}
               local outValue::T2
 
               (_, outValue, _, _, _, _) = inTuple
@@ -463,7 +388,7 @@
         end
 
          #= Returns true if a string contains a specified character =#
-        function stringContainsChar(str::String, char::String)::Bool
+        function stringContainsChar(str::String, char::String) ::Bool
               local res::Bool
 
               res = begin
@@ -493,7 +418,7 @@
                   local str1::String
                   local str2::String
                   local str::String
-                  local r::List{<:String}
+                  local r::List{String}
                 @matchcontinue inStringLst begin
                    nil()  => begin
                     ()
@@ -519,7 +444,7 @@
           consecutive strings in a list. But it also count the lists and inserts a second string delimiter
           when the counter is reached. This can be used when for instance outputting large lists of values
           and a newline is needed after ten or so items. =#
-        function stringDelimitListAndSeparate(str::List{<:String}, sep1::String, sep2::String, n::ModelicaInteger)::String
+        function stringDelimitListAndSeparate(str::List{<:String}, sep1::String, sep2::String, n::ModelicaInteger) ::String
               local res::String
 
               local handle::ModelicaInteger
@@ -541,7 +466,7 @@
                   local f::String
                   local sep1::String
                   local sep2::String
-                  local r::List{<:String}
+                  local r::List{String}
                   local n::ModelicaInteger
                   local iter_1::ModelicaInteger
                   local iter::ModelicaInteger
@@ -591,10 +516,10 @@
 
          #= the string delimiter inserted between those elements that are not empty.
           Example: stringDelimitListNonEmptyElts({\\\"x\\\",\\\"\\\",\\\"z\\\"}, \\\", \\\") => \\\"x, z\\\" =#
-        function stringDelimitListNonEmptyElts(lst::List{<:String}, delim::String)::String
+        function stringDelimitListNonEmptyElts(lst::List{<:String}, delim::String) ::String
               local str::String
 
-              local lst1::List{<:String}
+              local lst1::List{String}
 
               lst1 = ListUtil.select(lst, isNotEmptyString)
               str = stringDelimitList(lst1, delim)
@@ -603,11 +528,11 @@
 
          #=  splits the input string at the delimiter string in list of strings and converts to integer list which is then summarized
            =#
-        function mulStringDelimit2Int(inString::String, delim::String)::ModelicaInteger
+        function mulStringDelimit2Int(inString::String, delim::String) ::ModelicaInteger
               local i::ModelicaInteger
 
-              local lst::List{<:String}
-              local lst2::List{<:ModelicaInteger}
+              local lst::List{String}
+              local lst2::List{ModelicaInteger}
 
               lst = stringSplitAtChar(inString, delim)
               lst2 = ListUtil.map(lst, stringInt)
@@ -625,7 +550,7 @@
                          replace a char with a string
           Example: string_replace_char(\\\"hej.b.c\\\",\\\".\\\",\\\"_dot_\\\") => \\\"hej_dot_b_dot_c\\\"
            =#
-        function stringReplaceChar(inString1::String, inString2::String, inString3::String)::String
+        function stringReplaceChar(inString1::String, inString2::String, inString3::String) ::String
               local outString::String
 
               outString = System.stringReplace(inString1, inString2, inString3)
@@ -634,16 +559,16 @@
 
          #= Takes a string and a char and split the string at the char returning the list of components.
           Example: stringSplitAtChar(\\\"hej.b.c\\\",\\\".\\\") => {\\\"hej,\\\"b\\\",\\\"c\\\"} =#
-        function stringSplitAtChar(string::String, token::String)::List{<:String}
-              local strings::List{<:String} = list()
+        function stringSplitAtChar(string::String, token::String) ::List{String}
+              local strings::List{String} = nil
 
               local ch::ModelicaInteger = stringCharInt(token)
-              local cur::List{<:String} = list()
+              local cur::List{String} = nil
 
               for c in stringListStringChar(string)
                 if stringCharInt(c) == ch
                   strings = stringAppendList(listReverse(cur)) <| strings
-                  cur = list()
+                  cur = nil
                 else
                   cur = c <| cur
                 end
@@ -661,7 +586,7 @@
 
           NOTE: This function should not be used in OMC, since the OMC backend no longer
             uses stringified components. It is still used by MathCore though. =#
-        function modelicaStringToCStr(str::String, changeDerCall::Bool #= if true, first change 'DER(v)' to $derivativev =#)::String
+        function modelicaStringToCStr(str::String, changeDerCall::Bool #= if true, first change 'DER(v)' to $derivativev =#) ::String
               local res_str::String
 
               res_str = begin
@@ -692,13 +617,13 @@
 
          #= help function to modelicaStringToCStr,
         first  changes name 'der(v)' to $derivativev and 'pre(v)' to 'pre(v)' with applied rules for v =#
-        function modelicaStringToCStr2(inDerName::String)::String
+        function modelicaStringToCStr2(inDerName::String) ::String
               local outDerName::String
 
               outDerName = begin
                   local name::String
                   local derName::String
-                  local names::List{<:String}
+                  local names::List{String}
                 @matchcontinue inDerName begin
                   derName  => begin
                       @match 0 = System.strncmp(derName, "der(", 4)
@@ -732,7 +657,7 @@
         end
 
          #=  =#
-        function modelicaStringToCStr1(inString::String, inReplacePatternLst::List{<:ReplacePattern})::String
+        function modelicaStringToCStr1(inString::String, inReplacePatternLst::List{<:ReplacePattern}) ::String
               local outString::String
 
               outString = begin
@@ -741,7 +666,7 @@
                   local res_str::String
                   local from::String
                   local to::String
-                  local res::List{<:ReplacePattern}
+                  local res::List{ReplacePattern}
                 @matchcontinue (inString, inReplacePatternLst) begin
                   (str,  nil())  => begin
                     str
@@ -768,14 +693,14 @@
 
           NOTE: This function should not be used in OMC, since the OMC backend no longer
             uses stringified components. It is still used by MathCore though. =#
-        function cStrToModelicaString(str::String)::String
+        function cStrToModelicaString(str::String) ::String
               local res_str::String
 
               res_str = cStrToModelicaString1(str, replaceStringPatterns)
           res_str
         end
 
-        function cStrToModelicaString1(inString::String, inReplacePatternLst::List{<:ReplacePattern})::String
+        function cStrToModelicaString1(inString::String, inReplacePatternLst::List{<:ReplacePattern}) ::String
               local outString::String
 
               outString = begin
@@ -784,7 +709,7 @@
                   local res_str::String
                   local from::String
                   local to::String
-                  local res::List{<:ReplacePattern}
+                  local res::List{ReplacePattern}
                 @match (inString, inReplacePatternLst) begin
                   (str,  nil())  => begin
                     str
@@ -803,7 +728,7 @@
          #= Example:
             boolOrList({true,false,false})  => true
             boolOrList({false,false,false}) => false =#
-        function boolOrList(inBooleanLst::List{<:Bool})::Bool
+        function boolOrList(inBooleanLst::List{<:Bool}) ::Bool
               local outBoolean::Bool = false
 
               for b in inBooleanLst
@@ -820,7 +745,7 @@
           boolAndList({}) => true
           boolAndList({true, true}) => true
           boolAndList({false,false,true}) => false =#
-        function boolAndList(inBooleanLst::List{<:Bool})::Bool
+        function boolAndList(inBooleanLst::List{<:Bool}) ::Bool
               local outBoolean::Bool = true
 
               for b in inBooleanLst
@@ -839,19 +764,15 @@
              applyOption(SOME(1), intString) => SOME(\\\"1\\\")
              applyOption(NONE(),  intString) => NONE()
            =#
-        TI = Any
-        TO = Any
-        function applyOption(inOption::Option{<:TI}, inFunc::FuncType)::Option{<:TO}
-              local outOption::Option{<:TO}
-
+        function applyOption(inOption::Option{TI}, inFunc::FuncType)  where {TI}
+              local outOption::Option
               outOption = begin
                   local ival::TI
-                  local oval::TO
+                  local oval
                 @match inOption begin
                   SOME(ival)  => begin
                     SOME(inFunc(ival))
                   end
-
                   _  => begin
                       NONE()
                   end
@@ -861,15 +782,11 @@
         end
 
          #= Like applyOption but takes an additional argument =#
-        TI = Any
-        TO = Any
-        ArgT = Any
-        function applyOption1(inOption::Option{<:TI}, inFunc::FuncType, inArg::ArgT)::Option{<:TO}
-              local outOption::Option{<:TO}
-
+        function applyOption1(inOption::Option{TI}, inFunc::FuncType, inArg::ArgT)  where {TI, ArgT}
+              local outOption::Option
               outOption = begin
                   local ival::TI
-                  local oval::TO
+                  local oval
                 @match inOption begin
                   SOME(ival)  => begin
                     SOME(inFunc(ival, inArg))
@@ -886,19 +803,15 @@
          #= Takes an optional value, a function and an extra value. If the optional value
            is SOME, applies the function on that value and returns the result.
            Otherwise returns the extra value. =#
-        TI = Any
-        TO = Any
-        function applyOptionOrDefault(inValue::Option{<:TI}, inFunc::FuncType, inDefaultValue::TO)::TO
-              local outValue::TO
-
+        function applyOptionOrDefault(inValue::Option{TI}, inFunc::FuncType, inDefaultValue)  where {TI, TO}
+              local outValue
               outValue = begin
                   local value::TI
-                  local res::TO
+                  local res
                 @match inValue begin
                   SOME(value)  => begin
                     inFunc(value)
                   end
-
                   _  => begin
                       inDefaultValue
                   end
@@ -910,15 +823,11 @@
          #= Takes an optional value, a function, an extra argument and an extra value.
            If the optional value is SOME, applies the function on that value and the
            extra argument and returns the result. Otherwise returns the extra value. =#
-        TI = Any
-        TO = Any
-        ArgT = Any
-        function applyOptionOrDefault1(inValue::Option{<:TI}, inFunc::FuncType, inArg::ArgT, inDefaultValue::TO)::TO
+        function applyOptionOrDefault1(inValue::Option{TI}, inFunc::FuncType, inArg::ArgT, inDefaultValue::TO)  where {TI, ArgT, TO}
               local outValue::TO
-
               outValue = begin
                   local value::TI
-                  local res::TO
+                  local res
                 @match inValue begin
                   SOME(value)  => begin
                     inFunc(value, inArg)
@@ -935,13 +844,8 @@
          #= Takes an optional value, a function, two extra arguments and an extra value.
            If the optional value is SOME, applies the function on that value and the
            extra argument and returns the result. Otherwise returns the extra value. =#
-        TI = Any
-        TO = Any
-        ArgT1 = Any
-        ArgT2 = Any
-        function applyOptionOrDefault2(inValue::Option{<:TI}, inFunc::FuncType, inArg1::ArgT1, inArg2::ArgT2, inDefaultValue::TO)::TO
-              local outValue::TO
-
+        function applyOptionOrDefault2(inValue::Option{TI}, inFunc::FuncType, inArg1::ArgT1, inArg2::ArgT2, inDefaultValue::TO)  where {TI, TO, ArgT1, ArgT2}
+              local outValue
               outValue = begin
                   local value::TI
                   local res::TO
@@ -949,7 +853,6 @@
                   SOME(value)  => begin
                     inFunc(value, inArg1, inArg2)
                   end
-
                   _  => begin
                       inDefaultValue
                   end
@@ -958,9 +861,8 @@
           outValue
         end
 
-        T = Any
-        function applyOption_2(inValue1::Option{<:T}, inValue2::Option{<:T}, inFunc::FuncType)::Option{<:T}
-              local outValue::Option{<:T}
+        function applyOption_2(inValue1::Option{T}, inValue2::Option{T}, inFunc::FuncType)  where {T}
+              local outValue::Option{T}
 
               outValue = begin
                 @match (inValue1, inValue2) begin
@@ -981,15 +883,13 @@
         end
 
          #= Makes a value into value option, using SOME(value) =#
-        T = Any
-        function makeOption(inValue::T)::Option{<:T}
-              local outOption::Option{<:T} = SOME(inValue)
+        function makeOption(inValue::T)  where {T}
+              local outOption::Option{T} = SOME(inValue)
           outOption
         end
 
-        T = Any
-        function makeOptionOnTrue(inCondition::Bool, inValue::T)::Option{<:T}
-              local outOption::Option{<:T} = if inCondition
+        function makeOptionOnTrue(inCondition::Bool, inValue::T)  where {T}
+              local outOption::Option{T} = if inCondition
                     SOME(inValue)
                   else
                     NONE()
@@ -999,7 +899,7 @@
 
          #= author: PA
           Returns string value or empty string from string option. =#
-        function stringOption(inStringOption::Option{<:String})::String
+        function stringOption(inStringOption::Option{<:String}) ::String
               local outString::String
 
               outString = begin
@@ -1018,8 +918,7 @@
         end
 
          #= Returns an option value if SOME, otherwise fails =#
-        T = Any
-        function getOption(inOption::Option{<:T})::T
+        function getOption(inOption::Option{T})  where {T}
               local outValue::T
 
               @match SOME(outValue) = inOption
@@ -1027,8 +926,7 @@
         end
 
          #= Returns an option value if SOME, otherwise the default =#
-        T = Any
-        function getOptionOrDefault(inOption::Option{<:T}, inDefault::T)::T
+        function getOptionOrDefault(inOption::Option{T}, inDefault::T)  where {T}
               local outValue::T
 
               outValue = begin
@@ -1047,24 +945,24 @@
         end
 
          #= Returns true if integer value is greater zero (> 0) =#
-        function intGreaterZero(v::ModelicaInteger)::Bool
+        function intGreaterZero(v::ModelicaInteger) ::Bool
               local res::Bool = v > 0
           res
         end
 
          #= Returns true if integer value is positive (>= 0) =#
-        function intPositive(v::ModelicaInteger)::Bool
+        function intPositive(v::ModelicaInteger) ::Bool
               local res::Bool = v >= 0
           res
         end
 
          #= Returns true if integer value is negative (< 0) =#
-        function intNegative(v::ModelicaInteger)::Bool
+        function intNegative(v::ModelicaInteger) ::Bool
               local res::Bool = v < 0
           res
         end
 
-        function intSign(i::ModelicaInteger)::ModelicaInteger
+        function intSign(i::ModelicaInteger) ::ModelicaInteger
               local o::ModelicaInteger = if i == 0
                     0
                   elseif (i > 0)
@@ -1077,7 +975,7 @@
 
          #= Compares two integers and return -1 if the first is smallest, 1 if the second
            is smallest, or 0 if they are equal. =#
-        function intCompare(inN::ModelicaInteger, inM::ModelicaInteger)::ModelicaInteger
+        function intCompare(inN::ModelicaInteger, inM::ModelicaInteger) ::ModelicaInteger
               local outResult::ModelicaInteger = if inN == inM
                     0
                   elseif (inN > inM)
@@ -1089,7 +987,7 @@
         end
 
          #= Performs integer exponentiation. =#
-        function intPow(base::ModelicaInteger, exponent::ModelicaInteger)::ModelicaInteger
+        function intPow(base::ModelicaInteger, exponent::ModelicaInteger) ::ModelicaInteger
               local result::ModelicaInteger = 1
 
               if exponent >= 0
@@ -1104,7 +1002,7 @@
 
          #= Compares two reals and return -1 if the first is smallest, 1 if the second
            is smallest, or 0 if they are equal. =#
-        function realCompare(inN::ModelicaReal, inM::ModelicaReal)::ModelicaInteger
+        function realCompare(inN::ModelicaReal, inM::ModelicaReal) ::ModelicaInteger
               local outResult::ModelicaInteger = if inN == inM
                     0
                   elseif (inN > inM)
@@ -1117,7 +1015,7 @@
 
          #= Compares two booleans and return -1 if the first is smallest, 1 if the second
            is smallest, or 0 if they are equal. =#
-        function boolCompare(inN::Bool, inM::Bool)::ModelicaInteger
+        function boolCompare(inN::Bool, inM::Bool) ::ModelicaInteger
               local outResult::ModelicaInteger = if inN == inM
                     0
                   elseif (inN > inM)
@@ -1129,7 +1027,7 @@
         end
 
          #= Returns true if string is not the empty string. =#
-        function isNotEmptyString(inString::String)::Bool
+        function isNotEmptyString(inString::String) ::Bool
               local outIsNotEmpty::Bool = stringLength(inString) > 0
           outIsNotEmpty
         end
@@ -1144,7 +1042,7 @@
               end
         end
 
-        function stringStartsWith(inString1::String, inString2::String)::Bool
+        function stringStartsWith(inString1::String, inString2::String) ::Bool
               local outEqual::Bool
 
               outEqual = 0 == System.strncmp(inString1, inString2, stringLength(inString1))
@@ -1153,7 +1051,7 @@
 
          #= Compare two strings up to the nth character
           Returns true if they are equal. =#
-        function strncmp(inString1::String, inString2::String, inLength::ModelicaInteger)::Bool
+        function strncmp(inString1::String, inString2::String, inLength::ModelicaInteger) ::Bool
               local outEqual::Bool
 
               outEqual = 0 == System.strncmp(inString1, inString2, inLength)
@@ -1162,7 +1060,7 @@
 
          #= Compares two strings up to the nth character. Returns true if they are not
           equal. =#
-        function notStrncmp(inString1::String, inString2::String, inLength::ModelicaInteger)::Bool
+        function notStrncmp(inString1::String, inString2::String, inLength::ModelicaInteger) ::Bool
               local outEqual::Bool
 
               outEqual = 0 != System.strncmp(inString1, inString2, inLength)
@@ -1171,14 +1069,14 @@
 
          #= author: PA
           Returns tick as a string, i.e. an unique number. =#
-        function tickStr()::String
+        function tickStr() ::String
               local s::String = intString(tick())
           s
         end
 
          #= @author: adrpo
          replace \\\\ with path delimiter only in Windows! =#
-        function replaceWindowsBackSlashWithPathDelimiter(inPath::String)::String
+        function replaceWindowsBackSlashWithPathDelimiter(inPath::String) ::String
               local outPath::String
 
               if Autoconf.os == "Windows_NT"
@@ -1193,7 +1091,7 @@
           splits the filepath in directory and filename
           (\\\"c:\\\\programs\\\\file.mo\\\") => (\\\"c:\\\\programs\\\",\\\"file.mo\\\")
           (\\\"..\\\\work\\\\file.mo\\\") => (\\\"c:\\\\openmodelica123\\\\work\\\", \\\"file.mo\\\") =#
-        function getAbsoluteDirectoryAndFile(filename::String)::Tuple{String, String}
+        function getAbsoluteDirectoryAndFile(filename::String) ::Tuple{String, String}
               local basename::String
               local dirname::String
 
@@ -1208,7 +1106,7 @@
 
          #= author: x02lucpo
           replace the double-backslash with backslash =#
-        function rawStringToInputString(inString::String)::String
+        function rawStringToInputString(inString::String) ::String
               local outString::String
 
               outString = System.stringReplace(inString, "\\\\\\", "\\") #= change backslash-double-quote to double-quote  =#
@@ -1216,7 +1114,7 @@
           outString
         end
 
-        function escapeModelicaStringToCString(modelicaString::String)::String
+        function escapeModelicaStringToCString(modelicaString::String) ::String
               local cString::String
 
                #=  C cannot handle newline in string constants
@@ -1225,7 +1123,7 @@
           cString
         end
 
-        function escapeModelicaStringToJLString(modelicaString::String)::String
+        function escapeModelicaStringToJLString(modelicaString::String) ::String
               local cString::String
 
                #= TODO. Do this the proper way. We just remove all the dollars for now
@@ -1238,7 +1136,7 @@
           cString
         end
 
-        function escapeModelicaStringToXmlString(modelicaString::String)::String
+        function escapeModelicaStringToXmlString(modelicaString::String) ::String
               local xmlString::String
 
                #=  C cannot handle newline in string constants
@@ -1260,34 +1158,27 @@
           xmlString
         end
 
-        T1 = Any
-        T2 = Any
-        function makeTuple(inValue1::T1, inValue2::T2)::Tuple{<:T1, T2}
-              local outTuple::Tuple{<:T1, T2} = (inValue1, inValue2)
+        function makeTuple(inValue1::T1, inValue2::T2)  where {T1, T2}
+              local outTuple::Tuple{T1, T2} = (inValue1, inValue2)
           outTuple
         end
 
-        T1 = Any
-        T2 = Any
-        function makeTupleR(inValue1::T1, inValue2::T2)::Tuple{<:T2, T1}
-              local outTuple::Tuple{<:T2, T1} = (inValue2, inValue1)
+        function makeTupleR(inValue1::T1, inValue2::T2)  where {T1, T2}
+              local outTuple::Tuple{T2, T1} = (inValue2, inValue1)
           outTuple
         end
 
-        T1 = Any
-        T2 = Any
-        T3 = Any
-        function make3Tuple(inValue1::T1, inValue2::T2, inValue3::T3)::Tuple{<:T1, T2, T3}
-              local outTuple::Tuple{<:T1, T2, T3} = (inValue1, inValue2, inValue3)
+        function make3Tuple(inValue1::T1, inValue2::T2, inValue3::T3)  where {T1, T2, T3}
+              local outTuple::Tuple{T1, T2, T3} = (inValue1, inValue2, inValue3)
           outTuple
         end
 
-        function mulListIntegerOpt(inList::List{<:Option{<:ModelicaInteger}}, inAccum::ModelicaInteger = 1)::ModelicaInteger
+        function mulListIntegerOpt(inList::List{<:Option{<:ModelicaInteger}}, inAccum::ModelicaInteger = 1) ::ModelicaInteger
               local outResult::ModelicaInteger
 
               outResult = begin
                   local i::ModelicaInteger
-                  local rest::List{<:Option{<:ModelicaInteger}}
+                  local rest::List{Option{ModelicaInteger}}
                 @match inList begin
                    nil()  => begin
                     inAccum
@@ -1305,16 +1196,16 @@
           outResult
         end
 
-        StatefulBoolean = Array{Bool}  #= A single boolean value that can be updated (a destructive operation). NOTE: Use Mutable<Boolean> instead. This implementation is kept since Susan cannot use that type. =#
+        StatefulBoolean = Array  #= A single boolean value that can be updated (a destructive operation). NOTE: Use Mutable<Boolean> instead. This implementation is kept since Susan cannot use that type. =#
 
          #= Create a boolean with state (that is, it is mutable) =#
-        function makeStatefulBoolean(b::Bool)::StatefulBoolean
+        function makeStatefulBoolean(b::Bool) ::StatefulBoolean
               local sb::StatefulBoolean = arrayCreate(1, b)
           sb
         end
 
          #= Create a boolean with state (that is, it is mutable) =#
-        function getStatefulBoolean(sb::StatefulBoolean)::Bool
+        function getStatefulBoolean(sb::StatefulBoolean) ::Bool
               local b::Bool = sb[1]
           b
         end
@@ -1325,9 +1216,7 @@
         end
 
          #= Takes two options and a function to compare the type. =#
-        T1 = Any
-        T2 = Any
-        function optionEqual(inOption1::Option{<:T1}, inOption2::Option{<:T2}, inFunc::CompareFunc)::Bool
+        function optionEqual(inOption1::Option{T1}, inOption2::Option{T2}, inFunc::CompareFunc)  where {T1, T2}
               local outEqual::Bool
 
               outEqual = begin
@@ -1351,9 +1240,7 @@
         end
 
          #= Returns the value if the function call succeeds, otherwise the default =#
-        TI = Any
-        TO = Any
-        function makeValueOrDefault(inFunc::FuncType, inArg::TI, inDefaultValue::TO)::TO
+        function makeValueOrDefault(inFunc::FuncType, inArg::TI, inDefaultValue::TO)  where {TI, TO}
               local outValue::TO
 
               try
@@ -1365,7 +1252,7 @@
         end
 
          #= Escapes a String so that it can be used in xml =#
-        function xmlEscape(s1::String)::String
+        function xmlEscape(s1::String) ::String
               local s2::String
 
               s2 = stringReplaceChar(s1, "&", "&amp;")
@@ -1376,19 +1263,19 @@
         end
 
          #= As strcmp, but has Boolean output as is expected by the sort function =#
-        function strcmpBool(s1::String, s2::String)::Bool
+        function strcmpBool(s1::String, s2::String) ::Bool
               local b::Bool = stringCompare(s1, s2) > 0
           b
         end
 
          #= @author: adrpo
           This function will append the first string to the second string =#
-        function stringAppendReverse(str1::String, str2::String)::String
+        function stringAppendReverse(str1::String, str2::String) ::String
               local str::String = stringAppend(str2, str1)
           str
         end
 
-        function stringAppendNonEmpty(inString1::String, inString2::String)::String
+        function stringAppendNonEmpty(inString1::String, inString2::String) ::String
               local outString::String
 
               outString = begin
@@ -1405,7 +1292,7 @@
           outString
         end
 
-        function getCurrentDateTime()::DateTime
+        function getCurrentDateTime() ::DateTime
               local dt::DateTime
 
               local sec::ModelicaInteger
@@ -1420,16 +1307,16 @@
           dt
         end
 
-        function isSuccess(status::Status)::Bool
+        function isSuccess(status::Status) ::Bool
               local bool::Bool
 
               bool = begin
                 @match status begin
-                  SUCCESS()  => begin
+                  SUCCESS(__)  => begin
                     true
                   end
 
-                  FAILURE()  => begin
+                  FAILURE(__)  => begin
                     false
                   end
                 end
@@ -1437,20 +1324,19 @@
           bool
         end
 
-        T = Any
-        function id(inValue::T)::T
+        function id(inValue::T)  where {T}
               local outValue::T = inValue
           outValue
         end
 
          #= Takes two lists of the same type and builds a string like x = val1, y = val2, ....
           Example: listThread({1,2,3},{4,5,6},'=',',') => 1=4, 2=5, 3=6 =#
-        function buildMapStr(inLst1::List{<:String}, inLst2::List{<:String}, inMiddleDelimiter::String, inEndDelimiter::String)::String
+        function buildMapStr(inLst1::List{<:String}, inLst2::List{<:String}, inMiddleDelimiter::String, inEndDelimiter::String) ::String
               local outStr::String
 
               outStr = begin
-                  local ra::List{<:String}
-                  local rb::List{<:String}
+                  local ra::List{String}
+                  local rb::List{String}
                   local fa::String
                   local fb::String
                   local md::String
@@ -1480,9 +1366,7 @@
           Does linear search using equality(). This means it is slow for large
           inputs (many elements or large elements); if you have large inputs, you
           should use a hash-table instead. =#
-        Key = Any
-        Val = Any
-        function assoc(inKey::Key, inList::List{<:Tuple{<:Key, Val}})::Val
+        function assoc(inKey::Key, inList::List{Tuple{Key, Val}})  where {Key, Val}
               local outValue::Val
 
               local k::Key
@@ -1502,9 +1386,8 @@
 
           This function screams WARNING I USE COMBINATORIAL EXPLOSION.
           So there are flags that limit the size of the set it works on. =#
-        T = Any
-        function allCombinations(lst::List{<:List{<:T}}, maxTotalSize::Option{<:ModelicaInteger}, info::SourceInfo)::List{<:List{<:T}}
-              local out::List{<:List{<:T}}
+        function allCombinations(lst::List{List{T}}, maxTotalSize::Option{ModelicaInteger}, info::SourceInfo)  where {T}
+              local out::List{List{T}}
 
               out = begin
                   local sz::ModelicaInteger
@@ -1532,21 +1415,20 @@
           The output is a 2-dim list with lengths (len1*len2*...*lenN)) and N.
 
           This function screams WARNING I USE COMBINATORIAL EXPLOSION. =#
-        T = Any
-        function allCombinations2(ilst::List{<:List{<:T}})::List{<:List{<:T}}
-              local out::List{<:List{<:T}}
+        function allCombinations2(ilst::List{List{T}})  where {T}
+              local out::List{List{T}}
 
               out = begin
-                  local x::List{<:T}
-                  local lst::List{<:List{<:T}}
+                  local x::List{T}
+                  local lst::List{List{T}}
                 @match ilst begin
                    nil()  => begin
-                    list()
+                    nil
                   end
 
                   x <| lst  => begin
                       lst = allCombinations2(lst)
-                      lst = allCombinations3(x, lst, list())
+                      lst = allCombinations3(x, lst, nil)
                     lst
                   end
                 end
@@ -1554,15 +1436,14 @@
           out
         end
 
-        T = Any
-        function allCombinations3(ilst1::List{<:T}, ilst2::List{<:List{<:T}}, iacc::List{<:List{<:T}})::List{<:List{<:T}}
-              local out::List{<:List{<:T}}
+        function allCombinations3(ilst1::List{T}, ilst2::List{List{T}}, iacc::List{List{T}})  where {T}
+              local out::List{List{T}}
 
               out = begin
                   local x::T
-                  local lst1::List{<:T}
-                  local lst2::List{<:List{<:T}}
-                  local acc::List{<:List{<:T}}
+                  local lst1::List{T}
+                  local lst2::List{List{T}}
+                  local acc::List{List{T}}
                 @match (ilst1, ilst2, iacc) begin
                   ( nil(), _, acc)  => begin
                     listReverse(acc)
@@ -1578,14 +1459,13 @@
           out
         end
 
-        T = Any
-        function allCombinations4(x::T, ilst::List{<:List{<:T}}, iacc::List{<:List{<:T}})::List{<:List{<:T}}
-              local out::List{<:List{<:T}}
+        function allCombinations4(x::T, ilst::List{List{T}}, iacc::List{List{T}})  where {T}
+              local out::List{List{T}}
 
               out = begin
-                  local l::List{<:T}
-                  local lst::List{<:List{<:T}}
-                  local acc::List{<:List{<:T}}
+                  local l::List{T}
+                  local lst::List{List{T}}
+                  local acc::List{List{T}}
                 @match (x, ilst, iacc) begin
                   (_,  nil(), acc)  => begin
                     list(x) <| acc
@@ -1605,7 +1485,7 @@
         end
 
          #= Returns 1 if the given boolean is true, otherwise 0. =#
-        function boolInt(inBoolean::Bool)::ModelicaInteger
+        function boolInt(inBoolean::Bool) ::ModelicaInteger
               local outInteger::ModelicaInteger = if inBoolean
                     1
                   else
@@ -1615,14 +1495,14 @@
         end
 
          #= Returns true if the given integer is larger than 0, otherwise false. =#
-        function intBool(inInteger::ModelicaInteger)::Bool
+        function intBool(inInteger::ModelicaInteger) ::Bool
               local outBoolean::Bool = inInteger > 0
           outBoolean
         end
 
          #= Converts a string to a boolean value. true and yes is converted to true,
           false and no is converted to false. The function is case-insensitive. =#
-        function stringBool(inString::String)::Bool
+        function stringBool(inString::String) ::Bool
               local outBoolean::Bool
 
               outBoolean = stringBool2(System.tolower(inString))
@@ -1630,7 +1510,7 @@
         end
 
          #= Helper function to stringBool. =#
-        function stringBool2(inString::String)::Bool
+        function stringBool2(inString::String) ::Bool
               local outBoolean::Bool
 
               outBoolean = begin
@@ -1655,7 +1535,7 @@
           outBoolean
         end
 
-        function stringEqCaseInsensitive(str1::String, str2::String)::Bool
+        function stringEqCaseInsensitive(str1::String, str2::String) ::Bool
               local eq::Bool
 
               eq = stringEq(System.tolower(str1), System.tolower(str2))
@@ -1664,9 +1544,8 @@
 
          #= SOME(a) => {a}
            NONE()  => {} =#
-        T = Any
-        function optionList(inOption::Option{<:T})::List{<:T}
-              local outList::List{<:T}
+        function optionList(inOption::Option{T})  where {T}
+              local outList::List{T}
 
               outList = begin
                   local value::T
@@ -1676,7 +1555,7 @@
                   end
 
                   _  => begin
-                      list()
+                      nil
                   end
                 end
               end
@@ -1686,7 +1565,7 @@
          #= Pads a string with the given padding so that the resulting string is as long
            as the given width. If the string is already longer nothing is done to it.
            Note that the length of the padding is assumed to be one, i.e. a single char. =#
-        function stringPadRight(inString::String, inPadWidth::ModelicaInteger, inPadString::String)::String
+        function stringPadRight(inString::String, inPadWidth::ModelicaInteger, inPadString::String) ::String
               local outString::String
 
               local pad_length::ModelicaInteger
@@ -1705,7 +1584,7 @@
          #= Pads a string with the given padding so that the resulting string is as long
            as the given width. If the string is already longer nothing is done to it.
            Note that the length of the padding is assumed to be one, i.e. a single char. =#
-        function stringPadLeft(inString::String, inPadWidth::ModelicaInteger, inPadString::String)::String
+        function stringPadLeft(inString::String, inPadWidth::ModelicaInteger, inPadString::String) ::String
               local outString::String
 
               local pad_length::ModelicaInteger
@@ -1722,7 +1601,7 @@
         end
 
          #= Returns all but the first character of a string. =#
-        function stringRest(inString::String)::String
+        function stringRest(inString::String) ::String
               local outRest::String
 
               local len::ModelicaInteger
@@ -1732,7 +1611,7 @@
           outRest
         end
 
-        function intProduct(lst::List{<:ModelicaInteger})::ModelicaInteger
+        function intProduct(lst::List{<:ModelicaInteger}) ::ModelicaInteger
               local i::ModelicaInteger = ListUtil.fold(lst, intMul, 1)
           i
         end
@@ -1743,7 +1622,7 @@
            small (the largest gap between primes up to 32 bit is only around 300) it's
            still reasonably fast. It's useful for e.g. determining a good size for a
            hash table with a known number of elements. =#
-        function nextPrime(inN::ModelicaInteger)::ModelicaInteger
+        function nextPrime(inN::ModelicaInteger) ::ModelicaInteger
               local outNextPrime::ModelicaInteger
 
               outNextPrime = if inN <= 2
@@ -1756,7 +1635,7 @@
 
          #= Helper function to nextPrime2, does the actual work of finding the next
            prime. =#
-        function nextPrime2(inN::ModelicaInteger)::ModelicaInteger
+        function nextPrime2(inN::ModelicaInteger) ::ModelicaInteger
               local outNextPrime::ModelicaInteger
 
               outNextPrime = if nextPrime_isPrime(inN)
@@ -1770,7 +1649,7 @@
          #= Helper function to nextPrime2, checks if a given number is a prime or not.
            Note that this function is not a general prime checker, it only works for
            positive odd numbers. =#
-        function nextPrime_isPrime(inN::ModelicaInteger)::Bool
+        function nextPrime_isPrime(inN::ModelicaInteger) ::Bool
               local outIsPrime::Bool
 
               local i::ModelicaInteger = 3
@@ -1795,8 +1674,7 @@
         end
 
          #= Useful if you do not want to write an unparser =#
-        T = Any
-        function anyToEmptyString(a::T)::String
+        function anyToEmptyString(a::T)  where {T}
               local empty::String = ""
           empty
         end
@@ -1814,7 +1692,7 @@
          end
 
          #= Translate content to a string =#
-        function translateContent(msg::TranslatableContent)::String
+        function translateContent(msg::TranslatableContent) ::String
               local str::String
 
               str = begin
@@ -1832,34 +1710,33 @@
           str
         end
 
-        function removeLast3Char(str::String)::String
+        function removeLast3Char(str::String) ::String
               local outStr::String
 
               outStr = substring(str, 1, stringLength(str) - 3)
           outStr
         end
 
-        function removeLast4Char(str::String)::String
+        function removeLast4Char(str::String) ::String
               local outStr::String
 
               outStr = substring(str, 1, stringLength(str) - 4)
           outStr
         end
 
-        function removeLastNChar(str::String, n::ModelicaInteger)::String
+        function removeLastNChar(str::String, n::ModelicaInteger) ::String
               local outStr::String
 
               outStr = substring(str, 1, stringLength(str) - n)
           outStr
         end
 
-        function stringNotEqual(str1::String, str2::String)::Bool
+        function stringNotEqual(str1::String, str2::String) ::Bool
               local b::Bool = ! stringEq(str1, str2)
           b
         end
 
-        T = Any
-        function swap(cond::Bool, in1::T, in2::T)::Tuple{T, T}
+        function swap(cond::Bool, in1::T, in2::T)  where {T}
               local out2::T
               local out1::T
 
@@ -1877,14 +1754,13 @@
           (out1, out2)
         end
 
-        T = Any
-        function replace(replaced::T, arg::T)::T
+        function replace(replaced::T, arg::T)  where {T}
               local outArg::T = arg
           outArg
         end
 
          #= Calculates the size of a Real range given the start, step and stop values. =#
-        function realRangeSize(inStart::ModelicaReal, inStep::ModelicaReal, inStop::ModelicaReal)::ModelicaInteger
+        function realRangeSize(inStart::ModelicaReal, inStep::ModelicaReal, inStop::ModelicaReal) ::ModelicaInteger
               local outSize::ModelicaInteger
 
               outSize = integer(floor((inStop - inStart) / inStep + 5e-15)) + 1
@@ -1893,7 +1769,7 @@
         end
 
          #= Testsuite friendly name (start after testsuite/ or build/) =#
-        function testsuiteFriendly(name::String)::String
+        function testsuiteFriendly(name::String) ::String
               local friendly::String
 
               friendly = testsuiteFriendly2(Config.getRunningTestsuite(), Config.getRunningWSMTestsuite(), name)
@@ -1901,12 +1777,12 @@
         end
 
          #= Testsuite friendly name (start after testsuite/ or build/) =#
-        function testsuiteFriendly2(cond::Bool, wsmTestsuite::Bool, name::String)::String
+        function testsuiteFriendly2(cond::Bool, wsmTestsuite::Bool, name::String) ::String
               local friendly::String
 
               friendly = begin
                   local i::ModelicaInteger
-                  local strs::List{<:String}
+                  local strs::List{String}
                   local newName::String
                 @match (cond, wsmTestsuite) begin
                   (_, true)  => begin
@@ -1935,7 +1811,7 @@
          #= Adds ../ in front of a relative file path if we're running
            the testsuite, to compensate for tests being sandboxed.
            adrpo: only when running with partest the tests are sandboxed! =#
-        function testsuiteFriendlyPath(inPath::String)::String
+        function testsuiteFriendlyPath(inPath::String) ::String
               local outPath::String
 
               outPath = begin
@@ -1964,7 +1840,7 @@
           outPath
         end
 
-        function createDirectoryTreeH(inString::String, parentDir::String, parentDirExists::Bool)::Bool
+        function createDirectoryTreeH(inString::String, parentDir::String, parentDirExists::Bool) ::Bool
               local outBool::Bool
 
               outBool = begin
@@ -1995,7 +1871,7 @@
           outBool
         end
 
-        function createDirectoryTree(inString::String)::Bool
+        function createDirectoryTree(inString::String) ::Bool
               local outBool::Bool
 
               local parentDir::String
@@ -2008,7 +1884,7 @@
         end
 
          #= Rounds up to the nearest power of 2 =#
-        function nextPowerOf2(i::ModelicaInteger)::ModelicaInteger
+        function nextPowerOf2(i::ModelicaInteger) ::ModelicaInteger
               local v::ModelicaInteger
 
               v = i - 1
@@ -2021,7 +1897,7 @@
           v
         end
 
-        function endsWith(inString::String, inSuffix::String)::Bool
+        function endsWith(inString::String, inSuffix::String) ::Bool
               local outEndsWith::Bool
 
               local start::ModelicaInteger
@@ -2044,7 +1920,7 @@
           outEndsWith
         end
 
-        function isCIdentifier(str::String)::Bool
+        function isCIdentifier(str::String) ::Bool
               local b::Bool
 
               local i::ModelicaInteger
@@ -2057,7 +1933,7 @@
          #= @author:adrpo
          if the string is bigger than len keep only until len
          if not, return the same string =#
-        function stringTrunc(str::String, len::ModelicaInteger)::String
+        function stringTrunc(str::String, len::ModelicaInteger) ::String
               local truncatedStr::String
 
               truncatedStr = if stringLength(str) <= len
@@ -2069,22 +1945,21 @@
         end
 
          #= Create an iterator or the like with a unique name =#
-        function getTempVariableIndex()::String
+        function getTempVariableIndex() ::String
               local name::String
 
               name = stringAppend("tmpVar", intString(System.tmpTickIndex(Global.tmpVariableIndex)))
           name
         end
 
-        T = Any
-        function anyReturnTrue(a::T)::Bool
+        function anyReturnTrue(a::T)  where {T}
               local b::Bool = true
           b
         end
 
          #= @author: adrpo
          returns the given path if it exists if not it considers it relative and returns that =#
-        function absoluteOrRelative(inFileName::String)::String
+        function absoluteOrRelative(inFileName::String) ::String
               local outFileName::String
 
               local pwd::String
@@ -2100,7 +1975,7 @@
           outFileName
         end
 
-        function intLstString(lst::List{<:ModelicaInteger})::String
+        function intLstString(lst::List{<:ModelicaInteger}) ::String
               local s::String
 
               s = stringDelimitList(ListUtil.map(lst, intString), ", ")
@@ -2108,7 +1983,7 @@
         end
 
          #= Returns whether the given SourceInfo is empty or not. =#
-        function sourceInfoIsEmpty(inInfo::SourceInfo)::Bool
+        function sourceInfoIsEmpty(inInfo::SourceInfo) ::Bool
               local outIsEmpty::Bool
 
               outIsEmpty = begin
@@ -2126,12 +2001,12 @@
         end
 
          #= Returns whether two SourceInfo are equal or not. =#
-        function sourceInfoIsEqual(inInfo1::SourceInfo, inInfo2::SourceInfo)::Bool
+        function sourceInfoIsEqual(inInfo1::SourceInfo, inInfo2::SourceInfo) ::Bool
               local outIsEqual::Bool
 
               outIsEqual = begin
                 @match (inInfo1, inInfo2) begin
-                  (SOURCEINFO(), SOURCEINFO())  => begin
+                  (SOURCEINFO(__), SOURCEINFO(__))  => begin
                     inInfo1.fileName == inInfo2.fileName && inInfo1.isReadOnly == inInfo2.isReadOnly && inInfo1.lineNumberStart == inInfo2.lineNumberStart && inInfo1.columnNumberStart == inInfo2.columnNumberStart && inInfo1.lineNumberEnd == inInfo2.lineNumberEnd && inInfo1.columnNumberEnd == inInfo2.columnNumberEnd
                   end
 
@@ -2175,14 +2050,14 @@
               print("\\n")
         end
 
-        function profilertime1()::ModelicaReal
+        function profilertime1() ::ModelicaReal
               local t1::ModelicaReal
 
               t1 = getGlobalRoot(Global.profilerTime1Index)
           t1
         end
 
-        function profilertime2()::ModelicaReal
+        function profilertime2() ::ModelicaReal
               local t2::ModelicaReal
 
               t2 = getGlobalRoot(Global.profilerTime2Index)
@@ -2219,25 +2094,22 @@
               setGlobalRoot(Global.profilerTime2Index, 0.0)
         end
 
-        function profilertock1()::ModelicaReal
+        function profilertock1() ::ModelicaReal
               local t::ModelicaReal
 
               t = System.realtimeTock(ClockIndexes.RT_PROFILER1)
           t
         end
 
-        function profilertock2()::ModelicaReal
+        function profilertock2() ::ModelicaReal
               local t::ModelicaReal
 
               t = System.realtimeTock(ClockIndexes.RT_PROFILER2)
           t
         end
 
-        T1 = Any
-        T2 = Any
-        T3 = Any
-        function applyTuple31(inTuple::Tuple{<:T1, T2, T3}, func::FuncT)::Tuple{<:T1, T2, T3}
-              local outTuple::Tuple{<:T1, T2, T3}
+        function applyTuple31(inTuple::Tuple{T1, T2, T3}, func::FuncT)  where {T1, T2, T3}
+              local outTuple::Tuple{T1, T2, T3}
 
               local t1::T1
               local t1_new::T1

@@ -41,7 +41,7 @@
             #= Defined in the runtime =#
         end
 
-        function addSourceMessage(id::Error.ErrorID, msg_type::Error.MessageType, msg_severity::Error.Severity, sline::ModelicaInteger, scol::ModelicaInteger, eline::ModelicaInteger, ecol::ModelicaInteger, read_only::Bool, filename::String, msg::String, tokens::IList)
+        function addSourceMessage(id::Error.ErrorID, msg_type::Error.MessageType, msg_severity::Error.Severity, sline::ModelicaInteger, scol::ModelicaInteger, eline::ModelicaInteger, ecol::ModelicaInteger, read_only::Bool, filename::String, msg::String, tokens::List)
             #= Defined in the runtime =#
         end
 
@@ -61,7 +61,7 @@
           0
         end
 
-        function getMessages()::IList
+        function getMessages()::List
           0
         end
 
@@ -115,20 +115,20 @@
          #= rolls back error messages until the latest checkpoint,
         returning all error messages added since that point in time. A unique identifier for the checkpoint must be provided
         The application will exit with return code -1 if this identifier does not match. =#
-        function popCheckPoint(id::String #= unique identifier =#)::IList
-              local handles::IList #= opaque pointers; you MUST pass them back or memory is leaked =#
+        function popCheckPoint(id::String #= unique identifier =#)::List
+              local handles::List #= opaque pointers; you MUST pass them back or memory is leaked =#
 
             #= Defined in the runtime =#
           handles #= opaque pointers; you MUST pass them back or memory is leaked =#
         end
 
          #= Pushes stored pointers back to the error stack. =#
-        function pushMessages(handles::IList #= opaque pointers from popCheckPoint =#)
+        function pushMessages(handles::List #= opaque pointers from popCheckPoint =#)
             #= Defined in the runtime =#
         end
 
          #= Pushes stored pointers back to the error stack. =#
-        function freeMessages(handles::IList #= opaque pointers from popCheckPoint =#)
+        function freeMessages(handles::List #= opaque pointers from popCheckPoint =#)
             #= Defined in the runtime =#
         end
 

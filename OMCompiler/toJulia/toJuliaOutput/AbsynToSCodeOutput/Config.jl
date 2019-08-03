@@ -175,10 +175,7 @@
          #= returns: true if MetaModelica grammar is accepted or false otherwise
          usage: omc [-g=Modelica|MetaModelica|ParModelica|Optimica], default to 'Modelica'. =#
         function acceptMetaModelicaGrammar()::Bool
-              local outBoolean::Bool
-
-              outBoolean = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.METAMODELICA)
-          outBoolean
+          false
         end
 
          #= returns: true if ParModelica grammar is accepted or false otherwise

@@ -1,13 +1,5 @@
   module AbsynUtil
 
-  TypeA = Any
-
-  Type_a = Any
-
-  Argument = Any
-
-  Arg = Any
-
 
     using MetaModelica
     #= ExportAll is not good practice but it makes it so that we do not have to write export after each function :( =#
@@ -113,7 +105,16 @@
 
     FuncType = Function
 
-    FuncType = Function
+  FuncType = Function
+
+    TypeA = Any
+
+  Type_a = Any
+
+  Argument = Any
+
+  Arg = Any
+
 
          #= /*
          * This file is part of OpenModelica.
@@ -158,17 +159,17 @@
 
         import Util
 
-         dummyParts = PARTS(list(), list(), list(), list(), NONE())::ClassDef
+         const dummyParts = PARTS(nil, nil, nil, nil, NONE())::ClassDef
 
-         dummyInfo = SOURCEINFO("", false, 0, 0, 0, 0, 0.0)::Info
+         const dummyInfo = SOURCEINFO("", false, 0, 0, 0, 0, 0.0)::Info
 
-         dummyProgram = PROGRAM(list(), TOP())::Program
+         const dummyProgram = PROGRAM(nil, TOP())::Program
          #=  stefan
          =#
 
          #= Traverses all subequations of an equation.
            Takes a function and an extra argument passed through the traversal =#
-        function traverseEquation(inEquation::Equation, inFunc::FuncTplToTpl, inTypeA::TypeA)::Tuple{Equation, TypeA}
+        function traverseEquation(inEquation::Equation, inFunc::FuncTplToTpl, inTypeA::TypeA) ::Tuple{Equation, TypeA}
               local outTpl::Tuple{Equation, TypeA}
 
               outTpl = begin
@@ -235,7 +236,7 @@
          =#
 
          #= Traverses the equation inside an equationitem =#
-        function traverseEquationItem(inEquationItem::EquationItem, inFunc::FuncTplToTpl, inTypeA::TypeA)::Tuple{EquationItem, TypeA}
+        function traverseEquationItem(inEquationItem::EquationItem, inFunc::FuncTplToTpl, inTypeA::TypeA) ::Tuple{EquationItem, TypeA}
               local outTpl::Tuple{EquationItem, TypeA}
 
               outTpl = begin
@@ -265,7 +266,7 @@
          =#
 
          #= calls traverseEquationItem on every element of the given list =#
-        function traverseEquationItemList(inEquationItemList::List{<:Union{<:EquationItem, Nil{Any}}}, inFunc::FuncTplToTpl, inTypeA::TypeA)::Tuple{List{EquationItem}, TypeA}
+        function traverseEquationItemList(inEquationItemList::List{<:EquationItem}, inFunc::FuncTplToTpl, inTypeA::TypeA) ::Tuple{List{EquationItem}, TypeA}
               local outTpl::Tuple{List{EquationItem}, TypeA}
 
               local arg2::TypeA = inTypeA
@@ -288,7 +289,7 @@
 
          #= traverses a list of Exp * EquationItem list tuples
           mostly used for else-if blocks =#
-        function traverseExpEqItemTupleList(inList::List{<:Union{<:Tuple{<:Exp, List{<:Union{<:EquationItem, Nil{Any}}}}, Nil{Any}}}, inFunc::FuncTplToTpl, inTypeA::TypeA)::Tuple{List{Tuple{Exp, List{EquationItem}}}, TypeA}
+        function traverseExpEqItemTupleList(inList::List{<:Tuple{<:Exp, List{<:EquationItem}}}, inFunc::FuncTplToTpl, inTypeA::TypeA) ::Tuple{List{Tuple{Exp, List{EquationItem}}}, TypeA}
               local outTpl::Tuple{List{Tuple{Exp, List{EquationItem}}}, TypeA}
 
               local arg2::TypeA = inTypeA
@@ -312,7 +313,7 @@
 
          #= Traverses all subalgorithms of an algorithm
           Takes a function and an extra argument passed through the traversal =#
-        function traverseAlgorithm(inAlgorithm::Algorithm, inFunc::FuncTplToTpl, inTypeA::TypeA)::Tuple{Algorithm, TypeA}
+        function traverseAlgorithm(inAlgorithm::Algorithm, inFunc::FuncTplToTpl, inTypeA::TypeA) ::Tuple{Algorithm, TypeA}
               local outTpl::Tuple{Algorithm, TypeA}
 
               outTpl = begin
@@ -389,7 +390,7 @@
 
          #= traverses the Algorithm contained in an AlgorithmItem, if any
           see traverseAlgorithm =#
-        function traverseAlgorithmItem(inAlgorithmItem::AlgorithmItem, inFunc::FuncTplToTpl, inTypeA::TypeA)::Tuple{AlgorithmItem, TypeA}
+        function traverseAlgorithmItem(inAlgorithmItem::AlgorithmItem, inFunc::FuncTplToTpl, inTypeA::TypeA) ::Tuple{AlgorithmItem, TypeA}
               local outTpl::Tuple{AlgorithmItem, TypeA}
 
               outTpl = begin
@@ -419,7 +420,7 @@
          =#
 
          #= calls traverseAlgorithmItem on each item in a list of AlgorithmItems =#
-        function traverseAlgorithmItemList(inAlgorithmItemList::List{<:Union{<:AlgorithmItem, Nil{Any}}}, inFunc::FuncTplToTpl, inTypeA::TypeA)::Tuple{List{AlgorithmItem}, TypeA}
+        function traverseAlgorithmItemList(inAlgorithmItemList::List{<:AlgorithmItem}, inFunc::FuncTplToTpl, inTypeA::TypeA) ::Tuple{List{AlgorithmItem}, TypeA}
               local outTpl::Tuple{List{AlgorithmItem}, TypeA}
 
               outTpl = begin
@@ -433,7 +434,7 @@
                   local cdr_1::List{AlgorithmItem}
                 @match (inAlgorithmItemList, inFunc, inTypeA) begin
                   ( nil(), _, arg)  => begin
-                    (list(), arg)
+                    (nil, arg)
                   end
 
                   (ai <| cdr, rel, arg)  => begin
@@ -451,7 +452,7 @@
 
          #= traverses a list of Exp * AlgorithmItem list tuples
           mostly used for else-if blocks =#
-        function traverseExpAlgItemTupleList(inList::List{<:Union{<:Tuple{<:Exp, List{<:Union{<:AlgorithmItem, Nil{Any}}}}, Nil{Any}}}, inFunc::FuncTplToTpl, inTypeA::TypeA)::Tuple{List{Tuple{Exp, List{AlgorithmItem}}}, TypeA}
+        function traverseExpAlgItemTupleList(inList::List{<:Tuple{<:Exp, List{<:AlgorithmItem}}}, inFunc::FuncTplToTpl, inTypeA::TypeA) ::Tuple{List{Tuple{Exp, List{AlgorithmItem}}}, TypeA}
               local outTpl::Tuple{List{Tuple{Exp, List{AlgorithmItem}}}, TypeA}
 
               outTpl = begin
@@ -466,7 +467,7 @@
                   local ailst_1::List{AlgorithmItem}
                 @match (inList, inFunc, inTypeA) begin
                   ( nil(), _, arg)  => begin
-                    (list(), arg)
+                    (nil, arg)
                   end
 
                   ((e, ailst) <| cdr, rel, arg)  => begin
@@ -482,7 +483,7 @@
          #=  Traverses all subexpressions of an Exp expression.
           Takes a function and an extra argument passed through the traversal.
           NOTE:This function was copied from Expression.traverseExpression. =#
-        function traverseExp(inExp::Exp, inFunc::FuncType, inArg::Type_a)::Tuple{Exp, Type_a}
+        function traverseExp(inExp::Exp, inFunc::FuncType, inArg::Type_a) ::Tuple{Exp, Type_a}
               local outArg::Type_a
               local outExp::Exp
 
@@ -492,7 +493,7 @@
 
          #=  Traverses all subexpressions of an Exp expression.
           Takes a function and an extra argument passed through the traversal. =#
-        function traverseExpTopDown(inExp::Exp, inFunc::FuncType, inArg::Type_a)::Tuple{Exp, Type_a}
+        function traverseExpTopDown(inExp::Exp, inFunc::FuncType, inArg::Type_a) ::Tuple{Exp, Type_a}
               local outArg::Type_a
               local outExp::Exp
 
@@ -501,7 +502,7 @@
         end
 
          #= calls traverseExp on each element in the given list =#
-        function traverseExpList(inExpList::List{<:Union{<:Exp, Nil{Any}}}, inFunc::FuncTplToTpl, inArg::Type_a)::Tuple{List{Exp}, Type_a}
+        function traverseExpList(inExpList::List{<:Exp}, inFunc::FuncTplToTpl, inArg::Type_a) ::Tuple{List{Exp}, Type_a}
               local outArg::Type_a
               local outExpList::List{Exp}
 
@@ -511,7 +512,7 @@
 
          #= Traverses a list of expressions, calling traverseExpBidir on each
           expression. =#
-        function traverseExpListBidir(inExpl::List{<:Union{<:Exp, Nil{Any}}}, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument)::Tuple{List{Exp}, Argument}
+        function traverseExpListBidir(inExpl::List{<:Exp}, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument) ::Tuple{List{Exp}, Argument}
               local outArg::Argument
               local outExpl::List{Exp}
 
@@ -526,7 +527,7 @@
           them with the updated argument. Finally it calls the exit function, again with
           the updated argument. This means that this function is bidirectional, and can
           be used to emulate both top-down and bottom-up traversal. =#
-        function traverseExpBidir(inExp::Exp, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument)::Tuple{Exp, Argument}
+        function traverseExpBidir(inExp::Exp, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument) ::Tuple{Exp, Argument}
               local arg::Argument
               local e::Exp
 
@@ -539,7 +540,7 @@
          #= Same as traverseExpBidir, but with an optional expression. Calls
           traverseExpBidir if the option is SOME(), or just returns the input if it's
           NONE() =#
-        function traverseExpOptBidir(inExp::Option{<:Exp}, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument)::Tuple{Option{Exp}, Argument}
+        function traverseExpOptBidir(inExp::Option{<:Exp}, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument) ::Tuple{Option{Exp}, Argument}
               local arg::Argument
               local outExp::Option{Exp}
 
@@ -567,7 +568,7 @@
 
          #= Helper function to traverseExpBidir. Traverses the subexpressions of an
           expression and calls traverseExpBidir on them. =#
-        function traverseExpBidirSubExps(inExp::Exp, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument)::Tuple{Exp, Argument}
+        function traverseExpBidirSubExps(inExp::Exp, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument) ::Tuple{Exp, Argument} 
               local arg::Argument
               local e::Exp
 
@@ -804,7 +805,7 @@
 
          #= Helper function to traverseExpBidirSubExps. Traverses any expressions in a
           component reference (i.e. in it's subscripts). =#
-        function traverseExpBidirCref(inCref::ComponentRef, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument)::Tuple{ComponentRef, Argument}
+        function traverseExpBidirCref(inCref::ComponentRef, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument) ::Tuple{ComponentRef, Argument}
               local arg::Argument
               local outCref::ComponentRef
 
@@ -858,7 +859,7 @@
 
          #= Helper function to traverseExpBidirCref. Traverses expressions in a
           subscript. =#
-        function traverseExpBidirSubs(inSubscript::Subscript, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument)::Tuple{Subscript, Argument}
+        function traverseExpBidirSubs(inSubscript::Subscript, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument) ::Tuple{Subscript, Argument}
               local arg::Argument
               local outSubscript::Subscript
 
@@ -885,7 +886,7 @@
 
          #= Helper function to traverseExpBidirSubExps. Traverses the expressions in an
           elseif branch. =#
-        function traverseExpBidirElseIf(inElseIf::Tuple{<:Exp, Exp}, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument)::Tuple{Tuple{Exp, Exp}, Argument}
+        function traverseExpBidirElseIf(inElseIf::Tuple{<:Exp, Exp}, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument) ::Tuple{Tuple{Exp, Exp}, Argument}
               local arg::Argument
               local outElseIf::Tuple{Exp, Exp}
 
@@ -902,7 +903,7 @@
 
          #= Helper function to traverseExpBidirSubExps. Traverses the expressions in a
           list of function argument. =#
-        function traverseExpBidirFunctionArgs(inArgs::FunctionArgs, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument)::Tuple{FunctionArgs, Argument}
+        function traverseExpBidirFunctionArgs(inArgs::FunctionArgs, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument) ::Tuple{FunctionArgs, Argument}
               local outArg::Argument
               local outArgs::FunctionArgs
 
@@ -944,7 +945,7 @@
 
          #= Helper function to traverseExpBidirFunctionArgs. Traverses the expressions in
           a named function argument. =#
-        function traverseExpBidirNamedArg(inArg::NamedArg, enterFunc::FuncType, exitFunc::FuncType, inExtra::Argument)::Tuple{NamedArg, Argument}
+        function traverseExpBidirNamedArg(inArg::NamedArg, enterFunc::FuncType, exitFunc::FuncType, inExtra::Argument) ::Tuple{NamedArg, Argument}
               local outExtra::Argument
               local outArg::NamedArg
 
@@ -964,7 +965,7 @@
 
          #= Helper function to traverseExpBidirFunctionArgs. Traverses the expressions in
           an iterator. =#
-        function traverseExpBidirIterator(inIterator::ForIterator, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument)::Tuple{ForIterator, Argument}
+        function traverseExpBidirIterator(inIterator::ForIterator, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument) ::Tuple{ForIterator, Argument}
               local outArg::Argument
               local outIterator::ForIterator
 
@@ -985,7 +986,7 @@
           (outIterator, outArg)
         end
 
-        function traverseMatchCase(inMatchCase::Case, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument)::Tuple{Case, Argument}
+        function traverseMatchCase(inMatchCase::Case, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument) ::Tuple{Case, Argument}
               local outArg::Argument
               local outMatchCase::Case
 
@@ -1019,7 +1020,7 @@
           (outMatchCase, outArg)
         end
 
-        function traverseClassPartBidir(cp::ClassPart, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument)::Tuple{ClassPart, Argument}
+        function traverseClassPartBidir(cp::ClassPart, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument) ::Tuple{ClassPart, Argument}
               local outArg::Argument
               local outCp::ClassPart
 
@@ -1042,7 +1043,7 @@
           (outCp, outArg)
         end
 
-        function traverseEquationItemListBidir(inEquationItems::List{<:Union{<:EquationItem, Nil{Any}}}, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument)::Tuple{List{EquationItem}, Argument}
+        function traverseEquationItemListBidir(inEquationItems::List{<:EquationItem}, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument) ::Tuple{List{EquationItem}, Argument}
               local outArg::Argument
               local outEquationItems::List{EquationItem}
 
@@ -1050,7 +1051,7 @@
           (outEquationItems, outArg)
         end
 
-        function traverseAlgorithmItemListBidir(inAlgs::List{<:Union{<:AlgorithmItem, Nil{Any}}}, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument)::Tuple{List{AlgorithmItem}, Argument}
+        function traverseAlgorithmItemListBidir(inAlgs::List{<:AlgorithmItem}, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument) ::Tuple{List{AlgorithmItem}, Argument}
               local outArg::Argument
               local outAlgs::List{AlgorithmItem}
 
@@ -1058,7 +1059,7 @@
           (outAlgs, outArg)
         end
 
-        function traverseAlgorithmItemBidir(inAlgorithmItem::AlgorithmItem, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument)::Tuple{AlgorithmItem, Argument}
+        function traverseAlgorithmItemBidir(inAlgorithmItem::AlgorithmItem, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument) ::Tuple{AlgorithmItem, Argument}
               local outArg::Argument
               local outAlgorithmItem::AlgorithmItem
 
@@ -1081,7 +1082,7 @@
           (outAlgorithmItem, outArg)
         end
 
-        function traverseEquationItemBidir(inEquationItem::EquationItem, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument)::Tuple{EquationItem, Argument}
+        function traverseEquationItemBidir(inEquationItem::EquationItem, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument) ::Tuple{EquationItem, Argument}
               local outArg::Argument
               local outEquationItem::EquationItem
 
@@ -1100,7 +1101,7 @@
           (outEquationItem, outArg)
         end
 
-        function traverseEquationBidir(inEquation::Equation, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument)::Tuple{Equation, Argument}
+        function traverseEquationBidir(inEquation::Equation, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument) ::Tuple{Equation, Argument}
               local outArg::Argument
               local outEquation::Equation
 
@@ -1172,7 +1173,7 @@
           (outEquation, outArg)
         end
 
-        function traverseEquationBidirElse(inElse::Tuple{<:Exp, List{<:Union{<:EquationItem, Nil{Any}}}}, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument)::Tuple{Tuple{Exp, List{EquationItem}}, Argument}
+        function traverseEquationBidirElse(inElse::Tuple{<:Exp, List{<:EquationItem}}, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument) ::Tuple{Tuple{Exp, List{EquationItem}}, Argument}
               local arg::Argument
               local outElse::Tuple{Exp, List{EquationItem}}
 
@@ -1186,7 +1187,7 @@
           (outElse, arg)
         end
 
-        function traverseAlgorithmBidirElse(inElse::Tuple{<:Exp, List{<:Union{<:AlgorithmItem, Nil{Any}}}}, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument)::Tuple{Tuple{Exp, List{AlgorithmItem}}, Argument}
+        function traverseAlgorithmBidirElse(inElse::Tuple{<:Exp, List{<:AlgorithmItem}}, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument) ::Tuple{Tuple{Exp, List{AlgorithmItem}}, Argument}
               local arg::Argument
               local outElse::Tuple{Exp, List{AlgorithmItem}}
 
@@ -1200,7 +1201,7 @@
           (outElse, arg)
         end
 
-        function traverseAlgorithmBidir(inAlg::Algorithm, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument)::Tuple{Algorithm, Argument}
+        function traverseAlgorithmBidir(inAlg::Algorithm, enterFunc::FuncType, exitFunc::FuncType, inArg::Argument) ::Tuple{Algorithm, Argument}
               local outArg::Argument
               local outAlg::Algorithm
 
@@ -1289,14 +1290,14 @@
           (outAlg, outArg)
         end
 
-        function makeIdentPathFromString(s::String)::Path
+        function makeIdentPathFromString(s::String) ::Path
               local p::Path
 
               p = IDENT(s)
           p
         end
 
-        function makeQualifiedPathFromStrings(s1::String, s2::String)::Path
+        function makeQualifiedPathFromStrings(s1::String, s2::String) ::Path
               local p::Path
 
               p = QUALIFIED(s1, IDENT(s2))
@@ -1304,7 +1305,7 @@
         end
 
          #= returns the class name of a Class as a Path =#
-        function className(cl::Class)::Path
+        function className(cl::Class) ::Path
               local name::Path
 
               local id::String
@@ -1314,7 +1315,7 @@
           name
         end
 
-        function isClassNamed(inName::String, inClass::Class)::Bool
+        function isClassNamed(inName::String, inClass::Class) ::Bool
               local outIsNamed::Bool
 
               outIsNamed = begin
@@ -1333,7 +1334,7 @@
 
          #= The ElementSpec type contains the name of the element, and this function
            extracts this name. =#
-        function elementSpecName(inElementSpec::ElementSpec)::Ident
+        function elementSpecName(inElementSpec::ElementSpec) ::Ident
               local outIdent::Ident
 
               outIdent = begin
@@ -1351,7 +1352,7 @@
           outIdent
         end
 
-        function isClassdef(inElement::Element)::Bool
+        function isClassdef(inElement::Element) ::Bool
               local b::Bool
 
               b = begin
@@ -1369,7 +1370,7 @@
         end
 
          #= This function takes a Import and prints it as a flat-string. =#
-        function printImportString(imp::Import)::String
+        function printImportString(imp::Import) ::String
               local ostring::String
 
               ostring = begin
@@ -1395,7 +1396,7 @@
         end
 
          #= returns the string of an expression if it is a string constant. =#
-        function expString(exp::Exp)::String
+        function expString(exp::Exp) ::String
               local str::String
 
               @match STRING(str) = exp
@@ -1403,7 +1404,7 @@
         end
 
          #= returns the componentRef of an expression if matches. =#
-        function expCref(exp::Exp)::ComponentRef
+        function expCref(exp::Exp) ::ComponentRef
               local cr::ComponentRef
 
               @match CREF(cr) = exp
@@ -1411,21 +1412,21 @@
         end
 
          #= returns the componentRef of an expression if matches. =#
-        function crefExp(cr::ComponentRef)::Exp
+        function crefExp(cr::ComponentRef) ::Exp
               local exp::Exp
 
               exp = CREF(cr)
           exp
         end
 
-        function expComponentRefStr(aexp::Exp)::String
+        function expComponentRefStr(aexp::Exp) ::String
               local outString::String
 
               outString = printComponentRefStr(expCref(aexp))
           outString
         end
 
-        function printComponentRefStr(cr::ComponentRef)::String
+        function printComponentRefStr(cr::ComponentRef) ::String
               local ostring::String
 
               ostring = begin
@@ -1462,7 +1463,7 @@
         end
 
          #= Returns true if two paths are equal. =#
-        function pathEqual(inPath1::Path, inPath2::Path)::Bool
+        function pathEqual(inPath1::Path, inPath2::Path) ::Bool
               local outBoolean::Bool
 
               outBoolean = begin
@@ -1513,7 +1514,7 @@
 
          #= Author BZ 2009-01
            Check whether two type specs are equal or not. =#
-        function typeSpecEqual(a::TypeSpec, b::TypeSpec)::Bool
+        function typeSpecEqual(a::TypeSpec, b::TypeSpec) ::Bool
               local ob::Bool
 
               ob = begin
@@ -1553,7 +1554,7 @@
 
          #= Author BZ
            helper function for typeSpecEqual =#
-        function optArrayDimEqual(oad1::Option{<:ArrayDim}, oad2::Option{<:ArrayDim})::Bool
+        function optArrayDimEqual(oad1::Option{<:ArrayDim}, oad2::Option{<:ArrayDim}) ::Bool
               local b::Bool
 
               b = begin
@@ -1578,7 +1579,7 @@
         end
 
          #= This function simply converts a Path to a string. =#
-        function typeSpecPathString(tp::TypeSpec)::String
+        function typeSpecPathString(tp::TypeSpec) ::String
               local s::String
 
               s = begin
@@ -1597,7 +1598,7 @@
         end
 
          #= Converts a TypeSpec to Path =#
-        function typeSpecPath(tp::TypeSpec)::Path
+        function typeSpecPath(tp::TypeSpec) ::Path
               local op::Path
 
               op = begin
@@ -1616,7 +1617,7 @@
         end
 
          #= Returns the dimensions of a TypeSpec. =#
-        function typeSpecDimensions(inTypeSpec::TypeSpec)::ArrayDim
+        function typeSpecDimensions(inTypeSpec::TypeSpec) ::ArrayDim
               local outDimensions::ArrayDim
 
               outDimensions = begin
@@ -1631,7 +1632,7 @@
                   end
 
                   _  => begin
-                      list()
+                      nil
                   end
                 end
               end
@@ -1639,7 +1640,7 @@
         end
 
          #= This function simply converts a Path to a string. =#
-        function pathString(path::Path, delimiter::String = ".", usefq::Bool = true, reverse::Bool = false)::String
+        function pathString(path::Path, delimiter::String = ".", usefq::Bool = true, reverse::Bool = false) ::String
               local s::String
 
               local p1::Path
@@ -1694,7 +1695,7 @@
           s
         end
 
-        function pathStringWork(inPath::Path, len::ModelicaInteger, delimiter::String, dlen::ModelicaInteger, reverse::Bool)::String
+        function pathStringWork(inPath::Path, len::ModelicaInteger, delimiter::String, dlen::ModelicaInteger, reverse::Bool) ::String
               local s::String = ""
 
               local p::Path = inPath
@@ -1751,26 +1752,26 @@
 
           @ExtendedFunction pathStringNoQual pathString(usefq = false)
 
-        function pathStringDefault(path::Path)::String
+        function pathStringDefault(path::Path) ::String
               local s::String = pathString(path)
           s
         end
 
-        function classNameCompare(c1::Class, c2::Class)::ModelicaInteger
+        function classNameCompare(c1::Class, c2::Class) ::ModelicaInteger
               local o::ModelicaInteger
 
               o = stringCompare(c1.name, c2.name)
           o
         end
 
-        function classNameGreater(c1::Class, c2::Class)::Bool
+        function classNameGreater(c1::Class, c2::Class) ::Bool
               local b::Bool
 
               b = stringCompare(c1.name, c2.name) > 0
           b
         end
 
-        function pathCompare(ip1::Path, ip2::Path)::ModelicaInteger
+        function pathCompare(ip1::Path, ip2::Path) ::ModelicaInteger
               local o::ModelicaInteger
 
               o = begin
@@ -1817,7 +1818,7 @@
           o
         end
 
-        function pathCompareNoQual(ip1::Path, ip2::Path)::ModelicaInteger
+        function pathCompareNoQual(ip1::Path, ip2::Path) ::ModelicaInteger
               local o::ModelicaInteger
 
               o = begin
@@ -1861,7 +1862,7 @@
         end
 
          #= Hashes a path. =#
-        function pathHashMod(path::Path, mod::ModelicaInteger)::ModelicaInteger
+        function pathHashMod(path::Path, mod::ModelicaInteger) ::ModelicaInteger
               local hash::ModelicaInteger
 
                #=  hash := valueHashMod(path,mod);
@@ -1877,7 +1878,7 @@
         end
 
          #= Hashes a path. =#
-        function pathHashModWork(path::Path, acc::ModelicaInteger)::ModelicaInteger
+        function pathHashModWork(path::Path, acc::ModelicaInteger) ::ModelicaInteger
               local hash::ModelicaInteger
 
               hash = begin
@@ -1908,7 +1909,7 @@
         end
 
          #= Returns a path converted to string or an empty string if nothing exist =#
-        function optPathString(inPathOption::Option{<:Path})::String
+        function optPathString(inPathOption::Option{<:Path}) ::String
               local outString::String
 
               outString = begin
@@ -1933,7 +1934,7 @@
           a_b changes to a__b) before delimiting
           (Replaces dots with that separator). And also unquotes each ident.
          =#
-        function pathStringUnquoteReplaceDot(inPath::Path, repStr::String)::String
+        function pathStringUnquoteReplaceDot(inPath::Path, repStr::String) ::String
               local outString::String
 
               local strlst::List{String}
@@ -1948,7 +1949,7 @@
         end
 
          #= Converts a string into a qualified path. =#
-        function stringPath(str::String)::Path
+        function stringPath(str::String) ::Path
               local qualifiedPath::Path
 
               local paths::List{String}
@@ -1959,7 +1960,7 @@
         end
 
          #= Converts a list of strings into a qualified path. =#
-        function stringListPath(paths::List{<:Union{<:String, Nil{Any}}})::Path
+        function stringListPath(paths::List{<:String}) ::Path
               local qualifiedPath::Path
 
               qualifiedPath = begin
@@ -1986,7 +1987,7 @@
 
          #= Converts a list of strings into a qualified path, in reverse order.
            Ex: {'a', 'b', 'c'} => c.b.a =#
-        function stringListPathReversed(inStrings::List{<:Union{<:String, Nil{Any}}})::Path
+        function stringListPathReversed(inStrings::List{<:String}) ::Path
               local outPath::Path
 
               local id::String
@@ -1999,7 +2000,7 @@
           outPath
         end
 
-        function stringListPathReversed2(inStrings::List{<:Union{<:String, Nil{Any}}}, inAccumPath::Path)::Path
+        function stringListPathReversed2(inStrings::List{<:String}, inAccumPath::Path) ::Path
               local outPath::Path
 
               outPath = begin
@@ -2021,7 +2022,7 @@
         end
 
          #= Returns the two last idents of a path =#
-        function pathTwoLastIdents(inPath::Path)::Path
+        function pathTwoLastIdents(inPath::Path) ::Path
               local outTwoLast::Path
 
               outTwoLast = begin
@@ -2044,7 +2045,7 @@
         end
 
          #= Returns the last ident (after last dot) in a path =#
-        function pathLastIdent(inPath::Path)::String
+        function pathLastIdent(inPath::Path) ::String
               local outIdent::String
 
               outIdent = begin
@@ -2068,7 +2069,7 @@
         end
 
          #= Returns the last ident (after last dot) in a path =#
-        function pathLast(path::Path)::Path
+        function pathLast(path::Path) ::Path
 
 
               path = begin
@@ -2091,7 +2092,7 @@
         end
 
          #= Returns the first ident (before first dot) in a path =#
-        function pathFirstIdent(inPath::Path)::Ident
+        function pathFirstIdent(inPath::Path) ::Ident
               local outIdent::Ident
 
               outIdent = begin
@@ -2114,7 +2115,7 @@
           outIdent
         end
 
-        function pathFirstPath(inPath::Path)::Path
+        function pathFirstPath(inPath::Path) ::Path
               local outPath::Path
 
               outPath = begin
@@ -2136,7 +2137,7 @@
           outPath
         end
 
-        function pathSecondIdent(inPath::Path)::Ident
+        function pathSecondIdent(inPath::Path) ::Ident
               local outIdent::Ident
 
               outIdent = begin
@@ -2159,7 +2160,7 @@
           outIdent
         end
 
-        function pathRest(inPath::Path)::Path
+        function pathRest(inPath::Path) ::Path
               local outPath::Path
 
               outPath = begin
@@ -2177,7 +2178,7 @@
         end
 
          #= strips the same prefix paths and returns the stripped path. e.g pathStripSamePrefix(P.M.A, P.M.B) => A =#
-        function pathStripSamePrefix(inPath1::Absyn.Path, inPath2::Absyn.Path)::Absyn.Path
+        function pathStripSamePrefix(inPath1::Absyn.Path, inPath2::Absyn.Path) ::Absyn.Path
               local outPath::Absyn.Path
 
               outPath = begin
@@ -2204,7 +2205,7 @@
         end
 
          #= Returns the prefix of a path, i.e. this.is.a.path => this.is.a =#
-        function pathPrefix(path::Path)::Path
+        function pathPrefix(path::Path) ::Path
               local prefix::Path
 
               prefix = begin
@@ -2229,7 +2230,7 @@
         end
 
          #= Prefixes a path with an identifier. =#
-        function prefixPath(prefix::Ident, path::Path)::Path
+        function prefixPath(prefix::Ident, path::Path) ::Path
               local outPath::Path
 
               outPath = QUALIFIED(prefix, path)
@@ -2237,7 +2238,7 @@
         end
 
          #= Prefixes an optional path with an identifier. =#
-        function prefixOptPath(prefix::Ident, optPath::Option{<:Path})::Option{Path}
+        function prefixOptPath(prefix::Ident, optPath::Option{<:Path}) ::Option{Path}
               local outPath::Option{Path}
 
               outPath = begin
@@ -2257,7 +2258,7 @@
 
          #= Adds a suffix to a path. Ex:
              suffixPath(a.b.c, 'd') => a.b.c.d =#
-        function suffixPath(inPath::Path, inSuffix::Ident)::Path
+        function suffixPath(inPath::Path, inSuffix::Ident) ::Path
               local outPath::Path
 
               outPath = begin
@@ -2283,7 +2284,7 @@
         end
 
          #= returns true if suffix_path is a suffix of path =#
-        function pathSuffixOf(suffix_path::Path, path::Path)::Bool
+        function pathSuffixOf(suffix_path::Path, path::Path) ::Bool
               local res::Bool
 
               res = begin
@@ -2311,21 +2312,21 @@
         end
 
          #= returns true if suffix_path is a suffix of path =#
-        function pathSuffixOfr(path::Path, suffix_path::Path)::Bool
+        function pathSuffixOfr(path::Path, suffix_path::Path) ::Bool
               local res::Bool
 
               res = pathSuffixOf(suffix_path, path)
           res
         end
 
-        function pathToStringList(path::Path)::List{String}
+        function pathToStringList(path::Path) ::List{String}
               local outPaths::List{String}
 
-              outPaths = listReverse(pathToStringListWork(path, list()))
+              outPaths = listReverse(pathToStringListWork(path, nil))
           outPaths
         end
 
-        function pathToStringListWork(path::Path, acc::List{<:Union{<:String, Nil{Any}}})::List{String}
+        function pathToStringListWork(path::Path, acc::List{<:String}) ::List{String}
               local outPaths::List{String}
 
               outPaths = begin
@@ -2354,7 +2355,7 @@
           (a.b.c, d.e) => d.e.b.c
           (a, b.c.d) => b.c.d
          =#
-        function pathReplaceFirstIdent(path::Path, replPath::Path)::Path
+        function pathReplaceFirstIdent(path::Path, replPath::Path) ::Path
               local outPath::Path
 
               outPath = begin
@@ -2375,7 +2376,7 @@
         end
 
          #= Function for appending subscripts at end of last ident =#
-        function addSubscriptsLast(icr::ComponentRef, i::List{<:Union{<:Subscript, Nil{Any}}})::ComponentRef
+        function addSubscriptsLast(icr::ComponentRef, i::List{<:Subscript}) ::ComponentRef
               local ocr::ComponentRef
 
               ocr = begin
@@ -2406,7 +2407,7 @@
           (a[4].b.c[3], d.e) => d.e[4].b.c[3]
           (a[3], b.c.d) => b.c.d[3]
          =#
-        function crefReplaceFirstIdent(icref::ComponentRef, replPath::Path)::ComponentRef
+        function crefReplaceFirstIdent(icref::ComponentRef, replPath::Path) ::ComponentRef
               local outCref::ComponentRef
 
               outCref = begin
@@ -2436,7 +2437,7 @@
         end
 
          #= Returns true if prefixPath is a prefix of path, false otherwise. =#
-        function pathPrefixOf(prefixPath::Path, path::Path)::Bool
+        function pathPrefixOf(prefixPath::Path, path::Path) ::Bool
               local isPrefix::Bool
 
               isPrefix = begin
@@ -2480,7 +2481,7 @@
 
           Returns true if prefixCr is a prefix of cr, i.e., false otherwise.
           Subscripts are NOT checked. =#
-        function crefPrefixOf(prefixCr::ComponentRef, cr::ComponentRef)::Bool
+        function crefPrefixOf(prefixCr::ComponentRef, cr::ComponentRef) ::Bool
               local out::Bool
 
               out = begin
@@ -2503,7 +2504,7 @@
         end
 
          #= removes the prefix_path from path, and returns the rest of path =#
-        function removePrefix(prefix_path::Path, path::Path)::Path
+        function removePrefix(prefix_path::Path, path::Path) ::Path
               local newPath::Path
 
               newPath = begin
@@ -2541,7 +2542,7 @@
           succeeds or reaches the end of the prefix. Ex:
             removePartialPrefix(A.B.C, B.C.D.E) => D.E
            =#
-        function removePartialPrefix(inPrefix::Path, inPath::Path)::Path
+        function removePartialPrefix(inPrefix::Path, inPath::Path) ::Path
               local outPath::Path
 
               outPath = begin
@@ -2578,7 +2579,7 @@
           If prefixCr is a prefix of cr, removes prefixCr from cr and returns the remaining reference,
           otherwise fails. Subscripts are NOT checked.
          =#
-        function crefRemovePrefix(prefixCr::ComponentRef, cr::ComponentRef)::ComponentRef
+        function crefRemovePrefix(prefixCr::ComponentRef, cr::ComponentRef) ::ComponentRef
               local out::ComponentRef
 
               out = begin
@@ -2605,7 +2606,7 @@
 
                   (CREF_IDENT(name = prefixIdent), CREF_IDENT(name = ident))  => begin
                       @match true = stringEq(prefixIdent, ident)
-                    CREF_IDENT("", list())
+                    CREF_IDENT("", nil)
                   end
                 end
               end
@@ -2620,7 +2621,7 @@
 
          #= Author BZ,
            checks if one IDENT(..) is contained in path. =#
-        function pathContains(fullPath::Path, pathId::Path)::Bool
+        function pathContains(fullPath::Path, pathId::Path) ::Bool
               local b::Bool
 
               b = begin
@@ -2651,7 +2652,7 @@
 
          #= Author OT,
            checks if Path contains the given string. =#
-        function pathContainsString(p1::Path, str::String)::Bool
+        function pathContainsString(p1::Path, str::String) ::Bool
               local b::Bool
 
               b = begin
@@ -2689,7 +2690,7 @@
              pathContainedIn(C.D, A.B.C.D) => A.B.C.D
              pathContainedIn(A.B.C.D, A.B.C.D) => A.B.C.D
              pathContainedIn(B.C,A.B) => A.B.C =#
-        function pathContainedIn(subPath::Path, path::Path)::Path
+        function pathContainedIn(subPath::Path, path::Path) ::Path
               local completePath::Path
 
               completePath = begin
@@ -2728,7 +2729,7 @@
 
          #= Author BZ 2009-08
            Function for getting ComponentRefs out from Subscripts =#
-        function getCrefsFromSubs(isubs::List{<:Union{<:Subscript, Nil{Any}}}, includeSubs::Bool #= include crefs from array subscripts =#, includeFunctions::Bool #= note that if you say includeSubs = false then you won't get the functions from array subscripts =#)::List{ComponentRef}
+        function getCrefsFromSubs(isubs::List{<:Subscript}, includeSubs::Bool #= include crefs from array subscripts =#, includeFunctions::Bool #= note that if you say includeSubs = false then you won't get the functions from array subscripts =#) ::List{ComponentRef}
               local crefs::List{ComponentRef}
 
               crefs = begin
@@ -2737,7 +2738,7 @@
                   local subs::List{Subscript}
                 @match (isubs, includeSubs, includeFunctions) begin
                   ( nil(), _, _)  => begin
-                    list()
+                    nil
                   end
 
                   (NOSUB(__) <| subs, _, _)  => begin
@@ -2756,7 +2757,7 @@
 
          #= Returns a flattened list of the
            component references in an expression =#
-        function getCrefFromExp(inExp::Exp, includeSubs::Bool #= include crefs from array subscripts =#, includeFunctions::Bool #= note that if you say includeSubs = false then you won't get the functions from array subscripts =#)::List{ComponentRef}
+        function getCrefFromExp(inExp::Exp, includeSubs::Bool #= include crefs from array subscripts =#, includeFunctions::Bool #= note that if you say includeSubs = false then you won't get the functions from array subscripts =#) ::List{ComponentRef}
               local outComponentRefLst::List{ComponentRef}
 
               outComponentRefLst = begin
@@ -2777,27 +2778,27 @@
                   local crefll::List{List{ComponentRef}}
                 @match (inExp, includeSubs, includeFunctions) begin
                   (INTEGER(__), _, _)  => begin
-                    list()
+                    nil
                   end
 
                   (REAL(__), _, _)  => begin
-                    list()
+                    nil
                   end
 
                   (STRING(__), _, _)  => begin
-                    list()
+                    nil
                   end
 
                   (BOOL(__), _, _)  => begin
-                    list()
+                    nil
                   end
 
                   (CREF(componentRef = ALLWILD(__)), _, _)  => begin
-                    list()
+                    nil
                   end
 
                   (CREF(componentRef = WILD(__)), _, _)  => begin
-                    list()
+                    nil
                   end
 
                   (CREF(componentRef = cr), false, _)  => begin
@@ -2893,9 +2894,9 @@
                   end
 
                   (END(__), _, _)  => begin
-                    list()
+                    nil
                   end
-
+                  
                   (TUPLE(expressions = expl), _, _)  => begin
                       crefll = ListUtil.map2(expl, getCrefFromExp, includeSubs, includeFunctions)
                       res = ListUtil.flatten(crefll)
@@ -2903,7 +2904,7 @@
                   end
 
                   (CODE(__), _, _)  => begin
-                    list()
+                    nil
                   end
 
                   (AS(exp = e1), _, _)  => begin
@@ -2946,7 +2947,7 @@
 
          #= Returns the flattened list of all component references
           present in a list of function arguments. =#
-        function getCrefFromFarg(inFunctionArgs::FunctionArgs, includeSubs::Bool #= include crefs from array subscripts =#, includeFunctions::Bool #= note that if you say includeSubs = false then you won't get the functions from array subscripts =#)::List{ComponentRef}
+        function getCrefFromFarg(inFunctionArgs::FunctionArgs, includeSubs::Bool #= include crefs from array subscripts =#, includeFunctions::Bool #= note that if you say includeSubs = false then you won't get the functions from array subscripts =#) ::List{ComponentRef}
               local outComponentRefLst::List{ComponentRef}
 
               outComponentRefLst = begin
@@ -2984,21 +2985,21 @@
           outComponentRefLst
         end
 
-        function iteratorName(iterator::ForIterator)::String
+        function iteratorName(iterator::ForIterator) ::String
               local name::String
 
               @match ITERATOR(name = name) = iterator
           name
         end
 
-        function iteratorRange(iterator::ForIterator)::Option{Exp}
+        function iteratorRange(iterator::ForIterator) ::Option{Exp}
               local range::Option{Exp}
 
               @match ITERATOR(range = range) = iterator
           range
         end
 
-        function iteratorGuard(iterator::ForIterator)::Option{Exp}
+        function iteratorGuard(iterator::ForIterator) ::Option{Exp}
               local guardExp::Option{Exp}
 
               @match ITERATOR(guardExp = guardExp) = iterator
@@ -3009,7 +3010,7 @@
          =#
 
          #= returns the names from a list of NamedArgs as a string list =#
-        function getNamedFuncArgNamesAndValues(inNamedArgList::List{<:Union{<:NamedArg, Nil{Any}}})::Tuple{List{String}, List{Exp}}
+        function getNamedFuncArgNamesAndValues(inNamedArgList::List{<:NamedArg}) ::Tuple{List{String}, List{Exp}}
               local outExpList::List{Exp}
               local outStringList::List{String}
 
@@ -3021,7 +3022,7 @@
                   local elst::List{Exp}
                 @match inNamedArgList begin
                    nil()  => begin
-                    (list(), list())
+                    (nil, nil)
                   end
 
                   NAMEDARG(argName = s, argValue = e) <| cdr  => begin
@@ -3035,7 +3036,7 @@
 
          #= Returns the flattened list of all component references
           present in a list of named function arguments. =#
-        function getCrefFromNarg(inNamedArg::NamedArg, includeSubs::Bool #= include crefs from array subscripts =#, includeFunctions::Bool #= note that if you say includeSubs = false then you won't get the functions from array subscripts =#)::List{ComponentRef}
+        function getCrefFromNarg(inNamedArg::NamedArg, includeSubs::Bool #= include crefs from array subscripts =#, includeFunctions::Bool #= note that if you say includeSubs = false then you won't get the functions from array subscripts =#) ::List{ComponentRef}
               local outComponentRefLst::List{ComponentRef}
 
               outComponentRefLst = begin
@@ -3052,7 +3053,7 @@
         end
 
          #= This function joins two paths =#
-        function joinPaths(inPath1::Path, inPath2::Path)::Path
+        function joinPaths(inPath1::Path, inPath2::Path) ::Path
               local outPath::Path
 
               outPath = begin
@@ -3083,7 +3084,7 @@
         end
 
          #= This function joins two paths when the first one might be NONE =#
-        function joinPathsOpt(inPath1::Option{<:Path}, inPath2::Path)::Path
+        function joinPathsOpt(inPath1::Option{<:Path}, inPath2::Path) ::Path
               local outPath::Path
 
               outPath = begin
@@ -3101,7 +3102,7 @@
           outPath
         end
 
-        function joinPathsOptSuffix(inPath1::Path, inPath2::Option{<:Path})::Path
+        function joinPathsOptSuffix(inPath1::Path, inPath2::Option{<:Path}) ::Path
               local outPath::Path
 
               outPath = begin
@@ -3121,7 +3122,7 @@
 
          #= This function selects the second path when the first one
           is NONE() otherwise it will select the first one. =#
-        function selectPathsOpt(inPath1::Option{<:Path}, inPath2::Path)::Path
+        function selectPathsOpt(inPath1::Option{<:Path}, inPath2::Path) ::Path
               local outPath::Path
 
               outPath = begin
@@ -3141,7 +3142,7 @@
 
          #= author Lucian
           This function joins a path list =#
-        function pathAppendList(inPathLst::List{<:Union{<:Path, Nil{Any}}})::Path
+        function pathAppendList(inPathLst::List{<:Path}) ::Path
               local outPath::Path
 
               outPath = begin
@@ -3170,7 +3171,7 @@
 
          #= Returns the path given as argument to
           the function minus the last ident. =#
-        function stripLast(inPath::Path)::Path
+        function stripLast(inPath::Path) ::Path
               local outPath::Path
 
               outPath = begin
@@ -3195,7 +3196,7 @@
           outPath
         end
 
-        function stripLastOpt(inPath::Path)::Option{Path}
+        function stripLastOpt(inPath::Path) ::Option{Path}
               local outPath::Option{Path}
 
               outPath = begin
@@ -3216,7 +3217,7 @@
 
          #= Returns the path given as argument to
           the function minus the last ident. =#
-        function crefStripLast(inCref::ComponentRef)::ComponentRef
+        function crefStripLast(inCref::ComponentRef) ::ComponentRef
               local outCref::ComponentRef
 
               outCref = begin
@@ -3252,7 +3253,7 @@
         Function for splitting Absynpath into two parts,
         qualified part, and ident part (all_but_last, last);
          =#
-        function splitQualAndIdentPath(inPath::Path)::Tuple{Path, Path}
+        function splitQualAndIdentPath(inPath::Path) ::Tuple{Path, Path}
               local outPath2::Path
               local outPath1::Path
 
@@ -3283,7 +3284,7 @@
 
          #= Returns the path given as argument
           to the function minus the first ident. =#
-        function stripFirst(inPath::Path)::Path
+        function stripFirst(inPath::Path) ::Path
               local outPath::Path
 
               outPath = begin
@@ -3303,7 +3304,7 @@
 
          #= This function converts a ComponentRef to a Path, if possible.
           If the component reference contains subscripts, it will silently fail. =#
-        function crefToPath(inComponentRef::ComponentRef)::Path
+        function crefToPath(inComponentRef::ComponentRef) ::Path
               local outPath::Path
 
               outPath = begin
@@ -3331,7 +3332,7 @@
 
          #= This function converts a ElementSpec to a Path, if possible.
           If the ElementSpec is not EXTENDS, it will silently fail. =#
-        function elementSpecToPath(inElementSpec::ElementSpec)::Path
+        function elementSpecToPath(inElementSpec::ElementSpec) ::Path
               local outPath::Path
 
               outPath = begin
@@ -3346,7 +3347,7 @@
         end
 
          #= Converts a ComponentRef to a Path, ignoring any subscripts. =#
-        function crefToPathIgnoreSubs(inComponentRef::ComponentRef)::Path
+        function crefToPathIgnoreSubs(inComponentRef::ComponentRef) ::Path
               local outPath::Path
 
               outPath = begin
@@ -3373,7 +3374,7 @@
         end
 
          #= This function converts a Path to a ComponentRef. =#
-        function pathToCref(inPath::Path)::ComponentRef
+        function pathToCref(inPath::Path) ::ComponentRef
               local outComponentRef::ComponentRef
 
               outComponentRef = begin
@@ -3382,12 +3383,12 @@
                   local p::Path
                 @match inPath begin
                   IDENT(name = i)  => begin
-                    CREF_IDENT(i, list())
+                    CREF_IDENT(i, nil)
                   end
 
                   QUALIFIED(name = i, path = p)  => begin
                       c = pathToCref(p)
-                    CREF_QUAL(i, list(), c)
+                    CREF_QUAL(i, nil, c)
                   end
 
                   FULLYQUALIFIED(p)  => begin
@@ -3401,7 +3402,7 @@
 
          #= This function converts a Path to a ComponentRef, and applies the given
           subscripts to the last identifier. =#
-        function pathToCrefWithSubs(inPath::Path, inSubs::List{<:Union{<:Subscript, Nil{Any}}})::ComponentRef
+        function pathToCrefWithSubs(inPath::Path, inSubs::List{<:Subscript}) ::ComponentRef
               local outComponentRef::ComponentRef
 
               outComponentRef = begin
@@ -3415,7 +3416,7 @@
 
                   (QUALIFIED(name = i, path = p), _)  => begin
                       c = pathToCrefWithSubs(p, inSubs)
-                    CREF_QUAL(i, list(), c)
+                    CREF_QUAL(i, nil, c)
                   end
 
                   (FULLYQUALIFIED(p), _)  => begin
@@ -3428,7 +3429,7 @@
         end
 
          #= Returns the last identifier in a component reference. =#
-        function crefLastIdent(inComponentRef::ComponentRef)::Ident
+        function crefLastIdent(inComponentRef::ComponentRef) ::Ident
               local outIdent::Ident
 
               outIdent = begin
@@ -3453,7 +3454,7 @@
 
          #= Returns the basename of the component reference, but fails if it encounters
           any subscripts. =#
-        function crefFirstIdentNoSubs(inCref::ComponentRef)::Ident
+        function crefFirstIdentNoSubs(inCref::ComponentRef) ::Ident
               local outIdent::Ident
 
               outIdent = begin
@@ -3477,7 +3478,7 @@
         end
 
          #= Returns true if the component reference is a simple identifier, otherwise false. =#
-        function crefIsIdent(inComponentRef::ComponentRef)::Bool
+        function crefIsIdent(inComponentRef::ComponentRef) ::Bool
               local outIsIdent::Bool
 
               outIsIdent = begin
@@ -3495,7 +3496,7 @@
         end
 
          #= Returns true if the component reference is a qualified identifier, otherwise false. =#
-        function crefIsQual(inComponentRef::ComponentRef)::Bool
+        function crefIsQual(inComponentRef::ComponentRef) ::Bool
               local outIsQual::Bool
 
               outIsQual = begin
@@ -3517,7 +3518,7 @@
         end
 
          #= Return the last subscripts of an ComponentRef =#
-        function crefLastSubs(inComponentRef::ComponentRef)::List{Subscript}
+        function crefLastSubs(inComponentRef::ComponentRef) ::List{Subscript}
               local outSubscriptLst::List{Subscript}
 
               outSubscriptLst = begin
@@ -3544,7 +3545,7 @@
           outSubscriptLst
         end
 
-        function crefSetLastSubs(inCref::ComponentRef, inSubscripts::List{<:Union{<:Subscript, Nil{Any}}})::ComponentRef
+        function crefSetLastSubs(inCref::ComponentRef, inSubscripts::List{<:Subscript}) ::ComponentRef
               local outCref::ComponentRef = inCref
 
               outCref = begin
@@ -3569,7 +3570,7 @@
         end
 
          #= This function finds if a cref has subscripts =#
-        function crefHasSubscripts(cref::ComponentRef)::Bool
+        function crefHasSubscripts(cref::ComponentRef) ::Bool
               local hasSubscripts::Bool
 
               hasSubscripts = begin
@@ -3605,7 +3606,7 @@
          #=
         Author: BZ, 2009-09
          Extract subscripts of crefs. =#
-        function getSubsFromCref(cr::ComponentRef, includeSubs::Bool #= include crefs from array subscripts =#, includeFunctions::Bool #= note that if you say includeSubs = false then you won't get the functions from array subscripts =#)::List{Subscript}
+        function getSubsFromCref(cr::ComponentRef, includeSubs::Bool #= include crefs from array subscripts =#, includeFunctions::Bool #= note that if you say includeSubs = false then you won't get the functions from array subscripts =#) ::List{Subscript}
               local subscripts::List{Subscript}
 
               subscripts = begin
@@ -3635,7 +3636,7 @@
          =#
 
          #= Gets the last ident in a ComponentRef =#
-        function crefGetLastIdent(inComponentRef::ComponentRef)::ComponentRef
+        function crefGetLastIdent(inComponentRef::ComponentRef) ::ComponentRef
               local outComponentRef::ComponentRef
 
               outComponentRef = begin
@@ -3663,7 +3664,7 @@
         end
 
          #= Strips the last subscripts of a ComponentRef =#
-        function crefStripLastSubs(inComponentRef::ComponentRef)::ComponentRef
+        function crefStripLastSubs(inComponentRef::ComponentRef) ::ComponentRef
               local outComponentRef::ComponentRef
 
               outComponentRef = begin
@@ -3674,7 +3675,7 @@
                   local cr::ComponentRef
                 @match inComponentRef begin
                   CREF_IDENT(name = id)  => begin
-                    CREF_IDENT(id, list())
+                    CREF_IDENT(id, nil)
                   end
 
                   CREF_QUAL(name = id, subscripts = s, componentRef = cr)  => begin
@@ -3692,7 +3693,7 @@
         end
 
          #= This function joins two ComponentRefs. =#
-        function joinCrefs(inComponentRef1::ComponentRef, inComponentRef2::ComponentRef)::ComponentRef
+        function joinCrefs(inComponentRef1::ComponentRef, inComponentRef2::ComponentRef) ::ComponentRef
               local outComponentRef::ComponentRef
 
               outComponentRef = begin
@@ -3722,7 +3723,7 @@
         end
 
          #= Returns first ident from a ComponentRef =#
-        function crefFirstIdent(inCref::ComponentRef)::Ident
+        function crefFirstIdent(inCref::ComponentRef) ::Ident
               local outIdent::Ident
 
               outIdent = begin
@@ -3743,7 +3744,7 @@
           outIdent
         end
 
-        function crefSecondIdent(cref::ComponentRef)::Ident
+        function crefSecondIdent(cref::ComponentRef) ::Ident
               local ident::Ident
 
               ident = begin
@@ -3761,7 +3762,7 @@
         end
 
          #= Returns the first part of a cref. =#
-        function crefFirstCref(inCref::ComponentRef)::ComponentRef
+        function crefFirstCref(inCref::ComponentRef) ::ComponentRef
               local outCref::ComponentRef
 
               outCref = begin
@@ -3783,7 +3784,7 @@
         end
 
          #= Strip the first ident from a ComponentRef =#
-        function crefStripFirst(inComponentRef::ComponentRef)::ComponentRef
+        function crefStripFirst(inComponentRef::ComponentRef) ::ComponentRef
               local outComponentRef::ComponentRef
 
               outComponentRef = begin
@@ -3801,7 +3802,7 @@
           outComponentRef
         end
 
-        function crefIsFullyQualified(inCref::ComponentRef)::Bool
+        function crefIsFullyQualified(inCref::ComponentRef) ::Bool
               local outIsFullyQualified::Bool
 
               outIsFullyQualified = begin
@@ -3819,7 +3820,7 @@
         end
 
          #= Makes a component reference fully qualified unless it already is. =#
-        function crefMakeFullyQualified(inComponentRef::ComponentRef)::ComponentRef
+        function crefMakeFullyQualified(inComponentRef::ComponentRef) ::ComponentRef
               local outComponentRef::ComponentRef
 
               outComponentRef = begin
@@ -3837,7 +3838,7 @@
         end
 
          #= Maps a class restriction to the corresponding string for printing =#
-        function restrString(inRestriction::Restriction)::String
+        function restrString(inRestriction::Restriction) ::String
               local outString::String
 
               outString = begin
@@ -3930,7 +3931,7 @@
         end
 
          #= Returns the path (=name) of the last class in a program =#
-        function lastClassname(inProgram::Program)::Path
+        function lastClassname(inProgram::Program) ::Path
               local outPath::Path
 
               local lst::List{Class}
@@ -3943,7 +3944,7 @@
         end
 
          #= Retrieves the filename where the class is stored. =#
-        function classFilename(inClass::Class)::String
+        function classFilename(inClass::Class) ::String
               local outFilename::String
 
               @match CLASS(info = SOURCEINFO(fileName = outFilename)) = inClass
@@ -3951,7 +3952,7 @@
         end
 
          #= Sets the filename where the class is stored. =#
-        function setClassFilename(inClass::Class, fileName::String)::Class
+        function setClassFilename(inClass::Class, fileName::String) ::Class
               local outClass::Class
 
               outClass = begin
@@ -3970,7 +3971,7 @@
 
          #= author: BZ
           Sets the name of the class =#
-        function setClassName(inClass::Class, newName::String)::Class
+        function setClassName(inClass::Class, newName::String) ::Class
               local outClass::Class = inClass
 
               outClass = begin
@@ -3984,7 +3985,7 @@
           outClass
         end
 
-        function setClassBody(inClass::Class, inBody::ClassDef)::Class
+        function setClassBody(inClass::Class, inBody::ClassDef) ::Class
               local outClass::Class = inClass
 
               outClass = begin
@@ -4001,7 +4002,7 @@
          #=  Checks if the name of a ComponentRef is
          equal to the name of another ComponentRef, including subscripts.
          See also crefEqualNoSubs. =#
-        function crefEqual(iCr1::ComponentRef, iCr2::ComponentRef)::Bool
+        function crefEqual(iCr1::ComponentRef, iCr2::ComponentRef) ::Bool
               local outBoolean::Bool
 
               outBoolean = begin
@@ -4040,14 +4041,14 @@
          #= @author: adrpo
            a.b, a -> true
            b.c, a -> false =#
-        function crefFirstEqual(iCr1::ComponentRef, iCr2::ComponentRef)::Bool
+        function crefFirstEqual(iCr1::ComponentRef, iCr2::ComponentRef) ::Bool
               local outBoolean::Bool
 
               outBoolean = stringEq(crefFirstIdent(iCr1), crefFirstIdent(iCr2))
           outBoolean
         end
 
-        function subscriptEqual(inSubscript1::Subscript, inSubscript2::Subscript)::Bool
+        function subscriptEqual(inSubscript1::Subscript, inSubscript2::Subscript) ::Bool
               local outIsEqual::Bool
 
               outIsEqual = begin
@@ -4071,7 +4072,7 @@
         end
 
          #= Checks if two subscript lists are equal. =#
-        function subscriptsEqual(inSubList1::List{<:Union{<:Subscript, Nil{Any}}}, inSubList2::List{<:Union{<:Subscript, Nil{Any}}})::Bool
+        function subscriptsEqual(inSubList1::List{<:Subscript}, inSubList2::List{<:Subscript}) ::Bool
               local outIsEqual::Bool
 
               outIsEqual = ListUtil.isEqualOnTrue(inSubList1, inSubList2, subscriptEqual)
@@ -4081,7 +4082,7 @@
          #= Checks if the name of a ComponentRef is equal to the name
            of another ComponentRef without checking subscripts.
            See also crefEqual. =#
-        function crefEqualNoSubs(cr1::ComponentRef, cr2::ComponentRef)::Bool
+        function crefEqualNoSubs(cr1::ComponentRef, cr2::ComponentRef) ::Bool
               local outBoolean::Bool
 
               outBoolean = begin
@@ -4114,7 +4115,7 @@
         end
 
          #= checks if the provided parameter is a package or not =#
-        function isPackageRestriction(inRestriction::Restriction)::Bool
+        function isPackageRestriction(inRestriction::Restriction) ::Bool
               local outIsPackage::Bool
 
               outIsPackage = begin
@@ -4132,7 +4133,7 @@
         end
 
          #= checks if restriction is a function or not =#
-        function isFunctionRestriction(inRestriction::Restriction)::Bool
+        function isFunctionRestriction(inRestriction::Restriction) ::Bool
               local outIsFunction::Bool
 
               outIsFunction = begin
@@ -4150,7 +4151,7 @@
         end
 
          #= Returns true if two expressions are equal =#
-        function expEqual(exp1::Exp, exp2::Exp)::Bool
+        function expEqual(exp1::Exp, exp2::Exp) ::Bool
               local equal::Bool
 
               equal = begin
@@ -4183,7 +4184,7 @@
         end
 
          #= Returns true if two each attributes are equal =#
-        function eachEqual(each1::Each, each2::Each)::Bool
+        function eachEqual(each1::Each, each2::Each) ::Bool
               local equal::Bool
 
               equal = begin
@@ -4205,7 +4206,7 @@
         end
 
          #= Returns true if two FunctionArgs are equal =#
-        function functionArgsEqual(args1::FunctionArgs, args2::FunctionArgs)::Bool
+        function functionArgsEqual(args1::FunctionArgs, args2::FunctionArgs) ::Bool
               local equal::Bool
 
               equal = begin
@@ -4226,7 +4227,7 @@
 
          #= author: adrpo
           gets the name of the class. =#
-        function getClassName(inClass::Class)::String
+        function getClassName(inClass::Class) ::String
               local outName::String
 
               @match CLASS(name = outName) = inClass
@@ -4238,17 +4239,17 @@
          #= Find all crefs in an expression which are subscripted with the given
            iterator, and return a list of cref-Integer tuples, where the cref is the
            index of the subscript. =#
-        function findIteratorIndexedCrefs(inExp::Exp, inIterator::String, inCrefs::List{<:Union{<:IteratorIndexedCref, Nil{Any}}} = list())::List{IteratorIndexedCref}
+        function findIteratorIndexedCrefs(inExp::Exp, inIterator::String, inCrefs::List{<:IteratorIndexedCref} = nil) ::List{IteratorIndexedCref}
               local outCrefs::List{IteratorIndexedCref}
 
-              (_, outCrefs) = traverseExp(inExp, (inIterator) -> findIteratorIndexedCrefs_traverser(inIterator = inIterator), list())
+              (_, outCrefs) = traverseExp(inExp, (inIterator) -> findIteratorIndexedCrefs_traverser(inIterator = inIterator), nil)
               outCrefs = ListUtil.fold(outCrefs, (iteratorIndexedCrefsEqual) -> ListUtil.unionEltOnTrue(inCompFunc = iteratorIndexedCrefsEqual), inCrefs)
           outCrefs
         end
 
          #= Traversal function used by deduceReductionIterationRange. Used to find crefs
            which are subscripted by a given iterator. =#
-        function findIteratorIndexedCrefs_traverser(inExp::Exp, inCrefs::List{<:Union{<:IteratorIndexedCref, Nil{Any}}}, inIterator::String)::Tuple{Exp, List{IteratorIndexedCref}}
+        function findIteratorIndexedCrefs_traverser(inExp::Exp, inCrefs::List{<:IteratorIndexedCref}, inIterator::String) ::Tuple{Exp, List{IteratorIndexedCref}}
               local outCrefs::List{IteratorIndexedCref}
               local outExp::Exp = inExp
 
@@ -4268,7 +4269,7 @@
         end
 
          #= Checks whether two cref-index pairs are equal. =#
-        function iteratorIndexedCrefsEqual(inCref1::IteratorIndexedCref, inCref2::IteratorIndexedCref)::Bool
+        function iteratorIndexedCrefsEqual(inCref1::IteratorIndexedCref, inCref2::IteratorIndexedCref) ::Bool
               local outEqual::Bool
 
               local cr1::ComponentRef
@@ -4288,7 +4289,7 @@
            cref without subscripts, and the index is the subscripted dimension. E.g. for
            iterator i:
              a[i] => (a, 1), b[1, i] => (b, 2), c[i+1] => (), d[2].e[i] => (d[2].e, 1) =#
-        function getIteratorIndexedCrefs(inCref::ComponentRef, inIterator::String, inCrefs::List{<:Union{<:IteratorIndexedCref, Nil{Any}}})::List{IteratorIndexedCref}
+        function getIteratorIndexedCrefs(inCref::ComponentRef, inIterator::String, inCrefs::List{<:IteratorIndexedCref}) ::List{IteratorIndexedCref}
               local outCrefs::List{IteratorIndexedCref} = inCrefs
 
               local crefs::List{Tuple{ComponentRef, ModelicaInteger}}
@@ -4311,7 +4312,7 @@
                           @match sub begin
                             SUBSCRIPT(subscript = CREF(componentRef = CREF_IDENT(name = name, subscripts =  nil())))  => begin
                                 if name == inIterator
-                                  outCrefs = (CREF_IDENT(id, list()), idx) <| outCrefs
+                                  outCrefs = (CREF_IDENT(id, nil), idx) <| outCrefs
                                 end
                               ()
                             end
@@ -4327,7 +4328,7 @@
                   end
 
                   CREF_QUAL(name = id, subscripts = subs, componentRef = cref)  => begin
-                      crefs = getIteratorIndexedCrefs(cref, inIterator, list())
+                      crefs = getIteratorIndexedCrefs(cref, inIterator, nil)
                        #=  Append the prefix from the qualified cref to any matches, and add
                        =#
                        #=  them to the result list.
@@ -4340,7 +4341,7 @@
                   end
 
                   CREF_FULLYQUALIFIED(componentRef = cref)  => begin
-                      crefs = getIteratorIndexedCrefs(cref, inIterator, list())
+                      crefs = getIteratorIndexedCrefs(cref, inIterator, nil)
                        #=  Make any matches fully qualified, and add them to the result list.
                        =#
                       for cr in crefs
@@ -4358,7 +4359,7 @@
           outCrefs
         end
 
-        function pathReplaceIdent(path::Path, last::String)::Path
+        function pathReplaceIdent(path::Path, last::String) ::Path
               local out::Path
 
               out = begin
@@ -4384,7 +4385,7 @@
           out
         end
 
-        function getFileNameFromInfo(inInfo::SourceInfo)::String
+        function getFileNameFromInfo(inInfo::SourceInfo) ::String
               local inFileName::String
 
               @match SOURCEINFO(fileName = inFileName) = inInfo
@@ -4394,7 +4395,7 @@
          #= @author: adrpo
           this function returns true if the given InnerOuter
           is one of INNER_OUTER() or OUTER() =#
-        function isOuter(io::InnerOuter)::Bool
+        function isOuter(io::InnerOuter) ::Bool
               local isItAnOuter::Bool
 
               isItAnOuter = begin
@@ -4418,7 +4419,7 @@
          #= @author: adrpo
           this function returns true if the given InnerOuter
           is one of INNER_OUTER() or INNER() =#
-        function isInner(io::InnerOuter)::Bool
+        function isInner(io::InnerOuter) ::Bool
               local isItAnInner::Bool
 
               isItAnInner = begin
@@ -4440,7 +4441,7 @@
         end
 
          #= Returns true if the InnerOuter is INNER, false otherwise. =#
-        function isOnlyInner(inIO::InnerOuter)::Bool
+        function isOnlyInner(inIO::InnerOuter) ::Bool
               local outOnlyInner::Bool
 
               outOnlyInner = begin
@@ -4458,7 +4459,7 @@
         end
 
          #= Returns true if the InnerOuter is OUTER, false otherwise. =#
-        function isOnlyOuter(inIO::InnerOuter)::Bool
+        function isOnlyOuter(inIO::InnerOuter) ::Bool
               local outOnlyOuter::Bool
 
               outOnlyOuter = begin
@@ -4475,7 +4476,7 @@
           outOnlyOuter
         end
 
-        function isInnerOuter(inIO::InnerOuter)::Bool
+        function isInnerOuter(inIO::InnerOuter) ::Bool
               local outIsInnerOuter::Bool
 
               outIsInnerOuter = begin
@@ -4492,7 +4493,7 @@
           outIsInnerOuter
         end
 
-        function isNotInnerOuter(inIO::InnerOuter)::Bool
+        function isNotInnerOuter(inIO::InnerOuter) ::Bool
               local outIsNotInnerOuter::Bool
 
               outIsNotInnerOuter = begin
@@ -4510,7 +4511,7 @@
         end
 
          #= Returns true if two InnerOuter's are equal =#
-        function innerOuterEqual(io1::InnerOuter, io2::InnerOuter)::Bool
+        function innerOuterEqual(io1::InnerOuter, io2::InnerOuter) ::Bool
               local res::Bool
 
               res = begin
@@ -4540,7 +4541,7 @@
         end
 
          #= Makes a path fully qualified unless it already is. =#
-        function makeFullyQualified(inPath::Path)::Path
+        function makeFullyQualified(inPath::Path) ::Path
               local outPath::Path
 
               outPath = begin
@@ -4558,7 +4559,7 @@
         end
 
          #= Makes a path not fully qualified unless it already is. =#
-        function makeNotFullyQualified(inPath::Path)::Path
+        function makeNotFullyQualified(inPath::Path) ::Path
               local outPath::Path
 
               outPath = begin
@@ -4577,7 +4578,7 @@
         end
 
          #= Compares two import elements.  =#
-        function importEqual(im1::Import, im2::Import)::Bool
+        function importEqual(im1::Import, im2::Import) ::Bool
               local outBoolean::Bool
 
               outBoolean = begin
@@ -4611,7 +4612,7 @@
         end
 
          #= Transforms an if-expression to canonical form (without else-if branches) =#
-        function canonIfExp(inExp::Exp)::Exp
+        function canonIfExp(inExp::Exp) ::Exp
               local outExp::Exp
 
               outExp = begin
@@ -4629,7 +4630,7 @@
 
                   IFEXP(ifExp = cond, trueBranch = tb, elseBranch = eb, elseIfBranch = (ei_cond, ei_tb) <| eib)  => begin
                       e = canonIfExp(IFEXP(ei_cond, ei_tb, eb, eib))
-                    IFEXP(cond, tb, e, list())
+                    IFEXP(cond, tb, e, nil)
                   end
                 end
               end
@@ -4638,7 +4639,7 @@
 
          #= @author: adrpo
           This function checks if a modification only contains literal expressions =#
-        function onlyLiteralsInAnnotationMod(inMod::List{<:Union{<:ElementArg, Nil{Any}}})::Bool
+        function onlyLiteralsInAnnotationMod(inMod::List{<:ElementArg}) ::Bool
               local onlyLiterals::Bool
 
               onlyLiterals = begin
@@ -4688,7 +4689,7 @@
 
          #= @author: adrpo
           This function checks if an optional expression only contains literal expressions =#
-        function onlyLiteralsInEqMod(eqMod::EqMod)::Bool
+        function onlyLiteralsInEqMod(eqMod::EqMod) ::Bool
               local onlyLiterals::Bool
 
               onlyLiterals = begin
@@ -4701,7 +4702,7 @@
                   end
 
                   EQMOD(exp = exp)  => begin
-                      @match (_, lst <| list()) = traverseExpBidir(exp, onlyLiteralsInExpEnter, onlyLiteralsInExpExit, list() <| list())
+                      @match (_, lst <| nil) = traverseExpBidir(exp, onlyLiteralsInExpEnter, onlyLiteralsInExpExit, nil <| nil)
                       b = listEmpty(lst)
                     b
                   end
@@ -4715,7 +4716,7 @@
          #= @author: adrpo
          Visitor function for checking if Exp contains only literals, NO CREFS!
          It returns an empty list if it doesn't contain any crefs! =#
-        function onlyLiteralsInExpEnter(inExp::Exp, inLst::List{<:Union{<:List{<:Union{<:Exp, Nil{Any}}}, Nil{Any}}})::Tuple{Exp, List{List{Exp}}}
+        function onlyLiteralsInExpEnter(inExp::Exp, inLst::List{<:List{<:Exp}}) ::Tuple{Exp, List{List{Exp}}}
               local outLst::List{List{Exp}}
               local outExp::Exp
 
@@ -4757,7 +4758,7 @@
          #= @author: adrpo
          Visitor function for checking if Exp contains only literals, NO CREFS!
          It returns an empty list if it doesn't contain any crefs! =#
-        function onlyLiteralsInExpExit(inExp::Exp, inLst::List{<:Union{<:List{<:Union{<:Exp, Nil{Any}}}, Nil{Any}}})::Tuple{Exp, List{List{Exp}}}
+        function onlyLiteralsInExpExit(inExp::Exp, inLst::List{<:List{<:Exp}}) ::Tuple{Exp, List{List{Exp}}}
               local outLst::List{List{Exp}}
               local outExp::Exp
 
@@ -4780,21 +4781,21 @@
           (outExp, outLst)
         end
 
-        function makeCons(e1::Exp, e2::Exp)::Exp
+        function makeCons(e1::Exp, e2::Exp) ::Exp
               local e::Exp
 
               e = CONS(e1, e2)
           e
         end
 
-        function crefIdent(cr::ComponentRef)::String
+        function crefIdent(cr::ComponentRef) ::String
               local str::String
 
-              @match CREF_IDENT(str, list()) = cr
+              @match CREF_IDENT(str, nil) = cr
           str
         end
 
-        function unqotePathIdents(inPath::Path)::Path
+        function unqotePathIdents(inPath::Path) ::Path
               local path::Path
 
               path = stringListPath(ListUtil.map(pathToStringList(inPath), System.unquoteIdentifier))
@@ -4803,7 +4804,7 @@
 
          #= If the given component reference is fully qualified this function removes the
           fully qualified qualifier, otherwise does nothing. =#
-        function unqualifyCref(inCref::ComponentRef)::ComponentRef
+        function unqualifyCref(inCref::ComponentRef) ::ComponentRef
               local outCref::ComponentRef
 
               outCref = begin
@@ -4821,7 +4822,7 @@
           outCref
         end
 
-        function pathIsFullyQualified(inPath::Path)::Bool
+        function pathIsFullyQualified(inPath::Path) ::Bool
               local outIsQualified::Bool
 
               outIsQualified = begin
@@ -4838,7 +4839,7 @@
           outIsQualified
         end
 
-        function pathIsIdent(inPath::Path)::Bool
+        function pathIsIdent(inPath::Path) ::Bool 
               local outIsIdent::Bool
 
               outIsIdent = begin
@@ -4855,7 +4856,7 @@
           outIsIdent
         end
 
-        function pathIsQual(inPath::Path)::Bool
+        function pathIsQual(inPath::Path) ::Bool
               local outIsQual::Bool
 
               outIsQual = begin
@@ -4872,7 +4873,7 @@
           outIsQual
         end
 
-        function withinEqual(within1::Within, within2::Within)::Bool
+        function withinEqual(within1::Within, within2::Within) ::Bool
               local b::Bool
 
               b = begin
@@ -4895,7 +4896,7 @@
           b
         end
 
-        function withinString(w1::Within)::String
+        function withinString(w1::Within) ::String
               local str::String
 
               str = begin
@@ -4913,7 +4914,7 @@
           str
         end
 
-        function joinWithinPath(within_::Within, path::Path)::Path
+        function joinWithinPath(within_::Within, path::Path) ::Path
               local outPath::Path
 
               outPath = begin
@@ -4931,7 +4932,7 @@
           outPath
         end
 
-        function innerOuterStr(io::InnerOuter)::String
+        function innerOuterStr(io::InnerOuter) ::String
               local str::String
 
               str = begin
@@ -4956,7 +4957,7 @@
           str
         end
 
-        function subscriptExpOpt(inSub::Subscript)::Option{Exp}
+        function subscriptExpOpt(inSub::Subscript) ::Option{Exp}
               local outExpOpt::Option{Exp}
 
               outExpOpt = begin
@@ -4974,7 +4975,7 @@
           outExpOpt
         end
 
-        function crefInsertSubscriptLstLst(inExp::Exp, inLst::List{<:Union{<:List{<:Union{<:Subscript, Nil{Any}}}, Nil{Any}}})::Tuple{Exp, List{List{Subscript}}}
+        function crefInsertSubscriptLstLst(inExp::Exp, inLst::List{<:List{<:Subscript}}) ::Tuple{Exp, List{List{Subscript}}}
               local outLst::List{List{Subscript}}
               local outExp::Exp
 
@@ -4998,7 +4999,7 @@
         end
 
          #= Helper function to crefInsertSubscriptLstLst =#
-        function crefInsertSubscriptLstLst2(inCref::ComponentRef, inSubs::List{<:Union{<:List{<:Union{<:Subscript, Nil{Any}}}, Nil{Any}}})::ComponentRef
+        function crefInsertSubscriptLstLst2(inCref::ComponentRef, inSubs::List{<:List{<:Subscript}}) ::ComponentRef
               local outCref::ComponentRef
 
               outCref = begin
@@ -5030,7 +5031,7 @@
           outCref
         end
 
-        function isCref(exp::Exp)::Bool
+        function isCref(exp::Exp) ::Bool
               local b::Bool
 
               b = begin
@@ -5047,7 +5048,7 @@
           b
         end
 
-        function isTuple(exp::Exp)::Bool
+        function isTuple(exp::Exp) ::Bool
               local b::Bool
 
               b = begin
@@ -5066,7 +5067,7 @@
 
          #= @author: johti
            Returns true if all fields are crefs =#
-        function allFieldsAreCrefs(expLst::List{<:Union{<:Exp, Nil{Any}}})::Bool
+        function allFieldsAreCrefs(expLst::List{<:Exp}) ::Bool
               local b::Bool
 
               b = ListUtil.mapAllValueBool(expLst, complexIsCref, true)
@@ -5076,7 +5077,7 @@
          #=  @author: johti
             Returns true if everything contained
             in the tuple or a cons cell is a constant reference. =#
-        function complexIsCref(inExp::Exp)::Bool
+        function complexIsCref(inExp::Exp) ::Bool
               local b::Bool
 
               b = begin
@@ -5097,7 +5098,7 @@
           b
         end
 
-        function isDerCref(exp::Exp)::Bool
+        function isDerCref(exp::Exp) ::Bool
               local b::Bool
 
               b = begin
@@ -5115,24 +5116,24 @@
         end
 
         function isDerCrefFail(exp::Exp)
-              @match CALL(CREF_IDENT("der", list()), FUNCTIONARGS(list(CREF()), list())) = exp
+              @match CALL(CREF_IDENT("der", nil), FUNCTIONARGS(list(CREF()), nil)) = exp
         end
 
          #= author: adrpo
           returns all the expressions from array dimension as a list
           also returns if we have unknown dimensions in the array dimension =#
-        function getExpsFromArrayDim(inAd::ArrayDim)::Tuple{Bool, List{Exp}}
+        function getExpsFromArrayDim(inAd::ArrayDim) ::Tuple{Bool, List{Exp}}
               local outExps::List{Exp}
               local hasUnknownDimensions::Bool
 
-              (hasUnknownDimensions, outExps) = getExpsFromArrayDim_tail(inAd, list())
+              (hasUnknownDimensions, outExps) = getExpsFromArrayDim_tail(inAd, nil)
           (hasUnknownDimensions, outExps)
         end
 
          #= author: adrpo
           returns all the expressions from array dimension as a list
           also returns if we have unknown dimensions in the array dimension =#
-        function getExpsFromArrayDimOpt(inAdO::Option{<:ArrayDim})::Tuple{Bool, List{Exp}}
+        function getExpsFromArrayDimOpt(inAdO::Option{<:ArrayDim}) ::Tuple{Bool, List{Exp}}
               local outExps::List{Exp}
               local hasUnknownDimensions::Bool
 
@@ -5140,11 +5141,11 @@
                   local ad::ArrayDim
                 @match inAdO begin
                   NONE()  => begin
-                    (false, list())
+                    (false, nil)
                   end
 
                   SOME(ad)  => begin
-                      (hasUnknownDimensions, outExps) = getExpsFromArrayDim_tail(ad, list())
+                      (hasUnknownDimensions, outExps) = getExpsFromArrayDim_tail(ad, nil)
                     (hasUnknownDimensions, outExps)
                   end
                 end
@@ -5155,7 +5156,7 @@
          #= author: adrpo
           returns all the expressions from array dimension as a list
           also returns if we have unknown dimensions in the array dimension =#
-        function getExpsFromArrayDim_tail(inAd::ArrayDim, inAccumulator::List{<:Union{<:Exp, Nil{Any}}})::Tuple{Bool, List{Exp}}
+        function getExpsFromArrayDim_tail(inAd::ArrayDim, inAccumulator::List{<:Exp}) ::Tuple{Bool, List{Exp}}
               local outExps::List{Exp}
               local hasUnknownDimensions::Bool
 
@@ -5192,7 +5193,7 @@
 
          #= @author: adrpo
          returns true if the given direction is input or output =#
-        function isInputOrOutput(direction::Direction)::Bool
+        function isInputOrOutput(direction::Direction) ::Bool
               local isIorO::Bool #= input or output only =#
 
               isIorO = begin
@@ -5217,7 +5218,7 @@
           isIorO #= input or output only =#
         end
 
-        function isInput(inDirection::Direction)::Bool
+        function isInput(inDirection::Direction) ::Bool
               local outIsInput::Bool
 
               outIsInput = begin
@@ -5238,7 +5239,7 @@
           outIsInput
         end
 
-        function isOutput(inDirection::Direction)::Bool
+        function isOutput(inDirection::Direction) ::Bool
               local outIsOutput::Bool
 
               outIsOutput = begin
@@ -5259,7 +5260,7 @@
           outIsOutput
         end
 
-        function directionEqual(inDirection1::Direction, inDirection2::Direction)::Bool
+        function directionEqual(inDirection1::Direction, inDirection2::Direction) ::Bool
               local outEqual::Bool
 
               outEqual = begin
@@ -5288,7 +5289,7 @@
           outEqual
         end
 
-        function isFieldEqual(isField1::IsField, isField2::IsField)::Bool
+        function isFieldEqual(isField1::IsField, isField2::IsField) ::Bool
               local outEqual::Bool
 
               outEqual = begin
@@ -5309,14 +5310,14 @@
           outEqual
         end
 
-        function pathLt(path1::Path, path2::Path)::Bool
+        function pathLt(path1::Path, path2::Path) ::Bool
               local lt::Bool
 
               lt = stringCompare(pathString(path1), pathString(path2)) < 0
           lt
         end
 
-        function pathGe(path1::Path, path2::Path)::Bool
+        function pathGe(path1::Path, path2::Path) ::Bool
               local ge::Bool
 
               ge = ! pathLt(path1, path2)
@@ -5324,7 +5325,7 @@
         end
 
          #= Strips out long class definitions =#
-        function getShortClass(cl::Class)::Class
+        function getShortClass(cl::Class) ::Class
               local o::Class
 
               o = begin
@@ -5354,7 +5355,7 @@
         end
 
          #= Strips out class definition comments. =#
-        function stripClassDefComment(cl::ClassDef)::ClassDef
+        function stripClassDefComment(cl::ClassDef) ::ClassDef
               local o::ClassDef
 
               o = begin
@@ -5405,7 +5406,7 @@
         end
 
          #= Strips out the parts of a function definition that are not needed for the interface =#
-        function getFunctionInterface(cl::Class)::Class
+        function getFunctionInterface(cl::Class) ::Class
               local o::Class
 
               o = begin
@@ -5421,15 +5422,15 @@
                   local classAttr::List{NamedArg}
                 @match cl begin
                   CLASS(name, partialPrefix, finalPrefix, encapsulatedPrefix, R_FUNCTION(funcRest), PARTS(typeVars, classAttr, classParts, _, _), info)  => begin
-                      @match (@match _ <| _ = elts) = ListUtil.fold(listReverse(classParts), getFunctionInterfaceParts, list())
-                    CLASS(name, partialPrefix, finalPrefix, encapsulatedPrefix, R_FUNCTION(funcRest), PARTS(typeVars, classAttr, PUBLIC(elts) <| list(), list(), NONE()), info)
+                      @match (@match _ <| _ = elts) = ListUtil.fold(listReverse(classParts), getFunctionInterfaceParts, nil)
+                    CLASS(name, partialPrefix, finalPrefix, encapsulatedPrefix, R_FUNCTION(funcRest), PARTS(typeVars, classAttr, PUBLIC(elts) <| nil, nil, NONE()), info)
                   end
                 end
               end
           o
         end
 
-        function getFunctionInterfaceParts(part::ClassPart, elts::List{<:Union{<:ElementItem, Nil{Any}}})::List{ElementItem}
+        function getFunctionInterfaceParts(part::ClassPart, elts::List{<:ElementItem}) ::List{ElementItem} 
               local oelts::List{ElementItem}
 
               oelts = begin
@@ -5449,7 +5450,7 @@
           oelts
         end
 
-        function filterAnnotationItem(elt::ElementItem)::Bool
+        function filterAnnotationItem(elt::ElementItem) ::Bool
               local outB::Bool
 
               outB = begin
@@ -5467,7 +5468,7 @@
         end
 
          #= Filter outs the nested classes from the class if any. =#
-        function filterNestedClasses(cl::Class)::Class
+        function filterNestedClasses(cl::Class) ::Class
               local o::Class
 
               o = begin
@@ -5484,7 +5485,7 @@
                   local info::Info
                 @match cl begin
                   CLASS(name, partialPrefix, finalPrefix, encapsulatedPrefix, restriction, PARTS(typeVars, classAttrs, classParts, annotations, comment), info)  => begin
-                      @match (@match _ <| _ = classParts) = ListUtil.fold(listReverse(classParts), filterNestedClassesParts, list())
+                      @match (@match _ <| _ = classParts) = ListUtil.fold(listReverse(classParts), filterNestedClassesParts, nil)
                     CLASS(name, partialPrefix, finalPrefix, encapsulatedPrefix, restriction, PARTS(typeVars, classAttrs, classParts, annotations, comment), info)
                   end
 
@@ -5497,7 +5498,7 @@
         end
 
          #= Helper funciton for filterNestedClassesParts. =#
-        function filterNestedClassesParts(classPart::ClassPart, inClassParts::List{<:Union{<:ClassPart, Nil{Any}}})::List{ClassPart}
+        function filterNestedClassesParts(classPart::ClassPart, inClassParts::List{<:ClassPart}) ::List{ClassPart}
               local outClassPart::List{ClassPart}
 
               outClassPart = begin
@@ -5525,7 +5526,7 @@
          #= @author: adrpo
            returns the EXTERNAL form parts if there is any.
            if there is none, it fails! =#
-        function getExternalDecl(inCls::Class)::ClassPart
+        function getExternalDecl(inCls::Class) ::ClassPart
               local outExternal::ClassPart
 
               local cp::ClassPart
@@ -5536,7 +5537,7 @@
           outExternal
         end
 
-        function isExternalPart(inClassPart::ClassPart)::Bool
+        function isExternalPart(inClassPart::ClassPart) ::Bool
               local outFound::Bool
 
               outFound = begin
@@ -5553,7 +5554,7 @@
           outFound
         end
 
-        function isParts(cl::ClassDef)::Bool
+        function isParts(cl::ClassDef) ::Bool
               local b::Bool
 
               b = begin
@@ -5571,7 +5572,7 @@
         end
 
          #= Makes a class into an ElementItem =#
-        function makeClassElement(cl::Class)::ElementItem
+        function makeClassElement(cl::Class) ::ElementItem
               local el::ElementItem
 
               local info::Info
@@ -5582,14 +5583,14 @@
           el
         end
 
-        function componentName(c::ComponentItem)::String
+        function componentName(c::ComponentItem) ::String
               local name::String
 
               @match COMPONENTITEM(component = COMPONENT(name = name)) = c
           name
         end
 
-        function pathSetLastIdent(inPath::Path, inLastIdent::Path)::Path
+        function pathSetLastIdent(inPath::Path, inLastIdent::Path) ::Path
               local outPath::Path
 
               outPath = begin
@@ -5616,7 +5617,7 @@
 
          #= @author:
           returns true if expression contains initial() =#
-        function expContainsInitial(inExp::Exp)::Bool
+        function expContainsInitial(inExp::Exp) ::Bool
               local hasInitial::Bool
 
               hasInitial = begin
@@ -5637,7 +5638,7 @@
 
          #= @author:
           returns true if expression is initial() =#
-        function isInitialTraverseHelper(inExp::Exp, inBool::Bool)::Tuple{Exp, Bool}
+        function isInitialTraverseHelper(inExp::Exp, inBool::Bool) ::Tuple{Exp, Bool}
               local outBool::Bool
               local outExp::Exp
 
@@ -5668,7 +5669,7 @@
 
          #= @author:
           returns true if expression is initial() =#
-        function isInitial(inExp::Exp)::Bool
+        function isInitial(inExp::Exp) ::Bool
               local hasReinit::Bool
 
               hasReinit = begin
@@ -5690,7 +5691,7 @@
         end
 
          #= Return the path of the given import. =#
-        function importPath(inImport::Import)::Path
+        function importPath(inImport::Import) ::Path
               local outPath::Path
 
               outPath = begin
@@ -5717,7 +5718,7 @@
         end
 
          #= Returns the import name of a named or qualified import. =#
-        function importName(inImport::Import)::Ident
+        function importName(inImport::Import) ::Ident
               local outName::Ident
 
               outName = begin
@@ -5746,7 +5747,7 @@
            will be changed according to the new definition. For instance,
            merge_annotations(annotation(x=1,y=2),annotation(x=3))
            => annotation(x=3,y=2) =#
-        function mergeAnnotations(inAnnotation1::Annotation, inAnnotation2::Annotation)::Annotation
+        function mergeAnnotations(inAnnotation1::Annotation, inAnnotation2::Annotation) ::Annotation
               local outAnnotation::Annotation
 
               outAnnotation = begin
@@ -5766,7 +5767,7 @@
           outAnnotation
         end
 
-        function mergeAnnotations2(oldmods::List{<:Union{<:ElementArg, Nil{Any}}}, newmods::List{<:Union{<:ElementArg, Nil{Any}}})::List{ElementArg}
+        function mergeAnnotations2(oldmods::List{<:ElementArg}, newmods::List{<:ElementArg}) ::List{ElementArg}
               local res::List{ElementArg} = listReverse(oldmods)
 
               local mods::List{ElementArg}
@@ -5790,7 +5791,7 @@
         end
 
          #= Merges an annotation into a Comment option. =#
-        function mergeCommentAnnotation(inAnnotation::Annotation, inComment::Option{<:Comment})::Option{Comment}
+        function mergeCommentAnnotation(inAnnotation::Annotation, inComment::Option{<:Comment}) ::Option{Comment}
               local outComment::Option{Comment}
 
               outComment = begin
@@ -5820,7 +5821,7 @@
         end
 
          #= returns true or false if the given path is in the list of modifications =#
-        function isModificationOfPath(mod::ElementArg, path::Path)::Bool
+        function isModificationOfPath(mod::ElementArg, path::Path) ::Bool
               local yes::Bool
 
               yes = begin
@@ -5839,7 +5840,7 @@
           yes
         end
 
-        function subModsInSameOrder(oldmod::ElementArg, newmod::ElementArg)::ElementArg
+        function subModsInSameOrder(oldmod::ElementArg, newmod::ElementArg) ::ElementArg
               local mod::ElementArg
 
               mod = begin
@@ -5866,7 +5867,7 @@
                        =#
                        #=  Delete all items from args2 that are not in args1
                        =#
-                      res = list()
+                      res = nil
                       for arg1 in args1
                         @match MODIFICATION(path = p) = arg1
                         if ListUtil.exist(args2, (p) -> isModificationOfPath(path = p))
@@ -5885,35 +5886,35 @@
           mod
         end
 
-        function annotationToElementArgs(ann::Annotation)::List{ElementArg}
+        function annotationToElementArgs(ann::Annotation) ::List{ElementArg}
               local args::List{ElementArg}
 
               @match ANNOTATION(args) = ann
           args
         end
 
-        function pathToTypeSpec(inPath::Path)::TypeSpec
+        function pathToTypeSpec(inPath::Path) ::TypeSpec
               local outTypeSpec::TypeSpec
 
               outTypeSpec = TPATH(inPath, NONE())
           outTypeSpec
         end
 
-        function typeSpecString(inTs::TypeSpec)::String
+        function typeSpecString(inTs::TypeSpec) ::String
               local outStr::String
 
               outStr = Dump.unparseTypeSpec(inTs)
           outStr
         end
 
-        function crefString(inCr::ComponentRef)::String
+        function crefString(inCr::ComponentRef) ::String
               local outStr::String
 
               outStr = Dump.printComponentRefStr(inCr)
           outStr
         end
 
-        function typeSpecStringNoQualNoDims(inTs::TypeSpec)::String
+        function typeSpecStringNoQualNoDims(inTs::TypeSpec) ::String
               local outStr::String
 
               outStr = begin
@@ -5942,14 +5943,14 @@
           outStr
         end
 
-        function typeSpecStringNoQualNoDimsLst(inTypeSpecLst::List{<:Union{<:TypeSpec, Nil{Any}}})::String
+        function typeSpecStringNoQualNoDimsLst(inTypeSpecLst::List{<:TypeSpec}) ::String
               local outString::String
 
               outString = ListUtil.toString(inTypeSpecLst, typeSpecStringNoQualNoDims, "", "", ", ", "", false)
           outString
         end
 
-        function crefStringIgnoreSubs(inCr::ComponentRef)::String
+        function crefStringIgnoreSubs(inCr::ComponentRef) ::String
               local outStr::String
 
               local p::Path
@@ -5959,7 +5960,7 @@
           outStr
         end
 
-        function importString(inImp::Import)::String
+        function importString(inImp::Import) ::String
               local outStr::String
 
               outStr = Dump.unparseImportStr(inImp)
@@ -5969,7 +5970,7 @@
          #= @author: adrpo
          full Ref -> string
          cref/path full qualified, type dims, subscripts in crefs =#
-        function refString(inRef::Ref)::String
+        function refString(inRef::Ref) ::String
               local outStr::String
 
               outStr = begin
@@ -5996,7 +5997,7 @@
          #= @author: adrpo
          brief Ref -> string
          no cref/path full qualified, no type dims, no subscripts in crefs =#
-        function refStringBrief(inRef::Ref)::String
+        function refStringBrief(inRef::Ref) ::String
               local outStr::String
 
               outStr = begin
@@ -6020,7 +6021,7 @@
           outStr
         end
 
-        function getArrayDimOptAsList(inArrayDim::Option{<:ArrayDim})::ArrayDim
+        function getArrayDimOptAsList(inArrayDim::Option{<:ArrayDim}) ::ArrayDim
               local outArrayDim::ArrayDim
 
               outArrayDim = begin
@@ -6031,7 +6032,7 @@
                   end
 
                   _  => begin
-                      list()
+                      nil
                   end
                 end
               end
@@ -6039,7 +6040,7 @@
         end
 
          #= Removes a variable from a variable list =#
-        function removeCrefFromCrefs(inAbsynComponentRefLst::List{<:Union{<:ComponentRef, Nil{Any}}}, inComponentRef::ComponentRef)::List{ComponentRef}
+        function removeCrefFromCrefs(inAbsynComponentRefLst::List{<:ComponentRef}, inComponentRef::ComponentRef) ::List{ComponentRef}
               local outAbsynComponentRefLst::List{ComponentRef}
 
               outAbsynComponentRefLst = begin
@@ -6051,12 +6052,12 @@
                   local cr2::ComponentRef
                 @matchcontinue (inAbsynComponentRefLst, inComponentRef) begin
                   ( nil(), _)  => begin
-                    list()
+                    nil
                   end
 
                   (cr1 <| rest, cr2)  => begin
-                      @match CREF_IDENT(name = n1, subscripts = list()) = cr1
-                      @match CREF_IDENT(name = n2, subscripts = list()) = cr2
+                      @match CREF_IDENT(name = n1, subscripts = nil) = cr1
+                      @match CREF_IDENT(name = n2, subscripts = nil) = cr2
                       @match true = stringEq(n1, n2)
                       rest_1 = removeCrefFromCrefs(rest, cr2)
                     rest_1
@@ -6082,7 +6083,7 @@
         end
 
          #= Retrieve e.g. the documentation annotation as a string from the class passed as argument. =#
-        function getNamedAnnotationInClass(inClass::Class, id::Path, f::ModFunc)::Option{TypeA}
+        function getNamedAnnotationInClass(inClass::Class, id::Path, f::ModFunc) ::Option{TypeA}
               local outString::Option{TypeA}
 
               outString = begin
@@ -6128,7 +6129,7 @@
         end
 
          #= Helper function to getNamedAnnotationInElementitemlist. =#
-        function getNamedAnnotationStr(inAbsynElementArgLst::List{<:Union{<:ElementArg, Nil{Any}}}, id::Path, f::ModFunc)::Option{TypeA}
+        function getNamedAnnotationStr(inAbsynElementArgLst::List{<:ElementArg}, id::Path, f::ModFunc) ::Option{TypeA}
               local outString::Option{TypeA}
 
               outString = begin
@@ -6164,7 +6165,7 @@
            map function is expected to also return CREF_IDENT, so that the split cref
            can be reconstructed. Otherwise the map function is free to return whatever
            it wants. =#
-        function mapCrefParts(inCref::ComponentRef, inMapFunc::MapFunc)::ComponentRef
+        function mapCrefParts(inCref::ComponentRef, inMapFunc::MapFunc) ::ComponentRef
               local outCref::ComponentRef
 
               outCref = begin
@@ -6194,14 +6195,14 @@
           outCref
         end
 
-        function opEqual(op1::Operator, op2::Operator)::Bool
+        function opEqual(op1::Operator, op2::Operator) ::Bool
               local isEqual::Bool
 
               isEqual = valueEq(op1, op2)
           isEqual
         end
 
-        function opIsElementWise(op::Operator)::Bool
+        function opIsElementWise(op::Operator) ::Bool
               local isElementWise::Bool
 
               isElementWise = begin
@@ -6242,7 +6243,7 @@
           isElementWise
         end
 
-        function dummyTraverseExp(inExp::Exp, inArg::Arg)::Tuple{Exp, Arg}
+        function dummyTraverseExp(inExp::Exp, inArg::Arg) ::Tuple{Exp, Arg}
               local outArg::Arg
               local outExp::Exp
 
@@ -6252,7 +6253,7 @@
         end
 
          #= retrives defineunit definitions in elements =#
-        function getDefineUnitsInElements(elts::List{<:Union{<:ElementItem, Nil{Any}}})::List{Element}
+        function getDefineUnitsInElements(elts::List{<:ElementItem}) ::List{Element}
               local outElts::List{Element}
 
               outElts = begin
@@ -6260,7 +6261,7 @@
                   local rest::List{ElementItem}
                 @matchcontinue elts begin
                    nil()  => begin
-                    list()
+                    nil
                   end
 
                   ELEMENTITEM(e && DEFINEUNIT(__)) <| rest  => begin
@@ -6277,7 +6278,7 @@
         end
 
          #= Returns the public and protected elements in a class. =#
-        function getElementItemsInClass(inClass::Class)::List{ElementItem}
+        function getElementItemsInClass(inClass::Class) ::List{ElementItem}
               local outElements::List{ElementItem}
 
               outElements = begin
@@ -6292,7 +6293,7 @@
                   end
 
                   _  => begin
-                      list()
+                      nil
                   end
                 end
               end
@@ -6300,7 +6301,7 @@
         end
 
          #= Returns the public and protected elements in a class part. =#
-        function getElementItemsInClassPart(inClassPart::ClassPart)::List{ElementItem}
+        function getElementItemsInClassPart(inClassPart::ClassPart) ::List{ElementItem}
               local outElements::List{ElementItem}
 
               outElements = begin
@@ -6315,15 +6316,14 @@
                   end
 
                   _  => begin
-                      list()
+                      nil
                   end
                 end
               end
           outElements
         end
 
-        ArgT = Any
-        function traverseClassComponents(inClass::Class, inFunc::FuncType, inArg::ArgT)::Tuple{Class, ArgT}
+        function traverseClassComponents(inClass::Class, inFunc::FuncType, inArg::ArgT)  where {ArgT}
               local outArg::ArgT
               local outClass::Class = inClass
 
@@ -6342,12 +6342,10 @@
           (outClass, outArg)
         end
 
-        T = Any
-        ArgT = Any
-        function traverseListGeneric(inList::List{<:Union{<:T, Nil{Any}}}, inFunc::FuncType, inArg::ArgT)::Tuple{List{T}, ArgT, Bool}
+        function traverseListGeneric(inList::List{T}, inFunc::FuncType, inArg::ArgT)  where {T, ArgT}
               local outContinue::Bool = true
               local outArg::ArgT = inArg
-              local outList::List{T} = list()
+              local outList::List{T} = nil
 
               local eq::Bool
               local changed::Bool = false
@@ -6377,8 +6375,7 @@
           (outList, outArg, outContinue)
         end
 
-        ArgT = Any
-        function traverseClassPartComponents(inClassPart::ClassPart, inFunc::FuncType, inArg::ArgT)::Tuple{ClassPart, ArgT, Bool}
+        function traverseClassPartComponents(inClassPart::ClassPart, inFunc::FuncType, inArg::ArgT)  where {ArgT}
               local outContinue::Bool = true
               local outArg::ArgT = inArg
               local outClassPart::ClassPart = inClassPart
@@ -6406,8 +6403,7 @@
           (outClassPart, outArg, outContinue)
         end
 
-        ArgT = Any
-        function traverseElementItemComponents(inItem::ElementItem, inFunc::FuncType, inArg::ArgT)::Tuple{ElementItem, ArgT, Bool}
+        function traverseElementItemComponents(inItem::ElementItem, inFunc::FuncType, inArg::ArgT)  where {ArgT}
               local outContinue::Bool
               local outArg::ArgT
               local outItem::ElementItem
@@ -6433,8 +6429,7 @@
           (outItem, outArg, outContinue)
         end
 
-        ArgT = Any
-        function traverseElementComponents(inElement::Element, inFunc::FuncType, inArg::ArgT)::Tuple{Element, ArgT, Bool}
+        function traverseElementComponents(inElement::Element, inFunc::FuncType, inArg::ArgT)  where {ArgT}
               local outContinue::Bool
               local outArg::ArgT
               local outElement::Element = inElement
@@ -6458,8 +6453,7 @@
           (outElement, outArg, outContinue)
         end
 
-        ArgT = Any
-        function traverseElementSpecComponents(inSpec::ElementSpec, inFunc::FuncType, inArg::ArgT)::Tuple{ElementSpec, ArgT, Bool}
+        function traverseElementSpecComponents(inSpec::ElementSpec, inFunc::FuncType, inArg::ArgT)  where {ArgT}
               local outContinue::Bool
               local outArg::ArgT
               local outSpec::ElementSpec = inSpec
@@ -6484,8 +6478,7 @@
           (outSpec, outArg, outContinue)
         end
 
-        ArgT = Any
-        function traverseClassDef(inClassDef::ClassDef, inFunc::FuncType, inArg::ArgT)::Tuple{ClassDef, ArgT, Bool}
+        function traverseClassDef(inClassDef::ClassDef, inFunc::FuncType, inArg::ArgT)  where {ArgT}
               local outContinue::Bool = true
               local outArg::ArgT = inArg
               local outClassDef::ClassDef = inClassDef
@@ -6513,7 +6506,7 @@
           (outClassDef, outArg, outContinue)
         end
 
-        function isEmptyMod(inMod::Modification)::Bool
+        function isEmptyMod(inMod::Modification) ::Bool
               local outIsEmpty::Bool
 
               outIsEmpty = begin
@@ -6534,7 +6527,7 @@
           outIsEmpty
         end
 
-        function isEmptySubMod(inSubMod::ElementArg)::Bool
+        function isEmptySubMod(inSubMod::ElementArg) ::Bool
               local outIsEmpty::Bool
 
               outIsEmpty = begin
@@ -6552,7 +6545,7 @@
           outIsEmpty
         end
 
-        function elementArgName(inArg::ElementArg)::Path
+        function elementArgName(inArg::ElementArg) ::Path
               local outName::Path
 
               outName = begin
@@ -6570,7 +6563,7 @@
           outName
         end
 
-        function elementArgEqualName(inArg1::ElementArg, inArg2::ElementArg)::Bool
+        function elementArgEqualName(inArg1::ElementArg, inArg2::ElementArg) ::Bool
               local outEqual::Bool
 
               local name1::Path
@@ -6591,7 +6584,7 @@
         end
 
          #= Creates a Msg based on a boolean value. =#
-        function optMsg(inShowMessage::Bool, inInfo::SourceInfo)::Msg
+        function optMsg(inShowMessage::Bool, inInfo::SourceInfo) ::Msg
               local outMsg::Msg
 
               outMsg = if inShowMessage
@@ -6602,7 +6595,7 @@
           outMsg
         end
 
-        function makeSubscript(inExp::Exp)::Subscript
+        function makeSubscript(inExp::Exp) ::Subscript
               local outSubscript::Subscript
 
               outSubscript = SUBSCRIPT(inExp)
@@ -6610,7 +6603,7 @@
         end
 
          #= Splits a cref into parts. =#
-        function crefExplode(inCref::ComponentRef, inAccum::List{<:Union{<:ComponentRef, Nil{Any}}} = list())::List{ComponentRef}
+        function crefExplode(inCref::ComponentRef, inAccum::List{<:ComponentRef} = nil) ::List{ComponentRef}
               local outCrefParts::List{ComponentRef}
 
               outCrefParts = begin
@@ -6633,8 +6626,7 @@
 
          #= Calls the given function on each subexpression (non-recursively) of the given
            expression, sending in the extra argument to each call. =#
-        ArgT = Any
-        function traverseExpShallow(inExp::Exp, inArg::ArgT, inFunc::FuncT)::Exp
+        function traverseExpShallow(inExp::Exp, inArg::ArgT, inFunc::FuncT)  where {ArgT}
               local outExp::Exp = inExp
 
               _ = begin
@@ -6739,8 +6731,7 @@
           outExp
         end
 
-        ArgT = Any
-        function traverseExpShallowFuncArgs(inArgs::FunctionArgs, inArg::ArgT, inFunc::FuncT)::FunctionArgs
+        function traverseExpShallowFuncArgs(inArgs::FunctionArgs, inArg::ArgT, inFunc::FuncT)  where {ArgT}
               local outArgs::FunctionArgs = inArgs
 
               outArgs = begin
@@ -6760,8 +6751,7 @@
           outArgs
         end
 
-        ArgT = Any
-        function traverseExpShallowIterator(inIterator::ForIterator, inArg::ArgT, inFunc::FuncT)::ForIterator
+        function traverseExpShallowIterator(inIterator::ForIterator, inArg::ArgT, inFunc::FuncT)  where {ArgT}
               local outIterator::ForIterator
 
               local name::String
@@ -6775,7 +6765,7 @@
           outIterator
         end
 
-        function isElementItemClass(inElement::ElementItem)::Bool
+        function isElementItemClass(inElement::ElementItem) ::Bool
               local outIsClass::Bool
 
               outIsClass = begin
@@ -6792,7 +6782,7 @@
           outIsClass
         end
 
-        function isElementItem(inElement::ElementItem)::Bool
+        function isElementItem(inElement::ElementItem) ::Bool
               local outIsClass::Bool
 
               outIsClass = begin
@@ -6809,7 +6799,7 @@
           outIsClass
         end
 
-        function isAlgorithmItem(inAlg::AlgorithmItem)::Bool
+        function isAlgorithmItem(inAlg::AlgorithmItem) ::Bool
               local outIsClass::Bool
 
               outIsClass = begin
@@ -6826,7 +6816,7 @@
           outIsClass
         end
 
-        function isElementItemClassNamed(inName::String, inElement::ElementItem)::Bool
+        function isElementItemClassNamed(inName::String, inElement::ElementItem) ::Bool
               local outIsNamed::Bool
 
               outIsNamed = begin
@@ -6844,7 +6834,7 @@
           outIsNamed
         end
 
-        function isEmptyClassPart(inClassPart::ClassPart)::Bool
+        function isEmptyClassPart(inClassPart::ClassPart) ::Bool
               local outIsEmpty::Bool
 
               outIsEmpty = begin
@@ -6886,7 +6876,7 @@
         end
 
          #= For use with traverseExp =#
-        function isInvariantExpNoTraverse(e::Absyn.Exp, b::Bool)::Tuple{Absyn.Exp, Bool}
+        function isInvariantExpNoTraverse(e::Absyn.Exp, b::Bool) ::Tuple{Absyn.Exp, Bool}
 
 
 
@@ -6974,7 +6964,7 @@
         end
 
          #= Returns the number of parts a path consists of, e.g. A.B.C gives 3. =#
-        function pathPartCount(path::Path, partsAccum::ModelicaInteger = 0)::ModelicaInteger
+        function pathPartCount(path::Path, partsAccum::ModelicaInteger = 0) ::ModelicaInteger
               local parts::ModelicaInteger
 
               parts = begin
@@ -6995,7 +6985,7 @@
           parts
         end
 
-        function getAnnotationsFromConstraintClass(inCC::Option{<:ConstrainClass})::List{ElementArg}
+        function getAnnotationsFromConstraintClass(inCC::Option{<:ConstrainClass}) ::List{ElementArg}
               local outElArgLst::List{ElementArg}
 
               outElArgLst = begin
@@ -7006,15 +6996,15 @@
                   end
 
                   _  => begin
-                      list()
+                      nil
                   end
                 end
               end
           outElArgLst
         end
 
-        function getAnnotationsFromItems(inComponentItems::List{<:Union{<:ComponentItem, Nil{Any}}}, ccAnnotations::List{<:Union{<:ElementArg, Nil{Any}}})::List{List{ElementArg}}
-              local outLst::List{List{ElementArg}} = list()
+        function getAnnotationsFromItems(inComponentItems::List{<:ComponentItem}, ccAnnotations::List{<:ElementArg}) ::List{List{ElementArg}}
+              local outLst::List{List{ElementArg}} = nil
 
               local annotations::List{Absyn.ElementArg}
               local res::List{String}
@@ -7040,7 +7030,7 @@
          #=  This function strips out the `graphics\\' modification from an ElementArg
            list and return two lists, one with the other modifications and the
            second with the `graphics\\' modification =#
-        function stripGraphicsAndInteractionModification(inAbsynElementArgLst::List{<:Union{<:Absyn.ElementArg, Nil{Any}}})::Tuple{List{Absyn.ElementArg}, List{Absyn.ElementArg}}
+        function stripGraphicsAndInteractionModification(inAbsynElementArgLst::List{<:Absyn.ElementArg}) ::Tuple{List{Absyn.ElementArg}, List{Absyn.ElementArg}}
               local outAbsynElementArgLst2::List{Absyn.ElementArg}
               local outAbsynElementArgLst1::List{Absyn.ElementArg}
 
@@ -7053,7 +7043,7 @@
                    =#
                 @matchcontinue inAbsynElementArgLst begin
                    nil()  => begin
-                    (list(), list())
+                    (nil, nil)
                   end
 
                   Absyn.MODIFICATION(path = Absyn.IDENT(name = "interaction")) <| rest  => begin
@@ -7099,7 +7089,7 @@
                     \\'a, /* extra value passed to re-lation */
                     bool) /* true = traverse protected elements */
            outputs: (Absyn.Program   Absyn.Path option  \\'a) =#
-        function traverseClasses(inProgram::Absyn.Program, inPath::Option{<:Absyn.Path}, inFunc::FuncType, inArg::Type_a, inVisitProtected::Bool)::Tuple{Absyn.Program, Option{Absyn.Path}, Type_a}
+        function traverseClasses(inProgram::Absyn.Program, inPath::Option{<:Absyn.Path}, inFunc::FuncType, inArg::Type_a, inVisitProtected::Bool) ::Tuple{Absyn.Program, Option{Absyn.Path}, Type_a}
               local outTpl::Tuple{Absyn.Program, Option{Absyn.Path}, Type_a}
 
               outTpl = begin
@@ -7124,7 +7114,7 @@
         end
 
          #=  Helperfunction to traverseClasses. =#
-        function traverseClasses2(inClasses::List{<:Union{<:Absyn.Class, Nil{Any}}}, inPath::Option{<:Absyn.Path}, inFunc::FuncType, inArg::Type_a #= extra argument =#, inVisitProtected::Bool #= visit protected elements =#)::Tuple{List{Absyn.Class}, Option{Absyn.Path}, Type_a}
+        function traverseClasses2(inClasses::List{<:Absyn.Class}, inPath::Option{<:Absyn.Path}, inFunc::FuncType, inArg::Type_a #= extra argument =#, inVisitProtected::Bool #= visit protected elements =#) ::Tuple{List{Absyn.Class}, Option{Absyn.Path}, Type_a}
               local outTpl::Tuple{List{Absyn.Class}, Option{Absyn.Path}, Type_a}
 
               outTpl = begin
@@ -7145,7 +7135,7 @@
                   local traverse_prot::Bool
                 @matchcontinue (inClasses, inPath, inFunc, inArg, inVisitProtected) begin
                   ( nil(), pa, _, args, _)  => begin
-                    (list(), pa, args)
+                    (nil, pa, args)
                   end
 
                   (class_ <| classes, pa, visitor, args, traverse_prot)  => begin
@@ -7182,7 +7172,7 @@
         end
 
          #= Returns true if class contains a local class =#
-        function classHasLocalClasses(cl::Absyn.Class)::Bool
+        function classHasLocalClasses(cl::Absyn.Class) ::Bool
               local res::Bool
 
               res = begin
@@ -7207,7 +7197,7 @@
         end
 
          #= Help function to classHasLocalClass =#
-        function partsHasLocalClass(inParts::List{<:Union{<:Absyn.ClassPart, Nil{Any}}})::Bool
+        function partsHasLocalClass(inParts::List{<:Absyn.ClassPart}) ::Bool
               local res::Bool
 
               res = begin
@@ -7237,7 +7227,7 @@
         end
 
          #= help function to partsHasLocalClass =#
-        function eltsHasLocalClass(inElts::List{<:Union{<:Absyn.ElementItem, Nil{Any}}})::Bool
+        function eltsHasLocalClass(inElts::List{<:Absyn.ElementItem}) ::Bool
               local res::Bool
 
               res = begin
@@ -7260,7 +7250,7 @@
         end
 
          #=  Helperfunction to traverseClasses2. This function traverses all inner classes of a class. =#
-        function traverseInnerClass(inClass::Absyn.Class, inPath::Option{<:Absyn.Path}, inFunc::FuncType, inArg::Type_a #= extra value =#, inVisitProtected::Bool #= if true, traverse protected elts =#)::Tuple{Absyn.Class, Option{Absyn.Path}, Type_a}
+        function traverseInnerClass(inClass::Absyn.Class, inPath::Option{<:Absyn.Path}, inFunc::FuncType, inArg::Type_a #= extra value =#, inVisitProtected::Bool #= if true, traverse protected elts =#) ::Tuple{Absyn.Class, Option{Absyn.Path}, Type_a}
               local outTpl::Tuple{Absyn.Class, Option{Absyn.Path}, Type_a}
 
               outTpl = begin
@@ -7332,7 +7322,7 @@
         end
 
          #= Helper function to traverseInnerClass =#
-        function traverseInnerClassParts(inClassParts::List{<:Union{<:Absyn.ClassPart, Nil{Any}}}, inPath::Option{<:Absyn.Path}, inFunc::FuncType, inArg::Type_a #= extra argument =#, inVisitProtected::Bool #= visist protected elts =#)::Tuple{List{Absyn.ClassPart}, Option{Absyn.Path}, Type_a}
+        function traverseInnerClassParts(inClassParts::List{<:Absyn.ClassPart}, inPath::Option{<:Absyn.Path}, inFunc::FuncType, inArg::Type_a #= extra argument =#, inVisitProtected::Bool #= visist protected elts =#) ::Tuple{List{Absyn.ClassPart}, Option{Absyn.Path}, Type_a}
               local outTpl::Tuple{List{Absyn.ClassPart}, Option{Absyn.Path}, Type_a}
 
               outTpl = begin
@@ -7351,7 +7341,7 @@
                   local part::Absyn.ClassPart
                 @matchcontinue (inClassParts, inPath, inFunc, inArg, inVisitProtected) begin
                   ( nil(), pa, _, args, _)  => begin
-                    (list(), pa, args)
+                    (nil, pa, args)
                   end
 
                   (Absyn.PUBLIC(contents = elts) <| parts, pa, visitor, args, visit_prot)  => begin
@@ -7376,7 +7366,7 @@
         end
 
          #= Helper function to traverseInnerClassParts =#
-        function traverseInnerClassElements(inElements::List{<:Union{<:Absyn.ElementItem, Nil{Any}}}, inPath::Option{<:Absyn.Path}, inFuncType::FuncType, inArg::Type_a, inVisitProtected::Bool #= visit protected elts =#)::Tuple{List{Absyn.ElementItem}, Option{Absyn.Path}, Type_a}
+        function traverseInnerClassElements(inElements::List{<:Absyn.ElementItem}, inPath::Option{<:Absyn.Path}, inFuncType::FuncType, inArg::Type_a, inVisitProtected::Bool #= visit protected elts =#) ::Tuple{List{Absyn.ElementItem}, Option{Absyn.Path}, Type_a}
               local outTpl::Tuple{List{Absyn.ElementItem}, Option{Absyn.Path}, Type_a}
 
               outTpl = begin
@@ -7402,7 +7392,7 @@
                   local cl::Absyn.Class
                 @matchcontinue (inElements, inPath, inFuncType, inArg, inVisitProtected) begin
                   ( nil(), pa, _, args, _)  => begin
-                    (list(), pa, args)
+                    (nil, pa, args)
                   end
 
                   (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f, redeclareKeywords = r, innerOuter = io, specification = elt_spec, info = info, constrainClass = constr)) <| elts, pa, visitor, args, visit_prot)  => begin
@@ -7435,7 +7425,7 @@
         end
 
          #=  Helperfunction to traverseInnerClassElements =#
-        function traverseInnerClassElementspec(inElementSpec::Absyn.ElementSpec, inPath::Option{<:Absyn.Path}, inFuncType::FuncType, inArg::Type_a, inVisitProtected::Bool #= visit protected elts =#)::Tuple{Absyn.ElementSpec, Option{Absyn.Path}, Type_a}
+        function traverseInnerClassElementspec(inElementSpec::Absyn.ElementSpec, inPath::Option{<:Absyn.Path}, inFuncType::FuncType, inArg::Type_a, inVisitProtected::Bool #= visit protected elts =#) ::Tuple{Absyn.ElementSpec, Option{Absyn.Path}, Type_a}
               local outTpl::Tuple{Absyn.ElementSpec, Option{Absyn.Path}, Type_a}
 
               outTpl = begin
@@ -7477,7 +7467,7 @@
 
          #= @auhtor: johti
          Get the typespec path in an ElementItem if it has one =#
-        function getTypeSpecFromElementItemOpt(inElementItem::Absyn.ElementItem)::Option{Absyn.TypeSpec}
+        function getTypeSpecFromElementItemOpt(inElementItem::Absyn.ElementItem) ::Option{Absyn.TypeSpec}
               local outTypeSpec::Option{Absyn.TypeSpec}
 
               outTypeSpec = begin
@@ -7510,7 +7500,7 @@
 
          #= @auhtor: johti
              Get a ComponentItem from an ElementItem if it has one =#
-        function getElementSpecificationFromElementItemOpt(inElementItem::Absyn.ElementItem)::Option{Absyn.ElementSpec}
+        function getElementSpecificationFromElementItemOpt(inElementItem::Absyn.ElementItem) ::Option{Absyn.ElementSpec}
               local outSpec::Option{Absyn.ElementSpec}
 
               outSpec = begin
@@ -7537,7 +7527,7 @@
 
          #= @auhtor: johti
          Get the componentItems from a given elemSpec otherwise returns an empty list =#
-        function getComponentItemsFromElementSpec(elemSpec::Absyn.ElementSpec)::List{Absyn.ComponentItem}
+        function getComponentItemsFromElementSpec(elemSpec::Absyn.ElementSpec) ::List{Absyn.ComponentItem}
               local componentItems::List{Absyn.ComponentItem}
 
               componentItems = begin
@@ -7548,7 +7538,7 @@
                   end
 
                   _  => begin
-                      list()
+                      nil
                   end
                 end
               end
@@ -7557,7 +7547,7 @@
 
          #= @author: johti
          Get the componentItems from a given elementItem =#
-        function getComponentItemsFromElementItem(inElementItem::Absyn.ElementItem)::List{Absyn.ComponentItem}
+        function getComponentItemsFromElementItem(inElementItem::Absyn.ElementItem) ::List{Absyn.ComponentItem}
               local componentItems::List{Absyn.ComponentItem}
 
               componentItems = begin
@@ -7568,7 +7558,7 @@
                   end
 
                   _  => begin
-                      list()
+                      nil
                   end
                 end
               end
@@ -7577,7 +7567,7 @@
 
          #= @author johti
           Get the direction if one exists otherwise returns BIDIR() =#
-        function getDirection(elementItem::Absyn.ElementItem)::Direction
+        function getDirection(elementItem::Absyn.ElementItem) ::Direction
               local oDirection::Direction
 
               oDirection = begin

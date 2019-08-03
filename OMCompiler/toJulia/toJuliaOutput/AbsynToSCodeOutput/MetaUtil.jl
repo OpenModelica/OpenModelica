@@ -48,10 +48,10 @@
            uniontype into metarecords. It also makes a copy of them outside of the
            uniontype where they are found so that they can be used without prefixing
            with the uniontype name. =#
-        function createMetaClassesInProgram(inProgram::Absyn.Program)::Absyn.Program
+        function createMetaClassesInProgram(inProgram::Absyn.Program) ::Absyn.Program
               local outProgram::Absyn.Program = inProgram
 
-              local classes::List{Absyn.Class} = nil()
+              local classes::List{Absyn.Class} = nil
               local meta_classes::List{Absyn.Class}
 
               if ! Config.acceptMetaModelicaGrammar()
@@ -81,8 +81,8 @@
          #= Takes a class, and if it's a uniontype it converts all records inside it into
            metarecords and returns the updated uniontype and a list of all metarecords.
            It then recursively applies the same operation to all subclasses. =#
-        function createMetaClasses(inClass::Absyn.Class)::Tuple{Absyn.Class, List{Absyn.Class}}
-              local outMetaClasses::List{Absyn.Class} = nil()
+        function createMetaClasses(inClass::Absyn.Class) ::Tuple{Absyn.Class, List{Absyn.Class}}
+              local outMetaClasses::List{Absyn.Class} = nil
               local outClass::Absyn.Class = inClass
 
               local body::Absyn.ClassDef
@@ -99,7 +99,7 @@
                   end
 
                   Absyn.CLASS(restriction = Absyn.R_UNIONTYPE(__), body = body && Absyn.CLASS_EXTENDS(parts = parts))  => begin
-                      (parts, outMetaClasses) = fixClassParts(parts, outClass.name, nil())
+                      (parts, outMetaClasses) = fixClassParts(parts, outClass.name, nil)
                       body.parts = parts
                       outClass.body = body
                     ()
@@ -132,7 +132,7 @@
           (outClass, outMetaClasses)
         end
 
-        function createMetaClassesFromClassParts(inClassParts::Union{List{<:Absyn.ClassPart}, Nil{Any}})::List{Absyn.ClassPart}
+        function createMetaClassesFromClassParts(inClassParts::List{<:Absyn.ClassPart}) ::List{Absyn.ClassPart}
               local outClassParts::List{Absyn.ClassPart}
 
               outClassParts = list(begin
@@ -155,8 +155,8 @@
           outClassParts
         end
 
-        function createMetaClassesFromElementItems(inElementItems::Union{List{<:Absyn.ElementItem}, Nil{Any}})::List{Absyn.ElementItem}
-              local outElementItems::List{Absyn.ElementItem} = nil()
+        function createMetaClassesFromElementItems(inElementItems::List{<:Absyn.ElementItem}) ::List{Absyn.ElementItem}
+              local outElementItems::List{Absyn.ElementItem} = nil
 
               local cls::Absyn.Class
               local meta_classes::List{Absyn.Class}
@@ -182,7 +182,7 @@
           outElementItems
         end
 
-        function setElementItemClass(inElementItem::Absyn.ElementItem, inClass::Absyn.Class)::Absyn.ElementItem
+        function setElementItemClass(inElementItem::Absyn.ElementItem, inClass::Absyn.Class) ::Absyn.ElementItem
               local outElementItem::Absyn.ElementItem = inElementItem
 
               outElementItem = begin
@@ -204,15 +204,15 @@
           outElementItem
         end
 
-        function convertElementToClass(inElementItem::Absyn.ElementItem)::Absyn.Class
+        function convertElementToClass(inElementItem::Absyn.ElementItem) ::Absyn.Class
               local outClass::Absyn.Class
 
               @match Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = outClass))) = inElementItem
           outClass
         end
 
-        function fixClassParts(inClassParts::Union{List{<:Absyn.ClassPart}, Nil{Any}}, inClassName::Absyn.Ident, typeVars::Union{List{<:String}, Nil{Any}})::Tuple{List{Absyn.ClassPart}, List{Absyn.Class}}
-              local outMetaClasses::List{Absyn.Class} = nil()
+        function fixClassParts(inClassParts::List{<:Absyn.ClassPart}, inClassName::Absyn.Ident, typeVars::List{<:String}) ::Tuple{List{Absyn.ClassPart}, List{Absyn.Class}}
+              local outMetaClasses::List{Absyn.Class} = nil
               local outClassParts::List{Absyn.ClassPart}
 
               local meta_classes::List{Absyn.Class}
@@ -242,8 +242,8 @@
           (outClassParts, outMetaClasses)
         end
 
-        function fixElementItems(inElementItems::Union{List{<:Absyn.ElementItem}, Nil{Any}}, inName::String, typeVars::Union{List{<:String}, Nil{Any}})::Tuple{List{Absyn.ElementItem}, List{Absyn.Class}}
-              local outMetaClasses::List{Absyn.Class} = nil()
+        function fixElementItems(inElementItems::List{<:Absyn.ElementItem}, inName::String, typeVars::List{<:String}) ::Tuple{List{Absyn.ElementItem}, List{Absyn.Class}}
+              local outMetaClasses::List{Absyn.Class} = nil
               local outElementItems::List{Absyn.ElementItem}
 
               local index::ModelicaInteger = 0
@@ -293,13 +293,13 @@
           (outElementItems, outMetaClasses)
         end
 
-        function transformArrayNodesToListNodes(inList::Union{List{<:Absyn.Exp}, Nil{Any}})::List{Absyn.Exp}
+        function transformArrayNodesToListNodes(inList::List{<:Absyn.Exp}) ::List{Absyn.Exp}
               local outList::List{Absyn.Exp}
 
               outList = list(begin
                 @match e begin
                   Absyn.ARRAY( nil())  => begin
-                    Absyn.LIST(nil())
+                    Absyn.LIST(nil)
                   end
 
                   Absyn.ARRAY(__)  => begin

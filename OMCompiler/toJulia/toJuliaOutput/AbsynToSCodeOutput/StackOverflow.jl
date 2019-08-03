@@ -52,7 +52,7 @@
         end
 
         function stripAddresses(inSymbol::String)::String
-          nil()
+          nil
         end
 
         function triggerStackOverflow()
@@ -71,7 +71,7 @@
         end
 
         function readableStacktraceMessages()::List
-          nil()
+          nil
         end
 
         function getStacktraceMessages()::List

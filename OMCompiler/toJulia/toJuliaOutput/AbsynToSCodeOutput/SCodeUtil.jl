@@ -92,7 +92,7 @@
         Argument = Any
 
          #= Removes all submodifiers from the Mod. =#
-        function stripSubmod(inMod::SCode.Mod)::SCode.Mod
+        function stripSubmod(inMod::SCode.Mod) ::SCode.Mod
               local outMod::SCode.Mod
 
               outMod = begin
@@ -102,7 +102,7 @@
                   local info::SourceInfo
                 @match inMod begin
                   SCode.MOD(fp, ep, _, binding, info)  => begin
-                    SCode.MOD(fp, ep, list(), binding, info)
+                    SCode.MOD(fp, ep, nil, binding, info)
                   end
 
                   _  => begin
@@ -114,7 +114,7 @@
         end
 
          #= Removes submods from a modifier based on a filter function. =#
-        function filterSubMods(mod::SCode.Mod, filter::FilterFunc)::SCode.Mod
+        function filterSubMods(mod::SCode.Mod, filter::FilterFunc) ::SCode.Mod
 
 
               mod = begin
@@ -143,7 +143,7 @@
         end
 
          #= Return the Element with the name given as first argument from the Class. =#
-        function getElementNamed(inIdent::SCode.Ident, inClass::SCode.Element)::SCode.Element
+        function getElementNamed(inIdent::SCode.Ident, inClass::SCode.Element) ::SCode.Element
               local outElement::SCode.Element
 
               outElement = begin
@@ -167,7 +167,7 @@
         end
 
          #= Helper function to getElementNamed. =#
-        function getElementNamedFromElts(inIdent::SCode.Ident, inElementLst::List{<:Union{<:SCode.Element, Nil{Any}}})::SCode.Element
+        function getElementNamedFromElts(inIdent::SCode.Ident, inElementLst::List{<:SCode.Element}) ::SCode.Element
               local outElement::SCode.Element
 
               outElement = begin
@@ -219,7 +219,7 @@
          #=
         Author BZ, 2009-01
         check if an element is of type EXTENDS or not. =#
-        function isElementExtends(ele::SCode.Element)::Bool
+        function isElementExtends(ele::SCode.Element) ::Bool
               local isExtend::Bool
 
               isExtend = begin
@@ -237,7 +237,7 @@
         end
 
          #= Check if an element extends another class. =#
-        function isElementExtendsOrClassExtends(ele::SCode.Element)::Bool
+        function isElementExtendsOrClassExtends(ele::SCode.Element) ::Bool
               local isExtend::Bool
 
               isExtend = begin
@@ -256,7 +256,7 @@
 
          #=
         check if an element is not of type CLASS_EXTENDS. =#
-        function isNotElementClassExtends(ele::SCode.Element)::Bool
+        function isNotElementClassExtends(ele::SCode.Element) ::Bool
               local isExtend::Bool
 
               isExtend = begin
@@ -274,7 +274,7 @@
         end
 
          #= Returns true if Variability indicates a parameter or constant. =#
-        function isParameterOrConst(inVariability::SCode.Variability)::Bool
+        function isParameterOrConst(inVariability::SCode.Variability) ::Bool
               local outBoolean::Bool
 
               outBoolean = begin
@@ -296,7 +296,7 @@
         end
 
          #= Returns true if Variability is constant, otherwise false =#
-        function isConstant(inVariability::SCode.Variability)::Bool
+        function isConstant(inVariability::SCode.Variability) ::Bool
               local outBoolean::Bool
 
               outBoolean = begin
@@ -314,7 +314,7 @@
         end
 
          #= Counts the number of ClassParts of a Class. =#
-        function countParts(inClass::SCode.Element)::ModelicaInteger
+        function countParts(inClass::SCode.Element) ::ModelicaInteger
               local outInteger::ModelicaInteger
 
               outInteger = begin
@@ -341,7 +341,7 @@
         end
 
          #= Return a string list of all component names of a class. =#
-        function componentNames(inClass::SCode.Element)::List{String}
+        function componentNames(inClass::SCode.Element) ::List{String}
               local outStringLst::List{String}
 
               outStringLst = begin
@@ -359,7 +359,7 @@
                   end
 
                   _  => begin
-                      list()
+                      nil
                   end
                 end
               end
@@ -368,14 +368,14 @@
         end
 
          #= Helper function to componentNames. =#
-        function componentNamesFromElts(inElements::List{<:Union{<:SCode.Element, Nil{Any}}})::List{String}
+        function componentNamesFromElts(inElements::List{<:SCode.Element}) ::List{String}
               local outComponentNames::List{String}
 
               outComponentNames = ListUtil.filterMap(inElements, componentName)
           outComponentNames
         end
 
-        function componentName(inComponent::SCode.Element)::String
+        function componentName(inComponent::SCode.Element) ::String
               local outName::String
 
               @match SCode.COMPONENT(name = outName) = inComponent
@@ -383,7 +383,7 @@
         end
 
          #= retrieves the element info =#
-        function elementInfo(e::SCode.Element)::SourceInfo
+        function elementInfo(e::SCode.Element) ::SourceInfo
               local info::SourceInfo
 
               info = begin
@@ -414,7 +414,7 @@
         end
 
          #=  =#
-        function elementName(e::SCode.Element)::String
+        function elementName(e::SCode.Element) ::String
               local s::String
 
               s = begin
@@ -431,7 +431,7 @@
           s
         end
 
-        function elementNameInfo(inElement::SCode.Element)::Tuple{String, SourceInfo}
+        function elementNameInfo(inElement::SCode.Element) ::Tuple{String, SourceInfo}
               local outInfo::SourceInfo
               local outName::String
 
@@ -452,15 +452,15 @@
         end
 
          #= Gets all elements that have an element name from the list =#
-        function elementNames(elts::List{<:Union{<:SCode.Element, Nil{Any}}})::List{String}
+        function elementNames(elts::List{<:SCode.Element}) ::List{String}
               local names::List{String}
 
-              names = ListUtil.fold(elts, elementNamesWork, list())
+              names = ListUtil.fold(elts, elementNamesWork, nil)
           names
         end
 
          #= Gets all elements that have an element name from the list =#
-        function elementNamesWork(e::SCode.Element, acc::List{<:Union{<:String, Nil{Any}}})::List{String}
+        function elementNamesWork(e::SCode.Element, acc::List{<:String}) ::List{String}
               local out::List{String}
 
               out = begin
@@ -482,7 +482,7 @@
           out
         end
 
-        function renameElement(inElement::SCode.Element, inName::String)::SCode.Element
+        function renameElement(inElement::SCode.Element, inName::String) ::SCode.Element
               local outElement::SCode.Element
 
               outElement = begin
@@ -510,7 +510,7 @@
           outElement
         end
 
-        function elementNameEqual(inElement1::SCode.Element, inElement2::SCode.Element)::Bool
+        function elementNameEqual(inElement1::SCode.Element, inElement2::SCode.Element) ::Bool
               local outEqual::Bool
 
               outEqual = begin
@@ -544,7 +544,7 @@
         end
 
          #=  =#
-        function enumName(e::SCode.Enum)::String
+        function enumName(e::SCode.Enum) ::String
               local s::String
 
               s = begin
@@ -558,7 +558,7 @@
         end
 
          #= Return true if Class is a record. =#
-        function isRecord(inClass::SCode.Element)::Bool
+        function isRecord(inClass::SCode.Element) ::Bool
               local outBoolean::Bool
 
               outBoolean = begin
@@ -576,7 +576,7 @@
         end
 
          #= Return true if Class is a operator record. =#
-        function isOperatorRecord(inClass::SCode.Element)::Bool
+        function isOperatorRecord(inClass::SCode.Element) ::Bool
               local outBoolean::Bool
 
               outBoolean = begin
@@ -594,7 +594,7 @@
         end
 
          #= Return true if Class is a function. =#
-        function isFunction(inClass::SCode.Element)::Bool
+        function isFunction(inClass::SCode.Element) ::Bool
               local outBoolean::Bool
 
               outBoolean = begin
@@ -612,7 +612,7 @@
         end
 
          #= Return true if restriction is a function. =#
-        function isFunctionRestriction(inRestriction::SCode.Restriction)::Bool
+        function isFunctionRestriction(inRestriction::SCode.Restriction) ::Bool
               local outBoolean::Bool
 
               outBoolean = begin
@@ -631,7 +631,7 @@
 
          #= restriction is function or external function.
           Otherwise false is returned. =#
-        function isFunctionOrExtFunctionRestriction(r::SCode.Restriction)::Bool
+        function isFunctionOrExtFunctionRestriction(r::SCode.Restriction) ::Bool
               local res::Bool
 
               res = begin
@@ -654,7 +654,7 @@
 
          #= restriction is operator or operator function.
           Otherwise false is returned. =#
-        function isOperator(el::SCode.Element)::Bool
+        function isOperator(el::SCode.Element) ::Bool
               local res::Bool
 
               res = begin
@@ -676,7 +676,7 @@
         end
 
          #= Returns the class name of a Class. =#
-        function className(inClass::SCode.Element)::String
+        function className(inClass::SCode.Element) ::String
               local outName::String
 
               @match SCode.CLASS(name = outName) = inClass
@@ -685,7 +685,7 @@
 
          #= author: PA
           Sets the partial attribute of a Class =#
-        function classSetPartial(inClass::SCode.Element, inPartial::SCode.Partial)::SCode.Element
+        function classSetPartial(inClass::SCode.Element, inPartial::SCode.Partial) ::SCode.Element
               local outClass::SCode.Element
 
               outClass = begin
@@ -709,7 +709,7 @@
          #= returns true if two elements are equal,
           i.e. for a component have the same type,
           name, and attributes, etc. =#
-        function elementEqual(element1::SCode.Element, element2::SCode.Element)::Bool
+        function elementEqual(element1::SCode.Element, element2::SCode.Element) ::Bool
               local equal::Bool
 
               equal = begin
@@ -794,7 +794,7 @@
          =#
 
          #= returns true if 2 annotations are equal =#
-        function annotationEqual(annotation1::SCode.Annotation, annotation2::SCode.Annotation)::Bool
+        function annotationEqual(annotation1::SCode.Annotation, annotation2::SCode.Annotation) ::Bool
               local equal::Bool
 
               local mod1::SCode.Mod
@@ -807,7 +807,7 @@
         end
 
          #= Returns true if two Restriction's are equal. =#
-        function restrictionEqual(restr1::SCode.Restriction, restr2::SCode.Restriction)::Bool
+        function restrictionEqual(restr1::SCode.Restriction, restr2::SCode.Restriction) ::Bool
               local equal::Bool
 
               equal = begin
@@ -912,7 +912,7 @@
           equal
         end
 
-        function funcRestrictionEqual(funcRestr1::SCode.FunctionRestriction, funcRestr2::SCode.FunctionRestriction)::Bool
+        function funcRestrictionEqual(funcRestr1::SCode.FunctionRestriction, funcRestr2::SCode.FunctionRestriction) ::Bool
               local equal::Bool
 
               equal = begin
@@ -951,7 +951,7 @@
           equal
         end
 
-        function enumEqual(e1::SCode.Enum, e2::SCode.Enum)::Bool
+        function enumEqual(e1::SCode.Enum, e2::SCode.Enum) ::Bool
               local isEqual::Bool
 
               isEqual = begin
@@ -971,7 +971,7 @@
         end
 
          #= Returns true if Two ClassDef's are equal =#
-        function classDefEqual(cdef1::SCode.ClassDef, cdef2::SCode.ClassDef)::Bool
+        function classDefEqual(cdef1::SCode.ClassDef, cdef2::SCode.ClassDef) ::Bool
               local equal::Bool
 
               equal = begin
@@ -1058,7 +1058,7 @@
         end
 
          #= Returns true if two Option<ArrayDim> are equal =#
-        function arraydimOptEqual(adopt1::Option{<:Absyn.ArrayDim}, adopt2::Option{<:Absyn.ArrayDim})::Bool
+        function arraydimOptEqual(adopt1::Option{<:Absyn.ArrayDim}, adopt2::Option{<:Absyn.ArrayDim}) ::Bool
               local equal::Bool
 
               equal = begin
@@ -1086,7 +1086,7 @@
         end
 
          #= Returns true if two Absyn.Subscript are equal =#
-        function subscriptEqual(sub1::Absyn.Subscript, sub2::Absyn.Subscript)::Bool
+        function subscriptEqual(sub1::Absyn.Subscript, sub2::Absyn.Subscript) ::Bool
               local equal::Bool
 
               equal = begin
@@ -1106,7 +1106,7 @@
         end
 
          #= Returns true if two Algorithm's are equal. =#
-        function algorithmEqual(alg1::SCode.AlgorithmSection, alg2::SCode.AlgorithmSection)::Bool
+        function algorithmEqual(alg1::SCode.AlgorithmSection, alg2::SCode.AlgorithmSection) ::Bool
               local equal::Bool
 
               equal = begin
@@ -1129,7 +1129,7 @@
         end
 
          #= Returns true if two Absyn.Algorithm are equal. =#
-        function algorithmEqual2(ai1::SCode.Statement, ai2::SCode.Statement)::Bool
+        function algorithmEqual2(ai1::SCode.Statement, ai2::SCode.Statement) ::Bool
               local equal::Bool
 
               equal = begin
@@ -1194,7 +1194,7 @@
         end
 
          #= Returns true if two equations are equal. =#
-        function equationEqual(eqn1::SCode.Equation, eqn2::SCode.Equation)::Bool
+        function equationEqual(eqn1::SCode.Equation, eqn2::SCode.Equation) ::Bool
               local equal::Bool
 
               local eq1::SCode.EEquation
@@ -1207,7 +1207,7 @@
         end
 
          #= Helper function to equationEqual =#
-        function equationEqual2(eq1::SCode.EEquation, eq2::SCode.EEquation)::Bool
+        function equationEqual2(eq1::SCode.EEquation, eq2::SCode.EEquation) ::Bool
               local equal::Bool
 
               equal = begin
@@ -1320,7 +1320,7 @@
 
          #= Author BZ
          Helper function for equationEqual2, does compare list<list<equation>> (else ifs in ifequations.) =#
-        function equationEqual22(inTb1::List{<:Union{<:List{<:Union{<:SCode.EEquation, Nil{Any}}}, Nil{Any}}}, inTb2::List{<:Union{<:List{<:Union{<:SCode.EEquation, Nil{Any}}}, Nil{Any}}})::Bool
+        function equationEqual22(inTb1::List{<:List{<:SCode.EEquation}}, inTb2::List{<:List{<:SCode.EEquation}}) ::Bool
               local bOut::Bool
 
               bOut = begin
@@ -1356,7 +1356,7 @@
         end
 
          #= Return true if two Mod:s are equal =#
-        function modEqual(mod1::SCode.Mod, mod2::SCode.Mod)::Bool
+        function modEqual(mod1::SCode.Mod, mod2::SCode.Mod) ::Bool
               local equal::Bool
 
               equal = begin
@@ -1406,7 +1406,7 @@
         end
 
          #= Return true if two subModifier lists are equal =#
-        function subModsEqual(inSubModLst1::List{<:Union{<:SCode.SubMod, Nil{Any}}}, inSubModLst2::List{<:Union{<:SCode.SubMod, Nil{Any}}})::Bool
+        function subModsEqual(inSubModLst1::List{<:SCode.SubMod}, inSubModLst2::List{<:SCode.SubMod}) ::Bool
               local equal::Bool
 
               equal = begin
@@ -1439,7 +1439,7 @@
         end
 
          #= Returns true if two subscript lists are equal =#
-        function subscriptsEqual(inSs1::List{<:Union{<:SCode.Subscript, Nil{Any}}}, inSs2::List{<:Union{<:SCode.Subscript, Nil{Any}}})::Bool
+        function subscriptsEqual(inSs1::List{<:SCode.Subscript}, inSs2::List{<:SCode.Subscript}) ::Bool
               local equal::Bool
 
               equal = begin
@@ -1471,7 +1471,7 @@
         end
 
          #= Returns true if two Atributes are equal =#
-        function attributesEqual(attr1::SCode.Attributes, attr2::SCode.Attributes)::Bool
+        function attributesEqual(attr1::SCode.Attributes, attr2::SCode.Attributes) ::Bool
               local equal::Bool
 
               equal = begin
@@ -1507,7 +1507,7 @@
         end
 
          #= Returns true if two Parallelism prefixes are equal =#
-        function parallelismEqual(prl1::SCode.Parallelism, prl2::SCode.Parallelism)::Bool
+        function parallelismEqual(prl1::SCode.Parallelism, prl2::SCode.Parallelism) ::Bool
               local equal::Bool
 
               equal = begin
@@ -1533,7 +1533,7 @@
         end
 
          #= Returns true if two Variablity prefixes are equal =#
-        function variabilityEqual(var1::SCode.Variability, var2::SCode.Variability)::Bool
+        function variabilityEqual(var1::SCode.Variability, var2::SCode.Variability) ::Bool
               local equal::Bool
 
               equal = begin
@@ -1563,7 +1563,7 @@
         end
 
          #= Return true if two arraydims are equal =#
-        function arrayDimEqual(iad1::Absyn.ArrayDim, iad2::Absyn.ArrayDim)::Bool
+        function arrayDimEqual(iad1::Absyn.ArrayDim, iad2::Absyn.ArrayDim) ::Bool
               local equal::Bool
 
               equal = begin
@@ -1596,7 +1596,7 @@
         end
 
          #= Sets the restriction of a SCode Class =#
-        function setClassRestriction(r::SCode.Restriction, cl::SCode.Element)::SCode.Element
+        function setClassRestriction(r::SCode.Restriction, cl::SCode.Element) ::SCode.Element
               local outCl::SCode.Element
 
               outCl = begin
@@ -1627,7 +1627,7 @@
         end
 
          #= Sets the name of a SCode Class =#
-        function setClassName(name::SCode.Ident, cl::SCode.Element)::SCode.Element
+        function setClassName(name::SCode.Ident, cl::SCode.Element) ::SCode.Element
               local outCl::SCode.Element
 
               outCl = begin
@@ -1657,7 +1657,7 @@
           outCl
         end
 
-        function makeClassPartial(inClass::SCode.Element)::SCode.Element
+        function makeClassPartial(inClass::SCode.Element) ::SCode.Element
               local outClass::SCode.Element = inClass
 
               outClass = begin
@@ -1676,7 +1676,7 @@
         end
 
          #= Sets the partial prefix of a SCode Class =#
-        function setClassPartialPrefix(partialPrefix::SCode.Partial, cl::SCode.Element)::SCode.Element
+        function setClassPartialPrefix(partialPrefix::SCode.Partial, cl::SCode.Element) ::SCode.Element
               local outCl::SCode.Element
 
               outCl = begin
@@ -1706,28 +1706,28 @@
           outCl
         end
 
-        function findIteratorIndexedCrefsInEEquations(inEqs::List{<:Union{<:SCode.EEquation, Nil{Any}}}, inIterator::String, inCrefs::List{<:Union{<:AbsynUtil.IteratorIndexedCref, Nil{Any}}} = list())::List{AbsynUtil.IteratorIndexedCref}
+        function findIteratorIndexedCrefsInEEquations(inEqs::List{<:SCode.EEquation}, inIterator::String, inCrefs::List{<:AbsynUtil.IteratorIndexedCref} = nil) ::List{AbsynUtil.IteratorIndexedCref}
               local outCrefs::List{AbsynUtil.IteratorIndexedCref}
 
               outCrefs = ListUtil.fold1(inEqs, findIteratorIndexedCrefsInEEquation, inIterator, inCrefs)
           outCrefs
         end
 
-        function findIteratorIndexedCrefsInEEquation(inEq::SCode.EEquation, inIterator::String, inCrefs::List{<:Union{<:AbsynUtil.IteratorIndexedCref, Nil{Any}}} = list())::List{AbsynUtil.IteratorIndexedCref}
+        function findIteratorIndexedCrefsInEEquation(inEq::SCode.EEquation, inIterator::String, inCrefs::List{<:AbsynUtil.IteratorIndexedCref} = nil) ::List{AbsynUtil.IteratorIndexedCref}
               local outCrefs::List{AbsynUtil.IteratorIndexedCref}
 
               outCrefs = foldEEquationsExps(inEq, (inIterator) -> AbsynUtil.findIteratorIndexedCrefs(inIterator = inIterator), inCrefs)
           outCrefs
         end
 
-        function findIteratorIndexedCrefsInStatements(inStatements::List{<:Union{<:SCode.Statement, Nil{Any}}}, inIterator::String, inCrefs::List{<:Union{<:AbsynUtil.IteratorIndexedCref, Nil{Any}}} = list())::List{AbsynUtil.IteratorIndexedCref}
+        function findIteratorIndexedCrefsInStatements(inStatements::List{<:SCode.Statement}, inIterator::String, inCrefs::List{<:AbsynUtil.IteratorIndexedCref} = nil) ::List{AbsynUtil.IteratorIndexedCref}
               local outCrefs::List{AbsynUtil.IteratorIndexedCref}
 
               outCrefs = ListUtil.fold1(inStatements, findIteratorIndexedCrefsInStatement, inIterator, inCrefs)
           outCrefs
         end
 
-        function findIteratorIndexedCrefsInStatement(inStatement::SCode.Statement, inIterator::String, inCrefs::List{<:Union{<:AbsynUtil.IteratorIndexedCref, Nil{Any}}} = list())::List{AbsynUtil.IteratorIndexedCref}
+        function findIteratorIndexedCrefsInStatement(inStatement::SCode.Statement, inIterator::String, inCrefs::List{<:AbsynUtil.IteratorIndexedCref} = nil) ::List{AbsynUtil.IteratorIndexedCref}
               local outCrefs::List{AbsynUtil.IteratorIndexedCref}
 
               outCrefs = foldStatementsExps(inStatement, (inIterator) -> AbsynUtil.findIteratorIndexedCrefs(inIterator = inIterator), inCrefs)
@@ -1735,7 +1735,7 @@
         end
 
          #= Filters out the components from the given list of elements, as well as their names. =#
-        function filterComponents(inElements::List{<:Union{<:SCode.Element, Nil{Any}}})::Tuple{List{SCode.Element}, List{String}}
+        function filterComponents(inElements::List{<:SCode.Element}) ::Tuple{List{SCode.Element}, List{String}}
               local outComponentNames::List{String}
               local outComponents::List{SCode.Element}
 
@@ -1743,7 +1743,7 @@
           (outComponents, outComponentNames)
         end
 
-        function filterComponents2(inElement::SCode.Element)::Tuple{SCode.Element, String}
+        function filterComponents2(inElement::SCode.Element) ::Tuple{SCode.Element, String}
               local outName::String
               local outComponent::SCode.Element
 
@@ -1753,7 +1753,7 @@
         end
 
          #= This function returns the components from a class =#
-        function getClassComponents(cl::SCode.Element)::Tuple{List{SCode.Element}, List{String}}
+        function getClassComponents(cl::SCode.Element) ::Tuple{List{SCode.Element}, List{String}}
               local compNames::List{String}
               local compElts::List{SCode.Element}
 
@@ -1777,7 +1777,7 @@
         end
 
          #= This function returns the components from a class =#
-        function getClassElements(cl::SCode.Element)::List{SCode.Element}
+        function getClassElements(cl::SCode.Element) ::List{SCode.Element}
               local elts::List{SCode.Element}
 
               elts = begin
@@ -1791,7 +1791,7 @@
                   end
 
                   _  => begin
-                      list()
+                      nil
                   end
                 end
               end
@@ -1800,7 +1800,7 @@
 
          #= Creates an EnumType element from an enumeration literal and an optional
           comment. =#
-        function makeEnumType(inEnum::SCode.Enum, inInfo::SourceInfo)::SCode.Element
+        function makeEnumType(inEnum::SCode.Enum, inInfo::SourceInfo) ::SCode.Element
               local outEnumType::SCode.Element
 
               local literal::String
@@ -1815,7 +1815,7 @@
          #= Returns the more constant of two Variabilities
            (considers VAR() < DISCRETE() < PARAM() < CONST()),
            similarly to Types.constOr. =#
-        function variabilityOr(inConst1::SCode.Variability, inConst2::SCode.Variability)::SCode.Variability
+        function variabilityOr(inConst1::SCode.Variability, inConst2::SCode.Variability) ::SCode.Variability
               local outConst::SCode.Variability
 
               outConst = begin
@@ -1854,7 +1854,7 @@
 
          #= Transforms SCode.Statement back to Absyn.AlgorithmItem. Discards the comment.
         Only to be used to unparse statements again. =#
-        function statementToAlgorithmItem(stmt::SCode.Statement)::Absyn.AlgorithmItem
+        function statementToAlgorithmItem(stmt::SCode.Statement) ::Absyn.AlgorithmItem
               local algi::Absyn.AlgorithmItem
 
               algi = begin
@@ -1916,15 +1916,15 @@
                   end
 
                   SCode.ALG_ASSERT(__)  => begin
-                    Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("assert", list()), Absyn.FUNCTIONARGS(list(stmt.condition, stmt.message, stmt.level), list())), NONE(), stmt.info)
+                    Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("assert", nil), Absyn.FUNCTIONARGS(list(stmt.condition, stmt.message, stmt.level), nil)), NONE(), stmt.info)
                   end
 
                   SCode.ALG_TERMINATE(__)  => begin
-                    Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("terminate", list()), Absyn.FUNCTIONARGS(list(stmt.message), list())), NONE(), stmt.info)
+                    Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("terminate", nil), Absyn.FUNCTIONARGS(list(stmt.message), nil)), NONE(), stmt.info)
                   end
 
                   SCode.ALG_REINIT(__)  => begin
-                    Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("reinit", list()), Absyn.FUNCTIONARGS(list(stmt.cref, stmt.newValue), list())), NONE(), stmt.info)
+                    Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("reinit", nil), Absyn.FUNCTIONARGS(list(stmt.cref, stmt.newValue), nil)), NONE(), stmt.info)
                   end
 
                   SCode.ALG_NORETCALL(Absyn.CALL(function_ = functionCall, functionArgs = functionArgs), _, info)  => begin
@@ -1952,7 +1952,7 @@
           algi
         end
 
-        function equationFileInfo(eq::SCode.EEquation)::SourceInfo
+        function equationFileInfo(eq::SCode.EEquation) ::SourceInfo
               local info::SourceInfo
 
               info = begin
@@ -2002,7 +2002,7 @@
         end
 
          #= Checks if a Mod is empty (or only an equality binding is present) =#
-        function emptyModOrEquality(mod::SCode.Mod)::Bool
+        function emptyModOrEquality(mod::SCode.Mod) ::Bool
               local b::Bool
 
               b = begin
@@ -2023,7 +2023,7 @@
           b
         end
 
-        function isComponentWithDirection(elt::SCode.Element, dir1::Absyn.Direction)::Bool
+        function isComponentWithDirection(elt::SCode.Element, dir1::Absyn.Direction) ::Bool
               local b::Bool
 
               b = begin
@@ -2041,7 +2041,7 @@
           b
         end
 
-        function isComponent(elt::SCode.Element)::Bool
+        function isComponent(elt::SCode.Element) ::Bool
               local b::Bool
 
               b = begin
@@ -2058,7 +2058,7 @@
           b
         end
 
-        function isNotComponent(elt::SCode.Element)::Bool
+        function isNotComponent(elt::SCode.Element) ::Bool
               local b::Bool
 
               b = begin
@@ -2075,7 +2075,7 @@
           b
         end
 
-        function isClassOrComponent(inElement::SCode.Element)::Bool
+        function isClassOrComponent(inElement::SCode.Element) ::Bool
               local outIsClassOrComponent::Bool
 
               outIsClassOrComponent = begin
@@ -2092,7 +2092,7 @@
           outIsClassOrComponent
         end
 
-        function isClass(inElement::SCode.Element)::Bool
+        function isClass(inElement::SCode.Element) ::Bool
               local outIsClass::Bool
 
               outIsClass = begin
@@ -2111,8 +2111,7 @@
 
          #= Calls the given function on the equation and all its subequations, and
            updates the argument for each call. =#
-        ArgT = Any
-        function foldEEquations(inEquation::SCode.EEquation, inFunc::FoldFunc, inArg::ArgT)::ArgT
+        function foldEEquations(inEquation::SCode.EEquation, inFunc::FoldFunc, inArg::ArgT)  where {ArgT}
               local outArg::ArgT
 
               outArg = inFunc(inEquation, inArg)
@@ -2143,8 +2142,7 @@
 
          #= Calls the given function on all expressions inside the equation, and updates
            the argument for each call. =#
-        ArgT = Any
-        function foldEEquationsExps(inEquation::SCode.EEquation, inFunc::FoldFunc, inArg::ArgT)::ArgT
+        function foldEEquationsExps(inEquation::SCode.EEquation, inFunc::FoldFunc, inArg::ArgT)  where {ArgT}
               local outArg::ArgT = inArg
 
               outArg = begin
@@ -2220,8 +2218,7 @@
 
          #= Calls the given function on all expressions inside the statement, and updates
            the argument for each call. =#
-        ArgT = Any
-        function foldStatementsExps(inStatement::SCode.Statement, inFunc::FoldFunc, inArg::ArgT)::ArgT
+        function foldStatementsExps(inStatement::SCode.Statement, inFunc::FoldFunc, inArg::ArgT)  where {ArgT}
               local outArg::ArgT = inArg
 
               outArg = begin
@@ -2324,7 +2321,7 @@
 
          #= Traverses a list of SCode.EEquations, calling traverseEEquations on each SCode.EEquation
           in the list. =#
-        function traverseEEquationsList(inEEquations::List{<:Union{<:SCode.EEquation, Nil{Any}}}, inTuple::Tuple{<:TraverseFunc, Argument})::Tuple{List{SCode.EEquation}, Tuple{TraverseFunc, Argument}}
+        function traverseEEquationsList(inEEquations::List{<:SCode.EEquation}, inTuple::Tuple{<:TraverseFunc, Argument}) ::Tuple{List{SCode.EEquation}, Tuple{TraverseFunc, Argument}}
               local outTuple::Tuple{TraverseFunc, Argument}
               local outEEquations::List{SCode.EEquation}
 
@@ -2334,7 +2331,7 @@
 
          #= Traverses an SCode.EEquation. For each SCode.EEquation it finds it calls the given
           function with the SCode.EEquation and an extra argument which is passed along. =#
-        function traverseEEquations(inEEquation::SCode.EEquation, inTuple::Tuple{<:TraverseFunc, Argument})::Tuple{SCode.EEquation, Tuple{TraverseFunc, Argument}}
+        function traverseEEquations(inEEquation::SCode.EEquation, inTuple::Tuple{<:TraverseFunc, Argument}) ::Tuple{SCode.EEquation, Tuple{TraverseFunc, Argument}}
               local outTuple::Tuple{TraverseFunc, Argument}
               local outEEquation::SCode.EEquation
 
@@ -2349,7 +2346,7 @@
         end
 
          #= Helper function to traverseEEquations, does the actual traversing. =#
-        function traverseEEquations2(inEEquation::SCode.EEquation, inTuple::Tuple{<:TraverseFunc, Argument})::Tuple{SCode.EEquation, Tuple{TraverseFunc, Argument}}
+        function traverseEEquations2(inEEquation::SCode.EEquation, inTuple::Tuple{<:TraverseFunc, Argument}) ::Tuple{SCode.EEquation, Tuple{TraverseFunc, Argument}}
               local outTuple::Tuple{TraverseFunc, Argument}
               local outEEquation::SCode.EEquation
 
@@ -2393,7 +2390,7 @@
 
          #= Traverses all SCode.EEquations in an else when branch, calling the given function
           on each SCode.EEquation. =#
-        function traverseElseWhenEEquations(inElseWhen::Tuple{<:Absyn.Exp, List{<:Union{<:SCode.EEquation, Nil{Any}}}}, inTuple::Tuple{<:TraverseFunc, Argument})::Tuple{Tuple{Absyn.Exp, List{SCode.EEquation}}, Tuple{TraverseFunc, Argument}}
+        function traverseElseWhenEEquations(inElseWhen::Tuple{<:Absyn.Exp, List{<:SCode.EEquation}}, inTuple::Tuple{<:TraverseFunc, Argument}) ::Tuple{Tuple{Absyn.Exp, List{SCode.EEquation}}, Tuple{TraverseFunc, Argument}}
               local outTuple::Tuple{TraverseFunc, Argument}
               local outElseWhen::Tuple{Absyn.Exp, List{SCode.EEquation}}
 
@@ -2408,7 +2405,7 @@
 
          #= Traverses a list of SCode.EEquations, calling the given function on each Absyn.Exp
           it encounters. =#
-        function traverseEEquationListExps(inEEquations::List{<:Union{<:SCode.EEquation, Nil{Any}}}, traverser::TraverseFunc, inArg::Argument)::Tuple{List{SCode.EEquation}, Argument}
+        function traverseEEquationListExps(inEEquations::List{<:SCode.EEquation}, traverser::TraverseFunc, inArg::Argument) ::Tuple{List{SCode.EEquation}, Argument}
               local outArg::Argument
               local outEEquations::List{SCode.EEquation}
 
@@ -2419,7 +2416,7 @@
          #= Traverses an SCode.EEquation, calling the given function on each Absyn.Exp it
           encounters. This funcion is intended to be used together with
           traverseEEquations, and does NOT descend into sub-EEquations. =#
-        function traverseEEquationExps(inEEquation::SCode.EEquation, inFunc::TraverseFunc, inArg::Argument)::Tuple{SCode.EEquation, Argument}
+        function traverseEEquationExps(inEEquation::SCode.EEquation, inFunc::TraverseFunc, inArg::Argument) ::Tuple{SCode.EEquation, Argument}
               local outArg::Argument
               local outEEquation::SCode.EEquation
 
@@ -2509,7 +2506,7 @@
 
          #= Traverses the subscripts of a component reference and calls the given
           function on the subscript expressions. =#
-        function traverseComponentRefExps(inCref::Absyn.ComponentRef, inFunc::TraverseFunc, inArg::Argument)::Tuple{Absyn.ComponentRef, Argument}
+        function traverseComponentRefExps(inCref::Absyn.ComponentRef, inFunc::TraverseFunc, inArg::Argument) ::Tuple{Absyn.ComponentRef, Argument}
               local outArg::Argument
               local outCref::Absyn.ComponentRef
 
@@ -2544,7 +2541,7 @@
         end
 
          #= Calls the given function on the subscript expression. =#
-        function traverseSubscriptExps(inSubscript::Absyn.Subscript, inFunc::TraverseFunc, inArg::Argument)::Tuple{Absyn.Subscript, Argument}
+        function traverseSubscriptExps(inSubscript::Absyn.Subscript, inFunc::TraverseFunc, inArg::Argument) ::Tuple{Absyn.Subscript, Argument}
               local outArg::Argument
               local outSubscript::Absyn.Subscript
 
@@ -2568,7 +2565,7 @@
 
          #= Traverses the expressions in an else when branch, and calls the given
           function on the expressions. =#
-        function traverseElseWhenExps(inElseWhen::Tuple{<:Absyn.Exp, List{<:Union{<:SCode.EEquation, Nil{Any}}}}, traverser::TraverseFunc, inArg::Argument)::Tuple{Tuple{Absyn.Exp, List{SCode.EEquation}}, Argument}
+        function traverseElseWhenExps(inElseWhen::Tuple{<:Absyn.Exp, List{<:SCode.EEquation}}, traverser::TraverseFunc, inArg::Argument) ::Tuple{Tuple{Absyn.Exp, List{SCode.EEquation}}, Argument}
               local outArg::Argument
               local outElseWhen::Tuple{Absyn.Exp, List{SCode.EEquation}}
 
@@ -2583,7 +2580,7 @@
 
          #= Calls the given function on the value expression associated with a named
           function argument. =#
-        function traverseNamedArgExps(inArg::Absyn.NamedArg, inTuple::Tuple{<:TraverseFunc, Argument})::Tuple{Absyn.NamedArg, Tuple{TraverseFunc, Argument}}
+        function traverseNamedArgExps(inArg::Absyn.NamedArg, inTuple::Tuple{<:TraverseFunc, Argument}) ::Tuple{Absyn.NamedArg, Tuple{TraverseFunc, Argument}}
               local outTuple::Tuple{TraverseFunc, Argument}
               local outArg::Absyn.NamedArg
 
@@ -2601,7 +2598,7 @@
         end
 
          #= Calls the given function on the expression associated with a for iterator. =#
-        function traverseForIteratorExps(inIterator::Absyn.ForIterator, inFunc::TraverseFunc, inArg::Argument)::Tuple{Absyn.ForIterator, Argument}
+        function traverseForIteratorExps(inIterator::Absyn.ForIterator, inFunc::TraverseFunc, inArg::Argument) ::Tuple{Absyn.ForIterator, Argument}
               local outArg::Argument
               local outIterator::Absyn.ForIterator
 
@@ -2637,7 +2634,7 @@
         end
 
          #= Calls traverseStatement on each statement in the given list. =#
-        function traverseStatementsList(inStatements::List{<:Union{<:SCode.Statement, Nil{Any}}}, inTuple::Tuple{<:TraverseFunc, Argument})::Tuple{List{SCode.Statement}, Tuple{TraverseFunc, Argument}}
+        function traverseStatementsList(inStatements::List{<:SCode.Statement}, inTuple::Tuple{<:TraverseFunc, Argument}) ::Tuple{List{SCode.Statement}, Tuple{TraverseFunc, Argument}}
               local outTuple::Tuple{TraverseFunc, Argument}
               local outStatements::List{SCode.Statement}
 
@@ -2648,7 +2645,7 @@
          #= Traverses all statements in the given statement in a top-down approach where
           the given function is applied to each statement found, beginning with the given
           statement. =#
-        function traverseStatements(inStatement::SCode.Statement, inTuple::Tuple{<:TraverseFunc, Argument})::Tuple{SCode.Statement, Tuple{TraverseFunc, Argument}}
+        function traverseStatements(inStatement::SCode.Statement, inTuple::Tuple{<:TraverseFunc, Argument}) ::Tuple{SCode.Statement, Tuple{TraverseFunc, Argument}}
               local outTuple::Tuple{TraverseFunc, Argument}
               local outStatement::SCode.Statement
 
@@ -2664,7 +2661,7 @@
 
          #= Helper function to traverseStatements. Goes through each statement contained
           in the given statement and calls traverseStatements on them. =#
-        function traverseStatements2(inStatement::SCode.Statement, inTuple::Tuple{<:TraverseFunc, Argument})::Tuple{SCode.Statement, Tuple{TraverseFunc, Argument}}
+        function traverseStatements2(inStatement::SCode.Statement, inTuple::Tuple{<:TraverseFunc, Argument}) ::Tuple{SCode.Statement, Tuple{TraverseFunc, Argument}}
               local outTuple::Tuple{TraverseFunc, Argument}
               local outStatement::SCode.Statement
 
@@ -2723,7 +2720,7 @@
 
          #= Helper function to traverseStatements2. Calls traverseStatement each
           statement in a given branch. =#
-        function traverseBranchStatements(inBranch::Tuple{<:Absyn.Exp, List{<:Union{<:SCode.Statement, Nil{Any}}}}, inTuple::Tuple{<:TraverseFunc, Argument})::Tuple{Tuple{Absyn.Exp, List{SCode.Statement}}, Tuple{TraverseFunc, Argument}}
+        function traverseBranchStatements(inBranch::Tuple{<:Absyn.Exp, List{<:SCode.Statement}}, inTuple::Tuple{<:TraverseFunc, Argument}) ::Tuple{Tuple{Absyn.Exp, List{SCode.Statement}}, Tuple{TraverseFunc, Argument}}
               local outTuple::Tuple{TraverseFunc, Argument}
               local outBranch::Tuple{Absyn.Exp, List{SCode.Statement}}
 
@@ -2738,7 +2735,7 @@
 
          #= Traverses a list of statements and calls the given function on each
           expression found. =#
-        function traverseStatementListExps(inStatements::List{<:Union{<:SCode.Statement, Nil{Any}}}, inFunc::TraverseFunc, inArg::Argument)::Tuple{List{SCode.Statement}, Argument}
+        function traverseStatementListExps(inStatements::List{<:SCode.Statement}, inFunc::TraverseFunc, inArg::Argument) ::Tuple{List{SCode.Statement}, Argument}
               local outArg::Argument
               local outStatements::List{SCode.Statement}
 
@@ -2749,7 +2746,7 @@
          #= Applies the given function to each expression in the given statement. This
           function is intended to be used together with traverseStatements, and does NOT
           descend into sub-statements. =#
-        function traverseStatementExps(inStatement::SCode.Statement, inFunc::TraverseFunc, inArg::Argument)::Tuple{SCode.Statement, Argument}
+        function traverseStatementExps(inStatement::SCode.Statement, inFunc::TraverseFunc, inArg::Argument) ::Tuple{SCode.Statement, Argument}
               local outArg::Argument
               local outStatement::SCode.Statement
 
@@ -2832,7 +2829,7 @@
         end
 
          #= Calls the given function on each expression found in an if or when branch. =#
-        function traverseBranchExps(inBranch::Tuple{<:Absyn.Exp, List{<:Union{<:SCode.Statement, Nil{Any}}}}, traverser::TraverseFunc, inArg::Argument)::Tuple{Tuple{Absyn.Exp, List{SCode.Statement}}, Argument}
+        function traverseBranchExps(inBranch::Tuple{<:Absyn.Exp, List{<:SCode.Statement}}, traverser::TraverseFunc, inArg::Argument) ::Tuple{Tuple{Absyn.Exp, List{SCode.Statement}}, Argument}
               local outArg::Argument
               local outBranch::Tuple{Absyn.Exp, List{SCode.Statement}}
 
@@ -2846,7 +2843,7 @@
           (outBranch, outArg)
         end
 
-        function elementIsClass(el::SCode.Element)::Bool
+        function elementIsClass(el::SCode.Element) ::Bool
               local b::Bool
 
               b = begin
@@ -2863,7 +2860,7 @@
           b
         end
 
-        function elementIsImport(inElement::SCode.Element)::Bool
+        function elementIsImport(inElement::SCode.Element) ::Bool
               local outIsImport::Bool
 
               outIsImport = begin
@@ -2880,7 +2877,7 @@
           outIsImport
         end
 
-        function elementIsPublicImport(el::SCode.Element)::Bool
+        function elementIsPublicImport(el::SCode.Element) ::Bool
               local b::Bool
 
               b = begin
@@ -2897,7 +2894,7 @@
           b
         end
 
-        function elementIsProtectedImport(el::SCode.Element)::Bool
+        function elementIsProtectedImport(el::SCode.Element) ::Bool
               local b::Bool
 
               b = begin
@@ -2914,7 +2911,7 @@
           b
         end
 
-        function getElementClass(el::SCode.Element)::SCode.Element
+        function getElementClass(el::SCode.Element) ::SCode.Element
               local cl::SCode.Element
 
               cl = begin
@@ -2931,9 +2928,9 @@
           cl
         end
 
-         knownExternalCFunctions = list("sin", "cos", "tan", "asin", "acos", "atan", "atan2", "sinh", "cosh", "tanh", "exp", "log", "log10", "sqrt")::List
+         const knownExternalCFunctions = list("sin", "cos", "tan", "asin", "acos", "atan", "atan2", "sinh", "cosh", "tanh", "exp", "log", "log10", "sqrt")::List
 
-        function isBuiltinFunction(cl::SCode.Element, inVars::List{<:Union{<:String, Nil{Any}}}, outVars::List{<:Union{<:String, Nil{Any}}})::String
+        function isBuiltinFunction(cl::SCode.Element, inVars::List{<:String}, outVars::List{<:String}) ::String
               local name::String
 
               name = begin
@@ -2976,7 +2973,7 @@
         end
 
          #= Extracts the SourceInfo from an SCode.EEquation. =#
-        function getEEquationInfo(inEEquation::SCode.EEquation)::SourceInfo
+        function getEEquationInfo(inEEquation::SCode.EEquation) ::SourceInfo
               local outInfo::SourceInfo
 
               outInfo = begin
@@ -3027,7 +3024,7 @@
         end
 
          #= Extracts the SourceInfo from a Statement. =#
-        function getStatementInfo(inStatement::SCode.Statement)::SourceInfo
+        function getStatementInfo(inStatement::SCode.Statement) ::SourceInfo
               local outInfo::SourceInfo
 
               outInfo = begin
@@ -3102,7 +3099,7 @@
         end
 
          #= Adds a given element to a class definition. Only implemented for PARTS. =#
-        function addElementToClass(inElement::SCode.Element, inClassDef::SCode.Element)::SCode.Element
+        function addElementToClass(inElement::SCode.Element, inClassDef::SCode.Element) ::SCode.Element
               local outClassDef::SCode.Element
 
               local cdef::SCode.ClassDef
@@ -3114,7 +3111,7 @@
         end
 
          #= Adds a given element to a PARTS class definition. =#
-        function addElementToCompositeClassDef(inElement::SCode.Element, inClassDef::SCode.ClassDef)::SCode.ClassDef
+        function addElementToCompositeClassDef(inElement::SCode.Element, inClassDef::SCode.ClassDef) ::SCode.ClassDef
               local outClassDef::SCode.ClassDef
 
               local el::List{SCode.Element}
@@ -3131,7 +3128,7 @@
           outClassDef
         end
 
-        function setElementClassDefinition(inClassDef::SCode.ClassDef, inElement::SCode.Element)::SCode.Element
+        function setElementClassDefinition(inClassDef::SCode.ClassDef, inElement::SCode.Element) ::SCode.Element
               local outElement::SCode.Element
 
               local n::SCode.Ident
@@ -3148,7 +3145,7 @@
         end
 
          #= returns true for PUBLIC and false for PROTECTED =#
-        function visibilityBool(inVisibility::SCode.Visibility)::Bool
+        function visibilityBool(inVisibility::SCode.Visibility) ::Bool
               local bVisibility::Bool
 
               bVisibility = begin
@@ -3166,7 +3163,7 @@
         end
 
          #= returns for PUBLIC true and for PROTECTED false =#
-        function boolVisibility(inBoolVisibility::Bool)::SCode.Visibility
+        function boolVisibility(inBoolVisibility::Bool) ::SCode.Visibility
               local outVisibility::SCode.Visibility
 
               outVisibility = begin
@@ -3183,7 +3180,7 @@
           outVisibility
         end
 
-        function visibilityEqual(inVisibility1::SCode.Visibility, inVisibility2::SCode.Visibility)::Bool
+        function visibilityEqual(inVisibility1::SCode.Visibility, inVisibility2::SCode.Visibility) ::Bool
               local outEqual::Bool
 
               outEqual = begin
@@ -3204,7 +3201,7 @@
           outEqual
         end
 
-        function eachBool(inEach::SCode.Each)::Bool
+        function eachBool(inEach::SCode.Each) ::Bool
               local bEach::Bool
 
               bEach = begin
@@ -3221,7 +3218,7 @@
           bEach
         end
 
-        function boolEach(inBoolEach::Bool)::SCode.Each
+        function boolEach(inBoolEach::Bool) ::SCode.Each
               local outEach::SCode.Each
 
               outEach = begin
@@ -3238,14 +3235,14 @@
           outEach
         end
 
-        function prefixesRedeclare(inPrefixes::SCode.Prefixes)::SCode.Redeclare
+        function prefixesRedeclare(inPrefixes::SCode.Prefixes) ::SCode.Redeclare
               local outRedeclare::SCode.Redeclare
 
               @match SCode.PREFIXES(redeclarePrefix = outRedeclare) = inPrefixes
           outRedeclare
         end
 
-        function prefixesSetRedeclare(inPrefixes::SCode.Prefixes, inRedeclare::SCode.Redeclare)::SCode.Prefixes
+        function prefixesSetRedeclare(inPrefixes::SCode.Prefixes, inRedeclare::SCode.Redeclare) ::SCode.Prefixes
               local outPrefixes::SCode.Prefixes
 
               local v::SCode.Visibility
@@ -3258,7 +3255,7 @@
           outPrefixes
         end
 
-        function prefixesSetReplaceable(inPrefixes::SCode.Prefixes, inReplaceable::SCode.Replaceable)::SCode.Prefixes
+        function prefixesSetReplaceable(inPrefixes::SCode.Prefixes, inReplaceable::SCode.Replaceable) ::SCode.Prefixes
               local outPrefixes::SCode.Prefixes
 
               local v::SCode.Visibility
@@ -3271,7 +3268,7 @@
           outPrefixes
         end
 
-        function redeclareBool(inRedeclare::SCode.Redeclare)::Bool
+        function redeclareBool(inRedeclare::SCode.Redeclare) ::Bool
               local bRedeclare::Bool
 
               bRedeclare = begin
@@ -3288,7 +3285,7 @@
           bRedeclare
         end
 
-        function boolRedeclare(inBoolRedeclare::Bool)::SCode.Redeclare
+        function boolRedeclare(inBoolRedeclare::Bool) ::SCode.Redeclare
               local outRedeclare::SCode.Redeclare
 
               outRedeclare = begin
@@ -3305,7 +3302,7 @@
           outRedeclare
         end
 
-        function replaceableBool(inReplaceable::SCode.Replaceable)::Bool
+        function replaceableBool(inReplaceable::SCode.Replaceable) ::Bool
               local bReplaceable::Bool
 
               bReplaceable = begin
@@ -3322,7 +3319,7 @@
           bReplaceable
         end
 
-        function replaceableOptConstraint(inReplaceable::SCode.Replaceable)::Option{SCode.ConstrainClass}
+        function replaceableOptConstraint(inReplaceable::SCode.Replaceable) ::Option{SCode.ConstrainClass}
               local outOptConstrainClass::Option{SCode.ConstrainClass}
 
               outOptConstrainClass = begin
@@ -3340,7 +3337,7 @@
           outOptConstrainClass
         end
 
-        function boolReplaceable(inBoolReplaceable::Bool, inOptConstrainClass::Option{<:SCode.ConstrainClass})::SCode.Replaceable
+        function boolReplaceable(inBoolReplaceable::Bool, inOptConstrainClass::Option{<:SCode.ConstrainClass}) ::SCode.Replaceable
               local outReplaceable::SCode.Replaceable
 
               outReplaceable = begin
@@ -3362,7 +3359,7 @@
           outReplaceable
         end
 
-        function encapsulatedBool(inEncapsulated::SCode.Encapsulated)::Bool
+        function encapsulatedBool(inEncapsulated::SCode.Encapsulated) ::Bool
               local bEncapsulated::Bool
 
               bEncapsulated = begin
@@ -3379,7 +3376,7 @@
           bEncapsulated
         end
 
-        function boolEncapsulated(inBoolEncapsulated::Bool)::SCode.Encapsulated
+        function boolEncapsulated(inBoolEncapsulated::Bool) ::SCode.Encapsulated
               local outEncapsulated::SCode.Encapsulated
 
               outEncapsulated = begin
@@ -3396,7 +3393,7 @@
           outEncapsulated
         end
 
-        function partialBool(inPartial::SCode.Partial)::Bool
+        function partialBool(inPartial::SCode.Partial) ::Bool
               local bPartial::Bool
 
               bPartial = begin
@@ -3413,7 +3410,7 @@
           bPartial
         end
 
-        function boolPartial(inBoolPartial::Bool)::SCode.Partial
+        function boolPartial(inBoolPartial::Bool) ::SCode.Partial
               local outPartial::SCode.Partial
 
               outPartial = begin
@@ -3430,14 +3427,14 @@
           outPartial
         end
 
-        function prefixesFinal(inPrefixes::SCode.Prefixes)::SCode.Final
+        function prefixesFinal(inPrefixes::SCode.Prefixes) ::SCode.Final
               local outFinal::SCode.Final
 
               @match SCode.PREFIXES(finalPrefix = outFinal) = inPrefixes
           outFinal
         end
 
-        function finalBool(inFinal::SCode.Final)::Bool
+        function finalBool(inFinal::SCode.Final) ::Bool
               local bFinal::Bool
 
               bFinal = begin
@@ -3454,7 +3451,7 @@
           bFinal
         end
 
-        function finalEqual(inFinal1::SCode.Final, inFinal2::SCode.Final)::Bool
+        function finalEqual(inFinal1::SCode.Final, inFinal2::SCode.Final) ::Bool
               local bFinal::Bool
 
               bFinal = begin
@@ -3475,7 +3472,7 @@
           bFinal
         end
 
-        function boolFinal(inBoolFinal::Bool)::SCode.Final
+        function boolFinal(inBoolFinal::Bool) ::SCode.Final
               local outFinal::SCode.Final
 
               outFinal = begin
@@ -3492,7 +3489,7 @@
           outFinal
         end
 
-        function connectorTypeEqual(inConnectorType1::SCode.ConnectorType, inConnectorType2::SCode.ConnectorType)::Bool
+        function connectorTypeEqual(inConnectorType1::SCode.ConnectorType, inConnectorType2::SCode.ConnectorType) ::Bool
               local outEqual::Bool
 
               outEqual = begin
@@ -3513,7 +3510,7 @@
           outEqual
         end
 
-        function potentialBool(inConnectorType::SCode.ConnectorType)::Bool
+        function potentialBool(inConnectorType::SCode.ConnectorType) ::Bool
               local outPotential::Bool
 
               outPotential = begin
@@ -3530,7 +3527,7 @@
           outPotential
         end
 
-        function flowBool(inConnectorType::SCode.ConnectorType)::Bool
+        function flowBool(inConnectorType::SCode.ConnectorType) ::Bool
               local outFlow::Bool
 
               outFlow = begin
@@ -3547,7 +3544,7 @@
           outFlow
         end
 
-        function boolFlow(inBoolFlow::Bool)::SCode.ConnectorType
+        function boolFlow(inBoolFlow::Bool) ::SCode.ConnectorType
               local outFlow::SCode.ConnectorType
 
               outFlow = begin
@@ -3564,7 +3561,7 @@
           outFlow
         end
 
-        function streamBool(inStream::SCode.ConnectorType)::Bool
+        function streamBool(inStream::SCode.ConnectorType) ::Bool
               local bStream::Bool
 
               bStream = begin
@@ -3581,7 +3578,7 @@
           bStream
         end
 
-        function boolStream(inBoolStream::Bool)::SCode.ConnectorType
+        function boolStream(inBoolStream::Bool) ::SCode.ConnectorType
               local outStream::SCode.ConnectorType
 
               outStream = begin
@@ -3598,7 +3595,7 @@
           outStream
         end
 
-        function mergeAttributesFromClass(inAttributes::SCode.Attributes, inClass::SCode.Element)::SCode.Attributes
+        function mergeAttributesFromClass(inAttributes::SCode.Attributes, inClass::SCode.Element) ::SCode.Attributes
               local outAttributes::SCode.Attributes
 
               outAttributes = begin
@@ -3621,7 +3618,7 @@
          #= @author: adrpo
          Function that is used with Derived classes,
          merge the derived Attributes with the optional Attributes returned from ~instClass~. =#
-        function mergeAttributes(ele::SCode.Attributes, oEle::Option{<:SCode.Attributes})::Option{SCode.Attributes}
+        function mergeAttributes(ele::SCode.Attributes, oEle::Option{<:SCode.Attributes}) ::Option{SCode.Attributes}
               local outoEle::Option{SCode.Attributes}
 
               outoEle = begin
@@ -3664,14 +3661,14 @@
           outoEle
         end
 
-        function prefixesVisibility(inPrefixes::SCode.Prefixes)::SCode.Visibility
+        function prefixesVisibility(inPrefixes::SCode.Prefixes) ::SCode.Visibility
               local outVisibility::SCode.Visibility
 
               @match SCode.PREFIXES(visibility = outVisibility) = inPrefixes
           outVisibility
         end
 
-        function prefixesSetVisibility(inPrefixes::SCode.Prefixes, inVisibility::SCode.Visibility)::SCode.Prefixes
+        function prefixesSetVisibility(inPrefixes::SCode.Prefixes, inVisibility::SCode.Visibility) ::SCode.Prefixes
               local outPrefixes::SCode.Prefixes
 
               local rd::SCode.Redeclare
@@ -3685,7 +3682,7 @@
         end
 
          #= Returns true if two each attributes are equal =#
-        function eachEqual(each1::SCode.Each, each2::SCode.Each)::Bool
+        function eachEqual(each1::SCode.Each, each2::SCode.Each) ::Bool
               local equal::Bool
 
               equal = begin
@@ -3707,7 +3704,7 @@
         end
 
          #= Returns true if two replaceable attributes are equal =#
-        function replaceableEqual(r1::SCode.Replaceable, r2::SCode.Replaceable)::Bool
+        function replaceableEqual(r1::SCode.Replaceable, r2::SCode.Replaceable) ::Bool
               local equal::Bool
 
               equal = begin
@@ -3739,7 +3736,7 @@
         end
 
          #= Returns true if two prefixes are equal =#
-        function prefixesEqual(prefixes1::SCode.Prefixes, prefixes2::SCode.Prefixes)::Bool
+        function prefixesEqual(prefixes1::SCode.Prefixes, prefixes2::SCode.Prefixes) ::Bool
               local equal::Bool
 
               equal = begin
@@ -3772,14 +3769,14 @@
         end
 
          #= Returns the replaceable part =#
-        function prefixesReplaceable(prefixes::SCode.Prefixes)::SCode.Replaceable
+        function prefixesReplaceable(prefixes::SCode.Prefixes) ::SCode.Replaceable
               local repl::SCode.Replaceable
 
               @match SCode.PREFIXES(replaceablePrefix = repl) = prefixes
           repl
         end
 
-        function elementPrefixes(inElement::SCode.Element)::SCode.Prefixes
+        function elementPrefixes(inElement::SCode.Element) ::SCode.Prefixes
               local outPrefixes::SCode.Prefixes
 
               outPrefixes = begin
@@ -3797,7 +3794,7 @@
           outPrefixes
         end
 
-        function isElementReplaceable(inElement::SCode.Element)::Bool
+        function isElementReplaceable(inElement::SCode.Element) ::Bool
               local isReplaceable::Bool
 
               local pf::SCode.Prefixes
@@ -3807,7 +3804,7 @@
           isReplaceable
         end
 
-        function isElementRedeclare(inElement::SCode.Element)::Bool
+        function isElementRedeclare(inElement::SCode.Element) ::Bool
               local isRedeclare::Bool
 
               local pf::SCode.Prefixes
@@ -3817,21 +3814,21 @@
           isRedeclare
         end
 
-        function prefixesInnerOuter(inPrefixes::SCode.Prefixes)::Absyn.InnerOuter
+        function prefixesInnerOuter(inPrefixes::SCode.Prefixes) ::Absyn.InnerOuter
               local outInnerOuter::Absyn.InnerOuter
 
               @match SCode.PREFIXES(innerOuter = outInnerOuter) = inPrefixes
           outInnerOuter
         end
 
-        function prefixesSetInnerOuter(prefixes::SCode.Prefixes, innerOuter::Absyn.InnerOuter)::SCode.Prefixes
+        function prefixesSetInnerOuter(prefixes::SCode.Prefixes, innerOuter::Absyn.InnerOuter) ::SCode.Prefixes
 
 
               prefixes.innerOuter = innerOuter
           prefixes
         end
 
-        function removeAttributeDimensions(inAttributes::SCode.Attributes)::SCode.Attributes
+        function removeAttributeDimensions(inAttributes::SCode.Attributes) ::SCode.Attributes
               local outAttributes::SCode.Attributes
 
               local ct::SCode.ConnectorType
@@ -3841,11 +3838,11 @@
               local isf::Absyn.IsField
 
               @match SCode.ATTR(_, ct, p, v, d, isf) = inAttributes
-              outAttributes = SCode.ATTR(list(), ct, p, v, d, isf)
+              outAttributes = SCode.ATTR(nil, ct, p, v, d, isf)
           outAttributes
         end
 
-        function setAttributesDirection(attributes::SCode.Attributes, direction::Absyn.Direction)::SCode.Attributes
+        function setAttributesDirection(attributes::SCode.Attributes, direction::Absyn.Direction) ::SCode.Attributes
 
 
               attributes.direction = direction
@@ -3853,7 +3850,7 @@
         end
 
          #= Return the variability attribute from Attributes =#
-        function attrVariability(attr::SCode.Attributes)::SCode.Variability
+        function attrVariability(attr::SCode.Attributes) ::SCode.Variability
               local var::SCode.Variability
 
               var = begin
@@ -3867,14 +3864,14 @@
           var
         end
 
-        function setAttributesVariability(attributes::SCode.Attributes, variability::SCode.Variability)::SCode.Attributes
+        function setAttributesVariability(attributes::SCode.Attributes, variability::SCode.Variability) ::SCode.Attributes
 
 
               attributes.variability = variability
           attributes
         end
 
-        function isDerivedClassDef(inClassDef::SCode.ClassDef)::Bool
+        function isDerivedClassDef(inClassDef::SCode.ClassDef) ::Bool
               local isDerived::Bool
 
               isDerived = begin
@@ -3891,7 +3888,7 @@
           isDerived
         end
 
-        function isConnector(inRestriction::SCode.Restriction)::Bool
+        function isConnector(inRestriction::SCode.Restriction) ::Bool
               local isConnector::Bool
 
               isConnector = begin
@@ -3908,14 +3905,14 @@
           isConnector
         end
 
-        function removeBuiltinsFromTopScope(inProgram::SCode.Program)::SCode.Program
+        function removeBuiltinsFromTopScope(inProgram::SCode.Program) ::SCode.Program
               local outProgram::SCode.Program
 
               outProgram = ListUtil.filterOnTrue(inProgram, isNotBuiltinClass)
           outProgram
         end
 
-        function isNotBuiltinClass(inClass::SCode.Element)::Bool
+        function isNotBuiltinClass(inClass::SCode.Element) ::Bool
               local b::Bool
 
               b = begin
@@ -3934,7 +3931,7 @@
 
          #= Returns the annotation with the given name in the element, or fails if no
            such annotation could be found. =#
-        function getElementNamedAnnotation(element::SCode.Element, name::String)::Absyn.Exp
+        function getElementNamedAnnotation(element::SCode.Element, name::String) ::Absyn.Exp
               local exp::Absyn.Exp
 
               local ann::SCode.Annotation
@@ -3960,7 +3957,7 @@
 
          #= Checks if the given annotation contains an entry with the given name with the
            value true. =#
-        function getNamedAnnotation(inAnnotation::SCode.Annotation, inName::String)::Tuple{Absyn.Exp, SourceInfo}
+        function getNamedAnnotation(inAnnotation::SCode.Annotation, inName::String) ::Tuple{Absyn.Exp, SourceInfo}
               local info::SourceInfo
               local exp::Absyn.Exp
 
@@ -3973,7 +3970,7 @@
 
          #= Checks if a submod has the same name as the given name, and if its binding
            in that case is true. =#
-        function hasNamedAnnotation(inSubMod::SCode.SubMod, inName::String)::Bool
+        function hasNamedAnnotation(inSubMod::SCode.SubMod, inName::String) ::Bool
               local outIsMatch::Bool
 
               outIsMatch = begin
@@ -3993,7 +3990,7 @@
 
          #= Returns the modifier with the given name if it can be found in the
            annotation, otherwise an empty modifier. =#
-        function lookupNamedAnnotation(ann::SCode.Annotation, name::String)::SCode.Mod
+        function lookupNamedAnnotation(ann::SCode.Annotation, name::String) ::SCode.Mod
               local mod::SCode.Mod
 
               local submods::List{SCode.SubMod}
@@ -4020,8 +4017,8 @@
         end
 
          #= Returns a list of modifiers with the given name found in the annotation. =#
-        function lookupNamedAnnotations(ann::SCode.Annotation, name::String)::List{SCode.Mod}
-              local mods::List{SCode.Mod} = list()
+        function lookupNamedAnnotations(ann::SCode.Annotation, name::String) ::List{SCode.Mod}
+              local mods::List{SCode.Mod} = nil
 
               local submods::List{SCode.SubMod}
               local id::String
@@ -4040,14 +4037,14 @@
                   end
 
                   _  => begin
-                      list()
+                      nil
                   end
                 end
               end
           mods
         end
 
-        function hasBooleanNamedAnnotationInClass(inClass::SCode.Element, namedAnnotation::String)::Bool
+        function hasBooleanNamedAnnotationInClass(inClass::SCode.Element, namedAnnotation::String) ::Bool
               local hasAnn::Bool
 
               hasAnn = begin
@@ -4065,7 +4062,7 @@
           hasAnn
         end
 
-        function hasBooleanNamedAnnotationInComponent(inComponent::SCode.Element, namedAnnotation::String)::Bool
+        function hasBooleanNamedAnnotationInComponent(inComponent::SCode.Element, namedAnnotation::String) ::Bool
               local hasAnn::Bool
 
               hasAnn = begin
@@ -4084,7 +4081,7 @@
         end
 
          #= check if the named annotation is present and has value true =#
-        function optCommentHasBooleanNamedAnnotation(comm::Option{<:SCode.Comment}, annotationName::String)::Bool
+        function optCommentHasBooleanNamedAnnotation(comm::Option{<:SCode.Comment}, annotationName::String) ::Bool
               local outB::Bool
 
               outB = begin
@@ -4103,7 +4100,7 @@
         end
 
          #= check if the named annotation is present and has value true =#
-        function commentHasBooleanNamedAnnotation(comm::SCode.Comment, annotationName::String)::Bool
+        function commentHasBooleanNamedAnnotation(comm::SCode.Comment, annotationName::String) ::Bool
               local outB::Bool
 
               outB = begin
@@ -4123,7 +4120,7 @@
 
          #= Checks if the given annotation contains an entry with the given name with the
            value true. =#
-        function hasBooleanNamedAnnotation(inAnnotation::SCode.Annotation, inName::String)::Bool
+        function hasBooleanNamedAnnotation(inAnnotation::SCode.Annotation, inName::String) ::Bool
               local outHasEntry::Bool
 
               local submods::List{SCode.SubMod}
@@ -4135,7 +4132,7 @@
 
          #= Checks if a submod has the same name as the given name, and if its binding
            in that case is true. =#
-        function hasBooleanNamedAnnotation2(inSubMod::SCode.SubMod, inName::String)::Bool
+        function hasBooleanNamedAnnotation2(inSubMod::SCode.SubMod, inName::String) ::Bool
               local outIsMatch::Bool
 
               outIsMatch = begin
@@ -4156,7 +4153,7 @@
          #= @author: adrpo
          returns true if annotation(Evaluate = true) is present,
          otherwise false =#
-        function getEvaluateAnnotation(inCommentOpt::Option{<:SCode.Comment})::Bool
+        function getEvaluateAnnotation(inCommentOpt::Option{<:SCode.Comment}) ::Bool
               local evalIsTrue::Bool
 
               evalIsTrue = begin
@@ -4174,7 +4171,7 @@
           evalIsTrue
         end
 
-        function getInlineTypeAnnotationFromCmt(inComment::SCode.Comment)::Option{SCode.Annotation}
+        function getInlineTypeAnnotationFromCmt(inComment::SCode.Comment) ::Option{SCode.Annotation}
               local outAnnotation::Option{SCode.Annotation}
 
               outAnnotation = begin
@@ -4192,7 +4189,7 @@
           outAnnotation
         end
 
-        function getInlineTypeAnnotation(inAnnotation::SCode.Annotation)::Option{SCode.Annotation}
+        function getInlineTypeAnnotation(inAnnotation::SCode.Annotation) ::Option{SCode.Annotation}
               local outAnnotation::Option{SCode.Annotation}
 
               outAnnotation = begin
@@ -4215,7 +4212,7 @@
           outAnnotation
         end
 
-        function isInlineTypeSubMod(inSubMod::SCode.SubMod)::Bool
+        function isInlineTypeSubMod(inSubMod::SCode.SubMod) ::Bool
               local outIsInlineType::Bool
 
               outIsInlineType = begin
@@ -4236,7 +4233,7 @@
           outIsInlineType
         end
 
-        function appendAnnotationToComment(inAnnotation::SCode.Annotation, inComment::SCode.Comment)::SCode.Comment
+        function appendAnnotationToComment(inAnnotation::SCode.Annotation, inComment::SCode.Comment) ::SCode.Comment
               local outComment::SCode.Comment
 
               outComment = begin
@@ -4261,7 +4258,7 @@
           outComment
         end
 
-        function getModifierInfo(inMod::SCode.Mod)::SourceInfo
+        function getModifierInfo(inMod::SCode.Mod) ::SourceInfo
               local outInfo::SourceInfo
 
               outInfo = begin
@@ -4284,7 +4281,7 @@
           outInfo
         end
 
-        function getModifierBinding(inMod::SCode.Mod)::Option{Absyn.Exp}
+        function getModifierBinding(inMod::SCode.Mod) ::Option{Absyn.Exp}
               local outBinding::Option{Absyn.Exp}
 
               outBinding = begin
@@ -4302,7 +4299,7 @@
           outBinding
         end
 
-        function getComponentCondition(element::SCode.Element)::Option{Absyn.Exp}
+        function getComponentCondition(element::SCode.Element) ::Option{Absyn.Exp}
               local condition::Option{Absyn.Exp}
 
               condition = begin
@@ -4319,7 +4316,7 @@
           condition
         end
 
-        function removeComponentCondition(inElement::SCode.Element)::SCode.Element
+        function removeComponentCondition(inElement::SCode.Element) ::SCode.Element
               local outElement::SCode.Element
 
               local name::SCode.Ident
@@ -4337,7 +4334,7 @@
 
          #= Returns true if the given element is an element with the inner prefix,
            otherwise false. =#
-        function isInnerComponent(inElement::SCode.Element)::Bool
+        function isInnerComponent(inElement::SCode.Element) ::Bool
               local outIsInner::Bool
 
               outIsInner = begin
@@ -4355,7 +4352,7 @@
           outIsInner
         end
 
-        function makeElementProtected(inElement::SCode.Element)::SCode.Element
+        function makeElementProtected(inElement::SCode.Element) ::SCode.Element
               local outElement::SCode.Element
 
               outElement = begin
@@ -4397,21 +4394,21 @@
           outElement
         end
 
-        function isElementPublic(inElement::SCode.Element)::Bool
+        function isElementPublic(inElement::SCode.Element) ::Bool
               local outIsPublic::Bool
 
               outIsPublic = visibilityBool(prefixesVisibility(elementPrefixes(inElement)))
           outIsPublic
         end
 
-        function isElementProtected(inElement::SCode.Element)::Bool
+        function isElementProtected(inElement::SCode.Element) ::Bool
               local outIsProtected::Bool
 
               outIsProtected = ! visibilityBool(prefixesVisibility(elementPrefixes(inElement)))
           outIsProtected
         end
 
-        function isElementEncapsulated(inElement::SCode.Element)::Bool
+        function isElementEncapsulated(inElement::SCode.Element) ::Bool
               local outIsEncapsulated::Bool
 
               outIsEncapsulated = begin
@@ -4432,7 +4429,7 @@
          if the element does not exist at that location then it fails.
          this function will fail if any of the path prefixes
          to the element are not found in the given program =#
-        function replaceOrAddElementInProgram(inProgram::SCode.Program, inElement::SCode.Element, inClassPath::Absyn.Path)::SCode.Program
+        function replaceOrAddElementInProgram(inProgram::SCode.Program, inElement::SCode.Element, inClassPath::Absyn.Path) ::SCode.Program
               local outProgram::SCode.Program
 
               outProgram = begin
@@ -4467,7 +4464,7 @@
 
          #= replace the class in program at the specified id.
          if the class does not exist at that location then is is added =#
-        function replaceOrAddElementWithId(inProgram::SCode.Program, inElement::SCode.Element, inId::SCode.Ident)::SCode.Program
+        function replaceOrAddElementWithId(inProgram::SCode.Program, inElement::SCode.Element, inId::SCode.Ident) ::SCode.Program
               local outProgram::SCode.Program
 
               outProgram = begin
@@ -4510,7 +4507,7 @@
           outProgram
         end
 
-        function getElementsFromElement(inProgram::SCode.Program, inElement::SCode.Element)::SCode.Program
+        function getElementsFromElement(inProgram::SCode.Program, inElement::SCode.Element) ::SCode.Program
               local outProgram::SCode.Program
 
               outProgram = begin
@@ -4544,7 +4541,7 @@
         end
 
          #= replaces elements in element, it will search for elements pointed by derived =#
-        function replaceElementsInElement(inProgram::SCode.Program, inElement::SCode.Element, inElements::SCode.Program)::SCode.Element
+        function replaceElementsInElement(inProgram::SCode.Program, inElement::SCode.Element, inElements::SCode.Program) ::SCode.Element
               local outElement::SCode.Element
 
               outElement = begin
@@ -4582,7 +4579,7 @@
          #= replaces the elements in class definition.
          if derived a SOME(element) is returned,
          otherwise the modified class def and NONE() =#
-        function replaceElementsInClassDef(inProgram::SCode.Program, classDef::SCode.ClassDef, inElements::SCode.Program)::Tuple{SCode.ClassDef, Option{SCode.Element}}
+        function replaceElementsInClassDef(inProgram::SCode.Program, classDef::SCode.ClassDef, inElements::SCode.Program) ::Tuple{SCode.ClassDef, Option{SCode.Element}}
               local outElementOpt::Option{SCode.Element}
 
 
@@ -4622,7 +4619,7 @@
 
          #= returns the element from the program having the name as the id.
          if the element does not exist it fails =#
-        function getElementWithId(inProgram::SCode.Program, inId::String)::SCode.Element
+        function getElementWithId(inProgram::SCode.Program, inId::String) ::SCode.Element
               local outElement::SCode.Element
 
               outElement = begin
@@ -4656,7 +4653,7 @@
 
          #= returns the element from the program having the name as the id.
          if the element does not exist it fails =#
-        function getElementWithPath(inProgram::SCode.Program, inPath::Absyn.Path)::SCode.Element
+        function getElementWithPath(inProgram::SCode.Program, inPath::Absyn.Path) ::SCode.Element
               local outElement::SCode.Element
 
               outElement = begin
@@ -4689,7 +4686,7 @@
         end
 
          #=  =#
-        function getElementName(e::SCode.Element)::String
+        function getElementName(e::SCode.Element) ::String
               local s::String
 
               s = begin
@@ -4713,7 +4710,7 @@
 
          #= @auhtor: adrpo
          set the base class path in extends =#
-        function setBaseClassPath(inE::SCode.Element, inBcPath::Absyn.Path)::SCode.Element
+        function setBaseClassPath(inE::SCode.Element, inBcPath::Absyn.Path) ::SCode.Element
               local outE::SCode.Element
 
               local bc::SCode.Path
@@ -4729,7 +4726,7 @@
 
          #= @auhtor: adrpo
          return the base class path in extends =#
-        function getBaseClassPath(inE::SCode.Element)::Absyn.Path
+        function getBaseClassPath(inE::SCode.Element) ::Absyn.Path
               local outBcPath::Absyn.Path
 
               local bc::SCode.Path
@@ -4744,7 +4741,7 @@
 
          #= @auhtor: adrpo
          set the typespec path in component =#
-        function setComponentTypeSpec(inE::SCode.Element, inTypeSpec::Absyn.TypeSpec)::SCode.Element
+        function setComponentTypeSpec(inE::SCode.Element, inTypeSpec::Absyn.TypeSpec) ::SCode.Element
               local outE::SCode.Element
 
               local n::SCode.Ident
@@ -4766,7 +4763,7 @@
 
          #= @auhtor: adrpo
          get the typespec path in component =#
-        function getComponentTypeSpec(inE::SCode.Element)::Absyn.TypeSpec
+        function getComponentTypeSpec(inE::SCode.Element) ::Absyn.TypeSpec
               local outTypeSpec::Absyn.TypeSpec
 
               @match SCode.COMPONENT(typeSpec = outTypeSpec) = inE
@@ -4775,7 +4772,7 @@
 
          #= @auhtor: adrpo
          set the modification in component =#
-        function setComponentMod(inE::SCode.Element, inMod::SCode.Mod)::SCode.Element
+        function setComponentMod(inE::SCode.Element, inMod::SCode.Mod) ::SCode.Element
               local outE::SCode.Element
 
               local n::SCode.Ident
@@ -4797,14 +4794,14 @@
 
          #= @auhtor: adrpo
          get the modification in component =#
-        function getComponentMod(inE::SCode.Element)::SCode.Mod
+        function getComponentMod(inE::SCode.Element) ::SCode.Mod
               local outMod::SCode.Mod
 
               @match SCode.COMPONENT(modifications = outMod) = inE
           outMod
         end
 
-        function isDerivedClass(inClass::SCode.Element)::Bool
+        function isDerivedClass(inClass::SCode.Element) ::Bool
               local isDerived::Bool
 
               isDerived = begin
@@ -4821,7 +4818,7 @@
           isDerived
         end
 
-        function isClassExtends(cls::SCode.Element)::Bool
+        function isClassExtends(cls::SCode.Element) ::Bool
               local isCE::Bool
 
               isCE = begin
@@ -4840,7 +4837,7 @@
 
          #= @auhtor: adrpo
          set the base class path in extends =#
-        function setDerivedTypeSpec(inE::SCode.Element, inTypeSpec::Absyn.TypeSpec)::SCode.Element
+        function setDerivedTypeSpec(inE::SCode.Element, inTypeSpec::Absyn.TypeSpec) ::SCode.Element
               local outE::SCode.Element
 
               local n::SCode.Ident
@@ -4865,7 +4862,7 @@
 
          #= @auhtor: adrpo
          set the base class path in extends =#
-        function getDerivedTypeSpec(inE::SCode.Element)::Absyn.TypeSpec
+        function getDerivedTypeSpec(inE::SCode.Element) ::Absyn.TypeSpec
               local outTypeSpec::Absyn.TypeSpec
 
               @match SCode.CLASS(classDef = SCode.DERIVED(typeSpec = outTypeSpec)) = inE
@@ -4874,14 +4871,14 @@
 
          #= @auhtor: adrpo
          set the base class path in extends =#
-        function getDerivedMod(inE::SCode.Element)::SCode.Mod
+        function getDerivedMod(inE::SCode.Element) ::SCode.Mod
               local outMod::SCode.Mod
 
               @match SCode.CLASS(classDef = SCode.DERIVED(modifications = outMod)) = inE
           outMod
         end
 
-        function setClassPrefixes(inPrefixes::SCode.Prefixes, cl::SCode.Element)::SCode.Element
+        function setClassPrefixes(inPrefixes::SCode.Prefixes, cl::SCode.Element) ::SCode.Element
               local outCl::SCode.Element
 
               outCl = begin
@@ -4904,14 +4901,14 @@
           outCl
         end
 
-        function makeEquation(inEEq::SCode.EEquation)::SCode.Equation
+        function makeEquation(inEEq::SCode.EEquation) ::SCode.Equation
               local outEq::SCode.Equation
 
               outEq = SCode.EQUATION(inEEq)
           outEq
         end
 
-        function getClassDef(inClass::SCode.Element)::SCode.ClassDef
+        function getClassDef(inClass::SCode.Element) ::SCode.ClassDef
               local outCdef::SCode.ClassDef
 
               outCdef = begin
@@ -4926,7 +4923,7 @@
 
          #= @author:
          returns true if equations contains reinit =#
-        function equationsContainReinit(inEqs::List{<:Union{<:SCode.EEquation, Nil{Any}}})::Bool
+        function equationsContainReinit(inEqs::List{<:SCode.EEquation}) ::Bool
               local hasReinit::Bool
 
               hasReinit = begin
@@ -4943,7 +4940,7 @@
 
          #= @author:
          returns true if equation contains reinit =#
-        function equationContainReinit(inEq::SCode.EEquation)::Bool
+        function equationContainReinit(inEq::SCode.EEquation) ::Bool
               local hasReinit::Bool
 
               hasReinit = begin
@@ -4984,7 +4981,7 @@
 
          #= @author:
          returns true if statements contains reinit =#
-        function algorithmsContainReinit(inAlgs::List{<:Union{<:SCode.Statement, Nil{Any}}})::Bool
+        function algorithmsContainReinit(inAlgs::List{<:SCode.Statement}) ::Bool
               local hasReinit::Bool
 
               hasReinit = begin
@@ -5001,7 +4998,7 @@
 
          #= @author:
          returns true if statement contains reinit =#
-        function algorithmContainReinit(inAlg::SCode.Statement)::Bool
+        function algorithmContainReinit(inAlg::SCode.Statement) ::Bool
               local hasReinit::Bool
 
               hasReinit = begin
@@ -5052,21 +5049,21 @@
           hasReinit
         end
 
-        function getClassPartialPrefix(inElement::SCode.Element)::SCode.Partial
+        function getClassPartialPrefix(inElement::SCode.Element) ::SCode.Partial
               local outPartial::SCode.Partial
 
               @match SCode.CLASS(partialPrefix = outPartial) = inElement
           outPartial
         end
 
-        function getClassRestriction(inElement::SCode.Element)::SCode.Restriction
+        function getClassRestriction(inElement::SCode.Element) ::SCode.Restriction
               local outRestriction::SCode.Restriction
 
               @match SCode.CLASS(restriction = outRestriction) = inElement
           outRestriction
         end
 
-        function isRedeclareSubMod(inSubMod::SCode.SubMod)::Bool
+        function isRedeclareSubMod(inSubMod::SCode.SubMod) ::Bool
               local outIsRedeclare::Bool
 
               outIsRedeclare = begin
@@ -5083,7 +5080,7 @@
           outIsRedeclare
         end
 
-        function componentMod(inElement::SCode.Element)::SCode.Mod
+        function componentMod(inElement::SCode.Element) ::SCode.Mod
               local outMod::SCode.Mod
 
               outMod = begin
@@ -5101,7 +5098,7 @@
           outMod
         end
 
-        function elementMod(inElement::SCode.Element)::SCode.Mod
+        function elementMod(inElement::SCode.Element) ::SCode.Mod
               local outMod::SCode.Mod
 
               outMod = begin
@@ -5129,7 +5126,7 @@
 
          #= Sets the modifier of an element, or fails if the element is not capable of
            having a modifier. =#
-        function setElementMod(inElement::SCode.Element, inMod::SCode.Mod)::SCode.Element
+        function setElementMod(inElement::SCode.Element, inMod::SCode.Mod) ::SCode.Element
               local outElement::SCode.Element
 
               outElement = begin
@@ -5165,7 +5162,7 @@
           outElement
         end
 
-        function setClassDefMod(inClassDef::SCode.ClassDef, inMod::SCode.Mod)::SCode.ClassDef
+        function setClassDefMod(inClassDef::SCode.ClassDef, inMod::SCode.Mod) ::SCode.ClassDef
               local outClassDef::SCode.ClassDef
 
               outClassDef = begin
@@ -5186,7 +5183,7 @@
           outClassDef
         end
 
-        function isBuiltinElement(inElement::SCode.Element)::Bool
+        function isBuiltinElement(inElement::SCode.Element) ::Bool
               local outIsBuiltin::Bool
 
               outIsBuiltin = begin
@@ -5208,18 +5205,18 @@
           outIsBuiltin
         end
 
-        function partitionElements(inElements::List{<:Union{<:SCode.Element, Nil{Any}}})::Tuple{List{SCode.Element}, List{SCode.Element}, List{SCode.Element}, List{SCode.Element}, List{SCode.Element}}
+        function partitionElements(inElements::List{<:SCode.Element}) ::Tuple{List{SCode.Element}, List{SCode.Element}, List{SCode.Element}, List{SCode.Element}, List{SCode.Element}}
               local outDefineUnits::List{SCode.Element}
               local outImports::List{SCode.Element}
               local outExtends::List{SCode.Element}
               local outClasses::List{SCode.Element}
               local outComponents::List{SCode.Element}
 
-              (outComponents, outClasses, outExtends, outImports, outDefineUnits) = partitionElements2(inElements, list(), list(), list(), list(), list())
+              (outComponents, outClasses, outExtends, outImports, outDefineUnits) = partitionElements2(inElements, nil, nil, nil, nil, nil)
           (outComponents, outClasses, outExtends, outImports, outDefineUnits)
         end
 
-        function partitionElements2(inElements::List{<:Union{<:SCode.Element, Nil{Any}}}, inComponents::List{<:Union{<:SCode.Element, Nil{Any}}}, inClasses::List{<:Union{<:SCode.Element, Nil{Any}}}, inExtends::List{<:Union{<:SCode.Element, Nil{Any}}}, inImports::List{<:Union{<:SCode.Element, Nil{Any}}}, inDefineUnits::List{<:Union{<:SCode.Element, Nil{Any}}})::Tuple{List{SCode.Element}, List{SCode.Element}, List{SCode.Element}, List{SCode.Element}, List{SCode.Element}}
+        function partitionElements2(inElements::List{<:SCode.Element}, inComponents::List{<:SCode.Element}, inClasses::List{<:SCode.Element}, inExtends::List{<:SCode.Element}, inImports::List{<:SCode.Element}, inDefineUnits::List{<:SCode.Element}) ::Tuple{List{SCode.Element}, List{SCode.Element}, List{SCode.Element}, List{SCode.Element}, List{SCode.Element}}
               local outDefineUnits::List{SCode.Element}
               local outImports::List{SCode.Element}
               local outExtends::List{SCode.Element}
@@ -5268,7 +5265,7 @@
           (outComponents, outClasses, outExtends, outImports, outDefineUnits)
         end
 
-        function isExternalFunctionRestriction(inRestr::SCode.FunctionRestriction)::Bool
+        function isExternalFunctionRestriction(inRestr::SCode.FunctionRestriction) ::Bool
               local isExternal::Bool
 
               isExternal = begin
@@ -5285,7 +5282,7 @@
           isExternal
         end
 
-        function isImpureFunctionRestriction(inRestr::SCode.FunctionRestriction)::Bool
+        function isImpureFunctionRestriction(inRestr::SCode.FunctionRestriction) ::Bool
               local isExternal::Bool
 
               isExternal = begin
@@ -5306,7 +5303,7 @@
           isExternal
         end
 
-        function isRestrictionImpure(inRestr::SCode.Restriction, hasZeroOutputPreMSL3_2::Bool)::Bool
+        function isRestrictionImpure(inRestr::SCode.Restriction, hasZeroOutputPreMSL3_2::Bool) ::Bool
               local isExternal::Bool
 
               isExternal = begin
@@ -5331,7 +5328,7 @@
           isExternal
         end
 
-        function setElementVisibility(inElement::SCode.Element, inVisibility::SCode.Visibility)::SCode.Element
+        function setElementVisibility(inElement::SCode.Element, inVisibility::SCode.Visibility) ::SCode.Element
               local outElement::SCode.Element
 
               outElement = begin
@@ -5380,7 +5377,7 @@
         end
 
          #= Returns true if the given element is a class with the given name, otherwise false. =#
-        function isClassNamed(inName::SCode.Ident, inClass::SCode.Element)::Bool
+        function isClassNamed(inName::SCode.Ident, inClass::SCode.Element) ::Bool
               local outIsNamed::Bool
 
               outIsNamed = begin
@@ -5399,7 +5396,7 @@
         end
 
          #= Returns the comment of an element. =#
-        function getElementComment(inElement::SCode.Element)::Option{SCode.Comment}
+        function getElementComment(inElement::SCode.Element) ::Option{SCode.Comment}
               local outComment::Option{SCode.Comment}
 
               outComment = begin
@@ -5423,7 +5420,7 @@
         end
 
          #= Removes the annotation from a comment. =#
-        function stripAnnotationFromComment(inComment::Option{<:SCode.Comment})::Option{SCode.Comment}
+        function stripAnnotationFromComment(inComment::Option{<:SCode.Comment}) ::Option{SCode.Comment}
               local outComment::Option{SCode.Comment}
 
               outComment = begin
@@ -5442,7 +5439,7 @@
           outComment
         end
 
-        function isOverloadedFunction(inElement::SCode.Element)::Bool
+        function isOverloadedFunction(inElement::SCode.Element) ::Bool
               local isOverloaded::Bool
 
               isOverloaded = begin
@@ -5467,7 +5464,7 @@
          - prefixes and attributes are merged
          same with components
          TODO! how about non-short class definitions with constrained by with modifications? =#
-        function mergeWithOriginal(inNew::SCode.Element, inOld::SCode.Element)::SCode.Element
+        function mergeWithOriginal(inNew::SCode.Element, inOld::SCode.Element) ::SCode.Element
               local outNew::SCode.Element
 
               outNew = begin
@@ -5530,7 +5527,7 @@
           outNew
         end
 
-        function getConstrainedByModifiers(inPrefixes::SCode.Prefixes)::SCode.Mod
+        function getConstrainedByModifiers(inPrefixes::SCode.Prefixes) ::SCode.Mod
               local outMod::SCode.Mod
 
               outMod = begin
@@ -5550,7 +5547,7 @@
 
          #= @author: adrpo
          see mergeWithOriginal =#
-        function mergeClassDef(inNew::SCode.ClassDef, inOld::SCode.ClassDef, inCCModNew::SCode.Mod, inCCModOld::SCode.Mod)::SCode.ClassDef
+        function mergeClassDef(inNew::SCode.ClassDef, inOld::SCode.ClassDef, inCCModNew::SCode.Mod, inCCModOld::SCode.Mod) ::SCode.ClassDef
               local outNew::SCode.ClassDef
 
               outNew = begin
@@ -5576,7 +5573,7 @@
           outNew
         end
 
-        function mergeModifiers(inNewMod::SCode.Mod, inOldMod::SCode.Mod)::SCode.Mod
+        function mergeModifiers(inNewMod::SCode.Mod, inOldMod::SCode.Mod) ::SCode.Mod
               local outMod::SCode.Mod
 
               outMod = begin
@@ -5627,7 +5624,7 @@
           outMod
         end
 
-        function mergeBindings(inNew::Option{<:Absyn.Exp}, inOld::Option{<:Absyn.Exp})::Option{Absyn.Exp}
+        function mergeBindings(inNew::Option{<:Absyn.Exp}, inOld::Option{<:Absyn.Exp}) ::Option{Absyn.Exp}
               local outBnd::Option{Absyn.Exp}
 
               outBnd = begin
@@ -5644,7 +5641,7 @@
           outBnd
         end
 
-        function mergeSubMods(inNew::List{<:Union{<:SCode.SubMod, Nil{Any}}}, inOld::List{<:Union{<:SCode.SubMod, Nil{Any}}})::List{SCode.SubMod}
+        function mergeSubMods(inNew::List{<:SCode.SubMod}, inOld::List{<:SCode.SubMod}) ::List{SCode.SubMod}
               local outSubs::List{SCode.SubMod}
 
               outSubs = begin
@@ -5671,7 +5668,7 @@
           outSubs
         end
 
-        function removeSub(inSub::SCode.SubMod, inOld::List{<:Union{<:SCode.SubMod, Nil{Any}}})::List{SCode.SubMod}
+        function removeSub(inSub::SCode.SubMod, inOld::List{<:SCode.SubMod}) ::List{SCode.SubMod}
               local outSubs::List{SCode.SubMod}
 
               outSubs = begin
@@ -5700,7 +5697,7 @@
           outSubs
         end
 
-        function mergeComponentModifiers(inNewComp::SCode.Element, inOldComp::SCode.Element)::SCode.Element
+        function mergeComponentModifiers(inNewComp::SCode.Element, inOldComp::SCode.Element) ::SCode.Element
               local outComp::SCode.Element
 
               outComp = begin
@@ -5733,7 +5730,7 @@
           outComp
         end
 
-        function propagateAttributes(inOriginalAttributes::SCode.Attributes, inNewAttributes::SCode.Attributes, inNewTypeIsArray::Bool = false)::SCode.Attributes
+        function propagateAttributes(inOriginalAttributes::SCode.Attributes, inNewAttributes::SCode.Attributes, inNewTypeIsArray::Bool = false) ::SCode.Attributes
               local outNewAttributes::SCode.Attributes
 
               local dims1::Absyn.ArrayDim
@@ -5771,7 +5768,7 @@
           outNewAttributes
         end
 
-        function propagateArrayDimensions(inOriginalDims::Absyn.ArrayDim, inNewDims::Absyn.ArrayDim)::Absyn.ArrayDim
+        function propagateArrayDimensions(inOriginalDims::Absyn.ArrayDim, inNewDims::Absyn.ArrayDim) ::Absyn.ArrayDim
               local outNewDims::Absyn.ArrayDim
 
               outNewDims = begin
@@ -5788,7 +5785,7 @@
           outNewDims
         end
 
-        function propagateConnectorType(inOriginalConnectorType::SCode.ConnectorType, inNewConnectorType::SCode.ConnectorType)::SCode.ConnectorType
+        function propagateConnectorType(inOriginalConnectorType::SCode.ConnectorType, inNewConnectorType::SCode.ConnectorType) ::SCode.ConnectorType
               local outNewConnectorType::SCode.ConnectorType
 
               outNewConnectorType = begin
@@ -5805,7 +5802,7 @@
           outNewConnectorType
         end
 
-        function propagateParallelism(inOriginalParallelism::SCode.Parallelism, inNewParallelism::SCode.Parallelism)::SCode.Parallelism
+        function propagateParallelism(inOriginalParallelism::SCode.Parallelism, inNewParallelism::SCode.Parallelism) ::SCode.Parallelism
               local outNewParallelism::SCode.Parallelism
 
               outNewParallelism = begin
@@ -5822,7 +5819,7 @@
           outNewParallelism
         end
 
-        function propagateVariability(inOriginalVariability::SCode.Variability, inNewVariability::SCode.Variability)::SCode.Variability
+        function propagateVariability(inOriginalVariability::SCode.Variability, inNewVariability::SCode.Variability) ::SCode.Variability
               local outNewVariability::SCode.Variability
 
               outNewVariability = begin
@@ -5839,7 +5836,7 @@
           outNewVariability
         end
 
-        function propagateDirection(inOriginalDirection::Absyn.Direction, inNewDirection::Absyn.Direction)::Absyn.Direction
+        function propagateDirection(inOriginalDirection::Absyn.Direction, inNewDirection::Absyn.Direction) ::Absyn.Direction
               local outNewDirection::Absyn.Direction
 
               outNewDirection = begin
@@ -5856,7 +5853,7 @@
           outNewDirection
         end
 
-        function propagateIsField(inOriginalIsField::Absyn.IsField, inNewIsField::Absyn.IsField)::Absyn.IsField
+        function propagateIsField(inOriginalIsField::Absyn.IsField, inNewIsField::Absyn.IsField) ::Absyn.IsField
               local outNewIsField::Absyn.IsField
 
               outNewIsField = begin
@@ -5873,7 +5870,7 @@
           outNewIsField
         end
 
-        function propagateAttributesVar(inOriginalVar::SCode.Element, inNewVar::SCode.Element, inNewTypeIsArray::Bool)::SCode.Element
+        function propagateAttributesVar(inOriginalVar::SCode.Element, inNewVar::SCode.Element, inNewTypeIsArray::Bool) ::SCode.Element
               local outNewVar::SCode.Element
 
               local name::SCode.Ident
@@ -5895,7 +5892,7 @@
           outNewVar
         end
 
-        function propagateAttributesClass(inOriginalClass::SCode.Element, inNewClass::SCode.Element)::SCode.Element
+        function propagateAttributesClass(inOriginalClass::SCode.Element, inNewClass::SCode.Element) ::SCode.Element
               local outNewClass::SCode.Element
 
               local name::SCode.Ident
@@ -5915,7 +5912,7 @@
           outNewClass
         end
 
-        function propagatePrefixes(inOriginalPrefixes::SCode.Prefixes, inNewPrefixes::SCode.Prefixes)::SCode.Prefixes
+        function propagatePrefixes(inOriginalPrefixes::SCode.Prefixes, inNewPrefixes::SCode.Prefixes) ::SCode.Prefixes
               local outNewPrefixes::SCode.Prefixes
 
               local vis1::SCode.Visibility
@@ -5933,7 +5930,7 @@
           outNewPrefixes
         end
 
-        function propagatePrefixInnerOuter(inOriginalIO::Absyn.InnerOuter, inIO::Absyn.InnerOuter)::Absyn.InnerOuter
+        function propagatePrefixInnerOuter(inOriginalIO::Absyn.InnerOuter, inIO::Absyn.InnerOuter) ::Absyn.InnerOuter
               local outIO::Absyn.InnerOuter
 
               outIO = begin
@@ -5951,7 +5948,7 @@
         end
 
          #= Return true if Class is a partial. =#
-        function isPackage(inClass::SCode.Element)::Bool
+        function isPackage(inClass::SCode.Element) ::Bool
               local outBoolean::Bool
 
               outBoolean = begin
@@ -5969,7 +5966,7 @@
         end
 
          #= Return true if Class is a partial. =#
-        function isPartial(inClass::SCode.Element)::Bool
+        function isPartial(inClass::SCode.Element) ::Bool
               local outBoolean::Bool
 
               outBoolean = begin
@@ -5988,7 +5985,7 @@
 
          #= Return true if the given element is allowed in a package, i.e. if it's a
            constant or non-component element. Otherwise returns false. =#
-        function isValidPackageElement(inElement::SCode.Element)::Bool
+        function isValidPackageElement(inElement::SCode.Element) ::Bool
               local outIsValid::Bool
 
               outIsValid = begin
@@ -6010,7 +6007,7 @@
         end
 
          #= returns true if a Class fulfills the requirements of an external object =#
-        function classIsExternalObject(cl::SCode.Element)::Bool
+        function classIsExternalObject(cl::SCode.Element) ::Bool
               local res::Bool
 
               res = begin
@@ -6031,7 +6028,7 @@
          #= Returns true if the element list fulfills the condition of an External Object.
         An external object extends the builtinClass ExternalObject, and has two local
         functions, destructor and constructor.  =#
-        function isExternalObject(els::List{<:Union{<:SCode.Element, Nil{Any}}})::Bool
+        function isExternalObject(els::List{<:SCode.Element}) ::Bool
               local res::Bool
 
               res = begin
@@ -6053,7 +6050,7 @@
         end
 
          #= returns true if element list contains 'extends ExternalObject;' =#
-        function hasExtendsOfExternalObject(inEls::List{<:Union{<:SCode.Element, Nil{Any}}})::Bool
+        function hasExtendsOfExternalObject(inEls::List{<:SCode.Element}) ::Bool
               local res::Bool
 
               res = begin
@@ -6077,7 +6074,7 @@
         end
 
          #= returns true if element list contains 'function destructor .. end destructor' =#
-        function hasExternalObjectDestructor(inEls::List{<:Union{<:SCode.Element, Nil{Any}}})::Bool
+        function hasExternalObjectDestructor(inEls::List{<:SCode.Element}) ::Bool
               local res::Bool
 
               res = begin
@@ -6100,7 +6097,7 @@
         end
 
          #= returns true if element list contains 'function constructor ... end constructor' =#
-        function hasExternalObjectConstructor(inEls::List{<:Union{<:SCode.Element, Nil{Any}}})::Bool
+        function hasExternalObjectConstructor(inEls::List{<:SCode.Element}) ::Bool
               local res::Bool
 
               res = begin
@@ -6123,7 +6120,7 @@
         end
 
          #= returns the class 'function destructor .. end destructor' from element list =#
-        function getExternalObjectDestructor(inEls::List{<:Union{<:SCode.Element, Nil{Any}}})::SCode.Element
+        function getExternalObjectDestructor(inEls::List{<:SCode.Element}) ::SCode.Element
               local cl::SCode.Element
 
               cl = begin
@@ -6142,7 +6139,7 @@
         end
 
          #= returns the class 'function constructor ... end constructor' from element list =#
-        function getExternalObjectConstructor(inEls::List{<:Union{<:SCode.Element, Nil{Any}}})::SCode.Element
+        function getExternalObjectConstructor(inEls::List{<:SCode.Element}) ::SCode.Element
               local cl::SCode.Element
 
               cl = begin
@@ -6160,7 +6157,7 @@
           cl
         end
 
-        function isInstantiableClassRestriction(inRestriction::SCode.Restriction)::Bool
+        function isInstantiableClassRestriction(inRestriction::SCode.Restriction) ::Bool
               local outIsInstantiable::Bool
 
               outIsInstantiable = begin
@@ -6201,7 +6198,7 @@
           outIsInstantiable
         end
 
-        function isInitial(inInitial::SCode.Initial)::Bool
+        function isInitial(inInitial::SCode.Initial) ::Bool
               local isIn::Bool
 
               isIn = begin
@@ -6219,7 +6216,7 @@
         end
 
          #= check if the restrictions are the same for redeclared classes =#
-        function checkSameRestriction(inResNew::SCode.Restriction, inResOrig::SCode.Restriction, inInfoNew::SourceInfo, inInfoOrig::SourceInfo)::Tuple{SCode.Restriction, SourceInfo}
+        function checkSameRestriction(inResNew::SCode.Restriction, inResOrig::SCode.Restriction, inInfoNew::SourceInfo, inInfoOrig::SourceInfo) ::Tuple{SCode.Restriction, SourceInfo}
               local outInfo::SourceInfo
               local outRes::SCode.Restriction
 
@@ -6237,7 +6234,7 @@
 
          #= @auhtor: adrpo
          set the name of the component =#
-        function setComponentName(inE::SCode.Element, inName::SCode.Ident)::SCode.Element
+        function setComponentName(inE::SCode.Element, inName::SCode.Ident) ::SCode.Element
               local outE::SCode.Element
 
               local n::SCode.Ident
@@ -6257,7 +6254,7 @@
           outE
         end
 
-        function isArrayComponent(inElement::SCode.Element)::Bool
+        function isArrayComponent(inElement::SCode.Element) ::Bool
               local outIsArray::Bool
 
               outIsArray = begin
@@ -6274,7 +6271,7 @@
           outIsArray
         end
 
-        function isEmptyMod(mod::SCode.Mod)::Bool
+        function isEmptyMod(mod::SCode.Mod) ::Bool
               local isEmpty::Bool
 
               isEmpty = begin
@@ -6291,7 +6288,7 @@
           isEmpty
         end
 
-        function getConstrainingMod(element::SCode.Element)::SCode.Mod
+        function getConstrainingMod(element::SCode.Element) ::SCode.Mod
               local mod::SCode.Mod
 
               mod = begin
@@ -6320,7 +6317,7 @@
           mod
         end
 
-        function isEmptyClassDef(cdef::SCode.ClassDef)::Bool
+        function isEmptyClassDef(cdef::SCode.ClassDef) ::Bool
               local isEmpty::Bool
 
               isEmpty = begin
@@ -6346,14 +6343,14 @@
         end
 
          #= Strips all annotations and/or comments from a program. =#
-        function stripCommentsFromProgram(program::SCode.Program, stripAnnotations::Bool, stripComments::Bool)::SCode.Program
+        function stripCommentsFromProgram(program::SCode.Program, stripAnnotations::Bool, stripComments::Bool) ::SCode.Program
 
 
               program = list(stripCommentsFromElement(e, stripAnnotations, stripComments) for e in program)
           program
         end
 
-        function stripCommentsFromElement(element::SCode.Element, stripAnn::Bool, stripCmt::Bool)::SCode.Element
+        function stripCommentsFromElement(element::SCode.Element, stripAnn::Bool, stripCmt::Bool) ::SCode.Element
 
 
               () = begin
@@ -6386,7 +6383,7 @@
           element
         end
 
-        function stripCommentsFromMod(mod::SCode.Mod, stripAnn::Bool, stripCmt::Bool)::SCode.Mod
+        function stripCommentsFromMod(mod::SCode.Mod, stripAnn::Bool, stripCmt::Bool) ::SCode.Mod
 
 
               () = begin
@@ -6409,14 +6406,14 @@
           mod
         end
 
-        function stripCommentsFromSubMod(submod::SCode.SubMod, stripAnn::Bool, stripCmt::Bool)::SCode.SubMod
+        function stripCommentsFromSubMod(submod::SCode.SubMod, stripAnn::Bool, stripCmt::Bool) ::SCode.SubMod
 
 
               submod.mod = stripCommentsFromMod(submod.mod, stripAnn, stripCmt)
           submod
         end
 
-        function stripCommentsFromClassDef(cdef::SCode.ClassDef, stripAnn::Bool, stripCmt::Bool)::SCode.ClassDef
+        function stripCommentsFromClassDef(cdef::SCode.ClassDef, stripAnn::Bool, stripCmt::Bool) ::SCode.ClassDef
 
 
               cdef = begin
@@ -6461,14 +6458,14 @@
           cdef
         end
 
-        function stripCommentsFromEnum(enum::SCode.Enum, stripAnn::Bool, stripCmt::Bool)::SCode.Enum
+        function stripCommentsFromEnum(enum::SCode.Enum, stripAnn::Bool, stripCmt::Bool) ::SCode.Enum
 
 
               enum.comment = stripCommentsFromComment(enum.comment, stripAnn, stripCmt)
           enum
         end
 
-        function stripCommentsFromComment(cmt::SCode.Comment, stripAnn::Bool, stripCmt::Bool)::SCode.Comment
+        function stripCommentsFromComment(cmt::SCode.Comment, stripAnn::Bool, stripCmt::Bool) ::SCode.Comment
 
 
               if stripAnn
@@ -6480,7 +6477,7 @@
           cmt
         end
 
-        function stripCommentsFromExternalDecl(extDecl::Option{<:SCode.ExternalDecl}, stripAnn::Bool, stripCmt::Bool)::Option{SCode.ExternalDecl}
+        function stripCommentsFromExternalDecl(extDecl::Option{<:SCode.ExternalDecl}, stripAnn::Bool, stripCmt::Bool) ::Option{SCode.ExternalDecl}
 
 
               local ext_decl::SCode.ExternalDecl
@@ -6493,14 +6490,14 @@
           extDecl
         end
 
-        function stripCommentsFromEquation(eq::SCode.Equation, stripAnn::Bool, stripCmt::Bool)::SCode.Equation
+        function stripCommentsFromEquation(eq::SCode.Equation, stripAnn::Bool, stripCmt::Bool) ::SCode.Equation
 
 
               eq.eEquation = stripCommentsFromEEquation(eq.eEquation, stripAnn, stripCmt)
           eq
         end
 
-        function stripCommentsFromEEquation(eq::SCode.EEquation, stripAnn::Bool, stripCmt::Bool)::SCode.EEquation
+        function stripCommentsFromEEquation(eq::SCode.EEquation, stripAnn::Bool, stripCmt::Bool) ::SCode.EEquation
 
 
               () = begin
@@ -6564,7 +6561,7 @@
           eq
         end
 
-        function stripCommentsFromWhenEqBranch(branch::Tuple{<:Absyn.Exp, List{<:Union{<:SCode.EEquation, Nil{Any}}}}, stripAnn::Bool, stripCmt::Bool)::Tuple{Absyn.Exp, List{SCode.EEquation}}
+        function stripCommentsFromWhenEqBranch(branch::Tuple{<:Absyn.Exp, List{<:SCode.EEquation}}, stripAnn::Bool, stripCmt::Bool) ::Tuple{Absyn.Exp, List{SCode.EEquation}}
 
 
               local cond::Absyn.Exp
@@ -6576,14 +6573,14 @@
           branch
         end
 
-        function stripCommentsFromAlgorithm(alg::SCode.AlgorithmSection, stripAnn::Bool, stripCmt::Bool)::SCode.AlgorithmSection
+        function stripCommentsFromAlgorithm(alg::SCode.AlgorithmSection, stripAnn::Bool, stripCmt::Bool) ::SCode.AlgorithmSection
 
 
               alg.statements = list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in alg.statements)
           alg
         end
 
-        function stripCommentsFromStatement(stmt::SCode.Statement, stripAnn::Bool, stripCmt::Bool)::SCode.Statement
+        function stripCommentsFromStatement(stmt::SCode.Statement, stripAnn::Bool, stripCmt::Bool) ::SCode.Statement
 
 
               () = begin
@@ -6676,7 +6673,7 @@
           stmt
         end
 
-        function stripCommentsFromStatementBranch(branch::Tuple{<:Absyn.Exp, List{<:Union{<:SCode.Statement, Nil{Any}}}}, stripAnn::Bool, stripCmt::Bool)::Tuple{Absyn.Exp, List{SCode.Statement}}
+        function stripCommentsFromStatementBranch(branch::Tuple{<:Absyn.Exp, List{<:SCode.Statement}}, stripAnn::Bool, stripCmt::Bool) ::Tuple{Absyn.Exp, List{SCode.Statement}}
 
 
               local cond::Absyn.Exp

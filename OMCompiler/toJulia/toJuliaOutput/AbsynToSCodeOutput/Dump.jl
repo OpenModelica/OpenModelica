@@ -305,7 +305,7 @@
                   local a::Absyn.EnumLiteral
                   local b::List{<:Absyn.EnumLiteral}
                 @matchcontinue inAbsynEnumLiteralLst begin
-                   nil()  => begin
+                   nil  => begin
                     ()
                   end
 
@@ -319,7 +319,7 @@
                     ()
                   end
 
-                  Absyn.ENUMLITERAL(literal = str, comment = optcmt) <| Absyn.ENUMLITERAL(literal = str2, comment = optcmt2) <|  nil()  => begin
+                  Absyn.ENUMLITERAL(literal = str, comment = optcmt) <| Absyn.ENUMLITERAL(literal = str2, comment = optcmt2) <|  nil  => begin
                       Print.printBuf("Absyn.ENUMLITERAL(\\")
                       Print.printBuf(str)
                       Print.printBuf("\\,")
@@ -669,7 +669,7 @@
               _ = begin
                   local l::List{<:Absyn.ElementArg}
                 @matchcontinue inAbsynElementArgLst begin
-                   nil()  => begin
+                   nil  => begin
                     ()
                   end
 
@@ -872,11 +872,11 @@
                   local a::Absyn.Annotation
                   local els::List{<:Absyn.ElementItem}
                 @matchcontinue inAbsynElementItemLst begin
-                   nil()  => begin
+                   nil  => begin
                     ()
                   end
 
-                  Absyn.ELEMENTITEM(element = e) <|  nil()  => begin
+                  Absyn.ELEMENTITEM(element = e) <|  nil  => begin
                       Print.printBuf("Absyn.ELEMENTITEM(")
                       printElement(e)
                       Print.printBuf(")")
@@ -1589,7 +1589,7 @@
               _ = begin
                   local l::List{<:Absyn.ElementArg}
                 @matchcontinue inAbsynElementArgLst begin
-                   nil()  => begin
+                   nil  => begin
                     ()
                   end
 
@@ -1928,7 +1928,7 @@
                     ()
                   end
 
-                  Absyn.ALG_FAILURE(algItem <|  nil())  => begin
+                  Absyn.ALG_FAILURE(algItem <|  nil)  => begin
                       Print.printBuf("FAILURE(")
                       printAlgorithmitem(algItem)
                       Print.printBuf(")")
@@ -2031,7 +2031,7 @@
               _ = begin
                   local l::List{<:Absyn.Subscript}
                 @matchcontinue inAbsynSubscriptLst begin
-                   nil()  => begin
+                   nil  => begin
                       Print.printBuf("[]")
                     ()
                   end
@@ -2107,7 +2107,7 @@
                   local s_2::String
                   local l::List{<:Absyn.Subscript}
                 @matchcontinue inAbsynSubscriptLst begin
-                   nil()  => begin
+                   nil  => begin
                     ""
                   end
 
@@ -2504,12 +2504,12 @@
                     str
                   end
 
-                  Absyn.FUNCTIONARGS(args =  nil(), argNames = nargs)  => begin
+                  Absyn.FUNCTIONARGS(args =  nil, argNames = nargs)  => begin
                       str = printListStr(nargs, printNamedArgStr, ", ") #= Only named arguments =#
                     str
                   end
 
-                  Absyn.FUNCTIONARGS(args = expargs, argNames =  nil())  => begin
+                  Absyn.FUNCTIONARGS(args = expargs, argNames =  nil)  => begin
                       str = printListStr(expargs, printExpStr, ", ") #= Only positional arguments =#
                     str
                   end
@@ -2540,24 +2540,24 @@
                   local rest::Absyn.ForIterators
                   local x::Absyn.ForIterator
                 @matchcontinue iterators begin
-                   nil()  => begin
+                   nil  => begin
                     ""
                   end
 
-                  Absyn.ITERATOR(id, SOME(guardExp), SOME(exp)) <|  nil()  => begin
+                  Absyn.ITERATOR(id, SOME(guardExp), SOME(exp)) <|  nil  => begin
                       s1 = printExpStr(exp)
                       s2 = printExpStr(guardExp)
                       s = stringAppendList(list(id, " guard ", s2, " in ", s1))
                     s
                   end
 
-                  Absyn.ITERATOR(id, NONE(), SOME(exp)) <|  nil()  => begin
+                  Absyn.ITERATOR(id, NONE(), SOME(exp)) <|  nil  => begin
                       s1 = printExpStr(exp)
                       s = stringAppendList(list(id, " in ", s1))
                     s
                   end
 
-                  Absyn.ITERATOR(id, NONE(), NONE()) <|  nil()  => begin
+                  Absyn.ITERATOR(id, NONE(), NONE()) <|  nil  => begin
                     id
                   end
 
@@ -2968,11 +2968,11 @@
                   local r::FuncTypeType_aToString
                   local t::List{<:Type_a}
                 @matchcontinue (inTypeALst, inFuncTypeTypeAToString, inString) begin
-                  ( nil(), _, _)  => begin
+                  ( nil, _, _)  => begin
                     ""
                   end
 
-                  (h <|  nil(), r, _)  => begin
+                  (h <|  nil, r, _)  => begin
                       s = r(h)
                     s
                   end
@@ -3385,11 +3385,11 @@
                   local r::FuncTypeType_aTo
                   local rest::List{<:Type_a}
                 @match (inString1, inTypeALst2, inFuncTypeTypeATo3, inString4) begin
-                  (_,  nil(), _, _)  => begin
+                  (_,  nil, _, _)  => begin
                     ()
                   end
 
-                  (_, h <|  nil(), r, _)  => begin
+                  (_, h <|  nil, r, _)  => begin
                       r(h)
                     ()
                   end
@@ -3415,11 +3415,11 @@
                   local t::List{<:Type_a}
                   local sep::String
                 @matchcontinue (inTypeALst, inFuncTypeTypeATo, inString) begin
-                  ( nil(), _, _)  => begin
+                  ( nil, _, _)  => begin
                     ()
                   end
 
-                  (h <|  nil(), r, _)  => begin
+                  (h <|  nil, r, _)  => begin
                       r(h)
                     ()
                   end
@@ -3449,11 +3449,12 @@
                   local r::FuncTypeType_aToString
                   local t::List{<:Type_a}
                 @matchcontinue (inTypeALst, inFuncTypeTypeAToString, inString) begin
-                  ( nil(), _, _)  => begin
+                  ( nil, _, _)  => begin
                     ""
                   end
 
-                  (h <|  nil(), r, _)  => begin
+                  (h <|  nil
+                   , r, _)  => begin
                       s = r(h)
                     s
                   end

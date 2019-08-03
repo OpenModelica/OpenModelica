@@ -403,7 +403,7 @@
          CHEAPMATCHING_ALGORITHM = CONFIG_FLAG(13, "cheapmatchingAlgorithm", NONE(), EXTERNAL(), INT_FLAG(3), SOME(STRING_DESC_OPTION(list(("0", Util.gettext("No cheap matching.")), ("1", Util.gettext("Cheap matching, traverses all equations and match the first free variable.")), ("3", Util.gettext("Random Karp-Sipser: R. M. Karp and M. Sipser. Maximum matching in sparse random graphs."))))), Util.gettext("Sets the cheap matching algorithm to use. A cheap matching algorithm gives a jump start matching by heuristics."))::ConfigFlag
          MATCHING_ALGORITHM = CONFIG_FLAG(14, "matchingAlgorithm", NONE(), EXTERNAL(), STRING_FLAG("PFPlusExt"), SOME(STRING_DESC_OPTION(list(("BFSB", Util.gettext("Breadth First Search based algorithm.")), ("DFSB", Util.gettext("Depth First Search based algorithm.")), ("MC21A", Util.gettext("Depth First Search based algorithm with look ahead feature.")), ("PF", Util.gettext("Depth First Search based algorithm with look ahead feature.")), ("PFPlus", Util.gettext("Depth First Search based algorithm with look ahead feature and fair row traversal.")), ("HK", Util.gettext("Combined BFS and DFS algorithm.")), ("HKDW", Util.gettext("Combined BFS and DFS algorithm.")), ("ABMP", Util.gettext("Combined BFS and DFS algorithm.")), ("PR", Util.gettext("Matching algorithm using push relabel mechanism.")), ("DFSBExt", Util.gettext("Depth First Search based Algorithm external c implementation.")), ("BFSBExt", Util.gettext("Breadth First Search based Algorithm external c implementation.")), ("MC21AExt", Util.gettext("Depth First Search based Algorithm with look ahead feature external c implementation.")), ("PFExt", Util.gettext("Depth First Search based Algorithm with look ahead feature external c implementation.")), ("PFPlusExt", Util.gettext("Depth First Search based Algorithm with look ahead feature and fair row traversal external c implementation.")), ("HKExt", Util.gettext("Combined BFS and DFS algorithm external c implementation.")), ("HKDWExt", Util.gettext("Combined BFS and DFS algorithm external c implementation.")), ("ABMPExt", Util.gettext("Combined BFS and DFS algorithm external c implementation.")), ("PRExt", Util.gettext("Matching algorithm using push relabel mechanism external c implementation.")), ("BB", Util.gettext("BBs try."))))), Util.gettext("Sets the matching algorithm to use. See --help=optmodules for more info."))::ConfigFlag
          INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMethod", NONE(), EXTERNAL(), STRING_FLAG("dynamicStateSelection"), SOME(STRING_DESC_OPTION(list(("none", Util.gettext("Skip index reduction")), ("uode", Util.gettext("Use the underlying ODE without the constraints.")), ("dynamicStateSelection", Util.gettext("Simple index reduction method, select (dynamic) dummy states based on analysis of the system.")), ("dummyDerivatives", Util.gettext("Simple index reduction method, select (static) dummy states based on heuristic."))))), Util.gettext("Sets the index reduction method to use. See --help=optmodules for more info."))::ConfigFlag
-         POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules", NONE(), EXTERNAL(), STRING_LIST_FLAG(list("lateInlineFunction", "wrapFunctionCalls", "inlineArrayEqn", "constantLinearSystem", "simplifysemiLinear", "removeSimpleEquations", "simplifyComplexFunction", "solveSimpleEquations", "tearingSystem", "inputDerivativesUsed", "calculateStrongComponentJacobians", "calculateStateSetsJacobians", "symbolicJacobian", "removeConstants", "simplifyTimeIndepFuncCalls", "simplifyAllExpressions", "findZeroCrossings", "collapseArrayExpressions")), SOME(STRING_DESC_OPTION(list(("addScaledVars_states", Util.notrans("added var_norm = var/nominal, where var is state")), ("addScaledVars_inputs", Util.notrans("added var_norm = var/nominal, where var is input")), ("addTimeAsState", Util.gettext("Experimental feature: this replaces each occurrence of variable time with a new introduced state time with equation der(time) = 1.0")), ("calculateStateSetsJacobians", Util.gettext("Generates analytical jacobian for dynamic state selection sets.")), ("calculateStrongComponentJacobians", Util.gettext("Generates analytical jacobian for torn linear and non-linear strong components. By default linear components and non-linear components with user-defined function calls are skipped. See also debug flags: LSanalyticJacobian, NLSanalyticJacobian and forceNLSanalyticJacobian")), ("collapseArrayExpressions", collapseArrayExpressionsText), ("constantLinearSystem", Util.gettext("Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time.")), ("countOperations", Util.gettext("Count the mathematical operations of the system.")), ("cseBinary", Util.gettext("Common Sub-expression Elimination")), ("dumpComponentsGraphStr", Util.notrans("Dumps the assignment graph used to determine strong components to format suitable for Mathematica")), ("dumpDAE", Util.gettext("dumps the DAE representation of the current transformation state")), ("dumpDAEXML", Util.gettext("dumps the DAE as xml representation of the current transformation state")), ("evaluateParameters", Util.gettext("Evaluates parameters with annotation(Evaluate=true). Use '--evaluateFinalParameters=true' or '--evaluateProtectedParameters=true' to specify additional parameters to be evaluated. Use '--replaceEvaluatedParameters=true' if the evaluated parameters should be replaced in the DAE. To evaluate all parameters in the Frontend use -d=evaluateAllParameters.")), ("extendDynamicOptimization", Util.gettext("Move loops to constraints.")), ("generateSymbolicLinearization", Util.gettext("Generates symbolic linearization matrices A,B,C,D for linear model:\\n\\t:math:`\\\\dot{x} = Ax + Bu `\\n\\t:math:`y = Cx +Du`")), ("generateSymbolicSensitivities", Util.gettext("Generates symbolic Sensivities matrix, where der(x) is differentiated w.r.t. param.")), ("inlineArrayEqn", Util.gettext("This module expands all array equations to scalar equations.")), ("inputDerivativesUsed", Util.gettext("Checks if derivatives of inputs are need to calculate the model.")), ("lateInlineFunction", Util.gettext("Perform function inlining for function with annotation LateInline=true.")), ("partlintornsystem", Util.notrans("partitions linear torn systems.")), ("recursiveTearing", Util.notrans("inline and repeat tearing")), ("reduceDynamicOptimization", Util.notrans("Removes equations which are not needed for the calculations of cost and constraints. This module requires -d=reduceDynOpt.")), ("relaxSystem", Util.notrans("relaxation from gausian elemination")), ("removeConstants", Util.gettext("Remove all constants in the system.")), ("removeEqualRHS", Util.notrans("Detects equal function calls of the form a=f(b) and c=f(b) and substitutes them to get speed up.")), ("removeSimpleEquations", removeSimpleEquationDesc), ("removeUnusedParameter", Util.gettext("Strips all parameter not present in the equations from the system to get speed up for compilation of target code.")), ("removeUnusedVariables", Util.notrans("Strips all variables not present in the equations from the system to get speed up for compilation of target code.")), ("reshufflePost", Util.gettext("Reshuffles algebraic loops.")), ("simplifyAllExpressions", Util.notrans("Does simplifications on all expressions.")), ("simplifyComplexFunction", Util.notrans("Some simplifications on complex functions (complex refers to the internal data structure)")), ("simplifyConstraints", Util.notrans("Rewrites nonlinear constraints into box constraints if possible. This module requires +gDynOpt.")), ("simplifyLoops", Util.notrans("Simplifies algebraic loops. This modules requires +simplifyLoops.")), ("simplifyTimeIndepFuncCalls", Util.gettext("Simplifies time independent built in function calls like pre(param) -> param, der(param) -> 0.0, change(param) -> false, edge(param) -> false.")), ("simplifysemiLinear", Util.gettext("Simplifies calls to semiLinear.")), ("solveLinearSystem", Util.notrans("solve linear system with newton step")), ("solveSimpleEquations", Util.notrans("Solves simple equations")), ("symSolver", Util.notrans("Rewrites the ode system for implicit Euler method. This module requires +symSolver.")), ("symbolicJacobian", Util.notrans("Detects the sparse pattern of the ODE system and calculates also the symbolic Jacobian if flag '--generateSymbolicJacobian' is enabled.")), ("tearingSystem", Util.notrans("For method selection use flag tearingMethod.")), ("wrapFunctionCalls", Util.gettext("This module introduces variables for each function call and substitutes all these calls with the newly introduced variables."))))), Util.gettext("Sets the post optimization modules to use in the back end. See --help=optmodules for more info."))::ConfigFlag
+         POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules", NONE(), EXTERNAL(), STRING_LIST_FLAG(list("lateInlineFunction", "wrapFunctionCalls", "inlineArrayEqn", "constantLinearSystem", "simplifysemiLinear", "removeSimpleEquations", "simplifyComplexFunction", "solveSimpleEquations", "tearingSystem", "inputDerivativesUsed", "calculateStrongComponentJacobians", "calculateStateSetsJacobians", "symbolicJacobian", "removeConstants", "simplifyTimeIndepFuncCalls", "simplifyAllExpressions", "findZeroCrossings", "collapseArrayExpressions")), SOME(STRING_DESC_OPTION(list(("addScaledVars_states", Util.notrans("added var_norm = var/nominal, where var is state")), ("addScaledVars_inputs", Util.notrans("added var_norm = var/nominal, where var is input")), ("addTimeAsState", Util.gettext("Experimental feature: this replaces each occurrence of variable time with a new introduced state time with equation der(time) = 1.0")), ("calculateStateSetsJacobians", Util.gettext("Generates analytical jacobian for dynamic state selection sets.")), ("calculateStrongComponentJacobians", Util.gettext("Generates analytical jacobian for torn linear and non-linear strong components. By default linear components and non-linear components with user-defined function calls are skipped. See also debug flags: LSanalyticJacobian, NLSanalyticJacobian and forceNLSanalyticJacobian")), ("collapseArrayExpressions", collapseArrayExpressionsText), ("constantLinearSystem", Util.gettext("Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time.")), ("countOperations", Util.gettext("Count the mathematical operations of the system.")), ("cseBinary", Util.gettext("Common Sub-expression Elimination")), ("dumpComponentsGraphStr", Util.notrans("Dumps the assignment graph used to determine strong components to format suitable for Mathematica")), ("dumpDAE", Util.gettext("dumps the DAE representation of the current transformation state")), ("dumpDAEXML", Util.gettext("dumps the DAE as xml representation of the current transformation state")), ("evaluateParameters", Util.gettext("Evaluates parameters with annotation(Evaluate=true). Use '--evaluateFinalParameters=true' or '--evaluateProtectedParameters=true' to specify additional parameters to be evaluated. Use '--replaceEvaluatedParameters=true' if the evaluated parameters should be replaced in the DAE. To evaluate all parameters in the Frontend use -d=evaluateAllParameters.")), ("extendDynamicOptimization", Util.gettext("Move loops to constraints.")), ("generateSymbolicLinearization", Util.gettext("Generates symbolic linearization matrices A,B,C,D for linear model:\\n\\t:math:`\\\\dot{x} = Ax + Bu `\\n\\t:math:`y = Cx +Du`")), ("generateSymbolicSensitivities", Util.gettext("Generates symbolic Sensivities matrix, where der(x) is differentiated w.r.t. param.")), ("inlineArrayEqn", Util.gettext("This module expands all array equations to scalar equations.")), ("inputDerivativesUsed", Util.gettext("Checks if derivatives of inputs are need to calculate the model.")), ("lateInlineFunction", Util.gettext("Perform function inlining for function with annotation LateInline=true.")), ("partlintornsystem", Util.notrans("partitions linear torn systems.")), ("recursiveTearing", Util.notrans("inline and repeat tearing")), ("reduceDynamicOptimization", Util.notrans("Removes equations which are not needed for the calculations of cost and constraints. This module requires -d=reduceDynOpt.")), ("relaxSystem", Util.notrans("relaxation from gausian elemination")), ("removeConstants", Util.gettext("Remove all constants in the system.")), ("removeEqualRHS", Util.notrans("Detects equal function calls of the form a=f(b) and c=f(b) and substitutes them to get speed up.")), ("removeSimpleEquations", removeSimpleEquationDesc), ("removeUnusedParameter", Util.gettext("Strips all parameter not present in the equations from the system to get speed up for compilation of target code.")), ("removeUnusedVariables", Util.notrans("Strips all variables not present in the equations from the system to get speed up for compilation of target code.")), ("reshufflePost", Util.gettext("Reshuffles algebraic loops.")), ("simplifyAllExpressions", Util.notrans("Does simplifications on all expressions.")), ("simplifyComplexFunction", Util.notrans("Some simplifications on complex functions (complex refers to the internal data structure)")), ("simplifyConstraints", Util.notrans("Rewrites nonlinear constraints into box constraints if possible. This module requires +gDynOpt.")), ("simplifyLoops", Util.notrans("Simplifies algebraic loops. This modules requires +simplifyLoops.")), ("simplifyTimeIndepFuncCalls", Util.gettext("Simplifies time independent built in function calls like pre(param) -> param, der(param) -> 0.0, change(param) -> false, edge(param) -> false.")), ("simplifysemiLinear", Util.gettext("Simplifies calls to semiLinear.")), ("solveLinearSystem", Util.notrans("solve linear system with newton step")), ("solveSimpleEquations", Util.notrans("Solves simple equations")), ("symSolver", Util.notrans("Rewrites the ode system for implicit Euler method. This module requires +symSolver.")), ("symbolicJacobian", Util.notrans("Detects the sparse pattern of the ODE system and calculates also the symbolic Jacobian if flag '--generateSymbolicJacobian' is enabled.")), ("tearingSystem", Util.notrans("For method selection use flag tearingMethod.")), ("wrapFunctionCalls", Util.gettext("This module introduces variables for each function call and substitutes all these calls with the newly introduced variables."))))), Util.gettext("Sets the post optimization modules to use in the back end. See --help=optmodules for more info."))
          SIMCODE_TARGET = CONFIG_FLAG(17, "simCodeTarget", NONE(), EXTERNAL(), STRING_FLAG("C"), SOME(STRING_OPTION(list("None", "Adevs", "C", "Cpp", "CSharp", "ExperimentalEmbeddedC", "Java", "JavaScript", "omsic", "sfmi", "XML", "MidC"))), Util.gettext("Sets the target language for the code generation."))::ConfigFlag
          ORDER_CONNECTIONS = CONFIG_FLAG(18, "orderConnections", NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(), Util.gettext("Orders connect equations alphabetically if set."))::ConfigFlag
          TYPE_INFO = CONFIG_FLAG(19, "typeinfo", SOME("t"), EXTERNAL(), BOOL_FLAG(false), NONE(), Util.gettext("Prints out extra type information if set."))::ConfigFlag
@@ -624,7 +624,7 @@
               for flag in allDebugFlags
                 index = index + 1
                 if flag.index != index
-                  err_str = "Invalid flag '" + flag.name + "' with index " + String(flag.index) + " (expected " + String(index) + ") in Flags.allDebugFlags. Make sure that all flags are present and ordered correctly!"
+                  err_str = "Invalid flag '" * flag.name * "' with index " * string(flag.index) * " (expected " * string(index) * ") in Flags.allDebugFlags. Make sure that all flags are present and ordered correctly!"
                   Error.terminateError(err_str, sourceInfo())
                 end
               end
@@ -642,7 +642,7 @@
               for flag in allConfigFlags
                 index = index + 1
                 if flag.index != index
-                  err_str = "Invalid flag '" + flag.name + "' with index " + String(flag.index) + " (expected " + String(index) + ") in Flags.allConfigFlags. Make sure that all flags are present and ordered correctly!"
+                  err_str = "Invalid flag '" * flag.name * "' with index " * string(flag.index) * " (expected " * string(index) * ") in Flags.allConfigFlags. Make sure that all flags are present and ordered correctly!"
                   Error.terminateError(err_str, sourceInfo())
                 end
               end
@@ -842,7 +842,7 @@
               try
                 outFlag = ListUtil.getMemberOnTrue(inFlag, allConfigFlags, matchConfigFlag)
               catch
-                Error.addMessage(Error.UNKNOWN_OPTION, list(inFlagPrefix + inFlag))
+                Error.addMessage(Error.UNKNOWN_OPTION, list(inFlagPrefix * inFlag))
                 fail()
               end
           outFlag
@@ -1060,16 +1060,16 @@
                    #=  A boolean value.
                    =#
                 @matchcontinue (inValues, inExpectedType, validOptions, inName) begin
-                  (s <|  nil(), BOOL_FLAG(), _, _)  => begin
+                  (s <|  nil, BOOL_FLAG(), _, _)  => begin
                       b = Util.stringBool(s)
                     BOOL_FLAG(b)
                   end
 
-                  ( nil(), BOOL_FLAG(), _, _)  => begin
+                  ( nil, BOOL_FLAG(), _, _)  => begin
                     BOOL_FLAG(true)
                   end
 
-                  (s <|  nil(), INT_FLAG(), _, _)  => begin
+                  (s <|  nil, INT_FLAG(), _, _)  => begin
                       i = stringInt(s)
                       @match true = stringEq(intString(i), s)
                     INT_FLAG(i)
@@ -1080,17 +1080,17 @@
                     INT_LIST_FLAG(ilst)
                   end
 
-                  (s <|  nil(), REAL_FLAG(), _, _)  => begin
+                  (s <|  nil, REAL_FLAG(), _, _)  => begin
                     REAL_FLAG(System.stringReal(s))
                   end
 
-                  (s <|  nil(), STRING_FLAG(), SOME(options), _)  => begin
+                  (s <|  nil, STRING_FLAG(), SOME(options), _)  => begin
                       flags = getValidStringOptions(options)
                       @match true = listMember(s, flags)
                     STRING_FLAG(s)
                   end
 
-                  (s <|  nil(), STRING_FLAG(), NONE(), _)  => begin
+                  (s <|  nil, STRING_FLAG(), NONE(), _)  => begin
                     STRING_FLAG(s)
                   end
 
@@ -1098,7 +1098,7 @@
                     STRING_LIST_FLAG(inValues)
                   end
 
-                  (s <|  nil(), ENUM_FLAG(validValues = enums), _, _)  => begin
+                  (s <|  nil, ENUM_FLAG(validValues = enums), _, _)  => begin
                       i = Util.assoc(s, enums)
                     ENUM_FLAG(i, enums)
                   end
@@ -1168,7 +1168,7 @@
 
                   ENUM_FLAG(validValues = enums)  => begin
                       enum_strs = ListUtil.map(enums, Util.tuple21)
-                    "one of the values {" + stringDelimitList(enum_strs, ", ") + "}"
+                    "one of the values {" * stringDelimitList(enum_strs, ", ") * "}"
                   end
                 end
               end
@@ -1183,23 +1183,23 @@
                   local s::String
                   local i::ModelicaInteger
                 @matchcontinue inType begin
-                   nil()  => begin
+                   nil  => begin
                     "nothing"
                   end
 
-                  s <|  nil()  => begin
+                  s <|  nil  => begin
                       Util.stringBool(s)
-                    "the boolean value " + s
+                    "the boolean value " * s
                   end
 
-                  s <|  nil()  => begin
+                  s <|  nil  => begin
                       i = stringInt(s)
                       @match true = stringEq(intString(i), s)
-                    "the number " + intString(i)
+                    "the number " * intString(i)
                   end
 
-                  s <|  nil()  => begin
-                    "the string \\" + s + "\\"
+                  s <|  nil  => begin
+                    "the string \\" * s * "\\"
                   end
 
                   _  => begin
@@ -1219,7 +1219,7 @@
                =#
                #=   then
                =#
-               #=     \"the number \" + intString(i);
+               #=     \"the number \" * intString(i);
                =#
           outTypeStr
         end
@@ -1244,7 +1244,7 @@
                   local corba_name::String
                   local corba_objid_path::String
                   local zeroMQFileSuffix::String
-                   #=  +showErrorMessages needs to be sent to the C runtime.
+                   #=  *showErrorMessages needs to be sent to the C runtime.
                    =#
                 @matchcontinue (inFlag, inValue) begin
                   (_, _)  => begin
@@ -1456,37 +1456,37 @@
                   local config_flag::ConfigFlag
                   local topics::List{<:Tuple{<:String, String}}
                 @matchcontinue inTopics begin
-                   nil()  => begin
+                   nil  => begin
                     printUsage()
                   end
 
-                  "omc" <|  nil()  => begin
+                  "omc" <|  nil  => begin
                     printUsage()
                   end
 
-                  "omcall-sphinxoutput" <|  nil()  => begin
+                  "omcall-sphinxoutput" <|  nil  => begin
                     printUsageSphinxAll()
                   end
 
-                  "topics" <|  nil()  => begin
+                  "topics" <|  nil  => begin
                       topics = list(("omc", System.gettext("The command-line options available for omc.")), ("debug", System.gettext("Flags that enable debugging, diagnostics, and research prototypes.")), ("optmodules", System.gettext("Flags that determine which symbolic methods are used to produce the causalized equation system.")), ("simulation", System.gettext("The command-line options available for simulation executables generated by OpenModelica.")), ("<flagname>", System.gettext("Displays option descriptions for multi-option flag <flagname>.")), ("topics", System.gettext("This help-text.")))
                       str = System.gettext("The available topics (help(\\topics\\)) are as follows:\\n")
                       strs = ListUtil.map(topics, makeTopicString)
-                      help = str + stringDelimitList(strs, "\\n") + "\\n"
+                      help = str * stringDelimitList(strs, "\\n") * "\\n"
                     help
                   end
 
-                  "simulation" <|  nil()  => begin
-                      help = System.gettext("The simulation executable takes the following flags:\\n\\n") + System.getSimulationHelpText(true)
+                  "simulation" <|  nil  => begin
+                      help = System.gettext("The simulation executable takes the following flags:\\n\\n") * System.getSimulationHelpText(true)
                     help
                   end
 
-                  "simulation-sphinxoutput" <|  nil()  => begin
-                      help = System.gettext("The simulation executable takes the following flags:\\n\\n") + System.getSimulationHelpText(true, sphinx = true)
+                  "simulation-sphinxoutput" <|  nil  => begin
+                      help = System.gettext("The simulation executable takes the following flags:\\n\\n") * System.getSimulationHelpText(true, sphinx = true)
                     help
                   end
 
-                  "debug" <|  nil()  => begin
+                  "debug" <|  nil  => begin
                       str1 = System.gettext("The debug flag takes a comma-separated list of flags which are used by the\\ncompiler for debugging or experimental purposes.\\nFlags prefixed with \\-\\ or \\no\\ will be disabled.\\n")
                       str2 = System.gettext("The available flags are (+ are enabled by default, - are disabled):\\n\\n")
                       strs = list(printDebugFlag(flag) for flag in ListUtil.sort(allDebugFlags, compareDebugFlags))
@@ -1494,58 +1494,58 @@
                     help
                   end
 
-                  "optmodules" <|  nil()  => begin
+                  "optmodules" <|  nil  => begin
                       str1 = System.gettext("The --preOptModules flag sets the optimization modules which are used before the\\nmatching and index reduction in the back end. These modules are specified as a comma-separated list.")
                       str1 = stringAppendList(StringUtil.wordWrap(str1, System.getTerminalWidth(), "\\n"))
                       @match CONFIG_FLAG(defaultValue = STRING_LIST_FLAG(data = data)) = PRE_OPT_MODULES
-                      str1a = System.gettext("The modules used by default are:") + "\\n--preOptModules=" + stringDelimitList(data, ",")
+                      str1a = System.gettext("The modules used by default are:") * "\\n--preOptModules=" * stringDelimitList(data, ",")
                       str1b = System.gettext("The valid modules are:")
                       str2 = printFlagValidOptionsDesc(PRE_OPT_MODULES)
                       str3 = System.gettext("The --matchingAlgorithm sets the method that is used for the matching algorithm, after the pre optimization modules.")
                       str3 = stringAppendList(StringUtil.wordWrap(str3, System.getTerminalWidth(), "\\n"))
                       @match CONFIG_FLAG(defaultValue = STRING_FLAG(data = str3a)) = MATCHING_ALGORITHM
-                      str3a = System.gettext("The method used by default is:") + "\\n--matchingAlgorithm=" + str3a
+                      str3a = System.gettext("The method used by default is:") * "\\n--matchingAlgorithm=" * str3a
                       str3b = System.gettext("The valid methods are:")
                       str4 = printFlagValidOptionsDesc(MATCHING_ALGORITHM)
                       str5 = System.gettext("The --indexReductionMethod sets the method that is used for the index reduction, after the pre optimization modules.")
                       str5 = stringAppendList(StringUtil.wordWrap(str5, System.getTerminalWidth(), "\\n"))
                       @match CONFIG_FLAG(defaultValue = STRING_FLAG(data = str5a)) = INDEX_REDUCTION_METHOD
-                      str5a = System.gettext("The method used by default is:") + "\\n--indexReductionMethod=" + str5a
+                      str5a = System.gettext("The method used by default is:") * "\\n--indexReductionMethod=" * str5a
                       str5b = System.gettext("The valid methods are:")
                       str6 = printFlagValidOptionsDesc(INDEX_REDUCTION_METHOD)
                       str7 = System.gettext("The --initOptModules then sets the optimization modules which are used after the index reduction to optimize the system for initialization, specified as a comma-separated list.")
                       str7 = stringAppendList(StringUtil.wordWrap(str7, System.getTerminalWidth(), "\\n"))
                       @match CONFIG_FLAG(defaultValue = STRING_LIST_FLAG(data = data)) = INIT_OPT_MODULES
-                      str7a = System.gettext("The modules used by default are:") + "\\n--initOptModules=" + stringDelimitList(data, ",")
+                      str7a = System.gettext("The modules used by default are:") * "\\n--initOptModules=" * stringDelimitList(data, ",")
                       str7b = System.gettext("The valid modules are:")
                       str8 = printFlagValidOptionsDesc(INIT_OPT_MODULES)
                       str9 = System.gettext("The --postOptModules then sets the optimization modules which are used after the index reduction to optimize the system for simulation, specified as a comma-separated list.")
                       str9 = stringAppendList(StringUtil.wordWrap(str9, System.getTerminalWidth(), "\\n"))
                       @match CONFIG_FLAG(defaultValue = STRING_LIST_FLAG(data = data)) = POST_OPT_MODULES
-                      str9a = System.gettext("The modules used by default are:") + "\\n--postOptModules=" + stringDelimitList(data, ",")
+                      str9a = System.gettext("The modules used by default are:") * "\\n--postOptModules=" * stringDelimitList(data, ",")
                       str9b = System.gettext("The valid modules are:")
                       str10 = printFlagValidOptionsDesc(POST_OPT_MODULES)
                       help = stringAppendList(list(str1, "\\n\\n", str1a, "\\n\\n", str1b, "\\n", str2, "\\n", str3, "\\n\\n", str3a, "\\n\\n", str3b, "\\n", str4, "\\n", str5, "\\n\\n", str5a, "\\n\\n", str5b, "\\n", str6, "\\n", str7, "\\n\\n", str7a, "\\n\\n", str7b, "\\n", str8, "\\n", str9, "\\n\\n", str9a, "\\n\\n", str9b, "\\n", str10, "\\n"))
                     help
                   end
 
-                  str <|  nil()  => begin
+                  str <|  nil  => begin
                       @match (@match CONFIG_FLAG(name = name, description = desc) = config_flag) = ListUtil.getMemberOnTrue(str, allConfigFlags, matchConfigFlag)
-                      str1 = "-" + name
+                      str1 = "-" * name
                       str2 = stringAppendList(StringUtil.wordWrap(Util.translateContent(desc), System.getTerminalWidth(), "\\n"))
                       str = printFlagValidOptionsDesc(config_flag)
                       help = stringAppendList(list(str1, "\\n", str2, "\\n", str))
                     help
                   end
 
-                  str <|  nil()  => begin
-                    "I'm sorry, I don't know what " + str + " is.\\n"
+                  str <|  nil  => begin
+                    "I'm sorry, I don't know what " * str * " is.\\n"
                   end
 
                   str <| rest_topics && _ <| _  => begin
-                      str = printHelp(list(str)) + "\\n"
+                      str = printHelp(list(str)) * "\\n"
                       help = printHelp(rest_topics)
-                    str + help
+                    str * help
                   end
                 end
               end
@@ -1621,7 +1621,7 @@
 
               (str1, str2) = topic
               str1 = Util.stringPadRight(str1, 13, " ")
-              str = stringAppendList(StringUtil.wordWrap(str1 + str2, System.getTerminalWidth(), "\\n               "))
+              str = stringAppendList(StringUtil.wordWrap(str1 * str2, System.getTerminalWidth(), "\\n               "))
           str
         end
 
@@ -1693,7 +1693,7 @@
               Print.printBuf(sum("-" for e in 1:stringLength(s)))
               Print.printBuf("\\n\\n")
               Print.printBuf(System.gettext("The debug flag takes a comma-separated list of flags which are used by the\\ncompiler for debugging or experimental purposes.\\nFlags prefixed with \\-\\ or \\no\\ will be disabled.\\n"))
-              Print.printBuf(System.gettext("The available flags are (+ are enabled by default, - are disabled):\\n\\n"))
+              Print.printBuf(System.gettext("The available flags are (* are enabled by default, - are disabled):\\n\\n"))
               for flag in ListUtil.sort(allDebugFlags, compareDebugFlags)
                 Print.printBuf(printDebugFlag(flag, sphinx = true))
               end
@@ -1748,10 +1748,10 @@
                       desc_str = Util.translateContent(desc)
                       name = Util.stringPadRight(printConfigFlagName(inFlag), 28, " ")
                       flag_str = stringAppendList(list(name, " ", desc_str))
-                      delim_str = descriptionIndent + "  "
+                      delim_str = descriptionIndent * "  "
                       wrapped_str = StringUtil.wordWrap(flag_str, System.getTerminalWidth(), delim_str)
                       opt_str = printValidOptions(inFlag)
-                      flag_str = stringDelimitList(wrapped_str, "\\n") + opt_str + "\\n"
+                      flag_str = stringDelimitList(wrapped_str, "\\n") * opt_str * "\\n"
                     flag_str
                   end
                 end
@@ -1783,7 +1783,7 @@
                       desc_str = System.stringReplace(desc_str, "--help=optmodules", ":ref:`--help=optmodules <omcflag-optmodules-section>`")
                       (name, longName) = printConfigFlagName(inFlag, sphinx = true)
                       opt_str = printValidOptionsSphinx(inFlag)
-                      flag_str = stringAppendList(list(".. _omcflag-", longName, ":\\n\\n:ref:`", name, "<omcflag-", longName, ">`\\n\\n", desc_str, "\\n", opt_str + "\\n"))
+                      flag_str = stringAppendList(list(".. _omcflag-", longName, ":\\n\\n:ref:`", name, "<omcflag-", longName, ">`\\n\\n", desc_str, "\\n", opt_str * "\\n"))
                     flag_str
                   end
                 end
@@ -1803,9 +1803,9 @@
                 @match inFlag begin
                   CONFIG_FLAG(name = name, shortname = SOME(shortname))  => begin
                       shortname = if sphinx
-                            "-" + shortname
+                            "-" * shortname
                           else
-                            Util.stringPadLeft("-" + shortname, 4, " ")
+                            Util.stringPadLeft("-" * shortname, 4, " ")
                           end
                     (stringAppendList(list(shortname, ", --", name)), name)
                   end
@@ -1815,7 +1815,7 @@
                           "--"
                         else
                           "      --"
-                        end) + name, name)
+                        end) * name, name)
                   end
                 end
               end
@@ -1836,15 +1836,15 @@
                   end
 
                   CONFIG_FLAG(validOptions = SOME(STRING_OPTION(options = strl)))  => begin
-                      opt_str = descriptionIndent + "   " + System.gettext("Valid options:") + " " + stringDelimitList(strl, ", ")
-                      strl = StringUtil.wordWrap(opt_str, System.getTerminalWidth(), descriptionIndent + "     ")
+                      opt_str = descriptionIndent * "   " * System.gettext("Valid options:") * " " * stringDelimitList(strl, ", ")
+                      strl = StringUtil.wordWrap(opt_str, System.getTerminalWidth(), descriptionIndent * "     ")
                       opt_str = stringDelimitList(strl, "\\n")
-                      opt_str = "\\n" + opt_str
+                      opt_str = "\\n" * opt_str
                     opt_str
                   end
 
                   CONFIG_FLAG(validOptions = SOME(STRING_DESC_OPTION(options = descl)))  => begin
-                      opt_str = "\\n" + descriptionIndent + "   " + System.gettext("Valid options:") + "\\n" + stringAppendList(list(printFlagOptionDescShort(d) for d in descl))
+                      opt_str = "\\n" * descriptionIndent * "   " * System.gettext("Valid options:") * "\\n" * stringAppendList(list(printFlagOptionDescShort(d) for d in descl))
                     opt_str
                   end
                 end
@@ -1862,16 +1862,16 @@
                   local descl::List{<:Tuple{<:String, Util.TranslatableContent}}
                 @match inFlag begin
                   CONFIG_FLAG(validOptions = NONE())  => begin
-                    "\\n" + defaultFlagSphinx(inFlag.defaultValue) + "\\n"
+                    "\\n" * defaultFlagSphinx(inFlag.defaultValue) * "\\n"
                   end
 
                   CONFIG_FLAG(validOptions = SOME(STRING_OPTION(options = strl)))  => begin
-                      opt_str = "\\n" + defaultFlagSphinx(inFlag.defaultValue) + " " + System.gettext("Valid options") + ":\\n\\n" + sum("* " + s + "\\n" for s in strl)
+                      opt_str = "\\n" * defaultFlagSphinx(inFlag.defaultValue) * " " * System.gettext("Valid options") * ":\\n\\n" * sum("* " * s * "\\n" for s in strl)
                     opt_str
                   end
 
                   CONFIG_FLAG(validOptions = SOME(STRING_DESC_OPTION(options = descl)))  => begin
-                      opt_str = "\\n" + defaultFlagSphinx(inFlag.defaultValue) + " " + System.gettext("Valid options") + ":\\n\\n" + sum(printFlagOptionDesc(s, sphinx = true) for s in descl)
+                      opt_str = "\\n" * defaultFlagSphinx(inFlag.defaultValue) * " " * System.gettext("Valid options") * ":\\n\\n" * sum(printFlagOptionDesc(s, sphinx = true) for s in descl)
                     opt_str
                   end
                 end
@@ -1886,15 +1886,15 @@
                   local i::ModelicaInteger
                 @match flag begin
                   BOOL_FLAG()  => begin
-                    System.gettext("Boolean (default") + " ``" + boolString(flag.data) + "``)."
+                    System.gettext("Boolean (default") * " ``" * boolString(flag.data) * "``)."
                   end
 
                   INT_FLAG()  => begin
-                    System.gettext("Integer (default") + " ``" + intString(flag.data) + "``)."
+                    System.gettext("Integer (default") * " ``" * intString(flag.data) * "``)."
                   end
 
                   REAL_FLAG()  => begin
-                    System.gettext("Real (default") + " ``" + realString(flag.data) + "``)."
+                    System.gettext("Real (default") * " ``" * realString(flag.data) * "``)."
                   end
 
                   STRING_FLAG("")  => begin
@@ -1902,30 +1902,30 @@
                   end
 
                   STRING_FLAG()  => begin
-                    System.gettext("String (default") + " " + flag.data + ")."
+                    System.gettext("String (default") * " " * flag.data * ")."
                   end
 
-                  STRING_LIST_FLAG(data =  nil())  => begin
+                  STRING_LIST_FLAG(data =  nil)  => begin
                     System.gettext("String list (default *empty*).")
                   end
 
                   STRING_LIST_FLAG()  => begin
-                    System.gettext("String list (default") + " " + stringDelimitList(flag.data, ",") + ")."
+                    System.gettext("String list (default") * " " * stringDelimitList(flag.data, ",") * ")."
                   end
 
                   ENUM_FLAG()  => begin
                       for f in flag.validValues
                         (str, i) = f
                         if i == flag.data
-                          str = System.gettext("String (default ") + " " + str + ")."
+                          str = System.gettext("String (default ") * " " * str * ")."
                           return
                         end
                       end
-                    "#ENUM_FLAG Failed#" + anyString(flag)
+                    "#ENUM_FLAG Failed#" * anyString(flag)
                   end
 
                   _  => begin
-                      "Unknown default value" + anyString(flag)
+                      "Unknown default value" * anyString(flag)
                   end
                 end
               end
@@ -1942,8 +1942,8 @@
               outString = (if sphinx
                     "* "
                   else
-                    descriptionIndent + "    * "
-                  end) + name + "\\n"
+                    descriptionIndent * "    * "
+                  end) * name * "\\n"
           outString
         end
 
@@ -1971,7 +1971,7 @@
               (i, strs) = System.regex(o, "^(.*)[]([^]*)[](.*)", 4, extended = true)
               if i == 4
                 @match _ <| s1 <| s2 <| s3 <| _ = strs
-                o = s1 + " :math:`" + s2 + "` " + s3
+                o = s1 * " :math:`" * s2 * "` " * s3
               end
           o
         end
@@ -2005,10 +2005,10 @@
               desc_str = Util.translateContent(desc)
               if sphinx
                 desc_str = sum(System.trim(s) for s in System.strtok(desc_str, "\\n"))
-                outString = "* " + name + " (" + desc_str + ")\\n"
+                outString = "* " * name * " (" * desc_str * ")\\n"
               else
-                str = Util.stringPadRight(" * " + name + " ", 30, " ") + removeSphinxMathMode(desc_str)
-                outString = stringDelimitList(StringUtil.wordWrap(str, System.getTerminalWidth(), descriptionIndent + "    "), "\\n") + "\\n"
+                str = Util.stringPadRight(" * " * name * " ", 30, " ") * removeSphinxMathMode(desc_str)
+                outString = stringDelimitList(StringUtil.wordWrap(str, System.getTerminalWidth(), descriptionIndent * "    "), "\\n") * "\\n"
               end
           outString
         end
@@ -2026,18 +2026,18 @@
               desc_str = Util.translateContent(desc)
               if sphinx
                 desc_str = stringDelimitList(list(System.trim(s) for s in System.strtok(desc_str, "\\n")), "\\n  ")
-                outString = "\\n.. _omcflag-debug-" + name + ":\\n\\n" + ":ref:`" + name + " <omcflag-debug-" + name + ">`" + " (default: " + (if default
+                outString = "\\n.. _omcflag-debug-" * name * ":\\n\\n" * ":ref:`" * name * " <omcflag-debug-" * name * ">`" * " (default: " * (if default
                       "on"
                     else
                       "off"
-                    end) + ")\\n  " + desc_str + "\\n"
+                    end) * ")\\n  " * desc_str * "\\n"
               else
                 outString = Util.stringPadRight((if default
-                      " + "
+                      " * "
                     else
                       " - "
-                    end) + name + " ", 26, " ") + removeSphinxMathMode(desc_str)
-                outString = stringDelimitList(StringUtil.wordWrap(outString, System.getTerminalWidth(), descriptionIndent), "\\n") + "\\n"
+                    end) * name * " ", 26, " ") * removeSphinxMathMode(desc_str)
+                outString = stringDelimitList(StringUtil.wordWrap(outString, System.getTerminalWidth(), descriptionIndent), "\\n") * "\\n"
               end
           outString
         end
@@ -2183,15 +2183,15 @@
                   name = begin
                     @match f.shortname begin
                       SOME(name)  => begin
-                        "-" + name
+                        "-" * name
                       end
 
                       _  => begin
-                          "--" + f.name
+                          "--" * f.name
                       end
                     end
                   end
-                  flagStrings = name + "=" + flagDataString(config_flags[f.index]) <| flagStrings
+                  flagStrings = name * "=" * flagDataString(config_flags[f.index]) <| flagStrings
                 end
               end
               for f in allDebugFlags
@@ -2200,7 +2200,7 @@
                 end
               end
               if ! listEmpty(strl)
-                flagStrings = "-d=" + stringDelimitList(strl, ",") <| flagStrings
+                flagStrings = "-d=" * stringDelimitList(strl, ",") <| flagStrings
               end
           flagStrings
         end
