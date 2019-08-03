@@ -43,7 +43,11 @@ extern "C" {
 
 #else
 
+#if defined(_WIN32)
+#define DLLDirection __declspec(dllexport)
+#else
 #define DLLDirection /* nothing */
+#endif 
 #include <julia.h>
 
 #endif
