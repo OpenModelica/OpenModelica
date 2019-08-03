@@ -6,7 +6,6 @@ package AbsynToJulia
 /* TODOS:
 
 TODO: Public/Private semantics : (
-
 TODO: Julia does string concatination with * instead of +
 
 */
@@ -83,6 +82,7 @@ match class
     let returnType = (parts.classParts |> cp => dumpReturnTypeJL(getElementItemsInClassPart(cp)))
     let return_str = '<%(parts.classParts |> cp => dumpReturnStrJL(getElementItemsInClassPart(cp), functionContext))%>'
     let inputs_str = (parts.classParts |> cp => dumpInputsJL(getElementItemsInClassPart(cp), inputContext))
+    let typevar_inputs = System.stringReplace(inputs_str, "<:", "")
     let header = dumpClassHeader(parts, restriction)
     let functionBodyStr = dumpClassDef(parts, makeFunctionContext(return_str), options)
     /*
@@ -91,8 +91,7 @@ match class
     */
     <<
     <%commentStr%>
-    <%header%>
-    function <%name%>(<%inputs_str%>)<%returnType%>
+    function <%name%>(<%if header then typevar_inputs else inputs_str%>) <%if header then "" else returnType%> <%header%>
       <%functionBodyStr%>
       <%return_str%>
     end
@@ -201,7 +200,7 @@ match restriction
     (if typeVars then ("{" + (typeVars |> tv => tv ; separator=",") + "}"))
   /*Not pretty. But should solve generic functions scathered here and there*/
   case R_FUNCTION(__) then
-    (if typeVars then ((typeVars |> tv => tv + " = Any " ; separator="\n")))
+    (if typeVars then 'where {<%((typeVars |> tv => tv ; separator=", "))%>}')
   else ""
 end dumpClassTypeTypeVars;
 
@@ -527,7 +526,7 @@ match specification
     let comps_str_no_local = if elementSpecIsOUTPUT_OR_BIDIR(specification) then
                       (components |> comp =>
                         let comp_str = dumpComponentItem(comp, noContext)
-                          ' <%comp_str%>::<%ty_str%>'
+                          ' <%match context case PACKAGE(__) then "const "%><%comp_str%>::<%ty_str%>'
                       ;separator="\n")
                     else ''
    /*If our context is a function context we need to redefine comps_str*/
@@ -832,21 +831,8 @@ match typeSpec
     let isPackage  = match context
                        case PACKAGE(__) then "package"
                        else ""
-   /* We must treat lists in a special way */
-   let ty_str2 =
-      match path_str
-        /* Yes. Ride the crazy train... Julia <3 */
-        case "List" then '{<:<%ty_str%>}'
-        else '{<:<%ty_str%>}'
-   let isList =
-     match path_str
-       case "List" then "L"
-       else ""
-   let res =
-     if isList then
-       'Union{<%path_str%><%ty_str2%>, Nil{Any}}<%arraydim_str%>'
-     else
-       '<%path_str%><%ty_str2%><%arraydim_str%>'
+   let ty_str2 ='{<:<%ty_str%>}'
+   let res = '<%path_str%><%ty_str2%><%arraydim_str%>'
    if isFunc then
        '<%res%>'
    else
@@ -943,7 +929,7 @@ match exp
     if array_str then
       'list(<%array_str%>)'
     else
-      'nil()'
+      'nil'
   case MATRIX(__) then
     let matrix_str = (matrix |> row =>
         (row |> e => dumpExp(e, context) ;separator=", ") ;separator="; ")
@@ -997,6 +983,7 @@ match exp
   case LIST(__)
   case CALL(function_=Absyn.CREF_IDENT(name="list"), functionArgs=FUNCTIONARGS(args=exps))
   case CALL(function_=Absyn.CREF_IDENT(name="$array"), functionArgs=FUNCTIONARGS(args=exps)) then
+  /*Using nil() is only ok for matchexpressions*/
     '<%exps |> e => '<%dumpPattern(e, context, &as_str)%> <| '%> nil()'
   case CALL(function_=function_ as CREF_IDENT(name=id)) then
     let args_str = dumpFunctionArgsPattern(functionArgs)
