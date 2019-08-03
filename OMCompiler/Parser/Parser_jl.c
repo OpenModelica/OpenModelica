@@ -322,7 +322,7 @@ static void* parseStream(pANTLR3_INPUT_STREAM input)
   return res;
 }
 
-jl_value_t* parseFile(jl_value_t *fileName)
+DLLDirection jl_value_t* parseFile(jl_value_t *fileName)
 {
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;
