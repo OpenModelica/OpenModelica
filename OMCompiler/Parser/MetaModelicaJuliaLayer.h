@@ -3,6 +3,8 @@
 
 #include <julia.h>
 
+#define jl_debug_println(X) jl_call1(jl_get_function(jl_base_module, "show"), (X));
+
 /* Note: These values may be garbage collected away? Call this before each file is parsed? */
 void OpenModelica_initMetaModelicaJuliaLayer();
 
@@ -84,7 +86,5 @@ void c_add_source_message(
 static inline jl_value_t* or_nil(jl_value_t *value) {
   return value ? value : mmc_mk_nil();
 }
-
-#define jl_debug_println(X) jl_call1(jl_get_function(jl_base_module, "show"), (X));
 
 #endif
