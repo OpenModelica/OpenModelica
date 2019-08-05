@@ -272,7 +272,7 @@ class_specifier2 returns [void* ast, const char *s2]
 | EQUALS cs=overloading { $ast=cs; }
 | SUBTYPEOF ts=type_specifier
    {
-     $ast = Absyn__DERIVED(Absyn__TCOMPLEX(Absyn__IDENT(mmc_mk_scon("polymorphic")),mmc_mk_cons($ts.ast,mmc_mk_nil()),mmc_mk_nil()),
+     $ast = Absyn__DERIVED(Absyn__TCOMPLEX(Absyn__IDENT(mmc_mk_scon("polymorphic")),mmc_mk_cons_typed(Absyn_TypeSpec, $ts.ast, mmc_mk_nil()),mmc_mk_nil()),
                            Absyn__ATTR(MMC_FALSE,MMC_FALSE,Absyn__NON_5fPARALLEL,Absyn__VAR,Absyn__BIDIR,Absyn__NONFIELD,mmc_mk_nil()),mmc_mk_nil(),mmc_mk_none());
    }
 )
@@ -356,7 +356,7 @@ composition2 [void **ann] returns [void* ast]
     | el=equation_clause[ann]
     | el=constraint_clause[ann]
     | el=algorithm_clause[ann]
-    ) els=composition2[ann] {ast = mmc_mk_cons(el,els);}
+    ) els=composition2[ann] {ast = mmc_mk_cons_typed(Absyn_ClassPart, el, els);}
   )
   ;
 
@@ -374,7 +374,7 @@ external_clause returns [void* ast]
                     mmc_mk_some_or_none(retexp.ast),
                     or_nil(expl),
                     mmc_mk_some_or_none(ann1));
-            ast = mmc_mk_cons(Absyn__EXTERNAL(ast, mmc_mk_none()), mmc_mk_nil());
+            ast = mmc_mk_cons_typed(Absyn_ClassPart, Absyn__EXTERNAL(ast, mmc_mk_none()), mmc_mk_nil());
           }
         ;
 
@@ -407,13 +407,13 @@ element_list [void **ann] returns [void* ast]
   for (;omc_first_comment<last;omc_first_comment++) {
     pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
     if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
-      ast = mmc_mk_cons(Absyn__LEXER_5fCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
+      ast = mmc_mk_cons_typed(Absyn_ElementItem, Absyn__LEXER_5fCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
     }
   }
 } :
   ((
-     ( e=element {ast=mmc_mk_cons(Absyn__ELEMENTITEM(e.ast), ast);}
-     | ( { ann && (ModelicaParser_langStd < 31 || 1) }? a=annotation {*ann = mmc_mk_cons(a, *ann);} )
+     ( e=element {ast=mmc_mk_cons_typed(Absyn_ElementItem, Absyn__ELEMENTITEM(e.ast), ast);}
+     | ( { ann && (ModelicaParser_langStd < 31 || 1) }? a=annotation {*ann = mmc_mk_cons_typed(Absyn_Annotation, a, *ann);} )
      )
   ) SEMICOLON
     {
@@ -421,7 +421,7 @@ element_list [void **ann] returns [void* ast]
       for (;omc_first_comment<last;omc_first_comment++) {
         pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
         if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
-          ast = mmc_mk_cons(Absyn__LEXER_5fCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
+          ast = mmc_mk_cons_typed(Absyn_ElementItem, Absyn__LEXER_5fCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)), ast);
         }
       }
     }
@@ -628,12 +628,12 @@ type_specifier returns [void* ast]
 
 type_specifier_list returns [void* ast]
 @init { np2 = 0; } :
-  np1=type_specifier ( COMMA np2=type_specifier_list )? { ast = mmc_mk_cons($np1.ast,or_nil(np2)); }
+  np1=type_specifier ( COMMA np2=type_specifier_list )? { ast = mmc_mk_cons_typed(Absyn_TypeSpec, $np1.ast, or_nil(np2)); }
   ;
 
 component_list returns [void* ast]
 @init { c = 0; cs = 0; } :
-  c=component_declaration (COMMA cs=component_list)? {ast = mmc_mk_cons(c, or_nil(cs));}
+  c=component_declaration (COMMA cs=component_list)? {ast = mmc_mk_cons_typed(Absyn_ComponentItem, c, or_nil(cs));}
   ;
 
 component_declaration returns [void* ast]
@@ -680,7 +680,7 @@ class_modification returns [void* ast]
 
 argument_list returns [void* ast]
 @init { a = 0; as = 0; } :
-  a=argument ( COMMA as=argument_list )? { ast = mmc_mk_cons(a, or_nil(as)); }
+  a=argument ( COMMA as=argument_list )? { ast = mmc_mk_cons_typed(Absyn_ElementArg, a, or_nil(as)); }
   ;
 
 argument returns [void* ast]
@@ -738,7 +738,7 @@ component_clause1 returns [void* ast]
 @init { attr = NULL; ts.ast = 0; comp_decl = 0; } :
   attr=base_prefix ts=type_specifier comp_decl=component_declaration1
     {
-      ast = Absyn__COMPONENTS(attr, $ts.ast, mmc_mk_cons(comp_decl, mmc_mk_nil()));
+      ast = Absyn__COMPONENTS(attr, $ts.ast, mmc_mk_cons_typed(Absyn_ComponentItem, comp_decl, mmc_mk_nil()));
     }
   ;
 
@@ -775,21 +775,21 @@ equation_annotation_list [void **ann] returns [void* ast]
   for (;omc_first_comment<last;omc_first_comment++) {
     pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
     if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
-      ast = mmc_mk_cons(Absyn__EQUATIONITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
+      ast = mmc_mk_cons_typed(Absyn_EquationItem, Absyn__EQUATIONITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
     }
   }
 } :
   (
   { LA(1) != END_IDENT && LA(1) != CONSTRAINT && LA(1) != EQUATION && LA(1) != T_ALGORITHM && LA(1)!=INITIAL && LA(1) != PROTECTED && LA(1) != PUBLIC }? =>
-  ( eq=equation SEMICOLON { ast = mmc_mk_cons(eq.ast,ast); }
-  | ea=annotation SEMICOLON {*ann = mmc_mk_cons(ea,*ann);}
+  ( eq=equation SEMICOLON { ast = mmc_mk_cons_typed(Absyn_EquationItem, eq.ast,ast); }
+  | ea=annotation SEMICOLON {*ann = mmc_mk_cons_typed(Absyn_Annotation, ea,*ann);}
   )
     {
       last = LT(1)->getTokenIndex(LT(1));
       for (;omc_first_comment<last;omc_first_comment++) {
         pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
         if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
-          ast = mmc_mk_cons(Absyn__EQUATIONITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
+          ast = mmc_mk_cons_typed(Absyn_EquationItem, Absyn__EQUATIONITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
         }
       }
     }
@@ -805,13 +805,15 @@ equation_annotation_list [void **ann] returns [void* ast]
 constraint_annotation_list [void **ann] returns [void* ast]
 @init { co = 0; c = 0; }
 :
-  { LA(1) == END_IDENT || LA(1) == CONSTRAINT || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }?
+  { LA(1) == END_IDENT || LA(1) == CONSTRAINT || LA(1) == EQUATION || LA(1) ==
+T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }?
     { ast = mmc_mk_nil(); }
   |
   ( co=constraint SEMICOLON { c = co; }
-  | c=annotation SEMICOLON { *ann = mmc_mk_cons(c, ann); }
-  ) cs=constraint_annotation_list[ann] { ast = c ? mmc_mk_cons(c,cs) : cs; }
+  | c=annotation SEMICOLON { *ann = mmc_mk_cons_typed(Absyn_Annotation, c, *ann); }
+  ) cs=constraint_annotation_list[ann] { ast = c ? mmc_mk_cons_typed(Absyn_Exp, c, cs) : cs; }
   ;
+
 
 algorithm_clause [void **ann] returns [void* ast]
 @init{ as.ast = 0; } :
@@ -832,16 +834,16 @@ algorithm_annotation_list [void **ann, int matchCase] returns [void* ast]
   for (;omc_first_comment<last;omc_first_comment++) {
     pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
     if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
-      $ast = mmc_mk_cons(Absyn__ALGORITHMITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),$ast);
+      $ast = mmc_mk_cons_typed(Absyn_AlgorithmItem, Absyn__ALGORITHMITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),$ast);
     }
   }
 } :
   (
     { matchCase ? LA(1) != THEN : (LA(1) != END_IDENT && LA(1) != EQUATION && LA(1) != T_ALGORITHM && LA(1)!=INITIAL && LA(1) != PROTECTED && LA(1) != PUBLIC) }?=>
-  ( al=algorithm SEMICOLON { $ast = mmc_mk_cons(al.ast,$ast); }
+  ( al=algorithm SEMICOLON { $ast = mmc_mk_cons_typed(Absyn_AlgorithmItem, al.ast,$ast); }
   | a=annotation SEMICOLON {
       if (ann) {
-        *ann = mmc_mk_cons(a,*ann);
+        *ann = mmc_mk_cons_typed(Absyn_Annotation,a,*ann);
       } else {
         ModelicaParser_lexerError = ANTLR3_TRUE;
         c_add_source_message(NULL, 2, ErrorType_syntax, ErrorLevel_error, "Annotations are not allowed in an algorithm list.",
@@ -855,7 +857,7 @@ algorithm_annotation_list [void **ann, int matchCase] returns [void* ast]
     for (;omc_first_comment<last;omc_first_comment++) {
       pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
       if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
-        $ast = mmc_mk_cons(Absyn__ALGORITHMITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),$ast);
+        $ast = mmc_mk_cons_typed(Absyn_AlgorithmItem,Absyn__ALGORITHMITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),$ast);
       }
     }
   }
@@ -879,7 +881,9 @@ equation returns [void* ast]
   | FAILURE LPAR eq=equation RPAR { e = Absyn__EQ_5fFAILURE(eq.ast); }
   | EQUALITY LPAR e1=expression[metamodelica_enabled()] EQUALS e2=expression[metamodelica_enabled()] RPAR
     {
-      e = Absyn__EQ_5fNORETCALL(Absyn__CREF_5fIDENT(mmc_mk_scon("equality"),mmc_mk_nil()),Absyn__FUNCTIONARGS(mmc_mk_cons(e1.ast,mmc_mk_cons(e2.ast,mmc_mk_nil())),mmc_mk_nil()));
+      e = Absyn__EQ_5fNORETCALL(
+        Absyn__CREF_5fIDENT(mmc_mk_scon("equality"),mmc_mk_nil()),
+        Absyn__FUNCTIONARGS(mmc_mk_cons_typed(Absyn_Exp, e1.ast, mmc_mk_cons_typed(Absyn_Exp, e2.ast, mmc_mk_nil())), mmc_mk_nil()));
     }
   )
   cmt=comment
@@ -899,10 +903,12 @@ constraint returns [void* ast]
   | BREAK { a = Absyn__ALG_5fBREAK; }
   | RETURN { a = Absyn__ALG_5fRETURN; }
   | CONTINUE { a = Absyn__ALG_5fCONTINUE; }
-  | FAILURE LPAR al=algorithm RPAR { a = Absyn__ALG_5fFAILURE(mmc_mk_cons(al.ast,mmc_mk_nil())); }
+  | FAILURE LPAR al=algorithm RPAR { a = Absyn__ALG_5fFAILURE(mmc_mk_cons_typed(Absyn_AlgorithmItem, al.ast, mmc_mk_nil())); }
   | EQUALITY LPAR e1=expression[metamodelica_enabled()] ASSIGN e2=expression[metamodelica_enabled()] RPAR
     {
-      a = Absyn__ALG_5fNORETCALL(Absyn__CREF_5fIDENT(mmc_mk_scon("equality"),mmc_mk_nil()),Absyn__FUNCTIONARGS(mmc_mk_cons(e1.ast,mmc_mk_cons(e2.ast,mmc_mk_nil())),mmc_mk_nil()));
+      a = Absyn__ALG_5fNORETCALL(
+        Absyn__CREF_5fIDENT(mmc_mk_scon("equality"),mmc_mk_nil()),
+        Absyn__FUNCTIONARGS(mmc_mk_cons_typed(Absyn_Exp, e1.ast, mmc_mk_cons_typed(Absyn_Exp, e2.ast, mmc_mk_nil())), mmc_mk_nil()));
     }
   )
   cmt=comment
@@ -924,10 +930,13 @@ algorithm returns [void* ast]
   | BREAK { a = Absyn__ALG_5fBREAK; }
   | RETURN { a = Absyn__ALG_5fRETURN; }
   | CONTINUE { a = Absyn__ALG_5fCONTINUE; }
-  | FAILURE LPAR al=algorithm RPAR { a = Absyn__ALG_5fFAILURE(mmc_mk_cons(al.ast,mmc_mk_nil())); }
+  | FAILURE LPAR al=algorithm RPAR { a = Absyn__ALG_5fFAILURE(mmc_mk_cons_typed(Absyn_AlgorithmItem, al.ast, mmc_mk_nil())); }
   | EQUALITY LPAR e1=expression[metamodelica_enabled()] ASSIGN e2=expression[metamodelica_enabled()] RPAR
     {
-      a = Absyn__ALG_5fNORETCALL(Absyn__CREF_5fIDENT(mmc_mk_scon("equality"),mmc_mk_nil()),Absyn__FUNCTIONARGS(mmc_mk_cons(e1.ast,mmc_mk_cons(e2.ast,mmc_mk_nil())),mmc_mk_nil()));
+      a = Absyn__ALG_5fNORETCALL(
+        Absyn__CREF_5fIDENT(mmc_mk_scon("equality"),mmc_mk_nil()),
+        Absyn__FUNCTIONARGS(mmc_mk_cons_typed(Absyn_Exp, e1.ast,mmc_mk_cons_typed(Absyn_Exp, e2.ast, mmc_mk_nil())),
+        mmc_mk_nil()));
     }
   )
   cmt=comment
@@ -1061,7 +1070,7 @@ when_clause_e returns [void* ast]
 
 else_when_e_list returns [void* ast]
 @init{ es = 0; e = 0;} :
-  e=else_when_e es=else_when_e_list? { ast = mmc_mk_cons(e,or_nil(es)); }
+  e=else_when_e es=else_when_e_list? { ast = mmc_mk_cons(e, or_nil(es)); /* TODO: This will need some casting to make sure e is always Absyn.Exp */ }
   ;
 
 else_when_e returns [void* ast]
@@ -1079,7 +1088,7 @@ when_clause_a returns [void* ast]
 
 else_when_a_list returns [void* ast]
 @init{ e = 0; es = 0; } :
-  e=else_when_a es=else_when_a_list? { ast = mmc_mk_cons(e,or_nil(es)); }
+  e=else_when_a es=else_when_a_list? { ast = mmc_mk_cons(e,or_nil(es)); /* TODO: This will need some casting to make sure e is always Absyn.Exp */ }
   ;
 
 else_when_a returns [void* ast]
@@ -1089,7 +1098,7 @@ else_when_a returns [void* ast]
 
 equation_elseif_list returns [void* ast]
 @init{ e = 0; es = 0; } :
-  e=equation_elseif es=equation_elseif_list? { ast = mmc_mk_cons(e,or_nil(es)); }
+  e=equation_elseif es=equation_elseif_list? { ast = mmc_mk_cons(e,or_nil(es)); /* TODO: This will need some casting to make sure e is always Absyn.Exp */ }
   ;
 
 equation_elseif returns [void* ast]
@@ -1099,7 +1108,7 @@ equation_elseif returns [void* ast]
 
 algorithm_elseif_list returns [void* ast]
 @init{ a = 0; as = 0; } :
-  a=algorithm_elseif as=algorithm_elseif_list? { ast = mmc_mk_cons(a,or_nil(as)); }
+  a=algorithm_elseif as=algorithm_elseif_list? { ast = mmc_mk_cons(a,or_nil(as)); /* TODO: This will need some casting to make sure e is always Absyn.Exp */ }
   ;
 
 algorithm_elseif returns [void* ast]
@@ -1110,7 +1119,7 @@ algorithm_elseif returns [void* ast]
 equation_list_then returns [void* ast]
 @init{ e.ast = 0; es = 0; } :
     { LA(1) == THEN }? {ast = mmc_mk_nil();}
-  | (e=equation SEMICOLON es=equation_list_then) { ast = mmc_mk_cons(e.ast,es); }
+  | (e=equation SEMICOLON es=equation_list_then) { ast = mmc_mk_cons_typed(Absyn_Equation, e.ast, es); }
   ;
 
 equation_list returns [void* ast]
@@ -1128,18 +1137,18 @@ equation_list returns [void* ast]
       for (;first<last;last--) {
         pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
         if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
-          ast = mmc_mk_cons(Absyn__EQUATIONITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
+          ast = mmc_mk_cons_typed(Absyn_EquationItem, Absyn__EQUATIONITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
         }
       }
     }
   |
   ( e=equation SEMICOLON es=equation_list ) {
     ast = es;
-    ast = mmc_mk_cons(e.ast,ast);
+    ast = mmc_mk_cons_typed(Absyn_EquationItem, e.ast,ast);
     for (;first<last;last--) {
       pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
       if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
-        ast = mmc_mk_cons(Absyn__EQUATIONITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
+        ast = mmc_mk_cons_typed(Absyn_EquationItem, Absyn__EQUATIONITEMCOMMENT(mmc_mk_scon((char*)tok->getText(tok)->chars)),ast);
       }
     }
   }
@@ -1149,7 +1158,7 @@ algorithm_list returns [void* ast]
 @init { a.ast = 0; as = 0; } :
   {LA(1) != END_IDENT || LA(1) != END_IF || LA(1) != END_WHEN || LA(1) != END_FOR || LA(1) != END_WHILE}?
     { ast = mmc_mk_nil(); }
-  | a=algorithm SEMICOLON as=algorithm_list { ast = mmc_mk_cons(a.ast,as); }
+  | a=algorithm SEMICOLON as=algorithm_list { ast = mmc_mk_cons_typed(Absyn_AlgorithmItem, a.ast, as); }
   ;
 
 connect_clause returns [void* ast] :
@@ -1219,7 +1228,7 @@ if_expression returns [void* ast]
 
 elseif_expression_list returns [void* ast]
 @init{ e = 0; es = 0; } :
-  e=elseif_expression es=elseif_expression_list? { ast = mmc_mk_cons(e,or_nil(es)); }
+  e=elseif_expression es=elseif_expression_list? { ast = mmc_mk_cons(e,or_nil(es)); /* TODO: Need the tuple to have Absyn.Exp */ }
   ;
 
 elseif_expression returns [void* ast]
@@ -1229,7 +1238,7 @@ elseif_expression returns [void* ast]
 
 for_indices returns [void* ast]
 @init{ i = 0; is = 0; } :
-  i=for_index (COMMA is=for_indices)? { ast = mmc_mk_cons(i, or_nil(is)); }
+  i=for_index (COMMA is=for_indices)? { ast = mmc_mk_cons_typed(Absyn_ForIterator, i, or_nil(is)); }
   ;
 
 for_index returns [void* ast]
@@ -1488,7 +1497,7 @@ name_path_group returns [void* ast]
 @init{ id1 = 0; id2 = 0; rest = 0; } :
   (id1=IDENT|id1=CODE) (EQUALS (id2=IDENT|id2=CODE))? (COMMA rest=name_path_group)?
     {
-      $ast = mmc_mk_cons(id2 ? Absyn__GROUP_5fIMPORT_5fRENAME(token_to_scon(id1),token_to_scon(id2)) :
+      $ast = mmc_mk_cons_typed(Absyn_Import, id2 ? Absyn__GROUP_5fIMPORT_5fRENAME(token_to_scon(id1),token_to_scon(id2)) :
                            Absyn__GROUP_5fIMPORT_5fNAME(token_to_scon(id1)),
                      or_nil(rest));
     }
@@ -1553,11 +1562,11 @@ for_or_expression_list returns [void* ast, int isFor]
     )
     {
       if (el != NULL) {
-        $ast = mmc_mk_cons(e.ast,el);
+        $ast = mmc_mk_cons_typed(Absyn_Exp, e.ast, el);
       } else if (forind != NULL) {
         $ast = Absyn__FOR_5fITER_5fFARG(e.ast, threaded ? Absyn__THREAD : Absyn__COMBINE, forind);
       } else {
-        $ast = mmc_mk_cons(e.ast, mmc_mk_nil());
+        $ast = mmc_mk_cons_typed(Absyn_Exp, e.ast, mmc_mk_nil());
       }
       $isFor = forind != 0;
     }
@@ -1572,7 +1581,7 @@ for_or_expression_list2 returns [void* ast]
 
 named_arguments returns [void* ast]
 @init{ a = 0; as = 0; } :
-  a=named_argument (COMMA as=named_arguments)? { ast = mmc_mk_cons(a, or_nil(as)); }
+  a=named_argument (COMMA as=named_arguments)? { ast = mmc_mk_cons_typed(Absyn_NamedArg, a, or_nil(as)); }
   ;
 
 named_argument returns [void* ast]
@@ -1589,23 +1598,23 @@ output_expression_list [int* isTuple] returns [void* ast]
     }
   | COMMA {*isTuple = true;} el=output_expression_list[isTuple]
       {
-        $ast = mmc_mk_cons(Absyn__CREF(Absyn__WILD), el);
+        $ast = mmc_mk_cons_typed(Absyn_Exp, Absyn__CREF(Absyn__WILD), el);
       }
   | e1=expression[metamodelica_enabled()]
     ( COMMA {*isTuple = true;} el=output_expression_list[isTuple]
       {
         if (isNotNil(el))
         {
-          ast = mmc_mk_cons(e1.ast, el);
+          ast = mmc_mk_cons_typed(Absyn_Exp, e1.ast, el);
         }
         else
         {
-          ast = mmc_mk_cons(e1.ast, mmc_mk_cons(Absyn__CREF(Absyn__WILD), el));
+          ast = mmc_mk_cons_typed(Absyn_Exp, e1.ast, mmc_mk_cons_typed(Absyn_Exp, Absyn__CREF(Absyn__WILD), el));
         }
       }
     | RPAR
       {
-        ast = *isTuple ? mmc_mk_cons(e1.ast, mmc_mk_nil()) : e1.ast;
+        ast = *isTuple ? mmc_mk_cons_typed(Absyn_Exp, e1.ast, mmc_mk_nil()) : e1.ast;
       }
     )
   )
@@ -1613,7 +1622,7 @@ output_expression_list [int* isTuple] returns [void* ast]
 
 expression_list returns [void* ast]
 @init { e1.ast = 0; el = 0; } :
-  e1=expression[metamodelica_enabled()] (COMMA el=expression_list)? { ast = (el == NULL ? mmc_mk_cons(e1.ast,mmc_mk_nil()) : mmc_mk_cons(e1.ast,el)); }
+  e1=expression[metamodelica_enabled()] (COMMA el=expression_list)? { ast = (el == NULL ? mmc_mk_cons_typed(Absyn_Exp, e1.ast, mmc_mk_nil()) : mmc_mk_cons_typed(Absyn_Exp, e1.ast, el)); }
   ;
 
 array_subscripts returns [void* ast]
@@ -1623,7 +1632,7 @@ array_subscripts returns [void* ast]
 
 subscript_list returns [void* ast]
 @init{ s1 = 0; s2 = 0; } :
-  s1=subscript ( COMMA s2=subscript_list )? { ast = mmc_mk_cons(s1, or_nil(s2)); }
+  s1=subscript ( COMMA s2=subscript_list )? { ast = mmc_mk_cons_typed(Absyn_Subscript, s1, or_nil(s2)); }
   ;
 
 subscript returns [void* ast]
@@ -1695,7 +1704,7 @@ code_equation_clause returns [void* ast]
 @init{ e.ast = 0; as = 0; } :
   ( e=equation SEMICOLON as=code_equation_clause?
     {
-      ast = mmc_mk_cons(e.ast,or_nil(as));
+      ast = mmc_mk_cons_typed(Absyn_EquationItem, e.ast, or_nil(as));
     }
   )
   ;
@@ -1704,7 +1713,7 @@ code_constraint_clause returns [void* ast]
 @init{ e.ast = 0; as = 0; } :
   e=equation SEMICOLON as=code_constraint_clause?
     {
-      ast = mmc_mk_cons(e.ast,or_nil(as));
+      ast = mmc_mk_cons_typed(Absyn_EquationItem, e.ast,or_nil(as));
     }
   ;
 
@@ -1712,7 +1721,7 @@ code_algorithm_clause returns [void* ast]
 @init{ al.ast = 0; as = 0; } :
   al=algorithm SEMICOLON as=code_algorithm_clause?
     {
-      ast = mmc_mk_cons(al.ast,or_nil(as));
+      ast = mmc_mk_cons_typed(Absyn_AlgorithmItem, al.ast, or_nil(as));
     }
   ;
 
@@ -1760,7 +1769,7 @@ interactive_stmt returns [void* ast]
 
 interactive_stmt_list returns [void* ast]
 @init { a.ast = 0; $ast = mmc_mk_nil(); void *val; } :
-  a=top_algorithm {$ast = mmc_mk_cons(a.ast, $ast);} (SEMICOLON a=top_algorithm {$ast = mmc_mk_cons(a.ast, $ast);})*
+  a=top_algorithm {$ast = mmc_mk_cons_typed(Absyn_Algorithm, a.ast, $ast);} (SEMICOLON a=top_algorithm {$ast = mmc_mk_cons_typed(Absyn_AlgorithmItem, a.ast, $ast);})*
   {
     /* We build the list using iteration instead of recursion to save
      * stack space, so we need to reverse the result. */
@@ -1799,7 +1808,7 @@ cases returns [void* ast]
 @init{ c.ast = 0; cs.ast = 0; } :
   c=onecase cs=cases2
     {
-      $ast = mmc_mk_cons(c.ast,cs.ast);
+      $ast = mmc_mk_cons_typed(Absyn_Case, c.ast, cs.ast);
     }
   ;
 
@@ -1813,14 +1822,14 @@ cases2 returns [void* ast]
                              ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
       if ($th) $el = $th;
       if (exp.ast) {
-       $ast = mmc_mk_cons(Absyn__ELSE(or_nil(es),eqs ? Absyn__EQUATIONS(eqs) : (al ? Absyn__ALGORITHMS(algs.ast) : Absyn__EQUATIONS(mmc_mk_nil())),exp.ast,PARSER_INFO($el),mmc_mk_some_or_none(cmt),PARSER_INFO($start)),mmc_mk_nil());
+       $ast = mmc_mk_cons_typed(Absyn_Case, Absyn__ELSE(or_nil(es),eqs ? Absyn__EQUATIONS(eqs) : (al ? Absyn__ALGORITHMS(algs.ast) : Absyn__EQUATIONS(mmc_mk_nil())),exp.ast,PARSER_INFO($el),mmc_mk_some_or_none(cmt),PARSER_INFO($start)),mmc_mk_nil());
       } else {
        $ast = mmc_mk_nil();
       }
     }
   | c=onecase cs=cases2
     {
-      $ast = mmc_mk_cons(c.ast, cs.ast);
+      $ast = mmc_mk_cons_typed(Absyn_Case, c.ast, cs.ast);
     }
   )
   ;
