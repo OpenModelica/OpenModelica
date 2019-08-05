@@ -27,7 +27,7 @@ void OpenModelica_initMetaModelicaJuliaLayer()
   assert((omc_jl_listEmpty = jl_get_function(MetaModelicaModule, "listEmpty")));
   assert((omc_jl_isDerCref = jl_get_function(parserModule, "isDerCref")));
   assert((omc_jl_tuple2 = jl_get_function(jl_base_module, "tuple")));
-  assert((omc_jl_nil = jl_call0(jl_get_function(ListDefModule, "nil"))));
+  assert((omc_jl_nil = jl_get_global(ListDefModule, jl_symbol("nil"))));
 }
 
 void c_add_source_message(
