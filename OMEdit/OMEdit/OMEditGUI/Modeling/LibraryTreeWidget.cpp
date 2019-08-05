@@ -4170,10 +4170,10 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
           MainWindow::instance()->getProgressBar()->setRange(0, classesList.size());
           MainWindow::instance()->showProgressBar();
         }
-        bool activateAccessAnnotations = true;
+        bool activateAccessAnnotations = false;
         QComboBox *pActivateAccessAnnotationsComboBox = OptionsDialog::instance()->getGeneralSettingsPage()->getActivateAccessAnnotationsComboBox();
-        if (pActivateAccessAnnotationsComboBox->itemData(pActivateAccessAnnotationsComboBox->currentIndex()) == GeneralSettingsPage::Never) {
-          activateAccessAnnotations = false;
+        if (pActivateAccessAnnotationsComboBox->itemData(pActivateAccessAnnotationsComboBox->currentIndex()) == GeneralSettingsPage::Always) {
+          activateAccessAnnotations = true;
         }
         foreach (QString model, classesList) {
           mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, false, true, -1, activateAccessAnnotations);
