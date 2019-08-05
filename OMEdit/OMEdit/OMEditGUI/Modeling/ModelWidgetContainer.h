@@ -263,6 +263,7 @@ private:
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
   bool isAnyItemSelectedAndEditable(int key);
   bool isCreatingShape();
+  Component* getComponentFromQGraphicsItem(QGraphicsItem *pGraphicsItem);
   Component* connectorComponentAtPosition(QPoint position);
   Component* stateComponentAtPosition(QPoint position);
   bool isParameterConnectorSizing(Component *pComponent, QString parameter);

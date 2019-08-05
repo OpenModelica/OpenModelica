@@ -153,11 +153,11 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
 bool GraphicsView::isCreatingShape()
 {
   return isCreatingLineShape() ||
-    isCreatingPolygonShape() ||
-    isCreatingRectangleShape() ||
-    isCreatingEllipseShape() ||
-    isCreatingBitmapShape() ||
-    isCreatingTextShape();
+      isCreatingPolygonShape() ||
+      isCreatingRectangleShape() ||
+      isCreatingEllipseShape() ||
+      isCreatingBitmapShape() ||
+      isCreatingTextShape();
 }
 
 void GraphicsView::setExtentRectangle(qreal left, qreal bottom, qreal right, qreal top)
@@ -1695,6 +1695,24 @@ bool GraphicsView::isAnyItemSelectedAndEditable(int key)
 }
 
 /*!
+ * \brief GraphicsView::getComponentFromQGraphicsItem
+ * \param pGraphicsItem
+ * A QGraphicsItem can be a Component or a ShapeAnnotation inside a Component.
+ * \return
+ */
+Component *GraphicsView::getComponentFromQGraphicsItem(QGraphicsItem *pGraphicsItem)
+{
+  if (pGraphicsItem) {
+    Component *pComponent = dynamic_cast<Component*>(pGraphicsItem);
+    if (!pComponent && pGraphicsItem->parentItem()) {
+      pComponent = dynamic_cast<Component*>(pGraphicsItem->parentItem());
+    }
+    return pComponent;
+  }
+  return 0;
+}
+
+/*!
  * \brief GraphicsView::connectorComponentAtPosition
  * Returns the connector component at the position.
  * \param position
@@ -1709,23 +1727,21 @@ Component* GraphicsView::connectorComponentAtPosition(QPoint position)
    */
   QList<QGraphicsItem*> graphicsItems = items(position);
   foreach (QGraphicsItem *pGraphicsItem, graphicsItems) {
-    if (pGraphicsItem && pGraphicsItem->parentItem()) {
-      Component *pComponent = dynamic_cast<Component*>(pGraphicsItem->parentItem());
-      if (pComponent) {
-        Component *pRootComponent = pComponent->getRootParentComponent();
-        if (pRootComponent && pRootComponent->isSelected()) {
-          return 0;
-        } else if (pRootComponent && !pRootComponent->isSelected()) {
-          if (MainWindow::instance()->getConnectModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
-              !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView()) &&
-              ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector()) ||
-               (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel &&
-                pComponent->getComponentType() == Component::Port) ||
-               (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS &&
-                (pComponent->getLibraryTreeItem()->getOMSConnector() || pComponent->getLibraryTreeItem()->getOMSBusConnector()
-                 || pComponent->getLibraryTreeItem()->getOMSTLMBusConnector() || pComponent->getComponentType() == Component::Port)))) {
-            return pComponent;
-          }
+    Component *pComponent = getComponentFromQGraphicsItem(pGraphicsItem);
+    if (pComponent) {
+      Component *pRootComponent = pComponent->getRootParentComponent();
+      if (pRootComponent && pRootComponent->isSelected()) {
+        return 0;
+      } else if (pRootComponent && !pRootComponent->isSelected()) {
+        if (MainWindow::instance()->getConnectModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
+            !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView()) &&
+            ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector()) ||
+             (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel &&
+              pComponent->getComponentType() == Component::Port) ||
+             (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS &&
+              (pComponent->getLibraryTreeItem()->getOMSConnector() || pComponent->getLibraryTreeItem()->getOMSBusConnector()
+               || pComponent->getLibraryTreeItem()->getOMSTLMBusConnector() || pComponent->getComponentType() == Component::Port)))) {
+          return pComponent;
         }
       }
     }
@@ -1743,17 +1759,15 @@ Component* GraphicsView::stateComponentAtPosition(QPoint position)
 {
   QList<QGraphicsItem*> graphicsItems = items(position);
   foreach (QGraphicsItem *pGraphicsItem, graphicsItems) {
-    if (pGraphicsItem && pGraphicsItem->parentItem()) {
-      Component *pComponent = dynamic_cast<Component*>(pGraphicsItem->parentItem());
-      if (pComponent) {
-        Component *pRootComponent = pComponent->getRootParentComponent();
-        if (pRootComponent && !pRootComponent->isSelected()) {
-          if (MainWindow::instance()->getTransitionModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
-              !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView()) &&
-              ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica &&
-                pComponent->getLibraryTreeItem()->isState()))) {
-            return pComponent;
-          }
+    Component *pComponent = getComponentFromQGraphicsItem(pGraphicsItem);
+    if (pComponent) {
+      Component *pRootComponent = pComponent->getRootParentComponent();
+      if (pRootComponent && !pRootComponent->isSelected()) {
+        if (MainWindow::instance()->getTransitionModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
+            !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView()) &&
+            ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica &&
+              pComponent->getLibraryTreeItem()->isState()))) {
+          return pComponent;
         }
       }
     }
@@ -2840,26 +2854,24 @@ bool GraphicsView::handleDoubleClickOnComponent(QMouseEvent *event)
 {
   QGraphicsItem *pGraphicsItem = itemAt(event->pos());
   bool shouldEnactQTDoubleClick = true;
-  if (pGraphicsItem && pGraphicsItem->parentItem()) {
+  Component *pComponent = getComponentFromQGraphicsItem(pGraphicsItem);
+  if (pComponent) {
     shouldEnactQTDoubleClick = false;
-    Component *pComponent = dynamic_cast<Component*>(pGraphicsItem->parentItem());
-    if (pComponent) {
-      Component *pRootComponent = pComponent->getRootParentComponent();
-      if (pRootComponent) {
-        if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
-          pRootComponent->showSubModelAttributes();
-        } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-          removeCurrentConnection();
-          pRootComponent->handleOMSComponentDoubleClick();
+    Component *pRootComponent = pComponent->getRootParentComponent();
+    if (pRootComponent) {
+      if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+        pRootComponent->showSubModelAttributes();
+      } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+        removeCurrentConnection();
+        pRootComponent->handleOMSComponentDoubleClick();
+      } else {
+        removeCurrentConnection();
+        removeCurrentTransition();
+        /* ticket:4401 Open component class with shift + double click */
+        if (QApplication::keyboardModifiers() == Qt::ShiftModifier) {
+          pRootComponent->openClass();
         } else {
-          removeCurrentConnection();
-          removeCurrentTransition();
-          /* ticket:4401 Open component class with shift + double click */
-          if (QApplication::keyboardModifiers() == Qt::ShiftModifier) {
-            pRootComponent->openClass();
-          } else {
-            pRootComponent->showParameters();
-          }
+          pRootComponent->showParameters();
         }
       }
     }
