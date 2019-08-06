@@ -39,6 +39,10 @@ import MetaModelica_Lexer; /* Makes all tokens defined, imported in OptiMo_Lexer
 //import ParModelica_Lexer; /* Makes all tokens defined, except the ones specific to MetaModelica */
 //import OptiMo_Lexer;  /* Makes all tokens defined */
 
+scope omc{
+  int numPushed;
+}
+
 @includes {
   #define false 0
   #define true 1
@@ -127,7 +131,7 @@ goto rule ## func ## Ex; }}
   #else
 
   /* Julia */
-  #define PARSER_INFO(start) ((void*) SourceInfo__SOURCEINFO(mmc_mk_scon("dummyFile"), MMC_TRUE, mmc_mk_icon(start->line), mmc_mk_icon(start->line == 1 ? start->charPosition+2 : start->charPosition+1), mmc_mk_icon(LT(1)->line), mmc_mk_icon(LT(1)->charPosition+1), mmc_mk_rcon(0.0)))
+  #define PARSER_INFO(start) ((void*) SourceInfo__SOURCEINFO(ModelicaParser_filename_OMC, MMC_TRUE, mmc_mk_icon(start->line), mmc_mk_icon(start->line == 1 ? start->charPosition+2 : start->charPosition+1), mmc_mk_icon(LT(1)->line), mmc_mk_icon(LT(1)->charPosition+1), mmc_mk_rcon(0.0)))
   #define isCref(X) jl_typeis(X, Absyn_Exp_CREF_type)
   #define isPath(X) jl_typeis(X, Absyn_TypeSpec_TPATH_type)
   #define isComplex(X) jl_typeis(X, Absyn_TypeSpec_TCOMPLEX_type)
@@ -138,6 +142,8 @@ goto rule ## func ## Ex; }}
   #define GlobalScript__IALG(X) NULL
   #define GlobalScript__IEXP(X, Y) NULL
   #define GlobalScript__ISTMTS(X, Y) NULL
+  #define OM_PUSHZ(X) {(X) = NULL; JL_GC_PUSH1(&(X)); ctx->pModelicaParser_omcTop->numPushed++;}
+  #define OM_POP() {ctx->pModelicaParser_omcTop->numPushed--; JL_GC_POP(); }
   #endif
 }
 
@@ -163,18 +169,19 @@ goto rule ## func ## Ex; }}
  *------------------------------------------------------------------*/
 
 stored_definition returns [void* ast]
-@init{ within = NULL; cl = NULL; } :
+@init{ $omc::numPushed; OM_PUSHZ(within); OM_PUSHZ(cl); } :
   BOM? (within=within_clause SEMICOLON)?
   cl=class_definition_list?
   EOF
     {
       ast = Absyn__PROGRAM(or_nil(cl), within ? within : Absyn__TOP);
+      OM_POP();OM_POP();
     }
   ;
 
 within_clause returns [void* ast]
-@init{ name = NULL; } :
-  WITHIN (name=name_path)? {ast = name ? Absyn__WITHIN(name) : Absyn__TOP;}
+@init{ OM_PUSHZ(name); } :
+  WITHIN (name=name_path)? {ast = name ? Absyn__WITHIN(name) : Absyn__TOP; OM_POP(); }
   ;
 
 class_definition_list returns [void* ast]

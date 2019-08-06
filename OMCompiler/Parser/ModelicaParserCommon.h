@@ -47,7 +47,7 @@ extern "C" {
 #define DLLDirection __declspec(dllexport)
 #else
 #define DLLDirection /* nothing */
-#endif 
+#endif
 #include <julia.h>
 
 #endif
