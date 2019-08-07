@@ -34,6 +34,7 @@
 #include "DiagramWindow.h"
 #include "MainWindow.h"
 #include "Modeling/ModelWidgetContainer.h"
+#include "Plotting/PlotWindowContainer.h"
 #include "Plotting/VariablesWidget.h"
 
 /*!
@@ -134,4 +135,15 @@ void DiagramWindow::removeDiagram(ModelWidget *pModelWidget)
     delete mpGraphicsView;
     mpGraphicsView = 0;
   }
+}
+
+/*!
+ * \brief DiagramWindow::closeEvent
+ * Removes DiagramWindow from PlotWindowContainer.
+ * \param event
+ */
+void DiagramWindow::closeEvent(QCloseEvent *event)
+{
+  Q_UNUSED(event);
+  MainWindow::instance()->getPlotWindowContainer()->removeSubWindow(this);
 }

@@ -53,9 +53,8 @@ private:
   GraphicsScene *mpGraphicsScene;
   GraphicsView *mpGraphicsView;
   QVBoxLayout *mpMainLayout;
-signals:
-
-public slots:
+protected:
+  virtual void closeEvent(QCloseEvent *event);
 };
 
 #endif // DIAGRAMWINDOW_H

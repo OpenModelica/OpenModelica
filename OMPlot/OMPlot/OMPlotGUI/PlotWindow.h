@@ -110,8 +110,8 @@ public:
   void setupToolbar();
   void plot(PlotCurve *pPlotCurve = 0);
   void plotParametric(PlotCurve *pPlotCurve = 0);
-  void plotArray(double timePercent, PlotCurve *pPlotCurve = 0);
-  void plotArrayParametric(double timePercent, PlotCurve *pPlotCurve = 0);
+  void plotArray(double time, PlotCurve *pPlotCurve = 0);
+  void plotArrayParametric(double time, PlotCurve *pPlotCurve = 0);
   QPair<QVector<double>*, QVector<double>*> plotInteractive(PlotCurve *pPlotCurve = 0);
   void setInteractiveOwner(const QString &interactiveTreeItemOwner);
   void setInteractivePort(const int port);

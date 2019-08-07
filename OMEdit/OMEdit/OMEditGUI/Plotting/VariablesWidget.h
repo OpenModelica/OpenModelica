@@ -187,6 +187,7 @@ public:
   VariableTreeProxyModel* getVariableTreeProxyModel() {return mpVariableTreeProxyModel;}
   VariablesTreeModel* getVariablesTreeModel() {return mpVariablesTreeModel;}
   VariablesTreeView* getVariablesTreeView() {return mpVariablesTreeView;}
+  void enableVisualizationControls(bool enable);
   void insertVariablesItemsToTree(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
   void addSelectedInteractiveVariables(const QString &modelName, const QList<QString> &selectedVariables);
   void variablesUpdated();
@@ -204,6 +205,7 @@ private:
   Label *mpSimulationTimeLabel;
   QComboBox *mpSimulationTimeComboBox;
   QSlider *mpSimulationTimeSlider;
+  int mSliderRange;
   QToolBar *mpToolBar;
   QAction *mpRewindAction;
   QAction *mpPlayAction;

@@ -87,7 +87,6 @@ class TimeManager
   /*! \brief Sets pause status to new value. */
   void setPause(const bool status);
   int getTimeFraction();
-  int getTimeFraction(int discretization);
   void setSpeedUp(double value);
   double getSpeedUp();
   QTimer* getUpdateSceneTimer() {return mpUpdateSceneTimer;}

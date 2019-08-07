@@ -59,12 +59,7 @@ void TimeManager::updateTick()
 
 int TimeManager::getTimeFraction()
 {
-  return getTimeFraction(mTimeDiscretization);
-}
-
-int TimeManager::getTimeFraction(int discretization)
-{
-  return int(_visTime / (_endTime - _startTime)*discretization);
+  return int(_visTime / (_endTime - _startTime)*mTimeDiscretization);
 }
 
 double TimeManager::getEndTime() const

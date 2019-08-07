@@ -906,11 +906,11 @@ void PlotWindow::updateTimeText(QString unit)
   mpPlot->replot();
 }
 
-void PlotWindow::plotArray(double timePercent, PlotCurve *pPlotCurve)
+void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
 {
   double *res;
   QString currentLine;
-  double time;
+  setTime(time);
   double timeUnitFactor = getTimeUnitFactor(getTimeUnit());
   if (mVariablesList.isEmpty() and getPlotType() == PlotWindow::PLOTARRAY)
     throw NoVariableException(QString("No variables specified!").toStdString().c_str());
@@ -942,11 +942,6 @@ void PlotWindow::plotArray(double timePercent, PlotCurve *pPlotCurve)
     //Read in timevector
     double timeVals[intervalSize];
     readPLTDataset(mpTextStream, "time", intervalSize, timeVals);
-    //calculate time
-    double startTime = timeVals[0];
-    double stopTime = timeVals[intervalSize-1];
-    time = startTime + (stopTime - startTime)*timePercent/100.0;
-    setTime(time);
     //Find indexes and alpha to interpolate data in particular time
     double alpha;
     int it = setupInterp(timeVals, time, intervalSize, alpha);
@@ -996,11 +991,6 @@ void PlotWindow::plotArray(double timePercent, PlotCurve *pPlotCurve)
       omc_free_csv_reader(csvReader);
       throw NoVariableException(tr("Variable doesnt exist: %1").arg("time").toStdString().c_str());
     }
-    //calculate time
-    double startTime = timeVals[0];
-    double stopTime = timeVals[csvReader->numsteps-1];
-    time = startTime + (stopTime - startTime)*timePercent/100.0;
-    setTime(time);
     double alpha;
     int it = setupInterp(timeVals, time, csvReader->numsteps, alpha);
     if (it < 0) {
@@ -1062,8 +1052,6 @@ void PlotWindow::plotArray(double timePercent, PlotCurve *pPlotCurve)
       //calculate time
       double startTime = omc_matlab4_startTime(&reader);
       double stopTime =  omc_matlab4_stopTime(&reader);
-      time = startTime + (stopTime - startTime)*timePercent/100.0;
-      setTime(time);
       if (reader.nvar < 1) {
         omc_free_matlab4_reader(&reader);
         throw NoVariableException("Variable doesnt exist: time");
@@ -1114,11 +1102,11 @@ void PlotWindow::plotArray(double timePercent, PlotCurve *pPlotCurve)
     }
 }
 
-void PlotWindow::plotArrayParametric(double timePercent, PlotCurve *pPlotCurve)
+void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
 {
   QString xVariable, yVariable, xTitle, yTitle;
   int pair = 0;
-  double time;
+  setTime(time);
   double timeUnitFactor = getTimeUnitFactor(getTimeUnit());
   if (mVariablesList.isEmpty())
     throw NoVariableException(QString("No variables specified!").toStdString().c_str());
@@ -1129,7 +1117,6 @@ void PlotWindow::plotArrayParametric(double timePercent, PlotCurve *pPlotCurve)
 
   for (pair = 0; pair < mVariablesList.size(); pair += 2)
   {
-    QStringList varPair;
     xVariable = mVariablesList.at(pair);
     yVariable = mVariablesList.at(pair+1);
     //    if (!editCase)
@@ -1175,11 +1162,6 @@ void PlotWindow::plotArrayParametric(double timePercent, PlotCurve *pPlotCurve)
       //Read in timevector
       double timeVals[intervalSize];
       readPLTDataset(mpTextStream, "time", intervalSize, timeVals);
-      //calculate time
-      double startTime = timeVals[0];
-      double stopTime = timeVals[intervalSize-1];
-      time = startTime + (stopTime - startTime)*timePercent/100.0;
-      setTime(time);
       //Find indexes and alpha to interpolate data in particular time
       double alpha;
       int it = setupInterp(timeVals, time, intervalSize, alpha);
@@ -1230,11 +1212,6 @@ void PlotWindow::plotArrayParametric(double timePercent, PlotCurve *pPlotCurve)
         omc_free_csv_reader(csvReader);
         throw NoVariableException(tr("Variable doesnt exist: %1").arg("time").toStdString().c_str());
       }
-      //calculate time
-      double startTime = timeVals[0];
-      double stopTime = timeVals[csvReader->numsteps-1];
-      time = startTime + (stopTime - startTime)*timePercent/100.0;
-      setTime(time);
       double alpha;
       int it = setupInterp(timeVals, time, csvReader->numsteps, alpha);
       if (it < 0) {
@@ -1311,8 +1288,6 @@ void PlotWindow::plotArrayParametric(double timePercent, PlotCurve *pPlotCurve)
       //calculate time
       double startTime = omc_matlab4_startTime(&reader);
       double stopTime =  omc_matlab4_stopTime(&reader);
-      time = startTime + (stopTime - startTime)*timePercent/100.0;
-      setTime(time);
       if (reader.nvar < 1) {
         omc_free_matlab4_reader(&reader);
         throw NoVariableException("Variable doesnt exist: time");
