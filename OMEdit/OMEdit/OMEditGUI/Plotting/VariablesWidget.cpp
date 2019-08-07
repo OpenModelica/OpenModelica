@@ -766,6 +766,11 @@ bool VariablesTreeModel::removeVariableTreeItem(QString variable)
 {
   VariablesTreeItem *pVariablesTreeItem = findVariablesTreeItem(variable, mpRootVariablesTreeItem);
   if (pVariablesTreeItem) {
+    // if we are going to remove an active VariablesTreeItem then we should disable the visualization controls.
+    if (pVariablesTreeItem->isActive()) {
+      mpVariablesTreeView->getVariablesWidget()->enableVisualizationControls(false);
+      mpVariablesTreeView->getVariablesWidget()->rewindVisualization();
+    }
     beginRemoveRows(variablesTreeItemIndex(pVariablesTreeItem), 0, pVariablesTreeItem->getChildren().size());
     pVariablesTreeItem->removeChildren();
     VariablesTreeItem *pParentVariablesTreeItem = pVariablesTreeItem->parent();
@@ -1072,7 +1077,10 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   mpSimulationTimeComboBox->addItems(MainWindow::instance()->getOMCProxy()->getDerivedUnits("s"));
   connect(mpSimulationTimeComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(timeUnitChanged(QString)));
   // simulation time slider
+  mSliderRange = 1000;
   mpSimulationTimeSlider = new QSlider(Qt::Horizontal);
+  mpSimulationTimeSlider->setRange(0, mSliderRange);
+  mpSimulationTimeSlider->setSliderPosition(0);
   connect(mpSimulationTimeSlider, SIGNAL(valueChanged(int)), SLOT(simulationTimeChanged(int)));
   // toolbar
   mpToolBar = new QToolBar;
@@ -1167,6 +1175,19 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   connect(mpVariablesTreeModel, SIGNAL(variableTreeItemRemoved(QString)), MainWindow::instance()->getPlotWindowContainer(), SLOT(updatePlotWindows(QString)));
   //connect(mpVariablesTreeModel, SIGNAL(clicked(QModelIndex)), this, SLOT(selectInteractivePlotWindow(QModelIndex)));
   //connect(mpVariablesTreeModel, SIGNAL(itemChecked(QModelIndex)), SLOT(selectInteractivePlotWindow(QModelIndex)));
+  enableVisualizationControls(false);
+}
+
+/*!
+ * \brief VariablesWidget::enableVisualizationControls
+ * Enables/Disables the visualization controls.
+ * \param enable
+ */
+void VariablesWidget::enableVisualizationControls(bool enable)
+{
+  mpSimulationTimeSlider->setEnabled(enable);
+  mpSimulationTimeSlider->setToolTip(enable ? "" : tr("Mark a result file active to enable the controls."));
+  mpToolBar->setEnabled(enable);
 }
 
 /*!
@@ -1265,6 +1286,13 @@ void VariablesWidget::variablesUpdated()
 
 void VariablesWidget::updateVariablesTreeHelper(QMdiSubWindow *pSubWindow)
 {
+  /* We always pause the visualization if we reach this function
+   * This function can be reached via following ways,
+   * When active PlotWindow is changed.
+   * When active PlotWindow variables are updated.
+   * When clearing the PlotWindow curves
+   */
+  pauseVisualization();
   if (!pSubWindow) {
     return;
   }
@@ -1485,10 +1513,8 @@ void VariablesWidget::initializeVisualization(SimulationOptions simulationOption
   mpTimeManager->setPause(true);
   // reset the visualization controls
   mpTimeTextBox->setText("0.0");
-  mpSimulationTimeSlider->setRange(simulationOptions.getStartTime().toDouble(), simulationOptions.getNumberofIntervals());
-  bool state = mpSimulationTimeSlider->blockSignals(true);
-  mpSimulationTimeSlider->setValue(0);
-  mpSimulationTimeSlider->blockSignals(state);
+  mpSimulationTimeSlider->setValue(mpSimulationTimeSlider->minimum());
+  enableVisualizationControls(true);
 }
 
 /*!
@@ -1957,30 +1983,34 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
  */
 void VariablesWidget::simulationTimeChanged(int timePercent)
 {
-  float time = (mpTimeManager->getEndTime() - mpTimeManager->getStartTime()) * ((float)timePercent / (float)mpSimulationTimeSlider->maximum());
+  double time = (mpTimeManager->getEndTime() - mpTimeManager->getStartTime()) * ((double)timePercent / (double)mSliderRange);
   mpTimeManager->setVisTime(time);
   mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
 
   PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
   if (pPlotWindow) {
-    PlotWindow::PlotType plotType = pPlotWindow->getPlotType();
-    if (plotType == PlotWindow::PLOTARRAY) {
-      QList<PlotCurve*> curves = pPlotWindow->getPlot()->getPlotCurvesList();
-      foreach (PlotCurve* curve, curves) {
-        QString varName = curve->getYVariable();
-        pPlotWindow->setVariablesList(QStringList(varName));
-        pPlotWindow->plotArray(timePercent, curve);
+    try {
+      PlotWindow::PlotType plotType = pPlotWindow->getPlotType();
+      if (plotType == PlotWindow::PLOTARRAY) {
+        QList<PlotCurve*> curves = pPlotWindow->getPlot()->getPlotCurvesList();
+        foreach (PlotCurve* curve, curves) {
+          QString varName = curve->getYVariable();
+          pPlotWindow->setVariablesList(QStringList(varName));
+          pPlotWindow->plotArray(time, curve);
+        }
+      } else if (plotType == PlotWindow::PLOTARRAYPARAMETRIC) {
+        QList<PlotCurve*> curves = pPlotWindow->getPlot()->getPlotCurvesList();
+        foreach (PlotCurve* curve, curves) {
+          QString xVarName = curve->getXVariable();
+          QString yVarName = curve->getYVariable();
+          pPlotWindow->setVariablesList({xVarName,yVarName});
+          pPlotWindow->plotArrayParametric(time, curve);
+        }
+      } else {
+        return;
       }
-    } else if (plotType == PlotWindow::PLOTARRAYPARAMETRIC) {
-      QList<PlotCurve*> curves = pPlotWindow->getPlot()->getPlotCurvesList();
-      foreach (PlotCurve* curve, curves) {
-        QString xVarName = curve->getXVariable();
-        QString yVarName = curve->getYVariable();
-        pPlotWindow->setVariablesList({xVarName,yVarName});
-        pPlotWindow->plotArrayParametric(timePercent, curve);
-      }
-    } else {
-      return;
+    } catch (PlotException &e) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, e.what(), Helper::scriptingKind, Helper::errorLevel));
     }
   } else { // if no plot window then try to update the DiagramWindow
     updateVisualization();
@@ -2256,9 +2286,7 @@ void VariablesWidget::rewindVisualization()
   mpTimeManager->setVisTime(mpTimeManager->getStartTime());
   mpTimeManager->setRealTimeFactor(0.0);
   mpTimeManager->setPause(true);
-  bool state = mpSimulationTimeSlider->blockSignals(true);
-  mpSimulationTimeSlider->setValue(0);
-  mpSimulationTimeSlider->blockSignals(state);
+  mpSimulationTimeSlider->setValue(mpSimulationTimeSlider->minimum());
   mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
 }
 
@@ -2298,10 +2326,8 @@ void VariablesWidget::visulizationTimeChanged()
       value = end;
     }
     mpTimeManager->setVisTime(value);
-    bool state = mpSimulationTimeSlider->blockSignals(true);
-    mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction(mpSimulationTimeSlider->maximum()));
-    mpSimulationTimeSlider->blockSignals(state);
-    updateVisualization();
+    mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
+
   }
 }
 
@@ -2325,20 +2351,14 @@ void VariablesWidget::visualizationSpeedChanged()
  */
 void VariablesWidget::incrementVisualization()
 {
-  if (!mpTimeManager->isPaused()) {
-    mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
-    // set time slider
-    int time = mpTimeManager->getTimeFraction(mpSimulationTimeSlider->maximum());
-    bool state = mpSimulationTimeSlider->blockSignals(true);
-    mpSimulationTimeSlider->setValue(time);
-    mpSimulationTimeSlider->blockSignals(state);
-  }
-
   //measure realtime
   mpTimeManager->updateTick();
   //update scene and set next time step
   if (!mpTimeManager->isPaused()) {
-    updateVisualization();
+    mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
+    // set time slider
+    int time = mpTimeManager->getTimeFraction();
+    mpSimulationTimeSlider->setValue(time);
     //finish animation with pause when endtime is reached
     if (mpTimeManager->getVisTime() >= mpTimeManager->getEndTime()) {
       pauseVisualization();
