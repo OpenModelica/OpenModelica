@@ -40,13 +40,9 @@ import MetaModelica_Lexer; /* Makes all tokens defined, imported in OptiMo_Lexer
 //import OptiMo_Lexer;  /* Makes all tokens defined */
 
 @includes {
-  #include <stdlib.h>
-  #include <stdio.h>
-  #include <errno.h>
-  #include <time.h>
-
-  #include "ModelicaParserCommon.h"
-  #include "errorext.h"
+  #define false 0
+  #define true 1
+  #define token_to_scon(tok) mmc_mk_scon((char*)tok->getText(tok)->chars)
 
   #define ModelicaParserException 100
   #define ModelicaLexerException  200
@@ -62,13 +58,30 @@ __info->offset2 = _offset2; \
 EXCEPTION->custom = __info; \
 goto rule ## func ## Ex; }}
 
-  #define false 0
-  #define true 1
+  typedef struct fileinfo_struct {
+    int line1;
+    int line2;
+    int offset1;
+    int offset2;
+  } fileinfo;
+
+  #include <stdlib.h>
+  #include <stdio.h>
+  #include <errno.h>
+  #include <time.h>
+
+  #include "ModelicaParserCommon.h"
+
+  #define make_redeclare_keywords(replaceable,redeclare) (((replaceable) && (redeclare)) ? Absyn__REDECLARE_5fREPLACEABLE : ((replaceable) ? Absyn__REPLACEABLE : ((redeclare) ? Absyn__REDECLARE : NULL)))
+  #define make_inner_outer(i,o) (i && o ? Absyn__INNER_5fOUTER : i ? Absyn__INNER : o ? Absyn__OUTER : Absyn__NOT_5fINNER_5fOUTER)
+
+  #if !defined(OMJULIA)
+
+  #include "errorext.h"
+
   #define or_nil(x) (x != 0 ? x : mmc_mk_nil())
   #define mmc_mk_some_or_none(x) (x ? mmc_mk_some(x) : mmc_mk_none())
   #define mmc_mk_tuple2(x1,x2) mmc_mk_box2(0,x1,x2)
-  #define make_redeclare_keywords(replaceable,redeclare) (((replaceable) && (redeclare)) ? Absyn__REDECLARE_5fREPLACEABLE : ((replaceable) ? Absyn__REPLACEABLE : ((redeclare) ? Absyn__REDECLARE : NULL)))
-  #define make_inner_outer(i,o) (i && o ? Absyn__INNER_5fOUTER : i ? Absyn__INNER : o ? Absyn__OUTER : Absyn__NOT_5fINNER_5fOUTER)
 #if 0
   /* Enable if you don't want to generate the tree */
   void* mmc_mk_box_eat_all(int ix, ...);
@@ -93,32 +106,56 @@ goto rule ## func ## Ex; }}
   #undef MMC_STRUCTHDR
   #define MMC_STRUCTHDR(x,y) 0
 #endif
-  #define token_to_scon(tok) mmc_mk_scon((char*)tok->getText(tok)->chars)
+
   #define NYI(void) fprintf(stderr, "NYI \%s \%s:\%d\n", __FUNCTION__, __FILE__, __LINE__); exit(1);
 
   #define PARSER_INFO(start) ((void*) SourceInfo__SOURCEINFO(ModelicaParser_filename_OMC, mmc_mk_bcon(ModelicaParser_readonly), mmc_mk_icon(start->line), mmc_mk_icon(start->line == 1 ? start->charPosition+2 : start->charPosition+1), mmc_mk_icon(LT(1)->line), mmc_mk_icon(LT(1)->charPosition+1), ModelicaParser_timeStamp))
-  typedef struct fileinfo_struct {
-    int line1;
-    int line2;
-    int offset1;
-    int offset2;
-  } fileinfo;
   #if !defined(OMC_GENERATE_RELOCATABLE_CODE) || defined(OMC_BOOTSTRAPPING)
   modelica_boolean omc_AbsynUtil_isDerCref(threadData_t* threadData, void* exp);
   #else
   modelica_boolean (*omc_AbsynUtil_isDerCref)(threadData_t* threadData, void* exp);
   #endif
+
+  #define isCref(X) (MMC_GETHDR(X) == MMC_STRUCTHDR(1+1, Absyn__CREF_3dBOX1))
+  #define isPath(X) (MMC_GETHDR(X) == MMC_STRUCTHDR(2+1, Absyn__TPATH_3dBOX2))
+  #define isComplex(X) (MMC_GETHDR(X) == MMC_STRUCTHDR(3+1, Absyn__TCOMPLEX_3dBOX3))
+  #define isTuple(X) (MMC_GETHDR(X) == MMC_STRUCTHDR(1+1, Absyn__TUPLE_3dBOX1))
+  #define isCall(X) (MMC_GETHDR(X) == MMC_STRUCTHDR(2+1, Absyn__CALL_3dBOX2))
+  #define isNotNil(X) (MMC_NILHDR != MMC_GETHDR(X))
+  #define mmc_mk_cons_typed(T,head,tail) mmc_mk_cons(head,tail)
+
+  #else
+
+  /* Julia */
+  #define PARSER_INFO(start) ((void*) SourceInfo__SOURCEINFO(mmc_mk_scon("dummyFile"), MMC_TRUE, mmc_mk_icon(start->line), mmc_mk_icon(start->line == 1 ? start->charPosition+2 : start->charPosition+1), mmc_mk_icon(LT(1)->line), mmc_mk_icon(LT(1)->charPosition+1), mmc_mk_rcon(0.0)))
+  #define isCref(X) jl_typeis(X, Absyn_Exp_CREF_type)
+  #define isPath(X) jl_typeis(X, Absyn_TypeSpec_TPATH_type)
+  #define isComplex(X) jl_typeis(X, Absyn_TypeSpec_TCOMPLEX_type)
+  #define isTuple(X) jl_typeis(X, Absyn_Exp_TUPLE_type)
+  #define isCall(X) jl_typeis(X, Absyn_Exp_CALL_type)
+  #define isNotNil(X) !listEmpty(X)
+  #define mmc_mk_cons(X, Y) (__mmc_mk_cons((jl_value_t *)X, (jl_value_t *)Y))
+  #define GlobalScript__IALG(X) NULL
+  #define GlobalScript__IEXP(X, Y) NULL
+  #define GlobalScript__ISTMTS(X, Y) NULL
+  #endif
 }
 
 @members
 {
+  #define ARRAY_REDUCTION_NAME "\$array"
+
+  #if !defined(OMJULIA)
   #include "meta_modelica.h"
   #include "OpenModelicaBootstrappingHeader.h"
   parser_members members;
   void* mmc_mk_box_eat_all(int ix, ...) {return NULL;}
   #if defined(OMC_BOOTSTRAPPING)
   #endif
-  #define ARRAY_REDUCTION_NAME "\$array"
+  #else /* Julia */
+  #include "OpenModelicaJuliaHeader.h"
+  #include "MetaModelicaJuliaLayer.h"
+  #endif
 }
 
 /*------------------------------------------------------------------
@@ -144,7 +181,7 @@ class_definition_list returns [void* ast]
 @init{ f = NULL; cd.ast = NULL; cl = NULL; } :
   ((f=FINAL)? cd=class_definition[f != NULL] SEMICOLON) cl=class_definition_list?
     {
-      ast = mmc_mk_cons(cd.ast, or_nil(cl));
+      ast = mmc_mk_cons_typed(Absyn_Class, cd.ast, or_nil(cl));
     }
   ;
 
@@ -274,7 +311,7 @@ name_list returns [void* ast]
 @init { n = 0; nl = 0; } :
   n=name_path (COMMA nl=name_list)?
     {
-      ast = mmc_mk_cons(n, or_nil(nl));
+      ast = mmc_mk_cons_typed(Absyn_Path, n, or_nil(nl));
     }
   ;
 
@@ -292,7 +329,7 @@ enumeration returns [void* ast]
 
 enum_list returns [void* ast]
 @init { e = 0; el = 0; } :
-  e=enumeration_literal ( COMMA el=enum_list )? { ast = mmc_mk_cons(e, or_nil(el)); }
+  e=enumeration_literal ( COMMA el=enum_list )? { ast = mmc_mk_cons_typed(Absyn_EnumLiteral, e, or_nil(el)); }
   ;
 
 enumeration_literal returns [void* ast]
@@ -304,8 +341,8 @@ composition returns [void* ast, void* ann]
 @init { $ann = mmc_mk_nil(); el = 0; els = 0; a = 0; } :
   el=element_list[&$ann] els=composition2[&$ann] (a=annotation SEMICOLON)?
   {
-    $ast = mmc_mk_cons(Absyn__PUBLIC(el),els);
-    $ann = a ? mmc_mk_cons(a,$ann) : $ann;
+    $ast = mmc_mk_cons_typed(Absyn_ClassPart, Absyn__PUBLIC(el), els);
+    $ann = a ? mmc_mk_cons_typed(Absyn_Annotation, a, $ann) : $ann;
   }
   ;
 
@@ -496,23 +533,36 @@ component_clause returns [void* ast]
   tp=type_prefix path=type_specifier clst=component_list
     {
       // Take the last (array subscripts) from type and move it to ATTR
-      if (MMC_GETHDR($path.ast) == MMC_STRUCTHDR(2+1, Absyn__TPATH_3dBOX2)) // is TPATH(path, arr)
+      if (isPath($path.ast)) // is TPATH(path, arr)
       {
+      #if !defined(OMJULIA)
         struct mmc_struct *p = (struct mmc_struct*)MMC_UNTAGPTR($path.ast);
         ar_option = p->data[1+UNBOX_OFFSET];  // get the array option
         p->data[1+UNBOX_OFFSET] = mmc_mk_none();  // replace the array with nothing
+      #else
+        /* Are these things OK? */
+        ar_option = jl_data_ptr($path.ast)[1];
+        jl_data_ptr($path.ast)[1] = jl_nothing;
+      #endif
       }
-      else if (MMC_GETHDR($path.ast) == MMC_STRUCTHDR(3+1, Absyn__TCOMPLEX_3dBOX3))
+      else if (isComplex($path.ast))
       {
+      #if !defined(OMJULIA)
         struct mmc_struct *p = (struct mmc_struct*)MMC_UNTAGPTR($path.ast);
         ar_option = p->data[2+UNBOX_OFFSET];         // get the array option
         p->data[2+UNBOX_OFFSET] = mmc_mk_none();  // replace the array with nothing
+      #else
+        /* Are these things OK? */
+        ar_option = jl_data_ptr($path.ast)[2];
+        jl_data_ptr($path.ast)[2] = jl_nothing;
+      #endif
       }
       else
       {
         fprintf(stderr, "component_clause error\n");
       }
 
+      #if !defined(OMJULIA)
       { /* adrpo - use the ANSI C standard */
         // no arr was set, inspect ar_option and fix it
         struct mmc_struct *p = (struct mmc_struct*)MMC_UNTAGPTR(ar_option);
@@ -525,6 +575,19 @@ component_clause returns [void* ast]
           arr = p->data[0];
         }
       }
+      #else
+      { /* adrpo - use the ANSI C standard */
+        // no arr was set, inspect ar_option and fix it
+        if (optionNone(ar_option))
+        {
+          arr = mmc_mk_nil();
+        }
+        else // is SOME(arr)
+        {
+          arr = jl_data_ptr(ar_option)[0];
+        }
+      }
+      #endif
 
       ast = Absyn__COMPONENTS(Absyn__ATTR(tp.flow, tp.stream, tp.parallelism, tp.variability, tp.direction, tp.field, arr), $path.ast, clst);
     }
@@ -746,7 +809,7 @@ constraint_annotation_list [void **ann] returns [void* ast]
     { ast = mmc_mk_nil(); }
   |
   ( co=constraint SEMICOLON { c = co; }
-  | c=annotation SEMICOLON { *ann = mmc_mk_cons(c,ann); }
+  | c=annotation SEMICOLON { *ann = mmc_mk_cons(c, ann); }
   ) cs=constraint_annotation_list[ann] { ast = c ? mmc_mk_cons(c,cs) : cs; }
   ;
 
@@ -882,8 +945,8 @@ assign_clause_a returns [void* ast]
       {
         modelicaParserAssert(eq == 0,"Algorithms can not contain equations ('='), use assignments (':=') instead", assign_clause_a, $eq->line, $eq->charPosition+1, $eq->line, $eq->charPosition+2);
         {
-          int looks_like_cref = (MMC_GETHDR(e1) == MMC_STRUCTHDR(1+1, Absyn__CREF_3dBOX1));
-          int looks_like_call = ((MMC_GETHDR(e1) == MMC_STRUCTHDR(1+1, Absyn__TUPLE_3dBOX1)) && (MMC_GETHDR(e2.ast) == MMC_STRUCTHDR(2+1, Absyn__CALL_3dBOX2)));
+          int looks_like_cref = isCref(e1);
+          int looks_like_call = (isTuple(e1) && isCall(e2.ast));
           int looks_like_der_cr = !looks_like_cref && !looks_like_call && omc_AbsynUtil_isDerCref(ModelicaParser_threadData, e1);
           modelicaParserAssert(eq != 0 || metamodelica_enabled() || looks_like_cref || looks_like_call || looks_like_der_cr,
               "Modelica assignment statements are either on the form 'component_reference := expression' or '( output_expression_list ) := function_call'",
@@ -898,11 +961,15 @@ assign_clause_a returns [void* ast]
       }
     |
       {
-        modelicaParserAssert(MMC_GETHDR(e1) == MMC_STRUCTHDR(2+1, Absyn__CALL_3dBOX2), "Only function call expressions may stand alone in an algorithm section",
+        modelicaParserAssert(isCall(e1), "Only function call expressions may stand alone in an algorithm section",
                              assign_clause_a, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
         { /* uselsess block for ANSI C crap */
-        struct mmc_struct *p = (struct mmc_struct*)MMC_UNTAGPTR(e1);
-        $ast = Absyn__ALG_5fNORETCALL(p->data[0+UNBOX_OFFSET],p->data[1+UNBOX_OFFSET]);
+        #if !defined(OMJULIA)
+          struct mmc_struct *p = (struct mmc_struct*)MMC_UNTAGPTR(e1);
+          $ast = Absyn__ALG_5fNORETCALL(p->data[0+UNBOX_OFFSET],p->data[1+UNBOX_OFFSET]);
+        #else
+          $ast = Absyn__ALG_5fNORETCALL(jl_data_ptr(e1)[0],jl_data_ptr(e1)[1]);
+        #endif
         }
       }
     )
@@ -922,10 +989,16 @@ equality_or_noretcall_equation returns [void* ast]
       }
     | {LA(1) != EQUALS && LA(1) != ASSIGN}? /* It has to be a CALL */
        {
-         struct mmc_struct *p;
-         modelicaParserAssert(MMC_GETHDR(e1) == MMC_STRUCTHDR(2+1, Absyn__CALL_3dBOX2),"A singleton expression in an equation section is required to be a function call", equality_or_noretcall_equation, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
-         p = (struct mmc_struct*)MMC_UNTAGPTR(e1);
-         $ast = Absyn__EQ_5fNORETCALL(p->data[0+UNBOX_OFFSET],p->data[1+UNBOX_OFFSET]);
+
+         modelicaParserAssert(isCall(e1),"A singleton expression in an equation section is required to be a function call", equality_or_noretcall_equation, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
+         {
+         #if !defined(OMJULIA)
+           struct mmc_struct *p = (struct mmc_struct*)MMC_UNTAGPTR(e1);
+           $ast = Absyn__EQ_5fNORETCALL(p->data[0+UNBOX_OFFSET],p->data[1+UNBOX_OFFSET]);
+         #else
+           $ast = Absyn__EQ_5fNORETCALL(jl_data_ptr(e1)[0],jl_data_ptr(e1)[1]);
+         #endif
+         }
        }
     )
   ;
@@ -1268,9 +1341,16 @@ primary returns [void* ast]
       char* chars = (char*)$v.text->chars;
       char* endptr;
       const char* args[2] = {NULL};
+#if !defined(OMJULIA)
       mmc_sint_t l = 0;
+#else
+      int l = 0;
+#endif
+
       errno = 0;
       l = strtol(chars,&endptr,10);
+
+#if !defined(OMJULIA)
       args[0] = chars;
       args[1] = MMC_SIZE_INT == 8 ? "OpenModelica (64-bit) only supports 63"
                                   : errno || *endptr != 0 ? "Modelica only supports 32"
@@ -1301,6 +1381,9 @@ primary returns [void* ast]
           }
         }
       }
+#else /* julia */
+     $ast = Absyn__INTEGER(mmc_mk_icon(l));
+#endif
     }
   | v=UNSIGNED_REAL
     {
@@ -1328,7 +1411,7 @@ primary returns [void* ast]
     {
       if (!for_or_el.isFor) {
         modelicaParserAssert(
-          MMC_NILHDR != MMC_GETHDR(for_or_el.ast) ||
+          isNotNil(for_or_el.ast) ||
           metamodelica_enabled() ||
           parse_expression_enabled(), /* allow {} in mos scripts */
           "Empty array constructors are not valid in Modelica.", primary, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
@@ -1484,7 +1567,7 @@ for_or_expression_list returns [void* ast, int isFor]
 for_or_expression_list2 returns [void* ast]
 @init{ e.ast = 0; el = 0; } :
     {LA(2) == EQUALS}? { ast = mmc_mk_nil(); }
-  | e=expression[1] (COMMA el=for_or_expression_list2)? { ast = mmc_mk_cons(e.ast, or_nil(el)); }
+  | e=expression[1] (COMMA el=for_or_expression_list2)? { ast = mmc_mk_cons_typed(Absyn_Exp, e.ast, or_nil(el)); }
   ;
 
 named_arguments returns [void* ast]
@@ -1511,7 +1594,7 @@ output_expression_list [int* isTuple] returns [void* ast]
   | e1=expression[metamodelica_enabled()]
     ( COMMA {*isTuple = true;} el=output_expression_list[isTuple]
       {
-        if (MMC_NILHDR != MMC_GETHDR(el))
+        if (isNotNil(el))
         {
           ast = mmc_mk_cons(e1.ast, el);
         }

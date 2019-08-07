@@ -1,0 +1,7 @@
+loadFile("../Compiler/FrontEnd/Absyn.mo");
+err:=getErrorString();
+if err == "" then loadOK := true; end if;
+a:=loadOK; // Will cause exit(1) if loadOK is undefined
+b3:=generateJuliaHeader("OpenModelicaJuliaHeader.h.new");
+if b3 then genOK := true; end if;
+a:=genOK; // Will cause exit(1) if genOK is undefined

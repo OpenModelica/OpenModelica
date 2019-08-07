@@ -189,7 +189,11 @@ IDENT;
 
 @includes {
   #include "ModelicaParserCommon.h"
+  #if !defined(OMJULIA)
   #include "errorext.h"
+  #else
+  #include "MetaModelicaJuliaLayer.h"
+  #endif
 }
 
 T_ALGORITHM : 'algorithm';

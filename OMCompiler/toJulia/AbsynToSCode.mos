@@ -1,0 +1,157 @@
+/*
+Note that outcommented files have been change by me manually
+The reason being is that the Julia JIT is a bit greedy and loops on circular
+dependencies :(
+*/
+setCommandLineOptions("-g=MetaModelica");getErrorString();
+//Translating Absyn, to generate a syntax tree
+// loadFile("Compiler/FrontEnd/Absyn.mo");getErrorString();
+// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Absyn.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+// deleteClass(Absyn);getErrorString();
+
+//Translating AbsynUtil
+// loadFile("Compiler/FrontEnd/AbsynUtil.mo");getErrorString();
+// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/AbsynUtil.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+// deleteClass(AbsynUtil);getErrorString();
+
+// Translating SCode
+setCommandLineOptions("-g=MetaModelica");getErrorString();
+loadFile("Compiler/FrontEnd/SCode.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/SCode.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(SCode);getErrorString();
+
+//Translating SCodeUtil
+loadFile("Compiler/FrontEnd/SCodeUtil.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/SCodeUtil.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(SCodeUtil);getErrorString();
+
+//Translate Absyn to SCode
+loadFile("Compiler/FrontEnd/AbsynToSCode.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/AbsynToSCode.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(AbsynToSCode);getErrorString();
+
+
+//Getting INSTHASHTABLE
+// loadFile("Compiler/FrontEnd/InstHashTable.mo");getErrorString();
+// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/InstHashTable.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+// deleteClass(InstHashTable);getErrorString();
+
+//Connect
+// loadFile("Compiler/FrontEnd/Connect.mo");getErrorString();
+// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Connect.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+// deleteClass(Conncet);getErrorString();
+
+//SCodeDump
+loadFile("Compiler/FrontEnd/SCodeDump.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/SCodeDump.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(SCodeDump);getErrorString();
+
+
+// setCommandLineOptions("-g=MetaModelica");getErrorString();
+// loadFile("Compiler/FrontEnd/MetaUtil.mo");getErrorString();
+// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/MetaUtil.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+// deleteClass(MetaUtil);getErrorString();
+
+//For Dump
+// setCommandLineOptions("-g=MetaModelica");getErrorString();
+// loadFile("Compiler/FrontEnd/Dump.mo");getErrorString();
+// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Dump.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+// deleteClass(Dump);getErrorString();
+
+// loadFile("Compiler/Util/List.mo");getErrorString();
+// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/List.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+// deleteClass(List);getErrorString();
+
+//For Error
+// loadFile("Compiler/Util/Error.mo");getErrorString();
+// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Error.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+// deleteClass(Error);getErrorString();
+
+//Util
+// loadFile("Compiler/Util/Util.mo");getErrorString();
+// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Util.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+// deleteClass(Util);getErrorString();
+
+
+loadFile("Compiler/Util/Autoconf.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Autoconf.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(Autoconf);getErrorString();
+
+
+loadFile("Compiler/Util/ClockIndexes.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/ClockIndexes.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(ClockIndexes);getErrorString();
+
+
+loadFile("Compiler/Util/Debug.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Debug.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(Debug);getErrorString();
+
+
+// loadFile("Compiler/Util/StackOverflow.mo");getErrorString();
+// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/StackOverflow.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+// deleteClass(StackOverflow);getErrorString();
+
+//Wait for ENUM support
+// loadFile("Compiler/Util/Config.mo");getErrorString();
+// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Config.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+// deleteClass(Config);getErrorString();
+
+// module and type names are not allowed ovverride each other in Julia :(
+// loadFile("Compiler/Util/Flags.mo");getErrorString();
+// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Flags.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+// deleteClass(Flags);getErrorString();
+
+
+loadFile("Compiler/Util/Corba.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Corba.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(Corba);getErrorString();
+
+
+loadFile("Compiler/Util/Settings.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Settings.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(Settings);getErrorString();
+
+
+loadFile("Compiler/Util/ZeroMQ.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/ZeroMQ.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(ZeroMQ);getErrorString();
+
+
+loadFile("Compiler/Util/Print.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Print.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(Print);getErrorString();
+
+// loadFile("Compiler/Util/System.mo");getErrorString();
+// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/System.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+// deleteClass(System);getErrorString();
+
+// loadFile("Compiler/Util/ErrorExt.mo");getErrorString();
+// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/ErrorExt.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+// deleteClass(ErrorExt);getErrorString();
+
+// loadFile("Compiler/Util/File.mo");getErrorString();
+// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/File.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+// deleteClass(File);getErrorString();
+
+loadFile("Compiler/Template/AbsynDumpTpl.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/AbsynDumpTpl.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(AbsynDumpTpl);getErrorString();
+
+
+// loadFile("Compiler/Template/Tpl.mo");getErrorString();
+// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Tpl.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+// deleteClass(Tpl);getErrorString();
+
+loadFile("Compiler/Global/Global.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/Global.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(Global);getErrorString();
+
+
+loadFile("Compiler/Template/SCodeDumpTpl.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/SCodeDumpTpl.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(SCodeDumpTpl);getErrorString();
+
+// loadFile("Compiler/Util/StringUtil.mo");getErrorString();
+// writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/StringUtil.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+// deleteClass(StringUtil);getErrorString();

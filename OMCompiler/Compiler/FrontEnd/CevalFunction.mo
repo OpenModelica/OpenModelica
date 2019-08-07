@@ -1134,7 +1134,7 @@ algorithm
       then
         (cache, inEnv, NEXT());
     // Special case for print, and other known calls for now; evaluated even when there is no ST
-    case (DAE.STMT_NORETCALL(exp = rhs as DAE.CALL(path = path, expLst = exps, attr=DAE.CALL_ATTR(ty=returnType, tailCall=tailCall))), _, _)
+    case (DAE.STMT_NORETCALL(exp = rhs as DAE.CALL( expLst = exps, attr=DAE.CALL_ATTR(ty=_, tailCall=tailCall))), _, _)
       algorithm
         (cache, vals) := cevalExpList(exps, inCache, inEnv);
         (cache, v) := cevalExp(rhs, cache, inEnv);

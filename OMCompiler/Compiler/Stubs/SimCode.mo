@@ -33,6 +33,7 @@ encapsulated package SimCode
 
 type SimCode = Integer;
 type SimulationSettings = Integer;
+type SimEqSystem = Integer;
 
 annotation(__OpenModelica_Interface="backend");
 end SimCode;
