@@ -48,6 +48,7 @@ extern "C" {
 #else
 #define DLLDirection /* nothing */
 #endif
+
 #include <julia.h>
 
 #endif
