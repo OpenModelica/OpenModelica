@@ -47,6 +47,7 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:v1.13-qt4-xenial'
               label 'linux'
               alwaysPull true
+              args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
           }
           environment {
@@ -64,6 +65,7 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:v1.14'
               label 'linux'
               alwaysPull true
+              args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
           }
           steps {
@@ -133,6 +135,7 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:v1.14'
               label 'linux'
               alwaysPull true
+              args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
           }
           steps {
@@ -324,7 +327,8 @@ pipeline {
               additionalBuildArgs '--pull'
               dir '.CI/cache'
               label 'linux'
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
           }
           environment {
