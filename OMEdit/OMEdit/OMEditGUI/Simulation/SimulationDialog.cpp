@@ -1829,7 +1829,7 @@ void SimulationDialog::showAlgorithmicDebugger(SimulationOptions simulationOptio
       QString GDBPath = OptionsDialog::instance()->getDebuggerPage()->getGDBPath();
       GDBAdapter::instance()->launch(fileName, simulationOptions.getWorkingDirectory(), simulationOptions.getSimulationFlags(),
                                      GDBPath, simulationOptions);
-      MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(3);
+      MainWindow::instance()->switchToAlgorithmicDebuggingPerspectiveSlot();
     }
   }
 }
@@ -1985,7 +1985,7 @@ void SimulationDialog::createOpcUaClient(SimulationOptions simulationOptions)
       }
     }
 
-    MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(2);
+    MainWindow::instance()->switchToPlottingPerspectiveSlot();
   } else {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Could not connect to the embedded server.",
                                                           Helper::scriptingKind, Helper::errorLevel));
@@ -2071,7 +2071,7 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
       MainWindow::instance()->activateWindow();
       MainWindow::instance()->setWindowState(MainWindow::instance()->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
       if (OptionsDialog::instance()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
-        MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(2);
+        MainWindow::instance()->switchToPlottingPerspectiveSlot();
       } else {
         // stay in current perspective and show variables browser
         MainWindow::instance()->getVariablesDockWidget()->show();

@@ -139,7 +139,9 @@ public:
   void showProgressBar() {mpProgressBar->setVisible(true);}
   void hideProgressBar() {mpProgressBar->setVisible(false);}
   Label* getPositionLabel() {return mpPositionLabel;}
-  QTabBar* getPerspectiveTabBar() {return mpPerspectiveTabbar;}
+  bool isModelingPerspectiveActive();
+  bool isPlottingPerspectiveActive();
+  bool isDebuggingPerspectiveActive();
   QTimer* getAutoSaveTimer() {return mpAutoSaveTimer;}
   QAction* getSaveAction() {return mpSaveAction;}
   QAction* getSaveAsAction() {return mpSaveAsAction;}
@@ -454,6 +456,10 @@ private:
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
 public slots:
   void showMessagesBrowser();
+  void switchToWelcomePerspectiveSlot();
+  void switchToModelingPerspectiveSlot();
+  void switchToPlottingPerspectiveSlot();
+  void switchToAlgorithmicDebuggingPerspectiveSlot();
   void showSearchBrowser();
   void createNewModelicaClass();
   void openModelicaFile();
@@ -540,10 +546,6 @@ private slots:
   void documentationDockWidgetVisibilityChanged(bool visible);
   void threeDViewerDockWidgetVisibilityChanged(bool visible);
   void autoSave();
-  void switchToWelcomePerspectiveSlot();
-  void switchToModelingPerspectiveSlot();
-  void switchToPlottingPerspectiveSlot();
-  void switchToAlgorithmicDebuggingPerspectiveSlot();
   void showDebugConfigurationsDialog();
   void showAttachToProcessDialog();
   void createGitRepository();
