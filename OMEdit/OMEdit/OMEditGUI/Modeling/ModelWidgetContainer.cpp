@@ -6780,7 +6780,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     }
     pModelWidget->createModelWidgetComponents();
     pModelWidget->show();
-    if (subWindowsSize == 0 || MainWindow::instance()->getPerspectiveTabBar()->currentIndex() == 2) {
+    if (subWindowsSize == 0 || MainWindow::instance()->isPlottingPerspectiveActive()) {
       pModelWidget->setWindowState(Qt::WindowMaximized);
     }
     setActiveSubWindow(pSubWindow);
@@ -7277,7 +7277,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     /* ticket:5441 OMEdit toolbars
      * Show the relevant toolbars if we are in a Modeling perspective
      */
-    if (MainWindow::instance()->getPerspectiveTabBar()->currentIndex() == 1) {
+    if (MainWindow::instance()->isModelingPerspectiveActive()) {
       if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
         MainWindow::instance()->getShapesToolBar()->setVisible(true);
         MainWindow::instance()->getCheckToolBar()->setVisible(true);

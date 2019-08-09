@@ -1800,9 +1800,8 @@ void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, bool s
   }
   // only switch to modeling perspective if show is true and we are not in a plotting or debugging perspective.
   if (show
-      && MainWindow::instance()->getPerspectiveTabBar()->currentIndex() != 2
-      && MainWindow::instance()->getPerspectiveTabBar()->currentIndex() != 3) {
-    MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(1);
+      && !MainWindow::instance()->isDebuggingPerspectiveActive()) {
+    MainWindow::instance()->switchToModelingPerspectiveSlot();
   }
   if (!pLibraryTreeItem->getModelWidget()) {
     ModelWidget *pModelWidget = new ModelWidget(pLibraryTreeItem, MainWindow::instance()->getModelWidgetContainer());
@@ -3264,20 +3263,24 @@ void LibraryTreeView::libraryTreeItemDoubleClicked(const QModelIndex &index)
                    || pLibraryTreeItem->getOMSTLMBusConnector())) {
       return;
     }
+    /* Check if we are in the plotting perspective
+     * If yes then we first load the model and switch to Modeling perspective like normal
+     * and then switches back to plotting perspective and show the DiagramWindow
+     * If we don't do that then the window title is messed up.
+     */
+    bool isPlottingPerspectiveActive = MainWindow::instance()->isPlottingPerspectiveActive();
     mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
     // if we are in the plotting perspective then open the Diagram Window
-    if (MainWindow::instance()->getPerspectiveTabBar()->currentIndex() == 2) {
+    if (isPlottingPerspectiveActive) {
+      MainWindow::instance()->switchToPlottingPerspectiveSlot();
       if (MainWindow::instance()->getPlotWindowContainer()->getDiagramSubWindowFromMdi()) {
         if (pLibraryTreeItem->getModelWidget()) {
           pLibraryTreeItem->getModelWidget()->loadDiagramView();
           pLibraryTreeItem->getModelWidget()->loadConnections();
         }
         MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->drawDiagram(pLibraryTreeItem->getModelWidget());
-        MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->show();
-        MainWindow::instance()->getPlotWindowContainer()->setActiveSubWindow(MainWindow::instance()->getPlotWindowContainer()->getDiagramSubWindowFromMdi());
-      } else {
-        MainWindow::instance()->getPlotWindowContainer()->addDiagramWindow(pLibraryTreeItem->getModelWidget());
       }
+      MainWindow::instance()->getPlotWindowContainer()->addDiagramWindow(pLibraryTreeItem->getModelWidget());
     }
   }
 }

@@ -120,7 +120,7 @@ void OMSSimulationDialog::simulationFinished(OMSSimulationOptions omsSimulationO
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     QStringList list = pOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());
     if (list.size() > 0) {
-      MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(2);
+      MainWindow::instance()->switchToPlottingPerspectiveSlot();
       pVariablesWidget->insertVariablesItemsToTree(resultFileInfo.fileName(), omsSimulationOptions.getWorkingDirectory(),
                                                    list, SimulationOptions());
       MainWindow::instance()->getVariablesDockWidget()->show();

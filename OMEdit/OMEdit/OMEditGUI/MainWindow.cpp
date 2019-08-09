@@ -424,6 +424,36 @@ ThreeDViewer* MainWindow::getThreeDViewer()
 #endif
 
 /*!
+ * \brief MainWindow::isModelingPerspectiveActive
+ * Returns true if the Modeling perspective is active.
+ * \return
+ */
+bool MainWindow::isModelingPerspectiveActive()
+{
+  return mpPerspectiveTabbar->currentIndex() == 1;
+}
+
+/*!
+ * \brief MainWindow::isPlottingPerspectiveActive
+ * Returns true if the Plotting perspective is active.
+ * \return
+ */
+bool MainWindow::isPlottingPerspectiveActive()
+{
+  return mpPerspectiveTabbar->currentIndex() == 2;
+}
+
+/*!
+ * \brief MainWindow::isDebuggingPerspectiveActive
+ * Returns true if the Debugging perspective is active.
+ * \return
+ */
+bool MainWindow::isDebuggingPerspectiveActive()
+{
+  return mpPerspectiveTabbar->currentIndex() == 3;
+}
+
+/*!
  * \brief MainWindow::addRecentFile
  * Adds the currently opened file to the recentFilesList settings.
  * \param fileName
@@ -648,7 +678,7 @@ void MainWindow::openResultFiles(QStringList fileNames)
     QFileInfo fileInfo(fileName);
     QStringList list = mpOMCProxy->readSimulationResultVars(fileInfo.absoluteFilePath());
     if (list.size() > 0) {
-      mpPerspectiveTabbar->setCurrentIndex(2);
+      switchToPlottingPerspectiveSlot();
       mpVariablesWidget->insertVariablesItemsToTree(fileInfo.fileName(), fileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
     }
   }
@@ -1430,6 +1460,46 @@ void MainWindow::showMessagesBrowser()
   if (tabifiedDockWidgetsList.size() > 0) {
     tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpMessagesDockWidget);
   }
+}
+
+/*!
+ * \brief MainWindow::switchToWelcomePerspectiveSlot
+ * Slot activated when Ctrl+f1 is clicked.
+ * Switches to welcome perspective.
+ */
+void MainWindow::switchToWelcomePerspectiveSlot()
+{
+  mpPerspectiveTabbar->setCurrentIndex(0);
+}
+
+/*!
+ * \brief MainWindow::switchToModelingPerspectiveSlot
+ * Slot activated when Ctrl+f2 is clicked.
+ * Switches to modeling perspective.
+ */
+void MainWindow::switchToModelingPerspectiveSlot()
+{
+  mpPerspectiveTabbar->setCurrentIndex(1);
+}
+
+/*!
+ * \brief MainWindow::switchToPlottingPerspectiveSlot
+ * Slot activated when Ctrl+f3 is clicked.
+ * Switches to plotting perspective.
+ */
+void MainWindow::switchToPlottingPerspectiveSlot()
+{
+  mpPerspectiveTabbar->setCurrentIndex(2);
+}
+
+/*!
+ * \brief MainWindow::switchToAlgorithmicDebuggingPerspectiveSlot
+ * Slot activated when Ctrl+f5 is clicked.
+ * Switches to algorithmic debugging perspective.
+ */
+void MainWindow::switchToAlgorithmicDebuggingPerspectiveSlot()
+{
+  mpPerspectiveTabbar->setCurrentIndex(3);
 }
 
 /*!
@@ -2980,46 +3050,6 @@ void MainWindow::threeDViewerDockWidgetVisibilityChanged(bool visible)
 void MainWindow::autoSave()
 {
   autoSaveHelper(mpLibraryWidget->getLibraryTreeModel()->getRootLibraryTreeItem());
-}
-
-/*!
- * \brief MainWindow::switchToWelcomePerspectiveSlot
- * Slot activated when Ctrl+f1 is clicked.
- * Switches to welcome perspective.
- */
-void MainWindow::switchToWelcomePerspectiveSlot()
-{
-  mpPerspectiveTabbar->setCurrentIndex(0);
-}
-
-/*!
- * \brief MainWindow::switchToModelingPerspectiveSlot
- * Slot activated when Ctrl+f2 is clicked.
- * Switches to modeling perspective.
- */
-void MainWindow::switchToModelingPerspectiveSlot()
-{
-  mpPerspectiveTabbar->setCurrentIndex(1);
-}
-
-/*!
- * \brief MainWindow::switchToPlottingPerspectiveSlot
- * Slot activated when Ctrl+f3 is clicked.
- * Switches to plotting perspective.
- */
-void MainWindow::switchToPlottingPerspectiveSlot()
-{
-  mpPerspectiveTabbar->setCurrentIndex(2);
-}
-
-/*!
- * \brief MainWindow::switchToAlgorithmicDebuggingPerspectiveSlot
- * Slot activated when Ctrl+f5 is clicked.
- * Switches to algorithmic debugging perspective.
- */
-void MainWindow::switchToAlgorithmicDebuggingPerspectiveSlot()
-{
-  mpPerspectiveTabbar->setCurrentIndex(3);
 }
 
 /*!

@@ -222,7 +222,7 @@ void TLMCoSimulationDialog::simulationProcessFinished(TLMCoSimulationOptions tlm
         }
       }
 #endif
-      MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(2);
+      MainWindow::instance()->switchToPlottingPerspectiveSlot();
       pVariablesWidget->insertVariablesItemsToTree(resultFileInfo.fileName(), fileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
       MainWindow::instance()->getVariablesDockWidget()->show();
     }
