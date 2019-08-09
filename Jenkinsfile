@@ -67,7 +67,10 @@ pipeline {
             }
           }
           steps {
-            script { common.buildOMC('clang', 'clang++', '--without-hwloc') }
+            script {
+              common.buildOMC('clang', 'clang++', '--without-hwloc')
+              common.getVersion()
+            }
             stash name: 'omc-clang', includes: 'build/**, **/config.status'
           }
         }
