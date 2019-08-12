@@ -42,6 +42,11 @@ public constant ClassDef dummyParts = PARTS({},{},{},{},NONE());
 public constant Info dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
 public constant Program dummyProgram = PROGRAM({},TOP());
 
+replaceable type TypeA subtypeof Any;
+replaceable type Type_a subtypeof Any;
+replaceable type Argument subtypeof Any;
+replaceable type Arg subtypeof Any;
+
 // stefan
 public function traverseEquation
   "Traverses all subequations of an equation.
@@ -56,7 +61,6 @@ public function traverseEquation
     output tuple<Equation, TypeA> outTpl;
   end FuncTplToTpl;
 
-  replaceable type TypeA subtypeof Any;
 algorithm
   outTpl := matchcontinue (inEquation,inFunc,inTypeA)
     local
@@ -113,9 +117,7 @@ protected function traverseEquationItem
   partial function FuncTplToTpl
     input tuple<Equation, TypeA> inTpl;
     output tuple<Equation, TypeA> outTpl;
-    replaceable type TypeA subtypeof Any;
   end FuncTplToTpl;
-  replaceable type TypeA subtypeof Any;
 algorithm
   outTpl := matchcontinue (inEquationItem,inFunc,inTypeA)
     local
@@ -144,9 +146,7 @@ public function traverseEquationItemList
   partial function FuncTplToTpl
     input tuple<Equation, TypeA> inTpl;
     output tuple<Equation, TypeA> outTpl;
-    replaceable type TypeA subtypeof Any;
   end FuncTplToTpl;
-  replaceable type TypeA subtypeof Any;
 protected
   TypeA arg2 = inTypeA;
 algorithm
@@ -170,9 +170,7 @@ public function traverseExpEqItemTupleList
   partial function FuncTplToTpl
     input tuple<Equation, TypeA> inTpl;
     output tuple<Equation, TypeA> outTpl;
-    replaceable type TypeA subtypeof Any;
   end FuncTplToTpl;
-  replaceable type TypeA subtypeof Any;
 protected
   TypeA arg2 = inTypeA;
 algorithm
@@ -197,9 +195,7 @@ public function traverseAlgorithm
   partial function FuncTplToTpl
     input tuple<Algorithm, TypeA> inTpl;
     output tuple<Algorithm, TypeA> outTpl;
-    replaceable type TypeA subtypeof Any;
   end FuncTplToTpl;
-  replaceable type TypeA subtypeof Any;
 algorithm
   outTpl := matchcontinue (inAlgorithm,inFunc,inTypeA)
     local
@@ -263,9 +259,7 @@ public function traverseAlgorithmItem
   partial function FuncTplToTpl
     input tuple<Algorithm, TypeA> inTpl;
     output tuple<Algorithm, TypeA> outTpl;
-    replaceable type TypeA subtypeof Any;
   end FuncTplToTpl;
-  replaceable type TypeA subtypeof Any;
 algorithm
   outTpl := matchcontinue (inAlgorithmItem,inFunc,inTypeA)
     local
@@ -294,9 +288,7 @@ public function traverseAlgorithmItemList
   partial function FuncTplToTpl
     input tuple<Algorithm, TypeA> inTpl;
     output tuple<Algorithm, TypeA> outTpl;
-    replaceable type TypeA subtypeof Any;
   end FuncTplToTpl;
-  replaceable type TypeA subtypeof Any;
 algorithm
   outTpl := match (inAlgorithmItemList,inFunc,inTypeA)
     local
@@ -325,9 +317,7 @@ public function traverseExpAlgItemTupleList
   partial function FuncTplToTpl
     input tuple<Algorithm, TypeA> inTpl;
     output tuple<Algorithm, TypeA> outTpl;
-    replaceable type TypeA subtypeof Any;
   end FuncTplToTpl;
-  replaceable type TypeA subtypeof Any;
 algorithm
   outTpl := match (inList,inFunc,inTypeA)
     local
@@ -360,9 +350,7 @@ public function traverseExp
     input Type_a inArg;
     output Exp outExp;
     output Type_a outArg;
-    replaceable type Type_a subtypeof Any;
   end FuncType;
-  replaceable type Type_a subtypeof Any;
 algorithm
   (outExp,outArg) := traverseExpBidir(inExp,dummyTraverseExp,inFunc,inArg);
 end traverseExp;
@@ -380,9 +368,7 @@ public function traverseExpTopDown
     input Type_a inArg;
     output Exp outExp;
     output Type_a outArg;
-    replaceable type Type_a subtypeof Any;
   end FuncType;
-  replaceable type Type_a subtypeof Any;
 algorithm
   (outExp,outArg) := traverseExpBidir(inExp,inFunc,dummyTraverseExp,inArg);
 end traverseExpTopDown;
@@ -399,9 +385,7 @@ public function traverseExpList
     input Type_a inArg;
     output Exp outExp;
     output Type_a outArg;
-    replaceable type Type_a subtypeof Any;
   end FuncTplToTpl;
-  replaceable type Type_a subtypeof Any;
 algorithm
   (outExpList,outArg) := traverseExpListBidir(inExpList,dummyTraverseExp,inFunc,inArg);
 end traverseExpList;
@@ -415,14 +399,12 @@ public function traverseExpListBidir
   input Argument inArg;
   output list<Exp> outExpl;
   output Argument outArg;
-
   partial function FuncType
     input Exp inExp;
     input Argument inArg;
     output Exp outExp;
     output Argument outArg;
   end FuncType;
-  replaceable type Argument subtypeof Any;
 algorithm
   (outExpl, outArg) := List.map2FoldCheckReferenceEq(inExpl, traverseExpBidir, enterFunc, exitFunc, inArg);
 end traverseExpListBidir;
@@ -449,7 +431,6 @@ public function traverseExpBidir
     output Argument outArg;
   end FuncType;
 
-  replaceable type Argument subtypeof Any;
 algorithm
   (e, arg) := enterFunc(inExp, inArg);
   (e, arg) := traverseExpBidirSubExps(e, enterFunc, exitFunc, arg);
@@ -474,7 +455,6 @@ public function traverseExpOptBidir
     output Argument outArg;
   end FuncType;
 
-  replaceable type Argument subtypeof Any;
 algorithm
   (outExp, arg) := match(inExp, enterFunc, exitFunc, inArg)
     local
@@ -508,7 +488,6 @@ protected function traverseExpBidirSubExps
     output Argument outArg;
   end FuncType;
 
-  replaceable type Argument subtypeof Any;
 algorithm
   (e, arg) := match (inExp, enterFunc, exitFunc, inArg)
     local
@@ -688,7 +667,6 @@ public function traverseExpBidirCref
     output Exp outExp;
     output Argument outArg;
   end FuncType;
-  replaceable type Argument subtypeof Any;
 
 algorithm
   (outCref, arg) := match(inCref, enterFunc, exitFunc, inArg)
@@ -739,8 +717,6 @@ public function traverseExpBidirSubs
     output Argument outArg;
   end FuncType;
 
-  replaceable type Argument subtypeof Any;
-
 algorithm
   (outSubscript, arg) := match(inSubscript, enterFunc, exitFunc, inArg)
     local
@@ -773,8 +749,6 @@ public function traverseExpBidirElseIf
     output Argument outArg;
   end FuncType;
 
-  replaceable type Argument subtypeof Any;
-
 protected
   Exp e1, e2;
   tuple<FuncType, FuncType, Argument> tup;
@@ -802,7 +776,6 @@ public function traverseExpBidirFunctionArgs
     output Argument outArg;
   end FuncType;
 
-  replaceable type Argument subtypeof Any;
 algorithm
   (outArgs, outArg) := match(inArgs, enterFunc, exitFunc, inArg)
     local
@@ -846,8 +819,6 @@ public function traverseExpBidirNamedArg
     output Argument outArg;
   end FuncType;
 
-  replaceable type Argument subtypeof Any;
-
 protected
   Ident name;
   Exp value1,value2;
@@ -874,8 +845,6 @@ public function traverseExpBidirIterator
     output Argument outArg;
   end FuncType;
 
-  replaceable type Argument subtypeof Any;
-
 protected
   Ident name;
   Option<Exp> guardExp1,guardExp2,range1,range2;
@@ -901,7 +870,6 @@ public function traverseMatchCase
     output Argument outArg;
   end FuncType;
 
-  replaceable type Argument subtypeof Any;
 algorithm
   (outMatchCase, outArg) := match(inMatchCase, enterFunc, exitFunc, inArg)
     local
@@ -948,7 +916,6 @@ protected function traverseClassPartBidir
     output Argument outArg;
   end FuncType;
 
-  replaceable type Argument subtypeof Any;
 algorithm
   (outCp, outArg) := match (cp,enterFunc,exitFunc,inArg)
     local
@@ -981,7 +948,6 @@ protected function traverseEquationItemListBidir
     output Argument outArg;
   end FuncType;
 
-  replaceable type Argument subtypeof Any;
 algorithm
   (outEquationItems, outArg) := List.map2FoldCheckReferenceEq(inEquationItems, traverseEquationItemBidir, enterFunc, exitFunc, inArg);
 end traverseEquationItemListBidir;
@@ -1001,7 +967,6 @@ protected function traverseAlgorithmItemListBidir
     output Argument outArg;
   end FuncType;
 
-  replaceable type Argument subtypeof Any;
 algorithm
   (outAlgs, outArg) := List.map2FoldCheckReferenceEq(inAlgs, traverseAlgorithmItemBidir, enterFunc, exitFunc, inArg);
 end traverseAlgorithmItemListBidir;
@@ -1021,7 +986,6 @@ protected function traverseAlgorithmItemBidir
     output Argument outArg;
   end FuncType;
 
-  replaceable type Argument subtypeof Any;
 algorithm
   (outAlgorithmItem, outArg) := match(inAlgorithmItem, enterFunc, exitFunc, inArg)
     local
@@ -1055,7 +1019,6 @@ protected function traverseEquationItemBidir
     output Argument outArg;
   end FuncType;
 
-  replaceable type Argument subtypeof Any;
 algorithm
   (outEquationItem, outArg) := match(inEquationItem, enterFunc, exitFunc, inArg)
     local
@@ -1088,7 +1051,6 @@ public function traverseEquationBidir
     output Argument outArg;
   end FuncType;
 
-  replaceable type Argument subtypeof Any;
 algorithm
   (outEquation, outArg) := match(inEquation, enterFunc, exitFunc, inArg)
     local
@@ -1178,7 +1140,6 @@ protected function traverseEquationBidirElse
     output Argument outArg;
   end FuncType;
 
-  replaceable type Argument subtypeof Any;
 protected
   Exp e;
   list<EquationItem> eqil;
@@ -1204,7 +1165,6 @@ protected function traverseAlgorithmBidirElse
     output Argument outArg;
   end FuncType;
 
-  replaceable type Argument subtypeof Any;
 protected
   Exp e;
   list<AlgorithmItem> algs;
@@ -1230,7 +1190,6 @@ protected function traverseAlgorithmBidir
     output Argument outArg;
   end FuncType;
 
-  replaceable type Argument subtypeof Any;
 algorithm
   (outAlg, outArg) := match(inAlg, enterFunc, exitFunc, inArg)
     local
@@ -5005,7 +4964,6 @@ public function getNamedAnnotationInClass
   input Path id;
   input ModFunc f;
   output Option<TypeA> outString;
-  replaceable type TypeA subtypeof Any;
   partial function ModFunc
     input Option<Modification> mod;
     output TypeA docStr;
@@ -5061,7 +5019,6 @@ protected function getNamedAnnotationStr
   input Path id;
   input ModFunc f;
   output Option<TypeA> outString;
-  replaceable type TypeA subtypeof Any;
   partial function ModFunc
     input Option<Modification> mod;
     output TypeA docStr;
@@ -5166,7 +5123,6 @@ protected function dummyTraverseExp
   input Arg inArg;
   output Exp outExp;
   output Arg outArg;
-  replaceable type Arg subtypeof Any;
 algorithm
   outExp := inExp;
   outArg := inArg;
@@ -6318,8 +6274,6 @@ protected function traverseInnerClassElementspec
     input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTpl;
     output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTpl;
   end FuncType;
-
-  replaceable type Type_a subtypeof Any;
 algorithm
   outTpl := match(inElementSpec, inPath, inFuncType, inArg, inVisitProtected)
     local
