@@ -23,6 +23,8 @@ using MetaModelica
   testLst = list(randperm(100)...)
   @test_nothrow_nowarn 100 == length(Algorithms.sort(testLst, intGt))
   @test_nothrow_nowarn 1 == listHead(Algorithms.sort(testLst, intGt))
+  testLst = list(randperm(20000)...)
+  #@time Algorithms.sort(testLst)
 end #= End testset =#
 
 end
