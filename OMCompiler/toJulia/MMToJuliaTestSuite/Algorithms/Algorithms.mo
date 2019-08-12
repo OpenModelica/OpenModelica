@@ -111,8 +111,8 @@ algorithm
   if stop - start == 1 then return;
   else
     split(A,start,stop);
-    FFT(A=A,start=start,stop=middle);
-    FFT(A=A,start=middle,stop=stop);
+    FFT(A, start, middle);
+    FFT(A, middle, stop);
     for i in 1:intDiv(stop-start,2) loop
       factor := (-2.0 * PI * intReal(i - 1)) / intReal(stop-start);
       oddElem := arrayGet(A,start + i);
