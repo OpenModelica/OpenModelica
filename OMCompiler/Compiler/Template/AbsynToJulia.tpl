@@ -961,7 +961,7 @@ match exp
   case CONS(__) then
     let head_str = dumpExp(head, context)
     let rest_str = dumpExp(rest, context)
-    '<%head_str%> <| <%rest_str%>'
+    '_cons(<%head_str%>, <%rest_str%>)'
   case MATCHEXP(__) then dumpMatchExp(exp)
   case LIST(__) then
     let list_str = (exps |> e => dumpExp(e, context) ;separator=", ")
