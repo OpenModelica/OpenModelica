@@ -1865,8 +1865,6 @@ public function traverseEEquations
   output SCode.EEquation outEEquation;
   output tuple<TraverseFunc, Argument> outTuple;
 
-  replaceable type Argument subtypeof Any;
-
   partial function TraverseFunc
     input tuple<SCode.EEquation, Argument> inTuple;
     output tuple<SCode.EEquation, Argument> outTuple;
@@ -1888,8 +1886,6 @@ public function traverseEEquations2
   input tuple<TraverseFunc, Argument> inTuple;
   output SCode.EEquation outEEquation;
   output tuple<TraverseFunc, Argument> outTuple;
-
-  replaceable type Argument subtypeof Any;
 
   partial function TraverseFunc
     input tuple<SCode.EEquation, Argument> inTuple;
@@ -1943,8 +1939,6 @@ protected function traverseElseWhenEEquations
   output tuple<Absyn.Exp, list<SCode.EEquation>> outElseWhen;
   output tuple<TraverseFunc, Argument> outTuple;
 
-  replaceable type Argument subtypeof Any;
-
   partial function TraverseFunc
     input tuple<SCode.EEquation, Argument> inTuple;
     output tuple<SCode.EEquation, Argument> outTuple;
@@ -1968,8 +1962,6 @@ public function traverseEEquationListExps
   output list<SCode.EEquation> outEEquations;
   output Argument outArg;
 
-  replaceable type Argument subtypeof Any;
-
   partial function TraverseFunc
     input Absyn.Exp inExp;
     input Argument inArg;
@@ -1988,8 +1980,6 @@ public function traverseEEquationExps
   input Argument inArg;
   output SCode.EEquation outEEquation;
   output Argument outArg;
-
-  replaceable type Argument subtypeof Any;
 
   partial function TraverseFunc
     input Absyn.Exp inExp;
@@ -2093,8 +2083,6 @@ protected function traverseComponentRefExps
   output Absyn.ComponentRef outCref;
   output Argument outArg;
 
-  replaceable type Argument subtypeof Any;
-
   partial function TraverseFunc
     input Absyn.Exp inExp;
     input Argument inArg;
@@ -2140,8 +2128,6 @@ protected function traverseSubscriptExps
   output Absyn.Subscript outSubscript;
   output Argument outArg;
 
-  replaceable type Argument subtypeof Any;
-
   partial function TraverseFunc
     input Absyn.Exp inExp;
     input Argument inArg;
@@ -2174,8 +2160,6 @@ protected function traverseElseWhenExps
   output tuple<Absyn.Exp, list<SCode.EEquation>> outElseWhen;
   output Argument outArg;
 
-  replaceable type Argument subtypeof Any;
-
   partial function TraverseFunc
     input Absyn.Exp inExp;
     input Argument inArg;
@@ -2200,8 +2184,6 @@ protected function traverseNamedArgExps
   input tuple<TraverseFunc, Argument> inTuple;
   output Absyn.NamedArg outArg;
   output tuple<TraverseFunc, Argument> outTuple;
-
-  replaceable type Argument subtypeof Any;
 
   partial function TraverseFunc
     input Absyn.Exp inExp;
@@ -2231,8 +2213,6 @@ protected function traverseForIteratorExps
   input Argument inArg;
   output Absyn.ForIterator outIterator;
   output Argument outArg;
-
-  replaceable type Argument subtypeof Any;
 
   partial function TraverseFunc
     input Absyn.Exp inExp;
@@ -2282,8 +2262,6 @@ public function traverseStatementsList
   output list<SCode.Statement> outStatements;
   output tuple<TraverseFunc, Argument> outTuple;
 
-  replaceable type Argument subtypeof Any;
-
   partial function TraverseFunc
     input tuple<SCode.Statement, Argument> inTuple;
     output tuple<SCode.Statement, Argument> outTuple;
@@ -2301,8 +2279,6 @@ public function traverseStatements
   input tuple<TraverseFunc, Argument> inTuple;
   output SCode.Statement outStatement;
   output tuple<TraverseFunc, Argument> outTuple;
-
-  replaceable type Argument subtypeof Any;
 
   partial function TraverseFunc
     input tuple<SCode.Statement, Argument> inTuple;
@@ -2326,8 +2302,6 @@ public function traverseStatements2
   input tuple<TraverseFunc, Argument> inTuple;
   output SCode.Statement outStatement;
   output tuple<TraverseFunc, Argument> outTuple;
-
-  replaceable type Argument subtypeof Any;
 
   partial function TraverseFunc
     input tuple<SCode.Statement, Argument> inTuple;
@@ -2397,8 +2371,6 @@ protected function traverseBranchStatements
   output tuple<Absyn.Exp, list<SCode.Statement>> outBranch;
   output tuple<TraverseFunc, Argument> outTuple;
 
-  replaceable type Argument subtypeof Any;
-
   partial function TraverseFunc
     input tuple<SCode.Statement, Argument> inTuple;
     output tuple<SCode.Statement, Argument> outTuple;
@@ -2422,9 +2394,6 @@ public function traverseStatementListExps
   output list<SCode.Statement> outStatements;
   output Argument outArg;
 
-
-  replaceable type Argument subtypeof Any;
-
   partial function TraverseFunc
     input Absyn.Exp inExp;
     input Argument inArgument;
@@ -2444,8 +2413,6 @@ public function traverseStatementExps
   input Argument inArg;
   output SCode.Statement outStatement;
   output Argument outArg;
-
-  replaceable type Argument subtypeof Any;
 
   partial function TraverseFunc
     input Absyn.Exp inExp;
@@ -2544,8 +2511,6 @@ protected function traverseBranchExps
   input Argument inArg;
   output tuple<Absyn.Exp, list<SCode.Statement>> outBranch;
   output Argument outArg;
-
-  replaceable type Argument subtypeof Any;
 
   partial function TraverseFunc
     input Absyn.Exp inExp;
