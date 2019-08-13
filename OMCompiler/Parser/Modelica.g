@@ -159,7 +159,7 @@ goto rule ## func ## Ex; }}
   #define GlobalScript__IALG(X) NULL
   #define GlobalScript__IEXP(X, Y) NULL
   #define GlobalScript__ISTMTS(X, Y) NULL
-  
+
   #define JL_GC_PUSH7(arg1, arg2, arg3, arg4, arg5, arg6, arg7)                      \
     void *__gc_stkf[] = {(void*)15, jl_pgcstack, arg1, arg2, arg3, arg4, arg5, arg6, arg7}; \
     jl_pgcstack = (jl_gcframe_t*)__gc_stkf;
@@ -175,20 +175,20 @@ goto rule ## func ## Ex; }}
   #define JL_GC_PUSH11(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11)                      \
     void *__gc_stkf[] = {(void*)23, jl_pgcstack, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11}; \
     jl_pgcstack = (jl_gcframe_t*)__gc_stkf;
-  
-  #define OM_PUSHZ1(A) (A) = NULL; JL_GC_PUSH1(&(A)); ctx->pModelicaParser_omcTop->numPushed+=1; 
-  #define OM_PUSHZ2(A,B) (A) = NULL; (B) = NULL; JL_GC_PUSH2(&(A),&(B)); ctx->pModelicaParser_omcTop->numPushed+=2;
-  #define OM_PUSHZ3(A,B,C) (A) = NULL; (B) = NULL; (C) = NULL; JL_GC_PUSH3(&(A),&(B),&(C)); ctx->pModelicaParser_omcTop->numPushed+=3;
-  #define OM_PUSHZ4(A,B,C,D) (A) = NULL; (B) = NULL; (C) = NULL; (D) = NULL; JL_GC_PUSH4(&(A),&(B),&(C),&(D)); ctx->pModelicaParser_omcTop->numPushed+=4;
-  #define OM_PUSHZ5(A,B,C,D,E) (A) = NULL; (B) = NULL; (C) = NULL; (D) = NULL; (E) = NULL; JL_GC_PUSH5(&(A),&(B),&(C),&(D),&(E)); ctx->pModelicaParser_omcTop->numPushed+=5;
-  #define OM_PUSHZ6(A,B,C,D,E,F) (A) = NULL; (B) = NULL; (C) = NULL; (D) = NULL; (E) = NULL; (F) = NULL; JL_GC_PUSH6(&(A),&(B),&(C),&(D),&(E),&(F)); ctx->pModelicaParser_omcTop->numPushed+=6;
-  #define OM_PUSHZ7(A,B,C,D,E,F,G) (A) = NULL; (B) = NULL; (C) = NULL; (D) = NULL; (E) = NULL; (F) = NULL; (G) = NULL; JL_GC_PUSH7(&(A),&(B),&(C),&(D),&(E),&(F),&(G)); ctx->pModelicaParser_omcTop->numPushed+=7;
-  #define OM_PUSHZ8(A,B,C,D,E,F,G,H) (A) = NULL; (B) = NULL; (C) = NULL; (D) = NULL; (E) = NULL; (F) = NULL; (G) = NULL; (H) = NULL; JL_GC_PUSH8(&(A),&(B),&(C),&(D),&(E),&(F),&(G),&(H)); ctx->pModelicaParser_omcTop->numPushed+=8;
-  #define OM_PUSHZ9(A,B,C,D,E,F,G,H,I) (A) = NULL; (B) = NULL; (C) = NULL; (D) = NULL; (E) = NULL; (F) = NULL; (G) = NULL; (H) = NULL; (I) = NULL; JL_GC_PUSH9(&(A),&(B),&(C),&(D),&(E),&(F),&(G),&(H),&(I)); ctx->pModelicaParser_omcTop->numPushed+=9;
-  #define OM_PUSHZ10(A,B,C,D,E,F,G,H,I,J) (A) = NULL; (B) = NULL; (C) = NULL; (D) = NULL; (E) = NULL; (F) = NULL; (G) = NULL; (H) = NULL; (I) = NULL; (J) = NULL; JL_GC_PUSH10(&(A),&(B),&(C),&(D),&(E),&(F),&(G),&(H),&(I),&(J)); ctx->pModelicaParser_omcTop->numPushed+=10;
-  #define OM_PUSHZ11(A,B,C,D,E,F,G,H,I,J,K) (A) = NULL; (B) = NULL; (C) = NULL; (D) = NULL; (E) = NULL; (F) = NULL; (G) = NULL; (H) = NULL; (I) = NULL; (J) = NULL; (K) = NULL; JL_GC_PUSH11(&(A),&(B),&(C),&(D),&(E),&(F),&(G),&(H),&(I),&(J),&(K)); ctx->pModelicaParser_omcTop->numPushed+=11;
-  #define OM_POP(NN) ctx->pModelicaParser_omcTop->numPushed=ctx->pModelicaParser_omcTop->numPushed-NN; JL_GC_POP();
-  
+
+  #define OM_PUSHZ1(A) (A) = NULL; JL_GC_PUSH1(&(A)); ctx->pModelicaParser_omcTop->numPushed+=1;
+  #define OM_PUSHZ2(A,B) (A) = NULL; (B) = NULL; JL_GC_PUSH2(&(A),&(B)); ctx->pModelicaParser_omcTop->numPushed+=1;
+  #define OM_PUSHZ3(A,B,C) (A) = NULL; (B) = NULL; (C) = NULL; JL_GC_PUSH3(&(A),&(B),&(C)); ctx->pModelicaParser_omcTop->numPushed+=1;
+  #define OM_PUSHZ4(A,B,C,D) (A) = NULL; (B) = NULL; (C) = NULL; (D) = NULL; JL_GC_PUSH4(&(A),&(B),&(C),&(D)); ctx->pModelicaParser_omcTop->numPushed+=1;
+  #define OM_PUSHZ5(A,B,C,D,E) (A) = NULL; (B) = NULL; (C) = NULL; (D) = NULL; (E) = NULL; JL_GC_PUSH5(&(A),&(B),&(C),&(D),&(E)); ctx->pModelicaParser_omcTop->numPushed+=1;
+  #define OM_PUSHZ6(A,B,C,D,E,F) (A) = NULL; (B) = NULL; (C) = NULL; (D) = NULL; (E) = NULL; (F) = NULL; JL_GC_PUSH6(&(A),&(B),&(C),&(D),&(E),&(F)); ctx->pModelicaParser_omcTop->numPushed+=1;
+  #define OM_PUSHZ7(A,B,C,D,E,F,G) (A) = NULL; (B) = NULL; (C) = NULL; (D) = NULL; (E) = NULL; (F) = NULL; (G) = NULL; JL_GC_PUSH7(&(A),&(B),&(C),&(D),&(E),&(F),&(G)); ctx->pModelicaParser_omcTop->numPushed+=1;
+  #define OM_PUSHZ8(A,B,C,D,E,F,G,H) (A) = NULL; (B) = NULL; (C) = NULL; (D) = NULL; (E) = NULL; (F) = NULL; (G) = NULL; (H) = NULL; JL_GC_PUSH8(&(A),&(B),&(C),&(D),&(E),&(F),&(G),&(H)); ctx->pModelicaParser_omcTop->numPushed+=1;
+  #define OM_PUSHZ9(A,B,C,D,E,F,G,H,I) (A) = NULL; (B) = NULL; (C) = NULL; (D) = NULL; (E) = NULL; (F) = NULL; (G) = NULL; (H) = NULL; (I) = NULL; JL_GC_PUSH9(&(A),&(B),&(C),&(D),&(E),&(F),&(G),&(H),&(I)); ctx->pModelicaParser_omcTop->numPushed+=1;
+  #define OM_PUSHZ10(A,B,C,D,E,F,G,H,I,J) (A) = NULL; (B) = NULL; (C) = NULL; (D) = NULL; (E) = NULL; (F) = NULL; (G) = NULL; (H) = NULL; (I) = NULL; (J) = NULL; JL_GC_PUSH10(&(A),&(B),&(C),&(D),&(E),&(F),&(G),&(H),&(I),&(J)); ctx->pModelicaParser_omcTop->numPushed+=1;
+  #define OM_PUSHZ11(A,B,C,D,E,F,G,H,I,J,K) (A) = NULL; (B) = NULL; (C) = NULL; (D) = NULL; (E) = NULL; (F) = NULL; (G) = NULL; (H) = NULL; (I) = NULL; (J) = NULL; (K) = NULL; JL_GC_PUSH11(&(A),&(B),&(C),&(D),&(E),&(F),&(G),&(H),&(I),&(J),&(K)); ctx->pModelicaParser_omcTop->numPushed+=1;
+  #define OM_POP(NN) ctx->pModelicaParser_omcTop->numPushed=ctx->pModelicaParser_omcTop->numPushed-1; JL_GC_POP();
+
   #endif
 }
 
@@ -275,7 +275,7 @@ class_type returns [void* ast]
           }
   )
   ;
-  
+
 
 identifier returns [char* str] :
   ( id=IDENT | id=DER | id=CODE | id=EQUALITY | id=INITIAL ) { str = (char*)$id.text->chars; }
@@ -363,7 +363,7 @@ overloading returns [void* ast]
   ;
   finally{ OM_POP(2); }
 
-base_prefix returns [void* ast] 
+base_prefix returns [void* ast]
 @init { OM_PUSHZ7(tp.flow, tp.stream, tp.parallelism, tp.variability, tp.direction, tp.field, ast); } :
   tp=type_prefix { ast = Absyn__ATTR(tp.flow, tp.stream, tp.parallelism, tp.variability, tp.direction, tp.field, mmc_mk_nil()); }
   ;
@@ -385,7 +385,8 @@ enumeration returns [void* ast]
       if (c) {
         ast = Absyn__ENUMERATION(Absyn__ENUM_5fCOLON, mmc_mk_some_or_none(cmt));
       } else {
-        ast = Absyn__ENUMERATION(Absyn__ENUMLITERALS(el), mmc_mk_some_or_none(cmt));
+        ast = Absyn__ENUMLITERALS(el);
+        ast = Absyn__ENUMERATION(ast, mmc_mk_some_or_none(cmt));
       }
     }
   ;
@@ -399,16 +400,16 @@ enum_list returns [void* ast]
 
 enumeration_literal returns [void* ast]
 @init { i1 = 0; OM_PUSHZ1(c1); } :
-  i1=IDENT c1=comment { ast = Absyn__ENUMLITERAL(token_to_scon(i1),mmc_mk_some_or_none(c1)); }
+  i1=IDENT c1=comment { ast = token_to_scon(i1); ast = Absyn__ENUMLITERAL(ast,mmc_mk_some_or_none(c1)); }
   ;
   finally{ OM_POP(1); }
 
 composition returns [void* ast, void* ann]
-@init { OM_PUSHZ4($ann, el, els, a); $ann = mmc_mk_nil(); } :
-  el=element_list[&$ann] els=composition2[&$ann] (a=annotation SEMICOLON)?
+@init { void *ann_local; OM_PUSHZ4(ann_local, el, els, a); ann_local = mmc_mk_nil(); } :
+  el=element_list[&ann_local] els=composition2[&ann_local] (a=annotation SEMICOLON)?
   {
     $ast = mmc_mk_cons_typed(Absyn_ClassPart, Absyn__PUBLIC(el), els);
-    $ann = a ? mmc_mk_cons_typed(Absyn_Annotation, a, $ann) : $ann;
+    $ann = a ? mmc_mk_cons_typed(Absyn_Annotation, a, ann_local) : ann_local;
   }
   ;
   finally{ OM_POP(4); }
@@ -436,12 +437,15 @@ external_clause returns [void* ast]
           funcname=IDENT LPAR ( expl=expression_list )? RPAR )?
         ( ann1 = annotation )? SEMICOLON
           {
+            lang = mmc_mk_some_or_none(lang);
+            retexp.ast = mmc_mk_some_or_none(retexp.ast);
+            ann1 = mmc_mk_some_or_none(ann1);
             ast = Absyn__EXTERNALDECL(
                     funcname ? mmc_mk_some(token_to_scon(funcname)) : mmc_mk_none(),
-                    mmc_mk_some_or_none(lang),
-                    mmc_mk_some_or_none(retexp.ast),
+                    lang,
+                    retexp.ast,
                     or_nil(expl),
-                    mmc_mk_some_or_none(ann1));
+                    ann1);
             ast = mmc_mk_cons_typed(Absyn_ClassPart, Absyn__EXTERNAL(ast, mmc_mk_none()), mmc_mk_nil());
           }
         ;
@@ -453,13 +457,13 @@ external_annotation returns [void* ast]
   ;
   finally{ OM_POP(1); }
 
-public_element_list [void **ann] returns [void* ast]
+public_element_list [volatile void **ann] returns [void* ast]
 @init { OM_PUSHZ1(es); } :
   PUBLIC es=element_list[ann] { ast = Absyn__PUBLIC(es); }
   ;
   finally{ OM_POP(1); }
 
-protected_element_list [void **ann] returns [void* ast]
+protected_element_list [volatile void **ann] returns [void* ast]
 @init { OM_PUSHZ1(es); } :
   PROTECTED es=element_list[ann] {ast = Absyn__PROTECTED(es); }
   ;
@@ -508,7 +512,7 @@ element_list [void **ann] returns [void* ast]
 
 element returns [void* ast]
 @declarations { void *final = 0, *innerouter = 0; }
-@init { f = 0; i = 0; o = 0; r = 0; OM_PUSHZ9(cc, $ast, cdef.ast, constr, final, innerouter, ic, ec, du); }
+@init { f = 0; i = 0; o = 0; r = 0; void *redecl; OM_PUSHZ10(cc, $ast, cdef.ast, constr, final, innerouter, ic, ec, du, redecl); }
   :
     ic=import_clause { $ast = Absyn__ELEMENT(MMC_FALSE,mmc_mk_none(),Absyn__NOT_5fINNER_5fOUTER, ic, PARSER_INFO($start), mmc_mk_none()); }
   | ec=extends_clause { $ast = Absyn__ELEMENT(MMC_FALSE,mmc_mk_none(),Absyn__NOT_5fINNER_5fOUTER, ec, PARSER_INFO($start),mmc_mk_none()); }
@@ -516,23 +520,30 @@ element returns [void* ast]
   | (r=REDECLARE)? (f=FINAL)? (i=INNER)? (o=T_OUTER)? { final = mmc_mk_bcon(f); innerouter = make_inner_outer(i,o); }
     ( ( cdef=class_definition[f != NULL] | cc=component_clause )
         {
-           if (!cc)
-             $ast = Absyn__ELEMENT(final, r != NULL ? mmc_mk_some(make_redeclare_keywords(false,r != NULL)) : mmc_mk_none(),
+           redecl = r != NULL ? mmc_mk_some(make_redeclare_keywords(false,r != NULL)) : mmc_mk_none();
+           if (!cc) {
+             cdef.ast = Absyn__CLASSDEF(MMC_FALSE, cdef.ast);
+             $ast = Absyn__ELEMENT(final, redecl,
                                   innerouter,
-                                  Absyn__CLASSDEF(MMC_FALSE, cdef.ast),
+                                  cdef.ast,
                                   PARSER_INFO($start), mmc_mk_none());
-           else
-             $ast = Absyn__ELEMENT(final, r != NULL ? mmc_mk_some(make_redeclare_keywords(false,r != NULL)) : mmc_mk_none(), innerouter,
+           } else {
+             $ast = Absyn__ELEMENT(final, redecl, innerouter,
                                    cc, PARSER_INFO($start), mmc_mk_none());
+          }
         }
     | (REPLACEABLE ( cdef=class_definition[f != NULL] | cc=component_clause ) constr=constraining_clause_comment? )
         {
-           if (cc)
-             $ast = Absyn__ELEMENT(final, mmc_mk_some(make_redeclare_keywords(true,r != NULL)), innerouter,
-                                   cc, PARSER_INFO($start), mmc_mk_some_or_none(constr));
-           else
-             $ast = Absyn__ELEMENT(final, mmc_mk_some(make_redeclare_keywords(true,r != NULL)), innerouter,
-                                   Absyn__CLASSDEF(MMC_TRUE, cdef.ast), PARSER_INFO($start), mmc_mk_some_or_none(constr));
+           redecl = mmc_mk_some(make_redeclare_keywords(true,r != NULL));
+           constr = mmc_mk_some_or_none(constr);
+           if (cc) {
+             $ast = Absyn__ELEMENT(final, redecl, innerouter,
+                                   cc, PARSER_INFO($start), constr);
+           } else {
+             cdef.ast = Absyn__CLASSDEF(MMC_TRUE, cdef.ast);
+             $ast = Absyn__ELEMENT(final, redecl, innerouter,
+                                   cdef.ast, PARSER_INFO($start), constr);
+           }
         }
     )
   | conn=CONNECT
@@ -540,13 +551,14 @@ element returns [void* ast]
        modelicaParserAssert(0, "Found the start of a connect equation but expected an element (are you missing the equation keyword?)", element, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
     }
   ;
-  finally{ OM_POP(9); }
+  finally{ OM_POP(10); }
 
 import_clause returns [void* ast]
 @init { im = 0; OM_PUSHZ2(cmt, imp); } :
   im=IMPORT (imp=explicit_import_name | imp=implicit_import_name) cmt=comment
     {
-      ast = Absyn__IMPORT(imp, mmc_mk_some_or_none(cmt), PARSER_INFO($im));
+      cmt = mmc_mk_some_or_none(cmt);
+      ast = Absyn__IMPORT(imp, cmt, PARSER_INFO($im));
     }
   ;
   finally{ OM_POP(2); }
@@ -622,7 +634,7 @@ component_clause returns [void* ast]
       #else
         /* Are these things OK? */
         ar_option = jl_data_ptr($path.ast)[1];
-        jl_data_ptr($path.ast)[1] = jl_nothing; /* TODO! FIXME! I think we need a write barrier here, see jl_gc_wb */
+        jl_data_ptr($path.ast)[1] = jl_nothing;
         jl_gc_wb($path.ast, jl_nothing);
       #endif
       }
@@ -635,7 +647,7 @@ component_clause returns [void* ast]
       #else
         /* Are these things OK? */
         ar_option = jl_data_ptr($path.ast)[2];
-        jl_data_ptr($path.ast)[2] = jl_nothing; /* TODO! FIXME! I think we need a write barrier here, see jl_gc_wb */
+        jl_data_ptr($path.ast)[2] = jl_nothing;
         jl_gc_wb($path.ast, jl_nothing);
       #endif
       }
@@ -666,7 +678,7 @@ component_clause returns [void* ast]
         }
         else // is SOME(arr)
         {
-          arr = jl_data_ptr(ar_option)[0]; /* TODO! FIXME! I think we need a write barrier here, see jl_gc_wb */
+          arr = jl_data_ptr(ar_option)[0];
         }
       }
       #endif
@@ -727,12 +739,14 @@ component_declaration returns [void* ast]
 @init { OM_PUSHZ3(decl, cond, cmt); } :
   decl=declaration (cond=conditional_attribute)? cmt=comment
   {
-    ast = Absyn__COMPONENTITEM(decl, mmc_mk_some_or_none(cond), mmc_mk_some_or_none(cmt));
+    cond = mmc_mk_some_or_none(cond);
+    cmt = mmc_mk_some_or_none(cmt);
+    ast = Absyn__COMPONENTITEM(decl, cond, cmt);
   }
   ;
   finally{ OM_POP(3); }
 
-conditional_attribute returns [void* ast] 
+conditional_attribute returns [void* ast]
 @init { OM_PUSHZ1(e.ast); } :
   IF e=expression[metamodelica_enabled()] { ast = e.ast; }
   ;
@@ -742,7 +756,8 @@ declaration returns [void* ast]
 @init { id = 0; OM_PUSHZ2(as, mod.ast); } :
   ( id=IDENT | id=OPERATOR ) (as=array_subscripts)? (mod=modification)?
     {
-      ast = Absyn__COMPONENT(token_to_scon(id), or_nil(as), mmc_mk_some_or_none($mod.ast));
+      mod.ast = mmc_mk_some_or_none($mod.ast);
+      ast = Absyn__COMPONENT(token_to_scon(id), or_nil(as), mod.ast);
     }
   ;
   finally{ OM_POP(2); }
@@ -773,13 +788,13 @@ class_modification returns [void* ast]
 
 argument_list returns [void* ast]
 @init { OM_PUSHZ3(a, as, ast); } :
-  a=argument ( COMMA as=argument_list )? 
-  { 
-    if (!a) 
+  a=argument ( COMMA as=argument_list )?
+  {
+    if (!a)
     {
        fprintf(stderr, "crap!\n");
     }
-    ast = mmc_mk_cons_typed(Absyn_ElementArg, a, or_nil(as)); 
+    ast = mmc_mk_cons_typed(Absyn_ElementArg, a, or_nil(as));
   }
   ;
   finally{ OM_POP(3); }
@@ -801,7 +816,7 @@ element_modification_or_replaceable returns [void* ast]
     finally{ OM_POP(2); }
 
 element_modification [void *each, void *final] returns [void* ast]
-@init { OM_PUSHZ4($ast, $mod.ast, cmt, path); br = 0;} :
+@init { void *mod_tmp; OM_PUSHZ5(mod_tmp, $ast, $mod.ast, cmt, path); br = 0;} :
   path=name_path2 (br=LBRACK | ((mod=modification)? cmt=string_comment))
   {
     if (br) {
@@ -810,35 +825,42 @@ element_modification [void *each, void *final] returns [void* ast]
               NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition,
               ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
     }
-    $ast = Absyn__MODIFICATION(final, each, path, mmc_mk_some_or_none($mod.ast), mmc_mk_some_or_none(cmt), PARSER_INFO($start));
+    mod_tmp = mmc_mk_some_or_none($mod.ast);
+    cmt = mmc_mk_some_or_none(cmt);
+    $ast = Absyn__MODIFICATION(final, each, path, mod_tmp, cmt, PARSER_INFO($start));
   }
   ;
-  finally{ OM_POP(4); }
+  finally{ OM_POP(5); }
 
 element_redeclaration returns [void* ast]
-@init { OM_PUSHZ4($ast, er.ast, cc, cdef.ast); f = 0; e = 0; } :
+@init { void *redecl; OM_PUSHZ5($ast, er.ast, cc, cdef.ast, redecl); f = 0; e = 0; } :
   REDECLARE (e=EACH)? (f=FINAL)?
   ( (cdef=class_definition[f != NULL] | cc=component_clause1) | er=element_replaceable[e != NULL,f != NULL, true] )
      {
        if ($er.ast) {
          $ast = $er.ast;
        } else {
-         $ast = Absyn__REDECLARATION(mmc_mk_bcon(f), make_redeclare_keywords(false,true), e ? Absyn__EACH : Absyn__NON_5fEACH, $cc.ast ? $cc.ast : Absyn__CLASSDEF(MMC_FALSE,$cdef.ast), mmc_mk_none(), PARSER_INFO($start));
+         $ast = $cc.ast ? $cc.ast : Absyn__CLASSDEF(MMC_FALSE,$cdef.ast);
+         redecl = make_redeclare_keywords(false,true);
+         $ast = Absyn__REDECLARATION(mmc_mk_bcon(f), redecl, e ? Absyn__EACH : Absyn__NON_5fEACH, $ast, mmc_mk_none(), PARSER_INFO($start));
        }
      }
   ;
-  finally{ OM_POP(4); }
+  finally{ OM_POP(5); }
 
 element_replaceable [int each, int final, int redeclare] returns [void* ast]
-@init { OM_PUSHZ4($ast, e_spec, cd.ast, constr); } :
+@init { void *redecl; OM_PUSHZ5($ast, e_spec, cd.ast, constr, redecl); } :
   REPLACEABLE ( cd=class_definition[final] | e_spec=component_clause1 ) constr=constraining_clause_comment?
   {
-      $ast = Absyn__REDECLARATION(mmc_mk_bcon(final), make_redeclare_keywords(true,redeclare),
-                                  each ? Absyn__EACH : Absyn__NON_5fEACH, e_spec ? e_spec : Absyn__CLASSDEF(MMC_TRUE, $cd.ast),
-                                  mmc_mk_some_or_none(constr), PARSER_INFO($start));
+      e_spec = e_spec ? e_spec : Absyn__CLASSDEF(MMC_TRUE, $cd.ast);
+      constr = mmc_mk_some_or_none(constr);
+      redecl = make_redeclare_keywords(true,redeclare);
+      $ast = Absyn__REDECLARATION(mmc_mk_bcon(final), redecl,
+                                  each ? Absyn__EACH : Absyn__NON_5fEACH, e_spec,
+                                  constr, PARSER_INFO($start));
   }
   ;
-  finally{ OM_POP(4); }
+  finally{ OM_POP(5); }
 
 component_clause1 returns [void* ast]
 @init { OM_PUSHZ3(attr, ts.ast, comp_decl); } :
@@ -860,7 +882,7 @@ component_declaration1 returns [void* ast]
  * 2.2.6 Equations
  */
 
-initial_equation_clause [void **ann] returns [void* ast] 
+initial_equation_clause [void **ann] returns [void* ast]
 @init { OM_PUSHZ1(es); } :
   { LA(2)==EQUATION }?
   INITIAL EQUATION es=equation_annotation_list[ann] { ast = Absyn__INITIALEQUATIONS(es); }
@@ -873,7 +895,7 @@ equation_clause [void **ann] returns [void* ast]
   ;
   finally{ OM_POP(1); }
 
-constraint_clause [void **ann] returns [void* ast] 
+constraint_clause [void **ann] returns [void* ast]
 @init { OM_PUSHZ1(cs); } :
   CONSTRAINT cs=constraint_annotation_list[ann] { ast = Absyn__CONSTRAINTS(cs); }
   ;
@@ -1007,7 +1029,8 @@ equation returns [void* ast]
   )
   cmt=comment
   {
-    $ast = Absyn__EQUATIONITEM(e, mmc_mk_some_or_none(cmt), PARSER_INFO($start));
+    cmt = mmc_mk_some_or_none(cmt);
+    $ast = Absyn__EQUATIONITEM(e, cmt, PARSER_INFO($start));
   }
   ;
   finally{ OM_POP(6); }
@@ -1054,15 +1077,17 @@ algorithm returns [void* ast]
   | FAILURE LPAR al=algorithm RPAR { a = Absyn__ALG_5fFAILURE(mmc_mk_cons_typed(Absyn_AlgorithmItem, al.ast, mmc_mk_nil())); }
   | EQUALITY LPAR e1=expression[metamodelica_enabled()] ASSIGN e2=expression[metamodelica_enabled()] RPAR
     {
+      a = Absyn__CREF_5fIDENT(mmc_mk_scon("equality"),mmc_mk_nil());
       a = Absyn__ALG_5fNORETCALL(
-        Absyn__CREF_5fIDENT(mmc_mk_scon("equality"),mmc_mk_nil()),
+        a,
         Absyn__FUNCTIONARGS(mmc_mk_cons_typed(Absyn_Exp, e1.ast,mmc_mk_cons_typed(Absyn_Exp, e2.ast, mmc_mk_nil())),
         mmc_mk_nil()));
     }
   )
   cmt=comment
   {
-    $ast = Absyn__ALGORITHMITEM(a, mmc_mk_some_or_none(cmt), PARSER_INFO($start));
+    cmt = mmc_mk_some_or_none(cmt);
+    $ast = Absyn__ALGORITHMITEM(a, cmt, PARSER_INFO($start));
   }
   ;
   finally{ OM_POP(6); }
@@ -1099,7 +1124,7 @@ assign_clause_a returns [void* ast]
           struct mmc_struct *p = (struct mmc_struct*)MMC_UNTAGPTR(e1);
           $ast = Absyn__ALG_5fNORETCALL(p->data[0+UNBOX_OFFSET],p->data[1+UNBOX_OFFSET]);
         #else
-          $ast = Absyn__ALG_5fNORETCALL(jl_data_ptr(e1)[0],jl_data_ptr(e1)[1]); /* TODO! FIXME! I think we need a write barrier here, see jl_gc_wb */
+          $ast = Absyn__ALG_5fNORETCALL(jl_data_ptr(e1)[0],jl_data_ptr(e1)[1]);
         #endif
         }
       }
@@ -1304,7 +1329,7 @@ algorithm_list returns [void* ast]
   ;
   finally{ OM_POP(2); }
 
-connect_clause returns [void* ast] 
+connect_clause returns [void* ast]
 @init{ OM_PUSHZ2(cr1.ast, cr2.ast); } :
   CONNECT LPAR cr1=component_reference COMMA cr2=component_reference RPAR
   {
@@ -1315,7 +1340,7 @@ connect_clause returns [void* ast]
 
 /* adrpo: 2010-10-11, replaced commented-out part with the rule above
                       which is conform to the grammar in the Modelica specification!
-connect_clause returns [void* ast] 
+connect_clause returns [void* ast]
 @init{ OM_PUSHZ2(cr1, cr2); } :
   CONNECT LPAR cr1=connector_ref COMMA cr2=connector_ref RPAR { ast = Absyn__EQ_5fCONNECT(cr1,cr2); }
   ;
@@ -1338,7 +1363,7 @@ connector_ref_2 returns [void* ast]
   id=IDENT ( as=array_subscripts )? { ast = Absyn__CREF_5fIDENT(token_to_scon(id),or_nil(as)); }
   ;
   finally{ OM_POP(1); }
-  
+
 */
 
 /*
@@ -1402,7 +1427,9 @@ for_index returns [void* ast]
 @init{ i = 0; OM_PUSHZ2(e.ast, guard.ast); } :
   (i=IDENT (((IF|GUARD) guard=expression[metamodelica_enabled()])? T_IN e=expression[metamodelica_enabled()])?
    {
-     ast = Absyn__ITERATOR(token_to_scon(i),mmc_mk_some_or_none(guard.ast),mmc_mk_some_or_none(e.ast));
+     guard.ast = mmc_mk_some_or_none(guard.ast);
+     e.ast = mmc_mk_some_or_none(e.ast);
+     ast = Absyn__ITERATOR(token_to_scon(i),guard.ast,e.ast);
    }
   )
   ;
@@ -1480,7 +1507,7 @@ arithmetic_expression returns [void* ast]
   ;
   finally{ OM_POP(3); }
 
-unary_arithmetic_expression returns [void* ast] 
+unary_arithmetic_expression returns [void* ast]
 @init { OM_PUSHZ2(t, ast); } :
   ( PLUS t=term     { ast = Absyn__UNARY(Absyn__UPLUS,t); }
   | MINUS t=term    { ast = Absyn__UNARY(Absyn__UMINUS,t); }
@@ -1623,12 +1650,13 @@ component_reference__function_call returns [void* ast]
       }
     }
   | i=INITIAL LPAR RPAR {
-      $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mmc_mk_scon("initial"), mmc_mk_nil()),Absyn__FUNCTIONARGS(mmc_mk_nil(),mmc_mk_nil()));
+      $ast = Absyn__CREF_5fIDENT(mmc_mk_scon("initial"), mmc_mk_nil());
+      $ast = Absyn__CALL($ast,Absyn__FUNCTIONARGS(mmc_mk_nil(),mmc_mk_nil()));
     }
   ;
   finally{ OM_POP(3); }
 
-name_path_end returns [void* ast] 
+name_path_end returns [void* ast]
 @init{ OM_PUSHZ1(np); } :
   np=name_path EOF
   {
@@ -1651,7 +1679,7 @@ name_path2 returns [void* ast]
     { LA(2) != DOT }? (id=IDENT|id=CODE) { ast = Absyn__IDENT(token_to_scon(id)); }
   | (id=IDENT | id=CODE) DOT p=name_path2 { ast = Absyn__QUALIFIED(token_to_scon(id),p); }
   ;
-  finally{ OM_POP(1); }  
+  finally{ OM_POP(1); }
 
 name_path_star returns [void* ast, int unqual, void* lst]
 @init{ id = 0; uq = 0; OM_PUSHZ5(mlst, p.ast, p.lst, $lst, $ast); } :
@@ -1671,17 +1699,18 @@ name_path_star returns [void* ast, int unqual, void* lst]
   finally{ OM_POP(5); }
 
 name_path_group returns [void* ast]
-@init{ id1 = 0; id2 = 0; OM_PUSHZ1(rest); } :
+@init{ id1 = 0; id2 = 0; void *tmp; OM_PUSHZ2(rest, tmp); } :
   (id1=IDENT|id1=CODE) (EQUALS (id2=IDENT|id2=CODE))? (COMMA rest=name_path_group)?
     {
-      $ast = mmc_mk_cons_typed(Absyn_Import, id2 ? Absyn__GROUP_5fIMPORT_5fRENAME(token_to_scon(id1),token_to_scon(id2)) :
-                           Absyn__GROUP_5fIMPORT_5fNAME(token_to_scon(id1)),
+      tmp = token_to_scon(id1);
+      $ast = mmc_mk_cons_typed(Absyn_Import, id2 ? Absyn__GROUP_5fIMPORT_5fRENAME(tmp,token_to_scon(id2)) :
+                           Absyn__GROUP_5fIMPORT_5fNAME(tmp),
                      or_nil(rest));
     }
   ;
-  finally{ OM_POP(1); }
+  finally{ OM_POP(2); }
 
-component_reference_end returns [void* ast] 
+component_reference_end returns [void* ast]
 @init{ OM_PUSHZ1(cr.ast); } :
   cr=component_reference EOF
   {
@@ -1839,7 +1868,9 @@ comment returns [void* ast]
   (cmt=string_comment (ann=annotation)?)
     {
        if (cmt || ann) {
-         ast = Absyn__COMMENT(mmc_mk_some_or_none(ann), mmc_mk_some_or_none(cmt));
+         ann = mmc_mk_some_or_none(ann);
+         cmt = mmc_mk_some_or_none(cmt);
+         ast = Absyn__COMMENT(ann, cmt);
        }
     }
   ;
@@ -1937,7 +1968,8 @@ top_algorithm returns [void* ast]
   )
     {
       if (!e.ast) {
-        $ast = GlobalScript__IALG(Absyn__ALGORITHMITEM(a, mmc_mk_some_or_none(cmt), PARSER_INFO($start)));
+        cmt = mmc_mk_some_or_none(cmt);
+        $ast = GlobalScript__IALG(Absyn__ALGORITHMITEM(a, cmt, PARSER_INFO($start)));
       } else {
         $ast = GlobalScript__IEXP(e.ast, PARSER_INFO($start));
       }
