@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2019, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -46,20 +46,7 @@ encapsulated package Util
   A type variable is exactly what it sounds like, a type bound to a variable.
   It is used for higher order functions, i.e. in MetaModelica Compiler (MMC) the possibility to pass a
   \"pointer\" to a function into another function. But it can also be used for
-  generic data types, like in  C++ templates.
-
-  A type variable in MetaModelica Compiler (MMC) is written as:
-  replaceable type TyVar subtypeof Any;
-  For instance,
-  function listFill
-    replaceable type TyVar subtypeof Any;
-    input TyVar in;
-    input Integer i;
-    output list<TyVar>
-  ...
-  end listFill;
-  the type variable TyVar is here used as a generic type for the function listFill,
-  which returns a list of n elements of a certain type."
+  generic data types, like in  C++ templates."
 
 public uniontype ReplacePattern
   record REPLACEPATTERN
@@ -88,7 +75,6 @@ protected
 import Autoconf;
 import ClockIndexes;
 import Config;
-import Error;
 import Flags;
 import Global;
 import List;
@@ -1273,101 +1259,6 @@ algorithm
   (k, v) := listHead(inList);
   outValue := if valueEq(inKey, k) then v else assoc(inKey, listRest(inList));
 end assoc;
-
-public function allCombinations<T>
-  "{{1,2,3},{4,5},{6}} => {{1,4,6},{1,5,6},{2,4,6},...}.
-  The output is a 2-dim list with lengths (len1*len2*...*lenN)) and N.
-
-  This function screams WARNING I USE COMBINATORIAL EXPLOSION.
-  So there are flags that limit the size of the set it works on."
-  input list<list<T>> lst;
-  input Option<Integer> maxTotalSize;
-  input SourceInfo info;
-  output list<list<T>> out;
-algorithm
-  out := matchcontinue (lst,maxTotalSize,info)
-    local
-      Integer sz,maxSz;
-    case (_,SOME(maxSz),_)
-      equation
-        sz = intMul(listLength(lst),List.applyAndFold(lst,intMul,listLength,1));
-        true = (sz <= maxSz);
-      then allCombinations2(lst);
-
-    case (_,NONE(),_) then allCombinations2(lst);
-
-    case (_,SOME(_),_)
-      equation
-        Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"Util.allCombinations failed because the input was too large"}, info);
-      then fail();
-  end matchcontinue;
-end allCombinations;
-
-protected function allCombinations2<T>
-  "{{1,2,3},{4,5},{6}} => {{1,4,6},{1,5,6},{2,4,6},...}.
-  The output is a 2-dim list with lengths (len1*len2*...*lenN)) and N.
-
-  This function screams WARNING I USE COMBINATORIAL EXPLOSION."
-  input list<list<T>> ilst;
-  output list<list<T>> out;
-algorithm
-  out := match (ilst)
-    local
-      list<T> x;
-      list<list<T>> lst;
-
-    case {} then {};
-    case (x::lst)
-      equation
-        lst = allCombinations2(lst);
-        lst = allCombinations3(x, lst, {});
-      then lst;
-  end match;
-end allCombinations2;
-
-protected function allCombinations3<T>
-  input list<T> ilst1;
-  input list<list<T>> ilst2;
-  input list<list<T>> iacc;
-  output list<list<T>> out;
-algorithm
-  out := match (ilst1,ilst2,iacc)
-    local
-      T x;
-      list<T> lst1;
-      list<list<T>> lst2;
-      list<list<T>> acc;
-
-
-    case ({},_,acc) then listReverse(acc);
-    case (x::lst1,lst2,acc)
-      equation
-        acc = allCombinations4(x, lst2, acc);
-        acc = allCombinations3(lst1, lst2, acc);
-      then acc;
-  end match;
-end allCombinations3;
-
-protected function allCombinations4<T>
-  input T x;
-  input list<list<T>> ilst;
-  input list<list<T>> iacc;
-  output list<list<T>> out;
-algorithm
-  out := match (x,ilst,iacc)
-    local
-      list<T> l;
-      list<list<T>> lst;
-      list<list<T>> acc;
-
-    case (_,{},acc) then {x}::acc;
-    case (_,{l},acc) then (x::l)::acc;
-    case (_,l::lst,acc)
-      equation
-        acc = allCombinations4(x, lst, (x::l)::acc);
-      then acc;
-  end match;
-end allCombinations4;
 
 public function boolInt
   "Returns 1 if the given boolean is true, otherwise 0."

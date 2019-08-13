@@ -12299,7 +12299,7 @@ public function rangesToSubscripts
   input list<list<DAE.Subscript>> inRangelist;
   output list<list<DAE.Subscript>> outSubslst;
 algorithm
-  outSubslst := Util.allCombinations(inRangelist, NONE(), AbsynUtil.dummyInfo);
+  outSubslst := List.allCombinations(inRangelist, NONE(), AbsynUtil.dummyInfo);
 end rangesToSubscripts;
 
 public function expandSubscript
