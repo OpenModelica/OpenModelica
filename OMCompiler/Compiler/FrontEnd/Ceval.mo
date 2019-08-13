@@ -5599,7 +5599,7 @@ protected function makeReductionAllCombinations
   output list<list<Values.Value>> valMatrix;
 algorithm
   valMatrix := match (inValMatrix,rtype)
-    case (_,Absyn.COMBINE()) then listReverse(Util.allCombinations(inValMatrix,SOME(100000),AbsynUtil.dummyInfo));
+    case (_,Absyn.COMBINE()) then listReverse(List.allCombinations(inValMatrix,SOME(100000),AbsynUtil.dummyInfo));
     case (_,Absyn.THREAD()) then listReverse(List.transposeList(inValMatrix));
   end match;
 end makeReductionAllCombinations;

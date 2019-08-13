@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2019, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -101,6 +101,7 @@ import MetaModelica.Dangerous.{listReverseInPlace, arrayGetNoBoundsChecking, arr
 import MetaModelica.Dangerous;
 import DoubleEndedList;
 import GC;
+import Error;
 
 public function create<T>
   "Creates a list from an element."
@@ -7415,6 +7416,95 @@ algorithm
 
   outList := listReverseInPlace(outList);
 end mapIndices;
+
+public function allCombinations<T>
+  "{{1,2,3},{4,5},{6}} => {{1,4,6},{1,5,6},{2,4,6},...}.
+  The output is a 2-dim list with lengths (len1*len2*...*lenN)) and N.
+
+  This function screams WARNING I USE COMBINATORIAL EXPLOSION.
+  So there are flags that limit the size of the set it works on."
+  input list<list<T>> lst;
+  input Option<Integer> maxTotalSize;
+  input SourceInfo info;
+  output list<list<T>> out;
+algorithm
+  out := matchcontinue (lst,maxTotalSize,info)
+    local
+      Integer sz,maxSz;
+    case (_,SOME(maxSz),_)
+      algorithm
+        sz := intMul(listLength(lst), applyAndFold(lst,intMul,listLength,1));
+        true := (sz <= maxSz);
+      then allCombinations2(lst);
+    case (_,NONE(),_) then allCombinations2(lst);
+    case (_,SOME(_),_)
+      algorithm
+        Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"List.allCombinations failed because the input was too large"}, info);
+      then fail();
+  end matchcontinue;
+end allCombinations;
+
+protected function allCombinations2<T>
+  "{{1,2,3},{4,5},{6}} => {{1,4,6},{1,5,6},{2,4,6},...}.
+  The output is a 2-dim list with lengths (len1*len2*...*lenN)) and N.
+
+  This function screams WARNING I USE COMBINATORIAL EXPLOSION."
+  input list<list<T>> ilst;
+  output list<list<T>> out;
+algorithm
+  out := match (ilst)
+    local
+      list<T> x;
+      list<list<T>> lst;
+    case {} then {};
+    case (x::lst)
+      algorithm
+        lst := allCombinations2(lst);
+        lst := allCombinations3(x, lst, {});
+      then lst;
+  end match;
+end allCombinations2;
+
+protected function allCombinations3<T>
+  input list<T> ilst1;
+  input list<list<T>> ilst2;
+  input list<list<T>> iacc;
+  output list<list<T>> out;
+algorithm
+  out := match (ilst1,ilst2,iacc)
+    local
+      T x;
+      list<T> lst1;
+      list<list<T>> lst2;
+      list<list<T>> acc;
+    case ({},_,acc) then listReverse(acc);
+    case (x::lst1,lst2,acc)
+      algorithm
+        acc := allCombinations4(x, lst2, acc);
+        acc := allCombinations3(lst1, lst2, acc);
+      then acc;
+  end match;
+end allCombinations3;
+
+protected function allCombinations4<T>
+  input T x;
+  input list<list<T>> ilst;
+  input list<list<T>> iacc;
+  output list<list<T>> out;
+algorithm
+  out := match (x,ilst,iacc)
+    local
+      list<T> l;
+      list<list<T>> lst;
+      list<list<T>> acc;
+    case (_,{},acc) then {x}::acc;
+    case (_,{l},acc) then (x::l)::acc;
+    case (_,l::lst,acc)
+      algorithm
+        acc := allCombinations4(x, lst, (x::l)::acc);
+      then acc;
+  end match;
+end allCombinations4;
 
 annotation(__OpenModelica_Interface="util");
 end List;
