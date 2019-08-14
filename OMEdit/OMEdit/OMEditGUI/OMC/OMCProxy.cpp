@@ -1264,6 +1264,34 @@ QList<QString> OMCProxy::getInheritedClasses(QString className)
 }
 
 /*!
+ * \brief OMCProxy::getNthInheritedClassIconMapAnnotation
+ * Returns the icon map of an inherited class at a specific index from a model.
+ * \param className
+ * \param num
+ * \return
+ */
+QString OMCProxy::getNthInheritedClassIconMapAnnotation(QString className, int num)
+{
+  QString expression = "getNthInheritedClassIconMapAnnotation(" + className + ", " + QString::number(num) + ")";
+  sendCommand(expression);
+  return getResult();
+}
+
+/*!
+ * \brief OMCProxy::getNthInheritedClassDiagramMapAnnotation
+ * Returns the diagram map of an inherited class at a specific index from a model.
+ * \param className
+ * \param num
+ * \return
+ */
+QString OMCProxy::getNthInheritedClassDiagramMapAnnotation(QString className, int num)
+{
+  QString expression = "getNthInheritedClassDiagramMapAnnotation(" + className + ", " + QString::number(num) + ")";
+  sendCommand(expression);
+  return getResult();
+}
+
+/*!
  * \brief OMCProxy::getComponents
  * Returns the components of a model with their attributes.\n
  * Creates an object of ComponentInfo for each component.

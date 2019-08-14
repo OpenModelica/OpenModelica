@@ -97,11 +97,11 @@ void DiagramWindow::drawDiagram(ModelWidget *pModelWidget)
     }
 
     foreach (LineAnnotation *pConnectionLineAnnotation, pModelWidget->getDiagramGraphicsView()->getConnectionsList()) {
-      LineAnnotation *pNewConntionLineAnnotation = new LineAnnotation(pConnectionLineAnnotation, mpGraphicsView);
-      pNewConntionLineAnnotation->initializeTransformation();
-      pNewConntionLineAnnotation->drawCornerItems();
-      pNewConntionLineAnnotation->setCornerItemsActiveOrPassive();
-      mpGraphicsView->addConnectionToList(pNewConntionLineAnnotation);
+      LineAnnotation *pNewConnectionLineAnnotation = new LineAnnotation(pConnectionLineAnnotation, mpGraphicsView);
+      pNewConnectionLineAnnotation->initializeTransformation();
+      pNewConnectionLineAnnotation->drawCornerItems();
+      pNewConnectionLineAnnotation->setCornerItemsActiveOrPassive();
+      mpGraphicsView->addConnectionToList(pNewConnectionLineAnnotation);
     }
 
     foreach (LineAnnotation *pTransitionLineAnnotation, pModelWidget->getDiagramGraphicsView()->getTransitionsList()) {

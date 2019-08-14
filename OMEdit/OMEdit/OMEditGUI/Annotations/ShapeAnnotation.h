@@ -111,6 +111,7 @@ class ShapeAnnotation : public QObject, public QGraphicsItem, public GraphicItem
   Q_INTERFACES(QGraphicsItem)
 private:
   bool mIsCustomShape;
+  ShapeAnnotation *mpReferenceShapeAnnotation;
   bool mIsInheritedShape;
   QPointF mOldScenePosition;
   bool mIsCornerItemClicked;
@@ -121,8 +122,8 @@ private:
 public:
   enum LineGeometryType {VerticalLine, HorizontalLine};
   Transformation mTransformation;
-  ShapeAnnotation(QGraphicsItem *pParent);
-  ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsView, QGraphicsItem *pParent = 0);
+  ShapeAnnotation(ShapeAnnotation *pShapeAnnotation, QGraphicsItem *pParent);
+  ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsView, ShapeAnnotation *pShapeAnnotation, QGraphicsItem *pParent = 0);
   void setDefaults();
   void setDefaults(ShapeAnnotation *pShapeAnnotation);
   void setUserDefaults();
@@ -135,6 +136,7 @@ public:
   virtual void parseShapeAnnotation(QString annotation);
   virtual QString getOMCShapeAnnotation();
   virtual QString getShapeAnnotation();
+  static QList<QPointF> getExtentsForInheritedShapeFromIconDiagramMap(GraphicsView *pGraphicsView, ShapeAnnotation *pReferenceShapeAnnotation);
   void initializeTransformation();
   void drawCornerItems();
   void setCornerItemsActiveOrPassive();
@@ -192,14 +194,13 @@ public:
   void removeRedundantPointsGeometriesAndCornerItems();
   void adjustGeometries();
   virtual void setShapeFlags(bool enable);
-  virtual void updateShape(ShapeAnnotation *pShapeAnnotation);
+  virtual void updateShape(ShapeAnnotation *pShapeAnnotation) = 0;
   void emitAdded() {emit added();}
   void emitChanged() {emit changed();}
   void emitDeleted() {emit deleted();}
   void emitPrepareGeometryChange() {prepareGeometryChange();}
   static int maxTextLengthToShowOnLibraryIcon;
 signals:
-  void updateReferenceShapes();
   void added();
   void changed();
   void deleted();

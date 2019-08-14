@@ -1417,6 +1417,7 @@ void UpdateCoOrdinateSystemCommand::redoInternal()
   mpGraphicsView->setExtentRectangle(left, bottom, right, top);
   mpGraphicsView->addClassAnnotation();
   mpGraphicsView->fitInViewInternal();
+  updateReferencedShapes(mpGraphicsView);
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitCoOrdinateSystemUpdated(mpGraphicsView);
   // if copy properties is true
   if (mCopyProperties) {
@@ -1430,6 +1431,7 @@ void UpdateCoOrdinateSystemCommand::redoInternal()
     pGraphicsView->setExtentRectangle(left, bottom, right, top);
     pGraphicsView->addClassAnnotation();
     pGraphicsView->fitInViewInternal();
+    updateReferencedShapes(pGraphicsView);
     pGraphicsView->getModelWidget()->getLibraryTreeItem()->emitCoOrdinateSystemUpdated(pGraphicsView);
   }
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
@@ -1464,6 +1466,7 @@ void UpdateCoOrdinateSystemCommand::undo()
   }
   mpGraphicsView->addClassAnnotation();
   mpGraphicsView->fitInViewInternal();
+  updateReferencedShapes(mpGraphicsView);
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitCoOrdinateSystemUpdated(mpGraphicsView);
   // if copy properties is true
   if (mCopyProperties) {
@@ -1481,6 +1484,7 @@ void UpdateCoOrdinateSystemCommand::undo()
     }
     pGraphicsView->addClassAnnotation();
     pGraphicsView->fitInViewInternal();
+    updateReferencedShapes(pGraphicsView);
     pGraphicsView->getModelWidget()->getLibraryTreeItem()->emitCoOrdinateSystemUpdated(pGraphicsView);
   }
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
@@ -1493,6 +1497,22 @@ void UpdateCoOrdinateSystemCommand::undo()
     }
     // uses annotation
     pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mOldUsesAnnotationString);
+  }
+}
+
+/*!
+ * \brief UpdateCoOrdinateSystemCommand::updateReferencedShapes
+ * \param pGraphicsView
+ */
+void UpdateCoOrdinateSystemCommand::updateReferencedShapes(GraphicsView *pGraphicsView)
+{
+  /* If preserveAspectRatio is changed emit changed signal of all the shapes so that
+   * the inherited items gets updated accordingly using the iconmap/diagrammap
+   */
+  if (mNewCoOrdinateSystem.getPreserveAspectRatio() != mOldCoOrdinateSystem.getPreserveAspectRatio()) {
+    foreach (ShapeAnnotation *pShapeAnnotation, pGraphicsView->getShapesList()) {
+      pShapeAnnotation->emitChanged();
+    }
   }
 }
 

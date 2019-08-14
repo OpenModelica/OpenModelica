@@ -46,7 +46,7 @@
  * \param pGraphicsView - pointer to GraphicsView
  */
 TextAnnotation::TextAnnotation(QString annotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0)
+  : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
   mpComponent = 0;
   // set the default values
@@ -60,33 +60,25 @@ TextAnnotation::TextAnnotation(QString annotation, GraphicsView *pGraphicsView)
 }
 
 TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
-  : ShapeAnnotation(pParent), mpComponent(pParent)
+  : ShapeAnnotation(pShapeAnnotation, pParent), mpComponent(pParent)
 {
   updateShape(pShapeAnnotation);
   initUpdateTextString();
   setPos(mOrigin);
   setRotation(mRotation);
-  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
-  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
-  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
-  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
 }
 
 TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, 0)
+  : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
 {
   mpComponent = 0;
   updateShape(pShapeAnnotation);
   setShapeFlags(true);
   mpGraphicsView->addItem(this);
-  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
-  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
-  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
-  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
 }
 
 TextAnnotation::TextAnnotation(Component *pParent)
-  : ShapeAnnotation(pParent), mpComponent(pParent)
+  : ShapeAnnotation(0, pParent), mpComponent(pParent)
 {
   // set the default values
   GraphicItem::setDefaults();
@@ -102,7 +94,7 @@ TextAnnotation::TextAnnotation(Component *pParent)
 }
 
 TextAnnotation::TextAnnotation(QString annotation, LineAnnotation *pLineAnnotation)
-  : ShapeAnnotation(pLineAnnotation)
+  : ShapeAnnotation(0, pLineAnnotation)
 {
   mpComponent = 0;
   // set the default values
@@ -131,7 +123,7 @@ TextAnnotation::TextAnnotation(QString annotation, LineAnnotation *pLineAnnotati
  * \param pGraphicsView
  */
 TextAnnotation::TextAnnotation(GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, 0)
+  : ShapeAnnotation(true, pGraphicsView, 0, 0)
 {
   mpComponent = 0;
   // set the default values
