@@ -643,7 +643,8 @@ QList<QPointF> ShapeAnnotation::getExtentsForInheritedShapeFromIconDiagramMap(Gr
 {
   QPointF defaultPoint1 = QPointF(-100.0, -100.0);
   QPointF defaultPoint2 = QPointF(100.0, 100.0);
-  QPointF point1, point2;
+  QPointF point1 = defaultPoint1;
+  QPointF point2 = defaultPoint2;
 
   int index = pGraphicsView->getModelWidget()->getInheritedClassesList().indexOf(pReferenceShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()) + 1;
   if (index > 0) {
@@ -687,9 +688,6 @@ void ShapeAnnotation::initializeTransformation()
 {
   QPointF point1 = QPointF(-100.0, -100.0);
   QPointF point2 = QPointF(100.0, 100.0);
-
-  point1 = mpGraphicsView->mCoOrdinateSystem.getExtent().size() > 0 ? mpGraphicsView->mCoOrdinateSystem.getExtent().at(0) : point1;
-  point2 = mpGraphicsView->mCoOrdinateSystem.getExtent().size() > 1 ? mpGraphicsView->mCoOrdinateSystem.getExtent().at(1) : point2;
 
   if (mpReferenceShapeAnnotation && mpReferenceShapeAnnotation->getGraphicsView()) {
     QList<QPointF> extent = getExtentsForInheritedShapeFromIconDiagramMap(mpGraphicsView, mpReferenceShapeAnnotation);
