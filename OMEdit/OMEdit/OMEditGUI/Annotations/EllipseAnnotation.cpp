@@ -36,7 +36,7 @@
 #include "Modeling/Commands.h"
 
 EllipseAnnotation::EllipseAnnotation(QString annotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0)
+  : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
   // set the default values
   GraphicItem::setDefaults();
@@ -49,27 +49,19 @@ EllipseAnnotation::EllipseAnnotation(QString annotation, GraphicsView *pGraphics
 }
 
 EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
-  : ShapeAnnotation(pParent)
+  : ShapeAnnotation(pShapeAnnotation, pParent)
 {
   updateShape(pShapeAnnotation);
   setPos(mOrigin);
   setRotation(mRotation);
-  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
-  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
-  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
-  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
 }
 
 EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, 0)
+  : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
 {
   updateShape(pShapeAnnotation);
   setShapeFlags(true);
   mpGraphicsView->addItem(this);
-  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
-  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
-  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
-  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
 }
 
 void EllipseAnnotation::parseShapeAnnotation(QString annotation)

@@ -401,6 +401,20 @@ private:
   bool mEnabled;
 };
 
+class IconDiagramMap
+{
+public:
+  IconDiagramMap()
+  {
+    mExtent.clear();
+    mExtent << QPointF(0, 0) << QPointF(0, 0);
+    mPrimitivesVisible = true;
+  }
+
+  QList<QPointF> mExtent;
+  bool mPrimitivesVisible;
+};
+
 class ModelWidgetContainer;
 class ModelicaHighlighter;
 class CompositeModelHighlighter;
@@ -428,6 +442,8 @@ public:
   void removeInheritedClass(LibraryTreeItem *pLibraryTreeItem) {mInheritedClassesList.removeOne(pLibraryTreeItem);}
   void clearInheritedClasses() {mInheritedClassesList.clear();}
   QList<LibraryTreeItem*> getInheritedClassesList() {return mInheritedClassesList;}
+  QMap<int, IconDiagramMap> getInheritedClassIconMap() {return mInheritedClassesIconMap;}
+  QMap<int, IconDiagramMap> getInheritedClassDiagramMap() {return mInheritedClassesDiagramMap;}
   const QList<ComponentInfo*> &getComponentsList() {return mComponentsList;}
   QMap<QString, QString> getExtendsModifiersMap(QString extendsClass);
   QMap<QString, QString> getDerivedClassModifiersMap();
@@ -495,9 +511,12 @@ private:
   bool mDerivedClassModifiersLoaded;
   QMap<QString, QString> mDerivedClassModifiersMap;
   QList<LibraryTreeItem*> mInheritedClassesList;
+  QMap<int, IconDiagramMap> mInheritedClassesIconMap;
+  QMap<int, IconDiagramMap> mInheritedClassesDiagramMap;
   QList<ComponentInfo*> mComponentsList;
   QStringList mComponentsAnnotationsList;
 
+  IconDiagramMap getIconDiagramMap(QString mapAnnotation);
   void getModelInheritedClasses();
   void drawModelInheritedClassShapes(ModelWidget *pModelWidget, StringHandler::ViewType viewType);
   void getModelIconDiagramShapes(StringHandler::ViewType viewType);

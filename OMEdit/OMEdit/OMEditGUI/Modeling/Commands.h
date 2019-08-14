@@ -317,6 +317,8 @@ private:
   QString mNewVersion;
   QString mOldUsesAnnotationString;
   QString mNewUsesAnnotationString;
+
+  void updateReferencedShapes(GraphicsView *pGraphicsView);
 };
 
 class UpdateClassAnnotationCommand : public UndoCommand

@@ -38,7 +38,7 @@
 #include <QMessageBox>
 
 BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0)
+  : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
   mpComponent = 0;
   mClassFileName = classFileName;
@@ -52,28 +52,20 @@ BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, Gr
 }
 
 BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
-  : ShapeAnnotation(pParent), mpComponent(pParent)
+  : ShapeAnnotation(pShapeAnnotation, pParent), mpComponent(pParent)
 {
   updateShape(pShapeAnnotation);
   setPos(mOrigin);
   setRotation(mRotation);
-  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
-  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
-  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
-  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
 }
 
 BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, 0)
+  : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
 {
   mpComponent = 0;
   updateShape(pShapeAnnotation);
   setShapeFlags(true);
   mpGraphicsView->addItem(this);
-  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
-  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
-  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
-  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
 }
 
 /*!
@@ -84,7 +76,7 @@ BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsVi
  * \param pGraphicsView
  */
 BitmapAnnotation::BitmapAnnotation(QString classFileName, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, 0)
+  : ShapeAnnotation(true, pGraphicsView, 0, 0)
 {
   mpComponent = 0;
   mClassFileName = classFileName;

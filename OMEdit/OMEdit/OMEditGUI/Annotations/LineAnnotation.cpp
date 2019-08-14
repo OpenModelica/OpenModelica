@@ -41,7 +41,7 @@
 #include <QMessageBox>
 
 LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0)
+  : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
   setLineType(LineAnnotation::ShapeType);
   setStartComponent(0);
@@ -69,7 +69,7 @@ LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
 }
 
 LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
-  : ShapeAnnotation(pParent)
+  : ShapeAnnotation(pShapeAnnotation, pParent)
 {
   updateShape(pShapeAnnotation);
   setLineType(LineAnnotation::ComponentType);
@@ -90,26 +90,18 @@ LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pPa
   setActiveState(false);
   setPos(mOrigin);
   setRotation(mRotation);
-  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
-  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
-  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
-  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
 }
 
 LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, 0)
+  : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
 {
   updateShape(pShapeAnnotation);
   setShapeFlags(true);
   mpGraphicsView->addItem(this);
-  connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
-  connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
-  connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
-  connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
 }
 
 LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Component *pStartComponent, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0)
+  : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = lineType;
@@ -177,7 +169,7 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Component *pSt
 }
 
 LineAnnotation::LineAnnotation(QString annotation, Component *pStartComponent, Component *pEndComponent, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0)
+  : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::ConnectionType;
@@ -217,7 +209,7 @@ LineAnnotation::LineAnnotation(QString annotation, Component *pStartComponent, C
 
 LineAnnotation::LineAnnotation(QString annotation, QString text, Component *pStartComponent, Component *pEndComponent, QString condition,
                                QString immediate, QString reset, QString synchronize, QString priority, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0)
+  : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::TransitionType;
@@ -256,7 +248,7 @@ LineAnnotation::LineAnnotation(QString annotation, QString text, Component *pSta
 }
 
 LineAnnotation::LineAnnotation(QString annotation, Component *pComponent, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0)
+  : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::InitialStateType;
@@ -295,7 +287,7 @@ LineAnnotation::LineAnnotation(QString annotation, Component *pComponent, Graphi
 }
 
 LineAnnotation::LineAnnotation(Component *pParent)
-  : ShapeAnnotation(pParent)
+  : ShapeAnnotation(0, pParent)
 {
   setLineType(LineAnnotation::ComponentType);
   setStartComponent(0);
@@ -332,7 +324,7 @@ LineAnnotation::LineAnnotation(Component *pParent)
 }
 
 LineAnnotation::LineAnnotation(GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, 0)
+  : ShapeAnnotation(true, pGraphicsView, 0, 0)
 {
   setLineType(LineAnnotation::ShapeType);
   setStartComponent(0);

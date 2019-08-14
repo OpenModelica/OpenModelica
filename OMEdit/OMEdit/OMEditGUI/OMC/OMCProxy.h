@@ -143,6 +143,8 @@ public:
   int getInheritanceCount(QString className);
   QString getNthInheritedClass(QString className, int num);
   QList<QString> getInheritedClasses(QString className);
+  QString getNthInheritedClassIconMapAnnotation(QString className, int num);
+  QString getNthInheritedClassDiagramMapAnnotation(QString className, int num);
   QList<ComponentInfo*> getComponents(QString className);
   QStringList getComponentAnnotations(QString className);
   QString getDocumentationAnnotationInfoHeader(LibraryTreeItem *pLibraryTreeItem, QString infoHeader);

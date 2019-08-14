@@ -5560,6 +5560,30 @@ void ModelWidget::associateBusWithConnectors(QString busName)
 }
 
 /*!
+ * \brief ModelWidget::getIconDiagramMap
+ * Parses the IconMap/DiagramMap annotation and returns the IconDiagramMap object.
+ * \param mapAnnotation
+ * \return
+ */
+IconDiagramMap ModelWidget::getIconDiagramMap(QString mapAnnotation)
+{
+  IconDiagramMap map;
+  QStringList mapAnnotationValues = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(mapAnnotation));
+  if (mapAnnotationValues.length() == 6) {
+    QPointF point1, point2;
+    point1.setX(mapAnnotationValues.at(1).toFloat());
+    point1.setY(mapAnnotationValues.at(2).toFloat());
+    point2.setX(mapAnnotationValues.at(3).toFloat());
+    point2.setY(mapAnnotationValues.at(4).toFloat());
+    map.mExtent.clear();
+    map.mExtent.append(point1);
+    map.mExtent.append(point2);
+    map.mPrimitivesVisible = mapAnnotationValues.at(5).compare("true") == 0;
+  }
+  return map;
+}
+
+/*!
  * \brief ModelWidget::getModelInheritedClasses
  * Gets the class inherited classes.
  */
@@ -5569,11 +5593,12 @@ void ModelWidget::getModelInheritedClasses()
   LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
   // get the inherited classes of the class
   QList<QString> inheritedClasses = pMainWindow->getOMCProxy()->getInheritedClasses(mpLibraryTreeItem->getNameStructure());
+  int index = 1;
   foreach (QString inheritedClass, inheritedClasses) {
     /* If the inherited class is one of the builtin type such as Real we can
-       * stop here, because the class can not contain any classes, etc.
-       * Also check for cyclic loops.
-       */
+     * stop here, because the class can not contain any classes, etc.
+     * Also check for cyclic loops.
+     */
     if (!(pMainWindow->getOMCProxy()->isBuiltinType(inheritedClass) || inheritedClass.compare(mpLibraryTreeItem->getNameStructure()) == 0)) {
       LibraryTreeItem *pInheritedLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(inheritedClass);
       if (!pInheritedLibraryTreeItem) {
@@ -5584,7 +5609,13 @@ void ModelWidget::getModelInheritedClasses()
       }
       mpLibraryTreeItem->addInheritedClass(pInheritedLibraryTreeItem);
       addInheritedClass(pInheritedLibraryTreeItem);
+      // get the icon and diagram map of inherited class
+      IconDiagramMap iconMap = getIconDiagramMap(pMainWindow->getOMCProxy()->getNthInheritedClassIconMapAnnotation(mpLibraryTreeItem->getNameStructure(), index));
+      mInheritedClassesIconMap.insert(index, iconMap);
+      IconDiagramMap diagramMap = getIconDiagramMap(pMainWindow->getOMCProxy()->getNthInheritedClassDiagramMapAnnotation(mpLibraryTreeItem->getNameStructure(), index));
+      mInheritedClassesDiagramMap.insert(index, diagramMap);
     }
+    index++;
   }
 }
 
@@ -5596,6 +5627,7 @@ void ModelWidget::getModelInheritedClasses()
  */
 void ModelWidget::drawModelInheritedClassShapes(ModelWidget *pModelWidget, StringHandler::ViewType viewType)
 {
+  int index = 1;
   foreach (LibraryTreeItem *pLibraryTreeItem, pModelWidget->getInheritedClassesList()) {
     if (!pLibraryTreeItem->isNonExisting()) {
       if (!pLibraryTreeItem->getModelWidget()) {
@@ -5611,23 +5643,25 @@ void ModelWidget::drawModelInheritedClassShapes(ModelWidget *pModelWidget, Strin
         mpDiagramGraphicsView->addInheritedShapeToList(createNonExistingInheritedShape(mpDiagramGraphicsView));
       }
     } else {
+      bool primitivesVisible = true;
       if (viewType == StringHandler::Icon) {
         pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
         pGraphicsView = mpIconGraphicsView;
+        primitivesVisible = pModelWidget->getInheritedClassIconMap().value(index).mPrimitivesVisible;
       } else {
         pLibraryTreeItem->getModelWidget()->loadDiagramView();
         pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
         pGraphicsView = mpDiagramGraphicsView;
+        primitivesVisible = pModelWidget->getInheritedClassDiagramMap().value(index).mPrimitivesVisible;
       }
       // loop through the inherited class shapes
       foreach (ShapeAnnotation *pShapeAnnotation, pInheritedGraphicsView->getShapesList()) {
-        if (viewType == StringHandler::Icon) {
+        if (primitivesVisible) {
           pGraphicsView->addInheritedShapeToList(createInheritedShape(pShapeAnnotation, pGraphicsView));
-        } else {
-          mpDiagramGraphicsView->addInheritedShapeToList(createInheritedShape(pShapeAnnotation, pGraphicsView));
         }
       }
     }
+    index++;
   }
 }
 

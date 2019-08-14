@@ -308,40 +308,56 @@ QStringList FilledShape::getShapeAnnotation()
 }
 
 /*!
-  \class ShapeAnnotation
-  \brief The base class for all shapes LineAnnotation, PolygonAnnotation, RectangleAnnotation, EllipseAnnotation, TextAnnotation,
-         BitmapAnnotation.
-  */
+ * \class ShapeAnnotation
+ * \brief The base class for all shapes LineAnnotation, PolygonAnnotation, RectangleAnnotation, EllipseAnnotation, TextAnnotation, BitmapAnnotation.
+ */
 /*!
-  \param pParent - pointer to QGraphicsItem
-  */
-ShapeAnnotation::ShapeAnnotation(QGraphicsItem *pParent)
+ * \brief ShapeAnnotation::ShapeAnnotation
+ * \param pShapeAnnotation
+ * \param pParent
+ */
+ShapeAnnotation::ShapeAnnotation(ShapeAnnotation *pShapeAnnotation, QGraphicsItem *pParent)
   : QGraphicsItem(pParent)
 {
   mpGraphicsView = 0;
   mpParentComponent = dynamic_cast<Component*>(pParent);
   //mTransformation = 0;
   mIsCustomShape = false;
+  mpReferenceShapeAnnotation = pShapeAnnotation;
   mIsInheritedShape = false;
   setOldScenePosition(QPointF(0, 0));
   mIsCornerItemClicked = false;
+  if (pShapeAnnotation) {
+    connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+    connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+    connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
+  }
 }
 
 /*!
-  \param pGraphicsView - pointer to GraphicsView
-  \param pParent - pointer to QGraphicsItem
-  */
-ShapeAnnotation::ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsView, QGraphicsItem *pParent)
+ * \brief ShapeAnnotation::ShapeAnnotation
+ * \param inheritedShape
+ * \param pGraphicsView - pointer to GraphicsView
+ * \param pShapeAnnotation
+ * \param pParent - pointer to QGraphicsItem
+ */
+ShapeAnnotation::ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsView, ShapeAnnotation *pShapeAnnotation, QGraphicsItem *pParent)
   : QGraphicsItem(pParent)
 {
   mpGraphicsView = pGraphicsView;
   mpParentComponent = 0;
   mTransformation = Transformation(StringHandler::Diagram);
+  mpReferenceShapeAnnotation = pShapeAnnotation;
   mIsCustomShape = true;
   mIsInheritedShape = inheritedShape;
   setOldScenePosition(QPointF(0, 0));
   mIsCornerItemClicked = false;
   createActions();
+  if (pShapeAnnotation) {
+    connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
+    connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
+    connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
+  }
 }
 
 int ShapeAnnotation::maxTextLengthToShowOnLibraryIcon = 2;
@@ -623,15 +639,67 @@ QString ShapeAnnotation::getShapeAnnotation()
   return "";
 }
 
+QList<QPointF> ShapeAnnotation::getExtentsForInheritedShapeFromIconDiagramMap(GraphicsView *pGraphicsView, ShapeAnnotation *pReferenceShapeAnnotation)
+{
+  QPointF defaultPoint1 = QPointF(-100.0, -100.0);
+  QPointF defaultPoint2 = QPointF(100.0, 100.0);
+  QPointF point1, point2;
+
+  int index = pGraphicsView->getModelWidget()->getInheritedClassesList().indexOf(pReferenceShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()) + 1;
+  if (index > 0) {
+    QList<QPointF> extent;
+    if (pGraphicsView->getViewType() == StringHandler::Icon) {
+      extent = pGraphicsView->getModelWidget()->getInheritedClassIconMap().value(index).mExtent;
+    } else {
+      extent = pGraphicsView->getModelWidget()->getInheritedClassDiagramMap().value(index).mExtent;
+    }
+    point1 = extent.size() > 0 ? extent.at(0) : defaultPoint1;
+    point2 = extent.size() > 1 ? extent.at(1) : defaultPoint2;
+    // find the width and height
+    qreal width = fabs(point1.x() - point2.x());
+    qreal height = fabs(point1.y() - point2.y());
+    if (width < 1 || height < 1) {
+      point1 = defaultPoint1;
+      point2 = defaultPoint2;
+    } else {
+      /* if preserveAspectRatio of the base class is true
+       * Take x if width is lesser than height otherwise take y
+       */
+      if (pReferenceShapeAnnotation->getGraphicsView() && pReferenceShapeAnnotation->getGraphicsView()->mCoOrdinateSystem.getPreserveAspectRatio()) {
+        if (width < height) {
+          point1.setY(point1.x());
+          point2.setY(point2.x());
+        } else {
+          point1.setX(point1.y());
+          point2.setX(point2.y());
+        }
+      }
+    }
+  }
+  return QList<QPointF>() << point1 << point2;
+}
+
 /*!
  * \brief ShapeAnnotation::initializeTransformation
  * Initializes the transformation matrix with the default transformation values of the shape.
  */
 void ShapeAnnotation::initializeTransformation()
 {
+  QPointF point1 = QPointF(-100.0, -100.0);
+  QPointF point2 = QPointF(100.0, 100.0);
+
+  point1 = mpGraphicsView->mCoOrdinateSystem.getExtent().size() > 0 ? mpGraphicsView->mCoOrdinateSystem.getExtent().at(0) : point1;
+  point2 = mpGraphicsView->mCoOrdinateSystem.getExtent().size() > 1 ? mpGraphicsView->mCoOrdinateSystem.getExtent().at(1) : point2;
+
+  if (mpReferenceShapeAnnotation && mpReferenceShapeAnnotation->getGraphicsView()) {
+    QList<QPointF> extent = getExtentsForInheritedShapeFromIconDiagramMap(mpGraphicsView, mpReferenceShapeAnnotation);
+    point1 = extent.at(0);
+    point2 = extent.at(1);
+  }
+
   mTransformation.setOrigin(mOrigin);
-  mTransformation.setExtent1(QPointF(-100.0, -100.0));
-  mTransformation.setExtent2(QPointF(100.0, 100.0));
+  mTransformation.setExtent1(point1);
+  mTransformation.setExtent2(point2);
   mTransformation.setRotateAngle(mRotation);
   setTransform(mTransformation.getTransformationMatrix());
 }
@@ -992,11 +1060,6 @@ void ShapeAnnotation::setShapeFlags(bool enable)
   setFlag(QGraphicsItem::ItemIsSelectable, enable);
 }
 
-void ShapeAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
-{
-  Q_UNUSED(pShapeAnnotation);
-}
-
 /*!
  * \brief ShapeAnnotation::updateDynamicSelect
  * Updates the shapes according to the DynamicSelect annotation.
@@ -1146,11 +1209,18 @@ void ShapeAnnotation::referenceShapeChanged()
     if (mpGraphicsView) {
       prepareGeometryChange();
       updateShape(pShapeAnnotation);
-      setTransform(pShapeAnnotation->mTransformation.getTransformationMatrix());
+      mTransformation = pShapeAnnotation->mTransformation;
+      QList<QPointF> extent = getExtentsForInheritedShapeFromIconDiagramMap(mpGraphicsView, pShapeAnnotation);
+      if (extent.size() > 1) {
+        mTransformation.setExtent1(extent.at(0));
+        mTransformation.setExtent2(extent.at(1));
+      }
+      setTransform(mTransformation.getTransformationMatrix());
       removeCornerItems();
       drawCornerItems();
       setCornerItemsActiveOrPassive();
       update();
+      mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
     } else if (mpParentComponent) {
       prepareGeometryChange();
       updateShape(pShapeAnnotation);

@@ -949,14 +949,24 @@ void LibraryTreeItem::handleUnloaded()
 void LibraryTreeItem::handleShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
 {
   if (mpModelWidget) {
+    bool primitivesVisible = true;
+    int index = mpModelWidget->getInheritedClassesList().indexOf(pGraphicsView->getModelWidget()->getLibraryTreeItem()) + 1;
     GraphicsView *pCurrentGraphicsView = 0;
     if (pGraphicsView->getViewType() == StringHandler::Icon) {
+      if (index > 0) {
+        primitivesVisible = mpModelWidget->getInheritedClassIconMap().value(index).mPrimitivesVisible;
+      }
       pCurrentGraphicsView = mpModelWidget->getIconGraphicsView();
     } else {
+      if (index > 0) {
+        primitivesVisible = mpModelWidget->getInheritedClassDiagramMap().value(index).mPrimitivesVisible;
+      }
       pCurrentGraphicsView = mpModelWidget->getDiagramGraphicsView();
     }
-    pCurrentGraphicsView->addInheritedShapeToList(mpModelWidget->createInheritedShape(pShapeAnnotation, pCurrentGraphicsView));
-    pCurrentGraphicsView->reOrderShapes();
+    if (primitivesVisible) {
+      pCurrentGraphicsView->addInheritedShapeToList(mpModelWidget->createInheritedShape(pShapeAnnotation, pCurrentGraphicsView));
+      pCurrentGraphicsView->reOrderShapes();
+    }
   }
   emit shapeAdded(pShapeAnnotation, pGraphicsView);
 }
