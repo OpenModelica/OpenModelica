@@ -2872,7 +2872,6 @@ protected function printNonLinIterVarsAndEqs
 protected
   BackendDAE.EqSystem syst;
   BackendDAE.Shared shared;
-  list<BackendDAE.Equation> nonLinEqns = {};
   Integer idx = 1;
   list<BackendDAE.Var> diffVars, residualVars, allDiffedVars, nonLin = {}, nonLinStart = {}, lin = {};
   list<DAE.ComponentRef> dependentVarsCref;
@@ -2911,17 +2910,6 @@ algorithm
       BackendDump.dumpVarList(lin, "Linear iteration variables with predefined start attributes that are unrelevant in " + name + ".");
     end if;
 
-    // Get nonlinear equations
-    for i in eqnIndices loop
-      nonLinEqns := addNonlinearEquation(ExpandableArray.get(i,inEqns),ExpandableArray.get(idx,syst.orderedEqs),syst.orderedVars, shared.globalKnownVars,nonLinEqns);
-      //BackendDump.dumpEquationList({ExpandableArray.get(i,inEqns)}, "check eq");
-      //BackendDump.dumpEquationList({ExpandableArray.get(idx,syst.orderedEqs)}, "diffed eq");
-      idx := idx + 1;
-    end for;
-    if not listEmpty(nonLinEqns) then
-      BackendDump.dumpEquationList(nonLinEqns, "Relevant nonlinear equations in " + name + ".");
-    end if;
-
     if not (listEmpty(nonLin) and listEmpty(nonLinStart) and listEmpty(lin)) then
       print("Info: Only non-linear iteration variables in non-linear eqation systems require start values. " +
            "All other start values have no influence on convergence and are ignored. " +
@@ -2931,30 +2919,6 @@ algorithm
   // ToDo
   // BackendDAE.FULL_JACOBIAN()
 end printNonLinIterVarsAndEqs;
-
-protected function addNonlinearEquation
-  "Checks an equation for nonlinearity regarding input vars and adds
-  it to a list if the check succeeds. "
-  input BackendDAE.Equation originalEqn;
-  input BackendDAE.Equation diffedEqn;
-  input BackendDAE.Variables vars;
-  input BackendDAE.Variables knownVars;
-  input output list<BackendDAE.Equation> nonlinearEquationLst;
-protected
-  Integer eqnIndex;
-  HashTable.HashTable ht;
-algorithm
-  try
-    ht := HashTable.emptyHashTable();
-    (_, (_, _, ht)) := BackendEquation.findUnknownCrefs(diffedEqn,(vars, knownVars, ht));
-
-    if not listEmpty(BaseHashTable.hashTableKeyList(ht)) then
-      nonlinearEquationLst := originalEqn::nonlinearEquationLst;
-    end if;
-  else
-    Error.addMessage(Error.INTERNAL_ERROR,{"SymbolicJacobian.addNonlinearEquation failed"});
-  end try;
-end addNonlinearEquation;
 
 protected function traverserhasEqnNonDiffParts
 "function breaks differentiation for
