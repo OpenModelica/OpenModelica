@@ -105,6 +105,10 @@ public:
   virtual void updateLegend(QwtLegend *legend) const;
 #endif
   virtual int closestPoint(const QPoint &pos, double *dist = NULL) const;
+
+  // QwtPlotItem interface
+public:
+  virtual QRectF boundingRect() const override;
 };
 }
 
