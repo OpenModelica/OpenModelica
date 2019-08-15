@@ -1507,8 +1507,7 @@ public function setEvaluationStage
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
 protected
-  //BackendDAE.SparsePattern sp;
-  list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> spCrefs, spCrefsT;
+  BackendDAE.SparsePatternCrefs spCrefs, spCrefsT;
   BackendDAE.Variables vars;
   list<BackendDAE.Var> varLst;
   BackendDAE.EquationArray eqns;
