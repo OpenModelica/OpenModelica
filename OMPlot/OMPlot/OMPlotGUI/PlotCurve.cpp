@@ -305,3 +305,21 @@ int PlotCurve::closestPoint(const QPoint &pos, double *dist) const
 
   return index;
 }
+
+/*!
+ * \brief PlotCurve::boundingRect
+ * Reimplentation of QwtPlotCurve::boundingRect() to add a margin.
+ * \return
+ */
+QRectF PlotCurve::boundingRect() const
+{
+  QRectF r = QwtPlotCurve::boundingRect();
+  if (r.isValid()) {
+    /* Ticket:5515 Allow for some margin at the top and bottom of plot windows in OMEdit
+     * We add a margin of 10% to the curves bottom and top to better visualize them.
+     */
+    const double margin = r.height() * 0.1;
+    r.adjust(0, -margin, 0, margin);
+  }
+  return r;
+}
