@@ -27,7 +27,7 @@ buildModel(testSymjacdump); getErrorString();
 // ""
 // true
 // ""
-// Crete symbolic Jacobianis from:
+// Create symbolic Jacobians from:
 // Independent Variables
 // ========================================
 // 1: x[2]:VARIABLE(start = 0.5 )  type: Real  [100]
@@ -1075,7 +1075,7 @@ buildModel(testSymjacdump); getErrorString();
 // 98: input x[98]:VARIABLE(start = 0.5 )  type: Real  [100]
 // 99: input x[99]:VARIABLE(start = 0.5 )  type: Real  [100]
 //
-// Crete symbolic Jacobianis from:
+// Create symbolic Jacobians from:
 // Independent Variables
 // ========================================
 // 1: x[99]:VARIABLE(start = 0.5 )  type: Real  [100]

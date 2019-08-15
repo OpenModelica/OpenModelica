@@ -516,30 +516,17 @@ algorithm
   end match;
 end printExternalObjectClasses;
 
-protected function printSparsityPattern "author lochel"
-  input list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>> inPattern;
+public function printSparsityPatternCrefs
+  input BackendDAE.SparsePatternCrefs inPattern;
 algorithm
-  () := matchcontinue(inPattern)
-    local
-      tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>> curr;
-      list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>> rest;
-      .DAE.ComponentRef cr;
-      list< .DAE.ComponentRef> crList;
-      String crStr;
+  for e in inPattern loop
+    print(ComponentReference.printComponentRefStr(Util.tuple21(e)) +
+          " affects the following (" + intString(listLength(Util.tuple22(e))) +
+          ") outputs\n  ");
+    ComponentReference.printComponentRefList(Util.tuple22(e));
+  end for;
+end printSparsityPatternCrefs;
 
-    case (curr::rest) equation
-      (cr, crList) = curr;
-      crStr = ComponentReference.printComponentRefStr(cr);
-      print(crStr + " affects the following (" + intString(listLength(crList)) + ") outputs\n  ");
-      ComponentReference.printComponentRefList(crList);
-
-      printSparsityPattern(rest);
-    then ();
-
-    else
-    then ();
-  end matchcontinue;
-end printSparsityPattern;
 
 // =============================================================================
 // section for all graphviz* functions
@@ -812,11 +799,11 @@ algorithm
   print("\n");
 end dumpHashSet;
 
-public function dumpSparsityPattern "author lochel"
+public function dumpSparsityPattern
   input BackendDAE.SparsePattern inPattern;
   input String heading;
 protected
-  list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>> pattern,patternT;
+  BackendDAE.SparsePatternCrefs pattern,patternT;
   list< .DAE.ComponentRef> diffVars, diffedVars;
   Integer nnz;
 algorithm
@@ -824,15 +811,15 @@ algorithm
 
   print("\n" + heading + "\n" + UNDERLINE + "\n");
   print("Number of non zero elements: " + intString(nnz) + "\n");
-  print("independents [or inputs] (" + intString(listLength(diffVars)) + ")\n");
+  print("Independents [or inputs] (" + intString(listLength(diffVars)) + ")\n");
   ComponentReference.printComponentRefList(diffVars);
 
-  print("dependents [or outputs] (" + intString(listLength(diffedVars)) + ")\n");
+  print("Dependents [or outputs] (" + intString(listLength(diffedVars)) + ")\n");
   ComponentReference.printComponentRefList(diffedVars);
 
-  printSparsityPattern(pattern);
-  print("\n" + "transposed pattern" + "\n");
-  printSparsityPattern(patternT);
+  printSparsityPatternCrefs(pattern);
+  print("\n" + "Transposed pattern" + "\n");
+  printSparsityPatternCrefs(patternT);
 end dumpSparsityPattern;
 
 public function dumpSparseColoring
@@ -3756,7 +3743,7 @@ algorithm
       tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>> meqsys;
       tuple<list<tuple<Integer,Integer,Integer>>,list<tuple<Integer,Integer>>> teqsys,teqsys2;
       BackendDAE.InnerEquations innerEquations,innerEquations2;
-      list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>> patternLst;
+      BackendDAE.SparsePatternCrefs patternLst;
 
     case (BackendDAE.SINGLEEQUATION(),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,teqsys,teqsys2))
     then ((seq+1,salg,sarr,sce,swe,sie,eqsys,meqsys,teqsys,teqsys2));

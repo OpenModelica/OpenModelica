@@ -4488,7 +4488,7 @@ algorithm
     BackendDAE.SparsePattern pattern;
     BackendDAE.SparseColoring sparseColoring;
     list<list<Integer>> coloring;
-    list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsepatternComRefs, sparsepatternComRefsT;
+    BackendDAE.SparsePatternCrefs sparsepatternComRefs, sparsepatternComRefsT;
     list<tuple<Integer, list<Integer>>> sparseInts, sparseIntsT;
 
     BackendDAE.EqSystem syst;
@@ -4735,7 +4735,7 @@ algorithm
       list<SimCodeVar.SimVar> columnVarsKn;
       list<SimCodeVar.SimVar> seedVars, indexVars, seedIndexVars;
 
-      list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsepattern, sparsepatternT;
+      BackendDAE.SparsePatternCrefs sparsepattern, sparsepatternT;
       list<list<DAE.ComponentRef>> colsColors;
       Integer maxColor;
 
@@ -5138,7 +5138,7 @@ end makeTmpRealSimCodeVar;
 
 protected function sortSparsePattern
   input list<SimCodeVar.SimVar> inSimVars;
-  input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> inSparsePattern;
+  input BackendDAE.SparsePatternCrefs inSparsePattern;
   input Boolean useFMIIndex;
   output list<tuple<Integer, list<Integer>>> outSparse = {};
 protected
@@ -5228,7 +5228,7 @@ algorithm
 end dumpSparsePatternInt;
 
 protected function dumpSparsePattern
-  input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsePattern;
+  input BackendDAE.SparsePatternCrefs sparsePattern;
 protected
   DAE.ComponentRef cr;
   list<DAE.ComponentRef> crefs;
@@ -5262,7 +5262,7 @@ algorithm
     BackendDAE.SparsePattern pattern;
     BackendDAE.SparseColoring sparseColoring;
     list<list<Integer>> coloring;
-    list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsepatternComRefs, sparsepatternComRefsT;
+    BackendDAE.SparsePatternCrefs sparsepatternComRefs, sparsepatternComRefsT;
     list<tuple<Integer, list<Integer>>> sparseInts, sparseIntsT;
 
     BackendDAE.EqSystem syst;
@@ -12813,7 +12813,7 @@ public function createFMIModelStructure
   output list<SimCode.JacobianMatrix> symJacs = {};
   output Integer uniqueEqIndex = inUniqueEqIndex;
 protected
-   list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> spTA, spTB;
+   BackendDAE.SparsePatternCrefs spTA, spTB;
    list<tuple<Integer, list<Integer>>> sparseInts;
    list<SimCode.FmiUnknown> allUnknowns, derivatives, outputs, discreteStates;
    list<SimCodeVar.SimVar> varsA, varsB, clockedStates;
@@ -12986,18 +12986,18 @@ end translateSparsePatterInts2FMIUnknown;
 
 protected function translateSparsePatterCref2DerCref
 "function translates the first cref of sparse pattern to der(cref)"
-  input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsePattern;
+  input BackendDAE.SparsePatternCrefs sparsePattern;
   input SimCode.HashTableCrefToSimVar inSimVarHT;
-  input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> inAccum;
+  input BackendDAE.SparsePatternCrefs inAccum;
   input list<DAE.ComponentRef> inAccum2;
-  output list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> outSparsePattern;
+  output BackendDAE.SparsePatternCrefs outSparsePattern;
   output list<DAE.ComponentRef> outDerCrefs;
 algorithm
   (outSparsePattern, outDerCrefs) := match(sparsePattern)
     local
       DAE.ComponentRef cref;
       list<DAE.ComponentRef> crefs;
-      list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> rest;
+      BackendDAE.SparsePatternCrefs rest;
       SimCodeVar.SimVar simVar;
 
     case ({}) then (listReverse(inAccum), listReverse(inAccum2));
@@ -13015,14 +13015,14 @@ algorithm
 end translateSparsePatterCref2DerCref;
 
 protected function mergeSparsePatter
-  input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> inA;
-  input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> inB;
-  input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> inAccum;
-  output list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> out;
+  input BackendDAE.SparsePatternCrefs inA;
+  input BackendDAE.SparsePatternCrefs inB;
+  input BackendDAE.SparsePatternCrefs inAccum;
+  output BackendDAE.SparsePatternCrefs out;
 algorithm
   out := match(inA, inB, inAccum)
   local
-    list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> restA, restB;
+    BackendDAE.SparsePatternCrefs restA, restB;
     DAE.ComponentRef crefA, crefB;
     list<DAE.ComponentRef> listA, listB, listOut;
 
