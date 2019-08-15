@@ -652,6 +652,7 @@ public slots:
   void addConnector();
   void addBus();
   void addTLMBus();
+  void fetchInterfaceData();
   void addSubModel();
 };
 

@@ -597,6 +597,27 @@ bool OMSProxy::deleteConnectorFromTLMBus(QString busCref, QString connectorCref)
   return statusToBool(status);
 }
 
+bool OMSProxy::fetchInterfaceData(QString cref, QStringList &names, QStringList &domains, QVector<int> &dimensions)
+{
+    QString command = "oms_fetchExternalModelInterfaces";
+    QStringList args;
+    args << cref;
+    LOG_COMMAND(command, args);
+    char** cnames = nullptr;
+    char** cdomains = nullptr;
+    int* cdimensions = nullptr;
+    oms_status_enu_t status = oms_fetchExternalModelInterfaces(cref.toUtf8().constData(), &cnames, &cdomains, &cdimensions);
+    logResponse(command, status, &commandTime);
+
+    for (int i = 0 ; cnames[i] ; i++) {
+      names.append(cnames[i]);
+      domains.append(cdomains[i]);
+      dimensions.append(cdimensions[i]);
+    }
+
+    return statusToBool(status);
+}
+
 /*!
  * \brief OMSProxy::getBoolean
  * Gets the boolean variable value.
