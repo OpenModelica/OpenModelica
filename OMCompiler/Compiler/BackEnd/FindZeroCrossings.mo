@@ -40,6 +40,7 @@ encapsulated package FindZeroCrossings
 import Absyn;
 import BackendDAE;
 import DAE;
+import DoubleEnded;
 
 protected
 import BackendDAEUtil;
@@ -50,7 +51,6 @@ import CheckModel;
 import ComponentReference;
 import DAEDump;
 import DAEUtil;
-import DoubleEndedList;
 import Error;
 import Expression;
 import ExpressionDump;
@@ -63,8 +63,8 @@ import SynchronousFeatures;
 import Util;
 import ZeroCrossings;
 
-type ZCArgType  = tuple<tuple<BackendDAE.ZeroCrossingSet, DoubleEndedList<BackendDAE.ZeroCrossing>, BackendDAE.ZeroCrossingSet, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>>;
-type ForArgType = tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<BackendDAE.ZeroCrossingSet, DoubleEndedList<BackendDAE.ZeroCrossing>, BackendDAE.ZeroCrossingSet, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>>;
+type ZCArgType  = tuple<tuple<BackendDAE.ZeroCrossingSet, DoubleEnded.MutableList<BackendDAE.ZeroCrossing>, BackendDAE.ZeroCrossingSet, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>>;
+type ForArgType = tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<BackendDAE.ZeroCrossingSet, DoubleEnded.MutableList<BackendDAE.ZeroCrossing>, BackendDAE.ZeroCrossingSet, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>>;
 // =============================================================================
 // section for preOptModule >>encapsulateWhenConditions<<
 //
@@ -82,8 +82,8 @@ protected
   BackendDAE.Shared shared;
   Integer index;
   HashTableExpToIndex.HashTable ht "is used to avoid redundant condition-variables";
-  DoubleEndedList<BackendDAE.Var> vars;
-  DoubleEndedList<BackendDAE.Equation> eqns;
+  DoubleEnded.MutableList<BackendDAE.Var> vars;
+  DoubleEnded.MutableList<BackendDAE.Equation> eqns;
   BackendDAE.Variables vars_;
   BackendDAE.EquationArray eqns_, removedEqs;
 algorithm
@@ -95,10 +95,10 @@ algorithm
   // shared removedEqns
   ((removedEqs, vars, eqns, index, _)) :=
       BackendEquation.traverseEquationArray(shared.removedEqs, encapsulateWhenConditions_Equation,
-                                             (BackendEquation.emptyEqnsSized(BackendEquation.getNumberOfEquations(shared.removedEqs)), DoubleEndedList.fromList({}), DoubleEndedList.fromList({}), index, ht) );
+                                             (BackendEquation.emptyEqnsSized(BackendEquation.getNumberOfEquations(shared.removedEqs)), DoubleEnded.fromList({}), DoubleEnded.fromList({}), index, ht) );
   shared.removedEqs := removedEqs;
-  eqns_ := BackendEquation.listEquation(DoubleEndedList.toListNoCopyNoClear(eqns));
-  vars_ := BackendVariable.listVar(DoubleEndedList.toListNoCopyNoClear(vars));
+  eqns_ := BackendEquation.listEquation(DoubleEnded.toListNoCopyNoClear(eqns));
+  vars_ := BackendVariable.listVar(DoubleEnded.toListNoCopyNoClear(vars));
   syst := BackendDAEUtil.createEqSystem(vars_, eqns_, {}, BackendDAE.UNSPECIFIED_PARTITION(), BackendEquation.emptyEqns());
   systs := listAppend(systs, {syst});
 
@@ -125,13 +125,13 @@ algorithm
       BackendDAE.Variables orderedVars;
       BackendDAE.EquationArray orderedEqs, removedEqs;
       BackendDAE.EqSystem syst;
-      DoubleEndedList<BackendDAE.Var> varLst;
-      DoubleEndedList<BackendDAE.Equation> eqnLst;
+      DoubleEnded.MutableList<BackendDAE.Var> varLst;
+      DoubleEnded.MutableList<BackendDAE.Equation> eqnLst;
     case syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs)
       algorithm
         ((orderedEqs, varLst, eqnLst, outIndex, outHT)) :=
             BackendEquation.traverseEquationArray( orderedEqs, encapsulateWhenConditions_Equation,
-                                                   (BackendEquation.emptyEqnsSized(BackendEquation.getNumberOfEquations(orderedEqs)), DoubleEndedList.fromList({}), DoubleEndedList.fromList({}), inIndex, inHT) );
+                                                   (BackendEquation.emptyEqnsSized(BackendEquation.getNumberOfEquations(orderedEqs)), DoubleEnded.fromList({}), DoubleEnded.fromList({}), inIndex, inHT) );
 
         // removed equations
         ((removedEqs, varLst, eqnLst, outIndex, outHT)) :=
@@ -139,23 +139,23 @@ algorithm
                                                    (BackendEquation.emptyEqnsSized(BackendEquation.getNumberOfEquations(syst.removedEqs)), varLst, eqnLst, outIndex, outHT) );
         syst.removedEqs := removedEqs;
 
-        syst.orderedVars := BackendVariable.addVars(DoubleEndedList.toListNoCopyNoClear(varLst), orderedVars);
-        syst.orderedEqs := BackendEquation.addList(DoubleEndedList.toListNoCopyNoClear(eqnLst), orderedEqs);
+        syst.orderedVars := BackendVariable.addVars(DoubleEnded.toListNoCopyNoClear(varLst), orderedVars);
+        syst.orderedEqs := BackendEquation.addList(DoubleEnded.toListNoCopyNoClear(eqnLst), orderedEqs);
       then BackendDAEUtil.clearEqSyst(syst);
   end match;
 end encapsulateWhenConditions_EqSystem;
 
 protected function encapsulateWhenConditions_Equation "author: lochel"
   input BackendDAE.Equation inEq;
-  input tuple<BackendDAE.EquationArray, DoubleEndedList<BackendDAE.Var>, DoubleEndedList<BackendDAE.Equation>, Integer, HashTableExpToIndex.HashTable> inTpl;
+  input tuple<BackendDAE.EquationArray, DoubleEnded.MutableList<BackendDAE.Var>, DoubleEnded.MutableList<BackendDAE.Equation>, Integer, HashTableExpToIndex.HashTable> inTpl;
   output BackendDAE.Equation outEq;
-  output tuple<BackendDAE.EquationArray, DoubleEndedList<BackendDAE.Var>, DoubleEndedList<BackendDAE.Equation>, Integer, HashTableExpToIndex.HashTable> outTpl;
+  output tuple<BackendDAE.EquationArray, DoubleEnded.MutableList<BackendDAE.Var>, DoubleEnded.MutableList<BackendDAE.Equation>, Integer, HashTableExpToIndex.HashTable> outTpl;
 algorithm
   (outEq,outTpl) := match (inEq,inTpl)
     local
       BackendDAE.Equation eqn, eqn2;
-      DoubleEndedList<BackendDAE.Var> vars;
-      DoubleEndedList<BackendDAE.Equation> eqns;
+      DoubleEnded.MutableList<BackendDAE.Var> vars;
+      DoubleEnded.MutableList<BackendDAE.Equation> eqns;
       list<BackendDAE.Var> vars1;
       list<BackendDAE.Equation> eqns1;
       BackendDAE.WhenEquation whenEquation;
@@ -171,8 +171,8 @@ algorithm
     // when equation
     case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=whenEquation, source=source, attr=attr), (equationArray, vars, eqns, index, ht)) equation
       (whenEquation, vars1, eqns1, index, ht) = encapsulateWhenConditions_Equations(whenEquation, source, index, ht);
-      DoubleEndedList.push_list_back(vars, vars1);
-      DoubleEndedList.push_list_back(eqns, eqns1);
+      DoubleEnded.push_list_back(vars, vars1);
+      DoubleEnded.push_list_back(eqns, eqns1);
       eqn = BackendDAE.WHEN_EQUATION(size, whenEquation, source, attr);
       equationArray = BackendEquation.add(eqn, equationArray);
     then (eqn, (equationArray, vars, eqns, index, ht));
@@ -199,7 +199,7 @@ algorithm
       if sizePre > 0 then
         alg_ := DAE.ALGORITHM_STMTS(allPreStmts);
         eqn2 := BackendDAE.ALGORITHM(sizePre, alg_, source, crefExpand, attr);
-        DoubleEndedList.push_front(eqns, eqn2);
+        DoubleEnded.push_front(eqns, eqn2);
       end if;
     then (eqn, (equationArray, vars, eqns, index, ht));
 
@@ -366,7 +366,7 @@ end encapsulateWhenConditions_EquationsWithArrayConditions;
 
 protected function encapsulateWhenConditions_Algorithms "author: lochel"
   input list<DAE.Statement> inStmts;
-  input DoubleEndedList<BackendDAE.Var> vars;
+  input DoubleEnded.MutableList<BackendDAE.Var> vars;
   input Integer inIndex;
   output list<DAE.Statement> outStmts;
   output list<DAE.Statement> outPreStmts; // these are additional statements that should be inserted directly before a STMT_WHEN
@@ -389,7 +389,7 @@ algorithm
     case DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=NONE(), source=source)::rest equation
       (condition, vars1, preStmts, index) = encapsulateWhenConditions_Algorithms1(condition, source, inIndex);
       (conditions, initialCall) = BackendDAEUtil.getConditionList(condition);
-      DoubleEndedList.push_list_front(vars, vars1);
+      DoubleEnded.push_list_front(vars, vars1);
 
       if listEmpty(CheckModel.algorithmStatementListOutputs(stmts1, DAE.EXPAND())) then
         // without outputs
@@ -407,7 +407,7 @@ algorithm
     case (stmt as DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=SOME(elseWhen), source=source))::rest equation
       (condition, vars1, preStmts, index) = encapsulateWhenConditions_Algorithms1(condition, source, inIndex);
       (conditions, initialCall) = BackendDAEUtil.getConditionList(condition);
-      DoubleEndedList.push_list_front(vars, vars1);
+      DoubleEnded.push_list_front(vars, vars1);
 
       (elseWhenList, preStmts2, index) = encapsulateWhenConditions_Algorithms({elseWhen}, vars, index);
 
@@ -576,7 +576,7 @@ algorithm
       list<BackendDAE.Equation> eqs_lst, eqs_lst1;
       list<BackendDAE.TimeEvent> timeEvents;
       BackendDAE.ZeroCrossingSet zero_crossings, sampleLst;
-      DoubleEndedList<BackendDAE.ZeroCrossing> relations;
+      DoubleEnded.MutableList<BackendDAE.ZeroCrossing> relations;
       Integer countMathFunctions;
       Option<String> solver;
     //No zero crossing for clocked discrete partitions;
@@ -596,7 +596,7 @@ algorithm
         eqs_lst1 := listReverse(eqs_lst1);
         eqns1 := BackendEquation.listEquation(eqs_lst1);
         if Flags.isSet(Flags.RELIDX) then
-          print("findZeroCrossings1 number of relations: " + intString(DoubleEndedList.length(relations)) + "\n");
+          print("findZeroCrossings1 number of relations: " + intString(DoubleEnded.length(relations)) + "\n");
           print("findZeroCrossings1 sample index: " + intString(ZeroCrossings.length(sampleLst)) + "\n");
         end if;
         // replace zerocrossing expressions also in jacobian matrices
@@ -620,19 +620,19 @@ protected function findZeroCrossings2
   input Integer inEqnCount;
   input Integer inNumberOfMathFunctions;
   input BackendDAE.ZeroCrossingSet inZeroCrossingLst;
-  input DoubleEndedList<BackendDAE.ZeroCrossing> inRelationsLst;
+  input DoubleEnded.MutableList<BackendDAE.ZeroCrossing> inRelationsLst;
   input BackendDAE.ZeroCrossingSet inSamplesLst;
   input list<BackendDAE.Equation> inEquationLstAccum;
   output BackendDAE.ZeroCrossingSet outZeroCrossingLst;
   output list<BackendDAE.Equation> outEquationLst;
   output Integer outNumberOfMathFunctions;
-  output DoubleEndedList<BackendDAE.ZeroCrossing> outRelationsLst;
+  output DoubleEnded.MutableList<BackendDAE.ZeroCrossing> outRelationsLst;
   output BackendDAE.ZeroCrossingSet outSamplesLst;
 algorithm
   (outZeroCrossingLst, outEquationLst, outNumberOfMathFunctions, outRelationsLst, outSamplesLst) := match (inEquationLst2)
     local
       BackendDAE.ZeroCrossingSet zcs, zcs1, res, res1, sampleLst;
-      DoubleEndedList<BackendDAE.ZeroCrossing> relationsLst;
+      DoubleEnded.MutableList<BackendDAE.ZeroCrossing> relationsLst;
       Integer size, eq_count_1, eq_count, countMathFunctions;
       BackendDAE.Equation e;
       list<BackendDAE.Equation> xs, el, eq_reslst, eqnsAccum;
@@ -724,7 +724,7 @@ end findZeroCrossings2;
 protected function findZeroCrossingsWhenEqns
   input BackendDAE.WhenEquation inWhenEqn;
   input BackendDAE.ZeroCrossingSet inZeroCrossings;
-  input DoubleEndedList<BackendDAE.ZeroCrossing> inrelationsinZC;
+  input DoubleEnded.MutableList<BackendDAE.ZeroCrossing> inrelationsinZC;
   input BackendDAE.ZeroCrossingSet inSamplesLst;
   input Integer incountMathFunctions;
   input Integer counteq;
@@ -734,7 +734,7 @@ protected function findZeroCrossingsWhenEqns
   output BackendDAE.WhenEquation oWhenEqn;
   output Integer outCountMathFunctions;
   output BackendDAE.ZeroCrossingSet outZeroCrossings;
-  output DoubleEndedList<BackendDAE.ZeroCrossing> outrelationsinZC;
+  output DoubleEnded.MutableList<BackendDAE.ZeroCrossing> outrelationsinZC;
   output BackendDAE.ZeroCrossingSet outSamplesLst;
 algorithm
   (oWhenEqn, outCountMathFunctions, outZeroCrossings, outrelationsinZC, outSamplesLst) := match(inWhenEqn)
@@ -743,7 +743,7 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation we;
       BackendDAE.ZeroCrossingSet zc, samples;
-      DoubleEndedList<BackendDAE.ZeroCrossing> relations;
+      DoubleEnded.MutableList<BackendDAE.ZeroCrossing> relations;
       Integer countMathFunctions;
       list<BackendDAE.WhenOperator> whenStmtLst;
       Option<BackendDAE.WhenEquation> oweelse;
@@ -767,7 +767,7 @@ end findZeroCrossingsWhenEqns;
 protected function findZeroCrossingsIfEqns
   input BackendDAE.Equation inIfEqn;
   input BackendDAE.ZeroCrossingSet inZeroCrossings;
-  input DoubleEndedList<BackendDAE.ZeroCrossing> inrelationsinZC;
+  input DoubleEnded.MutableList<BackendDAE.ZeroCrossing> inrelationsinZC;
   input BackendDAE.ZeroCrossingSet inSamplesLst;
   input Integer incountMathFunctions;
   input Integer counteq;
@@ -777,7 +777,7 @@ protected function findZeroCrossingsIfEqns
   output BackendDAE.Equation outIfEqn;
   output Integer outCountMathFunctions;
   output BackendDAE.ZeroCrossingSet outZeroCrossings;
-  output DoubleEndedList<BackendDAE.ZeroCrossing> outrelationsinZC;
+  output DoubleEnded.MutableList<BackendDAE.ZeroCrossing> outrelationsinZC;
   output BackendDAE.ZeroCrossingSet outSamplesLst;
 algorithm
   (outIfEqn, outCountMathFunctions, outZeroCrossings, outrelationsinZC, outSamplesLst) := match(inIfEqn)
@@ -788,7 +788,7 @@ algorithm
       list<BackendDAE.Equation> eqnstrue, elseeqns, eqnsAccum;
       list<list<BackendDAE.Equation>> eqnsTrueLst, resteqns;
       BackendDAE.ZeroCrossingSet zc, samples;
-      DoubleEndedList<BackendDAE.ZeroCrossing> relations;
+      DoubleEnded.MutableList<BackendDAE.ZeroCrossing> relations;
       Integer countMathFunctions;
       DAE.ElementSource source_;
       BackendDAE.EquationAttributes eqAttr;
@@ -813,7 +813,7 @@ end findZeroCrossingsIfEqns;
 protected function findZeroCrossingsinJacobians
   input BackendDAE.StrongComponents inStrongComponents;
   input BackendDAE.ZeroCrossingSet zeroCrossingLst;
-  input DoubleEndedList<BackendDAE.ZeroCrossing> relationsLst;
+  input DoubleEnded.MutableList<BackendDAE.ZeroCrossing> relationsLst;
   input BackendDAE.ZeroCrossingSet samplesLst;
   input BackendDAE.Variables allVariables;
   input BackendDAE.Variables globalKnownVars;
@@ -857,7 +857,7 @@ end findZeroCrossingsinJacobians;
 protected function replaceZCExpinFullJacobian
   input BackendDAE.FullJacobian fullJac;
   input BackendDAE.ZeroCrossingSet zeroCrossingLst;
-  input DoubleEndedList<BackendDAE.ZeroCrossing> relationsLst;
+  input DoubleEnded.MutableList<BackendDAE.ZeroCrossing> relationsLst;
   input BackendDAE.ZeroCrossingSet samplesLst;
   input BackendDAE.Variables allVariables;
   input BackendDAE.Variables globalKnownVars;
@@ -883,7 +883,7 @@ end replaceZCExpinFullJacobian;
 protected function replaceZCExpinSymJacobian
   input BackendDAE.SymbolicJacobian symJac;
   input BackendDAE.ZeroCrossingSet zeroCrossingLst;
-  input DoubleEndedList<BackendDAE.ZeroCrossing> relationsLst;
+  input DoubleEnded.MutableList<BackendDAE.ZeroCrossing> relationsLst;
   input BackendDAE.ZeroCrossingSet samplesLst;
   input BackendDAE.Variables allVariables;
   input BackendDAE.Variables globalKnownVars;
@@ -902,7 +902,7 @@ end replaceZCExpinSymJacobian;
 protected function replaceZeroCrossingsJacBackend
   input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.ZeroCrossingSet zeroCrossingLst;
-  input DoubleEndedList<BackendDAE.ZeroCrossing> relationsLst;
+  input DoubleEnded.MutableList<BackendDAE.ZeroCrossing> relationsLst;
   input BackendDAE.ZeroCrossingSet samplesLst;
   input BackendDAE.Variables allVariables;
   input BackendDAE.Variables globalKnownVars;
@@ -938,7 +938,7 @@ end replaceZeroCrossingsJacBackend;
 protected function findZeroCrossings3
   input DAE.Exp e;
   input BackendDAE.ZeroCrossingSet inZeroCrossings;
-  input DoubleEndedList<BackendDAE.ZeroCrossing> inrelationsinZC;
+  input DoubleEnded.MutableList<BackendDAE.ZeroCrossing> inrelationsinZC;
   input BackendDAE.ZeroCrossingSet inSamplesLst;
   input Integer incountMathFunctions;
   input Integer counteq;
@@ -948,7 +948,7 @@ protected function findZeroCrossings3
   output DAE.Exp eres;
   output Integer outCountMathFunctions;
   output BackendDAE.ZeroCrossingSet outZeroCrossings;
-  output DoubleEndedList<BackendDAE.ZeroCrossing> outrelationsinZC;
+  output DoubleEnded.MutableList<BackendDAE.ZeroCrossing> outrelationsinZC;
   output BackendDAE.ZeroCrossingSet outSamplesLst;
 algorithm
   if Flags.isSet(Flags.RELIDX) then
@@ -970,7 +970,7 @@ algorithm
       DAE.Exp e, e1, e2, e_1, e_2, eres, eres1;
       BackendDAE.Variables vars, globalKnownVars;
       BackendDAE.ZeroCrossingSet zeroCrossings, zc_lst, samples;
-      DoubleEndedList<BackendDAE.ZeroCrossing> relations;
+      DoubleEnded.MutableList<BackendDAE.ZeroCrossing> relations;
       DAE.Operator op;
       Integer eq_count, itmp, numMathFunctions, oldNumRelations;
       BackendDAE.ZeroCrossing zc;
@@ -1001,7 +1001,7 @@ algorithm
       guard not BackendDAEUtil.hasExpContinuousParts(e1, vars, globalKnownVars)
       equation
       if Flags.isSet(Flags.RELIDX) then
-        print("discrete LUNARY: " + intString(DoubleEndedList.length(relations)) + "\n");
+        print("discrete LUNARY: " + intString(DoubleEnded.length(relations)) + "\n");
       end if;
       //fcall(Flags.RELIDX, BackendDump.debugExpStr, (inExp, "\n"));
     then (inExp, true, inTpl);
@@ -1010,7 +1010,7 @@ algorithm
       guard not (BackendDAEUtil.hasExpContinuousParts(e1, vars, globalKnownVars) or BackendDAEUtil.hasExpContinuousParts(e2, vars, globalKnownVars))
       equation
       if Flags.isSet(Flags.RELIDX) then
-        print("discrete LBINARY: " + intString(DoubleEndedList.length(relations)) + "\n");
+        print("discrete LBINARY: " + intString(DoubleEnded.length(relations)) + "\n");
       end if;
       //fcall(Flags.RELIDX, BackendDump.debugExpStr, (inExp, "\n"));
     then (inExp, true, inTpl);
@@ -1018,7 +1018,7 @@ algorithm
     // coditions that are zerocrossings.
     case (DAE.LUNARY(exp=e1, operator=op), ((zeroCrossings, relations, _, _), _)) equation
       if Flags.isSet(Flags.RELIDX) then
-        print("continues LUNARY: " + intString(DoubleEndedList.length(relations)) + "\n");
+        print("continues LUNARY: " + intString(DoubleEnded.length(relations)) + "\n");
       end if;
       (e1, tpl as ((_, _, _, _), (eq_count, _, _))) = Expression.traverseExpTopDown(e1, collectZC, inTpl);
       e_1 = DAE.LUNARY(op, e1);
@@ -1034,13 +1034,13 @@ algorithm
 
     case (DAE.LBINARY(exp1=e1, operator=op, exp2=e2), ((zeroCrossings, relations, samples, numMathFunctions), tp1)) equation
       if Flags.isSet(Flags.RELIDX) then
-        print("continues LBINARY: " + String(DoubleEndedList.length(relations)) + "\n");
+        print("continues LBINARY: " + String(DoubleEnded.length(relations)) + "\n");
         BackendDump.debugExpStr(inExp, "\n");
       end if;
-      oldNumRelations = DoubleEndedList.length(relations);
+      oldNumRelations = DoubleEnded.length(relations);
       (e_1, ((_, relations, samples, numMathFunctions), tp1)) = Expression.traverseExpTopDown(e1, collectZC, ((ZeroCrossings.new(), relations, samples, numMathFunctions), tp1));
       (e_2, ((_, relations, samples, numMathFunctions), tp1 as (eq_count, _, _))) = Expression.traverseExpTopDown(e2, collectZC, ((ZeroCrossings.new(), relations, samples, numMathFunctions), tp1));
-      if intGt(DoubleEndedList.length(relations), oldNumRelations) then
+      if intGt(DoubleEnded.length(relations), oldNumRelations) then
         e_1 = DAE.LBINARY(e_1, op, e_2);
         zc = createZeroCrossing(e_1, {eq_count});
         empty = not ZeroCrossings.contains(zeroCrossings, zc);
@@ -1062,7 +1062,7 @@ algorithm
       guard not (BackendDAEUtil.hasExpContinuousParts(e1, vars, globalKnownVars) or BackendDAEUtil.hasExpContinuousParts(e2, vars, globalKnownVars))
       equation
       if Flags.isSet(Flags.RELIDX) then
-        print("discrete RELATION: " + intString(DoubleEndedList.length(relations)) + "\n");
+        print("discrete RELATION: " + intString(DoubleEnded.length(relations)) + "\n");
       end if;
     then (inExp, true, inTpl);
 
@@ -1071,13 +1071,13 @@ algorithm
       guard Flags.isSet(Flags.EVENTS)
       equation
       if Flags.isSet(Flags.RELIDX) then
-        print("start collectZC (2): " + ExpressionDump.printExpStr(inExp) + " numRelations: " +intString(DoubleEndedList.length(relations)) + "\n");
+        print("start collectZC (2): " + ExpressionDump.printExpStr(inExp) + " numRelations: " +intString(DoubleEnded.length(relations)) + "\n");
       end if;
-      e_1 = DAE.RELATION(e1, op, e2, DoubleEndedList.length(relations), NONE());
+      e_1 = DAE.RELATION(e1, op, e2, DoubleEnded.length(relations), NONE());
       zc = createZeroCrossing(e_1, {eq_count});
-      (eres, relations) = zcIndexRelation(e_1, relations, DoubleEndedList.length(relations), zc);
+      (eres, relations) = zcIndexRelation(e_1, relations, DoubleEnded.length(relations), zc);
       zc = createZeroCrossing(eres, {eq_count});
-      (DAE.RELATION(index=itmp), zeroCrossings, _) = zcIndex(eres, zeroCrossings, DoubleEndedList.length(relations), zc);
+      (DAE.RELATION(index=itmp), zeroCrossings, _) = zcIndex(eres, zeroCrossings, DoubleEnded.length(relations), zc);
       if Flags.isSet(Flags.RELIDX) then
         print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + " index: " + intString(itmp) + "\n");
       end if;
@@ -1206,7 +1206,7 @@ algorithm
       list<DAE.Exp> inExpLst, explst;
       BackendDAE.Variables vars, globalKnownVars;
       BackendDAE.ZeroCrossingSet zeroCrossings, samples;
-      DoubleEndedList<BackendDAE.ZeroCrossing> relations;
+      DoubleEnded.MutableList<BackendDAE.ZeroCrossing> relations;
       list<BackendDAE.ZeroCrossing> zcLstNew, zc_lst;
       DAE.Operator op;
       Integer numEqual, alg_indx, itmp, numMathFunctions, oldNumRelations;
@@ -1220,7 +1220,7 @@ algorithm
       list<DAE.Exp> le;
       tuple<Integer, BackendDAE.Variables, BackendDAE.Variables> tp1;
       ForArgType tpl;
-      tuple<BackendDAE.ZeroCrossingSet, DoubleEndedList<BackendDAE.ZeroCrossing>, BackendDAE.ZeroCrossingSet, Integer> tp2;
+      tuple<BackendDAE.ZeroCrossingSet, DoubleEnded.MutableList<BackendDAE.ZeroCrossing>, BackendDAE.ZeroCrossingSet, Integer> tp2;
 
     case (DAE.CALL(path=Absyn.IDENT(name="noEvent")), _)
     then (inExp, false, inTpl);
@@ -1246,11 +1246,11 @@ algorithm
       guard Expression.expContains(inExp, iterator)
       equation
       if Flags.isSet(Flags.RELIDX) then
-        print("continues LUNARY with Iterator: " + intString(DoubleEndedList.length(relations)) + "\n");
+        print("continues LUNARY with Iterator: " + intString(DoubleEnded.length(relations)) + "\n");
       end if;
       (e1, tpl as (iterator, inExpLst, _, (_, relations, _, _), (alg_indx, _, _))) = Expression.traverseExpTopDown(e1, collectZCAlgsFor, inTpl);
       e_1 = DAE.LUNARY(op, e1);
-      (explst,_) = replaceIteratorWithStaticValues(e_1, iterator, inExpLst, DoubleEndedList.length(relations));
+      (explst,_) = replaceIteratorWithStaticValues(e_1, iterator, inExpLst, DoubleEnded.length(relations));
       zc_lst = createZeroCrossings(explst, {alg_indx});
       ZeroCrossings.add_list(zeroCrossings, zc_lst);
       if Flags.isSet(Flags.RELIDX) then
@@ -1262,7 +1262,7 @@ algorithm
     // coditions that are zerocrossings.
     case (DAE.LUNARY(exp=e1, operator=op), (_, _, _, (zeroCrossings, relations, _, _), _)) equation
       if Flags.isSet(Flags.RELIDX) then
-        print("continues LUNARY: " + intString(DoubleEndedList.length(relations)) + "\n");
+        print("continues LUNARY: " + intString(DoubleEnded.length(relations)) + "\n");
       end if;
       (e1, tpl as (_, _, _, (_, _, _, _), (alg_indx, _, _))) = Expression.traverseExpTopDown(e1, collectZCAlgsFor, inTpl);
       e_1 = DAE.LUNARY(op, e1);
@@ -1281,16 +1281,16 @@ algorithm
     case (DAE.LBINARY(exp1=e1, operator=op, exp2=e2), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numMathFunctions), tp1))
       algorithm
       if Flags.isSet(Flags.RELIDX) then
-        print("continues LBINARY: " + intString(DoubleEndedList.length(relations)) + "\n");
+        print("continues LBINARY: " + intString(DoubleEnded.length(relations)) + "\n");
         BackendDump.debugExpStr(inExp, "\n");
       end if;
-      oldNumRelations := DoubleEndedList.length(relations);
+      oldNumRelations := DoubleEnded.length(relations);
       (e_1, (_, inExpLst, range, tp2, tp1)) := Expression.traverseExpTopDown(e1, collectZCAlgsFor, (iterator, inExpLst, range, (ZeroCrossings.new(), relations, samples, numMathFunctions), tp1));
       (e_2, (_, inExpLst, range, (_, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _))) := Expression.traverseExpTopDown(e2, collectZCAlgsFor, (iterator, inExpLst, range, tp2, tp1));
-      if intGt(DoubleEndedList.length(relations), oldNumRelations) then
+      if intGt(DoubleEnded.length(relations), oldNumRelations) then
         e_1 := DAE.LBINARY(e_1, op, e_2);
         if Expression.expContains(e1, iterator) or Expression.expContains(e2, iterator) then
-          (explst,_) := replaceIteratorWithStaticValues(e_1, iterator, inExpLst, DoubleEndedList.length(relations));
+          (explst,_) := replaceIteratorWithStaticValues(e_1, iterator, inExpLst, DoubleEnded.length(relations));
           zc_lst := createZeroCrossings(explst, {alg_indx});
           ZeroCrossings.add_list(zeroCrossings, zc_lst);
           if Flags.isSet(Flags.RELIDX) then
@@ -1324,20 +1324,20 @@ algorithm
       guard if Flags.isSet(Flags.EVENTS) then (if Expression.expContains(e1, iterator) then true else Expression.expContains(e2, iterator)) else false
       equation
       if Flags.isSet(Flags.RELIDX) then
-        print(" number of relations: " + intString(DoubleEndedList.length(relations)) + "\n");
+        print(" number of relations: " + intString(DoubleEnded.length(relations)) + "\n");
       end if;
       stepvalue = Util.getOptionOrDefault(stepvalueopt, DAE.ICONST(1));
       istart = BackendDAEUtil.expInt(startvalue, globalKnownVars);
       istep = BackendDAEUtil.expInt(stepvalue, globalKnownVars);
-      eres = DAE.RELATION(e1, op, e2, DoubleEndedList.length(relations), SOME((iterator, istart, istep)));
-      (explst, itmp) = replaceIteratorWithStaticValues(inExp, iterator, inExpLst, DoubleEndedList.length(relations));
+      eres = DAE.RELATION(e1, op, e2, DoubleEnded.length(relations), SOME((iterator, istart, istep)));
+      (explst, itmp) = replaceIteratorWithStaticValues(inExp, iterator, inExpLst, DoubleEnded.length(relations));
       if Flags.isSet(Flags.RELIDX) then
         print(" number of new zc (1): " + intString(listLength(explst)) + "\n");
       end if;
       zcLstNew = createZeroCrossings(explst, {alg_indx});
-      DoubleEndedList.push_list_back(relations, zcLstNew);
+      DoubleEnded.push_list_back(relations, zcLstNew);
       if Flags.isSet(Flags.RELIDX) then
-        print(" number of new zc (2): " + intString(DoubleEndedList.length(relations)) + "\n");
+        print(" number of new zc (2): " + intString(DoubleEnded.length(relations)) + "\n");
       end if;
       itmp = listLength(zcLstNew);
       if Flags.isSet(Flags.RELIDX) then
@@ -1345,7 +1345,7 @@ algorithm
       end if;
       ZeroCrossings.add_list(zeroCrossings, zcLstNew);
       if Flags.isSet(Flags.RELIDX) then
-        print("collectZCAlgsFor result zc: " + ExpressionDump.printExpStr(eres)+ " index:" + intString(DoubleEndedList.length(relations)) + "\n");
+        print("collectZCAlgsFor result zc: " + ExpressionDump.printExpStr(eres)+ " index:" + intString(DoubleEnded.length(relations)) + "\n");
       end if;
     then (eres, true, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numMathFunctions), tp1));
 
@@ -1353,12 +1353,12 @@ algorithm
     case (DAE.RELATION(exp1=e1, operator=op, exp2=e2), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _)))
       guard Flags.isSet(Flags.EVENTS) // and (not Expression.expContains(e1, iterator) or Expression.expContains(e2, iterator))
       equation
-      eres = DAE.RELATION(e1, op, e2, DoubleEndedList.length(relations), NONE());
+      eres = DAE.RELATION(e1, op, e2, DoubleEnded.length(relations), NONE());
       zc = createZeroCrossing(eres, {alg_indx});
-      DoubleEndedList.push_back(relations, zc);
+      DoubleEnded.push_back(relations, zc);
       ZeroCrossings.add(zeroCrossings, zc);
       if Flags.isSet(Flags.RELIDX) then
-        print("collectZCAlgsFor result zc: " + ExpressionDump.printExpStr(eres)+ " index:" + intString(DoubleEndedList.length(relations)) + "\n");
+        print("collectZCAlgsFor result zc: " + ExpressionDump.printExpStr(eres)+ " index:" + intString(DoubleEnded.length(relations)) + "\n");
       end if;
     then (eres, true, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numMathFunctions), tp1));
 
@@ -1560,13 +1560,13 @@ end zcIndex;
 
 protected function zcIndexRelation
   input output DAE.Exp relation;
-  input output DoubleEndedList<BackendDAE.ZeroCrossing> zeroCrossings;
+  input output DoubleEnded.MutableList<BackendDAE.ZeroCrossing> zeroCrossings;
   input output Integer index;
   input BackendDAE.ZeroCrossing zc;
 protected
   list<BackendDAE.ZeroCrossing> duplicate;
 algorithm
-  duplicate := List.select1(DoubleEndedList.toListNoCopyNoClear(zeroCrossings), ZeroCrossings.equals, zc);
+  duplicate := List.select1(DoubleEnded.toListNoCopyNoClear(zeroCrossings), ZeroCrossings.equals, zc);
   (relation, index) := match (relation, duplicate)
     local
       DAE.Exp rel;
@@ -1576,19 +1576,19 @@ algorithm
 
     case (DAE.RELATION(), {})
       algorithm
-        DoubleEndedList.push_back(zeroCrossings, zc);
+        DoubleEnded.push_back(zeroCrossings, zc);
       then (relation, index+1);
 
     // math function with one argument and index
     case (DAE.CALL(expLst={_, _}), {})
       algorithm
-        DoubleEndedList.push_back(zeroCrossings, zc);
+        DoubleEnded.push_back(zeroCrossings, zc);
       then (relation, index+1);
 
     // math function with two arguments and index
     case (DAE.CALL(expLst={_, _, _}), {})
       algorithm
-        DoubleEndedList.push_back(zeroCrossings, zc);
+        DoubleEnded.push_back(zeroCrossings, zc);
       then (relation, index+2);
 
     case (_, BackendDAE.ZERO_CROSSING(relation_=rel)::_)
@@ -1614,7 +1614,7 @@ algorithm
   if not ZeroCrossings.contains(zcs, newZc) then
     ZeroCrossings.add(zcs, newZc);
   else
-    DoubleEndedList.mapNoCopy_1(zcs.zc, mergeZeroCrossingIfEqual, newZc);
+    DoubleEnded.mapNoCopy_1(zcs.zc, mergeZeroCrossingIfEqual, newZc);
   end if;
 end mergeZeroCrossings;
 
@@ -1866,7 +1866,7 @@ algorithm
   (outStatements, outTpl) := match (inExplst, inExtraArg)
     local
       list<DAE.Statement> statementLst;
-      tuple<BackendDAE.ZeroCrossingSet, DoubleEndedList<BackendDAE.ZeroCrossing>, BackendDAE.ZeroCrossingSet, Integer> tpl2;
+      tuple<BackendDAE.ZeroCrossingSet, DoubleEnded.MutableList<BackendDAE.ZeroCrossing>, BackendDAE.ZeroCrossingSet, Integer> tpl2;
       tuple<Integer, BackendDAE.Variables, BackendDAE.Variables> tpl3;
       ForArgType extraArg;
 

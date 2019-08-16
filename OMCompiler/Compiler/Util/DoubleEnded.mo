@@ -29,33 +29,34 @@
  *
  */
 
-encapsulated uniontype DoubleEndedList<T> "Implementation of a mutable double-ended list. O(1) push_front, push_back, pop_front, toListAndClear"
-
-record LIST
-  Mutable<Integer> length;
-  Mutable<list<T>> front, back;
-end LIST;
-
+encapsulated package DoubleEnded<T>
+"Implementation of a mutable double-ended list. O(1) push_front, push_back, pop_front, toListAndClear"
+public
 import Mutable;
+uniontype MutableList<T>
+  record LIST
+    Mutable<Integer> length;
+    Mutable<list<T>> front;
+    Mutable<list<T>> back;
+  end LIST;
+end MutableList;
 
 protected
 import GC;
 import MetaModelica.Dangerous;
 
-public
-
-impure function new
+public impure function new<T>
   input T first;
-  output DoubleEndedList<T> delst;
+  output MutableList<T> delst;
 protected
-  list<T> lst={first};
+  list<T> lst = {first};
 algorithm
   delst := LIST(Mutable.create(1),Mutable.create(lst),Mutable.create(lst));
 end new;
 
-impure function fromList
+public impure function fromList<T>
   input list<T> lst;
-  output DoubleEndedList<T> delst;
+  output MutableList<T> delst;
 protected
   list<T> head,tail,tmp;
   Integer length;
@@ -78,25 +79,25 @@ algorithm
   delst := LIST(Mutable.create(length),Mutable.create(head),Mutable.create(tail));
 end fromList;
 
-impure function empty
+public impure function empty<T>
   input T dummy;
-  output DoubleEndedList<T> delst;
+  output MutableList<T> delst;
 algorithm
   delst := LIST(Mutable.create(0),Mutable.create({}),Mutable.create({}));
 end empty;
 
-function length
-  input DoubleEndedList<T> delst;
+public function length<T>
+  input MutableList<T> delst;
   output Integer length;
 algorithm
   length := Mutable.access(delst.length);
 end length;
 
-function pop_front
-  input DoubleEndedList<T> delst;
+public function pop_front<T>
+  input MutableList<T> delst;
   output T elt;
 protected
-  Integer length=Mutable.access(delst.length);
+  Integer length = Mutable.access(delst.length);
   list<T> lst;
 algorithm
   true := length>0;
@@ -110,15 +111,15 @@ algorithm
   Mutable.update(delst.front, lst);
 end pop_front;
 
-function currentBackCell
-  input DoubleEndedList<T> delst;
+public function currentBackCell<T>
+  input MutableList<T> delst;
   output list<T> last;
 algorithm
   last := Mutable.access(delst.back);
 end currentBackCell;
 
-function push_front
-  input DoubleEndedList<T> delst;
+public function push_front<T>
+  input MutableList<T> delst;
   input T elt;
 protected
   Integer length=Mutable.access(delst.length);
@@ -135,11 +136,11 @@ algorithm
   Mutable.update(delst.front, elt::lst);
 end push_front;
 
-function push_list_front
-  input DoubleEndedList<T> delst;
+public function push_list_front<T>
+  input MutableList<T> delst;
   input list<T> lst;
 protected
-  Integer length=Mutable.access(delst.length), lstLength;
+  Integer length = Mutable.access(delst.length), lstLength;
   list<T> work, oldHead, tmp, head;
   T t;
 algorithm
@@ -164,11 +165,11 @@ algorithm
   end if;
 end push_list_front;
 
-function push_back<T>
-  input DoubleEndedList<T> delst;
+public function push_back<T>
+  input MutableList<T> delst;
   input T elt;
 protected
-  Integer length=Mutable.access(delst.length);
+  Integer length = Mutable.access(delst.length);
   list<T> lst;
 algorithm
   Mutable.update(delst.length, length+1);
@@ -183,8 +184,8 @@ algorithm
   Mutable.update(delst.back, lst);
 end push_back;
 
-function push_list_back
-  input DoubleEndedList<T> delst;
+public function push_list_back<T>
+  input MutableList<T> delst;
   input list<T> lst;
 protected
   Integer length=Mutable.access(delst.length), lstLength;
@@ -212,9 +213,9 @@ algorithm
   Mutable.update(delst.back, tail);
 end push_list_back;
 
-impure function toListAndClear
-  input DoubleEndedList<T> delst;
-  input list<T> prependToList={};
+public impure function toListAndClear<T>
+  input MutableList<T> delst;
+  input list<T> prependToList = {};
   output list<T> res;
 algorithm
   if Mutable.access(delst.length)==0 then
@@ -230,15 +231,16 @@ algorithm
   Mutable.update(delst.length, 0);
 end toListAndClear;
 
-impure function toListNoCopyNoClear "Returns the working list, which may be changed later on!"
-  input DoubleEndedList<T> delst;
+public impure function toListNoCopyNoClear<T>
+  "Returns the working list, which may be changed later on!"
+  input MutableList<T> delst;
   output list<T> res;
 algorithm
   res := Mutable.access(delst.front);
 end toListNoCopyNoClear;
 
-impure function clear
-  input DoubleEndedList<T> delst;
+public impure function clear<T>
+  input MutableList<T> delst;
 protected
   list<T> lst;
 algorithm
@@ -251,8 +253,8 @@ algorithm
   end for;
 end clear;
 
-impure function mapNoCopy_1<ArgT1>
-  input DoubleEndedList<T> delst;
+public impure function mapNoCopy_1<T, ArgT1>
+  input MutableList<T> delst;
   input MapFunc inMapFunc;
   input ArgT1 inArg1;
   partial function MapFunc
@@ -269,8 +271,8 @@ algorithm
   end while;
 end mapNoCopy_1;
 
-impure function mapFoldNoCopy<ArgT1>
-  input DoubleEndedList<T> delst;
+public impure function mapFoldNoCopy<T, ArgT1>
+  input MutableList<T> delst;
   input MapFunc inMapFunc;
   input output ArgT1 arg;
   partial function MapFunc
@@ -289,4 +291,5 @@ algorithm
 end mapFoldNoCopy;
 
 annotation(__OpenModelica_Interface="util");
-end DoubleEndedList;
+
+end DoubleEnded;

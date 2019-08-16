@@ -155,7 +155,7 @@ if true then /* Suppress output */
     //"../Util/Database.mo",
     "../Util/Debug.mo",
     "../Util/DisjointSets.mo",
-    "../Util/DoubleEndedList.mo",
+    "../Util/DoubleEnded.mo",
     "../Util/DynLoad.mo",
     "../Util/ErrorExt.mo",
     "../Util/Error.mo",

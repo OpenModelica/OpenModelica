@@ -51,7 +51,7 @@ import Expression;
 import ExpressionDump;
 import ComponentReference;
 import System;
-import DoubleEndedList;
+import DoubleEnded;
 import Mutable;
 import BaseHashTable;
 import HashTableMidVar;
@@ -60,11 +60,11 @@ import Error;
 
 uniontype State
   record STATE
-    DoubleEndedList<MidCode.Var> locals;
-    DoubleEndedList<MidCode.VarBuf> localBufs;
-    DoubleEndedList<MidCode.VarBufPtr> localBufPtrs;
-    DoubleEndedList<MidCode.Block> blocks;
-    DoubleEndedList<MidCode.Stmt> stmts;
+    DoubleEnded.MutableList<MidCode.Var> locals;
+    DoubleEnded.MutableList<MidCode.VarBuf> localBufs;
+    DoubleEnded.MutableList<MidCode.VarBufPtr> localBufPtrs;
+    DoubleEnded.MutableList<MidCode.Block> blocks;
+    DoubleEnded.MutableList<MidCode.Stmt> stmts;
     Mutable.Mutable<Integer> blockid;
     Mutable.Mutable<list<Integer>> continuejumps;
     Mutable.Mutable<list<Integer>> breakjumps;
@@ -97,7 +97,7 @@ function GenTmpVar
   output MidCode.Var var;
 algorithm
   var := MidCode.VAR("_tmp_" + intString(System.tmpTickIndex(46)), ty, false);
-  DoubleEndedList.push_back(state.locals, var);
+  DoubleEnded.push_back(state.locals, var);
 end GenTmpVar;
 
 function GenTmpVarVolatile
@@ -106,7 +106,7 @@ function GenTmpVarVolatile
   output MidCode.Var var;
 algorithm
   var := MidCode.VAR("_tmp_" + intString(System.tmpTickIndex(46)), ty, true);
-  DoubleEndedList.push_back(state.locals, var);
+  DoubleEnded.push_back(state.locals, var);
 end GenTmpVarVolatile;
 
 function GenTmpVarBuf
@@ -118,7 +118,7 @@ function GenTmpVarBuf
   output MidCode.VarBuf var;
 algorithm
   var := MidCode.VARBUF("_jmpbuf_" + intString(System.tmpTickIndex(47)));
-  DoubleEndedList.push_back(state.localBufs, var);
+  DoubleEnded.push_back(state.localBufs, var);
 end GenTmpVarBuf;
 
 function GenTmpVarBufPtr
@@ -130,7 +130,7 @@ function GenTmpVarBufPtr
   output MidCode.VarBufPtr var;
 algorithm
   var := MidCode.VARBUFPTR("_tmp_" + intString(System.tmpTickIndex(46)));
-  DoubleEndedList.push_back(state.localBufPtrs, var);
+  DoubleEnded.push_back(state.localBufPtrs, var);
 end GenTmpVarBufPtr;
 
 function GenBlockId
@@ -257,7 +257,7 @@ var := match rvalue
   else
   algorithm
     tmpvar := GenTmpVar(Types.complicateType(RValueType(rvalue)),state);
-    DoubleEndedList.push_back(state.stmts, MidCode.ASSIGN(tmpvar, rvalue));
+    DoubleEnded.push_back(state.stmts, MidCode.ASSIGN(tmpvar, rvalue));
   then tmpvar;
 end match;
 end RValueToVar;
@@ -267,8 +267,8 @@ function DAEFunctionToMid
   output MidCode.Function midfunc;
 protected
   State state;
-  DoubleEndedList<MidCode.Var> inputs;
-  DoubleEndedList<MidCode.Var> outputs;
+  DoubleEnded.MutableList<MidCode.Var> inputs;
+  DoubleEnded.MutableList<MidCode.Var> outputs;
   MidCode.Block block_;
   Absyn.Path path;
   Integer labelFirst;
@@ -292,25 +292,25 @@ algorithm
   algorithm
     labelFirst := GenBlockId();
     path := name;
-    inputs := DoubleEndedList.fromList({});
-    outputs := DoubleEndedList.fromList({});
-    state := STATE(DoubleEndedList.fromList({}),
-                   DoubleEndedList.fromList({}),
-                   DoubleEndedList.fromList({}),
-                   DoubleEndedList.fromList({}),
-                   DoubleEndedList.fromList({}),
+    inputs := DoubleEnded.fromList({});
+    outputs := DoubleEnded.fromList({});
+    state := STATE(DoubleEnded.fromList({}),
+                   DoubleEnded.fromList({}),
+                   DoubleEnded.fromList({}),
+                   DoubleEnded.fromList({}),
+                   DoubleEnded.fromList({}),
                    Mutable.create(labelFirst),
                    Mutable.create({}),
                    Mutable.create({}),
                    Mutable.create(HashTableMidVar.emptyHashTable()));
     for simcodeVar in variableDeclarations loop
-      DoubleEndedList.push_back(state.locals, ConvertSimCodeVars(simcodeVar, state));
+      DoubleEnded.push_back(state.locals, ConvertSimCodeVars(simcodeVar, state));
     end for;
     for simcodeVar in outVars loop
-      DoubleEndedList.push_back(outputs, ConvertSimCodeVars(simcodeVar, state));
+      DoubleEnded.push_back(outputs, ConvertSimCodeVars(simcodeVar, state));
     end for;
     for simcodeVar in functionArguments loop
-      DoubleEndedList.push_back(inputs, ConvertSimCodeVars(simcodeVar, state));
+      DoubleEnded.push_back(inputs, ConvertSimCodeVars(simcodeVar, state));
     end for;
 
     StmtsToMid(body, state);
@@ -325,12 +325,12 @@ algorithm
   stateTerminate(-1, MidCode.RETURN(), state);
 
   midfunc := MidCode.FUNCTION(name=path,
-                              locals=DoubleEndedList.toListAndClear(state.locals),
-                              localBufs=DoubleEndedList.toListAndClear(state.localBufs),
-                              localBufPtrs=DoubleEndedList.toListAndClear(state.localBufPtrs),
-                              inputs=DoubleEndedList.toListAndClear(inputs),
-                              outputs=DoubleEndedList.toListAndClear(outputs),
-                              body=DoubleEndedList.toListAndClear(state.blocks),
+                              locals=DoubleEnded.toListAndClear(state.locals),
+                              localBufs=DoubleEnded.toListAndClear(state.localBufs),
+                              localBufPtrs=DoubleEnded.toListAndClear(state.localBufPtrs),
+                              inputs=DoubleEnded.toListAndClear(inputs),
+                              outputs=DoubleEnded.toListAndClear(outputs),
+                              body=DoubleEnded.toListAndClear(state.blocks),
                               entryId=labelFirst,
                               exitId=GenBlockId());
   midfunc := MidToMid.longJmpGoto(midfunc);
@@ -375,7 +375,7 @@ algorithm
         Integer labelCondition;
         Integer labelStep;
         DAE.Else else_;
-        DoubleEndedList<MidCode.OutVar> outvars;
+        DoubleEnded.MutableList<MidCode.OutVar> outvars;
         String iter;
         Integer index;
         list<DAE.Subscript> subscripts;
@@ -413,17 +413,17 @@ algorithm
       then fail();
       case DAE.STMT_TUPLE_ASSIGN(_, expLst, exp, _)
       algorithm
-        outvars := DoubleEndedList.fromList({});
+        outvars := DoubleEnded.fromList({});
         for exp1 in expLst loop
           () := match exp1
             case DAE.CREF(DAE.WILD())
             algorithm
-              DoubleEndedList.push_back(outvars, MidCode.OUT_WILD());
+              DoubleEnded.push_back(outvars, MidCode.OUT_WILD());
             then ();
             case DAE.CREF(__)
             algorithm
               varCref := CrefToMidVar(exp1.componentRef, state);
-              DoubleEndedList.push_back(outvars, MidCode.OUT_VAR(varCref));
+              DoubleEnded.push_back(outvars, MidCode.OUT_VAR(varCref));
             then ();
             else
             algorithm
@@ -434,11 +434,11 @@ algorithm
         () := match exp
         case DAE.CALL(__)
         algorithm
-          CallToMid(exp, DoubleEndedList.toListAndClear(outvars), state);
+          CallToMid(exp, DoubleEnded.toListAndClear(outvars), state);
         then ();
         case DAE.MATCHEXPRESSION(__)
         algorithm
-          MatchExpressionToMid(exp, DoubleEndedList.toListAndClear(outvars), state);
+          MatchExpressionToMid(exp, DoubleEnded.toListAndClear(outvars), state);
         then ();
         end match;
       then ();
@@ -560,7 +560,7 @@ algorithm
     MidCode.Terminator terminator;
     Absyn.Path path;
     list<DAE.Exp> expLst;
-    DoubleEndedList<MidCode.Var> values;
+    DoubleEnded.MutableList<MidCode.Var> values;
     list<MidCode.OutVar> outvars;
     Option<DAE.Exp> option;
     DAE.CallAttributes callattrs;
@@ -588,20 +588,20 @@ algorithm
   then MidCode.LITERALMETATYPE({}, Types.complicateType(DAE.T_NONE_DEFAULT));
   case DAE.META_TUPLE(expLst)
   algorithm
-    values := DoubleEndedList.fromList({});
+    values := DoubleEnded.fromList({});
     for exp in expLst loop
       varExp := RValueToVar(ExpToMid(exp, state), state);
-      DoubleEndedList.push_back(values, varExp);
+      DoubleEnded.push_back(values, varExp);
     end for;
-  then MidCode.LITERALMETATYPE(DoubleEndedList.toListAndClear(values), Types.complicateType(Expression.typeof(exp)));
+  then MidCode.LITERALMETATYPE(DoubleEnded.toListAndClear(values), Types.complicateType(Expression.typeof(exp)));
   case DAE.METARECORDCALL(_, expLst, _, _, _)
   algorithm
-    values := DoubleEndedList.fromList({});
+    values := DoubleEnded.fromList({});
     for exp in expLst loop
       varExp := RValueToVar(ExpToMid(exp, state), state);
-      DoubleEndedList.push_back(values, varExp);
+      DoubleEnded.push_back(values, varExp);
     end for;
-  then MidCode.LITERALMETATYPE(DoubleEndedList.toListAndClear(values), Types.complicateType(Expression.typeof(exp)));
+  then MidCode.LITERALMETATYPE(DoubleEnded.toListAndClear(values), Types.complicateType(Expression.typeof(exp)));
   case DAE.CONS(__)
   algorithm
     varCar := RValueToVar(ExpToMid(exp.car, state), state);
@@ -612,11 +612,11 @@ algorithm
     expLst := listReverse(expLst);
 
     varCdr := GenTmpVar(DAE.T_METALIST_DEFAULT,state);
-    DoubleEndedList.push_back(state.stmts, MidCode.ASSIGN(varCdr, MidCode.LITERALMETATYPE({}, DAE.T_METALIST_DEFAULT)));
+    DoubleEnded.push_back(state.stmts, MidCode.ASSIGN(varCdr, MidCode.LITERALMETATYPE({}, DAE.T_METALIST_DEFAULT)));
     for exp in expLst loop
       varCar := RValueToVar(ExpToMid(exp, state), state);
       varTmp := GenTmpVar(DAE.T_METALIST(Types.complicateType(varCar.ty)),state);
-      DoubleEndedList.push_back(state.stmts, MidCode.ASSIGN(varTmp, MidCode.LITERALMETATYPE({varCar, varCdr},  Types.complicateType(DAE.T_METALIST(varCar.ty)))));
+      DoubleEnded.push_back(state.stmts, MidCode.ASSIGN(varTmp, MidCode.LITERALMETATYPE({varCar, varCdr},  Types.complicateType(DAE.T_METALIST(varCar.ty)))));
       varCdr := varTmp;
     end for;
   then MidCode.VARIABLE(varCdr);
@@ -806,21 +806,21 @@ algorithm
     list<DAE.Exp> expLst;
     DAE.CallAttributes callattr;
     Integer labelNext;
-    DoubleEndedList<MidCode.Var> inputs;
+    DoubleEnded.MutableList<MidCode.Var> inputs;
     MidCode.Var var1;
     MidCode.Block block_;
   case DAE.CALL(path, expLst, callattr)
   algorithm
     labelNext := GenBlockId();
 
-    inputs := DoubleEndedList.fromList({});
+    inputs := DoubleEnded.fromList({});
     for exp1 in expLst loop
       var1 := RValueToVar(ExpToMid(exp1, state), state);
-      DoubleEndedList.push_back(inputs, var1);
+      DoubleEnded.push_back(inputs, var1);
     end for;
 
     stateTerminate(labelNext,
-                    MidCode.CALL(path,callattr.builtin,DoubleEndedList.toListAndClear(inputs),outvars,labelNext),
+                    MidCode.CALL(path,callattr.builtin,DoubleEnded.toListAndClear(inputs),outvars,labelNext),
                     state);
 
   then ();
@@ -842,7 +842,7 @@ protected
   Integer labelNext;
 algorithm
   varCref := CrefToMidVar(DAE.CREF_IDENT(iter, type_, {}), state);
-  DoubleEndedList.push_back(state.locals, varCref);
+  DoubleEnded.push_back(state.locals, varCref);
 
   labelCondition := GenBlockId();
   labelStep := GenBlockId();
@@ -1032,7 +1032,7 @@ function stateAddStmt
   input MidCode.Stmt stmt;
   input State state;
 algorithm
-  DoubleEndedList.push_back(state.stmts, stmt);
+  DoubleEnded.push_back(state.stmts, stmt);
 end stateAddStmt;
 
 function stateTerminate
@@ -1043,9 +1043,9 @@ protected
   MidCode.Block block_;
 algorithm
   block_ := MidCode.BLOCK(stateGetCurrentLabel(state),
-                          DoubleEndedList.toListAndClear(state.stmts),
+                          DoubleEnded.toListAndClear(state.stmts),
                           terminator);
-  DoubleEndedList.push_back(state.blocks, block_);
+  DoubleEnded.push_back(state.blocks, block_);
 
   stateSetCurrentLabel(newLabel, state);
 end stateTerminate;
@@ -1147,7 +1147,7 @@ algorithm
       inputsMidVar := srcVar :: inputsMidVar;
       for alias in aliasList loop
         aliasVar := MidCode.VAR(name=alias, ty=ty, volatile=false);
-        DoubleEndedList.push_back(state.locals, aliasVar);
+        DoubleEnded.push_back(state.locals, aliasVar);
         stateAddStmt( MidCode.ASSIGN(aliasVar, MidCode.VARIABLE(srcVar) ), state );
       end for;
     end for;
@@ -1640,4 +1640,3 @@ end patternToMidCode2;
 annotation(__OpenModelica_Interface="backend");
 
 end DAEToMid;
-

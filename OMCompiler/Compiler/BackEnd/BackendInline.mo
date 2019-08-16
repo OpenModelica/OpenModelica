@@ -53,9 +53,10 @@ protected
  import BackendVariable;
  import BackendDAEOptimize;
  import ComponentReference;
- import Debug;
  import DAEDump;
  import DAEUtil;
+ import Debug;
+ import DoubleEnded;
  import ExpandableArray;
  import ExpressionDump;
  import Flags;
@@ -525,7 +526,7 @@ algorithm
   _ := matchcontinue inEventInfo
     local
       BackendDAE.ZeroCrossingSet zclst;
-      DoubleEndedList<BackendDAE.ZeroCrossing> relations;
+      DoubleEnded.MutableList<BackendDAE.ZeroCrossing> relations;
 
     case BackendDAE.EVENT_INFO(zeroCrossings=zclst, relations=relations) equation
       inlineZeroCrossings(zclst.zc, fns);
@@ -541,12 +542,12 @@ algorithm
 end inlineEventInfo;
 
 protected function inlineZeroCrossings "inlines function calls in zero crossings"
-  input DoubleEndedList<BackendDAE.ZeroCrossing> inStmts;
+  input DoubleEnded.MutableList<BackendDAE.ZeroCrossing> inStmts;
   input Inline.Functiontuple fns;
 protected
   BackendDAE.ZeroCrossing zc;
 algorithm
-  DoubleEndedList.mapNoCopy_1(inStmts, inlineZeroCrossing, fns);
+  DoubleEnded.mapNoCopy_1(inStmts, inlineZeroCrossing, fns);
 end inlineZeroCrossings;
 
 protected function inlineZeroCrossing "inlines function calls in a zero crossing"

@@ -42,13 +42,11 @@ import BackendDAE.{ZeroCrossing,ZeroCrossingSet};
 import BackendDAE.ZeroCrossingSet.ZERO_CROSSING_SET;
 
 protected
-import DE=DoubleEndedList;
-import DoubleEndedList.toListNoCopyNoClear;
+import DoubleEnded;
 import Expression;
 import ExpressionDump;
 
 public
-
 type Tree = ZeroCrossingTree.Tree;
 
 package ZeroCrossingTree "Lookup ZeroCrossing -> list<ZeroCrossing> (the cons-cell storing the ZC)"
@@ -75,14 +73,14 @@ end ZeroCrossingTree;
 function new
   output ZeroCrossingSet zc_set;
 algorithm
-  zc_set := ZERO_CROSSING_SET(DoubleEndedList.fromList({}), arrayCreate(1, ZeroCrossingTree.new()));
+  zc_set := ZERO_CROSSING_SET(DoubleEnded.fromList({}), arrayCreate(1, ZeroCrossingTree.new()));
 end new;
 
 function length
   input ZeroCrossingSet zc_set;
   output Integer i;
 algorithm
-  i := DE.length(zc_set.zc);
+  i := DoubleEnded.length(zc_set.zc);
 end length;
 
 function add
@@ -92,8 +90,8 @@ protected
   list<ZeroCrossing> addedCell;
 algorithm
   if not contains(zc_set, zc) then
-    DE.push_back(zc_set.zc, zc);
-    addedCell := DE.currentBackCell(zc_set.zc);
+    DoubleEnded.push_back(zc_set.zc, zc);
+    addedCell := DoubleEnded.currentBackCell(zc_set.zc);
     arrayUpdate(zc_set.tree, 1, ZeroCrossingTree.add(arrayGet(zc_set.tree, 1), zc, addedCell));
   end if;
 end add;
@@ -111,7 +109,7 @@ function toList
   input ZeroCrossingSet zc;
   output list<ZeroCrossing> lst;
 algorithm
-  lst := toListNoCopyNoClear(zc.zc);
+  lst := DoubleEnded.toListNoCopyNoClear(zc.zc);
 end toList;
 
 function contains

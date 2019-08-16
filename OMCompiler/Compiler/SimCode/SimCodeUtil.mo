@@ -39,13 +39,12 @@ encapsulated package SimCodeUtil
 
 
 // public imports
+public
 import Absyn;
 import BackendDAE;
 import Ceval;
 import DAE;
-import FCore;
-import FGraph;
-import HashTable;
+import DoubleEnded;
 import HashTableCrIListArray;
 import HashTableCrILst;
 import HashTableExpToIndex;
@@ -82,7 +81,6 @@ import DAEDump;
 import DAEUtil;
 import Debug;
 import Differentiate;
-import DoubleEndedList;
 import ElementSource;
 import Error;
 import ExecStat.execStat;
@@ -237,7 +235,7 @@ protected
   list<BackendDAE.Equation> removedInitialEquationLst;
   list<BackendDAE.TimeEvent> timeEvents;
   BackendDAE.ZeroCrossingSet zeroCrossingsSet, sampleZCSet;
-  DoubleEndedList<BackendDAE.ZeroCrossing> de_relations;
+  DoubleEnded.MutableList<BackendDAE.ZeroCrossing> de_relations;
   list<BackendDAE.ZeroCrossing> zeroCrossings, sampleZC, relations;
   list<DAE.ClassAttributes> classAttributes;
   list<DAE.ComponentRef> discreteModelVars;
@@ -351,7 +349,7 @@ algorithm
     timeEvents := eventInfo.timeEvents;
     (zeroCrossings,relations,sampleZC) := match eventInfo
       case BackendDAE.EVENT_INFO(zeroCrossings=zeroCrossingsSet, relations=de_relations, samples=sampleZCSet)
-      then (ZeroCrossings.toList(zeroCrossingsSet), DoubleEndedList.toListNoCopyNoClear(de_relations), ZeroCrossings.toList(sampleZCSet));
+      then (ZeroCrossings.toList(zeroCrossingsSet), DoubleEnded.toListNoCopyNoClear(de_relations), ZeroCrossings.toList(sampleZCSet));
     end match;
     if ifcpp then
       zeroCrossings := listAppend(relations, sampleZC);
@@ -3750,7 +3748,7 @@ protected
   BackendDAE.Equation eqn;
   BackendDAE.StrongComponent comp;
   list<SimCode.SimEqSystem> simequations;
-  DoubleEndedList<SimCode.SimEqSystem> equations;
+  DoubleEnded.MutableList<SimCode.SimEqSystem> equations;
   BackendDAE.Constraints cons;
 algorithm
   if listEmpty(innerEquations) then
@@ -3759,7 +3757,7 @@ algorithm
   end if;
 
   BackendDAE.EQSYSTEM(orderedEqs = eqns) := isyst;
-  equations := DoubleEndedList.fromList(isimequations);
+  equations := DoubleEnded.fromList(isimequations);
 
   for eq in innerEquations loop
     // get Eqn
@@ -3772,10 +3770,10 @@ algorithm
     // generate comp
     comp := createTornSystemInnerEqns1(eqn, eqnindx, vars);
     (simequations, _, ouniqueEqIndex, otempvars) := createEquationsWork(genDiscrete, false, genDiscrete, skipDiscInAlgorithm, isyst, ishared, comp, ouniqueEqIndex, otempvars, cons);
-    DoubleEndedList.push_list_back(equations, simequations);
+    DoubleEnded.push_list_back(equations, simequations);
   end for;
 
-  equations_ := DoubleEndedList.toListAndClear(equations);
+  equations_ := DoubleEnded.toListAndClear(equations);
 end createTornSystemInnerEqns;
 
 protected function createTornSystemInnerEqns1
@@ -4254,10 +4252,10 @@ protected
   BackendDAE.Equation eqn;
   BackendDAE.StrongComponent comp;
   list<SimCode.SimEqSystem> simequations;
-  DoubleEndedList<SimCode.SimEqSystem> dblLstEqns;
+  DoubleEnded.MutableList<SimCode.SimEqSystem> dblLstEqns;
   SimCode.OMSIFunction omsiFuncEquations;
 algorithm
-  dblLstEqns := DoubleEndedList.fromList(equations);
+  dblLstEqns := DoubleEnded.fromList(equations);
 
   for eq in innerEquations loop
     // get Eqn
@@ -4271,10 +4269,10 @@ algorithm
     // generate comp
     comp := createTornSystemInnerEqns1(eqn, eqnindx, vars);
     (omsiFuncEquations, uniqueEqIndex) := generateEquationsForComponents({comp}, syst, shared, uniqueEqIndex);
-    DoubleEndedList.push_list_back(dblLstEqns, omsiFuncEquations.equations);
+    DoubleEnded.push_list_back(dblLstEqns, omsiFuncEquations.equations);
   end for;
 
-  equations := DoubleEndedList.toListAndClear(dblLstEqns);
+  equations := DoubleEnded.toListAndClear(dblLstEqns);
 end generateInnerEqns;
 
 
@@ -12821,7 +12819,7 @@ protected
    list<SimCodeVar.SimVar> varsA, varsB, clockedStates;
    list<DAE.ComponentRef> diffCrefsA, diffedCrefsA, derdiffCrefsA;
    list<DAE.ComponentRef> diffCrefsB, diffedCrefsB;
-   DoubleEndedList<SimCodeVar.SimVar> delst;
+   DoubleEnded.MutableList<SimCodeVar.SimVar> delst;
    SimCode.VarInfo varInfo;
    Option<BackendDAE.SymbolicJacobian> optcontPartDer;
    BackendDAE.SparsePattern spPattern;
@@ -13583,27 +13581,27 @@ end getInputIndex;
 
 public function resetFunctionIndex
 algorithm
-  setGlobalRoot(Global.codegenFunctionList, DoubleEndedList.fromList({}));
+  setGlobalRoot(Global.codegenFunctionList, DoubleEnded.fromList({}));
 end resetFunctionIndex;
 
 public function addFunctionIndex
   input String prefix, suffix;
   output String newName;
 protected
-  DoubleEndedList<String> delst;
+  DoubleEnded.MutableList<String> delst;
 algorithm
   delst := getGlobalRoot(Global.codegenFunctionList);
-  newName := prefix + String(DoubleEndedList.length(delst)) + suffix;
-  DoubleEndedList.push_back(delst, newName);
+  newName := prefix + String(DoubleEnded.length(delst)) + suffix;
+  DoubleEnded.push_back(delst, newName);
 end addFunctionIndex;
 
 public function getFunctionIndex
   output list<String> files;
 protected
-  DoubleEndedList<String> delst;
+  DoubleEnded.MutableList<String> delst;
 algorithm
   delst := getGlobalRoot(Global.codegenFunctionList);
-  files := DoubleEndedList.toListAndClear(delst);
+  files := DoubleEnded.toListAndClear(delst);
 end getFunctionIndex;
 
 public function nVariablesReal

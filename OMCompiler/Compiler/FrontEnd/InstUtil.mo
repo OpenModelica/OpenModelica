@@ -54,7 +54,7 @@ import HashTable;
 import HashTable5;
 
 protected
-import DoubleEndedList;
+import DoubleEnded;
 import List;
 import BaseHashTable;
 import Expression;
@@ -5791,7 +5791,7 @@ public function reorderConnectEquationsExpandable
   input list<SCode.Equation> inEquations;
   output list<SCode.Equation> outEquations;
 protected
-  DoubleEndedList<SCode.Equation> delst;
+  DoubleEnded.MutableList<SCode.Equation> delst;
   list<SCode.Equation> expandableEqs;
   Absyn.ComponentRef crefLeft, crefRight;
   DAE.Type ty1,ty2;
@@ -5801,7 +5801,7 @@ algorithm
     return;
   end if;
   ErrorExt.setCheckpoint("expandableConnectorsOrder");
-  delst := DoubleEndedList.fromList({});
+  delst := DoubleEnded.fromList({});
   expandableEqs := list(
     eq
     for eq
@@ -5815,7 +5815,7 @@ algorithm
       // type of right left var is an expandable connector!
       true := Types.isExpandableConnector(ty2);
     then true;
-    else algorithm DoubleEndedList.push_back(delst, eq); then false;
+    else algorithm DoubleEnded.push_back(delst, eq); then false;
     end matchcontinue in inEquations
   );
 
@@ -5833,16 +5833,16 @@ algorithm
   //   connect(expandable, expandable);
 
   // put expandable at the begining
-  DoubleEndedList.push_list_front(delst, expandableEqs);
+  DoubleEnded.push_list_front(delst, expandableEqs);
   // put expandable at the end
-  DoubleEndedList.push_list_back(delst, expandableEqs);
+  DoubleEnded.push_list_back(delst, expandableEqs);
   // duplicate expandable to get the union
   _ := match expandableEqs
-  case _::_::_ algorithm DoubleEndedList.push_list_back(delst, expandableEqs); then (); // > length 1
+  case _::_::_ algorithm DoubleEnded.push_list_back(delst, expandableEqs); then (); // > length 1
   else ();
   end match;
 
-  outEquations := DoubleEndedList.toListAndClear(delst);
+  outEquations := DoubleEnded.toListAndClear(delst);
 end reorderConnectEquationsExpandable;
 
 public function sortInnerFirstTplLstElementMod

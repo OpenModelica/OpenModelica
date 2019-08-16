@@ -58,7 +58,7 @@ import Config;
 import ConnectUtil;
 import DAEDump;
 import Debug;
-import DoubleEndedList;
+import DoubleEnded;
 import ElementSource;
 import Error;
 import Expression;
@@ -367,11 +367,11 @@ public function splitDAEIntoVarsAndEquations
   output DAE.DAElist allEqs;
 protected
   list<DAE.Element> rest;
-  DoubleEndedList<DAE.Element> vars, eqs;
+  DoubleEnded.MutableList<DAE.Element> vars, eqs;
 algorithm
   DAE.DAE(rest) := inDae;
-  vars := DoubleEndedList.fromList({});
-  eqs := DoubleEndedList.fromList({});
+  vars := DoubleEnded.fromList({});
+  eqs := DoubleEnded.fromList({});
   for elt in rest loop
     _ := match elt
       local
@@ -383,133 +383,133 @@ algorithm
 
       case DAE.VAR()
         algorithm
-          DoubleEndedList.push_back(vars, elt);
+          DoubleEnded.push_back(vars, elt);
         then ();
 
       // adrpo: TODO! FIXME! a DAE.COMP SHOULD NOT EVER BE HERE!
       case DAE.COMP(id,elts1,source,cmt)
         algorithm
           (DAE.DAE(elts11),DAE.DAE(elts3)) := splitDAEIntoVarsAndEquations(DAE.DAE(elts1));
-          DoubleEndedList.push_back(vars, DAE.COMP(id,elts11,source,cmt));
-          DoubleEndedList.push_list_back(eqs, elts3);
+          DoubleEnded.push_back(vars, DAE.COMP(id,elts11,source,cmt));
+          DoubleEnded.push_list_back(eqs, elts3);
         then ();
 
       case DAE.EQUATION()
         algorithm
-          DoubleEndedList.push_back(eqs, elt);
+          DoubleEnded.push_back(eqs, elt);
         then ();
 
       case DAE.EQUEQUATION()
         algorithm
-          DoubleEndedList.push_back(eqs, elt);
+          DoubleEnded.push_back(eqs, elt);
         then ();
 
       case DAE.INITIALEQUATION()
         algorithm
-          DoubleEndedList.push_back(eqs, elt);
+          DoubleEnded.push_back(eqs, elt);
         then ();
 
       case DAE.ARRAY_EQUATION()
         algorithm
-          DoubleEndedList.push_back(eqs, elt);
+          DoubleEnded.push_back(eqs, elt);
         then ();
 
       case DAE.INITIAL_ARRAY_EQUATION()
         algorithm
-          DoubleEndedList.push_back(eqs, elt);
+          DoubleEnded.push_back(eqs, elt);
         then ();
 
       case DAE.COMPLEX_EQUATION()
         algorithm
-          DoubleEndedList.push_back(eqs, elt);
+          DoubleEnded.push_back(eqs, elt);
         then ();
 
       case DAE.INITIAL_COMPLEX_EQUATION()
         algorithm
-          DoubleEndedList.push_back(eqs, elt);
+          DoubleEnded.push_back(eqs, elt);
         then ();
 
       case DAE.INITIALDEFINE()
         algorithm
-          DoubleEndedList.push_back(eqs, elt);
+          DoubleEnded.push_back(eqs, elt);
         then ();
 
       case DAE.DEFINE()
         algorithm
-          DoubleEndedList.push_back(eqs, elt);
+          DoubleEnded.push_back(eqs, elt);
         then ();
 
       case DAE.WHEN_EQUATION()
         algorithm
-          DoubleEndedList.push_back(eqs, elt);
+          DoubleEnded.push_back(eqs, elt);
         then ();
 
       case DAE.FOR_EQUATION()
         algorithm
-          DoubleEndedList.push_back(eqs, elt);
+          DoubleEnded.push_back(eqs, elt);
         then ();
 
       case DAE.IF_EQUATION()
         algorithm
-          DoubleEndedList.push_back(eqs, elt);
+          DoubleEnded.push_back(eqs, elt);
         then ();
 
       case DAE.INITIAL_IF_EQUATION()
         algorithm
-          DoubleEndedList.push_back(eqs, elt);
+          DoubleEnded.push_back(eqs, elt);
         then ();
 
       case DAE.ALGORITHM()
         algorithm
-          DoubleEndedList.push_back(eqs, elt);
+          DoubleEnded.push_back(eqs, elt);
         then ();
 
       case DAE.INITIALALGORITHM()
         algorithm
-          DoubleEndedList.push_back(eqs, elt);
+          DoubleEnded.push_back(eqs, elt);
         then ();
 
       // adrpo: TODO! FIXME! why are external object constructor calls added to the non-equations DAE??
       // PA: are these external object constructor CALLS? Do not think so. But they should anyway be in funcs..
       case DAE.EXTOBJECTCLASS()
         algorithm
-          DoubleEndedList.push_back(vars, elt);
+          DoubleEnded.push_back(vars, elt);
         then ();
 
       case DAE.ASSERT()
         algorithm
-          DoubleEndedList.push_back(eqs, elt);
+          DoubleEnded.push_back(eqs, elt);
         then ();
 
       case DAE.INITIAL_ASSERT()
         algorithm
-          DoubleEndedList.push_back(eqs, elt);
+          DoubleEnded.push_back(eqs, elt);
         then ();
 
       case DAE.TERMINATE()
         algorithm
-          DoubleEndedList.push_back(eqs, elt);
+          DoubleEnded.push_back(eqs, elt);
         then ();
 
       case DAE.INITIAL_TERMINATE()
         algorithm
-          DoubleEndedList.push_back(eqs, elt);
+          DoubleEnded.push_back(eqs, elt);
         then ();
 
       case DAE.REINIT()
         algorithm
-          DoubleEndedList.push_back(eqs, elt);
+          DoubleEnded.push_back(eqs, elt);
         then ();
 
       // handle also NORETCALL! Connections.root(...)
       case DAE.NORETCALL()
         algorithm
-          DoubleEndedList.push_back(eqs, elt);
+          DoubleEnded.push_back(eqs, elt);
         then ();
 
       case DAE.INITIAL_NORETCALL()
         algorithm
-          DoubleEndedList.push_back(eqs, elt);
+          DoubleEnded.push_back(eqs, elt);
         then ();
 
       else
@@ -518,8 +518,8 @@ algorithm
         then fail();
     end match;
   end for;
-  allVars := DAE.DAE(DoubleEndedList.toListAndClear(vars));
-  allEqs := DAE.DAE(DoubleEndedList.toListAndClear(eqs));
+  allVars := DAE.DAE(DoubleEnded.toListAndClear(vars));
+  allEqs := DAE.DAE(DoubleEnded.toListAndClear(eqs));
 end splitDAEIntoVarsAndEquations;
 
 public function removeVariables "Remove the variables in the list from the DAE"
@@ -6608,4 +6608,3 @@ end getParameters;
 
 annotation(__OpenModelica_Interface="frontend");
 end DAEUtil;
-

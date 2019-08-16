@@ -53,6 +53,7 @@ protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
+protected import DoubleEnded;
 protected import ElementSource;
 protected import EvaluateFunctions;
 protected import Expression;
@@ -2739,7 +2740,7 @@ protected
   Integer numberMathEvents;
   list<BackendDAE.TimeEvent> timeEvents;
   BackendDAE.ZeroCrossingSet zeroCrossingLst, sampleLst;
-  DoubleEndedList<BackendDAE.ZeroCrossing> relationsLst;
+  DoubleEnded.MutableList<BackendDAE.ZeroCrossing> relationsLst;
   protected partial function Func
     input output BackendDAE.ZeroCrossing zc;
     input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
@@ -2749,9 +2750,9 @@ algorithm
   BackendDAE.EVENT_INFO(timeEvents, zeroCrossingLst, relationsLst, sampleLst, numberMathEvents) := eInfoIn;
   timeEvents := List.map2(timeEvents, replaceTimeEvents, inVariableReplacements, inFuncTypeExpExpToBooleanOption);
   zc := function replaceZeroCrossing(inVariableReplacements=inVariableReplacements);
-  DoubleEndedList.mapNoCopy_1(zeroCrossingLst.zc, zc, inFuncTypeExpExpToBooleanOption);
-  DoubleEndedList.mapNoCopy_1(sampleLst.zc, zc, inFuncTypeExpExpToBooleanOption);
-  DoubleEndedList.mapNoCopy_1(relationsLst, zc, inFuncTypeExpExpToBooleanOption);
+  DoubleEnded.mapNoCopy_1(zeroCrossingLst.zc, zc, inFuncTypeExpExpToBooleanOption);
+  DoubleEnded.mapNoCopy_1(sampleLst.zc, zc, inFuncTypeExpExpToBooleanOption);
+  DoubleEnded.mapNoCopy_1(relationsLst, zc, inFuncTypeExpExpToBooleanOption);
   eInfoOut := BackendDAE.EVENT_INFO(timeEvents,zeroCrossingLst,relationsLst,sampleLst,numberMathEvents);
 end replaceEventInfo;
 

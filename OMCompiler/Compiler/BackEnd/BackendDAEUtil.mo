@@ -78,6 +78,7 @@ import DAEDump;
 import DAEMode;
 import DAEUtil;
 import Debug;
+import DoubleEnded;
 import Differentiate;
 import DumpGraphML;
 import DynamicOptimization;
@@ -604,7 +605,7 @@ protected
 algorithm
   outNumZeroCrossings := ZeroCrossings.length(eventInfo.zeroCrossings);
   outNumTimeEvents := listLength(eventInfo.timeEvents);
-  outNumRelations := DoubleEndedList.length(eventInfo.relations);
+  outNumRelations := DoubleEnded.length(eventInfo.relations);
   outNumMathEventFunctions := eventInfo.numberMathEvents;
 end numberOfZeroCrossings;
 
@@ -9022,7 +9023,7 @@ end collapseRemovedEqs1;
 public function emptyEventInfo
   output BackendDAE.EventInfo info;
 algorithm
-  info := BackendDAE.EVENT_INFO({}, ZeroCrossings.new(), DoubleEndedList.fromList({}), ZeroCrossings.new(), 0);
+  info := BackendDAE.EVENT_INFO({}, ZeroCrossings.new(), DoubleEnded.fromList({}), ZeroCrossings.new(), 0);
 end emptyEventInfo;
 
 public function getSubClock

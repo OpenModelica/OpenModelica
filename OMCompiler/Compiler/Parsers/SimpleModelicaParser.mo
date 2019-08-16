@@ -32,6 +32,7 @@
 encapsulated package SimpleModelicaParser
 
 import LexerModelicaDiff.{Token,TokenId,tokenContent,printToken,modelicaDiffTokenEq};
+import DoubleEnded;
 
 protected
 
@@ -45,7 +46,6 @@ import System;
 import List;
 import StringUtil;
 import MetaModelica.Dangerous.listReverseInPlace;
-import DoubleEndedList;
 
 constant Token newlineToken = Token.TOKEN("", TokenId.NEWLINE, "\n", 1, 1, 1, 1, 1, 1);
 
@@ -1743,7 +1743,7 @@ function addCommentAtLabelPath
 protected
   ParseTree n, n2, label, pathFirst;
   list<ParseTree> rest, nodes, pathRest;
-  DoubleEndedList<ParseTree> delst;
+  DoubleEnded.MutableList<ParseTree> delst;
   Boolean b;
 algorithm
   if listEmpty(path) then
@@ -1751,7 +1751,7 @@ algorithm
     tree := LEAF(tok)::tree;
     return;
   end if;
-  delst := DoubleEndedList.fromList({});
+  delst := DoubleEnded.fromList({});
   rest := tree;
   while not listEmpty(rest) loop
     n::rest := rest;
@@ -1776,9 +1776,9 @@ algorithm
         then (n2,b);
       else (n,false);
     end match;
-    DoubleEndedList.push_back(delst, n2);
+    DoubleEnded.push_back(delst, n2);
     if b then
-      tree := DoubleEndedList.toListAndClear(delst, prependToList=rest);
+      tree := DoubleEnded.toListAndClear(delst, prependToList=rest);
       success := true;
       return;
     end if;
@@ -1794,14 +1794,14 @@ function removeCommentAtLabelPath
 protected
   ParseTree n, n2, label, pathFirst;
   list<ParseTree> rest, nodes, pathRest;
-  DoubleEndedList<ParseTree> delst;
+  DoubleEnded.MutableList<ParseTree> delst;
   Boolean b;
 algorithm
   if listEmpty(path) then
     (tree,success as true) := removeCommentAtThisLabel(tree, tok);
     return;
   end if;
-  delst := DoubleEndedList.fromList({});
+  delst := DoubleEnded.fromList({});
   rest := tree;
   while not listEmpty(rest) loop
     n::rest := rest;
@@ -1826,9 +1826,9 @@ algorithm
         then (n2,b);
       else (n,false);
     end match;
-    DoubleEndedList.push_back(delst, n2);
+    DoubleEnded.push_back(delst, n2);
     if b then
-      tree := DoubleEndedList.toListAndClear(delst, prependToList=rest);
+      tree := DoubleEnded.toListAndClear(delst, prependToList=rest);
       success := true;
       return;
     end if;
@@ -1841,32 +1841,32 @@ function removeCommentAtThisLabel
   input Token tok;
   output Boolean success=false;
 protected
-  DoubleEndedList<ParseTree> delst;
+  DoubleEnded.MutableList<ParseTree> delst;
   list<ParseTree> rest=tree, nodes;
   ParseTree n;
 algorithm
-  delst := DoubleEndedList.fromList({});
+  delst := DoubleEnded.fromList({});
   while not listEmpty(rest) loop
     n::rest := rest;
     _ := match n
       case LEAF() guard modelicaDiffTokenEq(n.token, tok)
         algorithm
           success := true;
-          tree := DoubleEndedList.toListAndClear(delst, prependToList=rest);
+          tree := DoubleEnded.toListAndClear(delst, prependToList=rest);
           return;
         then fail();
       case NODE(label=EMPTY())
         algorithm
           (nodes,success) := removeCommentAtThisLabel(n.nodes, tok);
           if success then
-            DoubleEndedList.push_back(delst, NODE(EMPTY(), nodes));
-            tree := DoubleEndedList.toListAndClear(delst, prependToList=rest);
+            DoubleEnded.push_back(delst, NODE(EMPTY(), nodes));
+            tree := DoubleEnded.toListAndClear(delst, prependToList=rest);
             return;
           end if;
         then ();
       else ();
     end match;
-    DoubleEndedList.push_back(delst, n);
+    DoubleEnded.push_back(delst, n);
   end while;
 end removeCommentAtThisLabel;
 

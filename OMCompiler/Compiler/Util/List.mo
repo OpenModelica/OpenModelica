@@ -99,7 +99,7 @@ protected
 import Array;
 import MetaModelica.Dangerous.{listReverseInPlace, arrayGetNoBoundsChecking, arrayUpdateNoBoundsChecking, arrayCreateNoInit};
 import MetaModelica.Dangerous;
-import DoubleEndedList;
+import DoubleEnded;
 import GC;
 
 public function create<T>
@@ -2000,7 +2000,7 @@ public function mapCheckReferenceEq<TI>
   end MapFunc;
 protected
   Boolean allEq=true;
-  DoubleEndedList<TI> delst;
+  DoubleEnded.MutableList<TI> delst;
   Integer n=0;
   TI e1;
 algorithm
@@ -2009,22 +2009,22 @@ algorithm
     // Preserve reference equality without any allocation if nothing changed
     if (if allEq then not referenceEq(e, e1) else false) then
       allEq:=false;
-      delst := DoubleEndedList.empty(e1);
+      delst := DoubleEnded.empty(e1);
       for elt in inList loop
         if n < 1 then
           break;
         end if;
-        DoubleEndedList.push_back(delst, elt);
+        DoubleEnded.push_back(delst, elt);
         n := n-1;
       end for;
     end if;
     if allEq then
       n := n + 1;
     else
-      DoubleEndedList.push_back(delst, e1);
+      DoubleEnded.push_back(delst, e1);
     end if;
   end for;
-  outList := if allEq then inList else DoubleEndedList.toListAndClear(delst);
+  outList := if allEq then inList else DoubleEnded.toListAndClear(delst);
 end mapCheckReferenceEq;
 
 public function mapReverse<TI, TO>
@@ -4230,29 +4230,29 @@ public function map2FoldCheckReferenceEq<TIO, FT, ArgT1, ArgT2>
 protected
   TIO res;
   Boolean allEq=true;
-  DoubleEndedList<TIO> delst;
+  DoubleEnded.MutableList<TIO> delst;
   Integer n=0;
 algorithm
   for e in inList loop
     (res, outArg) := inFunc(e, inConstArg, inConstArg2, outArg);
     if (if allEq then not referenceEq(e, res) else false) then
       allEq:=false;
-      delst := DoubleEndedList.empty(res);
+      delst := DoubleEnded.empty(res);
       for elt in inList loop
         if n < 1 then
           break;
         end if;
-        DoubleEndedList.push_back(delst, elt);
+        DoubleEnded.push_back(delst, elt);
         n := n-1;
       end for;
     end if;
     if allEq then
       n := n + 1;
     else
-      DoubleEndedList.push_back(delst, res);
+      DoubleEnded.push_back(delst, res);
     end if;
   end for;
-  outList := if allEq then inList else DoubleEndedList.toListAndClear(delst);
+  outList := if allEq then inList else DoubleEnded.toListAndClear(delst);
 end map2FoldCheckReferenceEq;
 
 public function map3Fold<TI, TO, FT, ArgT1, ArgT2, ArgT3>
@@ -6150,20 +6150,20 @@ public function findAndRemove<T>
   end SelectFunc;
 protected
   Integer i=0;
-  DoubleEndedList<T> delst;
+  DoubleEnded.MutableList<T> delst;
   T t;
 algorithm
   for e in inList loop
     if inFunc(e) then
       outElement := e;
-      delst := DoubleEndedList.fromList({});
+      delst := DoubleEnded.fromList({});
       rest := inList;
       for i in 1:i loop
         t::rest := rest;
-        DoubleEndedList.push_back(delst, t);
+        DoubleEnded.push_back(delst, t);
       end for;
       _::rest := rest;
-      rest := DoubleEndedList.toListAndClear(delst, prependToList=rest);
+      rest := DoubleEnded.toListAndClear(delst, prependToList=rest);
       return;
     end if;
     i := i + 1;
@@ -6188,20 +6188,20 @@ public function findAndRemove1<T, ArgT1>
   end SelectFunc;
 protected
   Integer i=0;
-  DoubleEndedList<T> delst;
+  DoubleEnded.MutableList<T> delst;
   T t;
 algorithm
   for e in inList loop
     if inFunc(e, arg1) then
       outElement := e;
-      delst := DoubleEndedList.fromList({});
+      delst := DoubleEnded.fromList({});
       rest := inList;
       for i in 1:i loop
         t::rest := rest;
-        DoubleEndedList.push_back(delst, t);
+        DoubleEnded.push_back(delst, t);
       end for;
       _::rest := rest;
-      rest := DoubleEndedList.toListAndClear(delst, prependToList=rest);
+      rest := DoubleEnded.toListAndClear(delst, prependToList=rest);
       return;
     end if;
     i := i + 1;
@@ -6366,20 +6366,20 @@ public function replaceAt<T>
 protected
   T e;
   list<T> rest = inList;
-  DoubleEndedList<T> delst;
+  DoubleEnded.MutableList<T> delst;
 algorithm
   true := inPosition >= 1;
-  delst := DoubleEndedList.fromList({});
+  delst := DoubleEnded.fromList({});
 
   // Shuffle elements from inList to outList until the position is reached.
   for i in 1:inPosition-1 loop
     e :: rest := rest;
-    DoubleEndedList.push_back(delst, e);
+    DoubleEnded.push_back(delst, e);
   end for;
 
   // Replace the element at the position and append the remaining elements.
   _ :: rest := rest;
-  outList := DoubleEndedList.toListAndClear(delst, prependToList=inElement::rest);
+  outList := DoubleEnded.toListAndClear(delst, prependToList=inElement::rest);
 end replaceAt;
 
 public function replaceOnTrue<T>
