@@ -5703,5 +5703,68 @@ algorithm
   end if;
 end checkValidEnumLiteral;
 
+public function isRedeclareElement
+"get the redeclare-as-element elements"
+  input SCode.Element element;
+  output Boolean isElement;
+algorithm
+  isElement := match element
+    // redeclare-as-element component
+    case SCode.COMPONENT(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE()))
+      then true;
+    // not redeclare class extends
+    case SCode.CLASS(classDef = SCode.CLASS_EXTENDS())
+      then false;
+    // redeclare-as-element class!, not class extends
+    case SCode.CLASS(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE()))
+      then true;
+    else false;
+  end match;
+end isRedeclareElement;
+
+public function mergeSCodeOptAnn
+  input Option<SCode.Annotation> inModOuter;
+  input Option<SCode.Annotation> inModInner;
+  output Option<SCode.Annotation> outMod;
+algorithm
+  outMod := match (inModOuter, inModInner)
+    local
+      SCode.Mod mod1, mod2, mod;
+
+    case (NONE(),_) then inModInner;
+    case (_,NONE()) then inModOuter;
+    case (SOME(SCode.ANNOTATION(mod1)),SOME(SCode.ANNOTATION(mod2)))
+      equation
+        mod = SCodeUtil.mergeSCodeMods(mod1,mod2);
+      then SOME(SCode.ANNOTATION(mod));
+  end match;
+end mergeSCodeOptAnn;
+
+public function mergeSCodeMods
+  input SCode.Mod inModOuter;
+  input SCode.Mod inModInner;
+  output SCode.Mod outMod;
+algorithm
+  outMod := match (inModOuter, inModInner)
+    local
+      SCode.Final f1, f2;
+      SCode.Each e1, e2;
+      list<SCode.SubMod> subMods1, subMods2;
+      Option<Absyn.Exp> b1, b2;
+      SourceInfo info;
+
+    case (_, SCode.NOMOD()) then inModOuter;
+
+    case (SCode.MOD(f1, e1, subMods1, b1, info),
+          SCode.MOD(_, _, subMods2, b2, _))
+      equation
+        subMods2 = listAppend(subMods1, subMods2);
+        b1 = if isSome(b1) then b1 else b2;
+      then
+        SCode.MOD(f1, e1, subMods2, b1, info);
+
+  end match;
+end mergeSCodeMods;
+
 annotation(__OpenModelica_Interface="frontend");
 end SCodeUtil;

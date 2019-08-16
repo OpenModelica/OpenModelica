@@ -64,6 +64,7 @@ protected import Lookup;
 protected import Mod;
 protected import Util;
 protected import SCodeDump;
+import SCodeInstUtil;
 import SCodeUtil;
 protected import ErrorExt;
 protected import AbsynToSCode;
@@ -183,8 +184,8 @@ algorithm
           (outCache, cenv, outIH) := InstUtil.addClassdefsToEnv(outCache, cenv,
             outIH, inPrefix, cdef_els, inImpl, SOME(mod));
 
-          rest_els := AbsynToSCode.addRedeclareAsElementsToExtends(rest_els,
-            list(e for e guard(AbsynToSCode.isRedeclareElement(e)) in rest_els));
+          rest_els := SCodeInstUtil.addRedeclareAsElementsToExtends(rest_els,
+            list(e for e guard(SCodeUtil.isRedeclareElement(e)) in rest_els));
 
           outMod := Mod.elabUntypedMod(emod, Mod.EXTENDS(el.baseClassPath));
           outMod := Mod.merge(mod, outMod, "", false);
@@ -364,7 +365,7 @@ protected
   list<tuple<SCode.Element, DAE.Mod, Boolean>> elts;
   list<SCode.Element> cdefelts, tmpelts, extendselts;
 algorithm
-  extendselts := List.map(inExtendsElementLst, AbsynToSCode.expandEnumerationClass);
+  extendselts := List.map(inExtendsElementLst, SCodeInstUtil.expandEnumerationClass);
   //fprintln(Flags.DEBUG,"instExtendsAndClassExtendsList: " + inClassName);
   (outCache,outEnv,outIH,outMod,elts,outNormalEqs,outInitialEqs,outNormalAlgs,outInitialAlgs,outComments):=
   instExtendsAndClassExtendsList2(inCache,inEnv,inIH,inMod,inPrefix,extendselts,inClassExtendsElementLst,inElementsFromExtendsScope,inState,inClassName,inImpl,isPartialInst);
@@ -677,7 +678,7 @@ algorithm
 
     case (cache,env,ih,mod,pre,SCode.CLASS(name=n, prefixes = prefixes, classDef = SCode.ENUMERATION(enumLst), cmt = cmt, info = info),impl,_,false)
       equation
-        c = AbsynToSCode.expandEnumeration(n, enumLst, prefixes, cmt, info);
+        c = SCodeInstUtil.expandEnumeration(n, enumLst, prefixes, cmt, info);
         (cache,env,ih,elt,eq,ieq,alg,ialg,mod,outComments) = instDerivedClassesWork(cache, env, ih, mod, pre, c, impl,info, numIter >= Global.recursionDepthLimit, numIter+1);
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg,mod,outComments);

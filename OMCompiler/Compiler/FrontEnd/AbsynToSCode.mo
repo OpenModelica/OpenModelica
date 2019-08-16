@@ -555,7 +555,7 @@ algorithm
     // Else, merge
     case (SOME(SCode.EXTERNALDECL(name,l,out,a,ann1)),SCode.COMMENT(annotation_=ann2))
       equation
-        ann = mergeSCodeOptAnn(ann1, ann2);
+        ann = SCodeUtil.mergeSCodeOptAnn(ann1, ann2);
       then SOME(SCode.EXTERNALDECL(name,l,out,a,ann));
   end match;
 end translateAlternativeExternalAnnotation;
@@ -573,7 +573,7 @@ algorithm
     case (Absyn.EXTERNAL(_,SOME(aann)),_)
       equation
         ann = translateAnnotation(aann);
-        ann = mergeSCodeOptAnn(ann, inMod);
+        ann = SCodeUtil.mergeSCodeOptAnn(ann, inMod);
       then ann;
     case (Absyn.PUBLIC(_::rest),_)
       then mergeSCodeAnnotationsFromParts(Absyn.PUBLIC(rest),inMod);
@@ -1068,17 +1068,16 @@ protected function translateDefineunitParam " help function to translateElement"
   input String inArg;
   output Option<String> expOpt;
 algorithm
-  (expOpt) := matchcontinue(inArgs,inArg)
+  (expOpt) := match (inArgs,inArg)
     local
       String str,name, arg;
       list<Absyn.NamedArg> args;
 
-    case(Absyn.NAMEDARG(name,Absyn.STRING(str))::_,arg) equation
-      true = name == arg;
+    case(Absyn.NAMEDARG(name,Absyn.STRING(str))::_,arg) guard name == arg
     then SOME(str);
     case({},_) then NONE();
     case(_::args,arg) then translateDefineunitParam(args,arg);
-  end matchcontinue;
+  end match;
 end translateDefineunitParam;
 
 protected function translateDefineunitParam2 " help function to translateElement"
@@ -1086,20 +1085,19 @@ protected function translateDefineunitParam2 " help function to translateElement
   input String inArg;
   output Option<Real> weightOpt;
 algorithm
-  weightOpt := matchcontinue(inArgs,inArg)
+  weightOpt := match (inArgs,inArg)
     local
       String name, arg, s;
       Real r;
       list<Absyn.NamedArg> args;
 
-    case(Absyn.NAMEDARG(name,Absyn.REAL(s))::_,arg)
+    case (Absyn.NAMEDARG(name,Absyn.REAL(s))::_,arg) guard name == arg
       equation
-      true = name == arg;
         r = System.stringReal(s);
-    then SOME(r);
+      then SOME(r);
     case({},_) then NONE();
     case(_::args,arg) then translateDefineunitParam2(args,arg);
-  end matchcontinue;
+  end match;
 end translateDefineunitParam2;
 
 protected function translateElementspec
@@ -1725,7 +1723,7 @@ protected function translateElementAddinfo
   input SourceInfo nfo;
   output SCode.Element oelem;
 algorithm
-  oelem := matchcontinue(elem,nfo)
+  oelem := match (elem,nfo)
     local
       SCode.Ident a1;
       Absyn.InnerOuter a2;
@@ -1742,7 +1740,7 @@ algorithm
       then SCode.COMPONENT(a1,p,a6,a7,a8,a10,a11,nfo);
 
     else elem;
-  end matchcontinue;
+  end match;
 end translateElementAddinfo;
 
 /* Modification management */
@@ -1843,289 +1841,6 @@ algorithm
   end match;
 end translateSub;
 
-public function translateSCodeModToNArgs
-"@author: adrpo
- this function translates a SCode.Mod into Absyn.NamedArg
- and prefixes all *LOCAL* expressions with the given prefix.
- Example:
-  Input:
-   prefix       : world
-   modifications: (gravityType  = gravityType, g  = g * Modelica.Math.Vectors.normalize(n), mue  = mue)
-  Gives:
-   namedArgs:     (gravityType  = world.gravityType, g  = world.g * Modelica.Math.Vectors.normalize(world.n), mue  = world.mue)"
-  input String prefix "given prefix, example: world";
-  input SCode.Mod mod "given modifications";
-  output list<Absyn.NamedArg> namedArgs "the resulting named arguments";
-algorithm
-  namedArgs := match(prefix, mod)
-    local
-      list<Absyn.NamedArg> nArgs;
-      list<SCode.SubMod> subModLst;
-
-    case (_, SCode.MOD(subModLst = subModLst))
-      equation
-        nArgs = translateSubModToNArgs(prefix, subModLst);
-      then
-        nArgs;
-  end match;
-end translateSCodeModToNArgs;
-
-public function translateSubModToNArgs
-"@author: adrpo
- this function translates a SCode.SubMod into Absyn.NamedArg
- and prefixes all *LOCAL* expressions with the given prefix."
-  input String prefix "given prefix, example: world";
-  input list<SCode.SubMod> subMods "given sub modifications";
-  output list<Absyn.NamedArg> namedArgs "the resulting named arguments";
-algorithm
-  namedArgs := match(prefix, subMods)
-    local
-      list<Absyn.NamedArg> nArgs;
-      list<SCode.SubMod> subModLst;
-      Absyn.Exp exp;
-      SCode.Ident ident;
-    // deal with the empty list
-    case (_, {}) then {};
-    // deal with named modifiers
-    case (_, SCode.NAMEMOD(ident, SCode.MOD(binding = SOME(exp)))::subModLst)
-      equation
-        nArgs = translateSubModToNArgs(prefix, subModLst);
-        exp = prefixUnqualifiedCrefsFromExp(exp, prefix);
-      then
-        Absyn.NAMEDARG(ident,exp)::nArgs;
-  end match;
-end translateSubModToNArgs;
-
-public function prefixTuple
-  input tuple<Absyn.Exp, Absyn.Exp> expTuple;
-  input String prefix;
-  output tuple<Absyn.Exp, Absyn.Exp> prefixedExpTuple;
-algorithm
-  prefixedExpTuple := match(expTuple, prefix)
-    local
-      Absyn.Exp e1,e2;
-
-    case((e1, e2), _)
-      equation
-        e1 = prefixUnqualifiedCrefsFromExp(e1, prefix);
-        e2 = prefixUnqualifiedCrefsFromExp(e2, prefix);
-      then
-        ((e1, e2));
-  end match;
-end prefixTuple;
-
-public function prefixUnqualifiedCrefsFromExpOpt
-  input Option<Absyn.Exp> inExpOpt;
-  input String prefix;
-  output Option<Absyn.Exp> outExpOpt;
-algorithm
-  outExpOpt := match(inExpOpt, prefix)
-    local
-      Absyn.Exp exp;
-
-    case (NONE(),_) then NONE();
-    case (SOME(exp), _)
-      equation
-        exp = prefixUnqualifiedCrefsFromExp(exp, prefix);
-      then
-        SOME(exp);
-  end match;
-end prefixUnqualifiedCrefsFromExpOpt;
-
-public function prefixUnqualifiedCrefsFromExpLst
-  input list<Absyn.Exp> inExpLst;
-  input String prefix;
-  output list<Absyn.Exp> outExpLst;
-algorithm
-  outExpLst := match(inExpLst, prefix)
-    local
-      Absyn.Exp exp;
-      list<Absyn.Exp> rest;
-
-    case ({},_) then {};
-    case (exp::rest, _)
-      equation
-        exp = prefixUnqualifiedCrefsFromExp(exp, prefix);
-        rest = prefixUnqualifiedCrefsFromExpLst(rest, prefix);
-      then
-        exp::rest;
-  end match;
-end prefixUnqualifiedCrefsFromExpLst;
-
-public function prefixFunctionArgs
-  input Absyn.FunctionArgs inFunctionArgs;
-  input String prefix;
-  output Absyn.FunctionArgs outFunctionArgs;
-algorithm
-  outFunctionArgs := match(inFunctionArgs, prefix)
-    local
-      list<Absyn.Exp> args "args" ;
-      list<Absyn.NamedArg> argNames "argNames" ;
-
-    case (Absyn.FUNCTIONARGS(args, argNames), _)
-      equation
-        args = prefixUnqualifiedCrefsFromExpLst(args, prefix);
-      then
-        Absyn.FUNCTIONARGS(args, argNames);
-  end match;
-end prefixFunctionArgs;
-
-public function prefixUnqualifiedCrefsFromExp
-  input Absyn.Exp exp;
-  input String prefix;
-  output Absyn.Exp prefixedExp;
-algorithm
-  prefixedExp := matchcontinue(exp, prefix)
-    local
-      SCode.Ident s;
-      Absyn.ComponentRef c,fcn;
-      Absyn.Exp e1,e2,e1a,e2a,e,t,f,start,stop,cond;
-      Absyn.Operator op;
-      list<tuple<Absyn.Exp, Absyn.Exp>> lst;
-      Absyn.FunctionArgs args;
-      list<Absyn.Exp> es;
-      Absyn.MatchType matchType;
-      Absyn.Exp head, rest;
-      Absyn.Exp inputExp;
-      list<Absyn.ElementItem> localDecls;
-      list<Absyn.Case> cases;
-      Option<String> comment;
-      list<list<Absyn.Exp>> esLstLst;
-      Option<Absyn.Exp> expOpt;
-
-    // deal with basic types
-    case (Absyn.INTEGER(_), _) then exp;
-    case (Absyn.REAL(_), _) then exp;
-    case (Absyn.STRING(_), _) then exp;
-    case (Absyn.BOOL(_), _) then exp;
-
-    // do NOT prefix if you have qualified component references
-    case (Absyn.CREF(componentRef = Absyn.CREF_QUAL()), _) then exp;
-
-    // do prefix if you have simple component references
-    case (Absyn.CREF(componentRef = c as Absyn.CREF_IDENT()), _)
-      equation
-        e = AbsynUtil.crefExp(Absyn.CREF_QUAL(prefix, {}, c));
-      then
-        e;
-    // binary
-    case (Absyn.BINARY(exp1 = e1,op = op,exp2 = e2), _)
-      equation
-        e1a = prefixUnqualifiedCrefsFromExp(e1, prefix);
-        e2a = prefixUnqualifiedCrefsFromExp(e2, prefix);
-      then
-        Absyn.BINARY(e1a, op, e2a);
-    // unary
-    case (Absyn.UNARY(op = op, exp = e), _)
-      equation
-        e = prefixUnqualifiedCrefsFromExp(e, prefix);
-      then
-        Absyn.UNARY(op, e);
-    // binary logical
-    case (Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2), _)
-      equation
-        e1a = prefixUnqualifiedCrefsFromExp(e1, prefix);
-        e2a = prefixUnqualifiedCrefsFromExp(e2, prefix);
-      then
-        Absyn.LBINARY(e1a, op, e2a);
-    // unary logical
-    case (Absyn.LUNARY(op = op,exp = e), _)
-      equation
-        e = prefixUnqualifiedCrefsFromExp(e, prefix);
-      then
-        Absyn.LUNARY(op, e);
-    // relations
-    case (Absyn.RELATION(exp1 = e1,op = op,exp2 = e2), _)
-      equation
-        e1a = prefixUnqualifiedCrefsFromExp(e1, prefix);
-        e2a = prefixUnqualifiedCrefsFromExp(e2, prefix);
-      then
-        Absyn.RELATION(e1a, op, e2a);
-    // if expressions
-    case (Absyn.IFEXP(ifExp = cond,trueBranch = t,elseBranch = f,elseIfBranch = lst), _)
-      equation
-        cond = prefixUnqualifiedCrefsFromExp(cond, prefix);
-        t = prefixUnqualifiedCrefsFromExp(t, prefix);
-        f = prefixUnqualifiedCrefsFromExp(f, prefix);
-        lst = List.map1(lst, prefixTuple, prefix); // TODO! fixme, prefix these also.
-      then
-        Absyn.IFEXP(cond, t, f, lst);
-    // calls
-    case (Absyn.CALL(function_ = fcn,functionArgs = args), _)
-      equation
-        args = prefixFunctionArgs(args, prefix);
-      then
-        Absyn.CALL(fcn, args);
-    // partial evaluated functions
-    case (Absyn.PARTEVALFUNCTION(function_ = fcn, functionArgs = args), _)
-      equation
-        args = prefixFunctionArgs(args, prefix);
-      then
-        Absyn.PARTEVALFUNCTION(fcn, args);
-    // arrays
-    case (Absyn.ARRAY(arrayExp = es), _)
-      equation
-        es = List.map1(es, prefixUnqualifiedCrefsFromExp, prefix);
-      then
-        Absyn.ARRAY(es);
-    // tuples
-    case (Absyn.TUPLE(expressions = es), _)
-      equation
-        es = List.map1(es, prefixUnqualifiedCrefsFromExp, prefix);
-      then
-        Absyn.TUPLE(es);
-    // matrix
-    case (Absyn.MATRIX(matrix = esLstLst), _)
-      equation
-        esLstLst = List.map1(esLstLst, prefixUnqualifiedCrefsFromExpLst, prefix);
-      then
-        Absyn.MATRIX(esLstLst);
-    // range
-    case (Absyn.RANGE(start = start,step = expOpt,stop = stop), _)
-      equation
-        start = prefixUnqualifiedCrefsFromExp(start, prefix);
-        expOpt = prefixUnqualifiedCrefsFromExpOpt(expOpt, prefix);
-        stop = prefixUnqualifiedCrefsFromExp(stop, prefix);
-      then
-        Absyn.RANGE(start, expOpt, stop);
-    // end
-    case (Absyn.END(),_) then exp;
-    // MetaModelica expressions!
-    case (Absyn.LIST(es), _)
-      equation
-        es = List.map1(es, prefixUnqualifiedCrefsFromExp, prefix);
-      then
-        Absyn.LIST(es);
-    // cons
-    case (Absyn.CONS(head, rest), _)
-      equation
-        head = prefixUnqualifiedCrefsFromExp(head, prefix);
-        rest = prefixUnqualifiedCrefsFromExp(rest, prefix);
-      then
-        Absyn.CONS(head, rest);
-    // as
-    case (Absyn.AS(s, rest), _)
-      equation
-        rest = prefixUnqualifiedCrefsFromExp(rest, prefix);
-      then
-        Absyn.AS(s, rest);
-    // matchexp
-    case (Absyn.MATCHEXP(matchType, inputExp, localDecls, cases, comment), _)
-      then
-        Absyn.MATCHEXP(matchType, inputExp, localDecls, cases, comment);
-    // something else, just return the expression
-    else exp;
-  end matchcontinue;
-end prefixUnqualifiedCrefsFromExp;
-
-public function getImportFromElement
-"Gets the Absyn.Import from an SCode.Element (fails if the element is not SCode.IMPORT)"
-  input SCode.Element elt;
-  output Absyn.Import imp;
-algorithm
-  SCode.IMPORT(imp = imp) := elt;
-end getImportFromElement;
-
 protected function makeTypeVarElement
   input String str;
   input SourceInfo info;
@@ -2157,485 +1872,6 @@ algorithm
     case (Absyn.NON_EACH()) then SCode.NOT_EACH();
   end match;
 end translateEach;
-
-public function isRedeclareElement
-"get the redeclare-as-element elements"
-  input SCode.Element element;
-  output Boolean isElement;
-algorithm
-  isElement := match element
-    // redeclare-as-element component
-    case SCode.COMPONENT(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE()))
-      then true;
-    // not redeclare class extends
-    case SCode.CLASS(classDef = SCode.CLASS_EXTENDS())
-      then false;
-    // redeclare-as-element class!, not class extends
-    case SCode.CLASS(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE()))
-      then true;
-    else false;
-  end match;
-end isRedeclareElement;
-
-public function addRedeclareAsElementsToExtends
-"add the redeclare-as-element elements to extends"
-  input list<SCode.Element> inElements;
-  input list<SCode.Element> redeclareElements;
-  output list<SCode.Element> outExtendsElements;
-algorithm
-  outExtendsElements := matchcontinue (inElements, redeclareElements)
-    local
-      SCode.Element el;
-      list<SCode.Element> redecls, rest, out;
-      Absyn.Path baseClassPath;
-      SCode.Visibility visibility;
-      SCode.Mod mod;
-      Option<SCode.Annotation> ann "the extends annotation";
-      SourceInfo info;
-      SCode.Mod redeclareMod;
-      list<SCode.SubMod> submods;
-
-    // empty, return the same
-    case (_, {}) then inElements;
-
-    // empty elements
-    case ({}, _) then {};
-
-    // we got some
-    case (SCode.EXTENDS(baseClassPath, visibility, mod, ann, info)::rest, redecls)
-      equation
-        submods = makeElementsIntoSubMods(SCode.NOT_FINAL(), SCode.NOT_EACH(), redecls);
-        redeclareMod = SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), submods, NONE(), info);
-        mod = mergeSCodeMods(redeclareMod, mod);
-        out = addRedeclareAsElementsToExtends(rest, redecls);
-      then
-        SCode.EXTENDS(baseClassPath, visibility, mod, ann, info)::out;
-
-    // failure
-    case ((el as SCode.EXTENDS())::_, redecls)
-      equation
-        print("- AbsynToSCode.addRedeclareAsElementsToExtends failed on:\nextends:\n\t" + SCodeDump.shortElementStr(el) +
-                 "\nredeclares:\n" + stringDelimitList(List.map1(redecls, SCodeDump.unparseElementStr, SCodeDump.defaultOptions), "\n") + "\n");
-      then
-        fail();
-
-    // ignore non-extends
-    case (el::rest, redecls)
-      equation
-        out = addRedeclareAsElementsToExtends(rest, redecls);
-      then
-        el::out;
-
-  end matchcontinue;
-end addRedeclareAsElementsToExtends;
-
-protected function mergeSCodeMods
-  input SCode.Mod inModOuter;
-  input SCode.Mod inModInner;
-  output SCode.Mod outMod;
-algorithm
-  outMod := matchcontinue(inModOuter, inModInner)
-    local
-      SCode.Final f1, f2;
-      SCode.Each e1, e2;
-      list<SCode.SubMod> subMods1, subMods2;
-      Option<Absyn.Exp> b1, b2;
-      SourceInfo info;
-
-    // inner is NOMOD
-    case (_, SCode.NOMOD()) then inModOuter;
-
-    // both are redeclarations
-    //case (SCode.REDECL(f1, e1, redecls), SCode.REDECL(f2, e2, els))
-    //  equation
-    //    els = listAppend(redecls, els);
-    //  then
-    //    SCode.REDECL(f2, e2, els);
-
-    // inner is mod
-    //case (SCode.REDECL(f1, e1, redecls), SCode.MOD(f2, e2, subMods, b, info))
-    //  equation
-    //    // we need to make each redcls element into a submod!
-    //    newSubMods = makeElementsIntoSubMods(f1, e1, redecls);
-    //    newSubMods = listAppend(newSubMods, subMods);
-    //  then
-    //    SCode.MOD(f2, e2, newSubMods, b, info);
-    case (SCode.MOD(f1, e1, subMods1, b1, info),
-          SCode.MOD(_, _, subMods2, b2, _))
-      equation
-        subMods2 = listAppend(subMods1, subMods2);
-        b1 = if isSome(b1) then b1 else b2;
-      then
-        SCode.MOD(f1, e1, subMods2, b1, info);
-
-    // failure
-    else
-      equation
-        print("AbsynToSCode.mergeSCodeMods failed on:\nouterMod: " + SCodeDump.printModStr(inModOuter,SCodeDump.defaultOptions) +
-               "\ninnerMod: " + SCodeDump.printModStr(inModInner,SCodeDump.defaultOptions) + "\n");
-      then
-        fail();
-
-  end matchcontinue;
-end mergeSCodeMods;
-
-protected function mergeSCodeOptAnn
-  input Option<SCode.Annotation> inModOuter;
-  input Option<SCode.Annotation> inModInner;
-  output Option<SCode.Annotation> outMod;
-algorithm
-  outMod := match (inModOuter, inModInner)
-    local
-      SCode.Mod mod1, mod2, mod;
-
-    case (NONE(),_) then inModInner;
-    case (_,NONE()) then inModOuter;
-    case (SOME(SCode.ANNOTATION(mod1)),SOME(SCode.ANNOTATION(mod2)))
-      equation
-        mod = mergeSCodeMods(mod1,mod2);
-      then SOME(SCode.ANNOTATION(mod));
-  end match;
-end mergeSCodeOptAnn;
-
-protected function makeElementsIntoSubMods
-"transform elements into submods with named mods"
-  input SCode.Final inFinal;
-  input SCode.Each inEach;
-  input list<SCode.Element> inElements;
-  output list<SCode.SubMod> outSubMods;
-algorithm
-  outSubMods := matchcontinue (inFinal, inEach, inElements)
-    local
-      SCode.Element el;
-      list<SCode.Element> rest;
-      SCode.Final f;
-      SCode.Each e;
-      SCode.Ident n;
-      list<SCode.SubMod> newSubMods;
-
-    // empty
-    case (_, _, {}) then {};
-
-    // class extends, error!
-    case (f, e, (el as SCode.CLASS(classDef = SCode.CLASS_EXTENDS()))::rest)
-      equation
-        // print an error here
-        print("- AbsynToSCode.makeElementsIntoSubMods ignoring class-extends redeclare-as-element: " + SCodeDump.unparseElementStr(el,SCodeDump.defaultOptions) + "\n");
-        // recurse
-        newSubMods = makeElementsIntoSubMods(f, e, rest);
-      then
-        newSubMods;
-
-    // component
-    case (f, e, (el as SCode.COMPONENT(name = n))::rest)
-      equation
-        // recurse
-        newSubMods = makeElementsIntoSubMods(f, e, rest);
-      then
-        SCode.NAMEMOD(n,SCode.REDECL(f,e,el))::newSubMods;
-
-    // class
-    case (f, e, (el as SCode.CLASS(name = n))::rest)
-      equation
-        // recurse
-        newSubMods = makeElementsIntoSubMods(f, e, rest);
-      then
-        SCode.NAMEMOD(n,SCode.REDECL(f,e,el))::newSubMods;
-
-    // rest
-    case (f, e, el::rest)
-      equation
-        // print an error here
-        print("- AbsynToSCode.makeElementsIntoSubMods ignoring redeclare-as-element redeclaration: " + SCodeDump.unparseElementStr(el,SCodeDump.defaultOptions) + "\n");
-        // recurse
-        newSubMods = makeElementsIntoSubMods(f, e, rest);
-      then
-        newSubMods;
-  end matchcontinue;
-end makeElementsIntoSubMods;
-
-public function constantBindingOrNone
-"@author: adrpo
- keeps the constant binding and if not returns none"
-  input Option<Absyn.Exp> inBinding;
-  output Option<Absyn.Exp> outBinding;
-algorithm
-  outBinding := matchcontinue(inBinding)
-    local
-      Absyn.Exp e;
-
-    // keep it
-    case SOME(e)
-      equation
-        {} = AbsynUtil.getCrefFromExp(e, true, true);
-      then
-        inBinding;
-    // else
-    else NONE();
-  end matchcontinue;
-end constantBindingOrNone;
-
-public function removeNonConstantBindingsKeepRedeclares
-"@author: adrpo
- keeps the redeclares and removes all non-constant bindings!
- if onlyRedeclare is true then bindings are removed completely!"
-  input SCode.Mod inMod;
-  input Boolean onlyRedeclares;
-  output SCode.Mod outMod;
-algorithm
-  outMod := matchcontinue(inMod, onlyRedeclares)
-    local
-      list<SCode.SubMod> sl;
-      SCode.Final fp;
-      SCode.Each ep;
-      SourceInfo i;
-      Option<Absyn.Exp> binding;
-
-    case (SCode.MOD(fp, ep, sl, binding, i), _)
-      equation
-        binding = if onlyRedeclares then NONE() else constantBindingOrNone(binding);
-        sl = removeNonConstantBindingsKeepRedeclaresFromSubMod(sl, onlyRedeclares);
-      then
-        SCode.MOD(fp, ep, sl, binding, i);
-
-    case (SCode.REDECL(), _) then inMod;
-
-    else inMod;
-
-  end matchcontinue;
-end removeNonConstantBindingsKeepRedeclares;
-
-protected function removeNonConstantBindingsKeepRedeclaresFromSubMod
-"@author: adrpo
- removes the non-constant bindings in submods and keeps the redeclares"
-  input list<SCode.SubMod> inSl;
-  input Boolean onlyRedeclares;
-  output list<SCode.SubMod> outSl;
-algorithm
-  outSl := match(inSl, onlyRedeclares)
-    local
-      String n;
-      list<SCode.SubMod> sl,rest;
-      SCode.Mod m;
-      list<SCode.Subscript> ssl;
-
-    case ({}, _) then {};
-
-    case (SCode.NAMEMOD(n, m)::rest, _)
-      equation
-        m = removeNonConstantBindingsKeepRedeclares(m, onlyRedeclares);
-        sl = removeNonConstantBindingsKeepRedeclaresFromSubMod(rest, onlyRedeclares);
-      then
-        SCode.NAMEMOD(n, m)::sl;
-
-  end match;
-end removeNonConstantBindingsKeepRedeclaresFromSubMod;
-
-public function removeReferenceInBinding
-"@author: adrpo
- remove the binding that contains a cref"
-  input Option<Absyn.Exp> inBinding;
-  input Absyn.ComponentRef inCref;
-  output Option<Absyn.Exp> outBinding;
-algorithm
-  outBinding := matchcontinue inBinding
-    local
-      Absyn.Exp e;
-      list<Absyn.ComponentRef> crlst1, crlst2;
-
-    // if cref is not present keep the binding!
-    case SOME(e)
-      equation
-        crlst1 = AbsynUtil.getCrefFromExp(e, true, true);
-        crlst2 = AbsynUtil.removeCrefFromCrefs(crlst1, inCref);
-        true = intEq(listLength(crlst1), listLength(crlst2));
-      then
-        inBinding;
-    // else
-    else NONE();
-  end matchcontinue;
-end removeReferenceInBinding;
-
-public function removeSelfReferenceFromMod
-"@author: adrpo
- remove the self reference from mod!"
-  input SCode.Mod inMod;
-  input Absyn.ComponentRef inCref;
-  output SCode.Mod outMod;
-algorithm
-  outMod := matchcontinue(inMod, inCref)
-    local
-      list<SCode.SubMod> sl;
-      SCode.Final fp;
-      SCode.Each ep;
-      SourceInfo i;
-      Option<Absyn.Exp> binding;
-
-    case (SCode.MOD(fp, ep, sl, binding, i), _)
-      equation
-        binding = removeReferenceInBinding(binding, inCref);
-        sl = removeSelfReferenceFromSubMod(sl, inCref);
-      then
-        SCode.MOD(fp, ep, sl, binding, i);
-
-    case (SCode.REDECL(), _) then inMod;
-
-    else inMod;
-
-  end matchcontinue;
-end removeSelfReferenceFromMod;
-
-protected function removeSelfReferenceFromSubMod
-"@author: adrpo
- removes the self references from a submod"
-  input list<SCode.SubMod> inSl;
-  input Absyn.ComponentRef inCref;
-  output list<SCode.SubMod> outSl;
-algorithm
-  outSl := match(inSl, inCref)
-    local
-      String n;
-      list<SCode.SubMod> sl,rest;
-      SCode.Mod m;
-      list<SCode.Subscript> ssl;
-
-    case ({}, _) then {};
-
-    case (SCode.NAMEMOD(n, m)::rest, _)
-      equation
-        m = removeSelfReferenceFromMod(m, inCref);
-        sl = removeSelfReferenceFromSubMod(rest, inCref);
-      then
-        SCode.NAMEMOD(n, m)::sl;
-
-  end match;
-end removeSelfReferenceFromSubMod;
-
-protected function expandEnumerationSubMod
-  input SCode.SubMod inSubMod;
-  input Boolean inChanged;
-  output SCode.SubMod outSubMod;
-  output Boolean outChanged;
-algorithm
-  (outSubMod, outChanged) := match inSubMod
-    local
-      SCode.Mod mod, mod1;
-      SCode.Ident ident;
-    case SCode.NAMEMOD(ident=ident, mod=mod)
-      equation
-        mod1 = expandEnumerationMod(mod);
-      then
-        if referenceEq(mod, mod1) then (inSubMod, inChanged) else (SCode.NAMEMOD(ident, mod1), true);
-    else
-      (inSubMod, inChanged);
-  end match;
-end expandEnumerationSubMod;
-
-public function expandEnumerationMod
-  input SCode.Mod inMod;
-  output SCode.Mod outMod;
-protected
-  SCode.Final f;
-  SCode.Each e;
-  SCode.Element el, el1;
-  list<SCode.SubMod> submod;
-  Option<Absyn.Exp> binding;
-  SourceInfo info;
-  Boolean changed;
-algorithm
-  outMod := match inMod
-    case SCode.REDECL(f, e, el)
-      equation
-        el1 = expandEnumerationClass(el);
-      then
-        if referenceEq(el, el1) then inMod else SCode.REDECL(f, e, el1);
-
-    case SCode.MOD(f, e, submod, binding, info)
-      equation
-        (submod, changed) = List.mapFold(submod, expandEnumerationSubMod, false);
-      then if changed then SCode.MOD(f, e, submod, binding, info) else inMod;
-
-    else inMod;
-  end match;
-end expandEnumerationMod;
-
-public function expandEnumerationClass
-"@author: PA, adrpo
- this function expands the enumeration from a list into a class with components
- if the class is not an enumeration is kept as it is"
-  input SCode.Element inElement;
-  output SCode.Element outElement;
-algorithm
-  outElement := match(inElement)
-    local
-      SCode.Ident n;
-      list<SCode.Enum> l;
-      SCode.Comment cmt;
-      SourceInfo info;
-      SCode.Element c;
-      SCode.Prefixes prefixes;
-      SCode.Mod m, m1;
-      Absyn.Path p;
-      SCode.Visibility v;
-      Option<SCode.Annotation> ann;
-
-    case SCode.CLASS(name = n,restriction = SCode.R_TYPE(), prefixes = prefixes,
-                     classDef = SCode.ENUMERATION(enumLst=l),cmt=cmt,info = info)
-      equation
-        c = expandEnumeration(n, l, prefixes, cmt, info);
-      then
-        c;
-
-    case SCode.EXTENDS(baseClassPath = p, visibility = v, modifications = m, ann = ann, info = info)
-      equation
-
-        m1 = expandEnumerationMod(m);
-      then
-        if referenceEq(m, m1) then inElement else SCode.EXTENDS(p, v, m1, ann, info);
-
-    else inElement;
-
-  end match;
-end expandEnumerationClass;
-
-public function expandEnumeration
-"author: PA
-  This function takes an Ident and list of strings, and returns an enumeration class."
-  input SCode.Ident n;
-  input list<SCode.Enum> l;
-  input SCode.Prefixes prefixes;
-  input SCode.Comment cmt;
-  input SourceInfo info;
-  output SCode.Element outClass;
-algorithm
-  outClass :=
-    SCode.CLASS(
-     n,
-     prefixes,
-     SCode.NOT_ENCAPSULATED(),
-     SCode.NOT_PARTIAL(),
-     SCode.R_ENUMERATION(),
-     makeEnumParts(l, info),
-     cmt,
-     info);
-end expandEnumeration;
-
-public function makeEnumParts
-  input list<SCode.Enum> inEnumLst;
-  input SourceInfo info;
-  output SCode.ClassDef classDef;
-algorithm
-  classDef := SCode.PARTS(makeEnumComponents(inEnumLst, info),{},{},{},{},{},{},NONE());
-end makeEnumParts;
-
-public function makeEnumComponents
-  "Translates a list of Enums to a list of elements of type EnumType."
-  input list<SCode.Enum> inEnumLst;
-  input SourceInfo info;
-  output list<SCode.Element> outSCodeElementLst;
-algorithm
-  outSCodeElementLst := List.map1(inEnumLst, SCodeUtil.makeEnumType, info);
-end makeEnumComponents;
 
 protected function checkTypeSpec
   input Absyn.TypeSpec ts;
@@ -2672,28 +1908,6 @@ algorithm
       then ();
   end match;
 end checkTypeSpec;
-
-public function mergeDimensions
-"@author: adrpo
- redeclare T x where the original type has array dimensions
- but the redeclare doesn't. Keep the original array dimensions then"
-  input SCode.Attributes fromRedeclare;
-  input SCode.Attributes fromOriginal;
-  output SCode.Attributes result;
-algorithm
-  result := matchcontinue(fromRedeclare,fromOriginal)
-    local
-      Absyn.ArrayDim ad1, ad2;
-      SCode.ConnectorType ct1, ct2;
-      SCode.Parallelism p1, p2;
-      SCode.Variability v1, v2;
-      Absyn.Direction d1, d2;
-      Absyn.IsField if1;
-    case(SCode.ATTR({}, ct1, p1, v1, d1, if1), SCode.ATTR(ad2, _, _, _, _, _)) then SCode.ATTR(ad2, ct1, p1, v1, d1, if1);
-    else fromRedeclare;
-
-  end matchcontinue;
-end mergeDimensions;
 
 annotation(__OpenModelica_Interface="frontend");
 end AbsynToSCode;
