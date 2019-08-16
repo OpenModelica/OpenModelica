@@ -1006,34 +1006,36 @@ public constant Message MOVING_PARAMETER_BINDING_TO_INITIAL_EQ_SECTION = MESSAGE
   Util.gettext("Moving binding to initial equation section and setting fixed attribute of %s to false."));
 public constant Message MIXED_DETERMINED = MESSAGE(584, SYMBOLIC(), ERROR(),
   Util.gettext("The initialization problem of given system is mixed-determined. It is under- as well as overdetermined and the mixed-determination-index is too high. [index > %s]\nPlease checkout the option \"--maxMixedDeterminedIndex\" to simulate with a higher threshold or consider changing some initial equations, fixed variables and start values."));
-public constant Message STACK_OVERFLOW_DETAILED = MESSAGE(584, SCRIPTING(), ERROR(),
+public constant Message STACK_OVERFLOW_DETAILED = MESSAGE(585, SCRIPTING(), ERROR(),
   Util.gettext("Stack overflow occurred while evaluating %s:\n%s"));
-public constant Message NF_VECTOR_INVALID_DIMENSIONS = MESSAGE(585, TRANSLATION(), ERROR(),
+public constant Message NF_VECTOR_INVALID_DIMENSIONS = MESSAGE(586, TRANSLATION(), ERROR(),
   Util.gettext("Invalid dimensions %s in %s, no more than one dimension may have size > 1."));
-public constant Message NF_ARRAY_TYPE_MISMATCH = MESSAGE(586, TRANSLATION(), ERROR(),
+public constant Message NF_ARRAY_TYPE_MISMATCH = MESSAGE(587, TRANSLATION(), ERROR(),
   Util.gettext("Array types mismatch. Argument %s (%s) has type %s whereas previous arguments have type %s."));
-public constant Message NF_DIFFERENT_NUM_DIM_IN_ARGUMENTS = MESSAGE(587, TRANSLATION(), ERROR(),
+public constant Message NF_DIFFERENT_NUM_DIM_IN_ARGUMENTS = MESSAGE(588, TRANSLATION(), ERROR(),
   Util.gettext("Different number of dimensions (%s) in arguments to %s."));
-public constant Message NF_CAT_WRONG_DIMENSION = MESSAGE(588, TRANSLATION(), ERROR(),
+public constant Message NF_CAT_WRONG_DIMENSION = MESSAGE(589, TRANSLATION(), ERROR(),
   Util.gettext("The first argument of cat characterizes an existing dimension in the other arguments (1..%s), but got dimension %s."));
-public constant Message NF_CAT_FIRST_ARG_EVAL = MESSAGE(589, TRANSLATION(), ERROR(),
+public constant Message NF_CAT_FIRST_ARG_EVAL = MESSAGE(590, TRANSLATION(), ERROR(),
   Util.gettext("The first argument of cat must be possible to evaluate during compile-time. Expression %s has variability %s."));
-public constant Message COMMA_OPERATOR_DIFFERENT_SIZES = MESSAGE(590, TRANSLATION(), ERROR(),
+public constant Message COMMA_OPERATOR_DIFFERENT_SIZES = MESSAGE(591, TRANSLATION(), ERROR(),
   Util.gettext("Arguments of concatenation comma operator have different sizes for the first dimension: %s has dimension %s and %s has dimension %s."));
-public constant Message NON_STATE_STATESELECT_ALWAYS = MESSAGE(591, SYMBOLIC(), WARNING(),
+public constant Message NON_STATE_STATESELECT_ALWAYS = MESSAGE(592, SYMBOLIC(), WARNING(),
   Util.gettext("Variable %s has attribute stateSelect=StateSelect.always, but was selected as a continuous variable."));
-public constant Message STATE_STATESELECT_NEVER = MESSAGE(592, SYMBOLIC(), WARNING(),
+public constant Message STATE_STATESELECT_NEVER = MESSAGE(593, SYMBOLIC(), WARNING(),
   Util.gettext("Variable %s has attribute stateSelect=StateSelect.never, but was selected as a state"));
-public constant Message FUNCTION_HIGHER_VARIABILITY_BINDING = MESSAGE(593, TRANSLATION(), WARNING(),
+public constant Message FUNCTION_HIGHER_VARIABILITY_BINDING = MESSAGE(594, TRANSLATION(), WARNING(),
   Util.gettext("Component ‘%s’ of variability %s has binding %s of higher variability %s."));
-public constant Message OCG_MISSING_BRANCH = MESSAGE(594, TRANSLATION(), WARNING(),
+public constant Message OCG_MISSING_BRANCH = MESSAGE(595, TRANSLATION(), WARNING(),
   Util.gettext("Connections.rooted(%s) needs exactly one statement Connections.branch(%s, B.R) involving %s but we found none in the graph. Run with -d=cgraphGraphVizFile to debug"));
-public constant Message UNBOUND_PARAMETER_EVALUATE_TRUE = MESSAGE(594, TRANSLATION(), WARNING(),
+public constant Message UNBOUND_PARAMETER_EVALUATE_TRUE = MESSAGE(596, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has annotation(Evaluate=true) and no binding."));
-public constant Message FMI_URI_RESOLVE = MESSAGE(595, TRANSLATION(), WARNING(),
+public constant Message FMI_URI_RESOLVE = MESSAGE(597, TRANSLATION(), WARNING(),
   Util.gettext("Could not resolve URI (%s) at compile-time; copying all loaded packages into the FMU"));
-public constant Message PATTERN_MIXED_POS_NAMED = MESSAGE(596, TRANSLATION(), WARNING(),
+public constant Message PATTERN_MIXED_POS_NAMED = MESSAGE(598, TRANSLATION(), WARNING(),
   Util.gettext("Call to %s contains mixed positional and named arguments."));
+public constant Message STATE_STATESELECT_NEVER_FORCED = MESSAGE(599, TRANSLATION(), WARNING(),
+  Util.gettext("Following variables have attribute stateSelect=StateSelect.never, but cant be statically chosen. %s"));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

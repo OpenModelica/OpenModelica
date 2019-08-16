@@ -1099,8 +1099,9 @@ algorithm
     case (DAE.VARIABLE(), SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS()))))
       then BackendDAE.STATE(1, NONE());
 
-    // variable -> state if have stateSelect = StateSelect.prefer
-    case (DAE.VARIABLE(), SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.PREFER()))))
+    // variable -> state if have stateSelect = StateSelect.prefer, only for linaerization
+    // fix related to ticket #5459
+    case (DAE.VARIABLE(), SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.PREFER())))) guard(Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION))
       then BackendDAE.STATE(1, NONE());
 
     else

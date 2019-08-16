@@ -81,7 +81,7 @@ algorithm
 end PerfectMatching;
 
 public function RegularMatching "
-  This function returns at least a partial matching for singular systems.
+  This function returns at least a partial matching for singular systems, starting from scratch.
   Unmatched nodes are represented by -1."
   input BackendDAE.IncidenceMatrix m;
   input Integer nVars;
@@ -89,14 +89,27 @@ public function RegularMatching "
   output array<Integer> ass1 "eqn := ass1[var]";
   output array<Integer> ass2 "var := ass2[eqn]";
   output Boolean outPerfectMatching=true;
+algorithm
+  ass2 := arrayCreate(nEqns, -1);
+  ass1 := arrayCreate(nVars, -1);
+  (ass1, ass2, outPerfectMatching) := ContinueMatching(m, nVars, nEqns, ass1, ass2);
+end RegularMatching;
+
+public function ContinueMatching "
+  This function returns at least a partial matching for singular systems.
+  Unmatched nodes are represented by -1."
+  input BackendDAE.IncidenceMatrix m;
+  input Integer nVars;
+  input Integer nEqns;
+  input output array<Integer> ass1 "eqn := ass1[var]";
+  input output array<Integer> ass2 "var := ass2[eqn]";
+  output Boolean outPerfectMatching=true;
 protected
   Integer i, j;
   array<Boolean> eMark, vMark;
   array<Integer> eMarkIx, vMarkIx;
   Integer eMarkN=0, vMarkN=0;
 algorithm
-  ass2 := arrayCreate(nEqns, -1);
-  ass1 := arrayCreate(nVars, -1);
   vMark := arrayCreate(nVars, false);
   eMark := arrayCreate(nEqns, false);
   vMarkIx := arrayCreate(nVars, 0);
@@ -114,7 +127,7 @@ algorithm
     end if;
     i := i+1;
   end while;
-end RegularMatching;
+end ContinueMatching;
 
 public function BBMatching
   input BackendDAE.EqSystem inSys;
@@ -5862,6 +5875,24 @@ algorithm
         getUnassigned(ne-1,ass,unassigned);
   end match;
 end getUnassigned;
+
+public function anyUnassigned
+  "author: kabdelhak FHB 2019-08
+  returns true if any assignment is -1."
+  input Integer ne;
+  input array<Integer> ass;
+  output Boolean b;
+algorithm
+  b := match(ne)
+    local
+      list<Integer> unassigned;
+    case 0
+      then false;
+    case _ guard(intLt(ass[ne],1))
+      then true;
+    else anyUnassigned(ne-1,ass);
+  end match;
+end anyUnassigned;
 
 public function getAssignedArray "author: lochel"
   input array<Integer> ass;

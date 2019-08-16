@@ -786,6 +786,48 @@ algorithm
   end if;
 end sort;
 
+public function sort1<T1,T2>
+  "Sorts a list given an ordering function with the mergesort algorithm.
+  Accepts an additional argument.
+    Example:
+      sort({2, 1, 3}, intGt) => {1, 2, 3}
+      sort({2, 1, 3}, intLt) => {3, 2, 1}"
+  input list<T1> inList;
+  input T2 arg;
+  input CompareFunc inCompFunc;
+  output list<T1> outList= {};
+
+  partial function CompareFunc
+    input T1 inElement1;
+    input T1 inElement2;
+    input T2 arg;
+    output Boolean inRes;
+  end CompareFunc;
+protected
+  list<T1> rest = inList;
+  T1 e1, e2;
+  list<T1> left, right;
+  Integer middle;
+algorithm
+  if not listEmpty(rest) then
+    e1 :: rest := rest;
+    if listEmpty(rest) then
+      outList := inList;
+    else
+      e2 :: rest := rest;
+      if listEmpty(rest) then
+        outList := if inCompFunc(e2, e1, arg) then inList else {e2,e1};
+      else
+        middle := intDiv(listLength(inList), 2);
+        (left, right) := split(inList, middle);
+        left := sort1(left, arg, inCompFunc);
+        right := sort1(right, arg, inCompFunc);
+        outList := merge1(left, right, arg, inCompFunc, {});
+      end if;
+    end if;
+  end if;
+end sort1;
+
 public function sortedDuplicates<T>
   "Returns a list of all duplicates in a sorted list, using the given comparison
    function to check for equality."
@@ -930,7 +972,8 @@ algorithm
 end sortedUniqueOnlyDuplicates;
 
 protected function merge<T>
-  "Helper function to sort, merges two sorted lists."
+  "Helper function to sort1, merges two sorted lists.
+  Accepts an additional argument."
   input list<T> inLeft;
   input list<T> inRight;
   input CompareFunc inCompFunc;
@@ -968,6 +1011,48 @@ algorithm
 
   end match;
 end merge;
+
+protected function merge1<T1, T2>
+  "Helper function to sort, merges two sorted lists."
+  input list<T1> inLeft;
+  input list<T1> inRight;
+  input T2 arg;
+  input CompareFunc inCompFunc;
+  input list<T1> acc;
+  output list<T1> outList;
+
+  partial function CompareFunc
+    input T1 inElement1;
+    input T1 inElement2;
+    input T2 arg;
+    output Boolean outRes;
+  end CompareFunc;
+algorithm
+  outList := match (inLeft, inRight)
+    local
+      Boolean b;
+      T1 l, r, el;
+      list<T1> l_rest, r_rest, res;
+
+    /* Tail recursive version */
+    case (l :: l_rest, r :: r_rest)
+      algorithm
+        if inCompFunc(r, l, arg) then
+          r_rest := inRight;
+          el := l;
+        else
+          l_rest := inLeft;
+          el := r;
+        end if;
+      then
+        merge1(l_rest, r_rest, arg, inCompFunc, el :: acc);
+
+    case ({}, {}) then listReverseInPlace(acc);
+    case ({}, _) then append_reverse(acc,inRight);
+    case (_, {}) then append_reverse(acc,inLeft);
+
+  end match;
+end merge1;
 
 public function mergeSorted<T>
   "This function merges two sorted lists into one sorted list. It takes a
@@ -4565,6 +4650,24 @@ public function threadTuple<T1, T2>
 algorithm
   outTuples := list((e1, e2) threaded for e1 in inList1, e2 in inList2);
 end threadTuple;
+
+public function zip<T1, T2>
+  input list<T1> inList1;
+  input list<T2> inList2;
+  output list<tuple<T1, T2>> outTuples = {};
+protected
+  list<T2> dummyList = inList2;
+  T2 t2;
+algorithm
+  if intEq(listLength(inList1),listLength(inList2)) then
+    for t1 in inList1 loop
+      t2::dummyList := dummyList;
+      outTuples := (t1, t2)::outTuples;
+    end for;
+  else fail();
+  end if;
+  outTuples := listReverse(outTuples);
+end zip;
 
 public function unzip<T1, T2>
   "Takes a list of two-element tuples and splits the tuples into two separate

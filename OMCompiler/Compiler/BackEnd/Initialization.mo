@@ -1004,6 +1004,13 @@ algorithm
       vars = BackendVariable.addVar(inVar, vars);
     then (inVar, vars);
 
+    // unfixed variable with StateSelect.prefer
+    // added for ticket #5459
+    case (BackendDAE.VAR(varKind=BackendDAE.VARIABLE()), vars) guard(BackendVariable.varStateSelectPrefer(inVar)) equation
+      false = BackendVariable.varFixed(inVar);
+      vars = BackendVariable.addVar(inVar, vars);
+    then (inVar, vars);
+
     // unfixed discrete -> pre(vd)
     case (BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE(), varType=ty, arryDim=arryDim), vars) equation
       false = BackendVariable.varFixed(inVar);
@@ -1244,6 +1251,7 @@ algorithm
 
     // get state-index list
     stateIndices := BackendVariable.getVarIndexFromVariablesIndexInFirstSet(inEqSystem.orderedVars, initVars);
+    stateIndices := List.sort1(stateIndices, inEqSystem.orderedVars, BackendVariable.startValueSortFunc);
 
     // modify incidence matrix for under-determined systems
     nAddEqs := intMax(nVars-nEqns + index, index);

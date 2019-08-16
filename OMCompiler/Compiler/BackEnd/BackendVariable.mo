@@ -328,6 +328,24 @@ algorithm
   outHasNoStartValue := not varHasStartValue(inVar);
 end varHasNoStartValue;
 
+public function startValueSortFunc
+  "author kabdelhak
+  Function to sort variables with start values in front.
+  Use with List.sort1"
+  input Integer i1;
+  input Integer i2;
+  input BackendDAE.Variables vars;
+  output Boolean swap;
+algorithm
+  if varHasStartValue(BackendVariable.getVarAt(vars,i2))
+   and not varHasStartValue(BackendVariable.getVarAt(vars,i1))
+  then
+    swap := true;
+  else
+    swap := false;
+  end if;
+end startValueSortFunc;
+
 public function varStartOrigin "author: Frenkel TUD
   Returns the StartOrigin of a variable."
   input BackendDAE.Var v;
@@ -459,6 +477,28 @@ algorithm
     else DAE.DEFAULT();
   end match;
 end varStateSelect;
+
+public function varStateSelectPrefer "author: kabdelhak
+  Returns true, if the state select attribute is DAE.PREFER()"
+  input BackendDAE.Var inVar;
+  output Boolean isPrefer;
+algorithm
+  isPrefer := match(varStateSelect(inVar))
+    case DAE.PREFER() then true;
+    else false;
+  end match;
+end varStateSelectPrefer;
+
+public function varStateSelectNever "author: kabdelhak
+  Returns true, if the state select attribute is DAE.NEVER()"
+  input BackendDAE.Var inVar;
+  output Boolean isNever;
+algorithm
+  isNever := match(varStateSelect(inVar))
+    case DAE.NEVER() then true;
+    else false;
+  end match;
+end varStateSelectNever;
 
 public function setVarStateSelect "Sets the state select attribute of a variable."
   input BackendDAE.Var inVar;
