@@ -150,6 +150,7 @@ import Mutable;
 import OperatorOverloading;
 import PrefixUtil;
 import SCodeUtil;
+import SCodeInstUtil;
 import StringUtil;
 import Static;
 import Types;
@@ -1951,7 +1952,7 @@ algorithm
         // no components and at least one extends!
 
         (cdefelts,extendsclasselts,extendselts as _::_,{}) = InstUtil.splitElts(els);
-        extendselts = AbsynToSCode.addRedeclareAsElementsToExtends(extendselts, List.select(els, AbsynToSCode.isRedeclareElement));
+        extendselts = SCodeInstUtil.addRedeclareAsElementsToExtends(extendselts, List.select(els, SCodeUtil.isRedeclareElement));
         (cache,env1,ih) = InstUtil.addClassdefsToEnv(cache, env, ih, pre, cdefelts, impl, SOME(mods));
         (cache,_,_,_,extcomps,{},{},{},{},_) =
         InstExtends.instExtendsAndClassExtendsList(cache, env1, ih, mods, pre, extendselts, extendsclasselts, els, ci_state, className, impl, false);
@@ -2010,7 +2011,7 @@ algorithm
         // remove components from expandable connectors
         // compelts = if_(valueEq(re, SCode.R_CONNECTOR(true)), {}, compelts);
 
-        extendselts = AbsynToSCode.addRedeclareAsElementsToExtends(extendselts, List.select(els, AbsynToSCode.isRedeclareElement));
+        extendselts = SCodeInstUtil.addRedeclareAsElementsToExtends(extendselts, List.select(els, SCodeUtil.isRedeclareElement));
 
         (cache, env1,ih) = InstUtil.addClassdefsToEnv(cache, env, ih, pre,
           cdefelts, impl, SOME(mods), FGraph.isEmptyScope(env));
@@ -2850,8 +2851,8 @@ algorithm
         outState := ClassInf.trans(inState, ClassInf.NEWDEF());
 
         (cdef_els, class_ext_els, extends_els) := InstUtil.splitElts(inClassDef.elementLst);
-        extends_els := AbsynToSCode.addRedeclareAsElementsToExtends(extends_els,
-          List.select(inClassDef.elementLst, AbsynToSCode.isRedeclareElement));
+        extends_els := SCodeInstUtil.addRedeclareAsElementsToExtends(extends_els,
+          List.select(inClassDef.elementLst, SCodeUtil.isRedeclareElement));
 
         // Classes and imports are added to env.
         (outCache, outEnv, outIH) := InstUtil.addClassdefsToEnv(inCache, inEnv,
@@ -3347,7 +3348,7 @@ algorithm
         // and a component modification redeclare X = Z
         // update the component modification to redeclare X = Y
         m = InstUtil.chainRedeclares(mods, m);
-        m = AbsynToSCode.expandEnumerationMod(m);
+        m = SCodeInstUtil.expandEnumerationMod(m);
         m = InstUtil.traverseModAddDims(cache, env, pre, m, inst_dims);
         comp = if referenceEq(oldmod,m) then comp else SCode.COMPONENT(name, prefixes, attr, ts, m, comment, cond, info);
         ci_state = ClassInf.trans(ci_state, ClassInf.FOUND_COMPONENT(name));
@@ -5006,7 +5007,7 @@ algorithm
         (cache,dims) = InstUtil.elabArraydim(cache,cenv, c1, sty, ad, NONE(), impl, true, false, pre, info, inst_dims);
 
         // we really need to keep at least the redeclare modifications here!!
-        smod = AbsynToSCode.removeSelfReferenceFromMod(scodeMod, c1);
+        smod = SCodeInstUtil.removeSelfReferenceFromMod(scodeMod, c1);
         (cache,m) = Mod.elabMod(cache, env, ih, pre, smod, impl, Mod.COMPONENT(n), info); // m = Mod.elabUntypedMod(smod, env, pre);
 
         (cenv, c, ih) = FGraph.createVersionScope(env, n, pre, m, cenv, c, ih);
@@ -5044,7 +5045,7 @@ algorithm
         (cache,dims) = InstUtil.elabArraydim(cache, cenv, c1, sty, ad, NONE(), impl, true, false, pre, info, inst_dims);
 
         // we really need to keep at least the redeclare modifications here!!
-        smod = AbsynToSCode.removeNonConstantBindingsKeepRedeclares(scodeMod, false);
+        smod = SCodeInstUtil.removeNonConstantBindingsKeepRedeclares(scodeMod, false);
         (cache,m) = Mod.elabMod(cache, env, ih, pre, smod, impl, Mod.COMPONENT(n), info); // m = Mod.elabUntypedMod(smod, env, pre);
 
         (cenv, c, ih) = FGraph.createVersionScope(env, n, pre, m, cenv, c, ih);
@@ -5082,7 +5083,7 @@ algorithm
         (cache,dims) = InstUtil.elabArraydim(cache,cenv, c1, sty, ad, NONE(), impl, true, false, pre, info, inst_dims);
 
         // we really need to keep at least the redeclare modifications here!!
-        smod = AbsynToSCode.removeNonConstantBindingsKeepRedeclares(scodeMod, true);
+        smod = SCodeInstUtil.removeNonConstantBindingsKeepRedeclares(scodeMod, true);
         (cache,m) = Mod.elabMod(cache, env, ih, pre, smod, impl, Mod.COMPONENT(n), info); // m = Mod.elabUntypedMod(smod, env, pre);
 
         (cenv, c, ih) = FGraph.createVersionScope(env, n, pre, m, cenv, c, ih);
@@ -5120,7 +5121,7 @@ algorithm
         (cache,dims) = InstUtil.elabArraydim(cache,cenv, c1, sty, ad, NONE(), impl, true, false, pre, info, inst_dims);
 
         // we really need to keep at least the redeclare modifications here!!
-        // smod = AbsynToSCode.removeNonConstantBindingsKeepRedeclares(scodeMod, true);
+        // smod = SCodeInstUtil.removeNonConstantBindingsKeepRedeclares(scodeMod, true);
         // (cache,m) = Mod.elabMod(cache, env, ih, pre, smod, impl, info); // m = Mod.elabUntypedMod(smod, env, pre);
         m = DAE.NOMOD();
 

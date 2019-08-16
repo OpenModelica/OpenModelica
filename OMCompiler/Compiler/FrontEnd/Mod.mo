@@ -70,6 +70,7 @@ protected import InstUtil;
 protected import List;
 protected import PrefixUtil;
 protected import Print;
+import SCodeInstUtil;
 import SCodeUtil;
 protected import Static;
 protected import Types;
@@ -79,7 +80,6 @@ protected import ValuesUtil;
 protected import System;
 protected import SCodeDump;
 protected import Lookup;
-protected import AbsynToSCode;
 
 public uniontype ModScope
   "Used to know where a modifier came from, for error reporting."
@@ -130,7 +130,7 @@ public function elabMod "
 protected
   SCode.Mod mod;
 algorithm
-  mod := AbsynToSCode.expandEnumerationMod(inMod);
+  mod := SCodeInstUtil.expandEnumerationMod(inMod);
   (outCache,outMod) := match(inCache,inEnv,inIH,inPrefix,mod,inBoolean,inModScope,inInfo)
     local
       Boolean impl;

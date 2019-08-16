@@ -57,6 +57,7 @@ if true then /* Suppress output */
     "../FrontEnd/PrefixUtil.mo",
     "../FrontEnd/SCode.mo",
     "../FrontEnd/SCodeDump.mo",
+    "../FrontEnd/SCodeInstUtil.mo",
     "../FrontEnd/SCodeUtil.mo",
     "../FrontEnd/Static.mo",
     //"../FrontEnd/SCodeSimplify.mo",

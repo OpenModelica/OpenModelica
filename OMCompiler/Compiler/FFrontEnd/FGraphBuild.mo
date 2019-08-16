@@ -70,6 +70,7 @@ import List;
 import AbsynToSCode;
 import SCodeDump;
 import SCodeUtil;
+import SCodeInstUtil;
 import Util;
 import FMod;
 
@@ -130,7 +131,7 @@ algorithm
 
     case (_, _, _, g)
       equation
-        cls = AbsynToSCode.expandEnumerationClass(inClass);
+        cls = SCodeInstUtil.expandEnumerationClass(inClass);
         SCode.CLASS(name = name, classDef = cdef) = cls;
         (g, n) = FGraph.node(g, name, {inParentRef}, FCore.CL(cls, Prefix.NOPRE(), DAE.NOMOD(), inKind, FCore.VAR_UNTYPED()));
         nr = FNode.toRef(n);
