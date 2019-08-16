@@ -717,7 +717,6 @@ algorithm
         als_1;
     case (cp :: rest) /* ignore everthing other than algorithms */
       equation
-        failure(Absyn.ALGORITHMS() = cp);
         als = translateClassdefAlgorithms(rest);
       then
         als;
@@ -749,7 +748,6 @@ algorithm
         cos_1;
     case (cp :: rest) /* ignore everthing other than Constraints */
       equation
-        failure(Absyn.CONSTRAINTS() = cp);
         cos = translateClassdefConstraints(rest);
       then
         cos;
