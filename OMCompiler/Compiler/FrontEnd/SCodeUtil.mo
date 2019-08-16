@@ -2966,10 +2966,7 @@ public function boolFinal
   input Boolean inBoolFinal;
   output SCode.Final outFinal;
 algorithm
-  outFinal := match(inBoolFinal)
-    case (true) then SCode.FINAL();
-    case (false) then SCode.NOT_FINAL();
-  end match;
+  outFinal := if inBoolFinal then SCode.FINAL() else SCode.NOT_FINAL();
 end boolFinal;
 
 public function connectorTypeEqual
