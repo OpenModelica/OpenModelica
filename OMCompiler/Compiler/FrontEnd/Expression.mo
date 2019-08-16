@@ -67,7 +67,7 @@ protected import ComponentReference;
 protected import Config;
 protected import DAEUtil;
 protected import Debug;
-protected import DoubleEndedList;
+protected import DoubleEnded;
 protected import FCore;
 protected import FGraph;
 protected import Error;
@@ -5469,7 +5469,7 @@ public function traverseExpList<ArgT> "Calls traverseExpBottomUp for each elemen
 protected
   DAE.Exp e1;
   Boolean allEq=true;
-  DoubleEndedList<DAE.Exp> delst;
+  DoubleEnded.MutableList<DAE.Exp> delst;
   Integer nEq=0;
 algorithm
   for e in inExpl loop
@@ -5477,22 +5477,22 @@ algorithm
     // Preserve reference equality without any allocation if nothing changed
     if (if allEq then not referenceEq(e, e1) else false) then
       allEq:=false;
-      delst := DoubleEndedList.empty(e1);
+      delst := DoubleEnded.empty(e1);
       for elt in inExpl loop
         if nEq < 1 then
           break;
         end if;
-        DoubleEndedList.push_back(delst, elt);
+        DoubleEnded.push_back(delst, elt);
         nEq := nEq-1;
       end for;
     end if;
     if allEq then
       nEq := nEq + 1;
     else
-      DoubleEndedList.push_back(delst, e1);
+      DoubleEnded.push_back(delst, e1);
     end if;
   end for;
-  expl := if allEq then inExpl else DoubleEndedList.toListAndClear(delst);
+  expl := if allEq then inExpl else DoubleEnded.toListAndClear(delst);
 end traverseExpList;
 
 public function traverseExpTopDown
@@ -7500,7 +7500,7 @@ protected
   DAE.Exp exp;
   DAE.Subscript nsub;
   Boolean allEq=true;
-  DoubleEndedList<DAE.Subscript> delst;
+  DoubleEnded.MutableList<DAE.Subscript> delst;
   Integer nEq=0;
 algorithm
   for sub in inSubscript loop
@@ -7522,22 +7522,22 @@ algorithm
     // Preserve reference equality without any allocation if nothing changed
     if (if allEq then not referenceEq(nsub, sub) else false) then
       allEq:=false;
-      delst := DoubleEndedList.empty(nsub);
+      delst := DoubleEnded.empty(nsub);
       for elt in inSubscript loop
         if nEq < 1 then
           break;
         end if;
-        DoubleEndedList.push_back(delst, elt);
+        DoubleEnded.push_back(delst, elt);
         nEq := nEq-1;
       end for;
     end if;
     if allEq then
       nEq := nEq + 1;
     else
-      DoubleEndedList.push_back(delst, nsub);
+      DoubleEnded.push_back(delst, nsub);
     end if;
   end for;
-  outSubscript := if allEq then inSubscript else DoubleEndedList.toListAndClear(delst);
+  outSubscript := if allEq then inSubscript else DoubleEnded.toListAndClear(delst);
 end traverseExpTopDownSubs;
 
 /***************************************************/

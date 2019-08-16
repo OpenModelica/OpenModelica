@@ -64,6 +64,7 @@ import ComponentReference;
 import DAEDump;
 import DAEUtil;
 import Debug;
+import DoubleEnded;
 import DumpHTML;
 import ElementSource;
 import Error;
@@ -270,7 +271,7 @@ algorithm
   dumpEquationArray(inShared.removedEqs, "Simple Shared Equations");
   dumpEquationArray(inShared.initialEqs, "Initial Equations");
   dumpZeroCrossingList(ZeroCrossings.toList(inShared.eventInfo.zeroCrossings), "Zero Crossings");
-  dumpZeroCrossingList(DoubleEndedList.toListNoCopyNoClear(inShared.eventInfo.relations), "Relations");
+  dumpZeroCrossingList(DoubleEnded.toListNoCopyNoClear(inShared.eventInfo.relations), "Relations");
   if stringEqual(Config.simCodeTarget(), "Cpp") then
     dumpZeroCrossingList(ZeroCrossings.toList(inShared.eventInfo.samples), "Samples");
   else

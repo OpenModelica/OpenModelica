@@ -66,6 +66,7 @@ import ComponentReference;
 import DAEUtil;
 import DAEDump;
 import Debug;
+import DoubleEnded;
 import Differentiate;
 import ElementSource;
 import ExpandableArray;
@@ -425,9 +426,9 @@ protected function traverseEventInfoExps<T>
     output T outA;
   end FuncExpType;
 algorithm
-  arg := DoubleEndedList.mapFoldNoCopy(eventInfo.zeroCrossings.zc, function traverseZeroCrossingExps(func=func), arg);
-  arg := DoubleEndedList.mapFoldNoCopy(eventInfo.samples.zc, function traverseZeroCrossingExps(func=func), arg);
-  arg := DoubleEndedList.mapFoldNoCopy(eventInfo.relations, function traverseZeroCrossingExps(func=func), arg);
+  arg := DoubleEnded.mapFoldNoCopy(eventInfo.zeroCrossings.zc, function traverseZeroCrossingExps(func=func), arg);
+  arg := DoubleEnded.mapFoldNoCopy(eventInfo.samples.zc, function traverseZeroCrossingExps(func=func), arg);
+  arg := DoubleEnded.mapFoldNoCopy(eventInfo.relations, function traverseZeroCrossingExps(func=func), arg);
 end traverseEventInfoExps;
 
 protected function traverseZeroCrossingExps<T>

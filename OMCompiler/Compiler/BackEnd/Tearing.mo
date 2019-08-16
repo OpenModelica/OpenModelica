@@ -51,7 +51,7 @@ import BackendDump;
 import BackendEquation;
 import BackendVariable;
 import Config;
-import DoubleEndedList;
+import DoubleEnded;
 import DumpGraphML;
 import Error;
 import ExecStat.execStat;
@@ -3336,9 +3336,9 @@ protected function traverseSingleEqnsforAssignable
   output list<Integer> selectedrows;
 protected
   Integer eqnColl,eqnSize;
-  DoubleEndedList<Integer> delst;
+  DoubleEnded.MutableList<Integer> delst;
 algorithm
-  delst := DoubleEndedList.empty(0);
+  delst := DoubleEnded.empty(0);
   for e in 1:arrayLength(inAss) loop
     if arrayGet(inAss,e)<>-1 then
       continue;
@@ -3347,13 +3347,13 @@ algorithm
     eqnSize := listLength(mapEqnIncRow[eqnColl]);
     if listLength(m[e]) == eqnSize + 1 then
       if eqnSize == 1 then
-        DoubleEndedList.push_back(delst, e);
+        DoubleEnded.push_back(delst, e);
       else
-        DoubleEndedList.push_front(delst, e);
+        DoubleEnded.push_front(delst, e);
       end if;
     end if;
   end for;
-  selectedrows := DoubleEndedList.toListAndClear(delst);
+  selectedrows := DoubleEnded.toListAndClear(delst);
 end traverseSingleEqnsforAssignable;
 
 
@@ -3366,9 +3366,9 @@ protected function traverseCollectiveEqnsforAssignable
   output list<Integer> selectedrows;
 protected
   Integer eqnSize,e,eqnColl=0;
-  DoubleEndedList<Integer> delst;
+  DoubleEnded.MutableList<Integer> delst;
 algorithm
-  delst := DoubleEndedList.empty(0);
+  delst := DoubleEnded.empty(0);
   for eqnLst in  mapEqnIncRow loop
     eqnColl := eqnColl + 1;
     e := listHead(eqnLst);
@@ -3378,13 +3378,13 @@ algorithm
     eqnSize := listLength(eqnLst);
     if listLength(m[e]) == eqnSize then
       if eqnSize == 1 then
-        DoubleEndedList.push_back(delst, eqnColl);
+        DoubleEnded.push_back(delst, eqnColl);
       else
-        DoubleEndedList.push_front(delst, eqnColl);
+        DoubleEnded.push_front(delst, eqnColl);
       end if;
     end if;
   end for;
-  selectedrows := DoubleEndedList.toListAndClear(delst);
+  selectedrows := DoubleEnded.toListAndClear(delst);
 end traverseCollectiveEqnsforAssignable;
 
 

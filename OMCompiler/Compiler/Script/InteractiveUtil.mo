@@ -65,7 +65,7 @@ import Constants;
 import DAEDump;
 import DAEUtil;
 import Debug;
-import DoubleEndedList;
+import DoubleEnded;
 import Dump;
 import Error;
 import ErrorExt;
@@ -9828,9 +9828,9 @@ public function getClassnamesInElts
   input Boolean includeConstants;
   output list<String> outStringLst;
 protected
-  DoubleEndedList<String> delst;
+  DoubleEnded.MutableList<String> delst;
 algorithm
-  delst := DoubleEndedList.fromList({});
+  delst := DoubleEnded.fromList({});
   for elt in inAbsynElementItemLst loop
   _ := match elt
     local
@@ -9844,25 +9844,25 @@ algorithm
     case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ =
                  Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = id)))))
       algorithm
-        DoubleEndedList.push_back(delst, id);
+        DoubleEnded.push_back(delst, id);
       then ();
 
     case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ =
                  Absyn.CLASS(name = id))))
       algorithm
-        DoubleEndedList.push_back(delst, id);
+        DoubleEnded.push_back(delst, id);
       then ();
 
     case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(attributes = Absyn.ATTR(variability = Absyn.CONST()),
                  components = lst))) guard includeConstants
       algorithm
-        DoubleEndedList.push_list_back(delst, getComponentItemsName(lst,false));
+        DoubleEnded.push_list_back(delst, getComponentItemsName(lst,false));
       then ();
 
     else ();
   end match;
   end for;
-  outStringLst := DoubleEndedList.toListAndClear(delst);
+  outStringLst := DoubleEnded.toListAndClear(delst);
 end getClassnamesInElts;
 
 protected function getBaseClasses
