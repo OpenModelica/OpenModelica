@@ -28,9 +28,7 @@
  # See the full OSMC Public License conditions for more details.
  #
 
-# Please do export OMC_EXEC=~/OpenModelica/build/bin/omc or something else before running the tests.
-# Otherwise we will invoke OMCSession with whatever standard omc you have
-
+OMC_EXEC=$(OPENMODELICAHOME)/bin/omc
 allTests :
 	julia runAllTests.jl ${OMC_EXEC}
 syntaxTest :
