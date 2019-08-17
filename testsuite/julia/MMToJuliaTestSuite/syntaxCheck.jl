@@ -46,7 +46,7 @@ function executeTestSteps(homeDirectory, sourceDirectory, outputDirectory, omc)
 end
 
 function executeTestSteps(homeDirectory, sourceDirectory, outputDirectory, omc, filterFunc)
-  outDir = createDirectoryReportErrorOnFailure(abspath(outputDirectory))
+  local outDir = createDirectoryReportErrorOnFailure(abspath(outputDirectory))
   translateFilesIfOutputIsEmpty(sourceDirectory, outDir, omc, homeDirectory, filterFunc)
   checkSyntax(outDir, sourceDirectory)
   cd(homeDirectory)
@@ -54,7 +54,8 @@ end
 
 function syntaxCheck(omc)
   @assert pwd() == abspath(".")[1:end - 1] "Tests should be run from the suite"
-  checkHome = pwd()
+  local checkHome = pwd()
+  local OPENMODELICA_HOME = ENV["OPENMODELICAHOME"]
   @testset "Syntax tests" begin
     xIsAbsyn = (x -> x == "Absyn.mo")
     xIsSCode = (x -> x == "SCode.mo")
@@ -64,17 +65,17 @@ function syntaxCheck(omc)
     xIsMatchTests = (x -> x == "MatchExpressions.mo")
     executeTestSteps(checkHome, "./Primitives", "./OutputPrimitives", omc)
     executeTestSteps(checkHome, "./Algorithms", "./OutputAlgorithms", omc)
-    executeTestSteps(checkHome, "$OPENMODELICAHOME/../OMCompiler/Compiler/FrontEnd", "./OutputAbsyn", omc, xIsAbsyn)
-    executeTestSteps(checkHome, "$OPENMODELICAHOME/../OMCompiler/Compiler/FrontEnd", "./OutputSCode", omc, xIsSCode)
-    executeTestSteps(checkHome, "$OPENMODELICAHOME/../OMCompiler/Compiler/FrontEnd", "./OutputGraphviz", omc, xIsGraphviz)
-    executeTestSteps(checkHome, "$OPENMODELICAHOME/../OMCompiler/Compiler/FrontEnd", "./OutputAbsynUtil", omc, xIsAbsynUtil)
-    executeTestSteps(checkHome, "$OPENMODELICAHOME/../OMCompiler/Compiler/FrontEnd", "./OutputSCodeUtil", omc, xIsSCodeUtil)
+    executeTestSteps(checkHome, "$OPENMODELICA_HOME/../OMCompiler/Compiler/FrontEnd", "./OutputAbsyn", omc, xIsAbsyn)
+    executeTestSteps(checkHome, "$OPENMODELICA_HOME/../OMCompiler/Compiler/FrontEnd", "./OutputSCode", omc, xIsSCode)
+    executeTestSteps(checkHome, "$OPENMODELICA_HOME/../OMCompiler/Compiler/FrontEnd", "./OutputGraphviz", omc, xIsGraphviz)
+    executeTestSteps(checkHome, "$OPENMODELICA_HOME/../OMCompiler/Compiler/FrontEnd", "./OutputAbsynUtil", omc, xIsAbsynUtil)
+    executeTestSteps(checkHome, "$OPENMODELICA_HOME/../OMCompiler/Compiler/FrontEnd", "./OutputSCodeUtil", omc, xIsSCodeUtil)
     executeTestSteps(checkHome, "./MatchExpressions", "./OutputMatchExpressions", omc, xIsMatchTests)
   end
 end
 
 function createDirectoryReportErrorOnFailure(dirToCreate)
-  directory = dirToCreate
+  local directory = dirToCreate
   if !isdir(directory)
     mkdir(directory)
   end
@@ -84,7 +85,7 @@ end
 
 function translateFilesIfOutputIsEmpty(directoryWithModelicaFiles, directory, omc, homeDirectory, filterFunc)
   cd(directoryWithModelicaFiles)
-  primitiveTestSet = 3
+  local primitiveTestSet = 3
   if size(readdir(directory), 1) < primitiveTestSet
     filesToConvert = [abspath(f) for f in filter(filterFunc, readdir())]
     @testset "Translation test $directory" begin
