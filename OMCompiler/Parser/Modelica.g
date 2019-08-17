@@ -414,7 +414,7 @@ composition returns [void* ast, void* ann]
   ;
   finally{ OM_POP(4); }
 
-composition2 [void **ann] returns [void* ast]
+composition2 [ void **ann] returns [void* ast]
 @init { OM_PUSHZ2(ext, el); } :
   ( ext=external_clause? { ast = or_nil(ext); }
   | ( el=public_element_list[ann]
@@ -457,13 +457,13 @@ external_annotation returns [void* ast]
   ;
   finally{ OM_POP(1); }
 
-public_element_list [volatile void **ann] returns [void* ast]
+public_element_list [ void **ann] returns [void* ast]
 @init { OM_PUSHZ1(es); } :
   PUBLIC es=element_list[ann] { ast = Absyn__PUBLIC(es); }
   ;
   finally{ OM_POP(1); }
 
-protected_element_list [volatile void **ann] returns [void* ast]
+protected_element_list [ void **ann] returns [void* ast]
 @init { OM_PUSHZ1(es); } :
   PROTECTED es=element_list[ann] {ast = Absyn__PROTECTED(es); }
   ;
@@ -473,7 +473,7 @@ language_specification returns [void* ast] :
   id=STRING {ast = token_to_scon(id);}
   ;
 
-element_list [void **ann] returns [void* ast]
+element_list [ void **ann] returns [void* ast]
 @init {
   int first = 0, last = 0;
   OM_PUSHZ3(e.ast, ast, a);
@@ -882,26 +882,26 @@ component_declaration1 returns [void* ast]
  * 2.2.6 Equations
  */
 
-initial_equation_clause [void **ann] returns [void* ast]
+initial_equation_clause [ void **ann] returns [void* ast]
 @init { OM_PUSHZ1(es); } :
   { LA(2)==EQUATION }?
   INITIAL EQUATION es=equation_annotation_list[ann] { ast = Absyn__INITIALEQUATIONS(es); }
   ;
   finally{ OM_POP(1); }
 
-equation_clause [void **ann] returns [void* ast]
+equation_clause [ void **ann] returns [void* ast]
 @init { OM_PUSHZ1(es); } :
   EQUATION es=equation_annotation_list[ann] { ast = Absyn__EQUATIONS(es); }
   ;
   finally{ OM_POP(1); }
 
-constraint_clause [void **ann] returns [void* ast]
+constraint_clause [ void **ann] returns [void* ast]
 @init { OM_PUSHZ1(cs); } :
   CONSTRAINT cs=constraint_annotation_list[ann] { ast = Absyn__CONSTRAINTS(cs); }
   ;
   finally{ OM_POP(1); }
 
-equation_annotation_list [void **ann] returns [void* ast]
+equation_annotation_list [ void **ann] returns [void* ast]
 @init {
   int last, haveEq;
   last = LT(1)->getTokenIndex(LT(1));
@@ -938,7 +938,7 @@ equation_annotation_list [void **ann] returns [void* ast]
   ;
   finally{ OM_POP(3); }
 
-constraint_annotation_list [void **ann] returns [void* ast]
+constraint_annotation_list [ void **ann] returns [void* ast]
 @init { OM_PUSHZ3(co, c, cs); }
 :
   { LA(1) == END_IDENT || LA(1) == CONSTRAINT || LA(1) == EQUATION || LA(1) ==
@@ -952,20 +952,20 @@ T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }?
   finally{ OM_POP(3); }
 
 
-algorithm_clause [void **ann] returns [void* ast]
+algorithm_clause [ void **ann] returns [void* ast]
 @init{ OM_PUSHZ1(as.ast); } :
   T_ALGORITHM as=algorithm_annotation_list[ann,0] { ast = Absyn__ALGORITHMS(as.ast); }
   ;
   finally{ OM_POP(1); }
 
-initial_algorithm_clause [void **ann] returns [void* ast]
+initial_algorithm_clause [ void **ann] returns [void* ast]
 @init{ OM_PUSHZ1(as.ast); } :
   { LA(2)==T_ALGORITHM }?
   INITIAL T_ALGORITHM as=algorithm_annotation_list[ann,0] { ast = Absyn__INITIALALGORITHMS(as.ast); }
   ;
   finally{ OM_POP(1); }
 
-algorithm_annotation_list [void **ann, int matchCase] returns [void* ast]
+algorithm_annotation_list [ void **ann, int matchCase] returns [void* ast]
 @init {
   int last,isalg = 0;
   OM_PUSHZ3(al.ast, $ast, a);
