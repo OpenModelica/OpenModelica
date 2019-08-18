@@ -35,14 +35,13 @@ import List;
 import Absyn;
 import AbsynUtil;
 import Util;
-import DoubleEndedList;
+import DoubleEnded;
 import Global;
-
 
 function createGenericTypes
   input String ty;
 protected
-  DoubleEndedList<String> genericTypes = DoubleEndedList.fromList({});
+  DoubleEnded.MutableList<String> genericTypes = DoubleEnded.fromList({});
 algorithm
   setGlobalRoot(Global.MMToJLListIndex, SOME(genericTypes));
 end createGenericTypes;
@@ -50,18 +49,18 @@ end createGenericTypes;
 function addGenericType
   input String ty;
 protected
-  DoubleEndedList<String> genericTypes;
+  DoubleEnded.MutableList<String> genericTypes;
 algorithm
   genericTypes := getGlobalRoot(Global.MMToJLListIndex);
-  DoubleEndedList.push_back(genericTypes, ty);
+  DoubleEnded.push_back(genericTypes, ty);
 end addGenericType;
 
 function clearGenericTypes
 protected
-  DoubleEndedList<String> genericTypes;
+  DoubleEnded.MutableList<String> genericTypes;
 algorithm
   genericTypes := getGlobalRoot(Global.MMToJLListIndex);
-  {} := DoubleEndedList.toListAndClear(genericTypes);
+  {} := DoubleEnded.toListAndClear(genericTypes);
 end clearGenericTypes;
 
 function isGenericType
@@ -69,17 +68,17 @@ function isGenericType
   output Boolean b = false;
 protected
   list<String> tmpLst;
-  DoubleEndedList<String> genericTypes;
+  DoubleEnded.MutableList<String> genericTypes;
 algorithm
   genericTypes := getGlobalRoot(Global.MMToJLListIndex);
-  tmpLst := DoubleEndedList.toListNoCopyNoClear(genericTypes);
+  tmpLst := DoubleEnded.toListNoCopyNoClear(genericTypes);
   for i in tmpLst loop
     if i == str then
       b := true;
       break;
     end if;
   end for;
-  genericTypes := DoubleEndedList.fromList(tmpLst);
+  genericTypes := DoubleEnded.fromList(tmpLst);
 end isGenericType;
 
 public
