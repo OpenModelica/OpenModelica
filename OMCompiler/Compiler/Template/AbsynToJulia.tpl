@@ -98,7 +98,7 @@ match class
     >>
   case CLASS(body=parts as PARTS(__)) then
     let enc_str = if encapsulatedPrefix then "" /*Should we use a macro here?*/ else ""
-    let partial_str = if partialPrefix then "abstract" else ""
+    let partial_str = if partialPrefix then "#=TODO: Originally partial =# " else ""
     let class_type_str = dumpClassType(restriction)
     let cdef_str1 = match restriction
       case R_PACKAGE(__) then
@@ -316,7 +316,7 @@ match class_part
     let ann_str = match annotation_ case SOME(ann) then ' <%dumpAnnotation(ann, context)%>;'
     match externalDecl
       case EXTERNALDECL(__) then //Turned of temporary to translate builtin
-        "#= Defined in the runtime =#" //AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassPart: EXTERNALDECL(__) not supported.")
+        "#= TODO: Defined in the runtime =#" //AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassPart: EXTERNALDECL(__) not supported.")
 end dumpClassPart;
 
 template dumpElementItems(list<Absyn.ElementItem> items, Context context, String prevSpacing, Boolean first, DumpOptions options)
@@ -788,6 +788,7 @@ match path
       case "array" then 'Array'
       case "tuple" then 'Tuple'
       case "polymorphic" then 'Any'
+      case "Mutable" then 'MutableType'
       else '<%name%>'
   else
     AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path.")
