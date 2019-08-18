@@ -46,7 +46,6 @@ encapsulated package SCode
   The SCode representation is used as input to the Inst module"
 
 public import Absyn;
-public import AbsynUtil;
 
 // Some definitions are aliased from Absyn
 public type Ident = Absyn.Ident;
