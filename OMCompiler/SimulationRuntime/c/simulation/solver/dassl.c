@@ -954,6 +954,11 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
   unsigned int sizeTmpVars = jac->sizeTmpVars;
   SPARSE_PATTERN* spp = jac->sparsePattern;
 
+
+  if (jac->constantEqns != NULL) {
+      jac->constantEqns(data, threadData, jac, NULL);
+  }
+
   genericColoredSymbolicJacobianEvaluation(rows, columns, spp, matrixA, jac,
                                            data, threadData, &setJacElementDasslSparse);
 
@@ -1006,6 +1011,10 @@ int jacA_sym(double *t, double *y, double *yprime, double *delta,
   ANALYTIC_JACOBIAN* t_jac = jac;
 #endif
   unsigned int j;
+
+  if (t_jac->constantEqns != NULL) {
+    t_jac->constantEqns(data, threadData, t_jac, NULL);
+  }
 
 #pragma omp for schedule(runtime)
   for(i=0; i < columns; i++)
@@ -1128,7 +1137,6 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta,
         delta_hh[ii] = 1. / delta_hh[ii];
       }
     }
-
     (*dasslData->residualFunction)(t, y, yprime, cj, dasslData->newdelta, &ires, rpar, ipar);
 
     increaseJacContext(data);

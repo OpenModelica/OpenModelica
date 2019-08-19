@@ -61,6 +61,7 @@ simulationexternal-functions.log \
 simulationindexreduction.log \
 simulationinheritances.log \
 simulationinlineFunction.log \
+simulationjacobian.log \
 simulationjapaneselanguage.log \
 simualtionlinear_system.log \
 simulationnonlinear_system.log \
@@ -337,6 +338,9 @@ simulationinlineFunction.log: omc-diff
 	@echo $@ done
 simulationinStream.log: omc-diff
 	$(MAKE) -C simulation/modelica/inStream -f Makefile test > $@
+	@echo $@ done
+simulationjacobian.log: omc-diff
+	$(MAKE) -C simulation/modelica/jacobian -f Makefile test > $@
 	@echo $@ done
 simulationjapaneselanguage.log: omc-diff
 	$(MAKE) -C simulation/modelica/japaneselanguage -f Makefile test > $@

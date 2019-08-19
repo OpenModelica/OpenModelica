@@ -155,6 +155,7 @@ typedef struct ANALYTIC_JACOBIAN
   modelica_real* seedVars;
   modelica_real* tmpVars;
   modelica_real* resultVars;
+  int (*constantEqns)(void* data, threadData_t *threadData, void* thisJacobian, void* parentJacobian);
 }ANALYTIC_JACOBIAN;
 
 /* EXTERNAL_INPUT

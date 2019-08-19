@@ -117,11 +117,16 @@ int getAnalyticalJacobianLapack(DATA* data, threadData_t *threadData, double* ja
 
   memset(jac, 0, (systemData->size)*(systemData->size)*sizeof(double));
 
-  for(i=0; i < jacobian->sparsePattern->maxColors; i++) {
+  if (jacobian->constantEqns != NULL) {
+    jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
+  }
+
+  for(i=0; i < jacobian->sparsePattern->maxColors; i++)
+  {
     /* activate seed variable for the corresponding color */
     for(ii=0; ii < jacobian->sizeCols; ii++)
       if(jacobian->sparsePattern->colorCols[ii]-1 == i)
-        jacobian->seedVars[ii] = 1;
+          jacobian->seedVars[ii] = 1;
 
     ((systemData->analyticalJacobianColumn))(data, threadData, jacobian, parentJacobian);
 
@@ -136,8 +141,9 @@ int getAnalyticalJacobianLapack(DATA* data, threadData_t *threadData, double* ja
         };
       }
       /* de-activate seed variable for the corresponding color */
-      if(jacobian->sparsePattern->colorCols[j]-1 == i)
-        jacobian->seedVars[j] = 0;
+      if(jacobian->sparsePattern->colorCols[j]-1 == i) {
+          jacobian->seedVars[j] = 0;
+      }
     }
   }
 
