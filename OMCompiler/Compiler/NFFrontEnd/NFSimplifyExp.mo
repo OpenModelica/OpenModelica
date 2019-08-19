@@ -170,7 +170,10 @@ algorithm
         // Use Ceval for builtin pure functions with literal arguments.
         if builtin then
           if is_pure and List.all(args, Expression.isLiteral) then
-            callExp := Ceval.evalCall(call, EvalTarget.IGNORE_ERRORS());
+            try
+              callExp := Ceval.evalCall(call, EvalTarget.IGNORE_ERRORS());
+            else
+            end try;
           else
             // do not expand builtin calls if we should not scalarize
             if Flags.isSet(Flags.NF_SCALARIZE) then
