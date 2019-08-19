@@ -268,6 +268,10 @@ static int getAnalyticalJacobian(struct dataAndSys* dataSys, double* jac)
   memset(jac, 0, (solverData->n)*(solverData->n)*sizeof(double));
   memset(solverData->fjacobian, 0, (solverData->n)*(solverData->n)*sizeof(double));
 
+  if (jacobian->constantEqns != NULL) {
+    jacobian->constantEqns(data, threadData, jacobian, NULL);
+  }
+
   for(i=0; i < jacobian->sparsePattern->maxColors; i++)
   {
     /* activate seed variable for the corresponding color */

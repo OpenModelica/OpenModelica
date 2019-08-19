@@ -129,9 +129,20 @@ static int getAnalyticalJacobian(DATA* data, threadData_t *threadData,
   int nth = 0;
   int nnz = jacobian->sparsePattern->numberOfNoneZeros;
 
-  for(i=0; i < jacobian->sizeRows; i++)
+  if (jacobian->constantEqns != NULL) {
+    jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
+  }
+
+  for(i=0; i < jacobian->sparsePattern->maxColors; i++)
   {
-    jacobian->seedVars[i] = 1;
+    /* activate seed variable for the corresponding color */
+    for(ii=0; ii < jacobian->sizeCols; ii++)
+    {
+      if(jacobian->sparsePattern->colorCols[ii]-1 == i)
+      {
+        jacobian->seedVars[ii] = 1;
+      }
+    }
 
     ((systemData->analyticalJacobianColumn))(data, threadData, jacobian, parentJacobian);
 
@@ -139,20 +150,18 @@ static int getAnalyticalJacobian(DATA* data, threadData_t *threadData,
     {
       if(jacobian->seedVars[j] == 1)
       {
-        ii = jacobian->sparsePattern->leadindex[j];
-        while(ii < jacobian->sparsePattern->leadindex[j+1])
+        nth = jacobian->sparsePattern->leadindex[j];
+        while(nth < jacobian->sparsePattern->leadindex[j+1])
         {
-          l  = jacobian->sparsePattern->index[ii];
-          systemData->setAElement(i, l, -jacobian->resultVars[l], nth, (void*) systemData, threadData);
+          l  = jacobian->sparsePattern->index[nth];
+          systemData->setAElement(j, l, -jacobian->resultVars[l], nth, (void*) systemData, threadData);
           nth++;
-          ii++;
         }
+        /* de-activate seed variable for the corresponding color */
+        jacobian->seedVars[j] = 0;
       }
     }
-    /* de-activate seed variable for the corresponding color */
-    jacobian->seedVars[i] = 0;
   }
-
   return 0;
 }
 

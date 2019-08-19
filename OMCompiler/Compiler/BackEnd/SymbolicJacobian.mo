@@ -2071,6 +2071,8 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       Boolean b;
+      String addRemoveConstantEqnsModule;
+      list<String> strPostOptModules;
 
       case (BackendDAE.DAE(syst::{}, shared), {}, _)
         equation
@@ -2094,21 +2096,34 @@ algorithm
             b = Flags.disableDebug(Flags.EXEC_STAT);
           end if;
 
+          strPostOptModules = {"wrapFunctionCalls",
+                               "inlineArrayEqn",
+                               "constantLinearSystem",
+                               "solveSimpleEquations",
+                               "tearingSystem",
+                               "calculateStrongComponentJacobians",
+                               "removeConstants",
+                               "simplifyTimeIndepFuncCalls"};
+
+          // Add removeSimpleEquation to remove constant(= independent of seed) equations.
+          if Flags.isSet(Flags.SPLIT_CONSTANT_PARTS_SYMJAC) then
+            /* ToDo: removeSimpleEquation can't handle all sorts of equations inside the
+             * jacobian BackendDAE. E.g. for equations lile
+             * $cse14 := $DER$$PModelica$PMedia$PWater$PIF97_Utilities$PwaterBaseProp_ph(p[10], h[10], 0, 0, 1.0, 0.0);
+             * from SteamPipe from ScalableTestSuite.
+             * Add a new module which finds constant (= independent of seed) equations
+             * and moves them to a different system.
+             */
+            strPostOptModules = List.insert(strPostOptModules, 4, "removeSimpleEquations");
+          end if;
+
           backendDAE2 = BackendDAEUtil.getSolvedSystemforJacobians(backendDAE,
                                                                    {"removeEqualRHS",
                                                                     "removeSimpleEquations",
                                                                     "evalFunc"},
-                                                                   NONE(),
-                                                                   NONE(),
-                                                                   {
-                                                                    "wrapFunctionCalls",
-                                                                    "inlineArrayEqn",
-                                                                    "constantLinearSystem",
-                                                                    "solveSimpleEquations",
-                                                                    "tearingSystem",
-                                                                    "calculateStrongComponentJacobians",
-                                                                    "removeConstants",
-                                                                    "simplifyTimeIndepFuncCalls"});
+                                                                    NONE(),
+                                                                    NONE(),
+                                                                    strPostOptModules);
           if Flags.isSet(Flags.JAC_DUMP) then
             BackendDump.bltdump("Symbolic Jacobian",backendDAE2);
           else
@@ -2227,10 +2242,10 @@ algorithm
              BackendVariable.varsSize(globalKnownVars) +
              BackendVariable.varsSize(inSeedVars);
       jacKnownVars = BackendVariable.emptyVarsSized(size);
-      jacKnownVars = BackendVariable.addVariables(orderedVars, jacKnownVars);
-      jacKnownVars = BackendVariable.addVariables(globalKnownVars, jacKnownVars);
       jacKnownVars = BackendVariable.addVariables(inSeedVars, jacKnownVars);
       (jacKnownVars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(jacKnownVars, BackendVariable.setVarDirectionTpl, (DAE.INPUT()));
+      jacKnownVars = BackendVariable.addVariables(orderedVars, jacKnownVars);
+      jacKnownVars = BackendVariable.addVariables(globalKnownVars, jacKnownVars);
       jacOrderedEqs = BackendEquation.listEquation(derivedEquations);
 
 
@@ -2422,10 +2437,13 @@ public function calcJacobianDependencies
   input BackendDAE.SymbolicJacobian jacobian;
   output list<DAE.ComponentRef> dependencies;
 protected
-  BackendDAE.EqSystem syst;
+  BackendDAE.EqSystems systems;
   BackendDAE.Shared shared;
+  BackendDAE.EqSystem syst;
 algorithm
-  (BackendDAE.DAE({syst}, shared), _, _, _, _, _) := jacobian;
+  (BackendDAE.DAE(systems, shared), _, _, _, _, _) := jacobian;
+  syst := List.first(systems);  // Only the first system contains directional derivative,
+                                // the others contain optional constant equations
   dependencies := BackendEquation.getCrefsFromEquations(syst.orderedEqs, syst.orderedVars, shared.globalKnownVars);
 end calcJacobianDependencies;
 

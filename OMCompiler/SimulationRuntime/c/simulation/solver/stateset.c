@@ -154,6 +154,9 @@ static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsig
   /* set all elements to zero */
   memset(jac, 0, (nrows*ncols*sizeof(double)));
 
+  if (jacobian->constantEqns != NULL) {
+    jacobian->constantEqns(data, threadData, jacobian, NULL);
+  }
   for(i=0; i < jacobian->sparsePattern->maxColors; i++)
   {
     for(ii=0; ii < jacobian->sizeCols; ii++)

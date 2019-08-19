@@ -553,6 +553,8 @@ constant DebugFlag DUMP_JL = DEBUG_FLAG(188, "dumpJL", false,
   Util.gettext("Dumps the absyn representation of a program as a Julia representation"));
 constant DebugFlag CONVERT_ANALYTICAL_DUMP = DEBUG_FLAG(189, "convertAnalyticalDump", false,
   Util.gettext("Dumps the conversion process of analytical to structural singularities."));
+constant DebugFlag SPLIT_CONSTANT_PARTS_SYMJAC = DEBUG_FLAG(190, "symJacConstantSplit", false,
+  Util.gettext("Generates all symbolic Jacobians with splitted constant parts."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -748,7 +750,8 @@ constant list<DebugFlag> allDebugFlags = {
   WARNING_MINMAX_ATTRIBUTES,
   NF_EXPAND_FUNC_ARGS,
   DUMP_JL,
-  CONVERT_ANALYTICAL_DUMP
+  CONVERT_ANALYTICAL_DUMP,
+  SPLIT_CONSTANT_PARTS_SYMJAC
 };
 
 public

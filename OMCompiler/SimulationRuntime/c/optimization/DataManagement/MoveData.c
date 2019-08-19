@@ -838,6 +838,10 @@ void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const in
   /* set symbolic jacobian context to reuse the matrix and the factorization in every column */
   setContext(data, &(data->localData[0]->timeValue), CONTEXT_SYM_JACOBIAN);
 
+  if (jacobian->constantEqns != NULL) {
+    jacobian->constantEqns(data, threadData, jacobian, NULL);
+  }
+
   for(i = 1; i < Cmax; ++i){
     jacobian->seedVars = sV[i];
 
@@ -892,6 +896,10 @@ void diffSynColoredOptimizerSystemF(OptData *optData, modelica_real **J){
 
     /* set symbolic jacobian context to reuse the matrix and the factorization in every column */
     setContext(data,  &(data->localData[0]->timeValue), CONTEXT_SYM_JACOBIAN);
+
+    if (jacobian->constantEqns != NULL) {
+      jacobian->constantEqns(data, threadData, jacobian, NULL);
+    }
 
     for(i = 1; i < Cmax; ++i){
       jacobian->seedVars = sV[i];
