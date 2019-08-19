@@ -1389,8 +1389,8 @@ algorithm
 end varsCollector;
 
 protected function markStateEquationsWork
-"Helper function to mark_state_equation
-  Does the job by looking at variable indexes and incidencematrices.
+  "Helper function to mark_state_equation
+  Does the job by looking at variable indexes and incidence matrix.
   inputs: (eqns: int list,
              marks: (int array  BackendDAE.IncidenceMatrix  int vector  int vector))
   outputs: ((marks: int array  BackendDAE.IncidenceMatrix
@@ -1404,25 +1404,25 @@ protected
   list<Integer> queue = inEqns;
   list<Integer> queue_tmp,vlst;
   Integer j, eqn, len = arrayLength(ass1);
+  Boolean positiveAndUnmarked;
 algorithm
-
- while not listEmpty(queue) loop
-   eqn :: queue := queue;
-   if oMark[eqn] == 0 then // "Mark an unmarked node/equation"
-     arrayUpdate(oMark, eqn, 1);
-     for i in m[eqn] loop
-       if i>0 and i<=len then
-         // We already did bounds checking above
-         j := Dangerous.arrayGetNoBoundsChecking(ass1, i);
-         if if j>0 then arrayGet(oMark, j) == 0 else false then
-           // Only add positive, unmarked variables to the queue
-           queue := j::queue;
-          end if;
-       end if;
-     end for;
-   end if;
- end while;
-
+  while not listEmpty(queue) loop
+    eqn :: queue := queue;
+    if oMark[eqn] == 0 then // "Mark an unmarked node/equation"
+      arrayUpdate(oMark, eqn, 1);
+      for i in m[eqn] loop
+        if i>0 and i<=len then
+          // We already did bounds checking above
+          j := Dangerous.arrayGetNoBoundsChecking(ass1, i);
+          positiveAndUnmarked := (if j>0 then arrayGet(oMark, j) == 0 else false);
+          if positiveAndUnmarked then
+            // Only add positive, unmarked variables to the queue
+            queue := j::queue;
+           end if;
+        end if;
+      end for;
+    end if;
+  end while;
 end markStateEquationsWork;
 
 
