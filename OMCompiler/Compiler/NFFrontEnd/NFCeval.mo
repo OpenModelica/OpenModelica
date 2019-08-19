@@ -1621,7 +1621,7 @@ algorithm
     case "matrix" then evalBuiltinMatrix(listHead(args));
     case "max" then evalBuiltinMax(args, fn);
     case "min" then evalBuiltinMin(args, fn);
-    case "mod" then evalBuiltinMod(args);
+    case "mod" then evalBuiltinMod(args, target);
     case "noEvent" then listHead(args); // No events during ceval, just return the argument.
     case "ones" then evalBuiltinOnes(args);
     case "product" then evalBuiltinProduct(listHead(args));
@@ -2198,6 +2198,7 @@ end evalBuiltinMin2;
 
 function evalBuiltinMod
   input list<Expression> args;
+  input EvalTarget target;
   output Expression result;
 protected
   Expression x, y;
@@ -2206,10 +2207,30 @@ algorithm
 
   result := match (x, y)
     case (Expression.INTEGER(), Expression.INTEGER())
-      then Expression.INTEGER(mod(x.value, y.value));
+      algorithm
+        if y.value == 0 then
+          if EvalTarget.hasInfo(target) then
+            Error.addSourceMessage(Error.MODULO_BY_ZERO,
+              {String(x.value), String(y.value)}, EvalTarget.getInfo(target));
+          end if;
+
+          fail();
+        end if;
+      then
+        Expression.INTEGER(mod(x.value, y.value));
 
     case (Expression.REAL(), Expression.REAL())
-      then Expression.REAL(mod(x.value, y.value));
+      algorithm
+        if y.value == 0.0 then
+          if EvalTarget.hasInfo(target) then
+            Error.addSourceMessage(Error.MODULO_BY_ZERO,
+              {String(x.value), String(y.value)}, EvalTarget.getInfo(target));
+          end if;
+
+          fail();
+        end if;
+      then
+        Expression.REAL(mod(x.value, y.value));
 
     else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
   end match;
