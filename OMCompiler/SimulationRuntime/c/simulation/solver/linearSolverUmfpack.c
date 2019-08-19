@@ -203,7 +203,7 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
   int i, j, status = UMFPACK_OK, success = 0, ni=0, n = systemData->size, eqSystemNumber = systemData->equationIndex, indexes[2] = {1,eqSystemNumber};
   int casualTearingSet = systemData->strictTearingFunctionCall != NULL;
   double tmpJacEvalTime;
-  int reuseMatrixJac = (data->simulationInfo->currentContext == CONTEXT_SYM_JACOBIAN && data->simulationInfo->currentJacobianEval > 0);
+  int reuseMatrixJac = systemData->reuseMatrixJac;
 
   infoStreamPrintWithEquationIndexes(LOG_LS, 0, indexes, "Start solving Linear System %d (size %d) at time %g with UMFPACK Solver",
    eqSystemNumber, (int) systemData->size,

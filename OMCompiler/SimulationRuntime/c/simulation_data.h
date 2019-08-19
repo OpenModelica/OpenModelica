@@ -350,6 +350,10 @@ typedef struct LINEAR_SYSTEM_DATA
   modelica_boolean useSparseSolver;     /* 1: use sparse solver, - else any solver */
   ANALYTIC_JACOBIAN* parentJacobian;    /* if != NULL then it's the parent jacobian matrix */
 
+  /* for symbolic jacobian evaluation */
+  int reuseMatrixJac;
+  int reuseMatrixJacIndex;
+
   /* statistics */
   unsigned long numberOfCall;           /* number of solving calls of this system */
   unsigned long numberOfJEval;          /* number of jacobian evaluations of this system */
