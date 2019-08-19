@@ -1,0 +1,72 @@
+// name: reuseConstantParsJac1
+// keywords: symbolic jacobian constant parts
+// status: correct
+// teardown_command: rm -f Modelica.Fluid.Examples.DrumBoiler.DrumBoiler* out.log
+//
+// Reuse constant parts of Jacobians and simulate with DASSL and IDA with
+// symbolic and colored symbolic Jacobians.
+
+
+loadModel(Modelica); getErrorString();
+
+setCommandLineOptions("-d=newInst,symJacConstantSplit --generateSymbolicJacobian"); getErrorString();
+
+buildModel(Modelica.Fluid.Examples.DrumBoiler.DrumBoiler); getErrorString();
+
+// Test DASSL
+system(realpath(".") + "/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler -s=dassl -jacobian=symbolical", "out.log"); getErrorString();
+readFile("out.log"); remove("out.log");
+diffSimulationResults("Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
+                      getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat","diff"
+                      vars={"evaporator.p", "evaporator.der(p)", "evaporator.V_l", "evaporator.der(V_l)", "controller.x", "controller.der(x)"});
+getErrorString();
+
+system(realpath(".") + "/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler -s=dassl -jacobian=coloredSymbolical", "out.log"); getErrorString();
+readFile("out.log"); remove("out.log");
+diffSimulationResults("Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
+                      getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat","diff"
+                      vars={"evaporator.p", "evaporator.der(p)", "evaporator.V_l", "evaporator.der(V_l)", "controller.x", "controller.der(x)"});
+getErrorString();
+
+// Test IDA
+system(realpath(".") + "/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler -s=ida -jacobian=coloredSymbolical", "out.log"); getErrorString();
+readFile("out.log"); remove("out.log");
+diffSimulationResults("Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
+                      getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat","diff"
+                      vars={"evaporator.p", "evaporator.der(p)", "evaporator.V_l", "evaporator.der(V_l)", "controller.x", "controller.der(x)"});
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"Modelica.Fluid.Examples.DrumBoiler.DrumBoiler","Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_init.xml"}
+// "Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "
+// 0
+// ""
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// true
+// (true,{})
+// ""
+// 0
+// ""
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// true
+// (true,{})
+// ""
+// 0
+// ""
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// true
+// (true,{})
+// ""
+// endResult

@@ -3569,15 +3569,15 @@ protected function TDS_replaceSimEqSysIdxInJacobianColumnWithUpdate "author: Wau
 algorithm
   (jacOut,tplOut) := matchcontinue(jacIn,tplIn)
     local
-      list<SimCode.SimEqSystem> simEqs;
+      list<SimCode.SimEqSystem> simEqs, constEqns;
       list<SimCodeVar.SimVar> simVars;
       Integer rowLen;
       array<Integer> ass;
       Integer newIdx;
-    case (SimCode.JAC_COLUMN(simEqs,simVars,rowLen),(newIdx,ass))
+    case (SimCode.JAC_COLUMN(simEqs,simVars,rowLen,constEqns),(newIdx,ass))
       equation
         (simEqs,(newIdx,ass)) = List.mapFold(simEqs,TDS_replaceSimEqSysIndexWithUpdate,(newIdx,ass));
-   then (SimCode.JAC_COLUMN(simEqs,simVars,rowLen),(newIdx,ass));
+   then (SimCode.JAC_COLUMN(simEqs,simVars,rowLen,constEqns),(newIdx,ass));
    else (jacIn,tplIn);
   end matchcontinue;
 end TDS_replaceSimEqSysIdxInJacobianColumnWithUpdate;

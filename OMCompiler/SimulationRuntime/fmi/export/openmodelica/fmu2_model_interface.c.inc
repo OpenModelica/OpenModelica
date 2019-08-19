@@ -1058,6 +1058,12 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
      The input values references are mapped with mapInputReference2InputNumber
      and mapOutputReference2OutputNumber functions
   */
+  /* eval constant part of jacobian */
+  /* TODO: Evaluate only once for one evaluation of jacobian */
+  if (comp->fmiDerJac->constantEqns != NULL) {
+    comp->fmiDerJac->constantEqns(fmudata, td, comp->fmiDerJac, NULL);
+  }
+
   /* clear out the seeds */
   for (i=0;i<independent; i++) {
     comp->fmiDerJac->seedVars[i]=0;

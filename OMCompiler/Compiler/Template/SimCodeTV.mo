@@ -337,6 +337,7 @@ package SimCode
       list<SimEqSystem> columnEqns;
       list<SimCodeVar.SimVar> columnVars;
       Integer numberOfResultVars;
+      list<SimEqSystem> constantEqns;
     end JAC_COLUMN;
   end JacobianColumn;
 
