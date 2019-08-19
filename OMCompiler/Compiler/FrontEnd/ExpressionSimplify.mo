@@ -503,9 +503,11 @@ algorithm
 
     // modulo for real values
     case (DAE.CALL(path=Absyn.IDENT("mod"),expLst={DAE.RCONST(r1),DAE.RCONST(r2)}))
+      guard r2 <> 0.0
       then DAE.RCONST(mod(r1,r2));
     // modulo for integer values
     case (DAE.CALL(path=Absyn.IDENT("mod"),expLst={DAE.ICONST(i1),DAE.ICONST(i2)}))
+      guard i2 <> 0.0
       then DAE.ICONST(mod(i1,i2));
     // integer call
     case (DAE.CALL(path=Absyn.IDENT("integer"),expLst={DAE.RCONST(r1)}))
