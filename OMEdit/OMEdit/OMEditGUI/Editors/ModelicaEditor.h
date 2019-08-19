@@ -65,7 +65,7 @@ public:
   void getCompletionSymbols(QString word, QList<CompleterItem> &classes, QList<CompleterItem> &components);
   LibraryTreeItem *getAnnotationCompletionRoot();
   void getCompletionAnnotations(const QStringList &stack, QList<CompleterItem> &annotations);
-  void getCompletionAnnotations(const QString &str, QList<CompleterItem> &annotations);
+  bool getCompletionAnnotations(const QString &str, QList<CompleterItem> &annotations);
   static QList<CompleterItem> getCodeSnippets();
 private:
   QString mLastValidText;
