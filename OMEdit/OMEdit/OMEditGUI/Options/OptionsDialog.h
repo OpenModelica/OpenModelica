@@ -817,6 +817,13 @@ public:
   void setCurveThickness(qreal thickness);
   qreal getCurveThickness();
   QSpinBox* getFilterIntervalSpinBox() {return mpFilterIntervalSpinBox;}
+  DoubleSpinBox *getTitleFontSizeSpinBox() const {return mpTitleFontSizeSpinBox;}
+  DoubleSpinBox *getVerticalAxisTitleFontSizeSpinBox() const {return mpVerticalAxisTitleFontSizeSpinBox;}
+  DoubleSpinBox *getVerticalAxisNumbersFontSizeSpinBox() const {return mpVerticalAxisNumbersFontSizeSpinBox;}
+  DoubleSpinBox *getHorizontalAxisTitleFontSizeSpinBox() const {return mpHorizontalAxisTitleFontSizeSpinBox;}
+  DoubleSpinBox *getHorizontalAxisNumbersFontSizeSpinBox() const {return mpHorizontalAxisNumbersFontSizeSpinBox;}
+  DoubleSpinBox *getFooterFontSizeSpinBox() const {return mpFooterFontSizeSpinBox;}
+  DoubleSpinBox *getLegendFontSizeSpinBox() const {return mpLegendFontSizeSpinBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralGroupBox;
@@ -833,7 +840,21 @@ private:
   Label *mpFilterIntervalHelpLabel;
   Label *mpFilterIntervalLabel;
   QSpinBox *mpFilterIntervalSpinBox;
-
+  QGroupBox *mpFontSizeGroupBox;
+  Label *mpTitleFontSizeLabel;
+  DoubleSpinBox *mpTitleFontSizeSpinBox;
+  Label *mpVerticalAxisTitleFontSizeLabel;
+  DoubleSpinBox *mpVerticalAxisTitleFontSizeSpinBox;
+  Label *mpVerticalAxisNumbersFontSizeLabel;
+  DoubleSpinBox *mpVerticalAxisNumbersFontSizeSpinBox;
+  Label *mpHorizontalAxisTitleFontSizeLabel;
+  DoubleSpinBox *mpHorizontalAxisTitleFontSizeSpinBox;
+  Label *mpHorizontalAxisNumbersFontSizeLabel;
+  DoubleSpinBox *mpHorizontalAxisNumbersFontSizeSpinBox;
+  Label *mpFooterFontSizeLabel;
+  DoubleSpinBox *mpFooterFontSizeSpinBox;
+  Label *mpLegendFontSizeLabel;
+  DoubleSpinBox *mpLegendFontSizeSpinBox;
 };
 
 class FigaroPage : public QWidget

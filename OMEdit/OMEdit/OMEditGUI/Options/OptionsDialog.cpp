@@ -777,6 +777,27 @@ void OptionsDialog::readPlottingSettings()
   if (mpSettings->contains("variableFilter/interval")) {
     mpPlottingPage->getFilterIntervalSpinBox()->setValue(mpSettings->value("variableFilter/interval").toInt());
   }
+  if (mpSettings->contains("plotting/titleFontSize")) {
+    mpPlottingPage->getTitleFontSizeSpinBox()->setValue(mpSettings->value("plotting/titleFontSize").toDouble());
+  }
+  if (mpSettings->contains("plotting/verticalAxisTitleFontSize")) {
+    mpPlottingPage->getVerticalAxisTitleFontSizeSpinBox()->setValue(mpSettings->value("plotting/verticalAxisTitleFontSize").toDouble());
+  }
+  if (mpSettings->contains("plotting/verticalAxisNumbersFontSize")) {
+    mpPlottingPage->getVerticalAxisNumbersFontSizeSpinBox()->setValue(mpSettings->value("plotting/verticalAxisNumbersFontSize").toDouble());
+  }
+  if (mpSettings->contains("plotting/horizontalAxisTitleFontSize")) {
+    mpPlottingPage->getHorizontalAxisTitleFontSizeSpinBox()->setValue(mpSettings->value("plotting/horizontalAxisTitleFontSize").toDouble());
+  }
+  if (mpSettings->contains("plotting/horizontalAxisNumbersFontSize")) {
+    mpPlottingPage->getHorizontalAxisNumbersFontSizeSpinBox()->setValue(mpSettings->value("plotting/horizontalAxisNumbersFontSize").toDouble());
+  }
+  if (mpSettings->contains("plotting/footerFontSize")) {
+    mpPlottingPage->getFooterFontSizeSpinBox()->setValue(mpSettings->value("plotting/footerFontSize").toDouble());
+  }
+  if (mpSettings->contains("plotting/legendFontSize")) {
+    mpPlottingPage->getLegendFontSizeSpinBox()->setValue(mpSettings->value("plotting/legendFontSize").toDouble());
+  }
 }
 
 //! Reads the Fiagro section settings from omedit.ini
@@ -1348,6 +1369,14 @@ void OptionsDialog::savePlottingSettings()
   // save variable filter interval
   mpSettings->setValue("variableFilter/interval", mpPlottingPage->getFilterIntervalSpinBox()->value());
   MainWindow::instance()->getVariablesWidget()->getTreeSearchFilters()->getFilterTimer()->setInterval(mpPlottingPage->getFilterIntervalSpinBox()->value() * 1000);
+  // save plot font sizes
+  mpSettings->setValue("plotting/titleFontSize", mpPlottingPage->getTitleFontSizeSpinBox()->value());
+  mpSettings->setValue("plotting/verticalAxisTitleFontSize", mpPlottingPage->getVerticalAxisTitleFontSizeSpinBox()->value());
+  mpSettings->setValue("plotting/verticalAxisNumbersFontSize", mpPlottingPage->getVerticalAxisNumbersFontSizeSpinBox()->value());
+  mpSettings->setValue("plotting/horizontalAxisTitleFontSize", mpPlottingPage->getHorizontalAxisTitleFontSizeSpinBox()->value());
+  mpSettings->setValue("plotting/horizontalAxisNumbersFontSize", mpPlottingPage->getHorizontalAxisNumbersFontSizeSpinBox()->value());
+  mpSettings->setValue("plotting/footerFontSize", mpPlottingPage->getFooterFontSizeSpinBox()->value());
+  mpSettings->setValue("plotting/legendFontSize", mpPlottingPage->getLegendFontSizeSpinBox()->value());
 }
 
 //! Saves the Figaro section settings to omedit.ini
@@ -4323,10 +4352,11 @@ PlottingPage::PlottingPage(OptionsDialog *pOptionsDialog)
   // set the layout
   QGridLayout *pCurveStyleLayout = new QGridLayout;
   pCurveStyleLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pCurveStyleLayout->addWidget(mpCurvePatternLabel, 0, 0);
-  pCurveStyleLayout->addWidget(mpCurvePatternComboBox, 0, 1);
-  pCurveStyleLayout->addWidget(mpCurveThicknessLabel, 1, 0);
-  pCurveStyleLayout->addWidget(mpCurveThicknessSpinBox, 1, 1);
+  pCurveStyleLayout->addWidget(new Label(tr("Curve styles are used for new curves. Use plot setup window to update the existing curves.")), 0, 0, 1, 2);
+  pCurveStyleLayout->addWidget(mpCurvePatternLabel, 1, 0);
+  pCurveStyleLayout->addWidget(mpCurvePatternComboBox, 1, 1);
+  pCurveStyleLayout->addWidget(mpCurveThicknessLabel, 2, 0);
+  pCurveStyleLayout->addWidget(mpCurveThicknessSpinBox, 2, 1);
   mpCurveStyleGroupBox->setLayout(pCurveStyleLayout);
   // variable filter interval
   mpVariableFilterGroupBox = new QGroupBox(tr("Variable Filter"));
@@ -4337,6 +4367,7 @@ PlottingPage::PlottingPage(OptionsDialog *pOptionsDialog)
   mpFilterIntervalSpinBox->setSuffix(tr(" seconds"));
   mpFilterIntervalSpinBox->setRange(0, std::numeric_limits<int>::max());
   mpFilterIntervalSpinBox->setValue(2);
+  mpFilterIntervalSpinBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   // variable filter layout
   QGridLayout *pVariableFilterGridLayout = new QGridLayout;
   pVariableFilterGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -4344,6 +4375,66 @@ PlottingPage::PlottingPage(OptionsDialog *pOptionsDialog)
   pVariableFilterGridLayout->addWidget(mpFilterIntervalLabel, 1, 0);
   pVariableFilterGridLayout->addWidget(mpFilterIntervalSpinBox, 1, 1);
   mpVariableFilterGroupBox->setLayout(pVariableFilterGridLayout);
+  // font size
+  mpFontSizeGroupBox = new QGroupBox(tr("Font Size"));
+  mpTitleFontSizeLabel = new Label("Title:");
+  mpTitleFontSizeSpinBox = new DoubleSpinBox;
+  mpTitleFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
+  mpTitleFontSizeSpinBox->setValue(14);
+  mpTitleFontSizeSpinBox->setSingleStep(1);
+  mpTitleFontSizeSpinBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  mpVerticalAxisTitleFontSizeLabel = new Label("Vertical Axis Title:");
+  mpVerticalAxisTitleFontSizeSpinBox = new DoubleSpinBox;
+  mpVerticalAxisTitleFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
+  mpVerticalAxisTitleFontSizeSpinBox->setValue(11);
+  mpVerticalAxisTitleFontSizeSpinBox->setSingleStep(1);
+  mpVerticalAxisNumbersFontSizeLabel = new Label("Vertical Axis Numbers:");
+  mpVerticalAxisNumbersFontSizeSpinBox = new DoubleSpinBox;
+  mpVerticalAxisNumbersFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
+  mpVerticalAxisNumbersFontSizeSpinBox->setValue(10);
+  mpVerticalAxisNumbersFontSizeSpinBox->setSingleStep(1);
+  mpHorizontalAxisTitleFontSizeLabel = new Label("Horizontal Axis Title:");
+  mpHorizontalAxisTitleFontSizeSpinBox = new DoubleSpinBox;
+  mpHorizontalAxisTitleFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
+  mpHorizontalAxisTitleFontSizeSpinBox->setValue(11);
+  mpHorizontalAxisTitleFontSizeSpinBox->setSingleStep(1);
+  mpHorizontalAxisNumbersFontSizeLabel = new Label("Horizontal Axis Numbers:");
+  mpHorizontalAxisNumbersFontSizeSpinBox = new DoubleSpinBox;
+  mpHorizontalAxisNumbersFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
+  mpHorizontalAxisNumbersFontSizeSpinBox->setValue(10);
+  mpHorizontalAxisNumbersFontSizeSpinBox->setSingleStep(1);
+  mpFooterFontSizeLabel = new Label("Footer:");
+  mpFooterFontSizeSpinBox = new DoubleSpinBox;
+  mpFooterFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
+  mpFooterFontSizeSpinBox->setValue(QApplication::font().pointSizeF());
+  mpFooterFontSizeSpinBox->setSingleStep(1);
+  mpLegendFontSizeLabel = new Label("Legend:");
+  mpLegendFontSizeSpinBox = new DoubleSpinBox;
+  mpLegendFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
+  mpLegendFontSizeSpinBox->setValue(QApplication::font().pointSizeF());
+  mpLegendFontSizeSpinBox->setSingleStep(1);
+  // font size layout
+  QGridLayout *pFontSizeGridLayout = new QGridLayout;
+  pFontSizeGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pFontSizeGridLayout->addWidget(new Label(tr("Font sizes are used for new plot windows. Use plot setup window to update the existing plots.")), 0, 0, 1, 2);
+  pFontSizeGridLayout->addWidget(mpTitleFontSizeLabel, 1, 0);
+  pFontSizeGridLayout->addWidget(mpTitleFontSizeSpinBox, 1, 1);
+  pFontSizeGridLayout->addWidget(mpVerticalAxisTitleFontSizeLabel, 2, 0);
+  pFontSizeGridLayout->addWidget(mpVerticalAxisTitleFontSizeSpinBox, 2, 1);
+  pFontSizeGridLayout->addWidget(mpVerticalAxisNumbersFontSizeLabel, 3, 0);
+  pFontSizeGridLayout->addWidget(mpVerticalAxisNumbersFontSizeSpinBox, 3, 1);
+  pFontSizeGridLayout->addWidget(mpHorizontalAxisTitleFontSizeLabel, 4, 0);
+  pFontSizeGridLayout->addWidget(mpHorizontalAxisTitleFontSizeSpinBox, 4, 1);
+  pFontSizeGridLayout->addWidget(mpHorizontalAxisNumbersFontSizeLabel, 5, 0);
+  pFontSizeGridLayout->addWidget(mpHorizontalAxisNumbersFontSizeSpinBox, 5, 1);
+  int index = 6;
+#if QWT_VERSION > 0x060000
+  pFontSizeGridLayout->addWidget(mpFooterFontSizeLabel, index, 0);
+  pFontSizeGridLayout->addWidget(mpFooterFontSizeSpinBox, index++, 1);
+#endif
+  pFontSizeGridLayout->addWidget(mpLegendFontSizeLabel, index, 0);
+  pFontSizeGridLayout->addWidget(mpLegendFontSizeSpinBox, index, 1);
+  mpFontSizeGroupBox->setLayout(pFontSizeGridLayout);
   // main layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setAlignment(Qt::AlignTop);
@@ -4352,6 +4443,7 @@ PlottingPage::PlottingPage(OptionsDialog *pOptionsDialog)
   pMainLayout->addWidget(mpPlottingViewModeGroupBox);
   pMainLayout->addWidget(mpCurveStyleGroupBox);
   pMainLayout->addWidget(mpVariableFilterGroupBox);
+  pMainLayout->addWidget(mpFontSizeGroupBox);
   setLayout(pMainLayout);
 }
 

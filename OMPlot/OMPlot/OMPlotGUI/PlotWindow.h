@@ -88,6 +88,7 @@ private:
   QString mYRangeMax;
   double mCurveWidth;
   int mCurveStyle;
+  QFont mLegendFont;
   double mTime;
   bool mIsInteractiveSimulation;
   QString mInteractiveTreeItemOwner;
@@ -148,6 +149,8 @@ public:
   double getCurveWidth();
   void setCurveStyle(int style);
   int getCurveStyle();
+  void setLegendFont(QFont font);
+  QFont getLegendFont();
   void setLegendPosition(QString position);
   QString getLegendPosition();
   void setFooter(QString footer);
@@ -252,16 +255,30 @@ private:
   QWidget *mpTitlesTab;
   QLabel *mpPlotTitleLabel;
   QLineEdit *mpPlotTitleTextBox;
+  QLabel *mpTitleFontSizeLabel;
+  QDoubleSpinBox *mpTitleFontSizeSpinBox;
   QLabel *mpVerticalAxisLabel;
   QLineEdit *mpVerticalAxisTextBox;
+  QLabel *mpVerticalAxisTitleFontSizeLabel;
+  QDoubleSpinBox *mpVerticalAxisTitleFontSizeSpinBox;
+  QLabel *mpVerticalAxisNumbersFontSizeLabel;
+  QDoubleSpinBox *mpVerticalAxisNumbersFontSizeSpinBox;
   QLabel *mpHorizontalAxisLabel;
   QLineEdit *mpHorizontalAxisTextBox;
+  QLabel *mpHorizontalAxisTitleFontSizeLabel;
+  QDoubleSpinBox *mpHorizontalAxisTitleFontSizeSpinBox;
+  QLabel *mpHorizontalAxisNumbersFontSizeLabel;
+  QDoubleSpinBox *mpHorizontalAxisNumbersFontSizeSpinBox;
   QLabel *mpPlotFooterLabel;
   QLineEdit *mpPlotFooterTextBox;
+  QLabel *mpFooterFontSizeLabel;
+  QDoubleSpinBox *mpFooterFontSizeSpinBox;
   /* legend tab */
   QWidget *mpLegendTab;
   QLabel *mpLegendPositionLabel;
   QComboBox *mpLegendPositionComboBox;
+  QLabel *mpLegendFontSizeLabel;
+  QDoubleSpinBox *mpLegendFontSizeSpinBox;
   /* range tab */
   QWidget *mpRangeTab;
   QCheckBox *mpAutoScaleCheckbox;
