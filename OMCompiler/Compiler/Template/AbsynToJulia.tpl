@@ -644,8 +644,8 @@ match imp
   case QUAL_IMPORT(__) then
     let path_str = dumpPathJL(path)
     match path_str
-      case "Array" then 'import MetaModelica.ArrayUtil'
-      case "List" then  'import MetaModelica.ListUtil'
+      case "Array" then 'import ArrayUtil'
+      case "List" then  'import ListUtil'
       else 'import <%path_str%>'
   case UNQUAL_IMPORT(__) then 'using <%dumpPathJL(path)%>'
   case GROUP_IMPORT(__) then
