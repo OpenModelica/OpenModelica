@@ -81,6 +81,8 @@ public:
   void addPlotCurve(PlotCurve *pCurve);
   void removeCurve(PlotCurve *pCurve);
   QColor getUniqueColor(int index, int total);
+  void setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, double verticalAxisNumbersFontSize, double horizontalAxisTitleFontSize,
+                    double horizontalAxisNumbersFontSize, double footerFontSize, double legendFontSize);
 public slots:
   virtual void replot();
 };
