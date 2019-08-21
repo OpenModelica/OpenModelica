@@ -793,6 +793,8 @@ ida_event_update(DATA* data, threadData_t *threadData)
     data->callback->functionDAE(data, threadData);
     if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
   }
+
+  return 0;
 }
 
 /* main ida function to make a step */
@@ -1228,7 +1230,7 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
     for(i=0; i < idaData->N; i++)
     {
       NV_Ith_S(res, i) = data->simulationInfo->daeModeData->residualVars[i];
-      infoStreamPrint(LOG_SOLVER_V, 0, "%d. residual = %e", i, NV_Ith_S(res, i));
+      infoStreamPrint(LOG_SOLVER_V, 0, "%ld. residual = %e", i, NV_Ith_S(res, i));
     }
   }
   else
@@ -1240,7 +1242,7 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
     for(i=0; i < idaData->N; i++)
     {
       NV_Ith_S(res, i) = data->localData[0]->realVars[data->modelData->nStates + i] - NV_Ith_S(yp, i);
-      infoStreamPrint(LOG_SOLVER_V, 0, "%d. residual = %e", i, NV_Ith_S(res, i));
+      infoStreamPrint(LOG_SOLVER_V, 0, "%ld. residual = %e", i, NV_Ith_S(res, i));
     }
   }
 
@@ -1774,7 +1776,6 @@ static int callSparseJacobian(double tt, double cj,
     N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
 {
   TRACE_PUSH
-  int retVal;
 
   IDA_SOLVER* idaData = (IDA_SOLVER*)user_data;
   DATA* data = (DATA*)(((IDA_USERDATA*)idaData->simData)->data);
@@ -1786,11 +1787,11 @@ static int callSparseJacobian(double tt, double cj,
 
   if (idaData->jacobianMethod == COLOREDSYMJAC || idaData->jacobianMethod == SYMJAC)
   {
-    retVal = jacColoredSymbolicalSparse(tt, yy, yp, rr, Jac, cj, user_data);
+    jacColoredSymbolicalSparse(tt, yy, yp, rr, Jac, cj, user_data);
   }
   else if (idaData->jacobianMethod == COLOREDNUMJAC || idaData->jacobianMethod == NUMJAC)
   {
-    retVal = jacoColoredNumericalSparse(tt, yy, yp, rr, Jac, cj, user_data);
+    jacoColoredNumericalSparse(tt, yy, yp, rr, Jac, cj, user_data);
   }
 
   /* debug */
@@ -1817,7 +1818,7 @@ static int callSparseJacobian(double tt, double cj,
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
   TRACE_POP
-  return retVal;
+  return 0;
 }
 
 static
