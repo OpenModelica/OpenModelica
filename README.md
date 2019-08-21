@@ -24,19 +24,16 @@ To get everything running, you will need a few extras:
 - Qt5 or Qt4, Webkit, QtOpenGL
 - [Sundials](http://www.llnl.gov/CASC/sundials/) (optional; adds more numerical solvers to the simulation runtime)
 
-## Compilation (Linux/OSX)
+## Compilation
 
-```bash
-> autoconf
-> ./configure CC=clang CXX=clang++
-> make -j8
-> build/bin/omc --version
-> (cd testsuite/partest && ./runtests.pl)
-```
+The OpenModelica Compiler is the core of the OpenModelica project, which is an open-source Modelica-based modeling and simulation environment intended for industrial and academic usage.
 
-## Compilation (Windows)
+### Building the OpenModelica Compiler
 
-Windows instruction are [here](../../../OMCompiler/blob/master/README-OMDev-MINGW.md).
+* [Linux/OSX instructions](/OMCompiler/README.Linux.md)
+* [Windows instructions](/OMCompiler/README-OMDev-MINGW.md)
+* [Windows Subsystem for Linux](/OMCompiler/README-Windows-WSL.md)
+
 
 ## Working with the repository
 
