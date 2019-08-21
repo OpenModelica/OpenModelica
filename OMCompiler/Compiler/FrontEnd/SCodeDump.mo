@@ -42,6 +42,7 @@ public import AbsynUtil;
 public import SCode;
 
 protected import Dump;
+protected import DAE;
 protected import List;
 protected import SCodeDumpTpl;
 protected import Tpl;
