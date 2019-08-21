@@ -441,6 +441,7 @@ namespace Utilities {
   QSettings* getApplicationSettings();
   void parseCompositeModelText(MessageHandler *pMessageHandler, QString contents);
   qreal convertUnit(qreal value, qreal offset, qreal scaleFactor);
+  bool isValueLiteralConstant(QString value);
   QString arrayExpressionUnitConversion(OMCProxy *pOMCProxy, QString modifierValue, QString fromUnit, QString toUnit);
   Label* getHeadingLabel(QString heading);
   QFrame* getHeadingLine();
