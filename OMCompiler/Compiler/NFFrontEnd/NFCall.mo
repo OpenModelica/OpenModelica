@@ -552,6 +552,21 @@ uniontype Call
     end match;
   end typedFunction;
 
+  function functionName
+    input Call call;
+    output Absyn.Path name;
+  algorithm
+    name := match call
+      case UNTYPED_CALL() then ComponentRef.toPath(call.ref);
+      case ARG_TYPED_CALL() then ComponentRef.toPath(call.ref);
+      case TYPED_CALL() then Function.name(call.fn);
+      case UNTYPED_ARRAY_CONSTRUCTOR() then Absyn.IDENT("array");
+      case TYPED_ARRAY_CONSTRUCTOR() then Absyn.IDENT("array");
+      case UNTYPED_REDUCTION() then ComponentRef.toPath(call.ref);
+      case TYPED_REDUCTION() then Function.name(call.fn);
+    end match;
+  end functionName;
+
   function arguments
     input Call call;
     output list<Expression> arguments;
