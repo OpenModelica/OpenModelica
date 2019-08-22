@@ -1237,7 +1237,7 @@ void VariablesWidget::variablesUpdated()
     PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
     if (pPlotWindow) { // we can have an AnimateWindow there as well so always check
       foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
-        if (pPlotWindow->getPlotType() == PlotWindow::PLOT) {
+        if (pPlotWindow->getPlotType() == PlotWindow::PLOT || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAY) {
           QString curveNameStructure = pPlotCurve->getNameStructure();
           VariablesTreeItem *pVariableTreeItem;
           pVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(curveNameStructure, mpVariablesTreeModel->getRootVariablesTreeItem());
@@ -1251,7 +1251,7 @@ void VariablesWidget::variablesUpdated()
           } else {
             pPlotWindow->getPlot()->removeCurve(pPlotCurve);
           }
-        } else if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC) {
+        } else if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC) {
           QString xVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getXVariable());
           VariablesTreeItem *pXVariableTreeItem;
           pXVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(xVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
