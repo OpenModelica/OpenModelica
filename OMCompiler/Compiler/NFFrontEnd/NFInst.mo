@@ -159,10 +159,17 @@ algorithm
   // Type the class.
   Typing.typeClass(inst_cls, name);
 
-  // Flatten and simplify the model.
+  // Flatten the model and evaluate constants in it.
   flat_model := Flatten.flatten(inst_cls, name);
   flat_model := EvalConstants.evaluate(flat_model);
+
+  // Do unit checking
+  flat_model := UnitCheck.checkUnits(flat_model);
+
+  // Apply simplifications to the model.
   flat_model := SimplifyModel.simplify(flat_model);
+
+  // Collect a tree of all functions that are still used in the flat model.
   funcs := Flatten.collectFunctions(flat_model, name);
 
   // Collect package constants that couldn't be substituted with their values
@@ -182,9 +189,6 @@ algorithm
 
   // Convert the flat model to a DAE.
   (dae, daeFuncs) := ConvertDAE.convert(flat_model, funcs, name, InstNode.info(inst_cls));
-
-  // Do unit checking
-  UnitCheck.checkUnits(dae, daeFuncs);
 end instClassInProgram;
 
 function instantiate

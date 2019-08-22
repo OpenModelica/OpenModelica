@@ -92,6 +92,7 @@ parameters.log \
 simoptions.log \
 annex60.log \
 frontEndUnitCheck.log \
+newFrontEndUnitCheck.log \
 gitlibraries.log
 
 # Sorted by time it takes to run the tests...
@@ -386,6 +387,9 @@ simulationqss.log: omc-diff
 	$(MAKE) -C simulation/modelica/qss -f Makefile test > $@
 	@echo $@ done
 frontEndUnitCheck.log: omc-diff
+	$(MAKE) -C simulation/modelica/Funitcheck -f Makefile test > $@
+	@echo $@ done
+newFrontEndUnitCheck.log: omc-diff
 	$(MAKE) -C simulation/modelica/NFunitcheck -f Makefile test > $@
 	@echo $@ done
 simulationunitcheck.log: omc-diff
@@ -676,6 +680,7 @@ clean_g_2 :
 	$(MAKE) -C simulation/modelica/packages -f Makefile clean
 	$(MAKE) -C simulation/modelica/records -f Makefile clean
 	$(MAKE) -C simulation/modelica/types -f Makefile clean
+	$(MAKE) -C simulation/modelica/Funitcheck -f Makefile clean
 	$(MAKE) -C simulation/modelica/NFunitcheck -f Makefile clean
 
 clean_g_3 :

@@ -60,11 +60,8 @@ public
 function evaluate
   input output FlatModel flatModel;
 protected
-  Variability const_var;
+  Variability const_var = Variability.STRUCTURAL_PARAMETER;
 algorithm
-  const_var := if Flags.getConfigBool(Flags.CHECK_MODEL) then
-    Variability.CONSTANT else Variability.STRUCTURAL_PARAMETER;
-
   flatModel.variables := list(evaluateVariable(v, const_var) for v in flatModel.variables);
   flatModel.equations := evaluateEquations(flatModel.equations, const_var);
   flatModel.initialEquations := evaluateEquations(flatModel.initialEquations, const_var);
