@@ -95,6 +95,17 @@ function Strings_advanced_scanReal
   external "C" ModelicaStrings_scanReal(string,startIndex,unsigned,nextIndex,number) annotation(Library = "ModelicaExternalC");
 end Strings_advanced_scanReal;
 
+function Strings_advanced_scanInteger
+  input String string;
+  input Integer startIndex;
+  input Boolean unsigned;
+  output Integer nextIndex;
+  output Integer number;
+
+  external "C"
+  ModelicaStrings_scanInteger(string,startIndex,unsigned,nextIndex,number) annotation(Library = "ModelicaExternalC");
+end Strings_advanced_scanInteger;
+
 function Strings_advanced_skipWhiteSpace
   input String string;
   input Integer startIndex(min = 1) = 1;
