@@ -29,8 +29,8 @@
  *
  */
 
-encapsulated package NFUnit
-" file:        NFUnit.mo
+encapsulated package FUnit
+" file:        FUnit.mo
   package:     Unit
   description: This package defines the type Unit, which represents a unit based
                on SI base units, and some auxiliary functions therefore.
@@ -40,12 +40,12 @@ encapsulated package NFUnit
 public
 import DAE;
 import System;
-import ComponentRef = NFComponentRef;
 
 protected
+import ComponentReference;
 import Error;
-import HashTableStringToUnit = NFHashTableStringToUnit;
-import HashTableUnitToString = NFHashTableUnitToString;
+import HashTableStringToUnit = FHashTableStringToUnit;
+import HashTableUnitToString = FHashTableUnitToString;
 import Util;
 
 
@@ -63,7 +63,7 @@ public uniontype Unit
   end UNIT;
 
   record MASTER "unknown unit that belongs to all the variables from varList"
-    list<ComponentRef> varList;
+    list<DAE.ComponentRef> varList;
   end MASTER;
 
   record UNKNOWN "unknown SI base unit decomposition"
@@ -86,7 +86,7 @@ protected uniontype Token
   record T_RPAREN end T_RPAREN;
 end Token;
 
-public constant ComponentRef UPDATECREF = ComponentRef.STRING("jhagemann", ComponentRef.EMPTY());
+public constant DAE.ComponentRef UPDATECREF = DAE.CREF_IDENT("jhagemann", DAE.T_REAL_DEFAULT, {});
 
 public constant list<tuple<String, Unit>> LU_COMPLEXUNITS = {
 /*                   fac,mol,cd, m, s, A, K, g*/
@@ -174,16 +174,6 @@ algorithm
   end match;
 end isUnit;
 
-public function isMaster
-  input Unit unit;
-  output Boolean res;
-algorithm
-  res := match unit
-    case MASTER() then true;
-    else false;
-  end match;
-end isMaster;
-
 public function hashUnitMod
   input Unit inKey;
   input Integer inMod;
@@ -206,7 +196,7 @@ algorithm
       Integer i1, i2, i3, i4, i5, i6, i7;
       Integer j1, j2, j3, j4, j5, j6, j7;
       String s, s2;
-      list<ComponentRef> lcr, lcr2;
+      list<DAE.ComponentRef> lcr, lcr2;
 
     case (UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), UNIT(factor2, j1, j2, j3, j4, j5, j6, j7)) equation
       true = realEq(factor1, factor2);
@@ -251,7 +241,7 @@ algorithm
     local
       String s, str;
       Boolean b;
-      list<ComponentRef> crefList;
+      list<DAE.ComponentRef> crefList;
       Real factor1;
       Integer i1, i2, i3, i4, i5, i6, i7;
 
@@ -324,24 +314,24 @@ algorithm
 end unit2string;
 
 public function printListCr
- input list<ComponentRef> inlCr;
+ input list<DAE.ComponentRef> inlCr;
  output String outS;
 algorithm
   outS := match(inlCr)
 
   local
-    list<ComponentRef> lCr;
-    ComponentRef cr;
+    list<DAE.ComponentRef> lCr;
+    DAE.ComponentRef cr;
     String s;
 
     case {} then "";
 
     case cr::{} equation
-      s = ComponentRef.toString(cr);
+      s = ComponentReference.crefStr(cr);
     then s;
 
     case cr::lCr equation
-      s = ComponentRef.toString(cr);
+      s = ComponentReference.crefStr(cr);
       s = s + ", " + printListCr(lCr);
     then s;
 
@@ -933,4 +923,4 @@ algorithm
 end popNumber;
 
 annotation(__OpenModelica_Interface="frontend");
-end NFUnit;
+end FUnit;

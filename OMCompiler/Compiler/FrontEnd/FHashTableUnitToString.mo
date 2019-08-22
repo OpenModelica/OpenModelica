@@ -29,16 +29,16 @@
  *
  */
 
-encapsulated package NFHashTableCrToUnit "
+encapsulated package FHashTableUnitToString "
   This file is an extension to OpenModelica.
 
   Copyright (c) 2013 TU Dresden
 
   All rights reserved.
 
-  file:        HashTableCrToUnit.mo
-  package:     HashTableCrToUnit
-  description: ComponentRef to Unit.Unit
+  file:        FHashTableUnitToString.mo
+  package:     FHashTableUnitToString
+  description: Unit.Unit to String
 
 
   "
@@ -54,13 +54,10 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 /* HashTable instance specific code */
 
 public import BaseHashTable;
-public import DAE;
-public import ComponentRef = NFComponentRef;
-public import Unit = NFUnit;
+public import FUnit;
 
-
-public type Key = ComponentRef;
-public type Value = Unit.Unit;
+public type Key = FUnit.Unit;
+public type Value = String;
 
 public type HashTableCrefFunctionsType = tuple<FuncHashKey,FuncKeyEqual,FuncKeyStr,FuncValueStr>;
 public type HashTable = tuple<
@@ -102,6 +99,13 @@ algorithm
   hashTable := emptyHashTableSized(BaseHashTable.defaultBucketSize);
 end emptyHashTable;
 
+protected function id
+  input String inStr;
+  output String outStr;
+algorithm
+  outStr := inStr;
+end id;
+
 public function emptyHashTableSized
 "
   Returns an empty HashTable.
@@ -110,8 +114,8 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size, (ComponentRef.hash, ComponentRef.isEqual, ComponentRef.toString, NFUnit.unit2string));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(FUnit.hashUnitMod,FUnit.unitEqual,FUnit.unit2string,id));
 end emptyHashTableSized;
 
 annotation(__OpenModelica_Interface="frontend");
-end NFHashTableCrToUnit;
+end FHashTableUnitToString;

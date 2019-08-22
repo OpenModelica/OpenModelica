@@ -867,6 +867,26 @@ uniontype Component
 
   end getFixedAttribute;
 
+  function getUnitAttribute
+    input Component component;
+    input String defaultUnit = "";
+    output String unitString;
+  protected
+    Binding binding;
+  algorithm
+    binding := Class.lookupAttributeBinding("unit", InstNode.getClass(classInstance(component)));
+
+    unitString := match binding
+      case Binding.TYPED_BINDING(bindingExp = Expression.STRING(value = unitString)) then unitString;
+      case Binding.FLAT_BINDING(bindingExp = Expression.STRING(value = unitString)) then unitString;
+      else defaultUnit;
+    end match;
+
+    if stringEmpty(unitString) then
+      unitString := defaultUnit;
+    end if;
+  end getUnitAttribute;
+
   function isDeleted
     input Component component;
     output Boolean isDeleted;

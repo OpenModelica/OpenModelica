@@ -10,8 +10,8 @@ equation
 end test;
 "); getErrorString();
 
-setCommandLineOptions("-d=frontEndUnitCheck,dumpUnits,newInst");
-getErrorString(); 
+setCommandLineOptions("-d=oldFrontEndUnitCheck,dumpUnits");
+getErrorString();
 instantiateModel(test);
 getErrorString();
 
