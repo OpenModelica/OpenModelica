@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated uniontype NFExpression
+encapsulated package NFExpression
 protected
   import Util;
   import Absyn;
@@ -70,29 +70,6 @@ public
   import NFTyping.ExpOrigin;
   import ExpressionSimplify;
   import Values;
-
-	uniontype ClockKind
-	  record INFERRED_CLOCK
-	  end INFERRED_CLOCK;
-
-	  record INTEGER_CLOCK
-	    Expression intervalCounter;
-	    Expression resolution " integer type >= 1 ";
-	  end INTEGER_CLOCK;
-
-	  record REAL_CLOCK
-	    Expression interval;
-	  end REAL_CLOCK;
-
-	  record BOOLEAN_CLOCK
-	    Expression condition;
-	    Expression startInterval " real type >= 0.0 ";
-	  end BOOLEAN_CLOCK;
-
-	  record SOLVER_CLOCK
-	    Expression c;
-	    Expression solverMethod " string type ";
-	  end SOLVER_CLOCK;
 
     function compare
       input ClockKind ck1;
@@ -158,7 +135,7 @@ public
       end match;
     end toDebugString;
 
-    function toString
+function toString
       input ClockKind ck;
       output String str;
     algorithm
@@ -175,165 +152,6 @@ public
 
       str := "Clock(" + str + ")";
     end toString;
-	end ClockKind;
-
-  record INTEGER
-    Integer value;
-  end INTEGER;
-
-  record REAL
-    Real value;
-  end REAL;
-
-  record STRING
-    String value;
-  end STRING;
-
-  record BOOLEAN
-    Boolean value;
-  end BOOLEAN;
-
-  record ENUM_LITERAL
-    Type ty;
-    String name;
-    Integer index;
-  end ENUM_LITERAL;
-
-  record CREF
-    Type ty;
-    ComponentRef cref;
-  end CREF;
-
-  record TYPENAME "Represents a type used as a range, e.g. Boolean."
-    Type ty;
-  end TYPENAME;
-
-  record ARRAY
-    Type ty;
-    list<Expression> elements;
-    Boolean literal "True if the array is known to only contain literal expressions.";
-  end ARRAY;
-
-  record MATRIX "The array concatentation operator [a,b; c,d]; this should be removed during type-checking"
-    // Does not have a type since we only keep this operator before type-checking
-    list<list<Expression>> elements;
-  end MATRIX;
-
-  record RANGE
-    Type ty;
-    Expression start;
-    Option<Expression> step;
-    Expression stop;
-  end RANGE;
-
-  record TUPLE
-    Type ty;
-    list<Expression> elements;
-  end TUPLE;
-
-  record RECORD
-    Path path; // Maybe not needed since the type contains the name. Prefix?
-    Type ty;
-    list<Expression> elements;
-  end RECORD;
-
-  record CALL
-    Call call;
-  end CALL;
-
-  record SIZE
-    Expression exp;
-    Option<Expression> dimIndex;
-  end SIZE;
-
-  record END
-  end END;
-
-  record BINARY "Binary operations, e.g. a+4"
-    Expression exp1;
-    Operator operator;
-    Expression exp2;
-  end BINARY;
-
-  record UNARY "Unary operations, -(4x)"
-    Operator operator;
-    Expression exp;
-  end UNARY;
-
-  record LBINARY "Logical binary operations: and, or"
-    Expression exp1;
-    Operator operator;
-    Expression exp2;
-  end LBINARY;
-
-  record LUNARY "Logical unary operations: not"
-    Operator operator;
-    Expression exp;
-  end LUNARY;
-
-  record RELATION "Relation, e.g. a <= 0"
-    Expression exp1;
-    Operator operator;
-    Expression exp2;
-  end RELATION;
-
-  record IF
-    Expression condition;
-    Expression trueBranch;
-    Expression falseBranch;
-  end IF;
-
-  record CAST
-    Type ty;
-    Expression exp;
-  end CAST;
-
-  record UNBOX "MetaModelica value unboxing (similar to a cast)"
-    Expression exp;
-    Type ty;
-  end UNBOX;
-
-  record SUBSCRIPTED_EXP
-    Expression exp;
-    list<Subscript> subscripts;
-    Type ty;
-  end SUBSCRIPTED_EXP;
-
-  record TUPLE_ELEMENT
-    Expression tupleExp;
-    Integer index;
-    Type ty;
-  end TUPLE_ELEMENT;
-
-  record RECORD_ELEMENT
-    Expression recordExp;
-    Integer index;
-    String fieldName;
-    Type ty;
-  end RECORD_ELEMENT;
-
-  record BOX "MetaModelica boxed value"
-    Expression exp;
-  end BOX;
-
-  record MUTABLE
-    Mutable<Expression> exp;
-  end MUTABLE;
-
-  record EMPTY
-    Type ty;
-  end EMPTY;
-
-  record CLKCONST "Clock constructors"
-    ClockKind clk "Clock kinds";
-  end CLKCONST;
-
-  record PARTIAL_FUNCTION_APPLICATION
-    ComponentRef fn;
-    list<Expression> args;
-    list<String> argNames;
-    Type ty;
-  end PARTIAL_FUNCTION_APPLICATION;
 
   function isArray
     input Expression exp;

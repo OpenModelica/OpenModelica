@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated uniontype NFConnections
+encapsulated package NFConnections
   import Connection = NFConnection;
   import Connector = NFConnector;
   import FlatModel = NFFlatModel;
@@ -49,12 +49,6 @@ protected
 public
   type BrokenEdge = tuple<ComponentRef, ComponentRef, list<Equation>>;
   type BrokenEdges = list<BrokenEdge>;
-
-  record CONNECTIONS
-    list<Connection> connections;
-    list<Connector> flows;
-    BrokenEdges broken;
-  end CONNECTIONS;
 
   function new
     output Connections conns = CONNECTIONS({}, {}, {});

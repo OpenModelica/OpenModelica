@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated uniontype NFImport
+encapsulated package NFImport
   import SCode;
   import NFInstNode.InstNode;
 
@@ -42,22 +42,6 @@ protected
   import Import = NFImport;
 
 public
-  record UNRESOLVED_IMPORT
-    Absyn.Import imp;
-    InstNode scope;
-    SourceInfo info;
-  end UNRESOLVED_IMPORT;
-
-  record RESOLVED_IMPORT
-    InstNode node;
-    SourceInfo info;
-  end RESOLVED_IMPORT;
-
-  record CONFLICTING_IMPORT
-    Import imp1;
-    Import imp2;
-  end CONFLICTING_IMPORT;
-
   function name
     input Import imp;
     output String name;

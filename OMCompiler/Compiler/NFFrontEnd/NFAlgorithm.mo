@@ -29,19 +29,20 @@
  *
  */
 
-encapsulated uniontype NFAlgorithm
+encapsulated package NFAlgorithm
   import Statement = NFStatement;
   import DAE.ElementSource;
   import Expression = NFExpression;
 
 protected
   import Algorithm = NFAlgorithm;
-
 public
-  record ALGORITHM
-    list<Statement> statements;
-    ElementSource source;
-  end ALGORITHM;
+  uniontype NFAlgorithmType
+    record ALGORITHM
+      list<Statement> statements;
+      ElementSource source;
+    end ALGORITHM;
+  end NFAlgorithmType;
 
   partial function ApplyFn
     input Statement alg;
@@ -81,7 +82,6 @@ public
   function mapExpList
     input output list<Algorithm> algs;
     input MapFunc func;
-
     partial function MapFunc
       input output Expression exp;
     end MapFunc;
@@ -125,6 +125,5 @@ public
   algorithm
     str := Statement.toStringList(alg.statements);
   end toString;
-
   annotation(__OpenModelica_Interface="frontend");
 end NFAlgorithm;

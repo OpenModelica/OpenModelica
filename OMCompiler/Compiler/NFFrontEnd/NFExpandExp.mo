@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated uniontype NFExpandExp
+encapsulated package NFExpandExp
   import Expression = NFExpression;
 
 protected

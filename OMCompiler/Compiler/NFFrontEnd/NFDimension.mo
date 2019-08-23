@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated uniontype NFDimension
+encapsulated package NFDimension
 protected
   import Dimension = NFDimension;
   import Operator = NFOperator;
@@ -46,35 +46,6 @@ public
   import ComponentRef = NFComponentRef;
   import NFPrefixes.Variability;
   import Inst = NFInst;
-
-  record RAW_DIM
-    Absyn.Subscript dim;
-  end RAW_DIM;
-
-  record UNTYPED
-    Expression dimension;
-    Boolean isProcessing;
-  end UNTYPED;
-
-  record INTEGER
-    Integer size;
-    Variability var;
-  end INTEGER;
-
-  record BOOLEAN
-  end BOOLEAN;
-
-  record ENUM
-    Type enumType;
-  end ENUM;
-
-  record EXP
-    Expression exp;
-    Variability var;
-  end EXP;
-
-  record UNKNOWN
-  end UNKNOWN;
 
   function fromExp
     input Expression exp;

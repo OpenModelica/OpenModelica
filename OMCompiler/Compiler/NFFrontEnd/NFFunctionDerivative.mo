@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated uniontype NFFunctionDerivative
+encapsulated package NFFunctionDerivative
   import Absyn;
   import AbsynUtil;
   import SCode;
@@ -313,4 +313,3 @@ protected
 
   annotation(__OpenModelica_Interface="frontend");
 end NFFunctionDerivative;
-

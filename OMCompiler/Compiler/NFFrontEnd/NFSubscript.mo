@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated uniontype NFSubscript
+encapsulated package NFSubscript
 protected
   import DAE;
   import List;
@@ -51,28 +51,6 @@ public
   import NFCeval.EvalTarget;
 
   import Subscript = NFSubscript;
-
-  record RAW_SUBSCRIPT
-    Absyn.Subscript subscript;
-  end RAW_SUBSCRIPT;
-
-  record UNTYPED
-    Expression exp;
-  end UNTYPED;
-
-  record INDEX
-    Expression index;
-  end INDEX;
-
-  record SLICE
-    Expression slice;
-  end SLICE;
-
-  record EXPANDED_SLICE
-    list<Subscript> indices;
-  end EXPANDED_SLICE;
-
-  record WHOLE end WHOLE;
 
   function fromExp
     input Expression exp;

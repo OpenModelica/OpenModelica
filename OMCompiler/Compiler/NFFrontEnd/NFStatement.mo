@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated uniontype NFStatement
+encapsulated package NFStatement
   import Absyn;
   import AbsynUtil;
   import Type = NFType;
@@ -44,73 +44,6 @@ protected
   import IOStream;
 
 public
-  record ASSIGNMENT
-    Expression lhs "The asignee";
-    Expression rhs "The expression";
-    Type ty;
-    DAE.ElementSource source;
-  end ASSIGNMENT;
-
-  record FUNCTION_ARRAY_INIT "Used to mark in which order local array variables in functions should be initialized"
-    String name;
-    Type ty;
-    DAE.ElementSource source;
-  end FUNCTION_ARRAY_INIT;
-
-  record FOR
-    InstNode iterator;
-    Option<Expression> range;
-    list<Statement> body "The body of the for loop.";
-    DAE.ElementSource source;
-  end FOR;
-
-  record IF
-    list<tuple<Expression, list<Statement>>> branches
-      "List of branches, where each branch is a tuple of a condition and a body.";
-    DAE.ElementSource source;
-  end IF;
-
-  record WHEN
-    list<tuple<Expression, list<Statement>>> branches
-      "List of branches, where each branch is a tuple of a condition and a body.";
-    DAE.ElementSource source;
-  end WHEN;
-
-  record ASSERT
-    Expression condition "The assert condition.";
-    Expression message "The message to display if the assert fails.";
-    Expression level;
-    DAE.ElementSource source;
-  end ASSERT;
-
-  record TERMINATE
-    Expression message "The message to display if the terminate triggers.";
-    DAE.ElementSource source;
-  end TERMINATE;
-
-  record NORETCALL
-    Expression exp;
-    DAE.ElementSource source;
-  end NORETCALL;
-
-  record WHILE
-    Expression condition;
-    list<Statement> body;
-    DAE.ElementSource source;
-  end WHILE;
-
-  record RETURN
-    DAE.ElementSource source;
-  end RETURN;
-
-  record BREAK
-    DAE.ElementSource source;
-  end BREAK;
-
-  record FAILURE
-    list<Statement> body;
-    DAE.ElementSource source;
-  end FAILURE;
 
   function makeAssignment
     input Expression lhs;

@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated uniontype NFConnector
+encapsulated package NFConnector
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import Type = NFType;
@@ -52,14 +52,6 @@ protected
 
 public
   type Face = enumeration(INSIDE, OUTSIDE);
-
-  record CONNECTOR
-    ComponentRef name;
-    Type ty;
-    Face face;
-    ConnectorType.Type cty;
-    DAE.ElementSource source;
-  end CONNECTOR;
 
   function fromCref
     input ComponentRef cref;

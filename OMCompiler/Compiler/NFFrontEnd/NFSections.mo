@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated uniontype NFSections
+encapsulated package NFSections
   import Equation = NFEquation;
   import Algorithm = NFAlgorithm;
   import Statement = NFStatement;
@@ -41,24 +41,6 @@ protected
   import Sections = NFSections;
 
 public
-  record SECTIONS
-    list<Equation> equations;
-    list<Equation> initialEquations;
-    list<Algorithm> algorithms;
-    list<Algorithm> initialAlgorithms;
-  end SECTIONS;
-
-  record EXTERNAL
-    String name;
-    list<Expression> args;
-    ComponentRef outputRef;
-    String language;
-    Option<SCode.Annotation> ann;
-    Boolean explicit;
-  end EXTERNAL;
-
-  record EMPTY end EMPTY;
-
   function new
     input list<Equation> equations;
     input list<Equation> initialEquations;

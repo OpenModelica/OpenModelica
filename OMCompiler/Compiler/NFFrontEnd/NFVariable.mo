@@ -29,33 +29,22 @@
  *
  */
 
-encapsulated uniontype NFVariable
+encapsulated package NFVariable
   import NFBinding.Binding;
   import NFComponent.Component;
-  import ComponentRef = NFComponentRef;
-  import Expression = NFExpression;
+  import ComponentRef = NFTypes.NFComponentRef;
+  import Expression = NFTypes.NFExpression;
   import NFInstNode.InstNode;
   import NFPrefixes.Visibility;
   import NFPrefixes.Variability;
   import NFPrefixes.ConnectorType;
-  import Type = NFType;
+  import Type = NFTypes.NFType;
 
 protected
-  import Variable = NFVariable;
+  import Variable = NFTypes.NFVariable;
   import IOStream;
 
 public
-  record VARIABLE
-    ComponentRef name;
-    Type ty;
-    Binding binding;
-    Visibility visibility;
-    Component.Attributes attributes;
-    list<tuple<String, Binding>> typeAttributes;
-    Option<SCode.Comment> comment;
-    SourceInfo info;
-  end VARIABLE;
-
   function fromCref
     input ComponentRef cref;
     output Variable variable;
@@ -93,7 +82,7 @@ public
 
   function isEmptyArray
     input Variable variable;
-    output Boolean isEmpty = Type.isEmptyArray(variable.ty);
+    output Boolean isEmpty = NFType.isEmptyArray(variable.ty);
   end isEmptyArray;
 
   function isDeleted
@@ -139,7 +128,7 @@ public
     end if;
 
     s := IOStream.append(s, Component.Attributes.toString(var.attributes, var.ty));
-    s := IOStream.append(s, Type.toString(var.ty));
+    s := IOStream.append(s, NFType.toString(var.ty));
     s := IOStream.append(s, " ");
     s := IOStream.append(s, ComponentRef.toString(var.name));
 

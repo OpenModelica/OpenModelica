@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated uniontype NFExpressionIterator
+encapsulated package NFExpressionIterator
 protected
   import ExpressionIterator = NFExpressionIterator;
   import ComponentRef = NFComponentRef;
@@ -39,27 +39,6 @@ protected
 public
   import Expression = NFExpression;
   import NFBinding.Binding;
-
-  record ARRAY_ITERATOR
-    list<Expression> array;
-    list<Expression> slice;
-  end ARRAY_ITERATOR;
-
-  record SCALAR_ITERATOR
-    Expression exp;
-  end SCALAR_ITERATOR;
-
-  record EACH_ITERATOR
-    Expression exp;
-  end EACH_ITERATOR;
-
-  record NONE_ITERATOR
-  end NONE_ITERATOR;
-
-  record REPEAT_ITERATOR
-    list<Expression> current;
-    list<Expression> all;
-  end REPEAT_ITERATOR;
 
   function fromExp
     input Expression exp;

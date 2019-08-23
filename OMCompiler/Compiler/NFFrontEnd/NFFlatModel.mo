@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated uniontype NFFlatModel
+encapsulated package NFFlatModel
   import Equation = NFEquation;
   import Algorithm = NFAlgorithm;
   import Variable = NFVariable;
@@ -41,15 +41,6 @@ protected
   import FlatModel = NFFlatModel;
 
 public
-  record FLAT_MODEL
-    String name;
-    list<Variable> variables;
-    list<Equation> equations;
-    list<Equation> initialEquations;
-    list<Algorithm> algorithms;
-    list<Algorithm> initialAlgorithms;
-    Option<SCode.Comment> comment;
-  end FLAT_MODEL;
 
   function toString
     input FlatModel flatModel;

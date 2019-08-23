@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated uniontype NFOperator
+encapsulated package NFOperator
 protected
   import Operator = NFOperator;
   import Util;
@@ -39,57 +39,6 @@ public
   import Absyn;
   import AbsynUtil;
   import DAE;
-
-  type Op = enumeration(
-    // Basic arithmetic operators.
-    ADD,               // +
-    SUB,               // -
-    MUL,               // *
-    DIV,               // /
-    POW,               // ^
-    // Element-wise arithmetic operators. These are only used until the type
-    // checking, then replaced with a more specific operator.
-    ADD_EW,            // .+
-    SUB_EW,            // .-
-    MUL_EW,            // .*
-    DIV_EW,            // ./
-    POW_EW,            // .^
-    // Scalar-Array and Array-Scalar arithmetic operators.
-    ADD_SCALAR_ARRAY,  // scalar + array
-    ADD_ARRAY_SCALAR,  // array + scalar
-    SUB_SCALAR_ARRAY,  // scalar - array
-    SUB_ARRAY_SCALAR,  // array - scalar
-    MUL_SCALAR_ARRAY,  // scalar * array
-    MUL_ARRAY_SCALAR,  // array * scalar
-    MUL_VECTOR_MATRIX, // vector * matrix
-    MUL_MATRIX_VECTOR, // matrix * vector
-    SCALAR_PRODUCT,    // vector * vector
-    MATRIX_PRODUCT,    // matrix * matrix
-    DIV_SCALAR_ARRAY,  // scalar / array
-    DIV_ARRAY_SCALAR,  // array / scalar
-    POW_SCALAR_ARRAY,  // scalar ^ array
-    POW_ARRAY_SCALAR,  // array ^ scalar
-    POW_MATRIX,        // matrix ^ Integer
-    // Unary arithmetic operators.
-    UMINUS,            // -
-    // Logic operators.
-    AND,               // and
-    OR,                // or
-    NOT,               // not
-    // Relational operators.
-    LESS,              // <
-    LESSEQ,            // <=
-    GREATER,           // >
-    GREATEREQ,         // >=
-    EQUAL,             // ==
-    NEQUAL,            // <>
-    USERDEFINED        // Overloaded operator.
-  );
-
-  record OPERATOR
-    Type ty;
-    Op op;
-  end OPERATOR;
 
   function compare
     input Operator op1;

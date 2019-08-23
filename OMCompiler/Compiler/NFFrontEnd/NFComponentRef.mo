@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated uniontype NFComponentRef
+encapsulated package NFComponentRef
 protected
   import NFComponent.Component;
   import Absyn;
@@ -46,7 +46,7 @@ protected
   import NFClass.Class;
   import List;
   import Prefixes = NFPrefixes;
-
+  import NFTypes.NFComponentRef;
   import ComponentRef = NFComponentRef;
 
 public
@@ -55,18 +55,6 @@ public
     SCOPE "From prefixing the cref with its scope.",
     ITERATOR "From an iterator."
   );
-
-  record CREF
-    InstNode node;
-    list<Subscript> subscripts;
-    Type ty "The type of the node, without taking subscripts into account.";
-    Origin origin;
-    ComponentRef restCref;
-  end CREF;
-
-  record EMPTY end EMPTY;
-
-  record WILD end WILD;
 
   function fromNode
     input InstNode node;

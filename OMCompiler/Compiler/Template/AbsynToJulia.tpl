@@ -640,7 +640,10 @@ template dumpImport(Absyn.Import imp)
   "This will depend on my ExportAll.jl package. Not good practice but seem to be needed at places"
 ::=
 match imp
-  case NAMED_IMPORT(__) then AbsynDumpTpl.errorMsg("Named imports are not implemented!.")
+  case NAMED_IMPORT(__) then
+    let path_str = dumpPathJL(path)
+    let str = 'import <%path_str%>'
+    'import path_str; <%str%> = path_str'
   case QUAL_IMPORT(__) then
     let path_str = dumpPathJL(path)
     match path_str

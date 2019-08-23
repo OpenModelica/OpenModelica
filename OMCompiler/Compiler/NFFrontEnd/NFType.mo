@@ -29,20 +29,21 @@
  *
  */
 
-encapsulated uniontype NFType
+encapsulated package NFType
 protected
-  import Type = NFType;
+  import NFTypes;
+  import Type = NFTypes.NFType;
   import List;
-  import Restriction = NFRestriction;
+  import Restriction = NFTypes.NFRestriction;
   import NFClass.Class;
 
 public
-  import Dimension = NFDimension;
+  import Dimension = NFTypes.NFDimension;
   import NFInstNode.InstNode;
-  import Subscript = NFSubscript;
-  import ComplexType = NFComplexType;
+  import Subscript = NFTypes.NFSubscript;
+  import ComplexType = NFTypes.NFComplexType;
   import ConvertDAE = NFConvertDAE;
-  import ComponentRef = NFComponentRef;
+  import ComponentRef = NFTypes.NFComponentRef;
   import NFFunction.Function;
 
   type FunctionType = enumeration(
@@ -50,66 +51,6 @@ public
     FUNCTION_REFERENCE   "Function name used to reference a function.",
     FUNCTIONAL_VARIABLE  "A variable that contains a function reference."
   );
-
-  record INTEGER
-  end INTEGER;
-
-  record REAL
-  end REAL;
-
-  record STRING
-  end STRING;
-
-  record BOOLEAN
-  end BOOLEAN;
-
-  record CLOCK
-  end CLOCK;
-
-  record ENUMERATION
-    Absyn.Path typePath;
-    list<String> literals;
-  end ENUMERATION;
-
-  record ENUMERATION_ANY "enumeration(:)"
-  end ENUMERATION_ANY;
-
-  record ARRAY
-    Type elementType;
-    list<Dimension> dimensions;
-  end ARRAY;
-
-  record TUPLE
-    list<Type> types;
-    Option<list<String>> names;
-  end TUPLE;
-
-  record NORETCALL
-  end NORETCALL;
-
-  record UNKNOWN
-  end UNKNOWN;
-
-  record COMPLEX
-    InstNode cls;
-    ComplexType complexTy;
-  end COMPLEX;
-
-  record FUNCTION
-    Function fn;
-    FunctionType fnType;
-  end FUNCTION;
-
-  record METABOXED "Used for MetaModelica generic types"
-    Type ty;
-  end METABOXED;
-
-  record POLYMORPHIC
-    String name;
-  end POLYMORPHIC;
-
-  record ANY
-  end ANY;
 
   // TODO: Fix constants in uniontypes and use these wherever applicable to
   // speed up comparisons using referenceEq.
@@ -921,12 +862,12 @@ public
     input Type arrayTy;
     output Type sizeTy;
   algorithm
-    if Type.isUnknown(arrayTy) then
+    if NFType.isUnknown(arrayTy) then
       // Return unknown type if the type is unknown, to avoid returning Array[0]
       // for untyped expressions.
       sizeTy := Type.UNKNOWN();
     else
-      sizeTy := Type.ARRAY(Type.INTEGER(), {Dimension.fromInteger(dimensionCount(arrayTy))});
+      sizeTy := Type.ARRAY(Type.INTEGER(), {NFDimension.fromInteger(dimensionCount(arrayTy))});
     end if;
   end sizeType;
 

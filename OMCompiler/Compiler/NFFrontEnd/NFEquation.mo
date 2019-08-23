@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated uniontype NFEquation
+encapsulated package NFEquation
   import Absyn;
   import AbsynUtil;
   import Expression = NFExpression;
@@ -48,18 +48,6 @@ protected
   import IOStream;
 
 public
-  uniontype Branch
-    record BRANCH
-      Expression condition;
-      Variability conditionVar;
-      list<Equation> body;
-    end BRANCH;
-
-    record INVALID_BRANCH
-      Branch branch;
-      list<Error.TotalMessage> errors;
-    end INVALID_BRANCH;
-
     function toStream
       input Branch branch;
       input String indent;
@@ -92,73 +80,6 @@ public
         else ();
       end match;
     end triggerErrors;
-  end Branch;
-
-  record EQUALITY
-    Expression lhs "The left hand side expression.";
-    Expression rhs "The right hand side expression.";
-    Type ty;
-    DAE.ElementSource source;
-  end EQUALITY;
-
-  record CREF_EQUALITY
-    ComponentRef lhs;
-    ComponentRef rhs;
-    DAE.ElementSource source;
-  end CREF_EQUALITY;
-
-  record ARRAY_EQUALITY
-    Expression lhs;
-    Expression rhs;
-    Type ty;
-    DAE.ElementSource source;
-  end ARRAY_EQUALITY;
-
-  record CONNECT
-    Expression lhs;
-    Expression rhs;
-    DAE.ElementSource source;
-  end CONNECT;
-
-  record FOR
-    InstNode iterator;
-    Option<Expression> range;
-    list<Equation> body   "The body of the for loop.";
-    DAE.ElementSource source;
-  end FOR;
-
-  record IF
-    list<Branch> branches;
-    DAE.ElementSource source;
-  end IF;
-
-  record WHEN
-    list<Branch> branches;
-    DAE.ElementSource source;
-  end WHEN;
-
-  record ASSERT
-    Expression condition "The assert condition.";
-    Expression message "The message to display if the assert fails.";
-    Expression level "Error or warning";
-    DAE.ElementSource source;
-  end ASSERT;
-
-  record TERMINATE
-    Expression message "The message to display if the terminate triggers.";
-    DAE.ElementSource source;
-  end TERMINATE;
-
-  record REINIT
-    Expression cref "The variable to reinitialize.";
-    Expression reinitExp "The new value of the variable.";
-    DAE.ElementSource source;
-  end REINIT;
-
-  record NORETCALL
-    Expression exp;
-    DAE.ElementSource source;
-  end NORETCALL;
 
   function makeEquality
     input Expression lhs;

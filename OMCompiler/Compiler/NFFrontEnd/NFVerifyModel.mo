@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated uniontype NFVerifyModel
+encapsulated package NFVerifyModel
   import FlatModel = NFFlatModel;
 
 protected
@@ -38,10 +38,10 @@ protected
   import DAE;
   import ElementSource;
   import ExecStat.execStat;
-  import ComponentRef = NFComponentRef;
-  import Equation = NFEquation;
-  import Expression = NFExpression;
-  import ExpandExp = NFExpandExp;
+  import ComponentRef = NFTypes.NFComponentRef;
+  import Equation = NFTypes.NFEquation;
+  import Expression = NFTypes.NFExpression;
+  import ExpandExp = NFTypes.NFExpandExp;
 
 public
   function verify

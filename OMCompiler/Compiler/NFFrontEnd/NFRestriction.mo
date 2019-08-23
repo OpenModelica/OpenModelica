@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated uniontype NFRestriction
+encapsulated package NFRestriction
   import NFInstNode.InstNode;
   import ClassInf;
 
@@ -37,27 +37,6 @@ protected
   import Restriction = NFRestriction;
 
 public
-  record CLASS end CLASS;
-
-  record CONNECTOR
-    Boolean isExpandable;
-  end CONNECTOR;
-
-  record ENUMERATION end ENUMERATION;
-  record EXTERNAL_OBJECT end EXTERNAL_OBJECT;
-  record FUNCTION end FUNCTION;
-  record MODEL end MODEL;
-  record OPERATOR end OPERATOR;
-
-  record RECORD
-    Boolean isOperator;
-  end RECORD;
-
-  record RECORD_CONSTRUCTOR end RECORD_CONSTRUCTOR;
-  record TYPE end TYPE;
-  record CLOCK end CLOCK;
-  record UNKNOWN end UNKNOWN;
-
   function fromSCode
     input SCode.Restriction sres;
     output Restriction res;

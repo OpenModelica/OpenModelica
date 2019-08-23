@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated uniontype NFRangeIterator
+encapsulated package NFRangeIterator
 protected
   import RangeIterator = NFRangeIterator;
   import Type = NFType;

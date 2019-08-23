@@ -29,18 +29,12 @@
  *
  */
 
-encapsulated uniontype NFConnection
+encapsulated package NFConnection
   import Connector = NFConnector;
 protected
   import Connection = NFConnection;
 
 public
-  record CONNECTION
-    // TODO: This should be Connector, but the import above doesn't work due to some compiler bug.
-    NFConnector lhs;
-    NFConnector rhs;
-  end CONNECTION;
-
   function toString
     input Connection conn;
     output String str;

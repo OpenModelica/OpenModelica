@@ -29,43 +29,6 @@
  *
  */
 
-encapsulated uniontype NFComplexType
-  import NFInstNode.InstNode;
-
-protected
-  import ComplexType = NFComplexType;
-
-public
-  record CLASS end CLASS;
-
-  record EXTENDS_TYPE
-    "Used for long class declarations extending from a type, e.g.:
-       type SomeType
-         extends Real;
-       end SomeType;"
-    InstNode baseClass;
-  end EXTENDS_TYPE;
-
-  record CONNECTOR
-    list<InstNode> potentials;
-    list<InstNode> flows;
-    list<InstNode> streams;
-  end CONNECTOR;
-
-  record EXPANDABLE_CONNECTOR
-    list<InstNode> potentiallyPresents;
-    list<InstNode> expandableConnectors;
-  end EXPANDABLE_CONNECTOR;
-
-  record RECORD
-    InstNode constructor;
-    list<String> fieldNames;
-  end RECORD;
-
-  record EXTERNAL_OBJECT
-    InstNode constructor;
-    InstNode destructor;
-  end EXTERNAL_OBJECT;
-
-annotation(__OpenModelica_Interface="frontend");
+encapsulated package NFComplexType
+  annotation(__OpenModelica_Interface="frontend");
 end NFComplexType;
