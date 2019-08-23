@@ -2021,7 +2021,7 @@ algorithm
         indepVars = createInDepVars(inDiffVars, false);
 
         if Flags.isSet(Flags.JAC_DUMP) then
-          print("Crete symbolic Jacobianis from:\n");
+          print("Create symbolic Jacobians from:\n");
           print(BackendDump.varListString(indepVars, "Independent Variables"));
           print(BackendDump.varListString(diffedVars, "Dependent Variables"));
           print("Basic equation system:\n");

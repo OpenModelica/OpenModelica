@@ -78,6 +78,11 @@ if true then /* Suppress output */
     "../FrontEnd/UnitParserExt.mo",
     "../FrontEnd/Values.mo",
     "../FrontEnd/ValuesUtil.mo",
+    "../FrontEnd/FUnit.mo",
+    "../FrontEnd/FUnitCheck.mo",
+    "../FrontEnd/FHashTableCrToUnit.mo",
+    "../FrontEnd/FHashTableStringToUnit.mo",
+    "../FrontEnd/FHashTableUnitToString.mo",
 
   // "FFrontEnd";
     "../FFrontEnd/FBuiltin.mo",

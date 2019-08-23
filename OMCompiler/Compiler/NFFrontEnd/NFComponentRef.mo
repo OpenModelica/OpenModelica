@@ -250,8 +250,7 @@ public
     ty := match cref
       case CREF()
         then getSubscriptedType2(cref.restCref, Type.subscript(cref.ty, cref.subscripts));
-      case EMPTY() then Type.UNKNOWN();
-      case WILD() then Type.UNKNOWN();
+      else Type.UNKNOWN();
     end match;
   end getSubscriptedType;
 
@@ -647,6 +646,8 @@ public
           str + "." + InstNode.name(cref.node) + Subscript.toStringList(cref.subscripts);
 
       case WILD() then "_";
+      case STRING(restCref = EMPTY()) then cref.name;
+      case STRING() then toString(cref.restCref) + "." + cref.name;
       else "EMPTY_CREF";
     end match;
   end toString;

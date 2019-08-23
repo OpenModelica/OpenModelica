@@ -55,12 +55,12 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 
 public import BaseHashTable;
 public import DAE;
-public import ComponentReference;
-public import NFUnit;
+public import ComponentRef = NFComponentRef;
+public import Unit = NFUnit;
 
 
-public type Key = DAE.ComponentRef;
-public type Value = NFUnit.Unit;
+public type Key = ComponentRef;
+public type Value = Unit.Unit;
 
 public type HashTableCrefFunctionsType = tuple<FuncHashKey,FuncKeyEqual,FuncKeyStr,FuncValueStr>;
 public type HashTable = tuple<
@@ -110,7 +110,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size, (ComponentReference.hashComponentRefMod, ComponentReference.crefEqual, ComponentReference.printComponentRefStr, NFUnit.unit2string));
+  hashTable := BaseHashTable.emptyHashTableWork(size, (ComponentRef.hash, ComponentRef.isEqual, ComponentRef.toString, NFUnit.unit2string));
 end emptyHashTableSized;
 
 annotation(__OpenModelica_Interface="frontend");

@@ -951,14 +951,13 @@ int jacA_sym(double *t, double *y, double *yprime, double *delta,
   threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
 
   const int index = data->callback->INDEX_JAC_A;
-  ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
-  unsigned int columns = jac->sizeCols;
-  unsigned int rows = jac->sizeRows;
-  unsigned int sizeTmpVars = jac->sizeTmpVars;
-  unsigned int i;
   ANALYTIC_JACOBIAN* t_jac = &(data->simulationInfo->analyticJacobians[index]);
+  unsigned int columns = t_jac->sizeCols;
+  unsigned int rows = t_jac->sizeRows;
+  unsigned int sizeTmpVars = t_jac->sizeTmpVars;
 
-  unsigned int j;
+  unsigned int i,j;
+
   for(i=0; i < columns; i++)
   {
     t_jac->seedVars[i] = 1.0;

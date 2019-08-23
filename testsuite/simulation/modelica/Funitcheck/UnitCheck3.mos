@@ -1,0 +1,44 @@
+// name: UnitCheck3
+// keywords: initialization
+// status: correct
+
+loadString("
+package unitCheckTests
+  model UnitCheck3
+    Real S(unit=\"m\");
+    Real V(unit=\"m/s\");
+    Real A(unit=\"m/s2\");
+  equation
+    der(V) = A;
+    S = 5.0;
+    V = der(S);
+  end UnitCheck3;
+end unitCheckTests;
+"); getErrorString();
+
+setCommandLineOptions("-d=oldFrontEndUnitCheck,dumpUnits");
+getErrorString();
+instantiateModel(unitCheckTests.UnitCheck3); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// HashTable:
+// {S,{1.0 * m^(1)}}
+// {V,{1.0 * m^(1) * s^(-1)}}
+// {A,{1.0 * m^(1) * s^(-2)}}
+// ######## UnitCheck COMPLETED ########
+// "class unitCheckTests.UnitCheck3
+//   Real S(unit = \"m\");
+//   Real V(unit = \"m/s\");
+//   Real A(unit = \"m/s2\");
+// equation
+//   der(V) = A;
+//   S = 5.0;
+//   V = der(S);
+// end unitCheckTests.UnitCheck3;
+// "
+// ""
+// endResult

@@ -971,6 +971,13 @@ algorithm
         Expression.TUPLE(Type.TUPLE({Type.INTEGER(), Type.BOOLEAN()}, NONE()),
                          {Expression.INTEGER(i), Expression.REAL(r)});
 
+    case ("ModelicaStrings_scanInteger", {Expression.STRING(s1), Expression.INTEGER(i), Expression.BOOLEAN(b)})
+      algorithm
+        (i, i2) := ModelicaExternalC.Strings_advanced_scanInteger(s1, i, b);
+      then
+        Expression.TUPLE(Type.TUPLE({Type.INTEGER(), Type.INTEGER()}, NONE()),
+                         {Expression.INTEGER(i), Expression.INTEGER(i2)});
+
     case ("ModelicaStrings_skipWhiteSpace", {Expression.STRING(s1), Expression.INTEGER(i)})
       then Expression.INTEGER(ModelicaExternalC.Strings_advanced_skipWhiteSpace(s1, i));
 

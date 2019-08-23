@@ -15,7 +15,7 @@ package unitCheckTests
 end unitCheckTests;
 "); getErrorString();
 
-setCommandLineOptions("-d=oldFrontEndUnitCheck,dumpUnits"); getErrorString();
+setCommandLineOptions("-d=frontEndUnitCheck,dumpUnits,newInst");
 instantiateModel(unitCheckTests.UnitCheck14); getErrorString();
 
 
@@ -23,7 +23,6 @@ instantiateModel(unitCheckTests.UnitCheck14); getErrorString();
 // true
 // ""
 // true
-// ""
 // HashTable:
 // {A,{1.0 * 1}}
 // {V,{MASTER(V)}}

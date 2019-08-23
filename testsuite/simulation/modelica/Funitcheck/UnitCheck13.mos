@@ -1,0 +1,51 @@
+// name: UnitCheck13
+// keywords: initialization
+// status: correct
+
+loadString("
+package unitCheckTests
+  model UnitCheck13
+    Real V;
+    Real A;
+    Real S(unit = \"m2\");
+  equation
+    A=5.0;
+    S=V^2+sqrt(A);
+    V=A;
+  end UnitCheck13;
+end unitCheckTests;
+"); getErrorString();
+
+setCommandLineOptions("-d=oldFrontEndUnitCheck,dumpUnits"); getErrorString();
+instantiateModel(unitCheckTests.UnitCheck13); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// HashTable:
+// {V,{1.0 * m^(1)}}
+// {A,{1.0 * m^(4)}}
+// {S,{1.0 * m^(2)}}
+// {jhagemann,{MASTER()}}
+// ######## UnitCheck COMPLETED ########
+// "class unitCheckTests.UnitCheck13
+//   Real V(unit = \"m\");
+//   Real A(unit = \"m4\");
+//   Real S(unit = \"m2\");
+// equation
+//   A = 5.0;
+//   S = V ^ 2.0 + sqrt(A);
+//   V = A;
+// end unitCheckTests.UnitCheck13;
+// "
+// "[<interactive>:10:5-10:8:writable] Warning: The following equation is INCONSISTENT due to specified unit information:  V = A;
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression "A" has unit "m4"
+// - sub-expression "V" has unit "m"
+// Notification: "V" has the Unit "m"
+// "A" has the Unit "m4"
+// "
+// endResult

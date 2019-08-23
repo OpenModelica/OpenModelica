@@ -1,6 +1,6 @@
 // status: correct
 
-loadModel(Modelica, {"trunk"});
+loadModel(Modelica, {"3.2.3"});
 getErrorString();
 echo(false);
 fileName := getSourceFile(Modelica.Electrical.PowerConverters.Examples.DCAC.MultiPhaseTwoLevel.MultiPhaseTwoLevel_R);

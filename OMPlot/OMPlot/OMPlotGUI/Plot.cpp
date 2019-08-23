@@ -39,6 +39,7 @@
 #if QWT_VERSION < 0x060000
 #include "qwt_legend_item.h"
 #endif
+#include "qwt_text_label.h"
 
 using namespace OMPlot;
 
@@ -179,6 +180,43 @@ QColor Plot::getUniqueColor(int index, int total)
     return QColor::fromHsvF(index/(total + 1.0), 1, 1);
   else
     return mColorsList.at(index);
+}
+
+void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, double verticalAxisNumbersFontSize, double horizontalAxisTitleFontSize,
+                        double horizontalAxisNumbersFontSize, double footerFontSize, double legendFontSize)
+{
+  // title
+  QFont font = titleLabel()->font();
+  font.setPointSizeF(titleFontSize);
+  titleLabel()->setFont(font);
+  // vertical axis title
+  QwtText verticalTitle = axisWidget(QwtPlot::yLeft)->title();
+  font = verticalTitle.font();
+  font.setPointSizeF(verticalAxisTitleFontSize);
+  verticalTitle.setFont(font);
+  axisWidget(QwtPlot::yLeft)->setTitle(verticalTitle);
+  // vertical axis numbers
+  font = axisWidget(QwtPlot::yLeft)->font();
+  font.setPointSizeF(verticalAxisNumbersFontSize);
+  axisWidget(QwtPlot::yLeft)->setFont(font);
+  // horizontal axis title
+  QwtText horizontalTitle = axisWidget(QwtPlot::xBottom)->title();
+  font = horizontalTitle.font();
+  font.setPointSizeF(horizontalAxisTitleFontSize);
+  horizontalTitle.setFont(font);
+  axisWidget(QwtPlot::xBottom)->setTitle(horizontalTitle);
+  // horizontal axis numbers
+  font = axisWidget(QwtPlot::xBottom)->font();
+  font.setPointSizeF(horizontalAxisNumbersFontSize);
+  axisWidget(QwtPlot::xBottom)->setFont(font);
+  // footer
+  font = footerLabel()->font();
+  font.setPointSizeF(footerFontSize);
+  footerLabel()->setFont(font);
+  // legend
+  font = mpParentPlotWindow->getLegendFont();
+  font.setPointSizeF(legendFontSize);
+  mpParentPlotWindow->setLegendFont(font);
 }
 
 // just overloaded this function to get colors for curves.

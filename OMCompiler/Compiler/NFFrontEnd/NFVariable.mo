@@ -43,6 +43,7 @@ encapsulated package NFVariable
 protected
   import Variable = NFTypes.NFVariable;
   import IOStream;
+  import Util;
 
 public
   function fromCref
@@ -99,6 +100,21 @@ public
     input Variable variable;
     output Boolean present = not ConnectorType.isPotentiallyPresent(variable.attributes.connectorType);
   end isPresent;
+
+  function lookupTypeAttribute
+    input String name;
+    input Variable var;
+    output Binding binding;
+  algorithm
+    for attr in var.typeAttributes loop
+      if Util.tuple21(attr) == name then
+        binding := Util.tuple22(attr);
+        return;
+      end if;
+    end for;
+
+    binding := NFBinding.EMPTY_BINDING;
+  end lookupTypeAttribute;
 
   function toString
     input Variable var;

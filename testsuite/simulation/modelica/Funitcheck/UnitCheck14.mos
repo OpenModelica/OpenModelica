@@ -1,0 +1,45 @@
+// name: UnitCheck14
+// keywords: initialization
+// status: correct
+
+loadString("
+package unitCheckTests
+  model UnitCheck14
+    Real A;
+    Real V=1;
+    Real S;
+  equation
+    S=time;
+    A=der(S);
+  end UnitCheck14;
+end unitCheckTests;
+"); getErrorString();
+
+setCommandLineOptions("-d=oldFrontEndUnitCheck,dumpUnits"); getErrorString();
+instantiateModel(unitCheckTests.UnitCheck14); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// HashTable:
+// {A,{1.0 * 1}}
+// {V,{MASTER(V)}}
+// {S,{1.0 * s^(1)}}
+// {jhagemann,{MASTER()}}
+// ######## UnitCheck COMPLETED ########
+// "class unitCheckTests.UnitCheck14
+//   Real A(unit = \"1\");
+//   Real V = 1.0;
+//   Real S(unit = \"s\");
+// equation
+//   S = time;
+//   A = der(S);
+// end unitCheckTests.UnitCheck14;
+// "
+// "Notification: "A" has the Unit "1"
+// "S" has the Unit "s"
+// "
+// endResult

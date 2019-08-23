@@ -516,6 +516,24 @@ qreal Utilities::convertUnit(qreal value, qreal offset, qreal scaleFactor)
 }
 
 /*!
+ * \brief Utilities::isValueLiteralConstant
+ * \param value
+ * \return
+ */
+bool Utilities::isValueLiteralConstant(QString value)
+{
+  bool ok = true;
+  value.toDouble(&ok);
+  if (ok) return true;
+
+  QStringList valuesArray = StringHandler::removeFirstLastCurlBrackets(value).split(",");
+  foreach (QString valueElement, valuesArray) {
+    valueElement.toDouble(&ok);
+  }
+  return ok;
+}
+
+/*!
  * \brief Utilities::arrayExpressionUnitConversion
  * If the expression is like an array of constants see ticket:4840
  * \param pOMCProxy

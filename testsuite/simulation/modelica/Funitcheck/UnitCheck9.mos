@@ -1,0 +1,53 @@
+// name: UnitCheck9
+// keywords: initialization
+// status: correct
+
+loadString("
+package unitCheckTests
+  model UnitCheck9
+    Real V(unit = \"m2/s2\");
+    Real A;
+    Real S(unit = \"m/s\");
+    Real C=1;
+    Real E=1;
+  equation
+    A=5.0;
+    V=8.0;
+    V=E*C+S*(-A);
+  end UnitCheck9;
+end unitCheckTests;
+"); getErrorString();
+
+setCommandLineOptions("-d=oldFrontEndUnitCheck,dumpUnits");
+getErrorString();
+instantiateModel(unitCheckTests.UnitCheck9); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// HashTable:
+// {V,{1.0 * m^(2) * s^(-2)}}
+// {A,{1.0 * m^(1) * s^(-1)}}
+// {S,{1.0 * m^(1) * s^(-1)}}
+// {C,{MASTER(C)}}
+// {E,{MASTER(E)}}
+// {jhagemann,{MASTER()}}
+// ######## UnitCheck COMPLETED ########
+// "class unitCheckTests.UnitCheck9
+//   Real V(unit = \"m2/s2\");
+//   Real A(unit = \"m/s\");
+//   Real S(unit = \"m/s\");
+//   Real C = 1.0;
+//   Real E = 1.0;
+// equation
+//   A = 5.0;
+//   V = 8.0;
+//   V = E * C - S * A;
+// end unitCheckTests.UnitCheck9;
+// "
+// "Notification: "A" has the Unit "m/s"
+// "
+// endResult

@@ -1,0 +1,48 @@
+// name: UnitCheck7
+// keywords: initialization
+// status: correct
+
+loadString("
+package unitCheckTests
+  model UnitCheck7
+    Real S;
+    Real V;
+    Real A(unit = \"m/s\");
+  equation
+    A=5.0;
+    V=8.0;
+    0=V-A-S;
+  end UnitCheck7;
+end unitCheckTests;
+"); getErrorString();
+
+setCommandLineOptions("-d=oldFrontEndUnitCheck,dumpUnits");
+getErrorString();
+instantiateModel(unitCheckTests.UnitCheck7); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// HashTable:
+// {S,{1.0 * m^(1) * s^(-1)}}
+// {V,{1.0 * m^(1) * s^(-1)}}
+// {A,{1.0 * m^(1) * s^(-1)}}
+// {jhagemann,{MASTER()}}
+// ######## UnitCheck COMPLETED ########
+// "class unitCheckTests.UnitCheck7
+//   Real S(unit = \"m/s\");
+//   Real V(unit = \"m/s\");
+//   Real A(unit = \"m/s\");
+// equation
+//   A = 5.0;
+//   V = 8.0;
+//   0.0 = V + (-A) - S;
+// end unitCheckTests.UnitCheck7;
+// "
+// "Notification: "S" has the Unit "m/s"
+// "V" has the Unit "m/s"
+// "
+// endResult

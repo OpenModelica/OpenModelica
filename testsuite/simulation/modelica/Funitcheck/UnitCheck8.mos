@@ -1,0 +1,49 @@
+// name: UnitCheck8
+// keywords: initialization
+// status: correct
+
+loadString("
+package unitCheckTests
+  model UnitCheck8
+    Real S(unit = \"s\");
+    Real V;
+    Real A(unit = \"m/s\");
+  equation
+    A=5.0;
+    V=8.0;
+    0=V-A-S;
+  end UnitCheck8;
+end unitCheckTests;
+"); getErrorString();
+
+setCommandLineOptions("-d=oldFrontEndUnitCheck,dumpUnits");
+getErrorString();
+instantiateModel(unitCheckTests.UnitCheck8); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// HashTable:
+// {S,{1.0 * s^(1)}}
+// {V,{MASTER(V)}}
+// {A,{1.0 * m^(1) * s^(-1)}}
+// ######## UnitCheck COMPLETED ########
+// "class unitCheckTests.UnitCheck8
+//   Real S(unit = \"s\");
+//   Real V;
+//   Real A(unit = \"m/s\");
+// equation
+//   A = 5.0;
+//   V = 8.0;
+//   0.0 = V + (-A) - S;
+// end unitCheckTests.UnitCheck8;
+// "
+// "[<interactive>:10:5-10:12:writable] Warning: The following equation is INCONSISTENT due to specified unit information:  0.0 = V + (-A) - S;
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression "-A" has unit "m/s"
+// - sub-expression "S" has unit "s"
+// "
+// endResult

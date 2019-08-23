@@ -40,12 +40,12 @@ encapsulated package NFUnit
 public
 import DAE;
 import System;
+import ComponentRef = NFComponentRef;
 
 protected
-import ComponentReference;
 import Error;
-import NFHashTableStringToUnit;
-import NFHashTableUnitToString;
+import HashTableStringToUnit = NFHashTableStringToUnit;
+import HashTableUnitToString = NFHashTableUnitToString;
 import Util;
 
 
@@ -63,7 +63,7 @@ public uniontype Unit
   end UNIT;
 
   record MASTER "unknown unit that belongs to all the variables from varList"
-    list<DAE.ComponentRef> varList;
+    list<ComponentRef> varList;
   end MASTER;
 
   record UNKNOWN "unknown SI base unit decomposition"
@@ -86,7 +86,7 @@ protected uniontype Token
   record T_RPAREN end T_RPAREN;
 end Token;
 
-public constant DAE.ComponentRef UPDATECREF = DAE.CREF_IDENT("jhagemann", DAE.T_REAL_DEFAULT, {});
+public constant ComponentRef UPDATECREF = ComponentRef.STRING("jhagemann", ComponentRef.EMPTY());
 
 public constant list<tuple<String, Unit>> LU_COMPLEXUNITS = {
 /*                   fac,mol,cd, m, s, A, K, g*/
@@ -138,9 +138,9 @@ public constant list<tuple<String, Unit>> LU_COMPLEXUNITS = {
 /*                 fac, mol, cd, m, s, A, K, g*/
 
 public function getKnownUnits
-  output NFHashTableStringToUnit.HashTable outKnownUnits;
+  output HashTableStringToUnit.HashTable outKnownUnits;
 algorithm
-  outKnownUnits := NFHashTableStringToUnit.emptyHashTableSized(Util.nextPrime(4 * listLength(LU_COMPLEXUNITS)));
+  outKnownUnits := HashTableStringToUnit.emptyHashTableSized(Util.nextPrime(4 * listLength(LU_COMPLEXUNITS)));
 
   for unit in LU_COMPLEXUNITS loop
     outKnownUnits := BaseHashTable.add(unit, outKnownUnits);
@@ -148,12 +148,12 @@ algorithm
 end getKnownUnits;
 
 public function getKnownUnitsInverse
-  output NFHashTableUnitToString.HashTable outKnownUnitsInverse;
+  output HashTableUnitToString.HashTable outKnownUnitsInverse;
 protected
   String s;
   Unit ut;
 algorithm
-  outKnownUnitsInverse := NFHashTableUnitToString.emptyHashTableSized(Util.nextPrime(4 * listLength(LU_COMPLEXUNITS)));
+  outKnownUnitsInverse := HashTableUnitToString.emptyHashTableSized(Util.nextPrime(4 * listLength(LU_COMPLEXUNITS)));
 
   for unit in LU_COMPLEXUNITS loop
     (s, ut) := unit;
@@ -173,6 +173,16 @@ algorithm
     else false;
   end match;
 end isUnit;
+
+public function isMaster
+  input Unit unit;
+  output Boolean res;
+algorithm
+  res := match unit
+    case MASTER() then true;
+    else false;
+  end match;
+end isMaster;
 
 public function hashUnitMod
   input Unit inKey;
@@ -196,7 +206,7 @@ algorithm
       Integer i1, i2, i3, i4, i5, i6, i7;
       Integer j1, j2, j3, j4, j5, j6, j7;
       String s, s2;
-      list<DAE.ComponentRef> lcr, lcr2;
+      list<ComponentRef> lcr, lcr2;
 
     case (UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), UNIT(factor2, j1, j2, j3, j4, j5, j6, j7)) equation
       true = realEq(factor1, factor2);
@@ -241,7 +251,7 @@ algorithm
     local
       String s, str;
       Boolean b;
-      list<DAE.ComponentRef> crefList;
+      list<ComponentRef> crefList;
       Real factor1;
       Integer i1, i2, i3, i4, i5, i6, i7;
 
@@ -314,24 +324,24 @@ algorithm
 end unit2string;
 
 public function printListCr
- input list<DAE.ComponentRef> inlCr;
+ input list<ComponentRef> inlCr;
  output String outS;
 algorithm
   outS := match(inlCr)
 
   local
-    list<DAE.ComponentRef> lCr;
-    DAE.ComponentRef cr;
+    list<ComponentRef> lCr;
+    ComponentRef cr;
     String s;
 
     case {} then "";
 
     case cr::{} equation
-      s = ComponentReference.crefStr(cr);
+      s = ComponentRef.toString(cr);
     then s;
 
     case cr::lCr equation
-      s = ComponentReference.crefStr(cr);
+      s = ComponentRef.toString(cr);
       s = s + ", " + printListCr(lCr);
     then s;
 
@@ -465,7 +475,7 @@ end unitRoot;
 
 public function unitString "Unit to Modelica unit string"
   input Unit inUnit;
-  input NFHashTableUnitToString.HashTable inHtU2S = getKnownUnitsInverse();
+  input HashTableUnitToString.HashTable inHtU2S = getKnownUnitsInverse();
   output String outString;
 algorithm
   outString := match(inUnit)
@@ -564,7 +574,7 @@ end prefix2String;
 public function parseUnitString "author: lochel
   The second argument is optional."
   input String inUnitString;
-  input NFHashTableStringToUnit.HashTable inKnownUnits = getKnownUnits();
+  input HashTableStringToUnit.HashTable inKnownUnits = getKnownUnits();
   output Unit outUnit;
 protected
   list<String> charList;
@@ -585,7 +595,7 @@ protected function parser3
   input list<Boolean> inMul "true=Mul, false=Div, initial call with true";
   input list<Token> inTokenList "Tokenliste";
   input Unit inUnit "initial call with UNIT(1e0, 0, 0, 0, 0, 0, 0, 0)";
-  input NFHashTableStringToUnit.HashTable inHtS2U;
+  input HashTableStringToUnit.HashTable inHtS2U;
   output Unit outUnit;
 algorithm
   outUnit := matchcontinue(inMul, inTokenList, inUnit, inHtS2U)
@@ -655,7 +665,7 @@ end parser3;
 
 protected function unitToken2unit
   input String inS;
-  input NFHashTableStringToUnit.HashTable inHtS2U;
+  input HashTableStringToUnit.HashTable inHtS2U;
   output Unit outUnit;
 algorithm
   outUnit := matchcontinue(inS, inHtS2U)

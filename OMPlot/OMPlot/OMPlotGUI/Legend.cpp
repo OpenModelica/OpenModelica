@@ -124,6 +124,7 @@ void Legend::legendMenu(const QPoint& pos)
 QWidget* Legend::createWidget(const QwtLegendData &data) const
 {
   QWidget *pWidget = QwtLegend::createWidget(data);
+  pWidget->setFont(mpPlot->getParentPlotWindow()->getLegendFont());
   pWidget->setMouseTracking(true);
   return pWidget;
 }
