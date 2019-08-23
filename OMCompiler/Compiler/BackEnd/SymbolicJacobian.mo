@@ -2750,7 +2750,12 @@ algorithm
 
   // Check if all nonlinear iteration variables have start values
   if BackendDAEUtil.isInitializationDAE(inShared) then
-      checkNonLinDependecies(outComp,inEqns);
+      try
+          checkNonLinDependecies(outComp,inEqns);
+      else
+          // ToDo Fix me! Like seriously!
+          Error.addInternalError("function calculateJacobianComponent failed to check all non-linear iteration variables for start values.", sourceInfo());
+      end try;
   end if;
 end calculateJacobianComponent;
 
