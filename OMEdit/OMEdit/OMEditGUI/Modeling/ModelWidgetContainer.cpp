@@ -54,6 +54,7 @@
 #include "OMS/ModelDialog.h"
 #include "OMS/BusDialog.h"
 #include "OMS/SystemSimulationInformationDialog.h"
+#include "Util/ResourceCache.h"
 
 #include <QNetworkReply>
 #include <QMessageBox>
@@ -1543,7 +1544,7 @@ void GraphicsView::createActions()
   mpRenameAction->setStatusTip(Helper::renameTip);
   connect(mpRenameAction, SIGNAL(triggered()), SLOT(showRenameDialog()));
   // Simulation Params Action
-  mpSimulationParamsAction = new QAction(QIcon(":/Resources/icons/simulation-parameters.svg"), Helper::simulationParams, this);
+  mpSimulationParamsAction = new QAction(ResourceCache::getIcon(":/Resources/icons/simulation-parameters.svg"), Helper::simulationParams, this);
   mpSimulationParamsAction->setStatusTip(Helper::simulationParamsTip);
   connect(mpSimulationParamsAction, SIGNAL(triggered()), SLOT(showSimulationParamsDialog()));
   // Actions for shapes and Components
@@ -1553,57 +1554,57 @@ void GraphicsView::createActions()
   mpManhattanizeAction->setDisabled(isSystemLibrary);
   connect(mpManhattanizeAction, SIGNAL(triggered()), SLOT(manhattanizeItems()));
   // Delete Action
-  mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::deleteStr, this);
+  mpDeleteAction = new QAction(ResourceCache::getIcon(":/Resources/icons/delete.svg"), Helper::deleteStr, this);
   mpDeleteAction->setStatusTip(tr("Deletes the item"));
   mpDeleteAction->setShortcut(QKeySequence::Delete);
   mpDeleteAction->setDisabled(isSystemLibrary);
   connect(mpDeleteAction, SIGNAL(triggered()), SLOT(deleteItems()));
   // Duplicate Action
-  mpDuplicateAction = new QAction(QIcon(":/Resources/icons/duplicate.svg"), Helper::duplicate, this);
+  mpDuplicateAction = new QAction(ResourceCache::getIcon(":/Resources/icons/duplicate.svg"), Helper::duplicate, this);
   mpDuplicateAction->setStatusTip(Helper::duplicateTip);
   mpDuplicateAction->setShortcut(QKeySequence("Ctrl+d"));
   mpDuplicateAction->setDisabled(isSystemLibrary);
   connect(mpDuplicateAction, SIGNAL(triggered()), SLOT(duplicateItems()));
   // Bring To Front Action
-  mpBringToFrontAction = new QAction(QIcon(":/Resources/icons/bring-to-front.svg"), tr("Bring to Front"), this);
+  mpBringToFrontAction = new QAction(ResourceCache::getIcon(":/Resources/icons/bring-to-front.svg"), tr("Bring to Front"), this);
   mpBringToFrontAction->setStatusTip(tr("Brings the item to front"));
   mpBringToFrontAction->setDisabled(isSystemLibrary);
   mpBringToFrontAction->setDisabled(true);
   // Bring Forward Action
-  mpBringForwardAction = new QAction(QIcon(":/Resources/icons/bring-forward.svg"), tr("Bring Forward"), this);
+  mpBringForwardAction = new QAction(ResourceCache::getIcon(":/Resources/icons/bring-forward.svg"), tr("Bring Forward"), this);
   mpBringForwardAction->setStatusTip(tr("Brings the item one level forward"));
   mpBringForwardAction->setDisabled(isSystemLibrary);
   mpBringForwardAction->setDisabled(true);
   // Send To Back Action
-  mpSendToBackAction = new QAction(QIcon(":/Resources/icons/send-to-back.svg"), tr("Send to Back"), this);
+  mpSendToBackAction = new QAction(ResourceCache::getIcon(":/Resources/icons/send-to-back.svg"), tr("Send to Back"), this);
   mpSendToBackAction->setStatusTip(tr("Sends the item to back"));
   mpSendToBackAction->setDisabled(isSystemLibrary);
   mpSendToBackAction->setDisabled(true);
   // Send Backward Action
-  mpSendBackwardAction = new QAction(QIcon(":/Resources/icons/send-backward.svg"), tr("Send Backward"), this);
+  mpSendBackwardAction = new QAction(ResourceCache::getIcon(":/Resources/icons/send-backward.svg"), tr("Send Backward"), this);
   mpSendBackwardAction->setStatusTip(tr("Sends the item one level backward"));
   mpSendBackwardAction->setDisabled(isSystemLibrary);
   mpSendBackwardAction->setDisabled(true);
   // Rotate ClockWise Action
-  mpRotateClockwiseAction = new QAction(QIcon(":/Resources/icons/rotateclockwise.svg"), tr("Rotate Clockwise"), this);
+  mpRotateClockwiseAction = new QAction(ResourceCache::getIcon(":/Resources/icons/rotateclockwise.svg"), tr("Rotate Clockwise"), this);
   mpRotateClockwiseAction->setStatusTip(tr("Rotates the item clockwise"));
   mpRotateClockwiseAction->setShortcut(QKeySequence("Ctrl+r"));
   mpRotateClockwiseAction->setDisabled(isSystemLibrary);
   connect(mpRotateClockwiseAction, SIGNAL(triggered()), SLOT(rotateClockwise()));
   // Rotate Anti-ClockWise Action
-  mpRotateAntiClockwiseAction = new QAction(QIcon(":/Resources/icons/rotateanticlockwise.svg"), tr("Rotate Anticlockwise"), this);
+  mpRotateAntiClockwiseAction = new QAction(ResourceCache::getIcon(":/Resources/icons/rotateanticlockwise.svg"), tr("Rotate Anticlockwise"), this);
   mpRotateAntiClockwiseAction->setStatusTip(tr("Rotates the item anticlockwise"));
   mpRotateAntiClockwiseAction->setShortcut(QKeySequence("Ctrl+Shift+r"));
   mpRotateAntiClockwiseAction->setDisabled(isSystemLibrary);
   connect(mpRotateAntiClockwiseAction, SIGNAL(triggered()), SLOT(rotateAntiClockwise()));
   // Flip Horizontal Action
-  mpFlipHorizontalAction = new QAction(QIcon(":/Resources/icons/flip-horizontal.svg"), tr("Flip Horizontal"), this);
+  mpFlipHorizontalAction = new QAction(ResourceCache::getIcon(":/Resources/icons/flip-horizontal.svg"), tr("Flip Horizontal"), this);
   mpFlipHorizontalAction->setStatusTip(tr("Flips the item horizontally"));
   mpFlipHorizontalAction->setShortcut(QKeySequence("h"));
   mpFlipHorizontalAction->setDisabled(isSystemLibrary);
   connect(mpFlipHorizontalAction, SIGNAL(triggered()), SLOT(flipHorizontal()));
   // Flip Vertical Action
-  mpFlipVerticalAction = new QAction(QIcon(":/Resources/icons/flip-vertical.svg"), tr("Flip Vertical"), this);
+  mpFlipVerticalAction = new QAction(ResourceCache::getIcon(":/Resources/icons/flip-vertical.svg"), tr("Flip Vertical"), this);
   mpFlipVerticalAction->setStatusTip(tr("Flips the item vertically"));
   mpFlipVerticalAction->setShortcut(QKeySequence("v"));
   mpFlipVerticalAction->setDisabled(isSystemLibrary);
@@ -3400,7 +3401,7 @@ void WelcomePageWidget::addRecentFilesListItems()
   {
     RecentFile recentFile = qvariant_cast<RecentFile>(files[i]);
     QListWidgetItem *listItem = new QListWidgetItem(mpRecentItemsList);
-    listItem->setIcon(QIcon(":/Resources/icons/next.svg"));
+    listItem->setIcon(ResourceCache::getIcon(":/Resources/icons/next.svg"));
     listItem->setText(recentFile.fileName);
     listItem->setData(Qt::UserRole, recentFile.encoding);
   }
@@ -3467,7 +3468,7 @@ void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
                   break;
                 count++;
                 QListWidgetItem *listItem = new QListWidgetItem(mpLatestNewsListWidget);
-                listItem->setIcon(QIcon(":/Resources/icons/next.svg"));
+                listItem->setIcon(ResourceCache::getIcon(":/Resources/icons/next.svg"));
                 listItem->setText(title);
                 listItem->setData(Qt::UserRole, link);
                 break;
@@ -4048,28 +4049,28 @@ void ModelWidget::createModelWidgetComponents()
     // icon view tool button
     mpIconViewToolButton = new QToolButton;
     mpIconViewToolButton->setText(Helper::iconView);
-    mpIconViewToolButton->setIcon(QIcon(":/Resources/icons/model.svg"));
+    mpIconViewToolButton->setIcon(ResourceCache::getIcon(":/Resources/icons/model.svg"));
     mpIconViewToolButton->setToolTip(Helper::iconView);
     mpIconViewToolButton->setAutoRaise(true);
     mpIconViewToolButton->setCheckable(true);
     // diagram view tool button
     mpDiagramViewToolButton = new QToolButton;
     mpDiagramViewToolButton->setText(Helper::diagramView);
-    mpDiagramViewToolButton->setIcon(QIcon(":/Resources/icons/modeling.png"));
+    mpDiagramViewToolButton->setIcon(ResourceCache::getIcon(":/Resources/icons/modeling.png"));
     mpDiagramViewToolButton->setToolTip(Helper::diagramView);
     mpDiagramViewToolButton->setAutoRaise(true);
     mpDiagramViewToolButton->setCheckable(true);
     // modelica text view tool button
     mpTextViewToolButton = new QToolButton;
     mpTextViewToolButton->setText(Helper::textView);
-    mpTextViewToolButton->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
+    mpTextViewToolButton->setIcon(ResourceCache::getIcon(":/Resources/icons/modeltext.svg"));
     mpTextViewToolButton->setToolTip(Helper::textView);
     mpTextViewToolButton->setAutoRaise(true);
     mpTextViewToolButton->setCheckable(true);
     // documentation view tool button
     mpDocumentationViewToolButton = new QToolButton;
     mpDocumentationViewToolButton->setText(Helper::documentationView);
-    mpDocumentationViewToolButton->setIcon(QIcon(":/Resources/icons/info-icon.svg"));
+    mpDocumentationViewToolButton->setIcon(ResourceCache::getIcon(":/Resources/icons/info-icon.svg"));
     mpDocumentationViewToolButton->setToolTip(Helper::documentationView);
     mpDocumentationViewToolButton->setAutoRaise(true);
     // view buttons box
@@ -4094,7 +4095,7 @@ void ModelWidget::createModelWidgetComponents()
     mpModelFilePathLabel->setElideMode(Qt::ElideMiddle);
     // documentation view tool button
     mpFileLockToolButton = new QToolButton;
-    mpFileLockToolButton->setIcon(QIcon(mpLibraryTreeItem->isReadOnly() ? ":/Resources/icons/lock.svg" : ":/Resources/icons/unlock.svg"));
+    mpFileLockToolButton->setIcon(ResourceCache::getIcon(mpLibraryTreeItem->isReadOnly() ? ":/Resources/icons/lock.svg" : ":/Resources/icons/unlock.svg"));
     mpFileLockToolButton->setText(mpLibraryTreeItem->isReadOnly() ? tr("Make writable") : tr("File is writable"));
     mpFileLockToolButton->setToolTip(mpFileLockToolButton->text());
     mpFileLockToolButton->setEnabled(mpLibraryTreeItem->isReadOnly() && !mpLibraryTreeItem->isSystemLibrary());
@@ -6555,7 +6556,7 @@ void ModelWidget::showIconView(bool checked)
   }
   QMdiSubWindow *pSubWindow = mpModelWidgetContainer->getCurrentMdiSubWindow();
   if (pSubWindow) {
-    pSubWindow->setWindowIcon(QIcon(":/Resources/icons/model.svg"));
+    pSubWindow->setWindowIcon(ResourceCache::getIcon(":/Resources/icons/model.svg"));
   }
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpIconGraphicsView->setFocus(Qt::ActiveWindowFocusReason);
@@ -6590,7 +6591,7 @@ void ModelWidget::showDiagramView(bool checked)
   }
   QMdiSubWindow *pSubWindow = mpModelWidgetContainer->getCurrentMdiSubWindow();
   if (pSubWindow) {
-    pSubWindow->setWindowIcon(QIcon(":/Resources/icons/modeling.png"));
+    pSubWindow->setWindowIcon(ResourceCache::getIcon(":/Resources/icons/modeling.png"));
   }
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpDiagramGraphicsView->setFocus(Qt::ActiveWindowFocusReason);
@@ -6622,7 +6623,7 @@ void ModelWidget::showTextView(bool checked)
     return;
   }
   if (QMdiSubWindow *pSubWindow = mpModelWidgetContainer->getCurrentMdiSubWindow()) {
-    pSubWindow->setWindowIcon(QIcon(":/Resources/icons/modeltext.svg"));
+    pSubWindow->setWindowIcon(ResourceCache::getIcon(":/Resources/icons/modeltext.svg"));
   }
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::ModelicaText));
@@ -6649,7 +6650,7 @@ void ModelWidget::makeFileWritAble()
   {
     mpLibraryTreeItem->setReadOnly(false);
     mpFileLockToolButton->setText(tr("File is writable"));
-    mpFileLockToolButton->setIcon(QIcon(":/Resources/icons/unlock.svg"));
+    mpFileLockToolButton->setIcon(ResourceCache::getIcon(":/Resources/icons/unlock.svg"));
     mpFileLockToolButton->setEnabled(false);
     mpFileLockToolButton->setToolTip(mpFileLockToolButton->text());
   }
@@ -6805,7 +6806,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     int subWindowsSize = subWindowList(QMdiArea::ActivationHistoryOrder).size();
     QMdiSubWindow *pSubWindow = addSubWindow(pModelWidget);
     addCloseActionsToSubWindowSystemMenu(pSubWindow);
-    pSubWindow->setWindowIcon(QIcon(":/Resources/icons/modeling.png"));
+    pSubWindow->setWindowIcon(ResourceCache::getIcon(":/Resources/icons/modeling.png"));
     if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
       pModelWidget->loadDiagramView();
       pModelWidget->loadConnections();

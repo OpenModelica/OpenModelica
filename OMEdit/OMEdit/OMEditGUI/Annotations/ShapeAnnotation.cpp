@@ -41,6 +41,7 @@
 #include "Component/ComponentProperties.h"
 #include "TLM/FetchInterfaceDataDialog.h"
 #include "Plotting/VariablesWidget.h"
+#include "Util/ResourceCache.h"
 
 /*!
  * \brief GraphicItem::setDefaults
@@ -390,7 +391,7 @@ void ShapeAnnotation::setDefaults()
   mOriginalFileName = "";
   mFileName = "";
   mImageSource = "";
-  mImage = QImage(":/Resources/icons/bitmap-shape.svg");
+  mImage = ResourceCache::getImage(":/Resources/icons/bitmap-shape.svg");
   mDynamicTextString.clear();
 }
 
@@ -474,7 +475,7 @@ void ShapeAnnotation::createActions()
   mpShapePropertiesAction->setStatusTip(tr("Shows the shape properties"));
   connect(mpShapePropertiesAction, SIGNAL(triggered()), SLOT(showShapeProperties()));
   // shape attributes
-  mpAlignInterfacesAction = new QAction(QIcon(":/Resources/icons/align-interfaces.svg"), Helper::alignInterfaces, mpGraphicsView);
+  mpAlignInterfacesAction = new QAction(ResourceCache::getIcon(":/Resources/icons/align-interfaces.svg"), Helper::alignInterfaces, mpGraphicsView);
   mpAlignInterfacesAction->setStatusTip(Helper::alignInterfacesTip);
   connect(mpAlignInterfacesAction, SIGNAL(triggered()), SLOT(alignInterfaces()));
   // shape attributes

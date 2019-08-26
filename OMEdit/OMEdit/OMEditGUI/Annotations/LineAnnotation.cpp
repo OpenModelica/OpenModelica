@@ -37,6 +37,7 @@
 #include "Modeling/ItemDelegate.h"
 #include "Modeling/Commands.h"
 #include "OMS/BusDialog.h"
+#include "Util/ResourceCache.h"
 
 #include <QMessageBox>
 
@@ -1389,10 +1390,10 @@ QVariant ExpandableConnectorTreeItem::data(int column, int role) const
         case Qt::DecorationRole:
           switch (mRestriction) {
             case StringHandler::ExpandableConnector:
-              return QIcon(":/Resources/icons/connect-mode.svg");
+              return ResourceCache::getIcon(":/Resources/icons/connect-mode.svg");
               break;
             case StringHandler::Connector:
-              return QIcon(":/Resources/icons/connector-icon.svg");
+              return ResourceCache::getIcon(":/Resources/icons/connector-icon.svg");
               break;
             default:
               return QVariant();
