@@ -966,23 +966,40 @@ algorithm
 
     case ("ModelicaStrings_scanReal", {Expression.STRING(s1), Expression.INTEGER(i), Expression.BOOLEAN(b)})
       algorithm
-        (i, r) := ModelicaExternalC.Strings_advanced_scanReal(s1, i, b);
+        (i, r) := ModelicaExternalC.Strings_scanReal(s1, i, b);
       then
-        Expression.TUPLE(Type.TUPLE({Type.INTEGER(), Type.BOOLEAN()}, NONE()),
+        Expression.TUPLE(Type.TUPLE({Type.INTEGER(), Type.REAL()}, NONE()),
                          {Expression.INTEGER(i), Expression.REAL(r)});
 
     case ("ModelicaStrings_scanInteger", {Expression.STRING(s1), Expression.INTEGER(i), Expression.BOOLEAN(b)})
       algorithm
-        (i, i2) := ModelicaExternalC.Strings_advanced_scanInteger(s1, i, b);
+        (i, i2) := ModelicaExternalC.Strings_scanInteger(s1, i, b);
       then
         Expression.TUPLE(Type.TUPLE({Type.INTEGER(), Type.INTEGER()}, NONE()),
                          {Expression.INTEGER(i), Expression.INTEGER(i2)});
 
+    case ("ModelicaStrings_scanString", {Expression.STRING(s1), Expression.INTEGER(i)})
+      algorithm
+        (i, s2) := ModelicaExternalC.Strings_scanString(s1, i);
+      then
+        Expression.TUPLE(Type.TUPLE({Type.INTEGER(), Type.STRING()}, NONE()),
+                         {Expression.INTEGER(i), Expression.STRING(s2)});
+
+    case ("ModelicaStrings_scanIdentifier", {Expression.STRING(s1), Expression.INTEGER(i)})
+      algorithm
+        (i, s2) := ModelicaExternalC.Strings_scanIdentifier(s1, i);
+      then
+        Expression.TUPLE(Type.TUPLE({Type.INTEGER(), Type.STRING()}, NONE()),
+                         {Expression.INTEGER(i), Expression.STRING(s2)});
+
     case ("ModelicaStrings_skipWhiteSpace", {Expression.STRING(s1), Expression.INTEGER(i)})
-      then Expression.INTEGER(ModelicaExternalC.Strings_advanced_skipWhiteSpace(s1, i));
+      then Expression.INTEGER(ModelicaExternalC.Strings_skipWhiteSpace(s1, i));
 
     case ("ModelicaStrings_substring", {Expression.STRING(s1), Expression.INTEGER(i), Expression.INTEGER(i2)})
       then Expression.STRING(System.substring(s1, i, i2));
+
+    case ("ModelicaStrings_hashString", {Expression.STRING(s1)})
+      then Expression.INTEGER(ModelicaExternalC.Strings_hashString(s1));
 
     case ("OpenModelica_regex", _) then evaluateOpenModelicaRegex(args);
 

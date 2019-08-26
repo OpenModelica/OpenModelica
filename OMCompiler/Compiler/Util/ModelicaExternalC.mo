@@ -85,7 +85,7 @@ function Strings_compare
   external "C" result=ModelicaStrings_compare(string1,string2,caseSensitive) annotation(Library = "ModelicaExternalC");
 end Strings_compare;
 
-function Strings_advanced_scanReal
+function Strings_scanReal
   input String string;
   input Integer startIndex;
   input Boolean unsigned;
@@ -93,9 +93,9 @@ function Strings_advanced_scanReal
   output Real number;
 
   external "C" ModelicaStrings_scanReal(string,startIndex,unsigned,nextIndex,number) annotation(Library = "ModelicaExternalC");
-end Strings_advanced_scanReal;
+end Strings_scanReal;
 
-function Strings_advanced_scanInteger
+function Strings_scanInteger
   input String string;
   input Integer startIndex;
   input Boolean unsigned;
@@ -104,15 +104,42 @@ function Strings_advanced_scanInteger
 
   external "C"
   ModelicaStrings_scanInteger(string,startIndex,unsigned,nextIndex,number) annotation(Library = "ModelicaExternalC");
-end Strings_advanced_scanInteger;
+end Strings_scanInteger;
 
-function Strings_advanced_skipWhiteSpace
+function Strings_scanString
+  input String string;
+  input Integer startIndex;
+  output Integer nextIndex;
+  output String string2;
+
+  external "C"
+  ModelicaStrings_scanString(string,startIndex,nextIndex,string2) annotation(Library = "ModelicaExternalC");
+end Strings_scanString;
+
+function Strings_scanIdentifier
+  input String string;
+  input Integer startIndex;
+  output Integer nextIndex;
+  output String identifier;
+
+  external "C"
+  ModelicaStrings_scanIdentifier(string,startIndex,nextIndex,identifier) annotation(Library = "ModelicaExternalC");
+end Strings_scanIdentifier;
+
+function Strings_skipWhiteSpace
   input String string;
   input Integer startIndex(min = 1) = 1;
   output Integer nextIndex;
 
   external "C" nextIndex = ModelicaStrings_skipWhiteSpace(string,startIndex) annotation(Library = "ModelicaExternalC");
-end Strings_advanced_skipWhiteSpace;
+end Strings_skipWhiteSpace;
+
+function Strings_hashString
+  input String string;
+  output Integer hash;
+
+  external "C" hash = ModelicaStrings_hashString(string) annotation(Library = "ModelicaExternalC");
+end Strings_hashString;
 
 function ModelicaIO_readMatrixSizes
   input String fileName;
