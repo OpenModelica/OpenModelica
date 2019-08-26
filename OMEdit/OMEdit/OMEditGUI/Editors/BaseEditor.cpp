@@ -37,6 +37,7 @@
 #include "Modeling/ModelWidgetContainer.h"
 #include "Util/Helper.h"
 #include "Debugger/Breakpoints/BreakpointsWidget.h"
+#include "Util/ResourceCache.h"
 
 #include <QMenu>
 #include <QCompleter>
@@ -788,7 +789,7 @@ void PlainTextEdit::insertCompleterSymbols(QList<CompleterItem> symbols, const Q
 {
   for (int i = 0; i < symbols.size(); ++i) {
     QStandardItem *pStandardItem = new QStandardItem(symbols[i].mKey);
-    pStandardItem->setIcon(QIcon(iconResource));
+    pStandardItem->setIcon(ResourceCache::getIcon(iconResource));
     pStandardItem->setData(QVariant::fromValue(symbols[i]), Qt::UserRole);
     mpStandardItemModel->appendRow(pStandardItem);
   }
@@ -805,7 +806,7 @@ void PlainTextEdit::insertCompleterKeywords(QStringList keywords)
 {
   for (int i = 0; i < keywords.size(); ++i) {
     QStandardItem *pStandardItem = new QStandardItem(keywords[i]);
-    pStandardItem->setIcon(QIcon(":/Resources/icons/completerkeyword.svg"));
+    pStandardItem->setIcon(ResourceCache::getIcon(":/Resources/icons/completerkeyword.svg"));
     pStandardItem->setData(QVariant::fromValue(CompleterItem(keywords[i],keywords[i],"")),Qt::UserRole);
     mpStandardItemModel->appendRow(pStandardItem);
   }
@@ -822,7 +823,7 @@ void PlainTextEdit::insertCompleterTypes(QStringList types)
 {
   for (int k = 0; k < types.size(); ++k) {
     QStandardItem *pStandardItem = new QStandardItem(types[k]);
-    pStandardItem->setIcon(QIcon(":/Resources/icons/completerType.svg"));
+    pStandardItem->setIcon(ResourceCache::getIcon(":/Resources/icons/completerType.svg"));
     pStandardItem->setData(QVariant::fromValue(CompleterItem(types[k],types[k],"")),Qt::UserRole);
     mpStandardItemModel->appendRow(pStandardItem);
   }
@@ -839,7 +840,7 @@ void PlainTextEdit::insertCompleterCodeSnippets(QList<CompleterItem> items)
 {
   for (int var = 0; var < items.length(); ++var) {
     QStandardItem *pStandardItem = new QStandardItem(items[var].mKey);
-    pStandardItem->setIcon(QIcon(":/Resources/icons/completerCodeSnippets.svg"));
+    pStandardItem->setIcon(ResourceCache::getIcon(":/Resources/icons/completerCodeSnippets.svg"));
     pStandardItem->setData(QVariant::fromValue(items[var]),Qt::UserRole);
     mpStandardItemModel->appendRow(pStandardItem);
   }
@@ -2090,19 +2091,19 @@ void BaseEditor::createActions()
   // we only define the zooming actions if ModelWidget is NULL otherwise we use the zooming actions from toolbar.
   if (!mpModelWidget) {
     // reset zoom action
-    mpResetZoomAction = new QAction(QIcon(":/Resources/icons/zoomReset.svg"), Helper::resetZoom, this);
+    mpResetZoomAction = new QAction(ResourceCache::getIcon(":/Resources/icons/zoomReset.svg"), Helper::resetZoom, this);
     mpResetZoomAction->setStatusTip(Helper::resetZoom);
     mpResetZoomAction->setShortcut(QKeySequence("Ctrl+0"));
     connect(mpResetZoomAction, SIGNAL(triggered()), mpPlainTextEdit, SLOT(resetZoom()));
     mpPlainTextEdit->addAction(mpResetZoomAction);
     // zoom in action
-    mpZoomInAction = new QAction(QIcon(":/Resources/icons/zoomIn.svg"), Helper::zoomIn, this);
+    mpZoomInAction = new QAction(ResourceCache::getIcon(":/Resources/icons/zoomIn.svg"), Helper::zoomIn, this);
     mpZoomInAction->setStatusTip(Helper::zoomIn);
     mpZoomInAction->setShortcut(QKeySequence("Ctrl++"));
     connect(mpZoomInAction, SIGNAL(triggered()), mpPlainTextEdit, SLOT(zoomIn()));
     mpPlainTextEdit->addAction(mpZoomInAction);
     // zoom out action
-    mpZoomOutAction = new QAction(QIcon(":/Resources/icons/zoomOut.svg"), Helper::zoomOut, this);
+    mpZoomOutAction = new QAction(ResourceCache::getIcon(":/Resources/icons/zoomOut.svg"), Helper::zoomOut, this);
     mpZoomOutAction->setStatusTip(Helper::zoomOut);
     mpZoomOutAction->setShortcut(QKeySequence("Ctrl+-"));
     connect(mpZoomOutAction, SIGNAL(triggered()), mpPlainTextEdit, SLOT(zoomOut()));
@@ -2156,11 +2157,11 @@ QMenu* BaseEditor::createStandardContextMenu()
     pMenu->addAction(MainWindow::instance()->getRedoAction());
   } else {
     QAction *pUndoAction = pMenu->addAction(tr("Undo"), mpPlainTextEdit, SLOT(undo()));
-    pUndoAction->setIcon(QIcon(":/Resources/icons/undo.svg"));
+    pUndoAction->setIcon(ResourceCache::getIcon(":/Resources/icons/undo.svg"));
     pUndoAction->setShortcut(QKeySequence::Undo);
     pUndoAction->setEnabled(mpPlainTextEdit->isUndoAvailable());
     QAction *pRedoAction = pMenu->addAction(tr("Redo"), mpPlainTextEdit, SLOT(undo()));
-    pRedoAction->setIcon(QIcon(":/Resources/icons/redo.svg"));
+    pRedoAction->setIcon(ResourceCache::getIcon(":/Resources/icons/redo.svg"));
     pRedoAction->setShortcut(QKeySequence::Redo);
     pRedoAction->setEnabled(mpPlainTextEdit->isRedoAvailable());
   }
@@ -2763,7 +2764,7 @@ GotoLineDialog::GotoLineDialog(BaseEditor *pBaseEditor)
   : QDialog(pBaseEditor)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - Go to Line"));
-  setWindowIcon(QIcon(":/Resources/icons/modeling.png"));
+  setWindowIcon(ResourceCache::getIcon(":/Resources/icons/modeling.png"));
   setAttribute(Qt::WA_DeleteOnClose);
   mpBaseEditor = pBaseEditor;
   mpLineNumberLabel = new Label;
@@ -2830,7 +2831,7 @@ InfoBar::InfoBar(QWidget *pParent)
   mpInfoLabel->setWordWrap(true);
   mpCloseButton = new QToolButton;
   mpCloseButton->setAutoRaise(true);
-  mpCloseButton->setIcon(QIcon(":/Resources/icons/delete.svg"));
+  mpCloseButton->setIcon(ResourceCache::getIcon(":/Resources/icons/delete.svg"));
   mpCloseButton->setToolTip(Helper::close);
   connect(mpCloseButton, SIGNAL(clicked()), SLOT(hide()));
   // set the layout

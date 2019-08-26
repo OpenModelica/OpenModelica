@@ -34,6 +34,7 @@
 
 #include "BitmapAnnotation.h"
 #include "Modeling/Commands.h"
+#include "Util/ResourceCache.h"
 
 #include <QMessageBox>
 
@@ -96,7 +97,7 @@ BitmapAnnotation::BitmapAnnotation(QString classFileName, GraphicsView *pGraphic
   if (!mFileName.isEmpty() && QFile::exists(mFileName)) {
     mImage.load(mFileName);
   } else {
-    mImage = QImage(":/Resources/icons/bitmap-shape.svg");
+    mImage = ResourceCache::getImage(":/Resources/icons/bitmap-shape.svg");
   }
 }
 
@@ -126,7 +127,7 @@ void BitmapAnnotation::parseShapeAnnotation(QString annotation)
   } else if (!mFileName.isEmpty() && QFile::exists(mFileName)) {
     mImage.load(mFileName);
   } else {
-    mImage = QImage(":/Resources/icons/bitmap-shape.svg");
+    mImage = ResourceCache::getImage(":/Resources/icons/bitmap-shape.svg");
   }
 }
 

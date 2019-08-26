@@ -47,6 +47,7 @@
 #include "ModelicaClassDialog.h"
 #include "Git/GitCommands.h"
 #include "Git/CommitChangesDialog.h"
+#include "Util/ResourceCache.h"
 
 /*!
  * \class LibraryTreeItem
@@ -419,54 +420,54 @@ QString LibraryTreeItem::getTooltip() const {
 QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
 {
   if (mLibraryType == LibraryTreeItem::CompositeModel) {
-    return QIcon(":/Resources/icons/tlm-icon.svg");
+    return ResourceCache::getIcon(":/Resources/icons/tlm-icon.svg");
   } else if (mLibraryType == LibraryTreeItem::OMS) {
     if (isTopLevel()) {
-      return QIcon(":/Resources/icons/model-icon.svg");
+      return ResourceCache::getIcon(":/Resources/icons/model-icon.svg");
     } else if (isSystemElement()) {
       if (isTLMSystem()) {
-        return QIcon(":/Resources/icons/tlm-system-icon.svg");
+        return ResourceCache::getIcon(":/Resources/icons/tlm-system-icon.svg");
       } else if (isWCSystem()) {
-        return QIcon(":/Resources/icons/wc-system-icon.svg");
+        return ResourceCache::getIcon(":/Resources/icons/wc-system-icon.svg");
       } else {
-        return QIcon(":/Resources/icons/sc-system-icon.svg");
+        return ResourceCache::getIcon(":/Resources/icons/sc-system-icon.svg");
       }
     } else if (isFMUComponent()) {
-      return QIcon(":/Resources/icons/fmu-icon.svg");
+      return ResourceCache::getIcon(":/Resources/icons/fmu-icon.svg");
     } else if (isTableComponent()) {
       if (mSubModelPath.endsWith(".csv")) {
-        return QIcon(":/Resources/icons/csv.svg");
+        return ResourceCache::getIcon(":/Resources/icons/csv.svg");
       } else {
-        return QIcon(":/Resources/icons/mat.svg");
+        return ResourceCache::getIcon(":/Resources/icons/mat.svg");
       }
     } else if (mpOMSConnector) {
       switch (mpOMSConnector->type) {
         case oms_signal_type_real:
           switch (mpOMSConnector->causality) {
             case oms_causality_input:
-              return QIcon(":/Resources/icons/real-input-connector.svg");
+              return ResourceCache::getIcon(":/Resources/icons/real-input-connector.svg");
             case oms_causality_output:
-              return QIcon(":/Resources/icons/real-output-connector.svg");
+              return ResourceCache::getIcon(":/Resources/icons/real-output-connector.svg");
             default:
-              return QIcon(":/Resources/icons/package-icon.svg");
+              return ResourceCache::getIcon(":/Resources/icons/package-icon.svg");
           }
         case oms_signal_type_integer:
           switch (mpOMSConnector->causality) {
             case oms_causality_input:
-              return QIcon(":/Resources/icons/integer-input-connector.svg");
+              return ResourceCache::getIcon(":/Resources/icons/integer-input-connector.svg");
             case oms_causality_output:
-              return QIcon(":/Resources/icons/integer-output-connector.svg");
+              return ResourceCache::getIcon(":/Resources/icons/integer-output-connector.svg");
             default:
-              return QIcon(":/Resources/icons/package-icon.svg");
+              return ResourceCache::getIcon(":/Resources/icons/package-icon.svg");
           }
         case oms_signal_type_boolean:
           switch (mpOMSConnector->causality) {
             case oms_causality_input:
-              return QIcon(":/Resources/icons/boolean-input-connector.svg");
+              return ResourceCache::getIcon(":/Resources/icons/boolean-input-connector.svg");
             case oms_causality_output:
-              return QIcon(":/Resources/icons/boolean-output-connector.svg");
+              return ResourceCache::getIcon(":/Resources/icons/boolean-output-connector.svg");
             default:
-              return QIcon(":/Resources/icons/package-icon.svg");
+              return ResourceCache::getIcon(":/Resources/icons/package-icon.svg");
           }
         default:
           qDebug() << "Unhanled connector type" << mpOMSConnector->type;
@@ -477,47 +478,47 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
     } else if (mpOMSTLMBusConnector) {
       switch (mpOMSTLMBusConnector->domain) {
         case oms_tlm_domain_input:
-          return QIcon(":/Resources/icons/tlm-input-bus-connector.svg");
+          return ResourceCache::getIcon(":/Resources/icons/tlm-input-bus-connector.svg");
         case oms_tlm_domain_output:
-          return QIcon(":/Resources/icons/tlm-output-bus-connector.svg");
+          return ResourceCache::getIcon(":/Resources/icons/tlm-output-bus-connector.svg");
         case oms_tlm_domain_rotational:
-          return QIcon(":/Resources/icons/tlm-rotational-bus-connector.svg");
+          return ResourceCache::getIcon(":/Resources/icons/tlm-rotational-bus-connector.svg");
         case oms_tlm_domain_hydraulic:
-          return QIcon(":/Resources/icons/tlm-hydraulic-bus-connector.svg");
+          return ResourceCache::getIcon(":/Resources/icons/tlm-hydraulic-bus-connector.svg");
         case oms_tlm_domain_electric:
-          return QIcon(":/Resources/icons/tlm-electric-bus-connector.svg");
+          return ResourceCache::getIcon(":/Resources/icons/tlm-electric-bus-connector.svg");
         case oms_tlm_domain_mechanical:
         default:
-          return QIcon(":/Resources/icons/tlm-mechanical-bus-connector.svg");
+          return ResourceCache::getIcon(":/Resources/icons/tlm-mechanical-bus-connector.svg");
       }
     }
   } else if (mLibraryType == LibraryTreeItem::Modelica) {
     switch (getRestriction()) {
       case StringHandler::Model:
-        return QIcon(":/Resources/icons/model-icon.svg");
+        return ResourceCache::getIcon(":/Resources/icons/model-icon.svg");
       case StringHandler::Class:
-        return QIcon(":/Resources/icons/class-icon.svg");
+        return ResourceCache::getIcon(":/Resources/icons/class-icon.svg");
       case StringHandler::Connector:
-        return QIcon(":/Resources/icons/connector-icon.svg");
+        return ResourceCache::getIcon(":/Resources/icons/connector-icon.svg");
       case StringHandler::ExpandableConnector:
-        return QIcon(":/Resources/icons/connect-mode.svg");
+        return ResourceCache::getIcon(":/Resources/icons/connect-mode.svg");
       case StringHandler::Record:
-        return QIcon(":/Resources/icons/record-icon.svg");
+        return ResourceCache::getIcon(":/Resources/icons/record-icon.svg");
       case StringHandler::Block:
-        return QIcon(":/Resources/icons/block-icon.svg");
+        return ResourceCache::getIcon(":/Resources/icons/block-icon.svg");
       case StringHandler::Function:
-        return QIcon(":/Resources/icons/function-icon.svg");
+        return ResourceCache::getIcon(":/Resources/icons/function-icon.svg");
       case StringHandler::Package:
-        return QIcon(":/Resources/icons/package-icon.svg");
+        return ResourceCache::getIcon(":/Resources/icons/package-icon.svg");
       case StringHandler::Type:
       case StringHandler::Operator:
       case StringHandler::OperatorRecord:
       case StringHandler::OperatorFunction:
-        return QIcon(":/Resources/icons/type-icon.svg");
+        return ResourceCache::getIcon(":/Resources/icons/type-icon.svg");
       case StringHandler::Optimization:
-        return QIcon(":/Resources/icons/optimization-icon.svg");
+        return ResourceCache::getIcon(":/Resources/icons/optimization-icon.svg");
       default:
-        return QIcon(":/Resources/icons/type-icon.svg");
+        return ResourceCache::getIcon(":/Resources/icons/type-icon.svg");
     }
   }
   return QIcon();

@@ -40,6 +40,7 @@
 #include "Modeling/DocumentationWidget.h"
 #include "Plotting/VariablesWidget.h"
 #include "OMS/BusDialog.h"
+#include "Util/ResourceCache.h"
 
 #include <QMessageBox>
 #include <QMenu>
@@ -1936,7 +1937,7 @@ void Component::createActions()
   mpParametersAction->setStatusTip(tr("Shows the component parameters"));
   connect(mpParametersAction, SIGNAL(triggered()), SLOT(showParameters()));
   // Fetch interfaces action
-  mpFetchInterfaceDataAction = new QAction(QIcon(":/Resources/icons/interface-data.svg"), Helper::fetchInterfaceData, mpGraphicsView);
+  mpFetchInterfaceDataAction = new QAction(ResourceCache::getIcon(":/Resources/icons/interface-data.svg"), Helper::fetchInterfaceData, mpGraphicsView);
   mpFetchInterfaceDataAction->setStatusTip(tr("Fetch interface data for this external model"));
   connect(mpFetchInterfaceDataAction, SIGNAL(triggered()), SLOT(fetchInterfaceData()));
   // Todo: Connect /robbr
@@ -1945,7 +1946,7 @@ void Component::createActions()
   mpAttributesAction->setStatusTip(tr("Shows the component attributes"));
   connect(mpAttributesAction, SIGNAL(triggered()), SLOT(showAttributes()));
   // Open Class Action
-  mpOpenClassAction = new QAction(QIcon(":/Resources/icons/model.svg"), Helper::openClass, mpGraphicsView);
+  mpOpenClassAction = new QAction(ResourceCache::getIcon(":/Resources/icons/model.svg"), Helper::openClass, mpGraphicsView);
   mpOpenClassAction->setStatusTip(Helper::openClassTip);
   connect(mpOpenClassAction, SIGNAL(triggered()), SLOT(openClass()));
   // SubModel attributes Action
