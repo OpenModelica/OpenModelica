@@ -66,6 +66,7 @@
 #include <QPrinter>
 #include <QPrintDialog>
 #include <QDesktopServices>
+#include <QClipboard>
 
 /*!
  * \class GraphicsScene
@@ -1559,6 +1560,20 @@ void GraphicsView::createActions()
   mpDeleteAction->setShortcut(QKeySequence::Delete);
   mpDeleteAction->setDisabled(isSystemLibrary);
   connect(mpDeleteAction, SIGNAL(triggered()), SLOT(deleteItems()));
+  // cut action
+  mpCutAction = new QAction(ResourceCache::getIcon(":/Resources/icons/cut.svg"), tr("Cut"), this);
+  mpCutAction->setShortcut(QKeySequence("Ctrl+x"));
+  mpCutAction->setDisabled(isSystemLibrary);
+  connect(mpCutAction, SIGNAL(triggered()), SLOT(cutItems()));
+  // copy action
+  mpCopyAction = new QAction(ResourceCache::getIcon(":/Resources/icons/copy.svg"), Helper::copy, this);
+  mpCopyAction->setShortcut(QKeySequence("Ctrl+c"));
+  connect(mpCopyAction, SIGNAL(triggered()), SLOT(copyItems()));
+  // paste action
+  mpPasteAction = new QAction(ResourceCache::getIcon(":/Resources/icons/paste.svg"), tr("Paste"), this);
+  mpPasteAction->setShortcut(QKeySequence("Ctrl+v"));
+  mpPasteAction->setDisabled(isSystemLibrary);
+  connect(mpPasteAction, SIGNAL(triggered()), SLOT(pasteItems()));
   // Duplicate Action
   mpDuplicateAction = new QAction(ResourceCache::getIcon(":/Resources/icons/duplicate.svg"), Helper::duplicate, this);
   mpDuplicateAction->setStatusTip(Helper::duplicateTip);
@@ -2213,6 +2228,144 @@ void GraphicsView::selectAll()
 {
   foreach (QGraphicsItem *pItem, items()) {
     pItem->setSelected(true);
+  }
+}
+
+/*!
+ * \brief GraphicsView::cutItems
+ * Slot activated when mpCutAction triggered SIGNAL is raised.
+ */
+void GraphicsView::cutItems()
+{
+  copyItems(true);
+}
+
+/*!
+ * \brief GraphicsView::copyItems
+ * Slot activated when mpCopyAction triggered SIGNAL is raised.
+ */
+void GraphicsView::copyItems()
+{
+  copyItems(false);
+}
+
+/*!
+ * \brief GraphicsView::copyItems
+ * Copies the selected items to the clipboard.
+ * \param cut - flag to know if we should cut the items or not.
+ */
+void GraphicsView::copyItems(bool cut)
+{
+  QList<QGraphicsItem*> selectedItems = scene()->selectedItems();
+  if (!selectedItems.isEmpty()) {
+    QStringList components, connections, shapes, allItems;
+    connections << "equation";
+    MimeData *pMimeData = new MimeData;
+    for (int i = 0 ; i < selectedItems.size() ; i++) {
+      if (Component *pComponent = dynamic_cast<Component*>(selectedItems.at(i))) {
+        // we need to get the modifiers here instead of inside pasteItems() because in case of cut the component is removed and then we can't fetch the modifiers.
+        pComponent->getComponentInfo()->getModifiersMap(MainWindow::instance()->getOMCProxy(), pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure(), pComponent);
+        pMimeData->addComponent(pComponent);
+        components << QString("%1 %2%3 %4;").arg(pComponent->getComponentInfo()->getClassName(), pComponent->getName(), "", pComponent->getPlacementAnnotation(true));
+      } else if (ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(selectedItems.at(i))) {
+        LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(selectedItems.at(i));
+        if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
+          pMimeData->addConnection(pLineAnnotation);
+          connections << QString("connect(%1, %2) annotation %3;").arg(pLineAnnotation->getStartComponentName(), pLineAnnotation->getEndComponentName(), pLineAnnotation->getShapeAnnotation());
+        } else {
+          pMimeData->addShape(pShapeAnnotation);
+          shapes << pShapeAnnotation->getShapeAnnotation();
+        }
+      }
+    }
+    allItems << components << connections << (shapes.isEmpty() ? "" : QString("annotation (%1)").arg(shapes.join(", ")));
+    pMimeData->setText(allItems.join("\n"));
+    QApplication::clipboard()->setMimeData(pMimeData);
+    // if cut flag is set
+    if (cut) {
+      deleteItems();
+    }
+  }
+}
+
+/*!
+ * \brief replaceComponentNameInConnection
+ * Helper function to GraphicsView::pasteItems(). Updates the connections component names if the component name is changed during paste operation.
+ * \param oldConnectionComponentName
+ * \param newConnectionComponentName
+ * \return
+ */
+QString replaceComponentNameInConnection(const QString &oldConnectionComponentName, const QString &newConnectionComponentName)
+{
+  QString connectionComponentName;
+  QStringList connectionComponentList = oldConnectionComponentName.split(".");
+  if (connectionComponentList.size() > 1) {
+    connectionComponentName = QString("%1.%2").arg(newConnectionComponentName, connectionComponentList.at(1));
+  } else {
+    connectionComponentName = connectionComponentList.at(0);
+    if (connectionComponentName.contains("[")) {
+      connectionComponentName = QString("%1%2").arg(newConnectionComponentName, connectionComponentName.mid(connectionComponentName.indexOf("[")));
+    } else {
+      connectionComponentName = newConnectionComponentName;
+    }
+  }
+  return connectionComponentName;
+}
+
+/*!
+ * \brief GraphicsView::pasteItems
+ * Slot activated when mpPasteAction triggered SIGNAL is raised.
+ * Reads the items from the clipboard and adds them to the view.
+ */
+void GraphicsView::pasteItems()
+{
+  QClipboard *pClipboard = QApplication::clipboard();
+  if (pClipboard->mimeData()->hasFormat(Helper::cutCopyPasteFormat)) {
+    if (const MimeData *pMimeData = qobject_cast<const MimeData*>(pClipboard->mimeData())) {
+      mpModelWidget->beginMacro("Paste items from clipboard");
+      // map to store
+      QMap<Component*, QString> renamedComponents;
+      // paste the components
+      foreach (Component *pComponent, pMimeData->getComponents()) {
+        QString name = pComponent->getName();
+        if (!checkComponentName(name)) {
+          name = getUniqueComponentName(StringHandler::toCamelCase(pComponent->getLibraryTreeItem()->getName()));
+          renamedComponents.insert(pComponent, name);
+        }
+        ComponentInfo *pComponentInfo = new ComponentInfo(pComponent->getComponentInfo());
+        pComponentInfo->setName(name);
+        addComponentToView(name, pComponent->getLibraryTreeItem(), pComponent->getOMCPlacementAnnotation(QPointF(0, 0)), QPointF(0, 0), pComponentInfo, true, true);
+        Component *pNewComponent = mComponentsList.last();
+        pNewComponent->setSelected(true);
+      }
+      // paste the connections
+      foreach (LineAnnotation *pConnectionLineAnnotation, pMimeData->getConnections()) {
+        QString startComponentName = pConnectionLineAnnotation->getStartComponentName();
+        if (renamedComponents.contains(pConnectionLineAnnotation->getStartComponent()->getRootParentComponent())) {
+          startComponentName = replaceComponentNameInConnection(startComponentName, renamedComponents.value(pConnectionLineAnnotation->getStartComponent()->getRootParentComponent()));
+        }
+        QString endComponentName = pConnectionLineAnnotation->getEndComponentName();
+        if (renamedComponents.contains(pConnectionLineAnnotation->getEndComponent()->getRootParentComponent())) {
+          endComponentName = replaceComponentNameInConnection(endComponentName, renamedComponents.value(pConnectionLineAnnotation->getEndComponent()->getRootParentComponent()));
+        }
+        QStringList connectionList;
+        connectionList << startComponentName << endComponentName << QString("");
+        QString connectionAnnotation = pConnectionLineAnnotation->getOMCShapeAnnotationWithShapeName();
+        mpModelWidget->addConnection(connectionList, connectionAnnotation, true, true);
+      }
+      // paste the shapes
+      QStringList shapes;
+      foreach (ShapeAnnotation *pShapeAnnotation, pMimeData->getShapes()) {
+        shapes << pShapeAnnotation->getOMCShapeAnnotationWithShapeName();
+      }
+      if (!shapes.isEmpty()) {
+        mpModelWidget->drawModelIconDiagramShapes(shapes, this, true);
+      }
+      // update the model text
+      mpModelWidget->updateClassAnnotationIfNeeded();
+      mpModelWidget->updateModelText();
+      mpModelWidget->endMacro();
+    }
   }
 }
 
@@ -3008,8 +3161,14 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
     mpModelWidget->beginMacro("Move control right by key press");
     emit keyPressCtrlRight();
     mpModelWidget->endMacro();
-  } else if (controlModifier && event->key() == Qt::Key_A) {
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_A) {
     selectAll();
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_X && isAnyItemSelectedAndEditable(event->key())) {
+    cutItems();
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_C) {
+    copyItems();
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_V) {
+    pasteItems();
   } else if (controlModifier && event->key() == Qt::Key_D && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->beginMacro("Duplicate by key press");
     emit keyPressDuplicate();
@@ -3149,6 +3308,8 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
     if (!isVisualizationView()) {
       menu.addSeparator();
       menu.addAction(MainWindow::instance()->getExportToOMNotebookAction());
+      menu.addSeparator();
+      menu.addAction(mpPasteAction);
     }
     menu.addSeparator();
     menu.addAction(MainWindow::instance()->getPrintModelAction());
@@ -3569,6 +3730,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     if (MainWindow::instance()->isDebug()) {
       mpUndoView = new QUndoView(mpUndoStack);
     }
+    mpEditor = 0;
     getModelInheritedClasses();
     drawModelInheritedClassShapes(this, StringHandler::Icon);
     getModelIconDiagramShapes(StringHandler::Icon);
@@ -3581,7 +3743,6 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     //    drawModelInheritedClassComponents(this, StringHandler::Icon);
     //    getModelComponents();
     //    drawModelIconComponents();
-    mpEditor = 0;
   } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     // icon graphics framework
     if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
@@ -3749,6 +3910,54 @@ void ModelWidget::drawBaseCoOrdinateSystem(ModelWidget *pModelWidget, GraphicsVi
         break;
       } else {
         drawBaseCoOrdinateSystem(pLibraryTreeItem->getModelWidget(), pGraphicsView);
+      }
+    }
+  }
+}
+
+/*!
+ * \brief ModelWidget::drawModelIconDiagramShapes
+ * Draws the model shapes.
+ * \param shapes
+ * \param pGraphicsView
+ */
+void ModelWidget::drawModelIconDiagramShapes(QStringList shapes, GraphicsView *pGraphicsView, bool select)
+{
+  foreach (QString shape, shapes) {
+    ShapeAnnotation *pShapeAnnotation = 0;
+    if (shape.startsWith("Line")) {
+      shape = shape.mid(QString("Line").length());
+      shape = StringHandler::removeFirstLastParentheses(shape);
+      pShapeAnnotation = new LineAnnotation(shape, pGraphicsView);
+    } else if (shape.startsWith("Polygon")) {
+      shape = shape.mid(QString("Polygon").length());
+      shape = StringHandler::removeFirstLastParentheses(shape);
+      pShapeAnnotation = new PolygonAnnotation(shape, pGraphicsView);
+    } else if (shape.startsWith("Rectangle")) {
+      shape = shape.mid(QString("Rectangle").length());
+      shape = StringHandler::removeFirstLastParentheses(shape);
+      pShapeAnnotation = new RectangleAnnotation(shape, pGraphicsView);
+    } else if (shape.startsWith("Ellipse")) {
+      shape = shape.mid(QString("Ellipse").length());
+      shape = StringHandler::removeFirstLastParentheses(shape);
+      pShapeAnnotation = new EllipseAnnotation(shape, pGraphicsView);
+    } else if (shape.startsWith("Text")) {
+      shape = shape.mid(QString("Text").length());
+      shape = StringHandler::removeFirstLastParentheses(shape);
+      pShapeAnnotation = new TextAnnotation(shape, pGraphicsView);
+    } else if (shape.startsWith("Bitmap")) {
+      /* create the bitmap shape */
+      shape = shape.mid(QString("Bitmap").length());
+      shape = StringHandler::removeFirstLastParentheses(shape);
+      pShapeAnnotation = new BitmapAnnotation(mpLibraryTreeItem->mClassInformation.fileName, shape, pGraphicsView);
+    }
+    if (pShapeAnnotation) {
+      pShapeAnnotation->initializeTransformation();
+      pShapeAnnotation->drawCornerItems();
+      pShapeAnnotation->setCornerItemsActiveOrPassive();
+      mpUndoStack->push(new AddShapeCommand(pShapeAnnotation));
+      if (select) {
+        pShapeAnnotation->setSelected(true);
       }
     }
   }
@@ -3928,115 +4137,124 @@ void ModelWidget::getModelConnections()
   detectMultipleDeclarations();
   // get the connections
   MainWindow *pMainWindow = MainWindow::instance();
-  LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
   int connectionCount = pMainWindow->getOMCProxy()->getConnectionCount(mpLibraryTreeItem->getNameStructure());
   for (int i = 1 ; i <= connectionCount ; i++) {
     // get the connection from OMC
     QStringList connectionList = pMainWindow->getOMCProxy()->getNthConnection(mpLibraryTreeItem->getNameStructure(), i);
-    QString connectionString = QString("{%1}").arg(connectionList.join(","));
-    // if the connectionString only contains two items then continue the loop,
-    // because connection is not valid then
-    if (connectionList.size() < 3) {
-      continue;
+    QString connectionAnnotationString = pMainWindow->getOMCProxy()->getNthConnectionAnnotation(mpLibraryTreeItem->getNameStructure(), i);
+    addConnection(connectionList, connectionAnnotationString, false, false);
+  }
+}
+
+void ModelWidget::addConnection(QStringList connectionList, QString connectionAnnotationString, bool addToOMC, bool select)
+{
+  MainWindow *pMainWindow = MainWindow::instance();
+  LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
+  QString connectionString = QString("{%1}").arg(connectionList.join(","));
+  // if the connectionString only contains two items then continue the loop,
+  // because connection is not valid then
+  if (connectionList.size() < 3) {
+    return;
+  }
+  // get start and end components
+  QStringList startComponentList = StringHandler::makeVariableParts(connectionList.at(0));
+  QStringList endComponentList = StringHandler::makeVariableParts(connectionList.at(1));
+  // get start component
+  Component *pStartComponent = 0;
+  if (startComponentList.size() > 0) {
+    QString startComponentName = startComponentList.at(0);
+    if (startComponentName.contains("[")) {
+      startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
     }
-    // get start and end components
-    QStringList startComponentList = StringHandler::makeVariableParts(connectionList.at(0));
-    QStringList endComponentList = StringHandler::makeVariableParts(connectionList.at(1));
-    // get start component
-    Component *pStartComponent = 0;
-    if (startComponentList.size() > 0) {
-      QString startComponentName = startComponentList.at(0);
+    pStartComponent = mpDiagramGraphicsView->getComponentObject(startComponentName);
+  }
+  // get start connector
+  Component *pStartConnectorComponent = 0;
+  Component *pEndConnectorComponent = 0;
+  if (pStartComponent) {
+    // if a component type is connector then we only get one item in startComponentList
+    // check the startcomponentlist
+    if (startComponentList.size() < 2
+        || (pStartComponent->getLibraryTreeItem()
+            && pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector)) {
+      pStartConnectorComponent = pStartComponent;
+    } else if (pStartComponent->getLibraryTreeItem()
+               && !pLibraryTreeModel->findLibraryTreeItem(pStartComponent->getLibraryTreeItem()->getNameStructure())) {
+      /* if class doesn't exist then connect with the red cross box */
+      pStartConnectorComponent = pStartComponent;
+    } else {
+      // look for port from the parent component
+      QString startComponentName = startComponentList.at(1);
       if (startComponentName.contains("[")) {
         startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
       }
-      pStartComponent = mpDiagramGraphicsView->getComponentObject(startComponentName);
+      pStartConnectorComponent = getConnectorComponent(pStartComponent, startComponentName);
     }
-    // get start connector
-    Component *pStartConnectorComponent = 0;
-    Component *pEndConnectorComponent = 0;
-    if (pStartComponent) {
-      // if a component type is connector then we only get one item in startComponentList
-      // check the startcomponentlist
-      if (startComponentList.size() < 2
-          || (pStartComponent->getLibraryTreeItem()
-              && pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector)) {
-        pStartConnectorComponent = pStartComponent;
-      } else if (pStartComponent->getLibraryTreeItem()
-                 && !pLibraryTreeModel->findLibraryTreeItem(pStartComponent->getLibraryTreeItem()->getNameStructure())) {
-        /* if class doesn't exist then connect with the red cross box */
-        pStartConnectorComponent = pStartComponent;
-      } else {
-        // look for port from the parent component
-        QString startComponentName = startComponentList.at(1);
-        if (startComponentName.contains("[")) {
-          startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
-        }
-        pStartConnectorComponent = getConnectorComponent(pStartComponent, startComponentName);
-      }
+  }
+  // show error message if start component is not found.
+  if (!pStartConnectorComponent) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+                                                          .arg(connectionList.at(0)).arg(connectionString),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+    return;
+  }
+  // get end component
+  Component *pEndComponent = 0;
+  if (endComponentList.size() > 0) {
+    QString endComponentName = endComponentList.at(0);
+    if (endComponentName.contains("[")) {
+      endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
     }
-    // show error message if start component is not found.
-    if (!pStartConnectorComponent) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                            GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
-                                                            .arg(connectionList.at(0)).arg(connectionString),
-                                                            Helper::scriptingKind, Helper::errorLevel));
-      continue;
-    }
-    // get end component
-    Component *pEndComponent = 0;
-    if (endComponentList.size() > 0) {
-      QString endComponentName = endComponentList.at(0);
+    pEndComponent = mpDiagramGraphicsView->getComponentObject(endComponentName);
+  }
+  // get the end connector
+  if (pEndComponent) {
+    // if a component type is connector then we only get one item in endComponentList
+    // check the endcomponentlist
+    if (endComponentList.size() < 2
+        || (pEndComponent->getLibraryTreeItem()
+            && pEndComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector)) {
+      pEndConnectorComponent = pEndComponent;
+    } else if (pEndComponent->getLibraryTreeItem()
+               && !pLibraryTreeModel->findLibraryTreeItem(pEndComponent->getLibraryTreeItem()->getNameStructure())) {
+      /* if class doesn't exist then connect with the red cross box */
+      pEndConnectorComponent = pEndComponent;
+    } else {
+      QString endComponentName = endComponentList.at(1);
       if (endComponentName.contains("[")) {
         endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
       }
-      pEndComponent = mpDiagramGraphicsView->getComponentObject(endComponentName);
+      pEndConnectorComponent = getConnectorComponent(pEndComponent, endComponentName);
     }
-    // get the end connector
-    if (pEndComponent) {
-      // if a component type is connector then we only get one item in endComponentList
-      // check the endcomponentlist
-      if (endComponentList.size() < 2
-          || (pEndComponent->getLibraryTreeItem()
-              && pEndComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector)) {
-        pEndConnectorComponent = pEndComponent;
-      } else if (pEndComponent->getLibraryTreeItem()
-                 && !pLibraryTreeModel->findLibraryTreeItem(pEndComponent->getLibraryTreeItem()->getNameStructure())) {
-        /* if class doesn't exist then connect with the red cross box */
-        pEndConnectorComponent = pEndComponent;
-      } else {
-        QString endComponentName = endComponentList.at(1);
-        if (endComponentName.contains("[")) {
-          endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
-        }
-        pEndConnectorComponent = getConnectorComponent(pEndComponent, endComponentName);
-      }
-    }
-    // show error message if end component is not found.
-    if (!pEndConnectorComponent) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                            GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
-                                                            .arg(connectionList.at(1)).arg(connectionString),
-                                                            Helper::scriptingKind, Helper::errorLevel));
-      continue;
-    }
-    // get the connector annotations from OMC
-    QString connectionAnnotationString = pMainWindow->getOMCProxy()->getNthConnectionAnnotation(mpLibraryTreeItem->getNameStructure(), i);
-    QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(connectionAnnotationString), '(', ')');
-    // Now parse the shapes available in list
-    QString lineShape = "";
-    foreach (QString shape, shapesList) {
-      if (shape.startsWith("Line")) {
-        lineShape = shape.mid(QString("Line").length());
-        lineShape = StringHandler::removeFirstLastParentheses(lineShape);
-        break;  // break the loop once we have got the line annotation.
-      }
-    }
-    LineAnnotation *pConnectionLineAnnotation;
-    pConnectionLineAnnotation = new LineAnnotation(lineShape, pStartConnectorComponent, pEndConnectorComponent, mpDiagramGraphicsView);
-    pConnectionLineAnnotation->setStartComponentName(connectionList.at(0));
-    pConnectionLineAnnotation->setEndComponentName(connectionList.at(1));
-    mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, false));
   }
+  // show error message if end component is not found.
+  if (!pEndConnectorComponent) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+                                                          .arg(connectionList.at(1)).arg(connectionString),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+    return;
+  }
+  // connection annotation
+  QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(connectionAnnotationString), '(', ')');
+  // Now parse the shapes available in list
+  QString lineShape = "";
+  foreach (QString shape, shapesList) {
+    if (shape.startsWith("Line")) {
+      lineShape = shape.mid(QString("Line").length());
+      lineShape = StringHandler::removeFirstLastParentheses(lineShape);
+      break;  // break the loop once we have got the line annotation.
+    }
+  }
+  LineAnnotation *pConnectionLineAnnotation;
+  pConnectionLineAnnotation = new LineAnnotation(lineShape, pStartConnectorComponent, pEndConnectorComponent, mpDiagramGraphicsView);
+  pConnectionLineAnnotation->setStartComponentName(connectionList.at(0));
+  pConnectionLineAnnotation->setEndComponentName(connectionList.at(1));
+  if (select) {
+    pConnectionLineAnnotation->setSelected(true);
+  }
+  mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, addToOMC));
 }
 
 /*!
@@ -5717,65 +5935,7 @@ void ModelWidget::getModelIconDiagramShapes(StringHandler::ViewType viewType)
   if (list.size() < 9)
     return;
   QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(8)), '(', ')');
-  // Now parse the shapes available in list
-  foreach (QString shape, shapesList) {
-    if (shape.startsWith("Line")) {
-      shape = shape.mid(QString("Line").length());
-      shape = StringHandler::removeFirstLastParentheses(shape);
-      LineAnnotation *pLineAnnotation = new LineAnnotation(shape, pGraphicsView);
-      pLineAnnotation->initializeTransformation();
-      pLineAnnotation->drawCornerItems();
-      pLineAnnotation->setCornerItemsActiveOrPassive();
-      pGraphicsView->addShapeToList(pLineAnnotation);
-      pGraphicsView->addItem(pLineAnnotation);
-    } else if (shape.startsWith("Polygon")) {
-      shape = shape.mid(QString("Polygon").length());
-      shape = StringHandler::removeFirstLastParentheses(shape);
-      PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation(shape, pGraphicsView);
-      pPolygonAnnotation->initializeTransformation();
-      pPolygonAnnotation->drawCornerItems();
-      pPolygonAnnotation->setCornerItemsActiveOrPassive();
-      pGraphicsView->addShapeToList(pPolygonAnnotation);
-      pGraphicsView->addItem(pPolygonAnnotation);
-    } else if (shape.startsWith("Rectangle")) {
-      shape = shape.mid(QString("Rectangle").length());
-      shape = StringHandler::removeFirstLastParentheses(shape);
-      RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(shape, pGraphicsView);
-      pRectangleAnnotation->initializeTransformation();
-      pRectangleAnnotation->drawCornerItems();
-      pRectangleAnnotation->setCornerItemsActiveOrPassive();
-      pGraphicsView->addShapeToList(pRectangleAnnotation);
-      pGraphicsView->addItem(pRectangleAnnotation);
-    } else if (shape.startsWith("Ellipse")) {
-      shape = shape.mid(QString("Ellipse").length());
-      shape = StringHandler::removeFirstLastParentheses(shape);
-      EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation(shape, pGraphicsView);
-      pEllipseAnnotation->initializeTransformation();
-      pEllipseAnnotation->drawCornerItems();
-      pEllipseAnnotation->setCornerItemsActiveOrPassive();
-      pGraphicsView->addShapeToList(pEllipseAnnotation);
-      pGraphicsView->addItem(pEllipseAnnotation);
-    } else if (shape.startsWith("Text")) {
-      shape = shape.mid(QString("Text").length());
-      shape = StringHandler::removeFirstLastParentheses(shape);
-      TextAnnotation *pTextAnnotation = new TextAnnotation(shape, pGraphicsView);
-      pTextAnnotation->initializeTransformation();
-      pTextAnnotation->drawCornerItems();
-      pTextAnnotation->setCornerItemsActiveOrPassive();
-      pGraphicsView->addShapeToList(pTextAnnotation);
-      pGraphicsView->addItem(pTextAnnotation);
-    } else if (shape.startsWith("Bitmap")) {
-      /* create the bitmap shape */
-      shape = shape.mid(QString("Bitmap").length());
-      shape = StringHandler::removeFirstLastParentheses(shape);
-      BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(mpLibraryTreeItem->mClassInformation.fileName, shape, pGraphicsView);
-      pBitmapAnnotation->initializeTransformation();
-      pBitmapAnnotation->drawCornerItems();
-      pBitmapAnnotation->setCornerItemsActiveOrPassive();
-      pGraphicsView->addShapeToList(pBitmapAnnotation);
-      pGraphicsView->addItem(pBitmapAnnotation);
-    }
-  }
+  drawModelIconDiagramShapes(shapesList, pGraphicsView, false);
 }
 
 /*!

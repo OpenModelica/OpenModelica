@@ -49,7 +49,6 @@
 #include <QAction>
 #include <QMenu>
 #include <QDesktopWidget>
-#include <QClipboard>
 #include <QTcpSocket>
 #include <QMessageBox>
 

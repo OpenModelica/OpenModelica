@@ -73,6 +73,7 @@ int Helper::tabWidth = 20;
 QString Helper::modelicaComponentFormat = "image/modelica-component";
 QString Helper::modelicaFileFormat = "text/uri-list";
 QString Helper::busConnectorFormat = "bus/connector";
+QString Helper::cutCopyPasteFormat = "application/OMEdit.cut-copy-paste";
 qreal Helper::shapesStrokeWidth = 2.0;
 int Helper::headingFontSize = 18;
 QString Helper::ModelicaSimulationOutputFormats = "mat,plt,csv";

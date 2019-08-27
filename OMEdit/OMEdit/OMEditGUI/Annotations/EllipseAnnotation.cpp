@@ -172,6 +172,16 @@ QString EllipseAnnotation::getOMCShapeAnnotation()
 }
 
 /*!
+ * \brief EllipseAnnotation::getOMCShapeAnnotationWithShapeName
+ * Returns Ellipse annotation in format as returned by OMC wrapped in Ellipse keyword.
+ * \return
+ */
+QString EllipseAnnotation::getOMCShapeAnnotationWithShapeName()
+{
+  return QString("Ellipse(%1)").arg(getOMCShapeAnnotation());
+}
+
+/*!
  * \brief EllipseAnnotation::getShapeAnnotation
  * Returns Ellipse annotation.
  * \return

@@ -1625,12 +1625,17 @@ void MainWindow::loadEncryptedLibrary()
   hideProgressBar();
 }
 
+/*!
+ * \brief MainWindow::showOpenResultFileDialog
+ * Shows the dialog to open the result files.
+ */
 void MainWindow::showOpenResultFileDialog()
 {
   QStringList fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles),
                                                           NULL, Helper::omResultFileTypes, NULL);
-  if (fileNames.isEmpty())
+  if (fileNames.isEmpty()) {
     return;
+  }
   openResultFiles(fileNames);
 }
 
@@ -3330,16 +3335,6 @@ void MainWindow::createActions()
   mpFilterClassesAction = new QAction(Helper::filterClasses, this);
   mpFilterClassesAction->setShortcut(QKeySequence("Ctrl+Shift+f"));
   connect(mpFilterClassesAction, SIGNAL(triggered()), SLOT(focusFilterClasses()));
-  // cut action
-  mpCutAction = new QAction(QIcon(":/Resources/icons/cut.svg"), tr("Cut"), this);
-  mpCutAction->setShortcut(QKeySequence("Ctrl+x"));
-  // copy action
-  mpCopyAction = new QAction(QIcon(":/Resources/icons/copy.svg"), Helper::copy, this);
-  //! @todo opening this will stop copying data from messages window.
-  //mpCopyAction->setShortcut(QKeySequence("Ctrl+c"));
-  // paste action
-  mpPasteAction = new QAction(QIcon(":/Resources/icons/paste.svg"), tr("Paste"), this);
-  mpPasteAction->setShortcut(QKeySequence("Ctrl+v"));
   // View Menu
   // show/hide gridlines action
   mpShowGridLinesAction = new QAction(QIcon(":/Resources/icons/grid.svg"), tr("Grid Lines"), this);
@@ -3787,9 +3782,6 @@ void MainWindow::createMenus()
   pEditMenu->addAction(mpRedoAction);
   pEditMenu->addSeparator();
   pEditMenu->addAction(mpFilterClassesAction);
-  //  pEditMenu->addAction(mpCutAction);
-  //  pEditMenu->addAction(mpCopyAction);
-  //  pEditMenu->addAction(mpPasteAction);
   // add Edit menu to menu bar
   menuBar()->addAction(pEditMenu->menuAction());
   // View menu
@@ -4232,9 +4224,6 @@ void MainWindow::createToolbars()
   // add actions to edit toolbar
   mpEditToolBar->addAction(mpUndoAction);
   mpEditToolBar->addAction(mpRedoAction);
-  //  mpEditToolBar->addAction(mpCutAction);
-  //  mpEditToolBar->addAction(mpCopyAction);
-  //  mpEditToolBar->addAction(mpPasteAction);
   // View Toolbar
   mpViewToolBar = addToolBar(tr("View Toolbar"));
   mpViewToolBar->setObjectName("View Toolbar");

@@ -442,6 +442,15 @@ QString TextAnnotation::getOMCShapeAnnotation()
 }
 
 /*!
+ * \brief TextAnnotation::getOMCShapeAnnotationWithShapeName
+ * \return the shape annotation in format as returned by OMC wrapped in Text keyword.
+ */
+QString TextAnnotation::getOMCShapeAnnotationWithShapeName()
+{
+  return QString("Text(%1)").arg(getOMCShapeAnnotation());
+}
+
+/*!
  * \brief TextAnnotation::getShapeAnnotation
  * \return the shape annotation in Modelica syntax.
  */

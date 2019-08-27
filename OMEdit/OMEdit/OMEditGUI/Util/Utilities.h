@@ -400,6 +400,7 @@ private slots:
  */
 class VerticalScrollArea : public QScrollArea
 {
+  Q_OBJECT
 public:
   VerticalScrollArea()
   {
