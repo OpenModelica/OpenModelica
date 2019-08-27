@@ -187,6 +187,16 @@ QString BitmapAnnotation::getOMCShapeAnnotation()
 }
 
 /*!
+ * \brief BitmapAnnotation::getOMCShapeAnnotationWithShapeName
+ * Returns Bitmap annotation in format as returned by OMC wrapped in Bitmap keyword.
+ * \return
+ */
+QString BitmapAnnotation::getOMCShapeAnnotationWithShapeName()
+{
+  return QString("Bitmap(%1)").arg(getOMCShapeAnnotation());
+}
+
+/*!
  * \brief BitmapAnnotation::getShapeAnnotation
  * Returns Bitmap annotation.
  * \return

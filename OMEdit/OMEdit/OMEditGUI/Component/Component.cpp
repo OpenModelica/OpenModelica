@@ -236,44 +236,6 @@ void ComponentInfo::parseComponentInfoString(QString value)
 }
 
 /*!
- * \brief ComponentInfo::fetchModifiers
- * Fetches the Component modifiers if any.
- * \param pOMCProxy
- * \param className
- * \param pComponent
- */
-void ComponentInfo::fetchModifiers(OMCProxy *pOMCProxy, QString className, Component *pComponent)
-{
-  mModifiersMap.clear();
-  QStringList componentModifiersList = pOMCProxy->getComponentModifierNames(className, mName);
-  foreach (QString componentModifier, componentModifiersList) {
-    QString modifierName = StringHandler::getFirstWordBeforeDot(componentModifier);
-    // if we have already read the record modifier then continue
-    if (mModifiersMap.contains(modifierName)) {
-      /* Ticket:4081
-       * If modifier is record then we can jump over otherwise read the modifier value.
-       */
-      if (pOMCProxy->isWhat(StringHandler::Record, modifierName)) {
-        continue;
-      }
-    }
-    /* Ticket:3626
-     * If a modifier class is a record we read the modifer value with submodifiers using OMCProxy::getComponentModifierValues()
-     * Otherwise read the binding value using OMCProxy::getComponentModifierValue()
-     */
-    if (isModiferClassRecord(modifierName, pComponent)) {
-      QString originalModifierName = QString(mName).append(".").append(modifierName);
-      QString componentModifierValue = pOMCProxy->getComponentModifierValues(className, originalModifierName);
-      mModifiersMap.insert(modifierName, componentModifierValue);
-    } else {
-      QString originalModifierName = QString(mName).append(".").append(componentModifier);
-      QString componentModifierValue = pOMCProxy->getComponentModifierValue(className, originalModifierName);
-      mModifiersMap.insert(componentModifier, componentModifierValue);
-    }
-  }
-}
-
-/*!
  * \brief ComponentInfo::fetchParameterValue
  * Fetches the Component parameter value if any.
  * \param pOMCProxy
@@ -398,6 +360,44 @@ QString ComponentInfo::getHTMLDescription() const
 {
   return QString("<b>%1</b><br/>&nbsp;&nbsp;&nbsp;&nbsp;%2 <i>\"%3\"<i>")
       .arg(mClassName, mName, Utilities::escapeForHtmlNonSecure(mComment));
+}
+
+/*!
+ * \brief ComponentInfo::fetchModifiers
+ * Fetches the Component modifiers if any.
+ * \param pOMCProxy
+ * \param className
+ * \param pComponent
+ */
+void ComponentInfo::fetchModifiers(OMCProxy *pOMCProxy, QString className, Component *pComponent)
+{
+  mModifiersMap.clear();
+  QStringList componentModifiersList = pOMCProxy->getComponentModifierNames(className, mName);
+  foreach (QString componentModifier, componentModifiersList) {
+    QString modifierName = StringHandler::getFirstWordBeforeDot(componentModifier);
+    // if we have already read the record modifier then continue
+    if (mModifiersMap.contains(modifierName)) {
+      /* Ticket:4081
+       * If modifier is record then we can jump over otherwise read the modifier value.
+       */
+      if (pOMCProxy->isWhat(StringHandler::Record, modifierName)) {
+        continue;
+      }
+    }
+    /* Ticket:3626
+     * If a modifier class is a record we read the modifer value with submodifiers using OMCProxy::getComponentModifierValues()
+     * Otherwise read the binding value using OMCProxy::getComponentModifierValue()
+     */
+    if (isModiferClassRecord(modifierName, pComponent)) {
+      QString originalModifierName = QString(mName).append(".").append(modifierName);
+      QString componentModifierValue = pOMCProxy->getComponentModifierValues(className, originalModifierName);
+      mModifiersMap.insert(modifierName, componentModifierValue);
+    } else {
+      QString originalModifierName = QString(mName).append(".").append(componentModifier);
+      QString componentModifierValue = pOMCProxy->getComponentModifierValue(className, originalModifierName);
+      mModifiersMap.insert(componentModifier, componentModifierValue);
+    }
+  }
 }
 
 /*!
@@ -844,7 +844,7 @@ void Component::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
     setVisible(mTransformation.getVisible());
     if (mpStateComponentRectangle) {
       if (isVisible() && mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica &&
-          mpLibraryTreeItem->isState()) {
+          !mpLibraryTreeItem->isNonExisting() && mpLibraryTreeItem->isState()) {
         if (mHasTransition && mIsInitialState) {
           mpStateComponentRectangle->setLinePattern(StringHandler::LineSolid);
           mpStateComponentRectangle->setLineThickness(0.5);
@@ -909,13 +909,19 @@ void Component::setComponentFlags(bool enable)
   setFlag(QGraphicsItem::ItemIsSelectable, enable);
 }
 
-QString Component::getTransformationAnnotation()
+/*!
+ * \brief Component::getTransformationAnnotation
+ * Returns the transformation annotation either in Modelica syntax or in the syntax that OMC API accepts.
+ * \param ModelicaSyntax
+ * \return
+ */
+QString Component::getTransformationAnnotation(bool ModelicaSyntax)
 {
   QString annotationString;
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-    annotationString.append("iconTransformation=transformation(");
+    annotationString.append(ModelicaSyntax ? "transformation(" : "iconTransformation=transformation(");
   } else if (mpGraphicsView->getViewType() == StringHandler::Diagram) {
-    annotationString.append("transformation=transformation(");
+    annotationString.append(ModelicaSyntax ? "transformation(" : "transformation=transformation(");
   }
   // add the origin
   if (mTransformation.hasOrigin()) {
@@ -934,10 +940,16 @@ QString Component::getTransformationAnnotation()
   return annotationString;
 }
 
-QString Component::getPlacementAnnotation()
+/*!
+ * \brief Component::getPlacementAnnotation
+ * Returns the placement annotation either in Modelica syntax or in the syntax that OMC API accepts.
+ * \param ModelicaSyntax
+ * \return
+ */
+QString Component::getPlacementAnnotation(bool ModelicaSyntax)
 {
   // create the placement annotation string
-  QString placementAnnotationString = "annotate=Placement(";
+  QString placementAnnotationString = ModelicaSyntax ? "annotation(Placement(" : "annotate=Placement(";
   if (mTransformation.isValid()) {
     placementAnnotationString.append("visible=").append(mTransformation.getVisible() ? "true" : "false");
   }
@@ -947,24 +959,24 @@ QString Component::getPlacementAnnotation()
       Component *pComponent;
       pComponent = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getComponentObject(getName());
       if (pComponent) {
-        placementAnnotationString.append(", ").append(pComponent->getTransformationAnnotation());
+        placementAnnotationString.append(", ").append(pComponent->getTransformationAnnotation(ModelicaSyntax));
       }
       // then get the icon transformations
-      placementAnnotationString.append(", ").append(getTransformationAnnotation());
+      placementAnnotationString.append(", ").append(getTransformationAnnotation(ModelicaSyntax));
     } else if (mpGraphicsView->getViewType() == StringHandler::Diagram) {
       // first get the component from diagram view and get the transformations
-      placementAnnotationString.append(", ").append(getTransformationAnnotation());
+      placementAnnotationString.append(", ").append(getTransformationAnnotation(ModelicaSyntax));
       // then get the icon transformations
       Component *pComponent;
       pComponent = mpGraphicsView->getModelWidget()->getIconGraphicsView()->getComponentObject(getName());
       if (pComponent) {
-        placementAnnotationString.append(", ").append(pComponent->getTransformationAnnotation());
+        placementAnnotationString.append(", ").append(pComponent->getTransformationAnnotation(ModelicaSyntax));
       }
     }
   } else {
-    placementAnnotationString.append(", ").append(getTransformationAnnotation());
+    placementAnnotationString.append(", ").append(getTransformationAnnotation(ModelicaSyntax));
   }
-  placementAnnotationString.append(")");
+  placementAnnotationString.append(ModelicaSyntax ? "))" : ")");
   return placementAnnotationString;
 }
 
@@ -2704,20 +2716,11 @@ void Component::duplicate()
   }
   QPointF gridStep(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5, mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
   // add component
+  mpComponentInfo->getModifiersMap(MainWindow::instance()->getOMCProxy(), mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), this);
   ComponentInfo *pComponentInfo = new ComponentInfo(mpComponentInfo);
   pComponentInfo->setName(name);
   mpGraphicsView->addComponentToView(name, mpLibraryTreeItem, getOMCPlacementAnnotation(gridStep), QPointF(0, 0), pComponentInfo, true, true);
-  // set component modifiers and attributes for Diagram Layer component.
   Component *pDiagramComponent = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getComponentsList().last();
-  // save the old ComponentInfo
-  ComponentInfo oldDiagramComponentInfo(pDiagramComponent->getComponentInfo());
-  // Create a new ComponentInfo
-  ComponentInfo newDiagramComponentInfo(mpComponentInfo);
-  newDiagramComponentInfo.setName(oldDiagramComponentInfo.getName());
-  UpdateComponentAttributesCommand *pUpdateDiagramComponentAttributesCommand;
-  pUpdateDiagramComponentAttributesCommand = new UpdateComponentAttributesCommand(pDiagramComponent, oldDiagramComponentInfo,
-                                                                                  newDiagramComponentInfo, true);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateDiagramComponentAttributesCommand);
   setSelected(false);
   if (mpGraphicsView->getViewType() == StringHandler::Diagram) {
     pDiagramComponent->setSelected(true);
@@ -3091,6 +3094,9 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
         menu.addSeparator();
         menu.addAction(pComponent->getOpenClassAction());
         menu.addSeparator();
+        menu.addAction(mpGraphicsView->getCutAction());
+        menu.addAction(mpGraphicsView->getCopyAction());
+        menu.addAction(mpGraphicsView->getPasteAction());
         menu.addAction(mpGraphicsView->getDuplicateAction());
         if (pComponent->isInheritedComponent()) {
           mpGraphicsView->getDeleteAction()->setDisabled(true);

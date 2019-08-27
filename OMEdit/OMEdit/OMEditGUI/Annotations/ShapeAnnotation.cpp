@@ -610,36 +610,6 @@ void ShapeAnnotation::applyFillPattern(QPainter *painter)
   }
 }
 
-/*!
- * \brief ShapeAnnotation::parseShapeAnnotation
- * Parses the shape annotation. Reimplemented by each child shape class to parse their annotation.
- * \param annotation
- */
-void ShapeAnnotation::parseShapeAnnotation(QString annotation)
-{
-  Q_UNUSED(annotation);
-}
-
-/*!
- * \brief ShapeAnnotation::getOMCShapeAnnotation
- * Returns the shape annotation in format as returned by OMC. Reimplemented by each child shape class to return their annotation.
- * \return the shape annotation string.
- */
-QString ShapeAnnotation::getOMCShapeAnnotation()
-{
-  return "";
-}
-
-/*!
- * \brief ShapeAnnotation::getShapeAnnotation
- * Returns the shape annotation. Reimplemented by each child shape class to return their annotation.
- * \return the shape annotation string.
- */
-QString ShapeAnnotation::getShapeAnnotation()
-{
-  return "";
-}
-
 QList<QPointF> ShapeAnnotation::getExtentsForInheritedShapeFromIconDiagramMap(GraphicsView *pGraphicsView, ShapeAnnotation *pReferenceShapeAnnotation)
 {
   QPointF defaultPoint1 = QPointF(-100.0, -100.0);
@@ -1767,6 +1737,9 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
     }
     menu.addAction(mpGraphicsView->getDeleteAction());
     if (lineType != LineAnnotation::ConnectionType && lineType != LineAnnotation::TransitionType) {
+      menu.addAction(mpGraphicsView->getCutAction());
+      menu.addAction(mpGraphicsView->getCopyAction());
+      menu.addAction(mpGraphicsView->getPasteAction());
       menu.addAction(mpGraphicsView->getDuplicateAction());
       menu.addSeparator();
       menu.addAction(mpGraphicsView->getBringToFrontAction());

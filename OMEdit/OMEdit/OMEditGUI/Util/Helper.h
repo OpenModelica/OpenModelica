@@ -79,6 +79,7 @@ public:
   static QString modelicaComponentFormat;
   static QString modelicaFileFormat;
   static QString busConnectorFormat;
+  static QString cutCopyPasteFormat;
   static qreal shapesStrokeWidth;
   static int headingFontSize;
   static QString ModelicaSimulationOutputFormats;

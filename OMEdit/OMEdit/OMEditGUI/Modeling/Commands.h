@@ -124,10 +124,11 @@ private:
 class UpdateComponentAttributesCommand : public UndoCommand
 {
 public:
-  UpdateComponentAttributesCommand(Component *pComponent, const ComponentInfo &oldComponentInfo, const ComponentInfo &newComponentInfo,
-                                   bool duplicate = false, UndoCommand *pParent = 0);
+  UpdateComponentAttributesCommand(Component *pComponent, const ComponentInfo &oldComponentInfo, const ComponentInfo &newComponentInfo, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
+  static void updateComponentAttributes(Component *pComponent, const ComponentInfo &componentInfo);
+  static void updateComponentModifiers(Component *pComponent, const ComponentInfo &componentInfo);
 private:
   Component *mpComponent;
   ComponentInfo mOldComponentInfo;

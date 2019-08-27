@@ -266,6 +266,7 @@ void AddComponentCommand::redoInternal()
   if (mAddObject) {
     if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
       mpDiagramGraphicsView->addComponentToClass(mpDiagramComponent);
+      UpdateComponentAttributesCommand::updateComponentModifiers(mpDiagramComponent, *mpDiagramComponent->getComponentInfo());
     } else {
       mpIconGraphicsView->addComponentToClass(mpIconComponent);
     }
@@ -386,14 +387,12 @@ void UpdateComponentTransformationsCommand::undo()
   mpComponent->emitTransformHasChanged();
 }
 
-UpdateComponentAttributesCommand::UpdateComponentAttributesCommand(Component *pComponent, const ComponentInfo &oldComponentInfo,
-                                                                   const ComponentInfo &newComponentInfo, bool duplicate, UndoCommand *pParent)
+UpdateComponentAttributesCommand::UpdateComponentAttributesCommand(Component *pComponent, const ComponentInfo &oldComponentInfo, const ComponentInfo &newComponentInfo, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpComponent = pComponent;
   mOldComponentInfo.updateComponentInfo(&oldComponentInfo);
   mNewComponentInfo.updateComponentInfo(&newComponentInfo);
-  mDuplicate = duplicate;
   setText(QString("Update Component %1 Attributes").arg(mpComponent->getName()));
 }
 
@@ -403,135 +402,7 @@ UpdateComponentAttributesCommand::UpdateComponentAttributesCommand(Component *pC
  */
 void UpdateComponentAttributesCommand::redoInternal()
 {
-  ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
-  QString modelName = pModelWidget->getLibraryTreeItem()->getNameStructure();
-  QString isFinal = mNewComponentInfo.getFinal() ? "true" : "false";
-  QString flow = mNewComponentInfo.getFlow() ? "true" : "false";
-  QString isProtected = mNewComponentInfo.getProtected() ? "true" : "false";
-  QString isReplaceAble = mNewComponentInfo.getReplaceable() ? "true" : "false";
-  QString variability = mNewComponentInfo.getVariablity();
-  QString isInner = mNewComponentInfo.getInner() ? "true" : "false";
-  QString isOuter = mNewComponentInfo.getOuter() ? "true" : "false";
-  QString causality = mNewComponentInfo.getCausality();
-
-  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-  // update component attributes
-  if (pOMCProxy->setComponentProperties(modelName, mpComponent->getComponentInfo()->getName(), isFinal, flow, isProtected, isReplaceAble,
-                                        variability, isInner, isOuter, causality)) {
-    mpComponent->getComponentInfo()->setFinal(mNewComponentInfo.getFinal());
-    mpComponent->getComponentInfo()->setProtected(mNewComponentInfo.getProtected());
-    mpComponent->getComponentInfo()->setReplaceable(mNewComponentInfo.getReplaceable());
-    mpComponent->getComponentInfo()->setVariablity(variability);
-    mpComponent->getComponentInfo()->setInner(mNewComponentInfo.getInner());
-    mpComponent->getComponentInfo()->setOuter(mNewComponentInfo.getOuter());
-    mpComponent->getComponentInfo()->setCausality(causality);
-    if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
-      if (mpComponent->getComponentInfo()->getProtected()) {
-        mpComponent->setVisible(false);
-        mpComponent->emitDeleted();
-      } else {
-        mpComponent->setVisible(true);
-        mpComponent->emitAdded();
-      }
-    } else {
-      Component *pComponent = 0;
-      pComponent = mpComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getComponentObject(mpComponent->getName());
-      if (pComponent) {
-        if (pComponent->getComponentInfo()->getProtected()) {
-          pComponent->setVisible(false);
-          pComponent->emitDeleted();
-        } else {
-          pComponent->setVisible(true);
-          pComponent->emitAdded();
-        }
-      }
-    }
-  } else {
-    QMessageBox::critical(MainWindow::instance(),
-                          QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
-    pOMCProxy->printMessagesStringInternal();
-  }
-  // update the component comment only if its changed.
-  if (mpComponent->getComponentInfo()->getComment().compare(mNewComponentInfo.getComment()) != 0) {
-    QString comment = StringHandler::escapeString(mNewComponentInfo.getComment());
-    if (pOMCProxy->setComponentComment(modelName, mpComponent->getComponentInfo()->getName(), comment)) {
-      mpComponent->getComponentInfo()->setComment(comment);
-      mpComponent->componentCommentHasChanged();
-      if (mpComponent->getLibraryTreeItem()->isConnector()) {
-        if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
-          Component *pComponent = 0;
-          pComponent = mpComponent->getGraphicsView()->getModelWidget()->getDiagramGraphicsView()->getComponentObject(mpComponent->getName());
-          if (pComponent) {
-            pComponent->componentCommentHasChanged();
-          }
-        } else {
-          Component *pComponent = 0;
-          pComponent = mpComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getComponentObject(mpComponent->getName());
-          if (pComponent) {
-            pComponent->componentCommentHasChanged();
-          }
-        }
-      }
-    } else {
-      QMessageBox::critical(MainWindow::instance(),
-                            QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
-      pOMCProxy->printMessagesStringInternal();
-    }
-  }
-  // update the component name only if its changed.
-  if (mpComponent->getComponentInfo()->getName().compare(mNewComponentInfo.getName()) != 0) {
-    // if renameComponentInClass command is successful update the component with new name
-    if (pOMCProxy->renameComponentInClass(modelName, mpComponent->getComponentInfo()->getName(), mNewComponentInfo.getName())) {
-      mpComponent->renameComponentInConnections(mNewComponentInfo.getName());
-      mpComponent->getComponentInfo()->setName(mNewComponentInfo.getName());
-      mpComponent->componentNameHasChanged();
-      if (mpComponent->getLibraryTreeItem()->isConnector()) {
-        if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
-          Component *pComponent = 0;
-          pComponent = mpComponent->getGraphicsView()->getModelWidget()->getDiagramGraphicsView()->getComponentObject(mpComponent->getName());
-          if (pComponent) {
-            pComponent->componentNameHasChanged();
-          }
-        } else {
-          Component *pComponent = 0;
-          pComponent = mpComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getComponentObject(mpComponent->getName());
-          if (pComponent) {
-            pComponent->componentNameHasChanged();
-          }
-        }
-      }
-    } else {
-      QMessageBox::critical(MainWindow::instance(),
-                            QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
-      pOMCProxy->printMessagesStringInternal();
-    }
-  }
-  // update the component dimensions
-  if (mpComponent->getComponentInfo()->getArrayIndex().compare(mNewComponentInfo.getArrayIndex()) != 0) {
-    if (pOMCProxy->setComponentDimensions(modelName, mpComponent->getComponentInfo()->getName(), mNewComponentInfo.getArrayIndex())) {
-      mpComponent->getComponentInfo()->setArrayIndex(mNewComponentInfo.getArrayIndex());
-    } else {
-      QMessageBox::critical(MainWindow::instance(),
-                            QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
-      pOMCProxy->printMessagesStringInternal();
-    }
-  }
-  // apply Component modifiers if duplicate case
-  if (mDuplicate) {
-    bool modifierValueChanged = false;
-    QMap<QString, QString> modifiers = mNewComponentInfo.getModifiersMapWithoutFetching();
-    QMap<QString, QString>::iterator modifiersIterator;
-    for (modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
-      QString modifierName = QString(mpComponent->getName()).append(".").append(modifiersIterator.key());
-      QString modifierValue = modifiersIterator.value();
-      if (pOMCProxy->setComponentModifierValue(modelName, modifierName, modifierValue)) {
-        modifierValueChanged = true;
-      }
-    }
-    if (modifierValueChanged) {
-      mpComponent->componentParameterHasChanged();
-    }
-  }
+  updateComponentAttributes(mpComponent, mNewComponentInfo);
 }
 
 /*!
@@ -540,52 +411,56 @@ void UpdateComponentAttributesCommand::redoInternal()
  */
 void UpdateComponentAttributesCommand::undo()
 {
-  /* We don't do anything if command is done for duplicate component action. Because when we undo duplicate component it will call
-   * AddComponentCommand::undo() which will eventually delete the component. So there is no point to undo attributes.
-   */
-  if (mDuplicate) {
-    return;
-  }
-  ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
-  QString modelName = pModelWidget->getLibraryTreeItem()->getNameStructure();
-  QString isFinal = mOldComponentInfo.getFinal() ? "true" : "false";
-  QString flow = mNewComponentInfo.getFlow() ? "true" : "false";
-  QString isProtected = mOldComponentInfo.getProtected() ? "true" : "false";
-  QString isReplaceAble = mOldComponentInfo.getReplaceable() ? "true" : "false";
-  QString variability = mOldComponentInfo.getVariablity();
-  QString isInner = mOldComponentInfo.getInner() ? "true" : "false";
-  QString isOuter = mOldComponentInfo.getOuter() ? "true" : "false";
-  QString causality = mOldComponentInfo.getCausality();
+  updateComponentAttributes(mpComponent, mOldComponentInfo);
+}
+
+/*!
+ * \brief UpdateComponentAttributesCommand::updateComponentAttributes
+ * Updates the component attributes based on the ComponentInfo
+ * \param pComponent
+ * \param componentInfo
+ */
+void UpdateComponentAttributesCommand::updateComponentAttributes(Component *pComponent, const ComponentInfo &componentInfo)
+{
+  QString modelName = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+  QString isFinal = componentInfo.getFinal() ? "true" : "false";
+  QString flow = componentInfo.getFlow() ? "true" : "false";
+  QString isProtected = componentInfo.getProtected() ? "true" : "false";
+  QString isReplaceAble = componentInfo.getReplaceable() ? "true" : "false";
+  QString variability = componentInfo.getVariablity();
+  QString isInner = componentInfo.getInner() ? "true" : "false";
+  QString isOuter = componentInfo.getOuter() ? "true" : "false";
+  QString causality = componentInfo.getCausality();
 
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   // update component attributes
-  if (pOMCProxy->setComponentProperties(modelName, mpComponent->getComponentInfo()->getName(), isFinal, flow, isProtected, isReplaceAble,
+  if (pOMCProxy->setComponentProperties(modelName, pComponent->getComponentInfo()->getName(), isFinal, flow, isProtected, isReplaceAble,
                                         variability, isInner, isOuter, causality)) {
-    mpComponent->getComponentInfo()->setFinal(mOldComponentInfo.getFinal());
-    mpComponent->getComponentInfo()->setProtected(mOldComponentInfo.getProtected());
-    mpComponent->getComponentInfo()->setReplaceable(mOldComponentInfo.getReplaceable());
-    mpComponent->getComponentInfo()->setVariablity(variability);
-    mpComponent->getComponentInfo()->setInner(mOldComponentInfo.getInner());
-    mpComponent->getComponentInfo()->setOuter(mOldComponentInfo.getOuter());
-    mpComponent->getComponentInfo()->setCausality(causality);
-    if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
-      if (mpComponent->getComponentInfo()->getProtected()) {
-        mpComponent->setVisible(false);
-        mpComponent->emitDeleted();
+    pComponent->getComponentInfo()->setFinal(componentInfo.getFinal());
+    pComponent->getComponentInfo()->setProtected(componentInfo.getProtected());
+    pComponent->getComponentInfo()->setReplaceable(componentInfo.getReplaceable());
+    pComponent->getComponentInfo()->setVariablity(variability);
+    pComponent->getComponentInfo()->setInner(componentInfo.getInner());
+    pComponent->getComponentInfo()->setOuter(componentInfo.getOuter());
+    pComponent->getComponentInfo()->setCausality(causality);
+    if (pComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
+      if (pComponent->getComponentInfo()->getProtected()) {
+        pComponent->setVisible(false);
+        pComponent->emitDeleted();
       } else {
-        mpComponent->setVisible(true);
-        mpComponent->emitAdded();
+        pComponent->setVisible(true);
+        pComponent->emitAdded();
       }
     } else {
-      Component *pComponent = 0;
-      pComponent = mpComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getComponentObject(mpComponent->getName());
-      if (pComponent) {
-        if (pComponent->getComponentInfo()->getProtected()) {
-          pComponent->setVisible(false);
-          pComponent->emitDeleted();
+      Component *pIconComponent = 0;
+      pIconComponent = pComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getComponentObject(pComponent->getName());
+      if (pIconComponent) {
+        if (pIconComponent->getComponentInfo()->getProtected()) {
+          pIconComponent->setVisible(false);
+          pIconComponent->emitDeleted();
         } else {
-          pComponent->setVisible(true);
-          pComponent->emitAdded();
+          pIconComponent->setVisible(true);
+          pIconComponent->emitAdded();
         }
       }
     }
@@ -595,23 +470,23 @@ void UpdateComponentAttributesCommand::undo()
     pOMCProxy->printMessagesStringInternal();
   }
   // update the component comment only if its changed.
-  if (mpComponent->getComponentInfo()->getComment().compare(mOldComponentInfo.getComment()) != 0) {
-    QString comment = StringHandler::escapeString(mOldComponentInfo.getComment());
-    if (pOMCProxy->setComponentComment(modelName, mpComponent->getComponentInfo()->getName(), comment)) {
-      mpComponent->getComponentInfo()->setComment(comment);
-      mpComponent->componentCommentHasChanged();
-      if (mpComponent->getLibraryTreeItem()->isConnector()) {
-        if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
-          Component *pComponent = 0;
-          pComponent = mpComponent->getGraphicsView()->getModelWidget()->getDiagramGraphicsView()->getComponentObject(mpComponent->getName());
-          if (pComponent) {
-            pComponent->componentCommentHasChanged();
+  if (pComponent->getComponentInfo()->getComment().compare(componentInfo.getComment()) != 0) {
+    QString comment = StringHandler::escapeString(componentInfo.getComment());
+    if (pOMCProxy->setComponentComment(modelName, pComponent->getComponentInfo()->getName(), comment)) {
+      pComponent->getComponentInfo()->setComment(comment);
+      pComponent->componentCommentHasChanged();
+      if (pComponent->getLibraryTreeItem()->isConnector()) {
+        if (pComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
+          Component *pDiagramComponent = 0;
+          pDiagramComponent = pComponent->getGraphicsView()->getModelWidget()->getDiagramGraphicsView()->getComponentObject(pComponent->getName());
+          if (pDiagramComponent) {
+            pDiagramComponent->componentCommentHasChanged();
           }
         } else {
-          Component *pComponent = 0;
-          pComponent = mpComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getComponentObject(mpComponent->getName());
-          if (pComponent) {
-            pComponent->componentCommentHasChanged();
+          Component *pIconComponent = 0;
+          pIconComponent = pComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getComponentObject(pComponent->getName());
+          if (pIconComponent) {
+            pIconComponent->componentCommentHasChanged();
           }
         }
       }
@@ -622,24 +497,24 @@ void UpdateComponentAttributesCommand::undo()
     }
   }
   // update the component name only if its changed.
-  if (mpComponent->getComponentInfo()->getName().compare(mOldComponentInfo.getName()) != 0) {
+  if (pComponent->getComponentInfo()->getName().compare(componentInfo.getName()) != 0) {
     // if renameComponentInClass command is successful update the component with new name
-    if (pOMCProxy->renameComponentInClass(modelName, mpComponent->getComponentInfo()->getName(), mOldComponentInfo.getName())) {
-      mpComponent->renameComponentInConnections(mOldComponentInfo.getName());
-      mpComponent->getComponentInfo()->setName(mOldComponentInfo.getName());
-      mpComponent->componentNameHasChanged();
-      if (mpComponent->getLibraryTreeItem()->isConnector()) {
-        if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
-          Component *pComponent = 0;
-          pComponent = mpComponent->getGraphicsView()->getModelWidget()->getDiagramGraphicsView()->getComponentObject(mpComponent->getName());
-          if (pComponent) {
-            pComponent->componentNameHasChanged();
+    if (pOMCProxy->renameComponentInClass(modelName, pComponent->getComponentInfo()->getName(), componentInfo.getName())) {
+      pComponent->renameComponentInConnections(componentInfo.getName());
+      pComponent->getComponentInfo()->setName(componentInfo.getName());
+      pComponent->componentNameHasChanged();
+      if (pComponent->getLibraryTreeItem()->isConnector()) {
+        if (pComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
+          Component *pDiagramComponent = 0;
+          pDiagramComponent = pComponent->getGraphicsView()->getModelWidget()->getDiagramGraphicsView()->getComponentObject(pComponent->getName());
+          if (pDiagramComponent) {
+            pDiagramComponent->componentNameHasChanged();
           }
         } else {
-          Component *pComponent = 0;
-          pComponent = mpComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getComponentObject(mpComponent->getName());
-          if (pComponent) {
-            pComponent->componentNameHasChanged();
+          Component *pIconComponent = 0;
+          pIconComponent = pComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getComponentObject(pComponent->getName());
+          if (pIconComponent) {
+            pIconComponent->componentNameHasChanged();
           }
         }
       }
@@ -650,14 +525,38 @@ void UpdateComponentAttributesCommand::undo()
     }
   }
   // update the component dimensions
-  if (mpComponent->getComponentInfo()->getArrayIndex().compare(mOldComponentInfo.getArrayIndex()) != 0) {
-    if (pOMCProxy->setComponentDimensions(modelName, mpComponent->getComponentInfo()->getName(), mOldComponentInfo.getArrayIndex())) {
-      mpComponent->getComponentInfo()->setArrayIndex(mOldComponentInfo.getArrayIndex());
+  if (pComponent->getComponentInfo()->getArrayIndex().compare(componentInfo.getArrayIndex()) != 0) {
+    if (pOMCProxy->setComponentDimensions(modelName, pComponent->getComponentInfo()->getName(), componentInfo.getArrayIndex())) {
+      pComponent->getComponentInfo()->setArrayIndex(componentInfo.getArrayIndex());
     } else {
       QMessageBox::critical(MainWindow::instance(),
                             QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
       pOMCProxy->printMessagesStringInternal();
     }
+  }
+}
+
+/*!
+ * \brief UpdateComponentAttributesCommand::updateComponentModifiers
+ * Applies Component modifiers
+ * \param pComponent
+ * \param componentInfo
+ */
+void UpdateComponentAttributesCommand::updateComponentModifiers(Component *pComponent, const ComponentInfo &componentInfo)
+{
+  QString modelName = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+  bool modifierValueChanged = false;
+  QMap<QString, QString> modifiers = componentInfo.getModifiersMapWithoutFetching();
+  QMap<QString, QString>::iterator modifiersIterator;
+  for (modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
+    QString modifierName = QString(pComponent->getName()).append(".").append(modifiersIterator.key());
+    QString modifierValue = modifiersIterator.value();
+    if (MainWindow::instance()->getOMCProxy()->setComponentModifierValue(modelName, modifierName, modifierValue)) {
+      modifierValueChanged = true;
+    }
+  }
+  if (modifierValueChanged) {
+    pComponent->componentParameterHasChanged();
   }
 }
 
@@ -694,7 +593,9 @@ void UpdateComponentParametersCommand::redoInternal()
       QString modifierKey = QString(mpComponent->getName()).append(".").append(componentModifier.key());
       pOMCProxy->setComponentModifierValue(className, modifierKey, modifierValue);
     }
-    mpComponent->getComponentInfo()->fetchModifiers(pOMCProxy, className, mpComponent);
+    // we want to load modifiers even if they are loaded already
+    mpComponent->getComponentInfo()->setModifiersLoaded(false);
+    mpComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className, mpComponent);
   } else {
     QString inheritedClassName;
     inheritedClassName = mpComponent->getReferenceComponent()->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
@@ -727,7 +628,9 @@ void UpdateComponentParametersCommand::undo()
       QString modifierKey = QString(mpComponent->getName()).append(".").append(componentModifier.key());
       pOMCProxy->setComponentModifierValue(className, modifierKey, modifierValue);
     }
-    mpComponent->getComponentInfo()->fetchModifiers(pOMCProxy, className, mpComponent);
+    // we want to load modifiers even if they are loaded already
+    mpComponent->getComponentInfo()->setModifiersLoaded(false);
+    mpComponent->getComponentInfo()->getModifiersMap(pOMCProxy, className, mpComponent);
   } else {
     QString inheritedClassName;
     inheritedClassName = mpComponent->getReferenceComponent()->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
@@ -753,9 +656,10 @@ DeleteComponentCommand::DeleteComponentCommand(Component *pComponent, GraphicsVi
   mpIconGraphicsView = pGraphicsView->getModelWidget()->getIconGraphicsView();
   mpDiagramGraphicsView = pGraphicsView->getModelWidget()->getDiagramGraphicsView();
   mpGraphicsView = pGraphicsView;
-
+  // save component modifiers before deleting if any
+  mpComponent->getComponentInfo()->getModifiersMap(MainWindow::instance()->getOMCProxy(), mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mpComponent);
   //Save sub-model parameters for composite models
-  if(pGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  if (pGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
     CompositeModelEditor *pEditor = qobject_cast<CompositeModelEditor*>(pGraphicsView->getModelWidget()->getEditor());
     mParameterNames = pEditor->getParameterNames(pComponent->getName());  //Assume submodel; otherwise returned list is empty
     foreach(QString parName, mParameterNames) {
@@ -830,9 +734,9 @@ void DeleteComponentCommand::undo()
     mpComponent->emitAdded();
   }
   mpGraphicsView->addComponentToClass(mpComponent);
-
-  //Restore sub-model parameters for composite models
-  if(pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  UpdateComponentAttributesCommand::updateComponentModifiers(mpComponent, *mpComponent->getComponentInfo());
+  // Restore sub-model parameters for composite models
+  if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
     CompositeModelEditor *pEditor = qobject_cast<CompositeModelEditor*>(pModelWidget->getEditor());
     for(int i=0; i<mParameterNames.size(); ++i) {
       pEditor->setParameterValue(mpComponent->getName(),mParameterNames[i],mParameterValues[i]);

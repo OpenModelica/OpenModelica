@@ -337,9 +337,6 @@ private:
   QAction *mpUndoAction;
   QAction *mpRedoAction;
   QAction *mpFilterClassesAction;
-  QAction *mpCutAction;
-  QAction *mpCopyAction;
-  QAction *mpPasteAction;
   // View Menu
   QAction *mpShowGridLinesAction;
   QAction *mpResetZoomAction;

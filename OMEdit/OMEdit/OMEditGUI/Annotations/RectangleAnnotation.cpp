@@ -202,6 +202,16 @@ QString RectangleAnnotation::getOMCShapeAnnotation()
 }
 
 /*!
+ * \brief RectangleAnnotation::getOMCShapeAnnotationWithShapeName
+ * Returns Rectangle annotation in format as returned by OMC wrapped in Rectangle keyword.
+ * \return
+ */
+QString RectangleAnnotation::getOMCShapeAnnotationWithShapeName()
+{
+  return QString("Rectangle(%1)").arg(getOMCShapeAnnotation());
+}
+
+/*!
  * \brief RectangleAnnotation::getShapeAnnotation
  * Returns Rectangle annotation.
  * \return

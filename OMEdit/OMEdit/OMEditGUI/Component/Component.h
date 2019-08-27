@@ -67,7 +67,6 @@ public:
   ComponentInfo(ComponentInfo *pComponentInfo, QObject *pParent = 0);
   void updateComponentInfo(const ComponentInfo *pComponentInfo);
   void parseComponentInfoString(QString value);
-  void fetchModifiers(OMCProxy *pOMCProxy, QString className, Component *pComponent);
   void fetchParameterValue(OMCProxy *pOMCProxy, QString className);
   void applyDefaultPrefixes(QString defaultPrefixes);
   void setClassName(QString className) {mClassName = className;}
@@ -98,6 +97,7 @@ public:
   QString getArrayIndex() const {return mArrayIndex;}
   bool isArray() const {return mIsArray;}
   bool isModifiersLoaded() const {return mModifiersLoaded;}
+  void setModifiersLoaded(bool modifiersLoaded) {mModifiersLoaded = modifiersLoaded;}
   void setModifiersMap(QMap<QString, QString> modifiersMap) {mModifiersMap = modifiersMap;}
   QMap<QString, QString> getModifiersMapWithoutFetching() const {return mModifiersMap;}
   QMap<QString, QString> getModifiersMap(OMCProxy *pOMCProxy, QString className, Component *pComponent);
@@ -160,6 +160,7 @@ private:
   QString mTLMCausality;
   QString mDomain;
 
+  void fetchModifiers(OMCProxy *pOMCProxy, QString className, Component *pComponent);
   bool isModiferClassRecord(QString modifierName, Component *pComponent);
 };
 
@@ -215,8 +216,8 @@ public:
   void setOldPosition(QPointF oldPosition) {mOldPosition = oldPosition;}
   QPointF getOldPosition() {return mOldPosition;}
   void setComponentFlags(bool enable);
-  QString getTransformationAnnotation();
-  QString getPlacementAnnotation();
+  QString getTransformationAnnotation(bool ModelicaSyntax);
+  QString getPlacementAnnotation(bool ModelicaSyntax = false);
   QString getOMCTransformationAnnotation(QPointF position);
   QString getOMCPlacementAnnotation(QPointF position);
   QString getTransformationOrigin();

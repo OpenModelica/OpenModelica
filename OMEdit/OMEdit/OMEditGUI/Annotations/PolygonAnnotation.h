@@ -50,19 +50,20 @@ public:
   PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   // Used for default input/output component
   PolygonAnnotation(Component *pParent);
-  void parseShapeAnnotation(QString annotation);
+  void parseShapeAnnotation(QString annotation) override;
   QPainterPath getShape() const;
   QRectF boundingRect() const;
   QPainterPath shape() const;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
   void drawPolygonAnnotaion(QPainter *painter);
-  QString getOMCShapeAnnotation();
-  QString getShapeAnnotation();
+  QString getOMCShapeAnnotation() override;
+  QString getOMCShapeAnnotationWithShapeName() override;
+  QString getShapeAnnotation() override;
   void addPoint(QPointF point);
   void removePoint(int index);
   void clearPoints();
   void updateEndPoint(QPointF point);
-  void updateShape(ShapeAnnotation *pShapeAnnotation);
+  void updateShape(ShapeAnnotation *pShapeAnnotation) override;
 public slots:
   void duplicate();
 };

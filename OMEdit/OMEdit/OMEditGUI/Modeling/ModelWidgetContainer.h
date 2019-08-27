@@ -128,6 +128,9 @@ private:
   QAction *mpBringForwardAction;
   QAction *mpSendToBackAction;
   QAction *mpSendBackwardAction;
+  QAction *mpCutAction;
+  QAction *mpCopyAction;
+  QAction *mpPasteAction;
   QAction *mpDuplicateAction;
   QAction *mpRotateClockwiseAction;
   QAction *mpRotateAntiClockwiseAction;
@@ -178,6 +181,9 @@ public:
   QList<ShapeAnnotation*> getInheritedShapesList() {return mInheritedShapesList;}
   QAction* getManhattanizeAction() {return mpManhattanizeAction;}
   QAction* getDeleteAction() {return mpDeleteAction;}
+  QAction* getCutAction() {return mpCutAction;}
+  QAction* getCopyAction() {return mpCopyAction;}
+  QAction* getPasteAction() {return mpPasteAction;}
   QAction* getDuplicateAction() {return mpDuplicateAction;}
   QAction* getBringToFrontAction() {return mpBringToFrontAction;}
   QAction* getBringForwardAction() {return mpBringForwardAction;}
@@ -281,6 +287,7 @@ private:
   void finishDrawingTextShape();
   void finishDrawingBitmapShape();
   void checkEmitUpdateSelect(const bool showPropertiesAndSelect, ShapeAnnotation* shapeAnnotation);
+  void copyItems(bool cut);
 signals:
   void mouseManhattanize();
   void mouseDelete();
@@ -319,6 +326,9 @@ public slots:
   void zoomIn();
   void zoomOut();
   void selectAll();
+  void cutItems();
+  void copyItems();
+  void pasteItems();
   void clearSelection();
   void addClassAnnotation(bool alwaysAdd = true);
   void showGraphicsViewProperties();
@@ -415,6 +425,34 @@ public:
   bool mPrimitivesVisible;
 };
 
+class MimeData : public QMimeData
+{
+  Q_OBJECT
+public:
+  MimeData() : QMimeData()
+  {
+    mComponents.clear();
+    mConnections.clear();
+    mShapes.clear();
+  }
+  void addComponent(Component *pComponent) {mComponents.append(pComponent);}
+  QList<Component*> getComponents() const {return mComponents;}
+  void addConnection(LineAnnotation *pConnectionLineAnnotation) {mConnections.append(pConnectionLineAnnotation);}
+  QList<LineAnnotation*> getConnections() const {return mConnections;}
+  void addShape(ShapeAnnotation *pShapeAnnotation) {mShapes.append(pShapeAnnotation);}
+  QList<ShapeAnnotation*> getShapes() const {return mShapes;}
+private:
+  QList<Component*> mComponents;
+  QList<LineAnnotation*> mConnections;
+  QList<ShapeAnnotation*> mShapes;
+  // QMimeData interface
+public:
+  virtual QStringList formats() const override
+  {
+    return QStringList() << "text/plain" << Helper::cutCopyPasteFormat;
+  }
+};
+
 class ModelWidgetContainer;
 class ModelicaHighlighter;
 class CompositeModelHighlighter;
@@ -450,6 +488,7 @@ public:
   void fetchExtendsModifiers(QString extendsClass);
   void reDrawModelWidgetInheritedClasses();
   void drawBaseCoOrdinateSystem(ModelWidget *pModelWidget, GraphicsView *pGraphicsView);
+  void drawModelIconDiagramShapes(QStringList shapes, GraphicsView *pGraphicsView, bool select);
   ShapeAnnotation* createNonExistingInheritedShape(GraphicsView *pGraphicsView);
   static ShapeAnnotation* createInheritedShape(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   Component* createInheritedComponent(Component *pComponent, GraphicsView *pGraphicsView);
@@ -458,6 +497,7 @@ public:
   void loadDiagramView();
   void loadConnections();
   void getModelConnections();
+  void addConnection(QStringList connectionList, QString connectionAnnotationString, bool addToOMC, bool select);
   void createModelWidgetComponents();
   ShapeAnnotation* drawOMSModelElement();
   Component* getConnectorComponent(Component *pConnectorComponent, QString connectorName);
@@ -552,7 +592,6 @@ public slots:
 protected:
   virtual void closeEvent(QCloseEvent *event);
 };
-
 
 void addCloseActionsToSubWindowSystemMenu(QMdiSubWindow *pMdiSubWindow);
 

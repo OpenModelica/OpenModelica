@@ -1503,8 +1503,7 @@ void ComponentAttributes::updateComponentAttributes()
   /* If user has really changed the Component's attributes then push that change on the stack.
    */
   if (oldComponentInfo != newComponentInfo) {
-    UpdateComponentAttributesCommand *pUpdateComponentAttributesCommand = new UpdateComponentAttributesCommand(mpComponent, oldComponentInfo,
-                                                                                                               newComponentInfo);
+    UpdateComponentAttributesCommand *pUpdateComponentAttributesCommand = new UpdateComponentAttributesCommand(mpComponent, oldComponentInfo, newComponentInfo);
     pModelWidget->getUndoStack()->push(pUpdateComponentAttributesCommand);
     pModelWidget->updateModelText();
   }

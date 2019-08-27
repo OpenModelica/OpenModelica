@@ -218,6 +218,16 @@ QString PolygonAnnotation::getOMCShapeAnnotation()
 }
 
 /*!
+ * \brief PolygonAnnotation::getOMCShapeAnnotationWithShapeName
+ * Returns Polygon annotation in format as returned by OMC wrapped in Polygon keyword.
+ * \return
+ */
+QString PolygonAnnotation::getOMCShapeAnnotationWithShapeName()
+{
+  return QString("Polygon(%1)").arg(getOMCShapeAnnotation());
+}
+
+/*!
  * \brief PolygonAnnotation::getShapeAnnotation
  * Returns Polygon annotation.
  * \return

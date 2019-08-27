@@ -718,6 +718,16 @@ QString LineAnnotation::getOMCShapeAnnotation()
 }
 
 /*!
+ * \brief LineAnnotation::getOMCShapeAnnotationWithShapeName
+ * Returns Line annotation in format as returned by OMC wrapped in Line keyword.
+ * \return
+ */
+QString LineAnnotation::getOMCShapeAnnotationWithShapeName()
+{
+  return QString("Line(%1)").arg(getOMCShapeAnnotation());
+}
+
+/*!
  * \brief LineAnnotation::getShapeAnnotation
  * Returns Line annotation.
  * \return

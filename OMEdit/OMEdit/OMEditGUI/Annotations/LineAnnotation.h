@@ -78,7 +78,7 @@ public:
   LineAnnotation(Component *pParent);
   // Used for non-existing class
   LineAnnotation(GraphicsView *pGraphicsView);
-  void parseShapeAnnotation(QString annotation);
+  void parseShapeAnnotation(QString annotation) override;
   QPainterPath getShape() const;
   QRectF boundingRect() const;
   QPainterPath shape() const;
@@ -86,8 +86,9 @@ public:
   void drawLineAnnotaion(QPainter *painter);
   void drawArrow(QPainter *painter, QPointF startPos, QPointF endPos, qreal size, int arrowType) const;
   QPolygonF perpendicularLine(QPointF startPos, QPointF endPos, qreal size) const;
-  QString getOMCShapeAnnotation();
-  QString getShapeAnnotation();
+  QString getOMCShapeAnnotation() override;
+  QString getOMCShapeAnnotationWithShapeName() override;
+  QString getShapeAnnotation() override;
   QString getCompositeModelShapeAnnotation();
   void addPoint(QPointF point);
   void removePoint(int index);
@@ -132,7 +133,7 @@ public:
   void setActiveState(bool activeState) {mActiveState = activeState;}
   bool isActiveState() {return mActiveState;}
   void setShapeFlags(bool enable);
-  void updateShape(ShapeAnnotation *pShapeAnnotation);
+  void updateShape(ShapeAnnotation *pShapeAnnotation) override;
   void setAligned(bool aligned);
   void updateOMSConnection();
   void updateToolTip();

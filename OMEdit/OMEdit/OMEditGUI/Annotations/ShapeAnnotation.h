@@ -133,9 +133,10 @@ public:
   QRectF getBoundingRect() const;
   void applyLinePattern(QPainter *painter);
   void applyFillPattern(QPainter *painter);
-  virtual void parseShapeAnnotation(QString annotation);
-  virtual QString getOMCShapeAnnotation();
-  virtual QString getShapeAnnotation();
+  virtual void parseShapeAnnotation(QString annotation) = 0;
+  virtual QString getOMCShapeAnnotation() = 0;
+  virtual QString getOMCShapeAnnotationWithShapeName() = 0;
+  virtual QString getShapeAnnotation() = 0;
   static QList<QPointF> getExtentsForInheritedShapeFromIconDiagramMap(GraphicsView *pGraphicsView, ShapeAnnotation *pReferenceShapeAnnotation);
   void initializeTransformation();
   void drawCornerItems();
