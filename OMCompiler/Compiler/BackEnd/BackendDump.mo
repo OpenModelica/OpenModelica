@@ -2328,12 +2328,12 @@ algorithm
   end match;
 end jacobianTypeStr;
 
-public function jacobianString"dumps a string representation of a jacobian.
+public function dumpJacobianString
+"dumps a string representation of a jacobian.
 author: Waurich TUD 2014-10"
   input BackendDAE.Jacobian jacIn;
-  output String sOut;
 algorithm
-  sOut := match(jacIn)
+  _ := match(jacIn)
     local
       BackendDAE.BackendDAE dae;
       BackendDAE.FullJacobian fJac;
@@ -2343,28 +2343,37 @@ algorithm
       String s;
   case(BackendDAE.FULL_JACOBIAN(jacobian=fJac))
     equation
-      s = "FULL JACOBIAN:\n";
-      s = s + dumpJacobianStr(fJac);
-    then s;
+      s = "###############\n" +
+          " FULL_JACOBIAN \n" +
+          "###############\n\n" +
+          dumpJacobianStr(fJac);
+      print(s);
+    then "";
   case(BackendDAE.GENERIC_JACOBIAN(jacobian=SOME(sJac),sparsePattern=sparsePattern))
     equation
       ((dae,_,_,_,_, _)) = sJac;
-      s = "GENERIC JACOBIAN:\n";
+      print("##################\n" +
+            " GENERIC_JACOBIAN \n" +
+            "##################\n\n");
       dumpBackendDAE(dae,"Directional Derivatives System");
       dumpSparsityPattern(sparsePattern,"Sparse Pattern");
-    then s;
+    then "";
   case(BackendDAE.GENERIC_JACOBIAN(jacobian=NONE(),sparsePattern=sparsePattern))
     equation
-      s = "GENERIC JACOBIAN:\n";
+      print("##################\n" +
+            " GENERIC_JACOBIAN \n" +
+            "##################\n\n");
       dumpSparsityPattern(sparsePattern,"Sparse Pattern");
-    then s;
+    then "";
 
   case(BackendDAE.EMPTY_JACOBIAN())
     equation
-      s = "EMPTY JACOBIAN:\n";
-    then s;
+      print("################\n" +
+            " EMPTY_JACOBIAN \n" +
+            "################\n\n");
+    then "";
   end match;
-end jacobianString;
+end dumpJacobianString;
 
 public function symJacString "dumps a string representation of a jacobian."
   input tuple<Option<BackendDAE.SymbolicJacobian>, BackendDAE.SparsePattern, BackendDAE.SparseColoring> jacIn;
