@@ -2751,10 +2751,9 @@ algorithm
   // Check if all nonlinear iteration variables have start values
   if BackendDAEUtil.isInitializationDAE(inShared) then
       try
-          checkNonLinDependecies(outComp,inEqns);
+        checkNonLinDependecies(outComp,inEqns);
       else
-          // ToDo Fix me! Like seriously!
-          Error.addInternalError("function calculateJacobianComponent failed to check all non-linear iteration variables for start values.", sourceInfo());
+        Error.addInternalError("function calculateJacobianComponent failed to check all non-linear iteration variables for start values.", sourceInfo());
       end try;
   end if;
 end calculateJacobianComponent;
@@ -2778,7 +2777,7 @@ algorithm
         BackendDAE.InnerEquations innerEquations;
         Boolean linear;
         String str;
-      // Case non-linear teared equation system
+      // Case non-linear torn equation system
       case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(jac=jac, residualequations=resIndices, innerEquations=innerEquations), linear=false))
         algorithm
           for eq in innerEquations loop
@@ -2794,7 +2793,7 @@ algorithm
           printNonLinIterVarsAndEqs(jac,eqnIndices,inEqns);
         then "";
 
-      // Case non-linear non-teared equation system
+      // Case non-linear non-torn equation system
       case (BackendDAE.EQUATIONSYSTEM(eqns=eqnIndices, jac=jac, jacType=BackendDAE.JAC_NONLINEAR()))
         algorithm
           printNonLinIterVarsAndEqs(jac,eqnIndices,inEqns);
@@ -2874,53 +2873,57 @@ protected function printNonLinIterVarsAndEqs
   input BackendDAE.Jacobian jacobian;
   input list<Integer> eqnIndices;
   input BackendDAE.EquationArray inEqns;
-protected
-  BackendDAE.EqSystem syst;
-  BackendDAE.Shared shared;
-  Integer idx = 1;
-  list<BackendDAE.Var> diffVars, residualVars, allDiffedVars, nonLin = {}, nonLinStart = {}, lin = {};
-  list<DAE.ComponentRef> dependentVarsCref;
-  DAE.ComponentRef varCref;
-  BackendDAE.Var var;
-  String name;
 algorithm
-    BackendDAE.GENERIC_JACOBIAN(SOME((BackendDAE.DAE({syst}, shared),name,diffVars,residualVars,allDiffedVars,dependentVarsCref))) := jacobian;
-
-    // Get non-linear variables without start value
-    for varCref in dependentVarsCref loop
-      for var in diffVars loop
-        if ComponentReference.crefEqual(varCref, var.varName) then
-          if (not BackendVariable.varHasStartValue(var)) then
-            nonLin := var::nonLin;
-          else
-            nonLinStart := var::nonLinStart;
+    _ := match jacobian
+      local
+        BackendDAE.EqSystem syst;
+        BackendDAE.Shared shared;
+        Integer idx = 1;
+        list<BackendDAE.Var> diffVars, residualVars, allDiffedVars, nonLin = {}, nonLinStart = {}, lin = {};
+        list<DAE.ComponentRef> dependentVarsCref;
+        DAE.ComponentRef varCref;
+        BackendDAE.Var var;
+        String name;
+      case BackendDAE.GENERIC_JACOBIAN(jacobian = SOME((BackendDAE.DAE({syst}, shared),name,diffVars,residualVars,allDiffedVars,dependentVarsCref)))
+        algorithm
+          // Get non-linear variables without start value
+          for varCref in dependentVarsCref loop
+            for var in diffVars loop
+              if ComponentReference.crefEqual(varCref, var.varName) then
+                if (not BackendVariable.varHasStartValue(var)) then
+                  nonLin := var::nonLin;
+                else
+                  nonLinStart := var::nonLinStart;
+                end if;
+              end if;
+            end for;
+          end for;
+          if not listEmpty(nonLin) then
+            BackendDump.dumpVarList(nonLin, "Nonlinear iteration variables with default zero start attribute in " + name + ".");
           end if;
-        end if;
-      end for;
-    end for;
-    if not listEmpty(nonLin) then
-      BackendDump.dumpVarList(nonLin, "Nonlinear iteration variables with default zero start attribute in " + name + ".");
-    end if;
-    if not listEmpty(nonLinStart) then
-      BackendDump.dumpVarList(nonLinStart, "Nonlinear iteration variables with predefined start attribute in " + name + ".");
-    end if;
+          if not listEmpty(nonLinStart) then
+            BackendDump.dumpVarList(nonLinStart, "Nonlinear iteration variables with predefined start attribute in " + name + ".");
+          end if;
 
-    // Get linear variables with start value, but ignore discrete vars
-    for var in allDiffedVars loop
-      if (BackendVariable.varHasStartValue(var) and not BackendVariable.isVarDiscrete(var) ) then
-        lin := var::lin;
-      end if;
-    end for;
-    if not listEmpty(lin) then
-      BackendDump.dumpVarList(lin, "Linear iteration variables with predefined start attributes that are unrelevant in " + name + ".");
-    end if;
+          // Get linear variables with start value, but ignore discrete vars
+          for var in allDiffedVars loop
+            if (BackendVariable.varHasStartValue(var) and not BackendVariable.isVarDiscrete(var) ) then
+              lin := var::lin;
+            end if;
+          end for;
+          if not listEmpty(lin) then
+            BackendDump.dumpVarList(lin, "Linear iteration variables with predefined start attributes that are unrelevant in " + name + ".");
+          end if;
 
-    if not (listEmpty(nonLin) and listEmpty(nonLinStart) and listEmpty(lin)) then
-      print("Info: Only non-linear iteration variables in non-linear eqation systems require start values. " +
-           "All other start values have no influence on convergence and are ignored. " +
-           "Use \"-d=dumpLoops\" to show all loops. In OMEdit Tools->Options->Simulation->OMCFlags, in "+
-           "OMNotebook call setCommandLineOptions(\"-d=dumpLoops\")\n\n");
-     end if;
+          if not (listEmpty(nonLin) and listEmpty(nonLinStart) and listEmpty(lin)) then
+            print("Info: Only non-linear iteration variables in non-linear eqation systems require start values. " +
+                 "All other start values have no influence on convergence and are ignored. " +
+                 "Use \"-d=dumpLoops\" to show all loops. In OMEdit Tools->Options->Simulation->OMCFlags, in "+
+                 "OMNotebook call setCommandLineOptions(\"-d=dumpLoops\")\n\n");
+          end if;
+        then "";
+      else "";
+    end match;
   // ToDo
   // BackendDAE.FULL_JACOBIAN()
 end printNonLinIterVarsAndEqs;

@@ -436,6 +436,16 @@ algorithm
   outString := stringDelimitList(toStringList(inComponentRef), if Flags.getConfigBool(Flags.MODELICA_OUTPUT) then "__" else ".");
 end crefStr;
 
+public function crefListStr
+"This function simply converts a list of ComponentReferences to a String."
+  input list<DAE.ComponentRef> crList;
+  output String outString = "";
+algorithm
+  for cr in crList loop
+    outString := outString + crefStr(cr) + "\n";
+  end for;
+end crefListStr;
+
 public function crefModelicaStr
 "Same as crefStr, but uses _ instead of . "
   input DAE.ComponentRef inComponentRef;
