@@ -47,6 +47,7 @@ import Error;
 import HashTableStringToUnit = NFHashTableStringToUnit;
 import HashTableUnitToString = NFHashTableUnitToString;
 import Util;
+import Debug;
 
 
 public uniontype Unit
@@ -103,37 +104,38 @@ public constant list<tuple<String, Unit>> LU_COMPLEXUNITS = {
 //("var",        UNIT(1e3, 0, 0, 2,-3, 0, 0, 1)), //Var=Watt
   ("Hz",         UNIT(1e0, 0, 0, 0,-1, 0, 0, 0)), //Hertz
   ("Ohm",        UNIT(1e3, 0, 0, 2,-3,-2, 0, 1)), //Ohm
-  ("F",         UNIT(1e-3, 0, 0,-2, 4, 2, 0,-1)), //Farad
+  ("F",          UNIT(1e-3, 0, 0,-2, 4, 2, 0,-1)), //Farad
   ("H",          UNIT(1e3, 0, 0, 2,-2,-2, 0, 1)), //Henry
   ("C",          UNIT(1e0, 0, 0, 0, 1, 1, 0, 0)), //Coulomb
   ("T",          UNIT(1e3, 0, 0, 0,-2,-1, 0, 1)), //Tesla
-  ("S",         UNIT(1e-3, 0, 0,-2, 3, 2, 0,-1)), //Siemens
+  ("S",          UNIT(1e-3, 0, 0,-2, 3, 2, 0,-1)), //Siemens
   ("Wb",         UNIT(1e3, 0, 0, 2,-2,-1, 0, 1)), //Weber
 //("lm",         UNIT(1e0, 0, 1, 0, 0, 0, 0, 0)), //Lumen=Candela
 //("lx",         UNIT(1e0, 0, 1,-2, 0, 0, 0, 0)), //Lux=lm/m^2
   ("N",          UNIT(1e3, 0, 0, 1,-2, 0, 0, 1)), //Newton
   ("Pa",         UNIT(1e3, 0, 0,-1,-2, 0, 0, 1)), //Pascal; displayUnit ="bar"
+  ("bar",        UNIT(1e8, 0, 0,-1,-2, 0, 0, 1)), //bar = 100kPa
   ("J",          UNIT(1e3, 0, 0, 2,-2, 0, 0, 1)), //Joule=N*m
   ("min",        UNIT(6e1, 0, 0, 0, 1, 0, 0, 0)), //Minute
-  ("h",        UNIT(3.6e3, 0, 0, 0, 1, 0, 0, 0)), //Stunde
-  ("d",       UNIT(8.64e4, 0, 0, 0, 1, 0, 0, 0)), //Tag
-  ("l",         UNIT(1e-3, 0, 0, 3, 0, 0, 0, 0)), //Liter
+  ("h",          UNIT(3.6e3, 0, 0, 0, 1, 0, 0, 0)), //Stunde
+  ("d",          UNIT(8.64e4, 0, 0, 0, 1, 0, 0, 0)), //Tag
+  ("l",          UNIT(1e-3, 0, 0, 3, 0, 0, 0, 0)), //Liter
   ("kg",         UNIT(1e3, 0, 0, 0, 0, 0, 0, 1)), //Kilogramm
 //("Bq",         UNIT(1e0, 0, 0, 0,-1, 0, 0, 0)), //Becquerel = Hertz
 //("Gy",         UNIT(1e0, 0, 0, 2,-2, 0, 0, 1)), //Gray
 //("Sv",         UNIT(1e0, 0, 0, 2,-2, 0, 0, 1)), //Sievert=Gray
-//("eV", UNIT(1.60218e-16, 0, 0, 2,-2, 0, 0, 1)), //Elektronenvolt    1, 602...*10^-19 kg*m^2/s^2
-//("R",      UNIT(2.58e-7, 0, 0, 0, 1, 1, 0,-1)), //Röntgen    2, 58*10^-4 C/kg
+//("eV",         UNIT(1.60218e-16, 0, 0, 2,-2, 0, 0, 1)), //Elektronenvolt    1, 602...*10^-19 kg*m^2/s^2
+//("R",          UNIT(2.58e-7, 0, 0, 0, 1, 1, 0,-1)), //Röntgen    2, 58*10^-4 C/kg
   ("kat",        UNIT(1e0, 1, 0, 0,-1, 0, 0, 0)), //Katal
   ("1",          UNIT(1e0, 0, 0, 0, 0, 0, 0, 0)), //1
   ("rad",        UNIT(1e0, 0, 0, 0, 0, 0, 0, 0)), //rad; displayUnit ="deg"
-//("B",         UNIT(1e-2, 0, 0, 0, 0, 0, 0, 0)), //Bel (dezibel dB)
+//("B",          UNIT(1e-2, 0, 0, 0, 0, 0, 0, 0)), //Bel (dezibel dB)
 //("phon",       UNIT(1e0, 0, 0, 0, 0, 0, 0, 0)), //Phon
 //("sone",       UNIT(1e0, 0, 0, 0, 0, 0, 0, 0)), //Sone
 //("sr",         UNIT(1e0, 0, 0, 0, 0, 0, 0, 0)), //Steradiant=m^2/m^2
   ("degC",       UNIT(1e0, 0, 0, 0, 0, 0, 1, 0)), //°Celsius
-  ("degF", UNIT(0.55555555555555555555555555555555555555, 0, 0, 0, 0, 0, 1, 0))};//°Fahrenheit
-//("degF", UNIT(5.0 / 9.0, 0, 0, 0, 0, 0, 1, 0, 459.67)), //°Fahrenheit
+  ("degF",       UNIT(0.55555555555555555555555555555555555555, 0, 0, 0, 0, 0, 1, 0))};//°Fahrenheit
+//("degF",       UNIT(5.0 / 9.0, 0, 0, 0, 0, 0, 1, 0, 459.67)), //°Fahrenheit
 //("degC",       UNIT(1e0, 0, 0, 0, 0, 0, 1, 0, 273.15))};//°Celsius
 /*                 fac, mol, cd, m, s, A, K, g*/
 
@@ -587,6 +589,9 @@ algorithm
   tokenList := lexer(charList);
   outUnit := parser3({true, true}, tokenList, UNIT(1e0, 0, 0, 0, 0, 0, 0, 0), inKnownUnits);
   if not isUnit(outUnit) then
+    if Flags.isSet(Flags.FAILTRACE) then
+      Debug.traceln(getInstanceName() + ": failed to parse unit string " + inUnitString);
+    end if;
     fail();
   end if;
 end parseUnitString;
@@ -659,7 +664,7 @@ algorithm
       ut = parser3(b::inMul, tokens, inUnit, inHtS2U);
     then ut;
 
-    else fail();
+    else UNKNOWN("");
   end matchcontinue;
 end parser3;
 

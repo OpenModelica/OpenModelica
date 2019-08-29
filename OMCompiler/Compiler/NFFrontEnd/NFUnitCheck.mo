@@ -330,7 +330,7 @@ algorithm
         formal_args := listHead(out_units);
         formal_var := listHead(out_vars);
 
-        unit2 := if formal_args == "NONE" then Unit.MASTER({}) else Unit.parseUnitString(formal_args);
+        unit2 := if formal_args == "NONE" then Unit.MASTER({}) else Unit.parseUnitString(formal_args, htS2U);
 
         b := unitTypesEqual(unit1, unit2, htCr2U);
         if b then
@@ -1052,7 +1052,7 @@ algorithm
     if unit == "NONE" then
       op_unit2 := Unit.MASTER({});
     else
-      op_unit2 := Unit.parseUnitString(unit);
+      op_unit2 := Unit.parseUnitString(unit, htS2U);
     end if;
 
     (b, op_unit) := unitTypesEqual(op_unit, op_unit2, htCr2U);
