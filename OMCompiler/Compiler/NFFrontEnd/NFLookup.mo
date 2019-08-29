@@ -253,8 +253,11 @@ function lookupImport
   input InstNode scope;
   input SourceInfo info;
   output InstNode element;
+protected
+  LookupState state;
 algorithm
-  element := lookupNameWithError(name, InstNode.topScope(scope), info, Error.LOOKUP_IMPORT_ERROR);
+  (element, state) := lookupNameWithError(name, InstNode.topScope(scope), info, Error.LOOKUP_IMPORT_ERROR);
+  LookupState.assertImport(state, element, name, info);
 end lookupImport;
 
 function lookupCrefWithError
@@ -387,8 +390,10 @@ function lookupLocalSimpleName
   input String name;
   input InstNode scope;
   output InstNode node;
+  output Boolean isImport;
 algorithm
-  node := InstNode.resolveInner(Class.lookupElement(name, InstNode.getClass(scope)));
+  (node, isImport) := Class.lookupElement(name, InstNode.getClass(scope));
+  node := InstNode.resolveInner(node);
 end lookupLocalSimpleName;
 
 function lookupSimpleName
@@ -524,6 +529,8 @@ function lookupLocalName
   input output LookupState state;
   input Boolean checkAccessViolations = true;
   input Boolean selfReference = false;
+protected
+  Boolean is_import;
 algorithm
   // Looking something up in a component is only legal when the name begins with
   // a component reference, and for that we use lookupCref. So if the given node
@@ -541,16 +548,26 @@ algorithm
   () := match name
     case Absyn.Path.IDENT()
       algorithm
-        node := lookupLocalSimpleName(name.name, node);
-        state := LookupState.next(node, state, checkAccessViolations);
+        (node, is_import) := lookupLocalSimpleName(name.name, node);
+
+        if is_import then
+          state := LookupState.ERROR(LookupState.IMPORT());
+        else
+          state := LookupState.next(node, state, checkAccessViolations);
+        end if;
       then
         ();
 
     case Absyn.Path.QUALIFIED()
       algorithm
-        node := lookupLocalSimpleName(name.name, node);
-        state := LookupState.next(node, state, checkAccessViolations);
-        (node, state) := lookupLocalName(name.path, node, state, checkAccessViolations);
+        (node, is_import) := lookupLocalSimpleName(name.name, node);
+
+        if is_import then
+          state := LookupState.ERROR(LookupState.IMPORT());
+        else
+          state := LookupState.next(node, state, checkAccessViolations);
+          (node, state) := lookupLocalName(name.path, node, state, checkAccessViolations);
+        end if;
       then
         ();
 
@@ -763,6 +780,7 @@ protected
   InstNode n;
   String name;
   Class cls;
+  Boolean is_import;
 algorithm
   if LookupState.isError(state) then
     return;
@@ -777,11 +795,18 @@ algorithm
   cls := InstNode.getClass(scope);
 
   try
-    n := Class.lookupElement(name, cls);
+    (n, is_import) := Class.lookupElement(name, cls);
   else
     true := InstNode.isComponent(node);
     n := InstNode.NAME_NODE(name);
+    is_import := false;
   end try;
+
+  if is_import then
+    state := LookupState.ERROR(LookupState.IMPORT());
+    foundCref := ComponentRef.fromAbsyn(n, {}, foundCref);
+    return;
+  end if;
 
   (n, foundCref, foundScope) := resolveInnerCref(n, foundCref, foundScope);
   state := LookupState.next(n, state);

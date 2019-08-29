@@ -99,6 +99,7 @@ uniontype LookupState
   record FUNC "A function." end FUNC;
   record PREDEF_COMP "A predefined component." end PREDEF_COMP;
   record PREDEF_CLASS "A predefined class." end PREDEF_CLASS;
+  record IMPORT end IMPORT;
   record ERROR "An error occured during lookup."
     LookupState errorState;
   end ERROR;
@@ -132,6 +133,16 @@ uniontype LookupState
     assertState(endState, LookupState.COMP(), node,
       LookupStateName.CREF(name), info);
   end assertComponent;
+
+  function assertImport
+    input LookupState endState;
+    input InstNode node;
+    input Absyn.Path name;
+    input SourceInfo info;
+  algorithm
+    assertState(endState, LookupState.IMPORT(), node,
+      LookupStateName.PATH(name), info);
+  end assertImport;
 
   function isCallableType
     input InstNode node;
@@ -274,6 +285,19 @@ uniontype LookupState
             {name_str, LookupStateName.toString(name)}, info);
         then
           fail();
+
+      // Found import as part of a composite name where it's not the first
+      // identifier, e.g. A.B.C where B or C are imported names.
+      case (ERROR(errorState = IMPORT()), _)
+        algorithm
+          name_str := InstNode.name(node);
+          Error.addSourceMessage(Error.IMPORT_IN_COMPOSITE_NAME,
+            {name_str, LookupStateName.toString(name)}, info);
+        then
+          fail();
+
+      // Found some element when looking for import.
+      case (_, IMPORT()) then ();
 
       // Found the wrong kind of element.
       else
