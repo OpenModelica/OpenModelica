@@ -556,11 +556,11 @@ ImportConflict1.mo \
 ImportConflict2.mo \
 ImportConflict3.mo \
 ImportConflict4.mo \
+ImportInCompositeName1.mo \
+ImportInCompositeName2.mo \
 ImportNamed1.mo \
 ImportNamed2.mo \
 ImportNamedInvalid1.mo \
-ImportNested1.mo \
-ImportNested2.mo \
 ImportQualified1.mo \
 ImportQualifiedInvalid1.mo \
 ImportQualifiedInvalid2.mo \
