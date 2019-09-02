@@ -1098,11 +1098,11 @@ algorithm
   outVarKind := match(inVarKind, daeAttr)
     // variable -> state if have stateSelect = StateSelect.always
     case (DAE.VARIABLE(), SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS()))))
-      then BackendDAE.STATE(1, NONE());
+      then BackendDAE.STATE(1, NONE(), false);
 
     // variable -> state if have stateSelect = StateSelect.prefer
     case (DAE.VARIABLE(), SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.PREFER()))))
-      then BackendDAE.STATE(1, NONE());
+      then BackendDAE.STATE(1, NONE(), false);
 
     else
       equation

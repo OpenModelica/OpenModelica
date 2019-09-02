@@ -471,6 +471,54 @@ algorithm
   outVar.values := DAEUtil.setStateSelect(oattr, stateSelect);
 end setVarStateSelect;
 
+public function varStateSelectForced
+  "author kabdelhak FHB 2019-09
+  Returns true if the variable has a state select attribute that forces it to be a state."
+  input BackendDAE.Var inVar;
+  output Boolean isForced;
+algorithm
+  isForced := match (inVar)
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_REAL(stateSelectOption=SOME(DAE.ALWAYS())))))
+     then true;
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_REAL(stateSelectOption=SOME(DAE.PREFER())))))
+     then true;
+    else false;
+  end match;
+end varStateSelectForced;
+
+public function isNaturalState
+  "author kabdelhak FHB 2019-08
+  Returns true if the input is a natural state.
+  A state is considered natural, if it occurs differentiated before index reduction."
+  input BackendDAE.Var var;
+  output Boolean natural;
+algorithm
+  natural := match var
+    local
+      Boolean n;
+    case BackendDAE.VAR(varKind = BackendDAE.STATE(natural = n))
+      then n;
+    else false;
+  end match;
+end isNaturalState;
+
+public function isArtificialState
+  "author kabdelhak FHB 2019-08
+  Returns true if the input is an artificial state.
+  A state is considered artificial, if it does not occur differentiated before
+  index reduction, but is forced to be a state by stateSelect attribute."
+  input BackendDAE.Var var;
+  output Boolean artificial;
+algorithm
+  artificial := match var
+    local
+      Boolean n;
+    case BackendDAE.VAR(varKind = BackendDAE.STATE(natural = n))
+      then not n;
+    else false;
+  end match;
+end isArtificialState;
+
 public function varStateDerivative "author: Frenkel TUD 2013-01
   Returns the name of the Derivative. Is no Derivative known the function will fail."
   input BackendDAE.Var inVar;
@@ -496,9 +544,10 @@ public function setStateDerivative "author: Frenkel TUD
   input Option<DAE.ComponentRef> derName;
 protected
   Integer index;
+  Boolean natural;
 algorithm
-  BackendDAE.STATE(index=index) := var.varKind;
-  var.varKind := BackendDAE.STATE(index, derName);
+  BackendDAE.STATE(index=index, natural=natural) := var.varKind;
+  var.varKind := BackendDAE.STATE(index, derName, natural);
 end setStateDerivative;
 
 public function getVariableAttributefromType
@@ -4290,10 +4339,11 @@ author:Waurich TUD"
   output BackendDAE.Var v2 = v1;
 protected
   Option<DAE.ComponentRef> derName;
+  Boolean natural;
 algorithm
   if isStateVar(v1) then
-    BackendDAE.STATE(_,derName) := getVarKind(v1);
-    v2 := setVarKind(v1,BackendDAE.STATE(idx,derName));
+    BackendDAE.STATE(_,derName,natural) := getVarKind(v1);
+    v2 := setVarKind(v1,BackendDAE.STATE(idx,derName,natural));
   end if;
 end setStateIndex;
 
