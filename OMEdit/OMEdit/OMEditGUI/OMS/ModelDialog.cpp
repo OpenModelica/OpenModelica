@@ -285,6 +285,9 @@ AddSubModelDialog::AddSubModelDialog(GraphicsView *pGraphicsView)
   // start script
   mpStartScriptLabel = new Label(Helper::startScript);
   mpStartScriptTextBox = new QLineEdit;
+  mpBrowseStartScriptButton = new QPushButton(Helper::browse);
+  mpBrowseStartScriptButton->setAutoDefault(false);
+  connect(mpBrowseStartScriptButton, SIGNAL(clicked()), SLOT(browseStartScript()));
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -308,7 +311,8 @@ AddSubModelDialog::AddSubModelDialog(GraphicsView *pGraphicsView)
   pMainLayout->addWidget(mpBrowsePathButton, 3, 2);
   if(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTLMSystem()) {
     pMainLayout->addWidget(mpStartScriptLabel, 4, 0);
-    pMainLayout->addWidget(mpStartScriptTextBox, 4, 1, 1, 2);
+    pMainLayout->addWidget(mpStartScriptTextBox, 4, 1);
+    pMainLayout->addWidget(mpBrowseStartScriptButton,4,2);
   }
   pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 3, Qt::AlignRight);
   setLayout(pMainLayout);
@@ -327,6 +331,16 @@ void AddSubModelDialog::browseSubModelPath()
   }
   mpPathTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile),
                                                         NULL, fileTypes, NULL));
+}
+
+/*!
+ * \brief AddSubModelDialog::browseStartScript
+ * Slot activated when mpBrowseSubModelPathButton clicked signal is raised.\n
+ * Allows the user to select the start script path
+ */
+void AddSubModelDialog::browseStartScript()
+{
+    mpStartScriptTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile)));
 }
 
 /*!
