@@ -99,7 +99,7 @@ class AddSubModelDialog : public QDialog
 {
   Q_OBJECT
 public:
-  AddSubModelDialog(GraphicsView *pGraphicsView);
+    AddSubModelDialog(GraphicsView *pGraphicsView);
 private:
   GraphicsView *mpGraphicsView;
   Label *mpHeading;
