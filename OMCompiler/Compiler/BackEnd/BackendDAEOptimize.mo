@@ -3970,8 +3970,8 @@ algorithm
     case(_, _, _)
       equation
         false = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative" ;
-        false = BackendVariable.isStateVar(var);
-        var1 = BackendVariable.setVarKind(var, BackendDAE.STATE(1,NONE()));
+        false = BackendVariable.isStateVar(var) and not BackendVariable.varStateSelectForced(var);
+        var1 = BackendVariable.setVarKind(var, BackendDAE.STATE(1, NONE(), true));
         vars = BackendVariable.addVar(var1, inVars);
       then (vars, iExp);
     case(_, _, _)
@@ -4004,7 +4004,7 @@ algorithm
       equation
         false = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative" ;
         false = BackendVariable.isStateVar(var);
-        var = BackendVariable.setVarKind(var, BackendDAE.STATE(1,NONE()));
+        var = BackendVariable.setVarKind(var, BackendDAE.STATE(1,NONE(),true));
         vars = BackendVariable.addVar(var, inVars);
         vars = updateStatesVars(vars, newStates, true);
       then vars;
@@ -5721,7 +5721,7 @@ protected
 algorithm
   (BackendDAE.DAE(eqs, shared), _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, addTimeAsState1, 0);
   orderedVars := BackendVariable.emptyVars();
-  var := BackendDAE.VAR(DAE.crefTimeState, BackendDAE.STATE(1, NONE()), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+  var := BackendDAE.VAR(DAE.crefTimeState, BackendDAE.STATE(1, NONE(), true), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
   var := BackendVariable.setVarFixed(var, true);
   var := BackendVariable.setVarStartValue(var, DAE.CREF(DAE.crefTime, DAE.T_REAL_DEFAULT));
   orderedVars := BackendVariable.addVar(var, orderedVars);

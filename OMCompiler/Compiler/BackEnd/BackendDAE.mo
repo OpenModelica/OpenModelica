@@ -257,6 +257,7 @@ uniontype VarKind "variable kind"
   record STATE
     Integer index "how often this states was differentiated";
     Option< .DAE.ComponentRef> derName "the name of the derivative";
+    Boolean natural "false if it was forced by StateSelect.always or StateSelect.prefer";
   end STATE;
   record STATE_DER end STATE_DER;
   record DUMMY_DER end DUMMY_DER;

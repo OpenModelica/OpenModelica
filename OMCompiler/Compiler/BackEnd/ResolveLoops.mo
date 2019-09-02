@@ -666,8 +666,6 @@ algorithm
   end match;
 end pathContainsNode;
 
-
-
  protected function listContains
     input list<Integer> lst;
     input Integer int;

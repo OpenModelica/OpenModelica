@@ -258,7 +258,25 @@ public function differentiateEquation
   output BackendDAE.Equation outEquation;
   output DAE.FunctionTree outFunctionTree;
 algorithm
-try
+  try
+    (outEquation, outFunctionTree) := differentiateEquationFragile(inEquation, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
+  else
+    Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {BackendDump.equationString(inEquation), ComponentReference.crefStr(inDiffwrtCref)}, sourceInfo());
+    fail();
+  end try;
+end differentiateEquation;
+
+public function differentiateEquationFragile
+  "author: kabdelhak 2019-09
+  Differentiates an equation with respect to a cref, fails if it can't be differentiated."
+  input BackendDAE.Equation inEquation;
+  input DAE.ComponentRef inDiffwrtCref;
+  input BackendDAE.DifferentiateInputData inInputData;
+  input BackendDAE.DifferentiationType inDiffType;
+  input DAE.FunctionTree inFunctionTree;
+  output BackendDAE.Equation outEquation;
+  output DAE.FunctionTree outFunctionTree;
+algorithm
   // Debug dump
   if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
     BackendDump.debugStrEqnStr("### differentiateEquation\n ", inEquation, " w.r.t. " + ComponentReference.crefStr(inDiffwrtCref) + "\n");
@@ -400,11 +418,8 @@ try
   if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
     BackendDump.debugStrEqnStr("### Result of differentiateEquation\n --> ", outEquation,"\n");
   end if;
-else
-  Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {BackendDump.equationString(inEquation), ComponentReference.crefStr(inDiffwrtCref)}, sourceInfo());
-  fail();
-end try;
-end differentiateEquation;
+end differentiateEquationFragile;
+
 
 protected function differentiateEquations
   "Differentiates an equation with respect to a cref."

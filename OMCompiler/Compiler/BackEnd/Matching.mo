@@ -51,6 +51,7 @@ import BackendVariable;
 import ClockIndexes;
 import Config;
 import Debug;
+import Differentiate;
 import DumpGraphML;
 import ElementSource;
 import Error;
@@ -5575,7 +5576,7 @@ protected function matchingExternal
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
-  match (meqns,internalCall,algIndx,cheapMatching,clearMatching,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
+  match (meqns,internalCall,isyst,inMatchingOptions)
     local
       BackendDAE.IncidenceMatrix m,mt, m1,m1t;
       Integer nv_1,ne_1,memsize;
@@ -5585,15 +5586,16 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       array<Integer> ass1_1,ass1_2,ass1_3,ass2_1,ass2_2,ass2_3;
-    case ({},true,_,_,_,_,_,_,_,_,_,_,_,_)
+    case ({},true,_,_)
       then
         (ass1,ass2,isyst,ishared,inArg);
-    case ({},false,_,_,_,BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
+    case ({},false,BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_)
       equation
         matchingExternalsetIncidenceMatrix(nv,ne,m);
         BackendDAEEXT.matching(nv,ne,algIndx,cheapMatching,1.0,clearMatching);
         BackendDAEEXT.getAssignment(ass1,ass2);
         unmatched1 = getUnassigned(ne, ass1, {});
+
           //BackendDump.dumpEqSystem(isyst, "EQSYS");
         if Flags.isSet(Flags.BLT_DUMP) and Flags.isSet(Flags.GRAPHML) then BackendDump.dumpBipartiteGraphEqSystem(isyst, ishared, "BeforMatching_"+intString(arrayLength(m))+"_unmatched "+intString(listLength(unmatched1))); end if;
         if Flags.isSet(Flags.BLT_DUMP) and listLength(unmatched1) > 0 then print("unmatched equations: "+stringDelimitList(List.map(unmatched1,intString),", ")+"\n\n"); end if;
@@ -5603,7 +5605,11 @@ algorithm
         m1t = arrayCopy(mt);
         (m1,m1t) = removeEdgesForNoDerivativeFunctionInputs(m1,m1t,isyst,ishared);
         (m1,m1t) = removeEdgesToDiscreteEquations(m1,m1t,isyst,ishared);
+
         meqns1 = getEqnsforIndexReduction(unmatched1,ne,m1,m1t,ass1,ass2,inArg);
+        if not listEmpty(meqns1) then
+          sanityCheckArtificialStates(isyst, ishared, meqns1, ass2, ass1, inArg);
+        end if;
         if Flags.isSet(Flags.BLT_DUMP) and listLength(meqns1) > 0
         then print("Index Reduction neccessary!\n"
                    + "MSS subsets:\n " + stringDelimitList(List.map(meqns1,Util.intLstString),"\n ")+"\n\n");
@@ -5616,7 +5622,7 @@ algorithm
         (ass1_1,ass2_1,syst,shared,arg) = matchingExternal(meqns1,true,algIndx,-1,0,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
       then
         (ass1_1,ass2_1,syst,shared,arg);
-    case (_::_,_,_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),_),_,_)
+    case (_::_,_,_,(BackendDAE.INDEX_REDUCTION(),_))
       equation
         memsize = arrayLength(ass1);
         (_,_,syst,shared,ass2_1,ass1_1,arg) = sssHandler(meqns,0,isyst,ishared,ass2,ass1,inArg);
@@ -5629,7 +5635,7 @@ algorithm
       then
         (ass1_3,ass2_3,syst,shared,arg1);
 
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    else
       equation
         singularSystemError(meqns,0,isyst,ishared,ass1,ass2,inArg);
       then
@@ -5637,6 +5643,61 @@ algorithm
 
   end match;
 end matchingExternal;
+
+protected function sanityCheckArtificialStates
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input list<list<Integer>> eqns;
+  input array<Integer> ass1;
+  input array<Integer> ass2;
+  input BackendDAE.StructurallySingularSystemHandlerArg arg;
+protected
+  BackendDAE.Variables orderedVars;
+  BackendDAE.EquationArray orderedEqs;
+  list<list<Integer>> eqns_1, unassignedStates, unassignedEqs;
+  list<Integer> flat_unassignedStates, flat_unassignedEqs;
+  list<BackendDAE.Var> artificialStates = {};
+  list<BackendDAE.Equation> residuals, equations = {};
+  BackendDAE.Var var;
+  DAE.Exp residualExp;
+algorithm
+  for i_l in eqns loop
+    for i in i_l loop
+      print(intString(i) + " ");
+    end for;
+    print("\n");
+  end for;
+  BackendDAE.EQSYSTEM(orderedVars = orderedVars, orderedEqs = orderedEqs) := syst;
+  (eqns_1, unassignedStates, unassignedEqs, _) := IndexReduction.minimalStructurallySingularSystem(eqns, syst, shared, ass1, ass2, arg);
+  print("test 2\n");
+
+  flat_unassignedStates := List.flatten(unassignedStates);
+  for state in flat_unassignedStates loop
+    var := BackendVariable.getVarAt(orderedVars, state);
+    if BackendVariable.isArtificialState(var) and not listMember(var, artificialStates) then
+      artificialStates := var :: artificialStates;
+    end if;
+  end for;
+  BackendDump.dumpVarList(artificialStates, "artificial");
+  flat_unassignedEqs := List.flatten(unassignedEqs);
+  for eqn in flat_unassignedEqs loop
+    equations := BackendEquation.get(orderedEqs, eqn) :: equations;
+  end for;
+  for var in artificialStates loop
+    for eqn in equations loop
+      try
+        residuals := BackendEquation.equationToScalarResidualForm(eqn, shared.functionTree);
+        for res in residuals loop
+          BackendDAE.RESIDUAL_EQUATION(exp = residualExp) := res;
+        //(_, _) := Differentiate.differentiateEquationFragile(eqn, BackendVariable.varCref(var), BackendDAE.emptyInputData, BackendDAE.SIMPLE_DIFFERENTIATION(), shared.functionTree);
+          _ := Differentiate.differentiateExpSolve(residualExp, BackendVariable.varCref(var), SOME(shared.functionTree));
+        end for;
+      else
+        print("failed for " + BackendDump.varString(var) + ".\n");
+      end try;
+    end for;
+  end for;
+end sanityCheckArtificialStates;
 
 protected function removeEdgesToDiscreteEquations""
   input BackendDAE.IncidenceMatrix m;
