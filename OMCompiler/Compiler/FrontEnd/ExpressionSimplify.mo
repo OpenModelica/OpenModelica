@@ -1915,7 +1915,7 @@ algorithm
     // DAE.Exp function
     case("exp",DAE.CALL(expLst={e}))
       equation
-        r = .exp(Expression.toReal(e));
+        r = exp(Expression.toReal(e));
       then DAE.RCONST(r);
 
     // log function
