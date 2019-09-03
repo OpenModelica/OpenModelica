@@ -495,8 +495,6 @@ algorithm
       algorithm
 
         (discVars, contVars) := List.splitOnTrue(inVars, BackendVariable.isVarDiscrete);
-        (newAuxVars, contVars) := List.splitOnTrue(contVars, BackendVariable.BackendVariable.isCSEVar);
-        discVars := listAppend(newAuxVars,discVars);
         (discEqns, contEqns) := getDiscAndContEqns(inVars, inEqns, discVars, contVars, traverserArgs.shared.functionTree);
 
         // create discrete
