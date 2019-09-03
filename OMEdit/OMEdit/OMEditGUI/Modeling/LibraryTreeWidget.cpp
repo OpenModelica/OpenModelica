@@ -893,6 +893,11 @@ QString LibraryTreeItem::getHTMLDescription() const
       .arg(mClassInformation.restriction, mName, Utilities::escapeForHtmlNonSecure(mClassInformation.comment));
 }
 
+void LibraryTreeItem::openClass()
+{
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(this);
+}
+
 /*!
  * \brief LibraryTreeItem::handleLoaded
  * Handles the case when an undefined inherited class is loaded.
@@ -3321,6 +3326,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
         case LibraryTreeItem::Modelica:
         default:
           menu.addAction(mpOpenClassAction);
+          putOpenBaseClassActionsToContextMenu(&menu, pLibraryTreeItem);
           menu.addAction(mpInformationAction);
           if (!pLibraryTreeItem->isSystemLibrary()) {
             menu.addSeparator();
@@ -3451,6 +3457,16 @@ void LibraryTreeView::showContextMenu(QPoint point)
     menu.addAction(mpNewFolderEmptyAction);
   }
   menu.exec(viewport()->mapToGlobal(point));
+}
+
+void LibraryTreeView::putOpenBaseClassActionsToContextMenu(QMenu *pMenu, LibraryTreeItem *pLibraryTreeItem)
+{
+  foreach (LibraryTreeItem *pItem, pLibraryTreeItem->getInheritedClasses()) {
+    QAction *pAction = new QAction(ResourceCache::getIcon(":/Resources/icons/modeling.png"), Helper::openBaseClass.arg(pItem->getName()), this);
+    pAction->setStatusTip(Helper::openBaseClassTip.arg(pItem->getNameStructure()));
+    connect(pAction, SIGNAL(triggered()), pItem, SLOT(openClass()));
+    pMenu->addAction(pAction);
+  }
 }
 
 /*!

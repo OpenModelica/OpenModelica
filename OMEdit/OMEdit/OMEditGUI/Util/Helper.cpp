@@ -291,6 +291,8 @@ QString Helper::findVariables;
 QString Helper::filterVariables;
 QString Helper::openClass;
 QString Helper::openClassTip;
+QString Helper::openBaseClass;
+QString Helper::openBaseClassTip;
 QString Helper::viewIcon;
 QString Helper::viewIconTip;
 QString Helper::viewDiagram;
@@ -584,6 +586,8 @@ void Helper::initHelperVariables()
   Helper::filterVariables = tr("Filter Variables");
   Helper::openClass = tr("Open Class");
   Helper::openClassTip = tr("Opens the class details");
+  Helper::openBaseClass = tr("Open base class: %1");
+  Helper::openBaseClassTip = tr("Opens base class: %1");
   Helper::viewIcon = tr("View Icon");
   Helper::viewIconTip = tr("Opens the class icon");
   Helper::viewDiagram = tr("View Diagram");
