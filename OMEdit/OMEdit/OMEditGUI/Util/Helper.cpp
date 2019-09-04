@@ -70,6 +70,7 @@ QString Helper::subModelFileTypes = "SubModel Files (*.fmu *.mat *.csv);;SubMode
 int Helper::treeIndentation = 13;
 QSize Helper::iconSize = QSize(20, 20);
 int Helper::tabWidth = 20;
+qreal Helper::minimumTextFontSize = 8.0;
 QString Helper::modelicaComponentFormat = "image/modelica-component";
 QString Helper::modelicaFileFormat = "text/uri-list";
 QString Helper::busConnectorFormat = "bus/connector";
