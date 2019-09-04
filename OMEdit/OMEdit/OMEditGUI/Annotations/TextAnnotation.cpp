@@ -299,96 +299,88 @@ void TextAnnotation::drawTextAnnotaion(QPainter *painter)
   applyLinePattern(painter);
   /* Don't apply the fill patterns on Text shapes. */
   /*applyFillPattern(painter);*/
-  qreal dx = ((-boundingRect().left()) - boundingRect().right());
-  qreal dy = ((-boundingRect().top()) - boundingRect().bottom());
-  // first we invert the painter since we have our coordinate system inverted.
-  painter->scale(1.0, -1.0);
-  painter->translate(0, dy);
+  // store the existing transformations
+  const QTransform painterTransform = painter->transform();
+  const qreal scaleX = painterTransform.m11();
+  const qreal scaleY = painterTransform.m22();
+  const qreal shearX = painterTransform.m21();
+  const qreal shearY = painterTransform.m12();
+  // set new transformation for the text based on rotation or scale.
+  qreal sx, sy;
+  if (painterTransform.type() == QTransform::TxRotate) {
+    // if no flip or XY flip
+    if ((shearX >= 0 && shearY >= 0) || (shearX < 0 && shearY < 0)) {
+      painter->setTransform(QTransform(painterTransform.m11(), (shearY < 0 ? -1.0 : 1.0), painterTransform.m13(),
+                                       (shearX >= 0 ? -1.0 : 1.0), painterTransform.m22(), painterTransform.m23(),
+                                       painterTransform.m31(), painterTransform.m32(), painterTransform.m33()));
+      sx = shearX * (shearX < 0 ? -1.0 : 1.0);
+      sy = shearY * (shearY >= 0 ? -1.0 : 1.0);
+    } else { // if x or y flip
+      painter->setTransform(QTransform(painterTransform.m11(), (shearY < 0 ? 1.0 : -1.0), painterTransform.m13(),
+                                       (shearX >= 0 ? -1.0 : 1.0), painterTransform.m22(), painterTransform.m23(),
+                                       painterTransform.m31(), painterTransform.m32(), painterTransform.m33()));
+      sx = shearX * (shearX < 0 ? 1.0 : -1.0);
+      sy = shearY * (shearY >= 0 ? -1.0 : 1.0);
+    }
+  } else {
+    painter->setTransform(QTransform(1.0, painterTransform.m12(), painterTransform.m13(),
+                                     painterTransform.m21(), 1.0, painterTransform.m23(),
+                                     painterTransform.m31(), painterTransform.m32(), painterTransform.m33()));
+    sx = scaleX;
+    sy = scaleY;
+  }
+  // map the existing bounding rect to new transformation
+  QRectF mappedBoundingRect = QRectF(boundingRect().x() * sx, boundingRect().y() * sy, boundingRect().width() * sx, boundingRect().height() * sy);
+  // map the existing bounding rect to new transformation but with positive width and height so that font metrics can work
+  QRectF absMappedBoundingRect = QRectF(boundingRect().x() * sx, boundingRect().y() * sy, qAbs(boundingRect().width() * sx), qAbs(boundingRect().height() * sy));
+  // normalize the text for drawing
   mTextString = StringHandler::removeFirstLastQuotes(mTextString);
   mTextString = StringHandler::unparse(QString("\"").append(mTextString).append("\""));
-  QFont font;
-  font = QFont(mFontName, mFontSize, StringHandler::getFontWeight(mTextStyles), StringHandler::getFontItalic(mTextStyles));
+  // Don't create new QFont instead get a font from painter and set the values on it and set it back.
+  QFont font = painter->font();
+  font.setFamily(mFontName);
+  if (mFontSize > 0) {
+    font.setPointSizeF(mFontSize);
+  }
+  font.setWeight(StringHandler::getFontWeight(mTextStyles));
+  font.setItalic(StringHandler::getFontItalic(mTextStyles));
   // set font underline
   if (StringHandler::getFontUnderline(mTextStyles)) {
     font.setUnderline(true);
   }
   painter->setFont(font);
-  QRect fontBoundRect = painter->fontMetrics().boundingRect(boundingRect().toRect(), Qt::TextDontClip, mTextString);
-  bool calculateFontSize = true;
-  if (mFontSize > 0) {
-    if (boundingRect().width() != 0 && fontBoundRect.width() <= boundingRect().width()) {
-      calculateFontSize = false;
-    } else if (boundingRect().height() != 0 && fontBoundRect.height() <= boundingRect().height()) {
-      calculateFontSize = false;
-    }
-  }
-  if (calculateFontSize) {
-    float xFactor = boundingRect().width() / fontBoundRect.width();
-    float yFactor = boundingRect().height() / fontBoundRect.height();
+  /* From Modelica specification version 3.5-dev
+   * "The style attribute fontSize specifies the font size. If the fontSize attribute is 0 the text is scaled to fit its extent. Otherwise, the size specifies the absolute size."
+   */
+  // if absolute font size is defined and is greater than 0 then we don't need to calculate the font size.
+  if (mFontSize <= 0) {
+    QFontMetrics fontMetrics(painter->font());
+    QRect fontBoundRect = fontMetrics.boundingRect(absMappedBoundingRect.toRect(), Qt::TextDontClip, mTextString);
+    const qreal xFactor = absMappedBoundingRect.width() / fontBoundRect.width();
+    const qreal yFactor = absMappedBoundingRect.height() / fontBoundRect.height();
     /* Ticket:4256
-       * Text aspect when x1=x2 i.e, width is 0.
-       * Use height.
-       */
-    float factor = (boundingRect().width() != 0 && xFactor < yFactor) ? xFactor : yFactor;
-    QFont f = painter->font();
-    qreal fontSizeFactor = f.pointSizeF()*factor;
-    if ((fontSizeFactor < 12) && mpComponent) {
-      f.setPointSizeF(12);
-    } else if (fontSizeFactor <= 0) {
-      f.setPointSizeF(1);
-    } else {
-      f.setPointSizeF(fontSizeFactor);
-    }
-    painter->setFont(f);
+     * Text aspect when x1=x2 i.e, width is 0.
+     * Use height.
+     */
+    const qreal factor = (absMappedBoundingRect.width() != 0 && xFactor < yFactor) ? xFactor : yFactor;
+    qreal fontSizeFactor = font.pointSizeF() * factor;
+    // Yes we don't go below Helper::minimumTextFontSize font pt.
+    font.setPointSizeF(qMax(fontSizeFactor, Helper::minimumTextFontSize));
+    painter->setFont(font);
   }
-  if (mpComponent) {
-    Component *pComponent = mpComponent->getRootParentComponent();
-    if (pComponent && pComponent->mTransformation.isValid()) {
-      QPointF extent1 = pComponent->mTransformation.getExtent1();
-      QPointF extent2 = pComponent->mTransformation.getExtent2();
-      qreal componentAngle = StringHandler::getNormalizedAngle(pComponent->mTransformation.getRotateAngle());
-      qreal shapeAngle = StringHandler::getNormalizedAngle(getRotation());
-      // if shape has its own angle
-      if (shapeAngle > 0) {
-        shapeAngle = StringHandler::getNormalizedAngle(pComponent->mTransformation.getRotateAngle() + getRotation());
-        if (shapeAngle == 180) {
-          painter->scale(-1.0, -1.0);
-          painter->translate(dx, dy);
-        }
-        if (extent2.x() < extent1.x()) {  // if vertical flip
-          painter->scale(1.0, -1.0);
-          painter->translate(0, dy);
-        }
-        if (extent2.y() < extent1.y()) {  // if horizontal flip
-          painter->scale(-1.0, 1.0);
-          painter->translate(dx, 0);
-        }
-      } else {
-        if (componentAngle == 180) {
-          painter->scale(-1.0, -1.0);
-          painter->translate(dx, dy);
-        }
-        if (extent2.x() < extent1.x()) {  // if horizontal flip
-          painter->scale(-1.0, 1.0);
-          painter->translate(dx, 0);
-        }
-        if (extent2.y() < extent1.y()) {  // if vertical flip
-          painter->scale(1.0, -1.0);
-          painter->translate(0, dy);
-        }
-      }
-    }
-  } else {
-    qreal angle = StringHandler::getNormalizedAngle(mTransformation.getRotateAngle());
-    if (angle == 180) {
-      painter->scale(-1.0, -1.0);
-      painter->translate(((-boundingRect().left()) - boundingRect().right()), ((-boundingRect().top()) - boundingRect().bottom()));
-    }
+  /* Get the elided text
+   * Try to get the elided text if the shape is inside a Component
+   * If the shape is not part of Component then only try to get the elided text if its font size <= Helper::minimumTextFontSize
+   */
+  QString textToDraw = mTextString;
+  if (absMappedBoundingRect.width() > 1 && (mpComponent || (!mpComponent && painter->font().pointSizeF() <= Helper::minimumTextFontSize))) {
+    QFontMetrics fontMetrics(painter->font());
+    textToDraw = fontMetrics.elidedText(mTextString, Qt::ElideRight, absMappedBoundingRect.width());
   }
   // draw the font
-  if (mpComponent || boundingRect().width() > 0 || boundingRect().height() > 0) {
-    painter->drawText(boundingRect(), StringHandler::getTextAlignment(mHorizontalAlignment) | Qt::AlignVCenter | Qt::TextDontClip, mTextString);
-    mExportBoundingRect = painter->boundingRect(boundingRect(), StringHandler::getTextAlignment(mHorizontalAlignment) | Qt::AlignVCenter | Qt::TextDontClip, mTextString);
+  if (mpComponent || mappedBoundingRect.width() != 0 || mappedBoundingRect.height() != 0) {
+    painter->drawText(mappedBoundingRect, StringHandler::getTextAlignment(mHorizontalAlignment) | Qt::AlignVCenter | Qt::TextDontClip, textToDraw);
+    mExportBoundingRect = painter->boundingRect(mappedBoundingRect, StringHandler::getTextAlignment(mHorizontalAlignment) | Qt::AlignVCenter | Qt::TextDontClip, textToDraw);
     if (mpComponent) {
       mExportBoundingRect = sceneTransform().mapRect(mExportBoundingRect);
     }

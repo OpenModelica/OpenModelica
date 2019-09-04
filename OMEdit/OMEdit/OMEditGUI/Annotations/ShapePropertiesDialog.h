@@ -112,7 +112,7 @@ private:
   Label *mpFontNameLabel;
   QFontComboBox *mpFontNameComboBox;
   Label *mpFontSizeLabel;
-  DoubleSpinBox *mpFontSizeSpinBox;
+  QComboBox *mpFontSizeComboBox;
   Label *mpFontStyleLabel;
   QCheckBox *mpTextBoldCheckBox;
   QCheckBox *mpTextItalicCheckBox;

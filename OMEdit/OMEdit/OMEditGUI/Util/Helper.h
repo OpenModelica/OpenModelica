@@ -76,6 +76,7 @@ public:
   static int treeIndentation;
   static QSize iconSize;
   static int tabWidth;
+  static qreal minimumTextFontSize;
   static QString modelicaComponentFormat;
   static QString modelicaFileFormat;
   static QString busConnectorFormat;

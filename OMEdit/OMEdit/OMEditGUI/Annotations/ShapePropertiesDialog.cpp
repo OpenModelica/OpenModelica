@@ -201,10 +201,28 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
     mpFontNameComboBox->setCurrentIndex(0);
   }
   mpFontSizeLabel = new Label(Helper::size);
-  mpFontSizeSpinBox = new DoubleSpinBox;
-  mpFontSizeSpinBox->setRange(0, std::numeric_limits<double>::max());
-  mpFontSizeSpinBox->setValue(mpShapeAnnotation->getFontSize());
-  mpFontSizeSpinBox->setSingleStep(1);
+  mpFontSizeComboBox = new QComboBox;
+  mpFontSizeComboBox->setEditable(true);
+  // get the standard font sizes
+  QList<int> standardFontSizes = QFontDatabase::standardSizes();
+  // remove the font sizes less than Helper::minimumTextFontSize
+  QMutableListIterator<int> mutableListIterator(standardFontSizes);
+  while (mutableListIterator.hasNext()) {
+    if (mutableListIterator.next() < Helper::minimumTextFontSize) {
+      mutableListIterator.remove();
+    }
+  }
+  // add the font sizes to the combobox
+  mpFontSizeComboBox->addItem("(Auto)");
+  for (int i = 0; i < standardFontSizes.size(); ++i) {
+    mpFontSizeComboBox->addItem(QString::number(standardFontSizes.at(i)));
+  }
+  // if the font size is less than equal to 0 then set it to Auto
+  if (mpShapeAnnotation->getFontSize() <= 0 ) {
+    mpFontSizeComboBox->setCurrentIndex(0);
+  } else {
+    mpFontSizeComboBox->lineEdit()->setText(QString::number(mpShapeAnnotation->getFontSize()));
+  }
   mpFontStyleLabel = new Label(tr("Style:"));
   mpTextBoldCheckBox = new QCheckBox(Helper::bold);
   mpTextBoldCheckBox->setChecked(StringHandler::getFontWeight(mpShapeAnnotation->getTextStyles()) == QFont::Bold ? true : false);
@@ -228,7 +246,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   pFontAndTextStyleGroupBox->addWidget(mpFontNameLabel, 0, 0);
   pFontAndTextStyleGroupBox->addWidget(mpFontNameComboBox, 0, 1, 1, 3);
   pFontAndTextStyleGroupBox->addWidget(mpFontSizeLabel, 0, 4);
-  pFontAndTextStyleGroupBox->addWidget(mpFontSizeSpinBox, 0, 5);
+  pFontAndTextStyleGroupBox->addWidget(mpFontSizeComboBox, 0, 5);
   pFontAndTextStyleGroupBox->addWidget(mpFontStyleLabel, 1, 0);
   pFontAndTextStyleGroupBox->addWidget(mpTextBoldCheckBox, 1, 1);
   pFontAndTextStyleGroupBox->addWidget(mpTextItalicCheckBox, 1, 2);
@@ -780,7 +798,9 @@ bool ShapePropertiesDialog::applyShapeProperties()
     if (mpFontNameComboBox->currentText().compare("Default") != 0) {
       mpShapeAnnotation->setFontName(mpFontNameComboBox->currentText());
     }
-    mpShapeAnnotation->setFontSize(mpFontSizeSpinBox->value());
+    qreal fontSize = 0;
+    fontSize = mpFontSizeComboBox->lineEdit()->text().toDouble();
+    mpShapeAnnotation->setFontSize(fontSize);
     QList<StringHandler::TextStyle> textStyles;
     if (mpTextBoldCheckBox->isChecked()) textStyles.append(StringHandler::TextStyleBold);
     if (mpTextItalicCheckBox->isChecked()) textStyles.append(StringHandler::TextStyleItalic);
