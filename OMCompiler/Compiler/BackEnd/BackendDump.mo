@@ -454,6 +454,40 @@ algorithm
   outTpl := (varNo + 1, buffer);
 end var1String;
 
+public function varListStringShort
+  input list<BackendDAE.Var> inVars;
+  input String heading;
+  output String outString;
+algorithm
+  outString := match(inVars, heading)
+    local
+      String buffer;
+
+    case (_, "") equation
+      ((_, buffer)) = List.fold(inVars, varNameString, (1, ""));
+    then buffer;
+
+    else equation
+      ((_, buffer)) = List.fold(inVars, varNameString, (1, ""));
+      buffer = heading + "\n" + UNDERLINE + "\n" + buffer;
+    then buffer;
+  end match;
+end varListStringShort;
+
+protected function varNameString
+  input BackendDAE.Var inVar;
+  input tuple<Integer /*inVarNo*/, String /*buffer*/> inTpl;
+  output tuple<Integer /*outVarNo*/, String /*buffer*/> outTpl;
+protected
+  Integer varNo;
+  String buffer;
+algorithm
+  (varNo, buffer) := inTpl;
+  buffer := buffer + intString(varNo) + ": ";
+  buffer := buffer + ComponentReference.printComponentRefStr(inVar.varName) + "\n";
+  outTpl := (varNo + 1, buffer);
+end varNameString;
+
 public function varListStringIndented
   input list<BackendDAE.Var> inVars;
   input String heading;

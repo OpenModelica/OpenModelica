@@ -4502,12 +4502,12 @@ public function flatten<T>
    of the sublists. O(len(outList))
      Example: flatten({{1, 2}, {3, 4, 5}, {6}, {}}) => {1, 2, 3, 4, 5, 6}"
   input list<list<T>> inList;
-  output list<T> outList = listAppend(lst for lst in listReverse(inList));
+  output list<T> outList = if listEmpty(inList) then {} elseif intEq(listLength(inList), 1) then first(inList) else listAppend(lst for lst in listReverse(inList));
 end flatten;
 
 public function flattenReverse<T>
   input list<list<T>> inList;
-  output list<T> outList = listAppend(lst for lst in inList);
+  output list<T> outList = if listEmpty(inList) then {} elseif intEq(listLength(inList), 1) then first(inList) else listAppend(lst for lst in inList);
 end flattenReverse;
 
 public function thread<T>
@@ -4566,6 +4566,27 @@ public function threadTuple<T1, T2>
 algorithm
   outTuples := list((e1, e2) threaded for e1 in inList1, e2 in inList2);
 end threadTuple;
+
+public function zip<T1, T2>
+  "Takes two lists and returns a list of two-element tuples contaning the
+  elements in the same order. Fails if the lists are not of the same length.
+  Example: zip({1, 3}, {2, 4}) =>  {(1, 2), (3, 4)}"
+  input list<T1> inList1;
+  input list<T2> inList2;
+  output list<tuple<T1, T2>> outTuples = {};
+protected
+  list<T2> dummyList = inList2;
+  T2 t2;
+algorithm
+  if intEq(listLength(inList1),listLength(inList2)) then
+    for t1 in inList1 loop
+      t2::dummyList := dummyList;
+      outTuples := (t1, t2)::outTuples;
+    end for;
+  else fail();
+  end if;
+  outTuples := listReverse(outTuples);
+end zip;
 
 public function unzip<T1, T2>
   "Takes a list of two-element tuples and splits the tuples into two separate

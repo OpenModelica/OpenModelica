@@ -284,5 +284,17 @@ algorithm
   end for;
 end absAdjacencyMatrix;
 
+public function isEmpty
+  input BackendDAE.AdjacencyMatrix m;
+  output Boolean b = true;
+algorithm
+  for element in m loop
+    if not listEmpty(element) then
+      b := false;
+      return;
+    end if;
+  end for;
+end isEmpty;
+
 annotation(__OpenModelica_Interface="backend");
 end AdjacencyMatrix;

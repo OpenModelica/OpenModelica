@@ -1096,12 +1096,14 @@ protected function lowerVarkind
   output BackendDAE.VarKind outVarKind;
 algorithm
   outVarKind := match(inVarKind, daeAttr)
-    // variable -> state if have stateSelect = StateSelect.always
+    // variable -> artificial state if have stateSelect = StateSelect.always
     case (DAE.VARIABLE(), SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS()))))
+      guard(not Types.isDiscreteType(inType))
       then BackendDAE.STATE(1, NONE(), false);
 
-    // variable -> state if have stateSelect = StateSelect.prefer
+    // variable -> artificial state if have stateSelect = StateSelect.prefer
     case (DAE.VARIABLE(), SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.PREFER()))))
+      guard(not Types.isDiscreteType(inType))
       then BackendDAE.STATE(1, NONE(), false);
 
     else
@@ -2022,7 +2024,7 @@ algorithm
 
     case DAE.DEFINE(componentRef = cr, exp = e, source = source)::xs
       equation
-        (e, _) = ExpressionSolve.solve(Expression.crefExp(cr), e, Expression.crefExp(cr));
+        (e, _) = ExpressionSolve.solve(Expression.crefExp(cr), e, Expression.crefExp(cr), NONE());
         (DAE.PARTIAL_EQUATION(e), source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e),source);
         whenOp = BackendDAE.ASSIGN(Expression.crefExp(cr), e, source);
         whenEq = BackendDAE.WHEN_STMTS(inCond, {whenOp}, NONE());
@@ -2052,7 +2054,7 @@ algorithm
 
     case (el as DAE.EQUATION(exp = (cre as DAE.CREF()), scalar = e, source = source))::xs algorithm
       try
-        e := ExpressionSolve.solve(cre, e, cre);
+        e := ExpressionSolve.solve(cre, e, cre, NONE());
       else
         Error.addCompilerError("Failed to solve " + DAEDump.dumpElementsStr({el}));
         fail();
