@@ -1495,6 +1495,11 @@ constant ConfigFlag STRICT = CONFIG_FLAG(130, "strict",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Enables stricter enforcement of Modelica language rules."));
 
+constant ConfigFlag LINEARIZATION_DUMP_LANGUAGE = CONFIG_FLAG(131, "linearizationDumpLanguage",
+  NONE(), EXTERNAL(), STRING_FLAG("modelica"),
+  SOME(STRING_OPTION({"modelica","matlab"})),
+    Util.gettext("Sets the target language for the produced code of linearization. Only works with '--generateSymbolicLinearization' and 'linearize(modelName)'."));
+
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -1629,7 +1634,8 @@ constant list<ConfigFlag> allConfigFlags = {
   SINGLE_INSTANCE_AGLSOLVER,
   SHOW_STRUCTURAL_ANNOTATIONS,
   INITIAL_STATE_SELECTION,
-  STRICT
+  STRICT,
+  LINEARIZATION_DUMP_LANGUAGE
 };
 
 public function new
