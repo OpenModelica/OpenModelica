@@ -505,7 +505,7 @@ algorithm
    resEqsOut := hs;
 
    // some optimization
-   (eqsNewOut,varsNewOut,resEqsOut) := simplifyNewEquations(eqsNewOut,varsNewOut,resEqsOut,listLength(List.flatten(arrayList(xa_iArr))),2);
+   (eqsNewOut,varsNewOut,resEqsOut) := simplifyNewEquations(eqsNewOut,varsNewOut,resEqsOut,listLength(List.flatten(arrayList(xa_iArr))),2,ishared);
 
    // handle the strongComponent (system of equations) to solve the tearing vars
    (compsEqSys,resEqsOut,tVarsOut,addEqLst,addVarLst) := buildEqSystemComponent(resEqIdcs0,tVarIdcs0,resEqsOut,tVarsOut,a_iArr,ishared);
@@ -559,6 +559,7 @@ protected function simplifyNewEquations
   input list<BackendDAE.Equation> resEqsIn;
   input Integer numAuxiliaryVars; // to prevent replacement of coefficients
   input Integer numIter;
+  input BackendDAE.Shared shared;
   output list<BackendDAE.Equation> eqsOut;
   output list<BackendDAE.Var> varsOut;
   output list<BackendDAE.Equation> resEqsOut;
@@ -578,7 +579,7 @@ algorithm
   eqSys := BackendDAEUtil.createEqSystem(varArr, eqArr);
   (m,mT) := BackendDAEUtil.incidenceMatrix(eqSys,BackendDAE.ABSOLUTE(),NONE());
   size := listLength(eqsIn);
-  (eqIdcs,varIdcs,resEqsOut) := List.fold(List.intRange(size),function simplifyNewEquations1(eqArr=eqArr,varArr=varArr,m=m,mt=mT,numAuxiliaryVars=numAuxiliaryVars),({},{},resEqsIn));
+  (eqIdcs,varIdcs,resEqsOut) := List.fold(List.intRange(size),function simplifyNewEquations1(eqArr=eqArr,varArr=varArr,m=m,mt=mT,numAuxiliaryVars=numAuxiliaryVars,shared=shared),({},{},resEqsIn));
   numAux := numAuxiliaryVars-listLength(varIdcs);
   if listEmpty(varIdcs) then numIterNew:=0;
     else numIterNew := numIter;
@@ -588,7 +589,7 @@ algorithm
   (_,eqIdcs,_) := List.intersection1OnTrue(List.intRange(size),eqIdcs,intEq);
   eqsOut := BackendEquation.getList(eqIdcs,eqArr);
   varsOut := List.map1(varIdcs,BackendVariable.getVarAtIndexFirst,varArr);
-  if numIterNew<>0 then (eqsOut,varsOut,resEqsOut) := simplifyNewEquations(eqsOut,varsOut,resEqsOut,numAux,numIterNew-1);
+  if numIterNew<>0 then (eqsOut,varsOut,resEqsOut) := simplifyNewEquations(eqsOut,varsOut,resEqsOut,numAux,numIterNew-1,shared);
     else (eqsOut,varsOut,resEqsOut) := (eqsOut,varsOut,resEqsOut);
     end if;
 end simplifyNewEquations;
@@ -600,6 +601,7 @@ protected function simplifyNewEquations1
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrix mt;
   input Integer numAuxiliaryVars;
+  input BackendDAE.Shared shared;
   input tuple<list<Integer>,list<Integer>,list<BackendDAE.Equation>> tplIn; //these can be removed afterwards (eqIdcs,varIdcs,_)
   output tuple<list<Integer>,list<Integer>,list<BackendDAE.Equation>> tplOut;
 algorithm
@@ -628,7 +630,7 @@ algorithm
        varExp := Expression.crefExp(varCref);
        rhs := BackendEquation.getEquationRHS(eq);
        lhs := BackendEquation.getEquationLHS(eq);
-       (rhs,_) := ExpressionSolve.solve(lhs,rhs,varExp);
+       (rhs,_) := ExpressionSolve.solve(lhs,rhs,varExp,NONE());
        if Expression.isAsubExp(rhs) then
        rhs := List.fold1(Expression.allTerms(rhs),Expression.makeBinaryExp,DAE.ADD(Expression.typeof(varExp)),DAE.RCONST(0.0));  //in case ({a,0,b}+funcCall(1,2,3,4,5))[2] I need to get 0+funcCAll(1,2,3,4,5)[2]
        end if;

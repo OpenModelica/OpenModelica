@@ -600,7 +600,7 @@ algorithm
         (_,(false,_,_,_,_)) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,globalKnownVars,true,false));
         cr = BackendVariable.varCref(var);
         cre = Expression.crefExp(cr);
-        (_,{}) = ExpressionSolve.solve(e1,e2,cre);
+        (_,{}) = ExpressionSolve.solve(e1,e2,cre, NONE());
       then ();
     // a = const
     case ({i},_,_,_,_)
@@ -619,7 +619,7 @@ algorithm
         (_,(false,_,_,_,_)) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,globalKnownVars,false,false));
         cr = BackendVariable.varCref(var);
         cre = Expression.crefExp(cr);
-        (_,{}) = ExpressionSolve.solve(e1,e2,cre);
+        (_,{}) = ExpressionSolve.solve(e1,e2,cre, NONE());
       then ();
     // a = der(b)
     case ({_,_},_,_,_,_)
@@ -3654,7 +3654,7 @@ algorithm
       try
         BackendDAE.EQUATION(exp = lhs, scalar = rhs) := potentialGlobalKnownEquation;
         crefExp := BackendVariable.varExp(potentialLocalKnownVar);
-        (binding,_) := ExpressionSolve.solve(lhs,rhs,crefExp);
+        (binding,_) := ExpressionSolve.solve(lhs,rhs,crefExp, NONE());
         potentialLocalKnownVar := BackendVariable.setBindExp(potentialLocalKnownVar, SOME(binding));
         localKnownVars := vindex::localKnownVars;
         localKnownEqns := eindex::localKnownEqns;

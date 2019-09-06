@@ -55,8 +55,10 @@ import Differentiate;
 import DumpGraphML;
 import ElementSource;
 import Error;
+import Expression;
 import Flags;
 import IndexReduction;
+import Inline;
 import List;
 import MetaModelica.Dangerous;
 import Util;
@@ -82,13 +84,28 @@ algorithm
 end PerfectMatching;
 
 public function RegularMatching "
-  This function returns at least a partial matching for singular systems.
+  This function returns at least a partial matching for singular systems, starting from scratch.
   Unmatched nodes are represented by -1."
   input BackendDAE.IncidenceMatrix m;
   input Integer nVars;
   input Integer nEqns;
   output array<Integer> ass1 "eqn := ass1[var]";
   output array<Integer> ass2 "var := ass2[eqn]";
+  output Boolean outPerfectMatching=true;
+algorithm
+  ass2 := arrayCreate(nEqns, -1);
+  ass1 := arrayCreate(nVars, -1);
+  (ass1, ass2, outPerfectMatching) := ContinueMatching(m, nVars, nEqns, ass1, ass2);
+end RegularMatching;
+
+public function ContinueMatching "
+  This function returns at least a partial matching for singular systems.
+  Unmatched nodes are represented by -1."
+  input BackendDAE.IncidenceMatrix m;
+  input Integer nVars;
+  input Integer nEqns;
+  input output array<Integer> ass1 "eqn := ass1[var]";
+  input output array<Integer> ass2 "var := ass2[eqn]";
   output Boolean outPerfectMatching=true;
 protected
   Integer i, j;
@@ -115,7 +132,7 @@ algorithm
     end if;
     i := i+1;
   end while;
-end RegularMatching;
+end ContinueMatching;
 
 public function BBMatching
   input BackendDAE.EqSystem inSys;
@@ -5590,25 +5607,27 @@ algorithm
       then
         (ass1,ass2,isyst,ishared,inArg);
     case ({},false,BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_)
-      equation
+      algorithm
         matchingExternalsetIncidenceMatrix(nv,ne,m);
         BackendDAEEXT.matching(nv,ne,algIndx,cheapMatching,1.0,clearMatching);
         BackendDAEEXT.getAssignment(ass1,ass2);
-        unmatched1 = getUnassigned(ne, ass1, {});
+        unmatched1 := getUnassigned(ne, ass1, {});
 
           //BackendDump.dumpEqSystem(isyst, "EQSYS");
         if Flags.isSet(Flags.BLT_DUMP) and Flags.isSet(Flags.GRAPHML) then BackendDump.dumpBipartiteGraphEqSystem(isyst, ishared, "BeforMatching_"+intString(arrayLength(m))+"_unmatched "+intString(listLength(unmatched1))); end if;
         if Flags.isSet(Flags.BLT_DUMP) and listLength(unmatched1) > 0 then print("unmatched equations: "+stringDelimitList(List.map(unmatched1,intString),", ")+"\n\n"); end if;
 
         // remove some edges which do not have to be traversed when finding the MSSS
-        m1 = arrayCopy(m);
-        m1t = arrayCopy(mt);
-        (m1,m1t) = removeEdgesForNoDerivativeFunctionInputs(m1,m1t,isyst,ishared);
-        (m1,m1t) = removeEdgesToDiscreteEquations(m1,m1t,isyst,ishared);
+        m1 := arrayCopy(m);
+        m1t := arrayCopy(mt);
+        (m1,m1t) := removeEdgesForNoDerivativeFunctionInputs(m1,m1t,isyst,ishared);
+        (m1,m1t) := removeEdgesToDiscreteEquations(m1,m1t,isyst,ishared);
 
-        meqns1 = getEqnsforIndexReduction(unmatched1,ne,m1,m1t,ass1,ass2,inArg);
+        meqns1 := getEqnsforIndexReduction(unmatched1,ne,m1,m1t,ass1,ass2,inArg);
         if not listEmpty(meqns1) then
-          sanityCheckArtificialStates(isyst, ishared, meqns1, ass2, ass1, inArg);
+          (syst, meqns1, ass1_1, ass2_1) := sanityCheckArtificialStates(isyst, ishared, nv, ne, meqns1, ass1, ass2, algIndx, cheapMatching, clearMatching, inArg);
+        else
+          (syst, meqns1, ass1_1, ass2_1) := (isyst, meqns1, ass1, ass2);
         end if;
         if Flags.isSet(Flags.BLT_DUMP) and listLength(meqns1) > 0
         then print("Index Reduction neccessary!\n"
@@ -5619,19 +5638,19 @@ algorithm
           //if listLength(List.flatten(meqns1)) >= 5 then meqs_short = List.firstN(List.flatten(meqns1),5); else meqs_short = List.flatten(meqns1); end if;
           //BackendDump.dumpBipartiteGraphEqSystem(isyst,ishared,"MSSS_"+stringDelimitList(List.map(meqs_short,intString),"_"));
 
-        (ass1_1,ass2_1,syst,shared,arg) = matchingExternal(meqns1,true,algIndx,-1,0,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
+        (ass1_1,ass2_1,syst,shared,arg) := matchingExternal(meqns1,true,algIndx,-1,0,syst,ishared,nv,ne,ass1_1,ass2_1,inMatchingOptions,sssHandler,inArg);
       then
         (ass1_1,ass2_1,syst,shared,arg);
     case (_::_,_,_,(BackendDAE.INDEX_REDUCTION(),_))
-      equation
-        memsize = arrayLength(ass1);
-        (_,_,syst,shared,ass2_1,ass1_1,arg) = sssHandler(meqns,0,isyst,ishared,ass2,ass1,inArg);
-        ne_1 = BackendDAEUtil.systemSize(syst);
-        nv_1 = BackendVariable.daenumVariables(syst);
-        ass1_2 = assignmentsArrayExpand(ass1_1,ne_1,memsize,-1);
-        ass2_2 = assignmentsArrayExpand(ass2_1,nv_1,memsize,-1);
-        true = BackendDAEEXT.setAssignment(ne_1,nv_1,ass1_2,ass2_2);
-        (ass1_3,ass2_3,syst,shared,arg1) = matchingExternal({},false,algIndx,cheapMatching,clearMatching,syst,shared,nv_1,ne_1,ass1_2,ass2_2,inMatchingOptions,sssHandler,arg);
+      algorithm
+        memsize := arrayLength(ass1);
+        (_,_,syst,shared,ass2_1,ass1_1,arg) := sssHandler(meqns,0,isyst,ishared,ass2,ass1,inArg);
+        ne_1 := BackendDAEUtil.systemSize(syst);
+        nv_1 := BackendVariable.daenumVariables(syst);
+        ass1_2 := assignmentsArrayExpand(ass1_1,ne_1,memsize,-1);
+        ass2_2 := assignmentsArrayExpand(ass2_1,nv_1,memsize,-1);
+        true := BackendDAEEXT.setAssignment(ne_1,nv_1,ass1_2,ass2_2);
+        (ass1_3,ass2_3,syst,shared,arg1) := matchingExternal({},false,algIndx,cheapMatching,clearMatching,syst,shared,nv_1,ne_1,ass1_2,ass2_2,inMatchingOptions,sssHandler,arg);
       then
         (ass1_3,ass2_3,syst,shared,arg1);
 
@@ -5645,58 +5664,131 @@ algorithm
 end matchingExternal;
 
 protected function sanityCheckArtificialStates
-  input BackendDAE.EqSystem syst;
+  "author: kabdelhak 2019-09 FHB
+  Checks if all equations that have to be differentiated for index reduction can
+  be differentiated by all artificial states. Reverts all those for which we
+  cannot derive to be algebraic variables.
+  Ticket: 5459
+  ----------------------------- INFO -----------------------------
+   Artificial states are those which do not naturally appear
+   differentiated in the system of DAEs, but have been forced
+   to be states with 'StateSelect.always' or 'StateSelect.prefer'.
+   ----------------------------------------------------------------"
+  input output BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
-  input list<list<Integer>> eqns;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input Integer nv;
+  input Integer ne;
+  input output list<list<Integer>> eqns;
+  input output array<Integer> ass1;
+  input output array<Integer> ass2;
+  input Integer algIndx "Index of the algorithm, see BackendDAEEXT.matching";
+  input Integer cheapMatching "Method for cheap Matching";
+  input Integer clearMatching;
   input BackendDAE.StructurallySingularSystemHandlerArg arg;
 protected
-  BackendDAE.Variables orderedVars;
-  BackendDAE.EquationArray orderedEqs;
-  list<list<Integer>> eqns_1, unassignedStates, unassignedEqs;
-  list<Integer> flat_unassignedStates, flat_unassignedEqs;
-  list<BackendDAE.Var> artificialStates = {};
+  list<list<Integer>> eqns_1, unassignedStates;
+  list<Integer> flat_unassignedStates, flat_eqns, unmatched1;
+  list<BackendDAE.Var> artificialStates = {}, undiffable_artificial = {};
   list<BackendDAE.Equation> residuals, equations = {};
   BackendDAE.Var var;
+  DAE.ComponentRef cr;
   DAE.Exp residualExp;
+  BackendDAE.AdjacencyMatrix m, mt, m1, m1t;
+  Boolean unique_flag;
+  String msg;
 algorithm
-  for i_l in eqns loop
-    for i in i_l loop
-      print(intString(i) + " ");
-    end for;
-    print("\n");
-  end for;
-  BackendDAE.EQSYSTEM(orderedVars = orderedVars, orderedEqs = orderedEqs) := syst;
-  (eqns_1, unassignedStates, unassignedEqs, _) := IndexReduction.minimalStructurallySingularSystem(eqns, syst, shared, ass1, ass2, arg);
-  print("test 2\n");
-
+  try
+    // Get the information about MSSS from index reduction
+    (eqns_1, unassignedStates, _, _) := IndexReduction.minimalStructurallySingularSystem(eqns, syst, shared, ass2, ass1, arg);
+  else
+    if Flags.isSet(Flags.BLT_DUMP) then
+      singularSystemError(eqns, 0, syst, shared, ass1, ass2, arg);
+    end if;
+    fail();
+  end try;
   flat_unassignedStates := List.flatten(unassignedStates);
+  // Collect artificial states
   for state in flat_unassignedStates loop
-    var := BackendVariable.getVarAt(orderedVars, state);
+    var := BackendVariable.getVarAt(syst.orderedVars, state);
     if BackendVariable.isArtificialState(var) and not listMember(var, artificialStates) then
       artificialStates := var :: artificialStates;
     end if;
   end for;
-  BackendDump.dumpVarList(artificialStates, "artificial");
-  flat_unassignedEqs := List.flatten(unassignedEqs);
-  for eqn in flat_unassignedEqs loop
-    equations := BackendEquation.get(orderedEqs, eqn) :: equations;
+  flat_eqns := List.flatten(eqns_1); // use eqns_1 (without discrete)
+  for eqn in flat_eqns loop
+    try
+      equations := BackendEquation.get(syst.orderedEqs, eqn) :: equations;
+    else
+      // equation can't be found -- array index to normal index?
+    end try;
   end for;
   for var in artificialStates loop
+    unique_flag := false;
     for eqn in equations loop
       try
         residuals := BackendEquation.equationToScalarResidualForm(eqn, shared.functionTree);
         for res in residuals loop
           BackendDAE.RESIDUAL_EQUATION(exp = residualExp) := res;
-        //(_, _) := Differentiate.differentiateEquationFragile(eqn, BackendVariable.varCref(var), BackendDAE.emptyInputData, BackendDAE.SIMPLE_DIFFERENTIATION(), shared.functionTree);
-          _ := Differentiate.differentiateExpSolve(residualExp, BackendVariable.varCref(var), SOME(shared.functionTree));
+          cr := BackendVariable.varCref(var);
+          // Only check if the equation actually contains the cref
+          if Expression.expHasCref(residualExp, cr) then
+            (residualExp,_,_) := Inline.forceInlineExp(residualExp,(SOME(shared.functionTree),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource);
+            // Check if the equation can be differentiated by the artificial state
+            _ := Differentiate.differentiateExpSolve(residualExp, cr, SOME(shared.functionTree));
+            // Check if the equation contains smooth(0, cr)
+            false := Expression.expHasCrefInSmoothZero(residualExp, cr);
+          end if;
         end for;
       else
-        print("failed for " + BackendDump.varString(var) + ".\n");
+        if Flags.isSet(Flags.BLT_DUMP) then
+          print("### The Equation ### \n" + BackendDump.equationString(eqn) +
+                "\n\n--- could not be differentiated for artificial variable ---\n " +
+                 ComponentReference.printComponentRefStr(var.varName) + ".\n\n");
+        end if;
+        // revert the varKind from STATE to VARIABLE
+        if not unique_flag then
+          undiffable_artificial := BackendVariable.setVarKind(var, BackendDAE.VARIABLE()) :: undiffable_artificial;
+          unique_flag := true;
+        end if;
       end try;
     end for;
   end for;
+
+  if not listEmpty(undiffable_artificial) then
+    syst.orderedVars := BackendVariable.addVars(undiffable_artificial, syst.orderedVars);
+    (syst, _, _, _, _) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(shared.functionTree));
+
+    if isSome(syst.m) and isSome(syst.mT) then
+      SOME(m) := syst.m;
+      SOME(mt) := syst.mT;
+      // It would be great to replace full matching by continue matching,
+      // to reuse old information, but somehow it does something different.
+      // (ass1, ass2) := ContinueMatching(m, nv, ne, ass1, ass2);
+      matchingExternalsetIncidenceMatrix(nv, ne, m);
+      BackendDAEEXT.matching(nv, ne, algIndx, cheapMatching, 1.0, clearMatching);
+      BackendDAEEXT.getAssignment(ass1, ass2);
+      unmatched1 := getUnassigned(ne, ass1, {});
+      m1 := arrayCopy(m);
+      m1t := arrayCopy(mt);
+      (m1,m1t) := removeEdgesForNoDerivativeFunctionInputs(m1, m1t, syst, shared);
+      (m1,m1t) := removeEdgesToDiscreteEquations(m1, m1t, syst, shared);
+      eqns := getEqnsforIndexReduction(unmatched1, ne, m1, m1t, ass1, ass2, arg);
+    end if;
+
+    if Flags.isSet(Flags.BLT_DUMP) then
+      print("----------------------------- INFO -----------------------------\n" +
+            " Artificial states are those which do not naturally appear\n" +
+            " differentiated in the system of DAEs, but have been forced\n" +
+            " to be states with 'StateSelect.always' or 'StateSelect.prefer'.\n" +
+            " The ones mentioned above will be treated as if they had \n" +
+            "'StateSelect.default'.\n" +
+            "----------------------------------------------------------------\n\n");
+    end if;
+
+    msg := System.gettext(BackendDump.varListStringShort(undiffable_artificial,"They will be treated as if they had stateSelect=StateSelect.default") +
+    "Please use -d=bltdump for more information.\n");
+    Error.addMessage(Error.STATE_STATESELECT_PREFER_REVERT, {msg});
+  end if;
 end sanityCheckArtificialStates;
 
 protected function removeEdgesToDiscreteEquations""
@@ -5923,6 +6015,24 @@ algorithm
         getUnassigned(ne-1,ass,unassigned);
   end match;
 end getUnassigned;
+
+public function anyUnassigned
+  "author: kabdelhak FHB 2019-08
+  returns true if any assignment is -1."
+  input Integer ne;
+  input array<Integer> ass;
+  output Boolean b;
+algorithm
+  b := match(ne)
+    local
+      list<Integer> unassigned;
+    case 0
+      then false;
+    case _ guard(intLt(ass[ne],1))
+      then true;
+    else anyUnassigned(ne-1,ass);
+  end match;
+end anyUnassigned;
 
 public function getAssignedArray "author: lochel"
   input array<Integer> ass;

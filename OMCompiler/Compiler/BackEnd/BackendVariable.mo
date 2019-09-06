@@ -460,6 +460,17 @@ algorithm
   end match;
 end varStateSelect;
 
+public function varStateSelectNever "author: kabdelhak
+  Returns true, if the state select attribute is DAE.NEVER()"
+  input BackendDAE.Var inVar;
+  output Boolean isNever;
+algorithm
+  isNever := match(varStateSelect(inVar))
+    case DAE.NEVER() then true;
+    else false;
+  end match;
+end varStateSelectNever;
+
 public function setVarStateSelect "Sets the state select attribute of a variable."
   input BackendDAE.Var inVar;
   input DAE.StateSelect stateSelect;

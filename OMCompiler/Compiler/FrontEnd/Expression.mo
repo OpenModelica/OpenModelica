@@ -6808,6 +6808,39 @@ algorithm
   end match;
 end expHasCrefInIfWork;
 
+public function expHasCrefInSmoothZero
+  "author: kabdelhak FHB 2019-09
+  Returns true if the expression contains a function call of the form
+  smooth(0, cr). Used to determine if an artificial state should
+  not be differentiated and reverted to be an algebraic variable
+  instead. "
+  input DAE.Exp exp;
+  input DAE.ComponentRef cr;
+  output Boolean b;
+algorithm
+  (_, (_, b)) := traverseExpBottomUp(exp, expHasCrefInSmoothZeroWork, (cr, false));
+end expHasCrefInSmoothZero;
+
+protected function expHasCrefInSmoothZeroWork
+  "author: kabdelhak FHB 2019-09
+  Work function to detect smooth(0, cr).
+  Q: Should it also return true if the smooth call expression
+  contains the cref in any way not only for direct identity?"
+  input output DAE.Exp exp;
+  input output tuple<DAE.ComponentRef, Boolean> tpl;
+algorithm
+  tpl := match (exp, tpl)
+    local
+      DAE.ComponentRef cr, sCr;
+      Boolean b;
+    case (DAE.CALL(path = Absyn.IDENT(name = "smooth"), expLst = {DAE.ICONST(0), DAE.CREF(componentRef = sCr)}), (cr, false))
+      algorithm
+        b := ComponentReference.crefEqual(sCr, cr);
+        //expHasCref(e, cr); use this instead for full check?
+      then (cr, b);
+    else tpl;
+  end match;
+end expHasCrefInSmoothZeroWork;
 
 public function traverseCrefsFromExp "
 Author: Frenkel TUD 2011-05, traverses all ComponentRef from an Expression."

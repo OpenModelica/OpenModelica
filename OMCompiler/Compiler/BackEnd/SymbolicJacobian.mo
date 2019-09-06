@@ -3095,6 +3095,7 @@ algorithm
     end if;
 
     backendDAE := BackendDAEUtil.transformBackendDAE(backendDAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
+
     BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = dependentVars)}, BackendDAE.SHARED(globalKnownVars = globalKnownVars)) := backendDAE;
 
     // prepare creation of symbolic jacobian
@@ -3114,6 +3115,7 @@ algorithm
     outJacobian := BackendDAE.GENERIC_JACOBIAN(symJacBDAE, sparsePattern, sparseColoring);
     outShared := BackendDAEUtil.setSharedFunctionTree(inShared, funcs);
   else
+
     if Flags.isSet(Flags.JAC_DUMP) then
       Error.addInternalError("function getSymbolicJacobian failed", sourceInfo());
     end if;

@@ -193,6 +193,7 @@ public function solve
   input DAE.Exp inExp1 "lhs";
   input DAE.Exp inExp2 "rhs";
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
+  input Option<DAE.FunctionTree> functions = NONE() "need for solve modelica functions";
   output DAE.Exp outExp;
   output list<DAE.Statement> outAsserts;
 protected
@@ -209,7 +210,7 @@ algorithm
   (outExp,outAsserts,dummy1, dummy2, dummyI) := matchcontinue inExp1
     case _ then solveSimple(inExp1, inExp2, inExp3, 0);
     case _ then solveSimple(inExp2, inExp1, inExp3, 0);
-    case _ then solveWork(inExp1, inExp2, inExp3, NONE(), NONE(), 0, false, false);
+    case _ then solveWork(inExp1, inExp2, inExp3, functions, NONE(), 0, false, false);
     else equation
       if Flags.isSet(Flags.FAILTRACE) then
         Error.addInternalError("Failed to solve \"" + ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2) + "\" w.r.t. \"" + ExpressionDump.printExpStr(inExp3) + "\"", sourceInfo());
