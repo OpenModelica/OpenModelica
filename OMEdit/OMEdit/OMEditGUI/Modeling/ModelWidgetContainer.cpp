@@ -1491,7 +1491,8 @@ bool GraphicsView::hasAnnotation()
  */
 void GraphicsView::addItem(QGraphicsItem *pGraphicsItem)
 {
-  if (!scene()->items().contains(pGraphicsItem)) {
+  if (!mAllItems.contains(pGraphicsItem)) {
+    mAllItems.insert(pGraphicsItem);
     scene()->addItem(pGraphicsItem);
   }
 }
@@ -1503,7 +1504,8 @@ void GraphicsView::addItem(QGraphicsItem *pGraphicsItem)
  */
 void GraphicsView::removeItem(QGraphicsItem *pGraphicsItem)
 {
-  if (scene()->items().contains(pGraphicsItem)) {
+  if (mAllItems.contains(pGraphicsItem)) {
+    mAllItems.remove(pGraphicsItem);
     scene()->removeItem(pGraphicsItem);
   }
 }
