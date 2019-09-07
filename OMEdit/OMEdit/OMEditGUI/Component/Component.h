@@ -270,7 +270,6 @@ private:
   QStringList mDialogAnnotation;
   QStringList mChoicesAnnotation;
   QString mParameterValue;
-  QGraphicsRectItem *mpResizerRectangle;
   LineAnnotation *mpNonExistingComponentLine;
   RectangleAnnotation *mpDefaultComponentRectangle;
   TextAnnotation *mpDefaultComponentText;

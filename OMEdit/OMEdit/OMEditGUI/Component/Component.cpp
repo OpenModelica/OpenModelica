@@ -452,14 +452,6 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString an
   mIsInheritedComponent = false;
   mComponentType = Component::Root;
   mTransformationString = StringHandler::getPlacementAnnotation(annotation);
-  // Construct the temporary polygon that is used when scaling
-  mpResizerRectangle = new QGraphicsRectItem;
-  mpResizerRectangle->setZValue(-5000);  // set to a very low value
-  mpGraphicsView->addItem(mpResizerRectangle);
-  QPen pen;
-  pen.setStyle(Qt::DotLine);
-  pen.setColor(Qt::transparent);
-  mpResizerRectangle->setPen(pen);
   setOldScenePosition(QPointF(0, 0));
   setOldPosition(QPointF(0, 0));
   setComponentFlags(true);
@@ -534,7 +526,6 @@ Component::Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentCompon
   mIsInheritedComponent = mpParentComponent->isInheritedComponent();
   mComponentType = Component::Extend;
   mTransformationString = "";
-  mpResizerRectangle = 0;
   createNonExistingComponent();
   mpDefaultComponentRectangle = 0;
   mpDefaultComponentText = 0;
@@ -570,7 +561,6 @@ Component::Component(Component *pComponent, Component *pParentComponent, Compone
   mTransformationString = mpReferenceComponent->getTransformationString();
   mDialogAnnotation = mpReferenceComponent->getDialogAnnotation();
   mChoicesAnnotation = mpReferenceComponent->getChoicesAnnotation();
-  mpResizerRectangle = 0;
   createNonExistingComponent();
   mpDefaultComponentRectangle = 0;
   mpDefaultComponentText = 0;
@@ -613,14 +603,6 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   mTransformationString = mpReferenceComponent->getTransformationString();
   mDialogAnnotation = mpReferenceComponent->getDialogAnnotation();
   mChoicesAnnotation = mpReferenceComponent->getChoicesAnnotation();
-  //Construct the temporary polygon that is used when scaling
-  mpResizerRectangle = new QGraphicsRectItem;
-  mpResizerRectangle->setZValue(5000);  // set to a very high value
-  mpGraphicsView->addItem(mpResizerRectangle);
-  QPen pen;
-  pen.setStyle(Qt::DotLine);
-  pen.setColor(Qt::transparent);
-  mpResizerRectangle->setPen(pen);
   setOldScenePosition(QPointF(0, 0));
   setOldPosition(QPointF(0, 0));
   setComponentFlags(true);
@@ -669,7 +651,6 @@ Component::Component(ComponentInfo *pComponentInfo, Component *pParentComponent)
   mTransformationString = "";
   mDialogAnnotation.clear();
   mChoicesAnnotation.clear();
-  mpResizerRectangle = 0;
   createNonExistingComponent();
   createDefaultComponent();
   mpStateComponentRectangle = 0;
@@ -2561,9 +2542,6 @@ void Component::prepareResizeComponent(ResizerItem *pResizerItem)
     mTransformationStartPosition = topRight;
     mPivotPoint = bottomLeft;
   }
-  mpResizerRectangle->setRect(boundingRect()); //Sets the current item to the temporary rect
-  mpResizerRectangle->setTransform(transform()); //Set the same matrix of this item to the temporary item
-  mpResizerRectangle->setPos(pos());
 }
 
 /*!
@@ -2607,7 +2585,6 @@ void Component::resizeComponent(QPointF newPosition)
   QTransform tmpTransform = QTransform().translate(pivot.x(), pivot.y()).rotate(0)
       .scale(mXFactor, mYFactor)
       .translate(-pivot.x(), -pivot.y());
-  mpResizerRectangle->setTransform(mTransform * tmpTransform); //Multiplies the previous transform * the temporary
   setTransform(mTransform * tmpTransform);
   // set the final resize on component.
   QPointF extent1, extent2;

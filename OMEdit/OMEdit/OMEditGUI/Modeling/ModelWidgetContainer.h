@@ -138,6 +138,8 @@ private:
   QAction *mpFlipVerticalAction;
   QAction *mpSetInitialStateAction;
   QAction *mpCancelTransitionAction;
+  // scene->items().contains(...) involves sorting on each items() call, avoid it
+  QSet<QGraphicsItem*> mAllItems;
 public:
   GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModelWidget, bool visualizationView = false);
   CoOrdinateSystem mCoOrdinateSystem;
