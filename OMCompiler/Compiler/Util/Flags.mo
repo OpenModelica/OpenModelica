@@ -1497,7 +1497,7 @@ constant ConfigFlag STRICT = CONFIG_FLAG(130, "strict",
 
 constant ConfigFlag LINEARIZATION_DUMP_LANGUAGE = CONFIG_FLAG(131, "linearizationDumpLanguage",
   NONE(), EXTERNAL(), STRING_FLAG("modelica"),
-  SOME(STRING_OPTION({"modelica","matlab"})),
+  SOME(STRING_OPTION({"modelica","matlab","julia","python"})),
     Util.gettext("Sets the target language for the produced code of linearization. Only works with '--generateSymbolicLinearization' and 'linearize(modelName)'."));
 
 protected
