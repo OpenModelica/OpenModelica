@@ -69,10 +69,6 @@ type Graph = FCore.Graph;
 type Extra = FCore.Extra;
 type Visited = FCore.Visited;
 type Import = FCore.Import;
-type AvlTree = FCore.CAvlTree;
-type AvlKey = FCore.CAvlKey;
-type AvlValue = FCore.CAvlValue;
-type AvlTreeValue = FCore.CAvlTreeValue;
 type ModScope = FCore.ModScope;
 
 
