@@ -3275,30 +3275,38 @@ void LibraryTreeView::libraryTreeItemDoubleClicked(const QModelIndex &index)
         }
         return;
       }
-    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS
-               && (pLibraryTreeItem->getOMSConnector()
-                   || pLibraryTreeItem->getOMSBusConnector()
-                   || pLibraryTreeItem->getOMSTLMBusConnector())) {
-      return;
-    }
-    /* Check if we are in the plotting perspective
-     * If yes then we first load the model and switch to Modeling perspective like normal
-     * and then switches back to plotting perspective and show the DiagramWindow
-     * If we don't do that then the window title is messed up.
-     */
-    bool isPlottingPerspectiveActive = MainWindow::instance()->isPlottingPerspectiveActive();
-    mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
-    // if we are in the plotting perspective then open the Diagram Window
-    if (isPlottingPerspectiveActive) {
-      MainWindow::instance()->switchToPlottingPerspectiveSlot();
-      if (MainWindow::instance()->getPlotWindowContainer()->getDiagramSubWindowFromMdi()) {
-        if (pLibraryTreeItem->getModelWidget()) {
-          pLibraryTreeItem->getModelWidget()->loadDiagramView();
-          pLibraryTreeItem->getModelWidget()->loadConnections();
-        }
-        MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->drawDiagram(pLibraryTreeItem->getModelWidget());
+    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+      if ((pLibraryTreeItem->getOMSConnector() || pLibraryTreeItem->getOMSBusConnector() || pLibraryTreeItem->getOMSTLMBusConnector())) {
+        return;
+      } else {
+        mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
       }
-      MainWindow::instance()->getPlotWindowContainer()->addDiagramWindow(pLibraryTreeItem->getModelWidget());
+    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
+      mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+    } else { // LibraryTreeItem::Modelica
+      /* if Model text is changed manually by user then validate it before opening double clicked ModelWidget. */
+      if (!MainWindow::instance()->getModelWidgetContainer()->validateText()) {
+        return;
+      }
+      /* Check if we are in the plotting perspective
+       * If yes then we first load the model and switch to Modeling perspective like normal
+       * and then switches back to plotting perspective and show the DiagramWindow
+       * If we don't do that then the window title is messed up.
+       */
+      bool isPlottingPerspectiveActive = MainWindow::instance()->isPlottingPerspectiveActive();
+      mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+      // if we are in the plotting perspective then open the Diagram Window
+      if (isPlottingPerspectiveActive) {
+        MainWindow::instance()->switchToPlottingPerspectiveSlot();
+        if (MainWindow::instance()->getPlotWindowContainer()->getDiagramSubWindowFromMdi()) {
+          if (pLibraryTreeItem->getModelWidget()) {
+            pLibraryTreeItem->getModelWidget()->loadDiagramView();
+            pLibraryTreeItem->getModelWidget()->loadConnections();
+          }
+          MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->drawDiagram(pLibraryTreeItem->getModelWidget());
+        }
+        MainWindow::instance()->getPlotWindowContainer()->addDiagramWindow(pLibraryTreeItem->getModelWidget());
+      }
     }
   }
 }

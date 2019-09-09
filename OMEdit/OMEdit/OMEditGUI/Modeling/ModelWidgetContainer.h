@@ -616,6 +616,7 @@ public:
 #if !defined(WITHOUT_OSG)
   void updateThreeDViewer(ModelWidget *pModelWidget);
 #endif
+  bool validateText();
 private:
   StringHandler::ViewType mPreviousViewType;
   bool mShowGridLines;
