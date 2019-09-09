@@ -2788,12 +2788,8 @@ void MainWindow::toggleShapesButton()
 void MainWindow::openRecentModelWidget()
 {
   /* if Model text is changed manually by user then validate it before opening recent ModelWidget. */
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
-    LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
-    if (!pModelWidget->validateText(&pLibraryTreeItem)) {
-      return;
-    }
+  if (!mpModelWidgetContainer->validateText()) {
+    return;
   }
   QAction *pAction = qobject_cast<QAction*>(sender());
   QToolButton *pToolButton = qobject_cast<QToolButton*>(sender());
@@ -3975,15 +3971,11 @@ void MainWindow::autoSaveHelper(LibraryTreeItem *pLibraryTreeItem)
  */
 void MainWindow::switchToWelcomePerspective()
 {
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
-    LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
-    if (!pModelWidget->validateText(&pLibraryTreeItem)) {
-      bool signalsState = mpPerspectiveTabbar->blockSignals(true);
-      mpPerspectiveTabbar->setCurrentIndex(1);
-      mpPerspectiveTabbar->blockSignals(signalsState);
-      return;
-    }
+  if (!mpModelWidgetContainer->validateText()) {
+    bool signalsState = mpPerspectiveTabbar->blockSignals(true);
+    mpPerspectiveTabbar->setCurrentIndex(1);
+    mpPerspectiveTabbar->blockSignals(signalsState);
+    return;
   }
   mpCentralStackedWidget->setCurrentWidget(mpWelcomePageWidget);
   mpModelWidgetContainer->currentModelWidgetChanged(0);
@@ -4051,16 +4043,13 @@ void MainWindow::switchToModelingPerspective()
  */
 void MainWindow::switchToPlottingPerspective()
 {
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
-    LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
-    if (!pModelWidget->validateText(&pLibraryTreeItem)) {
-      bool signalsState = mpPerspectiveTabbar->blockSignals(true);
-      mpPerspectiveTabbar->setCurrentIndex(1);
-      mpPerspectiveTabbar->blockSignals(signalsState);
-      return;
-    }
+  if (!mpModelWidgetContainer->validateText()) {
+    bool signalsState = mpPerspectiveTabbar->blockSignals(true);
+    mpPerspectiveTabbar->setCurrentIndex(1);
+    mpPerspectiveTabbar->blockSignals(signalsState);
+    return;
   }
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   mpCentralStackedWidget->setCurrentWidget(mpPlotWindowContainer);
   mpModelWidgetContainer->currentModelWidgetChanged(0);
   mpUndoAction->setEnabled(false);

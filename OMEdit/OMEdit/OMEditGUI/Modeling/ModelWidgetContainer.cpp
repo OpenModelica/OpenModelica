@@ -7118,13 +7118,9 @@ bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
    */
   if ((event->type() == QEvent::MouseButtonPress && qobject_cast<QMenuBar*>(object)) ||
       (event->type() == QEvent::FocusIn && qobject_cast<DocumentationViewer*>(object))) {
-    ModelWidget *pModelWidget = getCurrentModelWidget();
-    if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
-      LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
-      /* if Model text is changed manually by user then validate it. */
-      if (!pModelWidget->validateText(&pLibraryTreeItem)) {
-        return true;
-      }
+    /* if Model text is changed manually by user then validate it. */
+    if (!validateText()) {
+      return true;
     }
   }
   // Global key events with Ctrl modifier.
@@ -7279,6 +7275,21 @@ void ModelWidgetContainer::updateThreeDViewer(ModelWidget *pModelWidget)
 #endif
 
 /*!
+ * \brief ModelWidgetContainer::validateText
+ * Validates the text of the current ModelWidget editor.
+ * \return Returns true if validation is successful otherwise return false.
+ */
+bool ModelWidgetContainer::validateText()
+{
+  ModelWidget *pModelWidget = getCurrentModelWidget();
+  if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+    LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
+    return pModelWidget->validateText(&pLibraryTreeItem);
+  }
+  return true;
+}
+
+/*!
  * \brief ModelWidgetContainer::loadPreviousViewType
  * Opens the ModelWidget using the previous view type used by user.
  * \param pModelWidget
@@ -7323,14 +7334,13 @@ void ModelWidgetContainer::loadPreviousViewType(ModelWidget *pModelWidget)
 bool ModelWidgetContainer::openRecentModelWidget(QListWidgetItem *pListWidgetItem)
 {
   /* if Model text is changed manually by user then validate it before opening recent ModelWidget. */
-  ModelWidget *pModelWidget = getCurrentModelWidget();
-  if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
-    LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
-    if (!pModelWidget->validateText(&pLibraryTreeItem)) {
-      return false;
-    }
+  if (!validateText()) {
+    return false;
   }
   LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pListWidgetItem->data(Qt::UserRole).toString());
+  if (!pLibraryTreeItem) {
+    return false;
+  }
   addModelWidget(pLibraryTreeItem->getModelWidget(), false);
   return true;
 }
