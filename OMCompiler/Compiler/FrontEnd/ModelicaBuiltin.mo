@@ -4304,6 +4304,18 @@ package AutoCompletion "Auto completion information for OMEdit."
 
     Boolean choicesAllMatching "Specify whether to construct an automatic list of choices menu or not.";
 
+    record derivative
+      Integer order = 1;
+      String noDerivative;
+      String zeroDerivative;
+    end derivative;
+
+    record __OpenModelica_commandLineOptions
+    end __OpenModelica_commandLineOptions;
+
+    record __OpenModelica_simulationFlags
+    end __OpenModelica_simulationFlags;
+
     // TODO: Annotation for External Libraries and Include Files
 
     annotation(
