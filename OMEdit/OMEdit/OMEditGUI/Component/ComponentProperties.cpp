@@ -1202,7 +1202,7 @@ void ComponentParameters::updateComponentParameters()
       }
     }
     // if displayUnit is changed
-    if (pParameter->getDisplayUnit().compare(pParameter->getUnitComboBox()->currentText()) != 0) {
+    if (pParameter->getUnitComboBox()->isEnabled() && pParameter->getDisplayUnit().compare(pParameter->getUnitComboBox()->currentText()) != 0) {
       valueChanged = true;
       /* If the component is inherited then add the modifier value into the extends. */
       if (mpComponent->isInheritedComponent()) {
