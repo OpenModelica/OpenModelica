@@ -7507,6 +7507,14 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
         }
       }
     }
+    // set the focus when ModelWidget is changed so that the keyboard shortcuts can work e.g., ctrl+v
+    if (pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) {
+      pModelWidget->getIconGraphicsView()->setFocus(Qt::ActiveWindowFocusReason);
+    } else if (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()) {
+      pModelWidget->getDiagramGraphicsView()->setFocus(Qt::ActiveWindowFocusReason);
+    } else if (pModelWidget->getEditor() && pModelWidget->getEditor()) {
+      pModelWidget->getEditor()->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
+    }
   } else {
     MainWindow::instance()->getUndoAction()->setEnabled(false);
     MainWindow::instance()->getRedoAction()->setEnabled(false);

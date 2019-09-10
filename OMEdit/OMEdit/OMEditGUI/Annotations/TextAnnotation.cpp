@@ -183,8 +183,7 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
   mFontSize = list.at(10).toFloat();
   // 12th item of the list contains the optional textColor, {-1, -1, -1} if not set
   QStringList textColorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(11)));
-  if (textColorList.size() >= 3)
-  {
+  if (textColorList.size() >= 3) {
     int red, green, blue = 0;
     red = textColorList.at(0).toInt();
     green = textColorList.at(1).toInt();
@@ -418,24 +417,30 @@ QString TextAnnotation::getOMCShapeAnnotation()
   annotationString.append(QString("\"").append(mOriginalTextString).append("\""));
   // get the font size
   annotationString.append(QString::number(mFontSize));
+  // get the text color
+  QString textColorString;
+  textColorString.append("{");
+  textColorString.append(QString::number(mLineColor.red())).append(",");
+  textColorString.append(QString::number(mLineColor.green())).append(",");
+  textColorString.append(QString::number(mLineColor.blue()));
+  textColorString.append("}");
+  annotationString.append(textColorString);
   // get the font name
-  if (!mFontName.isEmpty()) {
+  if (!mFontName.isEmpty() && mFontName.compare(Helper::systemFontInfo.family()) != 0) {
     annotationString.append(QString("\"").append(mFontName).append("\""));
+  } else {
+    annotationString.append(QString("\"\""));
   }
   // get the font styles
   QString textStylesString;
   QStringList stylesList;
-  if (mTextStyles.size() > 0) {
-    textStylesString.append("{");
-  }
+  textStylesString.append("{");
   for (int i = 0 ; i < mTextStyles.size() ; i++) {
     stylesList.append(StringHandler::getTextStyleString(mTextStyles[i]));
   }
-  if (mTextStyles.size() > 0) {
-    textStylesString.append(stylesList.join(","));
-    textStylesString.append("}");
-    annotationString.append(textStylesString);
-  }
+  textStylesString.append(stylesList.join(","));
+  textStylesString.append("}");
+  annotationString.append(textStylesString);
   // get the font horizontal alignment
   annotationString.append(StringHandler::getTextAlignmentString(mHorizontalAlignment));
   return annotationString.join(",");
