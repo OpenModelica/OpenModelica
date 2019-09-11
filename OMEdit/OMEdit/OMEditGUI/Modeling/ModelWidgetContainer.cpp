@@ -2272,8 +2272,11 @@ void GraphicsView::copyItems(bool cut)
       } else if (ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(selectedItems.at(i))) {
         LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(selectedItems.at(i));
         if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
-          pMimeData->addConnection(pLineAnnotation);
-          connections << QString("connect(%1, %2) annotation %3;").arg(pLineAnnotation->getStartComponentName(), pLineAnnotation->getEndComponentName(), pLineAnnotation->getShapeAnnotation());
+          // Only consider the connection for copying if both the start and the end components are selected.
+          if (pLineAnnotation->getStartComponent()->getRootParentComponent()->isSelected() && pLineAnnotation->getEndComponent()->getRootParentComponent()->isSelected()) {
+            pMimeData->addConnection(pLineAnnotation);
+            connections << QString("connect(%1, %2) annotation %3;").arg(pLineAnnotation->getStartComponentName(), pLineAnnotation->getEndComponentName(), pLineAnnotation->getShapeAnnotation());
+          }
         } else {
           pMimeData->addShape(pShapeAnnotation);
           shapes << pShapeAnnotation->getShapeAnnotation();
