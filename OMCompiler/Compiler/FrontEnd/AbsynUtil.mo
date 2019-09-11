@@ -4215,14 +4215,37 @@ algorithm
 end isCref;
 
 public function isTuple
-  input Exp inExp;
-  output Boolean outIsTuple;
+  input Exp exp;
+  output Boolean b;
 algorithm
-  outIsTuple := match inExp
-    case TUPLE() then true;
+  b := match exp
+    case TUPLE(__) then true;
     else false;
   end match;
 end isTuple;
+
+public function allFieldsAreCrefs
+  "@author: johti
+   Returns true if all fields are crefs"
+  input list<Exp> expLst;
+  output Boolean b;
+algorithm
+  b := List.mapAllValueBool(expLst, complexIsCref, true);
+end allFieldsAreCrefs;
+
+public function complexIsCref
+  " @author: johti
+    Returns true if everything contained
+    in the tuple or a cons cell is a constant reference."
+  input Exp inExp;
+  output Boolean b;
+algorithm
+  b := match inExp
+    case TUPLE(__) then allFieldsAreCrefs(inExp.expressions);
+    case CONS(__) then complexIsCref(inExp.head) and complexIsCref(inExp.rest);
+    case _ then isCref(inExp);
+  end match;
+end complexIsCref;
 
 public function isDerCref
   input Exp exp;
@@ -5187,7 +5210,7 @@ algorithm
   end match;
 end getElementItemsInClass;
 
-protected function getElementItemsInClassPart
+public function getElementItemsInClassPart
   "Returns the public and protected elements in a class part."
   input ClassPart inClassPart;
   output list<ElementItem> outElements;
@@ -6282,6 +6305,7 @@ algorithm
   end matchcontinue;
 end traverseInnerClassElements;
 
+
 protected function traverseInnerClassElementspec
 " Helperfunction to traverseInnerClassElements"
   input Absyn.ElementSpec inElementSpec;
@@ -6290,7 +6314,6 @@ protected function traverseInnerClassElementspec
   input Type_a inArg;
   input Boolean inVisitProtected "visit protected elts";
   output tuple<Absyn.ElementSpec, Option<Absyn.Path>, Type_a> outTpl;
-
   partial function FuncType
     input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTpl;
     output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTpl;
@@ -6319,6 +6342,93 @@ algorithm
     case (elt_spec as Absyn.COMPONENTS(),pa,_,args,_) then ((elt_spec,pa,args));
   end match;
 end traverseInnerClassElementspec;
+
+public function getTypeSpecFromElementItemOpt
+"@auhtor: johti
+ Get the typespec path in an ElementItem if it has one"
+  input Absyn.ElementItem inElementItem;
+  output Option<Absyn.TypeSpec> outTypeSpec;
+algorithm
+  outTypeSpec := matchcontinue inElementItem
+    local
+      Absyn.TypeSpec typeSpec;
+      Absyn.ElementSpec specification;
+    case Absyn.ELEMENTITEM(__) then
+      match inElementItem.element
+        case Absyn.ELEMENT(specification = specification) then
+        match specification
+          case Absyn.COMPONENTS(typeSpec = typeSpec) then SOME(typeSpec);
+        end match;
+      end match;
+    else then NONE();
+  end matchcontinue;
+end getTypeSpecFromElementItemOpt;
+
+public function getElementSpecificationFromElementItemOpt
+  "@auhtor: johti
+     Get a ComponentItem from an ElementItem if it has one"
+  input Absyn.ElementItem inElementItem;
+  output Option<Absyn.ElementSpec> outSpec;
+algorithm
+  outSpec := matchcontinue inElementItem
+    local
+      Absyn.ElementSpec specification;
+      Absyn.Element element;
+    case Absyn.ELEMENTITEM(element = element) then
+      match element
+        case Absyn.ELEMENT(specification = specification) then SOME(specification);
+      end match;
+    else NONE();
+  end matchcontinue;
+end getElementSpecificationFromElementItemOpt;
+
+public function getComponentItemsFromElementSpec
+"@auhtor: johti
+ Get the componentItems from a given elemSpec otherwise returns an empty list"
+  input Absyn.ElementSpec elemSpec;
+  output list<Absyn.ComponentItem> componentItems;
+algorithm
+  componentItems := match elemSpec
+    local list<Absyn.ComponentItem> components;
+    case Absyn.COMPONENTS(components=components) then components;
+    else {};
+  end match;
+end getComponentItemsFromElementSpec;
+
+public function getComponentItemsFromElementItem
+"@author: johti
+ Get the componentItems from a given elementItem"
+  input Absyn.ElementItem inElementItem;
+  output list<Absyn.ComponentItem> componentItems;
+algorithm
+  componentItems := match getElementSpecificationFromElementItemOpt(inElementItem)
+    local Absyn.ElementSpec elementSpec;
+    case SOME(elementSpec) then getComponentItemsFromElementSpec(elementSpec);
+    else {};
+  end match;
+end getComponentItemsFromElementItem;
+
+public function getDirection
+"@author johti
+  Get the direction if one exists otherwise returns BIDIR()"
+  input Absyn.ElementItem elementItem;
+  output Direction oDirection;
+algorithm
+  oDirection:= matchcontinue elementItem
+    local Element element;
+    case ELEMENTITEM(element = element) then match element
+      local ElementSpec specification;
+      case ELEMENT(specification=specification) then match specification
+        local ElementAttributes attributes;
+        case COMPONENTS(attributes=attributes) then match attributes
+          local Direction direction;
+          case ATTR(direction=direction) then direction;
+        end match;
+      end match;
+    end match;
+    else BIDIR();
+  end matchcontinue;
+end getDirection;
 
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

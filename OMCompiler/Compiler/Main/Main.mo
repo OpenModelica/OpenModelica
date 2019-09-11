@@ -42,6 +42,7 @@ encapsulated package Main
 
 protected
 import Absyn;
+import AbsynJLDumpTpl;
 import AbsynUtil;
 import Autoconf;
 import BackendDAE;
@@ -421,6 +422,10 @@ algorithm
           Debug.trace("\n--------------- Parsed program ---------------\n");
           Dump.dump(SymbolTable.getAbsyn());
           print(Print.getString());
+        end if;
+        if Flags.isSet(Flags.DUMP_JL) then
+          Debug.trace("\n--------------- Julia representation of the parsed program ---------------\n");
+          print(Tpl.tplString(AbsynJLDumpTpl.dump, SymbolTable.getAbsyn()) + "\n");
         end if;
         if Flags.isSet(Flags.DUMP_GRAPHVIZ) then
           DumpGraphviz.dump(SymbolTable.getAbsyn());
