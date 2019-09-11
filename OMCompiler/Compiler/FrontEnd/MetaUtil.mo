@@ -253,10 +253,12 @@ protected
 algorithm
 
   outElementItems := list(match e
+    local Absyn.ClassDef body;
     case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification =
         Absyn.CLASSDEF(class_ = c as Absyn.CLASS(restriction = Absyn.R_RECORD()))))
       algorithm
-        _ := match body as c.body
+        body := c.body;
+        _ := match body
           case Absyn.PARTS(typeVars=_::_)
             algorithm
               Error.addSourceMessage(Error.METARECORD_WITH_TYPEVARS, {stringDelimitList(body.typeVars, ",")}, c.info);

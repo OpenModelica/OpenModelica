@@ -39,6 +39,7 @@ encapsulated package CevalScriptBackend
 // public imports
 import Absyn;
 import AbsynUtil;
+import AbsynJLDumpTpl;
 import BackendDAE;
 import Ceval;
 import DAE;
@@ -96,6 +97,7 @@ import Parser;
 import Print;
 import Refactor;
 import SCodeDump;
+import AbsynToJulia;
 import NFInst;
 import NFSCodeEnv;
 import NFSCodeFlatten;
@@ -3091,6 +3093,16 @@ algorithm
         b := System.relocateFunctions(str, relocatableFunctionsTuple);
       then (cache,Values.BOOL(b));
 
+    case (cache,_,"toJulia",{},_)
+      algorithm
+        str := Tpl.tplString(AbsynToJulia.dumpProgram, SymbolTable.getAbsyn());
+      then (cache,Values.STRING(str));
+
+    case (cache,_,"interactiveDumpAbsynToJL",{},_)
+      algorithm
+        str := Tpl.tplString(AbsynJLDumpTpl.dump, SymbolTable.getAbsyn());
+      then (cache,Values.STRING(str));
+
     case (cache,_,"relocateFunctions",_,_)
       then (cache,Values.BOOL(false));
 
@@ -3387,7 +3399,7 @@ algorithm
       list<String> libs;
       String file_dir, fileNamePrefix;
       Absyn.Program p;
-      Flags.Flags flags;
+      Flags.Flag flags;
       String commandLineOptions;
       list<String> args;
       Boolean haveAnnotation;
@@ -3449,7 +3461,7 @@ algorithm
       list<String> libs;
       String file_dir, fileNamePrefix;
       Absyn.Program p;
-      Flags.Flags flags;
+      Flags.Flag flags;
       String commandLineOptions;
       list<String> args;
       Boolean haveAnnotation;

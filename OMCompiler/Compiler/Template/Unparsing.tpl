@@ -138,6 +138,91 @@ match elt
   case SCode.CLASS(__) then classExternalHeader(elt,pack)
 end elementExternalHeader;
 
+
+template programExternalHeaderJulia(SCode.Program program)
+::=
+  let &buf1 = buffer ""
+  let &buf2 = buffer ""
+  let res = program |> cl => classExternalHeaderJulia(&buf1,&buf2,cl,"")
+  <<
+  /* Automatically generated header for external MetaModelica functions */
+  #include <julia.h>
+  #ifdef __cplusplus
+  extern "C" {
+  #endif
+  #ifdef ADD_METARECORD_DEFINITIONS
+  <%buf1%>
+  void OpenModelica_initAbsynReferences()
+  {
+    /* Note: These values may be garbage collected away? Call this before each file is parsed? */
+    jl_eval_string("import Absyn");
+    <%buf2%>
+  }
+  #else
+  void OpenModelica_initAbsynReferences();
+  #endif
+  <%res%>
+  #ifdef __cplusplus
+  }
+  #endif
+
+  >>
+  /* adrpo: leave a newline at the end of file to get rid of the C warnings */
+end programExternalHeaderJulia;
+
+template classExternalHeaderJulia(Text &buf1, Text &buf2, SCode.Element cl, String pack)
+::=
+match cl case c as SCode.CLASS(classDef=p as SCode.PARTS(__)) then (p.elementLst |> elt => elementExternalHeaderJulia(&buf1,&buf2,elt,c.name))
+end classExternalHeaderJulia;
+
+template elementExternalHeaderJulia(Text &buf1, Text &buf2, SCode.Element elt, String pack)
+::=
+match elt
+  case c as SCode.CLASS(restriction=r as SCode.R_METARECORD(moved = true),classDef=p as SCode.PARTS(__))
+    then
+      let fields1=(p.elementLst |> SCode.COMPONENT(__) => name; separator=",")
+      let fields2=(p.elementLst |> SCode.COMPONENT(__) => ', <%name%>')
+      let fieldsWithType=(p.elementLst |> SCode.COMPONENT(__) => 'jl_value_t *<%name%>'; separator=",")
+      let funcName = '<%pack%>.<%pathString(r.name)%>'
+      let omcname='<%pack%>_<%pathString(r.name)%>_<%stringReplace(c.name,"_","__")%>'
+      let fullname='<%pack%>__<%stringReplace(c.name,"_","_5f")%>'
+      let &buf1 +=
+        <<
+        extern jl_function_t *<%omcname%> = NULL;
+        extern jl_value_t *<%omcname%>_type = NULL;
+        <%\n%>
+        >>
+      let &buf2 +=
+        <<
+        <%omcname%> = jl_get_function(jl_base_module, "<%funcName%>");
+        <%omcname%>_type = jl_get_global(jl_base_module, symbol("<%funcName%>"));<%\n%>
+        >>
+      <<
+      extern jl_function_t *<%omcname%>;
+      extern jl_function_t *<%omcname%>_type;
+      <% match listLength(p.elementLst)
+      case 0 then '#define <%fullname%> jl_call0(<%omcname%>)'
+      case 1
+      case 2
+      case 3 then
+        <<
+        static inline jl_value_t* <%fullname%>(<%fieldsWithType%>) {
+          return jl_call<%listLength(p.elementLst)%>(<%omcname%><%fields2%>);
+        }
+        >>
+      else
+        <<
+        static inline jl_value_t* <%fullname%>(<%fieldsWithType%>) {
+          jl_value_t *values[<%listLength(p.elementLst)%>] = {<%fields1%>};
+          return jl_call(<%omcname%>, values, <%listLength(p.elementLst)%>);
+        }
+        >>
+      %>
+      <%\n%>
+      >>
+  case SCode.CLASS(__) then classExternalHeaderJulia(&buf1,&buf2,elt,pack)
+end elementExternalHeaderJulia;
+
 annotation(__OpenModelica_Interface="backend");
 end Unparsing;
 

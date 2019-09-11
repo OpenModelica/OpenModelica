@@ -1,0 +1,6 @@
+//Simple translating Graphviz
+setCommandLineOptions("-g=MetaModelica");getErrorString();
+loadFile("Compiler/FrontEnd/Graphviz.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/Graphviz.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+
+system("julia toJulia/toJuliaOutput/Graphviz.jl");

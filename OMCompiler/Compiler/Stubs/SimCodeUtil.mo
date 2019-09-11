@@ -82,6 +82,13 @@ algorithm
   /* Do nothing */
 end getLocalValueReference;
 
+public function hashEqSystemMod
+  input SimCode.SimEqSystem eq;
+  input Integer mod;
+  output Integer hash = 0;
+algorithm
+  assert(false, getInstanceName());
+end hashEqSystemMod;
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;

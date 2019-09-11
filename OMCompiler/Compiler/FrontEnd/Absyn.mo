@@ -179,6 +179,17 @@ uniontype ClassDef
 end ClassDef;
 
 public
+type ArrayDim = list<Subscript> "Component attributes are
+  properties of components which are applied by type prefixes.
+  As an example, declaring a component as `input Real x;\' will
+  give the attributes `ATTR({},false,VAR,INPUT)\'.
+  Components in Modelica can be scalar or arrays with one or more
+  dimensions. This type is used to indicate the dimensionality
+  of a component or a type definition.
+- Array dimensions" ;
+
+
+public
 uniontype TypeSpec "ModExtension: new MetaModelica type specification!"
   record TPATH
     Path path;
@@ -385,6 +396,11 @@ uniontype GroupImport
 end GroupImport;
 
 public
+type ComponentCondition = Exp "A componentItem can have a condition that must be fulfilled if
+  the component should be instantiated.
+" ;
+
+public
 uniontype ComponentItem "Collection of component and an optional comment"
   record COMPONENTITEM
     Component component "component" ;
@@ -393,11 +409,6 @@ uniontype ComponentItem "Collection of component and an optional comment"
   end COMPONENTITEM;
 
 end ComponentItem;
-
-public
-type ComponentCondition = Exp "A componentItem can have a condition that must be fulfilled if
-  the component should be instantiated.
-" ;
 
 public
 uniontype Component "Some kind of Modelica entity (object or variable)"
@@ -671,15 +682,6 @@ uniontype Direction "Direction"
   end INPUT_OUTPUT;
 end Direction;
 
-public
-type ArrayDim = list<Subscript> "Component attributes are
-  properties of components which are applied by type prefixes.
-  As an example, declaring a component as `input Real x;\' will
-  give the attributes `ATTR({},false,VAR,INPUT)\'.
-  Components in Modelica can be scalar or arrays with one or more
-  dimensions. This type is used to indicate the dimensionality
-  of a component or a type definition.
-- Array dimensions" ;
 
 public
 uniontype Exp "The Exp uniontype is the container of a Modelica expression.
@@ -802,7 +804,8 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
   end LIST;
 
   record DOT "exp.index"
-    Exp exp, index;
+    Exp exp;
+    Exp index;
   end DOT;
 
 end Exp;

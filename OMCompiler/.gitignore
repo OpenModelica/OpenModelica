@@ -115,6 +115,8 @@ Compiler/Script/OpenModelicaScriptingAPI.mo
 Compiler/Script/OpenModelicaScriptingAPIQt.cpp
 Compiler/Script/OpenModelicaScriptingAPIQt.h
 Compiler/Template/AbsynDumpTpl.mo
+Compiler/Template/AbsynToJulia.mo
+Compiler/Template/AbsynJLDumpTpl.mo
 Compiler/Template/Codegen*.mo
 Compiler/Template/DAEDumpTpl.mo
 Compiler/Template/ExpressionDumpTpl.mo
@@ -122,6 +124,7 @@ Compiler/Template/GenerateAPIFunctionsTpl.mo
 Compiler/Template/GraphMLDumpTpl.mo
 Compiler/Template/GraphvizDump.mo
 Compiler/Template/Makefile
+Compiler/Template/MMToJulia.mo
 Compiler/Template/NFInstDumpTpl.mo
 Compiler/Template/SCodeDumpTpl.mo
 Compiler/Template/SimCodeDump.mo
