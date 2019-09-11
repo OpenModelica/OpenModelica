@@ -580,13 +580,13 @@ Component* GraphicsView::getComponentObject(QString componentName)
  */
 QString GraphicsView::getUniqueComponentName(QString componentName, int number)
 {
-  QString name;
-  name = QString(componentName).append(QString::number(number));
-  foreach (Component *pComponent, mComponentsList) {
-    if (pComponent->getName().compare(name, Qt::CaseSensitive) == 0) {
-      name = getUniqueComponentName(componentName, ++number);
-      break;
-    }
+  QString name = componentName;
+  if (number > 0) {
+    name = QString("%1%2").arg(componentName).arg(number);
+  }
+
+  if (!checkComponentName(name)) {
+    name = getUniqueComponentName(componentName, ++number);
   }
   return name;
 }

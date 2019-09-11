@@ -206,7 +206,7 @@ public:
   void deleteComponentFromList(Component *pComponent) {mComponentsList.removeOne(pComponent);}
   void deleteInheritedComponentFromList(Component *pComponent) {mInheritedComponentsList.removeOne(pComponent);}
   Component* getComponentObject(QString componentName);
-  QString getUniqueComponentName(QString componentName, int number = 1);
+  QString getUniqueComponentName(QString componentName, int number = 0);
   bool checkComponentName(QString componentName);
   QList<Component*> getComponentsList() {return mComponentsList;}
   QList<Component*> getInheritedComponentsList() {return mInheritedComponentsList;}
