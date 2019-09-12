@@ -62,7 +62,7 @@ public:
   QString getShapeAnnotation() override;
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
 public slots:
-  void duplicate();
+  void duplicate() override;
 };
 
 #endif // RECTANGLEANNOTATION_H

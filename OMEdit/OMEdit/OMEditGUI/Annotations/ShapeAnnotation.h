@@ -207,7 +207,7 @@ signals:
   void deleted();
 public slots:
   void deleteMe();
-  virtual void duplicate();
+  virtual void duplicate() = 0;
   void bringToFront();
   void bringForward();
   void sendToBack();

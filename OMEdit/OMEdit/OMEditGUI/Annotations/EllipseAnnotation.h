@@ -58,7 +58,7 @@ public:
   QString getShapeAnnotation() override;
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
 public slots:
-  void duplicate();
+  void duplicate() override;
 };
 
 #endif // ELLIPSEANNOTATION_H
