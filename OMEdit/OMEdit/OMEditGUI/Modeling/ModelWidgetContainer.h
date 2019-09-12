@@ -197,7 +197,7 @@ public:
   QAction* getFlipVerticalAction() {return mpFlipVerticalAction;}
   bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
-                          ComponentInfo *pComponentInfo, bool addObject = true, bool openingClass = false);
+                          ComponentInfo *pComponentInfo, bool addObject, bool openingClass, bool emitComponentAdded);
   void addComponentToList(Component *pComponent) {mComponentsList.append(pComponent);}
   void addInheritedComponentToList(Component *pComponent) {mInheritedComponentsList.append(pComponent);}
   void addComponentToClass(Component *pComponent);
@@ -291,14 +291,13 @@ private:
   void checkEmitUpdateSelect(const bool showPropertiesAndSelect, ShapeAnnotation* shapeAnnotation);
   void copyItems(bool cut);
 signals:
-  void mouseManhattanize();
-  void mouseDelete();
+  void manhattanize();
+  void deleteSignal();
   void mouseDuplicate();
   void mouseRotateClockwise();
   void mouseRotateAntiClockwise();
   void mouseFlipHorizontal();
   void mouseFlipVertical();
-  void keyPressDelete();
   void keyPressRotateClockwise();
   void keyPressRotateAntiClockwise();
   void keyPressFlipHorizontal();

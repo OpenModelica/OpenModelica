@@ -63,7 +63,7 @@ public:
 private:
   Component *mpComponent;
 public slots:
-  void duplicate();
+  void duplicate() override;
 };
 
 #endif // BITMAPANNOTATION_H

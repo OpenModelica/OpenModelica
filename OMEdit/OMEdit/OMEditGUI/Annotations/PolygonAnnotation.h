@@ -65,7 +65,7 @@ public:
   void updateEndPoint(QPointF point);
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
 public slots:
-  void duplicate();
+  void duplicate() override;
 };
 
 #endif // POLYGONANNOTATION_H

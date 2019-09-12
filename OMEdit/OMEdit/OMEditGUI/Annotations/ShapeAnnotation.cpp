@@ -1242,15 +1242,6 @@ void ShapeAnnotation::deleteMe()
 }
 
 /*!
- * \brief ShapeAnnotation::duplicate
- * Reimplemented by each child shape class to duplicate the shape.
- */
-void ShapeAnnotation::duplicate()
-{
-  /* duplicate code is implemented in each child shape class. */
-}
-
-/*!
  * \brief ShapeAnnotation::bringToFront
  * Brings the shape to front of all other shapes.
  */
@@ -1787,10 +1778,9 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
       /* Only allow manipulations on shapes if the class is not a system library class OR shape is not an inherited component. */
       if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedShape()) {
         if (pLineAnnotation) {
-          connect(mpGraphicsView, SIGNAL(mouseManhattanize()), this, SLOT(manhattanizeShape()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(manhattanize()), this, SLOT(manhattanizeShape()), Qt::UniqueConnection);
         }
-        connect(mpGraphicsView, SIGNAL(mouseDelete()), this, SLOT(deleteMe()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(deleteSignal()), this, SLOT(deleteMe()), Qt::UniqueConnection);
         if (lineType == LineAnnotation::ShapeType) {
           connect(mpGraphicsView, SIGNAL(mouseDuplicate()), this, SLOT(duplicate()), Qt::UniqueConnection);
           connect(mpGraphicsView->getBringToFrontAction(), SIGNAL(triggered()), this, SLOT(bringToFront()), Qt::UniqueConnection);
@@ -1822,10 +1812,9 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
       /* Only allow manipulations on shapes if the class is not a system library class OR shape is not an inherited component. */
       if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedShape()) {
         if (pLineAnnotation) {
-          disconnect(mpGraphicsView, SIGNAL(mouseManhattanize()), this, SLOT(manhattanizeShape()));
+          disconnect(mpGraphicsView, SIGNAL(manhattanize()), this, SLOT(manhattanizeShape()));
         }
-        disconnect(mpGraphicsView, SIGNAL(mouseDelete()), this, SLOT(deleteMe()));
-        disconnect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()));
+        disconnect(mpGraphicsView, SIGNAL(deleteSignal()), this, SLOT(deleteMe()));
         if (lineType == LineAnnotation::ShapeType) {
           disconnect(mpGraphicsView, SIGNAL(mouseDuplicate()), this, SLOT(duplicate()));
           disconnect(mpGraphicsView->getBringToFrontAction(), SIGNAL(triggered()), this, SLOT(bringToFront()));

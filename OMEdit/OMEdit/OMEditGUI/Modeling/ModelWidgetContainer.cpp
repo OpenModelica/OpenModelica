@@ -321,7 +321,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
         pComponentInfo->setStartCommand("");
       }
       pComponentInfo->setModelFile(fileInfo.fileName());
-      addComponentToView(name, pLibraryTreeItem, "", position, pComponentInfo, true, false);
+      addComponentToView(name, pLibraryTreeItem, "", position, pComponentInfo, true, false, true);
       return true;
     }
   } else {
@@ -397,7 +397,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
         // if item is a class, model, block, connector or record. then we can drop it to the graphicsview
         if ((type == StringHandler::Class) || (type == StringHandler::Model) || (type == StringHandler::Block) ||
             (type == StringHandler::ExpandableConnector) || (type == StringHandler::Connector) || (type == StringHandler::Record)) {
-          addComponentToView(name, pLibraryTreeItem, "", position, pComponentInfo);
+          addComponentToView(name, pLibraryTreeItem, "", position, pComponentInfo, true, false, true);
           return true;
         } else {
           QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
@@ -408,7 +408,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
       } else if (mViewType == StringHandler::Icon) { // if dropping an item on the icon layer
         // if item is a connector. then we can drop it to the graphicsview
         if (type == StringHandler::Connector || type == StringHandler::ExpandableConnector) {
-          addComponentToView(name, pLibraryTreeItem, "", position, pComponentInfo);
+          addComponentToView(name, pLibraryTreeItem, "", position, pComponentInfo, true, false, true);
           return true;
         } else {
           QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
@@ -432,15 +432,18 @@ bool GraphicsView::addComponent(QString className, QPointF position)
  * \param pComponentInfo
  * \param addObject
  * \param openingClass
+ * \param emitComponentAdded
  */
 void GraphicsView::addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
-                                      ComponentInfo *pComponentInfo, bool addObject, bool openingClass)
+                                      ComponentInfo *pComponentInfo, bool addObject, bool openingClass, bool emitComponentAdded)
 {
   AddComponentCommand *pAddComponentCommand;
   pAddComponentCommand = new AddComponentCommand(name, pLibraryTreeItem, annotation, position, pComponentInfo, addObject, openingClass, this);
   mpModelWidget->getUndoStack()->push(pAddComponentCommand);
-  if (!openingClass) {
+  if (emitComponentAdded) {
     mpModelWidget->getLibraryTreeItem()->emitComponentAdded(pAddComponentCommand->getComponent());
+  }
+  if (!openingClass) {
     mpModelWidget->updateModelText();
   }
 }
@@ -1784,7 +1787,7 @@ Component* GraphicsView::stateComponentAtPosition(QPoint position)
         if (MainWindow::instance()->getTransitionModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
             !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView()) &&
             ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica &&
-              pComponent->getLibraryTreeItem()->isState()))) {
+              !pComponent->getLibraryTreeItem()->isNonExisting() && pComponent->getLibraryTreeItem()->isState()))) {
           return pComponent;
         }
       }
@@ -2339,7 +2342,7 @@ void GraphicsView::pasteItems()
         }
         ComponentInfo *pComponentInfo = new ComponentInfo(pComponent->getComponentInfo());
         pComponentInfo->setName(name);
-        addComponentToView(name, pComponent->getLibraryTreeItem(), pComponent->getOMCPlacementAnnotation(QPointF(0, 0)), QPointF(0, 0), pComponentInfo, true, true);
+        addComponentToView(name, pComponent->getLibraryTreeItem(), pComponent->getOMCPlacementAnnotation(QPointF(0, 0)), QPointF(0, 0), pComponentInfo, true, true, true);
         Component *pNewComponent = mComponentsList.last();
         pNewComponent->setSelected(true);
       }
@@ -2513,12 +2516,12 @@ void GraphicsView::showRenameDialog()
 
 /*!
  * \brief GraphicsView::manhattanizeItems
- * Manhattanize the selected items by emitting GraphicsView::mouseManhattanize() SIGNAL.
+ * Manhattanize the selected items by emitting GraphicsView::manhattanize() SIGNAL.
  */
 void GraphicsView::manhattanizeItems()
 {
-  mpModelWidget->beginMacro("Manhattanize by mouse");
-  emit mouseManhattanize();
+  mpModelWidget->beginMacro("Manhattanize");
+  emit manhattanize();
   mpModelWidget->updateClassAnnotationIfNeeded();
   mpModelWidget->updateModelText();
   mpModelWidget->endMacro();
@@ -2526,12 +2529,12 @@ void GraphicsView::manhattanizeItems()
 
 /*!
  * \brief GraphicsView::deleteItems
- * Deletes the selected items by emitting GraphicsView::mouseDelete() SIGNAL.
+ * Deletes the selected items by emitting GraphicsView::deleteSignal() SIGNAL.
  */
 void GraphicsView::deleteItems()
 {
-  mpModelWidget->beginMacro("Deleting by mouse");
-  emit mouseDelete();
+  mpModelWidget->beginMacro("Delete items");
+  emit deleteSignal();
   mpModelWidget->updateClassAnnotationIfNeeded();
   mpModelWidget->updateModelText();
   mpModelWidget->endMacro();
@@ -3113,11 +3116,7 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
   bool shiftModifier = event->modifiers().testFlag(Qt::ShiftModifier);
   bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
   if (event->key() == Qt::Key_Delete && isAnyItemSelectedAndEditable(event->key())) {
-    mpModelWidget->beginMacro("Deleting by key press");
-    emit keyPressDelete();
-    mpModelWidget->updateClassAnnotationIfNeeded();
-    mpModelWidget->updateModelText();
-    mpModelWidget->endMacro();
+    deleteItems();
   } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Up && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->beginMacro("Move up by key press");
     emit keyPressUp();
@@ -6016,8 +6015,7 @@ void ModelWidget::drawModelIconComponents()
         annotation = StringHandler::removeFirstLastCurlBrackets(annotation);
         annotation = QString("{%1, Placement(false,0.0,0.0,-10.0,-10.0,10.0,10.0,0.0,-,-,-,-,-,-,)}").arg(annotation);
       }
-      mpIconGraphicsView->addComponentToView(pComponentInfo->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo,
-                                             false, true);
+      mpIconGraphicsView->addComponentToView(pComponentInfo->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo, false, true, false);
     }
     i++;
   }
@@ -6054,8 +6052,7 @@ void ModelWidget::drawModelDiagramComponents()
       annotation = StringHandler::removeFirstLastCurlBrackets(annotation);
       annotation = QString("{%1, Placement(false,0.0,0.0,-10.0,-10.0,10.0,10.0,0.0,-,-,-,-,-,-,)}").arg(annotation);
     }
-    mpDiagramGraphicsView->addComponentToView(pComponentInfo->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo,
-                                              false, true);
+    mpDiagramGraphicsView->addComponentToView(pComponentInfo->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo, false, true, false);
     i++;
   }
 }
@@ -6267,8 +6264,7 @@ void ModelWidget::getCompositeModelSubModels()
       pComponentInfo->setPosition(subModel.attribute("Position"));
       pComponentInfo->setAngle321(subModel.attribute("Angle321"));
       // add submodel as component to view.
-      mpDiagramGraphicsView->addComponentToView(subModel.attribute("Name"), pLibraryTreeItem, transformation, QPointF(0.0, 0.0),
-                                                pComponentInfo, false, true);
+      mpDiagramGraphicsView->addComponentToView(subModel.attribute("Name"), pLibraryTreeItem, transformation, QPointF(0.0, 0.0), pComponentInfo, false, true, false);
     }
   }
 }
