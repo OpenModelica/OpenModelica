@@ -88,6 +88,11 @@ use the following API
 >>> omc.getWorkDirectory()
 'C:/Users/arupa54/AppData/Local/Temp/tp7dd648e5_5de6_4f66_b3d6_90bce1fe1d58'
 
+BuildModel
+~~~~~~~~~~
+The buildModel API can be used after ModelicaSystem(), in case the model needs to be updated or additional simulationflags needs to be set using sendExpression()
+
+>>> buildModel(mod)
 
 Standard get methods
 ~~~~~~~~~~~~~~~~~~~~
