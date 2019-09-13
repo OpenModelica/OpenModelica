@@ -378,7 +378,6 @@ public slots:
   void showElementPropertiesDialog();
   void updateDynamicSelect(double time);
 protected:
-  virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *event);
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);
 };
 

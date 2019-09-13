@@ -176,6 +176,7 @@ public:
   static QString instantiateModel;
   static QString instantiateModelTip;
   static QString FMU;
+  static QString exportt;
   static QString exportFMUTip;
   static QString exportReadonlyPackage;
   static QString exportRealonlyPackageTip;

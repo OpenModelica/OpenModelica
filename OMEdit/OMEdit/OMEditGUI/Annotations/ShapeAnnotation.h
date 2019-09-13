@@ -110,7 +110,6 @@ class ShapeAnnotation : public QObject, public QGraphicsItem, public GraphicItem
   Q_OBJECT
   Q_INTERFACES(QGraphicsItem)
 private:
-  bool mIsCustomShape;
   ShapeAnnotation *mpReferenceShapeAnnotation;
   bool mIsInheritedShape;
   QPointF mOldScenePosition;
@@ -144,6 +143,10 @@ public:
   void removeCornerItems();
   void setOldScenePosition(QPointF oldScenePosition) {mOldScenePosition = oldScenePosition;}
   QPointF getOldScenePosition() {return mOldScenePosition;}
+  QAction* getShapePropertiesAction() const {return mpShapePropertiesAction;}
+  QAction* getAlignInterfacesAction() const {return mpAlignInterfacesAction;}
+  QAction* getShapeAttributesAction() const {return mpShapeAttributesAction;}
+  QAction* getEditTransitionAction() const {return mpEditTransitionAction;}
   virtual void addPoint(QPointF point) {Q_UNUSED(point);}
   virtual void clearPoints() {}
   virtual void replaceExtent(int index, QPointF point);
@@ -266,7 +269,6 @@ protected:
   QImage mImage;
   QList<CornerItem*> mCornerItemsList;
   QList<QVariant> mDynamicTextString; /* list of String() arguments */
-  virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent);
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);
 };
 

@@ -4723,7 +4723,7 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   : QWidget(pOptionsDialog)
 {
   mpOptionsDialog = pOptionsDialog;
-  mpExportGroupBox = new QGroupBox(tr("Export"));
+  mpExportGroupBox = new QGroupBox(Helper::exportt);
   // FMI export version
   mpVersionGroupBox = new QGroupBox(Helper::version);
   mpVersion1RadioButton = new QRadioButton("1.0");

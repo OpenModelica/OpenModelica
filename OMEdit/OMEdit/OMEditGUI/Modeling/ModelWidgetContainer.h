@@ -272,6 +272,7 @@ private:
   bool isAnyItemSelectedAndEditable(int key);
   bool isCreatingShape();
   Component* getComponentFromQGraphicsItem(QGraphicsItem *pGraphicsItem);
+  Component* componentAtPosition(QPoint position);
   Component* connectorComponentAtPosition(QPoint position);
   Component* stateComponentAtPosition(QPoint position);
   bool isParameterConnectorSizing(Component *pComponent, QString parameter);
@@ -290,6 +291,18 @@ private:
   void finishDrawingBitmapShape();
   void checkEmitUpdateSelect(const bool showPropertiesAndSelect, ShapeAnnotation* shapeAnnotation);
   void copyItems(bool cut);
+  void modelicaGraphicsViewContextMenu(QMenu *pMenu);
+  void modelicaOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation, QMenu *pMenu);
+  void modelicaOneComponentContextMenu(Component *pComponent, QMenu *pMenu);
+  void modelicaMultipleItemsContextMenu(QMenu *pMenu);
+  void compositeModelGraphicsViewContextMenu(QMenu *pMenu);
+  void compositeModelOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation, QMenu *pMenu);
+  void compositeModelOneComponentContextMenu(Component *pComponent, QMenu *pMenu);
+  void compositeModelMultipleItemsContextMenu(QMenu *pMenu);
+  void omsGraphicsViewContextMenu(QMenu *pMenu);
+  void omsOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation, QMenu *pMenu);
+  void omsOneComponentContextMenu(Component *pComponent, QMenu *pMenu);
+  void omsMultipleItemsContextMenu(QMenu *pMenu);
 signals:
   void mouseManhattanize();
   void mouseDelete();
@@ -331,7 +344,7 @@ public slots:
   void cutItems();
   void copyItems();
   void pasteItems();
-  void clearSelection();
+  void clearSelection(QGraphicsItem *pSelectGraphicsItem = 0);
   void addClassAnnotation(bool alwaysAdd = true);
   void showGraphicsViewProperties();
   void showRenameDialog();

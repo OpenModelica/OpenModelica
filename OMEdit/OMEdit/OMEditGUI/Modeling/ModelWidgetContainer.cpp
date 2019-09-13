@@ -1731,6 +1731,27 @@ Component *GraphicsView::getComponentFromQGraphicsItem(QGraphicsItem *pGraphicsI
 }
 
 /*!
+ * \brief GraphicsView::componentAtPosition
+ * Returns the first component at the position.
+ * \param position
+ * \return
+ */
+Component *GraphicsView::componentAtPosition(QPoint position)
+{
+  QList<QGraphicsItem*> graphicsItems = items(position);
+  foreach (QGraphicsItem *pGraphicsItem, graphicsItems) {
+    Component *pComponent = getComponentFromQGraphicsItem(pGraphicsItem);
+    if (pComponent) {
+      Component *pRootComponent = pComponent->getRootParentComponent();
+      if (pRootComponent && pRootComponent->getLibraryTreeItem() && !pRootComponent->getLibraryTreeItem()->isNonExisting()) {
+        return pRootComponent;
+      }
+    }
+  }
+  return 0;
+}
+
+/*!
  * \brief GraphicsView::connectorComponentAtPosition
  * Returns the connector component at the position.
  * \param position
@@ -2228,8 +2249,8 @@ void GraphicsView::zoomOut()
  */
 void GraphicsView::selectAll()
 {
-  foreach (QGraphicsItem *pItem, items()) {
-    pItem->setSelected(true);
+  foreach (QGraphicsItem *pGraphicsItem, items()) {
+    pGraphicsItem->setSelected(true);
   }
 }
 
@@ -2291,6 +2312,273 @@ void GraphicsView::copyItems(bool cut)
       deleteItems();
     }
   }
+}
+
+/*!
+ * \brief GraphicsView::modelicaGraphicsViewContextMenu
+ * Creates a context menu for Modelica class.
+ * \param pMenu
+ */
+void GraphicsView::modelicaGraphicsViewContextMenu(QMenu *pMenu)
+{
+  QMenu *pExportMenu = pMenu->addMenu(Helper::exportt);
+  pExportMenu->addAction(MainWindow::instance()->getExportToClipboardAction());
+  pExportMenu->addAction(MainWindow::instance()->getExportAsImageAction());
+  if (!isVisualizationView()) {
+    pExportMenu->addAction(MainWindow::instance()->getExportToOMNotebookAction());
+    pMenu->addSeparator();
+    mpPasteAction->setEnabled(QApplication::clipboard()->mimeData()->hasFormat(Helper::cutCopyPasteFormat));
+    pMenu->addAction(mpPasteAction);
+  }
+  pMenu->addSeparator();
+  pMenu->addAction(MainWindow::instance()->getPrintModelAction());
+  pMenu->addSeparator();
+  pMenu->addAction(mpPropertiesAction);
+}
+
+/*!
+ * \brief GraphicsView::modelicaOneShapeContextMenu
+ * Creates a context menu for Modelica class when one shape is right clicked.
+ * \param pShapeAnnotation
+ * \param pMenu
+ */
+void GraphicsView::modelicaOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation, QMenu *pMenu)
+{
+  LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(pShapeAnnotation);
+  pMenu->addAction(pShapeAnnotation->getShapePropertiesAction());
+  pMenu->addSeparator();
+  pMenu->addAction(mpDeleteAction);
+  pMenu->addSeparator();
+  pMenu->addAction(mpCutAction);
+  pMenu->addAction(mpCopyAction);
+  if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
+    // nothing special for connection
+  } else if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
+    pMenu->addSeparator();
+    pMenu->addAction(pShapeAnnotation->getEditTransitionAction());
+  } else if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ShapeType) {
+    pMenu->addAction(mpDuplicateAction);
+    pMenu->addSeparator();
+    pMenu->addAction(mpManhattanizeAction);
+  } else {
+    pMenu->addAction(mpDuplicateAction);
+    pMenu->addSeparator();
+    pMenu->addAction(mpRotateClockwiseAction);
+    pMenu->addAction(mpRotateAntiClockwiseAction);
+    pMenu->addSeparator();
+    pMenu->addAction(mpBringToFrontAction);
+    pMenu->addAction(mpBringForwardAction);
+    pMenu->addAction(mpSendToBackAction);
+    pMenu->addAction(mpSendBackwardAction);
+  }
+}
+
+/*!
+ * \brief GraphicsView::modelicaOneComponentContextMenu
+ * Creates a context menu for Modelica class when one component is right clicked.
+ * \param pComponent
+ * \param pMenu
+ */
+void GraphicsView::modelicaOneComponentContextMenu(Component *pComponent, QMenu *pMenu)
+{
+  pMenu->addAction(pComponent->getParametersAction());
+  pMenu->addAction(pComponent->getAttributesAction());
+  pMenu->addSeparator();
+  pMenu->addAction(pComponent->getOpenClassAction());
+  pMenu->addSeparator();
+  pMenu->addAction(mpDeleteAction);
+  pMenu->addSeparator();
+  pMenu->addAction(mpCutAction);
+  pMenu->addAction(mpCopyAction);
+  pMenu->addAction(mpDuplicateAction);
+  pMenu->addSeparator();
+  pMenu->addAction(mpRotateClockwiseAction);
+  pMenu->addAction(mpRotateAntiClockwiseAction);
+  pMenu->addAction(mpFlipHorizontalAction);
+  pMenu->addAction(mpFlipVerticalAction);
+}
+
+/*!
+ * \brief GraphicsView::modelicaMultipleItemsContextMenu
+ * Creates a context menu for Modelica class when multiple items are right clicked.
+ * \param pMenu
+ */
+void GraphicsView::modelicaMultipleItemsContextMenu(QMenu *pMenu)
+{
+  pMenu->addAction(mpDeleteAction);
+  pMenu->addSeparator();
+  pMenu->addAction(mpCutAction);
+  pMenu->addAction(mpCopyAction);
+  pMenu->addAction(mpDuplicateAction);
+  pMenu->addSeparator();
+  pMenu->addAction(mpRotateClockwiseAction);
+  pMenu->addAction(mpRotateAntiClockwiseAction);
+}
+
+/*!
+ * \brief GraphicsView::compositeModelGraphicsViewContextMenu
+ * Creates a context menu for Composite model.
+ * \param pMenu
+ */
+void GraphicsView::compositeModelGraphicsViewContextMenu(QMenu *pMenu)
+{
+  QMenu *pExportMenu = pMenu->addMenu(Helper::exportt);
+  pExportMenu->addAction(MainWindow::instance()->getExportToClipboardAction());
+  pExportMenu->addAction(MainWindow::instance()->getExportAsImageAction());
+  pMenu->addSeparator();
+  pMenu->addAction(MainWindow::instance()->getPrintModelAction());
+  pMenu->addSeparator();
+  pMenu->addAction(mpRenameAction);
+  pMenu->addSeparator();
+  pMenu->addAction(mpSimulationParamsAction);
+}
+
+/*!
+ * \brief GraphicsView::compositeModelOneShapeContextMenu
+ * Creates a context menu for Composite model when one shape is right clicked.
+ * \param pShapeAnnotation
+ * \param pMenu
+ */
+void GraphicsView::compositeModelOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation, QMenu *pMenu)
+{
+  pMenu->addAction(pShapeAnnotation->getShapeAttributesAction());
+  //Only show align interfaces action for bidirectional connections
+  LineAnnotation *pConnectionLineAnnotation = dynamic_cast<LineAnnotation*>(pShapeAnnotation);
+  if (pConnectionLineAnnotation) {
+    QString startName = pConnectionLineAnnotation->getStartComponentName();
+    QString endName = pConnectionLineAnnotation->getEndComponentName();
+    CompositeModelEditor *pEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
+    if (pEditor && pEditor->getInterfaceCausality(startName) == StringHandler::getTLMCausality(StringHandler::TLMBidirectional) &&
+        pEditor->getInterfaceCausality(endName) == StringHandler::getTLMCausality(StringHandler::TLMBidirectional)) {
+        pMenu->addSeparator();
+        pMenu->addAction(pShapeAnnotation->getAlignInterfacesAction());
+    }
+  }
+  pMenu->addSeparator();
+  pMenu->addAction(mpDeleteAction);
+}
+
+/*!
+ * \brief GraphicsView::compositeModelOneComponentContextMenu
+ * Creates a context menu for Composite model when one component is right clicked.
+ * \param pComponent
+ * \param pMenu
+ */
+void GraphicsView::compositeModelOneComponentContextMenu(Component *pComponent, QMenu *pMenu)
+{
+  pMenu->addAction(pComponent->getFetchInterfaceDataAction());
+  pMenu->addSeparator();
+  pMenu->addAction(pComponent->getSubModelAttributesAction());
+  pMenu->addSeparator();
+  pMenu->addAction(mpDeleteAction);
+  pMenu->addSeparator();
+  pMenu->addAction(mpRotateClockwiseAction);
+  pMenu->addAction(mpRotateAntiClockwiseAction);
+  pMenu->addAction(mpFlipHorizontalAction);
+  pMenu->addAction(mpFlipVerticalAction);
+}
+
+/*!
+ * \brief GraphicsView::compositeModelMultipleItemsContextMenu
+ * Creates a context menu for Composite model when multiple items are right clicked.
+ * \param pMenu
+ */
+void GraphicsView::compositeModelMultipleItemsContextMenu(QMenu *pMenu)
+{
+  pMenu->addAction(mpDeleteAction);
+  pMenu->addSeparator();
+  pMenu->addAction(mpRotateClockwiseAction);
+  pMenu->addAction(mpRotateAntiClockwiseAction);
+  pMenu->addAction(mpFlipHorizontalAction);
+  pMenu->addAction(mpFlipVerticalAction);
+}
+
+/*!
+ * \brief GraphicsView::omsGraphicsViewContextMenu
+ * Creates a context menu for OMSimulator model.
+ * \param pMenu
+ */
+void GraphicsView::omsGraphicsViewContextMenu(QMenu *pMenu)
+{
+  QMenu *pExportMenu = pMenu->addMenu(Helper::exportt);
+  pExportMenu->addAction(MainWindow::instance()->getExportToClipboardAction());
+  pExportMenu->addAction(MainWindow::instance()->getExportAsImageAction());
+  pMenu->addSeparator();
+  pMenu->addAction(MainWindow::instance()->getPrintModelAction());
+  pMenu->addSeparator();
+  if (mpModelWidget->getLibraryTreeItem()->isTopLevel() || mpModelWidget->getLibraryTreeItem()->isSystemElement()) {
+    pMenu->addSeparator();
+    pMenu->addAction(MainWindow::instance()->getAddSystemAction());
+    if (mpModelWidget->getLibraryTreeItem()->isTopLevel()) {
+      pMenu->addSeparator();
+      pMenu->addAction(mpPropertiesAction);
+    }
+  }
+  if (mpModelWidget->getLibraryTreeItem()->isSystemElement() || mpModelWidget->getLibraryTreeItem()->isComponentElement()) {
+    pMenu->addSeparator();
+    pMenu->addAction(MainWindow::instance()->getAddOrEditIconAction());
+    pMenu->addAction(MainWindow::instance()->getDeleteIconAction());
+    pMenu->addSeparator();
+    pMenu->addAction(MainWindow::instance()->getAddConnectorAction());
+    pMenu->addAction(MainWindow::instance()->getAddBusAction());
+    pMenu->addAction(MainWindow::instance()->getAddTLMBusAction());
+    if (mpModelWidget->getLibraryTreeItem()->isSystemElement()) {
+      pMenu->addSeparator();
+      pMenu->addAction(MainWindow::instance()->getAddSubModelAction());
+      pMenu->addSeparator();
+      pMenu->addAction(mpPropertiesAction);
+    }
+  }
+}
+
+/*!
+ * \brief GraphicsView::omsOneShapeContextMenu
+ * Creates a context menu for OMSimulator model when one shape is right clicked.
+ * \param pShapeAnnotation
+ * \param pMenu
+ */
+void GraphicsView::omsOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation, QMenu *pMenu)
+{
+  BitmapAnnotation *pBitmapAnnotation = dynamic_cast<BitmapAnnotation*>(pShapeAnnotation);
+  if (pBitmapAnnotation && mpModelWidget->getLibraryTreeItem()->getOMSElement()) {
+    pMenu->addAction(MainWindow::instance()->getAddOrEditIconAction());
+    pMenu->addAction(MainWindow::instance()->getDeleteIconAction());
+  }
+}
+
+/*!
+ * \brief GraphicsView::omsOneComponentContextMenu
+ * Creates a context menu for OMSimulator model when one component is right clicked.
+ * \param pComponent
+ * \param pMenu
+ */
+void GraphicsView::omsOneComponentContextMenu(Component *pComponent, QMenu *pMenu)
+{
+  if (pComponent->getLibraryTreeItem()->isSystemElement() || pComponent->getLibraryTreeItem()->isComponentElement()) {
+    pMenu->addAction(pComponent->getElementPropertiesAction());
+  }
+  pMenu->addSeparator();
+  pMenu->addAction(mpDeleteAction);
+  pMenu->addSeparator();
+  pMenu->addAction(mpRotateClockwiseAction);
+  pMenu->addAction(mpRotateAntiClockwiseAction);
+  pMenu->addAction(mpFlipHorizontalAction);
+  pMenu->addAction(mpFlipVerticalAction);
+}
+
+/*!
+ * \brief GraphicsView::omsMultipleItemsContextMenu
+ * Creates a context menu for OMSimulator model when multiple items are right clicked.
+ * \param pMenu
+ */
+void GraphicsView::omsMultipleItemsContextMenu(QMenu *pMenu)
+{
+  pMenu->addAction(mpDeleteAction);
+  pMenu->addSeparator();
+  pMenu->addAction(mpRotateClockwiseAction);
+  pMenu->addAction(mpRotateAntiClockwiseAction);
+  pMenu->addAction(mpFlipHorizontalAction);
+  pMenu->addAction(mpFlipVerticalAction);
 }
 
 /*!
@@ -2377,11 +2665,17 @@ void GraphicsView::pasteItems()
 /*!
  * \brief GraphicsView::clearSelection
  * Clears the selection of all shapes, components and connectors.
+ * Selects the passed item if its valid.
+ * \param pSelectGraphicsItem
  */
-void GraphicsView::clearSelection()
+void GraphicsView::clearSelection(QGraphicsItem *pSelectGraphicsItem)
 {
-  foreach (QGraphicsItem *pItem, items()) {
-    pItem->setSelected(false);
+  foreach (QGraphicsItem *pGraphicsItem, items()) {
+    pGraphicsItem->setSelected(false);
+  }
+  // only select the item if it is valid
+  if (pSelectGraphicsItem) {
+    pSelectGraphicsItem->setSelected(true);
   }
 }
 
@@ -3168,11 +3462,11 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
     mpModelWidget->endMacro();
   } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_A) {
     selectAll();
-  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_X && isAnyItemSelectedAndEditable(event->key())) {
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_X && isAnyItemSelectedAndEditable(event->key()) && mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     cutItems();
-  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_C) {
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_C && mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     copyItems();
-  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_V) {
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_V && mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     pasteItems();
   } else if (controlModifier && event->key() == Qt::Key_D && isAnyItemSelectedAndEditable(event->key())) {
     mpModelWidget->beginMacro("Duplicate by key press");
@@ -3307,52 +3601,97 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
   }
   // if some item is right clicked then don't show graphics view context menu
   if (!itemAt(event->pos())) {
-    QMenu menu(MainWindow::instance());
-    menu.addAction(MainWindow::instance()->getExportAsImageAction());
-    menu.addAction(MainWindow::instance()->getExportToClipboardAction());
-    if (!isVisualizationView()) {
-      menu.addSeparator();
-      menu.addAction(MainWindow::instance()->getExportToOMNotebookAction());
-      menu.addSeparator();
-      menu.addAction(mpPasteAction);
-    }
-    menu.addSeparator();
-    menu.addAction(MainWindow::instance()->getPrintModelAction());
+    QMenu menu;
     if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-      menu.addSeparator();
-      menu.addAction(mpPropertiesAction);
+      modelicaGraphicsViewContextMenu(&menu);
     } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
-      menu.addSeparator();
-      menu.addAction(mpRenameAction);
-      menu.addSeparator();
-      menu.addAction(mpSimulationParamsAction);
+      compositeModelGraphicsViewContextMenu(&menu);
     } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-      if (mpModelWidget->getLibraryTreeItem()->isTopLevel() || mpModelWidget->getLibraryTreeItem()->isSystemElement()) {
-        menu.addSeparator();
-        menu.addAction(MainWindow::instance()->getAddSystemAction());
-        if (mpModelWidget->getLibraryTreeItem()->isTopLevel()) {
-          menu.addSeparator();
-          menu.addAction(mpPropertiesAction);
-        }
-      }
-      if (mpModelWidget->getLibraryTreeItem()->isSystemElement() || mpModelWidget->getLibraryTreeItem()->isComponentElement()) {
-        menu.addSeparator();
-        menu.addAction(MainWindow::instance()->getAddOrEditIconAction());
-        menu.addAction(MainWindow::instance()->getDeleteIconAction());
-        menu.addSeparator();
-        menu.addAction(MainWindow::instance()->getAddConnectorAction());
-        menu.addAction(MainWindow::instance()->getAddBusAction());
-        menu.addAction(MainWindow::instance()->getAddTLMBusAction());
-        if (mpModelWidget->getLibraryTreeItem()->isSystemElement()) {
-          menu.addSeparator();
-          menu.addAction(MainWindow::instance()->getAddSubModelAction());
-          menu.addSeparator();
-          menu.addAction(mpPropertiesAction);
-        }
-      }
+      omsGraphicsViewContextMenu(&menu);
     }
     menu.exec(event->globalPos());
-    return;         // return from it because at a time we only want one context menu.
+    return; // return from it because at a time we only want one context menu.
+  } else {  // if we click on some item.
+    bool oneShapeSelected = false;
+    bool oneComponentSelected = false;
+    // if a shape is right clicked
+    ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(itemAt(event->pos()));
+    Component *pComponent = 0;
+    if (pShapeAnnotation && pShapeAnnotation->getGraphicsView()) {
+      if (!pShapeAnnotation->isSelected()) {
+        clearSelection(pShapeAnnotation);
+      }
+      oneShapeSelected = scene()->selectedItems().size() == 1;
+    } else {
+      // if a component is right clicked
+      pComponent = componentAtPosition(event->pos());
+      if (pComponent) {
+        if (!pComponent->isSelected()) {
+          clearSelection(pComponent);
+        }
+        oneComponentSelected = scene()->selectedItems().size() == 1;
+      }
+    }
+    // construct context menu now
+    QMenu menu;
+    if (oneShapeSelected) {
+      if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+        modelicaOneShapeContextMenu(pShapeAnnotation, &menu);
+      } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+        compositeModelOneShapeContextMenu(pShapeAnnotation, &menu);
+      } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+        omsOneShapeContextMenu(pShapeAnnotation, &menu);
+      }
+    } else if (oneComponentSelected) {
+      if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+        modelicaOneComponentContextMenu(pComponent, &menu);
+      } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+        compositeModelOneComponentContextMenu(pComponent, &menu);
+      } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+        // No context menu for component of type OMS connector i.e., input/output signal or OMS bus connector.
+        if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
+            && (pComponent->getLibraryTreeItem()->getOMSConnector()
+                || pComponent->getLibraryTreeItem()->getOMSBusConnector()
+                || pComponent->getLibraryTreeItem()->getOMSTLMBusConnector())) {
+          return;
+        }
+        omsOneComponentContextMenu(pComponent, &menu);
+      }
+    } else {
+      if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+        modelicaMultipleItemsContextMenu(&menu);
+      } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+        compositeModelMultipleItemsContextMenu(&menu);
+      } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+        omsMultipleItemsContextMenu(&menu);
+      }
+    }
+    // enable/disable common actions based on if any inherited item is selected
+    bool noInheritedItemSelected = true;
+    QList<QGraphicsItem*> graphicsItems = scene()->selectedItems();
+    foreach (QGraphicsItem *pGraphicsItem, graphicsItems) {
+      Component *pComponent = getComponentFromQGraphicsItem(pGraphicsItem);
+      if (pComponent) {
+        Component *pRootComponent = pComponent->getRootParentComponent();
+        if (pRootComponent && pRootComponent->isInheritedComponent() && pRootComponent->isSelected()) {
+          noInheritedItemSelected = false;
+        }
+      } else if (ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(pGraphicsItem)) {
+        if (pShapeAnnotation->isInheritedShape() && pShapeAnnotation->isSelected()) {
+          noInheritedItemSelected = false;
+        }
+      }
+    }
+    mpManhattanizeAction->setEnabled(noInheritedItemSelected);
+    mpDeleteAction->setEnabled(noInheritedItemSelected);
+    mpCutAction->setEnabled(noInheritedItemSelected);
+    mpDuplicateAction->setEnabled(noInheritedItemSelected);
+    mpRotateClockwiseAction->setEnabled(noInheritedItemSelected);
+    mpRotateAntiClockwiseAction->setEnabled(noInheritedItemSelected);
+    mpFlipHorizontalAction->setEnabled(noInheritedItemSelected);
+    mpFlipVerticalAction->setEnabled(noInheritedItemSelected);
+    menu.exec(event->globalPos());
+    return; // return from it because at a time we only want one context menu.
   }
   QGraphicsView::contextMenuEvent(event);
 }
@@ -7432,8 +7771,8 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getInstantiateModelAction()->setEnabled(enabled && modelica && accessAnnotation);
   MainWindow::instance()->getCheckModelAction()->setEnabled(enabled && modelica);
   MainWindow::instance()->getCheckAllModelsAction()->setEnabled(enabled && modelica);
-  MainWindow::instance()->getExportToClipboardAction()->setEnabled(enabled && modelica);
-  MainWindow::instance()->getExportAsImageAction()->setEnabled(enabled && modelica);
+  MainWindow::instance()->getExportToClipboardAction()->setEnabled(enabled && (modelica || compositeModel || oms));
+  MainWindow::instance()->getExportAsImageAction()->setEnabled(enabled && (modelica || compositeModel || oms));
   MainWindow::instance()->getExportFMUAction()->setEnabled(enabled && modelica);
   bool packageSaveAsFolder = (enabled && pLibraryTreeItem && pLibraryTreeItem->isTopLevel()
                               && pLibraryTreeItem->getRestriction() == StringHandler::Package

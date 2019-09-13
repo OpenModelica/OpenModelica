@@ -3319,12 +3319,12 @@ void LibraryTreeView::libraryTreeItemDoubleClicked(const QModelIndex &index)
 void LibraryTreeView::showContextMenu(QPoint point)
 {
   QMenu menu(this);
+  QMenu exportMenu(Helper::exportt);
   if (indexAt(point).isValid()) {
     QModelIndex index = mpLibraryWidget->getLibraryTreeProxyModel()->mapToSource(indexAt(point));
     LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(index.internalPointer());
     if (pLibraryTreeItem) {
       QFileInfo fileInfo(pLibraryTreeItem->getFileName());
-      QMenu *pExportMenu = new QMenu(tr("Export"), this);
       switch (pLibraryTreeItem->getLibraryType()) {
         case LibraryTreeItem::Modelica:
         default:
@@ -3398,15 +3398,15 @@ void LibraryTreeView::showContextMenu(QPoint point)
           }
           menu.addSeparator();
           // add actions to Export menu
-          pExportMenu->addAction(mpExportFMUAction);
+          exportMenu.addAction(mpExportFMUAction);
           if (pLibraryTreeItem->isTopLevel() && pLibraryTreeItem->getRestriction() == StringHandler::Package
               && pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure) {
-            pExportMenu->addAction(mpExportReadonlyPackageAction);
-            pExportMenu->addAction(mpExportEncryptedPackageAction);
+            exportMenu.addAction(mpExportReadonlyPackageAction);
+            exportMenu.addAction(mpExportEncryptedPackageAction);
           }
-          pExportMenu->addAction(mpExportXMLAction);
-          pExportMenu->addAction(mpExportFigaroAction);
-          menu.addMenu(pExportMenu);
+          exportMenu.addAction(mpExportXMLAction);
+          exportMenu.addAction(mpExportFigaroAction);
+          menu.addMenu(&exportMenu);
           if (pLibraryTreeItem->isSimulationAllowed()) {
             menu.addSeparator();
             menu.addAction(mpUpdateBindingsAction);
