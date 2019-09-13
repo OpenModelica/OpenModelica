@@ -3726,7 +3726,7 @@ void MainWindow::createMenus()
   pFileMenu->addMenu(pImportMenu);
   // Export menu
   QMenu *pExportMenu = new QMenu(menuBar());
-  pExportMenu->setTitle(tr("Export"));
+  pExportMenu->setTitle(Helper::exportt);
   // add actions to Export menu
   pExportMenu->addAction(mpExportToClipboardAction);
   pExportMenu->addAction(mpExportAsImageAction);

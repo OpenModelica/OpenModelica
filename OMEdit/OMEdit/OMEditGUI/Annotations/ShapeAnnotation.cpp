@@ -323,7 +323,6 @@ ShapeAnnotation::ShapeAnnotation(ShapeAnnotation *pShapeAnnotation, QGraphicsIte
   mpGraphicsView = 0;
   mpParentComponent = dynamic_cast<Component*>(pParent);
   //mTransformation = 0;
-  mIsCustomShape = false;
   mpReferenceShapeAnnotation = pShapeAnnotation;
   mIsInheritedShape = false;
   setOldScenePosition(QPointF(0, 0));
@@ -349,7 +348,6 @@ ShapeAnnotation::ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsVie
   mpParentComponent = 0;
   mTransformation = Transformation(StringHandler::Diagram);
   mpReferenceShapeAnnotation = pShapeAnnotation;
-  mIsCustomShape = true;
   mIsInheritedShape = inheritedShape;
   setOldScenePosition(QPointF(0, 0));
   mIsCornerItemClicked = false;
@@ -1668,92 +1666,6 @@ void ShapeAnnotation::alignInterfaces()
   LineAnnotation *pConnectionLineAnnotation = dynamic_cast<LineAnnotation*>(this);
   AlignInterfacesDialog *pAlignInterfacesDialog = new AlignInterfacesDialog(mpGraphicsView->getModelWidget(), pConnectionLineAnnotation);
   pAlignInterfacesDialog->exec();
-}
-
-/*!
- * \brief ShapeAnnotation::contextMenuEvent
- * Reimplementation of contextMenuEvent.\n
- * Creates a context menu for the shape.\n
- * No context menu for the shapes that are part of Component.
- * \param pEvent - pointer to QGraphicsSceneContextMenuEvent
- */
-void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
-{
-  if (!mIsCustomShape) {
-    QGraphicsItem::contextMenuEvent(pEvent);
-    return;
-  }
-  if (!isSelected()) {
-    setSelected(true);
-  }
-
-  QMenu menu(mpGraphicsView);
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
-    menu.addAction(mpShapeAttributesAction);
-
-    //Only show align interfaces action for bidirectional connections
-    LineAnnotation *pConnectionLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-    QString startName = pConnectionLineAnnotation->getStartComponentName();
-    QString endName = pConnectionLineAnnotation->getEndComponentName();
-    CompositeModelEditor *pEditor = dynamic_cast<CompositeModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
-    if(pEditor->getInterfaceCausality(startName) == StringHandler::getTLMCausality(StringHandler::TLMBidirectional) &&
-       pEditor->getInterfaceCausality(endName) == StringHandler::getTLMCausality(StringHandler::TLMBidirectional)) {
-        menu.addSeparator();
-        menu.addAction(mpAlignInterfacesAction);
-    }
-
-    menu.addSeparator();
-    menu.addAction(mpGraphicsView->getDeleteAction());
-  } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::Modelica) {
-    menu.addAction(mpShapePropertiesAction);
-    menu.addSeparator();
-    if (isInheritedShape()) {
-      mpGraphicsView->getManhattanizeAction()->setDisabled(true);
-      mpGraphicsView->getDeleteAction()->setDisabled(true);
-      mpGraphicsView->getDuplicateAction()->setDisabled(true);
-      mpGraphicsView->getBringToFrontAction()->setDisabled(true);
-      mpGraphicsView->getBringForwardAction()->setDisabled(true);
-      mpGraphicsView->getSendToBackAction()->setDisabled(true);
-      mpGraphicsView->getSendBackwardAction()->setDisabled(true);
-      mpGraphicsView->getRotateClockwiseAction()->setDisabled(true);
-      mpGraphicsView->getRotateAntiClockwiseAction()->setDisabled(true);
-    }
-    LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-    LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
-    if (pLineAnnotation) {
-      lineType = pLineAnnotation->getLineType();
-      if (lineType != LineAnnotation::ConnectionType && lineType != LineAnnotation::TransitionType) {
-        menu.addAction(mpGraphicsView->getManhattanizeAction());
-      }
-    }
-    menu.addAction(mpGraphicsView->getDeleteAction());
-    if (lineType != LineAnnotation::ConnectionType && lineType != LineAnnotation::TransitionType) {
-      menu.addAction(mpGraphicsView->getCutAction());
-      menu.addAction(mpGraphicsView->getCopyAction());
-      menu.addAction(mpGraphicsView->getPasteAction());
-      menu.addAction(mpGraphicsView->getDuplicateAction());
-      menu.addSeparator();
-      menu.addAction(mpGraphicsView->getBringToFrontAction());
-      menu.addAction(mpGraphicsView->getBringForwardAction());
-      menu.addAction(mpGraphicsView->getSendToBackAction());
-      menu.addAction(mpGraphicsView->getSendBackwardAction());
-      menu.addSeparator();
-      menu.addAction(mpGraphicsView->getRotateClockwiseAction());
-      menu.addAction(mpGraphicsView->getRotateAntiClockwiseAction());
-    } else if (lineType == LineAnnotation::TransitionType) {
-      menu.addSeparator();
-      menu.addAction(mpEditTransitionAction);
-    }
-  } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
-    BitmapAnnotation *pBitmapAnnotation = dynamic_cast<BitmapAnnotation*>(this);
-    if (pBitmapAnnotation && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSElement()) {
-      menu.addAction(MainWindow::instance()->getAddOrEditIconAction());
-      menu.addAction(MainWindow::instance()->getDeleteIconAction());
-    } else {
-      return;
-    }
-  }
-  menu.exec(pEvent->screenPos());
 }
 
 /*!

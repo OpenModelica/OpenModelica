@@ -217,16 +217,11 @@ AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibrary
   }
   // only select the component of the active Icon/Diagram View
   if (!openingClass) {
-    // unselect all items
-    foreach (QGraphicsItem *pItem, mpGraphicsView->items()) {
-      pItem->setSelected(false);
-    }
+
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-      mpIconComponent->setSelected(true);
-    } else {
-      if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-        mpDiagramComponent->setSelected(true);
-      }
+      mpGraphicsView->clearSelection(mpIconComponent);
+    } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
+      mpGraphicsView->clearSelection(mpDiagramComponent);
     }
   }
 }
@@ -1718,11 +1713,7 @@ void AddSystemCommand::redoInternal()
   mpGraphicsView->addComponentToList(mpComponent);
   // select the component when not opening class.
   if (!mOpeningClass) {
-    // unselect all items
-    foreach (QGraphicsItem *pItem, mpGraphicsView->items()) {
-      pItem->setSelected(false);
-    }
-    mpComponent->setSelected(true);
+    mpGraphicsView->clearSelection(mpComponent);
   }
 }
 
@@ -1805,11 +1796,7 @@ void AddSubModelCommand::redoInternal()
   mpGraphicsView->addComponentToList(mpComponent);
   // select the component when not opening class.
   if (!mOpeningClass) {
-    // unselect all items
-    foreach (QGraphicsItem *pItem, mpGraphicsView->items()) {
-      pItem->setSelected(false);
-    }
-    mpComponent->setSelected(true);
+    mpGraphicsView->clearSelection(mpComponent);
   }
 }
 
@@ -1930,14 +1917,10 @@ void AddConnectorCommand::redoInternal()
   }
   // only select the component of the active Icon/Diagram View
   if (!mOpeningClass) {
-    // unselect all items
-    foreach (QGraphicsItem *pItem, mpGraphicsView->items()) {
-      pItem->setSelected(false);
-    }
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-      mpIconComponent->setSelected(true);
+      mpGraphicsView->clearSelection(mpIconComponent);
     } else {
-      mpDiagramComponent->setSelected(true);
+      mpGraphicsView->clearSelection(mpDiagramComponent);
     }
   }
 }
@@ -2357,14 +2340,10 @@ void AddBusCommand::redoInternal()
   mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
   // only select the component of the active Icon/Diagram View
   if (!mOpeningClass) {
-    // unselect all items
-    foreach (QGraphicsItem *pItem, mpGraphicsView->items()) {
-      pItem->setSelected(false);
-    }
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-      mpIconComponent->setSelected(true);
+      mpGraphicsView->clearSelection(mpIconComponent);
     } else {
-      mpDiagramComponent->setSelected(true);
+      mpGraphicsView->clearSelection(mpDiagramComponent);
     }
   }
 }
@@ -2514,14 +2493,10 @@ void AddTLMBusCommand::redoInternal()
   mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
   // only select the component of the active Icon/Diagram View
   if (!mOpeningClass) {
-    // unselect all items
-    foreach (QGraphicsItem *pItem, mpGraphicsView->items()) {
-      pItem->setSelected(false);
-    }
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-      mpIconComponent->setSelected(true);
+      mpGraphicsView->clearSelection(mpIconComponent);
     } else {
-      mpDiagramComponent->setSelected(true);
+      mpGraphicsView->clearSelection(mpDiagramComponent);
     }
   }
 }

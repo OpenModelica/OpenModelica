@@ -174,6 +174,7 @@ QString Helper::checkAllModelsTip;
 QString Helper::instantiateModel;
 QString Helper::instantiateModelTip;
 QString Helper::FMU;
+QString Helper::exportt;
 QString Helper::exportFMUTip;
 QString Helper::exportEncryptedPackage;
 QString Helper::exportEncryptedPackageTip;
@@ -467,6 +468,7 @@ void Helper::initHelperVariables()
   Helper::instantiateModel = tr("Instantiate Model");
   Helper::instantiateModelTip = tr("Instantiate/Flatten the Modelica class");
   Helper::FMU = tr("FMU");
+  Helper::exportt = tr("Export");
   Helper::exportFMUTip = tr("Exports the model as Functional Mockup Unit (FMU)");
   Helper::exportReadonlyPackage = tr("Read-only Package");
   Helper::exportRealonlyPackageTip = tr("Exports the package as read-only package");
