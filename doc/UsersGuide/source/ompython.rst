@@ -184,6 +184,13 @@ The object constructor requires a minimum of 2 input arguments which are strings
 -  By default ModelicaSystem uses OMCSessionZMQ but if you want to use OMCSession
    then pass the argument `useCorba=True` to the constructor.
 
+BuildModel
+~~~~~~~~~~
+The buildModel API can be used after ModelicaSystem(), in case the model needs to be updated or additional simulationflags needs to be set using sendExpression()
+
+>>> mod.buildModel()
+
+
 Standard get methods
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -237,10 +244,21 @@ Usage of getMethods
 >>> mod.getSimulationOptions("stepSize","tolerance") // method-2
 (0.002, 1e-06)
 
+The getSolution method can be used in two different ways.
+ 1) using default result filename
+ 2) use the result filenames provided by user
+
+This provides a way to compare simulation results and perform regression testing
+
 >>> mod.getSolutions() // method-1 returns list of simulation variables for which results are available
 ['time', 'height', 'velocity', 'der(height)', 'der(velocity)', 'c', 'radius']
 
->>> mod.getSolutions("time","height")  // method-2, return list of numpy arrays
+>>> mod.getSolutions("time","height")  // return list of numpy arrays
+
+>>> mod.getSolutions(resultfile="c:/tmpbouncingBall.mat") // method-2 returns list of simulation variables for which results are available , the resulfile location is provided by user
+
+>>> mod.getSolutions(["time","height"],resultfile="c:/tmpbouncingBall.mat") // return list of array
+
 
 Standard set methods
 ~~~~~~~~~~~~~~~~~~~~
@@ -279,9 +297,12 @@ To check whether new values are updated to model , we can again query the getPar
 >>> mod.getParameters()
 {'c': 0.5, 'radius': 14}
 
-And then finally we can simulate the model using.
+And then finally we can simulate the model using, The simulate() API can be used in two methods
+  1) without any arguments
+  2) resultfile names provided by user (only filename is allowed and not the location)
 
->>> mod.simulate()
+>>> mod.simulate() // method-1 default result file name will be used
+>>> mod.simulate(resultfile="tmpbouncingBall.mat")  // method-2 resultfile name provided by users
 
 Linearization
 ~~~~~~~~~~~~~

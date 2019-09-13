@@ -41,13 +41,14 @@ To get started, create an OMJulia session object:
 
 >>> using OMJulia
 >>> omc= OMJulia.OMCSession()
->>> omc.sendExpression("loadModel(Modelica)")
-"True"
->>> omc.sendExpression("model a Real s; equation s=sin(10*time); end a;")
-"{a}"
->>> omc.sendExpression("simulate(a)")
->>> omc.sendExpression("plot(s)")
-"true"
+>>> sendExpression(omc,"loadModel(Modelica)")
+true
+>>> sendExpression(omc,"model a Real s; equation s=sin(10*time); end a;")
+1-element Array{Symbol,1}:
+ :a
+>>> sendExpression(omc,"simulate(a)")
+>>> sendExpression(omc,"plot(s)")
+true
 
 .. figure :: media/sineplot.png
   :name: sineplot
@@ -62,7 +63,7 @@ To get started, create a ModelicaSystem object:
 
 >>> using OMJulia
 >>> mod = OMJulia.OMCSession()
->>> mod.ModelicaSystem("BouncingBall.mo","BouncingBall")
+>>> ModelicaSystem(mod,"BouncingBall.mo","BouncingBall")
 
 The object constructor requires a minimum of 2 input arguments which are strings, and third input argument which is optional .
 
@@ -72,10 +73,24 @@ The object constructor requires a minimum of 2 input arguments which are strings
 - The second input argument must be a string with the name of the Modelica model
   including the namespace if the model is wrapped within a Modelica package.
 
-- The third input argument (optional) is used to specify the list of dependent libraries 
+- The third input argument (optional) is used to specify the list of dependent libraries or dependent Modelica files
   The argument can be passed as a string or array of strings e.g.,
 
->>> mod.ModelicaSystem("BouncingBall.mo","BouncingBall",["Modelica", "SystemDynamics"])
+>>> ModelicaSystem(mod,"BouncingBall.mo","BouncingBall",["Modelica", "SystemDynamics", "dcmotor.mo"])
+
+WorkDirectory
+~~~~~~~~~~~~~
+For each OMJulia session a temporary work directory is created and the results are published in that working directory, Inorder to get the workdirectory the users can
+use the following API
+
+>>> getWorkDirectory(mod)
+"C:/Users/arupa54/AppData/Local/Temp/jl_5pbewl"
+
+BuildModel
+~~~~~~~~~~
+The buildModel API can be used after ModelicaSystem(), in case the model needs to be updated or additional simulationflags needs to be set using sendExpression()
+
+>>> buildModel(mod)
 
 
 Standard get methods
@@ -99,45 +114,56 @@ Three calling possibilities are accepted using getXXX() where "XXX" can be any o
 Usage of getMethods
 ~~~~~~~~~~~~~~~~~~~
 
->>> mod.getQuantities() // method-1, list of all variables from xml file
+>>> getQuantities(mod) // method-1, list of all variables from xml file
 [{"aliasvariable": None, "Name": "height", "Variability": "continuous", "Value": "1.0", "alias": "noAlias", "Changeable": "true", "Description": None}, {"aliasvariable": None, "Name": "c", "Variability": "parameter", "Value": "0.9", "alias": "noAlias", "Changeable": "true", "Description": None}]
 
->>> mod.getQuantities("height") // method-2, to query information about single quantity
+>>> getQuantities(mod,"height") // method-2, to query information about single quantity
 [{"aliasvariable": None, "Name": "height", "Variability": "continuous", "Value": "1.0", "alias": "noAlias", "Changeable": "true", "Description": None}]
 
->>> mod.getQuantities(["c","radius"]) // method-3, to query information about list of quantity
+>>> getQuantities(mod,["c","radius"]) // method-3, to query information about list of quantity
 [{"aliasvariable": None, "Name": "c", "Variability": "parameter", "Value": "0.9", "alias": "noAlias", "Changeable": "true", "Description": None}, {"aliasvariable": None, "Name": "radius", "Variability": "parameter", "Value": "0.1", "alias": "noAlias", "Changeable": "true", "Description": None}]
 
->>> mod.getContinuous() // method-1, list of continuous variable
+>>> getContinuous(mod) // method-1, list of continuous variable
 {"velocity": "-1.825929609047952", "der(velocity)": "-9.8100000000000005", "der(height)": "-1.825929609047952", "height": "0.65907039052943617"}
 
->>> mod.getContinuous(["velocity","height"]) // method-2, get specific variable value information
+>>> getContinuous(mod,["velocity","height"]) // method-2, get specific variable value information
 ["-1.825929609047952", "0.65907039052943617"]
 
->>> mod.getInputs()
+>>> getInputs(mod)
 {}
 
->>>  mod.getOutputs()
+>>> getOutputs(mod)
 {}
 
->>> mod.getParameters()  // method-1
+>>> getParameters(mod)  // method-1
 {"c": "0.9", "radius": "0.1"}
 
->>> mod.getParameters(["c","radius"]) // method-2
+>>> getParameters(mod,["c","radius"]) // method-2
 ["0.9", "0.1"]
 
->>> mod.getSimulationOptions()  // method-1
+>>> getSimulationOptions(mod)  // method-1
 {"stepSize": "0.002", "stopTime": "1.0", "tolerance": "1e-06", "startTime": "0.0", "solver": "dassl"}
 
->>> mod.getSimulationOptions(["stepSize","tolerance"]) // method-2
+>>> getSimulationOptions(mod,["stepSize","tolerance"]) // method-2
 ["0.002", "1e-06"]
 
->>> mod.getSolutions() // method-1 returns list of simulation variables for which results are available
+The getSolution method can be used in two different ways.
+ 1) using default result filename
+ 2) use the result filenames provided by user
+
+This provides a way to compare simulation results and perform regression testing
+
+>>> getSolutions(mod) // method-1 returns list of simulation variables for which results are available
 ["time", "height", ""velocity", "der(height)", "der(velocity)", "c", "radius"]
 
->>> mod.getSolutions(["time","height"])  // method-2, return list of array
+>>> getSolutions(mod,["time","height"])  // return list of array
 
->>> mod.showQuantities() // same as getQuantities() but returns the results in the form table 
+>>> getSolutions(mod,resultfile="c:/tmpbouncingBall.mat") // method-2 returns list of simulation variables for which results are available , the resulfile location is provided by user
+["time", "height", ""velocity", "der(height)", "der(velocity)", "c", "radius"]
+
+>>> getSolutions(mod,["time","h"],resultfile="c:/tmpbouncingBall.mat") // return list of array
+
+>>> showQuantities(mod) // same as getQuantities() but returns the results in the form table
 
 Standard set methods
 ~~~~~~~~~~~~~~~~~~~~
@@ -154,38 +180,42 @@ Two setting possibilities are accepted using setXXXs(),where "XXX" can be any of
 Usage of setMethods
 ~~~~~~~~~~~~~~~~~~~
 
->>> mod.setInputs("cAi=1") // method-1
+>>> setInputs(mod,"cAi=1") // method-1
 
->>> mod.setInputs(["cAi=1","Ti=2"]) // method-2
+>>> setInputs(mod,["cAi=1","Ti=2"]) // method-2
 
->>> mod.setParameters("radius=14") // method-1
+>>> setParameters(mod,"radius=14") // method-1
 
->>> mod.setParameters(["radius=14","c=0.5"]) // method-2 setting parameter value using array of string 
+>>> setParameters(mod,["radius=14","c=0.5"]) // method-2 setting parameter value using array of string
 
->>> mod.setSimulationOptions(["stopTime=2.0","tolerance=1e-08"])
+>>> setSimulationOptions(mod,["stopTime=2.0","tolerance=1e-08"])
 
 
 Advanced Simulation
 ~~~~~~~~~~~~~~~~~~~
 An example of how to do advanced simulation to set parameter values using set methods and finally simulate the  "BouncingBall.mo" model is given below . 
 
->>> mod.getParameters()
+>>> getParameters(mod)
 {"c": "0.9", "radius": "0.1"}
 
->>> mod.setParameters(["radius=14","c=0.5"]) 
+>>> setParameters(mod,["radius=14","c=0.5"])
 
 To check whether new values are updated to model , we can again query the getParameters().
 
->>> mod.getParameters()
+>>> getParameters(mod)
 {"c": "0.5", "radius": "14"}
 
 Similary we can also use setInputs() to set a value for the inputs during various time interval can also be done using the following.
 
->>> mod.setInputs("cAi=1")
+>>> setInputs(mod,"cAi=1")
 
-And then finally we can simulate the model using.
+And then finally we can simulate the model using, The simulate() API can be used in two methods
+  1) without any arguments
+  2) resultfile names provided by user (only filename is allowed and not the location)
 
->>> mod.simulate()
+>>> simulate(mod) // method-1 default result file name will be used
+>>> simulate(mod,resultfile="tmpbouncingBall.mat") // method-2 resultfile name provided by users
+
 
 Linearization
 ~~~~~~~~~~~~~
@@ -201,21 +231,21 @@ The following methods are available for linearization of a modelica model
 Usage of Linearization methods
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
->>> mod.getLinearizationOptions()  // method-1
+>>> getLinearizationOptions(mod)  // method-1
 {"stepSize": "0.002", "stopTime": "1.0", "startTime": "0.0", "numberOfIntervals": "500.0", "tolerance": "1e-08"}
 
->>> mod.getLinearizationOptions(["startTime","stopTime"]) // method-2
+>>> getLinearizationOptions(mod,["startTime","stopTime"]) // method-2
 ["0.0", "1.0"]
 
->>> mod.setLinearizationOptions(["stopTime=2.0","tolerance=1e-06"])
+>>> setLinearizationOptions(mod,["stopTime=2.0","tolerance=1e-06"])
 
->>> mod.linearize()  //returns a list 2D arrays (matrices) A, B, C and D.
+>>> linearize(mod)  //returns a list 2D arrays (matrices) A, B, C and D.
 
->>> mod.getLinearInputs()  //returns a list of strings of names of inputs used when forming matrices.
+>>> getLinearInputs(mod)  //returns a list of strings of names of inputs used when forming matrices.
 
->>> mod.getLinearOutputs() //returns a list of strings of names of outputs used when forming matrices.
+>>> getLinearOutputs(mod) //returns a list of strings of names of outputs used when forming matrices.
 
->>> mod.getLinearStates() // returns a list of strings of names of states used when forming matrices.
+>>> getLinearStates(mod) // returns a list of strings of names of states used when forming matrices.
 
 
 Sensitivity Analysis
@@ -239,7 +269,7 @@ The results contains the following .
 Usage 
 ~~~~~
 
->>> (Sn, Sa) = mod.sensitivity(["UA","EdR"],["T","cA"],[1e-2,1e-4])
+>>> (Sn, Sa) = sensitivity(mod,["UA","EdR"],["T","cA"],[1e-2,1e-4])
 
 
 With the above list of API calls implemented, the users can have more control over the result types, returned as Julia data structures.
