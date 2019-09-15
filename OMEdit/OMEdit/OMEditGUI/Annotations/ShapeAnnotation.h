@@ -100,6 +100,10 @@ public:
 protected:
   QColor mLineColor;
   QColor mFillColor;
+  QString mDynamicFillColor; /* Dynamic variable for fillColor attribute */
+  QColor mDynamicFillColorIfTrue;  /* Dynamic fillColor if variable is true */
+  QColor mDynamicFillColorIfFalse; /* Dynamic fillColor if variable is false */
+  QColor mDynamicFillColorValue;   /* Calculated dynamic fillColor value */
   StringHandler::LinePattern mLinePattern;
   StringHandler::FillPattern mFillPattern;
   qreal mLineThickness;
@@ -241,6 +245,7 @@ public slots:
   void referenceShapeDeleted();
   void updateDynamicSelect(double time);
 protected:
+  double getVariable(QString varName, double time, bool *isOk);
   GraphicsView *mpGraphicsView;
   Component *mpParentComponent;
   QList<QPointF> mPoints;

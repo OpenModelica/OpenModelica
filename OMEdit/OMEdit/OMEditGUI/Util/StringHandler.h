@@ -107,12 +107,16 @@ public:
   static QString getTextAlignmentString(StringHandler::TextAlignment alignment);
   static QString getTextStyleString(StringHandler::TextStyle textStyle);
   static QString removeFirstLastCurlBrackets(QString value);
+  static QString removeFunctionInvocation(QString value);
   static QString removeFirstLastParentheses(QString value);
   static QString removeFirstLastSquareBrackets(QString value);
   static QString removeFirstLastQuotes(QString value);
   static QString removeFirstLastSingleQuotes(QString value);
   static QStringList getStrings(QString value);
+  static QStringList getStringsMixed(QString value);
   static QStringList getStrings(QString value, char start, char end);
+  static QStringList getStrings(QString value, QString start, QString end);
+  static void parseColor(QString value, QColor *pResult);
   /* Handles quoted identifiers A.B.'C.D' -> A.B, A.B.C.D -> A.B.C */
   static QString getLastWordAfterDot(QString value);
   static QString removeLastWordAfterDot(QString value);

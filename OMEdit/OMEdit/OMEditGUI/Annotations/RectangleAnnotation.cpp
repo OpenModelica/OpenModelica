@@ -112,7 +112,7 @@ void RectangleAnnotation::parseShapeAnnotation(QString annotation)
   GraphicItem::parseShapeAnnotation(annotation);
   FilledShape::parseShapeAnnotation(annotation);
   // parse the shape to get the list of attributes of Rectangle.
-  QStringList list = StringHandler::getStrings(annotation);
+  QStringList list = StringHandler::getStringsMixed(annotation);
   if (list.size() < 11) {
     return;
   }

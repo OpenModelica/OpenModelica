@@ -85,12 +85,12 @@ void GraphicItem::setDefaults(ShapeAnnotation *pShapeAnnotation)
 void GraphicItem::parseShapeAnnotation(QString annotation)
 {
   // parse the shape to get the list of attributes
-  QStringList list = StringHandler::getStrings(annotation);
+  QStringList list = StringHandler::getStringsMixed(annotation);
   if (list.size() < 3)
     return;
   // if first item of list is true then the shape should be visible.
-  if (list.at(0).startsWith("{")) { // DynamicSelect
-    QStringList args = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(0)));
+  if (list.at(0).startsWith("DynamicSelect(")) {
+    QStringList args = StringHandler::getStrings(StringHandler::removeFunctionInvocation(list.at(0)));
     if (args.count() > 0) {
       mVisible = args.at(0).contains("true");
     }
@@ -107,8 +107,8 @@ void GraphicItem::parseShapeAnnotation(QString annotation)
     mOrigin.setY(originList.at(1).toFloat());
   }
   // 3rd item is the rotation
-  if (list.at(2).startsWith("{")) { // DynamicSelect
-    QStringList args = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(2)));
+  if (list.at(2).startsWith("DynamicSelect(")) {
+    QStringList args = StringHandler::getStrings(StringHandler::removeFunctionInvocation(list.at(2)));
     if (args.count() > 0) {
       mRotation = args.at(0).toFloat();
     }
@@ -178,6 +178,11 @@ void FilledShape::setDefaults()
   mLinePattern = StringHandler::LineSolid;
   mFillPattern = StringHandler::FillNone;
   mLineThickness = 0.25;
+
+  mDynamicFillColor = "";
+  mDynamicFillColorIfTrue = QColor(0, 0, 0);
+  mDynamicFillColorIfFalse = QColor(0, 0, 0);
+  mDynamicFillColorValue = QColor(0, 0, 0);
 }
 
 /*!
@@ -192,6 +197,11 @@ void FilledShape::setDefaults(ShapeAnnotation *pShapeAnnotation)
   mLinePattern = pShapeAnnotation->mLinePattern;
   mFillPattern = pShapeAnnotation->mFillPattern;
   mLineThickness = pShapeAnnotation->mLineThickness;
+
+  mDynamicFillColor = pShapeAnnotation->mDynamicFillColor;
+  mDynamicFillColorIfTrue = pShapeAnnotation->mDynamicFillColorIfTrue;
+  mDynamicFillColorIfFalse = pShapeAnnotation->mDynamicFillColorIfFalse;
+  mDynamicFillColorValue = pShapeAnnotation->mDynamicFillColorValue;
 }
 
 /*!
@@ -201,28 +211,30 @@ void FilledShape::setDefaults(ShapeAnnotation *pShapeAnnotation)
 void FilledShape::parseShapeAnnotation(QString annotation)
 {
   // parse the shape to get the list of attributes
-  QStringList list = StringHandler::getStrings(annotation);
+  QStringList list = StringHandler::getStringsMixed(annotation);
   if (list.size() < 8)
     return;
   // 4th item of the list is the line color
-  QStringList colorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(3)));
-  if (colorList.size() >= 3)
-  {
-    int red, green, blue = 0;
-    red = colorList.at(0).toInt();
-    green = colorList.at(1).toInt();
-    blue = colorList.at(2).toInt();
-    mLineColor = QColor (red, green, blue);
-  }
+  StringHandler::parseColor(list.at(3), &mLineColor);
   // 5th item of list contains the fill color.
-  QStringList fillColorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(4)));
-  if (fillColorList.size() >= 3)
-  {
-    int red, green, blue = 0;
-    red = fillColorList.at(0).toInt();
-    green = fillColorList.at(1).toInt();
-    blue = fillColorList.at(2).toInt();
-    mFillColor = QColor (red, green, blue);
+  if (list.at(4).trimmed().startsWith("DynamicSelect(")) {
+    QStringList args = StringHandler::getStringsMixed(StringHandler::removeFunctionInvocation(list.at(4)));
+    if (args.size() > 0) {
+      StringHandler::parseColor(args.at(0), &mFillColor);
+      mDynamicFillColorValue = mFillColor;
+    }
+    if (args.size() > 1) {
+      int ifInd = args.at(1).indexOf("if");
+      int thenInd = args.at(1).indexOf("then");
+      int elseInd = args.at(1).indexOf("else");
+      if (-1 < ifInd && ifInd < thenInd && thenInd < elseInd) {
+        mDynamicFillColor = args.at(1).mid(ifInd + 2, thenInd - ifInd - 2).trimmed();
+        StringHandler::parseColor(args.at(1).mid(thenInd + 4, elseInd - thenInd - 4), &mDynamicFillColorIfTrue);
+        StringHandler::parseColor(args.at(1).mid(elseInd + 4), &mDynamicFillColorIfFalse);
+      }
+    }
+  } else {
+    StringHandler::parseColor(list.at(4), &mFillColor);
   }
   // 6th item of list contains the Line Pattern.
   mLinePattern = StringHandler::getLinePatternType(list.at(5));
@@ -574,35 +586,36 @@ void ShapeAnnotation::applyFillPattern(QPainter *painter)
   }
   QLinearGradient linearGradient;
   QRadialGradient radialGradient;
+  QColor fill = mDynamicFillColor.isEmpty() ? mFillColor : mDynamicFillColorValue;
   switch (mFillPattern) {
     case StringHandler::FillHorizontalCylinder:
       linearGradient = QLinearGradient(boundingRectangle.center().x(), boundingRectangle.top(), boundingRectangle.center().x(), boundingRectangle.bottom());
       linearGradient.setColorAt(0.0, mLineColor);
-      linearGradient.setColorAt(0.5, mFillColor);
+      linearGradient.setColorAt(0.5, fill);
       linearGradient.setColorAt(1.0, mLineColor);
       painter->setBrush(linearGradient);
       break;
     case StringHandler::FillVerticalCylinder:
       linearGradient = QLinearGradient(boundingRectangle.left(), boundingRectangle.center().y(), boundingRectangle.right(), boundingRectangle.center().y());
       linearGradient.setColorAt(0.0, mLineColor);
-      linearGradient.setColorAt(0.5, mFillColor);
+      linearGradient.setColorAt(0.5, fill);
       linearGradient.setColorAt(1.0, mLineColor);
       painter->setBrush(linearGradient);
       break;
     case StringHandler::FillSphere:
       radialGradient = QRadialGradient(boundingRectangle.center().x(), boundingRectangle.center().y(), boundingRectangle.width());
-      radialGradient.setColorAt(0.0, mFillColor);
+      radialGradient.setColorAt(0.0, fill);
       radialGradient.setColorAt(1.0, mLineColor);
       painter->setBrush(radialGradient);
       break;
     case StringHandler::FillSolid:
-      painter->setBrush(QBrush(mFillColor, StringHandler::getFillPatternType(mFillPattern)));
+      painter->setBrush(QBrush(fill, StringHandler::getFillPatternType(mFillPattern)));
       break;
     case StringHandler::FillNone:
       break;
     default:
       painter->setBackgroundMode(Qt::OpaqueMode);
-      painter->setBackground(mFillColor);
+      painter->setBackground(fill);
       QBrush brush(mLineColor, StringHandler::getFillPatternType(mFillPattern));
       brush.setTransform(QTransform(1, 0, 0, 0, 1, 0, 0, 0, 0));
       painter->setBrush(brush);
@@ -1029,6 +1042,15 @@ void ShapeAnnotation::setShapeFlags(bool enable)
   setFlag(QGraphicsItem::ItemIsSelectable, enable);
 }
 
+double ShapeAnnotation::getVariable(QString varName, double time, bool *isOk)
+{
+  if (mpParentComponent && mpParentComponent->getComponentInfo()) {
+    QString fullName = QString("%1.%2").arg(mpParentComponent->getName(), varName);
+    return MainWindow::instance()->getVariablesWidget()->readVariableValue(fullName, time, isOk);
+  } else {
+    return MainWindow::instance()->getVariablesWidget()->readVariableValue(varName, time, isOk);
+  }
+}
 /*!
  * \brief ShapeAnnotation::updateDynamicSelect
  * Updates the shapes according to the DynamicSelect annotation.
@@ -1037,16 +1059,16 @@ void ShapeAnnotation::setShapeFlags(bool enable)
 void ShapeAnnotation::updateDynamicSelect(double time)
 {
   // visible
+  bool isOk = false;
   if (!mDynamicVisible.isEmpty()) {
     if (mDynamicVisible.compare("true") == 0) {
       mDynamicVisibleValue = true;
     } else if (mDynamicVisible.compare("false") == 0) {
       mDynamicVisibleValue = false;
-    } else if (mpParentComponent && mpParentComponent->getComponentInfo()) {
-      QString variableName = QString("%1.%2").arg(mpParentComponent->getName(), mDynamicVisible);
-      mDynamicVisibleValue = (bool)MainWindow::instance()->getVariablesWidget()->readVariableValue(variableName, time);
     } else {
-      mDynamicVisibleValue = (bool)MainWindow::instance()->getVariablesWidget()->readVariableValue(mDynamicVisible, time);
+      mDynamicVisibleValue = (bool)getVariable(mDynamicVisible, time, &isOk);
+      if (!isOk)
+        mDynamicVisibleValue = mVisible;
     }
   }
   // rotation
@@ -1055,24 +1077,28 @@ void ShapeAnnotation::updateDynamicSelect(double time)
     float rotation = mDynamicRotation.toFloat(&ok);
     if (ok) {
       mDynamicRotationValue = rotation;
-    } else if (mpParentComponent && mpParentComponent->getComponentInfo()) {
-      QString variableName = QString("%1.%2").arg(mpParentComponent->getName(), mDynamicRotation);
-      mDynamicRotationValue = MainWindow::instance()->getVariablesWidget()->readVariableValue(variableName, time);
     } else {
-      mDynamicRotationValue = MainWindow::instance()->getVariablesWidget()->readVariableValue(mDynamicRotation, time);
+      mDynamicRotationValue = getVariable(mDynamicRotation, time, &isOk);
+      if (!isOk)
+        mDynamicRotationValue = mRotation;
     }
     setRotation(mDynamicRotationValue);
     update();
   }
   // textString
   QVariant dynamicTextValue; // isNull() per default
+  int dynamicTextDigits = 0;
   if (mDynamicTextString.count() > 0) {
-    if (mpParentComponent && mpParentComponent->getComponentInfo()) {
-      QString variableName = QString("%1.%2").arg(mpParentComponent->getName(), mDynamicTextString.at(0).toString());
-      dynamicTextValue = MainWindow::instance()->getVariablesWidget()->readVariableValue(variableName, time);
-    } else {
-      dynamicTextValue = MainWindow::instance()->getVariablesWidget()->readVariableValue(mDynamicTextString.at(0).toString(), time);
-    }
+    dynamicTextValue = getVariable(mDynamicTextString.at(0).toString(), time, &isOk);
+    if (!isOk)
+      dynamicTextValue = mTextString;
+  }
+  if (mDynamicTextString.count() > 1) {
+    QString strDigits = mDynamicTextString.at(1).toString();
+    if (strDigits.size() > 0 && strDigits[0].isDigit())
+      dynamicTextDigits = mDynamicTextString.at(1).toInt();
+    else
+      dynamicTextDigits = (int)getVariable(strDigits, time, &isOk); // isOk not handled
   }
   if (!dynamicTextValue.isNull()) {
     mTextString = dynamicTextValue.toString();
@@ -1080,10 +1106,17 @@ void ShapeAnnotation::updateDynamicSelect(double time)
       /* use variable name as default value if result not found */
       mTextString = mDynamicTextString.at(0).toString();
     } else if (mDynamicTextString.count() > 1) {
-      int digits = mDynamicTextString.at(1).toInt();
-      mTextString = QString::number(mTextString.toDouble(), 'g', digits);
+      mTextString = QString::number(mTextString.toDouble(), 'f', dynamicTextDigits);
     }
     update();
+  }
+  // fillColor
+  if (!mDynamicFillColor.isEmpty()) {
+    bool cond = (bool)getVariable(mDynamicFillColor, time, &isOk);
+    if (isOk)
+      mDynamicFillColorValue = cond ? mDynamicFillColorIfTrue : mDynamicFillColorIfFalse;
+    else
+      mDynamicFillColorValue = mFillColor;
   }
 }
 

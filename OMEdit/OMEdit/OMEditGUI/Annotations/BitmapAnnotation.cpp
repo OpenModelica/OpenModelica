@@ -105,7 +105,7 @@ void BitmapAnnotation::parseShapeAnnotation(QString annotation)
 {
   GraphicItem::parseShapeAnnotation(annotation);
   // parse the shape to get the list of attributes of Bitmap.
-  QStringList list = StringHandler::getStrings(annotation);
+  QStringList list = StringHandler::getStringsMixed(annotation);
   if (list.size() < 5) {
     return;
   }

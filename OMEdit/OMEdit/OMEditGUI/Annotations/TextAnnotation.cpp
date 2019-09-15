@@ -150,7 +150,7 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
   GraphicItem::parseShapeAnnotation(annotation);
   FilledShape::parseShapeAnnotation(annotation);
   // parse the shape to get the list of attributes of Text.
-  QStringList list = StringHandler::getStrings(annotation);
+  QStringList list = StringHandler::getStringsMixed(annotation);
   if (list.size() < 15) {
     return;
   }
@@ -162,11 +162,14 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
       mExtents.replace(i, QPointF(extentPoints.at(0).toFloat(), extentPoints.at(1).toFloat()));
   }
   // 10th item of the list contains the textString.
-  if (list.at(9).startsWith("{")) {
-    // DynamicSelect
-    QStringList args = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(9)));
+  if (list.at(9).startsWith("DynamicSelect(")) {
+    QStringList args = StringHandler::getStringsMixed(StringHandler::removeFunctionInvocation(list.at(9)));
     if (args.count() > 0) {
       mOriginalTextString = StringHandler::removeFirstLastQuotes(args.at(0));
+    }
+    if (args.count() == 2 && args.at(1).startsWith("String(")) {
+      args = StringHandler::getStringsMixed(StringHandler::removeFunctionInvocation(args.at(1)));
+      args.prepend("");
     }
     if (args.count() > 1) {
       mDynamicTextString << args.at(1);  // variable name

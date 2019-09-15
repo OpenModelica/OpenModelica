@@ -199,7 +199,7 @@ public:
   void interactiveReSimulation(QString modelName);
   void updateInitXmlFile(SimulationOptions simulationOptions);
   void initializeVisualization(SimulationOptions simulationOptions);
-  double readVariableValue(QString variable, double time);
+  double readVariableValue(QString variable, double time, bool *isOk = nullptr);
 private:
   TreeSearchFilters *mpTreeSearchFilters;
   Label *mpSimulationTimeLabel;

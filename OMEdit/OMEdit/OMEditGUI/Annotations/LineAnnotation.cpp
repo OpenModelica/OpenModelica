@@ -367,7 +367,7 @@ void LineAnnotation::parseShapeAnnotation(QString annotation)
 {
   GraphicItem::parseShapeAnnotation(annotation);
   // parse the shape to get the list of attributes of Line.
-  QStringList list = StringHandler::getStrings(annotation);
+  QStringList list = StringHandler::getStringsMixed(annotation);
   if (list.size() < 10) {
     return;
   }

@@ -798,6 +798,16 @@ QString StringHandler::removeFirstLastCurlBrackets(QString value)
   return value;
 }
 
+QString StringHandler::removeFunctionInvocation(QString value)
+{
+  int firstInd = value.indexOf('(');
+  int lastInd = value.lastIndexOf(')');
+  if (-1 < firstInd && firstInd < lastInd)
+    return value.mid(firstInd + 1, lastInd - firstInd - 1);
+  else
+    return value;
+}
+
 /*!
  * \brief StringHandler::removeFirstLastParentheses
  * Removes the first and last parentheses () from the string.
@@ -856,17 +866,28 @@ QString StringHandler::removeFirstLastSingleQuotes(QString value)
 
 QStringList StringHandler::getStrings(QString value)
 {
-  return getStrings(value, '{', '}');
+  return getStrings(value, "{", "}");
+}
+
+QStringList StringHandler::getStringsMixed(QString value)
+{
+  return getStrings(value, "{(", "})");
 }
 
 QStringList StringHandler::getStrings(QString value, char start, char end)
+{
+  return getStrings(value, QString(start), QString(end));
+}
+
+QStringList StringHandler::getStrings(QString value, QString start, QString end)
 {
   QStringList list;
   bool mask = false;
   bool inString = false;
   char StringEnd = '\0';
   int begin = 0;
-  int ele = 0;
+  int startInd;
+  QString ele;
 
   for (int i = 0 ; i < value.length() ; i++)
   {
@@ -902,25 +923,38 @@ QStringList StringHandler::getStrings(QString value, char start, char end)
       }
       else if (value.at(i) == ',')
       {
-        if (ele == 0)
+        if (ele.isEmpty())
         {
           list.append(value.mid(begin,i-begin).trimmed());
           begin = i+1;
         }
       }
-      else if (value.at(i) == start)
+      else if ((startInd = start.indexOf(value.at(i))) != -1)
       {
-        ele++;
+        ele += end[startInd];
       }
-      else if (value.at(i) == end)
+      else if (!ele.isEmpty() && value.at(i) == ele.at(ele.size() - 1))
       {
-        ele--;
+        ele.chop(1);
       }
     }
   }
   list.append(value.mid(begin,value.length()-begin).trimmed());
 
   return list;
+}
+
+void StringHandler::parseColor(QString value, QColor *pResult)
+{
+  QStringList components = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(value.trimmed()));
+  if (components.size() >= 3)
+  {
+    int red, green, blue;
+    red = components.at(0).toInt();
+    green = components.at(1).toInt();
+    blue = components.at(2).toInt();
+    *pResult = QColor(red, green, blue);
+  }
 }
 
 /*!
