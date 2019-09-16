@@ -95,7 +95,6 @@ public:
   void clearPoints();
   void updateStartPoint(QPointF point);
   void updateEndPoint(QPointF point);
-  void moveAllPoints(qreal offsetX, qreal offsetY);
   void updateTransitionTextPosition();
   void setLineType(LineType lineType) {mLineType = lineType;}
   LineType getLineType() {return mLineType;}
