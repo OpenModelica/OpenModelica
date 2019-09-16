@@ -957,22 +957,6 @@ void LineAnnotation::updateEndPoint(QPointF point)
 }
 
 /*!
- * \brief LineAnnotation::moveAllPoints
- * Moves all the whole connection.
- * \param offsetX
- * \param offsetY
- */
-void LineAnnotation::moveAllPoints(qreal offsetX, qreal offsetY)
-{
-  prepareGeometryChange();
-  for(int i = 0 ; i < mPoints.size() ; i++) {
-    mPoints[i] = QPointF(mPoints[i].x() + offsetX, mPoints[i].y() + offsetY);
-    /* updated the corresponding CornerItem */
-    updateCornerItem(i);
-  }
-}
-
-/*!
  * \brief LineAnnotation::updateTransitionTextPosition
  * Updates the position of the transition text.
  */
@@ -1161,8 +1145,7 @@ QVariant LineAnnotation::itemChange(GraphicsItemChange change, const QVariant &v
 
 /*!
  * \brief LineAnnotation::handleComponentMoved
- * If the component associated with the connection is moved then update the connection accordingly.\n
- * If the both start and end components associated with the connection are moved then move whole connection.
+ * If the component associated with the connection is moved then update the connection accordingly.
  */
 void LineAnnotation::handleComponentMoved()
 {
@@ -1170,58 +1153,40 @@ void LineAnnotation::handleComponentMoved()
     return;
   }
   prepareGeometryChange();
-  if (mpStartComponent && mpStartComponent->getRootParentComponent()->isSelected() &&
-      mpEndComponent && mpEndComponent->getRootParentComponent()->isSelected()) {
-    if (mLineType == LineAnnotation::TransitionType) {
-      QPointF centerPos = mpGraphicsView->roundPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()));
-      QRectF sceneRectF = mpStartComponent->sceneBoundingRect();
-      QList<QPointF> newPos = Utilities::liangBarskyClipper(sceneRectF.topLeft().x(), sceneRectF.topLeft().y(),
-                                                            sceneRectF.bottomRight().x(), sceneRectF.bottomRight().y(),
-                                                            centerPos.x(), centerPos.y(),
-                                                            mPoints.at(1).x(), mPoints.at(1).y());
-      moveAllPoints(mpGraphicsView->roundPoint(newPos.at(1)).x() - mPoints[0].x(),
-          mpGraphicsView->roundPoint(newPos.at(1)).y() - mPoints[0].y());
-      updateTransitionTextPosition();
-    } else {
-      moveAllPoints(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()).x() - mPoints[0].x(),
-          mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()).y() - mPoints[0].y());
-    }
-  } else {
-    if (mpStartComponent) {
-      Component *pComponent = qobject_cast<Component*>(sender());
-      if (pComponent == mpStartComponent->getRootParentComponent()) {
-        updateStartPoint(mpGraphicsView->roundPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center())));
-        if (mLineType == LineAnnotation::TransitionType) {
-          QRectF sceneRectF = mpStartComponent->sceneBoundingRect();
-          QList<QPointF> newPos = Utilities::liangBarskyClipper(sceneRectF.topLeft().x(), sceneRectF.topLeft().y(),
-                                                                sceneRectF.bottomRight().x(), sceneRectF.bottomRight().y(),
-                                                                mPoints.at(0).x(), mPoints.at(0).y(),
-                                                                mPoints.at(1).x(), mPoints.at(1).y());
-          updateStartPoint(mpGraphicsView->roundPoint(newPos.at(1)));
-          updateTransitionTextPosition();
-        } else if (mLineType == LineAnnotation::InitialStateType) {
-          QRectF sceneRectF = mpStartComponent->sceneBoundingRect();
-          QList<QPointF> newPos = Utilities::liangBarskyClipper(sceneRectF.topLeft().x(), sceneRectF.topLeft().y(),
-                                                                sceneRectF.bottomRight().x(), sceneRectF.bottomRight().y(),
-                                                                mPoints.at(0).x(), mPoints.at(0).y(),
-                                                                mPoints.at(1).x(), mPoints.at(1).y());
-          updateStartPoint(mpGraphicsView->roundPoint(newPos.at(1)));
-        }
+  if (mpStartComponent) {
+    Component *pComponent = qobject_cast<Component*>(sender());
+    if (pComponent == mpStartComponent->getRootParentComponent()) {
+      updateStartPoint(mpGraphicsView->roundPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center())));
+      if (mLineType == LineAnnotation::TransitionType) {
+        QRectF sceneRectF = mpStartComponent->sceneBoundingRect();
+        QList<QPointF> newPos = Utilities::liangBarskyClipper(sceneRectF.topLeft().x(), sceneRectF.topLeft().y(),
+                                                              sceneRectF.bottomRight().x(), sceneRectF.bottomRight().y(),
+                                                              mPoints.at(0).x(), mPoints.at(0).y(),
+                                                              mPoints.at(1).x(), mPoints.at(1).y());
+        updateStartPoint(mpGraphicsView->roundPoint(newPos.at(1)));
+        updateTransitionTextPosition();
+      } else if (mLineType == LineAnnotation::InitialStateType) {
+        QRectF sceneRectF = mpStartComponent->sceneBoundingRect();
+        QList<QPointF> newPos = Utilities::liangBarskyClipper(sceneRectF.topLeft().x(), sceneRectF.topLeft().y(),
+                                                              sceneRectF.bottomRight().x(), sceneRectF.bottomRight().y(),
+                                                              mPoints.at(0).x(), mPoints.at(0).y(),
+                                                              mPoints.at(1).x(), mPoints.at(1).y());
+        updateStartPoint(mpGraphicsView->roundPoint(newPos.at(1)));
       }
     }
-    if (mpEndComponent) {
-      Component *pComponent = qobject_cast<Component*>(sender());
-      if (pComponent == mpEndComponent->getRootParentComponent()) {
-        updateEndPoint(mpGraphicsView->roundPoint(mpEndComponent->mapToScene(mpEndComponent->boundingRect().center())));
-        if (mLineType == LineAnnotation::TransitionType) {
-          QRectF sceneRectF = mpEndComponent->sceneBoundingRect();
-          QList<QPointF> newPos = Utilities::liangBarskyClipper(sceneRectF.topLeft().x(), sceneRectF.topLeft().y(),
-                                                                sceneRectF.bottomRight().x(), sceneRectF.bottomRight().y(),
-                                                                mPoints.at(mPoints.size() - 2).x(), mPoints.at(mPoints.size() - 2).y(),
-                                                                mPoints.at(mPoints.size() - 1).x(), mPoints.at(mPoints.size() - 1).y());
-          updateEndPoint(mpGraphicsView->roundPoint(newPos.at(0)));
-          updateTransitionTextPosition();
-        }
+  }
+  if (mpEndComponent) {
+    Component *pComponent = qobject_cast<Component*>(sender());
+    if (pComponent == mpEndComponent->getRootParentComponent()) {
+      updateEndPoint(mpGraphicsView->roundPoint(mpEndComponent->mapToScene(mpEndComponent->boundingRect().center())));
+      if (mLineType == LineAnnotation::TransitionType) {
+        QRectF sceneRectF = mpEndComponent->sceneBoundingRect();
+        QList<QPointF> newPos = Utilities::liangBarskyClipper(sceneRectF.topLeft().x(), sceneRectF.topLeft().y(),
+                                                              sceneRectF.bottomRight().x(), sceneRectF.bottomRight().y(),
+                                                              mPoints.at(mPoints.size() - 2).x(), mPoints.at(mPoints.size() - 2).y(),
+                                                              mPoints.at(mPoints.size() - 1).x(), mPoints.at(mPoints.size() - 1).y());
+        updateEndPoint(mpGraphicsView->roundPoint(newPos.at(0)));
+        updateTransitionTextPosition();
       }
     }
   }
