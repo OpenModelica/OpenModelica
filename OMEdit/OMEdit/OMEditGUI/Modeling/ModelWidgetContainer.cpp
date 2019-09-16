@@ -1345,10 +1345,11 @@ void GraphicsView::checkEmitUpdateSelect(const bool showPropertiesAndSelect, Sha
 {
   MainWindow *pMainWindow = MainWindow::instance();
   pMainWindow->getConnectModeAction()->setChecked(true);
-  mpModelWidget->getLibraryTreeItem()->emitShapeAdded(shapeAnnotation,
-                                                      this);
+  mpModelWidget->getLibraryTreeItem()->emitShapeAdded(shapeAnnotation, this);
   if (showPropertiesAndSelect) {
     shapeAnnotation->showShapeProperties();
+    // set the focus back on GraphicsView once the shape properties dialog is closed.
+    setFocus(Qt::ActiveWindowFocusReason);
   }
   mpModelWidget->updateClassAnnotationIfNeeded();
   mpModelWidget->updateModelText();
