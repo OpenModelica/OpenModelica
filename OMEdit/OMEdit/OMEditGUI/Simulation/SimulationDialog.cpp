@@ -2013,7 +2013,7 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
       pOpcUaClient->getSampleThread()->exit();
     }
     if (pOpcUaClient && pOpcUaClient->getOpcUaWorker()) {
-      pOpcUaClient->getOpcUaWorker()->pauseInteractiveSimulation();
+      pOpcUaClient->getOpcUaWorker()->emitPauseInteractiveSimulation();
     }
     return;
   }

@@ -91,13 +91,14 @@ private:
   QFont mLegendFont;
   double mTime;
   bool mIsInteractiveSimulation;
+  bool mShowInteractiveControls;
   QString mInteractiveTreeItemOwner;
   int mInteractivePort;
   QwtSeriesData<QPointF>* mpInteractiveData;
   QString mInteractiveModelName;
   QMdiSubWindow *mpSubWindow;
 public:
-  PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0, bool isInteractiveSimulation = false);
+  PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0, bool isInteractiveSimulation = false, bool showInteractiveControlsIfAppropriate = true);
 
   ~PlotWindow();
 

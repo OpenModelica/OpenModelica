@@ -1,6 +1,7 @@
 #include "OpcUaClient.h"
 
 #include "MainWindow.h"
+#include "Modeling/MessagesWidget.h"
 #include "Plotting/PlotWindowContainer.h"
 #include "Plotting/VariablesWidget.h"
 
@@ -74,8 +75,9 @@ OpcUaClient::OpcUaClient(SimulationOptions simulationOptions)
 
 OpcUaClient::~OpcUaClient()
 {
-  mpOpcUaWorker->pauseInteractiveSimulation();
+  mpOpcUaWorker->emitPauseInteractiveSimulation();
 
+  QMutexLocker(mpOpcUaWorker->getMutex());
   UA_Client_disconnect(mpClient);
   UA_Client_delete(mpClient);
 }
@@ -121,7 +123,7 @@ QStringList OpcUaClient::fetchVariableNamesFromServer()
         int nodeId = ref->nodeId.nodeId.identifier.numeric;
         QString variableName = QString::fromUtf8((char *)ref->browseName.name.data, ref->browseName.name.length);
         if (!variableName.startsWith("$")) {
-          Variable *pVariable = new Variable(nodeId, variableIsWritable(nodeId));
+          Variable *pVariable = new Variable(variableName, nodeId, variableIsWritable(nodeId));
           if (variableIsReal(nodeId)) {
             double variableValue = readReal(nodeId);
             pVariable->checkBounds(variableValue);
@@ -155,7 +157,7 @@ void OpcUaClient::checkVariable(int nodeId, VariablesTreeItem *pVariablesTreeIte
   // item checked, inform the backend
   mCheckedVariables.insert(nodeId, pVariablesTreeItem);
   if (!mSimulationOptions.isInteractiveSimulationWithSteps()) {
-    emit mpOpcUaWorker->emitSendAddMonitoredItem(nodeId, pVariablesTreeItem->getPlotVariable());
+    mpOpcUaWorker->emitSendAddMonitoredItem(nodeId, pVariablesTreeItem->getPlotVariable());
   }
 }
 
@@ -166,7 +168,7 @@ void OpcUaClient::unCheckVariable(int nodeId, const QString &name)
 {
   mCheckedVariables.remove(nodeId);
   if (!mSimulationOptions.isInteractiveSimulationWithSteps()) {
-    emit mpOpcUaWorker->emitSendRemoveMonitoredItem(name);
+    mpOpcUaWorker->emitSendRemoveMonitoredItem(name);
   }
 }
 
@@ -242,6 +244,7 @@ bool OpcUaClient::variableIsBool(int nodeId)
   */
 double OpcUaClient::readReal(int id)
 {
+  QMutexLocker locker(mpOpcUaWorker->getMutex());
   double res = -1;
   UA_ReadRequest rReq;
   UA_ReadRequest_init(&rReq);
@@ -262,12 +265,56 @@ double OpcUaClient::readReal(int id)
   return res;
 }
 
+void OpcUaClient::readVariables(const QVector<Variable *> &vars, QVector<double> &results)
+{
+  if (vars.isEmpty()) {
+    return; // otherwise we get error NothingToDo
+  }
+  QMutexLocker locker(mpOpcUaWorker->getMutex());
+  UA_ReadRequest rReq;
+  UA_ReadRequest_init(&rReq);
+  rReq.nodesToRead = (UA_ReadValueId*)UA_Array_new(vars.size(), &UA_TYPES[UA_TYPES_READVALUEID]);
+  rReq.nodesToReadSize = vars.size();
+  for (int i = 0; i < vars.size(); ++i) {
+    rReq.nodesToRead[i].nodeId = UA_NODEID_NUMERIC(1, vars[i]->getNodeId());
+    rReq.nodesToRead[i].attributeId = UA_ATTRIBUTEID_VALUE;
+  }
+
+  results.resize(vars.size());
+  UA_ReadResponse rResp = UA_Client_Service_read(mpClient, rReq);
+  if (rResp.responseHeader.serviceResult == UA_STATUSCODE_GOOD && rResp.resultsSize == vars.size()) {
+    for (int i = 0; i < vars.size(); ++i) {
+      double res = -1;
+      if (rResp.results[i].hasValue && UA_Variant_isScalar(&rResp.results[i].value)) {
+        if (rResp.results[i].value.type == &UA_TYPES[UA_TYPES_DOUBLE])
+          res = *(UA_Double*)rResp.results[i].value.data;
+        else if (rResp.results[i].value.type == &UA_TYPES[UA_TYPES_BOOLEAN])
+          res = *(UA_Boolean*)rResp.results[i].value.data;
+      }
+      results[i] = res;
+    }
+  } else {
+    const char *msg = (rResp.responseHeader.serviceResult == UA_STATUSCODE_GOOD) ?
+          "Invalid variable count in the response" :
+          UA_StatusCode_name(rResp.responseHeader.serviceResult);
+    MessagesWidget::instance()->addGUIMessage(MessageItem(
+                                                MessageItem::Modelica,
+                                                msg,
+                                                Helper::interactiveSimulation,
+                                                Helper::warningLevel
+                                                ));
+  }
+  UA_ReadRequest_deleteMembers(&rReq);
+  UA_ReadResponse_deleteMembers(&rResp);
+}
+
 /*!
   Read the bool value of the provided id, return the result as an integer.
   -1 indicates an error.
   */
 int OpcUaClient::readBool(int id)
 {
+  QMutexLocker locker(mpOpcUaWorker->getMutex());
   int res = -1;
   UA_ReadRequest rReq;
   UA_ReadRequest_init(&rReq);
@@ -294,11 +341,12 @@ int OpcUaClient::readBool(int id)
   */
 void OpcUaClient::writeValue(const QVariant &value, const QString &name)
 {
-  int nodeId = mVariables.value(name)->getNodeId();
-  if (variableIsReal(nodeId)) {
-    writeReal(mpClient, UA_NODEID_NUMERIC(1, nodeId), value.toDouble());
-  } else if (variableIsBool(nodeId)) {
-    writeBool(mpClient, UA_NODEID_NUMERIC(1, nodeId), value.toBool());
+  QMutexLocker(mpOpcUaWorker->getMutex());
+  Variable *pVar = mVariables.value(name);
+  if (pVar->isBool()) {
+    writeBool(mpClient, UA_NODEID_NUMERIC(1, pVar->getNodeId()), value.toBool());
+  } else {
+    writeReal(mpClient, UA_NODEID_NUMERIC(1, pVar->getNodeId()), value.toDouble());
   }
 }
 
@@ -323,6 +371,9 @@ OpcUaWorker::OpcUaWorker(OpcUaClient *pClient, bool simulateWithSteps)
   if (!mSimulateWithSteps) {
     createSubscription();
   }
+  mIsRunning = false;
+  connect(this, SIGNAL(sendStartInteractiveSimulation()), this, SLOT(startInteractiveSimulation()), Qt::QueuedConnection);
+  connect(this, SIGNAL(sendPauseInteractiveSimulation()), this, SLOT(pauseInteractiveSimulation()), Qt::QueuedConnection);
 }
 
 OpcUaWorker::~OpcUaWorker()
@@ -336,6 +387,8 @@ void OpcUaWorker::setInterval(double interval)
 
 void OpcUaWorker::startInteractiveSimulation()
 {
+  if (mIsRunning)
+    return;
   mClock.start();
   mIsRunning = true;
 
@@ -345,6 +398,7 @@ void OpcUaWorker::startInteractiveSimulation()
   }
 
   while(mIsRunning) {
+    QMutexLocker locker(&mMutex);
     const double elapsed = mClock.elapsed();
     sample();
 
@@ -360,6 +414,7 @@ void OpcUaWorker::startInteractiveSimulation()
       }
     } else {
       QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+      locker.unlock();
       Sleep::msleep(mServerSampleInterval);
     }
   }
@@ -367,6 +422,8 @@ void OpcUaWorker::startInteractiveSimulation()
 
 void OpcUaWorker::pauseInteractiveSimulation()
 {
+  if (!mIsRunning)
+    return;
   mIsRunning = false;
   if (!mSimulateWithSteps) {
     writeBool(mpParentClient->getClient(), UA_NODEID_NUMERIC(0, 10001), false);
@@ -587,7 +644,7 @@ void OpcUaWorker::removeMonitoredItem(const QString& variableName)
 /*!
   Data structure to handle data between the OPC UA server and OMPlot.
   */
-Variable::Variable(int id, bool isWritable)
+Variable::Variable(QString name, int id, bool isWritable): mName(name)
 {
   // starting bounds
   mCurveBounds.setRect(0.0, 0.0, -2.0, 1.0);

@@ -546,7 +546,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   endInsertRows();
   // set the newly inserted VariablesTreeItem active
   mpActiveVariablesTreeItem = pTopVariablesTreeItem;
-  if (simulationOptions.isValid() && !simulationOptions.isInteractiveSimulation()) {
+  if (simulationOptions.isValid()) {
     pTopVariablesTreeItem->setActive();
   }
   /* open the model_init.xml file for reading */
@@ -786,6 +786,8 @@ bool VariablesTreeModel::removeVariableTreeItem(QString variable)
       }
     }
     if (pVariablesTreeItem) {
+      if (mpActiveVariablesTreeItem == pVariablesTreeItem)
+        mpActiveVariablesTreeItem = nullptr;
       delete pVariablesTreeItem;
     }
     endRemoveRows();
@@ -1533,7 +1535,23 @@ double VariablesWidget::readVariableValue(QString variable, double time, bool *i
     isOk = &dummyOk;
   *isOk = false;
 
-  if (mModelicaMatReader.file) {
+  OpcUaClient *pOpcUaClient = getOpcUaClient();
+  if (pOpcUaClient) { // fetch from interactive simulator
+    if (mPrefetchedValues.contains(variable)) {
+      value = mPrefetchedValues[variable];
+      *isOk = true;
+    } else { // not previously requested variable
+      Variable *pVar = pOpcUaClient->getVariables()->value(variable);
+      if (pVar) {
+        mVariablesToPrefetch.push_back(pVar);
+        if (pVar->isBool())
+          value = pOpcUaClient->readBool(pVar->getNodeId());
+        else
+          value = pOpcUaClient->readReal(pVar->getNodeId());
+        *isOk = true;
+      }
+    }
+  } else if (mModelicaMatReader.file) {
     ModelicaMatVariable_t* var = omc_matlab4_find_var(&mModelicaMatReader, variable.toUtf8().constData());
     if (var) {
       omc_matlab4_val(&value, &mModelicaMatReader, var, time);
@@ -1576,6 +1594,17 @@ double VariablesWidget::readVariableValue(QString variable, double time, bool *i
     textStream.seek(0);
   }
   return value;
+}
+
+void VariablesWidget::prefetchVariables()
+{
+  OpcUaClient *pClient = getOpcUaClient();
+  if (pClient) {
+    pClient->readVariables(mVariablesToPrefetch, mRawPrefetchedValues);
+    for (int i = 0; i < mVariablesToPrefetch.size(); ++i) {
+      mPrefetchedValues[mVariablesToPrefetch[i]->getName()] = mRawPrefetchedValues[i];
+    }
+  }
 }
 
 void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, PlotCurve *pPlotCurve,
@@ -2040,11 +2069,6 @@ void VariablesWidget::valueEntered(const QModelIndex &index)
     return;
   }
   try {
-    OMPlot::PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
-    // if still pPlotWindow is 0 then return.
-    if (!pPlotWindow) {
-      return;
-    }
     QVariant variableValue = pVariablesTreeItem->getValue(pVariablesTreeItem->getDisplayUnit(), pVariablesTreeItem->getUnit()).toDouble();
     QString variableName = pVariablesTreeItem->getPlotVariable();
     // make sure the write goes to the right server
@@ -2237,7 +2261,6 @@ void VariablesWidget::showContextMenu(QPoint point)
     pSetResultActiveAction->setData(pVariablesTreeItem->getVariableName());
     pSetResultActiveAction->setStatusTip(tr("An active item is used for the visualization"));
     pSetResultActiveAction->setEnabled(pVariablesTreeItem->getSimulationOptions().isValid()
-                                       && !pVariablesTreeItem->getSimulationOptions().isInteractiveSimulation()
                                        && !pVariablesTreeItem->isActive());
     connect(pSetResultActiveAction, SIGNAL(triggered()), mpVariablesTreeModel, SLOT(setVariableTreeItemActive()));
 
@@ -2306,6 +2329,14 @@ void VariablesWidget::rewindVisualization()
  */
 void VariablesWidget::playVisualization()
 {
+  OpcUaClient *pOpcUaClient = getOpcUaClient();
+  if (pOpcUaClient) {
+    pOpcUaClient->getOpcUaWorker()->emitStartInteractiveSimulation();
+    mpPlayingState = OpcUaPlaying;
+  } else {
+    mpPlayingState = TimeManagerMode;
+  }
+  // it is still the mpTimeManager who ticks...
   mpTimeManager->setPause(false);
 }
 
@@ -2315,6 +2346,13 @@ void VariablesWidget::playVisualization()
  */
 void VariablesWidget::pauseVisualization()
 {
+  OpcUaClient *pOpcUaClient = getOpcUaClient();
+  if (pOpcUaClient) {
+    pOpcUaClient->getOpcUaWorker()->emitPauseInteractiveSimulation();
+    mpPlayingState = OpcUaPause;
+  } else {
+    mpPlayingState = TimeManagerMode;
+  }
   mpTimeManager->setPause(true);
 }
 
@@ -2355,12 +2393,23 @@ void VariablesWidget::visualizationSpeedChanged()
   }
 }
 
+OpcUaClient *VariablesWidget::getOpcUaClient()
+{
+  VariablesTreeItem *pActiveRoot = getVariablesTreeModel()->getActiveVariablesTreeItem();
+  int port = pActiveRoot ? pActiveRoot->getSimulationOptions().getInteractiveSimulationPortNumber() : -1;
+  if (port > 0)
+    return MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port);
+  else
+    return nullptr;
+}
+
 /*!
  * \brief VariablesWidget::incrementVisualization
  * Slot activated when TimeManager timer emits timeout SIGNAL.
  */
 void VariablesWidget::incrementVisualization()
 {
+  OpcUaClient *pClient = getOpcUaClient();
   //measure realtime
   mpTimeManager->updateTick();
   //update scene and set next time step
@@ -2372,13 +2421,16 @@ void VariablesWidget::incrementVisualization()
     //finish animation with pause when endtime is reached
     if (mpTimeManager->getVisTime() >= mpTimeManager->getEndTime()) {
       pauseVisualization();
-    } else { // get the new visualization time
+    } else if (!pClient) { // get the new visualization time
       double newTime = mpTimeManager->getVisTime() + (mpTimeManager->getHVisual()*mpTimeManager->getSpeedUp());
       if (newTime <= mpTimeManager->getEndTime()) {
         mpTimeManager->setVisTime(newTime);
       } else {
         mpTimeManager->setVisTime(mpTimeManager->getEndTime());
       }
+    } else {
+      prefetchVariables();
+      updateDynamicSelect(0);
     }
   }
 }

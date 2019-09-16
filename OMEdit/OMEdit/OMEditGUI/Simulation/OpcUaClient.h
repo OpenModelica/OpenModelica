@@ -25,6 +25,7 @@ public:
   double readReal(int id);
   bool variableIsBool(int nodeId);
   int readBool(int id);
+  void readVariables(const QVector<Variable *> &vars, QVector<double> &results);
   void writeValue(const QVariant &value, const QString &name);
   double getCurrentSimulationTime();
   QMap<int, VariablesTreeItem*> getCheckedVariables() {return mCheckedVariables;}
@@ -60,11 +61,15 @@ public:
   void setVariablesTreeItemRoot(VariablesTreeItem * pVariablesTreeItemRoot);
   VariablesTreeItem* getVariablesTreeItemRoot() {return mpVariablesTreeItemRoot;}
   QThreadStorage<QMap<UA_UInt32, Variable*>>* getMonitorIds() {return &mMonitorIds;}
+  QMutex *getMutex() { return &mMutex; }
+private slots:
+  void startInteractiveSimulation();
+  void pauseInteractiveSimulation();
 public slots:
   void addMonitoredItem(int nodeId, const QString &variableName);
   void removeMonitoredItem(const QString &variableName);
-  void startInteractiveSimulation();
-  void pauseInteractiveSimulation();
+  void emitStartInteractiveSimulation() { emit sendStartInteractiveSimulation(); }
+  void emitPauseInteractiveSimulation() { emit sendPauseInteractiveSimulation(); }
   void emitSendAddMonitoredItem(int nodeId, QString plotVariable) {emit sendAddMonitoredItem(nodeId, plotVariable);}
   void emitSendRemoveMonitoredItem(QString name) {emit sendRemoveMonitoredItem(name);}
 private slots:
@@ -74,6 +79,7 @@ protected:
 private:
   void appendVariableValues();
   void setInterval(double interval);
+  QMutex mMutex;
   QPair<double, double> mMinMaxValues;
   OpcUaClient *mpParentClient;
   VariablesTreeItem *mpVariablesTreeItemRoot;
@@ -99,12 +105,14 @@ signals:
   void sendUpdateYAxis(double, double);
   void sendAddMonitoredItem(int, QString);
   void sendRemoveMonitoredItem(QString);
+  void sendStartInteractiveSimulation();
+  void sendPauseInteractiveSimulation();
 };
 
 class Variable : public QwtSeriesData<QPointF>
 {
 public:
-  Variable(int id, bool isWritable);
+  Variable(QString name, int id, bool isWritable);
   ~Variable();
 
   QVector<double> *getXAxisData() {return mXAxisVector;}
@@ -123,7 +131,9 @@ public:
   UA_UInt32 getMonitoredItemId() {return mMonitordItemId;}
   void setIsBool(bool isBool) {mIsBool = isBool;}
   bool isBool() {return mIsBool;}
+  QString getName() const { return mName; }
 private:
+  QString mName;
   QPair<double, double> minMaxBounds;
   QVector<double> *mXAxisVector;
   QVector<double> *mYAxisVector;

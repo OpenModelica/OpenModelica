@@ -368,7 +368,7 @@ void PlotWindowContainer::addArrayPlotWindow(bool maximized)
 PlotWindow* PlotWindowContainer::addInteractivePlotWindow(bool maximized, QString owner, int port)
 {
   try {
-    PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this, true);
+    PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this, true, false);
     pPlotWindow->setPlotType(PlotWindow::PLOTINTERACTIVE);
     pPlotWindow->setInteractiveOwner(owner);
     pPlotWindow->setInteractivePort(port);

@@ -44,8 +44,8 @@
 
 using namespace OMPlot;
 
-PlotWindow::PlotWindow(QStringList arguments, QWidget *parent, bool isInteractiveSimulation)
-  : QMainWindow(parent), mIsInteractiveSimulation(isInteractiveSimulation)
+PlotWindow::PlotWindow(QStringList arguments, QWidget *parent, bool isInteractiveSimulation, bool showInteractiveControlsIfAppropriate)
+  : QMainWindow(parent), mIsInteractiveSimulation(isInteractiveSimulation), mShowInteractiveControls(showInteractiveControlsIfAppropriate)
 {
   /* set the widget background white. so that the plot is more useable in books and publications. */
   QPalette p(palette());
@@ -291,13 +291,15 @@ void PlotWindow::setupToolbar()
     mpSimulationSpeedComboBox->setCompleter(0);
     mpSimulationSpeedComboBox->setValidator(pDoubleValidator);
     // add the interactive controls
-    toolBar->addWidget(mpStartSimulationToolButton);
-    toolBar->addSeparator();
-    toolBar->addWidget(mpPauseSimulationToolButton);
-    toolBar->addSeparator();
-    toolBar->addWidget(mpSimulationSpeedLabel);
-    toolBar->addWidget(mpSimulationSpeedComboBox);
-    toolBar->addSeparator();
+    if (mShowInteractiveControls) {
+      toolBar->addWidget(mpStartSimulationToolButton);
+      toolBar->addSeparator();
+      toolBar->addWidget(mpPauseSimulationToolButton);
+      toolBar->addSeparator();
+      toolBar->addWidget(mpSimulationSpeedLabel);
+      toolBar->addWidget(mpSimulationSpeedComboBox);
+      toolBar->addSeparator();
+    }
   }
   // Auto scale
   mpAutoScaleButton = new QToolButton(toolBar);

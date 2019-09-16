@@ -44,6 +44,8 @@
 class OMCProxy;
 class TreeSearchFilters;
 class Label;
+class OpcUaClient;
+class Variable;
 
 class VariablesTreeItem
 {
@@ -200,7 +202,11 @@ public:
   void updateInitXmlFile(SimulationOptions simulationOptions);
   void initializeVisualization(SimulationOptions simulationOptions);
   double readVariableValue(QString variable, double time, bool *isOk = nullptr);
+  void prefetchVariables();
 private:
+  QMap<QString, double> mPrefetchedValues;
+  QVector<Variable*> mVariablesToPrefetch;
+  QVector<double> mRawPrefetchedValues;
   TreeSearchFilters *mpTreeSearchFilters;
   Label *mpSimulationTimeLabel;
   QComboBox *mpSimulationTimeComboBox;
@@ -215,6 +221,13 @@ private:
   Label *mpSpeedLabel;
   QComboBox *mpSpeedComboBox;
   TimeManager *mpTimeManager;
+  enum TimeControlMode {
+    TimeManagerMode,
+    OpcUaPlaying,
+    OpcUaPause,
+  };
+  TimeControlMode mpPlayingState;
+
   VariableTreeProxyModel *mpVariableTreeProxyModel;
   VariablesTreeModel *mpVariablesTreeModel;
   VariablesTreeView *mpVariablesTreeView;
@@ -229,6 +242,7 @@ private:
   void closeResultFile();
   void openResultFile();
   void updateVisualization();
+  OpcUaClient *getOpcUaClient();
 public slots:
   void plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle,
                      OMPlot::PlotCurve *pPlotCurve = 0, OMPlot::PlotWindow *pPlotWindow = 0);
