@@ -386,12 +386,15 @@ try
       then
         (BackendDAE.IF_EQUATION(expExpLst, eqnslst, eqns, source, eqAttr), funcs);
 
+    // when-equations
     case BackendDAE.WHEN_EQUATION(size=size, whenEquation=whenEqn, source=source, attr=eqAttr)
       equation
         (whenEqn, funcs) = differentiateWhenEquations(whenEqn, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
 
       then
         (BackendDAE.WHEN_EQUATION(size, whenEqn, source, eqAttr), funcs);
+
+    // Error case
     else equation
       Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {BackendDump.equationString(inEquation), ComponentReference.crefStr(inDiffwrtCref)}, sourceInfo());
      then fail();
@@ -655,6 +658,7 @@ algorithm
 
     then (res, functionTree);
 
+    // differential array
     case DAE.ARRAY(ty=tp, scalar=b, array=expl) equation
 
       (expl, functionTree) = List.map3Fold(expl, function differentiateExp(maxIter=maxIter-1), inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
@@ -664,6 +668,7 @@ algorithm
 
     then (res, functionTree);
 
+    // differential matrix
     case DAE.MATRIX(ty=tp, integer=i, matrix=matrix) equation
 
       (dmatrix, functionTree) = List.map3FoldList(matrix, function differentiateExp(maxIter=maxIter-1), inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
@@ -685,7 +690,6 @@ algorithm
           res := inExp;
         end if;
       then (res, functionTree);
-
 
     // differentiate rsub
     case e1 as DAE.RSUB()
@@ -717,6 +721,7 @@ algorithm
 
     then (res, functionTree);
 
+    // differential if expression
     case DAE.IFEXP(expCond=e1, expThen=e2, expElse=e3) equation
 
       (res1, functionTree) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter-1);
@@ -1685,12 +1690,13 @@ protected function differentiateCallExpNArg "
 algorithm
   (outDiffedExp,outFunctionTree) := match(name,inExpl,inAttr)
     local
-      DAE.Exp e, e1, e2, cond, etmp;
+      DAE.Exp e, e1, e2, e3, e4, cond, etmp;
       DAE.Exp res, res1, res2;
       list<DAE.Exp> expl, dexpl;
       DAE.Type tp;
       DAE.FunctionTree funcs;
-      String e_str;
+      DAE.CallAttributes attr;
+      String s1, s2, serr;
       Integer i;
 
     case ("smooth",{DAE.ICONST(i),e2}, DAE.CALL_ATTR(ty=tp))
@@ -1805,6 +1811,31 @@ algorithm
         (res1, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
        (res1, inFunctionTree);
+
+    // diff(delay(_,exp1, delayTime, delayMax)) = delay(_, diff(exp1), delayTime, delayMax)
+    case ("delay", {e1, e2, e3, e4}, attr)
+      equation
+        (res, funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
+      then
+       (DAE.CALL(Absyn.IDENT("delay"), {e1,res,e3,e4}, attr),funcs);
+
+    // diff(delay(_,exp1, delayTime)) = delay(_, diff(exp1), delayTime)
+    case ("delay", {e1, e2, e3}, attr)
+      equation
+        (res, funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
+      then
+       (DAE.CALL(Absyn.IDENT("delay"), {e1,res,e3}, attr),funcs);
+
+    // Error message for unsupported opeartor
+    case(_,_,_)
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        s1 = ExpressionDump.printExpListStr(inExpl);
+        s2 = ComponentReference.printComponentRefStr(inDiffwrtCref);
+        serr = stringAppendList({"\n- Function differentiateCallExpNArg failed. differentiateExp ",s1," w.r.t: ",s2," failed\n"});
+        Debug.trace(serr);
+      then
+        fail();
 
   end match;
 end differentiateCallExpNArg;
