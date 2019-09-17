@@ -1813,18 +1813,11 @@ algorithm
        (res1, inFunctionTree);
 
     // diff(delay(_,exp1, delayTime, delayMax)) = delay(_, diff(exp1), delayTime, delayMax)
-    case ("delay", {e1, e2, e3, e4}, attr)
+    case ("delay", {e1, e2, e3, e4}, DAE.CALL_ATTR(ty=tp))
       equation
         (res, funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
       then
-       (DAE.CALL(Absyn.IDENT("delay"), {e1,res,e3,e4}, attr),funcs);
-
-    // diff(delay(_,exp1, delayTime)) = delay(_, diff(exp1), delayTime)
-    case ("delay", {e1, e2, e3}, attr)
-      equation
-        (res, funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
-      then
-       (DAE.CALL(Absyn.IDENT("delay"), {e1,res,e3}, attr),funcs);
+       (Expression.makePureBuiltinCall("delay", {e1, res, e3, e4}, tp),funcs);
 
     // Error message for unsupported opeartor
     case(_,_,_)
