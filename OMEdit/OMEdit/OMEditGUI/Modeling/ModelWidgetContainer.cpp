@@ -337,14 +337,13 @@ bool GraphicsView::addComponent(QString className, QPointF position)
     if (isClassDroppedOnItself(pLibraryTreeItem)) {
       return false;
     } else { // check if the model is partial
-      QString name;
       if (pLibraryTreeItem->isPartial()) {
         if (pOptionsDialog->getNotificationsPage()->getReplaceableIfPartialCheckBox()->isChecked()) {
           NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::ReplaceableIfPartial,
                                                                               NotificationsDialog::InformationIcon,
                                                                               MainWindow::instance());
           pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::MAKE_REPLACEABLE_IF_PARTIAL)
-                                                           .arg(StringHandler::getModelicaClassType(type).toLower()).arg(name));
+                                                           .arg(StringHandler::getModelicaClassType(type).toLower()).arg(pLibraryTreeItem->getName()));
           if (!pNotificationsDialog->exec()) {
             return false;
           }
@@ -354,14 +353,11 @@ bool GraphicsView::addComponent(QString className, QPointF position)
       QString defaultPrefix = pMainWindow->getOMCProxy()->getDefaultComponentPrefixes(pLibraryTreeItem->getNameStructure());
       // get the model defaultComponentName
       QString defaultName = pMainWindow->getOMCProxy()->getDefaultComponentName(pLibraryTreeItem->getNameStructure());
-      if (defaultName.isEmpty()) {
-        name = getUniqueComponentName(StringHandler::toCamelCase(pLibraryTreeItem->getName()));
+      QString name;
+      if (!defaultName.isEmpty() && checkComponentName(defaultName)) {
+        name = defaultName;
       } else {
-        if (checkComponentName(defaultName)) {
-          name = defaultName;
-        } else {
-          name = getUniqueComponentName(defaultName);
-        }
+        name = getUniqueComponentName(StringHandler::toCamelCase(pLibraryTreeItem->getName()));
       }
       // Allow user to change the component name if always ask for component name settings is true.
       if (pOptionsDialog->getNotificationsPage()->getAlwaysAskForDraggedComponentName()->isChecked()) {
