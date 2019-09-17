@@ -617,7 +617,7 @@ protected
   Option<Absyn.Exp> cnd;
   Absyn.ArrayDim ad;
   Absyn.TypeSpec ts;
-  Absyn.ArrayDim tad, ad;
+  Absyn.ArrayDim tad;
   Data nd;
   DAE.Var i;
 algorithm
@@ -1411,58 +1411,6 @@ algorithm
 
   end match;
 end mkRefNode;
-
-/*
-public function mkCloneNode
-"@author: adrpo
- clone the target ref
- ignore basic types"
-  input Name inName;
-  input Ref inTargetRef;
-  input Ref inParentRef;
-  input Graph inGraph;
-  output Graph outGraph;
-  output Ref outCloneRef;
-algorithm
-  (outGraph, outCloneRef) := matchcontinue(inName, inTargetRef, inParentRef, inGraph)
-    local
-      Node n;
-      Ref rn, rc;
-      Graph g;
-      Children kids;
-
-    // not in section (eq or alg), modifiers or dimensions/subscripts
-    case (_, _, _, g)
-      equation
-        false = FNode.isRefIn(inParentRef, FNode.isRefSection);
-        false = FNode.isRefIn(inParentRef, FNode.isRefMod);
-        false = FNode.isRefIn(inParentRef, FNode.isRefDims);
-        false = FNode.isRefIn(inParentRef, FNode.isRefDerived);
-        false = FNode.isRefIn(inParentRef, FNode.isRefFunction);
-        true = not FNode.isRefBasicType(inTargetRef) and
-               not FNode.isRefBuiltin(inTargetRef) and
-               not FNode.isRefComponent(inTargetRef) and
-               not FNode.isRefConstrainClass(inTargetRef) and
-               not FNode.isRefFunction(inTargetRef);
-
-        //print("Cloning: " + FNode.toPathStr(FNode.fromRef(inTargetRef)) + "/" + FNode.toStr(FNode.fromRef(inTargetRef)) + "\n\t" +
-        //      "Scope: " + FNode.toPathStr(FNode.fromRef(inParentRef)) + "/" + FNode.toStr(FNode.fromRef(inParentRef)) + "\n");
-        (g, n) = FGraph.node(g, inName, {inParentRef}, FCore.CLONE(inTargetRef));
-        // make a ref
-        rn = FNode.toRef(n);
-        // add the ref node
-        FNode.addChildRef(inParentRef, inName, rn);
-        // clone ref target node children
-        (g, kids) = FNode.cloneTree(FNode.children(FNode.fromRef(inTargetRef)), rn, g);
-        rn = FNode.updateRef(rn, FNode.setChildren(n, kids));
-      then
-        (g, rn);
-
-    else (inGraph, inTargetRef);
-
-  end matchcontinue;
-end mkCloneNode;
-*/
 
 annotation(__OpenModelica_Interface="frontend");
 end FGraphBuildEnv;
