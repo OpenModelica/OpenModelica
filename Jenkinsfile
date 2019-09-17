@@ -1,6 +1,7 @@
 def common
 def shouldWeBuildOSX
 def shouldWeBuildMINGW
+def shouldWeRunTests
 def isPR
 pipeline {
   agent none
@@ -27,15 +28,16 @@ pipeline {
             def buildNumber = env.BUILD_NUMBER as int
             if (buildNumber > 1) milestone(buildNumber - 1)
             milestone(buildNumber)
-            isPR = true
-          } else {
-            isPR = false
           }
           common = load("${env.workspace}/.CI/common.groovy")
+          isPR = common.isPR()
+          print "isPR: ${isPR}"
           shouldWeBuildOSX = common.shouldWeBuildOSX()
           print "shouldWeBuildOSX: ${shouldWeBuildOSX}"
           shouldWeBuildMINGW = common.shouldWeBuildMINGW()
           print "shouldWeBuildMINGW: ${shouldWeBuildMINGW}"
+          shouldWeRunTests = common.shouldWeRunTests()
+          print "shouldWeRunTests: ${shouldWeRunTests}"
         }
       }
     }
@@ -175,6 +177,10 @@ pipeline {
             RUNTESTDB = "/cache/runtest/"
             LIBRARIES = "/cache/omlibrary"
           }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
           steps {
             script {
               common.standardSetup()
@@ -199,6 +205,10 @@ pipeline {
             RUNTESTDB = "/cache/runtest/"
             LIBRARIES = "/cache/omlibrary"
           }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
           steps {
             script {
               common.standardSetup()
@@ -218,6 +228,10 @@ pipeline {
               environment {
                 RUNTESTDB = "/cache/runtest/"
                 LIBRARIES = "/cache/omlibrary"
+              }
+              when {
+                beforeAgent true
+                expression { shouldWeRunTests }
               }
               steps {
                 script {
@@ -261,6 +275,10 @@ pipeline {
             COMPLIANCEEXTRAREPORTFLAGS = "--expectedFailures=.CI/compliance.failures --flakyTests=.CI/compliance.flaky"
             COMPLIANCEPREFIX = "compliance"
           }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
           steps {
             script { common.compliance() }
           }
@@ -286,6 +304,10 @@ pipeline {
             COMPLIANCEEXTRAFLAGS = "-d=newInst"
             COMPLIANCEEXTRAREPORTFLAGS = "--expectedFailures=.CI/compliance-newinst.failures"
             COMPLIANCEPREFIX = "compliance-newinst"
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
           }
           steps {
             script { common.compliance() }
@@ -367,6 +389,10 @@ pipeline {
               // No runtest.db cache necessary; the tests run in serial and do not load libraries!
             }
           }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
           steps {
             script {
               common.standardSetup()
@@ -383,6 +409,10 @@ pipeline {
               label 'linux'
             }
           }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
           steps {
             script { common.standardSetup() }
             unstash 'omc-clang'
@@ -397,6 +427,10 @@ pipeline {
               label 'linux'
               alwaysPull true
             }
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
           }
           steps {
             script {
@@ -419,6 +453,10 @@ pipeline {
               image 'docker.openmodelica.org/fmuchecker:v2.0.4'
             }
           }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
           options {
             skipDefaultCheckout true
           }
@@ -440,6 +478,10 @@ pipeline {
           agent {
             label 'osx'
           }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
           options {
             skipDefaultCheckout true
           }
@@ -459,6 +501,10 @@ pipeline {
               label 'linux-arm32'
               image 'docker.openmodelica.org/fmuchecker:v2.0.4-arm'
             }
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
           }
           options {
             skipDefaultCheckout true
@@ -485,6 +531,10 @@ pipeline {
               alwaysPull true
             }
           }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
           options {
             skipDefaultCheckout true
           }
@@ -509,7 +559,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { not isPR }
+            expression { !isPR }
           }
           steps {
             unstash 'compliance'
@@ -527,7 +577,7 @@ pipeline {
           }
           when {
             beforeAgent true
-            expression { not isPR }
+            expression { !isPR }
           }
           steps {
             unstash 'usersguide'

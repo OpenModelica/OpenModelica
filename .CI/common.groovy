@@ -299,7 +299,7 @@ def makeCommand() {
 }
 
 def shouldWeBuildOSX() {
-  if (env.CHANGE_ID) {
+  if (isPR()) {
     if (pullRequest.labels.contains("CI/Build OSX")) {
       return true
     }
@@ -308,12 +308,34 @@ def shouldWeBuildOSX() {
 }
 
 def shouldWeBuildMINGW() {
-  if (env.CHANGE_ID) {
+  if (isPR()) {
     if (pullRequest.labels.contains("CI/Build MINGW")) {
       return true
     }
   }
   return params.BUILD_MINGW
+}
+
+def shouldWeRunTests() {
+  if (isPR()) {
+    def skipTestsFilesList = [".*[.]md",
+                              "OMEdit/.*",
+                              "OMNotebook/.*",
+                              "OMPlot/.*",
+                              "OMShell/.*"]
+    def runTest = false
+    for (commitFile in pullRequest.files) {
+      def results = skipTestsFilesList.findAll {element -> commitFile.filename.matches(element)}
+      if (results.size() > 0) {
+        continue
+      } else {
+        runTest = true
+        break;
+      }
+    }
+    return runTest
+  }
+  return true
 }
 
 def isPR() {
