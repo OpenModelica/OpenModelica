@@ -2325,8 +2325,9 @@ algorithm
     case Binding.RAW_BINDING()
       algorithm
         bind_exp := instExp(binding.bindingExp, binding.scope, binding.info);
+        bind_exp := Expression.BINDING_EXP(bind_exp, Type.UNKNOWN(), Type.UNKNOWN(), binding.parents, binding.isEach);
       then
-        Binding.UNTYPED_BINDING(bind_exp, false, binding.scope, binding.parents, binding.isEach, binding.info);
+        Binding.UNTYPED_BINDING(bind_exp, false, binding.scope, binding.isEach, binding.info);
 
     else binding;
   end match;
@@ -3388,7 +3389,7 @@ algorithm
   end if;
 
   if Binding.hasExp(binding) then
-    isNotFixed := isExpressionNotFixed(Binding.getExp(binding), requireFinal, maxDepth);
+    isNotFixed := isExpressionNotFixed(Expression.getBindingExp(Binding.getExp(binding)), requireFinal, maxDepth);
   else
     isNotFixed := true;
   end if;

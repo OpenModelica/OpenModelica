@@ -67,17 +67,17 @@ public
         then
           (exp, expanded);
 
-      case Expression.ARRAY() then (exp, true);
+      case Expression.ARRAY()    then (exp, true);
       case Expression.TYPENAME() then (expandTypename(exp.ty), true);
-      case Expression.RANGE() then expandRange(exp);
-      case Expression.CALL() then expandCall(exp.call, exp);
-      case Expression.SIZE() then expandSize(exp);
-      case Expression.BINARY() then expandBinary(exp, exp.operator);
-      case Expression.UNARY() then expandUnary(exp.exp, exp.operator);
-      case Expression.LBINARY() then expandLogicalBinary(exp);
-      case Expression.LUNARY() then expandLogicalUnary(exp.exp, exp.operator);
+      case Expression.RANGE()    then expandRange(exp);
+      case Expression.CALL()     then expandCall(exp.call, exp);
+      case Expression.SIZE()     then expandSize(exp);
+      case Expression.BINARY()   then expandBinary(exp, exp.operator);
+      case Expression.UNARY()    then expandUnary(exp.exp, exp.operator);
+      case Expression.LBINARY()  then expandLogicalBinary(exp);
+      case Expression.LUNARY()   then expandLogicalUnary(exp.exp, exp.operator);
       case Expression.RELATION() then (exp, true);
-      case Expression.CAST() then expandCast(exp.exp, exp.ty);
+      case Expression.CAST()     then expandCast(exp.exp, exp.ty);
       else expandGeneric(exp);
     end match;
   end expand;

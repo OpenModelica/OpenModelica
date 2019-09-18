@@ -867,8 +867,7 @@ uniontype Component
       return;
     end if;
 
-    fixed := fixed and Expression.isTrue(Binding.getExp(binding));
-
+    fixed := fixed and Expression.isTrue(Expression.getBindingExp(Binding.getExp(binding)));
   end getFixedAttribute;
 
   function getUnitAttribute
@@ -877,18 +876,21 @@ uniontype Component
     output String unitString;
   protected
     Binding binding;
+    Expression unit;
   algorithm
     binding := Class.lookupAttributeBinding("unit", InstNode.getClass(classInstance(component)));
 
-    unitString := match binding
-      case Binding.TYPED_BINDING(bindingExp = Expression.STRING(value = unitString)) then unitString;
-      case Binding.FLAT_BINDING(bindingExp = Expression.STRING(value = unitString)) then unitString;
+    if Binding.isUnbound(binding) then
+      unitString := defaultUnit;
+      return;
+    end if;
+
+    unit := Expression.getBindingExp(Binding.getExp(binding));
+
+    unitString := match unit
+      case Expression.STRING() then unit.value;
       else defaultUnit;
     end match;
-
-    if stringEmpty(unitString) then
-      unitString := defaultUnit;
-    end if;
   end getUnitAttribute;
 
   function isDeleted
