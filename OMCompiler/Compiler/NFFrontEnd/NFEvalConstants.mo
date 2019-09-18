@@ -157,6 +157,7 @@ algorithm
         if ComponentRef.nodeVariability(cref) <= constVariability then
           // Evaluate all constants and structural parameters.
           outExp := Ceval.evalCref(cref, outExp, Ceval.EvalTarget.IGNORE_ERRORS(), evalSubscripts = false);
+          outExp := Expression.stripBindingInfo(outExp);
           outChanged := true;
         elseif outChanged then
           // If the cref's subscripts changed, recalculate its type.
@@ -437,6 +438,7 @@ algorithm
       algorithm
         if ComponentRef.isPackageConstant(e.cref) then
           outExp := Ceval.evalCref(e.cref, e, Ceval.EvalTarget.IGNORE_ERRORS(), evalSubscripts = false);
+          outExp := Expression.stripBindingInfo(outExp);
           outChanged := true;
         elseif outChanged then
           // If the cref's subscripts changed, recalculate its type.

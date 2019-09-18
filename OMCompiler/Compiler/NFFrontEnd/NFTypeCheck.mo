@@ -2996,24 +2996,29 @@ algorithm
     local
       MatchKind ty_match;
       Expression exp;
-      Type ty, comp_ty;
+      Type ty, exp_ty, comp_ty;
       list<list<Dimension>> dims;
 
-    case Binding.TYPED_BINDING()
+    case Binding.TYPED_BINDING(bindingExp = exp)
       algorithm
-        comp_ty := componentType;
-        if not binding.isEach then
-          dims := list(Type.arrayDims(InstNode.getType(p)) for p in listRest(binding.parents));
-          comp_ty := Type.liftArrayLeftList(comp_ty, List.flattenReverse(dims));
-        end if;
+        (exp_ty, comp_ty) := match exp
+          case Expression.BINDING_EXP() guard binding.eachType == NFBinding.EachType.NOT_EACH
+            algorithm
+              dims := list(Type.arrayDims(InstNode.getType(p)) for p in listRest(exp.parents));
+            then
+              (exp.expType, Type.liftArrayLeftList(componentType, List.flattenReverse(dims)));
 
-        (exp, ty, ty_match) := matchTypes(binding.bindingType, comp_ty, binding.bindingExp, true);
+          else (binding.bindingType, componentType);
+        end match;
+
+        (exp, ty, ty_match) := matchTypes(exp_ty, comp_ty, exp, true);
 
         if not isValidAssignmentMatch(ty_match) then
-          printBindingTypeError(name, binding, comp_ty, binding.bindingType, component);
+          printBindingTypeError(name, binding, comp_ty, exp_ty, component);
           fail();
         elseif isCastMatch(ty_match) then
-          binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.parents, binding.isEach, binding.evaluated, binding.isFlattened, binding.info);
+          binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.eachType,
+            binding.evaluated, binding.isFlattened, binding.info);
         end if;
       then
         ();

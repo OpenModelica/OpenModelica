@@ -550,6 +550,7 @@ algorithm
       Binding b;
       Type ty;
       TypingError ty_err;
+      Integer parent_dims;
 
     // Print an error when a dimension that's currently being processed is
     // found, which indicates a dependency loop. Another way of handling this
@@ -623,15 +624,17 @@ algorithm
     case Dimension.UNKNOWN()
       algorithm
         b := binding;
+        parent_dims := 0;
 
         if Binding.isUnbound(binding) then
           // If the component has no binding, try to use its parent's binding
           // (i.e. for record fields where the record instance has a binding).
-          b := getRecordElementBinding(component);
+          (b, parent_dims) := getRecordElementBinding(component);
 
           if Binding.isUnbound(b) then
             // If the component still doesn't have a binding, try to use the start attribute instead.
             // TODO: Any attribute should actually be fine to use here.
+            parent_dims := 0;
             b := Class.lookupAttributeBinding("start", InstNode.getClass(component));
           end if;
         end if;
@@ -649,14 +652,14 @@ algorithm
           // to get the dimension we're looking for.
           case Binding.UNTYPED_BINDING()
             algorithm
-              (dim, _, ty_err) := typeExpDim(b.bindingExp, index + Binding.countPropagatedDims(b),
+              (dim, _, ty_err) := typeExpDim(b.bindingExp, index + Binding.propagatedDimCount(b) + parent_dims,
                                              ExpOrigin.setFlag(origin, ExpOrigin.DIMENSION), info);
             then
               (dim, ty_err);
 
           // A typed binding, get the dimension from the binding's type.
           case Binding.TYPED_BINDING()
-            then nthDimensionBoundsChecked(b.bindingType, index + Binding.countPropagatedDims(b));
+            then nthDimensionBoundsChecked(b.bindingType, index + Binding.propagatedDimCount(b) + parent_dims);
         end match;
 
         () := match ty_err
@@ -725,8 +728,10 @@ function getRecordElementBinding
    the record instance."
   input InstNode component;
   output Binding binding;
+  output Integer parentDims = 0;
 protected
   InstNode parent;
+  Component comp;
   Expression exp;
   Binding parent_binding;
 algorithm
@@ -734,11 +739,12 @@ algorithm
 
   if InstNode.isComponent(parent) then
     // Get the binding of the component's parent.
-    parent_binding := Component.getBinding(InstNode.component(parent));
+    comp := InstNode.component(parent);
+    parent_binding := Component.getBinding(comp);
 
     if Binding.isUnbound(parent_binding) then
       // If the parent has no binding, try the parent's parent.
-      binding := getRecordElementBinding(parent);
+      (binding, parentDims) := getRecordElementBinding(parent);
     else
       // Otherwise type the binding, so we can safely look up the field name.
       binding := typeBinding(parent_binding, ExpOrigin.CLASS);
@@ -749,6 +755,8 @@ algorithm
         InstNode.componentApply(parent, Component.setBinding, binding);
       end if;
     end if;
+
+    parentDims := parentDims + Component.dimensionCount(comp);
 
     // If we found a binding, get the binding for the field from it.
     if Binding.isBound(binding) then
@@ -933,13 +941,22 @@ algorithm
       Type ty;
       Variability var;
       SourceInfo info;
+      NFBinding.EachType each_ty;
 
     case Binding.UNTYPED_BINDING(bindingExp = exp)
       algorithm
         info := Binding.getInfo(binding);
         (exp, ty, var) := typeExp(exp, origin, info);
+
+        if binding.isEach then
+          each_ty := NFBinding.EachType.EACH;
+        elseif Binding.isClassBinding(binding) then
+          each_ty := NFBinding.EachType.REPEAT;
+        else
+          each_ty := NFBinding.EachType.NOT_EACH;
+        end if;
       then
-        Binding.TYPED_BINDING(exp, ty, var, binding.parents, binding.isEach, false, false, binding.info);
+        Binding.TYPED_BINDING(exp, ty, var, each_ty, false, false, binding.info);
 
     case Binding.TYPED_BINDING() then binding;
     case Binding.UNBOUND() then binding;
@@ -1002,7 +1019,7 @@ algorithm
           fail();
         end if;
       then
-        Binding.TYPED_BINDING(exp, ty, var, condition.parents, false, false, false, info);
+        Binding.TYPED_BINDING(exp, ty, var, NFBinding.EachType.NOT_EACH, false, false, info);
 
   end match;
 end typeComponentCondition;
@@ -1189,6 +1206,9 @@ algorithm
     case Expression.PARTIAL_FUNCTION_APPLICATION()
       then Function.typePartialApplication(exp, origin, info);
 
+    case Expression.BINDING_EXP()
+      then typeBindingExp(exp, origin, info);
+
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got unknown expression: " + Expression.toString(exp), sourceInfo());
@@ -1223,6 +1243,44 @@ algorithm
   end for;
 end typeExpl;
 
+function typeBindingExp
+  input Expression exp;
+  input ExpOrigin.Type origin;
+  input SourceInfo info;
+  output Expression outExp;
+  output Type ty;
+  output Variability variability;
+protected
+  Expression e;
+  list<InstNode> parents;
+  Boolean is_each;
+  Type exp_ty;
+  Integer parent_dims;
+algorithm
+  Expression.BINDING_EXP(e, _, _, parents, is_each) := exp;
+  (e, exp_ty, variability) := typeExp(e, origin, info);
+
+  parent_dims := 0;
+
+  if not is_each then
+    for p in listRest(parents) loop
+      parent_dims := parent_dims + Type.dimensionCount(InstNode.getType(p));
+    end for;
+  end if;
+
+  if parent_dims == 0 then
+    ty := exp_ty;
+  else
+    // If the binding has too few dimensions we can't unlift it, but TypeCheck.matchBinding
+    // can report the error better so we silently ignore it here.
+    if Type.dimensionCount(exp_ty) >= parent_dims then
+      ty := Type.unliftArrayN(parent_dims, exp_ty);
+    end if;
+  end if;
+
+  outExp := Expression.BINDING_EXP(e, exp_ty, ty, parents, is_each);
+end typeBindingExp;
+
 function typeExpDim
   "Returns the requested dimension of the given expression, while doing as
    little typing as possible. This function returns TypingError.OUT_OF_BOUNDS if
@@ -1248,20 +1306,21 @@ algorithm
   else
     // Otherwise we try to type as little as possible of the expression to get
     // the dimension we need, to avoid introducing unnecessary cycles.
-    (dim, error) := match exp
+    e := Expression.getBindingExp(exp);
+    (dim, error) := match e
       // An untyped array, use typeArrayDim to get the dimension.
       case Expression.ARRAY(ty = Type.UNKNOWN())
-        then typeArrayDim(exp, dimIndex);
+        then typeArrayDim(e, dimIndex);
 
       // A cref, use typeCrefDim to get the dimension.
       case Expression.CREF()
-        then typeCrefDim(exp.cref, dimIndex, origin, info);
+        then typeCrefDim(e.cref, dimIndex, origin, info);
 
       // Any other expression, type the whole expression and get the dimension
       // from the type.
       else
         algorithm
-          (e, ty, _) := typeExp(exp, origin, info);
+          (e, ty, _) := typeExp(e, origin, info);
           typedExp := SOME(e);
         then
           nthDimensionBoundsChecked(ty, dimIndex);
