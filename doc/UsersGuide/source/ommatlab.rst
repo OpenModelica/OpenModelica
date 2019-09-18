@@ -207,8 +207,8 @@ Standard set methods
 
 Two setting possibilities are accepted using setXXXs(),where "XXX" can be any of above functions.
 
-- setXXX(S) where S is a string of names
-- setXXX([S1,S2])  where S1 and S1 are array of string elements
+- setXXX("Name=value") string of keyword assignments
+- setXXX(["Name1=value1","Name2=value2","Name3=value3"])  array of string of keyword assignments
 
 
 Usage of setMethods
