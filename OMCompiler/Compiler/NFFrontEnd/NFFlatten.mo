@@ -316,6 +316,7 @@ algorithm
     //cond := flattenBinding(condition, prefix);
     exp := Binding.getTypedExp(cond);
     exp := Ceval.evalExp(exp, Ceval.EvalTarget.CONDITION(Binding.getInfo(cond)));
+    exp := Expression.getBindingExp(exp);
 
     // Hack to make arrays work when all elements have the same value.
     if Expression.arrayAllEqual(exp) then
@@ -535,10 +536,10 @@ algorithm
 
     comp_var := Component.variability(comp);
     if comp_var <= Variability.STRUCTURAL_PARAMETER or binding_var <= Variability.STRUCTURAL_PARAMETER then
-      binding_exp := Ceval.evalExp(binding_exp);
+      binding_exp := Expression.stripBindingInfo(Ceval.evalExp(binding_exp));
     elseif binding_var == Variability.PARAMETER and Component.isFinal(comp) then
       try
-        binding_exp := Ceval.evalExp(binding_exp);
+        binding_exp := Expression.stripBindingInfo(Ceval.evalExp(binding_exp));
       else
       end try;
     else
@@ -789,39 +790,8 @@ algorithm
         if binding.isFlattened then
           return;
         end if;
-        bind_exp := binding.bindingExp;
-        pars := listRest(binding.parents);
 
-        // TODO: Optimize this, making a list of all subscripts in the prefix
-        //       when only a few are needed is unnecessary.
-        if not (binding.isEach or listEmpty(pars)) then
-          if isTypeAttribute then
-            pars := listRest(pars);
-          end if;
-
-          binding_level := 0;
-          for parent in pars loop
-            binding_level := binding_level + Type.dimensionCount(InstNode.getType(parent));
-          end for;
-
-          if binding_level > 0 then
-            subs := listAppend(listReverse(s) for s in ComponentRef.subscriptsAll(prefix));
-            accum_subs := {};
-
-            for i in 1:binding_level loop
-              if listEmpty(subs) then
-                break;
-              end if;
-
-              accum_subs := listHead(subs) :: accum_subs;
-              subs := listRest(subs);
-            end for;
-
-            bind_exp := Expression.applySubscripts(accum_subs, bind_exp);
-          end if;
-        end if;
-
-        binding.bindingExp := flattenExp(bind_exp, prefix);
+        binding.bindingExp := flattenBindingExp(binding.bindingExp, prefix, isTypeAttribute);
         binding.isFlattened := true;
       then
         binding;
@@ -846,6 +816,60 @@ algorithm
   end match;
 end flattenBinding;
 
+function flattenBindingExp
+  input Expression exp;
+  input ComponentRef prefix;
+  input Boolean isTypeAttribute = false;
+  output Expression outExp;
+protected
+  list<Subscript> subs, accum_subs;
+  Integer binding_level;
+  list<InstNode> parents;
+algorithm
+  outExp := match exp
+    case Expression.BINDING_EXP()
+      algorithm
+        parents := listRest(exp.parents);
+
+        if not (exp.isEach or listEmpty(parents)) then
+          if isTypeAttribute then
+            parents := listRest(parents);
+          end if;
+
+          binding_level := 0;
+          for parent in parents loop
+            binding_level := binding_level + Type.dimensionCount(InstNode.getType(parent));
+          end for;
+
+          if binding_level > 0 then
+            // TODO: Optimize this, making a list of all subscripts in the prefix
+            //       when only a few are needed is unnecessary.
+            subs := listAppend(listReverse(s) for s in ComponentRef.subscriptsAll(prefix));
+            accum_subs := {};
+
+            for i in 1:binding_level loop
+              if listEmpty(subs) then
+                break;
+              end if;
+
+              accum_subs := listHead(subs) :: accum_subs;
+              subs := listRest(subs);
+            end for;
+
+            outExp := Expression.applySubscripts(accum_subs, exp.exp);
+          else
+            outExp := exp.exp;
+          end if;
+        else
+          outExp := exp.exp;
+        end if;
+      then
+        flattenExp(outExp, prefix);
+
+    else exp;
+  end match;
+end flattenBindingExp;
+
 function flattenExp
   input output Expression exp;
   input ComponentRef prefix;
@@ -864,6 +888,7 @@ algorithm
       then
         exp;
 
+    case Expression.BINDING_EXP() then flattenBindingExp(exp, prefix);
     else exp;
   end match;
 end flattenExp_traverse;

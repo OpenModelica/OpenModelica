@@ -141,6 +141,13 @@ function evalExp
   input output Expression exp;
   input EvalTarget target = EvalTarget.IGNORE_ERRORS();
 algorithm
+  exp := Expression.getBindingExp(evalExp_impl(exp, target));
+end evalExp;
+
+function evalExp_impl
+  input output Expression exp;
+  input EvalTarget target;
+algorithm
   exp := match exp
     local
       InstNode c;
@@ -163,34 +170,20 @@ algorithm
       then if exp.literal then exp
            else
              Expression.makeArray(exp.ty,
-               list(evalExp(e, target) for e in exp.elements),
+               list(evalExp_impl(e, target) for e in exp.elements),
                literal = true);
 
-    case Expression.RANGE()
-      algorithm
-        exp1 := evalExp(exp.start, target);
-        oexp := evalExpOpt(exp.step, target);
-        exp3 := evalExp(exp.stop, target);
-
-        if EvalTarget.isRange(target) then
-          exp1 := Expression.RANGE(
-            TypeCheck.getRangeType(exp1, oexp, exp3, Type.arrayElementType(exp.ty), EvalTarget.getInfo(target)),
-            exp1, oexp, exp3);
-        else
-          exp1 := evalRange(exp1, oexp, exp3);
-        end if;
-      then
-        exp1;
+    case Expression.RANGE() then evalRange(exp, target);
 
     case Expression.TUPLE()
       algorithm
-        exp.elements := list(evalExp(e, target) for e in exp.elements);
+        exp.elements := list(evalExp_impl(e, target) for e in exp.elements);
       then
         exp;
 
     case Expression.RECORD()
       algorithm
-        exp.elements := list(evalExp(e, target) for e in exp.elements);
+        exp.elements := list(evalExp_impl(e, target) for e in exp.elements);
       then
         exp;
 
@@ -202,44 +195,47 @@ algorithm
 
     case Expression.BINARY()
       algorithm
-        exp1 := evalExp(exp.exp1, target);
-        exp2 := evalExp(exp.exp2, target);
+        exp1 := evalExp_impl(exp.exp1, target);
+        exp2 := evalExp_impl(exp.exp2, target);
       then
         evalBinaryOp(exp1, exp.operator, exp2, target);
 
     case Expression.UNARY()
       algorithm
-        exp1 := evalExp(exp.exp, target);
+        exp1 := evalExp_impl(exp.exp, target);
       then
         evalUnaryOp(exp1, exp.operator);
 
     case Expression.LBINARY()
-      then evalLogicBinaryOp(exp.exp1, exp.operator, exp.exp2, target);
+      algorithm
+        exp1 := evalExp_impl(exp.exp1, target);
+      then
+        evalLogicBinaryOp(exp1, exp.operator, exp.exp2, target);
 
     case Expression.LUNARY()
       algorithm
-        exp1 := evalExp(exp.exp, target);
+        exp1 := evalExp_impl(exp.exp, target);
       then
         evalLogicUnaryOp(exp1, exp.operator);
 
     case Expression.RELATION()
       algorithm
-        exp1 := evalExp(exp.exp1, target);
-        exp2 := evalExp(exp.exp2, target);
+        exp1 := evalExp_impl(exp.exp1, target);
+        exp2 := evalExp_impl(exp.exp2, target);
       then
         evalRelationOp(exp1, exp.operator, exp2);
 
-    case Expression.IF() then evalIfExp(exp.condition, exp.trueBranch, exp.falseBranch, target);
+    case Expression.IF() then evalIfExp(exp, target);
 
     case Expression.CAST()
       algorithm
-        exp1 := evalExp(exp.exp, target);
+        exp1 := evalExp_impl(exp.exp, target);
       then
         evalCast(exp1, exp.ty);
 
     case Expression.UNBOX()
       algorithm
-        exp1 := evalExp(exp.exp, target);
+        exp1 := evalExp_impl(exp.exp, target);
       then Expression.UNBOX(exp1, exp.ty);
 
     case Expression.SUBSCRIPTED_EXP()
@@ -247,7 +243,7 @@ algorithm
 
     case Expression.TUPLE_ELEMENT()
       algorithm
-        exp1 := evalExp(exp.tupleExp, target);
+        exp1 := evalExp_impl(exp.tupleExp, target);
       then
         Expression.tupleElement(exp1, exp.ty, exp.index);
 
@@ -256,13 +252,19 @@ algorithm
 
     case Expression.MUTABLE()
       algorithm
-        exp1 := evalExp(Mutable.access(exp.exp), target);
+        exp1 := evalExp_impl(Mutable.access(exp.exp), target);
       then
         exp1;
 
+    case Expression.BINDING_EXP()
+      algorithm
+        exp.exp := evalExp_impl(exp.exp, target);
+      then
+        exp;
+
     else exp;
   end match;
-end evalExp;
+end evalExp_impl;
 
 function evalExpOpt
   input output Option<Expression> oexp;
@@ -272,7 +274,7 @@ algorithm
     local
       Expression e;
 
-    case SOME(e) then SOME(evalExp(e, target));
+    case SOME(e) then SOME(evalExp_impl(e, target));
     else oexp;
   end match;
 end evalExpOpt;
@@ -357,7 +359,6 @@ protected
   list<Subscript> subs;
   Variability var;
   Option<Expression> start_exp;
-  Integer pcount;
 algorithm
   exp_origin := if InstNode.isFunction(InstNode.explicitParent(node))
     then ExpOrigin.FUNCTION else ExpOrigin.CLASS;
@@ -390,14 +391,12 @@ algorithm
         if binding.evaluated then
           exp := binding.bindingExp;
         else
-          exp := evalExp(binding.bindingExp, target);
+          exp := evalExp_impl(binding.bindingExp, target);
 
-          if not referenceEq(exp, binding.bindingExp) then
-            binding.bindingExp := exp;
-            binding.evaluated := true;
-            comp := Component.setBinding(binding, comp);
-            InstNode.updateComponent(comp, node);
-          end if;
+          binding.bindingExp := exp;
+          binding.evaluated := true;
+          comp := Component.setBinding(binding, comp);
+          InstNode.updateComponent(comp, node);
         end if;
       then
         (exp, true);
@@ -420,28 +419,129 @@ algorithm
 
   // Apply subscripts from the cref to the binding expression as needed.
   if evaluated then
-    pcount := if Binding.isEach(binding) then 1 else Binding.parentCount(binding);
-    exp := subscriptEvaluatedBinding(exp, cref, pcount, evalSubscripts);
+    exp := subscriptEvaluatedBinding(exp, cref, evalSubscripts);
   end if;
 end evalComponentBinding;
 
-function subscriptEvaluatedBinding
+function flattenBindingExp
   input Expression exp;
-  input ComponentRef cref;
-  input Integer parents;
-  input Boolean evalSubscripts;
   output Expression outExp;
+algorithm
+  outExp := match exp
+    case Expression.BINDING_EXP(exp = Expression.BINDING_EXP())
+      then flattenBindingExp(exp.exp);
+
+    else exp;
+  end match;
+end flattenBindingExp;
+
+function subscriptEvaluatedBinding
+  "Takes subscripts from the given component reference and applies them to an
+   evaluated expression."
+  input output Expression exp;
+  input ComponentRef cref;
+  input Boolean evalSubscripts;
 protected
   list<Subscript> subs;
+  ComponentRef cr;
 algorithm
-  subs := List.flatten(ComponentRef.subscriptsN(cref, parents));
+  // The subscripts of the first part of the cref are always applied.
+  subs := ComponentRef.getSubscripts(cref);
+  cr := ComponentRef.stripSubscripts(cref);
 
   if evalSubscripts then
-    subs := list(Subscript.eval(s) for s in subs);
+    subs := listReverse(Subscript.eval(s) for s in subs);
+  else
+    subs := listReverse(subs);
   end if;
 
-  outExp := Expression.applySubscripts(subs, exp);
+  // The rest of the cref contributes subscripts based on where the expressions
+  // comes from in the instance tree.
+  exp := subscriptEvaluatedBinding2(exp, cr, evalSubscripts, subs, subs);
 end subscriptEvaluatedBinding;
+
+function subscriptEvaluatedBinding2
+  input output Expression exp;
+  input ComponentRef cref;
+  input Boolean evalSubscripts;
+  input list<Subscript> subscripts = {};
+  input list<Subscript> bindingSubs = {};
+algorithm
+  exp := match exp
+    local
+      Expression e;
+      Type exp_ty, bind_ty;
+      list<InstNode> parents;
+      list<Subscript> accum_subs, subs;
+      ComponentRef cr;
+      InstNode cr_node;
+
+    case Expression.BINDING_EXP(bindingType = bind_ty, parents = parents)
+      algorithm
+        if exp.isEach then
+          parents := {listHead(parents)};
+        end if;
+
+        cr := cref;
+        accum_subs := subscripts;
+        subs := {};
+
+        if not ComponentRef.isEmpty(cr) then
+          cr_node := ComponentRef.node(cr);
+
+          // Remove binding parents until we find one referring to the first
+          // cref node, or we run out of parents.
+          while not (listEmpty(parents) or InstNode.refEqual(listHead(parents), cr_node)) loop
+            parents := listRest(parents);
+          end while;
+
+          // Collect subscripts from the part of the cref corresponding to the
+          // remaining parents.
+          while not listEmpty(parents) loop
+            if not InstNode.refEqual(listHead(parents), cr_node) then
+              break;
+            end if;
+
+            subs := List.append_reverse(ComponentRef.getSubscripts(cr), subs);
+
+            parents := listRest(parents);
+            cr := ComponentRef.rest(cr);
+
+            if ComponentRef.isEmpty(cr) then
+              break;
+            end if;
+
+            cr_node := ComponentRef.node(cr);
+          end while;
+
+          if evalSubscripts then
+            subs := listReverse(Subscript.eval(s) for s in subs);
+          else
+            subs := listReverse(subs);
+          end if;
+
+          accum_subs := List.append_reverse(subs, accum_subs);
+        end if;
+
+        // Subscript the binding type if bindingSubs was given.
+        if not listEmpty(bindingSubs) then
+          subs := bindingSubs;
+          bind_ty := Type.subscript(bind_ty, subs);
+        end if;
+
+        e := subscriptEvaluatedBinding2(exp.exp, cr, evalSubscripts, accum_subs, subs);
+        exp_ty := Expression.typeOf(e);
+      then
+        Expression.BINDING_EXP(e, exp_ty, bind_ty, exp.parents, exp.isEach);
+
+    else
+      algorithm
+        subs := listReverse(subscripts);
+      then
+        Expression.applySubscripts(subs, exp);
+
+  end match;
+end subscriptEvaluatedBinding2;
 
 function evalComponentStartBinding
   "Tries to evaluate the given component's start value. NONE() is returned if
@@ -461,6 +561,7 @@ protected
   Binding binding;
   Expression exp;
   list<Subscript> subs;
+  Integer pcount;
 algorithm
   // Only use the start value if the component is a fixed parameter.
   var := Component.variability(comp);
@@ -489,16 +590,12 @@ algorithm
   outExp := match binding
     case Binding.TYPED_BINDING()
       algorithm
-        exp := evalExp(binding.bindingExp, target);
+        exp := evalExp_impl(binding.bindingExp, target);
 
         if not referenceEq(exp, binding.bindingExp) then
           binding.bindingExp := exp;
           start_comp := Component.setBinding(binding, start_comp);
           InstNode.updateComponent(start_comp, start_node);
-        end if;
-
-        if not Binding.isEach(binding) then
-          exp := subscriptEvaluatedBinding(exp, cref, Binding.parentCount(binding) - 1, evalSubscripts);
         end if;
       then
         SOME(exp);
@@ -517,7 +614,7 @@ protected
   ClassTree tree;
   array<InstNode> comps;
   list<Expression> fields;
-  Type ty;
+  Type ty, exp_ty;
   InstNode rec_node;
   Expression exp;
   ComponentRef rest_cr;
@@ -527,7 +624,9 @@ algorithm
     case (Component.TYPED_COMPONENT(ty = Type.COMPLEX(complexTy = ComplexType.RECORD(rec_node))), _)
       algorithm
         exp := makeRecordBindingExp(component.classInst, rec_node, component.ty, cref);
-        binding := Binding.CEVAL_BINDING(exp, {node});
+        exp_ty := Expression.typeOf(exp);
+        exp := Expression.BINDING_EXP(exp, exp_ty, exp_ty, {node}, true);
+        binding := Binding.CEVAL_BINDING(exp);
 
         if not ComponentRef.hasSubscripts(cref) then
           InstNode.updateComponent(Component.setBinding(binding, component), node);
@@ -541,7 +640,9 @@ algorithm
       algorithm
         exp := makeRecordBindingExp(component.classInst, rec_node, component.ty, cref);
         exp := splitRecordArrayExp(exp);
-        binding := Binding.CEVAL_BINDING(exp, {node});
+        exp_ty := Expression.typeOf(exp);
+        exp := Expression.BINDING_EXP(exp, exp_ty, exp_ty, {node}, true);
+        binding := Binding.CEVAL_BINDING(exp);
 
         if not ComponentRef.hasSubscripts(cref) then
           InstNode.updateComponent(Component.setBinding(binding, component), node);
@@ -555,9 +656,9 @@ algorithm
       guard Type.isRecord(Type.arrayElementType(ty))
       algorithm
         exp := evalCref(rest_cr, Expression.EMPTY(ty), target);
-        exp := makeComponentBinding2(exp, InstNode.name(node));
+        exp := Expression.bindingExpMap(exp, function makeComponentBinding2(name = InstNode.name(node)));
       then
-        Binding.CEVAL_BINDING(exp, {node});
+        Binding.CEVAL_BINDING(exp);
 
     else NFBinding.EMPTY_BINDING;
   end matchcontinue;
@@ -628,7 +729,7 @@ algorithm
     field_exp := Expression.CREF(ty, cr);
 
     if Component.variability(InstNode.component(c)) <= Variability.PARAMETER then
-      field_exp := evalExp(field_exp);
+      field_exp := evalExp_impl(field_exp, EvalTarget.IGNORE_ERRORS());
     end if;
 
     fields := field_exp :: fields;
@@ -663,19 +764,46 @@ algorithm
 end evalTypename;
 
 function evalRange
-  input Expression start;
-  input Option<Expression> optStep;
-  input Expression stop;
+  input Expression rangeExp;
+  input EvalTarget target;
+  output Expression result;
+protected
+  Type ty;
+  Expression start_exp, stop_exp;
+  Option<Expression> step_exp;
+  Expression max_prop_exp;
+  Integer max_prop_count;
+algorithm
+  Expression.RANGE(ty = ty, start = start_exp, step = step_exp, stop = stop_exp) := rangeExp;
+  start_exp := evalExp(start_exp, target);
+  step_exp := evalExpOpt(step_exp, target);
+  stop_exp := evalExp(stop_exp, target);
+
+  if EvalTarget.isRange(target) then
+    ty := TypeCheck.getRangeType(start_exp, step_exp, stop_exp,
+      Type.arrayElementType(ty), EvalTarget.getInfo(target));
+    result := Expression.RANGE(ty, start_exp, step_exp, stop_exp);
+  else
+    result := Expression.RANGE(ty, start_exp, step_exp, stop_exp);
+    result := Expression.bindingExpMap(result, evalRangeExp);
+  end if;
+end evalRange;
+
+function evalRangeExp
+  input Expression rangeExp;
   output Expression exp;
 protected
-  Expression step;
+  Expression start, step, stop;
+  Option<Expression> opt_step;
   list<Expression> expl;
   Type ty;
   list<String> literals;
   Integer istep;
 algorithm
-  if isSome(optStep) then
-    SOME(step) := optStep;
+  Expression.RANGE(start = start, step = opt_step, stop = stop) := rangeExp;
+
+  if isSome(opt_step) then
+    SOME(step) := opt_step;
 
     (ty, expl) := match (start, step, stop)
       case (Expression.INTEGER(), Expression.INTEGER(istep), Expression.INTEGER())
@@ -733,7 +861,7 @@ algorithm
 
   exp := Expression.makeArray(Type.ARRAY(ty, {Dimension.fromInteger(listLength(expl))}),
                               expl, literal = true);
-end evalRange;
+end evalRangeExp;
 
 function evalRangeReal
   input Real start;
@@ -749,7 +877,6 @@ algorithm
   // exactly if they are part of the range.
   if steps == 0 then
     result := {};
-    return;
   elseif steps == 1 then
     result := {Expression.REAL(start)};
   else
@@ -770,6 +897,38 @@ algorithm
 end printFailedEvalError;
 
 function evalBinaryOp
+  input Expression exp1;
+  input Operator op;
+  input Expression exp2;
+  input EvalTarget target = EvalTarget.IGNORE_ERRORS();
+  output Expression exp;
+protected
+  Expression max_prop_exp;
+  Integer max_prop_count;
+algorithm
+  (max_prop_exp, max_prop_count) := Expression.mostPropagatedSubExpBinary(exp1, exp2);
+
+  if max_prop_count >= 0 then
+    exp := Expression.bindingExpMap2(Expression.BINARY(exp1, op, exp2),
+      function evalBinaryExp(target = target), max_prop_count, max_prop_exp);
+  else
+    exp := evalBinaryOp_dispatch(exp1, op, exp2, target);
+  end if;
+end evalBinaryOp;
+
+function evalBinaryExp
+  input Expression binaryExp;
+  input EvalTarget target;
+  output Expression result;
+protected
+  Expression e1, e2;
+  Operator op;
+algorithm
+  Expression.BINARY(exp1 = e1, operator = op, exp2 = e2) := binaryExp;
+  result := evalBinaryOp_dispatch(e1, op, e2, target);
+end evalBinaryExp;
+
+function evalBinaryOp_dispatch
   input Expression exp1;
   input Operator op;
   input Expression exp2;
@@ -806,7 +965,7 @@ algorithm
       then
         fail();
   end match;
-end evalBinaryOp;
+end evalBinaryOp_dispatch;
 
 function evalBinaryAdd
   input Expression exp1;
@@ -1184,7 +1343,7 @@ function evalUnaryOp
   output Expression exp;
 algorithm
   exp := match op.op
-    case Op.UMINUS then evalUnaryMinus(exp1);
+    case Op.UMINUS then Expression.bindingExpMap(exp1, evalUnaryMinus);
     else
       algorithm
         Error.addInternalError(getInstanceName() + ": unimplemented case for " +
@@ -1222,6 +1381,39 @@ function evalLogicBinaryOp
   input Expression exp2;
   input EvalTarget target = EvalTarget.IGNORE_ERRORS();
   output Expression exp;
+protected
+  Expression e1;
+  Expression max_prop_exp;
+  Integer max_prop_count;
+algorithm
+  (max_prop_exp, max_prop_count) := Expression.mostPropagatedSubExpBinary(exp1, exp2);
+
+  if max_prop_count >= 0 then
+    exp := Expression.bindingExpMap2(Expression.LBINARY(exp1, op, exp2),
+      function evalLogicBinaryExp(target = target), max_prop_count, max_prop_exp);
+  else
+    exp := evalLogicBinaryOp_dispatch(exp1, op, exp2, target);
+  end if;
+end evalLogicBinaryOp;
+
+function evalLogicBinaryExp
+  input Expression binaryExp;
+  input EvalTarget target;
+  output Expression result;
+protected
+  Expression e1, e2;
+  Operator op;
+algorithm
+  Expression.LBINARY(exp1 = e1, operator = op, exp2 = e2) := binaryExp;
+  result := evalLogicBinaryOp_dispatch(e1, op, e2, target);
+end evalLogicBinaryExp;
+
+function evalLogicBinaryOp_dispatch
+  input Expression exp1;
+  input Operator op;
+  input Expression exp2;
+  input EvalTarget target;
+  output Expression exp;
 algorithm
   exp := match op.op
     case Op.AND then evalLogicBinaryAnd(evalExp(exp1, target), exp2, target);
@@ -1233,7 +1425,7 @@ algorithm
       then
         fail();
   end match;
-end evalLogicBinaryOp;
+end evalLogicBinaryOp_dispatch;
 
 function evalLogicBinaryAnd
   input Expression exp1;
@@ -1246,11 +1438,11 @@ algorithm
       list<Expression> expl;
 
     case Expression.BOOLEAN()
-      then if exp1.value then evalExp(exp2, target) else exp1;
+      then if exp1.value then evalExp_impl(exp2, target) else exp1;
 
     case Expression.ARRAY()
       algorithm
-        Expression.ARRAY(elements = expl) := evalExp(exp2, target);
+        Expression.ARRAY(elements = expl) := evalExp_impl(exp2, target);
         expl := list(evalLogicBinaryAnd(e1, e2, target)
                      threaded for e1 in exp1.elements, e2 in expl);
       then
@@ -1258,7 +1450,7 @@ algorithm
 
     else
       algorithm
-        exp := Expression.BINARY(exp1, Operator.makeAnd(Type.UNKNOWN()), exp2);
+        exp := Expression.LBINARY(exp1, Operator.makeAnd(Type.UNKNOWN()), exp2);
         printFailedEvalError(getInstanceName(), exp, sourceInfo());
       then
         fail();
@@ -1276,11 +1468,11 @@ algorithm
       list<Expression> expl;
 
     case Expression.BOOLEAN()
-      then if exp1.value then exp1 else evalExp(exp2, target);
+      then if exp1.value then exp1 else evalExp_impl(exp2, target);
 
     case Expression.ARRAY()
       algorithm
-        Expression.ARRAY(elements = expl) := evalExp(exp2, target);
+        Expression.ARRAY(elements = expl) := evalExp_impl(exp2, target);
         expl := list(evalLogicBinaryOr(e1, e2, target)
                      threaded for e1 in exp1.elements, e2 in expl);
       then
@@ -1288,7 +1480,7 @@ algorithm
 
     else
       algorithm
-        exp := Expression.BINARY(exp1, Operator.makeOr(Type.UNKNOWN()), exp2);
+        exp := Expression.LBINARY(exp1, Operator.makeOr(Type.UNKNOWN()), exp2);
         printFailedEvalError(getInstanceName(), exp, sourceInfo());
       then
         fail();
@@ -1301,11 +1493,11 @@ function evalLogicUnaryOp
   output Expression exp;
 algorithm
   exp := match op.op
-    case Op.NOT then Expression.mapArrayElements(exp1, evalLogicUnaryNot);
+    case Op.NOT then Expression.bindingExpMap(exp1, evalLogicUnaryNot);
     else
       algorithm
         Error.addInternalError(getInstanceName() + ": unimplemented case for " +
-          Expression.toString(Expression.UNARY(op, exp1)), sourceInfo());
+          Expression.toString(Expression.LUNARY(op, exp1)), sourceInfo());
       then
         fail();
   end match;
@@ -1317,10 +1509,11 @@ function evalLogicUnaryNot
 algorithm
   exp := match exp1
     case Expression.BOOLEAN() then Expression.BOOLEAN(not exp1.value);
+    case Expression.ARRAY() then Expression.mapArrayElements(exp1, evalLogicUnaryNot);
 
     else
       algorithm
-        exp := Expression.UNARY(Operator.makeNot(Type.UNKNOWN()), exp1);
+        exp := Expression.LUNARY(Operator.makeNot(Type.UNKNOWN()), exp1);
         printFailedEvalError(getInstanceName(), exp, sourceInfo());
       then
         fail();
@@ -1328,6 +1521,36 @@ algorithm
 end evalLogicUnaryNot;
 
 function evalRelationOp
+  input Expression exp1;
+  input Operator op;
+  input Expression exp2;
+  output Expression exp;
+protected
+  Expression max_prop_exp;
+  Integer max_prop_count;
+algorithm
+  (max_prop_exp, max_prop_count) := Expression.mostPropagatedSubExpBinary(exp1, exp2);
+
+  if max_prop_count >= 0 then
+    exp := Expression.bindingExpMap2(Expression.RELATION(exp1, op, exp2),
+      evalRelationExp, max_prop_count, max_prop_exp);
+  else
+    exp := evalRelationOp_dispatch(exp1, op, exp2);
+  end if;
+end evalRelationOp;
+
+function evalRelationExp
+  input Expression relationExp;
+  output Expression result;
+protected
+  Expression e1, e2;
+  Operator op;
+algorithm
+  Expression.RELATION(exp1 = e1, operator = op, exp2 = e2) := relationExp;
+  result := evalRelationOp_dispatch(e1, op, e2);
+end evalRelationExp;
+
+function evalRelationOp_dispatch
   input Expression exp1;
   input Operator op;
   input Expression exp2;
@@ -1345,13 +1568,13 @@ algorithm
     else
       algorithm
         Error.addInternalError(getInstanceName() + ": unimplemented case for " +
-          Expression.toString(Expression.BINARY(exp1, op, exp2)), sourceInfo());
+          Expression.toString(Expression.RELATION(exp1, op, exp2)), sourceInfo());
       then
         fail();
   end match;
 
   exp := Expression.BOOLEAN(res);
-end evalRelationOp;
+end evalRelationOp_dispatch;
 
 function evalRelationLess
   input Expression exp1;
@@ -1510,28 +1733,38 @@ algorithm
 end evalRelationNotEqual;
 
 function evalIfExp
-  input Expression condition;
-  input Expression trueBranch;
-  input Expression falseBranch;
+  input Expression ifExp;
   input EvalTarget target;
-  output Expression exp;
+  output Expression result;
 protected
-  Expression cond;
+  Expression cond, btrue, bfalse;
 algorithm
-  cond := evalExp(condition, target);
+  Expression.IF(condition = cond, trueBranch = btrue, falseBranch = bfalse) := ifExp;
+  result := Expression.IF(evalExp_impl(cond, target), btrue, bfalse);
+  result := Expression.bindingExpMap(result, function evalIfExp2(target = target));
+end evalIfExp;
 
-  exp := match cond
+function evalIfExp2
+  input Expression ifExp;
+  input EvalTarget target;
+  output Expression result;
+protected
+  Expression cond, btrue, bfalse;
+algorithm
+  Expression.IF(condition = cond, trueBranch = btrue, falseBranch = bfalse) := ifExp;
+
+  result := match cond
     case Expression.BOOLEAN()
-      then evalExp(if cond.value then trueBranch else falseBranch, target);
+      then evalExp_impl(if cond.value then btrue else bfalse, target);
 
     else
       algorithm
         Error.addInternalError(getInstanceName() + ": unimplemented case for " +
-          Expression.toString(Expression.IF(cond, trueBranch, falseBranch)), sourceInfo());
+          Expression.toString(Expression.IF(cond, btrue, bfalse)), sourceInfo());
       then
         fail();
   end match;
-end evalIfExp;
+end evalIfExp2;
 
 function evalCast
   input Expression castExp;
@@ -1558,25 +1791,27 @@ function evalCall
   input Call call;
   input EvalTarget target;
   output Expression exp;
+protected
+  Call c = call;
 algorithm
-  exp := match call
+  exp := match c
     local
       list<Expression> args;
 
     case Call.TYPED_CALL()
       algorithm
-        args := list(evalExp(arg, target) for arg in call.arguments);
+        c.arguments := list(evalExp_impl(arg, target) for arg in c.arguments);
       then
-        if Function.isBuiltin(call.fn) then
-          evalBuiltinCall(call.fn, args, target)
+        if Function.isBuiltin(c.fn) then
+          Expression.bindingExpMap(Expression.CALL(c), function evalBuiltinCallExp(target = target))
         else
-          evalNormalCall(call.fn, args);
+          Expression.bindingExpMap(Expression.CALL(c), evalNormalCallExp);
 
     case Call.TYPED_ARRAY_CONSTRUCTOR()
-      then evalArrayConstructor(call.exp, call.iters);
+      then evalArrayConstructor(c.exp, c.iters);
 
     case Call.TYPED_REDUCTION()
-      then evalReduction(call.fn, call.exp, call.ty, call.iters);
+      then evalReduction(c.fn, c.exp, c.ty, c.iters);
 
     else
       algorithm
@@ -1586,6 +1821,18 @@ algorithm
 
   end match;
 end evalCall;
+
+function evalBuiltinCallExp
+  input Expression callExp;
+  input EvalTarget target;
+  output Expression result;
+protected
+  Function fn;
+  list<Expression> args;
+algorithm
+  Expression.CALL(call = Call.TYPED_CALL(fn = fn, arguments = args)) := callExp;
+  result := evalBuiltinCall(fn, args, target);
+end evalBuiltinCallExp;
 
 function evalBuiltinCall
   input Function fn;
@@ -1662,6 +1909,17 @@ algorithm
         fail();
   end match;
 end evalBuiltinCall;
+
+function evalNormalCallExp
+  input Expression callExp;
+  output Expression result;
+protected
+  Function fn;
+  list<Expression> args;
+algorithm
+  Expression.CALL(call = Call.TYPED_CALL(fn = fn, arguments = args)) := callExp;
+  result := evalNormalCall(fn, args);
+end evalNormalCallExp;
 
 function evalNormalCall
   input Function fn;
@@ -2782,6 +3040,23 @@ algorithm
   end match;
 end evalSolverClock;
 
+function evalBuiltinDynamicSelect
+  input Function fn;
+  input list<Expression> args;
+  input EvalTarget target;
+  output Expression result;
+protected
+  Expression s, d;
+algorithm
+  {s, d} := list(Expression.unbox(arg) for arg in args);
+  s := evalExp(s, target);
+  if Flags.isSet(Flags.NF_API_DYNAMIC_SELECT) then
+    result := Expression.CALL(Call.makeTypedCall(fn, {s, d}, Variability.CONTINUOUS, Expression.typeOf(s)));
+  else
+    result := s;
+  end if;
+end evalBuiltinDynamicSelect;
+
 function evalArrayConstructor
   input Expression exp;
   input list<tuple<InstNode, Expression>> iterators;
@@ -2821,7 +3096,7 @@ algorithm
     iter := Mutable.create(Expression.INTEGER(0));
     exp := Expression.replaceIterator(exp, node, Expression.MUTABLE(iter));
     iters := iter :: iters;
-    ranges := evalExp(range) :: ranges;
+    ranges := evalExp_impl(range, EvalTarget.IGNORE_ERRORS()) :: ranges;
   end for;
 end createIterationRanges;
 
@@ -2842,7 +3117,7 @@ protected
   list<Type> rest_ty;
 algorithm
   if listEmpty(ranges) then
-    result := evalExp(exp);
+    result := evalExp_impl(exp, EvalTarget.IGNORE_ERRORS());
   else
     range :: ranges_rest := ranges;
     iter :: iters_rest := iterators;
@@ -2913,7 +3188,7 @@ protected
   Type el_ty;
 algorithm
   if listEmpty(ranges) then
-    result := fn(foldExp, evalExp(exp));
+    result := fn(foldExp, evalExp_impl(exp, EvalTarget.IGNORE_ERRORS()));
   else
     range :: ranges_rest := ranges;
     iter :: iters_rest := iterators;
@@ -2946,7 +3221,7 @@ algorithm
 
   if isSome(optIndex) then
     // Evaluate the index.
-    index_exp := evalExp(Util.getOption(optIndex), target);
+    index_exp := evalExp_impl(Util.getOption(optIndex), target);
     index := Expression.toInteger(index_exp);
 
     // Get the index'd dimension of the expression.
@@ -2978,10 +3253,10 @@ algorithm
                             evalExpOpt(exp.step, target),
                             evalExp(exp.stop, target));
 
-    else evalExp(exp, target);
+    else evalExp_impl(exp, target);
   end match;
 
-  subs := list(Subscript.mapShallowExp(s, function evalExp(target = target)) for s in subscripts);
+  subs := list(Subscript.mapShallowExp(s, function evalExp_impl(target = target)) for s in subscripts);
   result := Expression.applySubscripts(subs, result);
 end evalSubscriptedExp;
 
@@ -2994,7 +3269,7 @@ protected
   Integer index;
 algorithm
   Expression.RECORD_ELEMENT(recordExp = e, index = index) := exp;
-  e := evalExp(e, target);
+  e := evalExp_impl(e, target);
 
   result := match e
     case Expression.RECORD()
@@ -3065,23 +3340,6 @@ algorithm
   Error.addInternalError(evalFunc + " got invalid arguments " +
     List.toString(args, Expression.toString, "", "(", ", ", ")", true), info);
 end printWrongArgsError;
-
-function evalBuiltinDynamicSelect
-  input Function fn;
-  input list<Expression> args;
-  input EvalTarget target;
-  output Expression result;
-protected
-  Expression s, d;
-algorithm
-  {s, d} := list(Expression.unbox(arg) for arg in args);
-  s := evalExp(s, target);
-  if Flags.isSet(Flags.NF_API_DYNAMIC_SELECT) then
-    result := Expression.CALL(Call.makeTypedCall(fn, {s, d}, Variability.CONTINUOUS, Expression.typeOf(s)));
-  else
-    result := s;
-  end if;
-end evalBuiltinDynamicSelect;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFCeval;

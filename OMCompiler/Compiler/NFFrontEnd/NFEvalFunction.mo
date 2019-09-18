@@ -236,7 +236,7 @@ algorithm
   binding := Component.getBinding(InstNode.component(node));
 
   if Binding.isBound(binding) then
-    bindingExp := Binding.getExp(binding);
+    bindingExp := Expression.getBindingExp(Binding.getExp(binding));
   else
     bindingExp := buildBinding(node, repl);
   end if;
@@ -1007,7 +1007,8 @@ algorithm
       algorithm
         dims := ModelicaExternalC.ModelicaIO_readMatrixSizes(s1, s2);
       then
-        Expression.ARRAY(Type.INTEGER(), {Expression.INTEGER(dims[1]), Expression.INTEGER(dims[2])}, true);
+        Expression.ARRAY(Type.ARRAY(Type.INTEGER(), {Dimension.fromInteger(2)}),
+                         {Expression.INTEGER(dims[1]), Expression.INTEGER(dims[2])}, true);
 
     case ("ModelicaIO_readRealMatrix",
         {Expression.STRING(s1), Expression.STRING(s2), Expression.INTEGER(i), Expression.INTEGER(i2), Expression.BOOLEAN(b)})

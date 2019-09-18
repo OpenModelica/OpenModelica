@@ -186,7 +186,7 @@ algorithm
           exp := NFInst.instExp(absynExp, inst_cls, info);
           (exp, ty, var) := Typing.typeExp(exp, ExpOrigin.CLASS, info);
           // exp := NFCeval.evalExp(exp);
-          exp := SimplifyExp.simplify(exp);
+          exp := SimplifyExp.simplify(Expression.stripBindingInfo(exp));
           str := Expression.toString(exp);
         then
           stringAppendList({annName, "=", str});
@@ -233,7 +233,7 @@ algorithm
               exp := NFInst.instExp(absynExp, inst_cls, info);
               (exp, ty, var) := Typing.typeExp(exp, ExpOrigin.CLASS, info);
               // exp := NFCeval.evalExp(exp);
-              exp := SimplifyExp.simplify(exp);
+              exp := SimplifyExp.simplify(Expression.stripBindingInfo(exp));
               str := str + ", " + Expression.toString(exp);
             else
               // just don't fail!
@@ -369,7 +369,7 @@ algorithm
           exp := NFInst.instExp(absynExp, inst_cls, info);
           (exp, ty, var) := Typing.typeExp(exp, ExpOrigin.CLASS, info);
           // exp := NFCeval.evalExp(exp);
-          exp := SimplifyExp.simplify(exp);
+          exp := SimplifyExp.simplify(Expression.stripBindingInfo(exp));
           str := Expression.toString(exp);
         then
           stringAppendList({annName, "=", str});
