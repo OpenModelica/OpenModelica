@@ -599,6 +599,7 @@ algorithm
 
   if isSome(nominal_oexp) then
     SOME(nominal_exp) := nominal_oexp;
+    nominal_exp := Expression.getBindingExp(nominal_exp);
     flow_threshold := Expression.BINARY(flowThreshold, Operator.makeMul(Type.REAL()), nominal_exp);
   else
     flow_threshold := flowThreshold;
@@ -806,7 +807,7 @@ algorithm
 
   if isSome(attr_oexp) then
     SOME(attr_exp) := attr_oexp;
-    isZero := Expression.isZero(attr_exp);
+    isZero := Expression.isZero(Expression.getBindingExp(attr_exp));
   else
     isZero := false;
   end if;
@@ -888,8 +889,10 @@ protected
   Real min_val, max_val;
 algorithm
   flow_cls := InstNode.getClass(ComponentRef.node(flowCref));
-  omin := SimplifyExp.simplifyOpt(Class.lookupAttributeValue("min", flow_cls));
-  omax := SimplifyExp.simplifyOpt(Class.lookupAttributeValue("max", flow_cls));
+  omin := Class.lookupAttributeValue("min", flow_cls);
+  omin := SimplifyExp.simplifyOpt(Util.applyOption(omin, Expression.getBindingExp));
+  omax := Class.lookupAttributeValue("max", flow_cls);
+  omax := SimplifyExp.simplifyOpt(Util.applyOption(omax, Expression.getBindingExp));
 
   direction := match (omin, omax)
     // No attributes, flow direction can't be decided.

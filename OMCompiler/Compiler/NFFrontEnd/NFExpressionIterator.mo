@@ -125,14 +125,17 @@ public
       local
         list<Expression> expl;
 
-      case Binding.TYPED_BINDING() guard Binding.isClassBinding(binding)
+      case Binding.TYPED_BINDING(eachType = NFBinding.EachType.REPEAT)
         algorithm
           expl := Expression.arrayScalarElements(binding.bindingExp);
         then
           if listLength(expl) == 1 then EACH_ITERATOR(listHead(expl)) else REPEAT_ITERATOR(expl, expl);
 
+      case Binding.TYPED_BINDING(eachType = NFBinding.EachType.EACH)
+        then EACH_ITERATOR(binding.bindingExp);
+
       case Binding.TYPED_BINDING()
-        then if binding.isEach then EACH_ITERATOR(binding.bindingExp) else fromExp(binding.bindingExp);
+        then fromExp(binding.bindingExp);
 
       case Binding.FLAT_BINDING()
         then EACH_ITERATOR(binding.bindingExp);

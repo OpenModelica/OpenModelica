@@ -129,7 +129,7 @@ algorithm
       end for;
     end if;
   else
-    var.binding := Binding.mapExp(var.binding, expandComplexCref);
+    var.binding := Binding.mapExp(var.binding, expandComplexCref_traverser);
     vars := var :: vars;
   end if;
 end scalarizeVariable;

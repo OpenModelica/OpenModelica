@@ -45,6 +45,12 @@ protected
 public
   constant Binding EMPTY_BINDING = Binding.UNBOUND({}, false, AbsynUtil.dummyInfo);
 
+  type EachType = enumeration(
+    NOT_EACH,
+    EACH,
+    REPEAT
+  );
+
 uniontype Binding
   record UNBOUND
     // NOTE: Use the EMPTY_BINDING constant above when a default unbound binding
@@ -68,7 +74,6 @@ uniontype Binding
     Expression bindingExp;
     Boolean isProcessing;
     InstNode scope;
-    list<InstNode> parents;
     Boolean isEach;
     SourceInfo info;
   end UNTYPED_BINDING;
@@ -77,8 +82,7 @@ uniontype Binding
     Expression bindingExp;
     Type bindingType;
     Variability variability;
-    list<InstNode> parents;
-    Boolean isEach;
+    EachType eachType;
     Boolean evaluated;
     Boolean isFlattened;
     SourceInfo info;
@@ -94,7 +98,6 @@ uniontype Binding
      bindings constructed from the record fields) that should be discarded
      during flattening."
     Expression bindingExp;
-    list<InstNode> parents;
   end CEVAL_BINDING;
 
   record INVALID_BINDING
@@ -266,7 +269,7 @@ public
     output Boolean isRecordExp;
   algorithm
     isRecordExp := match binding
-      case TYPED_BINDING(bindingExp = Expression.RECORD()) then true;
+      case TYPED_BINDING() then Expression.isRecord(Expression.getBindingExp(binding.bindingExp));
       else false;
     end match;
   end isRecordExp;
@@ -276,7 +279,7 @@ public
     output Boolean isCref;
   algorithm
     isCref := match binding
-      case TYPED_BINDING(bindingExp = Expression.CREF()) then true;
+      case TYPED_BINDING() then Expression.isCref(Expression.getBindingExp(binding.bindingExp));
       else false;
     end match;
   end isCrefExp;
@@ -301,11 +304,12 @@ public
       case TYPED_BINDING()
         algorithm
           exp := Expression.recordElement(field_name, fieldBinding.bindingExp);
+          exp := Expression.addBindingExpParent(fieldNode, exp);
           ty := Expression.typeOf(exp);
           var := Expression.variability(exp);
         then
-          TYPED_BINDING(exp, ty, var, fieldNode :: fieldBinding.parents, fieldBinding.isEach,
-                        fieldBinding.evaluated, fieldBinding.isFlattened, fieldBinding.info);
+          TYPED_BINDING(exp, ty, var, fieldBinding.eachType, fieldBinding.evaluated,
+                        fieldBinding.isFlattened, fieldBinding.info);
 
       case FLAT_BINDING()
         algorithm
@@ -366,7 +370,7 @@ public
       case UNBOUND() then binding.isEach;
       case RAW_BINDING() then binding.isEach;
       case UNTYPED_BINDING() then binding.isEach;
-      case TYPED_BINDING() then binding.isEach;
+      case TYPED_BINDING() then binding.eachType == EachType.EACH;
       else false;
     end match;
   end isEach;
@@ -388,9 +392,9 @@ public
     parents := match binding
       case UNBOUND() then binding.parents;
       case RAW_BINDING() then binding.parents;
-      case UNTYPED_BINDING() then binding.parents;
-      case TYPED_BINDING() then binding.parents;
-      case CEVAL_BINDING() then binding.parents;
+      case UNTYPED_BINDING(bindingExp = Expression.BINDING_EXP(parents = parents)) then parents;
+      case TYPED_BINDING(bindingExp = Expression.BINDING_EXP(parents = parents)) then parents;
+      case CEVAL_BINDING(bindingExp = Expression.BINDING_EXP(parents = parents)) then parents;
       else {};
     end match;
   end parents;
@@ -417,24 +421,6 @@ public
         then
           ();
 
-      case UNTYPED_BINDING()
-        algorithm
-          binding.parents := parent :: binding.parents;
-        then
-          ();
-
-      case TYPED_BINDING()
-        algorithm
-          binding.parents := parent :: binding.parents;
-        then
-          ();
-
-      case CEVAL_BINDING()
-        algorithm
-          binding.parents := parent :: binding.parents;
-        then
-          ();
-
       else ();
     end match;
   end addParent;
@@ -453,24 +439,18 @@ public
     isClass := false;
   end isClassBinding;
 
-  function countPropagatedDims
+  function propagatedDimCount
     "Returns the number of dimensions that the binding was propagated through to
      get to the element it belongs to."
     input Binding binding;
-    output Integer count = 0;
-  protected
-    list<InstNode> pars;
+    output Integer count;
   algorithm
-    pars := match binding
-      case UNTYPED_BINDING(isEach = false) then listRest(binding.parents);
-      case TYPED_BINDING(isEach = false) then listRest(binding.parents);
-      else {};
+    count := match binding
+      case UNTYPED_BINDING() then Expression.propagatedDimCount(binding.bindingExp);
+      case TYPED_BINDING() then Expression.propagatedDimCount(binding.bindingExp);
+      else 0;
     end match;
-
-    for parent in pars loop
-      count := count + Type.dimensionCount(InstNode.getType(parent));
-    end for;
-  end countPropagatedDims;
+  end propagatedDimCount;
 
   function toString
     input Binding binding;
@@ -575,6 +555,61 @@ public
     () := match binding
       case UNTYPED_BINDING(bindingExp = e1)
         algorithm
+          e2 := Expression.map(e1, mapFn);
+
+          if not referenceEq(e1, e2) then
+            binding.bindingExp := e2;
+          end if;
+        then
+          ();
+
+      case TYPED_BINDING(bindingExp = e1)
+        algorithm
+          e2 := Expression.map(e1, mapFn);
+
+          if not referenceEq(e1, e2) then
+            binding.bindingExp := e2;
+          end if;
+        then
+          ();
+
+      case FLAT_BINDING(bindingExp = e1)
+        algorithm
+          e2 := Expression.map(e1, mapFn);
+
+          if not referenceEq(e1, e2) then
+            binding.bindingExp := e2;
+          end if;
+        then
+          ();
+
+      case CEVAL_BINDING(bindingExp = e1)
+        algorithm
+          e2 := Expression.map(e1, mapFn);
+
+          if not referenceEq(e1, e2) then
+            binding.bindingExp := e2;
+          end if;
+        then
+          ();
+
+      else ();
+    end match;
+  end mapExp;
+
+  function mapExpShallow
+    input output Binding binding;
+    input MapFunc mapFn;
+
+    partial function MapFunc
+      input output Expression exp;
+    end MapFunc;
+  protected
+    Expression e1, e2;
+  algorithm
+    () := match binding
+      case UNTYPED_BINDING(bindingExp = e1)
+        algorithm
           e2 := mapFn(e1);
 
           if not referenceEq(e1, e2) then
@@ -615,7 +650,7 @@ public
 
       else ();
     end match;
-  end mapExp;
+  end mapExpShallow;
 
   function containsExp
     input Binding binding;
