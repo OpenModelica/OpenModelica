@@ -1035,6 +1035,7 @@ protected
           (arg, ty, exp_var) := Typing.typeExp(call.exp, next_origin, info);
           variability := Variability.variabilityMax(variability, exp_var);
           ty := Type.liftArrayLeftList(ty, dims);
+          variability := Variability.variabilityMax(variability, exp_var);
         then
           (TYPED_ARRAY_CONSTRUCTOR(ty, variability, arg, iters), ty, variability);
 

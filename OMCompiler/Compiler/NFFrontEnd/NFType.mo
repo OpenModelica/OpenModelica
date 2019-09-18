@@ -606,6 +606,12 @@ public
     end match;
   end dimensionCount;
 
+  function dimensionDiff
+    input Type ty1;
+    input Type ty2;
+    output Integer diff = dimensionCount(ty1) - dimensionCount(ty2);
+  end dimensionDiff;
+
   function hasKnownSize
     input Type ty;
     output Boolean isKnown;
