@@ -607,9 +607,7 @@ algorithm
     // differentiate homotopy
     case DAE.CALL(path=p as Absyn.IDENT(name="homotopy"), expLst={actual, simplified}, attr=attr) equation
       (e1, functionTree) = differentiateExp(actual, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
-      (e2, functionTree) = differentiateExp(simplified, inDiffwrtCref, inInputData, inDiffType, functionTree, maxIter);
-      res = DAE.CALL(p, {e1, e2}, attr);
-    then (res, functionTree);
+    then (e1, functionTree);
 
     // differentiate call
     case DAE.CALL() equation
@@ -1323,7 +1321,7 @@ algorithm
       DAE.CallAttributes attr;
       DAE.ComponentRef cr;
       DAE.Exp e, e1, e2, zero;
-      DAE.Exp res, res1;
+      DAE.Exp res, res1, actual, simplified;
       DAE.Type tp;
       DAE.FunctionTree funcs;
 
@@ -1338,6 +1336,13 @@ algorithm
       Option<BackendDAE.Shared> optShared;
 
       String s1, s2, serr, matrixName, name;
+
+    // differentiate homotopy
+    case (DAE.CALL(path=path as Absyn.IDENT(name="homotopy"), expLst={actual, simplified}, attr=attr), _, _, _, _) equation
+      (e1, funcs) = differentiateExp(actual, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
+      (e2, funcs) = differentiateExp(simplified, inDiffwrtCref, inInputData, inDiffType, funcs, maxIter);
+      res = DAE.CALL(path, {e1, e2}, attr);
+    then (e1, funcs);
 
     /* with previous are the actaully states marked in synchronous */
     case (e as DAE.CALL(path=Absyn.IDENT(name = "previous"), expLst = {DAE.CREF(componentRef=cr, ty=tp)}),
