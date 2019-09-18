@@ -1839,6 +1839,10 @@ algorithm
 
   rangeType := TypeCheck.getRangeType(start_exp, ostep_exp, stop_exp, rangeType, info);
   rangeExp := Expression.RANGE(rangeType, start_exp, ostep_exp, stop_exp);
+
+  if variability <= Variability.PARAMETER and not ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
+    Inst.markStructuralParamsExp(rangeExp);
+  end if;
 end typeRange;
 
 function typeTuple
