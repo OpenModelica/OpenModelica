@@ -2998,6 +2998,9 @@ algorithm
       b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1, e2);
     then (inExp, not b, tpl);
 
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), tpl) equation
+    then traversingincidenceRowExpSolvableFinder(e1, tpl);
+
     // use the inlined function to analyze the ocuring variables
     case (DAE.CALL(), (vars, pa, visitedPaths, ofunctionTree as SOME(functionTree))) guard not AvlSetPath.hasKey(visitedPaths, inExp.path)
       algorithm
@@ -3176,6 +3179,9 @@ algorithm
         b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1,e2);
       then (inExp,not b,inTpl);
 
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), _) equation
+    then traversingincidenceRowExpFinder(e1, inTpl);
+
     case (DAE.ASUB(exp=DAE.CREF(componentRef=cr), sub={DAE.ICONST(i)}), (vars, pa))
       equation
         cr = ComponentReference.subscriptCrefWithInt(cr, i);
@@ -3288,6 +3294,9 @@ algorithm
         (varslst,p) = BackendVariable.getVar(cr, vars);
         res = incidenceRowExp1withInput(varslst,p,pa,1);
       then (inExp,false,(vars,res));
+
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e, _}), (vars,pa)) equation
+    then traversingincidenceRowExpFinderwithInput(e, (vars,pa));
 
     /* pre(v) is considered a known variable */
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF()}),_) then (inExp,false,inTpl);
@@ -5524,6 +5533,9 @@ algorithm
       b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1, e2);
     then (inExp, not b, inTpl);
 
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), _) equation
+    then traversingAdjacencyRowExpSolvableEnhancedFinder(e1, inTpl);
+
     else (inExp, true, inTpl);
   end matchcontinue;
 end traversingAdjacencyRowExpSolvableEnhancedFinder;
@@ -5654,6 +5666,10 @@ algorithm
       equation
         b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1,e2);
       then (e,not b,bt);
+
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), _) equation
+    then getIfExpBranchVarOccurency(e1, inBt);
+
     else (inExp,true,inBt);
   end match;
 end getIfExpBranchVarOccurency;
