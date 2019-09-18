@@ -2327,7 +2327,7 @@ void GraphicsView::modelicaGraphicsViewContextMenu(QMenu *pMenu)
   if (!isVisualizationView()) {
     pExportMenu->addAction(MainWindow::instance()->getExportToOMNotebookAction());
     pMenu->addSeparator();
-    mpPasteAction->setEnabled(QApplication::clipboard()->mimeData()->hasFormat(Helper::cutCopyPasteFormat));
+    mpPasteAction->setEnabled(QApplication::clipboard()->mimeData()->hasFormat(Helper::cutCopyPasteFormat) && qobject_cast<const MimeData*>(QApplication::clipboard()->mimeData()));
     pMenu->addAction(mpPasteAction);
   }
   pMenu->addSeparator();
