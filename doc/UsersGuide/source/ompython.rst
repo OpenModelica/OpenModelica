@@ -203,10 +203,11 @@ Standard get methods
 - getSolutions()
 
 
-Two calling possibilities are accepted using getXXX() where "XXX" can be any of the above functions (eg:) getParameters().
+Three calling possibilities are accepted using getXXX() where "XXX" can be any of the above functions (eg:) getParameters().
 
 -  getXXX() without input argument, returns a dictionary with names as keys and values as values.
--  getXXX(S), where S is a sequence of strings of names, returns a tuple of values for the specified names.
+-  getXXX(S), where S is a string of names.
+-  getXXX(["S1","S2"]) where S1 and S1 are list of string elements
 
 Usage of getMethods
 ~~~~~~~~~~~~~~~~~~~
@@ -223,7 +224,7 @@ Usage of getMethods
 >>> mod.getContinuous() // method-1, list of continuous variable
 {'velocity': -1.825929609047952, 'der(velocity)': -9.8100000000000005, 'der(height)': -1.825929609047952, 'height': 0.65907039052943617}
 
->>> mod.getContinuous("velocity","height") // method-2, get specific variable value information
+>>> mod.getContinuous(["velocity","height"]) // method-2, get specific variable value information
 (-1.825929609047952, 0.65907039052943617)
 
 >>> mod.getInputs()
@@ -235,14 +236,14 @@ Usage of getMethods
 >>> mod.getParameters()  // method-1
 {'c': 0.9, 'radius': 0.1}
 
->>> mod.getParameters("c","radius") // method-2
-(0.9, 0.1)
+>>> mod.getParameters(["c","radius"]) // method-2
+[0.9, 0.1]
 
 >>> mod.getSimulationOptions()  // method-1
 {'stepSize': 0.002, 'stopTime': 1.0, 'tolerance': 1e-06, 'startTime': 0.0, 'solver': 'dassl'}
 
->>> mod.getSimulationOptions("stepSize","tolerance") // method-2
-(0.002, 1e-06)
+>>> mod.getSimulationOptions(["stepSize","tolerance"]) // method-2
+[0.002, 1e-06]
 
 The getSolution method can be used in two different ways.
  1) using default result filename
@@ -253,7 +254,7 @@ This provides a way to compare simulation results and perform regression testing
 >>> mod.getSolutions() // method-1 returns list of simulation variables for which results are available
 ['time', 'height', 'velocity', 'der(height)', 'der(velocity)', 'c', 'radius']
 
->>> mod.getSolutions("time","height")  // return list of numpy arrays
+>>> mod.getSolutions(["time","height"])  // return list of numpy arrays
 
 >>> mod.getSolutions(resultfile="c:/tmpbouncingBall.mat") // method-2 returns list of simulation variables for which results are available , the resulfile location is provided by user
 
@@ -266,21 +267,21 @@ Standard set methods
 - setParameters()
 - setSimulationOptions()
 
-Two calling possibilities are accepted using setXXXs(),where "XXX" can be any of above functions.
+Two setting possibilities are accepted using setXXXs(),where "XXX" can be any of above functions.
 
-- setXXX(K) with K being a sequence of keyword assignments (e.g.) (name = value).
-- setXXX(**D) with D being a dictionary with quantity names as keywords and values, being expanded by ** into the form of K.
+- setXXX("Name=value") string of keyword assignments
+- setXXX(["Name1=value1","Name2=value2","Name3=value3"])  list of string of keyword assignments
 
 Usage of setMethods
 ~~~~~~~~~~~~~~~~~~~
 
->>> mod.setInputs(cAi=1,Ti=2)
+>>> mod.setInputs(["cAi=1","Ti=2"]) // method-2
 
->>> mod.setParameters(radius=14,c=0.5) // method-1 setting parameter value
+>>> mod.setParameters("radius=14") // method-1 setting parameter value
 
->>> mod.setParameters(**{"radius":14,"c":0.5}) // method-2 setting parameter value using second option
+>>> mod.setParameters(["radius=14","c=0.5"]) // method-2 setting parameter value using second option
 
->>> mod.setSimulationOptions(stopTime=2.0,tolerance=1e-08)
+>>> mod.setSimulationOptions(["stopTime=2.0","tolerance=1e-08"]) // method-2
 
 
 Simulation
@@ -290,7 +291,7 @@ An example of how to get parameter names and change the value of parameters usin
 >>>  mod.getParameters()
 {'c': 0.9, 'radius': 0.1}
 
->>>  mod.setParameters(radius=14,c=0.5) //setting parameter value using first option
+>>>  mod.setParameters(["radius=14","c=0.5"]) //setting parameter value
 
 To check whether new values are updated to model , we can again query the getParameters().
 
@@ -322,9 +323,9 @@ Usage of Linearization methods
 {'simflags': ' ', 'stepSize': 0.002, 'stopTime': 1.0, 'startTime': 0.0, 'numberOfIntervals': 500.0, 'tolerance': 1e-08}
 
 >>> mod.getLinearizationOptions("startTime","stopTime") // method-2
-(0.0, 1.0)
+[0.0, 1.0]
 
->>> mod.setLinearizationOptions(stopTime=2.0,tolerance=1e-06)
+>>> mod.setLinearizationOptions(["stopTime=2.0","tolerance=1e-06"])
 
 >>> mod.linearize()  //returns a tuple of 2D numpy arrays (matrices) A, B, C and D.
 
