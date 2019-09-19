@@ -2093,6 +2093,17 @@ algorithm
       String funcname, s1;
       list<DAE.FuncArg> falst;
 
+    /* ticket5459
+    if the function call does not contain the cref, the derivative is zero
+    prevents failing of this function
+    - Maybe not only for SIMPLE_DIFFERENTIATION ?
+    */
+    case (_, _, _, BackendDAE.SIMPLE_DIFFERENTIATION(), _)
+      guard(not Expression.expHasCref(inExp, inDiffwrtCref))
+      algorithm
+        (e, _) := Expression.makeZeroExpression(Expression.arrayDimension(ComponentReference.crefTypeFull(inDiffwrtCref)));
+    then (e, inFunctionTree);
+
     case (DAE.CALL(path=path,expLst=expl,attr=DAE.CALL_ATTR(tuple_=b,builtin=c,isImpure=isImpure,ty=ty,tailCall=tc)), _, _, BackendDAE.DIFFERENTIATION_TIME(), _)
       equation
         // get function mapper

@@ -6784,7 +6784,7 @@ algorithm
 
     case(DAE.CALL(path = Absyn.IDENT(name = "smooth"),expLst = {DAE.ICONST(i),e1}),(cr,false))
     guard(i>1)
-     then (e1,true, (cr,true));
+     then (e1,true, (cr, expHasCref(e1,cr)));
 
     case(DAE.CALL(), (cr,false))
     guard(isEventTriggeringFunctionExp(inExp))
