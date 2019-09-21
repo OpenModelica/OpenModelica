@@ -46,6 +46,15 @@ runScript(modelTesting);getErrorString();
 // Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.InitialConditions', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Mechanics.Translational.Examples.InitialConditions_res.mat
 // Files Equal!
+// Warning: Some equations could not be differentiated for following variables having attribute stateSelect=StateSelect.prefer. They will be treated as if they had stateSelect=StateSelect.default
+// ========================================
+// 1: sd1.v_rel
+// Please use -d=bltdump for more information.
+// Warning: Some equations could not be differentiated for following variables having attribute stateSelect=StateSelect.prefer. They will be treated as if they had stateSelect=StateSelect.default
+// ========================================
+// 1: sd2.v_rel
+// Please use -d=bltdump for more information.
+//
 // "true
 // "
 // ""
