@@ -46,6 +46,15 @@ runScript(modelTesting);getErrorString();
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
+// Warning: Some equations could not be differentiated for following variables having attribute stateSelect=StateSelect.prefer. They will be treated as if they had stateSelect=StateSelect.default
+// ========================================
+// 1: sd1.v_rel
+// Please use -d=bltdump for more information.
+// Warning: Some equations could not be differentiated for following variables having attribute stateSelect=StateSelect.prefer. They will be treated as if they had stateSelect=StateSelect.default
+// ========================================
+// 1: sd2.v_rel
+// Please use -d=bltdump for more information.
+//
 // "true
 // "
 // ""

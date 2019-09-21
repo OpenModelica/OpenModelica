@@ -57,9 +57,18 @@ val(system2.s2, {0.0,0.1});
 // Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation.
 // "
 // "DualMassOscillator.System1.fmu"
-// ""
+// "Warning: Some equations could not be differentiated for following variables having attribute stateSelect=StateSelect.prefer. They will be treated as if they had stateSelect=StateSelect.default
+// ========================================
+// 1: springDamper1.v_rel
+// Please use -d=bltdump for more information.
+// "
 // "DualMassOscillator.System2.fmu"
-// ""
+// "Warning: Some equations could not be differentiated for following variables having attribute stateSelect=StateSelect.prefer. They will be treated as if they had stateSelect=StateSelect.default
+// ========================================
+// 1: springDamper2.v_rel
+// 2: springDamper_coupling.v_rel
+// Please use -d=bltdump for more information.
+// "
 // true
 // ""
 // 0
@@ -68,7 +77,7 @@ val(system2.s2, {0.0,0.1});
 // info:      system1.s1: 1.0
 // info:      system2.s2: 2.5
 // info:    Simulation
-// info:      system1.s1: 0.87154409411158
+// info:      system1.s1: 0.87154409411156
 // info:      system2.s2: 1.9937955391923
 // "
 // record SimulationResult
@@ -78,7 +87,13 @@ val(system2.s2, {0.0,0.1});
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
-// {1.0,0.9112773579994231}
-// {2.5,1.955636409834865}
+// "Warning: Some equations could not be differentiated for following variables having attribute stateSelect=StateSelect.prefer. They will be treated as if they had stateSelect=StateSelect.default
+// ========================================
+// 1: system1.springDamper1.v_rel
+// 2: system2.springDamper2.v_rel
+// 3: system2.springDamper_coupling.v_rel
+// Please use -d=bltdump for more information.
+// "
+// {1.0,0.9112752847863262}
+// {2.5,1.955638599930151}
 // endResult
