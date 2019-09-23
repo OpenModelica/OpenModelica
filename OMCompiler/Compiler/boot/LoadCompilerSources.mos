@@ -121,6 +121,7 @@ if true then /* Suppress output */
     "../Script/StaticScript.mo",
     "../Script/SymbolTable.mo",
     "../Script/InteractiveUtil.mo",
+    "../Script/CevalScriptOMSimulator.mo",
 
 // "Template";
     "../Template/AbsynDumpTpl.mo",
@@ -207,7 +208,8 @@ if true then /* Suppress output */
     "../Util/System.mo",
     "../Util/Util.mo",
     "../Util/VarTransform.mo",
-    "../Util/ZeroMQ.mo"
+    "../Util/ZeroMQ.mo",
+    "../Util/OMSimulator.mo"
   };
   backendfiles := if OpenModelica.Scripting.getEnvironmentVar("OPENMODELICA_BACKEND_STUBS")<>"" then
   {

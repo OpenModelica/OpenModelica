@@ -1,0 +1,105 @@
+// name:     DualMassOscillator.mos
+// status:   correct
+// teardown_command: rm -rf temp_dualmassoscillator/ DualMassOscillator.mat
+
+setCommandLineOptions("-g=MetaModelica");
+
+loadFile("DualMassOscillator.mo"); getErrorString();
+
+buildModelFMU(DualMassOscillator.System1, version="2.0", fmuType="me_cs", fileNamePrefix="DualMassOscillator.System1", platforms={"static"}); getErrorString();
+buildModelFMU(DualMassOscillator.System2, version="2.0", fmuType="me_cs", fileNamePrefix="DualMassOscillator.System2", platforms={"static"}); getErrorString();
+
+echo(false);
+
+loadString("
+function printStatus
+  input Integer status;
+  input Integer expected;
+protected
+  String outstatus;
+  String cmp=\" \";
+algorithm
+  if (status==expected) then
+    cmp := \"correct\";
+  else
+    cmp := \"wrong\";
+  end if;
+  if 0 == status then
+    outstatus := \" ok\";
+  elseif 1 == status then
+    outstatus := \" warning\";
+  elseif 3 == status then
+    outstatus := \" error\";
+  end if;
+  print(\"status:  [\" + cmp  + \"]\" + outstatus);
+  print(\"\n\");
+end printStatus;");
+
+loadOMSimulator();
+oms_setCommandLineOption("--suppressPath=true --ignoreInitialUnknowns=true");
+status:=oms_setTempDirectory("./temp_dualmassoscillator/");
+oms_newModel("DualMassOscillator");
+//oms_addSystem("DualMassOscillator.root", "oms_system_sc");
+oms_addSystem("DualMassOscillator.root", OpenModelica.Scripting.oms_system.oms_system_sc);
+
+//instantiate FMUs
+oms_addSubModel("DualMassOscillator.root.system1", "DualMassOscillator.System1.fmu");
+
+oms_addSubModel("DualMassOscillator.root.system2", "DualMassOscillator.System2.fmu");
+
+//add connections
+oms_addConnection("DualMassOscillator.root.system1.F", "DualMassOscillator.root.system2.F");
+oms_addConnection("DualMassOscillator.root.system1.s1", "DualMassOscillator.root.system2.s1");
+oms_addConnection("DualMassOscillator.root.system1.v1", "DualMassOscillator.root.system2.v1");
+oms_addConnection("DualMassOscillator.root.system1.a1", "DualMassOscillator.root.system2.a1");
+
+//simulation settings
+oms_setResultFile("DualMassOscillator", "DualMassOscillator.mat", 100);
+oms_setStopTime("DualMassOscillator", 0.1);
+oms_setFixedStepSize("DualMassOscillator.root", 1e-5);
+
+oms_instantiate("DualMassOscillator");
+oms_setReal("DualMassOscillator.root.system2.s2_start", 2.5);
+
+oms_initialize("DualMassOscillator");
+(_,v1):=oms_getReal("DualMassOscillator.root.system1.s1");
+(_,v2):=oms_getReal("DualMassOscillator.root.system2.s2");
+print("info:    Initialization\n");
+print("info:      system1.s1: " + realString(v1)+"\n");
+print("info:      system2.s2: " + realString(v2)+"\n");
+oms_simulate("DualMassOscillator");
+(_,v1):=oms_getReal("DualMassOscillator.root.system1.s1");
+(_,v2):=oms_getReal("DualMassOscillator.root.system2.s2");
+print("info:    Simulation\n");
+print("info:      system1.s1: " + realString(v1)+"\n");
+print("info:      system2.s2: " + realString(v2)+"\n");
+
+oms_terminate("DualMassOscillator");
+oms_delete("DualMassOscillator");
+unloadOMSimulator();
+
+
+
+// Result:
+// true
+// true
+// "Notification: Automatically loaded package Modelica 3.2.2 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.2 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation.
+// "
+// "DualMassOscillator.System1.fmu"
+// ""
+// "DualMassOscillator.System2.fmu"
+// ""
+// info:    maximum step size for 'DualMassOscillator.root': 0.100000
+// info:    Result file: DualMassOscillator.mat (bufferSize=100)
+// info:    Initialization
+// info:      system1.s1: 1.0
+// info:      system2.s2: 2.5
+// info:    Simulation
+// info:      system1.s1: 0.9106854898769722
+// info:      system2.s2: 1.956251983576969
+// info:    Final Statistics for 'DualMassOscillator.root':
+//          NumSteps = 656 NumRhsEvals  = 911 NumLinSolvSetups = 120
+//          NumNonlinSolvIters = 910 NumNonlinSolvConvFails = 0 NumErrTestFails = 57
+// endResult

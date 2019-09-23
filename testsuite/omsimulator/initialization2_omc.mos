@@ -1,0 +1,76 @@
+// name : initialization2_omc.mos
+// keywords: fmu export import
+// status: correct
+// teardown_command: rm -rf initialization2.fmu initialization2.log initialization2_systemCall.log initialization2.lua input.csv temp-initialization2/
+
+setCommandLineOptions("-g=MetaModelica");
+
+loadString("
+model initialization2
+  input Real u;
+  output Real y = u;
+  Real x(fixed=false);
+initial equation
+  x - u = 0.0;
+equation
+  der(x) = -x;
+end initialization2;"); getErrorString();
+
+buildModelFMU(initialization2, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
+
+writeFile("input.csv", "time,y
+0.0,2.3
+1.0,2.3
+");
+getErrorString();
+
+echo(false);
+
+loadOMSimulator();
+oms_setCommandLineOption("--suppressPath=true");
+oms_setTempDirectory("./temp-initialization2/");
+
+oms_newModel("test");
+oms_addSystem("test.root", OpenModelica.Scripting.oms_system.oms_system_sc);
+oms_addSubModel("test.root.A", "input.csv");
+oms_addSubModel("test.root.B", "initialization2.fmu");
+oms_addConnection("test.root.A.y", "test.root.B.u");
+oms_setResultFile("test", "");
+
+oms_instantiate("test");
+oms_initialize("test");
+(_,v1):=oms_getReal("test.root.A.y");
+(_,v2):=oms_getReal("test.root.B.x");
+(_,v3):=oms_getReal("test.root.B.y");
+(_,v4):=oms_getReal("test.root.B.u");
+
+print("info:    Initialization\n");
+print("info:      A.y: " + realString(v1)+ "\n");
+print("info:      B.x: " + realString(v2)+ "\n");
+print("info:      B.y: " + realString(v1)+ "\n");
+print("info:      B.u: " + realString(v1)+ "\n");
+
+oms_terminate("test");
+oms_delete("test");
+unloadOMSimulator();
+
+
+// Result:
+// true
+// true
+// ""
+// "initialization2.fmu"
+// ""
+// true
+// ""
+// info:    maximum step size for 'test.root': 0.100000
+// info:    Result file: test_res.mat (bufferSize=10)
+// info:    Initialization
+// info:      A.y: 2.3
+// info:      B.x: 2.3
+// info:      B.y: 2.3
+// info:      B.u: 2.3
+// info:    Final Statistics for 'test.root':
+//          NumSteps = 0 NumRhsEvals  = 0 NumLinSolvSetups = 0
+//          NumNonlinSolvIters = 0 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+// endResult

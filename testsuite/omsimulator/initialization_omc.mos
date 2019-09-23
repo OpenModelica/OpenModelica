@@ -1,0 +1,84 @@
+// name : initialization_omc.mos
+// keywords: fmu export import
+// status: correct
+// teardown_command: rm -rf initialization.lua initialization.fmu initialization.log initialization_systemCall.log temp-initialization/
+
+setCommandLineOptions("-g=MetaModelica");
+
+loadString("
+model initialization
+  output Real y = x;
+  parameter Real x_start = 1.0;
+protected
+  Real x(start=x_start, fixed=true);
+  Real w(fixed=false);
+initial equation
+  w = x;
+equation
+  der(x) = time;
+  der(w) = 2*time;
+end initialization;");
+getErrorString();
+
+buildModelFMU(initialization, version="2.0", fmuType="me", platforms={"static"});
+getErrorString();
+
+echo(false);
+
+loadOMSimulator();
+oms_setCommandLineOption("--suppressPath=true");
+oms_setTempDirectory("./temp-initialization/");
+
+oms_newModel("test");
+oms_addSystem("test.root", OpenModelica.Scripting.oms_system.oms_system_sc);
+oms_addSubModel("test.root.A", "initialization.fmu");
+oms_setResultFile("test", "");
+
+oms_instantiate("test");
+oms_setReal("test.root.A.x_start", 1.5);
+
+oms_initialize("test");
+(_,v1):=oms_getReal("test.root.A.x_start");
+(_,v2):=oms_getReal("test.root.A.x");
+(_,v3):=oms_getReal("test.root.A.w");
+
+print("info:    Initialization\n");
+print("info:      A.x_start: " + realString(v1)+"\n");
+print("info:      A.x:       " + realString(v2)+"\n");
+print("info:      A.w:       " + realString(v3)+"\n");
+
+oms_simulate("test");
+(_,v1):=oms_getReal("test.root.A.x_start");
+(_,v2):=oms_getReal("test.root.A.x");
+(_,v3):=oms_getReal("test.root.A.w");
+
+print("info:    Simulation\n");
+print("info:      A.x_start: " + realString(v1)+"\n");
+print("info:      A.x:       " + realString(v2)+"\n");
+print("info:      A.w:       " + realString(v3)+"\n");
+
+oms_terminate("test");
+oms_delete("test");
+unloadOMSimulator();
+
+
+// Result:
+// true
+// true
+// ""
+// "initialization.fmu"
+// ""
+// info:    maximum step size for 'test.root': 0.100000
+// info:    Result file: test_res.mat (bufferSize=10)
+// info:    Initialization
+// info:      A.x_start: 1.5
+// info:      A.x:       1.5
+// info:      A.w:       1.5
+// info:    Simulation
+// info:      A.x_start: 1.5
+// info:      A.x:       1.908037152285186
+// info:      A.w:       2.31607430457037
+// info:    Final Statistics for 'test.root':
+//          NumSteps = 37 NumRhsEvals  = 83 NumLinSolvSetups = 39
+//          NumNonlinSolvIters = 82 NumNonlinSolvConvFails = 0 NumErrTestFails = 18
+// endResult

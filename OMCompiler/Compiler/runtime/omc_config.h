@@ -72,6 +72,7 @@
 #define DEFAULT_CC "gcc"
 #define DEFAULT_CXX "g++"
 #define DEFAULT_OMPCC "gcc -fopenmp"
+#define CONFIG_TRIPLE ""
 
 /* adrpo: add -loleaut32 as is used by ExternalMedia */
 #define DEFAULT_LDFLAGS "-fopenmp -Wl,-Bstatic -lregex -ltre -lintl -liconv -lexpat -lomcgc -lpthread -loleaut32 -limagehlp -lhdf5 -lz -lszip -Wl,-Bdynamic"
