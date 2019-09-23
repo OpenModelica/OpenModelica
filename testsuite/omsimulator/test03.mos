@@ -1,0 +1,150 @@
+// name:     test03.mos
+// status:   correct
+// teardown_command: rm -rf test03/ test_res.mat
+
+setCommandLineOptions("-g=MetaModelica");
+loadModel(Modelica);
+getErrorString();
+buildModelFMU(Modelica.Blocks.Sources.Constant, version="2.0", fmuType="me_cs", fileNamePrefix="Modelica.Blocks.Sources.Constant", platforms={"static"});
+getErrorString();
+buildModelFMU(Modelica.Blocks.Sources.Sine, version="2.0", fmuType="me_cs", fileNamePrefix="Modelica.Blocks.Sources.Sine", platforms={"static"});
+getErrorString();
+
+echo(false);
+
+loadString("
+function printStatus
+  input Integer status;
+  input Integer expected;
+protected
+  String outstatus;
+  String cmp=\" \";
+algorithm
+  if (status==expected) then
+    cmp := \"correct\";
+  else
+    cmp := \"wrong\";
+  end if;
+  if 0 == status then
+    outstatus := \" ok\";
+  elseif 1 == status then
+    outstatus := \" warning\";
+  elseif 3 == status then
+    outstatus := \" error\";
+  end if;
+  print(\"status:  [\" + cmp  + \"]\" + outstatus);
+  print(\"\n\");
+end printStatus;
+
+function printType
+  input Integer t;
+algorithm
+  if (Integer(OpenModelica.Scripting.oms_system.oms_system_tlm)-1 == t) then
+    print(\"type: oms_system_tlm\");
+  elseif (Integer(OpenModelica.Scripting.oms_system.oms_system_wc)-1 == t) then
+    print(\"type: oms_system_wc\");
+  elseif (Integer(OpenModelica.Scripting.oms_system.oms_system_sc)-1 == t) then
+    print(\"type: oms_system_sc\");
+  else
+    print(\"Unknown type\");
+  end if;
+  print(\"\n\");
+end printType;
+");
+
+loadOMSimulator();
+oms_setCommandLineOption("--suppressPath=true");
+oms_setTempDirectory("./test03/");
+
+oms_newModel("test");
+oms_addSystem("test.eoo", OpenModelica.Scripting.oms_system.oms_system_wc);
+oms_addSubModel("test.eoo.source", "Modelica.Blocks.Sources.Sine.fmu");
+
+// save snapshot
+(status,src) := oms_list("test");
+print(src);
+
+// change model
+oms_addSystem("test.eoo.goo", OpenModelica.Scripting.oms_system.oms_system_sc);
+oms_delete("test.eoo.source");
+oms_addSubModel("test.eoo.source", "Modelica.Blocks.Sources.Constant.fmu");
+
+// restore model from snapshot
+status := oms_loadSnapshot("test", src);
+printStatus(status, 0);
+
+(status,src) := oms_list("test");
+print(src);
+
+oms_instantiate("test");
+oms_initialize("test");
+oms_simulate("test");
+oms_terminate("test");
+
+oms_delete("test");
+unloadOMSimulator();
+
+// Result:
+// true
+// true
+// ""
+// "Modelica.Blocks.Sources.Constant.fmu"
+// "[Modelica 3.2.3/Blocks/Sources.mo:216:5-217:102:writable] Warning: Parameter k has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// "
+// "Modelica.Blocks.Sources.Sine.fmu"
+// "[Modelica 3.2.3/Blocks/Sources.mo:517:5-517:73:writable] Warning: Parameter freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// "
+// <?xml version="1.0"?>
+// <ssd:SystemStructureDescription name="test" version="Draft20180219">
+// 	<ssd:System name="eoo">
+// 		<ssd:SimulationInformation>
+// 			<FixedStepMaster description="oms-ma" stepSize="0.100000" />
+// 		</ssd:SimulationInformation>
+// 		<ssd:Elements>
+// 			<ssd:Component name="source" type="application/x-fmu-sharedlibrary" source="resources/0001_source.fmu">
+// 				<ssd:Connectors>
+// 					<ssd:Connector name="y" kind="output" type="Real">
+// 						<ssd:ConnectorGeometry x="1.000000" y="0.500000" />
+// 					</ssd:Connector>
+// 					<ssd:Connector name="amplitude" kind="parameter" type="Real" />
+// 					<ssd:Connector name="freqHz" kind="parameter" type="Real" />
+// 					<ssd:Connector name="offset" kind="parameter" type="Real" />
+// 					<ssd:Connector name="phase" kind="parameter" type="Real" />
+// 					<ssd:Connector name="startTime" kind="parameter" type="Real" />
+// 				</ssd:Connectors>
+// 			</ssd:Component>
+// 		</ssd:Elements>
+// 		<ssd:Connectors />
+// 		<ssd:Connections />
+// 	</ssd:System>
+// 	<ssd:DefaultExperiment startTime="0.000000" stopTime="1.000000" />
+// </ssd:SystemStructureDescription>
+// info:    Delete source
+// status:  [correct] ok
+// <?xml version="1.0"?>
+// <ssd:SystemStructureDescription name="test" version="Draft20180219">
+// 	<ssd:System name="eoo">
+// 		<ssd:SimulationInformation>
+// 			<FixedStepMaster description="oms-ma" stepSize="0.100000" />
+// 		</ssd:SimulationInformation>
+// 		<ssd:Elements>
+// 			<ssd:Component name="source" type="application/x-fmu-sharedlibrary" source="resources/0001_source.fmu">
+// 				<ssd:Connectors>
+// 					<ssd:Connector name="y" kind="output" type="Real">
+// 						<ssd:ConnectorGeometry x="1.000000" y="0.500000" />
+// 					</ssd:Connector>
+// 					<ssd:Connector name="amplitude" kind="parameter" type="Real" />
+// 					<ssd:Connector name="freqHz" kind="parameter" type="Real" />
+// 					<ssd:Connector name="offset" kind="parameter" type="Real" />
+// 					<ssd:Connector name="phase" kind="parameter" type="Real" />
+// 					<ssd:Connector name="startTime" kind="parameter" type="Real" />
+// 				</ssd:Connectors>
+// 			</ssd:Component>
+// 		</ssd:Elements>
+// 		<ssd:Connectors />
+// 		<ssd:Connections />
+// 	</ssd:System>
+// 	<ssd:DefaultExperiment startTime="0.000000" stopTime="1.000000" />
+// </ssd:SystemStructureDescription>
+// info:    Result file: test_res.mat (bufferSize=10)
+// endResult

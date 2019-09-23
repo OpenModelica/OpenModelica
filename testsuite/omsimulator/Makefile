@@ -7,6 +7,12 @@ initialization.mos \
 initialization2.mos \
 outputState.mos \
 reset.mos \
+DualMassOscillator.mos \
+initialization_omc.mos \
+initialization2_omc.mos \
+outputState_omc.mos \
+reset_omc.mos \
+test03.mos \
 
 FAILINGTESTFILES = \
 

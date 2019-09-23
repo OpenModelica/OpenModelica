@@ -22,7 +22,7 @@ SET(SRCMO Absyn.mo AbsynDep.mo Algorithm.mo Builtin.mo
 
 SET(ALLMO ${SRCMO} DAEEXT.mo DynLoad.mo Print.mo System.mo Parser.mo
 		TaskGraphExt.mo Corba.mo Socket.mo ZeroMQ.mo ErrorExt.mo Settings.mo
-		UnitParserExt.mo SimulationResults.mo Serializer.mo)
+		UnitParserExt.mo SimulationResults.mo Serializer.mo OMSimulator.mo)
 
 # RML
 IF(NOT RML)

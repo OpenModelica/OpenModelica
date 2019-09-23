@@ -59,6 +59,7 @@ import GlobalScript;
 import Interactive;
 import Values;
 import SimCode;
+import CevalScriptOMSimulator;
 
 // protected imports
 protected
@@ -1808,6 +1809,12 @@ algorithm
       then
         (cache,ValuesUtil.makeArray(vals));
 
+    // check for OMSimulator API calls
+    case (cache,_,_,_,_)
+      equation
+        v = CevalScriptOMSimulator.ceval(inFunctionName,inVals);
+       then
+         (cache,v);
     else
       algorithm
         (cache,v) := CevalScriptBackend.cevalInteractiveFunctions3(inCache,inEnv,inFunctionName,inVals,msg);

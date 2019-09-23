@@ -1,0 +1,95 @@
+// name : reset_omc.mos
+// keywords: fmu export import
+// status: correct
+// teardown_command: rm -rf reset.fmu reset.log reset_systemCall.log temp-reset test_res.mat
+
+setCommandLineOptions("-g=MetaModelica");
+
+loadString("
+model reset
+  parameter Real a = -1;
+  parameter Real x_start = 1;
+  Real x(start=x_start, fixed=true);
+equation
+  der(x) = a*x;
+end reset;"); getErrorString();
+
+buildModelFMU(reset, version="2.0", fmuType="cs", platforms={"static"}); getErrorString();
+echo(false);
+
+loadOMSimulator();
+oms_setCommandLineOption("--suppressPath=true");
+oms_setTempDirectory("./temp-reset/");
+
+oms_newModel("test");
+oms_addSystem("test.root", OpenModelica.Scripting.oms_system.oms_system_wc);
+oms_addSubModel("test.root.A", "reset.fmu");
+
+oms_instantiate("test");
+oms_initialize("test");
+(_,v1):=oms_getReal("test.root.A.x_start");
+(_,v2):=oms_getReal("test.root.A.x");
+
+print("info:    Initialization\n");
+print("info:      A.x_start: " + realString(v1)+"\n");
+print("info:      A.x:       " + realString(v2)+"\n");
+
+oms_simulate("test");
+(_,v1):=oms_getReal("test.root.A.x_start");
+(_,v2):=oms_getReal("test.root.A.x");
+
+print("info:    Simulation\n");
+print("info:      A.x_start: " + realString(v1)+"\n");
+print("info:      A.x:       " + realString(v2)+"\n");
+
+for i in 0:1 loop
+  oms_reset("test");
+  oms_setReal("test.root.A.x_start", 1.5);
+  oms_initialize("test");
+  (_,v1):=oms_getReal("test.root.A.x_start");
+  (_,v2):=oms_getReal("test.root.A.x");
+  print("info:    Initialization\n");
+  print("info:      A.x_start: " + realString(v1)+"\n");
+  print("info:      A.x:       " + realString(v2)+"\n");
+
+  oms_simulate("test");
+  (_,v1):=oms_getReal("test.root.A.x_start");
+  (_,v2):=oms_getReal("test.root.A.x");
+  print("info:    Simulation\n");
+  print("info:      A.x_start: " + realString(v1)+"\n");
+  print("info:      A.x:       " + realString(v2)+"\n");
+end for;
+
+oms_terminate("test");
+oms_delete("test");
+unloadOMSimulator();
+
+
+// Result:
+// true
+// true
+// ""
+// "reset.fmu"
+// ""
+// info:    Result file: test_res.mat (bufferSize=10)
+// info:    Initialization
+// info:      A.x_start: 1.0
+// info:      A.x:       1.0
+// info:    Simulation
+// info:      A.x_start: 1.0
+// info:      A.x:       0.3486784401
+// info:    Result file: test_res.mat (bufferSize=10)
+// info:    Initialization
+// info:      A.x_start: 1.5
+// info:      A.x:       1.5
+// info:    Simulation
+// info:      A.x_start: 1.5
+// info:      A.x:       0.5230176601500001
+// info:    Result file: test_res.mat (bufferSize=10)
+// info:    Initialization
+// info:      A.x_start: 1.5
+// info:      A.x:       1.5
+// info:    Simulation
+// info:      A.x_start: 1.5
+// info:      A.x:       0.5230176601500001
+// endResult
