@@ -212,7 +212,7 @@ public:
   QList<Component*> getInheritedComponentsList() {return mInheritedComponentsList;}
   QList<LineAnnotation*> getConnectionsList() {return mConnectionsList;}
   QList<LineAnnotation*> getInheritedConnectionsList() {return mInheritedConnectionsList;}
-  bool addConnectionToClass(LineAnnotation *pConnectionLineAnnotation);
+  bool addConnectionToClass(LineAnnotation *pConnectionLineAnnotation, bool deleteUndo = false);
   void deleteConnectionFromClass(LineAnnotation *pConnectionLineAnnotation);
   void updateConnectionInClass(LineAnnotation *pConnectionLineAnnotation);
   void addConnectionToList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.append(pConnectionLineAnnotation);}
@@ -220,6 +220,7 @@ public:
   void deleteConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.removeOne(pConnectionLineAnnotation);}
   void removeConnectionsFromView();
   void deleteInheritedConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.removeOne(pConnectionLineAnnotation);}
+  int numberOfComponentConnections(Component *pComponent, LineAnnotation *pExcludeConnectionLineAnnotation = 0);
   QList<LineAnnotation*> getTransitionsList() {return mTransitionsList;}
   void addTransitionToClass(LineAnnotation *pTransitionLineAnnotation);
   void deleteTransitionFromClass(LineAnnotation *pTransitionLineAnnotation);
@@ -275,8 +276,7 @@ private:
   Component* componentAtPosition(QPoint position);
   Component* connectorComponentAtPosition(QPoint position);
   Component* stateComponentAtPosition(QPoint position);
-  bool isParameterConnectorSizing(Component *pComponent, QString parameter);
-  int numberOfComponentConnections(Component *pComponent);
+  static bool updateComponentConnectorSizingParameter(GraphicsView *pGraphicsView, QString className, Component *pComponent);
   bool handleDoubleClickOnComponent(QMouseEvent *event);
   void uncheckAllShapeDrawingActions();
   void setOriginAdjustAndInitialize(ShapeAnnotation* shapeAnnotation);

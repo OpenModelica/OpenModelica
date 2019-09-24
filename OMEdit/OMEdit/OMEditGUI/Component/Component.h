@@ -95,6 +95,7 @@ public:
   QString getCausality() const {return mCasuality;}
   void setArrayIndex(QString arrayIndex);
   QString getArrayIndex() const {return mArrayIndex;}
+  int getArrayIndexAsNumber(bool *ok) const;
   bool isArray() const {return mIsArray;}
   bool isModifiersLoaded() const {return mModifiersLoaded;}
   void setModifiersLoaded(bool modifiersLoaded) {mModifiersLoaded = modifiersLoaded;}
@@ -222,6 +223,11 @@ public:
   QString getOMCPlacementAnnotation(QPointF position);
   QString getTransformationOrigin();
   QString getTransformationExtent();
+  bool isExpandableConnector() const;
+  bool isArray() const;
+  int getArrayIndexAsNumber(bool *ok = 0) const;
+  bool isConnectorSizing();
+  static bool isParameterConnectorSizing(Component *pComponent, QString parameter);
   void createClassComponents();
   void applyRotation(qreal angle);
   void addConnectionDetails(LineAnnotation *pConnectorLineAnnotation);

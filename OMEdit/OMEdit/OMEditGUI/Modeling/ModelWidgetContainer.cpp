@@ -607,12 +607,38 @@ bool GraphicsView::checkComponentName(QString componentName)
 }
 
 /*!
+ * \brief updateConnectionIndexes
+ * Updates the connection indexes in the connection name with the passed index.
+ * \param connectionComponentName
+ * \param componentConnectionIndex
+ * \return
+ */
+QString updateConnectionIndexes(const QString &connectionComponentName, const int componentConnectionIndex) {
+  QString newConnectionComponentName = "";
+  int endIndex = connectionComponentName.lastIndexOf(']');
+  int startIndex = connectionComponentName.lastIndexOf('[', endIndex);
+  if (startIndex > -1 && endIndex > -1) {
+    newConnectionComponentName = connectionComponentName.left(startIndex);
+    newConnectionComponentName += "[";
+    QStringList range = connectionComponentName.mid(startIndex + 1, endIndex - startIndex - 1).split(':');
+    if (range.size() > 1) {
+      newConnectionComponentName += QString("%1:%2").arg(componentConnectionIndex).arg(componentConnectionIndex + (range.at(1).toInt() - range.at(0).toInt()));
+    } else {
+      newConnectionComponentName += QString("%1").arg(componentConnectionIndex);
+    }
+    newConnectionComponentName += "]";
+  }
+  return newConnectionComponentName;
+}
+
+/*!
  * \brief GraphicsView::addConnectionToClass
  * Adds the connection to class.
  * \param pConnectionLineAnnotation - the connection to add.
+ * \param deleteUndo - True when undo of a delete connection is called.
  * \return
  */
-bool GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotation)
+bool GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotation, bool deleteUndo)
 {
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
@@ -623,15 +649,11 @@ bool GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
     // if TLM connection
     bool connectionSuccessful = false;
     if (pConnectionLineAnnotation->getOMSConnectionType() == oms_connection_tlm) {
-      connectionSuccessful = OMSProxy::instance()->addTLMConnection(pConnectionLineAnnotation->getStartComponentName(),
-                                                                    pConnectionLineAnnotation->getEndComponentName(),
-                                                                    pConnectionLineAnnotation->getDelay().toDouble(),
-                                                                    pConnectionLineAnnotation->getAlpha().toDouble(),
-                                                                    pConnectionLineAnnotation->getZf().toDouble(),
-                                                                    pConnectionLineAnnotation->getZfr().toDouble());
+      connectionSuccessful = OMSProxy::instance()->addTLMConnection(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName(),
+                                                                    pConnectionLineAnnotation->getDelay().toDouble(), pConnectionLineAnnotation->getAlpha().toDouble(),
+                                                                    pConnectionLineAnnotation->getZf().toDouble(), pConnectionLineAnnotation->getZfr().toDouble());
     } else {
-      connectionSuccessful = OMSProxy::instance()->addConnection(pConnectionLineAnnotation->getStartComponentName(),
-                                                                 pConnectionLineAnnotation->getEndComponentName());
+      connectionSuccessful = OMSProxy::instance()->addConnection(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName());
     }
     if (connectionSuccessful) {
       pConnectionLineAnnotation->updateOMSConnection();
@@ -642,52 +664,29 @@ bool GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
     }
   } else {
     MainWindow *pMainWindow = MainWindow::instance();
-    // check for connectorSizing on start component
-    Component *pStartComponent = pConnectionLineAnnotation->getStartComponent();
-    if (pStartComponent && pStartComponent->getComponentInfo() && pStartComponent->getComponentInfo()->isArray()) {
-      QString parameter = StringHandler::removeFirstLastCurlBrackets(pStartComponent->getComponentInfo()->getArrayIndex());
-      // if connectorSizing then set a new value for the connectorSizing parameter.
-      if (isParameterConnectorSizing(pStartComponent->getRootParentComponent(), parameter)) {
-        int numberOfStartComponentConnections = numberOfComponentConnections(pStartComponent);
-        QString modifierKey = QString("%1.%2").arg(pStartComponent->getRootParentComponent()->getName())
-                              .arg(StringHandler::removeFirstLastCurlBrackets(pStartComponent->getComponentInfo()->getArrayIndex()));
-        MainWindow::instance()->getOMCProxy()->setComponentModifierValue(mpModelWidget->getLibraryTreeItem()->getNameStructure(),
-                                                                         modifierKey, QString::number(numberOfStartComponentConnections));
-        if (pStartComponent->getParentComponent()) {
-          pConnectionLineAnnotation->setStartComponentName(QString("%1.%2[%3]").arg(pStartComponent->getRootParentComponent()->getName())
-                                                           .arg(pStartComponent->getName()).arg(numberOfStartComponentConnections));
-        } else {
-          pConnectionLineAnnotation->setStartComponentName(QString("%1[%2]").arg(pStartComponent->getName())
-                                                           .arg(numberOfStartComponentConnections));
+    // update connectorSizing on start component if exists
+    bool isStartComponentConnectorSizing = GraphicsView::updateComponentConnectorSizingParameter(this, mpModelWidget->getLibraryTreeItem()->getNameStructure(), pConnectionLineAnnotation->getStartComponent());
+    // update connectorSizing on end component if exists
+    bool isEndComponentConnectorSizing = GraphicsView::updateComponentConnectorSizingParameter(this, mpModelWidget->getLibraryTreeItem()->getNameStructure(), pConnectionLineAnnotation->getEndComponent());
+    if (deleteUndo) {
+      if (isStartComponentConnectorSizing) {
+        QString newStartComponentName = updateConnectionIndexes(pConnectionLineAnnotation->getStartComponentName(), numberOfComponentConnections(pConnectionLineAnnotation->getStartComponent(), pConnectionLineAnnotation) + 1);
+        if (!newStartComponentName.isEmpty()) {
+          pConnectionLineAnnotation->setStartComponentName(newStartComponentName);
+          pConnectionLineAnnotation->updateToolTip();
         }
-        pConnectionLineAnnotation->updateToolTip();
       }
-    }
-    // check for connectorSizing on end component
-    Component *pEndComponent = pConnectionLineAnnotation->getEndComponent();
-    if (pEndComponent && pEndComponent->getComponentInfo() && pEndComponent->getComponentInfo()->isArray()) {
-      QString parameter = StringHandler::removeFirstLastCurlBrackets(pEndComponent->getComponentInfo()->getArrayIndex());
-      // if connectorSizing then set a new value for the connectorSizing parameter.
-      if (isParameterConnectorSizing(pEndComponent->getRootParentComponent(), parameter)) {
-        int numberOfEndComponentConnections = numberOfComponentConnections(pEndComponent);
-        QString modifierKey = QString("%1.%2").arg(pEndComponent->getRootParentComponent()->getName())
-                              .arg(StringHandler::removeFirstLastCurlBrackets(pEndComponent->getComponentInfo()->getArrayIndex()));
-        MainWindow::instance()->getOMCProxy()->setComponentModifierValue(mpModelWidget->getLibraryTreeItem()->getNameStructure(),
-                                                                         modifierKey, QString::number(numberOfEndComponentConnections));
-        if (pEndComponent->getParentComponent()) {
-          pConnectionLineAnnotation->setEndComponentName(QString("%1.%2[%3]").arg(pEndComponent->getRootParentComponent()->getName())
-                                                         .arg(pEndComponent->getName()).arg(numberOfEndComponentConnections));
-        } else {
-          pConnectionLineAnnotation->setEndComponentName(QString("%1[%2]").arg(pEndComponent->getName()).arg(numberOfEndComponentConnections));
+      if (isEndComponentConnectorSizing) {
+        QString newEndComponentName = updateConnectionIndexes(pConnectionLineAnnotation->getEndComponentName(), numberOfComponentConnections(pConnectionLineAnnotation->getEndComponent(), pConnectionLineAnnotation) + 1);
+        if (!newEndComponentName.isEmpty()) {
+          pConnectionLineAnnotation->setEndComponentName(newEndComponentName);
+          pConnectionLineAnnotation->updateToolTip();
         }
-        pConnectionLineAnnotation->updateToolTip();
       }
     }
     // add connection
-    if (pMainWindow->getOMCProxy()->addConnection(pConnectionLineAnnotation->getStartComponentName(),
-                                                  pConnectionLineAnnotation->getEndComponentName(),
-                                                  mpModelWidget->getLibraryTreeItem()->getNameStructure(),
-                                                  QString("annotate=").append(pConnectionLineAnnotation->getShapeAnnotation()))) {
+    if (pMainWindow->getOMCProxy()->addConnection(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName(),
+                                                  mpModelWidget->getLibraryTreeItem()->getNameStructure(), QString("annotate=").append(pConnectionLineAnnotation->getShapeAnnotation()))) {
       /* Ticket #2450
        * Do not check for the ports compatibility via instantiatemodel. Just let the user create the connection.
        */
@@ -695,6 +694,36 @@ bool GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
     }
   }
   return true;
+}
+
+/*!
+ * \brief componentIndexesRangeInConnection
+ * Returns the component array index in connection.
+ * It could be just index or range e.g., 1:3
+ * \param connectionComponentName
+ * \return
+ */
+QStringList componentIndexesRangeInConnection(const QString &connectionComponentName)
+{
+  int endIndex = connectionComponentName.lastIndexOf(']');
+  int startIndex = connectionComponentName.lastIndexOf('[', endIndex);
+  if (startIndex > -1 && endIndex > -1) {
+    return connectionComponentName.mid(startIndex + 1, endIndex - startIndex - 1).split(':');
+  }
+  return QStringList();
+}
+
+/*!
+ * \brief componentIndexInConnection
+ * Return the component array index used in connection.
+ * If the index is range then the start of range is returned e.g., 1:3 returns 1 and 2:4 returns 2.
+ * \param connectionComponentName
+ * \return
+ */
+int componentIndexInConnection(const QString &connectionComponentName)
+{
+  QStringList range = componentIndexesRangeInConnection(connectionComponentName);
+  return range.value(0, "0").toInt();
 }
 
 /*!
@@ -709,129 +738,56 @@ void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectionLineAnno
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
     pCompositeModelEditor->deleteConnection(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName());
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
-    OMSProxy::instance()->deleteConnection(pConnectionLineAnnotation->getStartComponentName(),
-                                           pConnectionLineAnnotation->getEndComponentName());
+    OMSProxy::instance()->deleteConnection(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName());
   } else {
     // delete the connection
-    if (pMainWindow->getOMCProxy()->deleteConnection(pConnectionLineAnnotation->getStartComponentName(),
-                                                 pConnectionLineAnnotation->getEndComponentName(),
-                                                 mpModelWidget->getLibraryTreeItem()->getNameStructure())) {
-      // check for connectorSizing on start component
-      Component *pStartComponent = pConnectionLineAnnotation->getStartComponent();
-      int numberOfStartComponentConnections = 0;
-      if (pStartComponent && pStartComponent->getComponentInfo() && pStartComponent->getComponentInfo()->isArray()) {
-        QString parameter = StringHandler::removeFirstLastCurlBrackets(pStartComponent->getComponentInfo()->getArrayIndex());
-        // if connectorSizing then update the connectorSizing modifier.
-        if (isParameterConnectorSizing(pStartComponent->getRootParentComponent(), parameter)) {
-          numberOfStartComponentConnections = numberOfComponentConnections(pStartComponent);
-          QString modifierKey = QString("%1.%2").arg(pStartComponent->getRootParentComponent()->getName())
-                                .arg(StringHandler::removeFirstLastCurlBrackets(pStartComponent->getComponentInfo()->getArrayIndex()));
-          QString modifierValue = numberOfStartComponentConnections > 0 ? QString::number(numberOfStartComponentConnections) : "";
-          pMainWindow->getOMCProxy()->setComponentModifierValue(mpModelWidget->getLibraryTreeItem()->getNameStructure(),
-                                                                modifierKey, modifierValue);
-        }
+    if (pMainWindow->getOMCProxy()->deleteConnection(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName(), mpModelWidget->getLibraryTreeItem()->getNameStructure())) {
+      // update connectorSizing on start component if exists
+      bool isStartComponentConnectorSizing = GraphicsView::updateComponentConnectorSizingParameter(this, mpModelWidget->getLibraryTreeItem()->getNameStructure(), pConnectionLineAnnotation->getStartComponent());
+      // update connectorSizing on end component if exists
+      bool isEndComponentConnectorSizing = GraphicsView::updateComponentConnectorSizingParameter(this, mpModelWidget->getLibraryTreeItem()->getNameStructure(), pConnectionLineAnnotation->getEndComponent());
+      // if the component is connectorSizing then get the index used in deleted connection
+      int connectionIndex = 0;
+      int startComponentConnectionIndex = 0;
+      if (isStartComponentConnectorSizing) {
+        startComponentConnectionIndex = componentIndexInConnection(pConnectionLineAnnotation->getStartComponentName());
+        connectionIndex = startComponentConnectionIndex;
       }
-      // check for connectorSizing on end component
-      Component *pEndComponent = pConnectionLineAnnotation->getEndComponent();
-      int numberOfEndComponentConnections = 0;
-      if (pEndComponent && pEndComponent->getComponentInfo() && pEndComponent->getComponentInfo()->isArray()) {
-        QString parameter = StringHandler::removeFirstLastCurlBrackets(pEndComponent->getComponentInfo()->getArrayIndex());
-        // if connectorSizing then update the connectorSizing modifier.
-        if (isParameterConnectorSizing(pEndComponent->getRootParentComponent(), parameter)) {
-          numberOfEndComponentConnections = numberOfComponentConnections(pEndComponent);
-          QString modifierKey = QString("%1.%2").arg(pEndComponent->getRootParentComponent()->getName())
-                                .arg(StringHandler::removeFirstLastCurlBrackets(pEndComponent->getComponentInfo()->getArrayIndex()));
-          QString modifierValue = numberOfEndComponentConnections > 0 ? QString::number(numberOfEndComponentConnections) : "";
-          pMainWindow->getOMCProxy()->setComponentModifierValue(mpModelWidget->getLibraryTreeItem()->getNameStructure(),
-                                                                modifierKey, modifierValue);
-        }
+      int endComponentConnectionIndex = 0;
+      if (isEndComponentConnectorSizing) {
+        endComponentConnectionIndex = componentIndexInConnection(pConnectionLineAnnotation->getEndComponentName());
+        connectionIndex = endComponentConnectionIndex;
       }
-      // update the connections if some middle connectorSizing connections is removed.
-      if (numberOfStartComponentConnections > 0 || numberOfEndComponentConnections > 0) {
-        int startStartComponentConnectionsCount = 0;
-        int startEndComponentConnectionsCount = 0;
-        int endStartComponentConnectionsCount = 0;
-        int endEndComponentConnectionsCount = 0;
-        foreach (LineAnnotation *pOtherConnectionLineAnnotation, mConnectionsList) {
-          QString startComponentName = pOtherConnectionLineAnnotation->getStartComponentName();
-          QString endComponentName = pOtherConnectionLineAnnotation->getEndComponentName();
-          bool updateConnection = false;
-          // if deleted connection then continue
-          if (pOtherConnectionLineAnnotation == pConnectionLineAnnotation) {
-            continue;
+      // update the connections if some middle connectorSizing connection is removed
+      foreach (LineAnnotation *pOtherConnectionLineAnnotation, mConnectionsList) {
+        // if deleted connection then continue
+        if (pOtherConnectionLineAnnotation == pConnectionLineAnnotation) {
+          continue;
+        }
+        bool updateConnection = false;
+        // start component matches
+        QString startComponentName = pOtherConnectionLineAnnotation->getStartComponentName();
+        if (pOtherConnectionLineAnnotation->getStartComponent() == pConnectionLineAnnotation->getStartComponent()
+            || pOtherConnectionLineAnnotation->getStartComponent() == pConnectionLineAnnotation->getEndComponent()) {
+          if (componentIndexInConnection(startComponentName) > startComponentConnectionIndex) {
+            pOtherConnectionLineAnnotation->setStartComponentName(updateConnectionIndexes(startComponentName, connectionIndex++));
+            updateConnection = true;
           }
-          if (pOtherConnectionLineAnnotation->getStartComponent() == pConnectionLineAnnotation->getStartComponent()) {
-            startStartComponentConnectionsCount++;
-            if (numberOfStartComponentConnections > 0 && startStartComponentConnectionsCount >= numberOfStartComponentConnections) {
-              if (pOtherConnectionLineAnnotation->getStartComponent()->getParentComponent()) {
-                pOtherConnectionLineAnnotation->setStartComponentName(QString("%1.%2[%3]")
-                                                                      .arg(pOtherConnectionLineAnnotation->getStartComponent()->getRootParentComponent()->getName())
-                                                                      .arg(pOtherConnectionLineAnnotation->getStartComponent()->getName())
-                                                                      .arg(startStartComponentConnectionsCount));
-              } else {
-                pOtherConnectionLineAnnotation->setStartComponentName(QString("%1[%2]")
-                                                                      .arg(pOtherConnectionLineAnnotation->getStartComponent()->getName())
-                                                                      .arg(startStartComponentConnectionsCount));
-              }
-              updateConnection = true;
-            }
+        }
+        // end component matches
+        QString endComponentName = pOtherConnectionLineAnnotation->getEndComponentName();
+        if (pOtherConnectionLineAnnotation->getEndComponent() == pConnectionLineAnnotation->getStartComponent()
+            || pOtherConnectionLineAnnotation->getEndComponent() == pConnectionLineAnnotation->getEndComponent()) {
+          if (componentIndexInConnection(endComponentName) > endComponentConnectionIndex) {
+            pOtherConnectionLineAnnotation->setEndComponentName(updateConnectionIndexes(endComponentName, connectionIndex++));
+            updateConnection = true;
           }
-          if (pOtherConnectionLineAnnotation->getStartComponent() == pConnectionLineAnnotation->getEndComponent()) {
-            startEndComponentConnectionsCount++;
-            if (numberOfEndComponentConnections > 0 && startEndComponentConnectionsCount >= numberOfEndComponentConnections) {
-              if (pOtherConnectionLineAnnotation->getStartComponent()->getParentComponent()) {
-                pOtherConnectionLineAnnotation->setStartComponentName(QString("%1.%2[%3]")
-                                                                      .arg(pOtherConnectionLineAnnotation->getStartComponent()->getRootParentComponent()->getName())
-                                                                      .arg(pOtherConnectionLineAnnotation->getStartComponent()->getName())
-                                                                      .arg(startEndComponentConnectionsCount));
-              } else {
-                pOtherConnectionLineAnnotation->setStartComponentName(QString("%1[%2]")
-                                                                      .arg(pOtherConnectionLineAnnotation->getStartComponent()->getName())
-                                                                      .arg(startEndComponentConnectionsCount));
-              }
-              updateConnection = true;
-            }
-          }
-          if (pOtherConnectionLineAnnotation->getEndComponent() == pConnectionLineAnnotation->getStartComponent()) {
-            endStartComponentConnectionsCount++;
-            if (numberOfStartComponentConnections > 0 && endStartComponentConnectionsCount >= numberOfStartComponentConnections) {
-              if (pOtherConnectionLineAnnotation->getEndComponent()->getParentComponent()) {
-                pOtherConnectionLineAnnotation->setEndComponentName(QString("%1.%2[%3]")
-                                                                    .arg(pOtherConnectionLineAnnotation->getEndComponent()->getRootParentComponent()->getName())
-                                                                    .arg(pOtherConnectionLineAnnotation->getEndComponent()->getName())
-                                                                    .arg(endStartComponentConnectionsCount));
-              } else {
-                pOtherConnectionLineAnnotation->setEndComponentName(QString("%1[%2]")
-                                                                    .arg(pOtherConnectionLineAnnotation->getEndComponent()->getName())
-                                                                    .arg(endStartComponentConnectionsCount));
-              }
-              updateConnection = true;
-            }
-          }
-          if (pOtherConnectionLineAnnotation->getEndComponent() == pConnectionLineAnnotation->getEndComponent()) {
-            endEndComponentConnectionsCount++;
-            if (numberOfEndComponentConnections > 0 && endEndComponentConnectionsCount >= numberOfEndComponentConnections) {
-              if (pOtherConnectionLineAnnotation->getEndComponent()->getParentComponent()) {
-                pOtherConnectionLineAnnotation->setEndComponentName(QString("%1.%2[%3]")
-                                                                    .arg(pOtherConnectionLineAnnotation->getEndComponent()->getRootParentComponent()->getName())
-                                                                    .arg(pOtherConnectionLineAnnotation->getEndComponent()->getName())
-                                                                    .arg(endEndComponentConnectionsCount));
-              } else {
-                pOtherConnectionLineAnnotation->setEndComponentName(QString("%1[%2]")
-                                                                    .arg(pOtherConnectionLineAnnotation->getEndComponent()->getName())
-                                                                    .arg(endEndComponentConnectionsCount));
-              }
-              updateConnection = true;
-            }
-          }
-          // update the connection with updated connectorSizing indexes.
-          if (updateConnection) {
-            pMainWindow->getOMCProxy()->updateConnectionNames(mpModelWidget->getLibraryTreeItem()->getNameStructure(),
-                                                              startComponentName, endComponentName,
-                                                              pOtherConnectionLineAnnotation->getStartComponentName(),
-                                                              pOtherConnectionLineAnnotation->getEndComponentName());
-            pOtherConnectionLineAnnotation->updateToolTip();
-          }
+        }
+        // update the connection with updated connectorSizing indexes.
+        if (updateConnection) {
+          pMainWindow->getOMCProxy()->updateConnectionNames(mpModelWidget->getLibraryTreeItem()->getNameStructure(), startComponentName, endComponentName,
+                                                            pOtherConnectionLineAnnotation->getStartComponentName(), pOtherConnectionLineAnnotation->getEndComponentName());
+          pOtherConnectionLineAnnotation->updateToolTip();
         }
       }
     }
@@ -863,6 +819,38 @@ void GraphicsView::removeConnectionsFromView()
     deleteConnectionFromList(pConnectionLineAnnotation);
     removeItem(pConnectionLineAnnotation);
   }
+}
+
+/*!
+ * \brief GraphicsView::numberOfComponentConnections
+ * Counts the number of connections of the component.
+ * \param pComponent
+ * \param pExcludeConnectionLineAnnotation
+ * \return
+ */
+int GraphicsView::numberOfComponentConnections(Component *pComponent, LineAnnotation *pExcludeConnectionLineAnnotation)
+{
+  int connections = 0;
+  foreach (LineAnnotation *pConnectionLineAnnotation, mConnectionsList) {
+    if (pExcludeConnectionLineAnnotation && pExcludeConnectionLineAnnotation == pConnectionLineAnnotation) {
+      continue;
+    }
+    if (pConnectionLineAnnotation->getStartComponent() == pComponent || pConnectionLineAnnotation->getEndComponent() == pComponent) {
+      // always count one connection if we are in here. Then look for array connections.
+      connections++;
+      QString connectionComponentName;
+      if (pConnectionLineAnnotation->getStartComponent() == pComponent) {
+        connectionComponentName = pConnectionLineAnnotation->getStartComponentName();
+      } else {
+        connectionComponentName = pConnectionLineAnnotation->getEndComponentName();
+      }
+      QStringList range = componentIndexesRangeInConnection(connectionComponentName);
+      if (range.size() > 1) {
+        connections += (range.at(1).toInt() - range.at(0).toInt());
+      }
+    }
+  }
+  return connections;
 }
 
 /*!
@@ -1815,52 +1803,31 @@ Component* GraphicsView::stateComponentAtPosition(QPoint position)
 }
 
 /*!
- * \brief GraphicsView::isParameterConnectorSizing
- * Searches for the parameter and returns true if the parameter has connectorSizing annotation.
+ * \brief GraphicsView::updateComponentConnectorSizingParameter
+ * Updates the component's connectorSizing parameter via the modifier.
+ * \param pGraphicsView
+ * \param className
  * \param pComponent
- * \param parameter
  * \return
  */
-bool GraphicsView::isParameterConnectorSizing(Component *pComponent, QString parameter)
+bool GraphicsView::updateComponentConnectorSizingParameter(GraphicsView *pGraphicsView, QString className, Component *pComponent)
 {
-  bool result = false;
-  // Look in class components
-  foreach (Component *pClassComponent, pComponent->getComponentsList()) {
-    if (pClassComponent->getComponentInfo() && pClassComponent->getName().compare(parameter) == 0) {
-      return (pClassComponent->getDialogAnnotation().size() > 10) && (pClassComponent->getDialogAnnotation().at(10).compare("true") == 0);
-    }
+  // if connectorSizing then set a new value for the connectorSizing parameter.
+  if (pComponent->isConnectorSizing()) {
+    QString parameter = StringHandler::removeFirstLastCurlBrackets(pComponent->getComponentInfo()->getArrayIndex());
+    int numberOfComponentConnections = pGraphicsView->numberOfComponentConnections(pComponent);
+    QString modifierKey = QString("%1.%2").arg(pComponent->getRootParentComponent()->getName()).arg(parameter);
+    MainWindow::instance()->getOMCProxy()->setComponentModifierValue(className, modifierKey, QString::number(numberOfComponentConnections));
+    return true;
   }
-  // Look in class inherited components
-  foreach (Component *pInheritedComponent, pComponent->getInheritedComponentsList()) {
-    /* Since we use the parent ComponentInfo for inherited classes so we should not use
-     * pInheritedComponent->getComponentInfo()->getClassName() to get the name instead we should use
-     * pInheritedComponent->getLibraryTreeItem()->getNameStructure() to get the correct name of inherited class.
-     */
-    if (pInheritedComponent->getLibraryTreeItem() && pInheritedComponent->getLibraryTreeItem()->getName().compare(parameter) == 0) {
-      return (pInheritedComponent->getDialogAnnotation().size() > 10) && (pInheritedComponent->getDialogAnnotation().at(10).compare("true") == 0);
-    }
-    result = isParameterConnectorSizing(pInheritedComponent, parameter);
-  }
-  return result;
+  return false;
 }
 
 /*!
- * \brief GraphicsView::numberOfComponentConnections
- * Counts the number of connections of the component.
+ * \brief GraphicsView::addConnection
+ * Adds the connection to GraphicsView.
  * \param pComponent
- * \return
  */
-int GraphicsView::numberOfComponentConnections(Component *pComponent)
-{
-  int connections = 0;
-  foreach (LineAnnotation *pConnectionLineAnnotation, mConnectionsList) {
-    if (pConnectionLineAnnotation->getStartComponent() == pComponent || pConnectionLineAnnotation->getEndComponent() == pComponent) {
-      connections++;
-    }
-  }
-  return connections;
-}
-
 void GraphicsView::addConnection(Component *pComponent)
 {
   // When clicking the start component
@@ -1877,17 +1844,16 @@ void GraphicsView::addConnection(Component *pComponent)
     mpConnectionLineAnnotation->addPoint(startPos);
     mpConnectionLineAnnotation->addPoint(startPos);
     /* Ticket:4196
-     * If we are starting connection from expandable connector or array connector
+     * If we are starting connection from expandable connector or (array && !connectorSizing) connector
      * then set the line thickness to 0.5
      */
-    if ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-        (pComponent->getParentComponent() && pComponent->getRootParentComponent()->getComponentInfo()->isArray()) ||
-        (!pComponent->getParentComponent() && pComponent->getRootParentComponent()->getLibraryTreeItem() && pComponent->getRootParentComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-        (pComponent->getParentComponent() && pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-        (pComponent->getComponentInfo() && pComponent->getComponentInfo()->isArray())) {
+    Component *pRootParentComponent = pComponent->getParentComponent() ? pComponent->getRootParentComponent() : 0;
+    if (pComponent->isExpandableConnector()
+        || (pComponent->isArray() && !pComponent->isConnectorSizing())
+        || (pRootParentComponent && (pRootParentComponent->isExpandableConnector() || (pRootParentComponent->isArray() && !pRootParentComponent->isConnectorSizing())))) {
       mpConnectionLineAnnotation->setLineThickness(0.5);
     }
-  } else if (isCreatingConnection()) { // When clicking the end component
+  } else { // When clicking the end component
     mpConnectionLineAnnotation->setEndComponent(pComponent);
     // update the last point to the center of component
     QPointF newPos;
@@ -1907,34 +1873,25 @@ void GraphicsView::addConnection(Component *pComponent)
       removeCurrentConnection();
     } else {
       /* Ticket:4956
-       * Only set the connection line thickness to 0.5 when both connectors are either expandable or array.
+       * Only set the connection line thickness to 0.5 when both connectors are either expandable or (array && !connectorSizing).
        * Otherwise set it to 0.25 i.e., default.
        */
-      if (((pStartComponent->getLibraryTreeItem() && pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-           (pStartComponent->getParentComponent() && pStartComponent->getRootParentComponent()->getComponentInfo()->isArray()) ||
-           (!pStartComponent->getParentComponent() && pStartComponent->getRootParentComponent()->getLibraryTreeItem() && pStartComponent->getRootParentComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-           (pStartComponent->getParentComponent() && pStartComponent->getLibraryTreeItem() && pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-           (pStartComponent->getComponentInfo() && pStartComponent->getComponentInfo()->isArray())) &&
-          ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-           (pComponent->getParentComponent() && pComponent->getRootParentComponent()->getComponentInfo()->isArray()) ||
-           (!pComponent->getParentComponent() && pComponent->getRootParentComponent()->getLibraryTreeItem() && pComponent->getRootParentComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-           (pComponent->getParentComponent() && pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-           (pComponent->getComponentInfo() && pComponent->getComponentInfo()->isArray()))) {
+      Component *pStartRootParentComponent = pStartComponent->getParentComponent() ? pStartComponent->getRootParentComponent() : 0;
+      Component *pRootParentComponent = pComponent->getParentComponent() ? pComponent->getRootParentComponent() : 0;
+
+      if ((pStartComponent->isExpandableConnector() || (pStartComponent->isArray() && !pStartComponent->isConnectorSizing())
+           || (pStartRootParentComponent && (pStartRootParentComponent->isExpandableConnector() || (pStartRootParentComponent->isArray() && !pStartRootParentComponent->isConnectorSizing()))))
+          && (pComponent->isExpandableConnector() || (pComponent->isArray() && !pComponent->isConnectorSizing())
+              || (pRootParentComponent && (pRootParentComponent->isExpandableConnector() || (pRootParentComponent->isArray() && !pRootParentComponent->isConnectorSizing()))))) {
         mpConnectionLineAnnotation->setLineThickness(0.5);
       } else {
         /* Ticket:4956
          * If the start connector is either expandable or array and the end connector is not then change the line color to end connector.
          */
-        if (((pStartComponent->getLibraryTreeItem() && pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-             (pStartComponent->getParentComponent() && pStartComponent->getRootParentComponent()->getComponentInfo()->isArray()) ||
-             (!pStartComponent->getParentComponent() && pStartComponent->getRootParentComponent()->getLibraryTreeItem() && pStartComponent->getRootParentComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-             (pStartComponent->getParentComponent() && pStartComponent->getLibraryTreeItem() && pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-             (pStartComponent->getComponentInfo() && pStartComponent->getComponentInfo()->isArray())) &&
-            (!(pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-             (pComponent->getParentComponent() && pComponent->getRootParentComponent()->getComponentInfo()->isArray()) ||
-             (!pComponent->getParentComponent() && pComponent->getRootParentComponent()->getLibraryTreeItem() && pComponent->getRootParentComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-             (pComponent->getParentComponent() && pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-             (pComponent->getComponentInfo() && pComponent->getComponentInfo()->isArray()))) {
+        if ((pStartComponent->isExpandableConnector() || pStartComponent->isArray()
+             || (pStartRootParentComponent && (pStartRootParentComponent->isExpandableConnector() || pStartRootParentComponent->isArray())))
+            && (!(pComponent->isExpandableConnector() || pComponent->isArray()
+                || (pRootParentComponent && (pRootParentComponent->isExpandableConnector() || pRootParentComponent->isArray()))))) {
           if (pComponent->getLibraryTreeItem()) {
             if (!pComponent->getLibraryTreeItem()->getModelWidget()) {
               MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pComponent->getLibraryTreeItem(), false);
@@ -1952,16 +1909,12 @@ void GraphicsView::addConnection(Component *pComponent)
         }
         mpConnectionLineAnnotation->setLineThickness(0.25);
       }
-      // check of any of starting or ending components are array
+      // check if any of starting or ending components are array
       bool showConnectionArrayDialog = false;
-      if ((pStartComponent->getParentComponent() && pStartComponent->getRootParentComponent()->getComponentInfo()->isArray()) ||
-          (!pStartComponent->getParentComponent() && pStartComponent->getRootParentComponent()->getLibraryTreeItem() && pStartComponent->getRootParentComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-          (pStartComponent->getParentComponent() && pStartComponent->getLibraryTreeItem() && pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-          (pStartComponent->getComponentInfo() && pStartComponent->getComponentInfo()->isArray()) ||
-          (pComponent->getParentComponent() && pComponent->getRootParentComponent()->getComponentInfo()->isArray()) ||
-          (!pComponent->getParentComponent() && pComponent->getRootParentComponent()->getLibraryTreeItem() && pComponent->getRootParentComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-          (pComponent->getParentComponent() && pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-          (pComponent->getComponentInfo() && pComponent->getComponentInfo()->isArray())) {
+      if ((pStartComponent->isExpandableConnector() || (pStartComponent->isArray() && !pStartComponent->isConnectorSizing())
+           || (pStartRootParentComponent && (pStartRootParentComponent->isExpandableConnector() || (pStartRootParentComponent->isArray() && !pStartRootParentComponent->isConnectorSizing()))))
+          || (pComponent->isExpandableConnector() || (pComponent->isArray() && !pComponent->isConnectorSizing())
+              || (pRootParentComponent && (pRootParentComponent->isExpandableConnector() || (pRootParentComponent->isArray() && !pRootParentComponent->isConnectorSizing()))))) {
         showConnectionArrayDialog = true;
       }
       // check if any starting or ending components are bus
@@ -1970,20 +1923,8 @@ void GraphicsView::addConnection(Component *pComponent)
         || (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getOMSBusConnector())) {
         showBusConnectionDialog = true;
       }
-      // check for connectorSizing on start component
-      bool startComponentConnectorSizing = false;
-      if (pStartComponent->getComponentInfo() && pStartComponent->getComponentInfo()->isArray()) {
-        QString parameter = StringHandler::removeFirstLastCurlBrackets(pStartComponent->getComponentInfo()->getArrayIndex());
-        startComponentConnectorSizing = isParameterConnectorSizing(pStartComponent->getRootParentComponent(), parameter);
-      }
-      // check for connectorSizing on end component
-      bool endComponentConnectorSizing = false;
-      if (pComponent->getComponentInfo() && pComponent->getComponentInfo()->isArray()) {
-        QString parameter = StringHandler::removeFirstLastCurlBrackets(pComponent->getComponentInfo()->getArrayIndex());
-        endComponentConnectorSizing = isParameterConnectorSizing(pComponent->getRootParentComponent(), parameter);
-      }
       // if connectorSizing annotation is set then don't show the CreateConnectionDialog
-      if (showConnectionArrayDialog && !(startComponentConnectorSizing || endComponentConnectorSizing)) {
+      if (showConnectionArrayDialog) {
         CreateConnectionDialog *pConnectionArray = new CreateConnectionDialog(this, mpConnectionLineAnnotation, MainWindow::instance());
         // if user cancels the array connection
         if (!pConnectionArray->exec()) {
@@ -2012,15 +1953,33 @@ void GraphicsView::addConnection(Component *pComponent)
             endComponentName = pComponent->getLibraryTreeItem()->getNameStructure();
           }
         } else {
+          int numberOfStartComponentConnections = numberOfComponentConnections(pStartComponent);
           if (pStartComponent->getParentComponent()) {
-            startComponentName = QString("%1.%2").arg(pStartComponent->getRootParentComponent()->getName()).arg(pStartComponent->getName());
+            if (pStartComponent->isConnectorSizing()) {
+              startComponentName = QString("%1.%2[%3]").arg(pStartComponent->getRootParentComponent()->getName()).arg(pStartComponent->getName()).arg(++numberOfStartComponentConnections);
+            } else {
+              startComponentName = QString("%1.%2").arg(pStartComponent->getRootParentComponent()->getName()).arg(pStartComponent->getName());
+            }
           } else {
-            startComponentName = pStartComponent->getName();
+            if (pStartComponent->isConnectorSizing()) {
+              startComponentName = QString("%1[%2]").arg(pStartComponent->getName()).arg(++numberOfStartComponentConnections);
+            } else {
+              startComponentName = pStartComponent->getName();
+            }
           }
+          int numberOfEndComponentConnections = numberOfComponentConnections(pComponent);
           if (pComponent->getParentComponent()) {
-            endComponentName = QString("%1.%2").arg(pComponent->getRootParentComponent()->getName()).arg(pComponent->getName());
+            if (pComponent->isConnectorSizing()) {
+              endComponentName = QString("%1.%2[%3]").arg(pComponent->getRootParentComponent()->getName()).arg(pComponent->getName()).arg(++numberOfEndComponentConnections);
+            } else {
+              endComponentName = QString("%1.%2").arg(pComponent->getRootParentComponent()->getName()).arg(pComponent->getName());
+            }
           } else {
-            endComponentName = pComponent->getName();
+            if (pComponent->isConnectorSizing()) {
+              endComponentName = QString("%1[%2]").arg(pComponent->getName()).arg(++numberOfEndComponentConnections);
+            } else {
+              endComponentName = pComponent->getName();
+            }
           }
         }
         mpConnectionLineAnnotation->setStartComponentName(startComponentName);
