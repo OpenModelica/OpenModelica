@@ -264,6 +264,10 @@ public:
 private:
   GraphicsView *mpGraphicsView;
   LineAnnotation *mpConnectionLineAnnotation;
+  Component *mpStartComponent;
+  Component *mpStartRootComponent;
+  Component *mpEndComponent;
+  Component *mpEndRootComponent;
   Label *mpHeading;
   QFrame *mpHorizontalLine;
   ExpandableConnectorTreeModel *mpStartExpandableConnectorTreeModel;
@@ -291,7 +295,10 @@ private:
   QHBoxLayout *mpConnectionEndHorizontalLayout;
 
   QSpinBox* createSpinBox(QString arrayIndex);
-  QString createComponentNameFromLayout(QHBoxLayout *pLayout);
+  static QString createComponentNameFromLayout(QHBoxLayout *pLayout);
+  static QString getComponentConnectionName(GraphicsView *pGraphicsView, ExpandableConnectorTreeView *pExpandableConnectorTreeView, QHBoxLayout *pConnectionHorizontalLayout,
+                                            Component *pComponent1, Component *pRootComponent1, QSpinBox *pComponentSpinBox1, QSpinBox *pRootComponentSpinBox1,
+                                            Component *pComponent2, Component *pRootComponent2, QSpinBox *pComponentSpinBox2, QSpinBox *pRootComponentSpinBox2);
 public slots:
   void startConnectorChanged(const QModelIndex &current, const QModelIndex &previous);
   void endConnectorChanged(const QModelIndex &current, const QModelIndex &previous);

@@ -288,6 +288,18 @@ void ComponentInfo::setArrayIndex(QString arrayIndex)
   }
 }
 
+int ComponentInfo::getArrayIndexAsNumber(bool *ok) const
+{
+  if (isArray()) {
+    QString arrayIndex = StringHandler::removeFirstLastCurlBrackets(mArrayIndex);
+    int intArrayIndex = arrayIndex.toInt(ok);
+    return intArrayIndex;
+  } else {
+    if (ok) *ok = false;
+    return 0;
+  }
+}
+
 /*!
  * \brief ComponentInfo::getModifiersMap
  * Fetches the Component modifiers if needed and return them.
@@ -1057,6 +1069,63 @@ QString Component::getTransformationExtent()
   transformationExtent.append(QString::number(extent2.x())).append(",");
   transformationExtent.append(QString::number(extent2.y())).append("}");
   return transformationExtent;
+}
+
+bool Component::isExpandableConnector() const
+{
+  return (mpLibraryTreeItem && mpLibraryTreeItem->getRestriction() == StringHandler::ExpandableConnector);
+}
+
+bool Component::isArray() const
+{
+  return (mpComponentInfo && mpComponentInfo->isArray());
+}
+
+int Component::getArrayIndexAsNumber(bool *ok) const
+{
+  if (isArray()) {
+    return mpComponentInfo->getArrayIndexAsNumber(ok);
+  } else {
+    if (ok) *ok = false;
+    return 0;
+  }
+}
+
+bool Component::isConnectorSizing()
+{
+  if (mpComponentInfo && mpComponentInfo->isArray()) {
+    QString parameter = StringHandler::removeFirstLastCurlBrackets(mpComponentInfo->getArrayIndex());
+    bool ok;
+    parameter.toInt(&ok);
+    // if the array index is not a number then look for parameter
+    if (!ok) {
+      return Component::isParameterConnectorSizing(getRootParentComponent(), parameter);
+    }
+  }
+  return false;
+}
+
+bool Component::isParameterConnectorSizing(Component *pComponent, QString parameter)
+{
+  bool result = false;
+  // Look in class components
+  foreach (Component *pClassComponent, pComponent->getComponentsList()) {
+    if (pClassComponent->getComponentInfo() && pClassComponent->getName().compare(parameter) == 0) {
+      return (pClassComponent->getDialogAnnotation().size() > 10) && (pClassComponent->getDialogAnnotation().at(10).compare("true") == 0);
+    }
+  }
+  // Look in class inherited components
+  foreach (Component *pInheritedComponent, pComponent->getInheritedComponentsList()) {
+    /* Since we use the parent ComponentInfo for inherited classes so we should not use
+     * pInheritedComponent->getComponentInfo()->getClassName() to get the name instead we should use
+     * pInheritedComponent->getLibraryTreeItem()->getNameStructure() to get the correct name of inherited class.
+     */
+    if (pInheritedComponent->getLibraryTreeItem() && pInheritedComponent->getLibraryTreeItem()->getName().compare(parameter) == 0) {
+      return (pInheritedComponent->getDialogAnnotation().size() > 10) && (pInheritedComponent->getDialogAnnotation().at(10).compare("true") == 0);
+    }
+    result = isParameterConnectorSizing(pInheritedComponent, parameter);
+  }
+  return result;
 }
 
 /*!
