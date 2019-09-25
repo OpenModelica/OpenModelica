@@ -74,11 +74,11 @@ regex_line = re.compile('Line\(([\w ]+), {('+exp_float+'), ('+exp_float+')}, ('+
 # example: Ellipse(true, {0.0, 0.0}, 0, {0, 0, 0}, {95, 95, 95}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-100, 100}, {100, -100}}, 0, 360)}}
 regex_ellipse = re.compile('Ellipse\(([\w ]+), {('+exp_float+'), ('+exp_float+')}, ('+exp_float+'), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ('+exp_float+'), {{('+exp_float+'), ('+exp_float+')}, {('+exp_float+'), ('+exp_float+')}}, ('+exp_float+'), ('+exp_float+')')
 
-# example: Text(true, {0.0, 0.0}, 0, {0, 0, 255}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-150, 110}, {150, 70}}, "%name", 0, TextAlignment.Center
-regex_text = re.compile('Text\(([\w ]+), {('+exp_float+'), ('+exp_float+')}, ('+exp_float+'), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ('+exp_float+'), {{('+exp_float+'), ('+exp_float+')}, {('+exp_float+'), ('+exp_float+')}}, ("[^"]*"), ('+exp_float+')(?:, ("[^"]*"))?(?:, {([^}]*)})?, (\w+.\w+)')
+# example: Text(true, {0.0, 0.0}, 0, {0, 0, 255}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-150, 110}, {150, 70}}, "%name", 0, {-1, -1, -1}, "fontName", {TextStyle.Bold, TextStyle.Italic, TextStyle.UnderLine}, TextAlignment.Center
+regex_text = re.compile('Text\(([\w ]+), {('+exp_float+'), ('+exp_float+')}, ('+exp_float+'), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ('+exp_float+'), {{('+exp_float+'), ('+exp_float+')}, {('+exp_float+'), ('+exp_float+')}}, ("[^"]*"), ('+exp_float+'), {([+-]?\d+), ([+-]?\d+), ([+-]?\d+)}, ("[^"]*"), {([^}]*)}, (\w+.\w+)')
 
-# example: Text(true, {0.0, 0.0}, 0, {0, 0, 255}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-150, 110}, {150, 70}}, {"%name", y, 0}, 0, TextAlignment.Center
-regex_text2 = re.compile('Text\(([\w ]+), {('+exp_float+'), ('+exp_float+')}, ('+exp_float+'), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ('+exp_float+'), {{('+exp_float+'), ('+exp_float+')}, {('+exp_float+'), ('+exp_float+')}}, {("[^"]*"), [+-, \w\d]*}, ('+exp_float+')(?:, ("[^"]*"))?(?:, {([^}]*)})?, (\w+.\w+)')
+# example: Text(true, {0.0, 0.0}, 0, {0, 0, 255}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-150, 110}, {150, 70}}, {"%name", y, 0}, 0, {-1, -1, -1}, "fontName", {TextStyle.Bold, TextStyle.Italic, TextStyle.UnderLine}, TextAlignment.Center
+regex_text2 = re.compile('Text\(([\w ]+), {('+exp_float+'), ('+exp_float+')}, ('+exp_float+'), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ('+exp_float+'), {{('+exp_float+'), ('+exp_float+')}, {('+exp_float+'), ('+exp_float+')}}, {("[^"]*"), [+-, \w\d]*}, ('+exp_float+'), {([+-]?\d+), ([+-]?\d+), ([+-]?\d+)}, ("[^"]*"), {([^}]*)}, (\w+.\w+)')
 
 # example: Polygon(true, {0.0, 0.0}, 0, {0, 127, 255}, {0, 127, 255}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-24, -34}, {-82, 40}, {-72, 46}, {-14, -26}, {-24, -34}}, Smooth.None
 #   Polygon(true, {-60, -40},90, {0, 0, 0}, {255, 128, 0}, LinePattern.Solid, FillPattern.VerticalCylinder, 0.25, {{-20.0, 10.0}, {0.0, -10.0}, {1.22465e-16, -50.0}, {-10.0, -60.0}, {-20.0, -60.0}, {-20.0, 10.0}}, Smooth.None
@@ -253,15 +253,16 @@ def getGraphicsForClass(modelicaClass):
             graphicsObj['extent'] = [[float(g[13]), float(g[14])], [float(g[15]), float(g[16])]]
             graphicsObj['textString'] = g[17].strip('"')
             graphicsObj['fontSize'] = float(g[18])
-            graphicsObj['fontName'] = g[19]
+            graphicsObj['textColor'] = [int(g[19]), int(g[20]), int(g[21])]
+            graphicsObj['fontName'] = g[22]
             if graphicsObj['fontName']:
                 graphicsObj['fontName'] = graphicsObj['fontName'].strip('"')
 
             graphicsObj['textStyle'] = []
-            if g[20]:
-                graphicsObj['textStyle'] = regex_type_value.findall(g[20])  # text Style can have different number of styles
+            if g[23]:
+                graphicsObj['textStyle'] = regex_type_value.findall(g[23])  # text Style can have different number of styles
 
-            graphicsObj['horizontalAlignment'] = g[21]
+            graphicsObj['horizontalAlignment'] = g[24]
 
         r = regex_ellipse.search(icon_line)
         if r:

@@ -442,6 +442,33 @@ pipeline {
           }
         }
 
+        stage('test-clang-icon-generator') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:v1.14.1'
+              label 'linux'
+              args "--mount type=volume,source=runtest-clang-icon-generator,target=/cache/runtest " +
+                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+            }
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          steps {
+            script {
+              common.standardSetup()
+              unstash 'omc-clang'
+              common.makeLibsAndCache()
+            }
+            sh 'make -C testsuite/openmodelica/icon-generator test'
+          }
+        }
+
       }
     }
     stage('fmuchecker') {
