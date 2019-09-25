@@ -355,48 +355,7 @@ void LapackImpl__dgegv(const char *jobvl, const char *jobvr, int N, void *A, int
     void **ALPHAR, void **ALPHAI, void **BETA, void **VL, void **VR,
     void **outWORK, int *INFO)
 {
-#ifndef NO_LAPACK
-  integer n, lda, ldb, ldvl, ldvr, lwork, info = 0;
-  double *a, *b, *work, *alphar, *alphai, *beta, *vl, *vr;
-
-  n = N;
-  lda = LDA;
-  ldb = LDB;
-  ldvl = LDVL;
-  ldvr = LDVR;
-  lwork = LWORK;
-
-  a = alloc_real_matrix(lda, n, A);
-  b = alloc_real_matrix(ldb, n, B);
-  alphar = alloc_zeroed_real_vector(n);
-  alphai = alloc_zeroed_real_vector(n);
-  beta = alloc_zeroed_real_vector(n);
-  vl = alloc_zeroed_real_matrix(ldvl, n);
-  vr = alloc_zeroed_real_matrix(ldvl, n);
-  work = alloc_real_vector(lwork, inWORK);
-
-  dgegv_(&*jobvl, &*jobvr, &n, a, &lda, b, &ldb, alphar, alphai, beta, vl,
-    &ldvl, vr, &ldvr, work, &lwork, &info);
-
-  *ALPHAR = mk_rml_real_vector(n, alphar);
-  *ALPHAI = mk_rml_real_vector(n, alphai);
-  *BETA = mk_rml_real_vector(n, beta);
-  *VL = mk_rml_real_matrix(ldvl, n, vl);
-  *VR = mk_rml_real_matrix(ldvl, n, vr);
-  *outWORK = mk_rml_real_vector(lwork, work);
-  *INFO = info;
-
-  free(a);
-  free(b);
-  free(alphar);
-  free(alphai);
-  free(beta);
-  free(vl);
-  free(vr);
-  free(work);
-#else
   MMC_THROW();
-#endif
 }
 
 void LapackImpl__dgels(const char *trans, int M, int N, int NRHS, void *inA,
@@ -437,38 +396,7 @@ void LapackImpl__dgelsx(int M, int N, int NRHS, void *inA, int LDA,
     void *inB, int LDB, void *inJPVT, double rcond, void *WORK,
     void **outA, void **outB, void **outJPVT, int *RANK, int *INFO)
 {
-#ifndef NO_LAPACK
-  integer m, n, nrhs, lda, ldb, rank = 0, info = 0, lwork;
-  double *a, *b, *work;
-  integer *jpvt;
-
-  m = M;
-  n = N;
-  nrhs = NRHS;
-  lda = LDA;
-  ldb = LDB;
-  lwork = (integer)fmax(fmin(M, N) + 3*N, 2*fmin(M, N) + nrhs);
-
-  a = alloc_real_matrix(lda, n, inA);
-  b = alloc_real_matrix(ldb, nrhs, inB);
-  work = alloc_real_vector(lwork, WORK);
-  jpvt = alloc_int_vector(n, inJPVT);
-
-  dgelsx_(&m, &n, &nrhs, a, &lda, b, &ldb, jpvt, &rcond, &rank, work, &info);
-
-  *outA = mk_rml_real_matrix(lda, n, a);
-  *outB = mk_rml_real_matrix(lda, nrhs, b);
-  *outJPVT = mk_rml_int_vector(n, jpvt);
-  *RANK = rank;
-  *INFO = info;
-
-  free(a);
-  free(b);
-  free(work);
-  free(jpvt);
-#else
   MMC_THROW();
-#endif
 }
 
 void LapackImpl__dgelsy(int M, int N, int NRHS, void *inA, int LDA,
@@ -792,36 +720,7 @@ void LapackImpl__dgetri(int N, void *inA, int LDA, void *IPIV, void *inWORK,
 void LapackImpl__dgeqpf(int M, int N, void *inA, int LDA, void *inJPVT,
     void *WORK, void **outA, void **outJPVT, void **TAU, int *INFO)
 {
-#ifndef NO_LAPACK
-  integer m, n, lda, lwork, ldtau, info = 0;
-  double *a, *tau, *work;
-  integer *jpvt;
-
-  m = M;
-  n = N;
-  lda = LDA;
-  lwork = 3 * n;
-  ldtau = (m < n ? m : n);
-
-  a = alloc_real_matrix(lda, n, inA);
-  jpvt = alloc_int_vector(n, inJPVT);
-  tau = alloc_zeroed_real_vector(ldtau);
-  work = alloc_real_vector(lwork, WORK);
-
-  dgeqpf_(&m, &n, a, &lda, jpvt, tau, work, &info);
-
-  *outA = mk_rml_real_matrix(lda, n, a);
-  *outJPVT = mk_rml_int_vector(n, jpvt);
-  *TAU = mk_rml_real_vector(ldtau, tau);
-  *INFO = info;
-
-  free(a);
-  free(jpvt);
-  free(tau);
-  free(work);
-#else
   MMC_THROW();
-#endif
 }
 
 void LapackImpl__dorgqr(int M, int N, int K, void *inA, int LDA,
