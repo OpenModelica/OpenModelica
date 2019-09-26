@@ -5643,7 +5643,12 @@ protected function traverseExpTopDown1
     output Boolean cont;
     output Type_a outArg;
   end FuncExpType;
+  protected
+    String str2;
 algorithm
+  str2 := ExpressionDump.printExpStr(inExp);
+  print("traverseExpTopDown1 AHeu:" + str2 + "\n");
+
   (outExp,outArg) := match (cont,inExp,func,inArg)
     local
       DAE.Exp e1_1,e,e1,e2_1,e2,e3_1,e3,e4,e4_1;
