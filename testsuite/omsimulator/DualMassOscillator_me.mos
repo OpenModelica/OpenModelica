@@ -58,18 +58,9 @@ val(system2.s2, {0.0,0.1});
 // Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation.
 // "
 // "DualMassOscillator.System1.fmu"
-// "Warning: Some equations could not be differentiated for following variables having attribute stateSelect=StateSelect.prefer. They will be treated as if they had stateSelect=StateSelect.default
-// ========================================
-// 1: springDamper1.v_rel
-// Please use -d=bltdump for more information.
-// "
+// ""
 // "DualMassOscillator.System2.fmu"
-// "Warning: Some equations could not be differentiated for following variables having attribute stateSelect=StateSelect.prefer. They will be treated as if they had stateSelect=StateSelect.default
-// ========================================
-// 1: springDamper2.v_rel
-// 2: springDamper_coupling.v_rel
-// Please use -d=bltdump for more information.
-// "
+// ""
 // true
 // ""
 // 0
@@ -79,11 +70,11 @@ val(system2.s2, {0.0,0.1});
 // info:      system1.s1: 1.0
 // info:      system2.s2: 2.5
 // info:    Simulation
-// info:      system1.s1: 0.91127791312639
-// info:      system2.s2: 1.9556358043088
+// info:      system1.s1: 0.9112797974079
+// info:      system2.s2: 1.9556338147396
 // info:    Final Statistics for 'DualMassOscillator.root':
-//          NumSteps = 1395 NumRhsEvals  = 1711 NumLinSolvSetups = 186
-//          NumNonlinSolvIters = 1710 NumNonlinSolvConvFails = 0 NumErrTestFails = 71
+//          NumSteps = 1301 NumRhsEvals  = 1545 NumLinSolvSetups = 138
+//          NumNonlinSolvIters = 1544 NumNonlinSolvConvFails = 0 NumErrTestFails = 49
 // "
 // record SimulationResult
 //     resultFile = "DualMassOscillator.CoupledSystem_res.mat",
@@ -92,13 +83,7 @@ val(system2.s2, {0.0,0.1});
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: Some equations could not be differentiated for following variables having attribute stateSelect=StateSelect.prefer. They will be treated as if they had stateSelect=StateSelect.default
-// ========================================
-// 1: system1.springDamper1.v_rel
-// 2: system2.springDamper2.v_rel
-// 3: system2.springDamper_coupling.v_rel
-// Please use -d=bltdump for more information.
-// "
-// {1.0,0.9112752847863262}
-// {2.5,1.955638599930151}
+// ""
+// {1.0,0.9112766780030248}
+// {2.5,1.955637128659751}
 // endResult

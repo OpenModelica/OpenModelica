@@ -5732,8 +5732,9 @@ algorithm
           cr := BackendVariable.varCref(var);
           // Only check if the equation actually contains the cref
           if Expression.expHasCref(residualExp, cr) then
-            (residualExp,_,_) := Inline.forceInlineExp(residualExp,(SOME(shared.functionTree),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource);
             // Check if the equation can be differentiated by the artificial state
+            (residualExp,_,_) := Inline.forceInlineExp(residualExp,(SOME(shared.functionTree),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource);
+            (residualExp) := Expression.replaceDerOpInExp(residualExp);
             _ := Differentiate.differentiateExpSolve(residualExp, cr, SOME(shared.functionTree));
             // Check if the equation contains smooth(0, cr)
             false := Expression.expHasCrefInSmoothZero(residualExp, cr);

@@ -34,12 +34,6 @@ runScript(modelTesting);getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
-// Warning: Some equations could not be differentiated for following variables having attribute stateSelect=StateSelect.prefer. They will be treated as if they had stateSelect=StateSelect.default
-// ========================================
-// 1: actuator.armature.stopper_xMin.v_rel
-// 2: actuator.armature.stopper_xMax.v_rel
-// Please use -d=bltdump for more information.
-//
 // "true
 // "
 // ""
