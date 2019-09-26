@@ -35,15 +35,6 @@ runScript(modelTesting);getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
-// Warning: Some equations could not be differentiated for following variables having attribute stateSelect=StateSelect.prefer. They will be treated as if they had stateSelect=StateSelect.default
-// ========================================
-// 1: outerContactA.v_rel
-// 2: outerContactB.v_rel
-// 3: innerContactA.v_rel
-// 4: friction.v_rel
-// 5: innerContactB.v_rel
-// Please use -d=bltdump for more information.
-//
 // "true
 // "
 // ""
