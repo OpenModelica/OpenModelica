@@ -1720,7 +1720,7 @@ protected function makeFunctionVariable
   output DAE.Var outVar;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  outVar := DAE.TYPES_VAR(inName, DAE.dummyAttrVar, inType, inBinding, NONE());
+  outVar := DAE.TYPES_VAR(inName, DAE.dummyAttrVar, inType, inBinding, false, NONE());
 end makeFunctionVariable;
 
 protected function getBinding
@@ -2284,9 +2284,8 @@ protected
   DAE.Type ty;
   Option<DAE.Const> c;
 algorithm
-  DAE.TYPES_VAR(name, attr, ty, _, c) := inVar;
-  outVar := DAE.TYPES_VAR(name, attr, ty,
-    DAE.VALBOUND(inValue, DAE.BINDING_FROM_DEFAULT_VALUE()), c);
+  outVar := inVar;
+  outVar.binding := DAE.VALBOUND(inValue, DAE.BINDING_FROM_DEFAULT_VALUE());
 end updateRecordBinding;
 
 protected function updateRecordComponentBinding
@@ -2296,18 +2295,12 @@ protected function updateRecordComponentBinding
   input Values.Value inValue;
   output DAE.Var outVar;
 protected
-  DAE.Ident name;
-  DAE.Attributes attr;
-  DAE.Type ty;
-  DAE.Binding binding;
-  Option<DAE.Const> c;
   Values.Value val;
 algorithm
-  DAE.TYPES_VAR(name, attr, ty, binding, c) := inVar;
-  val := getBindingOrDefault(binding, ty);
+  outVar := inVar;
+  val := getBindingOrDefault(outVar.binding, outVar.ty);
   val := updateRecordComponentValue(inComponentId, inValue, val);
-  binding := DAE.VALBOUND(val, DAE.BINDING_FROM_DEFAULT_VALUE());
-  outVar := DAE.TYPES_VAR(name, attr, ty, binding, c);
+  outVar.binding := DAE.VALBOUND(val, DAE.BINDING_FROM_DEFAULT_VALUE());
 end updateRecordComponentBinding;
 
 protected function updateRecordComponentValue

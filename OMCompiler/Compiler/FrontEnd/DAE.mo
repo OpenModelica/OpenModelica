@@ -813,6 +813,10 @@ uniontype Var "- Variables"
     Attributes attributes "attributes";
     Type ty "type";
     Binding binding "equation modification";
+    Boolean bind_from_outside "true if the binding has come from out of scope. This happens for derived record classes.
+                                   e.g. record A = B(k=exp). here the modification 'exp' is a binding from outside. We need
+                                   this infor to correctly generate default constructors at codegen time. This binding exp
+                                   will have to be supplied from outside for a default constructor of the owner record type";
     Option<Const> constOfForIteratorRange "the constant-ness of the range if this is a for iterator, NONE() if is NOT a for iterator";
   end TYPES_VAR;
 end Var;
@@ -884,13 +888,13 @@ constant Type T_COMPLEX_DEFAULT     = T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")
 constant Type T_COMPLEX_DEFAULT_RECORD = T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("")), {}, NONE()) "default complex with record CiState";
 
 constant Type T_SOURCEINFO_DEFAULT_METARECORD = T_METARECORD(Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO")), Absyn.IDENT("SourceInfo"), {}, 1, {
-    TYPES_VAR("fileName", dummyAttrVar, T_STRING_DEFAULT, UNBOUND(), NONE()),
-    TYPES_VAR("isReadOnly", dummyAttrVar, T_BOOL_DEFAULT, UNBOUND(), NONE()),
-    TYPES_VAR("lineNumberStart", dummyAttrVar, T_INTEGER_DEFAULT, UNBOUND(), NONE()),
-    TYPES_VAR("columnNumberStart", dummyAttrVar, T_INTEGER_DEFAULT, UNBOUND(), NONE()),
-    TYPES_VAR("lineNumberEnd", dummyAttrVar, T_INTEGER_DEFAULT, UNBOUND(), NONE()),
-    TYPES_VAR("columnNumberEnd", dummyAttrVar, T_INTEGER_DEFAULT, UNBOUND(), NONE()),
-    TYPES_VAR("lastModification", dummyAttrVar, T_REAL_DEFAULT, UNBOUND(), NONE())
+    TYPES_VAR("fileName", dummyAttrVar, T_STRING_DEFAULT, UNBOUND(), false, NONE()),
+    TYPES_VAR("isReadOnly", dummyAttrVar, T_BOOL_DEFAULT, UNBOUND(), false, NONE()),
+    TYPES_VAR("lineNumberStart", dummyAttrVar, T_INTEGER_DEFAULT, UNBOUND(), false, NONE()),
+    TYPES_VAR("columnNumberStart", dummyAttrVar, T_INTEGER_DEFAULT, UNBOUND(), false, NONE()),
+    TYPES_VAR("lineNumberEnd", dummyAttrVar, T_INTEGER_DEFAULT, UNBOUND(), false, NONE()),
+    TYPES_VAR("columnNumberEnd", dummyAttrVar, T_INTEGER_DEFAULT, UNBOUND(), false, NONE()),
+    TYPES_VAR("lastModification", dummyAttrVar, T_REAL_DEFAULT, UNBOUND(), false, NONE())
   }, true);
 constant Type T_SOURCEINFO_DEFAULT  = T_METAUNIONTYPE({Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO"))},{},true,EVAL_SINGLETON_KNOWN_TYPE(T_SOURCEINFO_DEFAULT_METARECORD),Absyn.IDENT("SourceInfo"));
 

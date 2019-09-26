@@ -255,15 +255,6 @@ algorithm
   end match;
 end externalObjectType;
 
-public function varName "
-Author BZ, 2009-09
-Function for getting the name of a DAE.Var"
-  input DAE.Var v;
-  output String s;
-algorithm
-  DAE.TYPES_VAR(name = s) := v;
-end varName;
-
 public function varBinding
   input DAE.Var inVar;
   output DAE.Binding outBinding;
@@ -473,23 +464,8 @@ protected function convertFromExpToTypesVar ""
   input DAE.Var inVar;
   output DAE.Var outVar;
 algorithm
-  outVar := matchcontinue(inVar)
-    local
-      String name;
-      Type ty;
-      DAE.Attributes attributes;
-      Binding binding;
-      Option<DAE.Const> constOfForIteratorRange;
-
-    case(DAE.TYPES_VAR(name, attributes, ty, binding, constOfForIteratorRange))
-      equation
-        ty = expTypetoTypesType(ty);
-      then
-        DAE.TYPES_VAR(name, attributes, ty, binding, constOfForIteratorRange);
-
-    else equation print("error in Types.convertFromExpToTypesVar\n"); then fail();
-
-  end matchcontinue;
+  outVar := inVar;
+  outVar.ty := expTypetoTypesType(inVar.ty);
 end convertFromExpToTypesVar;
 
 public function isTuple "Returns true if type is TUPLE"
@@ -1086,7 +1062,7 @@ algorithm
         tp = typeOfValue(v);
         rest = valuesToVars(vs, ids);
       then
-        (DAE.TYPES_VAR(id, DAE.dummyAttrVar, tp, DAE.UNBOUND(), NONE()) :: rest);
+        (DAE.TYPES_VAR(id, DAE.dummyAttrVar, tp, DAE.UNBOUND(), false, NONE()) :: rest);
 
     else
       equation
@@ -1274,67 +1250,53 @@ end arrayType;
 public function setVarInput "Sets a DAE.Var to input"
   input DAE.Var var;
   output DAE.Var outV;
+protected
+  DAE.Attributes attrs;
 algorithm
-  outV := match(var)
-    local
-      String name;
-      DAE.ConnectorType ct;
-      SCode.Visibility vis;
-      DAE.Type tp;
-      DAE.Binding bind;
-      SCode.Parallelism prl;
-      SCode.Variability v;
-      Absyn.InnerOuter io;
-      Option<DAE.Const> cnstForRange;
+  outV := var;
+  attrs := outV.attributes;
+  attrs.direction := Absyn.INPUT();
+  outV.attributes := attrs;
 
-    case DAE.TYPES_VAR(name,DAE.ATTR(ct,prl,v,_,io,vis),tp,bind,cnstForRange)
-    then DAE.TYPES_VAR(name,DAE.ATTR(ct,prl,v,Absyn.INPUT(),io,vis),tp,bind,cnstForRange);
-
-  end match;
+  // outV.attributes.direction := Absyn.INPUT();
 end setVarInput;
 
 public function setVarDefaultInput "Sets a DAE.Var to input"
   input DAE.Var var;
   output DAE.Var outV;
+protected
+  DAE.Attributes attrs;
 algorithm
-  outV := match(var)
-    local
-      String name;
-      SCode.ConnectorType ct;
-      SCode.Visibility vis;
-      DAE.Type tp;
-      DAE.Binding bind;
-      SCode.Parallelism prl;
-      SCode.Variability v;
-      Absyn.InnerOuter io;
-      Option<DAE.Const> cnstForRange;
+  outV := var;
 
-    case DAE.TYPES_VAR(name,DAE.ATTR(_,prl,_,_,_,_),tp,bind,cnstForRange)
-    then DAE.TYPES_VAR(name,DAE.ATTR(DAE.NON_CONNECTOR(),prl,SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(),SCode.PUBLIC()),tp,bind,cnstForRange);
+  attrs := outV.attributes;
+  attrs.connectorType := DAE.NON_CONNECTOR();
+  attrs.variability := SCode.VAR();
+  attrs.direction := Absyn.INPUT();
+  attrs.innerOuter := Absyn.NOT_INNER_OUTER();
+  attrs.visibility := SCode.PUBLIC();
+  outV.attributes := attrs;
 
-  end match;
+  /*
+  outV.attributes.connectorType := DAE.NON_CONNECTOR();
+  outV.attributes.variability := SCode.VAR();
+  outV.attributes.direction := Absyn.INPUT();
+  outV.attributes.innerOuter := Absyn.NOT_INNER_OUTER();
+  outV.attributes.visibility := SCode.PUBLIC();
+  */
 end setVarDefaultInput;
 
 public function setVarProtected "Sets a DAE.Var to input"
   input DAE.Var var;
   output DAE.Var outV;
+protected
+  DAE.Attributes attrs;
 algorithm
-  outV := match(var)
-    local
-      String name;
-      DAE.ConnectorType ct;
-      Absyn.Direction dir;
-      DAE.Type tp;
-      DAE.Binding bind;
-      SCode.Parallelism prl;
-      SCode.Variability v;
-      Absyn.InnerOuter io;
-      Option<DAE.Const> cnstForRange;
-
-    case DAE.TYPES_VAR(name,DAE.ATTR(ct,prl,v,dir,io,_),tp,bind,cnstForRange)
-    then DAE.TYPES_VAR(name,DAE.ATTR(ct,prl,v,dir,io,SCode.PROTECTED()),tp,bind,cnstForRange);
-
-  end match;
+  outV := var;
+  attrs := outV.attributes;
+  attrs.visibility := SCode.PROTECTED();
+  outV.attributes := attrs;
+  // outV.attributes.visibility := SCode.PROTECTED();
 end setVarProtected;
 
 protected function setVarType "Sets a DAE.Var's type"
@@ -1342,12 +1304,7 @@ protected function setVarType "Sets a DAE.Var's type"
   input DAE.Type ty;
   output DAE.Var outV = var;
 algorithm
-  outV := match outV
-    case DAE.TYPES_VAR()
-      algorithm
-        outV.ty := ty;
-      then outV;
-  end match;
+  outV.ty := ty;
 end setVarType;
 
 public function semiEquivTypes
@@ -1720,18 +1677,18 @@ algorithm
         v;
 
     case (DAE.T_ARRAY(dims = {dim},ty = DAE.T_COMPLEX(varLst = cs)),id)
-      equation
-        DAE.TYPES_VAR(n,attr,ty,bnd,cnstForRange) = lookupComponent2(cs, id);
-        ty_1 = DAE.T_ARRAY(ty,{dim});
+      algorithm
+        v := lookupComponent2(cs, id);
+        v.ty := DAE.T_ARRAY(v.ty,{dim});
       then
-        DAE.TYPES_VAR(n,attr,ty_1,bnd,cnstForRange);
+        v;
 
     case (DAE.T_ARRAY(dims = {dim},ty = DAE.T_SUBTYPE_BASIC(varLst = cs)),id)
-      equation
-        DAE.TYPES_VAR(n,attr,ty,bnd,cnstForRange) = lookupComponent2(cs, id);
-        ty_1 = DAE.T_ARRAY(ty,{dim});
+      algorithm
+        v := lookupComponent2(cs, id);
+        v.ty := DAE.T_ARRAY(v.ty,{dim});
       then
-        DAE.TYPES_VAR(n,attr,ty_1,bnd,cnstForRange);
+        v;
 
     else
       equation
@@ -1784,24 +1741,24 @@ algorithm
         v;
 
    case (DAE.T_ENUMERATION(index = SOME(_)),"quantity")
-     then DAE.TYPES_VAR("quantity", DAE.dummyAttrParam,DAE.T_STRING_DEFAULT,DAE.VALBOUND(Values.STRING(""),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
+     then DAE.TYPES_VAR("quantity", DAE.dummyAttrParam,DAE.T_STRING_DEFAULT,DAE.VALBOUND(Values.STRING(""),DAE.BINDING_FROM_DEFAULT_VALUE()),false,NONE());
 
     // Should be bound to the first element of DAE.T_ENUMERATION list higher up in the call chain
     case (DAE.T_ENUMERATION(index = SOME(_)),"min")
-      then DAE.TYPES_VAR("min", DAE.dummyAttrParam,DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"min,max"},{},{}),DAE.UNBOUND(),NONE());
+      then DAE.TYPES_VAR("min", DAE.dummyAttrParam,DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"min,max"},{},{}),DAE.UNBOUND(),false,NONE());
 
     // Should be bound to the last element of DAE.T_ENUMERATION list higher up in the call chain
     case (DAE.T_ENUMERATION(index = SOME(_)),"max")
-      then DAE.TYPES_VAR("max", DAE.dummyAttrParam,DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"min,max"},{},{}),DAE.UNBOUND(),NONE());
+      then DAE.TYPES_VAR("max", DAE.dummyAttrParam,DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"min,max"},{},{}),DAE.UNBOUND(),false,NONE());
 
     // Should be bound to the last element of DAE.T_ENUMERATION list higher up in the call chain
     case (DAE.T_ENUMERATION(index = SOME(_)),"start")
-      then DAE.TYPES_VAR("start", DAE.dummyAttrParam,DAE.T_BOOL_DEFAULT,DAE.UNBOUND(),NONE());
+      then DAE.TYPES_VAR("start", DAE.dummyAttrParam,DAE.T_BOOL_DEFAULT,DAE.UNBOUND(),false,NONE());
 
     // Needs to be set to true/false higher up the call chain depending on variability of instance
     case (DAE.T_ENUMERATION(index = SOME(_)),"fixed")
-      then DAE.TYPES_VAR("fixed", DAE.dummyAttrParam,DAE.T_BOOL_DEFAULT,DAE.UNBOUND(),NONE());
-    case (DAE.T_ENUMERATION(index = SOME(_)),"enable") then DAE.TYPES_VAR("enable", DAE.dummyAttrParam,DAE.T_BOOL_DEFAULT,DAE.VALBOUND(Values.BOOL(true),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
+      then DAE.TYPES_VAR("fixed", DAE.dummyAttrParam,DAE.T_BOOL_DEFAULT,DAE.UNBOUND(),false,NONE());
+    case (DAE.T_ENUMERATION(index = SOME(_)),"enable") then DAE.TYPES_VAR("enable", DAE.dummyAttrParam,DAE.T_BOOL_DEFAULT,DAE.VALBOUND(Values.BOOL(true),DAE.BINDING_FROM_DEFAULT_VALUE()),false,NONE());
   end match;
 end lookupInBuiltin;
 
@@ -1938,9 +1895,14 @@ public function liftTypeWithDims "
   input DAE.Dimensions inDims;
   output DAE.Type outType;
 algorithm
+  if listEmpty(inDims) then
+    outType := inType;
+    return;
+  end if;
+
   outType := match inType
     local
-      list<DAE.Dimension> dims, dims_;
+      list<DAE.Dimension> dims;
       DAE.Type ty;
 
     case DAE.T_ARRAY(ty=DAE.T_ARRAY())
@@ -1948,32 +1910,30 @@ algorithm
         print("Can not handle this yet!!");
       then fail();
 
-    case DAE.T_ARRAY(ty, dims)
-      algorithm
-        dims_ := listAppend(dims, inDims);
-      then if referenceEq(dims,dims_) then inType else DAE.T_ARRAY(ty, dims_);
+    case DAE.T_ARRAY(ty, dims) then DAE.T_ARRAY(ty, listAppend(dims, inDims));
 
-    else
-      DAE.T_ARRAY(inType, inDims);
+    else DAE.T_ARRAY(inType, inDims);
 
   end match;
 end liftTypeWithDims;
 
-public function liftArrayListExp "
+public function liftTypeWithDimExps "
   This function turns a type into an array of that type."
   input DAE.Type inType;
-  input list<DAE.Exp> inDimensionLst;
+  input list<DAE.Exp> inDimExps;
   output DAE.Type outType;
 algorithm
-  outType := match (inType,inDimensionLst)
+//   outType := liftTypeWithDims(inType, list(DAE.DIM_EXP(e) for e in inDimExps));
+
+  outType := match (inType,inDimExps)
     local
       Type ty;
       DAE.Exp d;
       list<DAE.Exp> rest;
     case (ty,{}) then ty;
-    case (ty,d::rest) then liftArray(liftArrayListExp(ty,rest),DAE.DIM_EXP(d));
+    case (ty,d::rest) then liftArray(liftTypeWithDimExps(ty,rest),DAE.DIM_EXP(d));
   end match;
-end liftArrayListExp;
+end liftTypeWithDimExps;
 
 public function liftArrayRight "This function adds an array dimension to *the right* of the passed type."
   input DAE.Type inType;
@@ -2595,7 +2555,7 @@ algorithm
 
     case(DAE.T_COMPLEX(complexClassType = (ClassInf.CONNECTOR(connectorName,isExpandable)),varLst = vars))
       equation
-        varNames = List.map(vars,varName);
+        varNames = List.map(vars,getVarName);
         isExpandableStr = if isExpandable then "/* expandable */ " else "";
         s = isExpandableStr + AbsynUtil.pathString(connectorName);
         s2 = "{" + stringDelimitList(varNames,", ") + "}";
@@ -2605,7 +2565,7 @@ algorithm
     // TODO! check if we can get T_SUBTYPE_BASIC here??!!
     case(DAE.T_SUBTYPE_BASIC(complexClassType = (ClassInf.CONNECTOR(connectorName,isExpandable)), varLst = vars, complexType = t))
       equation
-        varNames = List.map(vars,varName);
+        varNames = List.map(vars,getVarName);
         isExpandableStr = if isExpandable then "/* expandable */ " else "";
         s = isExpandableStr + AbsynUtil.pathString(connectorName);
         s2 = "{" + stringDelimitList(varNames,", ") + "}" + " subtype of: " + printTypeStr(t);
@@ -2957,14 +2917,15 @@ algorithm
       Integer idx;
       DAE.Attributes attributes;
       DAE.Binding binding;
+      Boolean bsrc;
       DAE.Var var;
       Option<DAE.Const> cnstForRange;
 
-    case (p,DAE.TYPES_VAR(name,attributes,_,binding,cnstForRange) :: xs,names,idx)
+    case (p,DAE.TYPES_VAR(name,attributes,_,binding,bsrc,cnstForRange) :: xs,names,idx)
       equation
         vars = makeEnumerationType1(p, xs, names, idx+1);
         t = DAE.T_ENUMERATION(SOME(idx),p,names,{},{});
-        var = DAE.TYPES_VAR(name,attributes,t,binding,cnstForRange);
+        var = DAE.TYPES_VAR(name,attributes,t,binding,bsrc,cnstForRange);
       then
         (var :: vars);
     case (_,{},_,_) then {};
@@ -3165,60 +3126,77 @@ algorithm
   end match;
 end isPublicAttr;
 
+public function isConstAttr
+  input DAE.Attributes inAttributes;
+  output Boolean outIsPublic;
+algorithm
+  outIsPublic := match(inAttributes)
+    case DAE.ATTR(variability = SCode.CONST()) then true;
+    else false;
+  end match;
+end isConstAttr;
+
 public function isPublicVar
-"true if variable is a public variable."
   input DAE.Var inVar;
   output Boolean b;
 algorithm
   b := match (inVar)
-    local
-      DAE.Attributes attr;
-
-    case DAE.TYPES_VAR(attributes = attr) then isPublicAttr(attr);
+    case DAE.TYPES_VAR() then isPublicAttr(inVar.attributes);
   end match;
 end isPublicVar;
 
-public function isProtectedVar
-"true if variable is a protected variable."
+public function isConstVar
   input DAE.Var inVar;
   output Boolean b;
 algorithm
   b := match (inVar)
-    local
-      DAE.Attributes attr;
-
-    case DAE.TYPES_VAR(attributes = attr) then not isPublicAttr(attr);
+    case DAE.TYPES_VAR() then isConstAttr(inVar.attributes);
   end match;
-end isProtectedVar;
+end isConstVar;
 
-
+// This used in creation of record constructors to decide wether a variable should be
+// part of the constructor signature or not. If a var is modifiable from outside then
+// it is part of the construvtor signature.
 public function isModifiableTypesVar
   input DAE.Var inVar;
   output Boolean b;
 algorithm
-  b := matchcontinue(inVar)
-  local
-    DAE.Attributes attrs;
-    case(DAE.TYPES_VAR(attributes = attrs))
-      equation
-        false = isPublicAttr(attrs);
-      then false;
 
-    case(DAE.TYPES_VAR(attributes = attrs, binding = DAE.UNBOUND()))
-      equation
-        true = isConstAttr(attrs);
-      then true;
+  // protected vars are not modifiable from outside.
+  if not isPublicVar(inVar) then
+    if isNone(getBindingExpOptional(inVar)) then
+      // TYPES_VAR has no info. For now this suffices.
+      Error.addSourceMessage(Error.MISSING_BINDING_PROTECTED_RECORD_VAR, {getVarName(inVar)}, AbsynUtil.dummyInfo);
+    end if;
 
-    case(DAE.TYPES_VAR(attributes = attrs))
-      equation
-        true = isConstAttr(attrs);
-      then false;
+    b := false;
+    return;
+  end if;
 
-    else true;
+  // const vars which already have binding are not modifiable from outside.
+  if isConstVar(inVar) and isSome(getBindingExpOptional(inVar)) then
+    b := false;
+    return;
+  end if;
 
-  end matchcontinue;
+  // otherwise modifiable
+  b := true;
 end isModifiableTypesVar;
 
+public function getBindingExpOptional
+  input DAE.Var inVar;
+  output Option<DAE.Exp> outExp;
+algorithm
+  outExp := match inVar
+  local
+    DAE.Exp exp;
+    case DAE.TYPES_VAR(binding=DAE.EQBOUND(exp=exp)) then SOME(exp);
+    else NONE();
+  end match;
+end getBindingExpOptional;
+
+// This should be removed. It is used in cevalScript now. cevalScript should be updated
+// and this removed.
 public function getBindingExp
   input DAE.Var inVar;
   input Absyn.Path inPath;
@@ -3239,17 +3217,6 @@ algorithm
         DAE.ICONST(0);
   end match;
 end getBindingExp;
-
-
-public function isConstAttr
-  input DAE.Attributes inAttributes;
-  output Boolean outIsPublic;
-algorithm
-  outIsPublic := match(inAttributes)
-    case DAE.ATTR(variability = SCode.CONST()) then true;
-    else false;
-  end match;
-end isConstAttr;
 
 public function makeFargsList
   "Makes a function argument list from a list of variables."
@@ -3335,7 +3302,7 @@ algorithm
     case vl
       then DAE.T_TUPLE(
         list(makeReturnTypeSingle(v) for v in vl),
-        SOME(list(varName(v) for v in vl)));
+        SOME(list(getVarName(v) for v in vl)));
   end matchcontinue;
 end makeReturnType;
 
@@ -6847,15 +6814,16 @@ algorithm
       DAE.Attributes attributes;
       DAE.Type type_;
       DAE.Binding binding;
+      Boolean bdsrc;
       Option<DAE.Const> constOfForIteratorRange;
       list<DAE.Var> rest;
 
     case {} then {};
-    case DAE.TYPES_VAR(name,attributes,type_,binding,constOfForIteratorRange)::rest
+    case DAE.TYPES_VAR(name,attributes,type_,binding,bdsrc,constOfForIteratorRange)::rest
       equation
         type_ = boxIfUnboxedType(type_);
         rest = boxVarLst(rest);
-      then DAE.TYPES_VAR(name,attributes,type_,binding,constOfForIteratorRange)::rest;
+      then DAE.TYPES_VAR(name,attributes,type_,binding,bdsrc,constOfForIteratorRange)::rest;
 
   end match;
 end boxVarLst;
@@ -8626,7 +8594,7 @@ public function lookupAttributeValue
   output Option<Values.Value> outValue = NONE();
 algorithm
   for attr in inAttributes loop
-    if inName == varName(attr) then
+    if inName == getVarName(attr) then
       outValue := DAEUtil.bindingValue(varBinding(attr));
       break;
     end if;
@@ -8639,7 +8607,7 @@ public function lookupAttributeExp
   output Option<DAE.Exp> outExp = NONE();
 algorithm
   for attr in inAttributes loop
-    if inName == varName(attr) then
+    if inName == getVarName(attr) then
       outExp := DAEUtil.bindingExp(varBinding(attr));
       break;
     end if;

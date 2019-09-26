@@ -1157,6 +1157,7 @@ algorithm
     Component.Attributes.toDAE(attr, InstNode.visibility(component)),
     Type.toDAE(Component.getType(comp)),
     Binding.toDAE(Component.getBinding(comp)),
+    false,
     NONE()
   );
 end makeTypeVar;
@@ -1183,6 +1184,7 @@ algorithm
     Component.Attributes.toDAE(attr, vis),
     Type.toDAE(Component.getType(comp)),
     Binding.toDAE(Component.getBinding(comp)),
+    false,
     NONE()
   );
 end makeTypeRecordVar;

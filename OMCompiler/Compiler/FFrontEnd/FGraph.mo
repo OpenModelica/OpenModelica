@@ -561,6 +561,7 @@ algorithm
               DAE.ATTR(DAE.NON_CONNECTOR(), SCode.NON_PARALLEL(), variability, Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
               ty,
               binding,
+              false,
               constOfForIteratorRange);
         r = lastScopeRef(g);
         g = FGraphBuildEnv.mkCompNode(c, r, FCore.BUILTIN(), g);

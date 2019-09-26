@@ -1264,6 +1264,7 @@ algorithm
       SCode.Visibility visibility;
       DAE.Type ty;
       DAE.Binding binding;
+      Boolean bndsrc;
 
       DAE.ConnectorType ct;
       SCode.Parallelism parallelism "parallelism";
@@ -1276,11 +1277,11 @@ algorithm
       equation
         // get the instance child
         r = FNode.childFromNode(node, FNode.itNodeName);
-        FCore.IT(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange)) = FNode.refData(r);
+        FCore.IT(DAE.TYPES_VAR(name, attributes, ty, binding, bndsrc, cnstForRange)) = FNode.refData(r);
         DAE.ATTR(ct, parallelism, variability, direction, Absyn.INNER(), visibility) = attributes;
         attributes = DAE.ATTR(ct, parallelism, variability, direction, Absyn.OUTER(), visibility);
         // update the ref
-        r = FNode.updateRef(r, FNode.setData(FNode.fromRef(r),FCore.IT(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange))));
+        r = FNode.updateRef(r, FNode.setData(FNode.fromRef(r),FCore.IT(DAE.TYPES_VAR(name, attributes, ty, binding, bndsrc, cnstForRange))));
         // env = switchInnerToOuterInGraph(env, inCr);
       then
         node;
@@ -1290,11 +1291,11 @@ algorithm
       equation
         // get the instance child
         r = FNode.childFromNode(node, FNode.itNodeName);
-        FCore.IT(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange)) = FNode.refData(r);
+        FCore.IT(DAE.TYPES_VAR(name, attributes, ty, binding, bndsrc, cnstForRange)) = FNode.refData(r);
         DAE.ATTR(ct, parallelism, variability, direction, Absyn.INNER_OUTER(), visibility) = attributes;
         attributes = DAE.ATTR(ct, parallelism, variability, direction, Absyn.OUTER(), visibility);
         // update the ref
-        r = FNode.updateRef(r, FNode.setData(FNode.fromRef(r),FCore.IT(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange))));
+        r = FNode.updateRef(r, FNode.setData(FNode.fromRef(r),FCore.IT(DAE.TYPES_VAR(name, attributes, ty, binding, bndsrc, cnstForRange))));
         // env = switchInnerToOuterInGraph(env, inCr);
       then
         node;

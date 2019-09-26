@@ -624,6 +624,8 @@ algorithm
         ty = InstUtil.mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint, c, InstUtil.extractComment(dae.elementLst));
         dae = InstUtil.updateDeducedUnits(callscope_1,store,dae);
 
+        ty = collectAndFixDerivedComplexOutsideBindings(ty, c);
+
         // Fixes partial functions.
         ty = InstUtil.fixInstClassType(ty,isPartialFn);
         // env_3 = FGraph.updateScope(env_3);
@@ -947,6 +949,72 @@ algorithm
     fail();
   end try;
 end instClassIn2;
+
+
+protected function collectAndFixDerivedComplexOutsideBindings
+  input DAE.Type inType;
+  input SCode.Element inClass;
+  output DAE.Type outType;
+protected
+  SCode.Mod derMod;
+  list<SCode.SubMod> submods;
+algorithm
+
+  if not SCodeUtil.isRecord(inClass)
+     or not SCodeUtil.isDerivedClass(inClass) then
+    outType := inType;
+    return;
+  end if;
+
+  derMod := SCodeUtil.getDerivedMod(inClass);
+  if SCodeUtil.isEmptyMod(derMod) then
+    outType := inType;
+    return;
+  end if;
+
+  try
+    SCode.MOD(subModLst = submods) := derMod;
+  else
+    Error.addMessage(Error.INTERNAL_ERROR, {"Unexpected Mod structure in collectAndFixDerivedComplexOutsideBindings."});
+    fail();
+  end try;
+
+  outType := match inType
+    local
+      list<DAE.Var> tvars;
+      Option<DAE.Exp> obind;
+      DAE.Exp bind_exp;
+
+    case DAE.T_COMPLEX() algorithm
+      tvars := {};
+      for var in inType.varLst loop
+
+        for submod in submods loop
+          if varIsModifiedInDerivedMod(var.name, submod) then
+            var.bind_from_outside := true;
+            break;
+          end if;
+        end for;
+
+        tvars := var::tvars;
+      end for;
+      tvars := listReverse(tvars);
+
+    then DAE.T_COMPLEX(inType.complexClassType, tvars, inType.equalityConstraint);
+  end match;
+
+end collectAndFixDerivedComplexOutsideBindings;
+
+function varIsModifiedInDerivedMod
+  input String inName;
+  input SCode.SubMod inSubmod;
+  output Boolean b;
+algorithm
+  b := match inSubmod
+    case SCode.NAMEMOD() then stringEqual(inSubmod.ident, inName);
+  end match;
+end varIsModifiedInDerivedMod;
+
 
 protected function callingScopeCacheEq
   input InstTypes.CallingScope inCallingScope1;
@@ -1420,7 +1488,7 @@ algorithm
         (vbind,_) = Types.matchType(ValuesUtil.valueExp(v),bindTp,expectedTp,true);
         v = ValuesUtil.expValue(vbind);
       then DAE.TYPES_VAR(id,DAE.dummyAttrParam,t_1,
-        DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
+        DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),false,NONE());
 
     case (_,_,_,SOME(v),_,expectedTp,DAE.PROP(bindTp as DAE.T_ARRAY(dims = {d}),c))
       equation
@@ -1432,7 +1500,7 @@ algorithm
         (vbind,_) = Types.matchType(ValuesUtil.valueExp(v),bindTp,expectedTp,true);
         v = ValuesUtil.expValue(vbind);
       then DAE.TYPES_VAR(id,DAE.dummyAttrParam,t_1,
-        DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
+        DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),false,NONE());
 
     case (cache,env,_,_,_,expectedTp,DAE.PROP(bindTp,c))
       equation
@@ -1440,7 +1508,7 @@ algorithm
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
         (cache,v) = Ceval.ceval(cache, env, bind1, false, Absyn.NO_MSG(), 0);
       then DAE.TYPES_VAR(id,DAE.dummyAttrParam,t_1,
-        DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
+        DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),false,NONE());
 
     case (cache,env,_,_,_,expectedTp,DAE.PROP(bindTp as DAE.T_ARRAY(dims = {d}),c))
       equation
@@ -1450,7 +1518,7 @@ algorithm
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
         (cache,v) = Ceval.ceval(cache,env, bind1, false, Absyn.NO_MSG(), 0);
       then DAE.TYPES_VAR(id,DAE.dummyAttrParam,t_1,
-        DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
+        DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),false,NONE());
 
     case(_,_,_,_,_,expectedTp,DAE.PROP(bindTp,c))
       equation
@@ -1463,7 +1531,7 @@ algorithm
         end if;
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
       then DAE.TYPES_VAR(id,DAE.dummyAttrParam,t_1,
-        DAE.EQBOUND(bind1,NONE(),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
+        DAE.EQBOUND(bind1,NONE(),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),false,NONE());
 
     case(_,_,_,_,_,_,DAE.PROP(_,c))
       equation
@@ -3197,7 +3265,7 @@ algorithm
     // The component was deleted, update its status in the environment so we can
     // look it up when instantiating connections.
     if isDeleted == true then
-      var := DAE.TYPES_VAR(el_name, DAE.dummyAttrVar, DAE.T_UNKNOWN_DEFAULT, DAE.UNBOUND(), NONE());
+      var := DAE.TYPES_VAR(el_name, DAE.dummyAttrVar, DAE.T_UNKNOWN_DEFAULT, DAE.UNBOUND(), false, NONE());
       env := FGraph.updateComp(env, var, FCore.VAR_DELETED(), FGraph.emptyGraph);
     end if;
   else
@@ -3515,7 +3583,7 @@ algorithm
 
         dae_attr = DAEUtil.translateSCodeAttrToDAEAttr(attr, prefixes);
         ty = Types.traverseType(ty, 1, Types.setIsFunctionPointer);
-        new_var = DAE.TYPES_VAR(name, dae_attr, ty, binding, NONE());
+        new_var = DAE.TYPES_VAR(name, dae_attr, ty, binding, false, NONE());
 
         // Type info present. Now we can also put the binding into the dae.
         // If the type is one of the simple, predifined types a simple variable
@@ -3590,7 +3658,7 @@ algorithm
         // true in update_frame means the variable is now instantiated.
         dae_attr = DAEUtil.translateSCodeAttrToDAEAttr(attr, prefixes);
         ty = Types.traverseType(ty, 1, Types.setIsFunctionPointer);
-        new_var = DAE.TYPES_VAR(name, dae_attr, ty, binding, NONE()) ;
+        new_var = DAE.TYPES_VAR(name, dae_attr, ty, binding, false, NONE()) ;
 
         // type info present Now we can also put the binding into the dae.
         // If the type is one of the simple, predifined types a simple variable
@@ -4306,7 +4374,7 @@ algorithm
     // The environment is extended with the new variable binding.
     (outCache, binding) :=
       InstBinding.makeBinding(outCache, outEnv, inAttr, mod, ty, inPrefix, inName, inInfo);
-    var := DAE.TYPES_VAR(inName, inDAttr, ty, binding, NONE());
+    var := DAE.TYPES_VAR(inName, inDAttr, ty, binding, false, NONE());
     outEnv := FGraph.updateComp(outEnv, var, FCore.VAR_TYPED(), comp_env);
     outUpdatedComps := BaseHashTable.add((inCref, 1), outUpdatedComps);
   end try;
@@ -5020,7 +5088,7 @@ algorithm
         io = SCodeUtil.prefixesInnerOuter(inPrefixes);
         vis = SCodeUtil.prefixesVisibility(inPrefixes);
 
-        new_var = DAE.TYPES_VAR(n,DAE.ATTR(DAEUtil.toConnectorTypeNoState(ct),prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
+        new_var = DAE.TYPES_VAR(n,DAE.ATTR(DAEUtil.toConnectorTypeNoState(ct),prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),false,NONE());
         env = FGraph.updateComp(env, new_var, FCore.VAR_TYPED(), compenv);
         ErrorExt.rollBack("Inst.removeSelfReferenceAndUpdate");
       then
@@ -5058,7 +5126,7 @@ algorithm
         io = SCodeUtil.prefixesInnerOuter(inPrefixes);
         vis = SCodeUtil.prefixesVisibility(inPrefixes);
 
-        new_var = DAE.TYPES_VAR(n,DAE.ATTR(DAEUtil.toConnectorTypeNoState(ct),prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
+        new_var = DAE.TYPES_VAR(n,DAE.ATTR(DAEUtil.toConnectorTypeNoState(ct),prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),false,NONE());
         env = FGraph.updateComp(env, new_var, FCore.VAR_TYPED(), compenv);
         ErrorExt.rollBack("Inst.removeSelfReferenceAndUpdate");
       then
@@ -5096,7 +5164,7 @@ algorithm
         io = SCodeUtil.prefixesInnerOuter(inPrefixes);
         vis = SCodeUtil.prefixesVisibility(inPrefixes);
 
-        new_var = DAE.TYPES_VAR(n,DAE.ATTR(DAEUtil.toConnectorTypeNoState(ct),prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
+        new_var = DAE.TYPES_VAR(n,DAE.ATTR(DAEUtil.toConnectorTypeNoState(ct),prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),false,NONE());
         env = FGraph.updateComp(env, new_var, FCore.VAR_TYPED(), compenv);
         ErrorExt.rollBack("Inst.removeSelfReferenceAndUpdate");
       then
@@ -5135,7 +5203,7 @@ algorithm
         io = SCodeUtil.prefixesInnerOuter(inPrefixes);
         vis = SCodeUtil.prefixesVisibility(inPrefixes);
 
-        new_var = DAE.TYPES_VAR(n,DAE.ATTR(DAEUtil.toConnectorTypeNoState(ct),prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
+        new_var = DAE.TYPES_VAR(n,DAE.ATTR(DAEUtil.toConnectorTypeNoState(ct),prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),false,NONE());
         env = FGraph.updateComp(env, new_var, FCore.VAR_TYPED(), compenv);
         ErrorExt.rollBack("Inst.removeSelfReferenceAndUpdate");
       then
@@ -5174,7 +5242,7 @@ algorithm
 
         io = SCodeUtil.prefixesInnerOuter(inPrefixes);
         vis = SCodeUtil.prefixesVisibility(inPrefixes);
-        new_var = DAE.TYPES_VAR(n,DAE.ATTR(ct,prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
+        new_var = DAE.TYPES_VAR(n,DAE.ATTR(ct,prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),false,NONE());
         env = FGraph.updateComp(env, new_var, FCore.VAR_TYPED(), compenv);
         ErrorExt.delCheckpoint("Inst.removeSelfReferenceAndUpdate");
       then

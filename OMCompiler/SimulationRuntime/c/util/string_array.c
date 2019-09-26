@@ -34,6 +34,7 @@
 #include "index_spec.h"
 #include "modelica_string.h"
 #include "omc_error.h"
+#include "generic_array.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -91,17 +92,7 @@ void alloc_string_array_data(string_array_t* a)
 
 void copy_string_array_data(const string_array_t source, string_array_t *dest)
 {
-    size_t i, nr_of_elements;
-
-    assert(base_array_ok(&source));
-    assert(base_array_ok(dest));
-    assert(base_array_shape_eq(&source, dest));
-
-    nr_of_elements = base_array_nr_of_elements(source);
-
-    for(i = 0; i < nr_of_elements; ++i) {
-        string_set(dest, i, string_get(source, i));
-    }
+    string_array_copy_data(source,*dest);
 }
 
 void copy_string_array_data_mem(const string_array_t source, modelica_string *dest)
@@ -119,9 +110,7 @@ void copy_string_array_data_mem(const string_array_t source, modelica_string *de
 
 void copy_string_array(const string_array_t source, string_array_t *dest)
 {
-    clone_base_array_spec(&source, dest);
-    alloc_string_array_data(dest);
-    copy_string_array_data(source,dest);
+    string_array_alloc_copy(source,*dest);
 }
 
 /*

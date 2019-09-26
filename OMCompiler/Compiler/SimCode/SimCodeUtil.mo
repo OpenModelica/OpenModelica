@@ -8128,8 +8128,6 @@ algorithm
       DAE.ComponentRef cref;
       DAE.Type ty;
       DAE.VarKind kind;
-      Option<DAE.Exp> val;
-      list<DAE.Exp> instDims;
       list<SimCodeFunction.Variable> rest;
     case({},_)
       equation
@@ -13752,13 +13750,10 @@ protected
   SimCode.SimCode simCode;
   Integer index;
 algorithm
-  if match context
-    case SimCodeFunction.FUNCTION_CONTEXT() then true;
-    case SimCodeFunction.PARALLEL_FUNCTION_CONTEXT() then true;
-    else false; end match
-  then
+  if SimCodeFunctionUtil.inFunctionContext(context) then
     return;
   end if;
+
   e := match e
     case DAE.CREF(ty=DAE.T_ARRAY())
       algorithm

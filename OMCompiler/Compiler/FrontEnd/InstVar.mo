@@ -881,6 +881,7 @@ algorithm
         //        see testsuite/mofiles/Sequence.mo
         (cache,env_1,ih,store,_,csets,ty,_,_,graph) =
           Inst.instClass(cache, env, ih, store, /* mod */ DAE.NOMOD(), pre, cl, inst_dims, impl, InstTypes.INNER_CALL(), graph, csets);
+
         //Make it an array type since we are not flattening
         ty_1 = InstUtil.makeArrayType(dims, ty);
         InstUtil.checkFunctionVarType(ty_1, ci_state, n, info);
@@ -913,6 +914,7 @@ algorithm
          //Instantiate type of the component, skip dae/not flattening
         (cache,env_1,ih,store,_,csets,ty,_,_,_) =
           Inst.instClass(cache, env, ih, store, mod, pre, cl, inst_dims, impl, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, csets);
+
         arrty = InstUtil.makeArrayType(dims, ty);
         InstUtil.checkFunctionVarType(arrty, ci_state, n, info);
         (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,arrty,{}));

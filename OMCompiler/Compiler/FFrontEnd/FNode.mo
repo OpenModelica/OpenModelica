@@ -610,7 +610,7 @@ algorithm
                   n,
                   DAE.ATTR(DAEUtil.toConnectorTypeNoState(ct),prl,var,dir,io,vis),
                   DAE.T_UNKNOWN_DEFAULT,
-                  DAE.UNBOUND(),NONE());
+                  DAE.UNBOUND(),false,NONE());
       then
         (nd, i);
 

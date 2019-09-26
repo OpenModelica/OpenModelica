@@ -3405,8 +3405,7 @@ algorithm
                           envExpandable,
                           DAE.TYPES_VAR(componentName,
                                         DAE.ATTR(ct2,prl2,vt2,Absyn.BIDIR(),io2,vis2),
-                                        ty2,DAE.UNBOUND(),
-                                        NONE()),
+                                        ty2,DAE.UNBOUND(),false, NONE()),
                           SCode.COMPONENT(
                             componentName,
                             SCode.defaultPrefixes,
@@ -3493,7 +3492,7 @@ algorithm
                           DAE.TYPES_VAR(
                             componentName,
                             DAE.ATTR(ct2,prl2,vt2,Absyn.BIDIR(),io2,vis2),
-                            ty2,DAE.UNBOUND(),NONE()),
+                            ty2,DAE.UNBOUND(),false,NONE()),
                           SCode.COMPONENT(
                             componentName,
                             SCode.defaultPrefixes,
@@ -3730,7 +3729,7 @@ algorithm
         // update the topEnv
         updatedEnv = FGraph.updateComp(
                        realEnv,
-                       DAE.TYPES_VAR(currentName, veAttr, veTy, veBinding, veCnstForRange),
+                       DAE.TYPES_VAR(currentName, veAttr, veTy, veBinding, false, veCnstForRange),
                        FCore.VAR_TYPED(),
                        veEnv);
         updatedEnv = FGraph.pushScope(updatedEnv, forLoopScope);
@@ -3753,7 +3752,7 @@ algorithm
         // update the current environment!
         currentEnv = FGraph.updateComp(
                        realEnv,
-                       DAE.TYPES_VAR(currentName, veAttr, veTy, veBinding, veCnstForRange),
+                       DAE.TYPES_VAR(currentName, veAttr, veTy, veBinding, false, veCnstForRange),
                        FCore.VAR_TYPED(),
                        veEnv);
         currentEnv = FGraph.pushScope(currentEnv, forLoopScope);

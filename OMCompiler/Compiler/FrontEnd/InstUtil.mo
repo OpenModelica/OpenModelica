@@ -393,7 +393,7 @@ algorithm
       String name,nn;
       list<String> names;
       list<DAE.Var> vars;
-      DAE.Var var,  new_var;
+      DAE.Var var;
       DAE.Type ty;
       FCore.Status instStatus;
       Absyn.Path p;
@@ -404,16 +404,15 @@ algorithm
     case (cache,env,_,nn::names,(DAE.TYPES_VAR(ty = ty))::vars,p)
       equation
         // get Var
-        (cache,DAE.TYPES_VAR(name,attributes,_,binding,cnstOpt),
-          _,_,_,compenv) =
+        (cache,var, _,_,_,compenv) =
           Lookup.lookupIdentLocal(cache, env, nn);
         // print("updateEnumerationEnvironment1 -> component: " + name + " ty: " + Types.printTypeStr(ty) + "\n");
         // change type
-        new_var = DAE.TYPES_VAR(name,attributes,ty,binding,cnstOpt);
+        var.ty = ty;
         // update
-         env_1 = FGraph.updateComp(env, new_var, FCore.VAR_DAE(), compenv);
+         env_1 = FGraph.updateComp(env, var, FCore.VAR_DAE(), compenv);
         // next
-        (cache,env_2) = updateEnumerationEnvironment1(cache,env_1,name,names,vars,p);
+        (cache,env_2) = updateEnumerationEnvironment1(cache,env_1,var.name,names,vars,p);
       then
        (cache,env_2);
     case (cache,env,_,{},_,_) then (cache,env);
@@ -2369,7 +2368,7 @@ algorithm
 
           dattr := DAEUtil.translateSCodeAttrToDAEAttr(attr, prefs);
           env := FGraph.mkComponentNode(env,
-            DAE.TYPES_VAR(comp.name, dattr, DAE.T_UNKNOWN_DEFAULT, DAE.UNBOUND(), NONE()),
+            DAE.TYPES_VAR(comp.name, dattr, DAE.T_UNKNOWN_DEFAULT, DAE.UNBOUND(), false, NONE()),
             comp, cmod, FCore.VAR_UNTYPED(), FGraph.empty());
         then
           false;
@@ -3237,6 +3236,16 @@ public function makeArrayType
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
+
+  /*
+  if Types.isArray(inType) then
+    Error.addInternalError(getInstanceName() + ": input Type is already an array. This should not happen.", sourceInfo());
+    fail();
+  end if;
+
+  outType := if listEmpty(inDimensionLst) then inType else DAE.T_ARRAY(inType, inDimensionLst);
+  */
+
   outType := matchcontinue (inDimensionLst,inType)
     local
       DAE.Type ty,ty_1;
@@ -3438,7 +3447,7 @@ algorithm
     case (SCode.COMPONENT(name = lit), _)
       equation
         env = FGraph.mkComponentNode(inEnv,
-          DAE.TYPES_VAR(lit, DAE.dummyAttrVar, DAE.T_UNKNOWN_DEFAULT, DAE.UNBOUND(), NONE()),
+          DAE.TYPES_VAR(lit, DAE.dummyAttrVar, DAE.T_UNKNOWN_DEFAULT, DAE.UNBOUND(), false, NONE()),
           inEnum, DAE.NOMOD(), FCore.VAR_UNTYPED(), FGraph.empty());
       then env;
 
@@ -4225,8 +4234,41 @@ protected function elabArraydimType2
   input DAE.Type inType;
   input Absyn.ArrayDim inArrayDim;
   input list<DAE.Dimension> inDims;
-  output DAE.Dimensions outDimensions;
+  output list<DAE.Dimension>  outDimensions;
+protected
+  list<DAE.Dimension> tyDims;
+  DAE.Dimension tydim;
 algorithm
+  /*
+  // I am not sure what excatly this is supposed to do. Anyway it seems to expect the
+  // nested array representations we used to have before T_ARRAY(d, T_ARRAY(...)). We
+  // have moved to flat arrays a while back. This was overlooked. I have tried to simulate what
+  // I can understand from the cases commented below.
+  // I am not sure if any of it is really needed though.
+
+  outDimensions := {};
+  tyDims := Types.getDimensions(inType);
+
+  try
+    for fl_dim in inDims loop
+      tydim::tyDims := tyDims;
+      compatibleArraydim(tydim, fl_dim);
+    end for;
+
+    for ab_dim in inArrayDim loop
+      tydim::tyDims := tyDims;
+      outDimensions := tydim::outDimensions;
+    end for;
+  else
+    if Flags.isSet(Flags.FAILTRACE) then
+      Debug.trace("Undefined! The type detected: ");
+      Debug.traceln(Types.printTypeStr(inType));
+    end if;
+
+    fail();
+  end try;
+  */
+
   outDimensions := matchcontinue (inType, inArrayDim, inDims)
     local
       DAE.Dimension d;
@@ -4245,7 +4287,7 @@ algorithm
 
     case (_, {}, {}) then {};
 
-    case (_, (_ :: _), _) /* PR, for debugging */
+    case (_, (_ :: _), _) // PR, for debugging
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("Undefined! The type detected: ");
@@ -4253,6 +4295,7 @@ algorithm
       then
         fail();
   end matchcontinue;
+
 end elabArraydimType2;
 
 public function addFunctionsToDAE
@@ -7179,7 +7222,7 @@ algorithm
       equation
         inVars = List.select(vl,Types.isInputVar);
         outVars = List.select(vl,Types.isOutputVar);
-        name = SCodeUtil.isBuiltinFunction(cl,List.map(inVars,Types.varName),List.map(outVars,Types.varName));
+        name = SCodeUtil.isBuiltinFunction(cl,List.map(inVars,Types.getVarName),List.map(outVars,Types.getVarName));
         inlineType = commentIsInlineFunc(inheritedComment);
         isOpenModelicaPure = not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
         isImpure = if isImpure then true else SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__ModelicaAssociation_Impure");
@@ -7191,7 +7234,7 @@ algorithm
       equation
         inVars = List.select(vl,Types.isInputVar);
         outVars = List.select(vl,Types.isOutputVar);
-        name = SCodeUtil.isBuiltinFunction(cl,List.map(inVars,Types.varName),List.map(outVars,Types.varName));
+        name = SCodeUtil.isBuiltinFunction(cl,List.map(inVars,Types.getVarName),List.map(outVars,Types.getVarName));
         inlineType = commentIsInlineFunc(inheritedComment);
         isOpenModelicaPure = not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
         unboxArgs = SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment, "__OpenModelica_UnboxArguments");
@@ -7729,7 +7772,7 @@ algorithm
       equation
         vars = List.filterOnTrue(vars, Types.varIsVariable);
         // TODO: We filter out parameters at the moment. I'm unsure if this is correct. Might be that this is an automatic error...
-        names = List.map1r(List.map(vars, Types.varName), stringAppend, name + ".");
+        names = List.map1r(List.map(vars, Types.getVarName), stringAppend, name + ".");
         // print("for record: " + stringDelimitList(names,",") + "\n");
         // Arrays with unknown bounds (size(cr,1), etc) are treated as initialized because they may have 0 dimensions checked for in the code
         outNames = if DAEUtil.varDirectionEqual(dir,DAE.OUTPUT()) then names else {};

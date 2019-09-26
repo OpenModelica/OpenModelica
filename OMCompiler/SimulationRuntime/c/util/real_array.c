@@ -35,6 +35,7 @@
 #include "division.h"
 #include "integer_array.h"
 #include "omc_error.h"
+#include "generic_array.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -92,17 +93,7 @@ void alloc_real_array_data(real_array_t *a)
 
 void copy_real_array_data(const real_array_t source, real_array_t *dest)
 {
-    size_t i, nr_of_elements;
-
-    omc_assert_macro(base_array_ok(&source));
-    omc_assert_macro(base_array_ok(dest));
-    omc_assert_macro(base_array_shape_eq(&source, dest));
-
-    nr_of_elements = base_array_nr_of_elements(source);
-
-    for(i = 0; i < nr_of_elements; ++i) {
-        real_set(dest, i, real_get(source, i));
-    }
+    real_array_copy_data(source,*dest);
 }
 
 void copy_real_array_data_mem(const real_array_t source, modelica_real *dest)
@@ -120,9 +111,7 @@ void copy_real_array_data_mem(const real_array_t source, modelica_real *dest)
 
 void copy_real_array(const real_array_t source, real_array_t *dest)
 {
-    clone_base_array_spec(&source, dest);
-    alloc_real_array_data(dest);
-    copy_real_array_data(source,dest);
+    real_array_alloc_copy(source,*dest);
 }
 
 

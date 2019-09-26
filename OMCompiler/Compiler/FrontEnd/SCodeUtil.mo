@@ -4388,6 +4388,7 @@ algorithm
 
     case (SCode.DERIVED(ty, _, attr), _) then SCode.DERIVED(ty, inMod, attr);
     case (SCode.CLASS_EXTENDS(_, cdef), _) then SCode.CLASS_EXTENDS(inMod, cdef);
+    else inClassDef;
 
   end match;
 end setClassDefMod;

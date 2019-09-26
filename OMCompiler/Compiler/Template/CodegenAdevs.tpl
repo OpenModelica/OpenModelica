@@ -2023,6 +2023,9 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
 
   boxed version of the header if boxed = true, otherwise a normal header"
 ::=
+  let &preExp = buffer "" /*BUFD*/
+  let &varDecls = buffer "" /*BUFD*/
+  
   let fargsStr = if boxed then
       (fargs |> var => funArgBoxedDefinition(var) ;separator=", ")
     else
@@ -2044,7 +2047,7 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
       match var
       case VARIABLE(__) then
         let dimStr = match ty case T_ARRAY(__) then
-          '[<%dims |> dim => dimension(dim) ;separator=", "%>]'
+          '[<%dims |> dim => dimension(dim, contextFunction, &preExp, &varDecls) ;separator=", "%>]'
         let typeStr = if boxed then varTypeBoxed(var) else varType(var)
         '<%typeStr%> targ<%i1%>; /* <%crefStr(name)%><%dimStr%> */'
       case FUNCTION_PTR(__) then
@@ -2642,9 +2645,7 @@ case var as VARIABLE(__) then
   let addRoot = match typ case "modelica_metatype" then ' mmc_GC_add_root(&<%varName%>, mmc_GC_local_state, "<%varName%>");' else ''
   let &varDecls += if not outStruct then '<%typ%> <%varName%><%initVar%>;<%addRoot%><%\n%>' //else ""
   let varName = if outStruct then '<%outStruct%>.targ<%i%>' else '<%contextCref(var.name,contextFunction)%>'
-  let instDimsInit = (instDims |> exp =>
-      daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/)
-    ;separator=", ")
+  let instDimsInit = (instDims |> dim => dimension(dim, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/) ;separator=", ")
   if instDims then
     (match var.value
     case SOME(exp) then
@@ -2741,15 +2742,13 @@ case var as VARIABLE(ty = T_STRING(__)) then
       let &varAssign += '<%dest%>.targ<%ix%> = <%contextCref(var.name,contextFunction)%>;<%\n%>'
       ""
 case var as VARIABLE(__) then
-  let instDimsInit = (instDims |> exp =>
-      daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/)
-    ;separator=", ")
+  let instDimsInit = (instDims |> dim => dimension(dim, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/) ;separator=", ")
   if instDims then
     let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%dest%>.targ<%ix%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
     let &varAssign += 'copy_<%expTypeShort(var.ty)%>_array_data(&<%contextCref(var.name,contextFunction)%>, &<%dest%>.targ<%ix%>);<%\n%>'
     ""
   else
-    let &varInits += initRecordMembers(var)
+    let &varInits += initRecordMembers(var, &varDecls)
     let &varAssign += '<%dest%>.targ<%ix%> = <%contextCref(var.name,contextFunction)%>;<%\n%>'
     ""
 case var as FUNCTION_PTR(__) then
@@ -2757,21 +2756,25 @@ case var as FUNCTION_PTR(__) then
     ""
 end varOutput;
 
-template initRecordMembers(Variable var)
+template initRecordMembers(Variable var, Text& varDecls)
 ::=
 match var
 case VARIABLE(ty = T_COMPLEX(complexClassType = RECORD(__))) then
   let varName = contextCref(name,contextFunction)
-  (ty.varLst |> v => recordMemberInit(v, varName) ;separator="\n")
+  (ty.varLst |> v => recordMemberInit(v, varName, &varDecls) ;separator="\n")
 end initRecordMembers;
 
-template recordMemberInit(Var v, Text varName)
+template recordMemberInit(Var v, Text varName, Text& varDecls)
 ::=
 match v
 case TYPES_VAR(ty = T_ARRAY(__)) then
+  let &preExp = buffer ""
   let arrayType = expType(ty, true)
-  let dims = (ty.dims |> dim => dimension(dim) ;separator=", ")
-  'alloc_<%arrayType%>(&<%varName%>.<%name%>, <%listLength(ty.dims)%>, <%dims%>);'
+  let dims = (ty.dims |> dim => dimension(dim, contextFunction, &preExp, &varDecls) ;separator=", ")
+  <<
+  <%preExp%>
+  alloc_<%arrayType%>(&<%varName%>.<%name%>, <%listLength(ty.dims)%>, <%dims%>);
+  >>
 end recordMemberInit;
 
 template extVarName(ComponentRef cr)
@@ -2903,8 +2906,7 @@ template extFunCallBiVarF77(Variable var, Text &preExp, Text &varDecls)
         '<%var_name%> = <%daeExp(v, contextFunction, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>;<%\n%>'
       else ""
     let &preExp += defaultValue
-    let instDimsInit = (instDims |> exp =>
-        daeExp(exp, contextFunction, &preExp /*BUFC*/, &varDecls /*BUFD*/) ;separator=", ")
+    let instDimsInit = (instDims |> dim => dimension(dim, contextFunction, &preExp /*BUFC*/, &varDecls /*BUFD*/) ;separator=", ")
     if instDims then
       let type = expTypeArray(var.ty)
       let &preExp += 'alloc_<%type%>(&<%var_name%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
@@ -3754,7 +3756,7 @@ case ecr as CREF(ty=T_ARRAY(ty=aty,dims=dims)) then
     // object since they are represented only in a double array.
     let tmpArr = tempDecl(expTypeArray(aty), &varDecls /*BUFD*/)
     let dimsLenStr = listLength(dims)
-    let dimsValuesStr = (dims |> dim => dimension(dim) ;separator=", ")
+    let dimsValuesStr = (dims |> dim => dimension(dim, context, &preExp, &varDecls) ;separator=", ")
     let type = expTypeShort(aty)
     let &preExp += '<%type%>_array_create(&<%tmpArr%>, ((modelica_<%type%>*)&(<%arrayCrefCStr(ecr.componentRef)%>)), <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
     tmpArr
@@ -5354,13 +5356,19 @@ template expTypeFromOpFlag(Operator op, Integer flag)
   else "expTypeFromOpFlag:ERROR"
 end expTypeFromOpFlag;
 
-template dimension(Dimension d)
+template dimension(Dimension d, Context context, Text &preExp, Text &varDecls)
 ::=
   match d
-  case DAE.DIM_INTEGER(__) then integer
+  case DAE.DIM_BOOLEAN(__) then '2'
   case DAE.DIM_ENUM(__) then size
-  case DAE.DIM_UNKNOWN(__) then ":"
-  else "INVALID_DIMENSION"
+  case DAE.DIM_EXP(exp=e) then daeExp(e, context, &preExp, &varDecls)
+  case DAE.DIM_INTEGER(__) then
+    if intEq(integer, -1) then
+      error(sourceInfo(),"Negeative dimension(unknown dimensions) may not be part of generated code. This is most likely an error on the part of OpenModelica. Please submit a detailed bug-report.")
+    else
+      integer
+  case DAE.DIM_UNKNOWN(__) then error(sourceInfo(),"Unknown dimensions may not be part of generated code. This is most likely an error on the part of OpenModelica. Please submit a detailed bug-report.")
+  else error(sourceInfo(), 'dimension: INVALID_DIMENSION')
 end dimension;
 
 template algStmtAssignPattern(DAE.Statement stmt, Context context, Text &varDecls)

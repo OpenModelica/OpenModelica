@@ -5958,6 +5958,7 @@ algorithm
               DAE.dummyAttrVar,
               DAE.T_UNKNOWN_DEFAULT,
               DAE.UNBOUND(),
+              false,
               NONE());
 end mkEmptyVar;
 

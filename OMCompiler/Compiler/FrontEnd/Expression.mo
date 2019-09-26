@@ -4839,7 +4839,7 @@ public function makeVar "Creates a Var given a name and Type"
   output DAE.Var v;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  v := DAE.TYPES_VAR(name, DAE.dummyAttrVar, tp, DAE.UNBOUND(), NONE());
+  v := DAE.TYPES_VAR(name, DAE.dummyAttrVar, tp, DAE.UNBOUND(), false, NONE());
 end makeVar;
 
 public function dimensionsMult
@@ -9902,7 +9902,7 @@ algorithm
 end dimensionsKnownAndEqual;
 
 public function dimensionKnown
-  "Checks whether a dimensions is known or not."
+  "Checks whether a dimension is known or not."
   input DAE.Dimension dim;
   output Boolean known;
 algorithm
@@ -9929,8 +9929,7 @@ algorithm
 end dimensionKnownAndNonZero;
 
 public function dimensionsKnownAndNonZero
-  "Checks whether all dimensions are known or not.
-  TODO: mahge: imprive this for speed"
+  "Checks whether all dimensions are known or not."
   input list<DAE.Dimension> dims;
   output Boolean allKnown;
 algorithm
@@ -9958,6 +9957,13 @@ algorithm
     else false;
   end match;
 end dimensionUnknown;
+
+public function hasUnknownDims
+  input list<DAE.Dimension> dims;
+  output Boolean hasUnkown;
+algorithm
+  hasUnkown := List.mapBoolOr(dims, dimensionUnknown);
+end hasUnknownDims;
 
 public function subscriptEqual
 "Returns true if two subscript lists are equal."
