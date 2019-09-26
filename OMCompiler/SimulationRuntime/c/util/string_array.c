@@ -80,7 +80,7 @@ void alloc_string_array(string_array_t *dest, int ndims, ...)
     size_t elements = 0;
     va_list ap;
     va_start(ap, ndims);
-    elements = alloc_base_array(dest, ndims, ap);
+    elements = alloc_base_array(dest, ndims, sizeof(modelica_string), ap);
     va_end(ap);
     dest->data = string_alloc(elements);
 }
@@ -846,7 +846,7 @@ void fill_alloc_string_array(string_array_t* dest, modelica_string value, int nd
   size_t elements = 0;
   va_list ap;
   va_start(ap, ndims);
-  elements = alloc_base_array(dest, ndims, ap);
+  elements = alloc_base_array(dest, ndims, sizeof(modelica_string), ap);
   va_end(ap);
   dest->data = string_alloc(elements);
 

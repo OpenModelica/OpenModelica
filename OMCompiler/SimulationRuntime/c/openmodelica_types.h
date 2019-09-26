@@ -86,6 +86,7 @@ struct base_array_s
 {
   int ndims;
   _index_t *dim_size;
+  _index_t elem_size;
   void *data;
   m_boolean flexible;
 };

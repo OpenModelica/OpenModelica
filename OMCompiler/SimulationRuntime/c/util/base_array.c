@@ -81,6 +81,10 @@ int base_array_ok(const base_array_t *a)
       fprintf(stderr, "base_array.c: array dimensions sizes are NULL!\n"); fflush(stderr);
       return 0;
     }
+    if(a->elem_size <= 0) {
+      fprintf(stderr, "base_array.c: element size is invalid!\n"); fflush(stderr);
+      return 0;
+    }
     for(i = 0; i < a->ndims; ++i) {
         if(a->dim_size[i] < 0) {
           fprintf(stderr, "base_array.c: array dimension size for dimension %d is %d < 0!\n", i, (int) a->dim_size[i]); fflush(stderr);
@@ -142,6 +146,11 @@ int base_array_shape_eq(const base_array_t *a, const base_array_t *b)
 
     if(a->ndims != b->ndims) {
         fprintf(stderr, "a->ndims != b->ndims, %d != %d\n", a->ndims, b->ndims);
+        return 0;
+    }
+
+    if(a->elem_size != b->elem_size) {
+        fprintf(stderr, "a->elem_size != b->elem_size, %d != %d\n", a->elem_size, b->elem_size);
         return 0;
     }
 
@@ -220,13 +229,15 @@ void simple_alloc_2d_base_array(base_array_t *dest, int r, int c, void *data)
     dest->data = data;
 }
 
-size_t alloc_base_array(base_array_t *dest, int ndims, va_list ap)
+size_t alloc_base_array(base_array_t *dest, int ndims, _index_t elem_size, va_list ap)
 {
     int i;
     size_t nr_of_elements = 1;
 
     dest->ndims = ndims;
     dest->dim_size = size_alloc(ndims);
+
+    dest->elem_size = elem_size;
 
     for(i = 0; i < ndims; ++i) {
         dest->dim_size[i] = va_arg(ap, _index_t);
@@ -251,11 +262,13 @@ void clone_base_array_spec(const base_array_t *source, base_array_t *dest)
 
     dest->ndims = source->ndims;
     dest->dim_size = size_alloc(dest->ndims);
+    dest->elem_size = source->elem_size;
     assert(dest->dim_size);
 
     for(i = 0; i < dest->ndims; ++i) {
         dest->dim_size[i] = source->dim_size[i];
     }
+
 }
 
 /*

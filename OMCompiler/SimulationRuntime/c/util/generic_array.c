@@ -36,9 +36,41 @@
 
 #pragma GCC diagnostic error "-Werror"
 
-static void* generic_ptrget(const base_array_t *a, size_t sze, size_t i) {
-  return ((char*)a->data) + (i*sze);
+
+static size_t subs_to_offset(const base_array_t *src, va_list ap)
+{
+    int i;
+    size_t offset;
+
+    offset = 0;
+    for(i = 0; i < src->ndims; ++i) {
+        int sub_i = va_arg(ap, _index_t) - 1;
+        if (sub_i < 0 || sub_i >= src->dim_size[i]) {
+          throwStreamPrint(NULL, "Dimension %d has bounds 1..%ld, got array subscript %d", i+1, src->dim_size[i], sub_i+1);
+        }
+        offset = (offset * src->dim_size[i]) + sub_i;
+    }
+
+    return offset;
 }
+
+static void* array_get(const base_array_t *src, size_t i) {
+  return ((char*)src->data) + (i * src->elem_size);
+}
+
+static void* array_get_ap(const base_array_t *src, va_list ap) {
+  return array_get(src, subs_to_offset(src, ap));
+}
+
+static size_t array_nr_of_elems(const base_array_t* src) {
+    int i;
+    size_t nr_elems = 1;
+    for(i = 0; i < src->ndims; ++i) {
+        nr_elems *= src->dim_size[i];
+    }
+    return nr_elems;
+}
+
 
 static int generic_array_ndims_eq(const base_array_t* src, const base_array_t* dst) {
     if(src->ndims != dst->ndims) {
@@ -65,19 +97,23 @@ static int generic_array_dimsizes_eq(const base_array_t* src, const base_array_t
 }
 
 
-static size_t check_copy_sanity(const base_array_t* src, base_array_t* dst, size_t sze) {
+static size_t check_copy_sanity(const base_array_t* src, base_array_t* dst) {
     size_t i;
     // TODO wrap me in debug. No need to do this in release.
     omc_assert_macro(base_array_ok(src));
     omc_assert_macro(generic_array_ndims_eq(src, dst));
 
-    size_t nr_of_elements = base_array_nr_of_elements(*src);
+    if(src->elem_size != dst->elem_size) {
+        throwStreamPrint(NULL, "src->elem_size != dst->dim_size, %ld != %ld\n", src->elem_size, dst->elem_size);
+    }
+
+    size_t nr_elems = array_nr_of_elems(src);
 
     // Check if shape is equal.
     int shape_eq = generic_array_dimsizes_eq(src, dst, 0 /*do not print error yet*/);
 
     if(shape_eq) {
-        return nr_of_elements;
+        return nr_elems;
     }
 
     // Shape not equal and destination is flexible array.
@@ -87,9 +123,9 @@ static size_t check_copy_sanity(const base_array_t* src, base_array_t* dst, size
           dst->dim_size[i] = src->dim_size[i];
         }
         // let GC collect the old data.
-        dst->data = generic_alloc(nr_of_elements, sze);
+        dst->data = generic_alloc(nr_elems, dst->elem_size);
 
-        return nr_of_elements;
+        return nr_elems;
     }
 
     // Shape not equal and destination is not flexible array.
@@ -100,10 +136,28 @@ static size_t check_copy_sanity(const base_array_t* src, base_array_t* dst, size
     return -1;
 }
 
-void generic_array_create_flexible(base_array_t* dst, int ndims)
+static void array_clone_spec(const base_array_t *src, base_array_t *dst)
+{
+    int i;
+    assert(base_array_ok(src));
+
+    dst->ndims = src->ndims;
+    dst->elem_size = src->elem_size;
+
+    dst->dim_size = size_alloc(dst->ndims);
+    for(i = 0; i < dst->ndims; ++i) {
+        dst->dim_size[i] = src->dim_size[i];
+    }
+}
+
+
+
+
+void generic_array_create_flexible(base_array_t* dst, int ndims, size_t sze)
 {
     dst->ndims = ndims;
     dst->dim_size = size_alloc(ndims);
+    dst->elem_size = sze;
 
     dst->flexible = 1;
 
@@ -115,142 +169,158 @@ void generic_array_create_flexible(base_array_t* dst, int ndims)
 
 void generic_array_create(threadData_t* td, base_array_t* dst, constructor_func ctr_func, int ndims, size_t sze, ...)
 {
-    size_t i, nr_of_elements;
+    size_t i, nr_elems;
 
-    va_list ap;
-    va_start(ap, sze);
-    nr_of_elements = alloc_base_array(dst, ndims, ap);
-    va_end(ap);
-    dst->data = generic_alloc(nr_of_elements, sze);
-
+    dst->ndims = ndims;
+    dst->dim_size = size_alloc(ndims);
+    dst->elem_size = sze;
     // If we get here then the dst array has known dims
     // Whcih means it is not flexible.
     dst->flexible = 0;
 
+    va_list ap;
+    va_start(ap, sze);
+    for(i = 0; i < ndims; ++i) {
+        dst->dim_size[i] = va_arg(ap, _index_t);
+        nr_elems *= dst->dim_size[i];
+    }
+    va_end(ap);
+
+    size_t data_size = nr_elems * dst->elem_size;
+    dst->data = omc_alloc_interface.malloc(data_size);
+
     // Initialize each element of the complex array
     char* d_data = (char*)(dst->data);
-    for(i = 0; i < nr_of_elements; ++i) {
-        ctr_func(td, d_data + (i*sze));
+    for(i = 0; i < nr_elems; ++i) {
+        ctr_func(td, array_get(dst, i));
     }
 }
 
 void simple_array_create(threadData_t* td, base_array_t* dst, int ndims, size_t sze, ...)
 {
-    size_t i, nr_of_elements;
+    size_t i, nr_elems;
 
-    va_list ap;
-    va_start(ap, sze);
-    nr_of_elements = alloc_base_array(dst, ndims, ap);
-    va_end(ap);
-    dst->data = generic_alloc(nr_of_elements, sze);
-
+    dst->ndims = ndims;
+    dst->dim_size = size_alloc(ndims);
+    dst->elem_size = sze;
     // If we get here then the dst array has known dims
     // Whcih means it is not flexible.
     dst->flexible = 0;
 
+    va_list ap;
+    va_start(ap, sze);
+    for(i = 0; i < ndims; ++i) {
+        dst->dim_size[i] = va_arg(ap, _index_t);
+        nr_elems *= dst->dim_size[i];
+    }
+    va_end(ap);
+
+    size_t data_size = nr_elems * dst->elem_size;
+    dst->data = omc_alloc_interface.malloc(data_size);
+
     // Init to 0. IDK if this is what Modelica expects
     // I guess it is better than garbage values.
-    memset(dst->data, 0, nr_of_elements*sze);
+    memset(dst->data, 0, data_size);
 }
 
 
-void generic_array_alloc_copy(const base_array_t src_cp, base_array_t* dst, copy_func cp_func, size_t sze)
+void generic_array_alloc_copy(const base_array_t src_cp, base_array_t* dst, copy_func cp_func)
 {
     const base_array_t* src = &src_cp;
 
-    clone_base_array_spec(src, dst);
+    array_clone_spec(src, dst);
 
     // If we get here then it means the dst array had a default value (i.e., binding to src array)
     // Whcih means even if it was unknown size, it is not flexible anymore and is
     // same shape as the src array.
     dst->flexible = 0;
 
-    size_t nr_of_elements = base_array_nr_of_elements(*dst);
-    dst->data = generic_alloc(nr_of_elements, sze);
+    size_t nr_elems = array_nr_of_elems(dst);
+    size_t data_size = nr_elems * dst->elem_size;
+    dst->data = omc_alloc_interface.malloc(data_size);
 
     size_t i;
-    char* d_data = (char*)(dst->data);
-    char* s_data = (char*)(src->data);
-    for(i = 0; i < nr_of_elements; ++i) {
-        cp_func(s_data + (i*sze), d_data + (i*sze));
+    for(i = 0; i < nr_elems; ++i) {
+        cp_func(array_get(src, i), array_get(dst, i));
     }
 }
 
-void simple_array_alloc_copy(const base_array_t src_cp, base_array_t* dst, size_t sze)
+void simple_array_alloc_copy(const base_array_t src_cp, base_array_t* dst)
 {
     const base_array_t* src = &src_cp;
 
-    clone_base_array_spec(src, dst);
+    array_clone_spec(src, dst);
 
     // If we get here then it means the dst array had a default value (i.e., binding to src array)
     // Whcih means even if it was unknown size, it is not flexible anymore and is
     // same shape as the src array.
     dst->flexible = 0;
 
-    size_t nr_of_elements = base_array_nr_of_elements(*dst);
-    dst->data = generic_alloc(nr_of_elements, sze);
+    size_t nr_elems = array_nr_of_elems(dst);
+    size_t data_size = nr_elems * dst->elem_size;
+    dst->data = generic_alloc(nr_elems, data_size);
 
-    memcpy(dst->data, src->data, sze*nr_of_elements);
+    memcpy(dst->data, src->data, data_size);
 }
 
 
-void generic_array_copy_data(const base_array_t src_cp, base_array_t* dst, copy_func cp_func, size_t sze)
+void generic_array_copy_data(const base_array_t src_cp, base_array_t* dst, copy_func cp_func)
 {
     const base_array_t* src = &src_cp;
 
-    size_t nr_of_elements = check_copy_sanity(src, dst, sze);
+    size_t nr_elems = check_copy_sanity(src, dst);
 
     size_t i;
-    char* d_data = (char*)(dst->data);
-    char* s_data = (char*)(src->data);
-    for(i = 0; i < nr_of_elements; ++i) {
-        cp_func(s_data + (i*sze), d_data + (i*sze));
+    for(i = 0; i < nr_elems; ++i) {
+        cp_func(array_get(src, i), array_get(dst, i));
     }
 }
 
-void simple_array_copy_data(const base_array_t src_cp, base_array_t* dst, size_t sze)
+void simple_array_copy_data(const base_array_t src_cp, base_array_t* dst)
 {
     const base_array_t* src = &src_cp;
 
-    size_t nr_of_elements = check_copy_sanity(src, dst, sze);
-    memcpy(dst->data, src->data, sze*nr_of_elements);
+    size_t nr_elems = check_copy_sanity(src, dst);
+    memcpy(dst->data, src->data, dst->elem_size*nr_elems);
 }
 
 
 
-void* generic_array_get(const base_array_t* src, size_t sze, ...) {
+void* generic_array_get(const base_array_t* src, ...) {
   va_list ap;
-  va_start(ap,sze);
+  va_start(ap,src);
   // TODO assert va_list is as long as ndims. Otherwise we have slicing
-  void* trgt = generic_ptrget(src, calc_base_index_va(src, src->ndims, ap), sze);
+  void* trgt = array_get_ap(src, ap);
   va_end(ap);
+
   return trgt;
 }
 
-void generic_array_set(base_array_t* dst, void* val, copy_func cp_func, size_t sze, ...) {
+void generic_array_set(base_array_t* dst, void* val, copy_func cp_func, ...) {
   va_list ap;
-  va_start(ap,sze);
+  va_start(ap,cp_func);
   // TODO assert va_list is as long as ndims. Otherwise we have slicing
-  void* trgt = generic_ptrget(dst, calc_base_index_va(dst, dst->ndims, ap), sze);
-  cp_func(val,trgt);
+  void* trgt = array_get_ap(dst, ap);
   va_end(ap);
+
+  cp_func(val,trgt);
 }
 
 
 
 // TODO remove me. not needed anymore. superseded by generic_array_get
 // TODO: ndims is not needed to be passed here.
-void* generic_array_element_addr(const base_array_t* source, size_t sze, int ndims,...) {
+void* generic_array_element_addr(const base_array_t* src, size_t sze, int ndims, ...) {
   va_list ap;
-  void* tmp;
   va_start(ap,ndims);
-  tmp = generic_ptrget(source, calc_base_index_va(source, ndims, ap), sze);
+  void* trgt = array_get_ap(src, ap);
   va_end(ap);
-  return tmp;
+
+  return trgt;
 }
 
-void* generic_array_element_addr1(const base_array_t* source, size_t sze, int dim1) {
-  return generic_ptrget(source, dim1-1, sze);
+void* generic_array_element_addr1(const base_array_t* source, size_t sze, int sub1) {
+  return array_get(source, sub1-1);
 }
 
 

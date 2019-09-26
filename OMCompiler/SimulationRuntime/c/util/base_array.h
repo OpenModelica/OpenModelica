@@ -51,7 +51,7 @@ void simple_alloc_1d_base_array(base_array_t *dest, int n, void *data);
 void simple_alloc_2d_base_array(base_array_t *dest, int r, int c, void *data);
 
 /* Allocate array */
-size_t alloc_base_array(base_array_t *dest, int ndims, va_list ap);
+size_t alloc_base_array(base_array_t *dest, int ndims, _index_t elem_size, va_list ap);
 
 /* Number of elements in array. */
 static OMC_INLINE size_t base_array_nr_of_elements(const base_array_t a)

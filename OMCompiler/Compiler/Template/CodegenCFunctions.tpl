@@ -498,12 +498,12 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
 
       typedef base_array_t <%rec_name%>_array;
       #define alloc_<%rec_name%>_array(dst,ndims,...) generic_array_create(NULL, dst, <%ctor_func_name%>, ndims, sizeof(<%rec_name%>), __VA_ARGS__)
-      #define <%rec_name%>_array_copy_data(src,dst)   generic_array_copy_data(src, &dst, <%cpy_func_name%>, sizeof(<%rec_name%>))
+      #define <%rec_name%>_array_copy_data(src,dst)   generic_array_copy_data(src, &dst, <%cpy_func_name%>)
       // This is here unitl we remove all places where this function call is written out instead of the one above.
-      #define copy_<%rec_name%>_array_data(src,dst)   generic_array_copy_data(src, &dst, <%cpy_func_name%>, sizeof(<%rec_name%>))
-      #define <%rec_name%>_array_alloc_copy(src,dst)   generic_array_alloc_copy(src, &dst, <%cpy_func_name%>, sizeof(<%rec_name%>))
-      #define <%rec_name%>_array_get(src,ndims,...)         (*(<%rec_name%>*)(generic_array_get(&src, sizeof(<%rec_name%>), __VA_ARGS__)))
-      #define <%rec_name%>_set(dst,val,...)           generic_array_set(&dst, &val, <%cpy_func_name%>, sizeof(<%rec_name%>), __VA_ARGS__)
+      #define copy_<%rec_name%>_array_data(src,dst)   generic_array_copy_data(src, &dst, <%cpy_func_name%>)
+      #define <%rec_name%>_array_alloc_copy(src,dst)   generic_array_alloc_copy(src, &dst, <%cpy_func_name%>)
+      #define <%rec_name%>_array_get(src,ndims,...)         (*(<%rec_name%>*)(generic_array_get(&src, __VA_ARGS__)))
+      #define <%rec_name%>_set(dst,val,...)           generic_array_set(&dst, &val, <%cpy_func_name%>, __VA_ARGS__)
       >>
 end recordDeclarationFullHeader;
 
@@ -716,7 +716,7 @@ template arrayVarAllocInit(ComponentRef var_cref, Type var_type, list<DAE.Dimens
     case NONE() then
       if Expression.hasUnknownDims(var_dims) then
         <<
-        generic_array_create_flexible(&<%var_name%>, <%listLength(var_dims)%>); // <%var_name%> has unknown size and no default value. It is flexible.<%\n%>
+        generic_array_create_flexible(&<%var_name%>, <%listLength(var_dims)%>, sizeof(<%type_name%>)); // <%var_name%> has unknown size and no default value. It is flexible.<%\n%>
         >>
       else
         let &preExpAlloc = buffer ""
@@ -2009,7 +2009,12 @@ template varInit(Variable var, String outStruct, Text &varDecls, Text &varInits,
   Does not return anything: just appends declarations to buffers."
 ::=
 match var
-case var as VARIABLE(parallelism = NON_PARALLEL(__)) then
+//mahge: OpenCL/CUDA GPU variables.
+case VARIABLE(parallelism = PARGLOBAL(__))
+case VARIABLE(parallelism = PARLOCAL(__)) then
+  parVarInit(var, outStruct, &varDecls, &varInits, &varFrees, &auxFunction)
+
+case var as VARIABLE() then
   let varName = contextCref(var.name,contextFunction,&auxFunction)
   let typeNameFull = varType(var)
   let initVar = match typeNameFull case "modelica_metatype"
@@ -2017,9 +2022,14 @@ case var as VARIABLE(parallelism = NON_PARALLEL(__)) then
                           else ''
   let &varDecls += if not outStruct then '<%typeNameFull%> <%varName%><%initVar%>;<%\n%>' //else ""
 
+  // TODO instDims is reduandant. We have to make sure in simCode that instdims is used to create
+  // The correct array type and then discard it.
   if instDims then
     let &varInits += arrayVarAllocInit(var.name, var.ty, instDims, var.value, var.bind_from_outside, contextFunction, &varDecls, &auxFunction)
     ""
+  else if isArrayType(var.ty) then
+    let &varInits += arrayVarAllocInit(var.name, var.ty, instDims, var.value, var.bind_from_outside, contextFunction, &varDecls, &auxFunction)
+      ""
   else if isRecordType(var.ty) then
     let &varInits += recordVarAllocInit(var.value, var.name, var.bind_from_outside, var.ty, contextFunction, &varDecls, &auxFunction)
     ""
@@ -3644,25 +3654,26 @@ template literalExpConst(Exp lit, Integer litindex) "These should all be declare
       static const MMC_DEFSTRINGLIT(<%tmp%>,<%unescapedStringLength(escstr)%>,<%name%>_data);
       #define <%name%> MMC_REFSTRINGLIT(<%tmp%>)
       >>
-  case lit as MATRIX(ty=ty as T_ARRAY(__))
-  case lit as ARRAY(ty=ty as T_ARRAY(__)) then
+  case lit as MATRIX(ty=ty as T_ARRAY(ty=elemTy))
+  case lit as ARRAY(ty=ty as T_ARRAY(ty=elemTy)) then
     let ndim = listLength(getDimensionSizes(ty))
-    let sty = expTypeShort(ty)
+    let elemty = expTypeModelica(ty)
+    let arrty = expTypeArray(ty)
     let dims = (getDimensionSizes(ty) |> dim => dim ;separator=", ")
     let data = flattenArrayExpToList(lit) |> exp => literalExpConstArrayVal(exp) ; separator=", "
     <<
     static _index_t <%name%>_dims[<%ndim%>] = {<%dims%>};
     <% match data case "" then
     <<
-    static base_array_t const <%name%> = {
-      <%ndim%>, <%name%>_dims, (void*) 0, (modelica_boolean) 0
+    static <%arrty%> const <%name%> = {
+      <%ndim%>, <%name%>_dims, sizeof(<%elemty%>), (void*) 0, (modelica_boolean) 0
     };
     >>
     else
     <<
-    static const modelica_<%sty%> <%name%>_data[] = {<%data%>};
-    static <%sty%>_array const <%name%> = {
-      <%ndim%>, <%name%>_dims, (void*) <%name%>_data, (modelica_boolean) 0
+    static const <%elemty%> <%name%>_data[] = {<%data%>};
+    static <%arrty%> const <%name%> = {
+      <%ndim%>, <%name%>_dims, sizeof(<%elemty%>), (void*) <%name%>_data, (modelica_boolean) 0
     };
     >>
     %>

@@ -81,7 +81,7 @@ void alloc_real_array(real_array_t *dest, int ndims, ...)
     size_t elements = 0;
     va_list ap;
     va_start(ap, ndims);
-    elements = alloc_base_array(dest, ndims, ap);
+    elements = alloc_base_array(dest, ndims, sizeof(modelica_real), ap);
     va_end(ap);
     dest->data = real_alloc(elements);
 }
@@ -1617,7 +1617,7 @@ void fill_alloc_real_array(real_array_t* dest, modelica_real value, int ndims, .
     size_t elements = 0;
     va_list ap;
     va_start(ap, ndims);
-    elements = alloc_base_array(dest, ndims, ap);
+    elements = alloc_base_array(dest, ndims, sizeof(modelica_real), ap);
     va_end(ap);
     dest->data = real_alloc(elements);
 

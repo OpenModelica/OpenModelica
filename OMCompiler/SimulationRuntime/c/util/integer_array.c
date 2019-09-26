@@ -82,7 +82,7 @@ void alloc_integer_array(integer_array_t* dest,int ndims,...)
     size_t elements = 0;
     va_list ap;
     va_start(ap, ndims);
-    elements = alloc_base_array(dest, ndims, ap);
+    elements = alloc_base_array(dest, ndims, sizeof(modelica_integer), ap);
     va_end(ap);
     dest->data = integer_alloc(elements);
 }
@@ -1341,7 +1341,7 @@ void fill_alloc_integer_array(integer_array_t* dest, modelica_integer value, int
     size_t elements = 0;
     va_list ap;
     va_start(ap, ndims);
-    elements = alloc_base_array(dest, ndims, ap);
+    elements = alloc_base_array(dest, ndims, sizeof(modelica_integer), ap);
     va_end(ap);
     dest->data = integer_alloc(elements);
 

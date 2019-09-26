@@ -36,37 +36,37 @@
 typedef void (*constructor_func)(threadData_t* td,  void* dst);
 typedef void (*copy_func)(void* dst, void* src);
 
-void generic_array_create_flexible(base_array_t* dst, int ndims);
+void generic_array_create_flexible(base_array_t* dst, int ndims, size_t sze);
 
 
 void generic_array_create(threadData_t* td, base_array_t* dst, constructor_func ctor, int ndims, size_t sze, ...);
 void simple_array_create(threadData_t* td, base_array_t* dst, int ndims, size_t sze, ...);
 
-void generic_array_copy_data(const base_array_t src, base_array_t* dst, copy_func cper, size_t sze);
-void simple_array_copy_data(const base_array_t src, base_array_t* dst, size_t sze);
+void generic_array_copy_data(const base_array_t src, base_array_t* dst, copy_func cper);
+void simple_array_copy_data(const base_array_t src, base_array_t* dst);
 
-#define real_array_copy_data(src,dst)               simple_array_copy_data(src, &dst, sizeof(modelica_real));
-#define integer_array_copy_data(src,dst)            simple_array_copy_data(src, &dst, sizeof(modelica_integer));
-#define string_array_copy_data(src,dst)             simple_array_copy_data(src, &dst, sizeof(modelica_string));
-#define boolean_array_copy_data(src,dst)            simple_array_copy_data(src, &dst, sizeof(modelica_boolean));
+#define real_array_copy_data(src,dst)               simple_array_copy_data(src, &dst);
+#define integer_array_copy_data(src,dst)            simple_array_copy_data(src, &dst);
+#define string_array_copy_data(src,dst)             simple_array_copy_data(src, &dst);
+#define boolean_array_copy_data(src,dst)            simple_array_copy_data(src, &dst);
 
-void generic_array_alloc_copy(const base_array_t src, base_array_t* dst, copy_func cper, size_t sze);
-void simple_array_alloc_copy(const base_array_t src, base_array_t* dst, size_t sze);
+void generic_array_alloc_copy(const base_array_t src, base_array_t* dst, copy_func cper);
+void simple_array_alloc_copy(const base_array_t src, base_array_t* dst);
 
-#define real_array_alloc_copy(src,dst)              simple_array_alloc_copy(src, &dst, sizeof(modelica_real));
-#define integer_array_alloc_copy(src,dst)           simple_array_alloc_copy(src, &dst, sizeof(modelica_integer));
-#define string_array_alloc_copy(src,dst)            simple_array_alloc_copy(src, &dst, sizeof(modelica_string));
-#define boolean_array_alloc_copy(src,dst)           simple_array_alloc_copy(src, &dst, sizeof(modelica_boolean));
+#define real_array_alloc_copy(src,dst)              simple_array_alloc_copy(src, &dst);
+#define integer_array_alloc_copy(src,dst)           simple_array_alloc_copy(src, &dst);
+#define string_array_alloc_copy(src,dst)            simple_array_alloc_copy(src, &dst);
+#define boolean_array_alloc_copy(src,dst)           simple_array_alloc_copy(src, &dst);
 
 
-void* generic_array_get(const base_array_t* source, size_t sze,...);
+void* generic_array_get(const base_array_t* src,...);
 
 #define real_array_get(src,ndims,...)               (*(modelica_real*)(real_array_element_addr(&src, ndims, __VA_ARGS__)))
 #define integer_array_get(src,ndims,...)            (*(modelica_integer*)(integer_array_element_addr(&src, ndims, __VA_ARGS__)))
 #define string_array_get(src,ndims,...)             (*(modelica_string*)(string_array_element_addr(&src, ndims, __VA_ARGS__)))
 #define boolean_array_get(src,ndims,...)            (*(modelica_boolean*)(boolean_array_element_addr(&src, ndims, __VA_ARGS__)))
 
-void generic_array_set(base_array_t* dst, void* val, copy_func cp_func, size_t sze, ...);
+void generic_array_set(base_array_t* dst, void* val, copy_func cp_func, ...);
 
 
 
