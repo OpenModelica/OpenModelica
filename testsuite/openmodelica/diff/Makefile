@@ -16,7 +16,7 @@ MoveConnection.mos \
 removeComponentModifiers.mos \
 Tables.mos \
 TestDiffListAPI.mos \
-ticket3619.mos \
+ticket2969.mos \
 ticket3642.mos \
 Ticket4110.mos \
 ticket4153.mos \

@@ -1,0 +1,47 @@
+// name: differentiateDelay
+// keywords: differentiate, delay
+// status: correct
+// teardown_command: rm -rf differentiateDelay.*
+//
+// Tests differentiation of delay operator.
+// Expected results: DASSL-Solver Jacobain
+//                   A = (0), for time < 0.1
+//                   A = (1), for time > 0.1
+//
+
+/*
+loadString("
+model differentiateDelay1
+  Real x;
+  Real tmp;
+  Real y(start=1.0, fixed=true);
+equation
+  x = sin(time) + y;
+  tmp = cos(time) + y;
+  //tmp = delay(x, 0.1, 0.1);
+  //der(y) = tmp;
+  //der(y) = delay(x, 0.1, 0.1);
+  der(y) = x + tmp;
+end differentiateDelay;1
+"); getErrorString();
+
+setCommandLineOptions("-d=newInst --generateSymbolicJacobian --removeSimpleEquations=none"); getErrorString();
+
+simulate(differentiateDelay1, simflags="-lv=LOG_JAC"); getErrorString();
+*/
+
+loadString("
+model differentiateDelay2
+  Real x1, x2;
+  Real y(start=1.0, fixed=true);
+equation
+  x1 = sin(time) + y;
+  x2 = cos(time) + y;
+  der(y) = delay(x1+x2, 0.1, 0.1);
+  //der(y) = x1 + x2;
+end differentiateDelay2;
+"); getErrorString();
+
+setCommandLineOptions("-d=newInst --generateSymbolicJacobian --removeSimpleEquations=none"); getErrorString();
+
+simulate(differentiateDelay2, simflags="-lv=LOG_JAC"); getErrorString();
