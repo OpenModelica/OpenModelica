@@ -32,6 +32,8 @@
 #include "boolean_array.h"
 #include "../gc/omc_gc.h"
 #include "omc_error.h"
+#include "generic_array.h"
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -89,17 +91,7 @@ void alloc_boolean_array_data(boolean_array_t* a)
 
 void copy_boolean_array_data(const boolean_array_t source, boolean_array_t *dest)
 {
-    size_t i, nr_of_elements;
-
-    assert(base_array_ok(&source));
-    assert(base_array_ok(dest));
-    assert(base_array_shape_eq(&source, dest));
-
-    nr_of_elements = base_array_nr_of_elements(source);
-
-    for(i = 0; i < nr_of_elements; ++i) {
-        boolean_set(dest, i, boolean_get(source, i));
-    }
+    boolean_array_copy_data(source,*dest);
 }
 
 void and_boolean_array(const boolean_array_t *source1, const boolean_array_t *source2, boolean_array_t *dest)
@@ -176,9 +168,7 @@ void copy_boolean_array_data_mem(const boolean_array_t source, modelica_boolean 
 
 void copy_boolean_array(const boolean_array_t source, boolean_array_t *dest)
 {
-    clone_base_array_spec(&source, dest);
-    alloc_boolean_array_data(dest);
-    copy_boolean_array_data(source,dest);
+    boolean_array_alloc_copy(source,*dest);
 }
 
 /*

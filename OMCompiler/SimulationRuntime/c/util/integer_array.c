@@ -33,6 +33,7 @@
 #include "index_spec.h"
 #include "../gc/omc_gc.h"
 #include "division.h"
+#include "generic_array.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -93,17 +94,7 @@ void alloc_integer_array_data(integer_array_t* a)
 
 void copy_integer_array_data(const integer_array_t source, integer_array_t* dest)
 {
-    size_t i, nr_of_elements;
-
-    omc_assert_macro(base_array_ok(&source));
-    omc_assert_macro(base_array_ok(dest));
-    omc_assert_macro(base_array_shape_eq(&source, dest));
-
-    nr_of_elements = base_array_nr_of_elements(source);
-
-    for(i = 0; i < nr_of_elements; ++i) {
-        integer_set(dest, i, integer_get(source, i));
-    }
+    integer_array_copy_data(source,*dest);
 }
 
 void copy_integer_array_data_mem(const integer_array_t source,
@@ -122,9 +113,7 @@ void copy_integer_array_data_mem(const integer_array_t source,
 
 void copy_integer_array(const integer_array_t source, integer_array_t *dest)
 {
-    clone_base_array_spec(&source, dest);
-    alloc_integer_array_data(dest);
-    copy_integer_array_data(*&source, dest);
+    integer_array_alloc_copy(source,*dest);
 }
 
 static modelica_integer integer_le(modelica_integer x, modelica_integer y)

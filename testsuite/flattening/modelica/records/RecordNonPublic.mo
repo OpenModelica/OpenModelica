@@ -25,4 +25,6 @@ end RecordNonPublic;
 // class RecordNonPublic
 //   protected Integer tr.i;
 // end RecordNonPublic;
+// Warning: Protected record member i has no binding and is not modifiable by a record constructor.
+//
 // endResult

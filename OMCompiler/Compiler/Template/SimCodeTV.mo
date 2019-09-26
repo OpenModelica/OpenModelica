@@ -808,9 +808,10 @@ package SimCodeFunction
       DAE.ComponentRef name;
       DAE.Type ty;
       Option<DAE.Exp> value;
-      list<DAE.Exp> instDims;
+      list<DAE.Dimension> instDims;
       DAE.VarParallelism parallelism;
       DAE.VarKind kind;
+      Boolean bind_from_outside;
     end VARIABLE;
 
     record FUNCTION_PTR
@@ -914,6 +915,8 @@ package SimCodeFunction
       Boolean genDiscrete;
     end SIMULATION_CONTEXT;
     record FUNCTION_CONTEXT
+      String cref_prefix;
+      Boolean is_parallel;
     end FUNCTION_CONTEXT;
     record JACOBIAN_CONTEXT
       Option<HashTableCrefSimVar.HashTable> jacHT;
@@ -924,8 +927,7 @@ package SimCodeFunction
     end ALGLOOP_CONTEXT;
     record OTHER_CONTEXT
     end OTHER_CONTEXT;
-    record PARALLEL_FUNCTION_CONTEXT
-    end PARALLEL_FUNCTION_CONTEXT;
+
     record ZEROCROSSINGS_CONTEXT
     end ZEROCROSSINGS_CONTEXT;
     record OPTIMIZATION_CONTEXT
@@ -1343,7 +1345,16 @@ package SimCodeFunctionUtil
     output String outdef;
   end generateSubPalceholders;
 
+  function getCurrentCrefPrefix
+    input SimCodeFunction.Context context;
+    output String cref_pref;
+  end getCurrentCrefPrefix;
 
+  function appendCurrentCrefPrefix
+    input SimCodeFunction.Context context;
+    input String cref_pref;
+    output SimCodeFunction.Context out_context;
+  end appendCurrentCrefPrefix;
 
 end SimCodeFunctionUtil;
 
@@ -2264,6 +2275,7 @@ package DAE
       Attributes attributes;
       Type ty;
       Binding binding;
+      Boolean bind_from_outside;
     end TYPES_VAR;
   end Var;
 
@@ -3546,6 +3558,11 @@ package Expression
     output Boolean b;
   end isArrayType;
 
+  function isRecordType
+    input DAE.Type e;
+    output Boolean b;
+  end isRecordType;
+
   function expHasCrefName "Returns a true if the exp contains a cref that starts with the given name"
     input DAE.Exp inExp;
     input String name;
@@ -3568,7 +3585,7 @@ package Expression
     output list<DAE.ComponentRef> ocrefs;
   end extractUniqueCrefsFromExp;
 
-    function extractUniqueCrefsFromExpDerPreStart
+  function extractUniqueCrefsFromExpDerPreStart
     input DAE.Exp inExp;
     output list<DAE.ComponentRef> ocrefs;
   end extractUniqueCrefsFromExpDerPreStart;
@@ -3584,13 +3601,13 @@ package Expression
   end isCrefListWithEqualIdents;
 
   function dimensionsList
-  input DAE.Dimensions inDims;
-  output list<Integer> outValues;
+	  input DAE.Dimensions inDims;
+	  output list<Integer> outValues;
   end dimensionsList;
 
   function expDimensionsList
-  input list<DAE.Exp> inDims;
-  output list<Integer> outValues;
+	  input list<DAE.Exp> inDims;
+	  output list<Integer> outValues;
   end expDimensionsList;
 
 
@@ -3608,6 +3625,22 @@ package Expression
     input DAE.Exp e1;
     output DAE.Exp ee;
   end consToListIgnoreSharedLiteral;
+
+  function dimensionSizeExpHandleUnkown
+  "Converts (extracts) a dimension to an expression.
+  This function will change unknown dims to DAE.ICONST(-1).
+  we use it to handle unknown dims in code generation. unknown dims
+  are okay if the variable is a function input (it's just holds the slot
+  and will not be generated). Otherwise it's an error
+  since it shouldn't have reached there."
+	  input DAE.Dimension dim;
+	  output DAE.Exp exp;
+  end dimensionSizeExpHandleUnkown;
+
+  function hasUnknownDims
+	  input list<DAE.Dimension> dims;
+	  output Boolean hasUnkown;
+	end hasUnknownDims;
 
 end Expression;
 
@@ -3858,11 +3891,11 @@ package Types
     input list<DAE.Var> vars;
     output Integer index;
   end findVarIndex;
- function liftArrayListExp
+ function liftTypeWithDims
     input DAE.Type inType;
-    input list<DAE.Exp> inDimensionLst;
+    input list<DAE.Dimension> inDimensionLst;
     output DAE.Type outType;
-  end liftArrayListExp;
+  end liftTypeWithDims;
  function unliftArray
     input DAE.Type inType;
     output DAE.Type outType;

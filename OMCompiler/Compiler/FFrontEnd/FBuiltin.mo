@@ -237,28 +237,28 @@ protected constant SCode.Element clockType = SCode.CLASS("Clock",commonPrefixes,
 // The builtin variable time. See also variableIsBuiltin
 protected constant DAE.Var timeVar = DAE.TYPES_VAR("time",
           DAE.dummyAttrInput,
-          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE());
+          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE());
 
 /* Optimica Extensions. Theses variables are considered builtin for Optimica: startTime, finalTime, objectiveIntegrand and objective */
 /* Optimica Extensions. The builtin variable startTime. */
 protected constant DAE.Var startTimeVar = DAE.TYPES_VAR("startTime",
           DAE.dummyAttrInput,
-          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `startTime\' variable" ;
+          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE()) "- The `startTime\' variable" ;
 
 /* Optimica Extensions. The builtin variable finalTime. */
 protected constant DAE.Var finalTimeVar = DAE.TYPES_VAR("finalTime",
           DAE.dummyAttrInput,
-          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `finalTime\' variable" ;
+          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE()) "- The `finalTime\' variable" ;
 
 /* Optimica Extensions. The builtin variable objectiveIntegrand. */
 protected constant DAE.Var objectiveIntegrandVar = DAE.TYPES_VAR("objectiveIntegrand",
           DAE.dummyAttrInput,
-          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `objectiveIntegrand\' variable" ;
+          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE()) "- The `objectiveIntegrand\' variable" ;
 
 /* Optimica Extensions. The builtin variable objective. */
 protected constant DAE.Var objectiveVar = DAE.TYPES_VAR("objective",
           DAE.dummyAttrInput,
-          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `objective\' variable" ;
+          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),false,NONE()) "- The `objective\' variable" ;
 
 protected constant DAE.FuncArg argRealX = DAE.FUNCARG("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE());
 protected constant DAE.FuncArg argRealY = DAE.FUNCARG("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE());

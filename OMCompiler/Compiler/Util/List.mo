@@ -1011,25 +1011,33 @@ algorithm
   outList := append_reverse(outList, l1);
 end mergeSorted;
 
-public function sortIntN
-  "Provides same functionality as sort, but for integer values between 1
-   and N. The complexity in this case is O(n)"
+public function countingSort
+ "Provides same functionality as sort, but for integer values between 1
+   and N. The complexity in this case is O(N + n).
+   This will terminate if the list contains an element > N."
   input list<Integer> inList;
-  input Integer inN;
+  input Integer N;
   output list<Integer> outSorted = {};
 protected
-  array<Boolean> a1;
+  array<Integer> a1;
 algorithm
-  a1 := arrayCreate(inN, false);
-  a1 := fold1r(inList,arrayUpdate,true,a1);
+  if listLength(inList) < 2 then
+    outSorted := inList;
+    return;
+  end if;
 
-  for i in inN:-1:1 loop
-    if a1[i] then
-      outSorted := i :: outSorted;
-    end if;
+  a1 := arrayCreate(N, 0);
+  for v in inList loop
+    a1[v] := intAdd(a1[v], 1);
+  end for;
+
+  for v in N:-1:1 loop
+    for c in 1:a1[v] loop
+      outSorted := v :: outSorted;
+    end for;
   end for;
   GC.free(a1);
-end sortIntN;
+end countingSort;
 
 public function unique<T>
   "Takes a list of elements and returns a list with duplicates removed, so that

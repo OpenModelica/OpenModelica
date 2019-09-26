@@ -142,7 +142,7 @@ protected function valueExpTypeExpVar "help function to valueExpType"
   output DAE.Var expVar;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  expVar := DAE.TYPES_VAR(name, DAE.dummyAttrVar, etp, DAE.UNBOUND(), NONE());
+  expVar := DAE.TYPES_VAR(name, DAE.dummyAttrVar, etp, DAE.UNBOUND(), false, NONE());
 end valueExpTypeExpVar;
 
 public function isZero "Returns true if value is zero"
