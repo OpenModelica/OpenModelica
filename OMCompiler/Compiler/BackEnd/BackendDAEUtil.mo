@@ -6284,6 +6284,48 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEExps;
 
+
+public function traverseBackendDAEExpsJac "author: Frenkel TUD
+
+  This function goes through the BackendDAE structure and finds all the
+  expressions and performs the function on them in a list
+  an extra argument passed through the function.
+"
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.BackendDAE inBackendDAE;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
+  end FuncExpType;
+algorithm
+  outTypeA := matchcontinue inBackendDAE
+    local
+      BackendDAE.Shared shared;
+      list<BackendDAE.EqSystem> systs;
+      String name;
+
+    case BackendDAE.DAE(systs, shared)
+      equation
+        outTypeA = List.fold1(systs, traverseBackendDAEExpsEqSystemJacobians, func, inTypeA);
+        //outTypeA = traverseBackendDAEExpsVars(shared.globalKnownVars, func, outTypeA);
+        //outTypeA = traverseBackendDAEExpsEqns(shared.initialEqs, func, outTypeA);
+        //outTypeA = traverseBackendDAEExpsEqns(shared.removedEqs, func, outTypeA);
+      then
+        outTypeA;
+
+    else equation
+      (_, _, name) = System.dladdr(func);
+      Error.addInternalError("traverseBackendDAEExps failed for " + name, sourceInfo());
+    then fail();
+  end matchcontinue;
+end traverseBackendDAEExpsJac;
+
+
 public function traverseBackendDAEExpsEqSystemJacobians "author: wbraun
 
   This function goes through the all jacobians and stateSets and finds all the
