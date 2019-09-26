@@ -116,7 +116,6 @@ public function inFunctionContext
 algorithm
   outInFunction := match inContext
     case SimCodeFunction.FUNCTION_CONTEXT() then true;
-    case SimCodeFunction.PARALLEL_FUNCTION_CONTEXT() then true;
     else false;
   end match;
 end inFunctionContext;
@@ -253,7 +252,6 @@ algorithm
     case(DAE.ARRAY(ty=aty, scalar=true, array =(DAE.CREF(componentRef=cr) ::aRest)), _)
       equation
         failure(SimCodeFunction.FUNCTION_CONTEXT()=context); // only in the function context
-        failure(SimCodeFunction.PARALLEL_FUNCTION_CONTEXT()=context); // only in the function context
         { DAE.INDEX(DAE.ICONST(1)) } = ComponentReference.crefLastSubs(cr);
         cr = ComponentReference.crefStripLastSubs(cr);
         true = isArrayExpansion(aRest, cr, 2);
@@ -310,7 +308,6 @@ algorithm
     case(DAE.MATRIX(ty=aty, matrix = rows as (((DAE.CREF(componentRef=cr))::_)::_) ), _)
       equation
         failure(SimCodeFunction.FUNCTION_CONTEXT()=context);
-        failure(SimCodeFunction.PARALLEL_FUNCTION_CONTEXT()=context); // only in the function context
         { DAE.INDEX(DAE.ICONST(1)), DAE.INDEX(DAE.ICONST(1)) } = ComponentReference.crefLastSubs(cr);
         cr = ComponentReference.crefStripLastSubs(cr);
         true = isMatrixExpansion(rows, cr, 1, 1);
@@ -742,7 +739,8 @@ algorithm
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
         (recordDecls, rt_1) = elaborateRecordDeclarationsForRecord(restype, recordDecls, rt);
         DAE.T_COMPLEX(varLst = varlst) = restype;
-        varlst = List.filterOnTrue(varlst, Types.isProtectedVar);
+        // varlst = List.filterOnTrue(varlst, Types.isProtectedVar);
+        varlst = List.filterOnFalse(varlst, Types.isModifiableTypesVar);
         varDecls = List.map(varlst, typesVar);
         info = ElementSource.getElementSourceFileInfo(source);
       then
@@ -802,7 +800,7 @@ algorithm
         cref_  = ComponentReference.makeCrefIdent(name, tty, {});
         kind = DAEUtil.const2VarKind(const);
       then
-        SimCodeFunction.VARIABLE(cref_, tty, binding, {}, prl, kind);
+        SimCodeFunction.VARIABLE(cref_, tty, binding, {}, prl, kind, false);
   end matchcontinue;
 end typesSimFunctionArg;
 
@@ -818,7 +816,7 @@ algorithm
       DAE.VarKind kind;
       DAE.VarParallelism prl;
       list<DAE.Dimension> inst_dims;
-      list<DAE.Exp> inst_dims_exp;
+      // list<DAE.Exp> inst_dims_exp;
       Option<DAE.Exp> binding;
       SimCodeFunction.Variable var;
     case (DAE.VAR(componentRef = DAE.CREF_IDENT(ident=name), ty = daeType as DAE.T_FUNCTION(), parallelism = prl, binding = binding))
@@ -833,10 +831,10 @@ algorithm
       dims = inst_dims,
       kind = kind
     ))
-      equation
-        daeType = Types.simplifyType(daeType);
-        inst_dims_exp = List.map(inst_dims, Expression.dimensionSizeExpHandleUnkown);
-      then SimCodeFunction.VARIABLE(id, daeType, binding, inst_dims_exp, prl, kind);
+      algorithm
+        daeType := Types.simplifyType(daeType);
+        // inst_dims_exp := List.map(inst_dims, Expression.dimensionSizeExpHandleUnkown);
+      then SimCodeFunction.VARIABLE(id, daeType, binding, inst_dims, prl, kind, false);
     else
       equation
         // TODO: ArrayEqn fails here
@@ -1560,8 +1558,16 @@ algorithm
       equation
         sname = AbsynUtil.pathStringUnquoteReplaceDot(name, "_");
         if not listMember(sname, rt) then
-          vars = List.map(varlst, typesVarNoBinding);
-          vars = List.sort(vars,compareVariable);
+          /* Dont remove the bindings. We need them for creating a default constructor.
+            Not as in modelica defalut. But as in just declared without being initialized.
+            That case still needs to have default values since we no longer initialize
+            members for every instance everywhere. It is in one default constrctor function now.*/
+          // vars = List.map(varlst, typesVarNoBinding);
+          vars = List.map(varlst, typesVar);
+          /* Why do we sort the member?? They are sorted here in the declration while 
+            every type in every cref has the original ordering. They should keep their original ordering
+            */
+          // vars = List.sort(vars,compareVariable);
           rt_1 = sname :: rt;
           (accRecDecls, rt_2) = elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
           recDecl = SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), name, vars);
@@ -1615,7 +1621,7 @@ algorithm
         cref_ = ComponentReference.makeCrefIdent(name, ty, {});
         DAE.ATTR(parallelism = scPrl) = attr;
         prl = scodeParallelismToDAEParallelism(scPrl);
-      then SimCodeFunction.VARIABLE(cref_, ty, NONE(), {}, prl,DAE.VARIABLE());
+      then SimCodeFunction.VARIABLE(cref_, ty, NONE(), {}, prl,DAE.VARIABLE(), false);
   end match;
 end typesVarNoBinding;
 
@@ -1631,7 +1637,7 @@ algorithm
       DAE.Attributes attr;
       SCode.Parallelism scPrl;
       DAE.VarParallelism prl;
-      DAE.Exp bindExp;
+      Option<DAE.Exp> bindExp;
 
     case (DAE.TYPES_VAR(name=name, attributes = attr, ty=ty))
       equation
@@ -1639,8 +1645,8 @@ algorithm
         cref_ = ComponentReference.makeCrefIdent(name, ty, {});
         DAE.ATTR(parallelism = scPrl) = attr;
         prl = scodeParallelismToDAEParallelism(scPrl);
-        bindExp = Types.getBindingExp(inTypesVar, Absyn.IDENT(name));
-      then SimCodeFunction.VARIABLE(cref_, ty, SOME(bindExp), {}, prl, DAE.VARIABLE());
+        bindExp = Types.getBindingExpOptional(inTypesVar);
+      then SimCodeFunction.VARIABLE(cref_, ty, bindExp, {}, prl, DAE.VARIABLE(), inTypesVar.bind_from_outside);
   end match;
 end typesVar;
 
@@ -2587,7 +2593,7 @@ public function isParallelFunctionContext
   output Boolean outBool;
 algorithm
   outBool := match(context)
-    case (SimCodeFunction.PARALLEL_FUNCTION_CONTEXT()) then true;
+    case SimCodeFunction.FUNCTION_CONTEXT() then context.is_parallel;
     else false;
   end match;
 end isParallelFunctionContext;
@@ -2624,6 +2630,33 @@ algorithm
   outdef := stringDelimitList(List.threadMap(List.fill("i_", nrdims), idxstrlst, stringAppend), ",");
 end generateSubPalceholders;
 
+
+/* This functions are used to get/append cref prefixes in function contexts.The cref prefix is appended 
+  to all crefs generated. We use this to generate dependent names in some cases (for example when generating 
+  code for record constructors) so that every cref we generate while this is set has this prefix applied to it*/
+public function getCurrentCrefPrefix
+  input SimCodeFunction.Context context;
+  output String cref_pref;
+algorithm
+  cref_pref := match context
+    case SimCodeFunction.FUNCTION_CONTEXT(cref_pref, _) then cref_pref;
+    else algorithm Error.addInternalError("Tried to get cref prefix from a non FUNCTION_CONTEXT() context. cref_pref is only avaiable in FUNCTION_CONTEXT.", sourceInfo()); then fail();
+  end match;
+end getCurrentCrefPrefix;
+
+public function appendCurrentCrefPrefix
+  input SimCodeFunction.Context context;
+  input String in_cref_pref;
+  output SimCodeFunction.Context out_context;
+protected
+  String cref_pref;
+  Boolean prl;
+algorithm
+  out_context := match context
+    case SimCodeFunction.FUNCTION_CONTEXT(cref_pref, prl) then SimCodeFunction.FUNCTION_CONTEXT(cref_pref + in_cref_pref, prl);
+    else algorithm Error.addInternalError("Tried to append cref prefix from a non FUNCTION_CONTEXT() context. cref_pref is only avaiable in FUNCTION_CONTEXT.", sourceInfo()); then fail();
+  end match;
+end appendCurrentCrefPrefix;
 
 
 annotation(__OpenModelica_Interface="backendInterface");

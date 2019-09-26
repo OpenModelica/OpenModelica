@@ -1773,7 +1773,7 @@ algorithm
     case (_,_,_) then VarTransform.getReplacement(repl,cr);
     case (_,_,DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path),varLst=vars))
       equation
-        crs = List.map1(List.map(vars,Types.varName),ComponentReference.appendStringCref,cr);
+        crs = List.map1(List.map(vars,Types.getVarName),ComponentReference.appendStringCref,cr);
         exps = List.map1r(crs, VarTransform.getReplacement, repl);
       then DAE.CALL(path,exps,DAE.CALL_ATTR(ty,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
   end matchcontinue;

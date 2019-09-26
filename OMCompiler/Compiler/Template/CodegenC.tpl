@@ -79,7 +79,7 @@ import ExpressionDumpTpl.*;
 
     let &records = buffer ""
     let &records += redirectToFile('<%fileNamePrefix%>_records.c')
-    let &records += recordsFile(fileNamePrefix, recordDecls)
+    let &records += recordsFile(fileNamePrefix, recordDecls, true /*isSimulation*/)
     let &records += closeFile()
 
     // adpro: write the main .c file last! Make on windows doesn't seem to realize that

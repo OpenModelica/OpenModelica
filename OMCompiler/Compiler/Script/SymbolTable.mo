@@ -391,6 +391,7 @@ algorithm
                     DAE.dummyAttrVar,
                     tp,
                     DAE.VALBOUND(v, DAE.BINDING_FROM_DEFAULT_VALUE()),
+                    false,
                     NONE()),
                   FCore.VAR_TYPED(),
                   empty_env);
@@ -402,7 +403,7 @@ algorithm
         empty_env = FGraph.empty();
         env = FGraph.mkComponentNode(
                  env,
-                 DAE.TYPES_VAR(id,DAE.dummyAttrVar,tp,DAE.VALBOUND(v,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()),
+                 DAE.TYPES_VAR(id,DAE.dummyAttrVar,tp,DAE.VALBOUND(v,DAE.BINDING_FROM_DEFAULT_VALUE()),false,NONE()),
                   SCode.COMPONENT(
                     id,
                     SCode.defaultPrefixes,

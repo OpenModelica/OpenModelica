@@ -338,9 +338,7 @@ case var as VARIABLE(__) then
   if instDims then
     let varName = crefStr(var.name,simCode)
     let &preDimsExp = buffer ""
-    let instDimsInit = (var.instDims |> exp =>
-          daeExp(exp, contextFunction, &preDimsExp, simCode)
-        ;separator=", ")
+    let instDimsInit = (var.instDims |> dim => dimension(dim, contextFunction, &preDimsExp, simCode) ;separator=", ")
     <<
     <%preDimsExp%>
     var <%varName%> = new <%expTypeArray(var.ty,listLength(instDims))%>(<%instDimsInit%>);<%
@@ -2071,7 +2069,7 @@ case ecr as CREF(ty=T_ARRAY(ty=aty,dims=dims)) then
     // object since they are represented only in a double array.
     let &tmpArr = buffer ""
     let arrType = expTypeArray(aty, listLength(dims))
-    let dimsValuesStr = (dims |> dim => dimension(dim) ;separator=", ")
+    let dimsValuesStr = (dims |> dim => dimension(dim, context, &preExp, simCode) ;separator=", ")
     let &indexTxt = buffer ""
     let reprArray = crefRepresentationArrayAndIndex(ecr.componentRef, &indexTxt, simCode)
     let &preExp +=
@@ -2175,7 +2173,7 @@ template asubSubsripts(list<Dimension> dims, list<Exp> subs, Text &constSum,
       match dims  case _ :: dimsRest then
           let subStr = daeExp(s, context, &preExp, simCode)
           if dimsRest then //not last
-             let ds = dimsRest |> dim => dimension(dim) ;separator="*"
+             let ds = dimsRest |> dim => dimension(dim, context, &preExp, simCode) ;separator="*"
              //if ds then //TODO: assuming every dimension is SOME, is it true ??
              let &constSum += '-(<%ds%>)' //-1 * ds
              '+<%subStr%>*(<%ds%>)<% asubSubsripts(dimsRest, subsRest, &constSum, context, &preExp, simCode) %>'
@@ -3052,12 +3050,19 @@ template expTypeFromOp(Operator it) ::=
   case _ then "expTypeFromOp:ERROR"
 end expTypeFromOp;
 
-template dimension(Dimension d)
+template dimension(Dimension d, Context context, Text &preExp, SimCode simCode)
 ::=
   match d
-  case DAE.DIM_INTEGER(__) then integer
-  case DAE.DIM_UNKNOWN(__) then ":"
-  else "INVALID_DIMENSION"
+  case DAE.DIM_BOOLEAN(__) then '2'
+  case DAE.DIM_ENUM(__) then size
+  case DAE.DIM_EXP(exp=e) then daeExp(e, context, &preExp, simCode)
+  case DAE.DIM_INTEGER(__) then
+    if intEq(integer, -1) then
+      error(sourceInfo(),"Negeative dimension(unknown dimensions) may not be part of generated code. This is most likely an error on the part of OpenModelica. Please submit a detailed bug-report.")
+    else
+      integer
+  case DAE.DIM_UNKNOWN(__) then error(sourceInfo(),"Unknown dimensions may not be part of generated code. This is most likely an error on the part of OpenModelica. Please submit a detailed bug-report.")
+  else error(sourceInfo(), 'dimension: INVALID_DIMENSION')
 end dimension;
 
 

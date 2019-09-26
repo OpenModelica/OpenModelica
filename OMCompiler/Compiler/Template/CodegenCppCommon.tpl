@@ -3035,22 +3035,22 @@ end functionClosure;
 template assertCommonVar(Text condVar, Text msgVar, Context context, Text &varDecls, builtin.SourceInfo info)
 ::=
   match context
-  case FUNCTION_CONTEXT(__) then
-    <<
-    if(!(<%condVar%>))
-    {
-
-      throw ModelicaSimulationError(MODEL_EQ_SYSTEM,  <%msgVar%>);
-    }
-    >>
   // OpenCL doesn't have support for variadic args. So message should be just a single string.
-  case PARALLEL_FUNCTION_CONTEXT(__) then
+  case FUNCTION_CONTEXT(is_parallel=true) then
     <<
     if(!(<%condVar%>))
     {
 
       throw ModelicaSimulationError(MODEL_EQ_SYSTEM, "Common assertion failed");
 
+    }
+    >>
+  case FUNCTION_CONTEXT(__) then
+    <<
+    if(!(<%condVar%>))
+    {
+
+      throw ModelicaSimulationError(MODEL_EQ_SYSTEM,  <%msgVar%>);
     }
     >>
   else

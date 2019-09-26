@@ -1412,44 +1412,61 @@ algorithm
 end removeUnusedFunctions;
 
 public function copyRecordConstructorAndExternalObjConstructorDestructor
-  input DAE.FunctionTree inFunctions;
-  output DAE.FunctionTree outFunctions;
+  input DAE.FunctionTree inAllFunctionTree;
+  output DAE.FunctionTree outUsedFunctionTree;
 protected
-  list<DAE.Function> funcelems;
+  list<DAE.Function> allfuncs_list;
 algorithm
-  funcelems := DAEUtil.getFunctionList(inFunctions);
-  outFunctions := List.fold(funcelems,copyRecordConstructorAndExternalObjConstructorDestructorFold,DAE.AvlTreePathFunction.Tree.EMPTY());
-end copyRecordConstructorAndExternalObjConstructorDestructor;
+  outUsedFunctionTree := DAE.AvlTreePathFunction.Tree.EMPTY();
+  allfuncs_list := DAEUtil.getFunctionList(inAllFunctionTree);
 
-protected function copyRecordConstructorAndExternalObjConstructorDestructorFold
-  input DAE.Function inFunction;
-  input DAE.FunctionTree inFunctions;
-  output DAE.FunctionTree outFunctions;
-algorithm
-  outFunctions :=
-  matchcontinue (inFunction,inFunctions)
-    local
-      DAE.Function f;
-      DAE.FunctionTree funcs,funcs1;
-      Absyn.Path path;
-    // copy record constructors
-    case (f as DAE.RECORD_CONSTRUCTOR(path=path),funcs)
-      equation
-         funcs1 = DAE.AvlTreePathFunction.add(funcs, path, SOME(f));
-       then
-        funcs1;
-    // copy external objects constructors/destructors
-    case (f as DAE.FUNCTION(path = path),funcs)
-      equation
-         true = boolOr(
-                  stringEq(AbsynUtil.pathLastIdent(path), "constructor"),
-                  stringEq(AbsynUtil.pathLastIdent(path), "destructor"));
-         funcs1 = DAE.AvlTreePathFunction.add(funcs, path, SOME(f));
-       then
-        funcs1;
-    case (_,funcs) then funcs;
-  end matchcontinue;
-end copyRecordConstructorAndExternalObjConstructorDestructorFold;
+  for func in allfuncs_list loop
+    _ := match func
+      local
+        Absyn.Path path;
+        list<DAE.Var> var_list;
+        Option<DAE.Exp> obind;
+        DAE.Exp bind_exp;
+
+      case (DAE.RECORD_CONSTRUCTOR(path=path)) algorithm
+        // Add the constructor function.
+        outUsedFunctionTree := DAE.AvlTreePathFunction.add(outUsedFunctionTree, path, SOME(func));
+
+        // Now we traverse the bindings of the record members and look for function calls.
+        try
+          DAE.T_FUNCTION(funcResultType = DAE.T_COMPLEX(varLst=var_list)) := func.type_;
+        else
+          Error.addSourceMessage(Error.INTERNAL_ERROR,
+              {getInstanceName() + " got unxpected record constructor structure for  " + AbsynUtil.pathString(path)},
+              sourceInfo());
+          fail();
+        end try;
+
+        for var in var_list loop
+          obind := Types.getBindingExpOptional(var);
+          if isSome(obind) then
+            SOME(bind_exp) := obind;
+            (_, outUsedFunctionTree) := checkUnusedFunctions(bind_exp,inAllFunctionTree,outUsedFunctionTree);
+          end if;
+        end for;
+
+      then
+        ();
+
+      // copy external objects constructors/destructors
+      case DAE.FUNCTION(path = path) algorithm
+        if stringEq(AbsynUtil.pathLastIdent(path), "constructor") or
+           stringEq(AbsynUtil.pathLastIdent(path), "destructor") then
+          outUsedFunctionTree := DAE.AvlTreePathFunction.add(outUsedFunctionTree, path, SOME(func));
+        end if;
+      then
+        ();
+
+    end match;
+
+  end for;
+
+end copyRecordConstructorAndExternalObjConstructorDestructor;
 
 protected function removeUnusedFunctionsSymJacs
   input BackendDAE.SymbolicJacobians inSymJacs;

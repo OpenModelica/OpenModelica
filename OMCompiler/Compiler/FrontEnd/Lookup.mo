@@ -3212,7 +3212,7 @@ protected
   DAE.Type tty, ty;
   list<DAE.Subscript> ss_1;
 algorithm
-  (DAE.TYPES_VAR(name,attr,ty,bind,cnstForRange),_,_,_,componentEnv) := lookupVar2(ht, ident, inEnv);
+  (DAE.TYPES_VAR(name,attr,ty,bind,_,cnstForRange),_,_,_,componentEnv) := lookupVar2(ht, ident, inEnv);
   ty_1 := checkSubscripts(ty, ss);
   tty := Types.simplifyType(ty);
   ss_1 := addArrayDimensions(tty,ss);
@@ -3240,7 +3240,7 @@ algorithm
     case DAE.CREF_IDENT()
       algorithm
         fields := Types.getMetaRecordFields(inType);
-        DAE.TYPES_VAR(name,attr,ty,binding,cnstForRange) := listGet(fields,Types.findVarIndex(cr.ident,fields)+1);
+        DAE.TYPES_VAR(name,attr,ty,binding,_,cnstForRange) := listGet(fields,Types.findVarIndex(cr.ident,fields)+1);
         for s in cr.subscriptLst loop
           ty := match ty
             case DAE.T_METAARRAY() then ty.ty;
@@ -3251,7 +3251,7 @@ algorithm
     case DAE.CREF_QUAL()
       algorithm
         fields := Types.getMetaRecordFields(inType);
-        DAE.TYPES_VAR(name,attr,ty,binding,cnstForRange) := listGet(fields,Types.findVarIndex(cr.ident,fields)+1);
+        DAE.TYPES_VAR(name,attr,ty,binding,_,cnstForRange) := listGet(fields,Types.findVarIndex(cr.ident,fields)+1);
         for s in cr.subscriptLst loop
           ty := match ty
             case DAE.T_METAARRAY() then ty.ty;

@@ -3499,7 +3499,7 @@ algorithm
         (cache, dims_1, dimprops) = elabExpList(cache, env, dims, impl,true, pre, info);
         (dims_1,_) = Types.matchTypes(dims_1, List.map(dimprops,Types.getPropType), DAE.T_INTEGER_DEFAULT, false);
         sty = Types.getPropType(prop);
-        sty = Types.liftArrayListExp(sty, dims_1);
+        sty = Types.liftTypeWithDimExps(sty, dims_1);
         exp_type = Types.simplifyType(sty);
         prop = DAE.PROP(sty, c1);
         exp = Expression.makePureBuiltinCall("fill", s_1 :: dims_1, exp_type);
@@ -3513,7 +3513,7 @@ algorithm
         false = Config.splitArrays();
         (cache, s_1, DAE.PROP(sty, c1)) = elabExpInExpression(cache, env, s, impl, true, pre, info);
         (cache, dims_1,_) = elabExpList(cache, env, dims, impl, true, pre, info);
-        sty = Types.liftArrayListExp(sty, dims_1);
+        sty = Types.liftTypeWithDimExps(sty, dims_1);
         exp_type = Types.simplifyType(sty);
         c1 = Types.constAnd(c1, DAE.C_PARAM());
         prop = DAE.PROP(sty, c1);
@@ -8766,7 +8766,7 @@ algorithm
         ty := Expression.typeof(exp);
         true := Types.dimensionsKnown(ty);
         binding := DAE.EQBOUND(exp, NONE(), DAE.C_CONST(), DAE.BINDING_FROM_DEFAULT_VALUE());
-      then (DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, binding, NONE()));
+      then (DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, binding, false, NONE()));
 
     // Otherwise, try to constant evaluate the expression.
     case SLOT(defaultArg = DAE.FUNCARG(name=name), arg = SOME(exp))
@@ -8777,10 +8777,10 @@ algorithm
         ty := Expression.typeof(exp);
         // Create a binding from the evaluated expression.
         binding := DAE.EQBOUND(exp, SOME(val), DAE.C_CONST(), DAE.BINDING_FROM_DEFAULT_VALUE());
-      then DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, binding, NONE());
+      then DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, binding, false, NONE());
 
     case SLOT(defaultArg = DAE.FUNCARG(name=name, ty=ty))
-      then (DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, DAE.UNBOUND(), NONE()));
+      then (DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, DAE.UNBOUND(), false, NONE()));
 
   end matchcontinue;
 end makeVarFromSlot;

@@ -179,9 +179,10 @@ uniontype Variable
     DAE.ComponentRef name;
     DAE.Type ty;
     Option<DAE.Exp> value "default value";
-    list<DAE.Exp> instDims;
+    list<DAE.Dimension> instDims;
     DAE.VarParallelism parallelism;
     DAE.VarKind kind;
+    Boolean bind_from_outside;
   end VARIABLE;
 
   record FUNCTION_PTR
@@ -200,22 +201,21 @@ uniontype Context
   end SIMULATION_CONTEXT;
 
   record FUNCTION_CONTEXT
+    String cref_prefix;
+    Boolean is_parallel;
   end FUNCTION_CONTEXT;
 
   record ALGLOOP_CONTEXT
-     Boolean genInitialisation;
-     Boolean genJacobian;
+    Boolean genInitialisation;
+    Boolean genJacobian;
   end ALGLOOP_CONTEXT;
 
-   record JACOBIAN_CONTEXT
-     Option<HashTableCrefSimVar.HashTable> jacHT;
-   end JACOBIAN_CONTEXT;
+  record JACOBIAN_CONTEXT
+    Option<HashTableCrefSimVar.HashTable> jacHT;
+  end JACOBIAN_CONTEXT;
 
   record OTHER_CONTEXT
   end OTHER_CONTEXT;
-
-  record PARALLEL_FUNCTION_CONTEXT
-  end PARALLEL_FUNCTION_CONTEXT;
 
   record ZEROCROSSINGS_CONTEXT
   end ZEROCROSSINGS_CONTEXT;
@@ -236,13 +236,13 @@ end Context;
 
 public constant Context contextSimulationNonDiscrete  = SIMULATION_CONTEXT(false);
 public constant Context contextSimulationDiscrete     = SIMULATION_CONTEXT(true);
-public constant Context contextFunction               = FUNCTION_CONTEXT();
+public constant Context contextFunction               = FUNCTION_CONTEXT("", false);
 public constant Context contextJacobian               = JACOBIAN_CONTEXT(NONE());
 public constant Context contextAlgloopJacobian        = ALGLOOP_CONTEXT(false,true);
 public constant Context contextAlgloopInitialisation  = ALGLOOP_CONTEXT(true,false);
 public constant Context contextAlgloop                = ALGLOOP_CONTEXT(false,false);
 public constant Context contextOther                  = OTHER_CONTEXT();
-public constant Context contextParallelFunction       = PARALLEL_FUNCTION_CONTEXT();
+public constant Context contextParallelFunction       = FUNCTION_CONTEXT("", true);
 public constant Context contextZeroCross              = ZEROCROSSINGS_CONTEXT();
 public constant Context contextOptimization           = OPTIMIZATION_CONTEXT();
 public constant Context contextFMI                    = FMI_CONTEXT();
@@ -250,7 +250,7 @@ public constant Context contextDAEmode                = DAE_MODE_CONTEXT();
 public constant Context contextOMSI                   = OMSI_CONTEXT(NONE());
 
 constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For CodegenC.tpl";
-constant list<Variable> boxedRecordOutVars = VARIABLE(DAE.CREF_IDENT("",DAE.T_COMPLEX_DEFAULT_RECORD,{}),DAE.T_COMPLEX_DEFAULT_RECORD,NONE(),{},DAE.NON_PARALLEL(),DAE.VARIABLE())::{} "For CodegenC.tpl";
+constant list<Variable> boxedRecordOutVars = VARIABLE(DAE.CREF_IDENT("",DAE.T_COMPLEX_DEFAULT_RECORD,{}),DAE.T_COMPLEX_DEFAULT_RECORD,NONE(),{},DAE.NON_PARALLEL(),DAE.VARIABLE(), false)::{} "For CodegenC.tpl";
 
 // protected imports
 protected
