@@ -521,8 +521,9 @@ void UpdateComponentAttributesCommand::updateComponentAttributes(Component *pCom
   }
   // update the component dimensions
   if (pComponent->getComponentInfo()->getArrayIndex().compare(componentInfo.getArrayIndex()) != 0) {
-    if (pOMCProxy->setComponentDimensions(modelName, pComponent->getComponentInfo()->getName(), componentInfo.getArrayIndex())) {
-      pComponent->getComponentInfo()->setArrayIndex(componentInfo.getArrayIndex());
+    const QString arrayIndex = QString("{%1}").arg(componentInfo.getArrayIndex());
+    if (pOMCProxy->setComponentDimensions(modelName, pComponent->getComponentInfo()->getName(), arrayIndex)) {
+      pComponent->getComponentInfo()->setArrayIndex(arrayIndex);
     } else {
       QMessageBox::critical(MainWindow::instance(),
                             QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);

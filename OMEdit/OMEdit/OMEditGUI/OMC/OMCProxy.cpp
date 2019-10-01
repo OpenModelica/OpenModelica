@@ -968,7 +968,7 @@ StringHandler::ModelicaClasses OMCProxy::getClassRestriction(QString className)
   \param className - is the name of the class whose parameter value is retrieved.
   \return the parameter value.
   */
-QString OMCProxy::getParameterValue(QString className, QString parameter)
+QString OMCProxy::getParameterValue(const QString &className, const QString &parameter)
 {
   return mpOMCInterface->getParameterValue(className, parameter);
 }
