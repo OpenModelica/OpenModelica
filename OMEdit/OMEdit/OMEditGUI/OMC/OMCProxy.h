@@ -122,7 +122,7 @@ public:
   bool isPartial(QString className);
   bool isReplaceable(QString parentClassName, QString className);
   StringHandler::ModelicaClasses getClassRestriction(QString className);
-  QString getParameterValue(QString className, QString parameter);
+  QString getParameterValue(const QString &className, const QString &parameter);
   QStringList getComponentModifierNames(QString className, QString name);
   QString getComponentModifierValue(QString className, QString name);
   bool setComponentModifierValue(QString className, QString name, QString modifierValue);

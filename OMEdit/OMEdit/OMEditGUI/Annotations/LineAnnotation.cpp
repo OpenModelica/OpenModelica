@@ -1854,7 +1854,6 @@ QSpinBox* CreateConnectionDialog::createSpinBox(QString arrayIndex)
   pSpinBox->setPrefix("[");
   pSpinBox->setSuffix("]");
   pSpinBox->setSpecialValueText("[:]");
-  arrayIndex = StringHandler::removeFirstLastCurlBrackets(arrayIndex);
   int intArrayIndex = arrayIndex.toInt();
   if (intArrayIndex > 0) {
     pSpinBox->setMaximum(intArrayIndex);

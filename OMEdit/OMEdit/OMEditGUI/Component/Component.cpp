@@ -241,7 +241,7 @@ void ComponentInfo::parseComponentInfoString(QString value)
  * \param pOMCProxy
  * \param className
  */
-void ComponentInfo::fetchParameterValue(OMCProxy *pOMCProxy, QString className)
+void ComponentInfo::fetchParameterValue(OMCProxy *pOMCProxy, const QString &className)
 {
   mParameterValue = pOMCProxy->getParameterValue(className, mName);
 }
@@ -278,22 +278,26 @@ void ComponentInfo::applyDefaultPrefixes(QString defaultPrefixes)
  * Sets the array index
  * \param arrayIndex
  */
-void ComponentInfo::setArrayIndex(QString arrayIndex)
+void ComponentInfo::setArrayIndex(const QString &arrayIndex)
 {
-  mArrayIndex = arrayIndex;
-  if (mArrayIndex.compare("{}") != 0) {
+  if (arrayIndex.compare("{}") != 0) {
     mIsArray = true;
   } else {
     mIsArray = false;
   }
+  mArrayIndex = StringHandler::removeFirstLastCurlBrackets(arrayIndex);
 }
 
+/*!
+ * \brief ComponentInfo::getArrayIndexAsNumber
+ * Returns the array index as number.
+ * \param ok
+ * \return
+ */
 int ComponentInfo::getArrayIndexAsNumber(bool *ok) const
 {
   if (isArray()) {
-    QString arrayIndex = StringHandler::removeFirstLastCurlBrackets(mArrayIndex);
-    int intArrayIndex = arrayIndex.toInt(ok);
-    return intArrayIndex;
+    return mArrayIndex.toInt(ok);
   } else {
     if (ok) *ok = false;
     return 0;
@@ -324,7 +328,7 @@ QMap<QString, QString> ComponentInfo::getModifiersMap(OMCProxy *pOMCProxy, QStri
  * \param className
  * \return
  */
-QString ComponentInfo::getParameterValue(OMCProxy *pOMCProxy, QString className)
+QString ComponentInfo::getParameterValue(OMCProxy *pOMCProxy, const QString &className)
 {
   if (!mParameterValueLoaded) {
     fetchParameterValue(pOMCProxy, className);
@@ -1094,7 +1098,7 @@ int Component::getArrayIndexAsNumber(bool *ok) const
 bool Component::isConnectorSizing()
 {
   if (mpComponentInfo && mpComponentInfo->isArray()) {
-    QString parameter = StringHandler::removeFirstLastCurlBrackets(mpComponentInfo->getArrayIndex());
+    QString parameter = mpComponentInfo->getArrayIndex();
     bool ok;
     parameter.toInt(&ok);
     // if the array index is not a number then look for parameter

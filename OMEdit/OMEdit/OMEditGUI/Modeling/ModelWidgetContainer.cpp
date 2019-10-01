@@ -1814,7 +1814,7 @@ bool GraphicsView::updateComponentConnectorSizingParameter(GraphicsView *pGraphi
 {
   // if connectorSizing then set a new value for the connectorSizing parameter.
   if (pComponent->isConnectorSizing()) {
-    QString parameter = StringHandler::removeFirstLastCurlBrackets(pComponent->getComponentInfo()->getArrayIndex());
+    QString parameter = pComponent->getComponentInfo()->getArrayIndex();
     int numberOfComponentConnections = pGraphicsView->numberOfComponentConnections(pComponent);
     QString modifierKey = QString("%1.%2").arg(pComponent->getRootParentComponent()->getName()).arg(parameter);
     MainWindow::instance()->getOMCProxy()->setComponentModifierValue(className, modifierKey, QString::number(numberOfComponentConnections));

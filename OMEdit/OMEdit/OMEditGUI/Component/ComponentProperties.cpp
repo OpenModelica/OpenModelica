@@ -1391,7 +1391,7 @@ void ComponentAttributes::initializeDialog()
   mpNameTextBox->setText(mpComponent->getComponentInfo()->getName());
   mpNameTextBox->setCursorPosition(0);
   // get dimensions
-  QString dimensions = StringHandler::removeFirstLastCurlBrackets(mpComponent->getComponentInfo()->getArrayIndex());
+  QString dimensions = mpComponent->getComponentInfo()->getArrayIndex();
   mpDimensionsTextBox->setText(QString("[%1]").arg(dimensions));
   // get Comment
   mpCommentTextBox->setText(mpComponent->getComponentInfo()->getComment());
