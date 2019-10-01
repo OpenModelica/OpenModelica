@@ -94,7 +94,7 @@ public:
   bool interfacesAligned(QString interface1, QString interface2);
   bool deleteSubModel(QString name);
   bool deleteConnection(QString startComponentName, QString endComponentName);
-  virtual void popUpCompleter();
+  virtual void popUpCompleter() override;
 private:
   QString mLastValidText;
   bool mTextChanged;
@@ -107,12 +107,12 @@ private:
   bool fuzzyCompare(double p1, double p2);
   QGenericMatrix<3, 1, double> getRotationVector(QGenericMatrix<3, 3, double> R);
 private slots:
-  virtual void showContextMenu(QPoint point);
+  virtual void showContextMenu(QPoint point) override;
   void updateAllOrientations();
 public slots:
   void setPlainText(const QString &text, bool useInserText = true);
-  virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded);
-  virtual void toggleCommentSelection() {}
+  virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded) override;
+  virtual void toggleCommentSelection() override {}
   void alignInterfaces(QString fromSubModel, QString toSubModel, bool showError = true);
   int getInterfaceDimensions(QString interfacePoint);
   QString getInterfaceCausality(QString interfacePoint);

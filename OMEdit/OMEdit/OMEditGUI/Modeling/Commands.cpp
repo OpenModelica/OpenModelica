@@ -1939,6 +1939,7 @@ ElementPropertiesCommand::ElementPropertiesCommand(Component *pComponent, QStrin
                                                    ElementProperties newElementProperties, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
+  Q_UNUSED(name);
   mpComponent = pComponent;
   mOldElementProperties = oldElementProperties;
   mNewElementProperties = newElementProperties;

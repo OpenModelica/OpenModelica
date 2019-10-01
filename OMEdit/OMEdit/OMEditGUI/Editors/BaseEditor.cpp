@@ -991,7 +991,7 @@ void PlainTextEdit::lineNumberAreaPaintEvent(QPaintEvent *event)
       if (drawFoldingControl) {
         bool expanded = nextBlock.isVisible();
         QStyle *pStyle = style();
-        QStyleOptionViewItemV2 styleOptionViewItem;
+        QStyleOptionViewItem styleOptionViewItem;
         styleOptionViewItem.rect = foldingMarkerBox;
         styleOptionViewItem.state = QStyle::State_Active | QStyle::State_Item | QStyle::State_Children;
         /* For some reason QStyle::PE_IndicatorBranch is not showing up in MAC.

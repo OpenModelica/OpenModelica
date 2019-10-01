@@ -269,7 +269,7 @@ protected:
   QImage mImage;
   QList<CornerItem*> mCornerItemsList;
   QList<QVariant> mDynamicTextString; /* list of String() arguments */
-  virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);
+  virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 };
 
 #endif // SHAPEANNOTATION_H

@@ -426,6 +426,7 @@ void Parameter::valueComboBoxChanged(int index)
  */
 void Parameter::valueCheckBoxChanged(bool toggle)
 {
+  Q_UNUSED(toggle);
   mValueCheckBoxModified = true;
 }
 

@@ -358,20 +358,20 @@ public slots:
   void setInitialState();
   void cancelTransition();
 protected:
-  virtual void dragMoveEvent(QDragMoveEvent *event);
-  virtual void dropEvent(QDropEvent *event);
-  virtual void drawBackground(QPainter *painter, const QRectF &rect);
-  virtual void mousePressEvent(QMouseEvent *event);
-  virtual void mouseMoveEvent(QMouseEvent *event);
-  virtual void mouseReleaseEvent(QMouseEvent *event);
-  virtual void mouseDoubleClickEvent(QMouseEvent *event);
-  virtual void focusOutEvent(QFocusEvent *event);
-  virtual void keyPressEvent(QKeyEvent *event);
-  virtual void keyReleaseEvent(QKeyEvent *event);
-  virtual void contextMenuEvent(QContextMenuEvent *event);
-  virtual void resizeEvent(QResizeEvent *event);
-  virtual void wheelEvent(QWheelEvent *event);
-  virtual void leaveEvent(QEvent *event);
+  virtual void dragMoveEvent(QDragMoveEvent *event) override;
+  virtual void dropEvent(QDropEvent *event) override;
+  virtual void drawBackground(QPainter *painter, const QRectF &rect) override;
+  virtual void mousePressEvent(QMouseEvent *event) override;
+  virtual void mouseMoveEvent(QMouseEvent *event) override;
+  virtual void mouseReleaseEvent(QMouseEvent *event) override;
+  virtual void mouseDoubleClickEvent(QMouseEvent *event) override;
+  virtual void focusOutEvent(QFocusEvent *event) override;
+  virtual void keyPressEvent(QKeyEvent *event) override;
+  virtual void keyReleaseEvent(QKeyEvent *event) override;
+  virtual void contextMenuEvent(QContextMenuEvent *event) override;
+  virtual void resizeEvent(QResizeEvent *event) override;
+  virtual void wheelEvent(QWheelEvent *event) override;
+  virtual void leaveEvent(QEvent *event) override;
 };
 
 class WelcomePageWidget : public QWidget
@@ -604,7 +604,7 @@ public slots:
   void handleCanUndoChanged(bool canUndo);
   void handleCanRedoChanged(bool canRedo);
 protected:
-  virtual void closeEvent(QCloseEvent *event);
+  virtual void closeEvent(QCloseEvent *event) override;
 };
 
 void addCloseActionsToSubWindowSystemMenu(QMdiSubWindow *pMdiSubWindow);

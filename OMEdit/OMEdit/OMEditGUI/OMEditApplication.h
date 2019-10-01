@@ -50,7 +50,7 @@ public:
 private:
   QStringList mFilesToOpenList;
 protected:
-  virtual bool event(QEvent *pEvent);
+  virtual bool event(QEvent *pEvent) override;
 };
 
 #endif // OMEDITAPPLICATION_H

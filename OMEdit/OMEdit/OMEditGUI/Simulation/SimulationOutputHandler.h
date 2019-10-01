@@ -73,11 +73,11 @@ class SimulationMessageModel : public QAbstractItemModel
   Q_OBJECT
 public:
   SimulationMessageModel(SimulationOutputWidget *pSimulationOutputWidget, QObject *pParent = 0);
-  virtual QModelIndex index(int row, int column, const QModelIndex &parent) const;
-  virtual QModelIndex parent(const QModelIndex &child) const;
-  virtual int rowCount(const QModelIndex &parent) const;
-  virtual int columnCount(const QModelIndex &parent) const;
-  virtual QVariant data(const QModelIndex &index, int role) const;
+  virtual QModelIndex index(int row, int column, const QModelIndex &parent) const override;
+  virtual QModelIndex parent(const QModelIndex &child) const override;
+  virtual int rowCount(const QModelIndex &parent) const override;
+  virtual int columnCount(const QModelIndex &parent) const override;
+  virtual QVariant data(const QModelIndex &index, int role) const override;
   SimulationMessage* getRootSimulationMessage() {return mpRootSimulationMessage;}
   int getDepth(const QModelIndex &index) const;
   void insertSimulationMessage(SimulationMessage *pSimulationMessage);

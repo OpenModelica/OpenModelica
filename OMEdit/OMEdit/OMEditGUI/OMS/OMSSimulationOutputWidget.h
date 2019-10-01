@@ -68,7 +68,7 @@ public slots:
   void cancelSimulation();
   void simulationProgress(QString ident, double time, oms_status_enu_t status);
 protected:
-  virtual void keyPressEvent(QKeyEvent *event);
+  virtual void keyPressEvent(QKeyEvent *event) override;
 };
 
 #endif // OMSSIMULATIONOUTPUTWIDGET_H

@@ -120,7 +120,7 @@ void RevertCommitsDialog::browseCommitLog()
 
 void RevertCommitsDialog::workingDirectoryChanged(const QString &workingDirectory)
 {
-
+  Q_UNUSED(workingDirectory);
 }
 
 void RevertCommitsDialog::browseWorkingDirectory()

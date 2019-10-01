@@ -1178,9 +1178,11 @@ QMimeData* ConnectionsModel::mimeData(const QModelIndexList &indexes) const
   return mimeData;
 }
 
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
 bool ConnectionsModel::canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const
 {
   Q_UNUSED(action);
+  Q_UNUSED(column);
   Q_UNUSED(row);
   Q_UNUSED(parent);
 
@@ -1202,9 +1204,13 @@ bool ConnectionsModel::canDropMimeData(const QMimeData *data, Qt::DropAction act
 
   return true;
 }
+#endif
 
 bool ConnectionsModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent)
 {
+  Q_UNUSED(action);
+  Q_UNUSED(row);
+  Q_UNUSED(column);
   int sourceRow, sourceColumn;
   QByteArray encodedData = data->data(Helper::busConnectorFormat);
   QDataStream stream(&encodedData, QIODevice::ReadOnly);

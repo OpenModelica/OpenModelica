@@ -55,17 +55,17 @@ public:
   CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotation *pParent);
   void setConnectedPointIndex(int connectedPointIndex) {mConnectedPointIndex = connectedPointIndex;}
   int getConnectetPointIndex() {return mConnectedPointIndex;}
-  QRectF boundingRect() const;
-  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
+  QRectF boundingRect() const override;
+  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
 signals:
   void cornerItemMoved(int index, QPointF point);
   void cornerItemPress();
   void cornerItemRelease();
   void cornerItemPositionChanged();
 protected:
-  virtual void mousePressEvent(QGraphicsSceneMouseEvent *event);
-  virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
-  QVariant itemChange(GraphicsItemChange change, const QVariant &value);
+  virtual void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+  virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+  QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 };
 
 class ResizerItem : public QObject, public QGraphicsItem
@@ -79,8 +79,8 @@ public:
   ResizePositions getResizePosition();
   void setActive();
   void setPassive();
-  QRectF boundingRect() const;
-  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
+  QRectF boundingRect() const override;
+  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
   bool isPressed();
 private:
   Component *mpComponent;
@@ -98,9 +98,9 @@ signals:
   void resizerItemReleased();
   void resizerItemPositionChanged();
 protected:
-  virtual void mousePressEvent(QGraphicsSceneMouseEvent *event);
-  virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
-  virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
+  virtual void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+  virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
+  virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
 };
 
 class OriginItem : public QGraphicsItem

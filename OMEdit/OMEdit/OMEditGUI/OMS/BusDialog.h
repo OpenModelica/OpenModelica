@@ -212,19 +212,21 @@ class ConnectionsModel : public QAbstractItemModel
 public:
   ConnectionsModel(LineAnnotation *pConnectionLineAnnotation, QObject *parent = 0);
 
-  int columnCount(const QModelIndex &parent = QModelIndex()) const;
-  int rowCount(const QModelIndex &parent = QModelIndex()) const;
-  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
-  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
-  QModelIndex parent(const QModelIndex & index) const;
-  bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
-  QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
-  QStringList mimeTypes() const;
-  QMimeData* mimeData(const QModelIndexList &indexes) const;
-  bool canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const;
-  bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent);
-  Qt::DropActions supportedDropActions() const;
-  Qt::ItemFlags flags(const QModelIndex &index) const;
+  int columnCount(const QModelIndex &parent = QModelIndex()) const override;
+  int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
+  QModelIndex parent(const QModelIndex & index) const override;
+  bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
+  QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const override;
+  QStringList mimeTypes() const override;
+  QMimeData* mimeData(const QModelIndexList &indexes) const override;
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+  bool canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const override;
+#endif
+  bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) override;
+  Qt::DropActions supportedDropActions() const override;
+  Qt::ItemFlags flags(const QModelIndex &index) const override;
   QModelIndex connectionItemIndex(const ConnectionItem *pConnectionItem) const;
 
   ConnectionItem* getRootConnectionItem() {return mpRootConnectionItem;}

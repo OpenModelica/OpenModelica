@@ -182,7 +182,6 @@ void VisualizerFMU::updateSystem()
 {
   // Set states
   mpFMU->setContinuousStates();
-  int zero_crossning_event = 0;
   mpFMU->prepareSimulationStep(mpTimeManager->getVisTime());
   bool zeroCrossingEvent = mpFMU->checkForTriggeredEvent();
   if (mpSimSettings->getIterateEvents() && (mpSimSettings->getCallEventUpdate() || zeroCrossingEvent || mpFMU->itsEventTime()))
@@ -199,7 +198,6 @@ void VisualizerFMU::updateSystem()
 
 double VisualizerFMU::simulateStep(const double time)
 {
-  int zero_crossning_event = 0;
   mpFMU->prepareSimulationStep(time);
 
   // Check if an event indicator has triggered
@@ -242,6 +240,7 @@ double VisualizerFMU::simulateStep(const double time)
 
 void VisualizerFMU::initializeVisAttributes(const double time)
 {
+  Q_UNUSED(time);
   mpFMU->initialize(mpSimSettings);
   //std::cout<<"VisualizerFMU::loadFMU: FMU was successfully initialized."<<std::endl;
 
@@ -323,6 +322,7 @@ void VisualizerFMU::updateVisAttributes(const double time)
 
 void VisualizerFMU::updateScene(const double time)
 {
+  Q_UNUSED(time);
   mpTimeManager->updateTick(); //for real-time measurement
 
   mpTimeManager->setSimTime(mpTimeManager->getVisTime());

@@ -168,6 +168,7 @@ unsigned int FMUWrapper_ME_1::fmi_get_variable_by_name(const char* name)
 
 void FMUWrapper_ME_1::load(const std::string& modelFile, const std::string& path, fmi_import_context_t* context)
 {
+  Q_UNUSED(modelFile);
   //Callbackfunctions
   mCallBackFunctions.logger = fmi1_log_forwarding;
   mCallBackFunctions.allocateMemory = calloc;
@@ -221,7 +222,7 @@ void FMUWrapper_ME_1::initialize(const std::shared_ptr<SimSettingsFMU> simSettin
       mFMUdata._stateNames.push_back(fmi1_import_get_variable_name(stateVar));
     }
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QObject::tr("fmi1_import_get_state_value_references returned failure code"+mFMUdata._fmiStatus),
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QString("%1 %2").arg(QObject::tr("fmi1_import_get_state_value_references returned failure code %1")).arg(mFMUdata._fmiStatus),
                                                           Helper::scriptingKind, Helper::errorLevel));
   }
 
@@ -377,6 +378,7 @@ void FMUWrapper_ME_2::fmi_get_real(unsigned int* valueRef, double* res)
 
 void FMUWrapper_ME_2::load(const std::string& modelFile, const std::string& path, fmi_import_context_t* context)
 {
+  Q_UNUSED(modelFile);
   //Callbackfunctions
   mCallBackFunctions.logger = fmi2_log_forwarding;
   mCallBackFunctions.allocateMemory = calloc;
@@ -542,6 +544,7 @@ void FMUWrapper_ME_2::updateNextTimeStep(const double hdef)
 
 void FMUWrapper_ME_2::handleEvents(const int intermediateResults)
 {
+  Q_UNUSED(intermediateResults);
   //std::cout<<"Handle event at "<<std::to_string(mFMUdata._tcur)<<std::endl;
   mFMUdata.fmiStatus2 = fmi2_import_enter_event_mode(mpFMU);
   do_event_iteration(mpFMU, &mFMUdata.eventInfo2);

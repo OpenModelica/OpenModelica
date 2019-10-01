@@ -208,9 +208,9 @@ class InformationDialog : public QWidget
 {
 public:
   InformationDialog(QString windowTitle, QString informationText, bool modelicaTextHighlighter = false, QWidget *pParent = 0);
-  void closeEvent(QCloseEvent *event);
+  void closeEvent(QCloseEvent *event) override;
 protected:
-  virtual void keyPressEvent(QKeyEvent *event);
+  virtual void keyPressEvent(QKeyEvent *event) override;
 };
 
 class GraphicsView;

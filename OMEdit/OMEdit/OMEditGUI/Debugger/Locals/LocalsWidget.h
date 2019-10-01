@@ -106,14 +106,14 @@ public:
   LocalsTreeModel(LocalsWidget *pLocalsWidget);
   LocalsWidget* getLocalsWidget() {return mpLocalsWidget;}
   LocalsTreeItem* getRootLocalsTreeItem() {return mpRootLocalsTreeItem;}
-  int columnCount(const QModelIndex &parent = QModelIndex()) const;
-  int rowCount(const QModelIndex &parent = QModelIndex()) const;
-  bool hasChildren(const QModelIndex &parent = QModelIndex()) const;
-  bool canFetchMore(const QModelIndex &parent) const;
-  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
-  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
-  QModelIndex parent(const QModelIndex & index) const;
-  QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
+  int columnCount(const QModelIndex &parent = QModelIndex()) const override;
+  int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+  bool hasChildren(const QModelIndex &parent = QModelIndex()) const override;
+  bool canFetchMore(const QModelIndex &parent) const override;
+  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
+  QModelIndex parent(const QModelIndex & index) const override;
+  QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const override;
   LocalsTreeItem* findLocalsTreeItem(const QString &name, LocalsTreeItem *root) const;
   QModelIndex localsTreeItemIndex(const LocalsTreeItem *pLocalsTreeItem) const;
   QModelIndex localsTreeItemIndexHelper(const LocalsTreeItem *pLocalsTreeItem, const LocalsTreeItem *pParentLocalsTreeItem,
@@ -134,7 +134,7 @@ class LocalsTreeProxyModel : public QSortFilterProxyModel
 public:
   LocalsTreeProxyModel(QObject *parent = 0);
 protected:
-  virtual bool lessThan(const QModelIndex &left, const QModelIndex &right) const;
+  virtual bool lessThan(const QModelIndex &left, const QModelIndex &right) const override;
 };
 
 class LocalsTreeView : public QTreeView

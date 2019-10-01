@@ -135,7 +135,7 @@ void CommitChangesDialog::getChangedFiles()
 
 void CommitChangesDialog::addFile(QString fileStatus, QString fileName, bool checked)
 {
-
+  Q_UNUSED(checked);
   /*QStyle *style = QApplication::style();
   const QIcon folderIcon = style->standardIcon(QStyle::SP_DirIcon);
   const QIcon fileIcon = style->standardIcon(QStyle::SP_FileIcon);
@@ -218,6 +218,7 @@ void CommitChangesDialog::commitFiles()
 
 void CommitChangesDialog::generateTraceabilityURI(QString activity, QString modelFileName, QString nameStructure, QString fmuFileName)
 {
+  Q_UNUSED(nameStructure);
   QString toolURI, activityURI, agentURI, sourceModelFileNameURI, fmuFileNameURI, entityType, path, gitHash;
   QDir dir(OptionsDialog::instance()->getTraceabilityPage()->getGitRepository()->text());
   QDateTime time = QDateTime::currentDateTime();

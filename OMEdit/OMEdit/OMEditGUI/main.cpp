@@ -143,6 +143,14 @@ void printOMEditUsage()
   printf("    files                       List of Modelica files(*.mo) to open.\n");
 }
 
+static int execution_failed()
+{
+  fflush(NULL);
+  fprintf(stderr, "Execution failed!\n");
+  fflush(NULL);
+  return 1;
+}
+
 int main(int argc, char *argv[])
 {
   MMC_INIT();
@@ -173,5 +181,5 @@ int main(int argc, char *argv[])
   OMEditApplication a(argc, argv, threadData);
   return a.exec();
 
-  MMC_CATCH_TOP();
+  MMC_CATCH_TOP(return execution_failed());
 }

@@ -43,14 +43,14 @@ class TransformationsEditor : public BaseEditor
   Q_OBJECT
 public:
   TransformationsEditor(TransformationsWidget *pTransformationsWidget);
-  virtual void popUpCompleter();
+  virtual void popUpCompleter() override;
 private:
   TransformationsWidget *mpTransformationsWidget;
 private slots:
-  virtual void showContextMenu(QPoint point);
+  virtual void showContextMenu(QPoint point) override;
 public slots:
-  virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded);
-  virtual void toggleCommentSelection() {}
+  virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded) override;
+  virtual void toggleCommentSelection() override {}
 };
 
 #endif // TRANSFORMATIONSEDITOR_H

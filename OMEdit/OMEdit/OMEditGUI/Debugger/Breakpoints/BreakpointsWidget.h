@@ -90,12 +90,12 @@ public:
   ~BreakpointsTreeModel();
   BreakpointsTreeView* getBreakpointsTreeView() {return mpBreakpointsTreeView;}
   BreakpointTreeItem* getRootBreakpointTreeItem() {return mpRootBreakpointTreeItem;}
-  int columnCount(const QModelIndex &parent = QModelIndex()) const;
-  int rowCount(const QModelIndex &parent = QModelIndex()) const;
-  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
-  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
-  QModelIndex parent(const QModelIndex & index) const;
-  QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
+  int columnCount(const QModelIndex &parent = QModelIndex()) const override;
+  int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
+  QModelIndex parent(const QModelIndex & index) const override;
+  QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const override;
   BreakpointMarker* findBreakpointMarker(const QString &fileName, int lineNumber);
   BreakpointTreeItem* findBreakpointTreeItem(const QString &fileName, int lineNumber, BreakpointTreeItem *pRootBreakpointTreeItem) const;
   QModelIndex breakpointTreeItemIndex(const BreakpointTreeItem *pBreakpointTreeItem) const;

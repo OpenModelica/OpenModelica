@@ -185,9 +185,9 @@ public:
   bool isInheritedComponent() {return mIsInheritedComponent;}
   bool hasShapeAnnotation(Component *pComponent);
   bool hasNonExistingClass();
-  QRectF boundingRect() const;
+  QRectF boundingRect() const override;
   QRectF itemsBoundingRect();
-  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
+  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
   QString getName() {return mpComponentInfo->getName();}
   GraphicsView* getGraphicsView() {return mpGraphicsView;}
@@ -384,7 +384,7 @@ public slots:
   void showElementPropertiesDialog();
   void updateDynamicSelect(double time);
 protected:
-  virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);
+  virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 };
 
 #endif // COMPONENT_H

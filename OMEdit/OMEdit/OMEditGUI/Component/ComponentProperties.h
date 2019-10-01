@@ -141,7 +141,7 @@ class ParametersScrollArea : public QScrollArea
   Q_OBJECT
 public:
   ParametersScrollArea();
-  virtual QSize minimumSizeHint() const;
+  virtual QSize minimumSizeHint() const override;
   void addGroupBox(GroupBox *pGroupBox);
   GroupBox *getGroupBox(QString title);
   QVBoxLayout* getLayout();

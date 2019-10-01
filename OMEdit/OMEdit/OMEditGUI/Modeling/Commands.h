@@ -97,7 +97,6 @@ public:
   void undo();
 private:
   LibraryTreeItem *mpLibraryTreeItem;
-  StringHandler::ModelicaClasses mType;
   bool mAddObject;
   ComponentInfo *mpComponentInfo;
   Component *mpIconComponent;
@@ -133,7 +132,6 @@ private:
   Component *mpComponent;
   ComponentInfo mOldComponentInfo;
   ComponentInfo mNewComponentInfo;
-  bool mDuplicate;
 };
 
 class UpdateComponentParametersCommand : public UndoCommand
@@ -214,7 +212,6 @@ public:
   void undo();
 private:
   LineAnnotation *mpConnectionLineAnnotation;
-  GraphicsView *mpGraphicsView;
 };
 
 class AddTransitionCommand : public UndoCommand
@@ -263,7 +260,6 @@ public:
   void undo();
 private:
   LineAnnotation *mpTransitionLineAnnotation;
-  GraphicsView *mpGraphicsView;
 };
 
 class AddInitialStateCommand : public UndoCommand
@@ -298,7 +294,6 @@ public:
   void undo();
 private:
   LineAnnotation *mpInitialStateLineAnnotation;
-  GraphicsView *mpGraphicsView;
 };
 
 class UpdateCoOrdinateSystemCommand : public UndoCommand

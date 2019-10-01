@@ -284,7 +284,7 @@ public:
   CustomExpressionBox(OMCProxy *pOMCProxy);
   OMCProxy *mpOMCProxy;
 protected:
-  virtual void keyPressEvent(QKeyEvent *event);
+  virtual void keyPressEvent(QKeyEvent *event) override;
 };
 
 #endif // OMCPROXY_H

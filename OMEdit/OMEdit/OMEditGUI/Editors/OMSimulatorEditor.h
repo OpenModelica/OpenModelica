@@ -44,14 +44,14 @@ class OMSimulatorEditor : public BaseEditor
 public:
   OMSimulatorEditor(QWidget *pParent);
   bool validateText();
-  virtual void popUpCompleter();
+  virtual void popUpCompleter() override;
 private:
   QString mLastValidText;
   bool mTextChanged;
 private slots:
-  virtual void showContextMenu(QPoint point);
+  virtual void showContextMenu(QPoint point) override;
 public slots:
-  virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded);
+  virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded) override;
   void setPlainText(const QString &text, bool useInserText = true);
 };
 
@@ -64,7 +64,7 @@ public:
   void initializeSettings();
   void highlightMultiLine(const QString &text);
 protected:
-  virtual void highlightBlock(const QString &text);
+  virtual void highlightBlock(const QString &text) override;
 private:
   OMSimulatorEditorPage *mpOMSimulatorEditorPage;
   QPlainTextEdit *mpPlainTextEdit;
