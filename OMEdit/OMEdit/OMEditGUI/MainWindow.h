@@ -212,7 +212,7 @@ public:
   QToolBar* getOMSimulatorToobar() const {return mpOMSimulatorToobar;}
   void addRecentFile(const QString &fileName, const QString &encoding);
   void updateRecentFileActions();
-  void closeEvent(QCloseEvent *event);
+  void closeEvent(QCloseEvent *event) override;
   int askForExit();
   void beforeClosingMainWindow();
   void openDroppedFile(const QMimeData *pMimeData);
@@ -565,9 +565,9 @@ private:
   void tileSubWindows(QMdiArea *pMdiArea, bool horizontally);
   void fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem, QString singleModel=QString());
 protected:
-  virtual void dragEnterEvent(QDragEnterEvent *event);
-  virtual void dragMoveEvent(QDragMoveEvent *event);
-  virtual void dropEvent(QDropEvent *event);
+  virtual void dragEnterEvent(QDragEnterEvent *event) override;
+  virtual void dragMoveEvent(QDragMoveEvent *event) override;
+  virtual void dropEvent(QDropEvent *event) override;
 };
 
 class AboutOMEditDialog : public QDialog

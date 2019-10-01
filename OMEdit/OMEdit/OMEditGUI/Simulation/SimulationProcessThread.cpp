@@ -87,7 +87,6 @@ void SimulationProcessThread::compileModel()
   } else {
     numProcs = QString::number(simulationOptions.getNumberOfProcessors());
   }
-  SimulationPage *pSimulationPage = OptionsDialog::instance()->getSimulationPage();
   QStringList args;
 #ifdef WIN32
 #if defined(__MINGW32__) && defined(__MINGW64__) /* on 64 bit */
@@ -95,6 +94,7 @@ void SimulationProcessThread::compileModel()
 #else
   const char* omPlatform = "mingw32";
 #endif
+  SimulationPage *pSimulationPage = OptionsDialog::instance()->getSimulationPage();
   args << simulationOptions.getOutputFileName()
        << pSimulationPage->getTargetBuildComboBox()->itemData(pSimulationPage->getTargetBuildComboBox()->currentIndex()).toString()
        << omPlatform << "parallel" << numProcs << "0";

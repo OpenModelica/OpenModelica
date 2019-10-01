@@ -80,9 +80,9 @@ public:
   LineAnnotation(GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation) override;
   QPainterPath getShape() const;
-  QRectF boundingRect() const;
-  QPainterPath shape() const;
-  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
+  QRectF boundingRect() const override;
+  QPainterPath shape() const override;
+  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
   void drawLineAnnotaion(QPainter *painter);
   void drawArrow(QPainter *painter, QPointF startPos, QPointF endPos, qreal size, int arrowType) const;
   QPolygonF perpendicularLine(QPointF startPos, QPointF endPos, qreal size) const;
@@ -90,9 +90,9 @@ public:
   QString getOMCShapeAnnotationWithShapeName() override;
   QString getShapeAnnotation() override;
   QString getCompositeModelShapeAnnotation();
-  void addPoint(QPointF point);
+  void addPoint(QPointF point) override;
   void removePoint(int index);
-  void clearPoints();
+  void clearPoints() override;
   void updateStartPoint(QPointF point);
   void updateEndPoint(QPointF point);
   void updateTransitionTextPosition();
@@ -131,7 +131,7 @@ public:
   oms_connection_type_enu_t getOMSConnectionType() {return mOMSConnectionType;}
   void setActiveState(bool activeState) {mActiveState = activeState;}
   bool isActiveState() {return mActiveState;}
-  void setShapeFlags(bool enable);
+  void setShapeFlags(bool enable) override;
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
   void setAligned(bool aligned);
   void updateOMSConnection();
@@ -142,7 +142,7 @@ public:
 
   static QColor findLineColorForConnection(Component *pComponent);
 protected:
-  QVariant itemChange(GraphicsItemChange change, const QVariant &value);
+  QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 
   private:
   LineType mLineType;
@@ -228,13 +228,13 @@ class ExpandableConnectorTreeModel : public QAbstractItemModel
 public:
   ExpandableConnectorTreeModel(CreateConnectionDialog *pCreateConnectionDialog);
   ExpandableConnectorTreeItem* getRootExpandableConnectorTreeItem() {return mpRootExpandableConnectorTreeItem;}
-  int columnCount(const QModelIndex &parent = QModelIndex()) const;
-  int rowCount(const QModelIndex &parent = QModelIndex()) const;
-  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
-  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
-  QModelIndex parent(const QModelIndex & index) const;
-  QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
-  Qt::ItemFlags flags(const QModelIndex &index) const;
+  int columnCount(const QModelIndex &parent = QModelIndex()) const override;
+  int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
+  QModelIndex parent(const QModelIndex & index) const override;
+  QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const override;
+  Qt::ItemFlags flags(const QModelIndex &index) const override;
   QModelIndex findFirstEnabledItem(ExpandableConnectorTreeItem *pExpandableConnectorTreeItem);
   QModelIndex expandableConnectorTreeItemIndex(const ExpandableConnectorTreeItem *pExpandableConnectorTreeItem) const;
   void createExpandableConnectorTreeItem(Component *pComponent, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);

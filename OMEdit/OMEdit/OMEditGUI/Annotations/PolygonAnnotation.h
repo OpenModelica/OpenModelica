@@ -52,16 +52,16 @@ public:
   PolygonAnnotation(Component *pParent);
   void parseShapeAnnotation(QString annotation) override;
   QPainterPath getShape() const;
-  QRectF boundingRect() const;
-  QPainterPath shape() const;
-  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
+  QRectF boundingRect() const override;
+  QPainterPath shape() const override;
+  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
   void drawPolygonAnnotaion(QPainter *painter);
   QString getOMCShapeAnnotation() override;
   QString getOMCShapeAnnotationWithShapeName() override;
   QString getShapeAnnotation() override;
-  void addPoint(QPointF point);
+  void addPoint(QPointF point) override;
   void removePoint(int index);
-  void clearPoints();
+  void clearPoints() override;
   void updateEndPoint(QPointF point);
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
 public slots:

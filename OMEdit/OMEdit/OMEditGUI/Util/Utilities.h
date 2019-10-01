@@ -153,8 +153,8 @@ public:
   Label(const QString &text, QWidget *parent = 0, Qt::WindowFlags flags = 0);
   Qt::TextElideMode elideMode() const {return mElideMode;}
   void setElideMode(Qt::TextElideMode elideMode) {mElideMode = elideMode;}
-  virtual QSize minimumSizeHint() const;
-  virtual QSize sizeHint() const;
+  virtual QSize minimumSizeHint() const override;
+  virtual QSize sizeHint() const override;
   void setText(const QString &text);
 private:
   Qt::TextElideMode mElideMode;
@@ -162,7 +162,7 @@ private:
 
   QString elidedText() const;
 protected:
-  virtual void resizeEvent(QResizeEvent *event);
+  virtual void resizeEvent(QResizeEvent *event) override;
 };
 
 //! @class DoubleSpinBox
@@ -203,7 +203,7 @@ public:
   bool tickState() {return mTickState;}
   QString tickStateString();
 protected:
-  virtual void paintEvent(QPaintEvent *event);
+  virtual void paintEvent(QPaintEvent *event) override;
 };
 
 //! @struct RecentFile
@@ -320,7 +320,7 @@ public:
   void setFailed(bool failed) {mFailed = failed;}
   bool isFailed() {return mFailed;}
 protected:
-  virtual void handleMessage(QtMsgType type, const QString &description, const QUrl &identifier, const QSourceLocation &sourceLocation)
+  virtual void handleMessage(QtMsgType type, const QString &description, const QUrl &identifier, const QSourceLocation &sourceLocation) override
   {
     Q_UNUSED(type);
     Q_UNUSED(identifier);
@@ -409,7 +409,7 @@ public:
     setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   }
 
-  virtual bool eventFilter(QObject *o, QEvent *e)
+  virtual bool eventFilter(QObject *o, QEvent *e) override
   {
     if (o && o == widget() && e->type() == QEvent::Resize) {
       setMinimumWidth(widget()->minimumSizeHint().width() + verticalScrollBar()->width());

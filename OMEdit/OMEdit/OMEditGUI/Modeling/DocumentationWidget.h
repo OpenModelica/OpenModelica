@@ -178,10 +178,10 @@ public slots:
   void processLinkHover(QString link, QString title, QString textContent);
   void showContextMenu(QPoint point);
 protected:
-  virtual QWebView* createWindow(QWebPage::WebWindowType type);
-  virtual void keyPressEvent(QKeyEvent *event);
-  virtual void wheelEvent(QWheelEvent *event);
-  virtual void mouseDoubleClickEvent(QMouseEvent *event);
+  virtual QWebView* createWindow(QWebPage::WebWindowType type) override;
+  virtual void keyPressEvent(QKeyEvent *event) override;
+  virtual void wheelEvent(QWheelEvent *event) override;
+  virtual void mouseDoubleClickEvent(QMouseEvent *event) override;
 };
 
 #endif // DOCUMENTATIONWIDGET_H

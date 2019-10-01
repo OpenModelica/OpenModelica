@@ -1589,6 +1589,8 @@ bool OMSProxy::terminate(QString cref)
  */
 bool OMSProxy::parseString(QString contents, QString *pModelName)
 {
+  Q_UNUSED(contents);
+  Q_UNUSED(pModelName);
   //  char* ident = NULL;
   //  oms_status_enu_t status = oms2_parseString(contents.toUtf8().constData(), &ident);
   //  if (ident) {
@@ -1608,6 +1610,8 @@ bool OMSProxy::parseString(QString contents, QString *pModelName)
  */
 bool OMSProxy::loadString(QString contents, QString* pModelName)
 {
+  Q_UNUSED(contents);
+  Q_UNUSED(pModelName);
   //  char* ident = NULL;
   //  oms_status_enu_t status = oms2_loadString(contents.toUtf8().constData(), &ident);
   //  *pModelName = QString(ident);

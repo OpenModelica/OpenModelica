@@ -117,7 +117,7 @@ public:
 private:
   QTreeWidget *mpTreeWidget;
 protected:
-  virtual bool operator <(const QTreeWidgetItem &other) const
+  virtual bool operator <(const QTreeWidgetItem &other) const override
   {
     int column = mpTreeWidget ? mpTreeWidget->sortColumn() : 0;
     QString text1 = text(column);

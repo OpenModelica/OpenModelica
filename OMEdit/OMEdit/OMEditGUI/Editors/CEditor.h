@@ -45,12 +45,12 @@ class CEditor : public BaseEditor
 public:
   CEditor(QWidget *pParent);
   void setPlainText(const QString &text);
-  virtual void popUpCompleter();
+  virtual void popUpCompleter() override;
 private slots:
-  virtual void showContextMenu(QPoint point);
+  virtual void showContextMenu(QPoint point) override;
 public slots:
-  virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded);
-  virtual void toggleCommentSelection() {}
+  virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded) override;
+  virtual void toggleCommentSelection() override {}
 };
 
 class CEditorPage;
@@ -64,7 +64,7 @@ public:
   static QStringList getKeywords();
   static QStringList getTypes();
 protected:
-  virtual void highlightBlock(const QString &text);
+  virtual void highlightBlock(const QString &text) override;
 private:
   CEditorPage *mpCEditorPage;
   QPlainTextEdit *mpPlainTextEdit;

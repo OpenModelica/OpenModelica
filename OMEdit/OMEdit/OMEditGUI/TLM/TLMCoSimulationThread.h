@@ -51,7 +51,7 @@ public:
   void setIsMonitorProcessRunning(bool isMonitorProcessRunning) {mIsMonitorProcessRunning = isMonitorProcessRunning;}
   bool isMonitorProcessRunning() {return mIsMonitorProcessRunning;}
 protected:
-  virtual void run();
+  virtual void run() override;
 private:
   QString mFileName;
   TLMCoSimulationOutputWidget *mpTLMCoSimulationOutputWidget;

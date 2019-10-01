@@ -45,7 +45,7 @@ public:
   void setIsManagerProcessRunning(bool isManagerProcessRunning) {mIsManagerProcessRunning = isManagerProcessRunning;}
   bool isManagerProcessRunning() {return mIsManagerProcessRunning;}
 protected:
-  virtual void run();
+  virtual void run() override;
 private:
   FetchInterfaceDataDialog *mpFetchInterfaceDataDialog;
   QProcess *mpManagerProcess;

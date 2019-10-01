@@ -72,7 +72,7 @@ public slots:
   void selectAllMessages();
   void copyMessages();
 protected:
-  virtual void keyPressEvent(QKeyEvent *event);
+  virtual void keyPressEvent(QKeyEvent *event) override;
 };
 
 class SimulationOutputWidget : public QWidget
@@ -130,7 +130,7 @@ public slots:
   void openSimulationLogFile();
   void openTransformationBrowser(QUrl url);
 protected:
-  virtual void keyPressEvent(QKeyEvent *event);
+  virtual void keyPressEvent(QKeyEvent *event) override;
 };
 
 #endif // SIMULATIONOUTPUTWIDGET_H

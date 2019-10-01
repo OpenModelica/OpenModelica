@@ -44,12 +44,12 @@ class HTMLEditor : public BaseEditor
   Q_OBJECT
 public:
   HTMLEditor(QWidget *pParent);
-  virtual void popUpCompleter();
+  virtual void popUpCompleter() override;
 private slots:
-  virtual void showContextMenu(QPoint point);
+  virtual void showContextMenu(QPoint point) override;
 public slots:
-  virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded);
-  virtual void toggleCommentSelection() {}
+  virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded) override;
+  virtual void toggleCommentSelection() override {}
 };
 
 class HTMLEditorPage;
@@ -61,7 +61,7 @@ public:
   void initializeSettings();
   void highlightMultiLine(const QString &text);
 protected:
-  virtual void highlightBlock(const QString &text);
+  virtual void highlightBlock(const QString &text) override;
 private:
   HTMLEditorPage *mpHTMLEditorPage;
   QPlainTextEdit *mpPlainTextEdit;

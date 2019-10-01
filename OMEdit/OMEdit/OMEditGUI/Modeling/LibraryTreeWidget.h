@@ -263,7 +263,7 @@ private:
   LibraryWidget *mpLibraryWidget;
   bool mShowOnlyModelica;
 protected:
-  virtual bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const;
+  virtual bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
 };
 
 class LibraryTreeModel : public QAbstractItemModel
@@ -272,13 +272,13 @@ class LibraryTreeModel : public QAbstractItemModel
 public:
   LibraryTreeModel(LibraryWidget *pLibraryWidget);
   LibraryTreeItem* getRootLibraryTreeItem() {return mpRootLibraryTreeItem;}
-  int columnCount(const QModelIndex &parent = QModelIndex()) const;
-  int rowCount(const QModelIndex &parent = QModelIndex()) const;
-  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
-  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
-  QModelIndex parent(const QModelIndex & index) const;
-  QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
-  Qt::ItemFlags flags(const QModelIndex &index) const;
+  int columnCount(const QModelIndex &parent = QModelIndex()) const override;
+  int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
+  QModelIndex parent(const QModelIndex & index) const override;
+  QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const override;
+  Qt::ItemFlags flags(const QModelIndex &index) const override;
   LibraryTreeItem* findLibraryTreeItem(const QString &name, LibraryTreeItem *pLibraryTreeItem = 0,
                                        Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   LibraryTreeItem* findLibraryTreeItem(const QRegExp &regExp, LibraryTreeItem *pLibraryTreeItem = 0) const;
@@ -360,7 +360,7 @@ private:
   void deleteFileHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
   void deleteFileChildren(LibraryTreeItem *pLibraryTreeItem);
 protected:
-  Qt::DropActions supportedDropActions() const;
+  Qt::DropActions supportedDropActions() const override;
 };
 
 class LibraryTreeView : public QTreeView
@@ -464,8 +464,8 @@ public slots:
   void OMSRename();
   void unloadOMSModel();
 protected:
-  virtual void startDrag(Qt::DropActions supportedActions);
-  virtual void keyPressEvent(QKeyEvent *event);
+  virtual void startDrag(Qt::DropActions supportedActions) override;
+  virtual void keyPressEvent(QKeyEvent *event) override;
 };
 
 class LibraryWidget : public QWidget

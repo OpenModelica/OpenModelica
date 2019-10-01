@@ -52,12 +52,12 @@ public:
   void setGridColor(QColor color) {mGridColor = color;}
   QString formatDisplayText(QVariant variant) const;
   void initTextDocument(QTextDocument *pTextDocument, QFont font, int width) const;
-  virtual void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+  virtual void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   void drawHover(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
-  virtual QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
-  virtual bool editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index);
-  virtual QWidget* createEditor(QWidget *pParent, const QStyleOptionViewItem &option, const QModelIndex &index) const;
-  virtual void setEditorData(QWidget *editor, const QModelIndex &index) const;
+  virtual QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  virtual bool editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index) override;
+  virtual QWidget* createEditor(QWidget *pParent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  virtual void setEditorData(QWidget *editor, const QModelIndex &index) const override;
 public slots:
   void unitComboBoxChanged(QString text);
 };

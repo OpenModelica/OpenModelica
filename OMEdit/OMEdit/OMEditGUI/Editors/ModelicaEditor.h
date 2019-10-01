@@ -56,8 +56,8 @@ public:
   QString getPlainText();
   void setTextChanged(bool changed) {mTextChanged = changed;}
   bool isTextChanged() {return mTextChanged;}
-  virtual void popUpCompleter();
-  virtual QString wordUnderCursor();
+  virtual void popUpCompleter() override;
+  virtual QString wordUnderCursor() override;
   QString stringAfterWord(const QString &word);
   static LibraryTreeItem *deepResolve(LibraryTreeItem *pItem, QStringList nameComponents);
   QList<LibraryTreeItem *> getCandidateContexts(QStringList nameComponents);
@@ -71,11 +71,11 @@ private:
   QString mLastValidText;
   bool mTextChanged;
 private slots:
-  virtual void showContextMenu(QPoint point);
+  virtual void showContextMenu(QPoint point) override;
 public slots:
   void setPlainText(const QString &text, bool useInserText = true);
-  virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded);
-  virtual void toggleCommentSelection();
+  virtual void contentsHasChanged(int position, int charsRemoved, int charsAdded) override;
+  virtual void toggleCommentSelection() override;
 };
 
 class ModelicaEditorPage;

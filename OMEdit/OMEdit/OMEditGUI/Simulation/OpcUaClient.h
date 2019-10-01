@@ -115,9 +115,9 @@ public:
   void setAxisVectors(QPair<QVector<double>*, QVector<double>*> axes);
   void setXBounds(const double &startBound, const double &stopBound);
   void setYBounds(const double &mixValue, const double &maxValue);
-  virtual QPointF sample( size_t i ) const;
-  virtual size_t size() const;
-  virtual QRectF boundingRect() const;
+  virtual QPointF sample( size_t i ) const override;
+  virtual size_t size() const override;
+  virtual QRectF boundingRect() const override;
   void checkBounds(const double &value);
   void setMonitoredItemId(UA_UInt32 value) {mMonitordItemId = value;}
   UA_UInt32 getMonitoredItemId() {return mMonitordItemId;}

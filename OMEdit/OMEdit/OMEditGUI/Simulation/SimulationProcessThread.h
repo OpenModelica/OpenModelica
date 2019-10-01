@@ -54,7 +54,7 @@ public:
   bool isSimulationProcessKilled() {return mIsSimulationProcessKilled;}
   bool isSimulationProcessRunning() {return mIsSimulationProcessRunning;}
 protected:
-  virtual void run();
+  virtual void run() override;
 private:
   SimulationOutputWidget *mpSimulationOutputWidget;
   QProcess *mpCompilationProcess;

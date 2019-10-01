@@ -84,7 +84,8 @@ void VisualizerMAT::readMat(const std::string& modelFile, const std::string& pat
   else
   {
     // Read mat file.
-    auto ret = omc_new_matlab4_reader(resFileName.c_str(), &_matReader);
+    omc_new_matlab4_reader(resFileName.c_str(), &_matReader);
+    //auto ret = omc_new_matlab4_reader(resFileName.c_str(), &_matReader);
     // Check return value.
 //    if (0 != ret)
 //    {

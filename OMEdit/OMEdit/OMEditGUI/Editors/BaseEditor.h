@@ -242,7 +242,7 @@ class PlainTextEdit : public QPlainTextEdit
   Q_OBJECT
 public:
   PlainTextEdit(BaseEditor *pBaseEditor);
-  bool eventFilter(QObject *pObject, QEvent *pEvent);
+  bool eventFilter(QObject *pObject, QEvent *pEvent) override;
   LineNumberArea* getLineNumberArea() {return mpLineNumberArea;}
   void clearCompleter();
   void insertCompleterSymbols(QList<CompleterItem> symbols, const QString &iconResource);
@@ -304,15 +304,15 @@ public slots:
   void zoomIn();
   void zoomOut();
 protected:
-  virtual void resizeEvent(QResizeEvent *pEvent);
-  virtual void keyPressEvent(QKeyEvent *pEvent);
-  virtual QMimeData* createMimeDataFromSelection() const;
-  virtual bool canInsertFromMimeData(const QMimeData *source) const;
-  virtual void insertFromMimeData(const QMimeData *source);
-  virtual void focusInEvent(QFocusEvent *event);
-  virtual void focusOutEvent(QFocusEvent *event);
-  void paintEvent(QPaintEvent *e);
-  void wheelEvent(QWheelEvent *event);
+  virtual void resizeEvent(QResizeEvent *pEvent) override;
+  virtual void keyPressEvent(QKeyEvent *pEvent) override;
+  virtual QMimeData* createMimeDataFromSelection() const override;
+  virtual bool canInsertFromMimeData(const QMimeData *source) const override;
+  virtual void insertFromMimeData(const QMimeData *source) override;
+  virtual void focusInEvent(QFocusEvent *event) override;
+  virtual void focusOutEvent(QFocusEvent *event) override;
+  void paintEvent(QPaintEvent *e) override;
+  void wheelEvent(QWheelEvent *event) override;
 };
 
 class BaseEditor : public QWidget
@@ -372,20 +372,20 @@ public:
   {
     mpBaseEditor = pBaseEditor;
   }
-  QSize sizeHint() const
+  QSize sizeHint() const override
   {
     return QSize(mpBaseEditor->getPlainTextEdit()->lineNumberAreaWidth(), 0);
   }
 protected:
-  virtual void paintEvent(QPaintEvent *event)
+  virtual void paintEvent(QPaintEvent *event) override
   {
     mpBaseEditor->getPlainTextEdit()->lineNumberAreaPaintEvent(event);
   }
-  virtual void mouseMoveEvent(QMouseEvent *event)
+  virtual void mouseMoveEvent(QMouseEvent *event) override
   {
     mpBaseEditor->getPlainTextEdit()->lineNumberAreaMouseEvent(event);
   }
-  virtual void mousePressEvent(QMouseEvent *event)
+  virtual void mousePressEvent(QMouseEvent *event) override
   {
     mpBaseEditor->getPlainTextEdit()->lineNumberAreaMouseEvent(event);
   }
@@ -425,7 +425,7 @@ public slots:
   void replace();
   void replaceAll();
 protected:
-  virtual void keyPressEvent(QKeyEvent *pEvent);
+  virtual void keyPressEvent(QKeyEvent *pEvent) override;
 protected slots:
   void validateRegularExpression(const QString &text);
   void regularExpressionSelected(bool selected);

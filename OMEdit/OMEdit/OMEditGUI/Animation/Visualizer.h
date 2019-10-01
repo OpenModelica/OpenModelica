@@ -67,8 +67,8 @@ class UpdateVisitor : public osg::NodeVisitor
   virtual ~UpdateVisitor() = default;
   UpdateVisitor(const UpdateVisitor& uv) = delete;
   UpdateVisitor& operator=(const UpdateVisitor& uv) = delete;
-  virtual void apply(osg::Geode& node);
-  virtual void apply(osg::MatrixTransform& node);
+  virtual void apply(osg::Geode& node) override;
+  virtual void apply(osg::MatrixTransform& node) override;
   void makeTransparent(osg::Geode& node, float transpCoeff);
   void applyTexture(osg::StateSet* ss, std::string imagePath);
   void changeColor(osg::StateSet* ss, float r, float g, float b);
@@ -85,8 +85,8 @@ public:
   InfoVisitor(const InfoVisitor& iv) = delete;
   InfoVisitor& operator=(const InfoVisitor& iv) = delete;
   std::string spaces();
-  virtual void apply(osg::Node& node);
-  virtual void apply(osg::Geode& node);
+  virtual void apply(osg::Node& node) override;
+  virtual void apply(osg::Geode& node) override;
 private:
   unsigned int _level;
 };

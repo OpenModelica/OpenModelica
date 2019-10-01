@@ -89,12 +89,17 @@ win32 {
     -L$$(OMBUILDDIR)/lib/omc -lomantlr3 -lOMPlot -lomqwt -lomopcua \
     -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread -lshlwapi \
     -lws2_32 \
-    -L$$(OMBUILDDIR)/bin -lOMSimulator
+    -L$$(OMBUILDDIR)/bin -lOMSimulator -lqjson
 
-  INCLUDEPATH += $$(OMBUILDDIR)/include/omplot \
-    $$(OMBUILDDIR)/include \
+  INCLUDEPATH += $$(OMBUILDDIR)/include \
+    $$(OMBUILDDIR)/include/omplot \
     $$(OMBUILDDIR)/include/omplot/qwt \
-    $$(OMBUILDDIR)/include/omc/antlr3 $$(OMBUILDDIR)/include/omc/c
+    $$(OMBUILDDIR)/include/omc/antlr3 \
+    $$OPENMODELICAHOME/include/omc/scripting-API \
+    $$(OMBUILDDIR)/include/omc/c \
+    $$OPENMODELICAHOME/include/omc/c/util \
+    $$OPENMODELICAHOME/include/omc/fmil \
+    ../../qjson/build/include
 
   RC_FILE = rc_omedit.rc
   CONFIG += osg
@@ -345,13 +350,6 @@ HEADERS += Animation/AbstractAnimationWindow.h \
   Animation/Shapes.h \
   Animation/rapidxml.hpp
 }
-
-LIBS += -lqjson
-INCLUDEPATH += ../../qjson/build/include
-
-INCLUDEPATH += $$OPENMODELICAHOME/include/omc/scripting-API \
-  $$OPENMODELICAHOME/include/omc/c/util \
-  $$OPENMODELICAHOME/include/omc/fmil
 
 OTHER_FILES += Resources/css/stylesheet.qss \
   Resources/XMLSchema/tlmModelDescription.xsd \

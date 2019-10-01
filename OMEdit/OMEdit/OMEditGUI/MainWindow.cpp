@@ -2840,15 +2840,14 @@ void MainWindow::updateModelSwitcherMenu(QMdiSubWindow *pActivatedWindow)
 
 /*!
  * \brief MainWindow::runDebugConfiguration
- * Runs the
+ * Runs the debug configuration.
  */
 void MainWindow::runDebugConfiguration()
 {
   QAction *pAction = qobject_cast<QAction*>(sender());
   QToolButton *pToolButton = qobject_cast<QToolButton*>(sender());
-  if (pAction) {
-    pAction = pAction;
-  } else if (pToolButton) {
+
+  if (!pAction && pToolButton) {
     QList<QAction *> actions = mpDebugConfigurationMenu->actions();
     // read the settings and add debug configurations
     QSettings *pSettings = Utilities::getApplicationSettings();
@@ -2860,6 +2859,7 @@ void MainWindow::runDebugConfiguration()
       return;
     }
   }
+
   if (pAction) {
     DebuggerConfigurationsDialog *pDebuggerConfigurationsDialog = new DebuggerConfigurationsDialog(this);
     connect(pDebuggerConfigurationsDialog, SIGNAL(debuggerLaunched()), SLOT(switchToAlgorithmicDebuggingPerspectiveSlot()));
