@@ -7668,7 +7668,11 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     diagramGraphicsView = pModelWidget->getDiagramViewToolButton()->isChecked();
     textView = pModelWidget->getTextViewToolButton()->isChecked();
     // check for git working directory
-    gitWorkingDirectory = !pLibraryTreeItem->getFileName().isEmpty() && GitCommands::instance()->isSavedUnderGitRepository(pLibraryTreeItem->getFileName());
+    /* ticket:5646 Crash when importing SSP files with TLM systems
+     * Disable the Git features until we have them implemented properly.
+     * GitCommands::getGitStdout causes crash in Linux.
+     */
+    //gitWorkingDirectory = !pLibraryTreeItem->getFileName().isEmpty() && GitCommands::instance()->isSavedUnderGitRepository(pLibraryTreeItem->getFileName());
     if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
       modelica = true;
     } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
