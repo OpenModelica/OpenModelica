@@ -226,7 +226,7 @@ all-runtimeCPPinstall:  CMinpack sundials
 omc-and-runtimeCPPinstall:  CMinpack sundials
 	$(MAKE) omc runtimeCPPinstall OMBUILDDIR=$(OMBUILDDIR)
 
-runtimeCPP: CMinpack sundials antlr-copy $(MINGW_EXTRA_LIBS) omc
+runtimeCPP: cppzmq CMinpack sundials antlr-copy $(MINGW_EXTRA_LIBS) omc
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
 CMAKE_ARGS=$(filter CMAKE_%, $(MAKEFLAGS))
@@ -304,25 +304,29 @@ CMinpack-clean:
 	rm -rf 3rdParty/CMinpack/build
 
 libzmq: $(builddir_lib_omc)/$(LIBZMQLIB)
-$(builddir_lib_omc)/$(LIBZMQLIB):
 	test -d 3rdParty/libzmq
 	mkdir -p 3rdParty/libzmq/build
-	(cd 3rdParty/libzmq/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE_CHECK_UNDEFINED_LOOKUP) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_AR:String="$(AR)" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DWITH_PERF_TOOL:Bool=OFF -DZMQ_BUILD_TESTS:Bool=OFF -DENABLE_CPACK:Bool=OFF -DCMAKE_BUILD_TYPE=Release .. -G $(CMAKE_TARGET))
-	test -f 3rdParty/libzmq/build/lib/$(LIBZMQLIB) || $(MAKE) -C 3rdParty/libzmq/build
+	(cd 3rdParty/libzmq/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE_CHECK_UNDEFINED_LOOKUP) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_AR:String="$(AR)" -DCMAKE_INSTALL_PREFIX="`pwd`" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DWITH_PERF_TOOL:Bool=OFF -DZMQ_BUILD_TESTS:Bool=OFF -DENABLE_CPACK:Bool=OFF -DCMAKE_BUILD_TYPE=Release .. -G $(CMAKE_TARGET))
+	test -f 3rdParty/libzmq/build/lib/$(LIBZMQLIB) || $(MAKE) -C 3rdParty/libzmq/build install
 	test ! `uname` = Darwin || install_name_tool -id @rpath/$(LIBZMQLIB) 3rdParty/libzmq/build/lib/$(LIBZMQLIB)
 	# copy dll/so to $(LIB_OMC) and $(builddir_bin) folders
-	(rm -f $(builddir_lib_omc)/$(LIBZMQLIB)*)
-	(rm -f $(builddir_bin)/$(LIBZMQLIB)*)
+	#(rm -f $(builddir_lib_omc)/$(LIBZMQLIB)*)
+	#(rm -f $(builddir_bin)/$(LIBZMQLIB)*)
 	(cp -af 3rdParty/libzmq/build/lib/$(LIBZMQLIB)* $(builddir_lib_omc))
 	# Darwin has to be special always; libzmq*.dylib while Linux is libzmq.so* ...
 	(test ! `uname` = Darwin || cp -af 3rdParty/libzmq/build/lib/lib*.dylib $(builddir_lib_omc))
 ifeq ($(SHREXT),.dll)
 	(cp -af 3rdParty/libzmq/build/lib/$(LIBZMQLIB)* $(builddir_bin))
 endif
-
+cppzmq: libzmq
+	test -d 3rdParty/cppzmq
+	mkdir -p 3rdParty/cppzmq/build
+	(cd 3rdParty/cppzmq/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE_CHECK_UNDEFINED_LOOKUP) -DCMAKE_FIND_DEBUG_MODE:Bool=ON -DCPPZMQ_BUILD_TESTS:Bool=OFF -DZeroMQ_DIR=../libzmq/build/share/cmake/ZeroMQ  -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_FIND_DEBUG_MODE:Bool=ON -DCMAKE_AR:String="$(AR)" -DCMAKE_INSTALL_PREFIX="`pwd`" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DWITH_PERF_TOOL:Bool=OFF  .. -G $(CMAKE_TARGET))
+	$(MAKE) -C 3rdParty/cppzmq/build install
 libzmq-clean:
 	rm -rf 3rdParty/libzmq/build
-
+cppzmq-clean:
+	rm -rf 3rdParty/cppzmq/build
 metis: $(OMBUILDDIR)/$(LIB_OMC)/libmetis$(STAEXT)
 $(OMBUILDDIR)/$(LIB_OMC)/libmetis$(STAEXT): 3rdParty/metis-5.1.0/CMakeLists.txt
 	(cd 3rdParty/metis-5.1.0 && $(CMAKE) ./ -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -G $(CMAKE_TARGET) && CC="$(CC)" CFLAGS="$(CFLAGS)" $(MAKE))
