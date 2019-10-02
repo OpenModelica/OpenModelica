@@ -123,6 +123,11 @@ win32 {
   }
 }
 
+# Don't show the warnings from included headers.
+for (path, INCLUDEPATH) {
+  QMAKE_CXXFLAGS += -isystem $${path}
+}
+
 SOURCES += main.cpp \
   Util/Helper.cpp \
   Util/Utilities.cpp \
@@ -362,7 +367,7 @@ OTHER_FILES += Resources/css/stylesheet.qss \
 CONFIG += warn_on
 # Only disable the unused variable/function/parameter warning
 win32 {
-  QMAKE_CXXFLAGS += -Wno-clobbered -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter
+  QMAKE_CXXFLAGS += -Wno-clobbered
 }
 
 RESOURCES += resource_omedit.qrc
