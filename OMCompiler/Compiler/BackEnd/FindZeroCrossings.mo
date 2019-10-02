@@ -654,7 +654,7 @@ algorithm
     // all algorithm stmts are processed firstly
     case (BackendDAE.ALGORITHM(size=size, alg=DAE.ALGORITHM_STMTS(stmts), source=source_, expand=expand, attr=eqAttr)::xs) equation
       eq_count = inEqnCount + 1;
-      (stmts_1, (_, _, _, (res, relationsLst, sampleLst, countMathFunctions), _)) = traverseStmtsExps(stmts, (DAE.RCONST(0.0), {}, DAE.RCONST(0.0), (inZeroCrossingLst, inRelationsLst, inSamplesLst, inNumberOfMathFunctions), (eq_count, inVariables1, globalKnownVars)), globalKnownVars);
+      (stmts_1, (_, _, _, (res, relationsLst, sampleLst, countMathFunctions), _)) = traverseStmtsExps(stmts, (DAE.SCONST("$$$"), {}, DAE.RCONST(0.0), (inZeroCrossingLst, inRelationsLst, inSamplesLst, inNumberOfMathFunctions), (eq_count, inVariables1, globalKnownVars)), globalKnownVars);
       eqnsAccum = BackendDAE.ALGORITHM(size, DAE.ALGORITHM_STMTS(stmts_1), source_, expand, eqAttr)::inEquationLstAccum;
       (res1, eq_reslst, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, globalKnownVars, xs, eq_count, countMathFunctions, res, relationsLst, sampleLst, eqnsAccum);
     then (res1, eq_reslst, countMathFunctions, relationsLst, sampleLst);
