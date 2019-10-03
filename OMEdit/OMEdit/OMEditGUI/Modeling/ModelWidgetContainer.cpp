@@ -2482,7 +2482,7 @@ void GraphicsView::omsGraphicsViewContextMenu(QMenu *pMenu)
     pMenu->addAction(MainWindow::instance()->getAddBusAction());
     pMenu->addAction(MainWindow::instance()->getAddTLMBusAction());
     if(mpModelWidget->getLibraryTreeItem()->isExternalTLMModelComponent()) {
-        pMenu->addAction(MainWindow::instance()->getFetchInterfaceDataAction());
+        pMenu->addAction(MainWindow::instance()->getOMSFetchInterfacesAction());
     }
     if (mpModelWidget->getLibraryTreeItem()->isSystemElement()) {
       pMenu->addSeparator();
@@ -7241,7 +7241,7 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   connect(MainWindow::instance()->getAddBusAction(), SIGNAL(triggered()), SLOT(addBus()));
   connect(MainWindow::instance()->getAddTLMBusAction(), SIGNAL(triggered()), SLOT(addTLMBus()));
   connect(MainWindow::instance()->getAddSubModelAction(), SIGNAL(triggered()), SLOT(addSubModel()));
-  connect(MainWindow::instance()->getFetchInterfaceDataAction(), SIGNAL(triggered()), SLOT(fetchInterfaceData()));
+  connect(MainWindow::instance()->getOMSFetchInterfacesAction(), SIGNAL(triggered()), SLOT(fetchInterfaceData()));
 }
 
 void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView)
@@ -7743,7 +7743,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getExportFigaroAction()->setEnabled(enabled && modelica);
   MainWindow::instance()->getExportToOMNotebookAction()->setEnabled(enabled && modelica);
   MainWindow::instance()->getSimulationParamsAction()->setEnabled(enabled && compositeModel);
-  MainWindow::instance()->getFetchInterfaceDataAction()->setEnabled(enabled && !textView && (pLibraryTreeItem->isExternalTLMModelComponent()));
+  MainWindow::instance()->getFetchInterfaceDataAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getAlignInterfacesAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getTLMSimulationAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getAddSystemAction()->setEnabled(enabled && !iconGraphicsView && !textView && (omsModel || (omsSystem && (!pLibraryTreeItem->isSCSystem()))));
@@ -7754,6 +7754,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getAddTLMBusAction()->setEnabled(enabled && !textView && ((omsSystem || omsSubmodel)  && (!pLibraryTreeItem->isTLMSystem())));
   MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && !iconGraphicsView && !textView && omsSystem);
   MainWindow::instance()->getOMSInstantiateModelAction()->setEnabled(enabled && (omsModel || omsSystem || omsSubmodel));
+  MainWindow::instance()->getOMSFetchInterfacesAction()->setEnabled(enabled && !textView && (pLibraryTreeItem->isExternalTLMModelComponent()));
   if (pLibraryTreeItem) {
     LibraryTreeItem *pTopLevelLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()));
     MainWindow::instance()->getOMSInstantiateModelAction()->setChecked(pTopLevelLibraryTreeItem && pTopLevelLibraryTreeItem->isInstantiated());
