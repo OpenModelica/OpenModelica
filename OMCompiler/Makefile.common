@@ -226,7 +226,7 @@ all-runtimeCPPinstall:  CMinpack sundials
 omc-and-runtimeCPPinstall:  CMinpack sundials
 	$(MAKE) omc runtimeCPPinstall OMBUILDDIR=$(OMBUILDDIR)
 
-runtimeCPP: cppzmq CMinpack sundials antlr-copy $(MINGW_EXTRA_LIBS) omc
+runtimeCPP: CMinpack sundials antlr-copy $(MINGW_EXTRA_LIBS) omc
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
 CMAKE_ARGS=$(filter CMAKE_%, $(MAKEFLAGS))
