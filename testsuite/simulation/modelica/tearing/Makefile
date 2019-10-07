@@ -110,11 +110,8 @@ Tearing18-minimal.mos \
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
 FAILINGTESTFILES = \
-Tearing17-omc.mos \
 Tearing18-omc.mos \
-Tearing17-cel.mos \
 Tearing18-cel.mos \
-Tearing17-celMC3.mos \
 Tearing18-celMC3.mos \
 
 # Dependency files that are not .mo .mos or Makefile
