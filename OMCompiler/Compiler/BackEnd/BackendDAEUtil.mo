@@ -6284,13 +6284,11 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEExps;
 
-
-public function traverseBackendDAEExpsJac "author: Frenkel TUD
-
+public function traverseBackendDAEExpsJac
+  "author: kabdelhak, AnHeuermann FHB 2019-10
   This function goes through the BackendDAE structure and finds all the
-  expressions and performs the function on them in a list
-  an extra argument passed through the function.
-"
+  expressions in all jacobians and performs the function on them in a list
+  an extra argument passed through the function."
   replaceable type Type_a subtypeof Any;
   input BackendDAE.BackendDAE inBackendDAE;
   input FuncExpType func;
@@ -6312,9 +6310,6 @@ algorithm
     case BackendDAE.DAE(systs, shared)
       equation
         outTypeA = List.fold1(systs, traverseBackendDAEExpsEqSystemJacobians, func, inTypeA);
-        //outTypeA = traverseBackendDAEExpsVars(shared.globalKnownVars, func, outTypeA);
-        //outTypeA = traverseBackendDAEExpsEqns(shared.initialEqs, func, outTypeA);
-        //outTypeA = traverseBackendDAEExpsEqns(shared.removedEqs, func, outTypeA);
       then
         outTypeA;
 
@@ -6324,7 +6319,6 @@ algorithm
     then fail();
   end matchcontinue;
 end traverseBackendDAEExpsJac;
-
 
 public function traverseBackendDAEExpsEqSystemJacobians "author: wbraun
 
@@ -9666,6 +9660,17 @@ algorithm
     case (BackendDAE.JAC_NO_ANALYTIC()) then false;
   end match;
 end getLinearfromJacType;
+
+public function isJacobianDiffType
+  input BackendDAE.DifferentiationType diffType;
+  output Boolean b;
+algorithm
+  b := match diffType
+    case BackendDAE.DIFF_FULL_JACOBIAN() then true;
+    case BackendDAE.GENERIC_GRADIENT() then true;
+    else false;
+  end match;
+end isJacobianDiffType;
 
 public function containsHomotopyCall
   input DAE.Exp inExp;

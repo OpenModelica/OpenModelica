@@ -446,7 +446,7 @@ algorithm
     discreteModelVars := BackendDAEUtil.foldEqSystem(dlow, extractDiscreteModelVars, {});
     if debug then execStat("simCode: extractDiscreteModelVars"); end if;
     makefileParams := SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, isFMU);
-    (delayedExps, maxDelayedExpIndex) := extractDelayedExpressions(dlow, symJacs);
+    (delayedExps, maxDelayedExpIndex) := extractDelayedExpressions(dlow);
     execStat("simCode: created of all other equations (e.g. parameter, nominal, assert, etc)");
 
     // append removed equation to all equations, since these are actually
@@ -5481,21 +5481,16 @@ end collectDelayExpressions;
 
 public function extractDelayedExpressions
   input BackendDAE.BackendDAE dlow;
-  input BackendDAE.SymbolicJacobians symJacs;
   output list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
   output Integer maxDelayedExpIndex;
 algorithm
   (delayedExps, maxDelayedExpIndex) := matchcontinue(dlow)
     local
-      list<DAE.Exp> exps, expsJac;
+      list<DAE.Exp> exps;
     case _
       equation
         ((_,exps)) = BackendDAEUtil.traverseBackendDAEExps(dlow, Expression.traverseSubexpressionsHelper, (collectDelayExpressions, {}));
-        ((_,expsJac)) = BackendDAEUtil.traverseBackendDAEExpsJac(dlow, Expression.traverseSubexpressionsHelper, (collectDelayExpressions, {}));
-        print("exps: " + ExpressionDump.printExpListStr(exps) +"\n");
-        print("expsJac: " + ExpressionDump.printExpListStr(expsJac) +"\n");
-        BackendDump.printBackendDAE(dlow);
-        delayedExps = List.map(listAppend(expsJac,exps), extractIdAndExpFromDelayExp);
+        delayedExps = List.map(exps, extractIdAndExpFromDelayExp);
         maxDelayedExpIndex = List.applyAndFold(delayedExps, intMax, Util.tuple21, -1);
       then
         (delayedExps, maxDelayedExpIndex+1);

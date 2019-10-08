@@ -1812,13 +1812,18 @@ algorithm
       then
        (res1, inFunctionTree);
 
-    // diff(delay(_,exp1, delayTime, delayMax)) = delay(_, diff(exp1), delayTime, delayMax)
-    case ("delay", {e1, e2, e3, e4}, DAE.CALL_ATTR(ty=tp))
+    /* diff(delay(_,exp1, delayTime, delayMax)) = delay(_, diff(exp1), delayTime, delayMax)
+    Do not differentiate delay operator for jacobians and use numerical jacobian for now.
+    ToDo: use difference quotient or build smarter ringbuffer for all possible inputs for delay.
+    The delay inputs may depend on the seed variables.
+    */
+    case ("delay", {e1, e2, e3, e4}, DAE.CALL_ATTR(ty=tp)) guard(not BackendDAEUtil.isJacobianDiffType(inDiffType))
       equation
         (res, funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
       then
        (Expression.makePureBuiltinCall("delay", {e1, res, e3, e4}, tp),funcs);
 
+/*
     // Error message for unsupported opeartor
     case(_,_,_)
       equation
@@ -1829,7 +1834,7 @@ algorithm
         Debug.trace(serr);
       then
         fail();
-
+*/
   end match;
 end differentiateCallExpNArg;
 
