@@ -331,6 +331,7 @@ public:
   void setForceSetPlainText(bool forceSetPlainText) {mForceSetPlainText = forceSetPlainText;}
   virtual void popUpCompleter () = 0;
   virtual QString wordUnderCursor();
+  bool isModelicaModelInPackageOneFile();
 private:
   void initialize();
   void createActions();

@@ -78,8 +78,8 @@ void BreakpointMarker::documentClosing()
 }
 
 //! @class DocumentMarker
-DocumentMarker::DocumentMarker(QTextDocument *doc)
-  : ITextMarkable(doc) , mpTextDocument(doc)
+DocumentMarker::DocumentMarker(QTextDocument *doc, int lineStartNumber)
+  : ITextMarkable(doc) , mpTextDocument(doc), mLineStartNumber(lineStartNumber)
 {
 
 }
@@ -92,11 +92,11 @@ bool DocumentMarker::addMark(ITextMark *mark, int line)
     if (!docLayout) {
       return false;
     }
-    QTextBlock block = mpTextDocument->findBlockByNumber(blockNumber);
+    QTextBlock block = mpTextDocument->findBlockByNumber(mLineStartNumber > 0 ? line - mLineStartNumber : blockNumber);
     if (block.isValid()) {
       TextBlockUserData *userData = BaseEditorDocumentLayout::userData(block);
       userData->addMark(mark);
-      mark->updateLineNumber(blockNumber + 1);
+      mark->updateLineNumber(line);
       mark->updateBlock(block);
       docLayout->mHasBreakpoint = true;
       docLayout->requestUpdate();
@@ -153,8 +153,9 @@ void DocumentMarker::updateMark(ITextMark *mark)
 {
   Q_UNUSED(mark)
   BaseEditorDocumentLayout *docLayout = qobject_cast<BaseEditorDocumentLayout*>(mpTextDocument->documentLayout());
-  if (docLayout)
+  if (docLayout) {
     docLayout->requestUpdate();
+  }
 }
 
 void DocumentMarker::updateBreakpointsLineNumber()
@@ -164,7 +165,7 @@ void DocumentMarker::updateBreakpointsLineNumber()
   while (block.isValid()) {
     if (const TextBlockUserData *userData = BaseEditorDocumentLayout::testUserData(block))
       foreach (ITextMark *mrk, userData->marks()) {
-        mrk->updateLineNumber(blockNumber + 1);
+        mrk->updateLineNumber(mLineStartNumber > 0 ? blockNumber + mLineStartNumber : blockNumber + 1);
       }
     block = block.next();
     ++blockNumber;
@@ -174,6 +175,7 @@ void DocumentMarker::updateBreakpointsLineNumber()
 void DocumentMarker::updateBreakpointsBlock(const QTextBlock &block)
 {
   if (const TextBlockUserData *userData = BaseEditorDocumentLayout::testUserData(block))
-    foreach (ITextMark *mrk, userData->marks())
+    foreach (ITextMark *mrk, userData->marks()) {
       mrk->updateBlock(block);
+    }
 }

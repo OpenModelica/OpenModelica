@@ -61,7 +61,11 @@ ModelicaEditor::ModelicaEditor(QWidget *pParent)
   mpPlainTextEdit->setCanHaveBreakpoints(true);
   mpPlainTextEdit->setCompletionCharacters(".");
   /* set the document marker */
-  mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
+  if (isModelicaModelInPackageOneFile()) {
+    mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document(), mpModelWidget->getLibraryTreeItem()->mClassInformation.lineNumberStart);
+  } else {
+    mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
+  }
 }
 
 /*!

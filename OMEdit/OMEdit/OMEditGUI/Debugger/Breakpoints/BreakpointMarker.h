@@ -121,7 +121,7 @@ class DocumentMarker : public ITextMarkable
 {
   Q_OBJECT
 public:
-  DocumentMarker(QTextDocument *);
+  DocumentMarker(QTextDocument *, int = 0);
 
   // ITextMarkable
   bool addMark(ITextMark *mark, int line);
@@ -135,6 +135,7 @@ public:
 
 private:
   QTextDocument *mpTextDocument;
+  int mLineStartNumber;
 };
 
 #endif // BREAKPOINTMARKER_H

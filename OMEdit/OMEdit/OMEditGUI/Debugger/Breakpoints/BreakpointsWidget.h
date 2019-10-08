@@ -99,12 +99,10 @@ public:
   BreakpointMarker* findBreakpointMarker(const QString &fileName, int lineNumber);
   BreakpointTreeItem* findBreakpointTreeItem(const QString &fileName, int lineNumber, BreakpointTreeItem *pRootBreakpointTreeItem) const;
   QModelIndex breakpointTreeItemIndex(const BreakpointTreeItem *pBreakpointTreeItem) const;
-  QModelIndex breakpointTreeItemIndexHelper(const BreakpointTreeItem *pBreakpointTreeItem, const BreakpointTreeItem *pParentBreakpointTreeItem,
-                                            const QModelIndex &parentIndex) const;
+  QModelIndex breakpointTreeItemIndexHelper(const BreakpointTreeItem *pBreakpointTreeItem, const BreakpointTreeItem *pParentBreakpointTreeItem, const QModelIndex &parentIndex) const;
   void insertBreakpoint(BreakpointMarker *pBreakpointMarker, LibraryTreeItem *pLibraryTreeItem, BreakpointTreeItem *pParentBreakpointTreeItem);
   void updateBreakpoint(BreakpointMarker *pBreakpointMarker, int lineNumber);
-  void updateBreakpoint(BreakpointTreeItem *pBreakpointTreeItem, QString filePath, int lineNumber, bool enabled, int ignoreCount,
-                        QString condition);
+  void updateBreakpoint(BreakpointTreeItem *pBreakpointTreeItem, QString filePath, int lineNumber, bool enabled, int ignoreCount, QString condition);
   void removeBreakpoint(BreakpointMarker *pBreakpointMarker);
   void removeBreakpoint(BreakpointTreeItem *pBreakpointTreeItem);
 private:
