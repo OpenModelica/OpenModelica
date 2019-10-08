@@ -69,6 +69,7 @@ import Prefixes = NFPrefixes;
 import NFComponent.Component;
 import Ceval = NFCeval;
 import MetaModelica.Dangerous.listReverseInPlace;
+import SimplifyExp = NFSimplifyExp;
 
 constant Expression EQ_ASSERT_STR =
   Expression.STRING("Connected constants/parameters must be equal");
@@ -845,8 +846,8 @@ protected
   Real min_val, max_val;
 algorithm
   flow_cls := InstNode.getClass(ComponentRef.node(flowCref));
-  omin := Class.lookupAttributeValue("min", flow_cls);
-  omax := Class.lookupAttributeValue("max", flow_cls);
+  omin := SimplifyExp.simplifyOpt(Class.lookupAttributeValue("min", flow_cls));
+  omax := SimplifyExp.simplifyOpt(Class.lookupAttributeValue("max", flow_cls));
 
   direction := match (omin, omax)
     // No attributes, flow direction can't be decided.
