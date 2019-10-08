@@ -818,9 +818,9 @@ algorithm
   // Select a branch if we know the flow direction, otherwise generate the whole
   // if-equation.
   if flow_dir == 1 then
-    rel_exp := evaluateInStream(streamCref, sets, setsArray, ctable);
+    exp := evaluateInStream(streamCref, sets, setsArray, ctable);
   elseif flow_dir == -1 then
-    rel_exp := Expression.fromCref(streamCref);
+    exp := Expression.fromCref(streamCref);
   else
     flow_exp := Expression.fromCref(flow_cr);
     stream_exp := Expression.fromCref(streamCref);
@@ -829,12 +829,12 @@ algorithm
     rel_exp := Expression.IF(
       Expression.RELATION(flow_exp, op, Expression.REAL(0.0)),
       instream_exp, stream_exp);
-  end if;
 
-  // actualStream(stream_var) = smooth(0, if flow_var > 0 then inStream(stream_var)
-  //                                                      else stream_var);
-  exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.SMOOTH,
-    {DAE.INTEGER(0), rel_exp}, Expression.variability(rel_exp)));
+    // actualStream(stream_var) = smooth(0, if flow_var > 0 then inStream(stream_var)
+    //                                                      else stream_var);
+    exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.SMOOTH,
+      {DAE.INTEGER(0), rel_exp}, Expression.variability(rel_exp)));
+  end if;
 end evaluateActualStream;
 
 function evaluateFlowDirection
