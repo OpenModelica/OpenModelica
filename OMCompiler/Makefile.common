@@ -66,7 +66,7 @@ else
 	UMFPACK_LIB_TARGET=$(OMBUILDDIR)/$(LIB_OMC)/libumfpack$(SHREXT)
 endif
 
-.PHONY : interactive omc release all fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc libzmq $(MINGW_EXTRA_LIBS) antlr-copy
+.PHONY : interactive omc release all fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc cppzmq $(MINGW_EXTRA_LIBS) antlr-copy
 
 ifeq ($(OMENCRYPTION),yes)
 .PHONY : semla semla-clean
@@ -97,7 +97,7 @@ bootstrap-dependencies-post-compiler-builtin:
 bootstrap-dependencies-post-parser:
 	$(MAKE) -f $(defaultMakefileTarget) -C Parser install_bootstrapping OMBUILDDIR=$(OMBUILDDIR) OMENCRYPTION=$(OMENCRYPTION)
 
-bootstrap-dependencies: $(BOOTSTRAP_FMIL_DEP) interactive-common libzmq interactive-short
+bootstrap-dependencies: $(BOOTSTRAP_FMIL_DEP) interactive-common cppzmq interactive-short
 	$(MAKE) -f $(defaultMakefileTarget) bootstrap-dependencies-post
 
 antlr-copy:
@@ -118,7 +118,7 @@ interactive-common: .testvariables graphstream boehm-gc idl ModelicaExternalC an
 interactive-short: .testvariables interactive-common
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies OMBUILDDIR=$(OMBUILDDIR)
 
-interactive: .testvariables interactive-common fmil lis Cdaskr CMinpack docs libzmq $(SUNDIALS_TARGET) $(IPOPT_TARGET) $(UMFPACK_TARGET) antlr-copy $(MINGW_EXTRA_LIBS)
+interactive: .testvariables interactive-common fmil lis Cdaskr CMinpack docs cppzmq $(SUNDIALS_TARGET) $(IPOPT_TARGET) $(UMFPACK_TARGET) antlr-copy $(MINGW_EXTRA_LIBS)
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) bootstrap-dependencies-post
 
