@@ -1351,7 +1351,7 @@ template fmuSourceMakefile(SimCode simCode, String FMUVersion)
 
   fmu:
   <%\t%>rm -f <%fileNamePrefix%>.fmutmp/sources/<%fileNamePrefix%>_init.xml<%/*Already translated to .c*/%>
-  <%\t%>cp -a <%makefileParams.omhome%>/share/omc/runtime/c/fmi/buildproject/* <%fileNamePrefix%>.fmutmp/sources
+  <%\t%>cp -a "<%makefileParams.omhome%>/share/omc/runtime/c/fmi/buildproject/"* <%fileNamePrefix%>.fmutmp/sources
   <%\t%>cp -a <%fileNamePrefix%>_FMU.libs <%fileNamePrefix%>.fmutmp/sources/
   <%\n%>
   >>
