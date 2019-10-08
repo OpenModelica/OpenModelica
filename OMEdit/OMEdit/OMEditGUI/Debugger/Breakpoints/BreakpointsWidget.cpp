@@ -354,10 +354,10 @@ QVariant BreakpointsTreeModel::data(const QModelIndex &index, int role) const
   */
 BreakpointMarker* BreakpointsTreeModel::findBreakpointMarker(const QString &fileName, int lineNumber)
 {
-  foreach (BreakpointMarker *pBreakpointMarker, mBreakpointMarkersList)
-  {
-    if ((pBreakpointMarker->filePath().compare(fileName) == 0) && (pBreakpointMarker->lineNumber() == lineNumber))
+  foreach (BreakpointMarker *pBreakpointMarker, mBreakpointMarkersList) {
+    if ((pBreakpointMarker->filePath().compare(fileName) == 0) && (pBreakpointMarker->lineNumber() == lineNumber)) {
       return pBreakpointMarker;
+    }
   }
   return 0;
 }
@@ -371,11 +371,14 @@ BreakpointMarker* BreakpointsTreeModel::findBreakpointMarker(const QString &file
 BreakpointTreeItem* BreakpointsTreeModel::findBreakpointTreeItem(const QString &fileName, int lineNumber, BreakpointTreeItem *pRootBreakpointTreeItem) const
 {
   QString ln = QString::number(lineNumber);
-  if ((pRootBreakpointTreeItem->getFilePath().compare(fileName) == 0) && (pRootBreakpointTreeItem->getLineNumber().compare(ln) == 0))
+  if ((pRootBreakpointTreeItem->getFilePath().compare(fileName) == 0) && (pRootBreakpointTreeItem->getLineNumber().compare(ln) == 0)) {
     return pRootBreakpointTreeItem;
-  for (int i = pRootBreakpointTreeItem->getChildren().size(); --i >= 0; )
-    if (BreakpointTreeItem *pBreakpointTreeItem = findBreakpointTreeItem(fileName, lineNumber, pRootBreakpointTreeItem->getChildren().at(i)))
+  }
+  for (int i = pRootBreakpointTreeItem->getChildren().size(); --i >= 0; ) {
+    if (BreakpointTreeItem *pBreakpointTreeItem = findBreakpointTreeItem(fileName, lineNumber, pRootBreakpointTreeItem->getChildren().at(i))) {
       return pBreakpointTreeItem;
+    }
+  }
   return 0;
 }
 
@@ -392,18 +395,18 @@ QModelIndex BreakpointsTreeModel::breakpointTreeItemIndex(const BreakpointTreeIt
   Helper function to find BreakpointTreeItem QModelIndex
   \see BreakpointsTreeModel::breakpointTreeItemIndex
   */
-QModelIndex BreakpointsTreeModel::breakpointTreeItemIndexHelper(const BreakpointTreeItem *pBreakpointTreeItem,
-                                                             const BreakpointTreeItem *pParentBreakpointTreeItem,
-                                                             const QModelIndex &parentIndex) const
+QModelIndex BreakpointsTreeModel::breakpointTreeItemIndexHelper(const BreakpointTreeItem *pBreakpointTreeItem, const BreakpointTreeItem *pParentBreakpointTreeItem, const QModelIndex &parentIndex) const
 {
-  if (pBreakpointTreeItem == pParentBreakpointTreeItem)
+  if (pBreakpointTreeItem == pParentBreakpointTreeItem) {
     return parentIndex;
+  }
   for (int i = pParentBreakpointTreeItem->getChildren().size(); --i >= 0; ) {
     const BreakpointTreeItem *childItem = pParentBreakpointTreeItem->getChildren().at(i);
     QModelIndex childIndex = index(i, 0, parentIndex);
     QModelIndex index = breakpointTreeItemIndexHelper(pBreakpointTreeItem, childItem, childIndex);
-    if (index.isValid())
+    if (index.isValid()) {
       return index;
+    }
   }
   return QModelIndex();
 }
@@ -417,8 +420,7 @@ QModelIndex BreakpointsTreeModel::breakpointTreeItemIndexHelper(const Breakpoint
   \param pLibraryTreeItem - pointer LibraryTreeItem
   \param pParentBreakpointTreeItem - pointer BreakpointTreeItem
   */
-void BreakpointsTreeModel::insertBreakpoint(BreakpointMarker *pBreakpointMarker, LibraryTreeItem *pLibraryTreeItem,
-                                            BreakpointTreeItem *pParentBreakpointTreeItem)
+void BreakpointsTreeModel::insertBreakpoint(BreakpointMarker *pBreakpointMarker, LibraryTreeItem *pLibraryTreeItem, BreakpointTreeItem *pParentBreakpointTreeItem)
 {
   // Add the breakpoint to the list.
   mBreakpointMarkersList.append(pBreakpointMarker);
