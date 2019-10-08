@@ -6384,5 +6384,16 @@ algorithm
   end matchcontinue;
 end getDirection;
 
+function isNamedPathIdent
+  input Absyn.Path path;
+  input String name;
+  output Boolean res;
+algorithm
+  res := match path
+    case IDENT() then path.name == name;
+    else false;
+  end match;
+end isNamedPathIdent;
+
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;
