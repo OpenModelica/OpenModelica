@@ -3552,7 +3552,7 @@ algorithm
     System.removeFile(logfile);
   end if;
   nozip := Autoconf.make+" -j"+intString(Config.noProc()) + " nozip";
-  includeDefaultFmi := Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi";
+  includeDefaultFmi := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
   finishedBuild := match Util.stringSplitAtChar(platform, " ")
     case {"dynamic"}
       algorithm
