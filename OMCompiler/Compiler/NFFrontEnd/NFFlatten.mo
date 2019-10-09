@@ -922,7 +922,7 @@ algorithm
         if Flags.isSet(Flags.NF_SCALARIZE) then
           eql := unrollForLoop(eq, prefix, equations);
         else
-          eql := eq :: equations;
+          eql := splitForLoop(eq, prefix, equations);
         end if;
       then eql;
 
@@ -1121,6 +1121,67 @@ algorithm
     equations := listAppend(unrolled_body, equations);
   end while;
 end unrollForLoop;
+
+function splitForLoop
+  input Equation forLoop;
+  input ComponentRef prefix;
+  input output list<Equation> equations;
+protected
+  InstNode iter;
+  Option<Expression> range;
+  list<Equation> body, connects, non_connects;
+  DAE.ElementSource src;
+algorithm
+  Equation.FOR(iter, range, body, src) := forLoop;
+  (connects, non_connects) := splitForLoop2(body);
+
+  if not listEmpty(connects) then
+    equations := unrollForLoop(Equation.FOR(iter, range, connects, src), prefix, equations);
+  end if;
+
+  if not listEmpty(non_connects) then
+    equations := Equation.FOR(iter, range, non_connects, src) :: equations;
+  end if;
+end splitForLoop;
+
+function splitForLoop2
+  input list<Equation> forBody;
+  output list<Equation> connects = {};
+  output list<Equation> nonConnects = {};
+protected
+  list<Equation> conns, nconns;
+algorithm
+  for eq in forBody loop
+    () := match eq
+      case Equation.CONNECT()
+        algorithm
+          connects := eq :: connects;
+        then
+          ();
+
+      case Equation.FOR()
+        algorithm
+          (conns, nconns) := splitForLoop2(eq.body);
+
+          if not listEmpty(conns) then
+            connects := Equation.FOR(eq.iterator, eq.range, conns, eq.source) :: connects;
+          end if;
+
+          if not listEmpty(nconns) then
+            nonConnects := Equation.FOR(eq.iterator, eq.range, nconns, eq.source) :: nonConnects;
+          end if;
+        then
+          ();
+
+      else
+        algorithm
+          nonConnects := eq :: nonConnects;
+        then
+          ();
+
+    end match;
+  end for;
+end splitForLoop2;
 
 function flattenAlgorithms
   input list<Algorithm> algorithms;
