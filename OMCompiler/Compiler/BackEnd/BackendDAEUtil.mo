@@ -3002,7 +3002,7 @@ algorithm
     then traversingincidenceRowExpSolvableFinder(e1, tpl);
 
     // use the inlined function to analyze the ocuring variables
-    case (DAE.CALL(), (vars, pa, visitedPaths, ofunctionTree as SOME(functionTree))) guard not AvlSetPath.hasKey(visitedPaths, inExp.path)
+    case (DAE.CALL(path=Absyn.IDENT()), (vars, pa, visitedPaths, ofunctionTree as SOME(functionTree))) guard not AvlSetPath.hasKey(visitedPaths, inExp.path)
       algorithm
         (e1,_) := Inline.forceInlineCall(inExp, {}, (SOME(functionTree), {DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}));
         false := referenceEq(inExp,e1);
