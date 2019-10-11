@@ -829,6 +829,7 @@ algorithm
         //   R1 r2(v1=1, v1=2);     // <= Here
         // end out;
         // see testsuit/mofiles/RecordBindings.mo.
+        /*
      case (cache,env,ih,store,ci_state,mod as DAE.MOD(binding = NONE()),pre,n,cl as SCode.CLASS(restriction = SCode.R_RECORD(_)),attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
       equation
         true = ClassInf.isFunction(ci_state);
@@ -841,7 +842,7 @@ algorithm
         //        input Integer sequence[3](min = {1,1,1}, max = {3,3,3}) = {1,2,3}; // this will fail if we send in the mod.
         //        see testsuite/mofiles/Sequence.mo
         (cache,env_1,ih,store,_,csets,ty,_,_,graph) =
-          Inst.instClass(cache, env, ih, store, /* mod */ DAE.NOMOD(), pre, cl, inst_dims, impl, InstTypes.INNER_CALL(), graph, csets);
+          Inst.instClass(cache, env, ih, store, DAE.NOMOD(), pre, cl, inst_dims, impl, InstTypes.INNER_CALL(), graph, csets);
         //Make it an array type since we are not flattening
         ty_1 = InstUtil.makeArrayType(dims, ty);
         InstUtil.checkFunctionVarType(ty_1, ci_state, n, info);
@@ -853,7 +854,7 @@ algorithm
         (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,ty_2,{}));
 
         //We should get a call exp from here
-        (cache, DAE.EQBOUND(e,_,_,_/*source*/)) = InstBinding.makeBinding(cache,env,attr,mod,ty_2,pre,n,info);
+        (cache, DAE.EQBOUND(e,_,_,_)) = InstBinding.makeBinding(cache,env,attr,mod,ty_2,pre,n,info);
 
         // set the source of this element
         source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre);
@@ -864,6 +865,7 @@ algorithm
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
       then
         (cache,env_1,ih,store,dae,csets,ty_1,graph);
+        */
 
     // mahge: function variables with eqMod modifications.
     // FIXHERE: They might have subMods too (variable attributes). see testsuite/mofiles/Sequence.mo
@@ -915,6 +917,7 @@ algorithm
         (cache,env_1,ih,store,_,csets,ty,_,_,_) =
           Inst.instClass(cache, env, ih, store, mod, pre, cl, inst_dims, impl, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, csets);
 
+        ty = markTypesVarsOutsideBindings(ty,mod);
         arrty = InstUtil.makeArrayType(dims, ty);
         InstUtil.checkFunctionVarType(arrty, ci_state, n, info);
         (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,arrty,{}));
@@ -1783,6 +1786,65 @@ algorithm
     outDae := DAEUtil.joinDaes(outDae, dae);
   end for;
 end instArrayDimEnum;
+
+protected function markTypesVarsOutsideBindings
+  input DAE.Type inType;
+  input DAE.Mod inMod;
+  output DAE.Type outType = inType;
+protected
+  list<DAE.SubMod> submods;
+algorithm
+
+  if not Types.isRecord(inType) then
+     return;
+  end if;
+
+  try
+    DAE.MOD(subModLst = submods) := inMod;
+  else
+    return;
+  end try;
+
+  if listEmpty(submods) then
+    return;
+  end if;
+
+
+  outType := match inType
+    local
+      list<DAE.Var> tvars;
+      Option<DAE.Exp> obind;
+      DAE.Exp bind_exp;
+
+    case DAE.T_COMPLEX() algorithm
+      tvars := {};
+      for var in inType.varLst loop
+
+        for submod in submods loop
+          if varIsModifiedInMod(var.name, submod) then
+            var.bind_from_outside := true;
+            break;
+          end if;
+        end for;
+
+        tvars := var::tvars;
+      end for;
+      tvars := listReverse(tvars);
+
+    then DAE.T_COMPLEX(inType.complexClassType, tvars, inType.equalityConstraint);
+  end match;
+
+end markTypesVarsOutsideBindings;
+
+function varIsModifiedInMod
+  input String inName;
+  input DAE.SubMod inSubmod;
+  output Boolean b;
+algorithm
+  b := match inSubmod
+    case DAE.NAMEMOD() then stringEqual(inSubmod.ident, inName);
+  end match;
+end varIsModifiedInMod;
 
 annotation(__OpenModelica_Interface="frontend");
 end InstVar;

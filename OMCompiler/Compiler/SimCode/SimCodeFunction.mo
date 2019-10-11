@@ -122,6 +122,12 @@ uniontype RecordDeclaration
     list<Variable> variables "only name and type";
   end RECORD_DECL_FULL;
 
+  record RECORD_DECL_ADD_CONSTRCTOR
+    String ctor_name "A unique name for the new constor. e.g. R_1_3() if it needs the 1st an 3rd members as inputs";
+    String name "The record's name";
+    list<Variable> variables "The members with the ones that need outisde binding marked. e.g 1st and 3rd elements will have bind_from_outside=true ";
+  end RECORD_DECL_ADD_CONSTRCTOR;
+
   record RECORD_DECL_DEF
     Absyn.Path path "definition path .. encoded?";
     list<String> fieldNames;

@@ -423,11 +423,15 @@ template recordDeclaration(RecordDeclaration recDecl)
                       (variables |> VARIABLE(__) => '"<%crefStr(name)%>"' ;separator=","),
                       listLength(variables))%>
 
-    <%recordConstructorDef(r.name, r.variables)%>
+    <%recordConstructorDef(r.name, r.name, r.variables)%>
     <%recordCopyFromVarsDef(r.name, r.variables)%>
 
     <%recordCopyDef(r.name, r.variables)%>
     <%recordCopyToVarsDef(r.name, r.variables)%>
+    >>
+  case r as RECORD_DECL_ADD_CONSTRCTOR(__) then
+    <<
+    <%recordConstructorDef(r.ctor_name, r.name, r.variables)%>
     >>
   case r as RECORD_DECL_DEF(__) then
     <<
@@ -443,9 +447,34 @@ template recordDeclarationHeader(RecordDeclaration recDecl)
 ::=
   match recDecl
   case r as RECORD_DECL_FULL(__) then recordDeclarationFullHeader(r)
+  case r as RECORD_DECL_ADD_CONSTRCTOR(__) then recordDeclarationExtraCtor(r)
   // TODO revise me
   case r as RECORD_DECL_DEF(__) then 'extern struct record_description <%underscorePath(r.path)%>__desc;<%\n%>'
 end recordDeclarationHeader;
+
+template recordDeclarationExtraCtor(RecordDeclaration recDecl)
+ "Generates structs for a record declaration."
+::=
+  match recDecl
+  case r as RECORD_DECL_ADD_CONSTRCTOR(__) then
+    let ctor_name = r.ctor_name
+    let rec_name = r.name
+
+    let ctor_macro_name = '<%ctor_name%>_construct'
+    let ctor_macro_additional_inputs = (r.variables |> var as VARIABLE(__) => if var.bind_from_outside
+                                  then (", " + "in_" + crefStr(var.name))
+                                  )
+    let ctor_func_name = '<%ctor_macro_name%>_p'
+    let ctor_additional_inputs = (r.variables |> var as VARIABLE(__) => if var.bind_from_outside
+                                  then (", " + varType(var) + " in_" + crefStr(var.name))
+                                  )
+      <<
+      void <%ctor_func_name%>(threadData_t *threadData, void* v_ths <%ctor_additional_inputs%>);
+      #define <%ctor_macro_name%>(td, ths <%ctor_macro_additional_inputs%>) <%ctor_func_name%>(td, &ths <%ctor_macro_additional_inputs%>)
+
+      #define alloc_<%ctor_name%>_array(dst,ndims,...) generic_array_create(NULL, dst, <%ctor_func_name%>, ndims, sizeof(<%rec_name%>), __VA_ARGS__)
+      >>
+end recordDeclarationExtraCtor;
 
 template recordDeclarationFullHeader(RecordDeclaration recDecl)
  "Generates structs for a record declaration."
@@ -587,7 +616,7 @@ case var as VARIABLE(__) then
   end match
 end recordMemberCopy;
 
-template recordConstructorDef(String rec_name, list<Variable> variables)
+template recordConstructorDef(String ctor_name, String rec_name, list<Variable> variables)
  "Generates structs for a record declaration."
 ::=
   let &varDecls = buffer ""
@@ -597,7 +626,7 @@ template recordConstructorDef(String rec_name, list<Variable> variables)
                                 )
   let varInits = (variables |> var => recordMemberAllocInit(var, appendCurrentCrefPrefix(contextFunction, "ths->"), &varDecls, &auxFunction) /*;separator="\n"*/)
   <<
-  void <%rec_name%>_construct_p(threadData_t *threadData, void* v_ths <%ctor_additional_inputs%>) {
+  void <%ctor_name%>_construct_p(threadData_t *threadData, void* v_ths <%ctor_additional_inputs%>) {
     <%rec_name%>* ths = (<%rec_name%>*)(v_ths);
     <%varDecls%>
     <%varInits%>
@@ -641,15 +670,18 @@ end simpleVarInit;
 template recordVarAllocInit(Option<Exp> value, ComponentRef var_cref, Boolean bind_outside, Type var_type, Context context, Text &varDecls, Text &auxFunction)
 ::=
   let &preExp = buffer ""
+  let &ctor_suffix = buffer ""
   let type_name = expTypeShort(var_type)
   let var_name = contextCref(var_cref, context, &auxFunction)
 
   let ctor_additional_inputs = match var_type
     case ty as DAE.T_COMPLEX() then
-      (ty.varLst |> sv  => recordInitOutsideBindings(sv, &preExp, &varDecls, &auxFunction))
+      (ty.varLst |> sv  hasindex i1 fromindex 1 =>
+            recordInitOutsideBindings(sv, i1, &ctor_suffix, &preExp, &varDecls, &auxFunction); empty /* increase the counter! */
+      )
     end match
 
-  let allocation = '<%type_name%>_construct(threadData, <%var_name%><%ctor_additional_inputs%>);'
+  let allocation = '<%type_name%><%ctor_suffix%>_construct(threadData, <%var_name%><%ctor_additional_inputs%>);'
 
   match value
     case SOME(rhs_exp) then
@@ -675,10 +707,11 @@ template recordVarAllocInit(Option<Exp> value, ComponentRef var_cref, Boolean bi
 
 end recordVarAllocInit;
 
-template recordInitOutsideBindings(Var subvar, Text &preExp, Text &varDecls, Text &auxFunction)
+template recordInitOutsideBindings(Var subvar, Integer ix, Text& ctor_suffix, Text &preExp, Text &varDecls, Text &auxFunction)
 ::=
 match subvar
   case TYPES_VAR(binding=EQBOUND(exp=exp), bind_from_outside = true) then
+    let &ctor_suffix += "_"  + ix
     ", " + daeExp(exp, contextFunction, &preExp, &varDecls, &auxFunction)
   case TYPES_VAR(bind_from_outside = true) then
     error(sourceInfo(), 'Record has binding from outside but found a non EQBOUND binding. Implement me.')
@@ -2309,14 +2342,16 @@ template initRecordMembers(Variable var, Text &varDecls, Text &varInits, Text &a
 match var
 case VARIABLE(ty = T_COMPLEX(complexClassType = RECORD(__), varLst = members)) then
   let &preExp = buffer ""
+  let &ctor_suffix = buffer ""
   let varName = contextCref(name, contextFunction, &auxFunction)
   let typeName = varType(var)
 
-  let ctor_additional_inputs = ty.varLst |> v  => recordInitOutsideBindings(v, &preExp, &varDecls, &auxFunction)
-
+  let ctor_additional_inputs = (ty.varLst |> sv  hasindex i1 fromindex 1 =>
+            recordInitOutsideBindings(sv, i1, &ctor_suffix, &preExp, &varDecls, &auxFunction); empty /* increase the counter! */
+                                )
   <<
   <%preExp%>
-  <%typeName%>_construct(threadData, <%varName%><%ctor_additional_inputs%>);<%\n%>
+  <%typeName%><%ctor_suffix%>_construct(threadData, <%varName%><%ctor_additional_inputs%>);<%\n%>
   >>
 end initRecordMembers;
 
@@ -5124,12 +5159,12 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
 
   case ecr as CREF(componentRef=cr, ty=ty) then
     if crefIsScalarWithAllConstSubs(cr) then
-      let cast = typeCastContextInt(context, ty)
-        '<%cast%><%contextCref(cr,context, &auxFunction)%>'
+      // let cast = typeCastContextInt(context, ty)
+      '<%contextCref(cr,context, &auxFunction)%>'
     else if crefIsScalarWithVariableSubs(cr) then
       let nosubname = contextCref(crefStripSubs(cr),context, &auxFunction)
-      let cast = typeCastContextInt(context, ty)
-        '<%cast%>(&<%nosubname%>)<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
+      // let cast = typeCastContextInt(context, ty)
+      '(&<%nosubname%>)<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
     else
       error(sourceInfo(),'daeExpCrefRhsSimContext: UNHANDLED CREF: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 end daeExpCrefRhsSimContext;

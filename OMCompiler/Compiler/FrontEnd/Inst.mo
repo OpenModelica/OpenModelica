@@ -624,7 +624,7 @@ algorithm
         ty = InstUtil.mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint, c, InstUtil.extractComment(dae.elementLst));
         dae = InstUtil.updateDeducedUnits(callscope_1,store,dae);
 
-        ty = collectAndFixDerivedComplexOutsideBindings(ty, c);
+        ty = markDerivedRecordOutsideBindings(ty, c);
 
         // Fixes partial functions.
         ty = InstUtil.fixInstClassType(ty,isPartialFn);
@@ -951,7 +951,7 @@ algorithm
 end instClassIn2;
 
 
-protected function collectAndFixDerivedComplexOutsideBindings
+protected function markDerivedRecordOutsideBindings
   input DAE.Type inType;
   input SCode.Element inClass;
   output DAE.Type outType;
@@ -1003,7 +1003,7 @@ algorithm
     then DAE.T_COMPLEX(inType.complexClassType, tvars, inType.equalityConstraint);
   end match;
 
-end collectAndFixDerivedComplexOutsideBindings;
+end markDerivedRecordOutsideBindings;
 
 function varIsModifiedInDerivedMod
   input String inName;
