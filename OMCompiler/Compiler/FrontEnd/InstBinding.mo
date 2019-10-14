@@ -655,6 +655,7 @@ algorithm
     // A record might have bindings for each component instead of a single
     // binding for the whole record, in which case we need to assemble them into
     // a binding.
+    /*
     case (cache, _, DAE.MOD(subModLst = sub_mods as _ :: _), _)
       equation
         (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = tpath),
@@ -662,6 +663,7 @@ algorithm
         binding = makeRecordBinding(cache, inEnv, tpath, inType, complex_vars, sub_mods, inInfo);
       then
         (cache, binding);
+        */
 
     case (cache,_,DAE.MOD(binding = NONE()),_) then (cache,DAE.UNBOUND());
     /* adrpo: CHECK! do we need this here? numerical values

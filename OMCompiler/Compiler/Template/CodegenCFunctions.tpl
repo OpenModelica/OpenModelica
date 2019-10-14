@@ -677,7 +677,7 @@ template recordVarAllocInit(Option<Exp> value, ComponentRef var_cref, Boolean bi
   let ctor_additional_inputs = match var_type
     case ty as DAE.T_COMPLEX() then
       (ty.varLst |> sv  hasindex i1 fromindex 1 =>
-            recordInitOutsideBindings(sv, i1, &ctor_suffix, &preExp, &varDecls, &auxFunction); empty /* increase the counter! */
+            recordInitOutsideBindings(sv, i1, &ctor_suffix, context, &preExp, &varDecls, &auxFunction); empty /* increase the counter! */
       )
     end match
 
@@ -707,12 +707,12 @@ template recordVarAllocInit(Option<Exp> value, ComponentRef var_cref, Boolean bi
 
 end recordVarAllocInit;
 
-template recordInitOutsideBindings(Var subvar, Integer ix, Text& ctor_suffix, Text &preExp, Text &varDecls, Text &auxFunction)
+template recordInitOutsideBindings(Var subvar, Integer ix, Text& ctor_suffix, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
 ::=
 match subvar
   case TYPES_VAR(binding=EQBOUND(exp=exp), bind_from_outside = true) then
     let &ctor_suffix += "_"  + ix
-    ", " + daeExp(exp, contextFunction, &preExp, &varDecls, &auxFunction)
+    ", " + daeExp(exp, context, &preExp, &varDecls, &auxFunction)
   case TYPES_VAR(bind_from_outside = true) then
     error(sourceInfo(), 'Record has binding from outside but found a non EQBOUND binding. Implement me.')
 end match
@@ -2347,7 +2347,7 @@ case VARIABLE(ty = T_COMPLEX(complexClassType = RECORD(__), varLst = members)) t
   let typeName = varType(var)
 
   let ctor_additional_inputs = (ty.varLst |> sv  hasindex i1 fromindex 1 =>
-            recordInitOutsideBindings(sv, i1, &ctor_suffix, &preExp, &varDecls, &auxFunction); empty /* increase the counter! */
+            recordInitOutsideBindings(sv, i1, &ctor_suffix, contextFunction, &preExp, &varDecls, &auxFunction); empty /* increase the counter! */
                                 )
   <<
   <%preExp%>

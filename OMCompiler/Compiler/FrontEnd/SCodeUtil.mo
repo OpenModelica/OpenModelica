@@ -2878,6 +2878,13 @@ algorithm
   end match;
 end boolEncapsulated;
 
+public function getClassEncapsulation
+  input SCode.Element inElement;
+  output SCode.Encapsulated outEncapsulation;
+algorithm
+  SCode.CLASS(encapsulatedPrefix = outEncapsulation) := inElement;
+end getClassEncapsulation;
+
 public function partialBool
   input SCode.Partial inPartial;
   output Boolean bPartial;

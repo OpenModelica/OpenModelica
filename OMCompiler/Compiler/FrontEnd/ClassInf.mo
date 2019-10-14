@@ -94,6 +94,7 @@ uniontype State "- Machine states, the string contains the classname."
   record FUNCTION
     Absyn.Path path;
     Boolean isImpure;
+    Boolean isRecordConstructor;
   end FUNCTION;
 
   record ENUMERATION
@@ -421,10 +422,11 @@ algorithm
     case (SCode.R_CONNECTOR(isExpandable),p) then CONNECTOR(p,isExpandable);
     case (SCode.R_TYPE(),p) then TYPE(p);
     case (SCode.R_PACKAGE(),p) then PACKAGE(p);
-    case (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(isImpure)),p) then FUNCTION(p, isImpure);
-    case (SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure)),p) then FUNCTION(p, isImpure);
-    case (SCode.R_FUNCTION(_),p) then FUNCTION(p, false);
-    case (SCode.R_OPERATOR(),p) then FUNCTION(p, false);
+    case (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(isImpure)),p) then FUNCTION(p, isImpure, false);
+    case (SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure)),p) then FUNCTION(p, isImpure, false);
+    case (SCode.R_FUNCTION(SCode.FR_RECORD_CONSTRUCTOR()),p) then FUNCTION(p, false, true);
+    case (SCode.R_FUNCTION(_),p) then FUNCTION(p, false, false);
+    case (SCode.R_OPERATOR(),p) then FUNCTION(p, false, false);
     case (SCode.R_ENUMERATION(),p) then ENUMERATION(p);
     case (SCode.R_PREDEFINED_INTEGER(),p) then TYPE_INTEGER(p);
     case (SCode.R_PREDEFINED_REAL(),p) then TYPE_REAL(p);
@@ -705,6 +707,17 @@ algorithm
     else false;
   end match;
 end isFunction;
+
+public function isRecordConstructor
+"returns true if state is FUNCTION."
+  input State inState;
+  output Boolean b;
+algorithm
+  b := match (inState)
+    case FUNCTION(isRecordConstructor = true) then true;
+    else false;
+  end match;
+end isRecordConstructor;
 
 public function isFunctionOrRecord "Fails for states that are not FUNCTION or RECORD."
   input State inState;

@@ -86,9 +86,9 @@ public
       case CONNECTOR() then ClassInf.State.CONNECTOR(path, res.isExpandable);
       case ENUMERATION() then ClassInf.State.ENUMERATION(path);
       case EXTERNAL_OBJECT() then ClassInf.State.EXTERNAL_OBJ(path);
-      case FUNCTION() then ClassInf.State.FUNCTION(path, false);
+      case FUNCTION() then ClassInf.State.FUNCTION(path, false, false);
       case MODEL() then ClassInf.State.MODEL(path);
-      case OPERATOR() then ClassInf.State.FUNCTION(path, false);
+      case OPERATOR() then ClassInf.State.FUNCTION(path, false, false);
       case RECORD() then ClassInf.State.RECORD(path);
       case TYPE() then ClassInf.State.TYPE(path);
       case CLOCK() then ClassInf.State.TYPE_CLOCK(path);

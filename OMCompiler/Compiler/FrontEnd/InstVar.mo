@@ -872,7 +872,7 @@ algorithm
     case (cache,env,ih,store,ci_state,mod as DAE.MOD(binding = SOME(_)),pre,n,cl,attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
       equation
         true = ClassInf.isFunction(ci_state);
-        InstUtil.checkFunctionVar(n, attr, pf, info);
+        InstUtil.checkFunctionVar(n, ci_state, attr, pf, info);
 
         //get the equation modification
         SOME(DAE.TYPED(e,_,p,_)) = Mod.modEquation(mod);
@@ -911,13 +911,12 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,(cl as SCode.CLASS()),attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
        equation
         true = ClassInf.isFunction(ci_state);
-        InstUtil.checkFunctionVar(n, attr, pf, info);
+        InstUtil.checkFunctionVar(n, ci_state, attr, pf, info);
 
          //Instantiate type of the component, skip dae/not flattening
         (cache,env_1,ih,store,_,csets,ty,_,_,_) =
           Inst.instClass(cache, env, ih, store, mod, pre, cl, inst_dims, impl, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, csets);
 
-        ty = markTypesVarsOutsideBindings(ty,mod);
         arrty = InstUtil.makeArrayType(dims, ty);
         InstUtil.checkFunctionVarType(arrty, ci_state, n, info);
         (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,arrty,{}));
@@ -1786,65 +1785,6 @@ algorithm
     outDae := DAEUtil.joinDaes(outDae, dae);
   end for;
 end instArrayDimEnum;
-
-protected function markTypesVarsOutsideBindings
-  input DAE.Type inType;
-  input DAE.Mod inMod;
-  output DAE.Type outType = inType;
-protected
-  list<DAE.SubMod> submods;
-algorithm
-
-  if not Types.isRecord(inType) then
-     return;
-  end if;
-
-  try
-    DAE.MOD(subModLst = submods) := inMod;
-  else
-    return;
-  end try;
-
-  if listEmpty(submods) then
-    return;
-  end if;
-
-
-  outType := match inType
-    local
-      list<DAE.Var> tvars;
-      Option<DAE.Exp> obind;
-      DAE.Exp bind_exp;
-
-    case DAE.T_COMPLEX() algorithm
-      tvars := {};
-      for var in inType.varLst loop
-
-        for submod in submods loop
-          if varIsModifiedInMod(var.name, submod) then
-            var.bind_from_outside := true;
-            break;
-          end if;
-        end for;
-
-        tvars := var::tvars;
-      end for;
-      tvars := listReverse(tvars);
-
-    then DAE.T_COMPLEX(inType.complexClassType, tvars, inType.equalityConstraint);
-  end match;
-
-end markTypesVarsOutsideBindings;
-
-function varIsModifiedInMod
-  input String inName;
-  input DAE.SubMod inSubmod;
-  output Boolean b;
-algorithm
-  b := match inSubmod
-    case DAE.NAMEMOD() then stringEqual(inSubmod.ident, inName);
-  end match;
-end varIsModifiedInMod;
 
 annotation(__OpenModelica_Interface="frontend");
 end InstVar;
