@@ -2820,9 +2820,10 @@ end crefStripLastSubs;
 public function crefStripIterSub
   "Recursively looks up subscripts and strips the given iter sub.
    This gives an array variable that is defined in a for loop (no NF_SCALARIZE).
+   Removes all iteration subscripts if an empty or no iter input was given.
    author: rfranke"
   input DAE.ComponentRef inComponentRef;
-  input DAE.Ident iter;
+  input DAE.Ident iter = "";
   output DAE.ComponentRef outComponentRef;
 protected
   DAE.Ident ident, index;
@@ -2834,11 +2835,11 @@ algorithm
     case DAE.CREF_IDENT(ident = ident, identType = ty,
       subscriptLst = subs as {DAE.INDEX(exp = DAE.CREF(componentRef = DAE.CREF_IDENT(ident = index)))})
       then
-        makeCrefIdent(ident, ty, if index == iter then {} else subs);
+        makeCrefIdent(ident, ty, if ("" == iter) or (index == iter) then {} else subs);
     case DAE.CREF_QUAL(ident = ident, identType = ty, componentRef = cref,
       subscriptLst = subs as {DAE.INDEX(exp = DAE.CREF(componentRef = DAE.CREF_IDENT(ident = index)))})
       algorithm
-        if index == iter then
+        if ("" == iter) or (index == iter) then
           subs := {};
         else
           cref := crefStripIterSub(cref, iter);

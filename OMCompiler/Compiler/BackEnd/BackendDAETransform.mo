@@ -150,12 +150,12 @@ protected function analyseStrongComponentsScalar "author: Frenkel TUD 2011-05
   input array<Integer> markarray;
   output BackendDAE.StrongComponents outComps = {};
 protected
-  BackendDAE.StrongComponent acomp;
+  list<BackendDAE.StrongComponent> acomp;
   Integer mark = imark;
 algorithm
   for comp in inComps loop
     (acomp, mark) := analyseStrongComponentScalar(comp, syst, shared, inAss1, inAss2, mapEqnIncRow, mapIncRowEqn, mark, markarray);
-    outComps := acomp :: outComps;
+    outComps := listAppend(acomp,outComps);
   end for;
 
   outComps := Dangerous.listReverseInPlace(outComps);
@@ -171,7 +171,7 @@ protected function analyseStrongComponentScalar "author: Frenkel TUD 2011-05"
   input array<Integer> mapIncRowEqn;
   input Integer imark;
   input array<Integer> markarray;
-  output BackendDAE.StrongComponent outComp;
+  output list<BackendDAE.StrongComponent> outComp;
   output Integer omark = imark + 1;
 protected
   list<Integer> comp, vlst;
@@ -191,7 +191,7 @@ algorithm
     comp := List.fold2(comp, uniqueComp, imark, markarray, {});
     //comp = List.unique(comp);
     eqn_lst := List.map1r(comp, BackendEquation.get, eqns);
-    outComp := analyseStrongComponentBlock(comp, eqn_lst, varlst, vlst, syst, shared);
+    outComp := analyseStrongComponentBlock(comp, eqn_lst, varlst, vlst, syst, shared, mapEqnIncRow);
   else
     Error.addInternalError("function analyseStrongComponentScalar failed", sourceInfo());
     fail();
@@ -218,7 +218,8 @@ protected function analyseStrongComponentBlock "author: Frenkel TUD 2011-05"
   input list<Integer> inVarindxLst;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
-  output BackendDAE.StrongComponent outComp;
+  input array<list<Integer>> mapEqnIncRow;
+  output list<BackendDAE.StrongComponent> outComp;
 algorithm
   outComp := matchcontinue (inComp, inEqnLst, inVarLst, inVarindxLst)
     local
@@ -242,9 +243,10 @@ algorithm
       list<DAE.Exp> expLst;
       list<String> slst;
       Boolean jacConstant, mixedSystem, b1;
+      list<BackendDAE.StrongComponent> algorithmComp;
 
     case (compelem::{}, BackendDAE.ALGORITHM()::{}, _, varindxs)
-    then BackendDAE.SINGLEALGORITHM(compelem, varindxs);
+    then {BackendDAE.SINGLEALGORITHM(compelem, varindxs)};
 
     case (compelem::{}, BackendDAE.ARRAY_EQUATION()::{}, var_lst, varindxs) equation
       crlst = List.map(var_lst,BackendVariable.varCref);
@@ -254,19 +256,19 @@ algorithm
         expLst = List.map(crlst, Expression.crefExp);
         true = List.exist1(inEqnLst,crefsAreArray,expLst);
       end if;
-    then BackendDAE.SINGLEARRAY(compelem, varindxs);
+    then {BackendDAE.SINGLEARRAY(compelem, varindxs)};
 
     case (compelem::{}, BackendDAE.IF_EQUATION()::{}, _, varindxs)
-    then BackendDAE.SINGLEIFEQUATION(compelem, varindxs);
+    then {BackendDAE.SINGLEIFEQUATION(compelem, varindxs)};
 
     case (compelem::{}, BackendDAE.COMPLEX_EQUATION()::{}, _, varindxs)
-    then BackendDAE.SINGLECOMPLEXEQUATION(compelem, varindxs);
+    then {BackendDAE.SINGLECOMPLEXEQUATION(compelem, varindxs)};
 
     case (compelem::{}, BackendDAE.WHEN_EQUATION()::{}, _, varindxs)
-    then BackendDAE.SINGLEWHENEQUATION(compelem, varindxs);
+    then {BackendDAE.SINGLEWHENEQUATION(compelem, varindxs)};
 
     case (compelem::{}, _, _, v::{})
-    then BackendDAE.SINGLEEQUATION(compelem, v);
+    then {BackendDAE.SINGLEEQUATION(compelem, v)};
 
     case (comp, eqn_lst, var_lst, varindxs) equation
       //false = BackendVariable.hasDiscreteVar(var_lst); //lochel: mixed systems and non-linear systems are treated the same
@@ -293,12 +295,35 @@ algorithm
         jac = NONE();
         jac_tp = BackendDAE.JAC_NO_ANALYTIC();
       end if;
-    then BackendDAE.EQUATIONSYSTEM(comp, varindxs, BackendDAE.FULL_JACOBIAN(jac), jac_tp, mixedSystem);
+    then {BackendDAE.EQUATIONSYSTEM(comp, varindxs, BackendDAE.FULL_JACOBIAN(jac), jac_tp, mixedSystem)};
 
+    /*
+      All algorithms - assume each can be solved for its matched variables.
+      Purely discrete algebraic loops are not solvable otherwise.
+      Related to ticket #5659
+    */
+    case (comp, eqn_lst, var_lst, varindxs)
+      guard(BackendEquation.allAlgorithmsLst(eqn_lst))
+      algorithm
+        true := BackendVariable.hasDiscreteVar(var_lst);
+        false := BackendVariable.hasContinuousVar(var_lst);
+        BackendDAE.MATCHING(ass1, ass2, _) := isyst.matching;
+        algorithmComp := {};
+        for c in comp loop
+          indxdisc_var := {};
+          // get matched variables for each aglorithm
+          for j in mapEqnIncRow[c] loop
+            indxdisc_var := ass2[j] :: indxdisc_var;
+          end for;
+          algorithmComp := BackendDAE.SINGLEALGORITHM(c, indxdisc_var) :: algorithmComp;
+        end for;
+    then algorithmComp;
+
+    /* Purely discrete algebraic loops are not solvable. */
     case (_, eqn_lst, var_lst, _) equation
       true = BackendVariable.hasDiscreteVar(var_lst);
       false = BackendVariable.hasContinuousVar(var_lst);
-      msg = getInstanceName() + " failed (Sorry - Support for Discrete Equation Systems is not yet implemented)\n";
+      msg = getInstanceName() + " failed (Purely discrete algebraic loops cannot be solved by iterative processes. Try to break them open using the delay() operator.)\n";
       crlst = List.map(var_lst, BackendVariable.varCref);
       slst = List.map(crlst, ComponentReference.printComponentRefStr);
       msg = msg + stringDelimitList(slst, "\n");
