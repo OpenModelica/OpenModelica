@@ -3196,5 +3196,20 @@ algorithm
   end match;
 end scalarComplexEquations;
 
+public function allAlgorithmsLst
+  input list<BackendDAE.Equation> eqn_lst;
+  output Boolean b;
+algorithm
+  b := match eqn_lst
+    local
+      list<BackendDAE.Equation> rest;
+    case {} then true;
+    case BackendDAE.ALGORITHM()::{} then true;
+    case BackendDAE.ALGORITHM()::rest then allAlgorithmsLst(rest);
+    else false;
+  end match;
+end allAlgorithmsLst;
+
+
 annotation(__OpenModelica_Interface="backend");
 end BackendEquation;

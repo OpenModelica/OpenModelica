@@ -432,7 +432,7 @@ algorithm
     // Failure
     case (_, {}, (_, _, _, mapIncRowEqn, _)) equation
       if Flags.isSet(Flags.BLT_DUMP) then
-        print("Reduce Index failed! Found empty set of continues equations.\nmarked equations:\n");
+        print("Reduce Index failed! Found empty set of continuous equations.\nmarked equations:\n");
       end if;
       // get from scalar eqns indexes the indexes in the equation array
       eqns1 = List.map1r(eqns, arrayGet, mapIncRowEqn);
@@ -444,12 +444,12 @@ algorithm
       if Flags.isSet(Flags.BLT_DUMP) then
         BackendDump.printBackendDAE(BackendDAE.DAE({syst}, inShared));
       end if;
-      Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction failed! Found empty set of continues equations. Use -d=bltdump to get more information."});
+      Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction failed! Found empty set of continuous equations. Use -d=bltdump to get more information."});
     then fail();
 
     case (false, _::_, (_, _, _, mapIncRowEqn, _)) equation
       if Flags.isSet(Flags.BLT_DUMP) then
-        print("Reduce Index failed! System is structurally singulare and cannot handled because number of unassigned continues equations is larger than number of states.\nmarked equations:\n");
+        print("Reduce Index failed! System is structurally singulare and cannot handled because number of unassigned continuous equations is larger than number of states.\nmarked equations:\n");
         // get from scalar eqns indexes the indexes in the equation array
         BackendDump.debuglst(eqns, intString, " ", "\n");
       end if;
@@ -506,7 +506,7 @@ algorithm
         varlst = m[eindx];
         varlst = List.map(varlst,intAbs);
         vlst = List.map1r(varlst,BackendVariable.getVarAt,vars);
-        // if there is a continues variable then b is false
+        // if there is a continuous variable then b is false
         b = List.mapBoolAnd(vlst,BackendVariable.isVarDiscrete);
         eqnsLst = List.consOnTrue(not b, eindx, eqnsLst);
         unassignedEqns = List.consOnTrue(ba and not b, eindx, unassignedEqns);
@@ -2203,7 +2203,7 @@ algorithm
           BackendDump.dumpEquationList(eqnslst, "Constraint equations:");
         end if;
         // no chance, to much equations
-        msg = "It is not possible to select continues time states because Number of Equations " + intString(neqns) + " greater than number of States " + intString(nfreeStates) + " to select from.";
+        msg = "It is not possible to select continuous time states because Number of Equations " + intString(neqns) + " greater than number of States " + intString(nfreeStates) + " to select from.";
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then
         fail();

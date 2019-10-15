@@ -2568,6 +2568,9 @@ algorithm
       list<BackendDAE.Equation> eqns;
       BackendDAE.Equation eqn;
       list<BackendDAE.WhenOperator> whenStmtLst;
+      list<DAE.ComponentRef> crefLst;
+      list<BackendDAE.Var> varslst;
+      list<Integer> p;
 
     // EQUATION
     case BackendDAE.EQUATION(exp = e1,scalar = e2)
@@ -2625,15 +2628,27 @@ algorithm
       then
         (res,size);
 
-    // ALGORITHM For now assume that algorithm will be solvable for
-    // correct variables. I.e. find all variables in algorithm and add to lst.
-    // If algorithm later on needs to be inverted, i.e. solved for
-    // different variables than calculated, a non linear solver or
-    // analysis of algorithm itself needs to be implemented.
+    // ALGORITHM
     case BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS(statementLst = statementLst))
-      equation
-        res = traverseStmts(statementLst, function incidenceRowAlgorithm(inVariables = vars,
+      algorithm
+        res := traverseStmts(statementLst, function incidenceRowAlgorithm(inVariables = vars,
           functionTree = functionTree, inIndexType = inIndexType), iRow);
+        /*
+          If looking for solvability add all discrete output variables, even if they don't occur in the algorithm.
+          Discrete output variables that do not occur get computed by pre().
+          Ticket #5659
+        */
+        if indexTypeSovable(inIndexType) then
+          try
+            crefLst := CheckModel.algorithmStatementListOutputs(statementLst, DAE.EXPAND()); // expand as we're in an algorithm
+            for cr in crefLst loop
+              (varslst, p) := BackendVariable.getVar(cr, vars);
+              res := incidenceRowExp1Discrete(varslst,p,res,0);
+            end for;
+          else
+            /* ... */
+          end try;
+        end if;
       then
         (res,size);
 
@@ -3203,6 +3218,7 @@ algorithm
 end traversingincidenceRowExpFinder;
 
 protected function incidenceRowExp1
+  "Adds an incidence matrix entry for all variables in the inVarLst."
   input list<BackendDAE.Var> inVarLst;
   input list<Integer> inIntegerLst;
   input AvlSetInt.Tree inVarIndxLst;
@@ -3236,6 +3252,29 @@ algorithm
       then incidenceRowExp1(rest,irest,vars,diffindex);
   end match;
 end incidenceRowExp1;
+
+protected function incidenceRowExp1Discrete
+  "Adds an incidence matrix entry for all variables in the inVarLst, if they are discrete."
+  input list<BackendDAE.Var> inVarLst;
+  input list<Integer> inIntegerLst;
+  input AvlSetInt.Tree inVarIndxLst;
+  input Integer diffindex;
+  output AvlSetInt.Tree outVarIndxLst;
+algorithm
+  outVarIndxLst := match (inVarLst,inIntegerLst,inVarIndxLst,diffindex)
+    local
+       list<BackendDAE.Var> rest;
+       list<Integer> irest;
+       AvlSetInt.Tree vars;
+       Integer i,i1,diffidx;
+       Boolean b;
+    case ({},{},vars,_) then vars;
+    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())::rest,i::irest,_,_)
+      equation
+        vars = AvlSetInt.add(inVarIndxLst, i);
+      then incidenceRowExp1Discrete(rest,irest,vars,diffindex);
+  end match;
+end incidenceRowExp1Discrete;
 
 public function traversingincidenceRowExpFinderwithInput "Helper for statesAndVarsExp"
   input DAE.Exp inExp;
@@ -9918,6 +9957,16 @@ algorithm
     else (inExp, inHomotopy, true);
   end match;
 end containsHomotopyCall2;
+
+protected function indexTypeSovable
+  input BackendDAE.IndexType indexType;
+  output Boolean b;
+algorithm
+  b := match indexType
+    case BackendDAE.SOLVABLE() then true;
+    else false;
+  end match;
+end indexTypeSovable;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEUtil;

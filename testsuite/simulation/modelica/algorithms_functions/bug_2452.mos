@@ -34,40 +34,17 @@ algorithm
   end for;
 end bug_2452;
 
-
-
-/* The algorithm section is considered to have 2 equations here.
-  Array is expanded and considered whole*/
-model bug_2452_2
-  record R
-    Integer d;
-  end R;
-  R r[2];
-algorithm 
-  r[1].d := 0;
-end bug_2452_2;
-
-
-
-/* We need to make sure that we have proper counting when algorithm
- secions come from component arrays. This will end up as 
- 
- algorithm
-   r[1].d := 0;
- algorithm
-   r[2].d := 0;
-
-  However unlike the mdoel above this time each algorithm section
-  is considered to have only 1 equation.  
+ /*
+  These algorithms are considered to have only 1 equation.
  */
-model bug_2452_3
+model bug_2452_2
   model R
     Integer d;
   algorithm
     d := 0;
   end R;
   R r[2];
-end bug_2452_3;
+end bug_2452_2;
 
 "); getErrorString();
 
@@ -76,9 +53,6 @@ checkModel(bug_2452); getErrorString();
 
 // bug_2452_2 has 2 equation(s) and 2 variable(s)
 checkModel(bug_2452_2); getErrorString();
-
-// bug_2452_3 has 2 equation(s) and 2 variable(s)
-checkModel(bug_2452_3); getErrorString();
 
 // Result:
 // true
@@ -89,10 +63,6 @@ checkModel(bug_2452_3); getErrorString();
 // ""
 // "Check of bug_2452_2 completed successfully.
 // Class bug_2452_2 has 2 equation(s) and 2 variable(s).
-// 0 of these are trivial equation(s)."
-// ""
-// "Check of bug_2452_3 completed successfully.
-// Class bug_2452_3 has 2 equation(s) and 2 variable(s).
 // 0 of these are trivial equation(s)."
 // ""
 // endResult
