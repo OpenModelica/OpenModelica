@@ -4940,6 +4940,13 @@ public
         then
           makeArray(Type.setArrayElementType(recordExp.ty, Expression.typeOf(listHead(expl))), expl);
 
+      case RECORD_ELEMENT(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+        algorithm
+          node := Class.nthComponent(index, InstNode.getClass(node));
+        then
+          RECORD_ELEMENT(recordExp, index, InstNode.name(node),
+                         Type.liftArrayLeftList(InstNode.getType(node), Type.arrayDims(recordExp.ty)));
+
       else
         algorithm
           Type.COMPLEX(cls = node) := typeOf(recordExp);
