@@ -823,14 +823,14 @@ algorithm
           restr = SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(false));
           // recordCl = SCodeUtil.setClassRestriction(restr, recordCl);
 
-/*
+
           (cache,_,_,_,_,_,recType,_,_,_) = Inst.instClass(inCache,recordEnv, InnerOuter.emptyInstHierarchy,
            UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), recordCl,
             {}, false, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
 
           DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo) = recType;
-*/
 
+/*
           recordEnv = FGraph.openScope(recordEnv, SCodeUtil.getClassEncapsulation(recordCl), newName, FGraph.restrictionToScopeType(restr));
           // ci_state = ClassInf.start(restr,FGraph.getGraphName(recordEnv));
           ci_state = ClassInf.FUNCTION(FGraph.getGraphName(recordEnv), false, true);
@@ -840,7 +840,7 @@ algorithm
 	          {}, true, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, NONE());
 
           path = ClassInf.getStateName(ci_state);
-
+*/
           vars = Types.filterRecordComponents(vars, SCodeUtil.elementInfo(recordCl));
           (inputs,locals) = List.extractOnTrue(vars, Types.isModifiableTypesVar);
           inputs = List.map(inputs,Types.setVarDefaultInput);
