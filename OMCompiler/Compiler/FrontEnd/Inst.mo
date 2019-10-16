@@ -3643,6 +3643,8 @@ algorithm
 
         dae_attr = DAEUtil.translateSCodeAttrToDAEAttr(attr, prefixes);
         ty = Types.traverseType(ty, 1, Types.setIsFunctionPointer);
+
+        binding = removePrefixFromBinding(binding, pre);
         new_var = DAE.TYPES_VAR(name, dae_attr, ty, binding, false, NONE());
 
         // Type info present. Now we can also put the binding into the dae.
@@ -3763,6 +3765,25 @@ algorithm
         fail();
   end matchcontinue;
 end instElement;
+
+protected function removePrefixFromBinding
+  input DAE.Binding inBind;
+  input Prefix.Prefix inPrefix;
+  output DAE.Binding outBind;
+algorithm
+  outBind := match (inBind, inPrefix)
+	  local
+	    DAE.Binding bind;
+      Prefix.Prefix pref;
+
+	    case (bind as DAE.EQBOUND(), pref as Prefix.PREFIX(compPre=Prefix.PRE())) algorithm
+        bind.exp := PrefixUtil.removeCompPrefixFromExps(bind.exp, pref.compPre);
+      then
+        bind;
+
+	    else inBind;
+	  end match;
+end removePrefixFromBinding;
 
 protected function updateCompeltsMods
 "never fail and *NEVER* display any error messages as this function
