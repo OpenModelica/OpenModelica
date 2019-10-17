@@ -3105,16 +3105,10 @@ end checkModificationOnOuter;
 public function checkFunctionVar
   "Checks that a function variable is valid."
   input String inName;
-  input ClassInf.State ci_state;
   input SCode.Attributes inAttributes;
   input SCode.Prefixes inPrefixes;
   input SourceInfo inInfo;
 algorithm
-
-  if ClassInf.isRecordConstructor(ci_state) then
-    return;
-  end if;
-
   _ := match(inName, inAttributes, inPrefixes, inInfo)
     // Public non-formal parameters are not allowed, but since they're used in
     // the MSL we just issue a warning for now.

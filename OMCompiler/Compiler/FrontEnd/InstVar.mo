@@ -833,7 +833,7 @@ algorithm
      case (cache,env,ih,store,ci_state,mod as DAE.MOD(binding = NONE()),pre,n,cl as SCode.CLASS(restriction = SCode.R_RECORD(_)),attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
       equation
         true = ClassInf.isFunction(ci_state);
-        InstUtil.checkFunctionVar(n, ci_state, attr, pf, info);
+        InstUtil.checkFunctionVar(n, attr, pf, info);
 
 
         //Instantiate type of the component, skip dae/not flattening (but extract functions)
@@ -872,7 +872,7 @@ algorithm
     case (cache,env,ih,store,ci_state,mod as DAE.MOD(binding = SOME(_)),pre,n,cl,attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
       equation
         true = ClassInf.isFunction(ci_state);
-        InstUtil.checkFunctionVar(n, ci_state, attr, pf, info);
+        InstUtil.checkFunctionVar(n, attr, pf, info);
 
         //get the equation modification
         SOME(DAE.TYPED(e,_,p,_)) = Mod.modEquation(mod);
@@ -911,7 +911,7 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,(cl as SCode.CLASS()),attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
        equation
         true = ClassInf.isFunction(ci_state);
-        InstUtil.checkFunctionVar(n, ci_state, attr, pf, info);
+        InstUtil.checkFunctionVar(n, attr, pf, info);
 
          //Instantiate type of the component, skip dae/not flattening
         (cache,env_1,ih,store,_,csets,ty,_,_,_) =

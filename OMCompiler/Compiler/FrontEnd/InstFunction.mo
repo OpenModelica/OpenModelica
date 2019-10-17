@@ -410,7 +410,7 @@ algorithm
         vis = SCode.PUBLIC();
         (cache,tempenv,ih,_,_,_,_,_,_,_,_,_) =
           Inst.instClassdef(cache, env_1, ih, UnitAbsyn.noStore, mod, pre,
-            ClassInf.FUNCTION(fpath,isImpure, false), n,parts, restr, vis, partialPrefix,
+            ClassInf.FUNCTION(fpath,isImpure), n,parts, restr, vis, partialPrefix,
             encapsulatedPrefix, inst_dims, true, InstTypes.INNER_CALL(),
             ConnectionGraph.EMPTY, Connect.emptySet, NONE(), cmt, info) "how to get this? impl" ;
         (cache,ih,extdecl) = instExtDecl(cache, tempenv, ih, n, scExtdecl, daeElts, ty1, true, pre,info) "impl" ;
@@ -820,17 +820,15 @@ algorithm
           newName = FGraph.getInstanceOriginalName(recordEnv, name);
           recordCl = SCodeUtil.setClassName(newName, recordCl);
 
-          restr = SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(false));
-          // recordCl = SCodeUtil.setClassRestriction(restr, recordCl);
-
-
           (cache,_,_,_,_,_,recType,_,_,_) = Inst.instClass(inCache,recordEnv, InnerOuter.emptyInstHierarchy,
            UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), recordCl,
-            {}, false, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
+            {}, true, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
 
           DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo) = recType;
 
 /*
+          // restr = SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(false));
+          // recordCl = SCodeUtil.setClassRestriction(restr, recordCl);
           recordEnv = FGraph.openScope(recordEnv, SCodeUtil.getClassEncapsulation(recordCl), newName, FGraph.restrictionToScopeType(restr));
           // ci_state = ClassInf.start(restr,FGraph.getGraphName(recordEnv));
           ci_state = ClassInf.FUNCTION(FGraph.getGraphName(recordEnv), false, true);
