@@ -2654,13 +2654,18 @@ protected
   list<list<ParseTree>> acc={};
   list<ParseTree> trees, lst;
   Diff d;
+  Integer addCount;
 algorithm
   for diff in diffs loop
     _ := match diff
       case (Diff.Add, lst)
         algorithm
+          addCount := 0;
           for tree in lst loop
-            if parseTreeIsWhitespace(tree) then
+            addCount := addCount + 1;
+            if parseTreeIsNewLine(tree) and addCount > 1 and addCount == listLength(lst) then
+              acc := {tree}::acc;
+            elseif parseTreeIsWhitespace(tree) then
               acc := acc;
             elseif parseTreeIsWhitespaceOrPar(tree) then
               acc := {tree}::acc;
@@ -2795,6 +2800,18 @@ algorithm
     else false;
   end match;
 end parseTreeIsWhitespace;
+
+function parseTreeIsNewLine
+  input ParseTree t1;
+  output Boolean b;
+protected
+  TokenId id;
+algorithm
+  b := match t1
+    case LEAF() then listMember(t1.token.id, {TokenId.NEWLINE});
+    else false;
+  end match;
+end parseTreeIsNewLine;
 
 function parseTreeIsWhitespaceOrPar
   input ParseTree t1;

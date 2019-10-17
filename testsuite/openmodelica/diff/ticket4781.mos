@@ -1,0 +1,51 @@
+// status: correct
+
+loadFile("ticket4781.mo");
+getErrorString();
+
+s1 := readFile("ticket4781.mo");
+getErrorString();
+
+addComponent(heatCapacitor1 , Modelica.Thermal.HeatTransfer.Components.HeatCapacitor, MM, annotate=Placement(visible=true, transformation=transformation(origin={-10,36}, extent={{-10,-10},{10,10}}, rotation=0)));
+getErrorString();
+
+addClassAnnotation(MM, annotate=$annotation(uses(Modelica(version="3.2.3"))));
+getErrorString();
+
+s2 := listFile(MM);
+getErrorString();
+
+diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.plain);
+getErrorString();
+
+// Result:
+// true
+// ""
+// "model MM
+// equation
+//
+// end MM;"
+// ""
+// true
+// ""
+// true
+// ""
+// "model MM
+//   Modelica.Thermal.HeatTransfer.Components.HeatCapacitor heatCapacitor1 annotation(
+//     Placement(visible = true, transformation(origin = {-10, 36}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+// equation
+//
+//   annotation(
+//     uses(Modelica(version = \"3.2.3\")));
+// end MM;"
+// ""
+// "model MM
+//   Modelica.Thermal.HeatTransfer.Components.HeatCapacitor heatCapacitor1 annotation(
+//     Placement(visible = true, transformation(origin = {-10, 36}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+// equation
+//
+// annotation(
+//     uses(Modelica(version = \"3.2.3\")));
+// end MM;"
+// ""
+// endResult

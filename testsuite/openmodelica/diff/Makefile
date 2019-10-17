@@ -22,7 +22,8 @@ Ticket4110.mos \
 ticket4153.mos \
 ticket4368.mos \
 ticket5360.mos \
-UTF8.mos
+UTF8.mos \
+ticket4781.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
