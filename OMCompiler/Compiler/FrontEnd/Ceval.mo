@@ -103,7 +103,7 @@ public function ceval "
   input FCore.Graph inEnv;
   input DAE.Exp inExp;
   input Boolean inBoolean "impl";
-  input Absyn.Msg inMsg = Absyn.NO_MSG();
+  input Absyn.Msg inMsg = Absyn.MSG(AbsynUtil.dummyInfo);
   input Integer numIter = 0 "Maximum recursion depth";
   output FCore.Cache outCache;
   output Values.Value outValue;
@@ -887,7 +887,7 @@ algorithm
 
     case DAE.PROP(constFlag = DAE.C_CONST(), type_ = tp)
       algorithm
-        (cache, v) := ceval(cache, inEnv, exp, impl, Absyn.NO_MSG(), 0);
+        (cache, v) := ceval(cache, inEnv, exp, impl, Absyn.MSG(inInfo), 0);
         exp := ValuesUtil.valueExp(v);
         exp := ValuesUtil.fixZeroSizeArray(exp, tp);
       then (cache, exp, prop);
@@ -895,7 +895,7 @@ algorithm
     case DAE.PROP_TUPLE()
       algorithm
         DAE.C_CONST() := Types.propAllConst(prop);
-        (cache, v) := ceval(cache, inEnv, exp, false, Absyn.NO_MSG(), 0);
+        (cache, v) := ceval(cache, inEnv, exp, false, Absyn.MSG(inInfo), 0);
         exp := ValuesUtil.valueExp(v);
       then (cache, exp, prop);
 
@@ -911,7 +911,7 @@ algorithm
       // Structural parameters and the like... we can ceval them if we want to
       guard Expression.isConst(exp) and not Config.acceptMetaModelicaGrammar()
       algorithm
-        (_, v) := ceval(cache, inEnv, exp, impl, Absyn.NO_MSG(), 0);
+        (_, v) := ceval(cache, inEnv, exp, impl, Absyn.MSG(inInfo), 0);
         exp := ValuesUtil.valueExp(v);
         exp := ValuesUtil.fixZeroSizeArray(exp, Types.getPropType(prop));
       then (cache, exp, prop);
@@ -5112,7 +5112,7 @@ algorithm
   structuralParameters := (AvlSetCR.EMPTY(),{});
   functionTree := Mutable.create(functions);
   cache := FCore.CACHE(NONE(), functionTree, structuralParameters, Absyn.IDENT(""));
-  (_,val) := ceval(cache, FGraph.empty(), exp, false, Absyn.NO_MSG(),0);
+  (_,val) := ceval(cache, FGraph.empty(), exp, false, Absyn.MSG(AbsynUtil.dummyInfo),0);
   oexp := ValuesUtil.valueExp(val);
 end cevalSimpleWithFunctionTreeReturnExp;
 

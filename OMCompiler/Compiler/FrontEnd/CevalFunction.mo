@@ -1482,7 +1482,7 @@ protected function cevalExp
   output FCore.Cache outCache;
   output Values.Value outValue;
 algorithm
-  (outCache, outValue) := Ceval.ceval(inCache, inEnv, inExp, true, Absyn.NO_MSG(), 0);
+  (outCache, outValue) := Ceval.ceval(inCache, inEnv, inExp, true, Absyn.MSG(AbsynUtil.dummyInfo), 0);
   false := valueEq(Values.META_FAIL(), outValue);
 end cevalExp;
 
@@ -1494,7 +1494,7 @@ protected function cevalExpList
   output FCore.Cache outCache;
   output list<Values.Value> outValue;
 algorithm
-  (outCache, outValue) := Ceval.cevalList(inCache, inEnv, inExpLst, true, Absyn.NO_MSG(), 0);
+  (outCache, outValue) := Ceval.cevalList(inCache, inEnv, inExpLst, true, Absyn.MSG(AbsynUtil.dummyInfo), 0);
 end cevalExpList;
 
 // [EENV]  Environment extension functions (add variables).
@@ -1665,7 +1665,7 @@ algorithm
     case (_, _, _, _, _, _)
       equation
         true = Types.isRecord(inType);
-        binding = getBinding(inOptValue);
+        binding = makeBinding(inOptValue);
         (cache, ty) =
           appendDimensions(inType, inOptValue, inDims, inCache, inEnv);
         var = makeFunctionVariable(inName, ty, binding);
@@ -1689,7 +1689,7 @@ algorithm
     // Normal variables.
     else
       equation
-        binding = getBinding(inOptValue);
+        binding = makeBinding(inOptValue);
         (cache, ty) =
           appendDimensions(inType, inOptValue, inDims, inCache, inEnv);
         var = makeFunctionVariable(inName, ty, binding);
@@ -1723,7 +1723,7 @@ algorithm
   outVar := DAE.TYPES_VAR(inName, DAE.dummyAttrVar, inType, inBinding, false, NONE());
 end makeFunctionVariable;
 
-protected function getBinding
+protected function makeBinding
   "Creates a binding from an optional value. If some value is given we return a
   value bound binding, otherwise an unbound binding."
   input Option<Values.Value> inBindingValue;
@@ -1734,7 +1734,7 @@ algorithm
     case SOME(val) then DAE.VALBOUND(val, DAE.BINDING_FROM_DEFAULT_VALUE());
     case NONE() then DAE.UNBOUND();
   end match;
-end getBinding;
+end makeBinding;
 
 protected function makeRecordEnvironment
   "This function creates an environment for a record variable by creating a new
@@ -2346,6 +2346,20 @@ algorithm
   outValue := getBindingOrDefault(binding, outType);
 end getVariableTypeAndValue;
 
+protected function getBindingValueOpt
+  "Returns the value in a binding, or NONE()."
+  input DAE.Binding inBinding;
+  output Option<Values.Value> outValue;
+algorithm
+  outValue := match(inBinding)
+    local
+      Values.Value val;
+    case DAE.VALBOUND(valBound = val) then SOME(val);
+    case DAE.EQBOUND(evaluatedExp = SOME(val)) then SOME(val);
+    else NONE();
+  end match;
+end getBindingValueOpt;
+
 protected function getBindingOrDefault
   "Returns the value in a binding, or a default value if binding isn't a value
   binding."
@@ -2357,6 +2371,7 @@ algorithm
     local
       Values.Value val;
     case (DAE.VALBOUND(valBound = val), _) then val;
+    case (DAE.EQBOUND(evaluatedExp = SOME(val)), _) then val;
     else generateDefaultBinding(inType);
   end match;
 end getBindingOrDefault;
@@ -2528,9 +2543,10 @@ algorithm
   outValues := match(inVars, inEnv)
     local
       Values.Value val;
+      Option<Values.Value> oval;
       String id;
       DAE.Type ty;
-      DAE.Binding binding;
+      DAE.Binding binding, tvbinding;
 
     // The component is a record itself.
     case (DAE.TYPES_VAR(
@@ -2542,11 +2558,26 @@ algorithm
         val;
 
     // A non-record variable.
-    case (DAE.TYPES_VAR(name = id, ty = ty), _)
-      equation
-        (_, DAE.TYPES_VAR(binding = binding), _, _, _, _) =
+    case (DAE.TYPES_VAR(name = id, ty = ty, binding = tvbinding), _)
+      algorithm
+        (_, DAE.TYPES_VAR(binding = binding), _, _, _, _) :=
           Lookup.lookupIdentLocal(FCore.emptyCache(), inEnv, id);
-        val = getBindingOrDefault(binding, ty);
+        oval := getBindingValueOpt(binding);
+
+        // if no binding from env then use the typesvar binding.
+        if isNone(oval) then
+          oval := getBindingValueOpt(tvbinding);
+        end if;
+
+        // if there is still no binding in the typesvar then generated default
+        // binding. IDK if this is a good idea. It is like generating a default
+        // equation for a variable if in a model. But this is how it was done.
+        if isSome(oval) then
+          SOME(val) := oval;
+        else
+          val := generateDefaultBinding(ty);
+        end if;
+
       then
         val;
   end match;
