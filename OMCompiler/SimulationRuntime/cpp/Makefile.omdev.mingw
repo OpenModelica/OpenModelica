@@ -210,11 +210,13 @@ runtimeCPPmsvc: getMSVCversion
 omcCAPIinstall:
 	mkdir -p Build_CAPI;
 	(cd ./Build_CAPI; echo "change to Build_CAPI"; \
-	  cmake -G "MSYS Makefiles"  -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE -DBUILD_SHARED_LIBS=TRUE -DPLATFORM=$(PLATFORM)  -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DOMC_PATH="$(OMBUILDDIR)"  -DCMAKE_INSTALL_PREFIX:PATH="./lib" MAKE_CXX_COMPILER=g++ ../omcWrapper/omcCAPI/; \
-	  $(MAKE) install;)
-	(cp -puf Build_CAPI/OMCAPIInterface* $(OMBUILDDIR)/bin/)
-	(cp -puf Build_CAPI/*.dll* $(OMBUILDDIR)/bin/)
-	(cp -puf Build_CAPI/*.dll* $(OMBUILDDIR)/lib/omc/)
+	mkdir -p tmp; \
+	  cmake -G "MSYS Makefiles"  -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE -DBUILD_SHARED_LIBS=TRUE -DPLATFORM=$(PLATFORM)  -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DOMC_PATH="$(OMBUILDDIR)"  -DCMAKE_INSTALL_PREFIX:PATH="./tmp"  -DOMCAPI_ROOT="../../Build_CAPI/tmp" MAKE_CXX_COMPILER=g++ ../omcWrapper/; \
+	  $(MAKE) install; )
+	
+	(cp -puf Build_CAPI/tmp/lib/*.dll* $(OMBUILDDIR)/bin/)
+	(cp -puf Build_CAPI/tmp/lib/*.dll* $(OMBUILDDIR)/lib/omc/)
+	(cp -puf Build_CAPI/tmp/bin/*.exe* $(OMBUILDDIR)/bin)
 
 install: runtimeCpp
 	$(foreach PLATFORM, $(PLATFORMS), \

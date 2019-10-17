@@ -1,10 +1,9 @@
-cmake_minimum_required(VERSION 2.8.9)
-CMAKE_MINIMUM_REQUIRED(VERSION 3.0.0)
 
-PROJECT(OMCDLL)
+
+PROJECT(${OMCCAPIName})
 
 #name of omc c api wrapper dll
-SET(OMCName OMCDLL)
+
 
 OPTION(ENABLE_CAPI_TESTS "enable tests for c api calls" OFF)
 
@@ -67,21 +66,18 @@ IF(NOT OMCGC_LIB)
   MESSAGE(FATAL_ERROR "Could not find omcgc library!")
 ENDIF(NOT OMCGC_LIB)
 
-IF(MSVC)
-# add these lines to generate export library to link in visual studio the dll to a other library
-include(GenerateExportHeader)
-generate_export_header(mylibrary)
-ENDIF(MSVC)
+
 #add necessary definitions
 ADD_DEFINITIONS(-DIMPORT_INTO=1)
 ADD_DEFINITIONS(-DBUILDING_OMC_DLL)
 
-ADD_LIBRARY(${OMCName} SHARED src/OMC.cpp)
-TARGET_LINK_LIBRARIES(${OMCName} ${MODELICAEX_LIB} ${OMCRUNTIME_LIB} ${OMC_LIB} ${FMI_LIB} ${OMCGC_LIB})
-#IF(ENABLE_CAPI_TESTS)
-    ADD_EXECUTABLE(OMCAPIInterface src/OMCTest.cpp)
-    TARGET_LINK_LIBRARIES(OMCAPIInterface ${OMCName}  ${Boost_LIBRARIES} pthread)
-    INSTALL(TARGETS OMCAPIInterface DESTINATION ./)
-#ENDIF(ENABLE_CAPI_TESTS)
-INSTALL(TARGETS ${OMCName} DESTINATION ${OMC_LIB_PATH})
+ADD_LIBRARY(${OMCCAPIName} SHARED src/OMC.cpp)
+TARGET_LINK_LIBRARIES(${OMCCAPIName} ${MODELICAEX_LIB} ${OMCRUNTIME_LIB} ${OMC_LIB} ${FMI_LIB} ${OMCGC_LIB})
+
+
+INSTALL(TARGETS ${OMCCAPIName} DESTINATION lib)
+#INSTALL(FILES 
+#    include/OMC.h 
+#    include/OMCAPI.h 
+#    include/OMCFunctions.h DESTINATION include)
 
