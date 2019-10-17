@@ -46,7 +46,7 @@ install: runtimeCpp
 omcCAPIinstall:
 	mkdir -p Build_CAPI;
 	(cd ./Build_CAPI; echo "change to Build_CAPI"; \
-	  $(CMAKE_COMMANDS) cmake -DPLATFORM=$(PLATFORM) -DOMC_PATH="$(OMBUILDDIR)" $(CMAKE_FLAGS) ../omcCAPI/; \
+	  $(CMAKE_COMMANDS) cmake -DPLATFORM=$(PLATFORM) -DOMC_PATH="$(OMBUILDDIR)" $(CMAKE_FLAGS) ../omcWrapper/omcCAPI/; \
 	  $(MAKE) install;)
 
 clean:
