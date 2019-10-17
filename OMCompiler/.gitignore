@@ -167,6 +167,8 @@ SimulationRuntime/cpp/build_msvc/
 # Visual Studio 2015/2017 cache/options directory
 SimulationRuntime/cpp/.vs/
 SimulationRuntime/cpp/CMakeSettings.json
+SimulationRuntime/cpp/omcWrapper/.vs
+SimulationRuntime/cpp/omcWrapper/CMakeSettings.json
 tags
 
 *.plist
