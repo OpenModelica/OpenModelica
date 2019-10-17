@@ -164,7 +164,7 @@ omcCAPImsvc: getMSVCversion
 
 	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_CAPI_MSVC/build.bat
 	echo echo using omc libraries from "$(OMBUILDDIR)" >> Build_CAPI_MSVC/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DOMC_PATH="$(OMBUILDDIR)/build"  -DCMAKE_INSTALL_PREFIX:PATH=./tmp ../omcCAPI/ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_CAPI_MSVC/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DOMC_PATH="$(OMBUILDDIR)/build"  -DCMAKE_INSTALL_PREFIX:PATH=./tmp ../omcWrapper/omcCAPI/ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_CAPI_MSVC/build.bat
 
 	# for some reason, the environment variable 'MAKEFLAGS' was set to 'w' on my and Niklas' machine?!
 	echo set MAKEFLAGS="" >> Build_CAPI_MSVC/build.bat
@@ -210,7 +210,7 @@ runtimeCPPmsvc: getMSVCversion
 omcCAPIinstall:
 	mkdir -p Build_CAPI;
 	(cd ./Build_CAPI; echo "change to Build_CAPI"; \
-	  cmake -G "MSYS Makefiles"  -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE -DBUILD_SHARED_LIBS=TRUE -DPLATFORM=$(PLATFORM)  -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DOMC_PATH="$(OMBUILDDIR)"  -DCMAKE_INSTALL_PREFIX:PATH="./lib" MAKE_CXX_COMPILER=g++ ../omcCAPI/; \
+	  cmake -G "MSYS Makefiles"  -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE -DBUILD_SHARED_LIBS=TRUE -DPLATFORM=$(PLATFORM)  -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DOMC_PATH="$(OMBUILDDIR)"  -DCMAKE_INSTALL_PREFIX:PATH="./lib" MAKE_CXX_COMPILER=g++ ../omcWrapper/omcCAPI/; \
 	  $(MAKE) install;)
 	(cp -puf Build_CAPI/OMCAPIInterface* $(OMBUILDDIR)/bin/)
 	(cp -puf Build_CAPI/*.dll* $(OMBUILDDIR)/bin/)
