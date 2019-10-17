@@ -783,12 +783,15 @@ algorithm
         DAE.EQBOUND(exp = exp, evaluatedExp = SOME(val)) := binding;
       else
         // Couldn't find a submod, and the variable doesn't have a binding.
+        /*
         ety := Types.simplifyType(ty);
         ty := Types.liftArrayListDims(ty, dims);
         scope := FGraph.printGraphPathStr(inEnv);
         ty_str := Types.printTypeStr(ty);
         exp := DAE.EMPTY(scope, DAE.CREF_IDENT(name, ety, {}), ety, ty_str);
         val := Values.EMPTY(scope, name, Types.typeToValue(ty), ty_str);
+        */
+        fail();
       end if;
 
       accum_exps := exp :: accum_exps;

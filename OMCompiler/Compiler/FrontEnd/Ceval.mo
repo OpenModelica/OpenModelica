@@ -4308,6 +4308,7 @@ algorithm
     // A variable without a binding -> error in a simulation model
     // and we can only check that at the DAE level!
     case (_, _, _, _, _, DAE.UNBOUND(), NONE(), _, _, _, _, false, Absyn.MSG(), _)
+      /*
       equation
         str = ComponentReference.printComponentRefStr(inCref);
         scope_str = FGraph.printGraphPathStr(inEnv);
@@ -4326,8 +4327,9 @@ algorithm
         // but unfortunately DAE depends on Values and they should probably be merged !
         // Actually, at a second thought we SHOULD NOT HAVE VALUES AT ALL, WE SHOULD HAVE
         // JUST ONE DAE.Exp.CONSTANT_EXPRESSION(exp, constantness, type)!
+        */
       then
-        (inCache, v);
+        fail();
 
     // A variable with a binding -> constant evaluate the binding
     case (_, _, _, DAE.ATTR(variability=variability), _, _, _, _, _, _, _, _, _, _)
