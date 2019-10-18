@@ -837,6 +837,7 @@ end expValue;
 
 public function valueExp "Transforms a Value into an Exp"
   input Values.Value inValue;
+  input Option<DAE.Exp> originalExp = NONE();
   output DAE.Exp outExp;
 algorithm
   outExp := match (inValue)
@@ -871,17 +872,17 @@ algorithm
     case (Values.BOOL(boolean = b))    then DAE.BCONST(b);
     case (Values.ENUM_LITERAL(name = path, index = i)) then DAE.ENUM_LITERAL(path, i);
 
-    case (Values.ARRAY(valueLst = vallist, dimLst = int_dims)) then valueExpArray(vallist,int_dims);
+    case (Values.ARRAY(valueLst = vallist, dimLst = int_dims)) then valueExpArray(vallist,int_dims, originalExp);
 
     case (Values.TUPLE(valueLst = vallist))
       equation
-        explist = List.map(vallist, valueExp);
+        explist = List.map(vallist, function valueExp(originalExp=NONE()));
       then
         DAE.TUPLE(explist);
 
     case(Values.RECORD(path,vallist,namelst,-1))
       equation
-        expl = List.map(vallist,valueExp);
+        expl = List.map(vallist,function valueExp(originalExp=NONE()));
         tpl = List.map(expl,Expression.typeof);
         varlst = List.threadMap(namelst,tpl,Expression.makeVar);
         t = DAE.T_COMPLEX(ClassInf.RECORD(path),varlst,NONE());
@@ -892,7 +893,7 @@ algorithm
 
     case (Values.TUPLE(vallist))
       equation
-        explist = List.map(vallist, valueExp);
+        explist = List.map(vallist, function valueExp(originalExp=NONE()));
       then DAE.TUPLE(explist);
 
     /* MetaModelica types */
@@ -906,7 +907,7 @@ algorithm
 
     case (Values.META_TUPLE(vallist))
       equation
-        explist = List.map(vallist, valueExp);
+        explist = List.map(vallist, function valueExp(originalExp=NONE()));
         typelist = List.map(vallist, Types.typeOfValue);
         (explist,_) = Types.matchTypeTuple(explist, typelist, List.map(typelist, Types.boxIfUnboxedType), true);
       then DAE.META_TUPLE(explist);
@@ -915,7 +916,7 @@ algorithm
 
     case (Values.LIST(vallist))
       equation
-        explist = List.map(vallist, valueExp);
+        explist = List.map(vallist, function valueExp(originalExp=NONE()));
         typelist = List.map(vallist, Types.typeOfValue);
         vt = Types.boxIfUnboxedType(List.reduce(typelist,Types.superType));
         (explist,_) = Types.matchTypes(explist, typelist, vt, true);
@@ -923,7 +924,7 @@ algorithm
 
     case (Values.META_ARRAY(vallist))
       equation
-        explist = List.map(vallist, valueExp);
+        explist = List.map(vallist, function valueExp(originalExp=NONE()));
         typelist = List.map(vallist, Types.typeOfValue);
         vt = Types.boxIfUnboxedType(List.reduce(typelist,Types.superType));
         (explist,_) = Types.matchTypes(explist, typelist, vt, true);
@@ -933,7 +934,7 @@ algorithm
     case (Values.RECORD(path,vallist,namelst,ix))
       equation
         true = ix >= 0;
-        explist = List.map(vallist, valueExp);
+        explist = List.map(vallist, function valueExp(originalExp=NONE()));
         typelist = List.map(vallist, Types.typeOfValue);
         (explist,_) = Types.matchTypeTuple(explist, typelist, List.map(typelist, Types.boxIfUnboxedType), true);
       then DAE.METARECORDCALL(path,explist,namelst,ix,{});
@@ -950,10 +951,15 @@ algorithm
       then DAE.CODE(code,DAE.T_UNKNOWN_DEFAULT);
 
     case (Values.EMPTY(scope = scope, name = name, tyStr = tyStr, ty = valType))
-      equation
-        ety = Types.simplifyType(Types.typeOfValue(valType));
+      algorithm
+        if isSome(originalExp) then
+          SOME(e) := originalExp;
+        else
+          ety := Types.simplifyType(Types.typeOfValue(valType));
+          e := DAE.EMPTY(scope, DAE.CREF_IDENT(name, ety, {}), ety, tyStr);
+        end if;
       then
-        DAE.EMPTY(scope, DAE.CREF_IDENT(name, ety, {}), ety, tyStr);
+        e;
 
     case (Values.NORETCALL())
       then DAE.TUPLE({});
@@ -970,41 +976,42 @@ end valueExp;
 protected function valueExpArray
   input list<Values.Value> values;
   input list<Integer> inDims;
+  input Option<DAE.Exp> originalExp;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (values,inDims)
+  outExp := matchcontinue (values,inDims, originalExp)
     local
       Values.Value v;
       list<Values.Value> xs,xs2;
-      list<DAE.Exp> explist;
+      list<DAE.Exp> explist, exps1;
       DAE.Dimensions dims;
       list<Integer> int_dims;
       DAE.Type t,vt;
       Integer dim,i;
       Boolean b;
       list<list<DAE.Exp>> mexpl;
-    case ({},{}) then DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT,false,{});
-    case ({},_)
+    case ({},{},_) then DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT,false,{});
+    case ({},_,_)
       equation
         dims = List.map(inDims, Expression.intDimension);
       then DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, dims),false,{});
 
     // Matrix
-    case(Values.ARRAY(valueLst=v::xs)::xs2,dim::int_dims)
+    case(Values.ARRAY(valueLst=v::xs)::xs2,dim::int_dims,_)
       equation
         failure(Values.ARRAY() = v);
-        explist = List.map((v :: xs), valueExp);
+        explist = List.map((v :: xs), function valueExp(originalExp=NONE()));
         DAE.MATRIX(t,_,mexpl) = valueExp(Values.ARRAY(xs2,int_dims));
         t = Expression.arrayDimensionSetFirst(t, DAE.DIM_INTEGER(dim));
       then
         DAE.MATRIX(t,dim,explist::mexpl);
 
     // Matrix last row
-    case({Values.ARRAY(valueLst=v::xs)},_)
+    case({Values.ARRAY(valueLst=v::xs)},_,_)
       equation
         failure(Values.ARRAY() = v);
         dim = listLength(v::xs);
-        explist = List.map((v :: xs), valueExp);
+        explist = List.map((v :: xs), function valueExp(originalExp=NONE()));
         vt = Types.typeOfValue(v);
         t = Types.simplifyType(vt);
         dim = listLength(v::xs);
@@ -1013,10 +1020,21 @@ algorithm
       then
         DAE.MATRIX(t,dim,{explist});
 
-    // Generic array
-    case (v :: xs,_)
+    // Generic array and we have original exp
+    case (v :: xs,_, SOME(DAE.ARRAY(array=exps1)))
       equation
-        explist = List.map((v :: xs), valueExp);
+        explist = list(valueExp(e1, SOME(e2)) threaded for e1 in values, e2 in exps1);
+        vt = Types.typeOfValue(v);
+        t = Types.simplifyType(vt);
+        dim = listLength(v::xs);
+        t = Expression.liftArrayR(t,DAE.DIM_INTEGER(dim));
+        b = Types.isArray(vt);
+        b = boolNot(b);
+      then DAE.ARRAY(t,b,explist);
+
+    case (v :: xs,_,_)
+      equation
+        explist = List.map((v :: xs), function valueExp(originalExp=NONE()));
         vt = Types.typeOfValue(v);
         t = Types.simplifyType(vt);
         dim = listLength(v::xs);

@@ -801,8 +801,6 @@ algorithm
       list<DAE.FuncArg> fargs;
       DAE.EqualityConstraint eqCo;
       String name, newName;
-      SCode.Restriction restr;
-      ClassInf.State ci_state;
 
       case(_, _, _)
         equation
@@ -821,24 +819,11 @@ algorithm
           recordCl = SCodeUtil.setClassName(newName, recordCl);
 
           (cache,_,_,_,_,_,recType,_,_,_) = Inst.instClass(inCache,recordEnv, InnerOuter.emptyInstHierarchy,
-           UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), recordCl,
+            UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), recordCl,
             {}, true, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
 
           DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo) = recType;
 
-/*
-          // restr = SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(false));
-          // recordCl = SCodeUtil.setClassRestriction(restr, recordCl);
-          recordEnv = FGraph.openScope(recordEnv, SCodeUtil.getClassEncapsulation(recordCl), newName, FGraph.restrictionToScopeType(restr));
-          // ci_state = ClassInf.start(restr,FGraph.getGraphName(recordEnv));
-          ci_state = ClassInf.FUNCTION(FGraph.getGraphName(recordEnv), false, true);
-
-	        (cache,_,_,_,_,_,ci_state,vars,_,_,eqCo,_) = Inst.instClassIn(inCache, recordEnv, InnerOuter.emptyInstHierarchy,
-	          UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), ci_state, recordCl, SCode.PUBLIC(),
-	          {}, true, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, NONE());
-
-          path = ClassInf.getStateName(ci_state);
-*/
           vars = Types.filterRecordComponents(vars, SCodeUtil.elementInfo(recordCl));
           (inputs,locals) = List.extractOnTrue(vars, Types.isModifiableTypesVar);
           inputs = List.map(inputs,Types.setVarDefaultInput);

@@ -829,7 +829,6 @@ algorithm
         //   R1 r2(v1=1, v1=2);     // <= Here
         // end out;
         // see testsuit/mofiles/RecordBindings.mo.
-
      case (cache,env,ih,store,ci_state,mod as DAE.MOD(binding = NONE()),pre,n,cl as SCode.CLASS(restriction = SCode.R_RECORD(_)),attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
       equation
         true = ClassInf.isFunction(ci_state);
@@ -865,7 +864,6 @@ algorithm
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
       then
         (cache,env_1,ih,store,dae,csets,ty_1,graph);
-
 
     // mahge: function variables with eqMod modifications.
     // FIXHERE: They might have subMods too (variable attributes). see testsuite/mofiles/Sequence.mo

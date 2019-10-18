@@ -888,7 +888,7 @@ algorithm
     case DAE.PROP(constFlag = DAE.C_CONST(), type_ = tp)
       algorithm
         (cache, v) := ceval(cache, inEnv, exp, impl, Absyn.MSG(inInfo), 0);
-        exp := ValuesUtil.valueExp(v);
+        exp := ValuesUtil.valueExp(v,SOME(exp));
         exp := ValuesUtil.fixZeroSizeArray(exp, tp);
       then (cache, exp, prop);
 
@@ -896,7 +896,7 @@ algorithm
       algorithm
         DAE.C_CONST() := Types.propAllConst(prop);
         (cache, v) := ceval(cache, inEnv, exp, false, Absyn.MSG(inInfo), 0);
-        exp := ValuesUtil.valueExp(v);
+        exp := ValuesUtil.valueExp(v, SOME(exp));
       then (cache, exp, prop);
 
     case DAE.PROP_TUPLE()
@@ -912,7 +912,7 @@ algorithm
       guard Expression.isConst(exp) and not Config.acceptMetaModelicaGrammar()
       algorithm
         (_, v) := ceval(cache, inEnv, exp, impl, Absyn.MSG(inInfo), 0);
-        exp := ValuesUtil.valueExp(v);
+        exp := ValuesUtil.valueExp(v,SOME(exp));
         exp := ValuesUtil.fixZeroSizeArray(exp, Types.getPropType(prop));
       then (cache, exp, prop);
 
@@ -4698,7 +4698,7 @@ algorithm
     case (cache,env,DAE.SLICE(exp = e1),_,impl,msg,_)
       equation
         (cache,v1) = ceval(cache,env, e1, impl,msg,numIter+1);
-        e1_1 = ValuesUtil.valueExp(v1);
+        e1_1 = ValuesUtil.valueExp(v1, SOME(e1));
       then
         (cache,DAE.SLICE(e1_1));
 
@@ -5113,7 +5113,7 @@ algorithm
   functionTree := Mutable.create(functions);
   cache := FCore.CACHE(NONE(), functionTree, structuralParameters, Absyn.IDENT(""));
   (_,val) := ceval(cache, FGraph.empty(), exp, false, Absyn.MSG(AbsynUtil.dummyInfo),0);
-  oexp := ValuesUtil.valueExp(val);
+  oexp := ValuesUtil.valueExp(val, SOME(exp));
 end cevalSimpleWithFunctionTreeReturnExp;
 
 public function cevalAstExp

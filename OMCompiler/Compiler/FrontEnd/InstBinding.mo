@@ -678,7 +678,7 @@ algorithm
         c = Types.propAllConst(prop);
         tp = Types.getPropType(prop);
         false = Types.equivtypes(tp,e_tp);
-        e_val_exp = ValuesUtil.valueExp(v);
+        e_val_exp = ValuesUtil.valueExp(v, SOME(e));
         // Handle bindings of the type Boolean b[Boolean]={true,false}, enumerations, and similar
         // tp = Types.traverseType(tp, 1, Types.makeKnownDimensionsInteger);
         // e_tp = Types.traverseType(e_tp, 1, Types.makeKnownDimensionsInteger);

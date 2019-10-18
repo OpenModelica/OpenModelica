@@ -4621,7 +4621,7 @@ algorithm
         (cache, val) = Ceval.ceval(cache, env, resolution, false, Absyn.MSG(info), 0);
         Error.assertionOrAddSourceMessage(ValuesUtil.valueInteger(val) >= 1,
           Error.WRONG_VALUE_OF_ARG, {"Clock", "resolution", ValuesUtil.valString(val), ">= 1"}, info);
-        resolution = ValuesUtil.valueExp(val);
+        resolution = ValuesUtil.valueExp(val, SOME(resolution));
         call = DAE.CLKCONST(DAE.INTEGER_CLOCK(intervalCounter, resolution));
       then (cache, call, prop);
 
@@ -4669,7 +4669,7 @@ algorithm
         (solverMethod,_) = Types.matchType(solverMethod,ty2,DAE.T_STRING_DEFAULT,true);
         // evaluate structural solverMethod (rfranke)
         (cache, val) = Ceval.ceval(cache, env, solverMethod, false, Absyn.MSG(info), 0);
-        solverMethod = ValuesUtil.valueExp(val);
+        solverMethod = ValuesUtil.valueExp(val, SOME(solverMethod));
         call = DAE.CLKCONST(DAE.SOLVER_CLOCK(c, solverMethod));
       then (cache, call, prop);
 
@@ -4684,7 +4684,7 @@ algorithm
         (solverMethod,_) = Types.matchType(solverMethod,ty2,DAE.T_STRING_DEFAULT,true);
         // evaluate structural solverMethod (rfranke)
         (cache, val) = Ceval.ceval(cache, env, solverMethod, false, Absyn.MSG(info), 0);
-        solverMethod = ValuesUtil.valueExp(val);
+        solverMethod = ValuesUtil.valueExp(val, SOME(solverMethod));
         call = DAE.CLKCONST(DAE.SOLVER_CLOCK(c, solverMethod));
       then (cache, call, prop);
 
@@ -8773,7 +8773,7 @@ algorithm
       algorithm
         // Constant evaluate the bound expression.
         (_, val) := Ceval.ceval(inCache, inEnv, exp, false, Absyn.NO_MSG(), 0);
-        exp := ValuesUtil.valueExp(val);
+        exp := ValuesUtil.valueExp(val, SOME(exp));
         ty := Expression.typeof(exp);
         // Create a binding from the evaluated expression.
         binding := DAE.EQBOUND(exp, SOME(val), DAE.C_CONST(), DAE.BINDING_FROM_DEFAULT_VALUE());
@@ -8822,7 +8822,7 @@ algorithm
       algorithm
         // Constant evaluate the bound expression.
         (cache, val) := Ceval.ceval(inCache, inEnv, exp, false, Absyn.NO_MSG(), 0);
-        exp := ValuesUtil.valueExp(val);
+        exp := ValuesUtil.valueExp(val, SOME(exp));
         // Create a binding from the evaluated expression.
         slot := SLOT(defaultArg,true,SOME(exp),dims,idx,ses);
         (cache,slots) := evaluateStructuralSlots2(cache,inEnv,rest,usedSlots,slot::acc);
@@ -10637,7 +10637,7 @@ algorithm
         e := Expression.makeCrefExp(cr, expTy);
         e := crefVectorize(inVectorize, e, inType, sexp, expIdTy);
         (outCache, v) := Ceval.ceval(outCache, inEnv, e, false, Absyn.MSG(info), 0);
-        e := ValuesUtil.valueExp(v);
+        e := ValuesUtil.valueExp(v, SOME(e));
       then
         (e, DAE.C_CONST(), inAttributes);
 
@@ -10655,7 +10655,7 @@ algorithm
         cr := fillCrefSubscripts(inCref, inType);
         e := crefVectorize(inVectorize, Expression.makeCrefExp(cr, expTy), inType, sexp, expIdTy);
         (outCache, v) := Ceval.ceval(outCache, inEnv, e, false, Absyn.MSG(info), 0);
-        e := ValuesUtil.valueExp(v);
+        e := ValuesUtil.valueExp(v, SOME(e));
       then
         (e, DAE.C_PARAM(), attr);
 
@@ -10669,7 +10669,7 @@ algorithm
         {DAE.INDEX(index as DAE.CREF(componentRef = subCr1))} := ComponentReference.crefLastSubs(inCref);
         true := ComponentReference.crefEqual(subCr1, subCr2);
         true := Expression.isArray(e) or Expression.isRange(e);
-        e := ValuesUtil.valueExp(v);
+        e := ValuesUtil.valueExp(v, SOME(e));
         e := DAE.ASUB(e, {index});
       then
         (e, DAE.C_CONST(), inAttributes);
