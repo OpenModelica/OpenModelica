@@ -372,6 +372,10 @@ void OMCProxy::logCommand(QString command, QTime *commandTime, bool saveToHistor
         fputs(QString("%1; getErrorString();\n").arg(command).toUtf8().constData(), mpCommandsLogFile);
       }
     }
+    // flush the logs if --Debug=true
+    if (MainWindow::instance()->isDebug()) {
+      fflush(NULL);
+    }
   }
 }
 
