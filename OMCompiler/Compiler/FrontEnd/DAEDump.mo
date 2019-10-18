@@ -1358,6 +1358,9 @@ algorithm
     case(DAE.EQBOUND(exp=e, source=DAE.BINDING_FROM_DEFAULT_VALUE())) equation
       str = " = "+ExpressionDump.printExpStr(e);
     then str;
+    case(DAE.EQBOUND(exp=e, source=DAE.BINDING_FROM_RECORD_SUBMODS())) equation
+      str = " = "+ExpressionDump.printExpStr(e);
+    then str;
     case(DAE.VALBOUND(valBound=v, source=DAE.BINDING_FROM_DEFAULT_VALUE())) equation
       str = " = " + ValuesUtil.valString(v);
     then str;

@@ -4193,4 +4193,6 @@ end Gear;
 //   inertia1.flange_b.phi = springDamper1.flange_a.phi;
 //   fixed1.flange_b.phi = springDamper1.flange_b.phi;
 // end Gear;
+// Error: Variable bearing in package Modelica.Mechanics.Rotational.Gear$gear1 is not constant.
+//
 // endResult

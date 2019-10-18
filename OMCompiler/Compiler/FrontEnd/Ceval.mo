@@ -103,7 +103,7 @@ public function ceval "
   input FCore.Graph inEnv;
   input DAE.Exp inExp;
   input Boolean inBoolean "impl";
-  input Absyn.Msg inMsg = Absyn.NO_MSG();
+  input Absyn.Msg inMsg = Absyn.MSG(AbsynUtil.dummyInfo);
   input Integer numIter = 0 "Maximum recursion depth";
   output FCore.Cache outCache;
   output Values.Value outValue;
@@ -285,21 +285,11 @@ algorithm
         (cache,Values.LIST(v::vallst));
 
     // MetaModelica Partial Function
-    case (_,_,DAE.CREF(componentRef = cr,
-        ty = DAE.T_FUNCTION_REFERENCE_VAR()),_,Absyn.MSG(info = info),_)
-      equation
-        str = ComponentReference.crefStr(cr);
-        Error.addSourceMessage(Error.META_CEVAL_FUNCTION_REFERENCE, {str}, info);
+    case (_,_,DAE.CREF(componentRef = cr, ty = DAE.T_FUNCTION_REFERENCE_VAR()),
+        _, _, _)
       then
         fail();
 
-    case (_,_,DAE.CREF(componentRef = cr, ty = DAE.T_FUNCTION_REFERENCE_FUNC()),
-        _, Absyn.MSG(info = info),_)
-      equation
-        str = ComponentReference.crefStr(cr);
-        Error.addSourceMessage(Error.META_CEVAL_FUNCTION_REFERENCE, {str}, info);
-      then
-        fail();
 
     // MetaModelica Uniontype Constructor
     case (cache,env,DAE.METARECORDCALL(path=funcpath,args=expl,fieldNames=fieldNames,index=index),impl,msg,_)
@@ -887,16 +877,16 @@ algorithm
 
     case DAE.PROP(constFlag = DAE.C_CONST(), type_ = tp)
       algorithm
-        (cache, v) := ceval(cache, inEnv, exp, impl, Absyn.NO_MSG(), 0);
-        exp := ValuesUtil.valueExp(v);
+        (cache, v) := ceval(cache, inEnv, exp, impl, Absyn.MSG(inInfo), 0);
+        exp := ValuesUtil.valueExp(v,SOME(exp));
         exp := ValuesUtil.fixZeroSizeArray(exp, tp);
       then (cache, exp, prop);
 
     case DAE.PROP_TUPLE()
       algorithm
         DAE.C_CONST() := Types.propAllConst(prop);
-        (cache, v) := ceval(cache, inEnv, exp, false, Absyn.NO_MSG(), 0);
-        exp := ValuesUtil.valueExp(v);
+        (cache, v) := ceval(cache, inEnv, exp, false, Absyn.MSG(inInfo), 0);
+        exp := ValuesUtil.valueExp(v, SOME(exp));
       then (cache, exp, prop);
 
     case DAE.PROP_TUPLE()
@@ -911,8 +901,8 @@ algorithm
       // Structural parameters and the like... we can ceval them if we want to
       guard Expression.isConst(exp) and not Config.acceptMetaModelicaGrammar()
       algorithm
-        (_, v) := ceval(cache, inEnv, exp, impl, Absyn.NO_MSG(), 0);
-        exp := ValuesUtil.valueExp(v);
+        (_, v) := ceval(cache, inEnv, exp, impl, Absyn.MSG(inInfo), 0);
+        exp := ValuesUtil.valueExp(v,SOME(exp));
         exp := ValuesUtil.fixZeroSizeArray(exp, Types.getPropType(prop));
       then (cache, exp, prop);
 
@@ -4698,7 +4688,7 @@ algorithm
     case (cache,env,DAE.SLICE(exp = e1),_,impl,msg,_)
       equation
         (cache,v1) = ceval(cache,env, e1, impl,msg,numIter+1);
-        e1_1 = ValuesUtil.valueExp(v1);
+        e1_1 = ValuesUtil.valueExp(v1, SOME(e1));
       then
         (cache,DAE.SLICE(e1_1));
 
@@ -5112,8 +5102,8 @@ algorithm
   structuralParameters := (AvlSetCR.EMPTY(),{});
   functionTree := Mutable.create(functions);
   cache := FCore.CACHE(NONE(), functionTree, structuralParameters, Absyn.IDENT(""));
-  (_,val) := ceval(cache, FGraph.empty(), exp, false, Absyn.NO_MSG(),0);
-  oexp := ValuesUtil.valueExp(val);
+  (_,val) := ceval(cache, FGraph.empty(), exp, false, Absyn.MSG(AbsynUtil.dummyInfo),0);
+  oexp := ValuesUtil.valueExp(val, SOME(exp));
 end cevalSimpleWithFunctionTreeReturnExp;
 
 public function cevalAstExp

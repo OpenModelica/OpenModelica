@@ -35,6 +35,5 @@ FunctionReturningArray.fromList({1,2,3}); getErrorString();
 // {1,2,3}
 // ""
 //
-// "[metamodelica/meta/FunctionReturningArray.mos:30:1-30:41:writable] Error: User-defined function calls that return Array<...> are not supported: FunctionReturningArray.fromList(List(#(1), #(2), #(3))).
-// "
+// ""
 // endResult

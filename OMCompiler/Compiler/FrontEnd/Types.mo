@@ -1139,7 +1139,7 @@ algorithm
         // MetaModelica list type
     case Values.LIST(vl)
       equation
-        explist = List.map(vl, ValuesUtil.valueExp);
+        explist = List.map(vl, function ValuesUtil.valueExp(originalExp=NONE()));
         ts = List.map(vl, typeOfValue);
         (_,tp) = listMatchSuperType(explist, ts, true);
         tp = boxIfUnboxedType(tp);

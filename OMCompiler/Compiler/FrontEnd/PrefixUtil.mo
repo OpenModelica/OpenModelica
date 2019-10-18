@@ -1476,5 +1476,77 @@ algorithm
   end match;
 end haveSubs;
 
+function removeCompPrefixFromExps
+  input DAE.Exp inExp;
+  input Prefix.ComponentPrefix inCompPref;
+  output DAE.Exp outExp;
+algorithm
+  outExp := Expression.traverseExpBottomUp(inExp, function removeCompPrefixFromCrefExp(inCompPref = inCompPref), false);
+end removeCompPrefixFromExps;
+
+protected function removeCompPrefixFromCrefExp
+  input DAE.Exp inExp;
+  input Boolean inB;
+  input Prefix.ComponentPrefix inCompPref;
+  output DAE.Exp outExp;
+  output Boolean b;
+algorithm
+  (outExp,b) := match (inExp)
+    local
+      DAE.Exp exp;
+      DAE.ComponentRef cref;
+
+    case (exp as DAE.CREF(DAE.CREF_QUAL()))
+      algorithm
+        cref := removePrefixFromCref(exp.componentRef, inCompPref);
+        exp.componentRef := cref;
+      then
+        (exp, true);
+
+    else (inExp, inB);
+  end match;
+end removeCompPrefixFromCrefExp;
+
+protected function removePrefixFromCref
+  input DAE.ComponentRef inCref;
+  input Prefix.ComponentPrefix inCompPref;
+  output DAE.ComponentRef outCref;
+algorithm
+  (outCref) := match (inCref, inCompPref)
+    local
+      DAE.ComponentRef cref, cref2;
+      Prefix.ComponentPrefix pref;
+
+    case (_, Prefix.NOCOMPPRE()) then inCref;
+    case (DAE.CREF_IDENT(), _) then inCref;
+
+    case (cref as DAE.CREF_QUAL(_), pref as Prefix.PRE(next=Prefix.NOCOMPPRE())) algorithm
+      if stringEqual(cref.ident, pref.prefix) then
+        cref2 := cref.componentRef;
+      else
+        cref2 := cref;
+      end if;
+    then
+      cref.componentRef;
+
+    case (DAE.CREF_QUAL(_), pref as Prefix.PRE(next=Prefix.PRE(_))) algorithm
+      cref := removePrefixFromCref(inCref,pref.next);
+      pref.next := Prefix.NOCOMPPRE();
+      cref := removePrefixFromCref(cref,pref);
+    then
+      cref;
+
+    case (_, Prefix.PRE()) algorithm
+      Error.addInternalError(getInstanceName() + " :Cref is not qualified but we have prefix to remove: " + ComponentReference.crefStr(inCref), sourceInfo());
+    then
+      fail();
+
+    else algorithm
+      Error.addInternalError(getInstanceName() + " :failed on cref: " + ComponentReference.crefStr(inCref), sourceInfo());
+    then
+      fail();
+  end match;
+end removePrefixFromCref;
+
 annotation(__OpenModelica_Interface="frontend");
 end PrefixUtil;

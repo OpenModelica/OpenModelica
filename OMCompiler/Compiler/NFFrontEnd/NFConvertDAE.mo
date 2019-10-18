@@ -1169,6 +1169,9 @@ protected
   Component comp;
   Component.Attributes attr;
   Visibility vis;
+  Binding binding;
+  Boolean bind_from_outside;
+  Type ty;
 algorithm
   comp := InstNode.component(component);
   attr := Component.getAttributes(comp);
@@ -1179,15 +1182,72 @@ algorithm
     vis := InstNode.visibility(component);
   end if;
 
+  binding := Component.getBinding(comp);
+  binding := Binding.mapExp(binding, stripScopePrefixExp);
+  bind_from_outside := Binding.parentCount(binding) > 1;
+
+  ty := Component.getType(comp);
+  ty := Type.mapDims(ty, stripScopePrefixFromDim);
+
   typeVar := DAE.TYPES_VAR(
     InstNode.name(component),
     Component.Attributes.toDAE(attr, vis),
-    Type.toDAE(Component.getType(comp)),
-    Binding.toDAE(Component.getBinding(comp)),
-    false,
+    Type.toDAE(ty),
+    Binding.toDAE(binding),
+    bind_from_outside,
     NONE()
   );
 end makeTypeRecordVar;
+
+protected function stripScopePrefixFromDim
+  input output Dimension dim;
+algorithm
+  dim := Dimension.mapExp(dim, stripScopePrefixCrefExp);
+end stripScopePrefixFromDim;
+
+function stripScopePrefixExp
+  input output Expression exp;
+algorithm
+  exp := Expression.map(exp, stripScopePrefixCrefExp);
+end stripScopePrefixExp;
+
+function stripScopePrefixCrefExp
+  input output Expression exp;
+algorithm
+  () := match exp
+    case Expression.CREF()
+      algorithm
+        exp.cref := stripScopePrefixCref(exp.cref);
+      then
+        ();
+
+    else ();
+  end match;
+end stripScopePrefixCrefExp;
+
+function stripScopePrefixCref
+  input output ComponentRef cref;
+algorithm
+
+  if ComponentRef.isSimple(cref) then
+    return;
+  end if;
+
+  () := match cref
+    case ComponentRef.CREF()
+      algorithm
+        if ComponentRef.isFromCref(cref.restCref) then
+          cref.restCref := stripScopePrefixCref(cref.restCref);
+        else
+          cref.restCref := ComponentRef.EMPTY();
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+
+end stripScopePrefixCref;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFConvertDAE;

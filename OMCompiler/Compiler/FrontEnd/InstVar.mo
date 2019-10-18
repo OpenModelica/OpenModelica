@@ -841,7 +841,7 @@ algorithm
         //        input Integer sequence[3](min = {1,1,1}, max = {3,3,3}) = {1,2,3}; // this will fail if we send in the mod.
         //        see testsuite/mofiles/Sequence.mo
         (cache,env_1,ih,store,_,csets,ty,_,_,graph) =
-          Inst.instClass(cache, env, ih, store, /* mod */ DAE.NOMOD(), pre, cl, inst_dims, impl, InstTypes.INNER_CALL(), graph, csets);
+          Inst.instClass(cache, env, ih, store, DAE.NOMOD(), pre, cl, inst_dims, impl, InstTypes.INNER_CALL(), graph, csets);
         //Make it an array type since we are not flattening
         ty_1 = InstUtil.makeArrayType(dims, ty);
         InstUtil.checkFunctionVarType(ty_1, ci_state, n, info);
@@ -853,7 +853,7 @@ algorithm
         (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,ty_2,{}));
 
         //We should get a call exp from here
-        (cache, DAE.EQBOUND(e,_,_,_/*source*/)) = InstBinding.makeBinding(cache,env,attr,mod,ty_2,pre,n,info);
+        (cache, DAE.EQBOUND(e,_,_,_)) = InstBinding.makeBinding(cache,env,attr,mod,ty_2,pre,n,info);
 
         // set the source of this element
         source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre);

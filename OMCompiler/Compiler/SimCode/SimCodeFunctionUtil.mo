@@ -456,6 +456,8 @@ algorithm
       list<list<DAE.Type>> tyss;
     case (SimCodeFunction.RECORD_DECL_FULL(aliasName=SOME(name)),_)
       then List.select1(allDecls, isRecordDecl, name);
+    case (SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(name=name),_)
+      then List.select1(allDecls, isRecordDecl, name);
     case (SimCodeFunction.RECORD_DECL_FULL(variables=vars),_)
       equation
         tys = list(getVarType(v) for v in vars);
@@ -1545,37 +1547,44 @@ protected function elaborateRecordDeclarationsForRecord
 algorithm
   (outRecordDecls, outReturnTypes) := match (inRecordType, inAccRecordDecls, inReturnTypes)
     local
-      Absyn.Path path, name;
+      Absyn.Path path;
       list<DAE.Var> varlst;
-      String    sname;
-      list<String> rt, rt_1, rt_2, fieldNames;
+      String name,sname;
+      list<String> rt, rt_1, fieldNames;
       list<SimCodeFunction.RecordDeclaration> accRecDecls;
       list<SimCodeFunction.Variable> vars;
-      Integer index;
+      Integer varnum;
       SimCodeFunction.RecordDeclaration recDecl;
 
-    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), varLst = varlst), accRecDecls, rt)
-      equation
-        sname = AbsynUtil.pathStringUnquoteReplaceDot(name, "_");
-        if not listMember(sname, rt) then
-          /* Dont remove the bindings. We need them for creating a default constructor.
-            Not as in modelica defalut. But as in just declared without being initialized.
-            That case still needs to have default values since we no longer initialize
-            members for every instance everywhere. It is in one default constrctor function now.*/
-          // vars = List.map(varlst, typesVarNoBinding);
-          vars = List.map(varlst, typesVar);
-          /* Why do we sort the member?? They are sorted here in the declration while 
-            every type in every cref has the original ordering. They should keep their original ordering
-            */
-          // vars = List.sort(vars,compareVariable);
-          rt_1 = sname :: rt;
-          (accRecDecls, rt_2) = elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
-          recDecl = SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), name, vars);
-          accRecDecls = List.appendElt(recDecl, accRecDecls);
-        else
-          rt_2 = rt;
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path), varLst = varlst), accRecDecls, rt)
+      algorithm
+        name := AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
+        rt_1 := rt;
+
+        if not listMember(name, rt_1) then
+          rt_1 := name :: rt_1;
+          vars := List.map(varlst, typesVar);
+          (accRecDecls, rt_1) := elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
+          recDecl := SimCodeFunction.RECORD_DECL_FULL(name, NONE(), path, vars);
+          accRecDecls := List.appendElt(recDecl, accRecDecls);
         end if;
-      then (accRecDecls, rt_2);
+
+        sname := name;
+        varnum := 1;
+        for var in varlst loop
+          if var.bind_from_outside then
+            sname := sname + "_" + intString(varnum);
+          end if;
+          varnum := intAdd(varnum,1);
+        end for;
+
+        if not listMember(sname, rt_1) then
+          rt_1 := sname :: rt_1;
+          vars := List.map(varlst, typesVar);
+          recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars);
+          accRecDecls := List.appendElt(recDecl, accRecDecls);
+        end if;
+      then (accRecDecls, rt_1);
 
     case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)), accRecDecls, rt)
     then (accRecDecls, rt);
@@ -1590,11 +1599,11 @@ algorithm
           fieldNames = List.map(varlst, generateVarName);
           accRecDecls = SimCodeFunction.RECORD_DECL_DEF(path, fieldNames) :: accRecDecls;
           rt_1 = sname::rt;
-          (accRecDecls, rt_2) = elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
+          (accRecDecls, rt_1) = elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
         else
-          rt_2 = rt;
+          rt_1 = rt;
         end if;
-      then (accRecDecls, rt_2);
+      then (accRecDecls, rt_1);
 
     case (_, accRecDecls, rt)
     then (accRecDecls, rt);
@@ -1645,10 +1654,22 @@ algorithm
         cref_ = ComponentReference.makeCrefIdent(name, ty, {});
         DAE.ATTR(parallelism = scPrl) = attr;
         prl = scodeParallelismToDAEParallelism(scPrl);
-        bindExp = Types.getBindingExpOptional(inTypesVar);
+        bindExp = checkSourceAndGetBindingExp(inTypesVar.binding);
       then SimCodeFunction.VARIABLE(cref_, ty, bindExp, {}, prl, DAE.VARIABLE(), inTypesVar.bind_from_outside);
   end match;
 end typesVar;
+
+protected function checkSourceAndGetBindingExp
+  input DAE.Binding inBinding;
+  output Option<DAE.Exp> bindExp;
+algorithm
+  bindExp := match (inBinding)
+    local
+    case DAE.EQBOUND(source=DAE.BINDING_FROM_RECORD_SUBMODS()) then NONE();
+    case DAE.EQBOUND() then SOME(inBinding.exp);
+    else NONE();
+  end match;
+end checkSourceAndGetBindingExp;
 
 protected function scodeParallelismToDAEParallelism
   input SCode.Parallelism inParallelism;
@@ -2631,8 +2652,8 @@ algorithm
 end generateSubPalceholders;
 
 
-/* This functions are used to get/append cref prefixes in function contexts.The cref prefix is appended 
-  to all crefs generated. We use this to generate dependent names in some cases (for example when generating 
+/* This functions are used to get/append cref prefixes in function contexts.The cref prefix is appended
+  to all crefs generated. We use this to generate dependent names in some cases (for example when generating
   code for record constructors) so that every cref we generate while this is set has this prefix applied to it*/
 public function getCurrentCrefPrefix
   input SimCodeFunction.Context context;

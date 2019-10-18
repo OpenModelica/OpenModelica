@@ -423,6 +423,7 @@ algorithm
     case (SCode.R_PACKAGE(),p) then PACKAGE(p);
     case (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(isImpure)),p) then FUNCTION(p, isImpure);
     case (SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure)),p) then FUNCTION(p, isImpure);
+    case (SCode.R_FUNCTION(SCode.FR_RECORD_CONSTRUCTOR()),p) then FUNCTION(p, false);
     case (SCode.R_FUNCTION(_),p) then FUNCTION(p, false);
     case (SCode.R_OPERATOR(),p) then FUNCTION(p, false);
     case (SCode.R_ENUMERATION(),p) then ENUMERATION(p);

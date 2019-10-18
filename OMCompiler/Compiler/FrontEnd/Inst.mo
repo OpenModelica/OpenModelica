@@ -516,7 +516,7 @@ public function instClass
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
   input list<list<DAE.Dimension>> inInstDims;
-  input Boolean inBoolean;
+  input Boolean inImplicit;
   input InstTypes.CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
@@ -532,7 +532,7 @@ public function instClass
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (cache,outEnv,outIH,outStore,outDae,outSets,outType,outState,optDerAttr,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,inStore,inMod,inPrefix,inClass,inInstDims,inBoolean,inCallingScope,inGraph,inSets)
+  matchcontinue (inCache,inEnv,inIH,inStore,inMod,inPrefix,inClass,inInstDims,inImplicit,inCallingScope,inGraph,inSets)
     local
       FCore.Graph env,env_1,env_3;
       DAE.Mod mod;
@@ -573,7 +573,7 @@ algorithm
         end if;
         // call normal instantiation
         (cache,env,ih,store,dae,csets,ty,ci_state_1,oDA,graph) =
-           instClass(inCache, inEnv, inIH, store, inMod, inPrefix, c, inInstDims, inBoolean, inCallingScope, inGraph, inSets);
+           instClass(inCache, inEnv, inIH, store, inMod, inPrefix, c, inInstDims, inImplicit, inCallingScope, inGraph, inSets);
       then
         (cache,env,ih,store,dae,csets,ty,ci_state_1,oDA,graph);
 
@@ -624,7 +624,8 @@ algorithm
         ty = InstUtil.mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint, c, InstUtil.extractComment(dae.elementLst));
         dae = InstUtil.updateDeducedUnits(callscope_1,store,dae);
 
-        ty = collectAndFixDerivedComplexOutsideBindings(ty, c);
+        ty = markDerivedRecordOutsideBindings(ty, c);
+        ty = markTypesVarsOutsideBindings(ty,mod);
 
         // Fixes partial functions.
         ty = InstUtil.fixInstClassType(ty,isPartialFn);
@@ -951,7 +952,7 @@ algorithm
 end instClassIn2;
 
 
-protected function collectAndFixDerivedComplexOutsideBindings
+protected function markDerivedRecordOutsideBindings
   input DAE.Type inType;
   input SCode.Element inClass;
   output DAE.Type outType;
@@ -1003,7 +1004,7 @@ algorithm
     then DAE.T_COMPLEX(inType.complexClassType, tvars, inType.equalityConstraint);
   end match;
 
-end collectAndFixDerivedComplexOutsideBindings;
+end markDerivedRecordOutsideBindings;
 
 function varIsModifiedInDerivedMod
   input String inName;
@@ -1014,6 +1015,65 @@ algorithm
     case SCode.NAMEMOD() then stringEqual(inSubmod.ident, inName);
   end match;
 end varIsModifiedInDerivedMod;
+
+protected function markTypesVarsOutsideBindings
+  input DAE.Type inType;
+  input DAE.Mod inMod;
+  output DAE.Type outType = inType;
+protected
+  list<DAE.SubMod> submods;
+algorithm
+
+  if not Types.isRecord(inType) then
+     return;
+  end if;
+
+  try
+    DAE.MOD(subModLst = submods) := inMod;
+  else
+    return;
+  end try;
+
+  if listEmpty(submods) then
+    return;
+  end if;
+
+
+  outType := match inType
+    local
+      list<DAE.Var> tvars;
+      Option<DAE.Exp> obind;
+      DAE.Exp bind_exp;
+
+    case DAE.T_COMPLEX() algorithm
+      tvars := {};
+      for var in inType.varLst loop
+
+        for submod in submods loop
+          if varIsModifiedInMod(var.name, submod) then
+            var.bind_from_outside := true;
+            break;
+          end if;
+        end for;
+
+        tvars := var::tvars;
+      end for;
+      tvars := listReverse(tvars);
+
+    then DAE.T_COMPLEX(inType.complexClassType, tvars, inType.equalityConstraint);
+  end match;
+
+end markTypesVarsOutsideBindings;
+
+function varIsModifiedInMod
+  input String inName;
+  input DAE.SubMod inSubmod;
+  output Boolean b;
+algorithm
+  b := match inSubmod
+    case DAE.NAMEMOD() then stringEqual(inSubmod.ident, inName);
+  end match;
+end varIsModifiedInMod;
 
 
 protected function callingScopeCacheEq
@@ -1742,7 +1802,7 @@ public function instClassdef "
   input SCode.Partial inPartialPrefix;
   input SCode.Encapsulated inEncapsulatedPrefix;
   input list<list<DAE.Dimension>> inInstDims9;
-  input Boolean inBoolean10;
+  input Boolean inImplicit;
   input InstTypes.CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
@@ -1764,7 +1824,7 @@ public function instClassdef "
 algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph):=
   instClassdef2(inCache,inEnv,inIH,store,inMod2,inPrefix3,inState5,className,inClassDef6,inRestriction7,inVisibility,
-    inPartialPrefix,inEncapsulatedPrefix,inInstDims9,inBoolean10,inCallingScope,inGraph,inSets,instSingleCref,comment,info,Mutable.create(false));
+    inPartialPrefix,inEncapsulatedPrefix,inInstDims9,inImplicit,inCallingScope,inGraph,inSets,instSingleCref,comment,info,Mutable.create(false));
 end instClassdef;
 
 protected function instClassdefBasicType "
@@ -1783,7 +1843,7 @@ type"
   input SCode.Restriction inRestriction7;
   input SCode.Visibility inVisibility;
   input list<list<DAE.Dimension>> inInstDims9;
-  input Boolean inBoolean10;
+  input Boolean inImplicit;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
   input Option<DAE.ComponentRef> instSingleCref;
@@ -1803,7 +1863,7 @@ type"
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,inStore,inMod2,inPrefix3,inState5,className,inClassDef6,inRestriction7,inVisibility,inInstDims9,inBoolean10,inGraph,inSets,instSingleCref,info,stopInst)
+  matchcontinue (inCache,inEnv,inIH,inStore,inMod2,inPrefix3,inState5,className,inClassDef6,inRestriction7,inVisibility,inInstDims9,inImplicit,inGraph,inSets,instSingleCref,info,stopInst)
     local
       list<SCode.Element> cdefelts,compelts,extendselts,els;
       FCore.Graph env1,env2,env3,env;
@@ -1911,7 +1971,7 @@ protected function instClassdef2 "
   input SCode.Partial inPartialPrefix;
   input SCode.Encapsulated inEncapsulatedPrefix;
   input list<list<DAE.Dimension>> inInstDims9;
-  input Boolean inBoolean10;
+  input Boolean inImplicit;
   input InstTypes.CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
@@ -1933,7 +1993,7 @@ protected function instClassdef2 "
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,oty,optDerAttr,outEqualityConstraint,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,inStore,inMod2,inPrefix3,inState5,className,inClassDef6,inRestriction7,inVisibility,inPartialPrefix,inEncapsulatedPrefix,inInstDims9,inBoolean10,inCallingScope,inGraph,inSets,instSingleCref,comment,info,stopInst)
+  matchcontinue (inCache,inEnv,inIH,inStore,inMod2,inPrefix3,inState5,className,inClassDef6,inRestriction7,inVisibility,inPartialPrefix,inEncapsulatedPrefix,inInstDims9,inImplicit,inCallingScope,inGraph,inSets,instSingleCref,comment,info,stopInst)
     local
       list<SCode.Element> cdefelts,compelts,extendselts,els,extendsclasselts,compelts_2_elem;
       FCore.Graph env1,env2,env3,env,env5,cenv,cenv_2,env_2,parentEnv,parentClassEnv;
@@ -3583,6 +3643,8 @@ algorithm
 
         dae_attr = DAEUtil.translateSCodeAttrToDAEAttr(attr, prefixes);
         ty = Types.traverseType(ty, 1, Types.setIsFunctionPointer);
+
+        binding = removePrefixFromBinding(binding, pre);
         new_var = DAE.TYPES_VAR(name, dae_attr, ty, binding, false, NONE());
 
         // Type info present. Now we can also put the binding into the dae.
@@ -3704,6 +3766,25 @@ algorithm
   end matchcontinue;
 end instElement;
 
+protected function removePrefixFromBinding
+  input DAE.Binding inBind;
+  input Prefix.Prefix inPrefix;
+  output DAE.Binding outBind;
+algorithm
+  outBind := match (inBind, inPrefix)
+    local
+      DAE.Binding bind;
+      Prefix.Prefix pref;
+
+	    case (bind as DAE.EQBOUND(), pref as Prefix.PREFIX(compPre=Prefix.PRE())) algorithm
+        bind.exp := PrefixUtil.removeCompPrefixFromExps(bind.exp, pref.compPre);
+      then
+        bind;
+
+      else inBind;
+    end match;
+end removePrefixFromBinding;
+
 protected function updateCompeltsMods
 "never fail and *NEVER* display any error messages as this function
  prints non-true error messages and even so instElementList dependency
@@ -3714,14 +3795,14 @@ protected function updateCompeltsMods
   input Prefix.Prefix inPrefix;
   input list<tuple<SCode.Element, DAE.Mod>> inComponents;
   input ClassInf.State inState;
-  input Boolean inBoolean;
+  input Boolean inImplicit;
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output list<tuple<SCode.Element, DAE.Mod>> outComponents;
 algorithm
   (outCache,outEnv,outIH,outComponents) :=
-  matchcontinue (inCache,inEnv,inIH,inPrefix,inComponents,inState,inBoolean)
+  matchcontinue (inCache,inEnv,inIH,inPrefix,inComponents,inState,inImplicit)
 
     /*
     case (_,_,_,_,_,_,_)
@@ -3734,7 +3815,7 @@ algorithm
       equation
         ErrorExt.setCheckpoint("updateCompeltsMods");
         (outCache,outEnv,outIH,outComponents) =
-          updateCompeltsMods_dispatch(inCache,inEnv,inIH,inPrefix,inComponents,inState,inBoolean);
+          updateCompeltsMods_dispatch(inCache,inEnv,inIH,inPrefix,inComponents,inState,inImplicit);
         ErrorExt.rollBack("updateCompeltsMods") "roll back any errors";
       then
         (outCache,outEnv,outIH,outComponents);
@@ -3758,14 +3839,14 @@ protected function updateCompeltsMods_dispatch
   input Prefix.Prefix inPrefix;
   input list<tuple<SCode.Element, DAE.Mod>> inComponents;
   input ClassInf.State inState;
-  input Boolean inBoolean;
+  input Boolean inImplicit;
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output list<tuple<SCode.Element, DAE.Mod>> outComponents;
 algorithm
   (outCache,outEnv,outIH,outComponents):=
-  matchcontinue (inCache,inEnv,inIH,inPrefix,inComponents,inState,inBoolean)
+  matchcontinue (inCache,inEnv,inIH,inPrefix,inComponents,inState,inImplicit)
     local
       FCore.Graph env,env2,env3;
       Prefix.Prefix pre;
@@ -4632,7 +4713,7 @@ public function instList
   input ClassInf.State inState;
   input InstFunc instFunc;
   input list<Type_a> inTypeALst;
-  input Boolean inBoolean;
+  input Boolean inImplicit;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
   input ConnectionGraph.ConnectionGraph inGraph;
   output FCore.Cache outCache;
@@ -4650,7 +4731,7 @@ public function instList
     input Connect.Sets inSets;
     input ClassInf.State inState;
     input Type_a inTypeA;
-    input Boolean inBoolean;
+    input Boolean inImplicit;
     input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
     input ConnectionGraph.ConnectionGraph inGraph;
     output FCore.Cache outCache;
@@ -4665,7 +4746,7 @@ public function instList
   replaceable type Type_a subtypeof Any;
 algorithm
   (outCache,outEnv,outIH,outDae,outSets,outState,outGraph):=
-  match (inCache,inEnv,inIH,inPrefix,inSets,inState,instFunc,inTypeALst,inBoolean,unrollForLoops,inGraph)
+  match (inCache,inEnv,inIH,inPrefix,inSets,inState,instFunc,inTypeALst,inImplicit,unrollForLoops,inGraph)
     local
       FCore.Graph env,env_1,env_2;
       DAE.Mod mod;
@@ -4740,7 +4821,7 @@ protected function instClassAttributes
   input FCore.Graph inEnv;
   input Prefix.Prefix inPrefix;
   input list<Absyn.NamedArg> inAttrs;
-  input Boolean inBoolean;
+  input Boolean inImplicit;
   input SourceInfo inInfo;
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
@@ -4748,7 +4829,7 @@ protected function instClassAttributes
 algorithm
 
   (outCache,outEnv,outDae):=
-  match (inCache,inEnv,inPrefix,inAttrs,inBoolean,inInfo)
+  match (inCache,inEnv,inPrefix,inAttrs,inImplicit,inInfo)
     local
       FCore.Cache cache;
       FCore.Graph env;
@@ -4760,7 +4841,7 @@ algorithm
     case (_,_,_,_,_,_)
       equation
         clsAttrs = DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(NONE(),NONE(),NONE(),NONE()))});
-        (cache,env,dae) = instClassAttributes2(inCache,inEnv,inPrefix,inAttrs,inBoolean,inInfo,clsAttrs);
+        (cache,env,dae) = instClassAttributes2(inCache,inEnv,inPrefix,inAttrs,inImplicit,inInfo,clsAttrs);
       then (cache,env,dae);
     else
       equation
@@ -4776,7 +4857,7 @@ protected function instClassAttributes2
   input FCore.Graph inEnv;
   input Prefix.Prefix inPrefix;
   input list<Absyn.NamedArg> inAttrs;
-  input Boolean inBoolean;
+  input Boolean inImplicit;
   input SourceInfo inInfo;
   input DAE.DAElist inClsAttrs;
   output FCore.Cache outCache;
@@ -4785,7 +4866,7 @@ protected function instClassAttributes2
 algorithm
 
   (outCache,outEnv,outDae):=
-  match (inCache,inEnv,inPrefix,inAttrs,inBoolean,inInfo,inClsAttrs)
+  match (inCache,inEnv,inPrefix,inAttrs,inImplicit,inInfo,inClsAttrs)
     local
       FCore.Graph env,env_2;
       Prefix.Prefix pre;

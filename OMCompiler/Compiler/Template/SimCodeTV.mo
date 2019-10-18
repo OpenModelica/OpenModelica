@@ -881,6 +881,11 @@ package SimCodeFunction
       Absyn.Path defPath;
       list<Variable> variables;
     end RECORD_DECL_FULL;
+    record RECORD_DECL_ADD_CONSTRCTOR
+      String ctor_name;
+      String name;
+      list<Variable> variables;
+    end RECORD_DECL_ADD_CONSTRCTOR;
     record RECORD_DECL_DEF
       Absyn.Path path;
       list<String> fieldNames;

@@ -842,6 +842,7 @@ constant Attributes dummyAttrInput = ATTR(NON_CONNECTOR(), SCode.NON_PARALLEL(),
 public uniontype BindingSource "where this binding came from: either default binding or start value"
   record BINDING_FROM_DEFAULT_VALUE "the binding came from the default value" end BINDING_FROM_DEFAULT_VALUE;
   record BINDING_FROM_START_VALUE "the binding came from the start value" end BINDING_FROM_START_VALUE;
+  record BINDING_FROM_RECORD_SUBMODS "the EQ binding is created from the submods of a record declration" end BINDING_FROM_RECORD_SUBMODS;
 end BindingSource;
 
 public

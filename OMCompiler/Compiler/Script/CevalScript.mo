@@ -2448,7 +2448,7 @@ algorithm
         end if;
       then
         fail();
-
+/*
     case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), _, _, msg as Absyn.MSG(info), _)
       equation
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
@@ -2457,6 +2457,8 @@ algorithm
         str = ExpressionDump.printExpStr(inExp);
         Error.addSourceMessage(Error.FUNCTION_RETURNS_META_ARRAY, {str}, info);
       then fail();
+*/
+    else fail();
 
   end matchcontinue;
 end cevalCallFunction;
