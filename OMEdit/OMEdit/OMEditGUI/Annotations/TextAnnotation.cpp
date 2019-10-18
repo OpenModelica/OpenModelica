@@ -528,7 +528,7 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
 {
   int pos = 0;
   while ((pos = regExp.indexIn(mTextString, pos)) != -1) {
-    QString variable = regExp.cap(0);
+    QString variable = regExp.cap(0).trimmed();
     if ((!variable.isEmpty()) && (variable.compare("%%") != 0) && (variable.compare("%name") != 0) && (variable.compare("%class") != 0)) {
       variable.remove("%");
       if (!variable.isEmpty()) {
@@ -550,8 +550,11 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
           }
           if (displaytUnit.isEmpty()) {
             mTextString.replace(pos, regExp.matchedLength(), textValue);
+            pos += textValue.length();
           } else {
-            mTextString.replace(pos, regExp.matchedLength(), QString("%1 %2").arg(textValue, displaytUnit));
+            QString textValueWithDisplayUnit = QString("%1 %2").arg(textValue, displaytUnit);
+            mTextString.replace(pos, regExp.matchedLength(), textValueWithDisplayUnit);
+            pos += textValueWithDisplayUnit.length();
           }
         } else { /* if the value of %\\W* is empty then remove the % sign. */
           mTextString.replace(pos, 1, "");
@@ -559,8 +562,9 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
       } else { /* if there is just alone % then remove it. Because if you want to print % then use %%. */
         mTextString.replace(pos, 1, "");
       }
+    } else if (variable.compare("%%") == 0) { /* if string is %% then just move over it. We replace it with % in TextAnnotation::updateTextString(). */
+      pos += regExp.matchedLength();
     }
-    pos = 0;
   }
 }
 
