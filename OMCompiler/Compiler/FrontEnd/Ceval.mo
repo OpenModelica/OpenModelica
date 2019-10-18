@@ -285,21 +285,11 @@ algorithm
         (cache,Values.LIST(v::vallst));
 
     // MetaModelica Partial Function
-    case (_,_,DAE.CREF(componentRef = cr,
-        ty = DAE.T_FUNCTION_REFERENCE_VAR()),_,Absyn.MSG(info = info),_)
-      equation
-        str = ComponentReference.crefStr(cr);
-        Error.addSourceMessage(Error.META_CEVAL_FUNCTION_REFERENCE, {str}, info);
+    case (_,_,DAE.CREF(componentRef = cr, ty = DAE.T_FUNCTION_REFERENCE_VAR()),
+        _, _, _)
       then
         fail();
 
-    case (_,_,DAE.CREF(componentRef = cr, ty = DAE.T_FUNCTION_REFERENCE_FUNC()),
-        _, Absyn.MSG(info = info),_)
-      equation
-        str = ComponentReference.crefStr(cr);
-        Error.addSourceMessage(Error.META_CEVAL_FUNCTION_REFERENCE, {str}, info);
-      then
-        fail();
 
     // MetaModelica Uniontype Constructor
     case (cache,env,DAE.METARECORDCALL(path=funcpath,args=expl,fieldNames=fieldNames,index=index),impl,msg,_)

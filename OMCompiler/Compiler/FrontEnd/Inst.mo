@@ -3772,8 +3772,8 @@ protected function removePrefixFromBinding
   output DAE.Binding outBind;
 algorithm
   outBind := match (inBind, inPrefix)
-	  local
-	    DAE.Binding bind;
+    local
+      DAE.Binding bind;
       Prefix.Prefix pref;
 
 	    case (bind as DAE.EQBOUND(), pref as Prefix.PREFIX(compPre=Prefix.PRE())) algorithm
@@ -3781,8 +3781,8 @@ algorithm
       then
         bind;
 
-	    else inBind;
-	  end match;
+      else inBind;
+    end match;
 end removePrefixFromBinding;
 
 protected function updateCompeltsMods
