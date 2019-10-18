@@ -5553,6 +5553,7 @@ algorithm
   str := match(bindingSource)
     local
     case(DAE.BINDING_FROM_DEFAULT_VALUE()) then "[DEFAULT VALUE]";
+    case(DAE.BINDING_FROM_DEFAULT_VALUE()) then "[RECORD SUBMOD]";
     case(DAE.BINDING_FROM_START_VALUE()) then  "[START VALUE]";
   end match;
 end printBindingSourceStr;

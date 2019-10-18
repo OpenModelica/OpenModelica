@@ -1654,10 +1654,22 @@ algorithm
         cref_ = ComponentReference.makeCrefIdent(name, ty, {});
         DAE.ATTR(parallelism = scPrl) = attr;
         prl = scodeParallelismToDAEParallelism(scPrl);
-        bindExp = Types.getBindingExpOptional(inTypesVar);
+        bindExp = checkSourceAndGetBindingExp(inTypesVar.binding);
       then SimCodeFunction.VARIABLE(cref_, ty, bindExp, {}, prl, DAE.VARIABLE(), inTypesVar.bind_from_outside);
   end match;
 end typesVar;
+
+protected function checkSourceAndGetBindingExp
+  input DAE.Binding inBinding;
+  output Option<DAE.Exp> bindExp;
+algorithm
+  bindExp := match (inBinding)
+    local
+    case DAE.EQBOUND(source=DAE.BINDING_FROM_RECORD_SUBMODS()) then NONE();
+    case DAE.EQBOUND() then SOME(inBinding.exp);
+    else NONE();
+  end match;
+end checkSourceAndGetBindingExp;
 
 protected function scodeParallelismToDAEParallelism
   input SCode.Parallelism inParallelism;
