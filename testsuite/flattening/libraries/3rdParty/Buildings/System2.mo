@@ -9638,7 +9638,7 @@ end System2;
 //             Temperature T is not in the allowed range
 //             200.0 K <= (T =" + String(vol.dynBal.medium.T, 6, 0, true) + " K) <= 423.15 K
 //             required from medium model \"" + "MoistAirPTDecoupledUnsaturated" + "\".");
-//   vol.dynBal.medium.MM = 1.0 / (vol.dynBal.medium.Xi[1] / <EMPTY(scope: Buildings.Fluid.Interfaces.ConservationEquation$vol$dynBal.Medium.BaseProperties$vol$dynBal$medium, name: steam.MM, ty: Real(String quantity PARAM DAE.EQBOUND("MolarMass", SOME("MolarMass"), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND("kg/mol", SOME("kg/mol"), C_PARAM, [DEFAULT VALUE]), Real min PARAM DAE.EQBOUND(0.0, SOME(0.0), C_PARAM, [DEFAULT VALUE])))> + (1.0 - vol.dynBal.medium.Xi[1]) / <EMPTY(scope: Buildings.Fluid.Interfaces.ConservationEquation$vol$dynBal.Medium.BaseProperties$vol$dynBal$medium, name: dryair.MM, ty: Real(String quantity PARAM DAE.EQBOUND("MolarMass", SOME("MolarMass"), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND("kg/mol", SOME("kg/mol"), C_PARAM, [DEFAULT VALUE]), Real min PARAM DAE.EQBOUND(0.0, SOME(0.0), C_PARAM, [DEFAULT VALUE])))>);
+//   vol.dynBal.medium.MM = 1.0 / (vol.dynBal.medium.Xi[1] / vol.dynBal.medium.MMX[1] + (1.0 - vol.dynBal.medium.Xi[1]) / vol.dynBal.medium.MMX[2]);
 //   vol.dynBal.medium.p_steam_sat = min(Buildings.Fluid.Interfaces.ConservationEquation$vol$dynBal.Medium.saturationPressure(vol.dynBal.medium.T), 0.999 * vol.dynBal.medium.p);
 //   vol.dynBal.medium.X_sat = min(vol.dynBal.medium.p_steam_sat * steam.MM * (1.0 - vol.dynBal.medium.Xi[1]) / (dryair.MM * max(1e-13, vol.dynBal.medium.p - vol.dynBal.medium.p_steam_sat)), 1.0);
 //   vol.dynBal.medium.X_steam = vol.dynBal.medium.Xi[1];
@@ -10171,5 +10171,7 @@ end System2;
 // end System2;
 // [flattening/libraries/3rdParty/Buildings/System2.mo:4960:69-4960:82:writable] Warning: Non-array modification 'false' for array component, possibly due to missing 'each'.
 // [flattening/libraries/3rdParty/Buildings/System2.mo:4961:73-4961:86:writable] Warning: Non-array modification 'false' for array component, possibly due to missing 'each'.
+// Error: Variable Buildings.Media.PerfectGases.Common.SingleGasData.Air not found in scope <global scope>.
+// Error: Variable Buildings.Media.PerfectGases.Common.SingleGasData.H2O not found in scope <global scope>.
 //
 // endResult

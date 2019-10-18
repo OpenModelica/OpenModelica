@@ -28,7 +28,7 @@ getErrorString();
 //   constant Real r = StackOverflowTest.f();
 // end StackOverflowTest;
 // "
-// "[Script/CevalScript.mo:0:0-0:0:writable] Error: Internal error Stack overflow when evaluating function call: StackOverflowTest.f()...
+// "[<interactive>:0:0-0:0:writable] Error: Internal error Stack overflow when evaluating function call: StackOverflowTest.f()...
 // [bt] [Symbols are not generated when running the test suite]
 // "
 // endResult
