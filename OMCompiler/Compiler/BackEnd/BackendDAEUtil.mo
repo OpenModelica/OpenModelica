@@ -2638,16 +2638,16 @@ algorithm
           Discrete output variables that do not occur get computed by pre().
           Ticket #5659
         */
-        if indexTypeSovable(inIndexType) then
-          try
-            crefLst := CheckModel.algorithmStatementListOutputs(statementLst, DAE.EXPAND()); // expand as we're in an algorithm
-            for cr in crefLst loop
+        if indexTypeSolvable(inIndexType) then
+          crefLst := CheckModel.algorithmStatementListOutputs(statementLst, DAE.EXPAND()); // expand as we're in an algorithm
+          for cr in crefLst loop
+            try
               (varslst, p) := BackendVariable.getVar(cr, vars);
-              res := incidenceRowExp1Discrete(varslst,p,res,0);
-            end for;
-          else
-            /* ... */
-          end try;
+              res := incidenceRowExp1Discrete(varslst, p, res);
+            else
+              /* Nothing to do, BackendVariable.getVar fails for $START, $PRE, time etc. */
+            end try;
+          end for;
         end if;
       then
         (res,size);
@@ -3258,21 +3258,21 @@ protected function incidenceRowExp1Discrete
   input list<BackendDAE.Var> inVarLst;
   input list<Integer> inIntegerLst;
   input AvlSetInt.Tree inVarIndxLst;
-  input Integer diffindex;
   output AvlSetInt.Tree outVarIndxLst;
 algorithm
-  outVarIndxLst := match (inVarLst,inIntegerLst,inVarIndxLst,diffindex)
+  outVarIndxLst := match (inVarLst,inIntegerLst)
     local
        list<BackendDAE.Var> rest;
        list<Integer> irest;
        AvlSetInt.Tree vars;
-       Integer i,i1,diffidx;
-       Boolean b;
-    case ({},{},vars,_) then vars;
-    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())::rest,i::irest,_,_)
+       Integer i;
+    case ({}, {}) then inVarIndxLst;
+    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())::rest, i::irest)
       equation
         vars = AvlSetInt.add(inVarIndxLst, i);
-      then incidenceRowExp1Discrete(rest,irest,vars,diffindex);
+      then incidenceRowExp1Discrete(rest,irest,vars);
+    case (_::rest, _::irest)
+      then incidenceRowExp1Discrete(rest,irest,inVarIndxLst);
   end match;
 end incidenceRowExp1Discrete;
 
@@ -9958,7 +9958,7 @@ algorithm
   end match;
 end containsHomotopyCall2;
 
-protected function indexTypeSovable
+protected function indexTypeSolvable
   input BackendDAE.IndexType indexType;
   output Boolean b;
 algorithm
@@ -9966,7 +9966,7 @@ algorithm
     case BackendDAE.SOLVABLE() then true;
     else false;
   end match;
-end indexTypeSovable;
+end indexTypeSolvable;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEUtil;

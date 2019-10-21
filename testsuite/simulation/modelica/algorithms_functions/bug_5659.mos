@@ -1,0 +1,37 @@
+// name: bug_5659
+// keywords:
+// status: correct
+// teardown_command: rm -rf bug_5659_* _bug_5659_* output.log
+//
+//  tests for counting of algorithm section output variables involving
+//  arrays and records combined.
+//
+
+loadString("
+/*slightly altered ticket model.
+https://trac.openmodelica.org/OpenModelica/ticket/5659
+*/
+model bug_5659
+  discrete Real x;
+  discrete Real[2] data;
+  Real y;
+algorithm
+  x := 1;
+  when sample(0, 0.1) then
+    data[1] := time;
+  end when;
+  y := cos(time);
+end bug_5659;
+"); getErrorString();
+
+// bug_5659 has 4 equation(s) and 4 variable(s)
+checkModel(bug_5659); getErrorString();
+
+// Result:
+// true
+// ""
+// "Check of bug_5659 completed successfully.
+// Class bug_5659 has 4 equation(s) and 4 variable(s).
+// 0 of these are trivial equation(s)."
+// ""
+// endResult

@@ -15,6 +15,7 @@ bug_2271.mos \
 bug_2286.mos \
 bug_2286_literal.mos \
 bug2888.mos \
+bug_5659.mos \
 ComplexSystem.mos \
 DoubleWhenSequential.mos \
 ForIterator1.mos \
