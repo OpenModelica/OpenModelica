@@ -354,8 +354,8 @@ bool GraphicsView::addComponent(QString className, QPointF position)
       // get the model defaultComponentName
       QString defaultName = pMainWindow->getOMCProxy()->getDefaultComponentName(pLibraryTreeItem->getNameStructure());
       QString name;
-      if (!defaultName.isEmpty() && checkComponentName(defaultName)) {
-        name = defaultName;
+      if (!defaultName.isEmpty()) {
+        name = getUniqueComponentName(StringHandler::toCamelCase(defaultName));
       } else {
         name = getUniqueComponentName(StringHandler::toCamelCase(pLibraryTreeItem->getName()));
       }
@@ -592,12 +592,20 @@ QString GraphicsView::getUniqueComponentName(QString componentName, int number)
 
 /*!
  * \brief GraphicsView::checkComponentName
+ * Checks the component name against the Modelica keywords as well.
  * Checks if the component with the same name already exists or not.
  * \param componentName
  * \return
  */
 bool GraphicsView::checkComponentName(QString componentName)
 {
+  // if component name is any keyword of Modelica
+  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    if (ModelicaHighlighter::getKeywords().contains(componentName)) {
+      return false;
+    }
+  }
+  // if component with same name exists
   foreach (Component *pComponent, mComponentsList) {
     if (pComponent->getName().compare(componentName, Qt::CaseSensitive) == 0) {
       return false;
