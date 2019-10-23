@@ -11,7 +11,7 @@ loadString("
 /*slightly altered ticket model.
 https://trac.openmodelica.org/OpenModelica/ticket/5659
 */
-model bug_5659
+model bug_5659_1
   discrete Real x;
   discrete Real[2] data;
   Real y;
@@ -21,17 +21,52 @@ algorithm
     data[1] := time;
   end when;
   y := cos(time);
-end bug_5659;
+end bug_5659_1;
+
+model bug_5659_2
+  record R
+    Integer d;
+  end R;
+  R r[2];
+algorithm
+  r[1].d := 0;
+end bug_5659_2;
+
+model bug_5659_3
+  model M
+   Integer d;
+  end M;
+  M m[2];
+algorithm
+  m[1].d := 0;
+end bug_5659_3;
+
 "); getErrorString();
 
-// bug_5659 has 4 equation(s) and 4 variable(s)
-checkModel(bug_5659); getErrorString();
+// bug_5659_1 has 4 equation(s) and 4 variable(s)
+checkModel(bug_5659_1); getErrorString();
+
+// bug_5659_2 has 2 equation(s) and 2 variable(s)
+// Records arrays get initialized as one
+checkModel(bug_5659_2); getErrorString();
+
+// bug_5659_3 has 1 equation(s) and 2 variable(s)
+// Model arrays get initialized individually
+checkModel(bug_5659_3); getErrorString();
 
 // Result:
 // true
 // ""
-// "Check of bug_5659 completed successfully.
-// Class bug_5659 has 4 equation(s) and 4 variable(s).
+// "Check of bug_5659_1 completed successfully.
+// Class bug_5659_1 has 4 equation(s) and 4 variable(s).
+// 0 of these are trivial equation(s)."
+// ""
+// "Check of bug_5659_2 completed successfully.
+// Class bug_5659_2 has 2 equation(s) and 2 variable(s).
+// 0 of these are trivial equation(s)."
+// ""
+// "Check of bug_5659_3 completed successfully.
+// Class bug_5659_3 has 1 equation(s) and 2 variable(s).
 // 0 of these are trivial equation(s)."
 // ""
 // endResult
