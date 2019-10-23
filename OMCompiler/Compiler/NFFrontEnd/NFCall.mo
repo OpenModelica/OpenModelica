@@ -979,7 +979,7 @@ protected
   protected
     Expression arg, range;
     Type iter_ty;
-    Variability iter_var;
+    Variability iter_var, exp_var;
     InstNode iter;
     list<Dimension> dims = {};
     list<tuple<InstNode, Expression>> iters = {};
@@ -1011,7 +1011,8 @@ protected
 
           // ExpOrigin.FOR is used here as a marker that this expression may contain iterators.
           next_origin := intBitOr(next_origin, ExpOrigin.FOR);
-          (arg, ty) := Typing.typeExp(call.exp, next_origin, info);
+          (arg, ty, exp_var) := Typing.typeExp(call.exp, next_origin, info);
+          variability := Variability.variabilityMax(variability, exp_var);
           ty := Type.liftArrayLeftList(ty, dims);
         then
           (TYPED_ARRAY_CONSTRUCTOR(ty, variability, arg, iters), ty, variability);
@@ -1034,7 +1035,7 @@ protected
     Expression range, arg;
     Option<Expression> default_exp, fold_exp;
     InstNode iter;
-    Variability iter_var;
+    Variability iter_var, exp_var;
     list<tuple<InstNode, Expression>> iters = {};
     ExpOrigin.Type next_origin;
     Function fn;
@@ -1058,7 +1059,8 @@ protected
 
           // ExpOrigin.FOR is used here as a marker that this expression may contain iterators.
           next_origin := intBitOr(next_origin, ExpOrigin.FOR);
-          (arg, ty) := Typing.typeExp(call.exp, next_origin, info);
+          (arg, ty, exp_var) := Typing.typeExp(call.exp, next_origin, info);
+          variability := Variability.variabilityMax(variability, exp_var);
           {fn} := Function.typeRefCache(call.ref);
           TypeCheck.checkReductionType(ty, Function.name(fn), call.exp, info);
 
