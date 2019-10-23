@@ -9,6 +9,7 @@ ActualStreamVariability1.mo \
 Algorithm1.mo \
 Algorithm2.mo \
 Algorithm3.mo \
+ArrayConstructorComplex1.mo \
 arrfunc.mo \
 Assert1.mo \
 Assert2.mo \
