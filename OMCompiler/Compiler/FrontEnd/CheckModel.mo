@@ -574,12 +574,11 @@ algorithm
       Modelica spec 3.3 rev 11.1.2
       "If at least one element of an array appears on the left hand side of the assignment operator, then the
        complete array is initialized in this algorithm section"
-      So we strip the last sub and all iterator subs and send the whole array to expansion. i.e. we consider the whole array as modified.
+      So we strip the all subs except for model subs and send the whole array to expansion. i.e. we consider the whole array as modified.
     */
     case (e as DAE.CREF(componentRef=cr), (expand,ht))
       equation
-        cr = ComponentReference.crefStripLastSubs(cr);
-        cr = ComponentReference.crefStripIterSub(cr);
+        cr = ComponentReference.crefStripSubsExceptModelSubs(cr);
         crlst = ComponentReference.expandCref(cr, true);
         ht = List.fold(crlst, BaseHashSet.add, ht);
       then (e, false, (expand,ht));

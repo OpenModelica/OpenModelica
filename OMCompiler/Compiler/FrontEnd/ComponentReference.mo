@@ -2721,8 +2721,8 @@ algorithm
   osubs := Dangerous.listReverseInPlace(osubs);
 end removeSliceSubs;
 
-public function crefStripSubs "
-Removes all subscript of a componentref"
+public function crefStripSubs
+"Removes all subscript of a componentref"
   input DAE.ComponentRef inCref;
   output DAE.ComponentRef outCref;
 algorithm
@@ -2742,6 +2742,38 @@ algorithm
         makeCrefQual(id,ty,{},outCref);
   end match;
 end crefStripSubs;
+
+public function crefStripSubsExceptModelSubs
+"Removes all subscript of a componentref expcept for model subscripts"
+  input DAE.ComponentRef inCref;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := match(inCref)
+    local
+      DAE.Ident id;
+      DAE.ComponentRef cr, cref;
+      DAE.Type ty;
+
+    case (cref as DAE.CREF_IDENT(ident = id,identType = DAE.T_ARRAY(ty = DAE.T_COMPLEX(complexClassType=ClassInf.MODEL()))))
+      then cref;
+
+    case (cref as DAE.CREF_QUAL(componentRef = cr, identType = DAE.T_ARRAY(ty = DAE.T_COMPLEX(complexClassType=ClassInf.MODEL()))))
+      algorithm
+        outCref := crefStripSubsExceptModelSubs(cr);
+        cref.componentRef := outCref;
+      then
+        cref;
+
+    case (DAE.CREF_IDENT(ident = id, identType = ty))
+      then makeCrefIdent(id,ty,{});
+
+    case (DAE.CREF_QUAL(componentRef = cr, identType = ty, ident = id))
+      algorithm
+        outCref := crefStripSubsExceptModelSubs(cr);
+      then
+        makeCrefQual(id,ty,{},outCref);
+  end match;
+end crefStripSubsExceptModelSubs;
 
 public function crefStripPrefix
 "Strips a prefix/cref from a component reference"
