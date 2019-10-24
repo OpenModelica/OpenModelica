@@ -43,6 +43,7 @@ protected
 import BuiltinCall = NFBuiltinCall;
 import Ceval = NFCeval;
 import ComponentRef = NFComponentRef;
+import Config;
 import Dimension = NFDimension;
 import ErrorExt;
 import Inline = NFInline;
@@ -847,10 +848,29 @@ protected
     ComponentRef fn_ref;
     list<Expression> args;
     list<NamedArg> named_args;
+    String name;
   algorithm
-    (args, named_args) := instArgs(functionArgs, scope, info);
 
-    callExp := match AbsynUtil.crefFirstIdent(functionName)
+    name := AbsynUtil.crefFirstIdent(functionName);
+
+    // try to inst the parameters
+    try
+      (args, named_args) := instArgs(functionArgs, scope, info);
+    else
+      // didn't work, is this DynamicSelect dynamic part?! #5631
+      if Config.getGraphicsExpMode() and stringEq(name, "DynamicSelect") then
+        // return just the first part of DynamicSelect
+        callExp := match functionArgs
+           case Absyn.FUNCTIONARGS() then
+             Inst.instExp(listHead(functionArgs.args), scope, info);
+        end match;
+        return;
+      else
+        fail();
+      end if;
+    end try;
+
+    callExp := match name
       // size creates Expression.SIZE instead of Expression.CALL.
       case "size" then BuiltinCall.makeSizeExp(args, named_args, info);
       // array() call with no iterators creates Expression.ARRAY instead of Expression.CALL.
@@ -862,6 +882,7 @@ protected
           fn_ref := Function.instFunction(functionName,scope,info);
         then
           Expression.CALL(UNTYPED_CALL(fn_ref, args, named_args, scope));
+
     end match;
   end instNormalCall;
 
