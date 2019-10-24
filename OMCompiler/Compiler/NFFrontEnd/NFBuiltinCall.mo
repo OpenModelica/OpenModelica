@@ -1882,7 +1882,17 @@ protected
     {expStatic, expDynamic} := list(Expression.unbox(arg) for arg in args);
     (arg1, ty1, var1) := Typing.typeExp(expStatic, origin, info);
     arg1 := ExpandExp.expand(arg1);
-    (arg2, ty2, var2) := Typing.typeExp(expDynamic, origin, info);
+
+    // if we cannot typecheck the dynamic part, ignore it!
+    // https://trac.openmodelica.org/OpenModelica/ticket/5631
+    try
+      (arg2, ty2, var2) := Typing.typeExp(expDynamic, origin, info);
+    else
+      variability := var1;
+      callExp := arg1;
+      return;
+    end try;
+
     arg2 := ExpandExp.expand(arg2);
     ty := ty1;
     variability := var2;
