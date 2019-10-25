@@ -1081,7 +1081,7 @@ void DuplicateClassDialog::browsePath()
 void DuplicateClassDialog::duplicateClass()
 {
   if (mpNameTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("class"), Helper::ok);
     return;
   }
@@ -1091,15 +1091,26 @@ void DuplicateClassDialog::duplicateClass()
   if (!mpPathTextBox->text().isEmpty()) {
     pParentLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(mpPathTextBox->text());
     if (!pParentLibraryTreeItem) {
-      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
+      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                             GUIMessages::getMessage(GUIMessages::INSERT_IN_CLASS_NOT_FOUND).arg(mpPathTextBox->text()), Helper::ok);
       return;
     }
   }
-  // check if new class already exists
   QString newClassPath = (mpPathTextBox->text().isEmpty() ? "" : mpPathTextBox->text() + ".") + mpNameTextBox->text();
+  // Ticket #5668 check for invalid names.
+  MainWindow::instance()->getOMCProxy()->setLoggingEnabled(false);
+  QList<QString> result = MainWindow::instance()->getOMCProxy()->parseString(QString("model %1 end %2;").arg(newClassPath, newClassPath), "<interactive>", false);
+  MainWindow::instance()->getOMCProxy()->setLoggingEnabled(true);
+  if (result.isEmpty()) {
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_CREATE_CLASS).arg(mpNameTextBox->text(), GUIMessages::getMessage(GUIMessages::NO_OPENMODELICA_KEYWORDS)),
+                          Helper::ok);
+    return;
+  }
+  // check if new class already exists
+
   if (MainWindow::instance()->getOMCProxy()->existClass(newClassPath) || pLibraryTreeModel->findLibraryTreeItemOneLevel(newClassPath)) {
-    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg("class").arg(mpNameTextBox->text())
                           .arg((mpPathTextBox->text().isEmpty() ? "Top Level" : mpPathTextBox->text())), Helper::ok);
     return;
@@ -1108,13 +1119,12 @@ void DuplicateClassDialog::duplicateClass()
   if (!mpPathTextBox->text().isEmpty()) {
     LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(mpPathTextBox->text());
     if (pLibraryTreeItem && pLibraryTreeItem->isSystemLibrary()) {
-      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                             tr("Cannot duplicate inside system library."), Helper::ok);
       return;
     } else if (pLibraryTreeItem->getRestriction() != StringHandler::Package) {
-      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            tr("Can only duplicate inside a package. <b>%1</b> is not a package.").arg(pLibraryTreeItem->getNameStructure()),
-                            Helper::ok);
+      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            tr("Can only duplicate inside a package. <b>%1</b> is not a package.").arg(pLibraryTreeItem->getNameStructure()), Helper::ok);
       return;
     }
   }
@@ -1152,8 +1162,8 @@ void DuplicateClassDialog::duplicateClass()
     }
     accept();
   } else {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Unable to create class <b>%1</b>. %2")
-                          .arg(mpNameTextBox->text(), GUIMessages::getMessage(GUIMessages::NO_OPENMODELICA_KEYWORDS)), Helper::ok);
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_CREATE_CLASS).arg(mpNameTextBox->text(), GUIMessages::getMessage(GUIMessages::NO_OPENMODELICA_KEYWORDS)), Helper::ok);
   }
 }
 
