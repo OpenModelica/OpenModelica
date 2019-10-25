@@ -881,7 +881,7 @@ algorithm
                   comment = comment,
                   innerOuter = io)
       equation
-        kind_1 = lowerKnownVarkind(kind, name, dir, ct);
+        kind_1 = lowerKnownVarkind(kind, name, dir, ct, protection);
         // bind = fixParameterStartBinding(bind, t, dae_var_attr, kind_1);
         tp = lowerType(t);
         b = DAEUtil.boolVarVisibility(protection);
@@ -1109,7 +1109,7 @@ algorithm
     else
       equation
         /* Consider toplevel inputs as known unless they are protected. Ticket #5591 */
-        true = (not DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType)) or  DAEUtil.boolVarVisibility(protection);
+        false = DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType, protection);
       then
         match (inVarKind, inType)
           case (DAE.VARIABLE(), DAE.T_BOOL()) then BackendDAE.DISCRETE();
@@ -1124,19 +1124,20 @@ end lowerVarkind;
 protected function lowerKnownVarkind
 "Helper function to lowerKnownVar.
   NOTE: Fails for everything but parameters and constants and top level inputs"
-  input DAE.VarKind inVarKind;
-  input DAE.ComponentRef inComponentRef;
-  input DAE.VarDirection inVarDirection;
-  input DAE.ConnectorType inConnectorType;
+  input DAE.VarKind varKind;
+  input DAE.ComponentRef componentRef;
+  input DAE.VarDirection varDirection;
+  input DAE.ConnectorType connectorType;
+  input DAE.VarVisibility visibility;
   output BackendDAE.VarKind outVarKind;
 algorithm
-  outVarKind := matchcontinue (inVarKind, inComponentRef, inVarDirection, inConnectorType)
+  outVarKind := matchcontinue varKind
 
-    case (DAE.PARAM(), _, _, _) then BackendDAE.PARAM();
-    case (DAE.CONST(), _, _, _) then BackendDAE.CONST();
-    case (DAE.VARIABLE(), _, _, _)
+    case DAE.PARAM() then BackendDAE.PARAM();
+    case DAE.CONST() then BackendDAE.CONST();
+    case DAE.VARIABLE()
       equation
-        true = DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType);
+        true = DAEUtil.topLevelInput(componentRef, varDirection, connectorType, visibility);
       then
         BackendDAE.VARIABLE();
     // adrpo: topLevelInput might fail!

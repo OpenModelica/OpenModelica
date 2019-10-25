@@ -77,11 +77,11 @@ protected type CountVarEqnFoldArg =
   tuple<Integer/*varSize*/, Integer/*eqnSize*/, list<DAE.Element>/*eqns*/, HashSet.HashSet/*vars*/>;
 
 protected function countVarEqnSize
-  input DAE.Element inElt;
+  input DAE.Element element;
   input CountVarEqnFoldArg inArg;
-  output CountVarEqnFoldArg outAtg;
+  output CountVarEqnFoldArg outArg;
 algorithm
-  outAtg := match inElt
+  outArg := match element
     local
       Boolean b;
       DAE.Exp e, ce;
@@ -109,7 +109,7 @@ algorithm
     case DAE.VAR(componentRef=cr, kind = DAE.VARIABLE(), direction=dir, connectorType = ct, binding=SOME(e), source=source)
       equation
         (varSize, eqnSize, eqns, hs) = inArg;
-        b = DAEUtil.topLevelInput(cr, dir, ct);
+        b = DAEUtil.topLevelInput(cr, dir, ct, element.protection);
         ce = Expression.crefExp(cr);
         size = if b then 0 else 1;
         eqns = List.consOnTrue(not b, DAE.EQUATION(ce, e, source), eqns);
@@ -120,7 +120,7 @@ algorithm
     case DAE.VAR(componentRef=cr, kind = DAE.DISCRETE(), direction=dir, connectorType = ct, binding=SOME(e), source=source)
       equation
         (varSize, eqnSize, eqns, hs) = inArg;
-        b = DAEUtil.topLevelInput(cr, dir, ct);
+        b = DAEUtil.topLevelInput(cr, dir, ct, element.protection);
         ce = Expression.crefExp(cr);
         size = if b then 0 else 1;
         eqns = List.consOnTrue(not b, DAE.EQUATION(ce, e, source), eqns);
@@ -131,7 +131,7 @@ algorithm
     case DAE.VAR(componentRef=cr, kind = DAE.VARIABLE(), direction=dir, connectorType = ct)
       equation
         (varSize, eqnSize, eqns, hs) = inArg;
-        b = DAEUtil.topLevelInput(cr, dir, ct);
+        b = DAEUtil.topLevelInput(cr, dir, ct, element.protection);
         size = if b then 0 else 1;
         hs = if not b then BaseHashSet.add(cr, hs) else hs;
       then (varSize+size, eqnSize, eqns, hs);
@@ -140,7 +140,7 @@ algorithm
     case DAE.VAR(componentRef=cr, kind = DAE.DISCRETE(), direction=dir, connectorType = ct)
       equation
         (varSize, eqnSize, eqns, hs) = inArg;
-        b = DAEUtil.topLevelInput(cr, dir, ct);
+        b = DAEUtil.topLevelInput(cr, dir, ct, element.protection);
         size = if b then 0 else 1;
         hs = if not b then BaseHashSet.add(cr, hs) else hs;
       then (varSize+size, eqnSize, eqns, hs);
@@ -158,7 +158,7 @@ algorithm
       equation
         (varSize, eqnSize, eqns, hs) = inArg;
         size = Expression.sizeOf(Expression.typeof(e));
-      then (varSize, eqnSize+size, inElt::eqns, hs);
+      then (varSize, eqnSize+size, element::eqns, hs);
 
     // initial equations
     case DAE.INITIALEQUATION()
@@ -170,7 +170,7 @@ algorithm
         (varSize, eqnSize, eqns, hs) = inArg;
         tp = ComponentReference.crefTypeConsiderSubs(cr);
         size = Expression.sizeOf(tp);
-      then (varSize, eqnSize+size, inElt::eqns, hs);
+      then (varSize, eqnSize+size, element::eqns, hs);
 
     // a solved equation
     case DAE.DEFINE(componentRef = cr)
@@ -178,14 +178,14 @@ algorithm
         (varSize, eqnSize, eqns, hs) = inArg;
         tp = ComponentReference.crefTypeConsiderSubs(cr);
         size = Expression.sizeOf(tp);
-      then (varSize, eqnSize+size, inElt::eqns, hs);
+      then (varSize, eqnSize+size, element::eqns, hs);
 
     // complex equations
     case DAE.COMPLEX_EQUATION(lhs = e)
       equation
         (varSize, eqnSize, eqns, hs) = inArg;
         size = Expression.sizeOf(Expression.typeof(e));
-      then (varSize, eqnSize+size, inElt::eqns, hs);
+      then (varSize, eqnSize+size, element::eqns, hs);
 
     // complex initial equations
     case DAE.INITIAL_COMPLEX_EQUATION()
@@ -195,8 +195,8 @@ algorithm
     case DAE.ARRAY_EQUATION(dimension=_)
       equation
         (varSize, eqnSize, eqns, hs) = inArg;
-        size = Expression.sizeOf(Expression.typeof(inElt.exp));
-      then (varSize, eqnSize+size, inElt::eqns, hs);
+        size = Expression.sizeOf(Expression.typeof(element.exp));
+      then (varSize, eqnSize+size, element::eqns, hs);
 
     // initial array equations
     case DAE.INITIAL_ARRAY_EQUATION()
@@ -290,7 +290,7 @@ algorithm
       equation
         // show only on failtrace!
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- CheckModel.countVarEqnSize failed on: " + DAEDump.dumpElementsStr({inElt}));
+        Debug.traceln("- CheckModel.countVarEqnSize failed on: " + DAEDump.dumpElementsStr({element}));
       then
         fail();
   end match;
