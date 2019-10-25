@@ -2436,6 +2436,82 @@ algorithm
   end match;
 end symJacString;
 
+public function dumpLinearIntegerJacobian
+  input BackendDAE.LinearIntegerJacobian linIntJac;
+  input String heading = "";
+protected
+  array<BackendDAE.LinearIntegerJacobianRow> rowArr;
+  BackendDAE.LinearIntegerJacobianRhs rhsArr;
+  BackendDAE.LinearIntegerJacobianIndices idxArr;
+algorithm
+  (rowArr, rhsArr, idxArr) := linIntJac;
+  print("####################################\n" +
+        " LinearIntegerJacobian: " + heading + "\n" +
+        "####################################\n\n");
+  for idx in 1:arrayLength(rowArr) loop
+    dumpLinearIntegerJacobianRow(rowArr[idx], rhsArr[idx], idxArr[idx]);
+  end for;
+end dumpLinearIntegerJacobian;
+
+protected function dumpLinearIntegerJacobianRow
+  input BackendDAE.LinearIntegerJacobianRow linIntJacRow;
+  input DAE.Exp rhs;
+  input tuple<Integer, Integer> indices;
+protected
+  Integer i_arr, i_scal;
+algorithm
+  (i_arr, i_scal) := indices;
+  print("(" + intString(i_arr) + "|" + intString(i_scal) + "):\t");
+  if arrayLength(linIntJacRow) < 1 then
+    print("EMPTY ROW \t");
+  else
+    print(intString(linIntJacRow[1]));
+    for idx in 2:arrayLength(linIntJacRow) loop
+      print("  " + intString(linIntJacRow[idx]));
+    end for;
+  end if;
+  print("\t || RHS: " + ExpressionDump.printExpStr(rhs) + "\n");
+end dumpLinearIntegerJacobianRow;
+
+public function dumpLinearIntegerJacobianSparse
+  input BackendDAE.LinearIntegerJacobian linIntJac;
+  input String heading = "";
+protected
+  array<BackendDAE.LinearIntegerJacobianRow> rowArr;
+  BackendDAE.LinearIntegerJacobianRhs rhsArr;
+  BackendDAE.LinearIntegerJacobianIndices idxArr;
+algorithm
+  (rowArr, rhsArr, idxArr) := linIntJac;
+  print("######################################################\n" +
+        " LinearIntegerJacobian sparsity pattern: " + heading + "\n" +
+        "######################################################\n\n");
+  for idx in 1:arrayLength(rowArr) loop
+    dumpLinearIntegerJacobianSparseRow(rowArr[idx], rhsArr[idx], idxArr[idx]);
+  end for;
+end dumpLinearIntegerJacobianSparse;
+
+protected function dumpLinearIntegerJacobianSparseRow
+  input BackendDAE.LinearIntegerJacobianRow linIntJacRow;
+  input DAE.Exp rhs;
+  input tuple<Integer, Integer> indices;
+protected
+  Integer i_arr, i_scal;
+  list<Integer> nonZero = {};
+algorithm
+  (i_arr, i_scal) := indices;
+  print("(" + intString(i_arr) + "|" + intString(i_scal) + "):\t");
+  if arrayLength(linIntJacRow) < 1 then
+    print("EMPTY ROW \t");
+  else
+    for i in 1:arrayLength(linIntJacRow) loop
+      if linIntJacRow[i] <> 0 then
+        print(" - " + intString(i));
+        end if;
+    end for;
+  end if;
+  print("\t|| RHS: " + ExpressionDump.printExpStr(rhs) + " \n");
+end dumpLinearIntegerJacobianSparseRow;
+
 public function dumpEqnsStr
 "Helper function to dump."
   input list<BackendDAE.Equation> eqns;
@@ -3970,7 +4046,7 @@ algorithm
       list<BackendDAE.Var> varLst;
       list<BackendDAE.Equation> eqLst;
       list<Integer> vIdxs, eIdxs;
-  case(BackendDAE.EQSYSTEM(vars,eqs,_,_,BackendDAE.MATCHING(comps=comps),_,_,_))
+  case(BackendDAE.EQSYSTEM(vars,eqs,_,_,_,BackendDAE.MATCHING(comps=comps),_,_,_))
     algorithm
       (varLst,vIdxs,eqLst,eIdxs) := BackendDAEUtil.getStrongComponentsVarsAndEquations(comps, vars, eqs);
       eqs := BackendEquation.listEquation(eqLst);
@@ -4029,7 +4105,7 @@ algorithm
   vars := BackendVariable.listVar1(varLst);
   eqs := BackendEquation.listEquation(eqLst);
   // build the incidence matrix for the whole System
-  (_,m,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(), {},BackendDAE.UNKNOWN_PARTITION(), BackendEquation.emptyEqns()),BackendDAE.SOLVABLE(), SOME(BackendDAEUtil.getFunctions(shared)));
+  (_,m,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),NONE(),BackendDAE.NO_MATCHING(), {},BackendDAE.UNKNOWN_PARTITION(), BackendEquation.emptyEqns()),BackendDAE.SOLVABLE(), SOME(BackendDAEUtil.getFunctions(shared)));
   varAtts := List.threadMap(List.fill(false,listLength(varLst)),List.fill("",listLength(varLst)),Util.makeTuple);
   eqAtts := List.threadMap(List.fill(false,listLength(eqLst)),List.fill("",listLength(eqLst)),Util.makeTuple);
   dumpBipartiteGraphStrongComponent2(vars,eqs,m,varAtts,eqAtts,"BipartiteGraph_"+fileName);
@@ -4112,7 +4188,7 @@ algorithm
 
       numEqs = listLength(compEqLst);
       numVars = listLength(compVarLst);
-      (_,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(BackendDAE.EQSYSTEM(compVars,compEqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION(),BackendEquation.emptyEqns()), BackendDAE.SOLVABLE(), funcs);
+      (_,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(BackendDAE.EQSYSTEM(compVars,compEqs,NONE(),NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION(),BackendEquation.emptyEqns()), BackendDAE.SOLVABLE(), funcs);
 
       varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
       eqAtts = List.threadMap(List.fill(false,numEqs),List.fill("",numEqs),Util.makeTuple);
@@ -4133,7 +4209,7 @@ algorithm
       // get incidence matrix
       numEqs = listLength(compEqLst);
       numVars = listLength(compVarLst);
-      (_,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(BackendDAE.EQSYSTEM(compVars,compEqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION(),BackendEquation.emptyEqns()), BackendDAE.SOLVABLE(), funcs);
+      (_,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(BackendDAE.EQSYSTEM(compVars,compEqs,NONE(),NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION(),BackendEquation.emptyEqns()), BackendDAE.SOLVABLE(), funcs);
 
       // add tearing info to graph object and dump graph
       addInfo = List.map(varIdcs,intString);// the DAE idcs for the vars

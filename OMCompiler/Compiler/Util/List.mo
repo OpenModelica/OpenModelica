@@ -4596,6 +4596,20 @@ algorithm
   outTuples := listReverse(outTuples);
 end zip;
 
+public function zip2<T1, T2>
+  "Takes a lists and a single elem and returns a list of two-element tuples contaning the
+  elements in the same order. Fails if the lists are not of the same length.
+  Example: zip2(1, {2, 4, -1}) =>  {(1, 2), (1, 4), (1, -1)}"
+  input T1 inElem;
+  input list<T2> inList2;
+  output list<tuple<T1, T2>> outTuples = {};
+algorithm
+  for t2 in inList2 loop
+    outTuples := (inElem, t2)::outTuples;
+  end for;
+  outTuples := listReverse(outTuples);
+end zip2;
+
 public function unzip<T1, T2>
   "Takes a list of two-element tuples and splits the tuples into two separate
    lists. Example: unzip({(1, 2), (3, 4)}) => ({1, 3}, {2, 4})"

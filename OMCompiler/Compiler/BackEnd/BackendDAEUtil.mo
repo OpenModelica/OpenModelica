@@ -507,7 +507,7 @@ algorithm
   m := AdjacencyMatrix.copyAdjacencyMatrix(inSystem.m);
   mt := AdjacencyMatrix.copyAdjacencyMatrixT(inSystem.mT);
   matching := copyMatching(inSystem.matching);
-  outSystem := BackendDAE.EQSYSTEM(vars, eqns, m, mt, matching, inSystem.stateSets, inSystem.partitionKind, removedEqs);
+  outSystem := BackendDAE.EQSYSTEM(vars, eqns, m, mt, inSystem.mapping, matching, inSystem.stateSets, inSystem.partitionKind, removedEqs);
 end copyEqSystem;
 
 public function copyEqSystems
@@ -2373,6 +2373,64 @@ algorithm
   end match;
 end applyIndexType;
 
+public function getIndexType
+"author kabdelhak FHB 10-2019
+ Returns the index type of the current adjacency matrix and two Booleans:
+ Boolean 1: true, if is scalar.
+ Boolean 2: true, if analytical to structural singularity processing has already been done.
+ Fails if none are present."
+  input BackendDAE.EqSystem syst;
+  output BackendDAE.IndexType indexType;
+  output Boolean scalar;
+  output Boolean processed;
+algorithm
+  SOME((_, _, indexType, scalar, processed)) := syst.mapping;
+end getIndexType;
+
+public function hasIndexTypeSolvableAndUnprocessed
+"author kabdelhak FHB 10-2019
+ Returns true if the equation system has an adjacency matrix that got
+ computed by strict solvability rules and wasn't already analyzed
+ by the analytical to structural conversion algorithm."
+  input BackendDAE.EqSystem syst;
+  output Boolean b = false;
+protected
+  BackendDAE.IndexType indexType;
+  Boolean processed;
+algorithm
+  try
+    (indexType, _, processed) := getIndexType(syst);
+    b := match (indexType, processed)
+      case (BackendDAE.SOLVABLE(), false) then true;
+      else false;
+    end match;
+  else
+    /* no mapping available, return false */
+  end try;
+end hasIndexTypeSolvableAndUnprocessed;
+
+public function hasScalarAdjacencyMatrix
+"author kabdelhak FHB 10-2019
+ Returns true if the equation system has a scalar adjacency matrix."
+  input BackendDAE.EqSystem syst;
+  output Boolean b;
+algorithm
+  (_, b, _) := getIndexType(syst);
+end hasScalarAdjacencyMatrix;
+
+public function setAnalyticalToStructuralProcessed
+  input output BackendDAE.EqSystem syst;
+  input Boolean processed;
+protected
+  array<list<Integer>> mapArrayToScalar;
+  array<Integer> mapScalarToArray;
+  BackendDAE.IndexType indexType;
+  Boolean scalar;
+algorithm
+  SOME((mapArrayToScalar, mapScalarToArray, indexType, scalar, _)) := syst.mapping;
+  syst.mapping := SOME((mapArrayToScalar, mapScalarToArray, indexType, scalar, processed));
+end setAnalyticalToStructuralProcessed;
+
 public function incidenceMatrixDispatch
 "@author: adrpo
   Calculates the incidence matrix as an array of list of integers"
@@ -3428,11 +3486,13 @@ algorithm
       BackendDAE.IncidenceMatrixT mt;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray daeeqns;
+      BackendDAE.AdjacencyMatrixMapping mapping;
 
-    case BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=daeeqns, m=SOME(m), mT=SOME(mt))
+    case BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=daeeqns, m=SOME(m), mT=SOME(mt), mapping=SOME(mapping))
       equation
-        (m,mt) = updateIncidenceMatrix1(vars, daeeqns, inIndxType, functionTree, m, mt, inIntegerLst);
-      then BackendDAEUtil.setEqSystMatrices(syst, SOME(m), SOME(mt));
+        /* kabdelhak: throw warning for unequal index types - inIndexType - indexType? also scalar function check!*/
+        (m,mt) = updateIncidenceMatrix1(vars, daeeqns, getIndexType(syst), functionTree, m, mt, inIntegerLst);
+      then BackendDAEUtil.setEqSystMatrices(syst, SOME(m), SOME(mt), SOME(mapping));
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.updateIncididenceMatrix failed"});
@@ -3516,8 +3576,10 @@ algorithm
       BackendDAE.Matching matching;
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
+      BackendDAE.IndexType indexType;
+      Boolean scalar, processed;
 
-    case BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=daeeqns, m=SOME(m), mT=SOME(mt))
+    case BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=daeeqns, m=SOME(m), mT=SOME(mt), mapping=SOME((_, _, indexType, scalar, processed)))
       equation
         // extend the mapping arrays
         oldsize = arrayLength(iMapEqnIncRow);
@@ -3533,14 +3595,14 @@ algorithm
         // fill the extended parts first
         (m, mt, mapEqnIncRow, mapIncRowEqn) =
             updateIncidenceMatrixScalar2( oldsize+1, newsize, oldsize1, vars, daeeqns, m, mt, mapEqnIncRow,
-                                          mapIncRowEqn, inIndxType, functionTree );
+                                          mapIncRowEqn, indexType, functionTree );
         // update the old
         eqns = List.removeOnTrue(oldsize, intLt, inIntegerLst);
         (m,mt,mapEqnIncRow,mapIncRowEqn) =
             updateIncidenceMatrixScalar1( vars, daeeqns, m, mt, eqns, mapEqnIncRow,
-                                          mapIncRowEqn, inIndxType, functionTree );
+                                          mapIncRowEqn, indexType, functionTree );
       then
-        (BackendDAEUtil.setEqSystMatrices(syst, SOME(m), SOME(mt)), mapEqnIncRow, mapIncRowEqn);
+        (BackendDAEUtil.setEqSystMatrices(syst, SOME(m), SOME(mt), SOME((mapEqnIncRow, mapIncRowEqn, indexType, scalar, processed))), mapEqnIncRow, mapIncRowEqn);
 
     else
       equation
@@ -3771,19 +3833,44 @@ algorithm
       BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-
+      BackendDAE.IndexType indexType;
+      Boolean scalar;
+      BackendDAE.AdjacencyMatrixMapping mapping;
     case BackendDAE.EQSYSTEM(m=NONE()) equation
       (m, mT) = incidenceMatrix(inSyst, inIndxType, inFunctionTree);
-    then (BackendDAEUtil.setEqSystMatrices(inSyst, SOME(m), SOME(mT)), m, mT);
+      mapping = getArrayAdjacencyMatrixMapping(ExpandableArray.getNumberOfElements(inSyst.orderedEqs), inIndxType, false);
+    then (BackendDAEUtil.setEqSystMatrices(inSyst, SOME(m), SOME(mT), SOME(mapping)), m, mT);
 
-    case BackendDAE.EQSYSTEM(orderedVars=v, m=SOME(m), mT=NONE()) equation
+    case BackendDAE.EQSYSTEM(orderedVars=v, m=SOME(m), mT=NONE(), mapping=NONE()) equation
       mT = AdjacencyMatrix.transposeAdjacencyMatrix(m, BackendVariable.varsSize(v));
-    then (BackendDAEUtil.setEqSystMatrices(inSyst, SOME(m), SOME(mT)), m, mT);
+    then (BackendDAEUtil.setEqSystMatrices(inSyst, SOME(m), SOME(mT), NONE()), m, mT);
+
+    case BackendDAE.EQSYSTEM(orderedVars=v, m=SOME(m), mT=NONE(), mapping=SOME(mapping)) equation
+      mT = AdjacencyMatrix.transposeAdjacencyMatrix(m, BackendVariable.varsSize(v));
+    then (BackendDAEUtil.setEqSystMatrices(inSyst, SOME(m), SOME(mT), SOME(mapping)), m, mT);
 
     case BackendDAE.EQSYSTEM(m=SOME(m), mT=SOME(mT))
     then (inSyst, m, mT);
   end match;
 end getIncidenceMatrixfromOption;
+
+public function getArrayAdjacencyMatrixMapping
+"author: kabdelhak FHB 10-2019
+ Returns an identity mapping for array adjacency matrices."
+  input Integer size;
+  input BackendDAE.IndexType indexType;
+  input Boolean scalar;
+  output BackendDAE.AdjacencyMatrixMapping mapping;
+protected
+  array<list<Integer>> mapEqnIncRow = arrayCreate(size, {-1});
+  array<Integer> mapIncRowEqn = arrayCreate(size, -1);
+algorithm
+  for i in 1:size loop
+    mapEqnIncRow[i] := {i};
+    mapIncRowEqn[i] := i;
+  end for;
+  mapping := (mapEqnIncRow, mapIncRowEqn, indexType, scalar, false);
+end getArrayAdjacencyMatrixMapping;
 
 public function getIncidenceMatrix "this function returns the incidence matrix,
   if the system contains multidimensional equations and the scalar one is needed use getIncidenceMatrixScalar"
@@ -3793,9 +3880,12 @@ public function getIncidenceMatrix "this function returns the incidence matrix,
   output BackendDAE.EqSystem outEqSystem;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrix outMT;
+protected
+  BackendDAE.AdjacencyMatrixMapping mapping;
 algorithm
   (outM, outMT) := incidenceMatrix(inEqSystem, inIndxType, functionTree);
-  outEqSystem := BackendDAEUtil.setEqSystMatrices(inEqSystem, SOME(outM), SOME(outMT));
+  mapping := getArrayAdjacencyMatrixMapping(ExpandableArray.getNumberOfElements(inEqSystem.orderedEqs), inIndxType, false);
+  outEqSystem := BackendDAEUtil.setEqSystMatrices(inEqSystem, SOME(outM), SOME(outMT), SOME(mapping));
 end getIncidenceMatrix;
 
 public function getIncidenceMatrixScalar "function getIncidenceMatrixScalar"
@@ -3809,7 +3899,7 @@ public function getIncidenceMatrixScalar "function getIncidenceMatrixScalar"
   output array<Integer> outMapIncRowEqn;
 algorithm
   (outM, outMT, outMapEqnIncRow, outMapIncRowEqn) := incidenceMatrixScalar(syst, inIndxType, functionTree);
-  osyst := BackendDAEUtil.setEqSystMatrices(syst, SOME(outM), SOME(outMT));
+  osyst := BackendDAEUtil.setEqSystMatrices(syst, SOME(outM), SOME(outMT), SOME((outMapEqnIncRow, outMapIncRowEqn, inIndxType, true, false)));
 end getIncidenceMatrixScalar;
 
 public function removedIncidenceMatrix
@@ -7878,6 +7968,98 @@ algorithm
   parameterEqns := BackendEquation.add(eqn, parameterEqns);
 end createGlobalKnownVarsEquations;
 
+public function getEqnIndexArray
+"author: kabdelhak FHB 10-2019
+ Returns the scalar equation indices for an equation array. REMOVABLE?"
+  input BackendDAE.EquationArray eqs;
+  output array<list<Integer>> eqIdxArray;
+protected
+  Integer idx = 1, idx2 = 0, size;
+  list<Integer> eqIdxLst;
+algorithm
+  eqIdxArray := arrayCreate(BackendEquation.getNumberOfEquations(eqs), {});
+  for eq in BackendEquation.equationList(eqs) loop
+    size := BackendEquation.equationSize(BackendEquation.get(eqs, idx));
+    eqIdxLst := List.map1(List.intRange(size),intAdd,idx2);
+    arrayUpdate(eqIdxArray, idx, eqIdxLst);
+    idx := idx+1;
+    idx2 := size+idx2;
+  end for;
+end getEqnIndexArray;
+
+public function analyticalToStructuralSingularity
+"author: kabdelhak FHB 10-2019
+ Performs the conversion of analytical to structural singularities by
+ using gaussian elimination on the linear integer part of the strong
+ component jacobian and replacing the zero row equations.
+ Example:
+  (f1) der(x) = sin(time);
+  (f2) der(y) = cos(time) + b;
+  (f3) a +  2b +  x = 3;
+  (f4) 2a + 4b + 2y = 6;
+  Jac:
+  | 1 2 |
+  | 2 4 | -> linear dependent
+  (f4) gets replaced by (f4) - 2*(f3) -> 2y - 2x = 0;
+  "
+  input list<Integer> comp;
+  input output array<Integer> ass1;
+  input output array<Integer> ass2;
+  input output BackendDAE.EqSystem syst;
+protected
+  array<list<Integer>> mapArrayToScalar;
+  array<Integer> mapScalarToArray;
+  list<Integer> eqnIndex_lst;
+  list<tuple<BackendDAE.Equation, tuple<Integer, Integer>>> tmp_tpl, loopEqs = {}; /* scalar index needs to be list -- replace lookup with eqnIndexArray*/
+  list<BackendDAE.Var> loopVars = {};
+  list<BackendDAE.Equation> tmp_eqs;
+  BackendDAE.Equation tmp_eq;
+  BackendDAE.LinearIntegerJacobian linIntJac;
+  BackendDAE.EquationArray eqs;
+algorithm
+  /* set the system to processed so that it gets analyzed only once */
+  syst := setAnalyticalToStructuralProcessed(syst, true);
+  if listLength(comp) > 1 then
+    /* collect eqs and vars from strong component */
+    SOME((mapArrayToScalar, mapScalarToArray, _, _, _)) := syst.mapping;
+    for eqnIndex in comp loop
+      /* ignore multidimensional equations for now */
+      if listLength(mapArrayToScalar[mapScalarToArray[eqnIndex]]) == 1 then
+        tmp_eq := BackendEquation.get(syst.orderedEqs, mapScalarToArray[eqnIndex]);
+        loopEqs := (tmp_eq, (eqnIndex, mapScalarToArray[eqnIndex])) :: loopEqs;
+      else
+        /*
+        tmp_eq := BackendEquation.get(syst.orderedEqs, mapScalarToArray[eqnIndex]);
+        BackendDump.dumpEquationList({tmp_eq}, "ignored array eqs index: " + intString(eqnIndex));
+        */
+      end if;
+      loopVars := BackendVariable.getVarAt(syst.orderedVars, ass1[eqnIndex]) :: loopVars;
+    end for;
+
+    try
+      /* generate linear integer sub jacobian from system */
+      linIntJac := SymbolicJacobian.generateLinearIntegerJacobian(loopEqs, loopVars);
+
+      if not SymbolicJacobian.emptyOrSingleLinearIntegerJacobian(linIntJac) then
+        if Flags.isSet(Flags.CONVERT_ANALYTICAL_DUMP) then
+          BackendDump.dumpLinearIntegerJacobianSparse(linIntJac, "Original");
+        end if;
+
+        /* solve jacobian with gaussian elimination */
+        linIntJac := SymbolicJacobian.solveLinearIntegerJacobian(linIntJac);
+        if Flags.isSet(Flags.CONVERT_ANALYTICAL_DUMP) then
+          BackendDump.dumpLinearIntegerJacobianSparse(linIntJac, "Solved");
+        end if;
+
+        /* resolve zero rows to new equations and update assignments / adjacency matrix */
+        (ass1, ass2, syst) := SymbolicJacobian.resolveAnalyticalSingularities(linIntJac, ass1, ass2, syst);
+      end if;
+    else
+      /* possibly fails if jacobian is empty --- nothing to do */
+    end try;
+  end if;
+end analyticalToStructuralSingularity;
+
 
 /*************************************************
  * index reduction method Selection
@@ -8952,7 +9134,7 @@ public function createEqSystem
   input BackendDAE.EquationArray removedEqs = BackendEquation.emptyEqns();
   output BackendDAE.EqSystem outSyst;
 algorithm
-  outSyst := BackendDAE.EQSYSTEM( inVars, inEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(),
+  outSyst := BackendDAE.EQSYSTEM( inVars, inEqs, NONE(), NONE(), NONE(), BackendDAE.NO_MATCHING(),
                                   inStateSets, inPartitionKind, removedEqs );
 end createEqSystem;
 
@@ -9110,8 +9292,9 @@ end setEqSystVars;
 
 public function setEqSystMatrices
   input BackendDAE.EqSystem inSyst;
-  input Option<BackendDAE.IncidenceMatrix> m = NONE();
-  input Option<BackendDAE.IncidenceMatrix> mT = NONE();
+  input Option<BackendDAE.AdjacencyMatrix> m = NONE();
+  input Option<BackendDAE.AdjacencyMatrix> mT = NONE();
+  input Option<BackendDAE.AdjacencyMatrixMapping> mapping = NONE();
   output BackendDAE.EqSystem outSyst;
 algorithm
   outSyst := match inSyst
@@ -9119,7 +9302,9 @@ algorithm
       BackendDAE.EqSystem syst;
     case syst as BackendDAE.EQSYSTEM()
       algorithm
-        syst.m := m; syst.mT := mT;
+        syst.m := m;
+        syst.mT := mT;
+        syst.mapping := mapping;
       then syst;
   end match;
 end setEqSystMatrices;
@@ -9135,7 +9320,7 @@ protected
 algorithm
   BackendDAE.EQSYSTEM( orderedVars=vars, orderedEqs=eqs, stateSets=stateSets, partitionKind=partitionKind,
                        removedEqs=removedEqs ) := inSyst;
-  outSyst := BackendDAE.EQSYSTEM( orderedVars=vars, orderedEqs=eqs, m=NONE(), mT=NONE(), removedEqs=removedEqs,
+  outSyst := BackendDAE.EQSYSTEM( orderedVars=vars, orderedEqs=eqs, m=NONE(), mT=NONE(), mapping=NONE(), removedEqs=removedEqs,
                                   matching=BackendDAE.NO_MATCHING(), stateSets=stateSets, partitionKind=partitionKind );
 end clearEqSyst;
 

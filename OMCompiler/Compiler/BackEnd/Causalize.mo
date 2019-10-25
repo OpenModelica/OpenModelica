@@ -146,14 +146,18 @@ protected
   array<Integer> ass1,ass2;
   BackendDAEFunc.matchingAlgorithmFunc matchingFunc;
   BackendDAE.EqSystem syst;
+  array<list<Integer>> mapEqnIncRow;
+  array<Integer> mapIncRowEqn;
+  BackendDAE.IndexType indexType;
+  Boolean scalar, processed;
 algorithm
-  BackendDAE.EQSYSTEM(m=SOME(m), mT=SOME(mT)) := iSyst;
+  BackendDAE.EQSYSTEM(m=SOME(m), mT=SOME(mT), mapping=SOME((mapEqnIncRow, mapIncRowEqn, indexType, scalar, processed))) := iSyst;
   (matchingFunc,_) :=  matchingAlgorithm;
   // get absolute Incidence Matrix
   m := AdjacencyMatrix.absAdjacencyMatrix(m);
   mT := AdjacencyMatrix.absAdjacencyMatrix(mT);
   // try to match
-  syst := BackendDAEUtil.setEqSystMatrices(iSyst, SOME(m), SOME(mT));
+  syst := BackendDAEUtil.setEqSystMatrices(iSyst, SOME(m), SOME(mT), SOME((mapEqnIncRow, mapIncRowEqn, BackendDAE.ABSOLUTE(), scalar, processed)));
   syst.matching := BackendDAE.NO_MATCHING();
   // do matching
   (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2)), _, _) :=

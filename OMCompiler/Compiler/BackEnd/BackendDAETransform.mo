@@ -100,7 +100,7 @@ algorithm
       ass1 := varAssignmentNonScalar(ass1, mapIncRowEqn);
 
       // Frenkel TUD: Do not hand over the scalar incidence Matrix because following modules does not check if scalar or not
-      syst := BackendDAE.EQSYSTEM(syst.orderedVars, syst.orderedEqs, NONE(), NONE(), BackendDAE.MATCHING(ass1, ass2, comps), syst.stateSets, syst.partitionKind, syst.removedEqs);
+      syst := BackendDAE.EQSYSTEM(syst.orderedVars, syst.orderedEqs, NONE(), NONE(), NONE(), BackendDAE.MATCHING(ass1, ass2, comps), syst.stateSets, syst.partitionKind, syst.removedEqs);
     then (syst, comps);
 
     else algorithm

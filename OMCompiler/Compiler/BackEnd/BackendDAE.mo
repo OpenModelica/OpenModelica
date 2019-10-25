@@ -73,12 +73,13 @@ uniontype EqSystem "An independent system of equations (and their corresponding 
   record EQSYSTEM
     Variables orderedVars                   "ordered Variables, only states and alg. vars";
     EquationArray orderedEqs                "ordered Equations";
-    Option<IncidenceMatrix> m;
-    Option<IncidenceMatrixT> mT;
+    Option<AdjacencyMatrix> m;
+    Option<AdjacencyMatrixT> mT;
+    Option<AdjacencyMatrixMapping> mapping  "current type of adjacency matrix, boolean is true if scalar";
     Matching matching;
-    StateSets stateSets                    "the state sets of the system";
+    StateSets stateSets                     "the state sets of the system";
     BaseClockPartitionKind partitionKind;
-    EquationArray removedEqs               "these are equations that cannot solve for a variable.
+    EquationArray removedEqs                "these are equations that cannot solve for a variable.
                                             e.g. assertions, external function calls, algorithm sections without effect";
   end EQSYSTEM;
 end EqSystem;
@@ -684,6 +685,14 @@ public
 type AdjacencyMatrix = IncidenceMatrix;
 type AdjacencyMatrixT = IncidenceMatrixT;
 
+type AdjacencyMatrixMapping = tuple<array<list<Integer>>, array<Integer>, IndexType, Boolean, Boolean>
+"a mapping for adjacency matrices that contains:
+ array<list<Integer>>: array index -> scalar index list
+ array<Integer>      : scalar index -> array index (not unique)
+ IndexType           : the occurence condition type for the current adjacency matrix
+ Boolean             : true if scalar
+ Boolean             : true if analytical to structural singularity processing has already been done";
+
 public
 type AdjacencyMatrixElementEnhancedEntry = tuple<Integer,Solvability,Constraints>;
 type AdjacencyMatrixElementEnhanced = list<AdjacencyMatrixElementEnhancedEntry>;
@@ -803,6 +812,13 @@ constant SparsePattern emptySparsePattern = ({},{},({},{}),0);
 public
 type SparseColoring = list<list< .DAE.ComponentRef>>;   // colouring
 
+/*
+  Type only for transformation from analytical to structural singularity.
+*/
+type LinearIntegerJacobianRow = array<Integer>;                       // Actual jacobian entries
+type LinearIntegerJacobianRhs = array<.DAE.Exp>;                      // RHS-Exp for full pivot algorithm. Replacement for eliminated equation.
+type LinearIntegerJacobianIndices = array<tuple<Integer, Integer>>;   // Index tuple (array, scalar) for equations
+type LinearIntegerJacobian = tuple<array<LinearIntegerJacobianRow>, LinearIntegerJacobianRhs, LinearIntegerJacobianIndices>;
 
 public
 uniontype DifferentiateInputData
