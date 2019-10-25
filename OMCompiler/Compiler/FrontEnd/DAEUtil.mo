@@ -123,16 +123,18 @@ end dumpVarParallelismStr;
 public function topLevelInput "author: PA
   if variable is input declared at the top level of the model,
   or if it is an input in a connector instance at top level return true."
-  input DAE.ComponentRef inComponentRef;
-  input DAE.VarDirection inVarDirection;
-  input DAE.ConnectorType inConnectorType;
+  input DAE.ComponentRef componentRef;
+  input DAE.VarDirection varDirection;
+  input DAE.ConnectorType connectorType;
+  input DAE.VarVisibility visibility = DAE.PUBLIC();
   output Boolean isTopLevel;
 algorithm
-  isTopLevel := match (inVarDirection, inComponentRef)
-    case (DAE.INPUT(), DAE.CREF_IDENT()) then true;
-    case (DAE.INPUT(), _)
-      guard(ConnectUtil.faceEqual(ConnectUtil.componentFaceType(inComponentRef), Connect.OUTSIDE()))
-      then topLevelConnectorType(inConnectorType);
+  isTopLevel := match (varDirection, componentRef, visibility)
+    case (          _,                _, DAE.PROTECTED()) then false;
+    case (DAE.INPUT(), DAE.CREF_IDENT(),               _) then true;
+    case (DAE.INPUT(),                _,               _)
+      guard(ConnectUtil.faceEqual(ConnectUtil.componentFaceType(componentRef), Connect.OUTSIDE()))
+      then topLevelConnectorType(connectorType);
     else false;
   end match;
 end topLevelInput;
@@ -140,16 +142,16 @@ end topLevelInput;
 public function topLevelOutput "author: PA
   if variable is output declared at the top level of the model,
   or if it is an output in a connector instance at top level return true."
-  input DAE.ComponentRef inComponentRef;
-  input DAE.VarDirection inVarDirection;
-  input DAE.ConnectorType inConnectorType;
+  input DAE.ComponentRef componentRef;
+  input DAE.VarDirection varDirection;
+  input DAE.ConnectorType connectorType;
   output Boolean isTopLevel;
 algorithm
-  isTopLevel := match (inVarDirection, inComponentRef)
+  isTopLevel := match (varDirection, componentRef)
     case (DAE.OUTPUT(), DAE.CREF_IDENT()) then true;
     case (DAE.OUTPUT(), _)
-      guard(ConnectUtil.faceEqual(ConnectUtil.componentFaceType(inComponentRef), Connect.OUTSIDE()))
-      then topLevelConnectorType(inConnectorType);
+      guard(ConnectUtil.faceEqual(ConnectUtil.componentFaceType(componentRef), Connect.OUTSIDE()))
+      then topLevelConnectorType(connectorType);
     else false;
   end match;
 end topLevelOutput;
