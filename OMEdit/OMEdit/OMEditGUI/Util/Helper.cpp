@@ -746,6 +746,8 @@ QString GUIMessages::getMessage(int type)
       return tr("<br /><br />If you cannot find the source of the error, you can always <b>revert to the last correct version</b>.");
     case NO_OPENMODELICA_KEYWORDS:
       return tr("Please make sure you are not using any OpenModelica Keywords like (model, package, record, class etc.)");
+    case UNABLE_TO_CREATE_CLASS:
+      return tr("Unable to create class <b>%1</b>. Invalid name.<br /><br />%2.");
     case UNABLE_TO_LOAD_FILE:
       return tr("Error has occurred while loading the file/library <b>%1</b>. Unable to load the file/library.");
     case UNABLE_TO_OPEN_FILE:
