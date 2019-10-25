@@ -3210,6 +3210,31 @@ algorithm
   end match;
 end allAlgorithmsLst;
 
+public function createResidualExp
+  input BackendDAE.Equation eqn;
+  output DAE.Exp res;
+algorithm
+  res := match eqn
+    local
+      DAE.Exp e1, e2;
+      DAE.ComponentRef cr;
+    case BackendDAE.EQUATION(exp = e1, scalar = e2)
+      then Expression.createResidualExp(e1, e2);
+    case BackendDAE.ARRAY_EQUATION(left = e1, right = e2)
+      then Expression.createResidualExp(e1, e2);
+    case BackendDAE.SOLVED_EQUATION(componentRef = cr, exp = e2)
+      then Expression.createResidualExp(DAE.CREF(cr, ComponentReference.crefTypeFull(cr)), e2);
+    case BackendDAE.RESIDUAL_EQUATION(exp = e1)
+      then e1;
+    case BackendDAE.COMPLEX_EQUATION(left = e1, right = e2)
+      then Expression.createResidualExp(e1, e2);
+    /*
+      Need FOR_EXPRESSION for this?
+    case BackendDAE.FOR_EQUATION()
+    */
+    else fail();
+  end match;
+end createResidualExp;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendEquation;
