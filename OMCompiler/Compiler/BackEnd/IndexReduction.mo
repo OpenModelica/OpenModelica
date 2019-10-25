@@ -449,7 +449,7 @@ algorithm
 
     case (false, _::_, (_, _, _, mapIncRowEqn, _)) equation
       if Flags.isSet(Flags.BLT_DUMP) then
-        print("Reduce Index failed! System is structurally singulare and cannot handled because number of unassigned continuous equations is larger than number of states.\nmarked equations:\n");
+        print("Reduce Index failed! System is structurally singulare and cannot be handled because number of unassigned continuous equations is larger than number of states.\nmarked equations:\n");
         // get from scalar eqns indexes the indexes in the equation array
         BackendDump.debuglst(eqns, intString, " ", "\n");
       end if;
@@ -457,7 +457,7 @@ algorithm
       eqns1 = List.uniqueIntN(eqns1, arrayLength(mapIncRowEqn));
       if Flags.isSet(Flags.BLT_DUMP) then
         print(BackendDump.dumpMarkedEqns(inSystem, eqns1));
-        print("unassgined states:\n");
+        print("\n\nunassgined states:\n");
       end if;
       varlst = List.map1r(unassignedStates, BackendVariable.getVarAt, BackendVariable.daeVars(inSystem));
       if Flags.isSet(Flags.BLT_DUMP) then

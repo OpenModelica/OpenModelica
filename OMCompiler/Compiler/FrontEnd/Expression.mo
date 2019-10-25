@@ -7951,6 +7951,24 @@ algorithm
   outBoolean := isEvaluatedConstWork(inExp,true);
 end isEvaluatedConst;
 
+public function getEvaluatedConstInteger
+"Returns the constant integer value, fails for incorrect types."
+  input DAE.Exp inExp;
+  output Integer val;
+algorithm
+  val := match inExp
+    local
+      Integer integer;
+    case DAE.ICONST(integer = integer)
+      then integer;
+    case DAE.RCONST()
+      algorithm
+        SOME(integer) := realExpIntLit(inExp);
+      then integer;
+    else fail();
+  end match;
+end getEvaluatedConstInteger;
+
 protected function isEvaluatedConstWork
 "Returns true if an expression is really constant"
   input DAE.Exp inExp;

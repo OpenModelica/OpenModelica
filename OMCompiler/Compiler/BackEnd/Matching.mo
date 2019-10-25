@@ -62,6 +62,7 @@ import Inline;
 import List;
 import MetaModelica.Dangerous;
 import Util;
+import Sorting;
 import System;
 
 // =============================================================================
@@ -5595,14 +5596,16 @@ algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
   match (meqns,internalCall,isyst,inMatchingOptions)
     local
+      BackendDAE.EquationArray eqs;
       BackendDAE.IncidenceMatrix m,mt, m1,m1t;
-      Integer nv_1,ne_1,memsize;
-      list<Integer> unmatched1, meqs_short;
-      list<list<Integer>> meqns1, meqns1_0;
+      Integer nv_1,ne_1,memsize, i;
+      list<Integer> unmatched_eqs, unmatched_vars, meqs_short;
+      list<list<Integer>> meqns1, meqns1_0, comps;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       array<Integer> ass1_1,ass1_2,ass1_3,ass2_1,ass2_2,ass2_3;
+      array<list<Integer>> eqnIndexArray;
     case ({},true,_,_)
       then
         (ass1,ass2,isyst,ishared,inArg);
@@ -5611,33 +5614,66 @@ algorithm
         matchingExternalsetIncidenceMatrix(nv,ne,m);
         BackendDAEEXT.matching(nv,ne,algIndx,cheapMatching,1.0,clearMatching);
         BackendDAEEXT.getAssignment(ass1,ass2);
-        unmatched1 := getUnassigned(ne, ass1, {});
 
-          //BackendDump.dumpEqSystem(isyst, "EQSYS");
-        if Flags.isSet(Flags.BLT_DUMP) and Flags.isSet(Flags.GRAPHML) then BackendDump.dumpBipartiteGraphEqSystem(isyst, ishared, "BeforMatching_"+intString(arrayLength(m))+"_unmatched "+intString(listLength(unmatched1))); end if;
-        if Flags.isSet(Flags.BLT_DUMP) and listLength(unmatched1) > 0 then print("unmatched equations: "+stringDelimitList(List.map(unmatched1,intString),", ")+"\n\n"); end if;
+        /*
+          -----------------------------------------
+          Try to transform analytical to structural
+          singularities and destroy algebraic loops
+          -----------------------------------------
+        */
 
+        // Copy everything
+        (ass1_1, ass2_1) := (ass1, ass2);
+        eqs := isyst.orderedEqs;
+        syst := isyst;
+
+        /* check if index type is solvable and is unprocessed, for now also hide behind flag */
+        if Flags.getConfigBool(Flags.CONVERT_ANALYTICAL_SINGULARITIES) and BackendDAEUtil.hasIndexTypeSolvableAndUnprocessed(syst) then
+          /* create NORMAL() adjacency matrix for sorting first */
+          (_, m1, _, _, _) := BackendDAEUtil.getIncidenceMatrixScalar(isyst, BackendDAE.NORMAL(), NONE());
+          comps := Sorting.Tarjan(m1, ass2_1);
+          for comp in comps loop
+            (ass1_1, ass2_1, syst) := BackendDAEUtil.analyticalToStructuralSingularity(comp, ass1_1, ass2_1, syst);
+          end for;
+        end if;
+
+        /* get unmatched equations for index reduction */
+        unmatched_eqs := getUnassigned(ne, ass1_1, {});
+
+        if Flags.isSet(Flags.BLT_DUMP) and Flags.isSet(Flags.GRAPHML) then BackendDump.dumpBipartiteGraphEqSystem(isyst, ishared, "BeforMatching_"+intString(arrayLength(m))+"_unmatched "+intString(listLength(unmatched_eqs))); end if;
+        if Flags.isSet(Flags.BLT_DUMP) and listLength(unmatched_eqs) > 0 then print("unmatched equations: "+stringDelimitList(List.map(unmatched_eqs,intString),", ")+"\n\n"); end if;
+
+        /*
+          -------------------------------------
+          Check if Index Reduction is necessary
+          -------------------------------------
+        */
         // remove some edges which do not have to be traversed when finding the MSSS
         m1 := arrayCopy(m);
         m1t := arrayCopy(mt);
-        (m1,m1t) := removeEdgesForNoDerivativeFunctionInputs(m1,m1t,isyst,ishared);
-        (m1,m1t) := removeEdgesToDiscreteEquations(m1,m1t,isyst,ishared);
+        (m1,m1t) := removeEdgesForNoDerivativeFunctionInputs(m1,m1t,syst,ishared);
+        (m1,m1t) := removeEdgesToDiscreteEquations(m1,m1t,syst,ishared);
 
-        meqns1 := getEqnsforIndexReduction(unmatched1,ne,m1,m1t,ass1,ass2,inArg);
+        meqns1 := getEqnsforIndexReduction(unmatched_eqs,ne,m1,m1t,ass1_1,ass2_1,inArg);
+        /*
+          -----------------------------------------
+          remove artificial states which cause
+          problems for differentiation
+          -----------------------------------------
+        */
         if not listEmpty(meqns1) then
-          (syst, meqns1, ass1_1, ass2_1) := sanityCheckArtificialStates(isyst, ishared, nv, ne, meqns1, ass1, ass2, algIndx, cheapMatching, clearMatching, inArg);
+          (syst, meqns1, ass1_1, ass2_1) := sanityCheckArtificialStates(syst, ishared, nv, ne, meqns1, ass1_1, ass2_1, algIndx, cheapMatching, clearMatching, inArg);
         else
-          (syst, meqns1, ass1_1, ass2_1) := (isyst, meqns1, ass1, ass2);
+          (syst, meqns1, ass1_1, ass2_1) := (syst, meqns1, ass1_1, ass2_1);
         end if;
         if Flags.isSet(Flags.BLT_DUMP) and listLength(meqns1) > 0
-        then print("Index Reduction neccessary!\n"
-                   + "MSS subsets:\n " + stringDelimitList(List.map(meqns1,Util.intLstString),"\n ")+"\n\n");
+          then print("Index Reduction neccessary!\n"
+                     + "MSS subsets:\n " + stringDelimitList(List.map(meqns1,Util.intLstString),"\n ")+"\n\n");
         end if;
 
         //Debug information
           //if listLength(List.flatten(meqns1)) >= 5 then meqs_short = List.firstN(List.flatten(meqns1),5); else meqs_short = List.flatten(meqns1); end if;
           //BackendDump.dumpBipartiteGraphEqSystem(isyst,ishared,"MSSS_"+stringDelimitList(List.map(meqs_short,intString),"_"));
-
         (ass1_1,ass2_1,syst,shared,arg) := matchingExternal(meqns1,true,algIndx,-1,0,syst,ishared,nv,ne,ass1_1,ass2_1,inMatchingOptions,sssHandler,inArg);
       then
         (ass1_1,ass2_1,syst,shared,arg);

@@ -4119,5 +4119,228 @@ algorithm
 end fixedVarsFromNonlinearCount;
 
 
+// =============================================================================
+// section for analytical to symbolical singularity transformation
+//
+// Generates linear integer jacobian
+// =============================================================================
+
+public function generateLinearIntegerJacobian
+  "author: kabdelhak FHB 10-2019
+   Generates a jacobian from algebraic loops which are linear and have integer coefficents
+   w.r.t. all loopVars. Fails if these criteria are not met."
+  input list<tuple<BackendDAE.Equation, tuple<Integer, Integer>>> loopEqs;
+  input list<BackendDAE.Var> loopVars;
+  output BackendDAE.LinearIntegerJacobian linIntJac;
+protected
+  Integer eqn_index = 1, var_index = 1;
+  array<BackendDAE.LinearIntegerJacobianRow> rowArr;
+  BackendDAE.LinearIntegerJacobianRhs rhsArr;
+  BackendDAE.LinearIntegerJacobianIndices idxArr;
+  list<Integer> tmp_row;
+  list<array<Integer>> tmp_mat = {};
+  list<DAE.Exp> tmp_rhs = {};
+  list<tuple<Integer, Integer>> tmp_idx = {};
+  BackendDAE.Equation eqn;
+  tuple<Integer, Integer> index;
+  DAE.Exp res, pDer;
+  BackendVarTransform.VariableReplacements varRep;
+algorithm
+  /* Add a replacement rule var->0 for each loopVar, so that the RHS can be determined afterwards */
+  varRep := BackendVarTransform.emptyReplacements();
+  for loopVar in loopVars loop
+    varRep := BackendVarTransform.addReplacement(varRep, BackendVariable.varCref(loopVar), DAE.ICONST(0), NONE());
+  end for;
+
+  /* Loop over all equations and create residual expression. */
+  for loopEq in loopEqs loop
+    var_index := 1;
+    tmp_row := {};
+    (eqn, index) := loopEq;
+    res := BackendEquation.createResidualExp(eqn);
+    /* Loop over all variables and differentiate residual expression for each. */
+    try
+      for loopVar in loopVars loop
+        pDer := Differentiate.differentiateExpSolve(res, BackendVariable.varCref(loopVar), NONE());
+        (pDer, _) := ExpressionSimplify.simplify(pDer);
+        tmp_row := Expression.getEvaluatedConstInteger(pDer) :: tmp_row;
+      end for;
+      /*
+        Save the full row.
+          - row entries
+          - rhs
+          - equation index
+        Perform var replacements, multiply by -1 and simplify for rhs.
+        NOTE: Multiplication with -1 is not really necessary for the
+              conversion of analytical to structural singularity, but
+              would be necessary if used for anything else.
+      */
+      tmp_mat := listArray(tmp_row) :: tmp_mat;
+      res := BackendVarTransform.replaceExp(res, varRep, NONE());
+      tmp_rhs := ExpressionSimplify.simplify(DAE.BINARY(DAE.ICONST(-1), DAE.MUL(DAE.T_UNKNOWN_DEFAULT), res)) :: tmp_rhs;
+      tmp_idx := index :: tmp_idx;
+      eqn_index := eqn_index + 1;
+    else
+      /*
+        Differentiation not possible or not convertible to an integer.
+        Purposely fails.
+      */
+    end try;
+  end for;
+  /* convert and store all data */
+  rowArr := listArray(tmp_mat);
+  rhsArr := listArray(tmp_rhs);
+  idxArr := listArray(tmp_idx);
+  linIntJac := (rowArr, rhsArr, idxArr);
+end generateLinearIntegerJacobian;
+
+public function emptyOrSingleLinearIntegerJacobian
+  "author: kabdelhak FHB 10-2019
+   Returns true if the linear integerjacobian is empty or has only one single row."
+  input BackendDAE.LinearIntegerJacobian linIntJac;
+  output Boolean empty;
+protected
+  array<BackendDAE.LinearIntegerJacobianRow> rowArr;
+  BackendDAE.LinearIntegerJacobianRhs rhsArr;
+  BackendDAE.LinearIntegerJacobianIndices idxArr;
+algorithm
+  (rowArr, rhsArr, idxArr) := linIntJac;
+  empty := (arrayLength(rowArr) < 2) and (arrayLength(rhsArr) < 2) and (arrayLength(idxArr) < 2);
+end emptyOrSingleLinearIntegerJacobian;
+
+public function solveLinearIntegerJacobian
+  "author: kabdelhak FHB 10-2019
+   Performs a gaussian elimination algorithm on the jacobian without reducing the
+   pivot elements to one to maintain the integer structure. This guarantees that
+   no numerical errors can occur and analytical singularities will be detected.
+   Also keeps track of the RHS for later equation replacement."
+  input output BackendDAE.LinearIntegerJacobian linIntJac;
+protected
+  array<BackendDAE.LinearIntegerJacobianRow> rowArr;
+  BackendDAE.LinearIntegerJacobianRhs rhsArr;
+  BackendDAE.LinearIntegerJacobianIndices idxArr;
+  array<Boolean> col_marks;
+  BackendDAE.LinearIntegerJacobianRow pivotRow, row;
+algorithm
+  (rowArr, rhsArr, idxArr) := linIntJac;
+  /*
+    create column mark vector to track in which column a pivot
+    element has already been chosen.
+  */
+  col_marks := arrayCreate(arrayLength(rhsArr), false);
+  /*
+    Gaussian Algorithm without rearrangeing rows
+    and without reducing pivot elemts to one.
+  */
+  for i in 1:arrayLength(rowArr) loop
+    pivotRow := rowArr[i];
+    for m in 1:arrayLength(col_marks) loop
+      if not col_marks[m] and pivotRow[m] <> 0 then
+        (rowArr, rhsArr) := solveLinearIntegerJacobianRow(rowArr, rhsArr, i, m);
+        col_marks[m] := true;
+        break;
+      end if;
+    end for;
+  end for;
+  linIntJac := (rowArr, rhsArr, idxArr);
+end solveLinearIntegerJacobian;
+
+protected function solveLinearIntegerJacobianRow
+"author: kabdelhak FHB 10-2019
+ Performs gaussian elimination for one pivot row and all following rows to reduce.
+ new_row = old_row * pivot_element - pivot_row * row_element
+ Example:
+   pivot idx: 2, because the first is zero
+   pivot row:     |  0 -1 -4 |
+   row-to change: | -3  2  3 |
+   new_row:       |  3  0  5 |"
+  input output array<BackendDAE.LinearIntegerJacobianRow> rowArr;
+  input output BackendDAE.LinearIntegerJacobianRhs rhsArr;
+  input Integer pivIdx;
+  input Integer col;
+protected
+  BackendDAE.LinearIntegerJacobianRow pivot_row, row;
+  array<Integer> row_arr, piv_arr;
+  Integer row_elem, piv_elem;
+algorithm
+  pivot_row := rowArr[pivIdx];
+  piv_elem := pivot_row[col];
+  for j in pivIdx+1:arrayLength(rowArr) loop
+    row := rowArr[j];
+    row_elem := row[col];
+    if row_elem <> 0 then
+      for i in 1:arrayLength(row) loop
+        row[i] := row[i] * piv_elem - pivot_row[i] * row_elem;
+      end for;
+
+      //perform multiplication inside? use simplification of multiplication afterwards?
+      rhsArr[j] := DAE.BINARY(
+                     DAE.BINARY(rhsArr[j], DAE.MUL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(piv_elem)),       // row_rhs * piv_elem
+                     DAE.SUB(DAE.T_INTEGER_DEFAULT),                                                    // -
+                     DAE.BINARY(rhsArr[pivIdx], DAE.MUL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(row_elem))   // piv_rhs * row_elem
+                   );
+    // Is it better to simplify once at the end or every time? Is traverser needed?
+    //rhsArr[j] := Expression.traverseExpBottomUp(rhsArr[j], ExpressionSimplify.simplifyTraverseHelper, "");
+    rhsArr[j] := ExpressionSimplify.simplify(rhsArr[j]);
+    end if;
+  end for;
+end solveLinearIntegerJacobianRow;
+
+public function resolveAnalyticalSingularities
+"author: kabdelhak FHB 10-2019
+ Resolves analytical singularities by replacing the equations with
+ zero rows in the jacobian with new equations. Needs preceeding
+ solving of the linear integer jacobian."
+  input BackendDAE.LinearIntegerJacobian linIntJac;
+  input output array<Integer> ass1;
+  input output array<Integer> ass2;
+  input output BackendDAE.EqSystem syst;
+protected
+  array<BackendDAE.LinearIntegerJacobianRow> rowArr;
+  BackendDAE.LinearIntegerJacobianRhs rhsArr;
+  BackendDAE.LinearIntegerJacobianIndices idxArr;
+  BackendDAE.LinearIntegerJacobianRow row;
+  Boolean fullZero;
+  Integer i_arr, i_scal;
+  DAE.Exp zeroExp;
+  BackendDAE.Equation newEqn;
+  list<Integer> updateList = {};
+algorithm
+  (rowArr, rhsArr, idxArr) := linIntJac;
+  for r in 1:arrayLength(rowArr) loop
+    row := rowArr[r];
+    /* check if row is full zero */
+    fullZero := true;
+    for i in 1:arrayLength(row) loop
+      if row[i] <> 0 then
+        fullZero := false;
+        break;
+      end if;
+    end for;
+
+    if fullZero then
+      (i_arr, i_scal) := idxArr[r];
+      /* remove assignments */
+      ass2[ass1[i_arr]] := -1;
+      ass1[i_arr] := -1;
+      /* replace equation */
+      zeroExp := DAE.RCONST(0);//Expression.makeZeroExpression({DAE.DIM_INTEGER(BackendEquation.equationSize(BackendEquation.get(syst.orderedEqs, i_scal)))});
+      newEqn := BackendEquation.generateEquation(rhsArr[r], zeroExp);
+      /* dump replacements */
+      if Flags.isSet(Flags.CONVERT_ANALYTICAL_DUMP) or Flags.isSet(Flags.BLT_DUMP) then
+        print("Linear dependent equation: " + BackendDump.equationString(BackendEquation.get(syst.orderedEqs, i_scal)) + "\n");
+        print("Gets replaced by equation: " + BackendDump.equationString(newEqn) + "\n");
+      end if;
+      syst.orderedEqs := BackendEquation.setAtIndex(syst.orderedEqs, i_scal, newEqn);
+      updateList := i_arr :: updateList;
+    end if;
+    /* update adjacency matrix and transposed adjacency matrix */
+    syst := BackendDAEUtil.updateIncidenceMatrix(syst, BackendDAE.NORMAL(), NONE(), updateList);
+    if not listEmpty(updateList) and not Flags.isSet(Flags.CONVERT_ANALYTICAL_DUMP) and Flags.isSet(Flags.BLT_DUMP) then
+      print("--- For more information please use -d=dumpAnalyticalToStructural.---\n\n");
+    end if;
+  end for;
+end resolveAnalyticalSingularities;
+
 annotation(__OpenModelica_Interface="backend");
 end SymbolicJacobian;
