@@ -175,6 +175,7 @@ template classExternalHeaderJulia(Text &buf1, Text &buf2, SCode.Element cl, Stri
 match cl case c as SCode.CLASS(__) then
   let &buf2 +=
     <<
+    jl_eval_string("using <%c.name%>");
     jl_module_t* <%c.name%> = (jl_module_t *) jl_eval_string("<%c.name%>");
     if (!<%c.name%>)
     {

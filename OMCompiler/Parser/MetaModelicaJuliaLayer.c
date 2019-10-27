@@ -14,9 +14,12 @@ jl_value_t* omc_jl_nil = NULL;
 
 void OpenModelica_initMetaModelicaJuliaLayer()
 {
+  jl_eval_string("using MetaModelica");
   jl_module_t *MetaModelicaModule = (jl_module_t*)jl_eval_string("MetaModelica");
+  jl_eval_string("using ImmutableList");
   jl_module_t *ImmutableList = (jl_module_t*)jl_eval_string("ImmutableList");
   jl_module_t *ListDefModule = (jl_module_t*)jl_eval_string("ImmutableList.ListDef");
+  jl_eval_string("using OpenModelicaParser");
   jl_module_t *parserModule = (jl_module_t*)jl_eval_string("OpenModelicaParser");
 
   if (!MetaModelicaModule)
