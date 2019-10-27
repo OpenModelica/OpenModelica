@@ -136,7 +136,7 @@ void makeLibsAndCache(libs='core') {
     // do nothing
   } else {
   // If we don't have any result, copy to the master to get a somewhat decent cache
-  sh "cp -f ${env.RUNTESTDB}/${cacheBranch()}/runtest.db.* testsuite/ || " +
+  sh "cp -f ${env.RUNTESTDB}/${cacheBranchEscape()}/runtest.db.* testsuite/ || " +
      "cp -f ${env.RUNTESTDB}/master/runtest.db.* testsuite/ || true"
   // env.WORKSPACE is null in the docker agent, so link the svn/git cache afterwards
   sh "mkdir -p '${env.LIBRARIES}/svn' '${env.LIBRARIES}/git'"
@@ -274,7 +274,7 @@ void compliance() {
   sh "mv ${env.COMPLIANCEPREFIX}.html ${env.COMPLIANCEPREFIX}-current.html"
   sh "test -f ${env.COMPLIANCEPREFIX}.xml"
   // Only publish openmodelica-current.html if we are running master
-  sh "cp -p ${env.COMPLIANCEPREFIX}-current.html ${env.COMPLIANCEPREFIX}${cacheBranch()=='master' ? '' : ('-' + cacheBranch()).replace('/','-')}-${getVersion()}.html"
+  sh "cp -p ${env.COMPLIANCEPREFIX}-current.html ${env.COMPLIANCEPREFIX}${cacheBranchEscape()}-${getVersion()}.html"
   sh "test ! '${cacheBranch()}' = 'master' || rm -f ${env.COMPLIANCEPREFIX}-current.html"
   stash name: "${env.COMPLIANCEPREFIX}", includes: "${env.COMPLIANCEPREFIX}-*.html"
   archiveArtifacts "${env.COMPLIANCEPREFIX}*${getVersion()}.html, ${env.COMPLIANCEPREFIX}.failures"
@@ -288,8 +288,12 @@ def cacheBranch() {
   return "${env.CHANGE_TARGET ?: env.GIT_BRANCH}"
 }
 
+def cacheBranchEscape() {
+  return cacheBranch()=='master' ? '' : ('-' + cacheBranch()).replace('/','-')
+}
+
 def tagName() {
-  def name = env.TAG_NAME ?: cacheBranch()
+  def name = env.TAG_NAME ?: cacheBranchEscape()
   return name == "master" ? "latest" : name
 }
 
