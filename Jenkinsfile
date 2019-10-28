@@ -492,7 +492,7 @@ void partest(cache=true, extraArgs='') {
 
 void patchConfigStatus() {
   // Running on nodes with different paths for the workspace
-  sh 'sed -i "s,--with-ombuilddir=[A-Za-z0-9/_-]*,--with-ombuilddir=`pwd`/build," config.status'
+  sh 'sed -i "s,--with-ombuilddir=[A-Za-z0-9./_-]*,--with-ombuilddir=`pwd`/build," config.status'
 }
 
 void makeLibsAndCache(libs='core') {
@@ -546,7 +546,7 @@ void compliance() {
   sh "mv ${env.COMPLIANCEPREFIX}.html ${env.COMPLIANCEPREFIX}-current.html"
   sh "test -f ${env.COMPLIANCEPREFIX}.xml"
   // Only publish openmodelica-current.html if we are running master
-  sh "cp -p ${env.COMPLIANCEPREFIX}-current.html ${env.COMPLIANCEPREFIX}${cacheBranch()=='master' ? '' : ('-' + cacheBranch()).replace('/','-')}-${getVersion()}.html"
+  sh "cp -p ${env.COMPLIANCEPREFIX}-current.html ${env.COMPLIANCEPREFIX}${cacheBranch()=='master' ? '' : ('-' + cacheBranchEscape())}-${getVersion()}.html"
   sh "test ! '${cacheBranch()}' = 'master' || rm -f ${env.COMPLIANCEPREFIX}-current.html"
   stash name: "${env.COMPLIANCEPREFIX}", includes: "${env.COMPLIANCEPREFIX}-*.html"
   archiveArtifacts "${env.COMPLIANCEPREFIX}*${getVersion()}.html, ${env.COMPLIANCEPREFIX}.failures"
@@ -559,8 +559,14 @@ def cacheBranch() {
   return "${env.CHANGE_TARGET ?: env.GIT_BRANCH}"
 }
 
+def cacheBranchEscape() {
+  def name = (cacheBranch()).replace('maintenance/v','')
+  name = name.replace('/','-')
+  return name
+}
+
 def tagName() {
-  def name = env.TAG_NAME ?: cacheBranch()
+  def name = env.TAG_NAME ?: cacheBranchEscape()
   return name == "master" ? "latest" : name
 }
 
