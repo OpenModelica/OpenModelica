@@ -289,7 +289,9 @@ def cacheBranch() {
 }
 
 def cacheBranchEscape() {
-  return cacheBranch()=='master' ? '' : ('-' + cacheBranch()).replace('/','-')
+  def name = (cacheBranch()).replace('maintenance/v','')
+  name = name.replace('/','-')
+  return name
 }
 
 def tagName() {
