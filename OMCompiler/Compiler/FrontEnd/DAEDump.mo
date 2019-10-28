@@ -758,6 +758,8 @@ algorithm
 
           if not SCodeUtil.isEmptyMod(ann_mod) then
             ann := inPrefix + "annotation" + SCodeDump.printModStr(ann_mod, SCodeDump.defaultOptions) + inSuffix;
+          else
+            ann := "";
           end if;
         else
           ann := "";
