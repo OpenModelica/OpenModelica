@@ -43,6 +43,9 @@
    DUMMY_FUNCTION_USERTAB: Use a dummy function "usertab"
 
    Release Notes:
+      Aug. 03, 2019: by Thomas Beutlich
+                     Added second derivatives (ticket #2901)
+
       Apr. 24, 2017: by Thomas Beutlich, ESI ITI GmbH
                      Added functions to retrieve minimum and maximum abscissa
                      values of CombiTable2D (ticket #2244)
@@ -218,6 +221,25 @@ MODELICA_EXPORT double ModelicaStandardTables_CombiTimeTable_getDerValue(void* t
      <- RETURN: Derivative of ordinate value
   */
 
+MODELICA_EXPORT double ModelicaStandardTables_CombiTimeTable_getDer2Value(void* tableID,
+                                                         int icol,
+                                                         double t,
+                                                         double nextTimeEvent,
+                                                         double preNextTimeEvent,
+                                                         double der_t,
+                                                         double der2_t);
+  /* Interpolated second derivative in table
+
+     -> tableID: Pointer to table defined with ModelicaStandardTables_CombiTimeTable_init
+     -> icol: Index (1-based) of column to interpolate
+     -> t: Abscissa value (time)
+     -> nextTimeEvent: Next time event (found by ModelicaStandardTables_CombiTimeTable_nextTimeEvent)
+     -> preNextTimeEvent: Pre value of next time event
+     -> der_t: Derivative of abscissa value (time)
+     -> der2_t: Second derivative of abscissa value (time)
+     <- RETURN: Second derivative of ordinate value
+  */
+
 MODELICA_EXPORT double ModelicaStandardTables_CombiTimeTable_nextTimeEvent(void* tableID, double t);
   /* Return next time event in table
 
@@ -308,6 +330,18 @@ MODELICA_EXPORT double ModelicaStandardTables_CombiTable1D_getDerValue(void* tab
      <- RETURN: Derivative of ordinate value
   */
 
+MODELICA_EXPORT double ModelicaStandardTables_CombiTable1D_getDer2Value(void* tableID, int icol,
+                                                       double u, double der_u, double der2_u);
+  /* Interpolated second derivative in table
+
+     -> tableID: Pointer to table defined with ModelicaStandardTables_CombiTable1D_init
+     -> icol: Index (1-based) of column to interpolate
+     -> u: Abscissa value
+     -> der_u: Derivative of abscissa value
+     -> der2_u: Second derivative of abscissa value
+     <- RETURN: Second derivative of ordinate value
+  */
+
 MODELICA_EXPORT double ModelicaStandardTables_CombiTable1D_read(void* tableID, int force,
                                                 int verbose);
   /* Empty function, kept only for backward compatibility */
@@ -384,6 +418,22 @@ MODELICA_EXPORT double ModelicaStandardTables_CombiTable2D_getDerValue(void* tab
      -> der_u1: Derivative value of first independent variable
      -> der_u2: Derivative value of second independent variable
      <- RETURN: Derivative of interpolated value
+  */
+
+MODELICA_EXPORT double ModelicaStandardTables_CombiTable2D_getDer2Value(void* tableID, double u1,
+                                                       double u2, double der_u1,
+                                                       double der_u2, double der2_u1,
+                                                       double der2_u2);
+  /* Interpolated second derivative in table
+
+     -> tableID: Pointer to table defined with ModelicaStandardTables_CombiTable2D_init
+     -> u1: Value of first independent variable
+     -> u2: Value of second independent variable
+     -> der_u1: Derivative value of first independent variable
+     -> der_u2: Derivative value of second independent variable
+     -> der2_u1: Second derivative value of first independent variable
+     -> der2_u2: Second derivative value of second independent variable
+     <- RETURN: Second derivative of interpolated value
   */
 
 MODELICA_EXPORT double ModelicaStandardTables_CombiTable2D_read(void* tableID, int force,
