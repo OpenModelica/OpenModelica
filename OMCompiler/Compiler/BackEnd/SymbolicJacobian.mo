@@ -2791,17 +2791,17 @@ algorithm
           end for;
           eqnIndices := listAppend(resIndices,eqnIndices);
           printNonLinIterVarsAndEqs(jac,eqnIndices,inEqns);
-        then "";
+        then();
 
       // Case non-linear non-torn equation system
       case (BackendDAE.EQUATIONSYSTEM(eqns=eqnIndices, jac=jac, jacType=BackendDAE.JAC_NONLINEAR()))
         algorithm
           printNonLinIterVarsAndEqs(jac,eqnIndices,inEqns);
-        then "";
+        then();
 
       // ToDo: Check if jacType=BackendDAE.JAC_GENERIC is needed
       //case BackendDAE.EQUATIONSYSTEM(jac=jac, jacType=BackendDAE.JAC_GENERIC())
-      else "";
+      else();
     end match;
   else
     // Only error message.
@@ -2921,8 +2921,9 @@ algorithm
                  "Use \"-d=dumpLoops\" to show all loops. In OMEdit Tools->Options->Simulation->OMCFlags, in "+
                  "OMNotebook call setCommandLineOptions(\"-d=dumpLoops\")\n\n");
           end if;
-        then "";
-      else "";
+        then();
+
+      else();
     end match;
   // ToDo
   // BackendDAE.FULL_JACOBIAN()
