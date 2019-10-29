@@ -115,6 +115,21 @@ public function startLibraryVendorExecutable "Starts the library vendor executab
   external "C" success=ParserExt_startLibraryVendorExecutable(lvePath, lveInstance) annotation(Library = {"omparse","omantlr3","omcruntime"});
 end startLibraryVendorExecutable;
 
+public function checkLVEToolLicense
+  input Option<Integer> lveInstance;
+  input String packageName;
+  output Boolean status;
+
+  external "C" status=ParserExt_checkLVEToolLicense(lveInstance, packageName) annotation(Library = {"omparse","omantlr3","omcruntime"});
+end checkLVEToolLicense;
+
+public function checkLVEToolFeature
+  input Option<Integer> lveInstance;
+  input String feature;
+
+  external "C" ParserExt_checkLVEToolFeature(lveInstance, feature) annotation(Library = {"omparse","omantlr3","omcruntime"});
+end checkLVEToolFeature;
+
 public function stopLibraryVendorExecutable
   input Option<Integer> lveInstance "Stores a pointer. If it is declared as Integer, it is truncated to 32-bit.";
 

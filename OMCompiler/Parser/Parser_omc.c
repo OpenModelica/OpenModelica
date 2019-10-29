@@ -134,6 +134,16 @@ int ParserExt_startLibraryVendorExecutable(const char* path, void** lveInstance)
   return startLibraryVendorExecutable(path, lveInstance);
 }
 
+int ParserExt_checkLVEToolLicense(void** lveInstance, const char* packageName)
+{
+  return checkLVEToolLicense(lveInstance, packageName);
+}
+
+void ParserExt_checkLVEToolFeature(void** lveInstance, const char* feature)
+{
+  checkLVEToolFeature(lveInstance, feature);
+}
+
 void ParserExt_stopLibraryVendorExecutable(void** lveInstance)
 {
   stopLibraryVendorExecutable(lveInstance);
