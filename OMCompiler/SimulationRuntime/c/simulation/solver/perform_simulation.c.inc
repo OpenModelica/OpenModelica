@@ -72,7 +72,9 @@ static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *thread
 
   if (compiledInDAEMode) /* dae mode */
   {
-    data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_ALGEBRAIC);
+    if (data->simulationInfo->daeModeData->nResidualVars > 0) {
+      data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_ALGEBRAIC);
+    }
   }
   else /* ode mode */
   {
