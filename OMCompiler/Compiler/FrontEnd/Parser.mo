@@ -168,6 +168,21 @@ algorithm
   (success, lveInstance) := ParserExt.startLibraryVendorExecutable(lvePath);
 end startLibraryVendorExecutable;
 
+function checkLVEToolLicense
+  input Option<Integer> lveInstance;
+  input String packageName;
+  output Boolean status;
+algorithm
+  status := ParserExt.checkLVEToolLicense(lveInstance, packageName);
+end checkLVEToolLicense;
+
+function checkLVEToolFeature
+  input Option<Integer> lveInstance;
+  input String feature;
+algorithm
+  ParserExt.checkLVEToolFeature(lveInstance, feature);
+end checkLVEToolFeature;
+
 function stopLibraryVendorExecutable
   input Option<Integer> lveInstance "Stores a pointer. If it is declared as Integer, it is truncated to 32-bit.";
 algorithm
