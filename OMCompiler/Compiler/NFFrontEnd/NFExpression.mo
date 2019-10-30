@@ -1143,7 +1143,7 @@ public
 
             el_count := listLength(expl);
             ty := if el_count > 0 then typeOf(listHead(expl)) else
-                                       Type.subscript(ty, restSubscripts);
+                                       Type.subscript(Type.unliftArray(ty), restSubscripts);
             ty := Type.liftArrayLeft(ty, Dimension.fromInteger(el_count));
             outExp := makeArray(ty, expl, literal);
           end if;
@@ -1152,12 +1152,12 @@ public
 
       case Subscript.EXPANDED_SLICE()
         algorithm
-          ARRAY(literal = literal) := exp;
+          ARRAY(ty = ty, literal = literal) := exp;
           expl := list(applyIndexSubscriptArray(exp, i, restSubscripts) for i in sub.indices);
 
           el_count := listLength(expl);
           ty := if el_count > 0 then typeOf(listHead(expl)) else
-                                     Type.subscript(typeOf(exp), restSubscripts);
+                                     Type.subscript(Type.unliftArray(ty), restSubscripts);
           ty := Type.liftArrayLeft(ty, Dimension.fromInteger(el_count));
         then
           makeArray(ty, expl, literal);
