@@ -4130,40 +4130,45 @@ public function generateLinearIntegerJacobian
    Generates a jacobian from algebraic loops which are linear and have integer coefficents
    w.r.t. all loopVars. Fails if these criteria are not met."
   input list<tuple<BackendDAE.Equation, tuple<Integer, Integer>>> loopEqs;
-  input list<BackendDAE.Var> loopVars;
+  input list<tuple<BackendDAE.Var, Integer>> loopVars;
   output BackendDAE.LinearIntegerJacobian linIntJac;
 protected
-  Integer eqn_index = 1, var_index = 1;
+  Integer eqn_index = 1, var_index, constInt;
   array<BackendDAE.LinearIntegerJacobianRow> rowArr;
   BackendDAE.LinearIntegerJacobianRhs rhsArr;
   BackendDAE.LinearIntegerJacobianIndices idxArr;
-  list<Integer> tmp_row;
-  list<array<Integer>> tmp_mat = {};
+  list<tuple<Integer, Integer>> tmp_row;
+  list<list<tuple<Integer,Integer>>> tmp_mat = {};
   list<DAE.Exp> tmp_rhs = {};
   list<tuple<Integer, Integer>> tmp_idx = {};
   BackendDAE.Equation eqn;
   tuple<Integer, Integer> index;
+  BackendDAE.Var var;
   DAE.Exp res, pDer;
   BackendVarTransform.VariableReplacements varRep;
 algorithm
   /* Add a replacement rule var->0 for each loopVar, so that the RHS can be determined afterwards */
   varRep := BackendVarTransform.emptyReplacements();
   for loopVar in loopVars loop
-    varRep := BackendVarTransform.addReplacement(varRep, BackendVariable.varCref(loopVar), DAE.ICONST(0), NONE());
+    (var, _) := loopVar;
+    varRep := BackendVarTransform.addReplacement(varRep, BackendVariable.varCref(var), DAE.ICONST(0), NONE());
   end for;
 
   /* Loop over all equations and create residual expression. */
   for loopEq in loopEqs loop
-    var_index := 1;
     tmp_row := {};
     (eqn, index) := loopEq;
     res := BackendEquation.createResidualExp(eqn);
     /* Loop over all variables and differentiate residual expression for each. */
     try
       for loopVar in loopVars loop
-        pDer := Differentiate.differentiateExpSolve(res, BackendVariable.varCref(loopVar), NONE());
+        (var, var_index) := loopVar;
+        pDer := Differentiate.differentiateExpSolve(res, BackendVariable.varCref(var), NONE());
         (pDer, _) := ExpressionSimplify.simplify(pDer);
-        tmp_row := Expression.getEvaluatedConstInteger(pDer) :: tmp_row;
+        constInt := Expression.getEvaluatedConstInteger(pDer);
+        if constInt <> 0 then
+          tmp_row := (var_index, constInt) :: tmp_row;
+        end if;
       end for;
       /*
         Save the full row.
@@ -4175,7 +4180,7 @@ algorithm
               conversion of analytical to structural singularity, but
               would be necessary if used for anything else.
       */
-      tmp_mat := listArray(tmp_row) :: tmp_mat;
+      tmp_mat := tmp_row :: tmp_mat;
       res := BackendVarTransform.replaceExp(res, varRep, NONE());
       tmp_rhs := ExpressionSimplify.simplify(DAE.BINARY(DAE.ICONST(-1), DAE.MUL(DAE.T_UNKNOWN_DEFAULT), res)) :: tmp_rhs;
       tmp_idx := index :: tmp_idx;
@@ -4196,7 +4201,7 @@ end generateLinearIntegerJacobian;
 
 public function emptyOrSingleLinearIntegerJacobian
   "author: kabdelhak FHB 10-2019
-   Returns true if the linear integerjacobian is empty or has only one single row."
+   Returns true if the linear integer jacobian is empty or has only one single row."
   input BackendDAE.LinearIntegerJacobian linIntJac;
   output Boolean empty;
 protected
@@ -4219,28 +4224,16 @@ protected
   array<BackendDAE.LinearIntegerJacobianRow> rowArr;
   BackendDAE.LinearIntegerJacobianRhs rhsArr;
   BackendDAE.LinearIntegerJacobianIndices idxArr;
-  array<Boolean> col_marks;
   BackendDAE.LinearIntegerJacobianRow pivotRow, row;
 algorithm
   (rowArr, rhsArr, idxArr) := linIntJac;
-  /*
-    create column mark vector to track in which column a pivot
-    element has already been chosen.
-  */
-  col_marks := arrayCreate(arrayLength(rhsArr), false);
   /*
     Gaussian Algorithm without rearrangeing rows
     and without reducing pivot elemts to one.
   */
   for i in 1:arrayLength(rowArr) loop
     pivotRow := rowArr[i];
-    for m in 1:arrayLength(col_marks) loop
-      if not col_marks[m] and pivotRow[m] <> 0 then
-        (rowArr, rhsArr) := solveLinearIntegerJacobianRow(rowArr, rhsArr, i, m);
-        col_marks[m] := true;
-        break;
-      end if;
-    end for;
+    (rowArr, rhsArr) := solveLinearIntegerJacobianRow(rowArr, rhsArr, i);
   end for;
   linIntJac := (rowArr, rhsArr, idxArr);
 end solveLinearIntegerJacobian;
@@ -4257,34 +4250,83 @@ protected function solveLinearIntegerJacobianRow
   input output array<BackendDAE.LinearIntegerJacobianRow> rowArr;
   input output BackendDAE.LinearIntegerJacobianRhs rhsArr;
   input Integer pivIdx;
-  input Integer col;
 protected
   BackendDAE.LinearIntegerJacobianRow pivot_row, row;
-  array<Integer> row_arr, piv_arr;
-  Integer row_elem, piv_elem;
+  Integer col_index, piv_value, row_value;
 algorithm
   pivot_row := rowArr[pivIdx];
-  piv_elem := pivot_row[col];
-  for j in pivIdx+1:arrayLength(rowArr) loop
-    row := rowArr[j];
-    row_elem := row[col];
-    if row_elem <> 0 then
-      for i in 1:arrayLength(row) loop
-        row[i] := row[i] * piv_elem - pivot_row[i] * row_elem;
-      end for;
+  try
+    /*
+      nothing in here? zero row -> analytical singularity detected!
+      jump over all manipulations, nothing to do
+    */
+    (col_index, piv_value) :: _ := pivot_row;
+    for j in pivIdx+1:arrayLength(rowArr) loop
+      row := rowArr[j];
+      row_value := getRowElementValue(row, col_index);
+      if row_value <> 0 then
+        rowArr[j] := solveLinearIntegerJacobianRowSingleStep(pivot_row, row, piv_value, row_value);
+        //perform multiplication inside? use simplification of multiplication afterwards?
+        rhsArr[j] := DAE.BINARY(
+                       DAE.BINARY(rhsArr[j], DAE.MUL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(piv_value)),       // row_rhs * piv_elem
+                       DAE.SUB(DAE.T_INTEGER_DEFAULT),                                                    // -
+                       DAE.BINARY(rhsArr[pivIdx], DAE.MUL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(row_value))   // piv_rhs * row_elem
+                     );
+        // Is it better to simplify once at the end or every time? Is traverser needed?
+        //rhsArr[j] := Expression.traverseExpBottomUp(rhsArr[j], ExpressionSimplify.simplifyTraverseHelper, "");
+        rhsArr[j] := ExpressionSimplify.simplify(rhsArr[j]);
+      end if;
+    end for;
+  else
+    /* zero row, nothing to do */
+  end try;
+end solveLinearIntegerJacobianRow;
 
-      //perform multiplication inside? use simplification of multiplication afterwards?
-      rhsArr[j] := DAE.BINARY(
-                     DAE.BINARY(rhsArr[j], DAE.MUL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(piv_elem)),       // row_rhs * piv_elem
-                     DAE.SUB(DAE.T_INTEGER_DEFAULT),                                                    // -
-                     DAE.BINARY(rhsArr[pivIdx], DAE.MUL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(row_elem))   // piv_rhs * row_elem
-                   );
-    // Is it better to simplify once at the end or every time? Is traverser needed?
-    //rhsArr[j] := Expression.traverseExpBottomUp(rhsArr[j], ExpressionSimplify.simplifyTraverseHelper, "");
-    rhsArr[j] := ExpressionSimplify.simplify(rhsArr[j]);
+public function solveLinearIntegerJacobianRowSingleStep
+"author: kabdelhak FHB 10-2019
+ Helper function for solveLinearIntegerJacobianRow, performs one single row update."
+  input BackendDAE.LinearIntegerJacobianRow pivot_row;
+  input BackendDAE.LinearIntegerJacobianRow row;
+  input Integer piv_value;
+  input Integer row_value;
+  output BackendDAE.LinearIntegerJacobianRow resultRow = {};
+protected
+  Integer idx, val;
+  list<Integer> marks = {};
+algorithm
+  for tpl in row loop
+    (idx, val) := tpl;
+    val := val * piv_value - getRowElementValue(pivot_row, idx) * row_value;
+    if val <> 0 then
+      resultRow := (idx, val) :: resultRow;
+    end if;
+    marks := idx :: marks;
+  end for;
+  for tpl in pivot_row loop
+    (idx, val) := tpl;
+    if not List.contains(marks, idx, intEq) then
+      resultRow := (idx, -val * row_value) :: resultRow;
     end if;
   end for;
-end solveLinearIntegerJacobianRow;
+end solveLinearIntegerJacobianRowSingleStep;
+
+public function getRowElementValue
+"author: kabdelhak FHB 10-2019
+ Returns the value at given column and zero if it does not exist in sparse structure."
+  input list<tuple<Integer, Integer>> row;
+  input Integer col_index;
+  output Integer value = 0;
+protected
+  Integer idx, val;
+algorithm
+  for tpl in row loop
+    (idx, val) := tpl;
+    if idx == col_index then
+      value := val;
+      break;
+    end if;
+  end for;
+end getRowElementValue;
 
 public function resolveAnalyticalSingularities
 "author: kabdelhak FHB 10-2019
@@ -4299,26 +4341,19 @@ protected
   array<BackendDAE.LinearIntegerJacobianRow> rowArr;
   BackendDAE.LinearIntegerJacobianRhs rhsArr;
   BackendDAE.LinearIntegerJacobianIndices idxArr;
-  BackendDAE.LinearIntegerJacobianRow row;
-  Boolean fullZero;
   Integer i_arr, i_scal;
   DAE.Exp zeroExp;
   BackendDAE.Equation newEqn;
-  list<Integer> updateList = {};
+  list<Integer> updateList_scal = {};
+  list<Integer> updateList_arr = {};
+  array<list<Integer>> mapEqnIncRow;
+  array<Integer> mapIncRowEqn;
+  BackendDAE.IndexType indexType;
 algorithm
   (rowArr, rhsArr, idxArr) := linIntJac;
   for r in 1:arrayLength(rowArr) loop
-    row := rowArr[r];
     /* check if row is full zero */
-    fullZero := true;
-    for i in 1:arrayLength(row) loop
-      if row[i] <> 0 then
-        fullZero := false;
-        break;
-      end if;
-    end for;
-
-    if fullZero then
+    if listEmpty(rowArr[r]) then
       (i_arr, i_scal) := idxArr[r];
       /* remove assignments */
       ass2[ass1[i_arr]] := -1;
@@ -4332,11 +4367,17 @@ algorithm
         print("Gets replaced by equation: " + BackendDump.equationString(newEqn) + "\n");
       end if;
       syst.orderedEqs := BackendEquation.setAtIndex(syst.orderedEqs, i_scal, newEqn);
-      updateList := i_arr :: updateList;
+      updateList_scal := i_scal :: updateList_scal;
+      updateList_arr := i_arr :: updateList_arr;
     end if;
     /* update adjacency matrix and transposed adjacency matrix */
-    syst := BackendDAEUtil.updateIncidenceMatrix(syst, BackendDAE.NORMAL(), NONE(), updateList);
-    if not listEmpty(updateList) and not Flags.isSet(Flags.CONVERT_ANALYTICAL_DUMP) and Flags.isSet(Flags.BLT_DUMP) then
+    try
+      SOME((mapEqnIncRow, mapIncRowEqn, indexType, true, _)) := syst.mapping;
+      syst := BackendDAEUtil.updateIncidenceMatrixScalar(syst, indexType, NONE(), updateList_scal, mapEqnIncRow, mapIncRowEqn);
+    else
+      syst := BackendDAEUtil.updateIncidenceMatrix(syst, BackendDAE.SOLVABLE(), NONE(), updateList_arr);
+    end try;
+    if not listEmpty(updateList_scal) and not Flags.isSet(Flags.CONVERT_ANALYTICAL_DUMP) and Flags.isSet(Flags.BLT_DUMP) then
       print("--- For more information please use -d=dumpAnalyticalToStructural.---\n\n");
     end if;
   end for;

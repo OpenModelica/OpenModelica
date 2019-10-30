@@ -2436,43 +2436,6 @@ algorithm
   end match;
 end symJacString;
 
-public function dumpLinearIntegerJacobian
-  input BackendDAE.LinearIntegerJacobian linIntJac;
-  input String heading = "";
-protected
-  array<BackendDAE.LinearIntegerJacobianRow> rowArr;
-  BackendDAE.LinearIntegerJacobianRhs rhsArr;
-  BackendDAE.LinearIntegerJacobianIndices idxArr;
-algorithm
-  (rowArr, rhsArr, idxArr) := linIntJac;
-  print("####################################\n" +
-        " LinearIntegerJacobian: " + heading + "\n" +
-        "####################################\n\n");
-  for idx in 1:arrayLength(rowArr) loop
-    dumpLinearIntegerJacobianRow(rowArr[idx], rhsArr[idx], idxArr[idx]);
-  end for;
-end dumpLinearIntegerJacobian;
-
-protected function dumpLinearIntegerJacobianRow
-  input BackendDAE.LinearIntegerJacobianRow linIntJacRow;
-  input DAE.Exp rhs;
-  input tuple<Integer, Integer> indices;
-protected
-  Integer i_arr, i_scal;
-algorithm
-  (i_arr, i_scal) := indices;
-  print("(" + intString(i_arr) + "|" + intString(i_scal) + "):\t");
-  if arrayLength(linIntJacRow) < 1 then
-    print("EMPTY ROW \t");
-  else
-    print(intString(linIntJacRow[1]));
-    for idx in 2:arrayLength(linIntJacRow) loop
-      print("  " + intString(linIntJacRow[idx]));
-    end for;
-  end if;
-  print("\t || RHS: " + ExpressionDump.printExpStr(rhs) + "\n");
-end dumpLinearIntegerJacobianRow;
-
 public function dumpLinearIntegerJacobianSparse
   input BackendDAE.LinearIntegerJacobian linIntJac;
   input String heading = "";
@@ -2484,7 +2447,8 @@ algorithm
   (rowArr, rhsArr, idxArr) := linIntJac;
   print("######################################################\n" +
         " LinearIntegerJacobian sparsity pattern: " + heading + "\n" +
-        "######################################################\n\n");
+        "######################################################\n\n" +
+        "(scalar_index|array_index) [var_index, value] || RHS_EXPRESSION\n");
   for idx in 1:arrayLength(rowArr) loop
     dumpLinearIntegerJacobianSparseRow(rowArr[idx], rhsArr[idx], idxArr[idx]);
   end for;
@@ -2495,18 +2459,16 @@ protected function dumpLinearIntegerJacobianSparseRow
   input DAE.Exp rhs;
   input tuple<Integer, Integer> indices;
 protected
-  Integer i_arr, i_scal;
-  list<Integer> nonZero = {};
+  Integer i_arr, i_scal, index, value;
 algorithm
   (i_arr, i_scal) := indices;
   print("(" + intString(i_arr) + "|" + intString(i_scal) + "):\t");
-  if arrayLength(linIntJacRow) < 1 then
+  if listLength(linIntJacRow) < 1 then
     print("EMPTY ROW \t");
   else
-    for i in 1:arrayLength(linIntJacRow) loop
-      if linIntJacRow[i] <> 0 then
-        print(" - " + intString(i));
-        end if;
+    for element in linIntJacRow loop
+      (index, value) := element;
+      print("[" + intString(index) + "|" + intString(value) + "] ");
     end for;
   end if;
   print("\t|| RHS: " + ExpressionDump.printExpStr(rhs) + " \n");
