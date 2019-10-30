@@ -3491,11 +3491,12 @@ algorithm
     case BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=daeeqns, m=SOME(m), mT=SOME(mt), mapping=SOME(mapping))
       equation
         /* kabdelhak: throw warning for unequal index types - inIndexType - indexType? also scalar function check!*/
-        (m,mt) = updateIncidenceMatrix1(vars, daeeqns, getIndexType(syst), functionTree, m, mt, inIntegerLst);
+        (m,mt) = updateIncidenceMatrix1(vars, daeeqns, inIndxType, functionTree, m, mt, inIntegerLst);
       then BackendDAEUtil.setEqSystMatrices(syst, SOME(m), SOME(mt), SOME(mapping));
+
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.updateIncididenceMatrix failed"});
+        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.updateIncidenceMatrix failed"});
       then fail();
 
   end matchcontinue;
@@ -3595,7 +3596,7 @@ algorithm
         // fill the extended parts first
         (m, mt, mapEqnIncRow, mapIncRowEqn) =
             updateIncidenceMatrixScalar2( oldsize+1, newsize, oldsize1, vars, daeeqns, m, mt, mapEqnIncRow,
-                                          mapIncRowEqn, indexType, functionTree );
+                                          mapIncRowEqn, inIndxType, functionTree );
         // update the old
         eqns = List.removeOnTrue(oldsize, intLt, inIntegerLst);
         (m,mt,mapEqnIncRow,mapIncRowEqn) =
@@ -8011,7 +8012,7 @@ protected
   array<Integer> mapScalarToArray;
   list<Integer> eqnIndex_lst;
   list<tuple<BackendDAE.Equation, tuple<Integer, Integer>>> tmp_tpl, loopEqs = {}; /* scalar index needs to be list -- replace lookup with eqnIndexArray*/
-  list<BackendDAE.Var> loopVars = {};
+  list<tuple<BackendDAE.Var, Integer>> loopVars = {};
   list<BackendDAE.Equation> tmp_eqs;
   BackendDAE.Equation tmp_eq;
   BackendDAE.LinearIntegerJacobian linIntJac;
@@ -8033,7 +8034,7 @@ algorithm
         BackendDump.dumpEquationList({tmp_eq}, "ignored array eqs index: " + intString(eqnIndex));
         */
       end if;
-      loopVars := BackendVariable.getVarAt(syst.orderedVars, ass1[eqnIndex]) :: loopVars;
+      loopVars := (BackendVariable.getVarAt(syst.orderedVars, ass1[eqnIndex]), ass1[eqnIndex]) :: loopVars;
     end for;
 
     try

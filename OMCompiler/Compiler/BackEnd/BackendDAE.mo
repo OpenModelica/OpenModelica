@@ -815,7 +815,7 @@ type SparseColoring = list<list< .DAE.ComponentRef>>;   // colouring
 /*
   Type only for transformation from analytical to structural singularity.
 */
-type LinearIntegerJacobianRow = array<Integer>;                       // Actual jacobian entries
+type LinearIntegerJacobianRow = list<tuple<Integer, Integer>>;        // Actual jacobian entries sparse, <column, value>
 type LinearIntegerJacobianRhs = array<.DAE.Exp>;                      // RHS-Exp for full pivot algorithm. Replacement for eliminated equation.
 type LinearIntegerJacobianIndices = array<tuple<Integer, Integer>>;   // Index tuple (array, scalar) for equations
 type LinearIntegerJacobian = tuple<array<LinearIntegerJacobianRow>, LinearIntegerJacobianRhs, LinearIntegerJacobianIndices>;

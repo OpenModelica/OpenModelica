@@ -7549,5 +7549,24 @@ algorithm
   end match;
 end allCombinations4;
 
+ public function contains<T>
+    input list<T> lst;
+    input T elem;
+    input equalityFunc eqFunc;
+    partial function equalityFunc
+      input T t1;
+      input T t2;
+      output Boolean res;
+    end equalityFunc;
+    output Boolean res = false;
+  algorithm
+    for i in lst loop
+      if eqFunc(i, elem) then
+        res := true;
+        return;
+      end if;
+    end for;
+end contains;
+
 annotation(__OpenModelica_Interface="util");
 end List;
