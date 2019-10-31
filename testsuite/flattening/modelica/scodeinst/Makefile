@@ -413,6 +413,7 @@ ForEquation7.mo \
 ForEquationEnum1.mo \
 ForEquationEnum2.mo \
 ForEquationNonParam.mo \
+ForEquationShadow1.mo \
 ForStatement1.mo \
 ForStatement2.mo \
 ForStatementArray.mo \
