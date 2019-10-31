@@ -115,8 +115,11 @@ OptionsDialog::OptionsDialog(QWidget *pParent)
   mpTLMPage = new TLMPage(this);
   mpOMSimulatorPage = new OMSimulatorPage(this);
   mpTraceabilityPage = new TraceabilityPage(this);
-  // get the settings
-  readSettings();
+  // Get the settings.
+  // Don't read the settings in case we are running the testsuite. We want default OMEdit.
+  if (!MainWindow::instance()->isTestsuiteRunning()) {
+    readSettings();
+  }
   // set up the Options Dialog
   setUpDialog();
 }

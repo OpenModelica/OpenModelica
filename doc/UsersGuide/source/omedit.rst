@@ -703,7 +703,7 @@ Diagram Window
 Shows the active ModelWidget as a read only diagram. You can only have one
 Diagram Window. To show it click on Diagram Window toolbar button (|diagram-window|).
 
-.. |diagram-window| image:: ../../../OMEdit/OMEdit/OMEditGUI/Resources/icons/modeling.*
+.. |diagram-window| image:: ../../../OMEdit/OMEditLIB/Resources/icons/modeling.*
   :alt: OMEdit Diagram Window Icon
   :height: 14pt
 

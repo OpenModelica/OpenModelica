@@ -77,8 +77,8 @@
 
 #include <QtSvg/QSvgGenerator>
 
-MainWindow::MainWindow(bool debug, QWidget *parent)
-  : QMainWindow(parent), mDebug(debug), mExitApplicationStatus(false)
+MainWindow::MainWindow(QWidget *parent)
+  : QMainWindow(parent), mExitApplicationStatus(false)
 {
   // This is a very convoluted way of asking for the default system font in Qt
   QFont systmFont("Monospace");
@@ -110,13 +110,12 @@ MainWindow *MainWindow::mpInstance = 0;
 /*!
  * \brief MainWindow::instance
  * Creates an instance of MainWindow. If we already have an instance then just return it.
- * \param debug
  * \return
  */
-MainWindow *MainWindow::instance(bool debug)
+MainWindow *MainWindow::instance()
 {
   if (!mpInstance) {
-    mpInstance = new MainWindow(debug);
+    mpInstance = new MainWindow;
   }
   return mpInstance;
 }
@@ -128,22 +127,24 @@ MainWindow *MainWindow::instance(bool debug)
  */
 void MainWindow::setUpMainWindow(threadData_t *threadData)
 {
-  // Reopen the standard output stream.
-  QString outputFileName = Utilities::tempDirectory() + "/omeditoutput.txt";
+  if (!isTestsuiteRunning()) {
+    // Reopen the standard output stream.
+    QString outputFileName = Utilities::tempDirectory() + "/omeditoutput.txt";
 #ifdef Q_OS_WIN
-  _wfreopen((wchar_t*)outputFileName.utf16(), L"w", stdout);
+    _wfreopen((wchar_t*)outputFileName.utf16(), L"w", stdout);
 #else
-  freopen(outputFileName.toUtf8().constData(), "w", stdout);
+    freopen(outputFileName.toUtf8().constData(), "w", stdout);
 #endif
-  setbuf(stdout, NULL); // used non-buffered stdout
-  // Reopen the standard error stream.
-  QString errorFileName = Utilities::tempDirectory() + "/omediterror.txt";
+    setbuf(stdout, NULL); // used non-buffered stdout
+    // Reopen the standard error stream.
+    QString errorFileName = Utilities::tempDirectory() + "/omediterror.txt";
 #ifdef Q_OS_WIN
-  _wfreopen((wchar_t*)errorFileName.utf16(), L"w", stderr);
+    _wfreopen((wchar_t*)errorFileName.utf16(), L"w", stderr);
 #else
-  freopen(outputFileName.toUtf8().constData(), "w", stderr);
+    freopen(outputFileName.toUtf8().constData(), "w", stderr);
 #endif
-  setbuf(stderr, NULL); // used non-buffered stderr
+    setbuf(stderr, NULL); // used non-buffered stderr
+  }
   SplashScreen::instance()->showMessage(tr("Initializing"), Qt::AlignRight, Qt::white);
   // Create an object of MessagesWidget.
   MessagesWidget::create();
@@ -536,9 +537,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
  */
 int MainWindow::askForExit()
 {
-  if (!OptionsDialog::instance()->getNotificationsPage()->getQuitApplicationCheckBox()->isChecked()) {
-    NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::QuitApplication,
-                                                                        NotificationsDialog::QuestionIcon, this);
+  if (!OptionsDialog::instance()->getNotificationsPage()->getQuitApplicationCheckBox()->isChecked() && !isTestsuiteRunning()) {
+    NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::QuitApplication, NotificationsDialog::QuestionIcon, this);
     return pNotificationsDialog->exec();
   }
   return true;

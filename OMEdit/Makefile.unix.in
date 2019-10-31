@@ -1,0 +1,71 @@
+all: omedit
+
+resourcedir=./OMEditLIB/Resources/nls/
+
+NAME=OMEdit
+APP=@APP@
+LIB=libOMEdit
+LIBEXE=.a
+QMAKE=@QMAKE@
+LRELEASE=@LRELEASE@
+
+CMAKE=CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" cmake
+CMAKE_TARGET = "Unix Makefiles"
+
+install: build OMEditLIB/Resources/nls/qm.stamp
+	cp -p $(resourcedir)/*.qm @OMBUILDDIR@/share/omedit/nls/
+	if [ "$(APP)" = ".app" ]; then mkdir -p @OMBUILDDIR@/Applications/ ; cp -rp bin/OMEdit$(APP) @OMBUILDDIR@/Applications/ ; else cp -p bin/OMEdit @OMBUILDDIR@/bin/; fi
+	cp -p bin/$(LIB)$(LIBEXE) @OMBUILDDIR@/lib/@host_short@/omc/
+
+OMEditLIB/Resources/nls/qm.stamp: OMEditLIB/OMEditLIB.pro OMEditLIB/Resources/nls/*.ts
+	$(LRELEASE) $<
+	@touch $@
+
+$(NAME): parsergen qjson-build Makefile OMEditLIB/OMEditLIB.unix.config.pri OMEditGUI/OMEditGUI.unix.config.pri omc_config.h
+	$(MAKE) -f Makefile
+
+build: $(NAME)
+
+parsergen:
+	$(MAKE) -C OMEditLIB/Debugger/Parser -f Makefile.lib.unix
+
+Makefile: OMEdit.pro OMEditLIB/OMEditLIB.unix.config.pri OMEditGUI/OMEditGUI.unix.config.pri
+	@test ! -f $@ || rm $@
+	$(QMAKE) -r
+Makefile.unix: Makefile.unix.in
+	(cd @top_builddir@; ./config.status)
+OMEditLIB/OMEditLIB.unix.config.pri: OMEditLIB/OMEditLIB.unix.config.pri.in
+	(cd @top_builddir@ && ./config.status)
+OMEditGUI/OMEditGUI.unix.config.pri: OMEditGUI/OMEditGUI.unix.config.pri.in
+	(cd @top_builddir@ && ./config.status)
+omc_config.h: omc_config.h.in
+	(cd @top_builddir@ && ./config.status)
+
+mkbuilddirs:
+	mkdir -p  @OMBUILDDIR@/share/omedit/nls @OMBUILDDIR@/bin @OMBUILDDIR@/lib/@host_short@/omc
+omedit: mkbuilddirs install
+
+clean:
+	test ! -f qjson/build/Makefile || $(MAKE) -C qjson/build clean
+	rm -rf qjson/build
+	$(MAKE) -C OMEditLIB/Debugger/Parser -f Makefile.lib.unix clean
+	test ! -f Makefile || $(MAKE) -f Makefile clean
+	rm -f bin/OMEdit$(APP) bin/$(LIB)$(LIBEXE)
+	rm -rf omc_config.h Makefile OMEditLIB/debug OMEditLIB/release OMEditLIB/generatedfiles OMEditLIB/Makefile OMEditLIB/Makefile.Debug OMEditLIB/Makefile.Release OMEditLIB/object_script.* OMEditGUI/debug OMEditGUI/release OMEditGUI/Makefile OMEditGUI/Makefile.Debug OMEditGUI/Makefile.Release
+
+distclean: clean
+	rm -rf config.log config.sub config.status install-sh autom4te.cache config.guess configure Makefile.unix OMEditLIB/OMEditLIB.unix.config.pri OMEditGUI/OMEditGUI.unix.config.pri
+
+config.status: configure
+	./config.status -recheck
+configure: configure.ac common/m4/corba.m4 common/m4/omhome.m4 common/m4/qmake.m4
+	autoconf
+
+qjson-build:
+	test -d qjson
+	mkdir -p qjson/build/include/qjson
+	(cd qjson/build && test -f Makefile || CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@" $(CMAKE) .. @QT4BUILD@ -G $(CMAKE_TARGET))
+	test -f qjson/build/lib/libqjson$(SHREXT) || $(MAKE) -C qjson/build
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libqjson.0.dylib qjson/build/lib/libqjson.0.dylib
+	cp -a qjson/build/lib/libqjson*$(SHREXT)* @OMBUILDDIR@/lib/@host_short@/omc/
+	cp -a qjson/src/*.h qjson/build/include/qjson

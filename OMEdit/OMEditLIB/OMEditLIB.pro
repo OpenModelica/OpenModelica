@@ -33,6 +33,10 @@ greaterThan(QT_MAJOR_VERSION, 4) {
   QT += printsupport widgets webkitwidgets concurrent
 }
 
+TARGET = OMEdit
+TEMPLATE = lib
+CONFIG += staticlib
+
 TRANSLATIONS = Resources/nls/OMEdit_de.ts \
   Resources/nls/OMEdit_es.ts \
   Resources/nls/OMEdit_fr.ts \
@@ -43,9 +47,6 @@ TRANSLATIONS = Resources/nls/OMEdit_de.ts \
   Resources/nls/OMEdit_sv.ts \
   Resources/nls/OMEdit_zh_CN.ts
 
-TARGET = OMEdit
-TEMPLATE = app
-
 # This is very evil, lupdate just look for SOURCES variable and creates translations. This section is not compiled at all :)
 evil_hack_to_fool_lupdate {
   SOURCES += ../../../OMPlot/OMPlotGUI/*.cpp
@@ -53,83 +54,31 @@ evil_hack_to_fool_lupdate {
 
 # Windows libraries and includes
 win32 {
-  OPENMODELICAHOME = $$(OPENMODELICAHOME)
-  # define used for OpenModelica C-API
-  DEFINES += IMPORT_INTO=1
-  # win32 vs. win64
-  contains(QT_ARCH, i386) { # 32-bit
-    QMAKE_LFLAGS += -Wl,--stack,16777216,--enable-auto-import,--large-address-aware
-  } else { # 64-bit
-    QMAKE_LFLAGS += -Wl,--stack,33554432,--enable-auto-import
-  }
-  # release vs debug
-  CONFIG(release, debug|release) { # release
-    # required for backtrace
-    # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
-    # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
-    # -s will remove all symbol table and relocation information from the executable.
-    QMAKE_CXXFLAGS += -g -DUA_DYNAMIC_LINKING
-    QMAKE_LFLAGS_RELEASE =
-    # win32 vs. win64
-    contains(QT_ARCH, i386) { # 32-bit
-      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib/binutils -L$$(OMDEV)/tools/msys/mingw32/bin -L$$(OMDEV)/tools/msys/mingw32/lib
-    } else { # 64-bit
-      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib/binutils -L$$(OMDEV)/tools/msys/mingw64/bin -L$$(OMDEV)/tools/msys/mingw64/lib
-    }
-    LIBS += -limagehlp -lbfd -lintl -liberty -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
-  } else { # debug
-    contains(QT_ARCH, i386) { # 32-bit
-      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib
-    } else { # 64-bit
-      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib
-    }
-    LIBS += -llibosgd.dll -llibosgViewerd.dll -llibOpenThreadsd.dll -llibosgDBd.dll -llibosgGAd.dll
-  }
-  LIBS += -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
-    -L$$(OMBUILDDIR)/lib/omc -lomantlr3 -lOMPlot -lomqwt -lomopcua \
-    -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread -lshlwapi \
-    -lws2_32 \
-    -L$$(OMBUILDDIR)/bin -lOMSimulator -lqjson
+  OPENMODELICAHOME = $$(OMBUILDDIR)
+  host_short =
 
-  INCLUDEPATH += $$(OMBUILDDIR)/include \
-    $$(OMBUILDDIR)/include/omplot \
-    $$(OMBUILDDIR)/include/omplot/qwt \
-    $$(OMBUILDDIR)/include/omc/antlr3 \
-    $$OPENMODELICAHOME/include/omc/scripting-API \
-    $$(OMBUILDDIR)/include/omc/c \
-    $$OPENMODELICAHOME/include/omc/c/util \
-    $$OPENMODELICAHOME/include/omc/fmil \
-    ../../qjson/build/include
-
-  RC_FILE = rc_omedit.rc
   CONFIG += osg
 } else { # Unix libraries and includes
-  include(OMEdit.config)
-  # required for backtrace
-  # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
-  # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
-  # -s will remove all symbol table and relocation information from the executable.
-  # On unix we use backtrace of execinfo.h which requires -rdynamic
-  # The symbol names may be unavailable without the use of special linker
-  # options.  For systems using the GNU linker, it is necessary to use
-  # the -rdynamic linker option.  Note that names of "static" functions
-  # are not exposed, and won't be available in the backtrace.
-  CONFIG(release, debug|release) {
-    QMAKE_CXXFLAGS += -g
-    QMAKE_LFLAGS_RELEASE = -rdynamic
-  }
-  equals(QT_ARCH, i386)|equals(QT_ARCH, i486)|equals(QT_ARCH, i586)|equals(QT_ARCH, i686) { # 32-bit
-    LIBS += -latomic -lboost_atomic
-  }
+  include(OMEditLIB.unix.config.pri)
 }
+
+INCLUDEPATH += ../ \
+  $$OPENMODELICAHOME/include \
+  $$OPENMODELICAHOME/include/omplot \
+  $$OPENMODELICAHOME/include/omplot/qwt \
+  $$OPENMODELICAHOME/include/$$host_short/omc/antlr3 \
+  $$OPENMODELICAHOME/include/omc/scripting-API \
+  $$OPENMODELICAHOME/include/omc/c \
+  $$OPENMODELICAHOME/include/omc/c/util \
+  $$OPENMODELICAHOME/include/omc/fmil \
+  ../qjson/build/include
 
 # Don't show the warnings from included headers.
 for (path, INCLUDEPATH) {
   QMAKE_CXXFLAGS += -isystem $${path}
 }
 
-SOURCES += main.cpp \
-  Util/Helper.cpp \
+SOURCES += Util/Helper.cpp \
   Util/Utilities.cpp \
   Util/StringHandler.cpp \
   MainWindow.cpp \
@@ -374,11 +323,11 @@ RESOURCES += resource_omedit.qrc
 
 DESTDIR = ../bin
 
-UI_DIR = ../generatedfiles/ui
+UI_DIR = generatedfiles/ui
 
-MOC_DIR = ../generatedfiles/moc
+MOC_DIR = generatedfiles/moc
 
-RCC_DIR = ../generatedfiles/rcc
+RCC_DIR = generatedfiles/rcc
 
 ICON = Resources/icons/omedit.icns
 

@@ -36,9 +36,6 @@
 #include "Util/Helper.h"
 #include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
-#ifndef WIN32
-#include "omc_config.h"
-#endif
 
 #include <locale.h>
 #include <QMessageBox>
@@ -53,7 +50,7 @@
  * \param argv
  * \param threadData
  */
-OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threadData)
+OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threadData, bool testsuiteRunning)
   : QApplication(argc, argv)
 {
   // set the stylesheet
@@ -105,7 +102,9 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   QPixmap pixmap(":/Resources/icons/omedit_splashscreen.png");
   SplashScreen *pSplashScreen = SplashScreen::instance();
   pSplashScreen->setPixmap(pixmap);
-  pSplashScreen->show();
+  if (!testsuiteRunning) {
+    pSplashScreen->show();
+  }
   Helper::initHelperVariables();
   /* Force C-style doubles */
   setlocale(LC_NUMERIC, "C");
@@ -113,7 +112,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   bool debug = false;
   QString fileName = "";
   QStringList fileNames;
-  if (arguments().size() > 1) {
+  if (arguments().size() > 1 && !testsuiteRunning) {
     for (int i = 1; i < arguments().size(); i++) {
       if (strncmp(arguments().at(i).toUtf8().constData(), "--Debug=",8) == 0) {
         QString debugArg = arguments().at(i);
@@ -143,7 +142,9 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
     }
   }
   // MainWindow Initialization
-  MainWindow *pMainwindow = MainWindow::instance(debug);
+  MainWindow *pMainwindow = MainWindow::instance();
+  pMainwindow->setDebug(debug);
+  pMainwindow->setTestsuiteRunning(testsuiteRunning);
   pMainwindow->setUpMainWindow(threadData);
   if (pMainwindow->getExitApplicationStatus()) {        // if there is some issue in running the application.
     quit();
@@ -154,14 +155,18 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
     pMainwindow->getLibraryWidget()->openFile(fileName);
   }
   // open the files recieved by QFileOpenEvent
-  foreach (QString fileToOpen, mFilesToOpenList) {
-    pMainwindow->getLibraryWidget()->openFile(fileToOpen);
+  if (!testsuiteRunning) {
+    foreach (QString fileToOpen, mFilesToOpenList) {
+      pMainwindow->getLibraryWidget()->openFile(fileToOpen);
+    }
   }
 
-  // finally show the main window
-  pMainwindow->show();
-  // hide the splash screen
-  pSplashScreen->finish(pMainwindow);
+  if (!testsuiteRunning) {
+    // finally show the main window
+    pMainwindow->show();
+    // hide the splash screen
+    SplashScreen::instance()->finish(pMainwindow);
+  }
 }
 
 /*!
