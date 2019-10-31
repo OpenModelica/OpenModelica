@@ -245,6 +245,10 @@ uniontype Component
       case COMPONENT_DEF() then SCodeUtil.elementInfo(component.definition);
       case UNTYPED_COMPONENT() then component.info;
       case TYPED_COMPONENT() then component.info;
+      case ITERATOR() then component.info;
+      case TYPE_ATTRIBUTE() then Modifier.info(component.modifier);
+      case DELETED_COMPONENT() then info(component.component);
+      // Fail for enumeration literals, InstNode.info handles that case instead.
     end match;
   end info;
 

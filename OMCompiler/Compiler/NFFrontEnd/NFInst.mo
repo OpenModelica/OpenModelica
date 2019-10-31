@@ -2872,6 +2872,7 @@ algorithm
     case SCode.EEquation.EQ_FOR(info = info)
       algorithm
         oexp := instExpOpt(scodeEq.range, scope, info);
+        checkIteratorShadowing(scodeEq.index, scope, scodeEq.info);
         (for_scope, iter) := addIteratorToScope(scodeEq.index, scope, scodeEq.info);
         next_origin := ExpOrigin.setFlag(origin, ExpOrigin.FOR);
         eql := instEEquations(scodeEq.eEquationLst, for_scope, next_origin);
@@ -3160,6 +3161,30 @@ algorithm
   iterator := InstNode.fromComponent(name, iter_comp, scope);
   scope := InstNode.addIterator(iterator, scope);
 end addIteratorToScope;
+
+function checkIteratorShadowing
+  "Gives a warning if the given iterator name is already used in an outer
+   implicit scope."
+  input String name;
+  input InstNode scope;
+  input SourceInfo info;
+algorithm
+  () := match scope
+    case InstNode.IMPLICIT_SCOPE()
+      algorithm
+        for iter in scope.locals loop
+          if InstNode.name(iter) == name then
+            Error.addMultiSourceMessage(Error.SHADOWED_ITERATOR,
+              {name}, {InstNode.info(iter), info});
+            return;
+          end if;
+        end for;
+      then
+        ();
+
+    else ();
+  end match;
+end checkIteratorShadowing;
 
 function insertGeneratedInners
   "Inner elements can be generated automatically during instantiation if they're

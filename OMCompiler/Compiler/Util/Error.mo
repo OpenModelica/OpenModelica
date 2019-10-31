@@ -846,6 +846,8 @@ public constant Message OPERATOR_RECORD_MISSING_OPERATOR = MESSAGE(358, TRANSLAT
   Util.gettext("Type ‘%s‘ of expression ‘%s‘ in ‘%s‘ does not implement the required operator ‘%s‘"));
 public constant Message IMPORT_IN_COMPOSITE_NAME = MESSAGE(359, TRANSLATION(), ERROR(),
   Util.gettext("Found imported name ‘%s‘ while looking up composite name ‘%s‘."));
+public constant Message SHADOWED_ITERATOR = MESSAGE(360, TRANSLATION(), WARNING(),
+  Util.gettext("An iterator named ‘%s‘ is already declared in this scope."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),
