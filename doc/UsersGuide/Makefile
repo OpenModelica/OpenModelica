@@ -244,7 +244,7 @@ OMOPTIM_ICONS=$(OMOPTIM_ICONS_BASE:%=source/media/omoptim-icons/%)
 
 all-dep: $(ALLDEP) source/media/mathematica-notebooks.pdf source/media/mdt-create-project.pdf source/media/mdt-build-prompt.pdf source/simoptions.inc source/omchelptext.rst source/tracreleases.rst
 
-source/media/omedit-icons/%.svg: $(OPENMODELICA_ROOT)/OMEdit/OMEdit/OMEditGUI/Resources/icons/%.svg
+source/media/omedit-icons/%.svg: $(OPENMODELICA_ROOT)/OMEdit/OMEditLIB/Resources/icons/%.svg
 	@mkdir -p source/media/omedit-icons
 	cp -a "$<" "$@"
 

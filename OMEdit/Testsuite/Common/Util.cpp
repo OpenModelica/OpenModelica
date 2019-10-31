@@ -9,8 +9,9 @@
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
  * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+ * ACCORDING TO RECIPIENTS CHOICE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
@@ -31,26 +32,20 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#ifndef OMEDITAPPLICATION_H
-#define OMEDITAPPLICATION_H
+#include "Util.h"
+#include "Modeling/LibraryTreeWidget.h"
 
-extern "C" {
-#include "meta/meta_modelica.h"
-#include "omc_config.h"
-#include "gc.h"
-}
-
-#include <QApplication>
-#include <QStringList>
-
-class OMEditApplication : public QApplication
+bool Util::expandLibraryTreeItemParentHierarchy(const LibraryTreeItem *pLibraryTreeItem)
 {
-public:
-  OMEditApplication(int& argc, char**argv, threadData_t *threadData);
-private:
-  QStringList mFilesToOpenList;
-protected:
-  virtual bool event(QEvent *pEvent) override;
-};
-
-#endif // OMEDITAPPLICATION_H
+  if (pLibraryTreeItem) {
+    if (pLibraryTreeItem->parent() != MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem()) {
+      expandLibraryTreeItemParentHierarchy(pLibraryTreeItem->parent());
+    }
+    QModelIndex modelIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->libraryTreeItemIndex(pLibraryTreeItem);
+    QModelIndex proxyIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+    MainWindow::instance()->getLibraryWidget()->getLibraryTreeView()->expand(proxyIndex);
+    return true;
+  } else {
+    return false;
+  }
+}

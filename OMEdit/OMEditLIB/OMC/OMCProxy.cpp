@@ -660,33 +660,37 @@ QString OMCProxy::getVersion(QString className)
  */
 void OMCProxy::loadSystemLibraries()
 {
-  QSettings *pSettings = Utilities::getApplicationSettings();
-  bool forceModelicaLoad = true;
-  if (pSettings->contains("forceModelicaLoad")) {
-    forceModelicaLoad = pSettings->value("forceModelicaLoad").toBool();
-  }
-  pSettings->beginGroup("libraries");
-  QStringList libraries = pSettings->childKeys();
-  pSettings->endGroup();
-  /*
-    Only force loading of Modelica & ModelicaReference if user is using OMEdit for the first time.
-    Later user must use the libraries options dialog.
-    */
-  if (forceModelicaLoad) {
-    if (!pSettings->contains("libraries/Modelica")) {
-      pSettings->setValue("libraries/Modelica","default");
-      libraries.prepend("Modelica");
+  if (MainWindow::instance()->isTestsuiteRunning()) {
+    loadModel("Modelica", "default");
+    loadModel("ModelicaReference", "default");
+  } else {
+    bool forceModelicaLoad = true;
+    QSettings *pSettings = Utilities::getApplicationSettings();
+    if (pSettings->contains("forceModelicaLoad")) {
+      forceModelicaLoad = pSettings->value("forceModelicaLoad").toBool();
     }
-    if (!pSettings->contains("libraries/ModelicaReference")) {
-      pSettings->setValue("libraries/ModelicaReference","default");
-      libraries.prepend("ModelicaReference");
+    pSettings->beginGroup("libraries");
+    QStringList libraries = pSettings->childKeys();
+    pSettings->endGroup();
+    /* Only force loading of Modelica & ModelicaReference if user is using OMEdit for the first time.
+     * Later user must use the libraries options dialog.
+     */
+    if (forceModelicaLoad) {
+      if (!pSettings->contains("libraries/Modelica")) {
+        pSettings->setValue("libraries/Modelica","default");
+        libraries.prepend("Modelica");
+      }
+      if (!pSettings->contains("libraries/ModelicaReference")) {
+        pSettings->setValue("libraries/ModelicaReference","default");
+        libraries.prepend("ModelicaReference");
+      }
     }
+    foreach (QString lib, libraries) {
+      QString version = pSettings->value("libraries/" + lib).toString();
+      loadModel(lib, version);
+    }
+    OptionsDialog::instance()->readLibrariesSettings();
   }
-  foreach (QString lib, libraries) {
-    QString version = pSettings->value("libraries/" + lib).toString();
-    loadModel(lib, version);
-  }
-  OptionsDialog::instance()->readLibrariesSettings();
 }
 
 /*!

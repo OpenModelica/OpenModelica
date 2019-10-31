@@ -97,12 +97,15 @@ class MainWindow : public QMainWindow
 public:
   enum { MaxRecentFiles = 8 };
 private:
-  MainWindow(bool debug, QWidget *parent = 0);
+  MainWindow(QWidget *parent = 0);
   static MainWindow *mpInstance;
 public:
-  static MainWindow *instance(bool debug = false);
+  static MainWindow *instance();
   void setUpMainWindow(threadData_t *threadData);
-  bool isDebug() {return mDebug;}
+  bool isDebug() const {return mDebug;}
+  void setDebug(bool debug) {mDebug = debug;}
+  bool isTestsuiteRunning() const {return mTestsuiteRunning;}
+  void setTestsuiteRunning(bool testsuiteRunning) {mTestsuiteRunning = testsuiteRunning;}
   OMCProxy* getOMCProxy() {return mpOMCProxy;}
   void setExitApplicationStatus(bool status) {mExitApplicationStatus = status;}
   bool getExitApplicationStatus() {return mExitApplicationStatus;}
@@ -252,6 +255,7 @@ public:
   QList<QString> mFMUDirectoriesList;
 private:
   bool mDebug;
+  bool mTestsuiteRunning;
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
   int mNumberOfProcessors;
