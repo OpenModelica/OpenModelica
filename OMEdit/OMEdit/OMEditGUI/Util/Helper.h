@@ -295,6 +295,8 @@ public:
   static QString filterVariables;
   static QString openClass;
   static QString openClassTip;
+  static QString openBaseClass;
+  static QString openBaseClassTip;
   static QString viewIcon;
   static QString viewIconTip;
   static QString viewDiagram;

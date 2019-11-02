@@ -244,6 +244,7 @@ signals:
   void iconUpdated();
   void coOrdinateSystemUpdated(GraphicsView *pGraphicsView);
 public slots:
+  void openClass();
   void handleLoaded(LibraryTreeItem *pLibraryTreeItem);
   void handleUnloaded();
   void handleShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
@@ -422,6 +423,7 @@ public slots:
   void libraryTreeItemExpanded(const QModelIndex &index);
   void libraryTreeItemDoubleClicked(const QModelIndex &index);
   void showContextMenu(QPoint point);
+  void putOpenBaseClassActionsToContextMenu(QMenu *pMenu, LibraryTreeItem *pLibraryTreeItem);
   void openClass();
   void openInformationDialog();
   void createNewModelicaClass();
