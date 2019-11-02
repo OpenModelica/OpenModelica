@@ -199,6 +199,7 @@ public:
   QAction* getAddSubModelAction() {return mpAddSubModelAction;}
   QAction* getOMSInstantiateModelAction() {return mpOMSInstantiateModelAction;}
   QAction* getOMSSimulationSetupAction() {return mpOMSSimulateAction;}
+  QAction* getOMSFetchInterfacesAction() {return mpOMSFetchInterfacesAction;}
   QAction* getLogCurrentFileAction() {return mpLogCurrentFileAction;}
   QAction* getStageCurrentFileForCommitAction() {return mpStageCurrentFileForCommitAction;}
   QAction* getUnstageCurrentFileFromCommitAction() {return mpUnstageCurrentFileFromCommitAction;}
@@ -430,6 +431,7 @@ private:
   QAction *mpAddSubModelAction;
   QAction *mpOMSInstantiateModelAction;
   QAction *mpOMSSimulateAction;
+  QAction *mpOMSFetchInterfacesAction;
   QAction *mpOMSArchivedSimulationsAction;
   // Toolbars
   QMenu *mpRecentFilesMenu;

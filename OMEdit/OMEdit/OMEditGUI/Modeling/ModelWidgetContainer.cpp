@@ -2505,6 +2505,9 @@ void GraphicsView::omsGraphicsViewContextMenu(QMenu *pMenu)
     pMenu->addAction(MainWindow::instance()->getAddConnectorAction());
     pMenu->addAction(MainWindow::instance()->getAddBusAction());
     pMenu->addAction(MainWindow::instance()->getAddTLMBusAction());
+    if(mpModelWidget->getLibraryTreeItem()->isExternalTLMModelComponent()) {
+        pMenu->addAction(MainWindow::instance()->getOMSFetchInterfacesAction());
+    }
     if (mpModelWidget->getLibraryTreeItem()->isSystemElement()) {
       pMenu->addSeparator();
       pMenu->addAction(MainWindow::instance()->getAddSubModelAction());
@@ -7262,6 +7265,7 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   connect(MainWindow::instance()->getAddBusAction(), SIGNAL(triggered()), SLOT(addBus()));
   connect(MainWindow::instance()->getAddTLMBusAction(), SIGNAL(triggered()), SLOT(addTLMBus()));
   connect(MainWindow::instance()->getAddSubModelAction(), SIGNAL(triggered()), SLOT(addSubModel()));
+  connect(MainWindow::instance()->getOMSFetchInterfacesAction(), SIGNAL(triggered()), SLOT(fetchInterfaceData()));
 }
 
 void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView)
@@ -7774,6 +7778,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getAddTLMBusAction()->setEnabled(enabled && !textView && ((omsSystem || omsSubmodel)  && (!pLibraryTreeItem->isTLMSystem())));
   MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && !iconGraphicsView && !textView && omsSystem);
   MainWindow::instance()->getOMSInstantiateModelAction()->setEnabled(enabled && (omsModel || omsSystem || omsSubmodel));
+  MainWindow::instance()->getOMSFetchInterfacesAction()->setEnabled(enabled && !textView && (pLibraryTreeItem->isExternalTLMModelComponent()));
   if (pLibraryTreeItem) {
     LibraryTreeItem *pTopLevelLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()));
     MainWindow::instance()->getOMSInstantiateModelAction()->setChecked(pTopLevelLibraryTreeItem && pTopLevelLibraryTreeItem->isInstantiated());
@@ -8123,6 +8128,60 @@ void ModelWidgetContainer::addTLMBus()
     AddTLMBusDialog *pAddTLMBusDialog = new AddTLMBusDialog(components, 0, pGraphicsView);
     pAddTLMBusDialog->exec();
   }
+}
+
+void ModelWidgetContainer::fetchInterfaceData()
+{
+    ModelWidget *pModelWidget = getCurrentModelWidget();
+    if (!pModelWidget) {
+        return;
+    }
+    if (!pModelWidget->getLibraryTreeItem()->isExternalTLMModelComponent()) {
+        return;
+    }
+
+    GraphicsView *pGraphicsView = 0;
+    if (pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) {
+      pGraphicsView = pModelWidget->getIconGraphicsView();
+    } else if (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()) {
+      pGraphicsView = pModelWidget->getDiagramGraphicsView();
+    }
+
+    QStringList names, domains;
+    QVector<int> dimensions;
+    OMSProxy::instance()->fetchInterfaceData(pModelWidget->getLibraryTreeItem()->getNameStructure(), names, domains, dimensions);
+
+    for(int i=0; i<names.size(); ++i) {
+        pGraphicsView->getModelWidget()->beginMacro("Add TLM bus");
+        QString annotation = QString("Placement(true,%1,%2,-10.0,-10.0,10.0,10.0,0,%1,%2,-10.0,-10.0,10.0,10.0,)")
+                             .arg(Utilities::mapToCoOrdinateSystem(0.5, 0, 1, -100, 100))
+                             .arg(Utilities::mapToCoOrdinateSystem(0.5, 0, 1, -100, 100));
+        oms_tlm_domain_t actualDomain = oms_tlm_domain_input;
+        if("output" == domains[i]) {
+            actualDomain = oms_tlm_domain_output;
+        }
+        else if("mechanical" == domains[i]) {
+            actualDomain = oms_tlm_domain_mechanical;
+        }
+        else if("hydraulic" == domains[i]) {
+            actualDomain = oms_tlm_domain_hydraulic;
+        }
+        else if("rotational" == domains[i]) {
+            actualDomain = oms_tlm_domain_rotational;
+        }
+        else if("electric" == domains[i]) {
+            actualDomain = oms_tlm_domain_electric;
+        }
+
+        AddTLMBusCommand *pAddTLMBusCommand = new AddTLMBusCommand(names[i], 0, annotation, pGraphicsView, false,
+                                                                   actualDomain, dimensions[i], oms_tlm_no_interpolation);
+        pGraphicsView->getModelWidget()->getUndoStack()->push(pAddTLMBusCommand);
+        if (!pAddTLMBusCommand->isFailed()) {
+          pGraphicsView->getModelWidget()->getLibraryTreeItem()->emitComponentAddedForComponent();
+          pGraphicsView->getModelWidget()->updateModelText();
+          pGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
+        }
+    }
 }
 
 /*!

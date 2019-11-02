@@ -3680,6 +3680,9 @@ void MainWindow::createActions()
   mpOMSSimulateAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::simulate, this);
   mpOMSSimulateAction->setStatusTip(Helper::OMSSimulateTip);
   connect(mpOMSSimulateAction, SIGNAL(triggered()), SLOT(simulateOMSModel()));
+  // OMSimulator fetch interfaces action
+  mpOMSFetchInterfacesAction = new QAction(QIcon(":/ResourceS/icons/interface-data.svg"), Helper::fetchInterfaceData, this);
+  mpOMSFetchInterfacesAction->setStatusTip(Helper::fetchInterfaceDataTip);
   // Archived simulations
   mpOMSArchivedSimulationsAction = new QAction(Helper::archivedSimulations, this);
   mpOMSArchivedSimulationsAction->setStatusTip(Helper::archivedSimulations);

@@ -86,6 +86,7 @@ public:
   bool deleteConnection(QString crefA, QString crefB);
   bool deleteConnectorFromBus(QString busCref, QString connectorCref);
   bool deleteConnectorFromTLMBus(QString busCref, QString connectorCref);
+  bool fetchInterfaceData(QString cref, QStringList &names, QStringList &domains, QVector<int> &dimensions);
   bool getBoolean(QString signal, bool* value);
   bool getBus(QString cref, oms_busconnector_t **pBusConnector);
   bool getComponentType(QString cref, oms_component_enu_t *pType);
