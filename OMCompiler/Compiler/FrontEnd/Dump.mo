@@ -52,6 +52,7 @@ import File.Escape;
 // protected imports
 protected
 import AbsynDumpTpl;
+import Flags;
 import Config;
 import Error;
 import List;
@@ -132,16 +133,30 @@ public function unparseStr
     ";
   input DumpOptions options = defaultDumpOptions;
   output String outString;
+protected
+  Boolean status;
 algorithm
+  // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
+  // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
+  status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString2(AbsynDumpTpl.dump, inProgram, options);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseStr;
 
 public function unparseClassList
   "Prettyprints a list of classes"
   input list<Absyn.Class> inClasses;
   output String outString;
+protected
+  Boolean status;
 algorithm
+  // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
+  // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
+  status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString2(AbsynDumpTpl.dump, Absyn.PROGRAM(inClasses, Absyn.TOP()), defaultDumpOptions);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseClassList;
 
 public function unparseClassStr
@@ -149,15 +164,30 @@ public function unparseClassStr
   input Absyn.Class inClass;
   output String outString;
 algorithm
+protected
+  Boolean status;
+algorithm
+  // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
+  // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
+  status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString2(AbsynDumpTpl.dumpClass, inClass, defaultDumpOptions);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseClassStr;
 
 public function unparseWithin
   "Prettyprints a within statement."
   input Absyn.Within inWithin;
   output String outString;
+protected
+  Boolean status;
 algorithm
+  // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
+  // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
+  status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpWithin, inWithin);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseWithin;
 
 protected function dumpWithin
@@ -773,24 +803,45 @@ end printAnnotation;
 public function unparseElementArgStr "Prettyprints an Absyn.ElementArg"
   input Absyn.ElementArg inElementArg;
   output String outString;
+protected
+  Boolean status;
 algorithm
+  // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
+  // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
+  status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpElementArg,inElementArg);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseElementArgStr;
 
 public function unparseElementItemStr
   "Prettyprints and ElementItem."
   input Absyn.ElementItem inElementItem;
   output String outString;
+protected
+  Boolean status;
 algorithm
+  // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
+  // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
+  status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString2(AbsynDumpTpl.dumpElementItem, inElementItem, defaultDumpOptions);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseElementItemStr;
 
 public function unparseAnnotation
   "Prettyprint an annotation."
   input Absyn.Annotation inAnnotation;
   output String outString;
+protected
+  Boolean status;
 algorithm
+  // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
+  // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
+  status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpAnnotation, inAnnotation);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseAnnotation;
 
 public function unparseAnnotationOption
@@ -1056,8 +1107,15 @@ public function unparseImportStr
   "Prettyprints an Import to a string."
   input Absyn.Import inImport;
   output String outString;
+protected
+  Boolean status;
 algorithm
+  // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
+  // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
+  status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpImport, inImport);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseImportStr;
 
 protected function printElementattr "Prints ElementAttributes to the Print buffer."
@@ -1229,8 +1287,15 @@ end printComponentitem;
 public function unparseComponentCondition "Prints a ComponentCondition option to a string."
   input Option<Absyn.ComponentCondition> inComponentCondition;
   output String outString;
+protected
+  Boolean status;
 algorithm
+  // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
+  // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
+  status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpComponentCondition, inComponentCondition);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseComponentCondition;
 
 protected function printArraydimOpt "
@@ -1408,8 +1473,15 @@ public function unparseModificationStr
   "Prettyprints a Modification to a string."
   input Absyn.Modification inModification;
   output String outString;
+protected
+  Boolean status;
 algorithm
+  // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
+  // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
+  status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpModification, inModification);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseModificationStr;
 
 public function equationName
@@ -1543,24 +1615,45 @@ public function unparseClassPart
   "Prettyprints an Equation to a string."
   input Absyn.ClassPart classPart;
   output String outString;
+protected
+  Boolean status;
 algorithm
+  // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
+  // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
+  status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString3(AbsynDumpTpl.dumpClassPart, classPart, 0, defaultDumpOptions);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseClassPart;
 
 public function unparseEquationStr
   "Prettyprints an Equation to a string."
   input Absyn.Equation inEquation;
   output String outString;
+protected
+  Boolean status;
 algorithm
+  // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
+  // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
+  status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpEquation, inEquation);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseEquationStr;
 
 public function unparseEquationItemStr
   "Prettyprints an EquationItem to a string."
   input Absyn.EquationItem inEquation;
   output String outString;
+protected
+  Boolean status;
 algorithm
+  // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
+  // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
+  status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpEquationItem, inEquation);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseEquationItemStr;
 
 public function unparseEquationItemStrLst
@@ -1745,8 +1838,15 @@ public function unparseAlgorithmStr
   "Helper function to unparseAlgorithmStr"
   input Absyn.AlgorithmItem inAlgorithmItem;
   output String outString;
+protected
+  Boolean status;
 algorithm
+  // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
+  // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
+  status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpAlgorithmItem, inAlgorithmItem);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseAlgorithmStr;
 
 protected function printAlgElseif "Prints an algorithm elseif branch to the Print buffer."
@@ -2587,16 +2687,30 @@ public function printExpStr "
 "
   input Absyn.Exp inExp;
   output String outString;
+protected
+  Boolean status;
 algorithm
+  // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
+  // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
+  status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpExp, inExp);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end printExpStr;
 
 public function printCodeStr
 "Prettyprint Code to a string."
   input Absyn.CodeNode inCode;
   output String outString;
+protected
+  Boolean status;
 algorithm
+  // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
+  // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
+  status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpCodeNode, inCode);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end printCodeStr;
 
 protected function printListStr
@@ -3070,8 +3184,15 @@ end indentStr;
 public function unparseTypeSpec
   input Absyn.TypeSpec inTypeSpec;
   output String outString;
+protected
+  Boolean status;
 algorithm
+  // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
+  // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
+  status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpTypeSpec, inTypeSpec);
+  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseTypeSpec;
 
 public function printTypeSpec
