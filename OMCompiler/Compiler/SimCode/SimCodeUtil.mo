@@ -12814,7 +12814,7 @@ protected
    BackendDAE.SparsePatternCrefs spTA, spTB;
    list<tuple<Integer, list<Integer>>> sparseInts;
    list<SimCode.FmiUnknown> allUnknowns, derivatives, outputs, discreteStates;
-   list<SimCodeVar.SimVar> varsA, varsB, clockedStates;
+   list<SimCodeVar.SimVar> varsA, varsB, varsC, varsD, clockedStates;
    list<DAE.ComponentRef> diffCrefsA, diffedCrefsA, derdiffCrefsA;
    list<DAE.ComponentRef> diffCrefsB, diffedCrefsB;
    DoubleEnded.MutableList<SimCodeVar.SimVar> delst;
@@ -12858,7 +12858,10 @@ algorithm
 
     // get output pattern
     varsA := List.filterOnTrue(inModelInfo.vars.algVars, isOutputSimVar);
-    intLst := list(getVariableIndex(v) for v in varsA);
+    varsB := List.filterOnTrue(inModelInfo.vars.intAlgVars, isOutputSimVar); // check for outputs in intAlgVar
+    varsC := List.filterOnTrue(inModelInfo.vars.boolAlgVars, isOutputSimVar); // check for outputs in boolAlgVar
+    varsD := List.filterOnTrue(inModelInfo.vars.stringAlgVars, isOutputSimVar); // check for outputs in stringAlgVars
+    intLst := list(getVariableIndex(v) for v in listAppend(listAppend(varsA,varsB),listAppend(varsC,varsD)));
     outputs := list(fmiUnknown for fmiUnknown guard(Util.boolOrList(list(isFmiUnknown(i, fmiUnknown) for i in intLst))) in allUnknowns);
 
     // get discrete states pattern
