@@ -14,10 +14,12 @@ extern "C"
     /**
     *  \brief Allocates and initializes OpenModelica compiler(omc) instance
     *  \param [in] compiler name of c++ compiler (gcc for mingw compiler, msvc10 for Visual Studio 2010 compiler,msvc12 for Visual Studio 2012 compiler ...)
+    *  \param [in] zeromqOptions configure us of zeromq in simulationruntime with: --useZeroMQInSim [true,false]  --zeroMQSimID=[ID for simulation run] --zeroMQPubPort=[portnumber] --zeroMQSubPort=[portnumber]
+
     *  \param [out] omcPtr  pointer to allocated omc instance
     *  \return returns a status flag
     */
-   int OMC_DLL InitOMC(data** omcDataPtr, const char* compiler, const char* openModelicaHome);
+   int OMC_DLL InitOMC(data** omcDataPtr, const char* compiler, const char* openModelicaHome, const char* zeromqOptions);
    /**
     *  \brief returns the version of the OpenModelica compiler (omc) instance
     *  \param [in] omcPtr Pointer to omc instance

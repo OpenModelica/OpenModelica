@@ -19,8 +19,8 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/program_options.hpp>
 #include "zhelpers.hpp"
-
-
+#include <exception>
+#include "stdlib.h"
 OMCData* omc;
 
 // Short alias for this namespace
@@ -33,22 +33,24 @@ using std::string;
 
 
 
-void initOMC(OMCData** omc, string compiler)
+void initOMC(OMCData** omc, string compiler, string openmodelicaHome , string zeroMQOptions)
 {
+    
+    int status = 0;
+    
+
     //std::cout << "Initialize OMC" << std::endl;
     InitMetaOMC();
 
-    int status = 0;
+    
     char* change_dir_results = 0, *mkDirResults = 0, *version = 0, *errorMsg2 = 0, *simulateResult = 0, *clear = 0;
 
     // if you send in 1 here it will crash on Windows, i need do debug more why this happens
-    status = InitOMC(omc, compiler.c_str(), "");
-    /*
-    if (status > 0)
-        std::cout << "init omc using compiler " << compiler << ": ok" << std::endl;
-    else
-        std::cout << "init omc: failed" << std::endl;
-     */
+    status = InitOMC(omc, compiler.c_str(), openmodelicaHome.c_str(), zeroMQOptions.c_str());
+    
+    if (status < 0)
+        throw std::invalid_argument("Coudl not iniitialize omc");
+    
 }
 
 string getVersion(OMCData* omc)
@@ -125,10 +127,13 @@ int main(int argc, const char* argv[])
     else
         throw std::invalid_argument("Path for OpenModelica home was not passed");
 
-
-    initOMC(&omc, "msvc15");
+    string zeromqOptions = "--useZeroMQInSim=true --zeroMQSimID=" + std::to_string(simulation_id) + " --zeroMQPubPort=" + std::to_string(port_pub) + " --zeroMQSubPort=" + std::to_string(port_sub);
+    initOMC(&omc, "msvc15", openmodelica_home_path,zeromqOptions);
     string version = getVersion(omc);
     std::cout << "used omc version: " << version << std::endl;
+    char* result = 0;
+    int status = SendCommand(omc, "getInstallationDirectoryPath()", &result);
+    std::cout << result << std::endl;
 }
 
 

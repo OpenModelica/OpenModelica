@@ -8,14 +8,14 @@
 // Short alias for this namespace
 namespace pt = boost::property_tree;
 
-ToZeroMQEvent::ToZeroMQEvent()
+ToZeroMQEvent::ToZeroMQEvent(int pubPort, int subPort, int simulationID)
     :ctx_(1),
     publisher_(ctx_, ZMQ_PUB),
     subscriber_(ctx_, ZMQ_SUB),
-    _simulation_id("")
+    _simulation_id(std::to_string(simulationID))
 {
-    publisher_.connect("tcp://127.0.0.1:3203");
-    subscriber_.connect("tcp://127.0.0.1:3204");
+    publisher_.connect("tcp://127.0.0.1:" + to_string(pubPort));
+    subscriber_.connect("tcp://127.0.0.1:" + to_string(subPort));
     subscriber_.setsockopt(ZMQ_SUBSCRIBE, "OMCSimultionThread", 18);
     //Needed to establish connection
     std::this_thread::sleep_for(std::chrono::milliseconds(500));

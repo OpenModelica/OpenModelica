@@ -91,5 +91,11 @@ class FMU2GlobalSettings : public IGlobalSettings
   virtual int getSolverThreads() { return 1; };
   virtual OutputFormat getOutputFormat() {return EMPTY;};
   virtual void setOutputFormat(OutputFormat) {};
+  virtual void setZeroMQPubPort(int) {};
+  virtual int getZeroMQPubPort() { return -1; };
+  virtual void setZeroMQSubPort(int) {};
+  virtual int getZeroMQSubPort() { return -1; };
+  virtual void setSimulationID(int) {};
+  virtual int getSimulationID() { return -1; };
 };
 /** @} */ // end of fmu2

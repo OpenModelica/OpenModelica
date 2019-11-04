@@ -58,7 +58,7 @@ ENDIF(ZeroMQ_FOUND AND cppzmq_FOUND)
 #in Visual Studio command prompt:
 #dumpbin /exports libOMCDLL.dll > libOMCDLL.def
 #remove all symbols except the function names
-#->Exports
+#->EXPORTS
 #->fun1
 #->fun2
 #lib /def:libOMCDLL.def /out:libOMCDLL.lib /machine:[x86,x64]

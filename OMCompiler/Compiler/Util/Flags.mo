@@ -1518,6 +1518,22 @@ constant ConfigFlag FULL_ASSC = CONFIG_FLAG(133, "fullASSC",
   NONE(), EXTERNAL(),  BOOL_FLAG(false), NONE(),
   Util.gettext("Enables full equation replacement for BLT transformation from the ASSC algorithm."));
 
+constant ConfigFlag USE_ZEROMQ_IN_SIM = CONFIG_FLAG(134, "useZeroMQInSim",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Configures to use zeroMQ in simulation runtime to exchange information via ZeroMQ with other applications"));
+
+constant ConfigFlag ZEROMQ_PUB_PORT = CONFIG_FLAG(135, "zeroMQPubPort",
+  NONE(), EXTERNAL(), INT_FLAG(3203), NONE(),
+  Util.gettext("Configures port number for simulation runtime to send information via ZeroMQ"));
+
+constant ConfigFlag ZEROMQ_SUB_PORT = CONFIG_FLAG(136, "zeroMQSubPort",
+  NONE(), EXTERNAL(), INT_FLAG(3204), NONE(),
+  Util.gettext("Configures port number for simulation runtime to receive information via ZeroMQ"));
+
+constant ConfigFlag ZEROMQ_SIM_ID = CONFIG_FLAG(137, "zeroMQSimID",
+  NONE(), EXTERNAL(), INT_FLAG(-1), NONE(),
+  Util.gettext("Configures the ID with which the simulation is labelled for zeroMQ communication."));
+
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -1655,7 +1671,11 @@ constant list<ConfigFlag> allConfigFlags = {
   STRICT,
   LINEARIZATION_DUMP_LANGUAGE,
   NO_ASSC,
-  FULL_ASSC
+  FULL_ASSC,
+  USE_ZEROMQ_IN_SIM,
+  ZEROMQ_PUB_PORT,
+  ZEROMQ_SUB_PORT,
+  ZEROMQ_SIM_ID
 };
 
 public function new

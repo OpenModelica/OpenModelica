@@ -49,7 +49,7 @@ void SimulationThread::Run(shared_ptr<SimManager> simManager, shared_ptr<IGlobal
        if (starting)
        {
            _communicator->setSimStarted();
-           simManager->initialize();
+         
 
 #ifdef RUNTIME_PROFILING
            if (MeasureTime::getInstance() != NULL)

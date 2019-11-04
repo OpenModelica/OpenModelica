@@ -9,7 +9,7 @@
 	class ToZeroMQEvent: public INotify
 	{
 	public:
-		ToZeroMQEvent( );
+		ToZeroMQEvent(int pubPort, int subPort, int simulationID);
 
 		~ToZeroMQEvent();
         virtual void NotifyStarted();
