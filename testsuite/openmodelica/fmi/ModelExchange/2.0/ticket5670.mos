@@ -1,0 +1,110 @@
+// name:  ticket5670
+// keywords: FMI 2.0 export
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml Bug5670.xml
+
+loadString("
+model ticket5670
+  output Real y_float;
+  output Integer y_int;
+  output String y_string;
+  output Boolean y_bool;
+equation
+  y_int = 1;
+  y_float = 2.2;
+  y_string = \"test\";
+  y_bool = true;
+end ticket5670;
+");
+
+translateModel(ticket5670);
+getErrorString();
+
+// read only the modelVariables from xml
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" ticket5670_init.xml >Bug5670.xml"); getErrorString();
+readFile("Bug5670.xml"); getErrorString();
+
+translateModelFMU(ticket5670,version="2.0");
+getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq ticket5670.fmu modelDescription.xml > modelDescription.tmp.xml"); getErrorString();
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" modelDescription.tmp.xml > Bug5670.xml"); getErrorString();
+readFile("Bug5670.xml"); getErrorString();
+
+
+// Result:
+// true
+// true
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//
+//   <ScalarVariable
+//     name = \"y_float\"
+//     valueReference = \"1000\"
+//     variability = \"continuous\" isDiscrete = \"false\"
+//     causality = \"output\" isValueChangeable = \"false\"
+//     alias = \"noAlias\"
+//     classIndex = \"0\" classType = \"rAlg\"
+//     isProtected = \"false\" hideResult = \"false\"
+//     fileName = \"&lt;interactive&gt;\" startLine = \"3\" startColumn = \"3\" endLine = \"3\" endColumn = \"22\" fileWritable = \"true\">
+//     <Real start=\"2.2\" fixed=\"false\" useNominal=\"false\" />
+//   </ScalarVariable>
+//   <ScalarVariable
+//     name = \"y_int\"
+//     valueReference = \"1001\"
+//     variability = \"discrete\" isDiscrete = \"true\"
+//     causality = \"output\" isValueChangeable = \"false\"
+//     alias = \"noAlias\"
+//     classIndex = \"0\" classType = \"iAlg\"
+//     isProtected = \"false\" hideResult = \"false\"
+//     fileName = \"&lt;interactive&gt;\" startLine = \"4\" startColumn = \"3\" endLine = \"4\" endColumn = \"23\" fileWritable = \"true\">
+//     <Integer start=\"1\" fixed=\"false\" />
+//   </ScalarVariable>
+//   <ScalarVariable
+//     name = \"y_bool\"
+//     valueReference = \"1002\"
+//     variability = \"discrete\" isDiscrete = \"true\"
+//     causality = \"output\" isValueChangeable = \"false\"
+//     alias = \"noAlias\"
+//     classIndex = \"0\" classType = \"bAlg\"
+//     isProtected = \"false\" hideResult = \"false\"
+//     fileName = \"&lt;interactive&gt;\" startLine = \"6\" startColumn = \"3\" endLine = \"6\" endColumn = \"24\" fileWritable = \"true\">
+//     <Boolean start=\"true\" fixed=\"false\" />
+//   </ScalarVariable>
+//   <ScalarVariable
+//     name = \"y_string\"
+//     valueReference = \"1003\"
+//     variability = \"continuous\" isDiscrete = \"false\"
+//     causality = \"output\" isValueChangeable = \"false\"
+//     alias = \"noAlias\"
+//     classIndex = \"0\" classType = \"sAlg\"
+//     isProtected = \"false\" hideResult = \"false\"
+//     fileName = \"&lt;interactive&gt;\" startLine = \"5\" startColumn = \"3\" endLine = \"5\" endColumn = \"25\" fileWritable = \"true\">
+//     <String start=\"test\" fixed=\"false\" />
+//   </ScalarVariable>
+//
+//
+//
+//   </ModelVariables>
+// "
+// ""
+// "ticket5670.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <Outputs>
+//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"4\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"6\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"8\" dependencies=\"\" dependenciesKind=\"\" />
+//     </Outputs>
+//   </ModelStructure>
+// "
+// ""
+// endResult
