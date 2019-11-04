@@ -27,7 +27,7 @@ public:
     virtual void startPause();
     virtual void stopPause();
     virtual bool shouldStop();
-
+    virtual void initialize(int pubPort, int subPort, int simulationID);
 
     void notifyResults(double time);
 
@@ -61,7 +61,7 @@ private:
     bool _paused;
     double _end_time;
     shared_ptr<Runnable> _sim_thread;
-
+    bool _isInitialized;
 
 };
 

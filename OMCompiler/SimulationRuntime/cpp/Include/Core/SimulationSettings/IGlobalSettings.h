@@ -103,5 +103,15 @@ public:
 
   virtual void setSolverThreads(int) = 0;
   virtual int getSolverThreads() = 0;
+
+  virtual void setZeroMQPubPort(int) = 0;
+  virtual int getZeroMQPubPort() = 0;
+
+  virtual void setZeroMQSubPort(int) = 0;
+  virtual int getZeroMQSubPort() = 0;
+
+
+  virtual void setSimulationID(int) = 0;
+  virtual int getSimulationID() = 0;
 };
 /** @} */ // end of coreSimulationSettings

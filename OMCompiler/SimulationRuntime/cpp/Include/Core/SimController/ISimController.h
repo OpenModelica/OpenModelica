@@ -25,6 +25,10 @@ struct SimSettings
   EmitResults emitResults;
   string inputPath;
   string outputPath;
+  bool useZeroMQ;
+  int zeroMQPubPort;
+  int zeroMQSubPort;
+  int simulationID;
 };
 
 /**

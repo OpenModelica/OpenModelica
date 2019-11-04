@@ -107,6 +107,7 @@ OMCFactory::OMCFactory(PATH library_path, PATH modelicasystem_path)
 	, _defaultLinSolver("linearSolver")
     #endif
 	, _defaultNonLinSolver("kinsol")
+    , _use_zeroMQ(false)
 {
   fillArgumentsToIgnore();
   fillArgumentsToReplace();
@@ -121,6 +122,7 @@ OMCFactory::OMCFactory()
 	, _defaultLinSolver("linearSolver")
     #endif
     , _defaultNonLinSolver("kinsol")
+    , _use_zeroMQ(false)
 {
   fillArgumentsToIgnore();
   fillArgumentsToReplace();
@@ -332,7 +334,11 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
           ("output-type,O", po::value< string >()->default_value("all"), "the points in time written to result file: all (output steps + events), step (just output points), none")
           ("output-format,P", po::value< string >()->default_value("mat"), "simulation results output format: csv, mat, buffer, empty")
           ("emit-results,U", po::value< string >()->default_value("public"), "emit results: all, public, none")
-          ;
+          ("use-zeromq,u", po::value<bool>()->default_value(false), "use zeromq for communication during simulation with other applications")
+          ("port-publish,p", po::value<int>()->default_value(3203), "zeromq publishing port")
+         ("port-subscribe,s", po::value<int>()->default_value(3204), "zeromq subscribing port")
+          ("simlation-ID,i", po::value<int>()->default_value(-1), "ID that identifies the translation and simulation for one model")
+         ;
 
      // a group for all options that should not be visible if '--help' is set
      po::options_description descHidden("Hidden options");
@@ -471,13 +477,35 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
            "Unknown emit-results " + emitResults_str);
      }
 
+     int port_pub =3203;
+     int port_sub = 3204;
+     int simulation_id = -1;
+     
+     if (vm.count("port-publish"))
+     {
+         port_pub = vm["port-publish"].as<int>();
+     }
+    
+     if (vm.count("port-subscribe"))
+     {
+         port_sub = vm["port-subscribe"].as<int>();
+     }
+     
+    if (vm.count("simlation-ID"))
+     {
+         simulation_id = vm["simlation-ID"].as<int>();
+     }
+     if (vm.count("use-zeromq"))
+     {
+         _use_zeroMQ = vm["use-zeromq"].as<bool>();
+     }
      fs::path libraries_path = fs::path( runtime_lib_path) ;
      fs::path modelica_path = fs::path( modelica_lib_path) ;
 
      libraries_path.make_preferred();
      modelica_path.make_preferred();
 
-     SimSettings settings = {solver, linSolver, nonLinSolver, starttime, stoptime, stepsize, 1e-24, 0.01, tolerance, resultsfilename, timeOut, outputPointType, logSettings, nlsContinueOnError, solverThreads, outputFormat, emitResults, inputPath, outputPath};
+     SimSettings settings = {solver, linSolver, nonLinSolver, starttime, stoptime, stepsize, 1e-24, 0.01, tolerance, resultsfilename, timeOut, outputPointType, logSettings, nlsContinueOnError, solverThreads, outputFormat, emitResults, inputPath, outputPath,_use_zeroMQ ,port_pub ,port_sub,simulation_id };
 
      _library_path = libraries_path.string();
      _modelicasystem_path = modelica_path.string();
@@ -677,13 +705,13 @@ shared_ptr<ISimController> OMCFactory::loadSimControllerLib(PATH simcontroller_p
   if (result != LOADER_SUCCESS)
     throw ModelicaSimulationError(MODEL_FACTORY,string("Failed loading SimConroller library!") + simcontroller_path);
 
-  map<string, factory<ISimController,PATH,PATH> >::iterator iter;
-  map<string, factory<ISimController,PATH,PATH> >& factories(simcontroller_type_map.get());
+  map<string, factory<ISimController,PATH,PATH,bool> >::iterator iter;
+  map<string, factory<ISimController,PATH,PATH,bool> >& factories(simcontroller_type_map.get());
   iter = factories.find("SimController");
 
   if (iter ==factories.end())
     throw ModelicaSimulationError(MODEL_FACTORY,"No such SimController library");
 
-  return shared_ptr<ISimController>(iter->second.create(_library_path, _modelicasystem_path));
+  return shared_ptr<ISimController>(iter->second.create(_library_path, _modelicasystem_path, _use_zeroMQ));
 }
 /** @} */ // end of simcorefactoryOMCFactory

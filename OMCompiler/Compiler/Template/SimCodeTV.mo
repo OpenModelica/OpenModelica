@@ -3758,6 +3758,10 @@ package Flags
   constant ConfigFlag Load_PACKAGE_FILE;
   constant ConfigFlag SINGLE_INSTANCE_AGLSOLVER;
   constant ConfigFlag LINEARIZATION_DUMP_LANGUAGE;
+  constant ConfigFlag USE_ZEROMQ_IN_SIM;
+  constant ConfigFlag ZEROMQ_PUB_PORT;
+  constant ConfigFlag ZEROMQ_SUB_PORT;
+  constant ConfigFlag ZEROMQ_SIM_ID;
   function set
     input DebugFlag inFlag;
     input Boolean inValue;

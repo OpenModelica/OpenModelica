@@ -64,6 +64,14 @@ public:
   virtual void setSolverThreads(int);
   virtual int getSolverThreads();
 
+  virtual void setZeroMQPubPort(int);
+  virtual int getZeroMQPubPort();
+
+  virtual void setZeroMQSubPort(int);
+  virtual int getZeroMQSubPort() ;
+
+  virtual void setSimulationID(int);
+  virtual int getSimulationID();
 private:
   double
       _startTime,   ///< Start time of integration (default: 0.0)
@@ -89,5 +97,8 @@ private:
 
   int _solverThreads;
   OutputFormat _outputFormat;
+  int _zeroMQ_pub_port;
+  int _zeroMQ_sub_port;
+  int _simulation_id;
 };
 /** @} */ // end of coreSimulationSettings

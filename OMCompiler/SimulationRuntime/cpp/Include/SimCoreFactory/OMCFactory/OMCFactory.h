@@ -97,5 +97,6 @@ protected:
   unordered_set<string> _argumentsToIgnore; //a set of arguments that should be ignored
   std::map<string, string> _argumentsToReplace; //a mapping to replace arguments (e.g. -r=... -> -F=...)
   std::string _overrideOMEdit; // unrecognized options if called from OMEdit
+  bool _use_zeroMQ;
 };
 /** @} */ // end of simcorefactoryOMCFactory

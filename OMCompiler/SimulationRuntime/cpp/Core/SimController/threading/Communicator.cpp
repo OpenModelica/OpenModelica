@@ -13,21 +13,9 @@ Communicator::Communicator()
     , _simstopped(true)
    ,_guistopped(true)
     , _stop(false)
+    ,_isInitialized(false)
 {
-    try
-    {
-
-
-        _notify = shared_ptr<INotify>(new ToZeroMQEvent());
-      
-
-    }
-    catch (std::exception& ex)
-    {
-
-        std::string error(ex.what());
-
-    }
+    
 }
 
 
@@ -40,6 +28,25 @@ Communicator::~Communicator()
 
 
 
+}
+
+ void Communicator::initialize(int pubPort, int subPort, int simulationID)
+{
+     try
+     {
+
+
+         _notify = shared_ptr<INotify>(new ToZeroMQEvent( pubPort,  subPort,  simulationID));
+
+
+     }
+     catch (std::exception & ex)
+     {
+
+         std::string error(ex.what());
+
+     }
+     _isInitialized = true;
 }
 /**
 Waits for all threads to end.

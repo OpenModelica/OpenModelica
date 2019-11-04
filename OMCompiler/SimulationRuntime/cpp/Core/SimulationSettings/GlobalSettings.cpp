@@ -23,6 +23,9 @@ GlobalSettings::GlobalSettings()
   , _outputPointType(OPT_ALL)
   , _alarm_time(0)
   , _outputFormat(MAT)
+    ,_zeroMQ_pub_port(3203)
+    ,_zeroMQ_sub_port(3204)
+   ,_simulation_id(-1)
 {
 }
 
@@ -229,4 +232,32 @@ int GlobalSettings::getSolverThreads()
   {
       _outputFormat = outputFormat;
   }
+
+
+  void GlobalSettings::setZeroMQPubPort(int pubPort)
+  {
+      _zeroMQ_pub_port = pubPort;
+   }
+  int GlobalSettings::getZeroMQPubPort()
+  {
+      return _zeroMQ_pub_port;
+   }
+
+   void GlobalSettings::setZeroMQSubPort(int subPort)
+   {
+       _zeroMQ_sub_port = subPort;
+   }
+   int GlobalSettings::getZeroMQSubPort()
+   {
+       return _zeroMQ_sub_port;
+   }
+
+   void GlobalSettings::setSimulationID(int id)
+   {
+       _simulation_id = id;
+   }
+   int GlobalSettings::getSimulationID()
+   {
+       return _simulation_id;
+   }
 /** @} */ // end of coreSimulationSettings

@@ -179,6 +179,9 @@ try
         global_settings->setSolverThreads(simsettings.solverThreads);
         global_settings->setInputPath(simsettings.inputPath);
         global_settings->setOutputPath(simsettings.outputPath);
+        global_settings->setZeroMQPubPort(simsettings.zeroMQPubPort);
+        global_settings->setZeroMQSubPort(simsettings.zeroMQSubPort);
+
 
        _simMgr = shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));
 
@@ -210,6 +213,7 @@ catch (ModelicaSimulationError& ex)
 if(_startZeroMQ)
 {
     #if defined(USE_ZEROMQ)
+    _communicator->initialize(global_settings->getZeroMQPubPort(), global_settings->getZeroMQSubPort(), global_settings->getSimulationID());
    _communicator->startThreads(_simMgr, global_settings, mixedsystem, _sim_objects, modelKey);
   _communicator->waitForAllThreads(120);
    #elif defined(USE_ZEROMQ)
