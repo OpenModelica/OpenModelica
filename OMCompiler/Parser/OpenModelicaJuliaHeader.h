@@ -737,6 +737,7 @@ void OpenModelica_initAbsynReferences()
 {
   /* Note: These values may be garbage collected away? Call this before each file is parsed? */
   jl_module_t* Absyn;
+  jl_eval_string("using Absyn");
   assert((Absyn = (jl_module_t *) jl_eval_string("Absyn")));
   assert((Absyn_ForIterator = jl_get_global(Absyn, jl_symbol("ForIterator"))));
   assert((Absyn_ForIterator_ITERATOR = jl_get_function(Absyn, "ITERATOR")));
