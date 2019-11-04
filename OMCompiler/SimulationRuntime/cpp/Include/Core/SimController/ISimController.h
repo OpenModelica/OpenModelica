@@ -28,7 +28,9 @@ struct SimSettings
   bool useZeroMQ;
   int zeroMQPubPort;
   int zeroMQSubPort;
-  int simulationID;
+  string zeromqJobID;
+  string zeromqServerID;
+  string zeromqClientID;
 };
 
 /**

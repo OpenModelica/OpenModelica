@@ -32,7 +32,15 @@ INCLUDE(../CMake/CheckCXX11.cmake)
 find_package(ZeroMQ )
 find_package(cppzmq )
 
+#find gc library
+#FIND_LIBRARY(OMCGC_LIB "gcmt-lib" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS "D:/temp/gc/Debug")
+#IF(NOT OMCGC_LIB)
+#  MESSAGE(FATAL_ERROR "Could not find omcgc library!")
+#ENDIF(NOT OMCGC_LIB)
+# MESSAGE(STATUS "omcgc library: ${OMCGC_LIB}")
 
+#include gc library header
+#include_directories ("D:\\OpenModelica\\omc\\omc_x64_cloudsim\\build\\include\\omc\\c")
 
 IF(ZeroMQ_FOUND AND cppzmq_FOUND)
   message (STATUS "zeromq type: ${CMAKE_BUILD_TYPE}")
@@ -51,7 +59,10 @@ ELSE(ZeroMQ_FOUND AND cppzmq_FOUND)
     SET(USE_ZEROMQ OFF)
     message (STATUS "zeromq was not found " )
 ENDIF(ZeroMQ_FOUND AND cppzmq_FOUND)
-
+#link pthread
+IF (NOT WIN32)
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread")
+ENDIF(NOT WIN32)
 
 #omc c-api library build is only supported for mingw on Windows.
 #compatible importlibrary library of the mingw dll can build 

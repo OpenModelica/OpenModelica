@@ -70,8 +70,12 @@ public:
   virtual void setZeroMQSubPort(int);
   virtual int getZeroMQSubPort() ;
 
-  virtual void setSimulationID(int);
-  virtual int getSimulationID();
+  virtual void setZeroMQJobiID(string);
+  virtual string getZeroMQJobiID();
+  virtual void setZeroMQServerID(string);
+  virtual string getZeroMQServerID();
+  virtual void setZeroMQClientID(string);
+  virtual string getZeroMQClientID();
 private:
   double
       _startTime,   ///< Start time of integration (default: 0.0)
@@ -99,6 +103,8 @@ private:
   OutputFormat _outputFormat;
   int _zeroMQ_pub_port;
   int _zeroMQ_sub_port;
-  int _simulation_id;
+  string _zeromq_job_id;
+  string _zeromq_server_id;
+  string _zeromq_client_id;
 };
 /** @} */ // end of coreSimulationSettings

@@ -3809,7 +3809,10 @@ package Flags
   constant ConfigFlag USE_ZEROMQ_IN_SIM;
   constant ConfigFlag ZEROMQ_PUB_PORT;
   constant ConfigFlag ZEROMQ_SUB_PORT;
-  constant ConfigFlag ZEROMQ_SIM_ID;
+  constant ConfigFlag ZEROMQ_JOB_ID;
+  constant ConfigFlag ZEROMQ_SERVER_ID;
+  constant ConfigFlag ZEROMQ_CLIENT_ID;
+
   function isSet
     input DebugFlag inFlag;
     output Boolean outValue;

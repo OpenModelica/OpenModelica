@@ -30,13 +30,13 @@ Communicator::~Communicator()
 
 }
 
- void Communicator::initialize(int pubPort, int subPort, int simulationID)
+ void Communicator::initialize(int pubPort, int subPort, string zeroMQJobiID, string zeroMQServerID, string zeroMQClientID)
 {
      try
      {
 
 
-         _notify = shared_ptr<INotify>(new ToZeroMQEvent( pubPort,  subPort,  simulationID));
+         _notify = shared_ptr<INotify>(new ToZeroMQEvent( pubPort,  subPort, zeroMQJobiID, zeroMQServerID, zeroMQClientID));
 
 
      }

@@ -95,7 +95,11 @@ class FMU2GlobalSettings : public IGlobalSettings
   virtual int getZeroMQPubPort() { return -1; };
   virtual void setZeroMQSubPort(int) {};
   virtual int getZeroMQSubPort() { return -1; };
-  virtual void setSimulationID(int) {};
-  virtual int getSimulationID() { return -1; };
+  void setZeroMQJobiID(string) {};
+  string getZeroMQJobiID() { return "empty"; };
+   void setZeroMQServerID(string) {};
+   string getZeroMQServerID() { return "empty"; };
+   void setZeroMQClientID(string) {};
+   string getZeroMQClientID() { return "empty"; };
 };
 /** @} */ // end of fmu2

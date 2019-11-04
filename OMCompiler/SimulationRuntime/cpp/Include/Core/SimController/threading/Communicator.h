@@ -27,7 +27,7 @@ public:
     virtual void startPause();
     virtual void stopPause();
     virtual bool shouldStop();
-    virtual void initialize(int pubPort, int subPort, int simulationID);
+    virtual void initialize(int pubPort, int subPort, string zeroMQJobiID,string zeroMQServerID, string zeroMQClientID);
 
     void notifyResults(double time);
 

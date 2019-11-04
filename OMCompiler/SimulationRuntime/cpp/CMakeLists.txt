@@ -815,6 +815,10 @@ include_directories (${Boost_INCLUDE_DIR} ${cppzmq_INCLUDE_DIR} ${ZeroMQ_INCLUDE
 include_directories ("${PROJECT_SOURCE_DIR}")
 include_directories ("${PROJECT_BINARY_DIR}")
 
+
+
+
+
 message(STATUS "Boost dirs '${Boost_LIBRARY_DIRS}', '${Boost_INCLUDE_DIR}'")
 
 if(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")

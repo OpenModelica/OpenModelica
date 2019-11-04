@@ -59,18 +59,28 @@ extern "C" {
     MMC_CATCH_TOP(return -1)
    
 
-    char* result = 0;
-   /* std::string set_openmodelica_home = std::string("setInstallationDirectoryPath(\"") + openModelicaHome + std::string("\")");
+
+   /* Test Collecting from unknown thread error
+   char* result = 0;
+
+    std::string set_openmodelica_home = std::string("setInstallationDirectoryPath(\"") + openModelicaHome + std::string("\")");
     int status = SendCommand(omcData, set_openmodelica_home.c_str(), &result);
     if (status < 0)
     {
         std::cout << " Could not set OpenModelica home path"<< std::endl;
         return -1;
-    }*/
-    //std::cout << "set OpenModelica home path " << set_openmodelica_home << result << std::endl;
+    }
+   
+  
+    std::cout << "set OpenModelica home path " << set_openmodelica_home << result << std::endl;
+     */
     
     std::string options = "+d=execstat --simCodeTarget=Cpp --target=" + std::string(compiler) + " "+ std::string(zeromqOptions);
-    std::cout << "options " << options << "\n";
+
+
+   
+    
+    
     if (SetCommandLineOptions(omcData, options.c_str()) == -1)
     {
         char* errorMsg = 0;
