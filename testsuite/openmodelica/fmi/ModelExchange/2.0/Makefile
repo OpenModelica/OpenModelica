@@ -23,6 +23,7 @@ testDiscreteStructe.mos \
 testInitialEquationsFMI.mos \
 TestSourceCodeFMU.mos \
 ZeroStates.mos \
+ticket5670.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
