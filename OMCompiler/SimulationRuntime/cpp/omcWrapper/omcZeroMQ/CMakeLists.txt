@@ -60,8 +60,12 @@ project(${OMCZeroMQName} VERSION 0.1)
  
 
 
-    include_directories(${cppzmq_INCLUDE_DIR} ${ZeroMQ_INCLUDE_DIR}  ${OMCCAPI_INCLUDE_DIR} ${Boost_INCLUDE_DIR})
-    ADD_EXECUTABLE(${OMCZeroMQName} src/omc.cpp)
+    include_directories(${cppzmq_INCLUDE_DIR} ${ZeroMQ_INCLUDE_DIR}  ${OMCCAPI_INCLUDE_DIR} ${Boost_INCLUDE_DIR} include/)
+    ADD_EXECUTABLE(${OMCZeroMQName} src/omc.cpp src/omcZeromqTask.cpp)
+   
+   
+    #link with gc lib
+    #target_link_libraries(${OMCZeroMQName}   ${ZeroMQ_LIB} ${OMCCAPIName} ${Boost_LIBRARIES} ${OMCGC_LIB} )
     target_link_libraries(${OMCZeroMQName}   ${ZeroMQ_LIB} ${OMCCAPIName} ${Boost_LIBRARIES}  )
     install(TARGETS ${OMCZeroMQName} DESTINATION bin )
 

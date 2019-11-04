@@ -9,7 +9,7 @@
 	class ToZeroMQEvent: public INotify
 	{
 	public:
-		ToZeroMQEvent(int pubPort, int subPort, int simulationID);
+		ToZeroMQEvent(int pubPort, int subPort, string zeroMQJobiID, string zeroMQServerID, string zeroMQClientID);
 
 		~ToZeroMQEvent();
         virtual void NotifyStarted();
@@ -23,7 +23,9 @@
         zmq::socket_t publisher_;
         zmq::socket_t subscriber_;
 
-        std::string  _simulation_id;
+        string _zeromq_job_id;
+        string _zeromq_server_id;
+        string _zeromq_client_id;
         int _progress;
 
       

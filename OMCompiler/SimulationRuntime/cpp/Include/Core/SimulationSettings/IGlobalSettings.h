@@ -111,7 +111,11 @@ public:
   virtual int getZeroMQSubPort() = 0;
 
 
-  virtual void setSimulationID(int) = 0;
-  virtual int getSimulationID() = 0;
+  virtual void setZeroMQJobiID(string) = 0;
+  virtual string getZeroMQJobiID() = 0;
+  virtual void setZeroMQServerID(string) = 0;
+  virtual string getZeroMQServerID() = 0;
+  virtual void setZeroMQClientID(string) = 0;
+  virtual string getZeroMQClientID() = 0;
 };
 /** @} */ // end of coreSimulationSettings

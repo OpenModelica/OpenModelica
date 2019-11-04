@@ -1529,7 +1529,7 @@ template simulationMainRunScript(SimCode simCode ,Text& extraFuncs,Text& extraFu
 
     let libFolder =simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
     let libPaths = makefileParams.libPaths |> path => path; separator=";"
-    let zermMQParams = if getConfigBool(USE_ZEROMQ_IN_SIM) then '-u true -p <%getConfigInt(ZEROMQ_PUB_PORT)%> -s <%getConfigInt(ZEROMQ_SUB_PORT)%> -i <%getConfigInt(ZEROMQ_SIM_ID)%>' else ''
+    let zermMQParams = if getConfigBool(USE_ZEROMQ_IN_SIM) then '-u true -p <%getConfigInt(ZEROMQ_PUB_PORT)%> -s <%getConfigInt(ZEROMQ_SUB_PORT)%> -v <%getConfigString(ZEROMQ_SERVER_ID)%> -c <%getConfigString(ZEROMQ_CLIENT_ID)%> -i <%getConfigString(ZEROMQ_JOB_ID)%>' else ''
     match makefileParams.platform
       case  "linux32"
       case  "linux64" then
@@ -1545,7 +1545,9 @@ template simulationMainRunScript(SimCode simCode ,Text& extraFuncs,Text& extraFu
         <%preRunCommandWindows%>
         REM ::export PATH=<%libFolder%>:$PATH REPLACE C: with /C/
         SET PATH=<%home%>/bin;<%libFolder%>;<%libPaths%>;%PATH%
+
         "<%moLib%>/<%fileNamePrefixx%>.exe" <%execParameters%> <%zermMQParams%> <%outputParameter%>
+
         >>
     end match
   end match

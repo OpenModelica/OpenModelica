@@ -391,8 +391,11 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.USE_ZEROMQ_IN_SIM,
   Flags.ZEROMQ_PUB_PORT,
   Flags.ZEROMQ_SUB_PORT,
-  Flags.ZEROMQ_SIM_ID,
+  Flags.ZEROMQ_JOB_ID,
+  Flags.ZEROMQ_SERVER_ID,
+  Flags.ZEROMQ_CLIENT_ID,
   Flags.FMI_VERSION
+
 };
 
 public function new

@@ -337,7 +337,9 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
           ("use-zeromq,u", po::value<bool>()->default_value(false), "use zeromq for communication during simulation with other applications")
           ("port-publish,p", po::value<int>()->default_value(3203), "zeromq publishing port")
          ("port-subscribe,s", po::value<int>()->default_value(3204), "zeromq subscribing port")
-          ("simlation-ID,i", po::value<int>()->default_value(-1), "ID that identifies the translation and simulation for one model")
+          ("zeromq-job-id,i", po::value<string>()->default_value("empty"), "ID that identifies the translation and simulation for one model")
+         ("zeromq-server-id,v", po::value<string>()->default_value("empty"), "ID that identifies the omc zeromq application that receives omc api commands via zeromq")
+         ("zeromq-client-id,c", po::value<string>()->default_value("empty"), "ID that identifies the client application that uses the omc zeromq application")
          ;
 
      // a group for all options that should not be visible if '--help' is set
@@ -479,7 +481,9 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
 
      int port_pub =3203;
      int port_sub = 3204;
-     int simulation_id = -1;
+     string zeromq_job_id = "empty";
+     string zeromq_server_id = "empty";
+     string zeromq_client_id = "empty";
      
      if (vm.count("port-publish"))
      {
@@ -491,10 +495,18 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
          port_sub = vm["port-subscribe"].as<int>();
      }
      
-    if (vm.count("simlation-ID"))
+    if (vm.count("zeromq-job-id"))
      {
-         simulation_id = vm["simlation-ID"].as<int>();
+         zeromq_job_id = vm["zeromq-job-id"].as<string>();
      }
+    if (vm.count("zeromq-server-id"))
+    {
+        zeromq_server_id = vm["zeromq-server-id"].as<string>();
+    }
+    if (vm.count("zeromq-client-id"))
+    {
+        zeromq_client_id = vm["zeromq-client-id"].as<string>();
+    }
      if (vm.count("use-zeromq"))
      {
          _use_zeroMQ = vm["use-zeromq"].as<bool>();
@@ -505,7 +517,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      libraries_path.make_preferred();
      modelica_path.make_preferred();
 
-     SimSettings settings = {solver, linSolver, nonLinSolver, starttime, stoptime, stepsize, 1e-24, 0.01, tolerance, resultsfilename, timeOut, outputPointType, logSettings, nlsContinueOnError, solverThreads, outputFormat, emitResults, inputPath, outputPath,_use_zeroMQ ,port_pub ,port_sub,simulation_id };
+     SimSettings settings = {solver, linSolver, nonLinSolver, starttime, stoptime, stepsize, 1e-24, 0.01, tolerance, resultsfilename, timeOut, outputPointType, logSettings, nlsContinueOnError, solverThreads, outputFormat, emitResults, inputPath, outputPath,_use_zeroMQ ,port_pub ,port_sub,zeromq_job_id,zeromq_server_id,zeromq_client_id };
 
      _library_path = libraries_path.string();
      _modelicasystem_path = modelica_path.string();

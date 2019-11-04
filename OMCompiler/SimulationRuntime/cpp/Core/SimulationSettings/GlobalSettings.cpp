@@ -9,23 +9,25 @@
 #include <Core/SimulationSettings/GlobalSettings.h>
 
 GlobalSettings::GlobalSettings()
-  : _startTime(0.0)
-  , _endTime(5.0)
-  , _hOutput(0.001)
-  , _emitResults(EMIT_ALL)
-  , _infoOutput(true)
-  , _selected_solver("Euler")
-  , _selected_lin_solver("linearSolver")
-  , _selected_nonlin_solver("Newton")
-  , _resultsfile_name("results.csv")
-  , _endless_sim(false)
-  , _nonLinSolverContinueOnError(false)
-  , _outputPointType(OPT_ALL)
-  , _alarm_time(0)
-  , _outputFormat(MAT)
-    ,_zeroMQ_pub_port(3203)
-    ,_zeroMQ_sub_port(3204)
-   ,_simulation_id(-1)
+   : _startTime(0.0)
+   , _endTime(5.0)
+   , _hOutput(0.001)
+   , _emitResults(EMIT_ALL)
+   , _infoOutput(true)
+   , _selected_solver("Euler")
+   , _selected_lin_solver("linearSolver")
+   , _selected_nonlin_solver("Newton")
+   , _resultsfile_name("results.csv")
+   , _endless_sim(false)
+   , _nonLinSolverContinueOnError(false)
+   , _outputPointType(OPT_ALL)
+   , _alarm_time(0)
+   , _outputFormat(MAT)
+   ,_zeroMQ_pub_port(3203)
+   ,_zeroMQ_sub_port(3204)
+   ,_zeromq_job_id("empty")
+   ,_zeromq_server_id("empty")
+   ,_zeromq_client_id("empty")
 {
 }
 
@@ -252,12 +254,35 @@ int GlobalSettings::getSolverThreads()
        return _zeroMQ_sub_port;
    }
 
-   void GlobalSettings::setSimulationID(int id)
+
+
+
+
+   void GlobalSettings::setZeroMQServerID(string id)
    {
-       _simulation_id = id;
+       _zeromq_server_id = id;
    }
-   int GlobalSettings::getSimulationID()
+   string GlobalSettings::getZeroMQServerID()
    {
-       return _simulation_id;
+       return _zeromq_server_id;
    }
+
+   void GlobalSettings::setZeroMQClientID(string id)
+   {
+       _zeromq_client_id = id;
+   }
+   string GlobalSettings::getZeroMQClientID()
+   {
+       return _zeromq_client_id;
+   }
+   void GlobalSettings::setZeroMQJobiID(string id)
+   {
+       _zeromq_job_id = id;
+   }
+   string GlobalSettings::getZeroMQJobiID()
+   {
+       return _zeromq_job_id;
+   }
+
+
 /** @} */ // end of coreSimulationSettings
