@@ -120,13 +120,13 @@ template dumpEqs(list<SimEqSystem> eqs)
       <<
       equation index: <%equationIndex(eq)%>
       type: SIMPLE_ASSIGN
-      <%crefStr(e.cref)%> = <%escapeCComments(dumpExp(e.exp,"\""))%>
+      <%dumpCref(e.cref)%> = <%escapeCComments(dumpExp(e.exp,"\""))%>
       >>
     case e as SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
       <<
       equation index: <%equationIndex(eq)%>
       type: SIMPLE_ASSIGN_CONSTRAINTS
-      <%crefStr(e.cref)%> = <%escapeCComments(dumpExp(e.exp,"\""))%>
+      <%dumpCref(e.cref)%> = <%escapeCComments(dumpExp(e.exp,"\""))%>
       constraints: <%escapeCComments(dumpConstraints(e.cons))%>
       >>
     case e as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
@@ -134,7 +134,7 @@ template dumpEqs(list<SimEqSystem> eqs)
       equation index: <%equationIndex(eq)%>
       type: ARRAY_CALL_ASSIGN
 
-      <%crefStr(lhs.componentRef)%> = <%escapeCComments(dumpExp(e.exp,"\""))%>
+      <%dumpCref(lhs.componentRef)%> = <%escapeCComments(dumpExp(e.exp,"\""))%>
       >>
     case e as SES_ALGORITHM(statements={}) then
       <<
@@ -159,7 +159,7 @@ template dumpEqs(list<SimEqSystem> eqs)
       equation index: <%equationIndex(eq)%>
       type: LINEAR
 
-      <%ls.vars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = "\n" %>
+      <%ls.vars |> SIMVAR(name=cr) => '<var><%dumpCref(cr)%></var>' ; separator = "\n" %>
       <row>
         <%ls.beqs |> exp => '<cell><%escapeCComments(dumpExp(exp,"\""))%></cell>' ; separator = "\n" %><%\n%>
       </row>
@@ -183,7 +183,7 @@ template dumpEqs(list<SimEqSystem> eqs)
       indexNonlinear: <%nls.indexNonLinearSystem%>
       type: NONLINEAR
 
-      vars: {<%nls.crefs |> cr => '<%crefStr(cr)%>' ; separator = ", "%>}
+      vars: {<%nls.crefs |> cr => '<%dumpCref(cr)%>' ; separator = ", "%>}
       eqns: {<%nls.eqs |> eq => '<%equationIndex(eq)%>' ; separator = ", "%>}
       >>
     case e as SES_MIXED(__) then
@@ -196,7 +196,7 @@ template dumpEqs(list<SimEqSystem> eqs)
 
       <mixed>
         <continuous index="<%equationIndex(e.cont)%>" />
-        <%e.discVars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = ","%>
+        <%e.discVars |> SIMVAR(name=cr) => '<var><%dumpCref(cr)%></var>' ; separator = ","%>
         <%e.discEqs |> eq => '<discrete index="<%equationIndex(eq)%>" />'%>
       </mixed>
       >>
@@ -216,7 +216,7 @@ template dumpEqs(list<SimEqSystem> eqs)
       equation index: <%equationIndex(eq)%>
       type: WHEN
 
-      when {<%conditions |> cond => '<%crefStr(cond)%>' ; separator=", " %>} then
+      when {<%conditions |> cond => '<%dumpCref(cond)%>' ; separator=", " %>} then
         <%body%>
       end when;
       >>
@@ -234,7 +234,7 @@ template dumpEqs(list<SimEqSystem> eqs)
       let &forstatement = buffer ""
       let &forstatement += 'for ' + escapeCComments(dumpExp(e.iter,"\"")) + ' in ' + escapeCComments(dumpExp(e.startIt,"\""))
       let &forstatement += ' : ' + escapeCComments(dumpExp(e.endIt,"\"")) + ' loop<%\n%>'
-      let &forstatement += '  <%crefStr(e.cref)%> = <%escapeCComments(dumpExp(e.exp,"\""))%>; '
+      let &forstatement += '  <%dumpCref(e.cref)%> = <%escapeCComments(dumpExp(e.exp,"\""))%>; '
       let &forstatement += 'end for'
       <<
       equation index: <%equationIndex(e)%>
@@ -276,13 +276,13 @@ template dumpAlgSystemColumn (OMSIFunction column ,Text &columnBuffer, Text &var
   case OMSI_FUNCTION(__) then
     let &varsBuffer += (inputVars |> var as SIMVAR(__) =>
         <<
-        <%crefStr(name)%>
+        <%dumpCref(name)%>
         >>
         ; separator=", "
     )
 
     let _ = (equations |> equation as SES_SIMPLE_ASSIGN(__) =>
-        let &columnBuffer += crefStr(equation.cref) + " = " + escapeCComments(dumpExp(equation.exp,"\"")) + "\n"        // "
+        let &columnBuffer += dumpCref(equation.cref) + " = " + escapeCComments(dumpExp(equation.exp,"\"")) + "\n"        // "
         <<>>
     )
     <<>>
@@ -296,7 +296,7 @@ template dumpWhenOps(list<BackendDAE.WhenOperator> whenOps)
   case ((e as BackendDAE.ASSIGN(left=left as CREF(__)))::rest) then
     let restbody = dumpWhenOps(rest)
     <<
-    <%crefStr(left.componentRef)%> = <%escapeCComments(dumpExp(e.right,"\""))%>;
+    <%dumpCref(left.componentRef)%> = <%escapeCComments(dumpExp(e.right,"\""))%>;
     <%restbody%>
     >>
   case ((e as BackendDAE.ASSIGN(left=left))::rest) then
@@ -308,7 +308,7 @@ template dumpWhenOps(list<BackendDAE.WhenOperator> whenOps)
   case ((e as BackendDAE.REINIT(__))::rest) then
     let restbody = dumpWhenOps(rest)
     <<
-    reinit(<%crefStr(e.stateVar)%>,  <%escapeCComments(dumpExp(e.value,"\""))%>);
+    reinit(<%dumpCref(e.stateVar)%>,  <%escapeCComments(dumpExp(e.value,"\""))%>);
     <%restbody%>
     >>
   case ((e as BackendDAE.ASSERT(__))::rest) then
@@ -340,7 +340,7 @@ template dumpEqsAlternativeTearing(list<SimEqSystem> eqs)
       equation index: <%equationIndexAlternativeTearing(eq)%>
       type: LINEAR
 
-      <%at.vars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = "\n" %>
+      <%at.vars |> SIMVAR(name=cr) => '<var><%dumpCref(cr)%></var>' ; separator = "\n" %>
       <row>
         <%at.beqs |> exp => '<cell><%escapeCComments(dumpExp(exp,"\""))%></cell>' ; separator = "\n" %><%\n%>
       </row>
@@ -367,7 +367,7 @@ template dumpEqsAlternativeTearing(list<SimEqSystem> eqs)
       indexNonlinear: <%at.indexNonLinearSystem%>
       type: NONLINEAR
 
-      vars: {<%at.crefs |> cr => '<%crefStr(cr)%>' ; separator = ", "%>}
+      vars: {<%at.crefs |> cr => '<%dumpCref(cr)%>' ; separator = ", "%>}
       eqns: {<%at.eqs |> eq => '<%equationIndex(eq)%>' ; separator = ", "%>}
 
       This is the alternative tearing set with casual solvability rules.

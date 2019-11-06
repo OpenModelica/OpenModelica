@@ -695,9 +695,7 @@ extern char* System_unescapedString(char* str)
 
 extern char* System_unquoteIdentifier(char *str)
 {
-  char *res = SystemImpl__unquoteIdentifier(str);
-  if (res == NULL) return str;
-  return res;
+  return SystemImpl__unquoteIdentifier(str);
 }
 
 extern char* System_getCurrentTimeStr()
