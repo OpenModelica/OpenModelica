@@ -61,6 +61,8 @@ parsergen:
 
 Makefile: parsergen qjson-build OMEdit.pro
 	$(QMAKE) -r "CONFIG+=release"
+MakefileClean: OMEdit.pro
+	$(QMAKE) -r "CONFIG+=release"
 
 omc_config.h:
 	@echo Current omhome: "$(CONFIG_DEFAULT_OPENMODELICAHOME)"
@@ -78,7 +80,7 @@ omc_config.h:
 		echo "#define LSB_RELEASE \"$(LSB_RELEASE)\"" >> omc_config.h; \
 	fi;
 
-clean:
+clean: MakefileClean
 	cd qjson && rm -rf build
 	$(MAKE) -C OMEditLIB/Debugger/Parser -f Makefile.lib.omdev.mingw clean
 	test ! -f Makefile || $(MAKE) -f Makefile clean

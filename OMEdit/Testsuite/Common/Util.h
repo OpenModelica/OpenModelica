@@ -35,6 +35,10 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <QtGlobal>
+#include <QtTest/QtTest>
+
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 #define OMEDITTEST_MAIN(TestObject) \
 static int execution_failed() \
 { \
@@ -60,6 +64,35 @@ int main(int argc, char *argv[]) \
   return QTest::qExec(&tc,argc, argv); \
   MMC_CATCH_TOP(execution_failed()); \
 }
+
+#define OMEDITTEST_SKIP(description) \
+QSKIP(description)
+
+#else
+#define OMEDITTEST_MAIN(TestObject) \
+static int execution_failed() \
+{ \
+  fflush(NULL); \
+  fprintf(stderr, "Execution failed!\n"); \
+  fflush(NULL); \
+  exit(1); \
+} \
+int main(int argc, char *argv[]) \
+{ \
+  MMC_INIT(); \
+  MMC_TRY_TOP() \
+  Q_INIT_RESOURCE(resource_omedit); \
+  OMEditApplication app(argc, argv, threadData, true); \
+  QTEST_DISABLE_KEYPAD_NAVIGATION \
+  TestObject tc; \
+  return QTest::qExec(&tc,argc, argv); \
+  MMC_CATCH_TOP(execution_failed()); \
+}
+
+#define OMEDITTEST_SKIP(description) \
+QSKIP(description, SkipAll)
+
+#endif // QT_VERSION
 
 class LibraryTreeItem;
 namespace Util {

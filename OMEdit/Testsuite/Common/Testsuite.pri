@@ -28,9 +28,11 @@
  #
  #/
 
-QT += network core gui webkit xml xmlpatterns svg opengl testlib
+QT += network core gui webkit xml xmlpatterns svg opengl
 greaterThan(QT_MAJOR_VERSION, 4) {
-  QT += printsupport widgets webkitwidgets concurrent
+  QT += printsupport widgets webkitwidgets concurrent testlib
+} else {
+  CONFIG += qtestlib
 }
 
 LIBS += -L../../bin -lOMEdit
@@ -52,7 +54,8 @@ INCLUDEPATH += ../../ \
   $$OPENMODELICAHOME/include/omc/scripting-API
 
 # Don't show the warnings from included headers.
-for (path, INCLUDEPATH) {
+# Don't add a space between for and open parenthesis below. Qt4 complains about it.
+for(path, INCLUDEPATH) {
   QMAKE_CXXFLAGS += -isystem $${path}
 }
 
