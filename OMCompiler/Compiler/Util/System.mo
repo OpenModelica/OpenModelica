@@ -864,18 +864,14 @@ literal in C. For example unescapedStringLength('\"')=1, unescapedStringLength('
 end unescapedStringLength;
 
 public function unquoteIdentifier
-  "Quoted identifiers, for example 'xyz' need to be translated into canonical form; for example _omcQuot_0x2778797A27"
+  "Quoted identifiers which can use Modelica's allowed Q-CHARs need to be translated into canonical (valid c89 identifier) form
+   using ascii representations; for example,
+    '+' ->  QQ_2B_QQ
+    'xyz@d!' -> QQ_xyz40d21_QQ "
   input String str;
   output String outStr;
   external "C" outStr=System_unquoteIdentifier(str) annotation(Library = "omcruntime");
 end unquoteIdentifier;
-
-public function forceQuotedIdentifier
-  "Forced quoted identifiers, for example xyz is translated into canonical form; for example _omcQuot_0x78797A"
-  input String str;
-  output String outStr;
-  external "C" outStr=System_forceQuotedIdentifier(str) annotation(Library = "omcruntime");
-end forceQuotedIdentifier;
 
 public function intMaxLit "Returns the maximum integer that can be represent using this version of the compiler"
   output Integer outInt;
