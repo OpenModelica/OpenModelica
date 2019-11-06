@@ -2,7 +2,6 @@ ModelicaCompliance.Algorithms.For.RealRange
 ModelicaCompliance.Algorithms.For.ShadowedIterator
 ModelicaCompliance.Algorithms.For.StringRange
 ModelicaCompliance.Algorithms.For.VarArrayRange
-ModelicaCompliance.Arrays.Declarations.BoolArray
 ModelicaCompliance.Arrays.Functions.Size.ArrayDimSize4
 ModelicaCompliance.Arrays.Indexing.EnumArrayInvalidIndexing
 ModelicaCompliance.Classes.Balancing.CorrectBalance3
@@ -87,10 +86,6 @@ ModelicaCompliance.Connections.Restrictions.SizeScalarInvalid
 ModelicaCompliance.Connections.Stream.StreamOutsideConnector
 ModelicaCompliance.Equations.Equality.MultiOutputEqualityLess
 ModelicaCompliance.Equations.For.ArrayRange
-ModelicaCompliance.Equations.For.BoolRange
-ModelicaCompliance.Equations.For.BoolTypeRange
-ModelicaCompliance.Equations.For.ImplicitBoolIterator
-ModelicaCompliance.Equations.For.ImplicitMultiMixedIterator
 ModelicaCompliance.Functions.Derivative.PartialDerivative
 ModelicaCompliance.Functions.Restrictions.FunctionInnerOuter
 ModelicaCompliance.Functions.Restrictions.FunctionMultipleAlgorithm

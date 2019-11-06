@@ -1610,11 +1610,6 @@ package System
     output String outStr;
   end unquoteIdentifier;
 
-  function forceQuotedIdentifier
-    input String str;
-    output String outStr;
-  end forceQuotedIdentifier;
-
   function dirname
     input String str;
     output String outStr;

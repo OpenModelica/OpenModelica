@@ -4532,7 +4532,7 @@ template contextIteratorName(Ident name, Context context)
 ::=
   match context
   case FUNCTION_CONTEXT(__) then "_" + System.unquoteIdentifier(name)
-  else System.forceQuotedIdentifier(name)
+  else System.unquoteIdentifier(name)
 end contextIteratorName;
 
 /* public */ template cref(ComponentRef cr)
@@ -4578,7 +4578,7 @@ end crefPre;
   case CREF_IDENT(ident = "xloc") then crefStr(cr)
   case CREF_IDENT(ident = "time") then "data->localData[0]->timeValue"
   case WILD(__) then ''
-  else System.forceQuotedIdentifier(crefStrNoUnderscore(cr))
+  else System.unquoteIdentifier(crefStrNoUnderscore(cr))
 end crefDefine;
 
 template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart)
@@ -5973,7 +5973,7 @@ end daeExpIteratedCref;
 
 template iteratedCrefStr(ComponentRef cref)
 ::=
-  System.forceQuotedIdentifier(crefStrNoUnderscore(cref))
+  System.unquoteIdentifier(crefStrNoUnderscore(cref))
 end iteratedCrefStr;
 
 template resultVarAssignment(DAE.Type ty, Text lhs, Text rhs) "Tuple need to be considered"
