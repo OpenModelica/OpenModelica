@@ -16,12 +16,12 @@ omlibrary-all:
 	$(MAKE) -C libraries BUILD_DIR=@OMBUILDDIR@/lib/omlibrary "host_short=@host_short@" "RPATH_QMAKE=@RPATH_QMAKE@ @CMAKE_LDFLAGS@" "SHREXT=@SHREXT@" all
 omplot: omplot.skip
 omplot.skip: omc
-	$(MAKE) -C OMPlot
+	test -f $@ || $(MAKE) -C OMPlot
 omedit: omedit.skip
 omedit.skip: omc omplot omsimulator
-	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit
+	test -f $@ || $(MAKE) -f $(defaultMakefileTarget) -C OMEdit
 omedit-testsuite: omedit-testsuite.skip
-omedit-testsuite.skip: omedit
+omedit-testsuite.skip: omedit.skip
 	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit/Testsuite
 omsimulator: omsimulator.skip
 omsimulator.skip:

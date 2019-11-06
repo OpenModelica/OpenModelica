@@ -243,6 +243,49 @@ void buildGUI(stash) {
   }
 }
 
+void buildAndRunOMEditTestsuite(stash) {
+  if (isWindows()) {
+  bat ("""
+     set OMDEV=C:\\OMDev
+     echo on
+     (
+     echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
+     echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
+     echo cd \${MSYS_WORKSPACE}
+     echo export MAKETHREADS=-j16
+     echo set -e
+     echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
+     echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/build/lib/omlibrary"
+     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omedit-testsuite
+     echo cd build/bin
+     echo ./RunOMEditTestsuite
+     ) > buildOMEditTestsuiteWindows.sh
+
+     set MSYSTEM=MINGW64
+     set MSYS2_PATH_TYPE=inherit
+     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMEditTestsuiteWindows.sh && ./buildOMEditTestsuiteWindows.sh && rm -f ./buildOMEditTestsuiteWindows.sh"
+  """)
+  } else {
+
+  if (stash) {
+    standardSetup()
+    unstash stash
+  }
+  sh 'autoconf'
+  if (stash) {
+    patchConfigStatus()
+  }
+  sh 'CONFIG=`./config.status --config` && ./configure `eval $CONFIG`'
+  sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip && ${makeCommand()} -q omc omc-diff ReferenceFiles omsimulator omedit omplot" // Pretend we already built omc since we already did so
+  sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync omedit-testsuite" // Builds the OMEdit testsuite
+  sh label: 'RunOMEditTestsuite', script: '''
+  cd build/bin
+  xvfb-run ./RunOMEditTestsuite
+  '''
+
+  }
+}
+
 void generateTemplates() {
   if (isWindows()) {
   // do nothing

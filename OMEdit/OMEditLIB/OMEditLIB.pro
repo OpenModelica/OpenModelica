@@ -74,7 +74,8 @@ INCLUDEPATH += ../ \
   ../qjson/build/include
 
 # Don't show the warnings from included headers.
-for (path, INCLUDEPATH) {
+# Don't add a space between for and open parenthesis below. Qt4 complains about it.
+for(path, INCLUDEPATH) {
   QMAKE_CXXFLAGS += -isystem $${path}
 }
 

@@ -43,8 +43,6 @@ extern "C" {
 #include "meta/meta_modelica.h"
 }
 
-#include <QtTest/QtTest>
-
 OMEDITTEST_MAIN(Test)
 
 void Test::testcase()

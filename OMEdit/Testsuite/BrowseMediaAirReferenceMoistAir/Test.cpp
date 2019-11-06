@@ -43,14 +43,12 @@ extern "C" {
 #include "meta/meta_modelica.h"
 }
 
-#include <QtTest/QtTest>
-
 OMEDITTEST_MAIN(Test)
 
 void Test::testcase()
 {
-  QSKIP("Enable this testcase by removing this line once the ticket#5669 (https://trac.openmodelica.org/OpenModelica/ticket/5669) is fixed.");
-  if (!Util::expandLibraryTreeItemParentHierarchy(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem("Modelica.Electrical.Analog.Examples"))) {
+  OMEDITTEST_SKIP("Enable this testcase by removing this line once the ticket#5669 (https://trac.openmodelica.org/OpenModelica/ticket/5669) is fixed.");
+  if (!Util::expandLibraryTreeItemParentHierarchy(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem("Modelica.Media.Air"))) {
     QFAIL("");
   }
   MainWindow::instance()->close();
