@@ -1,6 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+ASSC.mos \
 SingularPlanarLoop.mos \
 PantelidesSingular.mos \
 MoveWithInputs.mos

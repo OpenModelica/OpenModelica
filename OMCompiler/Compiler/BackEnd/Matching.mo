@@ -5606,6 +5606,7 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> ass1_1,ass1_2,ass1_3,ass2_1,ass2_2,ass2_3;
       array<list<Integer>> eqnIndexArray;
+      Boolean changed = false;
     case ({},true,_,_)
       then
         (ass1,ass2,isyst,ishared,inArg);
@@ -5622,20 +5623,35 @@ algorithm
           -----------------------------------------
         */
 
-        // Copy everything
+        // flat-copy everything
         (ass1_1, ass2_1) := (ass1, ass2);
-        eqs := isyst.orderedEqs;
         syst := isyst;
 
-        /* check if index type is solvable and is unprocessed, for now also hide behind flag */
-        if Flags.getConfigBool(Flags.CONVERT_ANALYTICAL_SINGULARITIES) and BackendDAEUtil.hasIndexTypeSolvableAndUnprocessed(syst) then
+        /* check if index type is solvable and is unprocessed and if index reduction is activated */
+        if not Flags.getConfigBool(Flags.NO_ASSC) and BackendDAEUtil.hasIndexTypeSolvableAndUnprocessedScalar(syst) and BackendDAEUtil.doIndexReduction(inMatchingOptions) then
+          /* set the system to processed so that it gets analyzed only once */
+          syst := BackendDAEUtil.setAnalyticalToStructuralProcessed(syst, true);
+
           /* create NORMAL() adjacency matrix for sorting first */
           (_, m1, _, _, _) := BackendDAEUtil.getIncidenceMatrixScalar(isyst, BackendDAE.NORMAL(), NONE());
           comps := Sorting.Tarjan(m1, ass2_1);
+
           for comp in comps loop
-            (ass1_1, ass2_1, syst) := BackendDAEUtil.analyticalToStructuralSingularity(comp, ass1_1, ass2_1, syst);
+            (ass1_1, ass2_1, syst, changed) := BackendDAEUtil.analyticalToStructuralSingularity(comp, ass1_1, ass2_1, syst, changed);
           end for;
+
+          /* only do matching again if anything has changed */
+          if changed then
+            BackendDAEEXT.setAssignment(nv,ne,ass1_1,ass2_1);
+            BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)) := syst;
+            matchingExternalsetIncidenceMatrix(nv,ne,m);
+            /* Call with clearMatching = 0 to reuse old information */
+            BackendDAEEXT.matching(nv,ne,algIndx,cheapMatching,1.0,0);
+            BackendDAEEXT.getAssignment(ass1_1,ass2_1);
+          end if;
+
         end if;
+
 
         /* get unmatched equations for index reduction */
         unmatched_eqs := getUnassigned(ne, ass1_1, {});
@@ -5724,6 +5740,7 @@ protected function sanityCheckArtificialStates
 protected
   list<list<Integer>> eqns_1, unassignedStates;
   list<Integer> flat_unassignedStates, flat_eqns, unmatched1;
+  array<Integer> scalarToArrayMap;
   list<BackendDAE.Var> artificialStates = {}, undiffable_artificial = {};
   list<BackendDAE.Equation> residuals, equations = {};
   BackendDAE.Var var;
@@ -5751,11 +5768,12 @@ algorithm
     end if;
   end for;
   flat_eqns := List.flatten(eqns_1); // use eqns_1 (without discrete)
+  SOME((_, scalarToArrayMap, _, _, _)) := syst.mapping;
   for eqn in flat_eqns loop
     try
-      equations := BackendEquation.get(syst.orderedEqs, eqn) :: equations;
+      equations := BackendEquation.get(syst.orderedEqs, scalarToArrayMap[eqn]) :: equations;
     else
-      // equation can't be found -- array index to normal index?
+      // equation can't be found -- scalar index to array index failed?
     end try;
   end for;
   for var in artificialStates loop

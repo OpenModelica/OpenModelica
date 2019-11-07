@@ -2443,26 +2443,29 @@ protected
   array<BackendDAE.LinearIntegerJacobianRow> rowArr;
   BackendDAE.LinearIntegerJacobianRhs rhsArr;
   BackendDAE.LinearIntegerJacobianIndices idxArr;
+  array<Boolean> boolArr, matchedVarsArr;
 algorithm
-  (rowArr, rhsArr, idxArr) := linIntJac;
+  (rowArr, rhsArr, idxArr, boolArr, matchedVarsArr) := linIntJac;
   print("######################################################\n" +
         " LinearIntegerJacobian sparsity pattern: " + heading + "\n" +
-        "######################################################\n\n" +
-        "(scalar_index|array_index) [var_index, value] || RHS_EXPRESSION\n");
+        "######################################################\n" +
+        "(scal_idx|arr_idx|changed) [var_index, value] || RHS_EXPRESSION\n");
   for idx in 1:arrayLength(rowArr) loop
-    dumpLinearIntegerJacobianSparseRow(rowArr[idx], rhsArr[idx], idxArr[idx]);
+    dumpLinearIntegerJacobianSparseRow(rowArr[idx], rhsArr[idx], idxArr[idx], boolArr[idx]);
   end for;
+  print("\n");
 end dumpLinearIntegerJacobianSparse;
 
 protected function dumpLinearIntegerJacobianSparseRow
   input BackendDAE.LinearIntegerJacobianRow linIntJacRow;
   input DAE.Exp rhs;
   input tuple<Integer, Integer> indices;
+  input Boolean changed;
 protected
   Integer i_arr, i_scal, index, value;
 algorithm
   (i_arr, i_scal) := indices;
-  print("(" + intString(i_arr) + "|" + intString(i_scal) + "):\t");
+  print("(" + intString(i_arr) + "|" + intString(i_scal) + "|" + boolString(changed) +"):\t");
   if listLength(linIntJacRow) < 1 then
     print("EMPTY ROW \t");
   else

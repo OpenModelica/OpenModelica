@@ -2387,7 +2387,7 @@ algorithm
   SOME((_, _, indexType, scalar, processed)) := syst.mapping;
 end getIndexType;
 
-public function hasIndexTypeSolvableAndUnprocessed
+public function hasIndexTypeSolvableAndUnprocessedScalar
 "author kabdelhak FHB 10-2019
  Returns true if the equation system has an adjacency matrix that got
  computed by strict solvability rules and wasn't already analyzed
@@ -2396,18 +2396,18 @@ public function hasIndexTypeSolvableAndUnprocessed
   output Boolean b = false;
 protected
   BackendDAE.IndexType indexType;
-  Boolean processed;
+  Boolean scalar, processed;
 algorithm
   try
-    (indexType, _, processed) := getIndexType(syst);
-    b := match (indexType, processed)
-      case (BackendDAE.SOLVABLE(), false) then true;
+    (indexType, scalar, processed) := getIndexType(syst);
+    b := match (indexType, scalar, processed)
+      case (BackendDAE.SOLVABLE(), true, false) then true;
       else false;
     end match;
   else
     /* no mapping available, return false */
   end try;
-end hasIndexTypeSolvableAndUnprocessed;
+end hasIndexTypeSolvableAndUnprocessedScalar;
 
 public function hasScalarAdjacencyMatrix
 "author kabdelhak FHB 10-2019
@@ -3601,7 +3601,7 @@ algorithm
         eqns = List.removeOnTrue(oldsize, intLt, inIntegerLst);
         (m,mt,mapEqnIncRow,mapIncRowEqn) =
             updateIncidenceMatrixScalar1( vars, daeeqns, m, mt, eqns, mapEqnIncRow,
-                                          mapIncRowEqn, indexType, functionTree );
+                                          mapIncRowEqn, inIndxType, functionTree );
       then
         (BackendDAEUtil.setEqSystMatrices(syst, SOME(m), SOME(mt), SOME((mapEqnIncRow, mapIncRowEqn, indexType, scalar, processed))), mapEqnIncRow, mapIncRowEqn);
 
@@ -8007,19 +8007,16 @@ public function analyticalToStructuralSingularity
   input output array<Integer> ass1;
   input output array<Integer> ass2;
   input output BackendDAE.EqSystem syst;
+  input output Boolean changed;
 protected
   array<list<Integer>> mapArrayToScalar;
   array<Integer> mapScalarToArray;
   list<Integer> eqnIndex_lst;
-  list<tuple<BackendDAE.Equation, tuple<Integer, Integer>>> tmp_tpl, loopEqs = {}; /* scalar index needs to be list -- replace lookup with eqnIndexArray*/
+  list<tuple<BackendDAE.Equation, tuple<Integer, Integer>>> loopEqs = {}; /* scalar index needs to be list -- replace lookup with eqnIndexArray*/
   list<tuple<BackendDAE.Var, Integer>> loopVars = {};
-  list<BackendDAE.Equation> tmp_eqs;
   BackendDAE.Equation tmp_eq;
   BackendDAE.LinearIntegerJacobian linIntJac;
-  BackendDAE.EquationArray eqs;
 algorithm
-  /* set the system to processed so that it gets analyzed only once */
-  syst := setAnalyticalToStructuralProcessed(syst, true);
   if listLength(comp) > 1 then
     /* collect eqs and vars from strong component */
     SOME((mapArrayToScalar, mapScalarToArray, _, _, _)) := syst.mapping;
@@ -8027,7 +8024,7 @@ algorithm
       /* ignore multidimensional equations for now */
       if listLength(mapArrayToScalar[mapScalarToArray[eqnIndex]]) == 1 then
         tmp_eq := BackendEquation.get(syst.orderedEqs, mapScalarToArray[eqnIndex]);
-        loopEqs := (tmp_eq, (eqnIndex, mapScalarToArray[eqnIndex])) :: loopEqs;
+        loopEqs := (tmp_eq, (mapScalarToArray[eqnIndex], eqnIndex)) :: loopEqs;
       else
         /*
         tmp_eq := BackendEquation.get(syst.orderedEqs, mapScalarToArray[eqnIndex]);
@@ -8039,18 +8036,21 @@ algorithm
 
     try
       /* generate linear integer sub jacobian from system */
-      linIntJac := SymbolicJacobian.generateLinearIntegerJacobian(loopEqs, loopVars);
+      linIntJac := SymbolicJacobian.generateLinearIntegerJacobian(loopEqs, loopVars, ass1);
 
       if not SymbolicJacobian.emptyOrSingleLinearIntegerJacobian(linIntJac) then
-        if Flags.isSet(Flags.CONVERT_ANALYTICAL_DUMP) then
+        if Flags.isSet(Flags.DUMP_ASSC) then
           BackendDump.dumpLinearIntegerJacobianSparse(linIntJac, "Original");
         end if;
 
         /* solve jacobian with gaussian elimination */
         linIntJac := SymbolicJacobian.solveLinearIntegerJacobian(linIntJac);
-        if Flags.isSet(Flags.CONVERT_ANALYTICAL_DUMP) then
+        if Flags.isSet(Flags.DUMP_ASSC) then
           BackendDump.dumpLinearIntegerJacobianSparse(linIntJac, "Solved");
         end if;
+
+        /* set changed to true if it was true before, or any row changed in the jacobian */
+        changed := changed or SymbolicJacobian.anyRowChanged(linIntJac);
 
         /* resolve zero rows to new equations and update assignments / adjacency matrix */
         (ass1, ass2, syst) := SymbolicJacobian.resolveAnalyticalSingularities(linIntJac, ass1, ass2, syst);
@@ -10153,6 +10153,16 @@ algorithm
     else false;
   end match;
 end indexTypeSolvable;
+
+public function doIndexReduction
+  input BackendDAE.MatchingOptions opt;
+  output Boolean b;
+algorithm
+  b := match opt
+    case (BackendDAE.INDEX_REDUCTION(), _) then true;
+    else false;
+  end match;
+end doIndexReduction;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEUtil;

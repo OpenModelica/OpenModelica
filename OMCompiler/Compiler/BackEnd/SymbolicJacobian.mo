@@ -4149,18 +4149,21 @@ public function generateLinearIntegerJacobian
    w.r.t. all loopVars. Fails if these criteria are not met."
   input list<tuple<BackendDAE.Equation, tuple<Integer, Integer>>> loopEqs;
   input list<tuple<BackendDAE.Var, Integer>> loopVars;
+  input array<Integer> ass1;
   output BackendDAE.LinearIntegerJacobian linIntJac;
 protected
   Integer eqn_index = 1, var_index, constInt;
   array<BackendDAE.LinearIntegerJacobianRow> rowArr;
   BackendDAE.LinearIntegerJacobianRhs rhsArr;
   BackendDAE.LinearIntegerJacobianIndices idxArr;
+  array<Boolean> boolArr, matchedVarsArr;
   list<tuple<Integer, Integer>> tmp_row;
   list<list<tuple<Integer,Integer>>> tmp_mat = {};
   list<DAE.Exp> tmp_rhs = {};
   list<tuple<Integer, Integer>> tmp_idx = {};
   BackendDAE.Equation eqn;
   tuple<Integer, Integer> index;
+  Integer scal_idx;
   BackendDAE.Var var;
   DAE.Exp res, pDer;
   BackendVarTransform.VariableReplacements varRep;
@@ -4171,6 +4174,8 @@ algorithm
     (var, _) := loopVar;
     varRep := BackendVarTransform.addReplacement(varRep, BackendVariable.varCref(var), DAE.ICONST(0), NONE());
   end for;
+
+  matchedVarsArr := arrayCreate(arrayLength(ass1), false);
 
   /* Loop over all equations and create residual expression. */
   for loopEq in loopEqs loop
@@ -4202,6 +4207,10 @@ algorithm
       res := BackendVarTransform.replaceExp(res, varRep, NONE());
       tmp_rhs := ExpressionSimplify.simplify(DAE.BINARY(DAE.ICONST(-1), DAE.MUL(DAE.T_UNKNOWN_DEFAULT), res)) :: tmp_rhs;
       tmp_idx := index :: tmp_idx;
+
+      /* set var as matched so that it can be chosen as pivot element for gaussian elimination */
+      (_, scal_idx) := index;
+      matchedVarsArr[ass1[scal_idx]] := true;
       eqn_index := eqn_index + 1;
     else
       /*
@@ -4214,7 +4223,8 @@ algorithm
   rowArr := listArray(tmp_mat);
   rhsArr := listArray(tmp_rhs);
   idxArr := listArray(tmp_idx);
-  linIntJac := (rowArr, rhsArr, idxArr);
+  boolArr := arrayCreate(arrayLength(rowArr), false);
+  linIntJac := (rowArr, rhsArr, idxArr, boolArr, matchedVarsArr);
 end generateLinearIntegerJacobian;
 
 public function emptyOrSingleLinearIntegerJacobian
@@ -4226,9 +4236,10 @@ protected
   array<BackendDAE.LinearIntegerJacobianRow> rowArr;
   BackendDAE.LinearIntegerJacobianRhs rhsArr;
   BackendDAE.LinearIntegerJacobianIndices idxArr;
+  array<Boolean> boolArr;
 algorithm
-  (rowArr, rhsArr, idxArr) := linIntJac;
-  empty := (arrayLength(rowArr) < 2) and (arrayLength(rhsArr) < 2) and (arrayLength(idxArr) < 2);
+  (rowArr, rhsArr, idxArr, boolArr, _) := linIntJac;
+  empty := (arrayLength(rowArr) < 2) and (arrayLength(rhsArr) < 2) and (arrayLength(idxArr) < 2) and (arrayLength(boolArr) < 2);
 end emptyOrSingleLinearIntegerJacobian;
 
 public function solveLinearIntegerJacobian
@@ -4243,17 +4254,18 @@ protected
   BackendDAE.LinearIntegerJacobianRhs rhsArr;
   BackendDAE.LinearIntegerJacobianIndices idxArr;
   BackendDAE.LinearIntegerJacobianRow pivotRow, row;
+  array<Boolean> boolArr, matchedVarsArr;
 algorithm
-  (rowArr, rhsArr, idxArr) := linIntJac;
+  (rowArr, rhsArr, idxArr, boolArr, matchedVarsArr) := linIntJac;
   /*
     Gaussian Algorithm without rearrangeing rows
     and without reducing pivot elemts to one.
   */
   for i in 1:arrayLength(rowArr) loop
     pivotRow := rowArr[i];
-    (rowArr, rhsArr) := solveLinearIntegerJacobianRow(rowArr, rhsArr, i);
+    (rowArr, rhsArr, boolArr) := solveLinearIntegerJacobianRow(rowArr, rhsArr, boolArr, matchedVarsArr, i);
   end for;
-  linIntJac := (rowArr, rhsArr, idxArr);
+  linIntJac := (rowArr, rhsArr, idxArr, boolArr, matchedVarsArr);
 end solveLinearIntegerJacobian;
 
 protected function solveLinearIntegerJacobianRow
@@ -4267,6 +4279,8 @@ protected function solveLinearIntegerJacobianRow
    new_row:       |  3  0  5 |"
   input output array<BackendDAE.LinearIntegerJacobianRow> rowArr;
   input output BackendDAE.LinearIntegerJacobianRhs rhsArr;
+  input output array<Boolean> boolArr;
+  input array<Boolean> matchedVarsArr;
   input Integer pivIdx;
 protected
   BackendDAE.LinearIntegerJacobianRow pivot_row, row;
@@ -4275,20 +4289,22 @@ algorithm
   pivot_row := rowArr[pivIdx];
   try
     /*
-      nothing in here? zero row -> analytical singularity detected!
+      no pivot element can be chosen?
       jump over all manipulations, nothing to do
     */
-    (col_index, piv_value) :: _ := pivot_row;
+    (col_index, piv_value) := getFirstPivotElement(pivot_row, matchedVarsArr);
     for j in pivIdx+1:arrayLength(rowArr) loop
       row := rowArr[j];
       row_value := getRowElementValue(row, col_index);
       if row_value <> 0 then
+        // set row to processed and perform pivot step
+        boolArr[j] := true;
         rowArr[j] := solveLinearIntegerJacobianRowSingleStep(pivot_row, row, piv_value, row_value);
         //perform multiplication inside? use simplification of multiplication afterwards?
         rhsArr[j] := DAE.BINARY(
-                       DAE.BINARY(rhsArr[j], DAE.MUL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(piv_value)),       // row_rhs * piv_elem
-                       DAE.SUB(DAE.T_INTEGER_DEFAULT),                                                    // -
-                       DAE.BINARY(rhsArr[pivIdx], DAE.MUL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(row_value))   // piv_rhs * row_elem
+                       DAE.BINARY(rhsArr[j], DAE.MUL(DAE.T_REAL_DEFAULT), DAE.ICONST(piv_value)),       // row_rhs * piv_elem
+                       DAE.SUB(DAE.T_REAL_DEFAULT),                                                    // -
+                       DAE.BINARY(rhsArr[pivIdx], DAE.MUL(DAE.T_REAL_DEFAULT), DAE.ICONST(row_value))   // piv_rhs * row_elem
                      );
         // Is it better to simplify once at the end or every time? Is traverser needed?
         //rhsArr[j] := Expression.traverseExpBottomUp(rhsArr[j], ExpressionSimplify.simplifyTraverseHelper, "");
@@ -4296,7 +4312,7 @@ algorithm
       end if;
     end for;
   else
-    /* zero row, nothing to do */
+    /* no pivot element, nothing to do */
   end try;
 end solveLinearIntegerJacobianRow;
 
@@ -4328,7 +4344,30 @@ algorithm
   end for;
 end solveLinearIntegerJacobianRowSingleStep;
 
-public function getRowElementValue
+protected function getFirstPivotElement
+"author: kabdelhak FHB 10-2019
+ Returns the first element that can be chosen as pivot, fails if none can be chosen."
+  input BackendDAE.LinearIntegerJacobianRow pivot_row;
+  input array<Boolean> matchedVarsArr;
+  output tuple<Integer, Integer> pivot_elem;
+algorithm
+  pivot_elem := match pivot_row
+    local
+      BackendDAE.LinearIntegerJacobianRow rest;
+      Integer elem_idx, elem_val;
+
+    /* if first element is matched to the equations return it */
+    case (elem_idx, elem_val)::rest guard(matchedVarsArr[elem_idx]) then (elem_idx, elem_val);
+
+    /* if not, then check next element */
+    case _::rest then getFirstPivotElement(rest, matchedVarsArr);
+
+    /* fail if none can be chosen */
+    case {} then fail();
+  end match;
+end getFirstPivotElement;
+
+protected function getRowElementValue
 "author: kabdelhak FHB 10-2019
  Returns the value at given column and zero if it does not exist in sparse structure."
   input list<tuple<Integer, Integer>> row;
@@ -4359,47 +4398,110 @@ protected
   array<BackendDAE.LinearIntegerJacobianRow> rowArr;
   BackendDAE.LinearIntegerJacobianRhs rhsArr;
   BackendDAE.LinearIntegerJacobianIndices idxArr;
+  array<Boolean> boolArr;
   Integer i_arr, i_scal;
-  DAE.Exp zeroExp;
+  DAE.Exp lhs;
   BackendDAE.Equation newEqn;
-  list<Integer> updateList_scal = {};
   list<Integer> updateList_arr = {};
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn;
   BackendDAE.IndexType indexType;
 algorithm
-  (rowArr, rhsArr, idxArr) := linIntJac;
+  (rowArr, rhsArr, idxArr, boolArr, _) := linIntJac;
   for r in 1:arrayLength(rowArr) loop
-    /* check if row is full zero */
-    if listEmpty(rowArr[r]) then
+
+    /*
+      check if row has been changed
+      for now also only resolve singularities and not replace full loop
+      otherwise it sometimes leads to mixed determined systems
+    */
+    if boolArr[r] and listEmpty(rowArr[r]) then
       (i_arr, i_scal) := idxArr[r];
       /* remove assignments */
-      ass2[ass1[i_arr]] := -1;
-      ass1[i_arr] := -1;
+      ass2[ass1[i_scal]] := -1;
+      ass1[i_scal] := -1;
+
       /* replace equation */
-      zeroExp := DAE.RCONST(0);//Expression.makeZeroExpression({DAE.DIM_INTEGER(BackendEquation.equationSize(BackendEquation.get(syst.orderedEqs, i_scal)))});
-      newEqn := BackendEquation.generateEquation(rhsArr[r], zeroExp);
+      lhs := generateLHSfromRow(rowArr[r], syst.orderedVars);
+      newEqn := BackendEquation.generateEquation(lhs, rhsArr[r]);
+
       /* dump replacements */
-      if Flags.isSet(Flags.CONVERT_ANALYTICAL_DUMP) or Flags.isSet(Flags.BLT_DUMP) then
-        print("Linear dependent equation: " + BackendDump.equationString(BackendEquation.get(syst.orderedEqs, i_scal)) + "\n");
-        print("Gets replaced by equation: " + BackendDump.equationString(newEqn) + "\n");
+      if Flags.isSet(Flags.DUMP_ASSC) or (Flags.isSet(Flags.BLT_DUMP) and listEmpty(rowArr[r])) then
+        print("[ASSC] The equation: " + BackendDump.equationString(BackendEquation.get(syst.orderedEqs, i_arr)) + "\n");
+        print("[ASSC] Gets replaced by equation: " + BackendDump.equationString(newEqn) + "\n");
       end if;
-      syst.orderedEqs := BackendEquation.setAtIndex(syst.orderedEqs, i_scal, newEqn);
-      updateList_scal := i_scal :: updateList_scal;
+
+      syst.orderedEqs := BackendEquation.setAtIndex(syst.orderedEqs, i_arr, newEqn);
       updateList_arr := i_arr :: updateList_arr;
     end if;
-    /* update adjacency matrix and transposed adjacency matrix */
-    try
-      SOME((mapEqnIncRow, mapIncRowEqn, indexType, true, _)) := syst.mapping;
-      syst := BackendDAEUtil.updateIncidenceMatrixScalar(syst, indexType, NONE(), updateList_scal, mapEqnIncRow, mapIncRowEqn);
-    else
-      syst := BackendDAEUtil.updateIncidenceMatrix(syst, BackendDAE.SOLVABLE(), NONE(), updateList_arr);
-    end try;
-    if not listEmpty(updateList_scal) and not Flags.isSet(Flags.CONVERT_ANALYTICAL_DUMP) and Flags.isSet(Flags.BLT_DUMP) then
-      print("--- For more information please use -d=dumpAnalyticalToStructural.---\n\n");
+  end for;
+      /* update adjacency matrix and transposed adjacency matrix */
+    if not listEmpty(updateList_arr) then
+      try
+        /* scalar = true */
+        SOME((mapEqnIncRow, mapIncRowEqn, indexType, true, _)) := syst.mapping;
+        syst := BackendDAEUtil.updateIncidenceMatrixScalar(syst, indexType, NONE(), updateList_arr, mapEqnIncRow, mapIncRowEqn);
+      else
+        /*
+          scalar = false,
+          should never occur, just to have a fallback option if someone wants to use this algorithm somewhere else
+        */
+        syst := BackendDAEUtil.updateIncidenceMatrix(syst, BackendDAE.SOLVABLE(), NONE(), updateList_arr);
+      end try;
+    end if;
+    //syst := BackendDAEUtil.getIncidenceMatrix
+    if not listEmpty(updateList_arr) and not Flags.isSet(Flags.DUMP_ASSC) and Flags.isSet(Flags.BLT_DUMP) then
+      print("--- Some equations have been changed, for more information please use -d=dumpASSC.---\n\n");
+    end if;
+end resolveAnalyticalSingularities;
+
+protected function generateLHSfromRow
+"author: kabdelhak FHB 10-2019
+ Generates the LHS expression from a linear integeger jacobian row.
+ Only used for full replacement of causalized loop."
+  input BackendDAE.LinearIntegerJacobianRow row;
+  input BackendDAE.Variables vars;
+  input output DAE.Exp lhs = DAE.RCONST(0.0);
+algorithm
+  lhs := match (row, lhs)
+    local
+      Real real;
+      Integer idx, val;
+      list<tuple<Integer, Integer>> rest;
+      DAE.Exp exp;
+    case ((idx, val) :: rest, DAE.RCONST(real = real)) guard(real == 0.0)
+      algorithm
+        exp := DAE.BINARY(DAE.RCONST(val), DAE.MUL(DAE.T_REAL_DEFAULT), BackendVariable.varExp(BackendVariable.getVarAt(vars, idx)));
+    then generateLHSfromRow(rest, vars, exp);
+
+    case ((idx, val) :: rest, _)
+      algorithm
+        exp := DAE.BINARY(DAE.RCONST(val), DAE.MUL(DAE.T_REAL_DEFAULT), BackendVariable.varExp(BackendVariable.getVarAt(vars, idx)));
+    then generateLHSfromRow(rest, vars, DAE.BINARY(lhs, DAE.ADD(DAE.T_REAL_DEFAULT), exp));
+
+    case ({}, _)
+      algorithm
+        exp :=ExpressionSimplify.simplify(lhs);
+    then exp;
+  end match;
+end generateLHSfromRow;
+
+public function anyRowChanged
+"author: kabdelhak FHB 10-2019
+ Returns true if any row of the jacobian got changed during gaussian elimination."
+  input BackendDAE.LinearIntegerJacobian linIntJac;
+  output Boolean changed = false;
+protected
+  array<Boolean> boolArr;
+algorithm
+  (_, _, _, boolArr, _) := linIntJac;
+  for i in 1:arrayLength(boolArr) loop
+    if boolArr[i] then
+      changed := true;
+      return;
     end if;
   end for;
-end resolveAnalyticalSingularities;
+end anyRowChanged;
 
 annotation(__OpenModelica_Interface="backend");
 end SymbolicJacobian;
