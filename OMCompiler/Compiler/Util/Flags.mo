@@ -551,7 +551,7 @@ constant DebugFlag NF_EXPAND_FUNC_ARGS = DEBUG_FLAG(187, "nfExpandFuncArgs", fal
   Util.gettext("Expand all function arguments in the new frontend."));
 constant DebugFlag DUMP_JL = DEBUG_FLAG(188, "dumpJL", false,
   Util.gettext("Dumps the absyn representation of a program as a Julia representation"));
-constant DebugFlag CONVERT_ANALYTICAL_DUMP = DEBUG_FLAG(189, "convertAnalyticalDump", false,
+constant DebugFlag DUMP_ASSC = DEBUG_FLAG(189, "dumpASSC", false,
   Util.gettext("Dumps the conversion process of analytical to structural singularities."));
 constant DebugFlag SPLIT_CONSTANT_PARTS_SYMJAC = DEBUG_FLAG(190, "symJacConstantSplit", false,
   Util.gettext("Generates all symbolic Jacobians with splitted constant parts."));
@@ -750,7 +750,7 @@ constant list<DebugFlag> allDebugFlags = {
   WARNING_MINMAX_ATTRIBUTES,
   NF_EXPAND_FUNC_ARGS,
   DUMP_JL,
-  CONVERT_ANALYTICAL_DUMP,
+  DUMP_ASSC,
   SPLIT_CONSTANT_PARTS_SYMJAC
 };
 
@@ -818,7 +818,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "removeEqualRHS",
     "removeSimpleEquations",
     "comSubExp",
-    "resolveLoops",
+    //"resolveLoops",
     "evalFunc",
     "encapsulateWhenConditions"
     }),
@@ -1510,9 +1510,9 @@ constant ConfigFlag LINEARIZATION_DUMP_LANGUAGE = CONFIG_FLAG(131, "linearizatio
   SOME(STRING_OPTION({"modelica","matlab","julia","python"})),
     Util.gettext("Sets the target language for the produced code of linearization. Only works with '--generateSymbolicLinearization' and 'linearize(modelName)'."));
 
-constant ConfigFlag CONVERT_ANALYTICAL_SINGULARITIES = CONFIG_FLAG(132, "convertAnalyticalSingularities",
+constant ConfigFlag NO_ASSC = CONFIG_FLAG(132, "noASSC",
   NONE(), EXTERNAL(),  BOOL_FLAG(false), NONE(),
-  Util.gettext("Allows the compiler to try to convert analytical to structural singularities."));
+  Util.gettext("Disables analytical to structural singularity conversion."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1650,7 +1650,7 @@ constant list<ConfigFlag> allConfigFlags = {
   INITIAL_STATE_SELECTION,
   STRICT,
   LINEARIZATION_DUMP_LANGUAGE,
-  CONVERT_ANALYTICAL_SINGULARITIES
+  NO_ASSC
 };
 
 public function new
