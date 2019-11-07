@@ -132,6 +132,7 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
         linsys[i].parDynamicData[j].jacobian->seedVars = (modelica_real*) calloc(jacobian->sizeCols, sizeof(modelica_real));
         linsys[i].parDynamicData[j].jacobian->resultVars = (modelica_real*) calloc(jacobian->sizeRows, sizeof(modelica_real));
         linsys[i].parDynamicData[j].jacobian->tmpVars = (modelica_real*) calloc(jacobian->sizeTmpVars, sizeof(modelica_real));
+        linsys[i].parDynamicData[j].jacobian->constantEqns = jacobian->constantEqns;
         linsys[i].parDynamicData[j].jacobian->sparsePattern = jacobian->sparsePattern;
       }
 #else
