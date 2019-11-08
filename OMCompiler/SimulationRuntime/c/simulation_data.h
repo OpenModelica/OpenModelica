@@ -609,6 +609,9 @@ typedef struct SIMULATION_INFO
   const char *outputFormat;
   const char *variableFilter;
 
+  double loggingTimeRecord[2];          /* Time interval in which logging is active. Only used if useLoggingTime=1 */
+  int useLoggingTime;                   /* 0 if logging is currently disabled, 1 if enabled */
+
   int lsMethod;                        /* linear solver */
   int lssMethod;                       /* linear sparse solver */
   int mixedMethod;                     /* mixed solver */

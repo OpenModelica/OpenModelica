@@ -227,6 +227,51 @@ void setGlobalVerboseLevel(int argc, char**argv)
   delete flags;
 }
 
+
+/* Read value of flag lv_time to set time interval in which loggin is active */
+void setGlobalLoggingTime(int argc, char**argv, SIMULATION_INFO *simulationInfo)
+{
+  const char *flagStr = omc_flagValue[FLAG_LV_TIME];
+  const string *flags = flagStr ? new string(flagStr) : NULL;
+  char *endptr;
+  const char *secondPart;
+  double loggingStartTime, loggingStopTime;
+
+  /* Check if lv_time flag is given */
+  if (flagStr==NULL || *flagStr=='\0')
+  {
+    /* default activated --> Log everything*/
+    simulationInfo->useLoggingTime = 0;
+    return;
+  }
+
+  /* Parse flagStr */
+  loggingStartTime = strtod(flagStr, &endptr);
+  endptr = endptr+1;
+  secondPart = endptr;
+  loggingStopTime = strtod(secondPart, &endptr);
+  if (*endptr)
+  {
+    throwStreamPrint(NULL, "Simulation flag %s expects two real numbers, seperated by a comata. Got: %s", FLAG_NAME[FLAG_LV_TIME], flagStr);
+  }
+
+  /* Check flag input */
+  if (loggingStartTime > loggingStopTime)
+  {
+    throwStreamPrint(NULL, "Simulation flag %s expects first number to be smaller then second number. Got: %s", FLAG_NAME[FLAG_LV_TIME], flagStr);
+  }
+
+  /* Save logging time */
+  simulationInfo->useLoggingTime = 1;
+  simulationInfo->loggingTimeRecord[0] = loggingStartTime;
+  simulationInfo->loggingTimeRecord[1] = loggingStopTime;
+  infoStreamPrint(LOG_STDOUT, 0, "Time dependent logging enabled. Activate loggin in intervall [%f, %f]", simulationInfo->loggingTimeRecord[0], simulationInfo->loggingTimeRecord[1]);
+
+  /* Deactivate Logging */
+  deactivateLogging();
+}
+
+
 static void readFlag(int *flag, int max, const char *value, const char *flagName, const char **names, const char **desc)
 {
   int i;
@@ -512,7 +557,17 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     outputVariablesAtEnd = omc_flagValue[FLAG_OUTPUT];
   }
 
+  /* Check if logging should be enabled */
+  if ((data->simulationInfo->useLoggingTime == 1) && (data->simulationInfo->startTime >= data->simulationInfo->loggingTimeRecord[0])) {
+    reactivateLogging();
+  }
+
   retVal = callSolver(data, threadData, init_initMethod, init_file, init_time, outputVariablesAtEnd, cpuTime, argv[0]);
+
+  /* Check if logging should be disabled */
+  if (data->simulationInfo->useLoggingTime == 1) {
+    deactivateLogging();
+  }
 
   if (omc_flag[FLAG_ALARM]) {
     alarm(0);
@@ -820,6 +875,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
   }
 
   setGlobalVerboseLevel(argc, argv);
+  setGlobalLoggingTime(argc, argv, data->simulationInfo);
   initializeDataStruc(data, threadData);
   if(!data)
   {
