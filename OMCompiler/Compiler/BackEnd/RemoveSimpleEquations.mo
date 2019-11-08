@@ -203,10 +203,10 @@ public function fixAliasVarsVariablity
 protected
   BackendDAE.Variables aliasVars, systvars, globalKnownVars;
   DAE.Exp binding;
-  DAE.ComponentRef cr;
+  list<DAE.ComponentRef> crefs;
   Boolean paramOrConst, const;
   BackendDAE.Shared shared;
-  list<BackendDAE.Var> referencevar, knownVarList={}, aliasVarList={};
+  list<BackendDAE.Var> referencevar, tempreferencevar, knownVarList={}, aliasVarList={};
   BackendDAE.Var tempvar;
 algorithm
   aliasVars := BackendDAEUtil.getAliasVars(inDAE);
@@ -215,14 +215,18 @@ algorithm
   //BackendDump.dumpVariables(aliasVars, "aliasVariable-Actual");
   for var in BackendVariable.varList(aliasVars) loop
     binding := BackendVariable.varBindExp(var);
-    {cr} := Expression.getAllCrefs(binding);
+    crefs := Expression.getAllCrefs(binding);
 
     // look up for the reference variable variablity
     // check in shared.globalKnownVars if not found in orderedVars
-    referencevar := getVarsHelper(cr, systvars); // first check in EqSystem.OrderedVars
-    if listEmpty(referencevar) then
-      referencevar := getVarsHelper(cr,inDAE.shared.globalKnownVars);
-    end if;
+    referencevar := {};
+    for cr in crefs loop
+      tempreferencevar := getVarsHelper(cr, systvars); // first check in EqSystem.OrderedVars
+      if listEmpty(tempreferencevar) then
+        tempreferencevar := getVarsHelper(cr,inDAE.shared.globalKnownVars);
+      end if;
+      referencevar := listAppend(referencevar,tempreferencevar);
+    end for;
 
     // check list of referencevariable either PARAM() or CONST()
     if listEmpty(referencevar) then
