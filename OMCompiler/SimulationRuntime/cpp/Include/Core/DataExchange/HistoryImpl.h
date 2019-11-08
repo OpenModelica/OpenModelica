@@ -103,9 +103,9 @@ public:
   {
     ResultsPolicy::eraseAll();
   };
-  virtual void write(const all_vars_t& v_list, double start_time, double end_time)
+  virtual void write(const all_vars_t& v_list, const neg_all_vars_t& neg_v_list, double start_time, double end_time)
   {
-      ResultsPolicy::write(v_list,start_time,end_time);
+      ResultsPolicy::write(v_list, neg_v_list,start_time,end_time);
   };
   virtual void write(const all_names_t& s_list,const all_description_t& s_desc_list, const all_names_t& s_parameter_list,const all_description_t&
   s_desc_parameter_list)
