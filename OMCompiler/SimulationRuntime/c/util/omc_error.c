@@ -139,11 +139,13 @@ const char *LOG_TYPE_DESC[LOG_TYPE_MAX] = {
   "debug"
 };
 
-int useStream[SIM_LOG_MAX];
+int useStream[SIM_LOG_MAX];         /* 1 if LOG is enabled, otherwise 0 */
+int backupUseStream[SIM_LOG_MAX];   /* Backup of useStream */
 int level[SIM_LOG_MAX];
 int lastType[SIM_LOG_MAX];
 int lastStream = LOG_UNKNOWN;
 int showAllWarnings = 0;
+int streamsActive = 1;              /* 1 if info streams from useStream are active, 0 if deactivated */
 
 #ifdef USE_DEBUG_TRACE
   int DEBUG_TRACE_PUSH_HELPER(const char* pFnc, const char* pFile, const long ln){if(useStream[LOG_TRACE]) printf("TRACE: push %s (%s:%d)\n", pFnc, pFile, ln); return 0;}
@@ -164,6 +166,65 @@ void initDumpSystem()
   useStream[LOG_STDOUT] = 1;
   useStream[LOG_ASSERT] = 1;
   useStream[LOG_SUCCESS] = 1;
+}
+
+/* Deactivates streams for logging except for stdout, assert and success. */
+void deactivateLogging()
+{
+  int i;
+
+  if (streamsActive == 0)
+  {
+    return;   /* Do nothing if allready actinactiveive */
+  }
+
+  for(i=0; i<SIM_LOG_MAX; ++i)
+  {
+    if (i != LOG_STDOUT && i != LOG_ASSERT && i != LOG_SUCCESS)
+    {
+      backupUseStream[i] = useStream[i];
+      /*
+      if (useStream[i] != 0) {
+        printf("Stream %s deactivated\n",LOG_STREAM_NAME[i]);
+      }
+      */
+      useStream[i] = 0;
+      }
+  }
+
+  useStream[LOG_STDOUT] = 1;
+  useStream[LOG_ASSERT] = 1;
+  useStream[LOG_SUCCESS] = 1;
+
+  streamsActive = 0;  /* Deactivate info streams */
+  //infoStreamPrint(LOG_STDOUT,0,"Deactivated logging");
+}
+
+/* Resets streams to backup after deactivateLogging() was used. */
+void reactivateLogging()
+{
+  int i;
+
+  if (streamsActive == 1)
+  {
+    return;   /* Do nothing if allready active */
+  }
+
+  for(i=0; i<SIM_LOG_MAX; ++i)
+  {
+    if (i != LOG_STDOUT && i != LOG_ASSERT && i != LOG_SUCCESS)
+    {
+      useStream[i] = backupUseStream[i];
+      /*
+      if (useStream[i] != 0) {
+        printf("Stream %s reactivated\n",LOG_STREAM_NAME[i]);
+      }
+      */
+    }
+  }
+
+  streamsActive = 1;  /* Activate info streams */
+  //infoStreamPrint(LOG_STDOUT,0,"Reactivated logging");
 }
 
 void printInfo(FILE *stream, FILE_INFO info)

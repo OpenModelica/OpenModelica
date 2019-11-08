@@ -390,6 +390,19 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
       int success = 0;
       threadData->currentErrorStage = ERROR_SIMULATION;
 
+      /* Check if loggin should be activated or deactivated */
+      if ((simInfo->useLoggingTime == 1) &&
+          (solverInfo->currentTime >= simInfo->loggingTimeRecord[0] || solverInfo->currentTime + solverInfo->currentStepSize >= simInfo->loggingTimeRecord[0]) &&
+          (solverInfo->currentTime + solverInfo->currentStepSize < simInfo->loggingTimeRecord[1]))
+      {
+        reactivateLogging();
+      }
+      if ((simInfo->useLoggingTime == 1) &&
+          (solverInfo->currentTime > simInfo->loggingTimeRecord[1]))
+      {
+        deactivateLogging();
+      }
+
 #ifdef USE_DEBUG_TRACE
       if(useStream[LOG_TRACE]) {
         printf("TRACE: push loop step=%u, time=%.12g\n", __currStepNo, solverInfo->currentTime);
