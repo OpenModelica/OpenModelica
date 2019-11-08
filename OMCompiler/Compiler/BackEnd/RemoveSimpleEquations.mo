@@ -201,12 +201,12 @@ public function fixAliasVarsVariablity
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 protected
-  BackendDAE.Variables aliasVars, systvars, globalKnownVars;
+  BackendDAE.Variables aliasVars, systvars;
   DAE.Exp binding;
   list<DAE.ComponentRef> crefs;
   Boolean paramOrConst, const;
   BackendDAE.Shared shared;
-  list<BackendDAE.Var> referencevar, tempreferencevar, knownVarList={}, aliasVarList={};
+  list<BackendDAE.Var> referencevar, tempreferencevar, aliasVarList={};
   BackendDAE.Var tempvar;
 algorithm
   aliasVars := BackendDAEUtil.getAliasVars(inDAE);
@@ -237,24 +237,20 @@ algorithm
       const := List.mapAllValueBool(referencevar, BackendVariable.isConst, true);
     end if;
 
-    // remove the variable from aliasVarList and add it to knownVarList after changing it to PARAM()/CONST() and fixed=true
+    // change variablity of alias vars to PARAM()/CONST() and fixed=true depending on binding
     if const then
       tempvar := BackendVariable.setVarKind(var,BackendDAE.CONST());
-      knownVarList := BackendVariable.setVarFixed(tempvar, true) :: knownVarList;
+      aliasVarList := BackendVariable.setVarFixed(tempvar, true) :: aliasVarList;
     elseif paramOrConst then
       tempvar := BackendVariable.setVarKind(var,BackendDAE.PARAM());
-      knownVarList := BackendVariable.setVarFixed(tempvar, true) :: knownVarList;
+      aliasVarList := BackendVariable.setVarFixed(tempvar, true) :: aliasVarList;
     else
       aliasVarList := var :: aliasVarList;
     end if;
   end for;
 
   //BackendDump.dumpVarList(aliasVarList, "AfterChangingParameters");
-  // add the parameter dependent alias vars to Global known Vars after removing from aliasVarList
-  globalKnownVars := BackendVariable.mergeVariables(inDAE.shared.globalKnownVars, BackendVariable.listVar(knownVarList));
-
   outDAE := BackendDAEUtil.setAliasVars(inDAE, BackendVariable.listVar(aliasVarList));
-  outDAE := BackendDAEUtil.setDAEGlobalKnownVars(outDAE, globalKnownVars);
 end fixAliasVarsVariablity;
 
 protected function getVarsHelper
