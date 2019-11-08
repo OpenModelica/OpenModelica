@@ -205,7 +205,6 @@ ModelicaCompliance.Scoping.Visibility.AccessProtectedClassComp
 ModelicaCompliance.Scoping.Visibility.AccessProtectedComp
 ModelicaCompliance.Scoping.Visibility.AccessProtectedCompClass
 ModelicaCompliance.Scoping.Visibility.AccessProtectedCompComp
-ModelicaCompliance.Scoping.Visibility.EnclosingAccessProtectedComp
 ModelicaCompliance.Scoping.Visibility.ModifyProtectedClass
 ModelicaCompliance.Scoping.Visibility.ModifyProtectedComp
 ModelicaCompliance.Scoping.Visibility.ProtectedMultiClass
@@ -213,3 +212,5 @@ ModelicaCompliance.Scoping.Visibility.ProtectedMultiComp
 ModelicaCompliance.Scoping.Visibility.RedeclareInheritedProtectedComp
 ModelicaCompliance.Scoping.Visibility.RedeclareProtectedClass
 ModelicaCompliance.Scoping.Visibility.RedeclareProtectedComp
+ModelicaCompliance.Components.Variability.ConstantNoBinding
+ModelicaCompliance.Connections.Restrictions.ConnectMismatchConstant
