@@ -44,8 +44,10 @@ struct SimulationOutput
   values_t outputVars;
 	/** Container for all output parameter*/
   values_t outputParams;
-  /** Container for all output variable kinds*/
+  /** Container for all negate alias output variable */
   negate_values_t negateOutputVars;
+  /** Container for all negate alias parameter */
+  negate_values_t negateParams;
 
   /**
 	 *  \brief adds a parameter to output list
@@ -54,11 +56,12 @@ struct SimulationOutput
 	 *  \param [in] description description of parameter
 	 *  \param [in] var pointer to parameter in simvars array
 	 */
-	void addParameter(string& name,string& description,const T* var)
+	void addParameter(string& name,string& description,const T* var, bool negate)
 	{
 		parameterNames.push_back(name);
 		parameterDescription.push_back(description);
 		outputParams.push_back(var);
+        negateParams.push_back(negate);
 	}
 	/**
 	 *  \brief adds a variable to output list
@@ -101,6 +104,9 @@ typedef  tuple<real_vars_t,int_vars_t,bool_vars_t,double,der_vars_t,res_vars_t> 
 typedef  tuple<real_vars_t,int_vars_t,bool_vars_t,der_vars_t,res_vars_t> all_vars_t;
 /**typedef for all output variables kinds at one time step*/
 typedef  tuple<negate_values_t,negate_values_t,negate_values_t,negate_values_t,negate_values_t> neg_all_vars_t;
+
+
+
 /**typedef for all output data at one time step*/
 typedef  tuple<all_vars_time_t,neg_all_vars_t> write_data_t;
 /**typedef for all variable names*/
@@ -159,7 +165,7 @@ public:
   virtual void clear()=0;
   virtual ~IHistory()  {};
   virtual void init() = 0;
-  virtual void write(const all_vars_t& v_list, double start_time, double end_time) = 0;
+  virtual void write(const all_vars_t& v_list,  const neg_all_vars_t& neg_v_list,double start_time, double end_time) = 0;
   virtual void write(const all_names_t& s_list,const all_description_t& s_desc_list, const all_names_t& s_parameter_list,const all_description_t& s_desc_parameter_list) = 0;
   virtual void write(const all_vars_time_t& v_list,const neg_all_vars_t& neg_v_list) = 0;
   virtual void addContainerToWriteQueue(const write_data_t& container) = 0;
