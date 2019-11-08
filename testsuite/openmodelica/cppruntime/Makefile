@@ -23,7 +23,8 @@ testMatrixIO.mos \
 testVectorizedBlocks.mos \
 testVectorizedPowerSystem.mos \
 testVectorizedSolarSystem.mos \
-trapezoidTest.mos
+trapezoidTest.mos \
+negatedParameter.mos
 
 FAILINGTESTFILES= \
 ClockInterval.mos \

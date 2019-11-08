@@ -10,13 +10,14 @@
 /config.sub
 /configure
 /install-sh
+/issues/
 /make.log
 /Makefile
 autom4te.cache/
 build/
 NewDocumentation/
+OMEncryption/
+OMPublicKey/
 OMPython/
 OMSetup/
 OpenModelicaSetup/
-OMEncryption/
-OMPublicKey/

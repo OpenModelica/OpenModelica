@@ -1191,6 +1191,14 @@ algorithm
   end match;
 end isParam;
 
+public function isParamOrConstant
+"Return true if variable is parameter or constant"
+  input BackendDAE.Var invar;
+  output Boolean outbool=false;
+algorithm
+  outbool := isParam(invar) or isConst(invar);
+end isParamOrConstant;
+
 public function isIntParam
 "Return true if variable is a parameter and integer."
   input BackendDAE.Var inVar;

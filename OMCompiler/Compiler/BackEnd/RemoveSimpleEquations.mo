@@ -165,6 +165,7 @@ algorithm
 
     outDAE := fixAliasVars(outDAE) "workaround for #3323";
     outDAE := fixAliasAndKnownVarsCausal(inDAE, outDAE);
+    outDAE := fixAliasVarsVariablity(outDAE) "workaround for #5673";
   else
     // This case performs "remove simple equations" on an acausal system.
     outDAE := match(Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS))
@@ -177,6 +178,7 @@ algorithm
 
     outDAE := fixAliasVars(outDAE) "workaround for #3323";
     outDAE := fixKnownVars(outDAE);
+    outDAE := fixAliasVarsVariablity(outDAE) "workaround for #5673";
   end if;
 end removeSimpleEquations;
 
@@ -191,6 +193,82 @@ algorithm
     outDAE := performAliasEliminationBB(inDAE, findAliases=true);
   end if;
 end removeVerySimpleEquations;
+
+public function fixAliasVarsVariablity
+" This is a workaround for #5673
+  This module traverses all alias variables and double-checks if the referenced alias variables variablitly
+  is parameter or not and changes variablilty of alias variable to BackendDAE.PARAM()."
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.Variables aliasVars, systvars, globalKnownVars;
+  DAE.Exp binding;
+  list<DAE.ComponentRef> crefs;
+  Boolean paramOrConst, const;
+  BackendDAE.Shared shared;
+  list<BackendDAE.Var> referencevar, tempreferencevar, knownVarList={}, aliasVarList={};
+  BackendDAE.Var tempvar;
+algorithm
+  aliasVars := BackendDAEUtil.getAliasVars(inDAE);
+  systvars := BackendVariable.listVar(BackendVariable.equationSystemsVarsLst(inDAE.eqs));
+
+  //BackendDump.dumpVariables(aliasVars, "aliasVariable-Actual");
+  for var in BackendVariable.varList(aliasVars) loop
+    binding := BackendVariable.varBindExp(var);
+    crefs := Expression.getAllCrefs(binding);
+
+    // look up for the reference variable variablity
+    // check in shared.globalKnownVars if not found in orderedVars
+    referencevar := {};
+    for cr in crefs loop
+      tempreferencevar := getVarsHelper(cr, systvars); // first check in EqSystem.OrderedVars
+      if listEmpty(tempreferencevar) then
+        tempreferencevar := getVarsHelper(cr,inDAE.shared.globalKnownVars);
+      end if;
+      referencevar := listAppend(referencevar,tempreferencevar);
+    end for;
+
+    // check list of referencevariable either PARAM() or CONST()
+    if listEmpty(referencevar) then
+      paramOrConst := false;
+      const := false;
+    else
+      paramOrConst := List.mapAllValueBool(referencevar, BackendVariable.isParamOrConstant, true);
+      const := List.mapAllValueBool(referencevar, BackendVariable.isConst, true);
+    end if;
+
+    // remove the variable from aliasVarList and add it to knownVarList after changing it to PARAM()/CONST() and fixed=true
+    if const then
+      tempvar := BackendVariable.setVarKind(var,BackendDAE.CONST());
+      knownVarList := BackendVariable.setVarFixed(tempvar, true) :: knownVarList;
+    elseif paramOrConst then
+      tempvar := BackendVariable.setVarKind(var,BackendDAE.PARAM());
+      knownVarList := BackendVariable.setVarFixed(tempvar, true) :: knownVarList;
+    else
+      aliasVarList := var :: aliasVarList;
+    end if;
+  end for;
+
+  //BackendDump.dumpVarList(aliasVarList, "AfterChangingParameters");
+  // add the parameter dependent alias vars to Global known Vars after removing from aliasVarList
+  globalKnownVars := BackendVariable.mergeVariables(inDAE.shared.globalKnownVars, BackendVariable.listVar(knownVarList));
+
+  outDAE := BackendDAEUtil.setAliasVars(inDAE, BackendVariable.listVar(aliasVarList));
+  outDAE := BackendDAEUtil.setDAEGlobalKnownVars(outDAE, globalKnownVars);
+end fixAliasVarsVariablity;
+
+protected function getVarsHelper
+  input DAE.ComponentRef cr;
+  input BackendDAE.Variables vars;
+  output list<BackendDAE.Var> outVars;
+algorithm
+  try
+    (outVars, _) := BackendVariable.getVar(cr, vars);
+  else
+    // guard against failures
+    outVars := {};
+  end try;
+end getVarsHelper;
 
 protected function fixAliasVars "author: lochel
   This is a workaround for #3323
