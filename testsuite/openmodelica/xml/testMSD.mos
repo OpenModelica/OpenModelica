@@ -178,13 +178,47 @@ readFile("stateSpace-MSD.xml");
 // </variable>
 // </variablesList>
 // </orderedVariables>
-// <knownVariables dimension=\"12\">
+// <knownVariables dimension=\"14\">
 // <variablesList>
-// <variable id=\"1\" name=\"force1.useSupport\" variability=\"parameter\" direction=\"none\" type=\"Boolean\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"= true, if support flange enabled, otherwise implicitly grounded\">
+// <variable id=\"1\" name=\"fixed1.s0\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Fixed offset position of housing\">
+// <bindExpression string=\"0.0\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Length&quot;\">
+// </quantity>
+// <unit string=\"&quot;m&quot;\">
+// </unit>
+// </attributesValues>
+// </variable>
+// <variable id=\"2\" name=\"damper1.flange_b.s\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
+// <bindExpression string=\"fixed1.s0\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Length&quot;\">
+// </quantity>
+// <unit string=\"&quot;m&quot;\">
+// </unit>
+// <fixed string=\"true\">
+// </fixed>
+// </attributesValues>
+// </variable>
+// <variable id=\"3\" name=\"fixed1.flange.s\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
+// <bindExpression string=\"fixed1.s0\">
+// </bindExpression>
+// <attributesValues>
+// <quantity string=\"&quot;Length&quot;\">
+// </quantity>
+// <unit string=\"&quot;m&quot;\">
+// </unit>
+// <fixed string=\"true\">
+// </fixed>
+// </attributesValues>
+// </variable>
+// <variable id=\"4\" name=\"force1.useSupport\" variability=\"parameter\" direction=\"none\" type=\"Boolean\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"= true, if support flange enabled, otherwise implicitly grounded\">
 // <bindExpression string=\"false\">
 // </bindExpression>
 // </variable>
-// <variable id=\"2\" name=\"damper1.d\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Damping constant\">
+// <variable id=\"5\" name=\"damper1.d\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Damping constant\">
 // <bindExpression string=\"0.01\">
 // </bindExpression>
 // <attributesValues>
@@ -198,11 +232,11 @@ readFile("stateSpace-MSD.xml");
 // </initialValue>
 // </attributesValues>
 // </variable>
-// <variable id=\"3\" name=\"damper1.useHeatPort\" variability=\"parameter\" direction=\"none\" type=\"Boolean\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"=true, if heatPort is enabled\">
+// <variable id=\"6\" name=\"damper1.useHeatPort\" variability=\"parameter\" direction=\"none\" type=\"Boolean\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"=true, if heatPort is enabled\">
 // <bindExpression string=\"false\">
 // </bindExpression>
 // </variable>
-// <variable id=\"4\" name=\"damper1.s_nominal\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Nominal value of s_rel (used for scaling)\">
+// <variable id=\"7\" name=\"damper1.s_nominal\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Nominal value of s_rel (used for scaling)\">
 // <bindExpression string=\"0.0001\">
 // </bindExpression>
 // <attributesValues>
@@ -214,7 +248,7 @@ readFile("stateSpace-MSD.xml");
 // </minValue>
 // </attributesValues>
 // </variable>
-// <variable id=\"5\" name=\"damper1.stateSelect\" variability=\"parameter\" direction=\"none\" type=\"enumeration(never, avoid, default, prefer, always)\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Priority to use s_rel and v_rel as states\">
+// <variable id=\"8\" name=\"damper1.stateSelect\" variability=\"parameter\" direction=\"none\" type=\"enumeration(never, avoid, default, prefer, always)\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Priority to use s_rel and v_rel as states\">
 // <bindExpression string=\"StateSelect.prefer\">
 // </bindExpression>
 // <attributesValues>
@@ -224,7 +258,7 @@ readFile("stateSpace-MSD.xml");
 // </maxValue>
 // </attributesValues>
 // </variable>
-// <variable id=\"6\" name=\"mass1.stateSelect\" variability=\"parameter\" direction=\"none\" type=\"enumeration(never, avoid, default, prefer, always)\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Priority to use s and v as states\">
+// <variable id=\"9\" name=\"mass1.stateSelect\" variability=\"parameter\" direction=\"none\" type=\"enumeration(never, avoid, default, prefer, always)\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Priority to use s and v as states\">
 // <bindExpression string=\"StateSelect.default\">
 // </bindExpression>
 // <attributesValues>
@@ -234,7 +268,7 @@ readFile("stateSpace-MSD.xml");
 // </maxValue>
 // </attributesValues>
 // </variable>
-// <variable id=\"7\" name=\"mass1.m\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Mass of the sliding mass\">
+// <variable id=\"10\" name=\"mass1.m\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Mass of the sliding mass\">
 // <bindExpression string=\"10.0\">
 // </bindExpression>
 // <attributesValues>
@@ -248,7 +282,7 @@ readFile("stateSpace-MSD.xml");
 // </initialValue>
 // </attributesValues>
 // </variable>
-// <variable id=\"8\" name=\"mass1.L\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Length of component, from left flange to right flange (= flange_b.s - flange_a.s)\">
+// <variable id=\"11\" name=\"mass1.L\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Length of component, from left flange to right flange (= flange_b.s - flange_a.s)\">
 // <bindExpression string=\"0.0\">
 // </bindExpression>
 // <attributesValues>
@@ -260,7 +294,7 @@ readFile("stateSpace-MSD.xml");
 // </initialValue>
 // </attributesValues>
 // </variable>
-// <variable id=\"9\" name=\"spring1.s_rel0\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Unstretched spring length\">
+// <variable id=\"12\" name=\"spring1.s_rel0\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Unstretched spring length\">
 // <bindExpression string=\"0.0\">
 // </bindExpression>
 // <attributesValues>
@@ -272,7 +306,7 @@ readFile("stateSpace-MSD.xml");
 // </minValue>
 // </attributesValues>
 // </variable>
-// <variable id=\"10\" name=\"spring1.c\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Spring constant\">
+// <variable id=\"13\" name=\"spring1.c\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Spring constant\">
 // <bindExpression string=\"1.0\">
 // </bindExpression>
 // <attributesValues>
@@ -286,17 +320,7 @@ readFile("stateSpace-MSD.xml");
 // </initialValue>
 // </attributesValues>
 // </variable>
-// <variable id=\"11\" name=\"fixed1.s0\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Fixed offset position of housing\">
-// <bindExpression string=\"0.0\">
-// </bindExpression>
-// <attributesValues>
-// <quantity string=\"&quot;Length&quot;\">
-// </quantity>
-// <unit string=\"&quot;m&quot;\">
-// </unit>
-// </attributesValues>
-// </variable>
-// <variable id=\"12\" name=\"force1.s_support\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute position of support flange\">
+// <variable id=\"14\" name=\"force1.s_support\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute position of support flange\">
 // <bindExpression string=\"0.0\">
 // </bindExpression>
 // <attributesValues>
@@ -310,7 +334,7 @@ readFile("stateSpace-MSD.xml");
 // </variable>
 // </variablesList>
 // </knownVariables>
-// <aliasVariables dimension=\"15\">
+// <aliasVariables dimension=\"13\">
 // <variablesList>
 // <variable id=\"1\" name=\"spring1.flange_a.s\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
 // <bindExpression string=\"mass1.flange_b.s\">
@@ -332,27 +356,7 @@ readFile("stateSpace-MSD.xml");
 // </unit>
 // </attributesValues>
 // </variable>
-// <variable id=\"3\" name=\"fixed1.flange.s\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
-// <bindExpression string=\"fixed1.s0\">
-// </bindExpression>
-// <attributesValues>
-// <quantity string=\"&quot;Length&quot;\">
-// </quantity>
-// <unit string=\"&quot;m&quot;\">
-// </unit>
-// </attributesValues>
-// </variable>
-// <variable id=\"4\" name=\"damper1.flange_b.s\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
-// <bindExpression string=\"fixed1.s0\">
-// </bindExpression>
-// <attributesValues>
-// <quantity string=\"&quot;Length&quot;\">
-// </quantity>
-// <unit string=\"&quot;m&quot;\">
-// </unit>
-// </attributesValues>
-// </variable>
-// <variable id=\"5\" name=\"mass1.flange_a.s\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
+// <variable id=\"3\" name=\"mass1.flange_a.s\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
 // <bindExpression string=\"force1.s\">
 // </bindExpression>
 // <attributesValues>
@@ -362,7 +366,7 @@ readFile("stateSpace-MSD.xml");
 // </unit>
 // </attributesValues>
 // </variable>
-// <variable id=\"6\" name=\"force1.flange.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
+// <variable id=\"4\" name=\"force1.flange.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
 // <bindExpression string=\"-force1.f\">
 // </bindExpression>
 // <attributesValues>
@@ -372,7 +376,7 @@ readFile("stateSpace-MSD.xml");
 // </unit>
 // </attributesValues>
 // </variable>
-// <variable id=\"7\" name=\"mass1.flange_a.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
+// <variable id=\"5\" name=\"mass1.flange_a.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
 // <bindExpression string=\"force1.f\">
 // </bindExpression>
 // <attributesValues>
@@ -382,7 +386,7 @@ readFile("stateSpace-MSD.xml");
 // </unit>
 // </attributesValues>
 // </variable>
-// <variable id=\"8\" name=\"spring1.flange_a.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
+// <variable id=\"6\" name=\"spring1.flange_a.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
 // <bindExpression string=\"-spring1.f\">
 // </bindExpression>
 // <attributesValues>
@@ -392,7 +396,7 @@ readFile("stateSpace-MSD.xml");
 // </unit>
 // </attributesValues>
 // </variable>
-// <variable id=\"9\" name=\"mass1.flange_b.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
+// <variable id=\"7\" name=\"mass1.flange_b.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
 // <bindExpression string=\"spring1.f\">
 // </bindExpression>
 // <attributesValues>
@@ -402,7 +406,7 @@ readFile("stateSpace-MSD.xml");
 // </unit>
 // </attributesValues>
 // </variable>
-// <variable id=\"10\" name=\"spring1.flange_b.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
+// <variable id=\"8\" name=\"spring1.flange_b.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
 // <bindExpression string=\"spring1.f\">
 // </bindExpression>
 // <attributesValues>
@@ -412,7 +416,7 @@ readFile("stateSpace-MSD.xml");
 // </unit>
 // </attributesValues>
 // </variable>
-// <variable id=\"11\" name=\"damper1.flange_a.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
+// <variable id=\"9\" name=\"damper1.flange_a.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
 // <bindExpression string=\"-spring1.f\">
 // </bindExpression>
 // <attributesValues>
@@ -422,7 +426,7 @@ readFile("stateSpace-MSD.xml");
 // </unit>
 // </attributesValues>
 // </variable>
-// <variable id=\"12\" name=\"damper1.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Forces between flanges (= flange_b.f)\">
+// <variable id=\"10\" name=\"damper1.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Forces between flanges (= flange_b.f)\">
 // <bindExpression string=\"spring1.f\">
 // </bindExpression>
 // <attributesValues>
@@ -432,7 +436,7 @@ readFile("stateSpace-MSD.xml");
 // </unit>
 // </attributesValues>
 // </variable>
-// <variable id=\"13\" name=\"damper1.flange_b.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
+// <variable id=\"11\" name=\"damper1.flange_b.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
 // <bindExpression string=\"spring1.f\">
 // </bindExpression>
 // <attributesValues>
@@ -442,7 +446,7 @@ readFile("stateSpace-MSD.xml");
 // </unit>
 // </attributesValues>
 // </variable>
-// <variable id=\"14\" name=\"fixed1.flange.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
+// <variable id=\"12\" name=\"fixed1.flange.f\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"Flow\" stream=\"NonStream\" comment=\"Cut force directed into flange\">
 // <bindExpression string=\"-spring1.f\">
 // </bindExpression>
 // <attributesValues>
@@ -452,7 +456,7 @@ readFile("stateSpace-MSD.xml");
 // </unit>
 // </attributesValues>
 // </variable>
-// <variable id=\"15\" name=\"force1.flange.s\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
+// <variable id=\"13\" name=\"force1.flange.s\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Absolute position of flange\">
 // <bindExpression string=\"force1.s\">
 // </bindExpression>
 // <attributesValues>

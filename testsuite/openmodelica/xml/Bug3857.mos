@@ -58,7 +58,7 @@ readFile("Bug3857.xml"); getErrorString();
 //   <VendorAnnotations>
 //   </VendorAnnotations>
 //
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"4.0\" tolerance=\"1e-06\" />
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"4.0\" tolerance=\"1e-006\" />
 //
 //   <ModelVariables>
 //     <ScalarVariable name=\"PI.I.y\" description=\"Connector of Real output signal\" valueReference=\"0\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
@@ -637,20 +637,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
-//     <ScalarVariable name=\"PI.Dzero.y\" description=\"Connector of Real output signal\" valueReference=\"46\" variability=\"continuous\" causality=\"internal\" alias=\"PI.Dzero.k\">
-//       <Real     />
-//       <QualifiedName>
-//         <exp:QualifiedNamePart name=\"PI\"/>
-//         <exp:QualifiedNamePart name=\"Dzero\"/>
-//         <exp:QualifiedNamePart name=\"y\"/>
-//       </QualifiedName>
-//     <isLinearTimedVariables>
-//       <TimePoint index=\"0\" isLinear=\"true\"/>
-//     </isLinearTimedVariables>
-//       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable>
-//
-//     <ScalarVariable name=\"PI.addI.u1\" description=\"Connector 1 of Real input signals\" valueReference=\"47\" variability=\"continuous\" causality=\"internal\" alias=\"integrator.y\">
+//     <ScalarVariable name=\"PI.addI.u1\" description=\"Connector 1 of Real input signals\" valueReference=\"46\" variability=\"continuous\" causality=\"internal\" alias=\"integrator.y\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -663,7 +650,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.addI.u2\" description=\"Connector 2 of Real input signals\" valueReference=\"48\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.w\">
+//     <ScalarVariable name=\"PI.addI.u2\" description=\"Connector 2 of Real input signals\" valueReference=\"47\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.w\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -676,7 +663,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.addI.y\" description=\"Connector of Real output signals\" valueReference=\"49\" variability=\"continuous\" causality=\"internal\" alias=\"PI.I.u\">
+//     <ScalarVariable name=\"PI.addI.y\" description=\"Connector of Real output signals\" valueReference=\"48\" variability=\"continuous\" causality=\"internal\" alias=\"PI.I.u\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -689,7 +676,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.addP.u1\" description=\"Connector of Real input signal 1\" valueReference=\"50\" variability=\"continuous\" causality=\"internal\" alias=\"integrator.y\">
+//     <ScalarVariable name=\"PI.addP.u1\" description=\"Connector of Real input signal 1\" valueReference=\"49\" variability=\"continuous\" causality=\"internal\" alias=\"integrator.y\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -702,7 +689,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.addP.u2\" description=\"Connector of Real input signal 2\" valueReference=\"51\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.w\">
+//     <ScalarVariable name=\"PI.addP.u2\" description=\"Connector of Real input signal 2\" valueReference=\"50\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.w\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -715,7 +702,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.addP.y\" description=\"Connector of Real output signal\" valueReference=\"52\" variability=\"continuous\" causality=\"internal\" alias=\"PI.P.u\">
+//     <ScalarVariable name=\"PI.addP.y\" description=\"Connector of Real output signal\" valueReference=\"51\" variability=\"continuous\" causality=\"internal\" alias=\"PI.P.u\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -728,7 +715,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.addPID.u1\" description=\"Connector 1 of Real input signals\" valueReference=\"53\" variability=\"continuous\" causality=\"internal\" alias=\"PI.P.y\">
+//     <ScalarVariable name=\"PI.addPID.u1\" description=\"Connector 1 of Real input signals\" valueReference=\"52\" variability=\"continuous\" causality=\"internal\" alias=\"PI.P.y\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -741,20 +728,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.addPID.u2\" description=\"Connector 2 of Real input signals\" valueReference=\"54\" variability=\"continuous\" causality=\"internal\" alias=\"PI.Dzero.k\">
-//       <Real     />
-//       <QualifiedName>
-//         <exp:QualifiedNamePart name=\"PI\"/>
-//         <exp:QualifiedNamePart name=\"addPID\"/>
-//         <exp:QualifiedNamePart name=\"u2\"/>
-//       </QualifiedName>
-//     <isLinearTimedVariables>
-//       <TimePoint index=\"0\" isLinear=\"true\"/>
-//     </isLinearTimedVariables>
-//       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable>
-//
-//     <ScalarVariable name=\"PI.addPID.u3\" description=\"Connector 3 of Real input signals\" valueReference=\"55\" variability=\"continuous\" causality=\"internal\" alias=\"PI.I.y\">
+//     <ScalarVariable name=\"PI.addPID.u3\" description=\"Connector 3 of Real input signals\" valueReference=\"53\" variability=\"continuous\" causality=\"internal\" alias=\"PI.I.y\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -767,7 +741,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.addSat.u1\" description=\"Connector of Real input signal 1\" valueReference=\"56\" variability=\"continuous\" causality=\"internal\" alias=\"PI.y\">
+//     <ScalarVariable name=\"PI.addSat.u1\" description=\"Connector of Real input signal 1\" valueReference=\"54\" variability=\"continuous\" causality=\"internal\" alias=\"PI.y\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -780,7 +754,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.gainPID.u\" description=\"Input signal connector\" valueReference=\"57\" variability=\"continuous\" causality=\"internal\" alias=\"PI.addPID.y\">
+//     <ScalarVariable name=\"PI.gainPID.u\" description=\"Input signal connector\" valueReference=\"55\" variability=\"continuous\" causality=\"internal\" alias=\"PI.addPID.y\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -793,7 +767,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.gainPID.y\" description=\"Output signal connector\" valueReference=\"58\" variability=\"continuous\" causality=\"internal\" alias=\"PI.addSat.u2\">
+//     <ScalarVariable name=\"PI.gainPID.y\" description=\"Output signal connector\" valueReference=\"56\" variability=\"continuous\" causality=\"internal\" alias=\"PI.addSat.u2\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -806,7 +780,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.gainTrack.u\" description=\"Input signal connector\" valueReference=\"59\" variability=\"continuous\" causality=\"internal\" alias=\"PI.addSat.y\">
+//     <ScalarVariable name=\"PI.gainTrack.u\" description=\"Input signal connector\" valueReference=\"57\" variability=\"continuous\" causality=\"internal\" alias=\"PI.addSat.y\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -819,7 +793,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.gainTrack.y\" description=\"Output signal connector\" valueReference=\"60\" variability=\"continuous\" causality=\"internal\" alias=\"PI.addI.u3\">
+//     <ScalarVariable name=\"PI.gainTrack.y\" description=\"Output signal connector\" valueReference=\"58\" variability=\"continuous\" causality=\"internal\" alias=\"PI.addI.u3\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -832,7 +806,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.limiter.u\" description=\"Connector of Real input signal\" valueReference=\"61\" variability=\"continuous\" causality=\"internal\" alias=\"PI.addSat.u2\">
+//     <ScalarVariable name=\"PI.limiter.u\" description=\"Connector of Real input signal\" valueReference=\"59\" variability=\"continuous\" causality=\"internal\" alias=\"PI.addSat.u2\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -845,7 +819,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.limiter.y\" description=\"Connector of Real output signal\" valueReference=\"62\" variability=\"continuous\" causality=\"internal\" alias=\"PI.y\">
+//     <ScalarVariable name=\"PI.limiter.y\" description=\"Connector of Real output signal\" valueReference=\"60\" variability=\"continuous\" causality=\"internal\" alias=\"PI.y\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -858,7 +832,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.u_m\" description=\"Connector of measurement input signal\" valueReference=\"63\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.w\">
+//     <ScalarVariable name=\"PI.u_m\" description=\"Connector of measurement input signal\" valueReference=\"61\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.w\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -870,7 +844,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.u_s\" description=\"Connector of setpoint input signal\" valueReference=\"64\" variability=\"continuous\" causality=\"internal\" alias=\"integrator.y\">
+//     <ScalarVariable name=\"PI.u_s\" description=\"Connector of setpoint input signal\" valueReference=\"62\" variability=\"continuous\" causality=\"internal\" alias=\"integrator.y\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -882,7 +856,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"inertia1.flange_a.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"65\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.phi\">
+//     <ScalarVariable name=\"inertia1.flange_a.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"63\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.phi\">
 //       <Real    unit=\"rad\" displayUnit=\"deg\"/>
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"inertia1\"/>
@@ -895,7 +869,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"inertia1.flange_a.tau\" description=\"Cut torque in the flange\" valueReference=\"66\" variability=\"continuous\" causality=\"internal\" alias=\"PI.y\">
+//     <ScalarVariable name=\"inertia1.flange_a.tau\" description=\"Cut torque in the flange\" valueReference=\"64\" variability=\"continuous\" causality=\"internal\" alias=\"PI.y\">
 //       <Real    unit=\"N.m\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"inertia1\"/>
@@ -908,7 +882,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"inertia1.flange_b.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"67\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.phi\">
+//     <ScalarVariable name=\"inertia1.flange_b.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"65\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.phi\">
 //       <Real    unit=\"rad\" displayUnit=\"deg\"/>
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"inertia1\"/>
@@ -921,7 +895,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"inertia1.flange_b.tau\" description=\"Cut torque in the flange\" valueReference=\"68\" variability=\"continuous\" causality=\"internal\" alias=\"spring.tau\">
+//     <ScalarVariable name=\"inertia1.flange_b.tau\" description=\"Cut torque in the flange\" valueReference=\"66\" variability=\"continuous\" causality=\"internal\" alias=\"spring.tau\">
 //       <Real    unit=\"N.m\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"inertia1\"/>
@@ -934,7 +908,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"inertia2.flange_a.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"69\" variability=\"continuous\" causality=\"internal\" alias=\"loadTorque.phi\">
+//     <ScalarVariable name=\"inertia2.flange_a.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"67\" variability=\"continuous\" causality=\"internal\" alias=\"loadTorque.phi\">
 //       <Real    unit=\"rad\" displayUnit=\"deg\"/>
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"inertia2\"/>
@@ -947,7 +921,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"inertia2.flange_a.tau\" description=\"Cut torque in the flange\" valueReference=\"70\" variability=\"continuous\" causality=\"internal\" alias=\"-spring.tau\">
+//     <ScalarVariable name=\"inertia2.flange_a.tau\" description=\"Cut torque in the flange\" valueReference=\"68\" variability=\"continuous\" causality=\"internal\" alias=\"-spring.tau\">
 //       <Real    unit=\"N.m\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"inertia2\"/>
@@ -960,7 +934,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"inertia2.flange_b.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"71\" variability=\"continuous\" causality=\"internal\" alias=\"loadTorque.phi\">
+//     <ScalarVariable name=\"inertia2.flange_b.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"69\" variability=\"continuous\" causality=\"internal\" alias=\"loadTorque.phi\">
 //       <Real    unit=\"rad\" displayUnit=\"deg\"/>
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"inertia2\"/>
@@ -973,20 +947,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"inertia2.flange_b.tau\" description=\"Cut torque in the flange\" valueReference=\"72\" variability=\"continuous\" causality=\"internal\" alias=\"loadTorque.tau_constant\">
-//       <Real    unit=\"N.m\" />
-//       <QualifiedName>
-//         <exp:QualifiedNamePart name=\"inertia2\"/>
-//         <exp:QualifiedNamePart name=\"flange_b\"/>
-//         <exp:QualifiedNamePart name=\"tau\"/>
-//       </QualifiedName>
-//     <isLinearTimedVariables>
-//       <TimePoint index=\"0\" isLinear=\"true\"/>
-//     </isLinearTimedVariables>
-//       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable>
-//
-//     <ScalarVariable name=\"inertia2.phi\" description=\"Absolute rotation angle of component\" valueReference=\"73\" variability=\"continuous\" causality=\"internal\" alias=\"loadTorque.phi\">
+//     <ScalarVariable name=\"inertia2.phi\" description=\"Absolute rotation angle of component\" valueReference=\"70\" variability=\"continuous\" causality=\"internal\" alias=\"loadTorque.phi\">
 //       <Real    unit=\"rad\" displayUnit=\"deg\"/>
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"inertia2\"/>
@@ -998,7 +959,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"integrator.u\" description=\"Connector of Real input signal\" valueReference=\"74\" variability=\"continuous\" causality=\"internal\" alias=\"kinematicPTP.y[1]\">
+//     <ScalarVariable name=\"integrator.u\" description=\"Connector of Real input signal\" valueReference=\"71\" variability=\"continuous\" causality=\"internal\" alias=\"kinematicPTP.y[1]\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"integrator\"/>
@@ -1010,7 +971,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"loadTorque.flange.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"75\" variability=\"continuous\" causality=\"internal\" alias=\"loadTorque.phi\">
+//     <ScalarVariable name=\"loadTorque.flange.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"72\" variability=\"continuous\" causality=\"internal\" alias=\"loadTorque.phi\">
 //       <Real    unit=\"rad\" displayUnit=\"deg\"/>
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"loadTorque\"/>
@@ -1023,32 +984,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"loadTorque.flange.tau\" description=\"Cut torque in the flange\" valueReference=\"76\" variability=\"continuous\" causality=\"internal\" alias=\"-loadTorque.tau_constant\">
-//       <Real    unit=\"N.m\" />
-//       <QualifiedName>
-//         <exp:QualifiedNamePart name=\"loadTorque\"/>
-//         <exp:QualifiedNamePart name=\"flange\"/>
-//         <exp:QualifiedNamePart name=\"tau\"/>
-//       </QualifiedName>
-//     <isLinearTimedVariables>
-//       <TimePoint index=\"0\" isLinear=\"true\"/>
-//     </isLinearTimedVariables>
-//       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable>
-//
-//     <ScalarVariable name=\"loadTorque.tau\" description=\"Accelerating torque acting at flange (= -flange.tau)\" valueReference=\"77\" variability=\"continuous\" causality=\"internal\" alias=\"loadTorque.tau_constant\">
-//       <Real    unit=\"N.m\" />
-//       <QualifiedName>
-//         <exp:QualifiedNamePart name=\"loadTorque\"/>
-//         <exp:QualifiedNamePart name=\"tau\"/>
-//       </QualifiedName>
-//     <isLinearTimedVariables>
-//       <TimePoint index=\"0\" isLinear=\"true\"/>
-//     </isLinearTimedVariables>
-//       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable>
-//
-//     <ScalarVariable name=\"loadTorque.w\" description=\"Angular velocity of flange with respect to support (= der(phi))\" valueReference=\"78\" variability=\"continuous\" causality=\"internal\" alias=\"inertia2.w\">
+//     <ScalarVariable name=\"loadTorque.w\" description=\"Angular velocity of flange with respect to support (= der(phi))\" valueReference=\"73\" variability=\"continuous\" causality=\"internal\" alias=\"inertia2.w\">
 //       <Real    unit=\"rad/s\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"loadTorque\"/>
@@ -1060,7 +996,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"speedSensor.flange.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"79\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.phi\">
+//     <ScalarVariable name=\"speedSensor.flange.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"74\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.phi\">
 //       <Real    unit=\"rad\" displayUnit=\"deg\"/>
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"speedSensor\"/>
@@ -1073,7 +1009,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"speedSensor.w\" description=\"Absolute angular velocity of flange as output signal\" valueReference=\"80\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.w\">
+//     <ScalarVariable name=\"speedSensor.w\" description=\"Absolute angular velocity of flange as output signal\" valueReference=\"75\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.w\">
 //       <Real    unit=\"rad/s\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"speedSensor\"/>
@@ -1085,7 +1021,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"spring.flange_a.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"81\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.phi\">
+//     <ScalarVariable name=\"spring.flange_a.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"76\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.phi\">
 //       <Real    unit=\"rad\" displayUnit=\"deg\"/>
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"spring\"/>
@@ -1098,7 +1034,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"spring.flange_a.tau\" description=\"Cut torque in the flange\" valueReference=\"82\" variability=\"continuous\" causality=\"internal\" alias=\"-spring.tau\">
+//     <ScalarVariable name=\"spring.flange_a.tau\" description=\"Cut torque in the flange\" valueReference=\"77\" variability=\"continuous\" causality=\"internal\" alias=\"-spring.tau\">
 //       <Real    unit=\"N.m\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"spring\"/>
@@ -1111,7 +1047,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"spring.flange_b.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"83\" variability=\"continuous\" causality=\"internal\" alias=\"loadTorque.phi\">
+//     <ScalarVariable name=\"spring.flange_b.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"78\" variability=\"continuous\" causality=\"internal\" alias=\"loadTorque.phi\">
 //       <Real    unit=\"rad\" displayUnit=\"deg\"/>
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"spring\"/>
@@ -1124,7 +1060,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"spring.flange_b.tau\" description=\"Cut torque in the flange\" valueReference=\"84\" variability=\"continuous\" causality=\"internal\" alias=\"spring.tau\">
+//     <ScalarVariable name=\"spring.flange_b.tau\" description=\"Cut torque in the flange\" valueReference=\"79\" variability=\"continuous\" causality=\"internal\" alias=\"spring.tau\">
 //       <Real    unit=\"N.m\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"spring\"/>
@@ -1137,7 +1073,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"torque.flange.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"85\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.phi\">
+//     <ScalarVariable name=\"torque.flange.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"80\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.phi\">
 //       <Real    unit=\"rad\" displayUnit=\"deg\"/>
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"torque\"/>
@@ -1150,7 +1086,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"torque.flange.tau\" description=\"Cut torque in the flange\" valueReference=\"86\" variability=\"continuous\" causality=\"internal\" alias=\"-PI.y\">
+//     <ScalarVariable name=\"torque.flange.tau\" description=\"Cut torque in the flange\" valueReference=\"81\" variability=\"continuous\" causality=\"internal\" alias=\"-PI.y\">
 //       <Real    unit=\"N.m\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"torque\"/>
@@ -1163,7 +1099,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"torque.tau\" description=\"Accelerating torque acting at flange (= -flange.tau)\" valueReference=\"87\" variability=\"continuous\" causality=\"internal\" alias=\"PI.y\">
+//     <ScalarVariable name=\"torque.tau\" description=\"Accelerating torque acting at flange (= -flange.tau)\" valueReference=\"82\" variability=\"continuous\" causality=\"internal\" alias=\"PI.y\">
 //       <Real    unit=\"N.m\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"torque\"/>
@@ -1174,7 +1110,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
 //     </ScalarVariable>
-//     <ScalarVariable name=\"PI.Dzero.k\" description=\"Constant output value\" valueReference=\"88\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.Dzero.k\" description=\"Constant output value\" valueReference=\"83\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"true\"    />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1187,7 +1123,20 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.I.k\" description=\"Integrator gain\" valueReference=\"89\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.Dzero.y\" description=\"Connector of Real output signal\" valueReference=\"84\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//       <Real     />
+//       <QualifiedName>
+//         <exp:QualifiedNamePart name=\"PI\"/>
+//         <exp:QualifiedNamePart name=\"Dzero\"/>
+//         <exp:QualifiedNamePart name=\"y\"/>
+//       </QualifiedName>
+//     <isLinearTimedVariables>
+//       <TimePoint index=\"0\" isLinear=\"true\"/>
+//     </isLinearTimedVariables>
+//       <VariableCategory>independentParameter</VariableCategory>
+//     </ScalarVariable>
+//
+//     <ScalarVariable name=\"PI.I.k\" description=\"Integrator gain\" valueReference=\"85\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"1\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1200,7 +1149,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.I.y_start\" description=\"Initial or guess value of output (= state)\" valueReference=\"90\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.I.y_start\" description=\"Initial or guess value of output (= state)\" valueReference=\"86\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1213,8 +1162,8 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.Nd\" description=\"The higher Nd, the more ideal the derivative block\" valueReference=\"91\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
-//       <Real start=\"10.0\" fixed=\"true\" min=\"1e-13\"   />
+//     <ScalarVariable name=\"PI.Nd\" description=\"The higher Nd, the more ideal the derivative block\" valueReference=\"87\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//       <Real start=\"10.0\" fixed=\"true\" min=\"1e-013\"   />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
 //         <exp:QualifiedNamePart name=\"Nd\"/>
@@ -1225,8 +1174,8 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.Ni\" description=\"Ni*Ti is time constant of anti-windup compensation\" valueReference=\"92\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
-//       <Real start=\"0.1\" fixed=\"true\" min=\"1e-13\"   />
+//     <ScalarVariable name=\"PI.Ni\" description=\"Ni*Ti is time constant of anti-windup compensation\" valueReference=\"88\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//       <Real start=\"0.1\" fixed=\"true\" min=\"1e-013\"   />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
 //         <exp:QualifiedNamePart name=\"Ni\"/>
@@ -1237,7 +1186,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.P.k\" description=\"Gain value multiplied with input signal\" valueReference=\"93\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.P.k\" description=\"Gain value multiplied with input signal\" valueReference=\"89\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"   unit=\"1\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1250,7 +1199,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.Td\" description=\"Time constant of Derivative block\" valueReference=\"94\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.Td\" description=\"Time constant of Derivative block\" valueReference=\"90\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.1\" fixed=\"true\" min=\"0.0\"  unit=\"s\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1262,8 +1211,8 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.Ti\" description=\"Time constant of Integrator block\" valueReference=\"95\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
-//       <Real start=\"0.1\" fixed=\"true\" min=\"1e-60\"  unit=\"s\" />
+//     <ScalarVariable name=\"PI.Ti\" description=\"Time constant of Integrator block\" valueReference=\"91\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//       <Real start=\"0.1\" fixed=\"true\" min=\"1e-060\"  unit=\"s\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
 //         <exp:QualifiedNamePart name=\"Ti\"/>
@@ -1274,7 +1223,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.addI.k1\" description=\"Gain of upper input\" valueReference=\"96\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.addI.k1\" description=\"Gain of upper input\" valueReference=\"92\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"    />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1287,7 +1236,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.addI.k2\" description=\"Gain of middle input\" valueReference=\"97\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.addI.k2\" description=\"Gain of middle input\" valueReference=\"93\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"-1.0\" fixed=\"true\"    />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1300,7 +1249,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.addI.k3\" description=\"Gain of lower input\" valueReference=\"98\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.addI.k3\" description=\"Gain of lower input\" valueReference=\"94\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"    />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1313,7 +1262,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.addP.k1\" description=\"Gain of upper input\" valueReference=\"99\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.addP.k1\" description=\"Gain of upper input\" valueReference=\"95\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1326,7 +1275,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.addP.k2\" description=\"Gain of lower input\" valueReference=\"100\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.addP.k2\" description=\"Gain of lower input\" valueReference=\"96\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"-1.0\" fixed=\"true\"    />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1339,7 +1288,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.addPID.k1\" description=\"Gain of upper input\" valueReference=\"101\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.addPID.k1\" description=\"Gain of upper input\" valueReference=\"97\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"    />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1352,7 +1301,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.addPID.k2\" description=\"Gain of middle input\" valueReference=\"102\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.addPID.k2\" description=\"Gain of middle input\" valueReference=\"98\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"    />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1365,7 +1314,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.addPID.k3\" description=\"Gain of lower input\" valueReference=\"103\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.addPID.k3\" description=\"Gain of lower input\" valueReference=\"99\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"    />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1378,7 +1327,20 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.addSat.k1\" description=\"Gain of upper input\" valueReference=\"104\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.addPID.u2\" description=\"Connector 2 of Real input signals\" valueReference=\"100\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//       <Real     />
+//       <QualifiedName>
+//         <exp:QualifiedNamePart name=\"PI\"/>
+//         <exp:QualifiedNamePart name=\"addPID\"/>
+//         <exp:QualifiedNamePart name=\"u2\"/>
+//       </QualifiedName>
+//     <isLinearTimedVariables>
+//       <TimePoint index=\"0\" isLinear=\"true\"/>
+//     </isLinearTimedVariables>
+//       <VariableCategory>independentParameter</VariableCategory>
+//     </ScalarVariable>
+//
+//     <ScalarVariable name=\"PI.addSat.k1\" description=\"Gain of upper input\" valueReference=\"101\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"    />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1391,7 +1353,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.addSat.k2\" description=\"Gain of lower input\" valueReference=\"105\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.addSat.k2\" description=\"Gain of lower input\" valueReference=\"102\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"-1.0\" fixed=\"true\"    />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1404,7 +1366,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.gainPID.k\" description=\"Gain value multiplied with input signal\" valueReference=\"106\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.gainPID.k\" description=\"Gain value multiplied with input signal\" valueReference=\"103\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"   unit=\"1\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1417,7 +1379,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.gainTrack.k\" description=\"Gain value multiplied with input signal\" valueReference=\"107\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.gainTrack.k\" description=\"Gain value multiplied with input signal\" valueReference=\"104\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"   unit=\"1\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1430,7 +1392,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.k\" description=\"Gain of controller\" valueReference=\"108\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.k\" description=\"Gain of controller\" valueReference=\"105\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"100.0\" fixed=\"true\" min=\"0.0\"  unit=\"1\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1442,7 +1404,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.limiter.uMax\" description=\"Upper limits of input signals\" valueReference=\"109\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.limiter.uMax\" description=\"Upper limits of input signals\" valueReference=\"106\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"    />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1455,7 +1417,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.limiter.uMin\" description=\"Lower limits of input signals\" valueReference=\"110\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.limiter.uMin\" description=\"Lower limits of input signals\" valueReference=\"107\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1468,7 +1430,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.wd\" description=\"Set-point weight for Derivative block (0..1)\" valueReference=\"111\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.wd\" description=\"Set-point weight for Derivative block (0..1)\" valueReference=\"108\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"true\" min=\"0.0\"   />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1480,7 +1442,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.wp\" description=\"Set-point weight for Proportional block (0..1)\" valueReference=\"112\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.wp\" description=\"Set-point weight for Proportional block (0..1)\" valueReference=\"109\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\" min=\"0.0\"   />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1492,7 +1454,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.xd_start\" description=\"Initial or guess value for state of derivative block\" valueReference=\"113\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.xd_start\" description=\"Initial or guess value for state of derivative block\" valueReference=\"110\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"true\"    />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1504,7 +1466,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.xi_start\" description=\"Initial or guess value value for integrator output (= integrator state)\" valueReference=\"114\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.xi_start\" description=\"Initial or guess value value for integrator output (= integrator state)\" valueReference=\"111\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"true\"    />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1516,7 +1478,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.yMax\" description=\"Upper limit of output\" valueReference=\"115\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.yMax\" description=\"Upper limit of output\" valueReference=\"112\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"12.0\" fixed=\"true\"    />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1528,7 +1490,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.yMin\" description=\"Lower limit of output\" valueReference=\"116\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.yMin\" description=\"Lower limit of output\" valueReference=\"113\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1540,7 +1502,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"PI.y_start\" description=\"Initial value of output\" valueReference=\"117\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"PI.y_start\" description=\"Initial value of output\" valueReference=\"114\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"true\"    />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
@@ -1552,7 +1514,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"driveAngle\" description=\"Reference distance to move\" valueReference=\"118\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"driveAngle\" description=\"Reference distance to move\" valueReference=\"115\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.570796326794897\" fixed=\"true\"   unit=\"rad\" displayUnit=\"deg\"/>
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"driveAngle\"/>
@@ -1563,7 +1525,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"inertia1.J\" description=\"Moment of inertia\" valueReference=\"119\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"inertia1.J\" description=\"Moment of inertia\" valueReference=\"116\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\" min=\"0.0\"  unit=\"kg.m2\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"inertia1\"/>
@@ -1575,7 +1537,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"inertia2.J\" description=\"Moment of inertia\" valueReference=\"120\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"inertia2.J\" description=\"Moment of inertia\" valueReference=\"117\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"2.0\" fixed=\"true\" min=\"0.0\"  unit=\"kg.m2\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"inertia2\"/>
@@ -1587,7 +1549,20 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"integrator.k\" description=\"Integrator gain\" valueReference=\"121\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"inertia2.flange_b.tau\" description=\"Cut torque in the flange\" valueReference=\"118\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//       <Real    unit=\"N.m\" />
+//       <QualifiedName>
+//         <exp:QualifiedNamePart name=\"inertia2\"/>
+//         <exp:QualifiedNamePart name=\"flange_b\"/>
+//         <exp:QualifiedNamePart name=\"tau\"/>
+//       </QualifiedName>
+//     <isLinearTimedVariables>
+//       <TimePoint index=\"0\" isLinear=\"true\"/>
+//     </isLinearTimedVariables>
+//       <VariableCategory>independentParameter</VariableCategory>
+//     </ScalarVariable>
+//
+//     <ScalarVariable name=\"integrator.k\" description=\"Integrator gain\" valueReference=\"119\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"   unit=\"1\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"integrator\"/>
@@ -1599,7 +1574,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"integrator.y_start\" description=\"Initial or guess value of output (= state)\" valueReference=\"122\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"integrator.y_start\" description=\"Initial or guess value of output (= state)\" valueReference=\"120\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"true\"    />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"integrator\"/>
@@ -1611,7 +1586,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"kinematicPTP.deltaq[1]\" description=\"Distance to move\" valueReference=\"123\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"kinematicPTP.deltaq[1]\" description=\"Distance to move\" valueReference=\"121\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
@@ -1629,7 +1604,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"kinematicPTP.p_deltaq[1]\"  valueReference=\"124\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"kinematicPTP.p_deltaq[1]\"  valueReference=\"122\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
@@ -1647,7 +1622,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"kinematicPTP.p_qd_max[1]\"  valueReference=\"125\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"kinematicPTP.p_qd_max[1]\"  valueReference=\"123\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
@@ -1665,7 +1640,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"kinematicPTP.p_qdd_max[1]\"  valueReference=\"126\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"kinematicPTP.p_qdd_max[1]\"  valueReference=\"124\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
@@ -1683,8 +1658,8 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"kinematicPTP.qd_max[1]\" description=\"Maximum velocities der(q)\" valueReference=\"127\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
-//       <Real start=\"1.0\" fixed=\"true\" min=\"1e-60\"   />
+//     <ScalarVariable name=\"kinematicPTP.qd_max[1]\" description=\"Maximum velocities der(q)\" valueReference=\"125\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//       <Real start=\"1.0\" fixed=\"true\" min=\"1e-060\"   />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //         <exp:QualifiedNamePart name=\"qd_max\">
@@ -1701,8 +1676,8 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"kinematicPTP.qdd_max[1]\" description=\"Maximum accelerations der(qd)\" valueReference=\"128\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
-//       <Real start=\"1.0\" fixed=\"true\" min=\"1e-60\"   />
+//     <ScalarVariable name=\"kinematicPTP.qdd_max[1]\" description=\"Maximum accelerations der(qd)\" valueReference=\"126\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//       <Real start=\"1.0\" fixed=\"true\" min=\"1e-060\"   />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //         <exp:QualifiedNamePart name=\"qdd_max\">
@@ -1719,11 +1694,36 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"kinematicPTP.startTime\" description=\"Time instant at which movement starts\" valueReference=\"129\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"kinematicPTP.startTime\" description=\"Time instant at which movement starts\" valueReference=\"127\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.5\" fixed=\"true\"   unit=\"s\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //         <exp:QualifiedNamePart name=\"startTime\"/>
+//       </QualifiedName>
+//     <isLinearTimedVariables>
+//       <TimePoint index=\"0\" isLinear=\"true\"/>
+//     </isLinearTimedVariables>
+//       <VariableCategory>independentParameter</VariableCategory>
+//     </ScalarVariable>
+//
+//     <ScalarVariable name=\"loadTorque.flange.tau\" description=\"Cut torque in the flange\" valueReference=\"128\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//       <Real    unit=\"N.m\" />
+//       <QualifiedName>
+//         <exp:QualifiedNamePart name=\"loadTorque\"/>
+//         <exp:QualifiedNamePart name=\"flange\"/>
+//         <exp:QualifiedNamePart name=\"tau\"/>
+//       </QualifiedName>
+//     <isLinearTimedVariables>
+//       <TimePoint index=\"0\" isLinear=\"true\"/>
+//     </isLinearTimedVariables>
+//       <VariableCategory>independentParameter</VariableCategory>
+//     </ScalarVariable>
+//
+//     <ScalarVariable name=\"loadTorque.tau\" description=\"Accelerating torque acting at flange (= -flange.tau)\" valueReference=\"129\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
+//       <Real    unit=\"N.m\" />
+//       <QualifiedName>
+//         <exp:QualifiedNamePart name=\"loadTorque\"/>
+//         <exp:QualifiedNamePart name=\"tau\"/>
 //       </QualifiedName>
 //     <isLinearTimedVariables>
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
@@ -4469,7 +4469,7 @@ readFile("Bug3857.xml"); getErrorString();
 //   <VendorAnnotations>
 //   </VendorAnnotations>
 //
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\" />
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-006\" />
 //
 //   <ModelVariables>
 //     <ScalarVariable name=\"h\"  valueReference=\"0\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
@@ -4588,7 +4588,7 @@ readFile("Bug3857.xml"); getErrorString();
 //             <exp:QualifiedNamePart name=\"v\"/>
 //           </exp:Identifier>
 //         </exp:Der>
-//         <exp:RealLiteral>-9.81</exp:RealLiteral>
+//         <exp:RealLiteral>-9.810000000000001</exp:RealLiteral>
 //       </exp:Sub>
 //     </equ:Equation>
 //     <equ:Equation>
@@ -4709,7 +4709,7 @@ readFile("Bug3857.xml"); getErrorString();
 //   <VendorAnnotations>
 //   </VendorAnnotations>
 //
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\" />
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-006\" />
 //
 //   <ModelVariables>
 //     <ScalarVariable name=\"T\" description=\"Temperature\" valueReference=\"0\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
@@ -4974,7 +4974,7 @@ readFile("Bug3857.xml"); getErrorString();
 //   <VendorAnnotations>
 //   </VendorAnnotations>
 //
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\" />
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-006\" />
 //
 //   <ModelVariables>
 //     <ScalarVariable name=\"T\"  valueReference=\"0\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
