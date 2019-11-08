@@ -201,48 +201,53 @@ public function fixAliasVarsVariablity
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 protected
-  BackendDAE.Variables aliasVars,systvars,globalKnownVars;
+  BackendDAE.Variables aliasVars, systvars, globalKnownVars;
   DAE.Exp binding;
   DAE.ComponentRef cr;
-  Boolean paramOrConst=false,const=false;
+  Boolean paramOrConst, const;
   BackendDAE.Shared shared;
-  list<BackendDAE.Var> referencevar,knownVarList={},aliasVarList={};
+  list<BackendDAE.Var> referencevar, knownVarList={}, aliasVarList={};
   BackendDAE.Var tempvar;
 algorithm
   aliasVars := BackendDAEUtil.getAliasVars(inDAE);
   systvars := BackendVariable.listVar(BackendVariable.equationSystemsVarsLst(inDAE.eqs));
-  //BackendDump.dumpVariables(aliasVars,"aliasVariable-Actual");
+
+  //BackendDump.dumpVariables(aliasVars, "aliasVariable-Actual");
   for var in BackendVariable.varList(aliasVars) loop
     binding := BackendVariable.varBindExp(var);
     {cr} := Expression.getAllCrefs(binding);
+
     // look up for the reference variable variablity
-    referencevar:= getVarsHelper(cr,systvars); // first check in EqSystem.OrderedVars
-    //check in shared.globalKnownVars if not found in orderedVars
-    if(listEmpty(referencevar)) then
+    // check in shared.globalKnownVars if not found in orderedVars
+    referencevar := getVarsHelper(cr, systvars); // first check in EqSystem.OrderedVars
+    if listEmpty(referencevar) then
       referencevar := getVarsHelper(cr,inDAE.shared.globalKnownVars);
     end if;
+
     // check list of referencevariable either PARAM() or CONST()
-    if (not listEmpty(referencevar)) then
+    if listEmpty(referencevar) then
+      paramOrConst := false;
+      const := false;
+    else
       paramOrConst := List.mapAllValueBool(referencevar, BackendVariable.isParamOrConstant, true);
       const := List.mapAllValueBool(referencevar, BackendVariable.isConst, true);
     end if;
 
-    if (paramOrConst and not const) then
-      // remove the variable from AliasVarList and add it to GlobalknownVarlist after changing it to PARAM() and fixed=true
-      tempvar := BackendVariable.setVarKind(var,BackendDAE.PARAM());
-      knownVarList := BackendVariable.setVarFixed(tempvar,true) :: knownVarList;
-      //BackendDump.dumpVarList(referencevar,"matchedparamvar");
-    elseif (const) then
+    // remove the variable from aliasVarList and add it to knownVarList after changing it to PARAM()/CONST() and fixed=true
+    if const then
       tempvar := BackendVariable.setVarKind(var,BackendDAE.CONST());
-      knownVarList := BackendVariable.setVarFixed(tempvar,true) :: knownVarList;
+      knownVarList := BackendVariable.setVarFixed(tempvar, true) :: knownVarList;
+    elseif paramOrConst then
+      tempvar := BackendVariable.setVarKind(var,BackendDAE.PARAM());
+      knownVarList := BackendVariable.setVarFixed(tempvar, true) :: knownVarList;
     else
       aliasVarList := var :: aliasVarList;
     end if;
-    //print("Alias var : " + ComponentReference.crefStr(var.varName) + "==>" + ComponentReference.crefStr(cr) + "\n");
   end for;
-  //BackendDump.dumpVarList(aliasVarList,"AfterChangingParameters");
+
+  //BackendDump.dumpVarList(aliasVarList, "AfterChangingParameters");
   // add the parameter dependent alias vars to Global known Vars after removing from aliasVarList
-  globalKnownVars := BackendVariable.mergeVariables(inDAE.shared.globalKnownVars,BackendVariable.listVar(knownVarList));
+  globalKnownVars := BackendVariable.mergeVariables(inDAE.shared.globalKnownVars, BackendVariable.listVar(knownVarList));
 
   outDAE := BackendDAEUtil.setAliasVars(inDAE, BackendVariable.listVar(aliasVarList));
   outDAE := BackendDAEUtil.setDAEGlobalKnownVars(outDAE, globalKnownVars);
@@ -254,7 +259,7 @@ protected function getVarsHelper
   output list<BackendDAE.Var> outVars;
 algorithm
   try
-    (outVars,_) := BackendVariable.getVar(cr, vars);
+    (outVars, _) := BackendVariable.getVar(cr, vars);
   else
     // guard against failures
     outVars := {};
