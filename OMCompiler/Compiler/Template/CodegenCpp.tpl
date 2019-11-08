@@ -6594,13 +6594,15 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
         case "mat" then
         <<
         const all_vars_t params = make_tuple(outputRealVars.outputParams,outputIntVars.outputParams,outputBoolVars.outputParams,outputDerVars.outputParams,outputResVars.outputParams);
+        neg_all_vars_t neg_all_params = make_tuple(outputRealVars.negateParams, outputIntVars.negateParams, outputBoolVars.negateParams, outputDerVars.negateParams, outputResVars.negateParams);
         >>
         else
         <<
         const all_vars_t params;
+        const neg_all_vars_t neg_all_params;
         >>
       %>
-      _writeOutput->write(params,_global_settings->getStartTime(),_global_settings->getEndTime());
+      _writeOutput->write(params,neg_all_params,_global_settings->getStartTime(),_global_settings->getEndTime());
     }
     //Write the current values
      else

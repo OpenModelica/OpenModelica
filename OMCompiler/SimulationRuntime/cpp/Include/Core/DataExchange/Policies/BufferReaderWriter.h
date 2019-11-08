@@ -312,7 +312,7 @@ public:
      @start_time
      @end_time
      */
-    virtual void write(const all_vars_t& v_list, double start_time, double end_time)
+    virtual void write(const all_vars_t& v_list, const neg_all_vars_t& neg_v_list, double start_time, double end_time)
     {
       //not supported for buffer
     }

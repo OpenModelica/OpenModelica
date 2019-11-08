@@ -99,7 +99,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
               if (emitResult)
               {
                 if (isParameter)
-                  _realVars.addParameter(name, descripton, realVarPtr);
+                  _realVars.addParameter(name, descripton, realVarPtr, isNegatedAlias);
                 else
                   _realVars.addOutputVar(name, descripton, realVarPtr, isNegatedAlias);
               }
@@ -121,7 +121,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
               if (emitResult)
               {
                 if (isParameter)
-                  _intVars.addParameter(name, descripton, intVarPtr);
+                  _intVars.addParameter(name, descripton, intVarPtr, isNegatedAlias);
                 else
                   _intVars.addOutputVar(name, descripton, intVarPtr, isNegatedAlias);
               }
@@ -143,7 +143,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
               if (emitResult)
               {
                 if (isParameter)
-                  _boolVars.addParameter(name, descripton, boolVarPtr);
+                  _boolVars.addParameter(name, descripton, boolVarPtr, isNegatedAlias);
                 else
                   _boolVars.addOutputVar(name, descripton, boolVarPtr, isNegatedAlias);
               }
