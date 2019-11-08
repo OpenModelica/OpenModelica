@@ -209,4 +209,3 @@ ModelicaCompliance.Scoping.Visibility.RedeclareProtectedClass
 ModelicaCompliance.Scoping.Visibility.RedeclareProtectedComp
 ModelicaCompliance.Components.Variability.ConstantNoBinding
 ModelicaCompliance.Connections.Restrictions.ConnectMismatchConstant
-
