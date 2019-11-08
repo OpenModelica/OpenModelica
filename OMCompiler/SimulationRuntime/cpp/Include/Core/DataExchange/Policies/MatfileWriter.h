@@ -289,7 +289,7 @@ class MatFileWriter : public ContainerManager
      * \return
      */
     /*========================================================================================{end}==*/
-    virtual void write(const all_vars_t& v_list, double start_time, double end_time)
+    virtual void write(const all_vars_t& v_list, const neg_all_vars_t& neg_v_list, double start_time, double end_time)
     {
         unsigned int uiParCount = get<0>(v_list).size() +get<1>(v_list).size()+get<2>(v_list).size()+ 1;  // all variables + time
         double *doubleHelpMatrix = NULL;
@@ -304,27 +304,31 @@ class MatFileWriter : public ContainerManager
         *(doubleHelpMatrix + uiParCount) = end_time;
         doubleHelpMatrix++;
 
-        // ...then the other real variables
-        for (real_vars_t::const_iterator it = get<0>(v_list).begin(); it != get<0>(v_list).end(); ++it)
+
+        std::transform(get<0>(v_list).begin(), get<0>(v_list).end(), get<0>(neg_v_list).begin(),
+            doubleHelpMatrix, WriteOutputVar<double>());
+
+
+        // ...followed by int variable values.
+        /*for (int_vars_t::const_iterator it = get<1>(v_list).begin(); it != get<1>(v_list).end(); ++it)
         {
             *doubleHelpMatrix = *(*it);
-            *(doubleHelpMatrix + uiParCount) = *(*it);
             doubleHelpMatrix++;
-        }
-        // ...then the other int variables
-        for (int_vars_t::const_iterator it = get<1>(v_list).begin(); it != get<1>(v_list).end(); ++it)
+        }*/
+        size_t nReal = get<0>(v_list).size();
+        std::transform(get<1>(v_list).begin(), get<1>(v_list).end(), get<1>(neg_v_list).begin(),
+            doubleHelpMatrix + nReal, WriteOutputVar<int>());
+        // ...followed by bool variable values.
+        /*for (bool_vars_t::const_iterator it = get<2>(v_list).begin(); it != get<2>(v_list).end(); ++it)
         {
             *doubleHelpMatrix = *(*it);
-            *(doubleHelpMatrix + uiParCount) = *(*it);
             doubleHelpMatrix++;
         }
-        // ...then the other bool variables
-        for (bool_vars_t::const_iterator it = get<2>(v_list).begin(); it != get<2>(v_list).end(); ++it)
-        {
-            *doubleHelpMatrix = *(*it);
-            *(doubleHelpMatrix + uiParCount) = *(*it);
-            doubleHelpMatrix++;
-        }
+        */
+        size_t nInt = get<1>(v_list).size();
+        std::transform(get<2>(v_list).begin(), get<2>(v_list).end(), get<2>(neg_v_list).begin(),
+            doubleHelpMatrix + nReal + nInt, WriteOutputVar<bool>());
+
 
         // if matrix is complete, write to file!
         writeMatVer4Matrix("data_1", uiParCount, 2, _doubleMatrixData1, sizeof(double));
