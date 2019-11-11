@@ -47,15 +47,22 @@ runScript(modelTesting);getErrorString();
 // |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
 // |                 | |       | | It could help to provide better start-values for the iteration variables.
 // |                 | |       | | For more information simulate with -lv LOG_NLS_V
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// stdout            | warning | While solving non-linear system an assertion failed during initialization.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS_V
+// assert            | debug   | Solving non-linear system 220 failed at time=0.
+// |                 | |       | For more information please use -lv LOG_NLS.
+// assert            | warning | Failed to solve the initialization problem without homotopy method. If homotopy is available the homotopy method is used now.
+// LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
 // Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // Warning: Some equations could not be differentiated for following variables having attribute stateSelect=StateSelect.prefer. They will be treated as if they had stateSelect=StateSelect.default
 // ========================================
-// 1: pump.medium.h
-// 2: pump.medium.p
+// 1: pump.medium.p
+// 2: pump.medium.h
 // Please use -d=bltdump for more information.
 //
 // "true
