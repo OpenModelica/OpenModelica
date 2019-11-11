@@ -1514,6 +1514,10 @@ constant ConfigFlag NO_ASSC = CONFIG_FLAG(132, "noASSC",
   NONE(), EXTERNAL(),  BOOL_FLAG(false), NONE(),
   Util.gettext("Disables analytical to structural singularity conversion."));
 
+constant ConfigFlag FULL_ASSC = CONFIG_FLAG(133, "fullASSC",
+  NONE(), EXTERNAL(),  BOOL_FLAG(false), NONE(),
+  Util.gettext("Disables analytical to structural singularity conversion."));
+
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -1650,7 +1654,8 @@ constant list<ConfigFlag> allConfigFlags = {
   INITIAL_STATE_SELECTION,
   STRICT,
   LINEARIZATION_DUMP_LANGUAGE,
-  NO_ASSC
+  NO_ASSC,
+  FULL_ASSC
 };
 
 public function new

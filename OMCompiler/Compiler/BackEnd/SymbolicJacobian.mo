@@ -4415,7 +4415,7 @@ algorithm
       for now also only resolve singularities and not replace full loop
       otherwise it sometimes leads to mixed determined systems
     */
-    if boolArr[r] and listEmpty(rowArr[r]) then
+    if boolArr[r] and (listEmpty(rowArr[r]) or Flags.getConfigBool(Flags.FULL_ASSC)) then
       (i_arr, i_scal) := idxArr[r];
       /* remove assignments */
       ass2[ass1[i_scal]] := -1;
