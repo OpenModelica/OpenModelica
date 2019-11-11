@@ -58,9 +58,9 @@ If you are a developer and want to track the latest heads, use:
 > git submodule foreach --recursive "git pull"
 ```
 
-In order to push to the repository, you will push to your own fork of OMCompiler.git, OMEdit.git, etc. You will need to create a fork of each repository that you want to push to (by clicking the Fork button in the GitHub web interface).
+In order to push to the repository, you will push to your own fork of OpenModelica.git, etc. You will need to create a fork of each repository that you want to push to (by clicking the Fork button in the GitHub web interface).
 
-If you do not checkout the repositories for GUI clients (such as OMEdit.git), these directories will be ignored by autoconf and skipped during compilation.
+If you do not checkout the repositories for GUI clients (such as OMOptim.git), these directories will be ignored by autoconf and skipped during compilation.
 
 ### How to contribute to the OpenModelica Compiler
 
@@ -71,7 +71,7 @@ See [CONTRIBUTING.md](https://github.com/OpenModelica/OpenModelica/blob/master/C
 ```bash
 > git clone https://openmodelica.org/git-readonly/OpenModelica.git OpenModelica-minimal
 > cd OpenModelica-minimal
-> git submodule update --init --recursive libraries testsuite OMCompiler common
+> git submodule update --init --recursive libraries
 ```
 
 ## OpenModelica User's Guide
