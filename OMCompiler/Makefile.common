@@ -220,19 +220,19 @@ breakprocess:
 	(cd tools/debugging/ && time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)
 	(cd tools/debugging/ && cp BreakProcess.exe $(builddir_bin))
 
-all-runtimeCPPinstall:  CMinpack sundials
+all-runtimeCPPinstall:  CMinpack sundials ModelicaExternalC
 	$(MAKE) all runtimeCPPinstall OMBUILDDIR=$(OMBUILDDIR)
 
-omc-and-runtimeCPPinstall:  CMinpack sundials
+omc-and-runtimeCPPinstall:  CMinpack sundials ModelicaExternalC
 	$(MAKE) omc runtimeCPPinstall OMBUILDDIR=$(OMBUILDDIR)
 
-runtimeCPP: CMinpack sundials antlr-copy $(MINGW_EXTRA_LIBS) omc
+runtimeCPP: CMinpack sundials antlr-copy $(MINGW_EXTRA_LIBS) omc ModelicaExternalC
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
 CMAKE_ARGS=$(filter CMAKE_%, $(MAKEFLAGS))
 
 
-omcCAPIinstall:
+omcCAPIinstall: ModelicaExternalC
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) omcCAPIinstall CC="$(CC)" CXX="$(CXX)"  $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR)
 
 runtimeCPPinstall: runtimeCPP

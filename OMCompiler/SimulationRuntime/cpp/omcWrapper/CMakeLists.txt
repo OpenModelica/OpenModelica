@@ -47,10 +47,10 @@ IF(ZeroMQ_FOUND AND cppzmq_FOUND)
     message(STATUS "cppzmq version ${cppzmq_VERSION}")
     message (STATUS "Using ZMQ Header ${ZeroMQ_INCLUDE_DIR}" )
     message (STATUS "Using CPPZMQ Header ${cppzmq_INCLUDE_DIR}" )
-ELSE(ZeroMQ_found AND cppzmq_found)
+ELSE(ZeroMQ_FOUND AND cppzmq_FOUND)
     SET(USE_ZEROMQ OFF)
     message (STATUS "zeromq was not found " )
-ENDIF(ZeroMQ_found AND cppzmq_found)
+ENDIF(ZeroMQ_FOUND AND cppzmq_FOUND)
 
 
 #omc c-api library build is only supported for mingw on Windows.
