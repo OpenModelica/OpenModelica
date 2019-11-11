@@ -2465,16 +2465,16 @@ protected
   Integer i_arr, i_scal, index, value;
 algorithm
   (i_arr, i_scal) := indices;
-  print("(" + intString(i_arr) + "|" + intString(i_scal) + "|" + boolString(changed) +"):\t");
+  print("(" + intString(i_arr) + "|" + intString(i_scal) + "|" + boolString(changed) +"):    ");
   if listLength(linIntJacRow) < 1 then
-    print("EMPTY ROW \t");
+    print("EMPTY ROW     ");
   else
     for element in linIntJacRow loop
       (index, value) := element;
       print("[" + intString(index) + "|" + intString(value) + "] ");
     end for;
   end if;
-  print("\t|| RHS: " + ExpressionDump.printExpStr(rhs) + " \n");
+  print("    || RHS: " + ExpressionDump.printExpStr(rhs) + "\n");
 end dumpLinearIntegerJacobianSparseRow;
 
 public function dumpEqnsStr
