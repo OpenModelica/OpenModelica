@@ -218,7 +218,8 @@ algorithm
   for t1 guard match t1 local Boolean b; case (cr1,Unit.MASTER()) algorithm
     b := false;
     try
-      Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7) := BaseHashTable.get(cr1, inHtCr2U2);
+      Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7) :=
+        BaseHashTable.get(ComponentRef.stripSubscripts(cr1), inHtCr2U2);
       b := true;
     else
     end try;
@@ -730,7 +731,7 @@ algorithm
         (op_unit, {});
 
     case Expression.CREF(ty = Type.REAL())
-      then (BaseHashTable.get(eq.cref, htCr2U), {});
+      then (BaseHashTable.get(ComponentRef.stripSubscripts(eq.cref), htCr2U), {});
 
     else (Unit.MASTER({}), {});
   end matchcontinue;
