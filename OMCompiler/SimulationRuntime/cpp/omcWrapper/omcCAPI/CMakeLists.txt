@@ -22,7 +22,7 @@ IF(WIN32) # Check if we are on Windows
    set(CMAKE_EXE_LINKER_FLAGS "-Wl,--stack,33554432")
   ENDIF(MSVC)
 ELSEIF(UNIX)
-  SET(OMC_LIB_PATH "${OMC_PATH}/lib/x86_64-linux-gnu/omc")
+  SET(OMC_LIB_PATH "${OMC_PATH}/${LIBINSTALLEXT}/../")
 ELSE(WIN32)
   MESSAGE(SEND_ERROR "You are on an unsupported platform! (Not Win32 or Unix)")
 ENDIF(WIN32)
