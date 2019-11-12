@@ -1140,7 +1140,7 @@ algorithm
   end matchcontinue;
 end checkLinearSystem;
 
-protected function generateSparsePattern "author: wbraun
+public function generateSparsePattern "author: wbraun
   Function generated for a given set of variables and
   equations the sparsity pattern and a coloring of Jacobian matrix A^(NxM).
     col: N = size(diffVars)

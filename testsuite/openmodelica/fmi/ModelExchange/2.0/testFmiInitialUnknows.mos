@@ -1,0 +1,105 @@
+// name:  testFMIInitialUnknows.mos
+// keywords: FMI 2.0 export
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml initialUnknows.xml
+
+loadString("
+model InitialUnknown01
+  input Real u;
+  Real x;
+  output Real y;
+initial equation
+  x = 0.0;
+equation
+  der(x) = u;
+  y = x;
+end InitialUnknown01;
+");
+getErrorString();
+
+translateModelFMU(InitialUnknown01);
+getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq InitialUnknown01.fmu modelDescription.xml > modelDescription.tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" modelDescription.tmp.xml > initialUnknows.xml"); getErrorString();
+readFile("initialUnknows.xml"); getErrorString();
+
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" modelDescription.tmp.xml > initialUnknows.xml"); getErrorString();
+readFile("initialUnknows.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// "InitialUnknown01.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"x\"
+//     valueReference=\"0\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"der(x)\"
+//     valueReference=\"1\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real derivative=\"1\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"u\"
+//     valueReference=\"2\"
+//     variability=\"continuous\"
+//     causality=\"input\"
+//     >
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
+//     name=\"y\"
+//     valueReference=\"3\"
+//     variability=\"continuous\"
+//     causality=\"output\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"5\" -->
+//   <ScalarVariable
+//     name=\"_D_outputAlias_y\"
+//     valueReference=\"0\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   </ModelVariables>
+// "
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <Outputs>
+//       <Unknown index=\"4\" dependencies=\"1\" dependenciesKind=\"dependent\" />
+//     </Outputs>
+//     <Derivatives>
+//       <Unknown index=\"2\" dependencies=\"3\" dependenciesKind=\"dependent\" />
+//     </Derivatives>
+//     <InitialUnknowns>
+//       <Unknown index=\"2\" dependencies=\"2\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"4\" dependencies=\"1 4\" dependenciesKind=\"dependent dependent\" />
+//     </InitialUnknowns>
+//   </ModelStructure>
+// "
+// ""
+// endResult

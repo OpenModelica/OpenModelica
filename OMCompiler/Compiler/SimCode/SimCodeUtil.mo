@@ -537,7 +537,7 @@ algorithm
 
     // collect fmi partial derivative
     if FMI.isFMIVersion20(FMUVersion) or Config.simCodeTarget() ==  "omsicpp"  then
-      (SymbolicJacsFMI, modelStructure, modelInfo, SymbolicJacsTemp, uniqueEqIndex) := createFMIModelStructure(inFMIDer, modelInfo, uniqueEqIndex);
+      (SymbolicJacsFMI, modelStructure, modelInfo, SymbolicJacsTemp, uniqueEqIndex) := createFMIModelStructure(inFMIDer, modelInfo, uniqueEqIndex, inInitDAE);
       SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
       if debug then execStat("simCode: create FMI model structure"); end if;
     end if;
@@ -13063,6 +13063,7 @@ public function createFMIModelStructure
   input BackendDAE.SymbolicJacobians inSymjacs;
   input SimCode.ModelInfo inModelInfo;
   input Integer inUniqueEqIndex;
+  input BackendDAE.BackendDAE inInitDAE;
   output list<SimCode.JacobianMatrix> symJacFMI = {};
   output Option<SimCode.FmiModelStructure> outFmiModelStructure;
   output SimCode.ModelInfo outModelInfo = inModelInfo;
@@ -13086,7 +13087,8 @@ protected
    list<SimCodeVar.SimVar> tempvars;
    SimCodeVar.SimVars vars;
    SimCode.HashTableCrefToSimVar crefSimVarHT;
-   list<Integer> intLst;
+   list<Integer> intLst,derivativeLst;
+   SimCode.FmiInitialUnknowns fmiInitUnknowns;
 algorithm
   try
     //print("Start creating createFMIModelStructure\n");
@@ -13112,6 +13114,7 @@ algorithm
 
     // get derivatives pattern
     intLst := list(getVariableIndex(v) for v in inModelInfo.vars.derivativeVars);
+    derivativeLst := intLst;
     derivatives := list(fmiUnknown for fmiUnknown guard(Util.boolOrList(list(isFmiUnknown(i, fmiUnknown) for i in intLst))) in allUnknowns);
 
     // get output pattern
@@ -13141,6 +13144,9 @@ algorithm
       contPartSimDer := NONE();
     end if;
 
+    // FMI initialUnknowns
+    fmiInitUnknowns := getFmiInitialUnknowns(inInitDAE, crefSimVarHT,derivativeLst);
+
     outFmiModelStructure :=
       SOME(
         SimCode.FMIMODELSTRUCTURE(
@@ -13148,7 +13154,7 @@ algorithm
           SimCode.FMIDERIVATIVES(derivatives),
           contPartSimDer,
           SimCode.FMIDISCRETESTATES(discreteStates),
-          SimCode.FMIINITIALUNKNOWNS({})));
+          fmiInitUnknowns));
 else
   // create empty model structure
   try
@@ -13182,6 +13188,75 @@ else
   end try;
 end try;
 end createFMIModelStructure;
+
+protected function getFmiInitialUnknowns
+"function which exctracts the FMI <InitialUnknowns> </InitialUnknowns>
+in FMI ModelStructure"
+  input BackendDAE.BackendDAE initDAE;
+  input SimCode.HashTableCrefToSimVar crefSimVarHT;
+  input list<Integer> derivativesLst; // Condition-3 defined with <derivatives> in ModelStructure
+  output SimCode.FmiInitialUnknowns fmiInitUnknowns;
+protected
+  list<BackendDAE.Var> initUnknowns, states, tmpinitUnknowns1,tmpinitUnknowns2;
+  list<DAE.ComponentRef> diffCrefs, diffedCrefs, derdiffCrefs, tmpOutputCref;
+  list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> spT;
+  list<tuple<Integer, list<Integer>>> sparseInts;
+  list<SimCode.FmiUnknown> unknowns;
+  list<SimCodeVar.SimVar> vars1, vars2, initialUnknownsOutput;
+  BackendDAE.BackendDAE tmpBDAE;
+  list<Integer> intLst;
+algorithm
+  try
+    //prepare initialUnknows from initialization DAE
+    tmpBDAE := BackendDAEOptimize.collapseIndependentBlocks(initDAE);
+    tmpBDAE := BackendDAEUtil.transformBackendDAE(tmpBDAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
+
+    initUnknowns := BackendVariable.equationSystemsVarsLst(tmpBDAE.eqs); // extract ordered vars
+
+    // Condition-1 get the output patterns with causality = "output" and initial = approx or calculated
+    // To Do how to identify intial = approx ?
+    tmpinitUnknowns1 := List.extractOnTrue(initUnknowns, isVarOutputandNotfixed);
+    //Condition-2 causality = "calculatedParameter"
+    tmpinitUnknowns2 := List.extractOnTrue(initUnknowns, checkCalculatedParameter);
+
+    tmpOutputCref:= List.filterMap(listAppend(tmpinitUnknowns1, tmpinitUnknowns2), BackendVariable.varCref);
+    initialUnknownsOutput := getSimVars2Crefs(tmpOutputCref, crefSimVarHT);
+    intLst := list(getVariableIndex(v) for v in initialUnknownsOutput);
+
+    ((_, spT, (diffCrefs, diffedCrefs),_),_) := SymbolicJacobian.generateSparsePattern(tmpBDAE, initUnknowns, initUnknowns);
+
+    // collect all variable
+    vars1 := getSimVars2Crefs(diffedCrefs, crefSimVarHT);
+    vars2 := getSimVars2Crefs(diffCrefs, crefSimVarHT);
+    vars1 := listAppend(vars1, vars2);
+
+    sparseInts := sortSparsePattern(vars1, spT, true);
+    unknowns := translateSparsePatterInts2FMIUnknown(sparseInts, {});
+
+    // filter the initial unknowns with output and derivativelist index
+    unknowns := list(fmiUnknown for fmiUnknown guard(Util.boolOrList(list(isFmiUnknown(i, fmiUnknown) for i in listAppend(intLst,derivativesLst)))) in unknowns);
+    fmiInitUnknowns := SimCode.FMIINITIALUNKNOWNS(unknowns);
+  else
+    // guard against failures
+    fmiInitUnknowns := SimCode.FMIINITIALUNKNOWNS({});
+  end try;
+end getFmiInitialUnknowns;
+
+protected function isVarOutputandNotfixed
+"function which checks var is OUTPUT() and not fixed=true"
+  input BackendDAE.Var inVar;
+  output Boolean outVar = false;
+algorithm
+  outVar := BackendVariable.isOutputVar(inVar) and not BackendVariable.varFixed(inVar);
+end isVarOutputandNotfixed;
+
+protected function checkCalculatedParameter
+"function which checks var is PARAM() and not fixed=true "
+  input BackendDAE.Var inVar;
+  output Boolean outVar = false;
+algorithm
+  outVar := BackendVariable.isParam(inVar) and  not BackendVariable.varFixed(inVar);
+end checkCalculatedParameter;
 
 protected function isClockedStateSimVar
 "Returns true for discrete state variable, false otherwise."

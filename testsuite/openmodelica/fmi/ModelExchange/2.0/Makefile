@@ -24,6 +24,7 @@ testBug5673.mos \
 testChangeParam.mos \
 testDisableDep.mos \
 testDiscreteStructe.mos \
+testFMIInitialUnknows.mos \
 testInitialEquationsFMI.mos \
 TestSourceCodeFMU.mos \
 ticket5670.mos \
@@ -41,8 +42,6 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile \
-
-
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 
