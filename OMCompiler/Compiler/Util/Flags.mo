@@ -1516,7 +1516,7 @@ constant ConfigFlag NO_ASSC = CONFIG_FLAG(132, "noASSC",
 
 constant ConfigFlag FULL_ASSC = CONFIG_FLAG(133, "fullASSC",
   NONE(), EXTERNAL(),  BOOL_FLAG(false), NONE(),
-  Util.gettext("Disables analytical to structural singularity conversion."));
+  Util.gettext("Enables full equation replacement for BLT transformation from the ASSC algorithm."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's

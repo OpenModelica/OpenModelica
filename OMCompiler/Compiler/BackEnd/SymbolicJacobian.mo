@@ -4318,7 +4318,8 @@ end solveLinearIntegerJacobianRow;
 
 public function solveLinearIntegerJacobianRowSingleStep
 "author: kabdelhak FHB 10-2019
- Helper function for solveLinearIntegerJacobianRow, performs one single row update."
+ Helper function for solveLinearIntegerJacobianRow, performs one single row update.
+ new_row = old_row * pivot_element - pivot_row * row_element"
   input BackendDAE.LinearIntegerJacobianRow pivot_row;
   input BackendDAE.LinearIntegerJacobianRow row;
   input Integer piv_value;
@@ -4328,14 +4329,19 @@ protected
   Integer idx, val;
   list<Integer> marks = {};
 algorithm
+  /* phase 1: traverse each element of the row and performs the multiplication */
   for tpl in row loop
     (idx, val) := tpl;
     val := val * piv_value - getRowElementValue(pivot_row, idx) * row_value;
+    /* only save element if not zero */
     if val <> 0 then
       resultRow := (idx, val) :: resultRow;
     end if;
+    /* mark visited elements for phase 2*/
     marks := idx :: marks;
   end for;
+
+  /* phase 2: row entries of zero are not in the list, therefore traverse the pivot row and update all zeros (unmarked indices) */
   for tpl in pivot_row loop
     (idx, val) := tpl;
     if not List.contains(marks, idx, intEq) then
@@ -4435,7 +4441,7 @@ algorithm
       updateList_arr := i_arr :: updateList_arr;
     end if;
   end for;
-      /* update adjacency matrix and transposed adjacency matrix */
+    /* update adjacency matrix and transposed adjacency matrix */
     if not listEmpty(updateList_arr) then
       try
         /* scalar = true */
@@ -4449,7 +4455,7 @@ algorithm
         syst := BackendDAEUtil.updateIncidenceMatrix(syst, BackendDAE.SOLVABLE(), NONE(), updateList_arr);
       end try;
     end if;
-    //syst := BackendDAEUtil.getIncidenceMatrix
+
     if not listEmpty(updateList_arr) and not Flags.isSet(Flags.DUMP_ASSC) and Flags.isSet(Flags.BLT_DUMP) then
       print("--- Some equations have been changed, for more information please use -d=dumpASSC.---\n\n");
     end if;
@@ -4469,16 +4475,20 @@ algorithm
       Integer idx, val;
       list<tuple<Integer, Integer>> rest;
       DAE.Exp exp;
+
+    /* START, generate first token: coeff*var */
     case ((idx, val) :: rest, DAE.RCONST(real = real)) guard(real == 0.0)
       algorithm
         exp := DAE.BINARY(DAE.RCONST(val), DAE.MUL(DAE.T_REAL_DEFAULT), BackendVariable.varExp(BackendVariable.getVarAt(vars, idx)));
     then generateLHSfromRow(rest, vars, exp);
 
+    /* MID, connect new and old exp with plus: old_exp + coeff*var */
     case ((idx, val) :: rest, _)
       algorithm
         exp := DAE.BINARY(DAE.RCONST(val), DAE.MUL(DAE.T_REAL_DEFAULT), BackendVariable.varExp(BackendVariable.getVarAt(vars, idx)));
     then generateLHSfromRow(rest, vars, DAE.BINARY(lhs, DAE.ADD(DAE.T_REAL_DEFAULT), exp));
 
+    /* END, simplify expression */
     case ({}, _)
       algorithm
         exp :=ExpressionSimplify.simplify(lhs);
