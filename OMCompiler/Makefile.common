@@ -233,7 +233,7 @@ CMAKE_ARGS=$(filter CMAKE_%, $(MAKEFLAGS))
 
 
 omcCAPIinstall: ModelicaExternalC
-	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) omcCAPIinstall CC="$(CC)" CXX="$(CXX)"  $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) omcCAPIinstall CC="$(CC)" CXX="$(CXX)" $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR)
 
 runtimeCPPinstall: runtimeCPP
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)" $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR)
