@@ -118,14 +118,17 @@ function evaluateAnnotation
   input Absyn.Annotation inAnnotation;
   output String outString = "";
 protected
-  Boolean b;
+  Boolean b, s;
 algorithm
   b := Flags.set(Flags.SCODE_INST, true);
+  s := Flags.set(Flags.NF_SCALARIZE, true); // #5689
   try
     outString := evaluateAnnotation_dispatch(absynProgram, classPath, inAnnotation);
     Flags.set(Flags.SCODE_INST, b);
+    Flags.set(Flags.NF_SCALARIZE, s);
   else
     Flags.set(Flags.SCODE_INST, b);
+    Flags.set(Flags.NF_SCALARIZE, s);
     fail();
   end try;
 end evaluateAnnotation;
@@ -282,14 +285,17 @@ function evaluateAnnotations
   input list<Absyn.Element> inElements;
   output list<String> outStringLst = {};
 protected
-  Boolean b;
+  Boolean b, s;
 algorithm
   b := Flags.set(Flags.SCODE_INST, true);
+  s := Flags.set(Flags.NF_SCALARIZE, true); // #5689
   try
     outStringLst := evaluateAnnotations_dispatch(absynProgram, classPath, inElements);
     Flags.set(Flags.SCODE_INST, b);
+    Flags.set(Flags.NF_SCALARIZE, s);
   else
     Flags.set(Flags.SCODE_INST, b);
+    Flags.set(Flags.NF_SCALARIZE, s);
     fail();
   end try;
 end evaluateAnnotations;
@@ -457,19 +463,22 @@ protected
   InstNode top, inst_cls, cls;
   SCode.Program program;
   String name;
-  Boolean b;
+  Boolean b, s;
 algorithm
   b := Flags.set(Flags.SCODE_INST, true);
+  s := Flags.set(Flags.NF_SCALARIZE, true); // #5689
   try
     // run the front-end front
     (program, name, top, inst_cls) := frontEndFront(absynProgram, classPath);
     cls := Lookup.lookupClassName(pathToQualify, inst_cls, AbsynUtil.dummyInfo, checkAccessViolations = false);
     qualPath := InstNode.scopePath(cls, true);
     Flags.set(Flags.SCODE_INST, b);
+    Flags.set(Flags.NF_SCALARIZE, s);
   else
     // do not fail, just return the Absyn path
     qualPath := pathToQualify;
     Flags.set(Flags.SCODE_INST, b);
+    Flags.set(Flags.NF_SCALARIZE, s);
   end try;
 end mkFullyQual;
 
