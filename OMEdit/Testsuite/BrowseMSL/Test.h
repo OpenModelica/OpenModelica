@@ -42,7 +42,8 @@ class Test: public QObject
   Q_OBJECT
 
 private slots:
-  void testcase();
+  void electricalAnalogBasic();
+  void mediaAir();
 };
 
 #endif // TESTGUI_H

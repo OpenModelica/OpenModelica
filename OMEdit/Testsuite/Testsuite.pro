@@ -30,6 +30,6 @@
 
 TEMPLATE = subdirs
 
-SUBDIRS = BrowseElectricalAnalogBasic \
-  BrowseMediaAirReferenceMoistAir
+SUBDIRS = BrowseMSL \
+  Diagram
 

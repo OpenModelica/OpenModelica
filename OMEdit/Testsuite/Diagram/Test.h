@@ -32,24 +32,17 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "Test.h"
-#include "Util.h"
-#include "OMEditApplication.h"
-#include "MainWindow.h"
-#include "Modeling/LibraryTreeWidget.h"
+#ifndef TESTGUI_H
+#define TESTGUI_H
 
-#define GC_THREADS
-extern "C" {
-#include "meta/meta_modelica.h"
-}
+#include <QObject>
 
-OMEDITTEST_MAIN(Test)
-
-void Test::testcase()
+class Test: public QObject
 {
-  OMEDITTEST_SKIP("Enable this testcase by removing this line once the ticket#5669 (https://trac.openmodelica.org/OpenModelica/ticket/5669) is fixed.");
-  if (!Util::expandLibraryTreeItemParentHierarchy(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem("Modelica.Media.Air"))) {
-    QFAIL("");
-  }
-  MainWindow::instance()->close();
-}
+  Q_OBJECT
+
+private slots:
+  void chuaCircuit();
+};
+
+#endif // TESTGUI_H
