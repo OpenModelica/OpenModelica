@@ -1999,10 +1999,10 @@ public
   protected
     Expression e;
   algorithm
-    if isSome(exp) then
-      SOME(e) := exp;
-      outExp := SOME(map(e, func));
-    end if;
+    outExp := match exp
+      case SOME(e) then SOME(map(e, func));
+      else exp;
+    end match;
   end mapOpt;
 
   function mapCall
@@ -2339,10 +2339,10 @@ public
   protected
     Expression e;
   algorithm
-    if isSome(exp) then
-      SOME(e) := exp;
-      outExp := SOME(func(e));
-    end if;
+    outExp := match exp
+      case SOME(e) then SOME(func(e));
+      else exp;
+    end match;
   end mapShallowOpt;
 
   function mapCrefShallow
@@ -3271,11 +3271,15 @@ public
   protected
     Expression e;
   algorithm
-    if isSome(exp) then
-      SOME(e) := exp;
-      (e, arg) := mapFold(e, func, arg);
-      outExp := SOME(e);
-    end if;
+    outExp := match exp
+      case SOME(e)
+        algorithm
+          (e, arg) := mapFold(e, func, arg);
+        then
+          SOME(e);
+
+      else exp;
+    end match;
   end mapFoldOpt;
 
   function mapFoldCall<ArgT>
