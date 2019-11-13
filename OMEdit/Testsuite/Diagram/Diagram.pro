@@ -30,7 +30,7 @@
 
 include(../Common/Testsuite.pri)
 
-TARGET = BrowseElectricalAnalogBasic
+TARGET = Diagram
 
 SOURCES += ../Common/Util.cpp \
   Test.cpp

@@ -45,10 +45,24 @@ extern "C" {
 
 OMEDITTEST_MAIN(Test)
 
-void Test::testcase()
+/*!
+ * \brief Test::chuaCircuit
+ * Browses to Modelica.Electrical.Analog.Examples.ChuaCircuit and loads it diagram view.
+ */
+void Test::chuaCircuit()
 {
-  if (!Util::expandLibraryTreeItemParentHierarchy(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem("Modelica.Electrical.Analog.Basic"))) {
-    QFAIL("");
+  LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem("Modelica.Electrical.Analog.Examples.ChuaCircuit");
+  if (!pLibraryTreeItem) {
+    QFAIL("Failed to find Modelica.Electrical.Analog.Examples.ChuaCircuit. Makesure MSL is loaded.");
   }
+  if (!Util::expandLibraryTreeItemParentHierarchy(pLibraryTreeItem)) {
+    QFAIL("Expanding to Modelica.Electrical.Analog.Examples failed.");
+  }
+
+  // Open the Modelica.Electrical.Analog.Examples.ChuaCircuit diagram.
+  QModelIndex modelIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->libraryTreeItemIndex(pLibraryTreeItem);
+  QModelIndex proxyIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeView()->libraryTreeItemDoubleClicked(proxyIndex);
+
   MainWindow::instance()->close();
 }

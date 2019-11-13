@@ -30,7 +30,7 @@
 
 include(../Common/Testsuite.pri)
 
-TARGET = BrowseMediaAirReferenceMoistAir
+TARGET = BrowseMSL
 
 SOURCES += ../Common/Util.cpp \
   Test.cpp

@@ -258,7 +258,7 @@ void buildAndRunOMEditTestsuite(stash) {
      echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/build/lib/omlibrary"
      echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omedit-testsuite
      echo cd build/bin
-     echo ./RunOMEditTestsuite
+     echo ./RunOMEditTestsuite.sh
      ) > buildOMEditTestsuiteWindows.sh
 
      set MSYSTEM=MINGW64
@@ -280,7 +280,7 @@ void buildAndRunOMEditTestsuite(stash) {
   sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync omedit-testsuite" // Builds the OMEdit testsuite
   sh label: 'RunOMEditTestsuite', script: '''
   cd build/bin
-  xvfb-run ./RunOMEditTestsuite
+  xvfb-run ./RunOMEditTestsuite.sh
   '''
 
   }
