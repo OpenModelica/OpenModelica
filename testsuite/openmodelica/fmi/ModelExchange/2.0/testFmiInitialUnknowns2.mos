@@ -1,0 +1,244 @@
+// name:  testFMIInitialUnknowns2.mos
+// keywords: FMI 2.0 export
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml Pendulum_tmp.txt Pendulumtest.txt
+
+loadString("
+model Pendulum
+  parameter Real m=0.5;
+  parameter Real g=9.82;
+  parameter Real L=1;
+  Real x(start=L),y(start=0),xd,yd;
+  Real Fo;
+equation
+  der(y)=yd;
+  der(x)=xd;
+  m*der(xd) = -x*Fo/L;
+  m*der(yd) = -m*g-Fo*y/L;
+  x*x+y*y=L^2;
+end Pendulum;
+");
+getErrorString();
+
+translateModelFMU(Pendulum);
+getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq Pendulum.fmu modelDescription.xml > Pendulum_tmp.txt"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" Pendulum_tmp.txt > Pendulumtest.txt"); getErrorString();
+readFile("Pendulumtest.txt"); getErrorString();
+
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" Pendulum_tmp.txt > Pendulumtest.txt"); getErrorString();
+readFile("Pendulumtest.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// "Pendulum.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"_D_STATESET1.x\"
+//     valueReference=\"0\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"_D_STATESET2.x\"
+//     valueReference=\"1\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"der(_D_STATESET1.x)\"
+//     valueReference=\"2\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real derivative=\"1\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
+//     name=\"der(_D_STATESET2.x)\"
+//     valueReference=\"3\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real derivative=\"2\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"5\" -->
+//   <ScalarVariable
+//     name=\"der(x)\"
+//     valueReference=\"4\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"6\" -->
+//   <ScalarVariable
+//     name=\"der(xd)\"
+//     valueReference=\"5\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"7\" -->
+//   <ScalarVariable
+//     name=\"der(y)\"
+//     valueReference=\"6\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"8\" -->
+//   <ScalarVariable
+//     name=\"der(yd)\"
+//     valueReference=\"7\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"9\" -->
+//   <ScalarVariable
+//     name=\"Fo\"
+//     valueReference=\"8\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"10\" -->
+//   <ScalarVariable
+//     name=\"x\"
+//     valueReference=\"9\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"11\" -->
+//   <ScalarVariable
+//     name=\"xd\"
+//     valueReference=\"10\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"12\" -->
+//   <ScalarVariable
+//     name=\"y\"
+//     valueReference=\"11\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"13\" -->
+//   <ScalarVariable
+//     name=\"yd\"
+//     valueReference=\"12\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"14\" -->
+//   <ScalarVariable
+//     name=\"L\"
+//     valueReference=\"13\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"1.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"15\" -->
+//   <ScalarVariable
+//     name=\"g\"
+//     valueReference=\"14\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"9.82\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"16\" -->
+//   <ScalarVariable
+//     name=\"m\"
+//     valueReference=\"15\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     initial=\"exact\">
+//     <Real start=\"0.5\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"17\" -->
+//   <ScalarVariable
+//     name=\"_D_STATESET1.A[1]\"
+//     valueReference=\"0\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Integer start=\"1\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"18\" -->
+//   <ScalarVariable
+//     name=\"_D_STATESET1.A[2]\"
+//     valueReference=\"1\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Integer start=\"0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"19\" -->
+//   <ScalarVariable
+//     name=\"_D_STATESET2.A[1]\"
+//     valueReference=\"2\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Integer start=\"1\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"20\" -->
+//   <ScalarVariable
+//     name=\"_D_STATESET2.A[2]\"
+//     valueReference=\"3\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Integer start=\"0\"/>
+//   </ScalarVariable>
+//   </ModelVariables>
+// "
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <Derivatives>
+//       <Unknown index=\"3\" dependencies=\"1 2\" dependenciesKind=\"dependent dependent\" />
+//       <Unknown index=\"4\" dependencies=\"1 2\" dependenciesKind=\"dependent dependent\" />
+//     </Derivatives>
+//     <InitialUnknowns>
+//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"3\" dependencies=\"1 2\" dependenciesKind=\"dependent dependent\" />
+//       <Unknown index=\"4\" dependencies=\"1 2\" dependenciesKind=\"dependent dependent\" />
+//     </InitialUnknowns>
+//   </ModelStructure>
+// "
+// ""
+// endResult

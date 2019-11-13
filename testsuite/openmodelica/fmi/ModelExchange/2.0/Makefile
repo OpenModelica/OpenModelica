@@ -25,6 +25,8 @@ testChangeParam.mos \
 testDisableDep.mos \
 testDiscreteStructe.mos \
 testFMIInitialUnknowns.mos \
+testFMIInitialUnknowns1.mos \
+testFMIInitialUnknowns2.mos \
 testFMIInitialUnknows.mos \
 testInitialEquationsFMI.mos \
 TestSourceCodeFMU.mos \
