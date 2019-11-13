@@ -867,10 +867,10 @@ function operatorsBinary "This function relates the operators in the abstract sy
   input output DAE.Exp e1;
   input output DAE.Type t2;
   input output DAE.Exp e2;
-  output DAE.Type oty1;
-  output DAE.Exp oe1;
-  output DAE.Type oty2;
-  output DAE.Exp oe2;
+  output DAE.Type oty1 = t1;
+  output DAE.Exp oe1 = e1;
+  output DAE.Type oty2 = t2;
+  output DAE.Exp oe2 = e2;
 protected
   package OperatorsBinary
     import int_scalar = DAE.T_INTEGER_DEFAULT;
