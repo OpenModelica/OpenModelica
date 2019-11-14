@@ -1493,12 +1493,18 @@ static int jacColoredSymbolicalDense(double currentTime, N_Vector yy,
   const int index = data->callback->INDEX_JAC_A;
   unsigned int i,ii,j, nth;
   SPARSE_PATTERN* sparsePattern = data->simulationInfo->analyticJacobians[index].sparsePattern;
+  ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
 
   /* prepare variables */
   double *states = N_VGetArrayPointer(yy);
   double *yprime = N_VGetArrayPointer(yp);
 
   setContext(data, &currentTime, CONTEXT_SYM_JACOBIAN);      /* Reuse jacobian matrix in KLU solver */
+
+  /* Evaluate constant equations if available */
+  if (jac->constantEqns != NULL) {
+      jac->constantEqns(data, threadData, jac, NULL);
+  }
 
 #ifdef USE_PARJAC
   GC_allow_register_threads();
@@ -1518,7 +1524,7 @@ static int jacColoredSymbolicalDense(double currentTime, N_Vector yy,
   // These are not the Jacobians of the linear systems! (SimulationInfo->linearSystemData[idx].jacobian)
   ANALYTIC_JACOBIAN* t_jac = &(idaData->jacColumns[omc_get_thread_num()]);
 #else
-  ANALYTIC_JACOBIAN* t_jac = &(data->simulationInfo->analyticJacobians[index]);
+  ANALYTIC_JACOBIAN* t_jac = jac;
 #endif
 
 #pragma omp for
@@ -1791,19 +1797,20 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
   DATA* data = (DATA*)(((IDA_USERDATA*)idaData->simData)->data);
   threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)idaData->simData)->threadData);
   const int index = data->callback->INDEX_JAC_A;
+  ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
 
   /* prepare variables */
   double *states = N_VGetArrayPointer(yy);
   double *yprime = N_VGetArrayPointer(yp);
 
 #ifdef USE_PARJAC
-  ANALYTIC_JACOBIAN* jacData = (idaData->jacColumns);
+  ANALYTIC_JACOBIAN* t_jac = (idaData->jacColumns);
 #else
-  ANALYTIC_JACOBIAN* jacData = &(data->simulationInfo->analyticJacobians[index]);
+  ANALYTIC_JACOBIAN* t_jac = jac;
 #endif
-  unsigned int columns = jacData->sizeCols;
-  unsigned int rows = jacData->sizeRows;
-  SPARSE_PATTERN* sparsePattern = jacData->sparsePattern;
+  unsigned int columns = jac->sizeCols;
+  unsigned int rows = jac->sizeRows;
+  SPARSE_PATTERN* sparsePattern = jac->sparsePattern;
   int maxColors = sparsePattern->maxColors;
 
   /* it's needed to clear the matrix */
@@ -1811,7 +1818,12 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
 
   setContext(data, &currentTime, CONTEXT_SYM_JACOBIAN);      /* Reuse jacobian matrix in KLU solver */
 
-  genericColoredSymbolicJacobianEvaluation(rows, columns, sparsePattern, Jac, jacData,
+  /* Evaluate constant equations if available */
+  if (jac->constantEqns != NULL) {
+      jac->constantEqns(data, threadData, jac, NULL);
+  }
+
+  genericColoredSymbolicJacobianEvaluation(rows, columns, sparsePattern, Jac, t_jac,
                                            data, threadData, &setJacElementKluSparse);
 
   finishSparseColPtr(Jac, sparsePattern->numberOfNoneZeros);
