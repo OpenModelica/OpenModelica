@@ -364,7 +364,8 @@ typedef struct LINEAR_SYSTEM_DATA
   modelica_integer equationIndex;       /* index for EQUATION_INFO */
   modelica_integer jacobianIndex;
 
-  modelica_integer method;              /* not used yet*/
+  modelica_integer method;              /* 0: No Jacobain created for linear system
+                                         * 1: Symbolic Jacobian available for linear system */
   modelica_boolean useSparseSolver;     /* 1: use sparse solver, - else any solver */
 
   LINEAR_SYSTEM_THREAD_DATA* parDynamicData; /* Array of length numMaxThreads for internal write data */
