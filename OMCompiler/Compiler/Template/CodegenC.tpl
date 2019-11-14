@@ -1941,8 +1941,10 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> linearSystems, Strin
   "Generates functions in simulation file."
 ::=
   (linearSystems |> eqn => (match eqn
+     // Mixed system
      case eq as SES_MIXED(__) then functionInitialLinearSystemsTemp(fill(eq.cont,1), modelNamePrefix, "")
-     // no dynamic tearing
+
+     // No dynamic tearing
      case eq as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing=NONE()) then
        match ls.jacobianMatrix
          case NONE() then
@@ -1953,7 +1955,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> linearSystems, Strin
            linearSystemData[<%ls.indexLinearSystem%>].equationIndex = <%ls.index%>;
            linearSystemData[<%ls.indexLinearSystem%>].size = <%size%>;
            linearSystemData[<%ls.indexLinearSystem%>].nnz = <%nnz%>;
-           linearSystemData[<%ls.indexLinearSystem%>].method = 0;
+           linearSystemData[<%ls.indexLinearSystem%>].method = 0;   /* No symbolic Jacobian available */
            linearSystemData[<%ls.indexLinearSystem%>].strictTearingFunctionCall = NULL;
            linearSystemData[<%ls.indexLinearSystem%>].setA = setLinearMatrixA<%ls.index%>;
            linearSystemData[<%ls.indexLinearSystem%>].setb = setLinearVectorb<%ls.index%>;
@@ -1970,7 +1972,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> linearSystems, Strin
            linearSystemData[<%ls.indexLinearSystem%>].equationIndex = <%ls.index%>;
            linearSystemData[<%ls.indexLinearSystem%>].size = <%size%>;
            linearSystemData[<%ls.indexLinearSystem%>].nnz = <%nnz%>;
-           linearSystemData[<%ls.indexLinearSystem%>].method = 1;
+           linearSystemData[<%ls.indexLinearSystem%>].method = 1;   /* Symbolic Jacobian available */
            linearSystemData[<%ls.indexLinearSystem%>].residualFunc = residualFunc<%ls.index%>;
            linearSystemData[<%ls.indexLinearSystem%>].strictTearingFunctionCall = NULL;
            linearSystemData[<%ls.indexLinearSystem%>].analyticalJacobianColumn = <%generatedJac%>;
@@ -1984,7 +1986,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> linearSystems, Strin
          error(sourceInfo(), ' No jacobian create for linear system <%ls.index%>.')
        end match
 
-     // dynamic tearing
+     // Dynamic tearing
      case eq as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(at as LINEARSYSTEM(__))) then
        match ls.jacobianMatrix
          case NONE() then
@@ -2000,7 +2002,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> linearSystems, Strin
            linearSystemData[<%ls.indexLinearSystem%>].equationIndex = <%ls.index%>;
            linearSystemData[<%ls.indexLinearSystem%>].size = <%size%>;
            linearSystemData[<%ls.indexLinearSystem%>].nnz = <%nnz%>;
-           linearSystemData[<%ls.indexLinearSystem%>].method = 0;
+           linearSystemData[<%ls.indexLinearSystem%>].method = 0;   /* No symbolic Jacobian available */
            linearSystemData[<%ls.indexLinearSystem%>].strictTearingFunctionCall = NULL;
            linearSystemData[<%ls.indexLinearSystem%>].setA = setLinearMatrixA<%ls.index%>;
            linearSystemData[<%ls.indexLinearSystem%>].setb = setLinearVectorb<%ls.index%>;
@@ -2010,7 +2012,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> linearSystems, Strin
            linearSystemData[<%at.indexLinearSystem%>].equationIndex = <%at.index%>;
            linearSystemData[<%at.indexLinearSystem%>].size = <%size2%>;
            linearSystemData[<%at.indexLinearSystem%>].nnz = <%nnz2%>;
-           linearSystemData[<%at.indexLinearSystem%>].method = 0;
+           linearSystemData[<%at.indexLinearSystem%>].method = 0;   /* No symbolic Jacobian available */
            linearSystemData[<%at.indexLinearSystem%>].strictTearingFunctionCall = <%symbolName(modelNamePrefix,"eqFunction")%>_<%ls.index%>;
            linearSystemData[<%at.indexLinearSystem%>].setA = setLinearMatrixA<%at.index%>;
            linearSystemData[<%at.indexLinearSystem%>].setb = setLinearVectorb<%at.index%>;
@@ -2034,7 +2036,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> linearSystems, Strin
            linearSystemData[<%ls.indexLinearSystem%>].equationIndex = <%ls.index%>;
            linearSystemData[<%ls.indexLinearSystem%>].size = <%size%>;
            linearSystemData[<%ls.indexLinearSystem%>].nnz = <%nnz%>;
-           linearSystemData[<%ls.indexLinearSystem%>].method = 1;
+           linearSystemData[<%ls.indexLinearSystem%>].method = 1;   /* Symbolic Jacobian available */
            linearSystemData[<%ls.indexLinearSystem%>].residualFunc = residualFunc<%ls.index%>;
            linearSystemData[<%ls.indexLinearSystem%>].strictTearingFunctionCall = NULL;
            linearSystemData[<%ls.indexLinearSystem%>].analyticalJacobianColumn = <%generatedJac%>;
@@ -2048,7 +2050,7 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> linearSystems, Strin
            linearSystemData[<%at.indexLinearSystem%>].equationIndex = <%at.index%>;
            linearSystemData[<%at.indexLinearSystem%>].size = <%size2%>;
            linearSystemData[<%at.indexLinearSystem%>].nnz = <%nnz2%>;
-           linearSystemData[<%at.indexLinearSystem%>].method = 1;
+           linearSystemData[<%at.indexLinearSystem%>].method = 1;   /* Symbolic Jacobian available */
            linearSystemData[<%at.indexLinearSystem%>].residualFunc = residualFunc<%at.index%>;
            linearSystemData[<%at.indexLinearSystem%>].strictTearingFunctionCall = <%symbolName(modelNamePrefix,"eqFunction")%>_<%ls.index%>;
            linearSystemData[<%at.indexLinearSystem%>].analyticalJacobianColumn = <%generatedJac2%>;
@@ -2059,6 +2061,8 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> linearSystems, Strin
            linearSystemData[<%at.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%at.index%>;
            linearSystemData[<%at.indexLinearSystem%>].checkConstraints = checkConstraints<%at.index%>;
            >>
+
+        // Error case
          else
          error(sourceInfo(), ' No jacobian create for linear system <%ls.index%> or <%at.index%>.')
        end match
