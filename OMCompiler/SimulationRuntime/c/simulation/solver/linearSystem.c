@@ -125,7 +125,6 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
       {
         // ToDo Simplify this. Only have one location for jacobian
         linsys[i].parDynamicData[j].jacobian = (ANALYTIC_JACOBIAN*) malloc(sizeof(ANALYTIC_JACOBIAN));
-        //linsys[i].initialAnalyticalJacobian(data, threadData, linsys[i].parDynamicData[j].jacobian);
         linsys[i].parDynamicData[j].jacobian->sizeCols = jacobian->sizeCols;
         linsys[i].parDynamicData[j].jacobian->sizeRows = jacobian->sizeRows;
         linsys[i].parDynamicData[j].jacobian->sizeTmpVars = jacobian->sizeTmpVars;

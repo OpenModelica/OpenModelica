@@ -29,6 +29,13 @@ diffSimulationResults("Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
 getErrorString();
 
 // Test IDA
+system(realpath(".") + "/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler -s=ida -jacobian=symbolical", "out.log"); getErrorString();
+readFile("out.log"); remove("out.log");
+diffSimulationResults("Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
+                      getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat","diff"
+                      vars={"evaporator.p", "evaporator.der(p)", "evaporator.V_l", "evaporator.der(V_l)", "controller.x", "controller.der(x)"});
+getErrorString();
+
 system(realpath(".") + "/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler -s=ida -jacobian=coloredSymbolical", "out.log"); getErrorString();
 readFile("out.log"); remove("out.log");
 diffSimulationResults("Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
@@ -56,6 +63,15 @@ getErrorString();
 // 0
 // ""
 // "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// true
+// (true,{})
+// ""
+// 0
+// ""
+// "stdout | warning | Symbolic Jacobians without coloring are currently not supported by IDA. Colored symbolical Jacobian will be used.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // true

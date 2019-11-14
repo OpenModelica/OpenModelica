@@ -109,6 +109,7 @@ void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATT
                                               threadData_t* threadData,
                                               void (*setJacElement)(int, int, int, double, void*, int))
 {
+
 #ifdef USE_PARJAC
   GC_allow_register_threads();
 #endif

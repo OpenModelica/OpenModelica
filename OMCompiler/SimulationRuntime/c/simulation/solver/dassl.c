@@ -941,12 +941,13 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
-
-#ifdef USE_PARJAC
-  ANALYTIC_JACOBIAN* jac = (dasslData->jacColumns);
-#else
   const int index = data->callback->INDEX_JAC_A;
   ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
+
+#ifdef USE_PARJAC
+  ANALYTIC_JACOBIAN* t_jac = (dasslData->jacColumns);
+#else
+  ANALYTIC_JACOBIAN* t_jac = jac;
 #endif
 
   unsigned int columns = jac->sizeCols;
@@ -954,12 +955,12 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
   unsigned int sizeTmpVars = jac->sizeTmpVars;
   SPARSE_PATTERN* spp = jac->sparsePattern;
 
-
+  /* Evaluate constant equations if available */
   if (jac->constantEqns != NULL) {
       jac->constantEqns(data, threadData, jac, NULL);
   }
 
-  genericColoredSymbolicJacobianEvaluation(rows, columns, spp, matrixA, jac,
+  genericColoredSymbolicJacobianEvaluation(rows, columns, spp, matrixA, t_jac,
                                            data, threadData, &setJacElementDasslSparse);
 
   TRACE_POP
@@ -990,6 +991,11 @@ int jacA_sym(double *t, double *y, double *yprime, double *delta,
   unsigned int sizeTmpVars = jac->sizeTmpVars;
   unsigned int i;
 
+  /* Evaluate constant equations if available */
+  if (jac->constantEqns != NULL) {
+      jac->constantEqns(data, threadData, jac, NULL);
+  }
+
 #ifdef USE_PARJAC
   GC_allow_register_threads();
 #endif
@@ -1011,10 +1017,6 @@ int jacA_sym(double *t, double *y, double *yprime, double *delta,
   ANALYTIC_JACOBIAN* t_jac = jac;
 #endif
   unsigned int j;
-
-  if (t_jac->constantEqns != NULL) {
-    t_jac->constantEqns(data, threadData, t_jac, NULL);
-  }
 
 #pragma omp for schedule(runtime)
   for(i=0; i < columns; i++)
