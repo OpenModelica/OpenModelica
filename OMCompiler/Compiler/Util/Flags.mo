@@ -818,7 +818,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "removeEqualRHS",
     "removeSimpleEquations",
     "comSubExp",
-    //"resolveLoops",
+    "resolveLoops", //reactivate for now, once fullASSC works this probably can be removed
     "evalFunc",
     "encapsulateWhenConditions"
     }),
