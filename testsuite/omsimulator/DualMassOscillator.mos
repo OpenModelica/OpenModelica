@@ -62,14 +62,14 @@ oms_instantiate("DualMassOscillator");
 oms_setReal("DualMassOscillator.root.system2.s2_start", 2.5);
 
 oms_initialize("DualMassOscillator");
-(_,v1):=oms_getReal("DualMassOscillator.root.system1.s1");
-(_,v2):=oms_getReal("DualMassOscillator.root.system2.s2");
+(v1,_):=oms_getReal("DualMassOscillator.root.system1.s1");
+(v2,_):=oms_getReal("DualMassOscillator.root.system2.s2");
 print("info:    Initialization\n");
 print("info:      system1.s1: " + realString(v1)+"\n");
 print("info:      system2.s2: " + realString(v2)+"\n");
 oms_simulate("DualMassOscillator");
-(_,v1):=oms_getReal("DualMassOscillator.root.system1.s1");
-(_,v2):=oms_getReal("DualMassOscillator.root.system2.s2");
+(v1,_):=oms_getReal("DualMassOscillator.root.system1.s1");
+(v2,_):=oms_getReal("DualMassOscillator.root.system2.s2");
 print("info:    Simulation\n");
 print("info:      system1.s1: " + realString(v1)+"\n");
 print("info:      system2.s2: " + realString(v2)+"\n");

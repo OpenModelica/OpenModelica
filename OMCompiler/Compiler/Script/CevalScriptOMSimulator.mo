@@ -213,81 +213,81 @@ algorithm
 
     case("oms_extractFMIKind",{Values.STRING(filename)})
       equation
-        (status,kind) = OMSimulator.oms_extractFMIKind(filename);
+        (kind,status) = OMSimulator.oms_extractFMIKind(filename);
       then
-        Values.TUPLE({Values.INTEGER(status),Values.INTEGER(kind)});
+        Values.TUPLE({Values.INTEGER(kind),Values.INTEGER(status)});
 
     case("oms_getBoolean",{Values.STRING(cref)})
       equation
-        (status,b) = OMSimulator.oms_getBoolean(cref);
+        (b,status) = OMSimulator.oms_getBoolean(cref);
       then
-        Values.TUPLE({Values.INTEGER(status),Values.BOOL(b)});
+        Values.TUPLE({Values.BOOL(b),Values.INTEGER(status)});
 
     case("oms_getFixedStepSize",{Values.STRING(cref)})
       equation
-        (status,rvalue) = OMSimulator.oms_getFixedStepSize(cref);
+        (rvalue,status) = OMSimulator.oms_getFixedStepSize(cref);
       then
-        Values.TUPLE({Values.INTEGER(status),Values.REAL(rvalue)});
+        Values.TUPLE({Values.REAL(rvalue),Values.INTEGER(status)});
 
     case("oms_getInteger",{Values.STRING(cref)})
       equation
-        (status,ivalue) = OMSimulator.oms_getInteger(cref);
+        (ivalue,status) = OMSimulator.oms_getInteger(cref);
       then
-        Values.TUPLE({Values.INTEGER(status),Values.INTEGER(ivalue)});
+        Values.TUPLE({Values.INTEGER(ivalue),Values.INTEGER(status)});
 
     case("oms_getModelState",{Values.STRING(cref)})
       equation
-        (status,ivalue) = OMSimulator.oms_getModelState(cref);
+        (ivalue,status) = OMSimulator.oms_getModelState(cref);
       then
-        Values.TUPLE({Values.INTEGER(status),Values.INTEGER(ivalue)});
+        Values.TUPLE({Values.INTEGER(ivalue),Values.INTEGER(status)});
 
     case("oms_getReal",{Values.STRING(cref)})
       equation
-        (status,rvalue) = OMSimulator.oms_getReal(cref);
+        (rvalue,status) = OMSimulator.oms_getReal(cref);
       then
-        Values.TUPLE({Values.INTEGER(status),Values.REAL(rvalue)});
+        Values.TUPLE({Values.REAL(rvalue),Values.INTEGER(status)});
 
     case("oms_getSolver",{Values.STRING(cref)})
       equation
-        (status,ivalue) = OMSimulator.oms_getSolver(cref);
+        (ivalue,status) = OMSimulator.oms_getSolver(cref);
       then
-        Values.TUPLE({Values.INTEGER(status),Values.INTEGER(ivalue)});
+        Values.TUPLE({Values.INTEGER(ivalue),Values.INTEGER(status)});
 
     case("oms_getStartTime",{Values.STRING(cref)})
       equation
-        (status,rvalue) = OMSimulator.oms_getStartTime(cref);
+        (rvalue,status) = OMSimulator.oms_getStartTime(cref);
       then
-        Values.TUPLE({Values.INTEGER(status),Values.REAL(rvalue)});
+        Values.TUPLE({Values.REAL(rvalue),Values.INTEGER(status)});
 
     case("oms_getStopTime",{Values.STRING(cref)})
       equation
-        (status,rvalue) = OMSimulator.oms_getStopTime(cref);
+        (rvalue,status) = OMSimulator.oms_getStopTime(cref);
       then
-        Values.TUPLE({Values.INTEGER(status),Values.REAL(rvalue)});
+        Values.TUPLE({Values.REAL(rvalue),Values.INTEGER(status)});
 
     case("oms_getSubModelPath",{Values.STRING(cref)})
       equation
-        (status,path) = OMSimulator.oms_getSubModelPath(cref);
+        (path,status) = OMSimulator.oms_getSubModelPath(cref);
       then
-        Values.TUPLE({Values.INTEGER(status),Values.STRING(path)});
+        Values.TUPLE({Values.STRING(path),Values.INTEGER(status)});
 
     case("oms_getSystemType",{Values.STRING(cref)})
       equation
-        (status,ivalue) = OMSimulator.oms_getSystemType(cref);
+        (ivalue,status) = OMSimulator.oms_getSystemType(cref);
       then
-        Values.TUPLE({Values.INTEGER(status),Values.INTEGER(ivalue)});
+        Values.TUPLE({Values.INTEGER(ivalue),Values.INTEGER(status)});
 
     case("oms_getTolerance",{Values.STRING(cref)})
       equation
-        (status,rvalue) = OMSimulator.oms_getTolerance(cref);
+        (absoluteTolerance,relativeTolerance,status) = OMSimulator.oms_getTolerance(cref);
       then
-        Values.TUPLE({Values.INTEGER(status),Values.REAL(rvalue)});
+        Values.TUPLE({Values.REAL(absoluteTolerance),Values.REAL(relativeTolerance),Values.INTEGER(status)});
 
     case("oms_getVariableStepSize",{Values.STRING(cref)})
       equation
-        (status,rvalue) = OMSimulator.oms_getVariableStepSize(cref);
+        (initialStepSize,minimumStepSize,maximumStepSize,status) = OMSimulator.oms_getVariableStepSize(cref);
       then
-        Values.TUPLE({Values.INTEGER(status),Values.REAL(rvalue)});
+        Values.TUPLE({Values.REAL(initialStepSize),Values.REAL(minimumStepSize),Values.REAL(maximumStepSize),Values.INTEGER(status)});
 
     case("oms_faultInjection",{Values.STRING(signal), Values.ENUM_LITERAL(index=faultType), Values.REAL(faultValue)})
       equation
@@ -297,9 +297,9 @@ algorithm
 
     case("oms_importFile",{Values.STRING(filename)})
       equation
-        (status,cref) = OMSimulator.oms_importFile(filename);
+        (cref,status) = OMSimulator.oms_importFile(filename);
       then
-        Values.TUPLE({Values.INTEGER(status),Values.STRING(cref)});
+        Values.TUPLE({Values.STRING(cref),Values.INTEGER(status)});
 
     case("oms_initialize",{Values.STRING(cref)})
       equation
@@ -315,15 +315,15 @@ algorithm
 
     case("oms_list",{Values.STRING(cref)})
       equation
-        (status,contents) = OMSimulator.oms_list(cref);
+        (contents,status) = OMSimulator.oms_list(cref);
       then
-        Values.TUPLE({Values.INTEGER(status),Values.STRING(contents)});
+        Values.TUPLE({Values.STRING(contents),Values.INTEGER(status)});
 
     case("oms_listUnconnectedConnectors",{Values.STRING(cref)})
       equation
-        (status,contents) = OMSimulator.oms_listUnconnectedConnectors(cref);
+        (contents,status) = OMSimulator.oms_listUnconnectedConnectors(cref);
       then
-    Values.TUPLE({Values.INTEGER(status),Values.STRING(contents)});
+        Values.TUPLE({Values.STRING(contents),Values.INTEGER(status)});
 
     case("oms_loadSnapshot",{Values.STRING(cref), Values.STRING(snapshot)})
       equation
@@ -339,9 +339,9 @@ algorithm
 
     case("oms_parseModelName",{Values.STRING(contents)})
       equation
-        (status,cref) = OMSimulator.oms_parseModelName(contents);
+        (cref,status) = OMSimulator.oms_parseModelName(contents);
       then
-        Values.TUPLE({Values.INTEGER(status),Values.STRING(cref)});
+        Values.TUPLE({Values.STRING(cref),Values.INTEGER(status)});
 
     case("oms_removeSignalsFromResults",{Values.STRING(cref), Values.STRING(regex)})
       equation
@@ -503,7 +503,7 @@ algorithm
       equation
         status = OMSimulator.oms_terminate(cref);
       then
-    Values.INTEGER(status);
+        Values.INTEGER(status);
 
     case ("oms_getVersion",{})
       equation

@@ -61,7 +61,7 @@ oms_addSystem("test.eoo", OpenModelica.Scripting.oms_system.oms_system_wc);
 oms_addSubModel("test.eoo.source", "Modelica.Blocks.Sources.Sine.fmu");
 
 // save snapshot
-(status,src) := oms_list("test");
+(src,status) := oms_list("test");
 print(src);
 
 // change model
@@ -73,7 +73,7 @@ oms_addSubModel("test.eoo.source", "Modelica.Blocks.Sources.Constant.fmu");
 status := oms_loadSnapshot("test", src);
 printStatus(status, 0);
 
-(status,src) := oms_list("test");
+(src,status) := oms_list("test");
 print(src);
 
 oms_instantiate("test");

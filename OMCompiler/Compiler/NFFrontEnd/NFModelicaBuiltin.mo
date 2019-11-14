@@ -4559,107 +4559,107 @@ end oms_exportDependencyGraphs;
 
 function oms_extractFMIKind
   input String filename;
-  output Integer status;
   output Integer  kind;
+  output Integer status;
 external "builtin";
 annotation(preferredView="text");
 end oms_extractFMIKind;
 
 function oms_getBoolean
   input String cref;
-  output Integer status;
   output Boolean  value;
+  output Integer status;
 external "builtin";
 annotation(preferredView="text");
 end oms_getBoolean;
 
 function oms_getFixedStepSize
   input String cref;
+  output Real stepSize;
   output Integer status;
-  output Real  stepSize;
 external "builtin";
 annotation(preferredView="text");
 end oms_getFixedStepSize;
 
 function oms_getInteger
   input String cref;
+  input Integer value;
   output Integer status;
-  input Integer  value;
 external "builtin";
 annotation(preferredView="text");
 end oms_getInteger;
 
 function oms_getModelState
   input String cref;
-  output Integer status;
   output Integer modelState;
+  output Integer status;
 external "builtin";
 annotation(preferredView="text");
 end oms_getModelState;
 
 function oms_getReal
   input String cref;
+  output Real value;
   output Integer status;
-  output Real  value;
 external "builtin";
 annotation(preferredView="text");
 end oms_getReal;
 
 function oms_getSolver
   input String cref;
-  output Integer status;
   output Integer solver;
+  output Integer status;
 external "builtin";
 annotation(preferredView="text");
 end oms_getSolver;
 
 function oms_getStartTime
   input String cref;
-  output Integer status;
   output Real startTime;
+  output Integer status;
 external "builtin";
 annotation(preferredView="text");
 end oms_getStartTime;
 
 function oms_getStopTime
   input String cref;
-  output Integer status;
   output Real stopTime;
+  output Integer status;
 external "builtin";
 annotation(preferredView="text");
 end oms_getStopTime;
 
 function oms_getSubModelPath
   input String cref;
-  output Integer status;
   output String path;
+  output Integer status;
 external "builtin";
 annotation(preferredView="text");
 end oms_getSubModelPath;
 
 function oms_getSystemType
   input String cref;
-  output Integer status;
   output Integer type_;
+  output Integer status;
 external "builtin";
 annotation(preferredView="text");
 end oms_getSystemType;
 
 function oms_getTolerance
   input String cref;
-  output Integer status;
   output Real absoluteTolerance;
   output Real relativeTolerance;
+  output Integer status;
 external "builtin";
 annotation(preferredView="text");
 end oms_getTolerance;
 
 function oms_getVariableStepSize
   input String cref;
-  output Integer status;
   output Real initialStepSize;
   output Real minimumStepSize;
   output Real maximumStepSize;
+  output Integer status;
 external "builtin";
 annotation(preferredView="text");
 end oms_getVariableStepSize;
@@ -4675,8 +4675,8 @@ end oms_faultInjection;
 
 function oms_importFile
   input String filename;
-  output Integer status;
   output String cref;
+  output Integer status;
 external "builtin";
 annotation(preferredView="text");
 end oms_importFile;
@@ -4697,16 +4697,16 @@ end oms_instantiate;
 
 function oms_list
   input String cref;
-  output Integer status;
   output String contents;
+  output Integer status;
 external "builtin";
 annotation(preferredView="text");
 end oms_list;
 
 function oms_listUnconnectedConnectors
   input String cref;
-  output Integer status;
   output String contents;
+  output Integer status;
 external "builtin";
 annotation(preferredView="text");
 end oms_listUnconnectedConnectors;
@@ -4728,8 +4728,8 @@ end oms_newModel;
 
 function oms_parseModelName
   input String contents;
-  output Integer status;
   output String cref;
+  output Integer status;
 external "builtin";
 annotation(preferredView="text");
 end oms_parseModelName;
