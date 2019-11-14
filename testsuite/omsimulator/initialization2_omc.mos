@@ -39,10 +39,10 @@ oms_setResultFile("test", "");
 
 oms_instantiate("test");
 oms_initialize("test");
-(_,v1):=oms_getReal("test.root.A.y");
-(_,v2):=oms_getReal("test.root.B.x");
-(_,v3):=oms_getReal("test.root.B.y");
-(_,v4):=oms_getReal("test.root.B.u");
+(v1,_):=oms_getReal("test.root.A.y");
+(v2,_):=oms_getReal("test.root.B.x");
+(v3,_):=oms_getReal("test.root.B.y");
+(v4,_):=oms_getReal("test.root.B.u");
 
 print("info:    Initialization\n");
 print("info:      A.y: " + realString(v1)+ "\n");

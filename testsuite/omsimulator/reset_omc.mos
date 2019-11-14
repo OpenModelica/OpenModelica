@@ -27,16 +27,16 @@ oms_addSubModel("test.root.A", "reset.fmu");
 
 oms_instantiate("test");
 oms_initialize("test");
-(_,v1):=oms_getReal("test.root.A.x_start");
-(_,v2):=oms_getReal("test.root.A.x");
+(v1,_):=oms_getReal("test.root.A.x_start");
+(v2,_):=oms_getReal("test.root.A.x");
 
 print("info:    Initialization\n");
 print("info:      A.x_start: " + realString(v1)+"\n");
 print("info:      A.x:       " + realString(v2)+"\n");
 
 oms_simulate("test");
-(_,v1):=oms_getReal("test.root.A.x_start");
-(_,v2):=oms_getReal("test.root.A.x");
+(v1,_):=oms_getReal("test.root.A.x_start");
+(v2,_):=oms_getReal("test.root.A.x");
 
 print("info:    Simulation\n");
 print("info:      A.x_start: " + realString(v1)+"\n");
@@ -46,15 +46,15 @@ for i in 0:1 loop
   oms_reset("test");
   oms_setReal("test.root.A.x_start", 1.5);
   oms_initialize("test");
-  (_,v1):=oms_getReal("test.root.A.x_start");
-  (_,v2):=oms_getReal("test.root.A.x");
+  (v1,_):=oms_getReal("test.root.A.x_start");
+  (v2,_):=oms_getReal("test.root.A.x");
   print("info:    Initialization\n");
   print("info:      A.x_start: " + realString(v1)+"\n");
   print("info:      A.x:       " + realString(v2)+"\n");
 
   oms_simulate("test");
-  (_,v1):=oms_getReal("test.root.A.x_start");
-  (_,v2):=oms_getReal("test.root.A.x");
+  (v1,_):=oms_getReal("test.root.A.x_start");
+  (v2,_):=oms_getReal("test.root.A.x");
   print("info:    Simulation\n");
   print("info:      A.x_start: " + realString(v1)+"\n");
   print("info:      A.x:       " + realString(v2)+"\n");

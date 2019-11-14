@@ -37,16 +37,16 @@ oms_instantiate("test");
 oms_setReal("test.root.A.y_start", 1.5);
 
 oms_initialize("test");
-(_,v1):=oms_getReal("test.root.A.y");
-(_,v2):=oms_getReal("test.root.B.u");
+(v1,_):=oms_getReal("test.root.A.y");
+(v2,_):=oms_getReal("test.root.B.u");
 
 print("info:    Initialization\n");
 print("info:      A.y: " + realString(v1)+"\n");
 print("info:      B.u: " + realString(v1)+"\n");
 
 oms_simulate("test");
-(_,v1):=oms_getReal("test.root.A.y");
-(_,v2):=oms_getReal("test.root.B.u");
+(v1,_):=oms_getReal("test.root.A.y");
+(v2,_):=oms_getReal("test.root.B.u");
 
 print("info:    Simulation\n");
 print("info:      A.y: " + realString(v1)+"\n");
