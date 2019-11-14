@@ -23,6 +23,8 @@ CONFIG_CFLAGS = -O2 -falign-functions -mstackrealign -msse2 -mfpmath=sse \
 -I$(OMDEV)/include/lis -I$(top_builddir)/ -I$(builddir_inc)/ -I. \
 -Wall -Wno-unused-variable
 CXXFLAGS = $(CFLAGS)
+OMPCC = $(CC) -fopenmp
+OMPCFLAGS= -fopenmp
 
 # Not needed since we already set fpmath
 FPMATHFORTRAN =
@@ -42,6 +44,14 @@ OBJ_EXT=.minimal.o
 else
 OBJ_EXT=.o
 endif
+endif
+
+# USE_PARJAC=yes to enable parallel Jacobians
+ifeq ($(USE_PARJAC),yes)
+  CFLAGS+=$(OMPCFLAGS) -DUSE_PARJAC
+  LDFLAGS+=$(OMPCFLAGS)
+else
+  OMPCFLAGS=
 endif
 
 defaultMakefileTarget = Makefile.omdev.mingw
