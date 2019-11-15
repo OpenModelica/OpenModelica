@@ -4210,6 +4210,12 @@ type oms_tlm_interpolation = enumeration(
   oms_tlm_fine_grained
 );
 
+type oms_fault_type = enumeration (
+  oms_fault_type_bias,      ///< y = y.$original + faultValue
+  oms_fault_type_gain,      ///< y = y.$original * faultValue
+  oms_fault_type_const      ///< y = faultValue
+);
+
 function loadOMSimulator "loads the OMSimulator DLL from default path"
   output Integer status;
 external "builtin";
@@ -4535,7 +4541,7 @@ end oms_getVariableStepSize;
 
 function oms_faultInjection
   input String signal;
-  input oms_fault_type_enu_t faultType;
+  input oms_fault_type faultType;
   input Real faultValue;
   output Integer status;
 external "builtin";
