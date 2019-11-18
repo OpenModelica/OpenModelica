@@ -1,7 +1,7 @@
-// name:  testFMIInitialUnknowns1.mos
+// name:  testFmiInitialUnknowns1.mos
 // keywords: FMI 2.0 export
 // status: correct
-// teardown_command: rm -rf binaries sources modelDescription.xml InitialUnknown02_tmp.txt initialUnknownstest1.txt
+// teardown_command: rm -rf binaries sources modelDescription.xml InitialUnknown02_tmp.xml initialUnknownstest1.xml
 
 loadString("
 model InitialUnknown02
@@ -24,12 +24,12 @@ translateModelFMU(InitialUnknown02);
 getErrorString();
 
 // unzip to console, quiet, extra quiet
-system("unzip -cqq InitialUnknown02.fmu modelDescription.xml > InitialUnknown02_tmp.txt"); getErrorString();
-system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" InitialUnknown02_tmp.txt > initialUnknownstest1.txt"); getErrorString();
-readFile("initialUnknownstest1.txt"); getErrorString();
+system("unzip -cqq InitialUnknown02.fmu modelDescription.xml > InitialUnknown02_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" InitialUnknown02_tmp.xml > initialUnknownstest1.xml"); getErrorString();
+readFile("initialUnknownstest1.xml"); getErrorString();
 
-system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" InitialUnknown02_tmp.txt > initialUnknownstest1.txt"); getErrorString();
-readFile("initialUnknownstest1.txt"); getErrorString();
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" InitialUnknown02_tmp.xml > initialUnknownstest1.xml"); getErrorString();
+readFile("initialUnknownstest1.xml"); getErrorString();
 
 // Result:
 // true

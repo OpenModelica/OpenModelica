@@ -1,7 +1,7 @@
-// name:  testFMIInitialUnknowns2.mos
+// name:  testFmiInitialUnknowns2.mos
 // keywords: FMI 2.0 export
 // status: correct
-// teardown_command: rm -rf binaries sources modelDescription.xml Pendulum_tmp.txt Pendulumtest.txt
+// teardown_command: rm -rf binaries sources modelDescription.xml Pendulum_tmp.xml Pendulumtest.xml
 
 loadString("
 model Pendulum
@@ -24,12 +24,12 @@ translateModelFMU(Pendulum);
 getErrorString();
 
 // unzip to console, quiet, extra quiet
-system("unzip -cqq Pendulum.fmu modelDescription.xml > Pendulum_tmp.txt"); getErrorString();
-system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" Pendulum_tmp.txt > Pendulumtest.txt"); getErrorString();
-readFile("Pendulumtest.txt"); getErrorString();
+system("unzip -cqq Pendulum.fmu modelDescription.xml > Pendulum_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" Pendulum_tmp.xml > Pendulumtest.xml"); getErrorString();
+readFile("Pendulumtest.xml"); getErrorString();
 
-system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" Pendulum_tmp.txt > Pendulumtest.txt"); getErrorString();
-readFile("Pendulumtest.txt"); getErrorString();
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" Pendulum_tmp.xml > Pendulumtest.xml"); getErrorString();
+readFile("Pendulumtest.xml"); getErrorString();
 
 // Result:
 // true

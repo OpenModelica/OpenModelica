@@ -24,10 +24,9 @@ testBug5673.mos \
 testChangeParam.mos \
 testDisableDep.mos \
 testDiscreteStructe.mos \
-testFMIInitialUnknowns.mos \
-testFMIInitialUnknowns1.mos \
-testFMIInitialUnknowns2.mos \
-testFMIInitialUnknows.mos \
+testFmiInitialUnknowns.mos \
+testFmiInitialUnknowns1.mos \
+testFmiInitialUnknowns2.mos \
 testInitialEquationsFMI.mos \
 TestSourceCodeFMU.mos \
 ticket5670.mos \
