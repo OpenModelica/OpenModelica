@@ -47,7 +47,6 @@ public import DAE;
 public import FCore;
 public import FGraph;
 public import InnerOuter;
-public import Prefix;
 public import SCode;
 
 protected import Algorithm;
@@ -99,7 +98,7 @@ public function instEquation
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.Equation inEquation;
@@ -127,7 +126,7 @@ protected function instEEquation
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.EEquation inEEquation;
@@ -154,7 +153,7 @@ public function instInitialEquation
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.Equation inEquation;
@@ -182,7 +181,7 @@ protected function instEInitialEquation
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.EEquation inEEquation;
@@ -212,7 +211,7 @@ protected function instEquationCommon
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.EEquation inEEquation;
@@ -277,7 +276,7 @@ protected function instEquationCommonWork
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.EEquation inEEquation;
@@ -604,7 +603,7 @@ end instEquationCommonWork;
 protected function makeEqSource
   input Absyn.Info inInfo;
   input FCore.Graph inEnv;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input DAE.SymbolicOperation inFlattenOp;
   output DAE.ElementSource outSource;
 algorithm
@@ -677,7 +676,7 @@ protected function instOperatorArg
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Absyn.Exp inArg;
   input Boolean inImpl;
   input DAE.Type inExpectedType;
@@ -728,7 +727,7 @@ protected function handleConnectionsOperators
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.EEquation inEEquation;
@@ -752,7 +751,7 @@ algorithm
       DAE.DAElist dae;
       ClassInf.State ci_state_1,ci_state,ci_state_2;
       FCore.Graph env,env_1,env_2;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       Absyn.ComponentRef c1,c2,cr,cr1,cr2;
       SCode.Initial initial_;
       Boolean impl, b1, b2;
@@ -907,7 +906,7 @@ end handleConnectionsOperators;
 protected function potentialRootArguments
   input Absyn.FunctionArgs inFunctionArgs;
   input SourceInfo info;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SCode.EEquation inEEquation;
   output Absyn.ComponentRef outCref;
   output Integer outPriority;
@@ -934,7 +933,7 @@ end potentialRootArguments;
 protected function uniqueRootArguments
   input Absyn.FunctionArgs inFunctionArgs;
   input SourceInfo info;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SCode.EEquation inEEquation;
   output Absyn.ComponentRef outCref;
   output Absyn.Exp outMessage;
@@ -1101,7 +1100,7 @@ This function detect this case and elaborates expressions without vectorization.
   input DAE.Properties iprop "To determine if array equation";
   input DAE.Properties iprop2 "To determine if array equation";
   input Boolean impl;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outE1;
@@ -1115,7 +1114,7 @@ algorithm
       Boolean b3,b4;
       DAE.Exp elabedE1_2, elabedE2_2;
       DAE.Properties prop1,prop,prop2;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       Absyn.Exp e1,e2;
 
     case(cache,env,e1,e2,_,_,prop,prop2,_,pre,_) equation
@@ -1217,7 +1216,7 @@ protected function unroll
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input Ident inIdent;
@@ -1812,7 +1811,7 @@ protected function unrollForLoop
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State inState;
   input String inIterator;
   input DAE.Exp inRange;
@@ -1855,7 +1854,7 @@ protected function instForStatement
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State inState;
   input SCode.Statement inForStatement;
   input DAE.ElementSource inSource;
@@ -1901,7 +1900,7 @@ protected function instForStatement_dispatch
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State inState;
   input String inIterator;
   input DAE.Exp inRange;
@@ -2021,7 +2020,7 @@ public function instAlgorithm
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.AlgorithmSection inAlgorithm;
@@ -2047,7 +2046,7 @@ algorithm
       SCode.Statement stmt;
       Boolean impl;
       FCore.Cache cache;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       SCode.AlgorithmSection algSCode;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
@@ -2093,7 +2092,7 @@ public function instInitialAlgorithm
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.AlgorithmSection inAlgorithm;
@@ -2118,7 +2117,7 @@ algorithm
       list<SCode.Statement> statements;
       Boolean impl;
       FCore.Cache cache;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
@@ -2149,7 +2148,7 @@ public function instConstraint
 "Constraints are elaborated and converted to DAE"
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State inState;
   input SCode.ConstraintSection inConstraints;
   input Boolean inImpl;
@@ -2167,7 +2166,7 @@ algorithm
       list<Absyn.Exp> constraints;
       Boolean impl;
       FCore.Cache cache;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       DAE.ElementSource source "the origin of the element";
       DAE.DAElist dae;
 
@@ -2205,7 +2204,7 @@ public function instStatements
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State inState;
   input list<SCode.Statement> inStatements;
   input DAE.ElementSource inSource;
@@ -2233,7 +2232,7 @@ protected function instExp
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Absyn.Exp inExp;
   input Boolean inImpl;
   input SourceInfo inInfo;
@@ -2253,7 +2252,7 @@ protected function instStatement
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State inState;
   input SCode.Statement inStatement;
   input DAE.ElementSource inSource;
@@ -2578,7 +2577,7 @@ protected function loopOverRange
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State ci_state;
   input Ident inIdent;
   input Values.Value inValue;
@@ -2594,7 +2593,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inPrefix,ci_state,inIdent,inValue,inAlgItmLst,source,inInitial,inImpl,unrollForLoops)
     local
       FCore.Graph env_1,env_2,env;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       String i;
       Values.Value fst,v;
       list<Values.Value> rest;
@@ -2660,7 +2659,7 @@ protected function instIfEqBranch
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State inState;
   input list<SCode.EEquation> inEquations;
   input Boolean inImpl;
@@ -2680,7 +2679,7 @@ protected function instIfEqBranches
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State inState;
   input list<list<SCode.EEquation>> inBranches;
   input Boolean inImpl;
@@ -2695,7 +2694,7 @@ algorithm
   match(inCache, inEnv, inIH, inPrefix, inState, inBranches, inImpl, inAccumEqs)
     local
       DAE.Mod mod;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       Connect.Sets csets,csets_1,csets_2;
       ClassInf.State ci_state,ci_state_1,ci_state_2;
       Boolean impl;
@@ -2730,7 +2729,7 @@ protected function instInitialIfEqBranch
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State inState;
   input list<SCode.EEquation> inEquations;
   input Boolean inImpl;
@@ -2750,7 +2749,7 @@ protected function instInitialIfEqBranches
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State inState;
   input list<list<SCode.EEquation>> inBranches;
   input Boolean inImpl;
@@ -2831,7 +2830,7 @@ protected function instElseIfs
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPre;
+  input DAE.Prefix inPre;
   input ClassInf.State ci_state;
   input list<tuple<Absyn.Exp, list<SCode.Statement>>> inElseIfBranches;
   input DAE.ElementSource source;
@@ -2855,7 +2854,7 @@ algorithm
       list<SCode.Statement> l;
       list<tuple<Absyn.Exp, list<SCode.Statement>>> tail;
       FCore.Cache cache;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       InstanceHierarchy ih;
 
     case (cache,_,_,_,_,{},_,_,_,_,_) then (cache,{});
@@ -2883,7 +2882,7 @@ protected function instWhenEqBranch
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input tuple<Absyn.Exp, list<SCode.EEquation>> inBranch;
@@ -2984,7 +2983,7 @@ protected function instConnect "
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Connect.Sets inSets;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Absyn.ComponentRef inComponentRefLeft;
   input Absyn.ComponentRef inComponentRefRight;
   input Boolean inImplicit;
@@ -3011,7 +3010,7 @@ algorithm
       Connect.Sets sets;
       DAE.DAElist dae;
       FCore.Graph env;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       Absyn.ComponentRef c1,c2;
       FCore.Cache cache;
       Absyn.InnerOuter io1,io2;
@@ -3107,7 +3106,7 @@ protected function instConnector
   input InnerOuter.InstHierarchy ih;
   input Absyn.ComponentRef connectorCref;
   input Boolean impl;
-  input Prefix.Prefix prefix;
+  input DAE.Prefix prefix;
   input SourceInfo info;
   output FCore.Cache outCache = inCache;
   output DAE.ComponentRef outCref;
@@ -3190,7 +3189,7 @@ Author BZ, 2009-09
   input FCore.Cache cache;
   input FCore.Graph env;
   input String affectedConnector;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo info;
 algorithm
   _ := matchcontinue(inrefs,cache,env,affectedConnector,inPrefix,info)
@@ -3198,7 +3197,7 @@ algorithm
     Absyn.ComponentRef cr;
     DAE.Properties prop;
     DAE.Const const;
-    Prefix.Prefix pre;
+    DAE.Prefix pre;
     String s1;
     list<Absyn.ComponentRef> refs;
 
@@ -3231,7 +3230,7 @@ protected function connectExpandableConnectors
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Connect.Sets inSets;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Absyn.ComponentRef inComponentRefLeft;
   input Absyn.ComponentRef inComponentRefRight;
   input Boolean inImpl;
@@ -3257,7 +3256,7 @@ algorithm
       Connect.Sets sets;
       DAE.DAElist dae, daeExpandable;
       FCore.Graph env, envExpandable, envComponent, env1, env2, envComponentEmpty;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       Absyn.ComponentRef c1,c2,c1_prefix;
       FCore.Cache cache;
       Absyn.InnerOuter io1,io2;
@@ -3780,7 +3779,7 @@ protected function connectExpandableVariables
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Connect.Sets inSets;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Absyn.ComponentRef inComponentRefLeft;
   input Absyn.ComponentRef inComponentRefRight;
   input list<String> inVariablesUnion;
@@ -3801,7 +3800,7 @@ algorithm
       Connect.Sets sets;
       DAE.DAElist dae, dae1, dae2;
       FCore.Graph env;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       Absyn.ComponentRef c1,c2,c1_full,c2_full;
       FCore.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
@@ -4148,7 +4147,7 @@ public function connectComponents "
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Connect.Sets inSets;
-  input Prefix.Prefix inPrefix3;
+  input DAE.Prefix inPrefix3;
   input DAE.ComponentRef cr1;
   input Connect.Face inFace5;
   input DAE.Type inType6;
@@ -4175,7 +4174,7 @@ algorithm
       DAE.ComponentRef c1_1,c2_1,c1,c2,c1p,c2p;
       Connect.Sets sets_1,sets;
       FCore.Graph env;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       Connect.Face f1,f2;
       DAE.Type t1, t2, bc_tp1, bc_tp2, equalityConstraintFunctionReturnType;
       DAE.Dimension dim1,dim2;
@@ -4394,7 +4393,7 @@ algorithm
         (cache,fpath1) = Inst.makeFullyQualified(cache,env,fpath1);
         cache = FCore.addCachedInstFuncGuard(cache,fpath1);
         (cache,env,ih) =
-          InstFunction.implicitFunctionInstantiation(cache,env,ih,DAE.NOMOD(),Prefix.NOPRE(),equalityConstraintFunction,{});
+          InstFunction.implicitFunctionInstantiation(cache,env,ih,DAE.NOMOD(),DAE.NOPRE(),equalityConstraintFunction,{});
       then
         (cache,env,ih,sets_1,dae,graph);
 
@@ -4440,7 +4439,7 @@ algorithm
         (cache,fpath1) = Inst.makeFullyQualified(cache,env,fpath1);
         cache = FCore.addCachedInstFuncGuard(cache,fpath1);
         (cache,env,ih) =
-          InstFunction.implicitFunctionInstantiation(cache,env,ih,DAE.NOMOD(),Prefix.NOPRE(),equalityConstraintFunction,{});
+          InstFunction.implicitFunctionInstantiation(cache,env,ih,DAE.NOMOD(),DAE.NOPRE(),equalityConstraintFunction,{});
       then
         (cache,env,ih,sets_1,dae,graph);
 
@@ -4526,7 +4525,7 @@ protected function connectArrayComponents
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Connect.Sets inSets;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input list<DAE.ComponentRef> inLhsCrefs;
   input Connect.Face inLhsFace;
   input DAE.Type inLhsType;
@@ -4590,7 +4589,7 @@ protected function connectVars
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Connect.Sets inSets;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input DAE.ComponentRef inComponentRef3;
   input Connect.Face inFace4;
   input list<DAE.Var> inTypesVarLst5;
@@ -4973,7 +4972,7 @@ protected function instAssignment
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy ih;
-  input Prefix.Prefix inPre;
+  input DAE.Prefix inPre;
   input SCode.Statement alg;
   input DAE.ElementSource source;
   input SCode.Initial initial_;
@@ -4989,7 +4988,7 @@ algorithm
       FCore.Graph env;
       DAE.Exp e_1;
       DAE.Properties eprop;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       Absyn.Exp var;
       Absyn.Exp value;
       SourceInfo info;
@@ -5016,7 +5015,7 @@ protected function instAssignment2
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPre;
+  input DAE.Prefix inPre;
   input Absyn.Exp var;
   input Absyn.Exp inRhs;
   input DAE.Exp value;
@@ -5297,7 +5296,7 @@ protected function instParForStatement
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State inState;
   input SCode.Statement inForStatement;
   input DAE.ElementSource inSource;
@@ -5343,7 +5342,7 @@ protected function instParForStatement_dispatch
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State inState;
   input String inIterator;
   input DAE.Exp inRange;

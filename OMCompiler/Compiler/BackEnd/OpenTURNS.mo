@@ -58,7 +58,6 @@ import ComponentReference;
 import DAEUtil;
 import Expression;
 import ExpressionDump;
-import SymbolTable;
 import List;
 import Settings;
 import SimCode;

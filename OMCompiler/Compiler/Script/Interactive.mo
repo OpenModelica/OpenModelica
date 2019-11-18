@@ -78,16 +78,16 @@ import ErrorExt;
 import ExpressionDump;
 import ExpressionSimplify;
 import FBuiltin;
-import Flags;
 import FGraph;
+import Flags;
+import FlagsUtil;
 import GC;
 import GlobalScriptDump;
-import GlobalScriptUtil;
 import InnerOuter;
 import Inst;
 import InstHashTable;
-import InstUtil;
 import InstTypes;
+import InstUtil;
 import InteractiveUtil.mo;
 import List;
 import Lookup;
@@ -95,7 +95,6 @@ import MetaUtil;
 import Mod;
 import NFApi;
 import Parser;
-import Prefix;
 import Print;
 import Refactor;
 import SCodeUtil;
@@ -105,12 +104,13 @@ import StaticScript;
 import StringUtil;
 import SymbolTable;
 import System;
+import Testsuite;
 import Types;
 import UnitAbsyn;
 import Util;
 import ValuesUtil;
+
 import MetaModelica.Dangerous;
-// import NFInst;
 
 public uniontype AnnotationType
   record ICON_ANNOTATION end ICON_ANNOTATION;
@@ -246,7 +246,7 @@ algorithm
     return;
   end if;
 
-  testsuite := Config.getRunningTestsuite();
+  testsuite := Testsuite.isRunning();
 
   _ := matchcontinue(start, testsuite)
 
@@ -333,10 +333,10 @@ algorithm
         // adrpo: always evaluate the graphicalAPI with these options so instantiation is faster!
         partialInst = System.getPartialInstantiation();
         System.setPartialInstantiation(true);
-        gen = Flags.set(Flags.GEN, false);
-        evalfunc = Flags.set(Flags.EVAL_FUNC, false);
+        gen = FlagsUtil.set(Flags.GEN, false);
+        evalfunc = FlagsUtil.set(Flags.EVAL_FUNC, false);
         keepArrays = Flags.getConfigBool(Flags.KEEP_ARRAYS);
-        Flags.setConfigBool(Flags.KEEP_ARRAYS, false);
+        FlagsUtil.setConfigBool(Flags.KEEP_ARRAYS, false);
         InstHashTable.init();
         str = evaluateGraphicalApi(stmt, partialInst, gen, evalfunc, keepArrays);
         str_1 = stringAppend(str, "\n");
@@ -363,7 +363,7 @@ algorithm
     str_1 := "";
     GC.gcollect();
     str := StackOverflow.getReadableMessage();
-    if Config.getRunningTestsuite() then
+    if Testsuite.isRunning() then
       /* It's useful to print the name of the component we failed on.
        * But we crash in different places, so for the testsuite we skip this.
        */
@@ -417,7 +417,7 @@ algorithm
           functionArgs = Absyn.FUNCTIONARGS(args = {cond,_})))
       equation
         env = SymbolTable.buildEnv();
-        (cache,econd,_) = StaticScript.elabExp(FCore.emptyCache(), env, cond, true, true, Prefix.NOPRE(), info);
+        (cache,econd,_) = StaticScript.elabExp(FCore.emptyCache(), env, cond, true, true, DAE.NOPRE(), info);
         (_,Values.BOOL(true)) = CevalScript.ceval(cache,env, econd, true, Absyn.MSG(info), 0);
       then "";
 
@@ -425,7 +425,7 @@ algorithm
           functionArgs = Absyn.FUNCTIONARGS(args = {_,msg})))
       equation
         env = SymbolTable.buildEnv();
-        (cache,msg_1,_) = StaticScript.elabExp(FCore.emptyCache(), env, msg, true, true, Prefix.NOPRE(), info);
+        (cache,msg_1,_) = StaticScript.elabExp(FCore.emptyCache(), env, msg, true, true, DAE.NOPRE(), info);
         (_,Values.STRING(str)) = CevalScript.ceval(cache,env, msg_1, true, Absyn.MSG(info), 0);
       then str;
 
@@ -433,7 +433,7 @@ algorithm
       equation
         env = SymbolTable.buildEnv();
         exp = Absyn.CALL(cr,fargs);
-        (cache,sexp,_) = StaticScript.elabExp(FCore.emptyCache(), env, exp, true, true, Prefix.NOPRE(), info);
+        (cache,sexp,_) = StaticScript.elabExp(FCore.emptyCache(), env, exp, true, true, DAE.NOPRE(), info);
         (_,_) = CevalScript.ceval(cache, env, sexp, true, Absyn.MSG(info), 0);
       then "";
 
@@ -456,9 +456,9 @@ algorithm
         Absyn.CREF(Absyn.CREF_IDENT(name = ident,subscripts = asubs)),value = exp))
       equation
         env = SymbolTable.buildEnv();
-        (cache,sexp,DAE.PROP(_,_)) = StaticScript.elabExp(FCore.emptyCache(),env, exp, true, true,Prefix.NOPRE(),info);
+        (cache,sexp,DAE.PROP(_,_)) = StaticScript.elabExp(FCore.emptyCache(),env, exp, true, true, DAE.NOPRE(),info);
         (_,value) = CevalScript.ceval(cache,env, sexp, true,Absyn.MSG(info),0);
-        (_, dsubs, _) = Static.elabSubscripts(cache, env, asubs, true,Prefix.NOPRE(), info);
+        (_, dsubs, _) = Static.elabSubscripts(cache, env, asubs, true, DAE.NOPRE(), info);
 
         t = Types.typeOfValue(value) "This type can be more specific than the elaborated type; if the dimensions are unknown...";
         str = ValuesUtil.valString(value);
@@ -472,7 +472,7 @@ algorithm
         Absyn.TUPLE(expressions = crefexps),value = rexp))
       equation
         env = SymbolTable.buildEnv();
-        (cache,srexp,rprop) = StaticScript.elabExp(FCore.emptyCache(),env, rexp, true, true,Prefix.NOPRE(),info);
+        (cache,srexp,rprop) = StaticScript.elabExp(FCore.emptyCache(),env, rexp, true, true, DAE.NOPRE(),info);
         DAE.T_TUPLE(types = types) = Types.getPropType(rprop);
         crefs = makeTupleCrefs(crefexps, types, env, cache, info);
         (_,Values.TUPLE(values)) = CevalScript.ceval(cache, env, srexp, true, Absyn.MSG(info),0);
@@ -730,7 +730,7 @@ algorithm
     case (exp,_)
       equation
         env = SymbolTable.buildEnv();
-        (cache,sexp,_) = StaticScript.elabExp(FCore.emptyCache(), env, exp, true, true, Prefix.NOPRE(), info);
+        (cache,sexp,_) = StaticScript.elabExp(FCore.emptyCache(), env, exp, true, true, DAE.NOPRE(), info);
         (_,value) = CevalScript.ceval(cache, env, sexp, true, Absyn.MSG(info),0);
       then value;
 
@@ -748,7 +748,7 @@ protected
   DAE.Properties prop;
 algorithm
   env := SymbolTable.buildEnv();
-  (_, sexp, prop) := StaticScript.elabExp(FCore.emptyCache(), env, exp, true, true, Prefix.NOPRE(), AbsynUtil.dummyInfo);
+  (_, sexp, prop) := StaticScript.elabExp(FCore.emptyCache(), env, exp, true, true, DAE.NOPRE(), AbsynUtil.dummyInfo);
   (_, sexp, prop) := Ceval.cevalIfConstant(FCore.emptyCache(), env, sexp, prop, true, AbsynUtil.dummyInfo);
   estr := ExpressionDump.printExpStr(sexp);
 end stringRepresOfExpr;
@@ -811,7 +811,7 @@ algorithm
 
     case (Absyn.CREF(componentRef = Absyn.CREF_IDENT(id, asubs)), _, _, _, _)
       equation
-        (_, dsubs, _) = Static.elabSubscripts(inCache, inEnv, asubs, true, Prefix.NOPRE(), inInfo);
+        (_, dsubs, _) = Static.elabSubscripts(inCache, inEnv, asubs, true, DAE.NOPRE(), inInfo);
       then
         DAE.CREF_IDENT(id, inType, dsubs);
 
@@ -903,9 +903,9 @@ algorithm
 
   // Reset the flags!
   System.setPartialInstantiation(isPartialInst);
-  Flags.set(Flags.GEN, flagGen);
-  Flags.set(Flags.EVAL_FUNC, flagEvalFunc);
-  Flags.setConfigBool(Flags.KEEP_ARRAYS, flagKeepArrays);
+  FlagsUtil.set(Flags.GEN, flagGen);
+  FlagsUtil.set(Flags.EVAL_FUNC, flagEvalFunc);
+  FlagsUtil.setConfigBool(Flags.KEEP_ARRAYS, flagKeepArrays);
 
   if failed then fail(); end if;
 end evaluateGraphicalApi;
@@ -4052,7 +4052,7 @@ algorithm
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         (cache,env_2,_,_,_) =
           Inst.partialInstClassIn(cache,env2,InnerOuter.emptyInstHierarchy,
-            DAE.NOMOD(), Prefix.NOPRE(), ci_state, cl, SCode.PUBLIC(), {}, 0);
+            DAE.NOMOD(), DAE.NOPRE(), ci_state, cl, SCode.PUBLIC(), {}, 0);
       then env_2;
 
     else FGraph.empty();
@@ -4637,7 +4637,7 @@ algorithm
         p_class = AbsynUtil.crefToPath(class_);
         cdef = getPathedClassInProgram(p_class, p);
         Absyn.CLASS(info = SOURCEINFO(fileName = filename,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol)) = cdef;
-        filename = Util.testsuiteFriendly(filename);
+        filename = Testsuite.friendly(filename);
         str_sline = intString(sline);
         str_scol = intString(scol);
         str_eline = intString(eline);
@@ -4764,7 +4764,7 @@ algorithm
         element_str = stringAppendList(
           {"elementtype=classdef, classname=",id,
           ", classrestriction=",str_restriction});
-        file = Util.testsuiteFriendly(file);
+        file = Testsuite.friendly(file);
         sline_str = intString(sline);
         scol_str = intString(scol);
         eline_str = intString(eline);
@@ -4789,7 +4789,7 @@ algorithm
         eline_str = intString(eline);
         ecol_str = intString(ecol);
         readonly_str = selectString(isReadOnly, "readonly", "writable");
-        file = Util.testsuiteFriendly(file);
+        file = Testsuite.friendly(file);
         str = stringAppendList(
           {"elementfile=\"",file,"\", elementreadonly=\"",
           readonly_str,"\", elementStartLine=",sline_str,", elementStartColumn=",scol_str,
@@ -9184,7 +9184,7 @@ algorithm
           ci_state := ClassInf.start(restr, FGraph.getGraphName(env2));
           (_,env_2,_,_,_) :=
             Inst.partialInstClassIn(FCore.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
-            DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
+            DAE.NOMOD(), DAE.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
           end if;
         lst := getBaseClasses(cdef, env_2);
         ErrorExt.rollBack("getInheritedClassesHelper");
@@ -9576,7 +9576,7 @@ algorithm
           ci_state := ClassInf.start(restr, FGraph.getGraphName(env2));
           (_,env_2,_,_,_) :=
             Inst.partialInstClassIn(FCore.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
-              DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
+              DAE.NOMOD(), DAE.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
           lst := getBaseClasses(cdef, env_2);
         end if;
         cref := listGet(lst, n);
@@ -9766,7 +9766,7 @@ algorithm
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         (_,env_2,_,_,_) =
           Inst.partialInstClassIn(FCore.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
-            DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
+            DAE.NOMOD(), DAE.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         comp = getNthComponentInClass(cdef, n);
         {s1} = getComponentInfoOld(comp, env_2);
         str = stringAppendList({"{", s1, "}"});
@@ -9865,11 +9865,11 @@ algorithm
           env2 = FGraph.openScope(env_1, encflag, id, FGraph.restrictionToScopeType(restr));
           ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
           permissive = Flags.getConfigBool(Flags.PERMISSIVE);
-          Flags.setConfigBool(Flags.PERMISSIVE, true);
+          FlagsUtil.setConfigBool(Flags.PERMISSIVE, true);
           (_,env2,_,_,_) =
             Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),
-              Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
-          Flags.setConfigBool(Flags.PERMISSIVE, permissive);
+              DAE.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
+          FlagsUtil.setConfigBool(Flags.PERMISSIVE, permissive);
           genv = GRAPHIC_ENV_FULL_CACHE(SymbolTable.getAbsyn(), modelpath, cache, env2);
         end if;
         comps1 = getPublicComponentsInClass(cdef);
@@ -12396,7 +12396,7 @@ algorithm
     case (Absyn.MODIFICATION(path = Absyn.IDENT(name = "info"),
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::_)
       equation
-        (_,dexp,_) = StaticScript.elabGraphicsExp(FCore.emptyCache(), FGraph.empty(), exp, true, Prefix.NOPRE(), AbsynUtil.dummyInfo);
+        (_,dexp,_) = StaticScript.elabGraphicsExp(FCore.emptyCache(), FGraph.empty(), exp, true, DAE.NOPRE(), AbsynUtil.dummyInfo);
         (DAE.SCONST(s),_) = ExpressionSimplify.simplify(dexp);
         // ss = getDocumentationAnnotationInfo(xs);
       then s;
@@ -12423,7 +12423,7 @@ algorithm
     case (Absyn.MODIFICATION(path = Absyn.IDENT(name = "revisions"),
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::_)
       equation
-        (_,dexp,_) = StaticScript.elabGraphicsExp(FCore.emptyCache(), FGraph.empty(), exp, true, Prefix.NOPRE(), AbsynUtil.dummyInfo);
+        (_,dexp,_) = StaticScript.elabGraphicsExp(FCore.emptyCache(), FGraph.empty(), exp, true, DAE.NOPRE(), AbsynUtil.dummyInfo);
         (DAE.SCONST(s),_) = ExpressionSimplify.simplify(dexp);
       then s;
     case (_::xs)
@@ -12449,7 +12449,7 @@ algorithm
     case (Absyn.MODIFICATION(path = Absyn.IDENT(name = "__OpenModelica_infoHeader"),
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::_)
       equation
-        (_,dexp,_) = StaticScript.elabGraphicsExp(FCore.emptyCache(), FGraph.empty(), exp, true, Prefix.NOPRE(), AbsynUtil.dummyInfo);
+        (_,dexp,_) = StaticScript.elabGraphicsExp(FCore.emptyCache(), FGraph.empty(), exp, true, DAE.NOPRE(), AbsynUtil.dummyInfo);
         (DAE.SCONST(s),_) = ExpressionSimplify.simplify(dexp);
       then s;
     case (_::xs)
@@ -12815,7 +12815,7 @@ algorithm
         fargs = createFuncargsFromElementargs(mod);
         p_1 = AbsynToSCode.translateAbsyn2SCode(lineProgram);
         (cache,env) = Inst.makeEnvFromProgram(p_1);
-        (_,newexp,prop) = StaticScript.elabGraphicsExp(cache,env, Absyn.CALL(Absyn.CREF_IDENT(annName,{}),fargs), false,Prefix.NOPRE(), info) "impl" ;
+        (_,newexp,prop) = StaticScript.elabGraphicsExp(cache,env, Absyn.CALL(Absyn.CREF_IDENT(annName,{}),fargs), false,DAE.NOPRE(), info) "impl" ;
         (cache, newexp, prop) = Ceval.cevalIfConstant(cache, env, newexp, prop, false, info);
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
         gexpstr = ExpressionDump.printExpStr(newexp);
@@ -13107,7 +13107,7 @@ algorithm
         algorithm
           (cache, env, _, outCache) := buildEnvForGraphicProgram(outCache, {});
           (_, eq_dexp, prop) :=
-            StaticScript.elabGraphicsExp(cache, env, eq_aexp, false, Prefix.NOPRE(), info);
+            StaticScript.elabGraphicsExp(cache, env, eq_aexp, false, DAE.NOPRE(), info);
           (cache, eq_dexp, prop) := Ceval.cevalIfConstant(cache, env, eq_dexp, prop, false, info);
           eq_dexp := ExpressionSimplify.simplify1(eq_dexp);
           Print.clearErrorBuf() "Clear any error messages generated by the annotations.";
@@ -13125,12 +13125,12 @@ algorithm
           (cache, env, _, outCache) := buildEnvForGraphicProgram(outCache, mod);
 
           (cache, c, env2) := Lookup.lookupClassIdent(cache, inEnv, ann_name);
-          (cache, dmod) := Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(),
+          (cache, dmod) := Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOPRE(),
             smod, false, Mod.COMPONENT(ann_name), AbsynUtil.dummyInfo);
 
           c := SCodeUtil.classSetPartial(c, SCode.NOT_PARTIAL());
           (_, _, _, _, dae) := Inst.instClass(cache, env2, InnerOuter.emptyInstHierarchy,
-            UnitAbsyn.noStore, dmod, Prefix.NOPRE(), c, {}, false,
+            UnitAbsyn.noStore, dmod, DAE.NOPRE(), c, {}, false,
             InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
 
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
@@ -13149,7 +13149,7 @@ algorithm
           (cache, c, env) := Lookup.lookupClassIdent(cache, inEnv, ann_name);
           c := SCodeUtil.classSetPartial(c, SCode.NOT_PARTIAL());
           (_, _, _, _, dae) := Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy,
-              UnitAbsyn.noStore, DAE.NOMOD(), Prefix.NOPRE(), c, {}, false,
+              UnitAbsyn.noStore, DAE.NOMOD(), DAE.NOPRE(), c, {}, false,
               InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
 
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
@@ -13470,7 +13470,7 @@ algorithm
   check_model := Flags.getConfigBool(Flags.CHECK_MODEL);
   eval_param := Config.getEvaluateParametersInAnnotations();
   graphics_mode := Config.getGraphicsExpMode();
-  Flags.setConfigBool(Flags.CHECK_MODEL, true);
+  FlagsUtil.setConfigBool(Flags.CHECK_MODEL, true);
   Config.setEvaluateParametersInAnnotations(true);
   Config.setGraphicsExpMode(true);
 
@@ -13481,7 +13481,7 @@ algorithm
   end try;
 
   Config.setEvaluateParametersInAnnotations(eval_param);
-  Flags.setConfigBool(Flags.CHECK_MODEL, check_model);
+  FlagsUtil.setConfigBool(Flags.CHECK_MODEL, check_model);
   Config.setGraphicsExpMode(graphics_mode);
   if failed then
     fail();
@@ -13547,12 +13547,12 @@ algorithm
         smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())),
           SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
         (cache, dmod) := Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy,
-          Prefix.NOPRE(), smod, false, Mod.COMPONENT(ann_name), info);
+          DAE.NOPRE(), smod, false, Mod.COMPONENT(ann_name), info);
 
         placement_cls := AbsynToSCode.translateClass(getClassInProgram(ann_name, graphic_prog));
         (cache, _, _, _, dae) :=
           Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-            dmod, Prefix.NOPRE(), placement_cls, {}, false, InstTypes.TOP_CALL(),
+            dmod, DAE.NOPRE(), placement_cls, {}, false, InstTypes.TOP_CALL(),
             ConnectionGraph.EMPTY, Connect.emptySet);
         outString := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
 
@@ -13563,7 +13563,7 @@ algorithm
             {Absyn.MODIFICATION(modification = SOME(Absyn.CLASSMOD(eqMod =
               Absyn.EQMOD(exp = graphic_exp))))} := graphic_mod;
             (_, graphic_dexp, prop) := StaticScript.elabGraphicsExp(cache, env,
-              graphic_exp, false, Prefix.NOPRE(), info);
+              graphic_exp, false, DAE.NOPRE(), info);
 
             if is_icon then
               ErrorExt.setCheckpoint("getAnnotationString: Icon");
@@ -17988,10 +17988,10 @@ algorithm
   // First try partial instantiation
   try
     (_, outEnv) := Inst.partialInstClassIn(cache, env, InnerOuter.emptyInstHierarchy,
-      DAE.NOMOD(), Prefix.NOPRE(), ci_state, cl, SCode.PUBLIC(), {}, 0);
+      DAE.NOMOD(), DAE.NOPRE(), ci_state, cl, SCode.PUBLIC(), {}, 0);
   else
     (_, outEnv) := Inst.instClassIn(cache, env, InnerOuter.emptyInstHierarchy,
-      UnitAbsyn.noStore, DAE.NOMOD(), Prefix.NOPRE(), ci_state, cl,
+      UnitAbsyn.noStore, DAE.NOMOD(), DAE.NOPRE(), ci_state, cl,
       SCode.PUBLIC(), {}, false, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY,
       Connect.emptySet, NONE());
   end try;

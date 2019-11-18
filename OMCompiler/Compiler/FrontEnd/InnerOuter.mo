@@ -40,7 +40,6 @@ import ConnectionGraph;
 import DAE;
 import FCore;
 import FNode;
-import Prefix;
 import SCode;
 import UnitAbsyn;
 import HashSet;
@@ -84,7 +83,7 @@ end InstResult;
 
 uniontype InstInner
   record INST_INNER
-    Prefix.Prefix innerPrefix "the prefix of the inner. we need it to prefix the outer variables with it!";
+    DAE.Prefix innerPrefix "the prefix of the inner. we need it to prefix the outer variables with it!";
     SCode.Ident name;
     Absyn.InnerOuter io;
     String fullName "full inner component name";
@@ -200,7 +199,7 @@ algorithm
       DAE.ComponentRef cr1,cr2,ncr1,ncr2;
       Absyn.InnerOuter io1,io2;
       Connect.Face f1,f2;
-      Prefix.Prefix scope;
+      DAE.Prefix scope;
       DAE.ElementSource source "the origin of the element";
 
     // the left hand side is an outer!
@@ -398,7 +397,7 @@ public function retrieveOuterConnections
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Connect.Sets inSets;
   input Boolean inTopCall;
   input ConnectionGraph.ConnectionGraph inCGraph;
@@ -417,7 +416,7 @@ end retrieveOuterConnections;
 protected function removeInnerPrefixFromCref
 "@author: adrpo
  This function will strip the given prefix from the component references."
- input Prefix.Prefix inPrefix;
+ input DAE.Prefix inPrefix;
  input DAE.ComponentRef inCref;
  output DAE.ComponentRef outCref;
 algorithm
@@ -426,7 +425,7 @@ algorithm
       DAE.ComponentRef crefPrefix, crOuter;
 
     // no prefix to strip, return the cref!
-    case (Prefix.NOPRE(),_) then inCref;
+    case (DAE.NOPRE(),_) then inCref;
 
     // we have a prefix, remove it from the cref
     case (_, _)
@@ -454,7 +453,7 @@ protected function retrieveOuterConnections2
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input list<Connect.OuterConnect> inOuterConnects;
   input Connect.Sets inSets;
   input Boolean inTopCall;
@@ -473,7 +472,7 @@ algorithm
       Connect.OuterConnect oc;
       list<Connect.OuterConnect> rest_oc, ioc;
       Boolean inner1, inner2, outer1, outer2, added;
-      Prefix.Prefix scope;
+      DAE.Prefix scope;
       DAE.ElementSource source "the origin of the element";
       SourceInfo info;
       Connect.Sets sets;
@@ -565,7 +564,7 @@ protected function addOuterConnectIfEmpty
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InstHierarchy inIH;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input Connect.Sets inSets;
   input Boolean added "if true, this function does nothing";
   input DAE.ComponentRef cr1;
@@ -640,7 +639,7 @@ protected function addOuterConnectIfEmptyNoEnv
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InstHierarchy inIH;
-  input Prefix.Prefix inPre;
+  input DAE.Prefix inPre;
   input Connect.Sets inSets;
   input Boolean added "if true, this function does nothing";
   input DAE.ComponentRef cr1;
@@ -666,7 +665,7 @@ algorithm
        FCore.Cache cache;
        FCore.Graph env;
        Absyn.InnerOuter io1,io2;
-       Prefix.Prefix pre;
+       DAE.Prefix pre;
 
     // if it was added, return the same
     case(_,_,_,_,_,true,_,_,_,_,_,_,_) then inSets;
@@ -675,7 +674,7 @@ algorithm
     case(cache,env,ih,_, Connect.SETS(sets, sc, cl, oc),false,_,io1,_,_,io2,_,_)
       equation
         (cache,DAE.ATTR(connectorType = ct,variability=vt1),t1,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
-        pre = Prefix.NOPRE();
+        pre = DAE.NOPRE();
         t2 = t1;
         vt2 = vt1;
         io1 = removeOuter(io1);
@@ -692,7 +691,7 @@ algorithm
     // if it was not added, add it (first component found: cr2)
     case(cache,env,ih,_, Connect.SETS(sets, sc, cl, oc),false,_,io1,_,_,io2,_,_)
       equation
-        pre = Prefix.NOPRE();
+        pre = DAE.NOPRE();
         (cache,DAE.ATTR(connectorType = ct,variability=vt2),t2,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
         t1 = t2;
         vt1 = vt2;
@@ -925,14 +924,14 @@ protected function lookupInnerInIH
  Given an instance hierarchy and a component name find the
  modification of the inner component with the same name"
  input TopInstance inTIH;
- input Prefix.Prefix inPrefix;
+ input DAE.Prefix inPrefix;
  input SCode.Ident inComponentIdent;
  output InstInner outInstInner;
 algorithm
   (outInstInner) := matchcontinue(inTIH, inPrefix, inComponentIdent)
     local
       SCode.Ident name;
-      Prefix.Prefix prefix;
+      DAE.Prefix prefix;
       InstHierarchyHashTable ht;
       DAE.ComponentRef cref;
       InstInner instInner;
@@ -941,18 +940,18 @@ algorithm
     // no prefix, this is an error!
     // disabled as this is used in Interactive.getComponents
     // and makes mosfiles/interactive_api_attributes.mos to fail!
-    case (TOP_INSTANCE(), Prefix.PREFIX(compPre = Prefix.NOCOMPPRE()),  _)
-      then lookupInnerInIH(inTIH, Prefix.NOPRE(), inComponentIdent);
+    case (TOP_INSTANCE(), DAE.PREFIX(compPre = DAE.NOCOMPPRE()),  _)
+      then lookupInnerInIH(inTIH, DAE.NOPRE(), inComponentIdent);
 
     // no prefix, this is an error!
     // disabled as this is used in Interactive.getComponents
     // and makes mosfiles/interactive_api_attributes.mos to fail!
-    case (TOP_INSTANCE(), Prefix.NOPRE(),  name)
+    case (TOP_INSTANCE(), DAE.NOPRE(),  name)
       equation
         // fprintln(Flags.INNER_OUTER, "Error: outer component: " + name + " defined at the top level!");
-        // fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : looking for: " + PrefixUtil.printPrefixStr(Prefix.NOPRE()) + "/" + name + " REACHED TOP LEVEL!");
+        // fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : looking for: " + PrefixUtil.printPrefixStr(DAE.NOPRE()) + "/" + name + " REACHED TOP LEVEL!");
         // TODO! add warning!
-      then emptyInstInner(Prefix.NOPRE(), name);
+      then emptyInstInner(DAE.NOPRE(), name);
 
     // we have a prefix, remove the last cref from the prefix and search!
     case (TOP_INSTANCE(_, ht, _, _), _,  name)
@@ -1018,7 +1017,7 @@ According to specification modifiers on outer elements is not allowed."
   input FCore.Cache cache;
   input FCore.Graph env;
   input InstHierarchy ih;
-  input Prefix.Prefix prefix;
+  input DAE.Prefix prefix;
   input String componentName;
   input DAE.ComponentRef cr;
   input DAE.Mod inMod;
@@ -1049,7 +1048,7 @@ public function switchInnerToOuterAndPrefix
 "switches the inner to outer attributes of a component in the dae."
   input list<DAE.Element> inDae;
   input Absyn.InnerOuter io;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   output list<DAE.Element> outDae;
  algorithm
   outDae := matchcontinue (inDae,io,pre)
@@ -1123,7 +1122,7 @@ end switchInnerToOuterAndPrefix;
 public function prefixOuterDaeVars
 "prefixes all the outer variables in the DAE with the given prefix."
   input list<DAE.Element> inDae;
-  input Prefix.Prefix crefPrefix;
+  input DAE.Prefix crefPrefix;
   output list<DAE.Element> outDae;
  algorithm
   outDae := matchcontinue (inDae,crefPrefix)
@@ -1314,7 +1313,7 @@ end switchInnerToOuterInChildrenValue;
 
 
 public function emptyInstInner
-  input Prefix.Prefix innerPrefix;
+  input DAE.Prefix innerPrefix;
   input String name;
   output InstInner outInstInner;
   annotation(__OpenModelica_EarlyInline = true);
@@ -1329,7 +1328,7 @@ public function lookupInnerVar
   input Cache inCache;
   input FCore.Graph inEnv;
   input InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SCode.Ident inIdent;
   input Absyn.InnerOuter io;
   output InstInner outInstInner;
@@ -1339,7 +1338,7 @@ algorithm
       Cache cache;
       String n;
       FCore.Graph env;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       TopInstance tih;
       InstInner instInner;
 
@@ -1371,7 +1370,7 @@ public function updateInstHierarchy
  This function updates the instance hierarchy by adding
  the INNER components to it with the given prefix"
   input InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Absyn.InnerOuter inInnerOuter;
   input InstInner inInstInner;
   output InstHierarchy outIH;
@@ -1489,7 +1488,7 @@ end updateSMHierarchy;
 
 public function addClassIfInner
   input SCode.Element inClass;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input FCore.Graph inScope;
   input InstHierarchy inIH;
   output InstHierarchy outIH;
@@ -1580,7 +1579,7 @@ public function prefixOuterCrefWithTheInnerPrefix
   This function searches for outer crefs and prefixes them with the inner prefix"
   input InstHierarchy inIH;
   input DAE.ComponentRef inOuterComponentRef;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   output DAE.ComponentRef outInnerComponentRef;
 algorithm
   outInnerComponentRef := match(inIH, inOuterComponentRef, inPrefix)
@@ -1705,7 +1704,7 @@ public function printInnerDefStr
 algorithm
   outStr := match(inInstInner)
     local
-      Prefix.Prefix innerPrefix;
+      DAE.Prefix innerPrefix;
       SCode.Ident name;
       Absyn.InnerOuter io;
       Option<InstResult> instResult;

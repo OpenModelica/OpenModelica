@@ -32,7 +32,6 @@
 encapsulated package NFApi
 
 import Absyn;
-import SCode;
 import DAE;
 
 public

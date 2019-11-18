@@ -43,7 +43,6 @@ import Absyn;
 import AbsynUtil;
 import SCode;
 import DAE;
-import Prefix;
 import ClassInf;
 import FCore;
 import FNode;
@@ -452,7 +451,7 @@ public function updateClass
 "This function updates a class element in the graph"
   input Graph inGraph;
   input SCode.Element inElement;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input DAE.Mod inMod;
   input FCore.Status instStatus;
   input Graph inTargetGraph;
@@ -471,7 +470,7 @@ algorithm
       Graph g;
       Status s;
       DAE.Mod m;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
 
     // update in the current frame
     case (g, e as SCode.CLASS(name = n), _, _, _, _)
@@ -500,7 +499,7 @@ public function updateClassElement
 "This function updates a class element in the given parent ref"
   input Ref inRef;
   input SCode.Element inElement;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input DAE.Mod inMod;
   input FCore.Status instStatus;
   input Graph inTargetGraph;
@@ -519,7 +518,7 @@ algorithm
       Graph g;
       Status s;
       DAE.Mod m;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
 
     case (r, e as SCode.CLASS(name = n), _, _, _, _)
       equation
@@ -1086,7 +1085,7 @@ public function mkClassNode
  Enumeration are expanded from a list into a class with components"
   input Graph inGraph;
   input SCode.Element inClass;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input DAE.Mod inMod;
   input Boolean checkDuplicate = false;
   output Graph outGraph;
@@ -1540,7 +1539,7 @@ public function mkVersionNode
  modifiers given to this functions"
   input Graph inSourceEnv;
   input Name inSourceName;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input DAE.Mod inMod;
   input Graph inTargetClassEnv;
   input SCode.Element inTargetClass;
@@ -1555,7 +1554,7 @@ algorithm
       Ref classRef, sourceRef, targetClassParentRef, versionRef;
       Node n;
       Ref r;
-      Prefix.Prefix crefPrefix;
+      DAE.Prefix crefPrefix;
       Scope sourceScope;
       SCode.Element c;
       Name targetClassName, newTargetClassName;
@@ -1640,7 +1639,7 @@ end mkVersionNode;
 public function createVersionScope
   input Graph inSourceEnv;
   input Name inSourceName;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input DAE.Mod inMod;
   input Graph inTargetClassEnv;
   input SCode.Element inTargetClass;
@@ -1716,12 +1715,12 @@ end isTargetClassBuiltin;
 public function mkVersionName
   input Graph inSourceEnv;
   input Name inSourceName;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input DAE.Mod inMod;
   input Graph inTargetClassEnv;
   input Name inTargetClassName;
   output Name outName;
-  output Prefix.Prefix outCrefPrefix;
+  output DAE.Prefix outCrefPrefix;
 algorithm
   (outName, outCrefPrefix) := match(inSourceEnv, inSourceName, inPrefix, inMod, inTargetClassEnv, inTargetClassName)
     local
@@ -1730,7 +1729,7 @@ algorithm
       Ref compRef;
       Node n;
       Ref r;
-      Prefix.Prefix crefPrefix;
+      DAE.Prefix crefPrefix;
       Name name;
 
     case (_, _, _, _, _, _)
@@ -1754,11 +1753,11 @@ end mkVersionName;
 public function getClassPrefix
   input FCore.Graph inEnv;
   input Name inClassName;
-  output Prefix.Prefix outPrefix;
+  output DAE.Prefix outPrefix;
 algorithm
   outPrefix := matchcontinue(inEnv, inClassName)
     local
-      Prefix.Prefix p;
+      DAE.Prefix p;
       Ref r;
 
     case (_, _)
@@ -1768,7 +1767,7 @@ algorithm
       then
         p;
 
-    else Prefix.NOPRE();
+    else DAE.NOPRE();
 
   end matchcontinue;
 end getClassPrefix;

@@ -37,7 +37,6 @@ encapsulated package BackendInterface
 public import Absyn;
 public import DAE;
 public import FCore;
-public import Prefix;
 public import Values;
 
 protected
@@ -78,7 +77,7 @@ public function elabCallInteractive "Note: elabCall_InteractiveFunction is set i
   input list<Absyn.Exp> inExps;
   input list<Absyn.NamedArg> inNamedArgs;
   input Boolean inImplInst;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;

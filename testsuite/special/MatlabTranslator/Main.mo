@@ -10,7 +10,7 @@ import Util;
 import System;
 import Types;
 import OMCCTypes;
-import Flags;
+import FlagsUtil;
 import Error;
 import Dump;
 import Print;
@@ -39,7 +39,7 @@ algorithm
       Real tp,tl,tt,r1;
     case args as _::_
       equation
-        {filename,grammar} = Flags.new(args);
+        {filename,grammar} = FlagsUtil.new(args);
         runparser = match grammar
           case "Modelica" then true;
           case "ModelicaLexer" then false;
@@ -60,16 +60,16 @@ algorithm
           (result,ParseCodeModelica.ASTSTART(matstart)) = ParserModelica.parse(tokens,filename);
           print("Parser done in time: " + realString(System.realtimeTock(1)*1000) + "ms\n");
         end if;
-        
+
           // call the translator
-        if result then         
-          modast=Translate.transform(matstart);         
+        if result then
+          modast=Translate.transform(matstart);
           //print("\n ********* Final Abstract Syntax tree ************ \n");
-          //print(anyString(modast));  
-                 
+          //print(anyString(modast));
+
           unparsed=Dump.unparseStr(modast,false);
-          
-          print("\n Translated Modelica Code \n"); 
+
+          print("\n Translated Modelica Code \n");
           print("\n");
           print(unparsed);
           print("\n");
@@ -78,10 +78,10 @@ algorithm
           print ("\n Failed");
           result=false;
         end if;
-      
-        then 
+
+        then
           result;
-              
+
          /* if (result) then
             print("SUCCEED\n");
             else
@@ -94,7 +94,7 @@ algorithm
         print("no args");
         printUsage();
         result=false;
-      then 
+      then
         result;
 
     case _
@@ -103,8 +103,8 @@ algorithm
          print("\n" +Error.printMessagesStr());
          printUsage();
          result=false;
-      then 
-        result; 
+      then
+        result;
   end matchcontinue;
 end main;
 

@@ -33,7 +33,6 @@ encapsulated uniontype NFComponentRef
 protected
   import NFComponent.Component;
   import Absyn;
-  import AbsynUtil;
   import DAE;
   import Subscript = NFSubscript;
   import Type = NFType;
@@ -42,7 +41,6 @@ protected
   import Dimension = NFDimension;
   import Expression = NFExpression;
   import NFPrefixes.Variability;
-  import System;
   import NFClass.Class;
   import List;
   import Prefixes = NFPrefixes;

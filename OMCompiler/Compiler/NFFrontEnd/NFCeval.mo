@@ -3336,10 +3336,10 @@ algorithm
         then
           // only add an error if fixed = true
           if Component.getFixedAttribute(component) then
-	          Error.addMultiSourceMessage(Error.UNBOUND_PARAMETER_EVALUATE_TRUE,
-	            {Expression.toString(exp) + "(fixed = true)"},
-	            {InstNode.info(ComponentRef.node(Expression.toCref(exp))), EvalTarget.getInfo(target)});
-	        end if;
+            Error.addMultiSourceMessage(Error.UNBOUND_PARAMETER_EVALUATE_TRUE,
+              {Expression.toString(exp) + "(fixed = true)"},
+              {InstNode.info(ComponentRef.node(Expression.toCref(exp))), EvalTarget.getInfo(target)});
+          end if;
         else // constant with no binding
           Error.addMultiSourceMessage(Error.UNBOUND_CONSTANT,
             {Expression.toString(exp)},

@@ -57,6 +57,7 @@ import Debug;
 import Error;
 import ExecStat;
 import Flags;
+import FlagsUtil;
 import HpcOmMemory;
 import HpcOmScheduler;
 import List;
@@ -431,7 +432,7 @@ algorithm
           numProc = 1;
           print("You did not choose a number of cores. Since there is no ODE-System, the number of cores is set to 1!\n");
         end if;
-        Flags.setConfigInt(Flags.NUM_PROC,numProc);
+        FlagsUtil.setConfigInt(Flags.NUM_PROC,numProc);
       then
         (numProc,true);
     else

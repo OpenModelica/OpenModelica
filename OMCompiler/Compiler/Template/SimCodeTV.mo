@@ -2614,6 +2614,21 @@ package DAE
   end OPTIMIZATION_ATTRS;
 end ClassAttributes;
 
+  uniontype ComponentPrefix
+  "Prefix for component name, e.g. a.b[2].c.
+   NOTE: Component prefixes are stored in inverse order c.b[2].a!"
+    record PRE
+      String prefix "prefix name" ;
+      list<DAE.Dimension> dimensions "dimensions" ;
+      list<DAE.Subscript> subscripts "subscripts" ;
+      ComponentPrefix next "next prefix" ;
+      ClassInf.State ci_state "to be able to at least partially fill in type information properly for DAE.VAR";
+      SourceInfo info;
+    end PRE;
+
+    record NOCOMPPRE end NOCOMPPRE;
+  end ComponentPrefix;
+
 end DAE;
 
 
@@ -3200,11 +3215,6 @@ package Util
     output Integer i;
   end mulStringDelimit2Int;
 
-  function testsuiteFriendly
-    input String in;
-    output String out;
-  end testsuiteFriendly;
-
   function endsWith
     input String str;
     input String suffix;
@@ -3602,13 +3612,13 @@ package Expression
   end isCrefListWithEqualIdents;
 
   function dimensionsList
-	  input DAE.Dimensions inDims;
-	  output list<Integer> outValues;
+    input DAE.Dimensions inDims;
+    output list<Integer> outValues;
   end dimensionsList;
 
   function expDimensionsList
-	  input list<DAE.Exp> inDims;
-	  output list<Integer> outValues;
+    input list<DAE.Exp> inDims;
+    output list<Integer> outValues;
   end expDimensionsList;
 
 
@@ -3634,14 +3644,14 @@ package Expression
   are okay if the variable is a function input (it's just holds the slot
   and will not be generated). Otherwise it's an error
   since it shouldn't have reached there."
-	  input DAE.Dimension dim;
-	  output DAE.Exp exp;
+    input DAE.Dimension dim;
+    output DAE.Exp exp;
   end dimensionSizeExpHandleUnkown;
 
   function hasUnknownDims
-	  input list<DAE.Dimension> dims;
-	  output Boolean hasUnkown;
-	end hasUnknownDims;
+    input list<DAE.Dimension> dims;
+    output Boolean hasUnkown;
+  end hasUnknownDims;
 
 end Expression;
 
@@ -3673,10 +3683,6 @@ package Config
   function noProc
     output Integer n;
   end noProc;
-
-  function getRunningTestsuite
-    output Boolean runningTestsuite;
-  end getRunningTestsuite;
 
   function getDefaultOpenCLDevice
   "Returns the id for the default OpenCL device to be used."
@@ -3723,6 +3729,17 @@ package Config
   end adaptiveHomotopy;
 end Config;
 
+package Testsuite
+  function isRunning
+    output Boolean runningTestsuite;
+  end isRunning;
+
+  function friendly
+    input String in;
+    output String out;
+  end friendly;
+end Testsuite;
+
 package Flags
   uniontype DebugFlag end DebugFlag;
   uniontype ConfigFlag end ConfigFlag;
@@ -3762,12 +3779,6 @@ package Flags
   constant ConfigFlag ZEROMQ_PUB_PORT;
   constant ConfigFlag ZEROMQ_SUB_PORT;
   constant ConfigFlag ZEROMQ_SIM_ID;
-  function set
-    input DebugFlag inFlag;
-    input Boolean inValue;
-    output Boolean outOldValue;
-  end set;
-
   function isSet
     input DebugFlag inFlag;
     output Boolean outValue;
@@ -3798,11 +3809,18 @@ package Flags
     output list<String> outValue;
   end getConfigStringList;
 
+end Flags;
+package FlagsUtil
+  function set
+    input Flags.DebugFlag inFlag;
+    input Boolean inValue;
+    output Boolean outOldValue;
+  end set;
+
   function configuredWithClang
     output Boolean yes;
   end configuredWithClang;
-end Flags;
-
+end FlagsUtil;
 package Settings
   function getVersionNr
     output String outString;
@@ -3960,22 +3978,5 @@ package HashTableCrIListArray
     output String res;
   end FuncExpStr;
 end HashTableCrIListArray;
-
-package Prefix
-  uniontype ComponentPrefix
-  "Prefix for component name, e.g. a.b[2].c.
-   NOTE: Component prefixes are stored in inverse order c.b[2].a!"
-    record PRE
-      String prefix "prefix name" ;
-      list<DAE.Dimension> dimensions "dimensions" ;
-      list<DAE.Subscript> subscripts "subscripts" ;
-      ComponentPrefix next "next prefix" ;
-      ClassInf.State ci_state "to be able to at least partially fill in type information properly for DAE.VAR";
-      SourceInfo info;
-    end PRE;
-
-    record NOCOMPPRE end NOCOMPPRE;
-  end ComponentPrefix;
-end Prefix;
 
 end SimCodeTV;

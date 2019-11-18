@@ -66,6 +66,7 @@ import ExpressionDump;
 import ExpressionSimplify;
 import Error;
 import Flags;
+import FlagsUtil;
 import GC;
 import Global;
 import Graph;
@@ -2093,7 +2094,7 @@ algorithm
           if Flags.isSet(Flags.JAC_DUMP) then
             BackendDump.bltdump("Symbolic Jacobian",backendDAE);
           else
-            b = Flags.disableDebug(Flags.EXEC_STAT);
+            b = FlagsUtil.disableDebug(Flags.EXEC_STAT);
           end if;
 
           strPostOptModules = {"wrapFunctionCalls",
@@ -2110,7 +2111,7 @@ algorithm
             /* ToDo: removeSimpleEquation can't handle all sorts of equations inside the
              * jacobian BackendDAE. E.g. for equations lile
              * $cse14 := $DER$$PModelica$PMedia$PWater$PIF97_Utilities$PwaterBaseProp_ph(p[10], h[10], 0, 0, 1.0, 0.0);
-             * from SteamPipe from ScalableTestSuite.
+             * from SteamPipe from ScalableTestsuite.
              * Add a new module which finds constant (= independent of seed) equations
              * and moves them to a different system.
              */
@@ -2127,7 +2128,7 @@ algorithm
           if Flags.isSet(Flags.JAC_DUMP) then
             BackendDump.bltdump("Symbolic Jacobian",backendDAE2);
           else
-            _ = Flags.set(Flags.EXEC_STAT, b);
+            _ = FlagsUtil.set(Flags.EXEC_STAT, b);
           end if;
         then backendDAE2;
      else

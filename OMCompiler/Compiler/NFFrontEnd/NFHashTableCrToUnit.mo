@@ -54,7 +54,6 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 /* HashTable instance specific code */
 
 public import BaseHashTable;
-public import DAE;
 public import ComponentRef = NFComponentRef;
 public import Unit = NFUnit;
 

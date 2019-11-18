@@ -41,7 +41,6 @@ public
 import DAE;
 import HashTableStringToUnit;
 import HashTableUnitToString;
-import System;
 
 protected
 import ComponentReference;

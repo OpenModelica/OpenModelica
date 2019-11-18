@@ -34,7 +34,6 @@ encapsulated package NFBuiltinCall
   import AbsynUtil;
   import NFCall.Call;
   import NFCall.CallAttributes;
-  import DAE;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import NFPrefixes.Variability;

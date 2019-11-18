@@ -10,7 +10,6 @@ public
 import Absyn;
 import AbsynUtil;
 //import DAE;
-import System;
 import FlatModel = NFFlatModel;
 import FunctionTree = NFFlatten.FunctionTree;
 

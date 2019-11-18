@@ -2846,7 +2846,7 @@ template algStmtAssignRecord(DAE.Statement stmt, Context context, Text &preExp, 
     let rec_typename = expTypeShort(ty)
     // The right hand side might be a call so we create a tmp var here and assign it. If the rhs is not
     // a call this is an uncessary copy. however, we can live with it since it is not a deep copy and the
-    // c compiler should just be able to optimzie it away. 
+    // c compiler should just be able to optimzie it away.
     let tmp_rec = tempDecl(rec_typename,&varDecls)
     let rhs = daeExp(rhs_exp, context, &preExp, &varDecls, &auxFunction)
     let vars = args |> arg => ( ", &(" + daeExp(arg, context, &preExp, &varDecls, &auxFunction) + ")" )
@@ -4344,7 +4344,7 @@ end patternMatch;
 template infoArgs(SourceInfo info)
 ::=
   match info
-  case SOURCEINFO(__) then '"<%Util.escapeModelicaStringToCString(testsuiteFriendly(fileName))%>",<%lineNumberStart%>,<%columnNumberStart%>,<%lineNumberEnd%>,<%columnNumberEnd%>,<%if isReadOnly then 1 else 0%>'
+  case SOURCEINFO(__) then '"<%Util.escapeModelicaStringToCString(Testsuite.friendly(fileName))%>",<%lineNumberStart%>,<%columnNumberStart%>,<%lineNumberEnd%>,<%columnNumberEnd%>,<%if isReadOnly then 1 else 0%>'
 end infoArgs;
 
 template assertCommon(Exp condition, list<Exp> messages, Exp level, Context context, Text &varDecls, Text &auxFunction, builtin.SourceInfo info)
@@ -4357,7 +4357,7 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
             case FUNCTION_CONTEXT(__) then ''
             else 'equationIndexes, '
   let AddionalFuncName = match context
-            case FUNCTION_CONTEXT(__) then '' 
+            case FUNCTION_CONTEXT(__) then ''
             else '_withEquationIndexes'
   let addInfoTextContext = match context
             case FUNCTION_CONTEXT(__) then ''

@@ -47,7 +47,6 @@ protected import BaseHashTable;
 protected import ComponentReference;
 protected import Error;
 protected import List;
-protected import System;
 protected import Util;
 
 

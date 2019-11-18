@@ -37,7 +37,6 @@ import ClassInf;
 import DAE;
 import FCore;
 import InstTypes;
-import Prefix;
 import SCode;
 
 protected
@@ -51,7 +50,7 @@ public
 type Key = Absyn.Path;
 type Value = CachedInstItems;
 
-type CachedInstItemInputs = tuple<DAE.Mod, Prefix.Prefix,
+type CachedInstItemInputs = tuple<DAE.Mod, DAE.Prefix,
     Connect.Sets, ClassInf.State, SCode.Element, InstTypes.InstDims, Boolean,
     Option<DAE.ComponentRef>, InstTypes.CallingScope>;
 
@@ -59,7 +58,7 @@ type CachedInstItemOutputs = tuple<FCore.Graph, DAE.DAElist, Connect.Sets,
     ClassInf.State, list<DAE.Var>, Option<DAE.Type>, Option<SCode.Attributes>,
     DAE.EqualityConstraint, ConnectionGraph.ConnectionGraph>;
 
-type CachedPartialInstItemInputs = tuple<DAE.Mod, Prefix.Prefix,
+type CachedPartialInstItemInputs = tuple<DAE.Mod, DAE.Prefix,
     ClassInf.State, SCode.Element, InstTypes.InstDims>;
 
 type CachedPartialInstItemOutputs = tuple<FCore.Graph, ClassInf.State, list<DAE.Var>>;

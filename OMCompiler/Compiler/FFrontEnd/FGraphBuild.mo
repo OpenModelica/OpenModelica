@@ -45,7 +45,6 @@ public import FCore;
 public import FNode;
 public import FGraph;
 public import DAE;
-public import Prefix;
 public
 type Name = FCore.Name;
 type Id = FCore.Id;
@@ -133,7 +132,7 @@ algorithm
       equation
         cls = SCodeInstUtil.expandEnumerationClass(inClass);
         SCode.CLASS(name = name, classDef = cdef) = cls;
-        (g, n) = FGraph.node(g, name, {inParentRef}, FCore.CL(cls, Prefix.NOPRE(), DAE.NOMOD(), inKind, FCore.VAR_UNTYPED()));
+        (g, n) = FGraph.node(g, name, {inParentRef}, FCore.CL(cls, DAE.NOPRE(), DAE.NOMOD(), inKind, FCore.VAR_UNTYPED()));
         nr = FNode.toRef(n);
         FNode.addChildRef(inParentRef, name, nr);
         // add constrained by node

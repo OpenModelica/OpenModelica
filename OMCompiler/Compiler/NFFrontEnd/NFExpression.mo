@@ -69,31 +69,30 @@ public
   import NFClass.Class;
   import NFComponentRef.Origin;
   import NFTyping.ExpOrigin;
-  import ExpressionSimplify;
   import Values;
 
-	uniontype ClockKind
-	  record INFERRED_CLOCK
-	  end INFERRED_CLOCK;
+  uniontype ClockKind
+    record INFERRED_CLOCK
+    end INFERRED_CLOCK;
 
-	  record INTEGER_CLOCK
-	    Expression intervalCounter;
-	    Expression resolution " integer type >= 1 ";
-	  end INTEGER_CLOCK;
+    record INTEGER_CLOCK
+      Expression intervalCounter;
+      Expression resolution " integer type >= 1 ";
+    end INTEGER_CLOCK;
 
-	  record REAL_CLOCK
-	    Expression interval;
-	  end REAL_CLOCK;
+    record REAL_CLOCK
+      Expression interval;
+    end REAL_CLOCK;
 
-	  record BOOLEAN_CLOCK
-	    Expression condition;
-	    Expression startInterval " real type >= 0.0 ";
-	  end BOOLEAN_CLOCK;
+    record BOOLEAN_CLOCK
+      Expression condition;
+      Expression startInterval " real type >= 0.0 ";
+    end BOOLEAN_CLOCK;
 
-	  record SOLVER_CLOCK
-	    Expression c;
-	    Expression solverMethod " string type ";
-	  end SOLVER_CLOCK;
+    record SOLVER_CLOCK
+      Expression c;
+      Expression solverMethod " string type ";
+    end SOLVER_CLOCK;
 
     function compare
       input ClockKind ck1;
@@ -129,20 +128,20 @@ public
       end match;
     end compare;
 
-	  function toDAE
-	    input ClockKind ick;
-	    output DAE.ClockKind ock;
-	  algorithm
-	    ock := match ick
-	      local
-	        Expression i, ic, r, c, si, sm;
-	      case INFERRED_CLOCK()     then DAE.INFERRED_CLOCK();
-	      case INTEGER_CLOCK(i, r)  then DAE.INTEGER_CLOCK(Expression.toDAE(i), Expression.toDAE(r));
-	      case REAL_CLOCK(i)        then DAE.REAL_CLOCK(Expression.toDAE(i));
-	      case BOOLEAN_CLOCK(c, si) then DAE.BOOLEAN_CLOCK(Expression.toDAE(c), Expression.toDAE(si));
-	      case SOLVER_CLOCK(c, sm)  then DAE.SOLVER_CLOCK(Expression.toDAE(c), Expression.toDAE(sm));
-	    end match;
-	  end toDAE;
+    function toDAE
+      input ClockKind ick;
+      output DAE.ClockKind ock;
+    algorithm
+      ock := match ick
+        local
+          Expression i, ic, r, c, si, sm;
+        case INFERRED_CLOCK()     then DAE.INFERRED_CLOCK();
+        case INTEGER_CLOCK(i, r)  then DAE.INTEGER_CLOCK(Expression.toDAE(i), Expression.toDAE(r));
+        case REAL_CLOCK(i)        then DAE.REAL_CLOCK(Expression.toDAE(i));
+        case BOOLEAN_CLOCK(c, si) then DAE.BOOLEAN_CLOCK(Expression.toDAE(c), Expression.toDAE(si));
+        case SOLVER_CLOCK(c, sm)  then DAE.SOLVER_CLOCK(Expression.toDAE(c), Expression.toDAE(sm));
+      end match;
+    end toDAE;
 
     function toDebugString
       input ClockKind ick;
@@ -176,7 +175,7 @@ public
 
       str := "Clock(" + str + ")";
     end toString;
-	end ClockKind;
+  end ClockKind;
 
   record INTEGER
     Integer value;

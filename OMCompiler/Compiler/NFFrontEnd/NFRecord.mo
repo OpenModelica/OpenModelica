@@ -51,19 +51,15 @@ import Subscript = NFSubscript;
 
 protected
 import Inst = NFInst;
-import List;
 import Lookup = NFLookup;
 import TypeCheck = NFTypeCheck;
-import Types;
 import Typing = NFTyping;
-import NFInstUtil;
 import NFPrefixes.Variability;
 import NFPrefixes.Visibility;
 import NFFunction.Function;
 import NFClassTree.ClassTree;
 import ComplexType = NFComplexType;
 import ComponentRef = NFComponentRef;
-import ErrorExt;
 import NFFunction.FunctionStatus;
 
 public

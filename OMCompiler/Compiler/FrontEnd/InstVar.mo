@@ -49,7 +49,6 @@ public import FGraph;
 public import InnerOuter;
 public import InstTypes;
 public import Mod;
-public import Prefix;
 public import SCode;
 public import UnitAbsyn;
 
@@ -108,7 +107,7 @@ the backend. The current implementation doesn't handle cases in which the
   input UnitAbsyn.InstStore inStore;
   input ClassInf.State inState;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input String inIdent;
   input SCode.Element inClass;
   input SCode.Attributes inAttributes;
@@ -159,7 +158,7 @@ algorithm
       DAE.Type ty;
       ClassInf.State ci_state;
       DAE.Mod mod;
-      Prefix.Prefix pre, innerPrefix;
+      DAE.Prefix pre, innerPrefix;
       String n,s1,s2,s3,s;
       SCode.Element cl;
       SCode.Attributes attr;
@@ -355,9 +354,9 @@ algorithm
         (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
         typeName = SCodeUtil.className(cl);
         (cache, typePath) = Inst.makeFullyQualifiedIdent(cache, env, typeName);
-        // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE()
+        // adrpo: do NOT! display an error message if impl = true and prefix is DAE.NOPRE()
         // print(if_(impl, "impl crap\n", "no impl\n"));
-        if not (impl and listMember(pre, {Prefix.NOPRE()})) and not Config.getGraphicsExpMode() then
+        if not (impl and listMember(pre, {DAE.NOPRE()})) and not Config.getGraphicsExpMode() then
           s1 = ComponentReference.printComponentRefStr(crefOuter);
           s2 = Dump.unparseInnerouterStr(io);
           s3 = InnerOuter.getExistingInnerDeclarations(ih, componentDefinitionParentEnv);
@@ -390,8 +389,8 @@ algorithm
         typeName = SCodeUtil.className(cl);
         (cache, typePath) = Inst.makeFullyQualifiedIdent(cache, env, typeName);
         // print(if_(impl, "impl crap\n", "no impl\n"));
-        // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE()
-        if not (impl and listMember(pre, {Prefix.NOPRE()})) and not Config.getGraphicsExpMode() then
+        // adrpo: do NOT! display an error message if impl = true and prefix is DAE.NOPRE()
+        if not (impl and listMember(pre, {DAE.NOPRE()})) and not Config.getGraphicsExpMode() then
           s1 = ComponentReference.printComponentRefStr(crefOuter);
           s2 = Dump.unparseInnerouterStr(io);
           s3 = InnerOuter.getExistingInnerDeclarations(ih,componentDefinitionParentEnv);
@@ -544,7 +543,7 @@ protected function instVar_dispatch "A component element in a class may consist 
   input UnitAbsyn.InstStore inStore;
   input ClassInf.State inState;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input String inName;
   input SCode.Element inClass;
   input SCode.Attributes inAttributes;
@@ -698,7 +697,7 @@ protected function addArrayVarEquation
   input DAE.Type inType;
   input DAE.Mod mod;
   input DAE.Const const;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input String n;
   input DAE.ElementSource source;
   output FCore.Cache outCache;
@@ -747,7 +746,7 @@ protected function instVar2
   input UnitAbsyn.InstStore inStore;
   input ClassInf.State inState;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input String inName;
   input SCode.Element inClass;
   input SCode.Attributes inAttributes;
@@ -784,7 +783,7 @@ algorithm
       DAE.Type ty_2;
       DAE.DAElist dae1,dae;
       DAE.Mod mod;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       String n;
       SCode.Element cl;
       SCode.Attributes attr;
@@ -1047,7 +1046,7 @@ public function instScalar
   input UnitAbsyn.InstStore inStore;
   input ClassInf.State inState;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input String inName;
   input SCode.Element inClass;
   input SCode.Attributes inAttributes;
@@ -1083,7 +1082,7 @@ algorithm
       SCode.Restriction res;
       SCode.Variability vt;
       list<DAE.Subscript> idxs;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       ClassInf.State ci_state;
       ConnectionGraph.ConnectionGraph graph;
       DAE.DAElist dae, dae1, dae2;
@@ -1187,7 +1186,7 @@ protected function stripVarAttrDirection
   input DAE.ComponentRef inCref;
   input InstanceHierarchy ih;
   input ClassInf.State inState;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SCode.Attributes inAttributes;
   output SCode.Attributes outAttributes;
 algorithm
@@ -1359,7 +1358,7 @@ end stripRecordDefaultBindingsFromElement;
 
 protected function checkDimensionGreaterThanZero
   input DAE.Dimension inDim;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input String inIdent;
   input SourceInfo info;
 algorithm
@@ -1392,7 +1391,7 @@ protected function checkArrayModDimSize
    for a component's dimensions."
   input DAE.Mod mod;
   input DAE.Dimension inDimension;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input String inIdent;
   input SourceInfo inInfo;
 algorithm
@@ -1409,7 +1408,7 @@ end checkArrayModDimSize;
 protected function checkArraySubModDimSize
   input DAE.SubMod inSubMod;
   input DAE.Dimension inDimension;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input String inIdent;
   input SourceInfo inInfo;
 algorithm
@@ -1437,7 +1436,7 @@ end checkArraySubModDimSize;
 protected function checkArrayModBindingDimSize
   input Option<DAE.EqMod> inBinding;
   input DAE.Dimension inDimension;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input String inIdent;
   input SourceInfo inInfo;
   output Boolean outIsCorrect;
@@ -1484,7 +1483,7 @@ protected function instArray
   input UnitAbsyn.InstStore inStore;
   input ClassInf.State inState;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input String inIdent;
   input tuple<SCode.Element, SCode.Attributes> inElement;
   input SCode.Prefixes inPrefixes;
@@ -1523,7 +1522,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Type ty_1;
       DAE.Mod mod,mod_1,mod_2;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       String n, str1, str2, str3, str4;
       SCode.Element cl;
       SCode.Attributes attr;
@@ -1661,7 +1660,7 @@ Special case for DIM_INTEGER: tail-recursive implementation since the number of 
   input UnitAbsyn.InstStore inStore;
   input ClassInf.State inState;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input String inName;
   input tuple<SCode.Element, SCode.Attributes> inElement;
   input SCode.Prefixes inPrefixes;
@@ -1736,7 +1735,7 @@ protected function instArrayDimEnum
   input UnitAbsyn.InstStore inStore;
   input ClassInf.State inState;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input String inName;
   input SCode.Element inClass;
   input SCode.Attributes inAttributes;

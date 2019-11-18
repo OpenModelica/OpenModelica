@@ -46,7 +46,6 @@ public import FCore;
 public import FGraph;
 public import InnerOuter;
 public import Mod;
-public import Prefix;
 public import SCode;
 public import Values;
 
@@ -586,7 +585,7 @@ public function makeBinding
   input SCode.Attributes inAttributes;
   input DAE.Mod inMod;
   input DAE.Type inType;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input String componentName;
   input SourceInfo inInfo;
   output FCore.Cache outCache;
@@ -868,7 +867,7 @@ public function makeVariableBinding
   input DAE.Type inType;
   input DAE.Mod inMod;
   input DAE.Const inConst;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input String inName;
   output Option<DAE.Exp> outBinding;
 protected

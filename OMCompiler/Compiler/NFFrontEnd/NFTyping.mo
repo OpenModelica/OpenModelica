@@ -60,7 +60,6 @@ protected
 import Builtin = NFBuiltin;
 import BuiltinCall = NFBuiltinCall;
 import Ceval = NFCeval;
-import ClassInf;
 import ComponentRef = NFComponentRef;
 import Config;
 import Origin = NFComponentRef.Origin;
@@ -76,7 +75,6 @@ import TypeCheck = NFTypeCheck;
 import Types;
 import NFSections.Sections;
 import List;
-import DAEUtil;
 import MetaModelica.Dangerous.listReverseInPlace;
 import ComplexType = NFComplexType;
 import Restriction = NFRestriction;
@@ -86,10 +84,9 @@ import NFFunction.Function;
 import NFInstNode.CachedData;
 import Direction = NFPrefixes.Direction;
 import ElementSource;
-import StringUtil;
-import NFOCConnectionGraph;
 import System;
 import ErrorExt;
+import ErrorTypes;
 import OperatorOverloading = NFOperatorOverloading;
 
 public
@@ -1735,11 +1732,11 @@ algorithm
     expl2 := exp::expl2;
     n := n-1;
     if not Config.getGraphicsExpMode() then // forget errors when handling annotations
-	    if TypeCheck.isIncompatibleMatch(mk) then
-	      Error.addSourceMessage(Error.NF_ARRAY_TYPE_MISMATCH, {String(n), Expression.toString(exp), Type.toString(ty2), Type.toString(ty1)}, info);
-	      fail();
-	    end if;
-	  end if;
+      if TypeCheck.isIncompatibleMatch(mk) then
+        Error.addSourceMessage(Error.NF_ARRAY_TYPE_MISMATCH, {String(n), Expression.toString(exp), Type.toString(ty2), Type.toString(ty1)}, info);
+        fail();
+      end if;
+    end if;
   end for;
 
   arrayType := Type.liftArrayLeft(ty1, Dimension.fromExpList(expl2));
@@ -2857,7 +2854,7 @@ function typeCondition
   input output Expression condition;
   input ExpOrigin.Type origin;
   input DAE.ElementSource source;
-  input Error.Message errorMsg;
+  input ErrorTypes.Message errorMsg;
   input Boolean allowVector = false;
   input Boolean allowClock = false;
         output Type ty;

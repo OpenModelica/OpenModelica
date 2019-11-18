@@ -81,7 +81,6 @@ type FlatEdges = NFConnections.BrokenEdges
 protected
 import Absyn;
 import AbsynUtil;
-import DAEUtil;
 import NFBuiltin;
 import NFCall.Call;
 import NFClass.Class;
@@ -509,10 +508,7 @@ end addConnection;
 // ************************************* //
 
 protected import BaseHashTable;
-protected import ComponentReference;
-protected import ConnectUtil;
 protected import Debug;
-protected import ExpressionDump;
 protected import Flags;
 protected import List;
 protected import Util;

@@ -50,6 +50,7 @@ import Flags;
 import ParserExt;
 import AbsynToSCode;
 import System;
+import Testsuite;
 import Util;
 
 public
@@ -70,7 +71,7 @@ function parseexp "Parse a mos-file"
   input String filename;
   output GlobalScript.Statements outStatements;
 algorithm
-  outStatements := ParserExt.parseexp(System.realpath(filename), Util.testsuiteFriendly(System.realpath(filename)), Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
+  outStatements := ParserExt.parseexp(System.realpath(filename), Testsuite.friendly(System.realpath(filename)), Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Testsuite.isRunning());
 end parseexp;
 
 function parsestring "Parse a string as if it were a stored definition"
@@ -78,7 +79,7 @@ function parsestring "Parse a string as if it were a stored definition"
   input String infoFilename = "<interactive>";
   output Absyn.Program outProgram;
 algorithm
-  outProgram := ParserExt.parsestring(str, infoFilename, Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
+  outProgram := ParserExt.parsestring(str, infoFilename, Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Testsuite.isRunning());
   /* Check that the program is not totally off the charts */
   _ := AbsynToSCode.translateAbsyn2SCode(outProgram);
 end parsestring;
@@ -96,7 +97,7 @@ protected
   String realpath;
 algorithm
   realpath := Util.replaceWindowsBackSlashWithPathDelimiter(System.realpath(filename));
-  outProgram := ParserExt.parse(realpath, Util.testsuiteFriendly(realpath), acceptedGram, encoding, languageStandardInt, Config.getRunningTestsuite(), libraryPath, lveInstance);
+  outProgram := ParserExt.parse(realpath, Testsuite.friendly(realpath), acceptedGram, encoding, languageStandardInt, Testsuite.isRunning(), libraryPath, lveInstance);
 end parsebuiltin;
 
 function parsestringexp "Parse a string as if it was a sequence of statements"
@@ -105,21 +106,21 @@ function parsestringexp "Parse a string as if it was a sequence of statements"
   output GlobalScript.Statements outStatements;
 algorithm
   outStatements := ParserExt.parsestringexp(str,infoFilename,
-    Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
+    Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Testsuite.isRunning());
 end parsestringexp;
 
 function stringPath
   input String str;
   output Absyn.Path path;
 algorithm
-  path := ParserExt.stringPath(str, "<internal>", Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
+  path := ParserExt.stringPath(str, "<internal>", Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Testsuite.isRunning());
 end stringPath;
 
 function stringCref
   input String str;
   output Absyn.ComponentRef cref;
 algorithm
-  cref := ParserExt.stringCref(str, "<internal>", Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
+  cref := ParserExt.stringCref(str, "<internal>", Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Testsuite.isRunning());
 end stringCref;
 
 function parallelParseFiles
@@ -208,7 +209,7 @@ function parallelParseFilesWork
 protected
   list<tuple<String,String,String,Option<Integer>>> workList = list((file,encoding,libraryPath,lveInstance) for file in filenames);
 algorithm
-  if Config.getRunningTestsuite() or Config.noProc()==1 or numThreads == 1 or listLength(filenames)<2 or not(libraryPath == "") then
+  if Testsuite.isRunning() or Config.noProc()==1 or numThreads == 1 or listLength(filenames)<2 or not(libraryPath == "") then
     partialResults := list(loadFileThread(t) for t in workList);
   else
     // GC.disable(); // Seems to sometimes break building nightly omc

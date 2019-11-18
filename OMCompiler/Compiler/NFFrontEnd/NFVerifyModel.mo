@@ -35,6 +35,7 @@ encapsulated uniontype NFVerifyModel
 protected
   import List;
   import Error;
+  import ErrorTypes;
   import DAE;
   import ElementSource;
   import ExecStat.execStat;
@@ -154,7 +155,7 @@ protected
   function checkCrefSetEquality
     input list<ComponentRef> crefs1;
     input list<ComponentRef> crefs2;
-    input Error.Message errMsg;
+    input ErrorTypes.Message errMsg;
     input DAE.ElementSource source;
   algorithm
     // Assume the user isn't mixing different ways of subscripting array

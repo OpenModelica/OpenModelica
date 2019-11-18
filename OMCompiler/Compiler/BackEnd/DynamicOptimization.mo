@@ -57,6 +57,7 @@ protected import Expression;
 protected import ExpressionSolve;
 protected import ExpressionSimplify;
 protected import Flags;
+protected import FlagsUtil;
 protected import List;
 
 
@@ -107,9 +108,9 @@ algorithm
       print("Something going wrong for postOptModul=createDynamicOptimization. Check your flags. You need -g=DynOpt or -g=Optimica!\n");
       fail();
    end if;
-   Flags.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
+   FlagsUtil.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
 
-    //Flags.setConfigString(Flags.INDEX_REDUCTION_METHOD, "dummyDerivatives");
+    //FlagsUtil.setConfigString(Flags.INDEX_REDUCTION_METHOD, "dummyDerivatives");
 
    (mayer,lagrange,startTimeE,finalTimeE) := getOptimicaArgs(classAttrs);
     varlst :=  BackendVariable.varList(globalKnownVars);
@@ -123,7 +124,7 @@ algorithm
     (vars, eqnsLst) := joinConstraints({}, "$finalCon$", BackendDAE.OPT_FCONSTR(), globalKnownVars, varlst, vars, eqnsLst, BackendVariable.hasFinalConTermAnno);
 
     // don't work....
-    Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
+    FlagsUtil.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
 
     shared.classAttrs := {DAE.OPTIMIZATION_ATTRS(mayer, lagrange, startTimeE, finalTimeE)};
     if debug then

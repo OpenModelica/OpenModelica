@@ -44,7 +44,6 @@ import Expression = NFExpression;
 import NFPrefixes.*;
 
 protected
-import NFInstUtil;
 import List;
 import Prefixes = NFPrefixes;
 import SCodeUtil;

@@ -44,7 +44,6 @@ import NFFunction.Function;
 import NFInstNode.InstNode;
 import Statement = NFStatement;
 import FlatModel = NFFlatModel;
-import Prefix;
 import Algorithm = NFAlgorithm;
 import CardinalityTable = NFCardinalityTable;
 
@@ -54,6 +53,7 @@ import Dimension = NFDimension;
 import ExecStat.execStat;
 import ExpressionIterator = NFExpressionIterator;
 import Expression = NFExpression;
+import Flags;
 import Inst = NFInst;
 import List;
 import NFCall.Call;
@@ -1232,16 +1232,16 @@ function addElementSourceArrayPrefix
   input output DAE.ElementSource source;
   input ComponentRef prefix;
 protected
-  Prefix.ComponentPrefix comp_pre;
+  DAE.ComponentPrefix comp_pre;
 algorithm
   // It seems the backend doesn't really care about the ComponentPrefix, and
   // creating a proper prefix here could be rather expensive. So we just create
   // a dummy prefix here with one subscript to keep CheckModel happy.
-  comp_pre := Prefix.ComponentPrefix.PRE(
+  comp_pre := DAE.ComponentPrefix.PRE(
     ComponentRef.firstName(prefix),
     {},
     {DAE.Subscript.INDEX(DAE.Exp.ICONST(-1))},
-    Prefix.ComponentPrefix.NOCOMPPRE(),
+    DAE.ComponentPrefix.NOCOMPPRE(),
     ClassInf.State.UNKNOWN(Absyn.IDENT("?")),
     AbsynUtil.dummyInfo
   );

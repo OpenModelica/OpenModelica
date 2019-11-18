@@ -50,7 +50,6 @@ public import FCore;
 public import FGraph;
 public import Lookup;
 public import SCode;
-public import Prefix;
 public import InnerOuter;
 public import ClassInf;
 
@@ -60,7 +59,6 @@ type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 
 import ComponentReference;
 import Config;
-import Debug;
 import Error;
 import Expression;
 import ExpressionDump;
@@ -73,54 +71,54 @@ import Types;
 import MetaModelica.Dangerous;
 
 public function printComponentPrefixStr "Prints a Prefix to a string. Rather slow..."
-  input Prefix.ComponentPrefix pre;
+  input DAE.ComponentPrefix pre;
   output String outString;
 algorithm
   outString :=  match pre
     local
       String str,s,rest_1,s_1,s_2;
-      Prefix.ComponentPrefix rest;
-      Prefix.ClassPrefix cp;
+      DAE.ComponentPrefix rest;
+      DAE.ClassPrefix cp;
       list<DAE.Subscript> ss;
 
-    case Prefix.NOCOMPPRE() then "<Prefix.NOCOMPPRE()>";
-    case Prefix.PRE(next=Prefix.NOCOMPPRE(), subscripts={}) then pre.prefix;
-    case Prefix.PRE(next=Prefix.NOCOMPPRE()) then pre.prefix + "[" + ExpressionDump.printSubscriptLstStr(pre.subscripts) + "]";
-    case Prefix.PRE(subscripts={}) then printComponentPrefixStr(pre.next)+"."+pre.prefix;
-    case Prefix.PRE() then printComponentPrefixStr(pre.next)+"."+pre.prefix + "[" + ExpressionDump.printSubscriptLstStr(pre.subscripts) + "]";
+    case DAE.NOCOMPPRE() then "<Prefix.NOCOMPPRE()>";
+    case DAE.PRE(next=DAE.NOCOMPPRE(), subscripts={}) then pre.prefix;
+    case DAE.PRE(next=DAE.NOCOMPPRE()) then pre.prefix + "[" + ExpressionDump.printSubscriptLstStr(pre.subscripts) + "]";
+    case DAE.PRE(subscripts={}) then printComponentPrefixStr(pre.next)+"."+pre.prefix;
+    case DAE.PRE() then printComponentPrefixStr(pre.next)+"."+pre.prefix + "[" + ExpressionDump.printSubscriptLstStr(pre.subscripts) + "]";
   end match;
 end printComponentPrefixStr;
 
 public function printPrefixStr "Prints a Prefix to a string."
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   output String outString;
 algorithm
   outString :=  matchcontinue (inPrefix)
     local
       String str,s,rest_1,s_1,s_2;
-      Prefix.ComponentPrefix rest;
-      Prefix.ClassPrefix cp;
+      DAE.ComponentPrefix rest;
+      DAE.ClassPrefix cp;
       list<DAE.Subscript> ss;
 
-    case Prefix.NOPRE() then "<Prefix.NOPRE()>";
-    case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "<Prefix.PREFIX(Prefix.NOCOMPPRE())>";
-    case Prefix.PREFIX(Prefix.PRE(str,_,{},Prefix.NOCOMPPRE(),_,_),_) then str;
-    case Prefix.PREFIX(Prefix.PRE(str,_,ss,Prefix.NOCOMPPRE(),_,_),_)
+    case DAE.NOPRE() then "<Prefix.NOPRE()>";
+    case DAE.PREFIX(DAE.NOCOMPPRE(),_) then "<Prefix.PREFIX(DAE.NOCOMPPRE())>";
+    case DAE.PREFIX(DAE.PRE(str,_,{},DAE.NOCOMPPRE(),_,_),_) then str;
+    case DAE.PREFIX(DAE.PRE(str,_,ss,DAE.NOCOMPPRE(),_,_),_)
       equation
         s = stringAppend(str, "[" + stringDelimitList(
           List.map(ss, ExpressionDump.subscriptString), ", ") + "]");
       then
         s;
-    case Prefix.PREFIX(Prefix.PRE(str,_,{},rest,_,_),cp)
+    case DAE.PREFIX(DAE.PRE(str,_,{},rest,_,_),cp)
       equation
-        rest_1 = printPrefixStr(Prefix.PREFIX(rest,cp));
+        rest_1 = printPrefixStr(DAE.PREFIX(rest,cp));
         s = stringAppend(rest_1, ".");
         s_1 = stringAppend(s, str);
       then
         s_1;
-    case Prefix.PREFIX(Prefix.PRE(str,_,ss,rest,_,_),cp)
+    case DAE.PREFIX(DAE.PRE(str,_,ss,rest,_,_),cp)
       equation
-        rest_1 = printPrefixStr(Prefix.PREFIX(rest,cp));
+        rest_1 = printPrefixStr(DAE.PREFIX(rest,cp));
         s = stringAppend(rest_1, ".");
         s_1 = stringAppend(s, str);
         s_2 = stringAppend(s_1, "[" + stringDelimitList(
@@ -131,46 +129,46 @@ algorithm
 end printPrefixStr;
 
 public function printPrefixStr2 "Prints a Prefix to a string. Designed to be used in Error messages to produce qualified component names"
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   output String outString;
 algorithm
   outString :=  match (inPrefix)
   local
-    Prefix.Prefix p;
-  case Prefix.NOPRE() then "";
-  case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "";
+    DAE.Prefix p;
+  case DAE.NOPRE() then "";
+  case DAE.PREFIX(DAE.NOCOMPPRE(),_) then "";
   case p then printPrefixStr(p)+".";
   end match;
 end printPrefixStr2;
 
 public function printPrefixStr3 "Prints a Prefix to a string as a component name. Designed to be used in Error messages"
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   output String outString;
 algorithm
   outString :=  match (inPrefix)
   local
-    Prefix.Prefix p;
-  case Prefix.NOPRE() then "<NO COMPONENT>";
-  case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "<NO COMPONENT>";
+    DAE.Prefix p;
+  case DAE.NOPRE() then "<NO COMPONENT>";
+  case DAE.PREFIX(DAE.NOCOMPPRE(),_) then "<NO COMPONENT>";
   case p then printPrefixStr(p);
   end match;
 end printPrefixStr3;
 
 public function printPrefixStrIgnoreNoPre "Prints a Prefix to a string as a component name. Designed to be used in Error messages"
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   output String outString;
 algorithm
   outString :=  match (inPrefix)
   local
-    Prefix.Prefix p;
-  case Prefix.NOPRE() then "";
-  case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "";
+    DAE.Prefix p;
+  case DAE.NOPRE() then "";
+  case DAE.PREFIX(DAE.NOCOMPPRE(),_) then "";
   case p then printPrefixStr(p);
   end match;
 end printPrefixStrIgnoreNoPre;
 
 public function printPrefix "Prints a prefix to the Print buffer."
-  input Prefix.Prefix p;
+  input DAE.Prefix p;
 protected
   String s;
 algorithm
@@ -186,72 +184,72 @@ public function prefixAdd "This function is used to extend a prefix with another
   input String inIdent;
   input list<DAE.Dimension> inType;
   input list<DAE.Subscript> inIntegerLst;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SCode.Variability vt;
   input ClassInf.State ci_state;
   input SourceInfo inInfo;
-  output Prefix.Prefix outPrefix;
+  output DAE.Prefix outPrefix;
 algorithm
   outPrefix := match (inIdent,inType,inIntegerLst,inPrefix,vt,ci_state)
     local
       String i;
       list<DAE.Subscript> s;
-      Prefix.ComponentPrefix p;
+      DAE.ComponentPrefix p;
 
-    case (i,_,s,Prefix.PREFIX(p,_),_,_)
-      then Prefix.PREFIX(Prefix.PRE(i,inType,s,p,ci_state,inInfo),Prefix.CLASSPRE(vt));
+    case (i,_,s,DAE.PREFIX(p,_),_,_)
+      then DAE.PREFIX(DAE.PRE(i,inType,s,p,ci_state,inInfo),DAE.CLASSPRE(vt));
 
-    case(i,_,s,Prefix.NOPRE(),_,_)
-      then Prefix.PREFIX(Prefix.PRE(i,inType,s,Prefix.NOCOMPPRE(),ci_state,inInfo),Prefix.CLASSPRE(vt));
+    case(i,_,s,DAE.NOPRE(),_,_)
+      then DAE.PREFIX(DAE.PRE(i,inType,s,DAE.NOCOMPPRE(),ci_state,inInfo),DAE.CLASSPRE(vt));
   end match;
 end prefixAdd;
 
 public function prefixFirst
-  input Prefix.Prefix inPrefix;
-  output Prefix.Prefix outPrefix;
+  input DAE.Prefix inPrefix;
+  output DAE.Prefix outPrefix;
 algorithm
   outPrefix := match (inPrefix)
     local
       String a;
       list<DAE.Subscript> b;
-      Prefix.ClassPrefix cp;
-      Prefix.ComponentPrefix c;
+      DAE.ClassPrefix cp;
+      DAE.ComponentPrefix c;
       ClassInf.State ci_state;
       list<DAE.Dimension> pdims;
       SourceInfo info;
 
-    case (Prefix.PREFIX(Prefix.PRE(prefix = a, dimensions = pdims, subscripts = b,ci_state=ci_state, info = info),cp))
-      then Prefix.PREFIX(Prefix.PRE(a,pdims,b,Prefix.NOCOMPPRE(),ci_state,info),cp);
+    case (DAE.PREFIX(DAE.PRE(prefix = a, dimensions = pdims, subscripts = b,ci_state=ci_state, info = info),cp))
+      then DAE.PREFIX(DAE.PRE(a,pdims,b,DAE.NOCOMPPRE(),ci_state,info),cp);
   end match;
 end prefixFirst;
 
 public function prefixFirstCref
   "Returns the first cref in the prefix."
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   output DAE.ComponentRef outCref;
 protected
   String name;
   list<DAE.Subscript> subs;
 algorithm
-  Prefix.PREFIX(compPre = Prefix.PRE(prefix = name, subscripts = subs)) := inPrefix;
+  DAE.PREFIX(compPre = DAE.PRE(prefix = name, subscripts = subs)) := inPrefix;
   outCref := DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, subs);
 end prefixFirstCref;
 
 public function prefixLast "Returns the last NONPRE Prefix of a prefix"
-  input Prefix.Prefix inPrefix;
-  output Prefix.Prefix outPrefix;
+  input DAE.Prefix inPrefix;
+  output DAE.Prefix outPrefix;
 algorithm
   outPrefix := matchcontinue (inPrefix)
     local
-      Prefix.ComponentPrefix p;
-      Prefix.Prefix res;
-      Prefix.ClassPrefix cp;
+      DAE.ComponentPrefix p;
+      DAE.Prefix res;
+      DAE.ClassPrefix cp;
 
-    case ((res as Prefix.PREFIX(Prefix.PRE(next = Prefix.NOCOMPPRE()),_))) then res;
+    case ((res as DAE.PREFIX(DAE.PRE(next = DAE.NOCOMPPRE()),_))) then res;
 
-    case (Prefix.PREFIX(Prefix.PRE(next = p),cp))
+    case (DAE.PREFIX(DAE.PRE(next = p),cp))
       equation
-        res = prefixLast(Prefix.PREFIX(p,cp));
+        res = prefixLast(DAE.PREFIX(p,cp));
       then
         res;
   end matchcontinue;
@@ -260,95 +258,95 @@ end prefixLast;
 public function prefixStripLast
 "@author: adrpo
  remove the last prefix from the component prefix"
-  input Prefix.Prefix inPrefix;
-  output Prefix.Prefix outPrefix;
+  input DAE.Prefix inPrefix;
+  output DAE.Prefix outPrefix;
 algorithm
   outPrefix := match (inPrefix)
     local
-      Prefix.ClassPrefix cp;
-      Prefix.ComponentPrefix compPre;
+      DAE.ClassPrefix cp;
+      DAE.ComponentPrefix compPre;
     // we can't remove what it isn't there!
-    case (Prefix.NOPRE()) then Prefix.NOPRE();
-    // if there isn't any next prefix, return Prefix.NOPRE!
-    case (Prefix.PREFIX(compPre,cp))
+    case (DAE.NOPRE()) then DAE.NOPRE();
+    // if there isn't any next prefix, return DAE.NOPRE!
+    case (DAE.PREFIX(compPre,cp))
       equation
          compPre = compPreStripLast(compPre);
-      then Prefix.PREFIX(compPre,cp);
+      then DAE.PREFIX(compPre,cp);
   end match;
 end prefixStripLast;
 
 protected function compPreStripLast
 "@author: adrpo
  remove the last prefix from the component prefix"
-  input Prefix.ComponentPrefix inCompPrefix;
-  output Prefix.ComponentPrefix outCompPrefix;
+  input DAE.ComponentPrefix inCompPrefix;
+  output DAE.ComponentPrefix outCompPrefix;
 algorithm
   outCompPrefix := match(inCompPrefix)
     local
-      Prefix.ComponentPrefix next;
+      DAE.ComponentPrefix next;
 
     // nothing to remove!
-    case Prefix.NOCOMPPRE() then Prefix.NOCOMPPRE();
+    case DAE.NOCOMPPRE() then DAE.NOCOMPPRE();
     // we have something
-    case Prefix.PRE(next = next) then next;
+    case DAE.PRE(next = next) then next;
    end match;
 end compPreStripLast;
 
 public function prefixPath "Prefix a Path variable by adding the supplied
   prefix to it and returning a new Path."
   input Absyn.Path inPath;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   output Absyn.Path outPath;
 algorithm
   outPath := match (inPath,inPrefix)
     local
       Absyn.Path p,p_1;
       String s;
-      Prefix.ComponentPrefix ss;
-      Prefix.ClassPrefix cp;
+      DAE.ComponentPrefix ss;
+      DAE.ClassPrefix cp;
 
-    case (p,Prefix.NOPRE()) then p;
-    case (p,Prefix.PREFIX(Prefix.PRE(prefix = s,next = Prefix.NOCOMPPRE()),_))
+    case (p,DAE.NOPRE()) then p;
+    case (p,DAE.PREFIX(DAE.PRE(prefix = s,next = DAE.NOCOMPPRE()),_))
       equation
         p_1 = Absyn.QUALIFIED(s,p);
       then p_1;
-    case (p,Prefix.PREFIX(Prefix.PRE(prefix = s,next = ss),cp))
+    case (p,DAE.PREFIX(DAE.PRE(prefix = s,next = ss),cp))
       equation
-        p_1 = prefixPath(Absyn.QUALIFIED(s,p), Prefix.PREFIX(ss,cp));
+        p_1 = prefixPath(Absyn.QUALIFIED(s,p), DAE.PREFIX(ss,cp));
       then p_1;
   end match;
 end prefixPath;
 
 public function prefixToPath "Convert a Prefix to a Path"
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   output Absyn.Path outPath;
 algorithm
   outPath := match inPrefix
     local
-      Prefix.ComponentPrefix ss;
-    case Prefix.PREFIX(ss,_) then componentPrefixToPath(ss);
+      DAE.ComponentPrefix ss;
+    case DAE.PREFIX(ss,_) then componentPrefixToPath(ss);
   end match;
 end prefixToPath;
 
 public function identAndPrefixToPath "Convert a Ident/Prefix to a String"
   input String ident;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   output String str;
 algorithm
   str := AbsynUtil.pathString(PrefixUtil.prefixPath(Absyn.IDENT(ident),inPrefix));
 end identAndPrefixToPath;
 
 public function componentPrefixToPath "Convert a Prefix to a Path"
-  input Prefix.ComponentPrefix pre;
+  input DAE.ComponentPrefix pre;
   output Absyn.Path path;
 algorithm
   path := match pre
     local
       String s;
-      Prefix.ComponentPrefix ss;
-    case Prefix.PRE(prefix = s,next = Prefix.NOCOMPPRE())
+      DAE.ComponentPrefix ss;
+    case DAE.PRE(prefix = s,next = DAE.NOCOMPPRE())
       then Absyn.IDENT(s);
-    case Prefix.PRE(prefix = s,next = ss)
+    case DAE.PRE(prefix = s,next = ss)
       then Absyn.QUALIFIED(s,componentPrefixToPath(ss));
   end match;
 end componentPrefixToPath;
@@ -359,7 +357,7 @@ public function prefixCref "Prefix a ComponentRef variable by adding the supplie
   input FCore.Cache cache;
   input FCore.Graph env;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input DAE.ComponentRef cref;
   output FCore.Cache outCache;
   output DAE.ComponentRef cref_1;
@@ -370,7 +368,7 @@ end prefixCref;
 public function prefixCrefNoContext "Prefix a ComponentRef variable by adding the supplied prefix to
   it and returning a new ComponentRef.
   LS: Changed to call prefixToCref which is more general now"
-  input Prefix.Prefix inPre;
+  input DAE.Prefix inPre;
   input DAE.ComponentRef inCref;
   output DAE.ComponentRef outCref;
 algorithm
@@ -378,19 +376,19 @@ algorithm
 end prefixCrefNoContext;
 
 public function prefixToCref "Convert a prefix to a component reference."
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   output DAE.ComponentRef cref_1;
 algorithm
   (_,cref_1) := prefixToCref2(FCore.noCache(), FGraph.empty(), InnerOuter.emptyInstHierarchy, pre, NONE());
 end prefixToCref;
 
-protected function prefixToCref2 "Convert a prefix to a component reference. Converting Prefix.NOPRE with no
+protected function prefixToCref2 "Convert a prefix to a component reference. Converting DAE.NOPRE with no
   component reference is an error because a component reference cannot be
   empty"
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InstanceHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Option<DAE.ComponentRef> inExpComponentRefOption;
   output FCore.Cache outCache;
   output DAE.ComponentRef outComponentRef;
@@ -402,45 +400,45 @@ algorithm
       list<DAE.Subscript> s;
       list<DAE.Dimension> ds;
       DAE.Type ident_ty;
-      Prefix.ComponentPrefix xs;
-      Prefix.ClassPrefix cp;
+      DAE.ComponentPrefix xs;
+      DAE.ClassPrefix cp;
       ClassInf.State ci_state;
       FCore.Cache cache;
       FCore.Graph env;
 
-    case (_,_,_,Prefix.NOPRE(),NONE()) then fail();
-    case (_,_,_,Prefix.PREFIX(Prefix.NOCOMPPRE(),_),NONE()) then fail();
+    case (_,_,_,DAE.NOPRE(),NONE()) then fail();
+    case (_,_,_,DAE.PREFIX(DAE.NOCOMPPRE(),_),NONE()) then fail();
 
-    case (cache,_,_,Prefix.NOPRE(),SOME(cref)) then (cache,cref);
-    case (cache,_,_,Prefix.PREFIX(Prefix.NOCOMPPRE(),_),SOME(cref)) then (cache,cref);
-    case (cache,env,_,Prefix.PREFIX(Prefix.PRE(prefix = i,dimensions=ds,subscripts = s,next = xs,ci_state=ci_state),cp),NONE())
+    case (cache,_,_,DAE.NOPRE(),SOME(cref)) then (cache,cref);
+    case (cache,_,_,DAE.PREFIX(DAE.NOCOMPPRE(),_),SOME(cref)) then (cache,cref);
+    case (cache,env,_,DAE.PREFIX(DAE.PRE(prefix = i,dimensions=ds,subscripts = s,next = xs,ci_state=ci_state),cp),NONE())
       equation
         ident_ty = Expression.liftArrayLeftList(DAE.T_COMPLEX(ci_state, {}, NONE()), ds);
         cref_ = ComponentReference.makeCrefIdent(i,ident_ty,s);
-        (cache,cref_1) = prefixToCref2(cache,env,inIH,Prefix.PREFIX(xs,cp), SOME(cref_));
+        (cache,cref_1) = prefixToCref2(cache,env,inIH,DAE.PREFIX(xs,cp), SOME(cref_));
       then
         (cache,cref_1);
-    case (cache,env,_,Prefix.PREFIX(Prefix.PRE(prefix = i,dimensions=ds,subscripts = s,next = xs,ci_state=ci_state),cp),SOME(cref))
+    case (cache,env,_,DAE.PREFIX(DAE.PRE(prefix = i,dimensions=ds,subscripts = s,next = xs,ci_state=ci_state),cp),SOME(cref))
       equation
         (cache,cref) = prefixSubscriptsInCref(cache,env,inIH,inPrefix,cref);
         ident_ty = Expression.liftArrayLeftList(DAE.T_COMPLEX(ci_state, {}, NONE()), ds);
         cref_2 = ComponentReference.makeCrefQual(i,ident_ty,s,cref);
-        (cache,cref_1) = prefixToCref2(cache,env,inIH,Prefix.PREFIX(xs,cp), SOME(cref_2));
+        (cache,cref_1) = prefixToCref2(cache,env,inIH,DAE.PREFIX(xs,cp), SOME(cref_2));
       then
         (cache,cref_1);
   end match;
 end prefixToCref2;
 
 public function prefixToCrefOpt "Convert a prefix to an optional component reference."
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   output Option<DAE.ComponentRef> cref_1;
 algorithm
   cref_1 := prefixToCrefOpt2(pre, NONE());
 end prefixToCrefOpt;
 
-public function prefixToCrefOpt2 "Convert a prefix to a component reference. Converting Prefix.NOPRE with no
+public function prefixToCrefOpt2 "Convert a prefix to a component reference. Converting DAE.NOPRE with no
   component reference gives a NONE"
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Option<DAE.ComponentRef> inExpComponentRefOption;
   output Option<DAE.ComponentRef> outComponentRefOpt;
 algorithm
@@ -450,22 +448,22 @@ algorithm
       DAE.ComponentRef cref,cref_;
       String i;
       list<DAE.Subscript> s;
-      Prefix.ComponentPrefix xs;
-      Prefix.ClassPrefix cp;
+      DAE.ComponentPrefix xs;
+      DAE.ClassPrefix cp;
 
-    case (Prefix.NOPRE(),NONE()) then NONE();
-    case (Prefix.NOPRE(),SOME(cref)) then SOME(cref);
-    case (Prefix.PREFIX(Prefix.NOCOMPPRE(),_),SOME(cref)) then SOME(cref);
-    case (Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs),cp),NONE())
+    case (DAE.NOPRE(),NONE()) then NONE();
+    case (DAE.NOPRE(),SOME(cref)) then SOME(cref);
+    case (DAE.PREFIX(DAE.NOCOMPPRE(),_),SOME(cref)) then SOME(cref);
+    case (DAE.PREFIX(DAE.PRE(prefix = i,subscripts = s,next = xs),cp),NONE())
       equation
         cref_ = ComponentReference.makeCrefIdent(i,DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE()),s);
-        cref_1 = prefixToCrefOpt2(Prefix.PREFIX(xs,cp), SOME(cref_));
+        cref_1 = prefixToCrefOpt2(DAE.PREFIX(xs,cp), SOME(cref_));
       then
         cref_1;
-    case (Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs),cp),SOME(cref))
+    case (DAE.PREFIX(DAE.PRE(prefix = i,subscripts = s,next = xs),cp),SOME(cref))
       equation
         cref_ = ComponentReference.makeCrefQual(i,DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE()),s,cref);
-        cref_1 = prefixToCrefOpt2(Prefix.PREFIX(xs,cp), SOME(cref_));
+        cref_1 = prefixToCrefOpt2(DAE.PREFIX(xs,cp), SOME(cref_));
       then
         cref_1;
   end match;
@@ -475,20 +473,20 @@ public function makeCrefFromPrefixNoFail
 "@author:adrpo
    Similar to prefixToCref but it doesn't fail for NOPRE or NOCOMPPRE,
    it will just create an empty cref in these cases"
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   output DAE.ComponentRef cref;
 algorithm
   cref := matchcontinue(pre)
     local
       DAE.ComponentRef c;
 
-    case(Prefix.NOPRE())
+    case(DAE.NOPRE())
       equation
         c = ComponentReference.makeCrefIdent("", DAE.T_UNKNOWN_DEFAULT, {});
       then
         c;
 
-    case(Prefix.PREFIX(Prefix.NOCOMPPRE(), _))
+    case(DAE.PREFIX(DAE.NOCOMPPRE(), _))
       equation
         c = ComponentReference.makeCrefIdent("", DAE.T_UNKNOWN_DEFAULT, {});
       then
@@ -506,7 +504,7 @@ protected function prefixSubscriptsInCref "help function to prefixToCrefOpt2, de
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InstanceHierarchy inIH;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input DAE.ComponentRef inCr;
   output FCore.Cache outCache;
   output DAE.ComponentRef outCr;
@@ -518,7 +516,7 @@ protected function prefixSubscriptsInCrefWork "help function to prefixToCrefOpt2
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InstanceHierarchy inIH;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input DAE.ComponentRef inCr;
   input list<DAE.ComponentRef> acc;
   output FCore.Cache outCache;
@@ -551,7 +549,7 @@ protected function prefixSubscripts "help function to prefixSubscriptsInCref, ad
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InstanceHierarchy inIH;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input list<DAE.Subscript> inSubs;
   output FCore.Cache outCache;
   output list<DAE.Subscript> outSubs;
@@ -577,7 +575,7 @@ protected function prefixSubscript "help function to prefixSubscripts, adds pref
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InstanceHierarchy inIH;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input DAE.Subscript sub;
   output FCore.Cache outCache;
   output DAE.Subscript outSub;
@@ -612,7 +610,7 @@ public function prefixCrefInnerOuter "Search for the prefix of the inner when th
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.ComponentRef inCref;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   output FCore.Cache outCache;
   output DAE.ComponentRef outCref;
 algorithm
@@ -622,7 +620,7 @@ algorithm
       FCore.Graph env;
       Absyn.InnerOuter io;
       InstanceHierarchy ih;
-      Prefix.Prefix innerPrefix, pre;
+      DAE.Prefix innerPrefix, pre;
       DAE.ComponentRef lastCref, cref, newCref;
       String n;
 
@@ -690,7 +688,7 @@ public function prefixExp "Add the supplied prefix to all component references i
   input FCore.Graph env;
   input InnerOuter.InstHierarchy ih;
   input output DAE.Exp exp;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
 algorithm
   try
     (cache, exp) := prefixExpWork(cache, env, ih, exp, pre);
@@ -705,7 +703,7 @@ protected function prefixExpWork "Add the supplied prefix to all component refer
   input FCore.Graph env;
   input InnerOuter.InstHierarchy ih;
   input DAE.Exp inExp;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   output DAE.Exp outExp;
 algorithm
   (cache,outExp) := match (inExp,pre)
@@ -720,7 +718,7 @@ algorithm
       list<list<DAE.Exp>> xs_1,xs;
       String s;
       list<DAE.Exp> expl;
-      Prefix.Prefix p;
+      DAE.Prefix p;
       Integer b,a;
       DAE.Type t,tp;
       Integer index_;
@@ -732,7 +730,7 @@ algorithm
       DAE.ClockKind clk;
 
     // no prefix, return the input expression
-    case (e,Prefix.NOPRE())
+    case (e,DAE.NOPRE())
       guard not System.getHasInnerOuterDefinitions()
       then (cache,e);
 
@@ -755,7 +753,7 @@ algorithm
           else
           end try;
         end if;
-        if valueEq(Prefix.NOPRE(), pre) then
+        if valueEq(DAE.NOPRE(), pre) then
           crefExp := inExp;
         else
           (cache, crefExp) := prefixExpCref(cache, env, ih, inExp, pre);
@@ -949,7 +947,7 @@ algorithm
         // ------------------------
 
     // no prefix, return the input expression
-    case (e,Prefix.NOPRE()) then (cache,e);
+    case (e,DAE.NOPRE()) then (cache,e);
 
     case (e as DAE.EMPTY(),_) then (cache,e);
 
@@ -966,7 +964,7 @@ protected function prefixExpCref
   input FCore.Graph inEnv;
   input InstanceHierarchy inIH;
   input DAE.Exp inCref;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   output FCore.Cache outCache;
   output DAE.Exp outCref;
 protected
@@ -985,7 +983,7 @@ protected function prefixExpCref2
   input InstanceHierarchy inIH;
   input Option<Boolean> inIsIter;
   input DAE.Exp inCref;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   output FCore.Cache outCache;
   output DAE.Exp outCref;
 algorithm
@@ -1026,7 +1024,7 @@ protected function prefixIterators
   input FCore.Graph inEnv;
   input InstanceHierarchy ih;
   input DAE.ReductionIterators inIters;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   output FCore.Cache outCache;
   output DAE.ReductionIterators outIters;
 algorithm
@@ -1062,7 +1060,7 @@ public function prefixExpList "This function prefixes a list of expressions usin
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input list<DAE.Exp> inExpExpLst;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   output FCore.Cache outCache = inCache;
   output list<DAE.Exp> outExpExpLst = {};
 protected
@@ -1083,7 +1081,7 @@ protected function prefixStatements "Prefix statements.
   input FCore.Graph env;
   input InstanceHierarchy inIH;
   input list<DAE.Statement> stmts;
-  input Prefix.Prefix p;
+  input DAE.Prefix p;
   output FCore.Cache outCache = cache;
   output list<DAE.Statement> outStmts = {};
 protected
@@ -1097,7 +1095,7 @@ algorithm
         DAE.Statement elem;
 
       list<DAE.Statement> localAccList,rest;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       InstanceHierarchy ih;
       list<DAE.Statement> elems,sList,b;
       String s,id;
@@ -1193,7 +1191,7 @@ protected function prefixElse "Prefix else statements.
   input FCore.Graph env;
   input InstanceHierarchy inIH;
   input DAE.Else elseBranch;
-  input Prefix.Prefix p;
+  input DAE.Prefix p;
   output FCore.Cache outCache;
   output DAE.Else outElse;
 algorithm
@@ -1201,7 +1199,7 @@ algorithm
     local
       FCore.Cache localCache;
       FCore.Graph localEnv;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       InstanceHierarchy ih;
       DAE.Exp e;
       list<DAE.Statement> lStmt;
@@ -1227,11 +1225,11 @@ algorithm
 end prefixElse;
 
 public function makePrefixString "helper function for Mod.verifySingleMod, pretty output"
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   output String str;
 algorithm
   str := matchcontinue(pre)
-    case(Prefix.NOPRE()) then "from top scope";
+    case(DAE.NOPRE()) then "from top scope";
     case _
       equation
         str = "from calling scope: " + printPrefixStr(pre);
@@ -1243,7 +1241,7 @@ public function prefixExpressionsInType
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPre;
+  input DAE.Prefix inPre;
   input DAE.Type inTy;
   output FCore.Cache outCache;
   output DAE.Type outTy;
@@ -1268,16 +1266,16 @@ protected function prefixArrayDimensions
 "@author: adrpo
  this function prefixes all the expressions in types to be found by the back-end or code generation!"
   input DAE.Type ty;
-  input tuple<FCore.Cache,FCore.Graph,InnerOuter.InstHierarchy,Prefix.Prefix> tpl;
+  input tuple<FCore.Cache,FCore.Graph,InnerOuter.InstHierarchy,DAE.Prefix> tpl;
   output DAE.Type oty = ty;
-  output tuple<FCore.Cache,FCore.Graph,InnerOuter.InstHierarchy,Prefix.Prefix> otpl;
+  output tuple<FCore.Cache,FCore.Graph,InnerOuter.InstHierarchy,DAE.Prefix> otpl;
 algorithm
   (oty,otpl) := match (oty,tpl)
     local
       FCore.Cache cache;
       FCore.Graph env;
       InnerOuter.InstHierarchy ih;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       DAE.Dimensions dims;
 
     case (DAE.T_ARRAY(),(cache, env, ih, pre))
@@ -1296,7 +1294,7 @@ public function prefixDimensions
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPre;
+  input DAE.Prefix inPre;
   input DAE.Dimensions inDims;
   output FCore.Cache outCache;
   output DAE.Dimensions outDims;
@@ -1326,21 +1324,21 @@ algorithm
 end prefixDimensions;
 
 public function isPrefix
-  input Prefix.Prefix prefix;
+  input DAE.Prefix prefix;
   output Boolean isPrefix;
 algorithm
   isPrefix := match prefix
-    case Prefix.PREFIX() then true;
+    case DAE.PREFIX() then true;
     else false;
   end match;
 end isPrefix;
 
 public function isNoPrefix
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   output Boolean outIsEmpty;
 algorithm
   outIsEmpty := match(inPrefix)
-    case Prefix.NOPRE() then true;
+    case DAE.NOPRE() then true;
     else false;
   end match;
 end isNoPrefix;
@@ -1350,7 +1348,7 @@ public function prefixClockKind "Add the supplied prefix to the clock kind"
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.ClockKind inClkKind;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   output FCore.Cache outCache;
   output DAE.ClockKind outClkKind;
 algorithm
@@ -1361,7 +1359,7 @@ algorithm
       FCore.Cache cache;
       FCore.Graph env;
       InstanceHierarchy ih;
-      Prefix.Prefix p;
+      DAE.Prefix p;
 
     // clock kinds
     case (cache, _, _, DAE.INFERRED_CLOCK(), _)
@@ -1402,59 +1400,59 @@ algorithm
 end prefixClockKind;
 
 public function getPrefixInfo
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   output SourceInfo outInfo;
 algorithm
   outInfo := match inPrefix
-    case Prefix.PREFIX(compPre = Prefix.PRE(info = outInfo)) then outInfo;
+    case DAE.PREFIX(compPre = DAE.PRE(info = outInfo)) then outInfo;
     else AbsynUtil.dummyInfo;
   end match;
 end getPrefixInfo;
 
 public function prefixHashWork
-  input Prefix.ComponentPrefix inPrefix;
+  input DAE.ComponentPrefix inPrefix;
   input output Integer hash;
 algorithm
   hash := match inPrefix
-    case Prefix.PRE() then prefixHashWork(inPrefix.next, 31*hash + stringHashDjb2(inPrefix.prefix));
+    case DAE.PRE() then prefixHashWork(inPrefix.next, 31*hash + stringHashDjb2(inPrefix.prefix));
     else hash;
   end match;
 end prefixHashWork;
 
 public function componentPrefixPathEqual
-  input Prefix.ComponentPrefix pre1,pre2;
+  input DAE.ComponentPrefix pre1,pre2;
   output Boolean eq;
 algorithm
   eq := match (pre1,pre2)
-    case (Prefix.PRE(),Prefix.PRE())
+    case (DAE.PRE(),DAE.PRE())
       then if pre1.prefix==pre2.prefix then componentPrefixPathEqual(pre1.next, pre2.next) else false;
-    case (Prefix.NOCOMPPRE(),Prefix.NOCOMPPRE()) then true;
+    case (DAE.NOCOMPPRE(),DAE.NOCOMPPRE()) then true;
     else false;
   end match;
 end componentPrefixPathEqual;
 
 public function componentPrefix
-  input Prefix.Prefix inPrefix;
-  output Prefix.ComponentPrefix outPrefix;
+  input DAE.Prefix inPrefix;
+  output DAE.ComponentPrefix outPrefix;
 algorithm
   outPrefix := match inPrefix
-    case Prefix.PREFIX() then inPrefix.compPre;
-    else Prefix.NOCOMPPRE();
+    case DAE.PREFIX() then inPrefix.compPre;
+    else DAE.NOCOMPPRE();
   end match;
 end componentPrefix;
 
 public function writeComponentPrefix
   input File.File file;
-  input Prefix.ComponentPrefix pre;
+  input DAE.ComponentPrefix pre;
   input File.Escape escape=File.Escape.None;
 algorithm
   _ := match pre
-    case Prefix.PRE(next=Prefix.NOCOMPPRE())
+    case DAE.PRE(next=DAE.NOCOMPPRE())
     algorithm
       File.writeEscape(file, pre.prefix, escape);
       ComponentReference.writeSubscripts(file, pre.subscripts, escape);
     then ();
-    case Prefix.PRE()
+    case DAE.PRE()
     algorithm
       writeComponentPrefix(file, pre.next); // Stored in reverse order...
       File.writeEscape(file, pre.prefix, escape);
@@ -1466,19 +1464,19 @@ end writeComponentPrefix;
 
 public function haveSubs "Function: crefHaveSubs
   Checks whether Prefix has any subscripts, recursive "
-  input Prefix.ComponentPrefix pre;
+  input DAE.ComponentPrefix pre;
   output Boolean ob;
 algorithm
   ob := match pre
-    case Prefix.PRE(subscripts = {}) then haveSubs(pre.next);
-    case Prefix.PRE() then true;
+    case DAE.PRE(subscripts = {}) then haveSubs(pre.next);
+    case DAE.PRE() then true;
     else false;
   end match;
 end haveSubs;
 
 function removeCompPrefixFromExps
   input DAE.Exp inExp;
-  input Prefix.ComponentPrefix inCompPref;
+  input DAE.ComponentPrefix inCompPref;
   output DAE.Exp outExp;
 algorithm
   outExp := Expression.traverseExpBottomUp(inExp, function removeCompPrefixFromCrefExp(inCompPref = inCompPref), false);
@@ -1487,7 +1485,7 @@ end removeCompPrefixFromExps;
 protected function removeCompPrefixFromCrefExp
   input DAE.Exp inExp;
   input Boolean inB;
-  input Prefix.ComponentPrefix inCompPref;
+  input DAE.ComponentPrefix inCompPref;
   output DAE.Exp outExp;
   output Boolean b;
 algorithm
@@ -1509,18 +1507,18 @@ end removeCompPrefixFromCrefExp;
 
 protected function removePrefixFromCref
   input DAE.ComponentRef inCref;
-  input Prefix.ComponentPrefix inCompPref;
+  input DAE.ComponentPrefix inCompPref;
   output DAE.ComponentRef outCref;
 algorithm
   (outCref) := match (inCref, inCompPref)
     local
       DAE.ComponentRef cref, cref2;
-      Prefix.ComponentPrefix pref;
+      DAE.ComponentPrefix pref;
 
-    case (_, Prefix.NOCOMPPRE()) then inCref;
+    case (_, DAE.NOCOMPPRE()) then inCref;
     case (DAE.CREF_IDENT(), _) then inCref;
 
-    case (cref as DAE.CREF_QUAL(_), pref as Prefix.PRE(next=Prefix.NOCOMPPRE())) algorithm
+    case (cref as DAE.CREF_QUAL(_), pref as DAE.PRE(next=DAE.NOCOMPPRE())) algorithm
       if stringEqual(cref.ident, pref.prefix) then
         cref2 := cref.componentRef;
       else
@@ -1529,14 +1527,14 @@ algorithm
     then
       cref.componentRef;
 
-    case (DAE.CREF_QUAL(_), pref as Prefix.PRE(next=Prefix.PRE(_))) algorithm
+    case (DAE.CREF_QUAL(_), pref as DAE.PRE(next=DAE.PRE(_))) algorithm
       cref := removePrefixFromCref(inCref,pref.next);
-      pref.next := Prefix.NOCOMPPRE();
+      pref.next := DAE.NOCOMPPRE();
       cref := removePrefixFromCref(cref,pref);
     then
       cref;
 
-    case (_, Prefix.PRE()) algorithm
+    case (_, DAE.PRE()) algorithm
       Error.addInternalError(getInstanceName() + " :Cref is not qualified but we have prefix to remove: " + ComponentReference.crefStr(inCref), sourceInfo());
     then
       fail();

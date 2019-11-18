@@ -46,7 +46,6 @@ import FCore;
 import InnerOuter;
 import InstTypes;
 import Mod;
-import Prefix;
 import SCode;
 import UnitAbsyn;
 import Values;
@@ -616,14 +615,14 @@ public function prefixEqualUnlessBasicType
 "Checks if two prefixes are equal, unless the class is a
  basic type, i.e. all reals, integers, enumerations with
  the same name, etc. are equal."
-  input Prefix.Prefix pre1;
-  input Prefix.Prefix pre2;
+  input DAE.Prefix pre1;
+  input DAE.Prefix pre2;
   input SCode.Element cls;
 algorithm
   _ := matchcontinue (pre1, pre2, cls)
     local
       String idn;
-    // adrpo: TODO! FIXME!, I think here we should have pre1 = Prefix.CLASSPRE(variability1) == pre2 = Prefix.CLASSPRE(variability2)
+    // adrpo: TODO! FIXME!, I think here we should have pre1 = DAE.CLASSPRE(variability1) == pre2 = DAE.CLASSPRE(variability2)
 
     // don't care about prefix for:
     // - enumerations
@@ -730,7 +729,7 @@ public function handleUnitChecking
   input FCore.Cache cache;
   input FCore.Graph env;
   input UnitAbsyn.InstStore inStore;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input DAE.DAElist compDAE;
   input list<DAE.DAElist> daes;
   input String className "for debugging";
@@ -2180,7 +2179,7 @@ public function addClassdefsToEnv
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input list<SCode.Element> inClasses;
   input Boolean inImpl;
   input Option<DAE.Mod> inRedeclareMod;
@@ -2201,7 +2200,7 @@ protected function addClassdefToEnv
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SCode.Element inSCodeElement;
   input Boolean inBoolean;
   input Option<DAE.Mod> redeclareMod;
@@ -2220,7 +2219,7 @@ algorithm
       Boolean impl;
       InstanceHierarchy ih;
       SourceInfo info;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       String s;
       SCode.Comment cmt;
       SCode.Replaceable rpp;
@@ -2317,7 +2316,7 @@ public function addComponentsToEnv
   input output FCore.Graph env;
   input output InnerOuter.InstHierarchy ih;
   input DAE.Mod mod;
-  input Prefix.Prefix prefix;
+  input DAE.Prefix prefix;
   input ClassInf.State state;
   input list<tuple<SCode.Element, DAE.Mod>> components;
   input Boolean impl;
@@ -2517,7 +2516,7 @@ protected function addRecordConstructorsToTheCache
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State inState;
   input Absyn.Direction inDirection;
   input SCode.Element inClass;
@@ -2563,7 +2562,7 @@ public function checkMultiplyDeclared
   input FCore.Cache cache;
   input FCore.Graph env;
   input DAE.Mod mod;
-  input Prefix.Prefix prefix;
+  input DAE.Prefix prefix;
   input ClassInf.State ciState;
   input tuple<SCode.Element, DAE.Mod> compTuple;
   input list<list<DAE.Dimension>> instDims;
@@ -2944,7 +2943,7 @@ public function extractConstrainingComps
  If there is a constraining class, lookup the class and return its elements."
   input Option<SCode.ConstrainClass> cc;
   input FCore.Graph env;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   output list<SCode.Element> elems;
 algorithm
   elems := matchcontinue(cc,env,pre)
@@ -3055,7 +3054,7 @@ public function checkModificationOnOuter
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input String inName;
   input DAE.ComponentRef inCref;
   input DAE.Mod inMod;
@@ -3192,7 +3191,7 @@ public function checkHigherVariability
 Helper to makeVariableBinding. Author -- alleb"
   input DAE.Const compConst;
   input DAE.Const bindConst;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input String name;
   input DAE.Exp binding;
   input SourceInfo info;
@@ -3280,7 +3279,7 @@ public function getUsertypeDimensions
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SCode.Element inClass;
   input list<list<DAE.Dimension>> inInstDims;
   input Boolean inBoolean;
@@ -3298,7 +3297,7 @@ algorithm
       DAE.Mod mod_1,type_mods;
       Option<DAE.EqMod> eq;
       DAE.Dimensions dim1,dim2,res;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       String id;
       Absyn.Path cn;
       Option<list<Absyn.Subscript>> ad;
@@ -3939,7 +3938,7 @@ algorithm
           = Lookup.lookupIdent(cache, env, id);
         cmod_1 = Mod.stripSubmod(cmod);
         m_1 = SCodeUtil.stripSubmod(m);
-        (cache,m_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), m_1, false, Mod.COMPONENT(id), info);
+        (cache,m_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOPRE(), m_1, false, Mod.COMPONENT(id), info);
         mod_2 = Mod.merge(cmod_1, m_2);
         SOME(eq) = Mod.modEquation(mod_2);
         (cache,dims) = elabComponentArraydimFromEnv2(cache,eq, env);
@@ -3950,7 +3949,7 @@ algorithm
       equation
         (cache,_,SCode.COMPONENT(attributes = SCode.ATTR(arrayDims = ad)),_,_,_)
           = Lookup.lookupIdent(cache,env, id);
-        (cache, subs) = Static.elabSubscripts(cache, env, ad, true, Prefix.NOPRE(), info);
+        (cache, subs) = Static.elabSubscripts(cache, env, ad, true, DAE.NOPRE(), info);
         dims = Expression.subscriptDimensions(subs);
       then
         (cache,dims);
@@ -4007,7 +4006,7 @@ public function elabArraydimOpt
   input Option<DAE.EqMod> inTypesEqModOption;
   input Boolean inBoolean;
   input Boolean performVectorization;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo info;
   input list<list<DAE.Dimension>> inInstDims;
   output FCore.Cache outCache;
@@ -4024,7 +4023,7 @@ algorithm
       Boolean impl;
       FCore.Cache cache;
       Boolean doVect;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       InstDims inst_dims;
     case (cache,env,owncref,_,SOME(ad),eq,impl,doVect,pre,_,inst_dims)
       equation
@@ -4056,7 +4055,7 @@ public function elabArraydim
   input Boolean inBoolean;
   input Boolean performVectorization;
   input Boolean isFunctionInput;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo inInfo;
   input list<list<DAE.Dimension>> inInstDims;
   output FCore.Cache outCache;
@@ -4078,7 +4077,7 @@ algorithm
       FCore.Cache cache;
       Boolean doVect;
       DAE.Properties prop;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       Absyn.Exp aexp;
       Option<DAE.EqMod> eq;
       InstDims inst_dims;
@@ -4204,7 +4203,7 @@ protected function elabArraydimType
   input Absyn.ArrayDim inArrayDim;
   input DAE.Exp inExp "User for error messages.";
   input Absyn.Path inPath "Class of declaration, used for error messages.";
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Absyn.ComponentRef inCref;
   input SourceInfo inInfo;
   input list<list<DAE.Dimension>> inInstDims;
@@ -4378,7 +4377,7 @@ helper function for InstFunction.implicitFunctionInstantiation, returns derivati
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo info;
   output list<DAE.FunctionDefinition> element;
 algorithm
@@ -4406,7 +4405,7 @@ helper function for getDeriveAnnotation"
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo info;
   output list<DAE.FunctionDefinition> element;
 algorithm
@@ -4430,7 +4429,7 @@ Author: bjozac
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo info;
   output list<DAE.FunctionDefinition> element;
 algorithm
@@ -4490,7 +4489,7 @@ Extracts conditions for derivative."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo info;
   output list<tuple<Integer,DAE.derivativeCond>> outconds;
 algorithm
@@ -4598,7 +4597,7 @@ helper function for getDeriveAnnotation"
   input list<SCode.SubMod> inSubs;
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
 output Option<Absyn.Path> defaultDerivative;
 algorithm defaultDerivative := matchcontinue(inSubs,inCache,inEnv,inPrefix)
   local
@@ -5091,7 +5090,7 @@ protected function elabExpListExt
   input FCore.Graph inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo info;
   output FCore.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
@@ -5109,7 +5108,7 @@ algorithm
       Absyn.Exp e;
       list<Absyn.Exp> rest;
       FCore.Cache cache;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       DAE.ComponentRef cr;
     case (cache,_,{},_,_,_) then (cache,{},{});
     case (cache,env,(e :: rest),impl,pre,_)
@@ -5130,7 +5129,7 @@ protected function elabExpExt
   input FCore.Graph inEnv;
   input Absyn.Exp inExp;
   input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
@@ -5149,7 +5148,7 @@ algorithm
       Boolean impl;
       FCore.Cache cache;
       Absyn.Exp absynExp;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
 
     // special case for  size
     case (cache,env,(Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),
@@ -5185,7 +5184,7 @@ public function instExtGetFargs
   input FCore.Graph inEnv;
   input SCode.ExternalDecl inExternalDecl;
   input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo info;
   output FCore.Cache outCache;
   output list<DAE.ExtArg> outDAEExtArgLst;
@@ -5202,7 +5201,7 @@ algorithm
       list<Absyn.Exp> absexps;
       Boolean impl;
       FCore.Cache cache;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
     case (cache,env,SCode.EXTERNALDECL(lang = lang,args = absexps),impl,pre,_)
       equation
         (cache,exps,props) = elabExpListExt(cache,env, absexps, impl, pre, info);
@@ -5351,7 +5350,7 @@ public function instExtGetRettype
   input FCore.Graph inEnv;
   input SCode.ExternalDecl inExternalDecl;
   input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.ExtArg outExtArg;
@@ -5367,7 +5366,7 @@ algorithm
       list<Absyn.Exp> args;
       Boolean impl;
       FCore.Cache cache;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       DAE.Attributes attr;
 
     case (cache,_,SCode.EXTERNALDECL(output_ = NONE()),_,_,_) then (cache,DAE.NOEXTARG());  /* impl */
@@ -6301,7 +6300,7 @@ protected function addClassdefsToEnv3
   input FCore.Cache inCache;
   input FCore.Graph env;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Option<DAE.Mod> inMod;
   input SCode.Element sele;
   output FCore.Cache outCache;
@@ -6318,7 +6317,7 @@ algorithm
       String str;
       InstanceHierarchy ih;
       list<DAE.SubMod> lsm,lsm2;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
 
     case(_,_,_,_,NONE(),_) then fail();
 
@@ -6461,7 +6460,7 @@ public function traverseModAddDims
 "The function used to modify modifications for non-expanded arrays"
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SCode.Mod inMod;
   input list<list<DAE.Dimension>> inInstDims;
   output SCode.Mod outMod;
@@ -6470,7 +6469,7 @@ algorithm
   local
     FCore.Cache cache;
     FCore.Graph env;
-    Prefix.Prefix pre;
+    DAE.Prefix pre;
     SCode.Mod mod, mod2;
     InstDims inst_dims;
     list<Absyn.Subscript> decDims;
@@ -6499,7 +6498,7 @@ protected function traverseModAddDims4
 "Helper function  for traverseModAddDims"
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SCode.Mod inMod;
   input list<list<Absyn.Exp>> inExps;
   input Boolean inIsTop;
@@ -6509,7 +6508,7 @@ algorithm
   local
     FCore.Cache cache;
     FCore.Graph env;
-    Prefix.Prefix pre;
+    DAE.Prefix pre;
     SCode.Mod mod;
     SCode.Final f;
     list<SCode.SubMod> submods,submods2;
@@ -6533,7 +6532,7 @@ protected function traverseModAddDims5
 "Helper function  for traverseModAddDims2"
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input list<SCode.SubMod> inMods;
   input list<list<Absyn.Exp>> inExps;
   output list<SCode.SubMod> outMods;
@@ -6542,7 +6541,7 @@ algorithm
   local
     FCore.Cache cache;
     FCore.Graph env;
-    Prefix.Prefix pre;
+    DAE.Prefix pre;
     SCode.Mod mod,mod2;
     list<SCode.SubMod> smods,smods2;
     Ident n;
@@ -6737,7 +6736,7 @@ public function instElementCondExp
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input SCode.Element component;
-  input Prefix.Prefix prefix;
+  input DAE.Prefix prefix;
   input SourceInfo info;
   output Option<Boolean> outCondValue;
   output FCore.Cache outCache;
@@ -6764,7 +6763,7 @@ protected function instConditionalDeclaration
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.Exp inCondition;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo inInfo;
   output Boolean outIsConditional;
   output FCore.Cache outCache;
@@ -6818,7 +6817,7 @@ public function propagateClassPrefix
  This is needed to make sure that e.g. a parameter does
  not generate an equation but a binding."
   input SCode.Attributes attr;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   output SCode.Attributes outAttr;
 algorithm
   outAttr := match(attr,pre)
@@ -6831,11 +6830,11 @@ algorithm
       Absyn.IsField isf;
 
     // if classprefix is variable, keep component variability
-    case (_,Prefix.PREFIX(_,Prefix.CLASSPRE(SCode.VAR()))) then attr;
+    case (_,DAE.PREFIX(_,DAE.CLASSPRE(SCode.VAR()))) then attr;
     // if variability is constant, do not override it!
     case(SCode.ATTR(variability = SCode.CONST()),_) then attr;
     // if classprefix is parameter or constant, override component variability
-    case(SCode.ATTR(ad,ct,prl,_,dir,isf),Prefix.PREFIX(_,Prefix.CLASSPRE(vt)))
+    case(SCode.ATTR(ad,ct,prl,_,dir,isf),DAE.PREFIX(_,DAE.CLASSPRE(vt)))
       then SCode.ATTR(ad,ct,prl,vt,dir,isf);
     // anything else
     else attr;
@@ -7674,7 +7673,7 @@ end pushStructuralParameters;
 public function popStructuralParameters
   "Cannot be part of Env due to RML issues"
   input FCore.Cache cache;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   output FCore.Cache ocache;
 algorithm
   ocache := match (cache,pre)
@@ -7699,7 +7698,7 @@ protected function prefixAndAddCrefsToHt
   "Cannot be part of Env due to RML issues"
   input FCore.Cache cache;
   input output AvlSetCR.Tree set;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input list<DAE.ComponentRef> icrs;
 algorithm
   for cr in icrs loop

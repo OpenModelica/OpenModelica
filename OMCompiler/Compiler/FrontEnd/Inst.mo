@@ -88,7 +88,6 @@ public import FCore;
 public import InnerOuter;
 public import InstTypes;
 public import Mod;
-public import Prefix;
 public import SCode;
 public import UnitAbsyn;
 
@@ -112,7 +111,6 @@ end BasicTypeAttrTyper;
 // protected imports
 protected
 
-import AbsynToSCode;
 import BaseHashTable;
 import Builtin;
 import Ceval;
@@ -147,7 +145,6 @@ import InstExtends;
 import List;
 import Lookup;
 import Mutable;
-import OperatorOverloading;
 import PrefixUtil;
 import SCodeUtil;
 import SCodeInstUtil;
@@ -433,13 +430,13 @@ end instantiatePartialClass;
 protected function makeTopComponentPrefix
   input FGraph.Graph inGraph;
   input Absyn.Ident inName;
-  output Prefix.Prefix outPrefix;
+  output DAE.Prefix outPrefix;
 protected
   Absyn.Path p;
 algorithm
   //p := FGraph.joinScopePath(inGraph, Absyn.IDENT(inName));
-  //outPrefix := Prefix.PREFIX(Prefix.PRE("$i", {}, {}, Prefix.NOCOMPPRE(), ClassInf.MODEL(p)), Prefix.CLASSPRE(SCode.VAR()));
-  outPrefix := Prefix.NOPRE();
+  //outPrefix := DAE.PREFIX(DAE.PRE("$i", {}, {}, DAE.NOCOMPPRE(), ClassInf.MODEL(p)), DAE.CLASSPRE(SCode.VAR()));
+  outPrefix := DAE.NOPRE();
 end makeTopComponentPrefix;
 
 protected function instClassInProgram
@@ -513,7 +510,7 @@ public function instClass
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SCode.Element inClass;
   input list<list<DAE.Dimension>> inInstDims;
   input Boolean inImplicit;
@@ -536,7 +533,7 @@ algorithm
     local
       FCore.Graph env,env_1,env_3;
       DAE.Mod mod;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       Connect.Sets csets;
       String n,scopeName,strDepth;
       Boolean impl,callscope_1,isFn,notIsPartial,isPartialFn,recursionDepthReached;
@@ -665,7 +662,7 @@ protected function instClassBasictype
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SCode.Element inClass;
   input list<list<DAE.Dimension>> inInstDims;
   input Boolean inImplicit;
@@ -696,7 +693,7 @@ algorithm
       Boolean impl;
       DAE.Type ty;
       DAE.Mod mod;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       String n;
       SCode.Restriction r;
       InstDims inst_dims;
@@ -743,7 +740,7 @@ public function instClassIn "
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State inState;
   input SCode.Element inClass;
   input SCode.Visibility inVisibility;
@@ -866,7 +863,7 @@ public function instClassIn2
   input output InnerOuter.InstHierarchy ih;
   input output UnitAbsyn.InstStore store;
   input        DAE.Mod mod;
-  input        Prefix.Prefix prefix;
+  input        DAE.Prefix prefix;
   input output ClassInf.State state;
   input        SCode.Element cls;
   input        SCode.Visibility visibility;
@@ -887,7 +884,7 @@ protected
   InstHashTable.CachedInstItemOutputs outputs;
   tuple<InstDims, Boolean, DAE.Mod, Connect.Sets, ClassInf.State, SCode.Element, Option<DAE.ComponentRef>> bbx, bby;
   DAE.Mod m;
-  Prefix.Prefix pre;
+  DAE.Prefix pre;
   Connect.Sets csets;
   ClassInf.State st;
   SCode.Element e;
@@ -1104,7 +1101,7 @@ public function instClassIn_dispatch
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State inState;
   input SCode.Element inClass;
   input SCode.Visibility inVisibility;
@@ -1133,7 +1130,7 @@ algorithm
       Option<DAE.Type> bc;
       FCore.Graph env,env_1;
       DAE.Mod mods;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       ClassInf.State ci_state,ci_state_1;
       SCode.Element c;
       InstDims inst_dims;
@@ -1181,7 +1178,7 @@ algorithm
         (cache, env, ih, store, DAE.emptyDae, inSets, ci_state, tys, bc, NONE(), NONE(), graph);
 
     // adrpo: 2010-09-27: here we do two things at once, but not correctly!
-    // Instantiate enumeration class at top level Prefix.NOPRE()
+    // Instantiate enumeration class at top level DAE.NOPRE()
     //   when we are instantiating with no prefix, it means we are instantiating the enumeration class!
     //   and we don't care about modifications!
     // Instantiate enumeration VARIABLE with a prefix!
@@ -1468,7 +1465,7 @@ protected function instBasicTypeAttributes
   input DAE.Mod inMod;
   input DAE.Type inBaseType;
   input BasicTypeAttrTyper inTypeFunc;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   output list<DAE.Var> outVars;
 algorithm
   outVars := match inMod
@@ -1658,7 +1655,7 @@ public function partialInstClassIn
   input output FCore.Graph env;
   input output InnerOuter.InstHierarchy ih;
   input        DAE.Mod mod;
-  input        Prefix.Prefix prefix;
+  input        DAE.Prefix prefix;
   input output ClassInf.State state;
   input        SCode.Element cls;
   input        SCode.Visibility visibility;
@@ -1671,7 +1668,7 @@ protected
   InstHashTable.CachedPartialInstItemOutputs outputs;
   tuple<InstDims, DAE.Mod, ClassInf.State, SCode.Element> bbx, bby;
   DAE.Mod m;
-  Prefix.Prefix pre;
+  DAE.Prefix pre;
   ClassInf.State st;
   SCode.Element e;
   InstDims dims;
@@ -1736,7 +1733,7 @@ protected function partialInstClassIn_dispatch
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State inState;
   input SCode.Element inClass;
   input SCode.Visibility inVisibility;
@@ -1793,7 +1790,7 @@ public function instClassdef "
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input DAE.Mod inMod2;
-  input Prefix.Prefix inPrefix3;
+  input DAE.Prefix inPrefix3;
   input ClassInf.State inState5;
   input String className;
   input SCode.ClassDef inClassDef6;
@@ -1836,7 +1833,7 @@ type"
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod2;
-  input Prefix.Prefix inPrefix3;
+  input DAE.Prefix inPrefix3;
   input ClassInf.State inState5;
   input String className;
   input SCode.ClassDef inClassDef6;
@@ -1874,7 +1871,7 @@ algorithm
       list<DAE.Var> tys;
       Option<DAE.Type> bc;
       DAE.Mod mods;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       SCode.Restriction re;
       Boolean impl;
       SCode.Visibility vis;
@@ -1929,7 +1926,7 @@ algorithm
       then
         (cache,env3,ih,store,dae,csets,ci_state,tys,bc,NONE(),eqConstraint,graph);
 
-    // VERY COMPLICATED CHECKPOINT! TODO! try to simplify it, maybe by sending Prefix.TYPE and checking in instVar!
+    // VERY COMPLICATED CHECKPOINT! TODO! try to simplify it, maybe by sending DAE.TYPE and checking in instVar!
     // did the previous
     case (_,_,_,_,_,_,_,_,
           SCode.PARTS(
@@ -1962,7 +1959,7 @@ protected function instClassdef2 "
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod2;
-  input Prefix.Prefix inPrefix3;
+  input DAE.Prefix inPrefix3;
   input ClassInf.State inState5;
   input String className;
   input SCode.ClassDef inClassDef6;
@@ -2004,7 +2001,7 @@ algorithm
       list<DAE.Var> vars;
       Option<DAE.Type> bc;
       DAE.Mod mods,emods,mod_1,mods_1,checkMods;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       list<SCode.Equation> eqs,initeqs,eqs2,initeqs2,eqs_1,initeqs_1;
       list<SCode.AlgorithmSection> alg,initalg,alg2,initalg2,alg_1,initalg_1;
       list<SCode.ConstraintSection> constrs;
@@ -2331,7 +2328,7 @@ algorithm
         (cache,cenv_2,_,_,_,_,_,_,_,_,_,_) =
         instClassIn(
           cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
-          DAE.NOMOD(), Prefix.NOPRE(), ci_state2, c, SCode.PUBLIC(), {}, false,
+          DAE.NOMOD(), DAE.NOPRE(), ci_state2, c, SCode.PUBLIC(), {}, false,
           callscope, ConnectionGraph.EMPTY, Connect.emptySet, NONE());
 
         (cache,mod_1) = Mod.elabMod(cache, cenv_2, ih, pre, mod, impl, Mod.DERIVED(cn), info);
@@ -2695,7 +2692,7 @@ protected function instClassDefHelper
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input list<Absyn.TypeSpec> inSpecs;
-  input Prefix.Prefix inPre;
+  input DAE.Prefix inPre;
   input list<list<DAE.Dimension>> inInstDims;
   input Boolean inImpl;
   input list<DAE.Type> accTypes;
@@ -2713,7 +2710,7 @@ algorithm
     local
       FCore.Cache cache;
       FCore.Graph env,cenv;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       InstDims dims;
       Boolean impl;
       list<DAE.Type> localAccTypes;
@@ -2818,12 +2815,12 @@ algorithm
       equation
         //Debug.traceln("Try instbasic 1 " + AbsynUtil.pathString(path));
         ErrorExt.setCheckpoint("instBasictypeBaseclass");
-        (cache,m_1) = Mod.elabModForBasicType(cache, env, ih, Prefix.NOPRE(), mod, true, Mod.DERIVED(path), info);
+        (cache,m_1) = Mod.elabModForBasicType(cache, env, ih, DAE.NOPRE(), mod, true, Mod.DERIVED(path), info);
         m_2 = Mod.merge(mods, m_1, className);
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, SOME(info));
         //Debug.traceln("Try instbasic 2 " + AbsynUtil.pathString(path) + " " + Mod.printModStr(m_2));
         (cache,_,ih,store,dae,_,ty,tys,_) =
-        instClassBasictype(cache,cenv,ih, store,m_2, Prefix.NOPRE(), cdef, inst_dims, false, InstTypes.INNER_CALL(), Connect.emptySet);
+        instClassBasictype(cache,cenv,ih, store,m_2, DAE.NOPRE(), cdef, inst_dims, false, InstTypes.INNER_CALL(), Connect.emptySet);
         //Debug.traceln("Try instbasic 3 " + AbsynUtil.pathString(path) + " " + Mod.printModStr(m_2));
         b1 = Types.basicType(ty);
         b2 = Types.arrayType(ty);
@@ -2904,12 +2901,12 @@ algorithm
 
     case (cache,env,ih,_,{SCode.EXTENDS(baseClassPath = path,modifications = mod, info = info)},(_ :: _),_,inst_dims,_,_) /* Inherits baseclass -and- has components */
       equation
-        (cache,m_1) = Mod.elabModForBasicType(cache, env, ih, Prefix.NOPRE(), mod, true, Mod.DERIVED(path), inInfo);
+        (cache,m_1) = Mod.elabModForBasicType(cache, env, ih, DAE.NOPRE(), mod, true, Mod.DERIVED(path), inInfo);
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, SOME(info));
         cdef_1 = SCodeUtil.classSetPartial(cdef, SCode.NOT_PARTIAL());
 
         (cache,_,ih,_,_,_,ty,_,_,_) = instClass(cache,cenv,ih,store, m_1,
-          Prefix.NOPRE(), cdef_1, inst_dims, false, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet) "impl" ;
+          DAE.NOPRE(), cdef_1, inst_dims, false, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet) "impl" ;
 
         b1 = Types.basicType(ty);
         b2 = Types.arrayType(ty);
@@ -2936,7 +2933,7 @@ protected function partialInstClassdef
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State inState;
   input SCode.Element inClass "The class this definition comes from.";
   input SCode.ClassDef inClassDef;
@@ -3089,7 +3086,7 @@ public function instElementList
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State inState;
   input list<tuple<SCode.Element, DAE.Mod>> inElements;
   input list<list<DAE.Dimension>> inInstDims;
@@ -3221,7 +3218,7 @@ public function instElement2
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State inState;
   input tuple<SCode.Element, DAE.Mod> inElement;
   input list<list<DAE.Dimension>> inInstDims;
@@ -3281,7 +3278,7 @@ protected function isDeletedComponent
    and adds it to the set of deleted components if it does. Otherwise the
    function does nothing."
   input tuple<SCode.Element, DAE.Mod> element;
-  input Prefix.Prefix prefix;
+  input DAE.Prefix prefix;
   input Boolean stopOnError;
         output Boolean isDeleted;
   input output FCore.Graph env;
@@ -3341,7 +3338,7 @@ public function instElement "
   input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inUnitStore;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State inState;
   input tuple<SCode.Element, DAE.Mod> inElement;
   input list<list<DAE.Dimension>> inInstDims;
@@ -3393,7 +3390,7 @@ algorithm
       Option<Absyn.Exp> cond;
       Option<DAE.EqMod> eq;
       SCode.Comment comment;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       SCode.Attributes attr;
       SCode.Element cls, comp, comp2, el;
       SCode.Final final_prefix;
@@ -3768,15 +3765,15 @@ end instElement;
 
 protected function removePrefixFromBinding
   input DAE.Binding inBind;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   output DAE.Binding outBind;
 algorithm
   outBind := match (inBind, inPrefix)
     local
       DAE.Binding bind;
-      Prefix.Prefix pref;
+      DAE.Prefix pref;
 
-	    case (bind as DAE.EQBOUND(), pref as Prefix.PREFIX(compPre=Prefix.PRE())) algorithm
+	    case (bind as DAE.EQBOUND(), pref as DAE.PREFIX(compPre=DAE.PRE())) algorithm
         bind.exp := PrefixUtil.removeCompPrefixFromExps(bind.exp, pref.compPre);
       then
         bind;
@@ -3792,7 +3789,7 @@ protected function updateCompeltsMods
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input list<tuple<SCode.Element, DAE.Mod>> inComponents;
   input ClassInf.State inState;
   input Boolean inImplicit;
@@ -3836,7 +3833,7 @@ protected function updateCompeltsMods_dispatch
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input list<tuple<SCode.Element, DAE.Mod>> inComponents;
   input ClassInf.State inState;
   input Boolean inImplicit;
@@ -3849,7 +3846,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inPrefix,inComponents,inState,inImplicit)
     local
       FCore.Graph env,env2,env3;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       SCode.Mod umod;
       list<Absyn.ComponentRef> crefs,crefs_1;
       Absyn.ComponentRef cref;
@@ -3959,7 +3956,7 @@ public function redeclareType
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input SCode.Element inElement;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State inState;
   input Boolean inImpl;
   input DAE.Mod inCmod;
@@ -4101,7 +4098,7 @@ protected function updateComponentsInEnv
   input FCore.Cache cache;
   input FCore.Graph env;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input DAE.Mod mod;
   input list<Absyn.ComponentRef> crefs;
   input ClassInf.State ci_state;
@@ -4139,7 +4136,7 @@ protected function updateComponentInEnv
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input DAE.Mod mod;
   input Absyn.ComponentRef cref;
   input ClassInf.State inCIState;
@@ -4352,7 +4349,7 @@ protected function updateComponentInEnv2
   input FCore.Graph inEnv;
   input FCore.Graph cenv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input Absyn.Path path;
   input String name;
   input list<Absyn.Subscript> ad;
@@ -4391,7 +4388,7 @@ protected function updateComponentInEnv2_dispatch
   input FCore.Graph inEnv;
   input FCore.Graph inClsEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Absyn.Path inPath;
   input String inName;
   input list<Absyn.Subscript> inSubscripts;
@@ -4435,7 +4432,7 @@ algorithm
     mod2 := Mod.merge(class_mod, mod1, inName);
     mod2 := Mod.merge(inClsMod, mod2, inName);
     (outCache, mod2) :=
-      Mod.updateMod(outCache, outEnv, outIH, Prefix.NOPRE(), mod2, inImpl, inInfo);
+      Mod.updateMod(outCache, outEnv, outIH, DAE.NOPRE(), mod2, inImpl, inInfo);
 
     mod := if InstUtil.redeclareBasicType(inClsMod) then mod1 else mod2;
     eq := Mod.modEquation(mod);
@@ -4481,7 +4478,7 @@ algorithm
     case (_, _, _, _, _, _, _)
       equation
         ErrorExt.setCheckpoint("updateComponentInEnv3");
-        (cache, mod) = Mod.elabMod(inCache, inEnv, inIH, Prefix.NOPRE(), inMod, inImpl, inModScope, inInfo)
+        (cache, mod) = Mod.elabMod(inCache, inEnv, inIH, DAE.NOPRE(), inMod, inImpl, inModScope, inInfo)
         "Prefix does not matter, since we only update types
          in env, and does not make any dae elements, etc.." ;
         ErrorExt.rollBack("updateComponentInEnv3")
@@ -4496,7 +4493,7 @@ algorithm
       equation
         ErrorExt.rollBack("updateComponentInEnv3");
         ErrorExt.setCheckpoint("updateComponentInEnv3");
-        mod = Mod.elabUntypedMod(inMod, inEnv, Prefix.NOPRE());
+        mod = Mod.elabUntypedMod(inMod, inEnv, DAE.NOPRE());
         ErrorExt.rollBack("updateComponentInEnv3")
         "Rollback all error since we are only interested in type, not value at
          this point. Errors that occur in elabMod which does not fail the
@@ -4708,7 +4705,7 @@ public function instList
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input InstFunc instFunc;
@@ -4727,7 +4724,7 @@ public function instList
     input FCore.Cache inCache;
     input FCore.Graph inEnv;
     input InnerOuter.InstHierarchy inIH;
-    input Prefix.Prefix inPrefix;
+    input DAE.Prefix inPrefix;
     input Connect.Sets inSets;
     input ClassInf.State inState;
     input Type_a inTypeA;
@@ -4750,7 +4747,7 @@ algorithm
     local
       FCore.Graph env,env_1,env_2;
       DAE.Mod mod;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       Connect.Sets csets,csets_1,csets_2;
       ClassInf.State ci_state,ci_state_1,ci_state_2;
       Boolean impl;
@@ -4777,7 +4774,7 @@ end instList;
 protected function instConstraints
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input ClassInf.State inState;
   input list<SCode.ConstraintSection> inConstraints;
   input Boolean inImpl;
@@ -4819,7 +4816,7 @@ end instConstraints;
 protected function instClassAttributes
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input list<Absyn.NamedArg> inAttrs;
   input Boolean inImplicit;
   input SourceInfo inInfo;
@@ -4855,7 +4852,7 @@ end instClassAttributes;
 protected function instClassAttributes2
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input list<Absyn.NamedArg> inAttrs;
   input Boolean inImplicit;
   input SourceInfo inInfo;
@@ -4869,7 +4866,7 @@ algorithm
   match (inCache,inEnv,inPrefix,inAttrs,inImplicit,inInfo,inClsAttrs)
     local
       FCore.Graph env,env_2;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       Boolean impl;
       Absyn.NamedArg na;
       list<Absyn.NamedArg> rest;
@@ -4990,7 +4987,7 @@ algorithm
         (cache,(cdef as SCode.CLASS()),env_2) = Lookup.lookupClass(cache,env_1, path, SOME(AbsynUtil.dummyInfo));
 
         (cache,env_2,ih,_,dae,_,_,_,_,_) =
-          instClass(cache,env_2,ih,UnitAbsyn.noStore, DAE.NOMOD(), Prefix.NOPRE(),
+          instClass(cache,env_2,ih,UnitAbsyn.noStore, DAE.NOMOD(), DAE.NOPRE(),
             cdef, {}, false, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet) "impl" ;
         _ = AbsynUtil.pathString(path);
       then
@@ -5033,7 +5030,7 @@ algorithm
       equation
         true = stringEq(name1, name2);
         (cache,env_1,ih,_,dae,_,_,_,_,_) =
-          instClass(cache,env,ih, UnitAbsyn.noStore, DAE.NOMOD(), Prefix.NOPRE(), c,
+          instClass(cache,env,ih, UnitAbsyn.noStore, DAE.NOMOD(), DAE.NOPRE(), c,
             {}, false, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet) "impl" ;
       then
         (cache,env_1,ih,dae);
@@ -5096,7 +5093,7 @@ protected function removeSelfReferenceAndUpdate
   input SCode.Prefixes inPrefixes;
   input Boolean impl;
   input list<list<DAE.Dimension>> inInstDims;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input DAE.Mod mods;
   input SCode.Mod scodeMod;
   input SourceInfo info;
@@ -5351,7 +5348,7 @@ protected function updateComponentsInEnv2
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input DAE.Mod mod;
   input list<Absyn.ComponentRef> crefs;
   input ClassInf.State ci_state;
@@ -5496,7 +5493,7 @@ public function getCachedInstance
 protected
   Absyn.Path cache_path;
   SCode.Element cls;
-  Prefix.Prefix prefix, prefix2;
+  DAE.Prefix prefix, prefix2;
   FCore.Graph env2;
   SCode.Encapsulated enc;
   SCode.Restriction res;
@@ -5521,7 +5518,7 @@ end getCachedInstance;
 protected function generateCachePath
   input FCore.Graph env;
   input SCode.Element cls;
-  input Prefix.Prefix prefix;
+  input DAE.Prefix prefix;
   input InstTypes.CallingScope callScope;
   output Absyn.Path cachePath;
 protected
@@ -5534,7 +5531,7 @@ algorithm
 end generateCachePath;
 
 public function generatePrefixStr
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   output String str;
 algorithm
   try

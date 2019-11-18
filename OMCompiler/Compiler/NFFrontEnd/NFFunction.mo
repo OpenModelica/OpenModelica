@@ -48,7 +48,6 @@ import Inst = NFInst;
 import NFBinding.Binding;
 import Config;
 import DAE;
-import DAEDump;
 import Error;
 import InstUtil;
 import NFClass.Class;

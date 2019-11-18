@@ -35,7 +35,6 @@ public import Absyn;
 public import DAE;
 public import FCore;
 public import GlobalScript;
-public import Prefix;
 
 protected type Ident = String;
 
@@ -50,8 +49,8 @@ import Error;
 import ErrorExt;
 import Expression;
 import ExpressionSimplify;
+import Flags;
 import Static;
-import Types;
 import Values;
 
 
@@ -63,7 +62,7 @@ protected function calculateSimulationTimes
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inImplInst;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo inInfo;
   input GlobalScript.SimulationOptions inSimOpt;
   output FCore.Cache outCache;
@@ -77,7 +76,7 @@ algorithm
       Absyn.ComponentRef cr;
       list<Absyn.NamedArg> args;
       Boolean impl;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       SourceInfo info;
       Integer intervals;
       Real rstepTime, rstopTime, rstartTime;
@@ -144,7 +143,7 @@ public function getSimulationArguments
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inImplInst;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input String callName;
   input SourceInfo inInfo;
   input Option<GlobalScript.SimulationOptions> defaultOption;
@@ -157,7 +156,7 @@ algorithm
       Absyn.Exp crexp;
       list<Absyn.NamedArg> args;
       Boolean impl;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       SourceInfo info;
       String cname_str;
       Absyn.Path className;
@@ -279,7 +278,7 @@ public function elabCallInteractive "This function elaborates the functions defi
   input list<Absyn.Exp> args;
   input list<Absyn.NamedArg> nargs;
   input Boolean impl;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input SourceInfo info;
   output DAE.Exp e;
   output DAE.Properties prop;
@@ -313,7 +312,7 @@ protected function elabCallInteractive_work "This function elaborates the functi
   input list<Absyn.Exp> inExps;
   input list<Absyn.NamedArg> inNamedArgs;
   input Boolean inImplInst;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
@@ -336,7 +335,7 @@ algorithm
       Integer excludeListSize;
       Absyn.Exp exp;
       FCore.Cache cache;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       Absyn.Path className;
       list<DAE.Exp> simulationArgs;
       String name;
@@ -524,7 +523,7 @@ function: elabExp
   input Absyn.Exp inExp;
   input Boolean inImplicit;
   input Boolean performVectorization;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
@@ -541,7 +540,7 @@ function: Auxiliary function to elabExp that considers elabCallInteractive. If t
   input Absyn.Exp inExp;
   input Boolean inImplicit;
   input Boolean performVectorization;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo info;
   input Integer numErrorMessages;
   output FCore.Cache outCache;
@@ -561,7 +560,7 @@ algorithm
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
       FCore.Cache cache;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
   case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,_,pre,_,_)
       equation
         (cache,e_1,prop) = elabCall(cache, env, fn, args, nargs, impl, pre, info, Error.getNumErrorMessages());
@@ -586,7 +585,7 @@ function: elabCall
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inImplInst;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo info;
   input Integer numErrorMessages;
   output FCore.Cache outCache;
@@ -604,7 +603,7 @@ algorithm
       list<Absyn.NamedArg> nargs;
       Boolean impl;
       FCore.Cache cache;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
   case (cache,env,fn,args,nargs,impl,pre,_,_)
       equation
         (cache,e,prop) = elabCallInteractive_work(cache, env, fn, args, nargs, impl, pre, info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
@@ -619,7 +618,7 @@ public function elabGraphicsExp
   input FCore.Graph inEnv;
   input Absyn.Exp inExp;
   input Boolean inImplInst;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
@@ -637,7 +636,7 @@ algorithm
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
       FCore.Cache cache;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
     // Function calls
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),_,pre,_)
       equation

@@ -72,7 +72,6 @@ import List;
 import Matching;
 import SCode;
 import Sorting;
-import SymbolicJacobian;
 import System;
 import Util;
 
@@ -1659,7 +1658,7 @@ algorithm
     (mulAdstates,_) := Expression.extendArrExp(mulAdstates,false);
     expset := if b then DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)}),true,expcrset) else listHead(expcrset);
     expderset := if b then DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)}),true,expcrdset) else listHead(expcrdset);
-    source := DAE.SOURCE(SOURCEINFO("stateselection",false,0,0,0,0,0.0),{},Prefix.NOCOMPPRE(),{},{},{},{});
+    source := DAE.SOURCE(SOURCEINFO("stateselection",false,0,0,0,0,0.0),{},DAE.NOCOMPPRE(),{},{},{},{});
 
     tp := ComponentReference.crefTypeFull(crA);
     tp := DAEUtil.expTypeElementType(tp);

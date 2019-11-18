@@ -39,8 +39,11 @@ encapsulated package Config
   module, which makes it easier to manipulate the configuration of the compiler."
 
 public import Flags;
-protected import Error;
-protected import System;
+protected
+
+import Error;
+import FlagsUtil;
+import System;
 
 public
 
@@ -189,7 +192,7 @@ public function setAnnotationVersion
    for annotations: 1.x or 2.x or 3.x"
   input String annotationVersion;
 algorithm
-  Flags.setConfigString(Flags.ANNOTATION_VERSION, annotationVersion);
+  FlagsUtil.setConfigString(Flags.ANNOTATION_VERSION, annotationVersion);
 end setAnnotationVersion;
 
 public function getNoSimplify
@@ -205,7 +208,7 @@ end getNoSimplify;
 public function setNoSimplify
   input Boolean noSimplify;
 algorithm
-  Flags.setConfigBool(Flags.NO_SIMPLIFY, noSimplify);
+  FlagsUtil.setConfigBool(Flags.NO_SIMPLIFY, noSimplify);
 end setNoSimplify;
 
 public function vectorizationLimit
@@ -220,7 +223,7 @@ public function setVectorizationLimit
   "Sets the vectorization limit, see vectorizationLimit above."
   input Integer limit;
 algorithm
-  Flags.setConfigInt(Flags.VECTORIZATION_LIMIT, limit);
+  FlagsUtil.setConfigInt(Flags.VECTORIZATION_LIMIT, limit);
 end setVectorizationLimit;
 
 public function getDefaultOpenCLDevice
@@ -234,7 +237,7 @@ public function setDefaultOpenCLDevice
   "Sets the default OpenCL device to be used."
   input Integer defdevid;
 algorithm
-  Flags.setConfigInt(Flags.DEFAULT_OPENCL_DEVICE, defdevid);
+  FlagsUtil.setConfigInt(Flags.DEFAULT_OPENCL_DEVICE, defdevid);
 end setDefaultOpenCLDevice;
 
 public function showAnnotations
@@ -246,7 +249,7 @@ end showAnnotations;
 public function setShowAnnotations
   input Boolean show;
 algorithm
-  Flags.setConfigBool(Flags.SHOW_ANNOTATIONS, show);
+  FlagsUtil.setConfigBool(Flags.SHOW_ANNOTATIONS, show);
 end setShowAnnotations;
 
 public function showStructuralAnnotations
@@ -261,24 +264,6 @@ algorithm
   show := Flags.isSet(Flags.SHOW_START_ORIGIN);
 end showStartOrigin;
 
-public function getRunningTestsuite
-  output Boolean runningTestsuite;
-algorithm
-  runningTestsuite := not stringEq(Flags.getConfigString(Flags.RUNNING_TESTSUITE),"");
-end getRunningTestsuite;
-
-public function getRunningWSMTestsuite
-  output Boolean runningTestsuite;
-algorithm
-  runningTestsuite := Flags.getConfigBool(Flags.RUNNING_WSM_TESTSUITE);
-end getRunningWSMTestsuite;
-
-public function getRunningTestsuiteFile
-  output String tempFile "File containing a list of files created by running this test so rtest can remove them after";
-algorithm
-  tempFile := Flags.getConfigString(Flags.RUNNING_TESTSUITE);
-end getRunningTestsuiteFile;
-
 public function getEvaluateParametersInAnnotations
 "@author: adrpo
   flag to tell us if we should evaluate parameters in annotations"
@@ -292,7 +277,7 @@ public function setEvaluateParametersInAnnotations
   flag to tell us if we should evaluate parameters in annotations"
   input Boolean shouldEvaluate;
 algorithm
-  Flags.setConfigBool(Flags.EVAL_PARAMS_IN_ANNOTATIONS, shouldEvaluate);
+  FlagsUtil.setConfigBool(Flags.EVAL_PARAMS_IN_ANNOTATIONS, shouldEvaluate);
 end setEvaluateParametersInAnnotations;
 
 public function getGraphicsExpMode
@@ -306,7 +291,7 @@ public function setGraphicsExpMode
   "flag to tell us if we should ignore some errors (when evaluating icons)"
   input Boolean graphicsExpMode;
 algorithm
-  Flags.setConfigBool(Flags.GRAPHICS_EXP_MODE, graphicsExpMode);
+  FlagsUtil.setConfigBool(Flags.GRAPHICS_EXP_MODE, graphicsExpMode);
 end setGraphicsExpMode;
 
 public function orderConnections
@@ -318,7 +303,7 @@ end orderConnections;
 public function setOrderConnections
   input Boolean show;
 algorithm
-  Flags.setConfigBool(Flags.ORDER_CONNECTIONS, show);
+  FlagsUtil.setConfigBool(Flags.ORDER_CONNECTIONS, show);
 end setOrderConnections;
 
 public function getPreOptModules
@@ -348,13 +333,13 @@ end getInitOptModules;
 public function setPreOptModules
   input list<String> inStringLst;
 algorithm
-  Flags.setConfigStringList(Flags.PRE_OPT_MODULES, inStringLst);
+  FlagsUtil.setConfigStringList(Flags.PRE_OPT_MODULES, inStringLst);
 end setPreOptModules;
 
 public function setPostOptModules
   input list<String> inStringLst;
 algorithm
-  Flags.setConfigStringList(Flags.POST_OPT_MODULES, inStringLst);
+  FlagsUtil.setConfigStringList(Flags.POST_OPT_MODULES, inStringLst);
 end setPostOptModules;
 
 public function getIndexReductionMethod
@@ -366,7 +351,7 @@ end getIndexReductionMethod;
 public function setIndexReductionMethod
   input String inString;
 algorithm
-  Flags.setConfigString(Flags.INDEX_REDUCTION_METHOD, inString);
+  FlagsUtil.setConfigString(Flags.INDEX_REDUCTION_METHOD, inString);
 end setIndexReductionMethod;
 
 public function getCheapMatchingAlgorithm
@@ -378,7 +363,7 @@ end getCheapMatchingAlgorithm;
 public function setCheapMatchingAlgorithm
   input Integer inInteger;
 algorithm
-  Flags.setConfigInt(Flags.CHEAPMATCHING_ALGORITHM, inInteger);
+  FlagsUtil.setConfigInt(Flags.CHEAPMATCHING_ALGORITHM, inInteger);
 end setCheapMatchingAlgorithm;
 
 public function getMatchingAlgorithm
@@ -390,7 +375,7 @@ end getMatchingAlgorithm;
 public function setMatchingAlgorithm
   input String inString;
 algorithm
-  Flags.setConfigString(Flags.MATCHING_ALGORITHM, inString);
+  FlagsUtil.setConfigString(Flags.MATCHING_ALGORITHM, inString);
 end setMatchingAlgorithm;
 
 public function getTearingMethod
@@ -402,7 +387,7 @@ end getTearingMethod;
 public function setTearingMethod
   input String inString;
 algorithm
-  Flags.setConfigString(Flags.TEARING_METHOD, inString);
+  FlagsUtil.setConfigString(Flags.TEARING_METHOD, inString);
 end setTearingMethod;
 
 public function getTearingHeuristic
@@ -414,7 +399,7 @@ end getTearingHeuristic;
 public function setTearingHeuristic
   input String inString;
 algorithm
-  Flags.setConfigString(Flags.TEARING_HEURISTIC, inString);
+  FlagsUtil.setConfigString(Flags.TEARING_HEURISTIC, inString);
 end setTearingHeuristic;
 
 public function simCodeTarget "Default is set by +simCodeTarget=C"
@@ -426,7 +411,7 @@ end simCodeTarget;
 public function setsimCodeTarget
   input String inString;
 algorithm
-  Flags.setConfigString(Flags.SIMCODE_TARGET, inString);
+  FlagsUtil.setConfigString(Flags.SIMCODE_TARGET, inString);
 end setsimCodeTarget;
 
 public function getLanguageStandard
@@ -438,7 +423,7 @@ end getLanguageStandard;
 public function setLanguageStandard
   input LanguageStandard inStandard;
 algorithm
-  Flags.setConfigEnum(Flags.LANGUAGE_STANDARD, languageStandardInt(inStandard));
+  FlagsUtil.setConfigEnum(Flags.LANGUAGE_STANDARD, languageStandardInt(inStandard));
 end setLanguageStandard;
 
 public function languageStandardAtLeast
