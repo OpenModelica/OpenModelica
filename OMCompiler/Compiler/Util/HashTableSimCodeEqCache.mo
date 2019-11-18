@@ -42,14 +42,11 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 /* HashTable instance specific code */
 
 import BaseHashTable;
-import DAE;
 import SimCode;
 
 protected
 
-import ComponentReference;
 import Expression;
-import ExpressionDump;
 import SimCodeUtil;
 
 public

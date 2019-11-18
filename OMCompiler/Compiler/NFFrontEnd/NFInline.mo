@@ -31,15 +31,16 @@
 
 encapsulated package NFInline
 
-import Expression = NFExpression;
-import NFCall.Call;
-import Statement = NFStatement;
 import ComponentRef = NFComponentRef;
 import DAE.InlineType;
+import Dimension = NFDimension;
+import Expression = NFExpression;
+import Flags;
+import NFCall.Call;
 import NFFunction.Function;
 import NFInstNode.InstNode;
+import Statement = NFStatement;
 import Subscript = NFSubscript;
-import Dimension = NFDimension;
 import Type = NFType;
 
 function inlineCallExp

@@ -39,7 +39,6 @@ encapsulated package FUnit
 
 public
 import DAE;
-import System;
 
 protected
 import ComponentReference;

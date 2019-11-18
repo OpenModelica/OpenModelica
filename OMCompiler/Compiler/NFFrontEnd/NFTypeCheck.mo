@@ -59,7 +59,6 @@ import Type = NFType;
 import Class = NFClass.Class;
 import ClassTree = NFClassTree;
 import InstUtil = NFInstUtil;
-import DAEUtil;
 import Prefixes = NFPrefixes;
 import Restriction = NFRestriction;
 import ComplexType = NFComplexType;
@@ -81,7 +80,6 @@ import OperatorOverloading = NFOperatorOverloading;
 import ExpandExp = NFExpandExp;
 import NFFunction.Slot;
 import Util;
-import System;
 
 public
 type MatchKind = enumeration(

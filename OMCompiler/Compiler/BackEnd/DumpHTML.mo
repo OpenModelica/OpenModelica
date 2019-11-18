@@ -38,7 +38,6 @@ encapsulated package DumpHTML
 
 public import BackendDAE;
 
-protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;

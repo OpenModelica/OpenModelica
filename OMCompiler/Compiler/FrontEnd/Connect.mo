@@ -57,7 +57,6 @@ encapsulated package Connect
 "
 
 public import DAE;
-public import Prefix;
 public import Absyn;
 
 public constant Integer NEW_SET = -1 "The index used for new sets which have not
@@ -123,7 +122,7 @@ public type SetConnection = tuple<Integer, Integer> "A connection between two se
 
 public uniontype OuterConnect
   record OUTERCONNECT
-    Prefix.Prefix scope "the scope where this connect was created";
+    DAE.Prefix scope "the scope where this connect was created";
     DAE.ComponentRef cr1 "the lhs component reference";
     Absyn.InnerOuter io1 "inner/outer attribute for cr1 component";
     Face f1 "the face of the lhs component";

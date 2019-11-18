@@ -46,7 +46,6 @@ import AvlSetCR;
 import DAE;
 import Mutable;
 import SCode;
-import Prefix;
 
 protected
 import DAEUtil;
@@ -130,7 +129,7 @@ uniontype Data
 
   record CL "class"
     SCode.Element e;
-    Prefix.Prefix pre;
+    DAE.Prefix pre;
     DAE.Mod mod "modification";
     Kind kind "usedefined, builtin, basic type";
     Status status "if it is untyped, typed or fully instantiated (dae)";
@@ -219,7 +218,7 @@ uniontype Data
 
   record VR "version node, contains the node that decided the generation of the clone"
     Scope source;
-    Prefix.Prefix p;
+    DAE.Prefix p;
     DAE.Mod m;
     Option<ScopeType> scopeType;
   end VR;

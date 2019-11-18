@@ -20,6 +20,7 @@ import Print;
 import StackOverflow;
 import StringUtil;
 import System;
+import Testsuite;
 
 // indentation will be implemented through spaces
 // where tabs will be converted where 1 tab = 4 spaces ??
@@ -2300,8 +2301,8 @@ algorithm
         textStringBuf(txt);
         rtTickW = System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
         Print.writeBuf(file);
-        if Config.getRunningTestsuite() then
-          System.appendFile(Config.getRunningTestsuiteFile(), file + "\n");
+        if Testsuite.isRunning() then
+          System.appendFile(Testsuite.getTempFilesFile(), file + "\n");
         end if;
         Print.clearBuf();
         if Flags.isSet(Flags.TPL_PERF_TIMES) then
@@ -2347,8 +2348,8 @@ algorithm
         else
           Print.writeBuf(file);
         end if;
-        if Config.getRunningTestsuite() then
-          System.appendFile(Config.getRunningTestsuiteFile(), file + "\n");
+        if Testsuite.isRunning() then
+          System.appendFile(Testsuite.getTempFilesFile(), file + "\n");
         end if;
         Print.clearBuf();
         if Flags.isSet(Flags.TPL_PERF_TIMES) then
@@ -2414,8 +2415,8 @@ public function redirectToFile
 protected
   File.File file = File.File();
 algorithm
-  if Config.getRunningTestsuite() then
-    System.appendFile(Config.getRunningTestsuiteFile(), fileName + "\n");
+  if Testsuite.isRunning() then
+    System.appendFile(Testsuite.getTempFilesFile(), fileName + "\n");
   end if;
   File.open(file, fileName, File.Mode.Write);
   text := writeText(FILE_TEXT(File.getReference(file), arrayCreate(1, 0), arrayCreate(1, 0), arrayCreate(1, true), arrayCreate(1, {})), text);

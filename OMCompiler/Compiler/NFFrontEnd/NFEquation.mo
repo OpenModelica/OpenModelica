@@ -30,22 +30,21 @@
  */
 
 encapsulated uniontype NFEquation
-  import Absyn;
-  import AbsynUtil;
   import Expression = NFExpression;
   import Type = NFType;
   import NFInstNode.InstNode;
   import DAE;
   import ComponentRef = NFComponentRef;
   import NFPrefixes.Variability;
-  import Error;
+  import ErrorTypes;
 
 protected
+  import ElementSource;
   import Equation = NFEquation;
+  import Error;
+  import IOStream;
   import NFComponent.Component;
   import Util;
-  import ElementSource;
-  import IOStream;
 
 public
   uniontype Branch
@@ -57,7 +56,7 @@ public
 
     record INVALID_BRANCH
       Branch branch;
-      list<Error.TotalMessage> errors;
+      list<ErrorTypes.TotalMessage> errors;
     end INVALID_BRANCH;
 
     function toStream

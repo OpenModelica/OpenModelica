@@ -57,14 +57,12 @@ public import AbsynUtil;
 public import DAE;
 public import FCore;
 public import FGraph;
-public import FNode;
 public import InstTypes;
 public import Values;
 public import Lookup;
 
 // protected imports
 protected
-import AvlTreeStringString;
 protected import BackendInterface;
 protected import ComponentReference;
 protected import Config;
@@ -78,7 +76,6 @@ protected import InstBinding;
 protected import InstUtil;
 protected import List;
 protected import ModelicaExternalC;
-protected import Prefix;
 protected import Print;
 protected import SCode;
 import SCodeUtil;
@@ -5188,7 +5185,7 @@ algorithm
 
     case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "Eval",subscripts = {}),functionArgs = Absyn.FUNCTIONARGS(args = {e},argNames = {})),impl,msg,_)
       equation
-        (cache,daeExp,_) = Static.elabExp(cache, env, e, impl, true, Prefix.NOPRE(), info);
+        (cache,daeExp,_) = Static.elabExp(cache, env, e, impl, true, DAE.NOPRE(), info);
         (cache,Values.CODE(Absyn.C_EXPRESSION(exp))) = ceval(cache, env, daeExp, impl,msg,0);
       then
         (cache,exp);

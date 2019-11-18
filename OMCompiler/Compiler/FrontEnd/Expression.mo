@@ -50,7 +50,6 @@ encapsulated package Expression
 public import Absyn;
 public import AbsynUtil;
 public import DAE;
-public import DAEDump;
 
 protected
 type ComponentRef = DAE.ComponentRef;
@@ -78,7 +77,6 @@ protected import Dump;
 protected import Flags;
 protected import List;
 protected import Patternm;
-protected import Prefix;
 protected import Static;
 protected import System; // stringReal
 protected import Types;
@@ -487,14 +485,14 @@ algorithm
 
     case(DAE.CODE(Absyn.C_VARIABLENAME(cref),_))
       equation
-        (_,e_cref) = Static.elabUntypedCref(FCore.emptyCache(),FGraph.empty(),cref,false,Prefix.NOPRE(),AbsynUtil.dummyInfo);
+        (_,e_cref) = Static.elabUntypedCref(FCore.emptyCache(),FGraph.empty(),cref,false,DAE.NOPRE(),AbsynUtil.dummyInfo);
         e = crefExp(e_cref);
       then
         e;
 
     case(DAE.CODE(Absyn.C_EXPRESSION(Absyn.CALL(Absyn.CREF_IDENT("der",{}),Absyn.FUNCTIONARGS({Absyn.CREF(cref)},{}))),_))
       equation
-        (_,e_cref) = Static.elabUntypedCref(FCore.emptyCache(),FGraph.empty(),cref,false,Prefix.NOPRE(),AbsynUtil.dummyInfo);
+        (_,e_cref) = Static.elabUntypedCref(FCore.emptyCache(),FGraph.empty(),cref,false,DAE.NOPRE(),AbsynUtil.dummyInfo);
         e = crefExp(e_cref);
       then
         DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal);

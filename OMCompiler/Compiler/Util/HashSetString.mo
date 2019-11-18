@@ -41,7 +41,6 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 /* HashSet instance specific code */
 
 public import BaseHashSet;
-protected import System;
 protected import Util;
 
 public type Key = String;

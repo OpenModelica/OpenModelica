@@ -59,17 +59,17 @@ import DAEUtil;
 import Debug;
 import Dump;
 import DumpGraphviz;
-import FCore;
-import FGraph;
-import FGraphStream;
 import Error;
 import ErrorExt;
 import ExecStat.{execStat,execStatReset};
+import FCore;
+import FGraph;
+import FGraphStream;
 import Flags;
+import FlagsUtil;
 import GC;
 import Global;
 import GlobalScript;
-import GlobalScriptUtil;
 import Interactive;
 import List;
 import Parser;
@@ -81,6 +81,7 @@ import Socket;
 import StackOverflow;
 import SymbolTable;
 import System;
+import Testsuite;
 import TplMain;
 import Util;
 import ZeroMQ;
@@ -362,7 +363,7 @@ algorithm
     case false
       equation
         path = AbsynUtil.stringPath(inLib);
-        mp = Settings.getModelicaPath(Config.getRunningTestsuite());
+        mp = Settings.getModelicaPath(Testsuite.isRunning());
         p = SymbolTable.getAbsyn();
         (pnew, true) = CevalScript.loadModel({(path, {"default"}, false)}, mp, p, true, true, true, false);
         SymbolTable.setAbsyn(pnew);
@@ -781,8 +782,8 @@ algorithm
   ErrorExt.registerModelicaFormatError();
   ErrorExt.initAssertionFunctions();
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-  args_1 := Flags.new(args);
-  System.gettextInit(if Config.getRunningTestsuite() then "C" else Flags.getConfigString(Flags.LOCALE_FLAG));
+  args_1 := FlagsUtil.new(args);
+  System.gettextInit(if Testsuite.isRunning() then "C" else Flags.getConfigString(Flags.LOCALE_FLAG));
   setDefaultCC();
   SymbolTable.reset();
 end init;
@@ -810,7 +811,7 @@ algorithm
     main2(args_1);
   else
     ErrorExt.clearMessages();
-    failure(_ := Flags.new(args));
+    failure(_ := FlagsUtil.new(args));
     print(ErrorExt.printMessagesStr(false)); print("\n");
     fail();
   end try;
@@ -880,7 +881,7 @@ algorithm
     // OMC called with no arguments, print usage information and quit.
     if listEmpty(args) and Config.classToInstantiate()=="" then
       if not Config.helpRequest() then
-        print(Flags.printUsage());
+        print(FlagsUtil.printUsage());
       end if;
       return;
     end if;

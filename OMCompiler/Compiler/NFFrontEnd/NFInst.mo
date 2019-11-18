@@ -66,8 +66,8 @@ import ExpOrigin = NFTyping.ExpOrigin;
 protected
 import Array;
 import Error;
+import FlagsUtil;
 import Flatten = NFFlatten;
-import Global;
 import InstUtil = NFInstUtil;
 import List;
 import Lookup = NFLookup;
@@ -76,7 +76,6 @@ import Typing = NFTyping;
 import ExecStat.{execStat,execStatReset};
 import SCodeDump;
 import SCodeUtil;
-import AbsynToSCode;
 import System;
 import NFCall.Call;
 import Absyn.Path;
@@ -84,7 +83,6 @@ import NFClassTree.ClassTree;
 import NFSections.Sections;
 import NFInstNode.CachedData;
 import NFInstNode.NodeTree;
-import StringUtil;
 import UnitCheck = NFUnitCheck;
 import NFPrefixes.*;
 import Prefixes = NFPrefixes;
@@ -122,8 +120,8 @@ algorithm
   // and scalarization if -d=-nfScalarize is on
   if not Flags.isSet(Flags.NF_SCALARIZE) then
     // make sure we don't expand anything
-    Flags.set(Flags.NF_EXPAND_OPERATIONS, false);
-    Flags.set(Flags.NF_EXPAND_FUNC_ARGS, false);
+    FlagsUtil.set(Flags.NF_EXPAND_OPERATIONS, false);
+    FlagsUtil.set(Flags.NF_EXPAND_FUNC_ARGS, false);
   end if;
 
   System.setUsesCardinality(false);
@@ -2969,7 +2967,7 @@ function makeSource
   input SourceInfo info;
   output DAE.ElementSource source;
 algorithm
-  source := DAE.ElementSource.SOURCE(info, {}, DAE.Prefix.NOCOMPPRE(), {}, {}, {}, {comment});
+  source := DAE.ElementSource.SOURCE(info, {}, DAE.NOCOMPPRE(), {}, {}, {}, {comment});
 end makeSource;
 
 function instAlgorithmSections

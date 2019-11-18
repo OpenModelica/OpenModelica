@@ -25,11 +25,17 @@ loadFile(pathPrefix + "Util/Error.mo");
 getErrorString();
 loadFile(pathPrefix + "Util/ErrorExt.mo");
 getErrorString();
+loadFile(pathPrefix + "Util/ErrorTypes.mo");
+getErrorString();
 loadFile(pathPrefix + "Util/Flags.mo");
+getErrorString();
+loadFile(pathPrefix + "Util/Gettext.mo");
 getErrorString();
 loadFile(pathPrefix + "Util/List.mo");
 getErrorString();
 loadFile(pathPrefix + "Util/System.mo");
+getErrorString();
+loadFile(pathPrefix + "Util/Testsuite.mo");
 getErrorString();
 loadFile(pathPrefix + "Util/Util.mo");
 getErrorString();
@@ -48,6 +54,12 @@ getErrorString();
 // Result:
 // true
 // true
+// true
+// ""
+// true
+// ""
+// true
+// ""
 // true
 // ""
 // true

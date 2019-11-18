@@ -154,9 +154,6 @@ algorithm
 end lookupId;
 
 protected
-import SimCode;
-import SimCodeFunction;
-import DAE;
 import List;
 
 function getSuccessors

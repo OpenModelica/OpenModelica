@@ -30,8 +30,6 @@
  */
 
 encapsulated uniontype NFStatement
-  import Absyn;
-  import AbsynUtil;
   import Type = NFType;
   import Expression = NFExpression;
   import NFInstNode.InstNode;

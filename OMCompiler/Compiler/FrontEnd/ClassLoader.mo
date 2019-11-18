@@ -54,6 +54,7 @@ import List;
 import Parser;
 import Settings;
 import System;
+import Testsuite;
 import Util;
 
 type HashTable = HashTableStringToProgram.HashTable;
@@ -147,7 +148,7 @@ algorithm
     (mp,name,isDir) := System.getLoadModelPath(id,prios,mps,requireExactVersion);
   else
     pwd := System.pwd();
-    userLibraries := Settings.getHomeDir(Config.getRunningTestsuite()) + "/.openmodelica/libraries/";
+    userLibraries := Settings.getHomeDir(Testsuite.isRunning()) + "/.openmodelica/libraries/";
     true := System.directoryExists(userLibraries);
     true := listMember(userLibraries, mps);
     System.cd(userLibraries);
@@ -214,7 +215,7 @@ algorithm
           end if;
         end if;
 
-        if (Config.getRunningTestsuite() or Config.noProc()==1) and not encrypted then
+        if (Testsuite.isRunning() or Config.noProc()==1) and not encrypted then
           strategy = STRATEGY_ON_DEMAND(encoding);
         else
           filenames = getAllFilesFromDirectory(path + pd + name, encrypted);
@@ -426,7 +427,7 @@ protected function getBothPackageAndFilename
   input String mp;
   output String out;
 algorithm
-  out := Util.testsuiteFriendly(System.realpath(mp + "/" + str + ".mo")) + ", " + Util.testsuiteFriendly(System.realpath(mp + "/" + str + "/package.mo"));
+  out := Testsuite.friendly(System.realpath(mp + "/" + str + ".mo")) + ", " + Testsuite.friendly(System.realpath(mp + "/" + str + "/package.mo"));
 end getBothPackageAndFilename;
 
 protected function getPackageContentNames

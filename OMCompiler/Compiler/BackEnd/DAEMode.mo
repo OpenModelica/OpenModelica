@@ -45,7 +45,6 @@ import BackendDAE;
 
 protected
 
-import Absyn;
 import Array;
 import BackendDAEOptimize;
 import BackendDAEUtil;
@@ -54,17 +53,17 @@ import BackendDump;
 import BackendEquation;
 import BackendVariable;
 import CheckModel;
-import CommonSubExpression;
 import ComponentReference;
 import Config;
 import DAE;
+import Error;
 import ErrorExt;
 import ExecStat.execStat;
 import Expression;
 import ExpressionDump;
-import ExpressionSimplify;
 import ExpressionSolve;
 import Flags;
+import FlagsUtil;
 import Global;
 import Initialization;
 import List;
@@ -98,7 +97,7 @@ algorithm
     preOptModules := BackendDAEUtil.getPreOptModules(strPreOptModules);
     postOptModules := BackendDAEUtil.getPostOptModules(match strPostOptModules case (NONE()) then SOME(getPostOptModulesDAEString()); else strPostOptModules; end match);
     matchingAlgorithm := BackendDAEUtil.getMatchingAlgorithm(strmatchingAlgorithm);
-    Flags.setConfigString(Flags.INDEX_REDUCTION_METHOD, "dummyDerivatives");
+    FlagsUtil.setConfigString(Flags.INDEX_REDUCTION_METHOD, "dummyDerivatives");
     daeHandler := BackendDAEUtil.getIndexReductionMethod(strdaeHandler);
 
     if Flags.isSet(Flags.DUMP_DAE_LOW) then

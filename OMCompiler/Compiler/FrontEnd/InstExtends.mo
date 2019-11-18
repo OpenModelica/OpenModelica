@@ -48,7 +48,6 @@ public import DAE;
 public import FCore;
 public import InnerOuter;
 public import SCode;
-public import Prefix;
 
 // protected imports
 protected import AvlSetString;
@@ -67,9 +66,7 @@ protected import SCodeDump;
 import SCodeInstUtil;
 import SCodeUtil;
 protected import ErrorExt;
-protected import AbsynToSCode;
 protected import Global;
-//protected import System;
 
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 
@@ -81,7 +78,7 @@ protected function instExtendsList
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input list<SCode.Element> inLocalElements;
   input list<SCode.Element> inElementsFromExtendsScope;
   input ClassInf.State inState;
@@ -343,7 +340,7 @@ public function instExtendsAndClassExtendsList "
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input list<SCode.Element> inExtendsElementLst;
   input list<SCode.Element> inClassExtendsElementLst;
   input list<SCode.Element> inElementsFromExtendsScope;
@@ -388,7 +385,7 @@ protected function instExtendsAndClassExtendsList2 "
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input list<SCode.Element> inExtendsElementLst;
   input list<SCode.Element> inClassExtendsElementLst;
   input list<SCode.Element> inElementsFromExtendsScope;
@@ -574,7 +571,7 @@ public function instDerivedClasses
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SCode.Element inClass;
   input Boolean inBoolean;
   input SourceInfo inInfo "File information of the extends element";
@@ -603,7 +600,7 @@ protected function instDerivedClassesWork
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SCode.Element inClass;
   input Boolean inBoolean;
   input SourceInfo inInfo "File information of the extends element";
@@ -638,7 +635,7 @@ algorithm
       list<SCode.Enum> enumLst;
       String n,name,str1,str2,strDepth,cn;
       Option<SCode.ExternalDecl> extdecl;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       SourceInfo info;
       SCode.Prefixes prefixes;
 

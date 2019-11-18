@@ -52,40 +52,44 @@ encapsulated package CevalScript
 import Absyn;
 import AbsynUtil;
 import Ceval;
+import CevalScriptOMSimulator;
 import DAE;
+import ErrorTypes;
 import FCore;
-import Error;
 import GlobalScript;
 import Interactive;
-import Values;
 import SimCode;
-import CevalScriptOMSimulator;
+import Values;
 
 // protected imports
 protected
 import Autoconf;
 import BaseHashSet;
-import CevalScriptBackend;
 import CevalFunction;
+import CevalScriptBackend;
 import ClassInf;
 import ClassLoader;
 import CodegenCFunctions;
+import ComponentReference;
 import Config;
 import Corba;
 import DAEUtil;
 import Debug;
 import Dump;
 import DynLoad;
+import Error;
+import ErrorExt;
+import ExecStat.{execStat,execStatReset};
 import Expression;
 import ExpressionDump;
 import FBuiltin;
-import Flags;
 import FGraph;
+import Flags;
+import FlagsUtil;
 import FNode;
 import GC;
 import GenerateAPIFunctionsTpl;
 import Global;
-import GlobalScriptUtil;
 import Graph;
 import HashSetString;
 import Inst;
@@ -94,26 +98,22 @@ import InteractiveUtil;
 import List;
 import Lookup;
 import Mod;
-import Prefix;
 import Parser;
 import Print;
-import SCodeDump;
-import SimCodeFunction;
-import ExecStat.{execStat,execStatReset};
-import StackOverflow;
-import System;
-import Static;
 import SCode;
+import SCodeDump;
 import SCodeUtil;
 import Settings;
+import SimCodeFunction;
+import StackOverflow;
+import Static;
 import SymbolTable;
+import System;
 import Tpl;
 import Types;
 import Unparsing;
 import Util;
 import ValuesUtil;
-import ComponentReference;
-import ErrorExt;
 
 public
 
@@ -249,10 +249,10 @@ algorithm
     omhome := "set OPENMODELICAHOME=" + System.stringReplace(omhome_1, "/", "\\") + "&& ";
     setMakeVars := sum("set "+var+"&& " for var in makeVarsNoBinding);
     cdWorkingDir := if stringEmpty(workingDir) then "" else ("cd \"" + workingDir + "\"&& ");
-    winCompileMode := if Config.getRunningTestsuite() then "serial" else "parallel";
+    winCompileMode := if Testsuite.isRunning() then "serial" else "parallel";
     s_call := stringAppendList({omhome,cdWorkingDir,setMakeVars,"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""," ",fileprefix," ",Config.simulationCodeTarget()," ", System.openModelicaPlatform(), " ", winCompileMode});
   else
-    numParallel := if Config.getRunningTestsuite() then 1 else Config.noProc();
+    numParallel := if Testsuite.isRunning() then 1 else Config.noProc();
     cdWorkingDir := if stringEmpty(workingDir) then "" else (" -C \"" + workingDir + "\"");
     setMakeVars := sum(" "+var for var in makeVarsNoBinding);
     s_call := stringAppendList({Autoconf.make," -j",intString(numParallel),cdWorkingDir," -f ",fileprefix,".makefile",setMakeVars});
@@ -272,8 +272,8 @@ algorithm
     0 := System.removeFile(fileLOG);
   end if;
 
-  if Config.getRunningTestsuite() then
-    System.appendFile(Config.getRunningTestsuiteFile(),
+  if Testsuite.isRunning() then
+    System.appendFile(Testsuite.getTempFilesFile(),
       fileEXE + "\n" + fileDLL + "\n" + fileLOG + "\n" + fileprefix + ".o\n" + fileprefix + ".libs\n" +
       fileprefix + "_records.o\n" + fileprefix + "_res.mat\n");
   end if;
@@ -319,13 +319,13 @@ algorithm
     // send "" priority if that is it, don't send "default"
     // see https://trac.openmodelica.org/OpenModelica/ticket/2422
     // prio = if_(stringEq(prio,""), "default", prio);
-    mp := System.realpath(dir + "/../") + Autoconf.groupDelimiter + Settings.getModelicaPath(Config.getRunningTestsuite());
+    mp := System.realpath(dir + "/../") + Autoconf.groupDelimiter + Settings.getModelicaPath(Testsuite.isRunning());
     (outProgram,true) := loadModel((Absyn.IDENT(cname),{prio},true)::{}, mp, p, true, true, checkUses, true, filename == "package.moc");
     return;
   end if;
   outProgram := Parser.parse(name,encoding);
   ClassLoader.checkOnLoadMessage(outProgram);
-  outProgram := checkUsesAndUpdateProgram(outProgram, p, checkUses, Settings.getModelicaPath(Config.getRunningTestsuite()));
+  outProgram := checkUsesAndUpdateProgram(outProgram, p, checkUses, Settings.getModelicaPath(Testsuite.isRunning()));
 end loadFile;
 
 protected function checkUsesAndUpdateProgram
@@ -373,7 +373,7 @@ protected
   list<String> versionsLst;
   String pathStr, versions, className, version, modelicaPath, thisModelicaPath;
   Absyn.Program p, pnew;
-  Error.MessageTokens msgTokens;
+  ErrorTypes.MessageTokens msgTokens;
 algorithm
   (path, versionsLst, onlyCheckFirstModelicaPath) := modelToLoad;
   (modelicaPath, forceLoad, notifyLoad, checkUses, requireExactVersion, encrypted) := inArg;
@@ -585,7 +585,7 @@ algorithm
       list<String> names, namesPublic, namesProtected, namesChanged, fileNames;
       HashSetString.HashSet hashSetString;
       list<Boolean> blst;
-      list<Error.TotalMessage> messages;
+      list<ErrorTypes.TotalMessage> messages;
       Real stoptime,starttime,tol,stepsize,interval;
       String stoptime_str,stepsize_str,starttime_str,tol_str,num_intervalls_str,description,prefix;
       list<String> interfaceType;
@@ -878,7 +878,7 @@ algorithm
 
     case (cache,_,"getModelicaPath",{},_)
       equation
-        res = Settings.getModelicaPath(Config.getRunningTestsuite());
+        res = Settings.getModelicaPath(Testsuite.isRunning());
       then
         (cache,Values.STRING(res));
 
@@ -980,7 +980,7 @@ algorithm
     case (_,_,"setCommandLineOptions",{Values.STRING(str)},_)
       equation
         args = System.strtok(str, " ");
-        {} = Flags.readArgs(args);
+        {} = FlagsUtil.readArgs(args);
       then
         (FCore.emptyCache(),Values.BOOL(true));
 
@@ -988,15 +988,15 @@ algorithm
       then (cache,Values.BOOL(false));
 
     case (cache, _, "getCommandLineOptions", {}, _)
-      then (cache, ValuesUtil.makeStringArray(Flags.unparseFlags()));
+      then (cache, ValuesUtil.makeStringArray(FlagsUtil.unparseFlags()));
 
     case (cache, _, "getCommandLineOptions", _, _)
       then (cache, Values.META_FAIL());
 
     case (cache,_,"clearCommandLineOptions",{},_)
       equation
-        Flags.resetDebugFlags();
-        Flags.resetConfigFlags();
+        FlagsUtil.resetDebugFlags();
+        FlagsUtil.resetConfigFlags();
       then
         (cache,Values.BOOL(true));
 
@@ -1005,7 +1005,7 @@ algorithm
 
     case (cache,_,"enableNewInstantiation",_,_)
       equation
-        Flags.enableDebug(Flags.SCODE_INST);
+        FlagsUtil.enableDebug(Flags.SCODE_INST);
       then
         (cache,Values.BOOL(true));
 
@@ -1015,7 +1015,7 @@ algorithm
 
     case (cache,_,"disableNewInstantiation",_,_)
       equation
-        Flags.disableDebug(Flags.SCODE_INST);
+        FlagsUtil.disableDebug(Flags.SCODE_INST);
       then
         (cache,Values.BOOL(true));
 
@@ -1025,7 +1025,7 @@ algorithm
 
     case (cache,_,"clearDebugFlags",_,_)
       equation
-        Flags.resetDebugFlags();
+        FlagsUtil.resetDebugFlags();
       then
         (cache,Values.BOOL(true));
 
@@ -1034,7 +1034,7 @@ algorithm
 
     case (cache,_,"getConfigFlagValidOptions",{Values.STRING(str)},_)
       equation
-        (strs1,str,strs2) = Flags.getValidOptionsAndDescription(str);
+        (strs1,str,strs2) = FlagsUtil.getValidOptionsAndDescription(str);
         v1 = ValuesUtil.makeArray(List.map(strs1, ValuesUtil.makeString));
         v2 = Values.STRING(str);
         v3 = ValuesUtil.makeArray(List.map(strs2, ValuesUtil.makeString));
@@ -1414,7 +1414,7 @@ algorithm
       equation
         p = SymbolTable.getAbsyn();
         execStatReset();
-        mp = Settings.getModelicaPath(Config.getRunningTestsuite());
+        mp = Settings.getModelicaPath(Testsuite.isRunning());
         strings = List.map(cvars, ValuesUtil.extractValueString);
         /* If the user requests a custom version to parse as, set it up */
         oldLanguageStd = Config.getLanguageStandard();
@@ -1441,7 +1441,7 @@ algorithm
     case (_,_,"loadFile",Values.STRING(name)::Values.STRING(encoding)::Values.BOOL(b)::_,_)
       equation
         execStatReset();
-        name = Util.testsuiteFriendlyPath(name);
+        name = Testsuite.friendlyPath(name);
         newp = loadFile(name, encoding, SymbolTable.getAbsyn(), b);
         execStat("loadFile("+name+")");
         SymbolTable.setAbsyn(newp);
@@ -1453,9 +1453,9 @@ algorithm
 
     case (_,_,"loadFiles",Values.ARRAY(valueLst=vals)::Values.STRING(encoding)::Values.INTEGER(i)::_,_)
       equation
-        strs = List.mapMap(vals,ValuesUtil.extractValueString,Util.testsuiteFriendlyPath);
+        strs = List.mapMap(vals,ValuesUtil.extractValueString,Testsuite.friendlyPath);
         newps = Parser.parallelParseFilesToProgramList(strs,encoding,numThreads=i);
-        newp = List.fold(newps, function checkUsesAndUpdateProgram(checkUses=false, modelicaPath=Settings.getModelicaPath(Config.getRunningTestsuite())), SymbolTable.getAbsyn());
+        newp = List.fold(newps, function checkUsesAndUpdateProgram(checkUses=false, modelicaPath=Settings.getModelicaPath(Testsuite.isRunning())), SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(newp);
       then
         (FCore.emptyCache(),Values.BOOL(true));
@@ -1487,7 +1487,7 @@ algorithm
                 // clear the errors before!
                 Error.clearMessages() "Clear messages";
                 Print.clearErrorBuf() "Clear error buffer";
-                filename_1 = Util.testsuiteFriendlyPath(filename_1);
+                filename_1 = Testsuite.friendlyPath(filename_1);
                 (paths) = Interactive.parseFile(filename_1, "UTF-8");
                 vals = List.map(paths,ValuesUtil.makeCodeTypeName);
               else
@@ -1527,7 +1527,7 @@ algorithm
               filename_1 = if System.regularFileExists(filename_1) then filename_1 else str;
               if (System.regularFileExists(filename_1)) then
                 execStatReset();
-                filename_1 = Util.testsuiteFriendlyPath(filename_1);
+                filename_1 = Testsuite.friendlyPath(filename_1);
                 p = SymbolTable.getAbsyn();
                 newp = loadFile(filename_1, "UTF-8", p, true);
                 execStat("loadFile("+filename_1+")");
@@ -1636,13 +1636,13 @@ algorithm
 
     case (cache,_,"help",{Values.STRING("")},_)
       equation
-        str = Flags.printUsage();
+        str = FlagsUtil.printUsage();
       then
         (cache,Values.STRING(str));
 
     case (cache,_,"help",{Values.STRING(str)},_)
       equation
-        str = Flags.printHelp({str});
+        str = FlagsUtil.printHelp({str});
       then
         (cache,Values.STRING(str));
 
@@ -1720,7 +1720,7 @@ algorithm
                   "HAVE_CORBA",
                   "CONFIGURE_CMDLINE"};
         omhome = Settings.getInstallationDirectoryPath();
-        omlib = Settings.getModelicaPath(Config.getRunningTestsuite());
+        omlib = Settings.getModelicaPath(Testsuite.isRunning());
         omcpath = omhome + "/bin/omc" + Autoconf.exeExt;
         systemPath = Util.makeValueOrDefault(System.readEnv,"PATH","");
         omdev = Util.makeValueOrDefault(System.readEnv,"OMDEV","");
@@ -1774,7 +1774,7 @@ algorithm
 
     case (cache,_,"runScript",{Values.STRING(str)},_)
       equation
-        str = Util.testsuiteFriendlyPath(str);
+        str = Testsuite.friendlyPath(str);
         istmts = Parser.parseexp(str);
         res = Interactive.evaluate(istmts, true);
       then
@@ -1874,7 +1874,7 @@ algorithm
 end getPackageVersion;
 
 protected function errorToValue
-  input Error.TotalMessage err;
+  input ErrorTypes.TotalMessage err;
   output Values.Value val;
 algorithm
   val := match err
@@ -1882,15 +1882,15 @@ algorithm
       Absyn.Path msgpath;
       Values.Value tyVal,severityVal,infoVal;
       list<Values.Value> values;
-      Util.TranslatableContent message;
+      Gettext.TranslatableContent message;
       String msg_str;
       Integer id;
-      Error.Severity severity;
-      Error.MessageType ty;
+      ErrorTypes.Severity severity;
+      ErrorTypes.MessageType ty;
       SourceInfo info;
-    case Error.TOTALMESSAGE(Error.MESSAGE(id,ty,severity,message),info)
+    case ErrorTypes.TOTALMESSAGE(ErrorTypes.MESSAGE(id,ty,severity,message),info)
       equation
-        msg_str = Util.translateContent(message);
+        msg_str = Gettext.translateContent(message);
         msgpath = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("Scripting",Absyn.IDENT("ErrorMessage"))));
         tyVal = errorTypeToValue(ty);
         severityVal = errorLevelToValue(severity);
@@ -1930,16 +1930,16 @@ algorithm
 end makeErrorEnumLiteral;
 
 protected function errorTypeToValue
-  input Error.MessageType ty;
+  input ErrorTypes.MessageType ty;
   output Values.Value val;
 algorithm
   val := match ty
-    case Error.SYNTAX() then makeErrorEnumLiteral("ErrorKind","syntax",1);
-    case Error.GRAMMAR() then makeErrorEnumLiteral("ErrorKind","grammar",2);
-    case Error.TRANSLATION() then makeErrorEnumLiteral("ErrorKind","translation",3);
-    case Error.SYMBOLIC() then makeErrorEnumLiteral("ErrorKind","symbolic",4);
-    case Error.SIMULATION() then makeErrorEnumLiteral("ErrorKind","runtime",5);
-    case Error.SCRIPTING() then makeErrorEnumLiteral("ErrorKind","scripting",6);
+    case ErrorTypes.SYNTAX() then makeErrorEnumLiteral("ErrorKind","syntax",1);
+    case ErrorTypes.GRAMMAR() then makeErrorEnumLiteral("ErrorKind","grammar",2);
+    case ErrorTypes.TRANSLATION() then makeErrorEnumLiteral("ErrorKind","translation",3);
+    case ErrorTypes.SYMBOLIC() then makeErrorEnumLiteral("ErrorKind","symbolic",4);
+    case ErrorTypes.SIMULATION() then makeErrorEnumLiteral("ErrorKind","runtime",5);
+    case ErrorTypes.SCRIPTING() then makeErrorEnumLiteral("ErrorKind","scripting",6);
     else
       equation
         print("errorTypeToValue failed\n");
@@ -1948,13 +1948,13 @@ algorithm
 end errorTypeToValue;
 
 protected function errorLevelToValue
-  input Error.Severity severity;
+  input ErrorTypes.Severity severity;
   output Values.Value val;
 algorithm
   val := match severity
-    case Error.ERROR() then makeErrorEnumLiteral("ErrorLevel","error",1);
-    case Error.WARNING() then makeErrorEnumLiteral("ErrorLevel","warning",2);
-    case Error.NOTIFICATION() then makeErrorEnumLiteral("ErrorLevel","notification",3);
+    case ErrorTypes.ERROR() then makeErrorEnumLiteral("ErrorLevel","error",1);
+    case ErrorTypes.WARNING() then makeErrorEnumLiteral("ErrorLevel","warning",2);
+    case ErrorTypes.NOTIFICATION() then makeErrorEnumLiteral("ErrorLevel","notification",3);
     else
       equation
         print("errorLevelToValue failed\n");
@@ -2564,7 +2564,7 @@ algorithm
           env,
           InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(),
-          Prefix.NOPRE(),
+          DAE.NOPRE(),
           sc,
           {});
         func = FCore.getCachedInstFunc(cache, funcpath);
@@ -3135,7 +3135,7 @@ protected
   String str1,str2,str3;
 algorithm
   (str1,str2,str3) := System.uriToClassAndPath(uri);
-  path := getBasePathFromUri(str1,str2,program,Settings.getModelicaPath(Config.getRunningTestsuite()),printError) + str3;
+  path := getBasePathFromUri(str1,str2,program,Settings.getModelicaPath(Testsuite.isRunning()),printError) + str3;
 end getFullPathFromUri;
 
 protected function getBasePathFromUri "Handle modelica:// URIs"

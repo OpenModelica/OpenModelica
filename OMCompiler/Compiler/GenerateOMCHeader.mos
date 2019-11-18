@@ -1,9 +1,9 @@
 loadFile("FrontEnd/Absyn.mo");
 loadFile("Script/GlobalScript.mo");
 loadFile("FrontEnd/Values.mo");
-loadFile("Util/Error.mo");
+loadFile("Util/ErrorTypes.mo");
 loadFile("Util/Config.mo");
-loadFile("Util/Util.mo");
+loadFile("Util/Gettext.mo");
 loadFile("Util/FMI.mo");
 err:=getErrorString();
 if err == "" then loadOK := true; end if;

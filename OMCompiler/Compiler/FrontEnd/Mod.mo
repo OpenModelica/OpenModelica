@@ -48,7 +48,6 @@ public import AbsynUtil;
 public import DAE;
 public import FCore;
 public import FGraph;
-public import Prefix;
 public import SCode;
 public import InnerOuter;
 public import ComponentReference;
@@ -120,7 +119,7 @@ public function elabMod "
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SCode.Mod inMod;
   input Boolean inBoolean;
   input ModScope inModScope;
@@ -137,7 +136,7 @@ algorithm
       SCode.Final finalPrefix;
       list<DAE.SubMod> subs_1;
       FCore.Graph env;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       SCode.Mod m;
       SCode.Each each_;
       list<SCode.SubMod> subs;
@@ -288,7 +287,7 @@ public function elabModForBasicType "
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SCode.Mod inMod;
   input Boolean inBoolean;
   input ModScope inModScope;
@@ -340,7 +339,7 @@ protected function elabModRedeclareElement
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SCode.Final finalPrefix;
   input SCode.Element inElt;
   input Boolean impl;
@@ -351,7 +350,7 @@ protected function elabModRedeclareElement
 algorithm
   (outElement, outMod) := matchcontinue inElt
     local
-      FCore.Cache cache; FCore.Graph env; Prefix.Prefix pre;
+      FCore.Cache cache; FCore.Graph env; DAE.Prefix pre;
       SCode.Final f,fi;
       SCode.Replaceable repl;
       SCode.Partial p;
@@ -442,7 +441,7 @@ protected function elabModQualifyTypespec
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input Boolean impl;
   input SourceInfo info;
   input Absyn.Ident name;
@@ -458,7 +457,7 @@ algorithm
         Absyn.ComponentRef cref;
         DAE.Dimensions edims;
         InnerOuter.InstHierarchy ih;
-        Prefix.Prefix pre;
+        DAE.Prefix pre;
 
     // no array dimensions
     case (cache, env, _, _, _, _, _, Absyn.TPATH(p,NONE()))
@@ -631,7 +630,7 @@ public function updateMod
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input DAE.Mod inMod;
   input Boolean inBoolean;
   input SourceInfo inInfo;
@@ -648,7 +647,7 @@ algorithm
       DAE.Properties prop,p;
       Option<Values.Value> e_val;
       FCore.Graph env;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       SCode.Each each_;
       Absyn.Exp e;
       Option<Absyn.Exp> eOpt;
@@ -700,7 +699,7 @@ protected function updateSubmods ""
     input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input list<DAE.SubMod> inTypesSubModLst;
   input Boolean inBoolean;
   input SourceInfo info;
@@ -740,7 +739,7 @@ algorithm
       SCode.Each each_;
       list<SCode.SubMod> subs;
       FCore.Graph env;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       Absyn.Exp e;
       SCode.Element elem;
       String s;
@@ -775,7 +774,7 @@ protected function elabSubmods
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input list<SCode.SubMod> inSCodeSubModLst;
   input Boolean inBoolean;
   input ModScope inModScope;
@@ -794,7 +793,7 @@ protected function elabSubmods2
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input list<SCode.SubMod> inSubMods;
   input Boolean inImpl;
   input SourceInfo inInfo;
@@ -963,7 +962,7 @@ protected function elabSubmod
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SCode.SubMod inSubMod;
   input Boolean inBoolean;
   input SourceInfo info;

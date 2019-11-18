@@ -75,7 +75,6 @@ protected import InnerOuter;
 protected import List;
 protected import Mod;
 protected import Mutable;
-protected import Prefix;
 protected import PrefixUtil;
 import SCodeUtil;
 protected import Static;
@@ -284,7 +283,7 @@ algorithm
         (cache,env_3,_,_,_,_,_,types,_,_,_,_) =
         Inst.instClassIn(
           cache,env_2,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
-          mod, Prefix.NOPRE(),
+          mod, DAE.NOPRE(),
           ci_state, c, SCode.PUBLIC(), {}, false, InstTypes.INNER_CALL(),
           ConnectionGraph.EMPTY, Connect.emptySet, NONE());
         // build names
@@ -339,7 +338,7 @@ algorithm
         true = SCodeUtil.classIsExternalObject(c);
         (cache,env_1,_,_,_,_,_,_,_,_) = Inst.instClass(
           cache,env_1,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-          DAE.NOMOD(), Prefix.NOPRE(), c,
+          DAE.NOMOD(), DAE.NOPRE(), c,
           {}, false, InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
         SCode.CLASS(name=id) = c;
         (env_1, _) = FGraph.stripLastScopeRef(env_1);
@@ -690,7 +689,7 @@ algorithm
         (cache,env,_,_,_) =
         Inst.partialInstClassIn(
           cache,env,InnerOuter.emptyInstHierarchy,
-          mod, Prefix.NOPRE(),
+          mod, DAE.NOPRE(),
           ci_state, inC, SCode.PUBLIC(), {}, 0);
 
         checkPartialScope(env, inEnv, cache, inInfo);
@@ -707,7 +706,7 @@ protected function checkPartialScope
   input Option<SourceInfo> inInfo;
 protected
   SCode.Element el;
-  Prefix.Prefix pre;
+  DAE.Prefix pre;
   String name, pre_str, cc_str;
   SourceInfo cls_info, pre_info, info;
 algorithm
@@ -1028,7 +1027,7 @@ algorithm
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
         // fprintln(Flags.INST_TRACE, "LOOKUP MORE UNQUALIFIED IMPORTED ICD: " + FGraph.printGraphPathStr(env) + "." + ident);
         mod = Mod.getClassModifier(env_1, id);
-        (cache, env, _,_,_) = Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, mod, Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
+        (cache, env, _,_,_) = Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, mod, DAE.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         r = FGraph.lastScopeRef(env);
         env = FGraph.setScope(env, {r});
         (cache,_,_) = lookupClass(cache, env, Absyn.IDENT(ident));
@@ -1092,7 +1091,7 @@ algorithm
         mod = Mod.getClassModifier(env_1, id);
         (cache,env2,_,_,_) =
         Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy,
-          mod, Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
+          mod, DAE.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         // Restrict import to the imported scope only, not its parents, thus {f} below
         (cache,c_1,env2,prevFrames) = lookupClassInEnv(cache,env2,ident,prevFrames,Mutable.create(true),inInfo) "Restrict import to the imported scope only, not its parents..." ;
         (cache,more) = moreLookupUnqualifiedImportedClassInFrame(cache, rest, env, ident);
@@ -1622,7 +1621,7 @@ algorithm
                 mod = Mod.getClassModifier(env2, n);
                 (cache,env5,_,_,_,_,_,_,_,_,_,_) =
                   Inst.instClassIn(cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
-                    mod, Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {},
+                    mod, DAE.NOPRE(), ci_state, c, SCode.PUBLIC(), {},
                     /*true*/false, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY,
                     Connect.emptySet, NONE());
               end if;
@@ -2157,7 +2156,7 @@ algorithm
           (cache,env2,_,_,_) =
             Inst.partialInstClassIn(
               cache, env2, InnerOuter.emptyInstHierarchy,
-              mod, Prefix.NOPRE(),
+              mod, DAE.NOPRE(),
               ci_state, c, SCode.PUBLIC(), {}, 0);
         end if;
         (cache,res) = lookupFunctionsInEnv2(cache, env2, path, true, info);
@@ -2357,7 +2356,7 @@ algorithm
 
         (cache ,env_1,_) = InstFunction.implicitFunctionInstantiation(
           cache,cenv,InnerOuter.emptyInstHierarchy,
-          DAE.NOMOD(), Prefix.NOPRE(), cdef, {});
+          DAE.NOMOD(), DAE.NOPRE(), cdef, {});
 
         (cache,ty,env_3) = lookupTypeInEnv(cache, env_1, id);
       then
@@ -2439,7 +2438,7 @@ algorithm
         algorithm
           (cache, env) := Inst.instClass(inCache, inEnv,
             InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore, DAE.NOMOD(),
-            Prefix.NOPRE(), cl, {}, false, InstTypes.TOP_CALL(),
+            DAE.NOPRE(), cl, {}, false, InstTypes.TOP_CALL(),
             ConnectionGraph.EMPTY, Connect.emptySet);
           (cache, ty) := lookupTypeInEnv(cache, env, inFuncName);
         then
@@ -2553,11 +2552,11 @@ algorithm
     // a class with parts
     case (cache,env,SCode.CLASS(name = name,info = info),_)
       equation
-        (cache,env,_,elts,_,_,_,_,_) = InstExtends.instDerivedClasses(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),cl,true,info);
+        (cache,env,_,elts,_,_,_,_,_) = InstExtends.instDerivedClasses(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),DAE.NOPRE(),cl,true,info);
         env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), name, SOME(FCore.CLASS_SCOPE()));
         fpath = FGraph.getGraphName(env);
         (cdefelts,classExtendsElts,extendsElts,compElts) = InstUtil.splitElts(elts);
-        (cache,env,_,_,eltsMods,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), extendsElts, classExtendsElts, elts, ClassInf.RECORD(fpath), name, true, false);
+        (cache,env,_,_,eltsMods,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), DAE.NOPRE(), extendsElts, classExtendsElts, elts, ClassInf.RECORD(fpath), name, true, false);
         eltsMods = listAppend(eltsMods,InstUtil.addNomod(compElts));
         // print("Record Elements: " +
         //   stringDelimitList(
@@ -2566,8 +2565,8 @@ algorithm
         //         eltsMods,
         //         Util.tuple21),
         //       SCodeDump.printElementStr), "\n"));
-        (cache, env1, _) = InstUtil.addClassdefsToEnv(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), cdefelts, false, NONE());
-        (cache, env1, _) = InstUtil.addComponentsToEnv(cache, env1, InnerOuter.emptyInstHierarchy, mods, Prefix.NOPRE(), ClassInf.RECORD(fpath), eltsMods, true);
+        (cache, env1, _) = InstUtil.addClassdefsToEnv(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOPRE(), cdefelts, false, NONE());
+        (cache, env1, _) = InstUtil.addComponentsToEnv(cache, env1, InnerOuter.emptyInstHierarchy, mods, DAE.NOPRE(), ClassInf.RECORD(fpath), eltsMods, true);
         (cache, env1, funcelts) = buildRecordConstructorElts(cache,env1,eltsMods,mods);
       then (cache,env1,funcelts,elts);
 
@@ -2641,7 +2640,7 @@ algorithm
         SCode.PREFIXES(_, redecl, f as SCode.FINAL(), io, repl),
         SCode.ATTR(d,ct,prl,var,_,isf),tp,mod,comment,cond,info)),cmod) :: rest), _)
       equation
-        (cache,mod_1) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, true, Mod.COMPONENT(id), info);
+        (cache,mod_1) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOPRE(), mod, true, Mod.COMPONENT(id), info);
         mod_1 = Mod.merge(mods,mod_1);
         // adrpo: this was wrong, you won't find any id modification there!!!
         // bjozac: This was right, you will find id modification unless modifers does not belong to component!
@@ -2649,7 +2648,7 @@ algorithm
         compMod = Mod.lookupCompModification(mod_1,id);
         fullMod = mod_1;
         selectedMod = selectModifier(compMod, fullMod); // if the first one is empty use the other one.
-        (cache,cmod) = Mod.updateMod(cache,env,InnerOuter.emptyInstHierarchy,Prefix.NOPRE(),cmod,true,info);
+        (cache,cmod) = Mod.updateMod(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOPRE(),cmod,true,info);
         selectedMod = Mod.merge(cmod,selectedMod);
         umod = Mod.unelabMod(selectedMod);
         (cache, env, res) = buildRecordConstructorElts(cache, env, rest, mods);
@@ -2669,7 +2668,7 @@ algorithm
         SCode.PREFIXES(vis, redecl, _, io, repl),
         SCode.ATTR(d,ct,prl,SCode.CONST(),_,isf),tp,mod as SCode.NOMOD(),comment,cond,info)), cmod) :: rest),_)
       equation
-        (cache,mod_1) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, true, Mod.COMPONENT(id), info);
+        (cache,mod_1) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOPRE(), mod, true, Mod.COMPONENT(id), info);
         mod_1 = Mod.merge(mods,mod_1);
         // adrpo: this was wrong, you won't find any id modification there!!!
         // bjozac: This was right, you will find id modification unless modifers does not belong to component!
@@ -2677,7 +2676,7 @@ algorithm
         compMod = Mod.lookupCompModification(mod_1,id);
         fullMod = mod_1;
         selectedMod = selectModifier(compMod, fullMod); // if the first one is empty use the other one.
-        (cache,cmod) = Mod.updateMod(cache,env,InnerOuter.emptyInstHierarchy,Prefix.NOPRE(),cmod,true,info);
+        (cache,cmod) = Mod.updateMod(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOPRE(),cmod,true,info);
         selectedMod = Mod.merge(cmod,selectedMod);
         umod = Mod.unelabMod(selectedMod);
         (cache, env, res) = buildRecordConstructorElts(cache, env, rest, mods);
@@ -2696,7 +2695,7 @@ algorithm
         SCode.PREFIXES(_, redecl, f, io, repl),
         SCode.ATTR(d,ct,prl,var as SCode.CONST(),_,isf),tp,mod,comment,cond,info)),cmod) :: rest), _)
       equation
-        (cache,mod_1) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, true, Mod.COMPONENT(id), info);
+        (cache,mod_1) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOPRE(), mod, true, Mod.COMPONENT(id), info);
         mod_1 = Mod.merge(mods,mod_1);
         // adrpo: this was wrong, you won't find any id modification there!!!
         // bjozac: This was right, you will find id modification unless modifers does not belong to component!
@@ -2704,7 +2703,7 @@ algorithm
         compMod = Mod.lookupCompModification(mod_1,id);
         fullMod = mod_1;
         selectedMod = selectModifier(compMod, fullMod); // if the first one is empty use the other one.
-        (cache,cmod) = Mod.updateMod(cache,env,InnerOuter.emptyInstHierarchy,Prefix.NOPRE(),cmod,true,info);
+        (cache,cmod) = Mod.updateMod(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOPRE(),cmod,true,info);
         selectedMod = Mod.merge(cmod,selectedMod);
         umod = Mod.unelabMod(selectedMod);
         (cache, env, res) = buildRecordConstructorElts(cache, env, rest, mods);
@@ -2723,7 +2722,7 @@ algorithm
         SCode.PREFIXES(_, redecl, _, io, repl),
         SCode.ATTR(d,ct,prl,_,_,isf),tp,mod,comment,cond,info)),cmod) :: rest), _)
       equation
-        (cache,mod_1) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, true, Mod.COMPONENT(id), info);
+        (cache,mod_1) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOPRE(), mod, true, Mod.COMPONENT(id), info);
         mod_1 = Mod.merge(mods,mod_1);
         // adrpo: this was wrong, you won't find any id modification there!!!
         // bjozac: This was right, you will find id modification unless modifers does not belong to component!
@@ -2731,7 +2730,7 @@ algorithm
         compMod = Mod.lookupCompModification(mod_1,id);
         fullMod = mod_1;
         selectedMod = selectModifier(compMod, fullMod); // if the first one is empty use the other one.
-        (cache,cmod) = Mod.updateMod(cache,env,InnerOuter.emptyInstHierarchy,Prefix.NOPRE(),cmod,true,info);
+        (cache,cmod) = Mod.updateMod(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOPRE(),cmod,true,info);
         selectedMod = Mod.merge(cmod,selectedMod);
         umod = Mod.unelabMod(selectedMod);
         (cache, env, res) = buildRecordConstructorElts(cache, env, rest, mods);
@@ -3540,7 +3539,7 @@ algorithm
   path := AbsynUtil.joinPaths(utPath, Absyn.IDENT(id));
   (outCache,outEnv,_,_,_,_,_,varlst,_,_) := Inst.instElementList(
     cache,env,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-    DAE.NOMOD(),Prefix.NOPRE(),
+    DAE.NOMOD(),DAE.NOPRE(),
     ClassInf.META_RECORD(Absyn.IDENT("")), List.map1(els,Util.makeTuple,DAE.NOMOD()),
     {}, false, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, true);
   varlst := Types.boxVarLst(varlst);

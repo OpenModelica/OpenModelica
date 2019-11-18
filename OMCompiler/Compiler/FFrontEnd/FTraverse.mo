@@ -39,7 +39,6 @@ encapsulated package FTraverse
 
 // public imports
 public import Absyn;
-public import AbsynUtil;
 public import FNode;
 public import FVisit;
 public import FGraph;

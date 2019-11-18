@@ -46,7 +46,6 @@ import BackendDAEUtil;
 import Ceval;
 import DAE;
 import FCore;
-import GlobalScript;
 import HashTableExpToIndex;
 import Tpl;
 import Values;
@@ -57,16 +56,13 @@ protected
 import Autoconf;
 import AvlSetString;
 import BackendDAECreate;
-import BackendDAEOptimize;
 import BackendDump;
-import BackendEquation;
 import BackendVariable;
 import Builtin;
 import ClockIndexes;
 import CevalScriptBackend;
 import CodegenC;
 import CodegenEmbeddedC;
-import CodegenFMU2;
 import CodegenFMU;
 import CodegenFMUCpp;
 import CodegenFMUCppHpcom;
@@ -77,7 +73,6 @@ import CodegenCpp;
 import CodegenCppHpcom;
 import CodegenOMSIC;
 import CodegenOMSI_common;
-import CodegenOMSIC_Equations;
 import CodegenXML;
 import CodegenJava;
 import CodegenJS;
@@ -102,13 +97,13 @@ import RuntimeSources;
 import SerializeModelInfo;
 import TaskSystemDump;
 import SerializeInitXML;
-import SimCodeDump;
 import SimCodeUtil;
 import StackOverflow;
 import StringUtil;
 import SymbolicJacobian;
 import SymbolTable;
 import System;
+import Testsuite;
 import Util;
 
 public
@@ -348,7 +343,7 @@ algorithm
 
       // either generate code for profiling or for parallel simulation
       //bcall(not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)),print,"Deactivate profiling if you want to simulate in parallel.\n");
-      //_ = bcallret2((not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL))) and (not stringEq("all_perf",Flags.getConfigString(Flags.PROFILING_LEVEL))),Flags.set,Flags.HPCOM,false,true);
+      //_ = bcallret2((not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL))) and (not stringEq("all_perf",Flags.getConfigString(Flags.PROFILING_LEVEL))),FlagsUtil.set,Flags.HPCOM,false,true);
       //true = stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)) or stringEq("all_perf",Flags.getConfigString(Flags.PROFILING_LEVEL));
 
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
@@ -361,7 +356,7 @@ algorithm
 
       // either generate code for profiling or for parallel simulation
       //bcall((not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL))) and (not stringEq("all_perf",Flags.getConfigString(Flags.PROFILING_LEVEL))),print,"Deactivate profiling if you want to simulate in parallel.\n");
-      //_ = bcallret2(not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)),Flags.set,Flags.HPCOM,false,true);
+      //_ = bcallret2(not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)),FlagsUtil.set,Flags.HPCOM,false,true);
       //true = stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)) or stringEq("all_perf",Flags.getConfigString(Flags.PROFILING_LEVEL));
 
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
@@ -569,7 +564,7 @@ algorithm
 
         codegenFuncs := (function runToStr(func=function SerializeModelInfo.serialize(code=simCode, withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
         // Test the parallel code generator in the test suite. Should give decent results given that the task is disk-intensive.
-        numThreads := max(1, if Config.getRunningTestsuite() then min(2, System.numProcessors()) else Config.noProc());
+        numThreads := max(1, if Testsuite.isRunning() then min(2, System.numProcessors()) else Config.noProc());
         if (not Flags.isSet(Flags.PARALLEL_CODEGEN)) or numThreads==1 then
           res := list(func() for func in codegenFuncs);
         else
@@ -607,7 +602,7 @@ algorithm
         end for;
 
         // Test the parallel code generator in the test suite. Should give decent results given that the task is disk-intensive.
-        numThreads := max(1, if Config.getRunningTestsuite() then min(2, System.numProcessors()) else Config.noProc());
+        numThreads := max(1, if Testsuite.isRunning() then min(2, System.numProcessors()) else Config.noProc());
         if (not Flags.isSet(Flags.PARALLEL_CODEGEN)) or numThreads==1 then
           res := list(func() for func in codegenFuncs);
         else
@@ -647,8 +642,8 @@ algorithm
       Error.addMessage(Error.INTERNAL_ERROR, {str});
     then fail();
   end match;
-  if Config.getRunningTestsuite() then
-    System.appendFile(Config.getRunningTestsuiteFile(), stringAppendList(AvlSetString.listKeys(generatedObjects)));
+  if Testsuite.isRunning() then
+    System.appendFile(Testsuite.getTempFilesFile(), stringAppendList(AvlSetString.listKeys(generatedObjects)));
   end if;
   setGlobalRoot(Global.optionSimCode, NONE());
 end callTargetTemplates;
@@ -836,7 +831,7 @@ protected
   type State = enumeration(frontend, backend, templates, simcode);
   State state = State.frontend;
 algorithm
-  Flags.setConfigBool(Flags.BUILDING_MODEL, true);
+  FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, true);
   (success, outStringLst, outFileDir) :=
   matchcontinue (inEnv, className, inFileNamePrefix, addDummy, inSimSettingsOpt, args)
     local
@@ -899,7 +894,7 @@ algorithm
       odae := NONE();
       dae1 := DAE.emptyDae;
 
-      generateFunctions := Flags.set(Flags.GEN, false);
+      generateFunctions := FlagsUtil.set(Flags.GEN, false);
       // We should not need to lookup constants and classes in the backend,
       // so let's free up the old graph and just make it the initial environment.
       if not Flags.isSet(Flags.BACKEND_KEEP_ENV_GRAPH) then
@@ -995,13 +990,13 @@ algorithm
       then (false, {}, "");
   end matchcontinue;
   if generateFunctions then
-    Flags.set(Flags.GEN, true);
+    FlagsUtil.set(Flags.GEN, true);
   end if;
   resultValues := {("timeTemplates", Values.REAL(timeTemplates)),
                   ("timeSimCode", Values.REAL(timeSimCode)),
                   ("timeBackend", Values.REAL(timeBackend)),
                   ("timeFrontend", Values.REAL(timeFrontend))};
-  Flags.setConfigBool(Flags.BUILDING_MODEL, false);
+  FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, false);
 end translateModel;
 
 public function translateModelDAEMode
@@ -1063,7 +1058,7 @@ algorithm
         ExecStat.execStat("Serialize DAE (2)");
       end if;
 
-      generateFunctions := Flags.set(Flags.GEN, false);
+      generateFunctions := FlagsUtil.set(Flags.GEN, false);
       // We should not need to lookup constants and classes in the backend,
       // so let's free up the old graph and just make it the initial environment.
       if not Flags.isSet(Flags.BACKEND_KEEP_ENV_GRAPH) then
@@ -1108,7 +1103,7 @@ algorithm
 
     else equation
       if generateFunctions then
-        Flags.set(Flags.GEN, true);
+        FlagsUtil.set(Flags.GEN, true);
       end if;
       true = Flags.isSet(Flags.FAILTRACE);
       resstr = AbsynUtil.pathStringNoQual(className);
@@ -1117,7 +1112,7 @@ algorithm
     then fail();
   end matchcontinue;
   if generateFunctions then
-    Flags.set(Flags.GEN, true);
+    FlagsUtil.set(Flags.GEN, true);
   end if;
 end translateModelDAEMode;
 
@@ -1255,9 +1250,9 @@ algorithm
                                 inBackendDAE.shared);
     // disable start value calculation, it's only helpful in case of algebraic loops
     // and they are not present in DAEmode
-    tmpB := Flags.set(Flags.NO_START_CALC, true);
+    tmpB := FlagsUtil.set(Flags.NO_START_CALC, true);
     modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, functions, {}, 0, fileDir, 0, tempVars);
-    Flags.set(Flags.NO_START_CALC, tmpB);
+    FlagsUtil.set(Flags.NO_START_CALC, tmpB);
 
     //create hash table
     crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);

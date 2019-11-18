@@ -126,6 +126,7 @@ public import NFSCodeEnv;
 
 protected import Debug;
 protected import Error;
+protected import ErrorTypes;
 protected import Flags;
 protected import List;
 protected import NFSCodeCheck;
@@ -657,7 +658,7 @@ algorithm
     local
       String bc_str, env_str, part;
       list<Extends> exts;
-      Error.Message msg;
+      ErrorTypes.Message msg;
       SourceInfo info;
 
     case (_, _, _, _, _)

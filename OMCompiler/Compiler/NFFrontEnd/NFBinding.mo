@@ -34,13 +34,13 @@ encapsulated package NFBinding
 public
   import Expression = NFExpression;
   import NFInstNode.InstNode;
-  import SCode;
   import Type = NFType;
   import NFPrefixes.Variability;
-  import Error;
+  import ErrorTypes;
 
 protected
   import Dump;
+  import Error;
 
 public
   constant Binding EMPTY_BINDING = Binding.UNBOUND({}, false, AbsynUtil.dummyInfo);
@@ -102,7 +102,7 @@ uniontype Binding
 
   record INVALID_BINDING
     Binding binding;
-    list<Error.TotalMessage> errors;
+    list<ErrorTypes.TotalMessage> errors;
   end INVALID_BINDING;
 
 public

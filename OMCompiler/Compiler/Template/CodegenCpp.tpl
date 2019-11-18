@@ -736,7 +736,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    {
       if(getGlobalSettings()->getOutputPointType()!= OPT_NONE)
       {
-        
+
     _writeOutput->init();
         _writeOutput->clear();
       }
@@ -1523,7 +1523,7 @@ template simulationMainRunScript(SimCode simCode ,Text& extraFuncs,Text& extraFu
     let moLib     =  makefileParams.compileDir
     let home      = makefileParams.omhome
   let outputformat = settings.outputFormat
-    let execParameters = '-S <%start%> -E <%end%> -H <%stepsize%> -G <%intervals%> -P <%outputformat%> -T <%tol%> -I <%solver%> -R <%simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%> -M <%moLib%> -r <%simulationResults(getRunningTestsuite(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>'
+    let execParameters = '-S <%start%> -E <%end%> -H <%stepsize%> -G <%intervals%> -P <%outputformat%> -T <%tol%> -I <%solver%> -R <%simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%> -M <%moLib%> -r <%simulationResults(Testsuite.isRunning(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>'
     let outputParameter = if (stringEq(settings.outputFormat, "empty")) then "-O none" else ""
     let fileNamePrefixx = fileNamePrefix
 
@@ -1657,7 +1657,7 @@ int _tmain(int argc, const _TCHAR* argv[])
       opts["-i"] = "<%solver%>";
       opts["-r"] = "<%simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
       opts["-m"] = "<%moLib%>";
-      opts["-R"] = "<%simulationResults(getRunningTestsuite(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
+      opts["-R"] = "<%simulationResults(Testsuite.isRunning(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
 
 
 
@@ -2282,7 +2282,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       opts["-P"] = "<%outputtype%>";
       opts["-R"] = "<%simulationLibDir(simulationCodeTarget(), simCode, &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
       opts["-M"] = "<%moLib%>";
-      opts["-F"] = "<%simulationResults(getRunningTestsuite(), simCode, &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
+      opts["-F"] = "<%simulationResults(Testsuite.isRunning(), simCode, &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
       opts["--solver-threads"] = "<%if(intGt(getConfigInt(NUM_PROC), 0)) then getConfigInt(NUM_PROC) else 1%>";
       <%if (stringEq(settings.outputFormat, "empty")) then 'opts["-O"] = "none";' else ""%>
       <%
@@ -11569,12 +11569,12 @@ template equationForLoop(SimEqSystem eq, Context context, Text &varDecls, SimCod
       >>
 end equationForLoop;
 
-// Previously unknown dims were set to ICONST(-1) at SimCode creation 
-// we do not do that anymore. 
+// Previously unknown dims were set to ICONST(-1) at SimCode creation
+// we do not do that anymore.
 // This used to return '' for ICONST no matter the value. I am not sure
 // if that is the right thing to do. For now we will just call the function
 // that was used to convert dims to expressions in SimCode creation
-// here as well, i.e., will still return '' for UNKNOWN_DIM since it 
+// here as well, i.e., will still return '' for UNKNOWN_DIM since it
 // will be converted to DAE.ICONST(-1).
 template testDaeDimension(DAE.Dimension dim)
  "Generates code for an expression."

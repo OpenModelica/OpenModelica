@@ -48,13 +48,6 @@ encapsulated package Util
   \"pointer\" to a function into another function. But it can also be used for
   generic data types, like in  C++ templates."
 
-public uniontype ReplacePattern
-  record REPLACEPATTERN
-    String from "from string (ie \".\"" ;
-    String to "to string (ie \"$p\") ))" ;
-  end REPLACEPATTERN;
-end ReplacePattern;
-
 public uniontype Status "Used to signal success or failure of a function call"
   record SUCCESS end SUCCESS;
   record FAILURE end FAILURE;
@@ -74,8 +67,6 @@ end DateTime;
 protected
 import Autoconf;
 import ClockIndexes;
-import Config;
-import Flags;
 import Global;
 import List;
 import Print;
@@ -83,20 +74,6 @@ import System;
 
 public constant SourceInfo dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
 public constant String derivativeNamePrefix="$DER";
-public constant String pointStr = "$P";
-public constant String leftBraketStr = "$lB";
-public constant String rightBraketStr = "$rB";
-public constant String leftParStr = "$lP";
-public constant String rightParStr = "$rP";
-public constant String commaStr = "$c";
-public constant String appostrophStr = "$a";
-
-protected constant list<ReplacePattern> replaceStringPatterns=
-         {REPLACEPATTERN(".",pointStr),
-          REPLACEPATTERN("[",leftBraketStr),REPLACEPATTERN("]",rightBraketStr),
-          REPLACEPATTERN("(",leftParStr),REPLACEPATTERN(")",rightParStr),
-          REPLACEPATTERN(",",commaStr),
-          REPLACEPATTERN("'",appostrophStr)};
 
 public function isIntGreater "Author: BZ"
   input Integer lhs;
@@ -528,119 +505,6 @@ algorithm
   end if;
   strings := listReverse(strings);
 end stringSplitAtChar;
-
-public function modelicaStringToCStr " this replaces symbols that are illegal in C to legal symbols
- see replaceStringPatterns to see the format. (example: \".\" becomes \"$P\")
-  author: x02lucpo
-
-  NOTE: This function should not be used in OMC, since the OMC backend no longer
-    uses stringified components. It is still used by MathCore though."
-  input String str;
-  input Boolean changeDerCall "if true, first change 'DER(v)' to $derivativev";
-  output String res_str;
-algorithm
-  res_str := matchcontinue(str,changeDerCall)
-    local String s;
-    case(s,false) // BoschRexroth specifics
-      equation
-        false = Flags.getConfigBool(Flags.TRANSLATE_DAE_STRING);
-        then
-          s;
-    case(_,false)
-      equation
-        res_str = "$"+ modelicaStringToCStr1(str, replaceStringPatterns);
-        // debug_print("prefix$", res_str);
-      then res_str;
-    case(s,true) equation
-      s = modelicaStringToCStr2(s);
-    then s;
-  end matchcontinue;
-end modelicaStringToCStr;
-
-protected function modelicaStringToCStr2 "help function to modelicaStringToCStr,
-first  changes name 'der(v)' to $derivativev and 'pre(v)' to 'pre(v)' with applied rules for v"
-  input String inDerName;
-  output String outDerName;
-algorithm
-  outDerName := matchcontinue(inDerName)
-    local
-      String name, derName;
-      list<String> names;
-
-    case(derName) equation
-      0 = System.strncmp(derName,"der(",4);
-      // adrpo: 2009-09-08
-      // the commented text: _::name::_ = listLast(System.strtok(derName,"()"));
-      // is wrong as der(der(x)) ends up beeing translated to $der$der instead
-      // of $der$der$x. Changed to the following 2 lines below!
-      _::names = (System.strtok(derName,"()"));
-      names = List.map1(names, modelicaStringToCStr, false);
-      name = derivativeNamePrefix + stringAppendList(names);
-    then name;
-    case(derName) equation
-      0 = System.strncmp(derName,"pre(",4);
-      _::name::_= System.strtok(derName,"()");
-      name = "pre(" + modelicaStringToCStr(name,false) + ")";
-    then name;
-    case(derName) then modelicaStringToCStr(derName,false);
-  end matchcontinue;
-end modelicaStringToCStr2;
-
-protected function modelicaStringToCStr1 ""
-  input String inString;
-  input list<ReplacePattern> inReplacePatternLst;
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue (inString,inReplacePatternLst)
-    local
-      String str,str_1,res_str,from,to;
-      list<ReplacePattern> res;
-    case (str,{}) then str;
-    case (str,(REPLACEPATTERN(from = from,to = to) :: res))
-      equation
-        str_1 = modelicaStringToCStr1(str, res);
-        res_str = System.stringReplace(str_1, from, to);
-      then
-        res_str;
-    else
-      equation
-        print("- Util.modelicaStringToCStr1 failed for str:"+inString+"\n");
-      then
-        fail();
-  end matchcontinue;
-end modelicaStringToCStr1;
-
-public function cStrToModelicaString " this replaces symbols that have been replace to correct value for modelica string
- see replaceStringPatterns to see the format. (example: \"$p\" becomes \".\")
-  author: x02lucpo
-
-  NOTE: This function should not be used in OMC, since the OMC backend no longer
-    uses stringified components. It is still used by MathCore though."
-  input String str;
-  output String res_str;
-algorithm
-  res_str := cStrToModelicaString1(str, replaceStringPatterns);
-end cStrToModelicaString;
-
-protected function cStrToModelicaString1
-  input String inString;
-  input list<ReplacePattern> inReplacePatternLst;
-  output String outString;
-algorithm
-  outString := match (inString,inReplacePatternLst)
-    local
-      String str,str_1,res_str,from,to;
-      list<ReplacePattern> res;
-    case (str,{}) then str;
-    case (str,(REPLACEPATTERN(from = from,to = to) :: res))
-      equation
-        str_1 = cStrToModelicaString1(str, res);
-        res_str = System.stringReplace(str_1, to, from);
-      then
-        res_str;
-  end match;
-end cStrToModelicaString1;
 
 public function boolOrList "Example:
     boolOrList({true,false,false})  => true
@@ -1440,28 +1304,6 @@ public function anyToEmptyString<T> "Useful if you do not want to write an unpar
   output String empty = "";
 end anyToEmptyString;
 
-public uniontype TranslatableContent
-  record gettext "Used to mark messages as targets for translation"
-    String msgid;
-  end gettext;
-  record notrans "String cannot be translated; used for too generic messages"
-    String str;
-  end notrans;
-end TranslatableContent;
-
-public function translateContent "Translate content to a string"
-  input TranslatableContent msg;
-  output String str;
-algorithm
-  str := match msg
-    case gettext(str)
-      equation
-        str = System.gettext(str);
-      then str;
-    case notrans(str) then str;
-  end match;
-end translateContent;
-
 public function removeLast3Char
   input String str;
   output String outStr;
@@ -1519,68 +1361,6 @@ algorithm
   outSize := integer(floor(((inStop - inStart) / inStep) + 5e-15)) + 1;
   outSize := max(outSize, 0);
 end realRangeSize;
-
-public function testsuiteFriendly "Testsuite friendly name (start after testsuite/ or build/)"
-  input String name;
-  output String friendly;
-algorithm
-  friendly := testsuiteFriendly2(Config.getRunningTestsuite(),Config.getRunningWSMTestsuite(),name);
-end testsuiteFriendly;
-
-protected function testsuiteFriendly2
-  "Testsuite friendly name (start after testsuite/ or build/)"
-  input Boolean cond;
-  input Boolean wsmTestsuite;
-  input String name;
-  output String friendly;
-algorithm
-  friendly := match (cond,wsmTestsuite)
-    local
-      Integer i;
-      list<String> strs;
-      String newName;
-
-    case (_,true) then System.basename(name);
-
-    case (true,_)
-      algorithm
-        newName := if Autoconf.os == "Windows_NT" then System.stringReplace(name, "\\", "/") else name;
-        (i,strs) := System.regex(newName, "^(.*/Compiler/)?(.*/testsuite/)?(.*/lib/omlibrary/)?(.*/build/)?(.*)$", 6, true, false);
-        friendly := listGet(strs,i);
-      then
-        friendly;
-
-    else name;
-  end match;
-end testsuiteFriendly2;
-
-public function testsuiteFriendlyPath
-  "Adds ../ in front of a relative file path if we're running
-   the testsuite, to compensate for tests being sandboxed.
-   adrpo: only when running with partest the tests are sandboxed!"
-  input String inPath;
-  output String outPath;
-algorithm
-  outPath := matchcontinue()
-    local
-      String path;
-
-    case ()
-      equation
-        // we're running the testsuite
-        true = Config.getRunningTestsuite();
-        // directory or file does not exist in this directory
-        false = System.directoryExists(inPath);
-        false = System.regularFileExists(inPath);
-        // prefix the path
-        path = "../" + inPath;
-        true = System.directoryExists(path) or System.regularFileExists(path);
-      then
-        path;
-
-    else inPath;
-  end matchcontinue;
-end testsuiteFriendlyPath;
 
 protected function createDirectoryTreeH
   input String inString;

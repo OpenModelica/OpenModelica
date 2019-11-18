@@ -38,6 +38,26 @@ extern "C" {
 #include "OpenModelicaBootstrappingHeader.h"
 #include "ModelicaUtilitiesExtra.h"
 
+#if !defined(Util__notrans)
+#define Util__notrans Gettext__notrans
+#endif
+#if !defined(Error__INTERNAL_3dBOX0)
+#define Error__INTERNAL ErrorTypes__INTERNAL
+#define Error__NOTIFICATION ErrorTypes__NOTIFICATION
+#define Error__WARNING ErrorTypes__WARNING
+#define Error__ERROR ErrorTypes__ERROR
+#define Error__SYNTAX ErrorTypes__SYNTAX
+#define Error__TRANSLATION ErrorTypes__TRANSLATION
+#define Error__SYMBOLIC ErrorTypes__SYMBOLIC
+#define Error__SCRIPTING ErrorTypes__SCRIPTING
+#define Error__GRAMMAR ErrorTypes__GRAMMAR
+#define Error__SIMULATION ErrorTypes__SIMULATION
+#define Error__MESSAGE ErrorTypes__MESSAGE
+#define Error__TOTALMESSAGE ErrorTypes__TOTALMESSAGE
+#define Error__SYNTAX_3dBOX0 ErrorTypes__SYNTAX_3dBOX0
+#define Error__INTERNAL_3dBOX0 ErrorTypes__INTERNAL_3dBOX0
+#endif
+
 }
 
 #include "errorext.cpp"

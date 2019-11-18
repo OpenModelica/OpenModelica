@@ -54,7 +54,6 @@ end scanString;
 /* grammar according to json.org */
 protected
 import Error;
-import StringUtil;
 public
 function action
   input Integer act;

@@ -46,7 +46,6 @@ import AbsynUtil;
 import BaseAvlTree;
 import ClassInf;
 import SCode;
-import Prefix;
 import Values;
 import Connect;
 
@@ -114,7 +113,7 @@ uniontype ElementSource "gives information about the origin of the element"
   record SOURCE
     SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
     list<Absyn.Within> partOfLst "the model(s) this element came from";
-    Prefix.ComponentPrefix instance "the instance(s) this element is part of";
+    ComponentPrefix instance "the instance(s) this element is part of";
     list<tuple<ComponentRef, ComponentRef>> connectEquationOptLst "this element came from this connect(s)";
     list<Absyn.Path> typeLst "the classes where the type(s) of the element is defined";
     list<SymbolicOperation> operations "the symbolic operations used to end up with the final state of the element";
@@ -122,7 +121,7 @@ uniontype ElementSource "gives information about the origin of the element"
   end SOURCE;
 end ElementSource;
 
-public constant ElementSource emptyElementSource = SOURCE(AbsynUtil.dummyInfo,{},Prefix.NOCOMPPRE(),{},{},{},{});
+public constant ElementSource emptyElementSource = SOURCE(AbsynUtil.dummyInfo,{},NOCOMPPRE(),{},{},{},{});
 
 public uniontype SymbolicOperation
   record FLATTEN "From one equation/statement to an element"
@@ -1867,6 +1866,41 @@ uniontype Expand "array cref expansion strategy"
 end Expand;
 
 public constant DAElist emptyDae = DAE({});
+
+uniontype Prefix "A Prefix has a component prefix and a class prefix.
+The component prefix consist of a name an a list of constant valued subscripts.
+The class prefix contains the variability of the class, i.e unspecified, parameter or constant."
+
+  record NOPRE "No prefix information" end NOPRE;
+
+  record PREFIX
+    ComponentPrefix compPre "component prefixes are stored in inverse order c.b.a";
+    ClassPrefix classPre "the class prefix, i.e. variability, var, discrete, param, const";
+  end PREFIX;
+end Prefix;
+
+type ComponentPrefixOpt = Option<ComponentPrefix> "a type alias for an optional component prefix";
+
+uniontype ComponentPrefix
+"Prefix for component name, e.g. a.b[2].c.
+ NOTE: Component prefixes are stored in inverse order c.b[2].a!"
+  record PRE
+    String prefix "prefix name" ;
+    list<Dimension> dimensions "dimensions" ;
+    list<Subscript> subscripts "subscripts" ;
+    ComponentPrefix next "next prefix" ;
+    ClassInf.State ci_state "to be able to at least partially fill in type information properly for DAE.VAR";
+    SourceInfo info;
+  end PRE;
+
+  record NOCOMPPRE end NOCOMPPRE;
+end ComponentPrefix;
+
+uniontype ClassPrefix "Prefix for classes is its variability"
+  record CLASSPRE
+    SCode.Variability variability "VAR, DISCRETE, PARAM, or CONST";
+  end CLASSPRE;
+end ClassPrefix;
 
 annotation(__OpenModelica_Interface="frontend");
 end DAE;

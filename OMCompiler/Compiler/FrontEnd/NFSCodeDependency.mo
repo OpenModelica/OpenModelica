@@ -49,6 +49,7 @@ public type Env = NFSCodeEnv.Env;
 protected import Config;
 protected import Debug;
 protected import Error;
+protected import ErrorTypes;
 protected import Flags;
 protected import List;
 protected import Mutable;
@@ -126,7 +127,7 @@ protected function lookupClass
   input Env inEnv;
   input Boolean inBuiltinPossible "True if the path can be a builtin, otherwise false.";
   input SourceInfo inInfo;
-  input Option<Error.Message> inErrorType;
+  input Option<ErrorTypes.Message> inErrorType;
   output Item outItem;
   output Env outEnv;
 algorithm
@@ -135,7 +136,7 @@ algorithm
       Item item;
       Env env;
       String name_str, env_str;
-      Error.Message error_id;
+      ErrorTypes.Message error_id;
 
     case (_, _, _, _, _)
       equation
@@ -160,7 +161,7 @@ protected function lookupClass2
   input Env inEnv;
   input Boolean inBuiltinPossible;
   input SourceInfo inInfo;
-  input Option<Error.Message> inErrorType;
+  input Option<ErrorTypes.Message> inErrorType;
   output Item outItem;
   output Env outEnv;
 algorithm
@@ -217,7 +218,7 @@ protected function lookupNameInItem
   input Absyn.Path inName;
   input Item inItem;
   input Env inEnv;
-  input Option<Error.Message> inErrorType;
+  input Option<ErrorTypes.Message> inErrorType;
   output Item outItem;
   output Env outEnv;
 algorithm

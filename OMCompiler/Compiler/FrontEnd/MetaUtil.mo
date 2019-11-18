@@ -37,7 +37,6 @@ encapsulated package MetaUtil
 
 import Absyn;
 import AbsynUtil;
-import SCode;
 
 protected
 

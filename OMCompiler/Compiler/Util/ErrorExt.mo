@@ -40,7 +40,7 @@ encapsulated package ErrorExt
   Error messages are stored externally, impl. in C++."
 
 
-import Error;
+import ErrorTypes;
 
 function registerModelicaFormatError
   external "C" Error_registerModelicaFormatError() annotation(Documentation(info="<html>
@@ -50,9 +50,9 @@ function registerModelicaFormatError
 end registerModelicaFormatError;
 
 function addSourceMessage
-  input Error.ErrorID id;
-  input Error.MessageType msg_type;
-  input Error.Severity msg_severity;
+  input ErrorTypes.ErrorID id;
+  input ErrorTypes.MessageType msg_type;
+  input ErrorTypes.Severity msg_severity;
   input Integer sline;
   input Integer scol;
   input Integer eline;
@@ -91,7 +91,7 @@ function getNumWarningMessages
 end getNumWarningMessages;
 
 function getMessages
-  output list<Error.TotalMessage> res;
+  output list<ErrorTypes.TotalMessage> res;
 
   external "C" res=Error_getMessages(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end getMessages;

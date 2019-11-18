@@ -50,6 +50,7 @@ import Ceval = NFCeval;
 import MetaModelica.Dangerous.*;
 import RangeIterator = NFRangeIterator;
 import ElementSource;
+import Flags;
 import ModelicaExternalC;
 import System;
 import NFTyping.ExpOrigin;

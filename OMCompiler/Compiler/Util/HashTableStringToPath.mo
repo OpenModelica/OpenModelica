@@ -44,7 +44,6 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 public import Absyn;
 public import BaseHashTable;
 protected import AbsynUtil;
-protected import System;
 protected import Util;
 
 public type Key = String;
