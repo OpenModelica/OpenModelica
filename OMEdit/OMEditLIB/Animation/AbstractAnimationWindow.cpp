@@ -66,6 +66,7 @@ AbstractAnimationWindow::AbstractAnimationWindow(QWidget *pParent)
     mpAnimationInitializeAction(nullptr),
     mpAnimationPlayAction(nullptr),
     mpAnimationPauseAction(nullptr),
+    mpAnimationRepeatAction(nullptr),
     mpAnimationSlider(nullptr),
     mpAnimationTimeLabel(nullptr),
     mpTimeTextBox(nullptr),
@@ -117,6 +118,7 @@ void AbstractAnimationWindow::openAnimationFile(QString fileName, bool stashCame
       mpAnimationInitializeAction->setEnabled(true);
       mpAnimationPlayAction->setEnabled(true);
       mpAnimationPauseAction->setEnabled(true);
+      mpAnimationRepeatAction->setEnabled(true);
       mpAnimationSlider->setEnabled(true);
       bool state = mpAnimationSlider->blockSignals(true);
       mpAnimationSlider->setValue(0);
@@ -169,6 +171,12 @@ void AbstractAnimationWindow::createActions()
   mpAnimationPauseAction->setStatusTip(Helper::animationPauseTip);
   mpAnimationPauseAction->setEnabled(false);
   connect(mpAnimationPauseAction, SIGNAL(triggered()),this, SLOT(pauseSlotFunction()));
+  // animation repeat action
+  mpAnimationRepeatAction = new QAction(QIcon(":/Resources/icons/refresh.svg"), Helper::animationRepeat, this);
+  mpAnimationRepeatAction->setStatusTip(Helper::animationRepeatTip);
+  mpAnimationRepeatAction->setEnabled(false);
+  mpAnimationRepeatAction->setCheckable(true);
+  connect(mpAnimationRepeatAction, SIGNAL(triggered(bool)),this, SLOT(repeatSlotFunciton(bool)));
   // animation slide
   mpAnimationSlider = new QSlider(Qt::Horizontal);
   mpAnimationSlider->setMinimum(0);
@@ -600,6 +608,16 @@ void AbstractAnimationWindow::playSlotFunction()
 void AbstractAnimationWindow::pauseSlotFunction()
 {
   mpVisualizer->getTimeManager()->setPause(true);
+}
+
+/*!
+ * \brief AbstractAnimationWindow::repeatSlotFunciton
+ * Slot function for the repeat button
+ * \param checked
+ */
+void AbstractAnimationWindow::repeatSlotFunciton(bool checked)
+{
+  mpVisualizer->getTimeManager()->setRepeat(checked);
 }
 
 /*!

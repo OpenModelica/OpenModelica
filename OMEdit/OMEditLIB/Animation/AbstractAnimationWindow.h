@@ -93,6 +93,7 @@ protected:
   QAction *mpAnimationPlayAction;
   QAction *mpAnimationPauseAction;
   QAction *mpInteractiveControlAction;
+  QAction *mpAnimationRepeatAction;
   QSlider* mpAnimationSlider;
   Label *mpAnimationTimeLabel;
   QLineEdit *mpTimeTextBox;
@@ -122,6 +123,7 @@ public slots:
   void initSlotFunction();
   void playSlotFunction();
   void pauseSlotFunction();
+  void repeatSlotFunciton(bool checked);
   void sliderSetTimeSlotFunction(int value);
   void jumpToTimeSlotFunction();
   void setSpeedSlotFunction();
