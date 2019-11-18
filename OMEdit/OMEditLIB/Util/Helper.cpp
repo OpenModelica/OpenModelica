@@ -361,6 +361,8 @@ QString Helper::animationPlay;
 QString Helper::animationPlayTip;
 QString Helper::animationPause;
 QString Helper::animationPauseTip;
+QString Helper::animationRepeat;
+QString Helper::animationRepeatTip;
 QString Helper::simulationParams;
 QString Helper::simulationParamsTip;
 QString Helper::newModel;
@@ -653,6 +655,8 @@ void Helper::initHelperVariables()
   Helper::animationInitializeTip = tr("Initialize the animation scene");
   Helper::animationPlay = tr("Play");
   Helper::animationPlayTip = tr("Play the animation");
+  Helper::animationRepeat = tr("Repeat");
+  Helper::animationRepeatTip = tr("Repeat the animation");
   Helper::animationPause = tr("Pause");
   Helper::animationPauseTip = tr("Pause the animation");
   Helper::simulationParams = tr("Simulation Parameters");

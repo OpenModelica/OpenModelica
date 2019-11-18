@@ -86,6 +86,8 @@ class TimeManager
   bool isPaused() const;
   /*! \brief Sets pause status to new value. */
   void setPause(const bool status);
+  bool canRepeat() const;
+  void setRepeat(const bool repeat);
   int getTimeFraction();
   void setSpeedUp(double value);
   double getSpeedUp();
@@ -108,6 +110,8 @@ class TimeManager
   double _endTime;
   //! This variable indicates if the simulation/visualization currently pauses.
   bool _pause;
+  //! This variable indicates if the simulation/visualization can repeat.
+  bool _repeat;
   double mSpeedUp;
   int mTimeDiscretization;
   rtclock_t _visualTimer;

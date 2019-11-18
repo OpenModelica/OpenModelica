@@ -315,7 +315,12 @@ void VisualizerAbstract::sceneUpdate()
     updateScene(mpTimeManager->getVisTime());
     //finish animation with pause when endtime is reached
     if (mpTimeManager->getVisTime() >= mpTimeManager->getEndTime()) {
-      mpTimeManager->setPause(true);
+      if (mpTimeManager->canRepeat()) {
+        initVisualization();
+        mpTimeManager->setPause(false);
+      } else {
+        mpTimeManager->setPause(true);
+      }
     } else { // get the new visualization time
       double newTime = mpTimeManager->getVisTime() + (mpTimeManager->getHVisual()*mpTimeManager->getSpeedUp());
       if (newTime <= mpTimeManager->getEndTime()) {

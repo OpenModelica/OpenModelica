@@ -363,6 +363,8 @@ public:
   static QString animationPlayTip;
   static QString animationPause;
   static QString animationPauseTip;
+  static QString animationRepeat;
+  static QString animationRepeatTip;
   static QString simulationParams;
   static QString simulationParamsTip;
   static QString newModel;

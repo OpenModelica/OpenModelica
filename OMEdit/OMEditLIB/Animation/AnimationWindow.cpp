@@ -76,6 +76,8 @@ void AnimationWindow::createActions()
   mpAnimationToolBar->addSeparator();
   mpAnimationToolBar->addAction(mpAnimationPauseAction);
   mpAnimationToolBar->addSeparator();
+  mpAnimationToolBar->addAction(mpAnimationRepeatAction);
+  mpAnimationToolBar->addSeparator();
   mpAnimationToolBar->addWidget(mpAnimationSlider);
   mpAnimationToolBar->addSeparator();
   mpAnimationToolBar->addWidget(mpAnimationTimeLabel);
