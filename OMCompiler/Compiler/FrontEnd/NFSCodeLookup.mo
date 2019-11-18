@@ -41,18 +41,20 @@ encapsulated package NFSCodeLookup
 
 public import Absyn;
 public import AbsynUtil;
-public import Error;
+public import ErrorTypes;
 public import NFInstPrefix;
 public import SCode;
 public import NFSCodeEnv;
 
-protected import Config;
-protected import Debug;
-protected import NFEnvExtends;
-protected import Flags;
-protected import List;
-protected import NFSCodeFlattenImports;
-protected import NFSCodeFlattenRedeclare;
+protected
+import Config;
+import Debug;
+import Error;
+import Flags;
+import List;
+import NFEnvExtends;
+import NFSCodeFlattenImports;
+import NFSCodeFlattenRedeclare;
 
 import NFSCodeEnv.EnvTree;
 
@@ -1317,7 +1319,7 @@ protected function lookupName
   input Env inEnv;
   input LookupStrategy inLookupStrategy;
   input SourceInfo inInfo;
-  input Option<Error.Message> inErrorType;
+  input Option<ErrorTypes.Message> inErrorType;
   output Item outItem;
   output Absyn.Path outName;
   output Env outEnv;
@@ -1330,7 +1332,7 @@ algorithm
       Absyn.Path path, new_path;
       Env env;
       String name_str, env_str;
-      Error.Message error_id;
+      ErrorTypes.Message error_id;
 
     // Builtin types.
     case (_, _, LOOKUP_ANY(), _, _)
@@ -1783,7 +1785,7 @@ public function qualifyPath
   input Absyn.Path inPath;
   input Env inEnv;
   input SourceInfo inInfo;
-  input Option<Error.Message> inErrorType;
+  input Option<ErrorTypes.Message> inErrorType;
   output Absyn.Path outPath;
 algorithm
   outPath := matchcontinue(inPath, inEnv, inInfo, inErrorType)

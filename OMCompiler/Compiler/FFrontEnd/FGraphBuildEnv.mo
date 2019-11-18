@@ -48,7 +48,6 @@ public import FCore;
 public import FNode;
 public import FGraph;
 public import DAE;
-public import Prefix;
 public
 type Name = FCore.Name;
 type Id = FCore.Id;
@@ -110,7 +109,7 @@ algorithm
     // class (we don't care here if is replaceable or not we can get that from the class)
     case (SCode.CLASS(), _, _, g)
       equation
-        g = mkClassNode(inClass, Prefix.NOPRE(), DAE.NOMOD(), inParentRef,
+        g = mkClassNode(inClass, DAE.NOPRE(), DAE.NOMOD(), inParentRef,
           inKind, g, checkDuplicate);
       then
         g;
@@ -120,7 +119,7 @@ end mkClassGraph;
 
 public function mkClassNode
   input SCode.Element inClass;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input DAE.Mod inMod;
   input Ref inParentRef;
   input Kind inKind;
@@ -423,7 +422,7 @@ algorithm
     // class
     case (SCode.CLASS(), _, _, g)
       equation
-        g = mkClassNode(inElement, Prefix.NOPRE(), DAE.NOMOD(), inParentRef, inKind, g);
+        g = mkClassNode(inElement, DAE.NOPRE(), DAE.NOMOD(), inParentRef, inKind, g);
       then
         g;
 

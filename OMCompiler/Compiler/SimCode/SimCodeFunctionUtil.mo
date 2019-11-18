@@ -57,6 +57,7 @@ import Mod;
 import Patternm;
 import SCode;
 import SCodeUtil;
+import Testsuite;
 
 public
 
@@ -1879,7 +1880,7 @@ algorithm
     end match;
     if not max(System.regularFileExists(d+"/"+n) for d in dirs2, n in names) then
       // suppress this warning if we're running the testsuite
-      if not Config.getRunningTestsuite() then
+      if not Testsuite.isRunning() then
         Error.addSourceMessage(Error.EXT_LIBRARY_NOT_FOUND, {name, sum("\n  " + d + "/" + n for d in dirs2, n in names)}, info);
       end if;
     end if;

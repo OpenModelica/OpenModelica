@@ -1,7 +1,6 @@
 encapsulated package ElementSource "A package for recording symbolic operations (used by the debugger) as well as other operations recording where an equation came from"
 
 import DAE;
-import Prefix;
 
 protected
 
@@ -9,6 +8,7 @@ import Absyn;
 import Algorithm;
 import Error;
 import Expression;
+import Flags;
 import List;
 import SCode;
 
@@ -23,7 +23,7 @@ algorithm
     local
       SourceInfo info;
       list<Absyn.Within> partOfLst1,partOfLst2,p;
-      Prefix.ComponentPrefix instanceOpt1,instanceOpt2,i;
+      DAE.ComponentPrefix instanceOpt1,instanceOpt2,i;
       list<tuple<DAE.ComponentRef, DAE.ComponentRef>> connectEquationOptLst1,connectEquationOptLst2,c;
       list<Absyn.Path> typeLst1,typeLst2,t;
       list<DAE.SymbolicOperation> o,operations1,operations2;
@@ -32,7 +32,7 @@ algorithm
           DAE.SOURCE(_ /* Discard */, partOfLst2, instanceOpt2, connectEquationOptLst2, typeLst2, operations2, comment2))
       equation
         p = List.union(partOfLst1, partOfLst2);
-        i = match instanceOpt1 case Prefix.NOCOMPPRE() then instanceOpt2; else instanceOpt1; end match;
+        i = match instanceOpt1 case DAE.NOCOMPPRE() then instanceOpt2; else instanceOpt1; end match;
         c = List.union(connectEquationOptLst1, connectEquationOptLst2);
         t = List.union(typeLst1, typeLst2);
         o = listAppend(operations1, operations2);
@@ -49,7 +49,7 @@ algorithm
     local
       SourceInfo info;
       list<Absyn.Within> partOfLst1;
-      Prefix.ComponentPrefix instanceOpt1;
+      DAE.ComponentPrefix instanceOpt1;
       list<tuple<DAE.ComponentRef, DAE.ComponentRef>> connectEquationOptLst1;
       list<Absyn.Path> typeLst1;
       list<DAE.SymbolicOperation> operations1;
@@ -68,7 +68,7 @@ function createElementSource
  set the various sources of the element"
   input SourceInfo fileInfo;
   input Option<Absyn.Path> partOf = NONE() "the model(s) this element came from";
-  input Prefix.Prefix prefix = Prefix.NOPRE() "the instance(s) this element is part of";
+  input DAE.Prefix prefix = DAE.NOPRE() "the instance(s) this element is part of";
   input tuple<DAE.ComponentRef, DAE.ComponentRef> connectEquation = (DAE.emptyCref, DAE.emptyCref) "this element came from this connect(s)";
   output DAE.ElementSource source;
 protected
@@ -77,7 +77,7 @@ algorithm
   source := DAE.SOURCE(
     fileInfo,
     match partOf case NONE() then {}; case SOME(path) then {Absyn.WITHIN(path)}; end match,
-    match prefix case Prefix.NOPRE() then Prefix.NOCOMPPRE(); case Prefix.PREFIX() then prefix.compPre; end match,
+    match prefix case DAE.NOPRE() then DAE.NOCOMPPRE(); case DAE.PREFIX() then prefix.compPre; end match,
     match connectEquation case (DAE.CREF_IDENT(ident=""),_) then {}; else {connectEquation}; end match,
     {},
     {},
@@ -95,7 +95,7 @@ algorithm
       SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
       list<Absyn.Within> partOfLst "the models this element came from" ;
-      Prefix.ComponentPrefix instanceOpt "the instance this element is part of" ;
+      DAE.ComponentPrefix instanceOpt "the instance this element is part of" ;
       list<tuple<DAE.ComponentRef, DAE.ComponentRef>> connectEquationOptLst "this element came from this connect" ;
       list<DAE.SymbolicOperation> operations;
       list<SCode.Comment> comment;
@@ -123,7 +123,7 @@ algorithm
       SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
       list<Absyn.Within> partOfLst "the models this element came from" ;
-      Prefix.ComponentPrefix instanceOpt "the instance this element is part of" ;
+      DAE.ComponentPrefix instanceOpt "the instance this element is part of" ;
       list<tuple<DAE.ComponentRef, DAE.ComponentRef>> connectEquationOptLst "this element came from this connect" ;
       list<DAE.SymbolicOperation> operations;
       list<SCode.Comment> commentLst;
@@ -162,7 +162,7 @@ algorithm
       SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
       list<Absyn.Within> partOfLst "the models this element came from" ;
-      Prefix.ComponentPrefix instanceOpt "the instance this element is part of" ;
+      DAE.ComponentPrefix instanceOpt "the instance this element is part of" ;
       list<tuple<DAE.ComponentRef, DAE.ComponentRef>> connectEquationOptLst "this element came from this connect" ;
       list<DAE.SymbolicOperation> operations;
       DAE.Exp h1,t1,t2;
@@ -230,7 +230,7 @@ algorithm
       SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
       list<Absyn.Within> partOfLst "the models this element came from" ;
-      Prefix.ComponentPrefix instanceOpt "the instance this element is part of" ;
+      DAE.ComponentPrefix instanceOpt "the instance this element is part of" ;
       list<tuple<DAE.ComponentRef, DAE.ComponentRef>> connectEquationOptLst "this element came from this connect" ;
       list<DAE.SymbolicOperation> operations;
       DAE.Exp h1,t1,t2;
@@ -436,7 +436,7 @@ function getElementSourceInstances
 "@author: adrpo
  retrieves the paths from the DAE.ElementSource.SOURCE.instanceOpt"
  input DAE.ElementSource source "the source of the element";
- output Prefix.ComponentPrefix instanceOpt;
+ output DAE.ComponentPrefix instanceOpt;
 algorithm
   instanceOpt := source.instance;
 end getElementSourceInstances;
@@ -504,7 +504,7 @@ algorithm
     local
       SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Within> partOfLst "the models this element came from" ;
-      Prefix.ComponentPrefix instanceOpt "the instance this element is part of" ;
+      DAE.ComponentPrefix instanceOpt "the instance this element is part of" ;
       list<tuple<DAE.ComponentRef, DAE.ComponentRef>> connectEquationOptLst "this element came from this connect" ;
       list<Absyn.Path> typeLst "the classes where the type of the element is defined" ;
       list<DAE.SymbolicOperation> operations;
@@ -528,7 +528,7 @@ algorithm
       SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
       list<Absyn.Within> partOfLst "the models this element came from" ;
-      Prefix.ComponentPrefix instanceOpt "the instance this element is part of" ;
+      DAE.ComponentPrefix instanceOpt "the instance this element is part of" ;
       list<tuple<DAE.ComponentRef, DAE.ComponentRef>> connectEquationOptLst "this element came from this connect" ;
       list<DAE.SymbolicOperation> operations;
       list<SCode.Comment> comment;
@@ -540,11 +540,11 @@ end addElementSourceType;
 
 function addElementSourceInstanceOpt
   input output DAE.ElementSource source;
-  input Prefix.ComponentPrefix instanceOpt;
+  input DAE.ComponentPrefix instanceOpt;
 algorithm
   () := match (source, instanceOpt)
     // a NONE() means top level (equivalent to NO_PRE, SOME(cref) means subcomponent
-    case (_, Prefix.NOCOMPPRE()) then ();
+    case (_, DAE.NOCOMPPRE()) then ();
 
     case (DAE.SOURCE(), _)
       algorithm

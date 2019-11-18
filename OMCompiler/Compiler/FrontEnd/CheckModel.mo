@@ -37,7 +37,6 @@ encapsulated package CheckModel "
 "
 
 public import Absyn;
-public import AbsynUtil;
 public import DAE;
 
 protected import BaseHashSet;
@@ -316,7 +315,7 @@ algorithm
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> crefLst;
 
-    case (_, DAE.SOURCE(instance = Prefix.NOCOMPPRE()), _)
+    case (_, DAE.SOURCE(instance = DAE.NOCOMPPRE()), _)
       then algorithmOutputs(inAlgorithm, inCrefExpansionRule);
 
     // the algorithm came from a component that is member of an array or not

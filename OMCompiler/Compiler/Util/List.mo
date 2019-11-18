@@ -101,7 +101,6 @@ import MetaModelica.Dangerous.{listReverseInPlace, arrayGetNoBoundsChecking, arr
 import MetaModelica.Dangerous;
 import DoubleEnded;
 import GC;
-import Error;
 
 public function create<T>
   "Creates a list from an element."
@@ -7466,10 +7465,12 @@ algorithm
         true := (sz <= maxSz);
       then allCombinations2(lst);
     case (_,NONE(),_) then allCombinations2(lst);
+    /*
     case (_,SOME(_),_)
       algorithm
         Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"List.allCombinations failed because the input was too large"}, info);
       then fail();
+    */
   end matchcontinue;
 end allCombinations;
 

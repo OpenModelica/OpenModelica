@@ -55,7 +55,6 @@ import Flags;
 import InstHashTable;
 import List;
 import MetaUtil;
-import SCodeDump;
 import SCodeUtil;
 import System;
 import Util;

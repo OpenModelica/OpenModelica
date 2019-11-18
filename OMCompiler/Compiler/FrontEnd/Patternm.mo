@@ -49,7 +49,6 @@ import HashTableStringToPath;
 import SCode;
 import Dump;
 import InnerOuter;
-import Prefix;
 import Types;
 import UnitAbsyn;
 
@@ -349,7 +348,7 @@ algorithm
           else false;
         end match)
       equation
-        (cache,elabExp,DAE.PROP(type_=ty2, constFlag=const)) = Static.elabExp(cache,env,inLhs,false,false,Prefix.NOPRE(),info);
+        (cache,elabExp,DAE.PROP(type_=ty2, constFlag=const)) = Static.elabExp(cache,env,inLhs,false,false,DAE.NOPRE(),info);
         et = validPatternType(ty1,ty2,inLhs,info);
         true = Types.isConstant(const);
         (cache, val) = Ceval.ceval(cache, env, elabExp, false, inMsg = Absyn.MSG(info));
@@ -731,7 +730,7 @@ public function elabMatchExpression
   input Absyn.Exp matchExp;
   input Boolean impl;
   input Boolean performVectorization;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
@@ -747,7 +746,7 @@ algorithm
       list<Absyn.ElementItem> decls;
       list<Absyn.Case> cases;
       list<DAE.Element> matchDecls;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       list<DAE.Exp> elabExps;
       list<DAE.MatchCase> elabCases;
       list<DAE.Type> tys;
@@ -1985,7 +1984,7 @@ protected function elabMatchCases
   input AvlSetString.Tree matchExpLocalTree;
   input Boolean impl;
   input Boolean performVectorization;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input SourceInfo info;
   output FCore.Cache outCache;
   output list<DAE.MatchCase> elabCases;
@@ -2008,7 +2007,7 @@ protected function elabMatchCases2
   input AvlSetString.Tree matchExpLocalTree;
   input Boolean impl;
   input Boolean performVectorization;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input list<DAE.MatchCase> inAccCases "Order does matter";
   input list<DAE.Exp> inAccExps "Order does matter";
   input list<DAE.Type> inAccTypes "Order does not matter";
@@ -2048,7 +2047,7 @@ protected function elabMatchCase
   input AvlSetString.Tree matchExpLocalTree;
   input Boolean impl;
   input Boolean performVectorization;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   output FCore.Cache outCache;
   output DAE.MatchCase elabCase;
   output Option<DAE.Exp> resExp;
@@ -2127,7 +2126,7 @@ protected function elabResultExp
   input Absyn.Exp exp;
   input Boolean impl;
   input Boolean performVectorization;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input SourceInfo inInfo;
   output FCore.Cache outCache;
   output list<DAE.Statement> outBody;
@@ -2165,7 +2164,7 @@ protected function elabPatternGuard
   input Option<Absyn.Exp> patternGuard;
   input Boolean impl;
   input Boolean performVectorization;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input SourceInfo inInfo;
   output FCore.Cache outCache;
   output Option<DAE.Exp> outPatternGuard;
@@ -2537,11 +2536,11 @@ algorithm
 
         dummyFunc = ClassInf.FUNCTION(Absyn.IDENT("dummieFunc"), false);
         (cache,env2,_) = InstUtil.addComponentsToEnv(cache, env2,
-          InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
+          InnerOuter.emptyInstHierarchy, DAE.NOMOD(), DAE.NOPRE(),
           dummyFunc, ld_mod, impl);
         (cache,env2,_,_,dae1,_,_,_,_,_) = Inst.instElementList(
           cache,env2, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-          DAE.NOMOD(), Prefix.NOPRE(), dummyFunc, ld_mod, {},
+          DAE.NOMOD(), DAE.NOPRE(), dummyFunc, ld_mod, {},
           impl, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, true);
 
         names = List.map(ld2, SCodeUtil.elementName);

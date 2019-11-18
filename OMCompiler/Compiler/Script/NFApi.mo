@@ -61,54 +61,52 @@ import Algorithm = NFAlgorithm;
 import ExpOrigin = NFTyping.ExpOrigin;
 
 
+import Absyn.Path;
+import AbsynToSCode;
 import Array;
+import ComplexType = NFComplexType;
 import Config;
-import Error;
+import ConvertDAE = NFConvertDAE;
+import DAEUtil;
+import EvalConstants = NFEvalConstants;
+import ExecStat.{execStat,execStatReset};
 import FBuiltin;
 import Flags;
+import FlagsUtil;
+import FlatModel = NFFlatModel;
 import Flatten = NFFlatten;
 import Global;
 import InstUtil = NFInstUtil;
+import Interactive;
 import List;
 import Lookup = NFLookup;
 import MetaModelica.Dangerous;
-import Typing = NFTyping;
-import ExecStat.{execStat,execStatReset};
-import SCodeDump;
-import AbsynToSCode;
-import System;
 import NFCall.Call;
-import Absyn.Path;
+import NFCeval;
 import NFClassTree.ClassTree;
-import NFSections.Sections;
+import NFFlatten.FunctionTree;
+import NFFunction.Function;
+import NFInst;
 import NFInstNode.CachedData;
 import NFInstNode.NodeTree;
-import StringUtil;
-import UnitCheck = NFUnitCheck;
 import NFPrefixes.*;
-import Prefixes = NFPrefixes;
-import NFFlatten.FunctionTree;
-import ConvertDAE = NFConvertDAE;
-import Scalarize = NFScalarize;
-import Restriction = NFRestriction;
-import ComplexType = NFComplexType;
-import Package = NFPackage;
-import NFFunction.Function;
-import FlatModel = NFFlatModel;
-import ElementSource;
-import SimplifyModel = NFSimplifyModel;
-import SimplifyExp = NFSimplifyExp;
-import Record = NFRecord;
-import Variable = NFVariable;
+import NFSections.Sections;
 import OperatorOverloading = NFOperatorOverloading;
-import EvalConstants = NFEvalConstants;
-import VerifyModel = NFVerifyModel;
-import Interactive;
-import NFInst;
-import DAEUtil;
-import ComponentReference;
-import NFCeval;
+import Package = NFPackage;
+import Prefixes = NFPrefixes;
+import Record = NFRecord;
+import Restriction = NFRestriction;
+import Scalarize = NFScalarize;
+import SCodeDump;
+import SimplifyExp = NFSimplifyExp;
+import SimplifyModel = NFSimplifyModel;
+import System;
+import Typing = NFTyping;
+import UnitCheck = NFUnitCheck;
 import Util;
+import Variable = NFVariable;
+import VerifyModel = NFVerifyModel;
+
 
 public
 function evaluateAnnotation
@@ -120,15 +118,15 @@ function evaluateAnnotation
 protected
   Boolean b, s;
 algorithm
-  b := Flags.set(Flags.SCODE_INST, true);
-  s := Flags.set(Flags.NF_SCALARIZE, true); // #5689
+  b := FlagsUtil.set(Flags.SCODE_INST, true);
+  s := FlagsUtil.set(Flags.NF_SCALARIZE, true); // #5689
   try
     outString := evaluateAnnotation_dispatch(absynProgram, classPath, inAnnotation);
-    Flags.set(Flags.SCODE_INST, b);
-    Flags.set(Flags.NF_SCALARIZE, s);
+    FlagsUtil.set(Flags.SCODE_INST, b);
+    FlagsUtil.set(Flags.NF_SCALARIZE, s);
   else
-    Flags.set(Flags.SCODE_INST, b);
-    Flags.set(Flags.NF_SCALARIZE, s);
+    FlagsUtil.set(Flags.SCODE_INST, b);
+    FlagsUtil.set(Flags.NF_SCALARIZE, s);
     fail();
   end try;
 end evaluateAnnotation;
@@ -287,15 +285,15 @@ function evaluateAnnotations
 protected
   Boolean b, s;
 algorithm
-  b := Flags.set(Flags.SCODE_INST, true);
-  s := Flags.set(Flags.NF_SCALARIZE, true); // #5689
+  b := FlagsUtil.set(Flags.SCODE_INST, true);
+  s := FlagsUtil.set(Flags.NF_SCALARIZE, true); // #5689
   try
     outStringLst := evaluateAnnotations_dispatch(absynProgram, classPath, inElements);
-    Flags.set(Flags.SCODE_INST, b);
-    Flags.set(Flags.NF_SCALARIZE, s);
+    FlagsUtil.set(Flags.SCODE_INST, b);
+    FlagsUtil.set(Flags.NF_SCALARIZE, s);
   else
-    Flags.set(Flags.SCODE_INST, b);
-    Flags.set(Flags.NF_SCALARIZE, s);
+    FlagsUtil.set(Flags.SCODE_INST, b);
+    FlagsUtil.set(Flags.NF_SCALARIZE, s);
     fail();
   end try;
 end evaluateAnnotations;
@@ -465,20 +463,20 @@ protected
   String name;
   Boolean b, s;
 algorithm
-  b := Flags.set(Flags.SCODE_INST, true);
-  s := Flags.set(Flags.NF_SCALARIZE, true); // #5689
+  b := FlagsUtil.set(Flags.SCODE_INST, true);
+  s := FlagsUtil.set(Flags.NF_SCALARIZE, true); // #5689
   try
     // run the front-end front
     (program, name, top, inst_cls) := frontEndFront(absynProgram, classPath);
     cls := Lookup.lookupClassName(pathToQualify, inst_cls, AbsynUtil.dummyInfo, checkAccessViolations = false);
     qualPath := InstNode.scopePath(cls, true);
-    Flags.set(Flags.SCODE_INST, b);
-    Flags.set(Flags.NF_SCALARIZE, s);
+    FlagsUtil.set(Flags.SCODE_INST, b);
+    FlagsUtil.set(Flags.NF_SCALARIZE, s);
   else
     // do not fail, just return the Absyn path
     qualPath := pathToQualify;
-    Flags.set(Flags.SCODE_INST, b);
-    Flags.set(Flags.NF_SCALARIZE, s);
+    FlagsUtil.set(Flags.SCODE_INST, b);
+    FlagsUtil.set(Flags.NF_SCALARIZE, s);
   end try;
 end mkFullyQual;
 
@@ -510,7 +508,7 @@ algorithm
   (program, name, top, inst_cls) := frontEndFront_dispatch(absynProgram, classPath);
   if listLength(cache) > 100 then
     // trim it down, keep 10
-	  cache := List.firstN(cache, 10);
+    cache := List.firstN(cache, 10);
   end if;
 
   cache := ((absynProgram,classPath),(program, name, top, inst_cls))::cache;
@@ -552,8 +550,8 @@ algorithm
     // and scalarization if -d=-nfScalarize is on
     if not Flags.isSet(Flags.NF_SCALARIZE) then
       // make sure we don't expand anything
-      Flags.set(Flags.NF_EXPAND_OPERATIONS, false);
-      Flags.set(Flags.NF_EXPAND_FUNC_ARGS, false);
+      FlagsUtil.set(Flags.NF_EXPAND_OPERATIONS, false);
+      FlagsUtil.set(Flags.NF_EXPAND_FUNC_ARGS, false);
     end if;
 
     System.setUsesCardinality(false);

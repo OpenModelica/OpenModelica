@@ -44,13 +44,13 @@ public import SimCodeVar;
 protected
 import AdjacencyMatrix;
 import Array;
-import BackendDAEUtil;
 import BackendVarTransform;
 import ComponentReference;
 import DAE;
 import Error;
 import Expression;
 import Flags;
+import FlagsUtil;
 import HashTableCrefSimVar;
 import HpcOmSchedulerExt;
 import HpcOmSimCodeMain;
@@ -3238,7 +3238,7 @@ algorithm
         true = listLength(clustersIn) < numProc;
         print("There are less initial clusters than processors. we need duplication, but since this is a rare case, it is not done. Less processors are used.\n");
         clusters = List.map(clustersIn,listReverse);
-        Flags.setConfigInt(Flags.NUM_PROC,listLength(clustersIn));
+        FlagsUtil.setConfigInt(Flags.NUM_PROC,listLength(clustersIn));
         (schedule,simCode,taskGraph,meta,sccSimEqMap) = TDS_schedule1(clusters,iTaskGraph,iTaskGraphT,iTaskGraphMeta,TDSLevel,listLength(clustersIn),iSccSimEqMapping,iSimCode,iCommCosts,iCompTaskMapping,iSimVarMapping);
       then
         (schedule,simCode,taskGraph,meta,sccSimEqMap);

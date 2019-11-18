@@ -59,7 +59,6 @@ import Values;
 // protected imports
 protected
 import Array;
-import Autoconf;
 import AbsynUtil;
 import AvlSetString;
 import BackendDAEOptimize;
@@ -89,6 +88,7 @@ import ExpressionDump;
 import ExpressionSimplify;
 import ExpressionSolve;
 import Flags;
+import FlagsUtil;
 import FMI;
 import GC;
 import Global;
@@ -361,7 +361,7 @@ algorithm
     // ToDo: fix this ugly flag switchting
     if (Flags.getConfigEnum(Flags.SYM_SOLVER) > 0) then
       SymEuler_help := Flags.getConfigEnum(Flags.SYM_SOLVER);
-      Flags.setConfigEnum(Flags.SYM_SOLVER, 0);
+      FlagsUtil.setConfigEnum(Flags.SYM_SOLVER, 0);
     end if;
 
     if not (Config.simCodeTarget() == "omsic" or
@@ -405,7 +405,7 @@ algorithm
 
 
     if (SymEuler_help > 0) then
-      Flags.setConfigEnum(Flags.SYM_SOLVER, SymEuler_help);
+      FlagsUtil.setConfigEnum(Flags.SYM_SOLVER, SymEuler_help);
     end if;
 
     //List.map1_0(inlineEquations, dumpSimEqSystemLst,"\n");
@@ -476,13 +476,13 @@ algorithm
 
     //build labels
     if(boolAnd(ifcpp,Flags.getConfigBool(Flags.LABELED_REDUCTION))) then
-      Flags.setConfigBool(Flags.GENERATE_LABELED_SIMCODE,true);
+      FlagsUtil.setConfigBool(Flags.GENERATE_LABELED_SIMCODE,true);
     end if;
 
     if(ifcpp) then
       if Flags.getConfigBool(Flags.GENERATE_LABELED_SIMCODE) then
         (allEquations,modelInfo) := ReduceDAE.buildLabels(allEquations,modelInfo,{},args);
-        //Flags.set(Flags.REDUCE_DAE,true);
+        //FlagsUtil.set(Flags.REDUCE_DAE,true);
         if debug then execStat("ReduceDAE: buildLabels"); end if;
       end if;
     end if;
@@ -493,8 +493,8 @@ algorithm
     if(ifcpp) then
       if Flags.getConfigBool(Flags.REDUCE_TERMS) then
         (allEquations,modelInfo) := ReduceDAE.reduceTerms(allEquations,modelInfo,args);
-        Flags.setConfigBool(Flags.REDUCE_TERMS, false);
-        Flags.disableDebug(Flags.REDUCE_DAE);
+        FlagsUtil.setConfigBool(Flags.REDUCE_TERMS, false);
+        FlagsUtil.disableDebug(Flags.REDUCE_DAE);
         if debug then execStat("ReduceDAE: reduceTerms"); end if;
       end if;
     end if;
@@ -4667,7 +4667,7 @@ algorithm
       list<String> matrixnames;
     case (_, _, _)
       equation
-        // b = Flags.disableDebug(Flags.EXEC_STAT);
+        // b = FlagsUtil.disableDebug(Flags.EXEC_STAT);
         crefSimVarHT = createCrefToSimVarHT(inModelInfo);
         // The jacobian code requires single systems;
         // I did not rewrite it to take advantage of any parallelism in the code
@@ -4681,7 +4681,7 @@ algorithm
            matrixnames={"A", "B", "C", "D", "F"};
         end if;
         (res, ouniqueEqIndex) = createSymbolicJacobianssSimCode(inSymjacs, crefSimVarHT, iuniqueEqIndex, matrixnames, {});
-        // _ = Flags.set(Flags.EXEC_STAT, b);
+        // _ = FlagsUtil.set(Flags.EXEC_STAT, b);
       then (res,ouniqueEqIndex);
   end match;
 end createJacobianLinearCode;

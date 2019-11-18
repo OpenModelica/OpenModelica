@@ -36,7 +36,6 @@ import Absyn;
 import AbsynUtil;
 import DAE;
 import FCore;
-import Prefix;
 import SCode;
 import Util;
 
@@ -78,7 +77,7 @@ function binary
   input Absyn.Exp AbExp1 "We need this when/if we elaborate user defined operator functions";
   input Absyn.Exp AbExp2 "We need this when/if we elaborate user defined operator functions";
   input Boolean inImpl;
-  input Prefix.Prefix inPre "For error-messages only";
+  input DAE.Prefix inPre "For error-messages only";
   input SourceInfo inInfo "For error-messages only";
   output FCore.Cache outCache;
   output DAE.Exp outExp;
@@ -163,7 +162,7 @@ resulting expression. "
   input Absyn.Exp AbExp "needed for function replaceOperatorWithFcall (not  really sure what is done in there though.)";
   input Absyn.Exp AbExp1 "We need this when/if we elaborate user defined operator functions";
   input Boolean inImpl;
-  input Prefix.Prefix inPre "For error-messages only";
+  input DAE.Prefix inPre "For error-messages only";
   input SourceInfo inInfo "For error-messages only";
   output FCore.Cache outCache;
   output DAE.Exp outExp;
@@ -243,7 +242,7 @@ function string
   input Absyn.Exp inExp1;
   input Boolean inImpl;
   input Boolean inDoVect;
-  input Prefix.Prefix inPre;
+  input DAE.Prefix inPre;
   input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
@@ -564,7 +563,7 @@ resulting expression. "
   input DAE.Type inType1;
   input DAE.Type inType2;
   input Boolean impl;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
@@ -630,7 +629,7 @@ function binaryUserdefArray
   input DAE.Type inType1;
   input DAE.Type inType2;
   input Boolean impl;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input SourceInfo info;
   output FCore.Cache cache;
   output list<tuple<DAE.Exp,Option<DAE.Type>>> exps;
@@ -681,7 +680,7 @@ function binaryUserdefArray2
   input DAE.Type inType1;
   input DAE.Type inType2;
   input Boolean impl;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input SourceInfo info;
   output FCore.Cache cache;
   output list<tuple<DAE.Exp,Option<DAE.Type>>> exps;
@@ -1567,7 +1566,7 @@ function deoverload "Given several lists of parameter types and one argument lis
   input list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> inOperators;
   input list<tuple<DAE.Exp, DAE.Type>> inArgs;
   input Absyn.Exp aexp "for error-messages";
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo info;
   output DAE.Operator outOperator;
   output list<DAE.Exp> outArgs;
@@ -1582,7 +1581,7 @@ algorithm
       DAE.Operator op;
       list<tuple<DAE.Exp, DAE.Type>> args;
       list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> xs;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       DAE.Type ty;
       list<String> exps_str,tps_str;
       String estr, pre_str, s, tpsstr;
@@ -1628,7 +1627,7 @@ function computeReturnType "This function determines the return type of
   input DAE.Operator inOperator;
   input list<DAE.Type> inTypesTypeLst;
   input DAE.Type inType;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo inInfo;
   output DAE.Type outType;
 algorithm
@@ -1637,7 +1636,7 @@ algorithm
       DAE.Type typ1,typ2,rtype,etype,typ;
       String t1_str,t2_str,pre_str;
       DAE.Dimension n1,n2,m,n,m1,m2,p;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
 
     case (DAE.ADD_ARR(),{typ1,typ2},_,_, _)
       equation
@@ -2036,14 +2035,14 @@ function warnUnsafeRelations "Check if we have Real == Real or Real != Real, if 
   input DAE.Type t1,t2;
   input DAE.Exp e1,e2;
   input DAE.Operator op;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inEnv,inExp,variability,t1,t2,e1,e2,op,inPrefix,inInfo)
     local
       Boolean b1,b2;
       String stmtString,opString,pre_str;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
     // == or != on Real is permitted in functions, so don't print an error if
     // we're in a function.
     case (_, _, _, _, _, _, _, _, _, _)

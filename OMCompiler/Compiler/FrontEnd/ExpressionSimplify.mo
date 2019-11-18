@@ -65,7 +65,6 @@ protected import ExpressionDump;
 protected import Flags;
 protected import List;
 protected import MetaModelica.Dangerous;
-protected import Prefix;
 protected import Static;
 protected import Types;
 protected import Util;
@@ -1218,7 +1217,7 @@ algorithm
     case (DAE.CALL(path = Absyn.IDENT("fill"), expLst = e::expl))
       equation
         valueLst = List.map(expl, ValuesUtil.expValue);
-        (_,outExp,_) = Static.elabBuiltinFill2(FCore.noCache(), FGraph.empty(), e, Expression.typeof(e), valueLst, DAE.C_CONST(), Prefix.NOPRE(), {}, AbsynUtil.dummyInfo);
+        (_,outExp,_) = Static.elabBuiltinFill2(FCore.noCache(), FGraph.empty(), e, Expression.typeof(e), valueLst, DAE.C_CONST(), DAE.NOPRE(), {}, AbsynUtil.dummyInfo);
       then
         outExp;
 

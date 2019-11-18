@@ -44,7 +44,6 @@ import BackendDAE;
 import Ceval;
 import DAE;
 import FCore;
-import Error;
 import GlobalScript;
 import Interactive;
 import InteractiveUtil;
@@ -54,83 +53,85 @@ import UnitAbsyn;
 
 // protected imports
 protected
+import AbsynToJulia;
+import AbsynToSCode;
 import Autoconf;
-import BackendDump;
 import BackendDAECreate;
-import BackendDAEUtil;
 import BackendDAEOptimize;
+import BackendDAEUtil;
+import BackendDump;
 import BackendEquation;
 import BackendVariable;
+import Binding;
+import BlockCallRewrite;
 import CevalScript;
 import CheckModel;
 import ClassInf;
 import ClockIndexes;
+import CodegenFMU;
+import ComponentReference;
 import Config;
+import DAEDump;
 import DAEQuery;
 import DAEUtil;
-import DAEDump;
 import Debug;
+import DiffAlgorithm;
 import Dump;
+import Error;
+import ErrorTypes;
+import ErrorExt;
 import ExecStat;
 import Expression;
 import ExpressionDump;
 import FBuiltin;
-import Figaro;
-import FindZeroCrossings;
-import Flags;
-import FInst;
 import FGraph;
 import FGraphDump;
+import Figaro;
+import FindZeroCrossings;
+import FInst;
+import Flags;
+import FlagsUtil;
+import FMI;
+import FMIExt;
 import GC;
-import GlobalScriptUtil;
 import Graph;
 import HashSetString;
-import Inst;
 import InnerOuter;
+import Inst;
 import LexerModelicaDiff;
-import DiffAlgorithm;
 import List;
 import Lookup;
-import NFSCodeLookup;
-import Prefix;
-import Parser;
-import Print;
-import Refactor;
-import SCodeDump;
-import AbsynToJulia;
 import NFInst;
 import NFSCodeEnv;
 import NFSCodeFlatten;
+import NFSCodeLookup;
+import OpenTURNS;
+import Parser;
+import Print;
+import Refactor;
+import RewriteRules;
+import SCode;
+import SCodeDump;
+import SCodeUtil;
+import Settings;
 import SimCodeMain;
 import SimpleModelicaParser;
-import System;
-import StaticScript;
-import SCode;
-import SCodeUtil;
-import AbsynToSCode;
-import Settings;
 import SimulationResults;
+import StaticScript;
 import StringUtil;
 import SymbolicJacobian;
 import SymbolTable;
+import System;
 import TaskGraphResults;
 import Tpl;
-import CodegenFMU;
 import Types;
+import Uncertainties;
+import UnitAbsynBuilder;
+import UnitParserExt;
 import Util;
 import ValuesUtil;
 import XMLDump;
-import ComponentReference;
-import Uncertainties;
-import OpenTURNS;
-import FMI;
-import FMIExt;
-import ErrorExt;
-import UnitAbsynBuilder;
-import UnitParserExt;
-import RewriteRules;
-import BlockCallRewrite;
-import Binding;
+
 
 protected constant DAE.Type simulationResultType_rtest = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
   DAE.TYPES_VAR("resultFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),false,NONE()),
@@ -215,13 +216,13 @@ protected constant list<String> simulationOptionsNames =
 public function getSimulationResultType
   output DAE.Type t;
 algorithm
-  t := if Config.getRunningTestsuite() then simulationResultType_rtest else simulationResultType_full;
+  t := if Testsuite.isRunning() then simulationResultType_rtest else simulationResultType_full;
 end getSimulationResultType;
 
 public function getDrModelicaSimulationResultType
   output DAE.Type t;
 algorithm
-  t := if Config.getRunningTestsuite() then simulationResultType_rtest else simulationResultType_drModelica;
+  t := if Testsuite.isRunning() then simulationResultType_rtest else simulationResultType_drModelica;
 end getDrModelicaSimulationResultType;
 
 public function createSimulationResult
@@ -238,7 +239,7 @@ protected
 algorithm
   resultValues := listReverse(inAddResultValues);
   //TODO: maybe we should test if the fields are the ones in simulationResultType_full
-  notest := not Config.getRunningTestsuite();
+  notest := not Testsuite.isRunning();
   fields := if notest then List.map(resultValues, Util.tuple21) else {};
   vals := if notest then List.map(resultValues, Util.tuple22) else {};
   res := Values.RECORD(Absyn.IDENT("SimulationResult"),
@@ -260,7 +261,7 @@ protected
 algorithm
   resultValues := listReverse(inAddResultValues);
   //TODO: maybe we should test if the fields are the ones in simulationResultType_full
-  notest := not Config.getRunningTestsuite();
+  notest := not Testsuite.isRunning();
   fields := if notest then List.map(resultValues, Util.tuple21) else {};
   vals := if notest then List.map(resultValues, Util.tuple22) else {};
   res := Values.RECORD(Absyn.IDENT("SimulationResult"),Values.STRING(message)::
@@ -745,7 +746,7 @@ algorithm
       list<String> names, namesPublic, namesProtected, namesChanged, fileNames;
       HashSetString.HashSet hashSetString;
       list<Boolean> blst;
-      list<Error.TotalMessage> messages;
+      list<ErrorTypes.TotalMessage> messages;
       UnitAbsyn.Unit u1,u2;
       Real stoptime,starttime,tol,stepsize,interval;
       String stoptime_str,stepsize_str,starttime_str,tol_str,num_intervalls_str,description,prefix,method,annotationname,modifiername,modifiervalue;
@@ -1347,9 +1348,9 @@ algorithm
 
     case (cache,env,"checkModel",{Values.CODE(Absyn.C_TYPENAME(className))},_)
       equation
-        Flags.setConfigBool(Flags.CHECK_MODEL, true);
+        FlagsUtil.setConfigBool(Flags.CHECK_MODEL, true);
         (cache,ret_val) = checkModel(cache, env, className, msg);
-        Flags.setConfigBool(Flags.CHECK_MODEL, false);
+        FlagsUtil.setConfigBool(Flags.CHECK_MODEL, false);
       then
         (cache,ret_val);
 
@@ -1448,7 +1449,7 @@ algorithm
           executable := filenameprefix + "_me_FMU";
           initfilename := filenameprefix + "_init_xml";
         end if;
-        executable := if not Config.getRunningTestsuite() then compileDir + executable else executable;
+        executable := if not Testsuite.isRunning() then compileDir + executable else executable;
       then
         (cache,ValuesUtil.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")}));
 
@@ -1457,8 +1458,8 @@ algorithm
 
     case (cache,env,"buildLabel",vals,_)
       equation
-        Flags.setConfigBool(Flags.GENERATE_LABELED_SIMCODE, true);
-        //Flags.set(Flags.WRITE_TO_BUFFER,true);
+        FlagsUtil.setConfigBool(Flags.GENERATE_LABELED_SIMCODE, true);
+        //FlagsUtil.set(Flags.WRITE_TO_BUFFER,true);
         List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
         (b,cache,_,executable,_,_,initfilename,_,_,vals) = buildModel(cache,env, vals, msg);
@@ -1467,10 +1468,10 @@ algorithm
 
      case (cache,env,"reduceTerms",vals,_)
       equation
-        Flags.setConfigBool(Flags.REDUCE_TERMS, true);
-        // Flags.setConfigBool(Flags.DISABLE_EXTRA_LABELING, true);
-        Flags.setConfigBool(Flags.GENERATE_LABELED_SIMCODE, false);
-        _=Flags.disableDebug(Flags.WRITE_TO_BUFFER);
+        FlagsUtil.setConfigBool(Flags.REDUCE_TERMS, true);
+        // FlagsUtil.setConfigBool(Flags.DISABLE_EXTRA_LABELING, true);
+        FlagsUtil.setConfigBool(Flags.GENERATE_LABELED_SIMCODE, false);
+        FlagsUtil.disableDebug(Flags.WRITE_TO_BUFFER);
         List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
@@ -1530,7 +1531,7 @@ algorithm
           exeDir := compileDir;
           (cache,simSettings) := calculateSimulationSettings(cache,env,vals,msg);
           SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) := simSettings;
-          result_file := stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
+          result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
           // result file might have been set by simflags (-r ...)
           result_file := selectResultFile(result_file, simflags);
           executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
@@ -1645,7 +1646,7 @@ algorithm
           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
 
           if 0 == System.systemCall(sim_call,logFile) then
-            result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
+            result_file = stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
             timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
             timeTotal = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
             simValue = createSimulationResult(
@@ -1688,16 +1689,16 @@ algorithm
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
-        Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION,true);
-        Flags.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
-        Flags.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,true);
+        FlagsUtil.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION,true);
+        FlagsUtil.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
+        FlagsUtil.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,true);
 
         (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals) = buildModel(cache,env,vals,msg);
         if b then
           exeDir=compileDir;
           (cache,simSettings) = calculateSimulationSettings(cache,env,vals,msg);
           SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) = simSettings;
-          result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
+          result_file = stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
           executableSuffixedExe = stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
           logFile = stringAppend(executable,".log");
           // adrpo: log file is deleted by buildModel! do NOT DELTE IT AGAIN!
@@ -1861,7 +1862,7 @@ algorithm
 
     case (cache,_,"getAvailableIndexReductionMethods",_,_)
       equation
-        (strs1,strs2) = Flags.getConfigOptionsStringList(Flags.INDEX_REDUCTION_METHOD);
+        (strs1,strs2) = FlagsUtil.getConfigOptionsStringList(Flags.INDEX_REDUCTION_METHOD);
         v1 = ValuesUtil.makeArray(List.map(strs1, ValuesUtil.makeString));
         v2 = ValuesUtil.makeArray(List.map(strs2, ValuesUtil.makeString));
         v = Values.TUPLE({v1,v2});
@@ -1956,7 +1957,7 @@ algorithm
       list<String> names, namesPublic, namesProtected, namesChanged, fileNames;
       HashSetString.HashSet hashSetString;
       list<Boolean> blst;
-      list<Error.TotalMessage> messages;
+      list<ErrorTypes.TotalMessage> messages;
       UnitAbsyn.Unit u1,u2;
       Real stoptime,starttime,tol,stepsize,interval;
       String stoptime_str,stepsize_str,starttime_str,tol_str,num_intervalls_str,description,prefix,method,annotationname,modifiername,modifiervalue;
@@ -1975,7 +1976,7 @@ algorithm
 
     case (cache,_,"getAvailableIndexReductionMethods",_,_)
       equation
-        (strs1,strs2) = Flags.getConfigOptionsStringList(Flags.INDEX_REDUCTION_METHOD);
+        (strs1,strs2) = FlagsUtil.getConfigOptionsStringList(Flags.INDEX_REDUCTION_METHOD);
         v1 = ValuesUtil.makeArray(List.map(strs1, ValuesUtil.makeString));
         v2 = ValuesUtil.makeArray(List.map(strs2, ValuesUtil.makeString));
         v = Values.TUPLE({v1,v2});
@@ -1988,7 +1989,7 @@ algorithm
 
     case (cache,_,"getAvailableMatchingAlgorithms",_,_)
       equation
-        (strs1,strs2) = Flags.getConfigOptionsStringList(Flags.MATCHING_ALGORITHM);
+        (strs1,strs2) = FlagsUtil.getConfigOptionsStringList(Flags.MATCHING_ALGORITHM);
         v1 = ValuesUtil.makeArray(List.map(strs1, ValuesUtil.makeString));
         v2 = ValuesUtil.makeArray(List.map(strs2, ValuesUtil.makeString));
         v = Values.TUPLE({v1,v2});
@@ -2001,7 +2002,7 @@ algorithm
 
     case (cache,_,"getAvailableTearingMethods",_,_)
       equation
-        (strs1,strs2) = Flags.getConfigOptionsStringList(Flags.TEARING_METHOD);
+        (strs1,strs2) = FlagsUtil.getConfigOptionsStringList(Flags.TEARING_METHOD);
         v1 = ValuesUtil.makeArray(List.map(strs1, ValuesUtil.makeString));
         v2 = ValuesUtil.makeArray(List.map(strs2, ValuesUtil.makeString));
         v = Values.TUPLE({v1,v2});
@@ -2272,7 +2273,7 @@ algorithm
         (cache, env) = Inst.makeEnvFromProgram(sp);
         (cache,(cl as SCode.CLASS(name=name,encapsulatedPrefix=encflag,restriction=restr)),env) = Lookup.lookupClass(cache, env, classpath, NONE());
         env = FGraph.openScope(env, encflag, name, FGraph.restrictionToScopeType(restr));
-        (_, env) = Inst.partialInstClassIn(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
+        (_, env) = Inst.partialInstClassIn(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), DAE.NOPRE(),
           ClassInf.start(restr, FGraph.getGraphName(env)), cl, SCode.PUBLIC(), {}, 0);
         valsLst = list(getComponentInfo(c, env, isProtected=false) for c in Interactive.getPublicComponentsInClass(absynClass));
         valsLst = listAppend(list(getComponentInfo(c, env, isProtected=true) for c in Interactive.getProtectedComponentsInClass(absynClass)), valsLst);
@@ -2290,7 +2291,7 @@ algorithm
         ErrorExt.setCheckpoint("getSimulationOptions");
         simOpt = GlobalScript.SIMULATION_OPTIONS(DAE.RCONST(startTime),DAE.RCONST(stopTime),DAE.ICONST(numberOfIntervals),DAE.RCONST(0.0),DAE.RCONST(tolerance),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""));
         ErrorExt.rollBack("getSimulationOptions");
-        (_, _::startTimeExp::stopTimeExp::intervalExp::toleranceExp::_) = StaticScript.getSimulationArguments(FCore.emptyCache(), FGraph.empty(), {Absyn.CREF(cr_1)},{},false,Prefix.NOPRE(), "getSimulationOptions", AbsynUtil.dummyInfo,SOME(simOpt));
+        (_, _::startTimeExp::stopTimeExp::intervalExp::toleranceExp::_) = StaticScript.getSimulationArguments(FCore.emptyCache(), FGraph.empty(), {Absyn.CREF(cr_1)},{},false,DAE.NOPRE(), "getSimulationOptions", AbsynUtil.dummyInfo,SOME(simOpt));
         startTime = ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,startTimeExp,Values.REAL(startTime)));
         stopTime = ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,stopTimeExp,Values.REAL(stopTime)));
         tolerance = ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,toleranceExp,Values.REAL(tolerance)));
@@ -2331,7 +2332,7 @@ algorithm
 
     case (cache,_,"getAvailableLibraries",{},_)
       equation
-        mp = Settings.getModelicaPath(Config.getRunningTestsuite());
+        mp = Settings.getModelicaPath(Testsuite.isRunning());
         gd = Autoconf.groupDelimiter;
         mps = System.strtok(mp, gd);
         files = List.flatten(List.map(mps, System.moFiles));
@@ -2428,11 +2429,11 @@ algorithm
       equation
         Error.addMessage(Error.DEPRECATED_API_CALL, {"compareSimulationResults", "diffSimulationResults"});
         filename = Util.absoluteOrRelative(filename);
-        filename_1 = Util.testsuiteFriendlyPath(filename_1);
+        filename_1 = Testsuite.friendlyPath(filename_1);
         filename_1 = Util.absoluteOrRelative(filename_1);
         filename2 = Util.absoluteOrRelative(filename2);
         vars_1 = List.map(cvars, ValuesUtil.extractValueString);
-        strings = SimulationResults.cmpSimulationResults(Config.getRunningTestsuite(),filename,filename_1,filename2,x1,x2,vars_1);
+        strings = SimulationResults.cmpSimulationResults(Testsuite.isRunning(),filename,filename_1,filename2,x1,x2,vars_1);
         cvars = List.map(strings,ValuesUtil.makeString);
         v = ValuesUtil.makeArray(cvars);
       then
@@ -2441,7 +2442,7 @@ algorithm
     case (cache,_,"deltaSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.STRING(method_str),Values.ARRAY(valueLst=cvars)},_)
       equation
         filename = Util.absoluteOrRelative(filename);
-        filename_1 = Util.testsuiteFriendlyPath(filename_1);
+        filename_1 = Testsuite.friendlyPath(filename_1);
         filename_1 = Util.absoluteOrRelative(filename_1);
         vars_1 = List.map(cvars, ValuesUtil.extractValueString);
         val = SimulationResults.deltaSimulationResults(filename,filename_1,method_str,vars_1);
@@ -2468,11 +2469,11 @@ algorithm
     case (cache,_,"diffSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.STRING(filename2),Values.REAL(reltol),Values.REAL(reltolDiffMinMax),Values.REAL(rangeDelta),Values.ARRAY(valueLst=cvars),Values.BOOL(b)},_)
       equation
         filename = Util.absoluteOrRelative(filename);
-        filename_1 = Util.testsuiteFriendlyPath(filename_1);
+        filename_1 = Testsuite.friendlyPath(filename_1);
         filename_1 = Util.absoluteOrRelative(filename_1);
         filename2 = Util.absoluteOrRelative(filename2);
         vars_1 = List.map(cvars, ValuesUtil.extractValueString);
-        (b,strings) = SimulationResults.diffSimulationResults(Config.getRunningTestsuite(),filename,filename_1,filename2,reltol,reltolDiffMinMax,rangeDelta,vars_1,b);
+        (b,strings) = SimulationResults.diffSimulationResults(Testsuite.isRunning(),filename,filename_1,filename2,reltol,reltolDiffMinMax,rangeDelta,vars_1,b);
         cvars = List.map(strings,ValuesUtil.makeString);
         v1 = ValuesUtil.makeArray(cvars);
       then
@@ -2486,9 +2487,9 @@ algorithm
     case (cache,_,"diffSimulationResultsHtml",{Values.STRING(str),Values.STRING(filename),Values.STRING(filename_1),Values.REAL(reltol),Values.REAL(reltolDiffMinMax),Values.REAL(rangeDelta)},_)
       equation
         filename = Util.absoluteOrRelative(filename);
-        filename_1 = Util.testsuiteFriendlyPath(filename_1);
+        filename_1 = Testsuite.friendlyPath(filename_1);
         filename_1 = Util.absoluteOrRelative(filename_1);
-        str = SimulationResults.diffSimulationResultsHtml(Config.getRunningTestsuite(),filename,filename_1,reltol,reltolDiffMinMax,rangeDelta,str);
+        str = SimulationResults.diffSimulationResultsHtml(Testsuite.isRunning(),filename,filename_1,reltol,reltolDiffMinMax,rangeDelta,str);
       then
         (cache,Values.STRING(str));
 
@@ -3211,7 +3212,7 @@ protected
 algorithm
   // add program to the cache so it can be used to lookup modelica://
   // URIs in external functions IncludeDirectory/LibraryDirectory
-  Flags.setConfigBool(Flags.BUILDING_MODEL, true);
+  FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, true);
   try
     b := runFrontEndLoadProgram(className);
     true := b;
@@ -3228,7 +3229,7 @@ algorithm
   else
     // Return odae=NONE(); needed to update cache and symbol table if we fail
   end try;
-  Flags.setConfigBool(Flags.BUILDING_MODEL, false);
+  FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, false);
 end runFrontEnd;
 
 protected function runFrontEndLoadProgram
@@ -3249,13 +3250,13 @@ algorithm
     Interactive.getPathedClassInProgram(className, p, true);
   else
     str := AbsynUtil.pathFirstIdent(className);
-    (p,b) := CevalScript.loadModel({(Absyn.IDENT(str),{"default"},false)},Settings.getModelicaPath(Config.getRunningTestsuite()),p,true,true,true,false);
+    (p,b) := CevalScript.loadModel({(Absyn.IDENT(str),{"default"},false)},Settings.getModelicaPath(Testsuite.isRunning()),p,true,true,true,false);
     Error.assertionOrAddSourceMessage(not b,Error.NOTIFY_NOT_LOADED,{str,"default"},AbsynUtil.dummyInfo);
     // print(stringDelimitList(list(AbsynUtil.pathString(path) for path in Interactive.getTopClassnames(p)), ",") + "\n");
     SymbolTable.setAbsyn(p);
   end try;
 
-  (p,success) := CevalScript.loadModel(Interactive.getUsesAnnotationOrDefault(p, false),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true,true,false);
+  (p,success) := CevalScript.loadModel(Interactive.getUsesAnnotationOrDefault(p, false),Settings.getModelicaPath(Testsuite.isRunning()),p,false,true,true,false);
   SymbolTable.setAbsyn(p);
   // Always update the SCode structure; otherwise the cache plays tricks on us
   SymbolTable.clearSCode();
@@ -3414,20 +3415,20 @@ algorithm
           Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotation(className, SymbolTable.getAbsyn(), Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
           haveAnnotation := boolNot(stringEq(commandLineOptions, ""));
           // backup the flags.
-          flags := if haveAnnotation then Flags.backupFlags() else Flags.loadFlags();
+          flags := if haveAnnotation then FlagsUtil.backupFlags() else FlagsUtil.loadFlags();
           try
             // apply if there are any new flags
             if haveAnnotation then
               args := System.strtok(commandLineOptions, " ");
-              _ := Flags.readArgs(args);
+              FlagsUtil.readArgs(args);
             end if;
 
             (success, cache, libs, file_dir, resultValues) :=
               callTranslateModel(cache,env,className,fileNamePrefix,inSimSettingsOpt);
             // reset to the original flags
-            Flags.saveFlags(flags);
+            FlagsUtil.saveFlags(flags);
           else
-            Flags.saveFlags(flags);
+            FlagsUtil.saveFlags(flags);
             fail();
           end try;
         end if;
@@ -3478,20 +3479,20 @@ algorithm
           Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotation(className, SymbolTable.getAbsyn(), Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
           haveAnnotation := boolNot(stringEq(commandLineOptions, ""));
           // backup the flags.
-          flags := if haveAnnotation then Flags.backupFlags() else Flags.loadFlags();
+          flags := if haveAnnotation then FlagsUtil.backupFlags() else FlagsUtil.loadFlags();
           try
             // apply if there are any new flags
             if haveAnnotation then
               args := System.strtok(commandLineOptions, " ");
-              _ := Flags.readArgs(args);
+              FlagsUtil.readArgs(args);
             end if;
 
             (true, cache, libs, file_dir, resultValues) :=
               SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(),cache,env,className,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},argNames =labelstoCancel));
             // reset to the original flags
-            Flags.saveFlags(flags);
+            FlagsUtil.saveFlags(flags);
           else
-            Flags.saveFlags(flags);
+            FlagsUtil.saveFlags(flags);
             fail();
           end try;
         end if;
@@ -3739,16 +3740,16 @@ algorithm
   fmuTargetName := if FMUVersion == "1.0" then filenameprefix else (if inFileNamePrefix == "<default>" then AbsynUtil.pathString(className) else inFileNamePrefix);
   defaulSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, filenameprefix, SOME(defaultSimulationOptions));
   simSettings := convertSimulationOptionsToSimCode(defaulSimOpt);
-  Flags.setConfigBool(Flags.BUILDING_FMU, true);
+  FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
   try
     (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUVersion, FMUType, fmuTargetName), cache, inEnv, className, filenameprefix, addDummy, SOME(simSettings));
     true := success;
-    outValue := Values.STRING((if not Config.getRunningTestsuite() then System.pwd() + Autoconf.pathDelimiter else "") + fmuTargetName + ".fmu");
+    outValue := Values.STRING((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fmuTargetName + ".fmu");
   else
     outValue := Values.STRING("");
     return;
   end try;
-  Flags.setConfigBool(Flags.BUILDING_FMU, false);
+  FlagsUtil.setConfigBool(Flags.BUILDING_FMU, false);
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_BUILD_MODEL);
 
@@ -3888,7 +3889,7 @@ protected
   Boolean success;
 algorithm
   (success,cache) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.XML(),cache,env,className,fileNamePrefix,addDummy,inSimSettingsOpt);
-  outValue := Values.STRING(if success then ((if not Config.getRunningTestsuite() then System.pwd() + Autoconf.pathDelimiter else "") + fileNamePrefix+".xml") else "");
+  outValue := Values.STRING(if success then ((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fileNamePrefix+".xml") else "");
 end translateModelXML;
 
 
@@ -5680,7 +5681,7 @@ algorithm
         Error.clearMessages() "Clear messages";
 
         // set the rewrite rules flag
-        Flags.setConfigString(Flags.REWRITE_RULES_FILE, rewriteRulesFile);
+        FlagsUtil.setConfigString(Flags.REWRITE_RULES_FILE, rewriteRulesFile);
         // load the rewrite rules
         RewriteRules.loadRules();
 
@@ -5703,10 +5704,10 @@ algorithm
         XMLDump.dumpBackendDAE(dlow_1,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
-        compileDir = if Config.getRunningTestsuite() then "" else compileDir;
+        compileDir = if Testsuite.isRunning() then "" else compileDir;
 
         // clear the rewrite rules!
-        Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
+        FlagsUtil.setConfigString(Flags.REWRITE_RULES_FILE, "");
         RewriteRules.clearRules();
       then
         (cache,stringAppendList({compileDir,xml_filename}));
@@ -5720,7 +5721,7 @@ algorithm
         Error.clearMessages() "Clear messages";
 
         // set the rewrite rules flag
-        Flags.setConfigString(Flags.REWRITE_RULES_FILE, rewriteRulesFile);
+        FlagsUtil.setConfigString(Flags.REWRITE_RULES_FILE, rewriteRulesFile);
         // load the rewrite rules
         RewriteRules.loadRules();
 
@@ -5744,10 +5745,10 @@ algorithm
         XMLDump.dumpBackendDAE(dlow_1,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
-        compileDir = if Config.getRunningTestsuite() then "" else compileDir;
+        compileDir = if Testsuite.isRunning() then "" else compileDir;
 
         // clear the rewrite rules!
-        Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
+        FlagsUtil.setConfigString(Flags.REWRITE_RULES_FILE, "");
         RewriteRules.clearRules();
       then
         (cache,stringAppendList({compileDir,xml_filename}));
@@ -5761,7 +5762,7 @@ algorithm
         Error.clearMessages() "Clear messages";
 
         // set the rewrite rules flag
-        Flags.setConfigString(Flags.REWRITE_RULES_FILE, rewriteRulesFile);
+        FlagsUtil.setConfigString(Flags.REWRITE_RULES_FILE, rewriteRulesFile);
         // load the rewrite rules
         RewriteRules.loadRules();
 
@@ -5783,10 +5784,10 @@ algorithm
         XMLDump.dumpBackendDAE(indexed_dlow,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
-        compileDir = if Config.getRunningTestsuite() then "" else compileDir;
+        compileDir = if Testsuite.isRunning() then "" else compileDir;
 
         // clear the rewrite rules!
-        Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
+        FlagsUtil.setConfigString(Flags.REWRITE_RULES_FILE, "");
         RewriteRules.clearRules();
       then
         (cache,stringAppendList({compileDir,xml_filename}));
@@ -5800,7 +5801,7 @@ algorithm
         Error.clearMessages() "Clear messages";
 
         // set the rewrite rules flag
-        Flags.setConfigString(Flags.REWRITE_RULES_FILE, rewriteRulesFile);
+        FlagsUtil.setConfigString(Flags.REWRITE_RULES_FILE, rewriteRulesFile);
         // load the rewrite rules
         RewriteRules.loadRules();
 
@@ -5822,10 +5823,10 @@ algorithm
         XMLDump.dumpBackendDAE(indexed_dlow,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,true);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
-        compileDir = if Config.getRunningTestsuite() then "" else compileDir;
+        compileDir = if Testsuite.isRunning() then "" else compileDir;
 
         // clear the rewrite rules!
-        Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
+        FlagsUtil.setConfigString(Flags.REWRITE_RULES_FILE, "");
         RewriteRules.clearRules();
       then
         (cache,stringAppendList({compileDir,xml_filename}));
@@ -5833,7 +5834,7 @@ algorithm
     else
     equation
         // clear the rewrite rules if we fail!
-        Flags.setConfigString(Flags.REWRITE_RULES_FILE, "");
+        FlagsUtil.setConfigString(Flags.REWRITE_RULES_FILE, "");
         RewriteRules.clearRules();
     then fail();
 
@@ -6084,9 +6085,9 @@ algorithm
         false = Interactive.isType(className, p);
         print("Checking: " + Dump.unparseClassAttributesStr(c) + " " + AbsynUtil.pathString(className) + "... ");
         t1 = clock();
-        Flags.setConfigBool(Flags.CHECK_MODEL, true);
+        FlagsUtil.setConfigBool(Flags.CHECK_MODEL, true);
         (_,Values.STRING(str)) = checkModel(FCore.emptyCache(), env, className, msg);
-        Flags.setConfigBool(Flags.CHECK_MODEL, false);
+        FlagsUtil.setConfigBool(Flags.CHECK_MODEL, false);
         t2 = clock();
         elapsedTime = t2 - t1;
         s = realString(elapsedTime);
@@ -7459,7 +7460,7 @@ algorithm
   Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,SOURCEINFO(file,isReadOnly,sl,sc,el,ec,_)) := Interactive.getPathedClassInProgram(path, p);
   res := Dump.unparseRestrictionStr(restr);
   cmt := getClassComment(cdef);
-  file := Util.testsuiteFriendly(file);
+  file := Testsuite.friendly(file);
   if AbsynUtil.pathIsIdent(AbsynUtil.makeNotFullyQualified(path)) then
     isProtectedClass := false;
   else
@@ -7584,7 +7585,7 @@ algorithm
         fargs = Interactive.createFuncargsFromElementargs(mod);
         p_1 = AbsynToSCode.translateAbsyn2SCode(lineProgram);
         (cache,env) = Inst.makeEnvFromProgram(p_1);
-        (_,newexp,prop) = StaticScript.elabGraphicsExp(cache,env, Absyn.CALL(Absyn.CREF_IDENT(annName,{}),fargs), false,Prefix.NOPRE(), sourceInfo()) "impl" ;
+        (_,newexp,prop) = StaticScript.elabGraphicsExp(cache,env, Absyn.CALL(Absyn.CREF_IDENT(annName,{}),fargs), false,DAE.NOPRE(), sourceInfo()) "impl" ;
         (cache, newexp, prop) = Ceval.cevalIfConstant(cache, env, newexp, prop, false, sourceInfo());
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
         gexpstr = ExpressionDump.printExpStr(newexp);

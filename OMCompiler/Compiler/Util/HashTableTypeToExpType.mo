@@ -51,7 +51,6 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 public import DAE;
 public import BaseHashTable;
 protected import Types;
-protected import System;
 
 public type Key = DAE.Type;
 public type Value = DAE.Type;

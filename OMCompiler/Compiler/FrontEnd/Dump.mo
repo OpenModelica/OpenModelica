@@ -51,10 +51,12 @@ import File.Escape;
 
 // protected imports
 protected
+
 import AbsynDumpTpl;
-import Flags;
 import Config;
 import Error;
+import Flags;
+import FlagsUtil;
 import List;
 import Print;
 import Tpl;
@@ -139,9 +141,9 @@ algorithm
   // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
   // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
   status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString2(AbsynDumpTpl.dump, inProgram, options);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseStr;
 
 public function unparseClassList
@@ -154,9 +156,9 @@ algorithm
   // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
   // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
   status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString2(AbsynDumpTpl.dump, Absyn.PROGRAM(inClasses, Absyn.TOP()), defaultDumpOptions);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseClassList;
 
 public function unparseClassStr
@@ -170,9 +172,9 @@ algorithm
   // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
   // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
   status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString2(AbsynDumpTpl.dumpClass, inClass, defaultDumpOptions);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseClassStr;
 
 public function unparseWithin
@@ -185,9 +187,9 @@ algorithm
   // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
   // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
   status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpWithin, inWithin);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseWithin;
 
 protected function dumpWithin
@@ -809,9 +811,9 @@ algorithm
   // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
   // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
   status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpElementArg,inElementArg);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseElementArgStr;
 
 public function unparseElementItemStr
@@ -824,9 +826,9 @@ algorithm
   // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
   // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
   status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString2(AbsynDumpTpl.dumpElementItem, inElementItem, defaultDumpOptions);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseElementItemStr;
 
 public function unparseAnnotation
@@ -839,9 +841,9 @@ algorithm
   // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
   // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
   status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpAnnotation, inAnnotation);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseAnnotation;
 
 public function unparseAnnotationOption
@@ -1113,9 +1115,9 @@ algorithm
   // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
   // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
   status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpImport, inImport);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseImportStr;
 
 protected function printElementattr "Prints ElementAttributes to the Print buffer."
@@ -1293,9 +1295,9 @@ algorithm
   // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
   // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
   status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpComponentCondition, inComponentCondition);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseComponentCondition;
 
 protected function printArraydimOpt "
@@ -1479,9 +1481,9 @@ algorithm
   // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
   // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
   status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpModification, inModification);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseModificationStr;
 
 public function equationName
@@ -1621,9 +1623,9 @@ algorithm
   // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
   // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
   status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString3(AbsynDumpTpl.dumpClassPart, classPart, 0, defaultDumpOptions);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseClassPart;
 
 public function unparseEquationStr
@@ -1636,9 +1638,9 @@ algorithm
   // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
   // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
   status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpEquation, inEquation);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseEquationStr;
 
 public function unparseEquationItemStr
@@ -1651,9 +1653,9 @@ algorithm
   // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
   // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
   status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpEquationItem, inEquation);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseEquationItemStr;
 
 public function unparseEquationItemStrLst
@@ -1844,9 +1846,9 @@ algorithm
   // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
   // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
   status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpAlgorithmItem, inAlgorithmItem);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseAlgorithmStr;
 
 protected function printAlgElseif "Prints an algorithm elseif branch to the Print buffer."
@@ -2693,9 +2695,9 @@ algorithm
   // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
   // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
   status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpExp, inExp);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end printExpStr;
 
 public function printCodeStr
@@ -2708,9 +2710,9 @@ algorithm
   // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
   // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
   status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpCodeNode, inCode);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end printCodeStr;
 
 protected function printListStr
@@ -3190,9 +3192,9 @@ algorithm
   // adrpo: make sure WE DO NOT HAVE this config flag set here: #5680
   // -m, --modelicaOutput       Enables valid modelica output for flat modelica.
   status := Flags.getConfigBool(Flags.MODELICA_OUTPUT);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, false);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, false);
   outString := Tpl.tplString(AbsynDumpTpl.dumpTypeSpec, inTypeSpec);
-  Flags.setConfigBool(Flags.MODELICA_OUTPUT, status);
+  FlagsUtil.setConfigBool(Flags.MODELICA_OUTPUT, status);
 end unparseTypeSpec;
 
 public function printTypeSpec

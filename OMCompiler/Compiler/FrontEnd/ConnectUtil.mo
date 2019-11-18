@@ -55,7 +55,6 @@ import Connect;
 import DAE;
 import FCore;
 import InnerOuter;
-import Prefix;
 import ConnectionGraph;
 
 // protected imports
@@ -99,7 +98,7 @@ public function newSet
   connections down in the instance hierarchy, but the list of connection crefs
   needs to be propagated to be able to evaluate the cardinality operator. See
   comments in addSet below for how the sets are merged later."
-  input Prefix.Prefix prefix;
+  input DAE.Prefix prefix;
   input output Sets sets;
 protected
   String pstr;
@@ -265,7 +264,7 @@ public function addConnectorVariablesFromDAE
   variables in the dae as inside connectors to the connection sets."
   input Boolean ignore;
   input ClassInf.State classState;
-  input Prefix.Prefix prefix;
+  input DAE.Prefix prefix;
   input list<DAE.Var> vars;
   input SourceInfo info;
   input DAE.ElementSource elementSource;
@@ -298,7 +297,7 @@ protected function addFlowVariableFromDAE
   "Adds a flow variable from the DAE to the sets as an inside flow variable."
   input DAE.Var variable;
   input DAE.ElementSource elementSource;
-  input Prefix.Prefix prefix;
+  input DAE.Prefix prefix;
   input output Sets sets;
 protected
   list<DAE.ComponentRef> crefs;
@@ -408,7 +407,7 @@ protected function addStreamFlowAssociations
   "Adds information to the connection sets about which flow variables each
   stream variable is associated to."
   input output Sets sets;
-  input Prefix.Prefix prefix;
+  input DAE.Prefix prefix;
   input list<DAE.Var> streamVars;
   input list<DAE.Var> flowVars;
 protected
@@ -567,7 +566,7 @@ protected function addInsideFlowVariable
   input output Sets sets;
   input DAE.ComponentRef cref;
   input DAE.ElementSource source;
-  input Prefix.Prefix prefix;
+  input DAE.Prefix prefix;
 protected
   ConnectorElement e;
 algorithm
@@ -620,7 +619,7 @@ public function addOuterConnection
   "Adds a connection with a reference to an outer connector These are added to a
    special list, such that they can be moved up in the instance hierarchy to a
    place where both instances are defined."
-  input Prefix.Prefix scope;
+  input DAE.Prefix scope;
   input output Sets sets;
   input DAE.ComponentRef cr1;
   input DAE.ComponentRef cr2;

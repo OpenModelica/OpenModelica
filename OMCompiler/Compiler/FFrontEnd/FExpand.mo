@@ -40,7 +40,6 @@ encapsulated package FExpand
 // public imports
 public
 import Absyn;
-import AbsynUtil;
 import FCore;
 
 protected

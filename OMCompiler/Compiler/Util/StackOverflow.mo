@@ -33,8 +33,8 @@ encapsulated package StackOverflow
 
 protected
 
-import Config;
 import System;
+import Testsuite;
 
 function unmangle
   input String inSymbol;
@@ -109,7 +109,7 @@ protected
   String prev = "";
   Integer n = 1, prevN = 1;
 algorithm
-  if Config.getRunningTestsuite() then
+  if Testsuite.isRunning() then
     symbols := {"[bt] [Symbols are not generated when running the test suite]"};
     return;
   end if;

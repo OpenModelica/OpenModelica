@@ -27,7 +27,6 @@ import List;
 import DAEUtil;
 import DAEDump;
 import SCode;
-import FCore;
 import ExecStat.execStat;
 
 public uniontype Functionargs

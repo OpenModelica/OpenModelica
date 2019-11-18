@@ -1032,7 +1032,7 @@ public function getSMStatesInContext "
 Author: BTH
 Return list of states defined in current context (by checking 'transtion' and 'initialState' operators)"
   input list<SCode.Equation> eqns;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   output list<DAE.ComponentRef> states "Initial and non-initial states";
   output list<DAE.ComponentRef> initialStates "Only initial states";
 protected
@@ -1061,7 +1061,7 @@ protected function prefixCrefNoContext2 "
 Helper function to getSMStatesInContext.
 Swapped order of inputs of PrefixUtil.prefixCrefNoContext(..) in order to use it with map1"
   input DAE.ComponentRef inCref;
-  input Prefix.Prefix inPre;
+  input DAE.Prefix inPre;
   output DAE.ComponentRef outCref;
 algorithm
   outCref := PrefixUtil.prefixCrefNoContext(inPre, inCref);

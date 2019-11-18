@@ -50,6 +50,7 @@ import AvlSetInt;
 import AvlSetPath;
 import BackendDAE;
 import BackendDAEFunc;
+import BackendEquation;
 import DAE;
 import FCore;
 import Util;
@@ -61,7 +62,6 @@ import Array;
 import BackendDAEOptimize;
 import BackendDAETransform;
 import BackendDump;
-import BackendEquation;
 import BackendDAEEXT;
 import BackendInline;
 import BackendVarTransform;
@@ -70,7 +70,6 @@ import BinaryTree;
 import Causalize;
 import CheckModel;
 import ClassInf;
-import ClockIndexes;
 import CommonSubExpression;
 import ComponentReference;
 import Config;
@@ -95,7 +94,7 @@ import ExpressionSimplify;
 import ExpressionSolve;
 import FindZeroCrossings;
 import Flags;
-import FMI;
+import FlagsUtil;
 import Global;
 import HpcOmEqSystems;
 import IndexReduction;
@@ -4081,7 +4080,7 @@ function testSolvabilityForEquation
 "Helper function for findSolvabelVarInEquation."
   input DAE.ComponentRef inCref;
   input BackendDAE.Equation inEq;
-  input array<Boolean> varArray;  
+  input array<Boolean> varArray;
   input BackendDAE.Variables inVariables "Unknowns of system";
   input BackendDAE.Variables globalKnownVars;
   output Boolean solvability;
@@ -4147,7 +4146,7 @@ algorithm
       then false;
 
     // IF_EQUATION
-	  // TODO : how to handle this?
+    // TODO : how to handle this?
     // Proposal:
     // 1. vars in conditions are unsolvable
     // 2. vars occur in all branches: check how they are occur
@@ -4156,7 +4155,7 @@ algorithm
       try
         print("\n if equation?");
         //check condition?
-	      try_b := tryToFindSolvableEqInBranch(inCref, eqnselse, varArray, inVariables, globalKnownVars);
+        try_b := tryToFindSolvableEqInBranch(inCref, eqnselse, varArray, inVariables, globalKnownVars);
         true := try_b;
         for eqns in eqnslst loop
           try_b := tryToFindSolvableEqInBranch(inCref, eqns, varArray, inVariables, globalKnownVars);
@@ -8160,7 +8159,7 @@ protected function deprecatedDebugFlag
 algorithm
   if Flags.isSet(inFlag) then
     outModuleList := inModule::inModuleList;
-    Error.addCompilerWarning("Deprecated debug flag -d=" + Flags.debugFlagName(inFlag) + " detected. Use --" + inPhase + "=" + inModule + " instead.");
+    Error.addCompilerWarning("Deprecated debug flag -d=" + FlagsUtil.debugFlagName(inFlag) + " detected. Use --" + inPhase + "=" + inModule + " instead.");
   end if;
 end deprecatedDebugFlag;
 
@@ -8173,7 +8172,7 @@ protected function deprecatedConfigFlag
 algorithm
   if Flags.getConfigBool(inFlag) then
     outModuleList := inModule::inModuleList;
-    Error.addCompilerWarning("Deprecated flag --" + Flags.configFlagName(inFlag) + " detected. Use --" + inPhase + "=" + inModule + " instead.");
+    Error.addCompilerWarning("Deprecated flag --" + FlagsUtil.configFlagName(inFlag) + " detected. Use --" + inPhase + "=" + inModule + " instead.");
   end if;
 end deprecatedConfigFlag;
 
@@ -8222,12 +8221,12 @@ algorithm
   end if;
 
   if not Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) and not listEmpty(enabledModules) then
-    Error.addCompilerError("It's not possible to combine following flags: --preOptModules+=... and --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
+    Error.addCompilerError("It's not possible to combine following flags: --preOptModules+=... and --" + FlagsUtil.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
     fail();
   end if;
 
   if not Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) and not listEmpty(disabledModules) then
-    Error.addCompilerError("It's not possible to combine following flags: --postOptModules-=... and --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
+    Error.addCompilerError("It's not possible to combine following flags: --postOptModules-=... and --" + FlagsUtil.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
     fail();
   end if;
 
@@ -8269,7 +8268,7 @@ algorithm
     enabledModules := deprecatedDebugFlag(Flags.ON_RELAXATION, enabledModules, "relaxSystem", "postOptModules+");
 
     if Flags.getConfigBool(Flags.DISABLE_LINEAR_TEARING) then
-      Flags.setConfigInt(Flags.MAX_SIZE_LINEAR_TEARING, 0);
+      FlagsUtil.setConfigInt(Flags.MAX_SIZE_LINEAR_TEARING, 0);
       Error.addCompilerWarning("Deprecated flag --disableLinearTearing detected. Use --maxSizeLinearTearing=0 instead.");
     end if;
 
@@ -8330,12 +8329,12 @@ algorithm
   end if;
 
   if not Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) and not listEmpty(enabledModules) then
-    Error.addCompilerError("It's not possible to combine following flags: --postOptModules+=... and --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
+    Error.addCompilerError("It's not possible to combine following flags: --postOptModules+=... and --" + FlagsUtil.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
     fail();
   end if;
 
   if not Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) and not listEmpty(disabledModules) then
-    Error.addCompilerError("It's not possible to combine following flags: --postOptModules-=... and --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
+    Error.addCompilerError("It's not possible to combine following flags: --postOptModules-=... and --" + FlagsUtil.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
     fail();
   end if;
 
@@ -8374,12 +8373,12 @@ algorithm
   end if;
 
   if not Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) and not listEmpty(enabledModules) then
-    Error.addCompilerError("It's not possible to combine following flags: --initOptModules+=... and --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
+    Error.addCompilerError("It's not possible to combine following flags: --initOptModules+=... and --" + FlagsUtil.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
     fail();
   end if;
 
   if not Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) and not listEmpty(disabledModules) then
-    Error.addCompilerError("It's not possible to combine following flags: --initOptModules-=... and --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
+    Error.addCompilerError("It's not possible to combine following flags: --initOptModules-=... and --" + FlagsUtil.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false");
     fail();
   end if;
 
@@ -8406,7 +8405,7 @@ algorithm
     for name in inStrOptModules loop
       for index in getModuleIndexes(name, inOptModules) loop
         if index < maxIndex then
-          Error.addCompilerWarning("Specified ordering will be ignored. Use --" + Flags.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false to override module ordering.");
+          Error.addCompilerWarning("Specified ordering will be ignored. Use --" + FlagsUtil.configFlagName(Flags.DEFAULT_OPT_MODULES_ORDERING) + "=false to override module ordering.");
           maxIndex := numModules;
         else
           maxIndex := intMax(maxIndex, index);

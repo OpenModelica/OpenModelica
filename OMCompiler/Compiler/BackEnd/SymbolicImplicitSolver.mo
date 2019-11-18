@@ -52,8 +52,8 @@ import BackendEquation;
 import BackendVariable;
 import ComponentReference;
 import Expression;
-import ExpressionDump;
 import Flags;
+import FlagsUtil;
 import List;
 
 
@@ -130,7 +130,7 @@ algorithm
 
   inlineBDAE := BackendDAE.DAE(osystlst, shared);
 
-  execbool := Flags.disableDebug(Flags.EXEC_STAT);
+  execbool := FlagsUtil.disableDebug(Flags.EXEC_STAT);
   if Flags.isSet(Flags.DUMP_INLINE_SOLVER) then
     BackendDump.bltdump("Generated inline system:",inlineBDAE);
   end if;
@@ -150,7 +150,7 @@ algorithm
                                                             "calculateStrongComponentJacobians",
                                                             "removeConstants",
                                                             "simplifyTimeIndepFuncCalls"});
-  _ := Flags.set(Flags.EXEC_STAT, execbool);
+  _ := FlagsUtil.set(Flags.EXEC_STAT, execbool);
   if Flags.isSet(Flags.DUMP_INLINE_SOLVER) then
     BackendDump.bltdump("Final inline systems:", inlineBDAE);
   end if;

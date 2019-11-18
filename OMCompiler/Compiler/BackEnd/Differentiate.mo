@@ -56,6 +56,7 @@ protected import BackendDump;
 protected import BackendDAECreate;
 protected import BackendDAEUtil;
 protected import BackendEquation;
+protected import BackendUtil;
 protected import BackendVariable;
 protected import ClassInf;
 protected import ComponentReference;
@@ -2281,7 +2282,7 @@ algorithm
         (true,_) = checkDerivativeFunctionInputs(blst, tp, dtp);
         (expl1,_) = List.splitOnBoolList(expl, blst);
         (dexpl, functions) = List.map3Fold(expl1, function differentiateExp(maxIter=maxIter), inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-        funcname = Util.modelicaStringToCStr(AbsynUtil.pathString(path), false);
+        funcname = BackendUtil.modelicaStringToCStr(AbsynUtil.pathString(path), false);
         diffFuncData = BackendDAE.emptyInputData;
          diffFuncData.matrixName = SOME(funcname);
         (dexplZero, functions) = List.map3Fold(expl1, function differentiateExp(maxIter=maxIter), DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), diffFuncData, BackendDAE.GENERIC_GRADIENT(), functions);
@@ -2673,7 +2674,7 @@ algorithm
 
       // prepare diffData
       path = DAEUtil.functionName(func);
-      funcname = Util.modelicaStringToCStr(AbsynUtil.pathString(path), false);
+      funcname = BackendUtil.modelicaStringToCStr(AbsynUtil.pathString(path), false);
       diffFuncData = BackendDAE.emptyInputData;
       diffFuncData.matrixName = SOME(funcname);
       diffFuncData.diffedFunctions = inInputData.diffedFunctions;
@@ -2739,7 +2740,7 @@ protected function getDiffedTypeandName
   output DAE.Type diffedType;
 algorithm
   diffedType := Types.extendsFunctionTypeArgs(DAEUtil.getFunctionType(inFunction), inputVarsDer, outputVarsDer, blst);
-  diffedName := AbsynUtil.stringPath("$DER" + Util.modelicaStringToCStr(AbsynUtil.pathString(DAEUtil.functionName(inFunction)), false));
+  diffedName := AbsynUtil.stringPath("$DER" + BackendUtil.modelicaStringToCStr(AbsynUtil.pathString(DAEUtil.functionName(inFunction)), false));
 end getDiffedTypeandName;
 
 protected function getFunctionInOutVars
@@ -2760,7 +2761,7 @@ algorithm
   inputVars := DAEUtil.getFunctionInputVars(inFunction);
   outputVars := DAEUtil.getFunctionOutputVars(inFunction);
   diffData := BackendDAE.emptyInputData;
-  diffData.matrixName := SOME(Util.modelicaStringToCStr(AbsynUtil.pathString(DAEUtil.functionName(inFunction)), false));
+  diffData.matrixName := SOME(BackendUtil.modelicaStringToCStr(AbsynUtil.pathString(DAEUtil.functionName(inFunction)), false));
 
   (inputVarsDer, functions, inputVarsNoDer, blst) := differentiateElementVars(inputVars, inDiffwrtCref, diffData, BackendDAE.DIFFERENTIATION_FUNCTION(), functions, {}, {}, {}, maxIter, true);
   (outputVarsDer, functions, outputVarsNoDer, _) := differentiateElementVars(outputVars, inDiffwrtCref, diffData, BackendDAE.DIFFERENTIATION_FUNCTION(), functions, {}, {}, {}, maxIter, false);

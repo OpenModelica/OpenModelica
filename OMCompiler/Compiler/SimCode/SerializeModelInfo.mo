@@ -231,7 +231,7 @@ protected
   SourceInfo info;
   list<Absyn.Path> paths,typeLst;
   list<Absyn.Within> partOfLst;
-  Prefix.ComponentPrefix instance;
+  DAE.ComponentPrefix instance;
   Integer i;
   list<DAE.SymbolicOperation> operations;
 algorithm
@@ -249,8 +249,8 @@ algorithm
   end if;
 
   _ := match instance
-  case Prefix.NOCOMPPRE() then ();
-  case Prefix.PRE()
+  case DAE.NOCOMPPRE() then ();
+  case DAE.PRE()
   algorithm
     File.write(file,",\"instance\":\"");
     PrefixUtil.writeComponentPrefix(file,instance,escape=JSON);

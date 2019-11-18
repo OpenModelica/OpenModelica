@@ -37,11 +37,9 @@ public import BackendDAE;
 public import BackendVarTransform;
 public import DAE;
 public import FCore;
-public import GlobalScript;
 public import HashTable;
 public import Values;
 public import SymbolicJacobian;
-public import SimCodeUtil;
 
 protected
 import AdjacencyMatrix;
@@ -62,6 +60,7 @@ import Expression;
 import ExpressionSimplify;
 import ExpressionSolve;
 import Flags;
+import FlagsUtil;
 import HashSet;
 import HashTable2;
 import InnerOuter;
@@ -72,6 +71,7 @@ import MathematicaDump;
 import Print;
 import SCode;
 import AbsynToSCode;
+import SimCode;
 import Sorting;
 import SymbolTable;
 import System;
@@ -149,9 +149,9 @@ algorithm
         //print("- Flatten ok\n");
         dlow = BackendDAECreate.lower(dae,cache,graph,BackendDAE.EXTRA_INFO(description,outputFile));
         //(dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(dlow, funcs,SOME({"removeSimpleEquations","removeFinalParameters", "removeEqualRHS", "expandDerOperator"}), NONE(), NONE(),NONE());
-        Flags.setConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING, false);
+        FlagsUtil.setConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING, false);
         (dlow_1) = BackendDAEUtil.getSolvedSystem(dlow, "", SOME({"removeSimpleEquations","removeUnusedVariables","removeEqualRHS","expandDerOperator"}), NONE(), NONE(), SOME({}));
-        Flags.setConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING, forceOrdering);
+        FlagsUtil.setConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING, forceOrdering);
         //print("* Lowered Ok \n");
 
         dlow_1 = removeSimpleEquationsUC(dlow_1);
@@ -1332,11 +1332,11 @@ algorithm
 end findSquareAndNonSquareBlocksHelper;
 
 public function findSquareAndNonSquareBlocksHelper1
-	input list<tuple<list<Integer>,Integer>> inlist1;
-	input list<tuple<list<String>,Integer>> inlist2;
-	output Boolean exists=false;
-	output list<Integer> foundknownblocks={};
-	output list<Integer> blockranks={};
+  input list<tuple<list<Integer>,Integer>> inlist1;
+  input list<tuple<list<String>,Integer>> inlist2;
+  output Boolean exists=false;
+  output list<Integer> foundknownblocks={};
+  output list<Integer> blockranks={};
 protected
   Boolean checkknowns;
   list<String> blocksvarlist;

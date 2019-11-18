@@ -49,7 +49,6 @@ public import FCore;
 public import InnerOuter;
 public import InstTypes;
 public import Mod;
-public import Prefix;
 public import SCode;
 public import UnitAbsyn;
 
@@ -113,8 +112,8 @@ algorithm
         checkExternalObjectMod(inMod, className);
         destr = SCodeUtil.getExternalObjectDestructor(els);
         constr = SCodeUtil.getExternalObjectConstructor(els);
-        env = FGraph.mkClassNode(env, destr, Prefix.NOPRE(), inMod);
-        env = FGraph.mkClassNode(env, constr, Prefix.NOPRE(), inMod);
+        env = FGraph.mkClassNode(env, destr, DAE.NOPRE(), inMod);
+        env = FGraph.mkClassNode(env, constr, DAE.NOPRE(), inMod);
         (cache,ih) = instantiateExternalObjectDestructor(cache,env,ih,destr);
         (cache,ih,functp) = instantiateExternalObjectConstructor(cache,env,ih,constr);
         SOME(classNameFQ)=  FGraph.getScopePath(env); // Fully qualified classname
@@ -192,7 +191,7 @@ algorithm
 
     case (cache,_,ih,_)
       equation
-        (cache,_,ih) = implicitFunctionInstantiation(cache,env,ih,DAE.NOMOD(),Prefix.NOPRE(),cl,{});
+        (cache,_,ih) = implicitFunctionInstantiation(cache,env,ih,DAE.NOMOD(),DAE.NOPRE(),cl,{});
       then
         (cache,ih);
     else
@@ -222,7 +221,7 @@ algorithm
 
     case (cache,_,ih,_)
       equation
-        (cache,env1,ih) = implicitFunctionInstantiation(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), cl, {});
+        (cache,env1,ih) = implicitFunctionInstantiation(cache,env,ih, DAE.NOMOD(), DAE.NOPRE(), cl, {});
         (cache,ty,_) = Lookup.lookupType(cache,env1,Absyn.IDENT("constructor"),NONE());
       then
         (cache,ih,ty);
@@ -242,7 +241,7 @@ public function implicitFunctionInstantiation
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SCode.Element inClass;
   input list<list<DAE.Dimension>> inInstDims;
   output FCore.Cache outCache;
@@ -255,7 +254,7 @@ algorithm
       FCore.Graph env,cenv;
       Absyn.Path fpath;
       DAE.Mod mod;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       SCode.Element c;
       String n;
       InstDims inst_dims;
@@ -301,7 +300,7 @@ protected function implicitFunctionInstantiation2
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
+  input DAE.Prefix inPrefix;
   input SCode.Element inClass;
   input list<list<DAE.Dimension>> inInstDims;
   input Boolean instFunctionTypeOnly "if true, do no additional checking of the function";
@@ -317,7 +316,7 @@ algorithm
       FCore.Graph env_1,env,tempenv,cenv;
       Absyn.Path fpath;
       DAE.Mod mod;
-      Prefix.Prefix pre;
+      DAE.Prefix pre;
       SCode.Element c;
       String n;
       InstDims inst_dims;
@@ -492,7 +491,7 @@ algorithm
             equation
               cache = FCore.addCachedInstFuncGuard(cache,p);
              (cache,_,ih,funcs) =
-                implicitFunctionInstantiation2(cache,cenv,ih,DAE.NOMOD(),Prefix.NOPRE(),cdef,{},false);
+                implicitFunctionInstantiation2(cache,cenv,ih,DAE.NOMOD(),DAE.NOPRE(),cdef,{},false);
 
              funcs = InstUtil.addNameToDerivativeMapping(funcs,path);
              cache = FCore.addDaeFunction(cache, funcs);
@@ -562,7 +561,7 @@ algorithm
                                    classDef = SCode.PARTS()))
       equation
         // stripped_class = SCode.CLASS(id,prefixes,e,p,r,SCode.PARTS(elts,{},{},{},{},{},{},extDecl),cmt,info);
-        (cache,env_1,ih,funs) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), inClass, {}, true);
+        (cache,env_1,ih,funs) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), DAE.NOPRE(), inClass, {}, true);
         // Only external functions are valid without an algorithm section...
         cache = FCore.addDaeExtFunction(cache, funs);
       then
@@ -577,7 +576,7 @@ algorithm
       equation
         elts = List.select(elts,isElementImportantForFunction);
         stripped_class = SCode.CLASS(id,prefixes,e,p,r,SCode.PARTS(elts,{},{},{},{},{},{},extDecl),cmt,info);
-        (cache,env_1,ih,_) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), stripped_class, {}, true);
+        (cache,env_1,ih,_) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), DAE.NOPRE(), stripped_class, {}, true);
         // Only external functions are valid without an algorithm section...
         // cache = FCore.addDaeExtFunction(cache, funs);
       then
@@ -589,24 +588,24 @@ algorithm
                                                             modifications = mod1),info = info))
       equation
         (cache,(c as SCode.CLASS()),cenv) = Lookup.lookupClass(cache, env, cn); // Makes MultiBody gravityacceleration hacks shit itself
-        (cache,mod2) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), mod1, false, Mod.DERIVED(cn), info);
+        (cache,mod2) = Mod.elabMod(cache, env, ih, DAE.NOPRE(), mod1, false, Mod.DERIVED(cn), info);
 
         (cache,_,ih,_,_,_,ty,_,_,_) =
           Inst.instClass(cache,cenv,ih,UnitAbsynBuilder.emptyInstStore(), mod2,
-            Prefix.NOPRE(), c, {}, true, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
+            DAE.NOPRE(), c, {}, true, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
 
         env_1 = env; // why would you want to do this: FGraph.mkClassNode(env,c); ?????
         (cache,fpath) = Inst.makeFullyQualifiedIdent(cache,env_1,id);
         ty1 = InstUtil.setFullyQualifiedTypename(ty,fpath);
         env_1 = FGraph.mkTypeNode(env_1, id, ty1);
-        // (cache,env_1,ih,_) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), inClass, {}, true);
+        // (cache,env_1,ih,_) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), DAE.NOPRE(), inClass, {}, true);
       then
         (cache,env_1,ih);
 
     case (cache,env,ih,SCode.CLASS(
                                    classDef = SCode.OVERLOAD()))
       equation
-         (cache,env,ih,_) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), inClass, {}, true);
+         (cache,env,ih,_) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), DAE.NOPRE(), inClass, {}, true);
       then
         (cache,env,ih);
 
@@ -625,7 +624,7 @@ protected function instOverloadedFunctions
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input list<Absyn.Path> inAbsynPathLst;
   input SourceInfo inInfo;
   output FCore.Cache outCache;
@@ -690,7 +689,7 @@ protected function instExtDecl
   input list<DAE.Element> inElements;
   input DAE.Type funcType;
   input Boolean impl;
-  input Prefix.Prefix pre;
+  input DAE.Prefix pre;
   input SourceInfo info;
   output DAE.ExternalDecl daeextdecl;
 protected
@@ -819,7 +818,7 @@ algorithm
           recordCl = SCodeUtil.setClassName(newName, recordCl);
 
           (cache,_,_,_,_,_,recType,_,_,_) = Inst.instClass(inCache,recordEnv, InnerOuter.emptyInstHierarchy,
-            UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), recordCl,
+            UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), DAE.NOPRE(), recordCl,
             {}, true, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
 
           DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo) = recType;

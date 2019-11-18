@@ -41,24 +41,27 @@ public import Absyn;
 public import BackendDAE;
 public import DAE;
 
-protected import AbsynUtil;
-protected import BackendDAEOptimize;
-protected import BackendDAEUtil;
-protected import BackendDump;
-protected import ExpressionDump;
-protected import BackendEquation;
-protected import BackendVariable;
-protected import ComponentReference;
-protected import DAEUtil;
-protected import DAEDump;
-protected import Error;
-protected import Flags;
-protected import List;
-protected import Util;
-protected import Types;
-protected import Expression;
-protected import HashTable;
-protected import MMath;
+protected
+
+import AbsynUtil;
+import BackendDAEOptimize;
+import BackendDAEUtil;
+import BackendDump;
+import BackendEquation;
+import BackendVariable;
+import ComponentReference;
+import DAEDump;
+import DAEUtil;
+import Error;
+import ErrorTypes;
+import Expression;
+import Flags;
+import HashTable;
+import List;
+import MMath;
+import Types;
+import Util;
+
 
 // =============================================================================
 // clock partitioning
@@ -2930,8 +2933,8 @@ end setSystPartition;
 
 protected function getPartitionConflictError
   input Option<DAE.ComponentRef> inComp;
-  output Error.Message msg;
-  output Error.MessageTokens tokens;
+  output ErrorTypes.Message msg;
+  output ErrorTypes.MessageTokens tokens;
 algorithm
   (msg, tokens) := match inComp
     local DAE.ComponentRef cr;
@@ -2951,8 +2954,8 @@ algorithm
   outPartitionType := match (inOldPartitionType, inNewPartitionType)
     local
       Boolean newVal, oldVal;
-      Error.Message msg;
-      Error.MessageTokens tokens;
+      ErrorTypes.Message msg;
+      ErrorTypes.MessageTokens tokens;
     case (NONE(), _) then inNewPartitionType;
     case (_, NONE()) then inOldPartitionType;
     case (SOME(oldVal), SOME(newVal)) guard (oldVal == newVal)

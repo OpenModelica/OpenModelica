@@ -41,7 +41,6 @@ encapsulated package CevalScriptOMSimulator
 
 import Values;
 import OMSimulator;
-import List;
 
 public function ceval
   input String inFunctionName;
