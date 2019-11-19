@@ -3188,7 +3188,7 @@ protected
   Type el_ty;
 algorithm
   if listEmpty(ranges) then
-    result := fn(foldExp, evalExp_impl(exp, EvalTarget.IGNORE_ERRORS()));
+    result := fn(evalExp(foldExp), evalExp(exp));
   else
     range :: ranges_rest := ranges;
     iter :: iters_rest := iterators;
@@ -3198,7 +3198,7 @@ algorithm
     while ExpressionIterator.hasNext(range_iter) loop
       (range_iter, value) := ExpressionIterator.next(range_iter);
       Mutable.update(iter, value);
-      result := evalReduction2(exp, ranges_rest, iters_rest, result, fn);
+      result := evalReduction2(evalExp(exp), ranges_rest, iters_rest, result, fn);
     end while;
   end if;
 end evalReduction2;
