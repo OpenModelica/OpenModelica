@@ -629,8 +629,10 @@ Archived Simulations Tab
 Shows the list of simulations already finished or running.
 Double clicking on any of them opens the simulation output window.
 
-Plotting the Simulation Results
--------------------------------
+.. _omedit-2d-plotting :
+
+2D Plotting
+-----------
 
 Successful simulation of model produces the result file which contains
 the instance variables that are candidate for plotting. Variables
