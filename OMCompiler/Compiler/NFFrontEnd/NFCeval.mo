@@ -3061,6 +3061,16 @@ function evalArrayConstructor
   input Expression exp;
   input list<tuple<InstNode, Expression>> iterators;
   output Expression result;
+algorithm
+  result := evalExpPartial(exp);
+  result := Expression.bindingExpMap(result,
+    function evalArrayConstructor2(iterators = iterators));
+end evalArrayConstructor;
+
+function evalArrayConstructor2
+  input Expression exp;
+  input list<tuple<InstNode, Expression>> iterators;
+  output Expression result;
 protected
   Expression e;
   list<Expression> ranges;
@@ -3078,8 +3088,8 @@ algorithm
     types := ty :: types;
   end for;
 
-  result := evalArrayConstructor2(e, ranges, iters, types);
-end evalArrayConstructor;
+  result := evalArrayConstructor3(e, ranges, iters, types);
+end evalArrayConstructor2;
 
 function createIterationRanges
   input output Expression exp;
@@ -3100,7 +3110,7 @@ algorithm
   end for;
 end createIterationRanges;
 
-function evalArrayConstructor2
+function evalArrayConstructor3
   input Expression exp;
   input list<Expression> ranges;
   input list<Mutable<Expression>> iterators;
@@ -3127,12 +3137,12 @@ algorithm
     while ExpressionIterator.hasNext(range_iter) loop
       (range_iter, value) := ExpressionIterator.next(range_iter);
       Mutable.update(iter, value);
-      expl := evalArrayConstructor2(exp, ranges_rest, iters_rest, rest_ty) :: expl;
+      expl := evalArrayConstructor3(exp, ranges_rest, iters_rest, rest_ty) :: expl;
     end while;
 
     result := Expression.makeArray(ty, listReverseInPlace(expl), literal = true);
   end if;
-end evalArrayConstructor2;
+end evalArrayConstructor3;
 
 partial function ReductionFn
   input Expression exp1;
@@ -3141,6 +3151,18 @@ partial function ReductionFn
 end ReductionFn;
 
 function evalReduction
+  input Function fn;
+  input Expression exp;
+  input Type ty;
+  input list<tuple<InstNode, Expression>> iterators;
+  output Expression result;
+algorithm
+  result := evalExpPartial(exp);
+  result := Expression.bindingExpMap(result,
+    function evalReduction2(fn = fn, ty = ty, iterators = iterators));
+end evalReduction;
+
+function evalReduction2
   input Function fn;
   input Expression exp;
   input Type ty;
@@ -3168,10 +3190,10 @@ algorithm
         fail();
   end match;
 
-  result := evalReduction2(e, ranges, iters, default_exp, red_fn);
-end evalReduction;
+  result := evalReduction3(e, ranges, iters, default_exp, red_fn);
+end evalReduction2;
 
-function evalReduction2
+function evalReduction3
   input Expression exp;
   input list<Expression> ranges;
   input list<Mutable<Expression>> iterators;
@@ -3198,10 +3220,10 @@ algorithm
     while ExpressionIterator.hasNext(range_iter) loop
       (range_iter, value) := ExpressionIterator.next(range_iter);
       Mutable.update(iter, value);
-      result := evalReduction2(exp, ranges_rest, iters_rest, result, fn);
+      result := evalReduction3(exp, ranges_rest, iters_rest, result, fn);
     end while;
   end if;
-end evalReduction2;
+end evalReduction3;
 
 function evalSize
   input Expression exp;
