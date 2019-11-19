@@ -3,7 +3,7 @@
 
 This chapter covers the 2D plotting available in OpenModelica via
 OMNotebook, OMShell and command line script. The plotting is based on
-OMPlot application. See also OMEdit :ref:`_omedit-2d-plotting`.
+OMPlot application. See also OMEdit :ref:`omedit-2d-plotting`.
 
 Example
 -------
