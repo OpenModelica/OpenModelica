@@ -3078,8 +3078,7 @@ protected
   list<Type> types = {};
   Type ty;
 algorithm
-  e := evalExpPartial(exp);
-  (e, ranges, iters) := createIterationRanges(e, iterators);
+  (e, ranges, iters) := createIterationRanges(exp, iterators);
 
   // Precompute all the types we're going to need for the arrays created.
   ty := Expression.typeOf(e);
@@ -3174,8 +3173,7 @@ protected
   list<Mutable<Expression>> iters;
   ReductionFn red_fn;
 algorithm
-  e := evalExpPartial(exp);
-  (e, ranges, iters) := createIterationRanges(e, iterators);
+  (e, ranges, iters) := createIterationRanges(exp, iterators);
 
   (red_fn, default_exp) := match AbsynUtil.pathString(Function.name(fn))
     case "sum" then (evalBinaryAdd, Expression.makeZero(ty));
