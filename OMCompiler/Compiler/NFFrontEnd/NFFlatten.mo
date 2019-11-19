@@ -316,7 +316,7 @@ algorithm
     //cond := flattenBinding(condition, prefix);
     exp := Binding.getTypedExp(cond);
     exp := Ceval.evalExp(exp, Ceval.EvalTarget.CONDITION(Binding.getInfo(cond)));
-    exp := Expression.getBindingExp(exp);
+    exp := Expression.stripBindingInfo(exp);
 
     // Hack to make arrays work when all elements have the same value.
     if Expression.arrayAllEqual(exp) then
