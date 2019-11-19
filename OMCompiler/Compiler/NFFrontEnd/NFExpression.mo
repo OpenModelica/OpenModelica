@@ -1045,7 +1045,7 @@ public
     Type ty;
   algorithm
     ty := typeOf(listHead(elements));
-    ty := Type.ARRAY(ty, {Dimension.fromInteger(listLength(elements))});
+    ty := Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(elements)));
     exp := makeArray(ty, elements, isLiteral);
   end makeExpArray;
 
