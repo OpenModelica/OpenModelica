@@ -2423,7 +2423,16 @@ void Component::handleLoaded()
 {
   Component *pComponent = getRootParentComponent();
   pComponent->removeChildren();
+  /* Ticket:5691
+   * Seems like setParentItem(0) doesn't work well on items already added to the scene.
+   * So here we remove the item, draw it and then add it back to the scene.
+   */
+  /*! @todo We should get rid of setParentItem(0).
+   * Basically instead of creating an object of class Component we should store the non scene items in some other class.
+   */
+  mpGraphicsView->removeItem(this);
   pComponent->drawComponent();
+  mpGraphicsView->addItem(this);
   pComponent->emitChanged();
   pComponent->updateConnections();
 }
