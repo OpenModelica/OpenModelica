@@ -1544,8 +1544,8 @@ Double click the transition or right click and choose *Edit Transition* to modif
   :height: 14pt
   :alt: OMEdit transition mode icon
 
-State Machine Simulation
-~~~~~~~~~~~~~~~~~~~~~~~~
+State Machines Simulation
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Support for Modelica state machines was added in the Modelica Language Specification
 v3.3. A subtle problem can occur if Modelica v3.2 libraries are loaded, e.g., the
@@ -1560,6 +1560,42 @@ setting that flag in the *Tools > Options > Simulation* dialog.
   :name: omedit-state-machine-simulation-settings
 
   Ensure (at least) Modelica v3.3 support.
+
+State Machines Debugger
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Modelica state machines debugger is implemented as a visualization,
+which allows the user to run the state machines simulation as an animation.
+
+.. figure :: media/omedit-state-machine-debugger.png
+  :name: omedit-state-machine-debugger
+
+  State machine debugger in OMEdit.
+
+A special Diagram Window is developed to visualize the active and inactive states.
+The active and inactive value of the states are stored in the OpenModelica simulation result file.
+After the successful simulation, of the state machine model, OMEdit reads the start,
+stop time values, and initializes the visualization controls accordingly.
+
+The controls allows the easy manipulation of the visualization,
+
+* Rewind – resets the visualization to start.
+* Play – starts the visualization.
+* Pause – pauses the visualization.
+* Time – allows the user to jump at any specific time.
+* Speed – speed of the visualization.
+* Slider – controls the time.
+
+The visualization is based on the simulation result file.
+All three formats of the simulation result file are supported i.e., mat, csv and plt
+where mat is a matlab file format, csv is a comma separated file and plt is an ordered text file.
+
+It is only possible to debug one state machine at a time.
+This is achieved by marking the result file active in the Variables Browser.
+The visualization only read the values from the active result file.
+It is possible to simulate several state machine models.
+In that case, the user will see a list of result files in the Variables Browser.
+The user can switch between different result files by right clicking on the result file and selecting *Set Active* in the context menu.
 
 Using OMEdit as Text Editor
 ---------------------------
