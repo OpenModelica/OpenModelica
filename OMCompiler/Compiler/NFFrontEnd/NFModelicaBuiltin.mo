@@ -679,6 +679,9 @@ record Correlation "defines correlation between two uncertainty variables"
    Real c "correlation value";
 end Correlation;
 
+function rooted
+  external "builtin";
+end rooted;
 
 encapsulated package Connections
   import OpenModelica.$Code.VariableName;

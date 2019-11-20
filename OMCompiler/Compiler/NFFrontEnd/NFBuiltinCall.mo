@@ -1539,6 +1539,10 @@ protected
     (arg, ty) := Typing.typeExp(listHead(args), origin, info);
     checkConnectionsArgument(arg, ty, fn_ref, 1, info);
 
+    if ComponentRef.isSimple(fn_ref) then
+      Error.addSourceMessage(Error.DEPRECATED_API_CALL, {"rooted", "Connections.rooted"}, info);
+    end if;
+
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.BOOLEAN();
     callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, ty));
