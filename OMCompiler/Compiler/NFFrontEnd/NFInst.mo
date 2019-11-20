@@ -1951,14 +1951,34 @@ function updateComponentVariability
 protected
   Variability var = attr.variability;
 algorithm
-  if referenceEq(attr, NFComponent.DEFAULT_ATTR) and
-     Type.isDiscrete(Class.getType(cls, clsNode)) then
+  if referenceEq(attr, NFComponent.DEFAULT_ATTR) and isDiscreteClass(clsNode) then
     attr := NFComponent.IMPL_DISCRETE_ATTR;
-  elseif var == Variability.CONTINUOUS and
-     Type.isDiscrete(Class.getType(cls, clsNode)) then
+  elseif var == Variability.CONTINUOUS and isDiscreteClass(clsNode) then
     attr.variability := Variability.IMPLICITLY_DISCRETE;
   end if;
 end updateComponentVariability;
+
+function isDiscreteClass
+  input InstNode clsNode;
+  output Boolean isDiscrete;
+protected
+  InstNode base_node;
+  Class cls;
+  array<InstNode> exts;
+algorithm
+  base_node := Class.lastBaseClass(clsNode);
+  cls := InstNode.getClass(base_node);
+
+  isDiscrete := match cls
+    case Class.EXPANDED_CLASS(restriction = Restriction.TYPE())
+      algorithm
+        exts := ClassTree.getExtends(cls.elements);
+      then
+        if arrayLength(exts) == 1 then isDiscreteClass(exts[1]) else false;
+
+    else Type.isDiscrete(Class.getType(cls, base_node));
+  end match;
+end isDiscreteClass;
 
 function instTypeSpec
   input Absyn.TypeSpec typeSpec;
