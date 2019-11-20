@@ -4,6 +4,9 @@ TESTFILES = \
 BooleanNetwork1.mos \
 BouncingBall.mos \
 EnumerationTest.mos \
+fmi_attributes_01.mos \
+fmi_attributes_02.mos \
+fmi_attributes_03.mos \
 FMIExercise.mos \
 HelloFMIWorld.mos \
 HelloFMIWorldEvent.mos \
@@ -17,20 +20,20 @@ testBug3034.mos \
 testBug3049.mos \
 testBug3763.mos \
 testBug3846.mos \
+testBug5673.mos \
 testChangeParam.mos \
 testDisableDep.mos \
 testDiscreteStructe.mos \
 testInitialEquationsFMI.mos \
 TestSourceCodeFMU.mos \
-ZeroStates.mos \
 ticket5670.mos \
-testBug5673.mos \
+ZeroStates.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES= \
 Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.mos \
-testExperimentalFMU.mos
+testExperimentalFMU.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

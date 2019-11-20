@@ -3741,6 +3741,7 @@ algorithm
   defaulSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, filenameprefix, SOME(defaultSimulationOptions));
   simSettings := convertSimulationOptionsToSimCode(defaulSimOpt);
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
+  FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);
   try
     (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUVersion, FMUType, fmuTargetName), cache, inEnv, className, filenameprefix, addDummy, SOME(simSettings));
     true := success;

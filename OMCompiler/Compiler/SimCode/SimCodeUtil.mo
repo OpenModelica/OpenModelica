@@ -2830,7 +2830,7 @@ algorithm
 
     case(DAE.CREF(cr, ty)::rest) equation
       slst = List.map(dims, intString);
-      var = SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), slst, false, true, true, NONE(), NONE());
+      var = SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), slst, false, true, true, NONE(), NONE(), NONE(), NONE());
       tempvars = createTempVarsforCrefs(rest, {var});
     then List.append_reverse(tempvars, itempvars);
   end match;
@@ -2866,7 +2866,7 @@ algorithm
       arrayCref = ComponentReference.getArrayCref(cr);
       inst_dims = ComponentReference.crefDims(cr);
       numArrayElement = List.map(inst_dims, ExpressionDump.dimensionString);
-      var = SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), numArrayElement, false, true, true, NONE(), NONE());
+      var = SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), numArrayElement, false, true, true, NONE(), NONE(), NONE(), NONE());
     then createTempVarsforCrefs(rest, var::itempvars);
   end match;
 end createTempVarsforCrefs;
@@ -2909,13 +2909,13 @@ algorithm
         arraycref := ComponentReference.crefStripSubs(cr);
         ty := ComponentReference.crefTypeFull(cr);
         var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false,
-              ty, false, SOME(arraycref), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), {}, false, true, true, NONE(), NONE());
+              ty, false, SOME(arraycref), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), {}, false, true, true, NONE(), NONE(), NONE(), NONE());
 
         /* The rest don't need to be marked i.e. we have 'NONE()'. Just create simvars. */
         ttmpvars := {var};
         for cr in crlst loop
           ty := ComponentReference.crefTypeFull(cr);
-          var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.NONECAUS(), NONE(), {}, false, true, true, NONE(), NONE());
+          var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), {}, false, true, true, NONE(), NONE(), NONE(), NONE());
           ttmpvars := var::ttmpvars;
         end for;
         ttmpvars := Dangerous.listReverseInPlace(ttmpvars);
@@ -4430,7 +4430,7 @@ algorithm
         crstates = List.map(statevars, BackendVariable.varCref);
 
         // create vars for A
-        simCodeAVars = List.map2(aVars, dlowvarToSimvar, NONE(), iVars);
+        simCodeAVars = List.map3(aVars, dlowvarToSimvar, NONE(), iVars, {});
 
         // get first a element for varinfo
         crA = ComponentReference.subscriptCrefWithInt(crA, 1);
@@ -5152,7 +5152,7 @@ algorithm
   outSimVar := SimCodeVar.SIMVAR(inName, inVarKind, "", "", "", -1 /* use -1 to get an error in simulation if something failed */,
         NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT,
         false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource,
-        SimCodeVar.NONECAUS(), NONE(), {}, false, false, false, NONE(), NONE());
+        SOME(SimCodeVar.NONECAUS()), NONE(), {}, false, false, false, NONE(), NONE(), NONE(), NONE());
 end makeTmpRealSimCodeVar;
 
 protected function sortSparsePattern
@@ -7745,11 +7745,15 @@ protected
   Mutable<HashSet.HashSet> hs;
   array<list<SimCodeVar.SimVar>> simVars = arrayCreate(size(SimVarsIndex,1), {});
   Integer primeSize;
+  list<DAE.ComponentRef> iterationVars;
 
   constant Boolean debug = false;
 algorithm
   BackendDAE.DAE(eqs=systs1, shared=shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars1, localKnownVars=localKnownVars1, externalObjects=extvars1, aliasVars=aliasVars1)) := inSimDAE;
   BackendDAE.DAE(eqs=systs2, shared=BackendDAE.SHARED(globalKnownVars=globalKnownVars2, localKnownVars=localKnownVars2, externalObjects=extvars2, aliasVars=aliasVars2)) := inInitDAE;
+
+  // get all iterationVars from initialization DAE which are needed for FMI-2.0 exports
+  (_, iterationVars) := BackendDAEOptimize.listAllIterationVariables0(inInitDAE.eqs);
 
   primeSize := Util.nextPrime(
     integer(1.4*(
@@ -7770,45 +7774,45 @@ algorithm
 
   // ### simulation ###
   // Extract from variable list
-  simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst in systs1), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs), simVars);
+  simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst in systs1), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: variable list"); end if;
 
   // Extract from known variable list
-  simVars := BackendVariable.traverseBackendDAEVars(globalKnownVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(globalKnownVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: known variable list"); end if;
 
   // Extract from localKnownVars variable list
-  simVars := BackendVariable.traverseBackendDAEVars(localKnownVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(localKnownVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: local known variables list"); end if;
 
   // Extract from removed variable list
-  simVars := BackendVariable.traverseBackendDAEVars(aliasVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(aliasVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: removed variables list"); end if;
 
   // Extract from external object list
-  simVars := BackendVariable.traverseBackendDAEVars(extvars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(extvars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: external object list"); end if;
 
 
   // ### initialization ###
   // Extract from variable list
-  simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst in systs2), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs), simVars);
+  simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst in systs2), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: variable list (init)"); end if;
 
   // Extract from known variable list
-  simVars := BackendVariable.traverseBackendDAEVars(globalKnownVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(globalKnownVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: known variable list (init)"); end if;
 
   // Extract from localKnownVars variable list
-  simVars := BackendVariable.traverseBackendDAEVars(localKnownVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(localKnownVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: local known variables list (init)"); end if;
 
   // Extract from removed variable list
-  simVars := BackendVariable.traverseBackendDAEVars(aliasVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(aliasVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: removed variables list (init)"); end if;
 
   // Extract from external object list
-  simVars := BackendVariable.traverseBackendDAEVars(extvars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(extvars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: external object list (init)"); end if;
 
   addTempVars(simVars, tempvars);
@@ -7868,17 +7872,73 @@ protected function extractVarsFromList
   input output array<list<SimCodeVar.SimVar>> simVars;
   input BackendDAE.Variables aliasVars, vars;
   input Mutable<HashSet.HashSet> hs;
+  input list<DAE.ComponentRef> iterationVars "list of iterationVars in InitializationMode" ;
 algorithm
   if if ComponentReference.isPreCref(var.varName) or ComponentReference.isStartCref(var.varName) then false else not BaseHashSet.has(var.varName, Mutable.access(hs)) then
     /* ignore variable, since they are treated by kind in the codegen */
     if not BackendVariable.isAlgebraicOldState(var) then
-      extractVarFromVar(var, aliasVars, vars, simVars, hs);
+      extractVarFromVar(var, aliasVars, vars, simVars, hs, iterationVars);
     end if;
   //  print("Added  " + ComponentReference.printComponentRefStr(inVar.varName) + "\n");
   //else
   //  print("Skiped " + ComponentReference.printComponentRefStr(inVar.varName) + "\n");
   end if;
 end extractVarsFromList;
+
+public function getDefaultFmiInitialAttribute
+ "Get the defualt fmi 2.0 initial attribute."
+  input SimCodeVar.Variability variability;
+  input SimCodeVar.Causality causality;
+  output SimCodeVar.Initial initial_;
+algorithm
+  initial_ := match(variability, causality)
+    // CONSTANT
+    case (SimCodeVar.CONSTANT(), SimCodeVar.OUTPUT()) then SimCodeVar.EXACT();
+    case (SimCodeVar.CONSTANT(), SimCodeVar.LOCAL()) then SimCodeVar.EXACT();
+
+    // FIXED
+    case (SimCodeVar.FIXED(), SimCodeVar.PARAMETER()) then SimCodeVar.EXACT();
+    case (SimCodeVar.FIXED(), SimCodeVar.CALCULATED_PARAMETER()) then SimCodeVar.CALCULATED();
+    case (SimCodeVar.FIXED(), SimCodeVar.LOCAL()) then SimCodeVar.CALCULATED();
+
+    // TUNABLE
+    case (SimCodeVar.TUNABLE(), SimCodeVar.PARAMETER()) then SimCodeVar.EXACT();
+    case (SimCodeVar.TUNABLE(), SimCodeVar.CALCULATED_PARAMETER()) then SimCodeVar.CALCULATED();
+    case (SimCodeVar.TUNABLE(), SimCodeVar.LOCAL()) then SimCodeVar.CALCULATED();
+
+    // DISCRETE
+    case (SimCodeVar.DISCRETE(), SimCodeVar.OUTPUT()) then SimCodeVar.CALCULATED();
+    case (SimCodeVar.DISCRETE(), SimCodeVar.LOCAL()) then SimCodeVar.CALCULATED();
+
+    // CONTINUOUS
+    case (SimCodeVar.CONTINUOUS(), SimCodeVar.OUTPUT()) then SimCodeVar.CALCULATED();
+    case (SimCodeVar.CONTINUOUS(), SimCodeVar.LOCAL()) then SimCodeVar.CALCULATED();
+
+    else SimCodeVar.NONE_INITIAL();
+  end match;
+end getDefaultFmiInitialAttribute;
+
+protected function clearUpDefaultFmiAttributes
+  input output SimCodeVar.SimVar simVar;
+protected
+  SimCodeVar.Causality default_causality = SimCodeVar.LOCAL();
+  SimCodeVar.Variability default_variability = SimCodeVar.CONTINUOUS();
+  SimCodeVar.Initial default_initial;
+algorithm
+  default_initial := getDefaultFmiInitialAttribute(Util.getOptionOrDefault(simVar.variability, default_variability), Util.getOptionOrDefault(simVar.causality, default_causality));
+
+  if isSome(simVar.initial_) and valueEq(Util.getOption(simVar.initial_), default_initial) then
+    simVar.initial_ := NONE();
+  end if;
+
+  if isSome(simVar.causality) and valueEq(Util.getOption(simVar.causality), default_causality) then
+    simVar.causality := NONE();
+  end if;
+
+  if isSome(simVar.variability) and valueEq(Util.getOption(simVar.variability), default_variability) then
+    simVar.variability := NONE();
+  end if;
+end clearUpDefaultFmiAttributes;
 
 // one dlow var can result in multiple simvars: input and output are a subset
 // of algvars for example
@@ -7888,25 +7948,33 @@ protected function extractVarFromVar
   input BackendDAE.Variables inVars;
   input array<list<SimCodeVar.SimVar>> simVars;
   input Mutable<HashSet.HashSet> hs "all processed crefs";
+  input list<DAE.ComponentRef> iterationVars "list of iterationVars in InitializationMode" ;
 protected
   SimCodeVar.SimVar simVar;
   SimCodeVar.SimVar derivSimvar;
+  SimCodeVar.Initial initial_;
   Boolean isalias, isAlg, isParam, isConst;
   DAE.ComponentRef name;
   Integer len;
 algorithm
   // extract the sim var
-  simVar := dlowvarToSimvar(dlowVar, SOME(inAliasVars), inVars);
+  simVar := dlowvarToSimvar(dlowVar, SOME(inAliasVars), inVars, iterationVars);
   isalias := isAliasVar(simVar);
 
 
   // update HashSet
   Mutable.update(hs, BaseHashSet.add(simVar.name, Mutable.access(hs)));
   if (not isalias) and (BackendVariable.isStateVar(dlowVar) or BackendVariable.isAlgState(dlowVar)) then
-    derivSimvar := derVarFromStateVar(simVar);
+    derivSimvar := derVarFromStateVar(simVar, iterationVars);
     Mutable.update(hs, BaseHashSet.add(derivSimvar.name, Mutable.access(hs)));
   else
     derivSimvar := simVar; // Just in case
+  end if;
+
+  // clear up the default values to improve readability of modelDescription.xml
+  if not Flags.isSet(Flags.DUMP_FORCE_FMI_ATTRIBUTES) then
+    simVar := clearUpDefaultFmiAttributes(simVar);
+    derivSimvar := clearUpDefaultFmiAttributes(derivSimvar) "just in case";
   end if;
 
   // If it is an input variable, we give it an index
@@ -8023,6 +8091,7 @@ end addSimVar;
 
 protected function derVarFromStateVar
   input SimCodeVar.SimVar state;
+  input list<DAE.ComponentRef> iterationVars = {} "list of iterationVars in InitializationMode" ;
   output SimCodeVar.SimVar deriv = state;
 protected
   Unit.Unit unit;
@@ -8043,15 +8112,22 @@ algorithm
   deriv.displayUnit := "";
   deriv.minValue := NONE();
   deriv.maxValue := NONE();
-  deriv.initialValue := NONE();
   deriv.nominalValue := NONE();
   deriv.isFixed := false;
   deriv.aliasvar := SimCodeVar.NOALIAS();
-  deriv.causality := SimCodeVar.INTERNAL();
+  deriv.causality := SOME(SimCodeVar.LOCAL());
   deriv.variable_index := NONE();
   deriv.isValueChangeable := false;
+  deriv.variability := SOME(SimCodeVar.CONTINUOUS());
+  // derivativeVars can be either APPROX or CALUCALTED
+  if ComponentReference.crefInLst(deriv.name, iterationVars) then  // Check Variable is an iterationVar
+    deriv.initial_ := SOME(SimCodeVar.APPROX());
+    deriv.initialValue := SOME(DAE.RCONST(0.0));
+  else
+    deriv.initial_ := SOME(SimCodeVar.CALCULATED()); // default value
+    deriv.initialValue := NONE();
+  end if;
 end derVarFromStateVar;
-
 
 public function simVarString
   input SimCodeVar.SimVar inVar;
@@ -9094,6 +9170,7 @@ protected function dlowvarToSimvar
   input BackendDAE.Var dlowVar;
   input Option<BackendDAE.Variables> optAliasVars;
   input BackendDAE.Variables inVars;
+  input list<DAE.ComponentRef> iterationVars = {}; // list of iterationVars in InitializationMode default set to empty
   output SimCodeVar.SimVar simVar;
 algorithm
   simVar := match (dlowVar, optAliasVars, inVars)
@@ -9119,6 +9196,8 @@ algorithm
       DAE.ElementSource source;
       BackendDAE.Variables vars;
       SimCodeVar.Causality caus;
+      SimCodeVar.Initial initial_;
+      SimCodeVar.Variability variability;
       Boolean isProtected;
       Boolean hideResult;
 
@@ -9144,7 +9223,6 @@ algorithm
         isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
         arrayCref = ComponentReference.getArrayCref(cr);
         aliasvar = getAliasVar(dlowVar, optAliasVars);
-        caus = getCausality(dlowVar, vars);
         numArrayElement = List.map(inst_dims, ExpressionDump.dimensionIntString);
         // print("name: " + ComponentReference.printComponentRefStr(cr) + "indx: " + intString(indx) + "\n");
         // check if the variable has changeable value
@@ -9152,9 +9230,13 @@ algorithm
         isValueChangeable = ((not BackendVariable.hasVarEvaluateTrueAnnotationOrFinalOrProtected(dlowVar)
                             and (BackendVariable.varHasConstantBindExp(dlowVar) or not BackendVariable.varHasBindExp(dlowVar))))
                             and isFixed;
+        caus = getCausality(dlowVar, vars, isValueChangeable);
+        variability = SimCodeVar.FIXED(); // PARAMETERS()
+        initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars);
+        initVal = updateStartValue(dlowVar, initVal, initial_, caus);
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
-        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus, NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, NONE(), NONE());
+        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, NONE(), NONE(), SOME(variability), SOME(initial_));
 
     // Start value of states may be changeable
     case ((BackendDAE.VAR(varName = cr,
@@ -9186,16 +9268,19 @@ algorithm
         isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
         arrayCref = ComponentReference.getArrayCref(cr);
         aliasvar = getAliasVar(dlowVar, optAliasVars);
-        caus = getCausality(dlowVar, vars);
         numArrayElement = List.map(inst_dims, ExpressionDump.dimensionIntString);
         isValueChangeable = BackendVariable.varHasConstantStartExp(dlowVar);
-        // print("name: " + ComponentReference.printComponentRefStr(cr) + "indx: " + intString(indx) + "\n");
+        caus = getCausality(dlowVar, vars, isValueChangeable);
+        variability = SimCodeVar.CONTINUOUS(); // state() should be CONTINUOUS
+        initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars);
+        initVal = updateStartValue(dlowVar, initVal, initial_, caus);
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
-        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus, NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, NONE(), NONE());
+        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, NONE(), NONE(), SOME(variability), SOME(initial_));
 
     case ((BackendDAE.VAR(varName = cr,
       varKind = kind,
+      varDirection = dir,
       arryDim = inst_dims,
       values = dae_var_attr,
       hideResult = hideResultExp,
@@ -9224,59 +9309,212 @@ algorithm
         isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
         arrayCref = ComponentReference.getArrayCref(cr);
         aliasvar = getAliasVar(dlowVar, optAliasVars);
-        caus = getCausality(dlowVar, vars);
         numArrayElement = List.map(inst_dims, ExpressionDump.dimensionIntString);
-        isValueChangeable = match caus case SimCodeVar.INPUT() then true; else false; end match;
-        // print("name: " + ComponentReference.printComponentRefStr(cr) + "indx: " + intString(indx) + "\n");
+        isValueChangeable = match dir case DAE.INPUT() then true; else false; end match;
+        caus = getCausality(dlowVar, vars, isValueChangeable);
+        variability = getVariabilityAttribute(dlowVar);
+        initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars);
+        initVal = updateStartValue(dlowVar, initVal, initial_, caus);
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
-        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus, NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, NONE(), NONE());
+        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, NONE(), NONE(), SOME(variability), SOME(initial_));
   end match;
 end dlowvarToSimvar;
-
-// lochel: This will now be checked in CodegenUtil.tpl (see #2597/#2601)
-// protected function checkInitVal
-//   input Option<DAE.Exp> oexp;
-//   input DAE.ElementSource source;
-// algorithm
-//   _ := match (oexp, source)
-//     local
-//       SourceInfo info;
-//       String str;
-//       DAE.Exp exp;
-//     case (NONE(), _) then ();
-//     case (SOME(DAE.RCONST(_)), _) then ();
-//     case (SOME(DAE.ICONST(_)), _) then ();
-//     case (SOME(DAE.SCONST(_)), _) then ();
-//     case (SOME(DAE.BCONST(_)), _) then ();
-//     // adrpo, 2011-04-18 -> enumeration literal is OK also
-//     case (SOME(DAE.ENUM_LITERAL(index = _)), _) then ();
-//     case (SOME(DAE.CALL(attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(path=_))))), _) then ();
-//     case (SOME(exp), DAE.SOURCE(info=info))
-//       equation
-//         str = "Initial value of unknown type: " + ExpressionDump.printExpStr(exp);
-//         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
-//       then ();
-//   end match;
-// end checkInitVal;
 
 protected function getCausality
   input BackendDAE.Var dlowVar;
   input BackendDAE.Variables inVars;
+  input Boolean isValueChangeable;
   output SimCodeVar.Causality caus;
 algorithm
-  caus := matchcontinue (dlowVar, inVars)
+  caus := matchcontinue (dlowVar, inVars, isValueChangeable)
     local
       DAE.ComponentRef cr;
       BackendDAE.Variables globalKnownVars;
-    case (BackendDAE.VAR(varDirection = DAE.OUTPUT()), _) then SimCodeVar.OUTPUT();
-    case (BackendDAE.VAR(varName = cr, varDirection = DAE.INPUT()), globalKnownVars)
+    case (BackendDAE.VAR(varDirection = DAE.OUTPUT()), _, _) then SimCodeVar.OUTPUT();
+    case (BackendDAE.VAR(varName = cr, varDirection = DAE.INPUT()), globalKnownVars, _)
       equation
         (_, _) = BackendVariable.getVar(cr, globalKnownVars);
       then SimCodeVar.INPUT();
-    else SimCodeVar.INTERNAL();
+    // move to SimCodeVar from CodegenFMUCommon.tpl inorder to calculate the initial attributes from fmi export
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM()), _, true) then SimCodeVar.PARAMETER(); //causality = parameter
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM()), _, false) then SimCodeVar.CALCULATED_PARAMETER(); // causality = calculatedParameter
+    else SimCodeVar.LOCAL();
+    //TODO! Handle causality="independant", from Fmi2.0 specification it is usually variable "time"
   end matchcontinue;
 end getCausality;
+
+protected function setInitialAttribute
+" this function sets the initial attribute of variable based
+  on the FMI 2.0 specification table for setting initial attribute
+  which is needed for the FMI export for adding initial unknowns in modelStructure"
+  input BackendDAE.Var dlow;
+  input SimCodeVar.Variability variability;
+  input SimCodeVar.Causality causality;
+  input Boolean isFixed;
+  input list<DAE.ComponentRef> iterationVars;
+  output SimCodeVar.Initial initial_;
+algorithm
+  initial_ := match(variability, causality)
+
+    // variability=CONSTANT Vs causality = output and local
+    case (SimCodeVar.CONSTANT(), SimCodeVar.OUTPUT()) then SimCodeVar.EXACT();
+    case (SimCodeVar.CONSTANT(), SimCodeVar.LOCAL()) then SimCodeVar.EXACT();
+
+    // variability=FIXED Vs causality = parameter, calculatedParameter and local
+    case (SimCodeVar.FIXED(), SimCodeVar.PARAMETER()) then SimCodeVar.EXACT();
+    case (SimCodeVar.FIXED(), SimCodeVar.CALCULATED_PARAMETER()) then getInitialAttributeHelperForParameters(dlow, isFixed, iterationVars);
+    case (SimCodeVar.FIXED(), SimCodeVar.LOCAL()) then getInitialAttributeHelperForParameters(dlow, isFixed, iterationVars);
+
+    // TODO varkind= tunable Vs causality = parameter, calculatedParameter and local, same like PARAM()
+
+    // variability=DISCRETE Vs causality = output and local
+    case (SimCodeVar.DISCRETE(), SimCodeVar.OUTPUT()) then getInitialAttributeHelper(dlow, isFixed, iterationVars);
+    case (SimCodeVar.DISCRETE(), SimCodeVar.LOCAL()) then getInitialAttributeHelper(dlow, isFixed, iterationVars);
+
+    // varkind=Continuous Vs causality = output and local
+    case (SimCodeVar.CONTINUOUS(), SimCodeVar.OUTPUT()) then getInitialAttributeHelper(dlow, isFixed, iterationVars);
+    case (SimCodeVar.CONTINUOUS(), SimCodeVar.LOCAL()) then getInitialAttributeHelper(dlow, isFixed, iterationVars);
+
+    // cases to handle invalid combination where initial is not allowed
+    case (_, _) then SimCodeVar.NONE_INITIAL();
+  end match;
+end setInitialAttribute;
+
+protected function getInitialAttributeHelperForParameters
+  "function which returns the initial attribute of a variable
+   with Variablity = parameter"
+  input BackendDAE.Var var;
+  input Boolean isFixed;
+  input list<DAE.ComponentRef> iterationVars "list of iterationvars from InitializationDAE";
+  output SimCodeVar.Initial initial_;
+algorithm
+  if not isFixed and ComponentReference.crefInLst(var.varName, iterationVars) and startValueIsConstOrNone(var) then
+    initial_ := SimCodeVar.APPROX();
+  else
+    initial_ := SimCodeVar.CALCULATED(); // default value
+  end if;
+end getInitialAttributeHelperForParameters;
+
+protected function startValueIsConstOrNone
+  input BackendDAE.Var var;
+  output Boolean b = false;
+protected
+  Option<DAE.Exp> start_value = getStartValue(var);
+algorithm
+  if isNone(start_value) then
+    b := true;
+  else
+    b := Expression.isConst(Util.getOption(start_value));
+  end if;
+end startValueIsConstOrNone;
+
+protected function getInitialAttributeHelper
+  "function which returns the initial attribute of a variable
+   with Variablity = Continuous or Discrete"
+  input BackendDAE.Var var;
+  input Boolean isFixed;
+  input list<DAE.ComponentRef> iterationVars "list of iterationvars from InitializationDAE";
+  output SimCodeVar.Initial initial_;
+algorithm
+  if isFixed and startValueIsConstOrNone(var) then
+    initial_ := SimCodeVar.EXACT() "initialized with start value";
+  elseif ComponentReference.crefInLst(var.varName, iterationVars) and startValueIsConstOrNone(var) then
+    initial_ := SimCodeVar.APPROX();
+  else
+    initial_ := SimCodeVar.CALCULATED() "default";
+  end if;
+end getInitialAttributeHelper;
+
+protected function getVariabilityAttribute
+  "function which sets the Variabilty attribute for FMI2.0 export"
+  input BackendDAE.Var var;
+  output SimCodeVar.Variability variability;
+algorithm
+  if BackendVariable.isParam(var) then
+    variability := SimCodeVar.FIXED();
+  elseif BackendVariable.isConst(var) then
+    variability := SimCodeVar.CONSTANT();
+  elseif BackendVariable.isVarDiscrete(var) or BackendVariable.isClockedStateVar(var) then
+    variability := SimCodeVar.DISCRETE();
+  // TODO SimCodeVar.TUNABLE()
+  else
+    variability := SimCodeVar.CONTINUOUS();
+  end if;
+end getVariabilityAttribute;
+
+protected function isInitialExactOrApprox
+  "return true if the initial attribute is EXACT or APPROX else false"
+  input SimCodeVar.Initial initial_;
+  output Boolean val;
+algorithm
+  val := match(initial_)
+    case SimCodeVar.EXACT() then true;
+    case SimCodeVar.APPROX() then true;
+    else false;
+  end match;
+end isInitialExactOrApprox;
+
+protected function isCausalityInput
+  "return true if the causality attribute is input else false"
+  input SimCodeVar.Causality causality;
+  output Boolean val;
+algorithm
+  val := match(causality)
+    case(SimCodeVar.INPUT()) then true;
+    else false;
+  end match;
+end isCausalityInput;
+
+protected function setDefaultStartValue
+  "function which sets default start Value for
+   an expression based on type if does not exist "
+  input DAE.Type type_;
+  output Option<DAE.Exp> exp;
+algorithm
+  exp := match type_
+    case (DAE.T_INTEGER()) then SOME(DAE.ICONST(0));
+    case (DAE.T_REAL()) then SOME(DAE.RCONST(0.0));
+    case (DAE.T_BOOL()) then SOME(DAE.BCONST(false));
+    case (DAE.T_STRING()) then SOME(DAE.SCONST(""));
+    case (DAE.T_ENUMERATION()) then SOME(DAE.ICONST(0));
+    else NONE();
+  end match;
+end setDefaultStartValue;
+
+protected function startValueIsConstOrDefault
+  "function which checks the exp has constant value otherwise
+   assign default startValue based on type"
+  input Option<DAE.Exp> start_value;
+  input DAE.Type type_;
+  output Option<DAE.Exp> outstart_value;
+algorithm
+  if Expression.isConstValue(Util.getOption(start_value)) then
+    outstart_value := start_value;
+  else
+    outstart_value := setDefaultStartValue(type_);
+  end if;
+end startValueIsConstOrDefault;
+
+protected function updateStartValue
+  "function which updates Start value of an expression
+   depending on the initial = EXACT or APPROX and causality = INPUT "
+  input BackendDAE.Var var;
+  input output Option<DAE.Exp> startValue;
+  input SimCodeVar.Initial initial_;
+  input SimCodeVar.Causality causality;
+algorithm
+  // update start value for FMI-2.0 only
+  if Flags.getConfigBool(Flags.BUILDING_FMU) and FMI.isFMIVersion20(Flags.getConfigString(Flags.FMI_VERSION)) then
+    startValue := match(startValue)
+      case (SOME(_)) guard isInitialExactOrApprox(initial_) then startValue;
+      case (NONE()) guard isInitialExactOrApprox(initial_) then setDefaultStartValue(var.varType);
+      case (SOME(_)) guard isCausalityInput(causality) then startValueIsConstOrDefault(startValue, var.varType);
+      case (NONE()) guard isCausalityInput(causality) then setDefaultStartValue(var.varType);
+      else NONE();
+    end match;
+  end if;
+end updateStartValue;
 
 protected function traversingdlowvarToSimvarFold
   input BackendDAE.Var v;
@@ -12960,7 +13198,7 @@ protected function isOutputSimVar
   output Boolean outBoolean;
 algorithm
   outBoolean := match (inVar)
-    case (SimCodeVar.SIMVAR(causality = SimCodeVar.OUTPUT())) then true;
+    case (SimCodeVar.SIMVAR(causality = SOME(SimCodeVar.OUTPUT()))) then true;
     else false;
   end match;
 end isOutputSimVar;
@@ -13658,7 +13896,7 @@ algorithm
   else
     //print("cref2simvar: " + ComponentReference.printComponentRefStr(inCref) + " not found!\n");
     badcref := ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed " + ComponentReference.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
-    outSimVar := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.INTERNAL(), NONE(), {}, false, true, false, NONE(), NONE());
+    outSimVar := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), {}, false, true, false, NONE(), NONE(), NONE(), NONE());
   end try;
 end cref2simvar;
 
@@ -13701,7 +13939,7 @@ algorithm
   else
     //print("cref2simvar: " + ComponentReference.printComponentRefStr(inCref) + " not found!\n");
     badcref := ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed " + ComponentReference.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
-    sv := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.INTERNAL(), NONE(), {}, false, true, false, NONE(), NONE());
+    sv := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), {}, false, true, false, NONE(), NONE(), NONE(), NONE());
   end try;
   outSimVar := sv;
 end simVarFromHT;
@@ -13734,7 +13972,7 @@ algorithm
     case (_,_)
       equation
         badcref = ComponentReference.makeCrefIdent("ERROR_localCref2SimVar_failed " + ComponentReference.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
-        then SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.INTERNAL(), NONE(), {}, false, true, false, NONE(), NONE());
+        then SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), {}, false, true, false, NONE(), NONE(), NONE(), NONE());
   end matchcontinue;
 end localCref2SimVar;
 

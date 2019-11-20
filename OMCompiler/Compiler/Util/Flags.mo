@@ -549,6 +549,8 @@ constant DebugFlag SPLIT_CONSTANT_PARTS_SYMJAC = DEBUG_FLAG(190, "symJacConstant
   Gettext.gettext("Generates all symbolic Jacobians with splitted constant parts."));
 constant DebugFlag NF_DUMP_FLAT = DEBUG_FLAG(191, "nfDumpFlat", false,
   Gettext.gettext("Dumps the flat model structure before generating the DAE."));
+constant DebugFlag DUMP_FORCE_FMI_ATTRIBUTES = DEBUG_FLAG(192, "force-fmi-attributes", false,
+  Gettext.gettext("Force to export all fmi attributes to the modelDescription.xml, including those which have default values"));
 
 public
 // CONFIGURATION FLAGS
@@ -1325,6 +1327,10 @@ constant ConfigFlag ZEROMQ_SUB_PORT = CONFIG_FLAG(135, "zeroMQSubPort",
 constant ConfigFlag ZEROMQ_SIM_ID = CONFIG_FLAG(136, "zeroMQSimID",
   NONE(), EXTERNAL(), INT_FLAG(-1), NONE(),
   Gettext.gettext("Configures the ID with which the simulation is labelled for zeroMQ communication."));
+
+constant ConfigFlag FMI_VERSION = CONFIG_FLAG(137,
+  "", NONE(), INTERNAL(), STRING_FLAG(""), NONE(),
+  Gettext.gettext("returns the FMI Version either 1.0 or 2.0."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

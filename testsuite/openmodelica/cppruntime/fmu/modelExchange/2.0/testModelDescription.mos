@@ -75,26 +75,23 @@ readFile("modelDescription.tmp.xml");
 //     name=\"previous(xd)\"
 //     valueReference=\"0\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     clockIndex=\"1\"
-//     initial=\"exact\">
-//     <Real start=\"0.0\"/>
+//     >
+//     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"2\" -->
 //   <ScalarVariable
 //     name=\"_D_outputAlias_y\"
 //     valueReference=\"1\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     clockIndex=\"1\"
-//     initial=\"calculated\">
+//     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"3\" -->
 //   <ScalarVariable
 //     name=\"u\"
 //     valueReference=\"2\"
-//     variability=\"continuous\"
 //     causality=\"input\"
 //     >
 //     <Real start=\"-2.0\"/>
@@ -104,11 +101,10 @@ readFile("modelDescription.tmp.xml");
 //     name=\"xd\"
 //     valueReference=\"3\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     clockIndex=\"1\"
 //     previous=\"1\"
-//     initial=\"exact\">
-//     <Real start=\"0.0\"/>
+//     >
+//     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"5\" -->
 //   <ScalarVariable
@@ -117,7 +113,7 @@ readFile("modelDescription.tmp.xml");
 //     variability=\"discrete\"
 //     causality=\"output\"
 //     clockIndex=\"1\"
-//     initial=\"calculated\">
+//     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"6\" -->
@@ -126,7 +122,7 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"5\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
-//     initial=\"calculated\">
+//     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"7\" -->
@@ -135,7 +131,7 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"6\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     initial=\"exact\">
+//     >
 //     <Real start=\"1.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"8\" -->
@@ -144,7 +140,7 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"7\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     initial=\"exact\">
+//     >
 //     <Real start=\"0.0\"/>
 //   </ScalarVariable>
 //   </ModelVariables>

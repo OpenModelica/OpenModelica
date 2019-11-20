@@ -193,7 +193,7 @@ template ScalarVariableAttribute(SimVar simVar)
 match simVar
   case SIMVAR(__) then
   let valueReference = '<%System.tmpTick()%>'
-  let variability = getVariability(varKind)
+  let variability_ = getVariability(variability)
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
   let alias = getAliasVar(aliasvar)
   let caus = getCausality(causality)
@@ -201,29 +201,30 @@ match simVar
   name="<%System.stringReplace(crefStrNoUnderscore(name),"$", "_D_")%>"
   valueReference="<%valueReference%>"
   <%description%>
-  variability="<%variability%>"
+  variability="<%variability_%>"
   causality="<%caus%>"
   alias="<%alias%>"
   >>
 end ScalarVariableAttribute;
 
-template getCausality(Causality c)
+template getCausality(Option<Causality> c)
  "Returns the Causality Attribute of ScalarVariable."
 ::=
 match c
-  case NONECAUS(__) then "none"
-  case INTERNAL(__) then "internal"
-  case OUTPUT(__) then "output"
-  case INPUT(__) then "input"
+  case SOME(NONECAUS(__)) then "none"
+  case SOME(OUTPUT(__)) then "output"
+  case SOME(INPUT(__)) then "input"
+  else "internal" // needed to support for FMI 1.0 since causality= PARAMETER, CALCULATED__PARAMETER and LOCAL are not handled
 end getCausality;
 
-template getVariability(VarKind varKind)
+template getVariability(Option<Variability> variability_)
  "Returns the variability Attribute of ScalarVariable."
 ::=
-match varKind
-  case DISCRETE(__) then "discrete"
-  case PARAM(__) then "parameter"
-  case CONST(__) then "constant"
+match variability_
+  case SOME(DISCRETE(__)) then "discrete"
+  case SOME(FIXED(__)) then "parameter" // FMI 1.0 do not have fixed
+  case SOME(CONSTANT(__)) then "constant"
+  case SOME(CONTINUOUS(__)) then "continuous"
   else "continuous"
 end getVariability;
 
@@ -247,7 +248,7 @@ case SIMVAR(__) then
   match type_
     case T_INTEGER(__) then '<Integer<%StartString(simvar)%>/>'
     /* Don't generate the units for now since it is wrong. If you generate a unit attribute here then we must add the UnitDefinitions tag section also. */
-    case T_REAL(__) then '<Real<%StartString(simvar)/*%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)*/%>/>'
+    case T_REAL(__) then '<Real<%StartString(simvar)/*%><%ScalarVariableTypeRealAttribute(unit,displayUnit)*/%>/>'
     case T_BOOL(__) then '<Boolean<%StartString(simvar)%>/>'
     case T_STRING(__) then '<String<%StartString(simvar)%>/>'
     case T_ENUMERATION(__) then '<Enumeration declaredType="<%AbsynUtil.pathString(path, ".", false)%>"<%StartString(simvar)%>/>'
@@ -266,7 +267,7 @@ case SIMVAR(initialValue = initialValue, causality = causality, type_ = type_) t
     case SOME(e as ENUM_LITERAL(__)) then ' start="<%initValXml(e)%>"'
     else
       match causality
-        case INPUT(__) then ' start="<%initDefaultValXml(type_)%>"'
+        case SOME(INPUT(__)) then ' start="<%initDefaultValXml(type_)%>"'
         else ''
 end StartString;
 
@@ -276,7 +277,7 @@ template ScalarVariableTypeRealAttribute(String unit, String displayUnit)
   let unit_ = if unit then 'unit="<%unit%>"'
   let displayUnit_ = if displayUnit then 'displayUnit="<%displayUnit%>"'
   <<
-  <%unit_%> <%displayUnit_%>
+   <%unit_%> <%displayUnit_%>
   >>
 end ScalarVariableTypeRealAttribute;
 
@@ -489,55 +490,48 @@ match simVar
   let defaultValueReference = '<%System.tmpTick()%>'
   let valueReference = getValueReference(simVar, simCode, false)
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
-  let variability = if getClockIndex(simVar, simCode) then "discrete" else getVariability2(varKind, type_)
+  let variability_ = if getClockIndex(simVar, simCode) then "discrete" else getVariability2(variability)
   let clockIndex = getClockIndex(simVar, simCode)
   let previous = match varKind case CLOCKED_STATE(__) then '<%getVariableIndex(cref2simvar(previousName, simCode))%>'
-  let caus = getCausality2(causality, varKind, isValueChangeable)
-  let initial = getInitialType2(variability, caus, initialValue)
+  let caus = getCausality2(causality)
+  let initial = getInitialType2(initial_)
   <<
   name="<%System.stringReplace(crefStrNoUnderscore(name),"$", "_D_")%>"
   valueReference="<%valueReference%>"
   <%description%>
-  variability="<%variability%>"
-  causality="<%caus%>"
+  <%if boolNot(stringEq(variability_, "")) then 'variability="'+variability_+'"' %>
+  <%if boolNot(stringEq(caus, "")) then 'causality="'+caus+'"' %>
   <%if boolNot(stringEq(clockIndex, "")) then 'clockIndex="'+clockIndex+'"' %>
   <%if boolNot(stringEq(previous, "")) then 'previous="'+previous+'"' %>
-  <%if boolNot(stringEq(initial, "")) then match aliasvar case SimCodeVar.ALIAS(__) then "" else 'initial="'+initial+'"' %>
+  <%if boolNot(stringEq(initial, "")) then 'initial="'+initial+'"' %>
   >>
 end ScalarVariableAttribute2;
 
-template getVariability2(VarKind varKind, DAE.Type type_)
+template getVariability2(Option<Variability> variability)
  "Returns the variability Attribute of ScalarVariable."
 ::=
-match varKind
-  case DISCRETE(__) then "discrete"
-  case PARAM(__) then "fixed"
-  /*case PARAM(__) then "tunable"*/  /*TODO! Don't know how tunable variables are represented in OpenModelica.*/
-  case CONST(__) then "constant"
-  else
-  match type_
-    case T_REAL(__) then "continuous"
-    else "discrete"
+match variability
+  case SOME(DISCRETE(__)) then "discrete"
+  case SOME(FIXED(__)) then "fixed"
+  case SOME(CONSTANT(__)) then "constant"
+  case SOME(CONTINUOUS(__)) then "continuous" // default
+  case SOME(TUNABLE(__)) then "tunable"
+  else ""
 end getVariability2;
 
-template getCausality2(Causality c, VarKind varKind, Boolean isValueChangeable)
+template getCausality2(Option<Causality> c)
  "Returns the Causality Attribute of ScalarVariable."
 ::=
 match c
-  case NONECAUS(__) then getCausality2Helper(varKind, isValueChangeable)
-  case INTERNAL(__) then getCausality2Helper(varKind, isValueChangeable)
-  case OUTPUT(__) then "output"
-  case INPUT(__) then "input"
+  case SOME(NONECAUS(__)) then "none"
+  case SOME(OUTPUT(__)) then "output"
+  case SOME(INPUT(__)) then "input"
+  case SOME(LOCAL(__)) then "local"  // same as INTERNAL() see FMI-2.0 specification
+  case SOME(PARAMETER(__)) then "parameter"
+  case SOME(CALCULATED_PARAMETER(__)) then "calculatedParameter"
+  else ""
   /*TODO! Handle "independent" causality.*/
-  else "local"
 end getCausality2;
-
-template getCausality2Helper(VarKind varKind, Boolean isValueChangeable)
-::=
-match varKind
-  case PARAM(__) then if isValueChangeable then "parameter" else "calculatedParameter"
-  else "local"
-end getCausality2Helper;
 
 template getNumberOfEventIndicators(SimCode simCode)
  "Get the number of event indicators, which depends on the selected code target (c or cpp)."
@@ -551,31 +545,13 @@ match simCode
   else ""
 end getNumberOfEventIndicators;
 
-template getInitialType2(String variability, String causality, Option<DAE.Exp> initialValue)
- "Returns the Initial Attribute of ScalarVariable."
+template getInitialType2(Option<Initial> initial_)
+ "Returns the Initial Attribute for fmiexport"
 ::=
-match variability
-  case "constant" then
-    match causality
-      case "output"
-      case "local" then "exact"
-      else ""
-  case "fixed"
-  case "tunable" then
-    match causality
-      case "parameter" then "exact"
-      case "calculatedParameter"
-      case "local" then "calculated"
-      else ""
-  case "discrete"
-  case "continuous" then
-    match causality
-      case "output"
-      case "local" then
-        match initialValue
-        case SOME(exp) then "exact"
-        else "calculated"
-      else ""
+match initial_
+  case SOME(EXACT(__)) then "exact"
+  case SOME(APPROX(__)) then "approx"
+  case SOME(CALCULATED(__)) then "calculated"
   else ""
 end getInitialType2;
 
@@ -597,33 +573,40 @@ template ScalarVariableTypeCommonAttribute2(SimVar simvar, list<SimVar> stateVar
  "Generates code for ScalarVariable Type file for FMU 2.0 target."
 ::=
 match simvar
-case SIMVAR(varKind = varKind, isValueChangeable = isValueChangeable, index = index) then
-  let extraAttributes = match varKind
-    case STATE_DER(__) then ' derivative="<%getStateSimVarIndexFromIndex(stateVars, index)%>"'
-    case PARAM(__) then if isValueChangeable then '<%StartString2(simvar)%>' else ''
-    else '<%StartString2(simvar)%>'
-  '<%extraAttributes%><%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%><%UnitString2(simvar)%>'
+case SIMVAR(__) then
+  let startString = StartString2(simvar)
+  let extraAttributes = '<%DerivativeVarIndex(simvar,stateVars)%><%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%><%UnitString2(simvar)%>'
+  <<
+  <%startString%><%extraAttributes%>
+  >>
 end ScalarVariableTypeCommonAttribute2;
+
+template DerivativeVarIndex(SimVar simvar, list<SimVar> stateVars)
+::=
+match simvar
+case SIMVAR(varKind = varKind, index = index) then
+  match varKind
+    case STATE_DER(__) then ' derivative="<%getStateSimVarIndexFromIndex(stateVars, index)%>"'
+    else ''
+end DerivativeVarIndex;
 
 template StartString2(SimVar simvar)
 ::=
 match simvar
-case SIMVAR(aliasvar = SimCodeVar.ALIAS(__)) then
-  ''
-case SIMVAR(initialValue = initialValue, varKind = varKind, causality = causality, type_ = type_, isValueChangeable = isValueChangeable) then
+case SIMVAR(aliasvar = SimCodeVar.ALIAS(__)) then ''
+case SIMVAR(initialValue = initialValue) then
   match initialValue
-    case SOME(e as ICONST(__)) then ' start="<%initValXml(e)%>"'
-    case SOME(e as RCONST(__)) then ' start="<%initValXml(e)%>"'
-    case SOME(e as SCONST(__)) then ' start="<%initValXml(e)%>"'
-    case SOME(e as BCONST(__)) then ' start="<%initValXml(e)%>"'
-    case SOME(e as ENUM_LITERAL(__)) then ' start="<%initValXml(e)%>"'
-    else
-      let variability = getVariability2(varKind, type_)
-      let caus = getCausality2(causality, varKind, isValueChangeable)
-      let initial = getInitialType2(variability, caus, initialValue)
-      if boolOr(stringEq(initial, "exact"), boolOr(stringEq(initial, "approx"), stringEq(caus, "input"))) then ' start="<%initDefaultValXml(type_)%>"'
-      else ''
+    case SOME(initialValue) then ' start="<%initValXml(initialValue)%>"'
+    else ''
 end StartString2;
+
+template startString2Helper(Option<Exp> exp, DAE.Type type_)
+::=
+match exp
+    case SOME((e as exp)) then '<%initValXml(e)%>'
+    // if start expression is none then assigne defaultvalues for start attribute based on Type
+    else '<%initDefaultValXml(type_)%>'
+end startString2Helper;
 
 template MinString2(SimVar simvar)
 ::=

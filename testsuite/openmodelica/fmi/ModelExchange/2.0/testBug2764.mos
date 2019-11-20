@@ -132,43 +132,34 @@ readFile("modelDescription.tmp.xml");
 //   <ScalarVariable
 //     name=\"_D_outputAlias_y1\"
 //     valueReference=\"0\"
-//     variability=\"continuous\"
-//     causality=\"local\"
-//     initial=\"calculated\">
-//     <Real/>
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"2\" -->
 //   <ScalarVariable
 //     name=\"_D_outputAlias_y2\"
 //     valueReference=\"1\"
-//     variability=\"continuous\"
-//     causality=\"local\"
-//     initial=\"calculated\">
-//     <Real/>
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"3\" -->
 //   <ScalarVariable
 //     name=\"der(_D_outputAlias_y1)\"
 //     valueReference=\"2\"
-//     variability=\"continuous\"
-//     causality=\"local\"
-//     initial=\"calculated\">
+//     >
 //     <Real derivative=\"1\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"4\" -->
 //   <ScalarVariable
 //     name=\"der(_D_outputAlias_y2)\"
 //     valueReference=\"3\"
-//     variability=\"continuous\"
-//     causality=\"local\"
-//     initial=\"calculated\">
+//     >
 //     <Real derivative=\"2\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"5\" -->
 //   <ScalarVariable
 //     name=\"u\"
 //     valueReference=\"4\"
-//     variability=\"continuous\"
 //     causality=\"input\"
 //     >
 //     <Real start=\"-2.0\"/>
@@ -177,18 +168,16 @@ readFile("modelDescription.tmp.xml");
 //   <ScalarVariable
 //     name=\"y1\"
 //     valueReference=\"5\"
-//     variability=\"continuous\"
 //     causality=\"output\"
-//     initial=\"calculated\">
+//     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"7\" -->
 //   <ScalarVariable
 //     name=\"y2\"
 //     valueReference=\"6\"
-//     variability=\"continuous\"
 //     causality=\"output\"
-//     initial=\"calculated\">
+//     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"8\" -->
@@ -197,7 +186,7 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"7\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     initial=\"exact\">
+//     >
 //     <Real start=\"23.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"9\" -->
@@ -205,9 +194,8 @@ readFile("modelDescription.tmp.xml");
 //     name=\"i\"
 //     valueReference=\"0\"
 //     variability=\"discrete\"
-//     causality=\"local\"
-//     initial=\"calculated\">
-//     <Integer/>
+//     initial=\"exact\">
+//     <Integer start=\"0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"10\" -->
 //   <ScalarVariable
@@ -215,17 +203,15 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"0\"
 //     description=\"b\"
 //     variability=\"discrete\"
-//     causality=\"local\"
-//     initial=\"calculated\">
-//     <Boolean/>
+//     initial=\"exact\">
+//     <Boolean start=\"false\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"11\" -->
 //   <ScalarVariable
 //     name=\"b\"
 //     valueReference=\"1\"
 //     variability=\"discrete\"
-//     causality=\"local\"
-//     initial=\"calculated\">
+//     >
 //     <Boolean/>
 //   </ScalarVariable>
 //   </ModelVariables>
