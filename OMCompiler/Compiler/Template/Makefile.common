@@ -12,171 +12,171 @@ check_tabs:
 AbsynDumpTpl.mo : AbsynDumpTpl.tpl AbsynDumpTV.mo
 	@echo " ** AbsynDumpTpl template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 CodegenAdevs.mo : CodegenAdevs.tpl SimCodeTV.mo
 	@echo " ** CodegenAdevs template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 CodegenSparseFMI.mo : CodegenSparseFMI.tpl SimCodeTV.mo
 	@echo " ** CodegenSparseFMI template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 CodegenUtil.mo : CodegenUtil.tpl SimCodeTV.mo
 	@echo " ** CodegenUtil template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 CodegenUtilSimulation.mo : CodegenUtilSimulation.tpl SimCodeTV.mo
 	@echo " ** CodegenUtilSimulation template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 CodegenC.mo : CodegenC.tpl CodegenCFunctions.tpl SimCodeTV.mo CodegenUtil.tpl
 	@echo " ** CodegenC template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 CodegenEmbeddedC.mo : CodegenEmbeddedC.tpl SimCodeTV.mo CodegenUtil.tpl
 	@echo " ** CodegenEmbeddedC template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 CodegenCFunctions.mo : CodegenCFunctions.tpl SimCodeTV.mo CodegenUtil.tpl
 	@echo " ** CodegenC template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 CodegenMidToC.mo : CodegenMidToC.tpl SimCodeTV.mo MidCodeTV.mo
 	@echo " ** CodegenMidToC template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 CodegenCSharp.mo : CodegenCSharp.tpl SimCodeTV.mo
 	@echo " ** CodegenCSharp template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 # FMU
 CodegenFMUCommon.mo : CodegenFMUCommon.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenCFunctions.tpl CodegenUtil.tpl
 	@echo " ** CodegenFMUCommon template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 CodegenFMU.mo : CodegenFMU.tpl CodegenFMU2.tpl CodegenFMUCommon.tpl CodegenFMUCommon.mo SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenCFunctions.tpl CodegenUtil.tpl
 	@echo " ** CodegenFMU template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 CodegenFMU1.mo : CodegenFMU1.tpl CodegenFMUCommon.tpl CodegenFMUCommon.mo SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenUtil.tpl
 	@echo " ** CodegenFMU1 template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 CodegenFMU2.mo : CodegenFMU2.tpl CodegenFMUCommon.tpl CodegenFMUCommon.mo SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenUtil.tpl
 	@echo " ** CodegenFMU2 template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 CodegenFMUCpp.mo : CodegenFMUCpp.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenUtil.tpl CodegenCpp.tpl  CodegenCppCommon.tpl CodegenFMU.tpl
 	@echo " ** CodegenFMUCpp template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 CodegenFMUCppHpcom.mo : CodegenFMUCppHpcom.tpl CodegenFMUCpp.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenCppHpcom.tpl CodegenUtil.tpl CodegenCppCommon.tpl CodegenCpp.tpl CodegenFMU.tpl
 	@echo " ** CodegenFMUCppHpcom template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 # OMSI
 CodegenOMSI_common.mo : CodegenOMSI_common.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenUtil.tpl CodegenUtilSimulation.tpl CodegenCFunctions.tpl
 	@echo " ** CodegenOMSI_common template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 CodegenOMSIC.mo : CodegenOMSIC.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenOMSI_common.tpl CodegenUtil.tpl CodegenUtilSimulation.tpl CodegenFMU.tpl
 	@echo " ** CodegenOMSIC template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 CodegenOMSIC_Equations.mo : CodegenOMSIC_Equations.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenCFunctions.tpl CodegenUtil.tpl CodegenUtilSimulation.tpl
 	@echo " ** CodegenOMSIC_Equations template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 CodegenModelica.mo : CodegenModelica.tpl
 	@echo " ** CodegenModelica template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 DAEDumpTpl.mo : DAEDumpTpl.tpl DAEDumpTV.mo
 	@echo " ** DAEDumpTpl template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 NFInstDumpTpl.mo : NFInstDumpTpl.tpl NFInstDumpTV.mo
 	@echo " ** NFInstDumpTpl template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 Unparsing.mo : Unparsing.tpl SimCodeTV.mo
 	@echo " ** Unparsing template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 SimCodeDump.mo : SimCodeDump.tpl SimCodeTV.mo CodegenUtil.tpl SCodeDumpTpl.tpl
 	@echo " ** SimCodeDump template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 CodegenCpp.mo : CodegenCpp.tpl SimCodeTV.mo CodegenUtil.tpl CodegenCppInit.tpl CodegenCppCommon.tpl
 	@echo " ** CodegenCpp template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 CodegenCppHpcom.mo : CodegenCppHpcom.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenCpp.tpl CodegenUtil.tpl
 	@echo " ** CodegenCppHpcom template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 CodegenCppInit.mo : CodegenCppInit.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenUtil.tpl CodegenFMUCommon.tpl
 	@echo " ** CodegenCppInit template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 CodegenCppCommon.mo : CodegenCppCommon.tpl SimCodeTV.mo
 	@echo " ** CodegenCppCommon template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 ExpressionDumpTpl.mo : ExpressionDumpTpl.tpl ExpressionDumpTV.mo DAEDumpTpl.tpl
 	@echo " ** ExpressionDumpTpl template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 GraphvizDump.mo : GraphvizDump.tpl SimCodeTV.mo SimCodeBackendTV.mo
 	@echo " ** GraphvizDump template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 GraphMLDumpTpl.mo : GraphMLDumpTpl.tpl GraphMLDumpTplTV.mo
 	@echo " ** GraphMLDumpTpl template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 SCodeDumpTpl.mo : SCodeDumpTpl.tpl SCodeTV.mo AbsynDumpTpl.tpl
 	@echo " ** SCodeDumpTpl template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 CodegenXML.mo : CodegenXML.tpl SimCodeTV.mo
 	@echo " ** CodegenXML template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 CodegenJava.mo : CodegenJava.tpl SimCodeTV.mo
 	@echo " ** CodegenJava template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 CodegenJS.mo : CodegenJS.tpl SimCodeTV.mo
 	@echo " ** CodegenJS template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 TplCodegen.mo : ../susan_codegen/TplCodegen.tpl ../susan_codegen/TplCodegenTV.mo
 	@echo " ** TplCodegen generation ** "
@@ -186,27 +186,27 @@ TplCodegen.mo : ../susan_codegen/TplCodegen.tpl ../susan_codegen/TplCodegenTV.mo
 TaskSystemDump.mo : TaskSystemDump.tpl SimCodeTV.mo CodegenUtil.tpl SCodeDumpTpl.tpl
 	@echo " ** TaskSystemDump template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 GenerateAPIFunctionsTpl.mo : GenerateAPIFunctionsTpl.tpl SimCodeTV.mo
 	@echo " ** GenerateAPIFunctionsTpl template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 VisualXMLTpl.mo : VisualXMLTpl.tpl VisualXMLTplTV.mo
 	@echo " ** VisualXMLTpl template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 AbsynToJulia.mo : AbsynToJulia.tpl AbsynToJuliaTV.mo
 	@echo " ** AbsynToJulia template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 AbsynJLDumpTpl.mo : AbsynJLDumpTpl.tpl AbsynDumpTV.mo
 	@echo " ** AbsynJLDump template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " "
+	@echo " " && ../boot/find-unused-import.sh "$@"
 
 clean:
 	rm -f $(GENERATED_FILES)
