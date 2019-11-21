@@ -46,7 +46,6 @@ import SimCode;
 
 protected
 
-import Expression;
 import SimCodeUtil;
 
 public
