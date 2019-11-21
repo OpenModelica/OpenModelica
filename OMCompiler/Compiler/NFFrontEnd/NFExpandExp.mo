@@ -60,14 +60,16 @@ public
 
       case Expression.CREF(ty = Type.ARRAY()) then expandCref(exp);
 
-      case Expression.ARRAY(ty = Type.ARRAY(dimensions = _ :: _ :: {}))
+      // One-dimensional arrays are already expanded.
+      case Expression.ARRAY(ty = Type.ARRAY(dimensions = {})) then (exp, true);
+
+      case Expression.ARRAY()
         algorithm
           (expl, expanded) := expandList(exp.elements);
           exp.elements := expl;
         then
           (exp, expanded);
 
-      case Expression.ARRAY()    then (exp, true);
       case Expression.TYPENAME() then (expandTypename(exp.ty), true);
       case Expression.RANGE()    then expandRange(exp);
       case Expression.CALL()     then expandCall(exp.call, exp);
