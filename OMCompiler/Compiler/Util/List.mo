@@ -696,6 +696,25 @@ algorithm
   outList := listReverseInPlace(outList);
 end firstN;
 
+public function firstN_reverse<T>
+  "Returns the first N element of a list in reverse order, or fails if there are
+   not enough elements in the list."
+  input list<T> inList;
+  input Integer N;
+  output list<T> outList = {};
+protected
+  T e;
+  list<T> rest;
+algorithm
+  true := (N >= 0);
+  rest := inList;
+
+  for i in 1:N loop
+    e :: rest := rest;
+    outList := e :: outList;
+  end for;
+end firstN_reverse;
+
 public function stripFirst<T>
   "Removes the first element of a list, but returns the empty list if the given
    list is empty."

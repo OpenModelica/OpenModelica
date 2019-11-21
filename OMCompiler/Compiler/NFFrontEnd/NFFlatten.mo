@@ -825,43 +825,22 @@ protected
   list<Subscript> subs, accum_subs;
   Integer binding_level;
   list<InstNode> parents;
+  ComponentRef pre;
+  InstNode cr_node, par;
 algorithm
   outExp := match exp
-    case Expression.BINDING_EXP()
+    case Expression.BINDING_EXP(exp = outExp)
       algorithm
         parents := listRest(exp.parents);
 
-        if not (exp.isEach or listEmpty(parents)) then
-          if isTypeAttribute then
+        if not exp.isEach then
+          if isTypeAttribute and not listEmpty(parents) then
             parents := listRest(parents);
           end if;
 
-          binding_level := 0;
-          for parent in parents loop
-            binding_level := binding_level + Type.dimensionCount(InstNode.getType(parent));
-          end for;
-
-          if binding_level > 0 then
-            // TODO: Optimize this, making a list of all subscripts in the prefix
-            //       when only a few are needed is unnecessary.
-            subs := listAppend(listReverse(s) for s in ComponentRef.subscriptsAll(prefix));
-            accum_subs := {};
-
-            for i in 1:binding_level loop
-              if listEmpty(subs) then
-                break;
-              end if;
-
-              accum_subs := listHead(subs) :: accum_subs;
-              subs := listRest(subs);
-            end for;
-
-            outExp := Expression.applySubscripts(accum_subs, exp.exp);
-          else
-            outExp := exp.exp;
+          if not listEmpty(parents) then
+            outExp := flattenBindingExp2(outExp, prefix, parents);
           end if;
-        else
-          outExp := exp.exp;
         end if;
       then
         flattenExp(outExp, prefix);
@@ -869,6 +848,47 @@ algorithm
     else exp;
   end match;
 end flattenBindingExp;
+
+function flattenBindingExp2
+  input Expression exp;
+  input ComponentRef prefix;
+  input list<InstNode> parents;
+  output Expression outExp = exp;
+protected
+  Integer binding_level = 0;
+  list<Subscript> subs;
+  ComponentRef pre = prefix;
+  InstNode pre_node, par;
+algorithm
+  par := listHead(parents);
+
+  if InstNode.isComponent(par) then
+    pre_node := ComponentRef.node(pre);
+
+    while not InstNode.refEqual(pre_node, par) loop
+      pre := ComponentRef.rest(pre);
+
+      if ComponentRef.isEmpty(pre) then
+        return;
+      end if;
+
+      pre_node := ComponentRef.node(pre);
+    end while;
+  end if;
+
+  for parent in parents loop
+    binding_level := binding_level + Type.dimensionCount(InstNode.getType(parent));
+  end for;
+
+  if binding_level > 0 then
+    // TODO: Optimize this, making a list of all subscripts in the prefix when
+    //       only a few are needed is unnecessary.
+    subs := listAppend(listReverse(s) for s in ComponentRef.subscriptsAll(pre));
+    binding_level := min(binding_level, listLength(subs));
+    subs := List.firstN_reverse(subs, binding_level);
+    outExp := Expression.applySubscripts(subs, exp);
+  end if;
+end flattenBindingExp2;
 
 function flattenExp
   input output Expression exp;
