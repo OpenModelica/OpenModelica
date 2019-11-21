@@ -2186,6 +2186,10 @@ algorithm
     case DAE.DIM_BOOLEAN() then 2;
     case DAE.DIM_EXP(exp = DAE.ICONST(integer = i)) then i;
     case DAE.DIM_EXP(exp = DAE.ENUM_LITERAL(index = i)) then i;
+    // else algorithm
+      // Error.addInternalError("Function dimensionSize failed to extract size from dimension. Make sure
+         // you have dimension that is evaluated if you want to use this function.", sourceInfo());
+      // then fail();
   end match;
 end dimensionSize;
 
@@ -4704,66 +4708,74 @@ protected function listToArray2
   input DAE.Type inType;
   output DAE.Exp oExp;
 algorithm
-  oExp := matchcontinue(inList, iDims, inType)
+  () := match(inList, iDims, inType)
   local
     Integer i;
     DAE.Dimension d;
     list<DAE.Exp> explst;
-    DAE.Exp arrexp;
     DAE.Dimensions dims;
+    Boolean is_scalar;
+    DAE.Type ty;
 
   case(_, {d}, _)
-    equation
-      i = dimensionSize(d);
-      true = i == listLength(inList);
-    then makeArrayFromList(inList);
-
-  case(_, {d}, _)
-    equation
-      i = dimensionSize(d);
-      true = i > listLength(inList);
-      Error.addMessage(Error.INTERNAL_ERROR, {"Expression.listToArray2: Not enough elements left in list to fit dimension."});
-    then
-      fail();
+    algorithm
+      is_scalar := not Types.isArray(inType);
+      if dimensionKnown(d) then
+        i := dimensionSize(d);
+        if i <> listLength(inList) then
+          Error.addMessage(Error.INTERNAL_ERROR, {"Expression.listToArray2: Number of elements in the list does not match the dimension size."});
+          fail();
+        else
+          ty := liftArrayR(inType, DAE.DIM_INTEGER(listLength(inList)));
+          oExp := DAE.ARRAY(ty, is_scalar, inList);
+        end if;
+      // We do not know the dimension size but we have only one dimension.
+      // WE just create a one dimensional array and hope for the best. This is needed for
+      // codegen when we have to expand an array crefexp to an array expression. Sometimes
+      // we get an unevaluated dimension for a model variable all the way down in codegen :(
+      else
+        ty := liftArrayR(inType, d);
+        oExp := DAE.ARRAY(ty, is_scalar, inList);
+      end if;
+    then ();
 
   case(_, _ :: _ , _)
-    equation
-      (d, dims) = List.splitLast(iDims);
-      explst = listToArray3(inList,d,inType);
-      arrexp = listToArray2(explst,dims,inType);
+    algorithm
+      (d, dims) := List.splitLast(iDims);
+      explst := listToArray3(inList,d);
+      ty := liftArrayR(inType, DAE.DIM_INTEGER(listLength(explst)));
+      oExp := listToArray2(explst,dims,ty);
     then
-      arrexp;
+      ();
 
-  end matchcontinue;
+  end match;
 end listToArray2;
 
 
 protected function listToArray3
   input list<DAE.Exp> inList;
   input DAE.Dimension iDim;
-  input DAE.Type inType;
   output list<DAE.Exp> oExps;
 algorithm
-  oExps := match(inList, iDim, inType)
+  oExps := match(inList, iDim)
   local
     Integer i;
     DAE.Dimension d;
     list<DAE.Exp> explst, restexps, restarr;
     DAE.Exp arrexp;
 
-    case({}, _, _) then {};
+    case({}, _) then {};
 
-    case(_, d, _)
+    case(_, d)
       equation
         i = dimensionSize(d);
-        if (i > listLength(inList))
-        then
+        if (i > listLength(inList)) then
           Error.addMessage(Error.INTERNAL_ERROR, {"Expression.listToArray3: Not enough elements left in list to fit dimension."});
           fail();
         else
           (explst, restexps) = List.split(inList,i);
           arrexp = makeArrayFromList(explst);
-          restarr = listToArray3(restexps,d,inType);
+          restarr = listToArray3(restexps,d);
         end if;
       then
         arrexp::restarr;
@@ -12129,14 +12141,20 @@ end makeVectorCall;
 
 
 public function expandCrefs
-  input output DAE.Exp exp;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
   input output Integer dummy=0 "For traversal";
 algorithm
-  exp := match exp
+  outExp := match inExp
     local
-      DAE.Type ty;
-    case DAE.CREF(ty=DAE.T_ARRAY(ty=ty)) then makeArray(list(makeCrefExp(cr, ty) for cr in ComponentReference.expandCref(exp.componentRef, true)), exp.ty, not Types.isArray(ty));
-    else exp;
+      DAE.Type elem_ty, arr_ty;
+      list<DAE.Exp> exp_lst;
+      DAE.Exp exp;
+    case DAE.CREF(ty=arr_ty as DAE.T_ARRAY()) algorithm
+        exp_lst := list(makeCrefExp(cr, arr_ty.ty) for cr in ComponentReference.expandCref(inExp.componentRef, true));
+        exp := listToArray(exp_lst, arr_ty.dims);
+      then exp;
+    else inExp;
   end match;
 end expandCrefs;
 

@@ -1305,11 +1305,19 @@ algorithm
     // create SimCodeVars for algebraic states
     algStateVars := BackendVariable.listVar(inBackendDAE.shared.daeModeData.algStateVars);
     ((algebraicStateVars, _)) :=  BackendVariable.traverseBackendDAEVars(algStateVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
-    SimCode.VARINFO(numStateVars=nStates) := modelInfo.varInfo;
 
     algebraicStateVars := SimCodeUtil.sortSimVarsAndWriteIndex(algebraicStateVars, crefToSimVarHT);
-    (algebraicStateVars, _) := SimCodeUtil.setVariableIndexHelper(algebraicStateVars, 2*nStates);
-    crefToSimVarHT:= List.fold(algebraicStateVars,HashTableCrefSimVar.addSimVarToHashTable,crefToSimVarHT);
+
+    /* This lines seem to be not neccsary and actually problematic.
+       The algebraicStateVars are already in the simvars. Which means they are already addded
+       to the hastable somewhere above. Here we try to add them again but with wrong indexs because
+       setVariableIndexHelper does not actually update the indices we want. If you want to enable this
+      for some reason use rewriteIndex.
+    */
+    // SimCode.VARINFO(numStateVars=nStates) := modelInfo.varInfo;
+    // // (algebraicStateVars, _) := SimCodeUtil.setVariableIndexHelper(algebraicStateVars, 2*nStates);
+    // (algebraicStateVars, _) := SimCodeUtil.rewriteIndex(algebraicStateVars, 2*nStates);
+    // crefToSimVarHT:= List.fold(algebraicStateVars,HashTableCrefSimVar.addSimVarToHashTable,crefToSimVarHT);
 
     // create DAE mode Sparse pattern and TODO: Jacobians
     // sparsity pattern generation
@@ -1323,7 +1331,9 @@ algorithm
     modelInfo := SimCodeUtil.addNumEqns(modelInfo, uniqueEqIndex-listLength(jacobianEquations));
 
     // update hash table
-    crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
+    // mahge: This creates a new crefToSimVarHT discarding everything added upto here
+    // The updated variable 'numEquations' (by SimCodeUtil.addNumEqns) is not even used in createCrefToSimVarHT :/
+    // crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
 
     simCode := SimCode.SIMCODE(modelInfo,
                               {}, // Set by the traversal below...
