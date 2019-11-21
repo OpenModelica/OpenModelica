@@ -50,7 +50,6 @@ protected
   import TypeCheck = NFTypeCheck;
   import ValuesUtil;
   import MetaModelica.Dangerous.listReverseInPlace;
-  import Types;
   import RangeIterator = NFRangeIterator;
 
 public
