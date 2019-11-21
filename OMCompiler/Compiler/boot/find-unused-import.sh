@@ -1,5 +1,6 @@
 #!/bin/bash
 
+EXIT=0
 for f in "$@"; do
   case $f in
     *Template*TV.mo)
@@ -23,7 +24,12 @@ for f in "$@"; do
         echo "Unused import $i in $f"
         sed -i "/^ *[a-z]* *import \+$i *;/d" "$f"
         CONTINUE=1
+        EXIT=1
       fi
     done
   done
 done
+if test "NOERROR" = "1"; then
+  exit
+fi
+exit "$EXIT"
