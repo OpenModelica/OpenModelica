@@ -450,9 +450,7 @@ algorithm
   cr := ComponentRef.stripSubscripts(cref);
 
   if evalSubscripts then
-    subs := listReverse(Subscript.eval(s) for s in subs);
-  else
-    subs := listReverse(subs);
+    subs := list(Subscript.eval(s) for s in subs);
   end if;
 
   // The rest of the cref contributes subscripts based on where the expressions
@@ -502,7 +500,7 @@ algorithm
               break;
             end if;
 
-            subs := List.append_reverse(ComponentRef.getSubscripts(cr), subs);
+            subs := listAppend(ComponentRef.getSubscripts(cr), subs);
 
             parents := listRest(parents);
             cr := ComponentRef.rest(cr);
@@ -515,12 +513,10 @@ algorithm
           end while;
 
           if evalSubscripts then
-            subs := listReverse(Subscript.eval(s) for s in subs);
-          else
-            subs := listReverse(subs);
+            subs := list(Subscript.eval(s) for s in subs);
           end if;
 
-          accum_subs := List.append_reverse(subs, accum_subs);
+          accum_subs := listAppend(subs, accum_subs);
         end if;
 
         // Subscript the binding type if bindingSubs was given.
@@ -534,12 +530,7 @@ algorithm
       then
         Expression.BINDING_EXP(e, exp_ty, bind_ty, exp.parents, exp.isEach);
 
-    else
-      algorithm
-        subs := listReverse(subscripts);
-      then
-        Expression.applySubscripts(subs, exp);
-
+    else Expression.applySubscripts(subscripts, exp);
   end match;
 end subscriptEvaluatedBinding2;
 
