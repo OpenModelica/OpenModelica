@@ -11,7 +11,6 @@ template getCevalScriptInterface(list<DAE.Type> tys)
   import AbsynUtil;
   import CevalScript;
   import Parser;
-  import SymbolTable;
 
   protected
 
