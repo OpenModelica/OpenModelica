@@ -203,6 +203,7 @@ void buildOMC(CC, CXX, extraFlags) {
   mv build.sanity-check build
   rm -rf .sanity-check
   '''
+  sh "cd OMCompiler/Compiler/boot && ./find-unused-import.sh ../*/*.mo"
   }
 }
 
