@@ -47,7 +47,6 @@ import BaseAvlTree;
 import ClassInf;
 import SCode;
 import Values;
-import Connect;
 
 protected
 import DAEDump;
@@ -1901,6 +1900,130 @@ uniontype ClassPrefix "Prefix for classes is its variability"
     SCode.Variability variability "VAR, DISCRETE, PARAM, or CONST";
   end CLASSPRE;
 end ClassPrefix;
+
+package Connect "
+  Connections generate connection sets which are stored in the Sets type, which
+  is then used to generate equations and evaluate stream operators during
+  instantiation.
+
+  Whenever a connection is instantiated by InstSection.connectComponents it is
+  added to the connection sets with addConnection or addArrayConnection. The
+  connector elements are stored in a trie, a.k.a. a prefix tree, where each node
+  represents a part of the elements component reference. The connection sets
+  are not stored explicitly, but each element keeps track of which set it
+  belongs to. Adding a new element to a set simply means assigning the element a
+  set index. Sets are not merged while connections are added either, instead a
+  list of set connections are kept.
+
+  The sets are collected and merged only when it's time to generate equations
+  from them in Inst.instClass. The elements are then bucket sorted into an
+  array, with pointers between buckets representing the set connections, and
+  then equations are generated for each resulting set. The stream operators
+  inStream and actualStream are also evaluated in the DAE at the same time,
+  since they need the same data as the equation generation.
+"
+
+public constant Integer NEW_SET = -1 "The index used for new sets which have not
+  yet been assigned a set index.";
+
+public uniontype Face
+  "This type indicates whether a connector is an inside or an outside connector.
+   Note: this is not the same as inner and outer references.
+   A connector is inside if it connects from the outside into a component and it
+   is outside if it connects out from the component.  This is important when
+   generating equations for flow variables, where outside connectors are
+   multiplied with -1 (since flow is always into a component)."
+  record INSIDE "This is an inside connection" end INSIDE;
+  record OUTSIDE "This is an outside connection" end OUTSIDE;
+  record NO_FACE end NO_FACE;
+end Face;
+
+public uniontype ConnectorType
+  "The type of a connector element."
+  record EQU end EQU;
+  record FLOW end FLOW;
+  record STREAM
+    Option<ComponentRef> associatedFlow;
+  end STREAM;
+  record NO_TYPE end NO_TYPE;
+end ConnectorType;
+
+public uniontype ConnectorElement
+  record CONNECTOR_ELEMENT
+    ComponentRef name;
+    Face face;
+    ConnectorType ty;
+    ElementSource source;
+    Integer set "Which set this element belongs to.";
+  end CONNECTOR_ELEMENT;
+end ConnectorElement;
+
+public uniontype SetTrieNode
+  record SET_TRIE_NODE
+    "A trie node has a name and contains a list of child nodes."
+    String name;
+    ComponentRef cref;
+    list<SetTrieNode> nodes;
+    Integer connectCount;
+  end SET_TRIE_NODE;
+
+  record SET_TRIE_LEAF
+    "A trie leaf contains information about a connector element. Each connector
+     might be connected as both inside and outside, and stream connector
+     elements have an associated flow element."
+    String name;
+    Option<ConnectorElement> insideElement "The inside element.";
+    Option<ConnectorElement> outsideElement "The outside element.";
+    Option<ComponentRef> flowAssociation "The name of the associated flow
+      variable, if the leaf represents a stream variable.";
+    Integer connectCount "How many times this connector has been connected.";
+  end SET_TRIE_LEAF;
+end SetTrieNode;
+
+public type SetTrie = SetTrieNode "A trie, a.k.a. prefix tree, that maps crefs to sets.";
+
+public type SetConnection = tuple<Integer, Integer> "A connection between two sets.";
+
+public uniontype OuterConnect
+  record OUTERCONNECT
+    Prefix scope "the scope where this connect was created";
+    ComponentRef cr1 "the lhs component reference";
+    Absyn.InnerOuter io1 "inner/outer attribute for cr1 component";
+    Face f1 "the face of the lhs component";
+    ComponentRef cr2 "the rhs component reference";
+    Absyn.InnerOuter io2 "inner/outer attribute for cr2 component";
+    Face f2 "the face of the rhs component";
+    ElementSource source "the element origin";
+  end OUTERCONNECT;
+end OuterConnect;
+
+public uniontype Sets
+  record SETS
+    SetTrie sets;
+    Integer setCount "How many sets the trie contains.";
+    list<SetConnection> connections;
+    list<OuterConnect> outerConnects "Connect statements to propagate upwards.";
+  end SETS;
+end Sets;
+
+public uniontype Set
+  "A set of connection elements."
+
+  record SET
+    "A set with a type and a list of elements."
+    ConnectorType ty;
+    list<ConnectorElement> elements;
+  end SET;
+
+  record SET_POINTER
+    "A pointer to another set."
+    Integer index;
+  end SET_POINTER;
+end Set;
+
+public constant Sets emptySet = SETS(SET_TRIE_NODE("", WILD(), {}, 0), 0, {}, {});
+
+end Connect;
 
 annotation(__OpenModelica_Interface="frontend");
 end DAE;

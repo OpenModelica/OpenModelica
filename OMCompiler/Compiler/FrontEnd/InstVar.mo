@@ -41,7 +41,7 @@ encapsulated package InstVar
 
 public import Absyn;
 public import ClassInf;
-public import Connect;
+public import DAE.Connect;
 public import ConnectionGraph;
 public import DAE;
 public import FCore;

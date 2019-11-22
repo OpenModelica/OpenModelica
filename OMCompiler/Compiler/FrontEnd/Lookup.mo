@@ -58,7 +58,7 @@ protected import BaseHashTable;
 protected import Builtin;
 protected import ComponentReference;
 protected import Config;
-protected import Connect;
+protected import DAE.Connect;
 protected import ConnectionGraph;
 protected import Debug;
 protected import Error;

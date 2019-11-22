@@ -58,7 +58,7 @@ import Algorithm;
 import AvlSetString;
 import BaseHashTable;
 import ComponentReference;
-import Connect;
+import DAE.Connect;
 import DAEUtil;
 import ElementSource;
 import Expression;

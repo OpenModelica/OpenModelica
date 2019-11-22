@@ -92,7 +92,7 @@ import NFHashTableCG;
 import NFInstNode.InstNode;
 import Operator = NFOperator;
 import NFOperator.Op;
-import Connect;
+import DAE.Connect;
 import Expression = NFExpression;
 import Type = NFType;
 import MetaModelica.Dangerous.listReverseInPlace;

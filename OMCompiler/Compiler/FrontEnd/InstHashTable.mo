@@ -31,7 +31,7 @@
 
 encapsulated package InstHashTable "hash table implementation for cashing instantiation results"
 
-import Connect;
+import DAE.Connect;
 import ConnectionGraph;
 import ClassInf;
 import DAE;

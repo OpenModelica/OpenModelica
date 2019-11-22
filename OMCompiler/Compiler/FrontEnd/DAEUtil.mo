@@ -55,6 +55,7 @@ import Ceval;
 import DAE.AvlTreePathFunction;
 import ComponentReference;
 import Config;
+import DAE.Connect;
 import ConnectUtil;
 import DAEDump;
 import Debug;

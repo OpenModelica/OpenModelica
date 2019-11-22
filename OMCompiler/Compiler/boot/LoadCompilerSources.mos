@@ -18,7 +18,6 @@ if true then /* Suppress output */
     "../FrontEnd/ClassLoader.mo",
     "../FrontEnd/ComponentReference.mo",
     "../FrontEnd/ConnectionGraph.mo",
-    "../FrontEnd/Connect.mo",
     "../FrontEnd/ConnectUtil.mo",
     "../FrontEnd/Constants.mo",
     "../FrontEnd/DAEDump.mo",

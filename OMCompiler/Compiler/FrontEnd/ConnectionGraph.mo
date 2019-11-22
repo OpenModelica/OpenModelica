@@ -72,7 +72,7 @@ public import DAEUtil;
 public import HashTable;
 public import HashTable3;
 public import HashTableCG;
-public import Connect;
+public import DAE.Connect;
 
 
 public type Edge  = tuple<DAE.ComponentRef,DAE.ComponentRef> "an edge is a tuple with two component references";

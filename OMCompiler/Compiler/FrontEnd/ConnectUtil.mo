@@ -51,7 +51,7 @@ import AbsynUtil;
 import SCode;
 import ClassInf;
 import Config;
-import Connect;
+import DAE.Connect;
 import DAE;
 import FCore;
 import InnerOuter;
@@ -78,15 +78,7 @@ import Util;
 import Global;
 
 // Import some types from Connect.
-import Connect.Face;
-import Connect.ConnectorType;
-import Connect.ConnectorElement;
-import Connect.SetTrieNode;
-import Connect.SetTrie;
-import Connect.SetConnection;
-import Connect.OuterConnect;
-import Connect.Sets;
-import Connect.Set;
+import DAE.Connect.{Face,ConnectorType,ConnectorElement,SetTrieNode,SetTrie,SetConnection,OuterConnect,Sets,Set};
 
 // Set graph represented as an adjacency list.
 protected type SetGraph = array<list<Integer>>;
