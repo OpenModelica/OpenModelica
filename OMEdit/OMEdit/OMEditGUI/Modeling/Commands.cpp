@@ -83,6 +83,7 @@ AddShapeCommand::AddShapeCommand(ShapeAnnotation *pShapeAnnotation, UndoCommand 
 void AddShapeCommand::redoInternal()
 {
   mpShapeAnnotation->getGraphicsView()->addShapeToList(mpShapeAnnotation, mIndex);
+  mpShapeAnnotation->getGraphicsView()->deleteShapeFromOutOfSceneList(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->addItem(mpShapeAnnotation);
   mpShapeAnnotation->emitAdded();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
@@ -96,6 +97,7 @@ void AddShapeCommand::redoInternal()
 void AddShapeCommand::undo()
 {
   mIndex = mpShapeAnnotation->getGraphicsView()->deleteShapeFromList(mpShapeAnnotation);
+  mpShapeAnnotation->getGraphicsView()->addShapeToOutOfSceneList(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->removeItem(mpShapeAnnotation);
   mpShapeAnnotation->emitDeleted();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
@@ -167,6 +169,7 @@ DeleteShapeCommand::DeleteShapeCommand(ShapeAnnotation *pShapeAnnotation, UndoCo
 void DeleteShapeCommand::redoInternal()
 {
   mIndex = mpShapeAnnotation->getGraphicsView()->deleteShapeFromList(mpShapeAnnotation);
+  mpShapeAnnotation->getGraphicsView()->addShapeToOutOfSceneList(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->removeItem(mpShapeAnnotation);
   mpShapeAnnotation->emitDeleted();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
@@ -180,6 +183,7 @@ void DeleteShapeCommand::redoInternal()
 void DeleteShapeCommand::undo()
 {
   mpShapeAnnotation->getGraphicsView()->addShapeToList(mpShapeAnnotation, mIndex);
+  mpShapeAnnotation->getGraphicsView()->deleteShapeFromOutOfSceneList(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->addItem(mpShapeAnnotation);
   mpShapeAnnotation->emitAdded();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
@@ -203,21 +207,15 @@ AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibrary
 
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
-  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() &&
-      pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    // first create the component for Icon View
+  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    // Connector type components exists on icon view as well
     mpIconComponent = new Component(name, pLibraryTreeItem, annotation, position, pComponentInfo, mpIconGraphicsView);
-    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-      mpDiagramComponent = new Component(name, pLibraryTreeItem, annotation, position, pComponentInfo, mpDiagramGraphicsView);
-    }
-  } else {
-    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-      mpDiagramComponent = new Component(name, pLibraryTreeItem, annotation, position, pComponentInfo, mpDiagramGraphicsView);
-    }
+  }
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
+    mpDiagramComponent = new Component(name, pLibraryTreeItem, annotation, position, pComponentInfo, mpDiagramGraphicsView);
   }
   // only select the component of the active Icon/Diagram View
   if (!openingClass) {
-
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
       mpGraphicsView->clearSelection(mpIconComponent);
     } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
@@ -234,35 +232,28 @@ void AddComponentCommand::redoInternal()
 {
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
-  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() &&
-      pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    // first create the component for Icon View
+  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    // Connector type components exists on icon view as well
     mpIconGraphicsView->addItem(mpIconComponent);
     mpIconGraphicsView->addItem(mpIconComponent->getOriginItem());
     mpIconGraphicsView->addComponentToList(mpIconComponent);
+    mpIconGraphicsView->deleteComponentFromOutOfSceneList(mpIconComponent);
     mpIconComponent->emitAdded();
     // hide the component if it is connector and is protected
     mpIconComponent->setVisible(!mpComponentInfo->getProtected());
-    // now add the component to Diagram View
-    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-      mpDiagramGraphicsView->addItem(mpDiagramComponent);
-      mpDiagramGraphicsView->addItem(mpDiagramComponent->getOriginItem());
-      mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
-      mpDiagramComponent->emitAdded();
-    }
-  } else {
-    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-      mpDiagramGraphicsView->addItem(mpDiagramComponent);
-      mpDiagramGraphicsView->addItem(mpDiagramComponent->getOriginItem());
-      mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
-      mpDiagramComponent->emitAdded();
-    }
+  }
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
+    mpDiagramGraphicsView->addItem(mpDiagramComponent);
+    mpDiagramGraphicsView->addItem(mpDiagramComponent->getOriginItem());
+    mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
+    mpDiagramGraphicsView->deleteComponentFromOutOfSceneList(mpDiagramComponent);
+    mpDiagramComponent->emitAdded();
   }
   if (mAddObject) {
     if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
       mpDiagramGraphicsView->addComponentToClass(mpDiagramComponent);
       UpdateComponentAttributesCommand::updateComponentModifiers(mpDiagramComponent, *mpDiagramComponent->getComponentInfo());
-    } else {
+    } else if (mpIconComponent) {
       mpIconGraphicsView->addComponentToClass(mpIconComponent);
     }
   }
@@ -276,31 +267,24 @@ void AddComponentCommand::undo()
 {
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
-  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() &&
-      pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    // first remove the component for Icon View
+  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    // Connector type components exists on icon view as well
     mpIconGraphicsView->removeItem(mpIconComponent);
     mpIconGraphicsView->removeItem(mpIconComponent->getOriginItem());
     mpIconGraphicsView->deleteComponentFromList(mpIconComponent);
+    mpIconGraphicsView->addComponentToOutOfSceneList(mpIconComponent);
     mpIconComponent->emitDeleted();
-    // now remove the component from Diagram View
-    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-      mpDiagramGraphicsView->removeItem(mpDiagramComponent);
-      mpDiagramGraphicsView->removeItem(mpDiagramComponent->getOriginItem());
-      mpDiagramGraphicsView->deleteComponentFromList(mpDiagramComponent);
-      mpDiagramComponent->emitDeleted();
-    }
-  } else {
-    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-      mpDiagramGraphicsView->removeItem(mpDiagramComponent);
-      mpDiagramGraphicsView->removeItem(mpDiagramComponent->getOriginItem());
-      mpDiagramGraphicsView->deleteComponentFromList(mpDiagramComponent);
-      mpDiagramComponent->emitDeleted();
-    }
+  }
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
+    mpDiagramGraphicsView->removeItem(mpDiagramComponent);
+    mpDiagramGraphicsView->removeItem(mpDiagramComponent->getOriginItem());
+    mpDiagramGraphicsView->deleteComponentFromList(mpDiagramComponent);
+    mpDiagramGraphicsView->addComponentToOutOfSceneList(mpDiagramComponent);
+    mpDiagramComponent->emitDeleted();
   }
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
     mpDiagramGraphicsView->deleteComponentFromClass(mpDiagramComponent);
-  } else {
+  } else if (mpIconComponent) {
     mpIconGraphicsView->deleteComponentFromClass(mpIconComponent);
   }
 }
@@ -648,7 +632,6 @@ DeleteComponentCommand::DeleteComponentCommand(Component *pComponent, GraphicsVi
 {
   mpComponent = pComponent;
   mpIconComponent = 0;
-  mpDiagramComponent = 0;
   mpIconGraphicsView = pGraphicsView->getModelWidget()->getIconGraphicsView();
   mpDiagramGraphicsView = pGraphicsView->getModelWidget()->getDiagramGraphicsView();
   mpGraphicsView = pGraphicsView;
@@ -672,30 +655,22 @@ void DeleteComponentCommand::redoInternal()
 {
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
-  if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() &&
-      pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    // first remove the component from Icon View
+  if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    // Connector type components exists on icon view as well
     mpIconComponent = mpIconGraphicsView->getComponentObject(mpComponent->getName());
     if (mpIconComponent) {
       mpIconGraphicsView->removeItem(mpIconComponent);
       mpIconGraphicsView->removeItem(mpIconComponent->getOriginItem());
       mpIconGraphicsView->deleteComponentFromList(mpIconComponent);
+      mpIconGraphicsView->addComponentToOutOfSceneList(mpIconComponent);
       mpIconComponent->emitDeleted();
     }
-    // now remove the component from Diagram View
-    mpDiagramComponent = mpDiagramGraphicsView->getComponentObject(mpComponent->getName());
-    if (mpDiagramComponent) {
-      mpDiagramGraphicsView->removeItem(mpDiagramComponent);
-      mpDiagramGraphicsView->removeItem(mpDiagramComponent->getOriginItem());
-      mpDiagramGraphicsView->deleteComponentFromList(mpDiagramComponent);
-      mpDiagramComponent->emitDeleted();
-    }
-  } else {
-    mpDiagramGraphicsView->removeItem(mpComponent);
-    mpDiagramGraphicsView->removeItem(mpComponent->getOriginItem());
-    mpDiagramGraphicsView->deleteComponentFromList(mpComponent);
-    mpComponent->emitDeleted();
   }
+  mpDiagramGraphicsView->removeItem(mpComponent);
+  mpDiagramGraphicsView->removeItem(mpComponent->getOriginItem());
+  mpDiagramGraphicsView->deleteComponentFromList(mpComponent);
+  mpDiagramGraphicsView->addComponentToOutOfSceneList(mpComponent);
+  mpComponent->emitDeleted();
   mpGraphicsView->deleteComponentFromClass(mpComponent);
 }
 
@@ -707,28 +682,21 @@ void DeleteComponentCommand::undo()
 {
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
-  if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() &&
-      pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    // first add the component to Icon View
+  if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    // Connector type components exists on icon view as well
     if (mpIconComponent) {
       mpIconGraphicsView->addItem(mpIconComponent);
       mpIconGraphicsView->addItem(mpIconComponent->getOriginItem());
       mpIconGraphicsView->addComponentToList(mpIconComponent);
+      mpIconGraphicsView->deleteComponentFromOutOfSceneList(mpIconComponent);
       mpIconComponent->emitAdded();
     }
-    // now add the component to Diagram View
-    if (mpDiagramComponent) {
-      mpDiagramGraphicsView->addItem(mpDiagramComponent);
-      mpDiagramGraphicsView->addItem(mpDiagramComponent->getOriginItem());
-      mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
-      mpDiagramComponent->emitAdded();
-    }
-  } else {
-    mpDiagramGraphicsView->addItem(mpComponent);
-    mpDiagramGraphicsView->addItem(mpComponent->getOriginItem());
-    mpDiagramGraphicsView->addComponentToList(mpComponent);
-    mpComponent->emitAdded();
   }
+  mpDiagramGraphicsView->addItem(mpComponent);
+  mpDiagramGraphicsView->addItem(mpComponent->getOriginItem());
+  mpDiagramGraphicsView->addComponentToList(mpComponent);
+  mpDiagramGraphicsView->deleteComponentFromOutOfSceneList(mpComponent);
+  mpComponent->emitAdded();
   mpGraphicsView->addComponentToClass(mpComponent);
   UpdateComponentAttributesCommand::updateComponentModifiers(mpComponent, *mpComponent->getComponentInfo());
   // Restore sub-model parameters for composite models
@@ -745,8 +713,7 @@ AddConnectionCommand::AddConnectionCommand(LineAnnotation *pConnectionLineAnnota
 {
   mpConnectionLineAnnotation = pConnectionLineAnnotation;
   mAddConnection = addConnection;
-  setText(QString("Add Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartComponentName(),
-                                                        mpConnectionLineAnnotation->getEndComponentName()));
+  setText(QString("Add Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartComponentName(), mpConnectionLineAnnotation->getEndComponentName()));
 
   mpConnectionLineAnnotation->updateToolTip();
   mpConnectionLineAnnotation->drawCornerItems();
@@ -774,6 +741,7 @@ void AddConnectionCommand::redoInternal()
     pEndComponent->addConnectionDetails(mpConnectionLineAnnotation);
   }
   mpConnectionLineAnnotation->getGraphicsView()->addConnectionToList(mpConnectionLineAnnotation);
+  mpConnectionLineAnnotation->getGraphicsView()->deleteConnectionFromOutOfSceneList(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->getGraphicsView()->addItem(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->emitAdded();
   if (mAddConnection) {
@@ -805,6 +773,7 @@ void AddConnectionCommand::undo()
     pEndComponent->removeConnectionDetails(mpConnectionLineAnnotation);
   }
   mpConnectionLineAnnotation->getGraphicsView()->deleteConnectionFromList(mpConnectionLineAnnotation);
+  mpConnectionLineAnnotation->getGraphicsView()->addConnectionToOutOfSceneList(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->getGraphicsView()->removeItem(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->emitDeleted();
   mpConnectionLineAnnotation->getGraphicsView()->deleteConnectionFromClass(mpConnectionLineAnnotation);
@@ -912,6 +881,7 @@ void DeleteConnectionCommand::redoInternal()
     pEndComponent->removeConnectionDetails(mpConnectionLineAnnotation);
   }
   mpConnectionLineAnnotation->getGraphicsView()->deleteConnectionFromList(mpConnectionLineAnnotation);
+  mpConnectionLineAnnotation->getGraphicsView()->addConnectionToOutOfSceneList(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->getGraphicsView()->removeItem(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->emitDeleted();
   mpConnectionLineAnnotation->getGraphicsView()->deleteConnectionFromClass(mpConnectionLineAnnotation);
@@ -938,6 +908,7 @@ void DeleteConnectionCommand::undo()
     pEndComponent->addConnectionDetails(mpConnectionLineAnnotation);
   }
   mpConnectionLineAnnotation->getGraphicsView()->addConnectionToList(mpConnectionLineAnnotation);
+  mpConnectionLineAnnotation->getGraphicsView()->deleteConnectionFromOutOfSceneList(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->getGraphicsView()->addItem(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->emitAdded();
   mpConnectionLineAnnotation->getGraphicsView()->addConnectionToClass(mpConnectionLineAnnotation, true);
@@ -963,6 +934,7 @@ AddTransitionCommand::AddTransitionCommand(LineAnnotation *pTransitionLineAnnota
 void AddTransitionCommand::redoInternal()
 {
   mpTransitionLineAnnotation->getGraphicsView()->addTransitionToList(mpTransitionLineAnnotation);
+  mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromOutOfSceneList(mpTransitionLineAnnotation);
   // Add the start component transition details.
   Component *pStartComponent = mpTransitionLineAnnotation->getStartComponent();
   if (pStartComponent && pStartComponent->getRootParentComponent()) {
@@ -998,6 +970,7 @@ void AddTransitionCommand::redoInternal()
 void AddTransitionCommand::undo()
 {
   mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromList(mpTransitionLineAnnotation);
+  mpTransitionLineAnnotation->getGraphicsView()->addTransitionToOutOfSceneList(mpTransitionLineAnnotation);
   // Remove the start component connection details.
   Component *pStartComponent = mpTransitionLineAnnotation->getStartComponent();
   if (pStartComponent && pStartComponent->getRootParentComponent()) {
@@ -1095,6 +1068,7 @@ DeleteTransitionCommand::DeleteTransitionCommand(LineAnnotation *pTransitionLine
 void DeleteTransitionCommand::redoInternal()
 {
   mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromList(mpTransitionLineAnnotation);
+  mpTransitionLineAnnotation->getGraphicsView()->addTransitionToOutOfSceneList(mpTransitionLineAnnotation);
   // Remove the start component connection details.
   Component *pStartComponent = mpTransitionLineAnnotation->getStartComponent();
   if (pStartComponent && pStartComponent->getRootParentComponent()) {
@@ -1125,6 +1099,7 @@ void DeleteTransitionCommand::redoInternal()
 void DeleteTransitionCommand::undo()
 {
   mpTransitionLineAnnotation->getGraphicsView()->addTransitionToList(mpTransitionLineAnnotation);
+  mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromOutOfSceneList(mpTransitionLineAnnotation);
   // Add the start component connection details.
   Component *pStartComponent = mpTransitionLineAnnotation->getStartComponent();
   if (pStartComponent && pStartComponent->getRootParentComponent()) {
@@ -1167,6 +1142,7 @@ AddInitialStateCommand::AddInitialStateCommand(LineAnnotation *pInitialStateLine
 void AddInitialStateCommand::redoInternal()
 {
   mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToList(mpInitialStateLineAnnotation);
+  mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromOutOfSceneList(mpInitialStateLineAnnotation);
   // Add the start component transition details.
   Component *pStartComponent = mpInitialStateLineAnnotation->getStartComponent();
   if (pStartComponent && pStartComponent->getRootParentComponent()) {
@@ -1190,6 +1166,7 @@ void AddInitialStateCommand::redoInternal()
 void AddInitialStateCommand::undo()
 {
   mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromList(mpInitialStateLineAnnotation);
+  mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToOutOfSceneList(mpInitialStateLineAnnotation);
   // Remove the start component connection details.
   Component *pStartComponent = mpInitialStateLineAnnotation->getStartComponent();
   if (pStartComponent && pStartComponent->getRootParentComponent()) {
@@ -1251,6 +1228,7 @@ DeleteInitialStateCommand::DeleteInitialStateCommand(LineAnnotation *pInitialSta
 void DeleteInitialStateCommand::redoInternal()
 {
   mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromList(mpInitialStateLineAnnotation);
+  mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToOutOfSceneList(mpInitialStateLineAnnotation);
   // Remove the start component connection details.
   Component *pStartComponent = mpInitialStateLineAnnotation->getStartComponent();
   if (pStartComponent && pStartComponent->getRootParentComponent()) {
@@ -1272,6 +1250,7 @@ void DeleteInitialStateCommand::redoInternal()
 void DeleteInitialStateCommand::undo()
 {
   mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToList(mpInitialStateLineAnnotation);
+  mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromOutOfSceneList(mpInitialStateLineAnnotation);
   // Add the start component connection details.
   Component *pStartComponent = mpInitialStateLineAnnotation->getStartComponent();
   if (pStartComponent && pStartComponent->getRootParentComponent()) {

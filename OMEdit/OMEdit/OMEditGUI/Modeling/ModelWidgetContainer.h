@@ -104,10 +104,16 @@ private:
   bool mIsMovingComponentsAndShapes;
   bool mRenderingLibraryPixmap;
   QList<Component*> mComponentsList;
+  // A list of components that are not deleted but are removed from scene.
+  QList<Component*> mOutOfSceneComponentsList;
   QList<LineAnnotation*> mConnectionsList;
+  QList<LineAnnotation*> mOutOfSceneConnectionsList;
   QList<LineAnnotation*> mTransitionsList;
+  QList<LineAnnotation*> mOutOfSceneTransitionsList;
   QList<LineAnnotation*> mInitialStatesList;
+  QList<LineAnnotation*> mOutOfSceneInitialStatesList;
   QList<ShapeAnnotation*> mShapesList;
+  QList<ShapeAnnotation*> mOutOfSceneShapesList;
   QList<Component*> mInheritedComponentsList;
   QList<LineAnnotation*> mInheritedConnectionsList;
   QList<ShapeAnnotation*> mInheritedShapesList;
@@ -199,11 +205,13 @@ public:
   void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
                           ComponentInfo *pComponentInfo, bool addObject, bool openingClass, bool emitComponentAdded);
   void addComponentToList(Component *pComponent) {mComponentsList.append(pComponent);}
+  void addComponentToOutOfSceneList(Component *pComponent) {mOutOfSceneComponentsList.append(pComponent);}
   void addInheritedComponentToList(Component *pComponent) {mInheritedComponentsList.append(pComponent);}
   void addComponentToClass(Component *pComponent);
   void deleteComponent(Component *pComponent);
   void deleteComponentFromClass(Component *pComponent);
   void deleteComponentFromList(Component *pComponent) {mComponentsList.removeOne(pComponent);}
+  void deleteComponentFromOutOfSceneList(Component *pComponent) {mOutOfSceneComponentsList.removeOne(pComponent);}
   void deleteInheritedComponentFromList(Component *pComponent) {mInheritedComponentsList.removeOne(pComponent);}
   Component* getComponentObject(QString componentName);
   QString getUniqueComponentName(QString componentName, int number = 0);
@@ -216,8 +224,10 @@ public:
   void deleteConnectionFromClass(LineAnnotation *pConnectionLineAnnotation);
   void updateConnectionInClass(LineAnnotation *pConnectionLineAnnotation);
   void addConnectionToList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.append(pConnectionLineAnnotation);}
+  void addConnectionToOutOfSceneList(LineAnnotation *pConnectionLineAnnotation) {mOutOfSceneConnectionsList.append(pConnectionLineAnnotation);}
   void addInheritedConnectionToList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.append(pConnectionLineAnnotation);}
   void deleteConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.removeOne(pConnectionLineAnnotation);}
+  void deleteConnectionFromOutOfSceneList(LineAnnotation *pConnectionLineAnnotation) {mOutOfSceneConnectionsList.removeOne(pConnectionLineAnnotation);}
   void removeConnectionsFromView();
   void deleteInheritedConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.removeOne(pConnectionLineAnnotation);}
   int numberOfComponentConnections(Component *pComponent, LineAnnotation *pExcludeConnectionLineAnnotation = 0);
@@ -225,18 +235,24 @@ public:
   void addTransitionToClass(LineAnnotation *pTransitionLineAnnotation);
   void deleteTransitionFromClass(LineAnnotation *pTransitionLineAnnotation);
   void addTransitionToList(LineAnnotation *pTransitionLineAnnotation) {mTransitionsList.append(pTransitionLineAnnotation);}
+  void addTransitionToOutOfSceneList(LineAnnotation *pTransitionLineAnnotation) {mOutOfSceneTransitionsList.append(pTransitionLineAnnotation);}
   void deleteTransitionFromList(LineAnnotation *pTransitionLineAnnotation) {mTransitionsList.removeOne(pTransitionLineAnnotation);}
+  void deleteTransitionFromOutOfSceneList(LineAnnotation *pTransitionLineAnnotation) {mOutOfSceneTransitionsList.removeOne(pTransitionLineAnnotation);}
   void removeTransitionsFromView();
   QList<LineAnnotation*> getInitialStatesList() {return mInitialStatesList;}
   void addInitialStateToClass(LineAnnotation *pInitialStateLineAnnotation);
   void deleteInitialStateFromClass(LineAnnotation *pInitialStateLineAnnotation);
   void addInitialStateToList(LineAnnotation *pInitialStateLineAnnotation) {mInitialStatesList.append(pInitialStateLineAnnotation);}
+  void addInitialStateToOutOfSceneList(LineAnnotation *pInitialStateLineAnnotation) {mOutOfSceneInitialStatesList.append(pInitialStateLineAnnotation);}
   void deleteInitialStateFromList(LineAnnotation *pInitialStateLineAnnotation) {mInitialStatesList.removeOne(pInitialStateLineAnnotation);}
+  void deleteInitialStateFromOutOfSceneList(LineAnnotation *pInitialStateLineAnnotation) {mOutOfSceneInitialStatesList.removeOne(pInitialStateLineAnnotation);}
   void removeInitialStatesFromView();
   void addShapeToList(ShapeAnnotation *pShape, int index = -1);
+  void addShapeToOutOfSceneList(ShapeAnnotation *pShape) {mOutOfSceneShapesList.append(pShape);}
   void addInheritedShapeToList(ShapeAnnotation *pShape) {mInheritedShapesList.append(pShape);}
   void deleteShape(ShapeAnnotation *pShapeAnnotation);
   int deleteShapeFromList(ShapeAnnotation *pShape);
+  void deleteShapeFromOutOfSceneList(ShapeAnnotation *pShape) {mOutOfSceneShapesList.removeOne(pShape);}
   void deleteInheritedShapeFromList(ShapeAnnotation *pShape) {mInheritedShapesList.removeOne(pShape);}
   void reOrderShapes();
   void bringToFront(ShapeAnnotation *pShape);
@@ -245,14 +261,18 @@ public:
   void sendBackward(ShapeAnnotation *pShape);
   void clearGraphicsView();
   void removeClassComponents();
+  void removeOutOfSceneClassComponents();
   void removeInheritedClassShapes();
   void removeInheritedClassComponents();
   void removeInheritedClassConnections();
-  void removeAllComponents() {mComponentsList.clear();}
   void removeAllShapes() {mShapesList.clear();}
+  void removeOutOfSceneShapes();
   void removeAllConnections() {mConnectionsList.clear();}
+  void removeOutOfSceneConnections();
   void removeAllTransitions() {mTransitionsList.clear();}
+  void removeOutOfSceneTransitions();
   void removeAllInitialStates() {mInitialStatesList.clear();}
+  void removeOutOfSceneInitialStates();
   void createLineShape(QPointF point);
   void createPolygonShape(QPointF point);
   void createRectangleShape(QPointF point);

@@ -141,6 +141,19 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
   mpClickedState = 0;
   setIsMovingComponentsAndShapes(false);
   setRenderingLibraryPixmap(false);
+  mComponentsList.clear();
+  mOutOfSceneComponentsList.clear();
+  mConnectionsList.clear();
+  mOutOfSceneConnectionsList.clear();
+  mTransitionsList.clear();
+  mOutOfSceneTransitionsList.clear();
+  mInitialStatesList.clear();
+  mOutOfSceneInitialStatesList.clear();
+  mShapesList.clear();
+  mOutOfSceneShapesList.clear();
+  mInheritedComponentsList.clear();
+  mInheritedConnectionsList.clear();
+  mInheritedShapesList.clear();
   mpConnectionLineAnnotation = 0;
   mpTransitionLineAnnotation = 0;
   mpLineShapeAnnotation = 0;
@@ -150,6 +163,7 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
   mpTextShapeAnnotation = 0;
   mpBitmapShapeAnnotation = 0;
   createActions();
+  mAllItems.clear();
 }
 
 bool GraphicsView::isCreatingShape()
@@ -1100,10 +1114,15 @@ void GraphicsView::sendBackward(ShapeAnnotation *pShape)
 void GraphicsView::clearGraphicsView()
 {
   removeAllShapes();
+  removeOutOfSceneShapes();
   removeAllConnections();
+  removeOutOfSceneConnections();
   removeAllTransitions();
+  removeOutOfSceneTransitions();
   removeAllInitialStates();
+  removeOutOfSceneInitialStates();
   removeClassComponents();
+  removeOutOfSceneClassComponents();
   removeInheritedClassShapes();
   removeInheritedClassConnections();
   removeInheritedClassComponents();
@@ -1122,6 +1141,21 @@ void GraphicsView::removeClassComponents()
     removeItem(pComponent->getOriginItem());
     delete pComponent->getOriginItem();
     removeItem(pComponent);
+    pComponent->emitDeleted();
+    delete pComponent;
+  }
+}
+
+/*!
+ * \brief GraphicsView::removeOutOfSceneClassComponents
+ * Removes all the class components that are not deleted but are removed from scene.
+ */
+void GraphicsView::removeOutOfSceneClassComponents()
+{
+  foreach (Component *pComponent, mOutOfSceneComponentsList) {
+    pComponent->removeChildren();
+    deleteComponentFromOutOfSceneList(pComponent);
+    delete pComponent->getOriginItem();
     pComponent->emitDeleted();
     delete pComponent;
   }
@@ -1167,6 +1201,54 @@ void GraphicsView::removeInheritedClassConnections()
     deleteInheritedConnectionFromList(pConnectionLineAnnotation);
     removeItem(pConnectionLineAnnotation);
     delete pConnectionLineAnnotation;
+  }
+}
+
+/*!
+ * \brief GraphicsView::removeOutOfSceneShapes
+ * Removes all the shapes that are not deleted but are removed from scene.
+ */
+void GraphicsView::removeOutOfSceneShapes()
+{
+  foreach (ShapeAnnotation *pShapeAnnotation, mOutOfSceneShapesList) {
+    deleteShapeFromOutOfSceneList(pShapeAnnotation);
+    delete pShapeAnnotation;
+  }
+}
+
+/*!
+ * \brief GraphicsView::removeOutOfSceneConnections
+ * Removes all the connections that are not deleted but are removed from scene.
+ */
+void GraphicsView::removeOutOfSceneConnections()
+{
+  foreach (LineAnnotation *pLineAnnotation, mOutOfSceneConnectionsList) {
+    deleteConnectionFromOutOfSceneList(pLineAnnotation);
+    delete pLineAnnotation;
+  }
+}
+
+/*!
+ * \brief GraphicsView::removeOutOfSceneTransitions
+ * Removes all the class transitions that are not deleted but are removed from scene.
+ */
+void GraphicsView::removeOutOfSceneTransitions()
+{
+  foreach (LineAnnotation *pLineAnnotation, mOutOfSceneTransitionsList) {
+    deleteTransitionFromOutOfSceneList(pLineAnnotation);
+    delete pLineAnnotation;
+  }
+}
+
+/*!
+ * \brief GraphicsView::removeOutOfSceneInitialStates
+ * Removes all the initial states that are not deleted but are removed from scene.
+ */
+void GraphicsView::removeOutOfSceneInitialStates()
+{
+  foreach (LineAnnotation *pLineAnnotation, mOutOfSceneInitialStatesList) {
+    deleteInitialStateFromOutOfSceneList(pLineAnnotation);
+    delete pLineAnnotation;
   }
 }
 
