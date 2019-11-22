@@ -2122,6 +2122,7 @@ void GraphicsView::removeCurrentConnection()
 {
   if (isCreatingConnection()) {
     setIsCreatingConnection(false);
+    removeItem(mpConnectionLineAnnotation);
     delete mpConnectionLineAnnotation;
     mpConnectionLineAnnotation = 0;
   }
