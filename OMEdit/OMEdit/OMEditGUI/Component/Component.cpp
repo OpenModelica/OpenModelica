@@ -1158,7 +1158,6 @@ void Component::createClassComponents()
       Component *pNewComponent = new Component(pComponent, this, getRootParentComponent());
       // Set the Parent Item to 0 beacause we don't want to render Diagram components. We just want to store them for Parameters Dialog.
       pNewComponent->setParentItem(0);
-      mpGraphicsView->removeItem(pNewComponent);
       mComponentsList.append(pNewComponent);
     }
   }
@@ -1248,20 +1247,17 @@ void Component::removeChildren()
   foreach (Component *pInheritedComponent, mInheritedComponentsList) {
     pInheritedComponent->removeChildren();
     pInheritedComponent->setParentItem(0);
-    mpGraphicsView->removeItem(pInheritedComponent);
     delete pInheritedComponent;
   }
   mInheritedComponentsList.clear();
   foreach (Component *pComponent, mComponentsList) {
     pComponent->removeChildren();
     pComponent->setParentItem(0);
-    mpGraphicsView->removeItem(pComponent);
     delete pComponent;
   }
   mComponentsList.clear();
   foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
     pShapeAnnotation->setParentItem(0);
-    mpGraphicsView->removeItem(pShapeAnnotation);
     delete pShapeAnnotation;
   }
   mShapesList.clear();

@@ -159,7 +159,6 @@ public:
 private:
   Component *mpComponent;
   Component *mpIconComponent;
-  Component *mpDiagramComponent;
   GraphicsView *mpIconGraphicsView;
   GraphicsView *mpDiagramGraphicsView;
   GraphicsView *mpGraphicsView;
