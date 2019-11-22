@@ -48,9 +48,6 @@ import ClassInf;
 import SCode;
 import Values;
 
-protected
-import DAEDump;
-
 public type Ident = String;
 
 public type InstDims = list<Dimension>;
@@ -605,9 +602,6 @@ end DAElist;
 public type FunctionTree = AvlTreePathFunction.Tree;
 
 package AvlTreePathFunction "AvlTree for Path to Function"
-protected
-  import DAEDump;
-public
   extends BaseAvlTree;
   redeclare type Key = Absyn.Path;
   redeclare type Value = Option<Function>;
@@ -619,8 +613,10 @@ public
   algorithm
     outString := match inValue
       local
-        Function f;
-      case SOME(f) then DAEDump.dumpFunctionStr(f);
+        Absyn.Path path;
+      case SOME(FUNCTION(path=path)) then AbsynUtil.pathString(path);
+      case SOME(RECORD_CONSTRUCTOR(path=path)) then AbsynUtil.pathString(path);
+      case SOME(RECORD_CONSTRUCTOR(path=path)) then "<SOME_FUNCTION>";
       else "<NO_FUNCTION>";
     end match;
   end valueStr;
