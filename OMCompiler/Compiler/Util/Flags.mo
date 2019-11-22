@@ -298,7 +298,7 @@ constant DebugFlag TPL_PERF_TIMES = DEBUG_FLAG(66, "tplPerfTimes", false,
   Gettext.gettext("Enables output of template performance data for rendering text to file."));
 constant DebugFlag CHECK_SIMPLIFY = DEBUG_FLAG(67, "checkSimplify", false,
   Gettext.gettext("Enables checks for expression simplification and prints a notification whenever an undesirable transformation has been performed."));
-constant DebugFlag SCODE_INST = DEBUG_FLAG(68, "newInst", false,
+constant DebugFlag SCODE_INST = DEBUG_FLAG(68, "newInst", true,
   Gettext.gettext("Enables experimental new instantiation phase."));
 constant DebugFlag WRITE_TO_BUFFER = DEBUG_FLAG(69, "writeToBuffer", false,
   Gettext.gettext("Enables writing simulation results to buffer."));
