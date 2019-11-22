@@ -373,7 +373,7 @@ void TextAnnotation::drawTextAnnotaion(QPainter *painter)
    * If the shape is not part of Component then only try to get the elided text if its font size <= Helper::minimumTextFontSize
    */
   QString textToDraw = mTextString;
-  if (absMappedBoundingRect.width() > 1 && (mpComponent || (!mpComponent && painter->font().pointSizeF() <= Helper::minimumTextFontSize))) {
+  if (absMappedBoundingRect.width() > 1 && painter->font().pointSizeF() <= Helper::minimumTextFontSize) {
     QFontMetrics fontMetrics(painter->font());
     textToDraw = fontMetrics.elidedText(mTextString, Qt::ElideRight, absMappedBoundingRect.width());
   }
