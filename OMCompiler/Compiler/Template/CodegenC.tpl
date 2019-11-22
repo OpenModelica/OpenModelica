@@ -858,21 +858,23 @@ template defineSimVarArray(SimVar simVar, String arrayName)
   case SIMVAR(arrayCref=SOME(c),aliasvar=NOALIAS()) then
     <<
     /* <%crefStrNoUnderscore(c)%> */
-    #define <%cref(c)%> data->simulationInfo->daeModeData-><%arrayName%>[<%index%>]
+    // #define <%cref(c)%> data->simulationInfo->daeModeData-><%arrayName%>[<%index%>]
 
     /* <%crefStrNoUnderscore(name)%> */
-    #define <%cref(name)%> data->simulationInfo->daeModeData-><%arrayName%>[<%index%>]
+    // #define <%cref(name)%> data->simulationInfo->daeModeData-><%arrayName%>[<%index%>]
 
     >>
   case SIMVAR(aliasvar=NOALIAS()) then
     <<
     /* <%crefStrNoUnderscore(name)%> */
-    #define <%cref(name)%> data->simulationInfo->daeModeData-><%arrayName%>[<%index%>]
+    // #define <%cref(name)%> data->simulationInfo->daeModeData-><%arrayName%>[<%index%>]
 
     >>
   end match
 end defineSimVarArray;
 
+// TODO: This is probably not relevant anymore can be removed. We access residual and auxialry
+// variables of daemode using cref2simvar now. No need to define them.
 template simulationFile_dae_header(SimCode simCode)
 "DAEmode header generation"
 ::=
@@ -5939,22 +5941,23 @@ match ty
       error(sourceInfo(), 'No runtime support for this sort of array call: <%cref(left)%> = <%dumpExp(right,"\"")%>')
     end match
   case T_COMPLEX(varLst = varLst, complexClassType=RECORD(__)) then
-    let &preExp = buffer ""
-    let exp = daeExp(right, context, &preExp, &varDecls, &auxFunction)
-    let tmp = tempDecl(expTypeModelica(ty),&varDecls)
-    <<
-    <%preExp%>
-    <%tmp%> = <%exp%>;
-    <% varLst |> var as TYPES_VAR(__) =>
-      match var.ty
-      case T_ARRAY(__) then
-        copyArrayData(var.ty, '<%tmp%>._<%var.name%>', appendStringCref(var.name,left), context, &preExp, &varDecls, &auxFunction)
-      else
-        let varPart = contextCref(appendStringCref(var.name,left),context, &auxFunction)
-        '<%varPart%> = <%tmp%>._<%var.name%>;'
-    ; separator="\n"
-    %>
-    >>
+    error(sourceInfo(), 'No runtime support for this record assignment: <%cref(left)%> = <%dumpExp(right,"\"")%>')
+    // let &preExp = buffer ""
+    // let exp = daeExp(right, context, &preExp, &varDecls, &auxFunction)
+    // let tmp = tempDecl(expTypeModelica(ty),&varDecls)
+    // <<
+    // <%preExp%>
+    // <%tmp%> = <%exp%>;
+    // <% varLst |> var as TYPES_VAR(__) =>
+    //   match var.ty
+    //   case T_ARRAY(__) then
+    //     copyArrayData(var.ty, '<%tmp%>._<%var.name%>', appendStringCref(var.name,left), context, &preExp, &varDecls, &auxFunction)
+    //   else
+    //     let varPart = contextCref(appendStringCref(var.name,left),context, &auxFunction)
+    //     '<%varPart%> = <%tmp%>._<%var.name%>;'
+    // ; separator="\n"
+    // %>
+    // >>
   else
     let &preExp = buffer ""
     let exp = daeExp(right, context, &preExp, &varDecls, &auxFunction)

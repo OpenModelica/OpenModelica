@@ -220,6 +220,58 @@ algorithm
   end match;
 end makeCrefRecordExp;
 
+public function splitRecordAssignmentToMemberAssignments
+"This function is used by the templates to split up a record assignment to
+ assignments of each of the members. This is needed in simulation context
+ since there is no 'record' per se. Instead the elements(locations) of the record are
+ scattered through the SIMVAR structure.
+
+ Note that this does not recurse to check if a member itself is a record as well i.e.
+ we generate an assignment of records. But since these assignments are sent the codegen
+ template we will indirectly come back here and resolve them."
+  input DAE.ComponentRef lhs_cref;
+  input DAE.Type lhs_type;
+  input String rhs_cref_str;
+  output list<DAE.Statement> outAssigns;
+protected
+  DAE.ComponentRef rhs_cref;
+algorithm
+
+  outAssigns := {};
+  rhs_cref := DAE.CREF_IDENT(rhs_cref_str, lhs_type, {});
+
+  _ := match lhs_type
+    local
+      DAE.ComponentRef l_v_cref,r_v_cref;
+      DAE.Exp l_v_exp, r_v_exp;
+      DAE.Statement stmt;
+
+    case DAE.T_COMPLEX() algorithm
+      for v in lhs_type.varLst loop
+        // l_v_cref := ComponentReference.crefPrependIdent(lhs_cref, v.name, {}, v.ty);
+        // r_v_cref := ComponentReference.crefPrependIdent(rhs_cref, v.name, {}, v.ty);
+
+        // l_v_exp := Expression.makeCrefExp(l_v_cref, v.ty);
+        // r_v_exp := Expression.makeCrefExp(r_v_cref, v.ty);
+
+        l_v_exp := makeCrefRecordExp(lhs_cref, v);
+        r_v_exp := makeCrefRecordExp(rhs_cref, v);
+
+        if Types.isArray(v.ty) then
+          stmt := DAE.STMT_ASSIGN_ARR(v.ty, l_v_exp, r_v_exp, DAE.emptyElementSource);
+        else
+          stmt := DAE.STMT_ASSIGN(v.ty, l_v_exp, r_v_exp, DAE.emptyElementSource);
+        end if;
+
+        outAssigns := stmt::outAssigns;
+      end for;
+
+      outAssigns := listReverse(outAssigns);
+    then ();
+
+  end match;
+end splitRecordAssignmentToMemberAssignments;
+
 public function derComponentRef
 "Used by templates to derrive a cref in a der(cref) expression.
  Particularly, this function is called for the C# code generator,

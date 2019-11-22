@@ -1262,6 +1262,13 @@ package SimCodeFunctionUtil
     output DAE.Exp outExp;
   end makeCrefRecordExp;
 
+  function splitRecordAssignmentToMemberAssignments
+    input DAE.ComponentRef lhs_cref;
+    input DAE.Type lhs_type;
+    input String rhs_cref_str;
+    output list<DAE.Statement> outAssigns;
+  end splitRecordAssignmentToMemberAssignments;
+
   function derComponentRef
     input DAE.ComponentRef inCref;
     output DAE.ComponentRef derCref;

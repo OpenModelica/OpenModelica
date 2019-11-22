@@ -2862,56 +2862,66 @@ template algStmtAssignRecord(DAE.Statement stmt, Context context, Text &preExp, 
 end algStmtAssignRecord;
 
 template assignRhsExpToRecordCref(ComponentRef lhs_cref, Exp rhs_exp, Type rec_type, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
- "Generates an assigment to record CREF depending."
+ "Generates an assigment to record CREF depending on context."
 ::=
-let rec_typename = expTypeShort(rec_type)
-match rhs_exp
-  /*RHS is call. We ASSIGN the call directly to tmp variable and then copy the tmp variable to the
-    destination. The assignment is NOT doing a deep copy. But should probably be fine for now since
-    the temp variable is not used anywhere else.
-    This will be fixed when we change function calls to take outputs as parameters.*/
-  case CALL() then
-    let tmp_rec = tempDecl(rec_typename,&varDecls)
-    let src = daeExp(rhs_exp, context, &preExp, &varDecls, &auxFunction)
-    let copy_stmt = assignRhsStringToRecordCrefContext(lhs_cref, tmp_rec, rec_type, context, &preExp, &varDecls, &auxFunction)
-    <<
-    <%tmp_rec%> = <%src%>;
-    <%copy_stmt%>
-    >>
-  /*Sometimes we have cases where a call is casted. It seems so far that the cast is pointless.
-    But it is created anyway so we deal with it here for now until function call exp are made standalone
-    and functions are converted to take outputs by pointers.*/
-  case CAST(exp = exp_internal as CALL()) then
-    let tmp_rec = tempDecl(rec_typename,&varDecls)
-    let src = daeExp(exp_internal, context, &preExp, &varDecls, &auxFunction)
-    let copy_stmt = assignRhsStringToRecordCrefContext(lhs_cref, tmp_rec, rec_type, context, &preExp, &varDecls, &auxFunction)
-    <<
-    <%tmp_rec%> = <%src%>;
-    <%copy_stmt%>
-    >>
+
+match context
+  case FUNCTION_CONTEXT(__) then
+    assignRhsExpToRecordCrefFunctionContext(lhs_cref, rhs_exp, rec_type, context, &preExp, &varDecls, &auxFunction)
   else
-    let src = daeExp(rhs_exp, context, &preExp, &varDecls, &auxFunction)
-    let copy_stmt = assignRhsStringToRecordCrefContext(lhs_cref, src, rec_type, context, &preExp, &varDecls, &auxFunction)
-    <<
-    <%copy_stmt%>
-    >>
+    assignRhsExpToRecordCrefSimContext(lhs_cref, rhs_exp, rec_type, context, &preExp, &varDecls, &auxFunction)
 end match
 end assignRhsExpToRecordCref;
 
-template assignRhsStringToRecordCrefContext(ComponentRef lhs_cref, String rhs, Type rec_type, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
- "Generates an assigment to record CREF depending on context."
+template assignRhsExpToRecordCrefSimContext(ComponentRef lhs_cref, Exp rhs_exp, Type rec_type, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+ "Generates an assigment to record CREF depending."
 ::=
+let lhs = contextCref(lhs_cref, context, &auxFunction)
 let rec_typename = expTypeShort(rec_type)
-match context
-  case FUNCTION_CONTEXT(__) then
-    let lhs = contextCref(lhs_cref, context, &auxFunction)
-    '<%rec_typename%>_copy(<%rhs%>, <%lhs%>);'
+let &rhs_exp_str = buffer ""
+
+match rhs_exp
+  case CREF(componentRef = cr) then
+    let &rhs_exp_str += contextCref(cr, context, auxFunction)
+    let assigns = splitRecordAssignmentToMemberAssignments(lhs_cref, rec_type, rhs_exp_str)
+      |> stmt => algStatement(stmt, context, &varDecls, &auxFunction)
+    <<
+    <%assigns%>
+    >>
   else
-    match rec_type case T_COMPLEX(varLst=members) then
-          let mem_simvars = members |> v => ( ", &(" + daeExp(makeCrefRecordExp(lhs_cref,v), context, &preExp, &varDecls, &auxFunction) + ")" )
-    '<%rec_typename%>_copy_to_vars(<%rhs%><%mem_simvars%>);'
+    let &rhs_exp_str += daeExp(rhs_exp, context, &preExp, &varDecls, &auxFunction)
+    let tmp_rec = tempDecl(rec_typename, &varDecls)
+    let assigns = splitRecordAssignmentToMemberAssignments(lhs_cref, rec_type, tmp_rec)
+      |> stmt => algStatement(stmt, context, &varDecls, &auxFunction)
+    <<
+    <%tmp_rec%> = <%rhs_exp_str%>;
+    <%assigns%>
+    >>
 end match
-end assignRhsStringToRecordCrefContext;
+end assignRhsExpToRecordCrefSimContext;
+
+template assignRhsExpToRecordCrefFunctionContext(ComponentRef lhs_cref, Exp rhs_exp, Type rec_type, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+ "Generates an assigment to record CREF depending."
+::=
+let lhs = contextCref(lhs_cref, context, &auxFunction)
+let rec_typename = expTypeShort(rec_type)
+
+let rec_typename = expTypeShort(rec_type)
+match rhs_exp
+  case rhs_exp as CREF() then
+    let rhs = contextCref(rhs_exp.componentRef, context, &auxFunction)
+    '<%rec_typename%>_copy(<%rhs%>, <%lhs%>);'
+
+  else
+    let tmp_rec = tempDecl(rec_typename,&varDecls)
+    let rhs = daeExp(rhs_exp, context, &preExp, &varDecls, &auxFunction)
+    <<
+    <%tmp_rec%> = <%rhs%>;
+    <%rec_typename%>_copy(<%tmp_rec%>, <%lhs%>);
+    >>
+end match
+
+end assignRhsExpToRecordCrefFunctionContext;
 
 
 
@@ -3043,18 +3053,6 @@ template indexedAssign(DAE.Exp lhs, String exp, Context context,
   else
     error(sourceInfo(), 'indexedAssign simulationContext failed')
 end indexedAssign;
-
-template copyArrayData(DAE.Type ty, String exp, DAE.ComponentRef cr, Context context,
-                                        Text &preExp, Text &varDecls, Text &auxFunction)
-::=
-  let type = expTypeArray(ty)
-  let cref = contextArrayCref(crefStripSubs(cr), context)
-  match context
-  case FUNCTION_CONTEXT(__) then
-    'copy_<%type%>_data(<%exp%>, &<%cref%>);'
-  else
-    'copy_<%type%>_data_mem(<%exp%>, &<%cref%>);'
-end copyArrayData;
 
 template algStmtTupleAssign(DAE.Statement stmt, Context context, Text &varDecls, Text &auxFunction)
  "Generates a tuple assigment algorithm statement."
@@ -4444,46 +4442,92 @@ template contextCref(ComponentRef cr, Context context, Text &auxFunction)
 end contextCref;
 
 template functionContextCref(ComponentRef cr, Context context, Text& pref, Text &auxFunction)
-  "Generates code for a component reference for function contexts. Handles qualified names properly"
+  "Generates code for a component reference for function contexts. Handles qualified names properly.
+  This will underscore all idents. See functionContextCrefFirstIdentNoUnderscore as well."
 ::=
-  match cr
-    case cr as CREF_QUAL(identType = T_ARRAY(), subscriptLst = _::_) then
-      let &preExp = buffer ""
-      let &varDecls = buffer ""
+match cr
+  case cr as CREF_QUAL(identType = T_ARRAY(), subscriptLst = _::_) then
+    let &preExp = buffer ""
+    let &varDecls = buffer ""
 
-      let typeName = expTypeShort(identType)
-      let dimsLenStr = listLength(crefSubs(cr))
-      let dimsValuesStr = (cr.subscriptLst |> sub => daeSubscript(sub, context, &preExp, &varDecls, &auxFunction) ; separator=", ")
+    let typeName = expTypeShort(identType)
+    let dimsLenStr = listLength(cr.subscriptLst)
+    let dimsValuesStr = (cr.subscriptLst |> sub => daeSubscript(sub, context, &preExp, &varDecls, &auxFunction) ; separator=", ")
 
-      let fullname = pref + '_' + System.unquoteIdentifier(cr.ident)
-      let fullname_i = '<%typeName%>_array_get(<%fullname%>, <%dimsLenStr%>, <%dimsValuesStr%>)'
-      let newpref = fullname_i + '.'
-      functionContextCref(cr.componentRef, context, newpref, &auxFunction)
+    let fullname = pref + '_' + System.unquoteIdentifier(cr.ident)
+    let fullname_i = '<%typeName%>_array_get(<%fullname%>, <%dimsLenStr%>, <%dimsValuesStr%>)'
+    let newpref = fullname_i + '.'
+    functionContextCref(cr.componentRef, context, newpref, &auxFunction)
 
-    case cr as CREF_QUAL() then
-      let fullname = pref + '_' + System.unquoteIdentifier(cr.ident)
-      let newpref = fullname + '.'
-      functionContextCref(cr.componentRef, context, newpref, &auxFunction)
+  case cr as CREF_QUAL() then
+    let fullname = pref + '_' + System.unquoteIdentifier(cr.ident)
+    let newpref = fullname + '.'
+    functionContextCref(cr.componentRef, context, newpref, &auxFunction)
 
-    case cr as CREF_IDENT(identType = T_ARRAY(), subscriptLst = _::_) then
-      let &preExp = buffer ""
-      let &varDecls = buffer ""
+  case cr as CREF_IDENT(identType = T_ARRAY(), subscriptLst = _::_) then
+    let &preExp = buffer ""
+    let &varDecls = buffer ""
 
-      let typeName = expTypeShort(identType)
-      let dimsLenStr = listLength(crefSubs(cr))
-      let dimsValuesStr = (cr.subscriptLst |> sub => daeSubscript(sub, context, &preExp, &varDecls, &auxFunction) ; separator=", ")
+    let typeName = expTypeShort(identType)
+    let dimsLenStr = listLength(cr.subscriptLst)
+    let dimsValuesStr = (cr.subscriptLst |> sub => daeSubscript(sub, context, &preExp, &varDecls, &auxFunction) ; separator=", ")
 
-      let fullname = pref + '_' + System.unquoteIdentifier(cr.ident)
-      let fullname_i = '<%typeName%>_array_get(<%fullname%>, <%dimsLenStr%>, <%dimsValuesStr%>)'
-      fullname_i
+    let fullname = pref + '_' + System.unquoteIdentifier(cr.ident)
+    let fullname_i = '<%typeName%>_array_get(<%fullname%>, <%dimsLenStr%>, <%dimsValuesStr%>)'
+    fullname_i
 
-    case cr as CREF_IDENT() then
-      let fullname = pref + '_' + System.unquoteIdentifier(cr.ident)
-      fullname
+  case cr as CREF_IDENT() then
+    let fullname = pref + '_' + System.unquoteIdentifier(cr.ident)
+    fullname
 
-    /*TODO make me error and see what fails.*/
-    else "_" + System.unquoteIdentifier(crefStr(cr))
+  else
+    error(sourceInfo(), 'crefNonSimVar got a cref it does not know how to handle <%crefStrNoUnderscore(cr)%>')
+end match
 end functionContextCref;
+
+template functionContextCrefFirstIdentNoUnderscore(ComponentRef cr, Context context, Text& pref, Text &auxFunction)
+ "The only difference between this and functionContextCref is that this will
+  not prefix the first ident with underscore."
+::=
+match cr
+  case cr as CREF_QUAL(identType = T_ARRAY(), subscriptLst = _::_) then
+    let &preExp = buffer ""
+    let &varDecls = buffer ""
+
+    let typeName = expTypeShort(identType)
+    let dimsLenStr = listLength(cr.subscriptLst)
+    let dimsValuesStr = (cr.subscriptLst |> sub => daeSubscript(sub, context, &preExp, &varDecls, &auxFunction) ; separator=", ")
+
+    let fullname = pref + System.unquoteIdentifier(cr.ident)
+    let fullname_i = '<%typeName%>_array_get(<%fullname%>, <%dimsLenStr%>, <%dimsValuesStr%>)'
+    let newpref = fullname_i + '.'
+    functionContextCref(cr.componentRef, context, newpref, &auxFunction)
+
+  case cr as CREF_QUAL() then
+    let fullname = pref + System.unquoteIdentifier(cr.ident)
+    let newpref = fullname + '.'
+    functionContextCref(cr.componentRef, context, newpref, &auxFunction)
+
+  case cr as CREF_IDENT(identType = T_ARRAY(), subscriptLst = _::_) then
+    let &preExp = buffer ""
+    let &varDecls = buffer ""
+
+    let typeName = expTypeShort(identType)
+    let dimsLenStr = listLength(cr.subscriptLst)
+    let dimsValuesStr = (cr.subscriptLst |> sub => daeSubscript(sub, context, &preExp, &varDecls, &auxFunction) ; separator=", ")
+
+    let fullname = pref + System.unquoteIdentifier(cr.ident)
+    let fullname_i = '<%typeName%>_array_get(<%fullname%>, <%dimsLenStr%>, <%dimsValuesStr%>)'
+    fullname_i
+
+  case cr as CREF_IDENT() then
+    let fullname = pref + System.unquoteIdentifier(cr.ident)
+    fullname
+
+  else
+    error(sourceInfo(), 'crefNonSimVar got a cref it does not know how to handle <%crefStrNoUnderscore(cr)%>')
+end match
+end functionContextCrefFirstIdentNoUnderscore;
 
 template contextCrefOld(ComponentRef cr, Context context, Text &auxFunction, Integer ix)
   "Generates code for a component reference depending on which context we're in."
@@ -4581,10 +4625,26 @@ end crefPre;
   else System.unquoteIdentifier(crefStrNoUnderscore(cr))
 end crefDefine;
 
+template crefNonSimVar(ComponentRef cr)
+ "Generates code for a cref that is used in simulation context
+  but is not part of SIMVARs.
+  This happens for example if the cerf is a temporary we created
+  during codegen. E.g. when expanding record assignments in simulation
+  context we create a tmp record cref and then expand it.
+
+  We use functionContextCrefFirstIdentNoUnderscore to generate these."
+::=
+// TODO: The correct context should reach here. Since the subscripts can be valid
+// simvars. Make sure to pass context around in these cref generation functions.
+  let &auxFunction = buffer ""
+  functionContextCrefFirstIdentNoUnderscore(cr, contextFunction, "", auxFunction)
+end crefNonSimVar;
+
 template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart)
  "Helper function to cref."
 ::=
   match cr
+  case CREF_IDENT(ident = "time") then "data->localData[0]->timeValue"
   case CREF_QUAL(ident="$PRE", subscriptLst={}) then
     (if isPre then error(sourceInfo(), 'Got $PRE for something that is already pre: <%crefStrNoUnderscore(cr)%>')
     else crefToCStr(componentRef, ix, true, isStart))
@@ -4598,10 +4658,10 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart)
     case SIMVAR(varKind=JAC_VAR()) then 'parentJacobian->resultVars[<%index%>] /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */'
     case SIMVAR(varKind=JAC_DIFF_VAR()) then 'parentJacobian->tmpVars[<%index%>] /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */'
     case SIMVAR(varKind=SEED_VAR()) then 'parentJacobian->seedVars[<%index%>] /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */'
-    case SIMVAR(varKind=DAE_RESIDUAL_VAR())
-    case SIMVAR(varKind=DAE_AUX_VAR())
+    case SIMVAR(varKind=DAE_RESIDUAL_VAR()) then 'data->simulationInfo->daeModeData->residualVars[<%index%>] /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */'
+    case SIMVAR(varKind=DAE_AUX_VAR()) then 'data->simulationInfo->daeModeData->auxiliaryVars[<%index%>] /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */'
     case SIMVAR(index=-2) then
-      (let s = (if isPre then crefDefine(crefPrefixPre(cr)) else crefDefine(cr))
+      (let s = (if isPre then crefNonSimVar(crefPrefixPre(cr)) else crefNonSimVar(cr))
       if intEq(ix,0) then s
       else '_<%s%>(<%ix%>)')
     case var as SIMVAR(index=-1) then error(sourceInfo(), 'crefToCStr got index=-1 for <%variabilityString(varKind)%> <%crefStrNoUnderscore(name)%>')
@@ -4618,17 +4678,6 @@ template crefToIndex(ComponentRef cr)
       '<%index%>'
     else "CREF_NOT_FOUND"
 end crefToIndex;
-
-template crefToCStrDefine(ComponentRef cr)
- "Helper function to cref."
-::=
-  match cr
-  case CREF_IDENT(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStr(subscriptLst)%>'
-  case CREF_QUAL(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStr(subscriptLst)%>$P<%crefToCStrDefine(componentRef)%>'
-  case WILD(__) then ''
-  else "CREF_NOT_IDENT_OR_QUAL"
-end crefToCStrDefine;
-
 
 template crefTypeOMSIC(ComponentRef cr) "template crefType
   Like cref but with cast if type is integer."
@@ -4656,34 +4705,6 @@ template crefTypeNameOMSIC(DAE.Type type)
   case T_COMPLEX(__)       then '<%CodegenUtil.underscorePath(ClassInf.getStateName(complexClassType))%>'
   else CodegenUtil.error(sourceInfo(),'crefTypeNameOMSIC: <%unparseType(type)%>')
 end crefTypeNameOMSIC;
-
-
-template subscriptsToCStr(list<Subscript> subscripts)
-::=
-  if subscripts then
-    '$lB<%subscripts |> s => subscriptToCStr(s) ;separator="$c"%>$rB'
-end subscriptsToCStr;
-
-template subscriptToCStr(Subscript subscript)
-::=
-  match subscript
-  case SLICE(exp=ICONST(integer=i)) then i
-  case SLICE(__) then error(sourceInfo(), "Unknown slice " + ExpressionDumpTpl.dumpExp(exp,"\""))
-  case WHOLEDIM(__) then "WHOLEDIM"
-  case WHOLE_NONEXP(__) then "WHOLE_NONEXP"
-  case INDEX(__) then
-   match exp
-    case ICONST(integer=i) then i
-    case ENUM_LITERAL(index=i) then i
-    case _ then
-    let &varDecls = buffer ""
-    let &preExp = buffer ""
-    let &auxFunction = buffer ""
-    let index = daeExp(exp, contextOther, &preExp, &varDecls, &auxFunction)
-    '<%index%>'
-   end match
-  else error(sourceInfo(), "UNKNOWN_SUBSCRIPT")
-end subscriptToCStr;
 
 template contextArrayCref(ComponentRef cr, Context context)
  "Generates code for an array component reference depending on the context."
@@ -5963,14 +5984,6 @@ case IFEXP(__) then
   )
 end daeExpIf;
 
-template daeExpIteratedCref(Exp exp)
-::=
-match exp
-case (CREF(__)) then
-  let subs = (crefSubs(componentRef) |> sub => subscriptToCStr(sub) ; separator=",")
-  <<<%iteratedCrefStr(componentRef)%>_index>>
-end daeExpIteratedCref;
-
 template iteratedCrefStr(ComponentRef cref)
 ::=
   System.unquoteIdentifier(crefStrNoUnderscore(cref))
@@ -6327,16 +6340,17 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
       ; empty)
     let ty_str = expTypeArray(ty)
     let tvar = tempDecl(ty_str, &varDecls)
-    let &preExp += // Why doesn't Susan allow me to use <<< here?
-'<%tvarc%>=0;
-<%dims%>if (<%tvarc%> > 1) {
-  throwStreamPrint(threadData, "Called vector with >1 dimensions with size >1: <%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp,"\""))%>");
-}
-<%nElts%> = base_array_nr_of_elements(<%val%>);
-<%tvardata%> = omc_alloc_interface.malloc(<%szElt%>*<%nElts%>);
-memcpy(<%tvardata%>, <%val%>.data, <%szElt%>*<%nElts%>);
-simple_alloc_1d_base_array(&<%tvar%>, <%nElts%>, <%tvardata%>);
-'
+    let &preExp += // Why does not Susan allow me to use << here?
+              <<
+                <%tvarc%>=0;
+              <%dims%>if (<%tvarc%> > 1) {
+                throwStreamPrint(threadData, "Called vector with >1 dimensions with size >1: <%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp,"\""))%>");
+              }
+              <%nElts%> = base_array_nr_of_elements(<%val%>);
+              <%tvardata%> = omc_alloc_interface.malloc(<%szElt%>*<%nElts%>);
+              memcpy(<%tvardata%>, <%val%>.data, <%szElt%>*<%nElts%>);
+              simple_alloc_1d_base_array(&<%tvar%>, <%nElts%>, <%tvardata%>);
+              >>
     tvar
 
   case CALL(path=IDENT(name="cat"), expLst=dim::arrays, attr=CALL_ATTR(ty = ty)) then
