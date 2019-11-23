@@ -704,21 +704,29 @@ algorithm
     // differentiate rsub
     case e1 as DAE.RSUB()
       algorithm
-        (res1, functionTree) := differentiateExp(e1.exp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter-1);
-        if not referenceEq(e1.exp, res1) then
-          try
-            (expl, strLst) := match res1
-              case DAE.RECORD(exps=expl,comp=strLst) then (expl, strLst);
-              case DAE.CALL(path=p1,expLst=expl,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=p2), varLst=varLst)))
-              guard AbsynUtil.pathEqual(p1,p2)
-              then (expl, list(v.name for v in varLst));
-            end match;
-            res := listGet(expl, List.position1OnTrue(strLst, stringEq, e1.fieldName));
-          else
-            e1.exp := res1;
-            (res,_) := ExpressionSimplify.simplify1(e1);
-          end try;
-        end if;
+        // Try simplifying first.
+        (res, b) := ExpressionSimplify.simplify(e1);
+        if b then
+          (res, functionTree) := differentiateExp(res, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter-1);
+        else
+	        (res1, functionTree) := differentiateExp(e1.exp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter-1);
+	        // This might not be needed anymore. If it is simplifiable
+	        // Then it would have been simplified above.
+	        if not referenceEq(e1.exp, res1) then
+	          try
+	            (expl, strLst) := match res1
+	              case DAE.RECORD(exps=expl,comp=strLst) then (expl, strLst);
+	              case DAE.CALL(path=p1,expLst=expl,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=p2), varLst=varLst)))
+	              guard AbsynUtil.pathEqual(p1,p2)
+	              then (expl, list(v.name for v in varLst));
+	            end match;
+	            res := listGet(expl, List.position1OnTrue(strLst, stringEq, e1.fieldName));
+	          else
+	            e1.exp := res1;
+	            (res,_) := ExpressionSimplify.simplify1(e1);
+	          end try;
+	        end if;
+	      end if;
       then (res, functionTree);
 
     // differentiate tuple
@@ -1072,6 +1080,16 @@ algorithm
     //
     // This part contains general rules for differentation crefs
     //
+
+    // case for records without expanding the record
+    case ((DAE.CREF(componentRef = cr,ty = tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path)))), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.DIFFERENTIATION_FUNCTION(), _)
+      equation
+        cr = ComponentReference.prependStringCref(BackendDAE.functionDerivativeNamePrefix, cr);
+        cr = ComponentReference.prependStringCref(matrixName, cr);
+
+        res = Expression.makeCrefExp(cr, tp);
+      then
+        (res, inFunctionTree);
 
     // case for Records
     case ((DAE.CREF(componentRef = cr,ty = tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path)))), _, _, _, _)
