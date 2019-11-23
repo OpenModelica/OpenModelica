@@ -932,13 +932,13 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
   omc_CommandLineOverrides *mOverrides = NULL;
   omc_CommandLineOverridesUses *mOverridesUses = NULL, *it = NULL, *ittmp = NULL;
   mmc_sint_t i;
-  char* overrideStr = NULL;
+  char* overrideStr1 = NULL, *overrideStr2 = NULL, *overrideStr = NULL;
   if((override != NULL) && (overrideFile != NULL)) {
-    throwStreamPrint(NULL, "simulation_input_xml.c: usage error you cannot have both -override and -overrideFile active at the same time. see Model -? for more info!");
+    infoStreamPrint(LOG_SOLVER, 0, "using -override=%s and -overrideFile=%s", override, overrideFile);
   }
 
   if(override != NULL) {
-    overrideStr = strdup(override);
+    overrideStr1 = strdup(override);
   }
 
   if(overrideFile != NULL) {
@@ -955,7 +955,6 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
       throwStreamPrint(NULL, "simulation_input_xml.c: could not open the file given to -overrideFile=%s", overrideFile);
     }
 
-    free(overrideStr);
     fseek(infile, 0L, SEEK_END);
     n = ftell(infile);
     line = (char*) malloc(n+1);
@@ -969,7 +968,7 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
     line[n] = '\0';
     overrideLine = (char*) malloc(n+1);
     overrideLine[0] = '\0';
-    overrideStr = overrideLine;
+    overrideStr2 = overrideLine;
     tline = line;
 
     /* get the lines */
@@ -979,7 +978,7 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
       tline = trim(tline);
       // if is comment //, ignore line
       if (tline[0] && tline[0] != '/' && tline[1] != '/') {
-        if (overrideLine != overrideStr) {
+        if (overrideLine != overrideStr2) {
           overrideLine[0] = ',';
           ++overrideLine;
         }
@@ -991,33 +990,71 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
     free(line);
   }
 
-  if (overrideStr != NULL) {
-    char *value, *p;
+  if (overrideStr1 != NULL || overrideStr2 != NULL) {
+    char *value, *p, *ov;
     const char *strs[] = {"solver","startTime","stopTime","stepSize","tolerance","outputFormat","variableFilter"};
     /* read override values */
-    infoStreamPrint(LOG_SOLVER, 0, "read override values: %s", overrideStr);
+    infoStreamPrint(LOG_SOLVER, 0, "-override=%s", overrideStr1 ? overrideStr1 : "[not given]");
+    infoStreamPrint(LOG_SOLVER, 0, "-overrideFile=%s", overrideStr2 ? overrideStr2 : "[not given]");
     /* fix overrideStr to contain | instead of , for splitting */
-    parseVariableStr(overrideStr);
-    p = strtok(overrideStr, "!");
+    if (overrideStr1)
+    {
+      parseVariableStr(overrideStr1);
+      p = strtok(overrideStr1, "!");
 
-    while (p) {
-      // split it key = value => map[key]=value
-      value = strchr(p, '=');
-      if (*value == '\0') {
-        warningStreamPrint(LOG_SOLVER, 0, "failed to parse override string %s", p);
+      while (p) {
+        // split it key = value => map[key]=value
+        value = strchr(p, '=');
+        if (*value == '\0') {
+          warningStreamPrint(LOG_SOLVER, 0, "failed to parse override string %s", p);
+          p = strtok(NULL, "!");
+        }
+        *value = '\0';
+        value++;
+        // map[key]=value
+        // check if we already overrided this variable
+        ov = (char*)findHashStringStringNull(mOverrides, p);
+        if (ov)
+        {
+          warningStreamPrint(LOG_STDOUT, 0, "You are overriding variable: %s=%s again with %s=%s.", p, ov, p, value);
+        }
+        addHashStringString(&mOverrides, p, value);
+        addHashStringLong(&mOverridesUses, p, OMC_OVERRIDE_UNUSED);
+
+        // move to next
         p = strtok(NULL, "!");
       }
-      *value = '\0';
-      value++;
-      // map[key]=value
-      addHashStringString(&mOverrides, p, value);
-      addHashStringLong(&mOverridesUses, p, OMC_OVERRIDE_UNUSED);
-
-      // move to next
-      p = strtok(NULL, "!");
+      free(overrideStr1);
     }
 
-    free(overrideStr);
+    if (overrideStr2)
+    {
+      parseVariableStr(overrideStr2);
+      p = strtok(overrideStr2, "!");
+
+      while (p) {
+        // split it key = value => map[key]=value
+        value = strchr(p, '=');
+        if (*value == '\0') {
+          warningStreamPrint(LOG_SOLVER, 0, "failed to parse override string %s", p);
+          p = strtok(NULL, "!");
+        }
+        *value = '\0';
+        value++;
+        // map[key]=value
+        ov = (char*)findHashStringStringNull(mOverrides, p);
+        if (ov)
+        {
+          warningStreamPrint(LOG_STDOUT, 0, "You are overriding variable: %s=%s again with %s=%s.", p, ov, p, value);
+        }
+        addHashStringString(&mOverrides, p, value);
+        addHashStringLong(&mOverridesUses, p, OMC_OVERRIDE_UNUSED);
+
+        // move to next
+        p = strtok(NULL, "!");
+      }
+      free(overrideStr2);
+    }
 
     // now we have all overrides in mOverrides, override mi now
     for (i=0; i<sizeof(strs)/sizeof(char*); i++) {
