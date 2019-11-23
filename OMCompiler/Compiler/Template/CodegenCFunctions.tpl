@@ -2847,14 +2847,22 @@ template algStmtAssignRecord(DAE.Statement stmt, Context context, Text &preExp, 
     // The right hand side might be a call so we create a tmp var here and assign it. If the rhs is not
     // a call this is an uncessary copy. however, we can live with it since it is not a deep copy and the
     // c compiler should just be able to optimzie it away.
-    let tmp_rec = tempDecl(rec_typename,&varDecls)
-    let rhs = daeExp(rhs_exp, context, &preExp, &varDecls, &auxFunction)
-    let vars = args |> arg => ( ", &(" + daeExp(arg, context, &preExp, &varDecls, &auxFunction) + ")" )
-    <<
-    <%tmp_rec%> = <%rhs%>;
-    <%rec_typename%>_copy_to_vars(<%tmp_rec%><%vars%>);
-    >>
-    // <%error(sourceInfo(), 'Left hand side of an assignment is a call expression. <%ExpressionDumpTpl.dumpExp(exp1,"\"")%> = <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')%>
+    // let tmp_rec = tempDecl(rec_typename,&varDecls)
+    // let rhs = daeExp(rhs_exp, context, &preExp, &varDecls, &auxFunction)
+    // let vars = args |> arg => ( ", &(" + daeExp(arg, context, &preExp, &varDecls, &auxFunction) + ")" )
+    // <<
+    // <%tmp_rec%> = <%rhs%>;
+    // <%rec_typename%>_copy_to_vars(<%tmp_rec%><%vars%>);
+    // >>
+    // let rhs_exp_str = daeExp(rhs_exp, context, &preExp, &varDecls, &auxFunction)
+    // let tmp_rec = tempDecl(rec_typename, &varDecls)
+    // let assigns = splitRhsForRecordAssignmentToMemberAssignments(args, ty, tmp_rec)
+    //   |> stmt => algStatement(stmt, context, &varDecls, &auxFunction)
+    // <<
+    // <%tmp_rec%> = <%rhs_exp_str%>;
+    // <%assigns%>
+    // >>
+    error(sourceInfo(), 'Left hand side of an assignment is a call expression. <%ExpressionDumpTpl.dumpExp(exp1,"\"")%> = <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
   case STMT_ASSIGN(exp1=RECORD(), type_ = ty as T_COMPLEX(complexClassType=RECORD(__))) then
     error(sourceInfo(), 'Left hand side of an assignment is a record expression. <%ExpressionDumpTpl.dumpExp(exp1,"\"")%>')
   case STMT_ASSIGN() then
@@ -2878,18 +2886,17 @@ template assignRhsExpToRecordCrefSimContext(ComponentRef lhs_cref, Exp rhs_exp, 
 ::=
 let lhs = contextCref(lhs_cref, context, &auxFunction)
 let rec_typename = expTypeShort(rec_type)
-let &rhs_exp_str = buffer ""
 
 match rhs_exp
   case CREF(componentRef = cr) then
-    let &rhs_exp_str += contextCref(cr, context, auxFunction)
+    let rhs_exp_str = contextCref(cr, context, auxFunction)
     let assigns = splitRecordAssignmentToMemberAssignments(lhs_cref, rec_type, rhs_exp_str)
       |> stmt => algStatement(stmt, context, &varDecls, &auxFunction)
     <<
     <%assigns%>
     >>
   else
-    let &rhs_exp_str += daeExp(rhs_exp, context, &preExp, &varDecls, &auxFunction)
+    let rhs_exp_str = daeExp(rhs_exp, context, &preExp, &varDecls, &auxFunction)
     let tmp_rec = tempDecl(rec_typename, &varDecls)
     let assigns = splitRecordAssignmentToMemberAssignments(lhs_cref, rec_type, tmp_rec)
       |> stmt => algStatement(stmt, context, &varDecls, &auxFunction)
