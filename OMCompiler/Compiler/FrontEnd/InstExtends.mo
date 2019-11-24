@@ -51,22 +51,23 @@ public import SCode;
 
 // protected imports
 protected import AvlSetString;
+protected import Config;
 protected import Debug;
 protected import Dump;
 protected import Error;
-protected import Flags;
+protected import ErrorExt;
 protected import FGraph;
+protected import Flags;
+protected import Global;
 protected import Inst;
 protected import InstUtil;
 protected import List;
 protected import Lookup;
 protected import Mod;
-protected import Util;
 protected import SCodeDump;
-import SCodeInstUtil;
-import SCodeUtil;
-protected import ErrorExt;
-protected import Global;
+protected import SCodeInstUtil;
+protected import SCodeUtil;
+protected import Util;
 
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 
@@ -95,7 +96,35 @@ protected function instExtendsList
   output list<SCode.AlgorithmSection> outNormalAlgs = {};
   output list<SCode.AlgorithmSection> outInitialAlgs = {};
   output list<SCode.Comment> outComments = {};
+protected
+  list<SCode.Element> duplicates = {};
+  list<String> duplicateUnparseStrings = {};
 algorithm
+  /*
+    Variables can be duplicated after inheritance not before.
+  */
+  duplicates := List.sortedDuplicates(List.sort(inElementsFromExtendsScope,
+                                      SCodeUtil.elementEqual), SCodeUtil.elementEqual);
+  /*
+    For MetaModelica grammar we allow a special instance of this rule.
+    We only keep duplicate that are not restricted to TypeVar.
+  */
+  if Config.acceptMetaModelicaGrammar() then
+    duplicates := List.filterOnFalse(duplicates, SCodeUtil.isTypeVar);
+  end if;
+  if not listEmpty(duplicates) then
+    duplicateUnparseStrings := list(SCodeDump.unparseElementStr(i) for i in duplicates);
+    if listLength(duplicates) > 1 then
+      Error.addMultiSourceMessage(Error.DUPLICATE_VARIABLE_ERROR,
+                                  duplicateUnparseStrings,
+                                  List.map(duplicates, SCodeUtil.elementInfo));
+    else
+      Error.addSourceMessage(Error.DUPLICATE_VARIABLE_ERROR,
+                             duplicateUnparseStrings,
+                             SCodeUtil.elementInfo(listHead(duplicates)));
+    end if;
+    fail();
+  end if;
   for el in listReverse(inLocalElements) loop
     _ := matchcontinue el
       local

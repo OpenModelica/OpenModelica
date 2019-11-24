@@ -390,6 +390,7 @@ if true then /* Suppress output */
     "../Script/OpenModelicaScriptingAPI.mo",
     "../Script/CevalScriptBackend.mo",
     "../Script/MMToJuliaUtil.mo",
+    "../Script/MMToJuliaKeywords.mo",
 
     "../SimCode/HpcOmSimCodeMain.mo",
     "../SimCode/SerializeInitXML.mo",

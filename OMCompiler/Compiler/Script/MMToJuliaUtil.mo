@@ -31,55 +31,104 @@
 
 encapsulated package MMToJuliaUtil
 protected
-import List;
 import Absyn;
 import AbsynUtil;
+//import DoubleEnded;
+//import Global;
+//import List;
 import Util;
-import DoubleEnded;
-import Global;
-
-function createGenericTypes
-  input String ty;
 protected
-  DoubleEnded.MutableList<String> genericTypes = DoubleEnded.fromList({});
-algorithm
-  setGlobalRoot(Global.MMToJLListIndex, SOME(genericTypes));
-end createGenericTypes;
 
-function addGenericType
-  input String ty;
-protected
-  DoubleEnded.MutableList<String> genericTypes;
-algorithm
-  genericTypes := getGlobalRoot(Global.MMToJLListIndex);
-  DoubleEnded.push_back(genericTypes, ty);
-end addGenericType;
+// function getAllPartsExceptRecords
+//   input Absyn.Class cls;
+//   output list<Absyn.ClassPart> parts;
+// algorithm
+// end getAllPartsExceptRecords;
 
-function clearGenericTypes
-protected
-  DoubleEnded.MutableList<String> genericTypes;
-algorithm
-  genericTypes := getGlobalRoot(Global.MMToJLListIndex);
-  {} := DoubleEnded.toListAndClear(genericTypes);
-end clearGenericTypes;
+// function getPartsThatAreRecords
+//   input Absyn.Class cls;
+//   output list<Absyn.ClassPart> parts;
+// algorithm
+// end getPartsThatAreRecords;
 
-function isGenericType
-  input String str;
-  output Boolean b = false;
-protected
-  list<String> tmpLst;
-  DoubleEnded.MutableList<String> genericTypes;
-algorithm
-  genericTypes := getGlobalRoot(Global.MMToJLListIndex);
-  tmpLst := DoubleEnded.toListNoCopyNoClear(genericTypes);
-  for i in tmpLst loop
-    if i == str then
-      b := true;
-      break;
-    end if;
-  end for;
-  genericTypes := DoubleEnded.fromList(tmpLst);
-end isGenericType;
+// function splitRecordsAndOtherElements
+// "This functions separates the records from the other elements of a given class."
+//   input Absyn.Class cls;
+//   output list<Absyn.ClassPart> bodyWithOnlyRecords = {};
+//   output list<Absyn.ClassPart> otherElements = {};
+// algorithm
+//   bodyWithOnlyRecords := getPartsThatAreRecords(cls);
+//   otherElements := getAllPartsExceptRecords(cls);
+// end splitRecordsAndOtherElements;
+
+// function restrictionIsRecord
+//   input Absyn.Restriction restriction;
+//   output Boolean isRecord;
+// algorithm
+//   isRecord := match restriction
+//     case R_RECORD(__) then true;
+//     else false;
+//   end match;
+// end restrictionIsRecord;
+
+// public
+// function refactorNonStandardUniontypes
+//   input Absyn.Program inProgram;
+//   output Absyn.Program outProgram;
+// protected
+//   constant Integer UNUSED;
+//   Absyn.Program tmpProgram = inProgram;
+//   Class tmpClass;
+// algorithm
+//   //Traverse all classes and create a package around each uniontype containing functions
+//   outProgram := AbsynUtil.traverseClasses(program,
+//                                           NONE(),
+//                                           createPackageAroundUniontypeIfContainsFuncs,
+//                                           UNUSED,
+//                                           true);
+//   //Traverse all classes and replace all uniontypes containing functions and other crap with with uniontypes containing only records.
+//   //AbsynUtil.traverseClasses()
+//   //Traverse all classes and replace all references to the old uniontype with <package>.<uniontype> instead
+//   //AbsynUtil.traverseClasses()
+// end refactorNonStandardUniontypes;
+
+// function refactorUniontypesWithFunctions
+//   input Absyn.Program inProgram;
+//   output Absyn.Program outProgram;
+// algorithm
+//   //Replace all uniontype containing functions with uniontypes containing only records.
+// end refactorUniontypesWithFunctions;
+
+// function createPackageAroundUniontypeIfContainsFuncs
+//   input tuple<Absyn.Class, Option<Absyn.Path>, Integer> inTuple;
+//   output tuple<Absyn.Class, Option<Absyn.Path>, Integer> outTuple;
+// protected
+//   Absyn.ClassDef classDef = Util.tuple31(inTuple);
+//   constant Boolean VISIT_PROTECTED = true;
+//   constant String PACKAGE_NAME = "P" + AbsynUtil.getClassName(Util.tuple31(inTuple));
+//   constant Integer UNUSED = 0;
+//   list<Absyn.ClassPart> bodyWithOnlyRecords = {};
+//   list<Absyn.ClassPart> otherElements = {};
+// algorithm
+//   if not AbsynUtil.isUniontype(cls) then
+//     classDef := Util.tuple31(inTuple);
+//   end if;
+//   (bodyWithOnlyRecords, otherElements) := splitRecordsAndOtherElements(cls);
+//   classDef := PARTS({} /*Assume no typevars for the package..*/,
+//                     {}/*Class Attributes. Only for Optimica, not used*/,
+//                     /*classParts*/ otherElements,
+//                     {}/* Annotations, they are kept in the nested uniontype */,
+//                     SOME("Generated top level package")/*Class comment*/);
+// // From these parts we create a package and inside this package we store things accordingly
+//  cls :=  CLASS(PACKAGE_NAME,
+//                false,
+//                false,
+//                Absyn.R_PACKAGE(),
+//                packageClsDef,
+//                cls.info);
+//    outTuple := (cls, NONE(), UNUSED);
+// end createPackageAroundUniontypeIfContainsFuncs;
+//TODO first figure out what we should rename
 
 public
 uniontype Context
@@ -261,7 +310,7 @@ algorithm
 end explicitReturnInClassPart;
 
 function algorithmItemsContainsReturn
-"@author: johti17"
+  "@author: johti17"
   input list<Absyn.AlgorithmItem> contents;
   output Boolean existsReturn;
 algorithm
@@ -277,6 +326,10 @@ algorithm
     end match;
   end for;
 end algorithmItemsContainsReturn;
+
+function mMKeywordToJLKeyword
+end mMKeywordToJLKeyword;
+
 
 annotation(__OpenModelica_Interface="backend");
 end MMToJuliaUtil;

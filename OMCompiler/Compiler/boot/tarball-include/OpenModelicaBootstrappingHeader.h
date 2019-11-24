@@ -1409,7 +1409,7 @@ extern struct record_description Absyn_Element_TEXT__desc;
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Element_DEFINEUNIT__desc_added
 #define Absyn_Element_DEFINEUNIT__desc_added
-ADD_METARECORD_DEFINITIONS const char* Absyn_Element_DEFINEUNIT__desc__fields[2] = {"name","args"};
+ADD_METARECORD_DEFINITIONS const char* Absyn_Element_DEFINEUNIT__desc__fields[3] = {"name","args", "info"};
 ADD_METARECORD_DEFINITIONS struct record_description Absyn_Element_DEFINEUNIT__desc = {
   "Absyn_Element_DEFINEUNIT",
   "Absyn.Element.DEFINEUNIT",
@@ -1420,7 +1420,7 @@ ADD_METARECORD_DEFINITIONS struct record_description Absyn_Element_DEFINEUNIT__d
 extern struct record_description Absyn_Element_DEFINEUNIT__desc;
 #endif
 #define Absyn__DEFINEUNIT_3dBOX2 4
-#define Absyn__DEFINEUNIT(name,args) (mmc_mk_box3(4,&Absyn_Element_DEFINEUNIT__desc,name,args))
+#define Absyn__DEFINEUNIT(name,args, info) (mmc_mk_box4(4,&Absyn_Element_DEFINEUNIT__desc,name,args, info))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Element_ELEMENT__desc_added
 #define Absyn_Element_ELEMENT__desc_added
@@ -4211,4 +4211,3 @@ extern struct record_description Absyn_Msg_MSG__desc;
 #ifdef __cplusplus
 }
 #endif
-

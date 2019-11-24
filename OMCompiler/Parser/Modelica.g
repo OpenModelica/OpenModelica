@@ -567,7 +567,7 @@ defineunit_clause returns [void* ast]
 @init { id = 0; OM_PUSHZ1(na); } :
   DEFINEUNIT id=IDENT (LPAR na=named_arguments RPAR)?
     {
-      ast = Absyn__DEFINEUNIT(token_to_scon(id),or_nil(na));
+      ast = Absyn__DEFINEUNIT(token_to_scon(id),or_nil(na), PARSER_INFO($id));
     }
   ;
   finally{ OM_POP(1); }

@@ -58,15 +58,11 @@ end dumpClass;
 template dumpClassElement(Absyn.Class class, DumpOptions options, Context context)
 "
   Note that partial functions are not handled here. They cannot really be translated to Julia in the way they are used in MetaModelica
-  they are dumped as forward declartions along with Uniontypes within the packages they occur.
+  they are dumped as forward decls along with Uniontypes within the packages they occur.
 "
 ::=
 match class
   case CLASS(body=parts as PARTS(__), restriction=R_UNIONTYPE(__)) then
-      /*
-        In Julia we treat uniontypes as declarations. They do not have a direct definition
-        I use a uniontype macro for short here so things that belong together are grouped together..
-      */
        let commentStr = dumpCommentStrOpt(parts.comment)
        let class_def_str = dumpClassDef(parts, makeUniontypeContext(name), options)
      <<
@@ -640,7 +636,8 @@ template dumpImport(Absyn.Import imp)
   "This will depend on my ExportAll.jl package. Not good practice but seem to be needed at places"
 ::=
 match imp
-  case NAMED_IMPORT(__) then AbsynDumpTpl.errorMsg("Named imports are not implemented!.")
+  case NAMED_IMPORT(__) then
+    'import <%dumpPathJL(path)%>; <%name%>=<%dumpPathJL(path)%>'
   case QUAL_IMPORT(__) then
     let path_str = dumpPathJL(path)
     match path_str
@@ -781,8 +778,8 @@ match path
     '<%name%>.<%AbsynDumpTpl.dumpPath(path)%>'
   case IDENT(__) then
     match name
-      case "Real" then 'ModelicaReal'
-      case "Integer" then 'ModelicaInteger'
+      case "Real" then 'Float'
+      case "Integer" then 'Integer'
       case "Boolean" then 'Bool'
       case "list" then 'List'
       case "array" then 'Array'

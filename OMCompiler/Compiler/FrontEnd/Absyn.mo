@@ -36,7 +36,7 @@ encapsulated package Absyn
   description: Abstract syntax
 
 
-  This file defines the abstract syntax for Modelica in MetaModelica Compiler (MMC). It 
+  This file defines the abstract syntax for Modelica in MetaModelica Compiler (MMC). It
   contains uniontypes for constructing the abstract syntax tree
   (AST).
 
@@ -294,6 +294,7 @@ uniontype Element "Elements
   record DEFINEUNIT
     Ident name;
     list<NamedArg> args;
+    Info info;
   end DEFINEUNIT;
 
   record TEXT

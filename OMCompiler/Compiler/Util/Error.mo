@@ -1132,7 +1132,8 @@ public constant ErrorTypes.Message ACCESS_ENCRYPTED_PROTECTED_CONTENTS = ErrorTy
   Gettext.gettext("Cannot access encrypted and protected class contents."));
 public constant ErrorTypes.Message INVALID_NONLINEAR_JACOBIAN_COMPONENT = ErrorTypes.MESSAGE(7024, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Jacobian %s contains non-linear components. This indicates a singular system or internal generation errors."));
-
+public constant ErrorTypes.Message DUPLICATE_VARIABLE_ERROR = ErrorTypes.MESSAGE(7025, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Duplicate elements:\n %s."));
 constant SourceInfo dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
 
 public function clearCurrentComponent

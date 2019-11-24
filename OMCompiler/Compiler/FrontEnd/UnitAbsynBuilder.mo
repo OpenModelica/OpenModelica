@@ -51,6 +51,7 @@ protected import FGraph;
 protected import List;
 protected import Lookup;
 protected import SCode;
+protected import SCodeUtil;
 protected import AbsynToSCode;
 protected import Types;
 protected import UnitParserExt;
@@ -112,34 +113,34 @@ algorithm
      SI system ,with lower cost on Hz and Bq */
      case({}) equation
        registerUnitWeightDefineunits2({
-       SCode.DEFINEUNIT("m",SCode.PUBLIC(),NONE(),NONE()),
-       SCode.DEFINEUNIT("kg",SCode.PUBLIC(),NONE(),NONE()),
-       SCode.DEFINEUNIT("s",SCode.PUBLIC(),NONE(),NONE()),
-       SCode.DEFINEUNIT("A",SCode.PUBLIC(),NONE(),NONE()),
-       SCode.DEFINEUNIT("k",SCode.PUBLIC(),NONE(),NONE()),
-       SCode.DEFINEUNIT("mol",SCode.PUBLIC(),NONE(),NONE()),
-       SCode.DEFINEUNIT("cd",SCode.PUBLIC(),NONE(),NONE()),
-       SCode.DEFINEUNIT("rad",SCode.PUBLIC(),SOME("m/m"),NONE()),
-       SCode.DEFINEUNIT("sr",SCode.PUBLIC(),SOME("m2/m2"),NONE()),
-       SCode.DEFINEUNIT("Hz",SCode.PUBLIC(),SOME("s-1"),SOME(0.8)),
-       SCode.DEFINEUNIT("N",SCode.PUBLIC(),SOME("m.kg.s-2"),NONE()),
-       SCode.DEFINEUNIT("Pa",SCode.PUBLIC(),SOME("N/m2"),NONE()),
-       SCode.DEFINEUNIT("W",SCode.PUBLIC(),SOME("J/s"),NONE()),
-       SCode.DEFINEUNIT("J",SCode.PUBLIC(),SOME("N.m"),NONE()),
-       SCode.DEFINEUNIT("C",SCode.PUBLIC(),SOME("s.A"),NONE()),
-       SCode.DEFINEUNIT("V",SCode.PUBLIC(),SOME("W/A"),NONE()),
-       SCode.DEFINEUNIT("F",SCode.PUBLIC(),SOME("C/V"),NONE()),
-       SCode.DEFINEUNIT("Ohm",SCode.PUBLIC(),SOME("V/A"),NONE()),
-       SCode.DEFINEUNIT("S",SCode.PUBLIC(),SOME("A/V"),NONE()),
-       SCode.DEFINEUNIT("Wb",SCode.PUBLIC(),SOME("V.s"),NONE()),
-       SCode.DEFINEUNIT("T",SCode.PUBLIC(),SOME("Wb/m2"),NONE()),
-       SCode.DEFINEUNIT("H",SCode.PUBLIC(),SOME("Wb/A"),NONE()),
-       SCode.DEFINEUNIT("lm",SCode.PUBLIC(),SOME("cd.sr"),NONE()),
-       SCode.DEFINEUNIT("lx",SCode.PUBLIC(),SOME("lm/m2"),NONE()),
-       SCode.DEFINEUNIT("Bq",SCode.PUBLIC(),SOME("s-1"),SOME(0.8)),
-       SCode.DEFINEUNIT("Gy",SCode.PUBLIC(),SOME("J/kg"),NONE()),
-       SCode.DEFINEUNIT("Sv",SCode.PUBLIC(),SOME("cd.sr"),NONE()),
-       SCode.DEFINEUNIT("kat",SCode.PUBLIC(),SOME("s-1.mol"),NONE())
+       SCode.DEFINEUNIT("m",SCode.PUBLIC(),NONE(),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("kg",SCode.PUBLIC(),NONE(),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("s",SCode.PUBLIC(),NONE(),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("A",SCode.PUBLIC(),NONE(),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("k",SCode.PUBLIC(),NONE(),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("mol",SCode.PUBLIC(),NONE(),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("cd",SCode.PUBLIC(),NONE(),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("rad",SCode.PUBLIC(),SOME("m/m"),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("sr",SCode.PUBLIC(),SOME("m2/m2"),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("Hz",SCode.PUBLIC(),SOME("s-1"),SOME(0.8), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("N",SCode.PUBLIC(),SOME("m.kg.s-2"),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("Pa",SCode.PUBLIC(),SOME("N/m2"),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("W",SCode.PUBLIC(),SOME("J/s"),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("J",SCode.PUBLIC(),SOME("N.m"),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("C",SCode.PUBLIC(),SOME("s.A"),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("V",SCode.PUBLIC(),SOME("W/A"),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("F",SCode.PUBLIC(),SOME("C/V"),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("Ohm",SCode.PUBLIC(),SOME("V/A"),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("S",SCode.PUBLIC(),SOME("A/V"),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("Wb",SCode.PUBLIC(),SOME("V.s"),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("T",SCode.PUBLIC(),SOME("Wb/m2"),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("H",SCode.PUBLIC(),SOME("Wb/A"),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("lm",SCode.PUBLIC(),SOME("cd.sr"),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("lx",SCode.PUBLIC(),SOME("lm/m2"),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("Bq",SCode.PUBLIC(),SOME("s-1"),SOME(0.8), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("Gy",SCode.PUBLIC(),SOME("J/kg"),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("Sv",SCode.PUBLIC(),SOME("cd.sr"),NONE(), SCodeUtil.dummyInfo),
+       SCode.DEFINEUNIT("kat",SCode.PUBLIC(),SOME("s-1.mol"),NONE(), SCodeUtil.dummyInfo)
        });   then ();
      else equation registerUnitWeightDefineunits2(du); then ();
   end matchcontinue;
@@ -214,34 +215,34 @@ algorithm
      String exp; Real weight;
      case({})
      equation registerDefineunits2({
-       Absyn.DEFINEUNIT("m",{}),
-       Absyn.DEFINEUNIT("kg",{}),
-       Absyn.DEFINEUNIT("s",{}),
-       Absyn.DEFINEUNIT("A",{}),
-       Absyn.DEFINEUNIT("k",{}),
-       Absyn.DEFINEUNIT("mol",{}),
-       Absyn.DEFINEUNIT("cd",{}),
-       Absyn.DEFINEUNIT("rad",{Absyn.NAMEDARG("exp",Absyn.STRING("m/m"))}),
-       Absyn.DEFINEUNIT("sr",{Absyn.NAMEDARG("exp",Absyn.STRING("m2/m2"))}),
-       Absyn.DEFINEUNIT("Hz",{Absyn.NAMEDARG("exp",Absyn.STRING("s-1")),Absyn.NAMEDARG("weight",Absyn.REAL("0.8"))}),
-       Absyn.DEFINEUNIT("N",{Absyn.NAMEDARG("exp",Absyn.STRING("m.kg.s-2"))}),
-       Absyn.DEFINEUNIT("Pa",{Absyn.NAMEDARG("exp",Absyn.STRING("N/m2"))}),
-       Absyn.DEFINEUNIT("W",{Absyn.NAMEDARG("exp",Absyn.STRING("J/s"))}),
-       Absyn.DEFINEUNIT("J",{Absyn.NAMEDARG("exp",Absyn.STRING("N.m"))}),
-       Absyn.DEFINEUNIT("C",{Absyn.NAMEDARG("exp",Absyn.STRING("s.A"))}),
-       Absyn.DEFINEUNIT("V",{Absyn.NAMEDARG("exp",Absyn.STRING("W/A"))}),
-       Absyn.DEFINEUNIT("F",{Absyn.NAMEDARG("exp",Absyn.STRING("C/V"))}),
-       Absyn.DEFINEUNIT("Ohm",{Absyn.NAMEDARG("exp",Absyn.STRING("V/A"))}),
-       Absyn.DEFINEUNIT("S",{Absyn.NAMEDARG("exp",Absyn.STRING("A/V"))}),
-       Absyn.DEFINEUNIT("Wb",{Absyn.NAMEDARG("exp",Absyn.STRING("V.s"))}),
-       Absyn.DEFINEUNIT("T",{Absyn.NAMEDARG("exp",Absyn.STRING("Wb/m2"))}),
-       Absyn.DEFINEUNIT("H",{Absyn.NAMEDARG("exp",Absyn.STRING("Wb/A"))}),
-       Absyn.DEFINEUNIT("lm",{Absyn.NAMEDARG("exp",Absyn.STRING("cd.sr"))}),
-       Absyn.DEFINEUNIT("lx",{Absyn.NAMEDARG("exp",Absyn.STRING("lm/m2"))}),
-       Absyn.DEFINEUNIT("Bq",{Absyn.NAMEDARG("exp",Absyn.STRING("s-1")),Absyn.NAMEDARG("weight",Absyn.REAL("0.8"))}),
-       Absyn.DEFINEUNIT("Gy",{Absyn.NAMEDARG("exp",Absyn.STRING("J/kg"))}),
-       Absyn.DEFINEUNIT("Sv",{Absyn.NAMEDARG("exp",Absyn.STRING("cd.sr"))}),
-       Absyn.DEFINEUNIT("kat",{Absyn.NAMEDARG("exp",Absyn.STRING("s-1.mol"))})
+       Absyn.DEFINEUNIT("m",{}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("kg",{}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("s",{}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("A",{}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("k",{}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("mol",{}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("cd",{}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("rad",{Absyn.NAMEDARG("exp",Absyn.STRING("m/m"))}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("sr",{Absyn.NAMEDARG("exp",Absyn.STRING("m2/m2"))}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("Hz",{Absyn.NAMEDARG("exp",Absyn.STRING("s-1")),Absyn.NAMEDARG("weight",Absyn.REAL("0.8"))}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("N",{Absyn.NAMEDARG("exp",Absyn.STRING("m.kg.s-2"))}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("Pa",{Absyn.NAMEDARG("exp",Absyn.STRING("N/m2"))}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("W",{Absyn.NAMEDARG("exp",Absyn.STRING("J/s"))}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("J",{Absyn.NAMEDARG("exp",Absyn.STRING("N.m"))}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("C",{Absyn.NAMEDARG("exp",Absyn.STRING("s.A"))}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("V",{Absyn.NAMEDARG("exp",Absyn.STRING("W/A"))}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("F",{Absyn.NAMEDARG("exp",Absyn.STRING("C/V"))}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("Ohm",{Absyn.NAMEDARG("exp",Absyn.STRING("V/A"))}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("S",{Absyn.NAMEDARG("exp",Absyn.STRING("A/V"))}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("Wb",{Absyn.NAMEDARG("exp",Absyn.STRING("V.s"))}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("T",{Absyn.NAMEDARG("exp",Absyn.STRING("Wb/m2"))}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("H",{Absyn.NAMEDARG("exp",Absyn.STRING("Wb/A"))}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("lm",{Absyn.NAMEDARG("exp",Absyn.STRING("cd.sr"))}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("lx",{Absyn.NAMEDARG("exp",Absyn.STRING("lm/m2"))}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("Bq",{Absyn.NAMEDARG("exp",Absyn.STRING("s-1")),Absyn.NAMEDARG("weight",Absyn.REAL("0.8"))}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("Gy",{Absyn.NAMEDARG("exp",Absyn.STRING("J/kg"))}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("Sv",{Absyn.NAMEDARG("exp",Absyn.STRING("cd.sr"))}, AbsynUtil.dummyInfo),
+       Absyn.DEFINEUNIT("kat",{Absyn.NAMEDARG("exp",Absyn.STRING("s-1.mol"))}, AbsynUtil.dummyInfo)
        });
      then ();
 
@@ -1763,4 +1764,3 @@ protected
  */
 annotation(__OpenModelica_Interface="frontend");
 end UnitAbsynBuilder;
-

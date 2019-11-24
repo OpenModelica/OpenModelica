@@ -47,6 +47,7 @@ import Util;
 public
 
 replaceable type Argument subtypeof Any;
+constant SourceInfo dummyInfo = SOURCEINFO("", false, 0, 0, 0, 0, 0.0);
 
 function stripSubmod
   "Removes all submodifiers from the Mod."
@@ -424,6 +425,17 @@ algorithm
     else false;
   end match;
 end isRecord;
+
+public function isTypeVar
+"Return true if Class is a type"
+  input SCode.Element inClass;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match(inClass)
+    case SCode.CLASS(restriction = SCode.R_TYPE()) then true;
+    else false;
+  end match;
+end isTypeVar;
 
 public function isOperatorRecord
 "Return true if Class is a operator record."
@@ -4559,8 +4571,8 @@ algorithm
     case (SCode.IMPORT(imp, _, info), _)
       then SCode.IMPORT(imp, inVisibility, info);
 
-    case (SCode.DEFINEUNIT(name, _, unit, weight), _)
-      then SCode.DEFINEUNIT(name, inVisibility, unit, weight);
+    case (SCode.DEFINEUNIT(name, _, unit, weight, info), _)
+      then SCode.DEFINEUNIT(name, inVisibility, unit, weight, info);
 
   end match;
 end setElementVisibility;
@@ -5687,6 +5699,7 @@ algorithm
     else false;
   end match;
 end isRedeclareElement;
+
 
 public function mergeSCodeOptAnn
   input Option<SCode.Annotation> inModOuter;

@@ -577,6 +577,7 @@ uniontype Element "- Elements
     Visibility visibility            "the protected/public prefix";
     Option<String> exp               "the unit expression";
     Option<Real> weight              "the weight";
+    SourceInfo info                  "The source information";
   end DEFINEUNIT;
 
 end Element;
