@@ -756,7 +756,6 @@ protected
   DAE.ComponentRef cr;
   list<BackendDAE.Var> var_lst, var_lst_opt, var_lst1;
   DAE.Exp e1, e2, e, c;
-  DAE.FunctionTree funcs;
   BackendDAE.Variables vars, globalKnownVars;
   BackendDAE.EquationArray eqns;
   BackendDAE.BaseClockPartitionKind partitionKind;

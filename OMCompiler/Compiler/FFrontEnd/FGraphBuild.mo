@@ -621,7 +621,7 @@ protected
   Option<Absyn.Exp> cnd;
   Absyn.ArrayDim ad;
   Absyn.TypeSpec ts;
-  Absyn.ArrayDim tad, ad;
+  Absyn.ArrayDim tad;
   Data nd;
   DAE.Var i;
 algorithm

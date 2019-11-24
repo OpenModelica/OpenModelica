@@ -9199,7 +9199,6 @@ protected
   Integer len1, len2;
   DAE.Exp e2;
   list<DAE.Exp> rest_expl2 = inExpl2;
-  Integer len1, len2;
 algorithm
   // Check that the lists have the same length, otherwise they can't be equal.
   len1 := listLength(inExpl1);

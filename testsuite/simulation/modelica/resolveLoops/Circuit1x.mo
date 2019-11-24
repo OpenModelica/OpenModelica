@@ -1,6 +1,5 @@
 model Circuit1x
   Modelica.Electrical.Analog.Basic.Ground Ground annotation(Placement(visible = true, transformation(origin = {-56, -30}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-  Modelica.Electrical.Analog.Basic.Ground Ground annotation(Placement(visible = true, transformation(origin = {-56, -30}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
   Modelica.Electrical.Analog.Basic.Capacitor Cgd(C = 1) annotation(Placement(visible = true, transformation(origin = {-14, 42}, extent = {{-10, 10}, {10, -10}}, rotation = 90)));
   Modelica.Electrical.Analog.Basic.Capacitor Cds(C = 1) annotation(Placement(visible = true, transformation(origin = {16, 42}, extent = {{10, 10}, {-10, -10}}, rotation = 90)));
   Modelica.Electrical.Analog.Basic.Resistor R_Load(R = 1) annotation(Placement(visible = true, transformation(origin = {16, 0}, extent = {{-10, 10}, {10, -10}}, rotation = -90)));

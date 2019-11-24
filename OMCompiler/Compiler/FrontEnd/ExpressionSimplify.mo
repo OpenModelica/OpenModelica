@@ -879,7 +879,6 @@ algorithm
       equation
         print("sourceInfo() - simplify?\n");
       then fail();
-
   end match;
 end simplifyMetaModelicaCalls;
 

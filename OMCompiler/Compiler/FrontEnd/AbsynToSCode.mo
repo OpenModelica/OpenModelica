@@ -1054,11 +1054,11 @@ algorithm
       then
         es;
 
-    case(Absyn.DEFINEUNIT(name,args),vis)
+    case(Absyn.DEFINEUNIT(name, args, info), vis)
       equation
         expOpt = translateDefineunitParam(args,"exp");
         weightOpt = translateDefineunitParam2(args,"weight");
-      then {SCode.DEFINEUNIT(name,vis,expOpt,weightOpt)};
+      then {SCode.DEFINEUNIT(name,vis,expOpt,weightOpt,info)};
   end match;
 end translateElement;
 

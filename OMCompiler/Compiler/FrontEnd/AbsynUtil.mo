@@ -5878,7 +5878,7 @@ algorithm
   end matchcontinue;
 end stripGraphicsAndInteractionModification;
 
-function traverseClasses
+public function traverseClasses
 " This function traverses all classes of a program and applies a function
    to each class. The function takes the Absyn.Class, Absyn.Path option
    and an additional argument and returns an updated class and the
@@ -6394,6 +6394,18 @@ algorithm
     else false;
   end match;
 end isNamedPathIdent;
+
+function isUniontype
+" @author johti17: Returns true if the class is of type uniontype
+"
+input Absyn.Class cls;
+output Boolean b;
+algorithm
+  b := match cls.restriction
+    case R_UNIONTYPE(__) then true;
+    else false;
+ end match;
+end isUniontype;
 
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

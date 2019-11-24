@@ -2899,7 +2899,6 @@ protected
   HpcOmSimCode.Schedule tmpSchedule;
   array<list<HpcOmSimCode.Task>> threadTasks;
   array<HpcOmTaskGraph.Communications> commCosts;
-  HpcOmSimCode.Schedule tmpSchedule;
   list<Integer> rootNodes;
   array<tuple<HpcOmSimCode.Task, Integer>> allCalcTasks;
   list<tuple<HpcOmSimCode.Task,Integer>> nodeList_refCount; //list of nodes which are ready to schedule

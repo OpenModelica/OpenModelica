@@ -2713,7 +2713,7 @@ import Util;
   protected
     array<list<Integer>> iClTaskMapping;
     array<Integer> iScVarTaskMapping;
-    Integer varIdx,eqSysIdx,varOffset,scVarIdx,clIdx,nodeIdx, nodeIdx, scVarOffset;
+    Integer varIdx,eqSysIdx,varOffset,scVarIdx,clIdx,nodeIdx, scVarOffset;
     BackendDAE.EqSystem eqSystem;
     BackendDAE.Variables orderedVars;
     array<Option<BackendDAE.Var>> varOptArr;
