@@ -1268,6 +1268,17 @@ algorithm
   end match;
 end addSourceMessage;
 
+function addSourceMessageAsError
+  input ErrorTypes.Message msg;
+  input ErrorTypes.MessageTokens tokens;
+  input SourceInfo info;
+protected
+  ErrorTypes.Message m = msg;
+algorithm
+  m.severity := ErrorTypes.ERROR();
+  addSourceMessage(m, tokens, info);
+end addSourceMessageAsError;
+
 function addStrictMessage
   input ErrorTypes.Message errorMsg;
   input ErrorTypes.MessageTokens tokens;
