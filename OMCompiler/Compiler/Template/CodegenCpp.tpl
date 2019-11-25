@@ -1523,7 +1523,7 @@ template simulationMainRunScript(SimCode simCode ,Text& extraFuncs,Text& extraFu
     let moLib     =  makefileParams.compileDir
     let home      = makefileParams.omhome
     let outputformat = settings.outputFormat
-    let execParameters = '-S <%start%> -E <%end%> -H <%stepsize%> -G <%intervals%> -P <%outputformat%> -T <%tol%> -I <%solver%> -R "<%simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>" -M <%moLib%> -r <%simulationResults(getRunningTestsuite(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>'
+    let execParameters = '-S <%start%> -E <%end%> -H <%stepsize%> -G <%intervals%> -P <%outputformat%> -T <%tol%> -I <%solver%> -R "<%simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>" -M "<%moLib%>" -r "<%simulationResults(getRunningTestsuite(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>"'
     let outputParameter = if (stringEq(settings.outputFormat, "empty")) then "-O none" else ""
     let fileNamePrefixx = fileNamePrefix
 
@@ -1545,7 +1545,7 @@ template simulationMainRunScript(SimCode simCode ,Text& extraFuncs,Text& extraFu
         <%preRunCommandWindows%>
         REM ::export PATH=<%libFolder%>:$PATH REPLACE C: with /C/
         SET PATH=<%home%>/bin;<%libFolder%>;<%libPaths%>;%PATH%
-        <%moLib%>/<%fileNamePrefixx%>.exe <%execParameters%> <%outputParameter%>
+        "<%moLib%>/<%fileNamePrefixx%>.exe" <%execParameters%> <%outputParameter%>
         >>
     end match
   end match
@@ -3104,8 +3104,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CXX=cl
   EXEEXT=.exe
   DLLEXT=.dll
-  include $(OMHOME)/include/omc/cpp/ModelicaConfig_msvc.inc
-  include $(OMHOME)/include/omc/cpp/ModelicaLibraryConfig_msvc.inc
+  <% /* Don't use $(OMHOME) with include. NMAKE fails to evaluate it. */ %>
+  include "<%makefileParams.omhome%>/include/omc/cpp/ModelicaConfig_msvc.inc"
+  include "<%makefileParams.omhome%>/include/omc/cpp/ModelicaLibraryConfig_msvc.inc
   # /Od - Optimization disabled
   # /EHa enable C++ EH (w/ SEH exceptions)
   # /fp:except - consider floating-point exceptions when generating code
