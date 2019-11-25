@@ -2037,14 +2037,22 @@ algorithm
   Expression.INTEGER(n) := argN;
   ty := Expression.typeOf(listHead(args));
   nd := Type.dimensionCount(ty);
+
   if n > nd or n < 1 then
     if EvalTarget.hasInfo(target) then
       Error.addSourceMessage(Error.ARGUMENT_OUT_OF_RANGE, {String(n), "cat", "1 <= x <= " + String(nd)}, EvalTarget.getInfo(target));
     end if;
     fail();
   end if;
-  (es,dims) := ExpressionSimplify.evalCat(n, args, getArrayContents=Expression.arrayElements, toString=Expression.toString);
-  result := Expression.arrayFromList(es, Expression.typeOf(listHead(es)), list(Dimension.fromInteger(d) for d in dims));
+
+  es := list(e for e guard not Expression.isEmptyArray(e) in args);
+
+  if listLength(es) == 1 then
+    result := listHead(es);
+  else
+    (es,dims) := ExpressionSimplify.evalCat(n, es, getArrayContents=Expression.arrayElements, toString=Expression.toString);
+    result := Expression.arrayFromList(es, Expression.typeOf(listHead(es)), list(Dimension.fromInteger(d) for d in dims));
+  end if;
 end evalBuiltinCat;
 
 function evalBuiltinCeil
