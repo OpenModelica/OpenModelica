@@ -372,9 +372,12 @@ algorithm
 
     case Equation.WHEN(branches = Equation.Branch.BRANCH(body = eql) :: _)
       algorithm
+        inconsistentUnits := {};
+
         for e in eql loop
-          (htCr2U, htS2U, htU2S, fnCache, inconsistentUnits) :=
+          (htCr2U, htS2U, htU2S, fnCache, icu1) :=
             foldEquation2(e, dumpEqInitStruct, htCr2U, htS2U, htU2S, fnCache);
+          inconsistentUnits := List.append_reverse(icu1, inconsistentUnits);
         end for;
       then
         inconsistentUnits;
