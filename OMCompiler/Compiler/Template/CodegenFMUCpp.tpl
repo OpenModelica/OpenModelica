@@ -686,8 +686,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # run with nmake from Visual Studio Command Prompt
   # FMU packaging requires PATH to $(OMHOME)/mingw/bin
   OMHOME=<%if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then '$(OPENMODELICAHOME)' else makefileParams.omhome%>
-  include $(OMHOME)/include/omc/cpp/ModelicaConfig_msvc.inc
-  include $(OMHOME)/include/omc/cpp/ModelicaLibraryConfig_msvc.inc
+  <% /* Don't use $(OMHOME) with include. NMAKE fails to evaluate it. */ %>
+  include "<%makefileParams.omhome%>/include/omc/cpp/ModelicaConfig_msvc.inc"
+  include "<%makefileParams.omhome%>/include/omc/cpp/ModelicaLibraryConfig_msvc.inc
   # Simulations use /Od by default
   SIM_OR_DYNLOAD_OPT_LEVEL=
   MODELICAUSERCFLAGS=
