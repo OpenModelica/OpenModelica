@@ -1802,19 +1802,10 @@ protected
           {InstNode.name(component)}, InstNode.info(component));
         fail();
       end if;
-    else
-
-      if vis == Visibility.PUBLIC then
-        if var > Variability.PARAMETER then
-          Error.addSourceMessage(Error.NON_FORMAL_PUBLIC_FUNCTION_VAR,
-            {InstNode.name(component)}, InstNode.info(component));
-          fail();
-        else
-          // @adrpo: alow public constants and parameters in functions
-          Error.addStrictMessage(Error.NON_FORMAL_PUBLIC_FUNCTION_VAR,
-            {InstNode.name(component)}, InstNode.info(component));
-        end if;
-      end if;
+    elseif vis == Visibility.PUBLIC then
+      Error.addSourceMessageAsError(Error.NON_FORMAL_PUBLIC_FUNCTION_VAR,
+        {InstNode.name(component)}, InstNode.info(component));
+      fail();
     end if;
   end paramDirection;
 
