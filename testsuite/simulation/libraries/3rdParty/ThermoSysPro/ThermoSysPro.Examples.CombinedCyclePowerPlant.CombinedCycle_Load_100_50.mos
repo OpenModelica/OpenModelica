@@ -448,17 +448,6 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.Combine
 // [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:918:3-971:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.2/Properties/C3H3F5/C3H3F5_Ps.mo:2:1-106:14:writable] Warning: props.ddsp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.2/Properties/C3H3F5/C3H3F5_Ps.mo:2:1-106:14:writable] Warning: props.ddps was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteamSimple/Entropy/s1sat_P.mo:5:3-5:89:writable] Warning: Invalid public variable coef, function variables that are not input/output must be protected.
-// [ThermoSysPro 3.2/Properties/WaterSteamSimple/Entropy/s2sat_P.mo:6:3-6:22:writable] Warning: Invalid public variable coef1, function variables that are not input/output must be protected.
-// [ThermoSysPro 3.2/Properties/WaterSteamSimple/Entropy/s2sat_P.mo:7:3-7:22:writable] Warning: Invalid public variable coef2, function variables that are not input/output must be protected.
-// [ThermoSysPro 3.2/Properties/WaterSteamSimple/Entropy/s2sat_P.mo:6:3-6:22:writable] Warning: Invalid public variable coef1, function variables that are not input/output must be protected.
-// [ThermoSysPro 3.2/Properties/WaterSteamSimple/Entropy/s2sat_P.mo:7:3-7:22:writable] Warning: Invalid public variable coef2, function variables that are not input/output must be protected.
-// [ThermoSysPro 3.2/Properties/WaterSteamSimple/Enthalpy/h1_Ps.mo:7:3-7:87:writable] Warning: Invalid public variable coef, function variables that are not input/output must be protected.
-// [ThermoSysPro 3.2/Properties/WaterSteamSimple/Density/dd1sp_Ps.mo:8:3-9:73:writable] Warning: Invalid public variable coef, function variables that are not input/output must be protected.
-// [ThermoSysPro 3.2/Properties/WaterSteamSimple/Density/dd1ps_Ps.mo:8:3-9:73:writable] Warning: Invalid public variable coef, function variables that are not input/output must be protected.
-// [ThermoSysPro 3.2/Properties/WaterSteamSimple/Enthalpy/h2_Ps.mo:7:3-7:87:writable] Warning: Invalid public variable coef, function variables that are not input/output must be protected.
-// [ThermoSysPro 3.2/Properties/WaterSteamSimple/Density/dd2sp_Ps.mo:8:3-9:73:writable] Warning: Invalid public variable coef, function variables that are not input/output must be protected.
-// [ThermoSysPro 3.2/Properties/WaterSteamSimple/Density/dd2ps_Ps.mo:8:3-9:73:writable] Warning: Invalid public variable coef, function variables that are not input/output must be protected.
 // [ThermoSysPro 3.2/Properties/WaterSteamSimple/prop4_Ps.mo:78:3-78:60:writable] Warning: dh1satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.2/Properties/WaterSteamSimple/prop4_Ps.mo:78:3-78:60:writable] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.2/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
