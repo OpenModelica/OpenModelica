@@ -3603,7 +3603,7 @@ algorithm
                nozip;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
-          System.removeFile(dir + logfile);
+          System.removeFile(logfile);
           fail();
         end if;
       then true;
@@ -3655,7 +3655,7 @@ algorithm
                nozip + dquote;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + ":\n" + System.readFile(logfile)});
-          System.removeFile(dir + logfile);
+          System.removeFile(logfile);
           // Cleanup
           System.systemCall("docker rm " + containerID);
           System.systemCall("docker volume rm " + volumeID);
@@ -3686,7 +3686,7 @@ algorithm
     end if;
     if 0 <> System.systemCall("cd \"" +  fmutmp + "/sources\" && " + nozip, outFile=logfile) then
       Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
-      System.removeFile(dir + logfile);
+      System.removeFile(logfile);
       fail();
     end if;
   end if;
@@ -3706,7 +3706,7 @@ protected function buildModelFMU " author: Frenkel TUD
   output Values.Value outValue;
 protected
   Boolean staticSourceCodeFMU, success;
-  String filenameprefix, fmutmp, logfile, dir, cmd;
+  String filenameprefix, fmutmp, logfile, configureLogFile, dir, cmd;
   String fmuTargetName;
   GlobalScript.SimulationOptions defaulSimOpt;
   SimCode.SimulationSettings simSettings;
@@ -3786,7 +3786,11 @@ algorithm
   end if;
 
   for platform in platforms loop
-    configureFMU(platform, fmutmp, System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log", isWindows);
+    configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log";
+    if isWindows then
+      configureLogFile := "\""+configureLogFile+"\"";
+    end if;
+    configureFMU(platform, fmutmp, configureLogFile, isWindows);
     ExecStat.execStat("buildModelFMU: Generate platform " + platform);
   end for;
 
