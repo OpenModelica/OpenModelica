@@ -22,7 +22,7 @@ for f in "$@"; do
     for i in `egrep "^ *(public|protected)? *import" "$f" | grep -o "import \+[A-Za-z0-9_]\+ *;" | cut -d" " -f2 | cut -d";" -f1`; do
       if ! grep "$i" "$f" | grep -q -v "import \+$i *[;]"; then
         echo "Unused import $i in $f"
-        sed -i.bak "/^ *[a-z]* *import \+$i *;/d" "$f"
+        sed -i.bak "/^ *[a-z]* *import *$i *;/d" "$f"
         rm -f "$f.bak"
         CONTINUE=1
         EXIT=1
