@@ -1127,6 +1127,7 @@ void GraphicsView::clearGraphicsView()
   removeInheritedClassConnections();
   removeInheritedClassComponents();
   scene()->clear();
+  mAllItems.clear();
 }
 
 /*!
