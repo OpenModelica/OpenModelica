@@ -292,6 +292,8 @@ Edit Menu
 -  *Redo* - Redoes the last undone change.
 -  *Filter Classes* - Filters the classes in Libraries Browser. see :ref:`omedit-filter-classes`
 
+.. _omedit-view-menu :
+
 View Menu
 ---------
 
@@ -638,6 +640,8 @@ Successful simulation of model produces the result file which contains
 the instance variables that are candidate for plotting. Variables
 Browser will show the list of such instance variables. Each variable has
 a checkbox, checking it will plot the variable. See :numref:`omedit-plotting-perspective`.
+To get several plot windows tiled horizontally or vertically use the
+menu items *Tile Windows Horizontally* or *Tile Windows Vertically* under :ref:`omedit-view-menu`.
 
 Types of Plotting
 ~~~~~~~~~~~~~~~~~
