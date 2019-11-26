@@ -2224,6 +2224,8 @@ algorithm
       CachedData cache;
 
     case Type.COMPLEX(complexTy = ComplexType.RECORD(node))
+      // Make sure it's really a record, and not e.g. a record inherited by a model.
+      guard InstNode.isRecord(node)
       algorithm
         instRecordConstructor(node);
       then
