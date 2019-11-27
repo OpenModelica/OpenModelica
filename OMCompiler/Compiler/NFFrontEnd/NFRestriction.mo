@@ -196,6 +196,16 @@ public
     end match;
   end isClock;
 
+  function isModel
+    input Restriction res;
+    output Boolean isModel;
+  algorithm
+    isModel := match res
+      case MODEL() then true;
+      else false;
+    end match;
+  end isModel;
+
   function toString
     input Restriction res;
     output String str;

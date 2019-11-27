@@ -2225,7 +2225,9 @@ algorithm
 
     case Type.COMPLEX(complexTy = ComplexType.RECORD(node))
       // Make sure it's really a record, and not e.g. a record inherited by a model.
-      guard InstNode.isRecord(node)
+      // TODO: This check should really be InstNode.isRecord(node), but that
+      //       causes issues with e.g. ComplexInput/ComplexOutput.
+      guard not InstNode.isModel(node)
       algorithm
         instRecordConstructor(node);
       then
