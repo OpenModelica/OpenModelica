@@ -246,7 +246,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.NF_EXPAND_FUNC_ARGS,
   Flags.DUMP_JL,
   Flags.DUMP_ASSC,
-  Flags.SPLIT_CONSTANT_PARTS_SYMJAC
+  Flags.SPLIT_CONSTANT_PARTS_SYMJAC,
+  Flags.NF_DUMP_FLAT
 };
 
 protected

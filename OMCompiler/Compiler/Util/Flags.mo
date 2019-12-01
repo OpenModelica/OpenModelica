@@ -547,6 +547,8 @@ constant DebugFlag DUMP_ASSC = DEBUG_FLAG(189, "dumpASSC", false,
   Gettext.gettext("Dumps the conversion process of analytical to structural singularities."));
 constant DebugFlag SPLIT_CONSTANT_PARTS_SYMJAC = DEBUG_FLAG(190, "symJacConstantSplit", false,
   Gettext.gettext("Generates all symbolic Jacobians with splitted constant parts."));
+constant DebugFlag NF_DUMP_FLAT = DEBUG_FLAG(191, "nfDumpFlat", false,
+  Gettext.gettext("Dumps the flat model structure before generating the DAE."));
 
 public
 // CONFIGURATION FLAGS

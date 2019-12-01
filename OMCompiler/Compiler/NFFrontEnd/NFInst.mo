@@ -185,6 +185,10 @@ algorithm
 
   VerifyModel.verify(flat_model);
 
+  if Flags.isSet(Flags.NF_DUMP_FLAT) then
+    print("FlatModel:\n" + FlatModel.toString(flat_model) + "\n");
+  end if;
+
   // Convert the flat model to a DAE.
   (dae, daeFuncs) := ConvertDAE.convert(flat_model, funcs, name, InstNode.info(inst_cls));
 end instClassInProgram;
