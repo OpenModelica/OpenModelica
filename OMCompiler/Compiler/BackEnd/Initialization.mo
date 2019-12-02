@@ -1210,7 +1210,7 @@ protected function fixInitialSystem "author: lochel
   input DoubleEnded.MutableList<BackendDAE.Equation> removedEqns;
 protected
   BackendDAE.EquationArray eqns2;
-  list<BackendDAE.Var> dumpVars2;
+  list<BackendDAE.Var> dumpVars2 = {};
   list<BackendDAE.Equation> removedEqns2;
   Integer nVars, nEqns, nInitEqs, nAddEqs, nAddVars;
   list<Integer> stateIndices, range, initEqsIndices, redundantEqns;
@@ -1308,9 +1308,7 @@ algorithm
         DoubleEnded.push_list_back(dumpVars, dumpVars2);
       end if;
       outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, eqns2);
-      if (not listEmpty(dumpVars2)) then
-        outEqSystem := BackendVariable.addVarsDAE(dumpVars2,outEqSystem);
-      end if;
+      outEqSystem := BackendVariable.addVarsDAE(dumpVars2, outEqSystem) "update fixed attribute";
       //print("index-" + intString(index) + " ende\n");
       //execStat("fixInitialSystem (initialization) [nEqns: " + intString(nEqns) + ", nAddEqs: " + intString(nAddEqs) + ", nAddVars: " + intString(nAddVars) + "]");
       return;
@@ -1428,8 +1426,8 @@ algorithm
     else
       // crStr = BackendDump.varString(var);
       // fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  " + crStr);
-
-      outDumpVars := BackendVariable.setVarFixed(var,true)::outDumpVars;
+      dumpVar := BackendVariable.setVarFixed(var, true);
+      outDumpVars := dumpVar::outDumpVars;
     end if;
   end for;
 end addStartValueEquations;
