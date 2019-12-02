@@ -1304,9 +1304,13 @@ algorithm
         initVarList := List.map1r(range, BackendVariable.getVarAt, inEqSystem.orderedVars);
         (eqns2, dumpVars2) := addStartValueEquations(initVarList, eqns2, {});
         //BackendDump.dumpEquationArray(eqns2, "remaining equations");
+        //BackendDump.dumpVarList(dumpVars2,"Check fixed attribute in vars");
         DoubleEnded.push_list_back(dumpVars, dumpVars2);
       end if;
       outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, eqns2);
+      if (not listEmpty(dumpVars2)) then
+        outEqSystem := BackendVariable.addVarsDAE(dumpVars2,outEqSystem);
+      end if;
       //print("index-" + intString(index) + " ende\n");
       //execStat("fixInitialSystem (initialization) [nEqns: " + intString(nEqns) + ", nAddEqs: " + intString(nAddEqs) + ", nAddVars: " + intString(nAddVars) + "]");
       return;
@@ -1425,7 +1429,7 @@ algorithm
       // crStr = BackendDump.varString(var);
       // fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  " + crStr);
 
-      outDumpVars := var::outDumpVars;
+      outDumpVars := BackendVariable.setVarFixed(var,true)::outDumpVars;
     end if;
   end for;
 end addStartValueEquations;
