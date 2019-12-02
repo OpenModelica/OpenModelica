@@ -1222,7 +1222,7 @@ protected
   DAE.FunctionTree funcs;
   BackendDAE.AdjacencyMatrixEnhanced me;
   array<Integer> mapIncRowEqn;
-  Boolean perfectMatching;
+  Boolean perfectMatching, found;
   Integer maxMixedDeterminedIndex = intMax(0, Flags.getConfigInt(Flags.MAX_MIXED_DETERMINED_INDEX));
   constant Boolean debug = false;
 algorithm
@@ -1308,7 +1308,15 @@ algorithm
         DoubleEnded.push_list_back(dumpVars, dumpVars2);
       end if;
       outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, eqns2);
-      outEqSystem := BackendVariable.addVarsDAE(dumpVars2, outEqSystem) "update fixed attribute";
+
+      // updated fixed attribute of a var
+      (dumpVars2, found) := updateVars(inEqSystem.orderedVars,dumpVars2); // search in orderedvars first
+
+      if (not found) then // if not found in ordered vars search in globalknowns and update the vars
+        (dumpVars2, _) := updateVars(inShared.globalKnownVars, dumpVars2);
+      end if;
+      outEqSystem := BackendDAEUtil.setEqSystVars(outEqSystem, BackendVariable.listVar(dumpVars2));
+
       //print("index-" + intString(index) + " ende\n");
       //execStat("fixInitialSystem (initialization) [nEqns: " + intString(nEqns) + ", nAddEqs: " + intString(nAddEqs) + ", nAddVars: " + intString(nAddVars) + "]");
       return;
@@ -1320,6 +1328,27 @@ algorithm
   Error.addMessage(Error.MIXED_DETERMINED, {intString(maxMixedDeterminedIndex)});
   fail();
 end fixInitialSystem;
+
+protected function updateVars
+  "function which updates the fixed attribute of a variable"
+  input BackendDAE.Variables invar1;
+  input list<BackendDAE.Var> invar2;
+  output list<BackendDAE.Var> outvar = {};
+  output Boolean outbool = false;
+protected
+  DAE.ComponentRef cr;
+  BackendDAE.Var tempvar;
+algorithm
+  for var in BackendVariable.varList(invar1) loop
+    cr := BackendVariable.varCref(var);
+    if BackendVariable.containsCref(cr, BackendVariable.listVar(invar2)) then
+      outvar := BackendVariable.setVarFixed(var,true)::outvar;
+      outbool := true;
+    else
+      outvar := var :: outvar;
+    end if;
+  end for;
+end updateVars;
 
 protected function fixUnderDeterminedSystem "author: lochel"
   input BackendDAE.IncidenceMatrix inM;
@@ -1421,7 +1450,7 @@ algorithm
       dumpVar := BackendVariable.copyVarNewName(cref, var);
       // crStr = BackendDump.varString(dumpVar);
       // fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  " + crStr);
-
+      dumpVar := BackendVariable.setVarFixed(dumpVar, true);
       outDumpVars := dumpVar::outDumpVars;
     else
       // crStr = BackendDump.varString(var);
