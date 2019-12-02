@@ -1309,13 +1309,15 @@ algorithm
       end if;
       outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, eqns2);
 
-      // updated fixed attribute of a var
-      (dumpVars2, found) := updateVars(inEqSystem.orderedVars,dumpVars2); // search in orderedvars first
+      // update fixed attribute of a var
+      (dumpVars2, found) := updateVarsfixedAttribute(inEqSystem.orderedVars,dumpVars2); // search in orderedvars first
 
-      if (not found) then // if not found in ordered vars search in globalknowns and update the vars
-        (dumpVars2, _) := updateVars(inShared.globalKnownVars, dumpVars2);
+      if (found) then // if found in ordered vars update the orderVars otherwise search in globalknowns and update the GlobalKnownVars
+        outEqSystem := BackendDAEUtil.setEqSystVars(outEqSystem, BackendVariable.listVar(dumpVars2));
+      else
+        (dumpVars2, _) := updateVarsfixedAttribute(inShared.globalKnownVars, dumpVars2);
+        outShared := BackendDAEUtil.setSharedGlobalKnownVars(inShared,BackendVariable.listVar(dumpVars2));
       end if;
-      outEqSystem := BackendDAEUtil.setEqSystVars(outEqSystem, BackendVariable.listVar(dumpVars2));
 
       //print("index-" + intString(index) + " ende\n");
       //execStat("fixInitialSystem (initialization) [nEqns: " + intString(nEqns) + ", nAddEqs: " + intString(nAddEqs) + ", nAddVars: " + intString(nAddVars) + "]");
@@ -1329,7 +1331,7 @@ algorithm
   fail();
 end fixInitialSystem;
 
-protected function updateVars
+protected function updateVarsfixedAttribute
   "function which updates the fixed attribute of a variable"
   input BackendDAE.Variables invar1;
   input list<BackendDAE.Var> invar2;
@@ -1342,13 +1344,13 @@ algorithm
   for var in BackendVariable.varList(invar1) loop
     cr := BackendVariable.varCref(var);
     if BackendVariable.containsCref(cr, BackendVariable.listVar(invar2)) then
-      outvar := BackendVariable.setVarFixed(var,true)::outvar;
+      outvar := BackendVariable.setVarFixed(var,true) :: outvar;
       outbool := true;
     else
       outvar := var :: outvar;
     end if;
   end for;
-end updateVars;
+end updateVarsfixedAttribute;
 
 protected function fixUnderDeterminedSystem "author: lochel"
   input BackendDAE.IncidenceMatrix inM;
