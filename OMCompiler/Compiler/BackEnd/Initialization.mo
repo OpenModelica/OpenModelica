@@ -1222,7 +1222,7 @@ protected
   DAE.FunctionTree funcs;
   BackendDAE.AdjacencyMatrixEnhanced me;
   array<Integer> mapIncRowEqn;
-  Boolean perfectMatching, found;
+  Boolean perfectMatching;
   Integer maxMixedDeterminedIndex = intMax(0, Flags.getConfigInt(Flags.MAX_MIXED_DETERMINED_INDEX));
   constant Boolean debug = false;
 algorithm
@@ -1309,15 +1309,9 @@ algorithm
       end if;
       outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, eqns2);
 
-      // update fixed attribute of a var
-      (dumpVars2, found) := updateVarsfixedAttribute(inEqSystem.orderedVars,dumpVars2); // search in orderedvars first
-
-      if (found) then // if found in ordered vars update the orderVars otherwise search in globalknowns and update the GlobalKnownVars
-        outEqSystem := BackendDAEUtil.setEqSystVars(outEqSystem, BackendVariable.listVar(dumpVars2));
-      else
-        (dumpVars2, _) := updateVarsfixedAttribute(inShared.globalKnownVars, dumpVars2);
-        outShared := BackendDAEUtil.setSharedGlobalKnownVars(inShared,BackendVariable.listVar(dumpVars2));
-      end if;
+      // update fixed attribute
+      (outEqSystem.orderedVars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(outEqSystem.orderedVars, updateFixedAttribute, BackendVariable.listVar(dumpVars2));
+      (outShared.globalKnownVars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(outShared.globalKnownVars, updateFixedAttribute, BackendVariable.listVar(dumpVars2));
 
       //print("index-" + intString(index) + " ende\n");
       //execStat("fixInitialSystem (initialization) [nEqns: " + intString(nEqns) + ", nAddEqs: " + intString(nAddEqs) + ", nAddVars: " + intString(nAddVars) + "]");
@@ -1331,26 +1325,20 @@ algorithm
   fail();
 end fixInitialSystem;
 
-protected function updateVarsfixedAttribute
+protected function updateFixedAttribute
   "function which updates the fixed attribute of a variable"
-  input BackendDAE.Variables invar1;
-  input list<BackendDAE.Var> invar2;
-  output list<BackendDAE.Var> outvar = {};
-  output Boolean outbool = false;
+  input BackendDAE.Var inVar;
+  input BackendDAE.Variables inArg;
+  output BackendDAE.Var outVar = inVar;
+  output BackendDAE.Variables outArg = inArg;
 protected
   DAE.ComponentRef cr;
-  BackendDAE.Var tempvar;
 algorithm
-  for var in BackendVariable.varList(invar1) loop
-    cr := BackendVariable.varCref(var);
-    if BackendVariable.containsCref(cr, BackendVariable.listVar(invar2)) then
-      outvar := BackendVariable.setVarFixed(var,true) :: outvar;
-      outbool := true;
-    else
-      outvar := var :: outvar;
-    end if;
-  end for;
-end updateVarsfixedAttribute;
+  cr := BackendVariable.varCref(inVar);
+  if BackendVariable.containsCref(cr, inArg) then
+    outVar := BackendVariable.setVarFixed(outVar, true);
+  end if;
+end updateFixedAttribute;
 
 protected function fixUnderDeterminedSystem "author: lochel"
   input BackendDAE.IncidenceMatrix inM;
