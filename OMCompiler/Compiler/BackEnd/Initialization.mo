@@ -85,6 +85,7 @@ public function solveInitialSystem "author: lochel
   output Option<BackendDAE.BackendDAE> outInitDAE_lambda0 "initialization system for lambda=0";
   output list<BackendDAE.Equation> outRemovedInitialEquations;
   output BackendDAE.Variables outGlobalKnownVars;
+  output BackendDAE.BackendDAE outSimDAE = inDAE "updated with fixed attribute";
 protected
   BackendDAE.BackendDAE dae;
   BackendDAE.BackendDAE initdae;
@@ -234,7 +235,6 @@ algorithm
     // simplify system
     initdae := BackendDAEUtil.setDAEGlobalKnownVars(initdae, outGlobalKnownVars);
 
-
     if useHomotopy then
       enabledModules := if Config.adaptiveHomotopy() then {"inlineHomotopy", "generateHomotopyComponents"} else {};
       disabledModules := {};
@@ -267,9 +267,10 @@ algorithm
     end if;
 
     // Remove the globalKnownVars for the initialization set again
-
     initdae.shared := BackendDAEUtil.setSharedGlobalKnownVars(initdae.shared, BackendVariable.emptyVars());
 
+    // update the fixed attribute in the simulation DAE
+    outSimDAE := BackendVariable.traverseBackendDAE(outSimDAE, updateFixedAttribute, BackendVariable.listVar(dumpVars));
 
     // warn about selected default initial conditions
     b1 := not listEmpty(dumpVars);
@@ -1309,10 +1310,6 @@ algorithm
       end if;
       outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, eqns2);
 
-      // update fixed attribute
-      (outEqSystem.orderedVars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(outEqSystem.orderedVars, updateFixedAttribute, BackendVariable.listVar(dumpVars2));
-      (outShared.globalKnownVars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(outShared.globalKnownVars, updateFixedAttribute, BackendVariable.listVar(dumpVars2));
-
       //print("index-" + intString(index) + " ende\n");
       //execStat("fixInitialSystem (initialization) [nEqns: " + intString(nEqns) + ", nAddEqs: " + intString(nAddEqs) + ", nAddVars: " + intString(nAddVars) + "]");
       return;
@@ -1327,16 +1324,14 @@ end fixInitialSystem;
 
 protected function updateFixedAttribute
   "function which updates the fixed attribute of a variable"
-  input BackendDAE.Var inVar;
-  input BackendDAE.Variables inArg;
-  output BackendDAE.Var outVar = inVar;
-  output BackendDAE.Variables outArg = inArg;
+  input output BackendDAE.Var var;
+  input output BackendDAE.Variables vars;
 protected
   DAE.ComponentRef cr;
 algorithm
-  cr := BackendVariable.varCref(inVar);
-  if BackendVariable.containsCref(cr, inArg) then
-    outVar := BackendVariable.setVarFixed(outVar, true);
+  cr := BackendVariable.varCref(var);
+  if BackendVariable.containsCref(cr, vars) then
+    var := BackendVariable.setVarFixed(var, true);
   end if;
 end updateFixedAttribute;
 

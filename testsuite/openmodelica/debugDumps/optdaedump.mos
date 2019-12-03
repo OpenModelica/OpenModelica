@@ -1161,7 +1161,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: iC:VARIABLE()  type: Real
 // 2: $DER.iL:VARIABLE()  type: Real
-// 3: iL:VARIABLE(fixed = true )  type: Real
+// 3: iL:VARIABLE()  type: Real
 // 4: i2:VARIABLE()  type: Real
 // 5: i1:VARIABLE()  type: Real
 // 6: i0:VARIABLE()  type: Real
@@ -1261,7 +1261,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: iC:VARIABLE()  type: Real
 // 2: $DER.iL:VARIABLE()  type: Real
-// 3: iL:VARIABLE(fixed = true )  type: Real
+// 3: iL:VARIABLE()  type: Real
 // 4: i2:VARIABLE()  type: Real
 // 5: i1:VARIABLE()  type: Real
 // 6: i0:VARIABLE()  type: Real
@@ -1363,7 +1363,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: iC:VARIABLE()  type: Real
 // 2: $DER.iL:VARIABLE()  type: Real
-// 3: iL:VARIABLE(fixed = true )  type: Real
+// 3: iL:VARIABLE()  type: Real
 // 4: i2:VARIABLE()  type: Real
 // 5: i1:VARIABLE()  type: Real
 // 6: i0:VARIABLE()  type: Real
@@ -2082,7 +2082,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: iC:VARIABLE()  type: Real
 // 2: $DER.iL:VARIABLE()  type: Real
-// 3: iL:VARIABLE(fixed = true )  type: Real
+// 3: iL:VARIABLE()  type: Real
 // 4: i2:VARIABLE()  type: Real
 // 5: i1:VARIABLE()  type: Real
 // 6: i0:VARIABLE()  type: Real
@@ -2184,7 +2184,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: iC:VARIABLE()  type: Real
 // 2: $DER.iL:VARIABLE()  type: Real
-// 3: iL:VARIABLE(fixed = true )  type: Real
+// 3: iL:VARIABLE()  type: Real
 // 4: i2:VARIABLE()  type: Real
 // 5: i1:VARIABLE()  type: Real
 // 6: i0:VARIABLE()  type: Real
@@ -2286,7 +2286,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: iC:VARIABLE()  type: Real
 // 2: $DER.iL:VARIABLE()  type: Real
-// 3: iL:VARIABLE(fixed = true )  type: Real
+// 3: iL:VARIABLE()  type: Real
 // 4: i2:VARIABLE()  type: Real
 // 5: i1:VARIABLE()  type: Real
 // 6: i0:VARIABLE()  type: Real
@@ -2364,7 +2364,7 @@ buildModel(testOptdaedump); getErrorString();
 // Variables (9)
 // ========================================
 // 1: iC:VARIABLE()  type: Real
-// 2: iL:STATE(1)()  type: Real
+// 2: iL:STATE(1)(fixed = true )  type: Real
 // 3: i2:VARIABLE()  type: Real
 // 4: i1:VARIABLE()  type: Real
 // 5: i0:VARIABLE()  type: Real
@@ -2444,7 +2444,7 @@ buildModel(testOptdaedump); getErrorString();
 // Variables (10)
 // ========================================
 // 1: iC:VARIABLE()  type: Real
-// 2: iL:STATE(1)()  type: Real
+// 2: iL:STATE(1)(fixed = true )  type: Real
 // 3: i2:VARIABLE()  type: Real
 // 4: i1:VARIABLE()  type: Real
 // 5: i0:VARIABLE()  type: Real
@@ -2528,7 +2528,7 @@ buildModel(testOptdaedump); getErrorString();
 // Variables (10)
 // ========================================
 // 1: iC:VARIABLE()  type: Real
-// 2: iL:STATE(1)()  type: Real
+// 2: iL:STATE(1)(fixed = true )  type: Real
 // 3: i2:VARIABLE()  type: Real
 // 4: i1:VARIABLE()  type: Real
 // 5: i0:VARIABLE()  type: Real
@@ -2612,7 +2612,7 @@ buildModel(testOptdaedump); getErrorString();
 // Variables (10)
 // ========================================
 // 1: iC:VARIABLE()  type: Real
-// 2: iL:STATE(1)()  type: Real
+// 2: iL:STATE(1)(fixed = true )  type: Real
 // 3: i2:VARIABLE()  type: Real
 // 4: i1:VARIABLE()  type: Real
 // 5: i0:VARIABLE()  type: Real
@@ -2696,7 +2696,7 @@ buildModel(testOptdaedump); getErrorString();
 // Variables (10)
 // ========================================
 // 1: iC:VARIABLE()  type: Real
-// 2: iL:STATE(1)()  type: Real
+// 2: iL:STATE(1)(fixed = true )  type: Real
 // 3: i2:VARIABLE()  type: Real
 // 4: i1:VARIABLE()  type: Real
 // 5: i0:VARIABLE()  type: Real
@@ -2780,7 +2780,7 @@ buildModel(testOptdaedump); getErrorString();
 // Variables (10)
 // ========================================
 // 1: iC:VARIABLE()  type: Real
-// 2: iL:STATE(1)()  type: Real
+// 2: iL:STATE(1)(fixed = true )  type: Real
 // 3: i2:VARIABLE()  type: Real
 // 4: i1:VARIABLE()  type: Real
 // 5: i0:VARIABLE()  type: Real
@@ -2864,7 +2864,7 @@ buildModel(testOptdaedump); getErrorString();
 // Variables (10)
 // ========================================
 // 1: iC:VARIABLE()  type: Real
-// 2: iL:STATE(1)()  type: Real
+// 2: iL:STATE(1)(fixed = true )  type: Real
 // 3: i2:VARIABLE()  type: Real
 // 4: i1:VARIABLE()  type: Real
 // 5: i0:VARIABLE()  type: Real
@@ -2948,7 +2948,7 @@ buildModel(testOptdaedump); getErrorString();
 // Variables (10)
 // ========================================
 // 1: iC:VARIABLE()  type: Real
-// 2: iL:STATE(1)()  type: Real
+// 2: iL:STATE(1)(fixed = true )  type: Real
 // 3: i2:VARIABLE()  type: Real
 // 4: i1:VARIABLE()  type: Real
 // 5: i0:VARIABLE()  type: Real
@@ -3032,7 +3032,7 @@ buildModel(testOptdaedump); getErrorString();
 // Variables (10)
 // ========================================
 // 1: iC:VARIABLE()  type: Real
-// 2: iL:STATE(1)()  type: Real
+// 2: iL:STATE(1)(fixed = true )  type: Real
 // 3: i2:VARIABLE()  type: Real
 // 4: i1:VARIABLE()  type: Real
 // 5: i0:VARIABLE()  type: Real
@@ -3118,7 +3118,7 @@ buildModel(testOptdaedump); getErrorString();
 // Variables (10)
 // ========================================
 // 1: iC:VARIABLE()  type: Real
-// 2: iL:STATE(1)()  type: Real
+// 2: iL:STATE(1)(fixed = true )  type: Real
 // 3: i2:VARIABLE()  type: Real
 // 4: i1:VARIABLE()  type: Real
 // 5: i0:VARIABLE()  type: Real
@@ -3821,7 +3821,7 @@ buildModel(testOptdaedump); getErrorString();
 // Variables (10)
 // ========================================
 // 1: iC:VARIABLE()  type: Real
-// 2: iL:STATE(1)()  type: Real
+// 2: iL:STATE(1)(fixed = true )  type: Real
 // 3: i2:VARIABLE()  type: Real
 // 4: i1:VARIABLE()  type: Real
 // 5: i0:VARIABLE()  type: Real
@@ -3907,7 +3907,7 @@ buildModel(testOptdaedump); getErrorString();
 // Variables (10)
 // ========================================
 // 1: iC:VARIABLE()  type: Real
-// 2: iL:STATE(1)()  type: Real
+// 2: iL:STATE(1)(fixed = true )  type: Real
 // 3: i2:VARIABLE()  type: Real
 // 4: i1:VARIABLE()  type: Real
 // 5: i0:VARIABLE()  type: Real
@@ -3993,7 +3993,7 @@ buildModel(testOptdaedump); getErrorString();
 // Variables (10)
 // ========================================
 // 1: iC:VARIABLE()  type: Real
-// 2: iL:STATE(1)()  type: Real
+// 2: iL:STATE(1)(fixed = true )  type: Real
 // 3: i2:VARIABLE()  type: Real
 // 4: i1:VARIABLE()  type: Real
 // 5: i0:VARIABLE()  type: Real
@@ -4079,7 +4079,7 @@ buildModel(testOptdaedump); getErrorString();
 // Variables (10)
 // ========================================
 // 1: iC:VARIABLE()  type: Real
-// 2: iL:STATE(1)()  type: Real
+// 2: iL:STATE(1)(fixed = true )  type: Real
 // 3: i2:VARIABLE()  type: Real
 // 4: i1:VARIABLE()  type: Real
 // 5: i0:VARIABLE()  type: Real
@@ -4165,7 +4165,7 @@ buildModel(testOptdaedump); getErrorString();
 // Variables (10)
 // ========================================
 // 1: iC:VARIABLE()  type: Real
-// 2: iL:STATE(1)()  type: Real
+// 2: iL:STATE(1)(fixed = true )  type: Real
 // 3: i2:VARIABLE()  type: Real
 // 4: i1:VARIABLE()  type: Real
 // 5: i0:VARIABLE()  type: Real
@@ -4251,7 +4251,7 @@ buildModel(testOptdaedump); getErrorString();
 // Variables (10)
 // ========================================
 // 1: iC:VARIABLE()  type: Real
-// 2: iL:STATE(1)()  type: Real
+// 2: iL:STATE(1)(fixed = true )  type: Real
 // 3: i2:VARIABLE()  type: Real
 // 4: i1:VARIABLE()  type: Real
 // 5: i0:VARIABLE()  type: Real
@@ -4337,7 +4337,7 @@ buildModel(testOptdaedump); getErrorString();
 // Variables (10)
 // ========================================
 // 1: iC:VARIABLE()  type: Real
-// 2: iL:STATE(1)()  type: Real
+// 2: iL:STATE(1)(fixed = true )  type: Real
 // 3: i2:VARIABLE()  type: Real
 // 4: i1:VARIABLE()  type: Real
 // 5: i0:VARIABLE()  type: Real
@@ -4423,7 +4423,7 @@ buildModel(testOptdaedump); getErrorString();
 // Variables (10)
 // ========================================
 // 1: iC:VARIABLE()  type: Real
-// 2: iL:STATE(1)()  type: Real
+// 2: iL:STATE(1)(fixed = true )  type: Real
 // 3: i2:VARIABLE()  type: Real
 // 4: i1:VARIABLE()  type: Real
 // 5: i0:VARIABLE()  type: Real

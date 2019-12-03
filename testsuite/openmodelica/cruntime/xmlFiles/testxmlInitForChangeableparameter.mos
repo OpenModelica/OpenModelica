@@ -94,7 +94,7 @@ readFile("testParameters_init.tmp.xml");
 //     classIndex = \"0\" classType = \"rSta\"
 //     isProtected = \"false\" hideResult = \"false\"
 //     fileName = \"&lt;interactive&gt;\" startLine = \"8\" startColumn = \"3\" endLine = \"8\" endColumn = \"9\" fileWritable = \"true\">
-//     <Real fixed=\"false\" useNominal=\"false\" />
+//     <Real fixed=\"true\" useNominal=\"false\" />
 //   </ScalarVariable>
 //   <ScalarVariable
 //     name = \"der(x)\"

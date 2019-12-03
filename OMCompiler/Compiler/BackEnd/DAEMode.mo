@@ -124,7 +124,7 @@ algorithm
     end if;
 
     // generate system for initialization
-    (outInitDAE, _, outRemovedInitialEquationLst, globalKnownVars) := Initialization.solveInitialSystem(dae);
+    (outInitDAE, _, outRemovedInitialEquationLst, globalKnownVars, dae) := Initialization.solveInitialSystem(dae);
 
     // use function tree from initDAE further for simDAE
     simDAE := BackendDAEUtil.setFunctionTree(dae, BackendDAEUtil.getFunctions(outInitDAE.shared));
