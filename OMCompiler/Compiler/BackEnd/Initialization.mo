@@ -1210,7 +1210,7 @@ protected function fixInitialSystem "author: lochel
   input DoubleEnded.MutableList<BackendDAE.Equation> removedEqns;
 protected
   BackendDAE.EquationArray eqns2;
-  list<BackendDAE.Var> dumpVars2;
+  list<BackendDAE.Var> dumpVars2 = {};
   list<BackendDAE.Equation> removedEqns2;
   Integer nVars, nEqns, nInitEqs, nAddEqs, nAddVars;
   list<Integer> stateIndices, range, initEqsIndices, redundantEqns;
@@ -1304,9 +1304,15 @@ algorithm
         initVarList := List.map1r(range, BackendVariable.getVarAt, inEqSystem.orderedVars);
         (eqns2, dumpVars2) := addStartValueEquations(initVarList, eqns2, {});
         //BackendDump.dumpEquationArray(eqns2, "remaining equations");
+        //BackendDump.dumpVarList(dumpVars2,"Check fixed attribute in vars");
         DoubleEnded.push_list_back(dumpVars, dumpVars2);
       end if;
       outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, eqns2);
+
+      // update fixed attribute
+      (outEqSystem.orderedVars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(outEqSystem.orderedVars, updateFixedAttribute, BackendVariable.listVar(dumpVars2));
+      (outShared.globalKnownVars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(outShared.globalKnownVars, updateFixedAttribute, BackendVariable.listVar(dumpVars2));
+
       //print("index-" + intString(index) + " ende\n");
       //execStat("fixInitialSystem (initialization) [nEqns: " + intString(nEqns) + ", nAddEqs: " + intString(nAddEqs) + ", nAddVars: " + intString(nAddVars) + "]");
       return;
@@ -1318,6 +1324,21 @@ algorithm
   Error.addMessage(Error.MIXED_DETERMINED, {intString(maxMixedDeterminedIndex)});
   fail();
 end fixInitialSystem;
+
+protected function updateFixedAttribute
+  "function which updates the fixed attribute of a variable"
+  input BackendDAE.Var inVar;
+  input BackendDAE.Variables inArg;
+  output BackendDAE.Var outVar = inVar;
+  output BackendDAE.Variables outArg = inArg;
+protected
+  DAE.ComponentRef cr;
+algorithm
+  cr := BackendVariable.varCref(inVar);
+  if BackendVariable.containsCref(cr, inArg) then
+    outVar := BackendVariable.setVarFixed(outVar, true);
+  end if;
+end updateFixedAttribute;
 
 protected function fixUnderDeterminedSystem "author: lochel"
   input BackendDAE.IncidenceMatrix inM;
@@ -1419,13 +1440,13 @@ algorithm
       dumpVar := BackendVariable.copyVarNewName(cref, var);
       // crStr = BackendDump.varString(dumpVar);
       // fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  " + crStr);
-
+      dumpVar := BackendVariable.setVarFixed(dumpVar, true);
       outDumpVars := dumpVar::outDumpVars;
     else
       // crStr = BackendDump.varString(var);
       // fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  " + crStr);
-
-      outDumpVars := var::outDumpVars;
+      dumpVar := BackendVariable.setVarFixed(var, true);
+      outDumpVars := dumpVar::outDumpVars;
     end if;
   end for;
 end addStartValueEquations;
