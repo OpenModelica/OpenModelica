@@ -3559,6 +3559,27 @@ algorithm
   end match;
 end traverseBackendDAEVarsWithStop2;
 
+public function traverseBackendDAE<ArgT>
+  "Traverse all vars of a BackendDAE"
+  input output BackendDAE.BackendDAE dae;
+  input FuncType inFunc;
+  input output ArgT arg;
+
+  partial function FuncType
+    input output BackendDAE.Var var;
+    input output ArgT arg;
+  end FuncType;
+algorithm
+  for syst in dae.eqs loop
+    (_, arg) := traverseBackendDAEVarsWithUpdate(syst.orderedVars, inFunc, arg);
+  end for;
+
+  (_, arg) := traverseBackendDAEVarsWithUpdate(dae.shared.globalKnownVars, inFunc, arg);
+  (_, arg) := traverseBackendDAEVarsWithUpdate(dae.shared.localKnownVars, inFunc, arg);
+  (_, arg) := traverseBackendDAEVarsWithUpdate(dae.shared.externalObjects, inFunc, arg);
+  (_, arg) := traverseBackendDAEVarsWithUpdate(dae.shared.aliasVars, inFunc, arg);
+end traverseBackendDAE;
+
 public function traverseBackendDAEVarsWithUpdate<ArgT>
   "Traverse all vars of a BackendDAE.Variables array."
   input BackendDAE.Variables inVariables;

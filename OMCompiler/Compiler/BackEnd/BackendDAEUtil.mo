@@ -7511,7 +7511,7 @@ algorithm
   dae := SymbolicJacobian.calculateStateSetsJacobians(dae);
 
   // generate system for initialization
-  (outInitDAE, outInitDAE_lambda0_option, outRemovedInitialEquationLst, globalKnownVars) := Initialization.solveInitialSystem(dae);
+  (outInitDAE, outInitDAE_lambda0_option, outRemovedInitialEquationLst, globalKnownVars, dae) := Initialization.solveInitialSystem(dae);
   if Flags.isSet(Flags.WARN_NO_NOMINAL) then
     warnAboutIterationVariablesWithNoNominal(outInitDAE);
   end if;

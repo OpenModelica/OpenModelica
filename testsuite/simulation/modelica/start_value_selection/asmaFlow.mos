@@ -774,7 +774,7 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 4: sinevoltage1.v[3]:VARIABLE(unit = "V" )  "Voltage drops between the two plugs" type: Real [3]
 // 5: sinevoltage1.v[2]:VARIABLE(unit = "V" )  "Voltage drops between the two plugs" type: Real [3]
 // 6: sinevoltage1.v[1]:VARIABLE(unit = "V" )  "Voltage drops between the two plugs" type: Real [3]
-// 7: speedSensor.flange.phi:STATE(1,aimc.inertiaRotor.w)(flow=false unit = "rad" )  "Absolute rotation angle of flange" type: Real
+// 7: speedSensor.flange.phi:STATE(1,aimc.inertiaRotor.w)(flow=false unit = "rad" fixed = true )  "Absolute rotation angle of flange" type: Real
 // 8: ground.p.i:VARIABLE(flow=true unit = "A" )  "Current flowing into the pin" type: Real
 // 9: aimc.thermalAmbient.Q_flowTotal:VARIABLE(unit = "W" final = true )  type: Real
 // 10: aimc.thermalAmbient.Q_flowRotorWinding:VARIABLE(unit = "W" final = true )  "Heat flow rate of rotor (squirrel cage)" type: Real
@@ -816,12 +816,12 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 46: aimc.rs.v[2]:VARIABLE(unit = "V" )  "Voltage drops between the two plugs" type: Real [3]
 // 47: aimc.rs.v[1]:VARIABLE(unit = "V" )  "Voltage drops between the two plugs" type: Real [3]
 // 48: aimc.plug_sn.pin[3].v:VARIABLE(flow=false unit = "V" )  "Potential at the pin" type: Real [3]
-// 49: aimc.idq_rr[2]:STATE(1)(unit = "A" stateSelect=StateSelect.prefer )  "Rotor space phasor current / rotor fixed frame" type: Real [2]
-// 50: aimc.idq_rr[1]:STATE(1)(unit = "A" stateSelect=StateSelect.prefer )  "Rotor space phasor current / rotor fixed frame" type: Real [2]
+// 49: aimc.idq_rr[2]:STATE(1)(unit = "A" fixed = true stateSelect=StateSelect.prefer )  "Rotor space phasor current / rotor fixed frame" type: Real [2]
+// 50: aimc.idq_rr[1]:STATE(1)(unit = "A" fixed = true stateSelect=StateSelect.prefer )  "Rotor space phasor current / rotor fixed frame" type: Real [2]
 // 51: aimc.idq_rs[2]:DUMMY_STATE(unit = "A" )  "Rotor space phasor current / stator fixed frame" type: Real [2]
 // 52: aimc.idq_rs[1]:DUMMY_STATE(unit = "A" )  "Rotor space phasor current / stator fixed frame" type: Real [2]
-// 53: aimc.idq_sr[2]:STATE(1)(unit = "A" stateSelect=StateSelect.prefer )  "Stator space phasor current / rotor fixed frame" type: Real [2]
-// 54: aimc.idq_sr[1]:STATE(1)(unit = "A" stateSelect=StateSelect.prefer )  "Stator space phasor current / rotor fixed frame" type: Real [2]
+// 53: aimc.idq_sr[2]:STATE(1)(unit = "A" fixed = true stateSelect=StateSelect.prefer )  "Stator space phasor current / rotor fixed frame" type: Real [2]
+// 54: aimc.idq_sr[1]:STATE(1)(unit = "A" fixed = true stateSelect=StateSelect.prefer )  "Stator space phasor current / rotor fixed frame" type: Real [2]
 // 55: aimc.i_0_s:DUMMY_STATE(start = 0.0 unit = "A" stateSelect=StateSelect.prefer )  "Stator zero-sequence current" type: Real
 // 56: aimc.vs[3]:VARIABLE(unit = "V" )  "Stator instantaneous voltages" type: Real [3]
 // 57: aimc.vs[2]:VARIABLE(unit = "V" )  "Stator instantaneous voltages" type: Real [3]
@@ -833,7 +833,7 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 63: aimc.powerBalance.powerStator:VARIABLE(unit = "W" final = true )  "Electrical power (stator)" type: Real
 // 64: aimc.friction.phi:DUMMY_STATE(unit = "rad" )  "Angle between shaft and support" type: Real
 // 65: aimc.inertiaRotor.a:VARIABLE(unit = "rad/s2" )  "Absolute angular acceleration of component (= der(w))" type: Real
-// 66: aimc.inertiaRotor.w:STATE(1,aimc.inertiaRotor.a)(start = 0.0 unit = "rad/s" )  "Absolute angular velocity of component (= der(phi))" type: Real
+// 66: aimc.inertiaRotor.w:STATE(1,aimc.inertiaRotor.a)(unit = "rad/s" fixed = true )  "Absolute angular velocity of component (= der(phi))" type: Real
 // 67: aimc.tauElectrical:VARIABLE(unit = "N.m" )  "Electromagnetic torque" type: Real
 // 68: aimc.phiMechanical:DUMMY_STATE(start = 0.0 unit = "rad" )  "Mechanical angle of rotor against stator" type: Real
 // 69: $DER.aimc.airGapS.gamma:DUMMY_DER(fixed = false )  "Rotor displacement angle" type: Real
