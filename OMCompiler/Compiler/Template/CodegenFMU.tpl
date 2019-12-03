@@ -1627,6 +1627,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     Boolean newStatesAvailable(fixed = true);
     Real triggerDSSEvent;
     Real nextEventTime;
+    <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then "Boolean doReinit(start = false, fixed = true);"%>
   initial equation
     flowStartTime = fmi1Functions.fmi1SetTime(fmi1me, time, 1);
     flowInitialized = fmi1Functions.fmi1Initialize(fmi1me, flowParamsStart+flowInitInputs+flowStartTime);
@@ -1682,11 +1683,21 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   <<
       if newStatesAvailable then
         fmi_x_new := fmi1Functions.fmi1GetContinuousStates(fmi1me, numberOfContinuousStates, flowStatesInputs);
-        <%fmiInfo.fmiNumberOfContinuousStates |> continuousStates =>  "reinit(fmi_x["+continuousStates+"], fmi_x_new["+continuousStates+"]);" ;separator="\n"%>
+        doReinit := true;
+       else
+        doReinit := false;
       end if;
   >>
   %>
     end when;
+  <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
+  <<
+  equation
+    when doReinit then
+      <%fmiInfo.fmiNumberOfContinuousStates |> continuousStates =>  "reinit(fmi_x["+continuousStates+"], fmi_x_new["+continuousStates+"]);" ;separator="\n"%>
+    end when;
+  >>
+  %>
     annotation(experiment(StartTime=<%fmiExperimentAnnotation.fmiExperimentStartTime%>, StopTime=<%fmiExperimentAnnotation.fmiExperimentStopTime%>, Tolerance=<%fmiExperimentAnnotation.fmiExperimentTolerance%>));
     annotation (Icon(graphics={
         Rectangle(
@@ -1989,6 +2000,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     Boolean newStatesAvailable(fixed = true);
     Real triggerDSSEvent;
     Real nextEventTime(fixed = true);
+    <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then "Boolean doReinit(start = false, fixed = true);"%>
   initial equation
     flowStartTime = fmi2Functions.fmi2SetTime(fmi2me, time, 1);
     flowEnterInitialization = fmi2Functions.fmi2EnterInitialization(fmi2me, flowParamsStart+flowInitInputs+flowStartTime);
@@ -2053,11 +2065,21 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   <<
       if newStatesAvailable then
         fmi_x_new := fmi2Functions.fmi2GetContinuousStates(fmi2me, numberOfContinuousStates, flowStatesInputs);
-        <%fmiInfo.fmiNumberOfContinuousStates |> continuousStates =>  "reinit(fmi_x["+continuousStates+"], fmi_x_new["+continuousStates+"]);" ;separator="\n"%>
+        doReinit := true;
+      else
+        doReinit := false;
       end if;
   >>
   %>
     end when;
+  <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
+  <<
+  equation
+    when doReinit then
+      <%fmiInfo.fmiNumberOfContinuousStates |> continuousStates =>  "reinit(fmi_x["+continuousStates+"], fmi_x_new["+continuousStates+"]);" ;separator="\n"%>
+    end when;
+  >>
+  %>
     annotation(experiment(StartTime=<%fmiExperimentAnnotation.fmiExperimentStartTime%>, StopTime=<%fmiExperimentAnnotation.fmiExperimentStopTime%>, Tolerance=<%fmiExperimentAnnotation.fmiExperimentTolerance%>));
     annotation (Icon(graphics={
         Rectangle(
