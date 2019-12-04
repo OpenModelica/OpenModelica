@@ -290,6 +290,7 @@ private:
   OMSSimulationDialog *mpOMSSimulationDialog;
   ModelWidgetContainer *mpModelWidgetContainer;
   WelcomePageWidget *mpWelcomePageWidget;
+  QObject *mpOMSensPlugin;
   GitCommands *mpGitCommands;
   CommitChangesDialog *mpCommitChangesDialog;
   TraceabilityInformationURI *mpTraceabilityInformationURI;
@@ -382,6 +383,7 @@ private:
   QAction *mpOpenWorkingDirectoryAction;
   QAction *mpOpenTerminalAction;
   QAction *mpOptionsAction;
+  QAction *mpRunOMSensAction;
   // Help Menu
   QAction *mpUsersGuideAction;
   QAction *mpUsersGuidePdfAction;
@@ -510,6 +512,7 @@ public slots:
   void exportModelXML();
   void exportModelFigaro();
   void showOpenModelicaCommandPrompt();
+  void runOMSensPlugin();
   void exportModelToOMNotebook();
   void importModelfromOMNotebook();
   void importNgspiceNetlist();
@@ -567,7 +570,7 @@ private:
   void switchToAlgorithmicDebuggingPerspective();
   void closeAllWindowsButThis(QMdiArea *pMdiArea);
   void tileSubWindows(QMdiArea *pMdiArea, bool horizontally);
-  void fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem, QString singleModel=QString());
+  void fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem, QString singleModel = QString());
 protected:
   virtual void dragEnterEvent(QDragEnterEvent *event) override;
   virtual void dragMoveEvent(QDragMoveEvent *event) override;
