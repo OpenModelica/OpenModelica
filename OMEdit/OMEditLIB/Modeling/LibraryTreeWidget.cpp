@@ -878,6 +878,17 @@ void LibraryTreeItem::updateChildrenNameStructure()
 }
 
 /*!
+ * \brief LibraryTreeItem::emitCoOrdinateSystemUpdated
+ * Emits the coOrdinateSystemUpdated and coOrdinateSystemUpdatedForComponent signals.
+ * \param pGraphicsView
+ */
+void LibraryTreeItem::emitCoOrdinateSystemUpdated(GraphicsView *pGraphicsView)
+{
+  emit coOrdinateSystemUpdated(pGraphicsView);
+  emit coOrdinateSystemUpdatedForComponent();
+}
+
+/*!
  * \brief LibraryTreeItem::canInstantiate
  * Returns true if OMSimulator model can be instantiated.
  * \return
