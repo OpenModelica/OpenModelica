@@ -3905,9 +3905,11 @@ void MainWindow::createMenus()
   pGitMenu->addAction(mpCleanWorkingDirectoryAction);
   pGitMenu->addSeparator();
   pGitMenu->addAction(pTraceabilityMenu->menuAction());
-  pGitMenu->setEnabled(false);
   // add Git menu to menu bar
-  menuBar()->addAction(pGitMenu->menuAction());
+  /*! @todo Fix the Git feature and then uncomment the line below to add it to the menu.
+   * For now just don't add it to the menu.
+   */
+  //menuBar()->addAction(pGitMenu->menuAction());
   // Tools menu
   QMenu *pToolsMenu = new QMenu(menuBar());
   pToolsMenu->setTitle(tr("&Tools"));
