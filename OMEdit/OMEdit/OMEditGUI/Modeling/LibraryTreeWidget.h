@@ -187,7 +187,7 @@ public:
   void emitNameChanged() {emit nameChanged();}
   void updateChildrenNameStructure();
   void emitConnectionAdded(LineAnnotation *pConnectionLineAnnotation) {emit connectionAdded(pConnectionLineAnnotation);}
-  void emitCoOrdinateSystemUpdated(GraphicsView *pGraphicsView) {emit coOrdinateSystemUpdated(pGraphicsView);}
+  void emitCoOrdinateSystemUpdated(GraphicsView *pGraphicsView);
   bool isInstantiated();
   QString getHTMLDescription() const;
 
@@ -243,6 +243,7 @@ signals:
   void connectionAdded(LineAnnotation *pConnectionLineAnnotation);
   void iconUpdated();
   void coOrdinateSystemUpdated(GraphicsView *pGraphicsView);
+  void coOrdinateSystemUpdatedForComponent();
 public slots:
   void handleLoaded(LibraryTreeItem *pLibraryTreeItem);
   void handleUnloaded();
