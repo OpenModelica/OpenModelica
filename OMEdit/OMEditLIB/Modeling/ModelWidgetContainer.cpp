@@ -6184,6 +6184,42 @@ void ModelWidget::associateBusWithConnectors(QString busName)
 }
 
 /*!
+ * \brief ModelWidget::toOMSensJson
+ * Creates a list of QVariant containing the model information needed by OMSens.
+ * \return
+ */
+QList<QVariant> ModelWidget::toOMSensData()
+{
+  QStringList inputVariables;
+  QStringList outputVariables;
+  QStringList parameters;
+  QStringList auxVariables;
+
+  if (mpDiagramGraphicsView) {
+    foreach (Component *pComponent, mpDiagramGraphicsView->getComponentsList()) {
+      ComponentInfo *pComponentInfo = pComponent->getComponentInfo();
+      if ((pComponentInfo->getCausality().compare("input") == 0) && ((pComponentInfo->getClassName().compare("Real") == 0)
+                                                                     || (pComponentInfo->getClassName().compare("Modelica.Blocks.Interfaces.RealInput") == 0))) {
+        inputVariables.append(pComponentInfo->getName());
+      } else if ((pComponentInfo->getCausality().compare("output") == 0) && ((pComponentInfo->getClassName().compare("Real") == 0)
+                                                                             || (pComponentInfo->getClassName().compare("Modelica.Blocks.Interfaces.RealOutput") == 0))) {
+        outputVariables.append(pComponentInfo->getName());
+      }
+      if ((pComponentInfo->getVariablity().compare("parameter") == 0) && (pComponentInfo->getClassName().compare("Real") == 0)) {
+        parameters.append(pComponentInfo->getName());
+      }
+      if (pComponentInfo->getClassName().compare("Real") == 0) {
+        auxVariables.append(pComponentInfo->getName());
+      }
+    }
+  }
+
+  QList<QVariant> omSensData;
+  omSensData << inputVariables << outputVariables << auxVariables << parameters << mpLibraryTreeItem->getFileName() << mpLibraryTreeItem->getNameStructure();
+  return omSensData;
+}
+
+/*!
  * \brief ModelWidget::getIconDiagramMap
  * Parses the IconMap/DiagramMap annotation and returns the IconDiagramMap object.
  * \param mapAnnotation

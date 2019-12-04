@@ -554,6 +554,7 @@ public:
   void associateBusWithConnector(QString busName, QString connectorName);
   void dissociateBusWithConnector(QString busName, QString connectorName);
   void associateBusWithConnectors(QString busName);
+  QList<QVariant> toOMSensData();
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   LibraryTreeItem *mpLibraryTreeItem;

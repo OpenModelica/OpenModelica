@@ -260,6 +260,8 @@ HEADERS  += Util/Helper.h \
   OMS/OMSSimulationDialog.h \
   OMS/OMSSimulationOutputWidget.h \
   Animation/TimeManager.h \
+  Interfaces/InformationInterface.h \
+  Interfaces/ModelInterface.h \
   Util/ResourceCache.h
 
 CONFIG(osg) {

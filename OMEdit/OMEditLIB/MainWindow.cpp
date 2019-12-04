@@ -73,6 +73,8 @@
 #include "Traceability/TraceabilityInformationURI.h"
 #include "Traceability/TraceabilityGraphViewWidget.h"
 #include "Plotting/DiagramWindow.h"
+#include "Interfaces/InformationInterface.h"
+#include "Interfaces/ModelInterface.h"
 #include "omc_config.h"
 
 #include <QtSvg/QSvgGenerator>
@@ -335,6 +337,8 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   // Create an object of WelcomePageWidget
   mpWelcomePageWidget = new WelcomePageWidget(this);
   updateRecentFileActions();
+  // OMSens plugin
+  mpOMSensPlugin = 0;
   // create the Git commands instance
   //mpGitCommands = new GitCommands(this);
   GitCommands::create();
@@ -2630,6 +2634,41 @@ void MainWindow::openConfigurationOptions()
 }
 
 /*!
+ * \brief MainWindow::runOMSensPlugin
+ * Slots activated when run OMSens action is triggered.\n
+ * Runs OMSens plugin.
+ */
+void MainWindow::runOMSensPlugin()
+{
+  if (!mpOMSensPlugin) {
+    // load OMSens plugin
+#ifdef Q_OS_WIN
+    QPluginLoader loader(QString("%1/bin/omsensplugin.dll").arg(Helper::OpenModelicaHome));
+#elif defined(Q_OS_MAC)
+    QPluginLoader loader(QString("%1/bin/omsensplugin.dylib").arg(Helper::OpenModelicaHome));
+#else
+    QPluginLoader loader(QString("%1/bin/omsensplugin.so").arg(Helper::OpenModelicaHome));
+#endif
+    mpOMSensPlugin = loader.instance();
+    if (!mpOMSensPlugin) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Failed to load OMSend plugin. %1").arg(loader.errorString()), Helper::scriptingKind, Helper::errorLevel));
+      return;
+    }
+  }
+  // if OMSens plugin is already loaded.
+  InformationInterface *pInformationInterface = qobject_cast<InformationInterface*>(mpOMSensPlugin);
+  pInformationInterface->setOpenModelicaHome(Helper::OpenModelicaHome);
+  pInformationInterface->setTempPath(Utilities::tempDirectory());
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget) {
+    ModelInterface *pModelInterface = qobject_cast<ModelInterface*>(mpOMSensPlugin);
+    pModelInterface->analyzeModel(pModelWidget->toOMSensData());
+  } else {
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information), tr("Please open a model before starting the OMSens plugin."), Helper::ok);
+  }
+}
+
+/*!
  * \brief MainWindow::openUsersGuide
  * Slot activated when mpUsersGuideAction triggered signal is raised.\n
  * Opens the html based version of OpenModelica users guide.
@@ -3483,6 +3522,10 @@ void MainWindow::createActions()
   mpOptionsAction->setStatusTip(tr("Shows the options window"));
   mpOptionsAction->setMenuRole(QAction::PreferencesRole);
   connect(mpOptionsAction, SIGNAL(triggered()), SLOT(openConfigurationOptions()));
+  // Run Sensitivity Analysis and Optimization action
+  mpRunOMSensAction = new QAction(tr("Run Sensitivity Analysis and Optimization"), this);
+  mpRunOMSensAction->setStatusTip(tr("Runs the sensitivity analysis and optimization"));
+  connect(mpRunOMSensAction, SIGNAL(triggered()), SLOT(runOMSensPlugin()));
   // Help Menu
   // users guide action
   mpUsersGuideAction = new QAction(tr("OpenModelica Users Guide"), this);
@@ -3869,6 +3912,14 @@ void MainWindow::createMenus()
   pOMSimulatorMenu->addAction(mpOMSArchivedSimulationsAction);
   // add OMSimulator menu to menu bar
   menuBar()->addAction(pOMSimulatorMenu->menuAction());
+  // Sensitivity Optimization menu
+  QMenu *pSensitivityOptimizationMenu = new QMenu(menuBar());
+  pSensitivityOptimizationMenu->setTitle(tr("Sensitivity Optimization"));
+  // add actions to Sensitivity Optimization menu
+  pSensitivityOptimizationMenu->addAction(mpRunOMSensAction);
+  pSensitivityOptimizationMenu->setEnabled(false);
+  // add Sensitivity Optimization menu to menu bar
+  menuBar()->addAction(pSensitivityOptimizationMenu->menuAction());
   // Git menu
   QMenu *pGitMenu = new QMenu(menuBar());
   pGitMenu->setTitle(tr("&Git"));
