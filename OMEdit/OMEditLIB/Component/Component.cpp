@@ -513,6 +513,7 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString an
   if (mpLibraryTreeItem) {
     connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
     connect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), SLOT(handleUnloaded()));
+    connect(mpLibraryTreeItem, SIGNAL(coOrdinateSystemUpdatedForComponent()), SLOT(handleCoOrdinateSystemUpdated()));
     connect(mpLibraryTreeItem, SIGNAL(shapeAddedForComponent()), SLOT(handleShapeAdded()));
     connect(mpLibraryTreeItem, SIGNAL(componentAddedForComponent()), SLOT(handleComponentAdded()));
     connect(mpLibraryTreeItem, SIGNAL(nameChanged()), SLOT(handleNameChanged()));
@@ -1717,6 +1718,44 @@ void Component::drawComponent()
 }
 
 /*!
+ * \brief Component::reDrawComponent
+ * Deletes the component childrens, removes it from the scene, redraws it and add its back to the scene.
+ * If coOrdinateSystemUpdated then recalculate the transformation and apply it.
+ * \param coOrdinateSystemUpdated
+ */
+void Component::reDrawComponent(bool coOrdinateSystemUpdated)
+{
+  removeChildren();
+  if (coOrdinateSystemUpdated) {
+    mTransformation.parseTransformationString(mTransformationString, boundingRect().width(), boundingRect().height());
+    if (mTransformationString.isEmpty()) {
+      CoOrdinateSystem coOrdinateSystem = getCoOrdinateSystem();
+      qreal initialScale = coOrdinateSystem.getInitialScale();
+      mTransformation.setExtent1(QPointF(initialScale * boundingRect().left(), initialScale * boundingRect().top()));
+      mTransformation.setExtent2(QPointF(initialScale * boundingRect().right(), initialScale * boundingRect().bottom()));
+      mTransformation.setRotateAngle(0.0);
+    }
+    setTransform(mTransformation.getTransformationMatrix());
+  }
+  /* Ticket:5691
+   * Seems like setParentItem(0) doesn't work well on items already added to the scene.
+   * So here we remove the item, draw it and then add it back to the scene.
+   */
+  /*! @todo We should get rid of setParentItem(0).
+   * Basically instead of creating an object of class Component we should store the non scene items in some other class.
+   */
+  mpGraphicsView->removeItem(this);
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    drawModelicaComponent();
+  } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    drawOMSComponent();
+  }
+  mpGraphicsView->addItem(this);
+  emitChanged();
+  updateConnections();
+}
+
+/*!
  * \brief Component::drawModelicaComponent
  * Draws the Modelica component.
  */
@@ -2418,19 +2457,7 @@ void Component::updateOriginItem()
 void Component::handleLoaded()
 {
   Component *pComponent = getRootParentComponent();
-  pComponent->removeChildren();
-  /* Ticket:5691
-   * Seems like setParentItem(0) doesn't work well on items already added to the scene.
-   * So here we remove the item, draw it and then add it back to the scene.
-   */
-  /*! @todo We should get rid of setParentItem(0).
-   * Basically instead of creating an object of class Component we should store the non scene items in some other class.
-   */
-  mpGraphicsView->removeItem(this);
-  pComponent->drawComponent();
-  mpGraphicsView->addItem(this);
-  pComponent->emitChanged();
-  pComponent->updateConnections();
+  pComponent->reDrawComponent();
 }
 
 /*!
@@ -2448,25 +2475,33 @@ void Component::handleUnloaded()
 }
 
 /*!
+ * \brief Component::handleCoOrdinateSystemUpdated
+ * Slot activated when a coordinate system is updated in the Component's class and LibraryTreeItem::coOrdinateSystemUpdatedForComponent() SIGNAL is raised.
+ */
+void Component::handleCoOrdinateSystemUpdated()
+{
+  Component *pComponent = getRootParentComponent();
+  pComponent->reDrawComponent(true);
+}
+
+/*!
  * \brief Component::handleShapeAdded
- * Slot activated when a new shape is added to Component's class and LibraryTreeItem::shapeAdded() SIGNAL is raised.
+ * Slot activated when a new shape is added to Component's class and LibraryTreeItem::shapeAddedForComponent() SIGNAL is raised.
  */
 void Component::handleShapeAdded()
 {
   Component *pComponent = getRootParentComponent();
-  pComponent->removeChildren();
-  pComponent->drawComponent();
-  pComponent->emitChanged();
-  pComponent->updateConnections();
+  pComponent->reDrawComponent();
 }
 
+/*!
+ * \brief Component::handleComponentAdded
+ * Slot activated when a new component is added to Component's class and LibraryTreeItem::componentAddedForComponent() SIGNAL is raised.
+ */
 void Component::handleComponentAdded()
 {
   Component *pComponent = getRootParentComponent();
-  pComponent->removeChildren();
-  pComponent->drawComponent();
-  pComponent->emitChanged();
-  pComponent->updateConnections();
+  pComponent->reDrawComponent();
 }
 
 /*!

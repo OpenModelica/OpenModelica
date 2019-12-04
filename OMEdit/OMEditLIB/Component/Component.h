@@ -312,6 +312,7 @@ private:
   void createStateComponent();
   void drawInterfacePoints();
   void drawComponent();
+  void reDrawComponent(bool coOrdinateSystemUpdated = false);
   void drawModelicaComponent();
   void drawOMSComponent();
   void drawInheritedComponentsAndShapes();
@@ -344,6 +345,7 @@ public slots:
   void updateOriginItem();
   void handleLoaded();
   void handleUnloaded();
+  void handleCoOrdinateSystemUpdated();
   void handleShapeAdded();
   void handleComponentAdded();
   void handleNameChanged();
