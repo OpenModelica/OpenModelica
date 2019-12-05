@@ -34,6 +34,7 @@ encapsulated package FMI
   package:     FMI
   description: This file contains FMI's import specific function, which are implemented in C."
 
+protected import Flags;
 protected import List;
 
 public uniontype Info
@@ -242,7 +243,7 @@ algorithm
 end isFMIVersion10;
 
 public function isFMIVersion20 "Checks if the FMI version is 2.0."
-  input String inFMUVersion;
+  input String inFMUVersion = getFMIVersionString();
   output Boolean success;
 algorithm
   success := match (inFMUVersion)
@@ -250,6 +251,10 @@ algorithm
     else false;
   end match;
 end isFMIVersion20;
+
+public function getFMIVersionString "Returns the FMI version string."
+  output String version = Flags.getConfigString(Flags.FMI_VERSION);
+end getFMIVersionString;
 
 public function checkFMIType "Checks if the FMU type is supported."
   input String inFMIType;

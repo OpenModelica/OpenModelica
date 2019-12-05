@@ -260,13 +260,15 @@ package SimCodeVar
       Option<DAE.ComponentRef> arrayCref;
       AliasVariable aliasvar;
       DAE.ElementSource source;
-      Causality causality;
+      Option<Causality> causality;
       Option<Integer> variable_index;
       list<String> numArrayElement;
       Boolean isValueChangeable;
       Boolean isProtected;
       Boolean hideResult;
       Option<String> matrixName;
+      Option<Variability> variability; // variabilty attribute of a variable needed for FMI-2.0
+      Option<Initial> initial_;  // initial attribute of a variable needed for FMI-2.0
     end SIMVAR;
   end SimVar;
 
@@ -282,10 +284,32 @@ package SimCodeVar
 
   uniontype Causality
     record NONECAUS end NONECAUS;
-    record INTERNAL end INTERNAL;
     record OUTPUT end OUTPUT;
     record INPUT end INPUT;
+    // cases for FMI-2.0 exports Causality attribute
+    record LOCAL
+    "replacement for INTERNAL(), as we handle PARAMETER and CALCULATED_PARAMETER, the default causality should be defined as LOCAL according to FMI 2.0 Specification"
+    end LOCAL;
+    record PARAMETER end PARAMETER;
+    record CALCULATED_PARAMETER end CALCULATED_PARAMETER;
   end Causality;
+
+  // for setting initial attribute of variable for FMI-2.0 export
+  uniontype Initial
+    record NONE_INITIAL end NONE_INITIAL;
+    record EXACT end EXACT;
+    record APPROX end APPROX;
+    record CALCULATED end CALCULATED;
+  end Initial;
+
+  // for setting Variability attribute for FMI-2.0 export
+  uniontype Variability
+    record CONSTANT end CONSTANT;
+    record FIXED end FIXED;
+    record TUNABLE end TUNABLE;
+    record DISCRETE end DISCRETE;
+    record CONTINUOUS end CONTINUOUS;
+  end Variability;
 end SimCodeVar;
 
 package HashTableCrefSimVar

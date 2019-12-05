@@ -5594,50 +5594,54 @@ protected
   list<String> warnings;
 algorithm
   BackendDAE.DAE(shared=BackendDAE.SHARED(backendDAEType=backendDAEType)) := inBackendDAE;
-  warnings := listAllIterationVariables0(inBackendDAE.eqs);
+  (warnings, _) := listAllIterationVariables0(inBackendDAE.eqs);
 
   Error.addCompilerNotification("List of all iteration variables (DAE kind: " + BackendDump.printBackendDAEType2String(backendDAEType) + ")\n" + stringDelimitList(warnings, "\n"));
 end listAllIterationVariables;
 
-protected function listAllIterationVariables0 "author: lochel"
+public function listAllIterationVariables0 "author: lochel"
   input list<BackendDAE.EqSystem> inEqs;
   output list<String> outWarnings;
+  output list<DAE.ComponentRef> outComponentRef;
 algorithm
-  outWarnings := match(inEqs)
+  (outWarnings, outComponentRef) := match(inEqs)
     local
       BackendDAE.EqSystem eq;
       list<BackendDAE.EqSystem> eqs;
       list<String> warning;
       list<String> warningList;
+      list<DAE.ComponentRef> creflist1,creflist2;
 
     case ({})
-    then {};
+    then ({},{});
 
     case (eq::eqs) equation
-      warning = listAllIterationVariables1(eq);
-      warningList = listAllIterationVariables0(eqs);
-    then listAppend(warning, warningList);
+      (warning, creflist1)  = listAllIterationVariables1(eq);
+      (warningList, creflist2) = listAllIterationVariables0(eqs);
+    then (listAppend(warning, warningList), listAppend(creflist1, creflist2));
   end match;
 end listAllIterationVariables0;
 
 protected function listAllIterationVariables1 "author: lochel"
   input BackendDAE.EqSystem inEqSystem;
   output list<String> outWarning;
+  output list<DAE.ComponentRef> outComponentRef;
 protected
   BackendDAE.Variables vars;
   BackendDAE.StrongComponents comps;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars,
                       matching=BackendDAE.MATCHING(comps=comps)) := inEqSystem;
-  outWarning := listAllIterationVariables2(comps, vars);
+  (outWarning, outComponentRef) := listAllIterationVariables2(comps, vars);
 end listAllIterationVariables1;
 
 protected function listAllIterationVariables2 "author: lochel"
   input BackendDAE.StrongComponents inComps;
   input BackendDAE.Variables inVars;
   output list<String> outWarning;
+  output list<DAE.ComponentRef> outComponentRef;
 algorithm
-  outWarning := matchcontinue(inComps, inVars)
+  (outWarning, outComponentRef) := matchcontinue(inComps, inVars)
     local
       BackendDAE.StrongComponents rest;
       list<BackendDAE.Var> varlst;
@@ -5646,56 +5650,62 @@ algorithm
       String str;
       String warning;
       list<String> warningList;
+      list<DAE.ComponentRef> crefList;
 
     case ({}, _)
-    then {};
+    then ({}, {});
 
     case (BackendDAE.EQUATIONSYSTEM(vars=vlst, jacType=BackendDAE.JAC_NONLINEAR())::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       false = listEmpty(varlst);
+      crefList = List.map(varlst, BackendVariable.varCref); // create cref list of the iterationVars
 
       warning = "Iteration variables of nonlinear equation system:\n" + warnAboutVars(varlst);
       warningList = listAllIterationVariables2(rest, inVars);
-    then warning::warningList;
+    then (warning::warningList, crefList);
 
      case (BackendDAE.EQUATIONSYSTEM(vars=vlst, jacType=BackendDAE.JAC_GENERIC())::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       false = listEmpty(varlst);
+      crefList = List.map(varlst, BackendVariable.varCref); // create cref list of the iterationVars
 
       warning = "Iteration variables of equation system with analytic Jacobian:\n" + warnAboutVars(varlst);
       warningList = listAllIterationVariables2(rest, inVars);
-    then warning::warningList;
+    then (warning::warningList, crefList);
 
     case (BackendDAE.EQUATIONSYSTEM(vars=vlst, jacType=BackendDAE.JAC_NO_ANALYTIC())::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       false = listEmpty(varlst);
+      crefList = List.map(varlst, BackendVariable.varCref); // create cref list of the iterationVars
 
       warning = "Iteration variables of equation system without analytic Jacobian:\n" + warnAboutVars(varlst);
       warningList = listAllIterationVariables2(rest, inVars);
-    then warning::warningList;
+    then (warning::warningList, crefList);
 
     case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=vlst), casualTearingSet=NONE(), linear=linear)::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       false = listEmpty(varlst);
+      crefList = List.map(varlst, BackendVariable.varCref); // create cref list of the iterationVars
 
       str = if linear then "linear" else "nonlinear";
       warning = "Iteration variables of torn " + str + " equation system:\n" + warnAboutVars(varlst);
       warningList = listAllIterationVariables2(rest, inVars);
-    then warning::warningList;
+    then (warning::warningList, crefList);
 
     case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=vlst), casualTearingSet=SOME(BackendDAE.TEARINGSET(tearingvars=vlst2)), linear=linear)::rest, _) equation
       vlst = List.unique(listAppend(vlst,vlst2));
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       false = listEmpty(varlst);
+      crefList = List.map(varlst, BackendVariable.varCref); // create cref list of the iterationVars
 
       str = if linear then "linear" else "nonlinear";
       warning = "Iteration variables of torn " + str + " equation system:\n" + warnAboutVars(varlst);
       warningList = listAllIterationVariables2(rest, inVars);
-    then warning::warningList;
+    then (warning::warningList, crefList);
 
     case (_::rest, _) equation
-      warningList = listAllIterationVariables2(rest, inVars);
-    then warningList;
+      (warningList, crefList) = listAllIterationVariables2(rest, inVars);
+    then (warningList, crefList);
   end matchcontinue;
 end listAllIterationVariables2;
 

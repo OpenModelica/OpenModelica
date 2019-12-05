@@ -95,10 +95,9 @@ getErrorString();
 //     valueReference=\"0\"
 //     description=\"Coolant temperature\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     clockIndex=\"1\"
-//     initial=\"exact\">
-//     <Real start=\"0.0\" nominal=\"100.0\" unit=\"degC\"/>
+//     >
+//     <Real nominal=\"100.0\" unit=\"degC\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"2\" -->
 //   <ScalarVariable
@@ -106,10 +105,9 @@ getErrorString();
 //     valueReference=\"1\"
 //     description=\"Concentration\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     clockIndex=\"1\"
-//     initial=\"exact\">
-//     <Real start=\"0.0\" unit=\"mol/l\"/>
+//     >
+//     <Real unit=\"mol/l\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"3\" -->
 //   <ScalarVariable
@@ -117,29 +115,26 @@ getErrorString();
 //     valueReference=\"2\"
 //     description=\"Concentration\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     clockIndex=\"1\"
-//     initial=\"exact\">
-//     <Real start=\"0.0\" unit=\"mol/l\"/>
+//     >
+//     <Real unit=\"mol/l\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"4\" -->
 //   <ScalarVariable
 //     name=\"previous(T)\"
 //     valueReference=\"3\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     clockIndex=\"1\"
-//     initial=\"exact\">
-//     <Real start=\"0.0\" nominal=\"100.0\" unit=\"degC\"/>
+//     >
+//     <Real nominal=\"100.0\" unit=\"degC\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"5\" -->
 //   <ScalarVariable
 //     name=\"der(_D_outputAlias_TK)\"
 //     valueReference=\"4\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     clockIndex=\"1\"
-//     initial=\"calculated\">
+//     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"6\" -->
@@ -147,9 +142,8 @@ getErrorString();
 //     name=\"der(_D_outputAlias_cA)\"
 //     valueReference=\"5\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     clockIndex=\"1\"
-//     initial=\"calculated\">
+//     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"7\" -->
@@ -157,9 +151,8 @@ getErrorString();
 //     name=\"der(_D_outputAlias_cB)\"
 //     valueReference=\"6\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     clockIndex=\"1\"
-//     initial=\"calculated\">
+//     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"8\" -->
@@ -167,9 +160,8 @@ getErrorString();
 //     name=\"der(T)\"
 //     valueReference=\"7\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     clockIndex=\"1\"
-//     initial=\"calculated\">
+//     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"9\" -->
@@ -177,9 +169,8 @@ getErrorString();
 //     name=\"_D_cse1\"
 //     valueReference=\"8\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     clockIndex=\"1\"
-//     initial=\"calculated\">
+//     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"10\" -->
@@ -187,9 +178,8 @@ getErrorString();
 //     name=\"_D_cse2\"
 //     valueReference=\"9\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     clockIndex=\"1\"
-//     initial=\"calculated\">
+//     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"11\" -->
@@ -197,9 +187,8 @@ getErrorString();
 //     name=\"_D_cse3\"
 //     valueReference=\"10\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     clockIndex=\"1\"
-//     initial=\"calculated\">
+//     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"12\" -->
@@ -208,7 +197,6 @@ getErrorString();
 //     valueReference=\"11\"
 //     description=\"Coolant temperature\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     clockIndex=\"1\"
 //     previous=\"1\"
 //     initial=\"exact\">
@@ -220,7 +208,6 @@ getErrorString();
 //     valueReference=\"12\"
 //     description=\"Concentration\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     clockIndex=\"1\"
 //     previous=\"2\"
 //     initial=\"exact\">
@@ -232,7 +219,6 @@ getErrorString();
 //     valueReference=\"13\"
 //     description=\"Concentration\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     clockIndex=\"1\"
 //     previous=\"3\"
 //     initial=\"exact\">
@@ -243,7 +229,6 @@ getErrorString();
 //     name=\"QK_flow\"
 //     valueReference=\"14\"
 //     description=\"Heat flow rate\"
-//     variability=\"continuous\"
 //     causality=\"input\"
 //     >
 //     <Real start=\"-1113.5\" nominal=\"1000.0\" unit=\"kJ/h\"/>
@@ -253,9 +238,8 @@ getErrorString();
 //     name=\"QK_flow_sampled\"
 //     valueReference=\"15\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     clockIndex=\"1\"
-//     initial=\"calculated\">
+//     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"17\" -->
@@ -263,7 +247,6 @@ getErrorString();
 //     name=\"T\"
 //     valueReference=\"16\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     clockIndex=\"1\"
 //     previous=\"4\"
 //     initial=\"exact\">
@@ -274,7 +257,6 @@ getErrorString();
 //     name=\"TF\"
 //     valueReference=\"17\"
 //     description=\"Feed temperature\"
-//     variability=\"continuous\"
 //     causality=\"input\"
 //     >
 //     <Real start=\"104.9\" unit=\"degC\"/>
@@ -287,7 +269,7 @@ getErrorString();
 //     variability=\"discrete\"
 //     causality=\"output\"
 //     clockIndex=\"1\"
-//     initial=\"calculated\">
+//     >
 //     <Real nominal=\"100.0\" unit=\"degC\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"20\" -->
@@ -295,7 +277,6 @@ getErrorString();
 //     name=\"VF_flow\"
 //     valueReference=\"19\"
 //     description=\"Feed flow rate\"
-//     variability=\"continuous\"
 //     causality=\"input\"
 //     >
 //     <Real start=\"14.19\" unit=\"1/h\"/>
@@ -308,7 +289,7 @@ getErrorString();
 //     variability=\"discrete\"
 //     causality=\"output\"
 //     clockIndex=\"1\"
-//     initial=\"calculated\">
+//     >
 //     <Real unit=\"mol/l\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"22\" -->
@@ -319,7 +300,7 @@ getErrorString();
 //     variability=\"discrete\"
 //     causality=\"output\"
 //     clockIndex=\"1\"
-//     initial=\"calculated\">
+//     >
 //     <Real unit=\"mol/l\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"23\" -->
@@ -327,9 +308,8 @@ getErrorString();
 //     name=\"k[1]\"
 //     valueReference=\"22\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     clockIndex=\"1\"
-//     initial=\"calculated\">
+//     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"24\" -->
@@ -337,9 +317,8 @@ getErrorString();
 //     name=\"k[2]\"
 //     valueReference=\"23\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     clockIndex=\"1\"
-//     initial=\"calculated\">
+//     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"25\" -->
@@ -347,9 +326,8 @@ getErrorString();
 //     name=\"k[3]\"
 //     valueReference=\"24\"
 //     variability=\"discrete\"
-//     causality=\"local\"
 //     clockIndex=\"1\"
-//     initial=\"calculated\">
+//     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"26\" -->
@@ -359,7 +337,7 @@ getErrorString();
 //     description=\"reactor surface area\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     initial=\"exact\">
+//     >
 //     <Real start=\"0.215\" unit=\"m2\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"27\" -->
@@ -368,7 +346,7 @@ getErrorString();
 //     valueReference=\"26\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     initial=\"exact\">
+//     >
 //     <Real start=\"3010.0\" unit=\"J/(kg.K)\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"28\" -->
@@ -378,7 +356,7 @@ getErrorString();
 //     description=\"coolant heat capacity\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     initial=\"exact\">
+//     >
 //     <Real start=\"2000.0\" unit=\"J/(kg.K)\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"29\" -->
@@ -387,7 +365,7 @@ getErrorString();
 //     valueReference=\"28\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     initial=\"exact\">
+//     >
 //     <Real start=\"-9758.299999999999\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"30\" -->
@@ -396,7 +374,7 @@ getErrorString();
 //     valueReference=\"29\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     initial=\"exact\">
+//     >
 //     <Real start=\"-9758.299999999999\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"31\" -->
@@ -405,7 +383,7 @@ getErrorString();
 //     valueReference=\"30\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     initial=\"exact\">
+//     >
 //     <Real start=\"-8560.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"32\" -->
@@ -414,7 +392,7 @@ getErrorString();
 //     valueReference=\"31\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     initial=\"exact\">
+//     >
 //     <Real start=\"4200.0\" nominal=\"20000.0\" unit=\"J/mol\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"33\" -->
@@ -423,7 +401,7 @@ getErrorString();
 //     valueReference=\"32\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     initial=\"exact\">
+//     >
 //     <Real start=\"-11000.0\" nominal=\"20000.0\" unit=\"J/mol\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"34\" -->
@@ -432,7 +410,7 @@ getErrorString();
 //     valueReference=\"33\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     initial=\"exact\">
+//     >
 //     <Real start=\"-41850.0\" nominal=\"20000.0\" unit=\"J/mol\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"35\" -->
@@ -442,7 +420,7 @@ getErrorString();
 //     description=\"reactor volume\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     initial=\"exact\">
+//     >
 //     <Real start=\"0.01\" unit=\"m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"36\" -->
@@ -452,7 +430,7 @@ getErrorString();
 //     description=\"Concentration of substance A in feed\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     initial=\"exact\">
+//     >
 //     <Real start=\"5.1\" unit=\"mol/l\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"37\" -->
@@ -461,7 +439,7 @@ getErrorString();
 //     valueReference=\"36\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     initial=\"exact\">
+//     >
 //     <Real start=\"357500000.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"38\" -->
@@ -470,7 +448,7 @@ getErrorString();
 //     valueReference=\"37\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     initial=\"exact\">
+//     >
 //     <Real start=\"357500000.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"39\" -->
@@ -479,7 +457,7 @@ getErrorString();
 //     valueReference=\"38\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     initial=\"exact\">
+//     >
 //     <Real start=\"2511944.444444444\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"40\" -->
@@ -488,7 +466,7 @@ getErrorString();
 //     valueReference=\"39\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     initial=\"exact\">
+//     >
 //     <Real start=\"1120.0\" unit=\"W/(m2.K)\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"41\" -->
@@ -498,7 +476,7 @@ getErrorString();
 //     description=\"coolant mass\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     initial=\"exact\">
+//     >
 //     <Real start=\"5.0\" min=\"0.0\" unit=\"kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"42\" -->
@@ -507,7 +485,7 @@ getErrorString();
 //     valueReference=\"41\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     initial=\"exact\">
+//     >
 //     <Real start=\"934.2\" min=\"0.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"43\" -->
@@ -517,7 +495,7 @@ getErrorString();
 //     description=\"Period of clock\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
-//     initial=\"calculated\">
+//     >
 //     <Real unit=\"s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"44\" -->
@@ -527,7 +505,7 @@ getErrorString();
 //     description=\"=false to free reactor states\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
-//     initial=\"calculated\">
+//     >
 //     <Boolean/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"45\" -->
@@ -536,7 +514,7 @@ getErrorString();
 //     valueReference=\"0\"
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
-//     initial=\"calculated\">
+//     >
 //     <String/>
 //   </ScalarVariable>
 //   </ModelVariables>

@@ -33,7 +33,6 @@ encapsulated package SimCodeVar
 " file:        SimCodeVar.mo
   package:     SimCodeVar
   description: Package to store simcode variables. Moved out of SimCodeUtil to break circular dependency with HpcOmSimCode.
-
 "
 
 // public imports
@@ -68,7 +67,7 @@ uniontype SimVars "Container for metadata about variables in a Modelica model."
     list<SimVar> seedVars;
     list<SimVar> realOptimizeConstraintsVars;
     list<SimVar> realOptimizeFinalConstraintsVars;
-    list<SimVar> sensitivityVars; // variable used to calculate sensitivities for parameters nSensitivitityParameters + nRealParam*nStates
+    list<SimVar> sensitivityVars "variable used to calculate sensitivities for parameters nSensitivitityParameters + nRealParam*nStates";
     list<SimVar> dataReconSetcVars;
     list<SimVar> dataReconinputVars;
   end SIMVARS;
@@ -92,19 +91,19 @@ public uniontype SimVar "Information about a variable in a Modelica model."
     Boolean isFixed;
     DAE.Type type_;
     Boolean isDiscrete;
-    // arrayCref is the name of the array if this variable is the first in that
-    // array
-    Option<DAE.ComponentRef> arrayCref;
+    Option<DAE.ComponentRef> arrayCref "the name of the array if this variable is the first in that array";
     AliasVariable aliasvar;
     DAE.ElementSource source;
-    Causality causality;
+    Option<Causality> causality;
     Option<Integer> variable_index;
     list<String> numArrayElement;
     Boolean isValueChangeable;
     Boolean isProtected;
     Boolean hideResult;
     Option<array<Integer>> inputIndex;
-    Option<String> matrixName; // if the varibale is a jacobian var, this is the corresponding matrix
+    Option<String> matrixName "if the varibale is a jacobian var, this is the corresponding matrix";
+    Option<Variability> variability "FMI-2.0 variabilty attribute";
+    Option<Initial> initial_ "FMI-2.0 initial attribute";
   end SIMVAR;
 end SimVar;
 
@@ -119,11 +118,28 @@ uniontype AliasVariable
 end AliasVariable;
 
 uniontype Causality
-  record NONECAUS end NONECAUS;
-  record INTERNAL end INTERNAL;
+  record NONECAUS "needed for FMI-1.0" end NONECAUS;
   record OUTPUT end OUTPUT;
   record INPUT end INPUT;
+  record LOCAL end LOCAL;
+  record PARAMETER end PARAMETER;
+  record CALCULATED_PARAMETER end CALCULATED_PARAMETER;
 end Causality;
+
+uniontype Initial
+  record NONE_INITIAL end NONE_INITIAL;
+  record EXACT end EXACT;
+  record APPROX end APPROX;
+  record CALCULATED end CALCULATED;
+end Initial;
+
+uniontype Variability
+  record CONSTANT end CONSTANT;
+  record FIXED end FIXED;
+  record TUNABLE end TUNABLE;
+  record DISCRETE end DISCRETE;
+  record CONTINUOUS end CONTINUOUS;
+end Variability;
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeVar;

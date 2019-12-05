@@ -1,0 +1,68 @@
+// name: fmi_attributes_01.mos
+// keywords: FMI 2.0 export
+// status: correct
+// teardown_command: rm -rf fmi_attributes_01.fmu fmi_attributes_01.log fmi_attributes_01.xml fmi_attributes_01_tmp.xml
+
+loadString("
+model fmi_attributes_01
+  Real x(start=-1.0, fixed=true);
+equation
+  (x + der(x))^2 = 3.0 - x^2 - der(x)^2;
+end fmi_attributes_01;
+");
+getErrorString();
+
+setDebugFlags("force-fmi-attributes"); getErrorString();
+translateModelFMU(fmi_attributes_01); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq fmi_attributes_01.fmu modelDescription.xml > fmi_attributes_01_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi_attributes_01_tmp.xml > fmi_attributes_01.xml"); getErrorString();
+readFile("fmi_attributes_01.xml"); getErrorString();
+
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi_attributes_01_tmp.xml > fmi_attributes_01.xml"); getErrorString();
+readFile("fmi_attributes_01.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi_attributes_01.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"x\"
+//     valueReference=\"0\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"-1.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"der(x)\"
+//     valueReference=\"1\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"approx\">
+//     <Real start=\"0.0\" derivative=\"1\"/>
+//   </ScalarVariable>
+//   </ModelVariables>
+// "
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <Derivatives>
+//       <Unknown index=\"2\" dependencies=\"1\" dependenciesKind=\"dependent\" />
+//     </Derivatives>
+//   </ModelStructure>
+// "
+// ""
+// endResult

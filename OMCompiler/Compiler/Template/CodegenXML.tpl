@@ -195,14 +195,18 @@ case SIMVAR(__) then
   >>
 end ScalarVariableAttributesXml;
 
-template getCausalityXml(Causality c)
+template getCausalityXml(Option<Causality> c)
  "Returns the Causality Attribute of ScalarVariable."
 ::=
 match c
-  case NONECAUS(__) then "none"
-  case INTERNAL(__) then "internal"
-  case OUTPUT(__) then "output"
-  case INPUT(__) then "input"
+  case SOME(NONECAUS(__)) then "none"
+  case SOME(OUTPUT(__)) then "output"
+  case SOME(INPUT(__)) then "input"
+  case SOME(LOCAL(__)) then "local" // replacement for INTERNAL(__)
+  case SOME(PARAMETER(__)) then "parameter"
+  case SOME(CALCULATED_PARAMETER(__)) then "calculatedParameter"
+  else "internal" // this should never reach here, this is mainly for guarding against failures
+  //TODO causality = independent (usually it should be "time")
 end getCausalityXml;
 
 template getVariablityXml(VarKind varKind)

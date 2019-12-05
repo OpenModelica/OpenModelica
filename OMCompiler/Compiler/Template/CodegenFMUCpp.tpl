@@ -290,7 +290,7 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, algVars=algVa
   // value references of real discrete states and outputs
   unsigned int <%modelShortName%>FMU::_outputRefs[] = {<%algVars |> var =>
     match var case SIMVAR(name=name, type_=T_REAL(), varKind=CLOCKED_STATE())
-      case SIMVAR(name=name, type_=T_REAL(), causality=OUTPUT()) then
+      case SIMVAR(name=name, type_=T_REAL(), causality=SOME(OUTPUT())) then
       intSub(getVariableIndex(cref2simvar(name, simCode)), 1) ;separator=", "%>};
 
   // constructor

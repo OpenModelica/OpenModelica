@@ -549,14 +549,17 @@ algorithm
 end scalarVariableTypeStringAttribute;
 
 function getCausality "Returns the Causality Attribute of ScalarVariable."
-  input Causality c;
+  input Option<Causality> c;
   output String str;
 algorithm
   str := match c
-    case Causality.NONECAUS(__) then "none";
-    case Causality.INTERNAL(__) then "internal";
-    case Causality.OUTPUT(__) then "output";
-    case Causality.INPUT(__) then "input";
+    case SOME(Causality.NONECAUS(__)) then "none";
+    case SOME(Causality.OUTPUT(__)) then "output";
+    case SOME(Causality.INPUT(__)) then "input";
+    case SOME(Causality.LOCAL(__)) then "local"; // replacement for INTERNAL(), From now Use LOCAL according to FMI-2.0 specification
+    case SOME(Causality.PARAMETER(__)) then "parameter";
+    case SOME(Causality.CALCULATED_PARAMETER(__)) then "calculatedParameter";
+    else "local";
   end match;
 end getCausality;
 

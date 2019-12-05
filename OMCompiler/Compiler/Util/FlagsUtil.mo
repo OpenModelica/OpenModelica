@@ -247,7 +247,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DUMP_JL,
   Flags.DUMP_ASSC,
   Flags.SPLIT_CONSTANT_PARTS_SYMJAC,
-  Flags.NF_DUMP_FLAT
+  Flags.NF_DUMP_FLAT,
+  Flags.DUMP_FORCE_FMI_ATTRIBUTES
 };
 
 protected
@@ -390,7 +391,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.USE_ZEROMQ_IN_SIM,
   Flags.ZEROMQ_PUB_PORT,
   Flags.ZEROMQ_SUB_PORT,
-  Flags.ZEROMQ_SIM_ID
+  Flags.ZEROMQ_SIM_ID,
+  Flags.FMI_VERSION
 };
 
 public function new
