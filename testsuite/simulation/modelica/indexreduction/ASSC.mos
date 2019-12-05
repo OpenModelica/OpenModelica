@@ -76,16 +76,18 @@ simulate(ASSC); getErrorString();
 // 1:(-1,constone)
 // 2:(-1,constone)
 //
-// Matching
-// ========================================
-// 2 variables and equations
-// var 1 is solved in eqn 1
-// var 2 is solved in eqn -1
 //
 // Matching
 // ========================================
-// 1 variables and equations
+// 2 variables
 // var 1 is solved in eqn 1
+// var 2 is solved in eqn -1
+//
+//
+// Matching
+// ========================================
+// 1 equations
+// eqn 1 is solved for var 1
 // Perfect Matching, no dynamic index reduction needed! There are no unassigned equations.
 //
 //

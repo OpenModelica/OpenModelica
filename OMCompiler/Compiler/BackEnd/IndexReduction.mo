@@ -2056,18 +2056,18 @@ algorithm
     // do state selection
     case BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=SOME(m),mT=SOME(mT),matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2))
       guard intGt(nfreeStates,1) and not intGt(neqns,nfreeStates)
-      equation
+      algorithm
         // try to select dummy vars
         //  print("nVars " + intString(nfreeStates) + " nEqns " + intString(neqns) + "\n");
         // sort vars with heuristic
-        hovvars = BackendVariable.listVar1(statecandidates);
-        eqns1 = BackendEquation.listEquation(eqnslst);
-        syst = BackendDAEUtil.createEqSystem(hovvars, eqns1);
-        (me,meT,_,_) =  BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inShared,false);
-        m1 = incidenceMatrixfromEnhancedStrict(me,hovvars);
-        mT1 = AdjacencyMatrix.transposeAdjacencyMatrix(m1,nfreeStates);
+        hovvars := BackendVariable.listVar1(statecandidates);
+        eqns1 := BackendEquation.listEquation(eqnslst);
+        syst := BackendDAEUtil.createEqSystem(hovvars, eqns1);
+        (me,meT,_,_) :=  BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inShared,false);
+        m1 := incidenceMatrixfromEnhancedStrict(me,hovvars);
+        mT1 := AdjacencyMatrix.transposeAdjacencyMatrix(m1,nfreeStates);
         //  BackendDump.printEqSystem(syst);
-        hovvars = sortStateCandidatesVars(hovvars,BackendVariable.daeVars(inSystem),SOME(mT1));
+        hovvars := sortStateCandidatesVars(hovvars,BackendVariable.daeVars(inSystem),SOME(mT1));
         if Flags.isSet(Flags.BLT_DUMP) then
           print("########## Try static state selection ##########\n"
                 + "Try to select dummy vars with natural matching (newer)\n"
@@ -2077,87 +2077,87 @@ algorithm
           BackendDump.dumpEquationList(eqnslst, "Constraint equations:");
         end if;
         // generate incidence matrix from system and equations of that level and the states of that level
-        nv = BackendVariable.varsSize(vars);
-        ne = BackendEquation.equationArraySize(eqns);
-        neqnarr = BackendEquation.getNumberOfEquations(eqns);
-        ne1 = ne + neqns;
-        indexmap = arrayCreate(nfreeStates  + nv,-1);
-        invindexmap = arrayCreate(nfreeStates,-1);
+        nv := BackendVariable.varsSize(vars);
+        ne := BackendEquation.equationArraySize(eqns);
+        neqnarr := BackendEquation.getNumberOfEquations(eqns);
+        ne1 := ne + neqns;
+        indexmap := arrayCreate(nfreeStates  + nv,-1);
+        invindexmap := arrayCreate(nfreeStates,-1);
         // workaround to get state indexes
-        nv1 = nv + nfreeStates;
-        (vars,(indexmap,invindexmap,_,_,_,_)) = BackendVariable.traverseBackendDAEVarsWithUpdate(vars,getStateIndexes,(indexmap,invindexmap,1,nv,hovvars,{}));
+        nv1 := nv + nfreeStates;
+        (vars,(indexmap,invindexmap,_,_,_,_)) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,getStateIndexes,(indexmap,invindexmap,1,nv,hovvars,{}));
         //  BackendDump.dumpMatching(indexmap);
-        m1 = arrayCreate(ne1,{});
-        mT1 = arrayCreate(nv1,{});
-        mapEqnIncRow = Array.expand(neqns,iMapEqnIncRow,{});
-        mapIncRowEqn = Array.expand(neqns,iMapIncRowEqn,-1);
+        m1 := arrayCreate(ne1,{});
+        mT1 := arrayCreate(nv1,{});
+        mapEqnIncRow := Array.expand(neqns,iMapEqnIncRow,{});
+        mapIncRowEqn := Array.expand(neqns,iMapIncRowEqn,-1);
         // replace state indexes in original incidencematrix
         getIncidenceMatrixSelectStates(ne,m1,mT1,m,indexmap);
         // add level equations
-        funcs = BackendDAEUtil.getFunctions(inShared);
+        funcs := BackendDAEUtil.getFunctions(inShared);
         getIncidenceMatrixLevelEquations(eqnslst,vars,neqnarr,ne,m1,mT1,m,mapEqnIncRow,mapIncRowEqn,indexmap,funcs);
         // match the variables not the equations, to have preferred states unmatched
-        vec1 = Array.expand(nfreeStates,ass1,-1);
-        vec2 = Array.expand(neqns,ass2,-1);
-        true = BackendDAEEXT.setAssignment(nv1,ne1,vec1,vec2);
+        vec1 := Array.expand(nfreeStates,ass1,-1);
+        vec2 := Array.expand(neqns,ass2,-1);
+        true := BackendDAEEXT.setAssignment(nv1,ne1,vec1,vec2);
         Matching.matchingExternalsetIncidenceMatrix(ne1, nv1, mT1);
         BackendDAEEXT.matching(ne1, nv1, 3, -1, 0.0, 0);
         BackendDAEEXT.getAssignment(vec1, vec2);
-        comps = Sorting.TarjanTransposed(mT1, vec2);
+        comps := Sorting.TarjanTransposed(mT1, vec2);
         // remove blocks without differentiated equations
-        comps = List.select1(comps, selectBlock, ne);
+        comps := List.select1(comps, selectBlock, ne);
         //  BackendDump.dumpComponentsOLD(comps);
         //  eqns1 = BackendEquation.listEquation(BackendEquation.equationList(eqns));
         //  eqns1 = BackendEquation.addList(eqnslst, eqns1);
         //  List.map3_0(comps, dumpBlock, mapIncRowEqn, nv, BackendDAE.EQSYSTEM(vars,eqns1,SOME(m1),NONE(),BackendDAE.MATCHING(invindexmap,vec2,{}),{}) );
         // traverse the blocks and collect the additional equations and vars
-        ilst = List.fold1(comps,getCompsExtraEquations,ne,{});
-        ilst = List.map1r(ilst,arrayGet,iMapIncRowEqn);
-        ilst = List.uniqueIntN(ilst, ne);
-        eqnslst1 = BackendEquation.getList(ilst,eqns);
-        ilst = List.fold2(comps,getCompsExtraVars,nv,vec2,{});
-        vlst = List.map1r(ilst,BackendVariable.getVarAt,vars);
+        ilst := List.fold1(comps,getCompsExtraEquations,ne,{});
+        ilst := List.map1r(ilst,arrayGet,iMapIncRowEqn);
+        ilst := List.uniqueIntN(ilst, ne);
+        eqnslst1 := BackendEquation.getList(ilst,eqns);
+        ilst := List.fold2(comps,getCompsExtraVars,nv,vec2,{});
+        vlst := List.map1r(ilst,BackendVariable.getVarAt,vars);
         // generate system
-        eqns = BackendEquation.listEquation(eqnslst);
-        eqns = BackendEquation.addList(eqnslst1, eqns);
-        vars = BackendVariable.listVar1(vlst);
-        vars = BackendVariable.addVars(BackendVariable.varList(hovvars), vars);
-        syst = BackendDAEUtil.createEqSystem(vars, eqns);
+        eqns := BackendEquation.listEquation(eqnslst);
+        eqns := BackendEquation.addList(eqnslst1, eqns);
+        vars := BackendVariable.listVar1(vlst);
+        vars := BackendVariable.addVars(BackendVariable.varList(hovvars), vars);
+        syst := BackendDAEUtil.createEqSystem(vars, eqns);
         // get advanced incidence Matrix
-        (me,meT,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inShared,false);
+        (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inShared,false);
         if Flags.isSet(Flags.BLT_DUMP) then
           BackendDump.dumpAdjacencyMatrixEnhanced(me);
           print("\n");
           BackendDump.dumpAdjacencyMatrixTEnhanced(meT);
         end if;
         // get indicenceMatrix from Enhanced
-        m = incidenceMatrixfromEnhancedStrict(me,vars);
-        nv = BackendVariable.varsSize(vars);
-        ne = BackendEquation.equationArraySize(eqns);
-        mT = AdjacencyMatrix.transposeAdjacencyMatrix(m,nv);
+        m := incidenceMatrixfromEnhancedStrict(me,vars);
+        nv := BackendVariable.varsSize(vars);
+        ne := BackendEquation.equationArraySize(eqns);
+        mT := AdjacencyMatrix.transposeAdjacencyMatrix(m,nv);
         // match the variables not the equations, to have preferred states unmatched
         Matching.matchingExternalsetIncidenceMatrix(ne,nv,mT);
         BackendDAEEXT.matching(ne,nv,3,-1,1.0,1);
-        vec1 = arrayCreate(nv,-1);
-        vec2 = arrayCreate(ne,-1);
+        vec1 := arrayCreate(nv,-1);
+        vec2 := arrayCreate(ne,-1);
         BackendDAEEXT.getAssignment(vec1,vec2);
         // get the matched state candidates -> dummys
         // get the unmatched state candidates -> actual states
         // force StateSelect.never vars
-        (dstates, states, vec1, vec2) = forceStateSelectNever(vec1, vec2, vars, eqns, me, inShared, so);
+        (dstates, states, vec1, vec2) := forceStateSelectNever(vec1, vec2, vars, eqns, me, inShared, so);
         if Flags.isSet(Flags.BLT_DUMP) then
           print("\n");
-          BackendDump.dumpMatching(vec1);
+          BackendDump.dumpMatchingVars(vec1);
           print("\n");
-          BackendDump.dumpMatching(vec2);
+          BackendDump.dumpMatchingEqns(vec2);
         end if;
-        (dstates,_) = checkAssignment(1,nv,vec1,vars);
-        dummyVars = List.map1r(List.map(dstates,Util.tuple22),BackendVariable.getVarAt,vars);
-        stateVars = List.map1r(List.map(states,Util.tuple22),BackendVariable.getVarAt,vars);
-        dummyVars = List.select(dummyVars, BackendVariable.isStateVar);
+        (dstates,_) := checkAssignment(1,nv,vec1,vars);
+        dummyVars := List.map1r(List.map(dstates,Util.tuple22),BackendVariable.getVarAt,vars);
+        stateVars := List.map1r(List.map(states,Util.tuple22),BackendVariable.getVarAt,vars);
+        dummyVars := List.select(dummyVars, BackendVariable.isStateVar);
         // get assigned and unassigned equations
-        unassigned = Matching.getUnassigned(ne, vec2, {});
-        _ = Matching.getAssigned(ne, vec2, {});
+        unassigned := Matching.getUnassigned(ne, vec2, {});
+        _ := Matching.getAssigned(ne, vec2, {});
         if Flags.isSet(Flags.BLT_DUMP) then
           if listEmpty(unassigned) then
             print("Perfect Matching, no dynamic index reduction needed! There are no unassigned equations.\n\n");
@@ -2167,33 +2167,32 @@ algorithm
             end if;
           else
             print("No perfect matching possible, dynamic index reduction needed.\n");
+            unassigned := list(mapIncRowEqn[unassigned_eq] for unassigned_eq in unassigned);
             BackendDump.dumpEquationList(BackendEquation.getEquationArraySubsetLst(eqns,unassigned),"Unassigned equations:");
-            if Flags.isSet(Flags.BLT_DUMP) then
-              BackendDump.dumpVarList(dummyVars, "Statically selected dummy states:");
-            end if;
+            BackendDump.dumpVarList(dummyVars, "Statically selected dummy states:");
             print("\n");
           end if;
         end if;
         // splitt it into sets
-        syst = BackendDAEUtil.setEqSystMatching(syst, BackendDAE.MATCHING(vec1,vec2,{}));
+        syst := BackendDAEUtil.setEqSystMatching(syst, BackendDAE.MATCHING(vec1,vec2,{}));
         //  dumpSystemGraphML(syst,inShared,NONE(),"StateSelection" + intString(arrayLength(m)) + ".graphml");
-        (syst,m,mT,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.ABSOLUTE(), SOME(funcs));
+        (syst,m,mT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.ABSOLUTE(), SOME(funcs));
         // TODO: partition the system
-        comps = partitionSystem(m,mT);
+        comps := partitionSystem(m,mT);
         //  print("Sets:\n");
         //  BackendDump.dumpIncidenceMatrix(listArray(comps));
         //  BackendDump.printEqSystem(syst);
-        (vlst,_,stateSets) = processComps4New(comps,nv,ne,vars,eqns,m,mT,mapEqnIncRow,mapIncRowEqn,vec2,vec1,level,inShared,{},{},iStateSets);
-        vlst = List.select(vlst, BackendVariable.isStateVar);
-        dummyVars = listAppend(dummyVars,vlst);
+        (vlst,_,stateSets) := processComps4New(comps,nv,ne,vars,eqns,m,mT,mapEqnIncRow,mapIncRowEqn,vec2,vec1,level,inShared,{},{},iStateSets);
+        vlst := List.select(vlst, BackendVariable.isStateVar);
+        dummyVars := listAppend(dummyVars,vlst);
       then
         (dummyVars,stateSets);
     // to much equations this is an error
     case _
       guard intGt(neqns,nfreeStates)
-      equation
+      algorithm
         if Flags.isSet(Flags.BLT_DUMP) then
-          hovvars = BackendVariable.listVar1(statecandidates);
+          hovvars := BackendVariable.listVar1(statecandidates);
           print("########## Try static state selection ##########\n"
                 + "Try to select dummy vars with natural matching (newer)\n"
                 + "Select " + intString(listLength(eqnslst)) + " dummy states from "
@@ -2202,7 +2201,7 @@ algorithm
           BackendDump.dumpEquationList(eqnslst, "Constraint equations:");
         end if;
         // no chance, to much equations
-        msg = "It is not possible to select continuous time states because Number of Equations " + intString(neqns) + " greater than number of States " + intString(nfreeStates) + " to select from.";
+        msg := "It is not possible to select continuous time states because Number of Equations " + intString(neqns) + " greater than number of States " + intString(nfreeStates) + " to select from.";
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then
         fail();
