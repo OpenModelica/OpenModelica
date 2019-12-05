@@ -7919,6 +7919,7 @@ algorithm
 end getDefaultFmiInitialAttribute;
 
 protected function clearUpDefaultFmiAttributes
+  "Replaces default values of the following attributes with NONE(): initial, causality, variability"
   input output SimCodeVar.SimVar simVar;
 protected
   SimCodeVar.Causality default_causality = SimCodeVar.LOCAL();
@@ -9397,6 +9398,7 @@ algorithm
 end getInitialAttributeHelperForParameters;
 
 protected function startValueIsConstOrNone
+  "Returns true iff the start value of the given variable is NONE or a constant."
   input BackendDAE.Var var;
   output Boolean b = false;
 protected
@@ -9410,8 +9412,7 @@ algorithm
 end startValueIsConstOrNone;
 
 protected function getInitialAttributeHelper
-  "function which returns the initial attribute of a variable
-   with Variablity = Continuous or Discrete"
+  "Returns the initial attribute of a variable with variablity = continuous or discrete."
   input BackendDAE.Var var;
   input Boolean isFixed;
   input list<DAE.ComponentRef> iterationVars "list of iterationvars from InitializationDAE";
