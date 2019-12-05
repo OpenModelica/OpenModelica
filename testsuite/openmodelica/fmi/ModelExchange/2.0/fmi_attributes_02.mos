@@ -12,8 +12,7 @@ equation
   der(x) = u;
   y = x;
 end fmi_attributes_02;
-");
-getErrorString();
+"); getErrorString();
 
 translateModelFMU(fmi_attributes_02); getErrorString();
 

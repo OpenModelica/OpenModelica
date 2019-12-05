@@ -7,6 +7,9 @@ EnumerationTest.mos \
 fmi_attributes_01.mos \
 fmi_attributes_02.mos \
 fmi_attributes_03.mos \
+fmi_attributes_04.mos \
+fmi_attributes_05.mos \
+fmi_attributes_06.mos \
 FMIExercise.mos \
 HelloFMIWorld.mos \
 HelloFMIWorldEvent.mos \
@@ -24,9 +27,6 @@ testBug5673.mos \
 testChangeParam.mos \
 testDisableDep.mos \
 testDiscreteStructe.mos \
-testFmiInitialUnknowns.mos \
-testFmiInitialUnknowns1.mos \
-testFmiInitialUnknowns2.mos \
 testInitialEquationsFMI.mos \
 TestSourceCodeFMU.mos \
 ticket5670.mos \

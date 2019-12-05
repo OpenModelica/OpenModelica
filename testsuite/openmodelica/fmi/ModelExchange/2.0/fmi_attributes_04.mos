@@ -1,10 +1,10 @@
 // name:  testFmiInitialUnknowns.mos
 // keywords: FMI 2.0 export
 // status: correct
-// teardown_command: rm -rf binaries sources modelDescription.xml InitialUnknown01_tmp.xml initialUnknownstest.xml
+// teardown_command: rm -rf fmi_attributes_04.fmu fmi_attributes_04.log fmi_attributes_04.xml fmi_attributes_04_tmp.xml fmi_attributes_04.fmutmp/
 
 loadString("
-model InitialUnknown01
+model fmi_attributes_04
   input Real u;
   Real x;
   output Real y;
@@ -13,28 +13,23 @@ initial equation
 equation
   der(x) = u;
   y = x;
-end InitialUnknown01;
-");
-getErrorString();
+end fmi_attributes_04;
+"); getErrorString();
 
-//buildModel(InitialUnknown01);getErrorString();
-
-translateModelFMU(InitialUnknown01);
-getErrorString();
+translateModelFMU(fmi_attributes_04); getErrorString();
 
 // unzip to console, quiet, extra quiet
-system("unzip -cqq InitialUnknown01.fmu modelDescription.xml > InitialUnknown01_tmp.xml"); getErrorString();
-system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" InitialUnknown01_tmp.xml > initialUnknownstest.xml"); getErrorString();
-readFile("initialUnknownstest.xml"); getErrorString();
+system("unzip -cqq fmi_attributes_04.fmu modelDescription.xml > fmi_attributes_04_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi_attributes_04_tmp.xml > fmi_attributes_04.xml"); getErrorString();
+readFile("fmi_attributes_04.xml"); getErrorString();
 
-system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" InitialUnknown01_tmp.xml > initialUnknownstest.xml"); getErrorString();
-readFile("initialUnknownstest.xml"); getErrorString();
-
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi_attributes_04_tmp.xml > fmi_attributes_04.xml"); getErrorString();
+readFile("fmi_attributes_04.xml"); getErrorString();
 
 // Result:
 // true
 // ""
-// "InitialUnknown01.fmu"
+// "fmi_attributes_04.fmu"
 // ""
 // 0
 // ""

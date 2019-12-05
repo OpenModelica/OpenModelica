@@ -1,10 +1,10 @@
 // name:  testFmiInitialUnknowns2.mos
 // keywords: FMI 2.0 export
 // status: correct
-// teardown_command: rm -rf binaries sources modelDescription.xml Pendulum_tmp.xml Pendulumtest.xml
+// teardown_command: rm -rf fmi_attributes_06.fmu fmi_attributes_06.log fmi_attributes_06.xml fmi_attributes_06_tmp.xml fmi_attributes_06.fmutmp/
 
 loadString("
-model Pendulum
+model fmi_attributes_06
   parameter Real m=0.5;
   parameter Real g=9.82;
   parameter Real L=1;
@@ -16,25 +16,23 @@ equation
   m*der(xd) = -x*Fo/L;
   m*der(yd) = -m*g-Fo*y/L;
   x*x+y*y=L^2;
-end Pendulum;
-");
-getErrorString();
+end fmi_attributes_06;
+"); getErrorString();
 
-translateModelFMU(Pendulum);
-getErrorString();
+translateModelFMU(fmi_attributes_06); getErrorString();
 
 // unzip to console, quiet, extra quiet
-system("unzip -cqq Pendulum.fmu modelDescription.xml > Pendulum_tmp.xml"); getErrorString();
-system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" Pendulum_tmp.xml > Pendulumtest.xml"); getErrorString();
-readFile("Pendulumtest.xml"); getErrorString();
+system("unzip -cqq fmi_attributes_06.fmu modelDescription.xml > fmi_attributes_06_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi_attributes_06_tmp.xml > fmi_attributes_06.xml"); getErrorString();
+readFile("fmi_attributes_06.xml"); getErrorString();
 
-system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" Pendulum_tmp.xml > Pendulumtest.xml"); getErrorString();
-readFile("Pendulumtest.xml"); getErrorString();
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi_attributes_06_tmp.xml > fmi_attributes_06.xml"); getErrorString();
+readFile("fmi_attributes_06.xml"); getErrorString();
 
 // Result:
 // true
 // ""
-// "Pendulum.fmu"
+// "fmi_attributes_06.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // 0
