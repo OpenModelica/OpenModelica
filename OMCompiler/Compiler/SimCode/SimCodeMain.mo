@@ -114,7 +114,6 @@ uniontype TranslateModelKind
   record XML
   end XML;
   record FMU
-    String version;
     String kind;
     String targetName;
   end FMU;
@@ -849,7 +848,6 @@ algorithm
       Option<DAE.DAElist> odae;
       Option<list<String>> strPreOptModules;
       Boolean isFMI2;
-      String fmiVersion;
       BackendDAE.SymbolicJacobians fmiDer;
       DAE.FunctionTree funcs;
       list<Option<Integer>> allRoots;
@@ -913,7 +911,7 @@ algorithm
       end if;
 
       isFMI2 := match kind
-        case TranslateModelKind.FMU(version=fmiVersion) then FMI.isFMIVersion20(kind.version);
+        case TranslateModelKind.FMU() then FMI.isFMIVersion20();
         else false;
       end match;
       // FMI 2.0: enable postOptModule to create alias variables for output states
@@ -949,7 +947,7 @@ algorithm
           then (libs, file_dir, timeSimCode, timeTemplates);
         case TranslateModelKind.FMU()
           algorithm
-            (libs,file_dir,timeSimCode,timeTemplates) := generateModelCodeFMU(dlow, initDAE, initDAE_lambda0, fmiDer, removedInitialEquationLst, SymbolTable.getAbsyn(), className, kind.version, kind.kind, filenameprefix, kind.targetName, inSimSettingsOpt);
+            (libs,file_dir,timeSimCode,timeTemplates) := generateModelCodeFMU(dlow, initDAE, initDAE_lambda0, fmiDer, removedInitialEquationLst, SymbolTable.getAbsyn(), className, FMI.getFMIVersionString(), kind.kind, filenameprefix, kind.targetName, inSimSettingsOpt);
           then (libs, file_dir, timeSimCode, timeTemplates);
         case TranslateModelKind.XML()
           algorithm

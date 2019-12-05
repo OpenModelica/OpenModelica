@@ -3743,14 +3743,17 @@ algorithm
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);
   try
-    (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUVersion, FMUType, fmuTargetName), cache, inEnv, className, filenameprefix, addDummy, SOME(simSettings));
+    (success, cache, libs, _, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUType, fmuTargetName), cache, inEnv, className, filenameprefix, addDummy, SOME(simSettings));
     true := success;
     outValue := Values.STRING((if not Testsuite.isRunning() then System.pwd() + Autoconf.pathDelimiter else "") + fmuTargetName + ".fmu");
   else
     outValue := Values.STRING("");
+    FlagsUtil.setConfigBool(Flags.BUILDING_FMU, false);
+    FlagsUtil.setConfigString(Flags.FMI_VERSION, "");
     return;
   end try;
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, false);
+  FlagsUtil.setConfigString(Flags.FMI_VERSION, "");
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_BUILD_MODEL);
 

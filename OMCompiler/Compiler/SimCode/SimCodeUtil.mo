@@ -9505,7 +9505,7 @@ protected function updateStartValue
   input SimCodeVar.Causality causality;
 algorithm
   // update start value for FMI-2.0 only
-  if Flags.getConfigBool(Flags.BUILDING_FMU) and FMI.isFMIVersion20(Flags.getConfigString(Flags.FMI_VERSION)) then
+  if Flags.getConfigBool(Flags.BUILDING_FMU) and FMI.isFMIVersion20() then
     startValue := match(startValue)
       case (SOME(_)) guard isInitialExactOrApprox(initial_) then startValue;
       case (NONE()) guard isInitialExactOrApprox(initial_) then setDefaultStartValue(var.varType);
