@@ -22,8 +22,8 @@ To export the FMU use the OpenModelica command
 `translateModelFMU(ModelName) <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.translateModelFMU.html>`_
 from command line interface, OMShell, OMNotebook or MDT.
 The export FMU command is also integrated with OMEdit.
-Select FMI > Export FMU the FMU package is generated in the
-current directory of omc. You can use the cd() command to see the
+Select `File > Export > FMU` the FMU package is generated in the
+current directory of omc. You can use the `cd() <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.cd.html>`_ command to see the
 current location. You can set which version of FMI to export through
 OMEdit settings, see section :ref:`omedit-options-fmi`.
 
@@ -51,7 +51,8 @@ If there are some errors while creating FMU they will be shown in the
 command line window and logged in this log file as well.
 
 By default an FMU that can be used for both Model Exchange and
-Co-Simulation is generated. We only support FMI 2.0 for Co-Simulation FMUs.
+Co-Simulation is generated. We support FMI 1.0 and FMI 2.0 for Model Exchange FMUs
+and FMI 2.0 for Co-Simulation FMUs.
 
 Currently the Co-Simulation FMU supports only the forward Euler solver
 with root finding which does an Euler step of communicationStepSize
@@ -70,10 +71,10 @@ To import the FMU package use the OpenModelica command importFMU,
 
 The command could be used from command line interface, OMShell,
 OMNotebook or MDT. The importFMU command is also integrated with OMEdit.
-Select FMI > Import FMU the FMU package is extracted in the directory
+Select `File > Import > FMU` the FMU package is extracted in the directory
 specified by workdir, since the workdir parameter is optional so if its
 not specified then the current directory of omc is used. You can use the
-cd() command to see the current location.
+`cd() <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.cd.html>`_ command to see the current location.
 
 The implementation supports FMI for Model Exchange 1.0 & 2.0 and FMI for
 Co-Simulation 1.0 stand-alone. The support for FMI Co-Simulation is
