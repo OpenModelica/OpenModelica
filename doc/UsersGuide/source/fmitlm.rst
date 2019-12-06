@@ -9,11 +9,9 @@ Mockup Interface (`FMI <http://www.fmi-standard.org>`_) allows export of pre-com
 C-code or binary code, from a tool for import in another tool, and vice
 versa. The FMI standard is Modelica independent. Import and export works
 both between different Modelica tools, or between certain non-Modelica
-tools. OpenModelica supports FMI 1.0 & 2.0,
+tools.
 
--  Model Exchange
-
--  Co-Simulation (under development)
+See also `OMSimulator documentation <https://openmodelica.org/doc/OMSimulator/master/html/>`_.
 
 FMI Export
 ~~~~~~~~~~
@@ -51,7 +49,7 @@ If there are some errors while creating FMU they will be shown in the
 command line window and logged in this log file as well.
 
 By default an FMU that can be used for both Model Exchange and
-Co-Simulation is generated. We support FMI 1.0 and FMI 2.0 for Model Exchange FMUs
+Co-Simulation is generated. We support FMI 1.0 & FMI 2.0 for Model Exchange FMUs
 and FMI 2.0 for Co-Simulation FMUs.
 
 Currently the Co-Simulation FMU supports only the forward Euler solver
@@ -82,7 +80,7 @@ still under development.
 
 The FMI Import is currently a prototype. The prototype has been tested
 in OpenModelica with several examples. It has also been tested with
-example FMUs from FMUSDK and Dymola. A more fullfleged version for FMI
+example FMUs from FMUSDK and Dymola. A more complete version for FMI
 Import will be released in the near future.
 
 When importing the model into OMEdit, roughly the following commands will be executed:

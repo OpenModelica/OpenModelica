@@ -25,6 +25,7 @@ Generated on |date| at |time|
   graphs
   fmitlm
   omsimulator
+  systemidentification
   encryption
   omnotebook
   optimization
