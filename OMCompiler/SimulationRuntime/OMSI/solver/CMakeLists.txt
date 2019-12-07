@@ -28,7 +28,7 @@ ENDIF()
 IF (LAPACK_FOUND STREQUAL "NOTFOUND")
   MESSAGE(FATAL_ERROR "Error: Lapack Libraries not found!")
 ENDIF()
-MESSAGE(STATUS "Lapack Libraries: ${LAPACK_LIBRARIES}")
+MESSAGE(STATUS "Lapack Libraries: ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES}")
 
 IF(MSVC)
   #workaround  because cmake does not find the lapack libraries for Visual Studio 10
@@ -117,7 +117,7 @@ add_library(${OMSISolverName}
 )
 
 set(CMAKE_MACOSX_RPATH 1)   # Handle rpath on mac in makefiles
-target_link_libraries(${OMSISolverName} ${CMAKE_DL_LIBS} ${LAPACK_LIBRARIES} ${SUNDIALS_LIBRARIES})
+target_link_libraries(${OMSISolverName} ${CMAKE_DL_LIBS} ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${SUNDIALS_LIBRARIES})
 
 install(TARGETS ${OMSISolverName} DESTINATION ${LIBINSTALLEXT})
 
