@@ -3375,7 +3375,7 @@ algorithm
       isStructural := false;
     elseif Binding.isUnbound(compBinding) then
       // Except parameters with no bindings.
-      if not evalAllParams then
+      if not evalAllParams and not Flags.getConfigBool(Flags.CHECK_MODEL) then
         // Print a warning if a parameter has an Evaluate=true annotation but no binding.
         Error.addSourceMessage(Error.UNBOUND_PARAMETER_EVALUATE_TRUE,
           {InstNode.name(compNode)}, InstNode.info(compNode));
