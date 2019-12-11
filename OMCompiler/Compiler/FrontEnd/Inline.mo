@@ -863,7 +863,6 @@ algorithm
 
             // output
             newExp = Expression.makeTuple(list( getReplacementCheckComplex(repl,cr,ty) for cr in lst_cr));
-
             // compare types
             true = checkExpsTypeEquiv(e1, newExp);
             // input map cref again function args
