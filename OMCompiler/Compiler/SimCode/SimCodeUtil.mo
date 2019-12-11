@@ -6076,6 +6076,7 @@ algorithm
 end createSingleComplexEqnCode;
 
 // TODO: are the cases really correct?
+// mahge: These should be revised or removed!!
 protected function createSingleComplexEqnCode2
   input list<DAE.ComponentRef> crefs;
   input DAE.Exp inExp3;
@@ -6157,7 +6158,7 @@ algorithm
         // check all crefs are on the lhs
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
-        expLst = Expression.traverseExpList(expLst, Expression.expandCrefs, 0) "The routines generate bad code for arrays inside the record unless we expand them";
+        expLst = Expression.traverseExpList(expLst, function Expression.expandCrefs(expandRecord=true), 0) "The routines generate bad code for arrays inside the record unless we expand them";
         List.foldAllValue(expLst, createSingleComplexEqnCode3, true, ht);
         (e2_1, _) = Expression.extendArrExp(e2, false);
 
@@ -6188,7 +6189,7 @@ algorithm
         // check all crefs are on the rhs => turn
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
-        expLst = Expression.traverseExpList(expLst, Expression.expandCrefs, 0) "The routines generate bad code for arrays inside the record unless we expand them";
+        expLst = Expression.traverseExpList(expLst, function Expression.expandCrefs(expandRecord=true), 0) "The routines generate bad code for arrays inside the record unless we expand them";
         List.foldAllValue(expLst, createSingleComplexEqnCode3, true, ht);
         (e1_1, _) = Expression.extendArrExp(e1, false);
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
@@ -13747,6 +13748,7 @@ protected
   list<SimCodeVar.SimVar> vars;
   SimCode.SimCode simCode;
   Integer index;
+  list<DAE.ComponentRef> crf_lst;
 algorithm
   if SimCodeFunctionUtil.inFunctionContext(context) then
     return;
@@ -13756,13 +13758,14 @@ algorithm
     case DAE.CREF(ty=DAE.T_ARRAY())
       algorithm
         simCode := getSimCode();
-        vars := list(cref2simvar(cr, simCode) for cr in ComponentReference.expandCref(e.componentRef, true));
+        crf_lst := ComponentReference.expandCref(e.componentRef, true);
+        vars := list(cref2simvar(cr, simCode) for cr in crf_lst);
         if not listEmpty(vars) then
           SimCodeVar.SIMVAR(index=index)::vars := vars;
           for v in vars loop
             // The array needs to be expanded because it's not stored in contiguous memory
             if v.index <> index+1 then
-              e := Expression.expandCrefs(e);
+              e := Expression.expandCrefs(e, false /*do not expand records*/);
               break;
             end if;
             index := v.index;

@@ -12111,14 +12111,21 @@ end makeVectorCall;
 
 
 public function expandCrefs
-  input output DAE.Exp exp;
+  input DAE.Exp inExp;
+  input Boolean expandRecord;
+  output DAE.Exp outExp;
   input output Integer dummy=0 "For traversal";
 algorithm
-  exp := match exp
+  outExp := match inExp
     local
-      DAE.Type ty;
-    case DAE.CREF(ty=DAE.T_ARRAY(ty=ty)) then makeArray(list(makeCrefExp(cr, ty) for cr in ComponentReference.expandCref(exp.componentRef, true)), exp.ty, not Types.isArray(ty));
-    else exp;
+      DAE.Type elem_ty, arr_ty;
+      list<DAE.Exp> exp_lst;
+      DAE.Exp exp;
+    case DAE.CREF(ty=arr_ty as DAE.T_ARRAY()) algorithm
+        exp_lst := list(makeCrefExp(cr, arr_ty.ty) for cr in ComponentReference.expandCref(inExp.componentRef, expandRecord));
+        exp := listToArray(exp_lst, arr_ty.dims);
+      then exp;
+    else inExp;
   end match;
 end expandCrefs;
 
