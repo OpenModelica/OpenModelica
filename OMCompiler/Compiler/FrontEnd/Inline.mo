@@ -838,8 +838,7 @@ algorithm
         true = checkInlineType(inlineType,fns);
         (fn,comment) = getFunctionBody(p,fns);
         (checkcr,repl) = getInlineHashTableVarTransform();
-        if (Config.acceptMetaModelicaGrammar())
-        then // MetaModelica
+        if (Config.acceptMetaModelicaGrammar()) then // MetaModelica
           crefs = List.map(fn,getInputCrefs);
           crefs = List.select(crefs,removeWilds);
           argmap = List.threadTuple(crefs,args);
@@ -860,12 +859,10 @@ algorithm
           // merge statements to one line
           (repl,assrtStmts) = mergeFunctionBody(stmts,repl,{});
           // depend on detection of assert or not
-          if (listEmpty(assrtStmts))
-          then // no assert detected
+          if (listEmpty(assrtStmts)) then // no assert detected
 
             // output
             newExp = Expression.makeTuple(list( getReplacementCheckComplex(repl,cr,ty) for cr in lst_cr));
-
             // compare types
             true = checkExpsTypeEquiv(e1, newExp);
             // input map cref again function args
@@ -906,7 +903,6 @@ algorithm
 
   end matchcontinue;
 end inlineCall;
-
 
 protected function inlineAssert "inlines an assert.
 author:Waurich TUD 2013-10"
@@ -1259,6 +1255,7 @@ algorithm
   end matchcontinue;
 end checkInlineType;
 
+// TODO: mahge: This needs to be rewritten completely.
 public function extendCrefRecords
 "extends crefs from records"
   input list<tuple<DAE.ComponentRef, DAE.Exp>> inArgmap;
@@ -1276,6 +1273,7 @@ algorithm
       list<DAE.Exp> expl;
       list<DAE.ComponentRef> crlst;
       list<tuple<DAE.ComponentRef,DAE.ComponentRef>> creftpllst;
+      Absyn.Path rpath;
     case ({},ht) then ({},ht);
       /* All elements of the record have correct type already. No cast needed. */
     case((c,(DAE.CAST(exp=e,ty=DAE.T_COMPLEX())))::res,ht)
@@ -1299,7 +1297,9 @@ algorithm
         (new1,ht2) = extendCrefRecords(new,ht1);
         res2 = listAppend(new1,res1);
       then ((c,e)::res2,ht2);
-    case((c,e as (DAE.CALL(expLst = expl,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst)))))::res,ht)
+    // If the call is to a record constructor then "extend the cref and inline" them
+    case((c,e as (DAE.CALL(expLst = expl,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(rpath), varLst=varLst)))))::res,ht)
+      guard AbsynUtil.pathEqual(e.path,rpath)
       equation
         (res1,ht1) = extendCrefRecords(res,ht);
         crlst = List.map1(varLst,extendCrefRecords2,c);
