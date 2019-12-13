@@ -2174,7 +2174,12 @@ algorithm
           stateSetIdx = stringInt(stateSetIdxString);
           arrayUpdate(stateSetFixCounts, stateSetIdx, arrayGet(stateSetFixCounts, stateSetIdx) + 1);
         else
-          eqn = BackendDAE.EQUATION(crefExp, Expression.crefExp(startCR), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+          // if startExp is constant, generate "cref = $START.cref" otherwise "cref = startExp"
+          if Expression.isConstValue(startExp) then
+            eqn = BackendDAE.EQUATION(crefExp, Expression.crefExp(startCR), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+          else
+            eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+          end if;
           eqns = BackendEquation.add(eqn, eqns);
         end if;
       end if;
@@ -2378,7 +2383,12 @@ algorithm
       preVar = BackendVariable.setVarFixed(preVar, true);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
 
-      eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), Expression.crefExp(startCR), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+      // if startExp is constant, generate "cref = $START.cref" otherwise "cref = startExp"
+      if Expression.isConstValue(startExp) then
+        eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), Expression.crefExp(startCR), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+      else
+        eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+      end if;
 
       vars = if not isInput then BackendVariable.addVar(var, vars) else vars;
       fixvars = if isInput then BackendVariable.addVar(var, fixvars) else fixvars;
@@ -2426,7 +2436,12 @@ algorithm
       preVar = BackendVariable.setVarFixed(preVar, true);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
 
-      eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), DAE.CREF(cr, ty), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+      // if startExp is constant, generate "cref = $START.cref" otherwise "cref = startExp"
+      if Expression.isConstValue(startExp) then
+        eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), DAE.CREF(cr, ty), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+      else
+        eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+      end if;
 
       vars = if not isInput then BackendVariable.addVar(var, vars) else vars;
       fixvars = if isInput then BackendVariable.addVar(var, fixvars) else fixvars;
