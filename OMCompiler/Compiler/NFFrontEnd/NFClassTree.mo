@@ -50,6 +50,7 @@ protected
   import SCodeDump;
   import SCodeUtil;
   import NFInstNode.InstNodeType;
+  import Restriction = NFRestriction;
 
 public
   encapsulated package LookupTree
@@ -547,6 +548,7 @@ public
       DuplicateTree.Tree dups;
       Component comp;
       SCode.Element ext_def;
+      Boolean is_typish;
     algorithm
       // TODO: If we don't have any extends we could probably generate a flat
       // tree directly and skip a lot of this.
@@ -603,12 +605,17 @@ public
 
             // Copy the local classes into the new class array, and set the
             // class we're instantiating to be their parent.
-            for c in old_clss loop
-              if not InstNode.isOperator(c) then
-                c := InstNode.clone(c);
-              end if;
+            is_typish := Restriction.isType(cls.restriction) or
+                         Restriction.isOperatorRecord(cls.restriction) or
+                         Restriction.isOperator(cls.restriction);
 
-              c := InstNode.setParent(clsNode, c);
+            for c in old_clss loop
+              if is_typish then
+                c := InstNode.setParent(clsNode, c);
+              else
+                c := InstNode.clone(c);
+                c := InstNode.setParent(instance, c);
+              end if;
 
               // If the class is outer, check that it's valid and link it with
               // the corresponding inner class.
