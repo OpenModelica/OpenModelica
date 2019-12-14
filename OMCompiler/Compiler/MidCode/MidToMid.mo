@@ -31,9 +31,6 @@
 encapsulated package MidToMid
 
 import MidCode;
-import SimCode;
-import SimCodeFunction;
-import DAE;
 import List;
 import MidCodeUtil;
 import Util;

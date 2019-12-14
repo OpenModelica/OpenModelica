@@ -36,7 +36,6 @@ import DAE;
 import DAE.{AvlTreePathFunction};
 import DAEDump;
 import FCore;
-import HashTableStringToPath;
 import Absyn;
 import List;
 public
