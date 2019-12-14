@@ -1,0 +1,42 @@
+// name:     ComplicatedInteractive
+// keywords: MetaModelica
+// status:   correct
+// cflags:   +g=MetaModelica -d=jit_eval_func
+//
+// Testing nested complex datatypes, like tuple, list, option...
+loadFile("ComplicatedInteractive.mo");
+res := ComplicatedInteractive.RecordWithComplicatedTypes((1.0, {}));
+res := ComplicatedInteractive.RecordWithComplicatedTypes((1.0, {(1.0, SOME({}))}));
+res := ComplicatedInteractive.RecordWithComplicatedTypes((1.0, {(1.0, NONE()), (1.0, SOME({1,2,3}))}));
+res2 := ComplicatedInteractive.LI2Ident(res);
+res3 := ComplicatedInteractive.NewComplicatedThingy(NONE());
+res3 := ComplicatedInteractive.NewComplicatedThingy(SOME({}));
+res3 := ComplicatedInteractive.NewComplicatedThingy(SOME({1,2,3}));
+res4 := ComplicatedInteractive.listOfTuple((2,3.5));
+
+// Result:
+// true
+// record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
+//     rcf = (1.0,{})
+// end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;
+// record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
+//     rcf = (1.0,{(1.0,SOME({}))})
+// end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;
+// record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
+//     rcf = (1.0,{(1.0,NONE()),(1.0,SOME({1,2,3}))})
+// end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;
+// record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
+//     rcf = (1.0,{(1.0,NONE()),(1.0,SOME({1,2,3}))})
+// end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;
+// (4,record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
+//     rcf = (1.0,{(7.5,NONE())})
+// end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;)
+// (4,record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
+//     rcf = (1.0,{(7.5,SOME({}))})
+// end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;)
+// (4,record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
+//     rcf = (1.0,{(7.5,SOME({1,2,3}))})
+// end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;)
+// {(2,3.5),(2,3.5),(2,3.5),(1,7.5),(2,3.5),(2,3.5)}
+//
+// endResult

@@ -142,7 +142,21 @@ UniontypeConst3.mos \
 UniontypeNestedSingelton.mos
 # test that currently fail. Move up when fixed.
 # Run make testfailing
-FAILINGTESTFILES=
+TESTFILESLLVM = \
+ListInteractiveLLVM.mos \
+ThreadedReductionLLVM.mos \
+AlgorithmsLLVM.mos
+
+# test that currently fail. Move up when fixed.
+# Run make testfailing
+FAILINGTESTFILES= \
+TupleLLVM.mos \
+ComplicatedInteractiveLLVM.mos \
+BuiltinIntegerLLVM.mos \
+BuiltinRealLLVM.mos \
+BuiltinListLLVM.mos \
+BuiltinStringLLVM.mos \
+BuiltinArrayLLVM.mos
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
@@ -157,12 +171,19 @@ CLEAN = `ls | grep -w -v -f deps.tmp`
 
 .PHONY : test clean getdeps failingtest
 
-test:
+test:   testLLVM
 	@echo
 	@echo Running tests...
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(TEST) $(TESTFILES)
+
+testLLVM:
+	@echo
+	@echo Running LLVM tests...
+	@echo
+	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
+	@$(TEST) $(TESTFILESLLVM)
 
 # Cleans all files that are not listed as dependencies
 clean :
