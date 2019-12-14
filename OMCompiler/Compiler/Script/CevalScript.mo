@@ -79,21 +79,17 @@ import DAEUtil;
 import Debug;
 import Dump;
 import DynLoad;
-<<<<<<< 33817e1492614e3321226289f4c1de7c4cfe6625
-import Error;
-=======
 import EXT_LLVM;
->>>>>>> Updated the LLVM backend with proper flags
+import Error;
 import ErrorExt;
 import ExecStat.{execStat,execStatReset};
 import Expression;
 import ExpressionDump;
 import FBuiltin;
 import FGraph;
-import Flags;
-import FlagsUtil;
 import FNode;
 import Flags;
+import FlagsUtil;
 import GC;
 import GenerateAPIFunctionsTpl;
 import Global;
@@ -108,7 +104,6 @@ import MidCode;
 import MidToLLVM;
 import Mod;
 import Parser;
-import Prefix;
 import Print;
 import SCode;
 import SCodeDump;
@@ -125,10 +120,7 @@ import Types;
 import Unparsing;
 import Util;
 import ValuesUtil;
-<<<<<<< 33817e1492614e3321226289f4c1de7c4cfe6625
 
-=======
->>>>>>> Updated the LLVM backend with proper flags
 public
 
 function ceval "

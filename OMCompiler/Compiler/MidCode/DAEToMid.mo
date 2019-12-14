@@ -910,7 +910,7 @@ algorithm
   algorithm
     varExp := RValueToVar(ExpToMid(exp.exp, state), state);
   then MidCode.METAFIELD(varExp, exp.ix, Types.complicateType(exp.ty));
-  case DAE.CAST(_, exp1)
+  case DAE.CAST(ty, exp1)
   algorithm
     varExp := RValueToVar(ExpToMid(exp1,state),state); //Will the expression to cast.
     varTmp := GenTmpVar(ty,state); //Tmp variable of the variable we want to cast the expression to.
