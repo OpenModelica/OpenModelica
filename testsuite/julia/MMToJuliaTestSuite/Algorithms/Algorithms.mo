@@ -74,7 +74,7 @@ algorithm
   complexNumbers := arrayList(A);
 end createTestArray2;
 
-function split
+function splitFFT
   input array<Complex> A;
   input Integer start;
   input Integer stop;
@@ -93,7 +93,7 @@ algorithm
   for i in 1:middle loop
     arrayUpdate(A,start + i + middle,arrayGet(tmp,i));
   end for;
-end split;
+end splitFFT;
 
 function FFT
   input array<Complex> A;
@@ -110,7 +110,7 @@ algorithm
   middle := start + intDiv(stop-start,2);
   if stop - start == 1 then return;
   else
-    split(A,start,stop);
+    splitFFT(A, start, stop);
     FFT(A, start, middle);
     FFT(A, middle, stop);
     for i in 1:intDiv(stop-start,2) loop
@@ -233,6 +233,16 @@ algorithm
   end match;
 end merge;
 
+function callFFT
+  output list<Complex> oLst;
+protected
+  array<Complex> A;
+algorithm
+  A := listArray(createTestArray2(8));
+  FFT(A, 0, 8);
+  oLst := arrayList(A);
+end callFFT;
+
 function sort<T>
   "The merge sort algorithm from the compiler.
    Sorts a list given an ordering function with the mergesort algorithm.
@@ -264,7 +274,7 @@ algorithm
         outList := if inCompFunc(e2, e1) then inList else {e2,e1};
       else
         middle := intDiv(listLength(inList), 2);
-        (left, right) := split(inList, middle);
+        (left, right) := splitLST(inList, middle);
         left := sort(left, inCompFunc);
         right := sort(right, inCompFunc);
         outList := merge(left, right, inCompFunc, {});
@@ -273,7 +283,7 @@ algorithm
   end if;
 end sort;
 
-public function split<T>
+public function splitLST<T>
   "Takes a list and a position, and splits the list at the position given.
     Example: split({1, 2, 5, 7}, 2) => ({1, 2}, {5, 7})"
   input list<T> inList;
@@ -296,6 +306,6 @@ algorithm
 
   outList1 := Dangerous.listReverseInPlace(l1);
   outList2 := l2;
-end split;
+end splitLST;
 
 end Algorithms;

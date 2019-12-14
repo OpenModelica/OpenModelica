@@ -1,0 +1,22 @@
+// name:     AlgorithmsLLVM
+// keywords: Builtin
+// status:   correct
+// cflags:   -g=MetaModelica -d=jit_eval_func
+//
+// Testing some Algorithms with LLVM
+//
+loadFile("../../julia/MMToJuliaTestSuite/Algorithms/Algorithms.mo");
+Algorithms.realSummation();
+Algorithms.fibonacci(10);
+Algorithms.createTestArray2(1);
+getErrorString();
+// Result:
+// true
+// 3216000000.0
+// 55
+//{record Algorithms.Complex.COMPLEX
+//r = 0.0,
+//i = 0.0
+//end Algorithms.Complex.COMPLEX;}
+// ""
+// endResult
