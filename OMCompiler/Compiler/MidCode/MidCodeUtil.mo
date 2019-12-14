@@ -36,7 +36,6 @@ import DAE;
 import DAE.{AvlTreePathFunction};
 import DAEDump;
 import FCore;
-import HashTableStringToPath;
 import Absyn;
 import List;
 public
@@ -57,8 +56,8 @@ type cacheValue = AvlTreePathFunction.Value;
 //     else fail();
 //   end match;
 //   for func in functions loop
-// 	value := SOME((AvlTreePathFunction.get(Mutable.access(functionTree), func.name), SOME(func)));
-// 	Mutable.update(functionTree ,AvlTreePathFunction.add2(Mutable.access(functionTree), func.name, value));
+//   value := SOME((AvlTreePathFunction.get(Mutable.access(functionTree), func.name), SOME(func)));
+//   Mutable.update(functionTree ,AvlTreePathFunction.add2(Mutable.access(functionTree), func.name, value));
 //   end for;
 //   cache := cache;
 // end addMidCodeFunctions;
@@ -159,7 +158,7 @@ function getCallTerminator
   output MidCode.Terminator outTerm;
 algorithm
   outTerm := match inTerm
-	case MidCode.CALL(__) then inTerm;
+  case MidCode.CALL(__) then inTerm;
   end match;
 end getCallTerminator;
 
@@ -194,7 +193,7 @@ algorithm
   calls := getTerminators(getBBs(midFunc));
   calls := List.filterOnTrue(calls,isCallTerminator);
   if not fetchBuiltinAsWell then
-	calls := List.filterOnTrue(calls,isNotBuiltinCall);
+  calls := List.filterOnTrue(calls,isNotBuiltinCall);
   end if;
   functionPaths := List.map(calls,getCallTermPath);
 end getMidCodeCallTerminators;
@@ -235,7 +234,7 @@ function rValueToLiteralInteger
   output Integer r;
   algorithm
   r := match rval
-	case MidCode.LITERALINTEGER(__) then rval.value;
+  case MidCode.LITERALINTEGER(__) then rval.value;
     else then fail();
   end match;
 end rValueToLiteralInteger;
@@ -245,7 +244,7 @@ function rValueToLiteralReal
   output Real r;
 algorithm
   r := match rval
-	case MidCode.LITERALREAL(__) then rval.value;
+  case MidCode.LITERALREAL(__) then rval.value;
     else then fail();
   end match;
 end rValueToLiteralReal;
@@ -255,7 +254,7 @@ function rValueToLiteralBoolean
   output Boolean r;
 algorithm
   r := match rval
-	case MidCode.LITERALBOOLEAN(__) then rval.value;
+  case MidCode.LITERALBOOLEAN(__) then rval.value;
     else then fail();
   end match;
 end rValueToLiteralBoolean;
@@ -265,7 +264,7 @@ function rValueToLiteralString
   output String r;
 algorithm
   r := match rval
-	case MidCode.LITERALSTRING(__) then rval.value;
+  case MidCode.LITERALSTRING(__) then rval.value;
     else then fail();
   end match;
 end rValueToLiteralString;
@@ -277,7 +276,7 @@ algorithm
   print("outputs:" + anyString(func.outputs) + "\n");
   print("Locals:" + anyString(func.locals) + "\n");
   for bb in func.body loop
-	print("\n"+anyString(bb) + "\n");
+  print("\n"+anyString(bb) + "\n");
   end for;
 end dumpMidCodeIR;
 

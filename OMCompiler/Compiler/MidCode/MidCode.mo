@@ -115,7 +115,7 @@ uniontype Terminator
     list<Var> inputs;
     list<OutVar> outputs;
     Integer next;
-	DAE.Type ty;
+  DAE.Type ty;
   end CALL;
 
   record RETURN
@@ -214,11 +214,11 @@ uniontype RValue
   end LITERALMETATYPE;
 
   record LITERALARRAY
-	"Represents T_ARRAY, e.g normal arrays for Scalars."
-	list<RValue> elements; //As a list since we need to support multidimensional arrays.
-	DAE.Type ty;
-	DAE.Dimensions dims;
-	//TODO extend with dimensions. ?
+  "Represents T_ARRAY, e.g normal arrays for Scalars."
+  list<RValue> elements; //As a list since we need to support multidimensional arrays.
+  DAE.Type ty;
+  DAE.Dimensions dims;
+  //TODO extend with dimensions. ?
   end LITERALARRAY;
 
 /*

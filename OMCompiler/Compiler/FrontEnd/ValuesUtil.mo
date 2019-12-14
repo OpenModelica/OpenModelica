@@ -110,6 +110,7 @@ algorithm
     list<DAE.Var> varLst;
     list<Integer> int_dims;
     DAE.Dimensions dims;
+    Values.Value tmpval;
     case(Values.INTEGER(_)) then DAE.T_INTEGER_DEFAULT;
     case(Values.REAL(_)) then DAE.T_REAL_DEFAULT;
     case(Values.BOOL(_)) then DAE.T_BOOL_DEFAULT;
@@ -129,21 +130,24 @@ algorithm
 
     /*MetaModelica types, TODO: It seems that meta_record and record are not quite comp here.*/
     case(Values.RECORD(path,valLst,nameLst,indx)) equation
-	    eltTps = List.map(valLst,valueExpType);
+      eltTps = List.map(valLst,valueExpType);
     then DAE.T_METARECORD(path,/*TODO:!*/path,eltTps,indx,/*TODO:!*/{},/*Used in Dynload context...*/false);
     case Values.LIST(valLst) equation
-		  eltTp = valueExpType(listHead(valLst));
+      eltTp = if not listEmpty(valLst) then valueExpType(listHead(valLst)) else DAE.T_METALIST_DEFAULT;
     then DAE.T_METALIST(eltTp);
     case Values.META_TUPLE(valLst) equation
-		  eltTps = List.map(valLst,valueExpType);
+      eltTps = List.map(valLst,valueExpType);
     then DAE.T_METATUPLE(eltTps);
-
-	  case Values.META_ARRAY(valLst) equation
-		  eltTp = valueExpType(listHead(valLst));
+    case Values.META_ARRAY(valLst) equation
+      eltTp = valueExpType(listHead(valLst));
     then DAE.T_METAARRAY(eltTp);
     case Values.META_BOX(_)
-	  then DAE.T_METABOXED(valueExpType(inValue.value));
-    
+    then DAE.T_METABOXED(valueExpType(inValue.value));
+    case Values.OPTION(NONE())
+    then DAE.T_NONE_DEFAULT;
+    case Values.OPTION(SOME(tmpval)) equation
+      eltTp = valueExpType(tmpval);
+    then DAE.T_METAOPTION(eltTp);
     case _
       equation
         print("valueExpType on "+valString(inValue) + " not implemented yet\n");
@@ -917,18 +921,14 @@ algorithm
         e = valueExp(v);
         (e,_) = Types.matchType(e, Types.typeOfValue(v), DAE.T_METABOXED_DEFAULT, true);
       then DAE.META_OPTION(SOME(e));
-
     case (Values.OPTION(NONE())) then DAE.META_OPTION(NONE());
-
     case (Values.META_TUPLE(vallist))
       equation
         explist = List.map(vallist, function valueExp(originalExp=NONE()));
         typelist = List.map(vallist, Types.typeOfValue);
         (explist,_) = Types.matchTypeTuple(explist, typelist, List.map(typelist, Types.boxIfUnboxedType), true);
       then DAE.META_TUPLE(explist);
-
     case (Values.LIST({})) then DAE.LIST({});
-
     case (Values.LIST(vallist))
       equation
         explist = List.map(vallist, function valueExp(originalExp=NONE()));

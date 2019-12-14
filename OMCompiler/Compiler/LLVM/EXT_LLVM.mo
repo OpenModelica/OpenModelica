@@ -661,8 +661,8 @@ end genGlobalStructConstant;
 
 function storeValToStruct
     input String varName;
-	input String structName;
-	input Integer idx0;
+  input String structName;
+  input Integer idx0;
     input Integer idx1;
   external "C" createStoreToStruct(varName,structName,idx0,idx1) annotation(Library="omcruntime");
 end storeValToStruct;

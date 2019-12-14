@@ -2299,7 +2299,7 @@ algorithm
 //        print("Before JIT COMPILE\n");
         newval := match midFuncs
           local MidCode.Function H; List<MidCode.Function> T = {};
-	  case H::T then MidToLLVM.JIT(H,vallst);
+    case H::T then MidToLLVM.JIT(H,vallst);
           else algorithm
             Error.addInternalError("Error occured when attempting JIT evaluation", sourceInfo());
           then fail();
