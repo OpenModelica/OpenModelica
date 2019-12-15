@@ -32,7 +32,6 @@
 encapsulated package MidCode
 
 import DAE;
-import DAEDump;
 
 uniontype Program
   record PROGRAM
