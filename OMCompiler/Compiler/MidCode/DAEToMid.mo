@@ -32,7 +32,6 @@ encapsulated package DAEToMid
 import BaseHashTable;
 import ComponentReference;
 import DAE;
-import DAEDump;
 import DAEUtil;
 import DoubleEnded;
 import Expression;
@@ -48,7 +47,6 @@ import System;
 import Types;
 protected
 import MetaModelica.Dangerous.{arrayGetNoBoundsChecking, arrayUpdateNoBoundsChecking, arrayCreateNoInit};
-import ValuesUtil;
 import List;
 import Error;
 
