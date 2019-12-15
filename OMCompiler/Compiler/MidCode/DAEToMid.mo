@@ -33,6 +33,7 @@ import BaseHashTable;
 import ComponentReference;
 import DAE;
 import DAEUtil;
+import DAEDump;
 import DoubleEnded;
 import Expression;
 import ExpressionDump;
