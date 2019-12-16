@@ -9251,7 +9251,7 @@ algorithm
       source = source)), _, vars)
       equation
         _ = match BackendVariable.varStateSelect(dlowVar)
-          case DAE.NEVER()
+          case DAE.NEVER() guard(BackendVariable.isNaturalState(dlowVar))
             algorithm
               Error.addSourceMessage(Error.STATE_STATESELECT_NEVER, {ComponentReference.printComponentRefStr(cr)}, source.info);
             then ();

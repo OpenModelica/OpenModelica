@@ -1107,9 +1107,9 @@ algorithm
       then BackendDAE.STATE(1, NONE(), false);
 
     else
-      equation
+      algorithm
         /* Consider toplevel inputs as known unless they are protected. Ticket #5591 */
-        false = DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType, protection);
+        false := DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType, protection);
       then
         match (inVarKind, inType)
           case (DAE.VARIABLE(), DAE.T_BOOL()) then BackendDAE.DISCRETE();
@@ -1117,7 +1117,7 @@ algorithm
           case (DAE.VARIABLE(), DAE.T_ENUMERATION()) then BackendDAE.DISCRETE();
           case (DAE.VARIABLE(), _) then BackendDAE.VARIABLE();
           case (DAE.DISCRETE(), _) then BackendDAE.DISCRETE();
-        end match;
+      end match;
   end match;
 end lowerVarkind;
 
