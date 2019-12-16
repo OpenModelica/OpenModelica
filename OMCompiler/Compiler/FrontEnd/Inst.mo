@@ -81,7 +81,7 @@ encapsulated package Inst
 public import Absyn;
 public import AbsynUtil;
 public import ClassInf;
-public import Connect;
+public import DAE.Connect;
 public import ConnectionGraph;
 public import DAE;
 public import FCore;

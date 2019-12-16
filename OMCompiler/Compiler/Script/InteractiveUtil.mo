@@ -57,7 +57,7 @@ protected
 import Ceval;
 import ClassInf;
 import Config;
-import Connect;
+import DAE.Connect;
 import Constants;
 import DAEUtil;
 import Debug;

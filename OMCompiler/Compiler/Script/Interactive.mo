@@ -66,7 +66,7 @@ import CevalScript;
 import ClassInf;
 import ClockIndexes;
 import Config;
-import Connect;
+import DAE.Connect;
 import Constants;
 import DAEDump;
 import DAEUtil;

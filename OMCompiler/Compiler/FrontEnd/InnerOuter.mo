@@ -35,7 +35,7 @@ encapsulated package InnerOuter
 
 
 import Absyn;
-import Connect;
+import DAE.Connect;
 import ConnectionGraph;
 import DAE;
 import FCore;
