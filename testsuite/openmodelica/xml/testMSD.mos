@@ -60,6 +60,9 @@ readFile("stateSpace-MSD.xml");
 // </quantity>
 // <unit string=\"&quot;m&quot;\">
 // </unit>
+// <stateSelect>
+// Never
+// </stateSelect>
 // </attributesValues>
 // </variable>
 // <variable id=\"6\" name=\"damper1.v_rel\" variability=\"continuousDummyState\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Relative velocity (= der(s_rel))\">
@@ -123,6 +126,9 @@ readFile("stateSpace-MSD.xml");
 // </quantity>
 // <unit string=\"&quot;m&quot;\">
 // </unit>
+// <stateSelect>
+// Never
+// </stateSelect>
 // </attributesValues>
 // </variable>
 // <variable id=\"11\" name=\"mass1.s\" variability=\"continuousState\" direction=\"none\" type=\"Real\" differentiatedIndex=\"1\" derivativeName=\"mass1.v\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute position of center of component (s = flange_a.s + L/2 = flange_b.s - L/2)\">
@@ -146,6 +152,9 @@ readFile("stateSpace-MSD.xml");
 // </quantity>
 // <unit string=\"&quot;N&quot;\">
 // </unit>
+// <stateSelect>
+// Never
+// </stateSelect>
 // </attributesValues>
 // </variable>
 // <variable id=\"13\" name=\"spring1.s_rel\" variability=\"continuousDummyState\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Relative distance (= flange_b.s - flange_a.s)\">
@@ -154,6 +163,9 @@ readFile("stateSpace-MSD.xml");
 // </quantity>
 // <unit string=\"&quot;m&quot;\">
 // </unit>
+// <stateSelect>
+// Never
+// </stateSelect>
 // <initialValue string=\"0.0\">
 // </initialValue>
 // </attributesValues>

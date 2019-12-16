@@ -1366,14 +1366,14 @@ algorithm
     case BackendDAE.VAR(varKind=BackendDAE.STATE(index=1))
       equation
         // do not count states with stateSelect.always
-        b = varStateSelectAlways(inVar);
+        b = BackendVariable.varStateSelectAlways(inVar);
         statecount = if not b then inCount+1 else inCount;
       then statecount;
 
     case BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(_)))
       equation
         // do not count states with stateSelect.always, but ignore only higest state
-        b = varStateSelectAlways(inVar);
+        b = BackendVariable.varStateSelectAlways(inVar);
         statecount = if b then inCount+1 else inCount;
       then statecount;
 
@@ -1381,7 +1381,7 @@ algorithm
       equation
         statecount = diffcount + inCount;
         // do not count states with stateSelect.always, but ignore only higest state
-        b = varStateSelectAlways(inVar);
+        b = BackendVariable.varStateSelectAlways(inVar);
         statecount = if b then statecount-1 else statecount;
       then statecount;
 
@@ -1404,14 +1404,14 @@ algorithm
     case BackendDAE.VAR(varKind=BackendDAE.STATE(index=1))
       equation
         // do only count states with stateSelect.never
-        b = varStateSelectNever(inVar);
+        b = BackendVariable.varStateSelectNever(inVar);
         statecount = if b then inCount+1 else inCount;
       then statecount;
 
     case BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(_)))
       equation
         // do only count states with stateSelect.never, but ignore only higest state
-        b = varStateSelectNever(inVar);
+        b = BackendVariable.varStateSelectNever(inVar);
         statecount = if not b then inCount+1 else inCount;
       then statecount;
 
@@ -1419,7 +1419,7 @@ algorithm
       equation
         statecount = diffcount + inCount;
         // do only count states with stateSelect.never, but ignore only higest state
-        b = varStateSelectNever(inVar);
+        b = BackendVariable.varStateSelectNever(inVar);
         statecount = if not b then statecount-1 else statecount;
       then statecount;
 
@@ -1868,7 +1868,7 @@ algorithm
         (eqnslst,_) = BackendEquation.traverseExpsOfEquationList(eqnslst, Expression.traverseSubexpressionsHelper, (replaceDummyDerivativesExp, ht));
         (eqnslst1,_) = BackendEquation.traverseExpsOfEquationList(eqnslst1, Expression.traverseSubexpressionsHelper, (replaceDummyDerivativesExp, ht));
         // remove stateSelect=StateSelect.always vars
-        varlst = list(var for var guard notVarStateSelectAlways(var, level) in hov);
+        varlst = list(var for var guard BackendVariable.notVarStateSelectAlways(var, level) in hov);
         neqns = BackendEquation.equationLstSizeKeepAlgorithmAsOne(eqnslst); //vwaurich: algorithms are handled as single equations, like a function call
         nfreeStates = listLength(varlst);
         // do state selection of that level
@@ -2251,7 +2251,8 @@ algorithm
 
   for state in states loop
     var := BackendVariable.getVarAt(vars,Util.tuple22(state));
-    if varStateSelectNever(var) and not BaseHashTable.hasKey(BackendVariable.varCref(var), ht) then
+    if BackendVariable.varStateSelectNever(var) and not BaseHashTable.hasKey(BackendVariable.varCref(var), ht) then
+
       neverVars := var::neverVars;
       neverIdx := Util.tuple22(state)::neverIdx;
     end if;
@@ -2261,10 +2262,6 @@ algorithm
   if not listEmpty(neverVars) then
     if Flags.isSet(Flags.BLT_DUMP) then
       BackendDump.dumpVarList(neverVars, "StateSelect.never variables that will tried to be forced as dummys");
-    else
-      msg := System.gettext(BackendDump.varListStringShort(neverVars,"") +
-      "They were forced to be statically selected as dummys, this could lead to errors during simulation, please use -d=bltdump for more information.\n");
-      Error.addMessage(Error.STATE_STATESELECT_NEVER_FORCED, {msg});
     end if;
 
     // If there are unmatched equations try to match full system with casual rules for stateSelect.never vars
@@ -2273,7 +2270,12 @@ algorithm
       m := incidenceMatrixfromEnhanced(me,vars,so);
       mT := AdjacencyMatrix.transposeAdjacencyMatrix(m,nv);
 
-      (vec2,vec1,_) := Matching.ContinueMatching(mT,ne,nv,vec2,vec1);
+      BackendDAEEXT.setAssignment(ne,nv,vec2,vec1);
+      Matching.matchingExternalsetIncidenceMatrix(ne,nv,mT);
+      /* Call with clearMatching = 0 to reuse old information */
+      BackendDAEEXT.matching(ne,nv,3,-1,1.0,1);
+      BackendDAEEXT.getAssignment(vec1,vec2);
+      //(vec2,vec1,_) := Matching.ContinueMatching(mT,ne,nv,vec2,vec1);
       (dummyStates,states) := checkAssignment(1,nv,vec1,vars);
 
       // look for leftover unmatched stateSelect.never vars
@@ -2281,7 +2283,7 @@ algorithm
       neverIdx := {};
       for state in states loop
         var := BackendVariable.getVarAt(vars,Util.tuple22(state));
-        if varStateSelectNever(var) and not BaseHashTable.hasKey(BackendVariable.varCref(var), ht) then
+        if BackendVariable.varStateSelectNever(var) and not BaseHashTable.hasKey(BackendVariable.varCref(var), ht) then
           neverVars := var::neverVars;
           neverIdx := Util.tuple22(state)::neverIdx;
         end if;
@@ -2301,14 +2303,15 @@ algorithm
 
       if not AdjacencyMatrix.isEmpty(m) then
         mT := AdjacencyMatrix.transposeAdjacencyMatrix(m,nv2);
-        Matching.matchingExternalsetIncidenceMatrix(ne,nv2,mT);
-        BackendDAEEXT.matching(ne,nv2,3,-1,1.0,1);
         vec_res1 := arrayCreate(nv2,-1);
         vec_res2 := arrayCreate(ne,-1);
+        BackendDAEEXT.setAssignment(ne,nv2,vec_res2,vec_res1);
+        Matching.matchingExternalsetIncidenceMatrix(ne,nv2,mT);
+        BackendDAEEXT.matching(ne,nv2,3,-1,1.0,1);
         BackendDAEEXT.getAssignment(vec_res1,vec_res2);
 
         // swap out new matchings
-         tplLst := List.zip(neverIdx,List.intRange(listLength(neverIdx)));
+        tplLst := List.zip(neverIdx,List.intRange(listLength(neverIdx)));
         for tpl in tplLst loop
           (never_i, eq_i) := tpl;
           // assigning matched never var to matched eq
@@ -2320,6 +2323,25 @@ algorithm
             vec1[old_i] := -1;
           end if;
         end for;
+      end if;
+
+      // look for leftover unmatched natural stateSelect.never vars and report them
+      neverVars := {};
+      neverIdx := {};
+      for state in states loop
+        var := BackendVariable.getVarAt(vars,Util.tuple22(state));
+        if BackendVariable.varStateSelectNever(var)
+          and BackendVariable.isNaturalState(var)
+          and not BaseHashTable.hasKey(BackendVariable.varCref(var), ht) then
+          neverVars := var::neverVars;
+          neverIdx := Util.tuple22(state)::neverIdx;
+        end if;
+      end for;
+
+      if not listEmpty(neverVars) then
+        msg := System.gettext(BackendDump.varListStringShort(neverVars,"") +
+        "They could not be forced to be statically selected as dummys, this could lead to errors during simulation, please use -d=bltdump for more information.\n");
+        Error.addMessage(Error.STATE_STATESELECT_NEVER_FORCED, {msg});
       end if;
     end if;
 
@@ -3224,7 +3246,7 @@ protected function varStateSelectPrioAttribute
 algorithm
   ss := BackendVariable.varStateSelect(v);
   prio := match ss
-          case DAE.NEVER() then -20.0;
+          case DAE.NEVER() then if BackendVariable.isArtificialState(v) then -25.0 else -20.0;
           case DAE.AVOID() then -1.5;
           case DAE.DEFAULT() then 0.0;
           case DAE.PREFER() then 1.5;
@@ -3325,45 +3347,6 @@ algorithm
   tp := Expression.typeof(inExp);
   outExp := DAE.CALL(Absyn.IDENT("der"), {inExp}, DAE.CALL_ATTR(tp, false, true, false, false, DAE.NO_INLINE(),DAE.NO_TAIL()));
 end makeder;
-
-protected function notVarStateSelectAlways
-"author: Frenkel TUD 2012-06
-  true if var is not StateSelect.always"
-  input BackendDAE.Var v;
-  input Integer level;
-  output Boolean b;
-algorithm
-  b := match v
-    local Integer diffcount;
-    case BackendDAE.VAR(varKind=BackendDAE.STATE(index=diffcount))
-      then not(varStateSelectAlways(v) and (diffcount == level or diffcount == 1));
-    else true;
-  end match;
-end notVarStateSelectAlways;
-
-protected function varStateSelectAlways
-"author: Frenkel TUD 2012-06
-  return true if var is StateSelect.always else false"
-  input BackendDAE.Var v;
-  output Boolean b;
-algorithm
-  b := match(v)
-    case BackendDAE.VAR(varKind=BackendDAE.STATE(),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))) then true;
-    else false;
-  end match;
-end varStateSelectAlways;
-
-protected function varStateSelectNever
-"author: kabdelhak FHB 2019-07
-  return true if var is StateSelect.never else false"
-  input BackendDAE.Var v;
-  output Boolean b;
-algorithm
-  b := match(v)
-    case BackendDAE.VAR(varKind=BackendDAE.STATE(),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.NEVER())))) then true;
-    else false;
-  end match;
-end varStateSelectNever;
 
 protected function incidenceMatrixfromEnhancedStrict
 "author: Frenkel TUD 2012-11
@@ -3826,6 +3809,16 @@ algorithm
         cr = ComponentReference.crefPrefixDer(name);
         source = ElementSource.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(cr,{}));
       then (BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,tplExp,dim,source,attr,ts,hideResult,comment,ct,io,false),(vars,so,varlst,ht));
+    // regular variable with StateSelect.Prefer
+    case (var as BackendDAE.VAR(name,BackendDAE.VARIABLE(),dir,prl,tp,bind,tplExp,dim,source,attr,ts,hideResult,comment,ct,io),(vars,so,varlst,ht))
+      guard(BackendVariable.varStateSelectNever(var))
+      equation
+        // add replacement for each derivative
+        (varlst,ht) = makeAllDummyVarandDummyDerivativeRepl1(1,1,name,name,var,vars,so,varlst,ht);
+        // dummy_der name vor Source information
+        cr = ComponentReference.crefPrefixDer(name);
+        source = ElementSource.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(cr,{}));
+      then (BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,tplExp,dim,source,attr,ts,hideResult,comment,ct,io,false),(vars,so,varlst,ht));
     else (inVar,inTpl);
   end matchcontinue;
 end makeAllDummyVarandDummyDerivativeRepl;
@@ -4229,9 +4222,17 @@ algorithm
         (vars,changedVars) = algebraicState(vlst,ilst,inVars,iChangedVars);
       then
         (vars,changedVars);
+    case((v as BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_REAL(stateSelectOption = NONE()))))::vlst,index::ilst,_,_)
+      equation
+        v = BackendVariable.setVarKind(v, BackendDAE.STATE(1,NONE(),false));
+        v.values = DAEUtil.setStateSelect(v.values, DAE.NEVER());
+        vars = BackendVariable.addVar(v, inVars);
+        (vars,changedVars) = algebraicState(vlst,ilst,vars,index::iChangedVars);
+      then
+        (vars,changedVars);
     case(v::vlst,index::ilst,_,_)
       equation
-        v = BackendVariable.setVarKind(v, BackendDAE.STATE(1,NONE(),true));
+        v = BackendVariable.setVarKind(v, BackendDAE.STATE(1,NONE(),false));
         vars = BackendVariable.addVar(v, inVars);
         (vars,changedVars) = algebraicState(vlst,ilst,vars,index::iChangedVars);
       then

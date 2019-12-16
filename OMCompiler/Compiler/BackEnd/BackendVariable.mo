@@ -459,7 +459,35 @@ algorithm
   end match;
 end varStateSelect;
 
-public function varStateSelectNever "author: kabdelhak
+public function varStateSelectAlways
+"author: Frenkel TUD 2012-06
+  return true if var is StateSelect.always else false"
+  input BackendDAE.Var v;
+  output Boolean b;
+algorithm
+  b := match(v)
+    case BackendDAE.VAR(varKind=BackendDAE.STATE(),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))) then true;
+    else false;
+  end match;
+end varStateSelectAlways;
+
+public function notVarStateSelectAlways
+"author: Frenkel TUD 2012-06
+  true if var is not StateSelect.always"
+  input BackendDAE.Var v;
+  input Integer level;
+  output Boolean b;
+algorithm
+  b := match v
+    local Integer diffcount;
+    case BackendDAE.VAR(varKind=BackendDAE.STATE(index=diffcount))
+      then not(varStateSelectAlways(v) and (diffcount == level or diffcount == 1));
+    else true;
+  end match;
+end notVarStateSelectAlways;
+
+public function varStateSelectNever
+"author: kabdelhak
   Returns true, if the state select attribute is DAE.NEVER()"
   input BackendDAE.Var inVar;
   output Boolean isNever;

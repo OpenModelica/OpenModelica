@@ -66,18 +66,18 @@ val(iC,0.0); getErrorString();
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (12):
-//  * Single equations (assignments): 11
+// Notification: Strong component statistics for simulation (9):
+//  * Single equations (assignments): 7
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
 //  * Equation systems (linear and non-linear blocks): 0
-//  * Torn equation systems: 1
+//  * Torn equation systems: 2
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(1,100.0%) 3}
+//  * Linear torn systems: 2 {(1,100.0%) 3,(1,100.0%) 3}
 //  * Non-linear torn systems: 0
 // "
 // 0.0
