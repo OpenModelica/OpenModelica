@@ -184,6 +184,13 @@ void omcZeromqTask::startSimulation(pt::ptree& node)
 
     string error;
     string results;
+    status = setModelParameter(_omc, classPath, node,error);
+    if (!status)
+    {
+
+        string error_msg = "Could set model parameter" + string(classPath) + string(" with error: ") + error;
+        throw std::invalid_argument(error_msg);
+    }
     status = simulateModel(_omc, classPath, node, _working_directory, results, error);
     std::cout << results;
     if (!status)
@@ -193,7 +200,102 @@ void omcZeromqTask::startSimulation(pt::ptree& node)
         throw std::invalid_argument(error_msg);
     }
 }
+int  omcZeromqTask::setModelParameter(OMCData* omc, string model_name, pt::ptree& node,string& error)
+{
+    int status = 0;
+    //omc api call for setting parameter vlaues;
+    char* errorMsg = 0;
+    char* result = 0;
+    //Read model paramater
+    BOOST_FOREACH(const pt::ptree::value_type & parameter,
+        node.get_child("parameters"))
+    {
+       
+        string type = parameter.second.get < string >("type");
+        string name = parameter.second.get < string >("name");
+        string set_parameter = string("setParameterValue(") + model_name + string(",")+ string(name) + string(",");
+       //set real parameter
+        if (string("real").compare(type) == 0)
+        {
+            double value = parameter.second.get < double >("value");
+            //append the paramter value
+            string set_value = std::to_string(value) + string("\)");
+            set_parameter.append(set_value);
+        }
+        //set int parameter
+        else if (string("int").compare(type) == 0)
+        {
+            int value = parameter.second.get < int >("value");
+            //append the paramter value
+            string set_value = string(",") + std::to_string(value) + string("\)");
+            set_parameter.append(set_value);
+        }
+        //set bool parameter
+        else if (string("bool").compare(type) == 0)
+        {
+            bool value = parameter.second.get < bool >("value");
+            //append the paramter value
+            string set_value = string(",") + std::to_string(value) + string("\)");
+            set_parameter.append(set_value);
+        }
+        //set real,int vector parameter
+        else if ((string("vector<real>").compare(type) == 0) || string("vector<int>").compare(type) == 0)
+        {
+            string set_value = string("\{");
+            int row = 0;
+            BOOST_FOREACH(const pt::ptree::value_type & elem, parameter.second.get_child("value"))
+            {
+                    set_value.append(elem.second.get_value<std::string>());
+                    set_value.append(",");
+            }
+            set_value.pop_back();
+            set_value.append("\}\)");
+            set_parameter.append(set_value);
 
+        }
+        //set real,int matrix parameter
+        else if ((string("matrix<real>").compare(type) == 0)|| string("matrix<int>").compare(type) == 0)
+        {
+            string set_value = string("\{");
+            int row = 0;
+            BOOST_FOREACH(const pt::ptree::value_type & row, parameter.second.get_child("value"))
+            {
+                set_value.append("\{");
+                // rowPair.first == ""
+                BOOST_FOREACH(const pt::ptree::value_type & elem, row.second)
+                {
+                   
+                    set_value.append(elem.second.get_value<std::string>());                
+                    set_value.append(",");
+                }
+                set_value.pop_back();
+                set_value.append("\}");
+                set_value.append(",");
+            }
+            set_value.pop_back();
+            set_value.append("\}\)");
+            set_parameter.append(set_value);
+            
+        }
+        else
+        {
+            error = string("parameter type ") + type + string("is not yet supported");
+            return -1;
+        }
+        status = SendCommand(omc, set_parameter.c_str(), &result);
+        if (!status)
+        {
+            GetError(omc, &errorMsg);
+            error = string(errorMsg);
+            return -1;
+        }
+    }
+
+
+
+    return status;
+
+}
 int omcZeromqTask::loadMSL(OMCData* omc)
 {
     char* errorMsg = 0;
@@ -253,7 +355,7 @@ int omcZeromqTask::simulateModel(OMCData* omc, string model_name, pt::ptree& nod
     string method = solver_settings.get < string >("method");
     string set_method;
     if (!method.empty())
-        set_method = string(",startTime=") + method + string("\"");
+        set_method = method + string("\"");
     status = SetWorkingDirectory(omc, tmp_dir.c_str(), &change_dir_results);
     if (!status)
     {
