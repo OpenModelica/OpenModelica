@@ -2771,7 +2771,7 @@ algorithm
   inputVars := DAEUtil.getFunctionInputVars(inFunction);
   outputVars := DAEUtil.getFunctionOutputVars(inFunction);
   diffData := BackendDAE.emptyInputData;
-  diffData.matrixName := SOME(BackendUtil.modelicaStringToCStr(AbsynUtil.pathString(DAEUtil.functionName(inFunction)), false));
+  diffData.matrixName := SOME(Util.escapeModelicaStringToCString(AbsynUtil.pathString(DAEUtil.functionName(inFunction))));
 
   (inputVarsDer, functions, inputVarsNoDer, blst) := differentiateElementVars(inputVars, inDiffwrtCref, diffData, BackendDAE.DIFFERENTIATION_FUNCTION(), functions, {}, {}, {}, maxIter, true);
   (outputVarsDer, functions, outputVarsNoDer, _) := differentiateElementVars(outputVars, inDiffwrtCref, diffData, BackendDAE.DIFFERENTIATION_FUNCTION(), functions, {}, {}, {}, maxIter, false);

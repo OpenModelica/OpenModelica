@@ -929,7 +929,7 @@ algorithm
         (newExp, _) = Inline.inlineCall(inExp, {}, fns);
 
         if Flags.isSet(Flags.DUMPBACKENDINLINE_VERBOSE) then
-          funcname = Util.escapeModelicaStringToCString(AbsynUtil.pathString(p), false);
+          funcname = Util.escapeModelicaStringToCString(AbsynUtil.pathString(p));
           print("\nBackendInline fallback replace implementation: " +funcname+" type: " +DAEDump.dumpInlineTypeStr(inlineType)+"\n");
           print("in : " + ExpressionDump.printExpStr(inExp) + "\n");
           print("out: " + ExpressionDump.printExpStr(newExp) + "\n");
