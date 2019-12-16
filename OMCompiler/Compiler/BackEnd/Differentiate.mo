@@ -2292,7 +2292,7 @@ algorithm
         (true,_) = checkDerivativeFunctionInputs(blst, tp, dtp);
         (expl1,_) = List.splitOnBoolList(expl, blst);
         (dexpl, functions) = List.map3Fold(expl1, function differentiateExp(maxIter=maxIter), inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-        funcname = BackendUtil.modelicaStringToCStr(AbsynUtil.pathString(path), false);
+        funcname = Util.escapeModelicaStringToCString(AbsynUtil.pathString(path));
         diffFuncData = BackendDAE.emptyInputData;
          diffFuncData.matrixName = SOME(funcname);
         (dexplZero, functions) = List.map3Fold(expl1, function differentiateExp(maxIter=maxIter), DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), diffFuncData, BackendDAE.GENERIC_GRADIENT(), functions);
@@ -2684,7 +2684,7 @@ algorithm
 
       // prepare diffData
       path = DAEUtil.functionName(func);
-      funcname = BackendUtil.modelicaStringToCStr(AbsynUtil.pathString(path), false);
+      funcname = Util.escapeModelicaStringToCString(AbsynUtil.pathString(path));
       diffFuncData = BackendDAE.emptyInputData;
       diffFuncData.matrixName = SOME(funcname);
       diffFuncData.diffedFunctions = inInputData.diffedFunctions;
@@ -2750,7 +2750,7 @@ protected function getDiffedTypeandName
   output DAE.Type diffedType;
 algorithm
   diffedType := Types.extendsFunctionTypeArgs(DAEUtil.getFunctionType(inFunction), inputVarsDer, outputVarsDer, blst);
-  diffedName := AbsynUtil.stringPath("$DER" + BackendUtil.modelicaStringToCStr(AbsynUtil.pathString(DAEUtil.functionName(inFunction)), false));
+  diffedName := AbsynUtil.stringPath("$DER" + Util.escapeModelicaStringToCString(AbsynUtil.pathString(DAEUtil.functionName(inFunction))));
 end getDiffedTypeandName;
 
 protected function getFunctionInOutVars

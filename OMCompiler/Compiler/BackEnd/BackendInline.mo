@@ -50,9 +50,8 @@ protected
  import BackendDAEUtil;
  import BackendDump;
  import BackendEquation;
- import BackendUtil;
- import BackendVariable;
  import BackendVarTransform;
+ import BackendVariable;
  import ComponentReference;
  import DAEDump;
  import DAEUtil;
@@ -63,6 +62,7 @@ protected
  import Flags;
  import InlineArrayEquations;
  import List;
+ import Util;
 
 // =============================================================================
 // late inline functions stuff
@@ -901,7 +901,7 @@ algorithm
     guard Inline.checkInlineType(inlineType,fns) and Flags.getConfigEnum(Flags.INLINE_METHOD)==2
       equation
         (fn,comment) = Inline.getFunctionBody(p,fns);
-        funcname = BackendUtil.modelicaStringToCStr(AbsynUtil.pathString(p), false);
+        funcname = Util.escapeModelicaStringToCString(AbsynUtil.pathString(p));
         if Flags.isSet(Flags.DUMPBACKENDINLINE_VERBOSE) then
           print("Inline Function " +funcname+" type: "+DAEDump.dumpInlineTypeStr(inlineType)+"\n");
           print("in : " + ExpressionDump.printExpStr(inExp) + "\n");
@@ -929,7 +929,7 @@ algorithm
         (newExp, _) = Inline.inlineCall(inExp, {}, fns);
 
         if Flags.isSet(Flags.DUMPBACKENDINLINE_VERBOSE) then
-          funcname = BackendUtil.modelicaStringToCStr(AbsynUtil.pathString(p), false);
+          funcname = Util.escapeModelicaStringToCString(AbsynUtil.pathString(p), false);
           print("\nBackendInline fallback replace implementation: " +funcname+" type: " +DAEDump.dumpInlineTypeStr(inlineType)+"\n");
           print("in : " + ExpressionDump.printExpStr(inExp) + "\n");
           print("out: " + ExpressionDump.printExpStr(newExp) + "\n");
