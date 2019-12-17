@@ -2408,6 +2408,9 @@ void VariablesWidget::showContextMenu(QPoint point)
     menu.addAction(pGetInitDepends);
 
     foreach(IntStringPair pair, pVariablesTreeItem->getDefinedIn()) {
+      if (pair.second == QString("")) {
+        continue;
+      }
       QAction *pGetDefines = new QAction(tr("Open debugger (equation %1 - %2)").arg(QString::number(pair.first), pair.second), this);
       QVariantList lst;
       lst << QString("%1/%2").arg(pVariablesTreeItem->getFilePath(), pVariablesTreeItem->getInfoFileName());
