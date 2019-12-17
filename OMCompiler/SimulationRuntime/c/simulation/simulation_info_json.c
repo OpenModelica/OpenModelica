@@ -110,7 +110,7 @@ static const char* skipValue(const char* str)
       switch (*str) {
       case '\0': fprintf(stderr, "Found end of file, expected end of string"); abort();
       case '\\':
-        if (str+1 == '\0') {
+        if (*(str+1) == '\0') {
           fprintf(stderr, "Found end of file, expected end of string"); abort();
         }
         str+=2;
