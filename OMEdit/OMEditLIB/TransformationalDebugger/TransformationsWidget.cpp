@@ -748,20 +748,11 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, QWidg
   }
 }
 
-static QStringList variantListToStringList(const QVariantList lst)
-{
-  QStringList strs;
-  foreach(QVariant v, lst) {
-    strs << v.toString().trimmed();
-  }
-  return strs;
-}
-
 static OMOperation* variantToOperationPtr(QVariantMap var)
 {
   QString op = var["op"].toString();
   QString display = var["display"].toString();
-  QStringList dataStrings = variantListToStringList(var["data"].toList());
+  QStringList dataStrings = Utilities::variantListToStringList(var["data"].toList());
 
   if (op == "before-after") {
     return new OMOperationBeforeAfter(display != "" ? display : op, dataStrings);
@@ -858,18 +849,18 @@ void TransformationsWidget::loadTransformations()
         eq->parent = 0;
       }
       if (veq.find("defines") != veq.end()) {
-        eq->defines = variantListToStringList(veq["defines"].toList());
+        eq->defines = Utilities::variantListToStringList(veq["defines"].toList());
         foreach (QString v, eq->defines) {
           mVariables[v].definedIn << eq->index;
         }
       }
       if (veq.find("uses") != veq.end()) {
-        eq->depends = variantListToStringList(veq["uses"].toList());
+        eq->depends = Utilities::variantListToStringList(veq["uses"].toList());
         foreach (QString v, eq->depends) {
           mVariables[v].usedIn << eq->index;
         }
       }
-      eq->text = variantListToStringList(veq["equation"].toList());
+      eq->text = Utilities::variantListToStringList(veq["equation"].toList());
       eq->tag = veq["tag"].toString();
       if (veq.find("display") != veq.end()) {
         eq->display = veq["display"].toString();

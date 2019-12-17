@@ -1112,3 +1112,12 @@ qreal Utilities::mapToCoOrdinateSystem(qreal value, qreal startA, qreal endA, qr
 {
   return ((value - startA) * ((endB - startB) / (endA - startA))) + startB;
 }
+
+QStringList Utilities::variantListToStringList(const QVariantList lst)
+{
+  QStringList strs;
+  foreach(QVariant v, lst) {
+    strs << v.toString().trimmed();
+  }
+  return strs;
+}

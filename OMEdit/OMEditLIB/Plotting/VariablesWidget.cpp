@@ -45,10 +45,33 @@
 #include "Simulation/SimulationDialog.h"
 #include "Simulation/SimulationOutputWidget.h"
 #include "Simulation/SimulationProcessThread.h"
+#include "TransformationalDebugger/TransformationsWidget.h"
+
+#include <qjson/parser.h>
 
 #include <QObject>
 
 using namespace OMPlot;
+
+namespace VariableItemData {
+  enum VariableItemData {
+    FILEPATH=0,
+    FILENAME,
+    NAME,
+    DISPLAYNAME,
+    VALUE,
+    UNIT,
+    DISPLAYUNIT,
+    DISPLAYUNITS,
+    DESCRIPTION,
+    TOOLTIP,
+    ISMAINARRAY,
+    USES,
+    INITIAL_USES,
+    DEFINED_IN,
+    INFOFILE
+  };
+}
 
 /*!
  * \class VariablesTreeItem
@@ -72,23 +95,31 @@ VariablesTreeItem::VariablesTreeItem(const QVector<QVariant> &variableItemData, 
 {
   mpParentVariablesTreeItem = pParent;
   mIsRootItem = isRootItem;
-  mFilePath = variableItemData[0].toString();
-  mFileName = variableItemData[1].toString();
-  mVariableName = variableItemData[2].toString();
-  mDisplayVariableName = variableItemData[3].toString();
-  mValue = variableItemData[4].toString();
+  mFilePath = variableItemData[VariableItemData::FILEPATH].toString();
+  mFileName = variableItemData[VariableItemData::FILENAME].toString();
+  mVariableName = variableItemData[VariableItemData::NAME].toString();
+  mDisplayVariableName = variableItemData[VariableItemData::DISPLAYNAME].toString();
+  mValue = variableItemData[VariableItemData::VALUE].toString();
   mValueChanged = false;
-  mUnit = variableItemData[5].toString();
-  mDisplayUnit = variableItemData[6].toString();
-  mPreviousUnit = variableItemData[6].toString();
-  mDisplayUnits = variableItemData[7].toStringList();
-  mDescription = variableItemData[8].toString();
-  mToolTip = variableItemData[9].toString();
+  mUnit = variableItemData[VariableItemData::UNIT].toString();
+  mDisplayUnit = variableItemData[VariableItemData::DISPLAYUNIT].toString();
+  mPreviousUnit = variableItemData[VariableItemData::DISPLAYUNIT].toString();
+  mDisplayUnits = variableItemData[VariableItemData::DISPLAYUNITS].toStringList();
+  mDescription = variableItemData[VariableItemData::DESCRIPTION].toString();
+  mToolTip = variableItemData[VariableItemData::TOOLTIP].toString();
   mChecked = false;
   mEditable = false;
   mVariability = "";
-  mIsMainArray = variableItemData[10].toBool();
+  mIsMainArray = variableItemData[VariableItemData::ISMAINARRAY].toBool();
   mActive = false;
+  mUses = variableItemData[VariableItemData::USES].toStringList();
+  mInitialUses = variableItemData[VariableItemData::INITIAL_USES].toStringList();
+
+  foreach(QVariant var, variableItemData[VariableItemData::DEFINED_IN].toList())
+  {
+     mDefinedIn << var.value<IntStringPair>();
+  }
+  mInfoFileName = variableItemData[VariableItemData::INFOFILE].toString();
 }
 
 VariablesTreeItem::~VariablesTreeItem()
@@ -322,7 +353,7 @@ VariablesTreeModel::VariablesTreeModel(VariablesTreeView *pVariablesTreeView)
   mpVariablesTreeView = pVariablesTreeView;
   QVector<QVariant> headers;
   headers << "" << "" << Helper::variables << Helper::variables << tr("Value") << tr("Unit") << tr("Display Unit") <<
-             QStringList() << Helper::description << "" << false;
+             QStringList() << Helper::description << "" << false << QVariantList() << QVariantList() << QVariantList() << "dummy.json";
   mpRootVariablesTreeItem = new VariablesTreeItem(headers, 0, true);
   mpActiveVariablesTreeItem = 0;
 }
@@ -536,7 +567,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   QString text = QString(fileName).remove(resultTypeRegExp);
   QModelIndex index = variablesTreeItemIndex(mpRootVariablesTreeItem);
   QVector<QVariant> Variabledata;
-  Variabledata << filePath << fileName << fileName << text << "" << "" << "" << QStringList() << "" << toolTip << false;
+  Variabledata << filePath << fileName << fileName << text << "" << "" << "" << QStringList() << "" << toolTip << false << QVariantList() << QVariantList() << QVariantList() << "dummy.json";
 
   VariablesTreeItem *pTopVariablesTreeItem = new VariablesTreeItem(Variabledata, mpRootVariablesTreeItem, true);
   pTopVariablesTreeItem->setSimulationOptions(simulationOptions);
@@ -551,11 +582,13 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   }
   /* open the model_init.xml file for reading */
   mScalarVariablesHash.clear();
-  QString initFileName;
+  QString initFileName, infoFileName;
   if (simulationOptions.isValid()) {
     initFileName = QString(simulationOptions.getOutputFileName()).append("_init.xml");
+    infoFileName = QString(simulationOptions.getOutputFileName()).append("_info.json");
   } else {
-    initFileName = QString(text).append("_init.xml");
+    initFileName = QString(text).append("_info.json");
+    infoFileName = QString(text).append("_init.xml");
   }
   QFile initFile(QString(filePath).append(QDir::separator()).append(initFileName));
   if (initFile.exists()) {
@@ -569,6 +602,52 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
                                                             .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
     }
   }
+  QFile infoFile(QString(filePath).append(QDir::separator()).append(infoFileName));
+
+  QMap<QString,QSet<QString>> usedInitialVars;
+  QMap<QString,QSet<QString>> usedVars;
+  QMap<QString,QList<IntStringPair>> definedIn;
+
+  if (infoFile.exists()) {
+    QJson::Parser parser;
+    bool ok;
+    QVariantMap result;
+    result = parser.parse(&infoFile, &ok).toMap();
+    if (!ok) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(infoFile.fileName())
+                                                            .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
+      return;
+    }
+    QVariantMap vars = result["variables"].toMap();
+    QVariantList eqs = result["equations"].toList();
+
+    for (int i=0; i<eqs.size(); i++) {
+      QVariantMap veq = eqs[i].toMap();
+      bool isInitial = (veq.find("section") != veq.end() && veq["section"] == QString("initial"));
+
+      if (veq.find("defines") != veq.end()) {
+        QStringList defines = Utilities::variantListToStringList(veq["defines"].toList());
+        foreach (QString v1, defines) {
+          if (!definedIn.contains(v1)) {
+            definedIn[v1] = QList<IntStringPair>();
+          }
+          definedIn[v1] << IntStringPair(veq["eqIndex"].toInt(), veq.find("section") != veq.end() ? veq["section"].toString() : QString("unknown"));
+          QString v1_1 = QString("%1.%2").arg(fileName ,v1);
+          if (veq.find("uses") != veq.end()) {
+            QStringList uses = Utilities::variantListToStringList(veq["uses"].toList());
+            foreach (QString v2, uses) {
+              if (isInitial) {
+                usedInitialVars[v1].insert(v2);
+              } else {
+                usedVars[v1].insert(v2);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   /* open the .mat file */
   ModelicaMatReader matReader;
   matReader.file = 0;
@@ -663,6 +742,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       } else {
         variableData << filePath << fileName << pParentVariablesTreeItem->getVariableName() + "." + variable << variable;
       }
+
       /* find the variable in the xml file */
       QString variableToFind = variableData[2].toString();
       variableToFind.remove(QRegExp(pTopVariablesTreeItem->getVariableName() + "."));
@@ -713,6 +793,33 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       } else {
         variableData << false;
       }
+      QString findVariableNoFileName = findVariable.right(findVariable.size()-fileName.size()-1);
+
+      if (usedVars.find(findVariableNoFileName) != usedVars.end()) {
+        QStringList lst = QStringList(usedVars[findVariableNoFileName].toList());
+        lst << findVariableNoFileName;
+        variableData << lst;
+      } else {
+        variableData << QStringList(findVariableNoFileName);
+      }
+      if (usedInitialVars.find(findVariableNoFileName) != usedInitialVars.end()) {
+        QStringList lst = QStringList(usedInitialVars[findVariableNoFileName].toList());
+        lst << findVariableNoFileName;
+        variableData << lst;
+      } else {
+        variableData << QStringList(findVariableNoFileName);
+      }
+      QVariantList variantDefinedIn;
+      if (definedIn.find(findVariableNoFileName) != definedIn.end()) {
+        foreach (IntStringPair pair, definedIn[findVariableNoFileName]) {
+          variantDefinedIn << QVariant::fromValue(pair);
+        }
+      } else {
+        variantDefinedIn << QVariant::fromValue(IntStringPair(0,QString("")));
+      }
+      variableData << variantDefinedIn;
+      variableData << infoFileName;
+
       VariablesTreeItem *pVariablesTreeItem = new VariablesTreeItem(variableData, pParentVariablesTreeItem);
       pVariablesTreeItem->setEditable(changeAble);
       pVariablesTreeItem->setVariability(variability);
@@ -911,6 +1018,42 @@ void VariablesTreeModel::removeVariableTreeItem()
   if (pAction) {
     removeVariableTreeItem(pAction->data().toString());
     emit variableTreeItemRemoved(pAction->data().toString());
+  }
+}
+
+
+void VariablesTreeModel::filterDependencies()
+{
+  QAction *pAction = qobject_cast<QAction*>(sender());
+  if (pAction) {
+    QStringList uses = pAction->data().toStringList();
+    QStringList escapedUses;
+    foreach(QString s, uses) {
+      escapedUses << s.replace("[","[[]").replace("]","[]]").replace("[[[]]","[[]").replace("(","[(]").replace(")","[)]").replace(".","[.]");
+    }
+    QRegExp regexp = QRegExp("^" + escapedUses.join("|") + "$");
+    mpVariablesTreeView->getVariablesWidget()->getVariableTreeProxyModel()->setFilterRegExp(regexp);
+  }
+}
+
+void VariablesTreeModel::openTransformationsBrowser()
+{
+  QAction *pAction = qobject_cast<QAction*>(sender());
+  if (pAction) {
+    QVariantList list = pAction->data().toList();
+    QString fileName = list[0].toString();
+    int equationIndex = list[1].toInt();
+    if (QFileInfo(fileName).exists()) {
+      TransformationsWidget *pTransformationsWidget = MainWindow::instance()->showTransformationsWidget(fileName);
+      QTreeWidgetItem *pTreeWidgetItem = pTransformationsWidget->findEquationTreeItem(equationIndex);
+      if (pTreeWidgetItem) {
+        pTransformationsWidget->getEquationsTreeWidget()->clearSelection();
+        pTransformationsWidget->getEquationsTreeWidget()->setCurrentItem(pTreeWidgetItem);
+      }
+      pTransformationsWidget->fetchEquationData(equationIndex);
+    } else {
+      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), Helper::ok);
+    }
   }
 }
 
@@ -2214,8 +2357,7 @@ void VariablesWidget::showContextMenu(QPoint point)
   QModelIndex index = mpVariablesTreeView->indexAt(point);
   index = mpVariableTreeProxyModel->mapToSource(index);
   VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
-  if (pVariablesTreeItem && pVariablesTreeItem->isRootItem())
-  {
+  if (pVariablesTreeItem && pVariablesTreeItem->isRootItem()) {
     /* delete result action */
     QAction *pDeleteResultAction = new QAction(QIcon(":/Resources/icons/delete.svg"), tr("Delete Result"), this);
     pDeleteResultAction->setData(pVariablesTreeItem->getVariableName());
@@ -2240,6 +2382,43 @@ void VariablesWidget::showContextMenu(QPoint point)
     menu.addAction(MainWindow::instance()->getReSimulateModelAction());
     menu.addAction(MainWindow::instance()->getReSimulateSetupAction());
     point.setY(point.y() + adjust);
+    menu.exec(mpVariablesTreeView->mapToGlobal(point));
+  } else if (pVariablesTreeItem) {
+    qDebug() << "showContextMenu" << index;
+    qDebug() << "name" << pVariablesTreeItem->getVariableName() << "path" << pVariablesTreeItem->getFilePath() << "uses" << pVariablesTreeItem->getUses();
+    QAction *pGetDepends = new QAction(tr("Show only direct dependencies"), this);
+    if (pVariablesTreeItem->getUses().size() <= 1 /* Self only */) {
+      pGetDepends->setEnabled(false);
+    }
+    pGetDepends->setData(pVariablesTreeItem->getUses());
+    pGetDepends->setStatusTip(tr("Show only variables that depend on this variable"));
+
+    QAction *pGetInitDepends = new QAction(tr("Show only direct dependencies (initial)"), this);
+    if (pVariablesTreeItem->getInitialUses().size() <= 1 /* Self only */) {
+      pGetInitDepends->setEnabled(false);
+    }
+    pGetInitDepends->setData(pVariablesTreeItem->getInitialUses());
+    pGetInitDepends->setStatusTip(tr("Show only variables that depend on this variable in the initial system of equations"));
+
+    connect(pGetDepends, SIGNAL(triggered()), mpVariablesTreeModel, SLOT(filterDependencies()));
+    connect(pGetInitDepends, SIGNAL(triggered()), mpVariablesTreeModel, SLOT(filterDependencies()));
+
+    QMenu menu(this);
+    menu.addAction(pGetDepends);
+    menu.addAction(pGetInitDepends);
+
+    foreach(IntStringPair pair, pVariablesTreeItem->getDefinedIn()) {
+      QAction *pGetDefines = new QAction(tr("Open debugger (equation %1 - %2)").arg(QString::number(pair.first), pair.second), this);
+      QVariantList lst;
+      lst << QString("%1/%2").arg(pVariablesTreeItem->getFilePath(), pVariablesTreeItem->getInfoFileName());
+      lst << pair.first;
+      pGetDefines->setData(lst);
+      pGetDefines->setStatusTip(tr("Open debugger for the equation"));
+      menu.addAction(pGetDefines);
+
+      connect(pGetDefines, SIGNAL(triggered()), mpVariablesTreeModel, SLOT(openTransformationsBrowser()));
+    }
+
     menu.exec(mpVariablesTreeView->mapToGlobal(point));
   }
 }
