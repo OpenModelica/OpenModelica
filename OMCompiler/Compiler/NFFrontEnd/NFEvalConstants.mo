@@ -465,7 +465,9 @@ function isLocalFunctionVariable
 protected
   InstNode node;
 algorithm
-  if ComponentRef.nodeVariability(cref) <= Variability.PARAMETER then
+  if ComponentRef.isPackageConstant(cref) then
+    res := false;
+  elseif ComponentRef.nodeVariability(cref) <= Variability.PARAMETER then
     node := InstNode.derivedParent(ComponentRef.node(ComponentRef.firstNonScope(cref)));
     res := InstNode.refEqual(fnNode, node);
   else
