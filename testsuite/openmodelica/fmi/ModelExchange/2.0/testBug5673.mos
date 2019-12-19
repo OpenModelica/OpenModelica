@@ -43,6 +43,8 @@ system("unzip -cqq aliasCheck.test2.fmu modelDescription.xml > modelDescription.
 system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" modelDescription.tmp.xml > Bug5673.xml"); getErrorString();
 readFile("Bug5673.xml"); getErrorString();
 
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" modelDescription.tmp.xml > Bug5673.xml"); getErrorString();
+readFile("Bug5673.xml"); getErrorString();
 
 
 // Result:
@@ -141,6 +143,15 @@ readFile("Bug5673.xml"); getErrorString();
 //     <Real start=\"1.0\"/>
 //   </ScalarVariable>
 //   </ModelVariables>
+// "
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <InitialUnknowns>
+//       <Unknown index=\"1\" dependencies=\"2\" dependenciesKind=\"dependent\" />
+//     </InitialUnknowns>
+//   </ModelStructure>
 // "
 // ""
 // endResult

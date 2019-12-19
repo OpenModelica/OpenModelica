@@ -13144,8 +13144,9 @@ algorithm
       contPartSimDer := NONE();
     end if;
 
-    // FMI initialUnknowns
+    // prepare FMI initialUnknowns list
     tmpInitialUnknowns := {};
+
     // Condition-1 get the output patterns with causality = "output" and initial = approx or calculated
     initialUnknownsOutputVars := List.filterOnTrue(allOutputVars, isInitialApproxOrCalculatedSimVar);
     tmpInitialUnknowns := listAppend(tmpInitialUnknowns, initialUnknownsOutputVars);
@@ -13153,7 +13154,6 @@ algorithm
     //Condition-2 causality = "calculatedParameter"
     allParamVars := getAllParamSimVars(inModelInfo);
     initialUnknownsCalculatedParameters := List.filterOnTrue(allParamVars,isCausalityCalculatedParameterSimVar);
-    //print("\n check CalculatedParameter :" + anyString(initialUnknownsCalculatedParameters));
     tmpInitialUnknowns := listAppend(tmpInitialUnknowns,initialUnknownsCalculatedParameters);
 
     //Condition-3 check all continuous-time states with initial = approx or calculated
@@ -13312,11 +13312,6 @@ algorithm
   //prepare initialization DAE
   tmpBDAE := BackendDAEUtil.copyBackendDAE(inInitDAE);
   tmpBDAE := BackendDAEOptimize.collapseIndependentBlocks(tmpBDAE);
-  tmpBDAE := BackendDAEUtil.transformBackendDAE(tmpBDAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
-
-  // copy shared globalknownVars from simDAE to initializationDAE as the intitialization-DAE is not synchronized correctly with simDAE
-  //tmpBDAE := BackendDAEUtil.setDAEGlobalKnownVars(tmpBDAE, inSimDAE.shared.globalKnownVars);
-  //tmpBDAE.shared := BackendVariable.addGlobalKnownVarDAE(inSimDAE.shared.globalKnownVars, tmpBDAE.shared);
 
   BackendDAE.DAE(currentSystem::{},shared) := tmpBDAE;
   //BackendDump.dumpVariables(currentSystem.orderedVars,"orderedVariables");
@@ -13324,8 +13319,8 @@ algorithm
 
   // traverse the simulation DAE globalknownVars and update the initialization DAE with new equations and vars
   for var in BackendVariable.varList(inSimDAE.shared.globalKnownVars) loop
+    // check for param Vars, as we are only interested in causality = calculatedParameters
     if BackendVariable.isParam(var) then
-      //print("\n paramvar :" + anyString(var));
       lhs := BackendVariable.varExp(var);
       rhs := BackendVariable.varBindExp(var);
       eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
@@ -13334,20 +13329,20 @@ algorithm
       //var := BackendVariable.setVarFixed(var,false);
       //var := BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       currentSystem := BackendVariable.addVarDAE(var,currentSystem);
-    elseif BackendVariable.isVarOnTopLevelAndInput(var) then
+    else
       shared := BackendVariable.addGlobalKnownVarDAE(var, shared);
     end if;
   end for;
 
-  // Calculate matching using incidenceMatrix, as some of the models with calculatedParameters do not have matching informations
-  (outIncidenceMatrix, _, _, _) := BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL(),NONE());
-  // Not sure whether to use PerfectMatching, because it may fail for system which needs index reduction
-  (match1,match2) := Matching.PerfectMatching(outIncidenceMatrix);
+  // Calculate incidenceMatrix, with the newly added equations and vars
+  (outIncidenceMatrix, _, _, _) := BackendDAEUtil.incidenceMatrixScalar(currentSystem, BackendDAE.NORMAL(), NONE());
+  // Perform the match on the incidenceMatrix
+  (match1, match2) := Matching.PerfectMatching(outIncidenceMatrix);
   currentSystem.matching := BackendDAE.MATCHING(match1, match2, BackendDAEUtil.getStrongComponents(currentSystem));
-
   // update the DAE with the new matching information
   tmpBDAE := BackendDAE.DAE({currentSystem}, shared);
 
+  // run the matching algorithm on the newly created DAE
   strMatchingAlgorithm := BackendDAEUtil.getMatchingAlgorithmString();
   strIndexReductionMethod := BackendDAEUtil.getIndexReductionMethodString();
   tmpBDAE := BackendDAEUtil.causalizeDAE(tmpBDAE, NONE(), BackendDAEUtil.getMatchingAlgorithm(SOME(strMatchingAlgorithm)), BackendDAEUtil.getIndexReductionMethod(SOME(strIndexReductionMethod)), false);
@@ -13360,12 +13355,11 @@ algorithm
   depVars := {}; // vars with causality = input and initial = exact
 
   (depVars, indepVars) := getDepAndIndepVarsForInitialUnknowns(orderedVars, depVars, indepVars, initialUnknownCrefs, crefSimVarHT);
-  // search in globalKnownVars as they contains parameters and inputs with inital = exact
+  // search in globalKnownVars as they contains inputs and parameters with inital = exact
   (depVars, indepVars) := getDepAndIndepVarsForInitialUnknowns(BackendVariable.varList(tmpBDAE.shared.globalKnownVars), depVars, indepVars, initialUnknownCrefs, crefSimVarHT);
 
   //BackendDump.dumpVarList(depVars, "depVars");
   //BackendDump.dumpVarList(indepVars, "indepVars");
-  //BackendDump.dumpVariables(tmpBDAE.shared.globalKnownVars, "globalknownVars");
 
   // Calculate the dependecies of initialUnknowns
   (sparsePattern, _) := SymbolicJacobian.generateSparsePattern(tmpBDAE, indepVars, depVars);
