@@ -13145,14 +13145,16 @@ algorithm
     end if;
 
     // FMI initialUnknowns
-
+    tmpInitialUnknowns := {};
     // Condition-1 get the output patterns with causality = "output" and initial = approx or calculated
     initialUnknownsOutputVars := List.filterOnTrue(allOutputVars, isInitialApproxOrCalculatedSimVar);
+    tmpInitialUnknowns := listAppend(tmpInitialUnknowns, initialUnknownsOutputVars);
 
     //Condition-2 causality = "calculatedParameter"
     allParamVars := getAllParamSimVars(inModelInfo);
     initialUnknownsCalculatedParameters := List.filterOnTrue(allParamVars,isCausalityCalculatedParameterSimVar);
-    tmpInitialUnknowns := listAppend(initialUnknownsOutputVars,initialUnknownsCalculatedParameters);
+    //print("\n check CalculatedParameter :" + anyString(initialUnknownsCalculatedParameters));
+    tmpInitialUnknowns := listAppend(tmpInitialUnknowns,initialUnknownsCalculatedParameters);
 
     //Condition-3 check all continuous-time states with initial = approx or calculated
     initialUnknownsStateVars := List.filterOnTrue(inModelInfo.vars.stateVars, isInitialApproxOrCalculatedSimVar);
@@ -13165,7 +13167,11 @@ algorithm
     //dumpVarLst(tmpInitialUnknowns, "InitialUnknownList");
 
     // get FMI initialUnknowns list with dependencies
-    allInitialUnknowns := getFmiInitialUnknowns(inInitDAE, inSimDAE, crefSimVarHT, tmpInitialUnknowns);
+    if not listEmpty(tmpInitialUnknowns) then
+      allInitialUnknowns := getFmiInitialUnknowns(inInitDAE, inSimDAE, crefSimVarHT, tmpInitialUnknowns);
+    else
+      allInitialUnknowns := {};
+    end if;
 
     outFmiModelStructure :=
       SOME(
@@ -13292,6 +13298,13 @@ protected
   BackendDAE.SparsePatternCrefs rowspt;
   list<tuple<Integer, list<Integer>>> sparseInts;
   list<SimCodeVar.SimVar> vars1, vars2;
+  BackendDAE.Shared shared;
+  BackendDAE.EqSystem currentSystem;
+  DAE.Exp lhs, rhs;
+  BackendDAE.Equation eqn;
+  String strMatchingAlgorithm, strIndexReductionMethod;
+  BackendDAE.IncidenceMatrix outIncidenceMatrix;
+  array<Integer> match1,match2;
 algorithm
   initialUnknownCrefs := List.map(initialUnknownList, getCrefFromSimVar); // extract cref from initialUnknownsList
   //print ("\n FmiInitialUnknownsDependencyList :" + ComponentReference.printComponentRefListStr(initialUnknownCrefs));
@@ -13302,7 +13315,43 @@ algorithm
   tmpBDAE := BackendDAEUtil.transformBackendDAE(tmpBDAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
 
   // copy shared globalknownVars from simDAE to initializationDAE as the intitialization-DAE is not synchronized correctly with simDAE
-  tmpBDAE := BackendDAEUtil.setDAEGlobalKnownVars(tmpBDAE, inSimDAE.shared.globalKnownVars);
+  //tmpBDAE := BackendDAEUtil.setDAEGlobalKnownVars(tmpBDAE, inSimDAE.shared.globalKnownVars);
+  //tmpBDAE.shared := BackendVariable.addGlobalKnownVarDAE(inSimDAE.shared.globalKnownVars, tmpBDAE.shared);
+
+  BackendDAE.DAE(currentSystem::{},shared) := tmpBDAE;
+  //BackendDump.dumpVariables(currentSystem.orderedVars,"orderedVariables");
+  //BackendDump.dumpEquationArray(currentSystem.orderedEqs,"orderedEquation");
+
+  // traverse the simulation DAE globalknownVars and update the initialization DAE with new equations and vars
+  for var in BackendVariable.varList(inSimDAE.shared.globalKnownVars) loop
+    if BackendVariable.isParam(var) then
+      //print("\n paramvar :" + anyString(var));
+      lhs := BackendVariable.varExp(var);
+      rhs := BackendVariable.varBindExp(var);
+      eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
+      BackendEquation.add(eqn, currentSystem.orderedEqs);
+      //var := BackendVariable.setBindExp(var,NONE());
+      //var := BackendVariable.setVarFixed(var,false);
+      //var := BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
+      currentSystem := BackendVariable.addVarDAE(var,currentSystem);
+    elseif BackendVariable.isVarOnTopLevelAndInput(var) then
+      shared := BackendVariable.addGlobalKnownVarDAE(var, shared);
+    end if;
+  end for;
+
+  // Calculate matching using incidenceMatrix, as some of the models with calculatedParameters do not have matching informations
+  (outIncidenceMatrix, _, _, _) := BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL(),NONE());
+  // Not sure whether to use PerfectMatching, because it may fail for system which needs index reduction
+  (match1,match2) := Matching.PerfectMatching(outIncidenceMatrix);
+  currentSystem.matching := BackendDAE.MATCHING(match1, match2, BackendDAEUtil.getStrongComponents(currentSystem));
+
+  // update the DAE with the new matching information
+  tmpBDAE := BackendDAE.DAE({currentSystem}, shared);
+
+  strMatchingAlgorithm := BackendDAEUtil.getMatchingAlgorithmString();
+  strIndexReductionMethod := BackendDAEUtil.getIndexReductionMethodString();
+  tmpBDAE := BackendDAEUtil.causalizeDAE(tmpBDAE, NONE(), BackendDAEUtil.getMatchingAlgorithm(SOME(strMatchingAlgorithm)), BackendDAEUtil.getIndexReductionMethod(SOME(strIndexReductionMethod)), false);
+
   //BackendDump.dumpBackendDAE(tmpBDAE, "Check Initilization DAE");
 
   orderedVars := BackendVariable.equationSystemsVarsLst(tmpBDAE.eqs); // extract ordered vars
@@ -13316,6 +13365,7 @@ algorithm
 
   //BackendDump.dumpVarList(depVars, "depVars");
   //BackendDump.dumpVarList(indepVars, "indepVars");
+  //BackendDump.dumpVariables(tmpBDAE.shared.globalKnownVars, "globalknownVars");
 
   // Calculate the dependecies of initialUnknowns
   (sparsePattern, _) := SymbolicJacobian.generateSparsePattern(tmpBDAE, indepVars, depVars);
