@@ -45,6 +45,9 @@ class OMCProxy;
 class TreeSearchFilters;
 class Label;
 
+typedef QPair<int,QString> IntStringPair;
+Q_DECLARE_METATYPE(IntStringPair);
+
 class VariablesTreeItem
 {
 public:
@@ -61,6 +64,10 @@ public:
   QString getDisplayUnit() {return mDisplayUnit;}
   QString getPreviousUnit() {return mPreviousUnit;}
   QStringList getDisplayUnits() {return mDisplayUnits;}
+  QStringList getUses() {return mUses;}
+  QStringList getInitialUses() {return mInitialUses;}
+  QList<IntStringPair> getDefinedIn() {return mDefinedIn;}
+  QString getInfoFileName() {return mInfoFileName;}
   bool isChecked() const {return mChecked;}
   void setChecked(bool set) {mChecked = set;}
   bool isEditable() const {return mEditable;}
@@ -106,11 +113,25 @@ private:
   QString mVariability;
   bool mIsMainArray;
   SimulationOptions mSimulationOptions;
+  QStringList mUses, mInitialUses;
+  QList<IntStringPair> mDefinedIn;
+  QString mInfoFileName;
 protected:
   bool mActive;
 };
 
 class VariablesTreeView;
+
+class VariableTreeProxyModel : public QSortFilterProxyModel
+{
+  Q_OBJECT
+public:
+  VariableTreeProxyModel(QObject *parent = 0);
+protected:
+  virtual bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
+  virtual bool lessThan(const QModelIndex &left, const QModelIndex &right) const override;
+};
+
 class VariablesTreeModel : public QAbstractItemModel
 {
   Q_OBJECT
@@ -151,16 +172,8 @@ signals:
 public slots:
   void removeVariableTreeItem();
   void setVariableTreeItemActive();
-};
-
-class VariableTreeProxyModel : public QSortFilterProxyModel
-{
-  Q_OBJECT
-public:
-  VariableTreeProxyModel(QObject *parent = 0);
-protected:
-  virtual bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
-  virtual bool lessThan(const QModelIndex &left, const QModelIndex &right) const override;
+  void filterDependencies();
+  void openTransformationsBrowser();
 };
 
 class VariablesWidget;

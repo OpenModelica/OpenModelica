@@ -487,6 +487,8 @@ namespace Utilities {
   void removeDirectoryRecursivly(QString path);
   qreal mapToCoOrdinateSystem(qreal value, qreal startA, qreal endA, qreal startB, qreal endB);
 
+  QStringList variantListToStringList(const QVariantList lst);
+
 } // namespace Utilities
 
 #endif // UTILITIES_H
