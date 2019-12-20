@@ -1,7 +1,7 @@
 // name: fmi_attributes_07.mos
 // keywords: FMI 2.0 export
 // status: correct
-// teardown_command: rm -rf fmi_attributes_05.fmu fmi_attributes_07.log fmi_attributes_07.xml fmi_attributes_07_tmp.xml fmi_attributes_07.fmutmp/
+// teardown_command: rm -rf fmi_attributes_07.fmu fmi_attributes_07.log fmi_attributes_07.xml fmi_attributes_07_tmp.xml fmi_attributes_07.fmutmp/
 
 loadString("
 model fmi_attributes_07
