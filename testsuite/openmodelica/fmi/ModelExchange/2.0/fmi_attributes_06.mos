@@ -1,0 +1,216 @@
+// name: fmi_attributes_06.mos
+// keywords: FMI 2.0 export
+// status: correct
+// teardown_command: rm -rf fmi_attributes_06.fmu fmi_attributes_06.log fmi_attributes_06.xml fmi_attributes_06_tmp.xml fmi_attributes_06.fmutmp/
+
+loadString("
+model fmi_attributes_06
+  parameter Real m=0.5;
+  parameter Real g=9.82;
+  parameter Real L=1;
+  Real x(start=L),y(start=0),xd,yd;
+  Real Fo;
+equation
+  der(y)=yd;
+  der(x)=xd;
+  m*der(xd) = -x*Fo/L;
+  m*der(yd) = -m*g-Fo*y/L;
+  x*x+y*y=L^2;
+end fmi_attributes_06;
+"); getErrorString();
+
+translateModelFMU(fmi_attributes_06); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq fmi_attributes_06.fmu modelDescription.xml > fmi_attributes_06_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi_attributes_06_tmp.xml > fmi_attributes_06.xml"); getErrorString();
+readFile("fmi_attributes_06.xml"); getErrorString();
+
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi_attributes_06_tmp.xml > fmi_attributes_06.xml"); getErrorString();
+readFile("fmi_attributes_06.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// "fmi_attributes_06.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"_D_STATESET1.x\"
+//     valueReference=\"0\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"_D_STATESET2.x\"
+//     valueReference=\"1\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"der(_D_STATESET1.x)\"
+//     valueReference=\"2\"
+//     >
+//     <Real derivative=\"1\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
+//     name=\"der(_D_STATESET2.x)\"
+//     valueReference=\"3\"
+//     >
+//     <Real derivative=\"2\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"5\" -->
+//   <ScalarVariable
+//     name=\"der(x)\"
+//     valueReference=\"4\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"6\" -->
+//   <ScalarVariable
+//     name=\"der(xd)\"
+//     valueReference=\"5\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"7\" -->
+//   <ScalarVariable
+//     name=\"der(y)\"
+//     valueReference=\"6\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"8\" -->
+//   <ScalarVariable
+//     name=\"der(yd)\"
+//     valueReference=\"7\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"9\" -->
+//   <ScalarVariable
+//     name=\"Fo\"
+//     valueReference=\"8\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"10\" -->
+//   <ScalarVariable
+//     name=\"x\"
+//     valueReference=\"9\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"11\" -->
+//   <ScalarVariable
+//     name=\"xd\"
+//     valueReference=\"10\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"12\" -->
+//   <ScalarVariable
+//     name=\"y\"
+//     valueReference=\"11\"
+//     initial=\"approx\">
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"13\" -->
+//   <ScalarVariable
+//     name=\"yd\"
+//     valueReference=\"12\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"14\" -->
+//   <ScalarVariable
+//     name=\"L\"
+//     valueReference=\"13\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     >
+//     <Real start=\"1.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"15\" -->
+//   <ScalarVariable
+//     name=\"g\"
+//     valueReference=\"14\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     >
+//     <Real start=\"9.82\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"16\" -->
+//   <ScalarVariable
+//     name=\"m\"
+//     valueReference=\"15\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     >
+//     <Real start=\"0.5\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"17\" -->
+//   <ScalarVariable
+//     name=\"_D_STATESET1.A[1]\"
+//     valueReference=\"0\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Integer start=\"1\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"18\" -->
+//   <ScalarVariable
+//     name=\"_D_STATESET1.A[2]\"
+//     valueReference=\"1\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Integer start=\"0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"19\" -->
+//   <ScalarVariable
+//     name=\"_D_STATESET2.A[1]\"
+//     valueReference=\"2\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Integer start=\"1\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"20\" -->
+//   <ScalarVariable
+//     name=\"_D_STATESET2.A[2]\"
+//     valueReference=\"3\"
+//     variability=\"discrete\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Integer start=\"0\"/>
+//   </ScalarVariable>
+//   </ModelVariables>
+// "
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <Derivatives>
+//       <Unknown index=\"3\" dependencies=\"1 2\" dependenciesKind=\"dependent dependent\" />
+//       <Unknown index=\"4\" dependencies=\"1 2\" dependenciesKind=\"dependent dependent\" />
+//     </Derivatives>
+//     <InitialUnknowns>
+//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"3\" dependencies=\"14 15 16\" dependenciesKind=\"dependent dependent dependent\" />
+//       <Unknown index=\"4\" dependencies=\"14\" dependenciesKind=\"dependent\" />
+//     </InitialUnknowns>
+//   </ModelStructure>
+// "
+// ""
+// endResult

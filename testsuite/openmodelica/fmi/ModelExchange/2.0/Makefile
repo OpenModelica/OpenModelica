@@ -7,6 +7,9 @@ EnumerationTest.mos \
 fmi_attributes_01.mos \
 fmi_attributes_02.mos \
 fmi_attributes_03.mos \
+fmi_attributes_04.mos \
+fmi_attributes_05.mos \
+fmi_attributes_06.mos \
 FMIExercise.mos \
 HelloFMIWorld.mos \
 HelloFMIWorldEvent.mos \
@@ -41,8 +44,6 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile \
-
-
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 

@@ -9,8 +9,7 @@ model fmi_attributes_01
 equation
   (x + der(x))^2 = 3.0 - x^2 - der(x)^2;
 end fmi_attributes_01;
-");
-getErrorString();
+"); getErrorString();
 
 setDebugFlags("force-fmi-attributes"); getErrorString();
 translateModelFMU(fmi_attributes_01); getErrorString();
@@ -62,6 +61,9 @@ readFile("fmi_attributes_01.xml"); getErrorString();
 //     <Derivatives>
 //       <Unknown index=\"2\" dependencies=\"1\" dependenciesKind=\"dependent\" />
 //     </Derivatives>
+//     <InitialUnknowns>
+//       <Unknown index=\"2\" dependencies=\"1\" dependenciesKind=\"dependent\" />
+//     </InitialUnknowns>
 //   </ModelStructure>
 // "
 // ""

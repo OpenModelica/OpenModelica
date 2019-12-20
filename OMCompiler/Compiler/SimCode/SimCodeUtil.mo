@@ -291,7 +291,6 @@ algorithm
   try
     execStat("Backend phase and start with SimCode phase");
     dlow := inBackendDAE;
-
     System.tmpTickReset(0);
     uniqueEqIndex := 1;
     ifcpp := (stringEqual(Config.simCodeTarget(), "Cpp") or stringEqual(Config.simCodeTarget(), "omsicpp"));
@@ -537,7 +536,7 @@ algorithm
 
     // collect fmi partial derivative
     if FMI.isFMIVersion20(FMUVersion) or Config.simCodeTarget() ==  "omsicpp"  then
-      (SymbolicJacsFMI, modelStructure, modelInfo, SymbolicJacsTemp, uniqueEqIndex) := createFMIModelStructure(inFMIDer, modelInfo, uniqueEqIndex);
+      (SymbolicJacsFMI, modelStructure, modelInfo, SymbolicJacsTemp, uniqueEqIndex) := createFMIModelStructure(inFMIDer, modelInfo, uniqueEqIndex, inInitDAE, inBackendDAE);
       SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
       if debug then execStat("simCode: create FMI model structure"); end if;
     end if;
@@ -13063,6 +13062,8 @@ public function createFMIModelStructure
   input BackendDAE.SymbolicJacobians inSymjacs;
   input SimCode.ModelInfo inModelInfo;
   input Integer inUniqueEqIndex;
+  input BackendDAE.BackendDAE inInitDAE;
+  input BackendDAE.BackendDAE inSimDAE;
   output list<SimCode.JacobianMatrix> symJacFMI = {};
   output Option<SimCode.FmiModelStructure> outFmiModelStructure;
   output SimCode.ModelInfo outModelInfo = inModelInfo;
@@ -13071,8 +13072,8 @@ public function createFMIModelStructure
 protected
    BackendDAE.SparsePatternCrefs spTA, spTB;
    list<tuple<Integer, list<Integer>>> sparseInts;
-   list<SimCode.FmiUnknown> allUnknowns, derivatives, outputs, discreteStates;
-   list<SimCodeVar.SimVar> varsA, varsB, varsC, varsD, clockedStates;
+   list<SimCode.FmiUnknown> allUnknowns, derivatives, outputs, discreteStates, allInitialUnknowns;
+   list<SimCodeVar.SimVar> varsA, varsB, varsC, varsD, clockedStates, allOutputVars, allParamVars, initialUnknownsOutputVars, initialUnknownsCalculatedParameters, tmpInitialUnknowns, initialUnknownsStateVars, initialUnknownsDerivativeVars;
    list<DAE.ComponentRef> diffCrefsA, diffedCrefsA, derdiffCrefsA;
    list<DAE.ComponentRef> diffCrefsB, diffedCrefsB;
    DoubleEnded.MutableList<SimCodeVar.SimVar> delst;
@@ -13119,7 +13120,8 @@ algorithm
     varsB := List.filterOnTrue(inModelInfo.vars.intAlgVars, isOutputSimVar); // check for outputs in intAlgVar
     varsC := List.filterOnTrue(inModelInfo.vars.boolAlgVars, isOutputSimVar); // check for outputs in boolAlgVar
     varsD := List.filterOnTrue(inModelInfo.vars.stringAlgVars, isOutputSimVar); // check for outputs in stringAlgVars
-    intLst := list(getVariableIndex(v) for v in listAppend(listAppend(varsA,varsB),listAppend(varsC,varsD)));
+    allOutputVars := listAppend(listAppend(varsA,varsB),listAppend(varsC,varsD));
+    intLst := list(getVariableIndex(v) for v in allOutputVars);
     outputs := list(fmiUnknown for fmiUnknown guard(Util.boolOrList(list(isFmiUnknown(i, fmiUnknown) for i in intLst))) in allUnknowns);
 
     // get discrete states pattern
@@ -13141,6 +13143,35 @@ algorithm
       contPartSimDer := NONE();
     end if;
 
+    // prepare FMI initialUnknowns list
+    tmpInitialUnknowns := {};
+
+    // Condition-1: causality = "output" and (initial = approx or calculated)
+    initialUnknownsOutputVars := List.filterOnTrue(allOutputVars, isInitialApproxOrCalculatedSimVar);
+    tmpInitialUnknowns := listAppend(tmpInitialUnknowns, initialUnknownsOutputVars);
+
+    // Condition-2: causality = "calculatedParameter"
+    allParamVars := getAllParamSimVars(inModelInfo);
+    initialUnknownsCalculatedParameters := List.filterOnTrue(allParamVars, isCausalityCalculatedParameterSimVar);
+    tmpInitialUnknowns := listAppend(tmpInitialUnknowns,initialUnknownsCalculatedParameters);
+
+    // Condition-3: continuous-time states with (initial = approx or calculated)
+    initialUnknownsStateVars := List.filterOnTrue(inModelInfo.vars.stateVars, isInitialApproxOrCalculatedSimVar);
+    tmpInitialUnknowns := listAppend(tmpInitialUnknowns, initialUnknownsStateVars);
+
+    // Condition-4: state derivatives with (initial = approx or calculated)
+    initialUnknownsDerivativeVars := List.filterOnTrue(inModelInfo.vars.derivativeVars, isInitialApproxOrCalculatedSimVar);
+    tmpInitialUnknowns := listAppend(tmpInitialUnknowns, initialUnknownsDerivativeVars);
+
+    //dumpVarLst(tmpInitialUnknowns, "InitialUnknownList");
+
+    // get FMI initialUnknowns list with dependencies
+    if not listEmpty(tmpInitialUnknowns) then
+      allInitialUnknowns := getFmiInitialUnknowns(inInitDAE, inSimDAE, crefSimVarHT, tmpInitialUnknowns);
+    else
+      allInitialUnknowns := {};
+    end if;
+
     outFmiModelStructure :=
       SOME(
         SimCode.FMIMODELSTRUCTURE(
@@ -13148,7 +13179,7 @@ algorithm
           SimCode.FMIDERIVATIVES(derivatives),
           contPartSimDer,
           SimCode.FMIDISCRETESTATES(discreteStates),
-          SimCode.FMIINITIALUNKNOWNS({})));
+          SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns)));
 else
   // create empty model structure
   try
@@ -13182,6 +13213,270 @@ else
   end try;
 end try;
 end createFMIModelStructure;
+
+protected function isInitialApproxOrCalculatedSimVar
+  "return true if the initial attribute is CALCULATED or APPROX else false"
+  input SimCodeVar.SimVar simVar;
+  output Boolean outBoolean;
+protected
+  SimCodeVar.Causality default_causality = SimCodeVar.LOCAL();
+  SimCodeVar.Variability default_variability = SimCodeVar.CONTINUOUS();
+  SimCodeVar.Initial default_initial;
+algorithm
+  outBoolean := match(simVar)
+    case SimCodeVar.SIMVAR(initial_ = SOME(SimCodeVar.CALCULATED())) then true;
+    case SimCodeVar.SIMVAR(initial_ = SOME(SimCodeVar.APPROX())) then true;
+    // Calculate the initial_ attribute as we set to NONE(),
+    // TODO should find a better way to clearup the fmi atttributes after calculating the FMI Initial unknowns
+    case SimCodeVar.SIMVAR(initial_ = NONE())
+      equation
+        default_initial = getDefaultFmiInitialAttribute(Util.getOptionOrDefault(simVar.variability, default_variability), Util.getOptionOrDefault(simVar.causality, default_causality));
+        outBoolean = isInitialApproxOrCalculated(default_initial);
+      then
+        outBoolean;
+    else false;
+  end match;
+end isInitialApproxOrCalculatedSimVar;
+
+protected function isInitialApproxOrCalculated
+  "return true if the initial attribute is CALCULATED or APPROX else false"
+  input SimCodeVar.Initial initial_;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match(initial_)
+    case SimCodeVar.APPROX() then true;
+    case SimCodeVar.CALCULATED() then true;
+    else false;
+  end match;
+end isInitialApproxOrCalculated;
+
+protected function isCausalityCalculatedParameterSimVar
+  "return true if the causality attribute is CALCULATED_PARAMETER else false"
+  input SimCodeVar.SimVar inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match(inVar)
+    case SimCodeVar.SIMVAR(causality = SOME(SimCodeVar.CALCULATED_PARAMETER())) then true;
+    else false;
+  end match;
+end isCausalityCalculatedParameterSimVar;
+
+protected function getCrefFromSimVar
+  "return the cref from SimVar"
+  input SimCodeVar.SimVar inSimVar;
+  output DAE.ComponentRef outCref = inSimVar.name;
+end getCrefFromSimVar;
+
+protected function isInitialExact
+  "return true if the initial attribute is EXACT else false"
+  input SimCodeVar.Initial initial_;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match(initial_)
+    case SimCodeVar.EXACT() then true;
+    else false;
+  end match;
+end isInitialExact;
+
+protected function getFmiInitialUnknowns
+  "extracts the list of fmi InitialUnknowns and their dependencies
+   defined in the modelDescription.xml under <InitialUnknowns> </InitialUnknowns>"
+  input BackendDAE.BackendDAE inInitDAE "initialization-DAE";
+  input BackendDAE.BackendDAE inSimDAE "simulation-DAE";
+  input SimCode.HashTableCrefToSimVar crefSimVarHT;
+  input list<SimCodeVar.SimVar> initialUnknownList;
+  output list<SimCode.FmiUnknown> outFmiUnknownlist;
+protected
+  list<DAE.ComponentRef> initialUnknownCrefs, indepCrefs, depCrefs;
+  BackendDAE.BackendDAE tmpBDAE;
+  list<BackendDAE.Var> orderedVars, indepVars, depVars;
+  BackendDAE.SparsePattern sparsePattern;
+  BackendDAE.SparsePatternCrefs rowspt;
+  list<tuple<Integer, list<Integer>>> sparseInts;
+  list<SimCodeVar.SimVar> vars1, vars2;
+  BackendDAE.Shared shared;
+  BackendDAE.EqSystem currentSystem;
+  DAE.Exp lhs, rhs;
+  BackendDAE.Equation eqn;
+  String strMatchingAlgorithm, strIndexReductionMethod;
+  BackendDAE.IncidenceMatrix outIncidenceMatrix;
+  array<Integer> match1,match2;
+algorithm
+  initialUnknownCrefs := List.map(initialUnknownList, getCrefFromSimVar); // extract cref from initialUnknownsList
+  //print ("\n FmiInitialUnknownsDependencyList :" + ComponentReference.printComponentRefListStr(initialUnknownCrefs));
+
+  //prepare initialization DAE
+  tmpBDAE := BackendDAEUtil.copyBackendDAE(inInitDAE);
+  tmpBDAE := BackendDAEOptimize.collapseIndependentBlocks(tmpBDAE);
+
+  BackendDAE.DAE(currentSystem::{},shared) := tmpBDAE;
+  //BackendDump.dumpVariables(currentSystem.orderedVars,"orderedVariables");
+  //BackendDump.dumpEquationArray(currentSystem.orderedEqs,"orderedEquation");
+
+  // traverse the simulation DAE globalknownVars and update the initialization DAE with new equations and vars
+  for var in BackendVariable.varList(inSimDAE.shared.globalKnownVars) loop
+    // check for param Vars, as we are only interested in causality = calculatedParameters
+    if BackendVariable.isParam(var) then
+      lhs := BackendVariable.varExp(var);
+      rhs := BackendVariable.varBindExp(var);
+      eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
+      BackendEquation.add(eqn, currentSystem.orderedEqs);
+      //var := BackendVariable.setBindExp(var,NONE());
+      //var := BackendVariable.setVarFixed(var,false);
+      //var := BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
+      currentSystem := BackendVariable.addVarDAE(var,currentSystem);
+    else
+      shared := BackendVariable.addGlobalKnownVarDAE(var, shared);
+    end if;
+  end for;
+
+  // Calculate incidenceMatrix, with the newly added equations and vars
+  (outIncidenceMatrix, _, _, _) := BackendDAEUtil.incidenceMatrixScalar(currentSystem, BackendDAE.NORMAL(), NONE());
+  // Perform the match on the incidenceMatrix
+  (match1, match2) := Matching.PerfectMatching(outIncidenceMatrix);
+  currentSystem.matching := BackendDAE.MATCHING(match1, match2, BackendDAEUtil.getStrongComponents(currentSystem));
+  // update the DAE with the new matching information
+  tmpBDAE := BackendDAE.DAE({currentSystem}, shared);
+
+  // run the matching algorithm on the newly created DAE
+  strMatchingAlgorithm := BackendDAEUtil.getMatchingAlgorithmString();
+  strIndexReductionMethod := BackendDAEUtil.getIndexReductionMethodString();
+  tmpBDAE := BackendDAEUtil.causalizeDAE(tmpBDAE, NONE(), BackendDAEUtil.getMatchingAlgorithm(SOME(strMatchingAlgorithm)), BackendDAEUtil.getIndexReductionMethod(SOME(strIndexReductionMethod)), false);
+
+  //BackendDump.dumpBackendDAE(tmpBDAE, "Check Initilization DAE");
+
+  orderedVars := BackendVariable.equationSystemsVarsLst(tmpBDAE.eqs); // extract ordered vars
+
+  indepVars := {}; // vars with causality = input and initial = approx or calculated, causality = calculatedParameter, states and derivative vars with initial = approx or calculated
+  depVars := {}; // vars with causality = input and initial = exact
+
+  (depVars, indepVars) := getDepAndIndepVarsForInitialUnknowns(orderedVars, depVars, indepVars, initialUnknownCrefs, crefSimVarHT);
+  // search in globalKnownVars as they contains inputs and parameters with inital = exact
+  (depVars, indepVars) := getDepAndIndepVarsForInitialUnknowns(BackendVariable.varList(tmpBDAE.shared.globalKnownVars), depVars, indepVars, initialUnknownCrefs, crefSimVarHT);
+
+  //BackendDump.dumpVarList(depVars, "depVars");
+  //BackendDump.dumpVarList(indepVars, "indepVars");
+
+  // Calculate the dependecies of initialUnknowns
+  (sparsePattern, _) := SymbolicJacobian.generateSparsePattern(tmpBDAE, indepVars, depVars);
+  //dumpFmiInitialUnknownsDependencies(sparsePattern, "FmiInitialUnknownDependency");
+
+  // collect all variables from sparsePattern
+  (_, rowspt, (indepCrefs, depCrefs), _) := sparsePattern;
+  vars1 := getSimVars2Crefs(indepCrefs, crefSimVarHT);
+  vars2 := getSimVars2Crefs(depCrefs, crefSimVarHT);
+  vars1 := listAppend(vars1, vars2);
+
+  // sort the vars with FMI Index
+  sparseInts := sortSparsePattern(vars1, rowspt, true);
+  // populate the FmiInitial unknowns according to FMI ModelDescription.xml format
+  outFmiUnknownlist := translateSparsePatterInts2FMIUnknown(sparseInts, {});
+end getFmiInitialUnknowns;
+
+protected function getDepAndIndepVarsForInitialUnknowns
+  "function which extracts the depVars and indepVars from initiDAE
+   depVars contains:
+     causality = output and  initial = approx or calculated
+     causality = calculatedParameter
+     state vars with initial = approx or calculated and
+     derivative vars with initial = approx or calculated
+   indepVars contains:
+     causality = input
+     initial = exact
+   "
+  input list<BackendDAE.Var> inVar;
+  input list<BackendDAE.Var> depVars;
+  input list<BackendDAE.Var> indepVars;
+  input list<DAE.ComponentRef> initialUnknownCrefs;
+  input SimCode.HashTableCrefToSimVar crefSimVarHT;
+  output list<BackendDAE.Var> outdepVars = depVars;
+  output list<BackendDAE.Var> outindepVars = indepVars;
+protected
+  DAE.ComponentRef cref;
+  SimCodeVar.SimVar referenceVar, tmpreferenceVar;
+  SimCodeVar.Causality tmpcausality;
+  SimCodeVar.Causality default_causality = SimCodeVar.LOCAL();
+  SimCodeVar.Variability default_variability = SimCodeVar.CONTINUOUS();
+  SimCodeVar.Initial tmpinitial_;
+algorithm
+  for var in inVar loop
+    cref := BackendVariable.varCref(var);
+    // get depVars, which is basically list of InitialUnknowns extracted according to FMI-2.0 specification from SimVar,
+    if listMember(cref, initialUnknownCrefs) then
+      outdepVars := var::outdepVars;
+    end if;
+    // get indepVars, which is bascially list of vars with causality = input or initial = exact
+    try
+      referenceVar := BaseHashTable.get(cref, crefSimVarHT); // lookup in the SimVar to get causality and initial attribute
+      //print("\n referenceVar name:"+ ComponentReference.printComponentRefStr(referenceVar.name) + "\n variability : " + anyString(referenceVar.variability) + "\n causality : " + anyString(referenceVar.causality) + "\n initial :" + anyString(referenceVar.initial_) + "\n");
+      if isCausalityInputSimVar(referenceVar) or isInitialExactSimVar(referenceVar) then
+        outindepVars := var :: outindepVars;
+      end if;
+    else
+      // have to investigate this part little bit more, when unable to find the referenceVar in SimDAE, as they are removed from the initDAE
+    end try;
+  end for;
+end getDepAndIndepVarsForInitialUnknowns;
+
+protected function isCausalityInputSimVar
+  "return true if the causality attribute is INPUT else false"
+  input SimCodeVar.SimVar simVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match(simVar)
+    case SimCodeVar.SIMVAR(causality = SOME(SimCodeVar.INPUT())) then true;
+    else false;
+  end match;
+end isCausalityInputSimVar;
+
+protected function isInitialExactSimVar
+  "return true if the initial attribute is EXACT() else false"
+  input SimCodeVar.SimVar simVar;
+  output Boolean outBoolean;
+protected
+  SimCodeVar.Causality default_causality = SimCodeVar.LOCAL();
+  SimCodeVar.Variability default_variability = SimCodeVar.CONTINUOUS();
+  SimCodeVar.Initial default_initial;
+algorithm
+  outBoolean := match(simVar)
+    case SimCodeVar.SIMVAR(initial_= SOME(SimCodeVar.EXACT()))  then  true;
+    // Calculate the initial_ attribute as we set to NONE(),
+    // TODO should find a better way to clearup the fmi atttributes after calculating the FMI Initial unknowns
+    case SimCodeVar.SIMVAR(initial_= NONE())
+      equation
+        default_initial = getDefaultFmiInitialAttribute(Util.getOptionOrDefault(simVar.variability, default_variability), Util.getOptionOrDefault(simVar.causality, default_causality));
+        outBoolean = isInitialExact(default_initial);
+      then
+        outBoolean;
+    else false;
+  end match;
+end isInitialExactSimVar;
+
+protected function dumpFmiInitialUnknownsDependencies
+  "dumps the initial unknowns dependencies for FMI-2.0"
+  input BackendDAE.SparsePattern sparsePattern;
+  input String heading = "";
+protected
+  list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> rowspT;
+  DAE.ComponentRef var;
+  list<DAE.ComponentRef> dependencylist;
+algorithm
+  print(heading+ "\n" + UNDERLINE + "\n");
+  (_, rowspT, _, _) := sparsePattern;
+  for i in rowspT loop
+    (var, dependencylist) := i;
+    print(ComponentReference.printComponentRefStr(var) + "=====>" + ComponentReference.printComponentRefListStr(dependencylist) + "\n");
+  end for;
+end dumpFmiInitialUnknownsDependencies;
+
+public function getAllParamSimVars
+ "function which gets all integer, string, bool and Real Parameter
+  Vars from modelInfo"
+  input SimCode.ModelInfo inModelInfo;
+  output list<SimCodeVar.SimVar> allParamVars = {};
+algorithm
+  allParamVars := listAppend(listAppend(inModelInfo.vars.paramVars,inModelInfo.vars.intParamVars),listAppend(inModelInfo.vars.boolParamVars,inModelInfo.vars.stringParamVars));
+end getAllParamSimVars;
 
 protected function isClockedStateSimVar
 "Returns true for discrete state variable, false otherwise."

@@ -87,7 +87,7 @@ getErrorString();
 //     <Category name=\"logAll\" />
 //     <Category name=\"logFmi2Call\" />
 //   </LogCategories>
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\"/>
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-006\"/>
 //   <ModelVariables>
 //   <!-- Index of variable = \"1\" -->
 //   <ScalarVariable
@@ -458,7 +458,7 @@ getErrorString();
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"2511944.444444444\"/>
+//     <Real start=\"2511944.444444445\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"40\" -->
 //   <ScalarVariable
@@ -486,7 +486,7 @@ getErrorString();
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"934.2\" min=\"0.0\" unit=\"kg/m3\"/>
+//     <Real start=\"934.2000000000001\" min=\"0.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"43\" -->
 //   <ScalarVariable
@@ -530,6 +530,14 @@ getErrorString();
 //       <Unknown index=\"14\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
 //       <Unknown index=\"17\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
 //     </DiscreteStates>
+//     <InitialUnknowns>
+//       <Unknown index=\"19\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"21\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"22\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"43\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"44\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"45\" dependencies=\"\" dependenciesKind=\"\" />
+//     </InitialUnknowns>
 //   </ModelStructure>
 // </fmiModelDescription>
 // "
