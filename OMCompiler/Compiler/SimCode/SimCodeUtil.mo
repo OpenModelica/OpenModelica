@@ -536,7 +536,7 @@ algorithm
 
     // collect fmi partial derivative
     if FMI.isFMIVersion20(FMUVersion) or Config.simCodeTarget() ==  "omsicpp"  then
-      (SymbolicJacsFMI, modelStructure, modelInfo, SymbolicJacsTemp, uniqueEqIndex) := createFMIModelStructure(inFMIDer, modelInfo, uniqueEqIndex, inInitDAE, inBackendDAE); // inInitDAE inBackendDAE
+      (SymbolicJacsFMI, modelStructure, modelInfo, SymbolicJacsTemp, uniqueEqIndex) := createFMIModelStructure(inFMIDer, modelInfo, uniqueEqIndex, inInitDAE, inBackendDAE);
       SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
       if debug then execStat("simCode: create FMI model structure"); end if;
     end if;
@@ -13087,8 +13087,7 @@ protected
    list<SimCodeVar.SimVar> tempvars;
    SimCodeVar.SimVars vars;
    SimCode.HashTableCrefToSimVar crefSimVarHT;
-   list<Integer> intLst, derivativeLst;
-   SimCode.FmiInitialUnknowns fmiInitUnknowns;
+   list<Integer> intLst;
 algorithm
   try
     //print("Start creating createFMIModelStructure\n");
@@ -13147,20 +13146,20 @@ algorithm
     // prepare FMI initialUnknowns list
     tmpInitialUnknowns := {};
 
-    // Condition-1 get the output patterns with causality = "output" and initial = approx or calculated
+    // Condition-1: causality = "output" and (initial = approx or calculated)
     initialUnknownsOutputVars := List.filterOnTrue(allOutputVars, isInitialApproxOrCalculatedSimVar);
     tmpInitialUnknowns := listAppend(tmpInitialUnknowns, initialUnknownsOutputVars);
 
-    //Condition-2 causality = "calculatedParameter"
+    // Condition-2: causality = "calculatedParameter"
     allParamVars := getAllParamSimVars(inModelInfo);
-    initialUnknownsCalculatedParameters := List.filterOnTrue(allParamVars,isCausalityCalculatedParameterSimVar);
+    initialUnknownsCalculatedParameters := List.filterOnTrue(allParamVars, isCausalityCalculatedParameterSimVar);
     tmpInitialUnknowns := listAppend(tmpInitialUnknowns,initialUnknownsCalculatedParameters);
 
-    //Condition-3 check all continuous-time states with initial = approx or calculated
+    // Condition-3: continuous-time states with (initial = approx or calculated)
     initialUnknownsStateVars := List.filterOnTrue(inModelInfo.vars.stateVars, isInitialApproxOrCalculatedSimVar);
     tmpInitialUnknowns := listAppend(tmpInitialUnknowns, initialUnknownsStateVars);
 
-    // Condition -4 check all state derivatives defined in modelStructure <derivatives> with initial = approx or calculated
+    // Condition-4: state derivatives with (initial = approx or calculated)
     initialUnknownsDerivativeVars := List.filterOnTrue(inModelInfo.vars.derivativeVars, isInitialApproxOrCalculatedSimVar);
     tmpInitialUnknowns := listAppend(tmpInitialUnknowns, initialUnknownsDerivativeVars);
 
@@ -13265,9 +13264,7 @@ end isCausalityCalculatedParameterSimVar;
 protected function getCrefFromSimVar
   "return the cref from SimVar"
   input SimCodeVar.SimVar inSimVar;
-  output DAE.ComponentRef outCref;
-algorithm
-  outCref := inSimVar.name;
+  output DAE.ComponentRef outCref = inSimVar.name;
 end getCrefFromSimVar;
 
 protected function isInitialExact
@@ -13282,9 +13279,8 @@ algorithm
 end isInitialExact;
 
 protected function getFmiInitialUnknowns
-  "function which extracts the list of fmi InitialUnknowns and their dependencies
-   defined in the modelDescription.xml under <InitialUnknowns> </InitialUnknowns>
-   "
+  "extracts the list of fmi InitialUnknowns and their dependencies
+   defined in the modelDescription.xml under <InitialUnknowns> </InitialUnknowns>"
   input BackendDAE.BackendDAE inInitDAE "initialization-DAE";
   input BackendDAE.BackendDAE inSimDAE "simulation-DAE";
   input SimCode.HashTableCrefToSimVar crefSimVarHT;
