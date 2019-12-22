@@ -43,7 +43,7 @@ oms_terminate(\"DualMassOscillator\")
 oms_delete(\"DualMassOscillator\")
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator --ignoreInitialUnknowns=true DualMassOscillator_cs.lua", "DualMassOscillator_cs_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator DualMassOscillator_cs.lua", "DualMassOscillator_cs_systemCall.log");
 readFile("DualMassOscillator_cs_systemCall.log");
 
 simulate(DualMassOscillator.CoupledSystem, stopTime=0.1, simflags="-override=system2.s2_start=2.5"); getErrorString();
@@ -68,7 +68,7 @@ val(system2.s2, {0.0,0.1});
 // info:      system1.s1: 1.0
 // info:      system2.s2: 2.5
 // info:    Simulation
-// info:      system1.s1: 0.87154409411156
+// info:      system1.s1: 0.87154409411158
 // info:      system2.s2: 1.9937955391923
 // "
 // record SimulationResult
@@ -79,6 +79,6 @@ val(system2.s2, {0.0,0.1});
 // "
 // end SimulationResult;
 // ""
-// {1.0,0.9112752847863262}
-// {2.5,1.955638599930151}
+// {1.0,0.9112766780030248}
+// {2.5,1.955637128659751}
 // endResult
