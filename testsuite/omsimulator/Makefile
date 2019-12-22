@@ -3,6 +3,7 @@ TEST = ../rtest -v
 TESTFILES = \
 DualMassOscillator_cs.mos \
 DualMassOscillator_me.mos \
+DualMassOscillator.mos \
 initialization_omc.mos \
 initialization.mos \
 initialization2_omc.mos \
@@ -14,7 +15,6 @@ reset.mos \
 test03.mos \
 
 FAILINGTESTFILES = \
-DualMassOscillator.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
