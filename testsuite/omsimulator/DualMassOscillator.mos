@@ -12,7 +12,7 @@ buildModelFMU(DualMassOscillator.System2, version="2.0", fmuType="me_cs", fileNa
 echo(false);
 
 loadOMSimulator();
-oms_setCommandLineOption("--suppressPath=true --ignoreInitialUnknowns=true");
+oms_setCommandLineOption("--suppressPath=true");
 oms_setTempDirectory("./temp_dualmassoscillator/");
 
 oms_newModel("DualMassOscillator");
@@ -65,7 +65,6 @@ unloadOMSimulator();
 // ""
 // "DualMassOscillator.System2.fmu"
 // ""
-// warning: Alg. loop (size 4)
 // info:    maximum step size for 'DualMassOscillator.root': 0.100000
 // info:    Result file: DualMassOscillator.mat (bufferSize=100)
 // info:    Initialization
@@ -77,6 +76,4 @@ unloadOMSimulator();
 // info:    Final Statistics for 'DualMassOscillator.root':
 //          NumSteps = 656 NumRhsEvals  = 911 NumLinSolvSetups = 120
 //          NumNonlinSolvIters = 910 NumNonlinSolvConvFails = 0 NumErrTestFails = 57
-// info:    1 warnings
-// info:    0 errors
 // endResult
