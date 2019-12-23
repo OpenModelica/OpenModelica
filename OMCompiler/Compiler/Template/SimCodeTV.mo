@@ -267,8 +267,9 @@ package SimCodeVar
       Boolean isProtected;
       Boolean hideResult;
       Option<String> matrixName;
-      Option<Variability> variability; // variabilty attribute of a variable needed for FMI-2.0
-      Option<Initial> initial_;  // initial attribute of a variable needed for FMI-2.0
+      Option<Variability> variability "FMI-2.0 variabilty attribute";
+      Option<Initial> initial_ "FMI-2.0 initial attribute";
+      Boolean isCseVariable "check if variable is a commonSubExpression";
     end SIMVAR;
   end SimVar;
 

@@ -553,6 +553,8 @@ constant DebugFlag NF_DUMP_FLAT = DEBUG_FLAG(192, "nfDumpFlat", false,
   Gettext.gettext("Dumps the flat model structure before generating the DAE."));
 constant DebugFlag DUMP_FORCE_FMI_ATTRIBUTES = DEBUG_FLAG(193, "force-fmi-attributes", false,
   Gettext.gettext("Force to export all fmi attributes to the modelDescription.xml, including those which have default values"));
+constant DebugFlag DUMP_FORCE_FMI_CSE_VARIABLES = DEBUG_FLAG(193, "force-fmi-cse-variables", false,
+  Gettext.gettext("Force to export all cse variables (eg: $CSE) to the modelDescription.xml"));
 
 public
 // CONFIGURATION FLAGS
