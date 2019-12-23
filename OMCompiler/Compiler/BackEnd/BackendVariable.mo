@@ -459,6 +459,23 @@ algorithm
   end match;
 end varStateSelect;
 
+public function varHasStateSelect
+  "author: kabdelhak FHB 2019-12
+  Returns false if the StateSelect attribute is NONE(), true otherwise."
+  input BackendDAE.Var inVar;
+  output Boolean b;
+algorithm
+  b := match (inVar)
+    local
+      DAE.StateSelect stateselect;
+
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_REAL(stateSelectOption=SOME(stateselect)))))
+    then true;
+
+    else false;
+  end match;
+end varHasStateSelect;
+
 public function varStateSelectAlways
 "author: Frenkel TUD 2012-06
   return true if var is StateSelect.always else false"
