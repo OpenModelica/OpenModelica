@@ -3246,7 +3246,7 @@ protected function varStateSelectPrioAttribute
 algorithm
   ss := BackendVariable.varStateSelect(v);
   prio := match ss
-          case DAE.NEVER() then if BackendVariable.isArtificialState(v) then -25.0 else -20.0;
+          case DAE.NEVER() then if BackendVariable.isArtificialState(v) then -15.0 else -20.0;
           case DAE.AVOID() then -1.5;
           case DAE.DEFAULT() then 0.0;
           case DAE.PREFER() then 1.5;
@@ -4222,17 +4222,12 @@ algorithm
         (vars,changedVars) = algebraicState(vlst,ilst,inVars,iChangedVars);
       then
         (vars,changedVars);
-    case((v as BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_REAL(stateSelectOption = NONE()))))::vlst,index::ilst,_,_)
-      equation
-        v = BackendVariable.setVarKind(v, BackendDAE.STATE(1,NONE(),false));
-        v.values = DAEUtil.setStateSelect(v.values, DAE.NEVER());
-        vars = BackendVariable.addVar(v, inVars);
-        (vars,changedVars) = algebraicState(vlst,ilst,vars,index::iChangedVars);
-      then
-        (vars,changedVars);
     case(v::vlst,index::ilst,_,_)
       equation
         v = BackendVariable.setVarKind(v, BackendDAE.STATE(1,NONE(),false));
+        if not BackendVariable.varHasStateSelect(v) then
+          v = BackendVariable.setVarStateSelect(v, DAE.NEVER());
+        end if;
         vars = BackendVariable.addVar(v, inVars);
         (vars,changedVars) = algebraicState(vlst,ilst,vars,index::iChangedVars);
       then
@@ -4275,33 +4270,24 @@ algorithm
       list<BackendDAE.Var> vlst;
       DAE.VarInnerOuter io;
     case ({},_,_,_,_) then (inVars,iChangedVars);
-    case (BackendDAE.VAR(varName = cr,
-              varKind = BackendDAE.STATE(diffcounter,dcr,natural),
-              varDirection = dir,
-              varParallelism = prl,
-              varType = tp,
-              bindExp = bind,
-              tplExp = tplExp,
-              arryDim = dim,
-              source = source,
-              values = attr,
-              tearingSelectOption = ts,
-              hideResult = hideResult,
-              comment = comment,
-              connectorType = ct,
-              innerOuter = io)::vlst,i::ilst,_,_,_)
-    equation
-      b = intGt(counter,diffcounter);
-      diffcounter = if b then counter else diffcounter;
-      var = BackendDAE.VAR(cr, BackendDAE.STATE(diffcounter,dcr,natural), dir, prl, tp, bind, tplExp, dim, source, attr, ts, hideResult, comment, ct,io, false);
-      vars = if b then BackendVariable.addVar(var, inVars) else inVars;
-      changedVars = List.consOnTrue(b,i,iChangedVars);
-      (vars,ilst) = increaseDifferentiation(vlst,ilst,counter,vars,changedVars);
+    case ((var as BackendDAE.VAR())::vlst,i::ilst,_,_,_)
+      algorithm
+        if BackendVariable.isStateVar(var) then
+          BackendDAE.STATE(diffcounter, dcr, natural) := var.varKind;
+        else
+          (diffcounter, dcr, natural) := (0, NONE(), false);
+      end if;
+      b := intGt(counter,diffcounter);
+      diffcounter := if b then counter else diffcounter;
+      var := BackendVariable.setVarKind(var, BackendDAE.STATE(diffcounter, dcr, natural));
+      vars := if b then BackendVariable.addVar(var, inVars) else inVars;
+      changedVars := List.consOnTrue(b,i,iChangedVars);
+      (vars,ilst) := increaseDifferentiation(vlst,ilst,counter,vars,changedVars);
     then
       (vars,ilst);
    else
      equation
-       print("IndexReduction.setVarKind failt because of wrong input:\n");
+       print("IndexReduction.increaseDifferentiation failt because of wrong input:\n");
        BackendDump.printVar(listHead(inVarLst));
      then
        fail();
