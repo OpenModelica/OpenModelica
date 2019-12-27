@@ -19,6 +19,7 @@ Modelica.Blocks.Sources.BooleanPulse.mos \
 Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
 testAssert.mos \
 testBug2764.mos \
+testBug2765.mos \
 testBug3034.mos \
 testBug3049.mos \
 testBug3763.mos \
