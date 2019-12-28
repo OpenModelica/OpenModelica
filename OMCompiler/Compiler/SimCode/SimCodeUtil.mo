@@ -7293,8 +7293,8 @@ algorithm
 
   // rewrite the index and set the variableIndex
   // not sure whether we need to do this, because we might get wrong valueReference
-  modelDescriptionVars := rewriteIndex(modelDescriptionVars, 0);
-  (modelDescriptionVars, _) := setVariableIndexHelper(modelDescriptionVars, 1);
+  //modelDescriptionVars := rewriteIndex(modelDescriptionVars, 0);
+  //(modelDescriptionVars, _) := setVariableIndexHelper(modelDescriptionVars, 1);
 
   //dumpVarLst(modelDescriptionVars,"createFmiModelDescriptionVariable-OrderedSimVars");
 end createFmiModelDescriptionVariable;
