@@ -70,11 +70,12 @@ uniontype SimVars "Container for metadata about variables in a Modelica model."
     list<SimVar> sensitivityVars "variable used to calculate sensitivities for parameters nSensitivitityParameters + nRealParam*nStates";
     list<SimVar> dataReconSetcVars;
     list<SimVar> dataReconinputVars;
+    list<SimVar> modelDescriptionVars "variables list which are used in FMI-2.0 modelDescription.xml";
   end SIMVARS;
 end SimVars;
 
 public constant SimVars emptySimVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {},
-  {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
+  {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
 
 public uniontype SimVar "Information about a variable in a Modelica model."
   record SIMVAR

@@ -102,7 +102,10 @@ case MODELINFO(vars=SIMVARS(stateVars=stateVars)) then
   <<
   <ModelVariables>
   <%System.tmpTickReset(0)%>
-  <%vars.stateVars |> var =>
+  <%vars.modelDescriptionVars |> var =>
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
+  ;separator="\n"%>
+  <%/*vars.stateVars |> var =>
     ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.derivativeVars |> var =>
@@ -149,7 +152,7 @@ case MODELINFO(vars=SIMVARS(stateVars=stateVars)) then
   ;separator="\n"%>
   <%vars.stringAliasVars |> var =>
     ScalarVariable(var, simCode, stateVars, FMUVersion)
-  ;separator="\n"%>
+  ;separator="\n"*/%>
   <%System.tmpTickReset(0)%>
   <%externalFunctions(modelInfo)%>
   </ModelVariables>
@@ -170,8 +173,9 @@ case SIMVAR(__) then
   <<>>
   else if stringEq(crefStr(name),"der($dummy)") then
   <<>>
+  /*
   else if isCseVariable then
-  <<>>
+  <<>>*/
   else if isFMIVersion20(FMUVersion) then
   <<
   <!-- Index of variable = "<%getVariableIndex(simVar)%>" -->

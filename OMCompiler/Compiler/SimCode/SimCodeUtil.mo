@@ -7220,6 +7220,10 @@ algorithm
     // name = AbsynUtil.pathStringNoQual(class_);
     directory := System.trim(fileDir, "\"");
     vars := createVars(dlow, inInitDAE, tempVars);
+
+    // create a Fmi ModelVariables which is used in ModelDescription.xml
+    vars.modelDescriptionVars := createFmiModelDescriptionVariable(vars);
+
     if debug then execStat("simCode: createVars"); end if;
     BackendDAE.DAE(shared=BackendDAE.SHARED(info=BackendDAE.EXTRA_INFO(description=description))) := dlow;
     nx := getNumScalars(vars.stateVars);
@@ -7260,6 +7264,57 @@ algorithm
     fail();
   end try;
 end createModelInfo;
+
+protected function createFmiModelDescriptionVariable
+  "returns list of ModelVariables for modelDescription.xml for FMU target"
+  input SimCodeVar.SimVars vars;
+  output list<SimCodeVar.SimVar> modelDescriptionVars;
+algorithm
+  modelDescriptionVars :={};
+  // filter only these variables, as only these types of variables are used in FMUs, to avoid overdetermined or underdetermined system
+  modelDescriptionVars := createFmiModelDescriptionVariableHelper(vars.stateVars, modelDescriptionVars);
+  modelDescriptionVars := createFmiModelDescriptionVariableHelper(vars.derivativeVars, modelDescriptionVars);
+  modelDescriptionVars := createFmiModelDescriptionVariableHelper(vars.algVars, modelDescriptionVars);
+  modelDescriptionVars := createFmiModelDescriptionVariableHelper(vars.discreteAlgVars, modelDescriptionVars);
+  modelDescriptionVars := createFmiModelDescriptionVariableHelper(vars.paramVars, modelDescriptionVars);
+  modelDescriptionVars := createFmiModelDescriptionVariableHelper(vars.aliasVars, modelDescriptionVars);
+  modelDescriptionVars := createFmiModelDescriptionVariableHelper(vars.intAlgVars, modelDescriptionVars);
+  modelDescriptionVars := createFmiModelDescriptionVariableHelper(vars.intParamVars, modelDescriptionVars);
+  modelDescriptionVars := createFmiModelDescriptionVariableHelper(vars.intAliasVars, modelDescriptionVars);
+  modelDescriptionVars := createFmiModelDescriptionVariableHelper(vars.boolAlgVars, modelDescriptionVars);
+  modelDescriptionVars := createFmiModelDescriptionVariableHelper(vars.boolParamVars, modelDescriptionVars);
+  modelDescriptionVars := createFmiModelDescriptionVariableHelper(vars.boolAliasVars, modelDescriptionVars);
+  modelDescriptionVars := createFmiModelDescriptionVariableHelper(vars.stringAlgVars, modelDescriptionVars);
+  modelDescriptionVars := createFmiModelDescriptionVariableHelper(vars.stringParamVars, modelDescriptionVars);
+  modelDescriptionVars := createFmiModelDescriptionVariableHelper(vars.stringAliasVars, modelDescriptionVars);
+
+  // sort the variables according to index
+  modelDescriptionVars := List.sort(modelDescriptionVars, compareVarIndexGt);
+
+  // rewrite the index and set the variableIndex
+  // not sure whether we need to do this, because we might get wrong valueReference
+  modelDescriptionVars := rewriteIndex(modelDescriptionVars, 0);
+  (modelDescriptionVars, _) := setVariableIndexHelper(modelDescriptionVars, 1);
+
+  //dumpVarLst(modelDescriptionVars,"createFmiModelDescriptionVariable-OrderedSimVars");
+end createFmiModelDescriptionVariable;
+
+protected function createFmiModelDescriptionVariableHelper
+  "modelDescription list helper function, which returns the list of ModelVariables"
+  input list<SimCodeVar.SimVar> simVars;
+  input list<SimCodeVar.SimVar> inModelDescriptionVars;
+  output list<SimCodeVar.SimVar> outModelDescriptionVars = inModelDescriptionVars;
+protected
+algorithm
+  for var in listReverse(simVars) loop
+    if not Flags.isSet(Flags.DUMP_FORCE_FMI_CSE_VARIABLES) and CommonSubExpression.isCSECref(var.name) then
+      // do not add $CSE variable
+    // ToDo filter other internalVariables
+    else
+      outModelDescriptionVars := var :: outModelDescriptionVars;
+    end if;
+  end for;
+end createFmiModelDescriptionVariableHelper;
 
 protected function createVarInfo
   input BackendDAE.BackendDAE dlow;
@@ -7766,6 +7821,7 @@ protected
   array<list<SimCodeVar.SimVar>> simVars = arrayCreate(size(SimVarsIndex,1), {});
   Integer primeSize;
   list<DAE.ComponentRef> iterationVars;
+  list<SimCodeVar.SimVar> modelDescriptionVars;
 
   constant Boolean debug = false;
 algorithm
@@ -7882,7 +7938,8 @@ algorithm
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.realOptimizeFinalConstraints)),
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.sensitivity)),
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.setcvars)),
-    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.datareconinputvars))
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.datareconinputvars)),
+    {}
   );
   GC.free(simVars);
 end createVars;
@@ -10954,11 +11011,11 @@ algorithm
                    paramVars, intParamVars, boolParamVars, stringParamVars,
                    constVars, intConstVars, boolConstVars, stringConstVars,
                    sensitivityVars, extObjVars, jacobianVars, seedVars,
-                   realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars,setcVars,datareconinputvars;
+                   realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars,setcVars,datareconinputvars,modelDescriptionVars;
      tpl intpl;
 
     case (SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
-                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, sensitivityVars,setcVars,datareconinputvars), _, intpl)
+                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, sensitivityVars,setcVars,datareconinputvars,modelDescriptionVars), _, intpl)
          equation
            (stateVars, intpl) = List.mapFoldTuple(stateVars, func, intpl);
            (derivativeVars, intpl) = List.mapFoldTuple(derivativeVars, func, intpl);
@@ -10988,9 +11045,10 @@ algorithm
            (sensitivityVars, intpl) = List.mapFoldTuple(sensitivityVars, func, intpl);
            (setcVars, intpl) = List.mapFoldTuple(setcVars, func, intpl);
            (datareconinputvars, intpl) = List.mapFoldTuple(datareconinputvars, func, intpl);
+           (modelDescriptionVars, intpl) = List.mapFoldTuple(modelDescriptionVars, func, intpl);
 
          then (SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
-                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, sensitivityVars,setcVars,datareconinputvars), intpl);
+                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, sensitivityVars,setcVars,datareconinputvars,modelDescriptionVars), intpl);
     case (_, _, _) then fail();
   end match;
 end traveseSimVars;
