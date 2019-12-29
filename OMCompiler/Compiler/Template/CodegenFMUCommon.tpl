@@ -173,9 +173,6 @@ case SIMVAR(__) then
   <<>>
   else if stringEq(crefStr(name),"der($dummy)") then
   <<>>
-  /*
-  else if isCseVariable then
-  <<>>*/
   else if isFMIVersion20(FMUVersion) then
   <<
   <!-- Index of variable = "<%getVariableIndex(simVar)%>" -->

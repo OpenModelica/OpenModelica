@@ -8057,7 +8057,7 @@ algorithm
 
   // clear up cse variable (eg:$CSE) to improve readability of modelDescription.xml for FMI-2.0
   if not Flags.isSet(Flags.DUMP_FORCE_FMI_CSE_VARIABLES) and CommonSubExpression.isCSECref(simVar.name) then
-    simVar.isCseVariable := true;
+    simVar.isInternalVar := true;
   end if;
 
   // If it is an input variable, we give it an index
