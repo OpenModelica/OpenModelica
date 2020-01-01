@@ -28,9 +28,12 @@
  #
  #/
 
-TEMPLATE = subdirs
+include(../Common/Testsuite.pri)
 
-SUBDIRS = BrowseMSL \
-  Diagram \
-  Transformation
+TARGET = Transformation
 
+SOURCES += ../Common/Util.cpp \
+  Test.cpp
+
+HEADERS += ../Common/Util.h \
+  Test.h

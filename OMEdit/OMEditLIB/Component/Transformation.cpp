@@ -88,11 +88,11 @@ void Transformation::parseTransformationString(QString value, qreal width, qreal
   if (height > 0) {
     mHeight = height;
   }
-  value = StringHandler::removeFirstLastCurlBrackets(value);
-  if (value.isEmpty()) {
+  QString value1 = StringHandler::removeFirstLastCurlBrackets(value);
+  if (value1.isEmpty()) {
     return;
   }
-  QStringList annotations = StringHandler::getStrings(value, '(', ')');
+  QStringList annotations = StringHandler::getStrings(value1, '(', ')');
   foreach (QString annotation, annotations) {
     if (annotation.startsWith("Placement")) {
       annotation = annotation.mid(QString("Placement").length());
@@ -146,6 +146,8 @@ void Transformation::parseTransformationString(QString value, qreal width, qreal
           mExtent2Icon.setY(mExtent2Diagram.y());
           mRotateAngleIcon = mRotateAngleDiagram;
         }
+      } else {
+        qDebug() << QString("The placement annotation string format is wrong. Received %1").arg(value);
       }
     }
   }
