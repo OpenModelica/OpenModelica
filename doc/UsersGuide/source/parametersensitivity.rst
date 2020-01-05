@@ -51,8 +51,8 @@ OpenModelica on an example. This module is enabled by the following
 OpenModelica compiler flag:
 
 .. omc-mos ::
-  setCommandLineOptions("--calculateSensitivities");
 
+  setCommandLineOptions("--calculateSensitivities")
 
 .. omc-loadstring ::
   :caption: LotkaVolterra.mo
