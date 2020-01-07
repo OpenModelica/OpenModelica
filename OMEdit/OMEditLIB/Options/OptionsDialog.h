@@ -621,6 +621,7 @@ public:
   QCheckBox* getIgnoreCommandLineOptionsAnnotationCheckBox() {return mpIgnoreCommandLineOptionsAnnotationCheckBox;}
   QCheckBox* getIgnoreSimulationFlagsAnnotationCheckBox() {return mpIgnoreSimulationFlagsAnnotationCheckBox;}
   QCheckBox* getEnableNewInstantiationAPICheckBox() {return mpEnableNewInstantiationAPICheckBox;}
+  QCheckBox* getDisplayNFAPIErrorsWarningsCheckBox() {return mpDisplayNFAPIErrorsWarningsCheckBox;}
   QCheckBox* getSaveClassBeforeSimulationCheckBox() {return mpSaveClassBeforeSimulationCheckBox;}
   QCheckBox* getSwitchToPlottingPerspectiveCheckBox() {return mpSwitchToPlottingPerspectiveCheckBox;}
   QCheckBox* getCloseSimulationOutputWidgetsBeforeSimulationCheckBox() {return mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox;}
@@ -645,6 +646,7 @@ private:
   QCheckBox *mpIgnoreCommandLineOptionsAnnotationCheckBox;
   QCheckBox *mpIgnoreSimulationFlagsAnnotationCheckBox;
   QCheckBox *mpEnableNewInstantiationAPICheckBox;
+  QCheckBox *mpDisplayNFAPIErrorsWarningsCheckBox;
   QCheckBox *mpSaveClassBeforeSimulationCheckBox;
   QCheckBox *mpSwitchToPlottingPerspectiveCheckBox;
   QCheckBox *mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox;
