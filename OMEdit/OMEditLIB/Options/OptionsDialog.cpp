@@ -628,6 +628,9 @@ void OptionsDialog::readSimulationSettings()
   if (mpSettings->contains("simulation/nfAPI")) {
     mpSimulationPage->getEnableNewInstantiationAPICheckBox()->setChecked(mpSettings->value("simulation/nfAPI").toBool());
   }
+  if (mpSettings->contains("simulation/nfAPINoise")) {
+    mpSimulationPage->getDisplayNFAPIErrorsWarningsCheckBox()->setChecked(mpSettings->value("simulation/nfAPINoise").toBool());
+  }
   if (mpSettings->contains("simulation/outputMode")) {
     mpSimulationPage->setOutputMode(mpSettings->value("simulation/outputMode").toString());
   }
@@ -1292,6 +1295,11 @@ void OptionsDialog::saveGlobalSimulationSettings()
   mpSettings->setValue("simulation/nfAPI", mpSimulationPage->getEnableNewInstantiationAPICheckBox()->isChecked());
   if (mpSimulationPage->getEnableNewInstantiationAPICheckBox()->isChecked()) {
     MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=nfAPI");
+  }
+  // save nfAPINoise
+  mpSettings->setValue("simulation/nfAPINoise", mpSimulationPage->getDisplayNFAPIErrorsWarningsCheckBox()->isChecked());
+  if (mpSimulationPage->getDisplayNFAPIErrorsWarningsCheckBox()->isChecked()) {
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=nfAPINoise");
   }
 }
 
@@ -3715,6 +3723,8 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   /* Enable new instantiation use in OMC API */
   mpEnableNewInstantiationAPICheckBox = new QCheckBox(tr("Enable new frontend use in the OMC API (faster GUI response)"));
   mpEnableNewInstantiationAPICheckBox->setChecked(true);
+  /* Display errors/warnings when new instantiation fails in evaluating graphical annotations */
+  mpDisplayNFAPIErrorsWarningsCheckBox = new QCheckBox(tr("Display errors/warnings when instantiating the graphical annotations"));
   /* save class before simulation checkbox */
   mpSaveClassBeforeSimulationCheckBox = new QCheckBox(tr("Save class before simulation"));
   mpSaveClassBeforeSimulationCheckBox->setToolTip(tr("Disabling this will effect the debugger functionality."));
@@ -3779,6 +3789,7 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   pSimulationLayout->addWidget(mpIgnoreCommandLineOptionsAnnotationCheckBox, row++, 0, 1, 2);
   pSimulationLayout->addWidget(mpIgnoreSimulationFlagsAnnotationCheckBox, row++, 0, 1, 2);
   pSimulationLayout->addWidget(mpEnableNewInstantiationAPICheckBox, row++, 0, 1, 2);
+  pSimulationLayout->addWidget(mpDisplayNFAPIErrorsWarningsCheckBox, row++, 0, 1, 2);
   pSimulationLayout->addWidget(mpSaveClassBeforeSimulationCheckBox, row++, 0, 1, 2);
   pSimulationLayout->addWidget(mpSwitchToPlottingPerspectiveCheckBox, row++, 0, 1, 2);
   pSimulationLayout->addWidget(mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox, row++, 0, 1, 2);
