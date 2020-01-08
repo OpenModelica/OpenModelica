@@ -379,6 +379,8 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   // navigation history list
   mpDocumentationHistoryList = new QList<DocumentationHistory>();
   mDocumentationHistoryPos = -1;
+  setExecutingPreviousNextButtons(false);
+  setScrollPosition(QPoint(0, 0));
   // Documentation viewer layout
   QGridLayout *pGridLayout = new QGridLayout;
   pGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -422,6 +424,18 @@ void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
     saveDocumentation(pLibraryTreeItem);
     return;
   }
+  // write the scroll position
+  if (!isExecutingPreviousNextButtons()) {
+    saveScrollPosition();
+  }
+  // read the scroll position
+  int index = mpDocumentationHistoryList->indexOf(DocumentationHistory(pLibraryTreeItem));
+  if (index > -1 && isExecutingPreviousNextButtons()) {
+    setScrollPosition(mpDocumentationHistoryList->at(index).mScrollPosition);
+  } else {
+    setScrollPosition(QPoint(0, 0));
+  }
+  // read documentation
   QString documentation = MainWindow::instance()->getOMCProxy()->getDocumentationAnnotation(pLibraryTreeItem);
   writeDocumentationFile(documentation);
   mpDocumentationViewer->setUrl(QUrl::fromLocalFile(mDocumentationFile.fileName()));
@@ -505,6 +519,19 @@ QString DocumentationWidget::queryCommandValue(const QString &commandName)
   QString javaScript = QString("document.queryCommandValue(\"%1\")").arg(commandName);
   QVariant result = pWebFrame->evaluateJavaScript(javaScript);
   return result.toString();
+}
+
+/*!
+ * \brief DocumentationWidget::saveScrollPosition
+ * Saves the scroll position of the current page.
+ */
+void DocumentationWidget::saveScrollPosition()
+{
+  if (mDocumentationHistoryPos > -1 && mpDocumentationHistoryList->size() > 0) {
+    DocumentationHistory documentationHistory = mpDocumentationHistoryList->at(mDocumentationHistoryPos);
+    documentationHistory.mScrollPosition = mpDocumentationViewer->page()->mainFrame()->scrollPosition();
+    mpDocumentationHistoryList->replace(mDocumentationHistoryPos, documentationHistory);
+  }
 }
 
 /*!
@@ -631,9 +658,12 @@ void DocumentationWidget::updateDocumentationHistory(LibraryTreeItem *pLibraryTr
 void DocumentationWidget::previousDocumentation()
 {
   if (mDocumentationHistoryPos > 0) {
+    saveScrollPosition();
     mDocumentationHistoryPos--;
+    setExecutingPreviousNextButtons(true);
     LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
     pLibraryTreeModel->showModelWidget(mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem);
+    setExecutingPreviousNextButtons(false);
   }
 }
 
@@ -645,9 +675,12 @@ void DocumentationWidget::previousDocumentation()
 void DocumentationWidget::nextDocumentation()
 {
   if ((mDocumentationHistoryPos + 1) < mpDocumentationHistoryList->count()) {
+    saveScrollPosition();
     mDocumentationHistoryPos++;
+    setExecutingPreviousNextButtons(true);
     LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
     pLibraryTreeModel->showModelWidget(mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem);
+    setExecutingPreviousNextButtons(false);
   }
 }
 
@@ -1140,6 +1173,9 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pDocumentationWidg
   connect(page(), SIGNAL(linkClicked(QUrl)), SLOT(processLinkClick(QUrl)));
   connect(page(), SIGNAL(linkHovered(QString,QString,QString)), SLOT(processLinkHover(QString,QString,QString)));
   createActions();
+  if (!isContentEditable) {
+    connect(this, SIGNAL(loadFinished(bool)), SLOT(pageLoaded(bool)));
+  }
 }
 
 /*!
@@ -1265,6 +1301,18 @@ void DocumentationViewer::showContextMenu(QPoint point)
   menu.addAction(page()->action(QWebPage::SelectAll));
   menu.addAction(page()->action(QWebPage::Copy));
   menu.exec(mapToGlobal(point));
+}
+
+/*!
+ * \brief DocumentationViewer::pageLoaded
+ * Scrolls the page after its finished loading.
+ * \param ok
+ */
+void DocumentationViewer::pageLoaded(bool ok)
+{
+  Q_UNUSED(ok);
+  const QPoint scrollPosition = mpDocumentationWidget->getScrollPosition();
+  page()->mainFrame()->scroll(scrollPosition.x(), scrollPosition.y());
 }
 
 /*!
