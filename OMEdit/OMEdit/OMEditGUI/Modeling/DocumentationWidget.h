@@ -51,7 +51,12 @@ class DocumentationHistory
 {
 public:
   LibraryTreeItem *mpLibraryTreeItem;
-  DocumentationHistory(LibraryTreeItem *pLibraryTreeItem) {mpLibraryTreeItem = pLibraryTreeItem;}
+  QPoint mScrollPosition;
+  DocumentationHistory(LibraryTreeItem *pLibraryTreeItem)
+  {
+    mpLibraryTreeItem = pLibraryTreeItem;
+    mScrollPosition = QPoint(0, 0);
+  }
   bool operator==(const DocumentationHistory &documentationHistory) const
   {
     return (documentationHistory.mpLibraryTreeItem == this->mpLibraryTreeItem);
@@ -80,6 +85,11 @@ public:
   void execCommand(const QString &commandName, const QString &valueArgument);
   bool queryCommandState(const QString &commandName);
   QString queryCommandValue(const QString &commandName);
+  void saveScrollPosition();
+  bool isExecutingPreviousNextButtons() const {return mExecutingPreviousNextButtons;}
+  void setExecutingPreviousNextButtons(bool executingPreviousNextButtons) {mExecutingPreviousNextButtons = executingPreviousNextButtons;}
+  QPoint getScrollPosition() const {return mScrollPosition;}
+  void setScrollPosition(const QPoint &scrollPosition) {mScrollPosition = scrollPosition;}
 private:
   QFile mDocumentationFile;
   QAction *mpPreviousAction;
@@ -126,6 +136,8 @@ private:
   EditType mEditType;
   QList<DocumentationHistory> *mpDocumentationHistoryList;
   int mDocumentationHistoryPos;
+  bool mExecutingPreviousNextButtons;
+  QPoint mScrollPosition;
 
   QPixmap createPixmapForToolButton(QColor color, QIcon icon);
   void updatePreviousNextButtons();
@@ -177,6 +189,7 @@ public slots:
   void requestFinished();
   void processLinkHover(QString link, QString title, QString textContent);
   void showContextMenu(QPoint point);
+  void pageLoaded(bool ok);
 protected:
   virtual QWebView* createWindow(QWebPage::WebWindowType type) override;
   virtual void keyPressEvent(QKeyEvent *event) override;
