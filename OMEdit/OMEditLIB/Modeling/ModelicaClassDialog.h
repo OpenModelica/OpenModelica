@@ -68,6 +68,8 @@ private:
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+
+  void findAndSelectLibraryTreeItem(const QRegExp &regExp);
 private slots:
   void searchClasses();
   void useModelicaClass();

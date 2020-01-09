@@ -52,7 +52,7 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
   : QDialog(0)
 {
   setAttribute(Qt::WA_DeleteOnClose);
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(title));
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, title));
   resize(250, 500);
   mpLineEdit = pLineEdit;
   mpLibraryWidget = pLibraryWidget;
@@ -79,9 +79,10 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
   connect(mpTreeSearchFilters->getExpandAllButton(), SIGNAL(clicked()), mpLibraryTreeView, SLOT(expandAll()));
   connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpLibraryTreeView, SLOT(collapseAll()));
   connect(mpLibraryTreeView, SIGNAL(doubleClicked(QModelIndex)), SLOT(useModelicaClass()));
-  // try to automatically select of user has something in the text box.
-  mpTreeSearchFilters->getFilterTextBox()->setText(mpLineEdit->text());
-  searchClasses();
+  // try to automatically select if user has something in the text box.
+  if (!mpLineEdit->text().isEmpty()) {
+    findAndSelectLibraryTreeItem(QRegExp(mpLineEdit->text()));
+  }
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -103,6 +104,29 @@ LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, Li
 }
 
 /*!
+ * \brief LibraryBrowseDialog::findAndSelectLibraryTreeItem
+ * Finds the LibraryTreeItem and selects it.
+ * \param regExp
+ */
+void LibraryBrowseDialog::findAndSelectLibraryTreeItem(const QRegExp &regExp)
+{
+  QModelIndex proxyIndex = mpLibraryTreeProxyModel->index(0, 0);
+  if (proxyIndex.isValid()) {
+    QModelIndex modelIndex = mpLibraryTreeProxyModel->mapToSource(proxyIndex);
+    LibraryTreeItem *pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(regExp, static_cast<LibraryTreeItem*>(modelIndex.internalPointer()));
+    if (pLibraryTreeItem) {
+      modelIndex = mpLibraryWidget->getLibraryTreeModel()->libraryTreeItemIndex(pLibraryTreeItem);
+      proxyIndex = mpLibraryTreeProxyModel->mapFromSource(modelIndex);
+      mpLibraryTreeView->selectionModel()->select(proxyIndex, QItemSelectionModel::Select);
+      while (proxyIndex.parent().isValid()) {
+        proxyIndex = proxyIndex.parent();
+        mpLibraryTreeView->expand(proxyIndex);
+      }
+    }
+  }
+}
+
+/*!
  * \brief LibraryBrowseDialog::searchClasses
  * Searches the classes.
  */
@@ -116,20 +140,7 @@ void LibraryBrowseDialog::searchClasses()
   mpLibraryTreeProxyModel->setFilterRegExp(regExp);
   // if we have really searched something
   if (!searchText.isEmpty()) {
-    QModelIndex proxyIndex = mpLibraryTreeProxyModel->index(0, 0);
-    if (proxyIndex.isValid()) {
-      QModelIndex modelIndex = mpLibraryTreeProxyModel->mapToSource(proxyIndex);
-      LibraryTreeItem *pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(regExp, static_cast<LibraryTreeItem*>(modelIndex.internalPointer()));
-      if (pLibraryTreeItem) {
-        modelIndex = mpLibraryWidget->getLibraryTreeModel()->libraryTreeItemIndex(pLibraryTreeItem);
-        proxyIndex = mpLibraryTreeProxyModel->mapFromSource(modelIndex);
-        mpLibraryTreeView->selectionModel()->select(proxyIndex, QItemSelectionModel::Select);
-        while (proxyIndex.parent().isValid()) {
-          proxyIndex = proxyIndex.parent();
-          mpLibraryTreeView->expand(proxyIndex);
-        }
-      }
-    }
+    findAndSelectLibraryTreeItem(regExp);
   }
 }
 
