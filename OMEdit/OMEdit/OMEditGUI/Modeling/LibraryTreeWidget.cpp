@@ -1816,7 +1816,6 @@ void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, bool s
           (pLibraryTreeItem->mClassInformation.preferredView.isEmpty() && pLibraryTreeItem->isDocumentationClass()) ||
           (pLibraryTreeItem->mClassInformation.preferredView.isEmpty() &&
            OptionsDialog::instance()->getGeneralSettingsPage()->getDefaultView().compare(Helper::documentationView) == 0))) {
-    MainWindow::instance()->getDocumentationWidget()->showDocumentation(pLibraryTreeItem);
     bool state = MainWindow::instance()->getDocumentationDockWidget()->blockSignals(true);
     MainWindow::instance()->getDocumentationDockWidget()->show();
     MainWindow::instance()->getDocumentationDockWidget()->blockSignals(state);
