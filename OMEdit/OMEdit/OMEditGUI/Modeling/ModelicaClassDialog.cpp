@@ -1096,10 +1096,9 @@ void DuplicateClassDialog::duplicateClass()
       return;
     }
   }
-  QString newClassPath = (mpPathTextBox->text().isEmpty() ? "" : mpPathTextBox->text() + ".") + mpNameTextBox->text();
   // Ticket #5668 check for invalid names.
   MainWindow::instance()->getOMCProxy()->setLoggingEnabled(false);
-  QList<QString> result = MainWindow::instance()->getOMCProxy()->parseString(QString("model %1 end %2;").arg(newClassPath, newClassPath), "<interactive>", false);
+  QList<QString> result = MainWindow::instance()->getOMCProxy()->parseString(QString("model %1 end %1;").arg(mpNameTextBox->text()), "<interactive>", false);
   MainWindow::instance()->getOMCProxy()->setLoggingEnabled(true);
   if (result.isEmpty()) {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
@@ -1108,7 +1107,7 @@ void DuplicateClassDialog::duplicateClass()
     return;
   }
   // check if new class already exists
-
+  QString newClassPath = (mpPathTextBox->text().isEmpty() ? "" : mpPathTextBox->text() + ".") + mpNameTextBox->text();
   if (MainWindow::instance()->getOMCProxy()->existClass(newClassPath) || pLibraryTreeModel->findLibraryTreeItemOneLevel(newClassPath)) {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg("class").arg(mpNameTextBox->text())
