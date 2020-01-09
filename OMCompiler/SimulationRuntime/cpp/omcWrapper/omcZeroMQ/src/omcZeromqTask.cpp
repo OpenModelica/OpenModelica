@@ -40,6 +40,7 @@ omcZeromqTask::omcZeromqTask(int pub_port, int sub_port, OMCData* omc2, string w
  {
    
 }
+
 void omcZeromqTask::run()
 {
 
@@ -184,7 +185,7 @@ void omcZeromqTask::startSimulation(pt::ptree& node)
 
     string error;
     string results;
-    status = setModelParameter(_omc, classPath, node,error);
+    status = setModelParameter(_omc, classPath, node, error);
     if (!status)
     {
 
