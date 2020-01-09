@@ -19,7 +19,7 @@ protected:
     int simulateModel(OMCData* omc, string model_name, pt::ptree& node, string tmp_dir, string& results_msg, string& error_msg);
     int loadMSL(OMCData* omc);
     int setZeroMQID(OMCData* omc, std::string jobId, string& error_msg);
-    int  setModelParameter(OMCData* omc, string model_name, pt::ptree& node, string& error_msg);
+    int setModelParameter(OMCData* omc, string model_name, pt::ptree& node, string& error_msg);
 private:
     zmq::context_t ctx_;
     zmq::socket_t publisher_;
