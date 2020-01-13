@@ -187,9 +187,16 @@ void setGlobalVerboseLevel(int argc, char**argv)
     }while(pos != string::npos);
   }
 
-  /* print LOG_SOTI if LOG_INIT is enabled */
-  if(useStream[LOG_INIT])
+  /* print LOG_INIT and LOG_SOTI if LOG_INIT_V is active */
+  if(useStream[LOG_INIT_V] == 1)
+  {
+    useStream[LOG_INIT] = 1;
     useStream[LOG_SOTI] = 1;
+  }
+
+  /* print LOG_INIT_HOMOTOPY if LOG_INIT is active */
+  if(useStream[LOG_INIT] == 1)
+    useStream[LOG_INIT_HOMOTOPY] = 1;
 
   /* print LOG_STATS if LOG_SOLVER if active */
   if(useStream[LOG_SOLVER_V] == 1)

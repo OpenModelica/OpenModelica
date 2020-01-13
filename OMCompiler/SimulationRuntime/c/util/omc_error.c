@@ -51,6 +51,8 @@ const char *LOG_STREAM_NAME[SIM_LOG_MAX] = {
   "LOG_EVENTS",
   "LOG_EVENTS_V",
   "LOG_INIT",
+  "LOG_INIT_HOMOTOPY",
+  "LOG_INIT_V",
   "LOG_IPOPT",
   "LOG_IPOPT_FULL",
   "LOG_IPOPT_JAC",
@@ -98,6 +100,8 @@ const char *LOG_STREAM_DESC[SIM_LOG_MAX] = {
   "additional information during event iteration",                              /* LOG_EVENTS */
   "verbose logging of event system",                                            /* LOG_EVENTS_V */
   "additional information during initialization",                               /* LOG_INIT */
+  "filter for LOG_INIT to log only homotopy initialization",                    /* LOG_INIT_HOMOTOPY */
+  "verbose information during initialziation",                                  /* LOG_INIT_V */
   "information from Ipopt",                                                     /* LOG_IPOPT */
   "more information from Ipopt",                                                /* LOG_IPOPT_FULL*/
   "check jacobian matrix with Ipopt",                                           /* LOG_IPOPT_JAC*/
