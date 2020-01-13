@@ -80,7 +80,6 @@ type FlatEdges = NFConnections.BrokenEdges
 
 protected
 import Absyn;
-import AbsynUtil;
 import NFBuiltin;
 import NFCall.Call;
 import NFClass.Class;
@@ -130,6 +129,17 @@ constant NFOCConnectionGraph EMPTY = GRAPH( true, {}, {}, {}, {}, {} ) "Initial 
 
 constant NFOCConnectionGraph NOUPDATE_EMPTY = GRAPH( false, {}, {}, {}, {}, {} ) "Initial connection graph with updateGraph set to false.";
 
+type ConnectionsOperator = enumeration(
+  BRANCH,
+  ROOT,
+  POTENTIAL_ROOT,
+  IS_ROOT,
+  ROOTED,
+  UNIQUE_ROOT,
+  UNIQUE_ROOT_INDICES,
+  NOT_OPERATOR
+);
+
 
 public
 function handleOverconstrainedConnections
@@ -164,6 +174,7 @@ protected
   list<ComponentRef> lhs_crefs, rhs_crefs;
   Boolean print_trace = Flags.isSet(Flags.CGRAPH);
   ExpOrigin.Type origin;
+  String name;
 algorithm
   origin := intBitOr(ExpOrigin.EQUATION, ExpOrigin.CONNECT);
 
@@ -184,42 +195,41 @@ algorithm
   for eq in flatModel.equations loop
     eql := match eq
       case Equation.NORETCALL(exp = Expression.CALL(call as Call.TYPED_CALL(arguments = lst)), source = source)
-        algorithm
-          _ := match Function.name(call.fn)
-            case Absyn.QUALIFIED("Connections", Absyn.IDENT("root"))
-              algorithm
-                {Expression.CREF(cref = cref)} := lst;
-                graph := addDefiniteRoot(cref, print_trace, graph);
-              then ();
+        then match identifyConnectionsOperator(Function.name(call.fn))
+          case ConnectionsOperator.ROOT
+            algorithm
+              {Expression.CREF(cref = cref)} := lst;
+              graph := addDefiniteRoot(cref, print_trace, graph);
+            then eql;
 
-            case Absyn.QUALIFIED("Connections", Absyn.IDENT("potentialRoot"))
-              algorithm
-                graph := match lst
-                  case {Expression.CREF(cref = cref)}
-                    then addPotentialRoot(cref, 0, print_trace, graph);
-                  case {Expression.CREF(cref = cref), Expression.INTEGER(priority)}
-                    then addPotentialRoot(cref, priority, print_trace, graph);
-                end match;
-              then ();
+          case ConnectionsOperator.POTENTIAL_ROOT
+            algorithm
+              graph := match lst
+                case {Expression.CREF(cref = cref)}
+                  then addPotentialRoot(cref, 0, print_trace, graph);
+                case {Expression.CREF(cref = cref), Expression.INTEGER(priority)}
+                  then addPotentialRoot(cref, priority, print_trace, graph);
+              end match;
+            then eql;
 
-            case Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRoot"))
-              algorithm
-                graph := match lst
-                  case {root as Expression.CREF(cref = cref)}
-                    then addUniqueRoots(root, Expression.STRING(""), print_trace, graph);
-                  case {root as Expression.CREF(cref = cref), msg}
-                    then addUniqueRoots(root, msg, print_trace, graph);
-                end match;
-              then ();
+          case ConnectionsOperator.UNIQUE_ROOT
+            algorithm
+              graph := match lst
+                case {root as Expression.CREF(cref = cref)}
+                  then addUniqueRoots(root, Expression.STRING(""), print_trace, graph);
+                case {root as Expression.CREF(cref = cref), msg}
+                  then addUniqueRoots(root, msg, print_trace, graph);
+              end match;
+            then eql;
 
-            case Absyn.QUALIFIED("Connections", Absyn.IDENT("branch"))
-              algorithm
-                {Expression.CREF(cref = lhs), Expression.CREF(cref = rhs)} := lst;
-                graph := addBranch(lhs, rhs, print_trace, graph);
-              then ();
-          end match;
-        then
-          eql;
+          case ConnectionsOperator.BRANCH
+            algorithm
+              {Expression.CREF(cref = lhs), Expression.CREF(cref = rhs)} := lst;
+              graph := addBranch(lhs, rhs, print_trace, graph);
+            then eql;
+
+          else eq :: eql;
+        end match;
 
       else eq::eql;
     end match;
@@ -378,13 +388,9 @@ algorithm
       list<ComponentRef> roots;
       FlatEdges broken, connected;
 
-    // empty graph gives you the same dae
-    case (GRAPH(_, {}, {}, {}, {}, {}), _, _, _) then (inEquations, inInitialEquations, {}, {});
-
     // handle the connection breaking
     case (graph, _, eqs, ieqs)
-      equation
-
+      algorithm
         if Flags.isSet(Flags.CGRAPH) then
           print("Summary: \n\t" +
            "Nr Roots:           " + intString(listLength(getDefiniteRoots(graph))) + "\n\t" +
@@ -394,7 +400,7 @@ algorithm
            "Nr Connections:     " + intString(listLength(getConnections(graph))) + "\n");
         end if;
 
-        (roots, connected, broken) = findResultGraph(graph, modelNameQualified);
+        (roots, connected, broken) := findResultGraph(graph, modelNameQualified);
 
         if Flags.isSet(Flags.CGRAPH) then
           print("Roots: " + stringDelimitList(List.map(roots, ComponentRef.toString), ", ") + "\n");
@@ -402,15 +408,15 @@ algorithm
           print("Allowed connections: " + stringDelimitList(List.map1(connected, printConnectionStr, "allowed"), ", ") + "\n");
         end if;
 
-        eqs = evalConnectionsOperators(roots, graph, eqs);
-        ieqs = evalConnectionsOperators(roots, graph, ieqs);
+        eqs := evalConnectionsOperators(roots, graph, eqs);
+        ieqs := evalConnectionsOperators(roots, graph, ieqs);
       then
         (eqs, ieqs, connected, broken);
 
     // handle the connection breaking
     else
-      equation
-        true = Flags.isSet(Flags.CGRAPH);
+      algorithm
+        true := Flags.isSet(Flags.CGRAPH);
         print("- NFOCConnectionGraph.handleOverconstrainedConnections failed for model: " + modelNameQualified + "\n");
       then
         fail();
@@ -1141,10 +1147,9 @@ algorithm
         //  BaseHashTable.dumpHashTable(table);
         rooted = setRootDistance(inRoots,table,0,{},NFHashTable.emptyHashTable());
         //  BaseHashTable.dumpHashTable(rooted);
-        outEquations =
-          list(Equation.mapExp(eq,
-            function evaluateOperators(inRoots = (rooted,inRoots,graph), info = Equation.info(eq)))
-            for eq in inEquations);
+        outEquations = list(Equation.mapExp(eq,
+            function evaluateOperators(rooted = rooted, roots = inRoots, graph = graph, info = Equation.info(eq)))
+          for eq in inEquations);
       then outEquations;
 
   end matchcontinue;
@@ -1152,132 +1157,127 @@ end evalConnectionsOperators;
 
 function evaluateOperators
   input output Expression exp;
-  input tuple<NFHashTable.HashTable,list<ComponentRef>, NFOCConnectionGraph> inRoots;
+  input NFHashTable.HashTable rooted;
+  input list<ComponentRef> roots;
+  input NFOCConnectionGraph graph;
   input SourceInfo info;
 algorithm
   exp := Expression.map(exp,
-    function evalConnectionsOperatorsHelper(inRoots = inRoots, info = info));
+    function evalConnectionsOperatorsHelper(rooted = rooted, roots = roots, graph = graph, info = info));
 end evaluateOperators;
 
 protected function evalConnectionsOperatorsHelper
 "Helper function for evaluation of Connections.rooted, Connections.isRoot, Connections.uniqueRootIndices"
-  input Expression inExp;
-  input tuple<NFHashTable.HashTable,list<ComponentRef>, NFOCConnectionGraph> inRoots;
+  input Expression exp;
+  input NFHashTable.HashTable rooted;
+  input list<ComponentRef> roots;
+  input NFOCConnectionGraph graph;
   input SourceInfo info;
   output Expression outExp;
 algorithm
-  outExp := matchcontinue (inExp,inRoots)
+  outExp := match exp
     local
-      NFOCConnectionGraph graph;
-      Expression exp, uroots, nodes, message;
-      NFHashTable.HashTable rooted;
+      Expression uroots, nodes, message, res;
       ComponentRef cref,cref1;
       Boolean result;
       Edges branches;
-      list<ComponentRef> roots;
       list<Expression> lst;
       Call call;
-      Expression res, exp;
       String str;
 
-    // handle rooted - with zero size array or the normal call
-    case (Expression.CALL(call = call as Call.TYPED_CALL(arguments = lst as {_})), (rooted,roots,graph))
-      equation
-        true =
-          AbsynUtil.pathEqual(Function.name(call.fn), Absyn.IDENT("rooted")) or
-          AbsynUtil.pathEqual(Function.name(call.fn), Absyn.QUALIFIED("Connections", Absyn.IDENT("rooted")));
-        res = match lst
-          // zero size array TODO! FIXME! check how zero size arrays are handled in the NF
-          case {Expression.ARRAY(elements = {})}
-            equation
-             if Flags.isSet(Flags.CGRAPH) then
-                print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(inExp) + " = false\n");
-             end if;
-           then Expression.BOOLEAN(false);
-          // normal call
-          case {Expression.CREF(cref = cref)}
-            algorithm
-              // find partner in branches
-              branches := getBranches(graph);
-              try
-               cref1 := getEdge(cref,branches);
-               // print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +
-               //   ComponentRef.toString(cref) + ", " + ComponentRef.toString(cref1) + "\n");
-               if Flags.isSet(Flags.CGRAPH) then
-                 print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +
-                   ComponentRef.toString(cref) + ", " + ComponentRef.toString(cref1) + "\n");
-               end if;
-               result := getRooted(cref,cref1,rooted);
-               //print("- NFOCConnectionGraph.evalRootedAndIsRootHelper: " +
-               //   ComponentRef.toString(cref) + " is " + boolString(result) + " rooted\n");
-               if Flags.isSet(Flags.CGRAPH) then
-                 print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(inExp) + " = " + boolString(result) + "\n");
-               end if;
-              else // add an error message:
-                str := ComponentRef.toString(cref);
-                Error.addSourceMessage(Error.OCG_MISSING_BRANCH, {str, str, str}, info);
-                result := false;
-              end try;
-            then
-              Expression.BOOLEAN(result);
-        end match;
-      then
-        res;
+    case Expression.CALL(call = call as Call.TYPED_CALL())
+      then match identifyConnectionsOperator(Function.name(call.fn))
+        // handle rooted - with zero size array or the normal call
+        case ConnectionsOperator.ROOTED
+          algorithm
+            res := match call.arguments
+              // zero size array TODO! FIXME! check how zero size arrays are handled in the NF
+              case {Expression.ARRAY(elements = {})}
+                equation
+                 if Flags.isSet(Flags.CGRAPH) then
+                    print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(exp) + " = false\n");
+                 end if;
+               then Expression.BOOLEAN(false);
+              // normal call
+              case {Expression.CREF(cref = cref)}
+                algorithm
+                  // find partner in branches
+                  branches := getBranches(graph);
+                  try
+                   cref1 := getEdge(cref,branches);
+                   // print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +
+                   //   ComponentRef.toString(cref) + ", " + ComponentRef.toString(cref1) + "\n");
+                   if Flags.isSet(Flags.CGRAPH) then
+                     print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +
+                       ComponentRef.toString(cref) + ", " + ComponentRef.toString(cref1) + "\n");
+                   end if;
+                   result := getRooted(cref,cref1,rooted);
+                   //print("- NFOCConnectionGraph.evalRootedAndIsRootHelper: " +
+                   //   ComponentRef.toString(cref) + " is " + boolString(result) + " rooted\n");
+                   if Flags.isSet(Flags.CGRAPH) then
+                     print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(exp) + " = " + boolString(result) + "\n");
+                   end if;
+                  else // add an error message:
+                    str := ComponentRef.toString(cref);
+                    Error.addSourceMessage(Error.OCG_MISSING_BRANCH, {str, str, str}, info);
+                    result := false;
+                  end try;
+                then
+                  Expression.BOOLEAN(result);
+            end match;
+          then
+            res;
 
-    // no roots, same exp
-    case (exp, (rooted,roots as {},graph)) then exp;
+        // deal with Connections.isRoot - with zero size array and normal
+        case ConnectionsOperator.IS_ROOT
+          algorithm
+            res := match call.arguments
+              // zero size array TODO! FIXME! check how zero size arrays are handled in the NF
+              case {Expression.ARRAY(elements = {})}
+                equation
+                  if Flags.isSet(Flags.CGRAPH) then
+                    print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(exp) + " = false\n");
+                  end if;
+                then Expression.BOOLEAN(false);
+              // normal call
+              case {Expression.CREF(cref = cref)}
+                equation
+                  result = List.isMemberOnTrue(cref, roots, ComponentRef.isEqual);
+                  if Flags.isSet(Flags.CGRAPH) then
+                    print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(exp) + " = " + boolString(result) + "\n");
+                  end if;
+                then
+                  Expression.BOOLEAN(result);
+            end match;
+          then
+            res;
 
-    // deal with Connections.isRoot - with zero size array and normal
-    case (Expression.CALL(call = call as Call.TYPED_CALL(arguments = lst)), (rooted,roots,graph))
-      equation
-        true =
-        AbsynUtil.pathEqual(Function.name(call.fn), Absyn.IDENT("isRoot")) or
-        AbsynUtil.pathEqual(Function.name(call.fn), Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")));
-        res = match lst
-          // zero size array TODO! FIXME! check how zero size arrays are handled in the NF
-          case {Expression.ARRAY(elements = {})}
-            equation
-              if Flags.isSet(Flags.CGRAPH) then
-                print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(inExp) + " = false\n");
-              end if;
-            then Expression.BOOLEAN(false);
-          // normal call
-          case {Expression.CREF(cref = cref)}
-            equation
-              result = List.isMemberOnTrue(cref, roots, ComponentRef.isEqual);
-              if Flags.isSet(Flags.CGRAPH) then
-                print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(inExp) + " = " + boolString(result) + "\n");
-              end if;
-            then
-              Expression.BOOLEAN(result);
-        end match;
-      then
-        res;
+        // deal with Connections.uniqueRootIndices, TODO! FIXME! actually implement this
+        case ConnectionsOperator.UNIQUE_ROOT_INDICES
+          algorithm
+            res := match call.arguments
+              // normal call
+              case {uroots as Expression.ARRAY(elements = lst),nodes,message}
+                equation
+                  if Flags.isSet(Flags.CGRAPH) then
+                    print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: Connections.uniqueRootsIndicies(" +
+                      Expression.toString(uroots) + "," +
+                      Expression.toString(nodes) + "," +
+                      Expression.toString(message) + ")\n");
+                  end if;
+                  lst = List.fill(Expression.INTEGER(1), listLength(lst)); // TODO! FIXME! actually implement this correctly
+                then
+                  Expression.makeArray(Type.INTEGER(), lst);
+            end match;
+          then
+            res;
 
-    // deal with Connections.uniqueRootIndices, TODO! FIXME! actually implement this
-    case (Expression.CALL(call = call as Call.TYPED_CALL(arguments = lst)), (rooted,roots,graph))
-      equation
-        true = AbsynUtil.pathEqual(Function.name(call.fn), Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRootIndices")));
-        res = match lst
-          // normal call
-          case {uroots as Expression.ARRAY(elements = lst),nodes,message}
-            equation
-              if Flags.isSet(Flags.CGRAPH) then
-                print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: Connections.uniqueRootsIndicies(" +
-                  Expression.toString(uroots) + "," +
-                  Expression.toString(nodes) + "," +
-                  Expression.toString(message) + ")\n");
-              end if;
-              lst = List.fill(Expression.INTEGER(1), listLength(lst)); // TODO! FIXME! actually implement this correctly
-            then
-              Expression.makeArray(Type.INTEGER(), lst);
-        end match;
-      then
-        res;
+        else exp;
+      end match;
 
     // no replacement needed
-    else inExp;
-  end matchcontinue;
+    else exp;
+  end match;
 end evalConnectionsOperatorsHelper;
 
 protected function getRooted
@@ -1894,6 +1894,31 @@ algorithm
 
   end matchcontinue;
 end addBrokenEqualityConstraintEquations;
+
+function identifyConnectionsOperator
+  input Absyn.Path functionName;
+  output ConnectionsOperator call;
+algorithm
+  call := match functionName
+    local
+      String name;
+
+    case Absyn.QUALIFIED(name = "Connections", path = Absyn.IDENT(name = name))
+      then match name
+        case "branch" then ConnectionsOperator.BRANCH;
+        case "root" then ConnectionsOperator.ROOT;
+        case "potentialRoot" then ConnectionsOperator.POTENTIAL_ROOT;
+        case "isRoot" then ConnectionsOperator.IS_ROOT;
+        case "rooted" then ConnectionsOperator.ROOTED;
+        case "uniqueRoot" then ConnectionsOperator.UNIQUE_ROOT;
+        case "uniqueRootIndices" then ConnectionsOperator.UNIQUE_ROOT_INDICES;
+        else ConnectionsOperator.NOT_OPERATOR;
+      end match;
+
+    case Absyn.IDENT(name = "rooted") then ConnectionsOperator.ROOTED;
+    else ConnectionsOperator.NOT_OPERATOR;
+  end match;
+end identifyConnectionsOperator;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFOCConnectionGraph;
