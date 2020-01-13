@@ -1019,10 +1019,10 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
      solve the system with the selected solver */
   if (homotopyDeactivated || !omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY]) {
     if (solveWithHomotopySolver && kinsol) {
-      infoStreamPrint(LOG_INIT, 0, "Automatically set -homotopyOnFirstTry, because trying without homotopy first is not supported for the local global approach in combination with KINSOL.");
+      infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "Automatically set -homotopyOnFirstTry, because trying without homotopy first is not supported for the local global approach in combination with KINSOL.");
     } else {
       if (!homotopyDeactivated && !omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY])
-        infoStreamPrint(LOG_INIT, 0, "Try to solve nonlinear initial system %d without homotopy first.", sysNumber);
+        infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "Try to solve nonlinear initial system %d without homotopy first.", sysNumber);
 
       data->simulationInfo->lambda = 1.0;
       /* SOLVE! */
@@ -1041,9 +1041,9 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     data->simulationInfo->lambda = 0.0;
     if (data->callback->useHomotopy == 3) {
       // First solve the lambda0-system separately
-      infoStreamPrint(LOG_INIT, 0, "Local homotopy with adaptive step size started for nonlinear system %d.", sysNumber);
-      infoStreamPrint(LOG_INIT, 1, "homotopy process\n---------------------------");
-      infoStreamPrint(LOG_INIT, 0, "solve lambda0-system");
+      infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "Local homotopy with adaptive step size started for nonlinear system %d.", sysNumber);
+      infoStreamPrint(LOG_INIT_HOMOTOPY, 1, "homotopy process\n---------------------------");
+      infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "solve lambda0-system");
       nonlinsys->homotopySupport = 0;
       if (!kinsol) {
         nonlinsys->solved = solveNLS(data, threadData, sysNumber);
@@ -1054,12 +1054,12 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
         data->simulationInfo->nlsLinearSolver = nlsLs;
       }
       nonlinsys->homotopySupport = 1;
-      infoStreamPrint(LOG_INIT, 0, "solving lambda0-system done with%s success\n---------------------------", nonlinsys->solved ? "" : " no");
-      messageClose(LOG_INIT);
+      infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "solving lambda0-system done with%s success\n---------------------------", nonlinsys->solved ? "" : " no");
+      messageClose(LOG_INIT_HOMOTOPY);
     }
     /* SOLVE! */
     if (data->callback->useHomotopy == 2 || nonlinsys->solved) {
-      infoStreamPrint(LOG_INIT, 0, "run along the homotopy path and solve the actual system");
+      infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "run along the homotopy path and solve the actual system");
       nonlinsys->initHomotopy = 1;
       nonlinsys->solved = solveWithInitHomotopy(data, threadData, sysNumber);
     }
@@ -1071,13 +1071,13 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY])
       warningStreamPrint(LOG_ASSERT, 0, "Failed to solve the initial system %d without homotopy method. The local homotopy method with equidistant step size is used now.", sysNumber);
     else
-      infoStreamPrint(LOG_INIT, 0, "Local homotopy with equidistant step size started for nonlinear system %d.", sysNumber);
+      infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "Local homotopy with equidistant step size started for nonlinear system %d.", sysNumber);
 #if !defined(OMC_NO_FILESYSTEM)
     const char sep[] = ",";
-    if(ACTIVE_STREAM(LOG_INIT))
+    if(ACTIVE_STREAM(LOG_INIT_HOMOTOPY))
     {
       sprintf(buffer, "%s_nonlinsys%d_equidistant_local_homotopy.csv", data->modelData->modelFilePrefix, sysNumber);
-      infoStreamPrint(LOG_INIT, 0, "The homotopy path of system %d will be exported to %s.", sysNumber, buffer);
+      infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "The homotopy path of system %d will be exported to %s.", sysNumber, buffer);
       pFile = omc_fopen(buffer, "wt");
       fprintf(pFile, "\"sep=%s\"\n%s", sep, "\"lambda\"");
       for(j=0; j<nonlinsys->size; ++j)
@@ -1094,15 +1094,15 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
         data->simulationInfo->lambda = 1.0;
       }
 
-      infoStreamPrint(LOG_INIT, 0, "[system %d] homotopy parameter lambda = %g", sysNumber, data->simulationInfo->lambda);
+      infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "[system %d] homotopy parameter lambda = %g", sysNumber, data->simulationInfo->lambda);
       /* SOLVE! */
       nonlinsys->solved = solveNLS(data, threadData, sysNumber);
       if (!nonlinsys->solved) break;
 
 #if !defined(OMC_NO_FILESYSTEM)
-      if(ACTIVE_STREAM(LOG_INIT))
+      if(ACTIVE_STREAM(LOG_INIT_HOMOTOPY))
       {
-        infoStreamPrint(LOG_INIT, 0, "[system %d] homotopy parameter lambda = %g done\n---------------------------", sysNumber, data->simulationInfo->lambda);
+        infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "[system %d] homotopy parameter lambda = %g done\n---------------------------", sysNumber, data->simulationInfo->lambda);
         fprintf(pFile, "%.16g", data->simulationInfo->lambda);
         for(j=0; j<nonlinsys->size; ++j)
           fprintf(pFile, "%s%.16g", sep, nonlinsys->nlsx[j]);
@@ -1112,7 +1112,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     }
 
 #if !defined(OMC_NO_FILESYSTEM)
-    if(ACTIVE_STREAM(LOG_INIT))
+    if(ACTIVE_STREAM(LOG_INIT_HOMOTOPY))
     {
       fclose(pFile);
     }
