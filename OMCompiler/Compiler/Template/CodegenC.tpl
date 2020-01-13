@@ -3002,7 +3002,7 @@ template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem
     <%minValueEquations |> SES_SIMPLE_ASSIGN(__) =>
       <<
       <%crefAttributes(cref)%>.min = <%cref(cref)%>;
-        infoStreamPrint(LOG_INIT, 0, "%s(min=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(cref)%>.name, (<%crefType(cref)%>) <%crefAttributes(cref)%>.min);
+        infoStreamPrint(LOG_INIT_V, 0, "%s(min=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(cref)%>.name, (<%crefType(cref)%>) <%crefAttributes(cref)%>.min);
       <%cref(cref)%> = <%crefAttributes(cref)%>.start;
       >>
       ;separator="\n"
@@ -3016,7 +3016,7 @@ template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem
     <%maxValueEquations |> SES_SIMPLE_ASSIGN(__) =>
       <<
       <%crefAttributes(cref)%>.max = <%cref(cref)%>;
-        infoStreamPrint(LOG_INIT, 0, "%s(max=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(cref)%>.name, (<%crefType(cref)%>) <%crefAttributes(cref)%>.max);
+        infoStreamPrint(LOG_INIT_V, 0, "%s(max=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(cref)%>.name, (<%crefType(cref)%>) <%crefAttributes(cref)%>.max);
       <%cref(cref)%> = <%crefAttributes(cref)%>.start;
       >>
       ;separator="\n"
@@ -3030,7 +3030,7 @@ template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem
     <%nominalValueEquations |> SES_SIMPLE_ASSIGN(__) =>
       <<
       <%crefAttributes(cref)%>.nominal = <%cref(cref)%>;
-        infoStreamPrint(LOG_INIT, 0, "%s(nominal=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(cref)%>.name, (<%crefType(cref)%>) <%crefAttributes(cref)%>.nominal);
+        infoStreamPrint(LOG_INIT_V, 0, "%s(nominal=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(cref)%>.name, (<%crefType(cref)%>) <%crefAttributes(cref)%>.nominal);
       <%cref(cref)%> = <%crefAttributes(cref)%>.start;
       >>
       ;separator="\n"
@@ -5459,7 +5459,7 @@ case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
   let postExp = if isStartCref(cref) then
     <<
     <%cref(popCref(cref))%> = <%cref(cref)%>;
-    infoStreamPrint(LOG_INIT, 0, "updated start value: %s(start=<%crefToPrintfArg(popCref(cref))%>)", <%crefVarInfo(popCref(cref))%>.name, (<%crefType(popCref(cref))%>) <%cref(popCref(cref))%>);
+    infoStreamPrint(LOG_INIT_V, 0, "updated start value: %s(start=<%crefToPrintfArg(popCref(cref))%>)", <%crefVarInfo(popCref(cref))%>.name, (<%crefType(popCref(cref))%>) <%cref(popCref(cref))%>);
     >>
   <<
   <%modelicaLine(eqInfo(eq))%>

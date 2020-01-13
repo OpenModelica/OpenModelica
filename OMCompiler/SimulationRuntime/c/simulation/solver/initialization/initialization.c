@@ -89,8 +89,8 @@ void dumpInitialSolution(DATA *simData)
   const MODEL_DATA      *mData = simData->modelData;
   const SIMULATION_INFO *sInfo = simData->simulationInfo;
 
-  if (ACTIVE_STREAM(LOG_INIT))
-    printParameters(simData, LOG_INIT);
+  if (ACTIVE_STREAM(LOG_INIT_V))
+    printParameters(simData, LOG_INIT_V);
 
   if (!ACTIVE_STREAM(LOG_SOTI)) return;
   infoStreamPrint(LOG_SOTI, 1, "### SOLUTION OF THE INITIALIZATION ###");
@@ -203,7 +203,15 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     }
   }
 #endif
-  adaptiveGlobal = data->callback->useHomotopy == 2;
+  /* useHomotopy=1: global homotopy (equidistant lambda) */
+  if ( (data->callback->useHomotopy == 1 && omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] != 1) && omc_flag[FLAG_NO_HOMOTOPY_ON_FIRST_TRY] !=1 ) {
+      omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] = 1;
+      init_lambda_steps = 2;
+      infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. "
+                                            "To disable initialization with homotpy operator use \"-noHomotopyOnFirstTry\".");
+  }
+
+  adaptiveGlobal = data->callback->useHomotopy == 2;  /* new global homotopy approach (adaptive lambda) */
   solveWithGlobalHomotopy = homotopySupport
                             && ((data->callback->useHomotopy == 1 && init_lambda_steps > 1) || adaptiveGlobal);
 
@@ -233,12 +241,12 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
     if (adaptiveGlobal && kinsol) {
-      infoStreamPrint(LOG_INIT, 0, "Automatically set -homotopyOnFirstTry, because trying without homotopy first is not supported for the adaptive global approach in combination with KINSOL.");
+      infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "Automatically set -homotopyOnFirstTry, because trying without homotopy first is not supported for the adaptive global approach in combination with KINSOL.");
     } else {
       if (adaptiveGlobal)
         data->callback->useHomotopy = 1;
       data->simulationInfo->lambda = 1.0;
-      infoStreamPrint(LOG_INIT, 0, "Try to solve the initialization problem without homotopy first.");
+      infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "Try to solve the initialization problem without homotopy first.");
       data->callback->functionInitialEquations(data, threadData);
       solveWithGlobalHomotopy = 0;
     }
@@ -269,14 +277,14 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     char buffer[4096];
     double lambda;
 
-    infoStreamPrint(LOG_INIT, 0, "Global homotopy with equidistant step size started.");
+    infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "Global homotopy with equidistant step size started.");
 
 #if !defined(OMC_NO_FILESYSTEM)
     const char sep[] = ",";
-    if(ACTIVE_STREAM(LOG_INIT))
+    if(ACTIVE_STREAM(LOG_INIT_HOMOTOPY))
     {
       sprintf(buffer, "%s_equidistant_global_homotopy.csv", mData->modelFilePrefix);
-      infoStreamPrint(LOG_INIT, 0, "The homotopy path will be exported to %s.", buffer);
+      infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "The homotopy path will be exported to %s.", buffer);
       pFile = omc_fopen(buffer, "wt");
       fprintf(pFile, "\"lambda\"");
       for(i=0; i<mData->nVariablesReal; ++i) {
@@ -286,12 +294,12 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     }
 #endif
 
-    infoStreamPrint(LOG_INIT, 1, "homotopy process\n---------------------------");
+    infoStreamPrint(LOG_INIT_HOMOTOPY, 1, "homotopy process\n---------------------------");
     for(step=0; step<init_lambda_steps; ++step)
     {
       data->simulationInfo->lambda = ((double)step)/(init_lambda_steps-1);
       lambda = data->simulationInfo->lambda;
-      infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g", lambda);
+      infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "homotopy parameter lambda = %g", lambda);
 
       if(data->simulationInfo->lambda > 1.0)
       {
@@ -304,23 +312,25 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       else
         data->callback->functionInitialEquations(data, threadData);
 
-      infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g done\n---------------------------", lambda);
+      infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "homotopy parameter lambda = %g done\n---------------------------", lambda);
 
 #if !defined(OMC_NO_FILESYSTEM)
-      if(ACTIVE_STREAM(LOG_INIT))
+      if(ACTIVE_STREAM(LOG_INIT_HOMOTOPY))
       {
         fprintf(pFile, "%.16g", lambda);
         for(i=0; i<mData->nVariablesReal; ++i)
+        {
           fprintf(pFile, "%s%.16g", sep, data->localData[0]->realVars[i]);
+        }
         fprintf(pFile, "\n");
       }
 #endif
     }
     data->simulationInfo->homotopySteps += init_lambda_steps;
-    messageClose(LOG_INIT);
+    messageClose(LOG_INIT_HOMOTOPY);
 
 #if !defined(OMC_NO_FILESYSTEM)
-    if(ACTIVE_STREAM(LOG_INIT))
+    if(ACTIVE_STREAM(LOG_INIT_HOMOTOPY))
       fclose(pFile);
 #endif
   }
@@ -330,19 +340,19 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
      use ADAPTIVE GLOBAL HOMOTOPY APPROACH. */
   if (adaptiveGlobal && solveWithGlobalHomotopy)
   {
-    infoStreamPrint(LOG_INIT, 0, "Global homotopy with adaptive step size started.");
-    infoStreamPrint(LOG_INIT, 1, "homotopy process\n---------------------------");
+    infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "Global homotopy with adaptive step size started.");
+    infoStreamPrint(LOG_INIT_HOMOTOPY, 1, "homotopy process\n---------------------------");
 
     // Solve lambda0-DAE
     data->simulationInfo->lambda = 0;
-    infoStreamPrint(LOG_INIT, 0, "solve simplified lambda0-DAE");
+    infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "solve simplified lambda0-DAE");
     data->callback->functionInitialEquations_lambda0(data, threadData);
-    infoStreamPrint(LOG_INIT, 0, "solving simplified lambda0-DAE done\n---------------------------");
+    infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "solving simplified lambda0-DAE done\n---------------------------");
 
     // Run along the homotopy path and solve the actual system
     data->callback->functionInitialEquations(data, threadData);
 
-    messageClose(LOG_INIT);
+    messageClose(LOG_INIT_HOMOTOPY);
   }
 
   storeRelations(data);
@@ -461,7 +471,7 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
       }
       if(pVar) {
         omc_matlab4_val(&(mData->realVarsData[i].attribute.start), &reader, pVar, initTime);
-        infoStreamPrint(LOG_INIT, 0, "| %s(start=%g)", mData->realVarsData[i].info.name, mData->realVarsData[i].attribute.start);
+        infoStreamPrint(LOG_INIT_V, 0, "| %s(start=%g)", mData->realVarsData[i].info.name, mData->realVarsData[i].attribute.start);
       } else if((strlen(mData->realVarsData[i].info.name) > 0) &&
               (mData->realVarsData[i].info.name[0] != '$') &&
               (strncmp(mData->realVarsData[i].info.name, "der($", 5) != 0)) {
@@ -483,7 +493,7 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
       if(pVar) {
         omc_matlab4_val(&(mData->realParameterData[i].attribute.start), &reader, pVar, initTime);
         data->simulationInfo->realParameter[i] = mData->realParameterData[i].attribute.start;
-        infoStreamPrint(LOG_INIT, 0, "| %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
+        infoStreamPrint(LOG_INIT_V, 0, "| %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
       } else {
         warningStreamPrint(LOG_INIT, 0, "unable to import real parameter %s from given file", mData->realParameterData[i].info.name);
       }
@@ -501,7 +511,7 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
 
       if(pVar) {
         omc_matlab4_val(&(mData->realParameterData[i].attribute.start), &reader, pVar, initTime);
-        infoStreamPrint(LOG_INIT, 0, "| %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
+        infoStreamPrint(LOG_INIT_V, 0, "| %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
       } else {
         warningStreamPrint(LOG_INIT, 0, "unable to import real parameter %s from given file", mData->realParameterData[i].info.name);
       }
@@ -522,7 +532,7 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
         omc_matlab4_val(&value, &reader, pVar, initTime);
         mData->integerParameterData[i].attribute.start = (modelica_integer)value;
         data->simulationInfo->integerParameter[i] = (modelica_integer)value;
-        infoStreamPrint(LOG_INIT, 0, "| %s(start=%ld)", mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.start);
+        infoStreamPrint(LOG_INIT_V, 0, "| %s(start=%ld)", mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.start);
       } else {
         warningStreamPrint(LOG_INIT, 0, "unable to import integer parameter %s from given file", mData->integerParameterData[i].info.name);
       }
@@ -542,7 +552,7 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
         omc_matlab4_val(&value, &reader, pVar, initTime);
         mData->booleanParameterData[i].attribute.start = (modelica_boolean)value;
         data->simulationInfo->booleanParameter[i] = (modelica_boolean)value;
-        infoStreamPrint(LOG_INIT, 0, "| %s(start=%s)", mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.start ? "true" : "false");
+        infoStreamPrint(LOG_INIT_V, 0, "| %s(start=%s)", mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.start ? "true" : "false");
       } else {
         warningStreamPrint(LOG_INIT, 0, "unable to import boolean parameter %s from given file", mData->booleanParameterData[i].info.name);
       }
