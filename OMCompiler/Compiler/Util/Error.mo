@@ -1120,8 +1120,8 @@ public constant ErrorTypes.Message CONFLICTING_ALIAS_SET = ErrorTypes.MESSAGE(70
   Gettext.gettext("The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts."));
 public constant ErrorTypes.Message ENCRYPTION_NOT_SUPPORTED = ErrorTypes.MESSAGE(7018, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("File not Found: %s. Compile OpenModelica with Encryption support."));
-public constant ErrorTypes.Message ENCRYPTED_FILE_NOT_FOUND_ERROR = ErrorTypes.MESSAGE(7019, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  Gettext.gettext("No encrypted files found. Looked for %s and %s."));
+public constant ErrorTypes.Message PACKAGE_FILE_NOT_FOUND_ERROR = ErrorTypes.MESSAGE(7019, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  Gettext.gettext("Unable to find the package definition file. Looked for \"%s\", \"%s\", \"%s\" and \"%s\"."));
 public constant ErrorTypes.Message UNABLE_TO_UNZIP_FILE = ErrorTypes.MESSAGE(7020, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("Unable to unzip the file: %s."));
 public constant ErrorTypes.Message EXPECTED_ENCRYPTED_PACKAGE = ErrorTypes.MESSAGE(7021, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
