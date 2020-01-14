@@ -1467,12 +1467,14 @@ algorithm
 
     case (cache,_,"parseEncryptedPackage",Values.STRING(filename)::Values.STRING(workdir)::_,_)
       equation
+        vals = {};
         if (System.regularFileExists(filename)) then
           if (Util.endsWith(filename, ".mol")) then
             workdir = if System.directoryExists(workdir) then workdir else System.pwd();
             if (0 == System.systemCall("unzip -q -o -d \"" + workdir + "\" \"" +  filename + "\"")) then
               s1 = System.basename(filename);
               s2 = Util.removeLast4Char(s1);
+              s2 = listGet(Util.stringSplitAtChar(s2," "),1);
               // possible .moc files to look for
               filename1 = workdir + "/" + s2 + "/" + s2 + ".moc";
               filename2 = workdir + "/" + s2 + "/package.moc";
@@ -1491,7 +1493,7 @@ algorithm
                 (paths) = Interactive.parseFile(filename_1, "UTF-8");
                 vals = List.map(paths,ValuesUtil.makeCodeTypeName);
               else
-                Error.addMessage(Error.ENCRYPTED_FILE_NOT_FOUND_ERROR, {filename1, filename2});
+                Error.addMessage(Error.PACKAGE_FILE_NOT_FOUND_ERROR, {filename1, filename2, str1, str2});
               end if;
             else
               Error.addMessage(Error.UNABLE_TO_UNZIP_FILE, {filename});
@@ -1512,9 +1514,9 @@ algorithm
             workdir = if System.directoryExists(workdir) then workdir else System.pwd();
             b = false;
             if (0 == System.systemCall("unzip -q -o -d \"" + workdir + "\" \"" +  filename + "\"")) then
-              b = true;
               s1 = System.basename(filename);
               s2 = Util.removeLast4Char(s1);
+              s2 = listGet(Util.stringSplitAtChar(s2," "),1);
               // possible .moc files to look for
               filename1 = workdir + "/" + s2 + ".moc";
               filename2 = workdir + "/" + s2 + "/package.moc";
@@ -1532,8 +1534,9 @@ algorithm
                 newp = loadFile(filename_1, "UTF-8", p, true);
                 execStat("loadFile("+filename_1+")");
                 SymbolTable.setAbsyn(newp);
+                b = true;
               else
-                Error.addMessage(Error.ENCRYPTED_FILE_NOT_FOUND_ERROR, {filename1, filename2});
+                Error.addMessage(Error.PACKAGE_FILE_NOT_FOUND_ERROR, {filename1, filename2, str1, str2});
               end if;
             else
               Error.addMessage(Error.UNABLE_TO_UNZIP_FILE, {filename});

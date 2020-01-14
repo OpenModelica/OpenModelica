@@ -1,0 +1,63 @@
+// name: ReadOnlyPkg.mos
+// keywords: Tests the export and import of read only packages i.e, package.mol
+// status: correct
+// teardown_command: rm -rf buildEncryptedPackage.log "ReadOnlyPkg 1.1.mol"
+//
+
+loadFile("ReadOnlyPkg/package.mo");
+getErrorString();
+getClassNames();
+getErrorString();
+
+buildEncryptedPackage(ReadOnlyPkg, false);
+getErrorString();
+deleteClass(ReadOnlyPkg);
+getErrorString();
+
+parseEncryptedPackage("ReadOnlyPkg.mol");
+getErrorString();
+loadEncryptedPackage("ReadOnlyPkg.mol");
+getErrorString();
+getClassNames();
+getErrorString();
+deleteClass(ReadOnlyPkg);
+getErrorString();
+
+// create a versioned package
+system("mv \"ReadOnlyPkg.mol\" \"ReadOnlyPkg 1.1.mol\"");
+getErrorString();
+
+// load a versioned package
+parseEncryptedPackage("ReadOnlyPkg 1.1.mol");
+getErrorString();
+loadEncryptedPackage("ReadOnlyPkg 1.1.mol");
+getErrorString();
+getClassNames();
+getErrorString();
+
+// Result:
+// true
+// ""
+// {ReadOnlyPkg}
+// ""
+// true
+// ""
+// true
+// ""
+// {ReadOnlyPkg}
+// ""
+// true
+// ""
+// {ReadOnlyPkg}
+// ""
+// true
+// ""
+// 0
+// ""
+// {ReadOnlyPkg}
+// ""
+// true
+// ""
+// {ReadOnlyPkg}
+// ""
+// endResult
