@@ -5202,7 +5202,7 @@ algorithm
     case(r::rest,_,_,_,_,_,_,_)
       // case: state derivative
       equation
-        // if not negatet rowmark then linear or nonlinear
+        // if not negated rowmark then linear or nonlinear
         true = intGt(r,0);
         false = intEq(rowmark[r],-mark);
         // de/dvar
@@ -5231,7 +5231,7 @@ algorithm
     case(r::rest,_,_,_,_,_,_,_)
       equation
         rabs = intAbs(r);
-        // if not negatet rowmark then linear or nonlinear
+        // if not negated rowmark then linear or nonlinear
         false = intEq(rowmark[rabs],-mark);
         // de/dvar
         BackendDAE.VAR(varName=cr) = BackendVariable.getVarAt(vars, rabs);
@@ -5377,7 +5377,14 @@ algorithm
    end if;
    true := solved or derived;
    if debug then
-     print("tryToSolveOrDerive" + ExpressionDump.printExpStr(e) + " -> " +  ExpressionDump.printExpStr(f) + " == " + ExpressionDump.printExpStr(Expression.crefExp(cr)) + "\n");
+     if solved then
+       print("[SOLVED] ");
+     elseif derived then
+       print("[DERIVED] ");
+     else
+       print("[?BROKEN?] ");
+     end if;
+     print("tryToSolveOrDerive " + ExpressionDump.printExpStr(e) + " -> " +  ExpressionDump.printExpStr(f) + " == " + ExpressionDump.printExpStr(Expression.crefExp(cr)) + "\n");
    end if;
 end tryToSolveOrDerive;
 

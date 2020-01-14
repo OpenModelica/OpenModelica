@@ -620,9 +620,17 @@ algorithm
     then (res, functionTree);
 
     // differentiate homotopy
-    case DAE.CALL(path=p as Absyn.IDENT(name="homotopy"), expLst={actual, simplified}, attr=attr) equation
-      (e1, functionTree) = differentiateExp(actual, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
+    case DAE.CALL(path=p as Absyn.IDENT(name="homotopy"), expLst={actual, simplified}, attr=attr) algorithm
+      (e1, functionTree) := differentiateExp(actual, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
     then (e1, functionTree);
+
+    /*
+      do not differentiate semiLinear, if the second or third expression contains the diff cref
+      ticket: #5595
+    */
+    case DAE.CALL(path=p as Absyn.IDENT(name="semiLinear"), expLst={e1, e2, e3}, attr=attr)
+      guard(Expression.expHasCref(e2, inDiffwrtCref) or  Expression.expHasCref(e3, inDiffwrtCref))
+    then fail();
 
     // differentiate call
     case DAE.CALL() equation
