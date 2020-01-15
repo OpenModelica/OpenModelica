@@ -534,7 +534,6 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
   string init_file = "";
   string init_time_string = "";
   double init_time = 0.0;
-  string init_lambda_steps_string = "";
   string outputVariablesAtEnd = "";
   int cpuTime = omc_flag[FLAG_CPU];
 
@@ -549,8 +548,14 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     init_time = atof(init_time_string.c_str());
   }
   if(omc_flag[FLAG_ILS]) {
-    init_lambda_steps_string = omc_flagValue[FLAG_ILS];
-    init_lambda_steps = atoi(init_lambda_steps_string.c_str());
+    init_lambda_steps = atoi(omc_flagValue[FLAG_ILS]);
+    if(init_lambda_steps <= 0) {
+      init_lambda_steps = 0;
+      infoStreamPrint(LOG_STDOUT, 0, "Number of lambda steps set to 0. Homotopy is disabled.");
+    }
+    else {
+      infoStreamPrint(LOG_STDOUT, 0, "Number of lambda steps for homotopy approach changed to %d", init_lambda_steps);
+    }
   }
   if(omc_flag[FLAG_MAX_BISECTION_ITERATIONS]) {
     maxBisectionIterations = atoi(omc_flagValue[FLAG_MAX_BISECTION_ITERATIONS]);
