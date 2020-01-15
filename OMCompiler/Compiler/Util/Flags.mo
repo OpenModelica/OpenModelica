@@ -876,8 +876,8 @@ constant ConfigFlag DELAY_BREAK_LOOP = CONFIG_FLAG(43, "delayBreakLoop",
 constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(44, "tearingMethod",
   NONE(), EXTERNAL(), STRING_FLAG("cellier"),
   SOME(STRING_DESC_OPTION({
-    ("noTearing", Gettext.gettext("Skip tearing.")),
-    ("minimalTearing", Gettext.gettext("Minimal tearing method based on a brute force approuch.")),
+    ("noTearing", Gettext.gettext("Skip tearing. This breaks models with mixed continuous-integer/boolean unknowns")),
+    ("minimalTearing", Gettext.gettext("Minimal tearing method to only tear discrete variables.")),
     ("omcTearing", Gettext.gettext("Tearing method developed by TU Dresden: Frenkel, Schubert.")),
     ("cellier", Gettext.gettext("Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick"))})),
 
