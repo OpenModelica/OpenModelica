@@ -1269,16 +1269,46 @@ algorithm
             end match;
 
    for syst in inDAE.eqs loop
-     print("\nsystem " + intString(isyst) + "\n");
+     print("\nsystem " + intString(isyst) + "\n" + UNDERLINE + "\n");
      BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns, matching=BackendDAE.MATCHING(comps=comps)) := syst;
      for comp in comps loop
        if BackendEquation.isEquationsSystem(comp) or BackendEquation.isTornSystem(comp) then
+         print("\n" + BORDER + BORDER + "\n dumpLoops: SORTED COMPONENT \n" + BORDER + BORDER + "\n\n");
          dumpEqnsSolved2({comp}, eqns, vars);
+         if Flags.isSet(Flags.DUMP_LOOPS_VERBOSE) then
+           printComponentAdjacencyMatrixEnhanced(comp, eqns, vars, outDAE.shared);
+         end if;
        end if;
      end for;
    isyst := isyst + 1;
    end for;
 end dumpLoops;
+
+public function printComponentAdjacencyMatrixEnhanced
+  input BackendDAE.StrongComponent comp;
+  input BackendDAE.EquationArray eqns;
+  input BackendDAE.Variables vars;
+  input BackendDAE.Shared shared;
+protected
+  list<BackendDAE.Equation> compEqnLst;
+  list<BackendDAE.Var> compVarLst;
+  BackendDAE.EquationArray compEqns;
+  BackendDAE.Variables compVars;
+  BackendDAE.EqSystem syst;
+  BackendDAE.AdjacencyMatrixEnhanced m, mT;
+algorithm
+  (compVarLst, _, compEqnLst, _) := BackendDAEUtil.getStrongComponentVarsAndEquations(comp, vars, eqns);
+  compEqns := BackendEquation.listEquation(compEqnLst);
+  compVars := BackendVariable.listVar(compVarLst);
+  syst := BackendDAEUtil.createEqSystem(compVars, compEqns);
+  (m, mT, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst, shared, false);
+  print("\n" + BORDER + BORDER + "\n dumpLoopsVerbose: UNSORTED COMPONENT WITH ENHANCED ADJACENCY MATRIX \n" + BORDER + BORDER + "\n\n");
+  dumpVariables(compVars, "component variables");
+  dumpEquationArray(compEqns, "component equations");
+  dumpAdjacencyMatrixEnhanced(m);
+  print("\n\n");
+  dumpAdjacencyMatrixTEnhanced(mT);
+end printComponentAdjacencyMatrixEnhanced;
 
 public function dumpComponentsAdvanced "author: Frenkel TUD
   Prints the blocks of the BLT sorting on stdout."

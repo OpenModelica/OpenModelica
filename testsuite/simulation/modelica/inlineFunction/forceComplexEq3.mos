@@ -37,23 +37,29 @@ val(x3,{0,1});
 // ""
 //
 // system 1
+// ========================================
+//
+// ################################################################################
+//  dumpLoops: SORTED COMPONENT
+// ################################################################################
+//
 // torn nonlinear Equationsystem:
 //
 // internal vars
-// 1: y2$$Pfoo$Pf9:VARIABLE()  type: Real 
-// 2: x4:VARIABLE()  type: Real 
-// 3: y1$$Pfoo$Pf12:VARIABLE()  type: Real 
-// 4: y2$$Pfoo$Pf13:VARIABLE()  type: Real 
-// 5: x1:VARIABLE()  type: Real 
-// 6: a$$Pfoo$Pf10:VARIABLE()  type: Real 
-// 7: a$$Pfoo$Pf14:VARIABLE()  type: Real 
-// 8: b$$Pfoo$Pf15:VARIABLE()  type: Real 
-// 9: b$$Pfoo$Pf11:VARIABLE()  type: Real 
-// 10: y1$$Pfoo$Pf8:VARIABLE()  type: Real 
+// 1: y2$$Pfoo$Pf9:VARIABLE()  type: Real
+// 2: x4:VARIABLE()  type: Real
+// 3: y1$$Pfoo$Pf12:VARIABLE()  type: Real
+// 4: y2$$Pfoo$Pf13:VARIABLE()  type: Real
+// 5: x1:VARIABLE()  type: Real
+// 6: a$$Pfoo$Pf10:VARIABLE()  type: Real
+// 7: a$$Pfoo$Pf14:VARIABLE()  type: Real
+// 8: b$$Pfoo$Pf15:VARIABLE()  type: Real
+// 9: b$$Pfoo$Pf11:VARIABLE()  type: Real
+// 10: y1$$Pfoo$Pf8:VARIABLE()  type: Real
 //
 // residual vars
-// 1: x3:VARIABLE()  type: Real 
-// 2: x2:VARIABLE()  type: Real 
+// 1: x3:VARIABLE()  type: Real
+// 2: x2:VARIABLE()  type: Real
 //
 // internal equation
 // 1/1 (1): x2 = y2$$Pfoo$Pf9   [unknown |0|0|0|0|]
