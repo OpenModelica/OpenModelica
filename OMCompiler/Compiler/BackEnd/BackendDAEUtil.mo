@@ -7575,7 +7575,7 @@ algorithm
   if Flags.isSet(Flags.DUMP_EQNINORDER) then
     BackendDump.dumpEqnsSolved(outSimDAE, "indxdae: eqns in order");
   end if;
-  if Flags.isSet(Flags.DUMP_LOOPS) then
+  if Flags.isSet(Flags.DUMP_LOOPS) or Flags.isSet(Flags.DUMP_LOOPS_VERBOSE) then
     BackendDump.dumpLoops(outSimDAE);
   end if;
   checkBackendDAEWithErrorMsg(outSimDAE);

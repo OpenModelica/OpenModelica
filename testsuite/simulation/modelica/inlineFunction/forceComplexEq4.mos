@@ -37,15 +37,21 @@ val(x3,{0,1});
 // ""
 //
 // system 1
+// ========================================
+//
+// ################################################################################
+//  dumpLoops: SORTED COMPONENT
+// ################################################################################
+//
 // torn nonlinear Equationsystem:
 //
 // internal vars
-// 1: x4:VARIABLE()  type: Real 
-// 2: x1:VARIABLE()  type: Real 
+// 1: x4:VARIABLE()  type: Real
+// 2: x1:VARIABLE()  type: Real
 //
 // residual vars
-// 1: x2:VARIABLE()  type: Real 
-// 2: x3:VARIABLE()  type: Real 
+// 1: x2:VARIABLE()  type: Real
+// 2: x3:VARIABLE()  type: Real
 //
 // internal equation
 // 1/1 (1): x2 = -5.0 + 3.0 * (1.0 + 3.0 * x2 + x3 + (-5.0) * x4)   [unknown |0|0|0|0|]
@@ -65,7 +71,7 @@ val(x3,{0,1});
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 4
 //  * Number of variables: 4
-// Warning:  There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ('-d=stateselection' for list of states)
