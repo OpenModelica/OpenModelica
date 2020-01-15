@@ -842,7 +842,7 @@ algorithm
 
   cont := match(inExp)
     local
-      DAE.Exp cse_var, cse_var2, call, e;
+      DAE.Exp cse_var, cse_var2, call, e, e2;
       DAE.Type ty;
       list<DAE.Type> types;
       Integer length, ix, id;
@@ -854,7 +854,6 @@ algorithm
     case DAE.IFEXP()
       algorithm
         (_, outTuple) := Expression.traverseExpTopDown(inExp.expCond, wrapFunctionCalls_analysis3, inTuple);
-        // TODO: We should also have analyzed all of the branches; if a call is present in all branches we can perform CSE. But the data structure is a hashtable and we would need to use immutable types...
         cont := false;
         return;
       then fail();
@@ -885,9 +884,20 @@ algorithm
             exarray := ExpandableArray.update(id, cseEquation, exarray);
           end if;
         else
-          print("This should never appear\n");
+          Error.addMessage(Error.GENERIC_ELAB_EXPRESSION, {ExpressionDump.dumpExpStr(inExp, 0) + " This should never happen, Error in wrapFunctionCalls_analysis3. Trying to recover."});
         end if;
       end if;
+    then true;
+
+    /*
+      check arguments of noEvent for functions but ignore noEvent itself.
+      ticket #5771
+    */
+    case DAE.CALL(Absyn.IDENT("noEvent"),{DAE.RELATION(e,_,e2,_,_)}) algorithm
+      (_, outTuple) := Expression.traverseExpTopDown(e, wrapFunctionCalls_analysis3, inTuple);
+      (_, outTuple) := Expression.traverseExpTopDown(e2, wrapFunctionCalls_analysis3, outTuple);
+      cont := false;
+      return;
     then true;
 
     case DAE.CALL(attr=DAE.CALL_ATTR(ty=ty)) algorithm
@@ -1264,7 +1274,7 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT("interval")) then true;
     case DAE.CALL(path=Absyn.IDENT("mod")) then true;
     case DAE.CALL(path=Absyn.IDENT("noClock")) then true;
-    case DAE.CALL(path=Absyn.IDENT("noEvent")) then true;
+    //case DAE.CALL(path=Absyn.IDENT("noEvent")) then true;
     case DAE.CALL(path=Absyn.IDENT("pre")) then true;
     case DAE.CALL(path=Absyn.IDENT("previous")) then true;
     case DAE.CALL(path=Absyn.IDENT("reinit")) then true;
