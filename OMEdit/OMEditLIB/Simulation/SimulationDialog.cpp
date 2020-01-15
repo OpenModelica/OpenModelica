@@ -2170,7 +2170,7 @@ void SimulationDialog::enableDasslIdaOptions(QString method)
 void SimulationDialog::showIntegrationHelp()
 {
   QUrl integrationAlgorithmsPath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
-                                  .append("/share/doc/omc/OpenModelicaUsersGuide/simulationflags.html#integration-methods"));
+                                  .append("/share/doc/omc/simulationflags.html#integration-methods"));
   if (!QDesktopServices::openUrl(integrationAlgorithmsPath)) {
     QString errorMessage = GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(integrationAlgorithmsPath.toString());
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, errorMessage, Helper::scriptingKind, Helper::errorLevel));
@@ -2257,7 +2257,7 @@ void SimulationDialog::browseDataReconciliationInputFile()
 void SimulationDialog::showSimulationFlagsHelp()
 {
   QUrl integrationAlgorithmsPath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
-                                  .append("/share/doc/omc/OpenModelicaUsersGuide/simulationflags.html"));
+                                  .append("/share/doc/omc/simulationflags.html"));
   if (!QDesktopServices::openUrl(integrationAlgorithmsPath)) {
     QString errorMessage = GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(integrationAlgorithmsPath.toString());
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, errorMessage, Helper::scriptingKind, Helper::errorLevel));
