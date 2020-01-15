@@ -44,6 +44,7 @@ parameterWithoutBinding.mos \
 pre1.mos \
 pre2.mos \
 pre3.mos \
+setNumberOfInitLambda.mos \
 scaling1.mos \
 scaling2.mos \
 SingularInitial.mos \

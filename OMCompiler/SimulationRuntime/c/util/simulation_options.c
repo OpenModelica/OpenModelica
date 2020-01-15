@@ -191,7 +191,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_IIF */                          "value specifies an external file for the initialization of the model",
   /* FLAG_IIM */                          "value specifies the initialization method",
   /* FLAG_IIT */                          "[double] value specifies a time for the initialization of the model",
-  /* FLAG_ILS */                          "[int] default: 4",
+  /* FLAG_ILS */                          "[int (default 4)] number of lambda steps for homotopy methods",
   /* FLAG_IMPRK_ORDER */                  "[int (default 5)] value specifies the integration order of the implicit Runge-Kutta method. Valid values: 1-6",
   /* FLAG_IMPRK_LS */                     "selects the linear solver of the integration methods: impeuler, trapezoid and imprungekuta",
   /* FLAG_INITIAL_STEP_SIZE */            "value specifies an initial step size for supported solver",

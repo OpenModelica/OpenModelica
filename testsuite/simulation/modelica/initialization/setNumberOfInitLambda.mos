@@ -1,0 +1,95 @@
+// name: setNumberOfInitLambda
+// keywords: initialization, lambda steps, global equidistant homotopy
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.homotopy4* _initializationTests.homotopy4*
+//
+// Test the flag -ils to set the number of lambda steps on initialization with global homotopy.
+//
+
+loadString("
+package initializationTests
+  model homotopy4
+    Real x,y,z,x1,y1,z1,x2,y2,z2,x3,y3,z3,a,b,c,d,e,f;
+    parameter Real p1 = 10;
+
+  equation
+    // a = sin(p1* time + 1);
+    a = sin(p1* time + 3.1415/2);
+
+    x + 5 = z + a;
+    -y + 10 = z + p1;
+    x - y + 9 = z;
+
+    b = sin(a*x);
+
+    // ********** Beginning of homotopy iteration loop
+    c = homotopy(b^2, b);
+
+    x1 + 5 = z1 + c;
+    -y1 + 10 = z1 + p1;
+    x1 - y1 + 9 = z1;
+
+    d = x1 + y1 + z1;
+
+    homotopy(x2^2, x2) + 5 = z2 + 5;
+    homotopy(y2^2, -d) + 10 = z2 + p1;
+    x2 + y2 + 9 = z2;
+
+    e = sin(d*x2);
+
+    x3 + 5 = z3 + e;
+    -y3 + 10 = z3*y3 + p1;
+    x3 - y3 + 9 = z3;
+    // ********** End of homotopy iteration loop
+
+    f = x + y + z + a + b + c + d + e + x1 + y1 + z1 + x2 + y2 + z2 + x3 + y3 + z3;
+  end homotopy4;
+end initializationTests;
+"); getErrorString();
+
+simulate(initializationTests.homotopy4, simflags="-ils=0 -lv=LOG_INIT_HOMOTOPY"); getErrorString();
+
+simulate(initializationTests.homotopy4, simflags="-ils=3 -lv=LOG_INIT_HOMOTOPY"); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.homotopy4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ils=0 -lv=LOG_INIT_HOMOTOPY'",
+//     messages = "stdout            | info    | Number of lambda steps set to 0. Homotopy is disabled.
+// LOG_INIT_HOMOTOPY | info    | Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. To disable initialization with homotpy operator use \"-noHomotopyOnFirstTry\".
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac3. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac6. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// record SimulationResult
+//     resultFile = "initializationTests.homotopy4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ils=3 -lv=LOG_INIT_HOMOTOPY'",
+//     messages = "stdout            | info    | Number of lambda steps for homotopy approach changed to 3
+// LOG_INIT_HOMOTOPY | info    | Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. To disable initialization with homotpy operator use \"-noHomotopyOnFirstTry\".
+// LOG_INIT_HOMOTOPY | info    | Global homotopy with equidistant step size started.
+// LOG_INIT_HOMOTOPY | info    | The homotopy path will be exported to initializationTests.homotopy4_equidistant_global_homotopy.csv.
+// LOG_INIT_HOMOTOPY | info    | homotopy process
+// |                 | |       | ---------------------------
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0 done
+// |                 | |       | ---------------------------
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.5
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 0.5 done
+// |                 | |       | ---------------------------
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 1
+// LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 1 done
+// |                 | |       | ---------------------------
+// LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac14. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac17. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

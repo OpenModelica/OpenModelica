@@ -74,7 +74,7 @@
 #include <math.h>
 #include <string.h>
 
-int init_lambda_steps = 4;
+extern int init_lambda_steps = 4;
 
 /*! \fn void dumpInitializationStatus(DATA *data)
  *
@@ -206,7 +206,6 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   /* useHomotopy=1: global homotopy (equidistant lambda) */
   if ( (data->callback->useHomotopy == 1 && omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] != 1) && omc_flag[FLAG_NO_HOMOTOPY_ON_FIRST_TRY] !=1 ) {
       omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] = 1;
-      init_lambda_steps = 2;
       infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. "
                                             "To disable initialization with homotpy operator use \"-noHomotopyOnFirstTry\".");
   }
