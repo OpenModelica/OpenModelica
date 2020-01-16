@@ -2637,11 +2637,11 @@ void MainWindow::openConfigurationOptions()
 void MainWindow::openUsersGuide()
 {
   QUrl usersGuidePath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
-                       .append("/share/doc/omc/OpenModelicaUsersGuide/index.html"));
+                       .append("/share/doc/omc/index.html"));
   if (!QDesktopServices::openUrl(usersGuidePath)) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
-                                                Helper::scriptingKind, Helper::errorLevel));
+                                                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -2656,24 +2656,8 @@ void MainWindow::openUsersGuidePdf()
                        .append("/share/doc/omc/OpenModelicaUsersGuide-latest.pdf"));
   if (!QDesktopServices::openUrl(usersGuidePath)) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
-                                                Helper::scriptingKind, Helper::errorLevel));
-  }
-}
-
-/*!
- * \brief MainWindow::openUsersGuideOldPdf
- * Slot activated when mpUsersGuideOldPdfAction triggered signal is raised.\n
- * Opens the old pdf versions of OpenModelica users guide.
- */
-void MainWindow::openUsersGuideOldPdf()
-{
-  QUrl usersGuidePath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
-                       .append("/share/doc/omc/OpenModelicaUsersGuide.pdf"));
-  if (!QDesktopServices::openUrl(usersGuidePath)) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
-                                                Helper::scriptingKind, Helper::errorLevel));
+                                                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -2685,11 +2669,11 @@ void MainWindow::openUsersGuideOldPdf()
 void MainWindow::openSystemDocumentation()
 {
   QUrl systemDocumentationPath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
-                                .append("/share/doc/omc/SystemDocumentation/OpenModelicaSystem.pdf"));
+                                .append("/share/doc/omc/OpenModelicaSystem.pdf"));
   if (!QDesktopServices::openUrl(systemDocumentationPath)) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(systemDocumentationPath.toString()),
-                                                Helper::scriptingKind, Helper::errorLevel));
+                                                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(systemDocumentationPath.toString()),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
