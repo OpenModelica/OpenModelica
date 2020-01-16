@@ -521,7 +521,6 @@ public slots:
   void openConfigurationOptions();
   void openUsersGuide();
   void openUsersGuidePdf();
-  void openUsersGuideOldPdf();
   void openSystemDocumentation();
   void openOpenModelicaScriptingDocumentation();
   void openModelicaDocumentation();
