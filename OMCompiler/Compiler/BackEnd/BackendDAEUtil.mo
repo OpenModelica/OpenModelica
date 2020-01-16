@@ -10116,6 +10116,47 @@ algorithm
   end match;
 end getLinearfromJacType;
 
+public function linearityFromAdjacencyMatrixEnhanced
+"author: kabdelhak FHB 2020-01
+ Determines the linearity of a system by looking at specified entries of the enhanced adjacency matrix."
+  input BackendDAE.AdjacencyMatrixEnhanced me;
+  input list<Integer> eqs;
+  input list<Integer> vars;
+  output Boolean linear = true;
+algorithm
+  /*
+    maybe presort vars and each row for better complexity?
+    right now it is O(e*v*n) where e is the number of observed
+    equations, v is the number of observed variables and
+    n is the avarage number of variables per row.
+  */
+  for rowIdx in eqs loop
+    for element in me[rowIdx] loop
+      _ := match element
+        local
+          Integer varIdx;
+        case (varIdx, BackendDAE.SOLVABILITY_NONLINEAR(), _) guard(List.contains(vars, intAbs(varIdx), intEq))
+          algorithm
+            linear := false;
+            return;
+        then 0;
+        case (varIdx, BackendDAE.SOLVABILITY_UNSOLVABLE(), _) guard(List.contains(vars, intAbs(varIdx), intEq))
+          algorithm
+            linear := false;
+            return;
+        then 0;
+        /* this may not be necessary */
+        case (varIdx, BackendDAE.SOLVABILITY_SOLVABLE(), _) guard(List.contains(vars, intAbs(varIdx), intEq))
+          algorithm
+            linear := false;
+            return;
+        then 0;
+        else 0;
+      end match;
+    end for;
+  end for;
+end linearityFromAdjacencyMatrixEnhanced;
+
 public function containsHomotopyCall
   input DAE.Exp inExp;
   input Boolean inHomotopy;

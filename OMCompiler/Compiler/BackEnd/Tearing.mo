@@ -2011,6 +2011,8 @@ algorithm
   if debug then execStat("Tearing.CellierTearing -> 3.2"); end if;
   // Unassigned equations are residual equations
   residual := getUnassigned(ass2);
+  /* kabdelhak: new method for determining linearity */
+  linear := BackendDAEUtil.linearityFromAdjacencyMatrixEnhanced(me, residual, OutTVars);
   if debug then execStat("Tearing.CellierTearing -> 3.3"); end if;
   residual_coll := List.map1r(residual,arrayGet,mapIncRowEqn);
   if debug then execStat("Tearing.CellierTearing -> 3.4"); end if;
