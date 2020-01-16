@@ -247,7 +247,7 @@ void TranslationFlagsWidget::updateIndexReductionToolTip(int index)
 void TranslationFlagsWidget::showTranslationFlagsHelp()
 {
   QUrl omcHelpTextPath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
-                        .append("/share/doc/omc/OpenModelicaUsersGuide/omchelptext.html"));
+                        .append("/share/doc/omc/omchelptext.html"));
   if (!QDesktopServices::openUrl(omcHelpTextPath)) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(omcHelpTextPath.toString()), Helper::ok);
