@@ -2339,6 +2339,14 @@ algorithm
   end for;
 end isCrefInVarList;
 
+public function varCrefEqualStripped
+  input BackendDAE.Var var;
+  input DAE.ComponentRef cref;
+  output Boolean res;
+algorithm
+  res := ComponentReference.crefEqual(ComponentReference.crefStripSubs(BackendVariable.varCref(var)), ComponentReference.crefStripSubs(cref));
+end varCrefEqualStripped;
+
 public function areAllCrefsInVarList "O(n^2)"
   input list<DAE.ComponentRef> inCrefs;
   input list<BackendDAE.Var> inVars;

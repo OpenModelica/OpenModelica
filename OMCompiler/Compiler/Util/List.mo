@@ -7569,24 +7569,72 @@ algorithm
   end match;
 end allCombinations4;
 
- public function contains<T>
-    input list<T> lst;
-    input T elem;
-    input equalityFunc eqFunc;
-    partial function equalityFunc
-      input T t1;
-      input T t2;
-      output Boolean res;
-    end equalityFunc;
-    output Boolean res = false;
-  algorithm
-    for i in lst loop
-      if eqFunc(i, elem) then
-        res := true;
+public function contains<T>
+"author kabdelhak: 2020-01
+ Returns true, if the list contains the element."
+  input list<T> lst;
+  input T elem;
+  input equalityFunc eqFunc;
+  partial function equalityFunc
+    input T t1;
+    input T t2;
+    output Boolean res;
+  end equalityFunc;
+  output Boolean res = false;
+algorithm
+  for i in lst loop
+    if eqFunc(i, elem) then
+      res := true;
+      return;
+    end if;
+  end for;
+end contains;
+
+public function intersection<T1,T2>
+"author kabdelhak: 2020-01
+ Returns the intersection of two lists with different types provided an equality function
+ (eg. Variables and Crefs). Output has the type of the first input."
+  input list<T1> lst1;
+  input list<T2> lst2;
+  input equalityFunc eqFunc;
+  partial function equalityFunc
+    input T1 t1;
+    input T2 t2;
+    output Boolean res;
+  end equalityFunc;
+  output list<T1> outLst = {};
+algorithm
+  for elem1 in lst1 loop
+    for elem2 in lst2 loop
+      if eqFunc(elem1, elem2) then
+        outLst := elem1 :: outLst;
+      end if;
+    end for;
+  end for;
+end intersection;
+
+public function intersectionEmpty<T1,T2>
+"author kabdelhak: 2020-01
+ Returns true, if the intersection of both input lists is not empty. The lists can be of different type."
+  input list<T1> lst1;
+  input list<T2> lst2;
+  input equalityFunc eqFunc;
+  partial function equalityFunc
+    input T1 t1;
+    input T2 t2;
+    output Boolean res;
+  end equalityFunc;
+  output Boolean isEmpty = true;
+algorithm
+  for elem1 in lst1 loop
+    for elem2 in lst2 loop
+      if eqFunc(elem1, elem2) then
+        isEmpty := false;
         return;
       end if;
     end for;
-end contains;
+  end for;
+end intersectionEmpty;
 
 annotation(__OpenModelica_Interface="util");
 end List;
