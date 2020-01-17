@@ -715,17 +715,30 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: loadModel(ThermoSysPro)
 // true
 // Evaluating: getMessagesStringInternal()
-// {}
+// {record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "",
+//     readonly = false,
+//     lineStart = 0,
+//     columnStart = 0,
+//     lineEnd = 0,
+//     columnEnd = 0
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.",
+//     kind = .OpenModelica.Scripting.ErrorKind.scripting,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 183
+// end OpenModelica.Scripting.ErrorMessage;}
 // Evaluating: translateModel(ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution)
 // true
 // Evaluating: getMessagesStringInternal()
 // {record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     filename = "ThermoSysPro 3.2/WaterSolution/Connectors.mo",
 //     readonly = false,
-//     lineStart = 45,
+//     lineStart = 44,
 //     columnStart = 3,
-//     lineEnd = 85,
+//     lineEnd = 83,
 //     columnEnd = 26
 // end OpenModelica.Scripting.SourceInfo;,
 //     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
@@ -734,11 +747,11 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     filename = "ThermoSysPro 3.2/WaterSolution/Connectors.mo",
 //     readonly = false,
 //     lineStart = 3,
 //     columnStart = 3,
-//     lineEnd = 43,
+//     lineEnd = 42,
 //     columnEnd = 25
 // end OpenModelica.Scripting.SourceInfo;,
 //     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
@@ -747,7 +760,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/Properties/WaterSteam/Common.mo",
+//     filename = "ThermoSysPro 3.2/Properties/WaterSteam/Common.mo",
 //     readonly = false,
 //     lineStart = 1185,
 //     columnStart = 3,
@@ -760,7 +773,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 245
 // end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/Properties/WaterSteam/Common.mo",
+//     filename = "ThermoSysPro 3.2/Properties/WaterSteam/Common.mo",
 //     readonly = false,
 //     lineStart = 703,
 //     columnStart = 3,
@@ -773,28 +786,41 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 245
 // end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     filename = "ThermoSysPro 3.2/WaterSolution/Connectors.mo",
 //     readonly = false,
-//     lineStart = 45,
+//     lineStart = 44,
 //     columnStart = 3,
-//     lineEnd = 85,
+//     lineEnd = 83,
 //     columnEnd = 26
 // end OpenModelica.Scripting.SourceInfo;,
 //     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet$pump$C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
 //     kind = .OpenModelica.Scripting.ErrorKind.translation,
 //     level = .OpenModelica.Scripting.ErrorLevel.warning,
 //     id = 150
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "",
+//     readonly = false,
+//     lineStart = 0,
+//     columnStart = 0,
+//     lineEnd = 0,
+//     columnEnd = 0
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.",
+//     kind = .OpenModelica.Scripting.ErrorKind.scripting,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 183
 // end OpenModelica.Scripting.ErrorMessage;}
 // Evaluating: translateModel(ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution)
 // true
 // Evaluating: getMessagesStringInternal(unique = false)
 // {record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     filename = "ThermoSysPro 3.2/WaterSolution/Connectors.mo",
 //     readonly = false,
-//     lineStart = 45,
+//     lineStart = 44,
 //     columnStart = 3,
-//     lineEnd = 85,
+//     lineEnd = 83,
 //     columnEnd = 26
 // end OpenModelica.Scripting.SourceInfo;,
 //     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
@@ -803,11 +829,11 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     filename = "ThermoSysPro 3.2/WaterSolution/Connectors.mo",
 //     readonly = false,
 //     lineStart = 3,
 //     columnStart = 3,
-//     lineEnd = 43,
+//     lineEnd = 42,
 //     columnEnd = 25
 // end OpenModelica.Scripting.SourceInfo;,
 //     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
@@ -816,11 +842,11 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     filename = "ThermoSysPro 3.2/WaterSolution/Connectors.mo",
 //     readonly = false,
-//     lineStart = 45,
+//     lineStart = 44,
 //     columnStart = 3,
-//     lineEnd = 85,
+//     lineEnd = 83,
 //     columnEnd = 26
 // end OpenModelica.Scripting.SourceInfo;,
 //     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
@@ -829,11 +855,11 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     filename = "ThermoSysPro 3.2/WaterSolution/Connectors.mo",
 //     readonly = false,
 //     lineStart = 3,
 //     columnStart = 3,
-//     lineEnd = 43,
+//     lineEnd = 42,
 //     columnEnd = 25
 // end OpenModelica.Scripting.SourceInfo;,
 //     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
@@ -842,11 +868,11 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     filename = "ThermoSysPro 3.2/WaterSolution/Connectors.mo",
 //     readonly = false,
-//     lineStart = 45,
+//     lineStart = 44,
 //     columnStart = 3,
-//     lineEnd = 85,
+//     lineEnd = 83,
 //     columnEnd = 26
 // end OpenModelica.Scripting.SourceInfo;,
 //     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
@@ -855,11 +881,11 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     filename = "ThermoSysPro 3.2/WaterSolution/Connectors.mo",
 //     readonly = false,
 //     lineStart = 3,
 //     columnStart = 3,
-//     lineEnd = 43,
+//     lineEnd = 42,
 //     columnEnd = 25
 // end OpenModelica.Scripting.SourceInfo;,
 //     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
@@ -868,11 +894,11 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     filename = "ThermoSysPro 3.2/WaterSolution/Connectors.mo",
 //     readonly = false,
-//     lineStart = 45,
+//     lineStart = 44,
 //     columnStart = 3,
-//     lineEnd = 85,
+//     lineEnd = 83,
 //     columnEnd = 26
 // end OpenModelica.Scripting.SourceInfo;,
 //     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
@@ -881,11 +907,11 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     filename = "ThermoSysPro 3.2/WaterSolution/Connectors.mo",
 //     readonly = false,
 //     lineStart = 3,
 //     columnStart = 3,
-//     lineEnd = 43,
+//     lineEnd = 42,
 //     columnEnd = 25
 // end OpenModelica.Scripting.SourceInfo;,
 //     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
@@ -894,11 +920,11 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     filename = "ThermoSysPro 3.2/WaterSolution/Connectors.mo",
 //     readonly = false,
-//     lineStart = 45,
+//     lineStart = 44,
 //     columnStart = 3,
-//     lineEnd = 85,
+//     lineEnd = 83,
 //     columnEnd = 26
 // end OpenModelica.Scripting.SourceInfo;,
 //     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
@@ -907,11 +933,11 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     filename = "ThermoSysPro 3.2/WaterSolution/Connectors.mo",
 //     readonly = false,
 //     lineStart = 3,
 //     columnStart = 3,
-//     lineEnd = 43,
+//     lineEnd = 42,
 //     columnEnd = 25
 // end OpenModelica.Scripting.SourceInfo;,
 //     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
@@ -920,11 +946,11 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     filename = "ThermoSysPro 3.2/WaterSolution/Connectors.mo",
 //     readonly = false,
-//     lineStart = 45,
+//     lineStart = 44,
 //     columnStart = 3,
-//     lineEnd = 85,
+//     lineEnd = 83,
 //     columnEnd = 26
 // end OpenModelica.Scripting.SourceInfo;,
 //     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
@@ -933,11 +959,11 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     filename = "ThermoSysPro 3.2/WaterSolution/Connectors.mo",
 //     readonly = false,
 //     lineStart = 3,
 //     columnStart = 3,
-//     lineEnd = 43,
+//     lineEnd = 42,
 //     columnEnd = 25
 // end OpenModelica.Scripting.SourceInfo;,
 //     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
@@ -946,7 +972,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/Properties/WaterSteam/Common.mo",
+//     filename = "ThermoSysPro 3.2/Properties/WaterSteam/Common.mo",
 //     readonly = false,
 //     lineStart = 1185,
 //     columnStart = 3,
@@ -959,7 +985,7 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 245
 // end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/Properties/WaterSteam/Common.mo",
+//     filename = "ThermoSysPro 3.2/Properties/WaterSteam/Common.mo",
 //     readonly = false,
 //     lineStart = 703,
 //     columnStart = 3,
@@ -972,11 +998,11 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 245
 // end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     filename = "ThermoSysPro 3.2/WaterSolution/Connectors.mo",
 //     readonly = false,
-//     lineStart = 45,
+//     lineStart = 44,
 //     columnStart = 3,
-//     lineEnd = 85,
+//     lineEnd = 83,
 //     columnEnd = 26
 // end OpenModelica.Scripting.SourceInfo;,
 //     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet$pump$C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
@@ -985,11 +1011,11 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     filename = "ThermoSysPro 3.2/WaterSolution/Connectors.mo",
 //     readonly = false,
 //     lineStart = 3,
 //     columnStart = 3,
-//     lineEnd = 43,
+//     lineEnd = 42,
 //     columnEnd = 25
 // end OpenModelica.Scripting.SourceInfo;,
 //     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
@@ -998,11 +1024,11 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     filename = "ThermoSysPro 3.2/WaterSolution/Connectors.mo",
 //     readonly = false,
-//     lineStart = 45,
+//     lineStart = 44,
 //     columnStart = 3,
-//     lineEnd = 85,
+//     lineEnd = 83,
 //     columnEnd = 26
 // end OpenModelica.Scripting.SourceInfo;,
 //     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
@@ -1011,16 +1037,29 @@ getMessagesStringInternal(unique = false); // not unique
 //     id = 150
 // end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
 //     info = record OpenModelica.Scripting.SourceInfo
-//     filename = "ThermoSysPro 3.1/WaterSolution/Connectors.mo",
+//     filename = "ThermoSysPro 3.2/WaterSolution/Connectors.mo",
 //     readonly = false,
 //     lineStart = 3,
 //     columnStart = 3,
-//     lineEnd = 43,
+//     lineEnd = 42,
 //     columnEnd = 25
 // end OpenModelica.Scripting.SourceInfo;,
 //     message = "Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).",
 //     kind = .OpenModelica.Scripting.ErrorKind.translation,
 //     level = .OpenModelica.Scripting.ErrorLevel.warning,
 //     id = 150
+// end OpenModelica.Scripting.ErrorMessage;,record OpenModelica.Scripting.ErrorMessage
+//     info = record OpenModelica.Scripting.SourceInfo
+//     filename = "",
+//     readonly = false,
+//     lineStart = 0,
+//     columnStart = 0,
+//     lineEnd = 0,
+//     columnEnd = 0
+// end OpenModelica.Scripting.SourceInfo;,
+//     message = "Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.",
+//     kind = .OpenModelica.Scripting.ErrorKind.scripting,
+//     level = .OpenModelica.Scripting.ErrorLevel.warning,
+//     id = 183
 // end OpenModelica.Scripting.ErrorMessage;}
 // endResult
