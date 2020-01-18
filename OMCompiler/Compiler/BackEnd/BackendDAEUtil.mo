@@ -2964,7 +2964,7 @@ algorithm
     else equation
       (_, (_, vallst)) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpFinder, (inVariables, inIntegerLst));
       // only absolute indexes?
-      vallst = applyIndexType(vallst, inIndexType);
+      // vallst = applyIndexType(vallst, inIndexType);
     then vallst;
   end match;
 end incidenceRowExp;
