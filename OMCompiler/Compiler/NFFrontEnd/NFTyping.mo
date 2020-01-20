@@ -542,12 +542,13 @@ algorithm
   dimension := match dimension
     local
       Expression exp;
+      Option<Expression> oexp;
       Variability var;
       Dimension dim;
       Binding b;
       Type ty;
       TypingError ty_err;
-      Integer parent_dims;
+      Integer parent_dims, dim_index;
 
     // Print an error when a dimension that's currently being processed is
     // found, which indicates a dependency loop. Another way of handling this
@@ -649,14 +650,32 @@ algorithm
           // to get the dimension we're looking for.
           case Binding.UNTYPED_BINDING()
             algorithm
-              (dim, _, ty_err) := typeExpDim(b.bindingExp, index + Binding.propagatedDimCount(b) + parent_dims,
-                                             ExpOrigin.setFlag(origin, ExpOrigin.DIMENSION), info);
+              dim_index := index + Binding.propagatedDimCount(b) + parent_dims;
+              (dim, oexp, ty_err) := typeExpDim(b.bindingExp, dim_index, ExpOrigin.setFlag(origin, ExpOrigin.DIMENSION), info);
+
+              // If the deduced dimension is unknown, evaluate the binding and try again.
+              if Dimension.isUnknown(dim) and not TypingError.isError(ty_err) then
+                exp := if isSome(oexp) then Util.getOption(oexp) else b.bindingExp;
+                exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
+                (dim, ty_err) := nthDimensionBoundsChecked(Expression.typeOf(exp), dim_index);
+              end if;
             then
               (dim, ty_err);
 
           // A typed binding, get the dimension from the binding's type.
           case Binding.TYPED_BINDING()
-            then nthDimensionBoundsChecked(b.bindingType, index + Binding.propagatedDimCount(b) + parent_dims);
+            algorithm
+              dim_index := index + Binding.propagatedDimCount(b) + parent_dims;
+              (dim, ty_err) := nthDimensionBoundsChecked(b.bindingType, dim_index);
+
+              // If the deduced dimension is unknown, evaluate the binding and try again.
+              if Dimension.isUnknown(dim) and not TypingError.isError(ty_err) then
+                exp := Ceval.evalExp(b.bindingExp, Ceval.EvalTarget.DIMENSION(component, index, b.bindingExp, info));
+                (dim, ty_err) := nthDimensionBoundsChecked(Expression.typeOf(exp), dim_index);
+              end if;
+            then
+              (dim, ty_err);
+
         end match;
 
         () := match ty_err
