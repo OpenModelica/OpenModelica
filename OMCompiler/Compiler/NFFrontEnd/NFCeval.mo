@@ -3290,18 +3290,24 @@ algorithm
   Expression.RECORD_ELEMENT(recordExp = e, index = index) := exp;
   e := evalExp_impl(e, target);
 
-  result := match e
-    case Expression.RECORD()
-      then listGet(e.elements, index);
-
-    else
-      algorithm
-        Error.assertion(false, getInstanceName() + " could not evaluate " +
-          Expression.toString(exp), sourceInfo());
-      then
-        fail();
-  end match;
+  try
+    result := Expression.bindingExpMap(e, function evalRecordElement2(index = index));
+  else
+    Error.assertion(false, getInstanceName() + " could not evaluate " +
+      Expression.toString(exp), sourceInfo());
+  end try;
 end evalRecordElement;
+
+function evalRecordElement2
+  input Expression exp;
+  input Integer index;
+  output Expression result;
+algorithm
+  result := match exp
+    case Expression.RECORD()
+      then listGet(exp.elements, index);
+  end match;
+end evalRecordElement2;
 
 protected
 
