@@ -53,6 +53,7 @@ public
 
   function toString
     input FlatModel flatModel;
+    input Boolean printBindingTypes = false;
     output String str;
   protected
     IOStream.IOStream s;
@@ -62,7 +63,7 @@ public
     s := IOStream.append(s, "class " + flatModel.name + "\n");
 
     for v in flatModel.variables loop
-      s := Variable.toStream(v, "  ", s);
+      s := Variable.toStream(v, "  ", printBindingTypes, s);
       s := IOStream.append(s, ";\n");
     end for;
 

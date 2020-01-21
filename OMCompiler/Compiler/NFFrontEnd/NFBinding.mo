@@ -359,7 +359,15 @@ public
     input Binding binding;
     output Type ty;
   algorithm
-    TYPED_BINDING(bindingType = ty) := binding;
+    ty := match binding
+      case UNBOUND() then Type.UNKNOWN();
+      case RAW_BINDING() then Type.UNKNOWN();
+      case UNTYPED_BINDING() then Type.UNKNOWN();
+      case TYPED_BINDING() then binding.bindingType;
+      case FLAT_BINDING() then Expression.typeOf(binding.bindingExp);
+      case CEVAL_BINDING() then Expression.typeOf(binding.bindingExp);
+      case INVALID_BINDING() then getType(binding.binding);
+    end match;
   end getType;
 
   function isEach
