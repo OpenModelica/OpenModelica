@@ -160,7 +160,7 @@ algorithm
         BackendDAE.EQSYSTEM(orderedVars=allVars,orderedEqs=allEqs) = currentSystem;
         BackendDAE.SHARED(globalKnownVars=globalKnownVars) = shared;
 
-        (m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL(),NONE());
+        (m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(shared));
 
         //(dlow_1 as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=allVars,orderedEqs=allEqs,m=SOME(m),mT=SOME(mt))::eqsyslist,_)) = BackendDAEUtil.mapEqSystem(dlow_1,BackendDAEUtil.getIncidenceMatrixScalarfromOptionForMapEqSystem);
 
@@ -191,7 +191,7 @@ algorithm
         BackendDAE.SHARED(globalKnownVars=globalKnownVars) = shared;
 
 
-        (m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL(),NONE());
+        (m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
 
               printSep(getMathematicaText("After Symbolic Elimination"));
               printSep(getMathematicaText("Equations (Function calls represent more than one equation)"));
@@ -362,7 +362,7 @@ algorithm
         BackendDAE.EQSYSTEM(orderedVars=allVars,orderedEqs=allEqs) = currentSystem;
         BackendDAE.SHARED(globalKnownVars=globalKnownVars,info=einfo) = shared;
         BackendDAE.EXTRA_INFO(fileNamePrefix=modelname)= einfo;
-        (m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL(),NONE());
+        (m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
         print("\nModelInfo: " + modelname + "\n" + UNDERLINE + "\n\n");
         BackendDump.dumpEquationArray(allEqs,"orderedEquation");
         BackendDump.dumpVariables(allVars,"orderedVariables");
@@ -3208,7 +3208,7 @@ algorithm
       //print("partially indexed crs:"+Util.stringDelimitList(Util.listMap(crefDouble,Exp.printComponentRefStr),",\n")+"\n");
       repl = BackendVarTransform.emptyReplacements();
 
-      (m,_,_,_) = BackendDAEUtil.incidenceMatrixScalar(syst, BackendDAE.NORMAL(),NONE());
+      (m,_,_,_) = BackendDAEUtil.incidenceMatrixScalar(syst, BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
       (eqnLst,_,movedvars_1,repl) = eliminateVariablesDAE2(eqnLst,1,vars,globalKnownVars,HashTable.emptyHashTable(),repl,crefDouble,m,elimVarIndexList,false);
       //Debug.fcall("dumprepl",BackendVarTransform.dumpReplacements,repl);
 

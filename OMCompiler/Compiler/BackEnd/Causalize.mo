@@ -102,7 +102,7 @@ algorithm
         esize_str = intString(neqns);
         vsize_str = intString(nvars);
         Error.addMessage(Error.UNDERDET_EQN_SYSTEM, {esize_str,vsize_str});
-        BackendDAEUtil.checkIncidenceMatrixSolvability(isyst, ishared.functionTree);
+        BackendDAEUtil.checkIncidenceMatrixSolvability(isyst, ishared.functionTree, BackendDAEUtil.isInitializationDAE(ishared));
       then
         fail();
 
@@ -112,7 +112,7 @@ algorithm
         esize_str = intString(neqns) ;
         vsize_str = intString(nvars);
         Error.addMessage(Error.OVERDET_EQN_SYSTEM, {esize_str,vsize_str});
-        BackendDAEUtil.checkIncidenceMatrixSolvability(isyst, ishared.functionTree);
+        BackendDAEUtil.checkIncidenceMatrixSolvability(isyst, ishared.functionTree, BackendDAEUtil.isInitializationDAE(ishared));
       then
         fail();
 

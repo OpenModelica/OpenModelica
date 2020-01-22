@@ -174,7 +174,7 @@ algorithm
   BackendDAE.SHARED(functionTree=sharedFuncs) := iShared;
   (iGraph,iGraphData,eqSysIdx) := iGraphInfo;
 
-  (_,incidenceMatrix,_) := BackendDAEUtil.getIncidenceMatrix(iSyst, BackendDAE.NORMAL(), SOME(sharedFuncs));
+  (_,incidenceMatrix,_) := BackendDAEUtil.getIncidenceMatrix(iSyst, BackendDAE.NORMAL(), SOME(sharedFuncs), BackendDAEUtil.isInitializationDAE(iShared));
   numberOfVars := BackendVariable.varsSize(vars);
   (tmpGraph,tmpGraphData) := getEmptyTaskGraph(listLength(comps), numberOfVars, ExpandableArray.getNumberOfElements(orderedEqs));
   TASKGRAPHMETA(inComps=inComps, compNames=compNames, exeCosts=exeCosts, commCosts=commCosts, nodeMark=nodeMark, varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, compParamMapping=compParamMapping, compInformations=compInformations) := tmpGraphData;

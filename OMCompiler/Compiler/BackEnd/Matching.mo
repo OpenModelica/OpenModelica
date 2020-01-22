@@ -5633,7 +5633,7 @@ algorithm
           syst := BackendDAEUtil.setAnalyticalToStructuralProcessed(syst, true);
 
           /* create NORMAL() adjacency matrix for sorting first */
-          (_, m1, _, _, _) := BackendDAEUtil.getIncidenceMatrixScalar(isyst, BackendDAE.NORMAL(), NONE());
+          (_, m1, _, _, _) := BackendDAEUtil.getIncidenceMatrixScalar(isyst, BackendDAE.NORMAL(), NONE(), BackendDAEUtil.isInitializationDAE(ishared));
           comps := Sorting.Tarjan(m1, ass2_1);
 
           for comp in comps loop
@@ -5811,7 +5811,7 @@ algorithm
 
   if not listEmpty(undiffable_artificial) then
     syst.orderedVars := BackendVariable.addVars(undiffable_artificial, syst.orderedVars);
-    (syst, _, _, _, _) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(shared.functionTree));
+    (syst, _, _, _, _) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(shared.functionTree), BackendDAEUtil.isInitializationDAE(shared));
 
     if isSome(syst.m) and isSome(syst.mT) then
       SOME(m) := syst.m;
@@ -6537,7 +6537,7 @@ algorithm
   testMatchingAlgorithms1(matchingAlgorithms,syst,ishared,inMatchingOptions);
 
   System.realtimeTick(ClockIndexes.RT_PROFILER0);
-  (_,m,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),NONE());
+  (_,m,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(ishared));
   matchingExternalsetIncidenceMatrix(nv,ne,m);
   cheapID := 3;
   t := System.realtimeTock(ClockIndexes.RT_PROFILER0);
@@ -6699,7 +6699,7 @@ algorithm
                                           BackendEquation.get, BackendEquation.add );
        syst.orderedVars = randSortSystem1( nv, 0, randarr1, vars, BackendVariable.emptyVars(),
                                            BackendVariable.getVarAt, BackendVariable.addVar );
-       (syst, _, _) = BackendDAEUtil.getIncidenceMatrix( BackendDAEUtil.clearEqSyst(syst), BackendDAE.NORMAL(), NONE() );
+       (syst, _, _) = BackendDAEUtil.getIncidenceMatrix( BackendDAEUtil.clearEqSyst(syst), BackendDAE.NORMAL(), NONE(), BackendDAEUtil.isInitializationDAE(ishared));
      then
        syst;
   end match;

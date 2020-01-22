@@ -2289,7 +2289,7 @@ protected
  DAE.FunctionTree funcs;
 algorithm
   funcs := BackendDAEUtil.getFunctions(shared);
-  (_,m,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),SOME(funcs));
+  (_,m,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
   _ := Array.fold(m,dumpIncidenceMatrix2,(inOffset,1));
   outOffset := inOffset + arrayLength(m);
 end dumpIncidenceMatrixWork;

@@ -639,7 +639,7 @@ algorithm
     end if;
     funcs := BackendDAEUtil.getFunctions(inShared);
     (syst,omapEqnIncRow,omapIncRowEqn) :=
-      BackendDAEUtil.updateIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst1, imapEqnIncRow, imapIncRowEqn);
+      BackendDAEUtil.updateIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst1, imapEqnIncRow, imapIncRowEqn, BackendDAEUtil.isInitializationDAE(inShared));
     osyst := syst;
     oshared := inShared;
     oNotDiffableMSS := iNotDiffableMSS;
@@ -993,7 +993,7 @@ algorithm
         end if;
         funcs = BackendDAEUtil.getFunctions(inShared);
         (syst, mapEqnIncRow, mapIncRowEqn) =
-            BackendDAEUtil.updateIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst, imapEqnIncRow, imapIncRowEqn);
+            BackendDAEUtil.updateIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst, imapEqnIncRow, imapIncRowEqn, BackendDAEUtil.isInitializationDAE(inShared));
       then
         (syst, inShared, ass1, ass2, inStateOrd, inOrgEqnsLst, mapEqnIncRow, mapIncRowEqn);
 
@@ -1016,7 +1016,7 @@ algorithm
           BackendDump.debuglst(eqnslst1,intString," ","\n");
         end if;
         funcs = BackendDAEUtil.getFunctions(inShared);
-        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst1, imapEqnIncRow, imapIncRowEqn);
+        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst1, imapEqnIncRow, imapIncRowEqn, BackendDAEUtil.isInitializationDAE(inShared));
       then
         (syst,inShared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,mapEqnIncRow,mapIncRowEqn);
 
@@ -1060,7 +1060,7 @@ algorithm
           BackendDump.debuglst(eqnslst1,intString," ","\n");
         end if;
         funcs = BackendDAEUtil.getFunctions(inShared);
-        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst1, imapEqnIncRow, imapIncRowEqn);
+        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst1, imapEqnIncRow, imapIncRowEqn, BackendDAEUtil.isInitializationDAE(inShared));
       then
         (syst,inShared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,mapEqnIncRow,mapIncRowEqn);
 
@@ -1763,7 +1763,7 @@ algorithm
         (syst,ht) = addAllDummyStates(syst,iSo,iHt);
         // update IncidenceMatrix
         funcs = BackendDAEUtil.getFunctions(inShared);
-        (syst,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), SOME(funcs));
+        (syst,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
         // expand the matching
         ass1 = Array.expand(nfreeStates,ass1,-1);
         ass2 = Array.expand(nOrgEqns,ass2,-1);
@@ -1792,7 +1792,7 @@ algorithm
         funcs = BackendDAEUtil.getFunctions(inShared);
         // replace der(x,n) with DERn.Der(n-1)..DER.x and add variables
         syst = replaceHigherDerivatives(inSystem);
-        (syst,_,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), SOME(funcs));
+        (syst,_,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
         // do state selection for each level
           //BackendDump.dumpVarList(hov,"HOV");
           //print("ORGEQNS "+BackendDump.constraintEquationString(orgEqnsLst)+"\n");
@@ -1898,7 +1898,7 @@ algorithm
         // fix derivative indexes
         _ = List.fold1(iHov, fixDerivativeIndex, level, BackendVariable.daeVars(syst));
         // update IncidenceMatrix
-        (syst,m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), SOME(funcs));
+        (syst,m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
         // genereate new Matching
         nv1 = BackendVariable.varsSize(BackendVariable.daeVars(syst));
         ne1 = BackendDAEUtil.systemSize(syst);
@@ -2095,7 +2095,7 @@ algorithm
         getIncidenceMatrixSelectStates(ne,m1,mT1,m,indexmap);
         // add level equations
         funcs := BackendDAEUtil.getFunctions(inShared);
-        getIncidenceMatrixLevelEquations(eqnslst,vars,neqnarr,ne,m1,mT1,m,mapEqnIncRow,mapIncRowEqn,indexmap,funcs);
+        getIncidenceMatrixLevelEquations(eqnslst,vars,neqnarr,ne,m1,mT1,m,mapEqnIncRow,mapIncRowEqn,indexmap,funcs,BackendDAEUtil.isInitializationDAE(inShared));
         // match the variables not the equations, to have preferred states unmatched
         vec1 := Array.expand(nfreeStates,ass1,-1);
         vec2 := Array.expand(neqns,ass2,-1);
@@ -2176,7 +2176,7 @@ algorithm
         // splitt it into sets
         syst := BackendDAEUtil.setEqSystMatching(syst, BackendDAE.MATCHING(vec1,vec2,{}));
         //  dumpSystemGraphML(syst,inShared,NONE(),"StateSelection" + intString(arrayLength(m)) + ".graphml");
-        (syst,m,mT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.ABSOLUTE(), SOME(funcs));
+        (syst,m,mT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
         // TODO: partition the system
         comps := partitionSystem(m,mT);
         //  print("Sets:\n");
@@ -2511,6 +2511,7 @@ protected function getIncidenceMatrixLevelEquations
   input array<Integer> mapIncRowEqn "input/output";
   input array<Integer> stateindexs;
   input DAE.FunctionTree functionTree;
+  input Boolean isInitial;
 algorithm
   _ := match (iEqns)
     local
@@ -2525,7 +2526,7 @@ algorithm
     // i < n
     case e::rest equation
         // compute the row
-        (rowTree,size) = BackendDAEUtil.incidenceRow(e, vars, BackendDAE.SOLVABLE(), SOME(functionTree), AvlSetInt.EMPTY());
+        (rowTree,size) = BackendDAEUtil.incidenceRow(e, vars, BackendDAE.SOLVABLE(), SOME(functionTree), AvlSetInt.EMPTY(), isInitial);
         row = AvlSetInt.listKeys(rowTree);
         rowSize = sindex + size;
         i1 = index+1;
@@ -2543,7 +2544,7 @@ algorithm
         rowindxs = List.map(rowindxs,intNeg);
         _ = List.fold1(row,Array.appendToElement,rowindxs,mT);
         // next equation
-        getIncidenceMatrixLevelEquations(rest, vars, i1, rowSize, m, mT, om, mapEqnIncRow, mapIncRowEqn, stateindexs, functionTree);
+        getIncidenceMatrixLevelEquations(rest, vars, i1, rowSize, m, mT, om, mapEqnIncRow, mapIncRowEqn, stateindexs, functionTree, isInitial);
       then ();
   end match;
 end getIncidenceMatrixLevelEquations;

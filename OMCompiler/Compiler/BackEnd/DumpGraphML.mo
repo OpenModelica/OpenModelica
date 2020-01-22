@@ -81,7 +81,7 @@ algorithm
         vars = BackendVariable.daeVars(inSystem);
         eqns = BackendEquation.getEqnsFromEqSystem(inSystem);
         funcs = BackendDAEUtil.getFunctions(inShared);
-        (_,m,_) = BackendDAEUtil.getIncidenceMatrix(inSystem,BackendDAE.NORMAL(),SOME(funcs));
+        (_,m,_) = BackendDAEUtil.getIncidenceMatrix(inSystem,BackendDAE.NORMAL(),SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
         mapIncRowEqn = Array.createIntRange(arrayLength(m));
         graphInfo = GraphML.createGraphInfo();
         (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
@@ -115,10 +115,10 @@ algorithm
         vars = BackendVariable.daeVars(inSystem);
         eqns = BackendEquation.getEqnsFromEqSystem(inSystem);
         funcs = BackendDAEUtil.getFunctions(inShared);
-        //(_,m,mt) = BackendDAEUtil.getIncidenceMatrix(inSystem, BackendDAE.NORMAL(), SOME(funcs));
+        //(_,m,mt) = BackendDAEUtil.getIncidenceMatrix(inSystem, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
         //mapIncRowEqn = Array.createIntRange(arrayLength(m));
         //(_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(inSystem,BackendDAE.SOLVABLE(), SOME(funcs)));
-        (_,m,_,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(inSystem,BackendDAE.NORMAL(), SOME(funcs));
+        (_,m,_,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(inSystem,BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
         graphInfo = GraphML.createGraphInfo();
         (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
         ((_,_,_,(graphInfo,graph))) = BackendVariable.traverseBackendDAEVars(vars,addVarGraphMatch,(numberMode,1,vec1,(graphInfo,graph)));
@@ -137,7 +137,7 @@ algorithm
         vars = BackendVariable.daeVars(inSystem);
         eqns = BackendEquation.getEqnsFromEqSystem(inSystem);
         funcs = BackendDAEUtil.getFunctions(inShared);
-        (_,m,_,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(inSystem,BackendDAE.NORMAL(), SOME(funcs));
+        (_,m,_,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(inSystem,BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
         graphInfo = GraphML.createGraphInfo();
         (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
         ((_,_,(graphInfo,graph))) = BackendVariable.traverseBackendDAEVars(vars,addVarGraph,(numberMode,1,(graphInfo,graph)));
@@ -153,7 +153,7 @@ algorithm
         vars = BackendVariable.daeVars(inSystem);
         _ = BackendEquation.getEqnsFromEqSystem(inSystem);
         funcs = BackendDAEUtil.getFunctions(inShared);
-        (_,m,mt) = BackendDAEUtil.getIncidenceMatrix(inSystem, BackendDAE.NORMAL(), SOME(funcs));
+        (_,m,mt) = BackendDAEUtil.getIncidenceMatrix(inSystem, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
         graphInfo = GraphML.createGraphInfo();
         (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
         // generate a node for each component and get the edges

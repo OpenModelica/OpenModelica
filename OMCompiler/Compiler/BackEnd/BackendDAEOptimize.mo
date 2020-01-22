@@ -935,19 +935,20 @@ algorithm
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       list<Integer> changed;
-      Boolean b;
+      Boolean b, isInitial;
       BackendDAE.EqSystem syst;
       DAE.FunctionTree funcs;
 
     case syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns)
       algorithm
+        isInitial := BackendDAEUtil.isInitializationDAE(ishared);
         funcs := BackendDAEUtil.getFunctions(ishared);
-        (syst, m, mT) := BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs));
+        (syst, m, mT) := BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs), isInitial);
         // check equations
-        (m, (mT,_,_,changed)) := AdjacencyMatrix.traverseAdjacencyMatrix(m, removeEqualFunctionCallFinder, (mT,vars,eqns,{}));
+        (m, (mT,_,_,changed,_)) := AdjacencyMatrix.traverseAdjacencyMatrix(m, removeEqualFunctionCallFinder, (mT,vars,eqns,{}, isInitial));
         // update arrayeqns and algorithms, collect info for wrappers
         syst.m := SOME(m); syst.mT := SOME(mT); syst.matching := BackendDAE.NO_MATCHING();
-        syst := BackendDAEUtil.updateIncidenceMatrix(syst, BackendDAE.NORMAL(), NONE(), changed);
+        syst := BackendDAEUtil.updateIncidenceMatrix(syst, BackendDAE.NORMAL(), NONE(), changed, isInitial);
       then (syst, ishared);
   end match;
 end removeEqualFunctionCallsWork;
@@ -955,12 +956,12 @@ end removeEqualFunctionCallsWork;
 protected function removeEqualFunctionCallFinder "author: Frenkel TUD 2010-12"
   input BackendDAE.IncidenceMatrixElement elem;
   input Integer pos;
-  input tuple<BackendDAE.IncidenceMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,list<Integer>> inTpl;
+  input tuple<BackendDAE.IncidenceMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,list<Integer>,Boolean> inTpl;
   output list<Integer> outList;
-  output tuple<BackendDAE.IncidenceMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,list<Integer>> outTpl;
+  output tuple<BackendDAE.IncidenceMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,list<Integer>,Boolean> outTpl;
 algorithm
   (outList,outTpl):=
-  matchcontinue (elem,pos,inTpl)
+  matchcontinue inTpl
     local
       BackendDAE.IncidenceMatrix mT;
       list<Integer> changed;
@@ -970,8 +971,9 @@ algorithm
       AvlSetInt.Tree expvars;
       list<Integer> controleqns,expvars1;
       list<list<Integer>> expvarseqns;
+      Boolean isInitial;
 
-    case (_,_,(mT,vars,eqns,changed))
+    case (mT,vars,eqns,changed,isInitial)
       equation
         // check number of vars in eqns
         _::_ = elem;
@@ -982,7 +984,7 @@ algorithm
         // failure(DAE.CREF(componentRef=_) = exp);
         // failure(DAE.UNARY(operator=DAE.UMINUS(ty=_),exp=DAE.CREF(componentRef=_)) = exp);
         // BackendDump.debugStrExpStrExpStr(("Found ",ecr," = ",exp,"\n"));
-        expvars = BackendDAEUtil.incidenceRowExp(exp,vars,AvlSetInt.EMPTY(),NONE(),BackendDAE.NORMAL());
+        expvars = BackendDAEUtil.incidenceRowExp(exp,vars,AvlSetInt.EMPTY(),NONE(),BackendDAE.NORMAL(),isInitial);
         // print("expvars "); BackendDump.debuglst((expvars,intString," ","\n"));
         (expvars1::expvarseqns) = List.map2(AvlSetInt.listKeys(expvars),varEqns,pos,mT);
         // print("expvars1 "); BackendDump.debuglst((expvars1,intString," ","\n"));;
@@ -992,8 +994,8 @@ algorithm
         //print("changed1 "); BackendDump.debuglst((changed1,intString," ","\n"));
         //print("changed2 "); BackendDump.debuglst((changed2,intString," ","\n"));
         // print("Next\n");
-      then ({},(mT,vars,eqns1,changed));
-    case (_,_,_)
+      then ({},(mT,vars,eqns1,changed,isInitial));
+    case _
       then ({},inTpl);
   end matchcontinue;
 end removeEqualFunctionCallFinder;
@@ -1659,16 +1661,17 @@ algorithm
       BackendDAE.IncidenceMatrix m, mT, rm, rmT;
       array<Integer> eqPartMap, varPartMap, rixs;
       array<Boolean> vars, rvars;
-      Boolean b;
+      Boolean b, isInitial;
       Integer i;
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
       DAE.FunctionTree funcs;
     case (syst,shared,_,_)
       equation
+        isInitial = BackendDAEUtil.isInitializationDAE(ishared);
         funcs = BackendDAEUtil.getFunctions(ishared);
-        (syst, m, mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs));
-        (rm, rmT) = BackendDAEUtil.removedIncidenceMatrix(syst, BackendDAE.NORMAL(), SOME(funcs));
+        (syst, m, mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs), isInitial);
+        (rm, rmT) = BackendDAEUtil.removedIncidenceMatrix(syst, BackendDAE.NORMAL(), SOME(funcs), isInitial);
         eqPartMap = arrayCreate(arrayLength(m), 0);
         varPartMap = arrayCreate(arrayLength(mT), 0);
         rixs = arrayCreate(arrayLength(rm), 0);
@@ -1680,7 +1683,7 @@ algorithm
         b = i > 1;
         // bcall2(b,BackendDump.dumpBackendDAE,BackendDAE.DAE({syst},shared), "partitionIndependentBlocksHelper");
         // printPartition(b,ixs);
-        systs = if b then SynchronousFeatures.partitionIndependentBlocksSplitBlocks(i, syst, eqPartMap, rixs, mT, rmT, throwNoError, funcs) else {syst};
+        systs = if b then SynchronousFeatures.partitionIndependentBlocksSplitBlocks(i, syst, eqPartMap, rixs, mT, rmT, throwNoError, funcs, isInitial) else {syst};
         // print("Number of partitioned systems: " + intString(listLength(systs)) + "\n");
         // List.map1_0(systs, BackendDump.dumpEqSystem, "System");
         GC.free(eqPartMap);
@@ -3652,7 +3655,7 @@ protected
   Integer eindex=0;
   Integer vindex;
 algorithm
-  (_,m,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.NORMAL(),NONE());
+  (_,m,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(shared));
 
   // Delete negative entries from incidence matrix
   m := Array.map(m,Tearing.deleteNegativeEntries);
@@ -4178,7 +4181,7 @@ algorithm
         BackendDAE.EqSystem syst1;
       case syst1 as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns)
         algorithm
-          (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.ABSOLUTE(), SOME(functionTree));
+          (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.ABSOLUTE(), SOME(functionTree), BackendDAEUtil.isInitializationDAE(shared));
           //debug
           if Flags.isSet(Flags.SORT_EQNS_AND_VARS) then
             BackendDump.dumpIncidenceMatrix(m);
@@ -4217,7 +4220,7 @@ algorithm
 
           //debug
           if Flags.isSet(Flags.SORT_EQNS_AND_VARS) then
-            (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(syst1, BackendDAE.ABSOLUTE(), SOME(functionTree));
+            (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(syst1, BackendDAE.ABSOLUTE(), SOME(functionTree), BackendDAEUtil.isInitializationDAE(shared));
             BackendDump.dumpIncidenceMatrix(m);
             BackendDump.dumpIncidenceMatrixT(mT);
           end if;
@@ -5941,7 +5944,7 @@ algorithm
       syst.m :=NONE();
       syst.mT :=NONE();
       syst.matching := BackendDAE.NO_MATCHING();
-      (m,mT) := BackendDAEUtil.incidenceMatrix(syst,BackendDAE.NORMAL(),NONE());
+      (m,mT) := BackendDAEUtil.incidenceMatrix(syst,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
       syst.m := SOME(m);
       syst.mT := SOME(mT);
       nVars := listLength(varLstNew);
@@ -5954,7 +5957,7 @@ algorithm
       matching := BackendDAE.MATCHING(ass1,ass2,compsNew);
       syst.matching := matching;
 
-      (syst, _, _, mapEqnIncRow, mapIncRowEqn) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.NORMAL(), SOME(funcTree));
+      (syst, _, _, mapEqnIncRow, mapIncRowEqn) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.NORMAL(), SOME(funcTree), BackendDAEUtil.isInitializationDAE(shared));
       syst := BackendDAETransform.strongComponentsScalar(syst,shared,mapEqnIncRow,mapIncRowEqn);
       syst.removedEqs := BackendEquation.emptyEqns();
     else

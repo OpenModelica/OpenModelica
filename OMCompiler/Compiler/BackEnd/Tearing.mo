@@ -481,7 +481,7 @@ algorithm
   vars := BackendVariable.listVar1(var_lst);
   subsyst := BackendDAEUtil.createEqSystem(vars, eqns);
   funcs := BackendDAEUtil.getFunctions(ishared);
-  (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(), SOME(funcs));
+  (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(ishared));
      //  DumpGraphML.dumpSystem(subsyst,ishared,NONE(),"System" + intString(size) + ".graphml");
   if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n\n###BEGIN print Strong Component#####################\n(Function:omcTearing)\n");
@@ -1697,7 +1697,7 @@ try
     eqArray[i] := true;
   end for;
 
-  (_,aMatrix,aMatrixT,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.SOLVABLE(), SOME(ishared.functionTree));
+  (_,aMatrix,aMatrixT,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.SOLVABLE(), SOME(ishared.functionTree), BackendDAEUtil.isInitializationDAE(ishared));
 
   // Match discrete variables
   if not listEmpty(discreteVars) then
@@ -1929,7 +1929,7 @@ algorithm
   var_lst := List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
   vars := BackendVariable.listVar1(var_lst);
   subsyst := BackendDAEUtil.createEqSystem(vars, eqns);
-  (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE());
+  (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(ishared));
   if debug then execStat("Tearing.CellierTearing -> 1"); end if;
 
   // Delete negative entries from incidence matrix
@@ -2050,7 +2050,7 @@ algorithm
     end if;
 
     // Get incidence matrix again
-    (_,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE());
+    (_,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(ishared));
 
     // Delete negative entries from incidence matrix
     m := Array.map(m,deleteNegativeEntries);
@@ -4119,7 +4119,7 @@ algorithm
   //BackendDump.bltdump("IN:", inDAE);
   for syst in inDAE.eqs loop
     BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(comps=comps),stateSets=stateSets,partitionKind=partitionKind) := syst;
-    (_, mm, _) := BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.SPARSE(), SOME(funcs));
+    (_, mm, _) := BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.SPARSE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
     tmp_update := false;
     for comp in comps loop
       if isTornsystem(comp, true, false) then
@@ -4482,7 +4482,7 @@ algorithm
   var_lst := List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
   vars := BackendVariable.listVar1(var_lst);
   subsyst := BackendDAEUtil.createEqSystem(vars, eqns);
-  (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE());
+  (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(ishared));
 
 
   // Delete negative entries from incidence matrix
@@ -4818,7 +4818,7 @@ algorithm
   var_lst := List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
   vars := BackendVariable.listVar1(var_lst);
   subsyst := BackendDAEUtil.createEqSystem(vars, eqns);
-  (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE());
+  (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(ishared));
 
   // Delete negative entries from incidence matrix
   m := Array.map(m,deleteNegativeEntries);

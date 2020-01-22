@@ -1281,7 +1281,7 @@ algorithm
         description = DAEUtil.daeDescription(dae);
         daelow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
         (BackendDAE.DAE({syst},shared)) = BackendDAEUtil.preOptimizeBackendDAE(daelow,NONE());
-        (syst,m,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),NONE());
+        (syst,m,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
         vars = BackendVariable.daeVars(syst);
         eqnarr = BackendEquation.getEqnsFromEqSystem(syst);
         (jac, _) = SymbolicJacobian.calculateJacobian(vars, eqnarr, m, false,shared);

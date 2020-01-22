@@ -356,7 +356,7 @@ algorithm
 
       //Create Memory-Map and Sim-Code
       //------------------------------
-      (optTmpMemoryMap, varToArrayIndexMapping, varToIndexMapping) = HpcOmMemory.createMemoryMap(simCode.modelInfo, simCode.varToArrayIndexMapping, simCode.varToIndexMapping, taskGraphOdeSimplified, AdjacencyMatrix.transposeAdjacencyMatrix(taskGraphOdeSimplified,arrayLength(taskGraphOdeSimplified)), taskGraphDataOdeSimplified, eqs, filenamePrefix, schedulerInfo, scheduleOde, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, numProc, HpcOmTaskGraph.getSystemComponents(inBackendDAE));
+      (optTmpMemoryMap, varToArrayIndexMapping, varToIndexMapping) = HpcOmMemory.createMemoryMap(simCode.modelInfo, simCode.varToArrayIndexMapping, simCode.varToIndexMapping, taskGraphOdeSimplified, AdjacencyMatrix.transposeAdjacencyMatrix(taskGraphOdeSimplified,arrayLength(taskGraphOdeSimplified)), taskGraphDataOdeSimplified, eqs, filenamePrefix, schedulerInfo, scheduleOde, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, numProc, HpcOmTaskGraph.getSystemComponents(inBackendDAE), BackendDAEUtil.isInitializationDAE(inBackendDAE.shared));
 
       //BaseHashTable.dumpHashTable(varToArrayIndexMapping);
 

@@ -103,7 +103,7 @@ algorithm
 
     case syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs)
       equation
-      (m,_) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE(), NONE());
+      (m,_) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE(), NONE(), BackendDAEUtil.isInitializationDAE(inShared));
       if Flags.isSet(Flags.RESOLVE_LOOPS_DUMP) then
         BackendDump.dumpBipartiteGraphEqSystem(syst,inShared, "whole System_"+intString(inSysIdx));
       end if;
@@ -121,7 +121,7 @@ algorithm
       // build the incidence matrix for the linear equations
       numSimpEqs = listLength(simpEqLst);
       numVars = listLength(simpVarLst);
-      (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs, BackendDAE.ABSOLUTE());
+      (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs, BackendDAE.ABSOLUTE(), NONE(), BackendDAEUtil.isInitializationDAE(inShared));
 
       if Flags.isSet(Flags.RESOLVE_LOOPS_DUMP) then
         varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
@@ -156,7 +156,7 @@ algorithm
         simpEqs = BackendEquation.listEquation(simpEqLst);
         numSimpEqs = listLength(simpEqLst);
         numVars = listLength(simpVarLst);
-        m_after = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs, BackendDAE.ABSOLUTE());
+        m_after = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs, BackendDAE.ABSOLUTE(),NONE(),BackendDAEUtil.isInitializationDAE(inShared));
         varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
         eqAtts = List.threadMap(List.fill(false,numSimpEqs),List.fill("",numSimpEqs),Util.makeTuple);
         BackendDump.dumpBipartiteGraphStrongComponent2(simpVars,simpEqs,m_after,varAtts,eqAtts,"rL_after_"+intString(inSysIdx));
@@ -2307,7 +2307,7 @@ algorithm
   vars := BackendVariable.listVar1(varLst);
   subSys := BackendDAEUtil.createEqSystem(vars, eqs);
   (me,meT,_,_) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subSys,shared,false);
-  (_,m,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subSys,BackendDAE.SOLVABLE(),SOME(BackendDAEUtil.getFunctions(shared)));
+  (_,m,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subSys,BackendDAE.SOLVABLE(),SOME(BackendDAEUtil.getFunctions(shared)), BackendDAEUtil.isInitializationDAE(shared));
   ass1 := arrayCreate(size,-1);
   ass2 := arrayCreate(size,-1);
 
@@ -2332,7 +2332,7 @@ algorithm
   daeOut := BackendDAEUtil.setEqSystEqs(dae, daeEqs);
   daeOut := BackendDAEUtil.setEqSystMatching(daeOut, BackendDAE.MATCHING(ass1Sys, ass2Sys, {}));
 
-  (daeOut,_,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(daeOut, BackendDAE.NORMAL(), SOME(funcs));
+  (daeOut,_,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(daeOut, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
 
   outRunMatching := true;
 end reshuffling_post2;
