@@ -4390,31 +4390,36 @@ protected
   BackendDAE.Equation eq;
   BackendDAE.VarKind varKind;
   DAE.ComponentRef cr;
+  String eqnstr;
   constant Boolean debug = false;
 algorithm
   // Get equation and variable from integer index
   try
     BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns) := isyst;
     BackendDAE.SHARED(globalKnownVars=globalKnownVars) := ishared;
-  else
-    //Todo: Error
-  end try;
-  eq := BackendEquation.get(eqns, inEquation);
-  BackendDAE.VAR(varName = cr , varKind = varKind) := BackendVariable.getVarAt(vars, inVariable);
-  // Compute solvability
-  solvability := match(varKind)
-    // Case variable is a state
-    case(BackendDAE.STATE()) algorithm
-        v := BackendVariable.createAliasDerVar(cr);
-        cr := BackendVariable.varCref(v);
-      then testSolvabilityForEquation(cr, eq, varArray, vars, globalKnownVars);
-    else
-      then testSolvabilityForEquation(cr, eq, varArray, vars, globalKnownVars);
-  end match;
 
-  if debug then
-    print("\n solvability: " + boolString(solvability) + " \n");
-  end if;
+    eq := BackendEquation.get(eqns, inEquation);
+    BackendDAE.VAR(varName = cr , varKind = varKind) := BackendVariable.getVarAt(vars, inVariable);
+    // Compute solvability
+    solvability := match(varKind)
+      // Case variable is a state
+      case(BackendDAE.STATE()) algorithm
+          v := BackendVariable.createAliasDerVar(cr);
+          cr := BackendVariable.varCref(v);
+        then testSolvabilityForEquation(cr, eq, varArray, vars, globalKnownVars);
+      else
+        then testSolvabilityForEquation(cr, eq, varArray, vars, globalKnownVars);
+    end match;
+
+    if debug then
+      print("\n solvability: " + boolString(solvability) + " \n");
+    end if;
+
+  else
+    eqnstr := stringAppendList({"findSolvabelVarInEquation failed\n Could not get equation and variable from integer index."});
+    Error.addInternalError(eqnstr, sourceInfo());
+    fail();
+  end try;
 end findSolvabelVarInEquation;
 
 function testSolvabilityForEquation

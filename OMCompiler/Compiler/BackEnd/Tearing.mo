@@ -1761,12 +1761,18 @@ protected function matchDiscreteVars
   input output array<Integer> nE "Equations";
   input output array<Integer> nV "Variables";
 protected
+  Boolean foundSomePath;
   array<Boolean> eqMarker;
 algorithm
   try
   for varIdx in inDiscreteVars loop
     eqMarker := arrayCopy(eqArray);
-    (eqMarker, nE, nV, true) := pathFound(varIdx, isyst, ishared, me, meT, varArray, eqArray, eqMarker, nE, nV);
+      (eqMarker, nE, nV, foundSomePath) := pathFound(varIdx, isyst, ishared, me, meT, varArray, eqArray, eqMarker, nE, nV);
+
+      if not foundSomePath then
+        Error.addCompilerError("Could not match variable " + intString(varIdx));
+        fail();
+      end if;
   end for;
   else
     Error.addInternalError("function matchDiscreteVars failed", sourceInfo());
