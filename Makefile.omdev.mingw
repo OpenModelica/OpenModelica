@@ -34,7 +34,7 @@ BUILDTYPE=Debug
 endif
 
 
-.PHONY: omc omc-diff omlibrary-core omplot omedit omedit-testsuite omsimulator omnotebook omshell omoptim
+.PHONY: omc omc-diff omlibrary-core omplot omedit omedit-testsuite omsimulator omnotebook omshell omoptim omsens_qt
 
 all: omc omc-diff omlibrary-core
 
@@ -73,7 +73,10 @@ omshell: omc qtclientsDLLs
 omoptim: omc omplot qtclientsDLLs
 	$(MAKE) -f $(defaultMakefileTarget) -C OMOptim OMBUILDDIR=$(OMBUILDDIR)
 
-qtclients: omplot omedit omnotebook omshell omoptim
+omsens_qt:
+	$(MAKE) -f $(defaultMakefileTarget) -C OMSens_Qt OMBUILDDIR=$(OMBUILDDIR)
+
+qtclients: omplot omedit omnotebook omshell omoptim omsens_qt
 
 qtclientsDLLs:
 	echo Copying needed .dlls

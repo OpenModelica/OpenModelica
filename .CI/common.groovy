@@ -207,7 +207,7 @@ void buildOMC(CC, CXX, extraFlags) {
   }
 }
 
-void buildGUI(stash) {
+void buildGUI(stash, isQt5) {
   if (isWindows()) {
   bat ("""
      set OMDEV=C:\\OMDev
@@ -238,7 +238,12 @@ void buildGUI(stash) {
     patchConfigStatus()
   }
   sh 'CONFIG=`./config.status --config` && ./configure `eval $CONFIG`'
-  sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && ${makeCommand()} -q omc omc-diff ReferenceFiles omsimulator" // Pretend we already built omc since we already did so
+  // compile OMSens_Qt for Qt5
+  if (isQt5) {
+    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && ${makeCommand()} -q omc omc-diff ReferenceFiles omsimulator" // Pretend we already built omc since we already did so
+  } else {
+    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omsens_qt.skip && ${makeCommand()} -q omc omc-diff ReferenceFiles omsimulator omsens_qt" // Pretend we already built omc since we already did so
+  }
   sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync" // Builds the GUI files
 
   }

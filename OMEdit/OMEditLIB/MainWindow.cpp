@@ -3918,6 +3918,10 @@ void MainWindow::createMenus()
   // add actions to Sensitivity Optimization menu
   pSensitivityOptimizationMenu->addAction(mpRunOMSensAction);
   pSensitivityOptimizationMenu->setEnabled(false);
+  /*! @todo Remove the block below once we fix the compilation for MAC. */
+#ifdef Q_OS_MAC
+  pSensitivityOptimizationMenu->setEnabled(false);
+#endif
   // add Sensitivity Optimization menu to menu bar
   menuBar()->addAction(pSensitivityOptimizationMenu->menuAction());
   // Git menu
