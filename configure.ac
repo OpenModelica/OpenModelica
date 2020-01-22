@@ -69,7 +69,7 @@ if test ! -z "$USE_CORBA"; then
   CORBA_TARGETS="OMOptim-omoptim"
 fi
 
-for dir_target in OMCompiler-omc OMPlot-omplot OMEdit-omedit OMNotebook-omnotebook OMShell-omshell $CORBA_TARGETS; do
+for dir_target in OMCompiler-omc OMPlot-omplot OMEdit-omedit OMNotebook-omnotebook OMShell-omshell OMSens_Qt-omsens_qt $CORBA_TARGETS; do
   dir=`echo $dir_target | cut -d- -f1`
   if test ! -f "$dir/configure.ac"; then
     AC_MSG_NOTICE("Subproject $dir does not exist")
@@ -87,7 +87,7 @@ if test -f testsuite/Makefile; then
 fi
 
 
-AC_CONFIG_SUBDIRS([OMCompiler OMPlot OMEdit OMNotebook OMShell])
+AC_CONFIG_SUBDIRS([OMCompiler OMPlot OMEdit OMNotebook OMShell OMSens_Qt])
 if test ! -z "$USE_CORBA"; then
   AC_CONFIG_SUBDIRS([OMOptim])
 fi

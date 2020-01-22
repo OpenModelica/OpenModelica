@@ -101,7 +101,7 @@ pipeline {
                 sh "echo PATH: \$PATH QTDIR: \$QTDIR"
                 sh "${env.GMAKE} --version"
                 common.buildOMC('cc', 'c++', "OMPCC='gcc-mp-5 -fopenmp -mno-avx' GNUCXX=g++-mp-5 FC=gfortran-mp-5 LDFLAGS=-L${env.MACPORTS}/lib CPPFLAGS=-I${env.MACPORTS}/include --without-omlibrary")
-                common.buildGUI('')
+                common.buildGUI('', false)
               }
             }
           }
@@ -126,7 +126,7 @@ pipeline {
                 bat "echo PATH: %PATH%"
                 common.buildOMC('cc', 'c++', "")
                 common.makeLibsAndCache()
-                common.buildGUI('')
+                common.buildGUI('', true)
                 common.buildAndRunOMEditTestsuite('')
               }
             }
@@ -324,7 +324,9 @@ pipeline {
             }
           }
           steps {
-            script { common.buildGUI('omc-clang') }
+            script {
+              common.buildGUI('omc-clang', true)
+            }
             stash name: 'omedit-testsuite-clang', includes: 'build/**, **/config.status, OMEdit/**'
           }
         }
@@ -341,7 +343,7 @@ pipeline {
             QTDIR = "/usr/lib/qt4"
           }
           steps {
-            script { common.buildGUI('omc-gcc') }
+            script { common.buildGUI('omc-gcc', false) }
           }
         }
 
