@@ -148,7 +148,7 @@ algorithm
         vars = BackendVariable.listVar1(var_lst);
 
         subsyst = BackendDAEUtil.createEqSystem(vars, eqns);
-        (subsyst, m, mt, mapEqnIncRow, mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs));
+        (subsyst, m, mt, mapEqnIncRow, mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(ishared));
         //  BackendDump.dumpEqSystem(subsyst);
 
         // Vector Matching a=f(..), f(..)=a
@@ -191,7 +191,7 @@ algorithm
 */
 
         // Matching based on Enhanced Adiacency Matrix, take care of the solvability - theems to be good but not good enough
-        //  (subsyst, _, _) = BackendDAEUtil.getIncidenceMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs));
+        //  (subsyst, _, _) = BackendDAEUtil.getIncidenceMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
         //   BackendDump.dumpEqSystem(subsyst);
         //   dumpJacMatrix(jac, 1, 1, size, vars);
         m1 = arrayCreate(size, {});
@@ -239,7 +239,7 @@ algorithm
         ass1 = BackendDAETransform.varAssignmentNonScalar(ass1, mapIncRowEqn);
         ass22 = BackendDAETransform.eqnAssignmentNonScalar(mapEqnIncRow, ass2);
         eorphans = List.uniqueIntN(List.map1r(eorphans, arrayGet, mapIncRowEqn), arrayLength(mapIncRowEqn));
-        (subsyst, m, mt) = BackendDAEUtil.getIncidenceMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs));
+        (subsyst, m, mt) = BackendDAEUtil.getIncidenceMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(ishared));
         //  BackendDump.dumpIncidenceMatrix(m);
         //  BackendDump.dumpIncidenceMatrixT(mt);
 
@@ -329,7 +329,7 @@ algorithm
         //_ = BackendDAEUtil.traverseBackendDAEExpsEqns(eqns, replaceFinalParameter, BackendVariable.daeGlobalKnownVars(shared));
 
         subsyst = BackendDAEUtil.createEqSystem(vars, eqns);
-        (subsyst, m, _) = BackendDAEUtil.getIncidenceMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs));
+        (subsyst, m, _) = BackendDAEUtil.getIncidenceMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(ishared));
         //  BackendDump.dumpEqSystem(subsyst);
         //  DumpGraphML.dumpSystem(subsyst, shared, NONE(), intString(size) + "SystemIndexed.graphml");
         (SOME(jac), _) = SymbolicJacobian.calculateJacobian(vars, eqns, m, true, ishared);
@@ -384,7 +384,7 @@ algorithm
           BackendDump.dumpEqSystem(subsyst);
         */
 
-        //  (syst, _, _) = BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.NORMAL(), SOME(funcs));
+        //  (syst, _, _) = BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
         //  BackendDump.dumpEqSystem(syst);
         //  (i1, i2, i3) = countOperations1(syst, shared);
         //  print("Add Operations: " + intString(i1) + "\n");

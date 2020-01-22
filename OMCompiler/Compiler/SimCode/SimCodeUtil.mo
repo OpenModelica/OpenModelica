@@ -847,7 +847,7 @@ algorithm
     BackendDAE.MATCHING(ass1=ass1, comps=comps) := syst.matching;
     subPartition := inShared.partitionsInfo.subPartitions[subPartIdx];
 
-    (syst, _, _) := BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.ABSOLUTE(), SOME(funcs));
+    (syst, _, _) := BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
     stateeqnsmark := arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
     stateeqnsmark := BackendDAEUtil.markStateEquations(syst, stateeqnsmark, ass1);
     zceqnsmarks := arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
@@ -1512,7 +1512,7 @@ algorithm
          eqSccMapping, eqBackendSimCodeMapping, backendMapping, sccOffset) = inFold;
 
         funcs = BackendDAEUtil.getFunctions(shared);
-        (syst, _, _) = BackendDAEUtil.getIncidenceMatrixfromOption(inSyst, BackendDAE.ABSOLUTE(), SOME(funcs));
+        (syst, _, _) = BackendDAEUtil.getIncidenceMatrixfromOption(inSyst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
 
         stateeqnsmark = arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
         zceqnsmarks = arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
@@ -5544,7 +5544,7 @@ protected
 algorithm
   BackendDAE.SHARED(externalObjects=evars) := shared;
   evarLst := BackendVariable.varList(evars);
-  evarLst := orderExtVars(evarLst);
+  evarLst := orderExtVars(evarLst, BackendDAEUtil.isInitializationDAE(shared));
   //evarLst := listReverse(evarLst);
   (simvars, aliases) := extractExtObjInfo2(evarLst, evars);
   extObjInfo := SimCode.EXTOBJINFO(simvars, aliases);
@@ -5554,6 +5554,7 @@ protected function orderExtVars"External Variables have to be ordered.
 It might occure that their binding expressions are dependent on other external variables and therefore, these vars and their binding exps have to be causalized.
 author: waurich TUD 08.2015"
   input list<BackendDAE.Var> varLstIn;
+  input Boolean isInitial;
   output list<BackendDAE.Var> varLstOut;
 protected
   Integer nVars,nEqs;
@@ -5567,7 +5568,7 @@ protected
 algorithm
   try
     (varsWithBind,varsWithoutBind) := List.separateOnTrue(varLstIn,BackendVariable.varHasBindExp);
-    (comps,ass1,ass2) := BackendDAEUtil.causalizeVarBindSystem(varsWithBind);
+    (comps,ass1,ass2) := BackendDAEUtil.causalizeVarBindSystem(varsWithBind, isInitial);
     order := List.map1(List.flatten(comps),Array.getIndexFirst,ass1);
     varsWithBind := List.map1(order,List.getIndexFirst,varsWithBind);
     varLstOut := listAppend(varsWithoutBind,varsWithBind);
@@ -7418,7 +7419,7 @@ algorithm
     //BackendDump.dumpEquationList(eqLst,"EQS AFTER");
   vars1 := BackendVariable.listVar1(noStartVarLst);
   syst := BackendDAEUtil.createEqSystem(vars1, eqs);
-  (syst, mStart, mTStart) := BackendDAEUtil.getIncidenceMatrix(syst,BackendDAE.NORMAL(),NONE());
+  (syst, mStart, mTStart) := BackendDAEUtil.getIncidenceMatrix(syst,BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(shared));
     //BackendDump.dumpIncidenceMatrix(mStart);
     //BackendDump.dumpIncidenceMatrixT(mTStart);
   // solve equations for new start values and assign start values to variables
@@ -11940,7 +11941,7 @@ algorithm
     case(_)
       equation
         BackendDAE.DAE(eqs=eqs) = dae;
-        tpl = List.map(eqs,setUpSystMapping);
+        tpl = List.map1(eqs,setUpSystMapping,BackendDAEUtil.isInitializationDAE(dae.shared));
         sizeE = List.applyAndFold(tpl,intAdd,Util.tuple61,0);
         sizeV = List.applyAndFold(tpl,intAdd,Util.tuple62,0);
         eqMap = {};
@@ -12059,6 +12060,7 @@ end addIntLst;
 protected function setUpSystMapping"gets the mapping information for every system of equations in the backenddae.
 author:Waurich TUD 2014-04"
   input BackendDAE.EqSystem dae;
+  input Boolean isInitial;
   output tuple<Integer,Integer,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,array<Integer>,array<Integer>> outTpl;
 protected
   Integer sizeV,sizeE;
@@ -12080,7 +12082,7 @@ algorithm
     equation
       BackendDAE.EQSYSTEM(m=NONE(),mT=NONE(),matching=matching) = dae;
       BackendDAE.MATCHING(ass1=ass1,ass2=ass2) = matching;
-      (_,m,mt) = BackendDAEUtil.getIncidenceMatrix(dae,BackendDAE.NORMAL(),NONE());
+      (_,m,mt) = BackendDAEUtil.getIncidenceMatrix(dae,BackendDAE.NORMAL(),NONE(),isInitial);
       sizeE = BackendDAEUtil.equationArraySizeDAE(dae);
       sizeV = BackendVariable.daenumVariables(dae);
     then
@@ -13331,7 +13333,7 @@ algorithm
   end for;
 
   // Calculate incidenceMatrix, with the newly added equations and vars
-  (outIncidenceMatrix, _, _, _) := BackendDAEUtil.incidenceMatrixScalar(currentSystem, BackendDAE.NORMAL(), NONE());
+  (outIncidenceMatrix, _, _, _) := BackendDAEUtil.incidenceMatrixScalar(currentSystem, BackendDAE.NORMAL(), NONE(), BackendDAEUtil.isInitializationDAE(shared));
   // Perform the match on the incidenceMatrix
   (match1, match2) := Matching.PerfectMatching(outIncidenceMatrix);
   currentSystem.matching := BackendDAE.MATCHING(match1, match2, BackendDAEUtil.getStrongComponents(currentSystem));

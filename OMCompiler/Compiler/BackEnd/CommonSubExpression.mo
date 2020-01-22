@@ -1947,15 +1947,17 @@ algorithm
     BackendDAE.Equation eqTest;
     BackendDAE.Var var1,var2;
     list<BackendDAE.Equation> eqLst;
+    Boolean isInitial;
 
   case(BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs), BackendDAE.SHARED(functionTree=functionTree))
     algorithm
-      (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(sysIn, BackendDAE.ABSOLUTE(), SOME(functionTree));
+      isInitial := BackendDAEUtil.isInitializationDAE(sharedIn);
+      (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(sysIn, BackendDAE.ABSOLUTE(), SOME(functionTree), isInitial);
           //print("start this eqSystem\n");
           //BackendDump.dumpEqSystem(sysIn, "eqSystem input");
           //BackendDump.dumpIncidenceMatrix(m);
           //BackendDump.dumpIncidenceMatrixT(mT);
-      cseLst := commonSubExpressionFind(m, mT, vars, eqs);
+      cseLst := commonSubExpressionFind(m, mT, vars, eqs, isInitial);
           //if not listEmpty(cseLst) then print("update "+stringDelimitList(List.map(cseLst, printCSE), "\n")+"\n");end if;
       syst := commonSubExpressionUpdate(cseLst, m, mT, sysIn);
       GC.free(m);
@@ -1973,6 +1975,7 @@ protected function commonSubExpressionFind
   input BackendDAE.IncidenceMatrix mTIn;
   input BackendDAE.Variables varsIn;
   input BackendDAE.EquationArray eqsIn;
+  input Boolean isInitial;
   output list<CommonSubExp> cseOut;
 protected
   Integer numVars;
@@ -2004,7 +2007,7 @@ algorithm
     //(varLst,varIdcs) := List.filterOnTrueSync(varLst,BackendVariable.isVarNonDiscrete,varIdcs);// no discrete vars
     vars := BackendVariable.listVar1(varLst);
     eqSys := BackendDAEUtil.createEqSystem(vars, eqs);
-    (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(eqSys, BackendDAE.ABSOLUTE(), NONE());
+    (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(eqSys, BackendDAE.ABSOLUTE(), NONE(), isInitial);
         //BackendDump.dumpEqSystem(eqSys, "reduced system for CSE 2");
         //BackendDump.dumpIncidenceMatrix(m);
         //BackendDump.dumpIncidenceMatrix(mT);
@@ -2016,7 +2019,7 @@ algorithm
         //print("the partitions for system  : \n"+stringDelimitList(List.map(partitions, HpcOmTaskGraph.intLstString), "\n")+"\n");
     cseLst2 := List.fold(partitions, function getCSE2(m=m, mT=mT, vars=vars, eqs=eqs, eqMap=eqIdcs, varMap=varIdcs), {});
 
-    shortenPathsCSE := shortenPaths(partitions, m, mT, vars, eqs, listArray(eqIdcs), listArray(varIdcs), {});
+    shortenPathsCSE := shortenPaths(partitions, m, mT, vars, eqs, listArray(eqIdcs), listArray(varIdcs), {}, isInitial);
 
     // check for CSE of length 2
       //print("CHECK FOR CSE 3\n");
@@ -2031,7 +2034,7 @@ algorithm
     varLst := List.map1(varIdcs, BackendVariable.getVarAtIndexFirst, varsIn);
     vars := BackendVariable.listVar1(varLst);
     eqSys := BackendDAEUtil.createEqSystem(vars, eqs);
-    (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(eqSys, BackendDAE.ABSOLUTE(), NONE());
+    (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(eqSys, BackendDAE.ABSOLUTE(), NONE(), isInitial);
         //BackendDump.dumpEqSystem(eqSys, "reduced system for CSE 3");
         //BackendDump.dumpIncidenceMatrix(m);
         //BackendDump.dumpIncidenceMatrix(mT);
@@ -2060,6 +2063,7 @@ author:Waurich TUD 2016-05"
   input array<Integer> eqMap;
   input array<Integer> varMap;
   input list<CommonSubExp> cseIn;
+  input Boolean isInitial;
   output list<CommonSubExp> cseOut;
 protected
   BackendDAE.IncidenceMatrix m, mT;
@@ -2093,7 +2097,7 @@ algorithm
         eqs := BackendEquation.listEquation(eqLst);
 
         eqSys := BackendDAEUtil.createEqSystem(pathVars, eqs);
-        (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(eqSys, BackendDAE.SOLVABLE(), NONE());
+        (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(eqSys, BackendDAE.SOLVABLE(), NONE(), isInitial);
 
           //BackendDump.dumpIncidenceMatrix(m);
           //BackendDump.dumpIncidenceMatrixT(mT);

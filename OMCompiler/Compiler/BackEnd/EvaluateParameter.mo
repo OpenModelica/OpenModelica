@@ -110,7 +110,9 @@ protected
   BackendDAE.IncidenceMatrixT mt;
   list<Integer> selectedParameters;
   AvlSetCR.Tree ht;
+  Boolean isInitial;
 algorithm
+  isInitial := BackendDAEUtil.isInitializationDAE(DAE.shared);
   if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
     print("\nBEGINNING of preOptModule 'evaluateParameters'\n" + BORDER + "\n\n");
     BackendDump.dumpBackendDAE(DAE,"DAE before evaluating parameters");
@@ -156,7 +158,7 @@ algorithm
     mt := arrayCreate(size, {});
     ass2 := Array.createIntRange(size);
     ht := FCore.getEvaluatedParams(cache); // get structural parameters
-    ((_, _, _, selectedParameters, m, mt, _)) := BackendVariable.traverseBackendDAEVars(globalKnownVars, getParameterIncidenceMatrix, (globalKnownVars, 1, selectParameterfunc, {}, m, mt, ht));
+    ((_, _, _, selectedParameters, m, mt, _, _)) := BackendVariable.traverseBackendDAEVars(globalKnownVars, getParameterIncidenceMatrix, (globalKnownVars, 1, selectParameterfunc, {}, m, mt, ht, isInitial));
     nselect := listLength(selectedParameters);
 
     if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
@@ -175,7 +177,7 @@ algorithm
     nselect := intMax(BaseHashTable.defaultBucketSize, nselect*2);
     repl := BackendVarTransform.emptyReplacementsSized(size);
     oRepl := BackendVarTransform.emptyReplacementsSized(nselect);
-    (globalKnownVars, cache, repl, oRepl, mark) := evaluateSelectedParameters(selectedParameters, globalKnownVars, m, initialEqs, cache, graph, markarr, repl, oRepl, 1);
+    (globalKnownVars, cache, repl, oRepl, mark) := evaluateSelectedParameters(selectedParameters, globalKnownVars, m, initialEqs, cache, graph, markarr, isInitial, repl, oRepl, 1);
 
     if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
       print("\n\nAfter evaluating the selected parameters:\n" + UNDERLINE + "\n");
@@ -201,7 +203,7 @@ algorithm
 
 
     // Replace the evaluated parameters in parameter bindings
-    (globalKnownVars, repl, oRepl, cache, mark) := traverseParameterSorted(comps, globalKnownVars, m, initialEqs, cache, graph, mark, markarr, repl, oRepl);
+    (globalKnownVars, repl, oRepl, cache, mark) := traverseParameterSorted(comps, globalKnownVars, m, initialEqs, cache, graph, mark, markarr, repl, oRepl, isInitial);
 
     if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
       print("\n\nAfter replacing the evaluated parameters in parameter bindings:\n" + UNDERLINE);
@@ -216,8 +218,8 @@ algorithm
 
 
     // Replace the evaluated parameters in variable bindings and start attributes
-    (systs, (globalKnownVars, m, initialEqs, cache, graph, mark, markarr, repl, oRepl)) := List.mapFold(systs, replaceEvaluatedParametersSystem, (globalKnownVars, m, initialEqs, cache, graph, mark, markarr, repl, oRepl));
-    (aliasVars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars, replaceEvaluatedParameterTraverser, (globalKnownVars, m, initialEqs, cache, graph, mark, markarr, repl, oRepl));
+    (systs, (globalKnownVars, m, initialEqs, cache, graph, mark, markarr,_ , repl, oRepl)) := List.mapFold(systs, replaceEvaluatedParametersSystem, (globalKnownVars, m, initialEqs, cache, graph, mark, markarr, isInitial, repl, oRepl));
+    (aliasVars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars, replaceEvaluatedParameterTraverser, (globalKnownVars, m, initialEqs, cache, graph, mark, markarr, isInitial, repl, oRepl));
 
     if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
       print("\n\nAfter replacing the evaluated parameters in variable bindings and start attributes:\n" + UNDERLINE);
@@ -281,9 +283,9 @@ protected function getParameterIncidenceMatrix
   ptaeuber: Evaluating structural parameters (again) in this module is just a workaround since structural parameters
   are already calculated in the Frontend but the value is lost."
   input BackendDAE.Var inVar;
-  input tuple<BackendDAE.Variables,Integer,selectParameterFunc,list<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,AvlSetCR.Tree> inTpl;
+  input tuple<BackendDAE.Variables,Integer,selectParameterFunc,list<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,AvlSetCR.Tree,Boolean> inTpl;
   output BackendDAE.Var outVar;
-  output tuple<BackendDAE.Variables,Integer,selectParameterFunc,list<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,AvlSetCR.Tree> outTpl;
+  output tuple<BackendDAE.Variables,Integer,selectParameterFunc,list<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,AvlSetCR.Tree,Boolean> outTpl;
 algorithm
   (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
@@ -298,40 +300,40 @@ algorithm
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
       selectParameterFunc selectParameter;
-      Boolean select;
+      Boolean select, isInitial;
       AvlSetCR.Tree ht;
 
-    case (v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),bindExp=SOME(e)),(globalKnownVars,index,selectParameter,selectedParameters,m,mt,ht))
+    case (v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),bindExp=SOME(e)),(globalKnownVars,index,selectParameter,selectedParameters,m,mt,ht,isInitial))
       equation
-        (_,(_,tree)) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (globalKnownVars,AvlSetInt.EMPTY()));
+        (_,(_,tree,_)) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (globalKnownVars,AvlSetInt.EMPTY(),isInitial));
         ilst = AvlSetInt.listKeys(tree);
         cref = BackendVariable.varCref(v);
         select = selectParameter(v) or AvlSetCR.hasKey(ht, cref);
         selectedParameters = List.consOnTrue(select, index, selectedParameters);
         m = arrayUpdate(m,index,ilst);
         mt = List.fold1(index::ilst,Array.consToElement,index,mt);
-      then (v,(globalKnownVars,index+1,selectParameter,selectedParameters,m,mt,ht));
+      then (v,(globalKnownVars,index+1,selectParameter,selectedParameters,m,mt,ht,isInitial));
 
-    case (v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),values=attr),(globalKnownVars,index,selectParameter,selectedParameters,m,mt,ht))
+    case (v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),values=attr),(globalKnownVars,index,selectParameter,selectedParameters,m,mt,ht,isInitial))
       equation
         e = DAEUtil.getStartAttrFail(attr);
-        (_,(_,tree)) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (globalKnownVars,AvlSetInt.EMPTY()));
+        (_,(_,tree,_)) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (globalKnownVars,AvlSetInt.EMPTY(),isInitial));
         ilst = AvlSetInt.listKeys(tree);
         cref = BackendVariable.varCref(v);
         select = selectParameter(v) or AvlSetCR.hasKey(ht, cref);
         selectedParameters = List.consOnTrue(select, index, selectedParameters);
         m = arrayUpdate(m,index,ilst);
         mt = List.fold1(index::ilst,Array.consToElement,index,mt);
-      then (v,(globalKnownVars,index+1,selectParameter,selectedParameters,m,mt,ht));
+      then (v,(globalKnownVars,index+1,selectParameter,selectedParameters,m,mt,ht,isInitial));
 
-    case (v,(globalKnownVars,index,selectParameter,selectedParameters,m,mt,ht))
+    case (v,(globalKnownVars,index,selectParameter,selectedParameters,m,mt,ht,isInitial))
       equation
         cref = BackendVariable.varCref(v);
         select = selectParameter(v) or AvlSetCR.hasKey(ht, cref);
         selectedParameters = List.consOnTrue(select, index, selectedParameters);
         ilst = {index};
         mt = arrayUpdate(mt,index,ilst);
-      then (v,(globalKnownVars,index+1,selectParameter,selectedParameters,m,mt,ht));
+      then (v,(globalKnownVars,index+1,selectParameter,selectedParameters,m,mt,ht,isInitial));
   end matchcontinue;
 end getParameterIncidenceMatrix;
 
@@ -345,12 +347,13 @@ protected function evaluateSelectedParameters
   input output FCore.Cache cache;
   input FCore.Graph graph;
   input array<Integer> markarr;
+  input Boolean isInitial;
   input output BackendVarTransform.VariableReplacements repl;
   input output BackendVarTransform.VariableReplacements replEvaluate;
   input output Integer mark;
 algorithm
   for i in iSelected loop
-    (globalKnownVars,cache,repl,replEvaluate,mark) := evaluateSelectedParameters0(i,globalKnownVars,m,inIEqns,cache,graph,markarr,repl,replEvaluate,mark);
+    (globalKnownVars,cache,repl,replEvaluate,mark) := evaluateSelectedParameters0(i,globalKnownVars,m,inIEqns,cache,graph,markarr,isInitial,repl,replEvaluate,mark);
   end for;
 end evaluateSelectedParameters;
 
@@ -364,6 +367,7 @@ protected function evaluateSelectedParameters0
   input output FCore.Cache cache;
   input FCore.Graph graph;
   input array<Integer> markarr;
+  input Boolean isInitial;
   input output BackendVarTransform.VariableReplacements repl;
   input output BackendVarTransform.VariableReplacements replEvaluate;
   input output Integer mark;
@@ -374,10 +378,10 @@ algorithm
     false := intGt(markarr[i],0) "not yet evaluated";
     arrayUpdate(markarr,i,mark);
     // evaluate needed parameters
-    (globalKnownVars,cache,mark,repl,replEvaluate) := evaluateSelectedParameters1(m[i],globalKnownVars,m,inIEqns,cache,graph,mark,markarr,repl,replEvaluate);
+    (globalKnownVars,cache,mark,repl,replEvaluate) := evaluateSelectedParameters1(m[i],globalKnownVars,m,inIEqns,cache,graph,mark,markarr,isInitial,repl,replEvaluate);
     // evaluate parameter
     v := BackendVariable.getVarAt(globalKnownVars,i);
-    (v,globalKnownVars,cache,mark,repl) := evaluateFixedAttribute(v,true,globalKnownVars,m,inIEqns,cache,graph,mark,markarr,repl);
+    (v,globalKnownVars,cache,mark,repl) := evaluateFixedAttribute(v,true,globalKnownVars,m,inIEqns,cache,graph,mark,markarr,isInitial,repl);
     (globalKnownVars,repl,replEvaluate,cache) := evaluateSelectedParameter(v,i,globalKnownVars,inIEqns,repl,replEvaluate,cache,graph);
   else
     // evaluate parameter
@@ -397,6 +401,7 @@ protected function evaluateSelectedParameters1
   input FCore.Graph graph;
   input output Integer mark;
   input array<Integer> markarr;
+  input Boolean isInitial;
   input output BackendVarTransform.VariableReplacements repl;
   input output BackendVarTransform.VariableReplacements replEvaluate = BackendVarTransform.emptyReplacements();
 algorithm
@@ -412,15 +417,15 @@ algorithm
     case i::rest equation
       false = intGt(markarr[i], 0) "not yet evaluated";
       arrayUpdate(markarr, i, mark);
-      (globalKnownVars, cache, mark, repl, replEvaluate) = evaluateSelectedParameters1(m[i], globalKnownVars, m, inIEqns, cache, graph, mark, markarr, repl, replEvaluate);
+      (globalKnownVars, cache, mark, repl, replEvaluate) = evaluateSelectedParameters1(m[i], globalKnownVars, m, inIEqns, cache, graph, mark, markarr, isInitial, repl, replEvaluate);
       v = BackendVariable.getVarAt(globalKnownVars, i);
-      (v, globalKnownVars, cache, mark, repl) = evaluateFixedAttribute(v, true, globalKnownVars, m, inIEqns, cache, graph, mark, markarr, repl);
+      (v, globalKnownVars, cache, mark, repl) = evaluateFixedAttribute(v, true, globalKnownVars, m, inIEqns, cache, graph, mark, markarr, isInitial, repl);
       (globalKnownVars, cache, repl, replEvaluate) = evaluateParameter(v, i, globalKnownVars, inIEqns, cache, graph, repl, replEvaluate);
-      (globalKnownVars, cache, mark, repl, replEvaluate) = evaluateSelectedParameters1(rest, globalKnownVars, m, inIEqns, cache, graph, mark, markarr, repl, replEvaluate);
+      (globalKnownVars, cache, mark, repl, replEvaluate) = evaluateSelectedParameters1(rest, globalKnownVars, m, inIEqns, cache, graph, mark, markarr, isInitial, repl, replEvaluate);
     then (globalKnownVars, cache, mark, repl, replEvaluate);
 
     case _::rest equation
-      (globalKnownVars, cache, mark, repl, replEvaluate) = evaluateSelectedParameters1(rest, globalKnownVars, m, inIEqns, cache, graph, mark, markarr, repl, replEvaluate);
+      (globalKnownVars, cache, mark, repl, replEvaluate) = evaluateSelectedParameters1(rest, globalKnownVars, m, inIEqns, cache, graph, mark, markarr, isInitial, repl, replEvaluate);
     then (globalKnownVars, cache, mark, repl, replEvaluate);
   end matchcontinue;
 end evaluateSelectedParameters1;
@@ -613,6 +618,7 @@ protected function evaluateFixedAttribute
   input FCore.Graph graph;
   input output Integer mark;
   input array<Integer> markarr;
+  input Boolean isInitial;
   input output BackendVarTransform.VariableReplacements repl;
 algorithm
   (var,globalKnownVars,cache,mark,repl) := match(var)
@@ -639,22 +645,22 @@ algorithm
         (var,globalKnownVars,cache,mark,repl);
     case BackendDAE.VAR(varName=cr,values=attr as SOME(DAE.VAR_ATTR_REAL(fixed=SOME(e))),source=source)
       equation
-        (var,globalKnownVars,cache,mark,repl) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,globalKnownVars,m,inIEqns,cache,graph,mark,markarr,repl);
+        (var,globalKnownVars,cache,mark,repl) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,globalKnownVars,m,inIEqns,cache,graph,mark,markarr,isInitial,repl);
       then
         (var,globalKnownVars,cache,mark,repl);
     case BackendDAE.VAR(varName=cr,values=attr as SOME(DAE.VAR_ATTR_INT(fixed=SOME(e))),source=source)
       equation
-        (var,globalKnownVars,cache,mark,repl) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,globalKnownVars,m,inIEqns,cache,graph,mark,markarr,repl);
+        (var,globalKnownVars,cache,mark,repl) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,globalKnownVars,m,inIEqns,cache,graph,mark,markarr,isInitial,repl);
       then
         (var,globalKnownVars,cache,mark,repl);
     case BackendDAE.VAR(varName=cr,values=attr as SOME(DAE.VAR_ATTR_BOOL(fixed=SOME(e))),source=source)
       equation
-        (var,globalKnownVars,cache,mark,repl) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,globalKnownVars,m,inIEqns,cache,graph,mark,markarr,repl);
+        (var,globalKnownVars,cache,mark,repl) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,globalKnownVars,m,inIEqns,cache,graph,mark,markarr,isInitial,repl);
       then
         (var,globalKnownVars,cache,mark,repl);
     case BackendDAE.VAR(varName=cr,values=attr as SOME(DAE.VAR_ATTR_ENUMERATION(fixed=SOME(e))),source=source)
       equation
-        (var,globalKnownVars,cache,mark,repl) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,globalKnownVars,m,inIEqns,cache,graph,mark,markarr,repl);
+        (var,globalKnownVars,cache,mark,repl) = evaluateFixedAttribute1(cr,e,attr,source,var,addVar,globalKnownVars,m,inIEqns,cache,graph,mark,markarr,isInitial,repl);
       then
         (var,globalKnownVars,cache,mark,repl);
     else (var,globalKnownVars,cache,mark,repl);
@@ -676,6 +682,7 @@ protected function evaluateFixedAttribute1
   input FCore.Graph graph;
   input output Integer mark;
   input array<Integer> markarr;
+  input Boolean isInitial;
   input output BackendVarTransform.VariableReplacements repl;
 protected
   DAE.Exp e1;
@@ -685,8 +692,8 @@ protected
 algorithm
    // apply replacements
   (e1,_) := BackendVarTransform.replaceExp(e, repl, NONE());
-  (_,(_,ilst)) := Expression.traverseExpTopDown(e1, BackendDAEUtil.traversingincidenceRowExpFinder, (globalKnownVars,AvlSetInt.EMPTY()));
-  (globalKnownVars,cache,mark,repl) := evaluateSelectedParameters1(AvlSetInt.listKeys(ilst),globalKnownVars,m,inIEqns,cache,graph,mark,markarr,repl);
+  (_,(_,ilst,_)) := Expression.traverseExpTopDown(e1, BackendDAEUtil.traversingincidenceRowExpFinder, (globalKnownVars,AvlSetInt.EMPTY(), isInitial));
+  (globalKnownVars,cache,mark,repl) := evaluateSelectedParameters1(AvlSetInt.listKeys(ilst),globalKnownVars,m,inIEqns,cache,graph,mark,markarr,isInitial,repl);
   (e1,_) := BackendVarTransform.replaceExp(e1, repl, NONE());
   (e1,_) := ExpressionSimplify.simplify(e1);
    b := Expression.isConst(e1);
@@ -763,6 +770,7 @@ protected function traverseParameterSorted
   input array<Integer> markarr;
   input BackendVarTransform.VariableReplacements repl;
   input BackendVarTransform.VariableReplacements replEvaluate;
+  input Boolean isInitial;
   output BackendDAE.Variables oKnVars;
   output BackendVarTransform.VariableReplacements oRepl;
   output BackendVarTransform.VariableReplacements oReplEvaluate;
@@ -784,17 +792,17 @@ algorithm
 
     case {i}::rest equation
       v = BackendVariable.getVarAt(inGlobalKnownVars,i);
-      (v,globalKnownVars,cache,mark,repl1) = evaluateFixedAttribute(v,true,inGlobalKnownVars,m,inIEqns,iCache,graph,iMark,markarr,repl);
+      (v,globalKnownVars,cache,mark,repl1) = evaluateFixedAttribute(v,true,inGlobalKnownVars,m,inIEqns,iCache,graph,iMark,markarr,isInitial,repl);
       (globalKnownVars,repl1,evrepl) = evaluateParameterBindings(v,i,globalKnownVars,cache,graph,repl1,replEvaluate);
-      (globalKnownVars,repl1,evrepl,cache,mark) = traverseParameterSorted(rest,globalKnownVars,m,inIEqns,cache,graph,mark,markarr,repl1,evrepl);
+      (globalKnownVars,repl1,evrepl,cache,mark) = traverseParameterSorted(rest,globalKnownVars,m,inIEqns,cache,graph,mark,markarr,repl1,evrepl,isInitial);
     then (globalKnownVars,repl1,evrepl,cache,mark);
 
     case ilst::rest equation
       // vlst = List.map1r(ilst,BackendVariable.getVarAt,inGlobalKnownVars);
       // str = stringDelimitList(List.map(vlst,BackendDump.varString),"\n");
       // print(stringAppendList({"EvaluateParameter.traverseParameterSorted faild because of strong connected Block in Parameters!\n",str,"\n"}));
-      (globalKnownVars,repl1,evrepl,cache,mark) = traverseParameterSorted(List.map(ilst,List.create),inGlobalKnownVars,m,inIEqns,iCache,graph,iMark,markarr,repl,replEvaluate);
-      (globalKnownVars,repl1,evrepl,cache,mark) = traverseParameterSorted(rest,globalKnownVars,m,inIEqns,cache,graph,mark,markarr,repl1,evrepl);
+      (globalKnownVars,repl1,evrepl,cache,mark) = traverseParameterSorted(List.map(ilst,List.create),inGlobalKnownVars,m,inIEqns,iCache,graph,iMark,markarr,repl,replEvaluate,isInitial);
+      (globalKnownVars,repl1,evrepl,cache,mark) = traverseParameterSorted(rest,globalKnownVars,m,inIEqns,cache,graph,mark,markarr,repl1,evrepl,isInitial);
     then (globalKnownVars,repl1,evrepl,cache,mark);
   end match;
 end traverseParameterSorted;
@@ -998,9 +1006,9 @@ end traverseExpVisitorWrapper;
 protected function replaceEvaluatedParametersSystem
 "author Frenkel TUD"
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,FCore.Cache,FCore.Graph,Integer,array<Integer>,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> inTypeA;
+  input tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,FCore.Cache,FCore.Graph,Integer,array<Integer>,Boolean,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> inTypeA;
   output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,FCore.Cache,FCore.Graph,Integer,array<Integer>,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> outTypeA;
+  output tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,FCore.Cache,FCore.Graph,Integer,array<Integer>,Boolean,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> outTypeA;
 protected
   BackendDAE.Variables vars;
 algorithm
@@ -1012,9 +1020,9 @@ end replaceEvaluatedParametersSystem;
 protected function replaceEvaluatedParameterTraverser
 "author: Frenkel TUD 2011-04"
  input BackendDAE.Var inVar;
- input tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,FCore.Cache,FCore.Graph,Integer,array<Integer>,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> inTpl;
+ input tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,FCore.Cache,FCore.Graph,Integer,array<Integer>,Boolean,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> inTpl;
  output BackendDAE.Var outVar;
- output tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,FCore.Cache,FCore.Graph,Integer,array<Integer>,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> outTpl;
+ output tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,FCore.Cache,FCore.Graph,Integer,array<Integer>,Boolean,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> outTpl;
 algorithm
   (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
@@ -1030,8 +1038,8 @@ algorithm
       BackendDAE.Var v;
       DAE.Exp e,e1;
       Option<DAE.VariableAttributes> attr;
-      Boolean b;
-    case (v as BackendDAE.VAR(bindExp=SOME(e),values=attr),(globalKnownVars,m,ieqns,cache,graph,mark,markarr,repl,replEvaluate))
+      Boolean b, isInitial;
+    case (v as BackendDAE.VAR(bindExp=SOME(e),values=attr),(globalKnownVars,m,ieqns,cache,graph,mark,markarr,isInitial,repl,replEvaluate))
       equation
         // apply replacements
         (e1,true) = BackendVarTransform.replaceExp(e, replEvaluate, NONE());
@@ -1039,21 +1047,21 @@ algorithm
         v = BackendVariable.setBindExp(v, SOME(e1));
         (attr,(replEvaluate,b)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(replEvaluate,false));
         v = if b then BackendVariable.setVarAttributes(v,attr) else v;
-        (v,globalKnownVars,cache,mark,repl) = evaluateFixedAttribute(v,false,globalKnownVars,m,ieqns,cache,graph,mark,markarr,repl);
-      then (v,(globalKnownVars,m,ieqns,cache,graph,mark,markarr,repl,replEvaluate));
+        (v,globalKnownVars,cache,mark,repl) = evaluateFixedAttribute(v,false,globalKnownVars,m,ieqns,cache,graph,mark,markarr,isInitial,repl);
+      then (v,(globalKnownVars,m,ieqns,cache,graph,mark,markarr,isInitial,repl,replEvaluate));
 
-    case  (v as BackendDAE.VAR(values=attr),(globalKnownVars,m,ieqns,cache,graph,mark,markarr,repl,replEvaluate))
+    case  (v as BackendDAE.VAR(values=attr),(globalKnownVars,m,ieqns,cache,graph,mark,markarr,isInitial,repl,replEvaluate))
       equation
         // apply replacements
         (attr,(replEvaluate,true)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(replEvaluate,false));
         v = BackendVariable.setVarAttributes(v,attr);
-        (v,globalKnownVars,cache,mark,repl) = evaluateFixedAttribute(v,false,globalKnownVars,m,ieqns,cache,graph,mark,markarr,repl);
-      then (v,(globalKnownVars,m,ieqns,cache,graph,mark,markarr,repl,replEvaluate));
+        (v,globalKnownVars,cache,mark,repl) = evaluateFixedAttribute(v,false,globalKnownVars,m,ieqns,cache,graph,mark,markarr,isInitial,repl);
+      then (v,(globalKnownVars,m,ieqns,cache,graph,mark,markarr,isInitial,repl,replEvaluate));
 
-    case (v,(globalKnownVars,m,ieqns,cache,graph,mark,markarr,repl,replEvaluate))
+    case (v,(globalKnownVars,m,ieqns,cache,graph,mark,markarr,isInitial,repl,replEvaluate))
       equation
-        (v,globalKnownVars,cache,mark,repl) = evaluateFixedAttribute(v,false,globalKnownVars,m,ieqns,cache,graph,mark,markarr,repl);
-      then (v,(globalKnownVars,m,ieqns,cache,graph,mark,markarr,repl,replEvaluate));
+        (v,globalKnownVars,cache,mark,repl) = evaluateFixedAttribute(v,false,globalKnownVars,m,ieqns,cache,graph,mark,markarr,isInitial,repl);
+      then (v,(globalKnownVars,m,ieqns,cache,graph,mark,markarr,isInitial,repl,replEvaluate));
   end matchcontinue;
 end replaceEvaluatedParameterTraverser;
 

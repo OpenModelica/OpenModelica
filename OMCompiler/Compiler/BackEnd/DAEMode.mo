@@ -494,7 +494,7 @@ algorithm
       algorithm
 
         (discVars, contVars) := List.splitOnTrue(inVars, BackendVariable.isVarDiscrete);
-        (discEqns, contEqns) := getDiscAndContEqns(inVars, inEqns, discVars, contVars, traverserArgs.shared.functionTree);
+        (discEqns, contEqns) := getDiscAndContEqns(inVars, inEqns, discVars, contVars, traverserArgs.shared.functionTree, BackendDAEUtil.isInitializationDAE(traverserArgs.shared));
 
         // create discrete
         for e in discEqns loop
@@ -532,6 +532,7 @@ function getDiscAndContEqns
   input list<BackendDAE.Var> inDiscVars;
   input list<BackendDAE.Var> inContVars;
   input DAE.FunctionTree functionTree;
+  input Boolean isInitial;
   output list<BackendDAE.Equation> discEqns;
   output list<BackendDAE.Equation> contEqns;
 protected
@@ -549,7 +550,7 @@ algorithm
     // create syst for a matching
     syst := BackendDAEUtil.createEqSystem(BackendVariable.listVar1(inAllVars), BackendEquation.listEquation(inAllEqns) );
     if debug then BackendDump.printEqSystem(syst); end if;
-    (adjMatrix, _, _, mapEqnScalarArray) := BackendDAEUtil.incidenceMatrixScalar(syst, BackendDAE.NORMAL(), SOME(functionTree));
+    (adjMatrix, _, _, mapEqnScalarArray) := BackendDAEUtil.incidenceMatrixScalar(syst, BackendDAE.NORMAL(), SOME(functionTree), isInitial);
     if debug then BackendDump.dumpIncidenceMatrix(adjMatrix); end if;
     (assignVarEqn, assignEqnVar, true) := Matching.RegularMatching(adjMatrix, BackendDAEUtil.systemSize(syst), BackendDAEUtil.systemSize(syst));
     if debug then BackendDump.dumpMatching(assignVarEqn); end if;

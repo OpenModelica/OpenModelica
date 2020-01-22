@@ -281,7 +281,7 @@ algorithm
       (mixedSystem, _) = BackendEquation.iterationVarsinRelations(eqn_lst1, vars_1);
       if not Flags.isSet(Flags.DISABLE_JACSCC) then
         syst = BackendDAEUtil.createEqSystem(vars_1, eqns_1);
-        (m, mt) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE(), NONE());
+        (m, mt) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE(), NONE(), BackendDAEUtil.isInitializationDAE(ishared));
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         (jac, shared) = SymbolicJacobian.calculateJacobian(vars_1, eqns_1, m, true, ishared);
         // Jacobian of a Linear System is always linear

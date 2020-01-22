@@ -601,15 +601,16 @@ protected
   BackendDAE.Shared shared;
 algorithm
   BackendDAE.DAE(eqSystems, shared) := inBackendDAE;
-  eqSystems := List.map(eqSystems, setIncidenceMatrix1);
+  eqSystems := List.map1(eqSystems, setIncidenceMatrix1, BackendDAEUtil.isInitializationDAE(shared));
   outBackendDAE := BackendDAE.DAE(eqSystems, shared);
 end setIncidenceMatrix;
 
 protected function setIncidenceMatrix1
   input BackendDAE.EqSystem inEqSystem;
+  input Boolean isInitial;
   output BackendDAE.EqSystem outEqSystem;
 algorithm
-  (outEqSystem, _, _) := BackendDAEUtil.getIncidenceMatrix(inEqSystem, BackendDAE.NORMAL(), NONE());
+  (outEqSystem, _, _) := BackendDAEUtil.getIncidenceMatrix(inEqSystem, BackendDAE.NORMAL(), NONE(), isInitial);
 end setIncidenceMatrix1;
 
 // =============================================================================
@@ -4020,7 +4021,7 @@ algorithm
   if Util.isSome(sys.m) then
     m := Util.getOption(sys.m);
   else
-    (_,m,_) := BackendDAEUtil.getIncidenceMatrix(sys,BackendDAE.NORMAL(),NONE());
+    (_,m,_) := BackendDAEUtil.getIncidenceMatrix(sys,BackendDAE.NORMAL(),NONE(),false); //no shared available so dump regular system.
   end if;
   BackendDump.dumpEqSystem(sys,"SYS");
   BackendDump.dumpMatrixHTML(m,List.map(List.intRange(BackendDAEUtil.systemSize(sys)),intString),
@@ -4046,7 +4047,7 @@ algorithm
       (varLst,vIdxs,eqLst,eIdxs) := BackendDAEUtil.getStrongComponentsVarsAndEquations(comps, vars, eqs);
       eqs := BackendEquation.listEquation(eqLst);
       vars := BackendVariable.listVar1(varLst);
-      (m, _) := BackendDAEUtil.incidenceMatrixDispatch(vars, eqs, BackendDAE.NORMAL(), NONE());
+      (m, _) := BackendDAEUtil.incidenceMatrixDispatch(vars, eqs, BackendDAE.NORMAL(), NONE(), false); //no shared available so dump regular system.
       BackendDump.dumpMatrixHTML(m,List.map(eIdxs,intString),
                                     List.map(vIdxs,intString),
                                    "BLT_MATRIX_"+intString(BackendDAEUtil.systemSize(sys)));
@@ -4100,7 +4101,7 @@ algorithm
   vars := BackendVariable.listVar1(varLst);
   eqs := BackendEquation.listEquation(eqLst);
   // build the incidence matrix for the whole System
-  (_,m,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),NONE(),BackendDAE.NO_MATCHING(), {},BackendDAE.UNKNOWN_PARTITION(), BackendEquation.emptyEqns()),BackendDAE.SOLVABLE(), SOME(BackendDAEUtil.getFunctions(shared)));
+  (_,m,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),NONE(),BackendDAE.NO_MATCHING(), {},BackendDAE.UNKNOWN_PARTITION(), BackendEquation.emptyEqns()),BackendDAE.SOLVABLE(), SOME(BackendDAEUtil.getFunctions(shared)), BackendDAEUtil.isInitializationDAE(shared));
   varAtts := List.threadMap(List.fill(false,listLength(varLst)),List.fill("",listLength(varLst)),Util.makeTuple);
   eqAtts := List.threadMap(List.fill(false,listLength(eqLst)),List.fill("",listLength(eqLst)),Util.makeTuple);
   dumpBipartiteGraphStrongComponent2(vars,eqs,m,varAtts,eqAtts,"BipartiteGraph_"+fileName);
@@ -4129,7 +4130,7 @@ algorithm
       dumpBipartiteGraphStrongComponent2(vars,eqs,Util.getOption(mO),varAtts,eqAtts,"BipartiteGraph_"+fileName);
   else
     // build the incidence matrix
-    (_,m,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(BackendDAEUtil.getFunctions(shared)));
+    (_,m,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(BackendDAEUtil.getFunctions(shared)), BackendDAEUtil.isInitializationDAE(shared));
     dumpBipartiteGraphStrongComponent2(vars,eqs,m,varAtts,eqAtts,"BipartiteGraph2_"+fileName);
   end if;
 end dumpBipartiteGraphEqSystem;
@@ -4183,7 +4184,7 @@ algorithm
 
       numEqs = listLength(compEqLst);
       numVars = listLength(compVarLst);
-      (_,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(BackendDAE.EQSYSTEM(compVars,compEqs,NONE(),NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION(),BackendEquation.emptyEqns()), BackendDAE.SOLVABLE(), funcs);
+      (_,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(BackendDAE.EQSYSTEM(compVars,compEqs,NONE(),NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION(),BackendEquation.emptyEqns()), BackendDAE.SOLVABLE(), funcs, false); // no shared available so dump regular system not initial
 
       varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
       eqAtts = List.threadMap(List.fill(false,numEqs),List.fill("",numEqs),Util.makeTuple);
@@ -4204,7 +4205,7 @@ algorithm
       // get incidence matrix
       numEqs = listLength(compEqLst);
       numVars = listLength(compVarLst);
-      (_,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(BackendDAE.EQSYSTEM(compVars,compEqs,NONE(),NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION(),BackendEquation.emptyEqns()), BackendDAE.SOLVABLE(), funcs);
+      (_,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(BackendDAE.EQSYSTEM(compVars,compEqs,NONE(),NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION(),BackendEquation.emptyEqns()), BackendDAE.SOLVABLE(), funcs, false); // no shared available so dump regular system not initial
 
       // add tearing info to graph object and dump graph
       addInfo = List.map(varIdcs,intString);// the DAE idcs for the vars
@@ -4548,7 +4549,7 @@ algorithm
   for sys in systs loop
     BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, matching = BackendDAE.MATCHING(comps=comps,ass2=ass2)) := sys;
     //dump the edges
-    (m, mT) := BackendDAEUtil.incidenceMatrix(sys, BackendDAE.NORMAL(), SOME(BackendDAEUtil.getFunctions(shared)));
+    (m, mT) := BackendDAEUtil.incidenceMatrix(sys, BackendDAE.NORMAL(), SOME(BackendDAEUtil.getFunctions(shared)), BackendDAEUtil.isInitializationDAE(shared));
 
     //traverse comps
     order := 1;

@@ -1211,7 +1211,7 @@ algorithm
 
         // generate adjacency matrix including diff vars
         (syst1 as BackendDAE.EQSYSTEM(orderedVars=varswithDiffs,orderedEqs=orderedEqns)) := BackendDAEUtil.addVarsToEqSystem(syst,jacDiffVars);
-        (adjMatrix, adjMatrixT) := BackendDAEUtil.incidenceMatrix(syst1,BackendDAE.SPARSE(),NONE());
+        (adjMatrix, adjMatrixT) := BackendDAEUtil.incidenceMatrix(syst1,BackendDAE.SPARSE(),NONE(),BackendDAEUtil.isInitializationDAE(inBackendDAE.shared));
         adjSize := arrayLength(adjMatrix) "number of equations";
         adjSizeT := arrayLength(adjMatrixT) "number of variables";
 
@@ -4442,18 +4442,21 @@ algorithm
       updateList_arr := i_arr :: updateList_arr;
     end if;
   end for;
-    /* update adjacency matrix and transposed adjacency matrix */
+    /*
+      update adjacency matrix and transposed adjacency matrix
+      isInitial should always be false
+    */
     if not listEmpty(updateList_arr) then
       try
         /* scalar = true */
         SOME((mapEqnIncRow, mapIncRowEqn, indexType, true, _)) := syst.mapping;
-        syst := BackendDAEUtil.updateIncidenceMatrixScalar(syst, indexType, NONE(), updateList_arr, mapEqnIncRow, mapIncRowEqn);
+        syst := BackendDAEUtil.updateIncidenceMatrixScalar(syst, indexType, NONE(), updateList_arr, mapEqnIncRow, mapIncRowEqn, false);
       else
         /*
           scalar = false,
           should never occur, just to have a fallback option if someone wants to use this algorithm somewhere else
         */
-        syst := BackendDAEUtil.updateIncidenceMatrix(syst, BackendDAE.SOLVABLE(), NONE(), updateList_arr);
+        syst := BackendDAEUtil.updateIncidenceMatrix(syst, BackendDAE.SOLVABLE(), NONE(), updateList_arr, false);
       end try;
     end if;
 

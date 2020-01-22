@@ -767,7 +767,7 @@ algorithm
 
   if nGlobalKnownVars > 0 then
     globalKnownVarsSystem := BackendDAEUtil.createEqSystem(globalKnownVars, globalKnownVarsEqns);
-    (m, mT) := BackendDAEUtil.incidenceMatrix(globalKnownVarsSystem, BackendDAE.NORMAL(), NONE());
+    (m, mT) := BackendDAEUtil.incidenceMatrix(globalKnownVarsSystem, BackendDAE.NORMAL(), NONE(), BackendDAEUtil.isInitializationDAE(dae.shared));
     //BackendDump.dumpIncidenceMatrix(m);
     //BackendDump.dumpIncidenceMatrixT(mT);
 
@@ -1074,7 +1074,7 @@ protected
   Boolean b;
   BackendDAE.IncidenceMatrix mt;
 algorithm
-  (_, mt) := BackendDAEUtil.incidenceMatrix(inEqSystem, BackendDAE.NORMAL(), NONE());
+  (_, mt) := BackendDAEUtil.incidenceMatrix(inEqSystem, BackendDAE.NORMAL(), NONE(), true);
   (orderedVars, orderedEqs, b, outDumpVars) := preBalanceInitialSystem1(arrayLength(mt), mt, inEqSystem.orderedVars, inEqSystem.orderedEqs, false, {});
   if b then
     outEqSystem.orderedEqs := orderedEqs;
@@ -1235,7 +1235,7 @@ algorithm
     nEqns := BackendEquation.equationArraySize(inEqSystem.orderedEqs);
     syst := BackendDAEUtil.createEqSystem(inEqSystem.orderedVars, inEqSystem.orderedEqs);
     funcs := BackendDAEUtil.getFunctions(inShared);
-    (m_, _, _, mapIncRowEqn) := BackendDAEUtil.incidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs));
+    (m_, _, _, mapIncRowEqn) := BackendDAEUtil.incidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared)); // Should always be true, just to be sure
     if debug then
       BackendDump.dumpEqSystem(syst, "fixInitialSystem");
       BackendDump.dumpVariables(initVars, "selected initialization variables");
@@ -1850,7 +1850,7 @@ algorithm
       eqns = BackendEquation.listEquation(list_inEqns);
       funcs = BackendDAEUtil.getFunctions(shared);
       system = BackendDAEUtil.createEqSystem(vars, eqns);
-      (m, _) = BackendDAEUtil.incidenceMatrix(system, BackendDAE.NORMAL(), SOME(funcs));
+      (m, _) = BackendDAEUtil.incidenceMatrix(system, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
       listVar = m[inUnassignedEqn];
       false = listEmpty(listVar);
 

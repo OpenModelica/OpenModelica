@@ -230,7 +230,7 @@ algorithm
 
         //build new DAE-EqSystem
         syst = BackendDAEUtil.setEqSystMatrices(syst);
-        (syst,_,_) = BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.NORMAL(),NONE());
+        (syst,_,_) = BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(sharedIn));
         (syst, tornSysIdx) = reduceLinearTornSystem1(compIdx+1+numNewSingleEqs,compsTmp,ass1All,ass2All,syst,sharedIn,tornSysIdxIn+1);
       then
         (syst, tornSysIdx);
@@ -297,7 +297,7 @@ algorithm
 
         //build new DAE-EqSystem
         syst = BackendDAEUtil.setEqSystMatrices(syst);
-        //(systTmp,_,_) = BackendDAEUtil.getIncidenceMatrix(systTmp, BackendDAE.NORMAL(),NONE());
+        //(systTmp,_,_) = BackendDAEUtil.getIncidenceMatrix(systTmp, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(shared));
 
         (syst,tornSysIdx) = reduceLinearTornSystem1(compIdx+1,compsTmp,ass1All,ass2All,syst,sharedIn,tornSysIdxIn+1);
       then
@@ -577,7 +577,7 @@ algorithm
   eqArr := BackendEquation.listEquation(eqsIn);
   varArr := BackendVariable.listVar1(varsIn);
   eqSys := BackendDAEUtil.createEqSystem(varArr, eqArr);
-  (m,mT) := BackendDAEUtil.incidenceMatrix(eqSys,BackendDAE.ABSOLUTE(),NONE());
+  (m,mT) := BackendDAEUtil.incidenceMatrix(eqSys,BackendDAE.ABSOLUTE(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
   size := listLength(eqsIn);
   (eqIdcs,varIdcs,resEqsOut) := List.fold(List.intRange(size),function simplifyNewEquations1(eqArr=eqArr,varArr=varArr,m=m,mt=mT,numAuxiliaryVars=numAuxiliaryVars,shared=shared),({},{},resEqsIn));
   numAux := numAuxiliaryVars-listLength(varIdcs);
@@ -1044,7 +1044,7 @@ algorithm
         vars = BackendVariable.listVar1(inVars);
         eqArr = BackendEquation.listEquation(inEqs);
         sysTmp = BackendDAEUtil.createEqSystem(vars, eqArr);
-        (sysTmp,m,_) = BackendDAEUtil.getIncidenceMatrix(sysTmp,BackendDAE.NORMAL(),NONE());
+        (sysTmp,m,_) = BackendDAEUtil.getIncidenceMatrix(sysTmp,BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(shared));
         nVars = listLength(inVars);
         nEqs = listLength(inEqs);
         ass1 = arrayCreate(nVars, -1);
@@ -1054,7 +1054,7 @@ algorithm
         BackendDAEEXT.getAssignment(ass2, ass1);
         matching = BackendDAE.MATCHING(ass1, ass2, {});
         sysTmp = BackendDAEUtil.createEqSystem(vars, eqArr);
-        (sysTmp,_,_) = BackendDAEUtil.getIncidenceMatrix(sysTmp,BackendDAE.ABSOLUTE(),NONE());
+        (sysTmp,_,_) = BackendDAEUtil.getIncidenceMatrix(sysTmp,BackendDAE.ABSOLUTE(),NONE(), BackendDAEUtil.isInitializationDAE(shared));
         sysTmp = BackendDAEUtil.setEqSystMatching(sysTmp, matching);
 
         // perform BLT to order the StrongComponents
@@ -2205,7 +2205,7 @@ algorithm
     case (_,_,_,_,_) equation
       true = false;
       BackendDAE.DAE(eqs=eqSysts) = inDAE;
-      (_,taskLst) = pts_traverseEqSystems(eqSysts,sccSimEqMapping,simVarMapping,1,{});
+      (_,taskLst) = pts_traverseEqSystems(eqSysts,sccSimEqMapping,simVarMapping,1,{}, BackendDAEUtil.isInitializationDAE(inDAE.shared));
       // calculate the node idcs for the dae-task-gaph
       daeNodes = List.map(taskLst,getScheduledTaskCompIdx);
       //HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = metaIn;
@@ -2233,6 +2233,7 @@ author: Waurich TUD 2014-07"
   input array<list<SimCodeVar.SimVar>> simVarMapping;
   input Integer compIdxIn;
   input list<HpcOmSimCode.Task> taskLstIn;
+  input Boolean isInitial;
   output Integer compIdxOut;
   output list<HpcOmSimCode.Task> taskLstOut;
 algorithm
@@ -2250,8 +2251,8 @@ algorithm
       equation
         eqLst = BackendEquation.equationList(eqs);
         varLst = BackendVariable.varList(vars);
-        (compIdx,taskLst) = pts_traverseCompsAndParallelize(comps,eqLst,varLst,sccSimEqMapping,simVarMapping,compIdxIn,taskLstIn);
-        (compIdx,taskLst) = pts_traverseEqSystems(eqSysRest,sccSimEqMapping,simVarMapping,compIdx,taskLst);
+        (compIdx,taskLst) = pts_traverseCompsAndParallelize(comps,eqLst,varLst,sccSimEqMapping,simVarMapping,compIdxIn,taskLstIn,isInitial);
+        (compIdx,taskLst) = pts_traverseEqSystems(eqSysRest,sccSimEqMapping,simVarMapping,compIdx,taskLst,isInitial);
       then (compIdx,taskLst);
    case({},_,_,_,_)
      then (compIdxIn,taskLstIn);
@@ -2271,6 +2272,7 @@ author:Waurich TUD 2014-07"
   input array<list<SimCodeVar.SimVar>> simVarMapping;
   input Integer compIdxIn;
   input list<HpcOmSimCode.Task> taskLstIn;
+  input Boolean isInitial;
   output Integer compIdxOut;
   output list<HpcOmSimCode.Task> taskLstOut;
 algorithm
@@ -2311,7 +2313,7 @@ algorithm
       otherVarLst = List.map1(varIdcs,List.getIndexFirst,varsIn);
       otherVars = BackendVariable.listVar1(otherVarLst);
       otherEqs = BackendEquation.listEquation(otherEqLst);
-      (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(otherVars,otherEqs, BackendDAE.ABSOLUTE());
+      (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(otherVars,otherEqs, BackendDAE.ABSOLUTE(),NONE(),isInitial);
 
       // build task graph and taskgraphmeta
       (graph,meta) = HpcOmTaskGraph.getEmptyTaskGraph(numEqs,numEqs,numVars);
@@ -2349,11 +2351,11 @@ algorithm
       //transform into scheduled task object
       task = pts_transformScheduleToTask(schedule,resSimEqSysIdcs,compIdxIn);
       //HpcOmScheduler.printTask(task);
-      (compIdx,taskLst) = pts_traverseCompsAndParallelize(rest,eqsIn,varsIn,sccSimEqMapping,simVarMapping,compIdxIn+1,task::taskLstIn);
+      (compIdx,taskLst) = pts_traverseCompsAndParallelize(rest,eqsIn,varsIn,sccSimEqMapping,simVarMapping,compIdxIn+1,task::taskLstIn,isInitial);
     then (compIdx,taskLst);
   case(_::rest,_,_,_,_,_,_)
     equation
-      (compIdx,taskLst) = pts_traverseCompsAndParallelize(rest,eqsIn,varsIn,sccSimEqMapping,simVarMapping,compIdxIn+1,taskLstIn);
+      (compIdx,taskLst) = pts_traverseCompsAndParallelize(rest,eqsIn,varsIn,sccSimEqMapping,simVarMapping,compIdxIn+1,taskLstIn,isInitial);
     then (compIdx,taskLst);
   end matchcontinue;
 end pts_traverseCompsAndParallelize;

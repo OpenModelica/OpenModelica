@@ -1481,7 +1481,7 @@ algorithm
   sys := BackendDAEUtil.setEqSystEqs(sys, eqs);
 
   //get incidence matrix
-  (sys, m, mT) := BackendDAEUtil.getIncidenceMatrix(sys, BackendDAE.SUBCLOCK_IDX(), SOME(funcs));
+  (sys, m, mT) := BackendDAEUtil.getIncidenceMatrix(sys, BackendDAE.SUBCLOCK_IDX(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
 
   //find baseclocks and sub partition interfaces, remove edges in incidence matrices for sub partition interfaces
   (baseClockEquations, subClockInterfaceEqIdxs, subClockInterfaceEqs) := findBaseClockInterfaces(eqs,vars,m,mT);
@@ -1492,7 +1492,7 @@ algorithm
   //old implementation, used for partitioning
   (clockEqs, clockedEqsMask) := splitClockEqs(eqs); //masks false  if clock equation
   (clockVars, clockedVarsMask)  := splitClockVars(vars);
-  (rm, rmT) := BackendDAEUtil.removedIncidenceMatrix(sys, BackendDAE.SUBCLOCK_IDX(), SOME(funcs));
+  (rm, rmT) := BackendDAEUtil.removedIncidenceMatrix(sys, BackendDAE.SUBCLOCK_IDX(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
 
   //partitioning of equations and variables
   remEqPartMap := arrayCreate(arrayLength(rm), 0);
@@ -1527,7 +1527,7 @@ algorithm
     //print("order "+stringDelimitList(List.map(arrayList(order),intString)," | ")+"\n");
 
   //Detect clocked continuous partitions and create new subclock equations
-  (m, mT) := BackendDAEUtil.incidenceMatrixMasked(inEqSystem, BackendDAE.SUBCLOCK_IDX(), clockedEqsMask, SOME(funcs));
+  (m, mT) := BackendDAEUtil.incidenceMatrixMasked(inEqSystem, BackendDAE.SUBCLOCK_IDX(), clockedEqsMask, SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
   (newClockEqs, newClockVars, contPartitions, subclksCnt)
         := collectSubclkInfo(eqs, inEqSystem.removedEqs, partitionsCnt, eqPartMap, remEqPartMap, vars, mT);
 
@@ -2645,14 +2645,14 @@ protected
   list<tuple<DAE.ComponentRef, Boolean>> refsInfo;
   tuple<DAE.ComponentRef, Boolean> refInfo;
   Option<Boolean> partitionType;
-  Boolean isClocked;
+  Boolean isClocked, isInitial;
   array<Option<Boolean>> clockedEqs, clockedVars, clockedPartitions;
   SourceInfo info;
 algorithm
   funcs := BackendDAEUtil.getFunctions(inShared);
-
-  (syst, m, mT) := BackendDAEUtil.getIncidenceMatrixfromOption(inSyst, BackendDAE.BASECLOCK_IDX(), SOME(funcs));
-  (rm, rmT) := BackendDAEUtil.removedIncidenceMatrix(inSyst, BackendDAE.BASECLOCK_IDX(), SOME(funcs));
+  isInitial := BackendDAEUtil.isInitializationDAE(inShared);
+  (syst, m, mT) := BackendDAEUtil.getIncidenceMatrixfromOption(inSyst, BackendDAE.BASECLOCK_IDX(), SOME(funcs), isInitial);
+  (rm, rmT) := BackendDAEUtil.removedIncidenceMatrix(inSyst, BackendDAE.BASECLOCK_IDX(), SOME(funcs), isInitial);
 
   BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqs) := syst;
   eqPartMap := arrayCreate(arrayLength(m), 0);
@@ -2665,7 +2665,7 @@ algorithm
   partitionCnt := partitionIndependentBlocks0(m, mT, rm, rmT, eqPartMap, varPartMap, reqsPartition, varsPartition, rvarsPartition);
 
   if partitionCnt > 1 then
-    (systs, outUnpartRemEqs) := partitionIndependentBlocksSplitBlocks(partitionCnt, syst, eqPartMap, reqsPartition, mT, rmT, false, funcs);
+    (systs, outUnpartRemEqs) := partitionIndependentBlocksSplitBlocks(partitionCnt, syst, eqPartMap, reqsPartition, mT, rmT, false, funcs, BackendDAEUtil.isInitializationDAE(inShared));
   else
     (systs, outUnpartRemEqs) := ({syst}, {});
   end if;
@@ -3116,6 +3116,7 @@ public function partitionIndependentBlocksSplitBlocks
   input BackendDAE.IncidenceMatrix rmT;
   input Boolean throwNoError;
   input DAE.FunctionTree funcs;
+  input Boolean isInitial;
   output list<BackendDAE.EqSystem> systs = {};
   output list<BackendDAE.Equation> unpartRemovedEqs;
   output array<Integer> varPartMap;
@@ -3137,7 +3138,7 @@ algorithm
 
   if i1 <> i2 and not throwNoError then
     Error.addSourceMessage(if i1 > i2 then Error.OVERDET_EQN_SYSTEM else Error.UNDERDET_EQN_SYSTEM, {String(i1), String(i2)}, AbsynUtil.dummyInfo);
-    BackendDAEUtil.checkIncidenceMatrixSolvability(inSyst, funcs);
+    BackendDAEUtil.checkIncidenceMatrixSolvability(inSyst, funcs, isInitial);
     fail();
   end if;
 
