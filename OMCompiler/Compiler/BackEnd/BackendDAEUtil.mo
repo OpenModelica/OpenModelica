@@ -4479,13 +4479,6 @@ algorithm
     case (BackendDAE.RESIDUAL_EQUATION(exp = e)) algorithm
       then minimalTearingRowEnhanced(e, DAE.RCONST(0.0), inCref, varArray, inVariables, globalKnownVars);
 
-    // WHEN_EQUATION
-    case (BackendDAE.WHEN_EQUATION(whenEquation = elsewe)) algorithm
-        print("\nWHEN_EQUATION are not supported now!\n");
-        fail();
-        // Todo Add Waring / Error
-      then false;
-
     // IF_EQUATION
     // TODO : how to handle this?
     // Proposal:
@@ -4507,11 +4500,27 @@ algorithm
       end try;
       then solvability;
 
+    // WHEN_EQUATION
+    case (BackendDAE.WHEN_EQUATION(whenEquation = elsewe)) algorithm
+        eqnstr := BackendDump.equationString(inEq);
+        eqnstr := stringAppendList({"testSolvabilityForEquation failed\nCase BackendDAE.WHEN_EQUATION not implemented yet!\nGot eqn: \n",eqnstr});
+        Error.addInternalError(eqnstr, sourceInfo());
+        fail();
+      then false;
+
+    // CASE ALGORITHM
+    case(BackendDAE.ALGORITHM(__)) algorithm
+      eqnstr := BackendDump.equationString(inEq);
+      eqnstr := stringAppendList({"testSolvabilityForEquation failed\nCase BackendDAE.ALGORITHM not implemented yet!\nGot eqn: \n",eqnstr});
+      Error.addInternalError(eqnstr, sourceInfo());
+      fail();
+    then false;
+
     else
       algorithm
         eqnstr := BackendDump.equationString(inEq);
-        eqnstr := stringAppendList({"BackendDAE.adjacencyRowEnhanced failed for eqn:\n",eqnstr,"\n"});
-        Error.addMessage(Error.INTERNAL_ERROR,{eqnstr});
+        eqnstr := stringAppendList({"testSolvabilityForEquation failed\nGot eqn:\n",eqnstr,"\n"});
+        Error.addInternalError(eqnstr, sourceInfo());
         fail();
       then false;
   end match;
