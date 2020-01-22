@@ -220,7 +220,7 @@ algorithm
       case MINIMAL_TEARING()
           algorithm
            if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-             print("\nTearing type: total\n");
+             print("\nTearing type: minimal\n");
            end if;
            ocomp := minimalTearing(isyst, ishared, eindex, vindx, jacType, mixedSystem);
            if debug then execStat("Tearing.minimalTearing"); end if;
