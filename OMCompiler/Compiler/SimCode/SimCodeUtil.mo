@@ -363,9 +363,7 @@ algorithm
       FlagsUtil.setConfigEnum(Flags.SYM_SOLVER, 0);
     end if;
 
-    if not (Config.simCodeTarget() == "omsic" or
-            Config.simCodeTarget() == "omsicpp")
-    then
+    if not (Config.simCodeTarget() == "omsic" or Config.simCodeTarget() == "omsicpp") then
       (uniqueEqIndex, odeEquations, algebraicEquations, localKnownVars, allEquations, equationsForZeroCrossings, tempvars,
         equationSccMapping, eqBackendSimCodeMapping, backendMapping, sccOffset) :=
            createEquationsForSystems(contSysts, shared, uniqueEqIndex, zeroCrossings, tempvars, 1, backendMapping, true);
@@ -642,7 +640,7 @@ algorithm
     execStat("simCode: some other stuff during SimCode phase");
 
 
-     if ((Config.simCodeTarget() <> "Cpp") and (Config.simCodeTarget()<>"omsicpp"))then
+    if (Config.simCodeTarget() <> "Cpp") and (Config.simCodeTarget() <> "omsicpp") then
       reasonableSize := Util.nextPrime(10+integer(1.4*(BackendDAEUtil.equationArraySizeBDAE(inBackendDAE)+BackendDAEUtil.equationArraySizeBDAE(inInitDAE)+listLength(parameterEquations))));
       eqCache := HashTableSimCodeEqCache.emptyHashTableSized(reasonableSize);
 
@@ -4684,9 +4682,9 @@ algorithm
       SimCode.JacobianMatrix tmpJac;
       list<String> matrixnames;
     case (_, _, _)
-      equation
-        // b = FlagsUtil.disableDebug(Flags.EXEC_STAT);
-        crefSimVarHT = createCrefToSimVarHT(inModelInfo);
+      algorithm
+        // b := FlagsUtil.disableDebug(Flags.EXEC_STAT);
+        crefSimVarHT := createCrefToSimVarHT(inModelInfo);
         // The jacobian code requires single systems;
         // I did not rewrite it to take advantage of any parallelism in the code
 
@@ -4694,12 +4692,12 @@ algorithm
         // For dataReconciliation F is set in earlier order which cause index problem for linearization matrix and hence identify if
         // dataReconciliation is involved and pass the matrix names
         if Util.isSome(shared.dataReconciliationData) then
-           matrixnames={"A", "B", "C", "D"};
+           matrixnames := {"A", "B", "C", "D"};
         else
-           matrixnames={"A", "B", "C", "D", "F"};
+           matrixnames := {"A", "B", "C", "D", "F"};
         end if;
-        (res, ouniqueEqIndex) = createSymbolicJacobianssSimCode(inSymjacs, crefSimVarHT, iuniqueEqIndex, matrixnames, {});
-        // _ = FlagsUtil.set(Flags.EXEC_STAT, b);
+        (res, ouniqueEqIndex) := createSymbolicJacobianssSimCode(inSymjacs, crefSimVarHT, iuniqueEqIndex, matrixnames, {});
+        // _ := FlagsUtil.set(Flags.EXEC_STAT, b);
       then (res,ouniqueEqIndex);
   end match;
 end createJacobianLinearCode;
@@ -4712,7 +4710,6 @@ algorithm
     case (NONE())
       then true;
     case (SOME((_,_,{},{},{},_)))
-      equation
       then true;
     else
       false;
@@ -14190,7 +14187,7 @@ protected
   DAE.ComponentRef badcref;
 algorithm
   try
-    SimCode.SIMCODE(crefToSimVarHT = crefToSimVarHT)  := simCode;
+    SimCode.SIMCODE(crefToSimVarHT = crefToSimVarHT) := simCode;
     outSimVar := simVarFromHT(inCref, crefToSimVarHT);
   else
     //print("cref2simvar: " + ComponentReference.printComponentRefStr(inCref) + " not found!\n");
@@ -14208,7 +14205,6 @@ protected
   DAE.ComponentRef cref, badcref;
   SimCodeVar.SimVar sv;
   list<DAE.Subscript> subs;
-  Integer index;
 algorithm
   try
     if BaseHashTable.hasKey(inCref, crefToSimVarHT) then
@@ -14226,6 +14222,7 @@ algorithm
       end if;
 
       sv.variable_index := match sv.variable_index
+        local Integer index;
         case SOME(index)
         then SOME(index + getScalarElementIndex(subs, List.map(sv.numArrayElement, stringInt)) - 1);
       end match;

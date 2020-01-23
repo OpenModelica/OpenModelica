@@ -2467,24 +2467,24 @@ algorithm
   BackendDAE.VARIABLES(varArr=BackendDAE.VARIABLE_ARRAY(numberOfElements=outNumVariables)) := inVariables;
 end varsSize;
 
+/*
 public function varDim
   "Returns the dimension of variables in the Variables structure.
   NOTE: function fail if dimension is not constant
   "
   input BackendDAE.Var inVar;
   output Integer outDimVariables = 1;
- protected
+protected
   DAE.Dimensions dims;
   Integer n;
 algorithm
-
   BackendDAE.VAR(arryDim=dims) := inVar;
   for dim in dims loop
     DAE.DIM_INTEGER(n) := dim;
-  outDimVariables := n * outDimVariables;
+    outDimVariables := n * outDimVariables;
   end for;
-
 end varDim;
+*/
 
 protected function varsLoadFactor
   input BackendDAE.Variables inVariables;

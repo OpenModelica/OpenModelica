@@ -144,17 +144,17 @@ template subscriptStr(Subscript subscript)
   else "UNKNOWN_SUBSCRIPT"
 end subscriptStr;
 
-template contextCref(ComponentRef cr, Context context,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template contextCref(ComponentRef cr, Context context, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
   "Generates code for a component reference depending on which context we're in."
 ::=
 match cr
-case CREF_QUAL(ident = "$PRE") then
-   '_discrete_events->pre(<%contextCref(componentRef,context,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>)'
- else
-  let &varDeclsCref = buffer "" /*BUFD*/
-  match context
-  case FUNCTION_CONTEXT(__) then crefStr(cr)
-  else '<%cref1(cr,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)%>'
+  case CREF_QUAL(ident = "$PRE") then
+    '_discrete_events->pre(<%contextCref(componentRef, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>)'
+else
+    let &varDeclsCref = buffer "" /*BUFD*/
+    match context
+    case FUNCTION_CONTEXT(__) then crefStr(cr)
+    else '<%cref1(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>'
 end contextCref;
 
 template contextCref2(ComponentRef cr, Context context)
@@ -375,10 +375,10 @@ case component as CREF(componentRef=cr, ty=ty) then
   else
     if boolAnd(intEq(listLength(crefSubs(cr)), listLength(crefDims(cr))), crefSubIsScalar(cr)) then
       // The array subscript results in a scalar
-      let arrName = contextCref(crefStripLastSubs(cr), context,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      let arrName = contextCref(crefStripLastSubs(cr), context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       let arrayType = expTypeShort(ty)
       let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
-          daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+          daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
         ;separator=",")
       match arrayType
         case "metatype_array" then
