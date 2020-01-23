@@ -2716,7 +2716,40 @@ algorithm
       then
         (res,size);
 
-    // if Equation
+    /*
+      special case: initial()
+      if initial() then ... else ... end if;
+      only then branch needs to be checked for initialization and else branch otherwise
+    */
+    case BackendDAE.IF_EQUATION(conditions={DAE.CALL(path=Absyn.IDENT("initial"))},eqnstrue=eqnslst,eqnsfalse=eqns)
+      algorithm
+        if not isInitial then
+          // only one condition, therefore the list of lists for "then" only contains one list
+          {eqns} := eqnslst;
+        end if;
+        (res,size) := incidenceRowLst(eqns, vars, inIndexType, functionTree, iRow, isInitial);
+      then
+        (res,size);
+
+    /*
+      special case: NEGATED initial()
+      if not initial() then ... else ... end if;
+      only else branch needs to be checked for initialization and then branch otherwise
+    */
+    case BackendDAE.IF_EQUATION(conditions={DAE.LUNARY(DAE.NOT(), DAE.CALL(path=Absyn.IDENT("initial")))},eqnstrue=eqnslst,eqnsfalse=eqns)
+      algorithm
+        if isInitial then
+          // only one condition, therefore the list of lists for "then" only contains one list
+          {eqns} := eqnslst;
+        end if;
+        (res,size) := incidenceRowLst(eqns, vars, inIndexType, functionTree, iRow, isInitial);
+      then
+        (res,size);
+
+    /*
+      if Equation
+      ToDo: More checks for stuff like initial()
+    */
     case BackendDAE.IF_EQUATION(conditions=expl,eqnstrue=eqnslst,eqnsfalse=eqns)
       equation
         res = incidenceRow1(expl, incidenceRowExp, vars, iRow, functionTree, inIndexType, isInitial);
@@ -4440,7 +4473,6 @@ algorithm
     // 3. vars occur not in all branches: then unsolvable
     case(BackendDAE.IF_EQUATION(conditions=expl,eqnstrue=eqnslst,eqnsfalse=eqnselse)) algorithm
       try
-        print("\n if equation?");
         //check condition?
         try_b := tryToFindSolvableEqInBranch(inCref, eqnselse, varArray, inVariables, globalKnownVars);
         true := try_b;
@@ -4998,7 +5030,7 @@ algorithm
     /*
       special case: NEGATED initial()
       if not initial() then ... else ... end if;
-      only then branch needs to be checked for initialization and else branch otherwise
+      only else branch needs to be checked for initialization and then branch otherwise
     */
     case(_,BackendDAE.IF_EQUATION(conditions={DAE.LUNARY(DAE.NOT(), DAE.CALL(path=Absyn.IDENT("initial")))},eqnstrue={eqns}, eqnsfalse=eqnselse),_,_,_)
       algorithm
