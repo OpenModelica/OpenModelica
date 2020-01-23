@@ -451,8 +451,8 @@ algorithm
     case DAE.CREF(componentRef = cr)
       algorithm
         try
-        (_, ilst) := BackendVariable.getVar(cr, vars);
-        tree := AvlSetInt.addList(tree, ilst);
+          (_, ilst) := BackendVariable.getVar(cr, vars);
+          tree := AvlSetInt.addList(tree, ilst);
         else
         end try;
       then (true, tree);

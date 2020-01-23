@@ -1910,17 +1910,14 @@ public function crefLastSubs "Return the last subscripts of a ComponentRef"
   input DAE.ComponentRef inComponentRef;
   output list<DAE.Subscript> outSubscriptLst;
 algorithm
-  outSubscriptLst := match (inComponentRef)
+  outSubscriptLst := match inComponentRef
     local
-      DAE.Ident id;
       list<DAE.Subscript> subs;
       DAE.ComponentRef cr;
-
-    case (DAE.CREF_IDENT(subscriptLst=subs))
-    then subs;
-
-    case (DAE.CREF_QUAL(componentRef=cr)) equation
-    then crefLastSubs(cr);
+    case DAE.CREF_IDENT(subscriptLst = subs)
+      then subs;
+    case DAE.CREF_QUAL(componentRef = cr)
+      then crefLastSubs(cr);
   end match;
 end crefLastSubs;
 
@@ -4006,29 +4003,29 @@ public function createDifferentiatedCrefName
   input String inMatrixName;
   output DAE.ComponentRef outCref;
 protected
- list<DAE.Subscript> subs;
- constant Boolean debug = false;
+  list<DAE.Subscript> subs;
+  constant Boolean debug = false;
 algorithm
-  if debug then print("inCref: " + ComponentReference.printComponentRefStr(inCref) +"\n"); end if;
+  if debug then print("inCref: " + printComponentRefStr(inCref) + "\n"); end if;
 
   // move subs and and type to lastCref, to move type replace by last type
   // and move last cref type to the last cref.
-  subs := ComponentReference.crefLastSubs(inCref);
-  outCref := ComponentReference.crefStripLastSubs(inCref);
-  outCref := ComponentReference.replaceSubsWithString(outCref);
-  if debug then print("after full type  " + Types.printTypeStr(ComponentReference.crefTypeConsiderSubs(inCref)) + "\n"); end if;
-  outCref := ComponentReference.crefSetLastType(outCref, DAE.T_UNKNOWN_DEFAULT);
-  if debug then print("after strip: " + ComponentReference.printComponentRefListStr(ComponentReference.expandCref(outCref, true)) + "\n"); end if;
+  subs := crefLastSubs(inCref);
+  outCref := crefStripLastSubs(inCref);
+  outCref := replaceSubsWithString(outCref);
+  if debug then print("after full type: " + Types.printTypeStr(crefTypeFull(crefStripIterSub(outCref))) + "\n"); end if;
+  outCref := crefSetLastType(outCref, DAE.T_UNKNOWN_DEFAULT);
+  if debug then print("after strip: " + printComponentRefListStr(expandCref(outCref, true)) + "\n"); end if;
 
   // join crefs
-  outCref := ComponentReference.joinCrefs(outCref, ComponentReference.makeCrefIdent(DAE.partialDerivativeNamePrefix + inMatrixName, DAE.T_UNKNOWN_DEFAULT, {}));
-  outCref := ComponentReference.joinCrefs(outCref, inX);
-  if debug then print("after join: " + ComponentReference.printComponentRefListStr(ComponentReference.expandCref(outCref, true)) + "\n"); end if;
+  outCref := joinCrefs(outCref, makeCrefIdent(DAE.partialDerivativeNamePrefix + inMatrixName, DAE.T_UNKNOWN_DEFAULT, {}));
+  outCref := joinCrefs(outCref, inX);
+  if debug then print("after join: " + printComponentRefListStr(expandCref(outCref, true)) + "\n"); end if;
 
   // fix subs and type of the last cref
-  outCref := ComponentReference.crefSetLastSubs(outCref, subs);
-  outCref := ComponentReference.crefSetLastType(outCref, ComponentReference.crefLastType(inCref));
-  if debug then print("outCref: " + ComponentReference.printComponentRefStr(outCref) +"\n"); end if;
+  outCref := crefSetLastSubs(outCref, subs);
+  outCref := crefSetLastType(outCref, crefLastType(inCref));
+  if debug then print("outCref: " + printComponentRefStr(outCref) + "\n"); end if;
 end createDifferentiatedCrefName;
 
 annotation(__OpenModelica_Interface="frontend");

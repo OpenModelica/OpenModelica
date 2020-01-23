@@ -1368,7 +1368,6 @@ algorithm
       DAE.FunctionTree funcs;
 
       Integer i;
-      Boolean b;
 
       list<Boolean> blst;
       list<DAE.ComponentRef> crefs;
@@ -1416,11 +1415,11 @@ algorithm
         cr = ComponentReference.createDifferentiatedCrefName(cr, inDiffwrtCref, matrixName);
         res = Expression.makeCrefExp(cr, tp);
 
-        b = ComponentReference.crefEqual(DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), inDiffwrtCref);
-        (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-        res = if b then zero else res;
+        if ComponentReference.crefEqual(DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), inDiffwrtCref) then
+          (res,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+        end if;
       then
-        (res,  inFunctionTree);
+        (res, inFunctionTree);
 
     /* Differentiate with respect to DAE.CREF_IDENT(ident="$") demands zero expressions */
     case (DAE.CALL(path=Absyn.IDENT(name = "der"),expLst = {e}), DAE.CREF_IDENT(ident="$"), _, _, _)
