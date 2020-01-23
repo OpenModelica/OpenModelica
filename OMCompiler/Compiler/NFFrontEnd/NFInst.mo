@@ -1320,6 +1320,8 @@ algorithm
   end if;
 
   redeclaredNode := InstNode.replaceClass(new_cls, redeclareNode);
+  node_ty := InstNodeType.REDECLARED_CLASS(InstNode.parent(originalNode), InstNode.nodeType(originalNode));
+  redeclaredNode := InstNode.setNodeType(node_ty, redeclaredNode);
 end redeclareClass;
 
 function redeclareEnum

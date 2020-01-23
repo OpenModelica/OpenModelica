@@ -91,6 +91,11 @@ uniontype InstNodeType
   record REDECLARED_COMP
     InstNode parent "The parent of the replaced component";
   end REDECLARED_COMP;
+
+  record REDECLARED_CLASS
+    InstNode parent;
+    InstNodeType originalType;
+  end REDECLARED_CLASS;
 end InstNodeType;
 
 encapsulated package NodeTree
@@ -960,6 +965,8 @@ uniontype InstNode
             scopeList(parent(clsNode), includeRoot, clsNode :: accumScopes)
           else
             accumScopes;
+      case InstNodeType.REDECLARED_CLASS()
+        then scopeList(parent(ty.parent), includeRoot, clsNode :: accumScopes);
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown node type", sourceInfo());
@@ -1028,6 +1035,8 @@ uniontype InstNode
             scopePath2(classParent(node), includeRoot, Absyn.QUALIFIED(className(node), accumPath))
           else
             accumPath;
+      case InstNodeType.REDECLARED_CLASS()
+        then scopePath2(ty.parent, includeRoot, Absyn.QUALIFIED(className(node), accumPath));
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown node type", sourceInfo());
