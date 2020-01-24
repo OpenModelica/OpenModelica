@@ -7823,7 +7823,10 @@ algorithm
     BackendDump.dumpEqnsSolved(outSimDAE, "indxdae: eqns in order");
   end if;
   if Flags.isSet(Flags.DUMP_LOOPS) or Flags.isSet(Flags.DUMP_LOOPS_VERBOSE) then
+    print("\n" + BackendDump.BORDER + "\n\n Algbraic Loops (Simulation): \n\n" + BackendDump.BORDER + "\n");
     BackendDump.dumpLoops(outSimDAE);
+    print("\n" + BackendDump.BORDER + "\n\n Algbraic Loops (Initialization): \n\n" + BackendDump.BORDER + "\n");
+    BackendDump.dumpLoops(outInitDAE);
   end if;
   checkBackendDAEWithErrorMsg(outSimDAE);
   return;
