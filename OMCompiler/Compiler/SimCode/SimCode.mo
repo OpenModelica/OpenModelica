@@ -177,8 +177,8 @@ end SubPartition;
 public
 uniontype BackendMapping
   record BACKENDMAPPING
-    BackendDAE.IncidenceMatrix m;
-    BackendDAE.IncidenceMatrixT mT;
+    BackendDAE.AdjacencyMatrix m;
+    BackendDAE.AdjacencyMatrixT mT;
     list<tuple<Integer,list<Integer>>> eqMapping; //indx:order <simEq,{backendEq}>
     list<tuple<Integer,Integer>> varMapping;  //<simVar,backendVar>
     array<Integer> eqMatch;  //indx:eq entry:var

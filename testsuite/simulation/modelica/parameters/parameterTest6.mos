@@ -100,7 +100,7 @@ system("./parameterTest6 -override s=5,f2=100 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2
 // Selected parameters for evaluation:
 // 8,7,6,5,4,3,2
 //
-// Incidence Matrix (row: equation)
+// Adjacency Matrix (row: equation)
 // ========================================
 // number of rows: 15
 // 1:
@@ -119,7 +119,7 @@ system("./parameterTest6 -override s=5,f2=100 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2
 // 14: 15 13 12 8 7 6
 // 15:
 //
-// Transposed Incidence Matrix (row: variable)
+// Transposed Adjacency Matrix (row: variable)
 // ========================================
 // number of rows: 15
 // 1: 11 1

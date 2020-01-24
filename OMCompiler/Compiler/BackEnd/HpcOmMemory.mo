@@ -185,7 +185,7 @@ import Util;
     String fileName;
     array<array<list<Integer>>> eqSimCodeVarMapping; //eqSystem -> eqIdx -> varIdx
     array<tuple<Integer,Integer,Integer>> eqCompMapping, varCompMapping;
-    BackendDAE.IncidenceMatrix incidenceMatrix;
+    BackendDAE.AdjacencyMatrix adjacencyMatrix;
     Option<HpcOmSimCode.MemoryMap> tmpMemoryMapOpt;
     Integer varCount;
     Integer VARSIZE_FLOAT, VARSIZE_INTEGER, VARSIZE_BOOLEAN, VARSIZE_STRING, CACHELINE_SIZE;
@@ -377,7 +377,7 @@ import Util;
           annotInfo = arrayCreate(arrayLength(iTaskGraph),"nothing");
           graphInfo = HpcOmTaskGraph.convertToGraphMLSccLevelSubgraph(iTaskGraph, iTaskGraphMeta, iCriticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(iCriticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(listHead(iCriticalPathsWoC)), iSccSimEqMapping, iSchedulerInfo, annotInfo, graphIdx, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true), graphInfo);
           SOME((_,threadAttIdx)) = GraphML.getAttributeByNameAndTarget("ThreadId", GraphML.TARGET_NODE(), graphInfo);
-          (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(listHead(iEqSystems), BackendDAE.ABSOLUTE(), NONE(), isInitial);
+          (_,adjacencyMatrix,_) = BackendDAEUtil.getAdjacencyMatrix(listHead(iEqSystems), BackendDAE.ABSOLUTE(), NONE(), isInitial);
           graphInfo = appendCacheLinesToGraph(cacheMap, arrayLength(iTaskGraph), eqSimCodeVarMapping, iEqSystems, simVarIdxMappingHashTable, eqCompMapping, scVarSolvedTaskMapping, iSchedulerInfo, threadAttIdx, sccNodeMapping, taskSolvedVarsMapping, taskUnsolvedVarsMapping, scVarCLMapping, scVarInfos, graphInfo);
           fileName = ("taskGraph"+iFileNamePrefix+"ODE_schedule_CL.graphml");
           GraphML.dumpGraph(graphInfo, fileName);
@@ -2831,7 +2831,7 @@ import Util;
     input CacheMap iCacheMap;
     input Integer iNumberOfNodes; //number of nodes in the task graph
     input array<array<list<Integer>>> iEqSimCodeVarMapping;
-    input BackendDAE.EqSystems iEqSystems; //the eqSystem of the incidence matrix
+    input BackendDAE.EqSystems iEqSystems; //the eqSystem of the adjacency matrix
     input HashTableCrILst.HashTable iVarNameSCVarIdxMapping;
     input array<tuple<Integer,Integer,Integer>> ieqCompMapping; //a mapping from eqIdx (arrayIdx) to the scc idx
     input array<Integer> iScVarTaskMapping; //maps each scVar (arrayIdx) to the task that solves it

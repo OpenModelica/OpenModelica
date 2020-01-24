@@ -32,7 +32,7 @@
 encapsulated package DAEQuery
 " file:        DAEQuery.mo
   package:     DAEQuery
-  description: DAEQuery contains functionality for query of Incidence Matrix."
+  description: DAEQuery contains functionality for query of Adjacency Matrix."
 
 
 // public imports
@@ -55,7 +55,7 @@ protected import System;
 
 protected constant String matlabStringDelim = "'";
 
-public function writeIncidenceMatrix
+public function writeAdjacencyMatrix
   input BackendDAE.BackendDAE dlow;
   input String fileNamePrefix;
   input String flatModelicaStr;
@@ -69,8 +69,8 @@ algorithm
     case (_, _, flatStr)
       equation
         file = stringAppend(fileNamePrefix, "_imatrix.m");
-        m = incidenceMatrix(dlow);
-        strIMatrix = getIncidenceMatrix(m);
+        m = adjacencyMatrix(dlow);
+        strIMatrix = getAdjacencyMatrix(m);
         strVariables = getVariables(dlow);
         strEquations = getEquations(dlow);
         strIMatrix = stringAppendList({strIMatrix, "\n", strVariables, "\n\n\n", strEquations, "\n\n\n", flatStr});
@@ -78,7 +78,7 @@ algorithm
       then
         file;
   end match;
-end writeIncidenceMatrix;
+end writeAdjacencyMatrix;
 
 public function getEquations
 " @author adrpo
@@ -161,7 +161,7 @@ algorithm
   end match;
 end equationStr;
 
-protected function getIncidenceMatrix "gets the incidence matrix as a string"
+protected function getAdjacencyMatrix "gets the adjacency matrix as a string"
   input array<list<String>> m;
   output String strIMatrix;
 protected
@@ -173,14 +173,14 @@ algorithm
   mlen := arrayLength(m);
   mlen_str := intString(mlen);
   m_1 := arrayList(m);
-  mstr := getIncidenceMatrix2(m_1,1);
-  strIMatrix := stringAppendList({"% Incidence Matrix\n",
+  mstr := getAdjacencyMatrix2(m_1,1);
+  strIMatrix := stringAppendList({"% Adjacency Matrix\n",
     "% ====================================\n", "% number of rows: ", mlen_str, "\n",
     "IM={", mstr, "};"});
-end getIncidenceMatrix;
+end getAdjacencyMatrix;
 
-protected function getIncidenceMatrix2 "author: adrpo
-  Helper function to getIncidenceMatrix (+_t).
+protected function getAdjacencyMatrix2 "author: adrpo
+  Helper function to getAdjacencyMatrix (+_t).
 "
   input list<list<String>> inStringLstLst;
   input Integer rowIndex;
@@ -195,22 +195,22 @@ algorithm
     case ({},_) then "";
     case ((row :: {}),_)
       equation
-        str1 = getIncidenceRow(row);
+        str1 = getAdjacencyRow(row);
         str = stringAppendList({"{", str1, "}"});
       then
         str;
     case ((row :: rows),_)
       equation
-        str1 = getIncidenceRow(row);
-        str2 = getIncidenceMatrix2(rows,rowIndex+1);
+        str1 = getAdjacencyRow(row);
+        str2 = getAdjacencyMatrix2(rows,rowIndex+1);
         str = stringAppendList({"{", str1, "},",  str2});
       then
         str;
   end match;
-end getIncidenceMatrix2;
+end getAdjacencyMatrix2;
 
-protected function getIncidenceRow "author: adrpo
-  Helper function to getIncidenceMatrix2.
+protected function getAdjacencyRow "author: adrpo
+  Helper function to getAdjacencyMatrix2.
 "
   input list<String> inStringLst;
   output String strRow;
@@ -224,12 +224,12 @@ algorithm
     case ((x :: {})) then x;
     case ((x :: xs))
       equation
-        s2 = getIncidenceRow(xs);
+        s2 = getAdjacencyRow(xs);
         s = stringAppendList({x, ",", s2});
       then
         s;
   end match;
-end getIncidenceRow;
+end getAdjacencyRow;
 
 public function getVariables "This function returns the variables
 "
@@ -338,14 +338,14 @@ algorithm
   end matchcontinue;
 end dumpVars2;
 
-public function incidenceMatrix
+public function adjacencyMatrix
 "author: PA
-  Calculates the incidence matrix, i.e. which
+  Calculates the adjacency matrix, i.e. which
   variables are present in each equation."
   input BackendDAE.BackendDAE inBackendDAE;
-  output array<list<String>> outIncidenceMatrix;
+  output array<list<String>> outAdjacencyMatrix;
 algorithm
-  outIncidenceMatrix:=
+  outAdjacencyMatrix:=
   matchcontinue (inBackendDAE)
     local
       list<BackendDAE.Equation> eqnsl;
@@ -356,22 +356,22 @@ algorithm
     case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{}))
       equation
         eqnsl = BackendEquation.equationList(eqns);
-        lstlst = incidenceMatrix2(vars, eqnsl);
+        lstlst = adjacencyMatrix2(vars, eqnsl);
         arr = listArray(lstlst);
       then
         arr;
     case (_)
       equation
-        print("DAEQuery.incidenceMatrix failed\n");
+        print("DAEQuery.adjacencyMatrix failed\n");
       then
         fail();
   end matchcontinue;
-end incidenceMatrix;
+end adjacencyMatrix;
 
-protected function incidenceMatrix2 "author: PA
+protected function adjacencyMatrix2 "author: PA
 
-  Helper function to incidence_matrix
-  Calculates the incidence matrix as a list of list of integers
+  Helper function to adjacency_matrix
+  Calculates the adjacency matrix as a list of list of integers
 "
   input BackendDAE.Variables inVariables;
   input list<BackendDAE.Equation> inEquationLst;
@@ -388,20 +388,20 @@ algorithm
     case (_,{}) then {};
     case (vars,(e :: eqns))
       equation
-        lst = incidenceMatrix2(vars, eqns);
-        row = incidenceRow(vars, e);
+        lst = adjacencyMatrix2(vars, eqns);
+        row = adjacencyRow(vars, e);
       then
         (row :: lst);
     case (_,_)
       equation
-        print("incidence_matrix2 failed\n");
+        print("adjacency_matrix2 failed\n");
       then
         fail();
   end matchcontinue;
-end incidenceMatrix2;
+end adjacencyMatrix2;
 
-protected function incidenceRow "author: PA
-  Helper function to incidence_matrix. Calculates the indidence row
+protected function adjacencyRow "author: PA
+  Helper function to adjacency_matrix. Calculates the indidence row
   in the matrix for one equation."
   input BackendDAE.Variables inVariables;
   input BackendDAE.Equation inEquation;
@@ -421,8 +421,8 @@ algorithm
     // equation
     case (vars,BackendDAE.EQUATION(exp = e1,scalar = e2))
       equation
-        lst1 = incidenceRowExp(e1, vars);
-        lst2 = incidenceRowExp(e2, vars);
+        lst1 = adjacencyRowExp(e1, vars);
+        lst2 = adjacencyRowExp(e2, vars);
         res = listAppend(lst1, lst2);
       then
         res;
@@ -430,8 +430,8 @@ algorithm
     // array equation
     case (vars,BackendDAE.ARRAY_EQUATION(left=e1,right=e2))
       equation
-        lst1 = incidenceRowExp(e1, vars);
-        lst2 = incidenceRowExp(e2, vars);
+        lst1 = adjacencyRowExp(e1, vars);
+        lst2 = adjacencyRowExp(e2, vars);
         res = listAppend(lst1, lst2);
       then
         res;
@@ -439,8 +439,8 @@ algorithm
     // complex equation
     case (vars,BackendDAE.COMPLEX_EQUATION(left=e1,right=e2))
       equation
-        lst1 = incidenceRowExp(e1, vars);
-        lst2 = incidenceRowExp(e2, vars);
+        lst1 = adjacencyRowExp(e1, vars);
+        lst2 = adjacencyRowExp(e2, vars);
         res = listAppend(lst1, lst2);
       then
         res;
@@ -448,8 +448,8 @@ algorithm
     // solved equation
     case (vars,BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e))
       equation
-        lst1 = incidenceRowExp(Expression.crefExp(cr), vars);
-        lst2 = incidenceRowExp(e, vars);
+        lst1 = adjacencyRowExp(Expression.crefExp(cr), vars);
+        lst2 = adjacencyRowExp(e, vars);
         res = listAppend(lst1, lst2);
       then
         res;
@@ -457,8 +457,8 @@ algorithm
     // solved equation
     case (vars,BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e))
       equation
-        lst1 = incidenceRowExp(Expression.crefExp(cr), vars);
-        lst2 = incidenceRowExp(e, vars);
+        lst1 = adjacencyRowExp(Expression.crefExp(cr), vars);
+        lst2 = adjacencyRowExp(e, vars);
         res = listAppend(lst1, lst2);
       then
         res;
@@ -466,7 +466,7 @@ algorithm
     // residual equation
     case (vars,BackendDAE.RESIDUAL_EQUATION(exp = e))
       equation
-        res = incidenceRowExp(e, vars);
+        res = adjacencyRowExp(e, vars);
       then
         res;
 
@@ -475,8 +475,8 @@ algorithm
       equation
         (cr,e2) = BackendEquation.getWhenEquationExpr(we);
         e1 = Expression.crefExp(cr);
-        lst1 = incidenceRowExp(e1, vars);
-        lst2 = incidenceRowExp(e2, vars);
+        lst1 = adjacencyRowExp(e1, vars);
+        lst2 = adjacencyRowExp(e2, vars);
         res = listAppend(lst1, lst2);
       then
         res;
@@ -489,21 +489,21 @@ algorithm
     case (vars,BackendDAE.ALGORITHM(alg=alg))
       equation
         expl = Algorithm.getAllExps(alg);
-        lstres = List.map1(expl, incidenceRowExp, vars);
+        lstres = List.map1(expl, adjacencyRowExp, vars);
         res_1 = List.flatten(lstres);
       then
         res_1;
 
     case (_,_)
       equation
-        print("- DAEQuery.incidenceRow failed\n");
+        print("- DAEQuery.adjacencyRow failed\n");
       then
         fail();
   end matchcontinue;
-end incidenceRow;
+end adjacencyRow;
 
-// protected function incidenceRowStmts "author: PA
-//   Helper function to incidenceRow, investigates statements for
+// protected function adjacencyRowStmts "author: PA
+//   Helper function to adjacencyRow, investigates statements for
 //   variables, returning variable indexes."
 //   input list<DAE.Statement> inAlgorithmStatementLst;
 //   input BackendDAE.Variables inVariables;
@@ -525,18 +525,18 @@ end incidenceRow;
 //
 //     case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e1,exp = e) :: rest),vars)
 //       equation
-//         lst1 = incidenceRowStmts(rest, vars);
-//         lst2 = incidenceRowExp(e, vars);
-//         lst3 = incidenceRowExp(e1, vars);
+//         lst1 = adjacencyRowStmts(rest, vars);
+//         lst2 = adjacencyRowExp(e, vars);
+//         lst3 = adjacencyRowExp(e1, vars);
 //         res = List.flatten({lst1,lst2,lst3});
 //       then
 //         res;
 //
 //     case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl,exp = e) :: rest),vars)
 //       equation
-//         lst1 = incidenceRowStmts(rest, vars);
-//         lst2 = incidenceRowExp(e, vars);
-//         lstlst = List.map1(expl, incidenceRowExp, vars);
+//         lst1 = adjacencyRowStmts(rest, vars);
+//         lst2 = adjacencyRowExp(e, vars);
+//         lstlst = List.map1(expl, adjacencyRowExp, vars);
 //         lst3_1 = List.flatten(lstlst);
 //         res = List.flatten({lst1,lst2,lst3_1});
 //       then
@@ -544,53 +544,53 @@ end incidenceRow;
 //
 //     case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr,exp = e) :: rest),vars)
 //       equation
-//         lst1 = incidenceRowStmts(rest, vars);
-//         lst2 = incidenceRowExp(e, vars);
-//         lst3 = incidenceRowExp(Expression.crefExp(cr), vars);
+//         lst1 = adjacencyRowStmts(rest, vars);
+//         lst2 = adjacencyRowExp(e, vars);
+//         lst3 = adjacencyRowExp(Expression.crefExp(cr), vars);
 //         res = List.flatten({lst1,lst2,lst3});
 //       then
 //         res;
 //
 //     case ((DAE.STMT_IF(exp = e,statementLst = stmts,else_ = else_) :: rest),vars)
 //       equation
-//         print("- DAEQuery.incidenceRowStmts on IF not implemented\n");
+//         print("- DAEQuery.adjacencyRowStmts on IF not implemented\n");
 //       then
 //         {};
 //
 //     case ((DAE.STMT_FOR(type_ = _) :: rest),vars)
 //       equation
-//         print("- DAEQuery.incidenceRowStmts on FOR not implemented\n");
+//         print("- DAEQuery.adjacencyRowStmts on FOR not implemented\n");
 //       then
 //         {};
 //
 //     case ((DAE.STMT_PARFOR(type_ = _) :: rest),vars)
 //       equation
-//         print("- DAEQuery.incidenceRowStmts on PARFOR not implemented\n");
+//         print("- DAEQuery.adjacencyRowStmts on PARFOR not implemented\n");
 //       then
 //         {};
 //
 //     case ((DAE.STMT_WHILE(exp = _) :: rest),vars)
 //       equation
-//         print("- DAEQuery.incidenceRowStmts on WHILE not implemented\n");
+//         print("- DAEQuery.adjacencyRowStmts on WHILE not implemented\n");
 //       then
 //         {};
 //
 //     case ((DAE.STMT_WHEN(exp = e) :: rest),vars)
 //       equation
-//         print("- DAEQuery.incidenceRowStmts on WHEN not implemented\n");
+//         print("- DAEQuery.adjacencyRowStmts on WHEN not implemented\n");
 //       then
 //         {};
 //
 //     case ((DAE.STMT_ASSERT(cond = _) :: rest),vars)
 //       equation
-//         print("- DAEQuery.incidenceRowStmts on ASSERT not implemented\n");
+//         print("- DAEQuery.adjacencyRowStmts on ASSERT not implemented\n");
 //       then
 //         {};
 //   end matchcontinue;
-// end incidenceRowStmts;
+// end adjacencyRowStmts;
 
-protected function incidenceRowExp "author: PA
-  Helper function to incidenceRow, investigates expressions for
+protected function adjacencyRowExp "author: PA
+  Helper function to adjacencyRow, investigates expressions for
   variables, returning variable indexes."
   input DAE.Exp inExp;
   input BackendDAE.Variables inVariables;
@@ -613,7 +613,7 @@ algorithm
     case (DAE.CREF(componentRef = cr),vars)
       equation
         ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),p) =
-        BackendVariable.getVar(cr, vars) "If variable x is a state, der(x) is a variable in incidence matrix,
+        BackendVariable.getVar(cr, vars) "If variable x is a state, der(x) is a variable in adjacency matrix,
                                  x is inserted as negative value, since it is needed by debugging and index
                                  reduction using dummy derivatives";
         p_1 = List.map1r(p, intSub, 0);
@@ -651,36 +651,36 @@ algorithm
 
     case (DAE.BINARY(exp1 = e1,exp2 = e2),vars)
       equation
-        s1 = incidenceRowExp(e1, vars);
-        s2 = incidenceRowExp(e2, vars);
+        s1 = adjacencyRowExp(e1, vars);
+        s2 = adjacencyRowExp(e2, vars);
         pStr = listAppend(s1, s2);
       then
         pStr;
 
     case (DAE.UNARY(exp = e),vars)
       equation
-        pStr = incidenceRowExp(e, vars);
+        pStr = adjacencyRowExp(e, vars);
       then
         pStr;
 
     case (DAE.LBINARY(exp1 = e1,exp2 = e2),vars)
       equation
-        s1 = incidenceRowExp(e1, vars);
-        s2 = incidenceRowExp(e2, vars);
+        s1 = adjacencyRowExp(e1, vars);
+        s2 = adjacencyRowExp(e2, vars);
         pStr = listAppend(s1, s2);
       then
         pStr;
 
     case (DAE.LUNARY(exp = e),vars)
       equation
-        pStr = incidenceRowExp(e, vars);
+        pStr = adjacencyRowExp(e, vars);
       then
         pStr;
 
     case (DAE.RELATION(exp1 = e1,exp2 = e2),vars)
       equation
-        s1 = incidenceRowExp(e1, vars);
-        s2 = incidenceRowExp(e2, vars);
+        s1 = adjacencyRowExp(e1, vars);
+        s2 = adjacencyRowExp(e2, vars);
         pStr = listAppend(s1, s2);
       then
         pStr;
@@ -689,12 +689,12 @@ algorithm
       equation
         opStr = ExpressionDump.relopSymbol(op1);
         s = printExpStr(ee2);
-        s1 = incidenceRowExp(e1, vars);
-        ss1 = getIncidenceRow(s1);
-        s2 = incidenceRowExp(e2, vars);
-        ss2 = getIncidenceRow(s2);
-        s3 = incidenceRowExp(e3, vars);
-        ss3 = getIncidenceRow(s3);
+        s1 = adjacencyRowExp(e1, vars);
+        ss1 = getAdjacencyRow(s1);
+        s2 = adjacencyRowExp(e2, vars);
+        ss2 = getAdjacencyRow(s2);
+        s3 = adjacencyRowExp(e3, vars);
+        ss3 = getAdjacencyRow(s3);
         // build the string now
         ss = stringAppendList({"{'if', ",s,",'", opStr, "' {",ss1,"}",",{", ss2, "},", ss3, "}"});
         pStr = {ss};
@@ -708,12 +708,12 @@ algorithm
         DAE.ComponentRef cref1;
       equation
         sb = printExpStr(e1);
-        s1 = incidenceRowExp(e1, vars);
-        ss1 = getIncidenceRow(s1);
-        s2 = incidenceRowExp(e2, vars);
-        ss2 = getIncidenceRow(s2);
-        s3 = incidenceRowExp(e3, vars);
-        ss3 = getIncidenceRow(s3);
+        s1 = adjacencyRowExp(e1, vars);
+        ss1 = getAdjacencyRow(s1);
+        s2 = adjacencyRowExp(e2, vars);
+        ss2 = getAdjacencyRow(s2);
+        s3 = adjacencyRowExp(e3, vars);
+        ss3 = getAdjacencyRow(s3);
         ss = stringAppendList({"{'if', ","'", sb, "' {",ss1,"}",",{", ss2, "},", ss3, "}"});
         pStr = {ss};
       then
@@ -727,12 +727,12 @@ algorithm
         //opStr = ExpressionDump.relopSymbol(op1);
         //s = printExpStr(ee2);
         sb = stringAppendList({"'true',","'=='"});
-        s1 = incidenceRowExp(e1, vars);
-        ss1 = getIncidenceRow(s1);
-        s2 = incidenceRowExp(e2, vars);
-        ss2 = getIncidenceRow(s2);
-        s3 = incidenceRowExp(e3, vars);
-        ss3 = getIncidenceRow(s3);
+        s1 = adjacencyRowExp(e1, vars);
+        ss1 = getAdjacencyRow(s1);
+        s2 = adjacencyRowExp(e2, vars);
+        ss2 = getAdjacencyRow(s2);
+        s3 = adjacencyRowExp(e3, vars);
+        ss3 = getAdjacencyRow(s3);
         // build the string now
         ss = stringAppendList({"{'if', ",sb,",", "{",ss1,"}",",{", ss2, "},", ss3, "}"});
         pStr = {ss};
@@ -744,12 +744,12 @@ algorithm
         //sb = printExpStr(e1);
 
         sb = stringAppendList({"'true',","'=='"});
-        s1 = incidenceRowExp(e1, vars);
-        ss1 = getIncidenceRow(s1);
-        s2 = incidenceRowExp(e2, vars);
-        ss2 = getIncidenceRow(s2);
-        s3 = incidenceRowExp(e3, vars);
-        ss3 = getIncidenceRow(s3);
+        s1 = adjacencyRowExp(e1, vars);
+        ss1 = getAdjacencyRow(s1);
+        s2 = adjacencyRowExp(e2, vars);
+        ss2 = getAdjacencyRow(s2);
+        s3 = adjacencyRowExp(e3, vars);
+        ss3 = getAdjacencyRow(s3);
         ss = stringAppendList({"{'if', ", sb, " {",ss1,"}",",{", ss2, "},", ss3, "}"});
         pStr = {ss};
       then
@@ -759,12 +759,12 @@ algorithm
     case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),vars) /* if expressions. */
       equation
         sb = printExpStr(e1);
-        s1 = incidenceRowExp(e1, vars);
-        ss1 = getIncidenceRow(s1);
-        s2 = incidenceRowExp(e2, vars);
-        ss2 = getIncidenceRow(s2);
-        s3 = incidenceRowExp(e3, vars);
-        ss3 = getIncidenceRow(s3);
+        s1 = adjacencyRowExp(e1, vars);
+        ss1 = getAdjacencyRow(s1);
+        s2 = adjacencyRowExp(e2, vars);
+        ss2 = getAdjacencyRow(s2);
+        s3 = adjacencyRowExp(e3, vars);
+        ss3 = getAdjacencyRow(s3);
         ss = stringAppendList({"{'if', ","'", sb, "' {",ss1,"}",",{", ss2, "},", ss3, "}"});
         pStr = {ss};
       then
@@ -804,54 +804,54 @@ algorithm
 
     case (DAE.CALL(expLst = expl),vars)
       equation
-        lst = List.map1(expl, incidenceRowExp, vars);
+        lst = List.map1(expl, adjacencyRowExp, vars);
         pStr = List.flatten(lst);
       then
         pStr;
 
     case (DAE.ARRAY(array = expl),vars)
       equation
-        lst = List.map1(expl, incidenceRowExp, vars);
+        lst = List.map1(expl, adjacencyRowExp, vars);
         pStr = List.flatten(lst);
       then
         pStr;
 
     case (DAE.MATRIX(matrix = explTpl),vars)
       equation
-        pStr = incidenceRowMatrixExp(explTpl, vars);
+        pStr = adjacencyRowMatrixExp(explTpl, vars);
       then
         pStr;
 
     case (DAE.TUPLE(),_)
       equation
-        print("- DAEQuery.incidence_row_exp TUPLE not impl. yet.");
+        print("- DAEQuery.adjacency_row_exp TUPLE not impl. yet.");
       then
         {};
 
     case (DAE.CAST(exp = e),vars)
       equation
-        pStr = incidenceRowExp(e, vars);
+        pStr = adjacencyRowExp(e, vars);
       then
         pStr;
 
     case (DAE.ASUB(exp = e),vars)
       equation
-        pStr = incidenceRowExp(e, vars);
+        pStr = adjacencyRowExp(e, vars);
       then
         pStr;
 
     case (DAE.REDUCTION(expr = e1,iterators = iters),vars)
       equation
-        s1 = incidenceRowExp(e1, vars);
-        lst = List.map1(iters, incidenceRowIter, vars);
+        s1 = adjacencyRowExp(e1, vars);
+        lst = List.map1(iters, adjacencyRowIter, vars);
         pStr = List.flatten(s1::lst);
       then
         pStr;
     case (_,_) then {};
   end matchcontinue;
-end incidenceRowExp;
+end adjacencyRowExp;
 
-protected function incidenceRowIter
+protected function adjacencyRowIter
   input DAE.ReductionIterator iter;
   input BackendDAE.Variables vars;
   output list<String> strs;
@@ -862,16 +862,16 @@ algorithm
       list<String> s1,s2;
     case (DAE.REDUCTIONITER(guardExp = SOME(e1), exp = e2),_)
       equation
-        s1 = incidenceRowExp(e1, vars);
-        s2 = incidenceRowExp(e2, vars);
+        s1 = adjacencyRowExp(e1, vars);
+        s2 = adjacencyRowExp(e2, vars);
       then listAppend(s1,s2);
     case (DAE.REDUCTIONITER(exp = e1),_)
-      then incidenceRowExp(e1, vars);
+      then adjacencyRowExp(e1, vars);
   end match;
-end incidenceRowIter;
+end adjacencyRowIter;
 
-protected function incidenceRowMatrixExp "author: PA
-  Traverses matrix expressions for building incidence matrix."
+protected function adjacencyRowMatrixExp "author: PA
+  Traverses matrix expressions for building adjacency matrix."
   input list<list<DAE.Exp>> inTplExpExpBooleanLstLst;
   input BackendDAE.Variables inVariables;
   output list<String> outStringLst;
@@ -886,14 +886,14 @@ algorithm
     case ({},_) then {};
     case ((expl_1 :: es),vars)
       equation
-        res1 = List.map1(expl_1, incidenceRowExp, vars);
-        res2 = incidenceRowMatrixExp(es, vars);
+        res1 = List.map1(expl_1, adjacencyRowExp, vars);
+        res2 = adjacencyRowMatrixExp(es, vars);
         res1_1 = List.flatten(res1);
         pStr = listAppend(res1_1, res2);
       then
         pStr;
   end match;
-end incidenceRowMatrixExp;
+end adjacencyRowMatrixExp;
 
 protected function printExpStr
   input DAE.Exp e;

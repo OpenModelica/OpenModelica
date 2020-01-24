@@ -336,7 +336,7 @@ import ZeroCrossings;
 
   /*This strings here below are used for printing additionalInfo
   concerning the DAE system of equations, such as:
-   - the original incidence matrix (before performing matching and BLT
+   - the original adjacency matrix (before performing matching and BLT
    - the matching algorithm output
    - the blocks obtained after running the BLT algorithm (Tarjan)
    */
@@ -344,7 +344,7 @@ import ZeroCrossings;
   protected constant String SOLVED_IN                 = "solvedIn";
   protected constant String BLT_REPRESENTATION        = "bltRepresentation";
   protected constant String BLT_BLOCK                 = "bltBlock";
-  protected constant String ORIGINAL_INCIDENCE_MATRIX = "originalIncidenceMatrix";
+  protected constant String ORIGINAL_ADJACENCY_MATRIX = "originalAdjacencyMatrix";
 
 
   protected constant String MATH                   = "math";
@@ -942,13 +942,13 @@ particular all the elements are optional, it means that if no element is present
 the relative tag is not printed.
 "
   input BackendDAE.BackendDAE inBackendDAE;
-  input Boolean addOriginalIncidenceMatrix;
+  input Boolean addOriginalAdjacencyMatrix;
   input Boolean addSolvingInfo;
   input Boolean addMathMLCode;
   input Boolean dumpResiduals;
   input Boolean dumpSolvedEquations;
 algorithm
-  _ := matchcontinue (inBackendDAE,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,dumpSolvedEquations)
+  _ := matchcontinue (inBackendDAE,addOriginalAdjacencyMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,dumpSolvedEquations)
     local
       list<BackendDAE.Var> vars,knvars,extvars,aliasvars;
 
@@ -2254,7 +2254,7 @@ algorithm
    end matchcontinue;
 end dumpFunctions3;
 
-protected function dumpIncidenceMatrix
+protected function dumpAdjacencyMatrix
 "author: Frenkel TUD 2011-05
   This function dumps a matrix using an xml representation.
 <matrix>
@@ -2271,30 +2271,30 @@ algorithm
   dumpStrOpenTag(MathML);
   dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
   dumpStrOpenTag(MathMLMatrix);
-  _ := BackendDAEUtil.foldEqSystem(dae,dumpIncidenceMatrixWork,0);
+  _ := BackendDAEUtil.foldEqSystem(dae,dumpAdjacencyMatrixWork,0);
   dumpStrCloseTag(MathMLMatrix);
   dumpStrCloseTag(MATH);
   dumpStrCloseTag(MathML);
-end dumpIncidenceMatrix;
+end dumpAdjacencyMatrix;
 
-protected function dumpIncidenceMatrixWork
+protected function dumpAdjacencyMatrixWork
 "author: Frenkel TUD 2011-05
-  wrapper for calling dumpIncidenceMatrix for each equation system"
+  wrapper for calling dumpAdjacencyMatrix for each equation system"
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
   input Integer inOffset;
   output Integer outOffset;
 protected
- BackendDAE.IncidenceMatrix m;
+ BackendDAE.AdjacencyMatrix m;
  DAE.FunctionTree funcs;
 algorithm
   funcs := BackendDAEUtil.getFunctions(shared);
-  (_,m,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
-  _ := Array.fold(m,dumpIncidenceMatrix2,(inOffset,1));
+  (_,m,_) := BackendDAEUtil.getAdjacencyMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
+  _ := Array.fold(m,dumpAdjacencyMatrix2,(inOffset,1));
   outOffset := inOffset + arrayLength(m);
-end dumpIncidenceMatrixWork;
+end dumpAdjacencyMatrixWork;
 
-protected function dumpIncidenceMatrix2 "
+protected function dumpAdjacencyMatrix2 "
 Help function to dumpMatrix
 "
   input list<Integer> row;
@@ -2308,7 +2308,7 @@ algorithm
   List.map1_0(row,dumpMatrixIntegerRow,offset);
   dumpStrCloseTag(MathMLMatrixrow);
   outTpl := ((offset,c+1));
-end dumpIncidenceMatrix2;
+end dumpAdjacencyMatrix2;
 
 protected function dumpMatrixIntegerRow "
 Function to print a matrix row of integer elements
@@ -2666,12 +2666,12 @@ protected function dumpSolvingInfo "
     </SolvingInfo>
   </AdditionalInfo>
   "
-  input Boolean addOriginalIncidenceMatrix;
+  input Boolean addOriginalAdjacencyMatrix;
   input Boolean addSolvingInfo;
   input BackendDAE.BackendDAE inBackendDAE;
 algorithm
   _:=
-  match (addOriginalIncidenceMatrix,addSolvingInfo,inBackendDAE)
+  match (addOriginalAdjacencyMatrix,addSolvingInfo,inBackendDAE)
     local
       BackendDAE.BackendDAE dlow;
   case (false,false,_) then ();
@@ -2679,9 +2679,9 @@ algorithm
     equation
       dlow = BackendDAEUtil.transformBackendDAE(inBackendDAE,NONE(),NONE(),NONE());
       dumpStrOpenTag(ADDITIONAL_INFO);
-      dumpStrOpenTag(ORIGINAL_INCIDENCE_MATRIX);
-      dumpIncidenceMatrix(dlow);
-      dumpStrCloseTag(ORIGINAL_INCIDENCE_MATRIX);
+      dumpStrOpenTag(ORIGINAL_ADJACENCY_MATRIX);
+      dumpAdjacencyMatrix(dlow);
+      dumpStrCloseTag(ORIGINAL_ADJACENCY_MATRIX);
       dumpStrOpenTag(SOLVING_INFO);
       dumpMatching(dlow);
       dumpComponents(dlow);
@@ -2691,9 +2691,9 @@ algorithm
   case (true,false,_)
     equation
       dumpStrOpenTag(ADDITIONAL_INFO);
-      dumpStrOpenTag(ORIGINAL_INCIDENCE_MATRIX);
-      dumpIncidenceMatrix(inBackendDAE);
-      dumpStrCloseTag(ORIGINAL_INCIDENCE_MATRIX);
+      dumpStrOpenTag(ORIGINAL_ADJACENCY_MATRIX);
+      dumpAdjacencyMatrix(inBackendDAE);
+      dumpStrCloseTag(ORIGINAL_ADJACENCY_MATRIX);
       dumpStrCloseTag(ADDITIONAL_INFO);
     then ();
   case (false,true,_)

@@ -12392,7 +12392,7 @@ algorithm
 
     // An index subscript from array.
     // This really shouldn't be happening. But the backend creats things like this.
-    // e.g. When finding Incidence Matrix entry for for-loops in Algorithm sections.
+    // e.g. When finding Adjacency Matrix entry for for-loops in Algorithm sections.
     // That whole creating IM should be done the way checkModel works. but it's not. :( so
     // we have this.
     case DAE.INDEX(exp = DAE.ARRAY())

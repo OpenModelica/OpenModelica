@@ -45,7 +45,7 @@ import Matching;
 
 public function Tarjan "author: lochel
   This sorting algorithm only considers equations e that have a matched variable v with e = ass1[v]."
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input array<Integer> ass1 "eqn := ass1[var]";
   output list<list<Integer>> outComponents = {} "eqn indices";
 protected
@@ -57,7 +57,7 @@ protected
   Integer N = arrayLength(ass1);
   Integer eqn;
 algorithm
-  //BackendDump.dumpIncidenceMatrix(m);
+  //BackendDump.dumpAdjacencyMatrix(m);
   //BackendDump.dumpMatchingVars(ass1);
 
   number := arrayCreate(N, -1);
@@ -78,7 +78,7 @@ algorithm
 end Tarjan;
 
 protected function StrongConnect "author: lochel"
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input array<Integer> ass1 "eqn := ass1[var]";
   input Integer eqn;
   input list<Integer> stack;
@@ -129,7 +129,7 @@ end StrongConnect;
 
 public function TarjanTransposed "author: lochel
   This sorting algorithm only considers equations e with ass2[e] > 0."
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> ass2 "var := ass2[eqn]";
   output list<list<Integer>> outComponents = {} "eqn indices";
 protected
@@ -140,7 +140,7 @@ protected
   array<Boolean> onStack;
   Integer N = arrayLength(ass2);
 algorithm
-  //BackendDump.dumpIncidenceMatrixT(mT);
+  //BackendDump.dumpAdjacencyMatrixT(mT);
   //BackendDump.dumpMatchingEqns(ass2);
 
   number := arrayCreate(N, -1);
@@ -155,7 +155,7 @@ algorithm
 end TarjanTransposed;
 
 protected function StrongConnectTransposed "author: lochel"
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> ass2 "var := ass2[eqn]";
   input Integer eqn;
   input list<Integer> stack;

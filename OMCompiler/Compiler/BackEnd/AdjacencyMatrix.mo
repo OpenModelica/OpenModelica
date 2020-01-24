@@ -65,17 +65,17 @@ public function traverseAdjacencyMatrix<T>
   output BackendDAE.AdjacencyMatrix outM;
   output T outTypeA;
   partial function FuncType
-    input BackendDAE.IncidenceMatrixElement elem;
+    input BackendDAE.AdjacencyMatrixElement elem;
     input Integer pos;
     input T inTpl;
     output list<Integer> outList;
     output T outTpl;
   end FuncType;
 algorithm
-  (outM, outTypeA) := traverseIncidenceMatrix1(inM, func, 1, arrayLength(inM), inTypeA);
+  (outM, outTypeA) := traverseAdjacencyMatrix1(inM, func, 1, arrayLength(inM), inTypeA);
 end traverseAdjacencyMatrix;
 
-protected function traverseIncidenceMatrix1<T>
+protected function traverseAdjacencyMatrix1<T>
   input BackendDAE.AdjacencyMatrix inM;
   input FuncType func;
   input Integer pos "iterated 1..len";
@@ -84,18 +84,18 @@ protected function traverseIncidenceMatrix1<T>
   output BackendDAE.AdjacencyMatrix outM;
   output T outTypeA;
   partial function FuncType
-    input BackendDAE.IncidenceMatrixElement elem;
+    input BackendDAE.AdjacencyMatrixElement elem;
     input Integer pos;
     input T inTpl;
     output list<Integer> outList;
     output T outTpl;
   end FuncType;
 algorithm
-  (outM, outTypeA) := traverseIncidenceMatrix2(inM, func, pos, len, intGt(pos, len), inTypeA);
+  (outM, outTypeA) := traverseAdjacencyMatrix2(inM, func, pos, len, intGt(pos, len), inTypeA);
   annotation(__OpenModelica_EarlyInline = true);
-end traverseIncidenceMatrix1;
+end traverseAdjacencyMatrix1;
 
-protected function traverseIncidenceMatrix2<T>
+protected function traverseAdjacencyMatrix2<T>
   input BackendDAE.AdjacencyMatrix inM;
   input FuncType func;
   input Integer pos "iterated 1..len";
@@ -105,7 +105,7 @@ protected function traverseIncidenceMatrix2<T>
   output BackendDAE.AdjacencyMatrix outM;
   output T outTypeA;
   partial function FuncType
-    input BackendDAE.IncidenceMatrixElement elem;
+    input BackendDAE.AdjacencyMatrixElement elem;
     input Integer pos;
     input T inTpl;
     output list<Integer> outList;
@@ -124,13 +124,13 @@ algorithm
     case false equation
       (eqns, extArg) = func(inM[pos], pos, inTypeA);
       eqns1 = List.removeOnTrue(pos, intLt, eqns);
-      (m1, extArg1) = traverseIncidenceMatrixList(eqns1, inM, func, arrayLength(inM), pos, extArg);
-      (m2, extArg2) = traverseIncidenceMatrix2(m1, func, pos+1, len, intGt(pos+1, len), extArg1);
+      (m1, extArg1) = traverseAdjacencyMatrixList(eqns1, inM, func, arrayLength(inM), pos, extArg);
+      (m2, extArg2) = traverseAdjacencyMatrix2(m1, func, pos+1, len, intGt(pos+1, len), extArg1);
     then (m2, extArg2);
   end match;
-end traverseIncidenceMatrix2;
+end traverseAdjacencyMatrix2;
 
-protected function traverseIncidenceMatrixList<T>
+protected function traverseAdjacencyMatrixList<T>
   input list<Integer> inLst "elements to traverse";
   input BackendDAE.AdjacencyMatrix inM;
   input FuncType func;
@@ -140,7 +140,7 @@ protected function traverseIncidenceMatrixList<T>
   output BackendDAE.AdjacencyMatrix outM;
   output T outTypeA;
   partial function FuncType
-    input BackendDAE.IncidenceMatrixElement elem;
+    input BackendDAE.AdjacencyMatrixElement elem;
     input Integer pos;
     input T inTpl;
     output list<Integer> outList;
@@ -165,24 +165,24 @@ algorithm
       (eqns, extArg) = func(inM[pos], pos, inTypeA);
       eqns1 = List.removeOnTrue(maxpos, intLt, eqns);
       alleqns = List.unionOnTrueList({rest, eqns1}, intEq);
-      (m, extArg1) = traverseIncidenceMatrixList(alleqns, inM, func, len, maxpos, extArg);
+      (m, extArg1) = traverseAdjacencyMatrixList(alleqns, inM, func, len, maxpos, extArg);
     then (m, extArg1);
 
     case (pos::rest) equation
       // do not leave the list
       true = intLt(pos, len+1);
-      (m, extArg) = traverseIncidenceMatrixList(rest, inM, func, len, maxpos, inTypeA);
+      (m, extArg) = traverseAdjacencyMatrixList(rest, inM, func, len, maxpos, inTypeA);
     then (m, extArg);
 
     else equation
       true = Flags.isSet(Flags.FAILTRACE);
-      Debug.trace("- BackendDAEOptimize.traverseIncidenceMatrixList failed\n");
+      Debug.trace("- BackendDAEOptimize.traverseAdjacencyMatrixList failed\n");
     then fail();
   end matchcontinue;
-end traverseIncidenceMatrixList;
+end traverseAdjacencyMatrixList;
 
 public function getOtherEqSysAdjacencyMatrix
-  "This function removes tvar and res from incidence matrix."
+  "This function removes tvar and res from adjacency matrix."
   input BackendDAE.AdjacencyMatrix m;
   input Integer size;
   input Integer index;
@@ -219,7 +219,7 @@ algorithm
 end isAssigned;
 
 public function transposeAdjacencyMatrix
-  "Calculates the transpose of the incidence matrix,
+  "Calculates the transpose of the adjacency matrix,
   i.e. which equations each variable is present in."
   input BackendDAE.AdjacencyMatrix m;
   input Integer nRowsMt;
@@ -263,7 +263,7 @@ algorithm
 end transposeRow;
 
 public function absAdjacencyMatrix "author: PA
-  Applies absolute value to all entries in the incidence matrix.
+  Applies absolute value to all entries in the adjacency matrix.
   This can be used when e.g. der(x) and x are considered the same variable."
   input BackendDAE.AdjacencyMatrix m;
   output BackendDAE.AdjacencyMatrix res;

@@ -1018,7 +1018,7 @@ protected
   HashTableCG.HashTable checkcr;
   DAE.ComponentRef cr;
   BackendDAE.Var var;
-  BackendDAE.IncidenceMatrix m;
+  BackendDAE.AdjacencyMatrix m;
   array<Integer> ass1, ass2;
   list<BackendDAE.Equation> eqlst;
 algorithm

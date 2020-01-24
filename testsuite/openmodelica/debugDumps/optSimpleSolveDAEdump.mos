@@ -185,14 +185,14 @@ buildModel(testOptdaedump); getErrorString();
 // 3/3 (1): tanh(x) = 0.9 * sin(10.0 * time)   [dynamic |0|0|0|0|]
 //
 //
-// Incidence Matrix (row: equation)
+// Adjacency Matrix (row: equation)
 // ========================================
 // number of rows: 3
 // 1: 3 2 1
 // 2: 3 2
 // 3: 3
 //
-// Transposed Incidence Matrix (row: variable)
+// Transposed Adjacency Matrix (row: variable)
 // ========================================
 // number of rows: 3
 // 1: 1

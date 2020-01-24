@@ -72,12 +72,12 @@ public uniontype FlatSMGroup
   end FLAT_SM_GROUP;
 end FlatSMGroup;
 
-public uniontype IncidenceTable
-  record INCIDENCE_TABLE
-    HashTable.HashTable cref2index "Map cref to corresponding index in incidence matrix";
-    Boolean incidence[:,:] "Incidence matrix showing which modes are connected by transitions";
-  end INCIDENCE_TABLE;
-end IncidenceTable;
+public uniontype AdjacencyTable
+  record ADJACENCY_TABLE
+    HashTable.HashTable cref2index "Map cref to corresponding index in adjacency matrix";
+    Boolean adjacency[:,:] "Adjacency matrix showing which modes are connected by transitions";
+  end ADJACENCY_TABLE;
+end AdjacencyTable;
 
 // Table having crefs as keys and corresponding SMNODE as value
 type SMNodeTable = HashTableSM1.HashTable;
@@ -101,7 +101,7 @@ protected
 
   SMNodeTable smNodeTable;
   Integer nStates;
-  IncidenceTable iTable, transClosure;
+  AdjacencyTable iTable, transClosure;
   list<DAE.ComponentRef> initialStates;
   list<FlatSMGroup> flatSMGroup;
 algorithm
@@ -121,13 +121,13 @@ algorithm
     if DEBUG_SMDUMP then print("***** State machine node table: ***** \n"); end if;
     if DEBUG_SMDUMP then BaseHashTable.dumpHashTable(smNodeTable); end if;
 
-    if DEBUG_SMDUMP then print("***** Incidence Matrix: ***** \n"); end if;
-    iTable := createIncidenceTable(smNodeTable, nStates);
-    if DEBUG_SMDUMP then printIncidenceTable(iTable, nStates); end if;
+    if DEBUG_SMDUMP then print("***** Adjacency Matrix: ***** \n"); end if;
+    iTable := createAdjacencyTable(smNodeTable, nStates);
+    if DEBUG_SMDUMP then printAdjacencyTable(iTable, nStates); end if;
 
     if DEBUG_SMDUMP then print("***** Transitive Closure: ***** \n"); end if;
     transClosure := transitiveClosure(iTable, nStates);
-    if DEBUG_SMDUMP then printIncidenceTable(transClosure, nStates); end if;
+    if DEBUG_SMDUMP then printAdjacencyTable(transClosure, nStates); end if;
 
     if DEBUG_SMDUMP then print("***** Initial States: ***** \n"); end if;
     initialStates := extractInitialStates(smNodeTable);
@@ -686,12 +686,12 @@ Author: BTH
 For each initial state extract the (flat) state machine group that is defined by the
 transitive closure associated with that initial state."
   input list<DAE.ComponentRef> initialStates;
-  input IncidenceTable iTable;
+  input AdjacencyTable iTable;
   input Integer nStates "Number of states";
   output list<FlatSMGroup> flatSMGroup;
 protected
   HashTable.HashTable cref2index;
-  Boolean incidence[nStates,nStates];
+  Boolean adjacency[nStates,nStates];
   list<tuple<DAE.ComponentRef, Integer>> entries;
   array<DAE.ComponentRef> i2cref;
   DAE.ComponentRef cref;
@@ -700,7 +700,7 @@ protected
   HashSet.HashSet memberSet;
   Integer n,i,j;
 algorithm
-  INCIDENCE_TABLE(cref2index, incidence) := iTable;
+  ADJACENCY_TABLE(cref2index, adjacency) := iTable;
   n := BaseHashTable.hashTableCurrentSize(cref2index);
   // sanity check:
   assert(n == nStates, "Value of nStates needs to be equal to number of modes within state table argument.");
@@ -715,7 +715,7 @@ algorithm
     i := BaseHashTable.get(cref, cref2index);
     members := {};
     for j in 1:n loop
-      if incidence[i,j] then
+      if adjacency[i,j] then
         members := i2cref[j]::members;
       end if;
     end for;
@@ -789,16 +789,16 @@ http://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm
 or the more succinct (and potentially more readable) description
 http://de.wikipedia.org/wiki/Warshall-Algorithmus
 "
-  input IncidenceTable iTable;
+  input AdjacencyTable iTable;
   input Integer nStates "Number of states";
-  output IncidenceTable  transClosure;
+  output AdjacencyTable  transClosure;
 protected
   HashTable.HashTable cref2index;
-  Boolean incidence[nStates,nStates];
+  Boolean adjacency[nStates,nStates];
   Integer n,k,i,j;
   Boolean c;
 algorithm
-  INCIDENCE_TABLE(cref2index, incidence) := iTable;
+  ADJACENCY_TABLE(cref2index, adjacency) := iTable;
   n := BaseHashTable.hashTableCurrentSize(cref2index);
   // sanity check:
   assert(n == nStates, "Value of nStates needs to be equal to number of states within state table argument.");
@@ -806,28 +806,28 @@ algorithm
   // Warshall's algorithm for computing the transitive closure
   for k in 1:n loop
     for i in 1:n loop
-      if incidence[i,k] then
+      if adjacency[i,k] then
         for j in 1:n loop
-          if incidence[k,j] then
-            incidence[i,j] := true;
+          if adjacency[k,j] then
+            adjacency[i,j] := true;
           end if;
         end for;
       end if;
     end for;
   end for;
 
-  transClosure := INCIDENCE_TABLE(cref2index, incidence);
+  transClosure := ADJACENCY_TABLE(cref2index, adjacency);
 end transitiveClosure;
 
-protected function createIncidenceTable "
+protected function createAdjacencyTable "
 Author: BTH
-Create incidence table showing which modes are connected by transitions."
+Create adjacency table showing which modes are connected by transitions."
   input SMNodeTable smNodes;
   input Integer nStates "Number of states";
-  output IncidenceTable iTable;
+  output AdjacencyTable iTable;
 protected
-  HashTable.HashTable cref2index "Map cref to corresponding index in incidence matrix";
-  Boolean incidence[nStates,nStates] "Incidence matrix showing which states are connected by transitions";
+  HashTable.HashTable cref2index "Map cref to corresponding index in adjacency matrix";
+  Boolean adjacency[nStates,nStates] "Adjacency matrix showing which states are connected by transitions";
   array<Boolean> iRow;
   Integer n,m,i,j,k;
   DAE.ComponentRef cref;
@@ -838,7 +838,7 @@ algorithm
   n := arrayLength(crefs1);
   cref2index := HashTable.emptyHashTableSized(n);
   assert(n == nStates, "Value of nStates needs to be equal to number of modes within mode table argument.");
-  incidence := fill(false,n,n);
+  adjacency := fill(false,n,n);
 
   for i in 1:n loop
     cref2index := BaseHashTable.addNoUpdCheck((crefs1[i], i), cref2index);
@@ -851,21 +851,21 @@ algorithm
     for j in 1:m loop
       cref := crefs2[j];
       k := BaseHashTable.get(cref, cref2index);
-      incidence[i,k] := true;
+      adjacency[i,k] := true;
     end for;
   end for;
 
-  iTable := INCIDENCE_TABLE(cref2index, incidence);
-end createIncidenceTable;
+  iTable := ADJACENCY_TABLE(cref2index, adjacency);
+end createAdjacencyTable;
 
-protected function printIncidenceTable "
+protected function printAdjacencyTable "
 Author: BTH
-Print incidence table."
-  input IncidenceTable iTable;
+Print adjacency table."
+  input AdjacencyTable iTable;
   input Integer nStates "Number of states";
 protected
   HashTable.HashTable cref2index;
-  Boolean incidence[nStates,nStates];
+  Boolean adjacency[nStates,nStates];
   list<tuple<DAE.ComponentRef, Integer>> entries;
   tuple<DAE.ComponentRef, Integer> entry;
   DAE.ComponentRef cref;
@@ -874,7 +874,7 @@ protected
   String str,pads;
   Boolean b;
 algorithm
-  INCIDENCE_TABLE(cref2index, incidence) := iTable;
+  ADJACENCY_TABLE(cref2index, adjacency) := iTable;
   entries := BaseHashTable.hashTableList(cref2index);
 
   // sanity check:
@@ -895,16 +895,16 @@ algorithm
     str := str + Util.stringPadLeft(intString(i)+",", padn, pads);
   end for;
   print(str + "\n");
-  // print incidence matrix rows
+  // print adjacency matrix rows
   for i in 1:n loop
     str := Util.stringPadRight(intString(i), padn, pads);
     for j in 1:n loop
-      b := incidence[i,j];
+      b := adjacency[i,j];
       str := str + Util.stringPadLeft(boolString(b)+",", padn, pads);
     end for;
     print(str + "\n");
   end for;
-end printIncidenceTable;
+end printAdjacencyTable;
 
 protected function crefIndexCmp "
 Author: BTH

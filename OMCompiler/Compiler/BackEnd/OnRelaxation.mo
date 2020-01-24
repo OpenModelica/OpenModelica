@@ -117,8 +117,8 @@ algorithm
       list<BackendDAE.Var> var_lst;
       BackendDAE.Variables vars, tvars;
       BackendDAE.EquationArray eqns, teqns;
-      BackendDAE.IncidenceMatrix m, m1, mc;
-      BackendDAE.IncidenceMatrixT mt, mct;
+      BackendDAE.AdjacencyMatrix m, m1, mc;
+      BackendDAE.AdjacencyMatrixT mt, mct;
       list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
       list<DAE.Exp> beqs;
       array<list<tuple<Integer, DAE.Exp>>> matrix;
@@ -148,7 +148,7 @@ algorithm
         vars = BackendVariable.listVar1(var_lst);
 
         subsyst = BackendDAEUtil.createEqSystem(vars, eqns);
-        (subsyst, m, mt, mapEqnIncRow, mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(ishared));
+        (subsyst, m, mt, mapEqnIncRow, mapIncRowEqn) = BackendDAEUtil.getAdjacencyMatrixScalar(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(ishared));
         //  BackendDump.dumpEqSystem(subsyst);
 
         // Vector Matching a=f(..), f(..)=a
@@ -157,8 +157,8 @@ algorithm
         ((_, ass1, ass2)) = List.fold1(eqn_lst, aliasMatching, vars, (1, ass1, ass2));
         // Vector matching
         m1 = arrayCreate(size, {});
-        transformJacToIncidenceMatrix2(jac, m1, mapIncRowEqn, eqns, ass1, ass2, isConstOneMinusOne);
-        Matching.matchingExternalsetIncidenceMatrix(size, size, m1);
+        transformJacToAdjacencyMatrix2(jac, m1, mapIncRowEqn, eqns, ass1, ass2, isConstOneMinusOne);
+        Matching.matchingExternalsetAdjacencyMatrix(size, size, m1);
         true = BackendDAEEXT.setAssignment(size, size, ass2, ass1);
         BackendDAEEXT.matching(size, size, 5, -1, 1.0, 0);
         BackendDAEEXT.getAssignment(ass2, ass1);
@@ -174,7 +174,7 @@ algorithm
 
         // Boeser hack fuer FourBar
     /*
-        (subsyst, m, mt, mapEqnIncRow, mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs));
+        (subsyst, m, mt, mapEqnIncRow, mapIncRowEqn) = BackendDAEUtil.getAdjacencyMatrixScalar(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs));
         temp::_ = mapEqnIncRow[72];
         arrayUpdate(ass1, 90, temp);
         arrayUpdate(ass2, temp, 90);
@@ -191,16 +191,16 @@ algorithm
 */
 
         // Matching based on Enhanced Adiacency Matrix, take care of the solvability - theems to be good but not good enough
-        //  (subsyst, _, _) = BackendDAEUtil.getIncidenceMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
+        //  (subsyst, _, _) = BackendDAEUtil.getAdjacencyMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
         //   BackendDump.dumpEqSystem(subsyst);
         //   dumpJacMatrix(jac, 1, 1, size, vars);
         m1 = arrayCreate(size, {});
         //mt1 = arrayCreate(size, {});
-        transformJacToIncidenceMatrix1(jac, m1, ass1, ass2, isConstOneMinusOne);
-        //  BackendDump.dumpIncidenceMatrix(m1);
-        //  BackendDump.dumpIncidenceMatrixT(mt1);
-        //transformJacToIncidenceMatrix(jac, 1, 1, size, m1, mt1, isConstOneMinusOne);
-        Matching.matchingExternalsetIncidenceMatrix(size, size, m1);
+        transformJacToAdjacencyMatrix1(jac, m1, ass1, ass2, isConstOneMinusOne);
+        //  BackendDump.dumpAdjacencyMatrix(m1);
+        //  BackendDump.dumpAdjacencyMatrixT(mt1);
+        //transformJacToAdjacencyMatrix(jac, 1, 1, size, m1, mt1, isConstOneMinusOne);
+        Matching.matchingExternalsetAdjacencyMatrix(size, size, m1);
         true = BackendDAEEXT.setAssignment(size, size, ass2, ass1);
         BackendDAEEXT.matching(size, size, 1, -1, 1.0, 0);
         BackendDAEEXT.getAssignment(ass2, ass1);
@@ -212,7 +212,7 @@ algorithm
 
         // onefreeMatching
         //  print("mapEqnIncRow:\n");
-        //  BackendDump.dumpIncidenceMatrix(mapEqnIncRow);
+        //  BackendDump.dumpAdjacencyMatrix(mapEqnIncRow);
         unassigned = Matching.getUnassigned(size, ass2, {});
         colummarks = arrayCreate(size, -1);
         onefreeMatchingBFS(unassigned, m, mt, size, ass1, ass2, colummarks, 1, {});
@@ -239,9 +239,9 @@ algorithm
         ass1 = BackendDAETransform.varAssignmentNonScalar(ass1, mapIncRowEqn);
         ass22 = BackendDAETransform.eqnAssignmentNonScalar(mapEqnIncRow, ass2);
         eorphans = List.uniqueIntN(List.map1r(eorphans, arrayGet, mapIncRowEqn), arrayLength(mapIncRowEqn));
-        (subsyst, m, mt) = BackendDAEUtil.getIncidenceMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(ishared));
-        //  BackendDump.dumpIncidenceMatrix(m);
-        //  BackendDump.dumpIncidenceMatrixT(mt);
+        (subsyst, m, mt) = BackendDAEUtil.getAdjacencyMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(ishared));
+        //  BackendDump.dumpAdjacencyMatrix(m);
+        //  BackendDump.dumpAdjacencyMatrixT(mt);
 
         // genereate cliques
         rowmarks = arrayCreate(size, -1);
@@ -280,7 +280,7 @@ algorithm
         List.map2_0(otherorphans, removeRootConnections, vorphansarray1, roots);
         mark = getConstraintesOrphansOrderEdvanced(constraints, ass1, ass22, m, mt, mc, mct, mark, rowmarks, colummarks, vorphansarray1);
         //  print("getOrphansOrderEdvanced:\n");
-        //  BackendDump.dumpIncidenceMatrix(vorphansarray1);
+        //  BackendDump.dumpAdjacencyMatrix(vorphansarray1);
 
         (vorphans, mark) = getOrphansOrderEdvanced3(roots, otherorphans, constraints, vorphans, vorphansarray1, mark, rowmarks);
           Util.profilerstop1();
@@ -302,7 +302,7 @@ algorithm
         mark = getOrphansPairsConstraints(constraints, ass1, ass22, mc, mct, mark, rowmarks, colummarks, eqns);
         //  print("Matching with Orphans:\n");
         //  BackendDump.dumpMatching(ass1);
-        //  BackendDump.dumpIncidenceMatrix(ass22);
+        //  BackendDump.dumpAdjacencyMatrix(ass22);
           Util.profilerstop1();
           print("Paarung  time: " + realString(Util.profilertime1()) + "\n");
           Util.profilerreset1();
@@ -314,7 +314,7 @@ algorithm
         ocolummarks = List.fold1(eorphans, markOrphans, 1, ocolummarks);
         mark = getIndexesForEqnsAdvanced(vorphans, 1, m, mt, mark, rowmarks, colummarks, orowmarks, ocolummarks, ass1, ass22, vec1, vec2, arrayCreate(esize, false), vars, eqns, shared, size);
 
-        //  BackendDump.dumpIncidenceMatrix(vec1);
+        //  BackendDump.dumpAdjacencyMatrix(vec1);
         //  BackendDump.dumpMatching(vec2);
         //  vec3 = arrayCreate(size, -1);
         //  _ = List.fold1(arrayList(vec2), transposeOrphanVec, vec3, 1);
@@ -329,7 +329,7 @@ algorithm
         //_ = BackendDAEUtil.traverseBackendDAEExpsEqns(eqns, replaceFinalParameter, BackendVariable.daeGlobalKnownVars(shared));
 
         subsyst = BackendDAEUtil.createEqSystem(vars, eqns);
-        (subsyst, m, _) = BackendDAEUtil.getIncidenceMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(ishared));
+        (subsyst, m, _) = BackendDAEUtil.getAdjacencyMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(ishared));
         //  BackendDump.dumpEqSystem(subsyst);
         //  DumpGraphML.dumpSystem(subsyst, shared, NONE(), intString(size) + "SystemIndexed.graphml");
         (SOME(jac), _) = SymbolicJacobian.calculateJacobian(vars, eqns, m, true, ishared);
@@ -368,12 +368,12 @@ algorithm
         vars = BackendVariable.addVars(var_lst, vars);
         eqns = BackendEquation.addList(neweqns, teqns);
         subsyst = BackendDAEUtil.createEqSystem(vars, eqns);
-          (subsyst, m, mt, mapEqnIncRow, mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(), SOME(funcs));
+          (subsyst, m, mt, mapEqnIncRow, mapIncRowEqn) = BackendDAEUtil.getAdjacencyMatrixScalar(subsyst, BackendDAE.NORMAL(), SOME(funcs));
           print("Relaxed System:\n");
           BackendDump.dumpEqSystem(subsyst);
 
           size = arrayLength(m);
-          Matching.matchingExternalsetIncidenceMatrix(size, size, m);
+          Matching.matchingExternalsetAdjacencyMatrix(size, size, m);
           ass1 = arrayCreate(size, -1);
           ass2 = arrayCreate(size, -1);
           BackendDAEEXT.matching(size, size, 5, -1, 1.0, 1);
@@ -384,7 +384,7 @@ algorithm
           BackendDump.dumpEqSystem(subsyst);
         */
 
-        //  (syst, _, _) = BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
+        //  (syst, _, _) = BackendDAEUtil.getAdjacencyMatrix(syst, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
         //  BackendDump.dumpEqSystem(syst);
         //  (i1, i2, i3) = countOperations1(syst, shared);
         //  print("Add Operations: " + intString(i1) + "\n");
@@ -478,7 +478,7 @@ algorithm
       BackendDAE.EqSystem eqSystem;
       BackendDAE.Variables orderedVars;
       BackendDAE.EquationArray orderedEqs;
-      Option<BackendDAE.IncidenceMatrix> m, mT;
+      Option<BackendDAE.AdjacencyMatrix> m, mT;
       BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
@@ -536,8 +536,8 @@ protected function generateCliquesResidual "author: Frenkel TUD 2012-07"
   input list<Integer> inOrphans;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input Integer mark;
   input array<Integer> rowmarks;
   input array<Integer> colummarks;
@@ -593,8 +593,8 @@ protected function generateCliquesResidual1 "author: Frenkel TUD 2012-05"
   input list<Integer> rows;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input Integer mark;
   input array<Integer> rowmarks;
   input array<Integer> colummarks;
@@ -653,8 +653,8 @@ protected function generateCliquesResidual2 "author: Frenkel TUD 2012-05"
   input list<Integer> eqns;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input Integer mark;
   input array<Integer> rowmarks;
   input array<Integer> colummarks;
@@ -699,8 +699,8 @@ protected function prepairOrphansOrder "author: Frenkel TUD 2012-07"
   input list<Integer> inOrphans;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input Integer mark;
   input array<Integer> rowmarks;
   input array<Integer> colummarks;
@@ -752,8 +752,8 @@ protected function prepairOrphansOrder1 "author: Frenkel TUD 2012-05"
   input list<Integer> eqns;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input Integer mark;
   input array<Integer> rowmarks;
   input array<Integer> colummarks;
@@ -800,8 +800,8 @@ protected function prepairOrphansOrder2 "author: Frenkel TUD 2012-07"
   input list<Integer> inOrphans;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input Integer imark;
   input array<Integer> rowmarks;
   input array<Integer> colummarks;
@@ -841,8 +841,8 @@ protected function prepairOrphansOrder3 "author: Frenkel TUD 2012-05"
   input list<Integer> eqns;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input Integer mark;
   input array<Integer> rowmarks;
   input array<Integer> colummarks;
@@ -880,7 +880,7 @@ algorithm
       equation
         //  print("check Eqn " + intString(e)  + " ass[e]: " + stringDelimitList(List.map(ass2[e], intString), ", ") + "\n");
         false = intEq(colummarks[e], mark);
-        // update Incidence Matrix
+        // update Adjacency Matrix
         List.map4_0(prer, generateClique, m, mt, partner, e);
         prepairOrphansOrder3(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, partner, orphans, prer);
       then
@@ -895,8 +895,8 @@ end prepairOrphansOrder3;
 
 protected function generateClique
   input Integer r;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input list<Integer> orphans;
   input Integer e;
 algorithm
@@ -933,8 +933,8 @@ end generateClique;
 
 protected function generateResidualClique
   input Integer r;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input list<Integer> orphans;
   input Integer e;
 algorithm
@@ -972,10 +972,10 @@ protected function getOrphansOrderEdvanced "author: Frenkel TUD 2012-07"
   input list<Integer> inOrphans;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
-  input BackendDAE.IncidenceMatrix mc;
-  input BackendDAE.IncidenceMatrixT mct;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
+  input BackendDAE.AdjacencyMatrix mc;
+  input BackendDAE.AdjacencyMatrixT mct;
   input Integer mark;
   input array<Integer> rowmarks;
   input array<Integer> colummarks;
@@ -1063,8 +1063,8 @@ protected function getOrphansOrderEdvanced1 "author: Frenkel TUD 2012-07"
   input list<Integer> eqns;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input Integer mark;
   input array<Integer> rowmarks;
   input array<Integer> colummarks;
@@ -1122,10 +1122,10 @@ protected function getConstraintesOrphansOrderEdvanced "author: Frenkel TUD 2012
   input list<Integer> inOrphans;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
-  input BackendDAE.IncidenceMatrix mc;
-  input BackendDAE.IncidenceMatrixT mct;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
+  input BackendDAE.AdjacencyMatrix mc;
+  input BackendDAE.AdjacencyMatrixT mct;
   input Integer mark;
   input array<Integer> rowmarks;
   input array<Integer> colummarks;
@@ -1157,8 +1157,8 @@ protected function getConstraintesOrphansOrderEdvanced1 "author: Frenkel TUD 201
   input list<Integer> eqns;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input Integer mark;
   input array<Integer> rowmarks;
   input array<Integer> colummarks;
@@ -1381,7 +1381,7 @@ algorithm
   oindex := index+1;
 end getInvMap;
 
-protected function getOrphansIncidenceMatrix
+protected function getOrphansAdjacencyMatrix
   input list<Integer> orphans;
   input array<Integer> invmap;
   input array<list<Integer>> vorphansarray;
@@ -1404,7 +1404,7 @@ algorithm
   end for;
   outM := List.listArrayReverse(m);
   outMT := mT;
-end getOrphansIncidenceMatrix;
+end getOrphansAdjacencyMatrix;
 
 protected function getOrder
   input list<Integer> comp;
@@ -1450,9 +1450,9 @@ algorithm
   //  print("invmap\n");
   //  BackendDump.dumpMatching(invmap);
   range := List.intRange(size);
-  (m, mt) := getOrphansIncidenceMatrix(vorphans, invmap, vorphansarray, arrayCreate(size, {}), true);
-  //  BackendDump.dumpIncidenceMatrix(m);
-  //  BackendDump.dumpIncidenceMatrixT(mt);
+  (m, mt) := getOrphansAdjacencyMatrix(vorphans, invmap, vorphansarray, arrayCreate(size, {}), true);
+  //  BackendDump.dumpAdjacencyMatrix(m);
+  //  BackendDump.dumpAdjacencyMatrixT(mt);
   ass := listArray(range);
   comps := Sorting.TarjanTransposed(mt, ass);
   //  BackendDump.dumpComponentsOLD(comps);
@@ -1460,14 +1460,14 @@ algorithm
   //  print("order: " + stringDelimitList(List.map(order, intString), ", ") + "\n");
   //  print("Links\n");
   //  BackendDump.dumpComponentsOLD(linkslst);
-  (m, mt) := getOrphansIncidenceMatrix(vorphans, invmap, vorphansarray, arrayCreate(size, {}), false);
-  //  BackendDump.dumpIncidenceMatrix(m);
-  //  BackendDump.dumpIncidenceMatrixT(mt);
+  (m, mt) := getOrphansAdjacencyMatrix(vorphans, invmap, vorphansarray, arrayCreate(size, {}), false);
+  //  BackendDump.dumpAdjacencyMatrix(m);
+  //  BackendDump.dumpAdjacencyMatrixT(mt);
   reduceOrphancMatrix(listReverse(comps), m);
-  //  BackendDump.dumpIncidenceMatrix(m);
+  //  BackendDump.dumpAdjacencyMatrix(m);
   // add links to the order
   omark := getOrphansOrderEdvanced4(linkslst, m, mt, mark, rowmarks, order, {});
-  //  BackendDump.dumpIncidenceMatrix(m);
+  //  BackendDump.dumpAdjacencyMatrix(m);
   mt := AdjacencyMatrix.transposeAdjacencyMatrix(m, arrayLength(mt));
   comps := Sorting.TarjanTransposed(mt, ass);
   //  BackendDump.dumpComponentsOLD(comps);
@@ -1953,10 +1953,10 @@ algorithm
 end isConstOneMinusOne;
 
 
-protected function transformJacToIncidenceMatrix2 "author: Frenkel TUD
+protected function transformJacToAdjacencyMatrix2 "author: Frenkel TUD
   transforms only array equations"
   input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input array<Integer> mapIncRowEqn;
   input BackendDAE.EquationArray eqns;
   input array<Integer> ass1;
@@ -1985,16 +1985,16 @@ algorithm
         b = func(e);
         lst = List.consOnTrue(b and b1, c, m[r]);
         arrayUpdate(m, r, lst);
-        transformJacToIncidenceMatrix2(rest, m, mapIncRowEqn, eqns, ass1, ass2, func);
+        transformJacToAdjacencyMatrix2(rest, m, mapIncRowEqn, eqns, ass1, ass2, func);
       then
         ();
    end match;
-end transformJacToIncidenceMatrix2;
+end transformJacToAdjacencyMatrix2;
 
-protected function transformJacToIncidenceMatrix1 "author: Frenkel TUD
+protected function transformJacToAdjacencyMatrix1 "author: Frenkel TUD
   transforms only not assigned equations"
   input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input array<Integer> ass1;
   input array<Integer> ass2;
   input CompareFunc func;
@@ -2018,15 +2018,15 @@ algorithm
         b = func(e);
         lst = List.consOnTrue(b and b1, c, m[r]);
         arrayUpdate(m, r, lst);
-        transformJacToIncidenceMatrix1(rest, m, ass1, ass2, func);
+        transformJacToAdjacencyMatrix1(rest, m, ass1, ass2, func);
       then ();
    end match;
-end transformJacToIncidenceMatrix1;
+end transformJacToAdjacencyMatrix1;
 
-protected function transformJacToIncidenceMatrix "author: Frenkel TUD"
+protected function transformJacToAdjacencyMatrix "author: Frenkel TUD"
   input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input CompareFunc func;
   partial function CompareFunc
     input DAE.Exp inExp;
@@ -2042,7 +2042,7 @@ algorithm
       list<Integer> lst, lst1;
     case ({}, _, _, _)
       equation
-        transformJacToIncidenceMatrix(jac, m, mT, func);
+        transformJacToAdjacencyMatrix(jac, m, mT, func);
       then ();
     case ((r, c, BackendDAE.RESIDUAL_EQUATION(exp = e))::rest, _, _, _)
       equation
@@ -2051,11 +2051,11 @@ algorithm
         lst1 = List.consOnTrue(b, r, mT[c]);
         arrayUpdate(m, r, lst);
         arrayUpdate(mT, c, lst1);
-        transformJacToIncidenceMatrix(rest, m, mT, func);
+        transformJacToAdjacencyMatrix(rest, m, mT, func);
       then
         ();
    end match;
-end transformJacToIncidenceMatrix;
+end transformJacToAdjacencyMatrix;
 
 protected function transformJacToMatrix
   input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
@@ -2308,8 +2308,8 @@ protected function getOrphansPairs
   input list<Integer> inOrphans;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input Integer mark;
   input array<Integer> rowmarks;
   input array<Integer> colummarks;
@@ -2340,8 +2340,8 @@ protected function getOrphansPairs1 "author: Frenkel TUD 2012-07"
   input list<Integer> rows;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input Integer mark;
   input array<Integer> rowmarks;
   input array<Integer> colummarks;
@@ -2398,8 +2398,8 @@ protected function getOrphansPairsConstraints "author: Frenkel TUD 2012-07"
   input list<Integer> inOrphans;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input Integer mark;
   input array<Integer> rowmarks;
   input array<Integer> colummarks;
@@ -2432,8 +2432,8 @@ protected function getOrphansPairsConstraints1 "author: Frenkel TUD 2012-07"
   input list<Integer> eqns;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input Integer mark;
   input array<Integer> rowmarks;
   input array<Integer> colummarks;
@@ -2495,8 +2495,8 @@ end getOrphansPairsConstraints1;
 protected function getIndexesForEqnsAdvanced "author: Frenkel TUD 2012-07"
   input list<Integer> orphans;
   input Integer index;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input Integer imark;
   input array<Integer> rowmarks;
   input array<Integer> colummarks;
@@ -2602,7 +2602,7 @@ end getIndexesForEqnsAdvanced;
 
 protected function getBorderElements
   input list<Integer> elements;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input Integer mark;
   input array<Integer> arr;
   input list<Integer> iAcc;
@@ -2627,7 +2627,7 @@ end getBorderElements;
 
 protected function setBoarderElemts
   input list<Integer> elements;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input Integer mark;
   input array<Integer> arr;
   input Integer orphan;
@@ -2687,8 +2687,8 @@ end setIndexQueue;
 
 protected function getIndexQueque "author: Frenkel TUD 2012-07"
   input list<Integer> colums;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input Integer mark;
   input array<Integer> rowmarks;
   input array<Integer> colummarks;
@@ -2732,7 +2732,7 @@ end getIndexQueque;
 protected function getIndexQueque1
   input list<Integer> rows;
   input Integer c;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrixT mT;
   input Integer mark;
   input array<Integer> rowmarks;
   output list<Integer> ocolums = {};
@@ -2821,8 +2821,8 @@ end doMark;
 protected function getIndexSubGraph "author: Frenkel TUD 2012-07"
   input list<Integer> rows;
   input list<Integer> vorphan;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input Integer mark;
   input array<Integer> rowmarks;
   input array<Integer> colummarks;
@@ -3110,20 +3110,20 @@ algorithm
 end unassignedLst;
 
 protected function onefreeMatchingBFS "author: Frenkel TUD 2012-05"
-  input BackendDAE.IncidenceMatrixElement queue;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrixElement queue;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input Integer size;
   input array<Integer> ass1;
   input array<Integer> ass2;
   input array<Integer> columark;
   input Integer mark;
-  input BackendDAE.IncidenceMatrixElement nextQeue;
+  input BackendDAE.AdjacencyMatrixElement nextQeue;
 algorithm
   _ := match(queue, m, mt, size, ass1, ass2, columark, mark, nextQeue)
     local
       Integer c;
-      BackendDAE.IncidenceMatrixElement rest, newqueue, rows;
+      BackendDAE.AdjacencyMatrixElement rest, newqueue, rows;
     case ({}, _, _, _, _, _, _, _, {}) then ();
     case ({}, _, _, _, _, _, _, _, _)
       equation
@@ -3152,20 +3152,20 @@ algorithm
 end isAssignedSaveEnhanced;
 
 protected function onefreeMatchingBFS1 "author: Frenkel TUD 2012-05"
-  input BackendDAE.IncidenceMatrixElement rows;
+  input BackendDAE.AdjacencyMatrixElement rows;
   input Integer c;
-  input BackendDAE.IncidenceMatrix mt;
+  input BackendDAE.AdjacencyMatrix mt;
   input array<Integer> ass1;
   input array<Integer> ass2;
   input array<Integer> columark;
   input Integer mark;
-  input BackendDAE.IncidenceMatrixElement inNextQeue;
-  output BackendDAE.IncidenceMatrixElement outNextQeue;
+  input BackendDAE.AdjacencyMatrixElement inNextQeue;
+  output BackendDAE.AdjacencyMatrixElement outNextQeue;
 algorithm
   outNextQeue := matchcontinue(rows, c, mt, ass1, ass2, columark, mark, inNextQeue)
     local
       Integer r;
-      BackendDAE.IncidenceMatrixElement vareqns;
+      BackendDAE.AdjacencyMatrixElement vareqns;
     case (r::{}, _, _, _, _, _, _, _)
       equation
         //  print("Assign Var" + intString(r) + " with Eqn " + intString(c) + "\n");

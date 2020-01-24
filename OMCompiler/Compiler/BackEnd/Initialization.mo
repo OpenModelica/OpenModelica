@@ -740,7 +740,7 @@ protected
   BackendDAE.Variables otherVariables, globalKnownVars=dae.shared.globalKnownVars;
   BackendDAE.EquationArray globalKnownVarsEqns;
   BackendDAE.EqSystem globalKnownVarsSystem;
-  BackendDAE.IncidenceMatrix m, mT;
+  BackendDAE.AdjacencyMatrix m, mT;
   array<Integer> ass1 "eqn := ass1[var]";
   array<Integer> ass2 "var := ass2[eqn]";
   list<list<Integer>> comps;
@@ -767,9 +767,9 @@ algorithm
 
   if nGlobalKnownVars > 0 then
     globalKnownVarsSystem := BackendDAEUtil.createEqSystem(globalKnownVars, globalKnownVarsEqns);
-    (m, mT) := BackendDAEUtil.incidenceMatrix(globalKnownVarsSystem, BackendDAE.NORMAL(), NONE(), BackendDAEUtil.isInitializationDAE(dae.shared));
-    //BackendDump.dumpIncidenceMatrix(m);
-    //BackendDump.dumpIncidenceMatrixT(mT);
+    (m, mT) := BackendDAEUtil.adjacencyMatrix(globalKnownVarsSystem, BackendDAE.NORMAL(), NONE(), BackendDAEUtil.isInitializationDAE(dae.shared));
+    //BackendDump.dumpAdjacencyMatrix(m);
+    //BackendDump.dumpAdjacencyMatrixT(mT);
 
     // match the system
     // ass1 and ass2 should be {1, 2, ..., nGlobalKnownVars}
@@ -784,7 +784,7 @@ algorithm
 
     // flattern list and look for cyclic dependencies
     flatComps := list(flattenParamComp(comp, globalKnownVars) for comp in comps);
-    //BackendDump.dumpIncidenceRow(flatComps);
+    //BackendDump.dumpAdjacencyRow(flatComps);
     //BackendDump.dumpVariables(globalKnownVars, "globalKnownVars");
 
     // select secondary parameters
@@ -920,7 +920,7 @@ end markIndex;
 protected function selectSecondaryParameters
   input list<Integer> inOrdering;
   input BackendDAE.Variables inParameters;
-  input BackendDAE.IncidenceMatrix inM;
+  input BackendDAE.AdjacencyMatrix inM;
   input array<Integer> inSecondaryParams;
   output array<Integer> outSecondaryParams;
 algorithm
@@ -1072,9 +1072,9 @@ protected
   BackendDAE.Variables orderedVars;
   BackendDAE.EquationArray orderedEqs;
   Boolean b;
-  BackendDAE.IncidenceMatrix mt;
+  BackendDAE.AdjacencyMatrix mt;
 algorithm
-  (_, mt) := BackendDAEUtil.incidenceMatrix(inEqSystem, BackendDAE.NORMAL(), NONE(), true);
+  (_, mt) := BackendDAEUtil.adjacencyMatrix(inEqSystem, BackendDAE.NORMAL(), NONE(), true);
   (orderedVars, orderedEqs, b, outDumpVars) := preBalanceInitialSystem1(arrayLength(mt), mt, inEqSystem.orderedVars, inEqSystem.orderedEqs, false, {});
   if b then
     outEqSystem.orderedEqs := orderedEqs;
@@ -1085,7 +1085,7 @@ end preBalanceInitialSystem;
 
 protected function preBalanceInitialSystem1 "author: lochel"
   input Integer n;
-  input BackendDAE.IncidenceMatrix mt;
+  input BackendDAE.AdjacencyMatrix mt;
   input BackendDAE.Variables inVars;
   input BackendDAE.EquationArray inEqs;
   input Boolean inB;
@@ -1119,7 +1119,7 @@ end preBalanceInitialSystem1;
 
 protected function preBalanceInitialSystem2 "author: lochel"
   input Integer n;
-  input BackendDAE.IncidenceMatrix mt;
+  input BackendDAE.AdjacencyMatrix mt;
   input BackendDAE.Variables inVars;
   input BackendDAE.EquationArray inEqs;
   input Boolean inB;
@@ -1217,8 +1217,8 @@ protected
   list<Integer> stateIndices, range, initEqsIndices, redundantEqns;
   list<BackendDAE.Var> initVarList;
   array<Integer> ass1, ass2;
-  BackendDAE.IncidenceMatrix m "incidence matrix of modified system";
-  BackendDAE.IncidenceMatrix m_ "incidence matrix of original system (TODO: fix this one)";
+  BackendDAE.AdjacencyMatrix m "adjacency matrix of modified system";
+  BackendDAE.AdjacencyMatrix m_ "adjacency matrix of original system (TODO: fix this one)";
   BackendDAE.EqSystem syst;
   DAE.FunctionTree funcs;
   BackendDAE.AdjacencyMatrixEnhanced me;
@@ -1235,23 +1235,23 @@ algorithm
     nEqns := BackendEquation.equationArraySize(inEqSystem.orderedEqs);
     syst := BackendDAEUtil.createEqSystem(inEqSystem.orderedVars, inEqSystem.orderedEqs);
     funcs := BackendDAEUtil.getFunctions(inShared);
-    (m_, _, _, mapIncRowEqn) := BackendDAEUtil.incidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared)); // Should always be true, just to be sure
+    (m_, _, _, mapIncRowEqn) := BackendDAEUtil.adjacencyMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared)); // Should always be true, just to be sure
     if debug then
       BackendDump.dumpEqSystem(syst, "fixInitialSystem");
       BackendDump.dumpVariables(initVars, "selected initialization variables");
       BackendDump.dumpVariables(inEqSystem.orderedVars, "vars in the system");
-      BackendDump.dumpIncidenceMatrix(m_);
+      BackendDump.dumpAdjacencyMatrix(m_);
     end if;
 
     // get state-index list
     stateIndices := BackendVariable.getVarIndexFromVariablesIndexInFirstSet(inEqSystem.orderedVars, initVars);
 
-    // modify incidence matrix for under-determined systems
+    // modify adjacency matrix for under-determined systems
     nAddEqs := intMax(nVars-nEqns + index, index);
     if debug then print("nAddEqs: " + intString(nAddEqs) + "\n"); end if;
     m := fixUnderDeterminedSystem(m_, stateIndices, nEqns, nAddEqs);
 
-    // modify incidence matrix for over-determined systems
+    // modify adjacency matrix for over-determined systems
     nAddVars := intMax(nEqns-nVars + index, index);
     if debug then print("nAddVars: " + intString(nAddVars) + "\n"); end if;
     m := fixOverDeterminedSystem(m, inEqSystem.orderedEqs, nVars, nAddVars);
@@ -1259,7 +1259,7 @@ algorithm
     // match the system (nVars+nAddVars == nEqns+nAddEqs)
     //ass1 := arrayCreate(nVars+nAddVars, -1);
     //ass2 := arrayCreate(nEqns+nAddEqs, -1);
-    //Matching.matchingExternalsetIncidenceMatrix(nVars+nAddVars, nEqns+nAddEqs, m);
+    //Matching.matchingExternalsetAdjacencyMatrix(nVars+nAddVars, nEqns+nAddEqs, m);
     //BackendDAEEXT.matching(nVars+nAddVars, nEqns+nAddEqs, 5, 0, 0.0, 1);
     //BackendDAEEXT.getAssignment(ass2, ass1);
     //perfectMatching := listEmpty(Matching.getUnassigned(nVars+nAddVars, ass1, {}));
@@ -1336,11 +1336,11 @@ algorithm
 end updateFixedAttribute;
 
 protected function fixUnderDeterminedSystem "author: lochel"
-  input BackendDAE.IncidenceMatrix inM;
+  input BackendDAE.AdjacencyMatrix inM;
   input list<Integer> inInitVarIndices;
   input Integer inNEqns;
   input Integer inNAddEqns;
-  output BackendDAE.IncidenceMatrix outM;
+  output BackendDAE.AdjacencyMatrix outM;
 protected
   list<Integer> newEqIndices;
 algorithm
@@ -1353,27 +1353,27 @@ algorithm
     outM := arrayCreate(inNEqns+inNAddEqns, {});
     outM := Array.copy(inM, outM);
     newEqIndices := List.intRange2(inNEqns+1, inNEqns+inNAddEqns);
-    outM := List.fold1(newEqIndices, squareIncidenceMatrix1, inInitVarIndices, outM);
+    outM := List.fold1(newEqIndices, squareAdjacencyMatrix1, inInitVarIndices, outM);
   else
     outM := arrayCopy(inM) "deep copy";
   end if;
 end fixUnderDeterminedSystem;
 
-protected function squareIncidenceMatrix1 "author: lochel"
+protected function squareAdjacencyMatrix1 "author: lochel"
   input Integer inPos;
   input list<Integer> inDependency;
-  input BackendDAE.IncidenceMatrix inM;
-  output BackendDAE.IncidenceMatrix outM = inM;
+  input BackendDAE.AdjacencyMatrix inM;
+  output BackendDAE.AdjacencyMatrix outM = inM;
 algorithm
   outM[inPos] := inDependency;
-end squareIncidenceMatrix1;
+end squareAdjacencyMatrix1;
 
 protected function fixOverDeterminedSystem "author: lochel"
-  input BackendDAE.IncidenceMatrix inM;
+  input BackendDAE.AdjacencyMatrix inM;
   input BackendDAE.EquationArray orderedEqs;
   input Integer inNVars;
   input Integer inNAddVars;
-  output BackendDAE.IncidenceMatrix outM;
+  output BackendDAE.AdjacencyMatrix outM;
 protected
   list<Integer> newVarIndices, initEqsIndices;
 algorithm
@@ -1385,20 +1385,20 @@ algorithm
   if inNAddVars > 0 then
     (_, initEqsIndices) := List.fold(BackendEquation.equationList(orderedEqs), getInitEqIndex, (1, {})); // TODO: Bad scaling. Can be done better. But only affects overdetermined systems
     newVarIndices := List.intRange2(inNVars+1, inNVars+inNAddVars);
-    outM := List.fold1(initEqsIndices, squareIncidenceMatrix2, newVarIndices, inM);
+    outM := List.fold1(initEqsIndices, squareAdjacencyMatrix2, newVarIndices, inM);
   else
     outM := inM;
   end if;
 end fixOverDeterminedSystem;
 
-protected function squareIncidenceMatrix2 "author: lochel"
+protected function squareAdjacencyMatrix2 "author: lochel"
   input Integer inPos;
   input list<Integer> inRange;
-  input BackendDAE.IncidenceMatrix inM;
-  output BackendDAE.IncidenceMatrix outM = inM;
+  input BackendDAE.AdjacencyMatrix inM;
+  output BackendDAE.AdjacencyMatrix outM = inM;
 algorithm
   outM[inPos] := listAppend(inM[inPos], inRange);
-end squareIncidenceMatrix2;
+end squareAdjacencyMatrix2;
 
 protected function addStartValueEquations "author: lochel"
   input list<BackendDAE.Var> inVarLst;
@@ -1462,7 +1462,7 @@ protected function consistencyCheck "
   input BackendDAE.Variables inVars;
   input BackendDAE.Shared inShared;
   input Integer nAddVars;
-  input BackendDAE.IncidenceMatrix inM;
+  input BackendDAE.AdjacencyMatrix inM;
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input array<Integer> vecVarToEqs;
   input array<Integer> vecEqsToVar;
@@ -1476,7 +1476,7 @@ algorithm
       list<Integer> outRange, resiRange, flatComps, markedComps;
       list<Integer> outListComps, outLoopListComps, restRedundantEqns;
       list<Integer> consistentEquations, inconsistentEquations, uncheckedEquations, uncheckedEquations2;
-      BackendDAE.IncidenceMatrix m;
+      BackendDAE.AdjacencyMatrix m;
       Integer nVars, nEqns, currRedundantEqn, redundantEqn;
       list<list<Integer>> comps;
       BackendVarTransform.VariableReplacements repl;
@@ -1493,7 +1493,7 @@ algorithm
     //BackendDump.dumpVariables(inVars, "inVars");
     //BackendDump.dumpEquationArray(inEqns, "inEqns");
     //BackendDump.dumpList(inRedundantEqns, "inRedundantEqns: ");
-    //BackendDump.dumpIncidenceMatrix(inM);
+    //BackendDump.dumpAdjacencyMatrix(inM);
 
       // get the sorting and algebraic loops
       comps = Sorting.Tarjan(inM, vecVarToEqs);
@@ -1622,7 +1622,7 @@ end mapListIndices;
 protected function compsMarker "author: mwenzler"
   input Integer inUnassignedEqn;
   input array<Integer> inVecVarToEq;
-  input BackendDAE.IncidenceMatrix inM;
+  input BackendDAE.AdjacencyMatrix inM;
   input list<Integer> inFlatComps;
   input list<Integer> inLoopListComps "not used yet";
   output list<Integer> outMarkedEqns "contains all the indices of the equations that need to be considered";
@@ -1645,7 +1645,7 @@ end compsMarker;
 protected function compsMarker2
   input list<Integer> inVarList;
   input array<Integer> inVecVarToEq;
-  input BackendDAE.IncidenceMatrix inM;
+  input BackendDAE.AdjacencyMatrix inM;
   input list<Integer> inFlatComps;
   input list<Integer> inMarkedEqns;
   input list<Integer> inLoopListComps;
@@ -1683,7 +1683,7 @@ end compsMarker2;
 protected function downCompsMarker
   input list<Integer> unassignedEqns;
   input array<Integer> vecVarToEq;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input list<Integer> flatComps;
   input output list<Integer> inMarkedEqns;
   input list<Integer> inLoopListComps;
@@ -1768,7 +1768,7 @@ protected function getConsistentEquation "author: mwenzler"
   input Integer inUnassignedEqn;
   input BackendDAE.EquationArray inEqns;
   input BackendDAE.EquationArray inEqnsOrig;
-  input BackendDAE.IncidenceMatrix inM;
+  input BackendDAE.AdjacencyMatrix inM;
   input array<Integer> vecVarToEqs;
   input BackendDAE.Variables vars;
   input BackendDAE.Shared shared;
@@ -1785,7 +1785,7 @@ algorithm
       BackendDAE.Equation eqn, eqn2;
       DAE.Exp lhs, rhs, exp;
       list<String> listParameter;
-      BackendDAE.IncidenceMatrix m;
+      BackendDAE.AdjacencyMatrix m;
       BackendDAE.EqSystem system;
       DAE.FunctionTree funcs;
       list<BackendDAE.Equation> list_inEqns;
@@ -1850,7 +1850,7 @@ algorithm
       eqns = BackendEquation.listEquation(list_inEqns);
       funcs = BackendDAEUtil.getFunctions(shared);
       system = BackendDAEUtil.createEqSystem(vars, eqns);
-      (m, _) = BackendDAEUtil.incidenceMatrix(system, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
+      (m, _) = BackendDAEUtil.adjacencyMatrix(system, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
       listVar = m[inUnassignedEqn];
       false = listEmpty(listVar);
 

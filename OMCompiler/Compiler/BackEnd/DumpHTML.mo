@@ -398,8 +398,8 @@ protected
   list<BackendDAE.Equation> eqnsl;
   BackendDAE.Variables vars1;
   BackendDAE.EquationArray eqns;
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrix> mT;
+  Option<BackendDAE.AdjacencyMatrix> m;
+  Option<BackendDAE.AdjacencyMatrix> mT;
   BackendDAE.Matching matching;
   Document doc;
   list<Tag> tags;
@@ -415,8 +415,8 @@ algorithm
   eqnlen_str := "Equations (" + intString(listLength(eqnsl)) + ", " + intString(BackendEquation.equationArraySize(eqns)) + ")";
   tags := addHeadingTag(2, eqnlen_str, tags);
   tags := dumpEqns(eqnsl, prefixId, tags);
-  //dumpOption(m, dumpIncidenceMatrix);
-  //dumpOption(mT, dumpIncidenceMatrixT);
+  //dumpOption(m, dumpAdjacencyMatrix);
+  //dumpOption(mT, dumpAdjacencyMatrixT);
   tags := dumpFullMatching(matching, prefixId, tags);
 //  doc := addBodyTags(tags, doc);
   doc := addLine("<hr>", doc);
@@ -553,9 +553,9 @@ algorithm
   end try;
 end dumpMatching2;
 
-public function dumpMatrixHTML"dumps a html file that shows the matrix representation of the incidence matrix.
+public function dumpMatrixHTML"dumps a html file that shows the matrix representation of the adjacency matrix.
 author: waurich TU Dresden 2016-05"
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input list<String> rowNames;
   input list<String> columNames;
   input String fileName;

@@ -108,12 +108,12 @@ extern void BackendDAEEXT_vMark(int _inInteger)
   BackendDAEEXTImpl__vMark(_inInteger);
 }
 
-extern void BackendDAEEXT_setIncidenceMatrix(modelica_integer nvars, modelica_integer neqns, modelica_integer nz, modelica_metatype incidencematrix)
+extern void BackendDAEEXT_setAdjacencyMatrix(modelica_integer nvars, modelica_integer neqns, modelica_integer nz, modelica_metatype adjacencymatrix)
 {
   int i=0;
   mmc_sint_t i1;
   int j=0;
-  modelica_integer nelts = MMC_HDRSLOTS(MMC_GETHDR(incidencematrix));
+  modelica_integer nelts = MMC_HDRSLOTS(MMC_GETHDR(adjacencymatrix));
 
   if (col_ptrs) free(col_ptrs);
   col_ptrs = (int*) malloc((neqns+1) * sizeof(int));
@@ -122,7 +122,7 @@ extern void BackendDAEEXT_setIncidenceMatrix(modelica_integer nvars, modelica_in
   col_ids = (int*) malloc(nz * sizeof(int));
 
   for(i=0; i<neqns; ++i) {
-    modelica_metatype ie = MMC_STRUCTDATA(incidencematrix)[i];
+    modelica_metatype ie = MMC_STRUCTDATA(adjacencymatrix)[i];
     col_ptrs[i] = j;
     while(MMC_GETHDR(ie) == MMC_CONSHDR) {
       i1 = MMC_UNTAGFIXNUM(MMC_CAR(ie));

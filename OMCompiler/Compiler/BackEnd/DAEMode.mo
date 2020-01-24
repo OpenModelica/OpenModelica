@@ -103,7 +103,7 @@ algorithm
     if Flags.isSet(Flags.DUMP_DAE_LOW) then
       BackendDump.dumpBackendDAE(inDAE, "dumpdaelow");
       if Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP) then
-        BackendDump.graphvizIncidenceMatrix(inDAE, "dumpdaelow");
+        BackendDump.graphvizAdjacencyMatrix(inDAE, "dumpdaelow");
       end if;
     end if;
 
@@ -275,7 +275,7 @@ algorithm
   matchcontinue(inEqns, traverserArgs.recursiveStrongComponentRun, isStateVarInvoled)
     local
       BackendDAE.EqSystem syst;
-      BackendDAE.IncidenceMatrix adjMatrix;
+      BackendDAE.AdjacencyMatrix adjMatrix;
 
       list<BackendDAE.Equation> newResEqns;
       list<BackendDAE.Var> newResVars, newAuxVars, discVars, contVars;
@@ -537,7 +537,7 @@ function getDiscAndContEqns
   output list<BackendDAE.Equation> contEqns;
 protected
   BackendDAE.EqSystem syst;
-  BackendDAE.IncidenceMatrix adjMatrix;
+  BackendDAE.AdjacencyMatrix adjMatrix;
 
   list<Integer> varsIndex, eqnIndex;
   array<Integer> assignVarEqn "eqn := assignVarEqn[var]";
@@ -550,16 +550,16 @@ algorithm
     // create syst for a matching
     syst := BackendDAEUtil.createEqSystem(BackendVariable.listVar1(inAllVars), BackendEquation.listEquation(inAllEqns) );
     if debug then BackendDump.printEqSystem(syst); end if;
-    (adjMatrix, _, _, mapEqnScalarArray) := BackendDAEUtil.incidenceMatrixScalar(syst, BackendDAE.NORMAL(), SOME(functionTree), isInitial);
-    if debug then BackendDump.dumpIncidenceMatrix(adjMatrix); end if;
+    (adjMatrix, _, _, mapEqnScalarArray) := BackendDAEUtil.adjacencyMatrixScalar(syst, BackendDAE.NORMAL(), SOME(functionTree), isInitial);
+    if debug then BackendDump.dumpAdjacencyMatrix(adjMatrix); end if;
     (assignVarEqn, assignEqnVar, true) := Matching.RegularMatching(adjMatrix, BackendDAEUtil.systemSize(syst), BackendDAEUtil.systemSize(syst));
     if debug then BackendDump.dumpMatching(assignVarEqn); end if;
 
     // get discrete vars indexes and then the equations
     varsIndex := BackendVariable.getVarIndexFromVars(inDiscVars, syst.orderedVars);
-    if debug then print("discVarsIndex: "); BackendDump.dumpIncidenceRow(varsIndex);  end if;
+    if debug then print("discVarsIndex: "); BackendDump.dumpAdjacencyRow(varsIndex);  end if;
     eqnIndex := List.map1(varsIndex, Array.getIndexFirst, assignVarEqn);
-    if debug then print("discEqnIndex: "); BackendDump.dumpIncidenceRow(eqnIndex);  end if;
+    if debug then print("discEqnIndex: "); BackendDump.dumpAdjacencyRow(eqnIndex);  end if;
     eqnIndex := List.unique(list(mapEqnScalarArray[i] for i in eqnIndex));
     discEqns := BackendEquation.getList(eqnIndex, syst.orderedEqs);
     if debug then BackendDump.equationListString(discEqns, "Discrete Equations");  end if;
@@ -568,7 +568,7 @@ algorithm
     varsIndex := BackendVariable.getVarIndexFromVars(inContVars, syst.orderedVars);
     eqnIndex := List.map1(varsIndex, Array.getIndexFirst, assignVarEqn);
     eqnIndex := List.unique(list(mapEqnScalarArray[i] for i in eqnIndex));
-    if debug then print("contEqnIndex: "); BackendDump.dumpIncidenceRow(eqnIndex);  end if;
+    if debug then print("contEqnIndex: "); BackendDump.dumpAdjacencyRow(eqnIndex);  end if;
     contEqns := BackendEquation.getList(eqnIndex, syst.orderedEqs);
     if debug then BackendDump.equationListString(contEqns, "Continuous Equations");  end if;
   else

@@ -448,7 +448,7 @@ end setNumProc;
 
 
 public function applyGRS "author: Waurich 2014-11
-  Applies several task graph rewriting rules to merge tasks. builds a new incidence matrix for the
+  Applies several task graph rewriting rules to merge tasks. builds a new adjacency matrix for the
   task graph after finishing their merging."
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;

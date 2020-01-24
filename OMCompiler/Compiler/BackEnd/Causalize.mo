@@ -102,7 +102,7 @@ algorithm
         esize_str = intString(neqns);
         vsize_str = intString(nvars);
         Error.addMessage(Error.UNDERDET_EQN_SYSTEM, {esize_str,vsize_str});
-        BackendDAEUtil.checkIncidenceMatrixSolvability(isyst, ishared.functionTree, BackendDAEUtil.isInitializationDAE(ishared));
+        BackendDAEUtil.checkAdjacencyMatrixSolvability(isyst, ishared.functionTree, BackendDAEUtil.isInitializationDAE(ishared));
       then
         fail();
 
@@ -112,7 +112,7 @@ algorithm
         esize_str = intString(neqns) ;
         vsize_str = intString(nvars);
         Error.addMessage(Error.OVERDET_EQN_SYSTEM, {esize_str,vsize_str});
-        BackendDAEUtil.checkIncidenceMatrixSolvability(isyst, ishared.functionTree, BackendDAEUtil.isInitializationDAE(ishared));
+        BackendDAEUtil.checkAdjacencyMatrixSolvability(isyst, ishared.functionTree, BackendDAEUtil.isInitializationDAE(ishared));
       then
         fail();
 
@@ -140,8 +140,8 @@ protected function singularSystemCheck1
   input BackendDAE.Shared iShared;
   output BackendDAE.EqSystem outSyst = iSyst;
 protected
-  BackendDAE.IncidenceMatrix m;
-  BackendDAE.IncidenceMatrixT mT;
+  BackendDAE.AdjacencyMatrix m;
+  BackendDAE.AdjacencyMatrixT mT;
   list<list<Integer>> comps;
   array<Integer> ass1,ass2;
   BackendDAEFunc.matchingAlgorithmFunc matchingFunc;
@@ -153,7 +153,7 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(m=SOME(m), mT=SOME(mT), mapping=SOME((mapEqnIncRow, mapIncRowEqn, indexType, scalar, processed))) := iSyst;
   (matchingFunc,_) :=  matchingAlgorithm;
-  // get absolute Incidence Matrix
+  // get absolute Adjacency Matrix
   m := AdjacencyMatrix.absAdjacencyMatrix(m);
   mT := AdjacencyMatrix.absAdjacencyMatrix(mT);
   // try to match

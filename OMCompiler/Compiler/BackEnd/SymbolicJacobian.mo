@@ -1163,7 +1163,7 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst, syst1;
       BackendDAE.StrongComponents comps;
-      BackendDAE.IncidenceMatrix adjMatrix, adjMatrixT;
+      BackendDAE.AdjacencyMatrix adjMatrix, adjMatrixT;
       BackendDAE.Matching bdaeMatching;
 
       list<tuple<Integer, list<Integer>>>  sparseGraph, sparseGraphT;
@@ -1211,7 +1211,7 @@ algorithm
 
         // generate adjacency matrix including diff vars
         (syst1 as BackendDAE.EQSYSTEM(orderedVars=varswithDiffs,orderedEqs=orderedEqns)) := BackendDAEUtil.addVarsToEqSystem(syst,jacDiffVars);
-        (adjMatrix, adjMatrixT) := BackendDAEUtil.incidenceMatrix(syst1,BackendDAE.SPARSE(),NONE(),BackendDAEUtil.isInitializationDAE(inBackendDAE.shared));
+        (adjMatrix, adjMatrixT) := BackendDAEUtil.adjacencyMatrix(syst1,BackendDAE.SPARSE(),NONE(),BackendDAEUtil.isInitializationDAE(inBackendDAE.shared));
         adjSize := arrayLength(adjMatrix) "number of equations";
         adjSizeT := arrayLength(adjMatrixT) "number of variables";
 
@@ -1219,8 +1219,8 @@ algorithm
         if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
           BackendDump.printVarList(BackendVariable.varList(varswithDiffs));
           BackendDump.printEquationList(BackendEquation.equationList(orderedEqns));
-          BackendDump.dumpIncidenceMatrix(adjMatrix);
-          BackendDump.dumpIncidenceMatrixT(adjMatrixT);
+          BackendDump.dumpAdjacencyMatrix(adjMatrix);
+          BackendDump.dumpAdjacencyMatrixT(adjMatrixT);
           BackendDump.dumpFullMatching(bdaeMatching);
         end if;
 
@@ -1231,7 +1231,7 @@ algorithm
         // debug dump
         if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
           print("nodesEqnsIndexs: ");
-          BackendDump.dumpIncidenceRow(nodesEqnsIndex);
+          BackendDump.dumpAdjacencyRow(nodesEqnsIndex);
           print("\n");
           print("analytical Jacobians[SPARSE] -> build sparse graph: " + realString(clock()) + "\n");
         end if;
@@ -1405,8 +1405,8 @@ protected function getSparsePattern
   input array<Integer> inMark; //
   input array<Integer> inUsed; //
   input Integer inmarkValue;
-  input BackendDAE.IncidenceMatrix inMatrix;
-  input BackendDAE.IncidenceMatrix inMatrixT;
+  input BackendDAE.AdjacencyMatrix inMatrix;
+  input BackendDAE.AdjacencyMatrix inMatrixT;
   output array<list<Integer>> outSparsePattern;
 algorithm
   outSparsePattern := match (inComponents, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue, inMatrix, inMatrixT)
@@ -3394,20 +3394,20 @@ public function calculateJacobian "This function takes an array of equations and
   and calculates the Jacobian of the equations."
   input BackendDAE.Variables inVariables;
   input BackendDAE.EquationArray inEquationArray;
-  input BackendDAE.IncidenceMatrix inIncidenceMatrix;
+  input BackendDAE.AdjacencyMatrix inAdjacencyMatrix;
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
   input BackendDAE.Shared iShared;
   output Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> outTplIntegerIntegerEquationLstOption;
   output BackendDAE.Shared oShared;
 algorithm
   (outTplIntegerIntegerEquationLstOption, oShared):=
-  matchcontinue (inVariables,inEquationArray,inIncidenceMatrix,differentiateIfExp,iShared)
+  matchcontinue (inVariables,inEquationArray,inAdjacencyMatrix,differentiateIfExp,iShared)
     local
       list<BackendDAE.Equation> eqn_lst;
       list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
-      BackendDAE.IncidenceMatrix m;
+      BackendDAE.AdjacencyMatrix m;
       BackendDAE.Shared shared;
     case (vars,eqns,m,_,_)
       equation
@@ -3466,8 +3466,8 @@ protected function calculateJacobianRow "author: PA
   Calculates the Jacobian for one equation. See calculateJacobianRows.
   inputs:  (Equation,
               BackendDAE.Variables,
-              IncidenceMatrix,
-              IncidenceMatrixT,
+              AdjacencyMatrix,
+              AdjacencyMatrixT,
               int /* eqn index */)
   outputs: ((int  int  Equation) list option)"
   replaceable type Type_a subtypeof Any;
@@ -4450,13 +4450,13 @@ algorithm
       try
         /* scalar = true */
         SOME((mapEqnIncRow, mapIncRowEqn, indexType, true, _)) := syst.mapping;
-        syst := BackendDAEUtil.updateIncidenceMatrixScalar(syst, indexType, NONE(), updateList_arr, mapEqnIncRow, mapIncRowEqn, false);
+        syst := BackendDAEUtil.updateAdjacencyMatrixScalar(syst, indexType, NONE(), updateList_arr, mapEqnIncRow, mapIncRowEqn, false);
       else
         /*
           scalar = false,
           should never occur, just to have a fallback option if someone wants to use this algorithm somewhere else
         */
-        syst := BackendDAEUtil.updateIncidenceMatrix(syst, BackendDAE.SOLVABLE(), NONE(), updateList_arr, false);
+        syst := BackendDAEUtil.updateAdjacencyMatrix(syst, BackendDAE.SOLVABLE(), NONE(), updateList_arr, false);
       end try;
     end if;
 

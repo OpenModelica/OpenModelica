@@ -341,7 +341,7 @@ public function minimalStructurallySingularSystem "author: Frenkel TUD - 2012-04
   output list<Integer> discEqns "discrete equations of all subsets";
 protected
   list<Integer> unassignedEqns, eqnslst, stateindxs;
-  BackendDAE.IncidenceMatrix m;
+  BackendDAE.AdjacencyMatrix m;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
   array<Integer> statemark;
@@ -373,7 +373,7 @@ protected function minimalStructurallySingularSystemMSS
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   input array<Integer> statemark;
   input Integer mark;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input BackendDAE.Variables vars;
   input list<list<Integer>> inEqnsLstAcc;
   input list<list<Integer>> inStateIndxsAcc;
@@ -479,7 +479,7 @@ protected function unassignedContinuesEqns
   input Integer eindx;
   input BackendDAE.Variables vars;
   input array<Integer> ass2;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input tuple<list<Integer>,list<Integer>,list<Integer>> inFold;
   output tuple<list<Integer>,list<Integer>,list<Integer>> outFold;
 algorithm
@@ -524,13 +524,13 @@ end unassignedContinuesEqns;
 protected function statesInEquations
 "author: Frenkel TUD 2012-04"
   input Integer eindx;
-  input tuple<BackendDAE.IncidenceMatrix,array<Integer>,Integer> inTpl;
+  input tuple<BackendDAE.AdjacencyMatrix,array<Integer>,Integer> inTpl;
   input array<Integer> ass1;
   input list<Integer> inStateLst;
   output list<Integer> outStateLst;
 protected
   list<Integer> vars;
-  BackendDAE.IncidenceMatrix m;
+  BackendDAE.AdjacencyMatrix m;
   array<Integer> statemark;
   Integer mark;
 algorithm
@@ -595,8 +595,8 @@ protected function differentiateEqns
 protected
   BackendDAE.EqSystem syst;
   BackendDAE.EquationArray eqns_1, eqns;
-  BackendDAE.IncidenceMatrix m;
-  BackendDAE.IncidenceMatrix mt;
+  BackendDAE.AdjacencyMatrix m;
+  BackendDAE.AdjacencyMatrix mt;
   BackendDAE.Variables v, v1;
   DAE.FunctionTree funcs;
   Integer numEqs, numEqs1;
@@ -633,13 +633,13 @@ algorithm
     eqnslst1 :=  List.uniqueIntN(listAppend(MSSSeqs,eqnslst1),numEqs1);
     eqnslst1 := listAppend(eqnslst1,eqnslst);
     if Flags.isSet(Flags.BLT_DUMP) then
-      print("Update Incidence Matrix: ");
+      print("Update Adjacency Matrix: ");
       BackendDump.debuglst(eqnslst1,intString," ","\n");
       print("\n");
     end if;
     funcs := BackendDAEUtil.getFunctions(inShared);
     (syst,omapEqnIncRow,omapIncRowEqn) :=
-      BackendDAEUtil.updateIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst1, imapEqnIncRow, imapIncRowEqn, BackendDAEUtil.isInitializationDAE(inShared));
+      BackendDAEUtil.updateAdjacencyMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst1, imapEqnIncRow, imapIncRowEqn, BackendDAEUtil.isInitializationDAE(inShared));
     osyst := syst;
     oshared := inShared;
     oNotDiffableMSS := iNotDiffableMSS;
@@ -650,7 +650,7 @@ protected function collectVarEqns
 "author: Frenkel TUD 2011-05, waurich 12-15
   collect all equations of a list with var indexes"
   input list<Integer> varIdcsIn;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrixT mT;
   input Integer numVars;
   input Integer numEqs "size of equations array, maximal entry in inMT";
   output list<Integer> eqIdcsOut = {};
@@ -762,7 +762,7 @@ protected function replaceDifferentiatedEqns
   input list<tuple<Integer, Option<BackendDAE.Equation>, BackendDAE.Equation>> inEqnTplLst; //<origIdx, SOME<derivedEq>, original Eq>
   input BackendDAE.Variables vars;
   input BackendDAE.EquationArray eqns;
-  input BackendDAE.IncidenceMatrix mt;
+  input BackendDAE.AdjacencyMatrix mt;
   input array<Integer> imapIncRowEqn;
   input list<Integer> inChangedVars;
   input BackendDAE.ConstraintEquations inOrgEqns;
@@ -849,7 +849,7 @@ protected function statesWithUnusedDerivative
 "author Frenkel TUD 2012-11
   add to iAcc all states with no positiv rows in mt"
   input Integer state;
-  input BackendDAE.IncidenceMatrix mt;
+  input BackendDAE.AdjacencyMatrix mt;
   input list<Integer> iAcc;
   output list<Integer> oAcc;
 algorithm
@@ -904,7 +904,7 @@ algorithm
       array<Integer> mapIncRowEqn;
       Integer noofeqns;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
-      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.AdjacencyMatrixT mt;
       array<Integer> ass1,ass2;
     case ({},_,_,_,_,_)
       then (inSystem,inShared,inAss1,inAss2,iArg);
@@ -965,8 +965,8 @@ algorithm
       BackendDAE.EquationArray eqns;
       list<Integer> ilst, eqnslst, eqnslst1;
       BackendDAE.Variables v,v1;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrix mt;
+      BackendDAE.AdjacencyMatrix m;
+      BackendDAE.AdjacencyMatrix mt;
       BackendDAE.EqSystem syst;
       array<Integer> ass1, ass2, mapIncRowEqn;
       array<list<Integer>> mapEqnIncRow;
@@ -985,15 +985,15 @@ algorithm
         ilst = List.select1(ilst, intGt, 0);
         ass2 = List.fold1r(eqnslst1, arrayUpdate, -1, inAss2);
         ass1 = List.fold1r(ilst, arrayUpdate, -1, inAss1);
-        // update IncidenceMatrix
+        // update AdjacencyMatrix
         if Flags.isSet(Flags.BLT_DUMP) then
           print("Replaced final Parameter in Eqns\n");
-          print("Update Incidence Matrix: ");
+          print("Update Adjacency Matrix: ");
           BackendDump.debuglst(eqnslst, intString, " ", "\n");
         end if;
         funcs = BackendDAEUtil.getFunctions(inShared);
         (syst, mapEqnIncRow, mapIncRowEqn) =
-            BackendDAEUtil.updateIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst, imapEqnIncRow, imapIncRowEqn, BackendDAEUtil.isInitializationDAE(inShared));
+            BackendDAEUtil.updateAdjacencyMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst, imapEqnIncRow, imapIncRowEqn, BackendDAEUtil.isInitializationDAE(inShared));
       then
         (syst, inShared, ass1, ass2, inStateOrd, inOrgEqnsLst, mapEqnIncRow, mapIncRowEqn);
 
@@ -1008,15 +1008,15 @@ algorithm
         end if;
         varlst = BackendVariable.setVarsKind(varlst, BackendDAE.VARIABLE());
         syst.orderedVars = BackendVariable.addVars(varlst, syst.orderedVars);
-        // update IncidenceMatrix
+        // update AdjacencyMatrix
         eqnslst1 = collectVarEqns(statesWithUnusedDer, mt, arrayLength(mt), arrayLength(m));
         eqnslst1 = List.map1r(eqnslst1, arrayGet, imapIncRowEqn);
         if Flags.isSet(Flags.BLT_DUMP) then
-          print("Update Incidence Matrix: ");
+          print("Update Adjacency Matrix: ");
           BackendDump.debuglst(eqnslst1,intString," ","\n");
         end if;
         funcs = BackendDAEUtil.getFunctions(inShared);
-        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst1, imapEqnIncRow, imapIncRowEqn, BackendDAEUtil.isInitializationDAE(inShared));
+        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateAdjacencyMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst1, imapEqnIncRow, imapIncRowEqn, BackendDAEUtil.isInitializationDAE(inShared));
       then
         (syst,inShared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,mapEqnIncRow,mapIncRowEqn);
 
@@ -1052,15 +1052,15 @@ algorithm
           print("Other Candidates are\n");
           BackendDump.printVarList(varlst);
         end if;
-        // update IncidenceMatrix
+        // update AdjacencyMatrix
         eqnslst1 = collectVarEqns({i}, mt, arrayLength(mt), arrayLength(m));
         eqnslst1 = List.map1r(eqnslst1, arrayGet, imapIncRowEqn);
         if Flags.isSet(Flags.BLT_DUMP) then
-          print("Update Incidence Matrix: ");
+          print("Update Adjacency Matrix: ");
           BackendDump.debuglst(eqnslst1,intString," ","\n");
         end if;
         funcs = BackendDAEUtil.getFunctions(inShared);
-        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst1, imapEqnIncRow, imapIncRowEqn, BackendDAEUtil.isInitializationDAE(inShared));
+        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateAdjacencyMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst1, imapEqnIncRow, imapIncRowEqn, BackendDAEUtil.isInitializationDAE(inShared));
       then
         (syst,inShared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,mapEqnIncRow,mapIncRowEqn);
 
@@ -1744,7 +1744,7 @@ algorithm
       HashTableCrIntToExp.HashTable ht;
       BackendDAE.EqSystem syst;
       DAE.FunctionTree funcs;
-      BackendDAE.IncidenceMatrix m;
+      BackendDAE.AdjacencyMatrix m;
       array<Integer> ass1,ass2;
       Integer ne,nv,setIndex;
       BackendDAE.Shared shared;
@@ -1761,16 +1761,16 @@ algorithm
         syst = BackendEquation.equationsAddDAE(eqnslst, inSystem);
         // change dummy states
         (syst,ht) = addAllDummyStates(syst,iSo,iHt);
-        // update IncidenceMatrix
+        // update AdjacencyMatrix
         funcs = BackendDAEUtil.getFunctions(inShared);
-        (syst,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
+        (syst,m,_,_,_) = BackendDAEUtil.getAdjacencyMatrixScalar(syst,BackendDAE.SOLVABLE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
         // expand the matching
         ass1 = Array.expand(nfreeStates,ass1,-1);
         ass2 = Array.expand(nOrgEqns,ass2,-1);
         nv = BackendVariable.varsSize(BackendVariable.daeVars(syst));
         ne = BackendDAEUtil.systemSize(syst);
         true = BackendDAEEXT.setAssignment(ne,nv,ass2,ass1);
-        Matching.matchingExternalsetIncidenceMatrix(nv, ne, m);
+        Matching.matchingExternalsetAdjacencyMatrix(nv, ne, m);
         BackendDAEEXT.matching(nv, ne, 5, -1, 0.0, 0);
         BackendDAEEXT.getAssignment(ass2, ass1);
         syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(ass1,ass2,{}));
@@ -1788,11 +1788,11 @@ algorithm
         if Flags.isSet(Flags.BLT_DUMP) then
           BackendDump.dumpStateOrder(so);
         end if;
-        // get scalar incidence matrix solvable
+        // get scalar adjacency matrix solvable
         funcs = BackendDAEUtil.getFunctions(inShared);
         // replace der(x,n) with DERn.Der(n-1)..DER.x and add variables
         syst = replaceHigherDerivatives(inSystem);
-        (syst,_,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
+        (syst,_,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getAdjacencyMatrixScalar(syst,BackendDAE.SOLVABLE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
         // do state selection for each level
           //BackendDump.dumpVarList(hov,"HOV");
           //print("ORGEQNS "+BackendDump.constraintEquationString(orgEqnsLst)+"\n");
@@ -1842,7 +1842,7 @@ algorithm
       StateSets stateSets;
       DAE.FunctionTree funcs;
       BackendDAE.Variables vars;
-      BackendDAE.IncidenceMatrix m;
+      BackendDAE.AdjacencyMatrix m;
       BackendDAE.ConstraintEquations orgEqnsLst;
       HashTableCrIntToExp.HashTable ht;
       HashTable2.HashTable repl;
@@ -1897,15 +1897,15 @@ algorithm
         (syst,ht) = addDummyStates(dummyVars,level,repl,syst,iHt);
         // fix derivative indexes
         _ = List.fold1(iHov, fixDerivativeIndex, level, BackendVariable.daeVars(syst));
-        // update IncidenceMatrix
-        (syst,m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
+        // update AdjacencyMatrix
+        (syst,m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getAdjacencyMatrixScalar(syst,BackendDAE.SOLVABLE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
         // genereate new Matching
         nv1 = BackendVariable.varsSize(BackendVariable.daeVars(syst));
         ne1 = BackendDAEUtil.systemSize(syst);
         ass1 = Array.expand(nv1-nv,ass1,-1);
         ass2 = Array.expand(ne1-ne,ass2,-1);
         true = BackendDAEEXT.setAssignment(ne1,nv1,ass2,ass1);
-        Matching.matchingExternalsetIncidenceMatrix(nv1, ne1, m);
+        Matching.matchingExternalsetAdjacencyMatrix(nv1, ne1, m);
         BackendDAEEXT.matching(nv1, ne1, 5, -1, 0.0, 0);
         BackendDAEEXT.getAssignment(ass2, ass1);
         syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(ass1,ass2,{}));
@@ -2041,8 +2041,8 @@ algorithm
       String msg;
       array<Integer> indexmap,invindexmap,vec1,vec2,ass1,ass2;
       list<Integer> ilst,assigned,unassigned;
-      BackendDAE.IncidenceMatrix m,m1;
-      BackendDAE.IncidenceMatrixT mT,mT1;
+      BackendDAE.AdjacencyMatrix m,m1;
+      BackendDAE.AdjacencyMatrixT mT,mT1;
       list<list<Integer>> comps;
       list<BackendDAE.Equation> eqnslst1;
       list<tuple<DAE.ComponentRef, Integer>> states,dstates;
@@ -2064,7 +2064,7 @@ algorithm
         eqns1 := BackendEquation.listEquation(eqnslst);
         syst := BackendDAEUtil.createEqSystem(hovvars, eqns1);
         (me,meT,_,_) :=  BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inShared,false);
-        m1 := incidenceMatrixfromEnhancedStrict(me,hovvars);
+        m1 := adjacencyMatrixfromEnhancedStrict(me,hovvars);
         mT1 := AdjacencyMatrix.transposeAdjacencyMatrix(m1,nfreeStates);
         //  BackendDump.printEqSystem(syst);
         hovvars := sortStateCandidatesVars(hovvars,BackendVariable.daeVars(inSystem),SOME(mT1));
@@ -2076,7 +2076,7 @@ algorithm
           BackendDump.dumpVariables(hovvars,"Highest order derivatives (state candidates):");
           BackendDump.dumpEquationList(eqnslst, "Constraint equations:");
         end if;
-        // generate incidence matrix from system and equations of that level and the states of that level
+        // generate adjacency matrix from system and equations of that level and the states of that level
         nv := BackendVariable.varsSize(vars);
         ne := BackendEquation.equationArraySize(eqns);
         neqnarr := BackendEquation.getNumberOfEquations(eqns);
@@ -2091,16 +2091,16 @@ algorithm
         mT1 := arrayCreate(nv1,{});
         mapEqnIncRow := Array.expand(neqns,iMapEqnIncRow,{});
         mapIncRowEqn := Array.expand(neqns,iMapIncRowEqn,-1);
-        // replace state indexes in original incidencematrix
-        getIncidenceMatrixSelectStates(ne,m1,mT1,m,indexmap);
+        // replace state indexes in original adjacencymatrix
+        getAdjacencyMatrixSelectStates(ne,m1,mT1,m,indexmap);
         // add level equations
         funcs := BackendDAEUtil.getFunctions(inShared);
-        getIncidenceMatrixLevelEquations(eqnslst,vars,neqnarr,ne,m1,mT1,m,mapEqnIncRow,mapIncRowEqn,indexmap,funcs,BackendDAEUtil.isInitializationDAE(inShared));
+        getAdjacencyMatrixLevelEquations(eqnslst,vars,neqnarr,ne,m1,mT1,m,mapEqnIncRow,mapIncRowEqn,indexmap,funcs,BackendDAEUtil.isInitializationDAE(inShared));
         // match the variables not the equations, to have preferred states unmatched
         vec1 := Array.expand(nfreeStates,ass1,-1);
         vec2 := Array.expand(neqns,ass2,-1);
         true := BackendDAEEXT.setAssignment(nv1,ne1,vec1,vec2);
-        Matching.matchingExternalsetIncidenceMatrix(ne1, nv1, mT1);
+        Matching.matchingExternalsetAdjacencyMatrix(ne1, nv1, mT1);
         BackendDAEEXT.matching(ne1, nv1, 3, -1, 0.0, 0);
         BackendDAEEXT.getAssignment(vec1, vec2);
         comps := Sorting.TarjanTransposed(mT1, vec2);
@@ -2123,7 +2123,7 @@ algorithm
         vars := BackendVariable.listVar1(vlst);
         vars := BackendVariable.addVars(BackendVariable.varList(hovvars), vars);
         syst := BackendDAEUtil.createEqSystem(vars, eqns);
-        // get advanced incidence Matrix
+        // get advanced adjacency Matrix
         (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inShared,false);
         if Flags.isSet(Flags.BLT_DUMP) then
           BackendDump.dumpAdjacencyMatrixEnhanced(me);
@@ -2131,12 +2131,12 @@ algorithm
           BackendDump.dumpAdjacencyMatrixTEnhanced(meT);
         end if;
         // get indicenceMatrix from Enhanced
-        m := incidenceMatrixfromEnhancedStrict(me,vars);
+        m := adjacencyMatrixfromEnhancedStrict(me,vars);
         nv := BackendVariable.varsSize(vars);
         ne := BackendEquation.equationArraySize(eqns);
         mT := AdjacencyMatrix.transposeAdjacencyMatrix(m,nv);
         // match the variables not the equations, to have preferred states unmatched
-        Matching.matchingExternalsetIncidenceMatrix(ne,nv,mT);
+        Matching.matchingExternalsetAdjacencyMatrix(ne,nv,mT);
         BackendDAEEXT.matching(ne,nv,3,-1,1.0,1);
         vec1 := arrayCreate(nv,-1);
         vec2 := arrayCreate(ne,-1);
@@ -2176,11 +2176,11 @@ algorithm
         // splitt it into sets
         syst := BackendDAEUtil.setEqSystMatching(syst, BackendDAE.MATCHING(vec1,vec2,{}));
         //  dumpSystemGraphML(syst,inShared,NONE(),"StateSelection" + intString(arrayLength(m)) + ".graphml");
-        (syst,m,mT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
+        (syst,m,mT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixScalar(syst,BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
         // TODO: partition the system
         comps := partitionSystem(m,mT);
         //  print("Sets:\n");
-        //  BackendDump.dumpIncidenceMatrix(listArray(comps));
+        //  BackendDump.dumpAdjacencyMatrix(listArray(comps));
         //  BackendDump.printEqSystem(syst);
         (vlst,_,stateSets) := processComps4New(comps,nv,ne,vars,eqns,m,mT,mapEqnIncRow,mapIncRowEqn,vec2,vec1,level,inShared,{},{},iStateSets);
         vlst := List.select(vlst, BackendVariable.isStateVar);
@@ -2240,7 +2240,7 @@ protected
   list<Integer> neverIdx = {};
   BackendDAE.EqSystem syst2;
   BackendDAE.AdjacencyMatrixEnhanced me2;
-  BackendDAE.IncidenceMatrix m, mT;
+  BackendDAE.AdjacencyMatrix m, mT;
   list<tuple<Integer,Integer>> tplLst;
   String msg;
 algorithm
@@ -2267,11 +2267,11 @@ algorithm
     // If there are unmatched equations try to match full system with casual rules for stateSelect.never vars
     if Matching.anyUnassigned(ne, vec2) then
       // non strict rules to be able to solve for nonlinear stateSelect.never states
-      m := incidenceMatrixfromEnhanced(me,vars,so);
+      m := adjacencyMatrixfromEnhanced(me,vars,so);
       mT := AdjacencyMatrix.transposeAdjacencyMatrix(m,nv);
 
       BackendDAEEXT.setAssignment(ne,nv,vec2,vec1);
-      Matching.matchingExternalsetIncidenceMatrix(ne,nv,mT);
+      Matching.matchingExternalsetAdjacencyMatrix(ne,nv,mT);
       /* Call with clearMatching = 0 to reuse old information */
       BackendDAEEXT.matching(ne,nv,3,-1,1.0,1);
       BackendDAEEXT.getAssignment(vec1,vec2);
@@ -2299,14 +2299,14 @@ algorithm
       (me2,_,_,_) :=  BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst2,inShared,false);
 
       // non strict rules to be able to solve for nonlinear stateSelect.never states
-      m := incidenceMatrixfromEnhancedPartial(me2,vars,neverVarsArray,vec2,so);
+      m := adjacencyMatrixfromEnhancedPartial(me2,vars,neverVarsArray,vec2,so);
 
       if not AdjacencyMatrix.isEmpty(m) then
         mT := AdjacencyMatrix.transposeAdjacencyMatrix(m,nv2);
         vec_res1 := arrayCreate(nv2,-1);
         vec_res2 := arrayCreate(ne,-1);
         BackendDAEEXT.setAssignment(ne,nv2,vec_res2,vec_res1);
-        Matching.matchingExternalsetIncidenceMatrix(ne,nv2,mT);
+        Matching.matchingExternalsetAdjacencyMatrix(ne,nv2,mT);
         BackendDAEEXT.matching(ne,nv2,3,-1,1.0,1);
         BackendDAEEXT.getAssignment(vec_res1,vec_res2);
 
@@ -2409,7 +2409,7 @@ protected
   list<Integer> eqns;
   list<Integer> ilst,ilst1;
   array<Integer> ass2,invindexmap;
-  BackendDAE.IncidenceMatrix m;
+  BackendDAE.AdjacencyMatrix m;
 algorithm
   BackendDAE.EQSYSTEM(m=SOME(m),matching=BackendDAE.MATCHING(ass1=invindexmap,ass2=ass2)) := syst;
   eqns := List.map1r(comp,arrayGet,iMapIncRowEqn);
@@ -2456,11 +2456,11 @@ algorithm
   end matchcontinue;
 end getStateIndexes;
 
-protected function getIncidenceMatrixSelectStates
+protected function getAdjacencyMatrixSelectStates
   input Integer nEqns;
-  input BackendDAE.IncidenceMatrix m "input/output";
-  input BackendDAE.IncidenceMatrixT mT "input/output";
-  input BackendDAE.IncidenceMatrix mo;
+  input BackendDAE.AdjacencyMatrix m "input/output";
+  input BackendDAE.AdjacencyMatrixT mT "input/output";
+  input BackendDAE.AdjacencyMatrix mo;
   input array<Integer> stateindexs;
 protected
   list<Integer> row, negrow;
@@ -2478,7 +2478,7 @@ algorithm
     row := List.map(negrow,intAbs);
     _ := List.fold1(row,Array.consToElement,-i,mT);
   end for;
-end getIncidenceMatrixSelectStates;
+end getAdjacencyMatrixSelectStates;
 
 protected function replaceStateIndex
   input Integer iR;
@@ -2497,16 +2497,16 @@ algorithm
   end if;
 end replaceStateIndex;
 
-protected function getIncidenceMatrixLevelEquations
+protected function getAdjacencyMatrixLevelEquations
 "@author: Frenkel TUD 2013-01
-  Calculates the incidence matrix as an array of list of integers"
+  Calculates the adjacency matrix as an array of list of integers"
   input list<BackendDAE.Equation> iEqns;
   input BackendDAE.Variables vars;
   input Integer index "index";
   input Integer sindex "scalar index";
-  input BackendDAE.IncidenceMatrix m "input/output";
-  input BackendDAE.IncidenceMatrixT mT "input/output";
-  input BackendDAE.IncidenceMatrix om;
+  input BackendDAE.AdjacencyMatrix m "input/output";
+  input BackendDAE.AdjacencyMatrixT mT "input/output";
+  input BackendDAE.AdjacencyMatrix om;
   input array<list<Integer>> mapEqnIncRow "input/output";
   input array<Integer> mapIncRowEqn "input/output";
   input array<Integer> stateindexs;
@@ -2526,7 +2526,7 @@ algorithm
     // i < n
     case e::rest equation
         // compute the row
-        (rowTree,size) = BackendDAEUtil.incidenceRow(e, vars, BackendDAE.SOLVABLE(), SOME(functionTree), AvlSetInt.EMPTY(), isInitial);
+        (rowTree,size) = BackendDAEUtil.adjacencyRow(e, vars, BackendDAE.SOLVABLE(), SOME(functionTree), AvlSetInt.EMPTY(), isInitial);
         row = AvlSetInt.listKeys(rowTree);
         rowSize = sindex + size;
         i1 = index+1;
@@ -2544,14 +2544,14 @@ algorithm
         rowindxs = List.map(rowindxs,intNeg);
         _ = List.fold1(row,Array.appendToElement,rowindxs,mT);
         // next equation
-        getIncidenceMatrixLevelEquations(rest, vars, i1, rowSize, m, mT, om, mapEqnIncRow, mapIncRowEqn, stateindexs, functionTree, isInitial);
+        getAdjacencyMatrixLevelEquations(rest, vars, i1, rowSize, m, mT, om, mapEqnIncRow, mapIncRowEqn, stateindexs, functionTree, isInitial);
       then ();
   end match;
-end getIncidenceMatrixLevelEquations;
+end getAdjacencyMatrixLevelEquations;
 
 protected function partitionSystem
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   output list<list<Integer>> systs;
 protected
   array<Integer> rowmarkarr,collmarkarr;
@@ -2572,8 +2572,8 @@ end partitionSystem;
 
 protected function partitionSystem1
   input Integer index;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrix mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrix mT;
   input array<Integer> rowmarkarr;
   input array<Integer> collmarkarr;
   input Integer iNSystems;
@@ -2603,8 +2603,8 @@ end partitionSystem1;
 protected function partitionSystemstraverseRows
   input list<Integer> iRows;
   input list<Integer> iQueue;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrix mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrix mT;
   input array<Integer> rowmarkarr;
   input array<Integer> collmarkarr;
   input Integer iNSystems;
@@ -2669,8 +2669,8 @@ protected function processComps4New
   input Integer inEqnsSize;
   input BackendDAE.Variables iVars;
   input BackendDAE.EquationArray iEqns;
-  input BackendDAE.IncidenceMatrix inM;
-  input BackendDAE.IncidenceMatrixT inMT;
+  input BackendDAE.AdjacencyMatrix inM;
+  input BackendDAE.AdjacencyMatrixT inMT;
   input array<list<Integer>> inMapEqnIncRow;
   input array<Integer> inMapIncRowEqn;
   input array<Integer> vec1;
@@ -2828,7 +2828,7 @@ end getSetSystem;
 protected function getSetStates
   input Integer e;
   input array<Boolean> flag;
-  input BackendDAE.IncidenceMatrix inM;
+  input BackendDAE.AdjacencyMatrix inM;
   input array<Integer> vec2;
   input tuple<list<Integer>,list<Integer>> iStates;
   output tuple<list<Integer>,list<Integer>> oStates;
@@ -2839,7 +2839,7 @@ end getSetStates;
 protected function getSetEqnStates
   input Integer v;
   input array<Boolean> flag;
-  input BackendDAE.IncidenceMatrix inM;
+  input BackendDAE.AdjacencyMatrix inM;
   input array<Integer> vec2;
   input tuple<list<Integer>,list<Integer>> iStates;
   output tuple<list<Integer>,list<Integer>> oStates;
@@ -2859,8 +2859,8 @@ protected function getEqnsforDynamicStateSelection
  author: Frenkel TUD 2012-12"
   input list<Integer> U;
   input Integer neqns;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Integer> ass1 "ass[eqnindx]=varindx";
   input array<Integer> ass2 "ass[varindx]=eqnindx";
   input array<list<Integer>> mapEqnIncRow;
@@ -2883,8 +2883,8 @@ protected function getEqnsforDynamicStateSelection1
 "function getEqnsforDynamicStateSelection1, helper for getEqnsforDynamicStateSelection
  author: Frenkel TUD 2012-12"
   input list<Integer> U;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input Integer mark;
   input array<Integer> colummarks;
   input array<Integer> ass1 "ass[eqnindx]=varindx";
@@ -2920,8 +2920,8 @@ end getEqnsforDynamicStateSelection1;
 protected function getEqnsforDynamicStateSelectionPhase
 "author: Frenkel TUD 2012-12"
   input list<Integer> elst;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input Integer mark;
   input array<Integer> colummarks;
   input array<Integer> ass1;
@@ -2959,8 +2959,8 @@ end getEqnsforDynamicStateSelectionPhase;
 protected function getEqnsforDynamicStateSelectionRows
 "author: Frenkel TUD 2012-12"
   input list<Integer> rows;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input Integer mark;
   input array<Integer> colummarks;
   input array<Integer> ass1;
@@ -3055,7 +3055,7 @@ protected function sortStateCandidatesVars
   sort the state candidates"
   input BackendDAE.Variables inVars;
   input BackendDAE.Variables allVars;
-  input Option<BackendDAE.IncidenceMatrix> m;
+  input Option<BackendDAE.AdjacencyMatrix> m;
   output BackendDAE.Variables outStates;
 protected
   Integer varsize;
@@ -3111,7 +3111,7 @@ Calculates a priority contribution bases on the stateSelect attribute and heuris
   input BackendDAE.Var v;
   input BackendDAE.Variables vars;
   input Integer index;
-  input Option<BackendDAE.IncidenceMatrix> m;
+  input Option<BackendDAE.AdjacencyMatrix> m;
   output Real prio_att;
   output Real prio_heu;
 algorithm
@@ -3124,7 +3124,7 @@ protected function varStateSelectHeuristicPrio
   input BackendDAE.Var v;
   input BackendDAE.Variables vars;
   input Integer index;
-  input Option<BackendDAE.IncidenceMatrix> m;
+  input Option<BackendDAE.AdjacencyMatrix> m;
   output Real prio;
 protected
   Real prio1,prio2,prio3,prio4,prio5;
@@ -3178,13 +3178,13 @@ protected function varStateSelectHeuristicPrio5
   added prio for states/variables, good state have much edges -> brackes loops"
   input BackendDAE.Var v;
   input Integer index;
-  input Option<BackendDAE.IncidenceMatrix> om;
+  input Option<BackendDAE.AdjacencyMatrix> om;
   output Real prio;
 algorithm
   prio := match(om)
     local
       list<Integer> row;
-      BackendDAE.IncidenceMatrix m;
+      BackendDAE.AdjacencyMatrix m;
       Real n;
     case(NONE()) then 0.0;
     case(SOME(m))
@@ -3349,31 +3349,31 @@ algorithm
   outExp := DAE.CALL(Absyn.IDENT("der"), {inExp}, DAE.CALL_ATTR(tp, false, true, false, false, DAE.NO_INLINE(),DAE.NO_TAIL()));
 end makeder;
 
-protected function incidenceMatrixfromEnhancedStrict
+protected function adjacencyMatrixfromEnhancedStrict
 "author: Frenkel TUD 2012-11
-  converts an AdjacencyMatrixEnhanced into a IncidenceMatrix"
+  converts an AdjacencyMatrixEnhanced into a AdjacencyMatrix"
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input BackendDAE.Variables vars;
-  output BackendDAE.IncidenceMatrix m;
+  output BackendDAE.AdjacencyMatrix m;
 algorithm
-  m := Array.map1(me,incidenceMatrixElementfromEnhancedStrict,vars);
-end incidenceMatrixfromEnhancedStrict;
+  m := Array.map1(me,adjacencyMatrixElementfromEnhancedStrict,vars);
+end adjacencyMatrixfromEnhancedStrict;
 
-protected function incidenceMatrixElementfromEnhancedStrict
+protected function adjacencyMatrixElementfromEnhancedStrict
 "author: Frenkel TUD 2012-11
-  helper for incidenceMatrixfromEnhancedStrict"
+  helper for adjacencyMatrixfromEnhancedStrict"
   input BackendDAE.AdjacencyMatrixElementEnhanced iRow;
   input BackendDAE.Variables vars;
-  output BackendDAE.IncidenceMatrixElement oRow;
+  output BackendDAE.AdjacencyMatrixElement oRow;
 algorithm
-  oRow := List.fold1(iRow, incidenceMatrixElementElementfromEnhancedStrict, vars, {});
+  oRow := List.fold1(iRow, adjacencyMatrixElementElementfromEnhancedStrict, vars, {});
   oRow := List.map(oRow,intAbs);
   oRow := listReverse(oRow);
-end incidenceMatrixElementfromEnhancedStrict;
+end adjacencyMatrixElementfromEnhancedStrict;
 
-protected function incidenceMatrixElementElementfromEnhancedStrict
+protected function adjacencyMatrixElementElementfromEnhancedStrict
 "author: Frenkel TUD 2012-11
-  converts an AdjacencyMatrix entry into a IncidenceMatrix entry"
+  converts an AdjacencyMatrix entry into a AdjacencyMatrix entry"
   input tuple<Integer, BackendDAE.Solvability, BackendDAE.Constraints> inTpl;
   input BackendDAE.Variables vars;
   input list<Integer> iRow;
@@ -3387,53 +3387,53 @@ algorithm
     case ((i,BackendDAE.SOLVABILITY_PARAMETER(b=true),_),_,_) then i::iRow;
     else iRow;
   end match;
-end incidenceMatrixElementElementfromEnhancedStrict;
+end adjacencyMatrixElementElementfromEnhancedStrict;
 
-protected function incidenceMatrixfromEnhanced
+protected function adjacencyMatrixfromEnhanced
 "author: kabdelhak FHB 2019-08
-  converts an AdjacencyMatrixEnhanced into a IncidenceMatrix"
+  converts an AdjacencyMatrixEnhanced into a AdjacencyMatrix"
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input BackendDAE.Variables vars;
   input BackendDAE.StateOrder so;
-  output BackendDAE.IncidenceMatrix m;
+  output BackendDAE.AdjacencyMatrix m;
 algorithm
-  m := Array.map1(me,incidenceMatrixElementfromEnhanced,(vars,so));
-end incidenceMatrixfromEnhanced;
+  m := Array.map1(me,adjacencyMatrixElementfromEnhanced,(vars,so));
+end adjacencyMatrixfromEnhanced;
 
-protected function incidenceMatrixElementfromEnhanced
+protected function adjacencyMatrixElementfromEnhanced
 "author: kabdelhak FHB 2019-08
-  helper for incidenceMatrixfromEnhanced"
+  helper for adjacencyMatrixfromEnhanced"
   input BackendDAE.AdjacencyMatrixElementEnhanced iRow;
   input tuple<BackendDAE.Variables, BackendDAE.StateOrder> tpl;
-  output BackendDAE.IncidenceMatrixElement oRow;
+  output BackendDAE.AdjacencyMatrixElement oRow;
 algorithm
-  oRow := List.fold1(iRow, incidenceMatrixElementElementfromEnhanced, tpl, {});
+  oRow := List.fold1(iRow, adjacencyMatrixElementElementfromEnhanced, tpl, {});
   oRow := List.map(oRow,intAbs);
   oRow := listReverse(oRow);
-end incidenceMatrixElementfromEnhanced;
+end adjacencyMatrixElementfromEnhanced;
 
-protected function incidenceMatrixfromEnhancedPartial
+protected function adjacencyMatrixfromEnhancedPartial
 "author: kabdelhak FHB 2019-08
-  converts an AdjacencyMatrixEnhanced into a IncidenceMatrix.
+  converts an AdjacencyMatrixEnhanced into a AdjacencyMatrix.
   does not allow unmatching of stateSelect.never variables."
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input BackendDAE.Variables vars;
   input BackendDAE.Variables neverVars;
   input array<Integer> ass;
   input BackendDAE.StateOrder so;
-  output BackendDAE.IncidenceMatrix m;
+  output BackendDAE.AdjacencyMatrix m;
 algorithm
-  m := Array.map1Ind(me,incidenceMatrixElementfromEnhancedPartial,(vars,neverVars,ass,so));
-end incidenceMatrixfromEnhancedPartial;
+  m := Array.map1Ind(me,adjacencyMatrixElementfromEnhancedPartial,(vars,neverVars,ass,so));
+end adjacencyMatrixfromEnhancedPartial;
 
-protected function incidenceMatrixElementfromEnhancedPartial
+protected function adjacencyMatrixElementfromEnhancedPartial
 "author: kabdelhak FHB 2019-08
-  helper for incidenceMatrixfromEnhanced
+  helper for adjacencyMatrixfromEnhanced
   does not allow unmatching of stateSelect.never variables."
   input BackendDAE.AdjacencyMatrixElementEnhanced iRow;
   input Integer index;
   input tuple<BackendDAE.Variables,BackendDAE.Variables,array<Integer>,BackendDAE.StateOrder> varsAssTpl;
-  output BackendDAE.IncidenceMatrixElement oRow;
+  output BackendDAE.AdjacencyMatrixElement oRow;
 protected
   BackendDAE.Variables vars;
   BackendDAE.Variables neverVars;
@@ -3442,17 +3442,17 @@ protected
 algorithm
   (vars, neverVars, ass, so) := varsAssTpl;
   if intEq(ass[index], -1) or (not BackendVariable.varStateSelectNever(BackendVariable.getVarAt(vars,ass[index]))) then
-    oRow := List.fold1(iRow, incidenceMatrixElementElementfromEnhanced, (neverVars, so), {});
+    oRow := List.fold1(iRow, adjacencyMatrixElementElementfromEnhanced, (neverVars, so), {});
     oRow := List.map(oRow,intAbs);
     oRow := listReverse(oRow);
   else
     oRow := {};
   end if;
-end incidenceMatrixElementfromEnhancedPartial;
+end adjacencyMatrixElementfromEnhancedPartial;
 
-protected function incidenceMatrixElementElementfromEnhanced
+protected function adjacencyMatrixElementElementfromEnhanced
 "author: kabdelhak FHB 2019-08
-  converts an AdjacencyMatrix entry into an IncidenceMatrix entry
+  converts an AdjacencyMatrix entry into an AdjacencyMatrix entry
   ToDo: remove nonlinear (?)"
   input tuple<Integer, BackendDAE.Solvability, BackendDAE.Constraints> inTpl;
   input tuple<BackendDAE.Variables, BackendDAE.StateOrder> tpl;
@@ -3465,14 +3465,14 @@ algorithm
     case (i,BackendDAE.SOLVABILITY_CONSTONE(),_) then i::iRow;
     case (i,BackendDAE.SOLVABILITY_CONST(),_) then i::iRow;
     case (i,BackendDAE.SOLVABILITY_PARAMETER(b=true),_) then i::iRow;
-    case (i,BackendDAE.SOLVABILITY_PARAMETER(b=false),_) then incidenceMatrixElementElementfromEnhanced_1(i,tpl,iRow);
-    case (i,BackendDAE.SOLVABILITY_LINEAR(b=true),_) then incidenceMatrixElementElementfromEnhanced_1(i,tpl,iRow);
-    case (i,BackendDAE.SOLVABILITY_NONLINEAR(),_) then incidenceMatrixElementElementfromEnhanced_1(i,tpl,iRow);
+    case (i,BackendDAE.SOLVABILITY_PARAMETER(b=false),_) then adjacencyMatrixElementElementfromEnhanced_1(i,tpl,iRow);
+    case (i,BackendDAE.SOLVABILITY_LINEAR(b=true),_) then adjacencyMatrixElementElementfromEnhanced_1(i,tpl,iRow);
+    case (i,BackendDAE.SOLVABILITY_NONLINEAR(),_) then adjacencyMatrixElementElementfromEnhanced_1(i,tpl,iRow);
     else iRow;
   end match;
-end incidenceMatrixElementElementfromEnhanced;
+end adjacencyMatrixElementElementfromEnhanced;
 
-protected function incidenceMatrixElementElementfromEnhanced_1
+protected function adjacencyMatrixElementElementfromEnhanced_1
   "author: kabdelhak FHB 2019-08
   Only append if stateSelect.never and the state is not the derivative of another state
   - ticket #5459
@@ -3495,7 +3495,7 @@ algorithm
   v := BackendVariable.getVarAt(vars,intAbs(i));
   b := BackendVariable.varStateSelectNever(v) and not BaseHashTable.hasKey(BackendVariable.varCref(v), ht);
   oRow := List.consOnTrue(b,i,iRow);
-end incidenceMatrixElementElementfromEnhanced_1;
+end adjacencyMatrixElementElementfromEnhanced_1;
 
 protected function checkAssignment
 "author: Frenkel TUD 2012-05
@@ -4125,7 +4125,7 @@ protected
   BackendDAE.AdjacencyMatrixEnhanced me;
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn;
-  BackendDAE.IncidenceMatrix m;
+  BackendDAE.AdjacencyMatrix m;
   Integer ne,nv;
   array<Integer> vec1,vec2;
   list<Integer> unassigned,assigned;
@@ -4135,13 +4135,13 @@ algorithm
   eqns := BackendEquation.listEquation(eqnslst);
   syst := BackendDAEUtil.createEqSystem(vars, eqns);
   (me, _, mapEqnIncRow, mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst, shared, false);
-  m := incidenceMatrixfromEnhancedStrict(me, vars);
+  m := adjacencyMatrixfromEnhancedStrict(me, vars);
   // match the equations, umatched are constrained equations
   nv := BackendVariable.varsSize(vars);
   ne := BackendEquation.equationArraySize(eqns);
   vec1 := arrayCreate(nv,-1);
   vec2 := arrayCreate(ne,-1);
-  Matching.matchingExternalsetIncidenceMatrix(nv,ne,m);
+  Matching.matchingExternalsetAdjacencyMatrix(nv,ne,m);
   BackendDAEEXT.matching(nv,ne,5,-1,1.0,1);
   BackendDAEEXT.getAssignment(vec2,vec1);
   unassigned := Matching.getUnassigned(ne, vec2, {});
@@ -4158,9 +4158,9 @@ protected function changeDerVariablesToStatesFinder
 "author: Frenkel TUD 2011-05
   helper for changeDerVariablestoStates"
   input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables,BackendDAE.EquationArray,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrix> inTpl;
+  input tuple<BackendDAE.Variables,BackendDAE.EquationArray,list<Integer>,Integer,array<Integer>,BackendDAE.AdjacencyMatrix> inTpl;
   output DAE.Exp outExp;
-  output tuple<BackendDAE.Variables,BackendDAE.EquationArray,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrixT> outTpl;
+  output tuple<BackendDAE.Variables,BackendDAE.EquationArray,list<Integer>,Integer,array<Integer>,BackendDAE.AdjacencyMatrixT> outTpl;
 algorithm
   (outExp,outTpl) := match (inExp,inTpl)
     local
@@ -4170,7 +4170,7 @@ algorithm
       list<Integer> ilst,changedVars;
       list<BackendDAE.Var> varlst;
       array<Integer> mapIncRowEqn;
-      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.AdjacencyMatrixT mt;
       BackendDAE.EquationArray eqns;
       Integer index,eindx;
      /* der(var), change algebraic to states */

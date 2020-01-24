@@ -36,16 +36,16 @@ algorithm
   assert(false, getInstanceName());
 end transformBackendDAE;
 
-function getIncidenceMatrixfromOption
+function getAdjacencyMatrixfromOption
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.IndexType inIndxType;
   input Option<DAE.FunctionTree> inFunctionTree;
   output BackendDAE.EqSystem outSyst;
-  output BackendDAE.IncidenceMatrix outM;
-  output BackendDAE.IncidenceMatrix outMT;
+  output BackendDAE.AdjacencyMatrix outM;
+  output BackendDAE.AdjacencyMatrix outMT;
 algorithm
   assert(false, getInstanceName());
-end getIncidenceMatrixfromOption;
+end getAdjacencyMatrixfromOption;
 
 function getAllVarLst
   input BackendDAE.BackendDAE dae;
