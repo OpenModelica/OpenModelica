@@ -65,8 +65,8 @@ interface package GraphvizDumpTV
       record EQSYSTEM
         Variables orderedVars;
         EquationArray orderedEqs;
-        Option<IncidenceMatrix> m;
-        Option<IncidenceMatrixT> mT;
+        Option<AdjacencyMatrix> m;
+        Option<AdjacencyMatrixT> mT;
         Matching matching;
         StateSets stateSets;
       end EQSYSTEM;
@@ -160,10 +160,10 @@ interface package GraphvizDumpTV
                                      list<DAE.ComponentRef>>>;                          // diffed vars
     type SparseColoring = list<list<DAE.ComponentRef>>;
 
-    type IncidenceMatrixElementEntry = Integer;
-    type IncidenceMatrixElement = list<IncidenceMatrixElementEntry>;
-    type IncidenceMatrix = array<IncidenceMatrixElement>;
-    type IncidenceMatrixT = IncidenceMatrix;
+    type AdjacencyMatrixElementEntry = Integer;
+    type AdjacencyMatrixElement = list<AdjacencyMatrixElementEntry>;
+    type AdjacencyMatrix = array<AdjacencyMatrixElement>;
+    type AdjacencyMatrixT = AdjacencyMatrix;
 
     uniontype Shared
       record SHARED

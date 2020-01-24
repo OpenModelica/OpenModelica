@@ -65,8 +65,8 @@ algorithm
     local
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.AdjacencyMatrix m;
+      BackendDAE.AdjacencyMatrixT mt;
       GraphML.GraphInfo graphInfo;
       Integer graph;
       list<Integer> eqnsids;
@@ -81,7 +81,7 @@ algorithm
         vars = BackendVariable.daeVars(inSystem);
         eqns = BackendEquation.getEqnsFromEqSystem(inSystem);
         funcs = BackendDAEUtil.getFunctions(inShared);
-        (_,m,_) = BackendDAEUtil.getIncidenceMatrix(inSystem,BackendDAE.NORMAL(),SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
+        (_,m,_) = BackendDAEUtil.getAdjacencyMatrix(inSystem,BackendDAE.NORMAL(),SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
         mapIncRowEqn = Array.createIntRange(arrayLength(m));
         graphInfo = GraphML.createGraphInfo();
         (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
@@ -115,10 +115,10 @@ algorithm
         vars = BackendVariable.daeVars(inSystem);
         eqns = BackendEquation.getEqnsFromEqSystem(inSystem);
         funcs = BackendDAEUtil.getFunctions(inShared);
-        //(_,m,mt) = BackendDAEUtil.getIncidenceMatrix(inSystem, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
+        //(_,m,mt) = BackendDAEUtil.getAdjacencyMatrix(inSystem, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
         //mapIncRowEqn = Array.createIntRange(arrayLength(m));
-        //(_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(inSystem,BackendDAE.SOLVABLE(), SOME(funcs)));
-        (_,m,_,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(inSystem,BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
+        //(_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getAdjacencyMatrixScalar(inSystem,BackendDAE.SOLVABLE(), SOME(funcs)));
+        (_,m,_,_,mapIncRowEqn) = BackendDAEUtil.getAdjacencyMatrixScalar(inSystem,BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
         graphInfo = GraphML.createGraphInfo();
         (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
         ((_,_,_,(graphInfo,graph))) = BackendVariable.traverseBackendDAEVars(vars,addVarGraphMatch,(numberMode,1,vec1,(graphInfo,graph)));
@@ -137,7 +137,7 @@ algorithm
         vars = BackendVariable.daeVars(inSystem);
         eqns = BackendEquation.getEqnsFromEqSystem(inSystem);
         funcs = BackendDAEUtil.getFunctions(inShared);
-        (_,m,_,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(inSystem,BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
+        (_,m,_,_,mapIncRowEqn) = BackendDAEUtil.getAdjacencyMatrixScalar(inSystem,BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
         graphInfo = GraphML.createGraphInfo();
         (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
         ((_,_,(graphInfo,graph))) = BackendVariable.traverseBackendDAEVars(vars,addVarGraph,(numberMode,1,(graphInfo,graph)));
@@ -153,7 +153,7 @@ algorithm
         vars = BackendVariable.daeVars(inSystem);
         _ = BackendEquation.getEqnsFromEqSystem(inSystem);
         funcs = BackendDAEUtil.getFunctions(inShared);
-        (_,m,mt) = BackendDAEUtil.getIncidenceMatrix(inSystem, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
+        (_,m,mt) = BackendDAEUtil.getAdjacencyMatrix(inSystem, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
         graphInfo = GraphML.createGraphInfo();
         (graphInfo,(_,graph)) = GraphML.addGraph("G",false,graphInfo);
         // generate a node for each component and get the edges
@@ -332,12 +332,12 @@ end addEqnGraph;
 
 protected function addEdgesGraph
   input Integer e;
-  input tuple<Integer,BackendDAE.IncidenceMatrix,GraphML.GraphInfo> inTpl;
-  output tuple<Integer,BackendDAE.IncidenceMatrix,GraphML.GraphInfo> outTpl;
+  input tuple<Integer,BackendDAE.AdjacencyMatrix,GraphML.GraphInfo> inTpl;
+  output tuple<Integer,BackendDAE.AdjacencyMatrix,GraphML.GraphInfo> outTpl;
 protected
   Integer id;
   GraphML.GraphInfo graph;
-  BackendDAE.IncidenceMatrix m;
+  BackendDAE.AdjacencyMatrix m;
   list<Integer> vars;
 algorithm
   (id,m,graph) := inTpl;
@@ -423,12 +423,12 @@ end addEdgeGraph;
 
 protected function addDirectedEdgesGraph
   input Integer e;
-  input tuple<Integer,BackendDAE.IncidenceMatrix,array<Integer>,array<Integer>,GraphML.GraphInfo> inTpl;
-  output tuple<Integer,BackendDAE.IncidenceMatrix,array<Integer>,array<Integer>,GraphML.GraphInfo> outTpl;
+  input tuple<Integer,BackendDAE.AdjacencyMatrix,array<Integer>,array<Integer>,GraphML.GraphInfo> inTpl;
+  output tuple<Integer,BackendDAE.AdjacencyMatrix,array<Integer>,array<Integer>,GraphML.GraphInfo> outTpl;
 protected
   Integer id,v,n;
   GraphML.GraphInfo graph;
-  BackendDAE.IncidenceMatrix m;
+  BackendDAE.AdjacencyMatrix m;
   list<Integer> vars;
   array<Integer> vec2;
   array<Integer> mapIncRowEqn;
@@ -463,12 +463,12 @@ end addDirectedEdgeGraph;
 
 protected function addDirectedNumEdgesGraph
   input Integer e;
-  input tuple<Integer,BackendDAE.IncidenceMatrix,array<Integer>,array<Integer>,GraphML.GraphInfo> inTpl;
-  output tuple<Integer,BackendDAE.IncidenceMatrix,array<Integer>,array<Integer>,GraphML.GraphInfo> outTpl;
+  input tuple<Integer,BackendDAE.AdjacencyMatrix,array<Integer>,array<Integer>,GraphML.GraphInfo> inTpl;
+  output tuple<Integer,BackendDAE.AdjacencyMatrix,array<Integer>,array<Integer>,GraphML.GraphInfo> outTpl;
 protected
   Integer id,v;
   GraphML.GraphInfo graph;
-  BackendDAE.IncidenceMatrix m;
+  BackendDAE.AdjacencyMatrix m;
   list<Integer> vars;
   array<Integer> vec2,vec3,mapIncRowEqn;
   String text;
@@ -538,7 +538,7 @@ end addCompsGraph;
 protected function addCompsEdgesGraph "author: Frenkel TUD 2013-02,
   add for each component the edges to the graph."
   input BackendDAE.StrongComponents iComps;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input array<Integer> varcomp;
   input Integer iN;
   input Integer id;
@@ -571,7 +571,7 @@ end addCompsEdgesGraph;
 protected function getUsedVarsComp "author: Frenkel TUD 2013-02,
   get all used var of the comp."
   input list<Integer> iEqns;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input array<Integer> markarray;
   input Integer mark;
   input list<Integer> iVars;

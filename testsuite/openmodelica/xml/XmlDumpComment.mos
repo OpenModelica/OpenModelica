@@ -21980,7 +21980,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </function>
 // </functions>
 // <additionalInfo>
-// <originalIncidenceMatrix>
+// <originalAdjacencyMatrix>
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
 // <matrix>
@@ -22689,7 +22689,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </matrix>
 // </math>
 // </MathML>
-// </originalIncidenceMatrix>
+// </originalAdjacencyMatrix>
 // <solvingInfo>
 // <matchingAlgorithm>
 // <solvedIn variableId=\"1\" equationId=\"10\" />

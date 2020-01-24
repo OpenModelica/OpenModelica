@@ -78,7 +78,7 @@ system("./parameterTest15 -override p1=2,p2=10,p3=10 -output=p1,p2,p3"); getErro
 // Selected parameters for evaluation:
 //
 //
-// Incidence Matrix (row: equation)
+// Adjacency Matrix (row: equation)
 // ========================================
 // number of rows: 12
 // 1: 2
@@ -94,7 +94,7 @@ system("./parameterTest15 -override p1=2,p2=10,p3=10 -output=p1,p2,p3"); getErro
 // 11: 12
 // 12:
 //
-// Transposed Incidence Matrix (row: variable)
+// Transposed Adjacency Matrix (row: variable)
 // ========================================
 // number of rows: 12
 // 1: 1

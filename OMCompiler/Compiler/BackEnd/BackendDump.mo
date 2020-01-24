@@ -117,8 +117,8 @@ public function printEqSystem "This function prints the BackendDAE.EqSystem repr
 protected
   BackendDAE.Variables orderedVars;
   BackendDAE.EquationArray orderedEqs;
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrix> mT;
+  Option<BackendDAE.AdjacencyMatrix> m;
+  Option<BackendDAE.AdjacencyMatrix> mT;
   BackendDAE.Matching matching;
   BackendDAE.StateSets stateSets;
   BackendDAE.BaseClockPartitionKind partitionKind;
@@ -128,8 +128,8 @@ algorithm
   dumpEquationArray(inSyst.orderedEqs, "Equations");
   dumpEquationArray(inSyst.removedEqs, "Simple Equations");
   dumpStateSets(inSyst.stateSets, "State Sets");
-  dumpOption(inSyst.m, dumpIncidenceMatrix);
-  dumpOption(inSyst.mT, dumpIncidenceMatrixT);
+  dumpOption(inSyst.m, dumpAdjacencyMatrix);
+  dumpOption(inSyst.mT, dumpAdjacencyMatrixT);
 
   print("\n");
   dumpFullMatching(inSyst.matching,SOME(inSyst));
@@ -576,11 +576,11 @@ protected
   String fileNamePrefix;
   String buffer;
 algorithm
-  dae := setIncidenceMatrix(inBackendDAE);
+  dae := setAdjacencyMatrix(inBackendDAE);
   Tpl.tplNoret2(GraphvizDump.dumpBackendDAE, dae, inFileNameSuffix);
 end graphvizBackendDAE;
 
-public function graphvizIncidenceMatrix
+public function graphvizAdjacencyMatrix
   input BackendDAE.BackendDAE inBackendDAE;
   input String inFileNameSuffix;
 protected
@@ -589,11 +589,11 @@ protected
   String fileNamePrefix;
   String buffer;
 algorithm
-  dae := setIncidenceMatrix(inBackendDAE);
-  Tpl.tplNoret2(GraphvizDump.dumpIncidenceMatrix, dae, inFileNameSuffix);
-end graphvizIncidenceMatrix;
+  dae := setAdjacencyMatrix(inBackendDAE);
+  Tpl.tplNoret2(GraphvizDump.dumpAdjacencyMatrix, dae, inFileNameSuffix);
+end graphvizAdjacencyMatrix;
 
-protected function setIncidenceMatrix
+protected function setAdjacencyMatrix
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
 protected
@@ -601,17 +601,17 @@ protected
   BackendDAE.Shared shared;
 algorithm
   BackendDAE.DAE(eqSystems, shared) := inBackendDAE;
-  eqSystems := List.map1(eqSystems, setIncidenceMatrix1, BackendDAEUtil.isInitializationDAE(shared));
+  eqSystems := List.map1(eqSystems, setAdjacencyMatrix1, BackendDAEUtil.isInitializationDAE(shared));
   outBackendDAE := BackendDAE.DAE(eqSystems, shared);
-end setIncidenceMatrix;
+end setAdjacencyMatrix;
 
-protected function setIncidenceMatrix1
+protected function setAdjacencyMatrix1
   input BackendDAE.EqSystem inEqSystem;
   input Boolean isInitial;
   output BackendDAE.EqSystem outEqSystem;
 algorithm
-  (outEqSystem, _, _) := BackendDAEUtil.getIncidenceMatrix(inEqSystem, BackendDAE.NORMAL(), NONE(), isInitial);
-end setIncidenceMatrix1;
+  (outEqSystem, _, _) := BackendDAEUtil.getAdjacencyMatrix(inEqSystem, BackendDAE.NORMAL(), NONE(), isInitial);
+end setAdjacencyMatrix1;
 
 // =============================================================================
 // section for all dump* functions
@@ -3012,12 +3012,12 @@ algorithm
   end match;
 end optBooleanString;
 
-public function dumpIncidenceMatrix "Prints incidence matrix on stdout."
-  input BackendDAE.IncidenceMatrix m;
+public function dumpAdjacencyMatrix "Prints adjacency matrix on stdout."
+  input BackendDAE.AdjacencyMatrix m;
 protected
   Integer rowIndex=0;
 algorithm
-  print("\nIncidence Matrix (row: equation)\n" + UNDERLINE + "\n");
+  print("\nAdjacency Matrix (row: equation)\n" + UNDERLINE + "\n");
   print("number of rows: " + intString(arrayLength(m)));
 
   for row in m loop
@@ -3028,14 +3028,14 @@ algorithm
     end for;
   end for;
   print("\n");
-end dumpIncidenceMatrix;
+end dumpAdjacencyMatrix;
 
-public function dumpIncidenceMatrixT "Prints the transposed incidence matrix on stdout."
-  input BackendDAE.IncidenceMatrixT mT;
+public function dumpAdjacencyMatrixT "Prints the transposed adjacency matrix on stdout."
+  input BackendDAE.AdjacencyMatrixT mT;
 protected
   Integer rowIndex=0;
 algorithm
-  print("\nTransposed Incidence Matrix (row: variable)\n" + UNDERLINE + "\n");
+  print("\nTransposed Adjacency Matrix (row: variable)\n" + UNDERLINE + "\n");
   print("number of rows: " + intString(arrayLength(mT)));
 
   for row in mT loop
@@ -3046,11 +3046,11 @@ algorithm
     end for;
   end for;
   print("\n");
-end dumpIncidenceMatrixT;
+end dumpAdjacencyMatrixT;
 
-public function dumpIncidenceRow
+public function dumpAdjacencyRow
 "author: PA
-  Helper function to dumpIncidenceMatrix2."
+  Helper function to dumpAdjacencyMatrix2."
   input list<Integer> inIntegerLst;
 algorithm
   _ := match (inIntegerLst)
@@ -3068,15 +3068,15 @@ algorithm
         s = intString(x);
         print(s);
         print(" ");
-        dumpIncidenceRow(xs);
+        dumpAdjacencyRow(xs);
       then
         ();
   end match;
-end dumpIncidenceRow;
+end dumpAdjacencyRow;
 
 public function dumpAdjacencyMatrixEnhanced
 "author: Frenkel TUD 2012-05
-  Prints the incidence matrix on stdout."
+  Prints the adjacency matrix on stdout."
   input BackendDAE.AdjacencyMatrixEnhanced m;
 protected
   Integer mlen;
@@ -3096,7 +3096,7 @@ end dumpAdjacencyMatrixEnhanced;
 
 public function dumpAdjacencyMatrixTEnhanced
 "author: Frenkel TUD 2012-05
-  Prints the transposed incidence matrix on stdout."
+  Prints the transposed adjacency matrix on stdout."
   input BackendDAE.AdjacencyMatrixTEnhanced m;
 protected
   Integer mlen;
@@ -3369,8 +3369,8 @@ protected
   list<String> lst;
   String s;
   BackendDAE.EqSystem syst;
-  BackendDAE.IncidenceMatrix m;
-  BackendDAE.IncidenceMatrix mT;
+  BackendDAE.AdjacencyMatrix m;
+  BackendDAE.AdjacencyMatrix mT;
   array<Integer> ass1,ass2;
 algorithm
   BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT),matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2))}) := inDAE;
@@ -3385,8 +3385,8 @@ end dumpComponentsGraphStr;
 protected function dumpComponentsGraphStr2 "help function"
   input Integer i;
   input Integer n;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> ass1;
   input array<Integer> ass2;
   output list<String> lst = {};
@@ -4012,16 +4012,16 @@ end printCompInfo;
 //
 // =============================================================================
 
-public function dumpEqSystemMatrixHTML"dumps the incidence matrix for the eqsystem as html file.
+public function dumpEqSystemMatrixHTML"dumps the adjacency matrix for the eqsystem as html file.
 author: waurich TUD 2016-05"
   input BackendDAE.EqSystem sys;
 protected
-  BackendDAE.IncidenceMatrix m;
+  BackendDAE.AdjacencyMatrix m;
 algorithm
   if Util.isSome(sys.m) then
     m := Util.getOption(sys.m);
   else
-    (_,m,_) := BackendDAEUtil.getIncidenceMatrix(sys,BackendDAE.NORMAL(),NONE(),false); //no shared available so dump regular system.
+    (_,m,_) := BackendDAEUtil.getAdjacencyMatrix(sys,BackendDAE.NORMAL(),NONE(),false); //no shared available so dump regular system.
   end if;
   BackendDump.dumpEqSystem(sys,"SYS");
   BackendDump.dumpMatrixHTML(m,List.map(List.intRange(BackendDAEUtil.systemSize(sys)),intString),
@@ -4029,14 +4029,14 @@ algorithm
                                "MATRIX_"+intString(BackendDAEUtil.systemSize(sys)));
 end dumpEqSystemMatrixHTML;
 
-public function dumpEqSystemBLTmatrixHTML"dumps the incidence matrix for the eqsystem as html file.
+public function dumpEqSystemBLTmatrixHTML"dumps the adjacency matrix for the eqsystem as html file.
 author: waurich TUD 2016-05"
   input BackendDAE.EqSystem sys;
 algorithm
   _ := matchcontinue(sys)
     local
       BackendDAE.StrongComponents comps;
-      BackendDAE.IncidenceMatrix m;
+      BackendDAE.AdjacencyMatrix m;
       BackendDAE.EquationArray eqs;
       BackendDAE.Variables vars;
       list<BackendDAE.Var> varLst;
@@ -4047,7 +4047,7 @@ algorithm
       (varLst,vIdxs,eqLst,eIdxs) := BackendDAEUtil.getStrongComponentsVarsAndEquations(comps, vars, eqs);
       eqs := BackendEquation.listEquation(eqLst);
       vars := BackendVariable.listVar1(varLst);
-      (m, _) := BackendDAEUtil.incidenceMatrixDispatch(vars, eqs, BackendDAE.NORMAL(), NONE(), false); //no shared available so dump regular system.
+      (m, _) := BackendDAEUtil.adjacencyMatrixDispatch(vars, eqs, BackendDAE.NORMAL(), NONE(), false); //no shared available so dump regular system.
       BackendDump.dumpMatrixHTML(m,List.map(eIdxs,intString),
                                     List.map(vIdxs,intString),
                                    "BLT_MATRIX_"+intString(BackendDAEUtil.systemSize(sys)));
@@ -4061,7 +4061,7 @@ end dumpEqSystemBLTmatrixHTML;
 
 
 public function dumpMatrixHTML
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input list<String> rowNames;
   input list<String> columNames;
   input String fileName;
@@ -4089,7 +4089,7 @@ protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqs;
   BackendDAE.EqSystems eqSysts;
-  BackendDAE.IncidenceMatrix m;
+  BackendDAE.AdjacencyMatrix m;
   BackendDAE.Shared shared;
   list<BackendDAE.Equation> eqLst;
   list<BackendDAE.Var> varLst;
@@ -4100,8 +4100,8 @@ algorithm
   varLst := List.flatten(List.mapMap(eqSysts,BackendVariable.daeVars,BackendVariable.varList));
   vars := BackendVariable.listVar1(varLst);
   eqs := BackendEquation.listEquation(eqLst);
-  // build the incidence matrix for the whole System
-  (_,m,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),NONE(),BackendDAE.NO_MATCHING(), {},BackendDAE.UNKNOWN_PARTITION(), BackendEquation.emptyEqns()),BackendDAE.SOLVABLE(), SOME(BackendDAEUtil.getFunctions(shared)), BackendDAEUtil.isInitializationDAE(shared));
+  // build the adjacency matrix for the whole System
+  (_,m,_,_,_) := BackendDAEUtil.getAdjacencyMatrixScalar(BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),NONE(),BackendDAE.NO_MATCHING(), {},BackendDAE.UNKNOWN_PARTITION(), BackendEquation.emptyEqns()),BackendDAE.SOLVABLE(), SOME(BackendDAEUtil.getFunctions(shared)), BackendDAEUtil.isInitializationDAE(shared));
   varAtts := List.threadMap(List.fill(false,listLength(varLst)),List.fill("",listLength(varLst)),Util.makeTuple);
   eqAtts := List.threadMap(List.fill(false,listLength(eqLst)),List.fill("",listLength(eqLst)),Util.makeTuple);
   dumpBipartiteGraphStrongComponent2(vars,eqs,m,varAtts,eqAtts,"BipartiteGraph_"+fileName);
@@ -4116,8 +4116,8 @@ protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqs;
   BackendDAE.AdjacencyMatrixEnhanced me,meT;
-  BackendDAE.IncidenceMatrix m;
-  Option<BackendDAE.IncidenceMatrix> mO;
+  BackendDAE.AdjacencyMatrix m;
+  Option<BackendDAE.AdjacencyMatrix> mO;
   list<BackendDAE.Var> varLst;
   list<tuple<Boolean,String>> varAtts,eqAtts;
 algorithm
@@ -4129,8 +4129,8 @@ algorithm
   if Util.isSome(mO) then
       dumpBipartiteGraphStrongComponent2(vars,eqs,Util.getOption(mO),varAtts,eqAtts,"BipartiteGraph_"+fileName);
   else
-    // build the incidence matrix
-    (_,m,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(BackendDAEUtil.getFunctions(shared)), BackendDAEUtil.isInitializationDAE(shared));
+    // build the adjacency matrix
+    (_,m,_,_,_) := BackendDAEUtil.getAdjacencyMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(BackendDAEUtil.getFunctions(shared)), BackendDAEUtil.isInitializationDAE(shared));
     dumpBipartiteGraphStrongComponent2(vars,eqs,m,varAtts,eqAtts,"BipartiteGraph2_"+fileName);
   end if;
 end dumpBipartiteGraphEqSystem;
@@ -4172,7 +4172,7 @@ algorithm
       BackendDAE.EquationArray compEqs;
       BackendDAE.Variables compVars;
       BackendDAE.StrongComponent comp;
-      BackendDAE.IncidenceMatrix m,mT;
+      BackendDAE.AdjacencyMatrix m,mT;
       list<BackendDAE.Equation> compEqLst;
       list<BackendDAE.Var> compVarLst;
   case((BackendDAE.EQUATIONSYSTEM(eqns=eqIdcs,vars=varIdcs)),_,_,_,_)
@@ -4184,7 +4184,7 @@ algorithm
 
       numEqs = listLength(compEqLst);
       numVars = listLength(compVarLst);
-      (_,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(BackendDAE.EQSYSTEM(compVars,compEqs,NONE(),NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION(),BackendEquation.emptyEqns()), BackendDAE.SOLVABLE(), funcs, false); // no shared available so dump regular system not initial
+      (_,m,_,_,_) = BackendDAEUtil.getAdjacencyMatrixScalar(BackendDAE.EQSYSTEM(compVars,compEqs,NONE(),NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION(),BackendEquation.emptyEqns()), BackendDAE.SOLVABLE(), funcs, false); // no shared available so dump regular system not initial
 
       varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
       eqAtts = List.threadMap(List.fill(false,numEqs),List.fill("",numEqs),Util.makeTuple);
@@ -4202,10 +4202,10 @@ algorithm
       compVars = BackendVariable.listVar1(compVarLst);
       compEqs = BackendEquation.listEquation(compEqLst);
 
-      // get incidence matrix
+      // get adjacency matrix
       numEqs = listLength(compEqLst);
       numVars = listLength(compVarLst);
-      (_,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(BackendDAE.EQSYSTEM(compVars,compEqs,NONE(),NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION(),BackendEquation.emptyEqns()), BackendDAE.SOLVABLE(), funcs, false); // no shared available so dump regular system not initial
+      (_,m,_,_,_) = BackendDAEUtil.getAdjacencyMatrixScalar(BackendDAE.EQSYSTEM(compVars,compEqs,NONE(),NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION(),BackendEquation.emptyEqns()), BackendDAE.SOLVABLE(), funcs, false); // no shared available so dump regular system not initial
 
       // add tearing info to graph object and dump graph
       addInfo = List.map(varIdcs,intString);// the DAE idcs for the vars
@@ -4230,14 +4230,14 @@ end dumpBipartiteGraphStrongComponent1;
 public function dumpBipartiteGraphStrongComponent2"helper function for dumpBipartiteGraphStrongComponent1 which dumps the graphml"
   input BackendDAE.Variables varsIn;
   input BackendDAE.EquationArray eqsIn;
-  input BackendDAE.IncidenceMatrix mIn;
+  input BackendDAE.AdjacencyMatrix mIn;
   input list<tuple<Boolean,String>> varAtts;  //<isTornVar,daeIdx>
   input list<tuple<Boolean,String>> eqAtts;  //<isResEq,daeIdx>
   input String name;
 protected
   Integer nameAttIdx,typeAttIdx,idxAttIdx, numVars,numEqs;
   list<Integer> varRange,eqRange;
-  BackendDAE.IncidenceMatrix m;
+  BackendDAE.AdjacencyMatrix m;
   GraphML.GraphInfo graphInfo;
   Integer graphIdx;
 algorithm
@@ -4463,10 +4463,10 @@ algorithm
   graphInfoOut := (graphInfo,graphIdx);
 end addEqNodeToGraph;
 
-protected function addEdgeToGraph "adds an edge to the graph by traversing the incidence matrix.
+protected function addEdgeToGraph "adds an edge to the graph by traversing the adjacency matrix.
 author:Waurich TUD 2013-12"
   input Integer eqIdx;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input GraphML.GraphInfo graphInfoIn;
   output GraphML.GraphInfo graphInfoOut;
 protected
@@ -4529,7 +4529,7 @@ protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqs;
   BackendDAE.StrongComponents comps;
-  BackendDAE.IncidenceMatrix m,mT;
+  BackendDAE.AdjacencyMatrix m,mT;
   array<Integer> ass2;
 algorithm
   //create graph
@@ -4549,7 +4549,7 @@ algorithm
   for sys in systs loop
     BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, matching = BackendDAE.MATCHING(comps=comps,ass2=ass2)) := sys;
     //dump the edges
-    (m, mT) := BackendDAEUtil.incidenceMatrix(sys, BackendDAE.NORMAL(), SOME(BackendDAEUtil.getFunctions(shared)), BackendDAEUtil.isInitializationDAE(shared));
+    (m, mT) := BackendDAEUtil.adjacencyMatrix(sys, BackendDAE.NORMAL(), SOME(BackendDAEUtil.getFunctions(shared)), BackendDAEUtil.isInitializationDAE(shared));
 
     //traverse comps
     order := 1;

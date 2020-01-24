@@ -77,8 +77,8 @@ import SymbolTable;
 import System;
 import Util;
 
-protected type ExtIncidenceMatrixRow = tuple<Integer,list<Integer>>;
-protected type ExtIncidenceMatrix = list<ExtIncidenceMatrixRow>;
+protected type ExtAdjacencyMatrixRow = tuple<Integer,list<Integer>>;
+protected type ExtAdjacencyMatrix = list<ExtAdjacencyMatrixRow>;
 
 protected type mapBlocks =list<tuple<list<Integer>,Boolean,Boolean>>; // {blocks,blocks.visited,blocks.square}
 public constant String UNDERLINE = "==========================================================================";
@@ -115,7 +115,7 @@ algorithm
 
       BackendDAE.BackendDAE dlow,dlow_1;
 
-      BackendDAE.IncidenceMatrix m,mt;
+      BackendDAE.AdjacencyMatrix m,mt;
 
       list<Integer>     approximatedEquations,approximatedEquations_one;
       list<BackendDAE.Equation> setC_eq,setS_eq;
@@ -127,7 +127,7 @@ algorithm
 
       BackendDAE.EqSystem currentSystem;
 
-      ExtIncidenceMatrix mExt;
+      ExtAdjacencyMatrix mExt;
       list<Integer> setS,setC,unknownsVarsMatch,remainingEquations,removed_equations_squared;
 
       array<list<Integer>> mapEqnIncRow;
@@ -160,14 +160,14 @@ algorithm
         BackendDAE.EQSYSTEM(orderedVars=allVars,orderedEqs=allEqs) = currentSystem;
         BackendDAE.SHARED(globalKnownVars=globalKnownVars) = shared;
 
-        (m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(shared));
+        (m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.adjacencyMatrixScalar(currentSystem,BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(shared));
 
-        //(dlow_1 as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=allVars,orderedEqs=allEqs,m=SOME(m),mT=SOME(mt))::eqsyslist,_)) = BackendDAEUtil.mapEqSystem(dlow_1,BackendDAEUtil.getIncidenceMatrixScalarfromOptionForMapEqSystem);
+        //(dlow_1 as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=allVars,orderedEqs=allEqs,m=SOME(m),mT=SOME(mt))::eqsyslist,_)) = BackendDAEUtil.mapEqSystem(dlow_1,BackendDAEUtil.getAdjacencyMatrixScalarfromOptionForMapEqSystem);
 
         true = listEmpty(eqsyslist);
-        mExt=getExtIncidenceMatrix(m);
+        mExt=getExtAdjacencyMatrix(m);
 
-        //dumpExtIncidenceMatrix(mExt);
+        //dumpExtAdjacencyMatrix(mExt);
 
         variables = List.intRange(BackendVariable.varsSize(allVars));
         (knowns,_) = getUncertainRefineVariableIndexes(allVars,variables);
@@ -191,7 +191,7 @@ algorithm
         BackendDAE.SHARED(globalKnownVars=globalKnownVars) = shared;
 
 
-        (m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
+        (m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.adjacencyMatrixScalar(currentSystem,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
 
               printSep(getMathematicaText("After Symbolic Elimination"));
               printSep(getMathematicaText("Equations (Function calls represent more than one equation)"));
@@ -199,7 +199,7 @@ algorithm
               printSep(getMathematicaText("Variables"));
               printSep(variablesToMathematicaGrid(List.intRange(BackendVariable.varsSize(allVars)),allVars));
 
-        mExt=getExtIncidenceMatrix(m);
+        mExt=getExtAdjacencyMatrix(m);
 
         approximatedEquations_one = getEquationsWithApproximatedAnnotation(dlow_1);
         approximatedEquations = List.flatten(List.map1r(approximatedEquations_one,listGet,arrayList(mapEqnIncRow)));
@@ -314,7 +314,7 @@ algorithm
     local
       BackendDAE.BackendDAE dae;
       BackendDAE.BackendDAE dlow,dlow_1;
-      BackendDAE.IncidenceMatrix m,mt;
+      BackendDAE.AdjacencyMatrix m,mt;
       list<Integer> approximatedEquations,approximatedEquations_one,constantvars,extractedvars,extractedeqs,extractedsetsvars;
       list<BackendDAE.Equation> setC_eq,setS_eq,reqns;
       list<BackendDAE.EqSystem> eqsyslist;
@@ -324,7 +324,7 @@ algorithm
       list<Integer> variables,knowns,unknowns,directlyLinked,indirectlyLinked,inputvar,outputvars,fullvars,finalvarlist;
       BackendDAE.Shared shared;
       BackendDAE.EqSystem currentSystem;
-      ExtIncidenceMatrix mExt;
+      ExtAdjacencyMatrix mExt;
       list<Integer> setS,setC,tempsetS,tempsetC,removedequationsquared,
       matchedknownssetc,matchedunknownssetc,inputvarlist;
       array<list<Integer>> mapEqnIncRow;
@@ -362,7 +362,7 @@ algorithm
         BackendDAE.EQSYSTEM(orderedVars=allVars,orderedEqs=allEqs) = currentSystem;
         BackendDAE.SHARED(globalKnownVars=globalKnownVars,info=einfo) = shared;
         BackendDAE.EXTRA_INFO(fileNamePrefix=modelname)= einfo;
-        (m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
+        (m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.adjacencyMatrixScalar(currentSystem,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
         print("\nModelInfo: " + modelname + "\n" + UNDERLINE + "\n\n");
         BackendDump.dumpEquationArray(allEqs,"orderedEquation");
         BackendDump.dumpVariables(allVars,"orderedVariables");
@@ -374,8 +374,8 @@ algorithm
         // dump BLT BLOCKS
         dumpListList(bltblocks,"BLT_BLOCKS");
         true = listEmpty(eqsyslist);
-        mExt=getExtIncidenceMatrix(m);
-        //dumpExtIncidenceMatrix(mExt);
+        mExt=getExtAdjacencyMatrix(m);
+        //dumpExtAdjacencyMatrix(mExt);
 
         // Extract List of variables
         variables = List.intRange(BackendVariable.varsSize(allVars));
@@ -650,7 +650,7 @@ end getSolvedDependentEquationAndVars;
 public function getVariablesAfterExtraction
    input list<Integer> setc;
    input list<Integer> sets;
-   input ExtIncidenceMatrix mext;
+   input ExtAdjacencyMatrix mext;
    output list<Integer> finalvars={};
 protected
    list<Integer> fulleqs,vars;
@@ -673,7 +673,7 @@ end getVariablesAfterExtraction;
 
 
 public function getConstantVariables
-   input ExtIncidenceMatrix mext;
+   input ExtAdjacencyMatrix mext;
    output list<Integer> constantvars={};
 protected
    list<Integer> vars;
@@ -696,7 +696,7 @@ public function VerifyDataReconciliation
    input list<Integer> sets;
    input list<Integer> knowns;
    input list<Integer> unknowns;
-   input ExtIncidenceMatrix mExt;
+   input ExtAdjacencyMatrix mExt;
    input list<tuple<Integer,Integer>> solvedvar;
    input list<Integer> constantvars;
    input list<Integer> approximatedEquations;
@@ -831,7 +831,7 @@ public function BuildSquareSubSetHelper
    //input list<Integer> ineqs;
    input list<Integer> invars;
    input list<Integer> knowns;
-   input ExtIncidenceMatrix mExt;
+   input ExtAdjacencyMatrix mExt;
    input list<tuple<Integer,Integer>> solvedeqvar;
    input list<Integer> solvedvars;
    input list<Integer> solvedeqs;
@@ -844,7 +844,7 @@ algorithm
        list<Integer> t1,t2,t3,tempeqs,tempvars1,tempvars2,allvars,tmp1,tmp2,tmp3,tempsolvedvars,tempsolvedeqs;
        list<tuple<Integer,Integer>> tmpsolveeqvar;
        list<Integer> tmpvars,tmpknowns,tempsolvedvars1,tempsolvedeqs1,tmpconstantvars,c1,c2,c3;
-       ExtIncidenceMatrix tmpExt;
+       ExtAdjacencyMatrix tmpExt;
        Integer eqnumber, varnumber;
        Boolean found=false;
    case(tmpvars,tmpknowns,tmpExt,tmpsolveeqvar,tempsolvedvars,tempsolvedeqs,tmpconstantvars)
@@ -908,7 +908,7 @@ public function BuildSquareSubSet
     input list<Integer> ineqs;
     input list<Integer> invars;
     input list<Integer> knowns;
-    input ExtIncidenceMatrix mExt;
+    input ExtAdjacencyMatrix mExt;
     input list<tuple<Integer,Integer>> solvedeqvar;
     input list<Integer> constantvars;
     input list<Integer> approximatedEquations;
@@ -963,7 +963,7 @@ end dumplistInteger;
 
 public function getVariableOccurence
     input list<Integer> setc;
-    input ExtIncidenceMatrix mext;
+    input ExtAdjacencyMatrix mext;
     input list<Integer> knowns;
     output list<Integer> knownvariables={};
     output list<Integer> unknownvariables={};
@@ -1079,7 +1079,7 @@ public function findBlockTargets
   input list<list<Integer>> inlist1;
   input list<list<String>> inlist2;
   input list<tuple<Integer,Integer>> solvedvariables;
-  input ExtIncidenceMatrix mxt;
+  input ExtAdjacencyMatrix mxt;
   input mapBlocks map;
   input list<tuple<list<Integer>,Integer>> blockranks;
   output list<tuple<list<Integer>,list<tuple<list<Integer>,Integer>>,list<tuple<list<String>,Integer>>>> outlist={};
@@ -1119,7 +1119,7 @@ public function findBlockTargetsHelper
   input list<list<Integer>> inlist1;
   input list<list<String>> inlist2;
   input list<tuple<Integer,Integer>> solvedvariables;
-  input ExtIncidenceMatrix mxt;
+  input ExtAdjacencyMatrix mxt;
   input mapBlocks map;
   input list<list<Integer>> actualblocks;
   output list<list<Integer>> outlist={};
@@ -1131,7 +1131,7 @@ algorithm
      list<list<String>> restitem;
      list<String> firstitem;
      list<tuple<Integer,Integer>> solvar;
-     ExtIncidenceMatrix mxt1;
+     ExtAdjacencyMatrix mxt1;
      mapBlocks map1;
    case(first::rest,firstitem::restitem,solvar,mxt1,map1,originalblocks)
      equation
@@ -1147,7 +1147,7 @@ end findBlockTargetsHelper;
 public function findBlockTargetsHelper1
    input list<list<Integer>>  inlist;
    input list<tuple<Integer,Integer>> solvedvariables;
-   input ExtIncidenceMatrix mxt;
+   input ExtAdjacencyMatrix mxt;
    output list<Integer> outlist={};
 protected
    list<Integer> dependencyequations;
@@ -1267,7 +1267,7 @@ public function findSquareAndNonSquareBlocks
   */
   input list<tuple<list<Integer>,list<tuple<list<Integer>,Integer>>,list<tuple<list<String>,Integer>>>> blockinfo;
   input list<tuple<Integer,Integer>> solvedvariables;
-  input ExtIncidenceMatrix mxt;
+  input ExtAdjacencyMatrix mxt;
   input mapBlocks map;
   output list<Boolean> outlist={};
   output list<tuple<list<Integer>,list<String>,Boolean,Integer,Boolean>> outlist2={};
@@ -1694,7 +1694,7 @@ public function getDependencyequation
   input list<Integer> inlist;
   input list<Integer> inlist1;
   input list<tuple<Integer,Integer>> solvedvariables;
-  input ExtIncidenceMatrix m;
+  input ExtAdjacencyMatrix m;
   output list<Integer> outinteger;
 protected
   list<Integer> t={},nonsq;
@@ -1715,14 +1715,14 @@ end getDependencyequation;
 
 
 public function getdirectOccurrencesinEquation
-  input ExtIncidenceMatrix m;
+  input ExtAdjacencyMatrix m;
   input Integer eqnumber;
   input Integer varnumber;
   output list<Integer> out;
 algorithm
   out:=match(m,eqnumber,varnumber)
     local
-      ExtIncidenceMatrix tail;
+      ExtAdjacencyMatrix tail;
       list<Integer> ret,vars,matchedeq;
       Integer eq,eqnum,varnum;
       case((eq,vars)::tail,eqnum,varnum)
@@ -2230,7 +2230,7 @@ algorithm
 end getMathematicaEqStr;
 
 protected function getEquationsForUnknownsSystem
-  input ExtIncidenceMatrix m;
+  input ExtAdjacencyMatrix m;
   input list<Integer> knowns;
   input list<Integer> unknowns;
   output list<Integer> eqnsOut;
@@ -2238,10 +2238,10 @@ protected function getEquationsForUnknownsSystem
 algorithm
 (eqnsOut,varsOut):=matchcontinue(m,knowns,unknowns)
   local
-    ExtIncidenceMatrix unknownsSystem;
+    ExtAdjacencyMatrix unknownsSystem;
     list<Integer> yEqMap,yVarMap,setS;
     Integer nv,ne;
-    BackendDAE.IncidenceMatrix my;
+    BackendDAE.AdjacencyMatrix my;
     array<Integer> ass1,ass2;
     list<Integer> vars;
   case(_,_,{})
@@ -2252,14 +2252,14 @@ algorithm
         unknownsSystem=getSystemForUnknowns(m,knowns,unknowns);
 
         (yEqMap,yVarMap,my)=prepareForMatching(unknownsSystem);
-        //Debug.fcall(Flags.UNCERTAINTIES,BackendDump.dumpIncidenceMatrix,my);
+        //Debug.fcall(Flags.UNCERTAINTIES,BackendDump.dumpAdjacencyMatrix,my);
 
         ne=listLength(yEqMap);
         nv=listLength(yVarMap);
         ass1=arrayCreate(ne,-1);
         ass2=arrayCreate(nv,-1);
         true = BackendDAEEXT.setAssignment(ne,nv,ass1,ass2);
-        Matching.matchingExternalsetIncidenceMatrix(nv,ne,my);
+        Matching.matchingExternalsetAdjacencyMatrix(nv,ne,my);
         BackendDAEEXT.matching(nv,ne,1,-1,0.0,0);
         BackendDAEEXT.getAssignment(ass1,ass2);
         //printIntList(arrayList(ass1));
@@ -2271,7 +2271,7 @@ end matchcontinue;
 end getEquationsForUnknownsSystem;
 
 protected function getEquationsForKnownsSystem
-  input ExtIncidenceMatrix m;
+  input ExtAdjacencyMatrix m;
   input list<Integer> knowns;
   input list<Integer> unknowns;
   input list<Integer> setS;
@@ -2284,9 +2284,9 @@ protected function getEquationsForKnownsSystem
 algorithm
 (setCOut,removed_equations_squaredOut):=matchcontinue(m,knowns,unknowns,setS,allEqs,variables,knownVariables,mapIncRowEqn)
   local
-    ExtIncidenceMatrix knownsSystem,knownsSystemComp;
+    ExtAdjacencyMatrix knownsSystem,knownsSystemComp;
     list<Integer> xEqMap,xVarMap;
-    BackendDAE.IncidenceMatrix mx,mt;
+    BackendDAE.AdjacencyMatrix mx,mt;
     array<Integer> ass1,ass2;
     list<list<Integer>> comps,comps_fixed;
     list<Integer> setC,removed_equations_squared;
@@ -2321,16 +2321,16 @@ algorithm
         knownsSystemComp=removeVarsNotInSet(knownsSystemComp,knowns);
 
         //knownsSystemComp=reduceVariables(knownsSystemComp,knowns);
-        //dumpExtIncidenceMatrix(knownsSystemComp);
+        //dumpExtAdjacencyMatrix(knownsSystemComp);
 
         (xEqMap,xVarMap,mx)=prepareForMatching(knownsSystemComp);
         nxVarMap = listLength(xVarMap);
         nxEqMap = listLength(xEqMap);
         size=if nxEqMap>nxVarMap then nxEqMap else nxVarMap;
         //print("Final matching of "+intString(nxEqMap)+" equations and "+intString(nxVarMap)+" variables \n");
-        Matching.matchingExternalsetIncidenceMatrix(size,size,mx);
+        Matching.matchingExternalsetAdjacencyMatrix(size,size,mx);
 
-        //BackendDump.dumpIncidenceMatrix(mx);
+        //BackendDump.dumpAdjacencyMatrix(mx);
         ass1=arrayCreate(size,0);
         ass2=arrayCreate(size,0);
 
@@ -2407,15 +2407,15 @@ end matchcontinue;
 end pickReductionCandidates;
 
 protected function reduceVariables
-  input ExtIncidenceMatrix m;
+  input ExtAdjacencyMatrix m;
   input list<Integer> knowns;
-  output ExtIncidenceMatrix mOut;
+  output ExtAdjacencyMatrix mOut;
 protected
   Integer neq,nvar;
   list<Integer> variables;
   list<list<Integer>> occurrences,candidates;
   list<tuple<list<Integer>,list<Integer>>> reducedVars;
-  ExtIncidenceMatrix newM;
+  ExtAdjacencyMatrix newM;
 algorithm
   mOut:=matchcontinue(m,knowns)
     case(_,_)
@@ -2443,17 +2443,17 @@ algorithm
 end reduceVariables;
 
 protected function reduceVariablesInMatrix
-  input ExtIncidenceMatrix m;
+  input ExtAdjacencyMatrix m;
   input list<list<Integer>> candidates;
   input Integer count;
-  output ExtIncidenceMatrix mOut;
+  output ExtAdjacencyMatrix mOut;
 algorithm
   mOut:=matchcontinue(m,candidates,count)
     local
       list<Integer> candidate,variables;
       Integer temp;
       list<list<Integer>> candidatesTail;
-      ExtIncidenceMatrix newM;
+      ExtAdjacencyMatrix newM;
     case(_,{},_)
       equation
         true=count>0;
@@ -2533,14 +2533,14 @@ end matchcontinue;
 end findReductionCantidates2;
 
 protected function eliminateOutputVariables
-  input ExtIncidenceMatrix mIn;
+  input ExtAdjacencyMatrix mIn;
   input list<Integer> outputs;
-  output ExtIncidenceMatrix mOut;
+  output ExtAdjacencyMatrix mOut;
 algorithm
 mOut:=matchcontinue(mIn,outputs)
   local Integer var; list<Integer> tail;
   list<Integer> o;
-  ExtIncidenceMatrix newM,m;
+  ExtAdjacencyMatrix newM,m;
   case(m,{})
     then m;
   case(m,var::tail)
@@ -2558,13 +2558,13 @@ end matchcontinue;
 end eliminateOutputVariables;
 
 protected function occurrencesOfVariable
-  input ExtIncidenceMatrix m;
+  input ExtAdjacencyMatrix m;
   input Integer var;
   output list<Integer> out;
 algorithm
   out:=matchcontinue(m,var)
     local
-      ExtIncidenceMatrix tail;
+      ExtAdjacencyMatrix tail;
       list<Integer> ret,vars;
       Integer eq;
       case({},_) then {};
@@ -2583,12 +2583,12 @@ algorithm
 end occurrencesOfVariable;
 
 protected function getEquationsNumber
-  input ExtIncidenceMatrix m;
+  input ExtAdjacencyMatrix m;
   output list<Integer> numbers;
 algorithm
 numbers:= match(m)
     local
-      ExtIncidenceMatrix t;
+      ExtAdjacencyMatrix t;
       Integer eq;
       list<Integer> inner_ret;
     case({})
@@ -2609,8 +2609,8 @@ algorithm
 end getMathematicaText;
 
 protected function getComponentsWrapper
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrix mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrix mt;
   input array<Integer> ass1;
   input array<Integer> ass2;
   output list<list<Integer>> compsOut;
@@ -2646,13 +2646,13 @@ end matchcontinue;
 end getComponentsWrapper;
 
 protected function getVariables
-  input ExtIncidenceMatrix m;
+  input ExtAdjacencyMatrix m;
   output list<Integer> varsOut;
 algorithm
 varsOut:= match(m)
    local
       list<Integer> vars,newVars;
-      ExtIncidenceMatrix t;
+      ExtAdjacencyMatrix t;
    case({})
         equation
         then {};
@@ -2665,18 +2665,18 @@ end match;
 end getVariables;
 
 protected function removeEquationInSquaredBlock
-  input ExtIncidenceMatrix m;
+  input ExtAdjacencyMatrix m;
   input list<Integer> knowns;
   input list<Integer> unknowns;
   input list<list<Integer>> components;
-  output ExtIncidenceMatrix mOut;
+  output ExtAdjacencyMatrix mOut;
   output list<Integer> removedEquations;
 algorithm
 (mOut,removedEquations):=matchcontinue(m,knowns,unknowns,components)
   local
     list<Integer> h,vars,usedKnowns;
     list<list<Integer>> t;
-    ExtIncidenceMatrix compEqns,compsSorted,tailEquations,inner_ret;
+    ExtAdjacencyMatrix compEqns,compsSorted,tailEquations,inner_ret;
     Integer removeEquation;
     list<Integer> removed_inner;
   case(_,_,_,{})
@@ -2734,7 +2734,7 @@ algorithm
 end setOfList;
 
 protected function countKnowns
-  input ExtIncidenceMatrixRow row;
+  input ExtAdjacencyMatrixRow row;
   input list<Integer> knowns;
   output Integer out;
 algorithm
@@ -2750,9 +2750,9 @@ algorithm
 end countKnowns;
 
 protected function sortEquations
-  input ExtIncidenceMatrix m;
+  input ExtAdjacencyMatrix m;
   input list<Integer> knowns;
-  output ExtIncidenceMatrix mOut;
+  output ExtAdjacencyMatrix mOut;
 algorithm
   mOut:=sortBy1(m,countKnowns,knowns);
 end sortEquations;
@@ -2766,9 +2766,9 @@ algorithm
 end removeVarsNotInSet_helper;
 
 protected function removeVarsNotInSet
-  input ExtIncidenceMatrix m;
+  input ExtAdjacencyMatrix m;
   input list<Integer> set;
-  output ExtIncidenceMatrix mOut = {};
+  output ExtAdjacencyMatrix mOut = {};
 protected
   list<Integer> vars,newVars;
   Integer eq;
@@ -2784,14 +2784,14 @@ algorithm
 end removeVarsNotInSet;
 
 protected function removeEquations
-  input ExtIncidenceMatrix m;
+  input ExtAdjacencyMatrix m;
   input list<Integer> eqns;
-  output ExtIncidenceMatrix mOut;
+  output ExtAdjacencyMatrix mOut;
 algorithm
 mOut:=matchcontinue(m,eqns)
   local
-    ExtIncidenceMatrixRow e;
-    ExtIncidenceMatrix t,inner_ret;
+    ExtAdjacencyMatrixRow e;
+    ExtAdjacencyMatrix t,inner_ret;
     Integer eq;
   case({},_)
     equation
@@ -2811,7 +2811,7 @@ end removeEquations;
 
 
 protected function getEquationsHelper
-  input ExtIncidenceMatrixRow m;
+  input ExtAdjacencyMatrixRow m;
   input list<Integer> eqns;
   output Boolean out;
 algorithm
@@ -2824,15 +2824,15 @@ algorithm
 end getEquationsHelper;
 
 protected function getEquations
-  input ExtIncidenceMatrix m;
+  input ExtAdjacencyMatrix m;
   input list<Integer> eqns;
-  output ExtIncidenceMatrix mOut;
+  output ExtAdjacencyMatrix mOut;
 algorithm
 mOut:=List.filter1OnTrue(m,getEquationsHelper,eqns);
 end getEquations;
 
 protected function removeUnrelatedEquations2
-  input ExtIncidenceMatrixRow row;
+  input ExtAdjacencyMatrixRow row;
   input list<Integer> knowns;
   output Boolean out;
 algorithm
@@ -2848,15 +2848,15 @@ end match;
 end removeUnrelatedEquations2;
 
 protected function removeUnrelatedEquations
-  input ExtIncidenceMatrix m;
+  input ExtAdjacencyMatrix m;
   input list<Integer> knowns;
-  output ExtIncidenceMatrix mOut;
+  output ExtAdjacencyMatrix mOut;
 algorithm
 mOut:=List.filter1OnTrue(m,removeUnrelatedEquations2,knowns);
 end removeUnrelatedEquations;
 
 protected function checkSystemContainsVars "Check that each variable is contained in the system"
-    input ExtIncidenceMatrix m;
+    input ExtAdjacencyMatrix m;
     input list<Integer> knows;
     input BackendDAE.Variables variables;
 algorithm
@@ -2885,25 +2885,25 @@ algorithm
 end checkSystemContainsVars;
 
 protected function getSystemForUnknowns
-  input ExtIncidenceMatrix m;
+  input ExtAdjacencyMatrix m;
   input list<Integer> knowns;
   input list<Integer> unknowns;
-  output ExtIncidenceMatrix mOut;
-  protected ExtIncidenceMatrix mTemp;
+  output ExtAdjacencyMatrix mOut;
+  protected ExtAdjacencyMatrix mTemp;
 algorithm
   mTemp:=sortEquations(m,knowns);
   mOut:=removeVarsNotInSet(mTemp,unknowns);
 end getSystemForUnknowns;
 
 protected function getRelatedVariables
-  input ExtIncidenceMatrix m;
+  input ExtAdjacencyMatrix m;
   input list<Integer> vars;
   output list<Integer> varsOut;
 algorithm
 varsOut:=matchcontinue(m,vars)
   local
-     ExtIncidenceMatrix t;
-     ExtIncidenceMatrixRow h;
+     ExtAdjacencyMatrix t;
+     ExtAdjacencyMatrixRow h;
      list<Integer> eqvars;
   case({},_)
       equation
@@ -2992,7 +2992,7 @@ end match;
 end addVarEquivalences;
 
 protected function prepareForMatching2
-  input ExtIncidenceMatrix mExt;
+  input ExtAdjacencyMatrix mExt;
   input list<Integer> eqMap;
   input list<Integer> varMap;
   input list<list<Integer>> m;
@@ -3004,7 +3004,7 @@ algorithm
     local
       Integer eq;
       list<Integer> vars,newVarMap,newEqMap,newVars;
-      ExtIncidenceMatrix t;
+      ExtAdjacencyMatrix t;
       list<list<Integer>> newM;
     case({},_,_,_)
       equation
@@ -3020,10 +3020,10 @@ algorithm
 end prepareForMatching2;
 
 protected function prepareForMatching
-  input ExtIncidenceMatrix mExt;
+  input ExtAdjacencyMatrix mExt;
   output list<Integer> eqMap;
   output list<Integer> varMap;
-  output BackendDAE.IncidenceMatrix mOut;
+  output BackendDAE.AdjacencyMatrix mOut;
   protected list<list<Integer>> m;
 algorithm
 (eqMap,varMap,m):=prepareForMatching2(mExt,{},{},{});
@@ -3071,38 +3071,38 @@ algorithm
   end matchcontinue;
 end fixUnderdeterminedSystem;
 
-protected function getExtIncidenceMatrix
-  input BackendDAE.IncidenceMatrix m;
-  output ExtIncidenceMatrix mOut;
+protected function getExtAdjacencyMatrix
+  input BackendDAE.AdjacencyMatrix m;
+  output ExtAdjacencyMatrix mOut;
 algorithm
-  mOut:=getExtIncidenceMatrix2(1,arrayList(m),{});
-end getExtIncidenceMatrix;
+  mOut:=getExtAdjacencyMatrix2(1,arrayList(m),{});
+end getExtAdjacencyMatrix;
 
-protected function getExtIncidenceMatrix2
+protected function getExtAdjacencyMatrix2
   input Integer i;
-  input list<BackendDAE.IncidenceMatrixElement> m;
-  input ExtIncidenceMatrix acc;
-  output ExtIncidenceMatrix mOut;
+  input list<BackendDAE.AdjacencyMatrixElement> m;
+  input ExtAdjacencyMatrix acc;
+  output ExtAdjacencyMatrix mOut;
 algorithm
   mOut:= match(i,m,acc)
     local
-      BackendDAE.IncidenceMatrixElement h;
-      list<BackendDAE.IncidenceMatrixElement> t;
+      BackendDAE.AdjacencyMatrixElement h;
+      list<BackendDAE.AdjacencyMatrixElement> t;
     case(_,{},_)
       equation
       then listReverse(acc);
     case(_,h::t,_)
         equation
-        then getExtIncidenceMatrix2(i+1,t,(i,h)::acc);
+        then getExtAdjacencyMatrix2(i+1,t,(i,h)::acc);
   end match;
-end getExtIncidenceMatrix2;
+end getExtAdjacencyMatrix2;
 
-protected function dumpExtIncidenceMatrix
-  input ExtIncidenceMatrix m;
+protected function dumpExtAdjacencyMatrix
+  input ExtAdjacencyMatrix m;
 algorithm
   _:=match(m)
     local
-      ExtIncidenceMatrix t;
+      ExtAdjacencyMatrix t;
       Integer eq;
       list<Integer> vars;
     case({})
@@ -3110,10 +3110,10 @@ algorithm
     case((eq,vars)::t)
         equation
           print(intString(eq)+":"+stringDelimitList(List.map(vars,intString),",")+"\n");
-          dumpExtIncidenceMatrix(t);
+          dumpExtAdjacencyMatrix(t);
         then ();
   end match;
-end dumpExtIncidenceMatrix;
+end dumpExtAdjacencyMatrix;
 
 protected function containsAny
   input list<Integer> m1;
@@ -3196,7 +3196,7 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       HashTable.HashTable crefDouble;
-      BackendDAE.IncidenceMatrix m;
+      BackendDAE.AdjacencyMatrix m;
       HashTable.HashTable movedvars_1;
       list<BackendDAE.Equation> seqns,eqnLst,ieqnLst;
       BackendVarTransform.VariableReplacements repl;
@@ -3208,7 +3208,7 @@ algorithm
       //print("partially indexed crs:"+Util.stringDelimitList(Util.listMap(crefDouble,Exp.printComponentRefStr),",\n")+"\n");
       repl = BackendVarTransform.emptyReplacements();
 
-      (m,_,_,_) = BackendDAEUtil.incidenceMatrixScalar(syst, BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
+      (m,_,_,_) = BackendDAEUtil.adjacencyMatrixScalar(syst, BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
       (eqnLst,_,movedvars_1,repl) = eliminateVariablesDAE2(eqnLst,1,vars,globalKnownVars,HashTable.emptyHashTable(),repl,crefDouble,m,elimVarIndexList,false);
       //Debug.fcall("dumprepl",BackendVarTransform.dumpReplacements,repl);
 
@@ -3220,7 +3220,7 @@ algorithm
       dae = BackendDAEUtil.setDAEGlobalKnownVars(dae, kvars_1);
 
       dae = BackendDAEUtil.transformBackendDAE(dae,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.ALLOW_UNDERCONSTRAINED())),NONE(),NONE());
-      dae = BackendDAEUtil.mapEqSystem1(dae,BackendDAEUtil.getIncidenceMatrixfromOptionForMapEqSystem,BackendDAE.NORMAL());
+      dae = BackendDAEUtil.mapEqSystem1(dae,BackendDAEUtil.getAdjacencyMatrixfromOptionForMapEqSystem,BackendDAE.NORMAL());
     then dae;
   end match;
 end eliminateVariablesDAE;
@@ -3428,7 +3428,7 @@ protected function eliminateVariablesDAE2
   input HashTable.HashTable mvars;
   input BackendVarTransform.VariableReplacements repl;
   input HashTable.HashTable inDoubles "variables that are partially indexed (part of array)";
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input list<Integer> elimVarIndexList;
   input Boolean failCheck "if becomes true, fail. (Poor mans exception handling )";
   output list<BackendDAE.Equation> outEqns;
@@ -3910,7 +3910,7 @@ algorithm
         dae = setDaeEqns(dae, BackendEquation.listEquation(listAppend(simple_eqns, other_eqns)),false);
 
         dae = BackendDAEUtil.transformBackendDAE(dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())), NONE(), NONE());
-        dae = BackendDAEUtil.mapEqSystem1(dae, BackendDAEUtil.getIncidenceMatrixfromOptionForMapEqSystem, BackendDAE.NORMAL());
+        dae = BackendDAEUtil.mapEqSystem1(dae, BackendDAEUtil.getAdjacencyMatrixfromOptionForMapEqSystem, BackendDAE.NORMAL());
       then dae;
   end match;
 end removeSimpleEquationsUC;

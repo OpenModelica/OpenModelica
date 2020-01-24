@@ -7,7 +7,7 @@ template dumpBackendDAE(BackendDAE.BackendDAE backendDAE, String suffix)
 ::=
   match backendDAE
     case dae as BackendDAE.DAE(shared=BackendDAE.SHARED(info=info as BackendDAE.EXTRA_INFO(__))) then
-      let _ = dumpIncidenceMatrix(dae, suffix)
+      let _ = dumpAdjacencyMatrix(dae, suffix)
       let _ = textFile(dumpMatching(dae, suffix), '<%info.fileNamePrefix%>_<%suffix%>_matching.dot')
       //let _ = textFile(dumpSorting(dae, suffix), '<%info.fileNamePrefix%>_<%suffix%>_sorting.dot')
 
@@ -17,14 +17,14 @@ template dumpBackendDAE(BackendDAE.BackendDAE backendDAE, String suffix)
   end match
 end dumpBackendDAE;
 
-template dumpIncidenceMatrix(BackendDAE.BackendDAE backendDAE, String suffix)
+template dumpAdjacencyMatrix(BackendDAE.BackendDAE backendDAE, String suffix)
 ::=
   match backendDAE
     case dae as BackendDAE.DAE(shared=BackendDAE.SHARED(info=info as BackendDAE.EXTRA_INFO(__))) then
       let _ = textFile(dumpDependence(dae, suffix), '<%info.fileNamePrefix%>_<%suffix%>_dependence.dot')
       ''
   end match
-end dumpIncidenceMatrix;
+end dumpAdjacencyMatrix;
 
 template dumpDependence(BackendDAE.BackendDAE backendDAE, String suffix)
 ::=
@@ -64,7 +64,7 @@ template dumpDependence(BackendDAE.BackendDAE backendDAE, String suffix)
       >>
 end dumpDependence;
 
-template dumpDependence2(Integer clusterID, Option<BackendDAE.IncidenceMatrix> m)
+template dumpDependence2(Integer clusterID, Option<BackendDAE.AdjacencyMatrix> m)
 ::=
   match m
     case SOME(incMatrix) then
@@ -77,7 +77,7 @@ template dumpDependence2(Integer clusterID, Option<BackendDAE.IncidenceMatrix> m
         ;separator="\n")
       '<%incNodes%>'
     else
-      '// no incidence matrix'
+      '// no adjacency matrix'
 end dumpDependence2;
 
 template dumpMatching(BackendDAE.BackendDAE backendDAE, String suffix)
@@ -120,7 +120,7 @@ template dumpMatching(BackendDAE.BackendDAE backendDAE, String suffix)
       >>
 end dumpMatching;
 
-template connections(Integer clusterID, BackendDAE.Matching matching, Option<BackendDAE.IncidenceMatrix> m)
+template connections(Integer clusterID, BackendDAE.Matching matching, Option<BackendDAE.AdjacencyMatrix> m)
 ::=
   match m
     case SOME(incMatrix) then
@@ -157,12 +157,12 @@ template connections(Integer clusterID, BackendDAE.Matching matching, Option<Bac
               'var<%clusterID%>_<%varID%> -> eq<%clusterID%>_<%eqID%> [style="bold", arrowhead="none"];'
             ;separator="\n")
           <<
-          // no incidence matrix
+          // no adjacency matrix
           <%matchedNodes%>
           >>
         else
           <<
-          // no incidence matrix
+          // no adjacency matrix
           // no matching
           >>
 end connections;

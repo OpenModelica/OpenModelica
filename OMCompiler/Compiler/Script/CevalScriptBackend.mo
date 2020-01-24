@@ -1281,7 +1281,7 @@ algorithm
         description = DAEUtil.daeDescription(dae);
         daelow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
         (BackendDAE.DAE({syst},shared)) = BackendDAEUtil.preOptimizeBackendDAE(daelow,NONE());
-        (syst,m,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
+        (syst,m,_) = BackendDAEUtil.getAdjacencyMatrixfromOption(syst,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
         vars = BackendVariable.daeVars(syst);
         eqnarr = BackendEquation.getEqnsFromEqSystem(syst);
         (jac, _) = SymbolicJacobian.calculateJacobian(vars, eqnarr, m, false,shared);
@@ -1342,7 +1342,7 @@ algorithm
 
     case (cache,env,"exportDAEtoMatlab",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},_)
       equation
-        (cache,ret_val,_) = getIncidenceMatrix(cache,env, className, msg, filenameprefix);
+        (cache,ret_val,_) = getAdjacencyMatrix(cache,env, className, msg, filenameprefix);
       then
         (cache,ret_val);
 
@@ -3151,8 +3151,8 @@ algorithm
   DAE.SCONST(str) := exp;
 end sconstToString;
 
-public function getIncidenceMatrix " author: adrpo
- translates a model and returns the incidence matrix"
+public function getAdjacencyMatrix " author: adrpo
+ translates a model and returns the adjacency matrix"
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.Path className "path for the model";
@@ -3193,12 +3193,12 @@ algorithm
         flatModelicaStr = System.stringReplace(flatModelicaStr, "\n", "%##%");
         flatModelicaStr = System.stringReplace(flatModelicaStr, "%##%", "','");
         flatModelicaStr = stringAppend(flatModelicaStr,"'};");
-        filename = DAEQuery.writeIncidenceMatrix(dlow, filenameprefix, flatModelicaStr);
+        filename = DAEQuery.writeAdjacencyMatrix(dlow, filenameprefix, flatModelicaStr);
         str = stringAppend("The equation system was dumped to Matlab file:", filename);
       then
         (cache,Values.STRING(str),file_dir);
   end match;
-end getIncidenceMatrix;
+end getAdjacencyMatrix;
 
 public function runFrontEnd
   input output FCore.Cache cache;
@@ -5672,13 +5672,13 @@ algorithm
       Absyn.Program p;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow;
       FCore.Cache cache;
-      Boolean addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
+      Boolean addOriginalAdjacencyMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
       Absyn.Msg msg;
       DAE.DAElist dae_1,dae;
       list<SCode.Element> p_1;
 
     case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="flat"),
-                     Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),
+                     Values.BOOL(addOriginalAdjacencyMatrix),Values.BOOL(addSolvingInfo),
                      Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),
                      Values.STRING(filenameprefix),Values.STRING(rewriteRulesFile)},_)
       equation
@@ -5705,7 +5705,7 @@ algorithm
         dlow_1 = applyRewriteRulesOnBackend(dlow_1);
 
         Print.clearBuf();
-        XMLDump.dumpBackendDAE(dlow_1,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
+        XMLDump.dumpBackendDAE(dlow_1,addOriginalAdjacencyMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
         compileDir = if Testsuite.isRunning() then "" else compileDir;
@@ -5717,7 +5717,7 @@ algorithm
         (cache,stringAppendList({compileDir,xml_filename}));
 
     case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="optimiser"),
-                     Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),
+                     Values.BOOL(addOriginalAdjacencyMatrix),Values.BOOL(addSolvingInfo),
                      Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),
                      Values.STRING(filenameprefix),Values.STRING(rewriteRulesFile)},_)
       equation
@@ -5746,7 +5746,7 @@ algorithm
         dlow_1 = applyRewriteRulesOnBackend(dlow_1);
 
         Print.clearBuf();
-        XMLDump.dumpBackendDAE(dlow_1,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
+        XMLDump.dumpBackendDAE(dlow_1,addOriginalAdjacencyMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
         compileDir = if Testsuite.isRunning() then "" else compileDir;
@@ -5758,7 +5758,7 @@ algorithm
         (cache,stringAppendList({compileDir,xml_filename}));
 
     case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="backEnd"),
-                     Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),
+                     Values.BOOL(addOriginalAdjacencyMatrix),Values.BOOL(addSolvingInfo),
                      Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),
                      Values.STRING(filenameprefix),Values.STRING(rewriteRulesFile)},_)
       equation
@@ -5785,7 +5785,7 @@ algorithm
         indexed_dlow = applyRewriteRulesOnBackend(indexed_dlow);
 
         Print.clearBuf();
-        XMLDump.dumpBackendDAE(indexed_dlow,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
+        XMLDump.dumpBackendDAE(indexed_dlow,addOriginalAdjacencyMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
         compileDir = if Testsuite.isRunning() then "" else compileDir;
@@ -5797,7 +5797,7 @@ algorithm
         (cache,stringAppendList({compileDir,xml_filename}));
 
     case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="stateSpace"),
-                     Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),
+                     Values.BOOL(addOriginalAdjacencyMatrix),Values.BOOL(addSolvingInfo),
                      Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),
                      Values.STRING(filenameprefix),Values.STRING(rewriteRulesFile)},_)
       equation
@@ -5824,7 +5824,7 @@ algorithm
         indexed_dlow = applyRewriteRulesOnBackend(indexed_dlow);
 
         Print.clearBuf();
-        XMLDump.dumpBackendDAE(indexed_dlow,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,true);
+        XMLDump.dumpBackendDAE(indexed_dlow,addOriginalAdjacencyMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,true);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
         compileDir = if Testsuite.isRunning() then "" else compileDir;

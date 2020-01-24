@@ -458,8 +458,8 @@ protected
   list<BackendDAE.Var> var_lst;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
-  BackendDAE.IncidenceMatrix m,m1;
-  BackendDAE.IncidenceMatrix mt,mt1,mt11;
+  BackendDAE.AdjacencyMatrix m,m1;
+  BackendDAE.AdjacencyMatrix mt,mt1,mt11;
   BackendDAE.AdjacencyMatrixEnhanced me;
   BackendDAE.AdjacencyMatrixTEnhanced meT;
   array<list<Integer>> mapEqnIncRow;
@@ -473,7 +473,7 @@ algorithm
      print("\n" + BORDER + "\nBEGINNING of omcTearing\n\n");
   end if;
   DAEtypeStr := BackendDump.printBackendDAEType2String(ishared.backendDAEType);
-  // generate Subsystem to get the incidence matrix
+  // generate Subsystem to get the adjacency matrix
   size := listLength(vindx);
   eqn_lst := BackendEquation.getList(eindex,BackendEquation.getEqnsFromEqSystem(isyst));
   eqns := BackendEquation.listEquation(eqn_lst);
@@ -481,7 +481,7 @@ algorithm
   vars := BackendVariable.listVar1(var_lst);
   subsyst := BackendDAEUtil.createEqSystem(vars, eqns);
   funcs := BackendDAEUtil.getFunctions(ishared);
-  (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(ishared));
+  (subsyst,m,mt,_,_) := BackendDAEUtil.getAdjacencyMatrixScalar(subsyst, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(ishared));
      //  DumpGraphML.dumpSystem(subsyst,ishared,NONE(),"System" + intString(size) + ".graphml");
   if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n\n###BEGIN print Strong Component#####################\n(Function:omcTearing)\n");
@@ -495,7 +495,7 @@ algorithm
      print("\nAdjacencyMatrixTransposedEnhanced:\n");
      BackendDump.dumpAdjacencyMatrixTEnhanced(meT);
      print("\nmapEqnIncRow:"); //+ stringDelimitList(List.map(List.flatten(arrayList(mapEqnIncRow)),intString),",") + "\n\n");
-     BackendDump.dumpIncidenceMatrix(mapEqnIncRow);
+     BackendDump.dumpAdjacencyMatrix(mapEqnIncRow);
      print("\nmapIncRowEqn:\n" + stringDelimitList(List.map(arrayList(mapIncRowEqn),intString),",") + "\n\n");
   end if;
 
@@ -539,7 +539,7 @@ algorithm
   tornsize := listLength(tvars);
   true := intLt(tornsize, size);
 
-  // create incidence matrices w/o tvar and residual
+  // create adjacency matrices w/o tvar and residual
   m1 := arrayCreate(size,{});
   mt1 := arrayCreate(size,{});
   m1 := AdjacencyMatrix.getOtherEqSysAdjacencyMatrix(m,size,1,ass2,ass1,m1);
@@ -631,7 +631,7 @@ protected function getDependenciesOfVars " function to determine which variables
   input list<list<Integer>> iComps;
   input array<Integer> ass1;
   input array<Integer> ass2;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input array<list<Integer>> mT;
   input array<Integer> visited;
   input Integer iMark;
@@ -670,7 +670,7 @@ end getDependenciesOfVars;
 
 protected function tVarsofEqns "determines tvars that influence this equations"
   input list<Integer> iEqns;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input array<Integer> ass1;
   input array<list<Integer>> mT;
   input array<Integer> visited;
@@ -723,7 +723,7 @@ protected function sortResidualDepentOnTVars
   input list<Integer> iResiduals;
   input list<Integer> iTVars;
   input array<Integer> ass1;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input array<list<Integer>> mT;
   input array<Integer> visited;
   input Integer iMark;
@@ -746,12 +746,12 @@ algorithm
   map := listArray(maplst);
   // get for each residual a tvar
   size := arrayLength(map);
-  Matching.matchingExternalsetIncidenceMatrix(size,size,map);
+  Matching.matchingExternalsetAdjacencyMatrix(size,size,map);
   BackendDAEEXT.matching(size,size,5,-1,1.0,1);
   v1 := arrayCreate(size,-1);
   v2 := arrayCreate(size,-1);
   BackendDAEEXT.getAssignment(v2,v1);
-  //  BackendDump.dumpIncidenceMatrix(map);
+  //  BackendDump.dumpAdjacencyMatrix(map);
   //  BackendDump.dumpMatching(v1);
   //  BackendDump.dumpMatching(v2);
   // sort residuals depent on matching to tvars
@@ -778,7 +778,7 @@ end getGlobalLocal;
 
 protected function tVarsofResidualEqns
   input list<Integer> iEqns;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input array<Integer> ass1;
   input array<list<Integer>> mT;
   input array<Integer> varGlobalLocal;
@@ -1697,7 +1697,7 @@ try
     eqArray[i] := true;
   end for;
 
-  (_,aMatrix,aMatrixT,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.SOLVABLE(), SOME(ishared.functionTree), BackendDAEUtil.isInitializationDAE(ishared));
+  (_,aMatrix,aMatrixT,_,_) := BackendDAEUtil.getAdjacencyMatrixScalar(isyst,BackendDAE.SOLVABLE(), SOME(ishared.functionTree), BackendDAEUtil.isInitializationDAE(ishared));
 
   // Match discrete variables
   if not listEmpty(discreteVars) then
@@ -1886,8 +1886,8 @@ protected
   BackendDAE.EqSystem subsyst;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
-  BackendDAE.IncidenceMatrix m;
-  BackendDAE.IncidenceMatrix mt;
+  BackendDAE.AdjacencyMatrix m;
+  BackendDAE.AdjacencyMatrix mt;
   BackendDAE.AdjacencyMatrixEnhanced me;
   BackendDAE.AdjacencyMatrixTEnhanced meT;
   BackendDAE.BackendDAEType DAEtype;
@@ -1922,17 +1922,17 @@ algorithm
     print("\n" + BORDER + "\nBEGINNING of CellierTearing\n\n");
   end if;
 
-  // Generate Subsystem to get the incidence matrix
+  // Generate Subsystem to get the adjacency matrix
   size := listLength(vindx);
   eqn_lst := BackendEquation.getList(eindex,BackendEquation.getEqnsFromEqSystem(isyst));
   eqns := BackendEquation.listEquation(eqn_lst);
   var_lst := List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
   vars := BackendVariable.listVar1(var_lst);
   subsyst := BackendDAEUtil.createEqSystem(vars, eqns);
-  (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(ishared));
+  (subsyst,m,mt,_,_) := BackendDAEUtil.getAdjacencyMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(ishared));
   if debug then execStat("Tearing.CellierTearing -> 1"); end if;
 
-  // Delete negative entries from incidence matrix
+  // Delete negative entries from adjacency matrix
   m := Array.map(m,deleteNegativeEntries);
   mt := Array.map(mt,deleteNegativeEntries);
 
@@ -1972,7 +1972,7 @@ algorithm
 
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("mapEqnIncRow:"); //+ stringDelimitList(List.map(List.flatten(arrayList(mapEqnIncRow)),intString),",") + "\n\n");
-    BackendDump.dumpIncidenceMatrix(mapEqnIncRow);
+    BackendDump.dumpAdjacencyMatrix(mapEqnIncRow);
     print("\nmapIncRowEqn:\n" + stringDelimitList(List.map(arrayList(mapIncRowEqn),intString),",") + "\n\n");
     print("\n\nUNSOLVABLES:\n" + stringDelimitList(List.map(unsolvables,intString),",") + "\n\n");
   end if;
@@ -2049,10 +2049,10 @@ algorithm
       print("\n\nDetermine CASUAL TEARING SET\n" + BORDER + BORDER + "\n\n");
     end if;
 
-    // Get incidence matrix again
-    (_,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(ishared));
+    // Get adjacency matrix again
+    (_,m,mt,_,_) := BackendDAEUtil.getAdjacencyMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(ishared));
 
-    // Delete negative entries from incidence matrix
+    // Delete negative entries from adjacency matrix
     m := Array.map(m,deleteNegativeEntries);
     mt := Array.map(mt,deleteNegativeEntries);
 
@@ -2072,7 +2072,7 @@ algorithm
 
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("mapEqnIncRow:"); //+ stringDelimitList(List.map(List.flatten(arrayList(mapEqnIncRow)),intString),",") + "\n\n");
-      BackendDump.dumpIncidenceMatrix(mapEqnIncRow);
+      BackendDump.dumpAdjacencyMatrix(mapEqnIncRow);
       print("\nmapIncRowEqn:\n" + stringDelimitList(List.map(arrayList(mapIncRowEqn),intString),",") + "\n\n");
       print("\n\nUNSOLVABLES:\n" + stringDelimitList(List.map(unsolvables,intString),",") + "\n\n");
       print("\nDiscrete Vars:\n" + stringDelimitList(List.map(discreteVars,intString),",") + "\n\n");
@@ -2217,7 +2217,7 @@ end tearingSelect;
 
 
 public function deleteNegativeEntries
- "deletes all negative entries from incidence matrix, works with Array.map1, needed for proper Cellier-Tearing
+ "deletes all negative entries from adjacency matrix, works with Array.map1, needed for proper Cellier-Tearing
   author: ptaeuber FHB 2014-01"
   input list<Integer> rowIn;
   output list<Integer> rowOut;
@@ -2287,8 +2287,8 @@ end nonlinearityWeight;
 protected function CellierTearing2 " function to call tearing heuristic and matching algorithm
   author: ptaeuber FHB 2013-2015"
   input Boolean inCausal;
-  input BackendDAE.IncidenceMatrix mIn;
-  input BackendDAE.IncidenceMatrixT mtIn;
+  input BackendDAE.AdjacencyMatrix mIn;
+  input BackendDAE.AdjacencyMatrixT mtIn;
   input BackendDAE.AdjacencyMatrixEnhanced meIn;
   input BackendDAE.AdjacencyMatrixTEnhanced meTIn;
   input array<Integer> ass1In,ass2In;
@@ -2329,16 +2329,16 @@ algorithm
       // mark tvar in ass1In
       arrayUpdate(ass1In,tvar,arrayLength(ass1In)*2);
 
-      // remove tearing var from incidence matrix and transposed inc matrix
-      deleteEntriesFromIncidenceMatrix(mIn,mtIn,{tvar});
+      // remove tearing var from adjacency matrix and transposed inc matrix
+      deleteEntriesFromAdjacencyMatrix(mIn,mtIn,{tvar});
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        print("\n\n###BEGIN print Incidence Matrix w/o tvar############\n(Function: CellierTearing2)\n");
-        BackendDump.dumpIncidenceMatrix(mIn);
+        print("\n\n###BEGIN print Adjacency Matrix w/o tvar############\n(Function: CellierTearing2)\n");
+        BackendDump.dumpAdjacencyMatrix(mIn);
       end if;
       _ = Array.replaceAtWithFill(tvar,{},{},mtIn);
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        BackendDump.dumpIncidenceMatrixT(mtIn);
-        print("\n###END print Incidence Matrix w/o tvar##############\n(Function: CellierTearing2)\n\n\n");
+        BackendDump.dumpAdjacencyMatrixT(mtIn);
+        print("\n###END print Adjacency Matrix w/o tvar##############\n(Function: CellierTearing2)\n\n\n");
       end if;
 
       if debug then execStat("Tearing.CellierTearing2 - 1.1"); end if;
@@ -2396,14 +2396,14 @@ algorithm
       // mark tvars in ass1In
       markTVarsOrResiduals(tvars, ass1In);
 
-      // remove tearing var from incidence matrix and transposed incidence matrix
-      deleteEntriesFromIncidenceMatrix(mIn, mtIn, tvars);
-      deleteRowsFromIncidenceMatrix(mtIn, tvars);
+      // remove tearing var from adjacency matrix and transposed adjacency matrix
+      deleteEntriesFromAdjacencyMatrix(mIn, mtIn, tvars);
+      deleteRowsFromAdjacencyMatrix(mtIn, tvars);
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        print("\n\n###BEGIN print Incidence Matrix w/o tvars###########\n(Function: CellierTearing2)\n");
-        BackendDump.dumpIncidenceMatrix(mIn);
-        BackendDump.dumpIncidenceMatrixT(mtIn);
-        print("\n###END print Incidence Matrix w/o tvars#############\n(Function: CellierTearing2)\n\n\n");
+        print("\n\n###BEGIN print Adjacency Matrix w/o tvars###########\n(Function: CellierTearing2)\n");
+        BackendDump.dumpAdjacencyMatrix(mIn);
+        BackendDump.dumpAdjacencyMatrixT(mtIn);
+        print("\n###END print Adjacency Matrix w/o tvars#############\n(Function: CellierTearing2)\n\n\n");
         print("\n" + BORDER + "\nBEGINNING of TarjanMatching\n\n");
       end if;
 
@@ -2442,8 +2442,8 @@ protected function selectTearingVar
   author: ptaeuber FHB 2013-2015"
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input BackendDAE.AdjacencyMatrixTEnhanced meT;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input array<Integer> ass1In,ass2In;
   input list<Integer> discreteVars,tSel_prefer,tSel_avoid,tSel_never;
   input array<list<Integer>> mapEqnIncRow;
@@ -2499,7 +2499,7 @@ end selectTearingVar;
 
 
 protected partial function TearingHeuristic "Heuristic to find a preferably good tearing variable; interface function"
-  input BackendDAE.IncidenceMatrix mIn,mtIn;
+  input BackendDAE.AdjacencyMatrix mIn,mtIn;
   input BackendDAE.AdjacencyMatrixEnhanced meIn;
   input BackendDAE.AdjacencyMatrixTEnhanced metIn;
   input array<Integer> ass1In;
@@ -3197,7 +3197,7 @@ end selectCausalVarsPrepareSelectionSet;
 protected function selectMostCausalizingVars
 " determines the variables causalizing the most equations in the next step.
   author: ptaeuber FHB 2013-2015"
-  input BackendDAE.IncidenceMatrix inMt;
+  input BackendDAE.AdjacencyMatrix inMt;
   input list<Integer> selVars;
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input array<Integer> ass1In;
@@ -3240,7 +3240,7 @@ end selectMostCausalizingVars;
 protected function selectCausalizingVars
 " returns the variables causalizing at least one equation in the next step and the counts in a second list.
   author: ptaeuber"
-  input BackendDAE.IncidenceMatrix inMt;
+  input BackendDAE.AdjacencyMatrix inMt;
   input list<Integer> selVars;
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input array<Integer> ass1In;
@@ -3277,7 +3277,7 @@ end selectCausalizingVars;
 protected function selectOneMostCausalizingVar
 " determines one variable causalizing the most equations in the next step.
   author: ptaeuber"
-  input BackendDAE.IncidenceMatrix inMt;
+  input BackendDAE.AdjacencyMatrix inMt;
   input list<Integer> selVars;
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input array<Integer> ass1In;
@@ -3474,8 +3474,8 @@ end countImpossibleAss;
 
 protected function TarjanMatching "Modified matching algorithm according to Tarjan as it is used by Cellier.
   author: ptaeuber 2013-2015"
-  input BackendDAE.IncidenceMatrix mIn;
-  input BackendDAE.IncidenceMatrixT mtIn;
+  input BackendDAE.AdjacencyMatrix mIn;
+  input BackendDAE.AdjacencyMatrixT mtIn;
   input BackendDAE.AdjacencyMatrixEnhanced meIn;
   input array<Integer> ass1In,ass2In;
   input list<Integer> orderIn;
@@ -3518,8 +3518,8 @@ end TarjanMatching;
 
 protected function TarjanAssignment " finds assignable equations and variables and assigns
 author: ptaeuber FHB 2013-2015"
-  input BackendDAE.IncidenceMatrix mIn;
-  input BackendDAE.IncidenceMatrixT mtIn;
+  input BackendDAE.AdjacencyMatrix mIn;
+  input BackendDAE.AdjacencyMatrixT mtIn;
   input BackendDAE.AdjacencyMatrixEnhanced meIn;
   input array<Integer> ass1In,ass2In;
   input list<Integer> orderIn;
@@ -3566,7 +3566,7 @@ protected function traverseSingleEqnsforAssignable
 " selects next equations that can be causalized without consideration of solvability
   author: ptaeuber FHB 2013-10"
   input array<Integer> inAss;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
   output list<Integer> selectedrows;
@@ -3597,7 +3597,7 @@ protected function traverseCollectiveEqnsforAssignable
 " selects next collective equations that can be causalized without consideration of solvability
   author: ptaeuber"
   input array<Integer> inAss;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input array<list<Integer>> mapEqnIncRow;
   output list<Integer> selectedrows;
 protected
@@ -3629,8 +3629,8 @@ protected function makeAssignment
   author: ptaeuber FHB 2013-10"
   input list<Integer> eqns,vars;
   input array<Integer> ass1In,ass2In;
-  input BackendDAE.IncidenceMatrix mIn;
-  input BackendDAE.IncidenceMatrixT mtIn;
+  input BackendDAE.AdjacencyMatrix mIn;
+  input BackendDAE.AdjacencyMatrixT mtIn;
 protected
   Integer eq, var;
 algorithm
@@ -3643,9 +3643,9 @@ algorithm
       print("assignment: Eq " + intString(eq) + " - Var " + intString(var) + "\n");
     end if;
     _ := Array.replaceAtWithFill(eq,{},{},mIn);
-    deleteEntriesFromIncidenceMatrix(mIn,mtIn,{var});
+    deleteEntriesFromAdjacencyMatrix(mIn,mtIn,{var});
     _ := Array.replaceAtWithFill(var,{},{},mtIn);
-    deleteEntriesFromIncidenceMatrix(mtIn,mIn,{eq});
+    deleteEntriesFromAdjacencyMatrix(mtIn,mIn,{eq});
   end for;
 end makeAssignment;
 
@@ -3653,7 +3653,7 @@ end makeAssignment;
 protected function getNextSolvableEqn " finds equation that can be matched with respect to solvability
   author: ptaeuber FHB 2013-08"
   input list<Integer> assEq_coll;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input array<Integer> ass1;
   input array<Integer> ass2;
@@ -3693,7 +3693,7 @@ protected function eqnSolvableCheck "
   input Integer eqn_coll;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> ass1;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input BackendDAE.AdjacencyMatrixEnhanced me;
   output Boolean solvable;
   output list<Integer> eqns;
@@ -3923,10 +3923,10 @@ algorithm
 end selectFromList;
 
 
-protected function deleteEntriesFromIncidenceMatrix "Deletes given entries from matrix. Applicable on Incidence and on transposed Incidence.
+protected function deleteEntriesFromAdjacencyMatrix "Deletes given entries from matrix. Applicable on Adjacency and on transposed Adjacency.
   author: ptaeuber 2015-02"
-  input BackendDAE.IncidenceMatrix mUpdate;
-  input BackendDAE.IncidenceMatrix mHelp;
+  input BackendDAE.AdjacencyMatrix mUpdate;
+  input BackendDAE.AdjacencyMatrix mHelp;
   input list<Integer> entries;
 protected
   Integer rowIndx;
@@ -3940,26 +3940,26 @@ algorithm
       Array.replaceAtWithFill(rowIndx,row,row,mUpdate);
     end for;
   end for;
-end deleteEntriesFromIncidenceMatrix;
+end deleteEntriesFromAdjacencyMatrix;
 
 
-protected function deleteRowsFromIncidenceMatrix "Deletes given rows from matrix. Applicable on Incidence and on transposed Incidence.
+protected function deleteRowsFromAdjacencyMatrix "Deletes given rows from matrix. Applicable on Adjacency and on transposed Adjacency.
   author: ptaeuber 2015-02"
-  input BackendDAE.IncidenceMatrix mUpdate;
+  input BackendDAE.AdjacencyMatrix mUpdate;
   input list<Integer> rows;
 algorithm
   for row in rows loop
     _ := Array.replaceAtWithFill(row,{},{},mUpdate);
   end for;
-end deleteRowsFromIncidenceMatrix;
+end deleteRowsFromAdjacencyMatrix;
 
 
 protected function getVarsOfEqnsWithMostVars "find vars occurring in the equations with the
   most variables considering the current matching.
   author: ptaeuber"
   input list<Integer> inVars;
-  input BackendDAE.IncidenceMatrix mIn;
-  input BackendDAE.IncidenceMatrixT mtIn;
+  input BackendDAE.AdjacencyMatrix mIn;
+  input BackendDAE.AdjacencyMatrixT mtIn;
   output list<Integer> outVars = {};
 protected
   Integer size, maxSize = 0;
@@ -3992,7 +3992,7 @@ protected function getVarsOccurringInMostEquations
  "find rows in transposed adjacency matrix enhanced with most nonzero
   elements and put the indexes of these rows in a list.
   author: ptaeuber"
-  input BackendDAE.IncidenceMatrixT mtIn;
+  input BackendDAE.AdjacencyMatrixT mtIn;
   input list<Integer> inSelect;
   output Integer length = 0;
   output list<Integer> outLst = {};
@@ -4016,7 +4016,7 @@ end getVarsOccurringInMostEquations;
 protected function getVarOccurringInMostEquations "find rows in transposed adjacency matrix enhanced with most nonzero
   elements. Return the first found row index with most entries.
 author: ptaeuber"
-  input BackendDAE.IncidenceMatrixT mtIn;
+  input BackendDAE.AdjacencyMatrixT mtIn;
   input list<Integer> inSelect;
   output Integer length = 0;
   output list<Integer> outLst = {};
@@ -4038,7 +4038,7 @@ end getVarOccurringInMostEquations;
 protected function findNEntries " find rows with n nonzero elements and
 put the indexes of these rows in a list.
 author: Waurich TUD 2012-10"
-  input BackendDAE.IncidenceMatrix mtIn;
+  input BackendDAE.AdjacencyMatrix mtIn;
   input list<Integer> inSelect;
   input Integer num;
   output list<Integer> outList = {};
@@ -4110,7 +4110,7 @@ protected
   array<Option<BackendDAE.Equation>> optarr, optarr_res;
   array<Integer> indx_res, indx_eq, indx_var;
   Boolean tmp_update, isDer;
-  BackendDAE.IncidenceMatrix mm;
+  BackendDAE.AdjacencyMatrix mm;
   Boolean maxSizeOne =  Flags.getConfigInt(Flags.RTEARING) == 1;
   list<DAE.Exp> loopT, noLoopT;
 algorithm
@@ -4119,7 +4119,7 @@ algorithm
   //BackendDump.bltdump("IN:", inDAE);
   for syst in inDAE.eqs loop
     BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(comps=comps),stateSets=stateSets,partitionKind=partitionKind) := syst;
-    (_, mm, _) := BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.SPARSE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
+    (_, mm, _) := BackendDAEUtil.getAdjacencyMatrix(syst, BackendDAE.SPARSE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
     tmp_update := false;
     for comp in comps loop
       if isTornsystem(comp, true, false) then
@@ -4455,8 +4455,8 @@ protected
   BackendDAE.EqSystem subsyst;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
-  BackendDAE.IncidenceMatrix m,mLoop;
-  BackendDAE.IncidenceMatrix mt,mtLoop;
+  BackendDAE.AdjacencyMatrix m,mLoop;
+  BackendDAE.AdjacencyMatrix mt,mtLoop;
   BackendDAE.AdjacencyMatrixEnhanced me;
   BackendDAE.AdjacencyMatrixTEnhanced meT;
   BackendDAE.BackendDAEType DAEtype;
@@ -4475,17 +4475,17 @@ algorithm
     print("\n" + BORDER + "\nBEGINNING of totalTearing\n\n");
   end if;
 
-  // Generate Subsystem to get the incidence matrix
+  // Generate Subsystem to get the adjacency matrix
   size := listLength(vindx);
   eqn_lst := BackendEquation.getList(eindex,BackendEquation.getEqnsFromEqSystem(isyst));
   eqns := BackendEquation.listEquation(eqn_lst);
   var_lst := List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
   vars := BackendVariable.listVar1(var_lst);
   subsyst := BackendDAEUtil.createEqSystem(vars, eqns);
-  (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(ishared));
+  (subsyst,m,mt,_,_) := BackendDAEUtil.getAdjacencyMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(ishared));
 
 
-  // Delete negative entries from incidence matrix
+  // Delete negative entries from adjacency matrix
   m := Array.map(m,deleteNegativeEntries);
   mt := Array.map(mt,deleteNegativeEntries);
 
@@ -4510,7 +4510,7 @@ algorithm
 
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n\nmapEqnIncRow:"); //+ stringDelimitList(List.map(List.flatten(arrayList(mapEqnIncRow)),intString),",") + "\n\n");
-    BackendDump.dumpIncidenceMatrix(mapEqnIncRow);
+    BackendDump.dumpAdjacencyMatrix(mapEqnIncRow);
     print("\nmapIncRowEqn:\n" + stringDelimitList(List.map(arrayList(mapIncRowEqn),intString),",") + "\n\n");
     print("\n\nUNSOLVABLES:\n" + stringDelimitList(List.map(unsolvables,intString),",") + "\n\n");
   end if;
@@ -4559,9 +4559,9 @@ algorithm
       // mark tVars in ass1
       markTVarsOrResiduals(tVars, ass1);
 
-      // remove tearing vars from incidence matrix and transposed incidence matrix
-      deleteEntriesFromIncidenceMatrix(mLoop, mtLoop, tVars);
-      deleteRowsFromIncidenceMatrix(mtLoop, tVars);
+      // remove tearing vars from adjacency matrix and transposed adjacency matrix
+      deleteEntriesFromAdjacencyMatrix(mLoop, mtLoop, tVars);
+      deleteRowsFromAdjacencyMatrix(mtLoop, tVars);
 
       // initially find equations which can be causalized in the next step and save in causEq
       causEq := traverseCollectiveEqnsforAssignable(ass2,mLoop,mapEqnIncRow);
@@ -4569,8 +4569,8 @@ algorithm
       // if Flags.isSet(Flags.TOTAL_TEARING_DUMPVERBOSE) then
         // print("\nInitial ass1: " + stringDelimitList(List.map(arrayList(ass1),intString),",")+"\n");
         // print("Initial ass2: " + stringDelimitList(List.map(arrayList(ass2),intString),",") + "\n");
-        // print("\nInitial m:");BackendDump.dumpIncidenceMatrix(mLoop);
-        // print("\nInitial mt:");BackendDump.dumpIncidenceMatrix(mtLoop);
+        // print("\nInitial m:");BackendDump.dumpAdjacencyMatrix(mLoop);
+        // print("\nInitial mt:");BackendDump.dumpAdjacencyMatrix(mtLoop);
         // print("\nInitial causEq: " + stringDelimitList(List.map(causEq,intString),",") + "\n");
         // print("Initial order: " + stringDelimitList(List.map(order,intString),",") + "\n\n\n\n");
       // end if;
@@ -4629,8 +4629,8 @@ author: ptaeuber FHB 2016"
   input array<Integer> ass1,ass2;
   input list<Integer> orderIn;
   input list<Integer> causEqIn;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
@@ -4639,8 +4639,8 @@ author: ptaeuber FHB 2016"
 protected
   list<Integer> order, causEq, e_exp, vars, unassigned;
   array<Integer> ass1Copy,ass2Copy;
-  BackendDAE.IncidenceMatrix mCopy;
-  BackendDAE.IncidenceMatrixT mtCopy;
+  BackendDAE.AdjacencyMatrix mCopy;
+  BackendDAE.AdjacencyMatrixT mtCopy;
   Boolean solvable;
 algorithm
   for e in causEqIn loop
@@ -4665,8 +4665,8 @@ algorithm
       // if Flags.isSet(Flags.TOTAL_TEARING_DUMPVERBOSE) then
         // print("\nNew ass1: " + stringDelimitList(List.map(arrayList(ass1Copy),intString),",")+"\n");
           // print("New ass2: " + stringDelimitList(List.map(arrayList(ass2Copy),intString),",") + "\n");
-        // print("\nNew m:");BackendDump.dumpIncidenceMatrix(mCopy);
-        // print("\nNew mt:");BackendDump.dumpIncidenceMatrix(mtCopy);
+        // print("\nNew m:");BackendDump.dumpAdjacencyMatrix(mCopy);
+        // print("\nNew mt:");BackendDump.dumpAdjacencyMatrix(mtCopy);
         // print("\nNew causEq: " + stringDelimitList(List.map(causEq,intString),",") + "\n");
           // print("New order: " + stringDelimitList(List.map(order,intString),",") + "\n\n\n\n");
       // end if;
@@ -4795,8 +4795,8 @@ protected
   BackendDAE.EqSystem subsyst;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
-  BackendDAE.IncidenceMatrix m;
-  BackendDAE.IncidenceMatrix mt;
+  BackendDAE.AdjacencyMatrix m;
+  BackendDAE.AdjacencyMatrix mt;
   BackendDAE.AdjacencyMatrixEnhanced me;
   BackendDAE.AdjacencyMatrixTEnhanced meT;
   BackendDAE.BackendDAEType DAEtype;
@@ -4811,16 +4811,16 @@ algorithm
   linear := BackendDAEUtil.getLinearfromJacType(jacType);
   BackendDAE.SHARED(backendDAEType=DAEtype, info=BackendDAE.EXTRA_INFO(fileNamePrefix=modelName)) := ishared;
 
-  // Generate Subsystem to get the incidence matrix
+  // Generate Subsystem to get the adjacency matrix
   size := listLength(vindx);
   eqn_lst := BackendEquation.getList(eindex,BackendEquation.getEqnsFromEqSystem(isyst));
   eqns := BackendEquation.listEquation(eqn_lst);
   var_lst := List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
   vars := BackendVariable.listVar1(var_lst);
   subsyst := BackendDAEUtil.createEqSystem(vars, eqns);
-  (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(ishared));
+  (subsyst,m,mt,_,_) := BackendDAEUtil.getAdjacencyMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(ishared));
 
-  // Delete negative entries from incidence matrix
+  // Delete negative entries from adjacency matrix
   m := Array.map(m,deleteNegativeEntries);
   mt := Array.map(mt,deleteNegativeEntries);
 
@@ -4871,7 +4871,7 @@ algorithm
   // Dumps
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n\nmapEqnIncRow:"); //+ stringDelimitList(List.map(List.flatten(arrayList(mapEqnIncRow)),intString),",") + "\n\n");
-    BackendDump.dumpIncidenceMatrix(mapEqnIncRow);
+    BackendDump.dumpAdjacencyMatrix(mapEqnIncRow);
     print("\nmapIncRowEqn:\n" + stringDelimitList(List.map(arrayList(mapIncRowEqn),intString),",") + "\n\n");
     print("\n\nUNSOLVABLES:\n" + stringDelimitList(List.map(unsolvables,intString),",") + "\n\n");
     print("\nDiscrete Vars:\n" + stringDelimitList(List.map(discreteVars,intString),",") + "\n\n");
@@ -4892,17 +4892,17 @@ algorithm
     print("ass2: " + stringDelimitList(List.map(arrayList(ass2),intString),",") + "\n");
   end if;
 
-  // remove tearing vars from incidence matrix and transposed incidence matrix
-  deleteEntriesFromIncidenceMatrix(m, mt, userTVars);
-  deleteRowsFromIncidenceMatrix(mt, userTVars);
-  // remove residual equations from incidence matrix and transposed incidence matrix
-  deleteEntriesFromIncidenceMatrix(mt, m, userResiduals_exp);
-  deleteRowsFromIncidenceMatrix(m, userResiduals_exp);
+  // remove tearing vars from adjacency matrix and transposed adjacency matrix
+  deleteEntriesFromAdjacencyMatrix(m, mt, userTVars);
+  deleteRowsFromAdjacencyMatrix(mt, userTVars);
+  // remove residual equations from adjacency matrix and transposed adjacency matrix
+  deleteEntriesFromAdjacencyMatrix(mt, m, userResiduals_exp);
+  deleteRowsFromAdjacencyMatrix(m, userResiduals_exp);
 
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    print("\nIncidence Matrix without tvars and residuals:\n");
-    BackendDump.dumpIncidenceMatrix(m);
-    BackendDump.dumpIncidenceMatrix(mt);
+    print("\nAdjacency Matrix without tvars and residuals:\n");
+    BackendDump.dumpAdjacencyMatrix(m);
+    BackendDump.dumpAdjacencyMatrix(mt);
   end if;
 
   if intEq(listLength(userTVars), countEmptyRows(m)) and intEq(listLength(userResiduals_exp), countEmptyRows(mt)) then
@@ -4951,8 +4951,8 @@ end userDefinedTearing;
 
 
 protected function countEmptyRows
-"function to count empty rows in incidence matrices"
-  input BackendDAE.IncidenceMatrix m;
+"function to count empty rows in adjacency matrices"
+  input BackendDAE.AdjacencyMatrix m;
   output Integer count=0;
 algorithm
   for row in m loop
@@ -4968,8 +4968,8 @@ author: ptaeuber FHB 2016"
   input array<Integer> ass1,ass2;
   input list<Integer> orderIn;
   input list<Integer> causEqIn;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;

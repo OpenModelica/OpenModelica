@@ -48,7 +48,7 @@ simulate(ASSC); getErrorString();
 // Differentiated equation:
 // 0.0 = der(x) - der(y)
 //
-// Update Incidence Matrix: 3
+// Update Adjacency Matrix: 3
 //
 // ########################### STATE SELECTION ###########################
 // ########## Try static state selection ##########

@@ -220,7 +220,7 @@ algorithm
   eqns := BackendEquation.add(eqn, eqns);
 
   eqSystem := BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(),{});
-  (outEqSystem, _, _) := BackendDAEUtil.getIncidenceMatrix(eqSystem, BackendDAE.NORMAL(),NONE());
+  (outEqSystem, _, _) := BackendDAEUtil.getAdjacencyMatrix(eqSystem, BackendDAE.NORMAL(),NONE());
 end timeEquation;
 
 protected function eliminatedStatesDerivations "author: vitalij
@@ -258,7 +258,7 @@ algorithm
   // change kind: state in known variable
   ((vars, eqns, outvars)) := BackendVariable.traverseBackendDAEVars(orderedVars, replaceStates_vars, (vars, eqns2, invars));
   eqSystem := BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets);
-  (eqSystem, _, _) := BackendDAEUtil.getIncidenceMatrix(eqSystem, BackendDAE.NORMAL(),NONE());
+  (eqSystem, _, _) := BackendDAEUtil.getAdjacencyMatrix(eqSystem, BackendDAE.NORMAL(),NONE());
   outTupel := (listAppend(inSystems,{eqSystem}), BackendVariable.mergeVariables(invars,outvars));
 end eliminatedStatesDerivations;
 

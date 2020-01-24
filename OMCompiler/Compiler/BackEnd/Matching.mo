@@ -74,7 +74,7 @@ import System;
 
 public function PerfectMatching "
   This function fails if there is no perfect matching for the given system."
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   output array<Integer> ass1 "eqn := ass1[var]";
   output array<Integer> ass2 "var := ass2[eqn]";
 protected
@@ -87,7 +87,7 @@ end PerfectMatching;
 public function RegularMatching "
   This function returns at least a partial matching for singular systems, starting from scratch.
   Unmatched nodes are represented by -1."
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input Integer nVars;
   input Integer nEqns;
   output array<Integer> ass1 "eqn := ass1[var]";
@@ -102,7 +102,7 @@ end RegularMatching;
 public function ContinueMatching "
   This function returns at least a partial matching for singular systems.
   Unmatched nodes are represented by -1."
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input Integer nVars;
   input Integer nEqns;
   input output array<Integer> ass1 "eqn := ass1[var]";
@@ -148,7 +148,7 @@ public function BBMatching
 protected
   Integer i;
   Boolean success = true;
-  BackendDAE.IncidenceMatrix m;
+  BackendDAE.AdjacencyMatrix m;
   Integer nVars, nEqns, j;
   array<Integer> ass1, ass2;
   array<Boolean> eMark, vMark;
@@ -213,7 +213,7 @@ end BBMatching;
 
 protected function BBPathFound
   input Integer i;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input array<Boolean> eMark;
   input array<Boolean> vMark;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -258,7 +258,7 @@ end BBPathFound;
 
 protected function BBCheapMatching
   input Integer nEqns;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
 protected
@@ -322,8 +322,8 @@ algorithm
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.AdjacencyMatrix m;
+      BackendDAE.AdjacencyMatrixT mt;
 
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
       equation
@@ -365,7 +365,7 @@ protected function DFSLH2
 "author: PA
   This is the outer loop of the matching algorithm
   The find_path algorithm is called for each equation/variable.
-  inputs:  (BackendDAE,IncidenceMatrix, IncidenceMatrixT
+  inputs:  (BackendDAE,AdjacencyMatrix, AdjacencyMatrixT
              ,int /* number of vars */
              ,int /* number of eqns */
              ,int /* current var */
@@ -374,7 +374,7 @@ protected function DFSLH2
              ,MatchingOptions) /* options for matching alg. */
   outputs: (Assignments, /* assignments, array of equation indices */
               Assignments, /* assignments, list of variable indices */
-              BackendDAE, BackendDAE.IncidenceMatrix, IncidenceMatrixT)"
+              BackendDAE, BackendDAE.AdjacencyMatrix, AdjacencyMatrixT)"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input Integer nv;
@@ -397,8 +397,8 @@ algorithm
   matchcontinue (isyst,ishared,nv,nf,i,emark,vmark,ass1,ass2,match_opts,sssHandler,inArg)
     local
       array<Integer> ass1_1,ass2_1,ass1_2,ass2_2,ass1_3,ass2_3,emark1,vmark1;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.AdjacencyMatrix m;
+      BackendDAE.AdjacencyMatrixT mt;
       Integer i_1,nv_1,nf_1;
       BackendDAE.EquationArray eqns;
       list<Integer> eqn_lst,var_lst,meqns;
@@ -474,11 +474,11 @@ protected function pathFound "author: PA
   This function is part of the matching algorithm.
   It tries to find a matching for the equation index given as
   third argument, i.
-  inputs:  (IncidenceMatrix, BackendDAE.IncidenceMatrixT, int /* equation */,
+  inputs:  (AdjacencyMatrix, BackendDAE.AdjacencyMatrixT, int /* equation */,
                Assignments, Assignments)
   outputs: (Assignments, Assignments)"
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input Integer i;
   input Integer imark;
   input array<Integer> emark;
@@ -508,8 +508,8 @@ end pathFound;
 
 protected function assignOneInEqn "author: PA
   Helper function to pathFound."
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input Integer i;
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
@@ -564,14 +564,14 @@ protected function forallUnmarkedVarsInEqn
 "author: PA
   This function is part of the matching algorithm.
   It loops over all umarked variables in an equation.
-  inputs:  (IncidenceMatrix,
-            IncidenceMatrixT,
+  inputs:  (AdjacencyMatrix,
+            AdjacencyMatrixT,
             int,
             BackendDAE.Assignments /* ass1 */,
             BackendDAE.Assignments /* ass2 */)
   outputs: (Assignments, Assignments)"
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input Integer i;
   input Integer imark;
   input array<Integer> emark;
@@ -606,14 +606,14 @@ protected function forallUnmarkedVarsInEqnBody
 "author: PA
   This function is part of the matching algorithm.
   It is the body of the loop over all unmarked variables.
-  inputs:  (IncidenceMatrix, BackendDAE.IncidenceMatrixT,
+  inputs:  (AdjacencyMatrix, BackendDAE.AdjacencyMatrixT,
             int,
             int list /* var list */
             Assignments
             Assignments)
   outputs: (Assignments, Assignments)"
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input Integer i;
   input Integer imark;
   input array<Integer> emark;
@@ -670,8 +670,8 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       array<Integer> rowmarks,parentcolum;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.AdjacencyMatrix m;
+      BackendDAE.AdjacencyMatrixT mt;
 
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
       equation
@@ -718,8 +718,8 @@ protected function BFSB1
   input Integer rowmark;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Integer> rowmarks;
   input array<Integer> parentcolum;
   input array<Integer> ass1 "ass[eqnindx]=varindx";
@@ -739,7 +739,7 @@ algorithm
   matchcontinue (i,rowmark,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2,isyst,ishared,inMatchingOptions,sssHandler,inArg)
     local
       list<Integer> visitedcolums;
-      BackendDAE.IncidenceMatrix m1,mt1;
+      BackendDAE.AdjacencyMatrix m1,mt1;
       Integer nv_1,ne_1,i_1;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
@@ -790,8 +790,8 @@ protected function BFSBphase
   input Integer i;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> parentcolum;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -836,8 +836,8 @@ protected function BFSBphase1
   input Integer i;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> parentcolum;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -870,8 +870,8 @@ protected function BFSBtraverseRows
   input Integer c;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> parentcolum;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -999,8 +999,8 @@ algorithm
   matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.AdjacencyMatrix m;
+      BackendDAE.AdjacencyMatrixT mt;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
@@ -1051,8 +1051,8 @@ protected function DFSB1
   input Integer rowmark;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Integer> rowmarks;
   input array<Integer> ass1 "ass[eqnindx]=varindx";
   input array<Integer> ass2 "ass[varindx]=eqnindx";
@@ -1071,7 +1071,7 @@ algorithm
   matchcontinue (i,rowmark,nv,ne,m,mT,rowmarks,ass1,ass2,isyst,ishared,inMatchingOptions,sssHandler,inArg)
     local
       list<Integer> visitedcolums;
-      BackendDAE.IncidenceMatrix m1,mt1;
+      BackendDAE.AdjacencyMatrix m1,mt1;
       Integer nv_1,ne_1,i_1;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
@@ -1120,8 +1120,8 @@ protected function DFSBphase
   input Integer c;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
@@ -1157,8 +1157,8 @@ protected function DFSBtraverseRows
   input Integer i;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
@@ -1208,8 +1208,8 @@ protected function DFSBtraverseRows1
   input Integer i;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
@@ -1265,8 +1265,8 @@ algorithm
   matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.AdjacencyMatrix m;
+      BackendDAE.AdjacencyMatrixT mt;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
@@ -1316,8 +1316,8 @@ protected function MC21A1
   input Integer rowmark;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
   input array<Integer> ass1 "ass[eqnindx]=varindx";
@@ -1337,7 +1337,7 @@ algorithm
   matchcontinue (i,rowmark,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,isyst,ishared,inMatchingOptions,sssHandler,inArg)
     local
       list<Integer> visitedcolums,changedEqns;
-      BackendDAE.IncidenceMatrix m1,mt1;
+      BackendDAE.AdjacencyMatrix m1,mt1;
       Integer nv_1,ne_1,i_1;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
@@ -1442,8 +1442,8 @@ protected function MC21Aphase
   input Integer c;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -1483,8 +1483,8 @@ protected function MC21Achecklookahead
   input Integer c;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -1513,8 +1513,8 @@ protected function MC21AtraverseRowsUnmatched
   input Integer l;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -1553,8 +1553,8 @@ protected function MC21AtraverseRows
   input Integer i;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -1597,8 +1597,8 @@ protected function MC21AtraverseRows1
   input Integer i;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -1631,8 +1631,8 @@ algorithm
   matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.AdjacencyMatrix m;
+      BackendDAE.AdjacencyMatrixT mt;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
@@ -1700,7 +1700,7 @@ algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
   match (i,unmatched,rowmarks,lookahead,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
-      BackendDAE.IncidenceMatrix m,mt;
+      BackendDAE.AdjacencyMatrix m,mt;
       Integer nv_1,ne_1,i_1;
       list<Integer> unmatched1;
       list<list<Integer>> meqns;
@@ -1791,8 +1791,8 @@ protected function PFaugmentmatching
   input list<Integer> U;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
   input array<Integer> ass1 "ass[eqnindx]=varindx";
@@ -1849,8 +1849,8 @@ protected function PFphase
   input Integer c;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -1889,8 +1889,8 @@ protected function PFchecklookahead
   input Integer c;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -1918,8 +1918,8 @@ protected function PFtraverseRowsUnmatched
   input Integer l;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -1957,8 +1957,8 @@ protected function PFtraverseRows
   input Integer i;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -2001,8 +2001,8 @@ protected function PFtraverseRows1
   input Integer i;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -2034,8 +2034,8 @@ algorithm
   matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns,i;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.AdjacencyMatrix m;
+      BackendDAE.AdjacencyMatrixT mt;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
@@ -2104,7 +2104,7 @@ algorithm
   (outI,outAss1,outAss2,osyst,oshared,outArg):=
   match (i,unmatched,rowmarks,lookahead,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
-      BackendDAE.IncidenceMatrix m,mt;
+      BackendDAE.AdjacencyMatrix m,mt;
       Integer nv_1,ne_1,i_1;
       list<Integer> unmatched1;
       list<list<Integer>> meqns;
@@ -2134,8 +2134,8 @@ protected function PFPlusaugmentmatching
   input list<Integer> U;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
   input array<Integer> ass1 "ass[eqnindx]=varindx";
@@ -2193,8 +2193,8 @@ protected function PFPlusphase
   input Integer c;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -2241,8 +2241,8 @@ protected function PFPluschecklookahead
   input Integer c;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -2271,8 +2271,8 @@ protected function PFPlustraverseRowsUnmatched
   input Integer l;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -2311,8 +2311,8 @@ protected function PFPlustraverseRows
   input Integer i;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -2356,8 +2356,8 @@ protected function PFPlustraverseRows1
   input Integer i;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> lookahead;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -2390,8 +2390,8 @@ algorithm
   matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.AdjacencyMatrix m;
+      BackendDAE.AdjacencyMatrixT mt;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
@@ -2461,7 +2461,7 @@ algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
   match (i,unmatched,rowmarks,collummarks,level,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
-      BackendDAE.IncidenceMatrix m,mt;
+      BackendDAE.AdjacencyMatrix m,mt;
       Integer nv_1,ne_1,i_1;
       list<Integer> unmatched1;
       list<list<Integer>> meqns;
@@ -2554,8 +2554,8 @@ protected function HKphase
   input list<Integer> U;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Integer> rowmarks;
   input array<Integer> collummarks;
   input array<Integer> level;
@@ -2633,8 +2633,8 @@ protected function HKBFS
   input list<Integer> colums;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Integer> rowmarks;
   input Integer i;
   input array<Integer> level;
@@ -2674,8 +2674,8 @@ protected function HKBFSBphase
   input Option<Integer> lowestL "lowest level find unmatched rows";
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> level;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -2736,8 +2736,8 @@ protected function HKBFSBphase1
   input Option<Integer> lowestL;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> level;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -2773,8 +2773,8 @@ protected function HKBFStraverseRows
   input list<Integer> queue;
   input Integer i;
   input Integer l;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> level;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -2833,8 +2833,8 @@ protected function HKDFS
   input Integer i;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Integer> collummarks;
   input array<Integer> level;
   input array<Integer> ass1 "ass[eqnindx]=varindx";
@@ -2875,8 +2875,8 @@ protected function HKDFSphase
   input Integer l;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> collummarks;
   input array<Integer> level;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -2912,8 +2912,8 @@ protected function HKDFStraverseCollums
   input Integer l;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> collummarks;
   input array<Integer> level;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -2984,8 +2984,8 @@ protected function HKDFStraverseCollums1
   input Integer l;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> collummarks;
   input array<Integer> level;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -3042,8 +3042,8 @@ algorithm
   matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.AdjacencyMatrix m;
+      BackendDAE.AdjacencyMatrixT mt;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
@@ -3113,7 +3113,7 @@ algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
   match (i,unmatched,rowmarks,collummarks,level,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
-      BackendDAE.IncidenceMatrix m,mt;
+      BackendDAE.AdjacencyMatrix m,mt;
       Integer nv_1,ne_1,i_1;
       list<Integer> unmatched1;
       list<list<Integer>> meqns;
@@ -3143,8 +3143,8 @@ protected function HKDWphase
   input list<Integer> U;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Integer> rowmarks;
   input array<Integer> collummarks;
   input array<Integer> level;
@@ -3202,8 +3202,8 @@ protected function HKDWDFS
   input Integer i;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Integer> collummarks;
   input array<Integer> ass1 "ass[eqnindx]=varindx";
   input array<Integer> ass2 "ass[varindx]=eqnindx";
@@ -3238,8 +3238,8 @@ protected function HKDWDFSphase
   input Integer r;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> collummarks;
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
@@ -3273,8 +3273,8 @@ protected function HKDWDFStraverseCollums
   input Integer i;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> collummarks;
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
@@ -3331,8 +3331,8 @@ protected function HKDWDFStraverseCollums1
   input Integer i;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> collummarks;
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
@@ -3363,8 +3363,8 @@ algorithm
   matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.AdjacencyMatrix m;
+      BackendDAE.AdjacencyMatrixT mt;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
@@ -3438,7 +3438,7 @@ algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
   match (i,unmatched,rowmarks,collummarks,level,rlevel,colptrs,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
-      BackendDAE.IncidenceMatrix m,mt;
+      BackendDAE.AdjacencyMatrix m,mt;
       Integer nv_1,ne_1,i_1,lim;
       list<Integer> unmatched1;
       list<list<Integer>> meqns;
@@ -3537,8 +3537,8 @@ protected function ABMPphase
   input Integer i;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Integer> rowmarks;
   input array<Integer> level;
   input array<Integer> colptrs;
@@ -3576,8 +3576,8 @@ protected function ABMPphase1
   input Integer i;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Integer> rowmarks;
   input array<Integer> level;
   input array<Integer> colptrs;
@@ -3618,8 +3618,8 @@ protected function ABMPphase2
   input Integer L;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Integer> rowmarks;
   input array<Integer> level;
   input array<Integer> colptrs;
@@ -3658,8 +3658,8 @@ protected function ABMPBFSphase
   input Integer lim1;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> level;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -3707,8 +3707,8 @@ protected function ABMPBFSphase1
   input Integer lim1;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> level;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -3739,8 +3739,8 @@ protected function ABMPBFStraverseRows
   input Integer L;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> rowmarks;
   input array<Integer> level;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -3801,8 +3801,8 @@ protected function ABMPDFS
   input Integer L;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Integer> level;
   input array<Integer> colptrs;
   input array<Integer> ass1 "ass[eqnindx]=varindx";
@@ -3848,8 +3848,8 @@ protected function ABMPDFS1
   input Integer L;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Integer> level;
   input array<Integer> colptrs;
   input array<Integer> ass1 "ass[eqnindx]=varindx";
@@ -3921,8 +3921,8 @@ protected function ABMPDFSphase
   input Integer r;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> level;
   input array<Integer> colptrs;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -3965,8 +3965,8 @@ protected function ABMPDFStraverseCollums
   input Integer desL;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> level;
   input array<Integer> colptrs;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -4031,8 +4031,8 @@ protected function ABMPDFStraverseCollums1
   input Integer desL;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> level;
   input array<Integer> colptrs;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -4073,8 +4073,8 @@ algorithm
   matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
     local
       Integer nvars,neqns;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.AdjacencyMatrix m;
+      BackendDAE.AdjacencyMatrixT mt;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
@@ -4142,7 +4142,7 @@ algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
   matchcontinue (unmatched,l_label,r_label,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
-      BackendDAE.IncidenceMatrix m,mt;
+      BackendDAE.AdjacencyMatrix m,mt;
       Integer nv_1,ne_1;
       list<Integer> unmatched1;
       list<list<Integer>> meqns;
@@ -4251,8 +4251,8 @@ protected function PR_Global_Relabel
   input array<Integer> r_label;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
 protected
@@ -4330,8 +4330,8 @@ protected function PR_Global_Relabel1
   input Integer max;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> nextqueue;
@@ -4366,8 +4366,8 @@ protected function PR_Global_Relabel_traverseCollums
   input array<Integer> r_label;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> nextqueue;
@@ -4410,8 +4410,8 @@ protected function PR_FIFO_FAIRphase
   input Integer min_vertex;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> l_label;
   input array<Integer> r_label;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -4453,8 +4453,8 @@ protected function PR_FIFO_FAIRphase1
   input Integer max;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> l_label;
   input array<Integer> r_label;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -4490,8 +4490,8 @@ protected function PR_FIFO_FAIRphase2
   input Integer max;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> l_label;
   input array<Integer> r_label;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -4532,8 +4532,8 @@ protected function PR_FIFO_FAIRphase_traverseRows
   input Integer max;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> l_label;
   input array<Integer> r_label;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -4587,8 +4587,8 @@ protected function PR_FIFO_FAIRrelabel
   input Integer max;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> l_label;
   input array<Integer> r_label;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -4637,8 +4637,8 @@ protected function cheapmatchingalgorithm
  author: Frenkel TUD 2012-07"
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Integer> ass1 "ass[eqnindx]=varindx";
   input array<Integer> ass2 "ass[varindx]=eqnindx";
   input Boolean intRangeUsed;
@@ -4652,8 +4652,8 @@ protected function cheapmatchingalgorithm1
   input Integer algorithmid;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Integer> ass1 "ass[eqnindx]=varindx";
   input array<Integer> ass2 "ass[varindx]=eqnindx";
   input Boolean intRangeUsed;
@@ -4673,8 +4673,8 @@ protected function cheapmatching
   input Integer i;
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Integer> ass1 "ass[eqnindx]=varindx";
   input array<Integer> ass2 "ass[varindx]=eqnindx";
   input list<Integer> inUnMatched;
@@ -4742,8 +4742,8 @@ protected function ks_rand_cheapmatching
  author: Frenkel TUD 2012-04"
   input Integer nv;
   input Integer ne;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Integer> ass1 "ass[eqnindx]=varindx";
   input array<Integer> ass2 "ass[varindx]=eqnindx";
   output list<Integer> outUnMatched;
@@ -4771,8 +4771,8 @@ protected function ks_rand_cheapmatching1
   input array<Integer> col_degrees;
   input array<Integer> row_degrees;
   input array<Integer> randarr;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
 algorithm
@@ -4806,8 +4806,8 @@ protected function ks_rand_cheapmatching2
   input array<Integer> col_degrees;
   input array<Integer> row_degrees;
   input array<Integer> randarr;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
   output list<Integer> onecolums;
@@ -4913,7 +4913,7 @@ protected function getOneRows
  return all rows with length == 1
  author: Frenkel TUD 2012-04"
  input Integer n;
- input BackendDAE.IncidenceMatrix m;
+ input BackendDAE.AdjacencyMatrix m;
  input array<Integer> degrees;
  input list<Integer> inOneRows;
  output list<Integer> outOneRows;
@@ -4964,8 +4964,8 @@ protected function ks_rand_match
   input list<Integer> stack2;
   input array<Integer> degrees1;
   input array<Integer> degrees2;
-  input BackendDAE.IncidenceMatrix m1;
-  input BackendDAE.IncidenceMatrix m2;
+  input BackendDAE.AdjacencyMatrix m1;
+  input BackendDAE.AdjacencyMatrix m2;
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
 algorithm
@@ -5027,12 +5027,12 @@ protected function ks_rand_match1
   input list<Integer> stack;
   input array<Integer> degrees1;
   input array<Integer> degrees2;
-  input BackendDAE.IncidenceMatrix incidence;
+  input BackendDAE.AdjacencyMatrix adjacency;
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
   output list<Integer> outStack;
 algorithm
-  outStack := matchcontinue(i,entries,stack,degrees1,degrees2,incidence,ass1,ass2)
+  outStack := matchcontinue(i,entries,stack,degrees1,degrees2,adjacency,ass1,ass2)
     local
         list<Integer> rest,lst;
         Integer e;
@@ -5040,14 +5040,14 @@ algorithm
       case (_,e::_,_,_,_,_,_,_)
         equation
           true = intLt(ass2[e],0);
-          lst = List.select(incidence[e], Util.intPositive);
+          lst = List.select(adjacency[e], Util.intPositive);
           arrayUpdate(ass1,i,e);
           arrayUpdate(ass2,e,i);
         then
           ks_rand_match_degree(lst,degrees1,ass1,stack);
       case (_,_::rest,_,_,_,_,_,_)
         then
-          ks_rand_match1(i,rest,stack,degrees1,degrees2,incidence,ass1,ass2);
+          ks_rand_match1(i,rest,stack,degrees1,degrees2,adjacency,ass1,ass2);
     end matchcontinue;
 end ks_rand_match1;
 
@@ -5597,7 +5597,7 @@ algorithm
   match (meqns,internalCall,isyst,inMatchingOptions)
     local
       BackendDAE.EquationArray eqs;
-      BackendDAE.IncidenceMatrix m,mt, m1,m1t;
+      BackendDAE.AdjacencyMatrix m,mt, m1,m1t;
       Integer nv_1,ne_1,memsize, i;
       list<Integer> unmatched_eqs, unmatched_vars, meqs_short;
       list<list<Integer>> meqns1, meqns1_0, comps;
@@ -5612,7 +5612,7 @@ algorithm
         (ass1,ass2,isyst,ishared,inArg);
     case ({},false,BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_)
       algorithm
-        matchingExternalsetIncidenceMatrix(nv,ne,m);
+        matchingExternalsetAdjacencyMatrix(nv,ne,m);
         BackendDAEEXT.matching(nv,ne,algIndx,cheapMatching,1.0,clearMatching);
         BackendDAEEXT.getAssignment(ass1,ass2);
 
@@ -5633,7 +5633,7 @@ algorithm
           syst := BackendDAEUtil.setAnalyticalToStructuralProcessed(syst, true);
 
           /* create NORMAL() adjacency matrix for sorting first */
-          (_, m1, _, _, _) := BackendDAEUtil.getIncidenceMatrixScalar(isyst, BackendDAE.NORMAL(), NONE(), BackendDAEUtil.isInitializationDAE(ishared));
+          (_, m1, _, _, _) := BackendDAEUtil.getAdjacencyMatrixScalar(isyst, BackendDAE.NORMAL(), NONE(), BackendDAEUtil.isInitializationDAE(ishared));
           comps := Sorting.Tarjan(m1, ass2_1);
 
           for comp in comps loop
@@ -5644,7 +5644,7 @@ algorithm
           if changed then
             BackendDAEEXT.setAssignment(nv,ne,ass1_1,ass2_1);
             BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)) := syst;
-            matchingExternalsetIncidenceMatrix(nv,ne,m);
+            matchingExternalsetAdjacencyMatrix(nv,ne,m);
             /* Call with clearMatching = 0 to reuse old information */
             BackendDAEEXT.matching(nv,ne,algIndx,cheapMatching,1.0,0);
             BackendDAEEXT.getAssignment(ass1_1,ass2_1);
@@ -5811,7 +5811,7 @@ algorithm
 
   if not listEmpty(undiffable_artificial) then
     syst.orderedVars := BackendVariable.addVars(undiffable_artificial, syst.orderedVars);
-    (syst, _, _, _, _) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(shared.functionTree), BackendDAEUtil.isInitializationDAE(shared));
+    (syst, _, _, _, _) := BackendDAEUtil.getAdjacencyMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(shared.functionTree), BackendDAEUtil.isInitializationDAE(shared));
 
     if isSome(syst.m) and isSome(syst.mT) then
       SOME(m) := syst.m;
@@ -5819,7 +5819,7 @@ algorithm
       // It would be great to replace full matching by continue matching,
       // to reuse old information, but somehow it does something different.
       // (ass1, ass2) := ContinueMatching(m, nv, ne, ass1, ass2);
-      matchingExternalsetIncidenceMatrix(nv, ne, m);
+      matchingExternalsetAdjacencyMatrix(nv, ne, m);
       BackendDAEEXT.matching(nv, ne, algIndx, cheapMatching, 1.0, clearMatching);
       BackendDAEEXT.getAssignment(ass1, ass2);
       unmatched1 := getUnassigned(ne, ass1, {});
@@ -5847,12 +5847,12 @@ algorithm
 end sanityCheckArtificialStates;
 
 protected function removeEdgesToDiscreteEquations""
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input BackendDAE.EqSystem sys;
   input BackendDAE.Shared shared;
-  output BackendDAE.IncidenceMatrix mOut;
-  output BackendDAE.IncidenceMatrixT mtOut;
+  output BackendDAE.AdjacencyMatrix mOut;
+  output BackendDAE.AdjacencyMatrixT mtOut;
 protected
   Boolean isDiscrete;
   Integer idx, idx2, size, varIdx;
@@ -5867,7 +5867,7 @@ algorithm
   idx := 1;
   idx2 := 0;
   eqIdxArray := arrayCreate(BackendEquation.getNumberOfEquations(eqs), {});
-  //algorithms with size>n occur as n single nodes in the incidence matrix, delete the rows for each of them
+  //algorithms with size>n occur as n single nodes in the adjacency matrix, delete the rows for each of them
   for eq in BackendEquation.equationList(eqs) loop
     size := BackendEquation.equationSize(BackendEquation.get(eqs, idx));
     eqIdxs := List.map1(List.intRange(size),intAdd,idx2);
@@ -5907,12 +5907,12 @@ end removeEdgesToDiscreteEquations;
 protected function removeEdgesForNoDerivativeFunctionInputs"when gathering the minimal structurally singular subsets from the unmatches equations,
 some edges dont have to be considered e.g. edges between a function call and an input variable if the input variable will not be derived when deriving the function
 author: Waurich TUD 10-2015"
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input BackendDAE.EqSystem sys;
   input BackendDAE.Shared shared;
-  output BackendDAE.IncidenceMatrix mOut;
-  output BackendDAE.IncidenceMatrixT mtOut;
+  output BackendDAE.AdjacencyMatrix mOut;
+  output BackendDAE.AdjacencyMatrixT mtOut;
 protected
   Boolean hasNoDerAnno;
   Integer idx, varIdx;
@@ -5948,9 +5948,9 @@ algorithm
   mtOut := mt;
 end removeEdgesForNoDerivativeFunctionInputs;
 
-protected function countincidenceMatrixEntries
+protected function countadjacencyMatrixEntries
   input Integer n;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   output Integer outCount = 0;
 algorithm
   for i in 1:n loop
@@ -5960,9 +5960,9 @@ algorithm
       end if;
     end for;
   end for;
-end countincidenceMatrixEntries;
+end countadjacencyMatrixEntries;
 
-public function matchingExternalsetIncidenceMatrix
+public function matchingExternalsetAdjacencyMatrix
 "author: Frenkel TUD 2012-04
   "
   input Integer nv;
@@ -5971,9 +5971,9 @@ public function matchingExternalsetIncidenceMatrix
 protected
  Integer nz;
 algorithm
-  nz := countincidenceMatrixEntries(ne,m);
-  BackendDAEEXT.setIncidenceMatrix(nv,ne,nz,m);
-end matchingExternalsetIncidenceMatrix;
+  nz := countadjacencyMatrixEntries(ne,m);
+  BackendDAEEXT.setAdjacencyMatrix(nv,ne,nz,m);
+end matchingExternalsetAdjacencyMatrix;
 
 // =============================================================================
 // Util Functions
@@ -5988,7 +5988,7 @@ public function reachableEquations "author: lochel
   that n1 solves for a variable (e.g. \'a\') that is used in the equation
   of n2, i.e. the equation of n1 must be solved before the equation of n2."
   input Integer eqn;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> ass2 "var := ass2[eqn]";
   output list<Integer> outEqNodes;
 protected
@@ -6002,7 +6002,7 @@ public function incomingEquations "author: lochel
   Returns a list of incoming nodes (equations), corresponding
   to those variables that occur in this equation."
   input Integer eqn;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input array<Integer> ass1 "eqn := ass1[var]";
   output list<Integer> outEqNodes;
 algorithm
@@ -6132,8 +6132,8 @@ public function getEqnsforIndexReduction
  author: Frenkel TUD 2012-04"
   input list<Integer> U;
   input Integer neqns;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Integer> ass1 "ass[eqnindx]=varindx";
   input array<Integer> ass2 "ass[varindx]=eqnindx";
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
@@ -6195,8 +6195,8 @@ protected function getEqnsforIndexReduction1
 "function getEqnsforIndexReduction1, helper for getEqnsforIndexReduction
  author: Frenkel TUD 2012-04"
   input list<Integer> U;
-  input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
-  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input BackendDAE.AdjacencyMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.AdjacencyMatrixT mT "mT[varindx] = list(eqnindx)";
   input Integer mark;
   input array<Integer> colummarks;
   input array<Integer> ass1 "ass[eqnindx]=varindx";
@@ -6234,8 +6234,8 @@ end getEqnsforIndexReduction1;
 protected function getEqnsforIndexReductionphase
 "author: Frenkel TUD 2012-04"
   input list<Integer> elst;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input Integer mark;
   input array<Integer> colummarks;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -6270,8 +6270,8 @@ protected function getEqnsforIndexReductiontraverseRows
 "author: Frenkel TUD 2012-04"
   input list<Integer> rows;
   input list<Integer> nextColums;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input Integer mark;
   input array<Integer> colummarks;
   input array<Integer> ass1 "eqn := ass1[var]";
@@ -6537,8 +6537,8 @@ algorithm
   testMatchingAlgorithms1(matchingAlgorithms,syst,ishared,inMatchingOptions);
 
   System.realtimeTick(ClockIndexes.RT_PROFILER0);
-  (_,m,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(ishared));
-  matchingExternalsetIncidenceMatrix(nv,ne,m);
+  (_,m,_) := BackendDAEUtil.getAdjacencyMatrixfromOption(syst,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(ishared));
+  matchingExternalsetAdjacencyMatrix(nv,ne,m);
   cheapID := 3;
   t := System.realtimeTock(ClockIndexes.RT_PROFILER0);
   print("SetMEXT:     " + realString(t) + "\n");
@@ -6699,7 +6699,7 @@ algorithm
                                           BackendEquation.get, BackendEquation.add );
        syst.orderedVars = randSortSystem1( nv, 0, randarr1, vars, BackendVariable.emptyVars(),
                                            BackendVariable.getVarAt, BackendVariable.addVar );
-       (syst, _, _) = BackendDAEUtil.getIncidenceMatrix( BackendDAEUtil.clearEqSyst(syst), BackendDAE.NORMAL(), NONE(), BackendDAEUtil.isInitializationDAE(ishared));
+       (syst, _, _) = BackendDAEUtil.getAdjacencyMatrix( BackendDAEUtil.clearEqSyst(syst), BackendDAE.NORMAL(), NONE(), BackendDAEUtil.isInitializationDAE(ishared));
      then
        syst;
   end match;

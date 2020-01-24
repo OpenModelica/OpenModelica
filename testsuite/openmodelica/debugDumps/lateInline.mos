@@ -304,13 +304,13 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
 //
 //
-// Incidence Matrix (row: equation)
+// Adjacency Matrix (row: equation)
 // ========================================
 // number of rows: 2
 // 1: 2
 // 2: 2 1
 //
-// Transposed Incidence Matrix (row: variable)
+// Transposed Adjacency Matrix (row: variable)
 // ========================================
 // number of rows: 2
 // 1: 2
@@ -344,13 +344,13 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): y = exp(time ^ 3.0) + x   [binding |0|0|0|0|]
 //
 //
-// Incidence Matrix (row: equation)
+// Adjacency Matrix (row: equation)
 // ========================================
 // number of rows: 2
 // 1: 2
 // 2: 2 1
 //
-// Transposed Incidence Matrix (row: variable)
+// Transposed Adjacency Matrix (row: variable)
 // ========================================
 // number of rows: 2
 // 1: 2
@@ -535,13 +535,13 @@ buildModel(testOptdaedump); getErrorString();
 // 2/2 (1): x = time ^ 3.0 + exp(time ^ 3.0)   [binding |0|0|0|0|]
 //
 //
-// Incidence Matrix (row: equation)
+// Adjacency Matrix (row: equation)
 // ========================================
 // number of rows: 2
 // 1: 2 1
 // 2: 2
 //
-// Transposed Incidence Matrix (row: variable)
+// Transposed Adjacency Matrix (row: variable)
 // ========================================
 // number of rows: 2
 // 1: 1

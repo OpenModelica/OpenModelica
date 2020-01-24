@@ -1185,12 +1185,12 @@ algorithm
 end getBaseClock;
 
 protected function removeEdge
-"removes edges in incidence matrices betwenn equation and variable
+"removes edges in adjacency matrices betwenn equation and variable
 author: vwaurich 2017-06"
   input Integer eq;
   input Integer var;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
 protected
   list<Integer> row;
 algorithm
@@ -1207,8 +1207,8 @@ protected function findBaseClockInterfaces
 author: vwaurich 2017-06"
   input BackendDAE.EquationArray eqs;
   input BackendDAE.Variables vars;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   output list<Integer> clockEqs={};
   output list<Integer> subClockInterfaceEqIdxs={};
   output list<BackendDAE.Equation> subClockInterfaceEqs = {};
@@ -1229,8 +1229,8 @@ author: vwaurich 2017-06"
   input Integer eqIdx;
   input BackendDAE.EquationArray eqs;
   input BackendDAE.Variables vars;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input list<Integer> clockEqsIn;
   input list<Integer> subClockInterfaceEqIdxsIn;
   input list<BackendDAE.Equation> subClockInterfaceEqsIn;
@@ -1449,7 +1449,7 @@ protected
   BackendDAE.EquationArray eqs, remEqs, clockEqs;
   BackendDAE.Variables vars, clockVars;
   BackendDAE.EqSystem clockSyst,outSys;
-  BackendDAE.IncidenceMatrix m, mT, rm, rmT;
+  BackendDAE.AdjacencyMatrix m, mT, rm, rmT;
   MMath.Rational subClkFactor;
   Integer partitionsCnt;
   array<Integer> partitions, remEqPartMap;
@@ -1480,10 +1480,10 @@ algorithm
   sys := BackendDAEUtil.setEqSystVars(inEqSystem, vars);
   sys := BackendDAEUtil.setEqSystEqs(sys, eqs);
 
-  //get incidence matrix
-  (sys, m, mT) := BackendDAEUtil.getIncidenceMatrix(sys, BackendDAE.SUBCLOCK_IDX(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
+  //get adjacency matrix
+  (sys, m, mT) := BackendDAEUtil.getAdjacencyMatrix(sys, BackendDAE.SUBCLOCK_IDX(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
 
-  //find baseclocks and sub partition interfaces, remove edges in incidence matrices for sub partition interfaces
+  //find baseclocks and sub partition interfaces, remove edges in adjacency matrices for sub partition interfaces
   (baseClockEquations, subClockInterfaceEqIdxs, subClockInterfaceEqs) := findBaseClockInterfaces(eqs,vars,m,mT);
     //print("all baseClockEquations "+stringDelimitList(List.map(baseClockEquations,intString),", ")+"\n");
     //print("all subClockInterfaceEqIdxs "+stringDelimitList(List.map(subClockInterfaceEqIdxs,intString),", ")+"\n");
@@ -1492,7 +1492,7 @@ algorithm
   //old implementation, used for partitioning
   (clockEqs, clockedEqsMask) := splitClockEqs(eqs); //masks false  if clock equation
   (clockVars, clockedVarsMask)  := splitClockVars(vars);
-  (rm, rmT) := BackendDAEUtil.removedIncidenceMatrix(sys, BackendDAE.SUBCLOCK_IDX(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
+  (rm, rmT) := BackendDAEUtil.removedAdjacencyMatrix(sys, BackendDAE.SUBCLOCK_IDX(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
 
   //partitioning of equations and variables
   remEqPartMap := arrayCreate(arrayLength(rm), 0);
@@ -1527,7 +1527,7 @@ algorithm
     //print("order "+stringDelimitList(List.map(arrayList(order),intString)," | ")+"\n");
 
   //Detect clocked continuous partitions and create new subclock equations
-  (m, mT) := BackendDAEUtil.incidenceMatrixMasked(inEqSystem, BackendDAE.SUBCLOCK_IDX(), clockedEqsMask, SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
+  (m, mT) := BackendDAEUtil.adjacencyMatrixMasked(inEqSystem, BackendDAE.SUBCLOCK_IDX(), clockedEqsMask, SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
   (newClockEqs, newClockVars, contPartitions, subclksCnt)
         := collectSubclkInfo(eqs, inEqSystem.removedEqs, partitionsCnt, eqPartMap, remEqPartMap, vars, mT);
 
@@ -1907,10 +1907,10 @@ end setShift;
 protected function collectSubclkInfoExp
   input DAE.Exp inExp;
   input tuple< list<BackendDAE.Equation>, list<BackendDAE.Var>, array<Option<Boolean>>, SourceInfo,
-               array<Integer>, Integer, array<Integer>, BackendDAE.Variables, BackendDAE.IncidenceMatrix > inTpl;
+               array<Integer>, Integer, array<Integer>, BackendDAE.Variables, BackendDAE.AdjacencyMatrix > inTpl;
   output DAE.Exp outExp;
   output tuple< list<BackendDAE.Equation>, list<BackendDAE.Var>, array<Option<Boolean>>, SourceInfo,
-               array<Integer>, Integer, array<Integer>, BackendDAE.Variables, BackendDAE.IncidenceMatrix > outTpl;
+               array<Integer>, Integer, array<Integer>, BackendDAE.Variables, BackendDAE.AdjacencyMatrix > outTpl;
 protected
   list<BackendDAE.Equation> newEqs;
   list<BackendDAE.Var> newVars;
@@ -1918,7 +1918,7 @@ protected
   Integer partitionIdx;
   array<Integer> partitions;
   BackendDAE.Variables vars;
-  BackendDAE.IncidenceMatrix mT;
+  BackendDAE.AdjacencyMatrix mT;
   Absyn.Path path;
   list<DAE.Exp> expLst;
   DAE.CallAttributes attr;
@@ -1948,7 +1948,7 @@ protected function createSubClockVar
   input DAE.CallAttributes inAttr;
   input array<Integer> inPartitions;
   input BackendDAE.Variables inVars;
-  input BackendDAE.IncidenceMatrix mT;
+  input BackendDAE.AdjacencyMatrix mT;
   output BackendDAE.Var outVar;
   output BackendDAE.Equation outEq;
 protected
@@ -1997,7 +1997,7 @@ protected function collectSubclkInfoCall
   input Integer inClkCnt;
   input array<Integer> inPartitions;
   input BackendDAE.Variables inVars;
-  input BackendDAE.IncidenceMatrix mT;
+  input BackendDAE.AdjacencyMatrix mT;
   input SourceInfo source;
   output DAE.Exp outExp;
   output list<BackendDAE.Equation> outNewEqs;
@@ -2120,7 +2120,7 @@ protected function createSubClockVarFactor
   input DAE.CallAttributes inAttr;
   input array<Integer> inPartitions;
   input BackendDAE.Variables inVars;
-  input BackendDAE.IncidenceMatrix mT;
+  input BackendDAE.AdjacencyMatrix mT;
   input list<BackendDAE.Equation> inNewEqs;
   input list<BackendDAE.Var> inNewVars;
   output DAE.Exp outExp;
@@ -2207,7 +2207,7 @@ protected function collectSubclkInfo
   input array<Integer> inPartitions;
   input array<Integer> inReqsPartitions;
   input BackendDAE.Variables inVars;
-  input BackendDAE.IncidenceMatrix mT;
+  input BackendDAE.AdjacencyMatrix mT;
   output list<BackendDAE.Equation> outNewEqs;
   output list<BackendDAE.Var> outNewVars;
   output array<Option<Boolean>> outContPartitions;
@@ -2261,7 +2261,7 @@ protected function collectEquationArrayClocks
   input array<Integer> clksCnt;
   input array<Option<Boolean>> contPartitions;
   input BackendDAE.Variables inVars;
-  input BackendDAE.IncidenceMatrix mT;
+  input BackendDAE.AdjacencyMatrix mT;
   input list<BackendDAE.Equation> inNewEqs;
   input list<BackendDAE.Var> inNewVars;
   output list<BackendDAE.Equation> outNewEqs = inNewEqs;
@@ -2307,10 +2307,10 @@ end collectEquationArrayClocks;
 protected function collectSubclkInfoExp1
   input DAE.Exp inExp;
   input tuple< list<BackendDAE.Equation>, list<BackendDAE.Var>, array<Option<Boolean>>, SourceInfo,
-               array<Integer>, Integer, array<Integer>, BackendDAE.Variables, BackendDAE.IncidenceMatrix > inTpl;
+               array<Integer>, Integer, array<Integer>, BackendDAE.Variables, BackendDAE.AdjacencyMatrix > inTpl;
   output DAE.Exp outExp;
   output tuple< list<BackendDAE.Equation>, list<BackendDAE.Var>, array<Option<Boolean>>, SourceInfo,
-               array<Integer>, Integer, array<Integer>, BackendDAE.Variables, BackendDAE.IncidenceMatrix > outTpl;
+               array<Integer>, Integer, array<Integer>, BackendDAE.Variables, BackendDAE.AdjacencyMatrix > outTpl;
 algorithm
   (outExp, outTpl) := Expression.traverseExpBottomUp(inExp, collectSubclkInfoExp, inTpl);
 end collectSubclkInfoExp1;
@@ -2632,7 +2632,7 @@ protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqs;
   DAE.FunctionTree funcs;
-  BackendDAE.IncidenceMatrix m, mT, rm, rmT;
+  BackendDAE.AdjacencyMatrix m, mT, rm, rmT;
   BackendDAE.EqSystem syst;
   BackendDAE.EqSystems systs;
   Integer partitionCnt, i, j;
@@ -2651,8 +2651,8 @@ protected
 algorithm
   funcs := BackendDAEUtil.getFunctions(inShared);
   isInitial := BackendDAEUtil.isInitializationDAE(inShared);
-  (syst, m, mT) := BackendDAEUtil.getIncidenceMatrixfromOption(inSyst, BackendDAE.BASECLOCK_IDX(), SOME(funcs), isInitial);
-  (rm, rmT) := BackendDAEUtil.removedIncidenceMatrix(inSyst, BackendDAE.BASECLOCK_IDX(), SOME(funcs), isInitial);
+  (syst, m, mT) := BackendDAEUtil.getAdjacencyMatrixfromOption(inSyst, BackendDAE.BASECLOCK_IDX(), SOME(funcs), isInitial);
+  (rm, rmT) := BackendDAEUtil.removedAdjacencyMatrix(inSyst, BackendDAE.BASECLOCK_IDX(), SOME(funcs), isInitial);
 
   BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqs) := syst;
   eqPartMap := arrayCreate(arrayLength(m), 0);
@@ -2969,10 +2969,10 @@ algorithm
 end setClockedPartition;
 
 public function partitionIndependentBlocks0
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
-  input BackendDAE.IncidenceMatrix rm;
-  input BackendDAE.IncidenceMatrixT rmT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
+  input BackendDAE.AdjacencyMatrix rm;
+  input BackendDAE.AdjacencyMatrixT rmT;
   input array<Integer> eqPartMap,varPartMap, rixs;
   input array<Boolean> vars, rvars;
   output Integer on = 0;
@@ -2986,8 +2986,8 @@ algorithm
 end partitionIndependentBlocks0;
 
 protected function partitionIndependentBlocks
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> eqPartMap; //partitions
   input array<Integer> varPartMap; //usedVars, usedRemovedVars
   output Integer on = 0;
@@ -3004,8 +3004,8 @@ end partitionIndependentBlocks;
 protected function partitionIndependentBlocks2
   input Integer eqIdx;
   input Integer partIdx;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> eqPartMap;
   input array<Integer> varPartMap;
   output Boolean ochange;
@@ -3025,10 +3025,10 @@ algorithm
 end partitionIndependentBlocks2;
 
 protected function partitionIndependentBlocksMasked
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
-  input BackendDAE.IncidenceMatrix rm;
-  input BackendDAE.IncidenceMatrixT rmT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
+  input BackendDAE.AdjacencyMatrix rm;
+  input BackendDAE.AdjacencyMatrixT rmT;
   input array<Boolean> mask; //clockedEqsMask
   input array<Integer> eqPartMap, varPartMap, remEqPartMap; //eqPartMap, varPartMap, remEqPartMap
   input array<Boolean> vars, rvars; //usedVars, usedRemovedVars
@@ -3049,10 +3049,10 @@ end partitionIndependentBlocksMasked;
 protected function partitionIndependentBlocksEq
   input Integer eqIdx;
   input Integer partIdx;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
-  input BackendDAE.IncidenceMatrix rm;
-  input BackendDAE.IncidenceMatrixT rmT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
+  input BackendDAE.AdjacencyMatrix rm;
+  input BackendDAE.AdjacencyMatrixT rmT;
   input array<Integer> eqPartMap, varPartMap, rixs;
   input array<Boolean> vars, rvars;
   output Boolean ochange;
@@ -3079,10 +3079,10 @@ end partitionIndependentBlocksEq;
 protected function partitionIndependentBlocksReq
   input Integer ix;
   input Integer n;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
-  input BackendDAE.IncidenceMatrix rm;
-  input BackendDAE.IncidenceMatrixT rmT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
+  input BackendDAE.AdjacencyMatrix rm;
+  input BackendDAE.AdjacencyMatrixT rmT;
   input array<Integer> eqPartMap, varPartMap, rixs;
   input array<Boolean> vars, rvars;
   output Boolean ochange;
@@ -3112,8 +3112,8 @@ public function partitionIndependentBlocksSplitBlocks
   input BackendDAE.EqSystem inSyst;
   input array<Integer> ixs;
   input array<Integer> rixs;
-  input BackendDAE.IncidenceMatrix mT;
-  input BackendDAE.IncidenceMatrix rmT;
+  input BackendDAE.AdjacencyMatrix mT;
+  input BackendDAE.AdjacencyMatrix rmT;
   input Boolean throwNoError;
   input DAE.FunctionTree funcs;
   input Boolean isInitial;
@@ -3138,7 +3138,7 @@ algorithm
 
   if i1 <> i2 and not throwNoError then
     Error.addSourceMessage(if i1 > i2 then Error.OVERDET_EQN_SYSTEM else Error.UNDERDET_EQN_SYSTEM, {String(i1), String(i2)}, AbsynUtil.dummyInfo);
-    BackendDAEUtil.checkIncidenceMatrixSolvability(inSyst, funcs, isInitial);
+    BackendDAEUtil.checkAdjacencyMatrixSolvability(inSyst, funcs, isInitial);
     fail();
   end if;
 

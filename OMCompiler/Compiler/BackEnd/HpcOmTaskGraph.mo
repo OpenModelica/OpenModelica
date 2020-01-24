@@ -167,14 +167,14 @@ protected
 
   BackendDAE.EqSystem syst;
   BackendDAE.Matching matching;
-  BackendDAE.IncidenceMatrix incidenceMatrix;
+  BackendDAE.AdjacencyMatrix adjacencyMatrix;
 algorithm
   BackendDAE.EQSYSTEM(matching=matching, orderedVars=vars, orderedEqs=orderedEqs) := iSyst;
   comps := BackendDAEUtil.getCompsOfMatching(matching);
   BackendDAE.SHARED(functionTree=sharedFuncs) := iShared;
   (iGraph,iGraphData,eqSysIdx) := iGraphInfo;
 
-  (_,incidenceMatrix,_) := BackendDAEUtil.getIncidenceMatrix(iSyst, BackendDAE.NORMAL(), SOME(sharedFuncs), BackendDAEUtil.isInitializationDAE(iShared));
+  (_,adjacencyMatrix,_) := BackendDAEUtil.getAdjacencyMatrix(iSyst, BackendDAE.NORMAL(), SOME(sharedFuncs), BackendDAEUtil.isInitializationDAE(iShared));
   numberOfVars := BackendVariable.varsSize(vars);
   (tmpGraph,tmpGraphData) := getEmptyTaskGraph(listLength(comps), numberOfVars, ExpandableArray.getNumberOfElements(orderedEqs));
   TASKGRAPHMETA(inComps=inComps, compNames=compNames, exeCosts=exeCosts, commCosts=commCosts, nodeMark=nodeMark, varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, compParamMapping=compParamMapping, compInformations=compInformations) := tmpGraphData;
@@ -182,7 +182,7 @@ algorithm
   (varCompMapping,eqCompMapping) := getVarEqCompMapping(comps, eqSysIdx, 0, 0, varCompMapping, eqCompMapping);
   //print("createTaskGraph0 varCompMapping created\n");
   compDescs := getEquationStrings(comps,iSyst);  //gets the description i.e. the whole equation, for every component
-  ((tmpGraph,inComps,compParamMapping,commCosts,compNames,nodeMark,_)) := List.fold(comps, function createTaskGraph1(iSystInfo=(incidenceMatrix,iSyst,iShared,listLength(comps)),iVarInfo=(varCompMapping,eqCompMapping,{}),iAnalyzeParameters=iAnalyzeParameters),(tmpGraph,inComps,compParamMapping,commCosts,compNames,nodeMark,1));
+  ((tmpGraph,inComps,compParamMapping,commCosts,compNames,nodeMark,_)) := List.fold(comps, function createTaskGraph1(iSystInfo=(adjacencyMatrix,iSyst,iShared,listLength(comps)),iVarInfo=(varCompMapping,eqCompMapping,{}),iAnalyzeParameters=iAnalyzeParameters),(tmpGraph,inComps,compParamMapping,commCosts,compNames,nodeMark,1));
   // gather the metadata
   tmpGraphData := TASKGRAPHMETA(inComps, varCompMapping, eqCompMapping, compParamMapping, compNames, compDescs, exeCosts, commCosts, nodeMark, compInformations);
   if(intGt(eqSysIdx,1)) then
@@ -437,14 +437,14 @@ end updateTaskGraphSystem;
 protected function createTaskGraph1 "author: marcusw, waurich
   Appends the task-graph information for the given StrongComponent to the given graph."
   input BackendDAE.StrongComponent iComponent;
-  input tuple<BackendDAE.IncidenceMatrix,BackendDAE.EqSystem,BackendDAE.Shared,Integer> iSystInfo; //<incidenceMatrix,isyst,iShared,numberOfComponents> in very compact form
+  input tuple<BackendDAE.AdjacencyMatrix,BackendDAE.EqSystem,BackendDAE.Shared,Integer> iSystInfo; //<adjacencyMatrix,isyst,iShared,numberOfComponents> in very compact form
   input tuple<array<tuple<Integer,Integer,Integer>>,array<tuple<Integer,Integer,Integer>>,list<Integer>> iVarInfo; //<varCompMapping,eqCompMapping,eventVarLst
   input Boolean iAnalyzeParameters;
   input tuple<TaskGraph,array<list<Integer>>,array<list<Integer>>,array<Communications>,array<String>,array<Integer>,Integer> graphInfoIn;
   //<taskGraph,inComps,compParamMapping,commCosts,compNames,nodeMark,componentIndex>
   output tuple<TaskGraph,array<list<Integer>>,array<list<Integer>>,array<Communications>,array<String>,array<Integer>,Integer> graphInfoOut;
 protected
-  BackendDAE.IncidenceMatrix incidenceMatrix;
+  BackendDAE.AdjacencyMatrix adjacencyMatrix;
   BackendDAE.EqSystem isyst;
   BackendDAE.Shared ishared;
   BackendDAE.Variables orderedVars;
@@ -469,7 +469,7 @@ protected
   list<Integer> paramVars;
   array<list<Integer>> compParamMapping;
 algorithm
-  (incidenceMatrix,isyst,ishared,numberOfComps) := iSystInfo;
+  (adjacencyMatrix,isyst,ishared,numberOfComps) := iSystInfo;
   BackendDAE.SHARED(globalKnownVars=globalKnownVars, localKnownVars=localKnownVars) := ishared;
   BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs) := isyst;
   (varCompMapping,eqCompMapping,eventVarLst) := iVarInfo;
@@ -479,7 +479,7 @@ algorithm
   compNames := arrayUpdate(compNames,componentIndex,compName);
   _ := HpcOmBenchmark.benchSystem();
 
-  (unsolvedVars,paramVars) := getUnsolvedVarsBySCC(iComponent,incidenceMatrix,orderedVars,BackendVariable.addVariables(globalKnownVars,localKnownVars),orderedEqs,eventVarLst,iAnalyzeParameters);
+  (unsolvedVars,paramVars) := getUnsolvedVarsBySCC(iComponent,adjacencyMatrix,orderedVars,BackendVariable.addVariables(globalKnownVars,localKnownVars),orderedEqs,eventVarLst,iAnalyzeParameters);
   compParamMapping := arrayUpdate(compParamMapping, componentIndex, paramVars);
   requiredSccs := arrayCreate(numberOfComps,({},{},{},{})); //create a ref-counter for each component
   requiredSccs := List.fold2(List.map1(Util.tuple41(unsolvedVars),Util.makeTuple,1),fillSccList,1,varCompMapping,requiredSccs);
@@ -946,7 +946,7 @@ end convertRefArrayToList;
 protected function getUnsolvedVarsBySCC "author: marcusw, waurich
   Returns all required variables which are not solved inside the given component."
   input BackendDAE.StrongComponent iComponent;
-  input BackendDAE.IncidenceMatrix iIncidenceMatrix;
+  input BackendDAE.AdjacencyMatrix iAdjacencyMatrix;
   input BackendDAE.Variables iOrderedVars;
   input BackendDAE.Variables iKnownVars; //parameters and constants of SHARED-object
   input BackendDAE.EquationArray iOrderedEquations;
@@ -955,7 +955,7 @@ protected function getUnsolvedVarsBySCC "author: marcusw, waurich
   output tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>,list<Integer>> oUnsolvedVars; //<intVarIdc, <floatVarIdx, [0 if derived, 1 if not]>, boolVarIdc, stringVarIdc>
   output list<Integer> oParamVars; //indices related to iKnownVars-object
 algorithm
-  (oUnsolvedVars, oParamVars) := matchcontinue(iComponent, iIncidenceMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iEventVarLst, iAnalyzeParameters)
+  (oUnsolvedVars, oParamVars) := matchcontinue(iComponent, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iEventVarLst, iAnalyzeParameters)
     local
       Integer varIdx;
       list<Integer> varIdc;
@@ -963,40 +963,40 @@ algorithm
       list<Integer> paramVars;
     case(BackendDAE.SINGLEEQUATION(var=varIdx),_,_,_,_,_,_)
       equation
-        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iIncidenceMatrix,iOrderedVars,iKnownVars,iOrderedEquations,{varIdx},iEventVarLst, iAnalyzeParameters);
+        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,{varIdx},iEventVarLst, iAnalyzeParameters);
       then
         (tmpVars, paramVars);
     case(BackendDAE.EQUATIONSYSTEM(vars=varIdc),_,_,_,_,_,_)
       equation
-        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iIncidenceMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
+        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
       then
         (tmpVars, paramVars);
     case(BackendDAE.SINGLEARRAY(vars=varIdc),_,_,_,_,_,_)
       equation
-        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iIncidenceMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
+        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
       then
         (tmpVars, paramVars);
     case(BackendDAE.SINGLEALGORITHM(vars=varIdc),_,_,_,_,_,_)
       equation
-        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iIncidenceMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
+        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
       then
         (tmpVars, paramVars);
     case(BackendDAE.SINGLECOMPLEXEQUATION(vars=varIdc),_,_,_,_,_,_)
       equation
-        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iIncidenceMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
+        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
       then (tmpVars, paramVars);
     case(BackendDAE.SINGLEWHENEQUATION(vars=varIdc),_,_,_,_,_,_)
       equation
-        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iIncidenceMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
+        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
       then (tmpVars, paramVars);
     case(BackendDAE.SINGLEIFEQUATION(vars=varIdc),_,_,_,_,_,_)
       equation
-        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iIncidenceMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
+        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
       then
         (tmpVars, paramVars);
     case(BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=varIdc)),_,_,_,_,_,_)
       equation
-        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iIncidenceMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
+        (tmpVars, paramVars) = getUnsolvedVarsBySCC0(iComponent,iAdjacencyMatrix,iOrderedVars,iKnownVars,iOrderedEquations,varIdc,iEventVarLst, iAnalyzeParameters);
       then
         (tmpVars, paramVars);
     else
@@ -1009,7 +1009,7 @@ end getUnsolvedVarsBySCC;
 protected function getUnsolvedVarsBySCC0 "author: marcusw
   Returns all required variables which are not solved inside the given component."
   input BackendDAE.StrongComponent iComponent;
-  input BackendDAE.IncidenceMatrix iIncidenceMatrix;
+  input BackendDAE.AdjacencyMatrix iAdjacencyMatrix;
   input BackendDAE.Variables iOrderedVars;
   input BackendDAE.Variables iKnownVars; //parameters and constants of SHARED-object
   input BackendDAE.EquationArray iOrderedEquations;
@@ -1021,7 +1021,7 @@ protected function getUnsolvedVarsBySCC0 "author: marcusw
 protected
   list<tuple<Integer,Integer>> tmpVars;
 algorithm
-  (tmpVars,oParamVars) := getVarsBySCC(iComponent, iIncidenceMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
+  (tmpVars,oParamVars) := getVarsBySCC(iComponent, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
   tmpVars := List.filter1OnTrue(tmpVars, isTupleMember, iVarIdc);
   tmpVars := removeEventVars(iEventVarLst,tmpVars,1);
   oUnsolvedVars := List.fold1(tmpVars, getUnsolvedVarsBySCC1, iOrderedVars, ({},{},{},{}));
@@ -1177,7 +1177,7 @@ end compareTasksByExecTime;
 protected function getVarsBySCC "author: marcusw, waurich
   Returns all variables of all equations which are part of the component."
   input BackendDAE.StrongComponent iComponent;
-  input BackendDAE.IncidenceMatrix iIncidenceMatrix;
+  input BackendDAE.AdjacencyMatrix iAdjacencyMatrix;
   input BackendDAE.Variables iOrderedVars;
   input BackendDAE.Variables iKnownVars; //parameters and constants of SHARED-object
   input BackendDAE.EquationArray iOrderedEquations;
@@ -1185,7 +1185,7 @@ protected function getVarsBySCC "author: marcusw, waurich
   output list<tuple<Integer,Integer>> oVars; //common variables
   output list<Integer> oParamVars; //parameters (index related to iKnownVars)
 algorithm
-  (oVars,oParamVars) := match(iComponent, iIncidenceMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters)
+  (oVars,oParamVars) := match(iComponent, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters)
     local
       Integer eqnIdx; //For SINGLEEQUATION
       list<Integer> eqns; //For EQUATIONSYSTEM
@@ -1198,49 +1198,49 @@ algorithm
       BackendDAE.StrongComponent condSys;
     case (BackendDAE.SINGLEEQUATION(eqn=eqnIdx),_,_,_,_,_)
       equation
-        (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iIncidenceMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
+        (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
         _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         (eqnVars, paramVars);
     case (BackendDAE.EQUATIONSYSTEM(eqns=eqns),_,_,_,_,_)
       equation
-        (eqnVars, paramVars) = getVarsByEqns(eqns, iIncidenceMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
+        (eqnVars, paramVars) = getVarsByEqns(eqns, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
       then
         (eqnVars, paramVars);
     case (BackendDAE.SINGLEARRAY(eqn=eqnIdx),_,_,_,_,_)
       equation
-        (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iIncidenceMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
+        (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
         _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         (eqnVars, paramVars);
     case (BackendDAE.SINGLEALGORITHM(eqn=eqnIdx),_,_,_,_,_)
       equation
-        (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iIncidenceMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
+        (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
         _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         (eqnVars, paramVars);
     case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=eqnIdx),_,_,_,_,_)
       equation
-        (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iIncidenceMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
+        (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
         _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         (eqnVars, paramVars);
     case (BackendDAE.SINGLEWHENEQUATION(eqn=eqnIdx),_,_,_,_,_)
       equation
-        (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iIncidenceMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
+        (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
         _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         (eqnVars, paramVars);
     case (BackendDAE.SINGLEIFEQUATION(eqn=eqnIdx),_,_,_,_,_)
       equation
-        (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iIncidenceMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
+        (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
         _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         (eqnVars, paramVars);
     case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=resEqns,innerEquations = innerEquations)),_,_,_,_,_)
       equation
         (eqns,_,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
-        (eqnVars, paramVars) = getVarsByEqns(listAppend(resEqns,eqns), iIncidenceMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
+        (eqnVars, paramVars) = getVarsByEqns(listAppend(resEqns,eqns), iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
       then
         (eqnVars, paramVars);
     else
@@ -1277,26 +1277,26 @@ algorithm
 end tuple3ToString;
 
 protected function getVarsByEqns "author: marcusw
-  Returns all variables of the incidence matrix for the given equation and, if iAnalyzeParameters is set to true,
+  Returns all variables of the adjacency matrix for the given equation and, if iAnalyzeParameters is set to true,
   all parameters that are used by the equations."
   input list<Integer> iEqnIdc;
-  input BackendDAE.IncidenceMatrix iIncidenceMatrix;
+  input BackendDAE.AdjacencyMatrix iAdjacencyMatrix;
   input BackendDAE.Variables iOrderedVars;
   input BackendDAE.Variables iKnownVars; //parameters and constants of SHARED-object
   input BackendDAE.EquationArray iOrderedEquations;
   input Boolean iAnalyzeParameters;
-  output list<tuple<Integer,Integer>> oIncidenceVars;
+  output list<tuple<Integer,Integer>> oAdjacencyVars;
   output list<Integer> oParamVars;
 protected
-  list<Integer> incidenceVars = {};
+  list<Integer> adjacencyVars = {};
   list<BackendDAE.Var> paramVars = {};
   list<BackendDAE.Equation> eqs = {};
 algorithm
   for eqIdx in iEqnIdc loop
-    incidenceVars := listAppend(arrayGet(iIncidenceMatrix,eqIdx), incidenceVars);
+    adjacencyVars := listAppend(arrayGet(iAdjacencyMatrix,eqIdx), adjacencyVars);
     eqs := BackendEquation.get(iOrderedEquations, eqIdx)::eqs;
   end for;
-  oIncidenceVars := List.map(incidenceVars, getVarTuple);
+  oAdjacencyVars := List.map(adjacencyVars, getVarTuple);
 
   if(iAnalyzeParameters) then
     (paramVars,oParamVars) := BackendEquation.equationsParams(eqs,iKnownVars);
@@ -3045,7 +3045,7 @@ algorithm
 end dumpAdjacencyLst;
 
 protected function dumpAdjacencyRow "author: PA
-  Helper function to dumpIncidenceMatrix2."
+  Helper function to dumpAdjacencyMatrix2."
   input list<Integer> inIntegerLst;
 algorithm
   _ := match (inIntegerLst)

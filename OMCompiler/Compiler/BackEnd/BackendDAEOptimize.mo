@@ -514,7 +514,7 @@ public function countSimpleEquations
   in BackendDAE.BackendDAE. Note this functions does not use variable replacements, because
   of this the number of simple equations is maybe smaller than using variable replacements."
   input BackendDAE.BackendDAE inDlow;
-  input BackendDAE.IncidenceMatrix inM;
+  input BackendDAE.AdjacencyMatrix inM;
   output Integer outSimpleEqns;
 algorithm
   outSimpleEqns:=
@@ -533,7 +533,7 @@ end countSimpleEquations;
 
 protected function countSimpleEquationsFinder
 "author: Frenkel TUD 2011-05"
- input BackendDAE.IncidenceMatrixElement elem;
+ input BackendDAE.AdjacencyMatrixElement elem;
  input Integer pos;
  input tuple<BackendDAE.BackendDAE,Integer> inTpl;
  output list<Integer> outList;
@@ -562,7 +562,7 @@ end countSimpleEquationsFinder;
 
 protected function countsimpleEquation
 "  author: Frenkel TUD 2011-05"
-  input BackendDAE.IncidenceMatrixElement elem;
+  input BackendDAE.AdjacencyMatrixElement elem;
   input Integer length;
   input Integer pos;
   input BackendDAE.EqSystem syst;
@@ -679,7 +679,7 @@ protected function removeParameterswork
 algorithm
   osyst := match isyst
     local
-      Option<BackendDAE.IncidenceMatrix> m,mT;
+      Option<BackendDAE.AdjacencyMatrix> m,mT;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns,eqns1;
       list<BackendDAE.Equation> lsteqns;
@@ -930,8 +930,8 @@ protected function removeEqualFunctionCallsWork "author: Frenkel TUD 2011-04
 algorithm
   (osyst,oshared) := match isyst
     local
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mT;
+      BackendDAE.AdjacencyMatrix m;
+      BackendDAE.AdjacencyMatrixT mT;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       list<Integer> changed;
@@ -943,27 +943,27 @@ algorithm
       algorithm
         isInitial := BackendDAEUtil.isInitializationDAE(ishared);
         funcs := BackendDAEUtil.getFunctions(ishared);
-        (syst, m, mT) := BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs), isInitial);
+        (syst, m, mT) := BackendDAEUtil.getAdjacencyMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs), isInitial);
         // check equations
         (m, (mT,_,_,changed,_)) := AdjacencyMatrix.traverseAdjacencyMatrix(m, removeEqualFunctionCallFinder, (mT,vars,eqns,{}, isInitial));
         // update arrayeqns and algorithms, collect info for wrappers
         syst.m := SOME(m); syst.mT := SOME(mT); syst.matching := BackendDAE.NO_MATCHING();
-        syst := BackendDAEUtil.updateIncidenceMatrix(syst, BackendDAE.NORMAL(), NONE(), changed, isInitial);
+        syst := BackendDAEUtil.updateAdjacencyMatrix(syst, BackendDAE.NORMAL(), NONE(), changed, isInitial);
       then (syst, ishared);
   end match;
 end removeEqualFunctionCallsWork;
 
 protected function removeEqualFunctionCallFinder "author: Frenkel TUD 2010-12"
-  input BackendDAE.IncidenceMatrixElement elem;
+  input BackendDAE.AdjacencyMatrixElement elem;
   input Integer pos;
-  input tuple<BackendDAE.IncidenceMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,list<Integer>,Boolean> inTpl;
+  input tuple<BackendDAE.AdjacencyMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,list<Integer>,Boolean> inTpl;
   output list<Integer> outList;
-  output tuple<BackendDAE.IncidenceMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,list<Integer>,Boolean> outTpl;
+  output tuple<BackendDAE.AdjacencyMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,list<Integer>,Boolean> outTpl;
 algorithm
   (outList,outTpl):=
   matchcontinue inTpl
     local
-      BackendDAE.IncidenceMatrix mT;
+      BackendDAE.AdjacencyMatrix mT;
       list<Integer> changed;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns,eqns1;
@@ -984,7 +984,7 @@ algorithm
         // failure(DAE.CREF(componentRef=_) = exp);
         // failure(DAE.UNARY(operator=DAE.UMINUS(ty=_),exp=DAE.CREF(componentRef=_)) = exp);
         // BackendDump.debugStrExpStrExpStr(("Found ",ecr," = ",exp,"\n"));
-        expvars = BackendDAEUtil.incidenceRowExp(exp,vars,AvlSetInt.EMPTY(),NONE(),BackendDAE.NORMAL(),isInitial);
+        expvars = BackendDAEUtil.adjacencyRowExp(exp,vars,AvlSetInt.EMPTY(),NONE(),BackendDAE.NORMAL(),isInitial);
         // print("expvars "); BackendDump.debuglst((expvars,intString," ","\n"));
         (expvars1::expvarseqns) = List.map2(AvlSetInt.listKeys(expvars),varEqns,pos,mT);
         // print("expvars1 "); BackendDump.debuglst((expvars1,intString," ","\n"));;
@@ -1047,7 +1047,7 @@ protected function varEqns
 "author Frenkel TUD 2011-04"
   input Integer v;
   input Integer pos;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrixT mT;
   output list<Integer> outVarEqns;
 protected
   list<Integer> vareqns,vareqns1;
@@ -1658,7 +1658,7 @@ public function partitionIndependentBlocksHelper
 algorithm
   (systs,oshared) := matchcontinue (isyst,ishared,numErrorMessages,throwNoError)
     local
-      BackendDAE.IncidenceMatrix m, mT, rm, rmT;
+      BackendDAE.AdjacencyMatrix m, mT, rm, rmT;
       array<Integer> eqPartMap, varPartMap, rixs;
       array<Boolean> vars, rvars;
       Boolean b, isInitial;
@@ -1670,8 +1670,8 @@ algorithm
       equation
         isInitial = BackendDAEUtil.isInitializationDAE(ishared);
         funcs = BackendDAEUtil.getFunctions(ishared);
-        (syst, m, mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs), isInitial);
-        (rm, rmT) = BackendDAEUtil.removedIncidenceMatrix(syst, BackendDAE.NORMAL(), SOME(funcs), isInitial);
+        (syst, m, mT) = BackendDAEUtil.getAdjacencyMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs), isInitial);
+        (rm, rmT) = BackendDAEUtil.removedAdjacencyMatrix(syst, BackendDAE.NORMAL(), SOME(funcs), isInitial);
         eqPartMap = arrayCreate(arrayLength(m), 0);
         varPartMap = arrayCreate(arrayLength(mT), 0);
         rixs = arrayCreate(arrayLength(rm), 0);
@@ -3641,7 +3641,7 @@ public function removeLocalKnownVars2
   input output BackendDAE.EqSystem syst;
   input output BackendDAE.Shared shared;
 protected
-  BackendDAE.IncidenceMatrix m;
+  BackendDAE.AdjacencyMatrix m;
   BackendDAE.Var potentialLocalKnownVar;
   BackendDAE.Equation potentialGlobalKnownEquation;
   BackendDAE.Variables orderedVars = syst.orderedVars;
@@ -3655,9 +3655,9 @@ protected
   Integer eindex=0;
   Integer vindex;
 algorithm
-  (_,m,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(shared));
+  (_,m,_,_,_) := BackendDAEUtil.getAdjacencyMatrixScalar(syst, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(shared));
 
-  // Delete negative entries from incidence matrix
+  // Delete negative entries from adjacency matrix
   m := Array.map(m,Tearing.deleteNegativeEntries);
 
   for row in m loop
@@ -4162,8 +4162,8 @@ protected
   BackendDAE.Shared shared;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
-  BackendDAE.IncidenceMatrix m;
-  BackendDAE.IncidenceMatrixT mT;
+  BackendDAE.AdjacencyMatrix m;
+  BackendDAE.AdjacencyMatrixT mT;
   Integer ne,nv;
   array<Integer> w_vars, w_eqns;
   DAE.FunctionTree functionTree;
@@ -4181,11 +4181,11 @@ algorithm
         BackendDAE.EqSystem syst1;
       case syst1 as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns)
         algorithm
-          (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.ABSOLUTE(), SOME(functionTree), BackendDAEUtil.isInitializationDAE(shared));
+          (_, m, mT) := BackendDAEUtil.getAdjacencyMatrix(syst, BackendDAE.ABSOLUTE(), SOME(functionTree), BackendDAEUtil.isInitializationDAE(shared));
           //debug
           if Flags.isSet(Flags.SORT_EQNS_AND_VARS) then
-            BackendDump.dumpIncidenceMatrix(m);
-            BackendDump.dumpIncidenceMatrixT(mT);
+            BackendDump.dumpAdjacencyMatrix(m);
+            BackendDump.dumpAdjacencyMatrixT(mT);
           end if;
 
           BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements = nv)) := vars;
@@ -4220,9 +4220,9 @@ algorithm
 
           //debug
           if Flags.isSet(Flags.SORT_EQNS_AND_VARS) then
-            (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(syst1, BackendDAE.ABSOLUTE(), SOME(functionTree), BackendDAEUtil.isInitializationDAE(shared));
-            BackendDump.dumpIncidenceMatrix(m);
-            BackendDump.dumpIncidenceMatrixT(mT);
+            (_, m, mT) := BackendDAEUtil.getAdjacencyMatrix(syst1, BackendDAE.ABSOLUTE(), SOME(functionTree), BackendDAEUtil.isInitializationDAE(shared));
+            BackendDump.dumpAdjacencyMatrix(m);
+            BackendDump.dumpAdjacencyMatrixT(mT);
           end if;
 
           GC.free(w_vars);
@@ -4246,7 +4246,7 @@ end sortEqnsVarsWorkTpl;
 protected function sortEqnsVarsWeights
   input array<Integer> inW;
   input Integer n;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   output array<Integer> outW = inW;
 protected
   Integer i;
@@ -5837,7 +5837,7 @@ protected
   BackendDAE.EqSystems systs, systsNew;
   BackendDAE.Equation eq;
   BackendDAE.EquationArray eqs;
-  BackendDAE.IncidenceMatrix m, mT;
+  BackendDAE.AdjacencyMatrix m, mT;
   BackendDAE.Matching matching;
   BackendDAE.Shared shared;
   BackendDAE.Variables vars;
@@ -5944,20 +5944,20 @@ algorithm
       syst.m :=NONE();
       syst.mT :=NONE();
       syst.matching := BackendDAE.NO_MATCHING();
-      (m,mT) := BackendDAEUtil.incidenceMatrix(syst,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
+      (m,mT) := BackendDAEUtil.adjacencyMatrix(syst,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
       syst.m := SOME(m);
       syst.mT := SOME(mT);
       nVars := listLength(varLstNew);
       nEqs := listLength(eqLstNew);
       ass1 := arrayCreate(nVars, -1);
       ass2 := arrayCreate(nEqs, -1);
-      Matching.matchingExternalsetIncidenceMatrix(nVars, nEqs, m);
+      Matching.matchingExternalsetAdjacencyMatrix(nVars, nEqs, m);
       BackendDAEEXT.matching(nVars, nEqs, 5, -1, 0.0, 1);
       BackendDAEEXT.getAssignment(ass2, ass1);
       matching := BackendDAE.MATCHING(ass1,ass2,compsNew);
       syst.matching := matching;
 
-      (syst, _, _, mapEqnIncRow, mapIncRowEqn) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.NORMAL(), SOME(funcTree), BackendDAEUtil.isInitializationDAE(shared));
+      (syst, _, _, mapEqnIncRow, mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixScalar(syst, BackendDAE.NORMAL(), SOME(funcTree), BackendDAEUtil.isInitializationDAE(shared));
       syst := BackendDAETransform.strongComponentsScalar(syst,shared,mapEqnIncRow,mapIncRowEqn);
       syst.removedEqs := BackendEquation.emptyEqns();
     else

@@ -845,7 +845,7 @@ algorithm
     BackendDAE.MATCHING(ass1=ass1, comps=comps) := syst.matching;
     subPartition := inShared.partitionsInfo.subPartitions[subPartIdx];
 
-    (syst, _, _) := BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
+    (syst, _, _) := BackendDAEUtil.getAdjacencyMatrixfromOption(syst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
     stateeqnsmark := arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
     stateeqnsmark := BackendDAEUtil.markStateEquations(syst, stateeqnsmark, ass1);
     zceqnsmarks := arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
@@ -1510,7 +1510,7 @@ algorithm
          eqSccMapping, eqBackendSimCodeMapping, backendMapping, sccOffset) = inFold;
 
         funcs = BackendDAEUtil.getFunctions(shared);
-        (syst, _, _) = BackendDAEUtil.getIncidenceMatrixfromOption(inSyst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
+        (syst, _, _) = BackendDAEUtil.getAdjacencyMatrixfromOption(inSyst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
 
         stateeqnsmark = arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
         zceqnsmarks = arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
@@ -3229,8 +3229,8 @@ algorithm
       list<SimCode.SimEqSystem> discEqs;
       list<Integer>    rf, tf;
       SimCode.SimEqSystem equation_;
-      BackendDAE.IncidenceMatrix  m;
-      BackendDAE.IncidenceMatrixT  mt;
+      BackendDAE.AdjacencyMatrix  m;
+      BackendDAE.AdjacencyMatrixT  mt;
       BackendDAE.StrongComponent comp, comp1;
       Integer index, uniqueEqIndex, uniqueEqIndexMapping;
       BackendDAE.EqSystem syst;
@@ -5557,7 +5557,7 @@ protected
   Integer nVars,nEqs;
   list<Integer> order;
   array<Integer> ass1,ass2;
-  BackendDAE.IncidenceMatrix m,  mT;
+  BackendDAE.AdjacencyMatrix m,  mT;
   list<list<Integer>> comps;
   list<BackendDAE.Var> varsWithBind, varsWithoutBind;
   list<DAE.Exp> bindExps;
@@ -7385,8 +7385,8 @@ protected
   BackendDAE.Variables vars, allVars, vars1;
   BackendDAE.EquationArray eqs;
   BackendDAE.Matching matching;
-  BackendDAE.IncidenceMatrix mStart;
-  BackendDAE.IncidenceMatrixT mTStart;
+  BackendDAE.AdjacencyMatrix mStart;
+  BackendDAE.AdjacencyMatrixT mTStart;
   BackendDAE.StrongComponents comps;
   BackendDAE.EqSystem syst;
   list<BackendDAE.Equation> eqLst;
@@ -7407,7 +7407,7 @@ algorithm
   varMap := List.intRange(BackendVariable.varsSize(vars));
   (noStartVarLst,varMap) := List.filterOnTrueSync(varLst, BackendVariable.varHasNoStartValue, varMap);
 
-  // insert start values for crefs and build incidence matrix
+  // insert start values for crefs and build adjacency matrix
     //BackendDump.dumpVariables(vars,"VAR BEFORE");
     //BackendDump.dumpEquationList(eqLst,"EQS BEFORE");
   eqs := BackendEquation.copyEquationArray(systIn.orderedEqs);
@@ -7416,9 +7416,9 @@ algorithm
     //BackendDump.dumpEquationList(eqLst,"EQS AFTER");
   vars1 := BackendVariable.listVar1(noStartVarLst);
   syst := BackendDAEUtil.createEqSystem(vars1, eqs);
-  (syst, mStart, mTStart) := BackendDAEUtil.getIncidenceMatrix(syst,BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(shared));
-    //BackendDump.dumpIncidenceMatrix(mStart);
-    //BackendDump.dumpIncidenceMatrixT(mTStart);
+  (syst, mStart, mTStart) := BackendDAEUtil.getAdjacencyMatrix(syst,BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(shared));
+    //BackendDump.dumpAdjacencyMatrix(mStart);
+    //BackendDump.dumpAdjacencyMatrixT(mTStart);
   // solve equations for new start values and assign start values to variables
   varMapArr := listArray(varMap);
   vars := preCalculateStartValues1(List.intRange(arrayLength(mStart)), mStart, mTStart, varMapArr, eqs, vars);
@@ -7436,8 +7436,8 @@ end preCalculateStartValues;
 
 protected function preCalculateStartValues1"try to solve the start equation for a var and set the resulting start value for it."
   input list<Integer> eqIndexes; // to be analyzed
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrix mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrix mT;
   input array<Integer> varMap;
   input BackendDAE.EquationArray eqs;
   input BackendDAE.Variables varsIn;
@@ -7490,7 +7490,7 @@ algorithm
       eqLst := List.map1r(newEqIdcs,BackendEquation.get,eqs);
       (eqLst,_) := BackendEquation.traverseExpsOfEquationList(eqLst,replaceCrefWithStartValue,varArr);
       eqArr := List.threadFold(newEqIdcs,eqLst,BackendEquation.setAtIndexFirst,eqs);
-      // update the incidenceMatrix m and remove the idcs for the calculated var
+      // update the adjacencyMatrix m and remove the idcs for the calculated var
       mEntries := List.map1(newEqIdcs,Array.getIndexFirst,m);
       mEntries := List.map1(mEntries,List.deleteMember,varIdx0);
       List.threadMap1_0(newEqIdcs,mEntries,Array.updateIndexFirst,m);
@@ -11927,14 +11927,14 @@ algorithm
       array<Integer> eqMatch, varMatch;
       array<list<Integer>> tree;
       BackendDAE.EqSystems eqs;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
-      list<BackendDAE.IncidenceMatrix> mLst;
-      list<BackendDAE.IncidenceMatrixT> mtLst;
+      BackendDAE.AdjacencyMatrix m;
+      BackendDAE.AdjacencyMatrixT mt;
+      list<BackendDAE.AdjacencyMatrix> mLst;
+      list<BackendDAE.AdjacencyMatrixT> mtLst;
       list<tuple<Integer,Integer>> varMap;
       list<tuple<Integer,list<Integer>>> eqMap;
       array<list<SimCodeVar.SimVar>> simVarMapping;
-      list<tuple<Integer,Integer,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,array<Integer>,array<Integer>>> tpl;
+      list<tuple<Integer,Integer,BackendDAE.AdjacencyMatrix,BackendDAE.AdjacencyMatrixT,array<Integer>,array<Integer>>> tpl;
     case(_)
       equation
         BackendDAE.DAE(eqs=eqs) = dae;
@@ -11963,8 +11963,8 @@ end setUpBackendMapping;
 protected function setUpEqTree" builds the tree graph. the index depicts an equation and the entry depicts the direct predecessors.
 author:Waurich TUD 2014-04"
   input Integer beq;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input array<Integer> eqMatch;
   input array<Integer> varMatch;
   input array<list<Integer>> treeIn;
@@ -11992,16 +11992,16 @@ end setUpEqTree_Help;
 protected function appendAdjacencyMatrices"appends the adjacencymatrices for the different equation systems.
 the indeces are raised according to the number of equations and vars in the previous systems
 author:Waurich TUD 2014-04"
-  input tuple<Integer,Integer,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,array<Integer>,array<Integer>> tplIn;
-  input tuple<Integer,Integer,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,array<Integer>,array<Integer>> foldIn;
-  output tuple<Integer,Integer,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,array<Integer>,array<Integer>> foldOut;
+  input tuple<Integer,Integer,BackendDAE.AdjacencyMatrix,BackendDAE.AdjacencyMatrixT,array<Integer>,array<Integer>> tplIn;
+  input tuple<Integer,Integer,BackendDAE.AdjacencyMatrix,BackendDAE.AdjacencyMatrixT,array<Integer>,array<Integer>> foldIn;
+  output tuple<Integer,Integer,BackendDAE.AdjacencyMatrix,BackendDAE.AdjacencyMatrixT,array<Integer>,array<Integer>> foldOut;
 algorithm
   foldOut := match(tplIn,foldIn)
     local
       Integer sizeE,sizeV,addV,addE;
       array<Integer> eqMatch,varMatch,eqMatchIn,varMatchIn;
-      BackendDAE.IncidenceMatrix mIn,m;
-      BackendDAE.IncidenceMatrixT mtIn,mt;
+      BackendDAE.AdjacencyMatrix mIn,m;
+      BackendDAE.AdjacencyMatrixT mtIn,mt;
     case((addE,addV,m,mt,eqMatch,varMatch),(sizeE,sizeV,mIn,mtIn,eqMatchIn,varMatchIn))
       equation
         m = Array.map1(m,addIntLst,sizeV);
@@ -12021,9 +12021,9 @@ protected function updateInAdjacencyMatrix"updates a row in an adajcency matrix.
 author: Waurich TUD 2014-04"
   input Integer idx;
   input Integer offset;
-  input BackendDAE.IncidenceMatrix mAppend;
-  input BackendDAE.IncidenceMatrix mIn;
-  output BackendDAE.IncidenceMatrix mOut;
+  input BackendDAE.AdjacencyMatrix mAppend;
+  input BackendDAE.AdjacencyMatrix mIn;
+  output BackendDAE.AdjacencyMatrix mOut;
 protected
   list<Integer> entry;
 algorithm
@@ -12058,12 +12058,12 @@ protected function setUpSystMapping"gets the mapping information for every syste
 author:Waurich TUD 2014-04"
   input BackendDAE.EqSystem dae;
   input Boolean isInitial;
-  output tuple<Integer,Integer,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,array<Integer>,array<Integer>> outTpl;
+  output tuple<Integer,Integer,BackendDAE.AdjacencyMatrix,BackendDAE.AdjacencyMatrixT,array<Integer>,array<Integer>> outTpl;
 protected
   Integer sizeV,sizeE;
   array<Integer> ass1, ass2;
-  BackendDAE.IncidenceMatrix m;
-  BackendDAE.IncidenceMatrixT mt;
+  BackendDAE.AdjacencyMatrix m;
+  BackendDAE.AdjacencyMatrixT mt;
   BackendDAE.Matching matching;
 algorithm
   outTpl := matchcontinue(dae)
@@ -12079,7 +12079,7 @@ algorithm
     equation
       BackendDAE.EQSYSTEM(m=NONE(),mT=NONE(),matching=matching) = dae;
       BackendDAE.MATCHING(ass1=ass1,ass2=ass2) = matching;
-      (_,m,mt) = BackendDAEUtil.getIncidenceMatrix(dae,BackendDAE.NORMAL(),NONE(),isInitial);
+      (_,m,mt) = BackendDAEUtil.getAdjacencyMatrix(dae,BackendDAE.NORMAL(),NONE(),isInitial);
       sizeE = BackendDAEUtil.equationArraySizeDAE(dae);
       sizeV = BackendVariable.daenumVariables(dae);
     then
@@ -12109,8 +12109,8 @@ algorithm
       list<SimCodeVar.SimVar> simVars;
       list<tuple<Integer,list<Integer>>> eqMapping;
       list<tuple<Integer,Integer>> varMapping;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.AdjacencyMatrix m;
+      BackendDAE.AdjacencyMatrixT mt;
       array<list<SimCodeVar.SimVar>> simVarMapping;
       SimCode.HashTableCrefToSimVar htStates;
       Integer size;
@@ -12209,8 +12209,8 @@ algorithm
       array<list<Integer>> tree;
       list<tuple<Integer,list<Integer>>> eqMapping;
       list<tuple<Integer,Integer>> varMapping;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.AdjacencyMatrix m;
+      BackendDAE.AdjacencyMatrixT mt;
       array<list<SimCodeVar.SimVar>> simVarMapping;
     case(_,_,SimCode.BACKENDMAPPING(m=m,mT=mt,eqMapping=eqMapping,varMapping=varMapping,eqMatch=eqMatch,varMatch=varMatch,eqTree=tree,simVarMapping=simVarMapping))
       equation
@@ -12237,15 +12237,15 @@ public function getSimVarsInSimEq"gets the indeces for the simVars occuring in t
 author:Waurich TUD 2014-04"
   input Integer simEq;
   input SimCode.BackendMapping map;
-  input Integer opt; //1: get all indeces from the incidenceMatrix, 2: get only positive entries, 3: get only negative entries
+  input Integer opt; //1: get all indeces from the adjacencyMatrix, 2: get only positive entries, 3: get only negative entries
   output list<Integer> simVars;
 protected
   list<Integer> bVars,bEqs;
   list<list<Integer>> bVarsLst;
   list<tuple<Integer,list<Integer>>> eqMapping;
   list<tuple<Integer,Integer>> varMapping;
-  BackendDAE.IncidenceMatrix m;
-  BackendDAE.IncidenceMatrixT mt;
+  BackendDAE.AdjacencyMatrix m;
+  BackendDAE.AdjacencyMatrixT mt;
 algorithm
   SimCode.BACKENDMAPPING(m=m,mT=mt,eqMapping=eqMapping,varMapping=varMapping) := map;
   bEqs := getBackendEqsForSimEq(simEq,map);
@@ -12265,15 +12265,15 @@ public function getSimEqsOfSimVar"gets the indeces for the simEqs for the given 
 author:Waurich TUD 2014-04"
   input Integer simVar;
   input SimCode.BackendMapping map;
-  input Integer opt; //1: complete incidence matrix row, 2: only positive entries, 3: only negative entries
+  input Integer opt; //1: complete adjacency matrix row, 2: only positive entries, 3: only negative entries
   output list<Integer> simEqs;
 protected
   Integer bVar;
   list<Integer> bEqs;
   list<tuple<Integer,list<Integer>>> eqMapping;
   list<tuple<Integer,Integer>> varMapping;
-  BackendDAE.IncidenceMatrix m;
-  BackendDAE.IncidenceMatrixT mt;
+  BackendDAE.AdjacencyMatrix m;
+  BackendDAE.AdjacencyMatrixT mt;
 algorithm
   SimCode.BACKENDMAPPING(m=m,mT=mt,eqMapping=eqMapping,varMapping=varMapping) := map;
   bVar := getBackendVarForSimVar(simVar,map);
@@ -12354,8 +12354,8 @@ protected
   list<Integer> beqs;
   array<Integer> eqMatch,varMatch;
   array<list<Integer>> tree;
-  BackendDAE.IncidenceMatrix m;
-  BackendDAE.IncidenceMatrixT mt;
+  BackendDAE.AdjacencyMatrix m;
+  BackendDAE.AdjacencyMatrixT mt;
 algorithm
   SimCode.BACKENDMAPPING(m=m,mT=mt,eqMatch=eqMatch,varMatch=varMatch,eqTree=tree) := map;
   bVar := getBackendVarForSimVar(simVar,map);
@@ -12915,21 +12915,21 @@ protected
   array<list<Integer>> tree;
   list<tuple<Integer,list<Integer>>> eqMapping;
   list<tuple<Integer,Integer>> varMapping;
-  BackendDAE.IncidenceMatrix m;
-  BackendDAE.IncidenceMatrixT mt;
+  BackendDAE.AdjacencyMatrix m;
+  BackendDAE.AdjacencyMatrixT mt;
   array<list<SimCodeVar.SimVar>> simVarMapping;
 algorithm
   SimCode.BACKENDMAPPING(m=m,mT=mt,eqMapping=eqMapping,varMapping=varMapping,eqMatch=eqMatch,varMatch=varMatch,eqTree=tree,simVarMapping=simVarMapping) := mapIn;
   dumpEqMapping(eqMapping);
   /*
   dumpVarMapping(varMapping);
-  print("\nthe incidence Matrix (backendIndices)\n");
-  BackendDump.dumpIncidenceMatrix(m);
-  BackendDump.dumpIncidenceMatrixT(mt);
+  print("\nthe adjacency Matrix (backendIndices)\n");
+  BackendDump.dumpAdjacencyMatrix(m);
+  BackendDump.dumpAdjacencyMatrixT(mt);
   print("\nvars matched to eq (backend indeces)\n");
   BackendDump.dumpMatching(varMatch);
   print("\nequations tree (rows:backendEqs, entrys: list of required backend equations)");
-  BackendDump.dumpIncidenceMatrix(tree);
+  BackendDump.dumpAdjacencyMatrix(tree);
   */
 end dumpBackendMapping;
 
@@ -13298,7 +13298,7 @@ protected
   DAE.Exp lhs, rhs;
   BackendDAE.Equation eqn;
   String strMatchingAlgorithm, strIndexReductionMethod;
-  BackendDAE.IncidenceMatrix outIncidenceMatrix;
+  BackendDAE.AdjacencyMatrix outAdjacencyMatrix;
   array<Integer> match1,match2;
 algorithm
   initialUnknownCrefs := List.map(initialUnknownList, getCrefFromSimVar); // extract cref from initialUnknownsList
@@ -13329,10 +13329,10 @@ algorithm
     end if;
   end for;
 
-  // Calculate incidenceMatrix, with the newly added equations and vars
-  (outIncidenceMatrix, _, _, _) := BackendDAEUtil.incidenceMatrixScalar(currentSystem, BackendDAE.NORMAL(), NONE(), BackendDAEUtil.isInitializationDAE(shared));
-  // Perform the match on the incidenceMatrix
-  (match1, match2) := Matching.PerfectMatching(outIncidenceMatrix);
+  // Calculate adjacencyMatrix, with the newly added equations and vars
+  (outAdjacencyMatrix, _, _, _) := BackendDAEUtil.adjacencyMatrixScalar(currentSystem, BackendDAE.NORMAL(), NONE(), BackendDAEUtil.isInitializationDAE(shared));
+  // Perform the match on the adjacencyMatrix
+  (match1, match2) := Matching.PerfectMatching(outAdjacencyMatrix);
   currentSystem.matching := BackendDAE.MATCHING(match1, match2, BackendDAEUtil.getStrongComponents(currentSystem));
   // update the DAE with the new matching information
   tmpBDAE := BackendDAE.DAE({currentSystem}, shared);

@@ -94,7 +94,7 @@ algorithm
       BackendDAE.Variables vars,simpVars;
       BackendDAE.EquationArray eqs,simpEqs;
       BackendDAE.EqSystem syst;
-      BackendDAE.IncidenceMatrix m,mT,m_cut, mT_cut, m_after, mT_after;
+      BackendDAE.AdjacencyMatrix m,mT,m_cut, mT_cut, m_after, mT_after;
       BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
       list<DAE.ComponentRef> crefs;
@@ -103,7 +103,7 @@ algorithm
 
     case syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs)
       equation
-      (m,_) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE(), NONE(), BackendDAEUtil.isInitializationDAE(inShared));
+      (m,_) = BackendDAEUtil.adjacencyMatrix(syst, BackendDAE.ABSOLUTE(), NONE(), BackendDAEUtil.isInitializationDAE(inShared));
       if Flags.isSet(Flags.RESOLVE_LOOPS_DUMP) then
         BackendDump.dumpBipartiteGraphEqSystem(syst,inShared, "whole System_"+intString(inSysIdx));
       end if;
@@ -118,10 +118,10 @@ algorithm
       simpEqs = BackendEquation.listEquation(simpEqLst);
       simpVars = BackendVariable.listVar1(simpVarLst);
 
-      // build the incidence matrix for the linear equations
+      // build the adjacency matrix for the linear equations
       numSimpEqs = listLength(simpEqLst);
       numVars = listLength(simpVarLst);
-      (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs, BackendDAE.ABSOLUTE(), NONE(), BackendDAEUtil.isInitializationDAE(inShared));
+      (m,mT) = BackendDAEUtil.adjacencyMatrixDispatch(simpVars,simpEqs, BackendDAE.ABSOLUTE(), NONE(), BackendDAEUtil.isInitializationDAE(inShared));
 
       if Flags.isSet(Flags.RESOLVE_LOOPS_DUMP) then
         varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
@@ -156,7 +156,7 @@ algorithm
         simpEqs = BackendEquation.listEquation(simpEqLst);
         numSimpEqs = listLength(simpEqLst);
         numVars = listLength(simpVarLst);
-        m_after = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs, BackendDAE.ABSOLUTE(),NONE(),BackendDAEUtil.isInitializationDAE(inShared));
+        m_after = BackendDAEUtil.adjacencyMatrixDispatch(simpVars,simpEqs, BackendDAE.ABSOLUTE(),NONE(),BackendDAEUtil.isInitializationDAE(inShared));
         varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
         eqAtts = List.threadMap(List.fill(false,numSimpEqs),List.fill("",numSimpEqs),Util.makeTuple);
         BackendDump.dumpBipartiteGraphStrongComponent2(simpVars,simpEqs,m_after,varAtts,eqAtts,"rL_after_"+intString(inSysIdx));
@@ -173,10 +173,10 @@ end resolveLoops_main;
 protected function resolveLoops_resolvePartitions "author:Waurich TUD 2014-02
   checks every partition for loops and resolves them if its worth to."
   input list<list<Integer>> partitionsIn;
-  input BackendDAE.IncidenceMatrix mIn;
-  input BackendDAE.IncidenceMatrixT mTIn;
-  input BackendDAE.IncidenceMatrix m_uncut;
-  input BackendDAE.IncidenceMatrixT mT_uncut;
+  input BackendDAE.AdjacencyMatrix mIn;
+  input BackendDAE.AdjacencyMatrixT mTIn;
+  input BackendDAE.AdjacencyMatrix m_uncut;
+  input BackendDAE.AdjacencyMatrixT mT_uncut;
   input array<Integer> eqMap;
   input array<Integer> varMap;
   input BackendDAE.EquationArray daeEqs;
@@ -229,8 +229,8 @@ end resolveLoops_resolvePartitions;
 
 protected function resolveLoops_cutNodes "author: Waurich TUD 2014-01
   cut the deadend nodes from the partitions"
-  input BackendDAE.IncidenceMatrix mIn;
-  input BackendDAE.IncidenceMatrix mTIn;
+  input BackendDAE.AdjacencyMatrix mIn;
+  input BackendDAE.AdjacencyMatrix mTIn;
   output array<Integer> deadEndVarsMark;
   output array<Integer> deadEndEqsMark;
 algorithm
@@ -316,14 +316,14 @@ end arrayEntryLengthIs;
 protected function getSimpleEquations
 "if the linear equation contains only variables with factor 1 or -1 except for the states."
   input BackendDAE.Equation inEq;
-  input tuple<list<BackendDAE.Equation>, list<Integer>, Integer, BackendDAE.Variables, array<Integer>, BackendDAE.IncidenceMatrix> inTpl;
+  input tuple<list<BackendDAE.Equation>, list<Integer>, Integer, BackendDAE.Variables, array<Integer>, BackendDAE.AdjacencyMatrix> inTpl;
   output BackendDAE.Equation outEq = inEq;
-  output tuple<list<BackendDAE.Equation>, list<Integer>, Integer, BackendDAE.Variables, array<Integer>, BackendDAE.IncidenceMatrix> outTpl;
+  output tuple<list<BackendDAE.Equation>, list<Integer>, Integer, BackendDAE.Variables, array<Integer>, BackendDAE.AdjacencyMatrix> outTpl;
 protected
   Boolean isSimple;
   Integer idx;
   BackendDAE.Equation eq;
-  BackendDAE.IncidenceMatrix m;
+  BackendDAE.AdjacencyMatrix m;
   BackendDAE.Variables vars;
   array<Integer> markLinEqVars;
   list<BackendDAE.Equation> eqLst;
@@ -367,8 +367,8 @@ end getSimpleEquationVariables;
 public function resolveLoops_findLoops "author:Waurich TUD 2014-02
   gets the crossNodes for the partitions and searches for loops"
   input list<list<Integer>> partitionsIn;
-  input BackendDAE.IncidenceMatrix mIn;  // the whole system of simpleEquations
-  input BackendDAE.IncidenceMatrixT mTIn;
+  input BackendDAE.AdjacencyMatrix mIn;  // the whole system of simpleEquations
+  input BackendDAE.AdjacencyMatrixT mTIn;
   input Boolean findExactlyOneLoop=false;
   output list<list<Integer>> loopsOut = {};
   output list<Integer> crossEqsOut = {};
@@ -415,8 +415,8 @@ protected function resolveLoops_findLoops2 "author: Waurich TUD 2014-01
   input list<Integer> eqsIn;
   input list<Integer> eqCrossLstIn;
   input list<Integer> varCrossLstIn;
-  input BackendDAE.IncidenceMatrix mIn;  // the whole system of simpleEquations
-  input BackendDAE.IncidenceMatrixT mTIn;
+  input BackendDAE.AdjacencyMatrix mIn;  // the whole system of simpleEquations
+  input BackendDAE.AdjacencyMatrixT mTIn;
   input Boolean findExactlyOneLoop;
   output list<list<Integer>> loopsOut;
   output Option<tuple<list<Integer>,BackendDAE.AdjacencyMatrix,list<list<Integer>>>> structureMapping;
@@ -722,8 +722,8 @@ protected function getShortPathsBetweenEqCrossNodes"find closedLoops between 2 e
 author: vwaurich TUD 12-2016"
   input list<Integer> eqCrossLstIn;
   input AvlSetInt.Tree eqCrossSet;
-  input BackendDAE.IncidenceMatrix mIn;
-  input BackendDAE.IncidenceMatrixT mTIn;
+  input BackendDAE.AdjacencyMatrix mIn;
+  input BackendDAE.AdjacencyMatrixT mTIn;
   input list<list<Integer>> pathsIn;
   input Boolean findExactlyOneLoop;
   output list<list<Integer>> pathsOut;
@@ -839,8 +839,8 @@ protected function resolveLoops_resolveAndReplace "author:Waurich TUD 2014-01
   input list<list<Integer>> loopsIn;
   input list<Integer> eqCrossLstIn;
   input list<Integer> varCrossLstIn;
-  input BackendDAE.IncidenceMatrix mIn;
-  input BackendDAE.IncidenceMatrixT mTIn;
+  input BackendDAE.AdjacencyMatrix mIn;
+  input BackendDAE.AdjacencyMatrixT mTIn;
   input array<Integer> eqMap;
   input array<Integer> varMap;
   input BackendDAE.EquationArray daeEqsIn;
@@ -891,7 +891,7 @@ algorithm
       loopVars = doubleEntriesInLst(vars,{},{});  // the vars in the loop
       (_,adjVars,_) = List.intersection1OnTrue(vars,loopVars,intEq); // the vars adjacent to the loop
 
-      // update incidenceMatrix
+      // update adjacencyMatrix
       List.map2_0(loopVars,Array.updateIndexFirst,{},mTIn);  //delete the vars in the loop
       List.map2_0(adjVars,arrayGetDeleteInLst,loop1,mTIn);  // remove the loop eqs from the adjacent vars
       List.map2_0(adjVars,arrayGetAppendLst,{pos},mTIn);  // redirect the adjacent vars to the replaced eq
@@ -944,7 +944,7 @@ algorithm
       adjVars = listAppend(crossVars,adjVars);
       adjVars = List.unique(adjVars);
 
-      // update incidenceMatrix
+      // update adjacencyMatrix
       List.map2_0(loopVars,Array.updateIndexFirst,{},mTIn);  //delete the vars in the loop
       List.map2_0(adjVars,arrayGetDeleteInLst,loop1,mTIn);  // remove the loop eqs from the adjacent vars
       List.map2_0(adjVars,arrayGetAppendLst,{pos},mTIn);  // redirect the adjacent vars to the replaced eq
@@ -972,7 +972,7 @@ algorithm
         //print("single loop\n");
       resolvedEq = resolveClosedLoop(loop1,mIn,mTIn,eqMap,varMap,daeEqsIn,daeVarsIn);
 
-      // update IncidenceMatrix
+      // update AdjacencyMatrix
       (_,crossEqs,_) = List.intersection1OnTrue(loop1,replEqsIn,intEq);  // do not replace an already replaced Eq
       (pos::_) = crossEqs;  // the equation that will be replaced = pos
       eqVars = List.map1(loop1,Array.getIndexFirst,mIn);
@@ -1054,11 +1054,11 @@ end arrayIsZeroAt;
 protected function markDeadEndsInBipartiteGraph "author:Waurich TUD 2017-01
 creates marking arrays for the equations and variables.
 if the node is a non-loop not its marked with 1, otherwise with0
-update the incidencematrix.
+update the adjacencymatrix.
 "
   input Integer varIdx;  //deadEnd
-  input BackendDAE.IncidenceMatrix mIn;  // the rows correspond to the primary nodes
-  input BackendDAE.IncidenceMatrixT mTIn;
+  input BackendDAE.AdjacencyMatrix mIn;  // the rows correspond to the primary nodes
+  input BackendDAE.AdjacencyMatrixT mTIn;
   input array<Integer> deadEndEqs; //marks all equations which are not in a loop with 1, otherwise 0
   input array<Integer> deadEndVars; //marks all variables which are not in a loop with 1, otherwise 0
 protected
@@ -1195,7 +1195,7 @@ end getTriples;
 protected function getEqNodesForVarLoop "author: Waurich TUD 2013-01
   fold function to get the eqs in a loop that is given by the varNodes."
   input list<Integer> varIdcs;
-  input BackendDAE.IncidenceMatrixT mTIn;
+  input BackendDAE.AdjacencyMatrixT mTIn;
   output list<Integer> eqIdcs;
 protected
   list<list<Integer>> varEqLst;
@@ -1209,8 +1209,8 @@ end getEqNodesForVarLoop;
 protected function resolveClosedLoop "author:Waurich TUD 2014-02
   sums up all equations in a loop so that the variables shared by the equations disappear."
   input list<Integer> loopIn;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> eqMap;
   input array<Integer> varMap;
   input BackendDAE.EquationArray daeEqsIn;
@@ -1232,8 +1232,8 @@ end resolveClosedLoop;
 protected function resolveClosedLoop2 "author:Waurich TUD 2013-12"
   input BackendDAE.Equation eqIn;
   input list<Integer> loopIn;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input array<Integer> eqMap;
   input array<Integer> varMap;
   input BackendDAE.EquationArray daeEqsIn;
@@ -1290,8 +1290,8 @@ end resolveClosedLoop2;
 public function sortLoop "author:Waurich TUD 2014-01
   sorts the equations in a loop so that they are solved in a row."
   input list<Integer> loopIn;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input list<Integer> sortLoopIn;
   output list<Integer> sortLoopOut;
 algorithm
@@ -1428,8 +1428,8 @@ end doubleEntriesInLst;
 protected function getPathTillNextCrossEq "author:Waurich TUD 2013-12
   collects the paths from the given crossEq to the next."
   input list<Integer> checkEqCrossNodes; //these will be traversed
-  input BackendDAE.IncidenceMatrix mIn;
-  input BackendDAE.IncidenceMatrixT mTIn;
+  input BackendDAE.AdjacencyMatrix mIn;
+  input BackendDAE.AdjacencyMatrixT mTIn;
   input list<Integer> allEqCrossNodes;
   input list<list<Integer>> unfinPathsIn;
   input list<list<Integer>> eqPathsIn;
@@ -1519,7 +1519,7 @@ end replaceContractedNodes2;
 protected function priorizeEqsWithVarCrosses "author:Waurich TUD 2014-02
   the equations with the least number of varCrossNodes are the best."
   input list<Integer> eqsIn;
-  input BackendDAE.IncidenceMatrix mIn;
+  input BackendDAE.AdjacencyMatrix mIn;
   input list<Integer> varCrossLst;
   output list<Integer> eqsOut;
 protected
@@ -1534,7 +1534,7 @@ end priorizeEqsWithVarCrosses;
 
 protected function priorizeEqsWithVarCrosses2
   input Integer eq;
-  input BackendDAE.IncidenceMatrix mIn;
+  input BackendDAE.AdjacencyMatrix mIn;
   input list<Integer> varCrossLst;
   input array<list<Integer>> priorities;
 protected
@@ -1556,14 +1556,14 @@ end priorizeEqsWithVarCrosses2;
 
 protected function evaluateLoop
   input list<Integer> loopIn;
-  input tuple<BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,list<Integer>> tplIn;
+  input tuple<BackendDAE.AdjacencyMatrix,BackendDAE.AdjacencyMatrixT,list<Integer>> tplIn;
   output Boolean resolve;
 protected
   Boolean r1,r2;
   Integer numInLoop,numOutLoop;
   list<Integer> nonLoopEqs,nonLoopVars,loopEqs, loopVars, allVars, eqCrossLst;
   list<list<Integer>> eqVars;
-  BackendDAE.IncidenceMatrix m;
+  BackendDAE.AdjacencyMatrix m;
 algorithm
   (m,_,eqCrossLst) := tplIn;
   eqVars := List.map1(loopIn,Array.getIndexFirst,m);
@@ -1588,12 +1588,12 @@ protected function evaluateTripleLoop
   "author:kabdelhak FHB 2019-07
   Special case for loops containing three eqCrossNodes"
   input list<Integer> loopIn;
-  input tuple<BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,list<Integer>,list<Integer>,BackendDAE.AdjacencyMatrix> tplIn;
+  input tuple<BackendDAE.AdjacencyMatrix,BackendDAE.AdjacencyMatrixT,list<Integer>,list<Integer>,BackendDAE.AdjacencyMatrix> tplIn;
   output Boolean resolve;
 protected
   Boolean r1,r2;
   Integer numInLoop,numOutLoop;
-  BackendDAE.IncidenceMatrix m,map;
+  BackendDAE.AdjacencyMatrix m,map;
   list<Integer> mapIndices,loopFull,eqCrossLst,allVars,loopVars,nonLoopVars,loopEqs,nonLoopEqs;
   list<list<Integer>> eqVars;
 algorithm
@@ -1625,9 +1625,9 @@ protected function updateTripleLoop
   "author:kabdelhak FHB 2019-07
   Update function for special case including for loops containing three eqCrossNodes"
   input output list<Integer> loopFull;
-  input tuple<BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,list<Integer>,list<Integer>,BackendDAE.AdjacencyMatrix> tplIn;
+  input tuple<BackendDAE.AdjacencyMatrix,BackendDAE.AdjacencyMatrixT,list<Integer>,list<Integer>,BackendDAE.AdjacencyMatrix> tplIn;
 protected
-  BackendDAE.IncidenceMatrix map;
+  BackendDAE.AdjacencyMatrix map;
   list<Integer> mapIndices;
 algorithm
   (_,_,_,mapIndices,map) := tplIn;
@@ -1785,9 +1785,9 @@ end listLengthIs;
 
 public function partitionBipartiteGraph "author: Waurich TUD 2013-12
   checks if there are independent subgraphs in the BIPARTITE graph. the given
-  indeces refer to the equation indeces (rows in the incidenceMatrix)."
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  indeces refer to the equation indeces (rows in the adjacencyMatrix)."
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   output array<list<Integer>> partitionsOut;
 protected
   Integer numEqs, numVars;
@@ -1809,8 +1809,8 @@ end partitionBipartiteGraph;
 protected function colorNodePartitions "author:Waurich TUD 2013-12
   helper for partitionsGraph1. Traverse the graph in a BFS manner.
   mark all visited nodes, gather partitions, color mark-arrays"
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mT;
   input list<Integer> checkNextIn;
   input array<Integer> markEqs;
   input array<Integer> markVars;
@@ -1898,7 +1898,7 @@ end arrayGetIsNegative;
 
 protected function getArrayEntryAndAppend
   input Integer entry;
-  input BackendDAE.IncidenceMatrixT m;
+  input BackendDAE.AdjacencyMatrixT m;
   input list<Integer> lstIn;
   output list<Integer> lstOut;
 protected
@@ -1911,8 +1911,8 @@ end getArrayEntryAndAppend;
 protected function gatherCrossNodes "author: Waurich TUD 2014-02
   checks if the indexed node has more than 2 neighbours (its a crossroad)."
   input Integer idx;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrix mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrix mT;
   input list<Integer> lstIn;
   output list<Integer> lstOut;
 protected
@@ -2292,7 +2292,7 @@ protected
   BackendDAE.Variables vars, daeVars;
   BackendDAE.EqSystem subSys;
   BackendDAE.AdjacencyMatrixEnhanced me, me2, meT;
-  BackendDAE.IncidenceMatrix m;
+  BackendDAE.AdjacencyMatrix m;
   DAE.FunctionTree funcs;
   list<BackendDAE.Equation> eqLst,eqsInLst;
   list<BackendDAE.Var> varLst;
@@ -2307,7 +2307,7 @@ algorithm
   vars := BackendVariable.listVar1(varLst);
   subSys := BackendDAEUtil.createEqSystem(vars, eqs);
   (me,meT,_,_) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subSys,shared,false);
-  (_,m,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subSys,BackendDAE.SOLVABLE(),SOME(BackendDAEUtil.getFunctions(shared)), BackendDAEUtil.isInitializationDAE(shared));
+  (_,m,_,_,_) := BackendDAEUtil.getAdjacencyMatrixScalar(subSys,BackendDAE.SOLVABLE(),SOME(BackendDAEUtil.getFunctions(shared)), BackendDAEUtil.isInitializationDAE(shared));
   ass1 := arrayCreate(size,-1);
   ass2 := arrayCreate(size,-1);
 
@@ -2332,7 +2332,7 @@ algorithm
   daeOut := BackendDAEUtil.setEqSystEqs(dae, daeEqs);
   daeOut := BackendDAEUtil.setEqSystMatching(daeOut, BackendDAE.MATCHING(ass1Sys, ass2Sys, {}));
 
-  (daeOut,_,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(daeOut, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
+  (daeOut,_,_,_,_) := BackendDAEUtil.getAdjacencyMatrixScalar(daeOut, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
 
   outRunMatching := true;
 end reshuffling_post2;

@@ -230,7 +230,7 @@ algorithm
 
         //build new DAE-EqSystem
         syst = BackendDAEUtil.setEqSystMatrices(syst);
-        (syst,_,_) = BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(sharedIn));
+        (syst,_,_) = BackendDAEUtil.getAdjacencyMatrix(syst, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(sharedIn));
         (syst, tornSysIdx) = reduceLinearTornSystem1(compIdx+1+numNewSingleEqs,compsTmp,ass1All,ass2All,syst,sharedIn,tornSysIdxIn+1);
       then
         (syst, tornSysIdx);
@@ -297,7 +297,7 @@ algorithm
 
         //build new DAE-EqSystem
         syst = BackendDAEUtil.setEqSystMatrices(syst);
-        //(systTmp,_,_) = BackendDAEUtil.getIncidenceMatrix(systTmp, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(shared));
+        //(systTmp,_,_) = BackendDAEUtil.getAdjacencyMatrix(systTmp, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(shared));
 
         (syst,tornSysIdx) = reduceLinearTornSystem1(compIdx+1,compsTmp,ass1All,ass2All,syst,sharedIn,tornSysIdxIn+1);
       then
@@ -567,7 +567,7 @@ protected
   BackendDAE.EquationArray eqArr;
   BackendDAE.Variables varArr;
   BackendDAE.EqSystem eqSys;
-  BackendDAE.IncidenceMatrix m, mT;
+  BackendDAE.AdjacencyMatrix m, mT;
   Integer size,numIterNew, numAux;
   list<Integer> varIdcs,eqIdcs;
   list<tuple<Integer,Integer>> simplifyPairs;
@@ -577,7 +577,7 @@ algorithm
   eqArr := BackendEquation.listEquation(eqsIn);
   varArr := BackendVariable.listVar1(varsIn);
   eqSys := BackendDAEUtil.createEqSystem(varArr, eqArr);
-  (m,mT) := BackendDAEUtil.incidenceMatrix(eqSys,BackendDAE.ABSOLUTE(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
+  (m,mT) := BackendDAEUtil.adjacencyMatrix(eqSys,BackendDAE.ABSOLUTE(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
   size := listLength(eqsIn);
   (eqIdcs,varIdcs,resEqsOut) := List.fold(List.intRange(size),function simplifyNewEquations1(eqArr=eqArr,varArr=varArr,m=m,mt=mT,numAuxiliaryVars=numAuxiliaryVars,shared=shared),({},{},resEqsIn));
   numAux := numAuxiliaryVars-listLength(varIdcs);
@@ -598,8 +598,8 @@ protected function simplifyNewEquations1
   input Integer eqIdx;
   input BackendDAE.EquationArray eqArr;
   input BackendDAE.Variables varArr;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrix mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrix mt;
   input Integer numAuxiliaryVars;
   input BackendDAE.Shared shared;
   input tuple<list<Integer>,list<Integer>,list<BackendDAE.Equation>> tplIn; //these can be removed afterwards (eqIdcs,varIdcs,_)
@@ -672,7 +672,7 @@ algorithm
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       BackendDAE.EquationArray eqArr;
       BackendDAE.EqSystem eqSys;
-      BackendDAE.IncidenceMatrix m,mT;
+      BackendDAE.AdjacencyMatrix m,mT;
       BackendDAE.StrongComponent comp;
       BackendDAE.StrongComponents comps;
       BackendDAE.Variables varArr;
@@ -1032,29 +1032,29 @@ algorithm
       Integer nVars, nEqs, compIdxTmp;
       BackendDAE.EquationArray eqArr;
       BackendDAE.EqSystem sysTmp;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.AdjacencyMatrix m;
+      BackendDAE.AdjacencyMatrixT mt;
       BackendDAE.Matching matching, matchingTmp;
       BackendDAE.StrongComponents compsTmp;
       BackendDAE.Variables vars;
     case(_,_,_,_,_)
       equation
         // build a singleEquation from a list<Equation> and list<Var> which are indexed by compIdx;
-        // get the EQSYSTEM, the incidenceMatrix and a matching
+        // get the EQSYSTEM, the adjacencyMatrix and a matching
         vars = BackendVariable.listVar1(inVars);
         eqArr = BackendEquation.listEquation(inEqs);
         sysTmp = BackendDAEUtil.createEqSystem(vars, eqArr);
-        (sysTmp,m,_) = BackendDAEUtil.getIncidenceMatrix(sysTmp,BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(shared));
+        (sysTmp,m,_) = BackendDAEUtil.getAdjacencyMatrix(sysTmp,BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(shared));
         nVars = listLength(inVars);
         nEqs = listLength(inEqs);
         ass1 = arrayCreate(nVars, -1);
         ass2 = arrayCreate(nEqs, -1);
-        Matching.matchingExternalsetIncidenceMatrix(nVars, nEqs, m);
+        Matching.matchingExternalsetAdjacencyMatrix(nVars, nEqs, m);
         BackendDAEEXT.matching(nVars, nEqs, 5, -1, 0.0, 1);
         BackendDAEEXT.getAssignment(ass2, ass1);
         matching = BackendDAE.MATCHING(ass1, ass2, {});
         sysTmp = BackendDAEUtil.createEqSystem(vars, eqArr);
-        (sysTmp,_,_) = BackendDAEUtil.getIncidenceMatrix(sysTmp,BackendDAE.ABSOLUTE(),NONE(), BackendDAEUtil.isInitializationDAE(shared));
+        (sysTmp,_,_) = BackendDAEUtil.getAdjacencyMatrix(sysTmp,BackendDAE.ABSOLUTE(),NONE(), BackendDAEUtil.isInitializationDAE(shared));
         sysTmp = BackendDAEUtil.setEqSystMatching(sysTmp, matching);
 
         // perform BLT to order the StrongComponents
@@ -2284,7 +2284,7 @@ algorithm
       BackendDAE.InnerEquations innerEquations;
       array<list<Integer>> otherSimEqMapping;
       BackendDAE.EquationArray otherEqs;
-      BackendDAE.IncidenceMatrix m,mT;
+      BackendDAE.AdjacencyMatrix m,mT;
       BackendDAE.StrongComponent comp;
       BackendDAE.Variables otherVars;
       HpcOmTaskGraph.TaskGraph graph, graphMerged;
@@ -2308,12 +2308,12 @@ algorithm
       eqIdcsSys = List.intRange(numEqs);
       (varIdcLstSys,_) = List.mapFold(varIdcsLsts,genSystemVarIdcs,1);
 
-      // create incidence matrix
+      // create adjacency matrix
       otherEqLst = List.map1(eqIdcs,List.getIndexFirst,eqsIn);
       otherVarLst = List.map1(varIdcs,List.getIndexFirst,varsIn);
       otherVars = BackendVariable.listVar1(otherVarLst);
       otherEqs = BackendEquation.listEquation(otherEqLst);
-      (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(otherVars,otherEqs, BackendDAE.ABSOLUTE(),NONE(),isInitial);
+      (m,mT) = BackendDAEUtil.adjacencyMatrixDispatch(otherVars,otherEqs, BackendDAE.ABSOLUTE(),NONE(),isInitial);
 
       // build task graph and taskgraphmeta
       (graph,meta) = HpcOmTaskGraph.getEmptyTaskGraph(numEqs,numEqs,numVars);
@@ -2469,8 +2469,8 @@ protected function buildMatchedGraphForTornSystem
   input Integer idx;
   input list<Integer> eqsIn;
   input list<list<Integer>> varsIn;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrixT mt;
   input array<list<Integer>> graphIn;
   output array<list<Integer>> graphOut;
 algorithm

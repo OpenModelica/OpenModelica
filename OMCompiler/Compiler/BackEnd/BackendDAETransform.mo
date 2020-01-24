@@ -73,7 +73,7 @@ protected
 
 public function strongComponentsScalar "author: PA
   This is the second part of the BLT sorting. It takes the variable
-  assignments and the incidence matrix as input and identifies strong
+  assignments and the adjacency matrix as input and identifies strong
   components, i.e. subsystems of equations."
   input BackendDAE.EqSystem inSystem;
   input BackendDAE.Shared inShared;
@@ -85,7 +85,7 @@ algorithm
   (outSystem, outComps) := matchcontinue inSystem
     local
       BackendDAE.EqSystem syst;
-      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.AdjacencyMatrixT mt;
       BackendDAE.StrongComponents comps;
       array<Integer> ass1, ass2;
       array<Integer> markarray;
@@ -99,7 +99,7 @@ algorithm
       GC.free(markarray);
       ass1 := varAssignmentNonScalar(ass1, mapIncRowEqn);
 
-      // Frenkel TUD: Do not hand over the scalar incidence Matrix because following modules does not check if scalar or not
+      // Frenkel TUD: Do not hand over the scalar adjacency Matrix because following modules does not check if scalar or not
       syst := BackendDAE.EQSYSTEM(syst.orderedVars, syst.orderedEqs, NONE(), NONE(), NONE(), BackendDAE.MATCHING(ass1, ass2, comps), syst.stateSets, syst.partitionKind, syst.removedEqs);
     then (syst, comps);
 
@@ -226,8 +226,8 @@ algorithm
       Integer compelem, v;
       list<Integer> comp, varindxs;
       array<Integer> ass1, ass2;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.AdjacencyMatrix m;
+      BackendDAE.AdjacencyMatrixT mt;
       BackendDAE.Variables vars, vars_1;
       list<BackendDAE.Equation> eqn_lst, eqn_lst1, cont_eqn, disc_eqn;
       list<BackendDAE.Var> var_lst, var_lst_1, cont_var, disc_var;
@@ -281,7 +281,7 @@ algorithm
       (mixedSystem, _) = BackendEquation.iterationVarsinRelations(eqn_lst1, vars_1);
       if not Flags.isSet(Flags.DISABLE_JACSCC) then
         syst = BackendDAEUtil.createEqSystem(vars_1, eqns_1);
-        (m, mt) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE(), NONE(), BackendDAEUtil.isInitializationDAE(ishared));
+        (m, mt) = BackendDAEUtil.adjacencyMatrix(syst, BackendDAE.ABSOLUTE(), NONE(), BackendDAEUtil.isInitializationDAE(ishared));
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         (jac, shared) = SymbolicJacobian.calculateJacobian(vars_1, eqns_1, m, true, ishared);
         // Jacobian of a Linear System is always linear

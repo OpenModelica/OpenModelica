@@ -173,7 +173,7 @@ algorithm
                                                     NONE()
                                                     ));
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
-  BackendDAEUtil.checkIncidenceMatrixSolvability(syst, functionTree,BackendDAEUtil.isInitializationDAE(outBackendDAE.shared));
+  BackendDAEUtil.checkAdjacencyMatrixSolvability(syst, functionTree,BackendDAEUtil.isInitializationDAE(outBackendDAE.shared));
   if Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) then
     Error.addSourceMessage(Error.BACKENDDAEINFO_LOWER,{String(BackendEquation.equationArraySize(syst.orderedEqs)), String(BackendVariable.varsSize(syst.orderedVars))},AbsynUtil.dummyInfo);
   end if;

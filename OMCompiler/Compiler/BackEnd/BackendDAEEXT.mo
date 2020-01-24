@@ -204,14 +204,14 @@ end getF;
  see: http://bmi.osu.edu/~kamer/index.html
  *****************************************/
 
-public function setIncidenceMatrix "author: Frenkel TUD 2012-04"
+public function setAdjacencyMatrix "author: Frenkel TUD 2012-04"
   input Integer nv;
   input Integer ne;
   input Integer nz;
   input array<list<Integer>> m;
 
-  external "C" BackendDAEEXT_setIncidenceMatrix(nv,ne,nz,m) annotation(Library = "omcruntime");
-end setIncidenceMatrix;
+  external "C" BackendDAEEXT_setAdjacencyMatrix(nv,ne,nz,m) annotation(Library = "omcruntime");
+end setAdjacencyMatrix;
 
 /* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
 public function cheapmatching

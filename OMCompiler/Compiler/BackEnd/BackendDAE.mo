@@ -674,16 +674,12 @@ end TimeEvent;
 // AdjacencyMatrixes
 //
 public
-type IncidenceMatrixElementEntry = Integer;
-type IncidenceMatrixElement = list<IncidenceMatrixElementEntry>;
-type IncidenceMatrix = array<IncidenceMatrixElement> "array<list<Integer>>";
-type IncidenceMatrixT = IncidenceMatrix
+type AdjacencyMatrixElementEntry = Integer;
+type AdjacencyMatrixElement = list<AdjacencyMatrixElementEntry>;
+type AdjacencyMatrix = array<AdjacencyMatrixElement> "array<list<Integer>>";
+type AdjacencyMatrixT = AdjacencyMatrix
 "a list of equation indices (1..n), one for each variable. Equations that -only-
  contain the state variable and not the derivative have a negative index.";
-
-public
-type AdjacencyMatrix = IncidenceMatrix;
-type AdjacencyMatrixT = IncidenceMatrixT;
 
 type AdjacencyMatrixMapping = tuple<array<list<Integer>>, array<Integer>, IndexType, Boolean, Boolean>
 "a mapping for adjacency matrices that contains:
@@ -724,12 +720,12 @@ type Constraints = list<.DAE.Constraint> "Constraints on the solvability of the 
 
 public
 uniontype IndexType
-  record ABSOLUTE "incidence matrix with absolute indexes" end ABSOLUTE;
-  record NORMAL "incidence matrix with positive/negative indexes" end NORMAL;
-  record SOLVABLE "incidence matrix with only solvable entries, for example {a,b,c}[d] then d is skipped" end SOLVABLE;
-  record BASECLOCK_IDX "incidence matrix for base-clock partitioning" end BASECLOCK_IDX;
-  record SUBCLOCK_IDX "incidence matrix for sub-clock partitioning" end SUBCLOCK_IDX;
-  record SPARSE "incidence matrix as normal, but add for inputs also a value" end SPARSE;
+  record ABSOLUTE "adjacency matrix with absolute indexes" end ABSOLUTE;
+  record NORMAL "adjacency matrix with positive/negative indexes" end NORMAL;
+  record SOLVABLE "adjacency matrix with only solvable entries, for example {a,b,c}[d] then d is skipped" end SOLVABLE;
+  record BASECLOCK_IDX "adjacency matrix for base-clock partitioning" end BASECLOCK_IDX;
+  record SUBCLOCK_IDX "adjacency matrix for sub-clock partitioning" end SUBCLOCK_IDX;
+  record SPARSE "adjacency matrix as normal, but add for inputs also a value" end SPARSE;
 end IndexType;
 
 //

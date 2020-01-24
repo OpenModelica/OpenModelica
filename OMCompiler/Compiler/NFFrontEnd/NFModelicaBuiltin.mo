@@ -2353,7 +2353,7 @@ end codeToString;
 function dumpXMLDAE "Outputs the DAE system corresponding to a specific model."
   input TypeName className;
   input String translationLevel = "flat" "flat, optimiser, backEnd, or stateSpace";
-  input Boolean addOriginalIncidenceMatrix = false;
+  input Boolean addOriginalAdjacencyMatrix = false;
   input Boolean addSolvingInfo = false;
   input Boolean addMathMLCode = false;
   input Boolean dumpResiduals = false;

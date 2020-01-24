@@ -1940,7 +1940,7 @@ algorithm
     BackendDAE.EquationArray eqs;
     BackendDAE.Shared shared;
     BackendDAE.EqSystem syst;
-    BackendDAE.IncidenceMatrix m, mT;
+    BackendDAE.AdjacencyMatrix m, mT;
     list<Integer> eqIdcs;
     list<CommonSubExp> cseLst;
 
@@ -1952,11 +1952,11 @@ algorithm
   case(BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs), BackendDAE.SHARED(functionTree=functionTree))
     algorithm
       isInitial := BackendDAEUtil.isInitializationDAE(sharedIn);
-      (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(sysIn, BackendDAE.ABSOLUTE(), SOME(functionTree), isInitial);
+      (_, m, mT) := BackendDAEUtil.getAdjacencyMatrix(sysIn, BackendDAE.ABSOLUTE(), SOME(functionTree), isInitial);
           //print("start this eqSystem\n");
           //BackendDump.dumpEqSystem(sysIn, "eqSystem input");
-          //BackendDump.dumpIncidenceMatrix(m);
-          //BackendDump.dumpIncidenceMatrixT(mT);
+          //BackendDump.dumpAdjacencyMatrix(m);
+          //BackendDump.dumpAdjacencyMatrixT(mT);
       cseLst := commonSubExpressionFind(m, mT, vars, eqs, isInitial);
           //if not listEmpty(cseLst) then print("update "+stringDelimitList(List.map(cseLst, printCSE), "\n")+"\n");end if;
       syst := commonSubExpressionUpdate(cseLst, m, mT, sysIn);
@@ -1971,8 +1971,8 @@ algorithm
 end commonSubExpression;
 
 protected function commonSubExpressionFind
-  input BackendDAE.IncidenceMatrix mIn;
-  input BackendDAE.IncidenceMatrix mTIn;
+  input BackendDAE.AdjacencyMatrix mIn;
+  input BackendDAE.AdjacencyMatrix mTIn;
   input BackendDAE.Variables varsIn;
   input BackendDAE.EquationArray eqsIn;
   input Boolean isInitial;
@@ -1985,7 +1985,7 @@ protected
   BackendDAE.Variables vars, linPathVars;
   BackendDAE.EquationArray eqs;
   BackendDAE.EqSystem eqSys;
-  BackendDAE.IncidenceMatrix m, mT;
+  BackendDAE.AdjacencyMatrix m, mT;
   list<BackendDAE.Equation> eqLst;
   list<BackendDAE.Var> varLst;
   list<CommonSubExp> cseLst2, cseLst3, shortenPathsCSE;
@@ -2007,10 +2007,10 @@ algorithm
     //(varLst,varIdcs) := List.filterOnTrueSync(varLst,BackendVariable.isVarNonDiscrete,varIdcs);// no discrete vars
     vars := BackendVariable.listVar1(varLst);
     eqSys := BackendDAEUtil.createEqSystem(vars, eqs);
-    (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(eqSys, BackendDAE.ABSOLUTE(), NONE(), isInitial);
+    (_, m, mT) := BackendDAEUtil.getAdjacencyMatrix(eqSys, BackendDAE.ABSOLUTE(), NONE(), isInitial);
         //BackendDump.dumpEqSystem(eqSys, "reduced system for CSE 2");
-        //BackendDump.dumpIncidenceMatrix(m);
-        //BackendDump.dumpIncidenceMatrix(mT);
+        //BackendDump.dumpAdjacencyMatrix(m);
+        //BackendDump.dumpAdjacencyMatrix(mT);
         //varAtts := List.threadMap(List.fill(false, listLength(varIdcs)), List.fill("", listLength(varIdcs)), Util.makeTuple);
         //eqAtts := List.threadMap(List.fill(false, listLength(eqIdcs)), List.fill("", listLength(eqIdcs)), Util.makeTuple);
         //BackendDump.dumpBipartiteGraphStrongComponent2(vars, eqs, m, varAtts, eqAtts, "CSE2_"+intString(arrayLength(mIn)));
@@ -2034,10 +2034,10 @@ algorithm
     varLst := List.map1(varIdcs, BackendVariable.getVarAtIndexFirst, varsIn);
     vars := BackendVariable.listVar1(varLst);
     eqSys := BackendDAEUtil.createEqSystem(vars, eqs);
-    (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(eqSys, BackendDAE.ABSOLUTE(), NONE(), isInitial);
+    (_, m, mT) := BackendDAEUtil.getAdjacencyMatrix(eqSys, BackendDAE.ABSOLUTE(), NONE(), isInitial);
         //BackendDump.dumpEqSystem(eqSys, "reduced system for CSE 3");
-        //BackendDump.dumpIncidenceMatrix(m);
-        //BackendDump.dumpIncidenceMatrix(mT);
+        //BackendDump.dumpAdjacencyMatrix(m);
+        //BackendDump.dumpAdjacencyMatrix(mT);
         //varAtts := List.threadMap(List.fill(false, listLength(varIdcs)), List.fill("", listLength(varIdcs)), Util.makeTuple);
         //eqAtts := List.threadMap(List.fill(false, listLength(eqIdcs)), List.fill("", listLength(eqIdcs)), Util.makeTuple);
         //BackendDump.dumpBipartiteGraphStrongComponent2(vars, eqs, m, varAtts, eqAtts, "CSE3_"+intString(arrayLength(mIn)));
@@ -2056,8 +2056,8 @@ protected function shortenPaths"looks for a path in the bipartite graph where ea
 Then check if variables which are shared by 2 equations can be combined somehow to rearrange edges and create a shortcut of this path.
 author:Waurich TUD 2016-05"
   input list<list<Integer>> allPartitions;
-  input BackendDAE.IncidenceMatrix mIn;
-  input BackendDAE.IncidenceMatrix mTIn;
+  input BackendDAE.AdjacencyMatrix mIn;
+  input BackendDAE.AdjacencyMatrix mTIn;
   input BackendDAE.Variables allVars;
   input BackendDAE.EquationArray allEqs;
   input array<Integer> eqMap;
@@ -2066,7 +2066,7 @@ author:Waurich TUD 2016-05"
   input Boolean isInitial;
   output list<CommonSubExp> cseOut;
 protected
-  BackendDAE.IncidenceMatrix m, mT;
+  BackendDAE.AdjacencyMatrix m, mT;
   BackendDAE.AdjacencyMatrixEnhanced me,meT;
   BackendDAE.EqSystem eqSys;
   BackendDAE.Variables vars, pathVars;
@@ -2097,10 +2097,10 @@ algorithm
         eqs := BackendEquation.listEquation(eqLst);
 
         eqSys := BackendDAEUtil.createEqSystem(pathVars, eqs);
-        (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(eqSys, BackendDAE.SOLVABLE(), NONE(), isInitial);
+        (_, m, mT) := BackendDAEUtil.getAdjacencyMatrix(eqSys, BackendDAE.SOLVABLE(), NONE(), isInitial);
 
-          //BackendDump.dumpIncidenceMatrix(m);
-          //BackendDump.dumpIncidenceMatrixT(mT);
+          //BackendDump.dumpAdjacencyMatrix(m);
+          //BackendDump.dumpAdjacencyMatrixT(mT);
           //varAtts := List.threadMap(List.fill(false, arrayLength(mT)), List.fill("", arrayLength(mT)), Util.makeTuple);
           //eqAtts := List.threadMap(List.fill(false, arrayLength(m)), List.fill("", arrayLength(m)), Util.makeTuple);
           //BackendDump.dumpBipartiteGraphStrongComponent2(pathVars, eqs, m, varAtts, eqAtts, "shortenPaths"+stringDelimitList(List.map(partition,intString),"_"));
@@ -2130,8 +2130,8 @@ end shortenPaths;
 protected function getCSE2"traverses the partitions and checks for CSE2 i.e a=b+const. ; c = b+const. --> a=c
 author:Waurich TUD 2014-11"
   input list<Integer> partition;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrix mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrix mT;
   input BackendDAE.Variables vars;  // for partition
   input BackendDAE.EquationArray eqs;  // for partition
   input list<Integer> eqMap;
@@ -2186,8 +2186,8 @@ end getCSE2;
 protected function getCSE3"traverses the partitions and checks for CSE3 i.e a=b+c+const. ; d = b+c+const. --> a=d
 author:Waurich TUD 2014-11"
   input list<Integer> partition;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrix mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrix mT;
   input BackendDAE.Variables vars;  // for partition
   input BackendDAE.EquationArray eqs;  // for partition
   input list<Integer> eqMap;
@@ -2263,8 +2263,8 @@ for i in 1:2 loop x[i] =i*time; end for;
 Thats why one original equation is replaced by an alias equation.
 author:Waurich TUD 2014-11"
   input list<CommonSubExp> tplsIn;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrix mT;
+  input BackendDAE.AdjacencyMatrix m;
+  input BackendDAE.AdjacencyMatrix mT;
   input BackendDAE.EqSystem sysIn;
   output BackendDAE.EqSystem sysOut;
 algorithm

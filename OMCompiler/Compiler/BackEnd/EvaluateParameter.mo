@@ -106,8 +106,8 @@ protected
   list<list<Integer>> comps;
   array<Integer> ass2, markarr;
   Integer size, mark, nselect;
-  BackendDAE.IncidenceMatrixT m;
-  BackendDAE.IncidenceMatrixT mt;
+  BackendDAE.AdjacencyMatrixT m;
+  BackendDAE.AdjacencyMatrixT mt;
   list<Integer> selectedParameters;
   AvlSetCR.Tree ht;
   Boolean isInitial;
@@ -158,7 +158,7 @@ algorithm
     mt := arrayCreate(size, {});
     ass2 := Array.createIntRange(size);
     ht := FCore.getEvaluatedParams(cache); // get structural parameters
-    ((_, _, _, selectedParameters, m, mt, _, _)) := BackendVariable.traverseBackendDAEVars(globalKnownVars, getParameterIncidenceMatrix, (globalKnownVars, 1, selectParameterfunc, {}, m, mt, ht, isInitial));
+    ((_, _, _, selectedParameters, m, mt, _, _)) := BackendVariable.traverseBackendDAEVars(globalKnownVars, getParameterAdjacencyMatrix, (globalKnownVars, 1, selectParameterfunc, {}, m, mt, ht, isInitial));
     nselect := listLength(selectedParameters);
 
     if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
@@ -166,8 +166,8 @@ algorithm
       print("Number of parameters: " + intString(size) + "\n");
       print("Number of parameters selected for evaluation: " + intString(nselect) + "\n");
       print("Selected parameters for evaluation:\n" + stringDelimitList(List.map(selectedParameters, intString), ",") + "\n");
-      BackendDump.dumpIncidenceMatrix(m);
-      BackendDump.dumpIncidenceMatrixT(mt);
+      BackendDump.dumpAdjacencyMatrix(m);
+      BackendDump.dumpAdjacencyMatrixT(mt);
     end if;
 
 
@@ -277,15 +277,15 @@ algorithm
 end evaluateParameters;
 
 
-protected function getParameterIncidenceMatrix
-" This function calculates the incidence matrix for parameters and determines which parameters should be calculated
+protected function getParameterAdjacencyMatrix
+" This function calculates the adjacency matrix for parameters and determines which parameters should be calculated
   with the input function 'selectParameter'. Structural parameters are also marked to be calculated.
   ptaeuber: Evaluating structural parameters (again) in this module is just a workaround since structural parameters
   are already calculated in the Frontend but the value is lost."
   input BackendDAE.Var inVar;
-  input tuple<BackendDAE.Variables,Integer,selectParameterFunc,list<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,AvlSetCR.Tree,Boolean> inTpl;
+  input tuple<BackendDAE.Variables,Integer,selectParameterFunc,list<Integer>,BackendDAE.AdjacencyMatrix,BackendDAE.AdjacencyMatrixT,AvlSetCR.Tree,Boolean> inTpl;
   output BackendDAE.Var outVar;
-  output tuple<BackendDAE.Variables,Integer,selectParameterFunc,list<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT,AvlSetCR.Tree,Boolean> outTpl;
+  output tuple<BackendDAE.Variables,Integer,selectParameterFunc,list<Integer>,BackendDAE.AdjacencyMatrix,BackendDAE.AdjacencyMatrixT,AvlSetCR.Tree,Boolean> outTpl;
 algorithm
   (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
@@ -297,15 +297,15 @@ algorithm
       AvlSetInt.Tree tree;
       list<Integer> ilst,selectedParameters;
       Integer index;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.AdjacencyMatrix m;
+      BackendDAE.AdjacencyMatrixT mt;
       selectParameterFunc selectParameter;
       Boolean select, isInitial;
       AvlSetCR.Tree ht;
 
     case (v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),bindExp=SOME(e)),(globalKnownVars,index,selectParameter,selectedParameters,m,mt,ht,isInitial))
       equation
-        (_,(_,tree,_)) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (globalKnownVars,AvlSetInt.EMPTY(),isInitial));
+        (_,(_,tree,_)) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingadjacencyRowExpFinder, (globalKnownVars,AvlSetInt.EMPTY(),isInitial));
         ilst = AvlSetInt.listKeys(tree);
         cref = BackendVariable.varCref(v);
         select = selectParameter(v) or AvlSetCR.hasKey(ht, cref);
@@ -317,7 +317,7 @@ algorithm
     case (v as BackendDAE.VAR(varKind=BackendDAE.PARAM(),values=attr),(globalKnownVars,index,selectParameter,selectedParameters,m,mt,ht,isInitial))
       equation
         e = DAEUtil.getStartAttrFail(attr);
-        (_,(_,tree,_)) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingincidenceRowExpFinder, (globalKnownVars,AvlSetInt.EMPTY(),isInitial));
+        (_,(_,tree,_)) = Expression.traverseExpTopDown(e, BackendDAEUtil.traversingadjacencyRowExpFinder, (globalKnownVars,AvlSetInt.EMPTY(),isInitial));
         ilst = AvlSetInt.listKeys(tree);
         cref = BackendVariable.varCref(v);
         select = selectParameter(v) or AvlSetCR.hasKey(ht, cref);
@@ -335,14 +335,14 @@ algorithm
         mt = arrayUpdate(mt,index,ilst);
       then (v,(globalKnownVars,index+1,selectParameter,selectedParameters,m,mt,ht,isInitial));
   end matchcontinue;
-end getParameterIncidenceMatrix;
+end getParameterAdjacencyMatrix;
 
 
 protected function evaluateSelectedParameters
 "author Frenkel TUD"
   input list<Integer> iSelected;
   input output BackendDAE.Variables globalKnownVars;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input BackendDAE.EquationArray inIEqns;
   input output FCore.Cache cache;
   input FCore.Graph graph;
@@ -362,7 +362,7 @@ protected function evaluateSelectedParameters0
 "author Frenkel TUD"
   input Integer i;
   input output BackendDAE.Variables globalKnownVars;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input BackendDAE.EquationArray inIEqns;
   input output FCore.Cache cache;
   input FCore.Graph graph;
@@ -395,7 +395,7 @@ protected function evaluateSelectedParameters1
 "author Frenkel TUD"
   input list<Integer> iUsed;
   input output BackendDAE.Variables globalKnownVars;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input BackendDAE.EquationArray inIEqns;
   input output FCore.Cache cache;
   input FCore.Graph graph;
@@ -612,7 +612,7 @@ protected function evaluateFixedAttribute
   input output BackendDAE.Var var;
   input Boolean addVar;
   input output BackendDAE.Variables globalKnownVars;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input BackendDAE.EquationArray inIEqns;
   input output FCore.Cache cache;
   input FCore.Graph graph;
@@ -676,7 +676,7 @@ protected function evaluateFixedAttribute1
   input output BackendDAE.Var var;
   input Boolean addVar;
   input output BackendDAE.Variables globalKnownVars;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input BackendDAE.EquationArray inIEqns;
   input output FCore.Cache cache;
   input FCore.Graph graph;
@@ -692,7 +692,7 @@ protected
 algorithm
    // apply replacements
   (e1,_) := BackendVarTransform.replaceExp(e, repl, NONE());
-  (_,(_,ilst,_)) := Expression.traverseExpTopDown(e1, BackendDAEUtil.traversingincidenceRowExpFinder, (globalKnownVars,AvlSetInt.EMPTY(), isInitial));
+  (_,(_,ilst,_)) := Expression.traverseExpTopDown(e1, BackendDAEUtil.traversingadjacencyRowExpFinder, (globalKnownVars,AvlSetInt.EMPTY(), isInitial));
   (globalKnownVars,cache,mark,repl) := evaluateSelectedParameters1(AvlSetInt.listKeys(ilst),globalKnownVars,m,inIEqns,cache,graph,mark,markarr,isInitial,repl);
   (e1,_) := BackendVarTransform.replaceExp(e1, repl, NONE());
   (e1,_) := ExpressionSimplify.simplify(e1);
@@ -762,7 +762,7 @@ end replaceCrefWithBindStartExp;
 protected function traverseParameterSorted
   input list<list<Integer>> inComps;
   input BackendDAE.Variables inGlobalKnownVars;
-  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.AdjacencyMatrix m;
   input BackendDAE.EquationArray inIEqns;
   input FCore.Cache iCache;
   input FCore.Graph graph;
@@ -1006,9 +1006,9 @@ end traverseExpVisitorWrapper;
 protected function replaceEvaluatedParametersSystem
 "author Frenkel TUD"
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,FCore.Cache,FCore.Graph,Integer,array<Integer>,Boolean,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> inTypeA;
+  input tuple<BackendDAE.Variables,BackendDAE.AdjacencyMatrix,BackendDAE.EquationArray,FCore.Cache,FCore.Graph,Integer,array<Integer>,Boolean,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> inTypeA;
   output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,FCore.Cache,FCore.Graph,Integer,array<Integer>,Boolean,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> outTypeA;
+  output tuple<BackendDAE.Variables,BackendDAE.AdjacencyMatrix,BackendDAE.EquationArray,FCore.Cache,FCore.Graph,Integer,array<Integer>,Boolean,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> outTypeA;
 protected
   BackendDAE.Variables vars;
 algorithm
@@ -1020,14 +1020,14 @@ end replaceEvaluatedParametersSystem;
 protected function replaceEvaluatedParameterTraverser
 "author: Frenkel TUD 2011-04"
  input BackendDAE.Var inVar;
- input tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,FCore.Cache,FCore.Graph,Integer,array<Integer>,Boolean,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> inTpl;
+ input tuple<BackendDAE.Variables,BackendDAE.AdjacencyMatrix,BackendDAE.EquationArray,FCore.Cache,FCore.Graph,Integer,array<Integer>,Boolean,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> inTpl;
  output BackendDAE.Var outVar;
- output tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,FCore.Cache,FCore.Graph,Integer,array<Integer>,Boolean,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> outTpl;
+ output tuple<BackendDAE.Variables,BackendDAE.AdjacencyMatrix,BackendDAE.EquationArray,FCore.Cache,FCore.Graph,Integer,array<Integer>,Boolean,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> outTpl;
 algorithm
   (outVar,outTpl) := matchcontinue (inVar,inTpl)
     local
       BackendDAE.Variables globalKnownVars;
-      BackendDAE.IncidenceMatrix m;
+      BackendDAE.AdjacencyMatrix m;
       BackendDAE.EquationArray ieqns;
       FCore.Cache cache;
       FCore.Graph graph;
