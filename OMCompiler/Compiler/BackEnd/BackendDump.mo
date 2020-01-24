@@ -1188,16 +1188,16 @@ algorithm
         (elst1,vlst1Lst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
         vlst1 = List.flatten(vlst1Lst);
         varlst = List.map1r(vlst1, BackendVariable.getVarAt, vars);
-        print("\ninternal vars\n");
+        print("\ninternal vars (" + intString(listLength(varlst)) + ")\n");
         printVarList(varlst);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        print("\nresidual vars\n");
+        print("\nresidual vars (" + intString(listLength(varlst)) + ")\n");
         printVarList(varlst);
-        print("\ninternal equation\n");
         eqnlst = BackendEquation.getList(elst1,eqns);
+        print("\ninternal equations (" + intString(listLength(eqnlst)) + ")\n");
         printEquationList(eqnlst);
-        print("\nresidual equations\n");
         eqnlst = BackendEquation.getList(elst,eqns);
+        print("\nresidual equations (" + intString(listLength(eqnlst)) + ")\n");
         printEquationList(eqnlst);
         print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
@@ -1262,6 +1262,7 @@ protected
   BackendDAE.EquationArray eqns;
   BackendDAE.Variables vars;
   Integer isyst = 1;
+  Boolean firstComp = true; // used to print header only if there is actually an algebraic loop
 algorithm
     _ := match outDAE.shared
             case BackendDAE.SHARED(backendDAEType=BackendDAE.SIMULATION()) then print("SIMULATION\n");
@@ -1270,10 +1271,14 @@ algorithm
             end match;
 
    for syst in inDAE.eqs loop
-     print("\nsystem " + intString(isyst) + "\n" + UNDERLINE + "\n");
+     firstComp := true;
      BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns, matching=BackendDAE.MATCHING(comps=comps)) := syst;
      for comp in comps loop
        if BackendEquation.isEquationsSystem(comp) or BackendEquation.isTornSystem(comp) then
+         if firstComp then
+           firstComp := false;
+           print("\nsystem " + intString(isyst) + "\n" + UNDERLINE + "\n");
+         end if;
          print("\n" + BORDER + BORDER + "\n dumpLoops: SORTED COMPONENT \n" + BORDER + BORDER + "\n\n");
          dumpEqnsSolved2({comp}, eqns, vars);
          if Flags.isSet(Flags.DUMP_LOOPS_VERBOSE) then

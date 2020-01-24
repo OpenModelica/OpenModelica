@@ -36,6 +36,12 @@ val(x3,{0,1});
 // true
 // ""
 //
+// ########################################
+//
+//  Algbraic Loops (Simulation):
+//
+// ########################################
+//
 // system 1
 // ========================================
 //
@@ -45,7 +51,7 @@ val(x3,{0,1});
 //
 // torn nonlinear Equationsystem:
 //
-// internal vars
+// internal vars (10)
 // 1: y2$$Pfoo$Pf9:VARIABLE()  type: Real
 // 2: x4:VARIABLE()  type: Real
 // 3: y1$$Pfoo$Pf12:VARIABLE()  type: Real
@@ -57,11 +63,11 @@ val(x3,{0,1});
 // 9: b$$Pfoo$Pf11:VARIABLE()  type: Real
 // 10: y1$$Pfoo$Pf8:VARIABLE()  type: Real
 //
-// residual vars
+// residual vars (2)
 // 1: x3:VARIABLE()  type: Real
 // 2: x2:VARIABLE()  type: Real
 //
-// internal equation
+// internal equations (10)
 // 1/1 (1): x2 = y2$$Pfoo$Pf9   [unknown |0|0|0|0|]
 // 2/2 (1): y2$$Pfoo$Pf9 = -5.0 + 3.0 * (1.0 + 3.0 * x2 + x3 + (-5.0) * x4)   [unknown |0|0|0|0|]
 // 3/3 (1): x4 = y1$$Pfoo$Pf12   [unknown |0|0|0|0|]
@@ -73,9 +79,57 @@ val(x3,{0,1});
 // 9/9 (1): b$$Pfoo$Pf11 = 23.0 * a$$Pfoo$Pf10   [unknown |0|0|0|0|]
 // 10/10 (1): y1$$Pfoo$Pf8 = b$$Pfoo$Pf11 * (1.0 + 3.0 * x2 + x3 + (-5.0) * x4) - a$$Pfoo$Pf10   [unknown |0|0|0|0|]
 //
-// residual equations
+// residual equations (2)
 // 1/1 (1): y1$$Pfoo$Pf12 = b$$Pfoo$Pf15 * (x1 + x3 - x2) - a$$Pfoo$Pf14   [unknown |0|0|0|0|]
 // 2/2 (1): x1 = y1$$Pfoo$Pf8   [unknown |0|0|0|0|]
+//
+//
+// ########################################
+//
+//  Algbraic Loops (Initialization):
+//
+// ########################################
+//
+// system 1
+// ========================================
+//
+// ################################################################################
+//  dumpLoops: SORTED COMPONENT
+// ################################################################################
+//
+// torn nonlinear Equationsystem:
+//
+// internal vars (10)
+// 1: y2$$Pfoo$Pf5:VARIABLE()  type: Real
+// 2: x1:VARIABLE()  type: Real
+// 3: a$$Pfoo$Pf6:VARIABLE()  type: Real
+// 4: b$$Pfoo$Pf7:VARIABLE()  type: Real
+// 5: y1$$Pfoo$Pf4:VARIABLE()  type: Real
+// 6: x4:VARIABLE()  type: Real
+// 7: a$$Pfoo$Pf2:VARIABLE()  type: Real
+// 8: y2$$Pfoo$Pf1:VARIABLE()  type: Real
+// 9: b$$Pfoo$Pf3:VARIABLE()  type: Real
+// 10: y1$$Pfoo$Pf0:VARIABLE()  type: Real
+//
+// residual vars (2)
+// 1: x2:VARIABLE()  type: Real
+// 2: x3:VARIABLE()  type: Real
+//
+// internal equations (10)
+// 1/1 (1): x3 = y2$$Pfoo$Pf5   [dynamic |0|0|0|0|]
+// 2/2 (1): y2$$Pfoo$Pf5 = -5.0 + 3.0 * (x1 + x3 - x2)   [unknown |0|0|0|0|]
+// 3/3 (1): a$$Pfoo$Pf6 = 10.0 + sin(time) - (x1 + x3 - x2)   [unknown |0|0|0|0|]
+// 4/4 (1): b$$Pfoo$Pf7 = 23.0 * a$$Pfoo$Pf6   [unknown |0|0|0|0|]
+// 5/5 (1): y1$$Pfoo$Pf4 = b$$Pfoo$Pf7 * (x1 + x3 - x2) - a$$Pfoo$Pf6   [unknown |0|0|0|0|]
+// 6/6 (1): x4 = y1$$Pfoo$Pf4   [dynamic |0|0|0|0|]
+// 7/7 (1): a$$Pfoo$Pf2 = 10.0 + 3.0 * x1 + cos(time) - (1.0 + 3.0 * x2 + x3 + (-5.0) * x4)   [unknown |0|0|0|0|]
+// 8/8 (1): y2$$Pfoo$Pf1 = -5.0 + 3.0 * (1.0 + 3.0 * x2 + x3 + (-5.0) * x4)   [unknown |0|0|0|0|]
+// 9/9 (1): b$$Pfoo$Pf3 = 23.0 * a$$Pfoo$Pf2   [unknown |0|0|0|0|]
+// 10/10 (1): y1$$Pfoo$Pf0 = b$$Pfoo$Pf3 * (1.0 + 3.0 * x2 + x3 + (-5.0) * x4) - a$$Pfoo$Pf2   [unknown |0|0|0|0|]
+//
+// residual equations (2)
+// 1/1 (1): x2 = y2$$Pfoo$Pf1   [dynamic |0|0|0|0|]
+// 2/2 (1): x1 = y1$$Pfoo$Pf0   [dynamic |0|0|0|0|]
 //
 // record SimulationResult
 //     resultFile = "foo_res.mat",
