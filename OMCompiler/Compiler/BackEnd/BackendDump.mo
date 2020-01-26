@@ -1749,7 +1749,7 @@ algorithm
       equation
         s1 = ExpressionDump.printExpStr(iter) + " in " + ExpressionDump.printExpStr(start) + " : " + ExpressionDump.printExpStr(stop);
         s2 = equationString(eqn);
-        res = stringAppendList({"for ", s1, " loop \n    ", s2, "; end for; "});
+        res = stringAppendList({"for ", s1, " loop\n    ", s2, "; end for;"});
       then
         res;
   end match;

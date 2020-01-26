@@ -300,6 +300,7 @@ algorithm
       list<list<BackendDAE.Equation>> eqnslst;
       list<DAE.Statement> statementLst;
       DAE.Expand expand;
+      BackendDAE.Equation forEq, body;
       BackendDAE.WhenEquation whenEqn;
       BackendDAE.EquationAttributes eqAttr;
 
@@ -337,7 +338,7 @@ algorithm
       then
         (BackendDAE.EQUATION(e1_1, e2_1, source, eqAttr), funcs);
 
-    // RESIDUAL_EQUATION
+    // residual equations
     case BackendDAE.RESIDUAL_EQUATION(exp=e1, source=source, attr=eqAttr)
       equation
 
@@ -405,12 +406,22 @@ algorithm
       then
         (BackendDAE.IF_EQUATION(expExpLst, eqnslst, eqns, source, eqAttr), funcs);
 
+    // when-equations
     case BackendDAE.WHEN_EQUATION(size=size, whenEquation=whenEqn, source=source, attr=eqAttr)
       equation
         (whenEqn, funcs) = differentiateWhenEquations(whenEqn, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
 
       then
         (BackendDAE.WHEN_EQUATION(size, whenEqn, source, eqAttr), funcs);
+
+    // for-equations
+    case forEq as BackendDAE.FOR_EQUATION()
+      algorithm
+        (body, funcs) := differentiateEquationFragile(forEq.body, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
+        forEq.body := body;
+      then
+        (forEq, funcs);
+
     else equation
       Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {BackendDump.equationString(inEquation), ComponentReference.crefStr(inDiffwrtCref)}, sourceInfo());
      then fail();

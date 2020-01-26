@@ -3950,6 +3950,17 @@ algorithm
         (varlst, _) = BackendVariable.getVar(cr, vars);
         vars = updateStatesVars(vars, varlst, false);
       then (e1, vars);
+    // case for FOR_LOOP
+    case DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={e1 as DAE.CREF(componentRef=cr)})
+      equation
+        // Throw away indices before searching var and add $DER
+        false = Flags.isSet(Flags.NF_SCALARIZE);
+        true = ComponentReference.crefHaveSubs(cr); // make special function for iterSubs?
+        cr = ComponentReference.crefStripIterSub(cr);
+        (v, _) = BackendVariable.getVarSingle(cr, vars);
+        (vars, _) = updateStatesVar(vars, v, e1);
+      then (exp, vars);
+    // exp is not a cref -> differentiate
     case (DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={e1}))
       equation
         (e2, shared) = Differentiate.differentiateExpTime(e1, vars, Mutable.access(inShared));

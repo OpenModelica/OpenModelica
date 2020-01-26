@@ -2224,7 +2224,7 @@ algorithm
       list<DAE.ComponentRef> conditions, solveCr;
       list<SimCode.SimEqSystem> resEqs;
       DAE.ComponentRef left, varOutput;
-      DAE.Exp e1, e2, varexp, exp_, start, cond, prevarexp;
+      DAE.Exp e1, e2, varexp, exp_, start, cond, prevarexp, iterExp;
       DAE.Ident iter;
       BackendDAE.WhenEquation whenEquation, elseWhen;
       Option<BackendDAE.WhenEquation> oelseWhen;
@@ -2253,7 +2253,7 @@ algorithm
         ({simEqSys}, iuniqueEqIndex + 1, itempvars);
 
     // for equation that may result from -d=-nfScalarize
-    case BackendDAE.FOR_EQUATION(iter = varexp, start = start, stop = cond, source = source, attr = eqAttr)
+    case BackendDAE.FOR_EQUATION(iter = iterExp, start = start, stop = cond, source = source, attr = eqAttr)
       algorithm
         (e1, e2) := match eqn.body
           case BackendDAE.EQUATION(exp = e1, scalar = e2) then
@@ -2264,17 +2264,22 @@ algorithm
             Error.addInternalError("Unsupported FOR_EQUATION: " + BackendDump.equationString(eqn)  + " ToDo: generalize SimEqSystem.SES_FOR_LOOP with embedded SimEqSystem.", sourceInfo());
           then fail();
         end match;
-        DAE.CREF(componentRef = DAE.CREF_IDENT(ident = iter)) := varexp;
+        DAE.CREF(componentRef = DAE.CREF_IDENT(ident = iter)) := iterExp;
         cr := ComponentReference.crefApplySubs(v.varName, {DAE.INDEX(DAE.CREF(DAE.CREF_IDENT(iter, DAE.T_INTEGER_DEFAULT, {}), DAE.T_INTEGER_DEFAULT))});
+        varexp := Expression.crefExp(cr);
+        if BackendVariable.isStateVar(v) then
+          cr := ComponentReference.crefPrefixDer(cr);
+          varexp := Expression.expDer(varexp);
+        end if;
         BackendDAE.SHARED(functionTree = funcs) := shared;
         try
-          (exp_, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(e1, e2, Expression.crefExp(cr), SOME(funcs), SOME(iuniqueEqIndex), true, BackendDAEUtil.isSimulationDAE(shared));
+          (exp_, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), SOME(iuniqueEqIndex), true, BackendDAEUtil.isSimulationDAE(shared));
         else
           Error.addInternalError("solving FOR_EQUATION body: " + BackendDump.equationString(eqn.body)  + "\nfor variable: " + ComponentReference.printComponentRefStr(cr) + ".", sourceInfo());
           fail();
         end try;
       then
-        ({SimCode.SES_FOR_LOOP(iuniqueEqIndex, varexp, start, cond, cr, exp_, source, eqAttr)}, iuniqueEqIndex + 1, itempvars);
+        ({SimCode.SES_FOR_LOOP(iuniqueEqIndex, iterExp, start, cond, cr, exp_, source, eqAttr)}, iuniqueEqIndex + 1, itempvars);
 
     // solved equation
     case BackendDAE.SOLVED_EQUATION(exp=e2, source=source, attr=eqAttr)
@@ -5139,7 +5144,7 @@ algorithm
         v1 := BackendVariable.setVarKind(v1, BackendDAE.JAC_VAR());
         simVar := dlowvarToSimvar(v1, NONE(), inAllVars);
         simVar.index := inResIndex;
-        resIndex := inResIndex + 1;
+        resIndex := inResIndex + (if Flags.isSet(Flags.NF_SCALARIZE) then 1 else Types.getDimensionProduct(simVar.type_));
         simVar.matrixName := SOME(inMatrixName);
         resVars := simVar::resVars;
       else
@@ -5152,12 +5157,11 @@ algorithm
         v1 := BackendVariable.setVarKind(v1, BackendDAE.JAC_DIFF_VAR());
         simVar := dlowvarToSimvar(v1, NONE(), inAllVars);
         simVar.index := inTmpIndex;
+        tmpIndex := inTmpIndex + (if Flags.isSet(Flags.NF_SCALARIZE) then 1 else Types.getDimensionProduct(simVar.type_));
         simVar.matrixName := SOME(inMatrixName);
-        tmpIndex := inTmpIndex + 1;
         tmpVars := simVar::tmpVars;
       end try;
-     then
-       createJacSimVarsColumn(restVar, inCref, inAllVars, resIndex, tmpIndex, inMatrixName, tmpVars, resVars);
+    then createJacSimVarsColumn(restVar, inCref, inAllVars, resIndex, tmpIndex, inMatrixName, tmpVars, resVars);
 
     else
      equation
@@ -8845,7 +8849,7 @@ algorithm
     case(SimCode.SES_FOR_LOOP(index=idx,iter=iterator, startIt=startIt, endIt=endIt, cref=cref, exp=exp))
       equation
         s = intString(idx) +" FOR-LOOP: "+" for "+ExpressionDump.printExpStr(iterator)+" in ("+ExpressionDump.printExpStr(startIt)+":"+ExpressionDump.printExpStr(endIt)+") loop\n";
-        s = s+ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp)+"[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]\n";
+        s = s+ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp)+" [" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]\n";
         s = s+"end for;";
     then s;
 
@@ -9341,7 +9345,7 @@ algorithm
   for var in inVars loop
     var.index := index;
     outVars := var::outVars;
-    index := index+1;
+    index := index + (if Flags.isSet(Flags.NF_SCALARIZE) then 1 else Types.getDimensionProduct(var.type_));
   end for;
   outVars := Dangerous.listReverseInPlace(outVars);
 end rewriteIndex;
@@ -14857,6 +14861,12 @@ algorithm
         local Integer index;
         case SOME(index)
         then SOME(index + getScalarElementIndex(subs, List.map(sv.numArrayElement, stringInt)) - 1);
+        // PHI: NONE() needs to be caught or else indexed arrayVars for the jacobian won't be found
+        // (things like $DER.a[$i].x.$pDERA.dummyVarA with 'x' being a state inside array 'a')
+        // not sure what the actual problem is, i.e. why they have no variable_index
+        case NONE() guard not Flags.isSet(Flags.NF_SCALARIZE) //algorithm
+          //print("simVarFromHT: sv has no variable_index: " + ComponentReference.printComponentRefStr(inCref) + "\n");
+        then NONE();
       end match;
     end if;
     sv := match sv.aliasvar

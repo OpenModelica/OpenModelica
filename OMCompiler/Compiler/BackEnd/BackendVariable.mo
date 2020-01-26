@@ -3478,15 +3478,16 @@ protected
   BackendDAE.VariableArray arr;
   Integer buckets, hash_idx;
   list<BackendDAE.CrefIndex> cr_indices;
-  DAE.ComponentRef cr;
+  DAE.ComponentRef cr, crefStripped;
 algorithm
+  crefStripped := if Flags.isSet(Flags.NF_SCALARIZE) then inCref else ComponentReference.crefStripIterSub(inCref);
   BackendDAE.VARIABLES(crefIndices=indices, varArr=arr, bucketSize=buckets) := inVariables;
-  hash_idx := ComponentReference.hashComponentRefMod(inCref, buckets) + 1;
+  hash_idx := ComponentReference.hashComponentRefMod(crefStripped, buckets) + 1;
   cr_indices := indices[hash_idx];
-  BackendDAE.CREFINDEX(index=outIndex) := List.getMemberOnTrue(inCref, cr_indices, crefIndexEqualCref);
+  BackendDAE.CREFINDEX(index=outIndex) := List.getMemberOnTrue(crefStripped, cr_indices, crefIndexEqualCref);
   outIndex := outIndex + 1;
   outVar as BackendDAE.VAR(varName = cr) := vararrayNth(arr, outIndex);
-  true := ComponentReference.crefEqualNoStringCompare(cr, inCref);
+  true := ComponentReference.crefEqualNoStringCompare(cr, crefStripped);
 end getVar2;
 
 protected function crefIndexEqualCref

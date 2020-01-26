@@ -234,17 +234,32 @@ template representationCref(ComponentRef inCref, SimCode simCode, Text& extraFun
     let representation = cref2simvar(inCref, simCode) |> var as SIMVAR(varKind=varKind, index=i, matrixName=matrixName) =>
     match varKind
     case STATE() then
-      '__z[<%i%>]'
+      if Flags.isSet(NF_SCALARIZE) then
+        '__z[<%i%>]'
+      else
+        '<%cref(inCref, useFlatArrayNotation)%><%representationCrefSubscripts(inCref, useFlatArrayNotation)%>'
     case STATE_DER() then
-      '__zDot[<%i%>]'
+      if Flags.isSet(NF_SCALARIZE) then
+        '__zDot[<%i%>]'
+      else
+        '<%cref(inCref, useFlatArrayNotation)%><%representationCrefSubscripts(inCref, useFlatArrayNotation)%>'
     case DAE_RESIDUAL_VAR() then
       '__daeResidual[<%i%>]'
     case JAC_VAR() then
-      '<%contextSystem(context)%>_<%getOption(matrixName)%>jac_y(<%i%>)'
+      if Flags.isSet(NF_SCALARIZE) then
+        '<%contextSystem(context)%>_<%getOption(matrixName)%>jac_y(<%i%>)'
+      else
+        '<%cref(inCref, useFlatArrayNotation)%><%representationCrefSubscripts(inCref, useFlatArrayNotation)%>'
     case JAC_DIFF_VAR() then
-      '<%contextSystem(context)%>_<%getOption(matrixName)%>jac_tmp(<%i%>)'
+      if Flags.isSet(NF_SCALARIZE) then
+        '<%contextSystem(context)%>_<%getOption(matrixName)%>jac_tmp(<%i%>)'
+      else
+        '<%cref(inCref, useFlatArrayNotation)%><%representationCrefSubscripts(inCref, useFlatArrayNotation)%>'
     case SEED_VAR() then
-      '<%contextSystem(context)%>_<%getOption(matrixName)%>jac_x(<%i%>)'
+      if Flags.isSet(NF_SCALARIZE) then
+        '<%contextSystem(context)%>_<%getOption(matrixName)%>jac_x(<%i%>)'
+      else
+        '<%cref(inCref, useFlatArrayNotation)%><%representationCrefSubscripts(inCref, useFlatArrayNotation)%>'
     case VARIABLE() then
       match var
         case SIMVAR(index=-2) then
@@ -265,6 +280,60 @@ template representationCref(ComponentRef inCref, SimCode simCode, Text& extraFun
   '<%representation%>'
 end representationCref;
 
+template representationCrefSubscripts(ComponentRef inCref, Boolean useFlatArrayNotation)
+""
+::=
+  match inCref
+  case CREF_IDENT(subscriptLst=subs)
+    then subscriptsToCStr(subs, useFlatArrayNotation)
+  case CREF_QUAL(componentRef=cr, subscriptLst={})
+    then representationCrefSubscripts(cr, useFlatArrayNotation)
+  case CREF_QUAL(componentRef=cr, subscriptLst=subs)
+    then '(<%subs |> s => subscriptToCStr(s) ;separator=","%><%representationCrefSubscriptsHelper(cr, useFlatArrayNotation)%>)'
+end representationCrefSubscripts;
+
+template representationCrefSubscriptsHelper(ComponentRef inCref, Boolean useFlatArrayNotation)
+""
+::=
+  match inCref
+  case CREF_IDENT(subscriptLst={})
+    then ''
+  case CREF_IDENT(subscriptLst=subs)
+    then ',<%subs |> s => subscriptToCStr(s) ;separator=","%>'
+  case CREF_QUAL(componentRef=cr, subscriptLst={})
+    then '<%representationCrefSubscriptsHelper(cr, useFlatArrayNotation)%>'
+  case CREF_QUAL(componentRef=cr, subscriptLst=subs)
+    then ',<%subs |> s => subscriptToCStr(s) ;separator=","%><%representationCrefSubscriptsHelper(cr, useFlatArrayNotation)%>'
+end representationCrefSubscriptsHelper;
+
+template crefToCStrWithoutIndexOperator(ComponentRef cr)
+ "Helper function to cref."
+::=
+  match cr
+  case CREF_IDENT(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStrWithoutIndexOperator(subscriptLst)%>'
+  case CREF_QUAL(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStrWithoutIndexOperator(subscriptLst)%>$P<%crefToCStrWithoutIndexOperator(componentRef)%>'
+  case WILD(__) then ''
+  else "CREF_NOT_IDENT_OR_QUAL"
+end crefToCStrWithoutIndexOperator;
+
+template subscriptsToCStrWithoutIndexOperator(list<Subscript> subscripts)
+::=
+  if subscripts then
+    '$lB<%subscripts |> s => subscriptToCStrWithoutIndexOperator(s) ;separator="$c"%>$rB'
+end subscriptsToCStrWithoutIndexOperator;
+
+template subscriptToCStrWithoutIndexOperator(Subscript subscript)
+::=
+  match subscript
+  case SLICE(exp=ICONST(integer=i)) then i
+  case WHOLEDIM(__) then "WHOLEDIM"
+  case INDEX(__) then
+   match exp
+    case ICONST(integer=i) then i
+    case ENUM_LITERAL(index=i) then i
+      end match
+  else "UNKNOWN_SUBSCRIPT"
+end subscriptToCStrWithoutIndexOperator;
 
 template arraycref(ComponentRef cr, Boolean useFlatArrayNotation)
 ::=
@@ -274,7 +343,6 @@ template arraycref(ComponentRef cr, Boolean useFlatArrayNotation)
   case WILD(__) then ''
   else "_"+crefToCStr1(cr, useFlatArrayNotation)
 end arraycref;
-
 
 template arraycref2(ComponentRef cr, Text& dims)
 ::=
@@ -1781,7 +1849,11 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     '<%var%>'
 
   case CALL(path=IDENT(name="der"), expLst={arg as CREF(__)}) then
-    let var = cref2simvar(arg.componentRef, simCode) |> SIMVAR(index=i) => '__zDot[<%i%>]'
+    let var = cref2simvar(arg.componentRef, simCode) |> SIMVAR(index=i, name=crName) =>
+      if Flags.isSet(NF_SCALARIZE) then
+        '__zDot[<%i%>]'
+      else
+        '<%cref(ComponentReference.crefPrefixDer(crName), useFlatArrayNotation)%><%representationCrefSubscripts(crName, useFlatArrayNotation)%>'
     '<%var%>'
 
   case CALL(path=IDENT(name="print"), expLst={e1}) then
