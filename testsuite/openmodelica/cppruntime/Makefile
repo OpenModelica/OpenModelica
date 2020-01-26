@@ -19,6 +19,7 @@ recordTupleReturnTest.mos \
 RefArrayDim2.mos \
 solveTest.mos \
 testArrayEquations.mos \
+testForLoopJacobian.mos \
 testMatrixIO.mos \
 testVectorizedBlocks.mos \
 testVectorizedPowerSystem.mos \

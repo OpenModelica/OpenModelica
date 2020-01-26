@@ -64,7 +64,11 @@ public function inlineArrayEqn "
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  (outDAE, _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, inlineArrayEqn1, false);
+  if Flags.isSet(Flags.NF_SCALARIZE) then
+    (outDAE, _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, inlineArrayEqn1, false);
+  else
+    outDAE := inDAE;
+  end if;
 end inlineArrayEqn;
 
 protected function inlineArrayEqn1

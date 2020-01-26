@@ -150,11 +150,11 @@ match simCode
 case SIMCODE(modelInfo=MODELINFO(__),initialEquations=initialequations,parameterEquations=parameterEquations,fileNamePrefix=fileNamePrefix) then
 
 let initeqs = generateEquationMemberFuncDecls(initialequations,"initEquation")
-      
+
 
 
 let initparameqs   =  generateEquationMemberFuncDecls(parameterEquations,"initParameterEquation")
-      
+
   match modelInfo
     case modelInfo as MODELINFO(vars=SIMVARS(__)) then
       let functionPrefix = if(Flags.isSet(Flags.HARDCODED_START_VALUES)) then "initialize" else "check"
@@ -167,7 +167,7 @@ let initparameqs   =  generateEquationMemberFuncDecls(parameterEquations,"initPa
     *
     *****************************************************************************/
 
-    class <%lastIdentOfPath(modelInfo.name)%>Initialize : public ISystemInitialization , public  <%lastIdentOfPath(modelInfo.name)%>WriteOutput 
+    class <%lastIdentOfPath(modelInfo.name)%>Initialize : public ISystemInitialization , public  <%lastIdentOfPath(modelInfo.name)%>WriteOutput
     {
      public:
 
@@ -299,7 +299,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
       ublas::vector<double> _<%name%>jac_tmp;
       ublas::vector<double> _<%name%>jac_x;
       int* _<%name%>ColorOfColumn;
-      int  _<%name%>MaxColors;
+      int _<%name%>MaxColors;
       >>
     ;separator="\n";empty)
     <<
@@ -307,7 +307,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     >>
     %>
 
-    <%variableDefinitionsJacobians_skip(jacobianMatrixes, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)%>
+    <%variableDefinitionsJacobians(jacobianMatrixes, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)%>
 
     /*testmaessig aus der Cruntime*/
     void initializeColoredJacobianA();
@@ -5586,7 +5586,7 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__),init
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeFreeVariables()
    {
 
-      
+
            #if !defined(FMU_BUILD)
            string init_file_path  =  "<%initfilename%>";
             <%if (Flags.getConfigBool(Flags.LABELED_REDUCTION)) then
@@ -5605,8 +5605,8 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__),init
           _reader->readInitialValues(*this, getSimVars());
 
          #endif
-       
-        
+
+
       _simTime = 0.0;
       _state_var_reinitialized = false;
 
@@ -5675,18 +5675,18 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__),init
                     equation_function_call(eq,  contextOther, &varDecls /*BUFC*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,"initEquation")
                     ;separator="\n")
       %>
-      
+
 
    }
-    
+
       <%initialequations%>
-     
+
       void <%lastIdentOfPath(modelInfo.name)%>Initialize::initParameterEquations()
       {
        <%(parameterEquations |> eq  =>
                     equation_function_call(eq,  contextOther, &varDecls /*BUFC*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,"initParameterEquation")
                     ;separator="\n")%>
-       
+
       }
 
 
@@ -6660,7 +6660,7 @@ let jacalgloopsystems =  (jacobianMatrixes |> JAC_MATRIX(columns=mat) hasindex i
 
 
 let memberfuncs =  generateEquationMemberFuncDecls(allEquations,"evaluate")
-      
+
 
 let clockedfuncs = generateClockedFuncDecls(getSubPartitions(clockedPartitions), "evaluate")
 let conditionvariables =  conditionvariable(zeroCrossings,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
@@ -6735,9 +6735,9 @@ match modelInfo
       //pointer to simVars-array to speedup simulation and compile time
       double* _pointerToRealVars;
       int* _pointerToIntVars;
-      
+
       bool* _pointerToBoolVars;
-     
+
       string* _pointerToStringVars;
 
       int _dimPartitions;
@@ -9694,10 +9694,7 @@ template equationString(SimEqSystem eq, Context context, Text &varDecls, SimCode
      throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,"Mixed systems are not supported yet");
     >>
   case e as SES_FOR_LOOP(__)
-    then
-    <<
-    FOR LOOPS ARE NOT IMPLEMENTED
-    >>
+    then equationForLoop(e, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, assignToStartValues)
   case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
   let &preExp = buffer ""
   let IfEquation = (ifbranches |> (e, eqns) hasindex index0 =>
@@ -12278,11 +12275,11 @@ template checkForDiscreteEvents(list<ComponentRef> discreteModelVars,SimCode sim
 ::=
    let &preExp = buffer ""
   let &varDecls = buffer ""
-  let changediscreteVars = 
+  let changediscreteVars =
     (discreteModelVars |> var => match var case CREF_QUAL(__) case CREF_IDENT(__) then
        'if (_discrete_events->changeDiscreteVar(<%cref(var, useFlatArrayNotation)%>)) {  return true; }'
        ;separator="\n")
-   
+
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
@@ -12382,11 +12379,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let className = lastIdentOfPathFromSimCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
 
   let equation_all_func_calls =
- 
+
         (List.partition(allEquationsPlusWhen, 100) |> eqs hasindex i0 =>
                                  createEvaluateWithSplit(i0, context, eqs, "evaluateAll","evaluate", className, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
                                  ;separator="\n")
-     
+
 
   <<
   bool <%className%>::evaluateAll(const UPDATETYPE command)
@@ -12971,63 +12968,58 @@ case _ then
 end generateJacobianMatrix;
 
 
-template variableDefinitionsJacobians_skip(list<JacobianMatrix> JacobianMatrixes, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text &jacobianVarsInit, Boolean createDebugCode)
- "Skips generation of defines for jacobian vars."
-::=
- ''
-end variableDefinitionsJacobians_skip;
-
-
 template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text &jacobianVarsInit, Boolean createDebugCode)
  "Generates defines for jacobian vars."
 ::=
-  let analyticVars = (JacobianMatrixes |> JAC_MATRIX(columns=jacColumn, seedVars=vars, matrixName=name, jacobianIndex=jacIndex)  =>
-    let varsDef = variableDefinitionsJacobians2(jacIndex, jacColumn, seedVars, name, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)
+if Flags.isSet(NF_SCALARIZE) then
+  ''
+else
+  let analyticVars = (JacobianMatrixes |> JAC_MATRIX(__) =>
+    let seedVarsResult = (seedVars |> var => jacobianVarDefine(var, &jacobianVarsInit, createDebugCode)
+      ;separator="\n";empty)
+    let columnVarsResult = (columns |> JAC_COLUMN(__) =>
+        (columnVars |> var => jacobianVarDefine(var, &jacobianVarsInit, createDebugCode)
+        ;separator="\n";empty)
+      ;separator="\n\n")
     <<
-    <%varsDef%>
+    /*seed vars <%matrixName%>*/
+    <%seedVarsResult%>
+    /*other jac vars <%matrixName%>*/
+    <%columnVarsResult%>
     >>
     ;separator="\n";empty)
-
-    <<
-    /* Jacobian Variables */
-    <%analyticVars%>
-    >>
+  <<
+  /* Jacobian Variables */
+  <%analyticVars%>
+  >>
 end variableDefinitionsJacobians;
 
-template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String name, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text& jacobianVarsInit, Boolean createDebugCode)
- "Generates Matrixes for Linear Model."
-::=
-  let seedVarsResult = (seedVars |> var hasindex index0 =>
-    jacobianVarDefine(var, indexJacobian, index0, name, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)
-    ;separator="\n";empty)
-  let columnVarsResult = (jacobianColumn |> JAC_COLUMN(columnVars=vars) =>
-      (vars |> var hasindex index0 => jacobianVarDefine(var, indexJacobian, index0, name, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)
-      ;separator="\n";empty)
-    ;separator="\n\n")
-
-<<
-<%seedVarsResult%>
-<%columnVarsResult%>
->>
-end variableDefinitionsJacobians2;
-
-
-template jacobianVarDefine(SimVar simVar, Integer indexJac, Integer index0, String matrixName, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text& jacobianVarsInit, Boolean createDebugCode)
+template jacobianVarDefine(SimVar simVar, Text& jacobianVarsInit, Boolean createDebugCode)
 ""
 ::=
 match simVar
-  case SIMVAR(aliasvar=NOALIAS(),name=name,index=index) then
-    let jacobianVar = '_<%crefToCStr(name, false)%>'
+  case SIMVAR(aliasvar = NOALIAS(), numArrayElement = {}, arrayCref = NONE()) then
     let typeName = match varKind
-                     case BackendDAE.JAC_VAR() then 'jac_y(<%index%>)'
-                     case BackendDAE.JAC_DIFF_VAR() then 'jac_tmp(<%index%>)'
-                     case BackendDAE.SEED_VAR() then 'jac_x(<%index0%>)'
-                     else 'UNKNOWN KIND'
-    let &jacobianVarsInit += if createDebugCode then ', <%jacobianVar%>(_<%matrixName%><%typeName%>)<%\n%>'
+      case JAC_VAR() then 'y'
+      case JAC_DIFF_VAR() then 'tmp'
+      case SEED_VAR() then 'x'
+      else 'UNKNOWN KIND'
+    let &jacobianVarsInit += if createDebugCode then ', <%cref(name,false)%>(_<%getOption(matrixName)%>jac_<%typeName%>(<%index%>))<%\n%>'
     if createDebugCode then
-       'double& <%jacobianVar%>;' else
-       '#define <%jacobianVar%> _<%matrixName%><%typeName%>'
-  end match
+      'double& <%cref(name,false)%>;'
+    else
+      '#define <%cref(name,false)%> _<%getOption(matrixName)%>jac_<%typeName%>(<%index%>)'
+  /* newInst with arrays */
+  case SIMVAR(type_ = T_ARRAY(), numArrayElement = num) then
+    let typeName = match varKind
+      case JAC_VAR() then 'y'
+      case JAC_DIFF_VAR() then 'tmp'
+      case SEED_VAR() then 'x'
+      else 'UNKNOWN KIND'
+    if createDebugCode then
+      'template jacobianVarDefine: createDebugCode for arrays not implemented'
+    else
+      '#define <%cref(name,false)%>(Idx) _<%getOption(matrixName)%>jac_<%typeName%>(<%index%>+((Idx)-1))' /* TODO currently only works for one-dimensional arrays */
 end jacobianVarDefine;
 
 
