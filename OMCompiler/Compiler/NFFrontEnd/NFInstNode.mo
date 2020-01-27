@@ -966,7 +966,7 @@ uniontype InstNode
           else
             accumScopes;
       case InstNodeType.REDECLARED_CLASS()
-        then scopeList(parent(ty.parent), includeRoot, clsNode :: accumScopes);
+        then scopeList(ty.parent, includeRoot, getDerivedNode(clsNode) :: accumScopes);
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown node type", sourceInfo());
