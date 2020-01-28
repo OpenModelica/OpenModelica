@@ -3117,7 +3117,14 @@ algorithm
       b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1, e2);
     then (inExp, not b, tpl);
 
-    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), tpl) equation
+    // homotopy operator for simulation system
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, _, false, _))
+    then traversingadjacencyRowExpSolvableFinder(e1, inTpl);
+
+    // homotopy operator for initialization system
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, _, true, _))
+      algorithm
+        (_, _, tpl) := traversingadjacencyRowExpSolvableFinder(e2, inTpl);
     then traversingadjacencyRowExpSolvableFinder(e1, tpl);
 
     // use the inlined function to analyze the ocuring variables
@@ -3462,8 +3469,15 @@ algorithm
         b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1,e2);
       then (inExp,not b,inTpl);
 
-    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), _) equation
+    // homotopy operator for simulation system
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, false))
     then traversingadjacencyRowExpFinder(e1, inTpl);
+
+    // homotopy operator for initialization system
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, true))
+      algorithm
+        (_, _, tpl) := traversingadjacencyRowExpFinder(e2, inTpl);
+    then traversingadjacencyRowExpFinder(e1, tpl);
 
     case (DAE.ASUB(exp=DAE.CREF(componentRef=cr), sub={DAE.ICONST(i)}), (vars, pa, isInitial))
       equation
@@ -3560,7 +3574,7 @@ algorithm
       AvlSetInt.Tree pa, res;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
-      DAE.Exp e;
+      DAE.Exp e, e1, e2;
       list<BackendDAE.Var> varslst;
       tuple<BackendDAE.Variables,AvlSetInt.Tree, Boolean> tpl;
       Boolean isInitial;
@@ -3607,8 +3621,15 @@ algorithm
         res = adjacencyRowExp1withInput(varslst,p,pa,1);
       then (inExp,false,(vars,res,isInitial));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e, _}), (vars,pa,isInitial)) equation
-    then traversingadjacencyRowExpFinderwithInput(e, (vars,pa,isInitial));
+    // homotopy operator for simulation system
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, false))
+    then traversingadjacencyRowExpFinderwithInput(e1, inTpl);
+
+    // homotopy operator for initialization system
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, true))
+      algorithm
+        (_, _, tpl) := traversingadjacencyRowExpFinderwithInput(e2, inTpl);
+    then traversingadjacencyRowExpFinderwithInput(e1, tpl);
 
     /* pre(v) is considered a known variable */
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF()}),_) then (inExp,false,inTpl);
@@ -6089,6 +6110,7 @@ algorithm
       BinaryTree.BinTree bt;
       Integer it;
       array<Integer> at;
+      tuple<BackendDAE.Variables, Boolean, Boolean, Integer, array<Integer>, list<Integer>> tpl;
 
     case (DAE.LUNARY(exp=e1), (vars, bs, isInitial, it, at, pa)) equation
       (_, (vars, _, _, _, _, pa)) = Expression.traverseExpTopDown(e1, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, true, isInitial, it, at, pa));
@@ -6159,8 +6181,15 @@ algorithm
       b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1, e2);
     then (inExp, not b, inTpl);
 
-    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), _) equation
+    // homotopy operator for simulation system
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, false, _, _, _))
     then traversingAdjacencyRowExpSolvableEnhancedFinder(e1, inTpl);
+
+    // homotopy operator for initialization system
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, true, _, _, _))
+      algorithm
+        (_, _, tpl) := traversingAdjacencyRowExpSolvableEnhancedFinder(e2, inTpl);
+    then traversingAdjacencyRowExpSolvableEnhancedFinder(e1, tpl);
 
     else (inExp, true, inTpl);
   end matchcontinue;
