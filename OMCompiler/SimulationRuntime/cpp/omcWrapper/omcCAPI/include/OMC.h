@@ -19,13 +19,15 @@ extern "C"
     *  \param [out] omcPtr  pointer to allocated omc instance
     *  \return returns a status flag
     */
-   int OMC_DLL InitOMC(data** omcDataPtr, const char* compiler, const char* openModelicaHome, const char* zeromqOptions);
+   int OMC_DLL InitOMC(data** omcDataPtr, const char* compiler, const char* openModelicaHome);
    /**
     *  \brief returns the version of the OpenModelica compiler (omc) instance
     *  \param [in] omcPtr Pointer to omc instance
     *  \param [out] version string of omc instance
     *  \return returns a status flag
     */
+   int OMC_DLL InitOMCWithZeroMQ(data** omcDataPtr, const char* compiler,  const char* codetarget, const char* openModelicaHome, const char* zeromqOptions);	
+	
    int OMC_DLL GetOMCVersion(data* omcData, char** result);
 
    /**
