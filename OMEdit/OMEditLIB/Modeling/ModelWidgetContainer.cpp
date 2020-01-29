@@ -6204,11 +6204,9 @@ QList<QVariant> ModelWidget::toOMSensData()
       } else if ((pComponentInfo->getCausality().compare("output") == 0) && ((pComponentInfo->getClassName().compare("Real") == 0)
                                                                              || (pComponentInfo->getClassName().compare("Modelica.Blocks.Interfaces.RealOutput") == 0))) {
         outputVariables.append(pComponentInfo->getName());
-      }
-      if ((pComponentInfo->getVariablity().compare("parameter") == 0) && (pComponentInfo->getClassName().compare("Real") == 0)) {
+      } else if ((pComponentInfo->getVariablity().compare("parameter") == 0) && (pComponentInfo->getClassName().compare("Real") == 0)) {
         parameters.append(pComponentInfo->getName());
-      }
-      if (pComponentInfo->getClassName().compare("Real") == 0) {
+      } else if (pComponentInfo->getClassName().compare("Real") == 0) {
         auxVariables.append(pComponentInfo->getName());
       }
     }
