@@ -286,7 +286,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end log10;
 
-function homotopy
+impure function homotopy
   input Real actual;
   input Real simplified;
   output Real outValue;
