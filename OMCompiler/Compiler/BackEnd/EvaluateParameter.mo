@@ -1123,6 +1123,44 @@ algorithm
   end if;
 end replaceEvaluatedParametersSystemEqns;
 
+public function evaluateSingleExpression
+"author: kabdelhak 2020-01
+ Evaluates a single expression by replacing all parameters by their bindings (if they have any).
+ Should only be used for evaluating start expressions of CALCULATED parameters during initialization."
+  input output DAE.Exp exp;
+  input BackendDAE.Variables vars;
+protected
+  DAE.Exp evalExp;
+algorithm
+  (evalExp, _) := Expression.traverseExpTopDown(exp, evaluateSingleExpressionTraverse, vars);
+  (evalExp, _) := ExpressionSimplify.simplify(evalExp);
+  exp := if Expression.isConst(evalExp) then evalExp else exp;
+end evaluateSingleExpression;
+
+public function evaluateSingleExpressionTraverse
+"author: kabdelhak 2020-01
+ Traverser function helper for evaluateSingleExpression.
+ Does the replacement of parameters by their bindings, otherwise input is returned."
+  input output DAE.Exp exp;
+  output Boolean cont;
+  input output BackendDAE.Variables vars;
+algorithm
+  (exp, cont) := matchcontinue exp
+    local
+      DAE.ComponentRef cref;
+      BackendDAE.Var var;
+      DAE.Exp start;
+    case DAE.CREF(componentRef = cref)
+      algorithm
+        ({var}, _) := BackendVariable.getVar(cref, vars);
+        true := BackendVariable.isParam(var);
+        SOME(start) := var.bindExp;
+        true := Expression.isConst(start);
+      then (start, false);
+
+    else (exp, true);
+  end matchcontinue;
+end evaluateSingleExpressionTraverse;
 
 annotation(__OpenModelica_Interface="backend");
 end EvaluateParameter;

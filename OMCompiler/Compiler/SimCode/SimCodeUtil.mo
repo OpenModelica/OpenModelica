@@ -82,6 +82,7 @@ import Debug;
 import Differentiate;
 import ElementSource;
 import Error;
+import EvaluateParameter;
 import ExecStat.execStat;
 import Expression;
 import ExpressionDump;
@@ -9232,7 +9233,7 @@ algorithm
         caus = getCausality(dlowVar, vars, isValueChangeable);
         variability = SimCodeVar.FIXED(); // PARAMETERS()
         initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars);
-        initVal = updateStartValue(dlowVar, initVal, initial_, caus);
+        initVal = updateStartValue(dlowVar, initVal, initial_, caus, inVars);
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
         minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, NONE(), NONE(), SOME(variability), SOME(initial_));
@@ -9272,7 +9273,7 @@ algorithm
         caus = getCausality(dlowVar, vars, isValueChangeable);
         variability = SimCodeVar.CONTINUOUS(); // state() should be CONTINUOUS
         initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars);
-        initVal = updateStartValue(dlowVar, initVal, initial_, caus);
+        initVal = updateStartValue(dlowVar, initVal, initial_, caus, inVars);
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
         minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, NONE(), NONE(), SOME(variability), SOME(initial_));
@@ -9313,7 +9314,7 @@ algorithm
         caus = getCausality(dlowVar, vars, isValueChangeable);
         variability = getVariabilityAttribute(dlowVar);
         initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars);
-        initVal = updateStartValue(dlowVar, initVal, initial_, caus);
+        initVal = updateStartValue(dlowVar, initVal, initial_, caus, inVars);
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
         minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, NONE(), NONE(), SOME(variability), SOME(initial_));
@@ -9454,6 +9455,17 @@ algorithm
   end match;
 end isInitialExactOrApprox;
 
+protected function isInitialCalculated
+  "return true if the initial attribute is CALCULATED else false"
+  input SimCodeVar.Initial initial_;
+  output Boolean val;
+algorithm
+  val := match(initial_)
+    case SimCodeVar.CALCULATED() then true;
+    else false;
+  end match;
+end isInitialCalculated;
+
 protected function isCausalityInput
   "return true if the causality attribute is input else false"
   input SimCodeVar.Causality causality;
@@ -9497,22 +9509,32 @@ end startValueIsConstOrDefault;
 
 protected function updateStartValue
   "function which updates Start value of an expression
-   depending on the initial = EXACT or APPROX and causality = INPUT "
+   depending on the initial = EXACT or APPROX and causality = INPUT
+   kabdelhak: 2020-01
+   ticket #5807
+   Added evaluation of start expressions for CALCULATED parameters.
+   Necessary for correct start values in loops."
   input BackendDAE.Var var;
   input output Option<DAE.Exp> startValue;
   input SimCodeVar.Initial initial_;
   input SimCodeVar.Causality causality;
+  input BackendDAE.Variables vars;
+protected
+  Boolean b;
 algorithm
   // update start value for FMI-2.0 only
-  if Flags.getConfigBool(Flags.BUILDING_FMU) and FMI.isFMIVersion20() then
-    startValue := match(startValue)
-      case (SOME(_)) guard isInitialExactOrApprox(initial_) then startValue;
-      case (NONE()) guard isInitialExactOrApprox(initial_) then setDefaultStartValue(var.varType);
-      case (SOME(_)) guard isCausalityInput(causality) then startValueIsConstOrDefault(startValue, var.varType);
-      case (NONE()) guard isCausalityInput(causality) then setDefaultStartValue(var.varType);
-      else NONE();
-    end match;
-  end if;
+  b := Flags.getConfigBool(Flags.BUILDING_FMU) and FMI.isFMIVersion20();
+  startValue := match(startValue)
+    local
+      DAE.Exp e;
+    // first case not only for FMI
+    case (SOME(e)) guard isInitialCalculated(initial_) then SOME(EvaluateParameter.evaluateSingleExpression(e, vars)); /* KAB */
+    case (SOME(_)) guard b and isInitialExactOrApprox(initial_) then startValue;
+    case (NONE()) guard b and isInitialExactOrApprox(initial_) then setDefaultStartValue(var.varType);
+    case (SOME(_)) guard b and isCausalityInput(causality) then startValueIsConstOrDefault(startValue, var.varType);
+    case (NONE()) guard b and isCausalityInput(causality) then setDefaultStartValue(var.varType);
+    else NONE();
+  end match;
 end updateStartValue;
 
 protected function traversingdlowvarToSimvarFold
