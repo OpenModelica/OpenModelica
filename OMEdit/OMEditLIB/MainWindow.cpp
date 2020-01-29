@@ -3912,18 +3912,15 @@ void MainWindow::createMenus()
   pOMSimulatorMenu->addAction(mpOMSArchivedSimulationsAction);
   // add OMSimulator menu to menu bar
   menuBar()->addAction(pOMSimulatorMenu->menuAction());
+#ifndef Q_OS_MAC
   // Sensitivity Optimization menu
-//  QMenu *pSensitivityOptimizationMenu = new QMenu(menuBar());
-//  pSensitivityOptimizationMenu->setTitle(tr("Sensitivity Optimization"));
-//  // add actions to Sensitivity Optimization menu
-//  pSensitivityOptimizationMenu->addAction(mpRunOMSensAction);
-//  pSensitivityOptimizationMenu->setEnabled(false);
-//  /*! @todo Remove the block below once we fix the compilation for MAC. */
-//#ifdef Q_OS_MAC
-//  pSensitivityOptimizationMenu->setEnabled(false);
-//#endif
-//  // add Sensitivity Optimization menu to menu bar
-//  menuBar()->addAction(pSensitivityOptimizationMenu->menuAction());
+  QMenu *pSensitivityOptimizationMenu = new QMenu(menuBar());
+  pSensitivityOptimizationMenu->setTitle(tr("Sensitivity Optimization"));
+  // add actions to Sensitivity Optimization menu
+  pSensitivityOptimizationMenu->addAction(mpRunOMSensAction);
+  // add Sensitivity Optimization menu to menu bar
+  menuBar()->addAction(pSensitivityOptimizationMenu->menuAction());
+#endif
   // Git menu
   QMenu *pGitMenu = new QMenu(menuBar());
   pGitMenu->setTitle(tr("&Git"));
