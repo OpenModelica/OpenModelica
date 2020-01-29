@@ -2186,7 +2186,7 @@ algorithm
         (lstConstExp, lstExp) = List.splitOnTrue(lstExp, Expression.isConst);
         if not listEmpty(lstConstExp) then
           resConst = simplifyBinaryMulConstants(lstConstExp);
-          exp_2 = Expression.makeProductLst(simplifyMul(lstExp));
+          exp_2 = Expression.makeProductLst(if Types.isScalarReal(Expression.typeofOp(op)) then simplifyMul(lstExp) else lstExp);
           if Expression.isConstOne(resConst) then
             exp_3 = simplify2(exp_2, true, false);
           elseif Expression.isConstMinusOne(resConst) then
