@@ -508,6 +508,7 @@ uniontype Call
     output Boolean isImpure;
   algorithm
     isImpure := match call
+      case UNTYPED_CALL() then Function.isImpure(listHead(Function.getRefCache(call.ref)));
       case TYPED_CALL() then Function.isImpure(call.fn) or Function.isOMImpure(call.fn);
       else false;
     end match;
