@@ -551,10 +551,7 @@ void read_input_xml(MODEL_DATA* modelData,
   read_value_string(findHashStringString(mi.de,"variableFilter"), &(simulationInfo->variableFilter));
   infoStreamPrint(LOG_SIMULATION, 0, "variable filter: %s", simulationInfo->variableFilter);
 
-  // escape the path with double quotes
-  const char *omhome;
-  GC_asprintf(&omhome, "\"%s\"", findHashStringString(mi.md,"OPENMODELICAHOME"));
-  read_value_string(omhome, &simulationInfo->OPENMODELICAHOME);
+  read_value_string(findHashStringString(mi.md,"OPENMODELICAHOME"), &simulationInfo->OPENMODELICAHOME);
   infoStreamPrint(LOG_SIMULATION, 0, "OPENMODELICAHOME: %s", simulationInfo->OPENMODELICAHOME);
   messageClose(LOG_SIMULATION);
 

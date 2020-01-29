@@ -491,12 +491,12 @@ int printModelInfo(DATA *data, threadData_t *threadData, const char *outputPath,
     const char *omhome = data->simulationInfo->OPENMODELICAHOME;
     char *buf = NULL;
     int genHtmlRes;
-    buf = (char*)malloc(230 + 2*strlen(plotfile) + 2*strlen(outputPath) + 2*(omhome ? strlen(omhome) : 0));
+    buf = (char*)malloc(230 + 4 + 2*strlen(plotfile) + 2*strlen(outputPath) + 2*(omhome ? strlen(omhome) : 0));
     assert(buf);
 #if defined(__MINGW32__) || defined(_MSC_VER) || defined(NO_PIPE)
     if(omhome) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-      sprintf(buf, "%s/lib/omc/libexec/gnuplot/binary/gnuplot.exe %s%s", omhome, outputPath, plotfile);
+      sprintf(buf, "\"\"%s/lib/omc/libexec/gnuplot/binary/gnuplot.exe\" %s%s\"", omhome, outputPath, plotfile);
 #else
       sprintf(buf, "gnuplot %s", plotfile);
 #endif
@@ -519,7 +519,13 @@ int printModelInfo(DATA *data, threadData_t *threadData, const char *outputPath,
 #else
       const char *xsltproc = "xsltproc";
 #endif
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+      sprintf(buf, "\"\"%s\" -o %s%s_prof.html \"%s/share/omc/scripts/default_profiling.xsl\" %s%s_prof.xml\"", xsltproc, outputPath, data->modelData->modelFilePrefix, omhome, outputPath, data->modelData->modelFilePrefix);
+#else
       sprintf(buf, "%s -o %s%s_prof.html %s/share/omc/scripts/default_profiling.xsl %s%s_prof.xml", xsltproc, outputPath, data->modelData->modelFilePrefix, omhome, outputPath, data->modelData->modelFilePrefix);
+#endif
+
 #if defined(__MINGW32__) || defined(_MSC_VER)
       free(xsltproc);
 #endif
