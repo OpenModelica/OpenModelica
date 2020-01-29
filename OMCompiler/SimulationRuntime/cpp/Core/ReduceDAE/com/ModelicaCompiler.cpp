@@ -33,7 +33,7 @@ _model(model)
   std::cout << "Intialize OMC, use gcc" << std::endl;
 
 
-  status = InitOMC(&_omcPtr,"gcc",omhome,"");
+  status = InitOMC(&_omcPtr,"gcc",omhome);
   if(status > 0)
   {
     std::cout << "..ok" << std::endl;

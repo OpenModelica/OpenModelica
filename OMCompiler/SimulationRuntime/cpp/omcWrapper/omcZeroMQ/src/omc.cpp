@@ -27,7 +27,7 @@
 using std::string;
 OMCData* omc;
 
-int initOMC(OMCData** omc, string compiler, string openmodelicaHome, string zeroMQOptions);
+int initOMCWithZeroMQ(OMCData** omc, string compiler,string codetarget, string openmodelicaHome, string zeroMQOptions);
 string getVersion(OMCData* omc);
 
 // Short alias for this namespace
@@ -128,7 +128,7 @@ int main(int argc, const char* argv[])
 
 
         //intitalize omc with above options
-        status = initOMC(&omc, "msvc15", openmodelica_home_path, zeromqOptions);
+        status = initOMCWithZeroMQ(&omc, "msvc15","cpp", openmodelica_home_path, zeromqOptions);
         if (!status)
             throw std::invalid_argument("Could not iniitialize omc");
 
@@ -160,7 +160,7 @@ int main(int argc, const char* argv[])
 }
 
 
-int initOMC(OMCData** omc, string compiler, string openmodelicaHome, string zeroMQOptions)
+int initOMCWithZeroMQ(OMCData** omc, string compiler,string codetarget, string openmodelicaHome, string zeroMQOptions)
 {
 
     int status = 0;
@@ -176,7 +176,7 @@ int initOMC(OMCData** omc, string compiler, string openmodelicaHome, string zero
     char* change_dir_results = 0, * mkDirResults = 0, * version = 0, * errorMsg2 = 0, * simulateResult = 0, * clear = 0;
 
     // if you send in 1 here it will crash on Windows, i need do debug more why this happens
-    status = InitOMC(omc, compiler.c_str(), openmodelicaHome.c_str(), zeroMQOptions.c_str());
+    status = InitOMCWithZeroMQ(omc, compiler.c_str(), codetarget.c_str(),openmodelicaHome.c_str(), zeroMQOptions.c_str());
 
 
     return status;

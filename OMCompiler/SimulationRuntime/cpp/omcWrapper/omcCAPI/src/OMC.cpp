@@ -38,8 +38,23 @@ extern "C" {
     // initialize garbage collector
     mmc_GC_init();
   }
+  int OMC_DLL InitOMCWithZeroMQ(data** omcDataPtr, const char* compiler, const char* codetarget,const char* openModelicaHome, const char* zeromqOptions)
+  {
+	InitOMC(omcDataPtr, compiler,openModelicaHome);
+	OMCData* omcData = *omcDataPtr;
+	std::string options = "--simCodeTarget=Cpp --target=" + std::string(compiler) + std::string(zeromqOptions);
 
-  int InitOMC(OMCData** omcDataPtr, const char* compiler, const char* openModelicaHome, const char* zeromqOptions)
+    if (SetCommandLineOptions(omcData, options.c_str()) == -1)
+    {
+        char* errorMsg = 0;
+        GetError(omcData, &errorMsg);
+      std::cout << "could not set OpenModelica options: " << options <<" "<< *errorMsg  <<std::endl;
+      return -1;
+    }
+   return 1;
+	  
+  }
+  int InitOMC(OMCData** omcDataPtr, const char* compiler, const char* openModelicaHome/*, const char* zeromqOptions*/)
   {
     // alloc omcData
     OMCData* omcData = new OMCData((threadData_t*)GC_malloc_uncollectable(sizeof(threadData_t)));
@@ -75,7 +90,7 @@ extern "C" {
     std::cout << "set OpenModelica home path " << set_openmodelica_home << result << std::endl;
      */
     
-    std::string options = "+d=execstat --simCodeTarget=Cpp --target=" + std::string(compiler) + " "+ std::string(zeromqOptions);
+    std::string options = "+d=execstat"; /* --simCodeTarget=Cpp --target=" + std::string(compiler) + " "+ std::string(zeromqOptions);*/
 
 
    
