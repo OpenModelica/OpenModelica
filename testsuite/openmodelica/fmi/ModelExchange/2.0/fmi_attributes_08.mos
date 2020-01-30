@@ -1,33 +1,33 @@
-// name: fmi_attributes_09.mos
+// name: fmi_attributes_08.mos
 // keywords: FMI 2.0 export
 // status: correct
-// teardown_command: rm -rf fmi_attributes_09.fmu fmi_attributes_09.log fmi_attributes_09.xml fmi_attributes_09_tmp.xml fmi_attributes_09.fmutmp/
+// teardown_command: rm -rf fmi_attributes_08.fmu fmi_attributes_08.log fmi_attributes_08.xml fmi_attributes_08_tmp.xml fmi_attributes_08.fmutmp/
 
 loadString("
-model fmi_attributes_09
+model fmi_attributes_08
   parameter Real p;
   Real x;
 initial equation
   tan(x) = 0.1;
 equation
   der(x) = -p;
-end fmi_attributes_09;
+end fmi_attributes_08;
 "); getErrorString();
 
-translateModelFMU(fmi_attributes_09); getErrorString();
+translateModelFMU(fmi_attributes_08); getErrorString();
 
 // unzip to console, quiet, extra quiet
-system("unzip -cqq fmi_attributes_09.fmu modelDescription.xml > fmi_attributes_09_tmp.xml"); getErrorString();
-system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi_attributes_09_tmp.xml > fmi_attributes_09.xml"); getErrorString();
-readFile("fmi_attributes_09.xml"); getErrorString();
+system("unzip -cqq fmi_attributes_08.fmu modelDescription.xml > fmi_attributes_08_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi_attributes_08_tmp.xml > fmi_attributes_08.xml"); getErrorString();
+readFile("fmi_attributes_08.xml"); getErrorString();
 
-system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi_attributes_09_tmp.xml > fmi_attributes_09.xml"); getErrorString();
-readFile("fmi_attributes_09.xml"); getErrorString();
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi_attributes_08_tmp.xml > fmi_attributes_08.xml"); getErrorString();
+readFile("fmi_attributes_08.xml"); getErrorString();
 
 // Result:
 // true
 // ""
-// "fmi_attributes_09.fmu"
+// "fmi_attributes_08.fmu"
 // "[<interactive>:3:3-3:19:writable] Warning: Parameter p has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
 // "
 // 0

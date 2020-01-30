@@ -523,7 +523,7 @@ template getCausality2(Option<Causality> c)
  "Returns the Causality Attribute of ScalarVariable."
 ::=
 match c
-  case SOME(NONECAUS(__)) then "local" // this should be set to local as FMI-2.0 does not have causality=none, #ticket5802
+  case SOME(NONECAUS(__)) then "none"
   case SOME(OUTPUT(__)) then "output"
   case SOME(INPUT(__)) then "input"
   case SOME(LOCAL(__)) then "local"  // same as INTERNAL() see FMI-2.0 specification
