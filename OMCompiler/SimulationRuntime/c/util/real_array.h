@@ -165,8 +165,8 @@ extern void range_real_array(modelica_real start,modelica_real stop, modelica_re
 
 extern real_array_t add_alloc_real_array(const real_array_t a, const real_array_t b);
 extern void add_real_array(const real_array_t * a, const real_array_t * b, real_array_t* dest);
-extern real_array_t add_alloc_scalar_real_array(const modelica_real sc, const real_array_t *arr);
-extern real_array_t sub_alloc_scalar_real_array(const modelica_real sc, const real_array_t *arr);
+extern real_array_t add_alloc_real_array_scalar(const real_array_t arr, const modelica_real sc);
+extern real_array_t sub_alloc_scalar_real_array(const modelica_real sc, const real_array_t arr);
 
 /* Unary subtraction */
 extern void usub_real_array(real_array_t* a);
@@ -181,7 +181,7 @@ extern void mul_scalar_real_array(modelica_real a,const real_array_t * b,real_ar
 extern real_array_t mul_alloc_scalar_real_array(modelica_real a,const real_array_t b);
 
 extern void mul_real_array_scalar(const real_array_t * a,modelica_real b,real_array_t* dest);
-extern real_array_t mul_alloc_real_array_scalar(const real_array_t a,modelica_real b);
+extern real_array_t mul_alloc_real_array_scalar(const real_array_t a, const modelica_real b);
 
 extern void mul_real_array(const real_array_t *a,const real_array_t *b,real_array_t* dest);
 extern real_array_t mul_alloc_real_array(const real_array_t a,const real_array_t b);
@@ -200,14 +200,14 @@ extern real_array_t div_alloc_real_array(const real_array_t a,const real_array_t
 
 
 extern void div_real_array_scalar(const real_array_t * a,modelica_real b,real_array_t* dest);
-extern real_array_t div_alloc_real_array_scalar(const real_array_t a,modelica_real b);
+extern real_array_t div_alloc_real_array_scalar(const real_array_t a, const modelica_real b);
 
 extern void division_real_array_scalar(threadData_t*,const real_array_t * a,modelica_real b,real_array_t* dest, const char* division_str);
 extern real_array_t division_alloc_real_array_scalar(threadData_t*,const real_array_t a,modelica_real b, const char* division_str);
 extern void div_scalar_real_array(modelica_real a, const real_array_t* b, real_array_t* dest);
 extern real_array_t div_alloc_scalar_real_array(modelica_real a, const real_array_t b);
 extern void pow_real_array_scalar(const real_array_t *a, modelica_real b, real_array_t* dest);
-extern real_array_t pow_alloc_real_array_scalar(const real_array_t a, modelica_real b);
+extern real_array_t pow_alloc_real_array_scalar(const real_array_t a, const modelica_real b);
 
 extern void exp_real_array(const real_array_t * a, modelica_integer n, real_array_t* dest);
 extern real_array_t exp_alloc_real_array(const real_array_t a, modelica_integer b);
