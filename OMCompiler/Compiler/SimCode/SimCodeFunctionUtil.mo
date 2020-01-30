@@ -1616,8 +1616,10 @@ algorithm
 
         if not listMember(name, rt_1) then
           rt_1 := name :: rt_1;
-          vars := List.map(varlst, typesVar);
           (accRecDecls, rt_1) := elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
+
+          vars := List.map(varlst, typesVar);
+          vars := List.map(vars, simCodeVarRemoveBindFromOutside);
           recDecl := SimCodeFunction.RECORD_DECL_FULL(name, NONE(), path, vars);
           accRecDecls := List.appendElt(recDecl, accRecDecls);
         end if;
@@ -1711,6 +1713,17 @@ algorithm
       then SimCodeFunction.VARIABLE(cref_, ty, bindExp, {}, prl, DAE.VARIABLE(), inTypesVar.bind_from_outside);
   end match;
 end typesVar;
+
+protected function simCodeVarRemoveBindFromOutside
+  input output SimCodeFunction.Variable var;
+algorithm
+  _ := match (var)
+    case SimCodeFunction.VARIABLE()
+      algorithm
+        var.bind_from_outside := false;
+      then ();
+  end match;
+end simCodeVarRemoveBindFromOutside;
 
 protected function checkSourceAndGetBindingExp
   input DAE.Binding inBinding;
