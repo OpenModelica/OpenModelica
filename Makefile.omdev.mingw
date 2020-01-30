@@ -34,7 +34,7 @@ BUILDTYPE=Debug
 endif
 
 
-.PHONY: omc omc-diff omlibrary-core omplot omedit omedit-testsuite omsimulator omnotebook omshell omoptim omsens_qt
+.PHONY: omc omc-diff omlibrary-core omplot omedit omedit-testsuite omsimulator omnotebook omshell omoptim omsens omsens_qt
 
 all: omc omc-diff omlibrary-core
 
@@ -72,6 +72,9 @@ omshell: omc qtclientsDLLs
 
 omoptim: omc omplot qtclientsDLLs
 	$(MAKE) -f $(defaultMakefileTarget) -C OMOptim OMBUILDDIR=$(OMBUILDDIR)
+
+omsens:
+	cp -rfp OMSens $(OMBUILDDIR)
 
 omsens_qt:
 	$(MAKE) -f $(defaultMakefileTarget) -C OMSens_Qt OMBUILDDIR=$(OMBUILDDIR)
