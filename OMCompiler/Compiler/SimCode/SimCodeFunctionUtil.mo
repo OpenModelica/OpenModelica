@@ -1908,12 +1908,16 @@ algorithm
                   Error.addSourceMessage(Error.COMPILER_WARNING, {"Failed to run "+cmd+": " + contents}, info);
                 else
                   Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"Succeeded with compilation and installation of the library using:\ncommand: "+cmd+"\n" + contents}, info);
-                  if not max(System.regularFileExists(d+"/"+n) for d in dirs2, n in names) then
-                    Error.addSourceMessage(Error.EXT_LIBRARY_NOT_FOUND_DESPITE_COMPILATION_SUCCESS, {cmd, System.pwd()}, info);
-                  else
+                  didFind := true;
+                  for d in dirs2, n in names loop
+                    if not System.regularFileExists(d+"/"+n) then
+                      Error.addSourceMessage(Error.EXT_LIBRARY_NOT_FOUND_DESPITE_COMPILATION_SUCCESS, {n, cmd, System.pwd()}, info);
+                      didFind := false;
+                    end if;
+                  end for;
+                  if didFind then
                     found := listHead(list(x for x guard System.regularFileExists(x) in List.flatten(list(d+"/"+n for d in dirs2, n in names))));
                     Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"Compiled "+found+" by running build project " + resourcesStr + "/BuildProjects/" + dir}, info);
-                    didFind := true;
                   end if;
                 end if;
               else
