@@ -267,7 +267,7 @@ extern void cross_integer_array(const integer_array_t * x,const integer_array_t 
 extern void cross_alloc_integer_array(const integer_array_t * x,const integer_array_t * y,integer_array_t* dest);
 extern void skew_integer_array(const integer_array_t * x,integer_array_t* dest);
 
-extern _index_t* integer_array_make_index_array(const integer_array_t *arr);
+extern _index_t* integer_array_make_index_array(const integer_array_t arr);
 
 static inline void clone_reverse_integer_array_spec(const integer_array_t * source,
                                                     integer_array_t* dest)

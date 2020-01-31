@@ -2280,7 +2280,7 @@ template daeExpCrefRhsIndexSpecXml(list<Subscript> subs, Context context,
         let expPart = daeExpXml(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
         let tmp = tempDeclXml("modelica_integer", &varDecls /*BUFD*/)
         let &preExp += '<%tmp%> = size_of_dimension_integer_array(&<%expPart%>, 1);<%\n%>'
-        let str = <<(int) <%tmp%>, integer_array_make_index_array(&<%expPart%>), 'A'>>
+        let str = <<<%tmp%>, integer_array_make_index_array(<%expPart%>), 'A'>>
         str
     ;separator=", ")
   let tmp = tempDeclXml("index_spec_t", &varDecls /*BUFD*/)
@@ -2440,7 +2440,7 @@ template daeExpCrefLhsIndexSpecXml(list<Subscript> subs, Context context,
         let expPart = daeExpXml(exp, context, &afterExp /*BUFC*/, &varDecls /*BUFD*/)
         let tmp = tempDeclXml("modelica_integer", &varDecls /*BUFD*/)
         let &afterExp += '<%tmp%> = size_of_dimension_integer_array(&<%expPart%>, 1);<%\n%>'
-        let str = <<(int) <%tmp%>, integer_array_make_index_array(&<%expPart%>), 'A'>>
+        let str = <<<%tmp%>, integer_array_make_index_array(<%expPart%>), 'A'>>
         str
     ;separator=", ")
   let tmp = tempDeclXml("index_spec_t", &varDecls /*BUFD*/)
