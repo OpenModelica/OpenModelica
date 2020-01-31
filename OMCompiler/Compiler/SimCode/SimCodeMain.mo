@@ -1249,7 +1249,9 @@ algorithm
     // disable start value calculation, it's only helpful in case of algebraic loops
     // and they are not present in DAEmode
     tmpB := FlagsUtil.set(Flags.NO_START_CALC, true);
-    modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, functions, {}, 0, fileDir, 0, tempVars);
+
+    // kabdelhak: Create and add initial DAE lambda 0 here!
+    modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, NONE(), functions, {}, 0, fileDir, 0, tempVars);
     FlagsUtil.set(Flags.NO_START_CALC, tmpB);
 
     //create hash table

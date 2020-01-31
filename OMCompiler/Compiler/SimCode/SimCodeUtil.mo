@@ -468,7 +468,7 @@ algorithm
     if debug then execStat("simCode: createStateSets"); end if;
 
     // create model info
-    modelInfo := createModelInfo(inClassName, program, dlow, inInitDAE, functions, {}, numStateSets, inFileDir, listLength(clockedSysts), tempvars);
+    modelInfo := createModelInfo(inClassName, program, dlow, inInitDAE, inInitDAE_lambda0, functions, {}, numStateSets, inFileDir, listLength(clockedSysts), tempvars);
     if debug then execStat("simCode: createModelInfo and variables"); end if;
 
     //build labels
@@ -7176,6 +7176,7 @@ public function createModelInfo
   input Absyn.Program program;
   input BackendDAE.BackendDAE dlow "simulation";
   input BackendDAE.BackendDAE inInitDAE "initialization";
+  input Option<BackendDAE.BackendDAE> inInitDAE_lambda0 "optional homotopy lambda 0 system";
   input list<SimCodeFunction.Function> functions;
   input list<String> labels;
   input Integer numStateSets;
@@ -7197,7 +7198,7 @@ algorithm
   try
     // name = AbsynUtil.pathStringNoQual(class_);
     directory := System.trim(fileDir, "\"");
-    vars := createVars(dlow, inInitDAE, tempVars);
+    vars := createVars(dlow, inInitDAE, inInitDAE_lambda0, tempVars);
     if debug then execStat("simCode: createVars"); end if;
     BackendDAE.DAE(shared=BackendDAE.SHARED(info=BackendDAE.EXTRA_INFO(description=description))) := dlow;
     nx := getNumScalars(vars.stateVars);
@@ -7731,6 +7732,7 @@ protected type SimVarsIndex = enumeration(
 protected function createVars
   input BackendDAE.BackendDAE inSimDAE "simulation";
   input BackendDAE.BackendDAE inInitDAE "initialization";
+  input Option<BackendDAE.BackendDAE> inInitDAE_lambda0 "optional homotopy lambda 0 system";
   input list<SimCodeVar.SimVar> tempvars;
   output SimCodeVar.SimVars outVars;
 protected
@@ -7813,6 +7815,15 @@ algorithm
   simVars := BackendVariable.traverseBackendDAEVars(extvars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: external object list (init)"); end if;
 
+  if isSome(inInitDAE_lambda0) then
+    SOME(BackendDAE.DAE(eqs=systs2, shared=BackendDAE.SHARED(globalKnownVars=globalKnownVars2, localKnownVars=localKnownVars2, externalObjects=extvars2, aliasVars=aliasVars2))) := inInitDAE_lambda0;
+    // ### lambda 0 initialization ###
+    // Extract from variable list
+    simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst in systs2), BackendVariable.traverseBackendDAEVars, function extractCSEVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, iterationVars=iterationVars), simVars);
+    if debug then execStat("createVars: variable list (init lambda 0)"); end if;
+  end if;
+
+
   addTempVars(simVars, tempvars);
   if debug then execStat("createVars: addTempVars"); end if;
   //BaseHashSet.printHashSet(hs);
@@ -7872,16 +7883,32 @@ protected function extractVarsFromList
   input Mutable<HashSet.HashSet> hs;
   input list<DAE.ComponentRef> iterationVars "list of iterationVars in InitializationMode" ;
 algorithm
-  if if ComponentReference.isPreCref(var.varName) or ComponentReference.isStartCref(var.varName) then false else not BaseHashSet.has(var.varName, Mutable.access(hs)) then
-    /* ignore variable, since they are treated by kind in the codegen */
-    if not BackendVariable.isAlgebraicOldState(var) then
-      extractVarFromVar(var, aliasVars, vars, simVars, hs, iterationVars);
-    end if;
-  //  print("Added  " + ComponentReference.printComponentRefStr(inVar.varName) + "\n");
-  //else
-  //  print("Skiped " + ComponentReference.printComponentRefStr(inVar.varName) + "\n");
+  if not (ComponentReference.isPreCref(var.varName)
+     or ComponentReference.isStartCref(var.varName)
+     or BaseHashSet.has(var.varName, Mutable.access(hs))
+     /* ignore variable, since they are treated by kind in the codegen */
+     or BackendVariable.isAlgebraicOldState(var)) then
+       extractVarFromVar(var, aliasVars, vars, simVars, hs, iterationVars);
   end if;
 end extractVarsFromList;
+
+protected function extractCSEVarsFromList
+  input output BackendDAE.Var var;
+  input output array<list<SimCodeVar.SimVar>> simVars;
+  input BackendDAE.Variables aliasVars, vars;
+  input Mutable<HashSet.HashSet> hs;
+  input list<DAE.ComponentRef> iterationVars "list of iterationVars in InitializationMode" ;
+algorithm
+  if not (ComponentReference.isPreCref(var.varName)
+     or ComponentReference.isStartCref(var.varName)
+     or BaseHashSet.has(var.varName, Mutable.access(hs))
+     /* ignore variable, since they are treated by kind in the codegen */
+     or BackendVariable.isAlgebraicOldState(var))
+     /* extract only cse variables from the lambda 0 system */
+     and BackendVariable.isCSEVar(var) then
+       extractVarFromVar(var, aliasVars, vars, simVars, hs, iterationVars);
+  end if;
+end extractCSEVarsFromList;
 
 public function getDefaultFmiInitialAttribute
  "Get the defualt fmi 2.0 initial attribute."
