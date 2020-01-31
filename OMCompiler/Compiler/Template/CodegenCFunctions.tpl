@@ -5401,7 +5401,7 @@ template daeExpCrefIndexSpec(list<Subscript> subs, Context context,
         let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
         let tmp = tempDecl("modelica_integer", &varDecls)
         let &preExp += '<%tmp%> = size_of_dimension_base_array(<%expPart%>, 1);<%\n%>'
-        let str = <<(int) <%tmp%>, integer_array_make_index_array(&<%expPart%>), 'A'>>
+        let str = <<<%tmp%>, integer_array_make_index_array(<%expPart%>), 'A'>>
         str
     ;separator=", ")
   let tmp = tempDecl("index_spec_t", &varDecls)

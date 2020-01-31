@@ -1553,13 +1553,13 @@ void symmetric_integer_array(const integer_array_t * a,integer_array_t* dest)
 
 /* integer_array_make_index_array
  *
- * Creates an integer array if indices to be used by e.g.
+ * Creates an integer array of indices to be used by e.g.
  ** create_index_spec defined in index_spec.c
  */
 
-_index_t* integer_array_make_index_array(const integer_array_t *arr)
+_index_t* integer_array_make_index_array(const integer_array_t arr)
 {
-    return arr->data;
+    return arr.data;
 }
 
 /* Converts the elements of an integer_array to int and packs them. I.e. if the
