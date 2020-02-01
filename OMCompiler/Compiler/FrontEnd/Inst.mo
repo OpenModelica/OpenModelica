@@ -990,6 +990,7 @@ algorithm
         for submod in submods loop
           if varIsModifiedInDerivedMod(var.name, submod) then
             var.bind_from_outside := true;
+            var.binding := markBindingFromDerivedRecordMods(var.binding);
             break;
           end if;
         end for;
@@ -1002,6 +1003,18 @@ algorithm
   end match;
 
 end markDerivedRecordOutsideBindings;
+
+function markBindingFromDerivedRecordMods
+  input output DAE.Binding bind;
+algorithm
+  _ := match bind
+    case DAE.EQBOUND() algorithm
+      bind.source := DAE.BINDING_FROM_DERIVED_RECORD_DECL();
+    then ();
+
+    else ();
+  end match;
+end markBindingFromDerivedRecordMods;
 
 function varIsModifiedInDerivedMod
   input String inName;
