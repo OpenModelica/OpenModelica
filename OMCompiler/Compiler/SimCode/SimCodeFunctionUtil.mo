@@ -792,14 +792,14 @@ algorithm
     case (_, DAE.RECORD_CONSTRUCTOR(source = source, type_ = DAE.T_FUNCTION(funcArg = args, funcResultType = restype as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)))), rt, recordDecls, includes, includeDirs, libs,libPaths)
       equation
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
-        (recordDecls, rt_1) = elaborateRecordDeclarationsForRecord(restype, recordDecls, rt);
+        // (recordDecls, rt_1) = elaborateRecordDeclarationsForRecord(restype, recordDecls, rt);
         DAE.T_COMPLEX(varLst = varlst) = restype;
         // varlst = List.filterOnTrue(varlst, Types.isProtectedVar);
         varlst = List.filterOnFalse(varlst, Types.isModifiableTypesVar);
         varDecls = List.map(varlst, typesVar);
         info = ElementSource.getElementSourceFileInfo(source);
       then
-        (SimCodeFunction.RECORD_CONSTRUCTOR(name, funArgs, varDecls, SCode.PUBLIC(), info), rt_1, recordDecls, includes, includeDirs, libs,libPaths);
+        (SimCodeFunction.RECORD_CONSTRUCTOR(name, funArgs, varDecls, SCode.PUBLIC(), info), rt, recordDecls, includes, includeDirs, libs,libPaths);
 
         // failure
     case (_, fn, _, _, _, _, _,_)

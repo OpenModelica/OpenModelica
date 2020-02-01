@@ -364,6 +364,7 @@ template functionHeader(Function fn, Boolean inFunc, Boolean isSimulation, Text 
       let funArgsStr = (funArgs |> var as VARIABLE(__) => ', <%varType(var)%> omc_<%crefStr(name)%>')
       let vis = (match visibility case PUBLIC() then "DLLExport")
       <<
+      /*
       <% if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS)
         then
         <<
@@ -379,6 +380,7 @@ template functionHeader(Function fn, Boolean inFunc, Boolean isSimulation, Text 
       %>
 
       <%functionHeaderBoxed(fname, funArgs, boxedRecordOutVars, inFunc, false, visibility, false, isSimulation, staticPrototypes)%>
+      */
       >>
 end functionHeader;
 
@@ -1715,6 +1717,7 @@ case RECORD_CONSTRUCTOR(__) then
     )
   let boxedFn = functionBodyBoxed(fn, isSimulation)
   <<
+  /*
   <%auxFunction%>
   <%fname%> omc<%if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then "impl"%>_<%fname%>(threadData_t *threadData<%funArgs |> VARIABLE(__) => ', <%expTypeArrayIf(ty)%> omc_<%crefStr(name)%>'%>)
   {
@@ -1726,6 +1729,7 @@ case RECORD_CONSTRUCTOR(__) then
   <%if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then 'omctd_<%fname%> omc_<%fname%> = omcimpl_<%fname%>;'%>
 
   <%boxedFn%>
+  */
   >>
 end functionBodyRecordConstructor;
 
