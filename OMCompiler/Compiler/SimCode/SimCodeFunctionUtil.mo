@@ -792,14 +792,14 @@ algorithm
     case (_, DAE.RECORD_CONSTRUCTOR(source = source, type_ = DAE.T_FUNCTION(funcArg = args, funcResultType = restype as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)))), rt, recordDecls, includes, includeDirs, libs,libPaths)
       equation
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
-        // (recordDecls, rt_1) = elaborateRecordDeclarationsForRecord(restype, recordDecls, rt);
+        (recordDecls, rt_1) = elaborateRecordDeclarationsForRecord(restype, recordDecls, rt);
         DAE.T_COMPLEX(varLst = varlst) = restype;
         // varlst = List.filterOnTrue(varlst, Types.isProtectedVar);
         varlst = List.filterOnFalse(varlst, Types.isModifiableTypesVar);
         varDecls = List.map(varlst, typesVar);
         info = ElementSource.getElementSourceFileInfo(source);
       then
-        (SimCodeFunction.RECORD_CONSTRUCTOR(name, funArgs, varDecls, SCode.PUBLIC(), info), rt, recordDecls, includes, includeDirs, libs,libPaths);
+        (SimCodeFunction.RECORD_CONSTRUCTOR(name, funArgs, varDecls, SCode.PUBLIC(), info), rt_1, recordDecls, includes, includeDirs, libs,libPaths);
 
         // failure
     case (_, fn, _, _, _, _, _,_)
@@ -1618,8 +1618,9 @@ algorithm
           rt_1 := name :: rt_1;
           (accRecDecls, rt_1) := elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
 
+          varlst := List.map(varlst, simCodeVarRemoveBindFromOutside);
           vars := List.map(varlst, typesVar);
-          vars := List.map(vars, simCodeVarRemoveBindFromOutside);
+          // vars := List.map(vars, simCodeVarRemoveBindFromOutside);
           recDecl := SimCodeFunction.RECORD_DECL_FULL(name, NONE(), path, vars);
           accRecDecls := List.appendElt(recDecl, accRecDecls);
         end if;
@@ -1715,10 +1716,12 @@ algorithm
 end typesVar;
 
 protected function simCodeVarRemoveBindFromOutside
-  input output SimCodeFunction.Variable var;
+  input output DAE.Var var;
 algorithm
   _ := match (var)
-    case SimCodeFunction.VARIABLE()
+    case DAE.TYPES_VAR(binding = DAE.EQBOUND(source=DAE.BINDING_FROM_DERIVED_RECORD_DECL()))
+      then ();
+    case DAE.TYPES_VAR()
       algorithm
         var.bind_from_outside := false;
       then ();

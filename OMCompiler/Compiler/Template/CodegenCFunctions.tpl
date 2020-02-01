@@ -364,7 +364,6 @@ template functionHeader(Function fn, Boolean inFunc, Boolean isSimulation, Text 
       let funArgsStr = (funArgs |> var as VARIABLE(__) => ', <%varType(var)%> omc_<%crefStr(name)%>')
       let vis = (match visibility case PUBLIC() then "DLLExport")
       <<
-      /*
       <% if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS)
         then
         <<
@@ -380,7 +379,6 @@ template functionHeader(Function fn, Boolean inFunc, Boolean isSimulation, Text 
       %>
 
       <%functionHeaderBoxed(fname, funArgs, boxedRecordOutVars, inFunc, false, visibility, false, isSimulation, staticPrototypes)%>
-      */
       >>
 end functionHeader;
 
@@ -519,7 +517,7 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
       void <%cpy_func_name%>(void* v_src, void* v_dst);
       #define <%cpy_macro_name%>(src,dst) <%cpy_func_name%>(&src, &dst)
 
-      <%rec_name%> <%modelica_ctor_name%>(threadData_t *threadData <%modelica_ctor_inputs%>);
+      // <%rec_name%> <%modelica_ctor_name%>(threadData_t *threadData <%modelica_ctor_inputs%>);
 
       /* This function is used to copy a records members to simvars. Since simvars
         have no structure yet we can not directly copy records. Insted we pass the
@@ -565,6 +563,7 @@ template recordCopyFromVarsDef(String rec_name, list<Variable> variables)
   let _ = (variables |> var => recordMemberCopy(var, src_pref, dst_pref, &varCopies, &auxFunction) ;separator="\n")
   let inputs = variables |> var as VARIABLE(__) => (", " + varType(var) + functionContextCref(var.name, contextFunction, src_pref, &auxFunction))
   <<
+  /*
   <%rec_name%> omc_<%rec_name%>(threadData_t *threadData <%inputs%>) {
     <%rec_name%> dst;
     // TODO Improve me. No need to initalize the record memebers with defaults in <%rec_name%>_construct
@@ -573,6 +572,7 @@ template recordCopyFromVarsDef(String rec_name, list<Variable> variables)
     <%varCopies%>
     return dst;
   }
+  */
   >>
 end recordCopyFromVarsDef;
 
@@ -1715,7 +1715,6 @@ case RECORD_CONSTRUCTOR(__) then
     )
   let boxedFn = functionBodyBoxed(fn, isSimulation)
   <<
-  /*
   <%auxFunction%>
   <%fname%> omc<%if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then "impl"%>_<%fname%>(threadData_t *threadData<%funArgs |> VARIABLE(__) => ', <%expTypeArrayIf(ty)%> omc_<%crefStr(name)%>'%>)
   {
@@ -1727,7 +1726,6 @@ case RECORD_CONSTRUCTOR(__) then
   <%if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then 'omctd_<%fname%> omc_<%fname%> = omcimpl_<%fname%>;'%>
 
   <%boxedFn%>
-  */
   >>
 end functionBodyRecordConstructor;
 
