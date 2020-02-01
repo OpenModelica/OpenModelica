@@ -2647,11 +2647,11 @@ void MainWindow::runOMSensPlugin()
 #elif defined(Q_OS_MAC)
     QPluginLoader loader(QString("%1/bin/omsensplugin.dylib").arg(Helper::OpenModelicaHome));
 #else
-    QPluginLoader loader(QString("%1/bin/omsensplugin.so").arg(Helper::OpenModelicaHome));
+    QPluginLoader loader(QString("%1/bin/libomsensplugin.so").arg(Helper::OpenModelicaHome));
 #endif
     mpOMSensPlugin = loader.instance();
     if (!mpOMSensPlugin) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Failed to load OMSend plugin. %1").arg(loader.errorString()), Helper::scriptingKind, Helper::errorLevel));
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Failed to load OMSens plugin. %1").arg(loader.errorString()), Helper::scriptingKind, Helper::errorLevel));
       return;
     }
   }
