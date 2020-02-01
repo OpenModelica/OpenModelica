@@ -519,7 +519,7 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
       void <%cpy_func_name%>(void* v_src, void* v_dst);
       #define <%cpy_macro_name%>(src,dst) <%cpy_func_name%>(&src, &dst)
 
-      // <%rec_name%> <%modelica_ctor_name%>(threadData_t *threadData <%modelica_ctor_inputs%>);
+      <%rec_name%> <%modelica_ctor_name%>(threadData_t *threadData <%modelica_ctor_inputs%>);
 
       /* This function is used to copy a records members to simvars. Since simvars
         have no structure yet we can not directly copy records. Insted we pass the
@@ -565,7 +565,6 @@ template recordCopyFromVarsDef(String rec_name, list<Variable> variables)
   let _ = (variables |> var => recordMemberCopy(var, src_pref, dst_pref, &varCopies, &auxFunction) ;separator="\n")
   let inputs = variables |> var as VARIABLE(__) => (", " + varType(var) + functionContextCref(var.name, contextFunction, src_pref, &auxFunction))
   <<
-  /*
   <%rec_name%> omc_<%rec_name%>(threadData_t *threadData <%inputs%>) {
     <%rec_name%> dst;
     // TODO Improve me. No need to initalize the record memebers with defaults in <%rec_name%>_construct
@@ -574,7 +573,6 @@ template recordCopyFromVarsDef(String rec_name, list<Variable> variables)
     <%varCopies%>
     return dst;
   }
-  */
   >>
 end recordCopyFromVarsDef;
 
@@ -5405,7 +5403,7 @@ template daeExpCrefIndexSpec(list<Subscript> subs, Context context,
         let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
         let tmp = tempDecl("modelica_integer", &varDecls)
         let &preExp += '<%tmp%> = size_of_dimension_base_array(<%expPart%>, 1);<%\n%>'
-        let str = <<(int) <%tmp%>, integer_array_make_index_array(&<%expPart%>), 'A'>>
+        let str = <<<%tmp%>, integer_array_make_index_array(<%expPart%>), 'A'>>
         str
     ;separator=", ")
   let tmp = tempDecl("index_spec_t", &varDecls)
