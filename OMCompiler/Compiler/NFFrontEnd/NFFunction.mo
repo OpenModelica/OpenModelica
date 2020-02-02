@@ -1449,6 +1449,8 @@ uniontype Function
           case "product" then true;
           case "root" then true;
           case "rooted" then true;
+          case "uniqueRoot" then true;
+          case "uniqueRootIndices" then true;
           // We need to make sure size(Arg,i) = 1 for 0 <= i <= ndims(Arg).
           // return type should always be scalar.
           case "scalar" then true;
