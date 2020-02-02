@@ -1550,6 +1550,7 @@ protected
   end typeRootedCall;
 
   function typeUniqueRootCall
+    "see also typeUniqueRootIndicesCall"
     input Call call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
@@ -1565,6 +1566,8 @@ protected
     Integer args_len;
     String name;
   algorithm
+    Error.addSourceMessage(Error.NON_STANDARD_OPERATOR, {"Connections.uniqueRoot"}, info);
+
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
 
     for narg in named_args loop
@@ -1636,6 +1639,8 @@ protected
     String name;
     Type ty1, ty2, ty3;
   algorithm
+    Error.addSourceMessage(Error.NON_STANDARD_OPERATOR, {"Connections.uniqueRootIndices"}, info);
+
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
 
     for narg in named_args loop
@@ -1684,6 +1689,7 @@ protected
     assert(listLength(Type.arrayDims(ty1)) == listLength(Type.arrayDims(ty2)), "the first two parameters need to have the same size");
     ty := Type.ARRAY(Type.Type.INTEGER(), Type.arrayDims(ty1));
     callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2}, var, ty));
+
   end typeUniqueRootIndicesCall;
 
   function checkConnectionsArgument
