@@ -34,7 +34,7 @@
 #include "BusDialog.h"
 #include "Util/Helper.h"
 #include "Modeling/ModelWidgetContainer.h"
-#include "Component/Component.h"
+#include "Element/Element.h"
 #include "Modeling/ItemDelegate.h"
 #include "Modeling/Commands.h"
 
@@ -49,7 +49,7 @@
  * \param pComponent
  * \param pParent
  */
-ConnectorItem::ConnectorItem(Component *pComponent, ConnectorItem *pParent)
+ConnectorItem::ConnectorItem(Element *pComponent, ConnectorItem *pParent)
 {
   mText = "";
   mpComponent = pComponent;
@@ -339,7 +339,7 @@ QModelIndex ConnectorsModel::connectorItemIndex(const ConnectorItem *pConnectorI
  * \param pParent
  * \return
  */
-ConnectorItem* ConnectorsModel::createConnectorItem(Component *pComponent, ConnectorItem *pParent)
+ConnectorItem* ConnectorsModel::createConnectorItem(Element *pComponent, ConnectorItem *pParent)
 {
   int row = pParent->childrenSize();
   beginInsertRows(connectorItemIndex(pParent), row, row);
@@ -402,7 +402,7 @@ ConnectorsTreeView::ConnectorsTreeView(QWidget *pParent)
  * \param pLibraryTreeItem
  * \param pGraphicsView
  */
-AddBusDialog::AddBusDialog(QList<Component *> components, LibraryTreeItem *pLibraryTreeItem, GraphicsView *pGraphicsView)
+AddBusDialog::AddBusDialog(QList<Element *> components, LibraryTreeItem *pLibraryTreeItem, GraphicsView *pGraphicsView)
   : QDialog(pGraphicsView)
 {
   setAttribute(Qt::WA_DeleteOnClose);
@@ -432,7 +432,7 @@ AddBusDialog::AddBusDialog(QList<Component *> components, LibraryTreeItem *pLibr
   ConnectorItem *pOutputsConnectorItem = mpInputConnectorsTreeModel->createConnectorItem(0, mpOutputConnectorsTreeModel->getRootConnectorItem());
   pOutputsConnectorItem->setText("Output Connectors");
   // add the connectors to input and output connectors tree views
-  foreach (Component* pComponent, mpGraphicsView->getComponentsList()) {
+  foreach (Element* pComponent, mpGraphicsView->getComponentsList()) {
     if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getOMSConnector()
         && (!pComponent->isInBus() || pComponent->getBusComponent()->getLibraryTreeItem() == mpLibraryTreeItem)) {
       ConnectorItem *pConnectorItem = 0;
@@ -482,7 +482,7 @@ AddBusDialog::AddBusDialog(QList<Component *> components, LibraryTreeItem *pLibr
  * \param pParentConnectorItem
  * \param components
  */
-void AddBusDialog::markExistingBusConnectors(ConnectorItem *pParentConnectorItem, QList<Component *> components)
+void AddBusDialog::markExistingBusConnectors(ConnectorItem *pParentConnectorItem, QList<Element *> components)
 {
   for (int i = 0 ; i < pParentConnectorItem->childrenSize() ; i++) {
     ConnectorItem *pConnectorItem = pParentConnectorItem->childAt(i);
@@ -598,7 +598,7 @@ void AddBusDialog::addBus()
  * \param pLibraryTreeItem
  * \param pGraphicsView
  */
-AddTLMBusDialog::AddTLMBusDialog(QList<Component *> components, LibraryTreeItem *pLibraryTreeItem, GraphicsView *pGraphicsView)
+AddTLMBusDialog::AddTLMBusDialog(QList<Element *> components, LibraryTreeItem *pLibraryTreeItem, GraphicsView *pGraphicsView)
   : QDialog(pGraphicsView)
 {
   setAttribute(Qt::WA_DeleteOnClose);
@@ -667,7 +667,7 @@ AddTLMBusDialog::AddTLMBusDialog(QList<Component *> components, LibraryTreeItem 
   ConnectorItem *pOutputsConnectorItem = mpInputConnectorsTreeModel->createConnectorItem(0, mpOutputConnectorsTreeModel->getRootConnectorItem());
   pOutputsConnectorItem->setText("Output Connectors");
   // add the connectors to input and output connectors tree views
-  foreach (Component* pComponent, mpGraphicsView->getComponentsList()) {
+  foreach (Element* pComponent, mpGraphicsView->getComponentsList()) {
     if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getOMSConnector()
         && (!pComponent->isInBus() || pComponent->getBusComponent()->getLibraryTreeItem() == mpLibraryTreeItem)) {
       ConnectorItem *pConnectorItem = 0;
@@ -726,7 +726,7 @@ AddTLMBusDialog::AddTLMBusDialog(QList<Component *> components, LibraryTreeItem 
  * \param pParentConnectorItem
  * \param components
  */
-void AddTLMBusDialog::markExistingTLMBusConnectors(ConnectorItem *pParentConnectorItem, QList<Component *> components)
+void AddTLMBusDialog::markExistingTLMBusConnectors(ConnectorItem *pParentConnectorItem, QList<Element *> components)
 {
   for (int i = 0 ; i < pParentConnectorItem->childrenSize() ; i++) {
     ConnectorItem *pConnectorItem = pParentConnectorItem->childAt(i);
@@ -1576,8 +1576,8 @@ void BusConnectionDialog::deleteAtomicConnection(QString startConnectorName, QSt
   LibraryTreeItem *pEndLibraryTreeItem = mpConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem();
   LibraryTreeItem *pEndParentLibraryTreeItem = pEndLibraryTreeItem->parent();
 
-  Component *pStartComponent = pStartParentLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentObject(startConnectorName);
-  Component *pEndComponent = pEndParentLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentObject(endConnectorName);
+  Element *pStartComponent = pStartParentLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentObject(startConnectorName);
+  Element *pEndComponent = pEndParentLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentObject(endConnectorName);
 
   if (pStartComponent && pEndComponent) {
     foreach (LineAnnotation *pConnectionLineAnnotation, mpGraphicsView->getConnectionsList()) {
@@ -1603,8 +1603,8 @@ void BusConnectionDialog::addAtomicConnection(QString startConnectorName, QStrin
   LibraryTreeItem *pEndLibraryTreeItem = mpConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem();
   LibraryTreeItem *pEndParentLibraryTreeItem = pEndLibraryTreeItem->parent();
 
-  Component *pStartComponent = pStartParentLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentObject(startConnectorName);
-  Component *pEndComponent = pEndParentLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentObject(endConnectorName);
+  Element *pStartComponent = pStartParentLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentObject(startConnectorName);
+  Element *pEndComponent = pEndParentLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentObject(endConnectorName);
 
   if (pStartComponent && pEndComponent) {
     LineAnnotation *pNewConnectionLineAnnotation = new LineAnnotation("", 0, 0, mpGraphicsView);

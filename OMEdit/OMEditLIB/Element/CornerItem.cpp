@@ -33,7 +33,7 @@
  */
 
 #include "CornerItem.h"
-#include "Component.h"
+#include "Element.h"
 #include "Modeling/Commands.h"
 
 /*!
@@ -193,7 +193,7 @@ void CornerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 /*!
   \param pComponent - pointer to Component.
   */
-ResizerItem::ResizerItem(Component *pComponent)
+ResizerItem::ResizerItem(Element *pComponent)
   : QGraphicsItem(pComponent), mIsPressed(false)
 {
   setZValue(2999);
@@ -347,7 +347,7 @@ void ResizerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 /*!
   \param pComponent - pointer to Component.
   */
-OriginItem::OriginItem(Component *pComponent)
+OriginItem::OriginItem(Element *pComponent)
 {
   mpComponent = pComponent;
   mpShapeAnnotation = 0;
