@@ -533,9 +533,9 @@ public constant ErrorTypes.Message REDECLARE_NONEXISTING_ELEMENT = ErrorTypes.ME
 public constant ErrorTypes.Message INVALID_ARGUMENT_TYPE_FIRST_ARRAY = ErrorTypes.MESSAGE(229, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("The first argument of %s must be an array expression."));
 public constant ErrorTypes.Message INVALID_ARGUMENT_TYPE_BRANCH_FIRST = ErrorTypes.MESSAGE(230, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("The first argument of %s must be on the form A.R, where A is a connector and R an over-determined type/record."));
+  Gettext.gettext("The first argument '%s' of %s must have the form A.R, where A is a connector and R an over-determined type/record."));
 public constant ErrorTypes.Message INVALID_ARGUMENT_TYPE_BRANCH_SECOND = ErrorTypes.MESSAGE(231, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("The second argument of %s must be on the form A.R, where A is a connector and R an over-determined type/record."));
+  Gettext.gettext("The second argument '%s' of %s must have the form A.R, where A is a connector and R an over-determined type/record."));
 public constant ErrorTypes.Message INVALID_ARGUMENT_TYPE_OVERDET_FIRST = ErrorTypes.MESSAGE(232, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("The first argument of %s must be an over-determined type or record."));
 public constant ErrorTypes.Message INVALID_ARGUMENT_TYPE_OVERDET_SECOND = ErrorTypes.MESSAGE(233, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -792,6 +792,11 @@ public constant ErrorTypes.Message IMPORT_IN_COMPOSITE_NAME = ErrorTypes.MESSAGE
   Gettext.gettext("Found imported name ‘%s‘ while looking up composite name ‘%s‘."));
 public constant ErrorTypes.Message SHADOWED_ITERATOR = ErrorTypes.MESSAGE(360, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("An iterator named ‘%s‘ is already declared in this scope."));
+public constant ErrorTypes.Message W_INVALID_ARGUMENT_TYPE_BRANCH_FIRST = ErrorTypes.MESSAGE(361, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  Gettext.gettext("The first argument '%s' of %s must have the form A.R, where A is a connector and R an over-determined type/record."));
+public constant ErrorTypes.Message W_INVALID_ARGUMENT_TYPE_BRANCH_SECOND = ErrorTypes.MESSAGE(362, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  Gettext.gettext("The second argument '%s' of %s must have the form A.R, where A is a connector and R an over-determined type/record."));
+
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
 public constant ErrorTypes.Message INITIALIZATION_OVER_SPECIFIED = ErrorTypes.MESSAGE(497, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
