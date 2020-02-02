@@ -33,7 +33,7 @@
  */
 
 #include "Transformation.h"
-#include "Component.h"
+#include "Element.h"
 
 Transformation::Transformation()
 {
@@ -42,7 +42,7 @@ Transformation::Transformation()
   initialize(StringHandler::Diagram);
 }
 
-Transformation::Transformation(StringHandler::ViewType viewType, Component *pComponent)
+Transformation::Transformation(StringHandler::ViewType viewType, Element *pComponent)
 {
   mValid = true;
   mpComponent = pComponent;

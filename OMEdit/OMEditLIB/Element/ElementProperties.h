@@ -35,7 +35,7 @@
 #ifndef COMPONENTPROPERTIES_H
 #define COMPONENTPROPERTIES_H
 
-#include "Component.h"
+#include "Element.h"
 
 #include <QRadioButton>
 
@@ -49,8 +49,8 @@ public:
     CheckBox,
     Enumeration
   };
-  Parameter(Component *pComponent, bool showStartAttribute, QString tab, QString groupBox);
-  Component* getComponent() {return mpComponent;}
+  Parameter(Element *pComponent, bool showStartAttribute, QString tab, QString groupBox);
+  Element* getComponent() {return mpComponent;}
   void setTab(QString tab) {mTab = tab;}
   QString getTab() {return mTab;}
   void setGroupBox(QString groupBox) {mGroupBox = groupBox;}
@@ -85,7 +85,7 @@ public:
   QString getFixedState();
   void setEnabled(bool enable);
 private:
-  Component *mpComponent;
+  Element *mpComponent;
   QString mTab;
   QString mGroupBox;
   bool mShowStartAttribute;
@@ -151,14 +151,14 @@ private:
   QVBoxLayout *mpVerticalLayout;
 };
 
-class ComponentParameters : public QDialog
+class ElementParameters : public QDialog
 {
   Q_OBJECT
 public:
-  ComponentParameters(Component *pComponent, QWidget *pParent = 0);
-  ~ComponentParameters();
+  ElementParameters(Element *pComponent, QWidget *pParent = 0);
+  ~ElementParameters();
 private:
-  Component *mpComponent;
+  Element *mpComponent;
   Label *mpParametersHeading;
   QFrame *mHorizontalLine;
   QTabWidget *mpParametersTabWidget;
@@ -192,15 +192,15 @@ public slots:
   void updateComponentParameters();
 };
 
-class ComponentAttributes : public QDialog
+class ElementAttributes : public QDialog
 {
   Q_OBJECT
 public:
-  ComponentAttributes(Component *pComponent, QWidget *pParent = 0);
+  ElementAttributes(Element *pComponent, QWidget *pParent = 0);
   void setUpDialog();
   void initializeDialog();
 private:
-  Component *mpComponent;
+  Element *mpComponent;
   Label *mpAttributesHeading;
   QFrame *mHorizontalLine;
   QGroupBox *mpTypeGroupBox;
@@ -242,11 +242,11 @@ class CompositeModelSubModelAttributes : public QDialog
 {
   Q_OBJECT
 public:
-  CompositeModelSubModelAttributes(Component *pComponent, QWidget *pParent = 0);
+  CompositeModelSubModelAttributes(Element *pComponent, QWidget *pParent = 0);
   void setUpDialog();
   void initializeDialog();
 private:
-  Component *mpComponent;
+  Element *mpComponent;
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
   Label *mpSimulationToolLabel;

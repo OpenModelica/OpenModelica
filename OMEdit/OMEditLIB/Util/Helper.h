@@ -243,6 +243,7 @@ public:
   static QString horizontal;
   static QString vertical;
   static QString component;
+  static QString element;
   static QString scaleFactor;
   static QString preserveAspectRatio;
   static QString originX;

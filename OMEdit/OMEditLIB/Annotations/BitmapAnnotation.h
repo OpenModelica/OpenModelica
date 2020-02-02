@@ -38,7 +38,7 @@
 #include "ShapeAnnotation.h"
 #include "Util/Utilities.h"
 
-class Component;
+class Element;
 class BitmapAnnotation : public ShapeAnnotation
 {
   Q_OBJECT
@@ -46,7 +46,7 @@ public:
   // Used for icon/diagram shape
   BitmapAnnotation(QString classFileName, QString annotation, GraphicsView *pGraphicsView);
   // Used for shape inside a component
-  BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   // Used for icon/diagram inherited shape
   BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   // Used for OMSimulator FMU
@@ -61,7 +61,7 @@ public:
   QString getShapeAnnotation() override;
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
 private:
-  Component *mpComponent;
+  Element *mpComponent;
 public slots:
   void duplicate() override;
 };

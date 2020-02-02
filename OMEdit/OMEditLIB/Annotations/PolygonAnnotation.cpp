@@ -48,7 +48,7 @@ PolygonAnnotation::PolygonAnnotation(QString annotation, GraphicsView *pGraphics
   setShapeFlags(true);
 }
 
-PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
+PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent)
 {
   updateShape(pShapeAnnotation);
@@ -64,7 +64,7 @@ PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Graphics
   mpGraphicsView->addItem(this);
 }
 
-PolygonAnnotation::PolygonAnnotation(Component *pParent)
+PolygonAnnotation::PolygonAnnotation(Element *pParent)
   : ShapeAnnotation(0, pParent)
 {
   // set the default values

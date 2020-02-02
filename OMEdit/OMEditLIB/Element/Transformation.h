@@ -39,19 +39,19 @@
 #include <QTransform>
 #include "Util/StringHandler.h"
 
-class Component;
+class Element;
 
 class Transformation
 {
 public:
   Transformation();
-  Transformation(StringHandler::ViewType viewType, Component *pComponent = 0);
+  Transformation(StringHandler::ViewType viewType, Element *pComponent = 0);
   Transformation(const Transformation &transformation);
   void initialize(StringHandler::ViewType viewType);
   void parseTransformationString(QString value, qreal width, qreal height);
   void updateTransformation(const Transformation &transformation);
   QTransform getTransformationMatrix();
-  Component* getComponent() const {return mpComponent;}
+  Element* getComponent() const {return mpComponent;}
   bool isValid() const {return mValid;}
   bool getVisible() const {return mVisible;}
   void adjustPosition(qreal x, qreal y);
@@ -69,7 +69,7 @@ public:
   bool operator==(const Transformation &transformation) const;
 private:
   bool mValid;
-  Component *mpComponent;
+  Element *mpComponent;
   StringHandler::ViewType mViewType;
   qreal mWidth;
   qreal mHeight;

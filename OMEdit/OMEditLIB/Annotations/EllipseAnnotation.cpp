@@ -48,7 +48,7 @@ EllipseAnnotation::EllipseAnnotation(QString annotation, GraphicsView *pGraphics
   setShapeFlags(true);
 }
 
-EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
+EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent)
 {
   updateShape(pShapeAnnotation);

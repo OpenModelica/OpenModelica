@@ -90,17 +90,17 @@ private:
 class AddComponentCommand : public UndoCommand
 {
 public:
-  AddComponentCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position, ComponentInfo *pComponentInfo,
+  AddComponentCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position, ElementInfo *pComponentInfo,
                       bool addObject, bool openingClass, GraphicsView *pGraphicsView, UndoCommand *pParent = 0);
-  Component* getComponent() {return mpDiagramComponent;}
+  Element* getComponent() {return mpDiagramComponent;}
   void redoInternal();
   void undo();
 private:
   LibraryTreeItem *mpLibraryTreeItem;
   bool mAddObject;
-  ComponentInfo *mpComponentInfo;
-  Component *mpIconComponent;
-  Component *mpDiagramComponent;
+  ElementInfo *mpComponentInfo;
+  Element *mpIconComponent;
+  Element *mpDiagramComponent;
   GraphicsView *mpIconGraphicsView;
   GraphicsView *mpDiagramGraphicsView;
   GraphicsView *mpGraphicsView;
@@ -109,13 +109,13 @@ private:
 class UpdateComponentTransformationsCommand : public UndoCommand
 {
 public:
-  UpdateComponentTransformationsCommand(Component *pComponent, const Transformation &oldTransformation,
+  UpdateComponentTransformationsCommand(Element *pComponent, const Transformation &oldTransformation,
                                         const Transformation &newTransformation, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
 private:
-  Component *mpComponent;
-  Component *mpIconOrDiagramComponent;
+  Element *mpComponent;
+  Element *mpIconOrDiagramComponent;
   Transformation mOldTransformation;
   Transformation mNewTransformation;
 };
@@ -123,27 +123,27 @@ private:
 class UpdateComponentAttributesCommand : public UndoCommand
 {
 public:
-  UpdateComponentAttributesCommand(Component *pComponent, const ComponentInfo &oldComponentInfo, const ComponentInfo &newComponentInfo, UndoCommand *pParent = 0);
+  UpdateComponentAttributesCommand(Element *pComponent, const ElementInfo &oldComponentInfo, const ElementInfo &newComponentInfo, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
-  static void updateComponentAttributes(Component *pComponent, const ComponentInfo &componentInfo);
-  static void updateComponentModifiers(Component *pComponent, const ComponentInfo &componentInfo);
+  static void updateComponentAttributes(Element *pComponent, const ElementInfo &componentInfo);
+  static void updateComponentModifiers(Element *pComponent, const ElementInfo &componentInfo);
 private:
-  Component *mpComponent;
-  ComponentInfo mOldComponentInfo;
-  ComponentInfo mNewComponentInfo;
+  Element *mpComponent;
+  ElementInfo mOldComponentInfo;
+  ElementInfo mNewComponentInfo;
 };
 
 class UpdateComponentParametersCommand : public UndoCommand
 {
 public:
-  UpdateComponentParametersCommand(Component *pComponent, QMap<QString, QString> oldComponentModifiersMap,
+  UpdateComponentParametersCommand(Element *pComponent, QMap<QString, QString> oldComponentModifiersMap,
                                    QMap<QString, QString> oldComponentExtendsModifiersMap, QMap<QString, QString> newComponentModifiersMap,
                                    QMap<QString, QString> newComponentExtendsModifiersMap, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
 private:
-  Component *mpComponent;
+  Element *mpComponent;
   QMap<QString, QString> mOldComponentModifiersMap;
   QMap<QString, QString> mOldComponentExtendsModifiersMap;
   QMap<QString, QString> mNewComponentModifiersMap;
@@ -153,12 +153,12 @@ private:
 class DeleteComponentCommand : public UndoCommand
 {
 public:
-  DeleteComponentCommand(Component *pComponent, GraphicsView *pGraphicsView, UndoCommand *pParent = 0);
+  DeleteComponentCommand(Element *pComponent, GraphicsView *pGraphicsView, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
 private:
-  Component *mpComponent;
-  Component *mpIconComponent;
+  Element *mpComponent;
+  Element *mpIconComponent;
   GraphicsView *mpIconGraphicsView;
   GraphicsView *mpDiagramGraphicsView;
   GraphicsView *mpGraphicsView;
@@ -344,15 +344,15 @@ private:
 class UpdateSubModelAttributesCommand : public UndoCommand
 {
 public:
-  UpdateSubModelAttributesCommand(Component *pComponent, const ComponentInfo &oldComponentInfo, const ComponentInfo &newComponentInfo,
+  UpdateSubModelAttributesCommand(Element *pComponent, const ElementInfo &oldComponentInfo, const ElementInfo &newComponentInfo,
                                   QStringList &parameterNames, QStringList &oldParameterValues,
                                   QStringList &newParameterValues, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
 private:
-  Component *mpComponent;
-  ComponentInfo mOldComponentInfo;
-  ComponentInfo mNewComponentInfo;
+  Element *mpComponent;
+  ElementInfo mOldComponentInfo;
+  ElementInfo mNewComponentInfo;
   QStringList mParameterNames;
   QStringList mOldParameterValues;
   QStringList mNewParameterValues;
@@ -419,7 +419,7 @@ private:
   GraphicsView *mpGraphicsView;
   bool mOpeningClass;
   oms_system_enu_t mType;
-  Component *mpComponent;
+  Element *mpComponent;
 };
 
 class AddSubModelCommand : public UndoCommand
@@ -436,18 +436,18 @@ private:
   LibraryTreeItem *mpLibraryTreeItem;
   QString mAnnotation;
   bool mOpeningClass;
-  Component *mpComponent;
+  Element *mpComponent;
   GraphicsView *mpGraphicsView;
 };
 
 class DeleteSubModelCommand : public UndoCommand
 {
 public:
-  DeleteSubModelCommand(Component *pComponent, GraphicsView *pGraphicsView, UndoCommand *pParent = 0);
+  DeleteSubModelCommand(Element *pComponent, GraphicsView *pGraphicsView, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
 private:
-  Component *mpComponent;
+  Element *mpComponent;
   GraphicsView *mpGraphicsView;
   QString mName;
   QString mPath;
@@ -471,19 +471,19 @@ private:
   oms_causality_enu_t mCausality;
   oms_signal_type_enu_t mType;
   GraphicsView *mpGraphicsView;
-  Component *mpIconComponent;
-  Component *mpDiagramComponent;
+  Element *mpIconComponent;
+  Element *mpDiagramComponent;
 };
 
 class ElementPropertiesCommand : public UndoCommand
 {
 public:
-  ElementPropertiesCommand(Component *pComponent, QString name, ElementProperties oldElementProperties,
+  ElementPropertiesCommand(Element *pComponent, QString name, ElementProperties oldElementProperties,
                            ElementProperties newElementProperties, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
 private:
-  Component *mpComponent;
+  Element *mpComponent;
   ElementProperties mOldElementProperties;
   ElementProperties mNewElementProperties;
 };
@@ -549,8 +549,8 @@ private:
   GraphicsView *mpDiagramGraphicsView;
   bool mOpeningClass;
   GraphicsView *mpGraphicsView;
-  Component *mpIconComponent;
-  Component *mpDiagramComponent;
+  Element *mpIconComponent;
+  Element *mpDiagramComponent;
 };
 
 class AddConnectorToBusCommand : public UndoCommand
@@ -595,8 +595,8 @@ private:
   oms_tlm_domain_t mDomain;
   int mDimension;
   oms_tlm_interpolation_t mInterpolation;
-  Component *mpIconComponent;
-  Component *mpDiagramComponent;
+  Element *mpIconComponent;
+  Element *mpDiagramComponent;
 };
 
 class AddConnectorToTLMBusCommand : public UndoCommand

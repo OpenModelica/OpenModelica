@@ -89,8 +89,8 @@ void DiagramWindow::drawDiagram(ModelWidget *pModelWidget)
               pShapeAnnotation, SLOT(updateDynamicSelect(double)));
     }
 
-    foreach (Component *pReferenceComponent, pModelWidget->getDiagramGraphicsView()->getComponentsList()) {
-      Component *pComponent = new Component(pReferenceComponent, mpGraphicsView);
+    foreach (Element *pReferenceComponent, pModelWidget->getDiagramGraphicsView()->getComponentsList()) {
+      Element *pComponent = new Element(pReferenceComponent, mpGraphicsView);
       mpGraphicsView->addComponentToList(pComponent);
       connect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)),
               pComponent, SLOT(updateDynamicSelect(double)));

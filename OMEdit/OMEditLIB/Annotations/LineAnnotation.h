@@ -45,7 +45,7 @@
 #include<functional>
 
 class Label;
-class Component;
+class Element;
 class TextAnnotation;
 
 class LineAnnotation : public ShapeAnnotation
@@ -62,20 +62,20 @@ public:
   // Used for icon/diagram shape
   LineAnnotation(QString annotation, GraphicsView *pGraphicsView);
   // Used for shape inside a component
-  LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  LineAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   // Used for icon/diagram inherited shape
   LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   // Used for creating connection/transition
-  LineAnnotation(LineAnnotation::LineType lineType, Component *pStartComponent, GraphicsView *pGraphicsView);
+  LineAnnotation(LineAnnotation::LineType lineType, Element *pStartComponent, GraphicsView *pGraphicsView);
   // Used for reading a connection
-  LineAnnotation(QString annotation, Component *pStartComponent, Component *pEndComponent, GraphicsView *pGraphicsView);
+  LineAnnotation(QString annotation, Element *pStartComponent, Element *pEndComponent, GraphicsView *pGraphicsView);
   // Used for reading a transition
-  LineAnnotation(QString annotation, QString text, Component *pStartComponent, Component *pEndComponent, QString condition, QString immediate,
+  LineAnnotation(QString annotation, QString text, Element *pStartComponent, Element *pEndComponent, QString condition, QString immediate,
                  QString reset, QString synchronize, QString priority, GraphicsView *pGraphicsView);
   // Used for reading an initial state
-  LineAnnotation(QString annotation, Component *pComponent, GraphicsView *pGraphicsView);
+  LineAnnotation(QString annotation, Element *pComponent, GraphicsView *pGraphicsView);
   // Used for non-exisiting component
-  LineAnnotation(Component *pParent);
+  LineAnnotation(Element *pParent);
   // Used for non-existing class
   LineAnnotation(GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation) override;
@@ -98,12 +98,12 @@ public:
   void updateTransitionTextPosition();
   void setLineType(LineType lineType) {mLineType = lineType;}
   LineType getLineType() {return mLineType;}
-  void setStartComponent(Component *pStartComponent) {mpStartComponent = pStartComponent;}
-  Component* getStartComponent() {return mpStartComponent;}
+  void setStartComponent(Element *pStartComponent) {mpStartComponent = pStartComponent;}
+  Element* getStartComponent() {return mpStartComponent;}
   void setStartComponentName(QString name) {mStartComponentName = name;}
   QString getStartComponentName() {return mStartComponentName;}
-  void setEndComponent(Component *pEndComponent) {mpEndComponent = pEndComponent;}
-  Component* getEndComponent() {return mpEndComponent;}
+  void setEndComponent(Element *pEndComponent) {mpEndComponent = pEndComponent;}
+  Element* getEndComponent() {return mpEndComponent;}
   void setEndComponentName(QString name) {mEndComponentName = name;}
   QString getEndComponentName() {return mEndComponentName;}
   void setCondition(QString condition) {mCondition = condition;}
@@ -140,15 +140,15 @@ public:
   void updateTransistion(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority);
   void setProperties(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority);
 
-  static QColor findLineColorForConnection(Component *pComponent);
+  static QColor findLineColorForConnection(Element *pComponent);
 protected:
   QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 
   private:
   LineType mLineType;
-  Component *mpStartComponent;
+  Element *mpStartComponent;
   QString mStartComponentName;
-  Component *mpEndComponent;
+  Element *mpEndComponent;
   QString mEndComponentName;
   QString mCondition;
   bool mImmediate;
@@ -237,7 +237,7 @@ public:
   Qt::ItemFlags flags(const QModelIndex &index) const override;
   QModelIndex findFirstEnabledItem(ExpandableConnectorTreeItem *pExpandableConnectorTreeItem);
   QModelIndex expandableConnectorTreeItemIndex(const ExpandableConnectorTreeItem *pExpandableConnectorTreeItem) const;
-  void createExpandableConnectorTreeItem(Component *pComponent, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
+  void createExpandableConnectorTreeItem(Element *pComponent, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
 private:
   CreateConnectionDialog *mpCreateConnectionDialog;
   ExpandableConnectorTreeItem *mpRootExpandableConnectorTreeItem;
@@ -264,10 +264,10 @@ public:
 private:
   GraphicsView *mpGraphicsView;
   LineAnnotation *mpConnectionLineAnnotation;
-  Component *mpStartComponent;
-  Component *mpStartRootComponent;
-  Component *mpEndComponent;
-  Component *mpEndRootComponent;
+  Element *mpStartComponent;
+  Element *mpStartRootComponent;
+  Element *mpEndComponent;
+  Element *mpEndRootComponent;
   Label *mpHeading;
   QFrame *mpHorizontalLine;
   ExpandableConnectorTreeModel *mpStartExpandableConnectorTreeModel;
@@ -297,8 +297,8 @@ private:
   QSpinBox* createSpinBox(QString arrayIndex);
   static QString createComponentNameFromLayout(QHBoxLayout *pLayout);
   static QString getComponentConnectionName(GraphicsView *pGraphicsView, ExpandableConnectorTreeView *pExpandableConnectorTreeView, QHBoxLayout *pConnectionHorizontalLayout,
-                                            Component *pComponent1, Component *pRootComponent1, QSpinBox *pComponentSpinBox1, QSpinBox *pRootComponentSpinBox1,
-                                            Component *pComponent2, Component *pRootComponent2, QSpinBox *pComponentSpinBox2, QSpinBox *pRootComponentSpinBox2);
+                                            Element *pComponent1, Element *pRootComponent1, QSpinBox *pComponentSpinBox1, QSpinBox *pRootComponentSpinBox1,
+                                            Element *pComponent2, Element *pRootComponent2, QSpinBox *pComponentSpinBox2, QSpinBox *pRootComponentSpinBox2);
 public slots:
   void startConnectorChanged(const QModelIndex &current, const QModelIndex &previous);
   void endConnectorChanged(const QModelIndex &current, const QModelIndex &previous);

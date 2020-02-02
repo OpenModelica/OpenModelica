@@ -69,7 +69,7 @@ LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
   setShapeFlags(true);
 }
 
-LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
+LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent)
 {
   updateShape(pShapeAnnotation);
@@ -101,7 +101,7 @@ LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *
   mpGraphicsView->addItem(this);
 }
 
-LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Component *pStartComponent, GraphicsView *pGraphicsView)
+LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Element *pStartComponent, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
   setFlag(QGraphicsItem::ItemIsSelectable);
@@ -147,7 +147,7 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Component *pSt
   mpGraphicsView->addItem(this);
   setOldAnnotation("");
 
-  ComponentInfo *pInfo = getStartComponent()->getComponentInfo();
+  ElementInfo *pInfo = getStartComponent()->getComponentInfo();
   bool tlm = (pInfo->getTLMCausality() == "Bidirectional");
   int dimensions = pInfo->getDimensions();
 
@@ -169,7 +169,7 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Component *pSt
   }
 }
 
-LineAnnotation::LineAnnotation(QString annotation, Component *pStartComponent, Component *pEndComponent, GraphicsView *pGraphicsView)
+LineAnnotation::LineAnnotation(QString annotation, Element *pStartComponent, Element *pEndComponent, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
   setFlag(QGraphicsItem::ItemIsSelectable);
@@ -208,7 +208,7 @@ LineAnnotation::LineAnnotation(QString annotation, Component *pStartComponent, C
   mpGraphicsView->addItem(this);
 }
 
-LineAnnotation::LineAnnotation(QString annotation, QString text, Component *pStartComponent, Component *pEndComponent, QString condition,
+LineAnnotation::LineAnnotation(QString annotation, QString text, Element *pStartComponent, Element *pEndComponent, QString condition,
                                QString immediate, QString reset, QString synchronize, QString priority, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
@@ -248,7 +248,7 @@ LineAnnotation::LineAnnotation(QString annotation, QString text, Component *pSta
   mpGraphicsView->addItem(this);
 }
 
-LineAnnotation::LineAnnotation(QString annotation, Component *pComponent, GraphicsView *pGraphicsView)
+LineAnnotation::LineAnnotation(QString annotation, Element *pComponent, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
   setFlag(QGraphicsItem::ItemIsSelectable);
@@ -287,7 +287,7 @@ LineAnnotation::LineAnnotation(QString annotation, Component *pComponent, Graphi
   mpGraphicsView->addItem(this);
 }
 
-LineAnnotation::LineAnnotation(Component *pParent)
+LineAnnotation::LineAnnotation(Element *pParent)
   : ShapeAnnotation(0, pParent)
 {
   setLineType(LineAnnotation::ComponentType);
@@ -1115,10 +1115,10 @@ void LineAnnotation::showOMSConnection()
  * \param pComponent
  * \return
  */
-QColor LineAnnotation::findLineColorForConnection(Component *pComponent)
+QColor LineAnnotation::findLineColorForConnection(Element *pComponent)
 {
   QColor lineColor(0, 0, 0);
-  foreach (Component *pInheritedComponent, pComponent->getInheritedComponentsList()) {
+  foreach (Element *pInheritedComponent, pComponent->getInheritedElementsList()) {
     if (pInheritedComponent->getShapesList().size() > 0) {
       return pInheritedComponent->getShapesList().at(0)->getLineColor();
     } else {
@@ -1154,7 +1154,7 @@ void LineAnnotation::handleComponentMoved()
   }
   prepareGeometryChange();
   if (mpStartComponent) {
-    Component *pComponent = qobject_cast<Component*>(sender());
+    Element *pComponent = qobject_cast<Element*>(sender());
     if (pComponent == mpStartComponent->getRootParentComponent()) {
       updateStartPoint(mpGraphicsView->roundPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center())));
       if (mLineType == LineAnnotation::TransitionType) {
@@ -1176,7 +1176,7 @@ void LineAnnotation::handleComponentMoved()
     }
   }
   if (mpEndComponent) {
-    Component *pComponent = qobject_cast<Component*>(sender());
+    Element *pComponent = qobject_cast<Element*>(sender());
     if (pComponent == mpEndComponent->getRootParentComponent()) {
       updateEndPoint(mpGraphicsView->roundPoint(mpEndComponent->mapToScene(mpEndComponent->boundingRect().center())));
       if (mLineType == LineAnnotation::TransitionType) {
@@ -1593,7 +1593,7 @@ QModelIndex ExpandableConnectorTreeModel::expandableConnectorTreeItemIndex(const
   return expandableConnectorTreeItemIndexHelper(pExpandableConnectorTreeItem, mpRootExpandableConnectorTreeItem, QModelIndex());
 }
 
-void ExpandableConnectorTreeModel::createExpandableConnectorTreeItem(Component *pComponent,
+void ExpandableConnectorTreeModel::createExpandableConnectorTreeItem(Element *pComponent,
                                                                      ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem)
 {
   StringHandler::ModelicaClasses restriction = StringHandler::Model;
@@ -1611,7 +1611,7 @@ void ExpandableConnectorTreeModel::createExpandableConnectorTreeItem(Component *
   pParentExpandableConnectorTreeItem->insertChild(row, pExpandableConnectorTreeItem);
   endInsertRows();
   if (pComponent->getLibraryTreeItem()) {
-    foreach (Component *pChildComponent, pComponent->getLibraryTreeItem()->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
+    foreach (Element *pChildComponent, pComponent->getLibraryTreeItem()->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
       createExpandableConnectorTreeItem(pChildComponent, pExpandableConnectorTreeItem);
     }
   }
@@ -1914,8 +1914,8 @@ QString CreateConnectionDialog::createComponentNameFromLayout(QHBoxLayout *pLayo
  * \return
  */
 QString CreateConnectionDialog::getComponentConnectionName(GraphicsView *pGraphicsView, ExpandableConnectorTreeView *pExpandableConnectorTreeView, QHBoxLayout *pConnectionHorizontalLayout,
-                                                           Component *pComponent1, Component *pRootComponent1, QSpinBox *pComponentSpinBox1, QSpinBox *pRootComponentSpinBox1,
-                                                           Component *pComponent2, Component *pRootComponent2, QSpinBox *pComponentSpinBox2, QSpinBox *pRootComponentSpinBox2)
+                                                           Element *pComponent1, Element *pRootComponent1, QSpinBox *pComponentSpinBox1, QSpinBox *pRootComponentSpinBox1,
+                                                           Element *pComponent2, Element *pRootComponent2, QSpinBox *pComponentSpinBox2, QSpinBox *pRootComponentSpinBox2)
 {
   QString componentName;
   if (pExpandableConnectorTreeView) {

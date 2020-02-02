@@ -48,7 +48,7 @@ RectangleAnnotation::RectangleAnnotation(QString annotation, GraphicsView *pGrap
   setShapeFlags(true);
 }
 
-RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
+RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent)
 {
   updateShape(pShapeAnnotation);
@@ -64,7 +64,7 @@ RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Grap
   mpGraphicsView->addItem(this);
 }
 
-RectangleAnnotation::RectangleAnnotation(Component *pParent)
+RectangleAnnotation::RectangleAnnotation(Element *pParent)
   : ShapeAnnotation(0, pParent)
 {
   // set the default values

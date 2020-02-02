@@ -36,7 +36,7 @@
 #define MODELWIDGETCONTAINER_H
 
 #include "CoOrdinateSystem.h"
-#include "Component/Component.h"
+#include "Element/Element.h"
 #include "Util/StringHandler.h"
 #include "Util/Helper.h"
 #include "Editors/BaseEditor.h"
@@ -61,7 +61,7 @@
 #include <QUndoView>
 
 class ModelWidget;
-class ComponentInfo;
+class ElementInfo;
 class LineAnnotation;
 class PolygonAnnotation;
 class RectangleAnnotation;
@@ -99,13 +99,13 @@ private:
   bool mIsCreatingBitmapShape;
   bool mIsPanning;
   QPoint mLastMouseEventPos;
-  Component *mpClickedComponent;
-  Component *mpClickedState;
+  Element *mpClickedComponent;
+  Element *mpClickedState;
   bool mIsMovingComponentsAndShapes;
   bool mRenderingLibraryPixmap;
-  QList<Component*> mComponentsList;
+  QList<Element*> mComponentsList;
   // A list of components that are not deleted but are removed from scene.
-  QList<Component*> mOutOfSceneComponentsList;
+  QList<Element*> mOutOfSceneComponentsList;
   QList<LineAnnotation*> mConnectionsList;
   QList<LineAnnotation*> mOutOfSceneConnectionsList;
   QList<LineAnnotation*> mTransitionsList;
@@ -114,7 +114,7 @@ private:
   QList<LineAnnotation*> mOutOfSceneInitialStatesList;
   QList<ShapeAnnotation*> mShapesList;
   QList<ShapeAnnotation*> mOutOfSceneShapesList;
-  QList<Component*> mInheritedComponentsList;
+  QList<Element*> mInheritedComponentsList;
   QList<LineAnnotation*> mInheritedConnectionsList;
   QList<ShapeAnnotation*> mInheritedShapesList;
   LineAnnotation *mpConnectionLineAnnotation;
@@ -203,21 +203,21 @@ public:
   QAction* getFlipVerticalAction() {return mpFlipVerticalAction;}
   bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
-                          ComponentInfo *pComponentInfo, bool addObject, bool openingClass, bool emitComponentAdded);
-  void addComponentToList(Component *pComponent) {mComponentsList.append(pComponent);}
-  void addComponentToOutOfSceneList(Component *pComponent) {mOutOfSceneComponentsList.append(pComponent);}
-  void addInheritedComponentToList(Component *pComponent) {mInheritedComponentsList.append(pComponent);}
-  void addComponentToClass(Component *pComponent);
-  void deleteComponent(Component *pComponent);
-  void deleteComponentFromClass(Component *pComponent);
-  void deleteComponentFromList(Component *pComponent) {mComponentsList.removeOne(pComponent);}
-  void deleteComponentFromOutOfSceneList(Component *pComponent) {mOutOfSceneComponentsList.removeOne(pComponent);}
-  void deleteInheritedComponentFromList(Component *pComponent) {mInheritedComponentsList.removeOne(pComponent);}
-  Component* getComponentObject(QString componentName);
+                          ElementInfo *pComponentInfo, bool addObject, bool openingClass, bool emitComponentAdded);
+  void addComponentToList(Element *pComponent) {mComponentsList.append(pComponent);}
+  void addComponentToOutOfSceneList(Element *pComponent) {mOutOfSceneComponentsList.append(pComponent);}
+  void addInheritedComponentToList(Element *pComponent) {mInheritedComponentsList.append(pComponent);}
+  void addComponentToClass(Element *pComponent);
+  void deleteComponent(Element *pComponent);
+  void deleteComponentFromClass(Element *pComponent);
+  void deleteComponentFromList(Element *pComponent) {mComponentsList.removeOne(pComponent);}
+  void deleteComponentFromOutOfSceneList(Element *pComponent) {mOutOfSceneComponentsList.removeOne(pComponent);}
+  void deleteInheritedComponentFromList(Element *pComponent) {mInheritedComponentsList.removeOne(pComponent);}
+  Element* getComponentObject(QString componentName);
   QString getUniqueComponentName(QString componentName, int number = 0);
   bool checkComponentName(QString componentName);
-  QList<Component*> getComponentsList() {return mComponentsList;}
-  QList<Component*> getInheritedComponentsList() {return mInheritedComponentsList;}
+  QList<Element*> getComponentsList() {return mComponentsList;}
+  QList<Element*> getInheritedElementsList() {return mInheritedComponentsList;}
   QList<LineAnnotation*> getConnectionsList() {return mConnectionsList;}
   QList<LineAnnotation*> getInheritedConnectionsList() {return mInheritedConnectionsList;}
   bool addConnectionToClass(LineAnnotation *pConnectionLineAnnotation, bool deleteUndo = false);
@@ -230,7 +230,7 @@ public:
   void deleteConnectionFromOutOfSceneList(LineAnnotation *pConnectionLineAnnotation) {mOutOfSceneConnectionsList.removeOne(pConnectionLineAnnotation);}
   void removeConnectionsFromView();
   void deleteInheritedConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.removeOne(pConnectionLineAnnotation);}
-  int numberOfComponentConnections(Component *pComponent, LineAnnotation *pExcludeConnectionLineAnnotation = 0);
+  int numberOfComponentConnections(Element *pComponent, LineAnnotation *pExcludeConnectionLineAnnotation = 0);
   QList<LineAnnotation*> getTransitionsList() {return mTransitionsList;}
   void addTransitionToClass(LineAnnotation *pTransitionLineAnnotation);
   void deleteTransitionFromClass(LineAnnotation *pTransitionLineAnnotation);
@@ -292,11 +292,11 @@ private:
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
   bool isAnyItemSelectedAndEditable(int key);
   bool isCreatingShape();
-  Component* getComponentFromQGraphicsItem(QGraphicsItem *pGraphicsItem);
-  Component* componentAtPosition(QPoint position);
-  Component* connectorComponentAtPosition(QPoint position);
-  Component* stateComponentAtPosition(QPoint position);
-  static bool updateComponentConnectorSizingParameter(GraphicsView *pGraphicsView, QString className, Component *pComponent);
+  Element* getComponentFromQGraphicsItem(QGraphicsItem *pGraphicsItem);
+  Element* componentAtPosition(QPoint position);
+  Element* connectorComponentAtPosition(QPoint position);
+  Element* stateComponentAtPosition(QPoint position);
+  static bool updateComponentConnectorSizingParameter(GraphicsView *pGraphicsView, QString className, Element *pComponent);
   bool handleDoubleClickOnComponent(QMouseEvent *event);
   void uncheckAllShapeDrawingActions();
   void setOriginAdjustAndInitialize(ShapeAnnotation* shapeAnnotation);
@@ -313,15 +313,15 @@ private:
   void copyItems(bool cut);
   void modelicaGraphicsViewContextMenu(QMenu *pMenu);
   void modelicaOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation, QMenu *pMenu);
-  void modelicaOneComponentContextMenu(Component *pComponent, QMenu *pMenu);
+  void modelicaOneComponentContextMenu(Element *pComponent, QMenu *pMenu);
   void modelicaMultipleItemsContextMenu(QMenu *pMenu);
   void compositeModelGraphicsViewContextMenu(QMenu *pMenu);
   void compositeModelOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation, QMenu *pMenu);
-  void compositeModelOneComponentContextMenu(Component *pComponent, QMenu *pMenu);
+  void compositeModelOneComponentContextMenu(Element *pComponent, QMenu *pMenu);
   void compositeModelMultipleItemsContextMenu(QMenu *pMenu);
   void omsGraphicsViewContextMenu(QMenu *pMenu);
   void omsOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation, QMenu *pMenu);
-  void omsOneComponentContextMenu(Component *pComponent, QMenu *pMenu);
+  void omsOneComponentContextMenu(Element *pComponent, QMenu *pMenu);
   void omsMultipleItemsContextMenu(QMenu *pMenu);
 signals:
   void manhattanize();
@@ -349,10 +349,10 @@ signals:
   void keyPressCtrlRight();
   void keyPressDuplicate();
 public slots:
-  void addConnection(Component *pComponent);
+  void addConnection(Element *pComponent);
   void removeCurrentConnection();
   void deleteConnection(LineAnnotation *pConnectionLineAnnotation);
-  void addTransition(Component *pComponent);
+  void addTransition(Element *pComponent);
   void removeCurrentTransition();
   void deleteTransition(LineAnnotation *pTransitionLineAnnotation);
   void deleteInitialState(LineAnnotation *pInitialLineAnnotation);
@@ -469,14 +469,14 @@ public:
     mConnections.clear();
     mShapes.clear();
   }
-  void addComponent(Component *pComponent) {mComponents.append(pComponent);}
-  QList<Component*> getComponents() const {return mComponents;}
+  void addComponent(Element *pComponent) {mComponents.append(pComponent);}
+  QList<Element*> getComponents() const {return mComponents;}
   void addConnection(LineAnnotation *pConnectionLineAnnotation) {mConnections.append(pConnectionLineAnnotation);}
   QList<LineAnnotation*> getConnections() const {return mConnections;}
   void addShape(ShapeAnnotation *pShapeAnnotation) {mShapes.append(pShapeAnnotation);}
   QList<ShapeAnnotation*> getShapes() const {return mShapes;}
 private:
-  QList<Component*> mComponents;
+  QList<Element*> mComponents;
   QList<LineAnnotation*> mConnections;
   QList<ShapeAnnotation*> mShapes;
   // QMimeData interface
@@ -516,7 +516,7 @@ public:
   QList<LibraryTreeItem*> getInheritedClassesList() {return mInheritedClassesList;}
   QMap<int, IconDiagramMap> getInheritedClassIconMap() {return mInheritedClassesIconMap;}
   QMap<int, IconDiagramMap> getInheritedClassDiagramMap() {return mInheritedClassesDiagramMap;}
-  const QList<ComponentInfo*> &getComponentsList() {return mComponentsList;}
+  const QList<ElementInfo*> &getComponentsList() {return mComponentsList;}
   QMap<QString, QString> getExtendsModifiersMap(QString extendsClass);
   QMap<QString, QString> getDerivedClassModifiersMap();
   void fetchExtendsModifiers(QString extendsClass);
@@ -525,7 +525,7 @@ public:
   void drawModelIconDiagramShapes(QStringList shapes, GraphicsView *pGraphicsView, bool select);
   ShapeAnnotation* createNonExistingInheritedShape(GraphicsView *pGraphicsView);
   static ShapeAnnotation* createInheritedShape(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
-  Component* createInheritedComponent(Component *pComponent, GraphicsView *pGraphicsView);
+  Element* createInheritedComponent(Element *pComponent, GraphicsView *pGraphicsView);
   LineAnnotation* createInheritedConnection(LineAnnotation *pConnectionLineAnnotation);
   void loadComponents();
   void loadDiagramView();
@@ -534,7 +534,7 @@ public:
   void addConnection(QStringList connectionList, QString connectionAnnotationString, bool addToOMC, bool select);
   void createModelWidgetComponents();
   ShapeAnnotation* drawOMSModelElement();
-  Component* getConnectorComponent(Component *pConnectorComponent, QString connectorName);
+  Element* getConnectorComponent(Element *pConnectorComponent, QString connectorName);
   void clearGraphicsViews();
   void reDrawModelWidget();
   bool validateText(LibraryTreeItem **pLibraryTreeItem);
@@ -588,7 +588,7 @@ private:
   QList<LibraryTreeItem*> mInheritedClassesList;
   QMap<int, IconDiagramMap> mInheritedClassesIconMap;
   QMap<int, IconDiagramMap> mInheritedClassesDiagramMap;
-  QList<ComponentInfo*> mComponentsList;
+  QList<ElementInfo*> mComponentsList;
   QStringList mComponentsAnnotationsList;
 
   IconDiagramMap getIconDiagramMap(QString mapAnnotation);
@@ -613,7 +613,7 @@ private:
   void drawOMSModelConnections();
   void associateBusWithConnector(QString busName, QString connectorName, GraphicsView *pGraphicsView);
   void dissociateBusWithConnector(QString busName, QString connectorName, GraphicsView *pGraphicsView);
-  void associateBusWithConnectors(Component *pBusComponent, GraphicsView *pGraphicsView);
+  void associateBusWithConnectors(Element *pBusComponent, GraphicsView *pGraphicsView);
 private slots:
   void showIconView(bool checked);
   void showDiagramView(bool checked);

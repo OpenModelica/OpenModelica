@@ -254,7 +254,7 @@ void ModelicaEditor::getCompletionAnnotations(const QStringList &stack, QList<Co
         QString name = pAnnotation->childAt(i)->getName();
         annotations << CompleterItem(name, name + "(", name, pAnnotation->childAt(i)->getHTMLDescription());
       }
-      QList<ComponentInfo *> components = pAnnotation->getComponentsList();
+      QList<ElementInfo *> components = pAnnotation->getComponentsList();
       for (int i = 0; i < components.size(); ++i) {
         QString componentName = components[i]->getName();
         QString componentValue = components[i]->getParameterValue(MainWindow::instance()->getOMCProxy(), pAnnotation->getNameStructure());

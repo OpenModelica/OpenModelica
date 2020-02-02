@@ -35,7 +35,7 @@
 #include "Util/Helper.h"
 #include "Util/Utilities.h"
 #include "Editors/BaseEditor.h"
-#include "Component/Component.h"
+#include "Element/Element.h"
 
 #include <QDomDocument>
 #include <QSyntaxHighlighter>
@@ -77,7 +77,7 @@ public:
   QString getParameterValue(QString subModelName, QString parameterName);
   void setParameterValue(QString subModelName, QString parameterName, QString value);
   void setCompositeModelName(QString name);
-  bool addSubModel(Component *pComponent);
+  bool addSubModel(Element *pComponent);
   void createAnnotationElement(QDomElement subModel, QString visible, QString origin, QString extent, QString rotation);
   void updateSubModelPlacementAnnotation(QString name, QString visible, QString origin, QString extent, QString rotation);
   void updateSubModelParameters(QString name, QString startCommand, QString exactStep, QString geometryFile);
@@ -90,7 +90,7 @@ public:
   QString getSimulationStartTime();
   QString getSimulationStopTime();
   void addInterfacesData(QDomElement interfaces, QDomElement parameters, QString singleModel=QString());
-  void addInterface(Component *pInterfaceComponent, QString subModel);
+  void addInterface(Element *pInterfaceComponent, QString subModel);
   bool interfacesAligned(QString interface1, QString interface2);
   bool deleteSubModel(QString name);
   bool deleteConnection(QString startComponentName, QString endComponentName);

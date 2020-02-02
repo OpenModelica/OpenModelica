@@ -36,7 +36,7 @@
 #define SHAPEANNOTATION_H
 
 #include "Util/StringHandler.h"
-#include "Component/Transformation.h"
+#include "Element/Transformation.h"
 
 #include <QGraphicsItem>
 #include <QSettings>
@@ -245,7 +245,7 @@ public slots:
   void updateDynamicSelect(double time);
 protected:
   GraphicsView *mpGraphicsView;
-  Component *mpParentComponent;
+  Element *mpParentComponent;
   QList<QPointF> mPoints;
   QList<LineGeometryType> mGeometries;
   QList<StringHandler::Arrow> mArrow;

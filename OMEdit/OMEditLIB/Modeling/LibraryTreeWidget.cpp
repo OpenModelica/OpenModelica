@@ -615,8 +615,8 @@ void LibraryTreeItem::addInheritedClass(LibraryTreeItem *pLibraryTreeItem)
   connect(pLibraryTreeItem, SIGNAL(unLoaded()), this, SLOT(handleUnloaded()), Qt::UniqueConnection);
   connect(pLibraryTreeItem, SIGNAL(shapeAdded(ShapeAnnotation*,GraphicsView*)),
           this, SLOT(handleShapeAdded(ShapeAnnotation*,GraphicsView*)), Qt::UniqueConnection);
-  connect(pLibraryTreeItem, SIGNAL(componentAdded(Component*)),
-          this, SLOT(handleComponentAdded(Component*)), Qt::UniqueConnection);
+  connect(pLibraryTreeItem, SIGNAL(componentAdded(Element*)),
+          this, SLOT(handleComponentAdded(Element*)), Qt::UniqueConnection);
   connect(pLibraryTreeItem, SIGNAL(connectionAdded(LineAnnotation*)),
           this, SLOT(handleConnectionAdded(LineAnnotation*)), Qt::UniqueConnection);
   connect(pLibraryTreeItem, SIGNAL(iconUpdated()), this, SLOT(handleIconUpdated()), Qt::UniqueConnection);
@@ -635,7 +635,7 @@ void LibraryTreeItem::removeInheritedClasses()
     disconnect(pLibraryTreeItem, SIGNAL(unLoaded()), this, SLOT(handleUnloaded()));
     disconnect(pLibraryTreeItem, SIGNAL(shapeAdded(ShapeAnnotation*,GraphicsView*)),
                this, SLOT(handleShapeAdded(ShapeAnnotation*,GraphicsView*)));
-    disconnect(pLibraryTreeItem, SIGNAL(componentAdded(Component*)), this, SLOT(handleComponentAdded(Component*)));
+    disconnect(pLibraryTreeItem, SIGNAL(componentAdded(Element*)), this, SLOT(handleComponentAdded(Element*)));
     disconnect(pLibraryTreeItem, SIGNAL(connectionAdded(LineAnnotation*)), this, SLOT(handleConnectionAdded(LineAnnotation*)));
     disconnect(pLibraryTreeItem, SIGNAL(iconUpdated()), this, SLOT(handleIconUpdated()));
     disconnect(pLibraryTreeItem, SIGNAL(coOrdinateSystemUpdated(GraphicsView*)), this, SLOT(handleCoOrdinateSystemUpdated(GraphicsView*)));
@@ -660,7 +660,7 @@ void LibraryTreeItem::setModelWidget(ModelWidget *pModelWidget)
   mComponentsLoaded = false;
 }
 
-const QList<ComponentInfo*> &LibraryTreeItem::getComponentsList()
+const QList<ElementInfo*> &LibraryTreeItem::getComponentsList()
 {
   if (mpModelWidget) {
     return mpModelWidget->getComponentsList();
@@ -681,7 +681,7 @@ LibraryTreeItem *LibraryTreeItem::getDirectComponentsClass(const QString &name)
       return children[i];
     }
   }
-  const QList<ComponentInfo*> &components = getComponentsList();
+  const QList<ElementInfo*> &components = getComponentsList();
   for (int i = 0; i < components.size(); ++i) {
     if (components[i]->getName() == name) {
       LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
@@ -717,7 +717,7 @@ void LibraryTreeItem::tryToComplete(QList<CompleterItem> &completionClasses, QLi
     }
 
     if (!baseClasses[bc]->isRootItem() && baseClasses[bc]->getLibraryType() == LibraryTreeItem::Modelica) {
-      const QList<ComponentInfo*> &components = baseClasses[bc]->getComponentsList();
+      const QList<ElementInfo*> &components = baseClasses[bc]->getComponentsList();
       for (int i = 0; i < components.size(); ++i) {
         if (components[i]->getName().startsWith(lastPart))
           completionComponents << CompleterItem(components[i]->getName(), components[i]->getHTMLDescription() + QString("<br/>// Inside %1").arg(baseClasses[bc]->mNameStructure));
@@ -856,7 +856,7 @@ void LibraryTreeItem::emitShapeAdded(ShapeAnnotation *pShapeAnnotation, Graphics
  * Emits the componentAdded and componentAddedForComponent signals.
  * \param pComponent
  */
-void LibraryTreeItem::emitComponentAdded(Component *pComponent)
+void LibraryTreeItem::emitComponentAdded(Element *pComponent)
 {
   emit componentAdded(pComponent);
   emit componentAddedForComponent();
@@ -990,7 +990,7 @@ void LibraryTreeItem::handleShapeAdded(ShapeAnnotation *pShapeAnnotation, Graphi
  * Handles a case when inherited class has created a new component.
  * \param pComponent
  */
-void LibraryTreeItem::handleComponentAdded(Component *pComponent)
+void LibraryTreeItem::handleComponentAdded(Element *pComponent)
 {
   if (mpModelWidget) {
     if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector()) {
@@ -5181,7 +5181,7 @@ bool LibraryWidget::saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryT
     for (int i = 0; i < subModels.size(); i++) {
       QDomElement subModel = subModels.at(i).toElement();
       QString directoryName = subModel.attribute("Name");
-      Component *pComponent = pGraphicsView->getComponentObject(directoryName);
+      Element *pComponent = pGraphicsView->getComponentObject(directoryName);
       QString modelFile;
       if (pComponent && pComponent->getLibraryTreeItem()) {
         modelFile = pComponent->getLibraryTreeItem()->getFileName();

@@ -54,7 +54,7 @@ void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 
 #include "OMCProxy.h"
 #include "MainWindow.h"
-#include "Component/Component.h"
+#include "Element/Element.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
 #include "simulation_options.h"
@@ -1302,24 +1302,24 @@ QString OMCProxy::getNthInheritedClassDiagramMapAnnotation(QString className, in
 /*!
  * \brief OMCProxy::getComponents
  * Returns the components of a model with their attributes.\n
- * Creates an object of ComponentInfo for each component.
+ * Creates an object of ElementInfo for each component.
  * \param className - is the name of the model.
  * \return the list of components
  */
-QList<ComponentInfo*> OMCProxy::getComponents(QString className)
+QList<ElementInfo*> OMCProxy::getComponents(QString className)
 {
   QString expression = "getComponents(" + className + ", useQuotes = true)";
   sendCommand(expression);
   QString result = getResult();
-  QList<ComponentInfo*> componentInfoList;
+  QList<ElementInfo*> componentInfoList;
   QStringList list = StringHandler::unparseArrays(result);
 
   for (int i = 0 ; i < list.size() ; i++) {
     if (list.at(i) == "Error") {
       continue;
     }
-    ComponentInfo *pComponentInfo = new ComponentInfo();
-    pComponentInfo->parseComponentInfoString(list.at(i));
+    ElementInfo *pComponentInfo = new ElementInfo();
+    pComponentInfo->parseElementInfoString(list.at(i));
     componentInfoList.append(pComponentInfo);
   }
 

@@ -38,7 +38,7 @@
 #include "Options/OptionsDialog.h"
 #include "ShapePropertiesDialog.h"
 #include "Modeling/Commands.h"
-#include "Component/ComponentProperties.h"
+#include "Element/ElementProperties.h"
 #include "TLM/FetchInterfaceDataDialog.h"
 #include "Plotting/VariablesWidget.h"
 #include "Util/ResourceCache.h"
@@ -321,7 +321,7 @@ ShapeAnnotation::ShapeAnnotation(ShapeAnnotation *pShapeAnnotation, QGraphicsIte
   : QGraphicsItem(pParent)
 {
   mpGraphicsView = 0;
-  mpParentComponent = dynamic_cast<Component*>(pParent);
+  mpParentComponent = dynamic_cast<Element*>(pParent);
   //mTransformation = 0;
   mpReferenceShapeAnnotation = pShapeAnnotation;
   mIsInheritedShape = false;

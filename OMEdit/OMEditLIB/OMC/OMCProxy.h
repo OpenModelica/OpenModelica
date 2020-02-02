@@ -41,7 +41,7 @@
 #include "Util/Utilities.h"
 
 class CustomExpressionBox;
-class ComponentInfo;
+class ElementInfo;
 class StringHandler;
 class OMCInterface;
 class LibraryTreeItem;
@@ -145,7 +145,7 @@ public:
   QList<QString> getInheritedClasses(QString className);
   QString getNthInheritedClassIconMapAnnotation(QString className, int num);
   QString getNthInheritedClassDiagramMapAnnotation(QString className, int num);
-  QList<ComponentInfo*> getComponents(QString className);
+  QList<ElementInfo*> getComponents(QString className);
   QStringList getComponentAnnotations(QString className);
   QString getDocumentationAnnotationInfoHeader(LibraryTreeItem *pLibraryTreeItem, QString infoHeader);
   QString getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem);

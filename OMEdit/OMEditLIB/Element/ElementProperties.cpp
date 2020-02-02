@@ -32,7 +32,7 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "ComponentProperties.h"
+#include "ElementProperties.h"
 #include "MainWindow.h"
 #include "Modeling/MessagesWidget.h"
 #include "Modeling/Commands.h"
@@ -58,7 +58,7 @@
  * \param tab
  * \param groupBox
  */
-Parameter::Parameter(Component *pComponent, bool showStartAttribute, QString tab, QString groupBox)
+Parameter::Parameter(Element *pComponent, bool showStartAttribute, QString tab, QString groupBox)
 {
   mpComponent = pComponent;
   mTab = tab;
@@ -552,7 +552,7 @@ ParametersScrollArea::ParametersScrollArea()
 
 /*!
  * Reimplementation of minimumSizeHint.
- * Finds maximum optimal size for ComponentParameters dialog. If the dialog is larger than screen then shows the scrollbars.
+ * Finds maximum optimal size for ElementParameters dialog. If the dialog is larger than screen then shows the scrollbars.
  */
 QSize ParametersScrollArea::minimumSizeHint() const
 {
@@ -607,19 +607,19 @@ QVBoxLayout *ParametersScrollArea::getLayout()
 }
 
 /*!
- * \class ComponentParameters
+ * \class ElementParameters
  * \brief A dialog for displaying Component's parameters.
  */
 /*!
- * \brief ComponentParameters::ComponentParameters
+ * \brief ElementParameters::ElementParameters
  * \param pComponent - pointer to Component
  * \param pParent
  */
-ComponentParameters::ComponentParameters(Component *pComponent, QWidget *pParent)
+ElementParameters::ElementParameters(Element *pComponent, QWidget *pParent)
   : QDialog(pParent)
 {
   QString className = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-  setWindowTitle(tr("%1 - %2 - %3 in %4").arg(Helper::applicationName).arg(tr("Component Parameters")).arg(pComponent->getName())
+  setWindowTitle(tr("%1 - %2 - %3 in %4").arg(Helper::applicationName).arg(tr("Element Parameters")).arg(pComponent->getName())
                  .arg(className));
   setAttribute(Qt::WA_DeleteOnClose);
   mpComponent = pComponent;
@@ -627,10 +627,10 @@ ComponentParameters::ComponentParameters(Component *pComponent, QWidget *pParent
 }
 
 /*!
- * \brief ComponentParameters::~ComponentParameters
+ * \brief ElementParameters::~ElementParameters
  * Deletes the list of Parameter objects.
  */
-ComponentParameters::~ComponentParameters()
+ElementParameters::~ElementParameters()
 {
   qDeleteAll(mParametersList.begin(), mParametersList.end());
   mParametersList.clear();
@@ -639,7 +639,7 @@ ComponentParameters::~ComponentParameters()
 /*!
   Creates the Dialog and set up all the controls with default values.
   */
-void ComponentParameters::setUpDialog()
+void ElementParameters::setUpDialog()
 {
   // heading label
   mpParametersHeading = Utilities::getHeadingLabel(Helper::parameters);
@@ -692,7 +692,7 @@ void ComponentParameters::setUpDialog()
   // create parameters tabs and groupboxes
   createTabsGroupBoxesAndParameters(mpComponent->getLibraryTreeItem());
   /* We append the actual Components parameters first so that they appear first on the list.
-   * For that we use QList insert instead of append in ComponentParameters::createTabsGroupBoxesAndParametersHelper() function.
+   * For that we use QList insert instead of append in ElementParameters::createTabsGroupBoxesAndParametersHelper() function.
    * Modelica.Electrical.Analog.Basic.Resistor order is wrong if we don't use insert.
    */
   createTabsGroupBoxesAndParametersHelper(mpComponent->getLibraryTreeItem(), true);
@@ -775,12 +775,12 @@ void ComponentParameters::setUpDialog()
 }
 
 /*!
- * \brief ComponentParameters::createTabsGroupBoxesAndParameters
+ * \brief ElementParameters::createTabsGroupBoxesAndParameters
  * Loops over the inherited classes of the Component.
  * \param pLibraryTreeItem
- * \see ComponentParameters::createTabsGroupBoxesAndParametersHelper()
+ * \see ElementParameters::createTabsGroupBoxesAndParametersHelper()
  */
-void ComponentParameters::createTabsGroupBoxesAndParameters(LibraryTreeItem *pLibraryTreeItem)
+void ElementParameters::createTabsGroupBoxesAndParameters(LibraryTreeItem *pLibraryTreeItem)
 {
   foreach (LibraryTreeItem *pInheritedLibraryTreeItem, pLibraryTreeItem->getModelWidget()->getInheritedClassesList()) {
     createTabsGroupBoxesAndParameters(pInheritedLibraryTreeItem);
@@ -789,14 +789,14 @@ void ComponentParameters::createTabsGroupBoxesAndParameters(LibraryTreeItem *pLi
 }
 
 /*!
- * \brief ComponentParameters::createTabsGroupBoxesAndParametersHelper
+ * \brief ElementParameters::createTabsGroupBoxesAndParametersHelper
  * Creates the dynamic tabs for QTabWidget and QGroupBoxes within them.
  * Creats the parameters and adds them to the appropriate tab and groupbox.
  * \param pLibraryTreeItem
  * \param useInsert - if true we use QList insert instead of append.
- * \see ComponentParameters::createTabsGroupBoxesAndParameters()
+ * \see ElementParameters::createTabsGroupBoxesAndParameters()
  */
-void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeItem *pLibraryTreeItem, bool useInsert)
+void ElementParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeItem *pLibraryTreeItem, bool useInsert)
 {
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   foreach (LibraryTreeItem *pInheritedLibraryTreeItem, pLibraryTreeItem->getInheritedClasses()) {
@@ -843,7 +843,7 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
   }
   int insertIndex = 0;
   pLibraryTreeItem->getModelWidget()->loadDiagramView();
-  foreach (Component *pComponent, pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
+  foreach (Element *pComponent, pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
     /* Ticket #2531
      * Do not show the protected & final parameters.
      */
@@ -962,12 +962,12 @@ void ComponentParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeIte
 }
 
 /*!
- * \brief ComponentParameters::fetchComponentModifiers
+ * \brief ElementParameters::fetchComponentModifiers
  * Fetches the Component's modifiers and apply modifier values on the appropriate Parameters.
  */
-void ComponentParameters::fetchComponentModifiers()
+void ElementParameters::fetchComponentModifiers()
 {
-  Component *pComponent = mpComponent;
+  Element *pComponent = mpComponent;
   if (mpComponent->getReferenceComponent()) {
     pComponent = mpComponent->getReferenceComponent();
   }
@@ -1023,7 +1023,7 @@ void ComponentParameters::fetchComponentModifiers()
   }
 }
 
-void ComponentParameters::fetchExtendsModifiers()
+void ElementParameters::fetchExtendsModifiers()
 {
   if (mpComponent->getReferenceComponent()) {
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
@@ -1087,14 +1087,14 @@ void ComponentParameters::fetchExtendsModifiers()
 }
 
 /*!
- * \brief ComponentParameters::findParameter
+ * \brief ElementParameters::findParameter
  * Finds the Parameter.
  * \param pLibraryTreeItem
  * \param parameter
  * \param caseSensitivity
  * \return
  */
-Parameter* ComponentParameters::findParameter(LibraryTreeItem *pLibraryTreeItem, const QString &parameter,
+Parameter* ElementParameters::findParameter(LibraryTreeItem *pLibraryTreeItem, const QString &parameter,
                                               Qt::CaseSensitivity caseSensitivity) const
 {
   foreach (Parameter *pParameter, mParametersList) {
@@ -1107,13 +1107,13 @@ Parameter* ComponentParameters::findParameter(LibraryTreeItem *pLibraryTreeItem,
 }
 
 /*!
- * \brief ComponentParameters::findParameter
+ * \brief ElementParameters::findParameter
  * Finds the Parameter.
  * \param parameter
  * \param caseSensitivity
  * \return
  */
-Parameter* ComponentParameters::findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity) const
+Parameter* ElementParameters::findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity) const
 {
   foreach (Parameter *pParameter, mParametersList) {
     if (pParameter->getComponent()->getName().compare(parameter, caseSensitivity) == 0) {
@@ -1123,7 +1123,7 @@ Parameter* ComponentParameters::findParameter(const QString &parameter, Qt::Case
   return 0;
 }
 
-void ComponentParameters::commentLinkClicked(QString link)
+void ElementParameters::commentLinkClicked(QString link)
 {
   QUrl linkUrl(link);
   if (linkUrl.scheme().compare("modelica") == 0) {
@@ -1138,11 +1138,11 @@ void ComponentParameters::commentLinkClicked(QString link)
 }
 
 /*!
- * \brief ComponentParameters::updateComponentParameters
+ * \brief ElementParameters::updateComponentParameters
  * Slot activated when mpOkButton clicked signal is raised.\n
  * Checks the list of parameters i.e mParametersList and if the value is changed then sets the new value.
  */
-void ComponentParameters::updateComponentParameters()
+void ElementParameters::updateComponentParameters()
 {
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
@@ -1254,19 +1254,19 @@ void ComponentParameters::updateComponentParameters()
 }
 
 /*!
- * \class ComponentAttributes
+ * \class ElementAttributes
  * \brief A dialog for displaying components attributes like visibility, stream, casuality etc.
  */
 /*!
- * \brief ComponentAttributes::ComponentAttributes
+ * \brief ElementAttributes::ElementAttributes
  * \param pComponent
  * \param pParent
  */
-ComponentAttributes::ComponentAttributes(Component *pComponent, QWidget *pParent)
+ElementAttributes::ElementAttributes(Element *pComponent, QWidget *pParent)
   : QDialog(pParent)
 {
   QString className = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-  setWindowTitle(tr("%1 - %2 - %3 in %4").arg(Helper::applicationName).arg(tr("Component Attributes")).arg(pComponent->getName())
+  setWindowTitle(tr("%1 - %2 - %3 in %4").arg(Helper::applicationName).arg(tr("Element Attributes")).arg(pComponent->getName())
                  .arg(className));
   setAttribute(Qt::WA_DeleteOnClose);
   mpComponent = pComponent;
@@ -1275,10 +1275,10 @@ ComponentAttributes::ComponentAttributes(Component *pComponent, QWidget *pParent
 }
 
 /*!
- * \brief ComponentAttributes::setUpDialog
+ * \brief ElementAttributes::setUpDialog
  * Creates the Dialog and set up all the controls with default values.
  */
-void ComponentAttributes::setUpDialog()
+void ElementAttributes::setUpDialog()
 {
   // heading label
   mpAttributesHeading = Utilities::getHeadingLabel(Helper::attributes);
@@ -1383,10 +1383,10 @@ void ComponentAttributes::setUpDialog()
 }
 
 /*!
- * \brief ComponentAttributes::initializeDialog
+ * \brief ElementAttributes::initializeDialog
  * Initialize the fields with default values.
  */
-void ComponentAttributes::initializeDialog()
+void ElementAttributes::initializeDialog()
 {
   // get Class Name
   mpNameTextBox->setText(mpComponent->getComponentInfo()->getName());
@@ -1428,11 +1428,11 @@ void ComponentAttributes::initializeDialog()
 }
 
 /*!
- * \brief ComponentAttributes::updateComponentAttributes
+ * \brief ElementAttributes::updateComponentAttributes
  * Slot activated when mpOkButton clicked signal is raised.\n
  * Updates the component attributes.
  */
-void ComponentAttributes::updateComponentAttributes()
+void ElementAttributes::updateComponentAttributes()
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   /* Check the same component name problem before setting any attributes. */
@@ -1483,10 +1483,10 @@ void ComponentAttributes::updateComponentAttributes()
   } else {
     causality = "";
   }
-  // save the old ComponentInfo
-  ComponentInfo oldComponentInfo(mpComponent->getComponentInfo());
-  // Create a new ComponentInfo
-  ComponentInfo newComponentInfo;
+  // save the old ElementInfo
+  ElementInfo oldComponentInfo(mpComponent->getComponentInfo());
+  // Create a new ElementInfo
+  ElementInfo newComponentInfo;
   newComponentInfo.setClassName(mpComponent->getComponentInfo()->getClassName());
   newComponentInfo.setName(mpNameTextBox->text());
   newComponentInfo.setComment(mpCommentTextBox->text());
@@ -1520,7 +1520,7 @@ void ComponentAttributes::updateComponentAttributes()
  * \param pComponent - pointer to Component
  * \param pParent
  */
-CompositeModelSubModelAttributes::CompositeModelSubModelAttributes(Component *pComponent, QWidget *pParent)
+CompositeModelSubModelAttributes::CompositeModelSubModelAttributes(Element *pComponent, QWidget *pParent)
   : QDialog(pParent)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("SubModel Attributes")));
@@ -1683,10 +1683,10 @@ void CompositeModelSubModelAttributes::browseGeometryFile()
  */
 void CompositeModelSubModelAttributes::updateSubModelParameters()
 {
-  // save the old ComponentInfo
-  ComponentInfo oldComponentInfo(mpComponent->getComponentInfo());
-  // Create a new ComponentInfo
-  ComponentInfo newComponentInfo(mpComponent->getComponentInfo());
+  // save the old ElementInfo
+  ElementInfo oldComponentInfo(mpComponent->getComponentInfo());
+  // Create a new ElementInfo
+  ElementInfo newComponentInfo(mpComponent->getComponentInfo());
   newComponentInfo.setStartCommand(mpStartCommandTextBox->text());
   newComponentInfo.setExactStep(mpExactStepCheckBox->isChecked());
   newComponentInfo.setGeometryFile(mpGeometryFileTextBox->text());
@@ -1734,7 +1734,7 @@ CompositeModelConnectionAttributes::CompositeModelConnectionAttributes(GraphicsV
                                                              bool edit, QWidget *pParent)
   : QDialog(pParent), mpGraphicsView(pGraphicsView), mpConnectionLineAnnotation(pConnectionLineAnnotation), mEdit(edit)
 {
-  ComponentInfo *pInfo = mpConnectionLineAnnotation->getStartComponent()->getComponentInfo();
+  ElementInfo *pInfo = mpConnectionLineAnnotation->getStartComponent()->getComponentInfo();
   bool tlm = (pInfo->getTLMCausality() == "Bidirectional");
   int dimensions = pInfo->getDimensions();
 
@@ -1802,7 +1802,7 @@ CompositeModelConnectionAttributes::CompositeModelConnectionAttributes(GraphicsV
  */
 void CompositeModelConnectionAttributes::createCompositeModelConnection()
 {
-  ComponentInfo *pInfo = mpConnectionLineAnnotation->getStartComponent()->getComponentInfo();
+  ElementInfo *pInfo = mpConnectionLineAnnotation->getStartComponent()->getComponentInfo();
   bool tlm = (pInfo->getTLMCausality() == "Bidirectional");
   int dimensions = pInfo->getDimensions();
   if (mEdit) {

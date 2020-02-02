@@ -52,7 +52,7 @@ BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, Gr
   setShapeFlags(true);
 }
 
-BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
+BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent), mpComponent(pParent)
 {
   updateShape(pShapeAnnotation);
