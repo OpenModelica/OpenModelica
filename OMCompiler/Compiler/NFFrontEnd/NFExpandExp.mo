@@ -719,22 +719,23 @@ public
     output Expression exp;
   protected
     list<Expression> expl1, expl2;
-    Type ty, tyUnlift;
+    Type ty, elem_ty;
     Operator mul_op, add_op;
   algorithm
     Expression.ARRAY(ty, expl1) := exp1;
     Expression.ARRAY( _, expl2) := exp2;
-    tyUnlift := Type.unliftArray(ty);
+    elem_ty := Type.unliftArray(ty);
 
     if listEmpty(expl1) then
       // Scalar product of two empty arrays. The result is defined in the spec
       // by sum, so we return 0 since that's the default value of sum.
-      exp := Expression.makeZero(tyUnlift);
+      exp := Expression.makeZero(elem_ty);
+    else
+      mul_op := Operator.makeMul(elem_ty);
+      add_op := Operator.makeAdd(elem_ty);
+      expl1 := list(SimplifyExp.simplifyBinaryOp(e1, mul_op, e2) threaded for e1 in expl1, e2 in expl2);
+      exp := List.reduce(expl1, function SimplifyExp.simplifyBinaryOp(op = add_op));
     end if;
-    mul_op := Operator.makeMul(tyUnlift);
-    add_op := Operator.makeAdd(tyUnlift);
-    expl1 := list(SimplifyExp.simplifyBinaryOp(e1, mul_op, e2) threaded for e1 in expl1, e2 in expl2);
-    exp := List.reduce(expl1, function SimplifyExp.simplifyBinaryOp(op = add_op));
   end makeScalarProduct;
 
   function expandBinaryMatrixProduct
