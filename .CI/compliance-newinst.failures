@@ -10,7 +10,6 @@ ModelicaCompliance.Algorithms.For.ShadowedIterator
 ModelicaCompliance.Algorithms.For.StringRange
 ModelicaCompliance.Arrays.Functions.Conversion.DimConversionMatrix
 ModelicaCompliance.Arrays.Functions.Reductions.Deduce
-ModelicaCompliance.Arrays.Operations.MatrixProduct.ArrayVectorVectorMul3
 ModelicaCompliance.Classes.Declarations.Long.QuotedIdentifiers.?abfnrtv
 ModelicaCompliance.Classes.Declarations.PartialSimulationModel
 ModelicaCompliance.Classes.Declarations.Short.PartialClass
