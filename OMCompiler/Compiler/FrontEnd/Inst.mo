@@ -1022,6 +1022,7 @@ function varIsModifiedInDerivedMod
   output Boolean b;
 algorithm
   b := match inSubmod
+    case SCode.NAMEMOD(mod=SCode.REDECL()) then false;
     case SCode.NAMEMOD() then stringEqual(inSubmod.ident, inName);
   end match;
 end varIsModifiedInDerivedMod;
@@ -3786,7 +3787,7 @@ algorithm
       DAE.Binding bind;
       DAE.Prefix pref;
 
-	    case (bind as DAE.EQBOUND(), pref as DAE.PREFIX(compPre=DAE.PRE())) algorithm
+      case (bind as DAE.EQBOUND(), pref as DAE.PREFIX(compPre=DAE.PRE())) algorithm
         bind.exp := PrefixUtil.removeCompPrefixFromExps(bind.exp, pref.compPre);
       then
         bind;
