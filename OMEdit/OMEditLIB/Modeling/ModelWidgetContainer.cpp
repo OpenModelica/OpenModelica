@@ -109,21 +109,30 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
   mpModelWidget = pModelWidget;
   // set the coOrdinate System
   mCoOrdinateSystem = CoOrdinateSystem();
-  GraphicalViewsPage *pGraphicalViewsPage;
-  pGraphicalViewsPage = OptionsDialog::instance()->getGraphicalViewsPage();
-  QList<QPointF> extent;
-  qreal left = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentLeft() : pGraphicalViewsPage->getDiagramViewExtentLeft();
-  qreal bottom = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentBottom() : pGraphicalViewsPage->getDiagramViewExtentBottom();
-  qreal right = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentRight() : pGraphicalViewsPage->getDiagramViewExtentRight();
-  qreal top = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentTop() : pGraphicalViewsPage->getDiagramViewExtentTop();
-  extent << QPointF(left, bottom) << QPointF(right, top);
-  mCoOrdinateSystem.setExtent(extent);
-  mCoOrdinateSystem.setPreserveAspectRatio((mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewPreserveAspectRation() : pGraphicalViewsPage->getDiagramViewPreserveAspectRation());
-  mCoOrdinateSystem.setInitialScale((mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewScaleFactor() : pGraphicalViewsPage->getDiagramViewScaleFactor());
-  qreal horizontal = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewGridHorizontal() : pGraphicalViewsPage->getDiagramViewGridHorizontal();
-  qreal vertical = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewGridVertical() : pGraphicalViewsPage->getDiagramViewGridVertical();
-  mCoOrdinateSystem.setGrid(QPointF(horizontal, vertical));
-  setExtentRectangle(left, bottom, right, top);
+  // if it is a new model then use the values from options
+  if (!mpModelWidget->getLibraryTreeItem()->isSaved()) {
+    GraphicalViewsPage *pGraphicalViewsPage;
+    pGraphicalViewsPage = OptionsDialog::instance()->getGraphicalViewsPage();
+    QList<QPointF> extent;
+    qreal left = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentLeft() : pGraphicalViewsPage->getDiagramViewExtentLeft();
+    qreal bottom = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentBottom() : pGraphicalViewsPage->getDiagramViewExtentBottom();
+    qreal right = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentRight() : pGraphicalViewsPage->getDiagramViewExtentRight();
+    qreal top = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentTop() : pGraphicalViewsPage->getDiagramViewExtentTop();
+    extent << QPointF(left, bottom) << QPointF(right, top);
+    mCoOrdinateSystem.setExtent(extent);
+    mCoOrdinateSystem.setPreserveAspectRatio((mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewPreserveAspectRation() : pGraphicalViewsPage->getDiagramViewPreserveAspectRation());
+    mCoOrdinateSystem.setInitialScale((mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewScaleFactor() : pGraphicalViewsPage->getDiagramViewScaleFactor());
+    qreal horizontal = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewGridHorizontal() : pGraphicalViewsPage->getDiagramViewGridHorizontal();
+    qreal vertical = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewGridVertical() : pGraphicalViewsPage->getDiagramViewGridVertical();
+    mCoOrdinateSystem.setGrid(QPointF(horizontal, vertical));
+    setExtentRectangle(left, bottom, right, top);
+  } else { // when opening a model use the default Modelica specification values
+    qreal left = mCoOrdinateSystem.getExtent().at(0).x();
+    qreal bottom = mCoOrdinateSystem.getExtent().at(0).y();
+    qreal right = mCoOrdinateSystem.getExtent().at(1).x();
+    qreal top = mCoOrdinateSystem.getExtent().at(1).y();
+    setExtentRectangle(left, bottom, right, top);
+  }
   scale(1.0, -1.0);     // invert the drawing area.
   setIsCustomScale(false);
   setAddClassAnnotationNeeded(false);
