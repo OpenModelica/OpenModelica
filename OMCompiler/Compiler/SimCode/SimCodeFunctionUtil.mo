@@ -1556,38 +1556,32 @@ algorithm
       list<SimCodeFunction.Variable> vars;
       Integer varnum;
       SimCodeFunction.RecordDeclaration recDecl;
+      Boolean is_default;
 
     case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path), varLst = varlst), accRecDecls, rt)
       algorithm
         name := AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
         rt_1 := rt;
 
-        if not listMember(name, rt_1) then
-          rt_1 := name :: rt_1;
-          (accRecDecls, rt_1) := elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
-
-          varlst := List.map(varlst, simCodeVarRemoveBindFromOutside);
-          vars := List.map(varlst, typesVar);
-          // vars := List.map(vars, simCodeVarRemoveBindFromOutside);
-          recDecl := SimCodeFunction.RECORD_DECL_FULL(name, NONE(), path, vars);
-          accRecDecls := List.appendElt(recDecl, accRecDecls);
-        end if;
-
-        sname := name;
-        varnum := 1;
-        for var in varlst loop
-          if var.bind_from_outside then
-            sname := sname + "_" + intString(varnum);
-          end if;
-          varnum := intAdd(varnum,1);
-        end for;
+        (sname, is_default) := checkBindingsandGetConstructorName(name, varlst);
+        // is_default := stringEqual(sname,name);
 
         if not listMember(sname, rt_1) then
           rt_1 := sname :: rt_1;
-          vars := List.map(varlst, typesVar);
-          recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars);
+
+          if is_default then
+            (accRecDecls, rt_1) := elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
+
+            vars := List.map(varlst, typesVar);
+            recDecl := SimCodeFunction.RECORD_DECL_FULL(sname, NONE(), path, vars);
+          else
+            vars := List.map(varlst, typesVar);
+            recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars);
+          end if;
+
           accRecDecls := List.appendElt(recDecl, accRecDecls);
         end if;
+
       then (accRecDecls, rt_1);
 
     case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)), accRecDecls, rt)
@@ -1663,18 +1657,38 @@ algorithm
   end match;
 end typesVar;
 
-protected function simCodeVarRemoveBindFromOutside
-  input output DAE.Var var;
+protected function checkBindingsandGetConstructorName
+  input String rec_name;
+  input list<DAE.Var> vars;
+  output String ctor_name;
+  output Boolean is_default;
+protected
+  Integer varnum;
 algorithm
-  _ := match (var)
-    case DAE.TYPES_VAR(binding = DAE.EQBOUND(source=DAE.BINDING_FROM_DERIVED_RECORD_DECL()))
-      then ();
-    case DAE.TYPES_VAR()
-      algorithm
-        var.bind_from_outside := false;
-      then ();
+  is_default := true;
+
+  ctor_name := rec_name;
+  varnum := 1;
+
+  for var in vars loop
+    if var.bind_from_outside and not isBindingFromDerivedRecordDeclaration(var.binding) then
+      is_default := false;
+      ctor_name := ctor_name + "_" + intString(varnum);
+    end if;
+
+    varnum := intAdd(varnum,1);
+  end for;
+end checkBindingsandGetConstructorName;
+
+protected function isBindingFromDerivedRecordDeclaration
+  input DAE.Binding bind;
+  output Boolean b;
+algorithm
+  b := match bind
+    case DAE.EQBOUND(source=DAE.BINDING_FROM_DERIVED_RECORD_DECL())  then true;
+    else false;
   end match;
-end simCodeVarRemoveBindFromOutside;
+end isBindingFromDerivedRecordDeclaration;
 
 protected function checkSourceAndGetBindingExp
   input DAE.Binding inBinding;
