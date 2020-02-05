@@ -9263,7 +9263,7 @@ algorithm
         initVal = updateStartValue(dlowVar, initVal, initial_, caus);
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
-        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, NONE(), NONE(), SOME(variability), SOME(initial_), false);
+        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, NONE(), NONE(), SOME(variability), SOME(initial_), true);
 
     // Start value of states may be changeable
     case ((BackendDAE.VAR(varName = cr,
@@ -9303,7 +9303,7 @@ algorithm
         initVal = updateStartValue(dlowVar, initVal, initial_, caus);
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
-        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, NONE(), NONE(), SOME(variability), SOME(initial_), false);
+        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, NONE(), NONE(), SOME(variability), SOME(initial_), true);
 
     case ((BackendDAE.VAR(varName = cr,
       varKind = kind,
@@ -9344,7 +9344,7 @@ algorithm
         initVal = updateStartValue(dlowVar, initVal, initial_, caus);
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
-        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, NONE(), NONE(), SOME(variability), SOME(initial_), false);
+        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, NONE(), NONE(), SOME(variability), SOME(initial_), true);
   end match;
 end dlowvarToSimvar;
 
