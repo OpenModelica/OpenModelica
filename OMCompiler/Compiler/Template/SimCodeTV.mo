@@ -261,7 +261,8 @@ package SimCodeVar
       AliasVariable aliasvar;
       DAE.ElementSource source;
       Option<Causality> causality;
-      Option<Integer> variable_index;
+      Option<Integer> variable_index "valueReference";
+      Option<Integer> fmi_index "index of variable in modelDescription.xml";
       list<String> numArrayElement;
       Boolean isValueChangeable;
       Boolean isProtected;
