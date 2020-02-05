@@ -269,7 +269,7 @@ package SimCodeVar
       Option<String> matrixName;
       Option<Variability> variability "FMI-2.0 variabilty attribute";
       Option<Initial> initial_ "FMI-2.0 initial attribute";
-      Boolean isInternalVar "true for internal variables that are introduced in the symbolic transformation process";
+      Boolean exportVar "true for internal variables that are introduced in the symbolic transformation process";
     end SIMVAR;
   end SimVar;
 
