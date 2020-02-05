@@ -102,10 +102,7 @@ case MODELINFO(vars=SIMVARS(stateVars=stateVars)) then
   <<
   <ModelVariables>
   <%System.tmpTickReset(0)%>
-  <%vars.modelDescriptionVars |> var =>
-    ScalarVariable(var, simCode, stateVars, FMUVersion)
-  ;separator="\n"%>
-  <%/*vars.stateVars |> var =>
+  <%vars.stateVars |> var =>
     ScalarVariable(var, simCode, stateVars, FMUVersion)
   ;separator="\n"%>
   <%vars.derivativeVars |> var =>
@@ -152,7 +149,7 @@ case MODELINFO(vars=SIMVARS(stateVars=stateVars)) then
   ;separator="\n"%>
   <%vars.stringAliasVars |> var =>
     ScalarVariable(var, simCode, stateVars, FMUVersion)
-  ;separator="\n"*/%>
+  ;separator="\n"%>
   <%System.tmpTickReset(0)%>
   <%externalFunctions(modelInfo)%>
   </ModelVariables>

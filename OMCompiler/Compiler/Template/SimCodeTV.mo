@@ -239,7 +239,6 @@ package SimCodeVar
       list<SimVar> sensitivityVars;
       list<SimVar> dataReconSetcVars;
       list<SimVar> dataReconinputVars;
-      list<SimVar> modelDescriptionVars "variables list which are used in FMI-2.0 modelDescription.xml";
     end SIMVARS;
   end SimVars;
 
