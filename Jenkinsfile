@@ -635,6 +635,23 @@ pipeline {
         }
       }
     }
+    stage('push-to-master') {
+      agent {
+        label 'linux'
+      }
+      when {
+        beforeAgent true
+        branch 'omlib-staging'
+      }
+      steps {
+        githubNotify status: 'SUCCESS', description: 'The staged library changes are working', context: 'continuous-integration/jenkins/pr-merge'
+        githubNotify status: 'SUCCESS', description: 'Skipping CLA checks on omlib-staging', context: 'license/CLA'
+        sshagent (credentials: ['Hudson-SSH-Key']) {
+          sh 'ssh-keyscan github.com >> ~/.ssh/known_hosts'
+          sh 'git push git@github.com:OpenModelica/OpenModelica.git omlib-staging:master || (echo "Trying to update the repository if that is the problem" ; git pull --rebase && git push --force  git@github.com:OpenModelica/OpenModelica.git omlib-staging:omlib-staging & false)'
+        }
+      }
+    }
   }
   post {
     failure {
