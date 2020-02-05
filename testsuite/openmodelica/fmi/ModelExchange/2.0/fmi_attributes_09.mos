@@ -68,54 +68,54 @@ readFile("fmi_attributes_09.xml"); getErrorString();
 //     >
 //     <Real derivative=\"1\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"3\" -->
-//   <ScalarVariable
-//     name=\"a\"
-//     valueReference=\"2\"
-//     >
-//     <Real/>
-//   </ScalarVariable>
 //   <!-- Index of variable = \"4\" -->
 //   <ScalarVariable
-//     name=\"b\"
+//     name=\"a\"
 //     valueReference=\"3\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"5\" -->
 //   <ScalarVariable
-//     name=\"u\"
+//     name=\"b\"
 //     valueReference=\"4\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"6\" -->
+//   <ScalarVariable
+//     name=\"u\"
+//     valueReference=\"5\"
 //     causality=\"input\"
 //     >
 //     <Real start=\"0.0\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"6\" -->
-//   <ScalarVariable
-//     name=\"y\"
-//     valueReference=\"5\"
-//     causality=\"output\"
-//     >
-//     <Real/>
-//   </ScalarVariable>
 //   <!-- Index of variable = \"7\" -->
 //   <ScalarVariable
-//     name=\"z1\"
+//     name=\"y\"
 //     valueReference=\"6\"
+//     causality=\"output\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"8\" -->
 //   <ScalarVariable
-//     name=\"z2\"
+//     name=\"z1\"
 //     valueReference=\"7\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"9\" -->
 //   <ScalarVariable
-//     name=\"z\"
+//     name=\"z2\"
 //     valueReference=\"8\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"10\" -->
+//   <ScalarVariable
+//     name=\"z\"
+//     valueReference=\"9\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
@@ -128,15 +128,15 @@ readFile("fmi_attributes_09.xml"); getErrorString();
 // ""
 // "  <ModelStructure>
 //     <Outputs>
-//       <Unknown index=\"6\" dependencies=\"1\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"7\" dependencies=\"1\" dependenciesKind=\"dependent\" />
 //     </Outputs>
 //     <Derivatives>
-//       <Unknown index=\"2\" dependencies=\"5\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"2\" dependencies=\"6\" dependenciesKind=\"dependent\" />
 //     </Derivatives>
 //     <InitialUnknowns>
 //       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"2\" dependencies=\"5 6\" dependenciesKind=\"dependent dependent\" />
-//       <Unknown index=\"6\" dependencies=\"6\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"2\" dependencies=\"6 10\" dependenciesKind=\"dependent dependent\" />
+//       <Unknown index=\"7\" dependencies=\"10\" dependenciesKind=\"dependent\" />
 //     </InitialUnknowns>
 //   </ModelStructure>
 // "

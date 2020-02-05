@@ -8000,7 +8000,7 @@ algorithm
   end if;
 
   // clear up cse variable (eg:$CSE) to improve readability of modelDescription.xml for FMI-2.0
-  if not Flags.isSet(Flags.DUMP_FORCE_FMI_CSE_VARIABLES) and CommonSubExpression.isCSECref(simVar.name) then
+  if not Flags.isSet(Flags.DUMP_FORCE_FMI_CSE_VARIABLES) and CommonSubExpression.isInternalCref(simVar.name) then
     simVar.exportVar := false;
   end if;
 

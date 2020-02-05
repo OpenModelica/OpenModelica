@@ -171,13 +171,16 @@ case SIMVAR(__) then
   else if stringEq(crefStr(name),"der($dummy)") then
   <<>>
   else if isFMIVersion20(FMUVersion) then
-  <<
-  <!-- Index of variable = "<%getVariableIndex(simVar)%>" -->
-  <ScalarVariable
-    <%ScalarVariableAttribute2(simVar, simCode)%>>
-    <%ScalarVariableType2(simVar, stateVars)%>
-  </ScalarVariable>
-  >>
+    if exportVar then
+      <<
+      <!-- Index of variable = "<%getVariableIndex(simVar)%>" -->
+      <ScalarVariable
+        <%ScalarVariableAttribute2(simVar, simCode)%>>
+        <%ScalarVariableType2(simVar, stateVars)%>
+      </ScalarVariable>
+      >>
+    else
+      ''
   else
   <<
   <ScalarVariable
