@@ -173,7 +173,7 @@ case SIMVAR(__) then
   else if isFMIVersion20(FMUVersion) then
     if exportVar then
       <<
-      <!-- Index of variable = "<%getVariableIndex(simVar)%>" -->
+      <!-- Index of variable = "<%getVariableFMIIndex(simVar)%>" -->
       <ScalarVariable
         <%ScalarVariableAttribute2(simVar, simCode)%>>
         <%ScalarVariableType2(simVar, stateVars)%>

@@ -1055,6 +1055,11 @@ package SimCodeUtil
     output Integer outVariableIndex;
   end getVariableIndex;
 
+  function getVariableFMIIndex
+    input SimCodeVar.SimVar inVar;
+    output Integer outIndex;
+  end getVariableFMIIndex;
+
   function getMaxSimEqSystemIndex
     input SimCode.SimCode simCode;
     output Integer idxOut;

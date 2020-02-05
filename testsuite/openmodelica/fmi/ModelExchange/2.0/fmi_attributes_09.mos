@@ -68,21 +68,21 @@ readFile("fmi_attributes_09.xml"); getErrorString();
 //     >
 //     <Real derivative=\"1\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"4\" -->
+//   <!-- Index of variable = \"3\" -->
 //   <ScalarVariable
 //     name=\"a\"
 //     valueReference=\"3\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"5\" -->
+//   <!-- Index of variable = \"4\" -->
 //   <ScalarVariable
 //     name=\"b\"
 //     valueReference=\"4\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"6\" -->
+//   <!-- Index of variable = \"5\" -->
 //   <ScalarVariable
 //     name=\"u\"
 //     valueReference=\"5\"
@@ -90,7 +90,7 @@ readFile("fmi_attributes_09.xml"); getErrorString();
 //     >
 //     <Real start=\"0.0\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"7\" -->
+//   <!-- Index of variable = \"6\" -->
 //   <ScalarVariable
 //     name=\"y\"
 //     valueReference=\"6\"
@@ -98,21 +98,21 @@ readFile("fmi_attributes_09.xml"); getErrorString();
 //     >
 //     <Real/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"8\" -->
+//   <!-- Index of variable = \"7\" -->
 //   <ScalarVariable
 //     name=\"z1\"
 //     valueReference=\"7\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"9\" -->
+//   <!-- Index of variable = \"8\" -->
 //   <ScalarVariable
 //     name=\"z2\"
 //     valueReference=\"8\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"10\" -->
+//   <!-- Index of variable = \"9\" -->
 //   <ScalarVariable
 //     name=\"z\"
 //     valueReference=\"9\"
