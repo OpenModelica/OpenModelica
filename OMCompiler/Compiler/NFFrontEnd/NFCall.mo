@@ -386,10 +386,7 @@ uniontype Call
       var := Variability.IMPLICITLY_DISCRETE;
     end if;
 
-    if intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
-      ty := evaluateCallType(ty, func, args);
-    end if;
-
+    ty := evaluateCallType(ty, func, args);
     call := makeTypedCall(func, args, var, ty);
 
     // If the matching was a vectorized one then create a map call
@@ -1428,7 +1425,11 @@ protected
         algorithm
           ptree := buildParameterTree(fnArgs, ptree);
           exp := Expression.map(dim.exp, function evaluateCallTypeDimExp(ptree = ptree));
-          exp := Ceval.evalExp(exp, Ceval.EvalTarget.IGNORE_ERRORS());
+
+          try
+            exp := Ceval.evalExp(exp, Ceval.EvalTarget.IGNORE_ERRORS());
+          else
+          end try;
         then
           Dimension.fromExp(exp, Variability.CONSTANT);
 
@@ -1520,6 +1521,7 @@ protected
           fail();
     end match;
   end getSpecialReturnType;
+
 end Call;
 
 annotation(__OpenModelica_Interface="frontend");
