@@ -940,7 +940,9 @@ protected
     for arg in dimensionArgs loop
       (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info);
 
-      if arg_var <= Variability.STRUCTURAL_PARAMETER and not Expression.containsIterator(arg, origin) then
+      if arg_var <= Variability.STRUCTURAL_PARAMETER and
+         not ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) and
+         not Expression.containsIterator(arg, origin) then
         arg := Ceval.evalExp(arg);
         arg_ty := Expression.typeOf(arg);
       else
@@ -965,7 +967,7 @@ protected
     {fn} := Function.typeRefCache(fnRef);
     ty := Type.liftArrayLeftList(fillType, dims);
 
-    if evaluated and ExpOrigin.flagNotSet(origin, ExpOrigin.FUNCTION) then
+    if evaluated then
       callExp := Ceval.evalBuiltinFill(ty_args);
     else
       callExp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.FILL_FUNC, ty_args, variability, ty));
