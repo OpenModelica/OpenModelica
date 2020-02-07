@@ -298,9 +298,9 @@ private:
 class UpdateCoOrdinateSystemCommand : public UndoCommand
 {
 public:
-  UpdateCoOrdinateSystemCommand(GraphicsView *pGraphicsView, CoOrdinateSystem oldCoOrdinateSystem, CoOrdinateSystem newCoOrdinateSystem,
-                                bool copyProperties, QString oldVersion, QString newVersion, QString oldUsesAnnotationString,
-                                QString newUsesAnnotationString, UndoCommand *pParent = 0);
+  UpdateCoOrdinateSystemCommand(GraphicsView *pGraphicsView, const CoOrdinateSystem oldCoOrdinateSystem, const CoOrdinateSystem newCoOrdinateSystem,
+                                const bool copyProperties, const QString &oldVersion, const QString &newVersion, const QString &oldUsesAnnotationString,
+                                const QString &newUsesAnnotationString, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
 private:

@@ -41,6 +41,10 @@
 #include <QObject>
 #include <QFontInfo>
 
+#if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
+#define QStringLiteral QString::fromUtf8
+#endif
+
 class Helper : public QObject
 {
   Q_OBJECT

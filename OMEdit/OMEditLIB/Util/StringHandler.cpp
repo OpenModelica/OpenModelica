@@ -1431,7 +1431,7 @@ QString StringHandler::getPlacementAnnotation(QString componentAnnotation)
  */
 qreal StringHandler::getNormalizedAngle(qreal angle)
 {
-  qreal multiplier = fabs(angle)/360;
+  qreal multiplier = qFabs(angle)/360;
   qreal normalizedAngle = angle;
   if (angle < 0) {
     normalizedAngle = angle + (qCeil(multiplier) * 360);

@@ -1032,13 +1032,9 @@ void LibraryTreeItem::handleCoOrdinateSystemUpdated(GraphicsView *pGraphicsView)
 {
   if (mpModelWidget) {
     if (pGraphicsView->getViewType() == StringHandler::Icon) {
-      if (!mpModelWidget->getIconGraphicsView()->mCoOrdinateSystem.isValid()) {
-        mpModelWidget->drawBaseCoOrdinateSystem(mpModelWidget, mpModelWidget->getIconGraphicsView());
-      }
+      mpModelWidget->drawModelCoOrdinateSystem(mpModelWidget->getIconGraphicsView());
     } else {
-      if (!mpModelWidget->getDiagramGraphicsView()->mCoOrdinateSystem.isValid()) {
-        mpModelWidget->drawBaseCoOrdinateSystem(mpModelWidget, mpModelWidget->getDiagramGraphicsView());
-      }
+      mpModelWidget->drawModelCoOrdinateSystem(mpModelWidget->getDiagramGraphicsView());
     }
   }
   emit coOrdinateSystemUpdated(pGraphicsView);
@@ -1714,11 +1710,11 @@ void LibraryTreeModel::loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeIt
   }
   GraphicsView *pGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
   if (pGraphicsView && pGraphicsView->hasAnnotation()) {
-    qreal left = pGraphicsView->mCoOrdinateSystem.getExtent().at(0).x();
-    qreal bottom = pGraphicsView->mCoOrdinateSystem.getExtent().at(0).y();
-    qreal right = pGraphicsView->mCoOrdinateSystem.getExtent().at(1).x();
-    qreal top = pGraphicsView->mCoOrdinateSystem.getExtent().at(1).y();
-    QRectF rectangle = QRectF(left, bottom, fabs(left - right), fabs(bottom - top));
+    qreal left = pGraphicsView->mMergedCoOrdinateSystem.getLeft();
+    qreal bottom = pGraphicsView->mMergedCoOrdinateSystem.getBottom();
+    qreal right = pGraphicsView->mMergedCoOrdinateSystem.getRight();
+    qreal top = pGraphicsView->mMergedCoOrdinateSystem.getTop();
+    QRectF rectangle = QRectF(left, bottom, qFabs(left - right), qFabs(bottom - top));
     if (rectangle.width() < 1) {
       rectangle = QRectF(-100.0, -100.0, 200.0, 200.0);
     }

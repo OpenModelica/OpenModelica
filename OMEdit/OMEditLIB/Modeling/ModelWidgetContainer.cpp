@@ -113,26 +113,38 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
   if (!mpModelWidget->getLibraryTreeItem()->isSaved()) {
     GraphicalViewsPage *pGraphicalViewsPage;
     pGraphicalViewsPage = OptionsDialog::instance()->getGraphicalViewsPage();
-    QList<QPointF> extent;
-    qreal left = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentLeft() : pGraphicalViewsPage->getDiagramViewExtentLeft();
-    qreal bottom = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentBottom() : pGraphicalViewsPage->getDiagramViewExtentBottom();
-    qreal right = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentRight() : pGraphicalViewsPage->getDiagramViewExtentRight();
-    qreal top = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentTop() : pGraphicalViewsPage->getDiagramViewExtentTop();
-    extent << QPointF(left, bottom) << QPointF(right, top);
-    mCoOrdinateSystem.setExtent(extent);
-    mCoOrdinateSystem.setPreserveAspectRatio((mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewPreserveAspectRation() : pGraphicalViewsPage->getDiagramViewPreserveAspectRation());
-    mCoOrdinateSystem.setInitialScale((mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewScaleFactor() : pGraphicalViewsPage->getDiagramViewScaleFactor());
-    qreal horizontal = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewGridHorizontal() : pGraphicalViewsPage->getDiagramViewGridHorizontal();
-    qreal vertical = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewGridVertical() : pGraphicalViewsPage->getDiagramViewGridVertical();
-    mCoOrdinateSystem.setGrid(QPointF(horizontal, vertical));
-    setExtentRectangle(left, bottom, right, top);
+    const qreal left = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentLeft() : pGraphicalViewsPage->getDiagramViewExtentLeft();
+    const qreal bottom = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentBottom() : pGraphicalViewsPage->getDiagramViewExtentBottom();
+    const qreal right = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentRight() : pGraphicalViewsPage->getDiagramViewExtentRight();
+    const qreal top = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewExtentTop() : pGraphicalViewsPage->getDiagramViewExtentTop();
+    if (!qFuzzyCompare(left, -100) || !qFuzzyCompare(bottom, -100) || !qFuzzyCompare(right, 100) || !qFuzzyCompare(top, 100)) {
+      mCoOrdinateSystem.setLeft(left);
+      mCoOrdinateSystem.setBottom(bottom);
+      mCoOrdinateSystem.setRight(right);
+      mCoOrdinateSystem.setTop(top);
+    }
+
+    const bool preserveAspectRatio = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewPreserveAspectRation() : pGraphicalViewsPage->getDiagramViewPreserveAspectRation();
+    if (!preserveAspectRatio) {
+      mCoOrdinateSystem.setPreserveAspectRatio(preserveAspectRatio);
+    }
+
+    const qreal initialScale = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewScaleFactor() : pGraphicalViewsPage->getDiagramViewScaleFactor();
+    if (!qFuzzyCompare(initialScale, 0.1)) {
+      mCoOrdinateSystem.setInitialScale(initialScale);
+    }
+
+    const qreal horizontal = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewGridHorizontal() : pGraphicalViewsPage->getDiagramViewGridHorizontal();
+    const qreal vertical = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewGridVertical() : pGraphicalViewsPage->getDiagramViewGridVertical();
+    if (!qFuzzyCompare(horizontal, 2) || !qFuzzyCompare(vertical, 2)) {
+      mCoOrdinateSystem.setHorizontal(horizontal);
+      mCoOrdinateSystem.setVertical(vertical);
+    }
+    setExtentRectangle(mCoOrdinateSystem.getExtentRectangle());
   } else { // when opening a model use the default Modelica specification values
-    qreal left = mCoOrdinateSystem.getExtent().at(0).x();
-    qreal bottom = mCoOrdinateSystem.getExtent().at(0).y();
-    qreal right = mCoOrdinateSystem.getExtent().at(1).x();
-    qreal top = mCoOrdinateSystem.getExtent().at(1).y();
-    setExtentRectangle(left, bottom, right, top);
+    setExtentRectangle(mCoOrdinateSystem.getExtentRectangle());
   }
+  mMergedCoOrdinateSystem = mCoOrdinateSystem;
   scale(1.0, -1.0);     // invert the drawing area.
   setIsCustomScale(false);
   setAddClassAnnotationNeeded(false);
@@ -185,13 +197,17 @@ bool GraphicsView::isCreatingShape()
       isCreatingTextShape();
 }
 
-void GraphicsView::setExtentRectangle(qreal left, qreal bottom, qreal right, qreal top)
+void GraphicsView::setExtentRectangle(const QRectF rectangle)
 {
-  mExtentRectangle = QRectF(left, bottom, fabs(left - right), fabs(bottom - top));
+  // Yes the top of the rectangle is bottom for us since the coordinate system is inverted.
+  qreal left = rectangle.left();
+  qreal bottom = rectangle.top();
+  qreal right = rectangle.right();
+  qreal top = rectangle.bottom();
   /* Ticket:4340 Extend vertical space
    * Make the drawing area 25% bigger than the actual size. So we can better use the panning feature.
    */
-  QRectF sceneRectangle(left * 1.5, bottom * 1.5, fabs(left - right) * 1.5, fabs(bottom - top) * 1.5);
+  QRectF sceneRectangle(left * 1.5, bottom * 1.5, qFabs(left - right) * 1.5, qFabs(bottom - top) * 1.5);
   setSceneRect(sceneRectangle);
   centerOn(sceneRectangle.center());
 }
@@ -1180,6 +1196,7 @@ void GraphicsView::removeInheritedClassShapes()
   foreach (ShapeAnnotation *pShapeAnnotation, mInheritedShapesList) {
     deleteInheritedShapeFromList(pShapeAnnotation);
     removeItem(pShapeAnnotation);
+    removeItem(pShapeAnnotation->getOriginItem());
     delete pShapeAnnotation;
   }
 }
@@ -1366,16 +1383,26 @@ void GraphicsView::createBitmapShape(QPointF point)
   }
 }
 
+/*!
+ * \brief GraphicsView::finishDrawingGenericShape
+ * This function is called when shape creation operation is cancelled.
+ * So we want to unselect the shapes in this case except for Text and Bitmap
+ * since they have their respective pop-up dialogs which doesn't lead to selection and focus issue.
+ */
 void GraphicsView::finishDrawingGenericShape()
 {
   if (mIsCreatingLineShape){
     finishDrawingLineShape();
+    mpLineShapeAnnotation->setSelected(false);
   } else if (mIsCreatingPolygonShape)  {
     finishDrawingPolygonShape();
+    mpPolygonShapeAnnotation->setSelected(false);
   } else if (mIsCreatingRectangleShape) {
     finishDrawingRectangleShape();
+    mpRectangleShapeAnnotation->setSelected(false);
   } else if (mIsCreatingEllipseShape) {
     finishDrawingEllipseShape();
+    mpEllipseShapeAnnotation->setSelected(false);
   } else if (mIsCreatingTextShape) {
     finishDrawingTextShape();
   } else /*Otherwise we have a bitmap*/{
@@ -1415,7 +1442,6 @@ void GraphicsView::finishDrawingRectangleShape()
   uncheckAllShapeDrawingActions();
   checkEmitUpdateSelect(false, mpRectangleShapeAnnotation);
 }
-
 
 void GraphicsView::finishDrawingEllipseShape()
 {
@@ -1477,8 +1503,8 @@ void GraphicsView::adjustInitializeDraw(ShapeAnnotation* shapeAnnotation)
   } else {
     shapeAnnotation->adjustExtentsWithOrigin();
   }
-  shapeAnnotation->initializeTransformation();
   shapeAnnotation->drawCornerItems();
+  shapeAnnotation->applyTransformation();
 }
 
 /*!
@@ -1519,8 +1545,8 @@ QRectF GraphicsView::itemsBoundingRect()
 
 QPointF GraphicsView::snapPointToGrid(QPointF point)
 {
-  qreal stepX = mCoOrdinateSystem.getHorizontalGridStep();
-  qreal stepY = mCoOrdinateSystem.getVerticalGridStep();
+  qreal stepX = mMergedCoOrdinateSystem.getHorizontalGridStep();
+  qreal stepY = mMergedCoOrdinateSystem.getVerticalGridStep();
   point.setX(stepX * qFloor((point.x() / stepX) + 0.5));
   point.setY(stepY * qFloor((point.y() / stepY) + 0.5));
   return point;
@@ -1528,11 +1554,11 @@ QPointF GraphicsView::snapPointToGrid(QPointF point)
 
 QPointF GraphicsView::movePointByGrid(QPointF point, QPointF origin, bool useShiftModifier)
 {
-  qreal stepX = mCoOrdinateSystem.getHorizontalGridStep() * ((useShiftModifier && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) ? 5 : 1);
-  qreal stepY = mCoOrdinateSystem.getVerticalGridStep() * ((useShiftModifier && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) ? 5 : 1);
+  qreal stepX = mMergedCoOrdinateSystem.getHorizontalGridStep() * ((useShiftModifier && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) ? 5 : 1);
+  qreal stepY = mMergedCoOrdinateSystem.getVerticalGridStep() * ((useShiftModifier && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) ? 5 : 1);
   if (useShiftModifier && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
-    int modX = (int)fabs(origin.x()) % (int)stepX;
-    int modY = (int)fabs(origin.y()) % (int)stepY;
+    int modX = (int)qFabs(origin.x()) % (int)stepX;
+    int modY = (int)qFabs(origin.y()) % (int)stepY;
     if (modX != 0) {
       if ((point.x() < 0 && origin.x() > 0) || (point.x() > 0 && origin.x() < 0)) {
         stepX = modX;
@@ -1624,7 +1650,7 @@ void GraphicsView::fitInViewInternal()
   // only resize the view if user has not set any custom scaling like zoom in and zoom out.
   if (!isCustomScale()) {
     // make the fitInView rectangle bigger so that the scene rectangle will show up properly on the screen.
-    QRectF extentRectangle = getExtentRectangle();
+    QRectF extentRectangle = mMergedCoOrdinateSystem.getExtentRectangle();
     qreal x1, y1, x2, y2;
     extentRectangle.getCoords(&x1, &y1, &x2, &y2);
     extentRectangle.setCoords(x1 -5, y1 -5, x2 + 5, y2 + 5);
@@ -2769,26 +2795,24 @@ void GraphicsView::addClassAnnotation(bool alwaysAdd)
   MainWindow *pMainWindow = MainWindow::instance();
   // coordinate system
   QStringList coOrdinateSystemList;
-  QList<QPointF> extent = mCoOrdinateSystem.getExtent();
-  qreal x1 = extent.at(0).x();
-  qreal y1 = extent.at(0).y();
-  qreal x2 = extent.at(1).x();
-  qreal y2 = extent.at(1).y();
-  if (x1 != -100 || y1 != -100 || x2 != 100 || y2 != 100) {
+  qreal x1 = mCoOrdinateSystem.getLeft();
+  qreal y1 = mCoOrdinateSystem.getBottom();
+  qreal x2 = mCoOrdinateSystem.getRight();
+  qreal y2 = mCoOrdinateSystem.getTop();
+  if (mCoOrdinateSystem.hasLeft() && mCoOrdinateSystem.hasBottom() && mCoOrdinateSystem.hasRight() && mCoOrdinateSystem.hasTop()) {
     coOrdinateSystemList.append(QString("extent={{%1, %2}, {%3, %4}}").arg(x1).arg(y1).arg(x2).arg(y2));
   }
   // add the preserveAspectRatio
-  if (!mCoOrdinateSystem.getPreserveAspectRatio()) {
+  if (mCoOrdinateSystem.hasPreserveAspectRatio()) {
     coOrdinateSystemList.append(QString("preserveAspectRatio=%1").arg(mCoOrdinateSystem.getPreserveAspectRatio() ? "true" : "false"));
   }
   // add the initial scale
-  if (mCoOrdinateSystem.getInitialScale() != 0.1) {
+  if (mCoOrdinateSystem.hasInitialScale()) {
     coOrdinateSystemList.append(QString("initialScale=%1").arg(mCoOrdinateSystem.getInitialScale()));
   }
   // add the grid
-  QPointF grid = mCoOrdinateSystem.getGrid();
-  if (grid.x() != 2 || grid.y() != 2) {
-    coOrdinateSystemList.append(QString("grid={%1, %2}").arg(grid.x()).arg(grid.y()));
+  if (mCoOrdinateSystem.hasHorizontal() && mCoOrdinateSystem.hasVertical()) {
+    coOrdinateSystemList.append(QString("grid={%1, %2}").arg(mCoOrdinateSystem.getHorizontal()).arg(mCoOrdinateSystem.getVertical()));
   }
   // graphics annotations
   QStringList graphicsList;
@@ -3083,12 +3107,12 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   painter->setPen(Qt::NoPen);
   painter->drawRect(rect);
   painter->setBrush(QBrush(Qt::white, Qt::SolidPattern));
-  painter->drawRect(getExtentRectangle());
+  painter->drawRect(mMergedCoOrdinateSystem.getExtentRectangle());
   if (mpModelWidget->getModelWidgetContainer()->isShowGridLines() && !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView())) {
     painter->setBrush(Qt::NoBrush);
     painter->setPen(lightGrayPen);
     /* Draw left half vertical lines */
-    int horizontalGridStep = mCoOrdinateSystem.getHorizontalGridStep() * 10;
+    int horizontalGridStep = mMergedCoOrdinateSystem.getHorizontalGridStep() * 10;
     qreal xAxisStep = 0;
     qreal yAxisStep = rect.y();
     xAxisStep -= horizontalGridStep;
@@ -3103,7 +3127,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
       xAxisStep += horizontalGridStep;
     }
     /* Draw left half horizontal lines */
-    int verticalGridStep = mCoOrdinateSystem.getVerticalGridStep() * 10;
+    int verticalGridStep = mMergedCoOrdinateSystem.getVerticalGridStep() * 10;
     xAxisStep = rect.x();
     yAxisStep = 0;
     yAxisStep += verticalGridStep;
@@ -3124,7 +3148,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   }
   // draw scene rectangle
   painter->setPen(grayPen);
-  painter->drawRect(getExtentRectangle());
+  painter->drawRect(mMergedCoOrdinateSystem.getExtentRectangle());
 }
 
 //! Defines what happens when clicking in a GraphicsView.
@@ -3134,16 +3158,21 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
   if (event->button() == Qt::RightButton) {
     return;
   }
+  /* Ticket:4379 Select multiple objects with [Shift] key (not with [Control] key)
+   * To provide multi select we switch the shift key with control.
+   */
+  if (event->modifiers() & Qt::ShiftModifier) {
+    event->setModifiers((event->modifiers() & ~Qt::ShiftModifier) | Qt::ControlModifier);
+  }
+  QGraphicsView::mousePressEvent(event);
   // if user is starting panning.
   if (QApplication::keyboardModifiers() == Qt::ControlModifier) {
     setIsPanning(true);
     mLastMouseEventPos = event->pos();
-    QGraphicsView::mousePressEvent(event);
     return;
   }
   MainWindow *pMainWindow = MainWindow::instance();
   QPointF snappedPoint = snapPointToGrid(mapToScene(event->pos()));
-  bool eventConsumed = false;
   // if left button presses and we are creating a connector
   if (isCreatingConnection()) {
     if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
@@ -3151,10 +3180,8 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
     } else {
       mpConnectionLineAnnotation->addPoint(snappedPoint);
     }
-    eventConsumed = true;
   } else if (isCreatingTransition()) {
     mpTransitionLineAnnotation->addPoint(snappedPoint);
-    eventConsumed = true;
   } else if (pMainWindow->getLineShapeAction()->isChecked()) {
     /* if line shape tool button is checked then create a line */
     createLineShape(snappedPoint);
@@ -3170,13 +3197,13 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
   } else if (pMainWindow->getTextShapeAction()->isChecked()) {
     /* if text shape tool button is checked then create a text */
     createTextShape(snappedPoint);
-    eventConsumed = true;
   } else if (pMainWindow->getBitmapShapeAction()->isChecked()) {
     /* if bitmap shape tool button is checked then create a bitmap */
     createBitmapShape(snappedPoint);
-    eventConsumed = true;
   } else if (dynamic_cast<ResizerItem*>(itemAt(event->pos()))) {
     // do nothing if resizer item is clicked. It will be handled in its class mousePressEvent();
+  } else if (dynamic_cast<CornerItem*>(itemAt(event->pos()))) {
+    // do nothing if cornet item is clicked. It will be handled in its class mousePressEvent();
   } else {
     // this flag is just used to have separate identity for if statement in mouse release event of graphicsview
     setIsMovingComponentsAndShapes(true);
@@ -3208,25 +3235,23 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
       mpClickedComponent = pComponent;
     } else if (isCreatingConnection()) {
       addConnection(pComponent);  // end the connection
-      eventConsumed = true; // consume the event so that connection line or end component will not become selected
+      /* we set this flag here instead of the constructor
+       * to avoid the unnecessary itemChange calls while creating the connection.
+       */
+      mpConnectionLineAnnotation->setFlag(QGraphicsItem::ItemIsSelectable);
     }
   } else if (Component *pComponent = stateComponentAtPosition(event->pos())) {
     if (!isCreatingTransition()) {
       mpClickedState = pComponent;
     } else if (isCreatingTransition()) {
       addTransition(pComponent);  // end the transition
-      eventConsumed = true; // consume the event so that transition line or end component will not become selected
+      /* we set this flag here instead of the constructor
+       * to avoid the unnecessary itemChange calls while creating the transition.
+       */
+      mpTransitionLineAnnotation->setFlag(QGraphicsItem::ItemIsSelectable);
     }
   }
-  if (!eventConsumed) {
-    /* Ticket:4379 Select multiple objects with [Shift] key (not with [Control] key)
-     * To provide multi select we switch the shift key with control.
-     */
-    if (event->modifiers() & Qt::ShiftModifier) {
-      event->setModifiers((event->modifiers() & ~Qt::ShiftModifier) | Qt::ControlModifier);
-    }
-    QGraphicsView::mousePressEvent(event);
-  }
+  setFocus(Qt::ActiveWindowFocusReason);
 }
 
 /*!
@@ -3236,6 +3261,7 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
  */
 void GraphicsView::mouseMoveEvent(QMouseEvent *event)
 {
+  QGraphicsView::mouseMoveEvent(event);
   // if we are in panning mode
   if (isPanning()) {
     QScrollBar *pHorizontalScrollBar = horizontalScrollBar();
@@ -3286,17 +3312,13 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
     mpPolygonShapeAnnotation->updateEndPoint(snappedPoint);
     mpPolygonShapeAnnotation->update();
   } else if (isCreatingRectangleShape()) {
-    mpRectangleShapeAnnotation->updateEndExtent(snappedPoint);
-    mpRectangleShapeAnnotation->update();
+    mpRectangleShapeAnnotation->updateExtent(1, snappedPoint);
   } else if (isCreatingEllipseShape()) {
-    mpEllipseShapeAnnotation->updateEndExtent(snappedPoint);
-    mpEllipseShapeAnnotation->update();
+    mpEllipseShapeAnnotation->updateExtent(1, snappedPoint);
   } else if (isCreatingTextShape()) {
-    mpTextShapeAnnotation->updateEndExtent(snappedPoint);
-    mpTextShapeAnnotation->update();
+    mpTextShapeAnnotation->updateExtent(1, snappedPoint);
   } else if (isCreatingBitmapShape()) {
-    mpBitmapShapeAnnotation->updateEndExtent(snappedPoint);
-    mpBitmapShapeAnnotation->update();
+    mpBitmapShapeAnnotation->updateExtent(1, snappedPoint);
   } else if (mpClickedComponent) {
     addConnection(mpClickedComponent);  // start the connection
     if (mpClickedComponent) { // if we creating a connection then don't select the starting component.
@@ -3308,7 +3330,6 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
       mpClickedState->setSelected(false);
     }
   }
-  QGraphicsView::mouseMoveEvent(event);
 }
 
 void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
@@ -3316,9 +3337,23 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
   if (event->button() == Qt::RightButton) {
     return;
   }
+
   setIsPanning(false);
   mpClickedComponent = 0;
   mpClickedState = 0;
+
+  if (isCreatingShape() || isCreatingConnection() || isCreatingTransition()) {
+    return;
+  }
+  /* Ticket:4379 Select multiple objects with [Shift] key (not with [Control] key)
+   * To provide multi select we switch the shift key with control.
+   * Yes we need to do this in both mousePressEvent and mouseReleaseEvent.
+   */
+  if (event->modifiers() & Qt::ShiftModifier) {
+    event->setModifiers((event->modifiers() & ~Qt::ShiftModifier) | Qt::ControlModifier);
+  }
+  QGraphicsView::mouseReleaseEvent(event);
+
   if (isMovingComponentsAndShapes()) {
     setIsMovingComponentsAndShapes(false);
     bool hasComponentMoved = false;
@@ -3345,16 +3380,8 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
           mpModelWidget->beginMacro("Move items by mouse");
           beginMacro = true;
         }
-        QString oldAnnotation = pShapeAnnotation->getOMCShapeAnnotation();
-        pShapeAnnotation->mTransformation.setOrigin(pShapeAnnotation->scenePos());
-        bool state = pShapeAnnotation->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
-        pShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
-        pShapeAnnotation->setPos(0, 0);
-        pShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
-        pShapeAnnotation->setTransform(pShapeAnnotation->mTransformation.getTransformationMatrix());
-        pShapeAnnotation->setOrigin(pShapeAnnotation->mTransformation.getPosition());
-        QString newAnnotation = pShapeAnnotation->getOMCShapeAnnotation();
-        mpModelWidget->getUndoStack()->push(new UpdateShapeCommand(pShapeAnnotation, oldAnnotation, newAnnotation));
+        QPointF positionDifference = pShapeAnnotation->scenePos() - pShapeAnnotation->getOldScenePosition();
+        pShapeAnnotation->moveShape(positionDifference.x(), positionDifference.y());
         hasShapeMoved = true;
       }
     }
@@ -3369,14 +3396,6 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
       mpModelWidget->endMacro();
     }
   }
-  /* Ticket:4379 Select multiple objects with [Shift] key (not with [Control] key)
-   * To provide multi select we switch the shift key with control.
-   * Yes we need to do this in both mousePressEvent and mouseReleaseEvent.
-   */
-  if (event->modifiers() & Qt::ShiftModifier) {
-    event->setModifiers((event->modifiers() & ~Qt::ShiftModifier) | Qt::ControlModifier);
-  }
-  QGraphicsView::mouseReleaseEvent(event);
 }
 
 bool GraphicsView::handleDoubleClickOnComponent(QMouseEvent *event)
@@ -3414,9 +3433,11 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
   const bool removeLastAddedPoint = true;
   if (isCreatingLineShape()) {
     finishDrawingLineShape(removeLastAddedPoint);
+    setFocus(Qt::ActiveWindowFocusReason);
     return;
   } else if (isCreatingPolygonShape()) {
     finishDrawingPolygonShape(removeLastAddedPoint);
+    setFocus(Qt::ActiveWindowFocusReason);
     return;
   }
   ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(itemAt(event->pos()));
@@ -3659,7 +3680,7 @@ void GraphicsView::keyReleaseEvent(QKeyEvent *event)
 void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
 {
   /* If we are creating the connection OR creating any shape then don't show context menu */
-  if (isCreatingShape() || isCreatingConnection()) {
+  if (isCreatingShape() || isCreatingConnection() || isCreatingTransition()) {
     return;
   }
   // if creating a transition
@@ -4302,36 +4323,6 @@ void ModelWidget::reDrawModelWidgetInheritedClasses()
 }
 
 /*!
- * \brief ModelWidget::drawBaseCoOrdinateSystem
- * Draws the coordinate system from base class.
- * \param pModelWidget
- * \param pGraphicsView
- */
-void ModelWidget::drawBaseCoOrdinateSystem(ModelWidget *pModelWidget, GraphicsView *pGraphicsView)
-{
-  foreach (LibraryTreeItem *pLibraryTreeItem, pModelWidget->getInheritedClassesList()) {
-    if (!pLibraryTreeItem->isNonExisting()) {
-      GraphicsView *pInheritedGraphicsView;
-      if (pGraphicsView->getViewType() == StringHandler::Icon) {
-        pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
-      } else {
-        pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
-      }
-      if (pInheritedGraphicsView->mCoOrdinateSystem.isValid()) {
-        qreal left = pInheritedGraphicsView->mCoOrdinateSystem.getExtent().at(0).x();
-        qreal bottom = pInheritedGraphicsView->mCoOrdinateSystem.getExtent().at(0).y();
-        qreal right = pInheritedGraphicsView->mCoOrdinateSystem.getExtent().at(1).x();
-        qreal top = pInheritedGraphicsView->mCoOrdinateSystem.getExtent().at(1).y();
-        pGraphicsView->setExtentRectangle(left, bottom, right, top);
-        break;
-      } else {
-        drawBaseCoOrdinateSystem(pLibraryTreeItem->getModelWidget(), pGraphicsView);
-      }
-    }
-  }
-}
-
-/*!
  * \brief ModelWidget::drawModelIconDiagramShapes
  * Draws the model shapes.
  * \param shapes
@@ -4368,9 +4359,9 @@ void ModelWidget::drawModelIconDiagramShapes(QStringList shapes, GraphicsView *p
       pShapeAnnotation = new BitmapAnnotation(mpLibraryTreeItem->mClassInformation.fileName, shape, pGraphicsView);
     }
     if (pShapeAnnotation) {
-      pShapeAnnotation->initializeTransformation();
       pShapeAnnotation->drawCornerItems();
       pShapeAnnotation->setCornerItemsActiveOrPassive();
+      pShapeAnnotation->applyTransformation();
       mpUndoStack->push(new AddShapeCommand(pShapeAnnotation));
       if (select) {
         pShapeAnnotation->setSelected(true);
@@ -4388,9 +4379,9 @@ void ModelWidget::drawModelIconDiagramShapes(QStringList shapes, GraphicsView *p
 ShapeAnnotation* ModelWidget::createNonExistingInheritedShape(GraphicsView *pGraphicsView)
 {
   LineAnnotation *pLineAnnotation = new LineAnnotation(pGraphicsView);
-  pLineAnnotation->initializeTransformation();
   pLineAnnotation->drawCornerItems();
   pLineAnnotation->setCornerItemsActiveOrPassive();
+  pLineAnnotation->applyTransformation();
   return pLineAnnotation;
 }
 
@@ -4405,39 +4396,39 @@ ShapeAnnotation* ModelWidget::createInheritedShape(ShapeAnnotation *pShapeAnnota
 {
   if (dynamic_cast<LineAnnotation*>(pShapeAnnotation)) {
     LineAnnotation *pLineAnnotation = new LineAnnotation(pShapeAnnotation, pGraphicsView);
-    pLineAnnotation->initializeTransformation();
     pLineAnnotation->drawCornerItems();
     pLineAnnotation->setCornerItemsActiveOrPassive();
+    pLineAnnotation->applyTransformation();
     return pLineAnnotation;
   } else if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
     PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation(pShapeAnnotation, pGraphicsView);
-    pPolygonAnnotation->initializeTransformation();
     pPolygonAnnotation->drawCornerItems();
     pPolygonAnnotation->setCornerItemsActiveOrPassive();
+    pPolygonAnnotation->applyTransformation();
     return pPolygonAnnotation;
   } else if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
     RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(pShapeAnnotation, pGraphicsView);
-    pRectangleAnnotation->initializeTransformation();
     pRectangleAnnotation->drawCornerItems();
     pRectangleAnnotation->setCornerItemsActiveOrPassive();
+    pRectangleAnnotation->applyTransformation();
     return pRectangleAnnotation;
   } else if (dynamic_cast<EllipseAnnotation*>(pShapeAnnotation)) {
     EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation(pShapeAnnotation, pGraphicsView);
-    pEllipseAnnotation->initializeTransformation();
     pEllipseAnnotation->drawCornerItems();
     pEllipseAnnotation->setCornerItemsActiveOrPassive();
+    pEllipseAnnotation->applyTransformation();
     return pEllipseAnnotation;
   } else if (dynamic_cast<TextAnnotation*>(pShapeAnnotation)) {
     TextAnnotation *pTextAnnotation = new TextAnnotation(pShapeAnnotation, pGraphicsView);
-    pTextAnnotation->initializeTransformation();
     pTextAnnotation->drawCornerItems();
     pTextAnnotation->setCornerItemsActiveOrPassive();
+    pTextAnnotation->applyTransformation();
     return pTextAnnotation;
   } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
     BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(pShapeAnnotation, pGraphicsView);
-    pBitmapAnnotation->initializeTransformation();
     pBitmapAnnotation->drawCornerItems();
     pBitmapAnnotation->setCornerItemsActiveOrPassive();
+    pBitmapAnnotation->applyTransformation();
     return pBitmapAnnotation;
   }
   return 0;
@@ -4471,6 +4462,7 @@ LineAnnotation* ModelWidget::createInheritedConnection(LineAnnotation *pConnecti
                                                  .arg(pConnectionLineAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
   pInheritedConnectionLineAnnotation->drawCornerItems();
   pInheritedConnectionLineAnnotation->setCornerItemsActiveOrPassive();
+  pInheritedConnectionLineAnnotation->applyTransformation();
   // Add the start component connection details.
   Component *pStartComponent = pInheritedConnectionLineAnnotation->getStartComponent();
   if (pStartComponent->getRootParentComponent()) {
@@ -4933,16 +4925,15 @@ ShapeAnnotation* ModelWidget::drawOMSModelElement()
     QUrl url(mpLibraryTreeItem->getOMSElement()->geometry->iconSource);
     QFileInfo fileInfo(url.toLocalFile());
     BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(fileInfo.absoluteFilePath(), mpIconGraphicsView);
-    pBitmapAnnotation->initializeTransformation();
     pBitmapAnnotation->drawCornerItems();
     pBitmapAnnotation->setCornerItemsActiveOrPassive();
+    pBitmapAnnotation->applyTransformation();
     mpIconGraphicsView->addShapeToList(pBitmapAnnotation);
     mpIconGraphicsView->addItem(pBitmapAnnotation);
     return pBitmapAnnotation;
   } else {
     // Rectangle shape as base
     RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(mpIconGraphicsView);
-    pRectangleAnnotation->initializeTransformation();
     if (mpLibraryTreeItem->isSystemElement()) {
       pRectangleAnnotation->setLineColor(QColor(128, 128, 0));
       pRectangleAnnotation->setFillColor(Qt::white);
@@ -4958,11 +4949,11 @@ ShapeAnnotation* ModelWidget::drawOMSModelElement()
     }
     pRectangleAnnotation->drawCornerItems();
     pRectangleAnnotation->setCornerItemsActiveOrPassive();
+    pRectangleAnnotation->applyTransformation();
     mpIconGraphicsView->addShapeToList(pRectangleAnnotation);
     mpIconGraphicsView->addItem(pRectangleAnnotation);
     // Text for name
     TextAnnotation *pTextAnnotation = new TextAnnotation(mpIconGraphicsView);
-    pTextAnnotation->initializeTransformation();
     if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isFMUComponent()) {
       QList<QPointF> extents;
       extents << QPointF(-100, 80) << QPointF(100, 40);
@@ -4975,12 +4966,12 @@ ShapeAnnotation* ModelWidget::drawOMSModelElement()
     }
     pTextAnnotation->drawCornerItems();
     pTextAnnotation->setCornerItemsActiveOrPassive();
+    pTextAnnotation->applyTransformation();
     mpIconGraphicsView->addShapeToList(pTextAnnotation);
     mpIconGraphicsView->addItem(pTextAnnotation);
     // Text for further information
     if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isFMUComponent()) {
       TextAnnotation *pInfoTextAnnotation = new TextAnnotation(mpIconGraphicsView);
-      pInfoTextAnnotation->initializeTransformation();
       QList<QPointF> extents;
       extents << QPointF(-100, -40) << QPointF(100, -80);
       pInfoTextAnnotation->setExtents(extents);
@@ -4993,6 +4984,7 @@ ShapeAnnotation* ModelWidget::drawOMSModelElement()
       }
       pInfoTextAnnotation->drawCornerItems();
       pInfoTextAnnotation->setCornerItemsActiveOrPassive();
+      pInfoTextAnnotation->applyTransformation();
       mpIconGraphicsView->addShapeToList(pInfoTextAnnotation);
       mpIconGraphicsView->addItem(pInfoTextAnnotation);
     }
@@ -5082,6 +5074,14 @@ void ModelWidget::reDrawModelWidget()
     // Draw icon view
     mExtendsModifiersLoaded = false;
     mDerivedClassModifiersLoaded = false;
+    // reset the CoOrdinateSystem
+    if (mpIconGraphicsView) {
+      mpIconGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
+    }
+    /* remove everything from the diagram view */
+    if (mpDiagramGraphicsView) {
+      mpDiagramGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
+    }
     // remove saved inherited classes
     clearInheritedClasses();
     // get inherited classes
@@ -6361,37 +6361,98 @@ void ModelWidget::getModelIconDiagramShapes(StringHandler::ViewType viewType)
     }
   }
   annotationString = StringHandler::removeFirstLastCurlBrackets(annotationString);
-  if (annotationString.isEmpty()) {
-    drawBaseCoOrdinateSystem(this, pGraphicsView);
-    return;
-  }
   QStringList list = StringHandler::getStrings(annotationString);
-  // read the coordinate system
-  if (list.size() < 8) {
-    drawBaseCoOrdinateSystem(this, pGraphicsView);
-    return;
-  }
 
-  qreal left = qMin(list.at(0).toFloat(), list.at(2).toFloat());
-  qreal bottom = qMin(list.at(1).toFloat(), list.at(3).toFloat());
-  qreal right = qMax(list.at(0).toFloat(), list.at(2).toFloat());
-  qreal top = qMax(list.at(1).toFloat(), list.at(3).toFloat());
-  QList<QPointF> extent;
-  extent << QPointF(left, bottom) << QPointF(right, top);
-  pGraphicsView->mCoOrdinateSystem.setExtent(extent);
-  pGraphicsView->mCoOrdinateSystem.setPreserveAspectRatio((list.at(4).compare("true") == 0) ? true : false);
-  pGraphicsView->mCoOrdinateSystem.setInitialScale(list.at(5).toFloat());
-  qreal horizontal = list.at(6).toFloat();
-  qreal vertical = list.at(7).toFloat();
-  pGraphicsView->mCoOrdinateSystem.setGrid(QPointF(horizontal, vertical));
-  pGraphicsView->mCoOrdinateSystem.setValid(true);
-  pGraphicsView->setExtentRectangle(left, bottom, right, top);
-  pGraphicsView->resize(pGraphicsView->size());
+  /* From Modelica Specification Version 3.5-dev
+   * The coordinate system (including preserveAspectRatio) of a class is defined by the following priority:
+   * 1. The coordinate system annotation given in the class (if specified).
+   * 2. The coordinate systems of the first base-class where the extent on the extends-clause specifies a
+   *    null-region (if any). Note that null-region is the default for base-classes, see section 18.6.3.
+   * 3. The default coordinate system CoordinateSystem(extent={{-100, -100}, {100, 100}}).
+   *
+   * Following is the first case.
+   */
+  if (list.size() >= 8) {
+    CoOrdinateSystem coOrdinateSystem = pGraphicsView->getCoOrdinateSystem();
+    coOrdinateSystem.setLeft(list.at(0));
+    coOrdinateSystem.setBottom(list.at(1));
+    coOrdinateSystem.setRight(list.at(2));
+    coOrdinateSystem.setTop(list.at(3));
+    coOrdinateSystem.setPreserveAspectRatio(list.at(4));
+    coOrdinateSystem.setInitialScale(list.at(5));
+    coOrdinateSystem.setHorizontal(list.at(6));
+    coOrdinateSystem.setVertical(list.at(7));
+    pGraphicsView->setCoOrdinateSystem(coOrdinateSystem);
+  }
+  // draw the CoOrdinateSystem
+  drawModelCoOrdinateSystem(pGraphicsView);
   // read the shapes
   if (list.size() < 9)
     return;
   QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(8)), '(', ')');
   drawModelIconDiagramShapes(shapesList, pGraphicsView, false);
+}
+
+void ModelWidget::drawModelCoOrdinateSystem(GraphicsView *pGraphicsView)
+{
+  // start with the local CoOrdinateSystem
+  pGraphicsView->mMergedCoOrdinateSystem = pGraphicsView->getCoOrdinateSystem();
+  // if local CoOrdinateSystem is not complete then try to complete the merged CoOrdinateSystem.
+  if (!pGraphicsView->getCoOrdinateSystem().isComplete()) {
+    readCoOrdinateSystemFromInheritedClass(this, pGraphicsView);
+  }
+
+  pGraphicsView->setExtentRectangle(pGraphicsView->mMergedCoOrdinateSystem.getExtentRectangle());
+  pGraphicsView->resize(pGraphicsView->size());
+}
+
+void ModelWidget::readCoOrdinateSystemFromInheritedClass(ModelWidget *pModelWidget, GraphicsView *pGraphicsView)
+{
+  /* From Modelica Specification Version 3.5-dev
+   * The coordinate system (including preserveAspectRatio) of a class is defined by the following priority:
+   * 1. The coordinate system annotation given in the class (if specified).
+   * 2. The coordinate systems of the first base-class where the extent on the extends-clause specifies a
+   *    null-region (if any). Note that null-region is the default for base-classes, see section 18.6.3.
+   * 3. The default coordinate system CoordinateSystem(extent={{-100, -100}, {100, 100}}).
+   *
+   * Following is the second case.
+   */
+  foreach (LibraryTreeItem *pLibraryTreeItem, pModelWidget->getInheritedClassesList()) {
+    if (!pLibraryTreeItem->isNonExisting()) {
+      GraphicsView *pInheritedGraphicsView;
+      if (pGraphicsView->getViewType() == StringHandler::Icon) {
+        pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
+      } else {
+        pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
+      }
+
+      if (!pGraphicsView->mMergedCoOrdinateSystem.hasLeft() && pInheritedGraphicsView->mMergedCoOrdinateSystem.hasLeft()) {
+        pGraphicsView->mMergedCoOrdinateSystem.setLeft(pInheritedGraphicsView->mMergedCoOrdinateSystem.getLeft());
+      }
+      if (!pGraphicsView->mMergedCoOrdinateSystem.hasBottom() && pInheritedGraphicsView->mMergedCoOrdinateSystem.hasBottom()) {
+        pGraphicsView->mMergedCoOrdinateSystem.setBottom(pInheritedGraphicsView->mMergedCoOrdinateSystem.getBottom());
+      }
+      if (!pGraphicsView->mMergedCoOrdinateSystem.hasRight() && pInheritedGraphicsView->mMergedCoOrdinateSystem.hasRight()) {
+        pGraphicsView->mMergedCoOrdinateSystem.setRight(pInheritedGraphicsView->mMergedCoOrdinateSystem.getRight());
+      }
+      if (!pGraphicsView->mMergedCoOrdinateSystem.hasTop() && pInheritedGraphicsView->mMergedCoOrdinateSystem.hasTop()) {
+        pGraphicsView->mMergedCoOrdinateSystem.setTop(pInheritedGraphicsView->mMergedCoOrdinateSystem.getTop());
+      }
+      if (!pGraphicsView->mMergedCoOrdinateSystem.hasPreserveAspectRatio() && pInheritedGraphicsView->mMergedCoOrdinateSystem.hasPreserveAspectRatio()) {
+        pGraphicsView->mMergedCoOrdinateSystem.setPreserveAspectRatio(pInheritedGraphicsView->mMergedCoOrdinateSystem.getPreserveAspectRatio());
+      }
+      if (!pGraphicsView->mMergedCoOrdinateSystem.hasInitialScale() && pInheritedGraphicsView->mMergedCoOrdinateSystem.hasInitialScale()) {
+        pGraphicsView->mMergedCoOrdinateSystem.setInitialScale(pInheritedGraphicsView->mMergedCoOrdinateSystem.getInitialScale());
+      }
+      if (!pGraphicsView->mMergedCoOrdinateSystem.hasHorizontal() && pInheritedGraphicsView->mMergedCoOrdinateSystem.hasHorizontal()) {
+        pGraphicsView->mMergedCoOrdinateSystem.setHorizontal(pInheritedGraphicsView->mMergedCoOrdinateSystem.getHorizontal());
+      }
+      if (!pGraphicsView->mMergedCoOrdinateSystem.hasVertical() && pInheritedGraphicsView->mMergedCoOrdinateSystem.hasVertical()) {
+        pGraphicsView->mMergedCoOrdinateSystem.setVertical(pInheritedGraphicsView->mMergedCoOrdinateSystem.getVertical());
+      }
+    }
+    break; // we only check the coordinate system of the first inherited class. See the comment in the start of the function i.e., "The coordinate systems of the first base-class ..."
+  }
 }
 
 /*!

@@ -85,6 +85,7 @@ void AddShapeCommand::redoInternal()
   mpShapeAnnotation->getGraphicsView()->addShapeToList(mpShapeAnnotation, mIndex);
   mpShapeAnnotation->getGraphicsView()->deleteShapeFromOutOfSceneList(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->addItem(mpShapeAnnotation);
+  mpShapeAnnotation->getGraphicsView()->addItem(mpShapeAnnotation->getOriginItem());
   mpShapeAnnotation->emitAdded();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
   mpShapeAnnotation->getGraphicsView()->reOrderShapes();
@@ -99,6 +100,7 @@ void AddShapeCommand::undo()
   mIndex = mpShapeAnnotation->getGraphicsView()->deleteShapeFromList(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->addShapeToOutOfSceneList(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->removeItem(mpShapeAnnotation);
+  mpShapeAnnotation->getGraphicsView()->removeItem(mpShapeAnnotation->getOriginItem());
   mpShapeAnnotation->emitDeleted();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
   mpShapeAnnotation->getGraphicsView()->reOrderShapes();
@@ -131,10 +133,13 @@ UpdateShapeCommand::UpdateShapeCommand(ShapeAnnotation *pShapeAnnotation, QStrin
  */
 void UpdateShapeCommand::redoInternal()
 {
+//  mpShapeAnnotation->resetTransform();
+//  bool state = mpShapeAnnotation->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
+//  mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
+//  mpShapeAnnotation->setPos(0, 0);
+//  mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
   mpShapeAnnotation->parseShapeAnnotation(mNewAnnotation);
-  mpShapeAnnotation->initializeTransformation();
-  mpShapeAnnotation->removeCornerItems();
-  mpShapeAnnotation->drawCornerItems();
+  mpShapeAnnotation->applyTransformation();
   mpShapeAnnotation->setCornerItemsActiveOrPassive();
   mpShapeAnnotation->emitChanged();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
@@ -146,10 +151,13 @@ void UpdateShapeCommand::redoInternal()
  */
 void UpdateShapeCommand::undo()
 {
+//  mpShapeAnnotation->resetTransform();
+//  bool state = mpShapeAnnotation->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
+//  mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
+//  mpShapeAnnotation->setPos(0, 0);
+//  mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
   mpShapeAnnotation->parseShapeAnnotation(mOldAnnotation);
-  mpShapeAnnotation->initializeTransformation();
-  mpShapeAnnotation->removeCornerItems();
-  mpShapeAnnotation->drawCornerItems();
+  mpShapeAnnotation->applyTransformation();
   mpShapeAnnotation->setCornerItemsActiveOrPassive();
   mpShapeAnnotation->emitChanged();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
@@ -171,6 +179,7 @@ void DeleteShapeCommand::redoInternal()
   mIndex = mpShapeAnnotation->getGraphicsView()->deleteShapeFromList(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->addShapeToOutOfSceneList(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->removeItem(mpShapeAnnotation);
+  mpShapeAnnotation->getGraphicsView()->removeItem(mpShapeAnnotation->getOriginItem());
   mpShapeAnnotation->emitDeleted();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
   mpShapeAnnotation->getGraphicsView()->reOrderShapes();
@@ -185,6 +194,7 @@ void DeleteShapeCommand::undo()
   mpShapeAnnotation->getGraphicsView()->addShapeToList(mpShapeAnnotation, mIndex);
   mpShapeAnnotation->getGraphicsView()->deleteShapeFromOutOfSceneList(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->addItem(mpShapeAnnotation);
+  mpShapeAnnotation->getGraphicsView()->addItem(mpShapeAnnotation->getOriginItem());
   mpShapeAnnotation->emitAdded();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
   mpShapeAnnotation->getGraphicsView()->reOrderShapes();
@@ -1252,9 +1262,9 @@ void DeleteInitialStateCommand::undo()
 }
 
 UpdateCoOrdinateSystemCommand::UpdateCoOrdinateSystemCommand(GraphicsView *pGraphicsView, CoOrdinateSystem oldCoOrdinateSystem,
-                                                             CoOrdinateSystem newCoOrdinateSystem, bool copyProperties, QString oldVersion,
-                                                             QString newVersion, QString oldUsesAnnotationString,
-                                                             QString newUsesAnnotationString, UndoCommand *pParent)
+                                                             CoOrdinateSystem newCoOrdinateSystem, bool copyProperties, const QString &oldVersion,
+                                                             const QString &newVersion, const QString &oldUsesAnnotationString,
+                                                             const QString &newUsesAnnotationString, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpGraphicsView = pGraphicsView;
@@ -1274,12 +1284,8 @@ UpdateCoOrdinateSystemCommand::UpdateCoOrdinateSystemCommand(GraphicsView *pGrap
  */
 void UpdateCoOrdinateSystemCommand::redoInternal()
 {
-  mpGraphicsView->mCoOrdinateSystem = mNewCoOrdinateSystem;
-  qreal left = mNewCoOrdinateSystem.getExtent().at(0).x();
-  qreal bottom = mNewCoOrdinateSystem.getExtent().at(0).y();
-  qreal right = mNewCoOrdinateSystem.getExtent().at(1).x();
-  qreal top = mNewCoOrdinateSystem.getExtent().at(1).y();
-  mpGraphicsView->setExtentRectangle(left, bottom, right, top);
+  mpGraphicsView->setCoOrdinateSystem(mNewCoOrdinateSystem);
+  mpGraphicsView->getModelWidget()->drawModelCoOrdinateSystem(mpGraphicsView);
   mpGraphicsView->addClassAnnotation();
   mpGraphicsView->fitInViewInternal();
   updateReferencedShapes(mpGraphicsView);
@@ -1292,8 +1298,8 @@ void UpdateCoOrdinateSystemCommand::redoInternal()
     } else {
       pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
     }
-    pGraphicsView->mCoOrdinateSystem = mNewCoOrdinateSystem;
-    pGraphicsView->setExtentRectangle(left, bottom, right, top);
+    pGraphicsView->setCoOrdinateSystem(mNewCoOrdinateSystem);
+    pGraphicsView->getModelWidget()->drawModelCoOrdinateSystem(pGraphicsView);
     pGraphicsView->addClassAnnotation();
     pGraphicsView->fitInViewInternal();
     updateReferencedShapes(pGraphicsView);
@@ -1318,17 +1324,8 @@ void UpdateCoOrdinateSystemCommand::redoInternal()
  */
 void UpdateCoOrdinateSystemCommand::undo()
 {
-  mpGraphicsView->mCoOrdinateSystem = mOldCoOrdinateSystem;
-  qreal left = mOldCoOrdinateSystem.getExtent().at(0).x();
-  qreal bottom = mOldCoOrdinateSystem.getExtent().at(0).y();
-  qreal right = mOldCoOrdinateSystem.getExtent().at(1).x();
-  qreal top = mOldCoOrdinateSystem.getExtent().at(1).y();
-
-  if (!mpGraphicsView->mCoOrdinateSystem.isValid()) {
-    mpGraphicsView->getModelWidget()->drawBaseCoOrdinateSystem(mpGraphicsView->getModelWidget(), mpGraphicsView);
-  } else {
-    mpGraphicsView->setExtentRectangle(left, bottom, right, top);
-  }
+  mpGraphicsView->setCoOrdinateSystem(mOldCoOrdinateSystem);
+  mpGraphicsView->getModelWidget()->drawModelCoOrdinateSystem(mpGraphicsView);
   mpGraphicsView->addClassAnnotation();
   mpGraphicsView->fitInViewInternal();
   updateReferencedShapes(mpGraphicsView);
@@ -1341,12 +1338,8 @@ void UpdateCoOrdinateSystemCommand::undo()
     } else {
       pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
     }
-    pGraphicsView->mCoOrdinateSystem = mOldCoOrdinateSystem;
-    if (!pGraphicsView->mCoOrdinateSystem.isValid()) {
-      pGraphicsView->getModelWidget()->drawBaseCoOrdinateSystem(pGraphicsView->getModelWidget(), pGraphicsView);
-    } else {
-      pGraphicsView->setExtentRectangle(left, bottom, right, top);
-    }
+    pGraphicsView->setCoOrdinateSystem(mOldCoOrdinateSystem);
+    pGraphicsView->getModelWidget()->drawModelCoOrdinateSystem(pGraphicsView);
     pGraphicsView->addClassAnnotation();
     pGraphicsView->fitInViewInternal();
     updateReferencedShapes(pGraphicsView);
@@ -2049,6 +2042,7 @@ void AddIconCommand::redoInternal()
       foreach (ShapeAnnotation *pShapeAnnotation, mpGraphicsView->getShapesList()) {
         mpGraphicsView->deleteShapeFromList(pShapeAnnotation);
         mpGraphicsView->removeItem(pShapeAnnotation);
+        mpGraphicsView->removeItem(pShapeAnnotation->getOriginItem());
       }
       ShapeAnnotation *pShapeAnnotation = mpGraphicsView->getModelWidget()->drawOMSModelElement();
       pElementLibraryTreeItem->handleIconUpdated();
@@ -2076,6 +2070,7 @@ void AddIconCommand::undo()
       foreach (ShapeAnnotation *pShapeAnnotation, mpGraphicsView->getShapesList()) {
         mpGraphicsView->deleteShapeFromList(pShapeAnnotation);
         mpGraphicsView->removeItem(pShapeAnnotation);
+        mpGraphicsView->removeItem(pShapeAnnotation->getOriginItem());
       }
       ShapeAnnotation *pShapeAnnotation = mpGraphicsView->getModelWidget()->drawOMSModelElement();
       pElementLibraryTreeItem->handleIconUpdated();
@@ -2178,6 +2173,7 @@ void DeleteIconCommand::redoInternal()
       foreach (ShapeAnnotation *pShapeAnnotation, mpGraphicsView->getShapesList()) {
         mpGraphicsView->deleteShapeFromList(pShapeAnnotation);
         mpGraphicsView->removeItem(pShapeAnnotation);
+        mpGraphicsView->removeItem(pShapeAnnotation->getOriginItem());
       }
       ShapeAnnotation *pShapeAnnotation = mpGraphicsView->getModelWidget()->drawOMSModelElement();
       pElementLibraryTreeItem->handleIconUpdated();
@@ -2208,6 +2204,7 @@ void DeleteIconCommand::undo()
       foreach (ShapeAnnotation *pShapeAnnotation, mpGraphicsView->getShapesList()) {
         mpGraphicsView->deleteShapeFromList(pShapeAnnotation);
         mpGraphicsView->removeItem(pShapeAnnotation);
+        mpGraphicsView->removeItem(pShapeAnnotation->getOriginItem());
       }
       ShapeAnnotation *pShapeAnnotation = mpGraphicsView->getModelWidget()->drawOMSModelElement();
       pElementLibraryTreeItem->handleIconUpdated();

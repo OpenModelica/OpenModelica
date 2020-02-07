@@ -147,11 +147,11 @@ getClassNames(B, includeConstants=true);
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getIconAnnotation(A.test)
-// {-100.0,-100.0,100.0,100.0,true,0.1,2.0,2.0,{Line(true, {0.0, 0.0}, 0, {{-50, -50}, {50, 50}, {100, 0}, {0, 100}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3, Smooth.None)}}
+// {-,-,-,-,-,-,-,,{Line(true, {0.0, 0.0}, 0, {{-50, -50}, {50, 50}, {100, 0}, {0, 100}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3, Smooth.None)}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getDiagramAnnotation(A.test)
-// {-100.0,-100.0,100.0,100.0,true,0.1,2.0,2.0,{Line(true, {0.0, 0.0}, 0, {{-50, -50}, {50, 50}, {100, 0}, {0, 100}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3, Smooth.None)}}
+// {-,-,-,-,-,-,-,,{Line(true, {0.0, 0.0}, 0, {{-50, -50}, {50, 50}, {100, 0}, {0, 100}}, {127, 127, 127}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.Open}, 3, Smooth.None)}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getDocumentationAnnotation(A.test)
