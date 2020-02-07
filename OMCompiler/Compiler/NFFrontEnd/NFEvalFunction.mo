@@ -537,12 +537,14 @@ algorithm
       list<Expression> vals;
       Mutable<Expression> var_ptr;
 
+    // variable := value
     case (Expression.MUTABLE(exp = var_ptr), _)
       algorithm
         Mutable.update(var_ptr, assignExp(Mutable.access(var_ptr), value));
       then
         ();
 
+    // (var1, var2, ...) := (value1, value2, ...)
     case (Expression.TUPLE(), Expression.TUPLE(elements = vals))
       algorithm
         for var in variable.elements loop
@@ -552,11 +554,16 @@ algorithm
       then
         ();
 
+    // variable[subscript1, subscript2, ...] := value
     case (Expression.SUBSCRIPTED_EXP(exp = Expression.MUTABLE(exp = var_ptr)), _)
       algorithm
         assignSubscriptedVariable(var_ptr, variable.subscripts, value);
       then
         ();
+
+    // _ := value
+    case (Expression.CREF(cref = ComponentRef.WILD()), _)
+      then ();
 
     else
       algorithm
@@ -629,7 +636,9 @@ algorithm
 
     case (Expression.ARRAY(), Subscript.WHOLE() :: rest_subs)
       algorithm
-        if not listEmpty(rest_subs) then
+        if listEmpty(rest_subs) then
+          arrayExp.elements := Expression.arrayElements(value);
+        else
           arrayExp.elements := list(assignArrayElement(e, rest_subs, v) threaded for
             e in arrayExp.elements, v in Expression.arrayElements(value));
         end if;

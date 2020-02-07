@@ -1802,7 +1802,7 @@ algorithm
       then evalArrayConstructor(c.exp, c.iters);
 
     case Call.TYPED_REDUCTION()
-      then evalReduction(c.fn, c.exp, c.ty, c.iters);
+      then evalReduction(c.fn, c.exp, c.iters);
 
     else
       algorithm
@@ -3156,19 +3156,17 @@ end ReductionFn;
 function evalReduction
   input Function fn;
   input Expression exp;
-  input Type ty;
   input list<tuple<InstNode, Expression>> iterators;
   output Expression result;
 algorithm
   result := evalExpPartial(exp);
   result := Expression.bindingExpMap(result,
-    function evalReduction2(fn = fn, ty = ty, iterators = iterators));
+    function evalReduction2(fn = fn, iterators = iterators));
 end evalReduction;
 
 function evalReduction2
   input Function fn;
   input Expression exp;
-  input Type ty;
   input list<tuple<InstNode, Expression>> iterators;
   output Expression result;
 protected
@@ -3176,8 +3174,10 @@ protected
   list<Expression> ranges;
   list<Mutable<Expression>> iters;
   ReductionFn red_fn;
+  Type ty;
 algorithm
   (e, ranges, iters) := createIterationRanges(exp, iterators);
+  ty := Expression.typeOf(e);
 
   (red_fn, default_exp) := match AbsynUtil.pathString(Function.name(fn))
     case "sum" then (evalBinaryAdd, Expression.makeZero(ty));
