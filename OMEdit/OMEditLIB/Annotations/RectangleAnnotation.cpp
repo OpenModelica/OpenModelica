@@ -38,6 +38,8 @@
 RectangleAnnotation::RectangleAnnotation(QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
+  mpOriginItem = new OriginItem(this);
+  mpOriginItem->setPassive();
   // set the default values
   GraphicItem::setDefaults();
   FilledShape::setDefaults();
@@ -51,6 +53,7 @@ RectangleAnnotation::RectangleAnnotation(QString annotation, GraphicsView *pGrap
 RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent)
 {
+  mpOriginItem = 0;
   updateShape(pShapeAnnotation);
   setPos(mOrigin);
   setRotation(mRotation);
@@ -59,14 +62,18 @@ RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Comp
 RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
 {
+  mpOriginItem = new OriginItem(this);
+  mpOriginItem->setPassive();
   updateShape(pShapeAnnotation);
   setShapeFlags(true);
   mpGraphicsView->addItem(this);
+  mpGraphicsView->addItem(mpOriginItem);
 }
 
 RectangleAnnotation::RectangleAnnotation(Component *pParent)
   : ShapeAnnotation(0, pParent)
 {
+  mpOriginItem = 0;
   // set the default values
   GraphicItem::setDefaults();
   FilledShape::setDefaults();
@@ -91,6 +98,7 @@ RectangleAnnotation::RectangleAnnotation(Component *pParent)
 RectangleAnnotation::RectangleAnnotation(GraphicsView *pGraphicsView)
   : ShapeAnnotation(true, pGraphicsView, 0, 0)
 {
+  mpOriginItem = 0;
   // set the default values
   GraphicItem::setDefaults();
   FilledShape::setDefaults();
@@ -170,7 +178,7 @@ void RectangleAnnotation::drawRectangleAnnotaion(QPainter *painter)
 {
   applyLinePattern(painter);
   applyFillPattern(painter);
-  painter->drawRoundedRect(getBoundingRect(), mRadius, mRadius);
+  painter->drawRoundedRect(getBoundingRect().normalized(), mRadius, mRadius);
 }
 
 /*!
@@ -259,12 +267,12 @@ void RectangleAnnotation::duplicate()
 {
   RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation("", mpGraphicsView);
   pRectangleAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5,
-                   mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
+  QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
   pRectangleAnnotation->setOrigin(mOrigin + gridStep);
-  pRectangleAnnotation->initializeTransformation();
   pRectangleAnnotation->drawCornerItems();
   pRectangleAnnotation->setCornerItemsActiveOrPassive();
+  pRectangleAnnotation->applyTransformation();
   pRectangleAnnotation->update();
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pRectangleAnnotation));
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pRectangleAnnotation, mpGraphicsView);

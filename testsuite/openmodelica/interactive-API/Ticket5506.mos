@@ -19,6 +19,6 @@ getDiagramAnnotation(Test); getErrorString();
 
 // Result:
 // true
-// {-120.0,-80.0,120.0,80.0,true,0.1,2.0,2.0}
+// {-120.0,-80.0,120.0,80.0,-,-,-,}
 // ""
 // endResult

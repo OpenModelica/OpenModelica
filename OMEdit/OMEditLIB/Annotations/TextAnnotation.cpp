@@ -49,6 +49,8 @@ TextAnnotation::TextAnnotation(QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
   mpComponent = 0;
+  mpOriginItem = new OriginItem(this);
+  mpOriginItem->setPassive();
   // set the default values
   GraphicItem::setDefaults();
   FilledShape::setDefaults();
@@ -62,6 +64,7 @@ TextAnnotation::TextAnnotation(QString annotation, GraphicsView *pGraphicsView)
 TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent), mpComponent(pParent)
 {
+  mpOriginItem = 0;
   updateShape(pShapeAnnotation);
   initUpdateTextString();
   setPos(mOrigin);
@@ -72,14 +75,18 @@ TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *
   : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
 {
   mpComponent = 0;
+  mpOriginItem = new OriginItem(this);
+  mpOriginItem->setPassive();
   updateShape(pShapeAnnotation);
   setShapeFlags(true);
   mpGraphicsView->addItem(this);
+  mpGraphicsView->addItem(mpOriginItem);
 }
 
 TextAnnotation::TextAnnotation(Component *pParent)
   : ShapeAnnotation(0, pParent), mpComponent(pParent)
 {
+  mpOriginItem = 0;
   // set the default values
   GraphicItem::setDefaults();
   FilledShape::setDefaults();
@@ -97,6 +104,7 @@ TextAnnotation::TextAnnotation(QString annotation, LineAnnotation *pLineAnnotati
   : ShapeAnnotation(0, pLineAnnotation)
 {
   mpComponent = 0;
+  mpOriginItem = 0;
   // set the default values
   GraphicItem::setDefaults();
   FilledShape::setDefaults();
@@ -126,6 +134,7 @@ TextAnnotation::TextAnnotation(GraphicsView *pGraphicsView)
   : ShapeAnnotation(true, pGraphicsView, 0, 0)
 {
   mpComponent = 0;
+  mpOriginItem = 0;
   // set the default values
   GraphicItem::setDefaults();
   FilledShape::setDefaults();
@@ -630,12 +639,12 @@ void TextAnnotation::duplicate()
 {
   TextAnnotation *pTextAnnotation = new TextAnnotation("", mpGraphicsView);
   pTextAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5,
-                   mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
+  QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
   pTextAnnotation->setOrigin(mOrigin + gridStep);
-  pTextAnnotation->initializeTransformation();
   pTextAnnotation->drawCornerItems();
   pTextAnnotation->setCornerItemsActiveOrPassive();
+  pTextAnnotation->applyTransformation();
   pTextAnnotation->update();
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pTextAnnotation));
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pTextAnnotation, mpGraphicsView);

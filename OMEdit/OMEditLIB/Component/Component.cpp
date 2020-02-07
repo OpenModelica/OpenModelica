@@ -519,6 +519,7 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString an
     connect(mpLibraryTreeItem, SIGNAL(nameChanged()), SLOT(handleNameChanged()));
   }
   connect(this, SIGNAL(transformHasChanged()), SLOT(updatePlacementAnnotation()));
+  connect(this, SIGNAL(transformChange()), SLOT(updateOriginItem()));
   connect(this, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
   /* Ticket:4204
    * If the child class use text annotation from base class then we need to call this
@@ -790,11 +791,11 @@ bool Component::hasNonExistingClass()
 QRectF Component::boundingRect() const
 {
   CoOrdinateSystem coOrdinateSystem = getCoOrdinateSystem();
-  qreal left = coOrdinateSystem.getExtent().at(0).x();
-  qreal bottom = coOrdinateSystem.getExtent().at(0).y();
-  qreal right = coOrdinateSystem.getExtent().at(1).x();
-  qreal top = coOrdinateSystem.getExtent().at(1).y();
-  return QRectF(left, bottom, fabs(left - right), fabs(bottom - top));
+  qreal left = coOrdinateSystem.getLeft();
+  qreal bottom = coOrdinateSystem.getBottom();
+  qreal right = coOrdinateSystem.getRight();
+  qreal top = coOrdinateSystem.getTop();
+  return QRectF(left, bottom, qFabs(left - right), qFabs(bottom - top));
 }
 
 /*!
@@ -884,12 +885,12 @@ CoOrdinateSystem Component::getCoOrdinateSystem() const
       && mpLibraryTreeItem->getModelWidget()) {
     if (mpLibraryTreeItem->isConnector()) {
       if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-        coOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->mCoOrdinateSystem;
+        coOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->mMergedCoOrdinateSystem;
       } else {
-        coOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->mCoOrdinateSystem;
+        coOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->mMergedCoOrdinateSystem;
       }
     } else {
-      coOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->mCoOrdinateSystem;
+      coOrdinateSystem = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->mMergedCoOrdinateSystem;
     }
   }
   return coOrdinateSystem;
@@ -2688,7 +2689,7 @@ void Component::resizeComponent(QPointF newPosition)
   // if preserveAspectRatio is true then resize equally
   CoOrdinateSystem coOrdinateSystem = getCoOrdinateSystem();
   if (coOrdinateSystem.getPreserveAspectRatio()) {
-    qreal factor = qMax(fabs(mXFactor), fabs(mYFactor));
+    qreal factor = qMax(qFabs(mXFactor), qFabs(mYFactor));
     mXFactor = mXFactor < 0 ? factor * -1 : factor;
     mYFactor = mYFactor < 0 ? factor * -1 : factor;
   }
@@ -2804,7 +2805,7 @@ void Component::duplicate()
   } else {
     name = mpGraphicsView->getUniqueComponentName(StringHandler::toCamelCase(getName()));
   }
-  QPointF gridStep(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5, mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
+  QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5, mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
   // add component
   mpComponentInfo->getModifiersMap(MainWindow::instance()->getOMCProxy(), mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), this);
   ComponentInfo *pComponentInfo = new ComponentInfo(mpComponentInfo);
@@ -2901,7 +2902,7 @@ updateComponentTransformations(oldTransformation);
 void Component::moveUp()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(0, mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep());
+  mTransformation.adjustPosition(0, mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep());
   updateComponentTransformations(oldTransformation);
 }
 
@@ -2914,7 +2915,7 @@ void Component::moveUp()
 void Component::moveShiftUp()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(0, mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
+  mTransformation.adjustPosition(0, mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
   updateComponentTransformations(oldTransformation);
 }
 
@@ -2940,7 +2941,7 @@ void Component::moveCtrlUp()
 void Component::moveDown()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(0, -mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep());
+  mTransformation.adjustPosition(0, -mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep());
   updateComponentTransformations(oldTransformation);
 }
 
@@ -2953,7 +2954,7 @@ void Component::moveDown()
 void Component::moveShiftDown()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(0, -(mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5));
+  mTransformation.adjustPosition(0, -(mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5));
   updateComponentTransformations(oldTransformation);
 }
 
@@ -2979,7 +2980,7 @@ void Component::moveCtrlDown()
 void Component::moveLeft()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(-mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep(), 0);
+  mTransformation.adjustPosition(-mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep(), 0);
   updateComponentTransformations(oldTransformation);
 }
 
@@ -2992,7 +2993,7 @@ void Component::moveLeft()
 void Component::moveShiftLeft()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(-(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5), 0);
+  mTransformation.adjustPosition(-(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5), 0);
   updateComponentTransformations(oldTransformation);
 }
 
@@ -3018,7 +3019,7 @@ void Component::moveCtrlLeft()
 void Component::moveRight()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep(), 0);
+  mTransformation.adjustPosition(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep(), 0);
   updateComponentTransformations(oldTransformation);
 }
 
@@ -3031,7 +3032,7 @@ void Component::moveRight()
 void Component::moveShiftRight()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5, 0);
+  mTransformation.adjustPosition(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5, 0);
   updateComponentTransformations(oldTransformation);
 }
 

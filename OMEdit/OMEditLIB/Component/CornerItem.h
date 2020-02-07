@@ -48,8 +48,7 @@ class CornerItem : public QObject, public QGraphicsItem
 private:
   ShapeAnnotation *mpShapeAnnotation;
   QRectF mRectangle;
-  QString mOldAnnotation;
-  QPointF mClickPos;
+  QPointF mOldScenePosition;
   int mConnectedPointIndex;
 public:
   CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotation *pParent);
@@ -59,13 +58,12 @@ public:
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
 signals:
   void cornerItemMoved(int index, QPointF point);
-  void cornerItemPress();
-  void cornerItemRelease();
-  void cornerItemPositionChanged();
+  void cornerItemPress(const int index);
+  void cornerItemRelease(const bool changed);
 protected:
   virtual void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+  virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
   virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
-  QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 };
 
 class ResizerItem : public QObject, public QGraphicsItem
@@ -107,12 +105,15 @@ class OriginItem : public QGraphicsItem
 {
 public:
   OriginItem(Component *pComponent);
+  OriginItem(ShapeAnnotation *pShapeAnnotation);
   void setActive();
   void setPassive();
   QRectF boundingRect() const {return mRectangle;}
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
 private:
+  void initialize();
   Component *mpComponent;
+  ShapeAnnotation *mpShapeAnnotation;
   QRectF mRectangle;
   QPen mPen;
   QPen mActivePen;

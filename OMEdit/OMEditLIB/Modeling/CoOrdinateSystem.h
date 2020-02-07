@@ -34,32 +34,77 @@
 #ifndef COORDINATESYSTEM_H
 #define COORDINATESYSTEM_H
 
-#include <QList>
-#include <QPointF>
+#include <QString>
+#include <QRectF>
 
 class CoOrdinateSystem
 {
 public:
   CoOrdinateSystem();
   CoOrdinateSystem(const CoOrdinateSystem &coOrdinateSystem);
-  void setExtent(QList<QPointF> extent) {mExtent = extent;}
-  QList<QPointF> getExtent() const {return mExtent;}
-  void setPreserveAspectRatio(bool PreserveAspectRatio) {mPreserveAspectRatio = PreserveAspectRatio;}
+  void setLeft(const qreal left);
+  void setLeft(const QString &left);
+  qreal getLeft() const {return mLeft;}
+  bool hasLeft() const {return mHasLeft;}
+  void setHasLeft(const bool hasLeft) {mHasLeft = hasLeft;}
+  void setBottom(const qreal bottom);
+  void setBottom(const QString &bottom);
+  qreal getBottom() const {return mBottom;}
+  bool hasBottom() const {return mHasBottom;}
+  void setHasBottom(const bool hasBottom) {mHasBottom = hasBottom;}
+  void setRight(const qreal right);
+  void setRight(const QString &right);
+  qreal getRight() const {return mRight;}
+  bool hasRight() const {return mHasRight;}
+  void setHasRight(const bool hasRight) {mHasRight = hasRight;}
+  void setTop(const qreal top);
+  void setTop(const QString &top);
+  qreal getTop() const {return mTop;}
+  bool hasTop() const {return mHasTop;}
+  void setHasTop(const bool hasTop) {mHasTop = hasTop;}
+  void setPreserveAspectRatio(const bool preserveAspectRatio);
+  void setPreserveAspectRatio(const QString &preserveAspectRatio);
   bool getPreserveAspectRatio() const {return mPreserveAspectRatio;}
-  void setInitialScale(qreal initialScale) {mInitialScale = initialScale;}
+  bool hasPreserveAspectRatio() const {return mHasPreserveAspectRatio;}
+  void setHasPreserveAspectRatio(const bool hasPreserveAspectRatio) {mHasPreserveAspectRatio = hasPreserveAspectRatio;}
+  void setInitialScale(const qreal initialScale);
+  void setInitialScale(const QString &initialScale);
   qreal getInitialScale() const {return mInitialScale;}
-  void setGrid(QPointF grid) {mGrid = grid;}
-  QPointF getGrid() const {return mGrid;}
+  bool hasInitialScale() const {return mHasInitialScale;}
+  void setHasInitialScale(const bool hasInitialScale) {mHasInitialScale = hasInitialScale;}
   qreal getHorizontalGridStep();
   qreal getVerticalGridStep();
-  void setValid(bool valid) {mValid = valid;}
-  bool isValid() const {return mValid;}
+  void setHorizontal(const qreal horizontal);
+  void setHorizontal(const QString &horizontal);
+  qreal getHorizontal() const {return mHorizontal;}
+  bool hasHorizontal() const {return mHasHorizontal;}
+  void setHasHorizontal(const bool hasHorizontal) {mHasHorizontal = hasHorizontal;}
+  void setVertical(const qreal vertical);
+  void setVertical(const QString &vertical);
+  qreal getVertical() const {return mVertical;}
+  bool hasVertical() const {return mHasVertical;}
+  void setHasVertical(const bool hasVertical) {mHasVertical = hasVertical;}
+
+  QRectF getExtentRectangle() const;
+  void reset();
+  bool isComplete() const;
 private:
-  QList<QPointF> mExtent;
+  qreal mLeft;
+  bool mHasLeft;
+  qreal mBottom;
+  bool mHasBottom;
+  qreal mRight;
+  bool mHasRight;
+  qreal mTop;
+  bool mHasTop;
   bool mPreserveAspectRatio;
+  bool mHasPreserveAspectRatio;
   qreal mInitialScale;
-  QPointF mGrid;      // horizontal and vertical spacing for grid
-  bool mValid;
+  bool mHasInitialScale;
+  qreal mHorizontal;
+  bool mHasHorizontal;
+  qreal mVertical;
+  bool mHasVertical;
 };
 
 #endif // COORDINATESYSTEM_H

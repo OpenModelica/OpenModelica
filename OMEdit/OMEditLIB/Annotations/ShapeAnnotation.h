@@ -50,7 +50,7 @@
 class MainWindow;
 class GraphicsView;
 class CornerItem;
-class ResizerItem;
+class OriginItem;
 class ShapeAnnotation;
 
 class GraphicItem
@@ -114,6 +114,13 @@ private:
   bool mIsInheritedShape;
   QPointF mOldScenePosition;
   bool mIsCornerItemClicked;
+  QTransform mTransform;
+  QRectF mSceneBoundingRect;
+  QPointF mTransformationStartPosition;
+  QPointF mPivotPoint;
+  QPointF mOldOrigin;
+  QList<QPointF> mOldExtents;
+  QString mOldAnnotation;
   QAction *mpShapePropertiesAction;
   QAction *mpAlignInterfacesAction;
   QAction *mpShapeAttributesAction;
@@ -137,21 +144,25 @@ public:
   virtual QString getOMCShapeAnnotationWithShapeName() = 0;
   virtual QString getShapeAnnotation() = 0;
   static QList<QPointF> getExtentsForInheritedShapeFromIconDiagramMap(GraphicsView *pGraphicsView, ShapeAnnotation *pReferenceShapeAnnotation);
-  void initializeTransformation();
+  void applyTransformation();
   void drawCornerItems();
   void setCornerItemsActiveOrPassive();
+  void updateCornerItems();
   void removeCornerItems();
   void setOldScenePosition(QPointF oldScenePosition) {mOldScenePosition = oldScenePosition;}
   QPointF getOldScenePosition() {return mOldScenePosition;}
+  bool isCornerItemClicked() const {return mIsCornerItemClicked;}
   QAction* getShapePropertiesAction() const {return mpShapePropertiesAction;}
   QAction* getAlignInterfacesAction() const {return mpAlignInterfacesAction;}
   QAction* getShapeAttributesAction() const {return mpShapeAttributesAction;}
   QAction* getEditTransitionAction() const {return mpEditTransitionAction;}
   virtual void addPoint(QPointF point) {Q_UNUSED(point);}
   virtual void clearPoints() {}
-  virtual void replaceExtent(int index, QPointF point);
-  virtual void updateEndExtent(QPointF point);
+  virtual void replaceExtent(const int index, const QPointF point);
+  void updateExtent(const int index, const QPointF point);
+  void setOriginItemPos(const QPointF point);
   GraphicsView* getGraphicsView() {return mpGraphicsView;}
+  OriginItem* getOriginItem() {return mpOriginItem;}
   void setPoints(QList<QPointF> points) {mPoints = points;}
   QList<QPointF> getPoints() {return mPoints;}
   void setStartArrow(StringHandler::Arrow startArrow) {mArrow.replace(0, startArrow);}
@@ -197,6 +208,7 @@ public:
   void adjustCornerItemsConnectedIndexes();
   void removeRedundantPointsGeometriesAndCornerItems();
   void adjustGeometries();
+  void moveShape(const qreal dx, const qreal dy);
   virtual void setShapeFlags(bool enable);
   virtual void updateShape(ShapeAnnotation *pShapeAnnotation) = 0;
   void emitAdded() {emit added();}
@@ -229,8 +241,8 @@ public slots:
   void moveRight();
   void moveShiftRight();
   void moveCtrlRight();
-  void cornerItemPressed();
-  void cornerItemReleased();
+  void cornerItemPressed(const int index);
+  void cornerItemReleased(const bool changed);
   void updateCornerItemPoint(int index, QPointF point);
   LineGeometryType findLineGeometryType(QPointF point1, QPointF point2);
   bool isLineStraight(QPointF point1, QPointF point2);
@@ -246,6 +258,7 @@ public slots:
 protected:
   GraphicsView *mpGraphicsView;
   Component *mpParentComponent;
+  OriginItem *mpOriginItem;
   QList<QPointF> mPoints;
   QList<LineGeometryType> mGeometries;
   QList<StringHandler::Arrow> mArrow;

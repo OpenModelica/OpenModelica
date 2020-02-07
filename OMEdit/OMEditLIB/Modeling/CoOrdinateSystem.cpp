@@ -33,6 +33,8 @@
 
 #include "CoOrdinateSystem.h"
 
+#include <QtCore/qmath.h>
+
 /*!
  * \class CoOrdinateSystem
  * \brief A class to represent the coordinate system of view.
@@ -42,13 +44,7 @@
  */
 CoOrdinateSystem::CoOrdinateSystem()
 {
-  QList<QPointF> extents;
-  extents << QPointF(-100, -100) << QPointF(100, 100);
-  setExtent(extents);
-  setPreserveAspectRatio(true);
-  setInitialScale(0.1);
-  setGrid(QPointF(2, 2));
-  setValid(false);
+  reset();
 }
 
 /*!
@@ -57,11 +53,107 @@ CoOrdinateSystem::CoOrdinateSystem()
  */
 CoOrdinateSystem::CoOrdinateSystem(const CoOrdinateSystem &coOrdinateSystem)
 {
-  setExtent(coOrdinateSystem.getExtent());
+  setLeft(coOrdinateSystem.getLeft());
+  setHasLeft(coOrdinateSystem.hasLeft());
+  setBottom(coOrdinateSystem.getBottom());
+  setHasBottom(coOrdinateSystem.hasBottom());
+  setRight(coOrdinateSystem.getRight());
+  setHasRight(coOrdinateSystem.hasRight());
+  setTop(coOrdinateSystem.getTop());
+  setHasTop(coOrdinateSystem.hasTop());
   setPreserveAspectRatio(coOrdinateSystem.getPreserveAspectRatio());
+  setHasPreserveAspectRatio(coOrdinateSystem.hasPreserveAspectRatio());
   setInitialScale(coOrdinateSystem.getInitialScale());
-  setGrid(coOrdinateSystem.getGrid());
-  setValid(coOrdinateSystem.isValid());
+  setHasInitialScale(coOrdinateSystem.hasInitialScale());
+  setHorizontal(coOrdinateSystem.getHorizontal());
+  setHasHorizontal(coOrdinateSystem.hasHorizontal());
+  setVertical(coOrdinateSystem.getVertical());
+  setHasVertical(coOrdinateSystem.hasVertical());
+}
+
+void CoOrdinateSystem::setLeft(const qreal left)
+{
+  mLeft = left;
+  setHasLeft(true);
+}
+
+void CoOrdinateSystem::setLeft(const QString &left)
+{
+  bool ok;
+  if (left.toDouble(&ok) && ok) {
+    setLeft(left.toDouble());
+  }
+}
+
+void CoOrdinateSystem::setBottom(const qreal bottom)
+{
+  mBottom = bottom;
+  setHasBottom(true);
+}
+
+void CoOrdinateSystem::setBottom(const QString &bottom)
+{
+  bool ok;
+  if (bottom.toDouble(&ok) && ok) {
+    setBottom(bottom.toDouble());
+  }
+}
+
+void CoOrdinateSystem::setRight(const qreal right)
+{
+  mRight = right;
+  setHasRight(true);
+}
+
+void CoOrdinateSystem::setRight(const QString &right)
+{
+  bool ok;
+  if (right.toDouble(&ok) && ok) {
+    setRight(right.toDouble());
+  }
+}
+
+void CoOrdinateSystem::setTop(const qreal top)
+{
+  mTop = top;
+  setHasTop(true);
+}
+
+void CoOrdinateSystem::setTop(const QString &top)
+{
+  bool ok;
+  if (top.toDouble(&ok) && ok) {
+    setTop(top.toDouble());
+  }
+}
+
+void CoOrdinateSystem::setPreserveAspectRatio(const bool preserveAspectRatio)
+{
+  mPreserveAspectRatio = preserveAspectRatio;
+  setHasPreserveAspectRatio(true);
+}
+
+void CoOrdinateSystem::setPreserveAspectRatio(const QString &preserveAspectRatio)
+{
+  if (preserveAspectRatio.compare("true") == 0) {
+    setPreserveAspectRatio(true);
+  } else if (preserveAspectRatio.compare("false") == 0) {
+    setPreserveAspectRatio(false);
+  }
+}
+
+void CoOrdinateSystem::setInitialScale(const qreal initialScale)
+{
+  mInitialScale = initialScale;
+  setHasInitialScale(true);
+}
+
+void CoOrdinateSystem::setInitialScale(const QString &initialScale)
+{
+  bool ok;
+  if (initialScale.toDouble(&ok) && ok) {
+    setInitialScale(initialScale.toDouble());
+  }
 }
 
 /*!
@@ -70,10 +162,10 @@ CoOrdinateSystem::CoOrdinateSystem(const CoOrdinateSystem &coOrdinateSystem)
  */
 qreal CoOrdinateSystem::getHorizontalGridStep()
 {
-  if (mGrid.x() < 1) {
+  if (mHorizontal < 1) {
     return 2;
   }
-  return mGrid.x();
+  return mHorizontal;
 }
 
 /*!
@@ -82,8 +174,70 @@ qreal CoOrdinateSystem::getHorizontalGridStep()
  */
 qreal CoOrdinateSystem::getVerticalGridStep()
 {
-  if (mGrid.y() < 1) {
+  if (mVertical < 1) {
     return 2;
   }
-  return mGrid.y();
+  return mVertical;
+}
+
+void CoOrdinateSystem::setHorizontal(const qreal horizontal)
+{
+  mHorizontal = horizontal;
+  setHasHorizontal(true);
+}
+
+void CoOrdinateSystem::setHorizontal(const QString &horizontal)
+{
+  bool ok;
+  if (horizontal.toDouble(&ok) && ok) {
+    setHorizontal(horizontal.toDouble());
+  }
+}
+
+void CoOrdinateSystem::setVertical(qreal vertical)
+{
+  mVertical = vertical;
+  setHasVertical(true);
+}
+
+void CoOrdinateSystem::setVertical(const QString &vertical)
+{
+  bool ok;
+  if (vertical.toDouble(&ok) && ok) {
+    setVertical(vertical.toDouble());
+  }
+}
+
+QRectF CoOrdinateSystem::getExtentRectangle() const
+{
+  qreal left = qMin(getLeft(), getRight());
+  qreal bottom = qMin(getBottom(), getTop());
+  qreal right = qMax(getLeft(), getRight());
+  qreal top = qMax(getBottom(), getTop());
+  return QRectF(left, bottom, qFabs(left - right), qFabs(bottom - top));
+}
+
+void CoOrdinateSystem::reset()
+{
+  setLeft(-100);
+  setHasLeft(false);
+  setBottom(-100);
+  setHasBottom(false);
+  setRight(100);
+  setHasRight(false);
+  setTop(100);
+  setHasTop(false);
+  setPreserveAspectRatio(true);
+  setHasPreserveAspectRatio(false);
+  setInitialScale(0.1);
+  setHasInitialScale(false);
+  setHorizontal(2);
+  setHasHorizontal(false);
+  setVertical(2);
+  setHasVertical(false);
+}
+
+bool CoOrdinateSystem::isComplete() const
+{
+  return mHasLeft && mHasBottom && mHasRight && mHasTop && mHasPreserveAspectRatio && mHasInitialScale && mHasHorizontal && mHasVertical;
 }
