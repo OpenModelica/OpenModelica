@@ -1573,7 +1573,7 @@ template jacobianColumnEqn(list<SimEqSystem> eqnSys, list<SimVar> eqnVars, Strin
   >>
 end jacobianColumnEqn;
 
-template makeJacobianFunc(String matrixName, list<JacobianColumn> cols, list<SimVar> seedVars, list<tuple<Integer, list<Integer>>> sparsePattern, String modelName)
+template makeJacobianFunc(String matrixName, list<JacobianColumn> cols, list<SimVar> seedVars, SparsityPattern sparsePattern, String modelName)
 ::=
   if seedVars then
     let varDecls = (seedVars |> var as SIMVAR(__) hasindex i0 =>
@@ -2025,7 +2025,7 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
 ::=
   let &preExp = buffer "" /*BUFD*/
   let &varDecls = buffer "" /*BUFD*/
-  
+
   let fargsStr = if boxed then
       (fargs |> var => funArgBoxedDefinition(var) ;separator=", ")
     else
@@ -5584,4 +5584,3 @@ end error;
 
 annotation(__OpenModelica_Interface="backend");
 end CodegenAdevs;
-
