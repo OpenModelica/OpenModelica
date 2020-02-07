@@ -1426,10 +1426,12 @@ protected
           ptree := buildParameterTree(fnArgs, ptree);
           exp := Expression.map(dim.exp, function evaluateCallTypeDimExp(ptree = ptree));
 
+          ErrorExt.setCheckpoint(getInstanceName());
           try
             exp := Ceval.evalExp(exp, Ceval.EvalTarget.IGNORE_ERRORS());
           else
           end try;
+          ErrorExt.rollBack(getInstanceName());
         then
           Dimension.fromExp(exp, Variability.CONSTANT);
 
