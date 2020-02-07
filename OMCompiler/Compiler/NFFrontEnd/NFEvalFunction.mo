@@ -390,6 +390,8 @@ algorithm
           ComponentRef.toString(cref), sourceInfo());
       end try;
     end if;
+
+    outExp := Expression.map(outExp, function applyReplacements2(repl = repl));
   end if;
 end applyReplacementCref;
 
