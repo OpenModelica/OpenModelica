@@ -85,8 +85,13 @@ class GraphicsView : public QGraphicsView
 private:
   StringHandler::ViewType mViewType;
   ModelWidget *mpModelWidget;
+  CoOrdinateSystem mCoOrdinateSystem;
+public:
+  CoOrdinateSystem mMergedCoOrdinateSystem;
+  CoOrdinateSystem getCoOrdinateSystem() const {return mCoOrdinateSystem;}
+  void setCoOrdinateSystem(const CoOrdinateSystem coOrdinateSystem) {mCoOrdinateSystem = coOrdinateSystem;}
+private:
   bool mVisualizationView;
-  QRectF mExtentRectangle;
   bool mIsCustomScale;
   bool mAddClassAnnotationNeeded;
   bool mIsCreatingConnection;
@@ -148,13 +153,11 @@ private:
   QSet<QGraphicsItem*> mAllItems;
 public:
   GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModelWidget, bool visualizationView = false);
-  CoOrdinateSystem mCoOrdinateSystem;
   bool mSkipBackground; /* Do not draw the background rectangle */
   StringHandler::ViewType getViewType() {return mViewType;}
   ModelWidget* getModelWidget() {return mpModelWidget;}
   bool isVisualizationView() {return mVisualizationView;}
-  void setExtentRectangle(qreal x1, qreal y1, qreal x2, qreal y2);
-  QRectF getExtentRectangle() {return mExtentRectangle;}
+  void setExtentRectangle(const QRectF rectangle);
   void setIsCustomScale(bool enable) {mIsCustomScale = enable;}
   bool isCustomScale() {return mIsCustomScale;}
   void setAddClassAnnotationNeeded(bool needed) {mAddClassAnnotationNeeded = needed;}
@@ -521,7 +524,7 @@ public:
   QMap<QString, QString> getDerivedClassModifiersMap();
   void fetchExtendsModifiers(QString extendsClass);
   void reDrawModelWidgetInheritedClasses();
-  void drawBaseCoOrdinateSystem(ModelWidget *pModelWidget, GraphicsView *pGraphicsView);
+  void drawModelCoOrdinateSystem(GraphicsView *pGraphicsView);
   void drawModelIconDiagramShapes(QStringList shapes, GraphicsView *pGraphicsView, bool select);
   ShapeAnnotation* createNonExistingInheritedShape(GraphicsView *pGraphicsView);
   static ShapeAnnotation* createInheritedShape(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
@@ -581,6 +584,8 @@ private:
   bool mDiagramViewLoaded;
   bool mConnectionsLoaded;
   bool mCreateModelWidgetComponents;
+  QString mIconAnnotationString;
+  QString mDiagramAnnotationString;
   bool mExtendsModifiersLoaded;
   QMap<QString, QMap<QString, QString> > mExtendsModifiersMap;
   bool mDerivedClassModifiersLoaded;
@@ -595,6 +600,7 @@ private:
   void getModelInheritedClasses();
   void drawModelInheritedClassShapes(ModelWidget *pModelWidget, StringHandler::ViewType viewType);
   void getModelIconDiagramShapes(StringHandler::ViewType viewType);
+  void readCoOrdinateSystemFromInheritedClass(ModelWidget *pModelWidget, GraphicsView *pGraphicsView);
   void drawModelInheritedClassComponents(ModelWidget *pModelWidget, StringHandler::ViewType viewType);
   void getModelComponents();
   void drawModelIconComponents();

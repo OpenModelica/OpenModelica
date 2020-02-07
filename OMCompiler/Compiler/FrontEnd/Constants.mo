@@ -181,9 +181,9 @@ end GraphicItem;
 
 record CoordinateSystem
   Real extent[2,2]/*(each final unit=\"mm\")*/;
-  Boolean preserveAspectRatio=true;
-  Real initialScale = 0.1;
-  Real grid[2]/*(each final unit=\"mm\")*/ = {2.0, 2.0};
+  Boolean preserveAspectRatio;
+  Real initialScale;
+  Real grid[2]/*(each final unit=\"mm\")*/;
 end CoordinateSystem;
 
 // example
@@ -191,12 +191,12 @@ end CoordinateSystem;
 // i.e. a coordinate system with width 20 units and height 20 units.
 
 record Icon \"Representation of the icon layer\"
-  CoordinateSystem coordinateSystem(extent = {{-100, -100}, {100, 100}});
+  CoordinateSystem coordinateSystem;
   //GraphicItem[:] graphics;
 end Icon;
 
 record Diagram \"Representation of the diagram layer\"
-  CoordinateSystem coordinateSystem(extent = {{-100, -100}, {100, 100}});
+  CoordinateSystem coordinateSystem;
   //GraphicItem[:] graphics;
 end Diagram;
 

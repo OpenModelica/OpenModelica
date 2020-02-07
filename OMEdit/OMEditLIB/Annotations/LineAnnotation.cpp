@@ -44,6 +44,8 @@
 LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
+  mpOriginItem = new OriginItem(this);
+  mpOriginItem->setPassive();
   setLineType(LineAnnotation::ShapeType);
   setStartComponent(0);
   setEndComponent(0);
@@ -72,6 +74,7 @@ LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
 LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent)
 {
+  mpOriginItem = 0;
   updateShape(pShapeAnnotation);
   setLineType(LineAnnotation::ComponentType);
   setStartComponent(0);
@@ -96,15 +99,18 @@ LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pPare
 LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
 {
+  mpOriginItem = new OriginItem(this);
+  mpOriginItem->setPassive();
   updateShape(pShapeAnnotation);
   setShapeFlags(true);
   mpGraphicsView->addItem(this);
+  mpGraphicsView->addItem(mpOriginItem);
 }
 
 LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Element *pStartComponent, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
-  setFlag(QGraphicsItem::ItemIsSelectable);
+  mpOriginItem = 0;
   mLineType = lineType;
   setZValue(1000);
   // set the default values
@@ -172,6 +178,7 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Element *pStar
 LineAnnotation::LineAnnotation(QString annotation, Element *pStartComponent, Element *pEndComponent, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
+  mpOriginItem = 0;
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::ConnectionType;
   setZValue(1000);
@@ -212,6 +219,7 @@ LineAnnotation::LineAnnotation(QString annotation, QString text, Element *pStart
                                QString immediate, QString reset, QString synchronize, QString priority, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
+  mpOriginItem = 0;
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::TransitionType;
   setZValue(1000);
@@ -251,6 +259,7 @@ LineAnnotation::LineAnnotation(QString annotation, QString text, Element *pStart
 LineAnnotation::LineAnnotation(QString annotation, Element *pComponent, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
+  mpOriginItem = 0;
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::InitialStateType;
   setZValue(1000);
@@ -290,6 +299,7 @@ LineAnnotation::LineAnnotation(QString annotation, Element *pComponent, Graphics
 LineAnnotation::LineAnnotation(Element *pParent)
   : ShapeAnnotation(0, pParent)
 {
+  mpOriginItem = 0;
   setLineType(LineAnnotation::ComponentType);
   setStartComponent(0);
   setEndComponent(0);
@@ -327,6 +337,7 @@ LineAnnotation::LineAnnotation(Element *pParent)
 LineAnnotation::LineAnnotation(GraphicsView *pGraphicsView)
   : ShapeAnnotation(true, pGraphicsView, 0, 0)
 {
+  mpOriginItem = 0;
   setLineType(LineAnnotation::ShapeType);
   setStartComponent(0);
   setEndComponent(0);
@@ -1258,8 +1269,7 @@ void LineAnnotation::updateInitialStateAnnotation()
   QString annotationString = QString("annotate=$annotation(%1)").arg(getShapeAnnotation());
   // update the initial state
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-  pOMCProxy->updateInitialState(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), getStartComponentName(),
-                                annotationString);
+  pOMCProxy->updateInitialState(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), getStartComponentName(), annotationString);
 }
 
 /*!
@@ -1270,12 +1280,12 @@ void LineAnnotation::duplicate()
 {
   LineAnnotation *pLineAnnotation = new LineAnnotation("", mpGraphicsView);
   pLineAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5,
-                   mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
+  QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
   pLineAnnotation->setOrigin(mOrigin + gridStep);
-  pLineAnnotation->initializeTransformation();
   pLineAnnotation->drawCornerItems();
   pLineAnnotation->setCornerItemsActiveOrPassive();
+  pLineAnnotation->applyTransformation();
   pLineAnnotation->update();
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pLineAnnotation));
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pLineAnnotation, mpGraphicsView);
@@ -1286,9 +1296,9 @@ void LineAnnotation::duplicate()
 void LineAnnotation::redraw(const QString& annotation, std::function<void()> updateAnnotationFunction)
 {
   parseShapeAnnotation(annotation);
-  initializeTransformation();
   removeCornerItems();
   drawCornerItems();
+  applyTransformation();
   adjustGeometries();
   setCornerItemsActiveOrPassive();
   update();

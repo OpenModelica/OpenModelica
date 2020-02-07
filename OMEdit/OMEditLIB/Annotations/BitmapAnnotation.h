@@ -60,8 +60,7 @@ public:
   QString getOMCShapeAnnotationWithShapeName() override;
   QString getShapeAnnotation() override;
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
-private:
-  Element *mpComponent;
+
 public slots:
   void duplicate() override;
 };

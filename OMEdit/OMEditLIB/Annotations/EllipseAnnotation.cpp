@@ -38,6 +38,8 @@
 EllipseAnnotation::EllipseAnnotation(QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
+  mpOriginItem = new OriginItem(this);
+  mpOriginItem->setPassive();
   // set the default values
   GraphicItem::setDefaults();
   FilledShape::setDefaults();
@@ -51,6 +53,7 @@ EllipseAnnotation::EllipseAnnotation(QString annotation, GraphicsView *pGraphics
 EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent)
 {
+  mpOriginItem = 0;
   updateShape(pShapeAnnotation);
   setPos(mOrigin);
   setRotation(mRotation);
@@ -59,9 +62,12 @@ EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Element 
 EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
 {
+  mpOriginItem = new OriginItem(this);
+  mpOriginItem->setPassive();
   updateShape(pShapeAnnotation);
   setShapeFlags(true);
   mpGraphicsView->addItem(this);
+  mpGraphicsView->addItem(mpOriginItem);
 }
 
 void EllipseAnnotation::parseShapeAnnotation(QString annotation)
@@ -229,12 +235,12 @@ void EllipseAnnotation::duplicate()
 {
   EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation("", mpGraphicsView);
   pEllipseAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5,
-                   mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
+  QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
   pEllipseAnnotation->setOrigin(mOrigin + gridStep);
-  pEllipseAnnotation->initializeTransformation();
   pEllipseAnnotation->drawCornerItems();
   pEllipseAnnotation->setCornerItemsActiveOrPassive();
+  pEllipseAnnotation->applyTransformation();
   pEllipseAnnotation->update();
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pEllipseAnnotation));
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pEllipseAnnotation, mpGraphicsView);

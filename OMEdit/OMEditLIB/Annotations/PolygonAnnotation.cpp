@@ -38,6 +38,8 @@
 PolygonAnnotation::PolygonAnnotation(QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
+  mpOriginItem = new OriginItem(this);
+  mpOriginItem->setPassive();
   // set the default values
   GraphicItem::setDefaults();
   FilledShape::setDefaults();
@@ -51,6 +53,7 @@ PolygonAnnotation::PolygonAnnotation(QString annotation, GraphicsView *pGraphics
 PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent)
 {
+  mpOriginItem = 0;
   updateShape(pShapeAnnotation);
   setPos(mOrigin);
   setRotation(mRotation);
@@ -59,14 +62,18 @@ PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Element 
 PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
 {
+  mpOriginItem = new OriginItem(this);
+  mpOriginItem->setPassive();
   updateShape(pShapeAnnotation);
   setShapeFlags(true);
   mpGraphicsView->addItem(this);
+  mpGraphicsView->addItem(mpOriginItem);
 }
 
 PolygonAnnotation::PolygonAnnotation(Element *pParent)
   : ShapeAnnotation(0, pParent)
 {
+  mpOriginItem = 0;
   // set the default values
   GraphicItem::setDefaults();
   FilledShape::setDefaults();
@@ -302,12 +309,12 @@ void PolygonAnnotation::duplicate()
 {
   PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation("", mpGraphicsView);
   pPolygonAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5,
-                   mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
+  QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
   pPolygonAnnotation->setOrigin(mOrigin + gridStep);
-  pPolygonAnnotation->initializeTransformation();
   pPolygonAnnotation->drawCornerItems();
   pPolygonAnnotation->setCornerItemsActiveOrPassive();
+  pPolygonAnnotation->applyTransformation();
   pPolygonAnnotation->update();
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pPolygonAnnotation));
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pPolygonAnnotation, mpGraphicsView);

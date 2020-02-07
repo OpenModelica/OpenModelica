@@ -53,6 +53,8 @@ public:
   QTransform getTransformationMatrix();
   Element* getComponent() const {return mpComponent;}
   bool isValid() const {return mValid;}
+  void setWidth(const qreal &width) {mWidth = width;}
+  void setHeight(const qreal &height) {mHeight = height;}
   bool getVisible() const {return mVisible;}
   void adjustPosition(qreal x, qreal y);
   bool hasOrigin();
@@ -89,14 +91,15 @@ private:
   qreal mRotateAngleIcon;
   QPointF mPositionIcon;
 
-  QTransform getTransformationMatrixDiagram();
+  QTransform getTransformationMatrixDiagram() const;
   StringHandler::ViewType getViewType() const {return mViewType;}
+
   qreal getWidth() const {return mWidth;}
   qreal getHeight() const {return mHeight;}
   void adjustPositionDiagram(qreal x, qreal y);
   bool hasOriginDiagramX() const {return mHasOriginDiagramX;}
   bool hasOriginDiagramY() const {return mHasOriginDiagramY;}
-  bool hasOriginDiagram() {return hasOriginDiagramX() && hasOriginDiagramY();}
+  bool hasOriginDiagram() const {return hasOriginDiagramX() && hasOriginDiagramY();}
   void setOriginDiagram(QPointF origin);
   QPointF getOriginDiagram() const {return mOriginDiagram;}
   void setExtent1Diagram(QPointF extent) {mExtent1Diagram = extent;}
@@ -105,7 +108,7 @@ private:
   QPointF getExtent2Diagram() const {return mExtent2Diagram;}
   void setRotateAngleDiagram(qreal rotateAngle) {mRotateAngleDiagram = rotateAngle;}
   qreal getRotateAngleDiagram() const {return mRotateAngleDiagram;}
-  QPointF getPositionDiagram() const {return mPositionDiagram;}
+  QPointF getPositionDiagram() const;
   QTransform getTransformationMatrixIcon();
   void adjustPositionIcon(qreal x, qreal y);
   bool hasOriginIconX() const {return mHasOriginIconX;}
@@ -119,7 +122,7 @@ private:
   QPointF getExtent2Icon() const {return mExtent2Icon;}
   void setRotateAngleIcon(qreal rotateAngle) {mRotateAngleIcon = rotateAngle;}
   qreal getRotateAngleIcon() const {return mRotateAngleIcon;}
-  QPointF getPositionIcon() const {return mPositionIcon;}
+  QPointF getPositionIcon() const;
 };
 
 #endif // TRANSFORMATION_H

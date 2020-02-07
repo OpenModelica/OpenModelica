@@ -343,21 +343,25 @@ qreal Transformation::getRotateAngle() const
   }
 }
 
-QTransform Transformation::getTransformationMatrixDiagram()
+QTransform Transformation::getTransformationMatrixDiagram() const
 {
-  // calculate X position
-  mPositionDiagram.setX(mOriginDiagram.x() + ((mExtent1Diagram.x() + mExtent2Diagram.x()) / 2));
-  // calculate Y position
-  mPositionDiagram.setY(mOriginDiagram.y() + ((mExtent1Diagram.y() + mExtent2Diagram.y()) / 2));
+  // calculate position
+  QPointF position = getPositionDiagram();
   /* Ticket #3032. Adjust position based on the coordinate system of the component. */
   if (mpComponent) {
-    mPositionDiagram = mPositionDiagram - (mpComponent->boundingRect().center() * mpComponent->getCoOrdinateSystem().getInitialScale());
+    position = position - (mpComponent->boundingRect().center() * mpComponent->getCoOrdinateSystem().getInitialScale());
   }
   // get scale
-  qreal tempwidth = fabs(mExtent1Diagram.x() - mExtent2Diagram.x());
-  qreal sx = tempwidth / mWidth;
-  qreal tempHeight = fabs(mExtent1Diagram.y() - mExtent2Diagram.y());
-  qreal sy = tempHeight / mHeight;
+  qreal tempwidth = qFabs(mExtent1Diagram.x() - mExtent2Diagram.x());
+  qreal sx = tempwidth / (mWidth > 0 ? mWidth : 1);
+  if (!mpComponent && qFuzzyCompare(sx, 0.0)) {
+    sx = 1;
+  }
+  qreal tempHeight = qFabs(mExtent1Diagram.y() - mExtent2Diagram.y());
+  qreal sy = tempHeight / (mHeight > 0 ? mHeight : 1);
+  if (!mpComponent && qFuzzyCompare(sy, 0.0)) {
+    sy = 1;
+  }
   // get the horizontal flip
   if (mExtent2Diagram.x() < mExtent1Diagram.x()) {
     sx = -sx;
@@ -368,17 +372,28 @@ QTransform Transformation::getTransformationMatrixDiagram()
   }
   // rotation origin point
   QPointF rotationOriginPoint;
-  if (mHasOriginDiagramX && mHasOriginDiagramY) {
+  if (hasOriginDiagram()) {
     rotationOriginPoint = mOriginDiagram;
   } else {
-    rotationOriginPoint = mPositionDiagram;
+    rotationOriginPoint = position;
   }
   // return the transformations
-  return QTransform().translate(rotationOriginPoint.x(), rotationOriginPoint.y())
-      .rotate(mRotateAngleDiagram)
-      .translate(-rotationOriginPoint.x(), -rotationOriginPoint.y())
-      .translate(mPositionDiagram.x(), mPositionDiagram.y())
-      .scale(sx, sy);
+  if (mpComponent) {
+    return QTransform().translate(rotationOriginPoint.x(), rotationOriginPoint.y())
+        .rotate(mRotateAngleDiagram)
+        .translate(-rotationOriginPoint.x(), -rotationOriginPoint.y())
+        .translate(position.x(), position.y())
+        .scale(sx, sy);
+  } else {
+    QPointF extentCentre;
+    extentCentre.setX((mExtent1Diagram.x() + mExtent2Diagram.x()) / 2);
+    extentCentre.setY((mExtent1Diagram.y() + mExtent2Diagram.y()) / 2);
+
+    QTransform transformationMatrix = QTransform().translate(extentCentre.x(), extentCentre.y()).scale(sx, sy).translate(-extentCentre.x(), -extentCentre.y());
+    transformationMatrix *= QTransform::fromTranslate(mOriginDiagram.x(), mOriginDiagram.y());
+    transformationMatrix *= QTransform().translate(mOriginDiagram.x(), mOriginDiagram.y()).rotate(mRotateAngleDiagram).translate(-mOriginDiagram.x(), -mOriginDiagram.y());
+    return transformationMatrix;
+  }
 }
 
 void Transformation::adjustPositionDiagram(qreal x, qreal y)
@@ -406,21 +421,33 @@ void Transformation::setOriginDiagram(QPointF origin)
   mOriginDiagram = origin;
 }
 
+QPointF Transformation::getPositionDiagram() const
+{
+  QPointF position;
+  position.setX(mOriginDiagram.x() + ((mExtent1Diagram.x() + mExtent2Diagram.x()) / 2));
+  position.setY(mOriginDiagram.y() + ((mExtent1Diagram.y() + mExtent2Diagram.y()) / 2));
+  return position;
+}
+
 QTransform Transformation::getTransformationMatrixIcon()
 {
-  // calculate X position
-  mPositionIcon.setX(mOriginIcon.x() + ((mExtent1Icon.x() + mExtent2Icon.x()) / 2));
-  // calculate Y position
-  mPositionIcon.setY(mOriginIcon.y() + ((mExtent1Icon.y() + mExtent2Icon.y()) / 2));
+  // calculate position
+  QPointF position = getPositionIcon();
   /* Ticket #3032. Adjust position based on the coordinate system of the component. */
   if (mpComponent) {
-    mPositionIcon = mPositionIcon - (mpComponent->boundingRect().center() * mpComponent->getCoOrdinateSystem().getInitialScale());
+    position = position - (mpComponent->boundingRect().center() * mpComponent->getCoOrdinateSystem().getInitialScale());
   }
   // get scale
-  qreal tempwidth = fabs(mExtent1Icon.x() - mExtent2Icon.x());
-  qreal sx = tempwidth / mWidth;
-  qreal tempHeight = fabs(mExtent1Icon.y() - mExtent2Icon.y());
-  qreal sy = tempHeight / mHeight;
+  qreal tempwidth = qFabs(mExtent1Icon.x() - mExtent2Icon.x());
+  qreal sx = tempwidth / (mWidth > 0 ? mWidth : 1);
+  if (!mpComponent && qFuzzyCompare(sx, 0.0)) {
+    sx = 1;
+  }
+  qreal tempHeight = qFabs(mExtent1Icon.y() - mExtent2Icon.y());
+  qreal sy = tempHeight / (mHeight > 0 ? mHeight : 1);
+  if (!mpComponent && qFuzzyCompare(sy, 0.0)) {
+    sy = 1;
+  }
   // get the horizontal flip
   if (mExtent2Icon.x() < mExtent1Icon.x()) {
     sx = -sx;
@@ -431,17 +458,28 @@ QTransform Transformation::getTransformationMatrixIcon()
   }
   // rotation origin point
   QPointF rotationOriginPoint;
-  if (mHasOriginIconX && mHasOriginIconY) {
+  if (hasOriginIcon()) {
     rotationOriginPoint = mOriginIcon;
   } else {
-    rotationOriginPoint = mPositionIcon;
+    rotationOriginPoint = position;
   }
   // return the transformations
-  return QTransform().translate(rotationOriginPoint.x(), rotationOriginPoint.y())
-      .rotate(mRotateAngleIcon)
-      .translate(-rotationOriginPoint.x(), -rotationOriginPoint.y())
-      .translate(mPositionIcon.x(), mPositionIcon.y())
-      .scale(sx, sy);
+  if (mpComponent) {
+    return QTransform().translate(rotationOriginPoint.x(), rotationOriginPoint.y())
+        .rotate(mRotateAngleIcon)
+        .translate(-rotationOriginPoint.x(), -rotationOriginPoint.y())
+        .translate(position.x(), position.y())
+        .scale(sx, sy);
+  } else {
+    QPointF extentCentre;
+    extentCentre.setX((mExtent1Icon.x() + mExtent2Icon.x()) / 2);
+    extentCentre.setY((mExtent1Icon.y() + mExtent2Icon.y()) / 2);
+
+    QTransform transformationMatrix = QTransform().translate(extentCentre.x(), extentCentre.y()).scale(sx, sy).translate(-extentCentre.x(), -extentCentre.y());
+    transformationMatrix *= QTransform::fromTranslate(mOriginIcon.x(), mOriginIcon.y());
+    transformationMatrix *= QTransform().translate(mOriginIcon.x(), mOriginIcon.y()).rotate(mRotateAngleIcon).translate(-mOriginIcon.x(), -mOriginIcon.y());
+    return transformationMatrix;
+  }
 }
 
 void Transformation::adjustPositionIcon(qreal x, qreal y)
@@ -467,4 +505,12 @@ void Transformation::setOriginIcon(QPointF origin)
   mHasOriginIconX = true;
   mHasOriginIconY = true;
   mOriginIcon = origin;
+}
+
+QPointF Transformation::getPositionIcon() const
+{
+  QPointF position;
+  position.setX(mOriginIcon.x() + ((mExtent1Icon.x() + mExtent2Icon.x()) / 2));
+  position.setY(mOriginIcon.y() + ((mExtent1Icon.y() + mExtent2Icon.y()) / 2));
+  return position;
 }

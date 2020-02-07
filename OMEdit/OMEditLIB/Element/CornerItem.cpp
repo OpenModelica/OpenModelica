@@ -47,21 +47,15 @@
   \param pParent - pointer to ShapeAnnotation
   */
 CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotation *pParent)
-  : QGraphicsItem(pParent), mpShapeAnnotation(pParent), mOldAnnotation(""), mConnectedPointIndex(connectedPointIndex)
+  : QGraphicsItem(pParent), mpShapeAnnotation(pParent)
 {
+  mOldScenePosition = QPointF();
+  setConnectedPointIndex(connectedPointIndex);
   setCursor(Qt::ArrowCursor);
-  setToolTip(Helper::clickAndDragToResize);
+  setToolTip(Helper::clickAndDragToResize + QString::number(mConnectedPointIndex));
   setPos(x, y);
-  setFlags(QGraphicsItem::ItemIgnoresTransformations | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable
-           | QGraphicsItem::ItemSendsGeometryChanges);
+  setFlags(QGraphicsItem::ItemIgnoresTransformations | QGraphicsItem::ItemIsSelectable);
   mRectangle = QRectF (-3, -3, 6, 6);
-  if (mpShapeAnnotation->isInheritedShape()
-      || (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
-          && (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSConnector()
-              || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()
-              || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSTLMBusConnector()))) {
-    setFlag(QGraphicsItem::ItemIsMovable, false);
-  }
   /* Only shapes manipulation via CornerItem's if the class is not a system library class
    * AND not an inherited shape
    * AND not a OMS connector i.e., input/output signals of fmu
@@ -73,16 +67,8 @@ CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotatio
          || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()
          || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSTLMBusConnector()))) {
     connect(this, SIGNAL(cornerItemMoved(int,QPointF)), mpShapeAnnotation, SLOT(updateCornerItemPoint(int,QPointF)));
-    connect(this, SIGNAL(cornerItemPress()), mpShapeAnnotation, SLOT(cornerItemPressed()));
-    connect(this, SIGNAL(cornerItemRelease()), mpShapeAnnotation, SLOT(cornerItemReleased()));
-    /*
-      if Line type is connection then don't connect the addClassAnnotation SLOT.
-      instead connect the updateConnectionAnnotation SLOT of LineAnnotation.
-      */
-    LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
-    if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
-      connect(this, SIGNAL(cornerItemPositionChanged()), pLineAnnotation, SLOT(updateConnectionAnnotation()));
-    }
+    connect(this, SIGNAL(cornerItemPress(int)), mpShapeAnnotation, SLOT(cornerItemPressed(int)));
+    connect(this, SIGNAL(cornerItemRelease(bool)), mpShapeAnnotation, SLOT(cornerItemReleased(bool)));
   }
 }
 
@@ -126,86 +112,78 @@ void CornerItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
 }
 
 /*!
-  Reimplementation of mousePressEvent.\n
-  Emits the CornerItem::CornerItemPress SIGNAL. Stores the old position of the CornerItem.
-  \param event - pointer to QGraphicsSceneMouseEvent
-  */
+ * Reimplementation of mousePressEvent.\n
+ * Emits the CornerItem::CornerItemPress SIGNAL. Stores the old position of the CornerItem.
+ * \brief CornerItem::mousePressEvent
+ * \param event - pointer to QGraphicsSceneMouseEvent
+ */
 void CornerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
   if (event->button() == Qt::LeftButton) {
     if (!signalsBlocked()) {
-      emit cornerItemPress();
+      emit cornerItemPress(mConnectedPointIndex);
     }
-    mOldAnnotation = mpShapeAnnotation->getOMCShapeAnnotation();
-    mClickPos = mapToScene(event->pos());
+    mOldScenePosition = scenePos();
   }
   QGraphicsItem::mousePressEvent(event);
 }
 
 /*!
-  Reimplementation of mouseReleaseEvent.\n
-  Emits the CornerItem::CornerItemRelease SIGNAL.\n
-  Checks the CornerItem old position with the current position.
-  If the position is changed then emits the CornerItem::CornerItemPositionChanged SIGNAL.
-  \param event - pointer to QGraphicsSceneMouseEvent
-  */
+ * \brief CornerItem::mouseMoveEvent
+ * \param event
+ * Reimplementation of mouseMoveEvent.\n
+ * If CornerItem position has changed then emits the CornerItem::CornerItemMoved SIGNAL.
+ */
+void CornerItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
+{
+  if (mpShapeAnnotation->isInheritedShape()
+      || (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
+          && (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSConnector()
+              || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()
+              || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSTLMBusConnector()))) {
+    QGraphicsItem::mouseMoveEvent(event);
+    return;
+  }
+  /* if line is a connection or transition then make the first and last point non movable.
+   * if line is initial state then make the first point non movable.
+   */
+  LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
+  if (pLineAnnotation) {
+    QList<QPointF> points = pLineAnnotation->getPoints();
+    LineAnnotation::LineType lineType = pLineAnnotation->getLineType();
+    if ((((lineType == LineAnnotation::ConnectionType || lineType == LineAnnotation::TransitionType) && (mConnectedPointIndex == 0 || mConnectedPointIndex == points.size() - 1))
+         || (lineType == LineAnnotation::InitialStateType && mConnectedPointIndex == 0))) {
+      QGraphicsItem::mouseMoveEvent(event);
+      return;
+    }
+  }
+  // indicates that user is dragging the resizer item
+  if (mpShapeAnnotation->isCornerItemClicked()) {
+    if (!signalsBlocked()) {
+      QPointF positionDifference = mpShapeAnnotation->getGraphicsView()->movePointByGrid(event->scenePos() - scenePos());
+      if (scenePos() != scenePos() + positionDifference) {
+        emit cornerItemMoved(mConnectedPointIndex, scenePos() + positionDifference);
+      }
+    }
+  }
+  QGraphicsItem::mouseMoveEvent(event);
+}
+
+/*!
+ * Reimplementation of mouseReleaseEvent.\n
+ * Emits the CornerItem::CornerItemRelease SIGNAL.\n
+ * Checks the CornerItem old position with the current position.
+ * \brief CornerItem::mouseReleaseEvent
+ * \param event - pointer to QGraphicsSceneMouseEvent
+ */
 void CornerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
   QGraphicsItem::mouseReleaseEvent(event);
   if (event->button() == Qt::LeftButton) {
     if (!signalsBlocked()) {
-      emit cornerItemRelease();
-    }
-    if (mClickPos != mapToScene(event->pos())) {
-      ModelWidget *pModelWidget = mpShapeAnnotation->getGraphicsView()->getModelWidget();
-      LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
-      if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
-        mpShapeAnnotation->manhattanizeShape(false);
-        mpShapeAnnotation->removeRedundantPointsGeometriesAndCornerItems();
-        QString newAnnotation = mpShapeAnnotation->getOMCShapeAnnotation();
-        pModelWidget->getUndoStack()->push(new UpdateConnectionCommand(pLineAnnotation, mOldAnnotation, newAnnotation));
-        pModelWidget->updateModelText();
-      } else if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
-        mpShapeAnnotation->manhattanizeShape(false);
-        mpShapeAnnotation->removeRedundantPointsGeometriesAndCornerItems();
-        QString newAnnotation = mpShapeAnnotation->getOMCShapeAnnotation();
-        pModelWidget->getUndoStack()->push(new UpdateTransitionCommand(pLineAnnotation, pLineAnnotation->getCondition(),
-                                                                       pLineAnnotation->getImmediate(), pLineAnnotation->getReset(),
-                                                                       pLineAnnotation->getSynchronize(), pLineAnnotation->getPriority(),
-                                                                       mOldAnnotation, pLineAnnotation->getCondition(),
-                                                                       pLineAnnotation->getImmediate(), pLineAnnotation->getReset(),
-                                                                       pLineAnnotation->getSynchronize(), pLineAnnotation->getPriority(),
-                                                                       newAnnotation));
-        pModelWidget->updateModelText();
-      } else {
-        QString newAnnotation = mpShapeAnnotation->getOMCShapeAnnotation();
-        pModelWidget->getUndoStack()->push(new UpdateShapeCommand(mpShapeAnnotation, mOldAnnotation, newAnnotation));
-        pModelWidget->updateClassAnnotationIfNeeded();
-        pModelWidget->updateModelText();
-      }
+      emit cornerItemRelease(mOldScenePosition != scenePos());
     }
   }
-}
-
-/*!
-  Reimplementation of itemChange.\n
-  If CornerItem position has changed then emits the CornerItem::CornerItemMoved SIGNAL.
-  \param change - GraphicsItemChange
-  \param value - QVariant
-  */
-QVariant CornerItem::itemChange(GraphicsItemChange change, const QVariant &value)
-{
-  QGraphicsItem::itemChange(change, value);
-  if (change == QGraphicsItem::ItemPositionHasChanged) {
-    if (!signalsBlocked()) {
-      emit cornerItemMoved(mConnectedPointIndex, value.toPointF());
-    }
-  } else if (change == QGraphicsItem::ItemPositionChange) {
-    // move by grid distance while dragging component
-    QPointF positionDifference = mpShapeAnnotation->getGraphicsView()->movePointByGrid(value.toPointF() - pos());
-    return pos() + positionDifference;
-  }
-  return value;
 }
 
 /*!
@@ -371,30 +349,51 @@ void ResizerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
   */
 OriginItem::OriginItem(Element *pComponent)
 {
-  setZValue(3000);
   mpComponent = pComponent;
+  mpShapeAnnotation = 0;
+  initialize();
+}
+
+/*!
+ * \brief OriginItem::OriginItem
+ * \param pShapeAnnotation
+ */
+OriginItem::OriginItem(ShapeAnnotation *pShapeAnnotation)
+{
+  mpComponent = 0;
+  mpShapeAnnotation = pShapeAnnotation;
+  initialize();
+}
+
+/*!
+ * \brief OriginItem::initialize
+ */
+void OriginItem::initialize()
+{
+  setZValue(3000);
   mActivePen = QPen(Qt::red, 2);
   mActivePen.setCosmetic(true);
   mInheritedActivePen = QPen(Qt::darkRed, 2);
   mInheritedActivePen.setCosmetic(true);
   mPassivePen = QPen(Qt::transparent);
-  mRectangle = QRectF (-2, -2, 2, 2);
+  mRectangle = QRectF (-1.5, -1.5, 3, 3);
   mPen = mPassivePen;
 }
 
 /*!
  * \brief OriginItem::setActive
  * Sets the pen to active color.
- * Sets the zValue of item to 4000 so that it shows on top of everything.
+ * Sets the zValue of item to 3000 so that it shows on top of everything.
  */
 void OriginItem::setActive()
 {
   setZValue(3000);
-  if (mpComponent->isInheritedComponent()
-      || (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
-          && (mpComponent->getLibraryTreeItem()->getOMSConnector()
-              || mpComponent->getLibraryTreeItem()->getOMSBusConnector()
-              || mpComponent->getLibraryTreeItem()->getOMSTLMBusConnector()))) {
+  if ((mpShapeAnnotation && mpShapeAnnotation->isInheritedShape())
+      || (mpComponent && (mpComponent->isInheritedComponent()
+                          || (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
+                              && (mpComponent->getLibraryTreeItem()->getOMSConnector()
+                                  || mpComponent->getLibraryTreeItem()->getOMSBusConnector()
+                                  || mpComponent->getLibraryTreeItem()->getOMSTLMBusConnector()))))) {
     mPen = mInheritedActivePen;
   } else {
     mPen = mActivePen;
@@ -404,7 +403,7 @@ void OriginItem::setActive()
 /*!
  * \brief OriginItem::setPassive
  * Sets the pen to passive color.
- * Sets the zValue of item to -4000 so that it shows on bottom of everything.
+ * Sets the zValue of item to -3000 so that it shows on bottom of everything.
  */
 void OriginItem::setPassive()
 {
@@ -423,13 +422,14 @@ void OriginItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
-  if (mpComponent->getGraphicsView()->isRenderingLibraryPixmap()) {
+  if ((mpShapeAnnotation && mpShapeAnnotation->getGraphicsView()->isRenderingLibraryPixmap())
+      || (mpComponent && mpComponent->getGraphicsView()->isRenderingLibraryPixmap())) {
     return;
   }
   painter->setRenderHint(QPainter::Antialiasing);
   painter->setPen(mPen);
   // draw horizontal Line
-  painter->drawLine(-2, 0, 2, 0);
-  // draw vertical Line
-  painter->drawLine(0, -2, 0, 2);
+  painter->drawLine(-1.5, 0, 1.5, 0);
+//  // draw vertical Line
+  painter->drawLine(0, -1.5, 0, 1.5);
 }

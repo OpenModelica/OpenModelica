@@ -41,7 +41,8 @@
 BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0, 0)
 {
-  mpComponent = 0;
+  mpOriginItem = new OriginItem(this);
+  mpOriginItem->setPassive();
   mClassFileName = classFileName;
   // set the default values
   GraphicItem::setDefaults();
@@ -52,9 +53,10 @@ BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, Gr
   setShapeFlags(true);
 }
 
-BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
-  : ShapeAnnotation(pShapeAnnotation, pParent), mpComponent(pParent)
+BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
+  : ShapeAnnotation(pShapeAnnotation, pParent)
 {
+  mpOriginItem = 0;
   updateShape(pShapeAnnotation);
   setPos(mOrigin);
   setRotation(mRotation);
@@ -63,10 +65,12 @@ BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Element *p
 BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
 {
-  mpComponent = 0;
+  mpOriginItem = new OriginItem(this);
+  mpOriginItem->setPassive();
   updateShape(pShapeAnnotation);
   setShapeFlags(true);
   mpGraphicsView->addItem(this);
+  mpGraphicsView->addItem(mpOriginItem);
 }
 
 /*!
@@ -79,7 +83,8 @@ BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsVi
 BitmapAnnotation::BitmapAnnotation(QString classFileName, GraphicsView *pGraphicsView)
   : ShapeAnnotation(true, pGraphicsView, 0, 0)
 {
-  mpComponent = 0;
+  mpOriginItem = new OriginItem(this);
+  mpOriginItem->setPassive();
   mClassFileName = classFileName;
   // set the default values
   GraphicItem::setDefaults();
@@ -158,7 +163,7 @@ void BitmapAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *
 
 void BitmapAnnotation::drawBitmapAnnotaion(QPainter *painter)
 {
-  painter->drawImage(getBoundingRect(), mImage.mirrored());
+  painter->drawImage(getBoundingRect().normalized(), mImage.mirrored());
 }
 
 /*!
@@ -243,12 +248,12 @@ void BitmapAnnotation::duplicate()
 {
   BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(mClassFileName, "", mpGraphicsView);
   pBitmapAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5,
-                   mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
+  QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
   pBitmapAnnotation->setOrigin(mOrigin + gridStep);
-  pBitmapAnnotation->initializeTransformation();
   pBitmapAnnotation->drawCornerItems();
   pBitmapAnnotation->setCornerItemsActiveOrPassive();
+  pBitmapAnnotation->applyTransformation();
   pBitmapAnnotation->update();
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pBitmapAnnotation));
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pBitmapAnnotation, mpGraphicsView);
