@@ -504,6 +504,7 @@ uniontype InstNode
       case REF_NODE() then "$REF[" + String(node.index) + "]";
       case NAME_NODE() then node.name;
       case IMPLICIT_SCOPE() then "$IMPLICIT";
+      case EXP_NODE() then "$EXP(" + Expression.toString(node.exp) + ")";
       case EMPTY_NODE() then "$EMPTY";
     end match;
   end name;

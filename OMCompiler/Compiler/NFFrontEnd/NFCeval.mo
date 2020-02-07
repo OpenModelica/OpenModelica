@@ -2020,7 +2020,7 @@ function evalBuiltinCat
   input EvalTarget target;
   output Expression result;
 protected
-  Integer n, nd;
+  Integer n, nd, sz;
   Type ty;
   list<Expression> es;
   list<Integer> dims;
@@ -2037,8 +2037,11 @@ algorithm
   end if;
 
   es := list(e for e guard not Expression.isEmptyArray(e) in args);
+  sz := listLength(es);
 
-  if listLength(es) == 1 then
+  if sz == 0 then
+    result := listHead(args);
+  elseif sz == 1 then
     result := listHead(es);
   else
     (es,dims) := ExpressionSimplify.evalCat(n, es, getArrayContents=Expression.arrayElements, toString=Expression.toString);
@@ -2094,6 +2097,8 @@ protected
   Boolean e_lit, arg_lit = true;
 algorithm
   result := match arg
+    case Expression.ARRAY(elements = {}) then arg;
+
     case Expression.ARRAY(elements = elems)
       algorithm
         n := listLength(elems);
