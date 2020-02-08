@@ -2841,7 +2841,7 @@ template generateStaticEmptySparseData(String indexName, String systemType)
   >>
 end generateStaticEmptySparseData;
 
-template generateStaticSparseData(String indexName, String systemType, list<tuple<Integer,list<Integer>>> sparsepattern, list<list<Integer>> colorList, Integer maxColor)
+template generateStaticSparseData(String indexName, String systemType, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor)
 "template generateStaticSparseData
   This template generates source code for functions that initialize the sparse-pattern."
 ::=
@@ -4177,7 +4177,7 @@ template genVarIndexes(list<SimVar> vars, String arrayName)
 end genVarIndexes;
 
 
-template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer nAuxVars, list<tuple<Integer,list<Integer>>> sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
+template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer nAuxVars, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
   "Generates initialization function for daeMode."
 ::=
   let nAlgVars = listLength(algVars)
@@ -5089,7 +5089,7 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimEqSystem> constantE
 end functionJac;
 
 // function for sparsity pattern generation
-template genSPCRSPtr(Integer sizeColPtr, list<tuple<Integer,list<Integer>>> sparsepattern, String constArrayName)
+template genSPCRSPtr(Integer sizeColPtr, SparsityPattern sparsepattern, String constArrayName)
 "This template generates colPtr of the CRS format"
 ::=
   let colPtrindex = (sparsepattern |> (i, indexes) =>
@@ -5102,7 +5102,7 @@ template genSPCRSPtr(Integer sizeColPtr, list<tuple<Integer,list<Integer>>> spar
   >>
 end genSPCRSPtr;
 
-template genSPCRSRows(Integer nonZeroElems, list<tuple<Integer,list<Integer>>> sparsepattern, String constArrayName)
+template genSPCRSRows(Integer nonZeroElems, SparsityPattern sparsepattern, String constArrayName)
 "This template generates row of the CRS format"
 ::=
   let rowsIndex = ( sparsepattern |> (i, indexes) hasindex index0 =>

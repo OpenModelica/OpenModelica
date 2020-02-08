@@ -242,7 +242,7 @@ template jacobianMatrixesXML(list<JacobianMatrix> JacobianMatrixes)
   >>
 end jacobianMatrixesXML;
 
-template jacobianMatrixXML(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixName, list<tuple<Integer,list<Integer>>> sparsepattern, list<list<Integer>> colorList, Integer maxColor)
+template jacobianMatrixXML(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixName, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor)
 ::=
   let indexColumn = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=nRows) => '<%nRows%>'; separator="\n")
   let jacvals = (sparsepattern |> (index,indexes) hasindex index0 =>

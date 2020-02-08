@@ -12825,7 +12825,7 @@ template functionAnalyticJacobians2(list<JacobianMatrix> JacobianMatrixes,String
 end functionAnalyticJacobians2;
 
 
-template initialAnalyticJacobians2(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, list<tuple<Integer,list<Integer>>> sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
+template initialAnalyticJacobians2(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
 "template initialAnalyticJacobians
   This template generates source code for functions that initialize the sparse-pattern for a single jacobian.
   This is a helper of template functionAnalyticJacobians"
@@ -12883,7 +12883,7 @@ template functionAnalyticJacobiansHeader(list<JacobianMatrix> JacobianMatrixes,S
 
 end functionAnalyticJacobiansHeader;
 
-template initialAnalyticJacobiansHeader(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, list<tuple<Integer,list<Integer>>> sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
+template initialAnalyticJacobiansHeader(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
 "template initialAnalyticJacobians
   This template generates source code for functions that initialize the sparse-pattern for a single jacobian.
   This is a helper of template functionAnalyticJacobians"
@@ -12924,7 +12924,7 @@ match matrixname
 end match
 end mkSparseFunctionHeader;
 
-template initialAnalyticJacobians(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixName, list<tuple<Integer,list<Integer>>> sparsepattern, list<list<Integer>> colorList, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace)
+template initialAnalyticJacobians(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixName, SparsityPattern sparsepattern, list<list<Integer>> colorList, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace)
  "Generates function that initialize the sparse-pattern for a jacobian matrix"
 ::=
   match simCode

@@ -4496,7 +4496,7 @@ algorithm
     BackendDAE.SparseColoring sparseColoring;
     list<list<Integer>> coloring;
     BackendDAE.SparsePatternCrefs sparsepatternComRefs, sparsepatternComRefsT;
-    list<tuple<Integer, list<Integer>>> sparseInts, sparseIntsT;
+    SimCode.SparsityPattern sparseInts, sparseIntsT;
 
     list<BackendDAE.EqSystem> systs;
     BackendDAE.EqSystem syst;
@@ -4772,7 +4772,7 @@ algorithm
 
       BackendDAE.SymbolicJacobians rest;
       list<SimCode.JacobianMatrix> linearModelMatrices;
-      list<tuple<Integer, list<Integer>>> sparseInts, sparseIntsT;
+      SimCode.SparsityPattern sparseInts, sparseIntsT;
       list<list<Integer>> coloring;
       Option<BackendDAE.SymbolicJacobian> optionBDAE;
 
@@ -5177,7 +5177,7 @@ protected function sortSparsePattern
   input list<SimCodeVar.SimVar> inSimVars;
   input BackendDAE.SparsePatternCrefs inSparsePattern;
   input Boolean useFMIIndex;
-  output list<tuple<Integer, list<Integer>>> outSparse = {};
+  output SimCode.SparsityPattern outSparse = {};
 protected
   HashTable.HashTable ht;
   DAE.ComponentRef cref;
@@ -5252,7 +5252,7 @@ algorithm
 end sortColoring;
 
 protected function dumpSparsePatternInt
-  input list<tuple<Integer, list<Integer>>> sparsePattern;
+  input SimCode.SparsityPattern sparsePattern;
 protected
   Integer i;
   list<Integer> lst;
@@ -5300,7 +5300,7 @@ algorithm
     BackendDAE.SparseColoring sparseColoring;
     list<list<Integer>> coloring;
     BackendDAE.SparsePatternCrefs sparsepatternComRefs, sparsepatternComRefsT;
-    list<tuple<Integer, list<Integer>>> sparseInts, sparseIntsT;
+    SimCode.SparsityPattern sparseInts, sparseIntsT;
 
     BackendDAE.EqSystem syst;
     BackendDAE.Shared shared;
@@ -8781,13 +8781,13 @@ protected
   list<Option<SimCode.JacobianMatrix>> jacObs;
 algorithm
   print("\n\n*********************\n* SimCode Equations *\n*********************\n\n");
-  print("\nallEquations: \n" + UNDERLINE + "\n\n");
+  print("\nallEquations:\n" + UNDERLINE + "\n\n");
   dumpSimEqSystemLst(simCode.allEquations,"\n");
   print(UNDERLINE + "\n\n\n");
-  print("\nodeEquations ("+intString(listLength(simCode.odeEquations))+" systems): \n" + UNDERLINE + "\n");
+  print("\nodeEquations ("+intString(listLength(simCode.odeEquations))+" systems):\n" + UNDERLINE + "\n");
   List.map1_0(simCode.odeEquations,dumpSimEqSystemLst,"\n");
   print(UNDERLINE + "\n\n\n");
-  print("\nalgebraicEquations ("+intString(listLength(simCode.algebraicEquations))+" systems): \n" + UNDERLINE + "\n");
+  print("\nalgebraicEquations ("+intString(listLength(simCode.algebraicEquations))+" systems):\n" + UNDERLINE + "\n");
   List.map1_0(simCode.algebraicEquations,dumpSimEqSystemLst,"\n");
   print(UNDERLINE + "\n\n\n");
   print("clockPartitions ("+intString(listLength(simCode.clockedPartitions))+" systems):\n\n");
@@ -8802,31 +8802,31 @@ algorithm
     print("\ninlineEquations: ("+intString(listLength(simCode.inlineEquations))+" systems)\n" + UNDERLINE + "\n");
     dumpSimEqSystemLst(simCode.inlineEquations,"\n");
   end if;
-  print("\nremovedInitialEquations: \n" + UNDERLINE + "\n");
+  print("\nremovedInitialEquations:\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.removedInitialEquations,"\n");
-  print("\nstartValueEquations: \n" + UNDERLINE + "\n");
+  print("\nstartValueEquations:\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.startValueEquations,"\n");
-  print("\nnominalValueEquations: \n" + UNDERLINE + "\n");
+  print("\nnominalValueEquations:\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.nominalValueEquations,"\n");
-  print("\nminValueEquations: \n" + UNDERLINE + "\n");
+  print("\nminValueEquations:\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.minValueEquations,"\n");
-  print("\nmaxValueEquations: \n" + UNDERLINE + "\n");
+  print("\nmaxValueEquations:\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.maxValueEquations,"\n");
-  print("\nparameterEquations: \n" + UNDERLINE + "\n");
+  print("\nparameterEquations:\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.parameterEquations,"\n");
-  print("\nremovedEquations: \n" + UNDERLINE + "\n");
+  print("\nremovedEquations:\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.removedEquations,"\n");
-  print("\nalgorithmAndEquationAsserts: \n" + UNDERLINE + "\n");
+  print("\nalgorithmAndEquationAsserts:\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.algorithmAndEquationAsserts,"\n");
-  print("\nequationsForZeroCrossings: \n" + UNDERLINE + "\n");
+  print("\nequationsForZeroCrossings:\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.equationsForZeroCrossings,"\n");
-  print("\njacobianEquations: \n" + UNDERLINE + "\n");
+  print("\njacobianEquations:\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.jacobianEquations,"\n");
   extObjInfoString(simCode.extObjInfo);
-  print("\njacobianMatrices: \n" + UNDERLINE + "\n");
+  print("\njacobianMatrices:\n" + UNDERLINE + "\n");
   jacObs := List.map(simCode.jacobianMatrixes,Util.makeOption);
   List.map_0(jacObs,dumpJacobianMatrix);
-  print("\nmodelInfo: \n" + UNDERLINE + "\n");
+  print("\nmodelInfo:\n" + UNDERLINE + "\n");
   dumpModelInfo(simCode.modelInfo);
   dumpSimCodeDAEmodeDataString(simCode.daeModeData);
 end dumpSimCodeDebug;
@@ -13092,7 +13092,7 @@ public function createFMIModelStructure
   output Integer uniqueEqIndex = inUniqueEqIndex;
 protected
    BackendDAE.SparsePatternCrefs spTA, spTB;
-   list<tuple<Integer, list<Integer>>> sparseInts;
+   SimCode.SparsityPattern sparseInts;
    list<SimCode.FmiUnknown> allUnknowns, derivatives, outputs, discreteStates, allInitialUnknowns;
    list<SimCodeVar.SimVar> varsA, varsB, varsC, varsD, clockedStates, allOutputVars, allParamVars, initialUnknownsOutputVars, initialUnknownsCalculatedParameters, tmpInitialUnknowns, initialUnknownsStateVars, initialUnknownsDerivativeVars;
    list<DAE.ComponentRef> diffCrefsA, diffedCrefsA, derdiffCrefsA;
@@ -13313,7 +13313,7 @@ protected
   list<BackendDAE.Var> orderedVars, indepVars, depVars;
   BackendDAE.SparsePattern sparsePattern;
   BackendDAE.SparsePatternCrefs rowspt;
-  list<tuple<Integer, list<Integer>>> sparseInts;
+  SimCode.SparsityPattern sparseInts;
   list<SimCodeVar.SimVar> vars1, vars2;
   BackendDAE.Shared shared;
   BackendDAE.EqSystem currentSystem;
@@ -13536,13 +13536,13 @@ end isFmiUnknown;
 
 protected function translateSparsePatterInts2FMIUnknown
 "function translates simVar integers to fmi unknowns."
-  input list<tuple<Integer, list<Integer>>> inSparsePattern;
+  input SimCode.SparsityPattern inSparsePattern;
   input list<SimCode.FmiUnknown> inAccum;
   output list<SimCode.FmiUnknown> outFmiUnknown;
 algorithm
   outFmiUnknown := match(inSparsePattern, inAccum)
     local
-      list<tuple<Integer, list<Integer>>> rest;
+      SimCode.SparsityPattern rest;
       Integer unknown;
       list<Integer> dependencies;
       list<String> dependenciesKind;
