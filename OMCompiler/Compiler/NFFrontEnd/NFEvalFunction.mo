@@ -382,7 +382,7 @@ algorithm
         for cr in cref_parts loop
           node := ComponentRef.node(cr);
           outExp := Expression.makeImmutable(outExp);
-          outExp := Expression.lookupRecordField(InstNode.name(node), outExp);
+          outExp := Expression.recordElement(InstNode.name(node), outExp);
           outExp := Expression.applySubscripts(ComponentRef.getSubscripts(cr), outExp);
         end for;
       else

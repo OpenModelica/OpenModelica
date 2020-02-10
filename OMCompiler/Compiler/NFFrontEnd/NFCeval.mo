@@ -666,7 +666,7 @@ algorithm
       Type ty;
       Dimension dim;
 
-    case Expression.RECORD() then Expression.lookupRecordField(name, exp);
+    case Expression.RECORD() then Expression.recordElement(name, exp);
 
     // An empty array of records will still be empty, only the type needs to be changed.
     case Expression.ARRAY(elements = {})
