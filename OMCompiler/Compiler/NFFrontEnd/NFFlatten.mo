@@ -668,7 +668,7 @@ algorithm
               prefix_node.parent, InstNodeType.NORMAL_COMP());
         end match;
         {Dimension.INTEGER(size = stop)} := dimensions;
-        range := Expression.RANGE(Type.INTEGER(), Expression.INTEGER(1), NONE(), Expression.INTEGER(stop));
+        range := Expression.RANGE(Type.ARRAY(Type.INTEGER(), dimensions), Expression.INTEGER(1), NONE(), Expression.INTEGER(stop));
         veqn := Equation.mapExp(eqn, function addIterator(prefix = prefix, subscript = Subscript.INDEX(Expression.CREF(Type.INTEGER(), ComponentRef.makeIterator(iter, Type.INTEGER())))));
       then
         Equation.FOR(iter, SOME(range), {veqn}, Equation.source(eqn));
@@ -702,7 +702,7 @@ algorithm
               prefix_node.parent, InstNodeType.NORMAL_COMP());
         end match;
         {Dimension.INTEGER(size = stop)} := dimensions;
-        range := Expression.RANGE(Type.INTEGER(), Expression.INTEGER(1), NONE(), Expression.INTEGER(stop));
+        range := Expression.RANGE(Type.ARRAY(Type.INTEGER(), dimensions), Expression.INTEGER(1), NONE(), Expression.INTEGER(stop));
         body := Statement.mapExpList(alg.statements, function addIterator(prefix = prefix, subscript = Subscript.INDEX(Expression.CREF(Type.INTEGER(), ComponentRef.makeIterator(iter, Type.INTEGER())))));
       then
         Algorithm.ALGORITHM({Statement.FOR(iter, SOME(range), body, alg.source)}, alg.source);

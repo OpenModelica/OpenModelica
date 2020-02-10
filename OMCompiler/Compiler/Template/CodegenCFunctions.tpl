@@ -6885,7 +6885,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
     >>
     res
 
-  case ASUB(exp=range as RANGE(ty=T_INTEGER(),step=NONE()), sub={idx}) then
+  case ASUB(exp=range as RANGE(ty=T_ARRAY(ty = T_INTEGER()),step=NONE()), sub={idx}) then
     let res = tempDecl("modelica_integer", &varDecls)
     let idx1 = daeExp(idx, context, &preExp, &varDecls, &auxFunction)
     let start = daeExp(range.start, context, &preExp, &varDecls, &auxFunction)

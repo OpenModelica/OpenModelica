@@ -1492,6 +1492,7 @@ protected
   DAE.Type ty;
 algorithm
   DAE.RANGE(ty=ty, start=start, stop=stop) := range;
+  ty := Types.unliftArray(ty);
   iterExp := DAE.CREF(DAE.CREF_IDENT(iter, ty, {}), ty);
   forEq := BackendDAE.FOR_EQUATION(iterExp, start, stop, eq,
                                    BackendEquation.equationSource(eq),
