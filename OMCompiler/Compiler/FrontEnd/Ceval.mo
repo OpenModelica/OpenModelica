@@ -681,63 +681,8 @@ algorithm
       then
         (cache,v);
 
-    case (cache, env, DAE.RANGE(ty = DAE.T_BOOL(), start = start, step = NONE(),stop = stop), impl,  msg,_)
-      equation
-        (cache, Values.BOOL(bstart)) = ceval(cache, env, start, impl, msg,numIter+1);
-        (cache, Values.BOOL(bstop)) = ceval(cache, env, stop, impl, msg,numIter+1);
-        arr = List.map(ExpressionSimplify.simplifyRangeBool(bstart, bstop),
-          ValuesUtil.makeBoolean);
-      then
-        (cache, ValuesUtil.makeArray(arr));
-
-    // range first:last for integers
-    case (cache,env,DAE.RANGE(ty = DAE.T_INTEGER(),start = start,step = NONE(),stop = stop),impl,msg,_)
-      equation
-        (cache,Values.INTEGER(start_1)) = ceval(cache,env, start, impl, msg,numIter+1);
-        (cache,Values.INTEGER(stop_1)) = ceval(cache,env, stop, impl, msg,numIter+1);
-        arr = List.map(ExpressionSimplify.simplifyRange(start_1, 1, stop_1), ValuesUtil.makeInteger);
-      then
-        (cache,ValuesUtil.makeArray(arr));
-
-    // range first:step:last for integers
-    case (cache,env,DAE.RANGE(ty = DAE.T_INTEGER(),start = start,step = SOME(step),stop = stop),impl,msg,_)
-      equation
-        (cache,Values.INTEGER(start_1)) = ceval(cache,env, start, impl, msg,numIter+1);
-        (cache,Values.INTEGER(step_1)) = ceval(cache,env, step, impl, msg,numIter+1);
-        (cache,Values.INTEGER(stop_1)) = ceval(cache,env, stop, impl, msg,numIter+1);
-        arr = List.map(ExpressionSimplify.simplifyRange(start_1, step_1, stop_1), ValuesUtil.makeInteger);
-      then
-        (cache,ValuesUtil.makeArray(arr));
-
-    // range first:last for enumerations.
-    case (cache,env,DAE.RANGE(ty = t as DAE.T_ENUMERATION(),start = start,step = NONE(),stop = stop),impl,msg,_)
-      equation
-        (cache,Values.ENUM_LITERAL(index = start_1)) = ceval(cache,env, start, impl, msg,numIter+1);
-        (cache,Values.ENUM_LITERAL(index = stop_1)) = ceval(cache,env, stop, impl, msg,numIter+1);
-        arr = cevalRangeEnum(start_1, stop_1, t);
-      then
-        (cache,ValuesUtil.makeArray(arr));
-
-    // range first:last for reals
-    case (cache,env,DAE.RANGE(ty = DAE.T_REAL(),start = start,step = NONE(),stop = stop),impl,msg,_)
-      equation
-        (cache,Values.REAL(realStart1)) = ceval(cache,env, start, impl, msg,numIter+1);
-        (cache,Values.REAL(realStop1)) = ceval(cache,env, stop, impl, msg,numIter+1);
-        // diff = realStop1 - realStart1;
-        realStep1 = intReal(1);
-        arr = List.map(ExpressionSimplify.simplifyRangeReal(realStart1, realStep1, realStop1), ValuesUtil.makeReal);
-      then
-        (cache,ValuesUtil.makeArray(arr));
-
-    // range first:step:last for reals
-    case (cache,env,DAE.RANGE(ty = DAE.T_REAL(),start = start,step = SOME(step),stop = stop),impl,msg,_)
-      equation
-        (cache,Values.REAL(realStart1)) = ceval(cache,env, start, impl, msg,numIter+1);
-        (cache,Values.REAL(realStep1)) = ceval(cache,env, step, impl, msg,numIter+1);
-        (cache,Values.REAL(realStop1)) = ceval(cache,env, stop, impl, msg,numIter+1);
-        arr = List.map(ExpressionSimplify.simplifyRangeReal(realStart1, realStep1, realStop1), ValuesUtil.makeReal);
-      then
-        (cache,ValuesUtil.makeArray(arr));
+    case (_, _, DAE.RANGE(), _, _, _)
+      then cevalRange(inCache, inEnv, inExp, inBoolean, inMsg, numIter);
 
     // cast integer to real
     case (cache,env,DAE.CAST(ty = DAE.T_REAL(),exp = e),impl,msg,_)
@@ -4149,6 +4094,64 @@ algorithm
     case (Values.INTEGER(),      Values.ENUM_LITERAL()) then (inValue1.integer <> inValue2.index);
   end match;
 end cevalRelationNotEqual;
+
+function cevalRange
+  input FCore.Cache cache;
+  input FCore.Graph env;
+  input DAE.Exp rangeExp;
+  input Boolean impl;
+  input Absyn.Msg msg;
+  input Integer numIter;
+  output FCore.Cache outCache;
+  output Values.Value outValue;
+protected
+  DAE.Exp start;
+  Option<DAE.Exp> step;
+  DAE.Exp stop;
+  DAE.Type range_ty;
+  Values.Value vstart, vstop;
+  Integer istep;
+  Real rstep;
+  list<Values.Value> arr;
+algorithm
+  DAE.RANGE(ty = range_ty, start = start, step = step, stop = stop) := rangeExp;
+  (outCache, vstart) := ceval(cache, env, start, impl, msg, numIter + 1);
+  (outCache, vstop) := ceval(outCache, env, stop, impl, msg, numIter + 1);
+
+  arr := match (vstart, vstop)
+    case (Values.BOOL(), Values.BOOL())
+      then list(ValuesUtil.makeBoolean(b) for b in
+                ExpressionSimplify.simplifyRangeBool(vstart.boolean, vstop.boolean));
+
+    case (Values.INTEGER(), Values.INTEGER())
+      algorithm
+        if isSome(step) then
+          (outCache, Values.INTEGER(istep)) := ceval(outCache, env, Util.getOption(step), impl, msg, numIter + 1);
+        else
+          istep := 1;
+        end if;
+      then
+        list(ValuesUtil.makeInteger(i) for i in
+             ExpressionSimplify.simplifyRange(vstart.integer, istep, vstop.integer));
+
+    case (Values.ENUM_LITERAL(), Values.ENUM_LITERAL())
+      then cevalRangeEnum(vstart.index, vstop.index, Types.arrayElementType(range_ty));
+
+    case (Values.REAL(), Values.REAL())
+      algorithm
+        if isSome(step) then
+          (outCache, Values.REAL(rstep)) := ceval(outCache, env, Util.getOption(step), impl, msg, numIter + 1);
+        else
+          rstep := 1.0;
+        end if;
+      then
+        list(ValuesUtil.makeReal(r) for r in
+             ExpressionSimplify.simplifyRangeReal(vstart.real, rstep, vstop.real));
+
+  end match;
+
+  outValue := ValuesUtil.makeArray(arr);
+end cevalRange;
 
 public function cevalRangeEnum
   "Evaluates a range expression on the form enum.lit1 : enum.lit2"

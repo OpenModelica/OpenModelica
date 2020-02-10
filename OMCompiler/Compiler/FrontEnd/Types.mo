@@ -4427,9 +4427,9 @@ algorithm
         (begin_1,_) = typeConvert(begin, ty1, ty2, printFailtrace);
         (step_1,_) = typeConvert(step, ty1, ty2, printFailtrace);
         (stop_1,_) = typeConvert(stop, ty1, ty2, printFailtrace);
-        at = simplifyType(ty2);
+        at = simplifyType(DAE.T_ARRAY(ty2, {dim1}));
       then
-        (DAE.RANGE(at,begin_1,SOME(step_1),stop_1),DAE.T_ARRAY(ty2,{dim1}));
+        (DAE.RANGE(at,begin_1,SOME(step_1),stop_1), DAE.T_ARRAY(ty2, {dim1}));
 
     // Range expressions, e.g. 1:10
     case (DAE.RANGE(start = begin,step = NONE(),stop = stop),
@@ -4440,9 +4440,9 @@ algorithm
         true = Expression.dimensionsKnownAndEqual(dim1, dim2);
         (begin_1,_) = typeConvert(begin, ty1, ty2, printFailtrace);
         (stop_1,_) = typeConvert(stop, ty1, ty2, printFailtrace);
-        at = simplifyType(ty2);
+        at = simplifyType(DAE.T_ARRAY(ty2, {dim1}));
       then
-        (DAE.RANGE(at,begin_1,NONE(),stop_1),DAE.T_ARRAY(ty2,{dim1}));
+        (DAE.RANGE(at,begin_1,NONE(),stop_1), DAE.T_ARRAY(ty2, {dim1}));
 
     // Matrix expressions: expression dimension [dim1,dim11], expected dimension [dim2,dim22]
     case (DAE.MATRIX(integer = nmax,matrix = ell),

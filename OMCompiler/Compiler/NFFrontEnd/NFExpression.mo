@@ -1730,7 +1730,7 @@ public
 
       case RANGE()
         then DAE.RANGE(
-               Type.toDAE(Type.arrayElementType(exp.ty)),
+               Type.toDAE(exp.ty),
                toDAE(exp.start),
                if isSome(exp.step)
                then SOME(toDAE(Util.getOption(exp.step)))

@@ -703,7 +703,7 @@ algorithm
   (outCache, ty) := elabRangeType(outCache, inEnv, start_exp, ostep_exp,
     stop_exp, start_ty, ety, c, inImplicit);
 
-  outExp := DAE.RANGE(ety, start_exp, ostep_exp, stop_exp);
+  outExp := DAE.RANGE(ty, start_exp, ostep_exp, stop_exp);
   outProperties := DAE.PROP(ty, c);
 end elabExp_Range;
 
@@ -1658,12 +1658,13 @@ protected
   Absyn.Path enum_path, enum_start, enum_end;
   list<String> enum_lits;
   Integer sz;
+  DAE.Exp size_exp;
 algorithm
   outRange := match inDimension
     // Boolean dimension => false:true
     case DAE.DIM_BOOLEAN()
       algorithm
-        range_ty := DAE.T_BOOL_DEFAULT;
+        range_ty := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {inDimension});
         range_const := DAE.C_CONST();
       then
         DAE.RANGE(range_ty, DAE.BCONST(false), NONE(), DAE.BCONST(true));
@@ -1674,6 +1675,7 @@ algorithm
         enum_start := AbsynUtil.suffixPath(enum_path, listHead(enum_lits));
         enum_end := AbsynUtil.suffixPath(enum_path, List.last(enum_lits));
         range_ty := DAE.T_ENUMERATION(NONE(), enum_path, enum_lits, {}, {});
+        range_ty := DAE.T_ARRAY(range_ty, {inDimension});
         range_const := DAE.C_CONST();
       then
         DAE.RANGE(range_ty, DAE.ENUM_LITERAL(enum_start, 1), NONE(),
@@ -1682,7 +1684,7 @@ algorithm
     // Integer dimension => 1:size
     case DAE.DIM_INTEGER(integer = sz)
       algorithm
-        range_ty := DAE.T_INTEGER_DEFAULT;
+        range_ty := DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {inDimension});
         range_const := DAE.C_CONST();
       then
         DAE.RANGE(range_ty, DAE.ICONST(1), NONE(), DAE.ICONST(sz));
@@ -1690,19 +1692,16 @@ algorithm
     // Any other kind of dimension => 1:size(cref, index)
     else
       algorithm
-        range_ty := DAE.T_INTEGER_DEFAULT;
+        size_exp := DAE.SIZE(DAE.CREF(inCref, inType), SOME(DAE.ICONST(inIndex)));
+        range_ty := DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {inDimension});
         range_const := DAE.C_PARAM();
       then
-        DAE.RANGE(range_ty, DAE.ICONST(1), NONE(),
-          DAE.SIZE(DAE.CREF(inCref, inType), SOME(DAE.ICONST(inIndex))));
+        DAE.RANGE(range_ty, DAE.ICONST(1), NONE(), size_exp);
 
   end match;
 
   // Set the properties of the range expression.
-  outProperties := DAE.PROP(
-    DAE.T_ARRAY(range_ty, {inDimension}),
-    range_const
-  );
+  outProperties := DAE.PROP(range_ty, range_const);
 end deduceReductionIterationRange2;
 
 protected function makeReductionFoldExp
@@ -2310,7 +2309,7 @@ algorithm
         const = Types.constAnd(c_start, c_stop);
         (cache, t) = elabRangeType(cache, env, start_1, NONE(), stop_1, start_t, rt, const, impl);
       then
-        (cache,DAE.RANGE(rt,start_1,NONE(),stop_1),DAE.PROP(t,const));
+        (cache,DAE.RANGE(t,start_1,NONE(),stop_1),DAE.PROP(t,const));
 
     case (cache,env,Absyn.RANGE(start = start,step = SOME(step),stop = stop),impl,pre,_)
       equation
@@ -2322,7 +2321,7 @@ algorithm
         const = Types.constAnd(c1, c_stop);
         (cache, t) = elabRangeType(cache, env, start_1, SOME(step_1), stop_1, start_t, rt, const, impl);
       then
-        (cache,DAE.RANGE(rt,start_2,SOME(step_2),stop_2),DAE.PROP(t,const));
+        (cache,DAE.RANGE(t,start_2,SOME(step_2),stop_2),DAE.PROP(t,const));
 
     case (cache,env,Absyn.ARRAY(arrayExp = es),impl,pre,_)
       equation

@@ -374,7 +374,7 @@ algorithm
       algorithm
         hasRange := false;
         subs := list(match exp
-          case DAE.RANGE(DAE.T_INTEGER(),DAE.ICONST(istart),step,DAE.ICONST(istop))
+          case DAE.RANGE(start = DAE.ICONST(istart),step = step, stop = DAE.ICONST(istop))
             algorithm
               e := Expression.makeArray(list(DAE.ICONST(i) for i in simplifyRange(istart,match step case NONE() then 1; case SOME(DAE.ICONST(istep)) then istep; end match,istop)), DAE.T_INTEGER_DEFAULT, true);
               hasRange := true;
@@ -1012,13 +1012,14 @@ algorithm
         DAE.ARRAY(tp,b,exps_1);
 
     // cast of array
-    case (_,DAE.RANGE(ty=DAE.T_INTEGER(),start=e1,step=eo,stop=e2),DAE.T_ARRAY(ty=tp2 as DAE.T_REAL()))
+    case (_,DAE.RANGE(ty=DAE.T_ARRAY(ty = DAE.T_INTEGER()),start=e1,step=eo,stop=e2),
+            DAE.T_ARRAY(ty=tp2 as DAE.T_REAL()))
       equation
         e1 = addCast(e1,tp2);
         e2 = addCast(e2,tp2);
         eo = Util.applyOption1(eo, addCast, tp2);
       then
-        DAE.RANGE(tp2,e1,eo,e2);
+        DAE.RANGE(tp,e1,eo,e2);
 
     // simplify cast in an if expression
     case (_,DAE.IFEXP(cond,e1,e2),_)
@@ -3310,7 +3311,7 @@ the subexpression"
   input DAE.Exp inSubExp;
   output DAE.Exp res;
 algorithm
-  res := match(ie, sub, inSubExp)
+  res := match ie
     local
       Type t,t1;
       Boolean b, bstart, bstop;
@@ -3326,44 +3327,44 @@ algorithm
       list<DAE.ReductionIterator> iters;
 
     // subscript of an array
-    case(DAE.ARRAY(_,_,exps),_, _)
+    case DAE.ARRAY(_,_,exps)
       equation
         exp = listGet(exps, sub);
       then
         exp;
 
-    case (DAE.RANGE(DAE.T_BOOL(), DAE.BCONST(bstart), NONE(), DAE.BCONST(bstop)), _, _)
+    case DAE.RANGE(start = DAE.BCONST(bstart), stop = DAE.BCONST(bstop))
       equation
         b = listGet(simplifyRangeBool(bstart, bstop), sub);
       then
         DAE.BCONST(b);
 
-    case (DAE.RANGE(DAE.T_INTEGER(),DAE.ICONST(istart),NONE(),DAE.ICONST(istop)),_, _)
+    case DAE.RANGE(start = DAE.ICONST(istart), step = NONE(), stop = DAE.ICONST(istop))
       equation
         ival = listGet(simplifyRange(istart,1,istop),sub);
         exp = DAE.ICONST(ival);
       then exp;
 
-    case (DAE.RANGE(DAE.T_INTEGER(),DAE.ICONST(istart),SOME(DAE.ICONST(istep)),DAE.ICONST(istop)),_, _)
+    case DAE.RANGE(start = DAE.ICONST(istart), step = SOME(DAE.ICONST(istep)), stop = DAE.ICONST(istop))
       equation
         ival = listGet(simplifyRange(istart,istep,istop),sub);
         exp = DAE.ICONST(ival);
       then exp;
 
-    case (DAE.RANGE(DAE.T_REAL(),DAE.RCONST(rstart),NONE(),DAE.RCONST(rstop)),_, _)
+    case DAE.RANGE(start = DAE.RCONST(rstart), step = NONE(), stop = DAE.RCONST(rstop))
       equation
         rval = listGet(simplifyRangeReal(rstart,1.0,rstop),sub);
         exp = DAE.RCONST(rval);
       then exp;
 
-    case (DAE.RANGE(DAE.T_REAL(),DAE.RCONST(rstart),SOME(DAE.RCONST(rstep)),DAE.RCONST(rstop)),_, _)
+    case DAE.RANGE(start = DAE.RCONST(rstart), step = SOME(DAE.RCONST(rstep)), stop = DAE.RCONST(rstop))
       equation
         rval = listGet(simplifyRangeReal(rstart,rstep,rstop),sub);
         exp = DAE.RCONST(rval);
       then exp;
 
     // subscript of a matrix
-    case(DAE.MATRIX(t,_,mexps), _, _)
+    case DAE.MATRIX(t,_,mexps)
       equation
         t1 = Expression.unliftArray(t);
         (mexpl) = listGet(mexps, sub);
@@ -3371,7 +3372,7 @@ algorithm
         DAE.ARRAY(t1,true,mexpl);
 
     // subscript of an if-expression
-    case(DAE.IFEXP(cond,e1,e2), _, _)
+    case DAE.IFEXP(cond,e1,e2)
       equation
         e1 = Expression.makeASUB(e1,{inSubExp});
         e2 = Expression.makeASUB(e2,{inSubExp});
@@ -3380,7 +3381,7 @@ algorithm
         e;
 
     // name subscript
-    case(DAE.CREF(c,t), _, _)
+    case DAE.CREF(c,t)
       equation
         true = Types.isArray(t);
         t = Expression.unliftArray(t);
@@ -3390,7 +3391,7 @@ algorithm
         exp;
 
    // BINARAY
-    case(DAE.BINARY(e1,op,e2), _, _)
+    case DAE.BINARY(e1,op,e2)
       guard Expression.isMulOrDiv(op) or Expression.isAddOrSub(op)
       equation
         e1 = Expression.makeASUB(e1,{inSubExp});
@@ -5490,7 +5491,7 @@ algorithm
       equation
         foldName2 = Util.getTempVariableIndex();
         resultName2 = Util.getTempVariableIndex();
-        ty1 = Types.unliftArray(ty);
+        ty1 = Expression.unliftArray(ty);
         expr = DAE.REDUCTION(DAE.REDUCTIONINFO(path,Absyn.COMBINE(),ty1,NONE(),foldName,resultName,NONE()),expr,iterators);
         expr = DAE.REDUCTION(DAE.REDUCTIONINFO(path,Absyn.COMBINE(),ty,NONE(),foldName2,resultName2,NONE()),expr,{iter});
       then expr;

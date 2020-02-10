@@ -1848,19 +1848,19 @@ algorithm
         es = List.map(ExpressionSimplify.simplifyRange(1,1,istop), makeIntegerExp);
         es = List.map1r(es, makeASUBSingleSub, e);
       then es;
-    case DAE.RANGE(DAE.T_BOOL(), DAE.BCONST(bstart), NONE(), DAE.BCONST(bstop))
+    case DAE.RANGE(start = DAE.BCONST(bstart), step = NONE(), stop = DAE.BCONST(bstop))
       then List.map(ExpressionSimplify.simplifyRangeBool(bstart, bstop), makeBoolExp);
 
-    case DAE.RANGE(DAE.T_INTEGER(),DAE.ICONST(istart),NONE(),DAE.ICONST(istop))
+    case DAE.RANGE(start = DAE.ICONST(istart), step = NONE(), stop = DAE.ICONST(istop))
       then List.map(ExpressionSimplify.simplifyRange(istart,1,istop), makeIntegerExp);
 
-    case DAE.RANGE(DAE.T_INTEGER(),DAE.ICONST(istart),SOME(DAE.ICONST(istep)),DAE.ICONST(istop))
+    case DAE.RANGE(start = DAE.ICONST(istart), step = SOME(DAE.ICONST(istep)), stop = DAE.ICONST(istop))
       then List.map(ExpressionSimplify.simplifyRange(istart,istep,istop), makeIntegerExp);
 
-    case DAE.RANGE(DAE.T_REAL(),DAE.RCONST(rstart),NONE(),DAE.RCONST(rstop))
+    case DAE.RANGE(start = DAE.RCONST(rstart), step = NONE(), stop = DAE.RCONST(rstop))
       then List.map(ExpressionSimplify.simplifyRangeReal(rstart,1.0,rstop), makeRealExp);
 
-    case DAE.RANGE(DAE.T_REAL(),DAE.RCONST(rstart),SOME(DAE.RCONST(rstep)),DAE.RCONST(rstop))
+    case DAE.RANGE(start = DAE.RCONST(rstart), step = SOME(DAE.RCONST(rstep)), stop = DAE.RCONST(rstop))
       then List.map(ExpressionSimplify.simplifyRangeReal(rstart,rstep,rstop), makeRealExp);
   end match;
 end getArrayOrRangeContents;
@@ -2262,44 +2262,38 @@ algorithm
       DAE.Dimension dim;
       DAE.Dimensions iterdims;
 
-    case (DAE.ICONST()) then DAE.T_INTEGER_DEFAULT;
-    case (DAE.RCONST()) then DAE.T_REAL_DEFAULT;
-    case (DAE.SCONST()) then DAE.T_STRING_DEFAULT;
-    case (DAE.BCONST()) then DAE.T_BOOL_DEFAULT;
-    case (DAE.CLKCONST()) then DAE.T_CLOCK_DEFAULT;
-    case (DAE.ENUM_LITERAL(name = p, index=i)) then DAE.T_ENUMERATION(SOME(i), p, {}, {}, {});
-    case (DAE.CREF(ty = tp)) then tp;
-    case (DAE.BINARY(operator = op)) then typeofOp(op);
-    case (DAE.UNARY(operator = op)) then typeofOp(op);
-    case (DAE.LBINARY(operator = op)) then typeofOp(op);
-    case (DAE.LUNARY(operator = op)) then typeofOp(op);
-    case (DAE.RELATION(operator = op)) then typeofRelation(typeofOp(op));
-    case (DAE.IFEXP(expThen = e2)) then typeof(e2);
-    case (DAE.CALL(attr = DAE.CALL_ATTR(ty=tp))) then tp;
-    case (DAE.RECORD(ty=tp)) then tp;
-    case (DAE.PARTEVALFUNCTION(ty=tp)) then tp;
-    case (DAE.ARRAY(ty = tp)) then tp;
-    case (DAE.MATRIX(ty = tp)) then tp;
-    case (DAE.RANGE(start=DAE.ICONST(i1),step=NONE(),stop=DAE.ICONST(i2),ty = tp as DAE.T_INTEGER()))
-      equation
-        i = intMax(0,i2-i1+1);
-      then DAE.T_ARRAY(tp, {DAE.DIM_INTEGER(i)});
-    case (DAE.RANGE(start=DAE.ICONST(1),step=NONE(),stop=e,ty = tp as DAE.T_INTEGER()))
-      then DAE.T_ARRAY(tp, {DAE.DIM_EXP(e)});
-    case (DAE.RANGE(ty = tp)) then DAE.T_ARRAY(tp, {DAE.DIM_UNKNOWN()});
-    case (DAE.CAST(ty = tp)) then tp;
-    case (DAE.ASUB(exp = e,sub=explist))
+    case DAE.ICONST() then DAE.T_INTEGER_DEFAULT;
+    case DAE.RCONST() then DAE.T_REAL_DEFAULT;
+    case DAE.SCONST() then DAE.T_STRING_DEFAULT;
+    case DAE.BCONST() then DAE.T_BOOL_DEFAULT;
+    case DAE.CLKCONST() then DAE.T_CLOCK_DEFAULT;
+    case DAE.ENUM_LITERAL(name = p, index=i) then DAE.T_ENUMERATION(SOME(i), p, {}, {}, {});
+    case DAE.CREF(ty = tp) then tp;
+    case DAE.BINARY(operator = op) then typeofOp(op);
+    case DAE.UNARY(operator = op) then typeofOp(op);
+    case DAE.LBINARY(operator = op) then typeofOp(op);
+    case DAE.LUNARY(operator = op) then typeofOp(op);
+    case DAE.RELATION(operator = op) then typeofRelation(typeofOp(op));
+    case DAE.IFEXP(expThen = e2) then typeof(e2);
+    case DAE.CALL(attr = DAE.CALL_ATTR(ty=tp)) then tp;
+    case DAE.RECORD(ty=tp) then tp;
+    case DAE.PARTEVALFUNCTION(ty=tp) then tp;
+    case DAE.ARRAY(ty = tp) then tp;
+    case DAE.MATRIX(ty = tp) then tp;
+    case DAE.RANGE(ty = tp) then tp;
+    case DAE.CAST(ty = tp) then tp;
+    case DAE.ASUB(exp = e,sub=explist)
       equation
         // Count the number of scalar subscripts, and remove as many dimensions.
         i = sum(1 for e guard(isScalar(e)) in explist);
         tp = unliftArrayX(typeof(e), i);
       then
         tp;
-    case (DAE.TSUB(ty = tp)) then tp;
+    case DAE.TSUB(ty = tp) then tp;
     case DAE.RSUB() then inExp.ty;
-    case (DAE.CODE(ty = tp)) then tp;
+    case DAE.CODE(ty = tp) then tp;
       /* array reduction with known size */
-    case (DAE.REDUCTION(iterators={DAE.REDUCTIONITER(exp=iterExp,guardExp=NONE())},expr = operExp, reductionInfo=DAE.REDUCTIONINFO(exprType=DAE.T_ARRAY(dims=dim::_),path = Absyn.IDENT("array"))))
+    case DAE.REDUCTION(iterators={DAE.REDUCTIONITER(exp=iterExp,guardExp=NONE())},expr = operExp, reductionInfo=DAE.REDUCTIONINFO(exprType=DAE.T_ARRAY(dims=dim::_),path = Absyn.IDENT("array")))
       equation
         false = dimensionKnown(dim);
         iterTp = typeof(iterExp);
@@ -2307,34 +2301,34 @@ algorithm
         DAE.T_ARRAY(dims=iterdims) = iterTp;
         tp = Types.liftTypeWithDims(operTp, iterdims);
       then tp;
-    case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(exprType=ty)))
+    case DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(exprType=ty))
       then Types.simplifyType(ty);
-    case (DAE.SIZE(_,NONE())) then DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()});
-    case (DAE.SIZE(_,SOME(_))) then DAE.T_INTEGER_DEFAULT;
+    case DAE.SIZE(_,NONE()) then DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()});
+    case DAE.SIZE(_,SOME(_)) then DAE.T_INTEGER_DEFAULT;
 
     // MetaModelica extension
-    case (DAE.LIST()) then DAE.T_METATYPE(DAE.T_METALIST_DEFAULT);
-    case (DAE.CONS()) then DAE.T_METATYPE(DAE.T_METALIST_DEFAULT);
-    case (DAE.META_TUPLE(exps))
+    case DAE.LIST() then DAE.T_METATYPE(DAE.T_METALIST_DEFAULT);
+    case DAE.CONS() then DAE.T_METATYPE(DAE.T_METALIST_DEFAULT);
+    case DAE.META_TUPLE(exps)
       equation
          tys = List.map(exps, typeof);
       then
         DAE.T_METATYPE(DAE.T_METATUPLE(tys));
-    case (DAE.TUPLE(exps))
+    case DAE.TUPLE(exps)
       equation
          tys = List.map(exps, typeof);
       then DAE.T_TUPLE(tys, NONE());
-    case (DAE.META_OPTION()) then DAE.T_METATYPE(DAE.T_NONE_DEFAULT);
-    case (DAE.METARECORDCALL(path=p, index = i, typeVars=typeVars))
+    case DAE.META_OPTION() then DAE.T_METATYPE(DAE.T_NONE_DEFAULT);
+    case DAE.METARECORDCALL(path=p, index = i, typeVars=typeVars)
       then DAE.T_METATYPE(DAE.T_METARECORD(p, AbsynUtil.stripLast(p), typeVars, i, {}, false));
-    case (DAE.BOX(e))
+    case DAE.BOX(e)
       then DAE.T_METATYPE(DAE.T_METABOXED(typeof(e)));
-    case (DAE.MATCHEXPRESSION(et=tp))
+    case DAE.MATCHEXPRESSION(et=tp)
       then tp;
-    case (DAE.UNBOX(ty = tp)) then tp;
-    case (DAE.SHARED_LITERAL(exp = e)) then typeof(e);
+    case DAE.UNBOX(ty = tp) then tp;
+    case DAE.SHARED_LITERAL(exp = e) then typeof(e);
     // A little crazy, but sometimes we call typeof on things that will not be used in the end...
-    case (DAE.EMPTY(ty = tp)) then tp;
+    case DAE.EMPTY(ty = tp) then tp;
 
     case e
       equation
@@ -10915,7 +10909,7 @@ algorithm
 
     case DAE.ARRAY(array = expl) then (expl,true);
     case DAE.MATRIX(matrix = mat) then (List.flatten(mat),true);
-    case DAE.RANGE(DAE.T_INTEGER(),DAE.ICONST(istart),step,DAE.ICONST(istop))
+    case DAE.RANGE(start = DAE.ICONST(istart), step = step, stop = DAE.ICONST(istop))
       then (list(DAE.ICONST(i) for i in ExpressionSimplify.simplifyRange(istart,match step case NONE() then 1; case SOME(DAE.ICONST(istep)) then istep; end match,istop)),true);
     else ({inExp},false);
   end match;
@@ -12859,6 +12853,7 @@ protected
   list<DAE.Exp> vals;
   list<String> enum_names;
   Absyn.Path enum_type;
+  DAE.Type range_ty;
 algorithm
   DAE.RANGE(start = start_exp, step = ostep_exp, stop = stop_exp) := inRange;
 
@@ -12899,7 +12894,8 @@ algorithm
         elseif start_exp.index == stop_exp.index then
           vals := {start_exp};
         else
-          DAE.RANGE(ty = DAE.T_ENUMERATION(path = enum_type, names = enum_names)) := inRange;
+          DAE.RANGE(ty = range_ty) := inRange;
+          DAE.T_ENUMERATION(path = enum_type, names = enum_names) := Types.arrayElementType(range_ty);
           enum_names := List.sublist(enum_names, start_exp.index,
             (stop_exp.index - start_exp.index) + 1);
           vals := makeEnumLiterals(enum_type, enum_names);
@@ -12999,6 +12995,8 @@ algorithm
   outSize := match inRange
     local
       Integer start, step, stop;
+
+    case DAE.RANGE(ty = DAE.T_ARRAY(dims = {DAE.DIM_INTEGER(outSize)})) then outSize;
 
     case DAE.RANGE(start = DAE.ICONST(start),
                    step = NONE(),
