@@ -4918,39 +4918,6 @@ public
     end match;
   end isEmpty;
 
-  function lookupRecordField
-    input String name;
-    input Expression exp;
-    output Expression fieldExp;
-  algorithm
-    fieldExp := match exp
-      local
-        InstNode node;
-        Integer index;
-        ClassTree cls_tree;
-        ComponentRef cref;
-        Type ty;
-
-      case RECORD(ty = Type.COMPLEX(cls = node))
-        algorithm
-          cls_tree := Class.classTree(InstNode.getClass(node));
-          index := ClassTree.lookupComponentIndex(name, cls_tree);
-        then
-          listGet(exp.elements, index);
-
-      case CREF(ty = Type.COMPLEX(cls = node))
-        algorithm
-          cls_tree := Class.classTree(InstNode.getClass(node));
-          (node, false) := ClassTree.lookupElement(name, cls_tree);
-          ty := InstNode.getType(node);
-          cref := ComponentRef.prefixCref(node, ty, {}, exp.cref);
-          ty := Type.liftArrayLeftList(ty, Type.arrayDims(exp.ty));
-        then
-          CREF(ty, cref);
-
-    end match;
-  end lookupRecordField;
-
   function enumIndexExp
     input Expression enumExp;
     output Expression indexExp;
@@ -5010,9 +4977,11 @@ public
       local
         InstNode node;
         Class cls;
+        ClassTree cls_tree;
         Type ty;
         Integer index;
         list<Expression> expl;
+        ComponentRef cref;
 
       case RECORD(ty = Type.COMPLEX(cls = node))
         algorithm
@@ -5020,6 +4989,16 @@ public
           index := Class.lookupComponentIndex(elementName, cls);
         then
           listGet(recordExp.elements, index);
+
+      case CREF(ty = Type.COMPLEX(cls = node))
+        algorithm
+          cls_tree := Class.classTree(InstNode.getClass(node));
+          (node, false) := ClassTree.lookupElement(elementName, cls_tree);
+          ty := InstNode.getType(node);
+          cref := ComponentRef.prefixCref(node, ty, {}, recordExp.cref);
+          ty := Type.liftArrayLeftList(ty, Type.arrayDims(recordExp.ty));
+        then
+          CREF(ty, cref);
 
       case ARRAY(elements = {}, ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
         algorithm
