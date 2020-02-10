@@ -1028,6 +1028,7 @@ algorithm
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
       BackendDAE.BackendDAE initDAE;
       list<BackendDAE.Equation> removedInitialEquationLst;
+      Option<BackendDAE.BackendDAE> initDAE_lambda0_option;
       Real fsize;
       Absyn.ComponentRef classNameCref;
 
@@ -1074,7 +1075,7 @@ algorithm
       end if;
 
       //BackendDump.printBackendDAE(dlow);
-      (bdae, initDAE, removedInitialEquationLst) := DAEMode.getEqSystemDAEmode(dlow,inFileNamePrefix);
+      (bdae, initDAE, initDAE_lambda0_option, removedInitialEquationLst) := DAEMode.getEqSystemDAEmode(dlow,inFileNamePrefix);
       ExecStat.execStat("Backend");
 
       timeBackend := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
@@ -1086,7 +1087,7 @@ algorithm
         ExecStat.execStat("Serialize solved system");
       end if;
 
-      (libs, file_dir, timeSimCode, timeTemplates) := generateModelCodeDAE(bdae, initDAE, removedInitialEquationLst, SymbolTable.getAbsyn(), className, filenameprefix, inSimSettingsOpt, args);
+      (libs, file_dir, timeSimCode, timeTemplates) := generateModelCodeDAE(bdae, initDAE, initDAE_lambda0_option, removedInitialEquationLst, SymbolTable.getAbsyn(), className, filenameprefix, inSimSettingsOpt, args);
       timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
       timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
 
@@ -1119,6 +1120,7 @@ protected function generateModelCodeDAE
   and call the template target generator. "
   input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.BackendDAE inInitDAE;
+  input Option<BackendDAE.BackendDAE> initDAE_lambda0_option;
   input list<BackendDAE.Equation> inRemovedInitialEquationLst;
   input Absyn.Program p;
   input Absyn.Path className;
@@ -1142,6 +1144,7 @@ protected
   Integer numCheckpoints;
   list<SimCodeVar.SimVar> tempVars = {};
   BackendDAE.BackendDAE emptyBDAE;
+  BackendDAE.BackendDAE initDAE_lambda0;
 
   SimCode.ModelInfo modelInfo;
   SimCode.ExtObjInfo extObjInfo;
@@ -1176,7 +1179,7 @@ protected
   tuple<Option<BackendDAE.SymbolicJacobian>, BackendDAE.SparsePattern, BackendDAE.SparseColoring> daeModeJac;
   SimCode.JacobianMatrix symDAESparsPattern;
   list<SimCode.JacobianMatrix> symJacs, SymbolicJacs, SymbolicJacsNLS, SymbolicJacsTemp, SymbolicJacsStateSelect;
-  list<SimCode.SimEqSystem> initialEquations, removedInitialEquations, jacobianEquations;
+  list<SimCode.SimEqSystem> initialEquations, initialEquations_lambda0, removedInitialEquations, jacobianEquations;
   list<SimCodeVar.SimVar> jacobianSimvars, seedVars;
   list<SimCode.SimEqSystem> startValueEquations;        // --> updateBoundStartValues
   list<SimCode.SimEqSystem> maxValueEquations;          // --> updateBoundMaxValues
@@ -1215,6 +1218,14 @@ algorithm
     // generate equations for initDAE
     (initialEquations, uniqueEqIndex, tempVars) := SimCodeUtil.createInitialEquations(inInitDAE, uniqueEqIndex, tempVars);
     //initialEquations := listReverse(initialEquations);
+
+    // generate equations for initDAE_lambda0
+    if isSome(initDAE_lambda0_option) then
+      SOME(initDAE_lambda0) := initDAE_lambda0_option;
+      (initialEquations_lambda0, uniqueEqIndex, tempVars) := SimCodeUtil.createInitialEquations_lambda0(initDAE_lambda0, uniqueEqIndex, tempVars);
+    else
+      initialEquations_lambda0 := {};
+    end if;
 
     // generate equations for removed initial equations
     (removedInitialEquations, uniqueEqIndex, tempVars) := SimCodeUtil.createNonlinearResidualEquations(inRemovedInitialEquationLst, uniqueEqIndex, tempVars, inBackendDAE.shared.functionTree);
@@ -1343,7 +1354,7 @@ algorithm
                               {},
                               {},
                               initialEquations,
-                              {},
+                              initialEquations_lambda0,
                               removedInitialEquations,
                               startValueEquations,
                               nominalValueEquations,
