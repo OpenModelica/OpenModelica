@@ -250,7 +250,7 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.SPLIT_CONSTANT_PARTS_SYMJAC,
   Flags.NF_DUMP_FLAT,
   Flags.DUMP_FORCE_FMI_ATTRIBUTES,
-  Flags.DUMP_FORCE_FMI_CSE_VARIABLES
+  Flags.DUMP_FORCE_FMI_INTERNAL_VARIABLES
 };
 
 protected

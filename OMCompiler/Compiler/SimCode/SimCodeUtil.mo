@@ -5173,6 +5173,59 @@ algorithm
   end if;
 end makeTmpRealSimCodeVar;
 
+protected function sortSparsePatternForFmiVariables
+  "function which sorts the indexes and dependencies for the
+  modelStructure in modeldescription.xml."
+  input list<SimCodeVar.SimVar> inSimVars;
+  input BackendDAE.SparsePatternCrefs inSparsePattern;
+  output list<tuple<Integer, list<Integer>>> outSparse = {};
+protected
+  HashTable.HashTable ht;
+  DAE.ComponentRef cref;
+  Integer size, i, j;
+  list<Integer> intLst;
+  array<Integer> intArr;
+  list<DAE.ComponentRef> crefs;
+algorithm
+  //create HT
+  size := listLength(inSimVars);
+  if size>0 then
+    ht := HashTable.emptyHashTableSized(size);
+    for var in inSimVars loop
+      SimCodeVar.SIMVAR(name = cref) := var;
+      i := getVariableFMIIndex(var);
+      //print("Setup HashTable with cref: " + ComponentReference.printComponentRefStr(cref) + " index: "+ intString(i) + "\n");
+      if not intEq(i,0) then // 0 means fmi_index = NONE() and represents FMI internalVariables and should be eliminated
+        ht := BaseHashTable.add((cref, i), ht);
+      end if;
+    end for;
+
+    //translate
+    for tpl in inSparsePattern loop
+      try
+        (cref, crefs) := tpl;
+        i := BaseHashTable.get(cref, ht);
+        intLst := {};
+        for cr in crefs loop
+          try
+            j := BaseHashTable.get(cr, ht);
+            intLst := j :: intLst;
+          else
+            // just in case if dependencies contains intermediateVariables
+          end try;
+        end for;
+        intArr := listArray(intLst);
+        Array.heapSort(intArr);
+        intLst := arrayList(intArr);
+        outSparse := (i, intLst) :: outSparse;
+      else
+        // just in case if we eliminate all variables starting with $
+      end try;
+    end for;
+    outSparse := List.sort(outSparse, Util.compareTupleIntGt);
+  end if;
+end sortSparsePatternForFmiVariables;
+
 protected function sortSparsePattern
   input list<SimCodeVar.SimVar> inSimVars;
   input BackendDAE.SparsePatternCrefs inSparsePattern;
@@ -8000,7 +8053,7 @@ algorithm
   end if;
 
   // clear up cse variable (eg:$CSE) to improve readability of modelDescription.xml for FMI-2.0
-  if not Flags.isSet(Flags.DUMP_FORCE_FMI_CSE_VARIABLES) and CommonSubExpression.isInternalCref(simVar.name) then
+  if not Flags.isSet(Flags.DUMP_FORCE_FMI_INTERNAL_VARIABLES) and CommonSubExpression.isInternalCref(simVar.name) then
     simVar.exportVar := false;
   end if;
 
@@ -13149,12 +13202,12 @@ algorithm
     varsB := getSimVars2Crefs(diffCrefsA, crefSimVarHT);
     varsA := listAppend(varsA, varsB);
     //print("-- created vars for AB\n");
-    sparseInts := sortSparsePattern(varsA, spTA, true);
+    sparseInts := sortSparsePatternForFmiVariables(varsA, spTA);
     //print("-- sorted vars for AB\n");
     allUnknowns := translateSparsePatterInts2FMIUnknown(sparseInts, {});
 
     // get derivatives pattern
-    intLst := list(getVariableIndex(v) for v in inModelInfo.vars.derivativeVars);
+    intLst := list(getVariableFMIIndex(v) for v in inModelInfo.vars.derivativeVars);
     derivatives := list(fmiUnknown for fmiUnknown guard(Util.boolOrList(list(isFmiUnknown(i, fmiUnknown) for i in intLst))) in allUnknowns);
 
     // get output pattern
@@ -13163,12 +13216,12 @@ algorithm
     varsC := List.filterOnTrue(inModelInfo.vars.boolAlgVars, isOutputSimVar); // check for outputs in boolAlgVar
     varsD := List.filterOnTrue(inModelInfo.vars.stringAlgVars, isOutputSimVar); // check for outputs in stringAlgVars
     allOutputVars := listAppend(listAppend(varsA,varsB),listAppend(varsC,varsD));
-    intLst := list(getVariableIndex(v) for v in allOutputVars);
+    intLst := list(getVariableFMIIndex(v) for v in allOutputVars);
     outputs := list(fmiUnknown for fmiUnknown guard(Util.boolOrList(list(isFmiUnknown(i, fmiUnknown) for i in intLst))) in allUnknowns);
 
     // get discrete states pattern
     clockedStates := List.filterOnTrue(inModelInfo.vars.algVars, isClockedStateSimVar);
-    intLst := list(getVariableIndex(v) for v in clockedStates);
+    intLst := list(getVariableFMIIndex(v) for v in clockedStates);
     discreteStates := list(fmiUnknown for fmiUnknown guard(Util.boolOrList(list(isFmiUnknown(i, fmiUnknown) for i in intLst))) in allUnknowns);
 
     // discreteStates
@@ -13410,7 +13463,7 @@ algorithm
   vars1 := listAppend(vars1, vars2);
 
   // sort the vars with FMI Index
-  sparseInts := sortSparsePattern(vars1, rowspt, true);
+  sparseInts := sortSparsePatternForFmiVariables(vars1, rowspt);
   // populate the FmiInitial unknowns according to FMI ModelDescription.xml format
   outFmiUnknownlist := translateSparsePatterInts2FMIUnknown(sparseInts, {});
 end getFmiInitialUnknowns;
