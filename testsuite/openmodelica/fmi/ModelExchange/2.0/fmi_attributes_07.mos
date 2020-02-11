@@ -37,7 +37,7 @@ readFile("fmi_attributes_07.xml"); getErrorString();
 // ""
 // 0
 // ""
-// 4
+// 0
 // ""
 // "  <ModelVariables>
 //   <!-- Index of variable = \"1\" -->
@@ -103,7 +103,7 @@ readFile("fmi_attributes_07.xml"); getErrorString();
 //   </ModelVariables>
 // "
 // ""
-// 4
+// 0
 // ""
 // "  <ModelStructure>
 //     <Outputs>
