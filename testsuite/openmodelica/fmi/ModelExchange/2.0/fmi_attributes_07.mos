@@ -37,7 +37,7 @@ readFile("fmi_attributes_07.xml"); getErrorString();
 // ""
 // 0
 // ""
-// 0
+// 4
 // ""
 // "  <ModelVariables>
 //   <!-- Index of variable = \"1\" -->
@@ -93,10 +93,17 @@ readFile("fmi_attributes_07.xml"); getErrorString();
 //     >
 //     <Real start=\"10.0\"/>
 //   </ScalarVariable>
+//   <!-- Index of variable = \"8\" -->
+//   <ScalarVariable
+//     name=\"_D_outputAlias_y\"
+//     valueReference=\"5\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
 //   </ModelVariables>
 // "
 // ""
-// 0
+// 4
 // ""
 // "  <ModelStructure>
 //     <Outputs>

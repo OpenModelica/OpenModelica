@@ -121,6 +121,13 @@ readFile("fmi_attributes_09.xml"); getErrorString();
 //     >
 //     <Real start=\"10.0\"/>
 //   </ScalarVariable>
+//   <!-- Index of variable = \"10\" -->
+//   <ScalarVariable
+//     name=\"_D_outputAlias_y\"
+//     valueReference=\"6\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
 //   </ModelVariables>
 // "
 // ""
@@ -128,15 +135,15 @@ readFile("fmi_attributes_09.xml"); getErrorString();
 // ""
 // "  <ModelStructure>
 //     <Outputs>
-//       <Unknown index=\"7\" dependencies=\"1\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"6\" dependencies=\"1\" dependenciesKind=\"dependent\" />
 //     </Outputs>
 //     <Derivatives>
-//       <Unknown index=\"2\" dependencies=\"6\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"2\" dependencies=\"5\" dependenciesKind=\"dependent\" />
 //     </Derivatives>
 //     <InitialUnknowns>
 //       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"2\" dependencies=\"6 10\" dependenciesKind=\"dependent dependent\" />
-//       <Unknown index=\"7\" dependencies=\"10\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"2\" dependencies=\"5 9\" dependenciesKind=\"dependent dependent\" />
+//       <Unknown index=\"6\" dependencies=\"9\" dependenciesKind=\"dependent\" />
 //     </InitialUnknowns>
 //   </ModelStructure>
 // "
