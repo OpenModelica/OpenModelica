@@ -5173,60 +5173,8 @@ algorithm
   end if;
 end makeTmpRealSimCodeVar;
 
-protected function sortSparsePatternForFmiVariables
-  "function which sorts the indexes and dependencies for the
-  modelStructure in modeldescription.xml."
-  input list<SimCodeVar.SimVar> inSimVars;
-  input BackendDAE.SparsePatternCrefs inSparsePattern;
-  output list<tuple<Integer, list<Integer>>> outSparse = {};
-protected
-  HashTable.HashTable ht;
-  DAE.ComponentRef cref;
-  Integer size, i, j;
-  list<Integer> intLst;
-  array<Integer> intArr;
-  list<DAE.ComponentRef> crefs;
-algorithm
-  //create HT
-  size := listLength(inSimVars);
-  if size>0 then
-    ht := HashTable.emptyHashTableSized(size);
-    for var in inSimVars loop
-      SimCodeVar.SIMVAR(name = cref) := var;
-      i := getVariableFMIIndex(var);
-      //print("Setup HashTable with cref: " + ComponentReference.printComponentRefStr(cref) + " index: "+ intString(i) + "\n");
-      if not intEq(i,0) then // 0 means fmi_index = NONE() and represents FMI internalVariables and should be eliminated
-        ht := BaseHashTable.add((cref, i), ht);
-      end if;
-    end for;
-
-    //translate
-    for tpl in inSparsePattern loop
-      try
-        (cref, crefs) := tpl;
-        i := BaseHashTable.get(cref, ht);
-        intLst := {};
-        for cr in crefs loop
-          try
-            j := BaseHashTable.get(cr, ht);
-            intLst := j :: intLst;
-          else
-            // just in case if dependencies contains intermediateVariables
-          end try;
-        end for;
-        intArr := listArray(intLst);
-        Array.heapSort(intArr);
-        intLst := arrayList(intArr);
-        outSparse := (i, intLst) :: outSparse;
-      else
-        // just in case if we eliminate all variables starting with $
-      end try;
-    end for;
-    outSparse := List.sort(outSparse, Util.compareTupleIntGt);
-  end if;
-end sortSparsePatternForFmiVariables;
-
 protected function sortSparsePattern
+ "Sorts the indices and dependencies for the modelStructure section in modeldescription.xml."
   input list<SimCodeVar.SimVar> inSimVars;
   input BackendDAE.SparsePatternCrefs inSparsePattern;
   input Boolean useFMIIndex;
@@ -5241,14 +5189,14 @@ protected
 algorithm
   //create HT
   size := listLength(inSimVars);
-  if size>0 then
+  if size > 0 then
     ht := HashTable.emptyHashTableSized(size);
     for var in inSimVars loop
       if not useFMIIndex then
-        SimCodeVar.SIMVAR(name = cref, index=i) := var;
+        SimCodeVar.SIMVAR(name=cref, index=i) := var;
       else
-        SimCodeVar.SIMVAR(name = cref) := var;
-        i := getVariableIndex(var);
+        SimCodeVar.SIMVAR(name=cref) := var;
+        i := getVariableFMIIndex(var);
       end if;
       //print("Setup HashTable with cref: " + ComponentReference.printComponentRefStr(cref) + " index: "+ intString(i) + "\n");
       ht := BaseHashTable.add((cref, i), ht);
@@ -5256,17 +5204,21 @@ algorithm
 
     //translate
     for tpl in inSparsePattern loop
-       (cref, crefs) := tpl;
-       i := BaseHashTable.get(cref, ht);
-       intLst := {};
-       for cr in crefs loop
-         j := BaseHashTable.get(cr, ht);
-         intLst := j :: intLst;
-       end for;
-       intArr := listArray(intLst);
-       Array.heapSort(intArr);
-       intLst := arrayList(intArr);
-       outSparse := (i, intLst) :: outSparse;
+      (cref, crefs) := tpl;
+      i := BaseHashTable.get(cref, ht);
+      if i > 0 then // 0 means fmi_index = NONE() and represents internal variables that should be eliminated
+        intLst := {};
+        for cr in crefs loop
+          j := BaseHashTable.get(cr, ht);
+          if j > 0 then // 0 means fmi_index = NONE() and represents internal variables that should be eliminated
+            intLst := j :: intLst;
+          end if;
+        end for;
+        intArr := listArray(intLst);
+        Array.heapSort(intArr);
+        intLst := arrayList(intArr);
+        outSparse := (i, intLst) :: outSparse;
+      end if;
     end for;
     outSparse := List.sort(outSparse, Util.compareTupleIntGt);
   end if;
@@ -13202,7 +13154,7 @@ algorithm
     varsB := getSimVars2Crefs(diffCrefsA, crefSimVarHT);
     varsA := listAppend(varsA, varsB);
     //print("-- created vars for AB\n");
-    sparseInts := sortSparsePatternForFmiVariables(varsA, spTA);
+    sparseInts := sortSparsePattern(varsA, spTA, true);
     //print("-- sorted vars for AB\n");
     allUnknowns := translateSparsePatterInts2FMIUnknown(sparseInts, {});
 
@@ -13463,7 +13415,7 @@ algorithm
   vars1 := listAppend(vars1, vars2);
 
   // sort the vars with FMI Index
-  sparseInts := sortSparsePatternForFmiVariables(vars1, rowspt);
+  sparseInts := sortSparsePattern(vars1, rowspt, true);
   // populate the FmiInitial unknowns according to FMI ModelDescription.xml format
   outFmiUnknownlist := translateSparsePatterInts2FMIUnknown(sparseInts, {});
 end getFmiInitialUnknowns;
