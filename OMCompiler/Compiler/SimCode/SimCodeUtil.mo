@@ -5206,19 +5206,17 @@ algorithm
     for tpl in inSparsePattern loop
       (cref, crefs) := tpl;
       i := BaseHashTable.get(cref, ht);
-      if i > 0 then // 0 means fmi_index = NONE() and represents internal variables that should be eliminated
-        intLst := {};
-        for cr in crefs loop
-          j := BaseHashTable.get(cr, ht);
-          if j > 0 then // 0 means fmi_index = NONE() and represents internal variables that should be eliminated
-            intLst := j :: intLst;
-          end if;
-        end for;
-        intArr := listArray(intLst);
-        Array.heapSort(intArr);
-        intLst := arrayList(intArr);
-        outSparse := (i, intLst) :: outSparse;
-      end if;
+      intLst := {};
+      for cr in crefs loop
+        j := BaseHashTable.get(cr, ht);
+        if j > 0 then // 0 means fmi_index = NONE() and represents internal variables that should be eliminated
+          intLst := j :: intLst;
+        end if;
+      end for;
+      intArr := listArray(intLst);
+      Array.heapSort(intArr);
+      intLst := arrayList(intArr);
+      outSparse := (i, intLst) :: outSparse;
     end for;
     outSparse := List.sort(outSparse, Util.compareTupleIntGt);
   end if;
