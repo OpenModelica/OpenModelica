@@ -78,6 +78,11 @@ The object constructor requires a minimum of 2 input arguments which are strings
 
 >>> ModelicaSystem(mod,"BouncingBall.mo","BouncingBall",["Modelica", "SystemDynamics", "dcmotor.mo"])
 
+-  The fourth input argument (optional), is a keyword argument which is used to set the command line options e.g.,
+
+>>> ModelicaSystem(mod,"BouncingBall.mo","BouncingBall",["Modelica", "SystemDynamics", "dcmotor.mo"],commandLineOptions="-d=newInst")
+
+
 WorkDirectory
 ~~~~~~~~~~~~~
 For each OMJulia session a temporary work directory is created and the results are published in that working directory, Inorder to get the workdirectory the users can
@@ -148,8 +153,8 @@ Usage of getMethods
 ["0.002", "1e-06"]
 
 The getSolution method can be used in two different ways.
- 1) using default result filename
- 2) use the result filenames provided by user
+ #. using default result filename
+ #. use the result filenames provided by user
 
 This provides a way to compare simulation results and perform regression testing
 
@@ -209,12 +214,14 @@ Similary we can also use setInputs() to set a value for the inputs during variou
 
 >>> setInputs(mod,"cAi=1")
 
-And then finally we can simulate the model using, The simulate() API can be used in two methods
-  1) without any arguments
-  2) resultfile names provided by user (only filename is allowed and not the location)
+The model can be simulated using the `simulate` API in the following ways,
+  #. without any arguments
+  #. resultfile (keyword argument) - (only filename is allowed and not the location)
+  #. simflags (keyword argument) - runtime simulationflags supported by OpenModelica
 
 >>> simulate(mod) // method-1 default result file name will be used
 >>> simulate(mod,resultfile="tmpbouncingBall.mat") // method-2 resultfile name provided by users
+>>> simulate(mod,simflags="-noEventEmit -noRestart -override=e=0.3,g=9.71") // method-3 simulationflags provided by users
 
 
 Linearization
