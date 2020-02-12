@@ -8589,8 +8589,8 @@ protected function allInitOptimizationModules
     (SymbolicJacobian.constantLinearSystem, "constantLinearSystem"),
     (BackendDAEOptimize.inlineHomotopy, "inlineHomotopy"),
     (BackendDAEOptimize.inlineFunctionInLoops, "forceInlineFunctionInLoops"), // before simplifyComplexFunction
-    (BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction"),
     (CommonSubExpression.wrapFunctionCalls, "wrapFunctionCalls"),
+    (BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction"),
     (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization"), // before tearing
     (Tearing.tearingSystem, "tearingSystem"),
     (BackendDAEOptimize.simplifyLoops, "simplifyLoops"),

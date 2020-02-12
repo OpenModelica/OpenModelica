@@ -267,7 +267,7 @@ algorithm
     end if;
 
     // Remove the globalKnownVars for the initialization set again
-    initdae.shared := BackendDAEUtil.setSharedGlobalKnownVars(initdae.shared, BackendVariable.emptyVars());
+    // initdae.shared := BackendDAEUtil.setSharedGlobalKnownVars(initdae.shared, BackendVariable.emptyVars());
 
     // update the fixed attribute in the simulation DAE
     outSimDAE := BackendVariable.traverseBackendDAE(outSimDAE, updateFixedAttribute, BackendVariable.listVar(dumpVars));
