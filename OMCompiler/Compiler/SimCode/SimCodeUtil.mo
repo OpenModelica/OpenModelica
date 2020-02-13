@@ -8004,8 +8004,8 @@ algorithm
     derivSimvar := clearUpDefaultFmiAttributes(derivSimvar) "just in case";
   end if;
 
-  // clear up cse variable (eg:$CSE) to improve readability of modelDescription.xml for FMI-2.0
-  if not Flags.isSet(Flags.DUMP_FORCE_FMI_INTERNAL_VARIABLES) and CommonSubExpression.isCSECref(simVar.name) then
+  // clear up all internal variable starting with $ (eg:$CSE ), except STATE() vars to improve readability of modelDescription.xml for FMI-2.0
+  if not Flags.isSet(Flags.DUMP_FORCE_FMI_INTERNAL_VARIABLES) and CommonSubExpression.isInternalCref(simVar.name) and not BackendVariable.isStateVar(dlowVar) then
     simVar.exportVar := false;
   end if;
 
