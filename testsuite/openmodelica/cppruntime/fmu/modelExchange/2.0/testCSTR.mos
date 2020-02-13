@@ -166,33 +166,6 @@ getErrorString();
 //   </ScalarVariable>
 //   <!-- Index of variable = \"9\" -->
 //   <ScalarVariable
-//     name=\"_D_cse1\"
-//     valueReference=\"8\"
-//     variability=\"discrete\"
-//     clockIndex=\"1\"
-//     >
-//     <Real/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"10\" -->
-//   <ScalarVariable
-//     name=\"_D_cse2\"
-//     valueReference=\"9\"
-//     variability=\"discrete\"
-//     clockIndex=\"1\"
-//     >
-//     <Real/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"11\" -->
-//   <ScalarVariable
-//     name=\"_D_cse3\"
-//     valueReference=\"10\"
-//     variability=\"discrete\"
-//     clockIndex=\"1\"
-//     >
-//     <Real/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"12\" -->
-//   <ScalarVariable
 //     name=\"_D_outputAlias_TK\"
 //     valueReference=\"11\"
 //     description=\"Coolant temperature\"
@@ -202,7 +175,7 @@ getErrorString();
 //     initial=\"exact\">
 //     <Real start=\"112.9\" nominal=\"100.0\" unit=\"degC\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"13\" -->
+//   <!-- Index of variable = \"10\" -->
 //   <ScalarVariable
 //     name=\"_D_outputAlias_cA\"
 //     valueReference=\"12\"
@@ -213,7 +186,7 @@ getErrorString();
 //     initial=\"exact\">
 //     <Real start=\"2.14\" unit=\"mol/l\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"14\" -->
+//   <!-- Index of variable = \"11\" -->
 //   <ScalarVariable
 //     name=\"_D_outputAlias_cB\"
 //     valueReference=\"13\"
@@ -224,7 +197,7 @@ getErrorString();
 //     initial=\"exact\">
 //     <Real start=\"1.09\" unit=\"mol/l\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"15\" -->
+//   <!-- Index of variable = \"12\" -->
 //   <ScalarVariable
 //     name=\"QK_flow\"
 //     valueReference=\"14\"
@@ -233,7 +206,7 @@ getErrorString();
 //     >
 //     <Real start=\"-1113.5\" nominal=\"1000.0\" unit=\"kJ/h\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"16\" -->
+//   <!-- Index of variable = \"13\" -->
 //   <ScalarVariable
 //     name=\"QK_flow_sampled\"
 //     valueReference=\"15\"
@@ -242,7 +215,7 @@ getErrorString();
 //     >
 //     <Real/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"17\" -->
+//   <!-- Index of variable = \"14\" -->
 //   <ScalarVariable
 //     name=\"T\"
 //     valueReference=\"16\"
@@ -252,7 +225,7 @@ getErrorString();
 //     initial=\"exact\">
 //     <Real start=\"114.2\" nominal=\"100.0\" unit=\"degC\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"18\" -->
+//   <!-- Index of variable = \"15\" -->
 //   <ScalarVariable
 //     name=\"TF\"
 //     valueReference=\"17\"
@@ -261,7 +234,7 @@ getErrorString();
 //     >
 //     <Real start=\"104.9\" unit=\"degC\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"19\" -->
+//   <!-- Index of variable = \"16\" -->
 //   <ScalarVariable
 //     name=\"TK\"
 //     valueReference=\"18\"
@@ -272,7 +245,7 @@ getErrorString();
 //     >
 //     <Real nominal=\"100.0\" unit=\"degC\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"20\" -->
+//   <!-- Index of variable = \"17\" -->
 //   <ScalarVariable
 //     name=\"VF_flow\"
 //     valueReference=\"19\"
@@ -281,7 +254,7 @@ getErrorString();
 //     >
 //     <Real start=\"14.19\" unit=\"1/h\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"21\" -->
+//   <!-- Index of variable = \"18\" -->
 //   <ScalarVariable
 //     name=\"cA\"
 //     valueReference=\"20\"
@@ -292,7 +265,7 @@ getErrorString();
 //     >
 //     <Real unit=\"mol/l\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"22\" -->
+//   <!-- Index of variable = \"19\" -->
 //   <ScalarVariable
 //     name=\"cB\"
 //     valueReference=\"21\"
@@ -303,7 +276,7 @@ getErrorString();
 //     >
 //     <Real unit=\"mol/l\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"23\" -->
+//   <!-- Index of variable = \"20\" -->
 //   <ScalarVariable
 //     name=\"k[1]\"
 //     valueReference=\"22\"
@@ -312,7 +285,7 @@ getErrorString();
 //     >
 //     <Real/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"24\" -->
+//   <!-- Index of variable = \"21\" -->
 //   <ScalarVariable
 //     name=\"k[2]\"
 //     valueReference=\"23\"
@@ -321,7 +294,7 @@ getErrorString();
 //     >
 //     <Real/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"25\" -->
+//   <!-- Index of variable = \"22\" -->
 //   <ScalarVariable
 //     name=\"k[3]\"
 //     valueReference=\"24\"
@@ -330,7 +303,7 @@ getErrorString();
 //     >
 //     <Real/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"26\" -->
+//   <!-- Index of variable = \"23\" -->
 //   <ScalarVariable
 //     name=\"AR\"
 //     valueReference=\"25\"
@@ -340,7 +313,7 @@ getErrorString();
 //     >
 //     <Real start=\"0.215\" unit=\"m2\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"27\" -->
+//   <!-- Index of variable = \"24\" -->
 //   <ScalarVariable
 //     name=\"Cp\"
 //     valueReference=\"26\"
@@ -349,7 +322,7 @@ getErrorString();
 //     >
 //     <Real start=\"3010.0\" unit=\"J/(kg.K)\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"28\" -->
+//   <!-- Index of variable = \"25\" -->
 //   <ScalarVariable
 //     name=\"CpK\"
 //     valueReference=\"27\"
@@ -359,7 +332,7 @@ getErrorString();
 //     >
 //     <Real start=\"2000.0\" unit=\"J/(kg.K)\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"29\" -->
+//   <!-- Index of variable = \"26\" -->
 //   <ScalarVariable
 //     name=\"E[1]\"
 //     valueReference=\"28\"
@@ -368,7 +341,7 @@ getErrorString();
 //     >
 //     <Real start=\"-9758.299999999999\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"30\" -->
+//   <!-- Index of variable = \"27\" -->
 //   <ScalarVariable
 //     name=\"E[2]\"
 //     valueReference=\"29\"
@@ -377,7 +350,7 @@ getErrorString();
 //     >
 //     <Real start=\"-9758.299999999999\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"31\" -->
+//   <!-- Index of variable = \"28\" -->
 //   <ScalarVariable
 //     name=\"E[3]\"
 //     valueReference=\"30\"
@@ -386,7 +359,7 @@ getErrorString();
 //     >
 //     <Real start=\"-8560.0\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"32\" -->
+//   <!-- Index of variable = \"29\" -->
 //   <ScalarVariable
 //     name=\"H[1]\"
 //     valueReference=\"31\"
@@ -395,7 +368,7 @@ getErrorString();
 //     >
 //     <Real start=\"4200.0\" nominal=\"20000.0\" unit=\"J/mol\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"33\" -->
+//   <!-- Index of variable = \"30\" -->
 //   <ScalarVariable
 //     name=\"H[2]\"
 //     valueReference=\"32\"
@@ -404,7 +377,7 @@ getErrorString();
 //     >
 //     <Real start=\"-11000.0\" nominal=\"20000.0\" unit=\"J/mol\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"34\" -->
+//   <!-- Index of variable = \"31\" -->
 //   <ScalarVariable
 //     name=\"H[3]\"
 //     valueReference=\"33\"
@@ -413,7 +386,7 @@ getErrorString();
 //     >
 //     <Real start=\"-41850.0\" nominal=\"20000.0\" unit=\"J/mol\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"35\" -->
+//   <!-- Index of variable = \"32\" -->
 //   <ScalarVariable
 //     name=\"VR\"
 //     valueReference=\"34\"
@@ -423,7 +396,7 @@ getErrorString();
 //     >
 //     <Real start=\"0.01\" unit=\"m3\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"36\" -->
+//   <!-- Index of variable = \"33\" -->
 //   <ScalarVariable
 //     name=\"cAF\"
 //     valueReference=\"35\"
@@ -433,7 +406,7 @@ getErrorString();
 //     >
 //     <Real start=\"5.1\" unit=\"mol/l\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"37\" -->
+//   <!-- Index of variable = \"34\" -->
 //   <ScalarVariable
 //     name=\"k0[1]\"
 //     valueReference=\"36\"
@@ -442,7 +415,7 @@ getErrorString();
 //     >
 //     <Real start=\"357500000.0\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"38\" -->
+//   <!-- Index of variable = \"35\" -->
 //   <ScalarVariable
 //     name=\"k0[2]\"
 //     valueReference=\"37\"
@@ -451,7 +424,7 @@ getErrorString();
 //     >
 //     <Real start=\"357500000.0\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"39\" -->
+//   <!-- Index of variable = \"36\" -->
 //   <ScalarVariable
 //     name=\"k0[3]\"
 //     valueReference=\"38\"
@@ -460,7 +433,7 @@ getErrorString();
 //     >
 //     <Real start=\"2511944.444444445\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"40\" -->
+//   <!-- Index of variable = \"37\" -->
 //   <ScalarVariable
 //     name=\"kw\"
 //     valueReference=\"39\"
@@ -469,7 +442,7 @@ getErrorString();
 //     >
 //     <Real start=\"1120.0\" unit=\"W/(m2.K)\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"41\" -->
+//   <!-- Index of variable = \"38\" -->
 //   <ScalarVariable
 //     name=\"mK\"
 //     valueReference=\"40\"
@@ -479,7 +452,7 @@ getErrorString();
 //     >
 //     <Real start=\"5.0\" min=\"0.0\" unit=\"kg\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"42\" -->
+//   <!-- Index of variable = \"39\" -->
 //   <ScalarVariable
 //     name=\"rho\"
 //     valueReference=\"41\"
@@ -488,7 +461,7 @@ getErrorString();
 //     >
 //     <Real start=\"934.2000000000001\" min=\"0.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"43\" -->
+//   <!-- Index of variable = \"40\" -->
 //   <ScalarVariable
 //     name=\"samplePeriod\"
 //     valueReference=\"42\"
@@ -498,7 +471,7 @@ getErrorString();
 //     >
 //     <Real unit=\"s\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"44\" -->
+//   <!-- Index of variable = \"41\" -->
 //   <ScalarVariable
 //     name=\"fixedInitial\"
 //     valueReference=\"0\"
@@ -508,7 +481,7 @@ getErrorString();
 //     >
 //     <Boolean/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"45\" -->
+//   <!-- Index of variable = \"42\" -->
 //   <ScalarVariable
 //     name=\"solverMethod\"
 //     valueReference=\"0\"
@@ -520,23 +493,23 @@ getErrorString();
 //   </ModelVariables>
 //   <ModelStructure>
 //     <Outputs>
-//       <Unknown index=\"19\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
-//       <Unknown index=\"21\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
-//       <Unknown index=\"22\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
+//       <Unknown index=\"16\" dependencies=\"1 2 3 4 12 15 17\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
+//       <Unknown index=\"18\" dependencies=\"1 2 3 4 12 15 17\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
+//       <Unknown index=\"19\" dependencies=\"1 2 3 4 12 15 17\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
 //     </Outputs>
 //     <DiscreteStates>
-//       <Unknown index=\"12\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
-//       <Unknown index=\"13\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
-//       <Unknown index=\"14\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
-//       <Unknown index=\"17\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
+//       <Unknown index=\"9\" dependencies=\"1 2 3 4 12 15 17\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
+//       <Unknown index=\"10\" dependencies=\"1 2 3 4 12 15 17\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
+//       <Unknown index=\"11\" dependencies=\"1 2 3 4 12 15 17\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
+//       <Unknown index=\"14\" dependencies=\"1 2 3 4 12 15 17\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
 //     </DiscreteStates>
 //     <InitialUnknowns>
+//       <Unknown index=\"16\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"18\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"19\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"21\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"22\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"43\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"44\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"45\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"40\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"41\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"42\" dependencies=\"\" dependenciesKind=\"\" />
 //     </InitialUnknowns>
 //   </ModelStructure>
 // </fmiModelDescription>

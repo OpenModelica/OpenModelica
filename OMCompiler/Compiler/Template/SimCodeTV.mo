@@ -261,14 +261,16 @@ package SimCodeVar
       AliasVariable aliasvar;
       DAE.ElementSource source;
       Option<Causality> causality;
-      Option<Integer> variable_index;
+      Option<Integer> variable_index "valueReference";
+      Option<Integer> fmi_index "index of variable in modelDescription.xml";
       list<String> numArrayElement;
       Boolean isValueChangeable;
       Boolean isProtected;
       Boolean hideResult;
       Option<String> matrixName;
-      Option<Variability> variability; // variabilty attribute of a variable needed for FMI-2.0
-      Option<Initial> initial_;  // initial attribute of a variable needed for FMI-2.0
+      Option<Variability> variability "FMI-2.0 variabilty attribute";
+      Option<Initial> initial_ "FMI-2.0 initial attribute";
+      Boolean exportVar "true for internal variables that are introduced in the symbolic transformation process";
     end SIMVAR;
   end SimVar;
 
@@ -1053,6 +1055,11 @@ package SimCodeUtil
     input SimCodeVar.SimVar inVar;
     output Integer outVariableIndex;
   end getVariableIndex;
+
+  function getVariableFMIIndex
+    input SimCodeVar.SimVar inVar;
+    output Integer outIndex;
+  end getVariableFMIIndex;
 
   function getMaxSimEqSystemIndex
     input SimCode.SimCode simCode;

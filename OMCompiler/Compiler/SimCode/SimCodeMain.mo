@@ -1300,7 +1300,7 @@ algorithm
     ((_, resVars)) := BackendVariable.traverseBackendDAEVars(daeVars, BackendVariable.collectVarKindVarinVariables, (BackendVariable.isDAEmodeResVar, BackendVariable.emptyVars()));
     ((residualVars, _)) :=  BackendVariable.traverseBackendDAEVars(resVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
     residualVars := SimCodeUtil.rewriteIndex(residualVars, 0);
-    (residualVars, _) := SimCodeUtil.setVariableIndexHelper(residualVars, 0);
+    (residualVars, _) := SimCodeUtil.setVariableIndexHelper(residualVars, 0, 0);
     crefToSimVarHT:= List.fold(residualVars,HashTableCrefSimVar.addSimVarToHashTable,crefToSimVarHT);
 
     // create auxiliary variables, set index and push them SimCode Hash Table
@@ -1308,7 +1308,7 @@ algorithm
     ((auxiliaryVars, _)) :=  BackendVariable.traverseBackendDAEVars(auxVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
     auxiliaryVars := List.sort(auxiliaryVars, SimCodeUtil.simVarCompareByCrefSubsAtEndlLexical);
     auxiliaryVars := SimCodeUtil.rewriteIndex(auxiliaryVars, 0);
-    (auxiliaryVars, _) := SimCodeUtil.setVariableIndexHelper(auxiliaryVars, 0);
+    (auxiliaryVars, _) := SimCodeUtil.setVariableIndexHelper(auxiliaryVars, 0, 0);
     crefToSimVarHT:= List.fold(auxiliaryVars,HashTableCrefSimVar.addSimVarToHashTable,crefToSimVarHT);
 
     // create SimCodeVars for algebraic states

@@ -12,6 +12,7 @@ fmi_attributes_05.mos \
 fmi_attributes_06.mos \
 fmi_attributes_07.mos \
 fmi_attributes_08.mos \
+fmi_attributes_09.mos \
 FMIExercise.mos \
 HelloFMIWorld.mos \
 HelloFMIWorldEvent.mos \

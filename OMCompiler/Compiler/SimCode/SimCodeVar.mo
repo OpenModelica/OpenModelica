@@ -95,7 +95,8 @@ public uniontype SimVar "Information about a variable in a Modelica model."
     AliasVariable aliasvar;
     DAE.ElementSource source;
     Option<Causality> causality;
-    Option<Integer> variable_index;
+    Option<Integer> variable_index "valueReference";
+    Option<Integer> fmi_index "index of variable in modelDescription.xml";
     list<String> numArrayElement;
     Boolean isValueChangeable;
     Boolean isProtected;
@@ -104,6 +105,7 @@ public uniontype SimVar "Information about a variable in a Modelica model."
     Option<String> matrixName "if the varibale is a jacobian var, this is the corresponding matrix";
     Option<Variability> variability "FMI-2.0 variabilty attribute";
     Option<Initial> initial_ "FMI-2.0 initial attribute";
+    Boolean exportVar "variables will only be exported to the modelDescription.xml if this attribute is true";
   end SIMVAR;
 end SimVar;
 
