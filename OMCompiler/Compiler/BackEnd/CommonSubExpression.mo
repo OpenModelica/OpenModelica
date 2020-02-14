@@ -1586,22 +1586,6 @@ algorithm
   end match;
 end createVarsForExp;
 
-public function isInternalCref
-"Returns true if the cref is prefixed with '$'"
-  input DAE.ComponentRef cr;
-  output Boolean b;
-protected
-  String s;
-algorithm
-  b := matchcontinue(cr)
-    case(DAE.CREF_IDENT(ident=s))
-     then (substring(s, 1, 1) == "$");
-    case(DAE.CREF_QUAL(ident=s))
-     then (substring(s, 1, 1) == "$");
-    else false;
-  end matchcontinue;
-end isInternalCref;
-
 public function isCSECref
 "Returns true if the cref is prefixed with '$cse'"
   input DAE.ComponentRef cr;
