@@ -1648,77 +1648,88 @@ protected function minimalTearing
   input Boolean mixedSystem;
   output BackendDAE.StrongComponent ocomp;
 protected
-  Integer size;
-  array<Integer> nE, nV;
+  Integer size, i;
+  array<Integer> nE, nV, scalar_to_multi_dim_eq_mapping;
+  array<list<Integer>> collected_inner_eq_vars;
   array<Boolean> varArray, eqArray;
-  list<Integer> discreteVars={};
-  list<Integer> tearingvars = {}, residualequations = {};
-  list<Integer> tSel_always, tSel_prefer, tSel_avoid, tSel_never;
-  list<BackendDAE.Var> var_lst;
-  BackendDAE.InnerEquations helpInnerEquations = {};
+  list<Integer> discreteVars = {};
+  list<Integer> tearingvars = {}, residualequations = {}, algorithmEqns = {};
+  list<BackendDAE.Var> var_lst, activeVars;
+  list<BackendDAE.Equation> eqn_lst, activeEqns;
+  BackendDAE.InnerEquations innerEquationsLocalIndex = {}, innerEquations;
   BackendDAE.AdjacencyMatrix aMatrix, aMatrixT;
-  BackendDAE.Var var;
   Boolean linear;
   String DAEtypeStr;
   constant Boolean debug = false;
+  BackendDAE.EquationArray eqns;
+  BackendDAE.EqSystem subsyst;
+  BackendDAE.Variables vars;
 algorithm
-  size := BackendDAEUtil.systemSize(isyst);
   linear := BackendDAEUtil.getLinearfromJacType(jacType);
 
-  // Write warning if variables have annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
-  DAEtypeStr := BackendDump.printBackendDAEType2String(ishared.backendDAEType);
-  var_lst := List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
-  (tSel_always, tSel_prefer, tSel_avoid, tSel_never) := tearingSelect(var_lst, {}, DAEtypeStr);
-  if listLength(tSel_always)>0 or listLength(tSel_prefer)>0 or listLength(tSel_avoid)>0 or listLength(tSel_never)>0 then
-    Error.addCompilerWarning("Minimal Tearing is ignoring tearingSelect annotation for discrete variables.");
-  end if;
-
 try
-  // Create arrays
-  varArray := arrayCreate(size,false);
-  eqArray := arrayCreate(size,false);
+
+  // Create a local subsystem to simplify processing. This is not neccessary per-se but is helpful.
+  // A little bit of cost is something we can live with for getting a clear view of the system.
+  eqn_lst := BackendEquation.getList(eindex,BackendEquation.getEqnsFromEqSystem(isyst));
+  eqns := BackendEquation.listEquation(eqn_lst);
+  var_lst := List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
+  vars := BackendVariable.listVar1(var_lst);
+  subsyst := BackendDAEUtil.createEqSystem(vars, eqns);
+  // Get the adjacency lists for the system. We are only intersted in solvable matches here.
+  // TODO: This needs to use adjacencyMatrixEnhanced because we will eventually need all the
+  // incidence info (not just solvable) to sort the inner equations in the proper order.
+  (subsyst,aMatrix,aMatrixT) := BackendDAEUtil.getAdjacencyMatrix(subsyst, BackendDAE.SOLVABLE(),SOME(ishared.functionTree), BackendDAEUtil.isInitializationDAE(ishared));
+
+  // print("Minimal Tearing subsystem: \n");
+  // BackendDump.printEqSystem(subsyst);
+
+  size := listLength(vindx);
+  varArray := arrayCreate(size,true);
+  eqArray := arrayCreate(size,true);
   nE := arrayCreate(size,-1);
   nV := arrayCreate(size,-1);
 
-  // Get discrete variables and adjacency matrix from strong component
-  if debug then
-    print("\nStrongComponent EQ's "+ stringDelimitList(List.map(eindex,intString),",") + "\n\n");
-    print("\nStrongComponent Var's "+ stringDelimitList(List.map(vindx,intString),",") + "\n\n");
-  end if;
+  // find discrete vars. Warn on tearing select always and prefer on discrete vars.
+  discreteVars := findDiscreteWarnTearingSelect(var_lst);
+  // print("All discrete Vars: " + stringDelimitList(List.map(discreteVars,intString),",") + "\n");
 
-  for i in vindx loop
-    varArray[i] := true;
-    var := BackendVariable.getVarAt(BackendVariable.daeVars(isyst), i);
-    if BackendVariable.isVarDiscrete(var) then
-      discreteVars:=i::discreteVars;
+  // Look for algorithm equations. If there is an algorithm equation
+  // remove all discrete variables that are in it since it implies that they are
+  // solved in that algorithm equation. We have used BackendDAE.SOLVABLE() to generate the
+  // adjacency list which means if a variable is associated with an equation it is solvable there.
+  i := 1;
+  for eqn in eqn_lst loop
+    if BackendEquation.isAlgorithm(eqn) then
+      for v in aMatrix[i] loop
+        discreteVars := List.deleteMember(discreteVars,v);
+      end for;
+      algorithmEqns := i::algorithmEqns;
     end if;
+    i := i + 1;
   end for;
-  for i in eindex loop
-    eqArray[i] := true;
-  end for;
+  // print("Non-algorithm-output discrete Vars: " + stringDelimitList(List.map(discreteVars,intString),",") + "\n");
 
-  (_,aMatrix,aMatrixT,_,_) := BackendDAEUtil.getAdjacencyMatrixScalar(isyst,BackendDAE.SOLVABLE(), SOME(ishared.functionTree), BackendDAEUtil.isInitializationDAE(ishared));
+  // Mark the arrays used for matching to ignore entries for algorithm equations
+  // and variables solved in them.
+  for qi in algorithmEqns loop
+    eqArray[qi] := false;
+    for vi in aMatrix[qi] loop
+      varArray[vi] := false;
+    end for;
+  end for;
 
   // Match discrete variables
   if not listEmpty(discreteVars) then
-    matchDiscreteVars(discreteVars, isyst, ishared, aMatrix, aMatrixT, varArray, eqArray, nE, nV);
-    if debug then
-      print("\nDiscrete Vars:\n" + stringDelimitList(List.map(discreteVars,intString),",") + "\n\n");
-      print("\nnE Array:\n" + stringDelimitList(List.map(arrayList(nE),intString),",") + "\n\n");
-      print("\nnV Array:\n" + stringDelimitList(List.map(arrayList(nV),intString),",") + "\n\n");
-    end if;
-    //Tearing of the assign
-    (varArray, eqArray, helpInnerEquations) := getTearingSetfromAssign(discreteVars, nE, varArray, eqArray, helpInnerEquations);
+    matchDiscreteVars(discreteVars, subsyst, ishared, aMatrix, aMatrixT, varArray, eqArray, nE, nV);
+    // make inner equations for the matched non-algorithm-output discrete vars.
+    (varArray, eqArray, innerEquationsLocalIndex) := getTearingSetfromAssign(discreteVars, nE, varArray, eqArray);
   end if;
 
-  if debug then
-    print("nE Array:\n" + stringDelimitList(List.map(arrayList(eqArray),boolString),",") + "\n\n");
-    print("nV Array:\n" + stringDelimitList(List.map(arrayList(varArray),boolString),",") + "\n\n");
-    print("Discrete Vars:\n" + stringDelimitList(List.map(discreteVars,intString),",") + "\n\n");
-  end if;
-
-  // Tear discrete variables
-  for i in 1:size loop
+  // Mark all other equations as residual and all other vars
+  // as tearing vars.
+  // This can be improved a bit to be clearer.
+  for i in 1:listLength(eindex) loop
     if eqArray[i] then
       residualequations := i::residualequations;
     end if;
@@ -1732,16 +1743,33 @@ try
       end if;
     end for;
   end for;
-  
-  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    if listLength(residualequations) >= listLength(eindex) then
-      // ToDo What does this mean?
-      Error.addCompilerWarning("Minimal Tearing: Loop size is equal to size of tearing set.");
-    end if;
-  end if;
+
+  // Add all the algorithm equations to the list of inner equations.
+  for algEqn in algorithmEqns loop
+    innerEquationsLocalIndex := BackendDAE.INNEREQUATION(algEqn, aMatrix[algEqn])::innerEquationsLocalIndex;
+  end for;
+
+  // dumpTearingSetGlobalIndexes(BackendDAE.TEARINGSET(tearingvars, residualequations, listReverse(innerEquationsLocalIndex), BackendDAE.EMPTY_JACOBIAN()),size," - STRICT SET");
+
+  // Start converting local indeces of variables and equations to their global
+  // counterparts (We used a smller local subsystem for processing the system above.)
+  innerEquations := list(
+    match ieqn
+      case BackendDAE.INNEREQUATION() algorithm
+          ieqn.vars := selectFromList_rev(vindx, ieqn.vars);
+          ieqn.eqn := listGet(eindex,ieqn.eqn);
+       then ieqn;
+      else fail();
+    end match for ieqn in innerEquationsLocalIndex);
+
+  tearingvars := selectFromList_rev(vindx, tearingvars);
+  residualequations := selectFromList_rev(eindex, residualequations);
+  discreteVars := selectFromList_rev(vindx, discreteVars);
+
+  // dumpTearingSetGlobalIndexes(BackendDAE.TEARINGSET(tearingvars, residualequations, listReverse(innerEquations), BackendDAE.EMPTY_JACOBIAN()),size," - STRICT SET");
 
   // Return torn system
-  ocomp := BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars, residualequations, listReverse(helpInnerEquations), BackendDAE.EMPTY_JACOBIAN()), NONE(), linear, mixedSystem);
+  ocomp := BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars, residualequations, listReverse(innerEquations), BackendDAE.EMPTY_JACOBIAN()), NONE(), linear, mixedSystem);
 else
   Error.addInternalError("function minimalTearing failed", sourceInfo());
   fail();
@@ -1795,13 +1823,13 @@ algorithm
     if eqIdx > 0 then
 
       if eqArray[eqIdx] and nV[eqIdx] == -1 then
-        if (BackendDAEUtil.findSolvabelVarInEquation(varIdx, eqIdx, varArray, isyst, ishared)) then
+        // if (BackendDAEUtil.findSolvabelVarInEquation(varIdx, eqIdx, varArray, isyst, ishared)) then
           // Path found
           nV[eqIdx] := varIdx;
           nE[varIdx] := eqIdx;
           success := true;
           return;
-        end if;
+        // end if;
       end if;
 
     end if;
@@ -1830,31 +1858,28 @@ end pathFound;
 
 
 protected function getTearingSetfromAssign
-  "Set unmatched vars as tearing variables"
+  "Set equations matched with the discrete vars as inner equations"
   input list<Integer> inDiscreteVars;
   input array<Integer> assign1;
   input output array<Boolean> varArray;
   input output array<Boolean> equationArray;
-  input output BackendDAE.InnerEquations innerEquations;
+  output BackendDAE.InnerEquations innerEquations = {};
 protected
   Integer eqIdx;
-  BackendDAE.InnerEquation innerEquation_tmp;
 algorithm
   try
-  // Add matched discrete equation to inner equations
-  for varIdx in inDiscreteVars loop
-    arrayUpdate(varArray,varIdx,false);
-    eqIdx := assign1[varIdx];
-    arrayUpdate(equationArray,eqIdx,false);
-    innerEquation_tmp := BackendDAE.INNEREQUATION(eqIdx, {varIdx});
-    innerEquations := innerEquation_tmp::innerEquations;
-  end for;
+    // Add matched discrete equation to inner equations
+    for varIdx in inDiscreteVars loop
+      arrayUpdate(varArray,varIdx,false);
+      eqIdx := assign1[varIdx];
+      arrayUpdate(equationArray,eqIdx,false);
+      innerEquations := BackendDAE.INNEREQUATION(eqIdx, {varIdx})::innerEquations;
+    end for;
 
   else
-     Error.addInternalError("function getTearingSetfromAssign failed", sourceInfo());
+    Error.addInternalError("function getTearingSetfromAssign failed", sourceInfo());
     fail();
   end try;
-    //  print("\n loopSize after D:" + intString(loopSize) + "\n");
 end getTearingSetfromAssign;
 
 
@@ -2240,6 +2265,38 @@ algorithm
     index := index + 1;
   end for;
 end findDiscrete;
+
+protected function findDiscreteWarnTearingSelect
+"mahge: Finds discrete variables in a variable list. This will also warn if the
+discrete variable has tearing select annotations. Right now this is used in manadatory
+tearing. It should probably used everywhere else as long as we don't have mixed solvers
+since we can not chose a discrete variable as a tearing(iteration) variable anyway.
+Note: This function returns indices based on the order of the variables in the list."
+  input list<BackendDAE.Var> inVars;
+  output list<Integer> discreteVarsOut = {};
+protected
+  Integer index = 1;
+algorithm
+  for var in inVars loop
+    if BackendVariable.isVarDiscrete(var) then
+      discreteVarsOut := index::discreteVarsOut;
+
+      _ := match(var.tearingSelectOption)
+        case SOME(BackendDAE.ALWAYS()) algorithm
+          Error.addCompilerWarning("Minimal Tearing is ignoring tearingSelect=always annotation for discrete variable: "
+            + BackendDump.varString(var));
+        then ();
+        case SOME(BackendDAE.PREFER()) algorithm
+          Error.addCompilerWarning("Minimal Tearing is ignoring tearingSelect=prefer annotation for discrete variable: "
+            + BackendDump.varString(var));
+        then ();
+        else ();
+      end match;
+
+    end if;
+    index := index + 1;
+  end for;
+end findDiscreteWarnTearingSelect;
 
 
 protected function getEquationNonlinearityPoints
