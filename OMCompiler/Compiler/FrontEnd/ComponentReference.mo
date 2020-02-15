@@ -1244,6 +1244,8 @@ protected
   String s;
 algorithm
   b := match(cr)
+    case(DAE.CREF_QUAL(ident="$DER")) then false; // allow exception for derivate vars
+    case(DAE.CREF_QUAL(ident="$CLKPRE")) then false; // allow exception for Clk-previous vars
     case(DAE.CREF_IDENT(ident=s))
      then (substring(s, 1, 1) == "$");
     case(DAE.CREF_QUAL(ident=s))

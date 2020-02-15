@@ -8004,8 +8004,8 @@ algorithm
     derivSimvar := clearUpDefaultFmiAttributes(derivSimvar) "just in case";
   end if;
 
-  // clear up internal variable starting with '$' except for states
-  if not Flags.isSet(Flags.DUMP_FORCE_FMI_INTERNAL_VARIABLES) and ComponentReference.isInternalCref(simVar.name) and not BackendVariable.isStateVar(dlowVar) then
+  // clear up internal variable starting with '$' except for states and "$CLKPRE" and also dummy state and derivative vars
+  if not Flags.isSet(Flags.DUMP_FORCE_FMI_INTERNAL_VARIABLES) and (ComponentReference.isInternalCref(simVar.name) and not BackendVariable.isStateVar(dlowVar)) or (BackendVariable.isDummyStateVar(dlowVar) or BackendVariable.isDummyDerVar(dlowVar)) then
     simVar.exportVar := false;
   end if;
 
@@ -8112,6 +8112,19 @@ algorithm
     Error.addInternalError("Failed to find the correct SimVar list for Var: " + BackendDump.varString(dlowVar), sourceInfo());
   end if;
 end extractVarFromVar;
+
+protected function isClockPreviousFalse
+"Returns false if the cref is prefixed with '$CLKPRE'"
+  input DAE.ComponentRef cr;
+  output Boolean b;
+protected
+  String s;
+algorithm
+  b := match(cr)
+    case(DAE.CREF_QUAL(ident="$CLKPRE")) then false;
+    else false;
+  end match;
+end isClockPreviousFalse;
 
 protected function addSimVar
   input SimCodeVar.SimVar simVar;
