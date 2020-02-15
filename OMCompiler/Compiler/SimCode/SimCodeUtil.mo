@@ -8005,10 +8005,10 @@ algorithm
   end if;
 
   // clear up internal variable starting with '$' except for states and "$CLKPRE" and also dummy state and derivative vars
-  if not Flags.isSet(Flags.DUMP_FORCE_FMI_INTERNAL_VARIABLES) and (ComponentReference.isInternalCref(simVar.name) and not BackendVariable.isStateVar(dlowVar)) or (BackendVariable.isDummyStateVar(dlowVar) or BackendVariable.isDummyDerVar(dlowVar)) then
+  if not Flags.isSet(Flags.DUMP_FORCE_FMI_INTERNAL_VARIABLES) and (ComponentReference.isInternalCref(simVar.name) and not BackendVariable.isStateVar(dlowVar) and not BackendVariable.isClockedStateVar(dlowVar)) or (BackendVariable.isDummyStateVar(dlowVar) or BackendVariable.isDummyDerVar(dlowVar)) then
     simVar.exportVar := false;
   end if;
-
+  //print("\n name :" + ComponentReference.printComponentRefStr(simVar.name) + "===>" + anyString(simVar.varKind) + "\n");
   // If it is an input variable, we give it an index
   if (not isalias) and BackendVariable.isVarOnTopLevelAndInputNoDerInput(dlowVar) then
     simVar := match simVar
