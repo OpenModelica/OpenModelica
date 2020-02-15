@@ -122,20 +122,6 @@ readFile("testBug2765_tmp2.xml"); getErrorString();
 //     >
 //     <Real start=\"0.0\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"11\" -->
-//   <ScalarVariable
-//     name=\"_D_outputAlias_y1\"
-//     valueReference=\"0\"
-//     >
-//     <Real/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"12\" -->
-//   <ScalarVariable
-//     name=\"_D_outputAlias_y2\"
-//     valueReference=\"1\"
-//     >
-//     <Real/>
-//   </ScalarVariable>
 //   </ModelVariables>
 // "
 // ""

@@ -121,34 +121,13 @@ readFile("modelDescription.tmp.xml");
 //   <ModelVariables>
 //   <!-- Index of variable = \"1\" -->
 //   <ScalarVariable
-//     name=\"_D_outputAlias_p1\"
-//     valueReference=\"0\"
-//     initial=\"exact\">
-//     <Real start=\"0.0\" min=\"0.0\" nominal=\"100000.0\" unit=\"Pa\"/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"2\" -->
-//   <ScalarVariable
-//     name=\"_D_outputAlias_p2\"
-//     valueReference=\"1\"
-//     initial=\"exact\">
-//     <Real start=\"5000000.0\" min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"3\" -->
-//   <ScalarVariable
-//     name=\"_D_outputAlias_p3\"
-//     valueReference=\"2\"
-//     initial=\"exact\">
-//     <Real start=\"0.0\" min=\"0.0\" nominal=\"10000000.0\" unit=\"Pa\"/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"4\" -->
-//   <ScalarVariable
 //     name=\"p1\"
 //     valueReference=\"3\"
 //     causality=\"output\"
 //     >
 //     <Real min=\"0.0\" nominal=\"100000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"5\" -->
+//   <!-- Index of variable = \"2\" -->
 //   <ScalarVariable
 //     name=\"p2\"
 //     valueReference=\"4\"
@@ -156,7 +135,7 @@ readFile("modelDescription.tmp.xml");
 //     >
 //     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"6\" -->
+//   <!-- Index of variable = \"3\" -->
 //   <ScalarVariable
 //     name=\"p3\"
 //     valueReference=\"5\"
@@ -167,14 +146,14 @@ readFile("modelDescription.tmp.xml");
 //   </ModelVariables>
 //   <ModelStructure>
 //     <Outputs>
-//       <Unknown index=\"4\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"5\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"6\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"3\" dependencies=\"\" dependenciesKind=\"\" />
 //     </Outputs>
 //     <InitialUnknowns>
-//       <Unknown index=\"4\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"5\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"6\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"3\" dependencies=\"\" dependenciesKind=\"\" />
 //     </InitialUnknowns>
 //   </ModelStructure>
 // </fmiModelDescription>

@@ -70,68 +70,12 @@ readFile("fmi_attributes_06.xml"); getErrorString();
 //   </ScalarVariable>
 //   <!-- Index of variable = \"5\" -->
 //   <ScalarVariable
-//     name=\"der(x)\"
-//     valueReference=\"4\"
-//     >
-//     <Real/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"6\" -->
-//   <ScalarVariable
-//     name=\"der(xd)\"
-//     valueReference=\"5\"
-//     >
-//     <Real/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"7\" -->
-//   <ScalarVariable
-//     name=\"der(y)\"
-//     valueReference=\"6\"
-//     >
-//     <Real/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"8\" -->
-//   <ScalarVariable
-//     name=\"der(yd)\"
-//     valueReference=\"7\"
-//     >
-//     <Real/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"9\" -->
-//   <ScalarVariable
 //     name=\"Fo\"
 //     valueReference=\"8\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"10\" -->
-//   <ScalarVariable
-//     name=\"x\"
-//     valueReference=\"9\"
-//     >
-//     <Real/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"11\" -->
-//   <ScalarVariable
-//     name=\"xd\"
-//     valueReference=\"10\"
-//     >
-//     <Real/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"12\" -->
-//   <ScalarVariable
-//     name=\"y\"
-//     valueReference=\"11\"
-//     initial=\"approx\">
-//     <Real start=\"0.0\"/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"13\" -->
-//   <ScalarVariable
-//     name=\"yd\"
-//     valueReference=\"12\"
-//     >
-//     <Real/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"14\" -->
+//   <!-- Index of variable = \"6\" -->
 //   <ScalarVariable
 //     name=\"L\"
 //     valueReference=\"13\"
@@ -140,7 +84,7 @@ readFile("fmi_attributes_06.xml"); getErrorString();
 //     >
 //     <Real start=\"1.0\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"15\" -->
+//   <!-- Index of variable = \"7\" -->
 //   <ScalarVariable
 //     name=\"g\"
 //     valueReference=\"14\"
@@ -149,7 +93,7 @@ readFile("fmi_attributes_06.xml"); getErrorString();
 //     >
 //     <Real start=\"9.82\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"16\" -->
+//   <!-- Index of variable = \"8\" -->
 //   <ScalarVariable
 //     name=\"m\"
 //     valueReference=\"15\"
@@ -158,7 +102,7 @@ readFile("fmi_attributes_06.xml"); getErrorString();
 //     >
 //     <Real start=\"0.5\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"17\" -->
+//   <!-- Index of variable = \"9\" -->
 //   <ScalarVariable
 //     name=\"_D_STATESET1.A[1]\"
 //     valueReference=\"0\"
@@ -167,7 +111,7 @@ readFile("fmi_attributes_06.xml"); getErrorString();
 //     initial=\"exact\">
 //     <Integer start=\"1\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"18\" -->
+//   <!-- Index of variable = \"10\" -->
 //   <ScalarVariable
 //     name=\"_D_STATESET1.A[2]\"
 //     valueReference=\"1\"
@@ -176,7 +120,7 @@ readFile("fmi_attributes_06.xml"); getErrorString();
 //     initial=\"exact\">
 //     <Integer start=\"0\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"19\" -->
+//   <!-- Index of variable = \"11\" -->
 //   <ScalarVariable
 //     name=\"_D_STATESET2.A[1]\"
 //     valueReference=\"2\"
@@ -185,7 +129,7 @@ readFile("fmi_attributes_06.xml"); getErrorString();
 //     initial=\"exact\">
 //     <Integer start=\"1\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"20\" -->
+//   <!-- Index of variable = \"12\" -->
 //   <ScalarVariable
 //     name=\"_D_STATESET2.A[2]\"
 //     valueReference=\"3\"
@@ -207,8 +151,8 @@ readFile("fmi_attributes_06.xml"); getErrorString();
 //     <InitialUnknowns>
 //       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"3\" dependencies=\"14 15 16\" dependenciesKind=\"dependent dependent dependent\" />
-//       <Unknown index=\"4\" dependencies=\"14\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"3\" dependencies=\"6 7 8\" dependenciesKind=\"dependent dependent dependent\" />
+//       <Unknown index=\"4\" dependencies=\"6\" dependenciesKind=\"dependent\" />
 //     </InitialUnknowns>
 //   </ModelStructure>
 // "

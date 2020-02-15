@@ -121,13 +121,6 @@ readFile("fmi_attributes_09.xml"); getErrorString();
 //     >
 //     <Real start=\"10.0\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"10\" -->
-//   <ScalarVariable
-//     name=\"_D_outputAlias_y\"
-//     valueReference=\"6\"
-//     >
-//     <Real/>
-//   </ScalarVariable>
 //   </ModelVariables>
 // "
 // ""
