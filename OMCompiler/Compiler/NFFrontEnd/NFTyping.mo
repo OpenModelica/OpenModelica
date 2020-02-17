@@ -1050,30 +1050,10 @@ protected
   Binding binding;
   InstNode mod_parent;
 algorithm
-  () := match attribute
-    // Normal modifier with no submodifiers.
-    case Modifier.MODIFIER(name = name, binding = binding, subModifiers = ModTable.EMPTY())
-      algorithm
-        // Type and type check the attribute.
-        checkBindingEach(binding);
-        binding := typeBinding(binding, origin);
-        binding := TypeCheck.matchBinding(binding, ty, name, component);
-
-        // Check the variability. All builtin attributes have parameter variability.
-        if Binding.variability(binding) > Variability.PARAMETER then
-          Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,
-            {name, Prefixes.variabilityString(Variability.PARAMETER),
-             "'" + Binding.toString(binding) + "'", Prefixes.variabilityString(Binding.variability(binding))},
-            Binding.getInfo(binding));
-          fail();
-        end if;
-
-        attribute.binding := binding;
-      then
-        ();
-
+  attribute := match attribute
     // Modifier with submodifier, e.g. Real x(start(y = 1)), is an error.
     case Modifier.MODIFIER()
+      guard not ModTable.isEmpty(attribute.subModifiers)
       algorithm
         // Print an error for the first submodifier. The builtin attributes
         // don't have types as such, so for the error message to make sense we
@@ -1083,6 +1063,38 @@ algorithm
           {name, Type.toString(ty)}, attribute.info);
       then
         fail();
+
+    // Modifier with no binding, e.g. Real x(final start).
+    case Modifier.MODIFIER()
+      guard Binding.isUnbound(attribute.binding)
+      algorithm
+        checkBindingEach(attribute.binding);
+      then
+        NFModifier.NOMOD();
+
+    // Normal modifier with no submodifiers.
+    case Modifier.MODIFIER(name = name, binding = binding)
+      algorithm
+        // Type and type check the attribute.
+        checkBindingEach(binding);
+
+        if Binding.isBound(binding) then
+          binding := typeBinding(binding, origin);
+          binding := TypeCheck.matchBinding(binding, ty, name, component);
+
+          // Check the variability. All builtin attributes have parameter variability.
+          if Binding.variability(binding) > Variability.PARAMETER then
+            Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,
+              {name, Prefixes.variabilityString(Variability.PARAMETER),
+               "'" + Binding.toString(binding) + "'", Prefixes.variabilityString(Binding.variability(binding))},
+              Binding.getInfo(binding));
+            fail();
+          end if;
+
+          attribute.binding := binding;
+        end if;
+      then
+        attribute;
 
   end match;
 end typeTypeAttribute;

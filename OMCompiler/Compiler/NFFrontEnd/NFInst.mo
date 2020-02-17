@@ -2277,8 +2277,6 @@ algorithm
     local
       Binding binding;
 
-    case Modifier.MODIFIER(binding = Binding.UNBOUND()) then ();
-
     case Modifier.MODIFIER(binding = binding)
       algorithm
         binding := Binding.addParent(node, binding);
@@ -2294,6 +2292,7 @@ algorithm
       then
         fail();
 
+    else ();
   end match;
 end instBuiltinAttribute;
 
