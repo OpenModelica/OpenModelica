@@ -54,6 +54,7 @@ BuiltinAttribute16.mo \
 BuiltinAttribute17.mo \
 BuiltinAttribute18.mo \
 BuiltinAttribute19.mo \
+BuiltinAttribute20.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 BuiltinTimeSubscripted.mo \
