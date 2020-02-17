@@ -2695,23 +2695,23 @@ algorithm
     // ALGORITHM
     case BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS(statementLst = statementLst))
       algorithm
-        res := traverseStmts(statementLst, function adjacencyRowAlgorithm(inVariables = vars,
-          functionTree = functionTree, inIndexType = inIndexType, isInitial = isInitial), iRow);
         /*
-          If looking for solvability add all discrete output variables, even if they don't occur in the algorithm.
-          Discrete output variables that do not occur get computed by pre().
-          Ticket #5659
+          If looking for solvability add ONLY all output variables
         */
         if indexTypeSolvable(inIndexType) then
+          res := iRow;
           crefLst := CheckModel.algorithmStatementListOutputs(statementLst, DAE.EXPAND()); // expand as we're in an algorithm
           for cr in crefLst loop
             try
               (varslst, p) := BackendVariable.getVar(cr, vars);
-              res := adjacencyRowExp1Discrete(varslst, p, res);
+              res := adjacencyRowExp1(varslst, p, res, 0);
             else
               /* Nothing to do, BackendVariable.getVar fails for $START, $PRE, time etc. */
             end try;
           end for;
+        else
+          res := traverseStmts(statementLst, function adjacencyRowAlgorithm(inVariables = vars,
+            functionTree = functionTree, inIndexType = inIndexType, isInitial = isInitial), iRow);
         end if;
       then
         (res,size);

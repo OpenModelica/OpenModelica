@@ -68,6 +68,7 @@ import MetaModelica.Dangerous;
 import Mutable;
 import Util;
 import Sorting;
+import ElementSource;
 
 // =============================================================================
 // section for type definitions
@@ -1719,7 +1720,7 @@ try
     end for;
   end for;
 
-  // Match discrete variables
+  // Match the remaining discrete variables
   if not listEmpty(discreteVars) then
     matchDiscreteVars(discreteVars, subsyst, ishared, aMatrix, aMatrixT, varArray, eqArray, nE, nV);
     // make inner equations for the matched non-algorithm-output discrete vars.
@@ -1764,7 +1765,6 @@ try
 
   tearingvars := selectFromList_rev(vindx, tearingvars);
   residualequations := selectFromList_rev(eindex, residualequations);
-  discreteVars := selectFromList_rev(vindx, discreteVars);
 
   // dumpTearingSetGlobalIndexes(BackendDAE.TEARINGSET(tearingvars, residualequations, listReverse(innerEquations), BackendDAE.EMPTY_JACOBIAN()),size," - STRICT SET");
 
@@ -2283,12 +2283,12 @@ algorithm
 
       _ := match(var.tearingSelectOption)
         case SOME(BackendDAE.ALWAYS()) algorithm
-          Error.addCompilerWarning("Minimal Tearing is ignoring tearingSelect=always annotation for discrete variable: "
-            + BackendDump.varString(var));
+          Error.addSourceMessage(Error.COMPILER_WARNING,{"Minimal Tearing is ignoring tearingSelect=always annotation for discrete variable: "
+            + BackendDump.varString(var)},ElementSource.getInfo(var.source));
         then ();
         case SOME(BackendDAE.PREFER()) algorithm
-          Error.addCompilerWarning("Minimal Tearing is ignoring tearingSelect=prefer annotation for discrete variable: "
-            + BackendDump.varString(var));
+          Error.addSourceMessage(Error.COMPILER_WARNING,{"Minimal Tearing is ignoring tearingSelect=prefer annotation for discrete variable: "
+            + BackendDump.varString(var)},ElementSource.getInfo(var.source));
         then ();
         else ();
       end match;
