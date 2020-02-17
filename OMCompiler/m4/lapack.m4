@@ -88,6 +88,13 @@ AC_DEFUN([OMC_AC_LAPACK], [
         fi
       ])
     fi
+    if test ! -z "$LD_LAPACK"; then
+      # lapack 3.6.0 deprecated dgegv, dgelsx, dgeqpf
+      AC_MSG_CHECKING([for deprecated LAPACK routines])
+      AC_LINK_IFELSE([AC_LANG_CALL([], [dgegv_])],[AC_MSG_RESULT([yes]); NO_LAPACK="#define HAVE_LAPACK_DEPRECATED 1"],[
+        AC_MSG_RESULT([no])
+      ])
+    fi
     LIBS="$OLDLIBS"
     AC_LANG_POP([C])
   fi
