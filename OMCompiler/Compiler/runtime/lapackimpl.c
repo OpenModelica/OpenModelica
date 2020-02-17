@@ -79,12 +79,10 @@ extern "C" {
 #define strncasecmp strnicmp
 #endif
 
-#ifndef NO_LAPACK
+#ifdef HAVE_LAPACK_DEPRECATED
 
-extern int dgeev_(const char *jobvl, const char *jobvr, integer *n,
-  doublereal *a, integer *lda, doublereal *wr, doublereal *wi, doublereal *vl,
-  integer *ldvl, doublereal *vr, integer *ldvr, doublereal *work,
-  integer *lwork, integer *info);
+extern int dgeqpf_(integer *m, integer *n, doublereal *a, integer *lda,
+  integer *jpvt, doublereal *tau, doublereal *work, integer *info);
 
 extern int dgegv_(const char *jobvl, const char *jobvr, integer *n, doublereal *a,
   integer *lda, doublereal *b, integer *ldb, doublereal *alphar,
@@ -92,13 +90,22 @@ extern int dgegv_(const char *jobvl, const char *jobvr, integer *n, doublereal *
   doublereal *vr, integer *ldvr, doublereal *work, integer *lwork,
   integer *info);
 
-extern int dgels_(const char *trans, integer *m, integer *n, integer *nrhs,
-  doublereal *a, integer *lda, doublereal *b, integer *ldb, doublereal *work,
-  integer *lwork, integer *info);
-
 extern int dgelsx_(integer *m, integer *n, integer *nrhs, doublereal *a,
   integer *lda, doublereal *b, integer *ldb, integer *jpvt, doublereal *rcond,
   integer *rank, doublereal *work, integer *info);
+
+#endif
+
+#ifndef NO_LAPACK
+
+extern int dgeev_(const char *jobvl, const char *jobvr, integer *n,
+  doublereal *a, integer *lda, doublereal *wr, doublereal *wi, doublereal *vl,
+  integer *ldvl, doublereal *vr, integer *ldvr, doublereal *work,
+  integer *lwork, integer *info);
+
+extern int dgels_(const char *trans, integer *m, integer *n, integer *nrhs,
+  doublereal *a, integer *lda, doublereal *b, integer *ldb, doublereal *work,
+  integer *lwork, integer *info);
 
 extern int dgelsy_(integer *m, integer *n, integer *nrhs, doublereal *a,
   integer *lda, doublereal *b, integer *ldb, integer *jpvt, doublereal *rcond,
@@ -130,9 +137,6 @@ extern int dgetrs_(const char *trans, integer *n, integer *nrhs, doublereal *a,
 
 extern int dgetri_(integer *n, doublereal *a, integer *lda, integer *ipiv,
   doublereal *work, integer *lwork, integer *info);
-
-extern int dgeqpf_(integer *m, integer *n, doublereal *a, integer *lda,
-  integer *jpvt, doublereal *tau, doublereal *work, integer *info);
 
 extern int dorgqr_(integer *m, integer *n, integer *k, doublereal *a,
   integer *lda, doublereal *tau, doublereal *work, integer *lwork, integer *info);
@@ -355,7 +359,7 @@ void LapackImpl__dgegv(const char *jobvl, const char *jobvr, int N, void *A, int
     void **ALPHAR, void **ALPHAI, void **BETA, void **VL, void **VR,
     void **outWORK, int *INFO)
 {
-#ifndef NO_LAPACK
+#ifdef HAVE_LAPACK_DEPRECATED
   integer n, lda, ldb, ldvl, ldvr, lwork, info = 0;
   double *a, *b, *work, *alphar, *alphai, *beta, *vl, *vr;
 
@@ -437,7 +441,7 @@ void LapackImpl__dgelsx(int M, int N, int NRHS, void *inA, int LDA,
     void *inB, int LDB, void *inJPVT, double rcond, void *WORK,
     void **outA, void **outB, void **outJPVT, int *RANK, int *INFO)
 {
-#ifndef NO_LAPACK
+#ifdef HAVE_LAPACK_DEPRECATED
   integer m, n, nrhs, lda, ldb, rank = 0, info = 0, lwork;
   double *a, *b, *work;
   integer *jpvt;
@@ -792,7 +796,7 @@ void LapackImpl__dgetri(int N, void *inA, int LDA, void *IPIV, void *inWORK,
 void LapackImpl__dgeqpf(int M, int N, void *inA, int LDA, void *inJPVT,
     void *WORK, void **outA, void **outJPVT, void **TAU, int *INFO)
 {
-#ifndef NO_LAPACK
+#ifdef HAVE_LAPACK_DEPRECATED
   integer m, n, lda, lwork, ldtau, info = 0;
   double *a, *tau, *work;
   integer *jpvt;
