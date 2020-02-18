@@ -1650,18 +1650,15 @@ protected function minimalTearing
   output BackendDAE.StrongComponent ocomp;
 protected
   Integer size, i;
-  array<Integer> nE, nV, scalar_to_multi_dim_eq_mapping;
-  array<list<Integer>> collected_inner_eq_vars;
+  array<Integer> nE, nV;
   array<Boolean> varArray, eqArray;
-  list<Integer> discreteVars = {};
+  list<Integer> discreteVars;
   list<Integer> tearingvars = {}, residualequations = {}, algorithmEqns = {};
-  list<BackendDAE.Var> var_lst, activeVars;
-  list<BackendDAE.Equation> eqn_lst, activeEqns;
+  list<BackendDAE.Var> var_lst;
+  list<BackendDAE.Equation> eqn_lst;
   BackendDAE.InnerEquations innerEquationsLocalIndex = {}, innerEquations;
   BackendDAE.AdjacencyMatrix aMatrix, aMatrixT;
   Boolean linear;
-  String DAEtypeStr;
-  constant Boolean debug = false;
   BackendDAE.EquationArray eqns;
   BackendDAE.EqSystem subsyst;
   BackendDAE.Variables vars;
