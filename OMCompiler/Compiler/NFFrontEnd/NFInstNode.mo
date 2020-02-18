@@ -1632,6 +1632,18 @@ uniontype InstNode
       else false;
     end match;
   end isModel;
+
+  function hasBinding
+    input InstNode node;
+    output Boolean hasBinding;
+  algorithm
+    hasBinding := match node
+      case COMPONENT_NODE()
+        then Component.hasBinding(Pointer.access(node.component)) or hasBinding(derivedParent(node));
+      else false;
+    end match;
+  end hasBinding;
+
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");
