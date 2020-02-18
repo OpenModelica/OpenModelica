@@ -3374,7 +3374,7 @@ algorithm
     elseif Component.isExternalObject(component) then
       // Except external objects.
       isStructural := false;
-    elseif Binding.isUnbound(compBinding) then
+    elseif not InstNode.hasBinding(compNode) then
       // Except parameters with no bindings.
       if not evalAllParams and not Flags.getConfigBool(Flags.CHECK_MODEL) then
         // Print a warning if a parameter has an Evaluate=true annotation but no binding.

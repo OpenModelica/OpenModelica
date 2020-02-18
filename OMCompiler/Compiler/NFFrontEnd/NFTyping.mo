@@ -751,7 +751,7 @@ protected
   Expression exp;
   Binding parent_binding;
 algorithm
-  parent := InstNode.parent(component);
+  parent := InstNode.derivedParent(component);
 
   if InstNode.isComponent(parent) then
     // Get the binding of the component's parent.
