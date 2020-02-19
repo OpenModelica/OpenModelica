@@ -1463,6 +1463,19 @@ algorithm
   end match;
 end solvable;
 
+protected function isEntrySolved
+  input BackendDAE.AdjacencyMatrixElementEnhancedEntry ent;
+  output Boolean b;
+algorithm
+  b := match ent
+    case (_, BackendDAE.SOLVABILITY_SOLVED(), _) then true;
+    case (_, BackendDAE.SOLVABILITY_PARAMETER(b=b), _) algorithm
+        Error.addInternalError("SOLVABILITY_PARAMETER is not handled yet. Requires revision.", sourceInfo());
+      then (b and not stringEqual(Flags.getConfigString(Flags.TEARING_STRICTNESS), "veryStrict"));
+    else false;
+  end match;
+end isEntrySolved;
+
 
 protected function tearingBFS2 " function to make an assignment and determine the next equations for queue
   author: Frenkel TUD 2012-05"
@@ -1649,15 +1662,16 @@ protected function minimalTearing
   input Boolean mixedSystem;
   output BackendDAE.StrongComponent ocomp;
 protected
-  Integer size, i;
+  Integer size, qidx, vidx;
   array<Integer> nE, nV;
   array<Boolean> varArray, eqArray;
-  list<Integer> discreteVars;
-  list<Integer> tearingvars = {}, residualequations = {}, algorithmEqns = {};
+  list<Integer> unsolvedDiscreteVars, algSolvedVars;
+  list<Integer> tearingvars = {}, residualequations = {};
   list<BackendDAE.Var> var_lst;
   list<BackendDAE.Equation> eqn_lst;
   BackendDAE.InnerEquations innerEquationsLocalIndex = {}, innerEquations;
   BackendDAE.AdjacencyMatrix aMatrix, aMatrixT;
+  BackendDAE.AdjacencyMatrixEnhanced adjEnh, adjEnhT;
   Boolean linear;
   BackendDAE.EquationArray eqns;
   BackendDAE.EqSystem subsyst;
@@ -1674,6 +1688,12 @@ try
   var_lst := List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
   vars := BackendVariable.listVar1(var_lst);
   subsyst := BackendDAEUtil.createEqSystem(vars, eqns);
+
+  // print("Minimal Tearing subsystem: \n");
+  // BackendDump.printEqSystem(subsyst);
+
+  (adjEnh,adjEnhT) := BackendDAEUtil.getAdjacencyMatrixEnhanced(subsyst, ishared, false);
+
   // Get the adjacency lists for the system. We are only intersted in solvable matches here.
   // TODO: This needs to use adjacencyMatrixEnhanced because we will eventually need all the
   // incidence info (not just solvable) to sort the inner equations in the proper order.
@@ -1689,39 +1709,45 @@ try
   nV := arrayCreate(size,-1);
 
   // find discrete vars. Warn on tearing select always and prefer on discrete vars.
-  discreteVars := findDiscreteWarnTearingSelect(var_lst);
-  // print("All discrete Vars: " + stringDelimitList(List.map(discreteVars,intString),",") + "\n");
+  unsolvedDiscreteVars := findDiscreteWarnTearingSelect(var_lst);
+  // print("All discrete Vars: " + stringDelimitList(List.map(unsolvedDiscreteVars,intString),",") + "\n");
 
   // Look for algorithm equations. If there is an algorithm equation
-  // remove all discrete variables that are in it since it implies that they are
-  // solved in that algorithm equation. We have used BackendDAE.SOLVABLE() to generate the
-  // adjacency list which means if a variable is associated with an equation it is solvable there.
-  i := 1;
+  // remove all discrete variables solved in it. The algorithm is added as
+  // inner equation.
+  qidx := 1;
   for eqn in eqn_lst loop
     if BackendEquation.isAlgorithm(eqn) then
-      for v in aMatrix[i] loop
-        discreteVars := List.deleteMember(discreteVars,v);
+      eqArray[qidx] := false;
+
+      algSolvedVars := {};
+      for entr in adjEnh[qidx] loop
+        if isEntrySolved(entr) then
+          (vidx,_,_) := entr;
+          algSolvedVars := vidx::algSolvedVars;
+          unsolvedDiscreteVars := List.deleteMember(unsolvedDiscreteVars,vidx);
+          varArray[vidx] := false;
+        end if;
       end for;
-      algorithmEqns := i::algorithmEqns;
+      innerEquationsLocalIndex := BackendDAE.INNEREQUATION(qidx, algSolvedVars)::innerEquationsLocalIndex;
     end if;
-    i := i + 1;
+    qidx := qidx + 1;
   end for;
-  // print("Non-algorithm-output discrete Vars: " + stringDelimitList(List.map(discreteVars,intString),",") + "\n");
+  // print("Non-algorithm-output discrete Vars: " + stringDelimitList(List.map(unsolvedDiscreteVars,intString),",") + "\n");
 
   // Mark the arrays used for matching to ignore entries for algorithm equations
   // and variables solved in them.
-  for qi in algorithmEqns loop
-    eqArray[qi] := false;
-    for vi in aMatrix[qi] loop
-      varArray[vi] := false;
-    end for;
-  end for;
 
   // Match the remaining discrete variables
-  if not listEmpty(discreteVars) then
-    matchDiscreteVars(discreteVars, subsyst, ishared, aMatrix, aMatrixT, varArray, eqArray, nE, nV);
+  if not listEmpty(unsolvedDiscreteVars) then
+    matchDiscreteVars(unsolvedDiscreteVars, adjEnhT, ishared, aMatrix, aMatrixT, varArray, eqArray, nE, nV);
     // make inner equations for the matched non-algorithm-output discrete vars.
-    (varArray, eqArray, innerEquationsLocalIndex) := getTearingSetfromAssign(discreteVars, nE, varArray, eqArray);
+    (varArray, eqArray, innerEquations) := getTearingSetfromAssign(unsolvedDiscreteVars, nE, varArray, eqArray);
+
+    for iq in innerEquations loop
+      innerEquationsLocalIndex := iq::innerEquationsLocalIndex;
+    end for;
+
   end if;
 
   // Mark all other equations as residual and all other vars
@@ -1740,11 +1766,6 @@ try
         end if;
       end if;
     end for;
-  end for;
-
-  // Add all the algorithm equations to the list of inner equations.
-  for algEqn in algorithmEqns loop
-    innerEquationsLocalIndex := BackendDAE.INNEREQUATION(algEqn, aMatrix[algEqn])::innerEquationsLocalIndex;
   end for;
 
   // dumpTearingSetGlobalIndexes(BackendDAE.TEARINGSET(tearingvars, residualequations, listReverse(innerEquationsLocalIndex), BackendDAE.EMPTY_JACOBIAN()),size," - STRICT SET");
@@ -1777,7 +1798,7 @@ end minimalTearing;
 protected function matchDiscreteVars
   "Matches all discrete vars given by inDiscreteVars."
   input list<Integer> inDiscreteVars;
-  input BackendDAE.EqSystem isyst;
+  input BackendDAE.AdjacencyMatrixEnhanced adjEnhT;
   input BackendDAE.Shared ishared;
   input BackendDAE.AdjacencyMatrix me "Adjacacency matrix";
   input BackendDAE.AdjacencyMatrix meT "Transposed adjacacency matrix";
@@ -1791,7 +1812,7 @@ algorithm
   try
   for varIdx in inDiscreteVars loop
     eqMarker := arrayCopy(eqArray);
-    (eqMarker, nE, nV, true) := pathFound(varIdx, isyst, ishared, me, meT, varArray, eqArray, eqMarker, nE, nV);
+    (eqMarker, nE, nV, true) := pathFound(varIdx, adjEnhT, ishared, me, meT, varArray, eqArray, eqMarker, nE, nV);
   end for;
   else
     Error.addInternalError("function matchDiscreteVars failed", sourceInfo());
@@ -1803,7 +1824,7 @@ protected function pathFound
   "Tries to find a path in the bipartit graph with respect to solvability for
    matching of discrete variables."
   input Integer varIdx;
-  input BackendDAE.EqSystem isyst;
+  input BackendDAE.AdjacencyMatrixEnhanced adjEnhT;
   input BackendDAE.Shared ishared;
   input BackendDAE.AdjacencyMatrix me "Adjacacency matrix";
   input BackendDAE.AdjacencyMatrix meT "Transposed adjacacency matrix";
@@ -1837,7 +1858,7 @@ algorithm
     if eqIdx > 0 then
       if eqMarker[eqIdx] then
          eqMarker[eqIdx] := false;
-         (eqMarker, nE, nV , success) := pathFound(nV[eqIdx], isyst, ishared, me, meT , varArray, eqArray, eqMarker, nE, nV);
+         (eqMarker, nE, nV , success) := pathFound(nV[eqIdx], adjEnhT, ishared, me, meT , varArray, eqArray, eqMarker, nE, nV);
       end if;
     end if;
     if success then

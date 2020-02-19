@@ -2695,26 +2695,24 @@ algorithm
     // ALGORITHM
     case BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS(statementLst = statementLst))
       algorithm
+         res := traverseStmts(statementLst, function adjacencyRowAlgorithm(inVariables = vars,
+            functionTree = functionTree, inIndexType = inIndexType, isInitial = isInitial), iRow);
+
         /*
           If looking for solvability and is not initialization system add ONLY all output variables
           the way initialization is implemented now it expects all outputs from algorithms and then
           seems to solve for the non-outputs as inverse algorithm non-linear systems.
         */
-        if indexTypeSolvable(inIndexType) and not isInitial then
-          res := iRow;
+        if indexTypeSolvable(inIndexType) then
           crefLst := CheckModel.algorithmStatementListOutputs(statementLst, DAE.EXPAND()); // expand as we're in an algorithm
           for cr in crefLst loop
             try
               (varslst, p) := BackendVariable.getVar(cr, vars);
-              res := adjacencyRowExp1(varslst, p, res, 0);
+               res := adjacencyRowExp1Discrete(varslst, p, res);
             else
               /* Nothing to do, BackendVariable.getVar fails for $START, $PRE, time etc. */
             end try;
           end for;
-        // Otherwise traverse and add all variables.
-        else
-          res := traverseStmts(statementLst, function adjacencyRowAlgorithm(inVariables = vars,
-            functionTree = functionTree, inIndexType = inIndexType, isInitial = isInitial), iRow);
         end if;
       then
         (res,size);
@@ -3540,6 +3538,29 @@ algorithm
       then adjacencyRowExp1(rest,irest,vars,diffindex);
   end match;
 end adjacencyRowExp1;
+
+protected function adjacencyRowExp1Discrete
+  "Adds an adjacency matrix entry for all variables in the inVarLst, if they are discrete."
+  input list<BackendDAE.Var> inVarLst;
+  input list<Integer> inIntegerLst;
+  input AvlSetInt.Tree inVarIndxLst;
+  output AvlSetInt.Tree outVarIndxLst;
+algorithm
+  outVarIndxLst := match (inVarLst,inIntegerLst)
+    local
+       list<BackendDAE.Var> rest;
+       list<Integer> irest;
+       AvlSetInt.Tree vars;
+       Integer i;
+    case ({}, {}) then inVarIndxLst;
+    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())::rest, i::irest)
+      equation
+        vars = AvlSetInt.add(inVarIndxLst, i);
+      then adjacencyRowExp1Discrete(rest,irest,vars);
+    case (_::rest, _::irest)
+      then adjacencyRowExp1Discrete(rest,irest,inVarIndxLst);
+  end match;
+end adjacencyRowExp1Discrete;
 
 public function traversingadjacencyRowExpFinderwithInput "Helper for statesAndVarsExp"
   input DAE.Exp inExp;
