@@ -3496,28 +3496,28 @@ protected function adjacencyRowExp1
   input Integer diffindex;
   output AvlSetInt.Tree outVarIndxLst;
 algorithm
-  outVarIndxLst := match (inVarLst,inIntegerLst,inVarIndxLst,diffindex)
+  outVarIndxLst := match (inVarLst,inIntegerLst)
     local
        list<BackendDAE.Var> rest;
        list<Integer> irest;
        AvlSetInt.Tree vars;
        Integer i,i1,diffidx;
        Boolean b;
-    case ({},{},vars,_) then vars;
+    case ({},{}) then inVarIndxLst;
     /*If variable x is a state, der(x) is a variable in adjacency matrix,
          x is inserted as negative value, since it is needed by debugging and
          index reduction using dummy derivatives */
-    case (BackendDAE.VAR(varKind = BackendDAE.STATE(derName=SOME(_)))::rest,i::irest,_,_)
+    case (BackendDAE.VAR(varKind = BackendDAE.STATE(derName=SOME(_)))::rest,i::irest)
       equation
         i1 = if intGe(diffindex,1) then i else -i;
         vars = AvlSetInt.add(inVarIndxLst, i1);
       then adjacencyRowExp1(rest,irest,vars,diffindex);
-    case (BackendDAE.VAR(varKind = BackendDAE.STATE(index=diffidx))::rest,i::irest,_,_)
+    case (BackendDAE.VAR(varKind = BackendDAE.STATE(index=diffidx))::rest,i::irest)
       equation
         i1 = if intGe(diffindex,diffidx) then i else -i;
         vars = AvlSetInt.add(inVarIndxLst, i1);
       then adjacencyRowExp1(rest,irest,vars,diffindex);
-    case (_::rest,i::irest,_,_)
+    case (_::rest,i::irest)
       equation
         vars = AvlSetInt.add(inVarIndxLst, i);
       then adjacencyRowExp1(rest,irest,vars,diffindex);
