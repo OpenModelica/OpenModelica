@@ -58,11 +58,10 @@ template ModelExchange(SimCode simCode, list<String> sourceFiles)
 match simCode
 case SIMCODE(__) then
   let modelIdentifier = modelNamePrefix(simCode)
-  let pdd = providesDirectionalDerivative(simCode)
+  let pdd = if providesDirectionalDerivative(simCode) then ' providesDirectionalDerivative=true' else ''
   <<
   <ModelExchange
-    modelIdentifier="<%modelIdentifier%>"<% if not pdd then '>' %>
-    <% if pdd then 'providesDirectionalDerivative="' + pdd + '">' %>
+    modelIdentifier="<%modelIdentifier%>"<%pdd%>>
     <%SourceFiles(sourceFiles)%>
   </ModelExchange>
   >>
@@ -77,20 +76,6 @@ template SourceFiles(list<String> sourceFiles)
     </SourceFiles>
     >>
 end SourceFiles;
-
-template providesDirectionalDerivative(SimCode simCode)
- "Returns true if Jacobian is present, returns nothing otherwise"
-::=
-match simCode
-case SIMCODE(__) then
-  let result = if isSome(modelStructure) then
-    match modelStructure
-    case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__)))
-      then "true"
-      else ""
-    else ""
-  '<%result%>'
-end providesDirectionalDerivative;
 
 template fmiModelVariables(SimCode simCode, String FMUVersion)
  "Generates code for ModelVariables file for FMU target."

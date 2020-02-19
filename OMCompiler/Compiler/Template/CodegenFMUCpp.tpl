@@ -621,7 +621,7 @@ case SIMCODE(modelInfo=MODELINFO(), modelStructure=fmiModelStructure) then
       const unsigned int vrKnown[], size_t nKnown,
       const double dvKnown[], double dvUnknown[])
   {
-  <% if CodegenFMUCommon.providesDirectionalDerivative(simCode) then
+  <% if providesDirectionalDerivative(simCode) then
   <<
     unsigned int idx, *ref_p, ref_1;
     int dimStates = _dimContinuousStates + <%dimDiscreteStates%>;

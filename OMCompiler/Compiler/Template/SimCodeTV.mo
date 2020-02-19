@@ -1114,6 +1114,11 @@ package SimCodeUtil
     output String oVarIndex;
   end getVarIndexByMapping;
 
+  function providesDirectionalDerivative
+    input SimCode.SimCode inSimCode;
+    output Boolean b;
+  end providesDirectionalDerivative;
+
   function isVarIndexListConsecutive
     input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
     input DAE.ComponentRef iVarName;
@@ -1237,6 +1242,7 @@ package SimCodeUtil
     input Integer numStates;
     output Integer n;
   end getNumContinuousEquations;
+
   function lookupVR
     input DAE.ComponentRef cr;
     input SimCode.SimCode simCode;
