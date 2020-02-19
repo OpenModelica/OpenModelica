@@ -788,6 +788,7 @@ StatementInvalidType1.mo \
 StateSelectVariability1.mo \
 StateSelect1.mo \
 StateSelect2.mo \
+StateSelect3.mo \
 Subscript1.mo \
 Subscript2.mo \
 Subscript3.mo \
