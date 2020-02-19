@@ -64,8 +64,7 @@ getErrorString();
 //   variableNamingConvention=\"structured\"
 //   numberOfEventIndicators=\"0\">
 //   <ModelExchange
-//     modelIdentifier=\"CSTRModel\"
-//     providesDirectionalDerivative=\"true\">
+//     modelIdentifier=\"CSTRModel\" providesDirectionalDerivative=\"true\">
 //   </ModelExchange>
 //   <TypeDefinitions>
 //     <Clocks>

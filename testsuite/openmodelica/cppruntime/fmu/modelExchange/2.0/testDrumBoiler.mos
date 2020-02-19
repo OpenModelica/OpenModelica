@@ -64,8 +64,7 @@ val(evaporator_qm_S, 100);
 //   variableNamingConvention=\"structured\"
 //   numberOfEventIndicators=\"3\">
 //   <ModelExchange
-//     modelIdentifier=\"DrumBoilerModel\"
-//     providesDirectionalDerivative=\"true\">
+//     modelIdentifier=\"DrumBoilerModel\" providesDirectionalDerivative=\"true\">
 //   </ModelExchange>
 //   <TypeDefinitions>
 //     <SimpleType name=\"Modelica.Blocks.Types.Init\">
