@@ -557,7 +557,7 @@ QString Utilities::arrayExpressionUnitConversion(OMCProxy *pOMCProxy, QString mo
       }
       if (convertUnit.unitsCompatible) {
         modifierRealValueArrayElement = Utilities::convertUnit(modifierRealValueArrayElement, convertUnit.offset, convertUnit.scaleFactor);
-        modifierConvertedValuesArray.append(QString::number(modifierRealValueArrayElement));
+        modifierConvertedValuesArray.append(StringHandler::number(modifierRealValueArrayElement));
       }
     }
   }

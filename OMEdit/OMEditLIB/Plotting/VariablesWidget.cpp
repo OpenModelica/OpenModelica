@@ -340,7 +340,7 @@ QVariant VariablesTreeItem::getValue(QString fromUnit, QString toUnit)
       qreal realValue = mValue.toDouble(&ok);
       if (ok) {
         realValue = Utilities::convertUnit(realValue, convertUnit.offset, convertUnit.scaleFactor);
-        value = QString::number(realValue);
+        value = StringHandler::number(realValue);
       }
     }
   }
@@ -788,7 +788,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
             qreal realValue = variableData[4].toDouble(&ok);
             if (ok) {
               realValue = Utilities::convertUnit(realValue, convertUnit.offset, convertUnit.scaleFactor);
-              variableData[4] = QString::number(realValue);
+              variableData[4] = StringHandler::number(realValue);
             }
           }
         } else { /* use unit as displayUnit */
@@ -2116,7 +2116,7 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
       qreal realValue = stringValue.toDouble(&ok);
       if (ok) {
         realValue = Utilities::convertUnit(realValue, convertUnit.offset, convertUnit.scaleFactor);
-        pVariablesTreeItem->setData(1, QString::number(realValue), Qt::EditRole);
+        pVariablesTreeItem->setData(1, StringHandler::number(realValue), Qt::EditRole);
       }
       /* update plots */
       foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {

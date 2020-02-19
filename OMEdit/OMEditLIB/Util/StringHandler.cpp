@@ -1856,3 +1856,16 @@ QString StringHandler::insertClassAtPosition(QString parentClassText, QString ch
   }
   return classText;
 }
+
+/*!
+ * \brief StringHandler::number
+ * Helper for QString::number with default precision of 16 instead of 6.
+ * \param value
+ * \param format
+ * \param precision
+ * \return
+ */
+QString StringHandler::number(double value, char format, int precision)
+{
+  return QString::number(value, format, precision);
+}

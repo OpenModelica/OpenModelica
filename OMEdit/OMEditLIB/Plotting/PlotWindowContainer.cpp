@@ -557,20 +557,18 @@ void PlotWindowContainer::exportVariables()
     data << QString::number(pPlotWindow->getPlot()->getPlotCurvesList().at(0)->mXAxisVector.at(i));
     for (int j = 0; j < headers.size() - 1; ++j) {
       PlotCurve *pPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().at(j);
-      OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pPlotCurve->getDisplayUnit(),
-                                                                                                       pPlotCurve->getUnit());
+      OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pPlotCurve->getDisplayUnit(), pPlotCurve->getUnit());
       if (convertUnit.unitsCompatible) {
-        data << QString::number(Utilities::convertUnit(pPlotCurve->mYAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
+        data << StringHandler::number(Utilities::convertUnit(pPlotCurve->mYAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
       } else {
-        data << QString::number(pPlotCurve->mYAxisVector.at(i));
+        data << StringHandler::number(pPlotCurve->mYAxisVector.at(i));
       }
     }
     contents.append(data.join(",")).append("\n");
   }
   // create a file
   if (MainWindow::instance()->getLibraryWidget()->saveFile(fileName, contents)) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Exported variables in %1")
-                                                                 .arg(fileName), Helper::scriptingKind, Helper::notificationLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Exported variables in %1").arg(fileName), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
 
