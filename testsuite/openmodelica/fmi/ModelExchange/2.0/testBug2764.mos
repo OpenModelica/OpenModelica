@@ -199,15 +199,6 @@ readFile("modelDescription.tmp.xml");
 //   </ScalarVariable>
 //   <!-- Index of variable = \"10\" -->
 //   <ScalarVariable
-//     name=\"_D_whenCondition1\"
-//     valueReference=\"0\"
-//     description=\"b\"
-//     variability=\"discrete\"
-//     initial=\"exact\">
-//     <Boolean start=\"false\"/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"11\" -->
-//   <ScalarVariable
 //     name=\"b\"
 //     valueReference=\"1\"
 //     variability=\"discrete\"

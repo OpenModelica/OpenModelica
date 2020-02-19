@@ -7998,17 +7998,17 @@ algorithm
     derivSimvar := simVar; // Just in case
   end if;
 
-  // clear up the default values to improve readability of modelDescription.xml
+  // clear up default values to improve readability of modelDescription.xml
   if not Flags.isSet(Flags.DUMP_FORCE_FMI_ATTRIBUTES) then
     simVar := clearUpDefaultFmiAttributes(simVar);
     derivSimvar := clearUpDefaultFmiAttributes(derivSimvar) "just in case";
   end if;
 
-  // clear up cse variable (eg:$CSE) to improve readability of modelDescription.xml for FMI-2.0
-  if not Flags.isSet(Flags.DUMP_FORCE_FMI_INTERNAL_VARIABLES) and CommonSubExpression.isCSECref(simVar.name) then
+  // clear up internal variable starting with '$' except for states and "$CLKPRE"
+  if not Flags.isSet(Flags.DUMP_FORCE_FMI_INTERNAL_VARIABLES) and (ComponentReference.isInternalCref(simVar.name) and not BackendVariable.isStateVar(dlowVar) and not BackendVariable.isClockedStateVar(dlowVar)) then
     simVar.exportVar := false;
   end if;
-
+  //print("\n name :" + ComponentReference.printComponentRefStr(simVar.name) + "===>" + anyString(simVar.varKind) + "\n");
   // If it is an input variable, we give it an index
   if (not isalias) and BackendVariable.isVarOnTopLevelAndInputNoDerInput(dlowVar) then
     simVar := match simVar
