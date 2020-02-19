@@ -156,7 +156,7 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
         OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(fromUnit, mpUnitComboBox->currentText());
         if (convertUnit.unitsCompatible) {
           realValue = Utilities::convertUnit(realValue, convertUnit.offset, convertUnit.scaleFactor);
-          value = QString::number(realValue);
+          value = StringHandler::number(realValue);
         }
       } else { // if expression
         value = Utilities::arrayExpressionUnitConversion(MainWindow::instance()->getOMCProxy(), value, fromUnit, mpUnitComboBox->currentText());
@@ -1165,12 +1165,10 @@ void ComponentParameters::updateComponentParameters()
         OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(pParameter->getUnitComboBox()->currentText(), pParameter->getUnit());
         if (convertUnit.unitsCompatible) {
           componentModifierRealValue = Utilities::convertUnit(componentModifierRealValue, convertUnit.offset, convertUnit.scaleFactor);
-          componentModifierValue = QString::number(componentModifierRealValue);
+          componentModifierValue = StringHandler::number(componentModifierRealValue);
         }
       } else { // if expression
-        componentModifierValue = Utilities::arrayExpressionUnitConversion(pOMCProxy, componentModifierValue,
-                                                                          pParameter->getUnitComboBox()->currentText(),
-                                                                          pParameter->getUnit());
+        componentModifierValue = Utilities::arrayExpressionUnitConversion(pOMCProxy, componentModifierValue, pParameter->getUnitComboBox()->currentText(), pParameter->getUnit());
       }
     }
     if (pParameter->isValueModified()) {
