@@ -58,7 +58,7 @@ template ModelExchange(SimCode simCode, list<String> sourceFiles)
 match simCode
 case SIMCODE(__) then
   let modelIdentifier = modelNamePrefix(simCode)
-  let pdd = if providesDirectionalDerivative(simCode) then ' providesDirectionalDerivative=true' else ''
+  let pdd = if providesDirectionalDerivative(simCode) then ' providesDirectionalDerivative="true"' else ''
   <<
   <ModelExchange
     modelIdentifier="<%modelIdentifier%>"<%pdd%>>
