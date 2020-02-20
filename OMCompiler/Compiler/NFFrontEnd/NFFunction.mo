@@ -1675,38 +1675,36 @@ uniontype Function
     Type ty;
     Boolean dirty = false;
   algorithm
-    if not InstNode.isEmpty(node) then
-      comp := InstNode.component(node);
-      binding := Component.getBinding(comp);
-      binding2 := Binding.mapExp(binding, mapFn);
+    comp := InstNode.component(node);
+    binding := Component.getBinding(comp);
+    binding2 := Binding.mapExp(binding, mapFn);
 
-      if not referenceEq(binding, binding2) then
-        comp := Component.setBinding(binding2, comp);
-        dirty := true;
-      end if;
+    if not referenceEq(binding, binding2) then
+      comp := Component.setBinding(binding2, comp);
+      dirty := true;
+    end if;
 
-      () := match comp
-        case Component.TYPED_COMPONENT()
-          algorithm
-            ty := Type.mapDims(comp.ty, function Dimension.mapExp(func = mapFn));
+    () := match comp
+      case Component.TYPED_COMPONENT()
+        algorithm
+          ty := Type.mapDims(comp.ty, function Dimension.mapExp(func = mapFn));
 
-            if not referenceEq(ty, comp.ty) then
-              comp.ty := ty;
-              dirty := true;
-            end if;
+          if not referenceEq(ty, comp.ty) then
+            comp.ty := ty;
+            dirty := true;
+          end if;
 
-            cls := InstNode.getClass(comp.classInst);
-            ClassTree.applyComponents(Class.classTree(cls),
-              function mapExpParameter(mapFn = mapFn));
-          then
-            ();
+          cls := InstNode.getClass(comp.classInst);
+          ClassTree.applyComponents(Class.classTree(cls),
+            function mapExpParameter(mapFn = mapFn));
+        then
+          ();
 
-        else ();
-      end match;
+      else ();
+    end match;
 
-      if dirty then
-        InstNode.updateComponent(comp, node);
-      end if;
+    if dirty then
+      InstNode.updateComponent(comp, node);
     end if;
   end mapExpParameter;
 
@@ -1735,10 +1733,6 @@ protected
         algorithm
           for i in arrayLength(comps):-1:1 loop
             n := comps[i];
-
-            if InstNode.isEmpty(n) then
-              continue;
-            end if;
 
             // Sort the components based on their direction.
             () := match paramDirection(n)

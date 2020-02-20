@@ -161,10 +161,6 @@ protected
   Component comp;
   InstNode comp_node = InstNode.resolveInner(component);
 algorithm
-  if InstNode.isEmpty(comp_node) then
-    return;
-  end if;
-
   if InstNode.isProtected(comp_node) then
     locals := comp_node :: locals;
     return;
