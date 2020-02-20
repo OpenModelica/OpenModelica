@@ -11598,6 +11598,17 @@ algorithm
   ((_,oConcreteVarIndex)) := getVarIndexInfosByMapping(iVarToArrayIndexMapping, iVarName, iColumnMajor, iIndexForUndefinedReferences);
 end getVarIndexByMapping;
 
+public function providesDirectionalDerivative
+  input SimCode.SimCode inSimCode;
+  output Boolean b;
+algorithm
+  b := match inSimCode
+    case SimCode.SIMCODE(modelStructure=SOME(SimCode.FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(_))))
+    then true;
+    else false;
+  end match;
+end providesDirectionalDerivative;
+
 protected function getVarIndexInfosByMapping "author: marcusw
   Return the variable indices stored for the given variable in the mapping-table. This function is used by susan."
   input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;

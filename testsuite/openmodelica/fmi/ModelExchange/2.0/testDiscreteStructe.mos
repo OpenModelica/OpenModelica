@@ -46,8 +46,7 @@ readFile("modelDescription.tmp.xml");
 //   variableNamingConvention=\"structured\"
 //   numberOfEventIndicators=\"0\">
 //   <ModelExchange
-//     modelIdentifier=\"testDID\"
-//     providesDirectionalDerivative=\"true\">
+//     modelIdentifier=\"testDID\" providesDirectionalDerivative=\"true\">
 //     <SourceFiles>
 //       <File name=\"testDID.c\" />
 //       <File name=\"testDID_functions.c\" />
