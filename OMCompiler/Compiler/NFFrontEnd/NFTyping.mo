@@ -205,9 +205,7 @@ algorithm
     case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
         for c in cls_tree.components loop
-          if not InstNode.isEmpty(c) then
-            typeComponent(c, origin);
-          end if;
+          typeComponent(c, origin);
         end for;
 
         () := match c.ty
@@ -842,10 +840,6 @@ protected
   Variability comp_var, comp_eff_var, bind_var, bind_eff_var;
   Component.Attributes attrs;
 algorithm
-  if InstNode.isEmpty(component) then
-    return;
-  end if;
-
   c := InstNode.component(node);
 
   () := match c
@@ -2473,10 +2467,6 @@ function typeComponentSections
 protected
   Component comp;
 algorithm
-  if InstNode.isEmpty(component) then
-    return;
-  end if;
-
   comp := InstNode.component(component);
 
   () := match comp

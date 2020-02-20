@@ -254,7 +254,7 @@ protected
   Visibility vis;
 algorithm
   // Remove components that are only outer.
-  if InstNode.isOnlyOuter(component) or InstNode.isEmpty(component) then
+  if InstNode.isOnlyOuter(component) then
     return;
   end if;
 
@@ -348,11 +348,9 @@ algorithm
     return;
   end if;
 
-  if not InstNode.isEmpty(compNode) then
-    comp := InstNode.component(compNode);
-    InstNode.updateComponent(Component.DELETED_COMPONENT(comp), compNode);
-    deleteClassComponents(Component.classInstance(comp));
-  end if;
+  comp := InstNode.component(compNode);
+  InstNode.updateComponent(Component.DELETED_COMPONENT(comp), compNode);
+  deleteClassComponents(Component.classInstance(comp));
 end deleteComponent;
 
 function deleteClassComponents
@@ -1711,10 +1709,6 @@ algorithm
     case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE(), sections = sections)
       algorithm
         for c in cls_tree.components loop
-          if InstNode.isEmpty(c) then
-            continue;
-          end if;
-
           comp := InstNode.component(c);
           funcs := collectTypeFuncs(Component.getType(comp), funcs);
           binding := Component.getBinding(comp);

@@ -1131,11 +1131,10 @@ protected
 algorithm
   typeVars := match cls as InstNode.getClass(complexCls)
     case Class.INSTANCED_CLASS(restriction = Restriction.RECORD())
-      then list(makeTypeRecordVar(c) for c guard not InstNode.isEmpty(c)
-             in ClassTree.getComponents(cls.elements));
+      then list(makeTypeRecordVar(c) for c in ClassTree.getComponents(cls.elements));
 
     case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE())
-      then list(makeTypeVar(c) for c guard not (InstNode.isOnlyOuter(c) or InstNode.isEmpty(c))
+      then list(makeTypeVar(c) for c guard not InstNode.isOnlyOuter(c)
              in ClassTree.getComponents(cls.elements));
 
     else {};

@@ -852,46 +852,143 @@ public
     end appendComponentsToInstTree;
 
     function flatten
+      "Flattens a class tree by creating new arrays for the classes and
+       components with any duplicates removed and with the elements no longer
+       being mutable references."
       input output ClassTree tree;
     algorithm
       tree := match tree
         local
           array<InstNode> clss, comps;
+          array<Integer> comp_offsets;
           Integer clsc, compc;
-          list<Integer> dup_cls, dup_comp;
+          list<Integer> dup_comp;
+          LookupTree.Tree ltree;
 
         case INSTANTIATED_TREE()
           algorithm
-            (dup_cls, dup_comp) := enumerateDuplicates(tree.duplicates);
+            // Create a list of indices for any duplicates.
+            (_, dup_comp) := enumerateDuplicates(tree.duplicates);
 
+            // Allocate new arrays for classes and components.
             clsc := arrayLength(tree.classes);
-            compc := arrayLength(tree.components);
+            compc := arrayLength(tree.components) - listLength(dup_comp);
             clss := arrayCreateNoInit(clsc, InstNode.EMPTY_NODE());
             comps := arrayCreateNoInit(compc, InstNode.EMPTY_NODE());
 
-            flatten2(tree.classes, clss, dup_cls);
-            flatten2(tree.components, comps, dup_comp);
+            // Class duplicates can be ignored since classes are only accessed
+            // through name lookup and not index, so there's no need to spend
+            // time on filtering them out.
+            flattenElements(tree.classes, clss);
+
+            // Component duplicates should be removed though, since we don't
+            // want any duplicates in the flat model.
+            if listEmpty(dup_comp) then
+              // No duplicates, just copy to new array.
+              flattenElements(tree.components, comps);
+              ltree := tree.tree;
+            else
+              // Duplicates, create an array of offsets and use it to fill the
+              // new array and update the lookup tree.
+              comp_offsets := createFlatOffsets(arrayLength(tree.components), dup_comp);
+              flattenElementsWithOffset(tree.components, comps, comp_offsets);
+              ltree := flattenLookupTree(tree.tree, comp_offsets);
+            end if;
           then
-            FLAT_TREE(tree.tree, clss, comps, tree.imports, tree.duplicates);
+            FLAT_TREE(ltree, clss, comps, tree.imports, tree.duplicates);
 
         else tree;
       end match;
     end flatten;
 
-    function flatten2
+    function flattenElements
+      "Copies elements from one array to another while removing the Mutable
+       container for each element."
       input array<Mutable<InstNode>> elements;
       input array<InstNode> flatElements;
-      input list<Integer> duplicates;
     algorithm
       for i in 1:arrayLength(elements) loop
         arrayUpdateNoBoundsChecking(flatElements, i,
           Mutable.access(arrayGetNoBoundsChecking(elements, i)));
       end for;
+    end flattenElements;
 
-      for i in duplicates loop
-        arrayUpdateNoBoundsChecking(flatElements, i, InstNode.EMPTY_NODE());
+    function flattenElementsWithOffset
+      input array<Mutable<InstNode>> elements;
+      input array<InstNode> flatElements;
+      input array<Integer> offsets;
+    protected
+      Integer offset;
+    algorithm
+      for i in 1:arrayLength(elements) loop
+        offset := arrayGetNoBoundsChecking(offsets, i);
+
+        if offset >= 0 then
+          arrayUpdateNoBoundsChecking(flatElements, i - offset,
+            Mutable.access(arrayGetNoBoundsChecking(elements, i)));
+        end if;
       end for;
-    end flatten2;
+    end flattenElementsWithOffset;
+
+    function createFlatOffsets
+      "Creates an array of offsets given an element count and a sorted list of
+       duplicate indices. The offsets indicate how many positions each element
+       is shifted when removing the duplicate elements. The duplicates are
+       marked with -1 in the array. For example:
+         createFlatOffsets(7, {2, 4, 5}) => {0, -1, 1, -1, -1, 3, 3}
+      "
+      input Integer elementCount;
+      input list<Integer> duplicates;
+      output array<Integer> offsets;
+    protected
+      Integer offset = 0;
+      Integer dup;
+      list<Integer> rest_dups;
+    algorithm
+      offsets := arrayCreateNoInit(elementCount, 0);
+      dup :: rest_dups := duplicates;
+
+      for i in 1:elementCount loop
+
+        if i == dup then
+          if listEmpty(rest_dups) then
+            dup := 0;
+          else
+            dup :: rest_dups := rest_dups;
+          end if;
+
+          offset := offset + 1;
+          arrayUpdateNoBoundsChecking(offsets, i, -1);
+        else
+          arrayUpdateNoBoundsChecking(offsets, i, offset);
+        end if;
+      end for;
+    end createFlatOffsets;
+
+    function flattenLookupTree
+      "Traverses a lookup tree and shifts the index of each component entry by
+       using the given offset array, such that the lookup tree can be used to
+       look up components when any duplicates have been removed from the
+       component array."
+      input output LookupTree.Tree tree;
+      input array<Integer> offsets;
+    algorithm
+      tree := LookupTree.map(tree, function flattenLookupTree2(offsets = offsets));
+    end flattenLookupTree;
+
+    function flattenLookupTree2
+      input LookupTree.Key key;
+      input LookupTree.Entry entry;
+      input array<Integer> offsets;
+      output LookupTree.Entry outEntry;
+    algorithm
+      outEntry := match entry
+        case LookupTree.Entry.COMPONENT()
+          then LookupTree.Entry.COMPONENT(entry.index - arrayGetNoBoundsChecking(offsets, entry.index));
+
+        else entry;
+      end match;
+    end flattenLookupTree2;
 
     function lookupElement
       "Returns the class or component with the given name in the class tree."
@@ -1949,6 +2046,8 @@ public
         components := {};
       else
         (classes, components) := DuplicateTree.fold_2(duplicates, enumerateDuplicates2, {}, {});
+        classes := List.sort(classes, intGt);
+        components := List.sort(components, intGt);
       end if;
     end enumerateDuplicates;
 

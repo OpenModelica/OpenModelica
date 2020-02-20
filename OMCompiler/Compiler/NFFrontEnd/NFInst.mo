@@ -3267,9 +3267,7 @@ algorithm
     case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
         for c in cls_tree.components loop
-          if not InstNode.isEmpty(c) then
-            updateImplicitVariabilityComp(c, evalAllParams);
-          end if;
+          updateImplicitVariabilityComp(c, evalAllParams);
         end for;
 
         Sections.apply(cls.sections,
