@@ -1675,11 +1675,10 @@ protected
   array<Integer> nE, nV;
   array<Boolean> varArray, eqArray;
   list<Integer> unsolvedDiscreteVars, algSolvedVars;
-  list<Integer> tearingvars = {}, residualequations = {};
+  list<Integer> iterationVars = {}, residualequations = {};
   list<BackendDAE.Var> var_lst;
   list<BackendDAE.Equation> eqn_lst;
   BackendDAE.InnerEquations innerEquationsLocalIndex = {}, innerEquations;
-  BackendDAE.AdjacencyMatrix aMatrix, aMatrixT;
   BackendDAE.AdjacencyMatrixEnhanced adjEnh, adjEnhT;
   Boolean linear;
   BackendDAE.EquationArray eqns;
@@ -1698,15 +1697,7 @@ try
   vars := BackendVariable.listVar1(var_lst);
   subsyst := BackendDAEUtil.createEqSystem(vars, eqns);
 
-  // print("Minimal Tearing subsystem: \n");
-  // BackendDump.printEqSystem(subsyst);
-
   (adjEnh,adjEnhT) := BackendDAEUtil.getAdjacencyMatrixEnhanced(subsyst, ishared, false);
-
-  // Get the adjacency lists for the system. We are only intersted in solvable matches here.
-  // TODO: This needs to use adjacencyMatrixEnhanced because we will eventually need all the
-  // incidence info (not just solvable) to sort the inner equations in the proper order.
-  (subsyst,aMatrix,aMatrixT) := BackendDAEUtil.getAdjacencyMatrix(subsyst, BackendDAE.SOLVABLE(),SOME(ishared.functionTree), BackendDAEUtil.isInitializationDAE(ishared));
 
   // print("Minimal Tearing subsystem: \n");
   // BackendDump.printEqSystem(subsyst);
@@ -1754,7 +1745,7 @@ try
 
   // Match the remaining discrete variables
   if not listEmpty(unsolvedDiscreteVars) then
-    matchDiscreteVars(unsolvedDiscreteVars, adjEnhT, ishared, aMatrix, aMatrixT, varArray, eqArray, nE, nV);
+    matchDiscreteVars(unsolvedDiscreteVars, adjEnhT, varArray, eqArray, nE, nV);
     // make inner equations for the matched non-algorithm-output discrete vars.
     (varArray, eqArray, innerEquations) := getTearingSetfromAssign(unsolvedDiscreteVars, nE, varArray, eqArray);
 
@@ -1772,20 +1763,55 @@ try
       residualequations := i::residualequations;
     end if;
 
+    // This ordering of iteration vars based on the ordering
+    // in the normal adjacency matrix seems to cause differences
+    // in sumulation time.
+    // What is odd is that the order in adj matrix is not really guided
+    // by anything. Somehow this seems to be faster for some models.
+    // However, we now use the enahnced matrix which can sometimes have
+    // the var entries for an equation slightly different order than the normal
+    // adj matix.
+    // Simulation should not be affected by what order we have here but it is.
+    // There is something in later phases that operates according to this order
+    // But it should not. This is just random order.
+    /*
     for elem in aMatrix[i] loop
       if elem > 0 then
         if varArray[elem] then
           arrayUpdate(varArray,elem,false);
-          tearingvars := elem::tearingvars;
+          iterationVars := elem::iterationVars;
         end if;
       end if;
     end for;
+    */
+
+    // This performs a bit worse but still better than below.
+    /*
+    for entry in adjEnh[i] loop
+      (vidx,_,_) := entry;
+      if vidx > 0 then
+        if varArray[vidx] then
+          varArray[vidx] := false;
+          iterationVars := vidx::iterationVars;
+        end if;
+      end if;
+    end for;
+    */
+
   end for;
 
-  // dumpTearingSetGlobalIndexes(BackendDAE.TEARINGSET(tearingvars, residualequations, listReverse(innerEquationsLocalIndex), BackendDAE.EMPTY_JACOBIAN()),size," - STRICT SET");
+  // Mark all other vars as iteration vars.
+  // This should be all we need here. The ordering issue needs to be investigated later.
+  for i in 1:listLength(vindx) loop
+    if varArray[i] then
+      iterationVars := i::iterationVars;
+    end if;
+  end for;
+
+  // dumpTearingSetGlobalIndexes(BackendDAE.TEARINGSET(iterationVars, residualequations, listReverse(innerEquationsLocalIndex), BackendDAE.EMPTY_JACOBIAN()),size," - STRICT SET");
 
   // Start converting local indeces of variables and equations to their global
-  // counterparts (We used a smller local subsystem for processing the system above.)
+  // counterparts (We used a smaller local subsystem for processing the system above.)
   innerEquations := list(
     match ieqn
       case BackendDAE.INNEREQUATION() algorithm
@@ -1795,13 +1821,13 @@ try
       else fail();
     end match for ieqn in innerEquationsLocalIndex);
 
-  tearingvars := selectFromList_rev(vindx, tearingvars);
+  iterationVars := selectFromList_rev(vindx, iterationVars);
   residualequations := selectFromList_rev(eindex, residualequations);
 
-  // dumpTearingSetGlobalIndexes(BackendDAE.TEARINGSET(tearingvars, residualequations, listReverse(innerEquations), BackendDAE.EMPTY_JACOBIAN()),size," - STRICT SET");
+  // dumpTearingSetGlobalIndexes(BackendDAE.TEARINGSET(iterationVars, residualequations, listReverse(innerEquations), BackendDAE.EMPTY_JACOBIAN()),size," - STRICT SET");
 
   // Return torn system
-  ocomp := BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars, residualequations, listReverse(innerEquations), BackendDAE.EMPTY_JACOBIAN()), NONE(), linear, mixedSystem);
+  ocomp := BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(iterationVars, residualequations, listReverse(innerEquations), BackendDAE.EMPTY_JACOBIAN()), NONE(), linear, mixedSystem);
 else
   Error.addInternalError("function minimalTearing failed", sourceInfo());
   fail();
@@ -1813,9 +1839,6 @@ protected function matchDiscreteVars
   "Matches all discrete vars given by inDiscreteVars."
   input list<Integer> inDiscreteVars;
   input BackendDAE.AdjacencyMatrixEnhanced adjEnhT;
-  input BackendDAE.Shared ishared;
-  input BackendDAE.AdjacencyMatrix me "Adjacacency matrix";
-  input BackendDAE.AdjacencyMatrix meT "Transposed adjacacency matrix";
   input array<Boolean> varArray;
   input array<Boolean> eqArray;
   input output array<Integer> nE "Equations";
@@ -1826,7 +1849,7 @@ algorithm
   try
   for varIdx in inDiscreteVars loop
     eqMarker := arrayCopy(eqArray);
-    (eqMarker, nE, nV, true) := pathFound(varIdx, adjEnhT, ishared, me, meT, varArray, eqArray, eqMarker, nE, nV);
+    (eqMarker, nE, nV, true) := pathFound(varIdx, adjEnhT, varArray, eqArray, eqMarker, nE, nV);
   end for;
   else
     Error.addInternalError("function matchDiscreteVars failed", sourceInfo());
@@ -1839,9 +1862,6 @@ protected function pathFound
    matching of discrete variables."
   input Integer varIdx;
   input BackendDAE.AdjacencyMatrixEnhanced adjEnhT;
-  input BackendDAE.Shared ishared;
-  input BackendDAE.AdjacencyMatrix me "Adjacacency matrix";
-  input BackendDAE.AdjacencyMatrix meT "Transposed adjacacency matrix";
   input array<Boolean> varArray;
   input array<Boolean> eqArray;
   input output array<Boolean> eqMarker;
@@ -1858,13 +1878,11 @@ algorithm
     if isEntrySolvable(entry) and eqIdx > 0 then
 
       if eqArray[eqIdx] and nV[eqIdx] == -1 then
-        // if (BackendDAEUtil.findSolvabelVarInEquation(varIdx, eqIdx, varArray, isyst, ishared)) then
           // Path found
           nV[eqIdx] := varIdx;
           nE[varIdx] := eqIdx;
           success := true;
           return;
-        // end if;
       end if;
 
     end if;
@@ -1877,7 +1895,7 @@ algorithm
     if isEntrySolvable(entry) and eqIdx > 0 then
       if eqMarker[eqIdx] then
          eqMarker[eqIdx] := false;
-         (eqMarker, nE, nV , success) := pathFound(nV[eqIdx], adjEnhT, ishared, me, meT , varArray, eqArray, eqMarker, nE, nV);
+         (eqMarker, nE, nV , success) := pathFound(nV[eqIdx], adjEnhT, varArray, eqArray, eqMarker, nE, nV);
       end if;
     end if;
     if success then
