@@ -6113,7 +6113,7 @@ algorithm
       tuple<BackendDAE.Variables, Boolean, Boolean, Integer, array<Integer>, list<Integer>> tpl;
 
     case (DAE.LUNARY(exp=e1), (vars, bs, isInitial, it, at, pa)) equation
-      (_, (vars, _, _, _, _, pa)) = Expression.traverseExpTopDown(e1, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, true, isInitial, it, at, pa));
+      (_, (vars, _, _, _, _, pa)) = Expression.traverseExpTopDown(e1, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, bs, isInitial, it, at, pa));
     then (inExp, false, (vars, bs, isInitial, it, at, pa));
 
     case (DAE.LBINARY(exp1=e1, exp2=e2), (vars, bs, isInitial, it, at, pa)) equation
