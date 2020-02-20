@@ -2695,20 +2695,20 @@ algorithm
     // ALGORITHM
     case BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS(statementLst = statementLst))
       algorithm
-         res := traverseStmts(statementLst, function adjacencyRowAlgorithm(inVariables = vars,
+        res := traverseStmts(statementLst, function adjacencyRowAlgorithm(inVariables = vars,
             functionTree = functionTree, inIndexType = inIndexType, isInitial = isInitial), iRow);
 
         /*
-          If looking for solvability and is not initialization system add ONLY all output variables
-          the way initialization is implemented now it expects all outputs from algorithms and then
-          seems to solve for the non-outputs as inverse algorithm non-linear systems.
+          If looking for solvability add all discrete output variables, even if they don't occur in the algorithm.
+          Discrete output variables that do not occur get computed by pre().
+          Ticket #5659
         */
         if indexTypeSolvable(inIndexType) then
           crefLst := CheckModel.algorithmStatementListOutputs(statementLst, DAE.EXPAND()); // expand as we're in an algorithm
           for cr in crefLst loop
             try
               (varslst, p) := BackendVariable.getVar(cr, vars);
-               res := adjacencyRowExp1Discrete(varslst, p, res);
+              res := adjacencyRowExp1Discrete(varslst, p, res);
             else
               /* Nothing to do, BackendVariable.getVar fails for $START, $PRE, time etc. */
             end try;
@@ -6114,7 +6114,7 @@ algorithm
       tuple<BackendDAE.Variables, Boolean, Boolean, Integer, array<Integer>, list<Integer>> tpl;
 
     case (DAE.LUNARY(exp=e1), (vars, bs, isInitial, it, at, pa)) equation
-      (_, (vars, _, _, _, _, pa)) = Expression.traverseExpTopDown(e1, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, true, isInitial, it, at, pa));
+      (_, (vars, _, _, _, _, pa)) = Expression.traverseExpTopDown(e1, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, bs, isInitial, it, at, pa));
     then (inExp, false, (vars, bs, isInitial, it, at, pa));
 
     case (DAE.LBINARY(exp1=e1, exp2=e2), (vars, bs, isInitial, it, at, pa)) equation

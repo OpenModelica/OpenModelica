@@ -1464,10 +1464,10 @@ algorithm
 end solvable;
 
 protected function isEntrySolved
-  input BackendDAE.AdjacencyMatrixElementEnhancedEntry ent;
+  input BackendDAE.AdjacencyMatrixElementEnhancedEntry entry;
   output Boolean b;
 algorithm
-  b := match ent
+  b := match entry
     case (_, BackendDAE.SOLVABILITY_SOLVED(), _) then true;
     case (_, BackendDAE.SOLVABILITY_PARAMETER(b=b), _) algorithm
         Error.addInternalError("SOLVABILITY_PARAMETER is not handled yet. Requires revision.", sourceInfo());
@@ -1475,6 +1475,15 @@ algorithm
     else false;
   end match;
 end isEntrySolved;
+
+protected function isEntrySolvable
+  input BackendDAE.AdjacencyMatrixElementEnhancedEntry entry;
+  output Boolean b;
+protected
+  BackendDAE.Solvability s;
+algorithm
+  b := solvable(Util.tuple32(entry));
+end isEntrySolvable;
 
 
 protected function tearingBFS2 " function to make an assignment and determine the next equations for queue
@@ -1718,25 +1727,30 @@ try
   qidx := 1;
   for eqn in eqn_lst loop
     if BackendEquation.isAlgorithm(eqn) then
+      // mark the alg eqn to be ignored for later
+      // matching.
       eqArray[qidx] := false;
 
       algSolvedVars := {};
       for entr in adjEnh[qidx] loop
+        // var is solved in this algorithm.
         if isEntrySolved(entr) then
           (vidx,_,_) := entr;
           algSolvedVars := vidx::algSolvedVars;
           unsolvedDiscreteVars := List.deleteMember(unsolvedDiscreteVars,vidx);
+
+          // mark the var to be ignored for later
+          // matching.
           varArray[vidx] := false;
         end if;
       end for;
+
+      // create an inner equation for the algorithm.
       innerEquationsLocalIndex := BackendDAE.INNEREQUATION(qidx, algSolvedVars)::innerEquationsLocalIndex;
     end if;
     qidx := qidx + 1;
   end for;
   // print("Non-algorithm-output discrete Vars: " + stringDelimitList(List.map(unsolvedDiscreteVars,intString),",") + "\n");
-
-  // Mark the arrays used for matching to ignore entries for algorithm equations
-  // and variables solved in them.
 
   // Match the remaining discrete variables
   if not listEmpty(unsolvedDiscreteVars) then
@@ -1834,11 +1848,14 @@ protected function pathFound
   input output array<Integer> nE "Equations";
   input output array<Integer> nV "Variables";
   output Boolean success = false;
+protected
+  Integer eqIdx;
 algorithm
   try
   // Try to find a path in given equation from adjacency matrix
-  for eqIdx in meT[varIdx] loop
-    if eqIdx > 0 then
+  for entry in adjEnhT[varIdx] loop
+    (eqIdx,_,_) := entry;
+    if isEntrySolvable(entry) and eqIdx > 0 then
 
       if eqArray[eqIdx] and nV[eqIdx] == -1 then
         // if (BackendDAEUtil.findSolvabelVarInEquation(varIdx, eqIdx, varArray, isyst, ishared)) then
@@ -1854,8 +1871,10 @@ algorithm
   end for;
 
   // If no path was found mark equation as false and call pathFound
-  for eqIdx in meT[varIdx] loop
-    if eqIdx > 0 then
+  for entry in adjEnhT[varIdx] loop
+    (eqIdx,_,_) := entry;
+
+    if isEntrySolvable(entry) and eqIdx > 0 then
       if eqMarker[eqIdx] then
          eqMarker[eqIdx] := false;
          (eqMarker, nE, nV , success) := pathFound(nV[eqIdx], adjEnhT, ishared, me, meT , varArray, eqArray, eqMarker, nE, nV);
