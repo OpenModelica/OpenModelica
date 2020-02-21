@@ -1697,7 +1697,7 @@ try
   vars := BackendVariable.listVar1(var_lst);
   subsyst := BackendDAEUtil.createEqSystem(vars, eqns);
 
-  (adjEnh,adjEnhT) := BackendDAEUtil.getAdjacencyMatrixEnhanced(subsyst, ishared, false);
+  (adjEnh,adjEnhT) := BackendDAEUtil.getAdjacencyMatrixEnhanced(subsyst, ishared, BackendDAEUtil.isInitializationDAE(ishared));
 
   // print("Minimal Tearing subsystem: \n");
   // BackendDump.printEqSystem(subsyst);
