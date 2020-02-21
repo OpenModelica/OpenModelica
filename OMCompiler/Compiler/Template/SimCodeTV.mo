@@ -3572,6 +3572,11 @@ package Expression
     output DAE.ComponentRef outComponentRef;
   end expCref;
 
+  function isConst
+   input DAE.Exp inExp;
+   output Boolean outBoolean;
+  end isConst;
+
   function subscriptConstants
     "returns true if all subscripts are known (i.e no cref) constant values (no slice or wholedim "
     input list<DAE.Subscript> inSubs;

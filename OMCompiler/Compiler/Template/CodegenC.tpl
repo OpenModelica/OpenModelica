@@ -5726,7 +5726,7 @@ template equationNonlinear(SimEqSystem eq, Context context, String modelNamePref
       %>
       /* get old value */
       <%nls.crefs |> name hasindex i0 =>
-        'data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%cref(name)%>;'
+        'data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%crefOrStartCref(name, context)%>;'
       ;separator="\n"%>
       retValue = solve_nonlinear_system(data, threadData, <%nls.indexNonLinearSystem%>);
       /* check if solution process was successful */
@@ -5771,7 +5771,7 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, St
       {
         /* get old value */
         <%at.crefs |> name hasindex i0 =>
-          'data->simulationInfo->nonlinearSystemData[<%at.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%cref(name)%>;'
+          'data->simulationInfo->nonlinearSystemData[<%at.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%crefOrStartCref(name, context)%>;'
         ;separator="\n"%>
         retValue = solve_nonlinear_system(data, threadData, <%at.indexNonLinearSystem%>);
         /* The casual tearing set found a solution */

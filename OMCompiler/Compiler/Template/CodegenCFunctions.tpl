@@ -4599,6 +4599,18 @@ end contextIteratorName;
   else crefToCStr(cr, 0, false, false)
 end cref;
 
+/* public */ template crefOrStartCref(ComponentRef cr, Context context)
+ "Generates C equivalent name for component reference if the start expression
+  was constant and could be written in the init_xml file. Returns the start
+  expression otherwise. Used to resolve Ticket: #5807"
+::=
+  match cref2simvar(cr, getSimCode())
+  case SIMVAR(initialValue = SOME(startExp)) then
+    if not Expression.isConst(startExp) then daeExp(startExp, context, "", "", "")
+    else cref(cr)
+  else cref(cr)
+end crefOrStartCref;
+
 /* public */ template crefOld(ComponentRef cr, Integer ix)
  "Generates C equivalent name for component reference.
   used in Compiler/Template/CodegenFMU.tpl"
