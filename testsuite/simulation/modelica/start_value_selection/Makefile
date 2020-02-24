@@ -5,6 +5,7 @@ TESTFILES = \
 	UnevaluateableFixedAttribute.mos \
 	MinimalModel.mos \
 	asmaFlow.mos \
+	ticket5807.mos \
 
 
 # test that currently fail. Move up when fixed. 
