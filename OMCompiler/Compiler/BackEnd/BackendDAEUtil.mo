@@ -3168,10 +3168,22 @@ algorithm
           (_, tpl) := Expression.traverseExpTopDown(expElse, traversingadjacencyRowExpSolvableFinder, tpl);
         end if;
       then tpl;
-    case DAE.IFEXP(expThen = expThen, expElse = expElse)
+    case DAE.IFEXP(expCond = expCond, expThen = expThen, expElse = expElse)
       algorithm
-        (_, tpl) := Expression.traverseExpTopDown(expThen, traversingadjacencyRowExpSolvableFinder, tpl);
-        (_, tpl) := Expression.traverseExpTopDown(expElse, traversingadjacencyRowExpSolvableFinder, tpl);
+        /* check if condition can be simplified to true or false to make it more robust against non-simplified expressions */
+        expCond := ExpressionSimplify.simplify(expCond);
+        tpl := match expCond
+          case DAE.BCONST(true) algorithm
+            (_,tpl) := Expression.traverseExpTopDown(expThen, traversingadjacencyRowExpSolvableFinder, tpl);
+          then tpl;
+          case DAE.BCONST(false) algorithm
+            (_,tpl) := Expression.traverseExpTopDown(expElse, traversingadjacencyRowExpSolvableFinder, tpl);
+          then tpl;
+          else algorithm
+            (_, tpl) := Expression.traverseExpTopDown(expThen, traversingadjacencyRowExpSolvableFinder, tpl);
+            (_, tpl) := Expression.traverseExpTopDown(expElse, traversingadjacencyRowExpSolvableFinder, tpl);
+          then tpl;
+        end match;
       then tpl;
     else
       algorithm
@@ -3219,9 +3231,21 @@ algorithm
       then tpl;
     case DAE.IFEXP(expCond = expCond, expThen = expThen, expElse = expElse)
       algorithm
-        (_, tpl) := Expression.traverseExpTopDown(expCond, traFunc, tpl);
-        (_, tpl) := Expression.traverseExpTopDown(expThen, traFunc, tpl);
-        (_, tpl) := Expression.traverseExpTopDown(expElse, traFunc, tpl);
+        /* check if condition can be simplified to true or false to make it more robust against non-simplified expressions */
+        expCond := ExpressionSimplify.simplify(expCond);
+        tpl := match expCond
+          case DAE.BCONST(true) algorithm
+            (_,tpl) := Expression.traverseExpTopDown(expThen, traFunc, tpl);
+          then tpl;
+          case DAE.BCONST(false) algorithm
+            (_,tpl) := Expression.traverseExpTopDown(expElse, traFunc, tpl);
+          then tpl;
+          else algorithm
+            (_, tpl) := Expression.traverseExpTopDown(expCond, traFunc, tpl);
+            (_, tpl) := Expression.traverseExpTopDown(expThen, traFunc, tpl);
+            (_, tpl) := Expression.traverseExpTopDown(expElse, traFunc, tpl);
+          then tpl;
+        end match;
       then tpl;
     else
       algorithm
@@ -3273,17 +3297,29 @@ algorithm
       then tpl;
     case DAE.IFEXP(expCond = expCond, expThen = expThen, expElse = expElse)
       algorithm
-        (vars, bs, isInitial, it, at, pa) := tpl;
-        mark := it;
-        rowmark := at;
-        (_, (vars, _, _, _, _, pa)) := Expression.traverseExpTopDown(expThen, traFunc, (vars, bs, isInitial, it, at, pa));
-        (_, (vars, _, _, _, _, pa)) := Expression.traverseExpTopDown(expElse, traFunc, (vars, bs, isInitial, it, at, pa));
-        (_, (vars, _, _, _, _, pa)) := Expression.traverseExpTopDown(expCond, traFunc, (vars, true, isInitial, it, at, pa));
-        // mark all vars which are not in all branches unsolvable
-        (_, bt) := Expression.traverseExpTopDown(e, getIfExpBranchVarOccurency, BinaryTree.emptyBinTree);
-        (_, (_, _, _, _)) := Expression.traverseExpBottomUp(expThen, markBranchVars, (mark, rowmark, vars, bt));
-        (_, (_, _, _, _)) := Expression.traverseExpBottomUp(expElse, markBranchVars, (mark, rowmark, vars, bt));
-      then (vars, bs, isInitial, it, at, pa);
+        /* check if condition can be simplified to true or false to make it more robust against non-simplified expressions */
+        expCond := ExpressionSimplify.simplify(expCond);
+        tpl := match expCond
+          case DAE.BCONST(true) algorithm
+            (_, tpl) := Expression.traverseExpTopDown(expThen, traFunc, tpl);
+          then tpl;
+          case DAE.BCONST(false) algorithm
+            (_, tpl) := Expression.traverseExpTopDown(expElse, traFunc, tpl);
+          then tpl;
+          else algorithm
+            (vars, bs, isInitial, it, at, pa) := tpl;
+            mark := it;
+            rowmark := at;
+            (_, (vars, _, _, _, _, pa)) := Expression.traverseExpTopDown(expThen, traFunc, (vars, bs, isInitial, it, at, pa));
+            (_, (vars, _, _, _, _, pa)) := Expression.traverseExpTopDown(expElse, traFunc, (vars, bs, isInitial, it, at, pa));
+            (_, (vars, _, _, _, _, pa)) := Expression.traverseExpTopDown(expCond, traFunc, (vars, true, isInitial, it, at, pa));
+            // mark all vars which are not in all branches unsolvable
+            (_, bt) := Expression.traverseExpTopDown(e, getIfExpBranchVarOccurency, BinaryTree.emptyBinTree);
+            (_, (_, _, _, _)) := Expression.traverseExpBottomUp(expThen, markBranchVars, (mark, rowmark, vars, bt));
+            (_, (_, _, _, _)) := Expression.traverseExpBottomUp(expElse, markBranchVars, (mark, rowmark, vars, bt));
+          then (vars, bs, isInitial, it, at, pa);
+        end match;
+      then tpl;
     else
       algorithm
         if Flags.isSet(Flags.FAILTRACE) then
