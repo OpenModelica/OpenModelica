@@ -5778,7 +5778,7 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, St
       if (data->simulationInfo->nonlinearSystemData[<%at.indexNonLinearSystem%>].checkConstraints(data, threadData) == 1)
       {
         /* get old value */
-        <%nls.crefs |> name hasindex i0 =>
+        <%at.crefs |> name hasindex i0 =>
           let &preExp = buffer ""
           let &varDecls = buffer ""
           let &auxFunction = buffer ""
