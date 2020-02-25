@@ -5629,13 +5629,16 @@ protected function listAllIterationVariables1 "author: lochel"
   input BackendDAE.EqSystem inEqSystem;
   output list<String> outWarning;
   output list<DAE.ComponentRef> outComponentRef;
-protected
-  BackendDAE.Variables vars;
-  BackendDAE.StrongComponents comps;
+
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars,
-                      matching=BackendDAE.MATCHING(comps=comps)) := inEqSystem;
-  (outWarning, outComponentRef) := listAllIterationVariables2(comps, vars);
+  (outWarning, outComponentRef) := match inEqSystem
+    local
+      BackendDAE.Variables vars;
+      BackendDAE.StrongComponents comps;
+    case BackendDAE.EQSYSTEM(orderedVars=vars, matching=BackendDAE.MATCHING(comps=comps))
+    then listAllIterationVariables2(comps, vars);
+    else ({}, {});
+  end match;
 end listAllIterationVariables1;
 
 protected function listAllIterationVariables2 "author: lochel"

@@ -43,6 +43,7 @@ import ExpandableArray;
 import FCore;
 import HashTable3;
 import HashTableCG;
+import HashTableExpToIndex;
 import MMath;
 import SCode;
 import ZeroCrossings;
@@ -131,9 +132,10 @@ uniontype Shared "Data shared for all equation-systems"
     ExternalObjectClasses extObjClasses     "classes of external objects, contains constructor & destructor";
     BackendDAEType backendDAEType           "indicate for what the BackendDAE is used";
     SymbolicJacobians symjacs               "Symbolic Jacobians";
-    ExtraInfo info "contains extra info that we send around like the model name";
+    ExtraInfo info                          "contains extra info that we send around like the model name";
     PartitionsInfo partitionsInfo;
-    BackendDAEModeData daeModeData "DAEMode Data";
+    BackendDAEModeData daeModeData          "DAEMode Data";
+    Option<WrapFunctionCallsData> WPFData    "Wrap function call data passed from simulation to initial system";
     Option<DataReconciliationData> dataReconciliationData;
   end SHARED;
 end Shared;
@@ -912,6 +914,28 @@ uniontype BackendDAEModeData
   end BDAE_MODE_DATA;
 end BackendDAEModeData;
 constant BackendDAEModeData emptyDAEModeData = BDAE_MODE_DATA({},{},0,NONE());
+
+public
+uniontype CSE_Equation
+  record CSE_EQUATION
+    .DAE.Exp cse "lhs";
+    .DAE.Exp call "rhs";
+    list<Integer> dependencies;
+  end CSE_EQUATION;
+end CSE_Equation;
+
+public
+constant CSE_Equation dummy_equation = CSE_EQUATION(.DAE.RCONST(0.0), .DAE.RCONST(0.0), {});
+
+public
+uniontype WrapFunctionCallsData
+  record WPF_DATA
+    list<tuple<HashTableExpToIndex.HashTable,             // function call -> cse index
+               ExpandableArray<CSE_Equation>,             // id -> (cse, call, dependencies)
+               Integer                                    // number of cse variables
+               >> data_lst;
+  end WPF_DATA;
+end WrapFunctionCallsData;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAE;

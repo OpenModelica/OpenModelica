@@ -1070,6 +1070,7 @@ constant ConfigFlag PARTLINTORN = CONFIG_FLAG(76, "partlintorn",
 constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(77, "initOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "simplifyComplexFunction",
+    "wrapFunctionCalls",
     "tearingSystem",
     "solveSimpleEquations",
     "calculateStrongComponentJacobians",

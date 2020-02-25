@@ -182,6 +182,7 @@ algorithm
     shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, fixvars);
     shared := BackendDAEUtil.setSharedOptimica(shared, dae.shared.constraints, dae.shared.classAttrs);
     shared := BackendDAEUtil.setSharedFunctionTree(shared, dae.shared.functionTree);
+    shared := BackendDAEUtil.setSharedWrapFunctionCallsData(shared, dae.shared.WPFData);
     execStat("setup shared object (initialization)");
 
     // generate initial system and pre-balance it

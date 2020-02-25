@@ -7570,20 +7570,9 @@ algorithm
   //generate Jacobian for StateSets for initial state selection
   dae := SymbolicJacobian.calculateStateSetsJacobians(dae);
 
-  // generate system for initialization
-  (outInitDAE, outInitDAE_lambda0_option, outRemovedInitialEquationLst, globalKnownVars, dae) := Initialization.solveInitialSystem(dae);
-  if Flags.isSet(Flags.WARN_NO_NOMINAL) then
-    warnAboutIterationVariablesWithNoNominal(outInitDAE);
-  end if;
-
-  // use function tree from initDAE further for simDAE
-  simDAE := BackendDAEUtil.setFunctionTree(dae, BackendDAEUtil.getFunctions(outInitDAE.shared));
-
-  // Set updated globalKnownVars
-  simDAE := setDAEGlobalKnownVars(simDAE, globalKnownVars);
 
   // add initial assignmnents to all algorithms
-  simDAE := BackendDAEOptimize.addInitialStmtsToAlgorithms(simDAE, false);
+  simDAE := BackendDAEOptimize.addInitialStmtsToAlgorithms(dae, false);
 
   // remove homotopy and initial calls
   simDAE := Initialization.removeInitializationStuff(simDAE);
@@ -7596,6 +7585,28 @@ algorithm
   if Flags.isSet(Flags.WARN_NO_NOMINAL) then
     warnAboutIterationVariablesWithNoNominal(simDAE);
   end if;
+
+  // copy relevant data
+  dae.shared := BackendDAEUtil.setSharedWrapFunctionCallsData(dae.shared, simDAE.shared.WPFData);
+  dae := BackendDAEUtil.setFunctionTree(dae, BackendDAEUtil.getFunctions(simDAE.shared));
+  dae := setDAEGlobalKnownVars(dae, simDAE.shared.globalKnownVars);
+  // use function tree from initDAE further for simDAE
+  //simDAE := BackendDAEUtil.setFunctionTree(dae, BackendDAEUtil.getFunctions(outInitDAE.shared));
+
+  // Set updated globalKnownVars
+  //simDAE := setDAEGlobalKnownVars(dae, globalKnownVars);
+
+  // generate system for initialization
+  // ToDo: WPF for lambda0
+  // fixed variables blah
+  (outInitDAE, outInitDAE_lambda0_option, outRemovedInitialEquationLst, globalKnownVars, dae) := Initialization.solveInitialSystem(dae);
+  if Flags.isSet(Flags.WARN_NO_NOMINAL) then
+    warnAboutIterationVariablesWithNoNominal(outInitDAE);
+  end if;
+
+  // copy relevant data
+  simDAE := BackendDAEUtil.setFunctionTree(simDAE, BackendDAEUtil.getFunctions(dae.shared));
+  simDAE := setDAEGlobalKnownVars(simDAE, dae.shared.globalKnownVars);
 
   // sort the globalKnownVars
   simDAE := sortGlobalKnownVarsInDAE(simDAE);
@@ -8367,7 +8378,7 @@ protected function allInitOptimizationModules
     (BackendDAEOptimize.inlineHomotopy, "inlineHomotopy"),
     (BackendDAEOptimize.inlineFunctionInLoops, "forceInlineFunctionInLoops"), // before simplifyComplexFunction
     (BackendDAEOptimize.simplifyComplexFunction, "simplifyComplexFunction"),
-    (CommonSubExpression.wrapFunctionCalls, "wrapFunctionCalls"),
+    (CommonSubExpression.wrapFunctionCalls_Initial, "wrapFunctionCalls"),
     (DynamicOptimization.reduceDynamicOptimization, "reduceDynamicOptimization"), // before tearing
     (Tearing.tearingSystem, "tearingSystem"),
     (BackendDAEOptimize.simplifyLoops, "simplifyLoops"),
@@ -9226,6 +9237,7 @@ algorithm
                               ei,
                               emptyPartitionsInfo(),
                               BackendDAE.emptyDAEModeData,
+                              NONE(),
                               NONE()
                               );
 end createEmptyShared;
@@ -9536,6 +9548,21 @@ algorithm
       then shared;
   end match;
 end setSharedOptimica;
+
+public function setSharedWrapFunctionCallsData
+  input BackendDAE.Shared inShared;
+  input Option<BackendDAE.WrapFunctionCallsData> WPFData;
+  output BackendDAE.Shared outShared;
+algorithm
+  outShared := match inShared
+    local
+      BackendDAE.Shared shared;
+    case shared as BackendDAE.SHARED()
+      equation
+        shared.WPFData = WPFData;
+      then shared;
+  end match;
+end setSharedWrapFunctionCallsData;
 
 public function collapseOrderedEqs
   input BackendDAE.BackendDAE inDAE;
