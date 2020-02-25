@@ -5727,7 +5727,14 @@ template equationNonlinear(SimEqSystem eq, Context context, String modelNamePref
       %>
       /* get old value */
       <%nls.crefs |> name hasindex i0 =>
-        'data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%if init then crefOrStartCref(name, context) else cref(name)%>;'
+        let &preExp = buffer ""
+        let &varDecls = buffer ""
+        let &auxFunction = buffer ""
+        let START = if init then crefOrStartCref(name, context, &preExp, &varDecls, &auxFunction) else cref(name)
+        let PREV = if stringEq(&preExp, "") then "" else &preExp + "\n"
+        let DECL = if stringEq(&varDecls, "") then "" else &varDecls + "\n"
+        let AUX = if stringEq(&auxFunction, "") then "" else &auxFunction + "\n"
+        '<%DECL%><%PREV%><%AUX%>data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%START%>;'
       ;separator="\n"%>
       retValue = solve_nonlinear_system(data, threadData, <%nls.indexNonLinearSystem%>);
       /* check if solution process was successful */
@@ -5771,8 +5778,15 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, St
       if (data->simulationInfo->nonlinearSystemData[<%at.indexNonLinearSystem%>].checkConstraints(data, threadData) == 1)
       {
         /* get old value */
-        <%at.crefs |> name hasindex i0 =>
-          'data->simulationInfo->nonlinearSystemData[<%at.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%if init then crefOrStartCref(name, context) else cref(name)%>;'
+        <%nls.crefs |> name hasindex i0 =>
+          let &preExp = buffer ""
+          let &varDecls = buffer ""
+          let &auxFunction = buffer ""
+          let START = if init then crefOrStartCref(name, context, &preExp, &varDecls, &auxFunction) else cref(name)
+          let PREV = if stringEq(&preExp, "") then "" else &preExp + "\n"
+          let DECL = if stringEq(&varDecls, "") then "" else &varDecls + "\n"
+          let AUX = if stringEq(&auxFunction, "") then "" else &auxFunction + "\n"
+          '<%DECL%><%PREV%><%AUX%>data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%START%>;'
         ;separator="\n"%>
         retValue = solve_nonlinear_system(data, threadData, <%at.indexNonLinearSystem%>);
         /* The casual tearing set found a solution */
