@@ -4599,14 +4599,14 @@ end contextIteratorName;
   else crefToCStr(cr, 0, false, false)
 end cref;
 
-/* public */ template crefOrStartCref(ComponentRef cr, Context context)
+/* public */ template crefOrStartCref(ComponentRef cr, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
  "Only during intialization and if the start expression cannot be
   evaluated to a constant use the full expression. Otherwise return the
   cref itself. Used to resolve Ticket: #5807"
 ::=
   match cref2simvar(cr, getSimCode())
   case SIMVAR(initialValue = SOME(startExp)) then
-    if boolNot(Expression.isConst(startExp)) then daeExp(startExp, context, "", "", "")
+    if boolNot(Expression.isConst(startExp)) then daeExp(startExp, context, &preExp, &varDecls, &auxFunction)
     else cref(cr)
   else cref(cr)
 end crefOrStartCref;
