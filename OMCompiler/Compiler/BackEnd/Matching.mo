@@ -106,7 +106,7 @@ public function ContinueMatching "
   input Integer nEqns;
   input output array<Integer> ass1 "eqn := ass1[var]";
   input output array<Integer> ass2 "var := ass2[eqn]";
-  output Boolean perfectMatching;
+  output Boolean perfectMatching = true;
 protected
   Integer i, j;
   array<Boolean> eMark, vMark;
