@@ -78,7 +78,6 @@ public function PerfectMatching "
   output array<Integer> ass1 "eqn := ass1[var]";
   output array<Integer> ass2 "var := ass2[eqn]";
 protected
-  Boolean perfectMatching;
   Integer N = arrayLength(m);
 algorithm
   (ass1, ass2, true) := RegularMatching(m, N, N);
@@ -92,11 +91,11 @@ public function RegularMatching "
   input Integer nEqns;
   output array<Integer> ass1 "eqn := ass1[var]";
   output array<Integer> ass2 "var := ass2[eqn]";
-  output Boolean outPerfectMatching=true;
+  output Boolean perfectMatching;
 algorithm
   ass2 := arrayCreate(nEqns, -1);
   ass1 := arrayCreate(nVars, -1);
-  (ass1, ass2, outPerfectMatching) := ContinueMatching(m, nVars, nEqns, ass1, ass2);
+  (ass1, ass2, perfectMatching) := ContinueMatching(m, nVars, nEqns, ass1, ass2);
 end RegularMatching;
 
 public function ContinueMatching "
@@ -107,7 +106,7 @@ public function ContinueMatching "
   input Integer nEqns;
   input output array<Integer> ass1 "eqn := ass1[var]";
   input output array<Integer> ass2 "var := ass2[eqn]";
-  output Boolean outPerfectMatching=true;
+  output Boolean perfectMatching;
 protected
   Integer i, j;
   array<Boolean> eMark, vMark;
@@ -122,14 +121,14 @@ algorithm
   eMarkIx := arrayCreate(nEqns, 0);
 
   i := 1;
-  while i<=nEqns and outPerfectMatching loop
+  while i<=nEqns loop
     j := ass2[i];
     if (j>0 and ass1[j] == i) then
-      outPerfectMatching :=true;
+      perfectMatching := true;
     else
       clearArrayWithKnownSetIndexes(eMark, eMarkIx, eMarkN);
       clearArrayWithKnownSetIndexes(vMark, vMarkIx, vMarkN);
-      (outPerfectMatching,eMarkN,vMarkN) := BBPathFound(i, m, eMark, vMark, ass1, ass2, eMarkIx, vMarkIx, 0, 0);
+      (perfectMatching, eMarkN, vMarkN) := BBPathFound(i, m, eMark, vMark, ass1, ass2, eMarkIx, vMarkIx, 0, 0);
     end if;
     i := i+1;
   end while;
