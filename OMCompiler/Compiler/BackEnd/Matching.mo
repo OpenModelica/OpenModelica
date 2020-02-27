@@ -78,10 +78,11 @@ public function PerfectMatching "
   output array<Integer> ass1 "eqn := ass1[var]";
   output array<Integer> ass2 "var := ass2[eqn]";
 protected
-  Boolean perfectMatching;
   Integer N = arrayLength(m);
 algorithm
-  (ass1, ass2, true) := RegularMatching(m, N, N);
+  ass1 := arrayCreate(N, -1);
+  ass2 := arrayCreate(N, -1);
+  (ass1, ass2, true) := ContinueMatching(m, N, N, ass1, ass2, true);
 end PerfectMatching;
 
 public function RegularMatching "
@@ -92,11 +93,11 @@ public function RegularMatching "
   input Integer nEqns;
   output array<Integer> ass1 "eqn := ass1[var]";
   output array<Integer> ass2 "var := ass2[eqn]";
-  output Boolean outPerfectMatching=true;
+  output Boolean perfectMatching;
 algorithm
-  ass2 := arrayCreate(nEqns, -1);
   ass1 := arrayCreate(nVars, -1);
-  (ass1, ass2, outPerfectMatching) := ContinueMatching(m, nVars, nEqns, ass1, ass2);
+  ass2 := arrayCreate(nEqns, -1);
+  (ass1, ass2, perfectMatching) := ContinueMatching(m, nVars, nEqns, ass1, ass2, false);
 end RegularMatching;
 
 public function ContinueMatching "
@@ -107,29 +108,33 @@ public function ContinueMatching "
   input Integer nEqns;
   input output array<Integer> ass1 "eqn := ass1[var]";
   input output array<Integer> ass2 "var := ass2[eqn]";
-  output Boolean outPerfectMatching=true;
+  input Boolean stopAtSingularity = false;
+  output Boolean perfectMatching = true;
 protected
   Integer i, j;
   array<Boolean> eMark, vMark;
   array<Integer> eMarkIx, vMarkIx;
   Integer eMarkN=0, vMarkN=0;
+  Boolean success;
 algorithm
-  ass2 := arrayCreate(nEqns, -1);
-  ass1 := arrayCreate(nVars, -1);
   vMark := arrayCreate(nVars, false);
   eMark := arrayCreate(nEqns, false);
   vMarkIx := arrayCreate(nVars, 0);
   eMarkIx := arrayCreate(nEqns, 0);
 
   i := 1;
-  while i<=nEqns and outPerfectMatching loop
+  while i<=nEqns loop
     j := ass2[i];
-    if (j>0 and ass1[j] == i) then
-      outPerfectMatching :=true;
-    else
+    if not (j>0 and ass1[j] == i) then
       clearArrayWithKnownSetIndexes(eMark, eMarkIx, eMarkN);
       clearArrayWithKnownSetIndexes(vMark, vMarkIx, vMarkN);
-      (outPerfectMatching,eMarkN,vMarkN) := BBPathFound(i, m, eMark, vMark, ass1, ass2, eMarkIx, vMarkIx, 0, 0);
+      (success, eMarkN, vMarkN) := BBPathFound(i, m, eMark, vMark, ass1, ass2, eMarkIx, vMarkIx, 0, 0);
+      if not success then
+        perfectMatching := false;
+        if stopAtSingularity then
+          return;
+        end if;
+      end if;
     end if;
     i := i+1;
   end while;
