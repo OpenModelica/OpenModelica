@@ -117,8 +117,6 @@ protected
   Integer eMarkN=0, vMarkN=0;
   Boolean success;
 algorithm
-  ass2 := arrayCreate(nEqns, -1);
-  ass1 := arrayCreate(nVars, -1);
   vMark := arrayCreate(nVars, false);
   eMark := arrayCreate(nEqns, false);
   vMarkIx := arrayCreate(nVars, 0);
