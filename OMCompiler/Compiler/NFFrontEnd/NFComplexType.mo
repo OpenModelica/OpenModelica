@@ -31,6 +31,7 @@
 
 encapsulated uniontype NFComplexType
   import NFInstNode.InstNode;
+  import Record = NFRecord;
 
 protected
   import ComplexType = NFComplexType;
@@ -59,7 +60,7 @@ public
 
   record RECORD
     InstNode constructor;
-    list<String> fieldNames;
+    list<Record.Field> fields;
   end RECORD;
 
   record EXTERNAL_OBJECT

@@ -1771,6 +1771,24 @@ uniontype Function
     output Boolean isPartial = InstNode.isPartial(fn.node);
   end isPartial;
 
+  function getLocalArguments
+    input Function fn;
+    output list<Expression> localArgs = {};
+  protected
+    Binding binding;
+  algorithm
+    for l in fn.locals loop
+      if InstNode.isComponent(l) then
+        binding := Component.getBinding(InstNode.component(l));
+        Error.assertion(Binding.hasExp(binding),
+          getInstanceName() + " got local component without binding", sourceInfo());
+        localArgs := Binding.getExp(binding) :: localArgs;
+      end if;
+    end for;
+
+    localArgs := listReverseInPlace(localArgs);
+  end getLocalArguments;
+
 protected
   function collectParams
     "Sorts all the function parameters as inputs, outputs and locals."

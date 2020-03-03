@@ -69,6 +69,7 @@ public
   import NFComponentRef.Origin;
   import NFTyping.ExpOrigin;
   import Values;
+  import Record = NFRecord;
 
   uniontype ClockKind
     record INFERRED_CLOCK
@@ -1725,8 +1726,7 @@ public
         then DAE.ARRAY(Type.toDAE(exp.ty), Type.isScalarArray(exp.ty),
           list(toDAE(e) for e in exp.elements));
 
-      case RECORD(ty = Type.COMPLEX(complexTy = ComplexType.RECORD(fieldNames = names)))
-        then DAE.RECORD(exp.path, list(toDAE(e) for e in exp.elements), names, Type.toDAE(exp.ty));
+      case RECORD() then toDAERecord(exp.ty, exp.path, exp.elements);
 
       case RANGE()
         then DAE.RANGE(
@@ -1807,6 +1807,37 @@ public
     end match;
   end toDAE;
 
+  function toDAERecord
+    input Type ty;
+    input Absyn.Path path;
+    input list<Expression> args;
+    output DAE.Exp exp;
+  protected
+    list<String> field_names = {};
+    Expression arg;
+    list<Expression> rest_args = args;
+    list<DAE.Exp> dargs = {};
+  algorithm
+    for field in Type.recordFields(ty) loop
+      arg :: rest_args := rest_args;
+
+      () := match field
+        case Record.Field.INPUT()
+          algorithm
+            field_names := field.name :: field_names;
+            dargs := toDAE(arg) :: dargs;
+          then
+            ();
+
+        else ();
+      end match;
+    end for;
+
+    field_names := listReverseInPlace(field_names);
+    dargs := listReverseInPlace(dargs);
+    exp := DAE.RECORD(path, dargs, field_names, Type.toDAE(ty));
+  end toDAERecord;
+
   function toDAEValueOpt
     input Option<Expression> exp;
     output Option<Values.Value> value = Util.applyOption(exp, toDAEValue);
@@ -1820,7 +1851,8 @@ public
       local
         Type ty;
         list<Values.Value> vals;
-        list<String> fields;
+        list<Record.Field> fields;
+        list<String> field_names;
 
       case INTEGER() then Values.INTEGER(exp.value);
       case REAL() then Values.REAL(exp.value);
@@ -1835,8 +1867,7 @@ public
         then
           ValuesUtil.makeArray(vals);
 
-      case RECORD(ty = Type.COMPLEX(complexTy = ComplexType.RECORD(fieldNames = fields)))
-        then Values.RECORD(exp.path, list(toDAEValue(e) for e in exp.elements), fields, -1);
+      case RECORD() then toDAEValueRecord(exp.ty, exp.path, exp.elements);
 
       else
         algorithm
@@ -1845,6 +1876,37 @@ public
           fail();
     end match;
   end toDAEValue;
+
+  function toDAEValueRecord
+    input Type ty;
+    input Absyn.Path path;
+    input list<Expression> args;
+    output Values.Value value;
+  protected
+    list<String> field_names = {};
+    Expression arg;
+    list<Expression> rest_args = args;
+    list<Values.Value> values = {};
+  algorithm
+    for field in Type.recordFields(ty) loop
+      arg :: rest_args := rest_args;
+
+      () := match field
+        case Record.Field.INPUT()
+          algorithm
+            field_names := field.name :: field_names;
+            values := toDAEValue(arg) :: values;
+          then
+            ();
+
+        else ();
+      end match;
+    end for;
+
+    field_names := listReverseInPlace(field_names);
+    values := listReverseInPlace(values);
+    value := Values.RECORD(path, values, field_names, -1);
+  end toDAEValueRecord;
 
   function dimensionCount
     input Expression exp;
@@ -5078,7 +5140,6 @@ public
 
     end match;
   end nthRecordElement;
-
 
   function splitRecordCref
     input Expression exp;

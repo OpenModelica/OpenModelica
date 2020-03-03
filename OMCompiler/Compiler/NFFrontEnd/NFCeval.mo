@@ -51,6 +51,7 @@ import ComplexType = NFComplexType;
 import Subscript = NFSubscript;
 import NFTyping.TypingError;
 import DAE;
+import Record = NFRecord;
 
 protected
 import NFFunction.Function;
@@ -701,34 +702,33 @@ function makeRecordBindingExp
 protected
   ClassTree tree;
   array<InstNode> comps;
-  list<Expression> fields;
-  list<String> field_names;
+  list<Expression> args;
+  list<Record.Field> fields;
   Type ty;
   InstNode c;
   ComponentRef cr;
-  Expression field_exp;
+  Expression arg;
 algorithm
   tree := Class.classTree(InstNode.getClass(typeNode));
   comps := ClassTree.getComponents(tree);
-  fields := {};
-  field_names := {};
+  args := {};
 
   for i in arrayLength(comps):-1:1 loop
     c := comps[i];
     ty := InstNode.getType(c);
     cr := ComponentRef.CREF(c, {}, ty, NFComponentRef.Origin.CREF, cref);
-    field_exp := Expression.CREF(ty, cr);
+    arg := Expression.CREF(ty, cr);
 
     if Component.variability(InstNode.component(c)) <= Variability.PARAMETER then
-      field_exp := evalExp_impl(field_exp, EvalTarget.IGNORE_ERRORS());
+      arg := evalExp_impl(arg, EvalTarget.IGNORE_ERRORS());
     end if;
 
-    fields := field_exp :: fields;
-    field_names := InstNode.name(c) :: field_names;
+    args := arg :: args;
   end for;
 
-  ty := Type.setRecordFields(field_names, recordType);
-  exp := Expression.RECORD(InstNode.scopePath(recordNode), ty, fields);
+  fields := Record.collectRecordFields(typeNode);
+  ty := Type.setRecordFields(fields, recordType);
+  exp := Expression.RECORD(InstNode.scopePath(recordNode), ty, args);
 end makeRecordBindingExp;
 
 function splitRecordArrayExp
