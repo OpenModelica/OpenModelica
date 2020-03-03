@@ -1,0 +1,28 @@
+// status: correct
+
+loadString("package P1
+  annotation(conversion(from(version={x,y,z})));
+end P1;");
+getConversionsFromVersions(P1);getErrorString();
+loadString("package P2
+  annotation(conversion(xfrom()));
+end P2;");
+getConversionsFromVersions(P2);getErrorString();
+loadString("package P3
+  annotation(conversion(noneFromVersion=\"1.2.3\",from(version=\"1.2.4\"),from(version={\"1.2.5\",\"1.2.6\"}),noneFromVersion=\"1.2.7\"));
+end P3;");
+getConversionsFromVersions(P3);getErrorString();
+
+// Result:
+// true
+// ({},{})
+// "[<interactive>:2:25-2:46:writable] Warning: Conversion-annotation is missing version for from-conversion: from(version = {x, y, z}).
+// "
+// true
+// ({},{})
+// "[<interactive>:2:25-2:32:writable] Warning: Conversion-annotation contains unknown element: xfrom.
+// "
+// true
+// ({"1.2.3","1.2.7"},{"1.2.4","1.2.5","1.2.6"})
+// ""
+// endResult

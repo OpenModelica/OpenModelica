@@ -18,6 +18,7 @@ Bug3979.mos \
 Bug4209.mos \
 Bug4248.mos \
 ConvertUnits.mos \
+ConversionVersions.mos \
 CopyClass.mos \
 choicesAllMatching.mos \
 DefaultComponentName.mos \

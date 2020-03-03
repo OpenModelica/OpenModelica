@@ -3862,6 +3862,18 @@ Returns the libraries used by the package {{\"Library1\",\"Version\"},{\"Library
   preferredView="text");
 end getUses;
 
+function getConversionsFromVersions
+  input TypeName pack;
+  output String[:] withoutConversion;
+  output String[:] withConversion;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+Returns the versions this library can convert from with and without conversions.
+</html>"),
+  preferredView="text");
+end getConversionsFromVersions;
+
 function getDerivedClassModifierNames "Returns the derived class modifier names.
   Example command:
   type Resistance = Real(final quantity=\"Resistance\",final unit=\"Ohm\");

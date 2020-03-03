@@ -11427,6 +11427,86 @@ algorithm
     end match;
 end getUsesAnnotationString2;
 
+public function getConversionAnnotation
+  "Returns the uses-annotations of the top-level classes in the given program."
+  input Absyn.Class cls;
+  output list<String> withoutConversion = {}, withConversion = {};
+protected
+  Option<tuple<list<String>,list<String>>> opt_conversion;
+  list<Absyn.Class> classes;
+algorithm
+  opt_conversion := AbsynUtil.getNamedAnnotationInClass(cls, Absyn.Path.IDENT("conversion"), getConversionAnnotationString);
+  (withoutConversion,withConversion) := match opt_conversion
+    case SOME((withoutConversion,withConversion)) then (withoutConversion,withConversion);
+    else ({},{});
+  end match;
+end getConversionAnnotation;
+
+protected function getConversionAnnotationString
+  input Option<Absyn.Modification> mod;
+  output tuple<list<String>,list<String>> result;
+protected
+  list<Absyn.ElementArg> arglst, arglst2;
+  list<String> without = {}, with = {};
+  list<Absyn.Exp> exps;
+  String version, name;
+  SourceInfo info;
+algorithm
+  SOME(Absyn.CLASSMOD(elementArgLst = arglst)) := mod;
+  for arg in arglst loop
+    _ := match arg
+
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name = "noneFromVersion"),
+      modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.STRING(version)))))
+      algorithm
+        without := version :: without;
+      then ();
+
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name = "from"),
+      modification=SOME(Absyn.CLASSMOD(elementArgLst=arglst2)), info=info)
+      algorithm
+        arglst2 := List.filterOnTrue(arglst2, filterIsVersionElement);
+        _ := matchcontinue arglst2
+          case {Absyn.MODIFICATION(modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.STRING(version)))))}
+            algorithm
+              with := version :: with;
+            then ();
+          case {Absyn.MODIFICATION(modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.ARRAY(exps)))))}
+            algorithm
+              for exp in exps loop
+                Absyn.STRING(version) := exp;
+                with := version :: with;
+              end for;
+            then ();
+          else
+            algorithm
+              Error.addSourceMessage(Error.CONVERSION_MISSING_FROM_VERSION, {Dump.unparseElementArgStr(arg)}, info);
+            then ();
+        end matchcontinue;
+      then ();
+
+    case Absyn.MODIFICATION(info = info, path = Absyn.IDENT(name = name))
+      equation
+        if not Util.stringStartsWith(name, "__") then
+          Error.addSourceMessage(Error.CONVERSION_UNKNOWN_ANNOTATION, {name}, info);
+        end if;
+      then ();
+
+    end match;
+  end for;
+  result := (listReverse(without), listReverse(with));
+end getConversionAnnotationString;
+
+protected function filterIsVersionElement
+  input Absyn.ElementArg eltArg;
+  output Boolean b;
+algorithm
+  b := match eltArg
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name = "version")) then true;
+    else false;
+  end match;
+end filterIsVersionElement;
+
 protected function getIconAnnotation
 "This function takes a Path and a Program and returns a comma separated
   string of values for the icon annotation for the class named by the
