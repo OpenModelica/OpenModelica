@@ -1951,6 +1951,7 @@ algorithm
       SimCode.SimulationSettings simSettings;
       Boolean dumpExtractionSteps, requireExactVersion;
       list<tuple<Absyn.Path,list<String>,Boolean>> uses;
+      list<String> withoutConversion, withConversion;
       Config.LanguageStandard oldLanguageStd;
       SCode.Element cl;
       list<SCode.Element> cls, elts;
@@ -2353,6 +2354,14 @@ algorithm
         (absynClass as Absyn.CLASS()) = Interactive.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
         uses = Interactive.getUsesAnnotation(Absyn.PROGRAM({absynClass},Absyn.TOP()));
         v = ValuesUtil.makeArray(List.map(uses,makeUsesArray));
+      then
+        (cache,v);
+
+    case (cache,_,"getConversionsFromVersions",{Values.CODE(Absyn.C_TYPENAME(classpath))},_)
+      equation
+        (absynClass as Absyn.CLASS()) = Interactive.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
+        (withoutConversion,withConversion) = Interactive.getConversionAnnotation(absynClass);
+        v = Values.TUPLE({ValuesUtil.makeArray(List.map(withoutConversion,ValuesUtil.makeString)), ValuesUtil.makeArray(List.map(withConversion,ValuesUtil.makeString))});
       then
         (cache,v);
 

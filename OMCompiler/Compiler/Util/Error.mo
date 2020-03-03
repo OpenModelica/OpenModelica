@@ -1080,6 +1080,10 @@ public constant ErrorTypes.Message SERIALIZED_SIZE = ErrorTypes.MESSAGE(5046, Er
   Gettext.gettext("%s uses %s of memory (%s without GC overhead; %s is consumed by not performing String sharing)."));
 public constant ErrorTypes.Message META_MATCH_CONSTANT = ErrorTypes.MESSAGE(5047, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("Match input %s is a constant value."));
+public constant ErrorTypes.Message CONVERSION_MISSING_FROM_VERSION = ErrorTypes.MESSAGE(5048, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  Gettext.gettext("Conversion-annotation is missing version for from-conversion: %s."));
+public constant ErrorTypes.Message CONVERSION_UNKNOWN_ANNOTATION = ErrorTypes.MESSAGE(5049, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  Gettext.gettext("Conversion-annotation contains unknown element: %s."));
 
 
 public constant ErrorTypes.Message COMPILER_ERROR = ErrorTypes.MESSAGE(5999, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
