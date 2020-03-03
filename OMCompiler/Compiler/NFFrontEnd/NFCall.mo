@@ -38,6 +38,7 @@ import Expression = NFExpression;
 import NFInstNode.InstNode;
 import NFPrefixes.Variability;
 import Type = NFType;
+import Record = NFRecord;
 
 protected
 import BuiltinCall = NFBuiltinCall;
@@ -582,8 +583,37 @@ uniontype Call
     output Expression exp;
   algorithm
     exp := match call
-      case TYPED_CALL()
-        then Expression.RECORD(Function.name(call.fn), ty, call.arguments);
+      local
+        Expression arg;
+        list<Expression> call_args, local_args, args;
+        list<Record.Field> fields;
+
+      case TYPED_CALL(arguments = call_args)
+        algorithm
+          local_args := Function.getLocalArguments(call.fn);
+          fields := Type.recordFields(ty);
+          args := {};
+
+          for field in fields loop
+            if Record.Field.isInput(field) then
+              arg :: call_args := call_args;
+            else
+              arg :: local_args := local_args;
+            end if;
+
+            args := arg :: args;
+          end for;
+
+          args := listReverseInPlace(args);
+        then
+          Expression.RECORD(Function.name(call.fn), ty, args);
+
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got unknown call", sourceInfo());
+        then
+          fail();
+
     end match;
   end toRecordExpression;
 

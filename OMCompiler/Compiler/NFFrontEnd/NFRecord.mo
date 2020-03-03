@@ -61,8 +61,29 @@ import NFClassTree.ClassTree;
 import ComplexType = NFComplexType;
 import ComponentRef = NFComponentRef;
 import NFFunction.FunctionStatus;
+import MetaModelica.Dangerous.listReverseInPlace;
 
 public
+
+encapsulated uniontype Field
+  record INPUT
+    String name;
+  end INPUT;
+
+  record LOCAL
+    String name;
+  end LOCAL;
+
+  function isInput
+    input Field field;
+    output Boolean isInput;
+  algorithm
+    isInput := match field
+      case INPUT() then true;
+      else false;
+    end match;
+  end isInput;
+end Field;
 
 function instDefaultConstructor
   input Absyn.Path path;
@@ -174,6 +195,77 @@ algorithm
     inputs := comp_node :: inputs;
   end if;
 end collectRecordParam;
+
+function collectRecordFields
+  input InstNode recNode;
+  output list<Field> fields;
+protected
+  ClassTree tree;
+algorithm
+  tree := Class.classTree(InstNode.getClass(recNode));
+  fields := ClassTree.foldComponents(tree, collectRecordField, {});
+  fields := listReverseInPlace(fields);
+end collectRecordFields;
+
+function collectRecordField
+  input InstNode component;
+  input output list<Field> fields;
+protected
+  InstNode comp_node = InstNode.resolveInner(component);
+  Component comp;
+algorithm
+  if InstNode.isProtected(comp_node) then
+    fields := Field.LOCAL(InstNode.name(comp_node)) :: fields;
+  else
+    comp := InstNode.component(comp_node);
+
+    if Component.isConst(comp) and Component.hasBinding(comp) then
+      fields := Field.LOCAL(InstNode.name(comp_node)) :: fields;
+    else
+      fields := Field.INPUT(InstNode.name(comp_node)) :: fields;
+    end if;
+  end if;
+end collectRecordField;
+
+function fieldsToDAE
+  input list<Field> fields;
+  output list<String> fieldNames = {};
+algorithm
+  for field in fields loop
+    () := match field
+      case Field.INPUT()
+        algorithm
+          fieldNames := field.name :: fieldNames;
+        then
+          ();
+
+      else ();
+    end match;
+  end for;
+end fieldsToDAE;
+
+function foldInputFields<T, ArgT>
+  input list<Field> fields;
+  input list<T> args;
+  input FuncT func;
+  input output ArgT foldArg;
+
+  partial function FuncT
+    input T arg;
+    input output ArgT foldArg;
+  end FuncT;
+protected
+  T arg;
+  list<T> rest_args = args;
+algorithm
+  for field in fields loop
+    arg :: rest_args := rest_args;
+
+    if Field.isInput(field) then
+      foldArg := func(arg, foldArg);
+    end if;
+  end for;
+end foldInputFields;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFRecord;

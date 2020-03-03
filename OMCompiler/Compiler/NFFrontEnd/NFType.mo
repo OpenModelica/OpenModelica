@@ -44,6 +44,7 @@ public
   import ConvertDAE = NFConvertDAE;
   import ComponentRef = NFComponentRef;
   import NFFunction.Function;
+  import Record = NFRecord;
 
   type FunctionType = enumeration(
     FUNCTIONAL_PARAMETER "Function parameter of function type.",
@@ -880,8 +881,18 @@ public
     end match;
   end lookupRecordFieldType;
 
+  function recordFields
+    input Type recordType;
+    output list<Record.Field> fields;
+  algorithm
+    fields := match recordType
+      case COMPLEX(complexTy = ComplexType.RECORD(fields = fields)) then fields;
+      else {};
+    end match;
+  end recordFields;
+
   function setRecordFields
-    input list<String> fields;
+    input list<Record.Field> fields;
     input output Type recordType;
   algorithm
     recordType := match recordType

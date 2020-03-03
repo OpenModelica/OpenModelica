@@ -193,7 +193,7 @@ algorithm
 
           if Binding.isBound(b) then
             b := flattenBinding(b, ComponentRef.rest(prefix));
-            bindings := getRecordBindings(b);
+            bindings := getRecordBindings(b, comps);
 
             Error.assertion(listLength(bindings) == arrayLength(comps),
               getInstanceName() + " got record binding with wrong number of elements for " +
@@ -475,18 +475,19 @@ end isTypeAttributeNamed;
 
 function getRecordBindings
   input Binding binding;
-  output list<Binding> recordBindings;
+  input array<InstNode> comps;
+  output list<Binding> recordBindings = {};
 protected
   Expression binding_exp;
-  list<Expression> expl;
   Variability var;
 algorithm
   binding_exp := Binding.getTypedExp(binding);
   var := Binding.variability(binding);
 
+  // Convert the expressions in the record expression into bindings.
   recordBindings := match binding_exp
-    case Expression.RECORD() then
-      list(if Expression.isEmpty(e) then
+    case Expression.RECORD()
+      then list(if Expression.isEmpty(e) then
                // The binding for a record field might be Expression.EMPTY if it comes
                // from an evaluated function call where it wasn't assigned a value.
                NFBinding.EMPTY_BINDING
