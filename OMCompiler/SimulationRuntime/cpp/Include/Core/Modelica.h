@@ -235,6 +235,6 @@ typedef ublas::matrix<double, ublas::column_major> matrix_t;
 #include <Core/DataExchange/SimDouble.h>
 #ifdef USE_REDUCE_DAE
 #include <Core/ReduceDAE/IReduceDAE.h>
-#include <core/ReduceDAE/ReduceDAESettings.h>
+#include <Core/ReduceDAE/ReduceDAESettings.h>
 #endif
 /** @} */ // end of group1
