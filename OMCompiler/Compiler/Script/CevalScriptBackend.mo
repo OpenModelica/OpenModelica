@@ -91,8 +91,10 @@ import FindZeroCrossings;
 import FInst;
 import Flags;
 import FlagsUtil;
+import FlatModel = NFFlatModel;
 import FMI;
 import FMIExt;
+import FunctionTree = NFFlatten.FunctionTree;
 import GC;
 import Graph;
 import HashSetString;
@@ -3216,6 +3218,9 @@ algorithm
   end match;
 end getAdjacencyMatrix;
 
+/* -------------------------------------------------------------------
+                         RUN OLD FRONTEND
+   ------------------------------------------------------------------- */
 public function runFrontEnd
   input output FCore.Cache cache;
   input output FCore.Graph env;
@@ -3301,7 +3306,6 @@ algorithm
   (cache,env,dae) := matchcontinue (inCache,inEnv,className)
     local
       Absyn.Restriction restriction;
-      Absyn.Class absynClass;
       String str,re;
       SCode.Program scodeP;
       Absyn.Program p;

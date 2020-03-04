@@ -285,6 +285,10 @@ if true then /* Suppress output */
     "../BackEnd/XMLDump.mo",
     "../BackEnd/ZeroCrossings.mo",
 
+  // "NBackend" kabdelhak: Have this also behind an environment var?
+    "../NBackEnd/NBackendDAE.mo",
+    "../NBackEnd/NBackendDAECreate.mo",
+
     "../FFrontEnd/FGraphDump.mo",
     "../FFrontEnd/FGraphStream.mo",
     "../FFrontEnd/FInst.mo",

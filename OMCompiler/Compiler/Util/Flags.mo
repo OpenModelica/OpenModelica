@@ -1346,9 +1346,11 @@ constant ConfigFlag ZEROMQ_SUB_PORT = CONFIG_FLAG(136, "zeroMQSubPort",
 constant ConfigFlag ZEROMQ_JOB_ID = CONFIG_FLAG(137, "zeroMQJOBID",
   NONE(), INTERNAL(), STRING_FLAG("empty"), NONE(),
   Gettext.gettext("Configures the ID with which the omc api call is labelled for zeroMQ communication."));
+
 constant ConfigFlag ZEROMQ_SERVER_ID = CONFIG_FLAG(138, "zeroMQServerID",
   NONE(), INTERNAL(), STRING_FLAG("empty"), NONE(),
   Gettext.gettext("Configures the ID with which server application is labelled for zeroMQ communication."));
+
 constant ConfigFlag ZEROMQ_CLIENT_ID = CONFIG_FLAG(139, "zeroMQClientID",
   NONE(), INTERNAL(), STRING_FLAG("empty"), NONE(),
   Gettext.gettext("Configures the ID with which the client application is labelled for zeroMQ communication."));
