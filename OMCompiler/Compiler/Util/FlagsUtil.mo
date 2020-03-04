@@ -249,7 +249,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DUMP_ASSC,
   Flags.SPLIT_CONSTANT_PARTS_SYMJAC,
   Flags.NF_DUMP_FLAT,
-  Flags.DUMP_FORCE_FMI_ATTRIBUTES
+  Flags.DUMP_FORCE_FMI_ATTRIBUTES,
+  Flags.DUMP_DATARECONCILIATION
 };
 
 protected

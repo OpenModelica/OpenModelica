@@ -560,6 +560,8 @@ constant DebugFlag NF_DUMP_FLAT = DEBUG_FLAG(192, "nfDumpFlat", false,
   Gettext.gettext("Dumps the flat model structure before generating the DAE."));
 constant DebugFlag DUMP_FORCE_FMI_ATTRIBUTES = DEBUG_FLAG(193, "force-fmi-attributes", false,
   Gettext.gettext("Force to export all fmi attributes to the modelDescription.xml, including those which have default values"));
+constant DebugFlag DUMP_DATARECONCILIATION = DEBUG_FLAG(194, "dataReconciliation", false,
+  Gettext.gettext("Dumps all the dataReconciliation extraction algorithm procedure"));
 
 public
 // CONFIGURATION FLAGS

@@ -2548,7 +2548,7 @@ algorithm
   end match;
 end dumpEqnsStr2;
 
-protected function ifequationString
+public function ifequationString
   input list<DAE.Exp> conditions;
   input list<list<BackendDAE.Equation>> eqnstrue;
   input list<BackendDAE.Equation> eqnsfalse;
