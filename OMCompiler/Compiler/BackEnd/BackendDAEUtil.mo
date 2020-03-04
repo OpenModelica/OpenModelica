@@ -118,7 +118,7 @@ import System;
 import Tearing;
 import Types;
 import UnitCheck;
-import Uncertainties;
+import DataReconciliation;
 import Values;
 import XMLDump;
 import ZeroCrossings;
@@ -8283,7 +8283,7 @@ public function allPreOptimizationModules
   "This list contains all back end pre-optimization modules."
   output list<tuple<BackendDAEFunc.optimizationModule, String>> allPreOptimizationModules = {
     (BackendDAEUtil.introduceOutputAliases, "introduceOutputAliases"),
-    (Uncertainties.dataReconciliation, "dataReconciliation"),
+    (DataReconciliation.extractionAlgorithm, "dataReconciliation"),
     (UnitCheck.unitChecking, "unitChecking"),
     (DynamicOptimization.createDynamicOptimization,"createDynamicOptimization"),
     (BackendInline.normalInlineFunction, "normalInlineFunction"),

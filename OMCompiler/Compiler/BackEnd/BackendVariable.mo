@@ -1414,6 +1414,19 @@ algorithm
   end match;
 end hasMayerTermAnno;
 
+public function hasOpenModelicaBoundaryConditionAnnotation
+"author: arun
+ Return true if variable has __OpenModelica_BoundaryCondition=true annotation"
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    local SCode.Comment comm;
+    case (BackendDAE.VAR(comment=SOME(comm))) then SCodeUtil.commentHasBooleanNamedAnnotation(comm, "__OpenModelica_BoundaryCondition");
+    else false;
+  end match;
+end hasOpenModelicaBoundaryConditionAnnotation;
+
 public function hasLagrangeTermAnno
 "author: Vitalij Ruge
  Return true if variable has isLagrange=true annotation"

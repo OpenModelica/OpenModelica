@@ -257,6 +257,7 @@ if true then /* Suppress output */
     "../BackEnd/CommonSubExpression.mo",
     "../BackEnd/DAEQuery.mo",
     "../BackEnd/DAEMode.mo",
+    "../BackEnd/DataReconciliation.mo",
     "../BackEnd/Differentiate.mo",
     "../BackEnd/DumpGraphML.mo",
     "../BackEnd/DumpHTML.mo",

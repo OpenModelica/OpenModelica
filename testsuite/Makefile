@@ -161,6 +161,7 @@ fmi_me_20.log \
 omsimulator.log \
 fmi_cs_st.log \
 uncertainties.log \
+dataReconciliation.log \
 scodeinst.log \
 xml.log \
 xogeny.log \
@@ -279,6 +280,9 @@ parser.log: omc-diff
 	@echo $@ done
 uncertainties.log: omc-diff
 	$(MAKE) -C openmodelica/uncertainties -f Makefile test > $@
+	@echo $@ done
+dataReconciliation.log: omc-diff
+	$(MAKE) -C openmodelica/dataReconciliation -f Makefile test > $@
 	@echo $@ done
 interactive-API.log: omc-diff
 	$(MAKE) -C openmodelica/interactive-API -f Makefile test > $@
