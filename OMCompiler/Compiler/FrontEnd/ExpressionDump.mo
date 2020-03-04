@@ -517,6 +517,9 @@ algorithm
     case (DAE.CREF(componentRef = c), _, _, _)
       equation
         s = ComponentReference.printComponentRefStr(c);
+        if listMember("dataReconciliation", Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD)) then
+          s = System.stringReplace(s, ".", "_"); // replace cref's to modelica output format for dumping to reconciled_dataReconciliation.mo
+        end if;
       then
         s;
 

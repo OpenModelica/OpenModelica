@@ -1,0 +1,182 @@
+// name:     Modified_FourFlows.mos
+// keywords: extraction algorithm
+// status:   correct
+
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+
+loadFile("DataReconciliationSimpleTests/package.mo");
+getErrorString();
+
+translateModel(DataReconciliationSimpleTests.Modified_FourFlows);
+getErrorString();
+
+//system("./DataReconciliationSimpleTests.Modified_FourFlows.exe -reconcile -sx=./DataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.FourFlows_Inputs.csv -eps=0.0023 -lv=LOG_JAC");
+//getErrorString()
+
+
+// Result:
+// true
+// ""
+// true
+// "Notification: Automatically loaded package Modelica 3.2.3 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.3 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.3 due to uses annotation.
+// Notification: Automatically loaded package ThermoSysPro 3.2 due to uses annotation.
+// "
+//
+// ModelInfo: DataReconciliationSimpleTests.Modified_FourFlows
+// ==========================================================================
+//
+//
+// OrderedVariables (4)
+// ========================================
+// 1: Q4:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real
+// 2: Q3:VARIABLE(start = 0.95 uncertain=Uncertainty.refine)  type: Real
+// 3: Q2:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  type: Real
+// 4: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
+//
+//
+// OrderedEquation (4, 4)
+// ========================================
+// 1/1 (1): Q1 = q0   [dynamic |0|0|0|0|]
+// 2/2 (1): Q2 = a * q0   [dynamic |0|0|0|0|]
+// 3/3 (1): Q1 = Q2 + Q3   [dynamic |0|0|0|0|]
+// 4/4 (1): Q4 = Q2 + Q3   [dynamic |0|0|0|0|]
+//
+//
+// OverDetermined-System-Equations (6, 6)
+// ========================================
+// 1/1 (1): Q3 = 0.0   [initial |0|0|0|0|]
+// 2/2 (1): Q4 = 0.0   [initial |0|0|0|0|]
+// 3/3 (1): Q1 = q0   [dynamic |0|0|0|0|]
+// 4/4 (1): Q2 = a * q0   [dynamic |0|0|0|0|]
+// 5/5 (1): Q1 = Q2 + Q3   [dynamic |0|0|0|0|]
+// 6/6 (1): Q4 = Q2 + Q3   [dynamic |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 4 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 4
+// var 4 is solved in eqn 3
+//
+// E-BLT-Equations {5, 6} (2)
+// ========================================
+// 1/1 (1): Q1 = Q2 + Q3   [dynamic |0|0|0|0|]
+// 2/2 (1): Q4 = Q2 + Q3   [dynamic |0|0|0|0|]
+//
+//
+// reOrdered-Equations-after-removal (4, 4)
+// ========================================
+// 1/1 (1): Q3 = 0.0   [initial |0|0|0|0|]
+// 2/2 (1): Q4 = 0.0   [initial |0|0|0|0|]
+// 3/3 (1): Q1 = q0   [dynamic |0|0|0|0|]
+// 4/4 (1): Q2 = a * q0   [dynamic |0|0|0|0|]
+//
+//
+// reOrderedVariables (4)
+// ========================================
+// 1: Q4:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real
+// 2: Q3:VARIABLE(start = 0.95 uncertain=Uncertainty.refine)  type: Real
+// 3: Q2:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  type: Real
+// 4: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
+//
+// Matching
+// ========================================
+// 4 variables and equations
+// var 1 is solved in eqn 2
+// var 2 is solved in eqn 1
+// var 3 is solved in eqn 4
+// var 4 is solved in eqn 3
+//
+// BLT_BLOCKS:
+// ==========================================================================
+// {{2},{1},{4},{3},{-1},{-2}}
+//
+//
+// Targets of blocks without predecessors:
+// ========================================
+//
+// Targets of Blue blocks (4)
+// ==============================
+//
+// Block :{2} || blockTargetsInfo :{({2}, 1), ({-2}, -2)} || KnownBlocks :{2} || constantBlocks :{}
+// Block :{1} || blockTargetsInfo :{({1}, 2), ({-1}, -1)} || KnownBlocks :{1} || constantBlocks :{}
+// Block :{4} || blockTargetsInfo :{({4}, 3), ({-1}, -1)} || KnownBlocks :{4} || constantBlocks :{}
+// Block :{3} || blockTargetsInfo :{({3}, 4), ({-1}, -1)} || KnownBlocks :{3} || constantBlocks :{}
+//
+//
+// Targets of Red blocks (0)
+// ==============================
+//
+//
+//
+// Targets of Brown blocks (0)
+// ==============================
+//
+//
+//
+// FINAL SET OF EQUATIONS After Reconciliation
+// ==========================================================================
+// SET_C: {-2, -1}
+// SET_S: {}
+//
+//
+// SET_C (2, 2)
+// ========================================
+// 1/1 (1): Q4 = Q2 + Q3   [dynamic |0|0|0|0|]
+// 2/2 (1): Q1 = Q2 + Q3   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_S  (0)
+// ========================================
+//
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{1, 2, 3, 4} (4)
+// ========================================
+// 1: Q4:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real
+// 2: Q3:VARIABLE(start = 0.95 uncertain=Uncertainty.refine)  type: Real
+// 3: Q2:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  type: Real
+// 4: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
+//
+// -SET_C:{-2, -1}
+// -SET_S:{}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Passed
+//
+// -SET_C has all known variables:{2, 3, 4, 1} (4)
+// ========================================
+// 1: Q3:VARIABLE(start = 0.95 uncertain=Uncertainty.refine)  type: Real
+// 2: Q2:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  type: Real
+// 3: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
+// 4: Q4:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real
+//
+// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
+// ==========================================================================
+// -Passed
+// -SET_C contains:2 equations < 4 known variables
+//
+// Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
+// ==========================================================================
+// -Passed
+// -SET_C contains No Intermediate Variables
+//
+// true
+// "Warning: Requested package Modelica of version default, but this package was already loaded with version 3.2.3. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
+// Warning: Requested package ThermoSysPro of version default, but this package was already loaded with version 3.2. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
+// "
+// endResult
