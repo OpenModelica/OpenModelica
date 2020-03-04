@@ -1,0 +1,6 @@
+Variable Names,Measured Value-x,HalfWidthConfidenceInterval,xi,xk,rx_ik
+singularPressureLoss1.Q, 100.3, 1.96
+singularPressureLoss2.Q, 99.3, 1.91
+singularPressureLoss1.Pm, 100000, 1.96
+singularPressureLoss2.Pm, 105000, 1.91
+volumeB1.P, 110000, 1.91

@@ -1,0 +1,251 @@
+// name:     DistillationTower
+// keywords: extraction algorithm
+// status:   correct
+// depends: ./DataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.DistillationTower_Inputs.csv
+
+
+setCommandLineOptions("--preOptModules+=dataReconciliation");
+getErrorString();
+
+loadFile("DataReconciliationSimpleTests/package.mo");
+getErrorString();
+
+//translateModel(DataReconciliationSimpleTests.DistillationTower);
+//getErrorString();
+
+//system("DataReconciliationSimpleTests.DistillationTower.exe -reconcile -sx=DataReconciliationSimpleTests.DistillationTower_Inputs.csv -eps=0.0023 -lv=LOG_JAC");
+//getErrorString()
+
+simulate(DataReconciliationSimpleTests.DistillationTower, simflags="-reconcile -sx=./DataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.DistillationTower_Inputs.csv -eps=0.0023 -lv=LOG_JAC");
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// "Notification: Automatically loaded package Modelica 3.2.3 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.3 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.3 due to uses annotation.
+// Notification: Automatically loaded package ThermoSysPro 3.2 due to uses annotation.
+// "
+//
+// ModelInfo: DataReconciliationSimpleTests.DistillationTower
+// ==========================================================================
+//
+//
+// OrderedVariables (9)
+// ========================================
+// 1: xD2:VARIABLE(start = 5.01 uncertain=Uncertainty.refine)  type: Real
+// 2: xD1:VARIABLE(start = 94.09999999999999 uncertain=Uncertainty.refine)  type: Real
+// 3: xB2:VARIABLE(start = 97.48 uncertain=Uncertainty.refine)  type: Real
+// 4: xB1:VARIABLE(start = 1.97 uncertain=Uncertainty.refine)  type: Real
+// 5: xF2:VARIABLE(start = 51.7 uncertain=Uncertainty.refine)  type: Real
+// 6: xF1:VARIABLE(start = 48.22 uncertain=Uncertainty.refine)  type: Real
+// 7: D:VARIABLE(start = 478.4 uncertain=Uncertainty.refine)  type: Real
+// 8: B:VARIABLE(start = 488.23 uncertain=Uncertainty.refine)  type: Real
+// 9: F:VARIABLE(start = 1095.47 uncertain=Uncertainty.refine)  type: Real
+//
+//
+// OrderedEquation (9, 9)
+// ========================================
+// 1/1 (1): F = 1095.47   [binding |0|0|0|0|]
+// 2/2 (1): B = 488.23   [binding |0|0|0|0|]
+// 3/3 (1): xB1 = 1.97   [binding |0|0|0|0|]
+// 4/4 (1): xD1 = 94.09999999999999   [binding |0|0|0|0|]
+// 5/5 (1): F * xF1 + (-B) * xB1 - D * xD1 = 0.0   [dynamic |0|0|0|0|]
+// 6/6 (1): F * xF2 + (-B) * xB2 - D * xD2 = 0.0   [dynamic |0|0|0|0|]
+// 7/7 (1): xF1 + xF2 = 100.0   [dynamic |0|0|0|0|]
+// 8/8 (1): xB1 + xB2 = 100.0   [dynamic |0|0|0|0|]
+// 9/9 (1): xD1 + xD2 = 100.0   [dynamic |0|0|0|0|]
+//
+//
+// OverDetermined-System-Equations (14, 14)
+// ========================================
+// 1/1 (1): D = 0.0   [initial |0|0|0|0|]
+// 2/2 (1): xF1 = 0.0   [initial |0|0|0|0|]
+// 3/3 (1): xF2 = 0.0   [initial |0|0|0|0|]
+// 4/4 (1): xB2 = 0.0   [initial |0|0|0|0|]
+// 5/5 (1): xD2 = 0.0   [initial |0|0|0|0|]
+// 6/6 (1): F = 1095.47   [binding |0|0|0|0|]
+// 7/7 (1): B = 488.23   [binding |0|0|0|0|]
+// 8/8 (1): xB1 = 1.97   [binding |0|0|0|0|]
+// 9/9 (1): xD1 = 94.09999999999999   [binding |0|0|0|0|]
+// 10/10 (1): F * xF1 + (-B) * xB1 - D * xD1 = 0.0   [dynamic |0|0|0|0|]
+// 11/11 (1): F * xF2 + (-B) * xB2 - D * xD2 = 0.0   [dynamic |0|0|0|0|]
+// 12/12 (1): xF1 + xF2 = 100.0   [dynamic |0|0|0|0|]
+// 13/13 (1): xB1 + xB2 = 100.0   [dynamic |0|0|0|0|]
+// 14/14 (1): xD1 + xD2 = 100.0   [dynamic |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 9 variables and equations
+// var 1 is solved in eqn 5
+// var 2 is solved in eqn 9
+// var 3 is solved in eqn 4
+// var 4 is solved in eqn 8
+// var 5 is solved in eqn 3
+// var 6 is solved in eqn 2
+// var 7 is solved in eqn 1
+// var 8 is solved in eqn 7
+// var 9 is solved in eqn 6
+//
+// E-BLT-Equations {10, 11, 12, 13, 14} (5)
+// ========================================
+// 1/1 (1): F * xF1 + (-B) * xB1 - D * xD1 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): F * xF2 + (-B) * xB2 - D * xD2 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): xF1 + xF2 = 100.0   [dynamic |0|0|0|0|]
+// 4/4 (1): xB1 + xB2 = 100.0   [dynamic |0|0|0|0|]
+// 5/5 (1): xD1 + xD2 = 100.0   [dynamic |0|0|0|0|]
+//
+//
+// reOrdered-Equations-after-removal (9, 9)
+// ========================================
+// 1/1 (1): D = 0.0   [initial |0|0|0|0|]
+// 2/2 (1): xF1 = 0.0   [initial |0|0|0|0|]
+// 3/3 (1): xF2 = 0.0   [initial |0|0|0|0|]
+// 4/4 (1): xB2 = 0.0   [initial |0|0|0|0|]
+// 5/5 (1): xD2 = 0.0   [initial |0|0|0|0|]
+// 6/6 (1): F = 1095.47   [binding |0|0|0|0|]
+// 7/7 (1): B = 488.23   [binding |0|0|0|0|]
+// 8/8 (1): xB1 = 1.97   [binding |0|0|0|0|]
+// 9/9 (1): xD1 = 94.09999999999999   [binding |0|0|0|0|]
+//
+//
+// reOrderedVariables (9)
+// ========================================
+// 1: xD2:VARIABLE(start = 5.01 uncertain=Uncertainty.refine)  type: Real
+// 2: xD1:VARIABLE(start = 94.09999999999999 uncertain=Uncertainty.refine)  type: Real
+// 3: xB2:VARIABLE(start = 97.48 uncertain=Uncertainty.refine)  type: Real
+// 4: xB1:VARIABLE(start = 1.97 uncertain=Uncertainty.refine)  type: Real
+// 5: xF2:VARIABLE(start = 51.7 uncertain=Uncertainty.refine)  type: Real
+// 6: xF1:VARIABLE(start = 48.22 uncertain=Uncertainty.refine)  type: Real
+// 7: D:VARIABLE(start = 478.4 uncertain=Uncertainty.refine)  type: Real
+// 8: B:VARIABLE(start = 488.23 uncertain=Uncertainty.refine)  type: Real
+// 9: F:VARIABLE(start = 1095.47 uncertain=Uncertainty.refine)  type: Real
+//
+// Matching
+// ========================================
+// 9 variables and equations
+// var 1 is solved in eqn 5
+// var 2 is solved in eqn 9
+// var 3 is solved in eqn 4
+// var 4 is solved in eqn 8
+// var 5 is solved in eqn 3
+// var 6 is solved in eqn 2
+// var 7 is solved in eqn 1
+// var 8 is solved in eqn 7
+// var 9 is solved in eqn 6
+//
+// BLT_BLOCKS:
+// ==========================================================================
+// {{5},{9},{4},{8},{3},{2},{1},{7},{6},{-1},{-2},{-3},{-4},{-5}}
+//
+//
+// Targets of blocks without predecessors:
+// ========================================
+//
+// Targets of Blue blocks (9)
+// ==============================
+//
+// Block :{5} || blockTargetsInfo :{({5}, 1), ({-2}, -2)} || KnownBlocks :{5} || constantBlocks :{}
+// Block :{9} || blockTargetsInfo :{({9}, 2), ({-1}, -1)} || KnownBlocks :{9} || constantBlocks :{}
+// Block :{4} || blockTargetsInfo :{({4}, 3), ({-2}, -2)} || KnownBlocks :{4} || constantBlocks :{}
+// Block :{8} || blockTargetsInfo :{({8}, 4), ({-1}, -1)} || KnownBlocks :{8} || constantBlocks :{}
+// Block :{3} || blockTargetsInfo :{({3}, 5), ({-2}, -2)} || KnownBlocks :{3} || constantBlocks :{}
+// Block :{2} || blockTargetsInfo :{({2}, 6), ({-1}, -1)} || KnownBlocks :{2} || constantBlocks :{}
+// Block :{1} || blockTargetsInfo :{({1}, 7), ({-1}, -1)} || KnownBlocks :{1} || constantBlocks :{}
+// Block :{7} || blockTargetsInfo :{({7}, 8), ({-1}, -1)} || KnownBlocks :{7} || constantBlocks :{}
+// Block :{6} || blockTargetsInfo :{({6}, 9), ({-1}, -1)} || KnownBlocks :{6} || constantBlocks :{}
+//
+//
+// Targets of Red blocks (0)
+// ==============================
+//
+//
+//
+// Targets of Brown blocks (0)
+// ==============================
+//
+//
+//
+// FINAL SET OF EQUATIONS After Reconciliation
+// ==========================================================================
+// SET_C: {-2, -1}
+// SET_S: {}
+//
+//
+// SET_C (2, 2)
+// ========================================
+// 1/1 (1): F * xF2 + (-B) * xB2 - D * xD2 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): F * xF1 + (-B) * xB1 - D * xD1 = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_S  (0)
+// ========================================
+//
+//
+//
+//
+// Automatic Verification Steps of DataReconciliation Algorithm
+// ==========================================================================
+//
+// knownVariables:{1, 2, 3, 4, 5, 6, 7, 8, 9} (9)
+// ========================================
+// 1: xD2:VARIABLE(start = 5.01 uncertain=Uncertainty.refine)  type: Real
+// 2: xD1:VARIABLE(start = 94.09999999999999 uncertain=Uncertainty.refine)  type: Real
+// 3: xB2:VARIABLE(start = 97.48 uncertain=Uncertainty.refine)  type: Real
+// 4: xB1:VARIABLE(start = 1.97 uncertain=Uncertainty.refine)  type: Real
+// 5: xF2:VARIABLE(start = 51.7 uncertain=Uncertainty.refine)  type: Real
+// 6: xF1:VARIABLE(start = 48.22 uncertain=Uncertainty.refine)  type: Real
+// 7: D:VARIABLE(start = 478.4 uncertain=Uncertainty.refine)  type: Real
+// 8: B:VARIABLE(start = 488.23 uncertain=Uncertainty.refine)  type: Real
+// 9: F:VARIABLE(start = 1095.47 uncertain=Uncertainty.refine)  type: Real
+//
+// -SET_C:{-2, -1}
+// -SET_S:{}
+//
+// Condition-1 "SET_C and SET_S must not have no equations in common"
+// ==========================================================================
+// -Passed
+//
+// Condition-2 "All variables of interest must be involved in SET_C or SET_S"
+// ==========================================================================
+// -Passed
+//
+// -SET_C has all known variables:{2, 4, 6, 7, 8, 9, 1, 3, 5} (9)
+// ========================================
+// 1: xD1:VARIABLE(start = 94.09999999999999 uncertain=Uncertainty.refine)  type: Real
+// 2: xB1:VARIABLE(start = 1.97 uncertain=Uncertainty.refine)  type: Real
+// 3: xF1:VARIABLE(start = 48.22 uncertain=Uncertainty.refine)  type: Real
+// 4: D:VARIABLE(start = 478.4 uncertain=Uncertainty.refine)  type: Real
+// 5: B:VARIABLE(start = 488.23 uncertain=Uncertainty.refine)  type: Real
+// 6: F:VARIABLE(start = 1095.47 uncertain=Uncertainty.refine)  type: Real
+// 7: xD2:VARIABLE(start = 5.01 uncertain=Uncertainty.refine)  type: Real
+// 8: xB2:VARIABLE(start = 97.48 uncertain=Uncertainty.refine)  type: Real
+// 9: xF2:VARIABLE(start = 51.7 uncertain=Uncertainty.refine)  type: Real
+//
+// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
+// ==========================================================================
+// -Passed
+// -SET_C contains:2 equations < 9 known variables
+//
+// Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
+// ==========================================================================
+// -Passed
+// -SET_C contains No Intermediate Variables
+//
+// record SimulationResult
+//     resultFile = "econcile",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DataReconciliationSimpleTests.DistillationTower', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./DataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.DistillationTower_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// stdout            | info    | DataReconciliation Starting!
+// stdout            | info    | DataReconciliationSimpleTests.DistillationTower
+// stdout            | info    | DataReconciliation Completed!
+// "
+// end SimulationResult;
+// "Warning: Requested package Modelica of version default, but this package was already loaded with version 3.2.3. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
+// Warning: Requested package ThermoSysPro of version default, but this package was already loaded with version 3.2. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
+// "
+// endResult
