@@ -1,0 +1,71 @@
+// name: fmi_attributes_10.mos
+// keywords: FMI 2.0 export
+// status: correct
+// teardown_command: rm -rf fmi_attributes_10.fmu fmi_attributes_10.log fmi_attributes_10.xml fmi_attributes_10_tmp.xml fmi_attributes_10.fmutmp/
+
+loadString("
+model fmi_attributes_10
+  Real x(start=1, fixed=true);
+  Real y(fixed=true);
+equation
+  x = y;
+  der(x) = 0;
+end fmi_attributes_10;
+"); getErrorString();
+translateModelFMU(fmi_attributes_10); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq fmi_attributes_10.fmu modelDescription.xml > fmi_attributes_10_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi_attributes_10_tmp.xml > fmi_attributes_10.xml"); getErrorString();
+readFile("fmi_attributes_10.xml"); getErrorString();
+
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi_attributes_10_tmp.xml > fmi_attributes_10.xml"); getErrorString();
+readFile("fmi_attributes_10.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// "fmi_attributes_10.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"x\"
+//     valueReference=\"0\"
+//     initial=\"exact\">
+//     <Real start=\"1.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"der(x)\"
+//     valueReference=\"1\"
+//     >
+//     <Real derivative=\"1\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"y\"
+//     valueReference=\"0\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   </ModelVariables>
+// "
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <Derivatives>
+//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//     </Derivatives>
+//     <InitialUnknowns>
+//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//     </InitialUnknowns>
+//   </ModelStructure>
+// "
+// ""
+// endResult

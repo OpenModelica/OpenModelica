@@ -9279,7 +9279,7 @@ algorithm
                             and isFixed;
         caus = getCausality(dlowVar, vars, isValueChangeable);
         variability = SimCodeVar.FIXED(); // PARAMETERS()
-        initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars);
+        initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars, aliasvar);
         initVal = updateStartValue(dlowVar, initVal, initial_, caus);
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
@@ -9319,7 +9319,7 @@ algorithm
         isValueChangeable = BackendVariable.varHasConstantStartExp(dlowVar);
         caus = getCausality(dlowVar, vars, isValueChangeable);
         variability = SimCodeVar.CONTINUOUS(); // state() should be CONTINUOUS
-        initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars);
+        initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars, aliasvar);
         initVal = updateStartValue(dlowVar, initVal, initial_, caus);
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
@@ -9360,7 +9360,7 @@ algorithm
         isValueChangeable = match dir case DAE.INPUT() then true; else false; end match;
         caus = getCausality(dlowVar, vars, isValueChangeable);
         variability = getVariabilityAttribute(dlowVar);
-        initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars);
+        initial_ = setInitialAttribute(dlowVar, variability, caus, isFixed, iterationVars, aliasvar);
         initVal = updateStartValue(dlowVar, initVal, initial_, caus);
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
@@ -9400,10 +9400,10 @@ protected function setInitialAttribute
   input SimCodeVar.Causality causality;
   input Boolean isFixed;
   input list<DAE.ComponentRef> iterationVars;
+  input SimCodeVar.AliasVariable aliasvar;
   output SimCodeVar.Initial initial_;
 algorithm
-  initial_ := match(variability, causality)
-
+  initial_ := match (variability, causality)
     // variability=CONSTANT Vs causality = output and local
     case (SimCodeVar.CONSTANT(), SimCodeVar.OUTPUT()) then SimCodeVar.EXACT();
     case (SimCodeVar.CONSTANT(), SimCodeVar.LOCAL()) then SimCodeVar.EXACT();
@@ -9426,6 +9426,11 @@ algorithm
     // cases to handle invalid combination where initial is not allowed
     case (_, _) then SimCodeVar.NONE_INITIAL();
   end match;
+
+  // at most one variable in an alias set can have initial=exact
+  if valueEq(initial_, SimCodeVar.EXACT()) and not valueEq(aliasvar, SimCodeVar.NOALIAS()) then
+    initial_ := SimCodeVar.CALCULATED();
+  end if;
 end setInitialAttribute;
 
 protected function getInitialAttributeHelperForParameters
