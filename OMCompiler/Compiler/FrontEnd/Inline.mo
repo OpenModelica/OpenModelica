@@ -130,48 +130,34 @@ public function inlineCallsInFunctions
 "inlines calls in DAEElements"
   input list<DAE.Function> inElementList;
   input Functiontuple inFunctions;
-  input list<DAE.Function> iAcc;
   output list<DAE.Function> outElementList;
+protected
+  list<DAE.Element> body;
+  DAE.ExternalDecl ext_decl;
+  DAE.FunctionDefinition fn_def;
+  list<DAE.FunctionDefinition> fn_defs;
 algorithm
-  outElementList := matchcontinue(inElementList,inFunctions,iAcc)
-    local
-      list<DAE.Function> cdr;
-      list<DAE.Element> elist,elist_1;
-      DAE.Function el,res;
-      DAE.Type t;
-      Boolean partialPrefix, isImpure;
-      Absyn.Path p;
-      DAE.ExternalDecl ext;
-      DAE.InlineType inlineType;
-      list<DAE.FunctionDefinition> funcDefs;
-      DAE.ElementSource source;
-      Option<SCode.Comment> cmt;
-      SCode.Visibility visibility;
+  outElementList := list(
+    matchcontinue fn
+      case DAE.FUNCTION(functions = (fn_def as DAE.FUNCTION_DEF()) :: fn_defs)
+        algorithm
+          (body, true) := inlineDAEElements(fn_def.body, inFunctions, {}, false);
+          fn_def.body := body;
+          fn.functions := fn_def :: fn_defs;
+        then
+          fn;
 
-    case({},_,_) then listReverse(iAcc);
+      case DAE.FUNCTION(functions = (fn_def as DAE.FUNCTION_EXT()) :: fn_defs)
+        algorithm
+          (body, true) := inlineDAEElements(fn_def.body, inFunctions, {}, false);
+          fn_def.body := body;
+          fn.functions := fn_def :: fn_defs;
+        then
+          fn;
 
-    case (DAE.FUNCTION(p,DAE.FUNCTION_DEF(body = elist)::funcDefs,t,visibility,partialPrefix,isImpure,inlineType,source,cmt) :: cdr,_,_)
-      equation
-        (elist_1,true)= inlineDAEElements(elist,inFunctions,{},false);
-        res = DAE.FUNCTION(p,DAE.FUNCTION_DEF(elist_1)::funcDefs,t,visibility,partialPrefix,isImpure,inlineType,source,cmt);
-      then
-        inlineCallsInFunctions(cdr,inFunctions,res::iAcc);
-    // external functions
-    case (DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist,ext)::funcDefs,t,visibility,partialPrefix,isImpure,inlineType,source,cmt) :: cdr,_,_)
-      equation
-        (elist_1,true)= inlineDAEElements(elist,inFunctions,{},false);
-        res = DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist_1,ext)::funcDefs,t,visibility,partialPrefix,isImpure,inlineType,source,cmt);
-      then
-        inlineCallsInFunctions(cdr,inFunctions,res::iAcc);
-
-    case(el :: cdr,_,_)
-      then
-        inlineCallsInFunctions(cdr,inFunctions,el::iAcc);
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Inline.inlineCallsInFunctions failed"});
-      then fail();
-  end matchcontinue;
+      else fn;
+    end matchcontinue
+  for fn in inElementList);
 end inlineCallsInFunctions;
 
 

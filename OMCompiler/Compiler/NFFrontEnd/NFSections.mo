@@ -289,6 +289,33 @@ public
     end match;
   end mapExp;
 
+  function foldExp<ArgT>
+    input Sections sections;
+    input FoldFn foldFn;
+    input output ArgT arg;
+
+    partial function FoldFn
+      input Expression exp;
+      input output ArgT arg;
+    end FoldFn;
+  algorithm
+    arg := match sections
+      case SECTIONS()
+        algorithm
+          arg := Equation.foldExpList(sections.equations, foldFn, arg);
+          arg := Equation.foldExpList(sections.initialEquations, foldFn, arg);
+          arg := Algorithm.foldExpList(sections.algorithms, foldFn, arg);
+          arg := Algorithm.foldExpList(sections.initialAlgorithms, foldFn, arg);
+        then
+          arg;
+
+      case EXTERNAL()
+        then List.fold(sections.args, foldFn, arg);
+
+      else arg;
+    end match;
+  end foldExp;
+
   function apply
     input Sections sections;
     input EquationFn eqFn;

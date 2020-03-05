@@ -1234,6 +1234,53 @@ public
       end match;
     end applyComponents;
 
+    function foldComponents<ArgT>
+      input ClassTree tree;
+      input FuncT func;
+      input output ArgT arg;
+
+      partial function FuncT
+        input InstNode component;
+        input output ArgT arg;
+      end FuncT;
+    algorithm
+      () := match tree
+        case PARTIAL_TREE()
+          algorithm
+            for c in tree.components loop
+              arg := func(c, arg);
+            end for;
+          then
+            ();
+
+        case EXPANDED_TREE()
+          algorithm
+            for c in tree.components loop
+              arg := func(c, arg);
+            end for;
+          then
+            ();
+
+        case INSTANTIATED_TREE()
+          algorithm
+            for c in tree.components loop
+              arg := func(Mutable.access(c), arg);
+            end for;
+          then
+            ();
+
+        case FLAT_TREE()
+          algorithm
+            for c in tree.components loop
+              arg := func(c, arg);
+            end for;
+          then
+            ();
+
+        else ();
+      end match;
+    end foldComponents;
+
     function classCount
       input ClassTree tree;
       output Integer count;

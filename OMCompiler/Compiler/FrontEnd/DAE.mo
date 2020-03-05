@@ -404,6 +404,7 @@ public uniontype Function
     Boolean partialPrefix "MetaModelica extension";
     Boolean isImpure "Modelica 3.3 impure/pure, by default isImpure = false all the time only if prefix *impure* function is specified";
     InlineType inlineType;
+    list<Integer> unusedInputs "The indices of any inputs not used in the function.";
     ElementSource source "the origin of the component/equation/algorithm" ;
     Option<SCode.Comment> comment;
   end FUNCTION;

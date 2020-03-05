@@ -178,6 +178,18 @@ public
     CREF(node = node) := cref;
   end node;
 
+  function containsNode
+    input ComponentRef cref;
+    input InstNode node;
+    output Boolean res;
+  algorithm
+    res := match cref
+      case CREF()
+        then InstNode.refEqual(cref.node, node) or containsNode(cref.restCref, node);
+      else false;
+    end match;
+  end containsNode;
+
   function nodeType
     input ComponentRef cref;
     output Type ty;

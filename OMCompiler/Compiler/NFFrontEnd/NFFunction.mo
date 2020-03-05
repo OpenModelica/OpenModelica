@@ -1560,14 +1560,16 @@ uniontype Function
     DAE.InlineType ity;
     DAE.Type ty;
     list<DAE.FunctionDefinition> defs;
+    list<Integer> unused_inputs;
   algorithm
     vis := SCode.PUBLIC(); // TODO: Use the actual visibility.
     par := false; // TODO: Use the actual partial prefix.
     impr := fn.attributes.isImpure;
     ity := fn.attributes.inline;
     ty := makeDAEType(fn);
+    unused_inputs := analyseUnusedParameters(fn);
     defs := def :: list(FunctionDerivative.toDAE(fn_der) for fn_der in fn.derivatives);
-    daeFn := DAE.FUNCTION(fn.path, defs, ty, vis, par, impr, ity,
+    daeFn := DAE.FUNCTION(fn.path, defs, ty, vis, par, impr, ity, unused_inputs,
       ElementSource.createElementSource(InstNode.info(fn.node)),
       SCodeUtil.getElementComment(InstNode.definition(fn.node)));
   end toDAE;
@@ -1707,6 +1709,62 @@ uniontype Function
       InstNode.updateComponent(comp, node);
     end if;
   end mapExpParameter;
+
+  function foldExp<ArgT>
+    input Function fn;
+    input FoldFunc foldFn;
+    input output ArgT arg;
+    input Boolean mapParameters = true;
+    input Boolean mapBody = true;
+
+    partial function FoldFunc
+      input Expression exp;
+      input output ArgT arg;
+    end FoldFunc;
+  protected
+    Class cls;
+  algorithm
+    cls := InstNode.getClass(fn.node);
+
+    if mapParameters then
+      arg := ClassTree.foldComponents(Class.classTree(cls),
+        function foldExpParameter(foldFn = foldFn), arg);
+    end if;
+
+    if mapBody then
+      arg := Sections.foldExp(Class.getSections(cls), foldFn, arg);
+    end if;
+  end foldExp;
+
+  function foldExpParameter<ArgT>
+    input InstNode node;
+    input FoldFunc foldFn;
+    input output ArgT arg;
+
+    partial function FoldFunc
+      input Expression exp;
+      input output ArgT arg;
+    end FoldFunc;
+  protected
+    Component comp;
+    Class cls;
+  algorithm
+    comp := InstNode.component(node);
+    arg := Binding.foldExp(Component.getBinding(comp), foldFn, arg);
+
+    () := match comp
+      case Component.TYPED_COMPONENT()
+        algorithm
+          arg := Type.foldDims(comp.ty, function Dimension.foldExp(func = foldFn), arg);
+          cls := InstNode.getClass(comp.classInst);
+          arg := ClassTree.foldComponents(Class.classTree(cls),
+            function foldExpParameter(foldFn = foldFn), arg);
+        then
+          ();
+
+      else ();
+    end match;
+  end foldExpParameter;
 
   function isPartial
     input Function fn;
@@ -2081,6 +2139,45 @@ protected
 
     end match;
   end getBody2;
+
+  function analyseUnusedParameters
+    input Function fn;
+    output list<Integer> unusedInputs = {};
+  protected
+    list<InstNode> inputs;
+    Integer index;
+  algorithm
+    inputs := foldExp(fn, analyseUnusedParametersExp, fn.inputs);
+
+    for i in inputs loop
+      index := List.positionOnTrue(fn.inputs, function InstNode.refEqual(node1 = i));
+      unusedInputs := index :: unusedInputs;
+    end for;
+  end analyseUnusedParameters;
+
+  function analyseUnusedParametersExp
+    input Expression exp;
+    input output list<InstNode> params;
+  algorithm
+    if not listEmpty(params) then
+      params := Expression.fold(exp, analyseUnusedParametersExp2, params);
+    end if;
+  end analyseUnusedParametersExp;
+
+  function analyseUnusedParametersExp2
+    input Expression exp;
+    input output list<InstNode> params;
+  algorithm
+    () := match exp
+      case Expression.CREF()
+        algorithm
+          params := List.deleteMemberOnTrue(exp.cref, params, ComponentRef.containsNode);
+        then
+          ();
+
+      else ();
+    end match;
+  end analyseUnusedParametersExp2;
 end Function;
 
 annotation(__OpenModelica_Interface="frontend");

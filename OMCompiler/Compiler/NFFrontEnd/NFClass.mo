@@ -270,6 +270,7 @@ uniontype Class
       case Class.INSTANCED_CLASS() then cls.elements;
       case Class.INSTANCED_BUILTIN() then cls.elements;
       case Class.TYPED_DERIVED() then classTree(InstNode.getClass(cls.baseClass));
+      else ClassTree.EMPTY_TREE();
     end match;
   end classTree;
 

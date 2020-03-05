@@ -56,7 +56,6 @@ protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
 protected import RemoveSimpleEquations;
-protected import SCode;
 protected import Util;
 
 
@@ -1541,52 +1540,42 @@ algorithm
   end match;
 end generateProtectedElements;
 
-protected function updateFunctionBody "udpates the function with the new elementsm update the type and create a new path name.
-author:Waurich TUD 2014-04"
+protected function updateFunctionBody
+  "Updates the function with the new elements, updates the type, and creates a
+   new path name."
   input DAE.Function funcIn;
   input list<DAE.Element> body;
   input Integer idx;
   input list<DAE.Element> outputs;
   input list<DAE.Element> origOutputs;
-  output DAE.Function funcOut;
+  output DAE.Function funcOut = funcIn;
   output Absyn.Path pathOut;
 algorithm
-  (funcOut,pathOut) := match(funcIn, body, idx, outputs, origOutputs)
+  (funcOut, pathOut) := match funcOut
     local
       String s;
-      list<String> chars;
-      Absyn.Path path;
-      list<DAE.FunctionDefinition> funcs;
-      DAE.Type typ;
-      Boolean pP, iI;
-      DAE.InlineType iType;
-      DAE.ElementSource source;
-      DAE.Function func;
-      Option<SCode.Comment> comment;
-      SCode.Visibility visibility;
-    case (DAE.FUNCTION(path,_,typ,visibility,pP,iI,iType,source,comment),_,_,_,_)
-      equation
-        //print("the pathname before: "+AbsynUtil.pathString(path)+"\n");
-        //print("THE FUNCTION BEFORE \n"+DAEDump.dumpFunctionStr(funcIn)+"\n");
-        // assemble the path-name
-        s = AbsynUtil.pathString(path);
-        chars = stringListStringChar(s);
-        chars = listDelete(chars, 1);
-        s = stringCharListString(chars);
-        path = AbsynUtil.stringPath(s+"_eval"+intString(idx));
-        // update the type
-        //print("the old type: "+Types.unparseType(typ)+"\n");
-        typ = updateFunctionType(typ,outputs,origOutputs);
-        //print("the new type: "+Types.unparseType(typ)+"\n");
-        func = DAE.FUNCTION(path,{DAE.FUNCTION_DEF(body)},typ,visibility,pP,iI,iType,source,comment);
-        //print("THE FUNCTION AFTER \n"+DAEDump.dumpFunctionStr(func)+"\n");
-        //print("the pathname after: "+AbsynUtil.pathString(path)+"\n");
-      then (func,path);
+
+    case DAE.FUNCTION()
+      algorithm
+        // Update the path.
+        s := AbsynUtil.pathLastIdent(funcOut.path);
+        s := s + "_eval" + intString(idx);
+        funcOut.path := AbsynUtil.pathReplaceIdent(AbsynUtil.makeNotFullyQualified(funcOut.path), s);
+
+        // Update the type.
+        funcOut.type_ := updateFunctionType(funcOut.type_, outputs, origOutputs);
+
+        // Update the function definition.
+        funcOut.functions := {DAE.FUNCTION_DEF(body)};
+      then
+        (funcOut, funcOut.path);
+
     else
-      equation
-        print("updateFunctionBody failed \n");
-        then
-          fail();
+      algorithm
+        Error.assertion(false, getInstanceName() + " failed", sourceInfo());
+      then
+        fail();
+
   end match;
 end updateFunctionBody;
 
