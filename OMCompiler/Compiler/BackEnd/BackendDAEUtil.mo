@@ -3315,8 +3315,8 @@ algorithm
             (_, (vars, _, _, _, _, pa)) := Expression.traverseExpTopDown(expCond, traFunc, (vars, true, isInitial, it, at, pa));
             // mark all vars which are not in all branches unsolvable
             (_, bt) := Expression.traverseExpTopDown(e, getIfExpBranchVarOccurency, BinaryTree.emptyBinTree);
-            (_, (_, _, _, _)) := Expression.traverseExpBottomUp(expThen, markBranchVars, (mark, rowmark, vars, bt));
-            (_, (_, _, _, _)) := Expression.traverseExpBottomUp(expElse, markBranchVars, (mark, rowmark, vars, bt));
+            (_, (_, _, _, _)) := Expression.traverseExpTopDown(expThen, markBranchVars, (mark, rowmark, vars, bt));
+            (_, (_, _, _, _)) := Expression.traverseExpTopDown(expElse, markBranchVars, (mark, rowmark, vars, bt));
           then (vars, bs, isInitial, it, at, pa);
         end match;
       then tpl;
@@ -5976,9 +5976,10 @@ protected function markBranchVars "mark all vars of a if expression which are no
   input DAE.Exp inExp;
   input tuple<Integer,array<Integer>,BackendDAE.Variables,BinaryTree.BinTree> inTuple;
   output DAE.Exp outExp;
+  output Boolean cont=true;
   output tuple<Integer,array<Integer>,BackendDAE.Variables,BinaryTree.BinTree> outTuple;
 algorithm
-  (outExp,outTuple) := matchcontinue (inExp,inTuple)
+  (outExp, cont, outTuple) := matchcontinue (inExp,inTuple)
     local
       DAE.Exp e;
       BackendDAE.Variables vars;
@@ -5991,20 +5992,26 @@ algorithm
 
     // special case for time, it is never part of the equation system
     case (DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),_)
-      then (inExp, inTuple);
+      then (inExp, false, inTuple);
 
     // case for functionpointers
     case (DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC()),_)
-      then (inExp, inTuple);
+      then (inExp, false, inTuple);
+
+    case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF()}),_)
+      then (inExp, false, inTuple);
+
+    case (DAE.CALL(path = Absyn.IDENT(name = "previous"),expLst = {DAE.CREF()}),_)
+      then (inExp, false, inTuple);
 
     // mark if not in bt
     case (DAE.CREF(componentRef = cr),(mark,rowmark,vars,bt))
       equation
          (backendVars,ilst) = BackendVariable.getVar(cr, vars);
          markBranchVars1(backendVars,ilst,mark,rowmark,bt);
-      then (inExp, inTuple);
+      then (inExp, true, inTuple);
 
-    else (inExp,inTuple);
+    else (inExp, true, inTuple);
   end matchcontinue;
 end markBranchVars;
 
