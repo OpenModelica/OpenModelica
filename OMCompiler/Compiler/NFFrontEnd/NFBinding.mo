@@ -660,6 +660,25 @@ public
     end match;
   end mapExpShallow;
 
+  function foldExp<ArgT>
+    input Binding binding;
+    input FoldFunc foldFn;
+    input output ArgT arg;
+
+    partial function FoldFunc
+      input Expression exp;
+      input output ArgT arg;
+    end FoldFunc;
+  algorithm
+    arg := match binding
+      case UNTYPED_BINDING() then Expression.fold(binding.bindingExp, foldFn, arg);
+      case TYPED_BINDING()   then Expression.fold(binding.bindingExp, foldFn, arg);
+      case FLAT_BINDING()    then Expression.fold(binding.bindingExp, foldFn, arg);
+      case CEVAL_BINDING()   then Expression.fold(binding.bindingExp, foldFn, arg);
+      else arg;
+    end match;
+  end foldExp;
+
   function containsExp
     input Binding binding;
     input PredFunc predFn;

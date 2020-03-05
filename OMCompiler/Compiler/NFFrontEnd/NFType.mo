@@ -673,6 +673,25 @@ public
     end match;
   end mapDims;
 
+  function foldDims<ArgT>
+    input Type ty;
+    input FuncT func;
+    input output ArgT arg;
+
+    partial function FuncT
+      input Dimension dim;
+      input output ArgT arg;
+    end FuncT;
+  algorithm
+    arg := match ty
+      case ARRAY() then List.fold(ty.dimensions, func, arg);
+      case TUPLE() then List.fold(ty.types, function foldDims(func = func), arg);
+      case FUNCTION() then foldDims(Function.returnType(ty.fn), func, arg);
+      case METABOXED() then foldDims(ty.ty, func, arg);
+      else arg;
+    end match;
+  end foldDims;
+
   function nthEnumLiteral
     input Type ty;
     input Integer index;
