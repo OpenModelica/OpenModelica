@@ -3496,34 +3496,28 @@ algorithm
   end matchcontinue;
 end renameFunctionParameter;
 
-protected function renameFunctionParameter1"
-author:Waurich TUD 2014-10"
-  input tuple<DAE.AvlTreePathFunction.Key,DAE.AvlTreePathFunction.Value> funcIn;
-  output tuple<DAE.AvlTreePathFunction.Key,DAE.AvlTreePathFunction.Value> funcOut;
+protected function renameFunctionParameter1
+  input tuple<DAE.AvlTreePathFunction.Key, DAE.AvlTreePathFunction.Value> funcIn;
+  output tuple<DAE.AvlTreePathFunction.Key, DAE.AvlTreePathFunction.Value> funcOut;
+protected
+  DAE.AvlTreePathFunction.Key key;
+  DAE.AvlTreePathFunction.Value value;
+  String pathName;
+  DAE.Function fn;
 algorithm
-  funcOut := matchcontinue(funcIn)
-    local
-      Boolean pPref;
-      Boolean isImpure;
-      String pathName;
-      Absyn.Path path;
-      DAE.AvlTreePathFunction.Key key;
-      DAE.ElementSource source;
-      DAE.Function func;
-      DAE.InlineType iType;
-      DAE.Type type_;
-      SCode.Visibility vis;
-      list<DAE.FunctionDefinition> functions;
-      Option<SCode.Comment> comment;
-  case((key,SOME(DAE.FUNCTION(path=path,functions=functions,type_=type_,visibility=vis,partialPrefix=pPref,isImpure=isImpure,inlineType=iType,source=source,comment=comment))))
-    equation
-      pathName = AbsynUtil.pathString(path);
-      pathName = Util.stringReplaceChar(pathName,".","_")+"_";
-      functions = List.map1(functions,renameFunctionParameter2,pathName);
-  then((key,SOME(DAE.FUNCTION(path,functions,type_,vis,pPref,isImpure,iType,source,comment))));
-  else
-    then funcIn;
-  end matchcontinue;
+  (key, value) := funcIn;
+
+  funcOut := match value
+    case SOME(fn as DAE.FUNCTION())
+      algorithm
+        pathName := AbsynUtil.pathString(fn.path);
+        pathName := Util.stringReplaceChar(pathName, ".", "_") + "_";
+        fn.functions := list(renameFunctionParameter2(fn_def, pathName) for fn_def in fn.functions);
+      then
+        (key, SOME(fn));
+
+    else funcIn;
+  end match;
 end renameFunctionParameter1;
 
 protected function renameFunctionParameter2"

@@ -2718,7 +2718,7 @@ algorithm
 
       isImpure = DAEUtil.getFunctionImpureAttribute(func);
       dinl = DAEUtil.getFunctionInlineType(func);
-      dfunc = DAE.FUNCTION(dpath, {DAE.FUNCTION_DEF(funcbodyDer)}, dtp, visibility, false, isImpure, dinl, DAE.emptyElementSource, NONE());
+      dfunc = DAE.FUNCTION(dpath, {DAE.FUNCTION_DEF(funcbodyDer)}, dtp, visibility, false, isImpure, dinl, {}, DAE.emptyElementSource, NONE());
     then (dfunc, functions, blst);
 
     else

@@ -763,7 +763,7 @@ algorithm
   try
     // get all the used functions from the function tree
     funcelems := DAEUtil.getFunctionList(functionTree);
-    funcelems := Inline.inlineCallsInFunctions(funcelems, (NONE(), {DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}), {});
+    funcelems := Inline.inlineCallsInFunctions(funcelems, (NONE(), {DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}));
     (funcelems, outLiterals as (_, _, lits)) := simulationFindLiterals(funcelems);
     (outFunctions, outRecordDecls, outIncludes, outIncludeDirs, outLibs, outLibPaths) := SimCodeFunctionUtil.elaborateFunctions(inProgram, funcelems, {}, lits, {}); // Do we need metarecords here as well?
   else
