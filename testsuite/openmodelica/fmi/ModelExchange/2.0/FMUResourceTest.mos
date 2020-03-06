@@ -1,7 +1,7 @@
 // name: FMUResourceTest
 // keywords: fmu export import
 // status: correct
-// teardown_command: rm -rf binaries sources modelDescription.xml FMIExercise_Components_PI* FMIExercise.TestPIFMU* output.log
+// teardown_command: rm -rf binaries sources modelDescription.xml FMUResourceTest_Test* FMUResourceTest.Test* output.log
 //
 
 
@@ -10,7 +10,7 @@ loadFile("./FMUResourceTest/package.mo"); getErrorString();
 translateModelFMU(FMUResourceTest.TestResource, version="2.0"); getErrorString();
 importFMU("FMUResourceTest.TestResource"); getErrorString();
 loadFile("FMUResourceTest_TestResource.mo"); getErrorString();
-simulate(FMIExercise.TestPIFMU); getErrorString();
+simulate(FMUResourceTest.TestPIFMU); getErrorString();
 
 
 // Result:
@@ -28,8 +28,8 @@ simulate(FMIExercise.TestPIFMU); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'FMIExercise.TestPIFMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "Simulation Failed. Model: FMIExercise.TestPIFMU does not exist! Please load it first before simulation."
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'FMUResourceTest.TestPIFMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation Failed. Model: FMUResourceTest.TestPIFMU does not exist! Please load it first before simulation."
 // end SimulationResult;
 // ""
 // endResult
