@@ -368,14 +368,17 @@ void TextAnnotation::drawTextAnnotaion(QPainter *painter)
     font.setPointSizeF(qMax(fontSizeFactor, Helper::minimumTextFontSize));
     painter->setFont(font);
   }
-  /* Get the elided text
-   * Try to get the elided text if the shape is inside a Component
-   * If the shape is not part of Component then only try to get the elided text if its font size <= Helper::minimumTextFontSize
+  /* Try to get the elided text if calculated font size <= Helper::minimumTextFontSize
+   * OR if font size is absolute.
    */
   QString textToDraw = mTextString;
-  if (absMappedBoundingRect.width() > 1 && painter->font().pointSizeF() <= Helper::minimumTextFontSize) {
+  if (absMappedBoundingRect.width() > 1 && ((mFontSize <= 0 && painter->font().pointSizeF() <= Helper::minimumTextFontSize) || mFontSize > 0)) {
     QFontMetrics fontMetrics(painter->font());
     textToDraw = fontMetrics.elidedText(mTextString, Qt::ElideRight, absMappedBoundingRect.width());
+    // if we get "..." i.e., QChar(0x2026) as textToDraw then don't draw anything
+    if (textToDraw.compare(QChar(0x2026)) == 0) {
+      textToDraw = "";
+    }
   }
   // draw the font
   if (mpComponent || mappedBoundingRect.width() != 0 || mappedBoundingRect.height() != 0) {
