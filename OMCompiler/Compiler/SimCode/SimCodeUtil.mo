@@ -8008,6 +8008,12 @@ algorithm
   if not Flags.isSet(Flags.DUMP_FORCE_FMI_INTERNAL_VARIABLES) and (ComponentReference.isInternalCref(simVar.name) and not BackendVariable.isStateVar(dlowVar) and not BackendVariable.isClockedStateVar(dlowVar)) then
     simVar.exportVar := false;
   end if;
+
+  // filter parameters of type string that doesn't have constant start values
+  if BackendVariable.isStringParam(dlowVar) and isSome(simVar.initialValue) and not Expression.isEvaluatedConst(Util.getOption(simVar.initialValue)) then
+    simVar.exportVar := false;
+  end if;
+
   //print("\n name :" + ComponentReference.printComponentRefStr(simVar.name) + "===>" + anyString(simVar.varKind) + "\n");
   // If it is an input variable, we give it an index
   if (not isalias) and BackendVariable.isVarOnTopLevelAndInputNoDerInput(dlowVar) then

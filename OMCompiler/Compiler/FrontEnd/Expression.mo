@@ -7952,7 +7952,14 @@ public function isEvaluatedConst
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := isEvaluatedConstWork(inExp,true);
+  outBoolean := match inExp
+    case DAE.ICONST() then true;
+    case DAE.RCONST() then true;
+    case DAE.BCONST() then true;
+    case DAE.SCONST() then true;
+    case DAE.ENUM_LITERAL() then true;
+    else false;
+  end match;
 end isEvaluatedConst;
 
 public function getEvaluatedConstInteger
@@ -7972,25 +7979,6 @@ algorithm
     else fail();
   end match;
 end getEvaluatedConstInteger;
-
-protected function isEvaluatedConstWork
-"Returns true if an expression is really constant"
-  input DAE.Exp inExp;
-  input Boolean inRes;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := match (inExp,inRes)
-    local
-      DAE.Exp e;
-    case (_,false) then false;
-    case (DAE.ICONST(),_) then true;
-    case (DAE.RCONST(),_) then true;
-    case (DAE.BCONST(),_) then true;
-    case (DAE.SCONST(),_) then true;
-    case (DAE.ENUM_LITERAL(),_) then true;
-    else false;
-  end match;
-end isEvaluatedConstWork;
 
 protected function isConstWork
 "Returns true if an expression is constant"
