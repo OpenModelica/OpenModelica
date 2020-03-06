@@ -8009,10 +8009,10 @@ algorithm
     simVar.exportVar := false;
   end if;
 
-  // always filter variables which are parameters of type string and does not have constant string expression as start value (i.e) start = SOME(DAE.Exp.SCONST())
-  if BackendVariable.isStringParam(dlowVar) and not Expression.isExpConstantString(Util.getOption(simVar.initialValue)) then
+  // filter parameters of type string that doesn't have constant start values
+  if BackendVariable.isStringParam(dlowVar) and isSome(simVar.initialValue) and not Expression.isEvaluatedConst(Util.getOption(simVar.initialValue)) then
     simVar.exportVar := false;
-  end if ;
+  end if;
 
   //print("\n name :" + ComponentReference.printComponentRefStr(simVar.name) + "===>" + anyString(simVar.varKind) + "\n");
   // If it is an input variable, we give it an index
