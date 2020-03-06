@@ -7947,6 +7947,17 @@ algorithm
   outBoolean := isConstWork(inExp);
 end isConst;
 
+public function isExpConstantString
+"Returns true if an expression is a string constant"
+  input DAE.Exp inExp;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inExp)
+    case (DAE.SCONST()) then true;
+    else false;
+  end match;
+end isExpConstantString;
+
 public function isEvaluatedConst
 "Returns true if an expression is really a constant scalar value. no calls, casts, or something"
   input DAE.Exp inExp;
