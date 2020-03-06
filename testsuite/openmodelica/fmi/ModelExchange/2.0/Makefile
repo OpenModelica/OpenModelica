@@ -15,6 +15,7 @@ fmi_attributes_08.mos \
 fmi_attributes_09.mos \
 fmi_attributes_10.mos \
 FMIExercise.mos \
+FMIResourceTest.mos \
 HelloFMIWorld.mos \
 HelloFMIWorldEvent.mos \
 IntegerNetwork1.mos \
