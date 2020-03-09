@@ -18185,23 +18185,26 @@ function excludeElementsFromFile
   input  list<Absyn.ElementItem> inEls;
   output list<Absyn.ElementItem> outEls;
 algorithm
-  outEls := matchcontinue (inFile,inEls)
+  outEls := match (inFile,inEls)
     local
       Absyn.ElementItem e;
       list<Absyn.ElementItem> rest, filtered;
-      String f,file;
+      String f,file,cmt;
+      Boolean b = false;
+
     case (_,{}) then {};
+    // elements can come from different files
     case (file,(e as Absyn.ELEMENTITEM(Absyn.ELEMENT(info = SOURCEINFO(fileName = f))))::rest)
       equation
-        false = stringEqual(file, f); // not from this file, use it!
+        b = stringEqual(file, f); // not from this file, use it, else discard!
         filtered = excludeElementsFromFile(file, rest);
-      then e::filtered;
-    case (file,(Absyn.ELEMENTITEM(Absyn.ELEMENT(info = SOURCEINFO(fileName = f))))::rest)
+      then if not b then e::filtered else filtered;
+    // lexer comments can only be from this file, exclude
+    case (file,(e as Absyn.LEXER_COMMENT(cmt))::rest)
       equation
-        true = stringEqual(file, f); // is from this file, discard!
         filtered = excludeElementsFromFile(file, rest);
       then filtered;
-  end matchcontinue;
+  end match;
 end excludeElementsFromFile;
 
 public function getInstantiatedParametersAndValues
