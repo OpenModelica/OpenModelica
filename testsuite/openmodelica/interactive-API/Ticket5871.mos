@@ -1,0 +1,69 @@
+// name: Ticket5871.mos
+// keywords:
+// status: correct
+//
+// Tests if class merging works fine if you have comments (LEXER_COMMENT)
+//
+
+
+loadFile("./TestTicket5871/package.mo");
+getErrorString();
+getClassNames();
+getErrorString();
+getClassNames(TestTicket5871);
+getErrorString();
+list(TestTicket5871);
+echo(false);
+s := getSourceFile(TestTicket5871);
+loadString("within; package TestTicket5871
+  extends Modelica.Icons.Package;
+  // test
+  // test comment
+end TestTicket5871;
+",s,"UTF-8",true);
+getErrorString();
+echo(true);
+getClassNames(TestTicket5871);
+getErrorString();
+getClassNames();
+getErrorString();
+list(TestTicket5871);
+
+// Result:
+// true
+// ""
+// {TestTicket5871}
+// ""
+// {pack1,pack2}
+// ""
+// "package TestTicket5871
+//   extends Modelica.Icons.Package;
+//   // test
+//
+//   package pack1
+//     extends Modelica.Icons.VariantsPackage;
+//   end pack1;
+//
+//   package pack2
+//     extends Modelica.Icons.TypesPackage;
+//   end pack2;
+// end TestTicket5871;"
+// true
+// {pack1,pack2}
+// ""
+// {TestTicket5871}
+// ""
+// "package TestTicket5871
+//   extends Modelica.Icons.Package;
+//   // test
+//   // test comment
+//
+//   package pack1
+//     extends Modelica.Icons.VariantsPackage;
+//   end pack1;
+//
+//   package pack2
+//     extends Modelica.Icons.TypesPackage;
+//   end pack2;
+// end TestTicket5871;"
+// endResult
