@@ -44,6 +44,7 @@ import Type = NFType;
 import Dimension = NFDimension;
 import NFClassTree.ClassTree;
 import Subscript = NFSubscript;
+import Record = NFRecord;
 
 protected
 import Ceval = NFCeval;
@@ -184,6 +185,40 @@ algorithm
     end try;
   end if;
 end evaluateExternal;
+
+function evaluateRecordConstructor
+  input Function fn;
+  input Type ty;
+  input list<Expression> args;
+  input Boolean evaluate = true;
+  output Expression result;
+protected
+  ReplTree.Tree repl;
+  Expression arg, repl_exp;
+  list<Record.Field> fields;
+  list<Expression> rest_args = args, expl;
+algorithm
+  repl := ReplTree.new();
+  fields := Type.recordFields(ty);
+
+  for i in fn.inputs loop
+    arg :: rest_args := rest_args;
+    repl := ReplTree.add(repl, InstNode.name(i), arg);
+  end for;
+
+  for l in fn.locals loop
+    repl := ReplTree.add(repl, InstNode.name(l), getBindingExp(l, repl));
+  end for;
+
+  repl := ReplTree.map(repl, function applyBindingReplacement(repl = repl));
+
+  expl := list(ReplTree.get(repl, Record.Field.name(f)) for f in fields);
+  result := Expression.RECORD(Function.name(fn), ty, expl);
+
+  if evaluate then
+    result := Ceval.evalExp(result);
+  end if;
+end evaluateRecordConstructor;
 
 protected
 
