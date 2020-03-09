@@ -81,6 +81,7 @@ Ticket5548.mos \
 Ticket5571.mos \
 Ticket5565.mos \
 Ticket5680.mos \
+Ticket5871.mos \
 ReadOnlyPkg.mos
 
 
