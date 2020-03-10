@@ -1271,6 +1271,23 @@ uniontype InstNode
     end match;
   end refEqual;
 
+  function refCompare
+    input InstNode node1;
+    input InstNode node2;
+    output Integer res;
+  algorithm
+    res := match (node1, node2)
+      case (CLASS_NODE(), CLASS_NODE())
+        then Util.referenceCompare(Pointer.access(node1.cls), Pointer.access(node2.cls));
+      case (COMPONENT_NODE(), COMPONENT_NODE())
+        then Util.referenceCompare(Pointer.access(node1.component), Pointer.access(node2.component));
+      case (CLASS_NODE(), COMPONENT_NODE())
+        then Util.referenceCompare(Pointer.access(node1.cls), Pointer.access(node2.component));
+      case (COMPONENT_NODE(), CLASS_NODE())
+        then Util.referenceCompare(Pointer.access(node1.component), Pointer.access(node2.cls));
+    end match;
+  end refCompare;
+
   function nameEqual
     input InstNode node1;
     input InstNode node2;

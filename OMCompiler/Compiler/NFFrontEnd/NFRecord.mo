@@ -83,6 +83,16 @@ encapsulated uniontype Field
       else false;
     end match;
   end isInput;
+
+  function name
+    input Field field;
+    output String name;
+  algorithm
+    name := match field
+      case INPUT() then field.name;
+      case LOCAL() then field.name;
+    end match;
+  end name;
 end Field;
 
 function instDefaultConstructor
