@@ -82,7 +82,7 @@ end VectorSlice;
 uniontype TensorSlice
   record TENSOR_SLICE
     "Slice through all dimensions."
-    array<Integer> dimSizes         "Sizes for each dimension.";
+    array<RegularSlice> itSlice     "Iterator slice.";
     array<VectorSlice> vecSlices    "Single dimension slicings.";
   end TENSOR_SLICE;
 end TensorSlice;
@@ -101,7 +101,7 @@ end IndexSlice;
 /* Adjacency matrix structure. */
 uniontype AdjacencyRow
   record ADJACENCY_ROW
-    array<Integer> dimSizes         "Sizes for each dimension.";
+    array<RegularSlice> itSlice     "Iterator slice.";
     list<IndexSlice> indSlice       "Indexed slice for each appearing variable or equation.";
   end ADJACENCY_ROW;
 end AdjacencyRow;
@@ -118,48 +118,6 @@ uniontype SliceAssignment
 end SliceAssignment;
 
 type Matching = array<list<SliceAssignment>>;
-
-/* OLD BAD IDEA I DONT WANT TO SCRAP RN */
- /* --- Slices of one dimension ---
-uniontype RegularSlice
-  record REG_SLICE
-    Integer Start;
-    Integer Stop;
-    Integer Step;
-  end REG_SLICE;
-  /* maybe we need more here
-end RegularSlice;
-
-uniontype Slice
-  record SLICE
-    "Full dimension slice."
-    list<Integer> singletons       "List of single unordered indices.";
-    list<RegularSlice> regSlices   "List of regular slicings.";
-  end SLICE;
-end Slice;
-
-/* --- Slices of multiple dimensions ---
-uniontype TensorSlice
-  record TENSOR_SLICE
-    "Slice through all dimensions."
-    array<Integer> dimSizes         "Size of each dimension.";
-    array<Slice> slices             "Single dimension slicings.";
-  end TENSOR_SLICE;
-end TensorSlice;
-
-/* General indexed slice. The index refers to the
-   variable or equation the slice belongs to.
-uniontype IndexSlice
-  record SCALAR_INDEX_SLICE
-  end SCALAR_INDEX_SLICE;
-
-  record VECTOR_INDEX_SLICE
-  end VECTOR_INDEX_SLICE;
-
-  record TENSOR_INDEX_SLICE
-  end TENSOR_INDEX_SLICE;
-end IndexSlice;
-*/
 
 annotation(__OpenModelica_Interface="backend");
 end NBackendDAE;

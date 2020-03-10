@@ -214,11 +214,10 @@ function instClassInProgramNewFrontend
   input SCode.Program program;
   output FlatModel flat_model;
   output FunctionTree funcs;
+  output String name;
+  output SourceInfo info;
 protected
   InstNode top, cls, inst_cls;
-  /* This may be needed as output in the future, disregard for now */
-  String name;
-  SourceInfo info;
 algorithm
   // gather here all the flags to disable expansion
   // and scalarization if -d=-nfScalarize is on
@@ -278,6 +277,10 @@ algorithm
   // (e.g. because they where used with non-constant subscripts), and add them
   // to the model.
   flat_model := Package.collectConstants(flat_model, funcs);
+
+  if Flags.getConfigBool(Flags.FLAT_MODELICA) then
+    FlatModel.printFlatString(flat_model, FunctionTree.listValues(funcs));
+  end if;
 
   // Scalarize array components in the flat model.
   if Flags.isSet(Flags.NF_SCALARIZE) then

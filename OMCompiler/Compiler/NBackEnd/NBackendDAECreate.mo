@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -46,7 +46,7 @@ public function lower
   input FunctionTree funcTree;
   output BackendDAE.BackendStructure bdae;
 algorithm
-  print("TRYING TO LOWER THE FLAT MODEL\n\n");
+  print(FlatModel.toString(flatModel, true));
   bdae := BackendDAE.BDAE();
 end lower;
 
