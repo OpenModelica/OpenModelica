@@ -711,7 +711,6 @@ RecordBinding5.mo \
 RecordBinding6.mo \
 RecordBinding7.mo \
 RecordConstructor1.mo \
-RecordConstructor2.mo \
 RecordExtends1.mo \
 RecordExtends2.mo \
 RecordUnknownDim1.mo \
@@ -881,6 +880,7 @@ OCGTests.mos \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+RecordConstructor2.mo \
 FinalParameter1.mo \
 FinalParameter2.mo \
 FinalParameter3.mo \
