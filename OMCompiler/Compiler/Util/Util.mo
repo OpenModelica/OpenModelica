@@ -1625,5 +1625,19 @@ algorithm
   outTuple := if referenceEq(t1, t1_new) then inTuple else (t1_new, t2, t3);
 end applyTuple31;
 
+function referenceCompare<T1, T2>
+  "Returns -1, 0, or 1 depending on whether the memory address of ref1 is less,
+   equal, or greater than the address of ref2."
+  input T1 ref1;
+  input T2 ref2;
+  output Integer result;
+external "C" result = referenceCompareExt(ref1, ref2) annotation(Include="
+  static inline int referenceCompareExt(void *ref1, void *ref2)
+  {
+    return (ref1 < ref2) ? -1 : (ref1 > ref2);
+  }
+");
+end referenceCompare;
+
 annotation(__OpenModelica_Interface="util");
 end Util;
