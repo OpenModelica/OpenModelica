@@ -44,6 +44,7 @@ import Type = NFType;
 import Dimension = NFDimension;
 import NFClassTree.ClassTree;
 import Subscript = NFSubscript;
+import Record = NFRecord;
 
 protected
 import Ceval = NFCeval;
@@ -63,13 +64,14 @@ import NFCeval.EvalTarget;
 encapsulated package ReplTree
   import BaseAvlTree;
   import Expression = NFExpression;
+  import NFInstNode.InstNode;
 
-  extends BaseAvlTree(redeclare type Key = String,
+  extends BaseAvlTree(redeclare type Key = InstNode,
                       redeclare type Value = Expression);
 
   redeclare function extends keyStr
   algorithm
-    outString := inKey;
+    outString := InstNode.name(inKey);
   end keyStr;
 
   redeclare function extends valueStr
@@ -79,7 +81,7 @@ encapsulated package ReplTree
 
   redeclare function extends keyCompare
   algorithm
-    outResult := stringCompare(inKey1, inKey2);
+    outResult := InstNode.refCompare(inKey1, inKey2);
   end keyCompare;
 
   annotation(__OpenModelica_Interface="util");
@@ -185,6 +187,70 @@ algorithm
   end if;
 end evaluateExternal;
 
+function evaluateRecordConstructor
+  "Evaluates a default record constructor call by replacing any field references
+   with the given arguments, optionally constant evaluating the resulting expression.
+
+   Example:
+     record R
+       Real x;
+       constant Real y = x / 2.0;
+       Real z;
+     end R;
+
+     CALL(R, {1.0, 2.0}) => RECORD(R, {1.0, 0.5, 2.0});
+   "
+  input Function fn;
+  input Type ty;
+  input list<Expression> args;
+  input Boolean evaluate = true;
+  output Expression result;
+protected
+  ReplTree.Tree repl;
+  Expression arg, repl_exp;
+  list<Record.Field> fields;
+  list<Expression> rest_args = args, expl = {};
+  list<InstNode> inputs = fn.inputs, locals = fn.locals;
+  InstNode node;
+algorithm
+  repl := ReplTree.new();
+  fields := Type.recordFields(ty);
+
+  // Add the inputs and local variables to the replacement tree with their
+  // respective bindings.
+  for i in inputs loop
+    arg :: rest_args := rest_args;
+    repl := ReplTree.add(repl, i, arg);
+  end for;
+
+  for l in locals loop
+    repl := ReplTree.add(repl, l, getBindingExp(l, repl));
+  end for;
+
+  // Apply the replacements to all the variables.
+  repl := ReplTree.map(repl, function applyBindingReplacement(repl = repl));
+
+  // Fetch the new binding expressions for all the variables, both inputs and
+  // locals.
+  for f in fields loop
+    if Record.Field.isInput(f) then
+      node :: inputs := inputs;
+    else
+      node :: locals := locals;
+    end if;
+
+    expl := ReplTree.get(repl, node) :: expl;
+  end for;
+
+  // Create a new record expression from the list of arguments.
+  result := Expression.RECORD(Function.name(fn), ty, listReverseInPlace(expl));
+
+  // Constant evaluate the expression if requested.
+  if evaluate then
+    result := Ceval.evalExp(result);
+  end if;
+end evaluateRecordConstructor;
+
 protected
 
 function createReplacements
@@ -201,13 +267,13 @@ algorithm
   // replacements don't need to be mutable.
   for i in fn.inputs loop
     arg :: rest_args := rest_args;
-    repl := addInputReplacement(i, "", arg, repl);
+    repl := addInputReplacement(i, arg, repl);
   end for;
 
   // Add outputs and local variables to the replacement tree. These do need to
   // be mutable to allow assigning to them.
-  repl := List.fold(fn.outputs, function addMutableReplacement(prefix = ""), repl);
-  repl := List.fold(fn.locals, function addMutableReplacement(prefix = ""), repl);
+  repl := List.fold(fn.outputs, addMutableReplacement, repl);
+  repl := List.fold(fn.locals, addMutableReplacement, repl);
 
   // Apply the replacements to the replacements themselves. This is done after
   // building the tree to make sure all the replacements are available.
@@ -216,7 +282,6 @@ end createReplacements;
 
 function addMutableReplacement
   input InstNode node;
-  input String prefix = "";
   input output ReplTree.Tree repl;
 protected
   Binding binding;
@@ -224,7 +289,7 @@ protected
 algorithm
   repl_exp := getBindingExp(node, repl);
   repl_exp := Expression.makeMutable(repl_exp);
-  repl := ReplTree.add(repl, prefix + InstNode.name(node), repl_exp);
+  repl := ReplTree.add(repl, node, repl_exp);
 end addMutableReplacement;
 
 function getBindingExp
@@ -307,15 +372,14 @@ end buildRecordBinding;
 
 function addInputReplacement
   input InstNode node;
-  input String prefix = "";
   input Expression argument;
   input output ReplTree.Tree repl;
 algorithm
-  repl := ReplTree.add(repl, prefix + InstNode.name(node), argument);
+  repl := ReplTree.add(repl, node, argument);
 end addInputReplacement;
 
 function applyBindingReplacement
-  input String name;
+  input InstNode node;
   input Expression exp;
   input ReplTree.Tree repl;
   output Expression outExp;
@@ -363,7 +427,7 @@ algorithm
   else
     // Look up the replacement for the first part in the replacement tree.
     parent := ComponentRef.node(listHead(cref_parts));
-    repl_exp := ReplTree.getOpt(repl, InstNode.name(parent));
+    repl_exp := ReplTree.getOpt(repl, parent);
 
     if isSome(repl_exp) then
       SOME(outExp) := repl_exp;
@@ -438,14 +502,14 @@ protected
   Expression e;
 algorithm
   if listLength(outputs) == 1 then
-    exp := Ceval.evalExp(ReplTree.get(repl, InstNode.name(listHead(outputs))));
+    exp := Ceval.evalExp(ReplTree.get(repl, listHead(outputs)));
     assertAssignedOutput(listHead(outputs), exp);
   else
     expl := {};
     types := {};
 
     for o in outputs loop
-      e := Ceval.evalExp(ReplTree.get(repl, InstNode.name(o)));
+      e := Ceval.evalExp(ReplTree.get(repl, o));
       assertAssignedOutput(o, e);
       expl := e :: expl;
     end for;

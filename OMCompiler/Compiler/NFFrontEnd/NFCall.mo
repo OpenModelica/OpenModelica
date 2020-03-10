@@ -70,6 +70,7 @@ import Typing = NFTyping;
 import Util;
 import Subscript = NFSubscript;
 import Operator = NFOperator;
+import EvalFunction = NFEvalFunction;
 
 public
   uniontype CallAttributes
@@ -583,30 +584,8 @@ uniontype Call
     output Expression exp;
   algorithm
     exp := match call
-      local
-        Expression arg;
-        list<Expression> call_args, local_args, args;
-        list<Record.Field> fields;
-
-      case TYPED_CALL(arguments = call_args)
-        algorithm
-          local_args := Function.getLocalArguments(call.fn);
-          fields := Type.recordFields(ty);
-          args := {};
-
-          for field in fields loop
-            if Record.Field.isInput(field) then
-              arg :: call_args := call_args;
-            else
-              arg :: local_args := local_args;
-            end if;
-
-            args := arg :: args;
-          end for;
-
-          args := listReverseInPlace(args);
-        then
-          Expression.RECORD(Function.name(call.fn), ty, args);
+      case TYPED_CALL()
+        then EvalFunction.evaluateRecordConstructor(call.fn, ty, call.arguments, evaluate = false);
 
       else
         algorithm
