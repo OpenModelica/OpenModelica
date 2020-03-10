@@ -1829,6 +1829,13 @@ public
           then
             ();
 
+        case Record.Field.LOCAL()
+          algorithm
+            field_names := field.name :: field_names;
+            dargs := toDAE(arg) :: dargs;
+          then
+            ();
+
         else ();
       end match;
     end for;
