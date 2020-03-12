@@ -11,7 +11,7 @@
     <message>
         <location filename="../../MainWindow.cpp" line="4393"/>
         <source>&lt;h2&gt;%1 - %2&lt;/h2&gt;&lt;b&gt;Connected to %3&lt;/b&gt;&lt;br /&gt;&lt;b&gt;Connected to %4&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Copyright &lt;b&gt;Open Source Modelica Consortium (OSMC)&lt;/b&gt;.&lt;br /&gt;Distributed under OSMC-PL and GPL, see &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;.&lt;br /&gt;&lt;br /&gt;Initially developed by &lt;b&gt;Adeel Asghar&lt;/b&gt; and &lt;b&gt;Sonia Tariq&lt;/b&gt; as part of their final master thesis.&lt;br /&gt;&lt;em&gt;Compiled without 3D animation support&lt;/em&gt;.&lt;br /&gt;&lt;br /&gt;&lt;b&gt;Contributors:&lt;/b&gt;&lt;ul&gt;&lt;li&gt;Adeel Asghar - &lt;u&gt;&lt;a href=&quot;mailto:adeel.asghar@liu.se&quot;&gt;adeel.asghar@liu.se&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Sonia Tariq&lt;/li&gt;&lt;li&gt;Martin Sjölund - &lt;u&gt;&lt;a href=&quot;mailto:martin.sjolund@liu.se&quot;&gt;martin.sjolund@liu.se&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Alachew Shitahun - &lt;u&gt;&lt;a href=&quot;mailto:alachew.mengist@liu.se&quot;&gt;alachew.mengist@liu.se&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Jan Kokert - &lt;u&gt;&lt;a href=&quot;mailto:jan.kokert@imtek.uni-freiburg.de&quot;&gt;jan.kokert@imtek.uni-freiburg.de&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Dr. Henning Kiel - &lt;u&gt;&lt;a href=&quot;mailto:henning.kiel@w-hs.de&quot;&gt;henning.kiel@w-hs.de&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Haris Kapidzic&lt;/li&gt;&lt;li&gt;Abhinn Kothari&lt;/li&gt;&lt;li&gt;Lennart Ochel - &lt;u&gt;&lt;a href=&quot;mailto:lennart.ochel@liu.se&quot;&gt;lennart.ochel@liu.se&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Volker Waurich - &lt;u&gt;&lt;a href=&quot;mailto:volker.waurich@tu-dresden.de&quot;&gt;volker.waurich@tu-dresden.de&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Rüdiger Franke&lt;/li&gt;&lt;li&gt;Martin Flehmig&lt;/li&gt;&lt;li&gt;Robert Braun - &lt;u&gt;&lt;a href=&quot;mailto:robert.braun@liu.se&quot;&gt;robert.braun@liu.se&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Per Östlund - &lt;u&gt;&lt;a href=&quot;mailto:per.ostlund@liu.se&quot;&gt;per.ostlund@liu.se&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;li&gt;Dietmar Winkler&lt;/li&gt;&lt;li&gt;Anatoly Severin&lt;li&gt;&lt;li&gt;Adrian Pop - &lt;u&gt;&lt;a href=&quot;mailto:adrian.pop@liu.se&quot;&gt;adrian.pop@liu.se&lt;/a&gt;&lt;/u&gt;&lt;/li&gt;&lt;/ul&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -904,7 +904,7 @@
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="4461"/>
         <source> seconds</source>
-        <translation>秒</translation>
+        <translation> 秒</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="4466"/>
@@ -914,7 +914,7 @@
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="4468"/>
         <source> characters</source>
-        <translation>字符</translation>
+        <translation> 字符</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="4473"/>
@@ -1458,7 +1458,7 @@
         <location filename="../../Options/OptionsDialog.cpp" line="4611"/>
         <location filename="../../Options/OptionsDialog.cpp" line="4612"/>
         <source> i.e.,</source>
-        <translation>等等，</translation>
+        <translation> 等等，</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="4625"/>
@@ -1744,8 +1744,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="766"/>
         <source>You cannot insert &lt;b&gt;%1&lt;/b&gt;, it is a &lt;b&gt;%2&lt;/b&gt;. Only &lt;b&gt;connector&lt;/b&gt; is allowed on the icon layer.</source>
-        <translation>
-这是一个&lt;b&gt;%2&lt;/b&gt;，不允许插入&lt;b&gt;%1&lt;/b&gt;，图标层只允许&lt;b&gt;connector&lt;/b&gt;。</translation>
+        <translation>这是一个&lt;b&gt;%2&lt;/b&gt;，不允许插入&lt;b&gt;%1&lt;/b&gt;，图标层只允许&lt;b&gt;connector&lt;/b&gt;。</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="770"/>
@@ -2153,7 +2152,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1894"/>
         <source> seconds</source>
-        <translation>秒</translation>
+        <translation> 秒</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="1910"/>
@@ -2365,7 +2364,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2227"/>
         <source>Error in class annotation </source>
-        <translation>类注解错误</translation>
+        <translation>类注解错误 </translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1538"/>
@@ -3042,7 +3041,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="471"/>
         <source>Exports the package as Encrytped package</source>
-        <translation>导出包为加密包。</translation>
+        <translation>导出包为加密包</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="474"/>
@@ -3177,8 +3176,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="580"/>
         <source>Find Variables</source>
-        <translation>查找变量
-</translation>
+        <translation>查找变量</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="581"/>
@@ -4628,7 +4626,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../MainWindow.cpp" line="3275"/>
         <source>Quit the </source>
-        <translation>退出</translation>
+        <translation>退出 </translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3302"/>
@@ -5948,19 +5946,19 @@ Set the value to 0 if you don&apos;t want any delay.</source>
         <location filename="../../Animation/FMUWrapper.cpp" line="178"/>
         <location filename="../../Animation/FMUWrapper.cpp" line="388"/>
         <source>Error parsing XML.</source>
-        <translation type="unfinished"></translation>
+        <translation>分析XML时出错.</translation>
     </message>
     <message>
         <location filename="../../Animation/FMUWrapper.cpp" line="183"/>
         <location filename="../../Animation/FMUWrapper.cpp" line="393"/>
         <source>Only Model-Exchange FMUs are supported right now.</source>
-        <translation type="unfinished"></translation>
+        <translation>现在仅支持FMUs模型交换。</translation>
     </message>
     <message>
         <location filename="../../Animation/FMUWrapper.cpp" line="191"/>
         <location filename="../../Animation/FMUWrapper.cpp" line="399"/>
         <source>Could not create the DLL loading mechanism(C-API test).</source>
-        <translation type="unfinished"></translation>
+        <translation>无法创建DLL加载机制（C-API测试）。</translation>
     </message>
     <message>
         <location filename="../../Animation/FMUWrapper.cpp" line="224"/>
@@ -5970,17 +5968,17 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <location filename="../../Animation/FMUWrapper.cpp" line="231"/>
         <source>fmi1_import_instantiate_model failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>fmi1_import_instantiate_model 失败。</translation>
     </message>
     <message>
         <location filename="../../Animation/FMUWrapper.cpp" line="447"/>
         <source>fmi2_import_instantiate_model failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>fmi2_import_instantiate_model 失败。</translation>
     </message>
     <message>
         <location filename="../../Animation/AnimationUtil.h" line="97"/>
         <source>This file extension is not supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>不支持此文件扩展名。</translation>
     </message>
     <message>
         <location filename="../../Animation/Visualizer.cpp" line="97"/>
@@ -5990,66 +5988,66 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <location filename="../../Animation/Visualizer.cpp" line="135"/>
         <source>The type of %1 is not supported right in the visxml file.</source>
-        <translation type="unfinished"></translation>
+        <translation>visxml文件不支持 %1 类型。</translation>
     </message>
     <message>
         <location filename="../../Animation/Visualizer.cpp" line="158"/>
         <source>Could not find the file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>未找到文件 %1 。</translation>
     </message>
     <message>
         <location filename="../../Animation/Visualizer.cpp" line="385"/>
         <source>There is nothing left to visualize. Initialize the model first.</source>
-        <translation type="unfinished"></translation>
+        <translation>无可视化内容，请首先初始化模型。</translation>
     </message>
     <message>
         <location filename="../../Animation/Visualizer.cpp" line="549"/>
         <source>Unknown type %1, we make a capsule.</source>
-        <translation type="unfinished"></translation>
+        <translation>对未知类型 %1 进行容器封装。</translation>
     </message>
     <message>
         <location filename="../../Animation/VisualizerCSV.cpp" line="64"/>
         <location filename="../../Animation/VisualizerMAT.cpp" line="67"/>
         <source>Cannot load visualization attributes for time point &lt; 0.0.</source>
-        <translation type="unfinished"></translation>
+        <translation>不能加载时间点&lt;0.0的可视化属性。</translation>
     </message>
     <message>
         <location filename="../../Animation/VisualizerCSV.cpp" line="76"/>
         <source>Could not find CSV file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>未找到 CSV 文件 %1。</translation>
     </message>
     <message>
         <location filename="../../Animation/VisualizerCSV.cpp" line="83"/>
         <source>Could not read CSV file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>不能读取 CSV 文件 %1。</translation>
     </message>
     <message>
         <location filename="../../Animation/VisualizerCSV.cpp" line="190"/>
         <location filename="../../Animation/VisualizerCSV.cpp" line="199"/>
         <location filename="../../Animation/VisualizerMAT.cpp" line="211"/>
         <source>Did not get variable from result file. Variable name is %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>未能从结果文件中获取变量 %1。</translation>
     </message>
     <message>
         <location filename="../../Animation/VisualizerFMU.cpp" line="82"/>
         <source>Unknown FMU version.</source>
-        <translation type="unfinished"></translation>
+        <translation>未知 FMU 版本。</translation>
     </message>
     <message>
         <location filename="../../Animation/VisualizerFMU.cpp" line="167"/>
         <source>Something went wrong in OMVisualizer::setVarReferencesInVisAttributes. %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>OMVisualizer：：setVarReferencesInVisAttributes 中出现错误 %1。</translation>
     </message>
     <message>
         <location filename="../../Animation/VisualizerFMU.cpp" line="317"/>
         <source>Error in VisualizerFMU::updateVisAttributes at time point %1
 %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>VisualizerFMU::updateVisAttributes 在 %1 时出现错误 %2。</translation>
     </message>
     <message>
         <location filename="../../Animation/VisualizerMAT.cpp" line="80"/>
         <source>Could not find MAT file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>未找到 MAT 文件 %1。</translation>
     </message>
 </context>
 <context>
@@ -6434,7 +6432,7 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="231"/>
         <source>Simulation server port: </source>
-        <translation>仿真服务器端口：</translation>
+        <translation>仿真服务器端口： </translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="232"/>
@@ -6703,7 +6701,7 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="242"/>
         <source>Open Output File</source>
-        <translation type="unfinished"></translation>
+        <translation>打开输出文件</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="275"/>
@@ -6713,37 +6711,37 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="592"/>
         <source>Compiling %1. Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation>正在编译 %1，请稍候。</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="625"/>
         <source>Compilation of %1 is finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 编译结束。</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="652"/>
         <source>Running interactive simulation of %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>交互式仿真运行 %1。</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="654"/>
         <source>Running simulation of %1. Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation>正在仿真 %1，请稍候。</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="712"/>
         <source>Simulation of %1 is finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 仿真结束。</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="736"/>
         <source>Compilation of %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>终止 %1 编译。</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="744"/>
         <source>Simulation of %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>终止 %1 仿真。</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="817"/>
@@ -6836,7 +6834,7 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3664"/>
         <source>Display Limit:</source>
-        <translation type="unfinished"></translation>
+        <translation>显示限制：</translation>
     </message>
 </context>
 <context>
@@ -7134,19 +7132,22 @@ Can cause high overhead but values will not be missed.</source>
         <location filename="../../TLM/TLMCoSimulationThread.cpp" line="187"/>
         <source>TLMManager process finished successfully.
 </source>
-        <translation>TLM 管理器进程结束。</translation>
+        <translation>TLM 管理器进程结束。
+</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationThread.cpp" line="254"/>
         <source>TLMMonitor process failed. Exited with code %1.
 </source>
-        <translation>TLM 监视器进程错误，退出码为 %1。</translation>
+        <translation>TLM 监视器进程错误，退出码为 %1。
+</translation>
     </message>
     <message>
         <location filename="../../TLM/TLMCoSimulationThread.cpp" line="256"/>
         <source>TLMMonitor process finished successfully.
 </source>
-        <translation>TLM 监视器进程结束。</translation>
+        <translation>TLM 监视器进程结束。
+</translation>
     </message>
 </context>
 <context>
