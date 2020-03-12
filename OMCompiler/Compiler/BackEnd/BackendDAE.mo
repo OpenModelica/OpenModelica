@@ -734,6 +734,8 @@ end IndexType;
 
 public
 uniontype JacobianType
+  record JAC_UNPROCESSED "Not yet determined." end JAC_UNPROCESSED;
+
   record JAC_CONSTANT "If Jacobian has only constant values, for system
                of equations this means that it can be solved statically." end JAC_CONSTANT;
 
