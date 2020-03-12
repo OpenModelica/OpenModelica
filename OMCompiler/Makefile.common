@@ -221,6 +221,8 @@ breakprocess:
 	(cd tools/debugging/ && cp BreakProcess.exe $(builddir_bin))
 
 
+runtimeCPPinstall: all-runtimeCPPinstall
+
 all-runtimeCPPinstall:  CMinpack sundials ModelicaExternalC fmil OMSI
 	$(MAKE) all OMSICPPinstall OMBUILDDIR=$(OMBUILDDIR)
 
