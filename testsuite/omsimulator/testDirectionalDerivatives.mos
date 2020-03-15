@@ -1,0 +1,68 @@
+// name:  testDirectionalDerivatives
+// keywords: FMI 2.0 fmi2GetDirectionalDerivative OMSimulator
+// status: correct
+// teardown_command: rm -rf temp_testDirectionalDerivatives/ test_res.mat directionalDerivatives.csv directionalDerivatives.lua directionalDerivatives_systemCall.log Modelica.Electrical.Analog.Examples.CauerLowPassAnalog.fmu Modelica_Electrical_Analog_Examples_CauerLowPassAnalog.log
+//
+// Test initialization, simulation with fmi2GetDirectionalDerivative and deinitialization of FMU with OMSimulator
+
+loadModel(Modelica);
+getErrorString();
+
+setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives");
+getErrorString();
+
+// Build 2.0 FMU
+buildModelFMU(Modelica.Electrical.Analog.Examples.CauerLowPassAnalog, version="2.0", fmuType="me_cs", platforms={"static"});
+getErrorString();
+
+// Simulate with OMSimulator
+
+writeFile("directionalDerivatives.lua","
+oms_setCommandLineOption(\"--suppressPath=true\")
+oms_setTempDirectory(\"./temp_testDirectionalDerivatives/\")
+
+oms_newModel(\"test\")
+oms_addSystem(\"test.root\", oms_system_sc)
+oms_addSubModel(\"test.root.system1\", \"Modelica.Electrical.Analog.Examples.CauerLowPassAnalog.fmu\")
+
+oms_setResultFile(\"test\", \"directionalDerivatives.csv\")
+
+oms_instantiate(\"test\")
+
+oms_initialize(\"test\")
+print(\"info:    Initialization\")
+print(\"info:    system1.C1.v: \" .. oms_getReal(\"test.root.system1.C1.v\"))
+
+oms_simulate(\"test\")
+print(\"info:    Simulation\")
+print(\"info:    system1.C1.v: \" .. oms_getReal(\"test.root.system1.C1.v\"))
+
+oms_terminate(\"test\");
+oms_delete(\"test\");
+"); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator directionalDerivatives.lua", "directionalDerivatives_systemCall.log");
+readFile("directionalDerivatives_systemCall.log");
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "Modelica.Electrical.Analog.Examples.CauerLowPassAnalog.fmu"
+// ""
+// true
+// ""
+// 0
+// "info:    maximum step size for 'test.root': 0.100000
+// info:    Result file: directionalDerivatives.csv (bufferSize=1)
+// info:    Initialization
+// info:    system1.C1.v: 0.0
+// info:    Simulation
+// info:    system1.C1.v: 6.2188841112434e-26
+// info:    Final Statistics for 'test.root':
+//          NumSteps = 12 NumRhsEvals  = 13 NumLinSolvSetups = 3
+//          NumNonlinSolvIters = 12 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+// "
+// endResult
