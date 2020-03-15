@@ -254,7 +254,7 @@ $(OMBUILDDIR)/$(LIB_OMC)/$(LIBFMILIB): 3rdParty/FMIL/build/Makefile
 	@# Pass CC/CFLAGS/CPPFLAGS because FMIL does not configure subprojects with the selected CC. Shocking; a cmake project not working the way it should.
 	test -f 3rdParty/FMIL/build/$(LIBFMILIB) || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(MAKE) -C 3rdParty/FMIL/build
 	test -d 3rdParty/FMIL/install || $(MAKE) -C 3rdParty/FMIL/build install
-	test "(" ! `uname` = Darwin ")" -o "(" ! -f 3rdParty/FMIL/install/libfmilib_shared$(SHREXT) ")" || install_name_tool -id @rpath/libfmilib_shared$(SHREXT) 3rdParty/FMIL/install/libfmilib_shared$(SHREXT)
+	test "(" ! `uname` = Darwin ")" -o "(" ! -f 3rdParty/FMIL/install/lib/libfmilib_shared$(SHREXT) ")" || install_name_tool -id @rpath/libfmilib_shared$(SHREXT) 3rdParty/FMIL/install/lib/libfmilib_shared$(SHREXT)
 	cp -pPR 3rdParty/FMIL/install/lib/$(LIBFMILIB) $(builddir_lib_omc)
 	@if [ "$(FMILIB_SHARED)" = "ON" ]; then\
 	    cp -v -pPR 3rdParty/FMIL/install/lib/libfmilib_shared$(SHREXT) $(builddir_lib_omc);\
