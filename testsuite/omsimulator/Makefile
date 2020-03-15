@@ -13,6 +13,7 @@ outputState.mos \
 reset_omc.mos \
 reset.mos \
 test03.mos \
+testDirectionalDerivatives.mos \
 
 FAILINGTESTFILES = \
 
