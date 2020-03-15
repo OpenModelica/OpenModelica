@@ -490,6 +490,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   comp->_has_jacobian = 0;
   comp->fmiDerJac = NULL;
   if (comp->fmuData->callback->initialPartialFMIDER != NULL){
+    comp->fmiDerJac = (ANALYTIC_JACOBIAN*) functions->allocateMemory(1, sizeof(ANALYTIC_JACOBIAN));
     if (! comp->fmuData->callback->initialPartialFMIDER(comp->fmuData, comp->threadData, comp->fmiDerJac)) {
       comp->_has_jacobian = 1;
     }
@@ -529,7 +530,23 @@ void fmi2FreeInstance(fmi2Component c)
   freeLinearSystems(comp->fmuData, comp->threadData);
 #endif
   /* free data struct */
-  deInitializeDataStruc(comp->fmuData);
+  deInitializeDataStruc(comp->fmuData);     /* TODO: Use comp->functions->freeMemory inside deInitializeDataStruc to be FMI comform */
+
+  /* Free jacobian data */
+  if (comp->_has_jacobian == 1) {
+    /* TODO: Use comp->functions->freeMemory insted of free,
+     * but generated code uses malloc / calloc instead of comp->functions->allocateMemory */
+    free(comp->fmiDerJac->seedVars);
+    free(comp->fmiDerJac->resultVars);
+    free(comp->fmiDerJac->tmpVars);
+
+    free(comp->fmiDerJac->sparsePattern->leadindex);
+    free(comp->fmiDerJac->sparsePattern->index);
+    free(comp->fmiDerJac->sparsePattern->colorCols);
+    free(comp->fmiDerJac->sparsePattern);
+
+    comp->functions->freeMemory(comp->fmiDerJac);
+  }
 
   comp->functions->freeMemory(comp->fmuData->modelData->resourcesDir);
 
