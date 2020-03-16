@@ -4496,7 +4496,10 @@ void ModelWidget::loadComponents()
 {
   if (!mComponentsLoaded) {
     drawModelInheritedClassComponents(this, StringHandler::Icon);
-    if (mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
+    /* We use access.icon here since getComponents will return public components in that case
+     * and we want to display them.
+     */
+    if (mpLibraryTreeItem->getAccess() >= LibraryTreeItem::icon) {
       getModelComponents();
       drawModelIconComponents();
     }
@@ -4515,7 +4518,10 @@ void ModelWidget::loadDiagramView()
     drawModelInheritedClassShapes(this, StringHandler::Diagram);
     getModelIconDiagramShapes(StringHandler::Diagram);
     drawModelInheritedClassComponents(this, StringHandler::Diagram);
-    if (mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
+    /* We use access.icon here since getComponents will return public components in that case
+     * and we add them to diagram layer so that we can see and set the parameters in the parameters window.
+     */
+    if (mpLibraryTreeItem->getAccess() >= LibraryTreeItem::icon) {
       drawModelDiagramComponents();
     }
     mDiagramViewLoaded = true;

@@ -211,14 +211,12 @@ AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibrary
     // Connector type components exists on icon view as well
     mpIconComponent = new Component(name, pLibraryTreeItem, annotation, position, pComponentInfo, mpIconGraphicsView);
   }
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-    mpDiagramComponent = new Component(name, pLibraryTreeItem, annotation, position, pComponentInfo, mpDiagramGraphicsView);
-  }
+  mpDiagramComponent = new Component(name, pLibraryTreeItem, annotation, position, pComponentInfo, mpDiagramGraphicsView);
   // only select the component of the active Icon/Diagram View
   if (!openingClass) {
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
       mpGraphicsView->clearSelection(mpIconComponent);
-    } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
+    } else {
       mpGraphicsView->clearSelection(mpDiagramComponent);
     }
   }
@@ -242,20 +240,14 @@ void AddComponentCommand::redoInternal()
     // hide the component if it is connector and is protected
     mpIconComponent->setVisible(!mpComponentInfo->getProtected());
   }
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-    mpDiagramGraphicsView->addItem(mpDiagramComponent);
-    mpDiagramGraphicsView->addItem(mpDiagramComponent->getOriginItem());
-    mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
-    mpDiagramGraphicsView->deleteComponentFromOutOfSceneList(mpDiagramComponent);
-    mpDiagramComponent->emitAdded();
-  }
+  mpDiagramGraphicsView->addItem(mpDiagramComponent);
+  mpDiagramGraphicsView->addItem(mpDiagramComponent->getOriginItem());
+  mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
+  mpDiagramGraphicsView->deleteComponentFromOutOfSceneList(mpDiagramComponent);
+  mpDiagramComponent->emitAdded();
   if (mAddObject) {
-    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-      mpDiagramGraphicsView->addComponentToClass(mpDiagramComponent);
-      UpdateComponentAttributesCommand::updateComponentModifiers(mpDiagramComponent, *mpDiagramComponent->getComponentInfo());
-    } else if (mpIconComponent) {
-      mpIconGraphicsView->addComponentToClass(mpIconComponent);
-    }
+    mpDiagramGraphicsView->addComponentToClass(mpDiagramComponent);
+    UpdateComponentAttributesCommand::updateComponentModifiers(mpDiagramComponent, *mpDiagramComponent->getComponentInfo());
   }
 }
 
@@ -275,18 +267,12 @@ void AddComponentCommand::undo()
     mpIconGraphicsView->addComponentToOutOfSceneList(mpIconComponent);
     mpIconComponent->emitDeleted();
   }
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-    mpDiagramGraphicsView->removeItem(mpDiagramComponent);
-    mpDiagramGraphicsView->removeItem(mpDiagramComponent->getOriginItem());
-    mpDiagramGraphicsView->deleteComponentFromList(mpDiagramComponent);
-    mpDiagramGraphicsView->addComponentToOutOfSceneList(mpDiagramComponent);
-    mpDiagramComponent->emitDeleted();
-  }
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-    mpDiagramGraphicsView->deleteComponentFromClass(mpDiagramComponent);
-  } else if (mpIconComponent) {
-    mpIconGraphicsView->deleteComponentFromClass(mpIconComponent);
-  }
+  mpDiagramGraphicsView->removeItem(mpDiagramComponent);
+  mpDiagramGraphicsView->removeItem(mpDiagramComponent->getOriginItem());
+  mpDiagramGraphicsView->deleteComponentFromList(mpDiagramComponent);
+  mpDiagramGraphicsView->addComponentToOutOfSceneList(mpDiagramComponent);
+  mpDiagramComponent->emitDeleted();
+  mpDiagramGraphicsView->deleteComponentFromClass(mpDiagramComponent);
 }
 
 UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommand(Component *pComponent, const Transformation &oldTransformation,

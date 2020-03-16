@@ -1040,15 +1040,15 @@ algorithm
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
         Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
-        if (access >= 4) then // i.e., Access.diagram
+        if (access >= 2) then // i.e., Access.icon
           nargs := getApiFunctionNamedArgs(inStatement);
           if not Flags.isSet(Flags.NF_API_NOISE) then
             ErrorExt.setCheckpoint("getComponents");
           end if;
-          outResult := getComponents(cr, useQuotes(nargs));
+          outResult := getComponents(cr, useQuotes(nargs), access);
           if not Flags.isSet(Flags.NF_API_NOISE) then
             ErrorExt.rollBack("getComponents");
-           end if;
+          end if;
         else
           Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
           outResult := "";
@@ -1068,13 +1068,13 @@ algorithm
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
         Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
-        if (access >= 4) then // i.e., Access.diagram
+        if (access >= 2) then // i.e., Access.icon
           if not Flags.isSet(Flags.NF_API_NOISE) then
             ErrorExt.setCheckpoint("getComponentAnnotations");
           end if;
           evalParamAnn := Config.getEvaluateParametersInAnnotations();
           Config.setEvaluateParametersInAnnotations(true);
-          outResult := getComponentAnnotations(cr, p);
+          outResult := getComponentAnnotations(cr, p, access);
           Config.setEvaluateParametersInAnnotations(evalParamAnn);
           if not Flags.isSet(Flags.NF_API_NOISE) then
             ErrorExt.rollBack("getComponentAnnotations");
@@ -9822,9 +9822,10 @@ public function getComponents
    a list of all components, as returned by get_nth_component."
   input Absyn.ComponentRef cr;
   input Boolean inBoolean;
+  input Integer inAccess;
   output String outString;
 algorithm
-  outString := getComponents2(cr,inBoolean);
+  outString := getComponents2(cr,inBoolean,inAccess);
 end getComponents;
 
 protected function getComponents2
@@ -9832,9 +9833,10 @@ protected function getComponents2
    a list of all components, as returned by get_nth_component."
   input Absyn.ComponentRef inComponentRef;
   input Boolean inBoolean;
+  input Integer inAccess;
   output String outString;
 algorithm
-  outString := matchcontinue (inComponentRef,inBoolean)
+  outString := matchcontinue (inComponentRef,inBoolean,inAccess)
     local
       Absyn.Path modelpath;
       Absyn.Class cdef;
@@ -9851,8 +9853,9 @@ algorithm
       FCore.Cache cache;
       Boolean b, permissive;
       GraphicEnvCache genv;
+      Integer access;
 
-    case (model_,b)
+    case (model_,b,access)
       equation
         modelpath = AbsynUtil.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
@@ -9874,8 +9877,12 @@ algorithm
         end if;
         comps1 = getPublicComponentsInClass(cdef);
         s1 = getComponentsInfo(comps1, b, "\"public\"", genv);
-        comps2 = getProtectedComponentsInClass(cdef);
-        s2 = getComponentsInfo(comps2, b, "\"protected\"", genv);
+        if (access >= 4) then // i.e., Access.diagram
+          comps2 = getProtectedComponentsInClass(cdef);
+          s2 = getComponentsInfo(comps2, b, "\"protected\"", genv);
+        else
+          s2 = "";
+        end if;
         str = Util.stringDelimitListNonEmptyElts({s1,s2}, ",");
         res = stringAppendList({"{",str,"}"});
       then res;
@@ -9891,6 +9898,7 @@ protected function getComponentAnnotations " This function takes a `ComponentRef
    components then protected ones."
   input Absyn.ComponentRef inClassPath;
   input Absyn.Program inProgram;
+  input Integer inAccess;
   output String outString;
 protected
   Absyn.Path model_path;
@@ -9901,7 +9909,11 @@ algorithm
     model_path := AbsynUtil.crefToPath(inClassPath);
     cdef := getPathedClassInProgram(model_path, inProgram);
     comps1 := getPublicComponentsInClass(cdef);
-    comps2 := getProtectedComponentsInClass(cdef);
+    if (inAccess >= 4) then // i.e., Access.diagram
+      comps2 := getProtectedComponentsInClass(cdef);
+    else
+      comps2 := {};
+    end if;
     comps := listAppend(comps1, comps2);
     outString := getComponentAnnotationsFromElts(comps, cdef, inProgram, model_path);
     outString := stringAppendList({"{", outString, "}"});

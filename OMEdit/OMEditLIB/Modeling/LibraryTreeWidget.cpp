@@ -271,10 +271,10 @@ LibraryTreeItem::Access LibraryTreeItem::getAccess()
       return LibraryTreeItem::packageText;
     } else if (mClassInformation.access.compare("Access.packageDuplicate") == 0) {
       return LibraryTreeItem::packageDuplicate;
-    } else if (mpParentLibraryTreeItem) {   // if there is no override for Access annotation then look in the parent class.
+    } else if (mpParentLibraryTreeItem && !mpParentLibraryTreeItem->isRootItem()) {   // if there is no override for Access annotation then look in the parent class.
       return mpParentLibraryTreeItem->getAccess();
-    } else {
-      return LibraryTreeItem::all;
+    } else { // if a class is encrypted and no Protection annotation is defined, the access annotation has the default value Access.documentation
+      return LibraryTreeItem::documentation;
     }
   } else {
     return LibraryTreeItem::all;
