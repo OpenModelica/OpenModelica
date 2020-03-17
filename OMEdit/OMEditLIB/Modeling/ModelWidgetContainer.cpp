@@ -6195,33 +6195,46 @@ void ModelWidget::associateBusWithConnectors(QString busName)
 /*!
  * \brief ModelWidget::toOMSensJson
  * Creates a list of QVariant containing the model information needed by OMSens.
+ * Currently only works for REAL types (OMSens currently have similar limitations)
  * \return
  */
 QList<QVariant> ModelWidget::toOMSensData()
 {
+  QList<QVariant> omSensData;
+  if (!mpDiagramGraphicsView) {
+    return omSensData;
+  }
   QStringList inputVariables;
   QStringList outputVariables;
   QStringList parameters;
   QStringList auxVariables;
-
-  if (mpDiagramGraphicsView) {
-    foreach (Component *pComponent, mpDiagramGraphicsView->getComponentsList()) {
-      ComponentInfo *pComponentInfo = pComponent->getComponentInfo();
-      if ((pComponentInfo->getCausality().compare("input") == 0) && ((pComponentInfo->getClassName().compare("Real") == 0)
-                                                                     || (pComponentInfo->getClassName().compare("Modelica.Blocks.Interfaces.RealInput") == 0))) {
-        inputVariables.append(pComponentInfo->getName());
-      } else if ((pComponentInfo->getCausality().compare("output") == 0) && ((pComponentInfo->getClassName().compare("Real") == 0)
-                                                                             || (pComponentInfo->getClassName().compare("Modelica.Blocks.Interfaces.RealOutput") == 0))) {
-        outputVariables.append(pComponentInfo->getName());
-      } else if ((pComponentInfo->getVariablity().compare("parameter") == 0) && (pComponentInfo->getClassName().compare("Real") == 0)) {
+  const QString modelicaBlocksInterfacesRealInput = "Modelica.Blocks.Interfaces.RealInput";
+  const QString modelicaBlocksInterfacesRealOutput = "Modelica.Blocks.Interfaces.RealOutput";
+  QList<Component*> pInheritedAndComposedComponents;
+  QList<Component*> pTopMostComponents = mpDiagramGraphicsView->getComponentsList() + mpDiagramGraphicsView->getInheritedComponentsList();
+  for (Component *pComponent : pTopMostComponents) {
+    pInheritedAndComposedComponents = pComponent->getComponentsList() + pComponent->getInheritedComponentsList();
+    pInheritedAndComposedComponents.append(pComponent);
+    for (auto component : pInheritedAndComposedComponents) {
+      ComponentInfo *pComponentInfo = component->getComponentInfo();
+      auto causality = pComponentInfo->getCausality();
+      auto variability = pComponentInfo->getVariablity();
+      const bool classNameIsReal = pComponentInfo->getClassName().compare("Real") == 0;
+      if (causality.compare("input") == 0) {
+        if (classNameIsReal || pComponentInfo->getClassName().compare(modelicaBlocksInterfacesRealInput) == 0) {
+          inputVariables.append(pComponentInfo->getName());
+        }
+      } else if (causality.compare("output") == 0) {
+        if (classNameIsReal || pComponentInfo->getClassName().compare(modelicaBlocksInterfacesRealOutput) == 0) {
+          outputVariables.append(pComponentInfo->getName());
+        }
+      } else if(classNameIsReal && variability.compare("parameter") == 0) {
         parameters.append(pComponentInfo->getName());
-      } else if (pComponentInfo->getClassName().compare("Real") == 0) {
+      } /* Otherwise we are dealing with an auxiliarly variable */else if (classNameIsReal) {
         auxVariables.append(pComponentInfo->getName());
       }
     }
   }
-
-  QList<QVariant> omSensData;
   omSensData << inputVariables << outputVariables << auxVariables << parameters << mpLibraryTreeItem->getFileName() << mpLibraryTreeItem->getNameStructure();
   return omSensData;
 }

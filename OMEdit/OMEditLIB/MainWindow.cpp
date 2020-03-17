@@ -4464,6 +4464,7 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
      "<li>Dietmar Winkler</li>"
      "<li>Anatoly Severin<li>"
      "<li>Adrian Pop - <u><a href=\"mailto:adrian.pop@liu.se\">adrian.pop@liu.se</a></u></li>"
+     "<li>John Tinnerholm - <u><a href=\"mailto:john.tinnerholm@liu.se\">john.tinnerholm@liu.se</a></u></li>"
      "</ul>")
      .arg(Helper::applicationName,
           Helper::applicationIntroText,
