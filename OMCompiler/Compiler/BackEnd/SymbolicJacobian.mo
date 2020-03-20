@@ -2487,7 +2487,7 @@ algorithm
       BackendDAE.EquationArray eqns;
       BackendDAE.JacobianType fullJacType;
 
-    /* No dendencies -> constant jacobian */
+    /* No dependencies -> constant jacobian */
     case (BackendDAE.GENERIC_JACOBIAN(jacobian=SOME((_, _, _, _, _, {}))), _, _)
     then BackendDAE.JAC_CONSTANT();
 
@@ -2754,11 +2754,11 @@ algorithm
       case (comp as BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_UNPROCESSED(), eqns=residualequations, vars=iterationvarsInts), _, _, _)
         algorithm
           strictTearingset := BackendDAE.TEARINGSET(iterationvarsInts, residualequations, {}, BackendDAE.EMPTY_JACOBIAN());
-          (jacobian, shared) := calculateTearingSetJacobian(inVars, inEqns, strictTearingset, inShared, false);
+          (jacobian, _) := calculateTearingSetJacobian(inVars, inEqns, strictTearingset, inShared, false);
           /* only save jacobian type */
           comp.jac := BackendDAE.FULL_JACOBIAN(NONE());
           comp.jacType := getJacType(jacobian);
-      then (comp, shared);
+      then (comp, inShared);
 
       // generate symbolic jacobian for a torn system
       case (BackendDAE.TORNSYSTEM(strictTearingset, optCasualTearingSet, linear, mixedSystem), _, _, _)
