@@ -73,6 +73,11 @@ MINGW_EXTRA_LIBS=@MINGW_EXTRA_LIBS@
 
 SUITESPARSE_LIBS = -DKLU_LIBRARY="libklu$(SHREXT)" -DAMD_LIBRARY="libamd$(SHREXT)" -DCOLAMD_LIBRARY="libcolamd$(SHREXT)" -DBTF_LIBRARY="libbtf$(SHREXT)"
 
+ifeq ($(OMENCRYPTION),yes)
+SEMLA_LIB=semla
+SEMLA_CLEAN=semla-clean
+endif
+
 include Makefile.common
 include Makefile.omsi.common
 
@@ -80,11 +85,7 @@ include Makefile.omsi.common
 .testvariables:
 settings:
 
-ifeq ($(OMENCRYPTION),yes)
-omc: semla omc-bootstrapped
-else
 omc: omc-bootstrapped
-endif
 
 boehm-gc-lib: @LIBGC@
 $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.so: 3rdParty/gc/.libs/libomcgc.so
@@ -93,7 +94,7 @@ $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.so: 3rdParty/gc/.libs/libomcgc.so
 3rdParty/gc/.libs/libomcgc.so: 3rdParty/gc/Makefile
 	$(MAKE) -C 3rdParty/gc/ libomcgc.la
 
-omc-bootstrapped:
+omc-bootstrapped: $(SELMA_LIB)
 	$(MAKE) interactive sim-dependencies
 	$(MAKE) -C Compiler/boot OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler install_scripts OMBUILDDIR=$(OMBUILDDIR)
