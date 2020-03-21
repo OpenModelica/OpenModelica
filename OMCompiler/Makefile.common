@@ -66,11 +66,9 @@ else
 	UMFPACK_LIB_TARGET=$(OMBUILDDIR)/$(LIB_OMC)/libumfpack$(SHREXT)
 endif
 
-.PHONY : interactive omc release all fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc cppzmq $(MINGW_EXTRA_LIBS) antlr-copy $(SEMLA_LIB)
+.PHONY : interactive omc release all fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc cppzmq $(MINGW_EXTRA_LIBS) antlr-copy $(SEMLA_LIB) $(SEMLA_CLEAN)
 
 ifeq ($(OMENCRYPTION),yes)
-.PHONY : semla semla-clean
-
 semla:
 	mkdir -p ../OMEncryption/3rdParty/SEMLA/build
 	# Build SEMLA
@@ -94,7 +92,7 @@ bootstrap-dependencies-post-compiler-runtime:
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/runtime install_bootstrapping BOOTSTRAPPING=1 OMBUILDDIR=$(OMBUILDDIR)
 bootstrap-dependencies-post-compiler-builtin:
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler builtin OMBUILDDIR=$(OMBUILDDIR)
-bootstrap-dependencies-post-parser:
+bootstrap-dependencies-post-parser: $(SEMLA_LIB)
 	$(MAKE) -f $(defaultMakefileTarget) -C Parser install_bootstrapping OMBUILDDIR=$(OMBUILDDIR) OMENCRYPTION=$(OMENCRYPTION)
 
 bootstrap-dependencies: $(BOOTSTRAP_FMIL_DEP) interactive-common cppzmq interactive-short
@@ -384,11 +382,7 @@ openblas-clean:
 	# OpenBLAS make clean actually gives error-messages. Let it do it, but silently
 	test ! -d 3rdParty/OpenBLAS-0.2.8 || $(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean > /dev/null 2>&1
 
-ifeq ($(OMENCRYPTION),yes)
-clean: semla-clean fmil-clean opencl_rt_clean gc-clean lis-clean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean umfpack-clean OMSI-clean
-else
-clean: fmil-clean opencl_rt_clean gc-clean lis-clean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean umfpack-clean OMSI-clean
-endif
+clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean umfpack-clean OMSI-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))

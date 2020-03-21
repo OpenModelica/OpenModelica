@@ -97,6 +97,11 @@ SUITESPARSE_LIBS=
 defaultMakefileTarget = Makefile.omdev.mingw
 MAKEFILE_BOOT = LinkMain.makefile.mingw
 
+ifeq ($(OMENCRYPTION),yes)
+SEMLA_LIB=semla
+SEMLA_CLEAN=semla-clean
+endif
+
 include Makefile.common
 include Makefile.omsi.common
 
@@ -285,11 +290,7 @@ copycppmsvcheader: getMSVCversion
 	(cp -puf $(BOOST_PATH_MSVC)/boost/*.hpp              $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/msvc/boost)
 	(cp -pufr $(BOOST_PATH_MSVC)/boost/*                 $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/msvc/boost)
 
-ifeq ($(OMENCRYPTION),yes)
-omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(IPOPT_TARGET) graphstream semla OMSI
-else
-omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(IPOPT_TARGET) graphstream OMSI
-endif
+omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(IPOPT_TARGET) graphstream $(SEMLA_LIB) OMSI
 	(time $(MAKE) -f $(defaultMakefileTarget) CFLAGS="$(CFLAGS)" omc-bootstrapped OMBUILDDIR=$(OMBUILDDIR))
 
 boehm-gc-lib: $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.a
