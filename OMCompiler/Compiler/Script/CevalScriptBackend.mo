@@ -3873,11 +3873,11 @@ algorithm
     ext := if Autoconf.os == "Windows_NT" then ".exe" else "";
     if encrypt then
       // create the path till packagetool
-      packageTool := stringAppendList({"\"",omhome,pd,"lib",pd,"omc",pd,"SEMLA",pd,"packagetool",ext,"\""});
+      packageTool := stringAppendList({omhome,pd,"lib",pd,"omc",pd,"SEMLA",pd,"packagetool",ext});
       if System.regularFileExists(packageTool) then
         // create the list of arguments for packagetool
         packageToolArgs := "-librarypath \"" + System.dirname(fileName) + "\" -version \"1.0\" -language \"3.2\" -encrypt \"" + boolString(encrypt) + "\"";
-        command := stringAppendList({packageTool," ",packageToolArgs});
+        command := stringAppendList({"\"",packageTool,"\""," ",packageToolArgs});
       else
         Error.addMessage(Error.ENCRYPTION_NOT_SUPPORTED, {packageTool});
         success := false;
