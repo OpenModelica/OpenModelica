@@ -34,7 +34,7 @@
 #ifndef ELEMENTPROPERTIESDIALOG_H
 #define ELEMENTPROPERTIESDIALOG_H
 
-#include "Component/Component.h"
+#include "Element/Element.h"
 
 class ElementProperties
 {
@@ -49,9 +49,9 @@ class ElementPropertiesDialog : public QDialog
 {
   Q_OBJECT
 public:
-  ElementPropertiesDialog(Component *pComponent, QWidget *pParent = 0);
+  ElementPropertiesDialog(Element *pComponent, QWidget *pParent = 0);
 private:
-  Component *mpComponent;
+  Element *mpComponent;
   Label *mpHeading;
   QFrame *mpHorizontalLine;
   Label *mpNameLabel;

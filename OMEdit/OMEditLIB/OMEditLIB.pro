@@ -105,17 +105,17 @@ SOURCES += Util/Helper.cpp \
   Editors/MetaModelicaEditor.cpp \
   Editors/HTMLEditor.cpp \
   Plotting/PlotWindowContainer.cpp \
-  Component/Component.cpp \
+  Element/Element.cpp \
   Annotations/ShapeAnnotation.cpp \
-  Component/CornerItem.cpp \
+  Element/CornerItem.cpp \
   Annotations/LineAnnotation.cpp \
   Annotations/PolygonAnnotation.cpp \
   Annotations/RectangleAnnotation.cpp \
   Annotations/EllipseAnnotation.cpp \
   Annotations/TextAnnotation.cpp \
   Annotations/BitmapAnnotation.cpp \
-  Component/ComponentProperties.cpp \
-  Component/Transformation.cpp \
+  Element/ElementProperties.cpp \
+  Element/Transformation.cpp \
   Modeling/DocumentationWidget.cpp \
   Simulation/TranslationFlagsWidget.cpp \
   Simulation/SimulationDialog.cpp \
@@ -195,17 +195,17 @@ HEADERS  += Util/Helper.h \
   Editors/MetaModelicaEditor.h \
   Editors/HTMLEditor.h \
   Plotting/PlotWindowContainer.h \
-  Component/Component.h \
+  Element/Element.h \
   Annotations/ShapeAnnotation.h \
-  Component/CornerItem.h \
+  Element/CornerItem.h \
   Annotations/LineAnnotation.h \
   Annotations/PolygonAnnotation.h \
   Annotations/RectangleAnnotation.h \
   Annotations/EllipseAnnotation.h \
   Annotations/TextAnnotation.h \
   Annotations/BitmapAnnotation.h \
-  Component/ComponentProperties.h \
-  Component/Transformation.h \
+  Element/ElementProperties.h \
+  Element/Transformation.h \
   Modeling/DocumentationWidget.h \
   Simulation/SimulationOptions.h \
   Simulation/TranslationFlagsWidget.h \

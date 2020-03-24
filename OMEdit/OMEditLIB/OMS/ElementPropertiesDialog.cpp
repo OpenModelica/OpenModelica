@@ -33,7 +33,7 @@
 
 #include "ElementPropertiesDialog.h"
 #include "Modeling/Commands.h"
-#include "Component/ComponentProperties.h"
+#include "Element/ElementProperties.h"
 
 #include <QMessageBox>
 
@@ -52,7 +52,7 @@ ElementProperties::ElementProperties()
  * \param pComponent - pointer to Component
  * \param pParent
  */
-ElementPropertiesDialog::ElementPropertiesDialog(Component *pComponent, QWidget *pParent)
+ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *pParent)
   : QDialog(pParent)
 {
   mpComponent = pComponent;

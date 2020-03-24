@@ -72,7 +72,7 @@ class ResizerItem : public QObject, public QGraphicsItem
   Q_INTERFACES(QGraphicsItem)
 public:
   enum ResizePositions {None, BottomLeft, TopLeft, TopRight, BottomRight};
-  ResizerItem(Component *pComponent);
+  ResizerItem(Element *pComponent);
   void setResizePosition(ResizePositions position);
   ResizePositions getResizePosition();
   void setActive();
@@ -81,7 +81,7 @@ public:
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
   bool isPressed();
 private:
-  Component *mpComponent;
+  Element *mpComponent;
   QRectF mRectangle;
   QPen mPen;
   QPen mActivePen;
@@ -104,7 +104,7 @@ protected:
 class OriginItem : public QGraphicsItem
 {
 public:
-  OriginItem(Component *pComponent);
+  OriginItem(Element *pComponent);
   OriginItem(ShapeAnnotation *pShapeAnnotation);
   void setActive();
   void setPassive();
@@ -112,7 +112,7 @@ public:
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
 private:
   void initialize();
-  Component *mpComponent;
+  Element *mpComponent;
   ShapeAnnotation *mpShapeAnnotation;
   QRectF mRectangle;
   QPen mPen;

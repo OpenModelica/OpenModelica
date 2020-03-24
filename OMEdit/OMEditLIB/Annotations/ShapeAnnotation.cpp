@@ -38,7 +38,7 @@
 #include "Options/OptionsDialog.h"
 #include "ShapePropertiesDialog.h"
 #include "Modeling/Commands.h"
-#include "Component/ComponentProperties.h"
+#include "Element/ElementProperties.h"
 #include "TLM/FetchInterfaceDataDialog.h"
 #include "Plotting/VariablesWidget.h"
 #include "Util/ResourceCache.h"
@@ -319,7 +319,7 @@ ShapeAnnotation::ShapeAnnotation(ShapeAnnotation *pShapeAnnotation, QGraphicsIte
   : QGraphicsItem(pParent)
 {
   mpGraphicsView = 0;
-  mpParentComponent = dynamic_cast<Component*>(pParent);
+  mpParentComponent = dynamic_cast<Element*>(pParent);
   //mTransformation = 0;
   mpReferenceShapeAnnotation = pShapeAnnotation;
   mIsInheritedShape = false;
@@ -606,8 +606,8 @@ void ShapeAnnotation::applyFillPattern(QPainter *painter)
 
 QList<QPointF> ShapeAnnotation::getExtentsForInheritedShapeFromIconDiagramMap(GraphicsView *pGraphicsView, ShapeAnnotation *pReferenceShapeAnnotation)
 {
-  QPointF defaultPoint1 = QPointF(pGraphicsView->mMergedCoOrdinateSystem.getLeft(), pGraphicsView->mMergedCoOrdinateSystem.getBottom());
-  QPointF defaultPoint2 = QPointF(pGraphicsView->mMergedCoOrdinateSystem.getRight(), pGraphicsView->mMergedCoOrdinateSystem.getTop());
+  QPointF defaultPoint1 = QPointF(-100.0, -100.0);
+  QPointF defaultPoint2 = QPointF(100.0, 100.0);
   QPointF point1 = defaultPoint1;
   QPointF point2 = defaultPoint2;
 
@@ -666,11 +666,8 @@ void ShapeAnnotation::applyTransformation()
   setTransform(mTransformation.getTransformationMatrix());
 
   QPointF origin = mOrigin;
-
-  // Only apply the extends coordinate extents on the shapes and not on connection, transition etc.
   // if the extends have some new coordinate extents then use it to scale the shape
-  LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-  if (!(pLineAnnotation && pLineAnnotation->getLineType() != LineAnnotation::ShapeType) && mpReferenceShapeAnnotation && mpReferenceShapeAnnotation->getGraphicsView()) {
+  if (mpReferenceShapeAnnotation && mpReferenceShapeAnnotation->getGraphicsView()) {
     QList<QPointF> extendsCoOrdinateExtents = getExtentsForInheritedShapeFromIconDiagramMap(mpGraphicsView, mpReferenceShapeAnnotation);
 
     qreal left = mpGraphicsView->mMergedCoOrdinateSystem.getLeft();
@@ -1219,6 +1216,7 @@ void ShapeAnnotation::manhattanizeShape(bool addToStack)
       ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
       pModelWidget->getUndoStack()->push(new UpdateShapeCommand(this, oldAnnotation, getOMCShapeAnnotation()));
     }
+    cornerItemReleased(false);
   }
 }
 
@@ -1536,24 +1534,21 @@ void ShapeAnnotation::cornerItemReleased(const bool changed)
   Q_ASSERT(!mOldAnnotation.isEmpty());
 
   if (changed) {
+    QString newAnnotation = getOMCShapeAnnotation();
     ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
     LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
     if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
       manhattanizeShape(false);
       removeRedundantPointsGeometriesAndCornerItems();
-      // Call getOMCShapeAnnotation() after manhattanizeShape() and removeRedundantPointsGeometriesAndCornerItems() to get a correct new annotation
-      QString newAnnotation = getOMCShapeAnnotation();
       pModelWidget->getUndoStack()->push(new UpdateConnectionCommand(pLineAnnotation, mOldAnnotation, newAnnotation));
     } else if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
       manhattanizeShape(false);
       removeRedundantPointsGeometriesAndCornerItems();
-      QString newAnnotation = getOMCShapeAnnotation();
       pModelWidget->getUndoStack()->push(new UpdateTransitionCommand(pLineAnnotation, pLineAnnotation->getCondition(), pLineAnnotation->getImmediate(),
                                                                      pLineAnnotation->getReset(), pLineAnnotation->getSynchronize(), pLineAnnotation->getPriority(),
                                                                      mOldAnnotation, pLineAnnotation->getCondition(), pLineAnnotation->getImmediate(),
                                                                      pLineAnnotation->getReset(), pLineAnnotation->getSynchronize(), pLineAnnotation->getPriority(), newAnnotation));
     } else {
-      QString newAnnotation = getOMCShapeAnnotation();
       pModelWidget->getUndoStack()->push(new UpdateShapeCommand(this, mOldAnnotation, newAnnotation));
       pModelWidget->updateClassAnnotationIfNeeded();
     }

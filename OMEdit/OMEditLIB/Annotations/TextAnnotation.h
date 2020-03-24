@@ -38,7 +38,7 @@
 #include "ShapeAnnotation.h"
 #include "LineAnnotation.h"
 
-class Component;
+class Element;
 class TextAnnotation : public ShapeAnnotation
 {
   Q_OBJECT
@@ -46,11 +46,11 @@ public:
   // Used for icon/diagram shape
   TextAnnotation(QString annotation, GraphicsView *pGraphicsView);
   // Used for shape inside a component
-  TextAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  TextAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   // Used for icon/diagram inherited shape
   TextAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   // Used for default component
-  TextAnnotation(Component *pParent);
+  TextAnnotation(Element *pParent);
   // Used for transition text
   TextAnnotation(QString annotation, LineAnnotation *pLineAnnotation);
   // Used for OMSimulator FMU
@@ -67,7 +67,7 @@ public:
 
   QRectF mExportBoundingRect;
 private:
-  Component *mpComponent;
+  Element *mpComponent;
 
   void initUpdateTextString();
   void updateTextStringHelper(QRegExp regExp);

@@ -37,7 +37,8 @@
 
 #include "ShapeAnnotation.h"
 
-class Component;
+class Element;
+
 class EllipseAnnotation : public ShapeAnnotation
 {
   Q_OBJECT
@@ -45,7 +46,7 @@ public:
   // Used for icon/diagram shape
   EllipseAnnotation(QString annotation, GraphicsView *pGraphicsView);
   // Used for shape inside a component
-  EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   // Used for icon/diagram inherited shape
   EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation) override;

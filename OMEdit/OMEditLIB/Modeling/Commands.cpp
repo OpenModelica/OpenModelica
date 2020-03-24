@@ -133,17 +133,14 @@ UpdateShapeCommand::UpdateShapeCommand(ShapeAnnotation *pShapeAnnotation, QStrin
  */
 void UpdateShapeCommand::redoInternal()
 {
+//  mpShapeAnnotation->resetTransform();
+//  bool state = mpShapeAnnotation->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
+//  mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
+//  mpShapeAnnotation->setPos(0, 0);
+//  mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
   mpShapeAnnotation->parseShapeAnnotation(mNewAnnotation);
-  /* If the shape is LineAnnotation then remove and draw the corner items
-   * since they might have been changed in number based on the annotation.
-   */
-  LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
-  if (pLineAnnotation) {
-    pLineAnnotation->removeCornerItems();
-    pLineAnnotation->drawCornerItems();
-  }
-  mpShapeAnnotation->setCornerItemsActiveOrPassive();
   mpShapeAnnotation->applyTransformation();
+  mpShapeAnnotation->setCornerItemsActiveOrPassive();
   mpShapeAnnotation->emitChanged();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
 }
@@ -154,17 +151,14 @@ void UpdateShapeCommand::redoInternal()
  */
 void UpdateShapeCommand::undo()
 {
+//  mpShapeAnnotation->resetTransform();
+//  bool state = mpShapeAnnotation->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
+//  mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
+//  mpShapeAnnotation->setPos(0, 0);
+//  mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
   mpShapeAnnotation->parseShapeAnnotation(mOldAnnotation);
-  /* If the shape is LineAnnotation then remove and draw the corner items
-   * since they might have been changed in number based on the annotation.
-   */
-  LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
-  if (pLineAnnotation) {
-    pLineAnnotation->removeCornerItems();
-    pLineAnnotation->drawCornerItems();
-  }
-  mpShapeAnnotation->setCornerItemsActiveOrPassive();
   mpShapeAnnotation->applyTransformation();
+  mpShapeAnnotation->setCornerItemsActiveOrPassive();
   mpShapeAnnotation->emitChanged();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
 }
@@ -207,7 +201,7 @@ void DeleteShapeCommand::undo()
 }
 
 AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
-                                         ComponentInfo *pComponentInfo, bool addObject, bool openingClass, GraphicsView *pGraphicsView,
+                                         ElementInfo *pComponentInfo, bool addObject, bool openingClass, GraphicsView *pGraphicsView,
                                          UndoCommand *pParent)
   : UndoCommand(pParent)
 {
@@ -225,9 +219,9 @@ AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibrary
   // if component is of connector type && containing class is Modelica type.
   if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     // Connector type components exists on icon view as well
-    mpIconComponent = new Component(name, pLibraryTreeItem, annotation, position, pComponentInfo, mpIconGraphicsView);
+    mpIconComponent = new Element(name, pLibraryTreeItem, annotation, position, pComponentInfo, mpIconGraphicsView);
   }
-  mpDiagramComponent = new Component(name, pLibraryTreeItem, annotation, position, pComponentInfo, mpDiagramGraphicsView);
+  mpDiagramComponent = new Element(name, pLibraryTreeItem, annotation, position, pComponentInfo, mpDiagramGraphicsView);
   // only select the component of the active Icon/Diagram View
   if (!openingClass) {
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
@@ -291,7 +285,7 @@ void AddComponentCommand::undo()
   mpDiagramGraphicsView->deleteComponentFromClass(mpDiagramComponent);
 }
 
-UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommand(Component *pComponent, const Transformation &oldTransformation, const Transformation &newTransformation,
+UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommand(Element *pComponent, const Transformation &oldTransformation, const Transformation &newTransformation,
                                                                              const bool positionChanged, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
@@ -317,7 +311,7 @@ void UpdateComponentTransformationsCommand::redoInternal()
     } else {
       pGraphicsView = pModelWidget->getIconGraphicsView();
     }
-    Component *pComponent = pGraphicsView->getComponentObject(mpComponent->getName());
+    Element *pComponent = pGraphicsView->getComponentObject(mpComponent->getName());
     if (pComponent && (mOldTransformation == pComponent->mTransformation)) {
       pComponent->resetTransform();
       bool state = pComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
@@ -355,7 +349,7 @@ void UpdateComponentTransformationsCommand::undo()
     } else {
       pGraphicsView = pModelWidget->getIconGraphicsView();
     }
-    Component *pComponent = pGraphicsView->getComponentObject(mpComponent->getName());
+    Element *pComponent = pGraphicsView->getComponentObject(mpComponent->getName());
     if (pComponent && (mpComponent->mTransformation == pComponent->mTransformation)) {
       pComponent->resetTransform();
       bool state = pComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
@@ -378,12 +372,12 @@ void UpdateComponentTransformationsCommand::undo()
   mpComponent->emitTransformHasChanged();
 }
 
-UpdateComponentAttributesCommand::UpdateComponentAttributesCommand(Component *pComponent, const ComponentInfo &oldComponentInfo, const ComponentInfo &newComponentInfo, UndoCommand *pParent)
+UpdateComponentAttributesCommand::UpdateComponentAttributesCommand(Element *pComponent, const ElementInfo &oldComponentInfo, const ElementInfo &newComponentInfo, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpComponent = pComponent;
-  mOldComponentInfo.updateComponentInfo(&oldComponentInfo);
-  mNewComponentInfo.updateComponentInfo(&newComponentInfo);
+  mOldComponentInfo.updateElementInfo(&oldComponentInfo);
+  mNewComponentInfo.updateElementInfo(&newComponentInfo);
   setText(QString("Update Component %1 Attributes").arg(mpComponent->getName()));
 }
 
@@ -407,11 +401,11 @@ void UpdateComponentAttributesCommand::undo()
 
 /*!
  * \brief UpdateComponentAttributesCommand::updateComponentAttributes
- * Updates the component attributes based on the ComponentInfo
+ * Updates the component attributes based on the ElementInfo
  * \param pComponent
  * \param componentInfo
  */
-void UpdateComponentAttributesCommand::updateComponentAttributes(Component *pComponent, const ComponentInfo &componentInfo)
+void UpdateComponentAttributesCommand::updateComponentAttributes(Element *pComponent, const ElementInfo &componentInfo)
 {
   QString modelName = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   QString isFinal = componentInfo.getFinal() ? "true" : "false";
@@ -443,7 +437,7 @@ void UpdateComponentAttributesCommand::updateComponentAttributes(Component *pCom
         pComponent->emitAdded();
       }
     } else {
-      Component *pIconComponent = 0;
+      Element *pIconComponent = 0;
       pIconComponent = pComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getComponentObject(pComponent->getName());
       if (pIconComponent) {
         if (pIconComponent->getComponentInfo()->getProtected()) {
@@ -468,13 +462,13 @@ void UpdateComponentAttributesCommand::updateComponentAttributes(Component *pCom
       pComponent->componentCommentHasChanged();
       if (pComponent->getLibraryTreeItem()->isConnector()) {
         if (pComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
-          Component *pDiagramComponent = 0;
+          Element *pDiagramComponent = 0;
           pDiagramComponent = pComponent->getGraphicsView()->getModelWidget()->getDiagramGraphicsView()->getComponentObject(pComponent->getName());
           if (pDiagramComponent) {
             pDiagramComponent->componentCommentHasChanged();
           }
         } else {
-          Component *pIconComponent = 0;
+          Element *pIconComponent = 0;
           pIconComponent = pComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getComponentObject(pComponent->getName());
           if (pIconComponent) {
             pIconComponent->componentCommentHasChanged();
@@ -496,13 +490,13 @@ void UpdateComponentAttributesCommand::updateComponentAttributes(Component *pCom
       pComponent->componentNameHasChanged();
       if (pComponent->getLibraryTreeItem()->isConnector()) {
         if (pComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
-          Component *pDiagramComponent = 0;
+          Element *pDiagramComponent = 0;
           pDiagramComponent = pComponent->getGraphicsView()->getModelWidget()->getDiagramGraphicsView()->getComponentObject(pComponent->getName());
           if (pDiagramComponent) {
             pDiagramComponent->componentNameHasChanged();
           }
         } else {
-          Component *pIconComponent = 0;
+          Element *pIconComponent = 0;
           pIconComponent = pComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getComponentObject(pComponent->getName());
           if (pIconComponent) {
             pIconComponent->componentNameHasChanged();
@@ -534,7 +528,7 @@ void UpdateComponentAttributesCommand::updateComponentAttributes(Component *pCom
  * \param pComponent
  * \param componentInfo
  */
-void UpdateComponentAttributesCommand::updateComponentModifiers(Component *pComponent, const ComponentInfo &componentInfo)
+void UpdateComponentAttributesCommand::updateComponentModifiers(Element *pComponent, const ElementInfo &componentInfo)
 {
   QString modelName = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   bool modifierValueChanged = false;
@@ -552,7 +546,7 @@ void UpdateComponentAttributesCommand::updateComponentModifiers(Component *pComp
   }
 }
 
-UpdateComponentParametersCommand::UpdateComponentParametersCommand(Component *pComponent, QMap<QString, QString> oldComponentModifiersMap,
+UpdateComponentParametersCommand::UpdateComponentParametersCommand(Element *pComponent, QMap<QString, QString> oldComponentModifiersMap,
                                                                    QMap<QString, QString> oldComponentExtendsModifiersMap,
                                                                    QMap<QString, QString> newComponentModifiersMap,
                                                                    QMap<QString, QString> newComponentExtendsModifiersMap,
@@ -639,7 +633,7 @@ void UpdateComponentParametersCommand::undo()
   mpComponent->componentParameterHasChanged();
 }
 
-DeleteComponentCommand::DeleteComponentCommand(Component *pComponent, GraphicsView *pGraphicsView, UndoCommand *pParent)
+DeleteComponentCommand::DeleteComponentCommand(Element *pComponent, GraphicsView *pGraphicsView, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpComponent = pComponent;
@@ -672,7 +666,7 @@ void DeleteComponentCommand::redoInternal()
     } else {
       pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
     }
-    Component *pComponent = pGraphicsView->getComponentObject(mpComponent->getName());
+    Element *pComponent = pGraphicsView->getComponentObject(mpComponent->getName());
     if (pComponent) {
       pGraphicsView->removeItem(pComponent);
       pGraphicsView->removeItem(pComponent->getOriginItem());
@@ -705,7 +699,7 @@ void DeleteComponentCommand::undo()
     } else {
       pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
     }
-    Component *pComponent = pGraphicsView->getComponentObject(mpComponent->getName());
+    Element *pComponent = pGraphicsView->getComponentObject(mpComponent->getName());
     if (pComponent) {
       pGraphicsView->addItem(pComponent);
       pGraphicsView->addItem(pComponent->getOriginItem());
@@ -749,14 +743,14 @@ AddConnectionCommand::AddConnectionCommand(LineAnnotation *pConnectionLineAnnota
 void AddConnectionCommand::redoInternal()
 {
   // Add the start component connection details.
-  Component *pStartComponent = mpConnectionLineAnnotation->getStartComponent();
+  Element *pStartComponent = mpConnectionLineAnnotation->getStartComponent();
   if (pStartComponent->getRootParentComponent()) {
     pStartComponent->getRootParentComponent()->addConnectionDetails(mpConnectionLineAnnotation);
   } else {
     pStartComponent->addConnectionDetails(mpConnectionLineAnnotation);
   }
   // Add the end component connection details.
-  Component *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
+  Element *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
   if (pEndComponent->getRootParentComponent()) {
     pEndComponent->getRootParentComponent()->addConnectionDetails(mpConnectionLineAnnotation);
   } else {
@@ -781,14 +775,14 @@ void AddConnectionCommand::redoInternal()
 void AddConnectionCommand::undo()
 {
   // Remove the start component connection details.
-  Component *pStartComponent = mpConnectionLineAnnotation->getStartComponent();
+  Element *pStartComponent = mpConnectionLineAnnotation->getStartComponent();
   if (pStartComponent->getRootParentComponent()) {
     pStartComponent->getRootParentComponent()->removeConnectionDetails(mpConnectionLineAnnotation);
   } else {
     pStartComponent->removeConnectionDetails(mpConnectionLineAnnotation);
   }
   // Remove the end component connection details.
-  Component *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
+  Element *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
   if (pEndComponent->getRootParentComponent()) {
     pEndComponent->getRootParentComponent()->removeConnectionDetails(mpConnectionLineAnnotation);
   } else {
@@ -889,14 +883,14 @@ DeleteConnectionCommand::DeleteConnectionCommand(LineAnnotation *pConnectionLine
 void DeleteConnectionCommand::redoInternal()
 {
   // Remove the start component connection details.
-  Component *pStartComponent = mpConnectionLineAnnotation->getStartComponent();
+  Element *pStartComponent = mpConnectionLineAnnotation->getStartComponent();
   if (pStartComponent && pStartComponent->getRootParentComponent()) {
     pStartComponent->getRootParentComponent()->removeConnectionDetails(mpConnectionLineAnnotation);
   } else if (pStartComponent) {
     pStartComponent->removeConnectionDetails(mpConnectionLineAnnotation);
   }
   // Remove the end component connection details.
-  Component *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
+  Element *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
   if (pEndComponent && pEndComponent->getRootParentComponent()) {
     pEndComponent->getRootParentComponent()->removeConnectionDetails(mpConnectionLineAnnotation);
   } else if (pEndComponent) {
@@ -916,14 +910,14 @@ void DeleteConnectionCommand::redoInternal()
 void DeleteConnectionCommand::undo()
 {
   // Add the start component connection details.
-  Component *pStartComponent = mpConnectionLineAnnotation->getStartComponent();
+  Element *pStartComponent = mpConnectionLineAnnotation->getStartComponent();
   if (pStartComponent && pStartComponent->getRootParentComponent()) {
     pStartComponent->getRootParentComponent()->addConnectionDetails(mpConnectionLineAnnotation);
   } else if (pStartComponent) {
     pStartComponent->addConnectionDetails(mpConnectionLineAnnotation);
   }
   // Add the end component connection details.
-  Component *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
+  Element *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
   if (pEndComponent && pEndComponent->getRootParentComponent()) {
     pEndComponent->getRootParentComponent()->addConnectionDetails(mpConnectionLineAnnotation);
   } else if (pEndComponent) {
@@ -958,7 +952,7 @@ void AddTransitionCommand::redoInternal()
   mpTransitionLineAnnotation->getGraphicsView()->addTransitionToList(mpTransitionLineAnnotation);
   mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromOutOfSceneList(mpTransitionLineAnnotation);
   // Add the start component transition details.
-  Component *pStartComponent = mpTransitionLineAnnotation->getStartComponent();
+  Element *pStartComponent = mpTransitionLineAnnotation->getStartComponent();
   if (pStartComponent && pStartComponent->getRootParentComponent()) {
     pStartComponent->getRootParentComponent()->addConnectionDetails(mpTransitionLineAnnotation);
     pStartComponent->getRootParentComponent()->setHasTransition(true);
@@ -967,7 +961,7 @@ void AddTransitionCommand::redoInternal()
     pStartComponent->setHasTransition(true);
   }
   // Add the end component connection details.
-  Component *pEndComponent = mpTransitionLineAnnotation->getEndComponent();
+  Element *pEndComponent = mpTransitionLineAnnotation->getEndComponent();
   if (pEndComponent && pEndComponent->getRootParentComponent()) {
     pEndComponent->getRootParentComponent()->addConnectionDetails(mpTransitionLineAnnotation);
     pEndComponent->getRootParentComponent()->setHasTransition(true);
@@ -994,7 +988,7 @@ void AddTransitionCommand::undo()
   mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromList(mpTransitionLineAnnotation);
   mpTransitionLineAnnotation->getGraphicsView()->addTransitionToOutOfSceneList(mpTransitionLineAnnotation);
   // Remove the start component connection details.
-  Component *pStartComponent = mpTransitionLineAnnotation->getStartComponent();
+  Element *pStartComponent = mpTransitionLineAnnotation->getStartComponent();
   if (pStartComponent && pStartComponent->getRootParentComponent()) {
     pStartComponent->getRootParentComponent()->removeConnectionDetails(mpTransitionLineAnnotation);
     pStartComponent->getRootParentComponent()->setHasTransition(false);
@@ -1003,7 +997,7 @@ void AddTransitionCommand::undo()
     pStartComponent->setHasTransition(false);
   }
   // Remove the end component connection details.
-  Component *pEndComponent = mpTransitionLineAnnotation->getEndComponent();
+  Element *pEndComponent = mpTransitionLineAnnotation->getEndComponent();
   if (pEndComponent && pEndComponent->getRootParentComponent()) {
     pEndComponent->getRootParentComponent()->removeConnectionDetails(mpTransitionLineAnnotation);
     pEndComponent->getRootParentComponent()->setHasTransition(false);
@@ -1092,7 +1086,7 @@ void DeleteTransitionCommand::redoInternal()
   mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromList(mpTransitionLineAnnotation);
   mpTransitionLineAnnotation->getGraphicsView()->addTransitionToOutOfSceneList(mpTransitionLineAnnotation);
   // Remove the start component connection details.
-  Component *pStartComponent = mpTransitionLineAnnotation->getStartComponent();
+  Element *pStartComponent = mpTransitionLineAnnotation->getStartComponent();
   if (pStartComponent && pStartComponent->getRootParentComponent()) {
     pStartComponent->getRootParentComponent()->removeConnectionDetails(mpTransitionLineAnnotation);
     pStartComponent->getRootParentComponent()->setHasTransition(false);
@@ -1101,7 +1095,7 @@ void DeleteTransitionCommand::redoInternal()
     pStartComponent->setHasTransition(false);
   }
   // Remove the end component connection details.
-  Component *pEndComponent = mpTransitionLineAnnotation->getEndComponent();
+  Element *pEndComponent = mpTransitionLineAnnotation->getEndComponent();
   if (pEndComponent && pEndComponent->getRootParentComponent()) {
     pEndComponent->getRootParentComponent()->removeConnectionDetails(mpTransitionLineAnnotation);
     pEndComponent->getRootParentComponent()->setHasTransition(false);
@@ -1123,7 +1117,7 @@ void DeleteTransitionCommand::undo()
   mpTransitionLineAnnotation->getGraphicsView()->addTransitionToList(mpTransitionLineAnnotation);
   mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromOutOfSceneList(mpTransitionLineAnnotation);
   // Add the start component connection details.
-  Component *pStartComponent = mpTransitionLineAnnotation->getStartComponent();
+  Element *pStartComponent = mpTransitionLineAnnotation->getStartComponent();
   if (pStartComponent && pStartComponent->getRootParentComponent()) {
     pStartComponent->getRootParentComponent()->addConnectionDetails(mpTransitionLineAnnotation);
     pStartComponent->getRootParentComponent()->setHasTransition(true);
@@ -1132,7 +1126,7 @@ void DeleteTransitionCommand::undo()
     pStartComponent->setHasTransition(true);
   }
   // Add the end component connection details.
-  Component *pEndComponent = mpTransitionLineAnnotation->getEndComponent();
+  Element *pEndComponent = mpTransitionLineAnnotation->getEndComponent();
   if (pEndComponent && pEndComponent->getRootParentComponent()) {
     pEndComponent->getRootParentComponent()->addConnectionDetails(mpTransitionLineAnnotation);
     pEndComponent->getRootParentComponent()->setHasTransition(true);
@@ -1166,7 +1160,7 @@ void AddInitialStateCommand::redoInternal()
   mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToList(mpInitialStateLineAnnotation);
   mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromOutOfSceneList(mpInitialStateLineAnnotation);
   // Add the start component transition details.
-  Component *pStartComponent = mpInitialStateLineAnnotation->getStartComponent();
+  Element *pStartComponent = mpInitialStateLineAnnotation->getStartComponent();
   if (pStartComponent && pStartComponent->getRootParentComponent()) {
     pStartComponent->getRootParentComponent()->addConnectionDetails(mpInitialStateLineAnnotation);
     pStartComponent->getRootParentComponent()->setIsInitialState(true);
@@ -1190,7 +1184,7 @@ void AddInitialStateCommand::undo()
   mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromList(mpInitialStateLineAnnotation);
   mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToOutOfSceneList(mpInitialStateLineAnnotation);
   // Remove the start component connection details.
-  Component *pStartComponent = mpInitialStateLineAnnotation->getStartComponent();
+  Element *pStartComponent = mpInitialStateLineAnnotation->getStartComponent();
   if (pStartComponent && pStartComponent->getRootParentComponent()) {
     pStartComponent->getRootParentComponent()->removeConnectionDetails(mpInitialStateLineAnnotation);
     pStartComponent->getRootParentComponent()->setIsInitialState(false);
@@ -1252,7 +1246,7 @@ void DeleteInitialStateCommand::redoInternal()
   mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromList(mpInitialStateLineAnnotation);
   mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToOutOfSceneList(mpInitialStateLineAnnotation);
   // Remove the start component connection details.
-  Component *pStartComponent = mpInitialStateLineAnnotation->getStartComponent();
+  Element *pStartComponent = mpInitialStateLineAnnotation->getStartComponent();
   if (pStartComponent && pStartComponent->getRootParentComponent()) {
 //    pStartComponent->getRootParentComponent()->removeConnectionDetails(mpTransitionLineAnnotation);
     pStartComponent->getRootParentComponent()->setIsInitialState(false);
@@ -1274,7 +1268,7 @@ void DeleteInitialStateCommand::undo()
   mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToList(mpInitialStateLineAnnotation);
   mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromOutOfSceneList(mpInitialStateLineAnnotation);
   // Add the start component connection details.
-  Component *pStartComponent = mpInitialStateLineAnnotation->getStartComponent();
+  Element *pStartComponent = mpInitialStateLineAnnotation->getStartComponent();
   if (pStartComponent && pStartComponent->getRootParentComponent()) {
 //    pStartComponent->getRootParentComponent()->addConnectionDetails(mpTransitionLineAnnotation);
     pStartComponent->getRootParentComponent()->setIsInitialState(true);
@@ -1468,15 +1462,15 @@ void UpdateClassSimulationFlagsAnnotationCommand::undo()
   MainWindow::instance()->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mOldSimulationFlags);
 }
 
-UpdateSubModelAttributesCommand::UpdateSubModelAttributesCommand(Component *pComponent, const ComponentInfo &oldComponentInfo,
-                                                                 const ComponentInfo &newComponentInfo,
+UpdateSubModelAttributesCommand::UpdateSubModelAttributesCommand(Element *pComponent, const ElementInfo &oldComponentInfo,
+                                                                 const ElementInfo &newComponentInfo,
                                                                  QStringList &parameterNames, QStringList &oldParameterValues,
                                                                  QStringList &newParameterValues, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpComponent = pComponent;
-  mOldComponentInfo.updateComponentInfo(&oldComponentInfo);
-  mNewComponentInfo.updateComponentInfo(&newComponentInfo);
+  mOldComponentInfo.updateElementInfo(&oldComponentInfo);
+  mNewComponentInfo.updateElementInfo(&newComponentInfo);
   setText(QString("Update SubModel %1 Attributes").arg(mpComponent->getName()));
 
   //Save sub-model parameters for composite models
@@ -1689,10 +1683,10 @@ void AddSystemCommand::redoInternal()
     }
   }
   // add the FMU to view
-  ComponentInfo *pComponentInfo = new ComponentInfo;
+  ElementInfo *pComponentInfo = new ElementInfo;
   pComponentInfo->setName(mpLibraryTreeItem->getName());
   pComponentInfo->setClassName(mpLibraryTreeItem->getNameStructure());
-  mpComponent = new Component(mName, mpLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpGraphicsView);
+  mpComponent = new Element(mName, mpLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpGraphicsView);
   mpGraphicsView->addItem(mpComponent);
   mpGraphicsView->addItem(mpComponent->getOriginItem());
   mpGraphicsView->addComponentToList(mpComponent);
@@ -1772,10 +1766,10 @@ void AddSubModelCommand::redoInternal()
     }
   }
   // add the FMU to view
-  ComponentInfo *pComponentInfo = new ComponentInfo;
+  ElementInfo *pComponentInfo = new ElementInfo;
   pComponentInfo->setName(mpLibraryTreeItem->getName());
   pComponentInfo->setClassName(mpLibraryTreeItem->getNameStructure());
-  mpComponent = new Component(mName, mpLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpGraphicsView);
+  mpComponent = new Element(mName, mpLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpGraphicsView);
   mpGraphicsView->addItem(mpComponent);
   mpGraphicsView->addItem(mpComponent->getOriginItem());
   mpGraphicsView->addComponentToList(mpComponent);
@@ -1802,7 +1796,7 @@ void AddSubModelCommand::undo()
  * \param pGraphicsView
  * \param pParent
  */
-DeleteSubModelCommand::DeleteSubModelCommand(Component *pComponent, GraphicsView *pGraphicsView, UndoCommand *pParent)
+DeleteSubModelCommand::DeleteSubModelCommand(Element *pComponent, GraphicsView *pGraphicsView, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpComponent = pComponent;
@@ -1881,11 +1875,11 @@ void AddConnectorCommand::redoInternal()
     mpLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mName, nameStructure, pParentLibraryTreeItem->getFileName(),
                                                                  true, pParentLibraryTreeItem, 0, pOMSConnector);
   }
-  ComponentInfo *pComponentInfo = new ComponentInfo;
+  ElementInfo *pComponentInfo = new ElementInfo;
   pComponentInfo->setName(mpLibraryTreeItem->getName());
   pComponentInfo->setClassName(mpLibraryTreeItem->getNameStructure());
   // add the connector to icon view
-  mpIconComponent = new Component(mName, mpLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpIconGraphicsView);
+  mpIconComponent = new Element(mName, mpLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpIconGraphicsView);
   mpIconGraphicsView->addItem(mpIconComponent);
   mpIconGraphicsView->addItem(mpIconComponent->getOriginItem());
   mpIconGraphicsView->addComponentToList(mpIconComponent);
@@ -1893,7 +1887,7 @@ void AddConnectorCommand::redoInternal()
     mpIconComponent->emitAdded();
   }
   // add the connector to diagram view
-  mpDiagramComponent = new Component(mName, mpLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpDiagramGraphicsView);
+  mpDiagramComponent = new Element(mName, mpLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpDiagramGraphicsView);
   mpDiagramGraphicsView->addItem(mpDiagramComponent);
   mpDiagramGraphicsView->addItem(mpDiagramComponent->getOriginItem());
   mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
@@ -1919,7 +1913,7 @@ void AddConnectorCommand::undo()
     qDebug() << "AddConnectorCommand::undo() not implemented.";
 }
 
-ElementPropertiesCommand::ElementPropertiesCommand(Component *pComponent, QString name, ElementProperties oldElementProperties,
+ElementPropertiesCommand::ElementPropertiesCommand(Element *pComponent, QString name, ElementProperties oldElementProperties,
                                                    ElementProperties newElementProperties, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
@@ -2315,16 +2309,16 @@ void AddBusCommand::redoInternal()
     mpLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mName, nameStructure, pParentLibraryTreeItem->getFileName(),
                                                                  true, pParentLibraryTreeItem, 0, 0, pOMSBusConnector);
   }
-  ComponentInfo *pComponentInfo = new ComponentInfo;
+  ElementInfo *pComponentInfo = new ElementInfo;
   pComponentInfo->setName(mpLibraryTreeItem->getName());
   pComponentInfo->setClassName(mpLibraryTreeItem->getNameStructure());
   // add the connector to icon view
-  mpIconComponent = new Component(mName, mpLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpIconGraphicsView);
+  mpIconComponent = new Element(mName, mpLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpIconGraphicsView);
   mpIconGraphicsView->addItem(mpIconComponent);
   mpIconGraphicsView->addItem(mpIconComponent->getOriginItem());
   mpIconGraphicsView->addComponentToList(mpIconComponent);
   // add the connector to diagram view
-  mpDiagramComponent = new Component(mName, mpLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpDiagramGraphicsView);
+  mpDiagramComponent = new Element(mName, mpLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpDiagramGraphicsView);
   mpDiagramGraphicsView->addItem(mpDiagramComponent);
   mpDiagramGraphicsView->addItem(mpDiagramComponent->getOriginItem());
   mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
@@ -2468,16 +2462,16 @@ void AddTLMBusCommand::redoInternal()
     mpLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mName, nameStructure, pParentLibraryTreeItem->getFileName(),
                                                                  true, pParentLibraryTreeItem, 0, 0, 0, pOMSTLMBusConnector);
   }
-  ComponentInfo *pComponentInfo = new ComponentInfo;
+  ElementInfo *pComponentInfo = new ElementInfo;
   pComponentInfo->setName(mpLibraryTreeItem->getName());
   pComponentInfo->setClassName(mpLibraryTreeItem->getNameStructure());
   // add the connector to icon view
-  mpIconComponent = new Component(mName, mpLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpIconGraphicsView);
+  mpIconComponent = new Element(mName, mpLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpIconGraphicsView);
   mpIconGraphicsView->addItem(mpIconComponent);
   mpIconGraphicsView->addItem(mpIconComponent->getOriginItem());
   mpIconGraphicsView->addComponentToList(mpIconComponent);
   // add the connector to diagram view
-  mpDiagramComponent = new Component(mName, mpLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpDiagramGraphicsView);
+  mpDiagramComponent = new Element(mName, mpLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpDiagramGraphicsView);
   mpDiagramGraphicsView->addItem(mpDiagramComponent);
   mpDiagramGraphicsView->addItem(mpDiagramComponent->getOriginItem());
   mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);

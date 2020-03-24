@@ -318,7 +318,7 @@ void CompositeModelEditor::setCompositeModelName(QString name)
  * \param pComponent
  * \return
  */
-bool CompositeModelEditor::addSubModel(Component *pComponent)
+bool CompositeModelEditor::addSubModel(Element *pComponent)
 {
   pComponent->getComponentInfo()->setName(pComponent->getName().remove("."));
   QDomElement subModels = getSubModelsElement();
@@ -443,7 +443,7 @@ void CompositeModelEditor::updateSubModelOrientation(QString name, QGenericMatri
   getSubModelElement(name).setAttribute("Angle321", rot_str);
   setPlainText(mXmlDocument.toString());
 
-  Component *pComp = mpModelWidget->getDiagramGraphicsView()->getComponentObject(name);
+  Element *pComp = mpModelWidget->getDiagramGraphicsView()->getComponentObject(name);
   if(pComp) {
     pComp->getComponentInfo()->setPosition(pos_str);
     pComp->getComponentInfo()->setAngle321(rot_str);
@@ -680,7 +680,7 @@ void CompositeModelEditor::addInterfacesData(QDomElement interfaces, QDomElement
           interfacePoint.setAttribute("Domain", interfaceDataElement.attribute("Domain"));
           subModel.appendChild(interfacePoint);
           setPlainText(mXmlDocument.toString());
-          Component *pComponent = mpModelWidget->getDiagramGraphicsView()->getComponentObject(subModel.attribute("Name"));
+          Element *pComponent = mpModelWidget->getDiagramGraphicsView()->getComponentObject(subModel.attribute("Name"));
           if (pComponent) {
             pComponent->insertInterfacePoint(interfaceDataElement.attribute("Name"),
                                              interfaceDataElement.attribute("Position", "0,0,0"),
@@ -699,7 +699,7 @@ void CompositeModelEditor::addInterfacesData(QDomElement interfaces, QDomElement
     if(subModel.attribute("Name") != singleModel && !singleModel.isEmpty()){
       continue;   //Ignore other models if single model is specified
     }
-    Component *pComponent = mpModelWidget->getDiagramGraphicsView()->getComponentObject(subModel.attribute("Name"));
+    Element *pComponent = mpModelWidget->getDiagramGraphicsView()->getComponentObject(subModel.attribute("Name"));
     QDomElement subModelInterfaceDataElement = subModel.firstChildElement("InterfacePoint");
     while (!subModelInterfaceDataElement.isNull()) {
       bool interfaceExists = false;
@@ -816,7 +816,7 @@ void CompositeModelEditor::addInterfacesData(QDomElement interfaces, QDomElement
  * \param pInterfaceComponent
  * \param subModel
  */
-void CompositeModelEditor::addInterface(Component *pInterfaceComponent, QString subModel)
+void CompositeModelEditor::addInterface(Element *pInterfaceComponent, QString subModel)
 {
   QDomElement subModelElement = getSubModelElement(subModel);
   QDomElement interfacePoint = mXmlDocument.createElement("InterfacePoint");
@@ -1033,7 +1033,7 @@ void CompositeModelEditor::updateAllOrientations()
     QString modelName = subModelElement.attribute("Name");
 
     if(subModelElement.hasAttribute("Position") && subModelElement.hasAttribute("Angle321")) {
-      Component *pComp = pView->getComponentObject(modelName);
+      Element *pComp = pView->getComponentObject(modelName);
       if(pComp) {
         pComp->getComponentInfo()->setPosition(subModelElement.attribute("Position"));
         pComp->getComponentInfo()->setAngle321(subModelElement.attribute("Angle321"));

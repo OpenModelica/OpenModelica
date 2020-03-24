@@ -583,11 +583,11 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   mScalarVariablesHash.clear();
   QString initFileName, infoFileName;
   if (simulationOptions.isValid()) {
-    initFileName = QString("%1_init.xml").arg(simulationOptions.getOutputFileName());
-    infoFileName = QString("%1_info.json").arg(simulationOptions.getOutputFileName());
+    initFileName = QString(simulationOptions.getOutputFileName()).append("_init.xml");
+    infoFileName = QString(simulationOptions.getOutputFileName()).append("_info.json");
   } else {
-    initFileName = QString("%1_init.xml").arg(text);
-    infoFileName = QString("%1_info.json").arg(text);
+    initFileName = QString(text).append("_info.json");
+    infoFileName = QString(text).append("_init.xml");
   }
   QFile initFile(QString(filePath).append(QDir::separator()).append(initFileName));
   if (initFile.exists()) {

@@ -48,7 +48,7 @@ class CompleterItem;
 class GraphicsView;
 class ModelWidget;
 class ShapeAnnotation;
-class Component;
+class Element;
 class LineAnnotation;
 class LibraryTreeModel;
 class LibraryTreeItem : public QObject
@@ -182,7 +182,7 @@ public:
   void emitLoaded();
   void emitUnLoaded();
   void emitShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
-  void emitComponentAdded(Component *pComponent);
+  void emitComponentAdded(Element *pComponent);
   void emitComponentAddedForComponent() {emit componentAddedForComponent();}
   void emitNameChanged() {emit nameChanged();}
   void updateChildrenNameStructure();
@@ -194,13 +194,13 @@ public:
   OMCInterface::getClassInformation_res mClassInformation;
   SimulationOptions mSimulationOptions;
   OMSSimulationOptions mOMSSimulationOptions;
-  const QList<ComponentInfo *> &getComponentsList();
+  const QList<ElementInfo *> &getComponentsList();
 private:
   bool mIsRootItem;
   LibraryTreeItem *mpParentLibraryTreeItem;
   QList<LibraryTreeItem*> mChildren;
   QList<LibraryTreeItem*> mInheritedClasses;
-  QList<ComponentInfo*> mComponents;
+  QList<ElementInfo*> mComponents;
   bool mComponentsLoaded;
   LibraryType mLibraryType;
   bool mSystemLibrary;
@@ -237,7 +237,7 @@ signals:
   void unLoadedForComponent();
   void shapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void shapeAddedForComponent();
-  void componentAdded(Component *pComponent);
+  void componentAdded(Element *pComponent);
   void componentAddedForComponent();
   void nameChanged();
   void connectionAdded(LineAnnotation *pConnectionLineAnnotation);
@@ -248,7 +248,7 @@ public slots:
   void handleLoaded(LibraryTreeItem *pLibraryTreeItem);
   void handleUnloaded();
   void handleShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
-  void handleComponentAdded(Component *pComponent);
+  void handleComponentAdded(Element *pComponent);
   void handleConnectionAdded(LineAnnotation *pConnectionLineAnnotation);
   void handleIconUpdated();
   void handleCoOrdinateSystemUpdated(GraphicsView *pGraphicsView);
