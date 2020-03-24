@@ -1,0 +1,31 @@
+# @author Adeel Asghar <adeel.asghar@liu.se>
+
+QMAKE_CC  = @CC@
+QMAKE_CXX = @CXX@
+QMAKE_LINK = @CXX@
+
+OPENMODELICAHOME = @OPENMODELICAHOME@
+host_short = @host_short@
+
+LIBS += -L@OPENMODELICAHOME@/lib/$$host_short/omc -lOMPlot -lomqwt -lfmilib_shared -L$$OMEDIT_ROOT/OMEditLIB/Debugger/Parser -lGDBMIParser -lomantlr3 @RPATH_QMAKE@ -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lomcgc -L@OMBUILDDIR@/lib/$$host_short/omc @LIBOSG@ -lomopcua -L@OMBUILDDIR@/lib -lOMSimulator -lqjson @LIB_BOOST_REGEX@
+
+QMAKE_CXXFLAGS_RELEASE -= -O1
+QMAKE_CXXFLAGS_RELEASE -= -O2
+
+QMAKE_CFLAGS = @CFLAGS@ @CPPFLAGS@
+QMAKE_CXXFLAGS = @CXXFLAGS@ @CPPFLAGS@
+QMAKE_LFLAGS += @LDFLAGS@
+
+# required for backtrace
+# On unix we use backtrace of execinfo.h which requires -rdynamic
+# The symbol names may be unavailable without the use of special linker
+# options.  For systems using the GNU linker, it is necessary to use
+# the -rdynamic linker option.  Note that names of "static" functions
+# are not exposed, and won't be available in the backtrace.
+CONFIG(release, debug|release) {
+  QMAKE_CXXFLAGS += -g
+  QMAKE_LFLAGS_RELEASE = -rdynamic
+}
+equals(QT_ARCH, i386)|equals(QT_ARCH, i486)|equals(QT_ARCH, i586)|equals(QT_ARCH, i686) { # 32-bit
+  LIBS += -latomic -lboost_atomic
+}
