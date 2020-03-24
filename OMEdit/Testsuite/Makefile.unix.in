@@ -1,0 +1,33 @@
+all: testsuite
+
+QMAKE=@QMAKE@
+
+install: build
+	cp -p ../bin/tests/* @OMBUILDDIR@/bin
+	cp -p RunOMEditTestsuite.sh @OMBUILDDIR@/bin
+
+build: Makefile OMEditGUI.unix.config.pri
+	$(MAKE) -f Makefile
+
+Makefile: Testsuite.pro OMEditGUI.unix.config.pri
+	@test ! -f $@ || rm $@
+	$(QMAKE) -r
+OMEditGUI.unix.config.pri: ../OMEditGUI/OMEditGUI.unix.config.pri.in
+	(cd @top_builddir@ && ./config.status)
+
+mkbuilddirs:
+	mkdir -p  @OMBUILDDIR@/bin
+
+testsuite: mkbuilddirs install
+
+clean:
+	test ! -f Makefile || $(MAKE) -f Makefile clean
+	rm -rf ../bin/tests Makefile
+
+distclean: clean
+	rm -rf Makefile.unix
+
+config.status: configure
+	./config.status -recheck
+configure: configure.ac ../common/m4/corba.m4 ../common/m4/omhome.m4 ../common/m4/qmake.m4
+	autoconf

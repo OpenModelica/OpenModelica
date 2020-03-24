@@ -152,7 +152,7 @@ exit(1);
   )
 
 
-for flag in -Wno-clobbered -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter; do
+for flag in -Wno-clobbered; do
   OLD_CXXFLAGS="$CXXFLAGS"
   CXXFLAGS="$CXXFLAGS $flag -Werror"
   AC_TRY_LINK([], [return 0;], [CXXFLAGS="$OLD_CXXFLAGS $flag"],[CXXFLAGS="$OLD_CXXFLAGS"])
@@ -170,4 +170,4 @@ fi
 m4_include([common/m4/semver.m4])
 SOURCE_REVISION="$SOURCE_REVISION$NON_FREE_VERSION"
 
-AC_OUTPUT(Makefile OMEdit/OMEditGUI/Makefile.unix OMEdit/OMEditGUI/OMEdit.config OMEdit/OMEditGUI/Debugger/Parser/Makefile.unix OMEdit/OMEditGUI/Debugger/Parser/Makefile.lib.unix OMEdit/OMEditGUI/omc_config.h)
+AC_OUTPUT(Makefile.unix omc_config.h OMEditLIB/OMEditLIB.unix.config.pri OMEditLIB/Debugger/Parser/Makefile.unix OMEditLIB/Debugger/Parser/Makefile.lib.unix OMEditGUI/OMEditGUI.unix.config.pri Testsuite/Makefile.unix)

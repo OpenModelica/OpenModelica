@@ -1,0 +1,37 @@
+ifeq ($(OMBUILDDIR),)
+$(error OMBUILDDIR variable is not set.)
+endif
+
+all: testsuite
+
+QMAKE=qmake
+CC = gcc
+EXE=.exe
+
+ifeq (gcc,$(findstring gcc,$(CC)))
+	override CFLAGS +=-falign-functions -fstack-protector-all
+endif
+
+builddir_bin=$(OMBUILDDIR)/bin
+
+testsuite: mkbuilddirs install
+	cp -puf ../../common/pre-commit.sh $(shell git rev-parse --git-dir)/hooks/pre-commit
+
+mkbuilddirs:
+	mkdir -p $(builddir_bin)
+
+install: build
+	cp -p ../bin/tests/*$(EXE) $(builddir_bin)
+	cp -p RunOMEditTestsuite.sh $(builddir_bin)
+
+build: Makefile
+	$(MAKE) -f Makefile
+
+Makefile: Testsuite.pro
+	$(QMAKE) -r "CONFIG+=release"
+MakefileClean: Testsuite.pro
+	$(QMAKE) -r "CONFIG+=release"
+
+clean: MakefileClean
+	test ! -f Makefile || $(MAKE) -f Makefile clean
+	rm -rf ../bin/tests Makefile
