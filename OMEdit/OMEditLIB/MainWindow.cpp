@@ -3912,6 +3912,8 @@ void MainWindow::createMenus()
   pOMSimulatorMenu->addAction(mpOMSArchivedSimulationsAction);
   // add OMSimulator menu to menu bar
   menuBar()->addAction(pOMSimulatorMenu->menuAction());
+
+/* disable OMSens for 1.15
 #ifndef Q_OS_MAC
   // Sensitivity Optimization menu
   QMenu *pSensitivityOptimizationMenu = new QMenu(menuBar());
@@ -3921,6 +3923,8 @@ void MainWindow::createMenus()
   // add Sensitivity Optimization menu to menu bar
   menuBar()->addAction(pSensitivityOptimizationMenu->menuAction());
 #endif
+*/
+
   // Git menu
   QMenu *pGitMenu = new QMenu(menuBar());
   pGitMenu->setTitle(tr("&Git"));
