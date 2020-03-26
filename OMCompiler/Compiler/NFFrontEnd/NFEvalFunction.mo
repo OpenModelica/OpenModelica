@@ -243,7 +243,7 @@ algorithm
   end for;
 
   // Create a new record expression from the list of arguments.
-  result := Expression.RECORD(Function.name(fn), ty, listReverseInPlace(expl));
+  result := Expression.makeRecord(Function.name(fn), ty, listReverseInPlace(expl));
 
   // Constant evaluate the expression if requested.
   if evaluate then
@@ -321,7 +321,7 @@ algorithm
   result := match ty
     case Type.ARRAY() guard Type.hasKnownSize(ty)
       then Expression.fillType(ty, Expression.EMPTY(Type.arrayElementType(ty)));
-    case Type.COMPLEX() then buildRecordBinding(ty.cls, repl);
+    case Type.COMPLEX() then buildRecordBinding(node, repl);
     else Expression.EMPTY(ty);
   end match;
 end buildBinding;
@@ -350,7 +350,8 @@ function buildRecordBinding
   input ReplTree.Tree repl;
   output Expression result;
 protected
-  Class cls = InstNode.getClass(recordNode);
+  InstNode cls_node = InstNode.classScope(recordNode);
+  Class cls = InstNode.getClass(cls_node);
   array<InstNode> comps;
   list<Expression> bindings;
   Expression exp;
@@ -364,7 +365,7 @@ algorithm
           bindings := Expression.makeMutable(getBindingExp(comps[i], repl)) :: bindings;
         end for;
       then
-        Expression.RECORD(InstNode.scopePath(recordNode), cls.ty, bindings);
+        Expression.makeRecord(InstNode.scopePath(cls_node), cls.ty, bindings);
 
     case Class.TYPED_DERIVED() then buildRecordBinding(cls.baseClass, repl);
   end match;

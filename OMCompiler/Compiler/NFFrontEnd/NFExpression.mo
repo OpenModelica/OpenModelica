@@ -1048,6 +1048,15 @@ public
     exp := makeArray(ty, elements, isLiteral);
   end makeExpArray;
 
+  function makeRecord
+    input Absyn.Path recordName;
+    input Type recordType;
+    input list<Expression> fields;
+    output Expression exp;
+  algorithm
+    exp := RECORD(recordName, recordType, fields);
+  end makeRecord;
+
   function applySubscripts
     "Subscripts an expression with the given list of subscripts."
     input list<Subscript> subscripts;
@@ -1829,6 +1838,9 @@ public
           then
             ();
 
+        // TODO: Constants/parameters shouldn't be added to record expressions
+        //       since that causes issues with the backend, but removing them
+        //       currently causes even worse issues.
         case Record.Field.LOCAL()
           algorithm
             field_names := field.name :: field_names;
@@ -5173,7 +5185,7 @@ public
             fields := CREF(ty, field_cr) :: fields;
           end for;
         then
-          RECORD(InstNode.scopePath(cls), outExp.ty, fields);
+          makeRecord(InstNode.scopePath(cls), outExp.ty, fields);
 
       case ARRAY()
         algorithm

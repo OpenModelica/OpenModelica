@@ -100,7 +100,7 @@ function instDefaultConstructor
   input output InstNode node;
   input SourceInfo info;
 protected
-  list<InstNode> inputs, locals;
+  list<InstNode> inputs, locals, all_params;
   DAE.FunctionAttributes attr;
   Pointer<FunctionStatus> status;
   InstNode ctor_node, out_rec;
@@ -128,7 +128,7 @@ algorithm
   Inst.instExpressions(ctor_node);
 
   // Collect the record fields.
-  (inputs, locals) := collectRecordParams(ctor_node);
+  (inputs, locals, all_params) := collectRecordParams(ctor_node);
 
   // Create the output record element, using the instance created above as both parent and type.
   out_comp := Component.UNTYPED_COMPONENT(ctor_node, listArray({}),
@@ -137,7 +137,7 @@ algorithm
   out_rec := InstNode.fromComponent("$out" + InstNode.name(ctor_node), out_comp, ctor_node);
 
   // Make a record constructor class and create a node for the constructor.
-  ctor_cls := Class.makeRecordConstructor(inputs, locals, out_rec);
+  ctor_cls := Class.makeRecordConstructor(all_params, out_rec);
   ctor_node := InstNode.replaceClass(ctor_cls, ctor_node);
 
   // Create the constructor function and add it to the function cache.
@@ -151,7 +151,9 @@ function collectRecordParams
   input InstNode recNode;
   output list<InstNode> inputs = {};
   output list<InstNode> locals = {};
+  output list<InstNode> allParams = {};
 protected
+  InstNode comp;
   array<InstNode> comps;
   array<Mutable<InstNode>> pcomps;
   ClassTree tree;
@@ -162,7 +164,9 @@ algorithm
     case ClassTree.FLAT_TREE(components = comps)
       algorithm
         for i in arrayLength(comps):-1:1 loop
-          (inputs, locals) := collectRecordParam(comps[i], inputs, locals);
+          comp := comps[i];
+          (inputs, locals) := collectRecordParam(comp, inputs, locals);
+          allParams := comp :: allParams;
         end for;
       then
         ();
@@ -170,7 +174,9 @@ algorithm
     case ClassTree.INSTANTIATED_TREE(components = pcomps)
       algorithm
         for i in arrayLength(pcomps):-1:1 loop
-          (inputs, locals) := collectRecordParam(Mutable.access(pcomps[i]), inputs, locals);
+          comp := Mutable.access(pcomps[i]);
+          (inputs, locals) := collectRecordParam(comp, inputs, locals);
+          allParams := comp :: allParams;
         end for;
       then
         ();
@@ -231,7 +237,7 @@ algorithm
 
     if Component.isConst(comp) and Component.hasBinding(comp) then
       fields := Field.LOCAL(InstNode.name(comp_node)) :: fields;
-    else
+    elseif not Component.isOutput(comp) then
       fields := Field.INPUT(InstNode.name(comp_node)) :: fields;
     end if;
   end if;

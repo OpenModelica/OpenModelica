@@ -736,8 +736,7 @@ public
     end instantiate;
 
     function fromRecordConstructor
-      input list<InstNode> inputs;
-      input list<InstNode> locals;
+      input list<InstNode> fields;
       input InstNode out;
       output ClassTree tree = EMPTY;
     protected
@@ -745,17 +744,11 @@ public
       Integer i = 1;
       array<InstNode> comps;
     algorithm
-      comps := arrayCreateNoInit(listLength(inputs) + listLength(locals) + 1, InstNode.EMPTY_NODE());
+      comps := arrayCreateNoInit(listLength(fields) + 1, InstNode.EMPTY_NODE());
 
-      for ci in inputs loop
+      for ci in fields loop
         comps[i] := ci;
         ltree := addLocalElement(InstNode.name(ci), LookupTree.Entry.COMPONENT(i), tree, ltree);
-        i := i + 1;
-      end for;
-
-      for cl in locals loop
-        comps[i] := cl;
-        ltree := addLocalElement(InstNode.name(cl), LookupTree.Entry.COMPONENT(i), tree, ltree);
         i := i + 1;
       end for;
 

@@ -726,9 +726,7 @@ algorithm
     args := arg :: args;
   end for;
 
-  fields := Record.collectRecordFields(typeNode);
-  ty := Type.setRecordFields(fields, recordType);
-  exp := Expression.RECORD(InstNode.scopePath(recordNode), ty, args);
+  exp := Expression.makeRecord(InstNode.scopePath(recordNode), recordType, args);
 end makeRecordBindingExp;
 
 function splitRecordArrayExp
@@ -739,7 +737,7 @@ protected
   list<Expression> expl;
 algorithm
   Expression.RECORD(path, ty, expl) := exp;
-  exp := Expression.RECORD(path, Type.arrayElementType(ty), expl);
+  exp := Expression.makeRecord(path, Type.arrayElementType(ty), expl);
   exp := Expression.fillType(ty, exp);
 end splitRecordArrayExp;
 

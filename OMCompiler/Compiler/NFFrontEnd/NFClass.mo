@@ -158,14 +158,13 @@ uniontype Class
   end fromEnumeration;
 
   function makeRecordConstructor
-    input list<InstNode> inputs;
-    input list<InstNode> locals;
+    input list<InstNode> fields;
     input InstNode out;
     output Class cls;
   protected
     ClassTree tree;
   algorithm
-    tree := ClassTree.fromRecordConstructor(inputs, locals, out);
+    tree := ClassTree.fromRecordConstructor(fields, out);
     cls := INSTANCED_CLASS(Type.UNKNOWN(), tree, Sections.EMPTY(), Restriction.RECORD_CONSTRUCTOR());
   end makeRecordConstructor;
 
