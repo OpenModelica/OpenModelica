@@ -2216,8 +2216,7 @@ protected
 algorithm
   cls_node := if SCodeUtil.isOperatorRecord(InstNode.definition(node))
     then InstNode.classScope(node) else InstNode.classScope(InstNode.getDerivedNode(node));
-  fields := Record.collectRecordFields(cls_node);
-  ty := ComplexType.RECORD(cls_node, fields);
+  ty := ComplexType.RECORD(cls_node, {});
 end makeRecordComplexType;
 
 function instComplexType

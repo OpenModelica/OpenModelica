@@ -55,6 +55,7 @@ import Prefixes = NFPrefixes;
 import Connector = NFConnector;
 import Connection = NFConnection;
 import Algorithm = NFAlgorithm;
+import Record = NFRecord;
 
 protected
 import Builtin = NFBuiltin;
@@ -286,7 +287,7 @@ function typeClassType
   output Type ty;
 protected
   Class cls, ty_cls;
-  InstNode node;
+  InstNode node, ty_node;
   Function fn;
   Boolean is_expandable;
 algorithm
@@ -296,6 +297,14 @@ algorithm
     case Class.INSTANCED_CLASS(restriction = Restriction.CONNECTOR(isExpandable = is_expandable))
       algorithm
         ty := Type.COMPLEX(clsNode, makeConnectorType(cls.elements, is_expandable));
+        cls.ty := ty;
+        InstNode.updateClass(cls, clsNode);
+      then
+        ty;
+
+    case Class.INSTANCED_CLASS(ty = Type.COMPLEX(cls = ty_node, complexTy = ComplexType.RECORD(constructor = node)))
+      algorithm
+        ty := Type.COMPLEX(ty_node, makeRecordType(node));
         cls.ty := ty;
         InstNode.updateClass(cls, clsNode);
       then
@@ -396,6 +405,32 @@ algorithm
     end if;
   end if;
 end makeConnectorType;
+
+function makeRecordType
+  input InstNode constructor;
+  output ComplexType recordTy;
+protected
+  CachedData cache;
+  Function fn;
+  list<Record.Field> fields;
+algorithm
+  cache := InstNode.getFuncCache(constructor);
+
+  recordTy := match cache
+    case CachedData.FUNCTION(funcs = fn :: _)
+      algorithm
+        fields := Record.collectRecordFields(fn.node);
+      then
+        ComplexType.RECORD(constructor, fields);
+
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() +
+          " got record type without constructor", sourceInfo());
+      then
+        fail();
+  end match;
+end makeRecordType;
 
 function typeComponent
   input InstNode component;

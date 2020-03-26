@@ -236,7 +236,7 @@ protected
     outExp := match exp
       case Expression.CALL(call = Call.TYPED_CALL(fn = fn, ty = ty, arguments = args))
         guard referenceEq(constructorFn.node, fn.node)
-        then Expression.RECORD(Function.name(constructorFn), ty, args);
+        then Expression.makeRecord(Function.name(constructorFn), ty, args);
 
       else exp;
     end match;
