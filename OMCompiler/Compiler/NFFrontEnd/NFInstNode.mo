@@ -1349,6 +1349,17 @@ uniontype InstNode
     end match;
   end toString;
 
+  function toFlatString
+    input InstNode node;
+    output String name;
+  algorithm
+    name := match node
+      case COMPONENT_NODE() then Component.toFlatString(node.name, Pointer.access(node.component));
+      case CLASS_NODE() then SCodeDump.unparseElementStr(node.definition);
+      else name(node);
+    end match;
+  end toFlatString;
+
   function isRedeclare
     input InstNode node;
     output Boolean isRedeclare;

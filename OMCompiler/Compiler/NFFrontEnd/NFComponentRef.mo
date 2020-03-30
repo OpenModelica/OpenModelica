@@ -661,22 +661,61 @@ public
     input ComponentRef cref;
     output String str;
   algorithm
-    str := match cref
-      case CREF(restCref = EMPTY())
-        then InstNode.name(cref.node) + Subscript.toStringList(cref.subscripts);
+    str := stringDelimitList(toString_impl(cref, {}), ".");
+  end toString;
+
+  function toString_impl
+    input ComponentRef cref;
+    input output list<String> strl;
+  algorithm
+    strl := match cref
+      local
+        String str;
 
       case CREF()
         algorithm
-          str := toString(cref.restCref);
+          str := InstNode.name(cref.node) + Subscript.toStringList(cref.subscripts);
         then
-          str + "." + InstNode.name(cref.node) + Subscript.toStringList(cref.subscripts);
+          toString_impl(cref.restCref, str :: strl);
 
-      case WILD() then "_";
-      case STRING(restCref = EMPTY()) then cref.name;
-      case STRING() then toString(cref.restCref) + "." + cref.name;
-      else "EMPTY_CREF";
+      case WILD() then "_" :: strl;
+      case STRING() then toString_impl(cref.restCref, cref.name :: strl);
+      else strl;
     end match;
-  end toString;
+  end toString_impl;
+
+  function toFlatString
+    input ComponentRef cref;
+    output String str;
+  protected
+    ComponentRef cr;
+    list<Subscript> subs;
+    list<String> strl = {};
+  algorithm
+    (cr, subs) := stripSubscripts(cref);
+    strl := toFlatString_impl(cr, strl);
+    str := stringAppendList({"'", stringDelimitList(strl, "."), "'", Subscript.toFlatStringList(subs)});
+  end toFlatString;
+
+  function toFlatString_impl
+    input ComponentRef cref;
+    input output list<String> strl;
+  algorithm
+    strl := match cref
+      local
+        String str;
+
+      case CREF()
+        algorithm
+          str := InstNode.name(cref.node) + Subscript.toFlatStringList(cref.subscripts);
+        then
+          toFlatString_impl(cref.restCref, str :: strl);
+
+      case WILD() then "_" :: strl;
+      case STRING() then toFlatString_impl(cref.restCref, cref.name :: strl);
+      else strl;
+    end match;
+  end toFlatString_impl;
 
   function listToString
     input list<ComponentRef> crs;
@@ -770,11 +809,12 @@ public
     "Strips the subscripts from the last name in a cref, e.g. a[2].b[3] => a[2].b"
     input ComponentRef cref;
     output ComponentRef strippedCref;
+    output list<Subscript> subs;
   algorithm
-    strippedCref := match cref
+    (strippedCref, subs) := match cref
       case CREF()
-        then CREF(cref.node, {}, cref.ty, cref.origin, cref.restCref);
-      else cref;
+        then (CREF(cref.node, {}, cref.ty, cref.origin, cref.restCref), cref.subscripts);
+      else (cref, {});
     end match;
   end stripSubscripts;
 

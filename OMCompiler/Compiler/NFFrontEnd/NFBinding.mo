@@ -476,6 +476,22 @@ public
     end match;
   end toString;
 
+  function toFlatString
+    input Binding binding;
+    input String prefix = "";
+    output String string;
+  algorithm
+    string := match binding
+      case UNBOUND() then "";
+      case RAW_BINDING() then prefix + Dump.printExpStr(binding.bindingExp);
+      case UNTYPED_BINDING() then prefix + Expression.toFlatString(binding.bindingExp);
+      case TYPED_BINDING() then prefix + Expression.toFlatString(binding.bindingExp);
+      case FLAT_BINDING() then prefix + Expression.toFlatString(binding.bindingExp);
+      case CEVAL_BINDING() then prefix + Expression.toFlatString(binding.bindingExp);
+      case INVALID_BINDING() then toFlatString(binding.binding, prefix);
+    end match;
+  end toFlatString;
+
   function isEqual
     input Binding binding1;
     input Binding binding2;

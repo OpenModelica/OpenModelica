@@ -598,6 +598,149 @@ public
     end for;
   end toStreamList;
 
+  function toFlatStream
+    input Statement stmt;
+    input String indent;
+    input output IOStream.IOStream s;
+  protected
+    String str;
+  algorithm
+    s := IOStream.append(s, indent);
+
+    s := match stmt
+      case ASSIGNMENT()
+        algorithm
+          s := IOStream.append(s, Expression.toFlatString(stmt.lhs));
+          s := IOStream.append(s, " := ");
+          s := IOStream.append(s, Expression.toFlatString(stmt.rhs));
+        then
+          s;
+
+      case FUNCTION_ARRAY_INIT()
+        algorithm
+          s := IOStream.append(s, "array init");
+          s := IOStream.append(s, stmt.name);
+        then
+          s;
+
+      case FOR()
+        algorithm
+          s := IOStream.append(s, "for ");
+          s := IOStream.append(s, InstNode.name(stmt.iterator));
+
+          if isSome(stmt.range) then
+            s := IOStream.append(s, " in ");
+            s := IOStream.append(s, Expression.toFlatString(Util.getOption(stmt.range)));
+          end if;
+
+          s := IOStream.append(s, " loop\n");
+          s := toFlatStreamList(stmt.body, indent + "  ", s);
+          s := IOStream.append(s, indent);
+          s := IOStream.append(s, "end for");
+        then
+          s;
+
+      case IF()
+        algorithm
+          str := "if ";
+
+          for b in stmt.branches loop
+            s := IOStream.append(s, str);
+            s := IOStream.append(s, Expression.toFlatString(Util.tuple21(b)));
+            s := IOStream.append(s, " then\n");
+            s := toFlatStreamList(Util.tuple22(b), indent + "  ", s);
+            s := IOStream.append(s, indent);
+            str := "elseif ";
+          end for;
+
+          s := IOStream.append(s, "end if");
+        then
+          s;
+
+      case WHEN()
+        algorithm
+          str := "when ";
+
+          for b in stmt.branches loop
+            s := IOStream.append(s, str);
+            s := IOStream.append(s, Expression.toFlatString(Util.tuple21(b)));
+            s := IOStream.append(s, " then\n");
+            s := toFlatStreamList(Util.tuple22(b), indent + "  ", s);
+            s := IOStream.append(s, indent);
+            str := "elsewhen ";
+          end for;
+
+          s := IOStream.append(s, "end when");
+        then
+          s;
+
+      case ASSERT()
+        algorithm
+          s := IOStream.append(s, "assert(");
+          s := IOStream.append(s, Expression.toFlatString(stmt.condition));
+          s := IOStream.append(s, ", ");
+          s := IOStream.append(s, Expression.toFlatString(stmt.message));
+          s := IOStream.append(s, ", ");
+          s := IOStream.append(s, Expression.toFlatString(stmt.level));
+          s := IOStream.append(s, ")");
+        then
+          s;
+
+      case TERMINATE()
+        algorithm
+          s := IOStream.append(s, "terminate(");
+          s := IOStream.append(s, Expression.toFlatString(stmt.message));
+          s := IOStream.append(s, ")");
+        then
+          s;
+
+      case NORETCALL()
+        then IOStream.append(s, Expression.toFlatString(stmt.exp));
+
+      case WHILE()
+        algorithm
+          s := IOStream.append(s, "while ");
+          s := IOStream.append(s, Expression.toFlatString(stmt.condition));
+          s := IOStream.append(s, " then\n");
+          s := toFlatStreamList(stmt.body, indent + "  ", s);
+          s := IOStream.append(s, indent);
+          s := IOStream.append(s, "end while");
+        then
+          s;
+
+      case RETURN() then IOStream.append(s, "return");
+      case RETURN() then IOStream.append(s, "break");
+      else IOStream.append(s, "#UNKNOWN STATEMENT#");
+    end match;
+
+  end toFlatStream;
+
+  function toFlatStreamList
+    input list<Statement> stmtl;
+    input String indent;
+    input output IOStream.IOStream s;
+  protected
+    Boolean prev_multi_line = false, multi_line;
+    Boolean first = true;
+  algorithm
+    for stmt in stmtl loop
+      multi_line := isMultiLine(stmt);
+
+      // Improve human parsability by separating statements that spans multiple
+      // lines (like if-statements) with newlines.
+      if first then
+        first := false;
+      elseif prev_multi_line or multi_line then
+        s := IOStream.append(s, "\n");
+      end if;
+
+      prev_multi_line := multi_line;
+
+      s := toFlatStream(stmt, indent, s);
+      s := IOStream.append(s, ";\n");
+    end for;
+  end toFlatStreamList;
+
   function isMultiLine
     input Statement stmt;
     output Boolean multiLine;

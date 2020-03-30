@@ -734,6 +734,35 @@ public
     end match;
   end toString;
 
+  function toFlatString
+    input Type ty;
+    output String str;
+  algorithm
+    str := match ty
+      case Type.INTEGER() then "Integer";
+      case Type.REAL() then "Real";
+      case Type.STRING() then "String";
+      case Type.BOOLEAN() then "Boolean";
+      case Type.CLOCK() then "Clock";
+      case Type.ENUMERATION() then AbsynUtil.pathString(ty.typePath);
+      case Type.ENUMERATION_ANY() then "enumeration(:)";
+      case Type.ARRAY() then toString(ty.elementType) + "[" + stringDelimitList(List.map(ty.dimensions, Dimension.toString), ", ") + "]";
+      case Type.TUPLE() then "(" + stringDelimitList(List.map(ty.types, toString), ", ") + ")";
+      case Type.NORETCALL() then "()";
+      case Type.UNKNOWN() then "unknown()";
+      case Type.COMPLEX() then InstNode.name(ty.cls);
+      case Type.FUNCTION() then Function.typeString(ty.fn);
+      case Type.METABOXED() then "#" + toFlatString(ty.ty);
+      case Type.POLYMORPHIC() then "<" + ty.name + ">";
+      case Type.ANY() then "$ANY$";
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got unknown type: " + anyString(ty), sourceInfo());
+        then
+          fail();
+    end match;
+  end toFlatString;
+
   function typenameString
     input Type ty;
     output String str;

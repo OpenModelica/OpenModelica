@@ -1637,6 +1637,84 @@ public
     end match;
   end toString;
 
+  function toFlatString
+    input Expression exp;
+    output String str;
+  protected
+    Type t;
+    ClockKind clk;
+  algorithm
+    str := match exp
+      case INTEGER() then intString(exp.value);
+      case REAL() then realString(exp.value);
+      case STRING() then "\"" + exp.value + "\"";
+      case BOOLEAN() then boolString(exp.value);
+
+      case ENUM_LITERAL(ty = t as Type.ENUMERATION())
+        then AbsynUtil.pathString(t.typePath) + "." + exp.name;
+
+      case CLKCONST(clk) then ClockKind.toString(clk);
+
+      case CREF() then ComponentRef.toFlatString(exp.cref);
+      case TYPENAME() then Type.typenameString(Type.arrayElementType(exp.ty));
+      case ARRAY() then "{" + stringDelimitList(list(toFlatString(e) for e in exp.elements), ", ") + "}";
+      case MATRIX() then "[" + stringDelimitList(list(stringDelimitList(list(toFlatString(e) for e in el), ", ") for el in exp.elements), "; ") + "]";
+
+      case RANGE() then operandFlatString(exp.start, exp, false) +
+                        (
+                        if isSome(exp.step)
+                        then ":" + operandFlatString(Util.getOption(exp.step), exp, false)
+                        else ""
+                        ) + ":" + operandFlatString(exp.stop, exp, false);
+
+      case TUPLE() then "(" + stringDelimitList(list(toFlatString(e) for e in exp.elements), ", ") + ")";
+      case RECORD() then List.toString(exp.elements, toFlatString, AbsynUtil.pathString(exp.path), "(", ", ", ")", true);
+      case CALL() then Call.toFlatString(exp.call);
+      case SIZE() then "size(" + toFlatString(exp.exp) +
+                        (
+                        if isSome(exp.dimIndex)
+                        then ", " + toFlatString(Util.getOption(exp.dimIndex))
+                        else ""
+                        ) + ")";
+      case END() then "end";
+
+      case BINARY() then operandFlatString(exp.exp1, exp, true) +
+                         Operator.symbol(exp.operator) +
+                         operandFlatString(exp.exp2, exp, false);
+
+      case UNARY() then Operator.symbol(exp.operator, "") +
+                        operandFlatString(exp.exp, exp, false);
+
+      case LBINARY() then operandFlatString(exp.exp1, exp, true) +
+                          Operator.symbol(exp.operator) +
+                          operandFlatString(exp.exp2, exp, false);
+
+      case LUNARY() then Operator.symbol(exp.operator, "") + " " +
+                         operandFlatString(exp.exp, exp, false);
+
+      case RELATION() then operandFlatString(exp.exp1, exp, true) +
+                           Operator.symbol(exp.operator) +
+                           operandFlatString(exp.exp2, exp, false);
+
+      case IF() then "if " + toFlatString(exp.condition) + " then " + toFlatString(exp.trueBranch) + " else " + toFlatString(exp.falseBranch);
+
+      case UNBOX() then "UNBOX(" + toFlatString(exp.exp) + ")";
+      case BOX() then "BOX(" + toFlatString(exp.exp) + ")";
+      case CAST() then toFlatString(exp.exp);
+      case SUBSCRIPTED_EXP() then toFlatString(exp.exp) + Subscript.toFlatStringList(exp.subscripts);
+      case TUPLE_ELEMENT() then toFlatString(exp.tupleExp) + "[" + intString(exp.index) + "]";
+      case RECORD_ELEMENT() then toFlatString(exp.recordExp) + "[field: " + exp.fieldName + "]";
+      case MUTABLE() then toFlatString(Mutable.access(exp.exp));
+      case EMPTY() then "#EMPTY#";
+      case PARTIAL_FUNCTION_APPLICATION()
+        then "function " + ComponentRef.toFlatString(exp.fn) + "(" + stringDelimitList(
+          list(n + " = " + Expression.toFlatString(a) threaded for a in exp.args, n in exp.argNames), ", ") + ")";
+      case BINDING_EXP() then toFlatString(exp.exp);
+
+      else anyString(exp);
+    end match;
+  end toFlatString;
+
   function operandString
     "Helper function to toString, prints an operator and adds parentheses as needed."
     input Expression operand;
@@ -1647,9 +1725,11 @@ public
     Integer operand_prio, operator_prio;
   algorithm
     str := toString(operand);
-
     operand_prio := priority(operand, lhs);
-    if operand_prio <> 4 then
+
+    if operand_prio == 4 then
+      str := "(" + str + ")";
+    else
       operator_prio := priority(operator, lhs);
 
       if operand_prio > operator_prio or
@@ -1659,12 +1739,38 @@ public
     end if;
   end operandString;
 
+  function operandFlatString
+    "Helper function to toString, prints an operator and adds parentheses as needed."
+    input Expression operand;
+    input Expression operator;
+    input Boolean lhs;
+    output String str;
+  protected
+    Integer operand_prio, operator_prio;
+  algorithm
+    str := toFlatString(operand);
+    operand_prio := priority(operand, lhs);
+
+    if operand_prio == 4 then
+      str := "(" + str + ")";
+    else
+      operator_prio := priority(operator, lhs);
+
+      if operand_prio > operator_prio or
+         not lhs and operand_prio == operator_prio and not isAssociativeExp(operand) then
+        str := "(" + str + ")";
+      end if;
+    end if;
+  end operandFlatString;
+
   function priority
     input Expression exp;
     input Boolean lhs;
     output Integer priority;
   algorithm
     priority := match exp
+      case INTEGER() then if exp.value < 0 then 4 else 0;
+      case REAL() then if exp.value < 0.0 then 4 else 0;
       case BINARY() then Operator.priority(exp.operator, lhs);
       case UNARY() then 4;
       case LBINARY() then Operator.priority(exp.operator, lhs);
@@ -4405,19 +4511,20 @@ public
     end match;
   end isOne;
 
-  function isPositive
+  function isNegative
     input Expression exp;
-    output Boolean positive;
+    output Boolean negative;
   algorithm
-    positive := match exp
-      case INTEGER() then exp.value > 0;
-      case REAL() then exp.value > 0;
-      case BOOLEAN() then true;
-      case ENUM_LITERAL() then true;
-      case CAST() then isPositive(exp.exp);
-      case UNARY() then not isPositive(exp.exp);
+    negative := match exp
+      case INTEGER() then exp.value < 0;
+      case REAL() then exp.value < 0;
+      case BOOLEAN() then false;
+      case ENUM_LITERAL() then false;
+      case CAST() then isNegative(exp.exp);
+      case UNARY() then not isNegative(exp.exp);
+      else false;
     end match;
-  end isPositive;
+  end isNegative;
 
   function isScalarLiteral
     input Expression exp;
@@ -4662,6 +4769,19 @@ public
     end match;
   end unbox;
 
+  function isNegated
+    input Expression exp;
+    output Boolean negated;
+  algorithm
+    negated := match exp
+      case INTEGER() then exp.value < 0;
+      case REAL() then exp.value < 0;
+      case CAST() then isNegated(exp.exp);
+      case UNARY() then true;
+      else false;
+    end match;
+  end isNegated;
+
   function negate
     input output Expression exp;
   algorithm
@@ -4669,6 +4789,7 @@ public
       case INTEGER() then INTEGER(-exp.value);
       case REAL() then REAL(-exp.value);
       case CAST() then CAST(exp.ty, negate(exp.exp));
+      case UNARY() then exp.exp;
       else UNARY(Operator.OPERATOR(typeOf(exp), NFOperator.Op.UMINUS), exp);
     end match;
   end negate;
