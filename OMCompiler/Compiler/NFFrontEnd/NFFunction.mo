@@ -76,6 +76,7 @@ import MetaModelica.Dangerous.listReverseInPlace;
 import Array;
 import ElementSource;
 import SCodeUtil;
+import IOStream;
 
 public
 type NamedArg = tuple<String, Expression>;
@@ -673,6 +674,68 @@ uniontype Function
     input InstNode param;
     output String str = Type.toString(InstNode.getType(param));
   end paramTypeString;
+
+  function toFlatStream
+    input Function fn;
+    input output IOStream.IOStream s;
+  protected
+    String fn_name;
+    list<Statement> fn_body;
+  algorithm
+    if isDefaultRecordConstructor(fn) then
+      s := IOStream.append(s, InstNode.toString(fn.node));
+    else
+      fn_name := AbsynUtil.pathString(fn.path);
+      s := IOStream.append(s, "function '");
+      s := IOStream.append(s, fn_name);
+      s := IOStream.append(s, "'\n");
+
+      for i in fn.inputs loop
+        s := IOStream.append(s, "  ");
+        s := IOStream.append(s, InstNode.toFlatString(i));
+        s := IOStream.append(s, ";\n");
+      end for;
+
+      for o in fn.outputs loop
+        s := IOStream.append(s, "  ");
+        s := IOStream.append(s, InstNode.toFlatString(o));
+        s := IOStream.append(s, ";\n");
+      end for;
+
+      if not listEmpty(fn.locals) then
+        s := IOStream.append(s, "protected\n");
+
+        for l in fn.locals loop
+          s := IOStream.append(s, "  ");
+          s := IOStream.append(s, InstNode.toFlatString(l));
+          s := IOStream.append(s, ";\n");
+        end for;
+      end if;
+
+      fn_body := getBody(fn);
+
+      if not listEmpty(fn_body) then
+        s := IOStream.append(s, "algorithm\n");
+        s := Statement.toFlatStreamList(fn_body, "  ", s);
+      end if;
+
+      s := IOStream.append(s, "end '");
+      s := IOStream.append(s, fn_name);
+      s := IOStream.append(s, "';");
+    end if;
+  end toFlatStream;
+
+  function toFlatString
+    input Function fn;
+    output String str;
+  protected
+    IOStream.IOStream s;
+  algorithm
+    s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
+    s := toFlatStream(fn, s);
+    str := IOStream.string(s);
+    IOStream.delete(s);
+  end toFlatString;
 
   function instance
     input Function fn;

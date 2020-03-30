@@ -578,6 +578,28 @@ public
     string := List.toString(subscripts, toString, "", "[", ", ", "]", false);
   end toStringList;
 
+  function toFlatString
+    input Subscript subscript;
+    output String string;
+  algorithm
+    string := match subscript
+      case RAW_SUBSCRIPT() then Dump.printSubscriptStr(subscript.subscript);
+      case UNTYPED() then Expression.toFlatString(subscript.exp);
+      case INDEX() then Expression.toFlatString(subscript.index);
+      case SLICE() then Expression.toFlatString(subscript.slice);
+      case EXPANDED_SLICE()
+        then List.toString(subscript.indices, toString, "", "{", ", ", "}", false);
+      case WHOLE() then ":";
+    end match;
+  end toFlatString;
+
+  function toFlatStringList
+    input list<Subscript> subscripts;
+    output String string;
+  algorithm
+    string := List.toString(subscripts, toFlatString, "", "[", ",", "]", false);
+  end toFlatStringList;
+
   function eval
     input Subscript subscript;
     input EvalTarget target = EvalTarget.IGNORE_ERRORS();

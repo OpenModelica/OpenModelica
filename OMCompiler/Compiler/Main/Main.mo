@@ -444,7 +444,7 @@ algorithm
 
         Print.clearBuf();
         execStat("Transformations before Dump");
-        s := if Config.silent() then "" else DAEDump.dumpStr(d, funcs);
+        s := if Config.silent() or Flags.getConfigBool(Flags.FLAT_MODELICA) then "" else DAEDump.dumpStr(d, funcs);
         execStat("DAEDump done");
         Print.printBuf(s);
         if Flags.isSet(Flags.DAE_DUMP_GRAPHV) then

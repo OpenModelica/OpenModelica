@@ -1342,6 +1342,10 @@ constant ConfigFlag ZEROMQ_CLIENT_ID = CONFIG_FLAG(138, "zeroMQClientID",
 constant ConfigFlag FMI_VERSION = CONFIG_FLAG(139,
   "", NONE(), INTERNAL(), STRING_FLAG(""), NONE(),
   Gettext.gettext("returns the FMI Version either 1.0 or 2.0."));
+constant ConfigFlag FLAT_MODELICA = CONFIG_FLAG(140, "flatModelica",
+  SOME("f"), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Gettext.gettext("Outputs experimental flat Modelica."));
+
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
   input Boolean initialize = true;

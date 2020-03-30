@@ -464,5 +464,24 @@ public
     end match;
   end isElementWise;
 
+  function negate
+    input Operator op;
+    output Operator outOp;
+  protected
+    Op neg_op;
+  algorithm
+    neg_op := match op.op
+      case Op.ADD then Op.SUB;
+      case Op.SUB then Op.ADD;
+      case Op.ADD_EW then Op.SUB_EW;
+      case Op.SUB_EW then Op.ADD_EW;
+      case Op.ADD_SCALAR_ARRAY then Op.SUB_SCALAR_ARRAY;
+      case Op.SUB_SCALAR_ARRAY then Op.ADD_SCALAR_ARRAY;
+      case Op.ADD_ARRAY_SCALAR then Op.SUB_ARRAY_SCALAR;
+    end match;
+
+    outOp := OPERATOR(op.ty, neg_op);
+  end negate;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFOperator;
