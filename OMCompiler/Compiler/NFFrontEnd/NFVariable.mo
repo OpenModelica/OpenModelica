@@ -199,5 +199,63 @@ public
     end if;
   end toStream;
 
+  function toFlatStream
+    input Variable var;
+    input String indent = "";
+    input Boolean printBindingType = false;
+    input output IOStream.IOStream s;
+  protected
+    Boolean first;
+    Binding b;
+  algorithm
+    s := IOStream.append(s, indent);
+
+    if var.visibility == Visibility.PROTECTED then
+      s := IOStream.append(s, "protected ");
+    end if;
+
+    s := IOStream.append(s, Component.Attributes.toFlatString(var.attributes, var.ty));
+    s := IOStream.append(s, Type.toFlatString(var.ty));
+    s := IOStream.append(s, " ");
+    s := IOStream.append(s, ComponentRef.toFlatString(var.name));
+
+    if not listEmpty(var.typeAttributes) then
+      s := IOStream.append(s, "(");
+
+      first := true;
+      for a in var.typeAttributes loop
+        if first then
+          first := false;
+        else
+          s := IOStream.append(s, ", ");
+        end if;
+
+        b := Util.tuple22(a);
+
+        if Binding.isEach(b) then
+          s := IOStream.append(s, "each ");
+        end if;
+
+        s := IOStream.append(s, Util.tuple21(a));
+        s := IOStream.append(s, " = ");
+        s := IOStream.append(s, Binding.toFlatString(b));
+      end for;
+
+      s := IOStream.append(s, ")");
+    end if;
+
+    if Binding.isBound(var.binding) then
+      s := IOStream.append(s, " = ");
+
+      if printBindingType then
+        s := IOStream.append(s, "(");
+        s := IOStream.append(s, Type.toFlatString(Binding.getType(var.binding)));
+        s := IOStream.append(s, ") ");
+      end if;
+
+      s := IOStream.append(s, Binding.toFlatString(var.binding));
+    end if;
+  end toFlatStream;
+
   annotation(__OpenModelica_Interface="frontend");
 end NFVariable;

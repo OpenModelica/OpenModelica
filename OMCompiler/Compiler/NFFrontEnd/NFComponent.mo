@@ -155,6 +155,15 @@ uniontype Component
              Prefixes.unparseVariability(attr.variability, ty) +
              Prefixes.unparseDirection(attr.direction);
     end toString;
+
+    function toFlatString
+      input Attributes attr;
+      input Type ty;
+      output String str;
+    algorithm
+      str := Prefixes.unparseVariability(attr.variability, ty) +
+             Prefixes.unparseDirection(attr.direction);
+    end toFlatString;
   end Attributes;
 
   record COMPONENT_DEF
@@ -817,6 +826,25 @@ uniontype Component
         then name + Modifier.toString(component.modifier, printName = false);
     end match;
   end toString;
+
+  function toFlatString
+    input String name;
+    input Component component;
+    output String str;
+  algorithm
+    str := match component
+      local
+        SCode.Element def;
+
+      case TYPED_COMPONENT()
+        then Attributes.toFlatString(component.attributes, component.ty) +
+             Type.toFlatString(component.ty) + " '" + name + "'" +
+             Binding.toFlatString(component.binding, " = ");
+
+      case TYPE_ATTRIBUTE()
+        then name + Modifier.toFlatString(component.modifier, printName = false);
+    end match;
+  end toFlatString;
 
   function setDimensions
     input list<Dimension> dims;

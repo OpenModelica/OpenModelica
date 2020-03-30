@@ -180,7 +180,6 @@ uniontype Call
     input SourceInfo info;
     output Expression callExp;
   algorithm
-
     callExp := match functionArgs
       case Absyn.FUNCTIONARGS() then instNormalCall(functionName, functionArgs, scope, info);
       case Absyn.FOR_ITER_FARG() then instIteratorCall(functionName, functionArgs, scope, info);
@@ -668,6 +667,57 @@ uniontype Call
 
     end match;
   end toString;
+
+  function toFlatString
+    input Call call;
+    output String str;
+  protected
+    String name, arg_str,c;
+    Expression argexp;
+    list<InstNode> iters;
+  algorithm
+    str := match call
+      case TYPED_CALL()
+        algorithm
+          name := AbsynUtil.pathString(Function.name(call.fn));
+          arg_str := stringDelimitList(list(Expression.toFlatString(arg) for arg in call.arguments), ", ");
+        then
+          if Function.isBuiltin(call.fn) then
+            stringAppendList({name, "(", arg_str, ")"})
+          else
+            stringAppendList({"'", name, "'(", arg_str, ")"});
+
+      case TYPED_ARRAY_CONSTRUCTOR()
+        algorithm
+          if isVectorized(call) then
+            // Vectorized calls contains iterators with illegal Modelica names
+            // (to avoid name conflicts), to make the flat output legal such
+            // calls are reverted to their original form here.
+            str := toFlatString(devectorizeCall(call));
+          else
+            name := AbsynUtil.pathString(Function.name(NFBuiltinFuncs.ARRAY_FUNC));
+            arg_str := Expression.toFlatString(call.exp);
+            c := stringDelimitList(list(InstNode.name(Util.tuple21(iter)) + " in " +
+              Expression.toFlatString(Util.tuple22(iter)) for iter in call.iters), ", ");
+            str := stringAppendList({"{", arg_str, " for ", c, "}"});
+          end if;
+        then
+          str;
+
+      case TYPED_REDUCTION()
+        algorithm
+          name := AbsynUtil.pathString(Function.name(call.fn));
+          arg_str := Expression.toFlatString(call.exp);
+          c := stringDelimitList(list(InstNode.name(Util.tuple21(iter)) + " in " +
+            Expression.toFlatString(Util.tuple22(iter)) for iter in call.iters), ", ");
+        then
+          if Function.isBuiltin(call.fn) then
+            stringAppendList({name, "(", arg_str, " for ", c, ")"})
+          else
+            stringAppendList({"'", name, "'(", arg_str, " for ", c, ")"});
+
+    end match;
+  end toFlatString;
 
   function typedString
     "Like toString, but prefixes each argument with its type as a comment."
@@ -1392,6 +1442,40 @@ protected
      end match;
   end vectorizeCall;
 
+  function isVectorized
+    input Call call;
+    output Boolean vectorized;
+  algorithm
+    vectorized := match call
+      // A call is considered to be vectorized if the first iterator has a name
+      // beginning with $.
+      case TYPED_ARRAY_CONSTRUCTOR(exp = Expression.CALL())
+        then stringGet(InstNode.name(Util.tuple21(listHead(call.iters))), 1) == 36; /* $ */
+      else false;
+    end match;
+  end isVectorized;
+
+  function devectorizeCall
+    "Transforms a vectorized call into a non-vectorized one. This function is
+     used as a helper to output valid flat Modelica, and should probably not
+     be used where e.g. correct types are required."
+    input Call call;
+    output Call outCall;
+  protected
+    Expression exp, iter_exp;
+    list<tuple<InstNode, Expression>> iters;
+    InstNode iter_node;
+  algorithm
+    TYPED_ARRAY_CONSTRUCTOR(exp = exp, iters = iters) := call;
+
+    for i in iters loop
+      (iter_node, iter_exp) := i;
+      exp := Expression.replaceIterator(exp, iter_node, iter_exp);
+    end for;
+
+    Expression.CALL(call = outCall) := exp;
+  end devectorizeCall;
+
   function evaluateCallType
     input output Type ty;
     input Function fn;
@@ -1532,7 +1616,6 @@ protected
           fail();
     end match;
   end getSpecialReturnType;
-
 end Call;
 
 annotation(__OpenModelica_Interface="frontend");

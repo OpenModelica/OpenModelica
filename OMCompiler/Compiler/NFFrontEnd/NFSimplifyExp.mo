@@ -437,6 +437,9 @@ algorithm
   elseif Expression.isZero(exp2) then
     // e + 0 = e
     outExp := exp1;
+  elseif Expression.isNegated(exp2) then
+    // e1 + -(e2) = e1 - e2
+    outExp := Expression.BINARY(exp1, Operator.negate(op), Expression.negate(exp2));
   else
     outExp := Expression.BINARY(exp1, op, exp2);
   end if;
@@ -454,6 +457,9 @@ algorithm
   elseif Expression.isZero(exp2) then
     // e - 0 = e
     outExp := exp1;
+  elseif Expression.isNegated(exp2) then
+    // e1 - -(e2) = e1 + e2
+    outExp := Expression.BINARY(exp1, Operator.negate(op), Expression.negate(exp2));
   else
     outExp := Expression.BINARY(exp1, op, exp2);
   end if;

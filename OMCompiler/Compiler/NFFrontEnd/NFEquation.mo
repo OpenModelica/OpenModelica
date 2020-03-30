@@ -78,6 +78,25 @@ public
       end match;
     end toStream;
 
+    function toFlatStream
+      input Branch branch;
+      input String indent;
+      input output IOStream.IOStream s;
+    algorithm
+      s := match branch
+        case BRANCH()
+          algorithm
+            s := IOStream.append(s, Expression.toFlatString(branch.condition));
+            s := IOStream.append(s, " then\n");
+            s := toFlatStreamList(branch.body, indent + "  ", s);
+          then
+            s;
+
+        case INVALID_BRANCH()
+          then toFlatStream(branch.branch, indent, s);
+      end match;
+    end toFlatStream;
+
     function triggerErrors
       input Branch branch;
     algorithm
@@ -835,6 +854,160 @@ public
       s := IOStream.append(s, ";\n");
     end for;
   end toStreamList;
+
+  function toFlatStream
+    input Equation eq;
+    input String indent;
+    input output IOStream.IOStream s;
+  algorithm
+    s := IOStream.append(s, indent);
+
+    s := match eq
+      case EQUALITY()
+        algorithm
+          s := IOStream.append(s, Expression.toFlatString(eq.lhs));
+          s := IOStream.append(s, " = ");
+          s := IOStream.append(s, Expression.toFlatString(eq.rhs));
+        then
+          s;
+
+      case CREF_EQUALITY()
+        algorithm
+          s := IOStream.append(s, ComponentRef.toFlatString(eq.lhs));
+          s := IOStream.append(s, " = ");
+          s := IOStream.append(s, ComponentRef.toFlatString(eq.rhs));
+        then
+          s;
+
+      case ARRAY_EQUALITY()
+        algorithm
+          s := IOStream.append(s, Expression.toFlatString(eq.lhs));
+          s := IOStream.append(s, " = ");
+          s := IOStream.append(s, Expression.toFlatString(eq.rhs));
+        then
+          s;
+
+      case CONNECT()
+        algorithm
+          s := IOStream.append(s, "connect(");
+          s := IOStream.append(s, Expression.toFlatString(eq.lhs));
+          s := IOStream.append(s, " = ");
+          s := IOStream.append(s, Expression.toFlatString(eq.rhs));
+          s := IOStream.append(s, ")");
+        then
+          s;
+
+      case FOR()
+        algorithm
+          s := IOStream.append(s, "for ");
+          s := IOStream.append(s, InstNode.name(eq.iterator));
+
+          if isSome(eq.range) then
+            s := IOStream.append(s, " in ");
+            s := IOStream.append(s, Expression.toFlatString(Util.getOption(eq.range)));
+          end if;
+
+          s := IOStream.append(s, " loop\n");
+          s := toFlatStreamList(eq.body, indent + "  ", s);
+          s := IOStream.append(s, indent);
+          s := IOStream.append(s, "end for");
+        then
+          s;
+
+      case IF()
+        algorithm
+          s := IOStream.append(s, "if ");
+          s := Branch.toFlatStream(listHead(eq.branches), indent, s);
+
+          for b in listRest(eq.branches) loop
+            s := IOStream.append(s, indent);
+            s := IOStream.append(s, "elseif ");
+            s := Branch.toFlatStream(b, indent, s);
+          end for;
+
+          s := IOStream.append(s, indent);
+          s := IOStream.append(s, "end if");
+        then
+          s;
+
+      case WHEN()
+        algorithm
+          s := IOStream.append(s, "when ");
+          s := Branch.toFlatStream(listHead(eq.branches), indent, s);
+
+          for b in listRest(eq.branches) loop
+            s := IOStream.append(s, indent);
+            s := IOStream.append(s, "elsewhen ");
+            s := Branch.toFlatStream(b, indent, s);
+          end for;
+
+          s := IOStream.append(s, indent);
+          s := IOStream.append(s, "end when");
+        then
+          s;
+
+      case ASSERT()
+        algorithm
+          s := IOStream.append(s, "assert(");
+          s := IOStream.append(s, Expression.toFlatString(eq.condition));
+          s := IOStream.append(s, ", ");
+          s := IOStream.append(s, Expression.toFlatString(eq.message));
+          s := IOStream.append(s, ", ");
+          s := IOStream.append(s, Expression.toFlatString(eq.level));
+          s := IOStream.append(s, ")");
+        then
+          s;
+
+      case TERMINATE()
+        algorithm
+          s := IOStream.append(s, "terminate(");
+          s := IOStream.append(s, Expression.toFlatString(eq.message));
+          s := IOStream.append(s, ")");
+        then
+          s;
+
+      case REINIT()
+        algorithm
+          s := IOStream.append(s, "reinit(");
+          s := IOStream.append(s, Expression.toFlatString(eq.cref));
+          s := IOStream.append(s, ", ");
+          s := IOStream.append(s, Expression.toFlatString(eq.reinitExp));
+          s := IOStream.append(s, ")");
+        then
+          s;
+
+      case NORETCALL()
+        then IOStream.append(s, Expression.toFlatString(eq.exp));
+
+      else IOStream.append(s, "#UNKNOWN EQUATION#");
+    end match;
+  end toFlatStream;
+
+  function toFlatStreamList
+    input list<Equation> eql;
+    input String indent;
+    input output IOStream.IOStream s;
+  protected
+    Boolean prev_multi_line = false, multi_line;
+    Boolean first = true;
+  algorithm
+    for eq in eql loop
+      multi_line := isMultiLine(eq);
+
+      // Improve human parsability by separating statements that spans multiple
+      // lines (like if-equations) with newlines.
+      if first then
+        first := false;
+      elseif prev_multi_line or multi_line then
+        s := IOStream.append(s, "\n");
+      end if;
+
+      prev_multi_line := multi_line;
+
+      s := toFlatStream(eq, indent, s);
+      s := IOStream.append(s, ";\n");
+    end for;
+  end toFlatStreamList;
 
   function isMultiLine
     input Equation eq;

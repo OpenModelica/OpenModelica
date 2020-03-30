@@ -97,5 +97,71 @@ public
     IOStream.delete(s);
   end toString;
 
+  function toFlatString
+    input FlatModel flatModel;
+    input Boolean printBindingTypes = false;
+    output String str;
+  protected
+    IOStream.IOStream s;
+  algorithm
+    s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
+    s := toFlatStream(flatModel, printBindingTypes, s);
+    str := IOStream.string(s);
+  end toFlatString;
+
+  function printFlatString
+    input FlatModel flatModel;
+    input Boolean printBindingTypes = false;
+  protected
+    IOStream.IOStream s;
+  algorithm
+    s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
+    s := toFlatStream(flatModel, printBindingTypes, s);
+    IOStream.print(s, IOStream.stdOutput);
+  end printFlatString;
+
+  function toFlatStream
+    input FlatModel flatModel;
+    input Boolean printBindingTypes = false;
+    input output IOStream.IOStream s;
+    output String str;
+  algorithm
+    s := IOStream.append(s, "class '" + flatModel.name + "'\n");
+
+    for v in flatModel.variables loop
+      s := Variable.toFlatStream(v, "  ", printBindingTypes, s);
+      s := IOStream.append(s, ";\n");
+    end for;
+
+    if not listEmpty(flatModel.initialEquations) then
+      s := IOStream.append(s, "initial equation\n");
+      s := Equation.toFlatStreamList(flatModel.initialEquations, "  ", s);
+    end if;
+
+    if not listEmpty(flatModel.equations) then
+      s := IOStream.append(s, "equation\n");
+      s := Equation.toFlatStreamList(flatModel.equations, "  ", s);
+    end if;
+
+    for alg in flatModel.initialAlgorithms loop
+      if not listEmpty(alg.statements) then
+        s := IOStream.append(s, "initial algorithm\n");
+        s := Statement.toFlatStreamList(alg.statements, "  ", s);
+      end if;
+    end for;
+
+    for alg in flatModel.algorithms loop
+      if not listEmpty(alg.statements) then
+        s := IOStream.append(s, "algorithm\n");
+        s := Statement.toFlatStreamList(alg.statements, "  ", s);
+      end if;
+    end for;
+
+    s := IOStream.append(s, "end '" + flatModel.name + "';\n");
+
+    str := IOStream.string(s);
+    IOStream.delete(s);
+  end toFlatStream;
+
   annotation(__OpenModelica_Interface="frontend");
 end NFFlatModel;

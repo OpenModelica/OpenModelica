@@ -541,6 +541,35 @@ public
     end match;
   end toString;
 
+  function toFlatString
+    input Modifier mod;
+    input Boolean printName = true;
+    output String string;
+  algorithm
+    string := match mod
+      local
+        list<Modifier> submods;
+        String subs_str, binding_str, binding_sep;
+
+      case MODIFIER()
+        algorithm
+          submods := ModTable.listValues(mod.subModifiers);
+          if not listEmpty(submods) then
+            subs_str := "(" + stringDelimitList(list(toFlatString(s) for s in submods), ", ") + ")";
+            binding_sep := " = ";
+          else
+            subs_str := "";
+            binding_sep := if printName then " = " else "= ";
+          end if;
+
+          binding_str := Binding.toFlatString(mod.binding, binding_sep);
+        then
+          if printName then mod.name + subs_str + binding_str else subs_str + binding_str;
+
+      else "";
+    end match;
+  end toFlatString;
+
 protected
   function createSubMod
     input SCode.SubMod subMod;

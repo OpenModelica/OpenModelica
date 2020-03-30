@@ -175,6 +175,16 @@ algorithm
   // to the model.
   flat_model := Package.collectConstants(flat_model, funcs);
 
+  if Flags.getConfigBool(Flags.FLAT_MODELICA) then
+    for fn in FunctionTree.listValues(funcs) loop
+      print(Function.toFlatString(fn));
+      print("\n\n");
+    end for;
+
+    FlatModel.printFlatString(flat_model);
+    print("\n");
+  end if;
+
   // Scalarize array components in the flat model.
   if Flags.isSet(Flags.NF_SCALARIZE) then
     flat_model := Scalarize.scalarize(flat_model, name);
