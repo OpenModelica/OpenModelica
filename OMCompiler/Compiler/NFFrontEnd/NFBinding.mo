@@ -34,13 +34,13 @@ encapsulated package NFBinding
 public
   import Expression = NFExpression;
   import NFInstNode.InstNode;
-  import SCode;
   import Type = NFType;
   import NFPrefixes.Variability;
-  import Error;
+  import ErrorTypes;
 
 protected
   import Dump;
+  import Error;
 
 public
   constant Binding EMPTY_BINDING = Binding.UNBOUND({}, false, AbsynUtil.dummyInfo);
@@ -102,7 +102,7 @@ uniontype Binding
 
   record INVALID_BINDING
     Binding binding;
-    list<Error.TotalMessage> errors;
+    list<ErrorTypes.TotalMessage> errors;
   end INVALID_BINDING;
 
 public
@@ -359,7 +359,15 @@ public
     input Binding binding;
     output Type ty;
   algorithm
-    TYPED_BINDING(bindingType = ty) := binding;
+    ty := match binding
+      case UNBOUND() then Type.UNKNOWN();
+      case RAW_BINDING() then Type.UNKNOWN();
+      case UNTYPED_BINDING() then Type.UNKNOWN();
+      case TYPED_BINDING() then binding.bindingType;
+      case FLAT_BINDING() then Expression.typeOf(binding.bindingExp);
+      case CEVAL_BINDING() then Expression.typeOf(binding.bindingExp);
+      case INVALID_BINDING() then getType(binding.binding);
+    end match;
   end getType;
 
   function isEach
@@ -651,6 +659,25 @@ public
       else ();
     end match;
   end mapExpShallow;
+
+  function foldExp<ArgT>
+    input Binding binding;
+    input FoldFunc foldFn;
+    input output ArgT arg;
+
+    partial function FoldFunc
+      input Expression exp;
+      input output ArgT arg;
+    end FoldFunc;
+  algorithm
+    arg := match binding
+      case UNTYPED_BINDING() then Expression.fold(binding.bindingExp, foldFn, arg);
+      case TYPED_BINDING()   then Expression.fold(binding.bindingExp, foldFn, arg);
+      case FLAT_BINDING()    then Expression.fold(binding.bindingExp, foldFn, arg);
+      case CEVAL_BINDING()   then Expression.fold(binding.bindingExp, foldFn, arg);
+      else arg;
+    end match;
+  end foldExp;
 
   function containsExp
     input Binding binding;

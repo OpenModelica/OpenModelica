@@ -102,32 +102,37 @@ protected
   Variability bind_var;
 algorithm
   if Type.isArray(var.ty) then
-    Variable.VARIABLE(name, ty, binding, vis, attr, ty_attr, cmt, info) := var;
-    crefs := ComponentRef.scalarize(name);
+    try
+      Variable.VARIABLE(name, ty, binding, vis, attr, ty_attr, cmt, info) := var;
+      crefs := ComponentRef.scalarize(name);
 
-    if listEmpty(crefs) then
-      return;
-    end if;
+      if listEmpty(crefs) then
+        return;
+      end if;
 
-    ty := Type.arrayElementType(ty);
-    (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
+      ty := Type.arrayElementType(ty);
+      (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
 
-    if Binding.isBound(binding) then
-      binding_iter := ExpressionIterator.fromExp(expandComplexCref(Binding.getTypedExp(binding)));
-      bind_var := Binding.variability(binding);
+      if Binding.isBound(binding) then
+        binding_iter := ExpressionIterator.fromExp(expandComplexCref(Binding.getTypedExp(binding)));
+        bind_var := Binding.variability(binding);
 
-      for cr in crefs loop
-        (binding_iter, exp) := ExpressionIterator.next(binding_iter);
-        binding := Binding.FLAT_BINDING(exp, bind_var);
-        ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
-        vars := Variable.VARIABLE(cr, ty, binding, vis, attr, ty_attr, cmt, info) :: vars;
-      end for;
+        for cr in crefs loop
+          (binding_iter, exp) := ExpressionIterator.next(binding_iter);
+          binding := Binding.FLAT_BINDING(exp, bind_var);
+          ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
+          vars := Variable.VARIABLE(cr, ty, binding, vis, attr, ty_attr, cmt, info) :: vars;
+        end for;
+      else
+        for cr in crefs loop
+          ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
+          vars := Variable.VARIABLE(cr, ty, binding, vis, attr, ty_attr, cmt, info) :: vars;
+        end for;
+      end if;
     else
-      for cr in crefs loop
-        ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
-        vars := Variable.VARIABLE(cr, ty, binding, vis, attr, ty_attr, cmt, info) :: vars;
-      end for;
-    end if;
+      Error.assertion(false, getInstanceName() + " failed on " +
+        Variable.toString(var, printBindingType = true), var.info);
+    end try;
   else
     var.binding := Binding.mapExp(var.binding, expandComplexCref_traverser);
     vars := var :: vars;

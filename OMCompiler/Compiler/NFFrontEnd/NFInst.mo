@@ -66,8 +66,8 @@ import ExpOrigin = NFTyping.ExpOrigin;
 protected
 import Array;
 import Error;
+import FlagsUtil;
 import Flatten = NFFlatten;
-import Global;
 import InstUtil = NFInstUtil;
 import List;
 import Lookup = NFLookup;
@@ -76,7 +76,6 @@ import Typing = NFTyping;
 import ExecStat.{execStat,execStatReset};
 import SCodeDump;
 import SCodeUtil;
-import AbsynToSCode;
 import System;
 import NFCall.Call;
 import Absyn.Path;
@@ -84,7 +83,6 @@ import NFClassTree.ClassTree;
 import NFSections.Sections;
 import NFInstNode.CachedData;
 import NFInstNode.NodeTree;
-import StringUtil;
 import UnitCheck = NFUnitCheck;
 import NFPrefixes.*;
 import Prefixes = NFPrefixes;
@@ -122,8 +120,8 @@ algorithm
   // and scalarization if -d=-nfScalarize is on
   if not Flags.isSet(Flags.NF_SCALARIZE) then
     // make sure we don't expand anything
-    Flags.set(Flags.NF_EXPAND_OPERATIONS, false);
-    Flags.set(Flags.NF_EXPAND_FUNC_ARGS, false);
+    FlagsUtil.set(Flags.NF_EXPAND_OPERATIONS, false);
+    FlagsUtil.set(Flags.NF_EXPAND_FUNC_ARGS, false);
   end if;
 
   System.setUsesCardinality(false);
@@ -186,6 +184,10 @@ algorithm
   end if;
 
   VerifyModel.verify(flat_model);
+
+  if Flags.isSet(Flags.NF_DUMP_FLAT) then
+    print("FlatModel:\n" + FlatModel.toString(flat_model) + "\n");
+  end if;
 
   // Convert the flat model to a DAE.
   (dae, daeFuncs) := ConvertDAE.convert(flat_model, funcs, name, InstNode.info(inst_cls));
@@ -1318,6 +1320,8 @@ algorithm
   end if;
 
   redeclaredNode := InstNode.replaceClass(new_cls, redeclareNode);
+  node_ty := InstNodeType.REDECLARED_CLASS(InstNode.parent(originalNode), InstNode.nodeType(originalNode));
+  redeclaredNode := InstNode.setNodeType(node_ty, redeclaredNode);
 end redeclareClass;
 
 function redeclareEnum
@@ -2208,13 +2212,11 @@ function makeRecordComplexType
   output ComplexType ty;
 protected
   InstNode cls_node;
-  list<String> inputs;
-  list<String> fields;
+  list<Record.Field> fields;
 algorithm
   cls_node := if SCodeUtil.isOperatorRecord(InstNode.definition(node))
     then InstNode.classScope(node) else InstNode.classScope(InstNode.getDerivedNode(node));
-  fields := list(InstNode.name(c) for c in Record.collectRecordParams(cls_node));
-  ty := ComplexType.RECORD(cls_node, fields);
+  ty := ComplexType.RECORD(cls_node, {});
 end makeRecordComplexType;
 
 function instComplexType
@@ -2226,6 +2228,10 @@ algorithm
       CachedData cache;
 
     case Type.COMPLEX(complexTy = ComplexType.RECORD(node))
+      // Make sure it's really a record, and not e.g. a record inherited by a model.
+      // TODO: This check should really be InstNode.isRecord(node), but that
+      //       causes issues with e.g. ComplexInput/ComplexOutput.
+      guard not InstNode.isModel(node)
       algorithm
         instRecordConstructor(node);
       then
@@ -2269,8 +2275,6 @@ algorithm
     local
       Binding binding;
 
-    case Modifier.MODIFIER(binding = Binding.UNBOUND()) then ();
-
     case Modifier.MODIFIER(binding = binding)
       algorithm
         binding := Binding.addParent(node, binding);
@@ -2286,6 +2290,7 @@ algorithm
       then
         fail();
 
+    else ();
   end match;
 end instBuiltinAttribute;
 
@@ -2989,7 +2994,7 @@ function makeSource
   input SourceInfo info;
   output DAE.ElementSource source;
 algorithm
-  source := DAE.ElementSource.SOURCE(info, {}, DAE.Prefix.NOCOMPPRE(), {}, {}, {}, {comment});
+  source := DAE.ElementSource.SOURCE(info, {}, DAE.NOCOMPPRE(), {}, {}, {}, {comment});
 end makeSource;
 
 function instAlgorithmSections
@@ -3260,9 +3265,7 @@ algorithm
     case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
         for c in cls_tree.components loop
-          if not InstNode.isEmpty(c) then
-            updateImplicitVariabilityComp(c, evalAllParams);
-          end if;
+          updateImplicitVariabilityComp(c, evalAllParams);
         end for;
 
         Sections.apply(cls.sections,
@@ -3367,9 +3370,9 @@ algorithm
     elseif Component.isExternalObject(component) then
       // Except external objects.
       isStructural := false;
-    elseif Binding.isUnbound(compBinding) then
+    elseif not InstNode.hasBinding(compNode) then
       // Except parameters with no bindings.
-      if not evalAllParams then
+      if not evalAllParams and not Flags.getConfigBool(Flags.CHECK_MODEL) then
         // Print a warning if a parameter has an Evaluate=true annotation but no binding.
         Error.addSourceMessage(Error.UNBOUND_PARAMETER_EVALUATE_TRUE,
           {InstNode.name(compNode)}, InstNode.info(compNode));

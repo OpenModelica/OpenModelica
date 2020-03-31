@@ -51,6 +51,7 @@ import ComplexType = NFComplexType;
 import Subscript = NFSubscript;
 import NFTyping.TypingError;
 import DAE;
+import Record = NFRecord;
 
 protected
 import NFFunction.Function;
@@ -450,9 +451,7 @@ algorithm
   cr := ComponentRef.stripSubscripts(cref);
 
   if evalSubscripts then
-    subs := listReverse(Subscript.eval(s) for s in subs);
-  else
-    subs := listReverse(subs);
+    subs := list(Subscript.eval(s) for s in subs);
   end if;
 
   // The rest of the cref contributes subscripts based on where the expressions
@@ -502,7 +501,7 @@ algorithm
               break;
             end if;
 
-            subs := List.append_reverse(ComponentRef.getSubscripts(cr), subs);
+            subs := listAppend(ComponentRef.getSubscripts(cr), subs);
 
             parents := listRest(parents);
             cr := ComponentRef.rest(cr);
@@ -515,12 +514,10 @@ algorithm
           end while;
 
           if evalSubscripts then
-            subs := listReverse(Subscript.eval(s) for s in subs);
-          else
-            subs := listReverse(subs);
+            subs := list(Subscript.eval(s) for s in subs);
           end if;
 
-          accum_subs := List.append_reverse(subs, accum_subs);
+          accum_subs := listAppend(subs, accum_subs);
         end if;
 
         // Subscript the binding type if bindingSubs was given.
@@ -534,12 +531,7 @@ algorithm
       then
         Expression.BINDING_EXP(e, exp_ty, bind_ty, exp.parents, exp.isEach);
 
-    else
-      algorithm
-        subs := listReverse(subscripts);
-      then
-        Expression.applySubscripts(subs, exp);
-
+    else Expression.applySubscripts(subscripts, exp);
   end match;
 end subscriptEvaluatedBinding2;
 
@@ -675,7 +667,7 @@ algorithm
       Type ty;
       Dimension dim;
 
-    case Expression.RECORD() then Expression.lookupRecordField(name, exp);
+    case Expression.RECORD() then Expression.recordElement(name, exp);
 
     // An empty array of records will still be empty, only the type needs to be changed.
     case Expression.ARRAY(elements = {})
@@ -710,34 +702,31 @@ function makeRecordBindingExp
 protected
   ClassTree tree;
   array<InstNode> comps;
-  list<Expression> fields;
-  list<String> field_names;
+  list<Expression> args;
+  list<Record.Field> fields;
   Type ty;
   InstNode c;
   ComponentRef cr;
-  Expression field_exp;
+  Expression arg;
 algorithm
   tree := Class.classTree(InstNode.getClass(typeNode));
   comps := ClassTree.getComponents(tree);
-  fields := {};
-  field_names := {};
+  args := {};
 
   for i in arrayLength(comps):-1:1 loop
     c := comps[i];
     ty := InstNode.getType(c);
     cr := ComponentRef.CREF(c, {}, ty, NFComponentRef.Origin.CREF, cref);
-    field_exp := Expression.CREF(ty, cr);
+    arg := Expression.CREF(ty, cr);
 
     if Component.variability(InstNode.component(c)) <= Variability.PARAMETER then
-      field_exp := evalExp_impl(field_exp, EvalTarget.IGNORE_ERRORS());
+      arg := evalExp_impl(arg, EvalTarget.IGNORE_ERRORS());
     end if;
 
-    fields := field_exp :: fields;
-    field_names := InstNode.name(c) :: field_names;
+    args := arg :: args;
   end for;
 
-  ty := Type.setRecordFields(field_names, recordType);
-  exp := Expression.RECORD(InstNode.scopePath(recordNode), ty, fields);
+  exp := Expression.makeRecord(InstNode.scopePath(recordNode), recordType, args);
 end makeRecordBindingExp;
 
 function splitRecordArrayExp
@@ -748,7 +737,7 @@ protected
   list<Expression> expl;
 algorithm
   Expression.RECORD(path, ty, expl) := exp;
-  exp := Expression.RECORD(path, Type.arrayElementType(ty), expl);
+  exp := Expression.makeRecord(path, Type.arrayElementType(ty), expl);
   exp := Expression.fillType(ty, exp);
 end splitRecordArrayExp;
 
@@ -1811,7 +1800,7 @@ algorithm
       then evalArrayConstructor(c.exp, c.iters);
 
     case Call.TYPED_REDUCTION()
-      then evalReduction(c.fn, c.exp, c.ty, c.iters);
+      then evalReduction(c.fn, c.exp, c.iters);
 
     else
       algorithm
@@ -2029,7 +2018,7 @@ function evalBuiltinCat
   input EvalTarget target;
   output Expression result;
 protected
-  Integer n, nd;
+  Integer n, nd, sz;
   Type ty;
   list<Expression> es;
   list<Integer> dims;
@@ -2037,14 +2026,25 @@ algorithm
   Expression.INTEGER(n) := argN;
   ty := Expression.typeOf(listHead(args));
   nd := Type.dimensionCount(ty);
+
   if n > nd or n < 1 then
     if EvalTarget.hasInfo(target) then
       Error.addSourceMessage(Error.ARGUMENT_OUT_OF_RANGE, {String(n), "cat", "1 <= x <= " + String(nd)}, EvalTarget.getInfo(target));
     end if;
     fail();
   end if;
-  (es,dims) := ExpressionSimplify.evalCat(n, args, getArrayContents=Expression.arrayElements, toString=Expression.toString);
-  result := Expression.arrayFromList(es, Expression.typeOf(listHead(es)), list(Dimension.fromInteger(d) for d in dims));
+
+  es := list(e for e guard not Expression.isEmptyArray(e) in args);
+  sz := listLength(es);
+
+  if sz == 0 then
+    result := listHead(args);
+  elseif sz == 1 then
+    result := listHead(es);
+  else
+    (es,dims) := ExpressionSimplify.evalCat(n, es, getArrayContents=Expression.arrayElements, toString=Expression.toString);
+    result := Expression.arrayFromList(es, Expression.typeOf(listHead(es)), list(Dimension.fromInteger(d) for d in dims));
+  end if;
 end evalBuiltinCat;
 
 function evalBuiltinCeil
@@ -2095,6 +2095,8 @@ protected
   Boolean e_lit, arg_lit = true;
 algorithm
   result := match arg
+    case Expression.ARRAY(elements = {}) then arg;
+
     case Expression.ARRAY(elements = elems)
       algorithm
         n := listLength(elems);
@@ -3152,19 +3154,17 @@ end ReductionFn;
 function evalReduction
   input Function fn;
   input Expression exp;
-  input Type ty;
   input list<tuple<InstNode, Expression>> iterators;
   output Expression result;
 algorithm
   result := evalExpPartial(exp);
   result := Expression.bindingExpMap(result,
-    function evalReduction2(fn = fn, ty = ty, iterators = iterators));
+    function evalReduction2(fn = fn, iterators = iterators));
 end evalReduction;
 
 function evalReduction2
   input Function fn;
   input Expression exp;
-  input Type ty;
   input list<tuple<InstNode, Expression>> iterators;
   output Expression result;
 protected
@@ -3172,8 +3172,10 @@ protected
   list<Expression> ranges;
   list<Mutable<Expression>> iters;
   ReductionFn red_fn;
+  Type ty;
 algorithm
   (e, ranges, iters) := createIterationRanges(exp, iterators);
+  ty := Expression.typeOf(e);
 
   (red_fn, default_exp) := match AbsynUtil.pathString(Function.name(fn))
     case "sum" then (evalBinaryAdd, Expression.makeZero(ty));
@@ -3291,18 +3293,24 @@ algorithm
   Expression.RECORD_ELEMENT(recordExp = e, index = index) := exp;
   e := evalExp_impl(e, target);
 
-  result := match e
-    case Expression.RECORD()
-      then listGet(e.elements, index);
-
-    else
-      algorithm
-        Error.assertion(false, getInstanceName() + " could not evaluate " +
-          Expression.toString(exp), sourceInfo());
-      then
-        fail();
-  end match;
+  try
+    result := Expression.bindingExpMap(e, function evalRecordElement2(index = index));
+  else
+    Error.assertion(false, getInstanceName() + " could not evaluate " +
+      Expression.toString(exp), sourceInfo());
+  end try;
 end evalRecordElement;
+
+function evalRecordElement2
+  input Expression exp;
+  input Integer index;
+  output Expression result;
+algorithm
+  result := match exp
+    case Expression.RECORD()
+      then listGet(exp.elements, index);
+  end match;
+end evalRecordElement2;
 
 protected
 
@@ -3336,10 +3344,10 @@ algorithm
         then
           // only add an error if fixed = true
           if Component.getFixedAttribute(component) then
-	          Error.addMultiSourceMessage(Error.UNBOUND_PARAMETER_EVALUATE_TRUE,
-	            {Expression.toString(exp) + "(fixed = true)"},
-	            {InstNode.info(ComponentRef.node(Expression.toCref(exp))), EvalTarget.getInfo(target)});
-	        end if;
+            Error.addMultiSourceMessage(Error.UNBOUND_PARAMETER_EVALUATE_TRUE,
+              {Expression.toString(exp) + "(fixed = true)"},
+              {InstNode.info(ComponentRef.node(Expression.toCref(exp))), EvalTarget.getInfo(target)});
+          end if;
         else // constant with no binding
           Error.addMultiSourceMessage(Error.UNBOUND_CONSTANT,
             {Expression.toString(exp)},

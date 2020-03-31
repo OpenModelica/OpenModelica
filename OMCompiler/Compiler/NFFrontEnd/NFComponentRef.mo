@@ -33,7 +33,6 @@ encapsulated uniontype NFComponentRef
 protected
   import NFComponent.Component;
   import Absyn;
-  import AbsynUtil;
   import DAE;
   import Subscript = NFSubscript;
   import Type = NFType;
@@ -42,7 +41,6 @@ protected
   import Dimension = NFDimension;
   import Expression = NFExpression;
   import NFPrefixes.Variability;
-  import System;
   import NFClass.Class;
   import List;
   import Prefixes = NFPrefixes;
@@ -179,6 +177,18 @@ public
   algorithm
     CREF(node = node) := cref;
   end node;
+
+  function containsNode
+    input ComponentRef cref;
+    input InstNode node;
+    output Boolean res;
+  algorithm
+    res := match cref
+      case CREF()
+        then InstNode.refEqual(cref.node, node) or containsNode(cref.restCref, node);
+      else false;
+    end match;
+  end containsNode;
 
   function nodeType
     input ComponentRef cref;

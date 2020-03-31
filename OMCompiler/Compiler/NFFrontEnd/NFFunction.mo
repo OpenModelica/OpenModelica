@@ -48,7 +48,6 @@ import Inst = NFInst;
 import NFBinding.Binding;
 import Config;
 import DAE;
-import DAEDump;
 import Error;
 import InstUtil;
 import NFClass.Class;
@@ -1450,6 +1449,8 @@ uniontype Function
           case "product" then true;
           case "root" then true;
           case "rooted" then true;
+          case "uniqueRoot" then true;
+          case "uniqueRootIndices" then true;
           // We need to make sure size(Arg,i) = 1 for 0 <= i <= ndims(Arg).
           // return type should always be scalar.
           case "scalar" then true;
@@ -1559,14 +1560,16 @@ uniontype Function
     DAE.InlineType ity;
     DAE.Type ty;
     list<DAE.FunctionDefinition> defs;
+    list<Integer> unused_inputs;
   algorithm
     vis := SCode.PUBLIC(); // TODO: Use the actual visibility.
     par := false; // TODO: Use the actual partial prefix.
     impr := fn.attributes.isImpure;
     ity := fn.attributes.inline;
     ty := makeDAEType(fn);
+    unused_inputs := analyseUnusedParameters(fn);
     defs := def :: list(FunctionDerivative.toDAE(fn_der) for fn_der in fn.derivatives);
-    daeFn := DAE.FUNCTION(fn.path, defs, ty, vis, par, impr, ity,
+    daeFn := DAE.FUNCTION(fn.path, defs, ty, vis, par, impr, ity, unused_inputs,
       ElementSource.createElementSource(InstNode.info(fn.node)),
       SCodeUtil.getElementComment(InstNode.definition(fn.node)));
   end toDAE;
@@ -1674,45 +1677,117 @@ uniontype Function
     Type ty;
     Boolean dirty = false;
   algorithm
-    if not InstNode.isEmpty(node) then
-      comp := InstNode.component(node);
-      binding := Component.getBinding(comp);
-      binding2 := Binding.mapExp(binding, mapFn);
+    comp := InstNode.component(node);
+    binding := Component.getBinding(comp);
+    binding2 := Binding.mapExp(binding, mapFn);
 
-      if not referenceEq(binding, binding2) then
-        comp := Component.setBinding(binding2, comp);
-        dirty := true;
-      end if;
+    if not referenceEq(binding, binding2) then
+      comp := Component.setBinding(binding2, comp);
+      dirty := true;
+    end if;
 
-      () := match comp
-        case Component.TYPED_COMPONENT()
-          algorithm
-            ty := Type.mapDims(comp.ty, function Dimension.mapExp(func = mapFn));
+    () := match comp
+      case Component.TYPED_COMPONENT()
+        algorithm
+          ty := Type.mapDims(comp.ty, function Dimension.mapExp(func = mapFn));
 
-            if not referenceEq(ty, comp.ty) then
-              comp.ty := ty;
-              dirty := true;
-            end if;
+          if not referenceEq(ty, comp.ty) then
+            comp.ty := ty;
+            dirty := true;
+          end if;
 
-            cls := InstNode.getClass(comp.classInst);
-            ClassTree.applyComponents(Class.classTree(cls),
-              function mapExpParameter(mapFn = mapFn));
-          then
-            ();
+          cls := InstNode.getClass(comp.classInst);
+          ClassTree.applyComponents(Class.classTree(cls),
+            function mapExpParameter(mapFn = mapFn));
+        then
+          ();
 
-        else ();
-      end match;
+      else ();
+    end match;
 
-      if dirty then
-        InstNode.updateComponent(comp, node);
-      end if;
+    if dirty then
+      InstNode.updateComponent(comp, node);
     end if;
   end mapExpParameter;
+
+  function foldExp<ArgT>
+    input Function fn;
+    input FoldFunc foldFn;
+    input output ArgT arg;
+    input Boolean mapParameters = true;
+    input Boolean mapBody = true;
+
+    partial function FoldFunc
+      input Expression exp;
+      input output ArgT arg;
+    end FoldFunc;
+  protected
+    Class cls;
+  algorithm
+    cls := InstNode.getClass(fn.node);
+
+    if mapParameters then
+      arg := ClassTree.foldComponents(Class.classTree(cls),
+        function foldExpParameter(foldFn = foldFn), arg);
+    end if;
+
+    if mapBody then
+      arg := Sections.foldExp(Class.getSections(cls), foldFn, arg);
+    end if;
+  end foldExp;
+
+  function foldExpParameter<ArgT>
+    input InstNode node;
+    input FoldFunc foldFn;
+    input output ArgT arg;
+
+    partial function FoldFunc
+      input Expression exp;
+      input output ArgT arg;
+    end FoldFunc;
+  protected
+    Component comp;
+    Class cls;
+  algorithm
+    comp := InstNode.component(node);
+    arg := Binding.foldExp(Component.getBinding(comp), foldFn, arg);
+
+    () := match comp
+      case Component.TYPED_COMPONENT()
+        algorithm
+          arg := Type.foldDims(comp.ty, function Dimension.foldExp(func = foldFn), arg);
+          cls := InstNode.getClass(comp.classInst);
+          arg := ClassTree.foldComponents(Class.classTree(cls),
+            function foldExpParameter(foldFn = foldFn), arg);
+        then
+          ();
+
+      else ();
+    end match;
+  end foldExpParameter;
 
   function isPartial
     input Function fn;
     output Boolean isPartial = InstNode.isPartial(fn.node);
   end isPartial;
+
+  function getLocalArguments
+    input Function fn;
+    output list<Expression> localArgs = {};
+  protected
+    Binding binding;
+  algorithm
+    for l in fn.locals loop
+      if InstNode.isComponent(l) then
+        binding := Component.getBinding(InstNode.component(l));
+        Error.assertion(Binding.hasExp(binding),
+          getInstanceName() + " got local component without binding", sourceInfo());
+        localArgs := Binding.getExp(binding) :: localArgs;
+      end if;
+    end for;
+
+    localArgs := listReverseInPlace(localArgs);
+  end getLocalArguments;
 
 protected
   function collectParams
@@ -1734,10 +1809,6 @@ protected
         algorithm
           for i in arrayLength(comps):-1:1 loop
             n := comps[i];
-
-            if InstNode.isEmpty(n) then
-              continue;
-            end if;
 
             // Sort the components based on their direction.
             () := match paramDirection(n)
@@ -1803,19 +1874,10 @@ protected
           {InstNode.name(component)}, InstNode.info(component));
         fail();
       end if;
-    else
-
-      if vis == Visibility.PUBLIC then
-        if var > Variability.PARAMETER then
-          Error.addSourceMessage(Error.NON_FORMAL_PUBLIC_FUNCTION_VAR,
-            {InstNode.name(component)}, InstNode.info(component));
-          fail();
-        else
-          // @adrpo: alow public constants and parameters in functions
-          Error.addStrictMessage(Error.NON_FORMAL_PUBLIC_FUNCTION_VAR,
-            {InstNode.name(component)}, InstNode.info(component));
-        end if;
-      end if;
+    elseif vis == Visibility.PUBLIC then
+      Error.addSourceMessageAsError(Error.NON_FORMAL_PUBLIC_FUNCTION_VAR,
+        {InstNode.name(component)}, InstNode.info(component));
+      fail();
     end if;
   end paramDirection;
 
@@ -2095,6 +2157,45 @@ protected
 
     end match;
   end getBody2;
+
+  function analyseUnusedParameters
+    input Function fn;
+    output list<Integer> unusedInputs = {};
+  protected
+    list<InstNode> inputs;
+    Integer index;
+  algorithm
+    inputs := foldExp(fn, analyseUnusedParametersExp, fn.inputs);
+
+    for i in inputs loop
+      index := List.positionOnTrue(fn.inputs, function InstNode.refEqual(node1 = i));
+      unusedInputs := index :: unusedInputs;
+    end for;
+  end analyseUnusedParameters;
+
+  function analyseUnusedParametersExp
+    input Expression exp;
+    input output list<InstNode> params;
+  algorithm
+    if not listEmpty(params) then
+      params := Expression.fold(exp, analyseUnusedParametersExp2, params);
+    end if;
+  end analyseUnusedParametersExp;
+
+  function analyseUnusedParametersExp2
+    input Expression exp;
+    input output list<InstNode> params;
+  algorithm
+    () := match exp
+      case Expression.CREF()
+        algorithm
+          params := List.deleteMemberOnTrue(exp.cref, params, ComponentRef.containsNode);
+        then
+          ();
+
+      else ();
+    end match;
+  end analyseUnusedParametersExp2;
 end Function;
 
 annotation(__OpenModelica_Interface="frontend");

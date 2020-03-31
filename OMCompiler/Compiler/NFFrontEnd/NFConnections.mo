@@ -38,13 +38,14 @@ encapsulated uniontype NFConnections
 
 protected
   import Connections = NFConnections;
-  import NFComponent.Component;
-  import NFInstNode.InstNode;
-  import Expression = NFExpression;
-  import Type = NFType;
-  import MetaModelica.Dangerous.listReverseInPlace;
   import ElementSource;
   import ExpandExp = NFExpandExp;
+  import Expression = NFExpression;
+  import Flags;
+  import MetaModelica.Dangerous.listReverseInPlace;
+  import NFComponent.Component;
+  import NFInstNode.InstNode;
+  import Type = NFType;
 
 public
   type BrokenEdge = tuple<ComponentRef, ComponentRef, list<Equation>>;

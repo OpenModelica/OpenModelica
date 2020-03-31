@@ -50,7 +50,6 @@ protected
   import TypeCheck = NFTypeCheck;
   import ValuesUtil;
   import MetaModelica.Dangerous.listReverseInPlace;
-  import Types;
   import RangeIterator = NFRangeIterator;
 
 public
@@ -69,31 +68,31 @@ public
   import NFClass.Class;
   import NFComponentRef.Origin;
   import NFTyping.ExpOrigin;
-  import ExpressionSimplify;
   import Values;
+  import Record = NFRecord;
 
-	uniontype ClockKind
-	  record INFERRED_CLOCK
-	  end INFERRED_CLOCK;
+  uniontype ClockKind
+    record INFERRED_CLOCK
+    end INFERRED_CLOCK;
 
-	  record INTEGER_CLOCK
-	    Expression intervalCounter;
-	    Expression resolution " integer type >= 1 ";
-	  end INTEGER_CLOCK;
+    record INTEGER_CLOCK
+      Expression intervalCounter;
+      Expression resolution " integer type >= 1 ";
+    end INTEGER_CLOCK;
 
-	  record REAL_CLOCK
-	    Expression interval;
-	  end REAL_CLOCK;
+    record REAL_CLOCK
+      Expression interval;
+    end REAL_CLOCK;
 
-	  record BOOLEAN_CLOCK
-	    Expression condition;
-	    Expression startInterval " real type >= 0.0 ";
-	  end BOOLEAN_CLOCK;
+    record BOOLEAN_CLOCK
+      Expression condition;
+      Expression startInterval " real type >= 0.0 ";
+    end BOOLEAN_CLOCK;
 
-	  record SOLVER_CLOCK
-	    Expression c;
-	    Expression solverMethod " string type ";
-	  end SOLVER_CLOCK;
+    record SOLVER_CLOCK
+      Expression c;
+      Expression solverMethod " string type ";
+    end SOLVER_CLOCK;
 
     function compare
       input ClockKind ck1;
@@ -129,20 +128,20 @@ public
       end match;
     end compare;
 
-	  function toDAE
-	    input ClockKind ick;
-	    output DAE.ClockKind ock;
-	  algorithm
-	    ock := match ick
-	      local
-	        Expression i, ic, r, c, si, sm;
-	      case INFERRED_CLOCK()     then DAE.INFERRED_CLOCK();
-	      case INTEGER_CLOCK(i, r)  then DAE.INTEGER_CLOCK(Expression.toDAE(i), Expression.toDAE(r));
-	      case REAL_CLOCK(i)        then DAE.REAL_CLOCK(Expression.toDAE(i));
-	      case BOOLEAN_CLOCK(c, si) then DAE.BOOLEAN_CLOCK(Expression.toDAE(c), Expression.toDAE(si));
-	      case SOLVER_CLOCK(c, sm)  then DAE.SOLVER_CLOCK(Expression.toDAE(c), Expression.toDAE(sm));
-	    end match;
-	  end toDAE;
+    function toDAE
+      input ClockKind ick;
+      output DAE.ClockKind ock;
+    algorithm
+      ock := match ick
+        local
+          Expression i, ic, r, c, si, sm;
+        case INFERRED_CLOCK()     then DAE.INFERRED_CLOCK();
+        case INTEGER_CLOCK(i, r)  then DAE.INTEGER_CLOCK(Expression.toDAE(i), Expression.toDAE(r));
+        case REAL_CLOCK(i)        then DAE.REAL_CLOCK(Expression.toDAE(i));
+        case BOOLEAN_CLOCK(c, si) then DAE.BOOLEAN_CLOCK(Expression.toDAE(c), Expression.toDAE(si));
+        case SOLVER_CLOCK(c, sm)  then DAE.SOLVER_CLOCK(Expression.toDAE(c), Expression.toDAE(sm));
+      end match;
+    end toDAE;
 
     function toDebugString
       input ClockKind ick;
@@ -176,7 +175,7 @@ public
 
       str := "Clock(" + str + ")";
     end toString;
-	end ClockKind;
+  end ClockKind;
 
   record INTEGER
     Integer value;
@@ -1049,6 +1048,15 @@ public
     exp := makeArray(ty, elements, isLiteral);
   end makeExpArray;
 
+  function makeRecord
+    input Absyn.Path recordName;
+    input Type recordType;
+    input list<Expression> fields;
+    output Expression exp;
+  algorithm
+    exp := RECORD(recordName, recordType, fields);
+  end makeRecord;
+
   function applySubscripts
     "Subscripts an expression with the given list of subscripts."
     input list<Subscript> subscripts;
@@ -1727,12 +1735,11 @@ public
         then DAE.ARRAY(Type.toDAE(exp.ty), Type.isScalarArray(exp.ty),
           list(toDAE(e) for e in exp.elements));
 
-      case RECORD(ty = Type.COMPLEX(complexTy = ComplexType.RECORD(fieldNames = names)))
-        then DAE.RECORD(exp.path, list(toDAE(e) for e in exp.elements), names, Type.toDAE(exp.ty));
+      case RECORD() then toDAERecord(exp.ty, exp.path, exp.elements);
 
       case RANGE()
         then DAE.RANGE(
-               Type.toDAE(Type.arrayElementType(exp.ty)),
+               Type.toDAE(exp.ty),
                toDAE(exp.start),
                if isSome(exp.step)
                then SOME(toDAE(Util.getOption(exp.step)))
@@ -1809,6 +1816,47 @@ public
     end match;
   end toDAE;
 
+  function toDAERecord
+    input Type ty;
+    input Absyn.Path path;
+    input list<Expression> args;
+    output DAE.Exp exp;
+  protected
+    list<String> field_names = {};
+    Expression arg;
+    list<Expression> rest_args = args;
+    list<DAE.Exp> dargs = {};
+  algorithm
+    for field in Type.recordFields(ty) loop
+      arg :: rest_args := rest_args;
+
+      () := match field
+        case Record.Field.INPUT()
+          algorithm
+            field_names := field.name :: field_names;
+            dargs := toDAE(arg) :: dargs;
+          then
+            ();
+
+        // TODO: Constants/parameters shouldn't be added to record expressions
+        //       since that causes issues with the backend, but removing them
+        //       currently causes even worse issues.
+        case Record.Field.LOCAL()
+          algorithm
+            field_names := field.name :: field_names;
+            dargs := toDAE(arg) :: dargs;
+          then
+            ();
+
+        else ();
+      end match;
+    end for;
+
+    field_names := listReverseInPlace(field_names);
+    dargs := listReverseInPlace(dargs);
+    exp := DAE.RECORD(path, dargs, field_names, Type.toDAE(ty));
+  end toDAERecord;
+
   function toDAEValueOpt
     input Option<Expression> exp;
     output Option<Values.Value> value = Util.applyOption(exp, toDAEValue);
@@ -1822,7 +1870,8 @@ public
       local
         Type ty;
         list<Values.Value> vals;
-        list<String> fields;
+        list<Record.Field> fields;
+        list<String> field_names;
 
       case INTEGER() then Values.INTEGER(exp.value);
       case REAL() then Values.REAL(exp.value);
@@ -1837,8 +1886,7 @@ public
         then
           ValuesUtil.makeArray(vals);
 
-      case RECORD(ty = Type.COMPLEX(complexTy = ComplexType.RECORD(fieldNames = fields)))
-        then Values.RECORD(exp.path, list(toDAEValue(e) for e in exp.elements), fields, -1);
+      case RECORD() then toDAEValueRecord(exp.ty, exp.path, exp.elements);
 
       else
         algorithm
@@ -1847,6 +1895,37 @@ public
           fail();
     end match;
   end toDAEValue;
+
+  function toDAEValueRecord
+    input Type ty;
+    input Absyn.Path path;
+    input list<Expression> args;
+    output Values.Value value;
+  protected
+    list<String> field_names = {};
+    Expression arg;
+    list<Expression> rest_args = args;
+    list<Values.Value> values = {};
+  algorithm
+    for field in Type.recordFields(ty) loop
+      arg :: rest_args := rest_args;
+
+      () := match field
+        case Record.Field.INPUT()
+          algorithm
+            field_names := field.name :: field_names;
+            values := toDAEValue(arg) :: values;
+          then
+            ();
+
+        else ();
+      end match;
+    end for;
+
+    field_names := listReverseInPlace(field_names);
+    values := listReverseInPlace(values);
+    value := Values.RECORD(path, values, field_names, -1);
+  end toDAEValueRecord;
 
   function dimensionCount
     input Expression exp;
@@ -4920,39 +4999,6 @@ public
     end match;
   end isEmpty;
 
-  function lookupRecordField
-    input String name;
-    input Expression exp;
-    output Expression fieldExp;
-  algorithm
-    fieldExp := match exp
-      local
-        InstNode node;
-        Integer index;
-        ClassTree cls_tree;
-        ComponentRef cref;
-        Type ty;
-
-      case RECORD(ty = Type.COMPLEX(cls = node))
-        algorithm
-          cls_tree := Class.classTree(InstNode.getClass(node));
-          index := ClassTree.lookupComponentIndex(name, cls_tree);
-        then
-          listGet(exp.elements, index);
-
-      case CREF(ty = Type.COMPLEX(cls = node))
-        algorithm
-          cls_tree := Class.classTree(InstNode.getClass(node));
-          (node, false) := ClassTree.lookupElement(name, cls_tree);
-          ty := InstNode.getType(node);
-          cref := ComponentRef.prefixCref(node, ty, {}, exp.cref);
-          ty := Type.liftArrayLeftList(ty, Type.arrayDims(exp.ty));
-        then
-          CREF(ty, cref);
-
-    end match;
-  end lookupRecordField;
-
   function enumIndexExp
     input Expression enumExp;
     output Expression indexExp;
@@ -5012,9 +5058,11 @@ public
       local
         InstNode node;
         Class cls;
+        ClassTree cls_tree;
         Type ty;
         Integer index;
         list<Expression> expl;
+        ComponentRef cref;
 
       case RECORD(ty = Type.COMPLEX(cls = node))
         algorithm
@@ -5022,6 +5070,16 @@ public
           index := Class.lookupComponentIndex(elementName, cls);
         then
           listGet(recordExp.elements, index);
+
+      case CREF(ty = Type.COMPLEX(cls = node))
+        algorithm
+          cls_tree := Class.classTree(InstNode.getClass(node));
+          (node, false) := ClassTree.lookupElement(elementName, cls_tree);
+          ty := InstNode.getType(node);
+          cref := ComponentRef.prefixCref(node, ty, {}, recordExp.cref);
+          ty := Type.liftArrayLeftList(ty, Type.arrayDims(recordExp.ty));
+        then
+          CREF(ty, cref);
 
       case ARRAY(elements = {}, ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
         algorithm
@@ -5102,7 +5160,6 @@ public
     end match;
   end nthRecordElement;
 
-
   function splitRecordCref
     input Expression exp;
     output Expression outExp;
@@ -5128,7 +5185,7 @@ public
             fields := CREF(ty, field_cr) :: fields;
           end for;
         then
-          RECORD(InstNode.scopePath(cls), outExp.ty, fields);
+          makeRecord(InstNode.scopePath(cls), outExp.ty, fields);
 
       case ARRAY()
         algorithm

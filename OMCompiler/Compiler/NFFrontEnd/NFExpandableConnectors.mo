@@ -44,24 +44,24 @@ import ComponentRef = NFComponentRef;
 import Connection = NFConnection;
 import ConnectionSets = NFConnectionSets.ConnectionSets;
 import Connector = NFConnector;
-import DAE;
 import ElementSource;
+import Error;
+import ErrorTypes;
+import Expression = NFExpression;
+import MetaModelica.Dangerous.listReverseInPlace;
 import NFClass.Class;
 import NFClassTree.ClassTree;
 import NFComponent.Component;
 import NFInstNode.InstNode;
 import NFPrefixes.ConnectorType;
 import NFPrefixes.Visibility;
+import NFTypeCheck.MatchKind;
 import Prefixes = NFPrefixes;
-import System;
+import TypeCheck = NFTypeCheck;
 import Type = NFType;
 import Typing = NFTyping;
 import Util;
 import Variable = NFVariable;
-import MetaModelica.Dangerous.listReverseInPlace;
-import TypeCheck = NFTypeCheck;
-import NFTypeCheck.MatchKind;
-import Expression = NFExpression;
 
 public
 function elaborate
@@ -120,7 +120,6 @@ protected
 
 encapsulated package ExpandableSet
   import BaseHashSet;
-  import System;
   import Connector = NFConnector;
   import ComponentRef = NFComponentRef;
 
@@ -155,7 +154,7 @@ function sortConnections
   output list<Connection> normalConnections = {};
 protected
   Connector c1, c2;
-  Option<tuple<Error.Message, list<Connector>>> err_msg;
+  Option<tuple<ErrorTypes.Message, list<Connector>>> err_msg;
   Boolean is_undeclared1, is_undeclared2, is_expandable1, is_expandable2;
 algorithm
   for conn in conns loop

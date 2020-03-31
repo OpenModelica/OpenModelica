@@ -40,7 +40,6 @@ import BrokenEdges = NFConnections.BrokenEdges;
 protected
 import Flags;
 import List;
-import NFOCConnectionGraph;
 
 public
 package ConnectionSets

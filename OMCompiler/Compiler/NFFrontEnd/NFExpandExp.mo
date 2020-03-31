@@ -60,14 +60,16 @@ public
 
       case Expression.CREF(ty = Type.ARRAY()) then expandCref(exp);
 
-      case Expression.ARRAY(ty = Type.ARRAY(dimensions = _ :: _ :: {}))
+      // One-dimensional arrays are already expanded.
+      case Expression.ARRAY(ty = Type.ARRAY(dimensions = {})) then (exp, true);
+
+      case Expression.ARRAY()
         algorithm
           (expl, expanded) := expandList(exp.elements);
           exp.elements := expl;
         then
           (exp, expanded);
 
-      case Expression.ARRAY()    then (exp, true);
       case Expression.TYPENAME() then (expandTypename(exp.ty), true);
       case Expression.RANGE()    then expandRange(exp);
       case Expression.CALL()     then expandCall(exp.call, exp);
@@ -717,22 +719,23 @@ public
     output Expression exp;
   protected
     list<Expression> expl1, expl2;
-    Type ty, tyUnlift;
+    Type ty, elem_ty;
     Operator mul_op, add_op;
   algorithm
     Expression.ARRAY(ty, expl1) := exp1;
     Expression.ARRAY( _, expl2) := exp2;
-    tyUnlift := Type.unliftArray(ty);
+    elem_ty := Type.unliftArray(ty);
 
     if listEmpty(expl1) then
       // Scalar product of two empty arrays. The result is defined in the spec
       // by sum, so we return 0 since that's the default value of sum.
-      exp := Expression.makeZero(tyUnlift);
+      exp := Expression.makeZero(elem_ty);
+    else
+      mul_op := Operator.makeMul(elem_ty);
+      add_op := Operator.makeAdd(elem_ty);
+      expl1 := list(SimplifyExp.simplifyBinaryOp(e1, mul_op, e2) threaded for e1 in expl1, e2 in expl2);
+      exp := List.reduce(expl1, function SimplifyExp.simplifyBinaryOp(op = add_op));
     end if;
-    mul_op := Operator.makeMul(tyUnlift);
-    add_op := Operator.makeAdd(tyUnlift);
-    expl1 := list(SimplifyExp.simplifyBinaryOp(e1, mul_op, e2) threaded for e1 in expl1, e2 in expl2);
-    exp := List.reduce(expl1, function SimplifyExp.simplifyBinaryOp(op = add_op));
   end makeScalarProduct;
 
   function expandBinaryMatrixProduct

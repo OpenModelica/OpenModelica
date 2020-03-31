@@ -34,6 +34,7 @@ encapsulated package NFComponent
 import DAE;
 import NFBinding.Binding;
 import NFClass.Class;
+import NFClassTree.ClassTree;
 import Dimension = NFDimension;
 import NFInstNode.InstNode;
 import NFModifier.Modifier;
@@ -44,10 +45,10 @@ import Expression = NFExpression;
 import NFPrefixes.*;
 
 protected
-import NFInstUtil;
 import List;
 import Prefixes = NFPrefixes;
 import SCodeUtil;
+import Restriction = NFRestriction;
 
 public
 constant Component.Attributes DEFAULT_ATTR =
@@ -470,9 +471,39 @@ uniontype Component
 
   function hasBinding
     input Component component;
+    input InstNode parent = InstNode.EMPTY_NODE();
     output Boolean b;
+  protected
+    Class cls;
+    array<InstNode> children;
   algorithm
-    b := Binding.isBound(getBinding(component));
+    if Binding.isBound(getBinding(component)) then
+      // Simple case, component has normal binding equation.
+      b := true;
+      return;
+    end if;
+
+    // Complex case, component might be a record instance where each field has
+    // its own binding equation.
+    cls := InstNode.getClass(classInstance(component));
+
+    if not Restriction.isRecord(Class.restriction(cls)) then
+      // Not record.
+      b := false;
+      return;
+    end if;
+
+    // Check if any child of this component is missing a binding.
+    children := ClassTree.getComponents(Class.classTree(cls));
+    for c in children loop
+      if InstNode.isComponent(c) and not hasBinding(InstNode.component(c)) then
+        b := false;
+        return;
+      end if;
+    end for;
+
+
+    b := true;
   end hasBinding;
 
   function getCondition

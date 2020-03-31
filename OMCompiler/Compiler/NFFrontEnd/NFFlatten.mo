@@ -44,7 +44,6 @@ import NFFunction.Function;
 import NFInstNode.InstNode;
 import Statement = NFStatement;
 import FlatModel = NFFlatModel;
-import Prefix;
 import Algorithm = NFAlgorithm;
 import CardinalityTable = NFCardinalityTable;
 
@@ -54,6 +53,7 @@ import Dimension = NFDimension;
 import ExecStat.execStat;
 import ExpressionIterator = NFExpressionIterator;
 import Expression = NFExpression;
+import Flags;
 import Inst = NFInst;
 import List;
 import NFCall.Call;
@@ -193,7 +193,7 @@ algorithm
 
           if Binding.isBound(b) then
             b := flattenBinding(b, ComponentRef.rest(prefix));
-            bindings := getRecordBindings(b);
+            bindings := getRecordBindings(b, comps);
 
             Error.assertion(listLength(bindings) == arrayLength(comps),
               getInstanceName() + " got record binding with wrong number of elements for " +
@@ -254,7 +254,7 @@ protected
   Visibility vis;
 algorithm
   // Remove components that are only outer.
-  if InstNode.isOnlyOuter(component) or InstNode.isEmpty(component) then
+  if InstNode.isOnlyOuter(component) then
     return;
   end if;
 
@@ -348,11 +348,9 @@ algorithm
     return;
   end if;
 
-  if not InstNode.isEmpty(compNode) then
-    comp := InstNode.component(compNode);
-    InstNode.updateComponent(Component.DELETED_COMPONENT(comp), compNode);
-    deleteClassComponents(Component.classInstance(comp));
-  end if;
+  comp := InstNode.component(compNode);
+  InstNode.updateComponent(Component.DELETED_COMPONENT(comp), compNode);
+  deleteClassComponents(Component.classInstance(comp));
 end deleteComponent;
 
 function deleteClassComponents
@@ -477,18 +475,19 @@ end isTypeAttributeNamed;
 
 function getRecordBindings
   input Binding binding;
-  output list<Binding> recordBindings;
+  input array<InstNode> comps;
+  output list<Binding> recordBindings = {};
 protected
   Expression binding_exp;
-  list<Expression> expl;
   Variability var;
 algorithm
   binding_exp := Binding.getTypedExp(binding);
   var := Binding.variability(binding);
 
+  // Convert the expressions in the record expression into bindings.
   recordBindings := match binding_exp
-    case Expression.RECORD() then
-      list(if Expression.isEmpty(e) then
+    case Expression.RECORD()
+      then list(if Expression.isEmpty(e) then
                // The binding for a record field might be Expression.EMPTY if it comes
                // from an evaluated function call where it wasn't assigned a value.
                NFBinding.EMPTY_BINDING
@@ -668,7 +667,7 @@ algorithm
               prefix_node.parent, InstNodeType.NORMAL_COMP());
         end match;
         {Dimension.INTEGER(size = stop)} := dimensions;
-        range := Expression.RANGE(Type.INTEGER(), Expression.INTEGER(1), NONE(), Expression.INTEGER(stop));
+        range := Expression.RANGE(Type.ARRAY(Type.INTEGER(), dimensions), Expression.INTEGER(1), NONE(), Expression.INTEGER(stop));
         veqn := Equation.mapExp(eqn, function addIterator(prefix = prefix, subscript = Subscript.INDEX(Expression.CREF(Type.INTEGER(), ComponentRef.makeIterator(iter, Type.INTEGER())))));
       then
         Equation.FOR(iter, SOME(range), {veqn}, Equation.source(eqn));
@@ -702,7 +701,7 @@ algorithm
               prefix_node.parent, InstNodeType.NORMAL_COMP());
         end match;
         {Dimension.INTEGER(size = stop)} := dimensions;
-        range := Expression.RANGE(Type.INTEGER(), Expression.INTEGER(1), NONE(), Expression.INTEGER(stop));
+        range := Expression.RANGE(Type.ARRAY(Type.INTEGER(), dimensions), Expression.INTEGER(1), NONE(), Expression.INTEGER(stop));
         body := Statement.mapExpList(alg.statements, function addIterator(prefix = prefix, subscript = Subscript.INDEX(Expression.CREF(Type.INTEGER(), ComponentRef.makeIterator(iter, Type.INTEGER())))));
       then
         Algorithm.ALGORITHM({Statement.FOR(iter, SOME(range), body, alg.source)}, alg.source);
@@ -825,43 +824,22 @@ protected
   list<Subscript> subs, accum_subs;
   Integer binding_level;
   list<InstNode> parents;
+  ComponentRef pre;
+  InstNode cr_node, par;
 algorithm
   outExp := match exp
-    case Expression.BINDING_EXP()
+    case Expression.BINDING_EXP(exp = outExp)
       algorithm
         parents := listRest(exp.parents);
 
-        if not (exp.isEach or listEmpty(parents)) then
-          if isTypeAttribute then
+        if not exp.isEach then
+          if isTypeAttribute and not listEmpty(parents) then
             parents := listRest(parents);
           end if;
 
-          binding_level := 0;
-          for parent in parents loop
-            binding_level := binding_level + Type.dimensionCount(InstNode.getType(parent));
-          end for;
-
-          if binding_level > 0 then
-            // TODO: Optimize this, making a list of all subscripts in the prefix
-            //       when only a few are needed is unnecessary.
-            subs := listAppend(listReverse(s) for s in ComponentRef.subscriptsAll(prefix));
-            accum_subs := {};
-
-            for i in 1:binding_level loop
-              if listEmpty(subs) then
-                break;
-              end if;
-
-              accum_subs := listHead(subs) :: accum_subs;
-              subs := listRest(subs);
-            end for;
-
-            outExp := Expression.applySubscripts(accum_subs, exp.exp);
-          else
-            outExp := exp.exp;
+          if not listEmpty(parents) then
+            outExp := flattenBindingExp2(outExp, prefix, parents);
           end if;
-        else
-          outExp := exp.exp;
         end if;
       then
         flattenExp(outExp, prefix);
@@ -869,6 +847,47 @@ algorithm
     else exp;
   end match;
 end flattenBindingExp;
+
+function flattenBindingExp2
+  input Expression exp;
+  input ComponentRef prefix;
+  input list<InstNode> parents;
+  output Expression outExp = exp;
+protected
+  Integer binding_level = 0;
+  list<Subscript> subs;
+  ComponentRef pre = prefix;
+  InstNode pre_node, par;
+algorithm
+  par := listHead(parents);
+
+  if InstNode.isComponent(par) then
+    pre_node := ComponentRef.node(pre);
+
+    while not InstNode.refEqual(pre_node, par) loop
+      pre := ComponentRef.rest(pre);
+
+      if ComponentRef.isEmpty(pre) then
+        return;
+      end if;
+
+      pre_node := ComponentRef.node(pre);
+    end while;
+  end if;
+
+  for parent in parents loop
+    binding_level := binding_level + Type.dimensionCount(InstNode.getType(parent));
+  end for;
+
+  if binding_level > 0 then
+    // TODO: Optimize this, making a list of all subscripts in the prefix when
+    //       only a few are needed is unnecessary.
+    subs := listAppend(listReverse(s) for s in ComponentRef.subscriptsAll(pre));
+    binding_level := min(binding_level, listLength(subs));
+    subs := List.firstN_reverse(subs, binding_level);
+    outExp := Expression.applySubscripts(subs, exp);
+  end if;
+end flattenBindingExp2;
 
 function flattenExp
   input output Expression exp;
@@ -1232,16 +1251,16 @@ function addElementSourceArrayPrefix
   input output DAE.ElementSource source;
   input ComponentRef prefix;
 protected
-  Prefix.ComponentPrefix comp_pre;
+  DAE.ComponentPrefix comp_pre;
 algorithm
   // It seems the backend doesn't really care about the ComponentPrefix, and
   // creating a proper prefix here could be rather expensive. So we just create
   // a dummy prefix here with one subscript to keep CheckModel happy.
-  comp_pre := Prefix.ComponentPrefix.PRE(
+  comp_pre := DAE.ComponentPrefix.PRE(
     ComponentRef.firstName(prefix),
     {},
     {DAE.Subscript.INDEX(DAE.Exp.ICONST(-1))},
-    Prefix.ComponentPrefix.NOCOMPPRE(),
+    DAE.ComponentPrefix.NOCOMPPRE(),
     ClassInf.State.UNKNOWN(Absyn.IDENT("?")),
     AbsynUtil.dummyInfo
   );
@@ -1691,10 +1710,6 @@ algorithm
     case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE(), sections = sections)
       algorithm
         for c in cls_tree.components loop
-          if InstNode.isEmpty(c) then
-            continue;
-          end if;
-
           comp := InstNode.component(c);
           funcs := collectTypeFuncs(Component.getType(comp), funcs);
           binding := Component.getBinding(comp);

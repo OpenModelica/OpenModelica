@@ -130,12 +130,13 @@ public
   function toString
     input Variable var;
     input String indent = "";
+    input Boolean printBindingType = false;
     output String str;
   protected
     IOStream.IOStream s;
   algorithm
     s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
-    s := toStream(var, indent, s);
+    s := toStream(var, indent, printBindingType, s);
     str := IOStream.string(s);
     IOStream.delete(s);
   end toString;
@@ -143,6 +144,7 @@ public
   function toStream
     input Variable var;
     input String indent = "";
+    input Boolean printBindingType = false;
     input output IOStream.IOStream s;
   protected
     Boolean first;
@@ -186,6 +188,13 @@ public
 
     if Binding.isBound(var.binding) then
       s := IOStream.append(s, " = ");
+
+      if printBindingType then
+        s := IOStream.append(s, "(");
+        s := IOStream.append(s, Type.toString(Binding.getType(var.binding)));
+        s := IOStream.append(s, ") ");
+      end if;
+
       s := IOStream.append(s, Binding.toString(var.binding));
     end if;
   end toStream;

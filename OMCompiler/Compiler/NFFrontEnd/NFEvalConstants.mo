@@ -406,7 +406,7 @@ protected
 algorithm
   if not Function.isEvaluated(func) then
     Function.markEvaluated(func);
-    func := Function.mapExp(func, evaluateFuncExp);
+    func := Function.mapExp(func, function evaluateFuncExp(fnNode = func.node));
 
     for fn_der in func.derivatives loop
       for der_fn in Function.getCachedFuncs(fn_der.derivativeFn) loop
@@ -418,25 +418,28 @@ end evaluateFunction;
 
 function evaluateFuncExp
   input Expression exp;
+  input InstNode fnNode;
   output Expression outExp;
 algorithm
-  outExp := evaluateFuncExpTraverser(exp, false);
+  outExp := evaluateFuncExpTraverser(exp, fnNode, false);
 end evaluateFuncExp;
 
 function evaluateFuncExpTraverser
   input Expression exp;
+  input InstNode fnNode;
   input Boolean changed;
   output Expression outExp;
   output Boolean outChanged;
 protected
   Expression e;
 algorithm
-  (e, outChanged) := Expression.mapFoldShallow(exp, evaluateFuncExpTraverser, false);
+  (e, outChanged) := Expression.mapFoldShallow(exp,
+    function evaluateFuncExpTraverser(fnNode = fnNode), false);
 
   outExp := match e
     case Expression.CREF()
       algorithm
-        if ComponentRef.isPackageConstant(e.cref) then
+        if not isLocalFunctionVariable(e.cref, fnNode) then
           outExp := Ceval.evalCref(e.cref, e, Ceval.EvalTarget.IGNORE_ERRORS(), evalSubscripts = false);
           outExp := Expression.stripBindingInfo(outExp);
           outChanged := true;
@@ -454,6 +457,23 @@ algorithm
 
   outChanged := changed or outChanged;
 end evaluateFuncExpTraverser;
+
+function isLocalFunctionVariable
+  input ComponentRef cref;
+  input InstNode fnNode;
+  output Boolean res;
+protected
+  InstNode node;
+algorithm
+  if ComponentRef.isPackageConstant(cref) then
+    res := false;
+  elseif ComponentRef.nodeVariability(cref) <= Variability.PARAMETER then
+    node := InstNode.derivedParent(ComponentRef.node(ComponentRef.firstNonScope(cref)));
+    res := InstNode.refEqual(fnNode, node);
+  else
+    res := true;
+  end if;
+end isLocalFunctionVariable;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFEvalConstants;

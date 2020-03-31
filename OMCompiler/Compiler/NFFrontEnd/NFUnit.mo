@@ -38,16 +38,15 @@ encapsulated package NFUnit
                authors: Jan Hagemann and Lennart Ochel (FH Bielefeld, Germany)"
 
 public
-import DAE;
-import System;
 import ComponentRef = NFComponentRef;
 
 protected
+import Debug;
 import Error;
+import Flags;
 import HashTableStringToUnit = NFHashTableStringToUnit;
 import HashTableUnitToString = NFHashTableUnitToString;
 import Util;
-import Debug;
 
 
 public uniontype Unit

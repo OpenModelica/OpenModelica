@@ -59,7 +59,6 @@ import Type = NFType;
 import Class = NFClass.Class;
 import ClassTree = NFClassTree;
 import InstUtil = NFInstUtil;
-import DAEUtil;
 import Prefixes = NFPrefixes;
 import Restriction = NFRestriction;
 import ComplexType = NFComplexType;
@@ -81,7 +80,6 @@ import OperatorOverloading = NFOperatorOverloading;
 import ExpandExp = NFExpandExp;
 import NFFunction.Slot;
 import Util;
-import System;
 
 public
 type MatchKind = enumeration(
@@ -2613,12 +2611,12 @@ algorithm
   end if;
 
   for ty2 in tyl2 loop
+    ty1 :: tyl1 := tyl1;
+
     // Skip matching if the rhs is _.
     if Type.isUnknown(ty2) then
       continue;
     end if;
-
-    ty1 :: tyl1 := tyl1;
 
     (_, _, matchKind) := matchTypes(ty1, ty2, expression, allowUnknown);
 

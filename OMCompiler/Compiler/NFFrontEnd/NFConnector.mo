@@ -43,6 +43,7 @@ protected
   import Connector = NFConnector;
   import NFInstNode.InstNode;
   import ElementSource;
+  import Flags;
   import NFComponent.Component;
   import NFClassTree.ClassTree;
   import NFClass.Class;

@@ -41,30 +41,30 @@ import Statement = NFStatement;
 import Restriction = NFRestriction;
 
 protected
-import ExecStat.execStat;
-import ElementSource;
-import ComponentRef = NFComponentRef;
-import Type = NFType;
-import NFModifier.Modifier;
-import Expression = NFExpression;
-import NFComponent.Component;
-import Prefixes = NFPrefixes;
-import NFClass.Class;
-import DAEUtil;
-import Dimension = NFDimension;
-import List;
-import Util;
-import MetaModelica.Dangerous.listReverseInPlace;
-import Sections = NFSections;
-import Function = NFFunction.Function;
-import NFClassTree.ClassTree;
-import NFPrefixes.Visibility;
-import NFPrefixes.Direction;
-import Variable = NFVariable;
-import ComponentReference;
+
 import Algorithm = NFAlgorithm;
+import ComponentReference;
+import ComponentRef = NFComponentRef;
+import Dimension = NFDimension;
+import ElementSource;
+import ExecStat.execStat;
+import Expression = NFExpression;
+import Flags;
+import Function = NFFunction.Function;
+import MetaModelica.Dangerous.listReverseInPlace;
+import NFClass.Class;
+import NFClassTree.ClassTree;
+import NFComponent.Component;
+import NFModifier.Modifier;
 import NFPrefixes.ConnectorType;
+import NFPrefixes.Direction;
 import NFPrefixes.Variability;
+import NFPrefixes.Visibility;
+import Prefixes = NFPrefixes;
+import Sections = NFSections;
+import Type = NFType;
+import Util;
+import Variable = NFVariable;
 
 public
 function convert
@@ -443,7 +443,7 @@ function convertStateSelectAttribute
 protected
   InstNode node;
   String name;
-  Expression exp = Binding.getTypedExp(binding);
+  Expression exp = Expression.getBindingExp(Binding.getTypedExp(binding));
 algorithm
   name := match exp
     case Expression.ENUM_LITERAL() then exp.name;
@@ -1131,11 +1131,10 @@ protected
 algorithm
   typeVars := match cls as InstNode.getClass(complexCls)
     case Class.INSTANCED_CLASS(restriction = Restriction.RECORD())
-      then list(makeTypeRecordVar(c) for c guard not InstNode.isEmpty(c)
-             in ClassTree.getComponents(cls.elements));
+      then list(makeTypeRecordVar(c) for c in ClassTree.getComponents(cls.elements));
 
     case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE())
-      then list(makeTypeVar(c) for c guard not (InstNode.isOnlyOuter(c) or InstNode.isEmpty(c))
+      then list(makeTypeVar(c) for c guard not InstNode.isOnlyOuter(c)
              in ClassTree.getComponents(cls.elements));
 
     else {};

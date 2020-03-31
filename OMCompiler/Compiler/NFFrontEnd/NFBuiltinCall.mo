@@ -34,7 +34,6 @@ encapsulated package NFBuiltinCall
   import AbsynUtil;
   import NFCall.Call;
   import NFCall.CallAttributes;
-  import DAE;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import NFPrefixes.Variability;
@@ -132,6 +131,8 @@ public
       case "product" then typeProductCall(call, next_origin, info);
       case "root" then typeRootCall(call, next_origin, info);
       case "rooted" then typeRootedCall(call, next_origin, info);
+      case "uniqueRoot" then typeUniqueRootCall(call, next_origin, info);
+      case "uniqueRootIndices" then typeUniqueRootIndicesCall(call, next_origin, info);
       case "scalar" then typeScalarCall(call, next_origin, info);
       case "smooth" then typeSmoothCall(call, next_origin, info);
       case "sum" then typeSumCall(call, next_origin, info);
@@ -939,7 +940,9 @@ protected
     for arg in dimensionArgs loop
       (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info);
 
-      if arg_var <= Variability.STRUCTURAL_PARAMETER and not Expression.containsIterator(arg, origin) then
+      if arg_var <= Variability.STRUCTURAL_PARAMETER and
+         not ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) and
+         not Expression.containsIterator(arg, origin) then
         arg := Ceval.evalExp(arg);
         arg_ty := Expression.typeOf(arg);
       else
@@ -964,7 +967,7 @@ protected
     {fn} := Function.typeRefCache(fnRef);
     ty := Type.liftArrayLeftList(fillType, dims);
 
-    if evaluated and ExpOrigin.flagNotSet(origin, ExpOrigin.FUNCTION) then
+    if evaluated then
       callExp := Ceval.evalBuiltinFill(ty_args);
     else
       callExp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.FILL_FUNC, ty_args, variability, ty));
@@ -1548,6 +1551,149 @@ protected
     callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, ty));
   end typeRootedCall;
 
+  function typeUniqueRootCall
+    "see also typeUniqueRootIndicesCall"
+    input Call call;
+    input ExpOrigin.Type origin;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+    output Variability var = Variability.PARAMETER;
+  protected
+    ComponentRef fn_ref;
+    list<Expression> args;
+    list<NamedArg> named_args;
+    Expression arg1, arg2;
+    Function fn;
+    Integer args_len;
+    String name;
+  algorithm
+    Error.addSourceMessage(Error.NON_STANDARD_OPERATOR, {"Connections.uniqueRoot"}, info);
+
+    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+
+    for narg in named_args loop
+      (name, arg2) := narg;
+
+      if name == "message" then
+        args := List.appendElt(arg2, args);
+      else
+        Error.addSourceMessageAndFail(Error.NO_SUCH_PARAMETER,
+          {ComponentRef.toString(fn_ref), name}, info);
+      end if;
+    end for;
+
+    args_len := listLength(args);
+    if args_len < 1 or args_len > 2 then
+      Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
+        {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector, String = \"\")"}, info);
+    end if;
+
+    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
+      Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
+        {ComponentRef.toString(fn_ref)}, info);
+    end if;
+
+    arg1 :: args := args;
+
+    (arg1, ty) := Typing.typeExp(arg1, origin, info);
+    checkConnectionsArgument(arg1, ty, fn_ref, 1, info);
+
+    if args_len == 2 then
+      arg2 := listHead(args);
+      (arg2, ty) := Typing.typeExp(arg2, origin, info);
+
+      if not Type.isString(ty) then
+        Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
+          {"2", ComponentRef.toString(fn_ref), "", Expression.toString(arg2),
+           Type.toString(ty), "String"}, info);
+      end if;
+    else
+      arg2 := Expression.STRING("");
+    end if;
+
+    {fn} := Function.typeRefCache(fn_ref);
+    ty := Type.NORETCALL();
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2}, var, ty));
+  end typeUniqueRootCall;
+
+  function typeUniqueRootIndicesCall
+  "See Modelica_StateGraph2:
+    https://github.com/modelica/Modelica_StateGraph2
+    and
+    https://trac.modelica.org/Modelica/ticket/984
+    and
+    http://www.ep.liu.se/ecp/043/041/ecp09430108.pdf
+    for a specification of this operator"
+    input Call call;
+    input ExpOrigin.Type origin;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+    output Variability var = Variability.PARAMETER;
+  protected
+    ComponentRef fn_ref;
+    list<Expression> args;
+    list<NamedArg> named_args;
+    Expression arg1, arg2, arg3;
+    Function fn;
+    Integer args_len;
+    String name;
+    Type ty1, ty2, ty3;
+  algorithm
+    Error.addSourceMessage(Error.NON_STANDARD_OPERATOR, {"Connections.uniqueRootIndices"}, info);
+
+    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+
+    for narg in named_args loop
+      (name, arg3) := narg;
+
+      if name == "message" then
+        args := List.appendElt(arg3, args);
+      else
+        Error.addSourceMessageAndFail(Error.NO_SUCH_PARAMETER,
+          {ComponentRef.toString(fn_ref), name}, info);
+      end if;
+    end for;
+
+    args_len := listLength(args);
+    if args_len < 2 or args_len > 3 then
+      Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
+        {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector, Connector, String = \"\")"}, info);
+    end if;
+
+    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
+      Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
+        {ComponentRef.toString(fn_ref)}, info);
+    end if;
+
+    arg1 :: arg2 :: args := args;
+
+    (arg1, ty1) := Typing.typeExp(arg1, origin, info);
+    checkConnectionsArgument(arg1, ty1, fn_ref, 1, info);
+    (arg2, ty2) := Typing.typeExp(arg2, origin, info);
+    checkConnectionsArgument(arg2, ty2, fn_ref, 1, info);
+
+    if args_len == 3 then
+      arg3 := listHead(args);
+      (arg3, ty3) := Typing.typeExp(arg3, origin, info);
+
+      if not Type.isString(ty3) then
+        Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
+          {"3", ComponentRef.toString(fn_ref), "", Expression.toString(arg2),
+           Type.toString(ty3), "String"}, info);
+      end if;
+    else
+      arg2 := Expression.STRING("");
+    end if;
+
+    {fn} := Function.typeRefCache(fn_ref);
+    assert(listLength(Type.arrayDims(ty1)) == listLength(Type.arrayDims(ty2)), "the first two parameters need to have the same size");
+    ty := Type.ARRAY(Type.Type.INTEGER(), Type.arrayDims(ty1));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2}, var, ty));
+
+  end typeUniqueRootIndicesCall;
+
   function checkConnectionsArgument
     input Expression arg;
     input Type ty;
@@ -1559,11 +1705,12 @@ protected
       local
         Type ty2;
         InstNode node;
-        Boolean valid_cref;
+        Boolean valid_cref, isConnector;
 
       case Expression.CREF()
         algorithm
-          valid_cref := match arg.cref
+          (valid_cref, isConnector) := match arg.cref
+            // check form A.R
             case ComponentRef.CREF(node = node, origin = NFComponentRef.Origin.CREF,
                 restCref = ComponentRef.CREF(ty = ty2, origin = NFComponentRef.Origin.CREF))
               algorithm
@@ -1573,17 +1720,34 @@ protected
                     then ty2.elementType;
                   else ty2;
                 end match;
-              then Class.isOverdetermined(InstNode.getClass(node)) and
-                   Type.isConnector(ty2);
+              then (Class.isOverdetermined(InstNode.getClass(node)), Type.isConnector(ty2));
 
-            else false;
+            // adrpo #5821, allow for R only instead of A.R and issue a warning
+            case ComponentRef.CREF(node = node, ty = ty2)
+              algorithm
+                ty2 := match ty2
+                  case Type.ARRAY()
+                    guard listLength(ComponentRef.subscriptsAllFlat(arg.cref)) == listLength(ty2.dimensions)
+                    then ty2.elementType;
+                  else ty2;
+                end match;
+              then (Class.isOverdetermined(InstNode.getClass(node)), Type.isConnector(ty2));
+
+            else (false, false);
           end match;
 
-          if not valid_cref then
-            Error.addSourceMessageAndFail(
-              if argIndex == 1 then Error.INVALID_ARGUMENT_TYPE_BRANCH_FIRST else
-                                    Error.INVALID_ARGUMENT_TYPE_BRANCH_SECOND,
-              {ComponentRef.toString(fnRef)}, info);
+          if not (valid_cref and isConnector) then
+            if valid_cref then
+              Error.addSourceMessage(
+                if argIndex == 1 then Error.W_INVALID_ARGUMENT_TYPE_BRANCH_FIRST else
+                                      Error.W_INVALID_ARGUMENT_TYPE_BRANCH_SECOND,
+                {ComponentRef.toString(arg.cref), ComponentRef.toString(fnRef)}, info);
+            else
+              Error.addSourceMessageAndFail(
+                if argIndex == 1 then Error.INVALID_ARGUMENT_TYPE_BRANCH_FIRST else
+                                      Error.INVALID_ARGUMENT_TYPE_BRANCH_SECOND,
+                {ComponentRef.toString(arg.cref), ComponentRef.toString(fnRef)}, info);
+            end if;
           end if;
         then
           ();

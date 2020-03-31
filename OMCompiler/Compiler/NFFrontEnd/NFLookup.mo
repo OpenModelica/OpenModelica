@@ -39,7 +39,7 @@ import Absyn;
 import AbsynUtil;
 import SCode;
 import Dump;
-import Error;
+import ErrorTypes;
 import Global;
 import NFBuiltin;
 import Inst = NFInst;
@@ -56,6 +56,7 @@ import NFComponent.Component;
 import Subscript = NFSubscript;
 import ComplexType = NFComplexType;
 import Config;
+import Error;
 
 public
 type MatchType = enumeration(FOUND, NOT_FOUND, PARTIAL);
@@ -264,7 +265,7 @@ function lookupCrefWithError
   input Absyn.ComponentRef cref;
   input InstNode scope;
   input SourceInfo info;
-  input Error.Message errMsg;
+  input ErrorTypes.Message errMsg;
   output ComponentRef foundCref;
   output InstNode foundScope;
   output LookupState state;
@@ -431,7 +432,7 @@ function lookupNameWithError
   input Absyn.Path name;
   input InstNode scope;
   input SourceInfo info;
-  input Error.Message errorType;
+  input ErrorTypes.Message errorType;
   input Boolean checkAccessViolations = true;
   output InstNode node;
   output LookupState state;

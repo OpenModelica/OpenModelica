@@ -91,6 +91,11 @@ uniontype InstNodeType
   record REDECLARED_COMP
     InstNode parent "The parent of the replaced component";
   end REDECLARED_COMP;
+
+  record REDECLARED_CLASS
+    InstNode parent;
+    InstNodeType originalType;
+  end REDECLARED_CLASS;
 end InstNodeType;
 
 encapsulated package NodeTree
@@ -499,6 +504,7 @@ uniontype InstNode
       case REF_NODE() then "$REF[" + String(node.index) + "]";
       case NAME_NODE() then node.name;
       case IMPLICIT_SCOPE() then "$IMPLICIT";
+      case EXP_NODE() then "$EXP(" + Expression.toString(node.exp) + ")";
       case EMPTY_NODE() then "$EMPTY";
     end match;
   end name;
@@ -960,6 +966,8 @@ uniontype InstNode
             scopeList(parent(clsNode), includeRoot, clsNode :: accumScopes)
           else
             accumScopes;
+      case InstNodeType.REDECLARED_CLASS()
+        then scopeList(ty.parent, includeRoot, getDerivedNode(clsNode) :: accumScopes);
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown node type", sourceInfo());
@@ -1028,6 +1036,8 @@ uniontype InstNode
             scopePath2(classParent(node), includeRoot, Absyn.QUALIFIED(className(node), accumPath))
           else
             accumPath;
+      case InstNodeType.REDECLARED_CLASS()
+        then scopePath2(ty.parent, includeRoot, Absyn.QUALIFIED(className(node), accumPath));
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown node type", sourceInfo());
@@ -1260,6 +1270,23 @@ uniontype InstNode
       else false;
     end match;
   end refEqual;
+
+  function refCompare
+    input InstNode node1;
+    input InstNode node2;
+    output Integer res;
+  algorithm
+    res := match (node1, node2)
+      case (CLASS_NODE(), CLASS_NODE())
+        then Util.referenceCompare(Pointer.access(node1.cls), Pointer.access(node2.cls));
+      case (COMPONENT_NODE(), COMPONENT_NODE())
+        then Util.referenceCompare(Pointer.access(node1.component), Pointer.access(node2.component));
+      case (CLASS_NODE(), COMPONENT_NODE())
+        then Util.referenceCompare(Pointer.access(node1.cls), Pointer.access(node2.component));
+      case (COMPONENT_NODE(), CLASS_NODE())
+        then Util.referenceCompare(Pointer.access(node1.component), Pointer.access(node2.cls));
+    end match;
+  end refCompare;
 
   function nameEqual
     input InstNode node1;
@@ -1611,6 +1638,29 @@ uniontype InstNode
       case COMPONENT_NODE() then isRecord(Component.classInstance(Pointer.access(node.component)));
     end match;
   end isRecord;
+
+  function isModel
+    input InstNode node;
+    output Boolean isModel;
+  algorithm
+    isModel := match node
+      case CLASS_NODE() then Restriction.isModel(Class.restriction(Pointer.access(node.cls)));
+      case COMPONENT_NODE() then isModel(Component.classInstance(Pointer.access(node.component)));
+      else false;
+    end match;
+  end isModel;
+
+  function hasBinding
+    input InstNode node;
+    output Boolean hasBinding;
+  algorithm
+    hasBinding := match node
+      case COMPONENT_NODE()
+        then Component.hasBinding(Pointer.access(node.component)) or hasBinding(derivedParent(node));
+      else false;
+    end match;
+  end hasBinding;
+
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

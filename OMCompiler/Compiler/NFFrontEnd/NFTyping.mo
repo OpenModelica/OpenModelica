@@ -55,12 +55,12 @@ import Prefixes = NFPrefixes;
 import Connector = NFConnector;
 import Connection = NFConnection;
 import Algorithm = NFAlgorithm;
+import Record = NFRecord;
 
 protected
 import Builtin = NFBuiltin;
 import BuiltinCall = NFBuiltinCall;
 import Ceval = NFCeval;
-import ClassInf;
 import ComponentRef = NFComponentRef;
 import Config;
 import Origin = NFComponentRef.Origin;
@@ -76,7 +76,6 @@ import TypeCheck = NFTypeCheck;
 import Types;
 import NFSections.Sections;
 import List;
-import DAEUtil;
 import MetaModelica.Dangerous.listReverseInPlace;
 import ComplexType = NFComplexType;
 import Restriction = NFRestriction;
@@ -86,10 +85,9 @@ import NFFunction.Function;
 import NFInstNode.CachedData;
 import Direction = NFPrefixes.Direction;
 import ElementSource;
-import StringUtil;
-import NFOCConnectionGraph;
 import System;
 import ErrorExt;
+import ErrorTypes;
 import OperatorOverloading = NFOperatorOverloading;
 
 public
@@ -208,9 +206,7 @@ algorithm
     case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
         for c in cls_tree.components loop
-          if not InstNode.isEmpty(c) then
-            typeComponent(c, origin);
-          end if;
+          typeComponent(c, origin);
         end for;
 
         () := match c.ty
@@ -291,7 +287,7 @@ function typeClassType
   output Type ty;
 protected
   Class cls, ty_cls;
-  InstNode node;
+  InstNode node, ty_node;
   Function fn;
   Boolean is_expandable;
 algorithm
@@ -301,6 +297,14 @@ algorithm
     case Class.INSTANCED_CLASS(restriction = Restriction.CONNECTOR(isExpandable = is_expandable))
       algorithm
         ty := Type.COMPLEX(clsNode, makeConnectorType(cls.elements, is_expandable));
+        cls.ty := ty;
+        InstNode.updateClass(cls, clsNode);
+      then
+        ty;
+
+    case Class.INSTANCED_CLASS(ty = Type.COMPLEX(cls = ty_node, complexTy = ComplexType.RECORD(constructor = node)))
+      algorithm
+        ty := Type.COMPLEX(ty_node, makeRecordType(node));
         cls.ty := ty;
         InstNode.updateClass(cls, clsNode);
       then
@@ -401,6 +405,32 @@ algorithm
     end if;
   end if;
 end makeConnectorType;
+
+function makeRecordType
+  input InstNode constructor;
+  output ComplexType recordTy;
+protected
+  CachedData cache;
+  Function fn;
+  list<Record.Field> fields;
+algorithm
+  cache := InstNode.getFuncCache(constructor);
+
+  recordTy := match cache
+    case CachedData.FUNCTION(funcs = fn :: _)
+      algorithm
+        fields := Record.collectRecordFields(fn.node);
+      then
+        ComplexType.RECORD(constructor, fields);
+
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() +
+          " got record type without constructor", sourceInfo());
+      then
+        fail();
+  end match;
+end makeRecordType;
 
 function typeComponent
   input InstNode component;
@@ -545,12 +575,13 @@ algorithm
   dimension := match dimension
     local
       Expression exp;
+      Option<Expression> oexp;
       Variability var;
       Dimension dim;
       Binding b;
       Type ty;
       TypingError ty_err;
-      Integer parent_dims;
+      Integer parent_dims, dim_index;
 
     // Print an error when a dimension that's currently being processed is
     // found, which indicates a dependency loop. Another way of handling this
@@ -652,14 +683,32 @@ algorithm
           // to get the dimension we're looking for.
           case Binding.UNTYPED_BINDING()
             algorithm
-              (dim, _, ty_err) := typeExpDim(b.bindingExp, index + Binding.propagatedDimCount(b) + parent_dims,
-                                             ExpOrigin.setFlag(origin, ExpOrigin.DIMENSION), info);
+              dim_index := index + Binding.propagatedDimCount(b) + parent_dims;
+              (dim, oexp, ty_err) := typeExpDim(b.bindingExp, dim_index, ExpOrigin.setFlag(origin, ExpOrigin.DIMENSION), info);
+
+              // If the deduced dimension is unknown, evaluate the binding and try again.
+              if Dimension.isUnknown(dim) and not TypingError.isError(ty_err) then
+                exp := if isSome(oexp) then Util.getOption(oexp) else b.bindingExp;
+                exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
+                (dim, ty_err) := nthDimensionBoundsChecked(Expression.typeOf(exp), dim_index);
+              end if;
             then
               (dim, ty_err);
 
           // A typed binding, get the dimension from the binding's type.
           case Binding.TYPED_BINDING()
-            then nthDimensionBoundsChecked(b.bindingType, index + Binding.propagatedDimCount(b) + parent_dims);
+            algorithm
+              dim_index := index + Binding.propagatedDimCount(b) + parent_dims;
+              (dim, ty_err) := nthDimensionBoundsChecked(b.bindingType, dim_index);
+
+              // If the deduced dimension is unknown, evaluate the binding and try again.
+              if Dimension.isUnknown(dim) and not TypingError.isError(ty_err) then
+                exp := Ceval.evalExp(b.bindingExp, Ceval.EvalTarget.DIMENSION(component, index, b.bindingExp, info));
+                (dim, ty_err) := nthDimensionBoundsChecked(Expression.typeOf(exp), dim_index);
+              end if;
+            then
+              (dim, ty_err);
+
         end match;
 
         () := match ty_err
@@ -735,7 +784,7 @@ protected
   Expression exp;
   Binding parent_binding;
 algorithm
-  parent := InstNode.parent(component);
+  parent := InstNode.derivedParent(component);
 
   if InstNode.isComponent(parent) then
     // Get the binding of the component's parent.
@@ -826,10 +875,6 @@ protected
   Variability comp_var, comp_eff_var, bind_var, bind_eff_var;
   Component.Attributes attrs;
 algorithm
-  if InstNode.isEmpty(component) then
-    return;
-  end if;
-
   c := InstNode.component(node);
 
   () := match c
@@ -1034,30 +1079,10 @@ protected
   Binding binding;
   InstNode mod_parent;
 algorithm
-  () := match attribute
-    // Normal modifier with no submodifiers.
-    case Modifier.MODIFIER(name = name, binding = binding, subModifiers = ModTable.EMPTY())
-      algorithm
-        // Type and type check the attribute.
-        checkBindingEach(binding);
-        binding := typeBinding(binding, origin);
-        binding := TypeCheck.matchBinding(binding, ty, name, component);
-
-        // Check the variability. All builtin attributes have parameter variability.
-        if Binding.variability(binding) > Variability.PARAMETER then
-          Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,
-            {name, Prefixes.variabilityString(Variability.PARAMETER),
-             "'" + Binding.toString(binding) + "'", Prefixes.variabilityString(Binding.variability(binding))},
-            Binding.getInfo(binding));
-          fail();
-        end if;
-
-        attribute.binding := binding;
-      then
-        ();
-
+  attribute := match attribute
     // Modifier with submodifier, e.g. Real x(start(y = 1)), is an error.
     case Modifier.MODIFIER()
+      guard not ModTable.isEmpty(attribute.subModifiers)
       algorithm
         // Print an error for the first submodifier. The builtin attributes
         // don't have types as such, so for the error message to make sense we
@@ -1067,6 +1092,38 @@ algorithm
           {name, Type.toString(ty)}, attribute.info);
       then
         fail();
+
+    // Modifier with no binding, e.g. Real x(final start).
+    case Modifier.MODIFIER()
+      guard Binding.isUnbound(attribute.binding)
+      algorithm
+        checkBindingEach(attribute.binding);
+      then
+        NFModifier.NOMOD();
+
+    // Normal modifier with no submodifiers.
+    case Modifier.MODIFIER(name = name, binding = binding)
+      algorithm
+        // Type and type check the attribute.
+        checkBindingEach(binding);
+
+        if Binding.isBound(binding) then
+          binding := typeBinding(binding, origin);
+          binding := TypeCheck.matchBinding(binding, ty, name, component);
+
+          // Check the variability. All builtin attributes have parameter variability.
+          if Binding.variability(binding) > Variability.PARAMETER then
+            Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,
+              {name, Prefixes.variabilityString(Variability.PARAMETER),
+               "'" + Binding.toString(binding) + "'", Prefixes.variabilityString(Binding.variability(binding))},
+              Binding.getInfo(binding));
+            fail();
+          end if;
+
+          attribute.binding := binding;
+        end if;
+      then
+        attribute;
 
   end match;
 end typeTypeAttribute;
@@ -1735,11 +1792,11 @@ algorithm
     expl2 := exp::expl2;
     n := n-1;
     if not Config.getGraphicsExpMode() then // forget errors when handling annotations
-	    if TypeCheck.isIncompatibleMatch(mk) then
-	      Error.addSourceMessage(Error.NF_ARRAY_TYPE_MISMATCH, {String(n), Expression.toString(exp), Type.toString(ty2), Type.toString(ty1)}, info);
-	      fail();
-	    end if;
-	  end if;
+      if TypeCheck.isIncompatibleMatch(mk) then
+        Error.addSourceMessage(Error.NF_ARRAY_TYPE_MISMATCH, {String(n), Expression.toString(exp), Type.toString(ty2), Type.toString(ty1)}, info);
+        fail();
+      end if;
+    end if;
   end for;
 
   arrayType := Type.liftArrayLeft(ty1, Dimension.fromExpList(expl2));
@@ -2445,10 +2502,6 @@ function typeComponentSections
 protected
   Component comp;
 algorithm
-  if InstNode.isEmpty(component) then
-    return;
-  end if;
-
   comp := InstNode.component(component);
 
   () := match comp
@@ -2857,7 +2910,7 @@ function typeCondition
   input output Expression condition;
   input ExpOrigin.Type origin;
   input DAE.ElementSource source;
-  input Error.Message errorMsg;
+  input ErrorTypes.Message errorMsg;
   input Boolean allowVector = false;
   input Boolean allowClock = false;
         output Type ty;

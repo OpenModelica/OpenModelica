@@ -38,6 +38,7 @@ import Expression = NFExpression;
 import NFInstNode.InstNode;
 import NFPrefixes.Variability;
 import Type = NFType;
+import Record = NFRecord;
 
 protected
 import BuiltinCall = NFBuiltinCall;
@@ -69,6 +70,7 @@ import Typing = NFTyping;
 import Util;
 import Subscript = NFSubscript;
 import Operator = NFOperator;
+import EvalFunction = NFEvalFunction;
 
 public
   uniontype CallAttributes
@@ -386,10 +388,7 @@ uniontype Call
       var := Variability.IMPLICITLY_DISCRETE;
     end if;
 
-    if intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
-      ty := evaluateCallType(ty, func, args);
-    end if;
-
+    ty := evaluateCallType(ty, func, args);
     call := makeTypedCall(func, args, var, ty);
 
     // If the matching was a vectorized one then create a map call
@@ -508,6 +507,7 @@ uniontype Call
     output Boolean isImpure;
   algorithm
     isImpure := match call
+      case UNTYPED_CALL() then Function.isImpure(listHead(Function.getRefCache(call.ref)));
       case TYPED_CALL() then Function.isImpure(call.fn) or Function.isOMImpure(call.fn);
       else false;
     end match;
@@ -585,7 +585,14 @@ uniontype Call
   algorithm
     exp := match call
       case TYPED_CALL()
-        then Expression.RECORD(Function.name(call.fn), ty, call.arguments);
+        then EvalFunction.evaluateRecordConstructor(call.fn, ty, call.arguments, evaluate = false);
+
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got unknown call", sourceInfo());
+        then
+          fail();
+
     end match;
   end toRecordExpression;
 
@@ -1427,7 +1434,13 @@ protected
         algorithm
           ptree := buildParameterTree(fnArgs, ptree);
           exp := Expression.map(dim.exp, function evaluateCallTypeDimExp(ptree = ptree));
-          exp := Ceval.evalExp(exp, Ceval.EvalTarget.IGNORE_ERRORS());
+
+          ErrorExt.setCheckpoint(getInstanceName());
+          try
+            exp := Ceval.evalExp(exp, Ceval.EvalTarget.IGNORE_ERRORS());
+          else
+          end try;
+          ErrorExt.rollBack(getInstanceName());
         then
           Dimension.fromExp(exp, Variability.CONSTANT);
 
@@ -1519,6 +1532,7 @@ protected
           fail();
     end match;
   end getSpecialReturnType;
+
 end Call;
 
 annotation(__OpenModelica_Interface="frontend");

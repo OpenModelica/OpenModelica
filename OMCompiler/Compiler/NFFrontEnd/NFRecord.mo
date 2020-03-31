@@ -51,29 +51,56 @@ import Subscript = NFSubscript;
 
 protected
 import Inst = NFInst;
-import List;
 import Lookup = NFLookup;
 import TypeCheck = NFTypeCheck;
-import Types;
 import Typing = NFTyping;
-import NFInstUtil;
 import NFPrefixes.Variability;
 import NFPrefixes.Visibility;
 import NFFunction.Function;
 import NFClassTree.ClassTree;
 import ComplexType = NFComplexType;
 import ComponentRef = NFComponentRef;
-import ErrorExt;
 import NFFunction.FunctionStatus;
+import MetaModelica.Dangerous.listReverseInPlace;
 
 public
+
+encapsulated uniontype Field
+  record INPUT
+    String name;
+  end INPUT;
+
+  record LOCAL
+    String name;
+  end LOCAL;
+
+  function isInput
+    input Field field;
+    output Boolean isInput;
+  algorithm
+    isInput := match field
+      case INPUT() then true;
+      else false;
+    end match;
+  end isInput;
+
+  function name
+    input Field field;
+    output String name;
+  algorithm
+    name := match field
+      case INPUT() then field.name;
+      case LOCAL() then field.name;
+    end match;
+  end name;
+end Field;
 
 function instDefaultConstructor
   input Absyn.Path path;
   input output InstNode node;
   input SourceInfo info;
 protected
-  list<InstNode> inputs, locals;
+  list<InstNode> inputs, locals, all_params;
   DAE.FunctionAttributes attr;
   Pointer<FunctionStatus> status;
   InstNode ctor_node, out_rec;
@@ -101,7 +128,7 @@ algorithm
   Inst.instExpressions(ctor_node);
 
   // Collect the record fields.
-  (inputs, locals) := collectRecordParams(ctor_node);
+  (inputs, locals, all_params) := collectRecordParams(ctor_node);
 
   // Create the output record element, using the instance created above as both parent and type.
   out_comp := Component.UNTYPED_COMPONENT(ctor_node, listArray({}),
@@ -110,7 +137,7 @@ algorithm
   out_rec := InstNode.fromComponent("$out" + InstNode.name(ctor_node), out_comp, ctor_node);
 
   // Make a record constructor class and create a node for the constructor.
-  ctor_cls := Class.makeRecordConstructor(inputs, locals, out_rec);
+  ctor_cls := Class.makeRecordConstructor(all_params, out_rec);
   ctor_node := InstNode.replaceClass(ctor_cls, ctor_node);
 
   // Create the constructor function and add it to the function cache.
@@ -124,7 +151,9 @@ function collectRecordParams
   input InstNode recNode;
   output list<InstNode> inputs = {};
   output list<InstNode> locals = {};
+  output list<InstNode> allParams = {};
 protected
+  InstNode comp;
   array<InstNode> comps;
   array<Mutable<InstNode>> pcomps;
   ClassTree tree;
@@ -135,7 +164,9 @@ algorithm
     case ClassTree.FLAT_TREE(components = comps)
       algorithm
         for i in arrayLength(comps):-1:1 loop
-          (inputs, locals) := collectRecordParam(comps[i], inputs, locals);
+          comp := comps[i];
+          (inputs, locals) := collectRecordParam(comp, inputs, locals);
+          allParams := comp :: allParams;
         end for;
       then
         ();
@@ -143,7 +174,9 @@ algorithm
     case ClassTree.INSTANTIATED_TREE(components = pcomps)
       algorithm
         for i in arrayLength(pcomps):-1:1 loop
-          (inputs, locals) := collectRecordParam(Mutable.access(pcomps[i]), inputs, locals);
+          comp := Mutable.access(pcomps[i]);
+          (inputs, locals) := collectRecordParam(comp, inputs, locals);
+          allParams := comp :: allParams;
         end for;
       then
         ();
@@ -165,10 +198,6 @@ protected
   Component comp;
   InstNode comp_node = InstNode.resolveInner(component);
 algorithm
-  if InstNode.isEmpty(comp_node) then
-    return;
-  end if;
-
   if InstNode.isProtected(comp_node) then
     locals := comp_node :: locals;
     return;
@@ -182,6 +211,77 @@ algorithm
     inputs := comp_node :: inputs;
   end if;
 end collectRecordParam;
+
+function collectRecordFields
+  input InstNode recNode;
+  output list<Field> fields;
+protected
+  ClassTree tree;
+algorithm
+  tree := Class.classTree(InstNode.getClass(recNode));
+  fields := ClassTree.foldComponents(tree, collectRecordField, {});
+  fields := listReverseInPlace(fields);
+end collectRecordFields;
+
+function collectRecordField
+  input InstNode component;
+  input output list<Field> fields;
+protected
+  InstNode comp_node = InstNode.resolveInner(component);
+  Component comp;
+algorithm
+  if InstNode.isProtected(comp_node) then
+    fields := Field.LOCAL(InstNode.name(comp_node)) :: fields;
+  else
+    comp := InstNode.component(comp_node);
+
+    if Component.isConst(comp) and Component.hasBinding(comp) then
+      fields := Field.LOCAL(InstNode.name(comp_node)) :: fields;
+    elseif not Component.isOutput(comp) then
+      fields := Field.INPUT(InstNode.name(comp_node)) :: fields;
+    end if;
+  end if;
+end collectRecordField;
+
+function fieldsToDAE
+  input list<Field> fields;
+  output list<String> fieldNames = {};
+algorithm
+  for field in fields loop
+    () := match field
+      case Field.INPUT()
+        algorithm
+          fieldNames := field.name :: fieldNames;
+        then
+          ();
+
+      else ();
+    end match;
+  end for;
+end fieldsToDAE;
+
+function foldInputFields<T, ArgT>
+  input list<Field> fields;
+  input list<T> args;
+  input FuncT func;
+  input output ArgT foldArg;
+
+  partial function FuncT
+    input T arg;
+    input output ArgT foldArg;
+  end FuncT;
+protected
+  T arg;
+  list<T> rest_args = args;
+algorithm
+  for field in fields loop
+    arg :: rest_args := rest_args;
+
+    if Field.isInput(field) then
+      foldArg := func(arg, foldArg);
+    end if;
+  end for;
+end foldInputFields;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFRecord;

@@ -43,7 +43,6 @@ import NFInstNode.InstNode;
 protected
 
 import Dimension = NFDimension;
-import ExpressionSimplify;
 import Ceval = NFCeval;
 import NFCeval.EvalTarget;
 import NFFunction.Function;

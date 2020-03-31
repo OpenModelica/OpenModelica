@@ -30,7 +30,6 @@
  */
 
 encapsulated uniontype NFImport
-  import SCode;
   import NFInstNode.InstNode;
 
 protected
@@ -40,6 +39,8 @@ protected
   import NFClass.Class;
 
   import Import = NFImport;
+  import Error;
+  import ErrorTypes;
 
 public
   record UNRESOLVED_IMPORT
@@ -164,7 +165,7 @@ public
     input Import imp1;
     input Import imp2;
   protected
-    Error.Message err_msg;
+    ErrorTypes.Message err_msg;
   algorithm
     Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info(imp1));
 
