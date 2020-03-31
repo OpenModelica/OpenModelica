@@ -117,6 +117,9 @@ void ElementInfo::updateElementInfo(const ElementInfo *pElementInfo)
   mIsFlow = pElementInfo->getFlow();
   mIsStream = pElementInfo->getStream();
   mIsReplaceable = pElementInfo->getReplaceable();
+  mIsRedeclare = pElementInfo->getRedeclare();
+  mIsEach = pElementInfo->getEach();
+  mIsElement = pElementInfo->getIsElement();
   mVariabilityMap.insert("constant", "constant");
   mVariabilityMap.insert("discrete", "discrete");
   mVariabilityMap.insert("parameter", "parameter");
