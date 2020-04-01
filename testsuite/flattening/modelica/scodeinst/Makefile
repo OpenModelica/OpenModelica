@@ -371,6 +371,7 @@ ExtendSelf3.mo \
 ExtendsMod1.mo \
 ExtendsShort1.mo \
 ExtendsShort2.mo \
+ExtendsShort3.mo \
 ExtendsVisibility1.mo \
 ExtendsVisibility2.mo \
 ExtendsVisibility3.mo \
