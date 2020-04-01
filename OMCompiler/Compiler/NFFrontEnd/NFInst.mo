@@ -682,7 +682,6 @@ algorithm
   res := Restriction.fromSCode(SCodeUtil.getClassRestriction(element));
   cls := Class.EXPANDED_DERIVED(ext_node, mod, listArray(dims), prefs, attrs, res);
   node := InstNode.updateClass(cls, node);
-  node := InstNode.setNodeType(InstNodeType.DERIVED_CLASS(InstNode.nodeType(node)), node);
 end expandClassDerived;
 
 function instDerivedAttributes
@@ -808,6 +807,7 @@ algorithm
     case Class.EXPANDED_DERIVED()
       algorithm
         (node, par) := ClassTree.instantiate(node, parent);
+        node := InstNode.setNodeType(InstNodeType.DERIVED_CLASS(InstNode.nodeType(node)), node);
         Class.EXPANDED_DERIVED(baseClass = base_node) := InstNode.getClass(node);
 
         // Merge outer modifiers and attributes.
