@@ -1,0 +1,98 @@
+// name: problem6-cvode
+// status: correct
+// teardown_command: rm -f testSolver.problem6* output.log testSolver_problem6_*
+//
+// Test different settings for CVODE solver on bouncing ball example
+//   Use solver for stiff and non-stiff problems
+
+loadFile("./testSolverPackage.mo");
+getErrorString();
+
+resfile := "testSolver.problem6_res.mat";
+
+
+setCommandLineOptions("-d=newInst"); getErrorString();
+
+// Build model
+buildModel(testSolver.problem6); getErrorString();
+
+// Test default settings
+system(realpath(".") + "/testSolver.problem6 -s=cvode -override stopTime=3.0", "testSolver_problem6_default.log"); getErrorString();
+readFile("testSolver_problem6_default.log"); remove("testSolver_problem6_default.log");
+
+echo(false);  /* Silence readSimulationResult */
+s:=readSimulationResultSize(resfile);
+res:=readSimulationResult(resfile,{flying},s);
+res2:=readSimulationResult(resfile,{h},s);
+echo(true);
+res[1,1];
+res[1,s];
+if res2[1,s] > -1e-2 then 1 else 0;
+
+// Test CVODE with BDF method and Newton integrator
+system(realpath(".") + "/testSolver.problem6 -s=cvode -cvodeLinearMultistepMethod=CV_BDF -cvodeNonlinearSolverIteration=CV_NEWTON -override stopTime=3.0 ", "testSolver_problem6_BDF.log"); getErrorString();
+readFile("testSolver_problem6_BDF.log"); remove("testSolver_problem6_BDF.log");
+
+echo(false);  /* Silence readSimulationResult */
+s:=readSimulationResultSize(resfile);
+res:=readSimulationResult(resfile,{flying},s);
+res2:=readSimulationResult(resfile,{h},s);
+echo(true);
+res[1,1];
+res[1,s];
+if res2[1,s] > -1e-2 then 1 else 0;
+
+// Test CVODE with Adams method and Newton integrator
+system(realpath(".") + "/testSolver.problem6 -s=cvode -cvodeLinearMultistepMethod=CV_ADAMS -cvodeNonlinearSolverIteration=CV_FUNCTIONAL -override stopTime=3.0 ", "testSolver_problem6_ADAMS.log"); getErrorString();
+readFile("testSolver_problem6_ADAMS.log"); remove("testSolver_problem6_ADAMS.log");
+
+echo(false);  /* Silence readSimulationResult */
+s:=readSimulationResultSize(resfile);
+res:=readSimulationResult(resfile,{flying},s);
+res2:=readSimulationResult(resfile,{h},s);
+echo(true);
+res[1,1];
+res[1,s];
+if res2[1,s] > -1e-2 then 1 else 0;
+
+
+// Result:
+// true
+// ""
+// "testSolver.problem6_res.mat"
+// true
+// ""
+// {"testSolver.problem6","testSolver.problem6_init.xml"}
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 0
+// ""
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// true
+// true
+// 1.0
+// 1.0
+// 1
+// 0
+// ""
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// true
+// true
+// 1.0
+// 1.0
+// 1
+// 0
+// ""
+// "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// true
+// true
+// 1.0
+// 1.0
+// 1
+// endResult

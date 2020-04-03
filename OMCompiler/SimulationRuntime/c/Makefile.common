@@ -79,6 +79,7 @@ RUNTIMESIMSOLVER_HEADERS = ./simulation/solver/delay.h \
 ./simulation/solver/dassl.h \
 ./simulation/solver/embedded_server.h \
 ./simulation/solver/ida_solver.h \
+./simulation/solver/cvode_solver.h \
 ./simulation/solver/omc_math.h \
 ./simulation/solver/events.h \
 ./simulation/solver/synchronous.h \
@@ -282,13 +283,17 @@ libSimulationRuntimeFMI.a: $(FMI_ME_OBJS_BUILDPATH)
 install: bootstrap-dependencies $(LIBSIMULATION) $(LIBFMIRUNTIME) $(ALL_OBJS) fmi-runtime RuntimeSources.mo
 	# copy libraries
 	cp -p $(LIBSIMULATION) $(LIBFMIRUNTIME) $(LIBSIMULATIONFMI) $(builddir_lib)
+	# FMI runtime libs
 	test ! -f libSimulationRuntimeC.bc || cp libSimulationRuntimeC.bc $(builddir_lib)/emcc/libSimulationRuntimeC.so
 	test ! `uname` = Darwin || install_name_tool -change libsundials_idas.0.dylib @rpath/libsundials_idas.0.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
 	test ! `uname` = Darwin || install_name_tool -change libsundials_ida.2.dylib @rpath/libsundials_ida.2.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
 	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.0.dylib @rpath/libsundials_nvecserial.0.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
 	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.1.dylib @rpath/libsundials_kinsol.1.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
+	# C runtime libs
 	test ! `uname` = Darwin || install_name_tool -change libsundials_idas.0.dylib @rpath/libsundials_idas.0.dylib $(builddir_lib)/$(LIBSIMULATION)
 	test ! `uname` = Darwin || install_name_tool -change libsundials_ida.2.dylib @rpath/libsundials_ida.2.dylib $(builddir_lib)/$(LIBSIMULATION)
+	test ! `uname` = Darwin || install_name_tool -change libsundials_cvodes.2.dylib @rpath/libsundials_cvodes.2.dylib $(builddir_lib)/$(LIBSIMULATION)
+	test ! `uname` = Darwin || install_name_tool -change libsundials_cvode.1.dylib @rpath/libsundials_cvode.1.dylib $(builddir_lib)/$(LIBSIMULATION)
 	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.0.dylib @rpath/libsundials_nvecserial.0.dylib $(builddir_lib)/$(LIBSIMULATION)
 	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.1.dylib @rpath/libsundials_kinsol.1.dylib $(builddir_lib)/$(LIBSIMULATION)
 	test ! `uname` = Darwin || install_name_tool -change liblis.dylib @rpath/liblis.dylib $(builddir_lib)/$(LIBSIMULATION)

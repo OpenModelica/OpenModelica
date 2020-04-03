@@ -583,7 +583,7 @@ fi
 
 OMC_AC_LAPACK(RequireFound)
 
-SUNDIALS_LDFLAGS="-lsundials_idas -lsundials_kinsol -lsundials_nvecserial $LD_LAPACK"
+SUNDIALS_LDFLAGS="-lsundials_idas -lsundials_cvodes -lsundials_kinsol -lsundials_nvecserial $LD_LAPACK"
 FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use sundials suite: Yes"
 SUNDIALS_TARGET="sundials"
 

@@ -386,8 +386,13 @@ void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeC
   /* Will crash with a static size array */
   char *buffer = NULL;
 
-  if (!ACTIVE_STREAM(stream))
+  if (!sparsePattern) {
     return;
+  }
+
+  if (!ACTIVE_STREAM(stream)) {
+    return;
+  }
 
   buffer = (char*)omc_alloc_interface.malloc(sizeof(char)* 2*sizeCols + 4);
 

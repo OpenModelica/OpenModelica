@@ -39,6 +39,7 @@
 #include "initialization/initialization.h"
 #include "nonlinearSystem.h"
 #include "newtonIteration.h"
+#include "cvode_solver.h"
 #include "dassl.h"
 #include "ida_solver.h"
 #include "delay.h"
@@ -151,6 +152,12 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     return retVal;
   case S_IDA:
     retVal = ida_solver_step(data, threadData, solverInfo);
+    if(omc_flag[FLAG_SOLVER_STEPS])
+      data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
+    TRACE_POP
+    return retVal;
+  case S_CVODE:
+    retVal = cvode_solver_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats[0] + solverInfo->solverStatsTmp[0];
     TRACE_POP
@@ -338,6 +345,16 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     solverInfo->solverData = idaData;
     break;
   }
+  case S_CVODE:
+  {
+    CVODE_SOLVER* cvodeData = NULL;
+    infoStreamPrint(LOG_SOLVER, 0, "Initializing CVODE ODE Solver");
+    cvodeData = (CVODE_SOLVER*) calloc(1, sizeof(CVODE_SOLVER));
+    assertStreamPrint(threadData, cvodeData != NULL, "Out of memory");
+    retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData);
+    solverInfo->solverData = cvodeData;
+    break;
+  }
 #endif
   default:
     errorStreamPrint(LOG_SOLVER, 0, "Solver %s disabled on this configuration", SOLVER_METHOD_NAME[solverInfo->solverMethod]);
@@ -402,13 +419,18 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
           solverInfo->solverMethod == S_TRAPEZOID ||
           solverInfo->solverMethod == S_IMPRUNGEKUTTA)
   {
-    /* free  work arrays */
+    /* free work arrays */
     freeKinOde(data, solverInfo);
   }
   else if(solverInfo->solverMethod == S_IDA)
   {
-    /* free  work arrays */
+    /* free work arrays */
     ida_solver_deinitial(solverInfo->solverData);
+  }
+  else if(solverInfo->solverMethod == S_CVODE)
+  {
+    /* free work arrays */
+    cvode_solver_deinitial(solverInfo->solverData);
   }
 #endif
   {
@@ -606,7 +628,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     infoStreamPrint(LOG_STATS_V, 1, "function calls");
     if (compiledInDAEMode)
     {
-      infoStreamPrint(LOG_STATS_V, 1, "%5ld calls of functionDAE", rt_ncall(SIM_TIMER_DAE));
+      infoStreamPrint(LOG_STATS_V, 1, "%5u calls of functionDAE", rt_ncall(SIM_TIMER_DAE));
       infoStreamPrint(LOG_STATS_V, 0, "%12gs [%5.1f%%]", rt_accumulated(SIM_TIMER_DAE), rt_accumulated(SIM_TIMER_DAE)/total100);
       messageClose(LOG_STATS_V);
     }
@@ -623,7 +645,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     }
 
     if (data->simulationInfo->callStatistics.functionAlgebraics) {
-      infoStreamPrint(LOG_STATS_V, 1, "%5d calls of functionAlgebraics", data->simulationInfo->callStatistics.functionAlgebraics);
+      infoStreamPrint(LOG_STATS_V, 1, "%5ld calls of functionAlgebraics", data->simulationInfo->callStatistics.functionAlgebraics);
       infoStreamPrint(LOG_STATS_V, 0, "%12gs [%5.1f%%]", rt_accumulated(SIM_TIMER_ALGEBRAICS), rt_accumulated(SIM_TIMER_ALGEBRAICS)/total100);
       messageClose(LOG_STATS_V);
     }
