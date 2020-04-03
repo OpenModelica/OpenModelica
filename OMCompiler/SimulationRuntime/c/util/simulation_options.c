@@ -38,6 +38,8 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_CLOCK */                        "clock",
   /* FLAG_CPU */                          "cpu",
   /* FLAG_CSV_OSTEP */                    "csvOstep",
+  /* FLAG_CVODE_ITER */                   "cvodeNonlinearSolverIteration",
+  /* FLAG_CVODE_LMM */                    "cvodeLinearMultistepMethod",
   /* FLAG_DAE_MODE */                     "daeMode",
   /* FLAG_DELTA_X_LINEARIZE */            "deltaXLinearize",
   /* FLAG_DELTA_X_SOLVER */               "deltaXSolver",
@@ -154,6 +156,8 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_CLOCK */                        "selects the type of clock to use -clock=RT, -clock=CYC or -clock=CPU",
   /* FLAG_CPU */                          "dumps the cpu-time into the result file",
   /* FLAG_CSV_OSTEP */                    "value specifies csv-files for debug values for optimizer step",
+  /* FLAG_CVODE_ITER */                   "nonlinear solver iteration for CVODE solver",
+  /* FLAG_CVODE_LMM */                    "linear multistep method for CVODE solver",
   /* FLAG_DAE_MODE */                     "flag to let the integrator use daeResiduals",
   /* FLAG_DELTA_X_LINEARIZE */            "value specifies the delta x value for numerical differentiation used by linearization. The default value is 1e-5.",
   /* FLAG_DELTA_X_SOLVER */               "value specifies the delta x value for numerical differentiation used by integrator. The default values is sqrt(DBL_EPSILON).",
@@ -277,6 +281,18 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Dumps the cpu-time into the result file using the variable named $cpuTime.",
   /* FLAG_CSV_OSTEP */
   "  Value specifies csv-files for debug values for optimizer step.",
+  /* FLAG_CVODE_ITER */
+  "  Nonlinear solver iteration for CVODE solver. Default: Depends on flag cvodeLinearMultistepMethod. Valid values\n\n"
+  "  * CV_NEWTON      - Newton iteration.\n"
+  "                     Advised to use together with flag -cvodeLinearMultistepMethod=CV_BDF.\n"
+  "  * CV_FUNCTIONAL  - Functional iteration.\n"
+  "                     Advised to use together with flag -cvodeLinearMultistepMethod=CV_ADAMS.",
+  /* FLAG_CVODE_LMM */
+  "  Linear multistep method for CVODE solver. Default: CV_BDF. Valid values\n\n"
+  "  * CV_BDF    - BDF linear multistep method for stiff problems.\n"
+  "                Use together with flag -cvodeNonlinearSolverIteration=CV_NEWTON or don't set cvodeNonlinearSolverIteration.\n"
+  "  * CV_ADAMS  - Adams-Moulton linear multistep method for nonstiff problems.\n"
+  "                Use together with flag -cvodeNonlinearSolverIteration=CV_FUNCTIONAL or don't set cvodeNonlinearSolverIteration.",
   /* FLAG_DAE_MODE */
   "  Enables daeMode simulation if the model was compiled with the omc flag --daeMode and ida method is used.",
   /* FLAG_DELTA_X_LINEARIZE */
@@ -552,6 +568,8 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_CLOCK */                        FLAG_TYPE_OPTION,
   /* FLAG_CPU */                          FLAG_TYPE_FLAG,
   /* FLAG_CSV_OSTEP */                    FLAG_TYPE_OPTION,
+  /* FLAG_CVODE_ITER */                   FLAG_TYPE_OPTION,
+  /* FLAG_CVODE_LMM */                    FLAG_TYPE_OPTION,
   /* FLAG_DAE_SOLVING */                  FLAG_TYPE_FLAG,
   /* FLAG_DELTA_X_LINEARIZE */            FLAG_TYPE_OPTION,
   /* FLAG_DELTA_X_SOLVER */               FLAG_TYPE_OPTION,
@@ -669,6 +687,7 @@ const char *SOLVER_METHOD_NAME[S_MAX] = {
   /* S_IRKSCO */        "irksco",
   /* S_DASSL */         "dassl",
   /* S_IDA */           "ida",
+  /* S_CVODE */         "cvode",
   /* S_ERKSSC */        "rungekuttaSsc",
   /* S_SYM_SOLVER */    "symSolver",
   /* S_SYM_SOLVER_SSC */"symSolverSsc",
@@ -687,6 +706,7 @@ const char *SOLVER_METHOD_DESC[S_MAX] = {
   /* S_IRKSCO */        "irksco - own developed Runge-Kutta solver - implicit, step size control, order 1-2",
   /* S_DASSL */         "dassl - default solver - BDF method - implicit, step size control, order 1-5",
   /* S_IDA */           "ida - SUNDIALS IDA solver - BDF method with sparse linear solver - implicit, step size control, order 1-5",
+  /* S_CVODE */         "cvode - experimental implementation of SUNDIALS CVODE solver - BDF or Adams-Moulton method - step size control, order 1-5",
   /* S_ERKSSC */        "rungekuttaSsc - Runge-Kutta based on Novikov (2016) - explicit, step size control, order 4-5 [experimental]",
   /* S_SYM_SOLVER */     "symSolver - symbolic inline Solver [compiler flag +symSolver needed] - fixed step size, order 1",
   /* S_SYM_SOLVER_SSC */ "symSolverSsc - symbolic implicit Euler with step size control [compiler flag +symSolver needed] - step size control, order 1",

@@ -308,7 +308,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   }
   infoStreamPrint(LOG_SOLVER, 0, "ida uses internal root finding method %s", solverInfo->solverRootFinding?"YES":"NO");
 
-  /* define maximum integration order of dassl */
+  /* define maximum integration order of ida */
   if (omc_flag[FLAG_MAX_ORDER])
   {
     maxOrder = atoi(omc_flagValue[FLAG_MAX_ORDER]);
@@ -1231,12 +1231,12 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
   }
 
   /* debug */
-  if (ACTIVE_STREAM(LOG_DASSL_STATES)){
-    printCurrentStatesVector(LOG_DASSL_STATES, data->localData[0]->realVars, data, time);
-    printVector(LOG_DASSL_STATES, "yprime", data->localData[0]->realVars + data->modelData->nStates, data->modelData->nStates, time);
+  if (ACTIVE_STREAM(LOG_SOLVER_V)){
+    printCurrentStatesVector(LOG_SOLVER_V, data->localData[0]->realVars, data, time);
+    printVector(LOG_SOLVER_V, "yprime", data->localData[0]->realVars + data->modelData->nStates, data->modelData->nStates, time);
     if (idaData->daeMode)
     {
-      printVector(LOG_DASSL_STATES, "yalg", states + data->modelData->nStates, data->simulationInfo->daeModeData->nAlgebraicDAEVars, time);
+      printVector(LOG_SOLVER_V, "yalg", states + data->modelData->nStates, data->simulationInfo->daeModeData->nAlgebraicDAEVars, time);
     }
   }
 
