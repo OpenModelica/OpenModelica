@@ -1468,84 +1468,27 @@ algorithm
     case (cache,_,"parseEncryptedPackage",Values.STRING(filename)::Values.STRING(workdir)::_,_)
       equation
         vals = {};
-        if (System.regularFileExists(filename)) then
-          if (Util.endsWith(filename, ".mol")) then
-            workdir = if System.directoryExists(workdir) then workdir else System.pwd();
-            if (0 == System.systemCall("unzip -q -o -d \"" + workdir + "\" \"" +  filename + "\"")) then
-              s1 = System.basename(filename);
-              s2 = Util.removeLast4Char(s1);
-              s2 = listGet(Util.stringSplitAtChar(s2," "),1);
-              // possible .moc files to look for
-              filename1 = workdir + "/" + s2 + "/" + s2 + ".moc";
-              filename2 = workdir + "/" + s2 + "/package.moc";
-              filename_1 = if System.regularFileExists(filename1) then filename1 else filename2;
-              // possible .mo files to look for
-              str1 = workdir + "/" + s2 + "/" + s2 + ".mo";
-              str2 = workdir + "/" + s2 + "/package.mo";
-              str = if System.regularFileExists(str1) then str1 else str2;
-              // check if .mol contains .moc or .mo files
-              filename_1 = if System.regularFileExists(filename_1) then filename_1 else str;
-              if (System.regularFileExists(filename_1)) then
-                // clear the errors before!
-                Error.clearMessages() "Clear messages";
-                Print.clearErrorBuf() "Clear error buffer";
-                filename_1 = Testsuite.friendlyPath(filename_1);
-                (paths) = Interactive.parseFile(filename_1, "UTF-8");
-                vals = List.map(paths,ValuesUtil.makeCodeTypeName);
-              else
-                Error.addMessage(Error.PACKAGE_FILE_NOT_FOUND_ERROR, {filename1, filename2, str1, str2});
-              end if;
-            else
-              Error.addMessage(Error.UNABLE_TO_UNZIP_FILE, {filename});
-            end if;
-          else
-            Error.addMessage(Error.EXPECTED_ENCRYPTED_PACKAGE, {filename});
-          end if;
-        else
-          Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {filename});
+        (b, filename_1) = unZipEncryptedPackageAndCheckFile(workdir, filename);
+        if (b) then
+          // clear the errors before!
+          Error.clearMessages() "Clear messages";
+          Print.clearErrorBuf() "Clear error buffer";
+          filename_1 = Testsuite.friendlyPath(filename_1);
+          (paths) = Interactive.parseFile(filename_1, "UTF-8");
+          vals = List.map(paths,ValuesUtil.makeCodeTypeName);
         end if;
       then (cache,ValuesUtil.makeArray(vals));
 
     case (_,_,"loadEncryptedPackage",Values.STRING(filename)::Values.STRING(workdir)::_,_)
       equation
-        b = false;
-        if (System.regularFileExists(filename)) then
-          if (Util.endsWith(filename, ".mol")) then
-            workdir = if System.directoryExists(workdir) then workdir else System.pwd();
-            b = false;
-            if (0 == System.systemCall("unzip -q -o -d \"" + workdir + "\" \"" +  filename + "\"")) then
-              s1 = System.basename(filename);
-              s2 = Util.removeLast4Char(s1);
-              s2 = listGet(Util.stringSplitAtChar(s2," "),1);
-              // possible .moc files to look for
-              filename1 = workdir + "/" + s2 + ".moc";
-              filename2 = workdir + "/" + s2 + "/package.moc";
-              filename_1 = if System.regularFileExists(filename1) then filename1 else filename2;
-              // possible .mo files to look for
-              str1 = workdir + "/" + s2 + ".mo";
-              str2 = workdir + "/" + s2 + "/package.mo";
-              str = if System.regularFileExists(str1) then str1 else str2;
-              // check if .mol contains .moc or .mo files
-              filename_1 = if System.regularFileExists(filename_1) then filename_1 else str;
-              if (System.regularFileExists(filename_1)) then
-                execStatReset();
-                filename_1 = Testsuite.friendlyPath(filename_1);
-                p = SymbolTable.getAbsyn();
-                newp = loadFile(filename_1, "UTF-8", p, true);
-                execStat("loadFile("+filename_1+")");
-                SymbolTable.setAbsyn(newp);
-                b = true;
-              else
-                Error.addMessage(Error.PACKAGE_FILE_NOT_FOUND_ERROR, {filename1, filename2, str1, str2});
-              end if;
-            else
-              Error.addMessage(Error.UNABLE_TO_UNZIP_FILE, {filename});
-            end if;
-          else
-            Error.addMessage(Error.EXPECTED_ENCRYPTED_PACKAGE, {filename});
-          end if;
-        else
-          Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {filename});
+        (b, filename_1) = unZipEncryptedPackageAndCheckFile(workdir, filename);
+        if (b) then
+          execStatReset();
+          filename_1 = Testsuite.friendlyPath(filename_1);
+          p = SymbolTable.getAbsyn();
+          newp = loadFile(filename_1, "UTF-8", p, true);
+          execStat("loadFile("+filename_1+")");
+          SymbolTable.setAbsyn(newp);
         end if;
       then
         (FCore.emptyCache(),Values.BOOL(b));
@@ -3246,6 +3189,70 @@ algorithm
       then mp;
   end matchcontinue;
 end findModelicaPath2;
+
+protected function unZipEncryptedPackageAndCheckFile
+  input String inWorkdir;
+  input String filename;
+  output Boolean success;
+  output String outFilename;
+protected
+  String workdir, s1, s2, s3, filename_1, filename1, filename2, filename3, filename4, str, str1, str2, str3, str4;
+algorithm
+  success := false;
+  outFilename := "";
+  if (System.regularFileExists(filename)) then
+	  if (Util.endsWith(filename, ".mol")) then
+	    workdir := if System.directoryExists(inWorkdir) then inWorkdir else System.pwd();
+	    if (0 == System.systemCall("unzip -q -o -d \"" + workdir + "\" \"" +  filename + "\"")) then
+	      s1 := System.basename(filename);
+	      s2 := Util.removeLast4Char(s1);
+	      s3 := listGet(Util.stringSplitAtChar(s2," "),1);
+	      // possible .moc files to look for
+	      filename1 := workdir + "/" + s2 + "/package.moc";
+	      filename2 := workdir + "/" + s2 + "/" + s2 + ".moc";
+	      filename3 := workdir + "/" + s3 + "/package.moc";
+	      filename4 := workdir + "/" + s3 + "/" + s3 + ".moc";
+	      if System.regularFileExists(filename1) then
+	        filename_1 := filename1;
+	      elseif System.regularFileExists(filename2) then
+	        filename_1 := filename2;
+	      elseif System.regularFileExists(filename3) then
+	        filename_1 := filename3;
+	      else
+	        filename_1 := filename4;
+	      end if;
+	      // possible .mo files to look for
+	      str1 := workdir + "/" + s2 + "/package.mo";
+	      str2 := workdir + "/" + s2 + "/" + s2 + ".mo";
+	      str3 := workdir + "/" + s3 + "/package.mo";
+	      str4 := workdir + "/" + s3 + "/" + s3 + ".mo";
+	      if System.regularFileExists(str1) then
+	        str := str1;
+	      elseif System.regularFileExists(str2) then
+	        str := str2;
+	      elseif System.regularFileExists(str3) then
+          str := str3;
+	      else
+	        str := str4;
+	      end if;
+	      // check if .mol contains .moc or .mo files
+	      filename_1 := if System.regularFileExists(filename_1) then filename_1 else str;
+	      if (System.regularFileExists(filename_1)) then
+	        success := true;
+	        outFilename := filename_1;
+	      else
+	        Error.addMessage(Error.PACKAGE_FILE_NOT_FOUND_ERROR, {filename1, filename2, filename3, filename4, str1, str2, str3, str4});
+	      end if;
+	    else
+	      Error.addMessage(Error.UNABLE_TO_UNZIP_FILE, {filename});
+	    end if;
+	  else
+	    Error.addMessage(Error.EXPECTED_ENCRYPTED_PACKAGE, {filename});
+	  end if;
+	else
+	  Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {filename});
+	end if;
+end unZipEncryptedPackageAndCheckFile;
 
 annotation(__OpenModelica_Interface="backend");
 end CevalScript;
