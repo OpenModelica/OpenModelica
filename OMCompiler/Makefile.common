@@ -490,6 +490,7 @@ $(builddir_lib_omc)/liblpsolve55.a: 3rdParty/lpsolve/Makefile
 clean-lpsolve:
 	rm -rf 3rdParty/lpsolve/build
 	rm -rf $(builddir_lib_omc)/lpsolve*
+
 # build sqlite3
 sqlite3: 3rdParty/sqlite3/Makefile
 	$(MAKE) -C 3rdParty/sqlite3/ install CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)"
@@ -497,6 +498,7 @@ sqlite3: 3rdParty/sqlite3/Makefile
 	(cd 3rdParty/sqlite3 && autoreconf -vif && automake --add-missing && ./configure --prefix="`pwd`/build" "--host=$(host)" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)")
 clean-sqlite3:
 	rm -rf 3rdParty/sqlite3/build
+
 # build sundials
 sundials: umfpack
 	$(MAKE) -f $(defaultMakefileTarget) $(builddir_lib_omc)/libsundials_ida.a

@@ -49,7 +49,6 @@
 /* Headers for sundials kinsol */
 #include <kinsol/kinsol.h>
 #include <nvector/nvector_serial.h>
-#include <kinsol/kinsol_dense.h>
 
 #ifdef __cplusplus
 extern "C" {

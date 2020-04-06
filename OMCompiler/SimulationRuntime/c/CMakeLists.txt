@@ -33,20 +33,21 @@ MESSAGE(STATUS "${Sundials_Path}")
 # SUNDIALS Header
 FIND_PATH(SUNDIALS_INCLUDE_DIR sundials/sundials_config.h /usr/include /usr/local/include $ENV{INCLUDE} ${Sundials_Path}/include)
 
+MESSAGE(STATUS: "AHeuTest")
 MESSAGE(STATUS "Sundials include:")
 MESSAGE(STATUS "${SUNDIALS_INCLUDE_DIR}")
 
 # SUNDIALS Libraires
 if(MSVC)
-FIND_LIBRARY(SUNDIALS_LIBRARY_CVODE      NAMES sundials_cvode      PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
-FIND_LIBRARY(SUNDIALS_LIBRARY_IDA        NAMES sundials_ida        PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
-FIND_LIBRARY(SUNDIALS_LIBRARY_NVEC       NAMES sundials_nvecserial        PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
-FIND_LIBRARY(SUNDIALS_KINSOL       NAMES sundials_kinsol        PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
+FIND_LIBRARY(SUNDIALS_LIBRARY_CVODE      NAMES sundials_cvode         PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
+FIND_LIBRARY(SUNDIALS_LIBRARY_IDA        NAMES sundials_ida           PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
+FIND_LIBRARY(SUNDIALS_LIBRARY_NVEC       NAMES sundials_nvecserial    PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
+FIND_LIBRARY(SUNDIALS_KINSOL             NAMES sundials_kinsol        PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
 else(MSVC)
 FIND_LIBRARY(SUNDIALS_LIBRARY_CVODE      NAMES libsundials_cvode      PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
 FIND_LIBRARY(SUNDIALS_LIBRARY_IDA        NAMES libsundials_ida        PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
-FIND_LIBRARY(SUNDIALS_LIBRARY_NVEC       NAMES libsundials_nvecserial        PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
-FIND_LIBRARY(SUNDIALS_KINSOL       NAMES libsundials_kinsol        PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
+FIND_LIBRARY(SUNDIALS_LIBRARY_NVEC       NAMES libsundials_nvecserial PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
+FIND_LIBRARY(SUNDIALS_KINSOL             NAMES libsundials_kinsol     PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
 endif(MSVC)
 
 IF(SUNDIALS_INCLUDE_DIR)
