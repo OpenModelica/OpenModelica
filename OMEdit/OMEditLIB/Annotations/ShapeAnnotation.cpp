@@ -606,8 +606,8 @@ void ShapeAnnotation::applyFillPattern(QPainter *painter)
 
 QList<QPointF> ShapeAnnotation::getExtentsForInheritedShapeFromIconDiagramMap(GraphicsView *pGraphicsView, ShapeAnnotation *pReferenceShapeAnnotation)
 {
-  QPointF defaultPoint1 = QPointF(-100.0, -100.0);
-  QPointF defaultPoint2 = QPointF(100.0, 100.0);
+  QPointF defaultPoint1 = QPointF(pGraphicsView->mMergedCoOrdinateSystem.getLeft(), pGraphicsView->mMergedCoOrdinateSystem.getBottom());
+  QPointF defaultPoint2 = QPointF(pGraphicsView->mMergedCoOrdinateSystem.getRight(), pGraphicsView->mMergedCoOrdinateSystem.getTop());
   QPointF point1 = defaultPoint1;
   QPointF point2 = defaultPoint2;
 
@@ -666,6 +666,12 @@ void ShapeAnnotation::applyTransformation()
   setTransform(mTransformation.getTransformationMatrix());
 
   QPointF origin = mOrigin;
+
+  // Only apply the extends coordinate extents on the shapes and not on connection, transition etc.
+  LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
+  if (pLineAnnotation && pLineAnnotation->getLineType() != LineAnnotation::ShapeType) {
+    return;
+  }
   // if the extends have some new coordinate extents then use it to scale the shape
   if (mpReferenceShapeAnnotation && mpReferenceShapeAnnotation->getGraphicsView()) {
     QList<QPointF> extendsCoOrdinateExtents = getExtentsForInheritedShapeFromIconDiagramMap(mpGraphicsView, mpReferenceShapeAnnotation);
