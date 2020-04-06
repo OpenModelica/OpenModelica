@@ -6219,16 +6219,16 @@ QList<QVariant> ModelWidget::toOMSensData()
       ComponentInfo *pComponentInfo = component->getComponentInfo();
       auto causality = pComponentInfo->getCausality();
       auto variability = pComponentInfo->getVariablity();
-      const bool classNameIsReal = pComponentInfo->getClassName().compare("Real") == 0;
-      if (causality.compare("input") == 0) {
+      const bool classNameIsReal = pComponentInfo->getClassName().compare(QStringLiteral("Real")) == 0;
+      if (causality.compare(QStringLiteral("input")) == 0) {
         if (classNameIsReal || pComponentInfo->getClassName().compare(modelicaBlocksInterfacesRealInput) == 0) {
           inputVariables.append(pComponentInfo->getName());
         }
-      } else if (causality.compare("output") == 0) {
+      } else if (causality.compare(QStringLiteral("output")) == 0) {
         if (classNameIsReal || pComponentInfo->getClassName().compare(modelicaBlocksInterfacesRealOutput) == 0) {
           outputVariables.append(pComponentInfo->getName());
         }
-      } else if(classNameIsReal && variability.compare("parameter") == 0) {
+      } else if(classNameIsReal && variability.compare(QStringLiteral("parameter")) == 0) {
         parameters.append(pComponentInfo->getName());
       } /* Otherwise we are dealing with an auxiliarly variable */else if (classNameIsReal) {
         auxVariables.append(pComponentInfo->getName());
