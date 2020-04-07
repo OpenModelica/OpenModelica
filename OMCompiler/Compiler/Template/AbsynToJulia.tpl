@@ -1,13 +1,16 @@
 package AbsynToJulia
 "
- Translates Absyn to Julia.
+ Translates Absyn IR  to Julia.
  @Authors: John Tinnerholm & Martin Sjoelund
+
+ 46 is used as the seed for enumerations.
 "
-/* TODOS:
 
-TODO: Public/Private semantics : (
-TODO: Julia does string concatination with * instead of +
-
+/*
+TODOS:
+  TODO: Module renamning and Julia adaptation of uniontypes
+     <In progress>
+     TODO: Make sure renamning of imports work as they should
 */
 
 import interface AbsynToJuliaTV;
@@ -15,6 +18,7 @@ import AbsynDumpTpl;
 
 template dumpProgram(Absyn.Program program)
 ::=
+/* Reset the tick before code generation! */
 match program
   case PROGRAM(classes = {}) then ""
   case PROGRAM(__) then
@@ -27,20 +31,21 @@ end dumpProgram;
 
 template dumpSCodeElements(list<SCode.Element> elements)
 "
-       Dumps forward declaration of uniontypes and partial functions unless elements is empty.
-       Recursion needed to find all partial functions!. This should be call on a per module basis"
+  Dumps forward declaration of uniontypes and partial functions unless elements is empty.
+  This should be called once and only once per module basis
+"
 ::= dumpSCodeElements2(filterElements(elements, defaultOptions))
 end dumpSCodeElements;
 
 template dumpSCodeElements2(list<SCode.Element> elements)
 ::=
-  let str = elements |> el hasindex i1 fromindex 1 =>
+  let str = List.unique(elements) |> el hasindex i1 fromindex 1 =>
   (
     match el
       case CLASS(restriction=SCode.R_UNIONTYPE(__)) then
         '@UniontypeDecl <%name%> <%\n%>'
       case CLASS(classDef = parts as SCode.PARTS(__), partialPrefix = SCode.NOT_PARTIAL(), restriction=SCode.R_FUNCTION(__)) then
-      dumpSCodeElements2(parts.elementLst)
+        dumpSCodeElements2(parts.elementLst)
       case CLASS(partialPrefix = SCode.PARTIAL(), restriction=SCode.R_FUNCTION(__)) then
        '<%name%> = Function<%\n%>'
       else ''
@@ -51,7 +56,7 @@ template dumpSCodeElements2(list<SCode.Element> elements)
 end dumpSCodeElements2;
 
 template dumpClass(Absyn.Class cls, DumpOptions options)
-/*We do not yet know our context in Absyn */
+  /*We do not yet know our context in Absyn :) */
 ::= dumpClassElement(cls, options, noContext)
 end dumpClass;
 
@@ -81,12 +86,13 @@ match class
     let typevar_inputs = System.stringReplace(inputs_str, "<:", "")
     let header = dumpClassHeader(parts, restriction)
     let functionBodyStr = dumpClassDef(parts, makeFunctionContext(return_str), options)
+    let cmt2 = if commentStr then '"""<%commentStr%>"""' else ""
     /*
       Input output variables are treated as parameters
       output and bidirectional variables occurs as local variables in Julia
     */
     <<
-    <%commentStr%>
+    <%cmt2%>
     function <%name%>(<%if header then typevar_inputs else inputs_str%>) <%if header then "" else returnType%> <%header%>
       <%functionBodyStr%>
       <%return_str%>
@@ -95,6 +101,7 @@ match class
   case CLASS(body=parts as PARTS(__)) then
     let enc_str = if encapsulatedPrefix then "" /*Should we use a macro here?*/ else ""
     let partial_str = if partialPrefix then "#=TODO: Originally partial =# " else ""
+    let commentStr = dumpCommentStrOpt(parts.comment)
     let class_type_str = dumpClassType(restriction)
     let cdef_str1 = match restriction
       case R_PACKAGE(__) then
@@ -110,26 +117,22 @@ match class
     let cdef_str2 = match restriction
       case R_PACKAGE(__) then
         <<
-        <%\n%>
         using MetaModelica
-        #= ExportAll is not good practice but it makes it so that we do not have to write export after each function :( =#
         using ExportAll
         <%inform%>
         <%forwardDeclarations%>
         <%\n%>
         <%cdef_str1%>
         <%\n%>
-        #= So that we can use wildcard imports and named imports when they do occur. Not good Julia practice =#
         @exportAll()
         >>
       else
-      <<
-        <%cdef_str1%>
-      >>
+        <<
+          <%cdef_str1%>
+        >>
    let begin_str = match restriction
      case R_RECORD(__) then  'begin'
      else ''
-
     let cdef_str = cdef_str2
     let cmt_str = dumpCommentStrOpt(parts.comment)
     /* Investigate header_str and annotation string*/
@@ -153,6 +156,19 @@ match class
     <<
     <%name%> = <%spec%> <%attr%><%comment%>
     >>
+  case CLASS(body=parts as ENUMERATION(__), restriction=R_TYPE(__)) then
+    let _ = System.tmpTickReset(1)
+    let comment = dumpCommentOpt(parts.comment, context)
+    let enumArgs = dumpEnumDef(parts.enumLiterals)
+    <<
+      <%name%> = #= Enumeration =# (() -> begin
+      <%match parts.enumLiterals
+        case ENUMLITERALS(__) then
+          (enumLiterals |> lit => '<%dumpEnumLiteral(lit)%> = <%intString(System.tmpTick())%>' ;separator="\n")
+       %>
+       ()->(<%enumArgs%>)
+      end)()
+    >>
   /*
     This is a special case that seems to occur from time to time!
     Modelica style function redfinition something that is not support in Julia.
@@ -171,7 +187,10 @@ match class
         <%comment%>
         @ExtendedFunction <%name_of_new_function%> <%spec%>(<%args%>)
       >>
-  /*PDER. Should not occur. Derived Enumeration and Overload might?*/
+//TODO: case CLASS(restriction=R_ENUMERATION(__)) then
+   //let cdef_str = dumpClassDef(parts, packageContext, options)
+   //AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassHeader:")
+  /* PDER. Should not occur. Derived, and Overload might? */
 end dumpClassElement;
 
 template dumpClassHeader(ClassDef classDef, Absyn.Restriction restriction)
@@ -263,19 +282,37 @@ match cdef
   case CLASS_EXTENDS(__) then
     AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassDef: CLASS_EXETENDS not yet supported.")
   case ENUMERATION(__) then
-    AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassDef: CLASS_ENUMERATION not yet supported.")
+    let enum_str = dumpEnumDef(enumLiterals)
+    ' =  @enum(<%enum_str%>)'
   else "TODO Unkown class definition"
 end dumpClassDef;
+
+template dumpEnumDef(Absyn.EnumDef enum_def)
+::=
+match enum_def
+  case ENUMLITERALS(__) then
+    (enumLiterals |> lit => dumpEnumLiteral(lit) ;separator=";")
+  case ENUM_COLON() then ":"
+end dumpEnumDef;
+
+template dumpEnumLiteral(Absyn.EnumLiteral lit)
+::=
+match lit
+  case ENUMLITERAL(__) then
+    '<%literal%>'
+end dumpEnumLiteral;
 
 template dumpClassType(Absyn.Restriction restriction)
 ::=
 match restriction
-  case R_PACKAGE(__) then "module"
+  case R_PACKAGE(__) then 'module'
   case R_METARECORD(__) then "struct"
   case R_RECORD(__) then '@Record' //Only handles Metamodelica records(!)
   case R_UNIONTYPE(__) then "uniontype"
   case R_TYPE(__) then '' // Should be const iff we are in a global scope (Julia 1.0 (Packages are not))
   case R_FUNCTION(__) then "function"
+  case R_CLASS(__) then "module"
+  case R_MODEL(__) then "module #= Should be a model here =#"
   /* TODO: The other ones are probably not relevant for now */
   else AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassType: Unknown restriction for class." + AbsynDumpTpl.dumpRestriction(restriction))
 end dumpClassType;
@@ -312,7 +349,7 @@ match class_part
     let ann_str = match annotation_ case SOME(ann) then ' <%dumpAnnotation(ann, context)%>;'
     match externalDecl
       case EXTERNALDECL(__) then //Turned of temporary to translate builtin
-        "#= TODO: Defined in the runtime =#" //AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassPart: EXTERNALDECL(__) not supported.")
+        "@error \"TODO: Defined in the runtime\"" //AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassPart: EXTERNALDECL(__) not supported.")
 end dumpClassPart;
 
 template dumpElementItems(list<Absyn.ElementItem> items, Context context, String prevSpacing, Boolean first, DumpOptions options)
@@ -508,7 +545,7 @@ match specification
     let args_str = (elementArg |> earg => dumpElementArg(earg, context) ;separator=", ")
     let mod_str = if args_str then '(<%args_str%>)'
     let ann_str = dumpAnnotationOptSpace(annotationOpt, context)
-    'extends <%bc_str%><%mod_str%><%ann_str%>'
+    'using #= Modelica extend clause =# <%bc_str%><%mod_str%><%ann_str%>'
   case COMPONENTS(__) then
     let attr_str = dumpElementAttr(attributes)
     /* Remove all items with input-output specification. They are handled earlier and separate! */
@@ -522,7 +559,8 @@ match specification
     let comps_str_no_local = if elementSpecIsOUTPUT_OR_BIDIR(specification) then
                       (components |> comp =>
                         let comp_str = dumpComponentItem(comp, noContext)
-                          ' <%match context case PACKAGE(__) then "const "%><%comp_str%>::<%ty_str%>'
+                          '<%match context
+                            case PACKAGE(__) then "const "%><%comp_str%>::<%ty_str%>'
                       ;separator="\n")
                     else ''
    /*If our context is a function context we need to redefine comps_str*/
@@ -658,10 +696,6 @@ match gimp
   case GROUP_IMPORT_RENAME(__) then '<%rename%> = <%name%>'
 end dumpGroupImport;
 
-template dumpEquation(Absyn.Equation eq)
-::= "No equations allowed. Translate them to algorithms"
-end dumpEquation;
-
 template dumpAlgorithmItems(list<Absyn.AlgorithmItem> algs, Context context)
 ::= (algs |> alg => dumpAlgorithmItem(alg, context) ;separator="\n")
 end dumpAlgorithmItems;
@@ -685,12 +719,12 @@ match alg
     /* Somtimes assignments are used as assertions. There are probably more cases...*/
     if AbsynUtil.complexIsCref(assignComponent) then
       match assignComponent
-      case CONS(__) then
-        '@match <%lhs_str%> = <%rhs_str%>'
-      else
-        '<%lhs_str%> = <%rhs_str%>'
-    else
-      '@match <%lhs_str%> = <%rhs_str%>'
+        case CONS(__) then
+          '@match <%lhs_str%> = <%rhs_str%>'
+        else /* MetaModelica assignenment via the assign operator */
+          '@assign <%lhs_str%> = <%rhs_str%>'
+     else
+       '@match <%lhs_str%> = <%rhs_str%>'
   case ALG_IF(__) then
     let if_str = dumpAlgorithmBranch(ifExp, trueBranch, "if", context)
     let elseif_str = (elseIfAlgorithmBranch |> (c, b) =>
@@ -768,27 +802,51 @@ template dumpPathJL(Absyn.Path path)
 "Wrapper function for dump path.
  Needed since certain keywords will have a sligthly different meaning in Julia"
 ::=
-match path
-  case FULLYQUALIFIED(__) then
-    '.<%AbsynDumpTpl.dumpPath(path)%>'
-  case QUALIFIED(__) then
-    if (Flags.getConfigBool(Flags.MODELICA_OUTPUT)) then
-    '<%name%>__<%AbsynDumpTpl.dumpPath(path)%>'
-    else
-    '<%name%>.<%AbsynDumpTpl.dumpPath(path)%>'
-  case IDENT(__) then
-    match name
-      case "Real" then 'Float'
-      case "Integer" then 'Integer'
-      case "Boolean" then 'Bool'
-      case "list" then 'List'
-      case "array" then 'Array'
-      case "tuple" then 'Tuple'
-      case "polymorphic" then 'Any'
-      case "Mutable" then 'MutableType'
-      else '<%name%>'
-  else
-    AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path.")
+match MMToJuliaHT.componentInPathIsInHT(path)
+  case false then
+    match path
+      case FULLYQUALIFIED(__) then
+      '.<%AbsynDumpTpl.dumpPath(path)%>'
+      case QUALIFIED(__) then
+        '<%name%>.<%AbsynDumpTpl.dumpPath(path)%>'
+      case IDENT(__) then
+        match name
+          case "Real" then 'AbstractFloat'
+          case "Integer" then 'Integer'
+          case "Boolean" then 'Bool'
+          case "list" then 'List'
+          case "array" then 'Array'
+          case "tuple" then 'Tuple'
+          case "polymorphic" then 'Any'
+          case "Mutable" then 'MutableType'
+          else '<%name%>'
+      else
+        AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path:" + AbsynDumpTpl.dumpPath(path))
+  else /* The path we try to access have been refactored and is present in the Hash table. */
+    match path
+      case FULLYQUALIFIED(__) then
+        '.<%AbsynDumpTpl.dumpPath(path)%>'
+      case QUALIFIED(__) then
+        '<%name%>.<%AbsynDumpTpl.dumpPath(path)%>'
+      case IDENT(__) then
+       let tmpName = name
+        match name
+          case "Real" then 'AbstractFloat'
+          case "Integer" then 'Integer'
+          case "Boolean" then 'Bool'
+          case "list" then 'List'
+          case "array" then 'Array'
+          case "tuple" then 'Tuple'
+          case "polymorphic" then 'Any'
+          case "Mutable" then 'MutableType'
+          else
+            match MMToJuliaHT.get(name)
+              case SOME(CLASS_INFO(originalClass = CLASS(name = name1), wrapperClass = CLASS(name = name2))) then
+                'test <%name2%>'
+              else
+                AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path:" + AbsynDumpTpl.dumpPath(path))
+      else
+        AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path.")
 end dumpPathJL;
 
 template dumpPathNoQual(Absyn.Path path)
@@ -807,10 +865,8 @@ end dumpTypeSpecOpt;
 template dumpTypeSpec(Absyn.TypeSpec typeSpec, Context context)
 "
 Dumps the type specification:
-
-TODO add several <: for the different types. Not important at the present time.
-
-TODO: Any types should not have the <: syntax
+  TODO add several <: for the different types. Not important at the present time.
+  TODO: Any types should not have the <: syntax
 "
 ::=
 match typeSpec
@@ -839,19 +895,6 @@ match typeSpec
      else
        '<%path_str%>{<%ty_str%>}<%arraydim_str%>'
 end dumpTypeSpec;
-
-template dumpArrayDimOptTypeSpec(Option<Absyn.ArrayDim> arraydim, Context context)
-"Not in use"
-::= match arraydim case SOME(ad) then dumpSubscriptsTypeSpec(ad, context)
-end dumpArrayDimOptTypeSpec;
-
-template dumpSubscriptsTypeSpec(list<Subscript> subscripts, Context context)
-"Not in use"
-::=
-  if subscripts then
-    let sub_str = (subscripts |> s => 'Array' ;separator=", ")
-    'Array{<%sub_str%>}'
-end dumpSubscriptsTypeSpec;
 
 template dumpArrayDimOpt(Option<Absyn.ArrayDim> arraydim, Context context)
 ::= match arraydim case SOME(ad) then dumpSubscripts(ad, context)
@@ -963,7 +1006,7 @@ match exp
   case MATCHEXP(__) then dumpMatchExp(exp)
   case LIST(__) then
     let list_str = (exps |> e => dumpExp(e, context) ;separator=", ")
-    'list(<%list_str%>)'
+    '@list(<%list_str%>)'
   case DOT(__) then
     '<%dumpExp(exp, context)%>.<%dumpExp(index, context)%>'
   case _ then '/* AbsynDumpTpl.dumpExp: UNHANDLED Abyn.Exp */'

@@ -115,6 +115,7 @@ if true then /* Suppress output */
     "../Script/GlobalScriptUtil.mo",
     "../Script/Interactive.mo",
     "../Script/NFApi.mo",
+    "../Script/MMToJuliaHT.mo",
     "../Script/MMToJuliaUtil.mo",
     "../Script/StaticScript.mo",
     "../Script/SymbolTable.mo",
