@@ -101,7 +101,7 @@ try
     case ( <%mexps |> it => mmMatchingExp(it) ;separator=",\n"; anchor%> )
       <%if statements then <<
       algorithm
-        <%statements |> it => '<%mmExp(it, "=")%>;' ;separator="\n"%>
+        <%statements |> it => '<%mmExp(it, ":=")%>;' ;separator="\n"%>
       >>%>
       then <%match outArgs
             case {(nm,_)} then nm
