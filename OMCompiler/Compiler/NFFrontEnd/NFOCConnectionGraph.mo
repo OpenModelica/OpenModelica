@@ -80,7 +80,6 @@ type FlatEdges = NFConnections.BrokenEdges
 
 protected
 import Absyn;
-import AbsynUtil;
 import NFBuiltin;
 import NFCall.Call;
 import NFClass.Class;

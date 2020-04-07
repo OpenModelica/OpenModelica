@@ -211,6 +211,7 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DISABLE_JACSCC,
   Flags.FORCE_NLS_ANALYTIC_JACOBIAN,
   Flags.DUMP_LOOPS,
+  Flags.DUMP_LOOPS_VERBOSE,
   Flags.SKIP_INPUT_OUTPUT_SYNTACTIC_SUGAR,
   Flags.OMC_RECORD_ALLOC_WORDS,
   Flags.TOTAL_TEARING_DUMP,
@@ -246,7 +247,10 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.NF_EXPAND_FUNC_ARGS,
   Flags.DUMP_JL,
   Flags.DUMP_ASSC,
-  Flags.SPLIT_CONSTANT_PARTS_SYMJAC
+  Flags.SPLIT_CONSTANT_PARTS_SYMJAC,
+  Flags.NF_DUMP_FLAT,
+  Flags.DUMP_FORCE_FMI_ATTRIBUTES,
+  Flags.DUMP_FORCE_FMI_INTERNAL_VARIABLES
 };
 
 protected
@@ -389,7 +393,11 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.USE_ZEROMQ_IN_SIM,
   Flags.ZEROMQ_PUB_PORT,
   Flags.ZEROMQ_SUB_PORT,
-  Flags.ZEROMQ_SIM_ID
+  Flags.ZEROMQ_JOB_ID,
+  Flags.ZEROMQ_SERVER_ID,
+  Flags.ZEROMQ_CLIENT_ID,
+  Flags.FMI_VERSION
+
 };
 
 public function new

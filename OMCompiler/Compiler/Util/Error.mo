@@ -533,9 +533,9 @@ public constant ErrorTypes.Message REDECLARE_NONEXISTING_ELEMENT = ErrorTypes.ME
 public constant ErrorTypes.Message INVALID_ARGUMENT_TYPE_FIRST_ARRAY = ErrorTypes.MESSAGE(229, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("The first argument of %s must be an array expression."));
 public constant ErrorTypes.Message INVALID_ARGUMENT_TYPE_BRANCH_FIRST = ErrorTypes.MESSAGE(230, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("The first argument of %s must be on the form A.R, where A is a connector and R an over-determined type/record."));
+  Gettext.gettext("The first argument '%s' of %s must have the form A.R, where A is a connector and R an over-determined type/record."));
 public constant ErrorTypes.Message INVALID_ARGUMENT_TYPE_BRANCH_SECOND = ErrorTypes.MESSAGE(231, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("The second argument of %s must be on the form A.R, where A is a connector and R an over-determined type/record."));
+  Gettext.gettext("The second argument '%s' of %s must have the form A.R, where A is a connector and R an over-determined type/record."));
 public constant ErrorTypes.Message INVALID_ARGUMENT_TYPE_OVERDET_FIRST = ErrorTypes.MESSAGE(232, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("The first argument of %s must be an over-determined type or record."));
 public constant ErrorTypes.Message INVALID_ARGUMENT_TYPE_OVERDET_SECOND = ErrorTypes.MESSAGE(233, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -792,6 +792,11 @@ public constant ErrorTypes.Message IMPORT_IN_COMPOSITE_NAME = ErrorTypes.MESSAGE
   Gettext.gettext("Found imported name ‘%s‘ while looking up composite name ‘%s‘."));
 public constant ErrorTypes.Message SHADOWED_ITERATOR = ErrorTypes.MESSAGE(360, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("An iterator named ‘%s‘ is already declared in this scope."));
+public constant ErrorTypes.Message W_INVALID_ARGUMENT_TYPE_BRANCH_FIRST = ErrorTypes.MESSAGE(361, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  Gettext.gettext("The first argument '%s' of %s must have the form A.R, where A is a connector and R an over-determined type/record."));
+public constant ErrorTypes.Message W_INVALID_ARGUMENT_TYPE_BRANCH_SECOND = ErrorTypes.MESSAGE(362, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  Gettext.gettext("The second argument '%s' of %s must have the form A.R, where A is a connector and R an over-determined type/record."));
+
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
 public constant ErrorTypes.Message INITIALIZATION_OVER_SPECIFIED = ErrorTypes.MESSAGE(497, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
@@ -1075,6 +1080,10 @@ public constant ErrorTypes.Message SERIALIZED_SIZE = ErrorTypes.MESSAGE(5046, Er
   Gettext.gettext("%s uses %s of memory (%s without GC overhead; %s is consumed by not performing String sharing)."));
 public constant ErrorTypes.Message META_MATCH_CONSTANT = ErrorTypes.MESSAGE(5047, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("Match input %s is a constant value."));
+public constant ErrorTypes.Message CONVERSION_MISSING_FROM_VERSION = ErrorTypes.MESSAGE(5048, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  Gettext.gettext("Conversion-annotation is missing version for from-conversion: %s."));
+public constant ErrorTypes.Message CONVERSION_UNKNOWN_ANNOTATION = ErrorTypes.MESSAGE(5049, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  Gettext.gettext("Conversion-annotation contains unknown element: %s."));
 
 
 public constant ErrorTypes.Message COMPILER_ERROR = ErrorTypes.MESSAGE(5999, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -1103,7 +1112,6 @@ public constant ErrorTypes.Message UNKNOWN_FMU_TYPE = ErrorTypes.MESSAGE(7009, E
   Gettext.gettext("Unknown FMU type %s. Supported types are me (model exchange), cs (co-simulation) & me_cs (model exchange & co-simulation)."));
 public constant ErrorTypes.Message FMU_EXPORT_NOT_SUPPORTED = ErrorTypes.MESSAGE(7010, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("Export of FMU type %s for version %s is not supported. Supported combinations are me (model exchange) for versions 1.0 & 2.0, cs (co-simulation) & me_cs (model exchange & co-simulation) for version 2.0."));
-
 // FIGARO_ERROR added by Alexander Carlqvist
 public constant ErrorTypes.Message FIGARO_ERROR = ErrorTypes.MESSAGE(7011, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.notrans("Figaro: %s."));
@@ -1121,8 +1129,8 @@ public constant ErrorTypes.Message CONFLICTING_ALIAS_SET = ErrorTypes.MESSAGE(70
   Gettext.gettext("The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts."));
 public constant ErrorTypes.Message ENCRYPTION_NOT_SUPPORTED = ErrorTypes.MESSAGE(7018, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("File not Found: %s. Compile OpenModelica with Encryption support."));
-public constant ErrorTypes.Message ENCRYPTED_FILE_NOT_FOUND_ERROR = ErrorTypes.MESSAGE(7019, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  Gettext.gettext("No encrypted files found. Looked for %s and %s."));
+public constant ErrorTypes.Message PACKAGE_FILE_NOT_FOUND_ERROR = ErrorTypes.MESSAGE(7019, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  Gettext.gettext("Unable to find the package definition file. Looked for \"%s\", \"%s\", \"%s\" and \"%s\"."));
 public constant ErrorTypes.Message UNABLE_TO_UNZIP_FILE = ErrorTypes.MESSAGE(7020, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("Unable to unzip the file: %s."));
 public constant ErrorTypes.Message EXPECTED_ENCRYPTED_PACKAGE = ErrorTypes.MESSAGE(7021, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
@@ -1133,7 +1141,8 @@ public constant ErrorTypes.Message ACCESS_ENCRYPTED_PROTECTED_CONTENTS = ErrorTy
   Gettext.gettext("Cannot access encrypted and protected class contents."));
 public constant ErrorTypes.Message INVALID_NONLINEAR_JACOBIAN_COMPONENT = ErrorTypes.MESSAGE(7024, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Jacobian %s contains non-linear components. This indicates a singular system or internal generation errors."));
-
+public constant ErrorTypes.Message DUPLICATE_VARIABLE_ERROR = ErrorTypes.MESSAGE(7025, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Duplicate elements:\n %s."));
 constant SourceInfo dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
 
 public function clearCurrentComponent
@@ -1268,6 +1277,17 @@ algorithm
       then ();
   end match;
 end addSourceMessage;
+
+function addSourceMessageAsError
+  input ErrorTypes.Message msg;
+  input ErrorTypes.MessageTokens tokens;
+  input SourceInfo info;
+protected
+  ErrorTypes.Message m = msg;
+algorithm
+  m.severity := ErrorTypes.ERROR();
+  addSourceMessage(m, tokens, info);
+end addSourceMessageAsError;
 
 function addStrictMessage
   input ErrorTypes.Message errorMsg;

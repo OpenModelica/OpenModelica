@@ -696,6 +696,25 @@ algorithm
   outList := listReverseInPlace(outList);
 end firstN;
 
+public function firstN_reverse<T>
+  "Returns the first N element of a list in reverse order, or fails if there are
+   not enough elements in the list."
+  input list<T> inList;
+  input Integer N;
+  output list<T> outList = {};
+protected
+  T e;
+  list<T> rest;
+algorithm
+  true := (N >= 0);
+  rest := inList;
+
+  for i in 1:N loop
+    e :: rest := rest;
+    outList := e :: outList;
+  end for;
+end firstN_reverse;
+
 public function stripFirst<T>
   "Removes the first element of a list, but returns the empty list if the given
    list is empty."
@@ -4595,6 +4614,20 @@ algorithm
   outTuples := listReverse(outTuples);
 end zip;
 
+public function zip2<T1, T2>
+  "Takes a lists and a single elem and returns a list of two-element tuples contaning the
+  elements in the same order. Fails if the lists are not of the same length.
+  Example: zip2(1, {2, 4, -1}) =>  {(1, 2), (1, 4), (1, -1)}"
+  input T1 inElem;
+  input list<T2> inList2;
+  output list<tuple<T1, T2>> outTuples = {};
+algorithm
+  for t2 in inList2 loop
+    outTuples := (inElem, t2)::outTuples;
+  end for;
+  outTuples := listReverse(outTuples);
+end zip2;
+
 public function unzip<T1, T2>
   "Takes a list of two-element tuples and splits the tuples into two separate
    lists. Example: unzip({(1, 2), (3, 4)}) => ({1, 3}, {2, 4})"
@@ -7535,6 +7568,25 @@ algorithm
       then acc;
   end match;
 end allCombinations4;
+
+ public function contains<T>
+    input list<T> lst;
+    input T elem;
+    input equalityFunc eqFunc;
+    partial function equalityFunc
+      input T t1;
+      input T t2;
+      output Boolean res;
+    end equalityFunc;
+    output Boolean res = false;
+  algorithm
+    for i in lst loop
+      if eqFunc(i, elem) then
+        res := true;
+        return;
+      end if;
+    end for;
+end contains;
 
 annotation(__OpenModelica_Interface="util");
 end List;
