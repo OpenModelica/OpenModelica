@@ -100,7 +100,7 @@ try
 
     case ( <%mexps |> it => mmMatchingExp(it) ;separator=",\n"; anchor%> )
       <%if statements then <<
-      equation
+      algorithm
         <%statements |> it => '<%mmExp(it, "=")%>;' ;separator="\n"%>
       >>%>
       then <%match outArgs
