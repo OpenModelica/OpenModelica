@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -30,105 +30,18 @@
  */
 
 encapsulated package MMToJuliaUtil
+" file:        MMToJuliaUtil.mo
+  package:     MMToJuliaUtil
+  description: MMToJuliaUtil contains utility functions for Julia translation.
+ It makes use of a global hash table indexed with MM_TO_JL_HT_INDEX "
+
 protected
 import Absyn;
 import AbsynUtil;
-//import DoubleEnded;
-//import Global;
-//import List;
+import Global;
+import Mutable;
 import Util;
-protected
-
-// function getAllPartsExceptRecords
-//   input Absyn.Class cls;
-//   output list<Absyn.ClassPart> parts;
-// algorithm
-// end getAllPartsExceptRecords;
-
-// function getPartsThatAreRecords
-//   input Absyn.Class cls;
-//   output list<Absyn.ClassPart> parts;
-// algorithm
-// end getPartsThatAreRecords;
-
-// function splitRecordsAndOtherElements
-// "This functions separates the records from the other elements of a given class."
-//   input Absyn.Class cls;
-//   output list<Absyn.ClassPart> bodyWithOnlyRecords = {};
-//   output list<Absyn.ClassPart> otherElements = {};
-// algorithm
-//   bodyWithOnlyRecords := getPartsThatAreRecords(cls);
-//   otherElements := getAllPartsExceptRecords(cls);
-// end splitRecordsAndOtherElements;
-
-// function restrictionIsRecord
-//   input Absyn.Restriction restriction;
-//   output Boolean isRecord;
-// algorithm
-//   isRecord := match restriction
-//     case R_RECORD(__) then true;
-//     else false;
-//   end match;
-// end restrictionIsRecord;
-
-// public
-// function refactorNonStandardUniontypes
-//   input Absyn.Program inProgram;
-//   output Absyn.Program outProgram;
-// protected
-//   constant Integer UNUSED;
-//   Absyn.Program tmpProgram = inProgram;
-//   Class tmpClass;
-// algorithm
-//   //Traverse all classes and create a package around each uniontype containing functions
-//   outProgram := AbsynUtil.traverseClasses(program,
-//                                           NONE(),
-//                                           createPackageAroundUniontypeIfContainsFuncs,
-//                                           UNUSED,
-//                                           true);
-//   //Traverse all classes and replace all uniontypes containing functions and other crap with with uniontypes containing only records.
-//   //AbsynUtil.traverseClasses()
-//   //Traverse all classes and replace all references to the old uniontype with <package>.<uniontype> instead
-//   //AbsynUtil.traverseClasses()
-// end refactorNonStandardUniontypes;
-
-// function refactorUniontypesWithFunctions
-//   input Absyn.Program inProgram;
-//   output Absyn.Program outProgram;
-// algorithm
-//   //Replace all uniontype containing functions with uniontypes containing only records.
-// end refactorUniontypesWithFunctions;
-
-// function createPackageAroundUniontypeIfContainsFuncs
-//   input tuple<Absyn.Class, Option<Absyn.Path>, Integer> inTuple;
-//   output tuple<Absyn.Class, Option<Absyn.Path>, Integer> outTuple;
-// protected
-//   Absyn.ClassDef classDef = Util.tuple31(inTuple);
-//   constant Boolean VISIT_PROTECTED = true;
-//   constant String PACKAGE_NAME = "P" + AbsynUtil.getClassName(Util.tuple31(inTuple));
-//   constant Integer UNUSED = 0;
-//   list<Absyn.ClassPart> bodyWithOnlyRecords = {};
-//   list<Absyn.ClassPart> otherElements = {};
-// algorithm
-//   if not AbsynUtil.isUniontype(cls) then
-//     classDef := Util.tuple31(inTuple);
-//   end if;
-//   (bodyWithOnlyRecords, otherElements) := splitRecordsAndOtherElements(cls);
-//   classDef := PARTS({} /*Assume no typevars for the package..*/,
-//                     {}/*Class Attributes. Only for Optimica, not used*/,
-//                     /*classParts*/ otherElements,
-//                     {}/* Annotations, they are kept in the nested uniontype */,
-//                     SOME("Generated top level package")/*Class comment*/);
-// // From these parts we create a package and inside this package we store things accordingly
-//  cls :=  CLASS(PACKAGE_NAME,
-//                false,
-//                false,
-//                Absyn.R_PACKAGE(),
-//                packageClsDef,
-//                cls.info);
-//    outTuple := (cls, NONE(), UNUSED);
-// end createPackageAroundUniontypeIfContainsFuncs;
-//TODO first figure out what we should rename
+import MMToJuliaHT;
 
 public
 uniontype Context
@@ -254,6 +167,119 @@ algorithm
   end for;
 end filterOnDirection;
 
+
+function simplifyAbsyn
+"
+Input Absyn.Program
+outoyt Absyn.Program
+
+Description:
+  This function takes an Absyn.Program and transforms it to an equvivalent Absyn.Program with
+  certain MetaModelica simplified.
+  Each refactored component is saved in a cache.
+
+  For instance the Uniontype A declared in the following way:
+
+  uniontype A
+    function f1 end f1;
+    function f2 end f2;
+    record r1 end r1;
+    record r2 end r2;
+  end A;
+
+Is transformed into:
+
+package P_A
+  Uniontype A
+    record  r1 end r1;
+    record r2 end r2;
+  end A;
+  function f1 end f1;
+  function f2 end f2;
+end P_A;
+
+The uniontype A is saved in the cache.
+Along with the names of the concerned records.
+
+All references to A is rerouted to P_A
+
+If a reference is to a record that is saved in the cache.
+That reference is rerouted to P_A.A. This to account for the additional level of redirection.
+"
+
+  input Absyn.Program inProgram;
+  output Absyn.Program outProgram;
+protected
+  Absyn.Program tmpProgram;
+  MMToJuliaHT.HashTable mmToJuliaHT;
+  Boolean visitProtected = true;
+algorithm
+  MMToJuliaHT.init();
+  mmToJuliaHT := getGlobalRoot(Global.MM_TO_JL_HT_INDEX);
+  (tmpProgram, NONE(), mmToJuliaHT) := AbsynUtil.traverseClasses(inProgram,
+                                                       NONE(),
+                                                       refactorUniontypesWithFunctions,
+                                                       mmToJuliaHT,
+                                                       visitProtected);
+  outProgram := tmpProgram;
+//  print("<<Dumping hash table>>\n");
+//  BaseHashTable.dumpHashTable(mmToJuliaHT);
+end simplifyAbsyn;
+
+function refactorUniontypesWithFunctions
+  input tuple<Absyn.Class, Option<Absyn.Path>, MMToJuliaHT.HashTable> inTpl;
+  output tuple<Absyn.Class, Option<Absyn.Path>, MMToJuliaHT.HashTable> outTpl;
+protected
+  Absyn.Class inClass;
+  MMToJuliaHT.HashTable hashTable;
+  Option<Absyn.Path> inPath;
+  list<Absyn.ClassPart> nonRecords = {};
+  list<Absyn.ClassPart> records = {};
+  Absyn.Class newPackage;
+  Absyn.ClassDef tmpClassDef;
+  String className;
+algorithm
+  (inClass, inPath, hashTable) := inTpl;
+  if not (AbsynUtil.isUniontype(inClass) and  AbsynUtil.classHasLocalClassesThatAreFunctions(inClass)) then
+    outTpl := inTpl;
+    return;
+  end if;
+  /* The class is a uniontype and it has functions */
+  (records, nonRecords) := AbsynUtil.splitRecordsAndOtherElements(inClass);
+  /* Create a new package and surround the record by said package.*/
+  className := AbsynUtil.optPathString(SOME(AbsynUtil.className(inClass)));
+  try
+    () := match inClass.body
+      local
+        list<Absyn.ClassPart> bodyParts;
+        list<String> typeVars;
+        list<Absyn.NamedArg> classAttrs;
+        list<Absyn.Annotation> ann;
+        Option<String>  comment;
+        Absyn.ClassPart newClassPart;
+      case Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, ann = ann, comment = comment) algorithm
+        inClass.body := Absyn.PARTS(typeVars, classAttrs,  records, ann, comment);
+        newClassPart := AbsynUtil.makePublicClassPartFromElementItem(AbsynUtil.makeClassElement(inClass));
+        tmpClassDef := Absyn.PARTS(typeVars, classAttrs,  newClassPart :: nonRecords, ann, comment);
+        then ();
+      else fail();
+   end match;
+   newPackage := Absyn.CLASS("P_" + className,
+                            false,
+                            false,
+                            false,
+                            Absyn.R_PACKAGE(),
+                            tmpClassDef,
+                            sourceInfo());
+    MMToJuliaHT.add(className, SOME(MMToJuliaHT.CLASS_INFO(inClass, newPackage)));
+    outTpl := (newPackage, NONE(), hashTable);
+    return;
+  /* Update our hash table with our new package and the uniontype */
+ else /* No modification */
+   outTpl := inTpl;
+ end try;
+end refactorUniontypesWithFunctions;
+
 function elementSpecIsBIDIR
  "@author:johti17"
   input Absyn.ElementSpec spec;
@@ -317,10 +343,9 @@ algorithm
   for item in contents loop
     existsReturn := match item
       local Absyn.Algorithm alg;
-      case Absyn.ALGORITHMITEM(algorithm_ = alg) then
-        match alg
-          case Absyn.ALG_RETURN(__) then true;
-          else false;
+      case Absyn.ALGORITHMITEM(algorithm_ = alg) then match alg
+        case Absyn.ALG_RETURN(__) then true;
+        else false;
         end match;
       else false;
     end match;

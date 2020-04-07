@@ -38,8 +38,8 @@ encapsulated package CevalScriptBackend
 
 // public imports
 import Absyn;
-import AbsynUtil;
 import AbsynJLDumpTpl;
+import AbsynUtil;
 import BackendDAE;
 import Ceval;
 import DAE;
@@ -47,9 +47,9 @@ import FCore;
 import GlobalScript;
 import Interactive;
 import InteractiveUtil;
-import Values;
 import SimCode;
 import UnitAbsyn;
+import Values;
 
 // protected imports
 protected
@@ -78,21 +78,21 @@ import Debug;
 import DiffAlgorithm;
 import Dump;
 import Error;
-import ErrorTypes;
 import ErrorExt;
+import ErrorTypes;
 import ExecStat;
 import Expression;
 import ExpressionDump;
 import FBuiltin;
 import FGraph;
 import FGraphDump;
-import Figaro;
-import FindZeroCrossings;
 import FInst;
-import Flags;
-import FlagsUtil;
 import FMI;
 import FMIExt;
+import Figaro;
+import FindZeroCrossings;
+import Flags;
+import FlagsUtil;
 import GC;
 import Graph;
 import HashSetString;
@@ -101,6 +101,7 @@ import Inst;
 import LexerModelicaDiff;
 import List;
 import Lookup;
+import MMToJuliaUtil;
 import NFInst;
 import NFSCodeEnv;
 import NFSCodeFlatten;
@@ -119,8 +120,8 @@ import SimpleModelicaParser;
 import SimulationResults;
 import StaticScript;
 import StringUtil;
-import SymbolicJacobian;
 import SymbolTable;
+import SymbolicJacobian;
 import System;
 import TaskGraphResults;
 import Tpl;
@@ -1520,9 +1521,9 @@ algorithm
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,_)
       algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-        
+
         if Config.simCodeTarget() == "omsicpp" then
-        
+
          filenameprefix := AbsynUtil.pathString(className);
           try
              (cache, Values.STRING(str)) := buildModelFMU(cache, env, className, "2.0", "me", "<default>", true, {"static"});
@@ -1533,7 +1534,7 @@ algorithm
           else
             b := false;
           end try;
-          
+
           compileDir := System.pwd() + Autoconf.pathDelimiter;
            executable := filenameprefix;
           initfilename := filenameprefix + "_init_xml";
@@ -1552,9 +1553,9 @@ algorithm
            SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) := simSettings;
            result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
             // result file might have been set by simflags (-r ...)
-        
+
 			result_file := selectResultFile(result_file, simflags);
-		  
+
 			executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
             logFile := stringAppend(executable,".log");
             // adrpo: log file is deleted by buildModel! do NOT DELETE IT AGAIN!
@@ -1566,11 +1567,11 @@ algorithm
             sim_call := stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
             System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
             SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
-            
+
 			resI := System.systemCall(sim_call,logFile);
-			
+
             timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
-			
+
          else
            result_file := "";
            resI := 1;
@@ -1578,7 +1579,7 @@ algorithm
          end if;
 
         timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-		
+
         (cache,simValue) := createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,cache,className,vals,result_file,logFile);
       then
         (cache,simValue);
@@ -3129,7 +3130,8 @@ algorithm
 
     case (cache,_,"toJulia",{},_)
       algorithm
-        str := Tpl.tplString(AbsynToJulia.dumpProgram, SymbolTable.getAbsyn());
+        p := MMToJuliaUtil.simplifyAbsyn(SymbolTable.getAbsyn());
+        str := Tpl.tplString(AbsynToJulia.dumpProgram, p);
       then (cache,Values.STRING(str));
 
     case (cache,_,"interactiveDumpAbsynToJL",{},_)

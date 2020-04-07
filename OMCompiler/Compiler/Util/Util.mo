@@ -1192,6 +1192,16 @@ algorithm
   end match;
 end optionList;
 
+public function listOfOptionToList<T>
+  " @author johti17:
+    {SOME(1), NONE, SOME(2)} => {1, 2}
+    {NONE} => {}"
+  input list<Option<T>> inOptLst;
+  output list<T> outLst;
+algorithm
+  outLst := List.flatten(List.map(inOptLst, optionList));
+end listOfOptionToList;
+
 public function stringPadRight
   "Pads a string with the given padding so that the resulting string is as long
    as the given width. If the string is already longer nothing is done to it.

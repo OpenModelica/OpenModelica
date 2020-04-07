@@ -136,8 +136,7 @@ uniontype ClassDef
  derived from another class or an enumeration type.
  For a derived type, the  type contains the name of the derived class
  and an optional array dimension and a list of modifications.
- "
-  record PARTS
+ "  record PARTS
     list<String> typeVars "class A<B,C> ... has type variables B,C";
     list<NamedArg> classAttrs "optimization Op (objective=...) end Op. A list arguments attributing a
     class declaration. Currently used only for Optimica extensions";

@@ -68,6 +68,10 @@ package builtin
     output Boolean nb;
   end boolNot;
 
+  function intString
+    input Integer i;
+    output String s;
+  end intString;
 
   function stringEqual
     input String s1;
@@ -965,6 +969,16 @@ package System
     input Boolean unescapeNewline;
     output String escapedString;
   end escapedString;
+  function tmpTickIndex
+    input Integer i;
+    output Integer io;
+  end tmpTickIndex;
+  function tmpTickReset
+    input Integer i;
+  end tmpTickReset;
+  function tmpTick
+    output Integer tickNo;
+  end tmpTick;
 end System;
 
 package Tpl
@@ -1051,6 +1065,13 @@ package Flags
     output Boolean outValue;
   end getConfigBool;
 end Flags;
+
+package List
+ function unique
+  input list<SCode.Element> inList;
+  output list<SCode.Element> outDuplicateElements;
+ end unique;
+end List;
 
 package MMToJuliaUtil
   uniontype Context
@@ -1151,14 +1172,32 @@ function isClassdef
   input Absyn.Element inElement;
   output Boolean b;
 end isClassdef;
-  function getElementItemsInClassPart
-    input Absyn.ClassPart inClassPart;
-    output list<Absyn.ElementItem> outElements;
-  end getElementItemsInClassPart;
-  function complexIsCref
-    input Absyn.Exp inExp;
-    output Boolean b;
-  end complexIsCref;
+function getElementItemsInClassPart
+  input Absyn.ClassPart inClassPart;
+  output list<Absyn.ElementItem> outElements;
+end getElementItemsInClassPart;
+function complexIsCref
+  input Absyn.Exp inExp;
+  output Boolean b;
+end complexIsCref;
+function optPathString
+  input Option<Path> optIP;
+  output String os;
+end optPathString;
+
+function pathString
+  input Absyn.Path path;
+  input String delimiter;
+  input Boolean usefq;
+  input Boolean reverse;
+  output String s;
+end pathString;
+
+function pathStringDefault
+  input Absyn.Path path;
+  output String s;
+end pathStringDefault;
+
 end AbsynUtil;
 
 package Util
@@ -2485,5 +2524,96 @@ function fromAbsynExp
 end fromAbsynExp;
 
 end Expression;
+
+package MMToJuliaHT
+
+uniontype ClassInfo
+  record CLASS_INFO
+    Absyn.Class originalClass "Uniontype usually";
+    Absyn.Class wrapperClass "The class in which the old top class is wrapped. E.g a package around a uniontype";
+  end CLASS_INFO;
+end ClassInfo;
+
+type Key = String;
+type Value = Option<ClassInfo>;
+
+function FuncHashCref
+  input Key cr;
+  input Integer mod;
+  output Integer res;
+end FuncHashCref;
+
+function FuncCrefEqual
+  input Key cr1;
+  input Key cr2;
+  output Boolean res;
+end FuncCrefEqual;
+
+function FuncCrefStr
+  input Key cr;
+  output String res;
+end FuncCrefStr;
+
+function FuncExpStr
+  input Value exp;
+  output String res;
+end FuncExpStr;
+
+type HashTableCrefFunctionsType = tuple<FuncHashCref, FuncCrefEqual, FuncCrefStr, FuncExpStr>;
+type HashTable = tuple<array<list<tuple<Key, Integer>>>,
+                              tuple<Integer, Integer, array<Option<tuple<Key, Value>>>>,
+                              Integer,
+                              HashTableCrefFunctionsType>;
+
+function dumpClassInfo
+  input Value exp;
+  output String res;
+end dumpClassInfo;
+
+function valueEq
+  input Key key1;
+  input Key key2;
+  output Boolean res;
+end valueEq;
+
+function keyToString
+  input Key key1;
+  output String keyStr;
+end keyToString;
+
+function hashKey
+  input Key inKey;
+  input Integer modulo;
+  output Integer outHash;
+end hashKey;
+
+function get
+  input Key k;
+  output Value v;
+end get;
+
+function add
+  input Key k;
+  input Value v;
+end add;
+
+function exists
+  input Key k;
+  output Boolean b;
+end exists;
+
+function componentInPathIsInHT
+  input Absyn.Path inPath;
+  output Boolean pathIsInHT;
+end componentInPathIsInHT;
+
+function init
+end init;
+
+function createHT
+  output HashTable hashTable;
+end createHT;
+end MMToJuliaHT;
+
 
 end AbsynToJuliaTV;
