@@ -33,7 +33,6 @@ MESSAGE(STATUS "${Sundials_Path}")
 # SUNDIALS Header
 FIND_PATH(SUNDIALS_INCLUDE_DIR sundials/sundials_config.h /usr/include /usr/local/include $ENV{INCLUDE} ${Sundials_Path}/include)
 
-MESSAGE(STATUS: "AHeuTest")
 MESSAGE(STATUS "Sundials include:")
 MESSAGE(STATUS "${SUNDIALS_INCLUDE_DIR}")
 
