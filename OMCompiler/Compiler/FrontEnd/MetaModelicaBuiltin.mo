@@ -751,6 +751,14 @@ function arrayAppend<A>
 external "builtin";
 end arrayAppend;
 
+function println
+"Like print. However, adds a linebreak to the output."
+  input String str;
+algorithm
+  print(str + "\n");
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
+end println;
+
 function anyString<A>
   "Returns the string representation of any value.
   Rather slow; only use this for debugging!"
