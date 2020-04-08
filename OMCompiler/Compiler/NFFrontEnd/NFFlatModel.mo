@@ -44,6 +44,10 @@ protected
   import ComplexType = NFComplexType;
   import NFInstNode.InstNode;
   import IOStream;
+  import NFSubscript.Subscript;
+  import NFClass.Class;
+  import NFClassTree.ClassTree;
+  import NFComponent.Component;
 
   import FlatModel = NFFlatModel;
 
@@ -172,7 +176,7 @@ public
       end if;
     end for;
 
-    for ty in TypeTree.listValues(collectFlatTypes(flatModel)) loop
+    for ty in TypeTree.listValues(collectFlatTypes(flatModel, functions)) loop
       s := Type.toFlatDeclarationStream(ty, s);
       s := IOStream.append(s, ";\n\n");
     end for;
@@ -216,17 +220,19 @@ public
 
   function collectFlatTypes
     input FlatModel flatModel;
+    input list<Function> functions;
     output TypeTree types;
   algorithm
     types := TypeTree.new();
-    types := List.fold(flatModel.variables, collectComponentFlatTypes, types);
+    types := List.fold(flatModel.variables, collectVariableFlatTypes, types);
     types := List.fold(flatModel.equations, collectEquationFlatTypes, types);
     types := List.fold(flatModel.initialEquations, collectEquationFlatTypes, types);
     types := List.fold(flatModel.algorithms, collectAlgorithmFlatTypes, types);
     types := List.fold(flatModel.initialAlgorithms, collectAlgorithmFlatTypes, types);
+    types := List.fold(functions, collectFunctionFlatTypes, types);
   end collectFlatTypes;
 
-  function collectComponentFlatTypes
+  function collectVariableFlatTypes
     input Variable var;
     input output TypeTree types;
   algorithm
@@ -236,7 +242,7 @@ public
     for attr in var.typeAttributes loop
       types := collectBindingFlatTypes(Util.tuple22(attr), types);
     end for;
-  end collectComponentFlatTypes;
+  end collectVariableFlatTypes;
 
   function collectFlatType
     input Type ty;
@@ -449,8 +455,58 @@ public
     input Expression exp;
     input output TypeTree types;
   algorithm
-    types := collectFlatType(Expression.typeOf(exp), types);
+    types := match exp
+      case Expression.SUBSCRIPTED_EXP()
+        algorithm
+          types := collectSubscriptedFlatType(exp.exp, exp.subscripts, exp.ty, types);
+        then
+          types;
+
+      else collectFlatType(Expression.typeOf(exp), types);
+    end match;
   end collectExpFlatTypes_traverse;
+
+  function collectFunctionFlatTypes
+    input Function fn;
+    input output TypeTree types;
+  protected
+    list<Statement> body;
+  algorithm
+    types := ClassTree.foldComponents(Class.classTree(InstNode.getClass(fn.node)),
+      collectComponentFlatTypes, types);
+    body := Function.getBody(fn);
+    types := List.fold(body, collectStatementFlatTypes, types);
+  end collectFunctionFlatTypes;
+
+  function collectComponentFlatTypes
+    input InstNode component;
+    input output TypeTree types;
+  protected
+    Component comp;
+  algorithm
+    comp := InstNode.component(component);
+    types := collectFlatType(Component.getType(comp), types);
+    types := collectBindingFlatTypes(Component.getBinding(comp), types);
+  end collectComponentFlatTypes;
+
+  function collectSubscriptedFlatType
+    input Expression exp;
+    input list<Subscript> subs;
+    input Type subscriptedTy;
+    input output TypeTree types;
+  protected
+    Type exp_ty;
+    list<Type> sub_tyl;
+    list<Dimension> dims;
+    list<String> strl;
+    String name;
+  algorithm
+    exp_ty := Expression.typeOf(exp);
+    dims := List.firstN(Type.arrayDims(exp_ty), listLength(subs));
+    sub_tyl := list(Dimension.subscriptType(d) for d in dims);
+    name := Type.subscriptedTypeName(exp_ty, sub_tyl);
+    types := TypeTree.add(types, Absyn.IDENT(name), Type.SUBSCRIPTED(name, exp_ty, sub_tyl, subscriptedTy));
+  end collectSubscriptedFlatType;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFFlatModel;
