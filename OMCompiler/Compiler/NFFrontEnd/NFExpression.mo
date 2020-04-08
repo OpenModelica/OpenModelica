@@ -1701,7 +1701,8 @@ public
       case UNBOX() then "UNBOX(" + toFlatString(exp.exp) + ")";
       case BOX() then "BOX(" + toFlatString(exp.exp) + ")";
       case CAST() then toFlatString(exp.exp);
-      case SUBSCRIPTED_EXP() then toFlatString(exp.exp) + Subscript.toFlatStringList(exp.subscripts);
+
+      case SUBSCRIPTED_EXP() then toFlatSubscriptedString(exp.exp, exp.subscripts);
       case TUPLE_ELEMENT() then toFlatString(exp.tupleExp) + "[" + intString(exp.index) + "]";
       case RECORD_ELEMENT() then toFlatString(exp.recordExp) + "[field: " + exp.fieldName + "]";
       case MUTABLE() then toFlatString(Mutable.access(exp.exp));
@@ -1714,6 +1715,36 @@ public
       else anyString(exp);
     end match;
   end toFlatString;
+
+  function toFlatSubscriptedString
+    input Expression exp;
+    input list<Subscript> subs;
+    output String str;
+  protected
+    Type exp_ty;
+    list<Type> sub_tyl;
+    list<Dimension> dims;
+    list<String> strl;
+    String name;
+  algorithm
+    exp_ty := typeOf(exp);
+    dims := List.firstN(Type.arrayDims(exp_ty), listLength(subs));
+    sub_tyl := list(Dimension.subscriptType(d) for d in dims);
+    name := Type.subscriptedTypeName(exp_ty, sub_tyl);
+
+    strl := {")"};
+
+    for s in subs loop
+      strl := Subscript.toFlatString(s) :: strl;
+      strl := "," :: strl;
+    end for;
+
+    strl := toFlatString(exp) :: strl;
+    strl := "'(" :: strl;
+    strl := name :: strl;
+    strl := "'" :: strl;
+    str := stringAppendList(strl);
+  end toFlatSubscriptedString;
 
   function operandString
     "Helper function to toString, prints an operator and adds parentheses as needed."
