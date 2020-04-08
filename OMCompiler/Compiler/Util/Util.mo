@@ -373,6 +373,14 @@ algorithm
   end matchcontinue;
 end stringDelimitListPrintBuf;
 
+
+public function println
+"Like print. However, adds a linebreak to the output."
+  input String str;
+algorithm
+  print(str + "\n");
+end println;
+
 public function stringDelimitListAndSeparate "author: PA
   This function is similar to stringDelimitList, i.e it inserts string delimiters between
   consecutive strings in a list. But it also count the lists and inserts a second string delimiter
