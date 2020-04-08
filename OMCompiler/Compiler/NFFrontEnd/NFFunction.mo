@@ -683,7 +683,7 @@ uniontype Function
     list<Statement> fn_body;
   algorithm
     if isDefaultRecordConstructor(fn) then
-      s := IOStream.append(s, InstNode.toString(fn.node));
+      s := IOStream.append(s, InstNode.toFlatString(fn.node));
     else
       fn_name := AbsynUtil.pathString(fn.path);
       s := IOStream.append(s, "function '");
@@ -721,7 +721,7 @@ uniontype Function
 
       s := IOStream.append(s, "end '");
       s := IOStream.append(s, fn_name);
-      s := IOStream.append(s, "';");
+      s := IOStream.append(s, "'");
     end if;
   end toFlatStream;
 
