@@ -47,7 +47,9 @@ protected
 import NFBinding.Binding;
 import ComplexType = NFComplexType;
 import System;
+import AbsynUtil;
 import SCodeUtil;
+import IOStream;
 
 public
 
@@ -692,6 +694,70 @@ uniontype Class
     end if;
   end hasOperator;
 
+  function toFlatStream
+    input Class cls;
+    input InstNode clsNode;
+    input output IOStream.IOStream s;
+  protected
+    String name;
+  algorithm
+    name := AbsynUtil.pathString(InstNode.scopePath(clsNode));
+
+    s := match cls
+      case INSTANCED_CLASS()
+        algorithm
+          s := IOStream.append(s, Restriction.toString(cls.restriction));
+          s := IOStream.append(s, " '");
+          s := IOStream.append(s, name);
+          s := IOStream.append(s, "'\n");
+
+          for comp in ClassTree.getComponents(cls.elements) loop
+            s := IOStream.append(s, "  ");
+            s := IOStream.append(s, InstNode.toFlatString(comp));
+            s := IOStream.append(s, ";\n");
+          end for;
+
+          s := IOStream.append(s, "end '");
+          s := IOStream.append(s, name);
+          s := IOStream.append(s, "'");
+        then
+          s;
+
+      case INSTANCED_BUILTIN()
+        algorithm
+          s := IOStream.append(s, "INSTANCED_BUILTIN(");
+          s := IOStream.append(s, name);
+          s := IOStream.append(s, ")");
+        then
+          s;
+
+      case TYPED_DERIVED()
+        algorithm
+          s := IOStream.append(s, Restriction.toString(cls.restriction));
+          s := IOStream.append(s, " '");
+          s := IOStream.append(s, name);
+          s := IOStream.append(s, "' = '");
+          s := IOStream.append(s, AbsynUtil.pathString(InstNode.scopePath(cls.baseClass)));
+          s := IOStream.append(s, "'");
+        then
+          s;
+
+      else IOStream.append(s, "UNKNOWN_CLASS(" + name + ")");
+    end match;
+  end toFlatStream;
+
+  function toFlatString
+    input Class cls;
+    input InstNode clsNode;
+    output String str;
+  protected
+    IOStream.IOStream s;
+  algorithm
+    s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
+    s := toFlatStream(cls, clsNode, s);
+    str := IOStream.string(s);
+    IOStream.delete(s);
+  end toFlatString;
 end Class;
 
 annotation(__OpenModelica_Interface="frontend");

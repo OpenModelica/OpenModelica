@@ -35,6 +35,7 @@ protected
   import List;
   import Restriction = NFRestriction;
   import NFClass.Class;
+  import IOStream;
 
 public
   import Dimension = NFDimension;
@@ -721,7 +722,7 @@ public
       case Type.TUPLE() then "(" + stringDelimitList(List.map(ty.types, toString), ", ") + ")";
       case Type.NORETCALL() then "()";
       case Type.UNKNOWN() then "unknown()";
-      case Type.COMPLEX() then InstNode.name(ty.cls);
+      case Type.COMPLEX() then AbsynUtil.pathString(InstNode.scopePath(ty.cls));
       case Type.FUNCTION() then Function.typeString(ty.fn);
       case Type.METABOXED() then "#" + toString(ty.ty);
       case Type.POLYMORPHIC() then "<" + ty.name + ">";
@@ -750,7 +751,7 @@ public
       case Type.TUPLE() then "(" + stringDelimitList(List.map(ty.types, toString), ", ") + ")";
       case Type.NORETCALL() then "()";
       case Type.UNKNOWN() then "unknown()";
-      case Type.COMPLEX() then InstNode.name(ty.cls);
+      case Type.COMPLEX() then "'" + AbsynUtil.pathString(InstNode.scopePath(ty.cls)) + "'";
       case Type.FUNCTION() then Function.typeString(ty.fn);
       case Type.METABOXED() then "#" + toFlatString(ty.ty);
       case Type.POLYMORPHIC() then "<" + ty.name + ">";
@@ -762,6 +763,37 @@ public
           fail();
     end match;
   end toFlatString;
+
+  function toFlatDeclarationStream
+    input Type ty;
+    input output IOStream.IOStream s;
+  algorithm
+    s := match ty
+      case Type.ENUMERATION()
+        algorithm
+          s := IOStream.append(s, "type '");
+          s := IOStream.append(s, AbsynUtil.pathString(ty.typePath));
+          s := IOStream.append(s, "' = enumeration(");
+
+          if not listEmpty(ty.literals) then
+            s := IOStream.append(s, listHead(ty.literals));
+
+            for l in listRest(ty.literals) loop
+              s := IOStream.append(s, ", ");
+              s := IOStream.append(s, l);
+            end for;
+          end if;
+
+          s := IOStream.append(s, ")");
+        then
+          s;
+
+      case Type.COMPLEX(complexTy = ComplexType.RECORD())
+        then InstNode.toFlatStream(ty.cls, s);
+
+      else s;
+    end match;
+  end toFlatDeclarationStream;
 
   function typenameString
     input Type ty;

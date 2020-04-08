@@ -53,6 +53,7 @@ import ConvertDAE = NFConvertDAE;
 import Restriction = NFRestriction;
 import NFClassTree.ClassTree;
 import SCodeUtil;
+import IOStream;
 
 public
 uniontype InstNodeType
@@ -1355,10 +1356,20 @@ uniontype InstNode
   algorithm
     name := match node
       case COMPONENT_NODE() then Component.toFlatString(node.name, Pointer.access(node.component));
-      case CLASS_NODE() then SCodeDump.unparseElementStr(node.definition);
+      case CLASS_NODE() then Class.toFlatString(Pointer.access(node.cls), node);
       else name(node);
     end match;
   end toFlatString;
+
+  function toFlatStream
+    input InstNode node;
+    input output IOStream.IOStream s;
+  algorithm
+    s := match node
+      case CLASS_NODE() then Class.toFlatStream(Pointer.access(node.cls), node, s);
+      else IOStream.append(s, toFlatString(node));
+    end match;
+  end toFlatStream;
 
   function isRedeclare
     input InstNode node;

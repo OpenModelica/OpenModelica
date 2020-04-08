@@ -176,12 +176,7 @@ algorithm
   flat_model := Package.collectConstants(flat_model, funcs);
 
   if Flags.getConfigBool(Flags.FLAT_MODELICA) then
-    for fn in FunctionTree.listValues(funcs) loop
-      print(Function.toFlatString(fn));
-      print("\n\n");
-    end for;
-
-    FlatModel.printFlatString(flat_model);
+    FlatModel.printFlatString(flat_model, FunctionTree.listValues(funcs));
     print("\n");
   end if;
 
