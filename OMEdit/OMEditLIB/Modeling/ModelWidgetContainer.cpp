@@ -3158,21 +3158,16 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
   if (event->button() == Qt::RightButton) {
     return;
   }
-  /* Ticket:4379 Select multiple objects with [Shift] key (not with [Control] key)
-   * To provide multi select we switch the shift key with control.
-   */
-  if (event->modifiers() & Qt::ShiftModifier) {
-    event->setModifiers((event->modifiers() & ~Qt::ShiftModifier) | Qt::ControlModifier);
-  }
-  QGraphicsView::mousePressEvent(event);
   // if user is starting panning.
   if (QApplication::keyboardModifiers() == Qt::ControlModifier) {
     setIsPanning(true);
     mLastMouseEventPos = event->pos();
+    QGraphicsView::mousePressEvent(event);
     return;
   }
   MainWindow *pMainWindow = MainWindow::instance();
   QPointF snappedPoint = snapPointToGrid(mapToScene(event->pos()));
+  bool eventConsumed = false;
   // if left button presses and we are creating a connector
   if (isCreatingConnection()) {
     if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
@@ -3180,26 +3175,34 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
     } else {
       mpConnectionLineAnnotation->addPoint(snappedPoint);
     }
+    eventConsumed = true;
   } else if (isCreatingTransition()) {
     mpTransitionLineAnnotation->addPoint(snappedPoint);
+    eventConsumed = true;
   } else if (pMainWindow->getLineShapeAction()->isChecked()) {
     /* if line shape tool button is checked then create a line */
     createLineShape(snappedPoint);
+    eventConsumed = true;
   } else if (pMainWindow->getPolygonShapeAction()->isChecked()) {
     /* if polygon shape tool button is checked then create a polygon */
     createPolygonShape(snappedPoint);
+    eventConsumed = true;
   } else if (pMainWindow->getRectangleShapeAction()->isChecked()) {
     /* if rectangle shape tool button is checked then create a rectangle */
     createRectangleShape(snappedPoint);
+    eventConsumed = true;
   } else if (pMainWindow->getEllipseShapeAction()->isChecked()) {
     /* if ellipse shape tool button is checked then create an ellipse */
     createEllipseShape(snappedPoint);
+    eventConsumed = true;
   } else if (pMainWindow->getTextShapeAction()->isChecked()) {
     /* if text shape tool button is checked then create a text */
     createTextShape(snappedPoint);
+    eventConsumed = true;
   } else if (pMainWindow->getBitmapShapeAction()->isChecked()) {
     /* if bitmap shape tool button is checked then create a bitmap */
     createBitmapShape(snappedPoint);
+    eventConsumed = true;
   } else if (dynamic_cast<ResizerItem*>(itemAt(event->pos()))) {
     // do nothing if resizer item is clicked. It will be handled in its class mousePressEvent();
   } else if (dynamic_cast<CornerItem*>(itemAt(event->pos()))) {
@@ -3235,21 +3238,24 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
       mpClickedComponent = pComponent;
     } else if (isCreatingConnection()) {
       addConnection(pComponent);  // end the connection
-      /* we set this flag here instead of the constructor
-       * to avoid the unnecessary itemChange calls while creating the connection.
-       */
-      mpConnectionLineAnnotation->setFlag(QGraphicsItem::ItemIsSelectable);
+      eventConsumed = true; // consume the event so that connection line or end component will not become selected
     }
   } else if (Component *pComponent = stateComponentAtPosition(event->pos())) {
     if (!isCreatingTransition()) {
       mpClickedState = pComponent;
     } else if (isCreatingTransition()) {
       addTransition(pComponent);  // end the transition
-      /* we set this flag here instead of the constructor
-       * to avoid the unnecessary itemChange calls while creating the transition.
-       */
-      mpTransitionLineAnnotation->setFlag(QGraphicsItem::ItemIsSelectable);
+      eventConsumed = true; // consume the event so that transition line or end component will not become selected
     }
+  }
+  if (!eventConsumed) {
+    /* Ticket:4379 Select multiple objects with [Shift] key (not with [Control] key)
+     * To provide multi select we switch the shift key with control.
+     */
+    if (event->modifiers() & Qt::ShiftModifier) {
+      event->setModifiers((event->modifiers() & ~Qt::ShiftModifier) | Qt::ControlModifier);
+    }
+    QGraphicsView::mousePressEvent(event);
   }
   setFocus(Qt::ActiveWindowFocusReason);
 }
@@ -3261,7 +3267,6 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
  */
 void GraphicsView::mouseMoveEvent(QMouseEvent *event)
 {
-  QGraphicsView::mouseMoveEvent(event);
   // if we are in panning mode
   if (isPanning()) {
     QScrollBar *pHorizontalScrollBar = horizontalScrollBar();
@@ -3330,6 +3335,7 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
       mpClickedState->setSelected(false);
     }
   }
+  QGraphicsView::mouseMoveEvent(event);
 }
 
 void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
@@ -3337,22 +3343,9 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
   if (event->button() == Qt::RightButton) {
     return;
   }
-
   setIsPanning(false);
   mpClickedComponent = 0;
   mpClickedState = 0;
-
-  if (isCreatingShape() || isCreatingConnection() || isCreatingTransition()) {
-    return;
-  }
-  /* Ticket:4379 Select multiple objects with [Shift] key (not with [Control] key)
-   * To provide multi select we switch the shift key with control.
-   * Yes we need to do this in both mousePressEvent and mouseReleaseEvent.
-   */
-  if (event->modifiers() & Qt::ShiftModifier) {
-    event->setModifiers((event->modifiers() & ~Qt::ShiftModifier) | Qt::ControlModifier);
-  }
-  QGraphicsView::mouseReleaseEvent(event);
 
   if (isMovingComponentsAndShapes()) {
     setIsMovingComponentsAndShapes(false);
@@ -3396,6 +3389,14 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
       mpModelWidget->endMacro();
     }
   }
+  /* Ticket:4379 Select multiple objects with [Shift] key (not with [Control] key)
+   * To provide multi select we switch the shift key with control.
+   * Yes we need to do this in both mousePressEvent and mouseReleaseEvent.
+   */
+  if (event->modifiers() & Qt::ShiftModifier) {
+    event->setModifiers((event->modifiers() & ~Qt::ShiftModifier) | Qt::ControlModifier);
+  }
+  QGraphicsView::mouseReleaseEvent(event);
 }
 
 bool GraphicsView::handleDoubleClickOnComponent(QMouseEvent *event)
