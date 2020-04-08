@@ -584,11 +584,11 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   mScalarVariablesHash.clear();
   QString initFileName, infoFileName;
   if (simulationOptions.isValid()) {
-    initFileName = QString(simulationOptions.getOutputFileName()).append("_init.xml");
-    infoFileName = QString(simulationOptions.getOutputFileName()).append("_info.json");
+    initFileName = QString("%1_init.xml").arg(simulationOptions.getOutputFileName());
+    infoFileName = QString("%1_info.json").arg(simulationOptions.getOutputFileName());
   } else {
-    initFileName = QString(text).append("_info.json");
-    infoFileName = QString(text).append("_init.xml");
+    initFileName = QString("%1_init.xml").arg(text);
+    infoFileName = QString("%1_info.json").arg(text);
   }
   QFile initFile(QString(filePath).append(QDir::separator()).append(initFileName));
   if (initFile.exists()) {
@@ -615,7 +615,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     result = parser.parse(&infoFile, &ok).toMap();
     if (!ok) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(infoFile.fileName())
-                                                            .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
+                                                            .arg(infoFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
       return;
     }
     QVariantMap vars = result["variables"].toMap();
