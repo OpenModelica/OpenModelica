@@ -512,6 +512,7 @@ FuncWildcard.mo \
 FuncWrongType.mo \
 FunctionalArg1.mo \
 FunctionalArg2.mo \
+FunctionalArgBinary1.mo \
 FunctionalArgInvalidType1.mo \
 FunctionDerivative1.mo \
 FunctionDerivativeInvalidInput1.mo \

@@ -4789,7 +4789,7 @@ public
       local
         Type ty;
 
-      case Expression.BOX() then boxedExp.exp;
+      case BOX() then boxedExp.exp;
 
       else
         algorithm
