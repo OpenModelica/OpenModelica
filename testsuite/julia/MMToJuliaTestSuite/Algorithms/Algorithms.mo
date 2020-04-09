@@ -5,6 +5,10 @@ package Algorithms
 
 import MetaModelica.Dangerous;
 
+type testEnum1 = enumeration(A,B,C,D,E);
+
+type testEnum2 = enumeration(A,B,C,D,E);
+
 uniontype Complex
   record COMPLEX
     Real r;
