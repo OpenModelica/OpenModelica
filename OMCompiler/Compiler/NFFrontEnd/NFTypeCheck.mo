@@ -154,7 +154,9 @@ function checkBinaryOperation
 algorithm
   if Type.isComplex(Type.arrayElementType(type1)) or
      Type.isComplex(Type.arrayElementType(type2)) then
-    (binaryExp,resultType) := checkOverloadedBinaryOperator(exp1, type1, var1, operator, exp2, type2, var2, info);
+    (binaryExp, resultType) := checkOverloadedBinaryOperator(exp1, type1, var1, operator, exp2, type2, var2, info);
+  elseif Type.isBoxed(type1) and Type.isBoxed(type2) then
+    (binaryExp, resultType) := checkBinaryOperationBoxed(exp1, type1, var1, operator, exp2, type2, var2, info);
   else
     (binaryExp, resultType) := match operator.op
       case Op.ADD then checkBinaryOperationAdd(exp1, type1, exp2, type2, info);
@@ -288,6 +290,27 @@ algorithm
   end if;
 end matchOverloadedBinaryOperator;
 
+public function checkBinaryOperationBoxed
+  input Expression exp1;
+  input Type type1;
+  input Variability var1;
+  input Operator op;
+  input Expression exp2;
+  input Type type2;
+  input Variability var2;
+  input SourceInfo info;
+  output Expression outExp;
+  output Type outType;
+protected
+  Expression e1, e2;
+  Type ty1, ty2;
+algorithm
+  (e1, ty1) := matchTypes(type1, Type.unbox(type1), exp1);
+  (e2, ty2) := matchTypes(type2, Type.unbox(type2), exp2);
+  (outExp, outType) := checkBinaryOperation(e1, ty1, var1, op, e2, ty2, var2, info);
+end checkBinaryOperationBoxed;
+
+protected
 function checkOverloadedBinaryArrayAddSub
   input Expression exp1;
   input Type type1;
