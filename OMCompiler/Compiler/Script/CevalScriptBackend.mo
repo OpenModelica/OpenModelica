@@ -3131,7 +3131,11 @@ algorithm
     case (cache,_,"toJulia",{},_)
       algorithm
         p := MMToJuliaUtil.simplifyAbsyn(SymbolTable.getAbsyn());
-        str := Tpl.tplString(AbsynToJulia.dumpProgram, p);
+        try
+          str := Tpl.tplString(AbsynToJulia.dumpProgram, p);
+        else
+          Error.addInternalError("Julia translation error", sourceInfo());
+        end try;
       then (cache,Values.STRING(str));
 
     case (cache,_,"interactiveDumpAbsynToJL",{},_)

@@ -45,10 +45,11 @@ protected
 import Absyn;
 import AbsynUtil;
 import Dump;
+import Error;
 import Global;
-import Util;
 import List;
 import Util.println;
+import Util;
 public
 import BaseHashTable;
 
@@ -150,9 +151,13 @@ function add
 protected
   HashTable ht;
 algorithm
-  ht := getGlobalRoot(Global.MM_TO_JL_HT_INDEX);
-  ht := BaseHashTable.add((k, v),ht);
-  setGlobalRoot(Global.MM_TO_JL_HT_INDEX, ht);
+  try
+    ht := getGlobalRoot(Global.MM_TO_JL_HT_INDEX);
+    ht := BaseHashTable.add((k, v),ht);
+    setGlobalRoot(Global.MM_TO_JL_HT_INDEX, ht);
+  else
+    Error.addInternalError("Error adding to HT", sourceInfo());
+  end try;
 end add;
 
 function componentInPathIsInHT
@@ -188,8 +193,8 @@ protected
   list<String> newPathStrs = {};
   Integer indexCounter = 0;
 algorithm
-//  println("returnThePathOfTheWrapperPackageInHT: 1");
   if not componentInPathIsInHT(inPath) then
+//  println("returnThePathOfTheWrapperPackageInHT: 1");
     newPath := AbsynUtil.pathStringDefault(inPath);
     return;
   end if;
@@ -211,7 +216,7 @@ algorithm
      else ();
    end match;
   end for;
-//  println("returnThePathOfTheWrapperPackageInHT: 3" + anyString(newPathStrs));
+//println("returnThePathOfTheWrapperPackageInHT: 3" + anyString(newPathStrs));
   for ps in newPathStrs loop
     if stringEqual(newPath, "") then
       newPath := ps;
