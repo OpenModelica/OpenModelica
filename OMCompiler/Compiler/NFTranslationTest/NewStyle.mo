@@ -27,7 +27,7 @@ end StaticUniontypes;
 
 package TestPackage
 
-import StaticUniontypes;
+import StaticUniontypes.topNested.Nested;
 
 function test
  output Integer o = StaticUniontypes.topNested.Nested.foo(4);

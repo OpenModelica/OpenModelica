@@ -38,7 +38,7 @@ TODOS:
   TODO: Module renamning and Julia adaptation of uniontypes
      <In progress>
      TODO: Make sure renamning of imports work as they should
-     TODO: Make sure to fix for nested classes as well
+     TODO: How to handle stand alone modules?
 */
 
 import interface AbsynToJuliaTV;
@@ -704,8 +704,8 @@ match imp
   case NAMED_IMPORT(__) then
     'import <%dumpPathJL2(path, MMToJuliaUtil.makeImportContext())%>; <%name%>=<%dumpPathJL2(path, MMToJuliaUtil.makeImportContext())%>'
   case QUAL_IMPORT(__) then
-    let path_str = dumpPathJL(path)
-    match path_str
+    let path_str = dumpPathJL2(path,  MMToJuliaUtil.makeImportContext())
+    match path_str /* Some package need different names */
       case "Array" then 'import ArrayUtil'
       case "List" then  'import ListUtil'
       else 'import <%path_str%>'
@@ -846,7 +846,7 @@ template dumpPathJL(Absyn.Path path)
           else
             match MMToJuliaHT.get(name) /* Check for direct reference. If so add wrapper package and dot before. Uniontypes do not really have a scope in Julia (I cheat a bit..) */
               case SOME(CLASS_INFO(originalClass = CLASS(name = name1), wrapperClass = CLASS(name = name2))) then
-                '<%name2%>.<%name%>'
+                '<%name2%>.<%name1%>'
               else
                 '<%name%>'
       else
@@ -859,51 +859,51 @@ template dumpPathJL2(Absyn.Path path, Context context)
 ::=
   match context
     case IMPORT_CONTEXT() then
-          match path
-      case topPath as QUALIFIED(__) then
-        '<%MMToJuliaHT.returnThePathOfTheWrapperPackageInHT(topPath)%>'
-      case IDENT(__) then
-       let tmpName = name
-        match name
-          case "Real" then 'AbstractFloat'
-          case "Integer" then 'Integer'
-          case "Boolean" then 'Bool'
-          case "list" then 'List'
-          case "array" then 'Array'
-          case "tuple" then 'Tuple'
-          case "polymorphic" then 'Any'
-          case "Mutable" then 'MutableType'
-          else
-            match MMToJuliaHT.get(name) /* Check for direct reference. If so add wrapper package and dot before. Uniontypes do not really have a scope in Julia (I cheat a bit..) */
+      match path
+        case topPath as QUALIFIED(__) then
+          '<%MMToJuliaHT.returnThePathOfTheWrapperPackageInHT(topPath)%>'
+        case IDENT(__) then
+         let tmpName = name
+          match name
+            case "Real" then 'AbstractFloat'
+            case "Integer" then 'Integer'
+            case "Boolean" then 'Bool'
+            case "list" then 'List'
+            case "array" then 'Array'
+            case "tuple" then 'Tuple'
+            case "polymorphic" then 'Any'
+            case "Mutable" then 'MutableType'
+            else
+              match MMToJuliaHT.get(name) /* Check for direct reference. If so add wrapper package and dot before. Uniontypes do not really have a scope in Julia (I cheat a bit..) */
               case SOME(CLASS_INFO(originalClass = CLASS(name = name1), wrapperClass = CLASS(name = name2))) then
                 '<%name2%>'
               else
                 '<%name%>'
-      else
-        AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path.")
+        else
+          AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path.")
     else
-    match path
-      case topPath as QUALIFIED(__) then
+      match path
+        case topPath as QUALIFIED(__) then
         '<%MMToJuliaHT.returnThePathOfTheWrapperPackageInHT(topPath)%>'
-      case IDENT(__) then
-       let tmpName = name
-        match name
-          case "Real" then 'AbstractFloat'
-          case "Integer" then 'Integer'
-          case "Boolean" then 'Bool'
-          case "list" then 'List'
-          case "array" then 'Array'
-          case "tuple" then 'Tuple'
-          case "polymorphic" then 'Any'
-          case "Mutable" then 'MutableType'
-          else
-            match MMToJuliaHT.get(name) /* Check for direct reference. If so add wrapper package and dot before. Uniontypes do not really have a scope in Julia (I cheat a bit..) */
-              case SOME(CLASS_INFO(originalClass = CLASS(name = name1), wrapperClass = CLASS(name = name2))) then
-                '<%name2%>'
-              else
-                '<%name%>'
-      else
-        AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path.")
+        case IDENT(__) then
+          match name
+            case "Real" then 'AbstractFloat'
+            case "Integer" then 'Integer'
+            case "Boolean" then 'Bool'
+            case "list" then 'List'
+            case "array" then 'Array'
+            case "tuple" then 'Tuple'
+            case "polymorphic" then 'Any'
+            case "Mutable" then 'MutableType'
+            else
+              /* Check for direct reference. If so add wrapper package and dot before. Uniontypes do not really have a scope in Julia (I cheat a bit..) */
+              match MMToJuliaHT.get(name)
+                case SOME(CLASS_INFO(originalClass = CLASS(name = name1), wrapperClass = CLASS(name = name2))) then
+                  '<%name2%>'
+                else
+                  '<%name%>'
+        else
+          AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path.")
 end dumpPathJL2;
 
 template dumpPathNoQual(Absyn.Path path)
@@ -1309,13 +1309,14 @@ end dumpOperator;
 template dumpCref(Absyn.ComponentRef cref, Context context)
 ::=
 match cref
-  case CREF_QUAL(__) then
+  case topCref as CREF_QUAL(__) then
      let ss_str = dumpSubscripts(subscripts, context)
      let c_str = dumpPathJL(AbsynUtil.crefToPath(componentRef))
+     let c_str2 = dumpPathJL(AbsynUtil.crefToPath(topCref))
     match name
       case "List" then 'ListUtil<%ss_str%>.<%c_str%>'
       case "Array" then 'ArrayUtil<%ss_str%>.<%c_str%>'
-      else '<%dumpPathJL(AbsynUtil.makeIdentPathFromString(name))%>.<%c_str%>'
+      else '<%c_str2%>'
   case CREF_IDENT(__) then
      let ss = dumpSubscripts(subscripts, context)
     '<%dumpPathJL(AbsynUtil.makeIdentPathFromString(name))%><%ss%>'
