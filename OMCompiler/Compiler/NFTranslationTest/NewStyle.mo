@@ -1,5 +1,6 @@
-package StaticUniontypes
+uniontype StaticUniontypes
 
+uniontype topNested
 uniontype Nested
 function foo
   input Real x;
@@ -16,6 +17,8 @@ end hR;
 
 end Nested;
 
+end topNested;
+
 uniontype regular
   record RR1 end RR1;
 end regular;
@@ -27,7 +30,17 @@ package TestPackage
 import StaticUniontypes;
 
 function test
- output Integer o = StaticUniontypes.Nested.foo(4);
+ output Integer o = StaticUniontypes.topNested.Nested.foo(4);
 end test;
+
+function testMatch
+  input Nested n;
+  output Integer i;
+algorithm
+  i := match n
+    case fr(__) then 1;
+    case _ then 2;
+  end match;
+end testMatch;
 
 end TestPackage;

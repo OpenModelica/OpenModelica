@@ -1,16 +1,44 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+ * ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from OSMC, either from the above address,
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
+ * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
 package AbsynToJulia
 "
  Translates Absyn IR  to Julia.
- @Authors: John Tinnerholm & Martin Sjoelund
-
- 46 is used as the seed for enumerations.
-"
+ @Authors: John Tinnerholm & Martin Sjölund"
 
 /*
 TODOS:
   TODO: Module renamning and Julia adaptation of uniontypes
      <In progress>
      TODO: Make sure renamning of imports work as they should
+     TODO: Make sure to fix for nested classes as well
 */
 
 import interface AbsynToJuliaTV;
@@ -112,7 +140,7 @@ match class
        dumpClassDef(parts, context, options)
     let forwardDeclarations = dumpSCodeElements(AbsynToSCode.translateClassdefElements(parts.classParts))
     let inform  = if forwardDeclarations then
-                    '#= Necessary to write declarations for your uniontypes until Julia adds support for mutually recursive types =#'
+                    '#= Forward declarations for uniontypes until Julia adds support for mutual recursion =#'
                   else ''
     let cdef_str2 = match restriction
       case R_PACKAGE(__) then
@@ -308,11 +336,10 @@ match restriction
   case R_PACKAGE(__) then 'module'
   case R_METARECORD(__) then "struct"
   case R_RECORD(__) then '@Record' //Only handles Metamodelica records(!)
-  case R_UNIONTYPE(__) then "uniontype"
   case R_TYPE(__) then '' // Should be const iff we are in a global scope (Julia 1.0 (Packages are not))
   case R_FUNCTION(__) then "function"
   case R_CLASS(__) then "module"
-  case R_MODEL(__) then "module #= Should be a model here =#"
+  case R_MODEL(__) then "module #= Should be a model here. Not widley used but apparently occurs =#"
   /* TODO: The other ones are probably not relevant for now */
   else AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassType: Unknown restriction for class." + AbsynDumpTpl.dumpRestriction(restriction))
 end dumpClassType;
@@ -675,16 +702,16 @@ template dumpImport(Absyn.Import imp)
 ::=
 match imp
   case NAMED_IMPORT(__) then
-    'import <%dumpPathJL(path)%>; <%name%>=<%dumpPathJL(path)%>'
+    'import <%dumpPathJL2(path, MMToJuliaUtil.makeImportContext())%>; <%name%>=<%dumpPathJL2(path, MMToJuliaUtil.makeImportContext())%>'
   case QUAL_IMPORT(__) then
     let path_str = dumpPathJL(path)
     match path_str
       case "Array" then 'import ArrayUtil'
       case "List" then  'import ListUtil'
       else 'import <%path_str%>'
-  case UNQUAL_IMPORT(__) then 'using <%dumpPathJL(path)%>'
+  case UNQUAL_IMPORT(__) then 'using <%dumpPathJL2(path, MMToJuliaUtil.makeImportContext())%>'
   case GROUP_IMPORT(__) then
-    let prefix_str = dumpPathJL(prefix)
+    let prefix_str = dumpPathJL2(prefix, MMToJuliaUtil.makeImportContext())
     let groups_str = (groups |> group => dumpGroupImport(group) ;separator=", ")
     'using <%prefix_str%>: <%groups_str%>'
 end dumpImport;
@@ -802,32 +829,9 @@ template dumpPathJL(Absyn.Path path)
 "Wrapper function for dump path.
  Needed since certain keywords will have a sligthly different meaning in Julia"
 ::=
-match MMToJuliaHT.componentInPathIsInHT(path)
-  case false then
     match path
-      case FULLYQUALIFIED(__) then
-      '.<%AbsynDumpTpl.dumpPath(path)%>'
-      case QUALIFIED(__) then
-        '<%name%>.<%AbsynDumpTpl.dumpPath(path)%>'
-      case IDENT(__) then
-        match name
-          case "Real" then 'AbstractFloat'
-          case "Integer" then 'Integer'
-          case "Boolean" then 'Bool'
-          case "list" then 'List'
-          case "array" then 'Array'
-          case "tuple" then 'Tuple'
-          case "polymorphic" then 'Any'
-          case "Mutable" then 'MutableType'
-          else '<%name%>'
-      else
-        AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path:" + AbsynDumpTpl.dumpPath(path))
-  else /* The path we try to access have been refactored and is present in the Hash table. */
-    match path
-      case FULLYQUALIFIED(__) then
-        '.<%AbsynDumpTpl.dumpPath(path)%>'
-      case QUALIFIED(__) then
-        '<%name%>.<%AbsynDumpTpl.dumpPath(path)%>'
+      case topPath as QUALIFIED(__) then
+        '<%MMToJuliaHT.returnThePathOfTheWrapperPackageInHT(topPath)%>'
       case IDENT(__) then
        let tmpName = name
         match name
@@ -840,14 +844,67 @@ match MMToJuliaHT.componentInPathIsInHT(path)
           case "polymorphic" then 'Any'
           case "Mutable" then 'MutableType'
           else
-            match MMToJuliaHT.get(name)
+            match MMToJuliaHT.get(name) /* Check for direct reference. If so add wrapper package and dot before. Uniontypes do not really have a scope in Julia (I cheat a bit..) */
               case SOME(CLASS_INFO(originalClass = CLASS(name = name1), wrapperClass = CLASS(name = name2))) then
-                'test <%name2%>'
+                '<%name2%>.<%name%>'
               else
-                AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path:" + AbsynDumpTpl.dumpPath(path))
+                '<%name%>'
       else
         AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path.")
 end dumpPathJL;
+
+template dumpPathJL2(Absyn.Path path, Context context)
+"Wrapper function for dump path.
+ Needed since certain keywords will have a sligthly different meaning in Julia"
+::=
+  match context
+    case IMPORT_CONTEXT() then
+          match path
+      case topPath as QUALIFIED(__) then
+        '<%MMToJuliaHT.returnThePathOfTheWrapperPackageInHT(topPath)%>'
+      case IDENT(__) then
+       let tmpName = name
+        match name
+          case "Real" then 'AbstractFloat'
+          case "Integer" then 'Integer'
+          case "Boolean" then 'Bool'
+          case "list" then 'List'
+          case "array" then 'Array'
+          case "tuple" then 'Tuple'
+          case "polymorphic" then 'Any'
+          case "Mutable" then 'MutableType'
+          else
+            match MMToJuliaHT.get(name) /* Check for direct reference. If so add wrapper package and dot before. Uniontypes do not really have a scope in Julia (I cheat a bit..) */
+              case SOME(CLASS_INFO(originalClass = CLASS(name = name1), wrapperClass = CLASS(name = name2))) then
+                '<%name2%>'
+              else
+                '<%name%>'
+      else
+        AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path.")
+    else
+    match path
+      case topPath as QUALIFIED(__) then
+        '<%MMToJuliaHT.returnThePathOfTheWrapperPackageInHT(topPath)%>'
+      case IDENT(__) then
+       let tmpName = name
+        match name
+          case "Real" then 'AbstractFloat'
+          case "Integer" then 'Integer'
+          case "Boolean" then 'Bool'
+          case "list" then 'List'
+          case "array" then 'Array'
+          case "tuple" then 'Tuple'
+          case "polymorphic" then 'Any'
+          case "Mutable" then 'MutableType'
+          else
+            match MMToJuliaHT.get(name) /* Check for direct reference. If so add wrapper package and dot before. Uniontypes do not really have a scope in Julia (I cheat a bit..) */
+              case SOME(CLASS_INFO(originalClass = CLASS(name = name1), wrapperClass = CLASS(name = name2))) then
+                '<%name2%>'
+              else
+                '<%name%>'
+      else
+        AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path.")
+end dumpPathJL2;
 
 template dumpPathNoQual(Absyn.Path path)
 ::=
@@ -994,7 +1051,7 @@ match exp
     if tuple_str then '(<%tuple_str%>)'
     else '()'
   case END(__) then 'end'
-  case CODE(__) then '$Code(<%dumpCodeNode(code, context)%>)'
+  case CODE(__) then '@error CODE(__) NOT SUPPORTED'
   case AS(__) then
     let exp_str = dumpExp(exp, context)
     /* TODO Macro might be needed for this case*/
@@ -1144,21 +1201,6 @@ template dumpElseIfExp(list<tuple<Absyn.Exp, Absyn.Exp>> else_if, Context contex
       <%branch_str%>' ;separator="\n"
 end dumpElseIfExp;
 
-template dumpCodeNode(Absyn.CodeNode code, Context context)
-::=
-match code
-  case C_TYPENAME(__) then dumpPathJL(path)
-  case C_VARIABLENAME(__) then dumpCref(componentRef, context)
-  case C_CONSTRAINTSECTION(__) then
-    AbsynDumpTpl.errorMsg("AbsynToJulia.dumpCodeNode: C_CONSTRAINTSECTION not supported")
-  case C_EQUATIONSECTION(__) then
-    AbsynDumpTpl.errorMsg("AbsynToJulia.dumpCodeNode: C_CONSTRAINTSECTION not supported")
-  case C_ALGORITHMSECTION(__) then
-    AbsynDumpTpl.errorMsg("AbsynToJulia.dumpCodeNode: C_ALGORITHMSECTION not supported")
-  case C_ELEMENT(__) then dumpElement(element, Dump.defaultDumpOptions, context)
-  case C_EXPRESSION(__) then dumpExp(exp, context)
-  case C_MODIFICATION(__) then dumpModification(modification, context)
-end dumpCodeNode;
 
 //John: look at this one more time...
 template dumpMatchExp(Absyn.Exp match_exp)
@@ -1263,19 +1305,21 @@ template dumpOperator(Absyn.Operator op)
     else AbsynDumpTpl.dumpOperator(op)
 end dumpOperator;
 
+//TODO check here instead in cref
 template dumpCref(Absyn.ComponentRef cref, Context context)
 ::=
 match cref
   case CREF_QUAL(__) then
      let ss_str = dumpSubscripts(subscripts, context)
-     let c_str = dumpCref(componentRef, context)
+     let c_str = dumpPathJL(AbsynUtil.crefToPath(componentRef))
     match name
       case "List" then 'ListUtil<%ss_str%>.<%c_str%>'
       case "Array" then 'ArrayUtil<%ss_str%>.<%c_str%>'
-      else '<%name%>.<%c_str%>'
+      else '<%dumpPathJL(AbsynUtil.makeIdentPathFromString(name))%>.<%c_str%>'
   case CREF_IDENT(__) then
-    '<%name%><%dumpSubscripts(subscripts, context)%>'
-  case CREF_FULLYQUALIFIED(__) then '.<%dumpCref(componentRef, context)%>'
+     let ss = dumpSubscripts(subscripts, context)
+    '<%dumpPathJL(AbsynUtil.makeIdentPathFromString(name))%><%ss%>'
+  case CREF_FULLYQUALIFIED(__) then '.<%dumpPathJL(AbsynUtil.crefToPath(componentRef))%>)'
   case WILD(__) then if Config.acceptMetaModelicaGrammar() then "_" else ""
   case ALLWILD(__) then '__'
 end dumpCref;

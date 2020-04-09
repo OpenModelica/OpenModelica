@@ -39,7 +39,6 @@ protected
 import Absyn;
 import AbsynUtil;
 import Global;
-import Mutable;
 import Util;
 import MMToJuliaHT;
 
@@ -73,6 +72,9 @@ uniontype Context
     Absyn.Exp inputExp;
   end MATCH_CONTEXT;
 
+  record IMPORT_CONTEXT
+  end IMPORT_CONTEXT;
+
 end Context;
 
 constant Context packageContext = PACKAGE();
@@ -87,6 +89,12 @@ function makeUniontypeContext
 algorithm
   context := UNIONTYPE(name);
 end makeUniontypeContext;
+
+function makeImportContext
+  output Context context;
+algorithm
+  context := IMPORT_CONTEXT();
+end makeImportContext;
 
 function makeInputContext
   input String ty_str;
@@ -222,7 +230,6 @@ algorithm
                                                        mmToJuliaHT,
                                                        visitProtected);
   outProgram := tmpProgram;
-//  print("<<Dumping hash table>>\n");
 //  BaseHashTable.dumpHashTable(mmToJuliaHT);
 end simplifyAbsyn;
 
@@ -231,16 +238,22 @@ function refactorUniontypesWithFunctions
   output tuple<Absyn.Class, Option<Absyn.Path>, MMToJuliaHT.HashTable> outTpl;
 protected
   Absyn.Class inClass;
-  MMToJuliaHT.HashTable hashTable;
-  Option<Absyn.Path> inPath;
-  list<Absyn.ClassPart> nonRecords = {};
-  list<Absyn.ClassPart> records = {};
   Absyn.Class newPackage;
   Absyn.ClassDef tmpClassDef;
+  Boolean classHasSubClassesOfTypeFunctionOrUniontype = false;
+  Boolean isUniontype = false;
+  MMToJuliaHT.HashTable hashTable;
+  Option<Absyn.Path> inPath;
   String className;
+  list<Absyn.ClassPart> nonRecords = {};
+  list<Absyn.ClassPart> records = {};
 algorithm
   (inClass, inPath, hashTable) := inTpl;
-  if not (AbsynUtil.isUniontype(inClass) and  AbsynUtil.classHasLocalClassesThatAreFunctions(inClass)) then
+  isUniontype := AbsynUtil.isUniontype(inClass);
+  /* Julia also does not support the concept of having uniontypes within uniontypes */
+  classHasSubClassesOfTypeFunctionOrUniontype := AbsynUtil.classHasLocalClassesThatAreFunctions(inClass)
+                                              or  AbsynUtil.classHasLocalClassesThatAreUniontypes(inClass);
+  if not (isUniontype and classHasSubClassesOfTypeFunctionOrUniontype) then
     outTpl := inTpl;
     return;
   end if;

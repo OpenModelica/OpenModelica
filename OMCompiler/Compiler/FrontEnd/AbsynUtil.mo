@@ -6103,7 +6103,7 @@ algorithm
       then
         eltsHasLocalClassOfType(elts, inRestriction);
     case _ :: parts then partsHasLocalClassOfType(parts, inRestriction);
-    else false;
+    case {} then false;
   end match;
 end partsHasLocalClassOfType;
 
@@ -6548,8 +6548,8 @@ end getClassFromElementSpecOpt;
 
 public function classHasLocalClassesThatAreFunctions
 "@Author johti17:
- Same as classHasLocalClasses.
- However, only returns true if those local classes are functions."
+Returns true if those local classes are functions.
+N.B!: Only checks the first level of nesting."
   input Absyn.Class cls;
   output Boolean b;
 protected
@@ -6561,6 +6561,18 @@ algorithm
     or
       classHasLocalClassOfType(cls, Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.IMPURE())));
 end classHasLocalClassesThatAreFunctions;
+
+public function classHasLocalClassesThatAreUniontypes
+"@Author johti17:
+ Returns true if any of those local classes are a uniontype
+N.B!: Only checks the first level of nesting."
+  input Absyn.Class cls;
+  output Boolean b;
+protected
+  Absyn.Restriction uniontype_restriction = Absyn.R_UNIONTYPE();
+algorithm
+  b := classHasLocalClassOfType(cls, uniontype_restriction);
+end classHasLocalClassesThatAreUniontypes;
 
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

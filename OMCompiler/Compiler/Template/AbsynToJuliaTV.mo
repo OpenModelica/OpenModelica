@@ -1096,6 +1096,8 @@ package MMToJuliaUtil
     record MATCH_CONTEXT
       Absyn.Exp inputExp;
     end MATCH_CONTEXT;
+    record IMPORT_CONTEXT
+    end IMPORT_CONTEXT;
   end Context;
   constant Context packageContext;
   constant Context functionContext;
@@ -1105,6 +1107,9 @@ package MMToJuliaUtil
     input String name;
     output Context context;
   end makeUniontypeContext;
+  function makeImportContext
+    output Context context;
+  end makeImportContext;
   function makeFunctionContext
     input String returnValuesStr;
     output Context context;
@@ -1198,6 +1203,16 @@ function pathStringDefault
   output String s;
 end pathStringDefault;
 
+function makeIdentPathFromString
+  input String s;
+  output Absyn.Path p;
+end makeIdentPathFromString;
+
+function crefToPath
+  input Absyn.ComponentRef inComponentRef;
+  output Absyn.Path outPath;
+end crefToPath;
+
 end AbsynUtil;
 
 package Util
@@ -1255,6 +1270,7 @@ uniontype ClassDef
   record PDER
   end PDER;
 end ClassDef;
+
 uniontype Restriction
   record R_CLASS end R_CLASS;
   record R_OPTIMIZATION end R_OPTIMIZATION;
@@ -2526,6 +2542,11 @@ end fromAbsynExp;
 end Expression;
 
 package MMToJuliaHT
+
+function returnThePathOfTheWrapperPackageInHT
+  input Absyn.Path inPath;
+  output String newPath;
+end returnThePathOfTheWrapperPackageInHT;
 
 uniontype ClassInfo
   record CLASS_INFO
