@@ -48,6 +48,7 @@ import Dump;
 import Global;
 import Util;
 import List;
+import Util.println;
 public
 import BaseHashTable;
 
@@ -162,13 +163,13 @@ function componentInPathIsInHT
 protected
   list<String> pathStrings = {};
 algorithm
-  print(anyString(inPath) + "\n");
+//  println(anyString(inPath));
   pathStrings := Util.stringSplitAtChar(AbsynUtil.pathStringDefault(inPath), ".");
-  print(anyString(pathStrings) + "\n");
+//  println(anyString(pathStrings));
   for ps in pathStrings loop
     pathIsInHT := match get(ps)
-      case SOME(CLASS_INFO(__)) then true;
-      else false;
+      case SOME(CLASS_INFO(__)) algorithm then true;
+      case _ then false;
     end match;
     if pathIsInHT then
       break;
@@ -187,10 +188,12 @@ protected
   list<String> newPathStrs = {};
   Integer indexCounter = 0;
 algorithm
+//  println("returnThePathOfTheWrapperPackageInHT: 1");
   if not componentInPathIsInHT(inPath) then
     newPath := AbsynUtil.pathStringDefault(inPath);
     return;
   end if;
+//  println("returnThePathOfTheWrapperPackageInHT: 2");
   pathStrings := Util.stringSplitAtChar(AbsynUtil.pathStringDefault(inPath), ".");
   newPathStrs := pathStrings;
   for ps in pathStrings loop
@@ -198,17 +201,25 @@ algorithm
     () := match get(ps)
      local
        ClassInfo cInfo;
+       Absyn.Class oldClass_;
        Absyn.Class newPackage_;
-     case SOME(CLASS_INFO(wrapperClass = newPackage_))
+     case SOME(CLASS_INFO(originalClass = oldClass_, wrapperClass = newPackage_))
        algorithm /* Insert the wrapper in the path before the path that was in the HT. */
-         List.insert(newPathStrs, indexCounter, newPackage_.name);
+         newPathStrs := List.insert(newPathStrs, indexCounter, newPackage_.name);
+         newPathStrs := List.deleteMember(newPathStrs, oldClass_.name);
        then ();
      else ();
    end match;
   end for;
+//  println("returnThePathOfTheWrapperPackageInHT: 3" + anyString(newPathStrs));
   for ps in newPathStrs loop
-    newPath := newPath + ps;
+    if stringEqual(newPath, "") then
+      newPath := ps;
+    else
+        newPath := newPath + "." + ps;
+    end if;
   end for;
+//  println("The new path:" + newPath);
 end returnThePathOfTheWrapperPackageInHT;
 
 function exists
