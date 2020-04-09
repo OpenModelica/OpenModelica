@@ -47,6 +47,11 @@ writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/SCodeDump.jl", OpenModelica.
 deleteClass(SCodeDump);getErrorString();
 
 
+//SCodeDump
+loadFile("Compiler/FrontEnd/DAE.mo");getErrorString();
+writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/DAE.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
+deleteClass(DAE);getErrorString();
+
 // setCommandLineOptions("-g=MetaModelica");getErrorString();
 // loadFile("Compiler/FrontEnd/MetaUtil.mo");getErrorString();
 // writeFile("toJulia/toJuliaOutput/AbsynToSCodeOutput/MetaUtil.jl", OpenModelica.Scripting.Experimental.toJulia());getErrorString();
