@@ -22,6 +22,8 @@ all: libomcparserantlr4.a
 
 libomcparserantlr4.a: $(OBJS)
 	$(AR) -s -r $@ $(OBJS)
+	mkdir -p $(OMBUILDDIR)/lib/$(host_short)/omc/
+	mkdir -p $(OMBUILDDIR)/include/$(host_short)/omc/
 	cp -puR $@ $(OMBUILDDIR)/lib/$(host_short)/omc/
 	cp -pur install/include/antlr4-runtime $(OMBUILDDIR)/include/$(host_short)/omc/
 
