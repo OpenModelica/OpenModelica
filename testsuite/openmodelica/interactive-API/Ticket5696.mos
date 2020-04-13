@@ -40,14 +40,7 @@ readFile("logOverride.txt"); getErrorString();
 // ""
 // 0
 // ""
-// "LOG_SOLVER        | info    | using -override=stopTime=0,b=1 and -overrideFile=override.txt
-// LOG_SOLVER        | info    | read override values from file: override.txt
-// LOG_SOLVER        | info    | -override=stopTime=0,b=1
-// LOG_SOLVER        | info    | -overrideFile=b=5,c=6
-// stdout            | warning | You are overriding variable: b=1 again with b=5.
-// LOG_SOLVER        | info    | override b = 5
-// LOG_SOLVER        | info    | override c = 6
-// LOG_SOLVER        | info    | override done!
+// "assert            | debug   | simulation_input_xml.c: usage error you cannot have both -override and -overrideFile active at the same time. see Model -? for more info!
 // "
 // ""
 // endResult

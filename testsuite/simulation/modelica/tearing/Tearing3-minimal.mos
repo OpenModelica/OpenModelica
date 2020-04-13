@@ -41,6 +41,7 @@ val(iC,0.0); getErrorString();
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 10
 //  * Number of variables: 10
+// Warning: Minimal Tearing is ignoring tearingSelect annotation for discrete variables.
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ('-d=stateselection' for list of states)
@@ -66,18 +67,18 @@ val(iC,0.0); getErrorString();
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (9):
-//  * Single equations (assignments): 7
+// Notification: Strong component statistics for simulation (12):
+//  * Single equations (assignments): 11
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
 //  * Equation systems (linear and non-linear blocks): 0
-//  * Torn equation systems: 2
+//  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 2 {(4,50.0%) 0,(4,50.0%) 0}
+//  * Linear torn systems: 1 {(4,50.0%) 0}
 //  * Non-linear torn systems: 0
 // "
 // 0.0

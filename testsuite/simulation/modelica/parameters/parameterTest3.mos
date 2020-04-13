@@ -51,9 +51,9 @@ simulate(parameterTest3); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (3)
 // ========================================
-// 1: p2:PARAM()  = if b1 then 0.0 else parameterTest3.sub(p1, 3.0)  type: Real 
-// 2: p1:PARAM()  = if b1 then parameterTest3.sub(p2, 2.0) else 0.0  type: Real 
-// 3: b1:PARAM()  = false  type: Boolean 
+// 1: p2:PARAM()  = if b1 then 0.0 else parameterTest3.sub(p1, 3.0)  type: Real
+// 2: p1:PARAM()  = if b1 then parameterTest3.sub(p2, 2.0) else 0.0  type: Real
+// 3: b1:PARAM()  = false  type: Boolean
 //
 //
 //
@@ -66,14 +66,14 @@ simulate(parameterTest3); getErrorString();
 // Selected parameters for evaluation:
 //
 //
-// Adjacency Matrix (row: equation)
+// Incidence Matrix (row: equation)
 // ========================================
 // number of rows: 3
 // 1: 3 2
 // 2: 3 1
 // 3:
 //
-// Transposed Adjacency Matrix (row: variable)
+// Transposed Incidence Matrix (row: variable)
 // ========================================
 // number of rows: 3
 // 1: 2 1
@@ -96,9 +96,9 @@ simulate(parameterTest3); getErrorString();
 //
 // globalKnownVars (3)
 // ========================================
-// 1: p2:PARAM()  = if b1 then 0.0 else parameterTest3.sub(p1, 3.0)  type: Real 
-// 2: p1:PARAM()  = if b1 then parameterTest3.sub(p2, 2.0) else 0.0  type: Real 
-// 3: b1:PARAM()  = false  type: Boolean 
+// 1: p2:PARAM()  = if b1 then 0.0 else parameterTest3.sub(p1, 3.0)  type: Real
+// 2: p1:PARAM()  = if b1 then parameterTest3.sub(p2, 2.0) else 0.0  type: Real
+// 3: b1:PARAM()  = false  type: Boolean
 //
 //
 // mark: 1
@@ -126,9 +126,9 @@ simulate(parameterTest3); getErrorString();
 //
 // globalKnownVars (3)
 // ========================================
-// 1: p2:PARAM()  = if b1 then 0.0 else parameterTest3.sub(p1, 3.0)  type: Real 
-// 2: p1:PARAM()  = if b1 then parameterTest3.sub(p2, 2.0) else 0.0  type: Real 
-// 3: b1:PARAM()  = false  type: Boolean 
+// 1: p2:PARAM()  = if b1 then 0.0 else parameterTest3.sub(p1, 3.0)  type: Real
+// 2: p1:PARAM()  = if b1 then parameterTest3.sub(p2, 2.0) else 0.0  type: Real
+// 3: b1:PARAM()  = false  type: Boolean
 //
 //
 // mark: 1
@@ -149,9 +149,9 @@ simulate(parameterTest3); getErrorString();
 //
 // globalKnownVars (3)
 // ========================================
-// 1: p2:PARAM()  = if b1 then 0.0 else parameterTest3.sub(p1, 3.0)  type: Real 
-// 2: p1:PARAM()  = if b1 then parameterTest3.sub(p2, 2.0) else 0.0  type: Real 
-// 3: b1:PARAM()  = false  type: Boolean 
+// 1: p2:PARAM()  = if b1 then 0.0 else parameterTest3.sub(p1, 3.0)  type: Real
+// 2: p1:PARAM()  = if b1 then parameterTest3.sub(p2, 2.0) else 0.0  type: Real
+// 3: b1:PARAM()  = false  type: Boolean
 //
 //
 // mark: 1
@@ -169,7 +169,7 @@ simulate(parameterTest3); getErrorString();
 //     messages = "Failed to build model: parameterTest3"
 // end SimulationResult;
 // "Error: Cyclically dependent parameters found:
-//          p2:PARAM()  = if b1 then 0.0 else parameterTest3.sub(p1, 3.0)  type: Real 
+//          p2:PARAM()  = if b1 then 0.0 else parameterTest3.sub(p1, 3.0)  type: Real
 //          p1:PARAM()  = if b1 then parameterTest3.sub(p2, 2.0) else 0.0  type: Real
 // Error: No system for the symbolic initialization was generated
 // "

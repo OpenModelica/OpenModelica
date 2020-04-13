@@ -39,22 +39,27 @@ readFile("fmi_attributes_08.xml"); getErrorString();
 //   <ScalarVariable
 //     name=\"x\"
 //     valueReference=\"0\"
-//     initial=\"approx\">
-//     <Real start=\"0.0\"/>
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"2\" -->
 //   <ScalarVariable
 //     name=\"der(x)\"
 //     valueReference=\"1\"
-//     >
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
 //     <Real derivative=\"1\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"3\" -->
 //   <ScalarVariable
 //     name=\"_D_TMP_D_VAR_D_2_D_0PREX_D_TAN\"
 //     valueReference=\"2\"
+//     variability=\"continuous\"
 //     causality=\"local\"
-//     >
+//     initial=\"calculated\">
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"4\" -->
@@ -63,7 +68,7 @@ readFile("fmi_attributes_08.xml"); getErrorString();
 //     valueReference=\"3\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     >
+//     initial=\"exact\">
 //     <Real start=\"0.0\"/>
 //   </ScalarVariable>
 //   </ModelVariables>

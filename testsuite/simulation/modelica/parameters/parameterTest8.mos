@@ -42,8 +42,8 @@ system("./parameterTest8 -override state=false -output=state,v,r"); getErrorStri
 //
 // Variables (2)
 // ========================================
-// 1: r:VARIABLE()  type: Real 
-// 2: v:VARIABLE()  type: Real 
+// 1: r:VARIABLE()  type: Real
+// 2: v:VARIABLE()  type: Real
 //
 //
 // Equations (2, 2)
@@ -61,7 +61,7 @@ system("./parameterTest8 -override state=false -output=state,v,r"); getErrorStri
 //
 // Known variables only depending on parameters and constants - globalKnownVars (1)
 // ========================================
-// 1: state:PARAM(final = true )  = true  type: Boolean 
+// 1: state:PARAM(final = true )  = true  type: Boolean
 //
 //
 //
@@ -74,12 +74,12 @@ system("./parameterTest8 -override state=false -output=state,v,r"); getErrorStri
 // Selected parameters for evaluation:
 // 1
 //
-// Adjacency Matrix (row: equation)
+// Incidence Matrix (row: equation)
 // ========================================
 // number of rows: 1
 // 1:
 //
-// Transposed Adjacency Matrix (row: variable)
+// Transposed Incidence Matrix (row: variable)
 // ========================================
 // number of rows: 1
 // 1: 1
@@ -100,7 +100,7 @@ system("./parameterTest8 -override state=false -output=state,v,r"); getErrorStri
 //
 // globalKnownVars (1)
 // ========================================
-// 1: state:PARAM(final = true )  = true  type: Boolean 
+// 1: state:PARAM(final = true )  = true  type: Boolean
 //
 //
 // mark: 1
@@ -127,7 +127,7 @@ system("./parameterTest8 -override state=false -output=state,v,r"); getErrorStri
 //
 // globalKnownVars (1)
 // ========================================
-// 1: state:PARAM(final = true )  = true  type: Boolean 
+// 1: state:PARAM(final = true )  = true  type: Boolean
 //
 //
 // mark: 1
@@ -148,7 +148,7 @@ system("./parameterTest8 -override state=false -output=state,v,r"); getErrorStri
 //
 // globalKnownVars (1)
 // ========================================
-// 1: state:PARAM(final = true )  = true  type: Boolean 
+// 1: state:PARAM(final = true )  = true  type: Boolean
 //
 //
 // mark: 1
@@ -165,8 +165,8 @@ system("./parameterTest8 -override state=false -output=state,v,r"); getErrorStri
 //
 // Variables (2)
 // ========================================
-// 1: r:VARIABLE()  type: Real 
-// 2: v:VARIABLE()  type: Real 
+// 1: r:VARIABLE()  type: Real
+// 2: v:VARIABLE()  type: Real
 //
 //
 // Equations (2, 2)
@@ -184,7 +184,7 @@ system("./parameterTest8 -override state=false -output=state,v,r"); getErrorStri
 //
 // Known variables only depending on parameters and constants - globalKnownVars (1)
 // ========================================
-// 1: state:PARAM(final = true )  = true  type: Boolean 
+// 1: state:PARAM(final = true )  = true  type: Boolean
 //
 //
 //

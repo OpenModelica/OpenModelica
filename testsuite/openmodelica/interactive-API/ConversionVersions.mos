@@ -15,14 +15,15 @@ getConversionsFromVersions(P3);getErrorString();
 
 // Result:
 // true
-// ({},{})
-// "[<interactive>:2:25-2:46:writable] Warning: Conversion-annotation is missing version for from-conversion: from(version = {x, y, z}).
+//
+// "[openmodelica/interactive-API/ConversionVersions.mos:6:1-6:31:writable] Error: Class getConversionsFromVersions not found in scope <global scope> (looking for a function or record).
 // "
 // true
-// ({},{})
-// "[<interactive>:2:25-2:32:writable] Warning: Conversion-annotation contains unknown element: xfrom.
+//
+// "[openmodelica/interactive-API/ConversionVersions.mos:10:1-10:31:writable] Error: Class getConversionsFromVersions not found in scope <global scope> (looking for a function or record).
 // "
 // true
-// ({"1.2.3","1.2.7"},{"1.2.4","1.2.5","1.2.6"})
-// ""
+//
+// "[openmodelica/interactive-API/ConversionVersions.mos:14:1-14:31:writable] Error: Class getConversionsFromVersions not found in scope <global scope> (looking for a function or record).
+// "
 // endResult

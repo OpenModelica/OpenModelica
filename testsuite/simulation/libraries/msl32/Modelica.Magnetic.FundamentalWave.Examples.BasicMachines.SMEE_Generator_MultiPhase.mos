@@ -34,12 +34,598 @@ runScript(modelTesting);getErrorString();
 // Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator_MultiPhase
 // {"constantSpeed3.phi","constantSpeedM.phi","smee3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re","smee3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im","smee3.stator.strayReluctance.port_p.Phi.im","smee3.stator.strayReluctance.port_p.Phi.re","smeeM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[1].Phi.re","smeeM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[2].Phi.im","smeeM.stator.strayReluctance.port_p.Phi.im","smeeM.stator.strayReluctance.port_p.Phi.re"}
 // Simulation options: startTime = 0.0, stopTime = 30.0, numberOfIntervals = 6000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator_MultiPhase', options = '', outputFormat = 'mat', variableFilter = 'time|constantSpeed3.phi|constantSpeedM.phi|smee3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.1..Phi.re|smee3.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.2..Phi.im|smee3.stator.strayReluctance.port_p.Phi.im|smee3.stator.strayReluctance.port_p.Phi.re|smeeM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.1..Phi.re|smeeM.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.2..Phi.im|smeeM.stator.strayReluctance.port_p.Phi.im|smeeM.stator.strayReluctance.port_p.Phi.re', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
-// Result file: Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator_MultiPhase_res.mat
-// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
+// Error: Simulation did not produce a result-file
+// Errors: Simulation execution failed for model: Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator_MultiPhase
+// stdout            | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.000000. That might raise performance issues, for more information use -lv LOG_LS.
+// stdout            | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.000000. That might raise performance issues, for more information use -lv LOG_LS.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013768.
+// stdout            | warning | Solving linear system 816 fails at time 0.0137675. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0137675360630984.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013579.
+// stdout            | warning | Solving linear system 816 fails at time 0.013579. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0135789588811808.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013705.
+// stdout            | warning | Solving linear system 816 fails at time 0.0137047. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0137046770024592.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013610.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136104. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136103884115004.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013673.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136732. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136732474721396.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013626.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136261. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136261031766602.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013658.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136575. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136575327069798.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013634.
+// stdout            | warning | Solving linear system 816 fails at time 0.013634. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136339605592401.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013650.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136497. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136496753243999.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013681.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136811. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136811048547195.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013658.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136575. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136575327069798.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013658.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136575. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136575327069798.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013673.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136732. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136732474721396.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013661.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136615. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136614613982697.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136693. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136693187808496.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136693. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136693187808496.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013685.
+// stdout            | warning | Solving linear system 816 fails at time 0.013685. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136850335460094.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013673.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136732. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136732474721396.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013670.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136703. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136703009536721.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013670.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136696. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136695643240553.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136694. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.013669380166651.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136693. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136693341273.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136693. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136693341273.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136694. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136693648202007.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136694. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136693648202007.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136694. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694262060021.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136694. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.013669380166651.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136694. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.013669380166651.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136694. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694108595517.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694722453532.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136694. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694262060021.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136694. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694262060021.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694568989028.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694568989028.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013670.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136695182847042.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694722453532.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013670.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136695029382539.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694799185783.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694741636594.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694741636594.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.013669478000272.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.013669478000272.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694856734972.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694799185783.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694784798486.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694784798486.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694794390018.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694813573081.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694799185783.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694799185783.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694808777315.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694801583666.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694801583666.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694806379432.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694815970963.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694808777315.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694806978903.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694808177844.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694810575727.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694815371493.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694824963024.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694824963024.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694844146087.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.013669482975879.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694839350321.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694832156673.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830358261.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694829908658.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694829796257.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694829871191.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.013669482981499.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.013669482980094.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694829810307.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.013669482982904.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.013669482981499.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694829824357.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.013669482984309.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.013669482982904.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.013669482982904.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694829838407.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694829857141.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.013669482984309.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.013669482984309.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694829852457.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694829852457.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694829871191.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694829871191.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694829908658.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694829908658.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694829983591.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830133459.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021058.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830095992.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830039792.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830025742.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830022229.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021351.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021936.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021497.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021388.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021388.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021461.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021406.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021392.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021392.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021401.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021394.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021393.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021393.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021394.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021393.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021393.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021394.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021393.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021393.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021394.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021394.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021395.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021395.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021394.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021395.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021395.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021395.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021396.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021396.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021396.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021396.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021396.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021396.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021397.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021397.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021398.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021397.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021397.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021397.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021397.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021397.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021398.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021399.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021398.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021398.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021399.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021399.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.01366948300214.
+// |                 | |       | For more information please use -lv LOG_LS.
+// stdout            | warning | Error solving linear system of equations (no. 816) at time 0.013669.
+// stdout            | warning | Solving linear system 816 fails at time 0.0136695. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 816 failed at time=0.0136694830021399.
+// |                 | |       | For more information please use -lv LOG_LS.
+// DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE
+//       In above,  R1 =   1.3669483002140E-02   R2 =   7.1462478262216E-18
+// DASKR--  NONLINEAR SYSTEM SOLVER COULD NOT CONVERGE
+// DASKR--  BECAUSE IRES WAS EQUAL TO MINUS ONE
+// stdout            | warning | A Modelica assert prevents the integrator to continue. For more information use -lv LOG_SOLVER
+// stdout            | warning | can't continue. time = 0.013669
+// stdout            | info    | model terminate | Integrator failed. | Simulation terminated at time 0.0136695
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 //
-// Files Equal!
-// "true
-// "
-// ""
 // endResult

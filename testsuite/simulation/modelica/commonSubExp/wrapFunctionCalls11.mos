@@ -48,8 +48,8 @@ simulate(CSE.wrapFunctionCalls11); getErrorString();
 //
 // ########### Updated globalKnownVars (jacobian) (2)
 // ========================================
-// 1: $res1:VARIABLE()  type: Real
-// 2: input y.SeedNLSJac0:STATE_DER()  type: Real unreplaceable
+// 1: input y.SeedNLSJac0:STATE_DER()  type: Real unreplaceable
+// 2: input $res1:VARIABLE()  type: Real
 //
 //
 // ########### CSE Replacements (1/43)
@@ -109,9 +109,9 @@ simulate(CSE.wrapFunctionCalls11); getErrorString();
 //
 // ########### Updated globalKnownVars (jacobian) (3)
 // ========================================
-// 1: x:VARIABLE(fixed = true )  = cos(z)  type: Real
-// 2: $res1:VARIABLE()  type: Real
-// 3: input y.SeedNLSJac1:STATE_DER()  type: Real unreplaceable
+// 1: input y.SeedNLSJac1:STATE_DER()  type: Real unreplaceable
+// 2: input x:VARIABLE(fixed = true )  = cos(z)  type: Real
+// 3: input $res1:VARIABLE()  type: Real
 //
 //
 // ########### CSE Replacements (1/43)

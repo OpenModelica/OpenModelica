@@ -44,34 +44,43 @@ readFile("testBug2765_tmp2.xml"); getErrorString();
 //   <ScalarVariable
 //     name=\"x1\"
 //     valueReference=\"0\"
-//     >
-//     <Real/>
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"2\" -->
 //   <ScalarVariable
 //     name=\"x2\"
 //     valueReference=\"1\"
-//     >
-//     <Real/>
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"3\" -->
 //   <ScalarVariable
 //     name=\"der(x1)\"
 //     valueReference=\"2\"
-//     >
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
 //     <Real derivative=\"1\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"4\" -->
 //   <ScalarVariable
 //     name=\"der(x2)\"
 //     valueReference=\"3\"
-//     >
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
 //     <Real derivative=\"2\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"5\" -->
 //   <ScalarVariable
 //     name=\"u\"
 //     valueReference=\"4\"
+//     variability=\"continuous\"
 //     causality=\"input\"
 //     >
 //     <Real start=\"-2.0\"/>
@@ -80,16 +89,18 @@ readFile("testBug2765_tmp2.xml"); getErrorString();
 //   <ScalarVariable
 //     name=\"y1\"
 //     valueReference=\"5\"
+//     variability=\"continuous\"
 //     causality=\"output\"
-//     >
+//     initial=\"calculated\">
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"7\" -->
 //   <ScalarVariable
 //     name=\"y2\"
 //     valueReference=\"6\"
+//     variability=\"continuous\"
 //     causality=\"output\"
-//     >
+//     initial=\"calculated\">
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"8\" -->
@@ -99,7 +110,7 @@ readFile("testBug2765_tmp2.xml"); getErrorString();
 //     description=\"gain for input\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     >
+//     initial=\"exact\">
 //     <Real start=\"1.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"9\" -->
@@ -109,7 +120,7 @@ readFile("testBug2765_tmp2.xml"); getErrorString();
 //     description=\"start value for first state\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     >
+//     initial=\"exact\">
 //     <Real start=\"1.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"10\" -->
@@ -119,8 +130,26 @@ readFile("testBug2765_tmp2.xml"); getErrorString();
 //     description=\"start value for second state\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     >
+//     initial=\"exact\">
 //     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"11\" -->
+//   <ScalarVariable
+//     name=\"_D_outputAlias_y1\"
+//     valueReference=\"0\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"12\" -->
+//   <ScalarVariable
+//     name=\"_D_outputAlias_y2\"
+//     valueReference=\"1\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     >
+//     <Real/>
 //   </ScalarVariable>
 //   </ModelVariables>
 // "

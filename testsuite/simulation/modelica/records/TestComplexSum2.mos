@@ -53,11 +53,28 @@ simulate(TestComplexSum2); getErrorString();
 // true
 // ""
 // record SimulationResult
-//     resultFile = "TestComplexSum2_res.mat",
+//     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestComplexSum2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
+//     messages = "Failed to build model: TestComplexSum2"
 // end SimulationResult;
-// ""
+// "Error: Error building simulator. Build log: clang  -O0 -fPIC -mfpmath=sse -fno-dollars-in-identifiers     -I"/home/adrpo/om/build/bin/../include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=TestComplexSum2 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=0 -DOMC_NUM_NONLINEAR_SYSTEMS=0 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o TestComplexSum2.o TestComplexSum2.c
+// TestComplexSum2.c:153:37: warning: implicit declaration of function 'omc_Complex__omcQuot_272B27' is invalid in C99 [-Wimplicit-function-declaration]
+//         _omcQuot_24746D7056617231 = omc_Complex__omcQuot_272B27(threadData, omc_Complex(threadData, _omcQuot_24746D70566172312E7265, _omcQuot_24746D70566172312E696D), omc_Complex(threadData, _omcQuot_24746D70566172302E7265, _omcQuot_24746D70566172302E696D));
+//                                     ^
+// TestComplexSum2.c:153:101: error: use of undeclared identifier '_omcQuot_24746D70566172312E7265'
+//         _omcQuot_24746D7056617231 = omc_Complex__omcQuot_272B27(threadData, omc_Complex(threadData, _omcQuot_24746D70566172312E7265, _omcQuot_24746D70566172312E696D), omc_Complex(threadData, _omcQuot_24746D70566172302E7265, _omcQuot_24746D70566172302E696D));
+//                                                                                                     ^
+// TestComplexSum2.c:153:134: error: use of undeclared identifier '_omcQuot_24746D70566172312E696D'
+//         _omcQuot_24746D7056617231 = omc_Complex__omcQuot_272B27(threadData, omc_Complex(threadData, _omcQuot_24746D70566172312E7265, _omcQuot_24746D70566172312E696D), omc_Complex(threadData, _omcQuot_24746D70566172302E7265, _omcQuot_24746D70566172302E696D));
+//                                                                                                                                      ^
+// TestComplexSum2.c:153:192: error: use of undeclared identifier '_omcQuot_24746D70566172302E7265'
+//         _omcQuot_24746D7056617231 = omc_Complex__omcQuot_272B27(threadData, omc_Complex(threadData, _omcQuot_24746D70566172312E7265, _omcQuot_24746D70566172312E696D), omc_Complex(threadData, _omcQuot_24746D70566172302E7265, _omcQuot_24746D70566172302E696D));
+//                                                                                                                                                                                                ^
+// TestComplexSum2.c:153:225: error: use of undeclared identifier '_omcQuot_24746D70566172302E696D'
+//         _omcQuot_24746D7056617231 = omc_Complex__omcQuot_272B27(threadData, omc_Complex(threadData, _omcQuot_24746D70566172312E7265, _omcQuot_24746D70566172312E696D), omc_Complex(threadData, _omcQuot_24746D70566172302E7265, _omcQuot_24746D70566172302E696D));
+//                                                                                                                                                                                                                                 ^
+// 1 warning and 4 errors generated.
+// <builtin>: recipe for target 'TestComplexSum2.o' failed
+// make: *** [TestComplexSum2.o] Error 1
+// "
 // endResult

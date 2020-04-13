@@ -40,7 +40,7 @@ simulate(parameterTest14); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (1)
 // ========================================
-// 1: p1:PARAM(start = 5 )  type: Integer 
+// 1: p1:PARAM(start = 5 )  type: Integer
 //
 //
 //
@@ -53,12 +53,12 @@ simulate(parameterTest14); getErrorString();
 // Selected parameters for evaluation:
 // 1
 //
-// Adjacency Matrix (row: equation)
+// Incidence Matrix (row: equation)
 // ========================================
 // number of rows: 1
 // 1:
 //
-// Transposed Adjacency Matrix (row: variable)
+// Transposed Incidence Matrix (row: variable)
 // ========================================
 // number of rows: 1
 // 1: 1
@@ -79,7 +79,7 @@ simulate(parameterTest14); getErrorString();
 //
 // globalKnownVars (1)
 // ========================================
-// 1: p1:PARAM(start = 5 final = true )  type: Integer 
+// 1: p1:PARAM(start = 5 final = true )  type: Integer
 //
 //
 // mark: 1
@@ -106,7 +106,7 @@ simulate(parameterTest14); getErrorString();
 //
 // globalKnownVars (1)
 // ========================================
-// 1: p1:PARAM(start = 5 final = true )  type: Integer 
+// 1: p1:PARAM(start = 5 final = true )  type: Integer
 //
 //
 // mark: 1
@@ -127,7 +127,7 @@ simulate(parameterTest14); getErrorString();
 //
 // globalKnownVars (1)
 // ========================================
-// 1: p1:PARAM(start = 5 final = true )  type: Integer 
+// 1: p1:PARAM(start = 5 final = true )  type: Integer
 //
 //
 // mark: 1
@@ -151,7 +151,7 @@ simulate(parameterTest14); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (1)
 // ========================================
-// 1: p1:PARAM(start = 5 final = true )  type: Integer 
+// 1: p1:PARAM(start = 5 final = true )  type: Integer
 //
 //
 //

@@ -44,11 +44,11 @@ simulate(parameterTest2); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
-// 1: e:PARAM()  = 5.0 + b  type: Real 
-// 2: d:PARAM()  = a + b  type: Real 
-// 3: c:PARAM()  = 2.0 * b  type: Real 
-// 4: b:PARAM()  = 5.0  type: Real 
-// 5: a:PARAM(final = true )  = b + c + e  type: Real 
+// 1: e:PARAM()  = 5.0 + b  type: Real
+// 2: d:PARAM()  = a + b  type: Real
+// 3: c:PARAM()  = 2.0 * b  type: Real
+// 4: b:PARAM()  = 5.0  type: Real
+// 5: a:PARAM(final = true )  = b + c + e  type: Real
 //
 //
 //
@@ -61,7 +61,7 @@ simulate(parameterTest2); getErrorString();
 // Selected parameters for evaluation:
 // 5
 //
-// Adjacency Matrix (row: equation)
+// Incidence Matrix (row: equation)
 // ========================================
 // number of rows: 5
 // 1: 4
@@ -70,7 +70,7 @@ simulate(parameterTest2); getErrorString();
 // 4:
 // 5: 4 3 1
 //
-// Transposed Adjacency Matrix (row: variable)
+// Transposed Incidence Matrix (row: variable)
 // ========================================
 // number of rows: 5
 // 1: 5 1
@@ -101,11 +101,11 @@ simulate(parameterTest2); getErrorString();
 //
 // globalKnownVars (5)
 // ========================================
-// 1: e:PARAM(final = true )  = 5.0 + b  type: Real 
-// 2: d:PARAM()  = a + b  type: Real 
-// 3: c:PARAM(final = true )  = 2.0 * b  type: Real 
-// 4: b:PARAM(final = true )  = 5.0  type: Real 
-// 5: a:PARAM(final = true )  = 25.0  type: Real 
+// 1: e:PARAM(final = true )  = 5.0 + b  type: Real
+// 2: d:PARAM()  = a + b  type: Real
+// 3: c:PARAM(final = true )  = 2.0 * b  type: Real
+// 4: b:PARAM(final = true )  = 5.0  type: Real
+// 5: a:PARAM(final = true )  = 25.0  type: Real
 //
 //
 // mark: 1
@@ -144,11 +144,11 @@ simulate(parameterTest2); getErrorString();
 //
 // globalKnownVars (5)
 // ========================================
-// 1: e:PARAM(final = true )  = 10.0  type: Real 
-// 2: d:PARAM(final = true )  = 30.0  type: Real 
-// 3: c:PARAM(final = true )  = 10.0  type: Real 
-// 4: b:PARAM(final = true )  = 5.0  type: Real 
-// 5: a:PARAM(final = true )  = 25.0  type: Real 
+// 1: e:PARAM(final = true )  = 10.0  type: Real
+// 2: d:PARAM(final = true )  = 30.0  type: Real
+// 3: c:PARAM(final = true )  = 10.0  type: Real
+// 4: b:PARAM(final = true )  = 5.0  type: Real
+// 5: a:PARAM(final = true )  = 25.0  type: Real
 //
 //
 // mark: 1
@@ -177,11 +177,11 @@ simulate(parameterTest2); getErrorString();
 //
 // globalKnownVars (5)
 // ========================================
-// 1: e:PARAM(final = true )  = 10.0  type: Real 
-// 2: d:PARAM(final = true )  = 30.0  type: Real 
-// 3: c:PARAM(final = true )  = 10.0  type: Real 
-// 4: b:PARAM(final = true )  = 5.0  type: Real 
-// 5: a:PARAM(final = true )  = 25.0  type: Real 
+// 1: e:PARAM(final = true )  = 10.0  type: Real
+// 2: d:PARAM(final = true )  = 30.0  type: Real
+// 3: c:PARAM(final = true )  = 10.0  type: Real
+// 4: b:PARAM(final = true )  = 5.0  type: Real
+// 5: a:PARAM(final = true )  = 25.0  type: Real
 //
 //
 // mark: 1
@@ -205,11 +205,11 @@ simulate(parameterTest2); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (5)
 // ========================================
-// 1: e:PARAM(final = true )  = 10.0  type: Real 
-// 2: d:PARAM(final = true )  = 30.0  type: Real 
-// 3: c:PARAM(final = true )  = 10.0  type: Real 
-// 4: b:PARAM(final = true )  = 5.0  type: Real 
-// 5: a:PARAM(final = true )  = 25.0  type: Real 
+// 1: e:PARAM(final = true )  = 10.0  type: Real
+// 2: d:PARAM(final = true )  = 30.0  type: Real
+// 3: c:PARAM(final = true )  = 10.0  type: Real
+// 4: b:PARAM(final = true )  = 5.0  type: Real
+// 5: a:PARAM(final = true )  = 25.0  type: Real
 //
 //
 //

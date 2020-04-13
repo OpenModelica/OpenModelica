@@ -44,34 +44,43 @@ readFile("fmi_attributes_07.xml"); getErrorString();
 //   <ScalarVariable
 //     name=\"x\"
 //     valueReference=\"0\"
-//     >
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"2\" -->
 //   <ScalarVariable
 //     name=\"der(x)\"
 //     valueReference=\"1\"
-//     >
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
 //     <Real derivative=\"1\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"3\" -->
 //   <ScalarVariable
 //     name=\"a\"
 //     valueReference=\"2\"
-//     >
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"4\" -->
 //   <ScalarVariable
 //     name=\"b\"
 //     valueReference=\"3\"
-//     >
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"5\" -->
 //   <ScalarVariable
 //     name=\"u\"
 //     valueReference=\"4\"
+//     variability=\"continuous\"
 //     causality=\"input\"
 //     >
 //     <Real start=\"0.0\"/>
@@ -80,8 +89,9 @@ readFile("fmi_attributes_07.xml"); getErrorString();
 //   <ScalarVariable
 //     name=\"y\"
 //     valueReference=\"5\"
+//     variability=\"continuous\"
 //     causality=\"output\"
-//     >
+//     initial=\"calculated\">
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"7\" -->
@@ -90,8 +100,17 @@ readFile("fmi_attributes_07.xml"); getErrorString();
 //     valueReference=\"6\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     >
+//     initial=\"exact\">
 //     <Real start=\"10.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"8\" -->
+//   <ScalarVariable
+//     name=\"_D_outputAlias_y\"
+//     valueReference=\"5\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     >
+//     <Real/>
 //   </ScalarVariable>
 //   </ModelVariables>
 // "
@@ -105,11 +124,6 @@ readFile("fmi_attributes_07.xml"); getErrorString();
 //     <Derivatives>
 //       <Unknown index=\"2\" dependencies=\"5\" dependenciesKind=\"dependent\" />
 //     </Derivatives>
-//     <InitialUnknowns>
-//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"2\" dependencies=\"5 7\" dependenciesKind=\"dependent dependent\" />
-//       <Unknown index=\"6\" dependencies=\"7\" dependenciesKind=\"dependent\" />
-//     </InitialUnknowns>
 //   </ModelStructure>
 // "
 // ""

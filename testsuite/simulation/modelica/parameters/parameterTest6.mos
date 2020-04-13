@@ -52,9 +52,9 @@ system("./parameterTest6 -override s=5,f2=100 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2
 //
 // Variables (3)
 // ========================================
-// 1: z:DISCRETE()  type: Integer 
-// 2: y:DISCRETE()  type: Integer 
-// 3: x:DISCRETE()  type: Integer 
+// 1: z:DISCRETE()  type: Integer
+// 2: y:DISCRETE()  type: Integer
+// 3: x:DISCRETE()  type: Integer
 //
 //
 // Equations (3, 3)
@@ -73,21 +73,21 @@ system("./parameterTest6 -override s=5,f2=100 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2
 //
 // Known variables only depending on parameters and constants - globalKnownVars (15)
 // ========================================
-// 1: pr1:PARAM(protected = true )  = 100  type: Integer 
-// 2: a[3]:PARAM()  = 1  type: Integer  [3]
-// 3: a[2]:PARAM()  = 1  type: Integer  [3]
-// 4: a[1]:PARAM()  = 1  type: Integer  [3]
-// 5: s:PARAM(final = true )  = 3  type: Integer 
-// 6: e1:PARAM()  = if b1 then p3 + p1 else 7 + p2  type: Integer 
-// 7: b2:PARAM()  = true  type: Boolean 
-// 8: b1:PARAM()  = false  type: Boolean 
-// 9: f2:PARAM(final = true )  = 10  type: Integer 
-// 10: f1:PARAM(final = true )  = p1  type: Integer 
-// 11: p5:PARAM()  = pr1  type: Integer 
-// 12: p4:PARAM()  = f1 + p1  type: Integer 
-// 13: p3:PARAM()  = 5  type: Integer 
-// 14: p2:PARAM()  = if b1 then e1 + p4 else if b2 then p1 - p3 else e1 - p3  type: Integer 
-// 15: p1:PARAM()  = 2  type: Integer 
+// 1: pr1:PARAM(protected = true )  = 100  type: Integer
+// 2: a[3]:PARAM()  = 1  type: Integer [3]
+// 3: a[2]:PARAM()  = 1  type: Integer [3]
+// 4: a[1]:PARAM()  = 1  type: Integer [3]
+// 5: s:PARAM(final = true )  = 3  type: Integer
+// 6: e1:PARAM()  = if b1 then p3 + p1 else 7 + p2  type: Integer
+// 7: b2:PARAM()  = true  type: Boolean
+// 8: b1:PARAM()  = false  type: Boolean
+// 9: f2:PARAM(final = true )  = 10  type: Integer
+// 10: f1:PARAM(final = true )  = p1  type: Integer
+// 11: p5:PARAM()  = pr1  type: Integer
+// 12: p4:PARAM()  = f1 + p1  type: Integer
+// 13: p3:PARAM()  = 5  type: Integer
+// 14: p2:PARAM()  = if b1 then e1 + p4 else if b2 then p1 - p3 else e1 - p3  type: Integer
+// 15: p1:PARAM()  = 2  type: Integer
 //
 //
 //
@@ -100,7 +100,7 @@ system("./parameterTest6 -override s=5,f2=100 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2
 // Selected parameters for evaluation:
 // 8,7,6,5,4,3,2
 //
-// Adjacency Matrix (row: equation)
+// Incidence Matrix (row: equation)
 // ========================================
 // number of rows: 15
 // 1:
@@ -119,7 +119,7 @@ system("./parameterTest6 -override s=5,f2=100 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2
 // 14: 15 13 12 8 7 6
 // 15:
 //
-// Transposed Adjacency Matrix (row: variable)
+// Transposed Incidence Matrix (row: variable)
 // ========================================
 // number of rows: 15
 // 1: 11 1
@@ -176,21 +176,21 @@ system("./parameterTest6 -override s=5,f2=100 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2
 //
 // globalKnownVars (15)
 // ========================================
-// 1: pr1:PARAM(protected = true )  = 100  type: Integer 
-// 2: a[3]:PARAM(final = true )  = 1  type: Integer  [3]
-// 3: a[2]:PARAM(final = true )  = 1  type: Integer  [3]
-// 4: a[1]:PARAM(final = true )  = 1  type: Integer  [3]
-// 5: s:PARAM(final = true )  = 3  type: Integer 
-// 6: e1:PARAM(final = true )  = 4  type: Integer 
-// 7: b2:PARAM(final = true )  = true  type: Boolean 
-// 8: b1:PARAM(final = true )  = false  type: Boolean 
-// 9: f2:PARAM(final = true )  = 10  type: Integer 
-// 10: f1:PARAM(final = true )  = p1  type: Integer 
-// 11: p5:PARAM()  = pr1  type: Integer 
-// 12: p4:PARAM(final = true )  = f1 + p1  type: Integer 
-// 13: p3:PARAM(final = true )  = 5  type: Integer 
-// 14: p2:PARAM(final = true )  = if b1 then e1 + p4 else if b2 then p1 - p3 else e1 - p3  type: Integer 
-// 15: p1:PARAM(final = true )  = 2  type: Integer 
+// 1: pr1:PARAM(protected = true )  = 100  type: Integer
+// 2: a[3]:PARAM(final = true )  = 1  type: Integer [3]
+// 3: a[2]:PARAM(final = true )  = 1  type: Integer [3]
+// 4: a[1]:PARAM(final = true )  = 1  type: Integer [3]
+// 5: s:PARAM(final = true )  = 3  type: Integer
+// 6: e1:PARAM(final = true )  = 4  type: Integer
+// 7: b2:PARAM(final = true )  = true  type: Boolean
+// 8: b1:PARAM(final = true )  = false  type: Boolean
+// 9: f2:PARAM(final = true )  = 10  type: Integer
+// 10: f1:PARAM(final = true )  = p1  type: Integer
+// 11: p5:PARAM()  = pr1  type: Integer
+// 12: p4:PARAM(final = true )  = f1 + p1  type: Integer
+// 13: p3:PARAM(final = true )  = 5  type: Integer
+// 14: p2:PARAM(final = true )  = if b1 then e1 + p4 else if b2 then p1 - p3 else e1 - p3  type: Integer
+// 15: p1:PARAM(final = true )  = 2  type: Integer
 //
 //
 // mark: 1
@@ -254,21 +254,21 @@ system("./parameterTest6 -override s=5,f2=100 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2
 //
 // globalKnownVars (15)
 // ========================================
-// 1: pr1:PARAM(protected = true )  = 100  type: Integer 
-// 2: a[3]:PARAM(final = true )  = 1  type: Integer  [3]
-// 3: a[2]:PARAM(final = true )  = 1  type: Integer  [3]
-// 4: a[1]:PARAM(final = true )  = 1  type: Integer  [3]
-// 5: s:PARAM(final = true )  = 3  type: Integer 
-// 6: e1:PARAM(final = true )  = 4  type: Integer 
-// 7: b2:PARAM(final = true )  = true  type: Boolean 
-// 8: b1:PARAM(final = true )  = false  type: Boolean 
-// 9: f2:PARAM(final = true )  = 10  type: Integer 
-// 10: f1:PARAM(final = true )  = 2  type: Integer 
-// 11: p5:PARAM()  = pr1  type: Integer 
-// 12: p4:PARAM(final = true )  = 4  type: Integer 
-// 13: p3:PARAM(final = true )  = 5  type: Integer 
-// 14: p2:PARAM(final = true )  = -3  type: Integer 
-// 15: p1:PARAM(final = true )  = 2  type: Integer 
+// 1: pr1:PARAM(protected = true )  = 100  type: Integer
+// 2: a[3]:PARAM(final = true )  = 1  type: Integer [3]
+// 3: a[2]:PARAM(final = true )  = 1  type: Integer [3]
+// 4: a[1]:PARAM(final = true )  = 1  type: Integer [3]
+// 5: s:PARAM(final = true )  = 3  type: Integer
+// 6: e1:PARAM(final = true )  = 4  type: Integer
+// 7: b2:PARAM(final = true )  = true  type: Boolean
+// 8: b1:PARAM(final = true )  = false  type: Boolean
+// 9: f2:PARAM(final = true )  = 10  type: Integer
+// 10: f1:PARAM(final = true )  = 2  type: Integer
+// 11: p5:PARAM()  = pr1  type: Integer
+// 12: p4:PARAM(final = true )  = 4  type: Integer
+// 13: p3:PARAM(final = true )  = 5  type: Integer
+// 14: p2:PARAM(final = true )  = -3  type: Integer
+// 15: p1:PARAM(final = true )  = 2  type: Integer
 //
 //
 // mark: 1
@@ -313,21 +313,21 @@ system("./parameterTest6 -override s=5,f2=100 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2
 //
 // globalKnownVars (15)
 // ========================================
-// 1: pr1:PARAM(protected = true )  = 100  type: Integer 
-// 2: a[3]:PARAM(final = true )  = 1  type: Integer  [3]
-// 3: a[2]:PARAM(final = true )  = 1  type: Integer  [3]
-// 4: a[1]:PARAM(final = true )  = 1  type: Integer  [3]
-// 5: s:PARAM(final = true )  = 3  type: Integer 
-// 6: e1:PARAM(final = true )  = 4  type: Integer 
-// 7: b2:PARAM(final = true )  = true  type: Boolean 
-// 8: b1:PARAM(final = true )  = false  type: Boolean 
-// 9: f2:PARAM(final = true )  = 10  type: Integer 
-// 10: f1:PARAM(final = true )  = 2  type: Integer 
-// 11: p5:PARAM()  = pr1  type: Integer 
-// 12: p4:PARAM(final = true )  = 4  type: Integer 
-// 13: p3:PARAM(final = true )  = 5  type: Integer 
-// 14: p2:PARAM(final = true )  = -3  type: Integer 
-// 15: p1:PARAM(final = true )  = 2  type: Integer 
+// 1: pr1:PARAM(protected = true )  = 100  type: Integer
+// 2: a[3]:PARAM(final = true )  = 1  type: Integer [3]
+// 3: a[2]:PARAM(final = true )  = 1  type: Integer [3]
+// 4: a[1]:PARAM(final = true )  = 1  type: Integer [3]
+// 5: s:PARAM(final = true )  = 3  type: Integer
+// 6: e1:PARAM(final = true )  = 4  type: Integer
+// 7: b2:PARAM(final = true )  = true  type: Boolean
+// 8: b1:PARAM(final = true )  = false  type: Boolean
+// 9: f2:PARAM(final = true )  = 10  type: Integer
+// 10: f1:PARAM(final = true )  = 2  type: Integer
+// 11: p5:PARAM()  = pr1  type: Integer
+// 12: p4:PARAM(final = true )  = 4  type: Integer
+// 13: p3:PARAM(final = true )  = 5  type: Integer
+// 14: p2:PARAM(final = true )  = -3  type: Integer
+// 15: p1:PARAM(final = true )  = 2  type: Integer
 //
 //
 // mark: 1
@@ -344,9 +344,9 @@ system("./parameterTest6 -override s=5,f2=100 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2
 //
 // Variables (3)
 // ========================================
-// 1: z:DISCRETE()  type: Integer 
-// 2: y:DISCRETE()  type: Integer 
-// 3: x:DISCRETE()  type: Integer 
+// 1: z:DISCRETE()  type: Integer
+// 2: y:DISCRETE()  type: Integer
+// 3: x:DISCRETE()  type: Integer
 //
 //
 // Equations (3, 3)
@@ -365,21 +365,21 @@ system("./parameterTest6 -override s=5,f2=100 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2
 //
 // Known variables only depending on parameters and constants - globalKnownVars (15)
 // ========================================
-// 1: pr1:PARAM(protected = true )  = 100  type: Integer 
-// 2: a[3]:PARAM(final = true )  = 1  type: Integer  [3]
-// 3: a[2]:PARAM(final = true )  = 1  type: Integer  [3]
-// 4: a[1]:PARAM(final = true )  = 1  type: Integer  [3]
-// 5: s:PARAM(final = true )  = 3  type: Integer 
-// 6: e1:PARAM(final = true )  = 4  type: Integer 
-// 7: b2:PARAM(final = true )  = true  type: Boolean 
-// 8: b1:PARAM(final = true )  = false  type: Boolean 
-// 9: f2:PARAM(final = true )  = 10  type: Integer 
-// 10: f1:PARAM(final = true )  = 2  type: Integer 
-// 11: p5:PARAM()  = pr1  type: Integer 
-// 12: p4:PARAM(final = true )  = 4  type: Integer 
-// 13: p3:PARAM(final = true )  = 5  type: Integer 
-// 14: p2:PARAM(final = true )  = -3  type: Integer 
-// 15: p1:PARAM(final = true )  = 2  type: Integer 
+// 1: pr1:PARAM(protected = true )  = 100  type: Integer
+// 2: a[3]:PARAM(final = true )  = 1  type: Integer [3]
+// 3: a[2]:PARAM(final = true )  = 1  type: Integer [3]
+// 4: a[1]:PARAM(final = true )  = 1  type: Integer [3]
+// 5: s:PARAM(final = true )  = 3  type: Integer
+// 6: e1:PARAM(final = true )  = 4  type: Integer
+// 7: b2:PARAM(final = true )  = true  type: Boolean
+// 8: b1:PARAM(final = true )  = false  type: Boolean
+// 9: f2:PARAM(final = true )  = 10  type: Integer
+// 10: f1:PARAM(final = true )  = 2  type: Integer
+// 11: p5:PARAM()  = pr1  type: Integer
+// 12: p4:PARAM(final = true )  = 4  type: Integer
+// 13: p3:PARAM(final = true )  = 5  type: Integer
+// 14: p2:PARAM(final = true )  = -3  type: Integer
+// 15: p1:PARAM(final = true )  = 2  type: Integer
 //
 //
 //

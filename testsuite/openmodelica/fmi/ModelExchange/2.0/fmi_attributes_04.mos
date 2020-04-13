@@ -40,20 +40,25 @@ readFile("fmi_attributes_04.xml"); getErrorString();
 //   <ScalarVariable
 //     name=\"x\"
 //     valueReference=\"0\"
-//     >
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"2\" -->
 //   <ScalarVariable
 //     name=\"der(x)\"
 //     valueReference=\"1\"
-//     >
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
 //     <Real derivative=\"1\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"3\" -->
 //   <ScalarVariable
 //     name=\"u\"
 //     valueReference=\"2\"
+//     variability=\"continuous\"
 //     causality=\"input\"
 //     >
 //     <Real start=\"0.0\"/>
@@ -62,7 +67,17 @@ readFile("fmi_attributes_04.xml"); getErrorString();
 //   <ScalarVariable
 //     name=\"y\"
 //     valueReference=\"3\"
+//     variability=\"continuous\"
 //     causality=\"output\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"5\" -->
+//   <ScalarVariable
+//     name=\"_D_outputAlias_y\"
+//     valueReference=\"0\"
+//     variability=\"continuous\"
+//     causality=\"local\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -78,11 +93,6 @@ readFile("fmi_attributes_04.xml"); getErrorString();
 //     <Derivatives>
 //       <Unknown index=\"2\" dependencies=\"3\" dependenciesKind=\"dependent\" />
 //     </Derivatives>
-//     <InitialUnknowns>
-//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"2\" dependencies=\"3\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"4\" dependencies=\"\" dependenciesKind=\"\" />
-//     </InitialUnknowns>
 //   </ModelStructure>
 // "
 // ""

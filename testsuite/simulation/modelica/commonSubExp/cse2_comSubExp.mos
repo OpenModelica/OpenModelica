@@ -65,9 +65,9 @@ simulate(Tearing3); getErrorString();
 // 6: uC:DUMMY_STATE()  type: Real
 // 7: uL:VARIABLE()  type: Real
 // 8: u1:VARIABLE()  type: Real
-// 9: u0:DUMMY_STATE(stateSelect=StateSelect.never )  type: Real
-// 10: $DER.u0:DUMMY_DER(fixed = false )  type: Real
-// 11: $DER.uC:DUMMY_DER(fixed = false )  type: Real
+// 9: u0:DUMMY_STATE()  type: Real
+// 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real
+// 11: $DER.u0:DUMMY_DER(fixed = false )  type: Real
 //
 //
 // ########### Updated Equation List (simulation) (11, 11)
@@ -108,9 +108,9 @@ simulate(Tearing3); getErrorString();
 // 6: uC:DUMMY_STATE()  type: Real
 // 7: uL:VARIABLE()  type: Real
 // 8: u1:VARIABLE()  type: Real
-// 9: u0:DUMMY_STATE(stateSelect=StateSelect.never )  type: Real
-// 10: $DER.u0:DUMMY_DER(fixed = false )  type: Real
-// 11: $DER.uC:DUMMY_DER(fixed = false )  type: Real
+// 9: u0:DUMMY_STATE()  type: Real
+// 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real
+// 11: $DER.u0:DUMMY_DER(fixed = false )  type: Real
 //
 //
 // ########### Updated Equation List ########### (11, 11)

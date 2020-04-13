@@ -36,68 +36,24 @@ val(x3,{0,1});
 // true
 // ""
 //
-// ########################################
-//
-//  Algbraic Loops (Simulation):
-//
-// ########################################
-//
 // system 1
-// ========================================
-//
-// ################################################################################
-//  dumpLoops: SORTED COMPONENT
-// ################################################################################
-//
 // torn nonlinear Equationsystem:
 //
-// internal vars (2)
+// internal vars
 // 1: x4:VARIABLE()  type: Real
 // 2: x1:VARIABLE()  type: Real
 //
-// residual vars (2)
+// residual vars
 // 1: x2:VARIABLE()  type: Real
 // 2: x3:VARIABLE()  type: Real
 //
-// internal equations (2)
+// internal equation
 // 1/1 (1): x2 = -5.0 + 3.0 * (1.0 + 3.0 * x2 + x3 + (-5.0) * x4)   [unknown |0|0|0|0|]
 // 2/2 (1): x3 = -5.0 + 3.0 * (x1 + x3 - x2)   [unknown |0|0|0|0|]
 //
-// residual equations (2)
+// residual equations
 // 1/1 (1): x1 = 23.0 * (10.0 + 3.0 * x1 + $cse3 - (1.0 + 3.0 * x2 + x3 + (-5.0) * x4)) * (1.0 + 3.0 * x2 + x3 + (-5.0) * x4) - (10.0 + 3.0 * x1 + $cse3 - (1.0 + 3.0 * x2 + x3 + (-5.0) * x4))   [unknown |0|0|0|0|]
 // 2/2 (1): x4 = 23.0 * (10.0 + $cse4 - (x1 + x3 - x2)) * (x1 + x3 - x2) - (10.0 + $cse4 - (x1 + x3 - x2))   [unknown |0|0|0|0|]
-//
-//
-// ########################################
-//
-//  Algbraic Loops (Initialization):
-//
-// ########################################
-//
-// system 1
-// ========================================
-//
-// ################################################################################
-//  dumpLoops: SORTED COMPONENT
-// ################################################################################
-//
-// torn nonlinear Equationsystem:
-//
-// internal vars (2)
-// 1: x4:VARIABLE()  type: Real
-// 2: x1:VARIABLE()  type: Real
-//
-// residual vars (2)
-// 1: x3:VARIABLE()  type: Real
-// 2: x2:VARIABLE()  type: Real
-//
-// internal equations (2)
-// 1/1 (1): x2 = -5.0 + 3.0 * (1.0 + 3.0 * x2 + x3 + (-5.0) * x4)   [dynamic |0|0|0|0|]
-// 2/2 (1): x3 = -5.0 + 3.0 * (x1 + x3 - x2)   [dynamic |0|0|0|0|]
-//
-// residual equations (2)
-// 1/1 (1): x1 = 23.0 * (10.0 + 3.0 * x1 + cos(time) - (1.0 + 3.0 * x2 + x3 + (-5.0) * x4)) * (1.0 + 3.0 * x2 + x3 + (-5.0) * x4) - (10.0 + 3.0 * x1 + cos(time) - (1.0 + 3.0 * x2 + x3 + (-5.0) * x4))   [dynamic |0|0|0|0|]
-// 2/2 (1): x4 = 23.0 * (10.0 + sin(time) - (x1 + x3 - x2)) * (x1 + x3 - x2) - (10.0 + sin(time) - (x1 + x3 - x2))   [dynamic |0|0|0|0|]
 //
 // record SimulationResult
 //     resultFile = "foo_res.mat",

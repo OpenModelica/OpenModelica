@@ -54,18 +54,18 @@ system("./parameterTest15 -override p1=2,p2=10,p3=10 -output=p1,p2,p3"); getErro
 //
 // Known variables only depending on parameters and constants - globalKnownVars (12)
 // ========================================
-// 1: pr2:PARAM(protected = true )  = pr1  type: Integer 
-// 2: pr1:PARAM(protected = true )  = 5  type: Integer 
-// 3: p8:PARAM(start = 2 * p3 )  type: Integer 
-// 4: p7:PARAM(start = 1 final = true )  type: Integer 
-// 5: p6:PARAM(final = true )  = p5  type: Integer 
-// 6: p5:PARAM(final = true )  = 1  type: Integer 
-// 7: p4:PARAM(fixed = false )  type: Integer 
-// 8: p3:PARAM()  = 5  type: Integer 
-// 9: c2:CONST()  = 5  type: Integer 
-// 10: c1:CONST()  = 5  type: Integer 
-// 11: p2:PARAM()  = p1  type: Integer 
-// 12: p1:PARAM()  = 1  type: Integer 
+// 1: pr2:PARAM(protected = true )  = pr1  type: Integer
+// 2: pr1:PARAM(protected = true )  = 5  type: Integer
+// 3: p8:PARAM(start = 2 * p3 )  type: Integer
+// 4: p7:PARAM(start = 1 final = true )  type: Integer
+// 5: p6:PARAM(final = true )  = p5  type: Integer
+// 6: p5:PARAM(final = true )  = 1  type: Integer
+// 7: p4:PARAM(fixed = false )  type: Integer
+// 8: p3:PARAM()  = 5  type: Integer
+// 9: c2:CONST()  = 5  type: Integer
+// 10: c1:CONST()  = 5  type: Integer
+// 11: p2:PARAM()  = p1  type: Integer
+// 12: p1:PARAM()  = 1  type: Integer
 //
 //
 //
@@ -78,7 +78,7 @@ system("./parameterTest15 -override p1=2,p2=10,p3=10 -output=p1,p2,p3"); getErro
 // Selected parameters for evaluation:
 //
 //
-// Adjacency Matrix (row: equation)
+// Incidence Matrix (row: equation)
 // ========================================
 // number of rows: 12
 // 1: 2
@@ -94,7 +94,7 @@ system("./parameterTest15 -override p1=2,p2=10,p3=10 -output=p1,p2,p3"); getErro
 // 11: 12
 // 12:
 //
-// Transposed Adjacency Matrix (row: variable)
+// Transposed Incidence Matrix (row: variable)
 // ========================================
 // number of rows: 12
 // 1: 1
@@ -126,18 +126,18 @@ system("./parameterTest15 -override p1=2,p2=10,p3=10 -output=p1,p2,p3"); getErro
 //
 // globalKnownVars (12)
 // ========================================
-// 1: pr2:PARAM(protected = true )  = pr1  type: Integer 
-// 2: pr1:PARAM(protected = true )  = 5  type: Integer 
-// 3: p8:PARAM(start = 2 * p3 )  type: Integer 
-// 4: p7:PARAM(start = 1 final = true )  type: Integer 
-// 5: p6:PARAM(final = true )  = p5  type: Integer 
-// 6: p5:PARAM(final = true )  = 1  type: Integer 
-// 7: p4:PARAM(fixed = false )  type: Integer 
-// 8: p3:PARAM()  = 5  type: Integer 
-// 9: c2:CONST()  = 5  type: Integer 
-// 10: c1:CONST()  = 5  type: Integer 
-// 11: p2:PARAM()  = p1  type: Integer 
-// 12: p1:PARAM()  = 1  type: Integer 
+// 1: pr2:PARAM(protected = true )  = pr1  type: Integer
+// 2: pr1:PARAM(protected = true )  = 5  type: Integer
+// 3: p8:PARAM(start = 2 * p3 )  type: Integer
+// 4: p7:PARAM(start = 1 final = true )  type: Integer
+// 5: p6:PARAM(final = true )  = p5  type: Integer
+// 6: p5:PARAM(final = true )  = 1  type: Integer
+// 7: p4:PARAM(fixed = false )  type: Integer
+// 8: p3:PARAM()  = 5  type: Integer
+// 9: c2:CONST()  = 5  type: Integer
+// 10: c1:CONST()  = 5  type: Integer
+// 11: p2:PARAM()  = p1  type: Integer
+// 12: p1:PARAM()  = 1  type: Integer
 //
 //
 // mark: 1
@@ -177,18 +177,18 @@ system("./parameterTest15 -override p1=2,p2=10,p3=10 -output=p1,p2,p3"); getErro
 //
 // globalKnownVars (12)
 // ========================================
-// 1: pr2:PARAM(protected = true )  = pr1  type: Integer 
-// 2: pr1:PARAM(protected = true )  = 5  type: Integer 
-// 3: p8:PARAM(start = 2 * p3 )  type: Integer 
-// 4: p7:PARAM(start = 1 final = true )  type: Integer 
-// 5: p6:PARAM(final = true )  = 1  type: Integer 
-// 6: p5:PARAM(final = true )  = 1  type: Integer 
-// 7: p4:PARAM(fixed = false )  type: Integer 
-// 8: p3:PARAM()  = 5  type: Integer 
-// 9: c2:CONST()  = 5  type: Integer 
-// 10: c1:CONST()  = 5  type: Integer 
-// 11: p2:PARAM()  = p1  type: Integer 
-// 12: p1:PARAM()  = 1  type: Integer 
+// 1: pr2:PARAM(protected = true )  = pr1  type: Integer
+// 2: pr1:PARAM(protected = true )  = 5  type: Integer
+// 3: p8:PARAM(start = 2 * p3 )  type: Integer
+// 4: p7:PARAM(start = 1 final = true )  type: Integer
+// 5: p6:PARAM(final = true )  = 1  type: Integer
+// 6: p5:PARAM(final = true )  = 1  type: Integer
+// 7: p4:PARAM(fixed = false )  type: Integer
+// 8: p3:PARAM()  = 5  type: Integer
+// 9: c2:CONST()  = 5  type: Integer
+// 10: c1:CONST()  = 5  type: Integer
+// 11: p2:PARAM()  = p1  type: Integer
+// 12: p1:PARAM()  = 1  type: Integer
 //
 //
 // mark: 1
@@ -211,18 +211,18 @@ system("./parameterTest15 -override p1=2,p2=10,p3=10 -output=p1,p2,p3"); getErro
 //
 // globalKnownVars (12)
 // ========================================
-// 1: pr2:PARAM(protected = true )  = pr1  type: Integer 
-// 2: pr1:PARAM(protected = true )  = 5  type: Integer 
-// 3: p8:PARAM(start = 2 * p3 )  type: Integer 
-// 4: p7:PARAM(start = 1 final = true )  type: Integer 
-// 5: p6:PARAM(final = true )  = 1  type: Integer 
-// 6: p5:PARAM(final = true )  = 1  type: Integer 
-// 7: p4:PARAM(fixed = false )  type: Integer 
-// 8: p3:PARAM()  = 5  type: Integer 
-// 9: c2:CONST()  = 5  type: Integer 
-// 10: c1:CONST()  = 5  type: Integer 
-// 11: p2:PARAM()  = p1  type: Integer 
-// 12: p1:PARAM()  = 1  type: Integer 
+// 1: pr2:PARAM(protected = true )  = pr1  type: Integer
+// 2: pr1:PARAM(protected = true )  = 5  type: Integer
+// 3: p8:PARAM(start = 2 * p3 )  type: Integer
+// 4: p7:PARAM(start = 1 final = true )  type: Integer
+// 5: p6:PARAM(final = true )  = 1  type: Integer
+// 6: p5:PARAM(final = true )  = 1  type: Integer
+// 7: p4:PARAM(fixed = false )  type: Integer
+// 8: p3:PARAM()  = 5  type: Integer
+// 9: c2:CONST()  = 5  type: Integer
+// 10: c1:CONST()  = 5  type: Integer
+// 11: p2:PARAM()  = p1  type: Integer
+// 12: p1:PARAM()  = 1  type: Integer
 //
 //
 // mark: 1
@@ -246,18 +246,18 @@ system("./parameterTest15 -override p1=2,p2=10,p3=10 -output=p1,p2,p3"); getErro
 //
 // Known variables only depending on parameters and constants - globalKnownVars (12)
 // ========================================
-// 1: pr2:PARAM(protected = true )  = pr1  type: Integer 
-// 2: pr1:PARAM(protected = true )  = 5  type: Integer 
-// 3: p8:PARAM(start = 2 * p3 )  type: Integer 
-// 4: p7:PARAM(start = 1 final = true )  type: Integer 
-// 5: p6:PARAM(final = true )  = 1  type: Integer 
-// 6: p5:PARAM(final = true )  = 1  type: Integer 
-// 7: p4:PARAM(fixed = false )  type: Integer 
-// 8: p3:PARAM()  = 5  type: Integer 
-// 9: c2:CONST()  = 5  type: Integer 
-// 10: c1:CONST()  = 5  type: Integer 
-// 11: p2:PARAM()  = p1  type: Integer 
-// 12: p1:PARAM()  = 1  type: Integer 
+// 1: pr2:PARAM(protected = true )  = pr1  type: Integer
+// 2: pr1:PARAM(protected = true )  = 5  type: Integer
+// 3: p8:PARAM(start = 2 * p3 )  type: Integer
+// 4: p7:PARAM(start = 1 final = true )  type: Integer
+// 5: p6:PARAM(final = true )  = 1  type: Integer
+// 6: p5:PARAM(final = true )  = 1  type: Integer
+// 7: p4:PARAM(fixed = false )  type: Integer
+// 8: p3:PARAM()  = 5  type: Integer
+// 9: c2:CONST()  = 5  type: Integer
+// 10: c1:CONST()  = 5  type: Integer
+// 11: p2:PARAM()  = p1  type: Integer
+// 12: p1:PARAM()  = 1  type: Integer
 //
 //
 //

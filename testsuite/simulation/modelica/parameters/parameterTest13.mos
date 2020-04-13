@@ -41,7 +41,7 @@ simulate(parameterTest13); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: x:VARIABLE()  type: Real 
+// 1: x:VARIABLE()  type: Real
 //
 //
 // Equations (1, 1)
@@ -58,12 +58,12 @@ simulate(parameterTest13); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (6)
 // ========================================
-// 1: p3:PARAM()  = 5  type: Integer 
-// 2: p2:PARAM()  = if b3 then p1 else p3  type: Integer 
-// 3: p1:PARAM()  = if b2 then p2 else 0  type: Integer 
-// 4: b3:PARAM()  = not b1  type: Boolean 
-// 5: b2:PARAM(final = true )  = b1  type: Boolean 
-// 6: b1:PARAM()  = true  type: Boolean 
+// 1: p3:PARAM()  = 5  type: Integer
+// 2: p2:PARAM()  = if b3 then p1 else p3  type: Integer
+// 3: p1:PARAM()  = if b2 then p2 else 0  type: Integer
+// 4: b3:PARAM()  = not b1  type: Boolean
+// 5: b2:PARAM(final = true )  = b1  type: Boolean
+// 6: b1:PARAM()  = true  type: Boolean
 //
 //
 //
@@ -76,7 +76,7 @@ simulate(parameterTest13); getErrorString();
 // Selected parameters for evaluation:
 // 5,2
 //
-// Adjacency Matrix (row: equation)
+// Incidence Matrix (row: equation)
 // ========================================
 // number of rows: 6
 // 1:
@@ -86,7 +86,7 @@ simulate(parameterTest13); getErrorString();
 // 5: 6
 // 6:
 //
-// Transposed Adjacency Matrix (row: variable)
+// Transposed Incidence Matrix (row: variable)
 // ========================================
 // number of rows: 6
 // 1: 2 1
@@ -122,12 +122,12 @@ simulate(parameterTest13); getErrorString();
 //
 // globalKnownVars (6)
 // ========================================
-// 1: p3:PARAM(final = true )  = 5  type: Integer 
-// 2: p2:PARAM(final = true )  = 5  type: Integer 
-// 3: p1:PARAM(final = true )  = if b2 then p2 else 0  type: Integer 
-// 4: b3:PARAM(final = true )  = not b1  type: Boolean 
-// 5: b2:PARAM(final = true )  = true  type: Boolean 
-// 6: b1:PARAM(final = true )  = true  type: Boolean 
+// 1: p3:PARAM(final = true )  = 5  type: Integer
+// 2: p2:PARAM(final = true )  = 5  type: Integer
+// 3: p1:PARAM(final = true )  = if b2 then p2 else 0  type: Integer
+// 4: b3:PARAM(final = true )  = not b1  type: Boolean
+// 5: b2:PARAM(final = true )  = true  type: Boolean
+// 6: b1:PARAM(final = true )  = true  type: Boolean
 //
 //
 // mark: 1
@@ -168,12 +168,12 @@ simulate(parameterTest13); getErrorString();
 //
 // globalKnownVars (6)
 // ========================================
-// 1: p3:PARAM(final = true )  = 5  type: Integer 
-// 2: p2:PARAM(final = true )  = 5  type: Integer 
-// 3: p1:PARAM(final = true )  = 5  type: Integer 
-// 4: b3:PARAM(final = true )  = false  type: Boolean 
-// 5: b2:PARAM(final = true )  = true  type: Boolean 
-// 6: b1:PARAM(final = true )  = true  type: Boolean 
+// 1: p3:PARAM(final = true )  = 5  type: Integer
+// 2: p2:PARAM(final = true )  = 5  type: Integer
+// 3: p1:PARAM(final = true )  = 5  type: Integer
+// 4: b3:PARAM(final = true )  = false  type: Boolean
+// 5: b2:PARAM(final = true )  = true  type: Boolean
+// 6: b1:PARAM(final = true )  = true  type: Boolean
 //
 //
 // mark: 1
@@ -204,12 +204,12 @@ simulate(parameterTest13); getErrorString();
 //
 // globalKnownVars (6)
 // ========================================
-// 1: p3:PARAM(final = true )  = 5  type: Integer 
-// 2: p2:PARAM(final = true )  = 5  type: Integer 
-// 3: p1:PARAM(final = true )  = 5  type: Integer 
-// 4: b3:PARAM(final = true )  = false  type: Boolean 
-// 5: b2:PARAM(final = true )  = true  type: Boolean 
-// 6: b1:PARAM(final = true )  = true  type: Boolean 
+// 1: p3:PARAM(final = true )  = 5  type: Integer
+// 2: p2:PARAM(final = true )  = 5  type: Integer
+// 3: p1:PARAM(final = true )  = 5  type: Integer
+// 4: b3:PARAM(final = true )  = false  type: Boolean
+// 5: b2:PARAM(final = true )  = true  type: Boolean
+// 6: b1:PARAM(final = true )  = true  type: Boolean
 //
 //
 // mark: 1
@@ -226,7 +226,7 @@ simulate(parameterTest13); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: x:VARIABLE()  type: Real 
+// 1: x:VARIABLE()  type: Real
 //
 //
 // Equations (1, 1)
@@ -243,12 +243,12 @@ simulate(parameterTest13); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (6)
 // ========================================
-// 1: p3:PARAM(final = true )  = 5  type: Integer 
-// 2: p2:PARAM(final = true )  = 5  type: Integer 
-// 3: p1:PARAM(final = true )  = 5  type: Integer 
-// 4: b3:PARAM(final = true )  = false  type: Boolean 
-// 5: b2:PARAM(final = true )  = true  type: Boolean 
-// 6: b1:PARAM(final = true )  = true  type: Boolean 
+// 1: p3:PARAM(final = true )  = 5  type: Integer
+// 2: p2:PARAM(final = true )  = 5  type: Integer
+// 3: p1:PARAM(final = true )  = 5  type: Integer
+// 4: b3:PARAM(final = true )  = false  type: Boolean
+// 5: b2:PARAM(final = true )  = true  type: Boolean
+// 6: b1:PARAM(final = true )  = true  type: Boolean
 //
 //
 //

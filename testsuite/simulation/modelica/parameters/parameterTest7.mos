@@ -46,31 +46,31 @@ system("./parameterTest7 -override p2=10,a[1]=10 -output=p1,p2,s,a[1],a[2],a[3]"
 //
 // Known variables only depending on parameters and constants - globalKnownVars (25)
 // ========================================
-// 1: a3[10]:PARAM()  = 1  type: Integer  [10]
-// 2: a3[9]:PARAM()  = 1  type: Integer  [10]
-// 3: a3[8]:PARAM()  = 1  type: Integer  [10]
-// 4: a3[7]:PARAM()  = 1  type: Integer  [10]
-// 5: a3[6]:PARAM()  = 1  type: Integer  [10]
-// 6: a3[5]:PARAM()  = 1  type: Integer  [10]
-// 7: a3[4]:PARAM()  = 1  type: Integer  [10]
-// 8: a3[3]:PARAM()  = 1  type: Integer  [10]
-// 9: a3[2]:PARAM()  = 1  type: Integer  [10]
-// 10: a3[1]:PARAM()  = 1  type: Integer  [10]
-// 11: s3:PARAM(final = true )  = 10  type: Integer 
-// 12: a2[7]:PARAM()  = 1  type: Integer  [7]
-// 13: a2[6]:PARAM()  = 1  type: Integer  [7]
-// 14: a2[5]:PARAM()  = 1  type: Integer  [7]
-// 15: a2[4]:PARAM()  = 1  type: Integer  [7]
-// 16: a2[3]:PARAM()  = 1  type: Integer  [7]
-// 17: a2[2]:PARAM()  = 1  type: Integer  [7]
-// 18: a2[1]:PARAM()  = 1  type: Integer  [7]
-// 19: s2:PARAM(final = true )  = 7  type: Integer 
-// 20: a[3]:PARAM()  = 3  type: Integer  [3]
-// 21: a[2]:PARAM()  = 2  type: Integer  [3]
-// 22: a[1]:PARAM()  = 1  type: Integer  [3]
-// 23: s:PARAM(final = true )  = p1  type: Integer 
-// 24: p2:PARAM()  = 3  type: Integer 
-// 25: p1:PARAM()  = p2  type: Integer 
+// 1: a3[10]:PARAM()  = 1  type: Integer [10]
+// 2: a3[9]:PARAM()  = 1  type: Integer [10]
+// 3: a3[8]:PARAM()  = 1  type: Integer [10]
+// 4: a3[7]:PARAM()  = 1  type: Integer [10]
+// 5: a3[6]:PARAM()  = 1  type: Integer [10]
+// 6: a3[5]:PARAM()  = 1  type: Integer [10]
+// 7: a3[4]:PARAM()  = 1  type: Integer [10]
+// 8: a3[3]:PARAM()  = 1  type: Integer [10]
+// 9: a3[2]:PARAM()  = 1  type: Integer [10]
+// 10: a3[1]:PARAM()  = 1  type: Integer [10]
+// 11: s3:PARAM(final = true )  = 10  type: Integer
+// 12: a2[7]:PARAM()  = 1  type: Integer [7]
+// 13: a2[6]:PARAM()  = 1  type: Integer [7]
+// 14: a2[5]:PARAM()  = 1  type: Integer [7]
+// 15: a2[4]:PARAM()  = 1  type: Integer [7]
+// 16: a2[3]:PARAM()  = 1  type: Integer [7]
+// 17: a2[2]:PARAM()  = 1  type: Integer [7]
+// 18: a2[1]:PARAM()  = 1  type: Integer [7]
+// 19: s2:PARAM(final = true )  = 7  type: Integer
+// 20: a[3]:PARAM()  = 3  type: Integer [3]
+// 21: a[2]:PARAM()  = 2  type: Integer [3]
+// 22: a[1]:PARAM()  = 1  type: Integer [3]
+// 23: s:PARAM(final = true )  = p1  type: Integer
+// 24: p2:PARAM()  = 3  type: Integer
+// 25: p1:PARAM()  = p2  type: Integer
 //
 //
 //
@@ -83,7 +83,7 @@ system("./parameterTest7 -override p2=10,a[1]=10 -output=p1,p2,s,a[1],a[2],a[3]"
 // Selected parameters for evaluation:
 // 23,19,11
 //
-// Adjacency Matrix (row: equation)
+// Incidence Matrix (row: equation)
 // ========================================
 // number of rows: 25
 // 1:
@@ -112,7 +112,7 @@ system("./parameterTest7 -override p2=10,a[1]=10 -output=p1,p2,s,a[1],a[2],a[3]"
 // 24:
 // 25: 24
 //
-// Transposed Adjacency Matrix (row: variable)
+// Transposed Incidence Matrix (row: variable)
 // ========================================
 // number of rows: 25
 // 1: 1
@@ -165,31 +165,31 @@ system("./parameterTest7 -override p2=10,a[1]=10 -output=p1,p2,s,a[1],a[2],a[3]"
 //
 // globalKnownVars (25)
 // ========================================
-// 1: a3[10]:PARAM()  = 1  type: Integer  [10]
-// 2: a3[9]:PARAM()  = 1  type: Integer  [10]
-// 3: a3[8]:PARAM()  = 1  type: Integer  [10]
-// 4: a3[7]:PARAM()  = 1  type: Integer  [10]
-// 5: a3[6]:PARAM()  = 1  type: Integer  [10]
-// 6: a3[5]:PARAM()  = 1  type: Integer  [10]
-// 7: a3[4]:PARAM()  = 1  type: Integer  [10]
-// 8: a3[3]:PARAM()  = 1  type: Integer  [10]
-// 9: a3[2]:PARAM()  = 1  type: Integer  [10]
-// 10: a3[1]:PARAM()  = 1  type: Integer  [10]
-// 11: s3:PARAM(final = true )  = 10  type: Integer 
-// 12: a2[7]:PARAM()  = 1  type: Integer  [7]
-// 13: a2[6]:PARAM()  = 1  type: Integer  [7]
-// 14: a2[5]:PARAM()  = 1  type: Integer  [7]
-// 15: a2[4]:PARAM()  = 1  type: Integer  [7]
-// 16: a2[3]:PARAM()  = 1  type: Integer  [7]
-// 17: a2[2]:PARAM()  = 1  type: Integer  [7]
-// 18: a2[1]:PARAM()  = 1  type: Integer  [7]
-// 19: s2:PARAM(final = true )  = 7  type: Integer 
-// 20: a[3]:PARAM()  = 3  type: Integer  [3]
-// 21: a[2]:PARAM()  = 2  type: Integer  [3]
-// 22: a[1]:PARAM()  = 1  type: Integer  [3]
-// 23: s:PARAM(final = true )  = 3  type: Integer 
-// 24: p2:PARAM(final = true )  = 3  type: Integer 
-// 25: p1:PARAM(final = true )  = p2  type: Integer 
+// 1: a3[10]:PARAM()  = 1  type: Integer [10]
+// 2: a3[9]:PARAM()  = 1  type: Integer [10]
+// 3: a3[8]:PARAM()  = 1  type: Integer [10]
+// 4: a3[7]:PARAM()  = 1  type: Integer [10]
+// 5: a3[6]:PARAM()  = 1  type: Integer [10]
+// 6: a3[5]:PARAM()  = 1  type: Integer [10]
+// 7: a3[4]:PARAM()  = 1  type: Integer [10]
+// 8: a3[3]:PARAM()  = 1  type: Integer [10]
+// 9: a3[2]:PARAM()  = 1  type: Integer [10]
+// 10: a3[1]:PARAM()  = 1  type: Integer [10]
+// 11: s3:PARAM(final = true )  = 10  type: Integer
+// 12: a2[7]:PARAM()  = 1  type: Integer [7]
+// 13: a2[6]:PARAM()  = 1  type: Integer [7]
+// 14: a2[5]:PARAM()  = 1  type: Integer [7]
+// 15: a2[4]:PARAM()  = 1  type: Integer [7]
+// 16: a2[3]:PARAM()  = 1  type: Integer [7]
+// 17: a2[2]:PARAM()  = 1  type: Integer [7]
+// 18: a2[1]:PARAM()  = 1  type: Integer [7]
+// 19: s2:PARAM(final = true )  = 7  type: Integer
+// 20: a[3]:PARAM()  = 3  type: Integer [3]
+// 21: a[2]:PARAM()  = 2  type: Integer [3]
+// 22: a[1]:PARAM()  = 1  type: Integer [3]
+// 23: s:PARAM(final = true )  = 3  type: Integer
+// 24: p2:PARAM(final = true )  = 3  type: Integer
+// 25: p1:PARAM(final = true )  = p2  type: Integer
 //
 //
 // mark: 1
@@ -248,31 +248,31 @@ system("./parameterTest7 -override p2=10,a[1]=10 -output=p1,p2,s,a[1],a[2],a[3]"
 //
 // globalKnownVars (25)
 // ========================================
-// 1: a3[10]:PARAM()  = 1  type: Integer  [10]
-// 2: a3[9]:PARAM()  = 1  type: Integer  [10]
-// 3: a3[8]:PARAM()  = 1  type: Integer  [10]
-// 4: a3[7]:PARAM()  = 1  type: Integer  [10]
-// 5: a3[6]:PARAM()  = 1  type: Integer  [10]
-// 6: a3[5]:PARAM()  = 1  type: Integer  [10]
-// 7: a3[4]:PARAM()  = 1  type: Integer  [10]
-// 8: a3[3]:PARAM()  = 1  type: Integer  [10]
-// 9: a3[2]:PARAM()  = 1  type: Integer  [10]
-// 10: a3[1]:PARAM()  = 1  type: Integer  [10]
-// 11: s3:PARAM(final = true )  = 10  type: Integer 
-// 12: a2[7]:PARAM()  = 1  type: Integer  [7]
-// 13: a2[6]:PARAM()  = 1  type: Integer  [7]
-// 14: a2[5]:PARAM()  = 1  type: Integer  [7]
-// 15: a2[4]:PARAM()  = 1  type: Integer  [7]
-// 16: a2[3]:PARAM()  = 1  type: Integer  [7]
-// 17: a2[2]:PARAM()  = 1  type: Integer  [7]
-// 18: a2[1]:PARAM()  = 1  type: Integer  [7]
-// 19: s2:PARAM(final = true )  = 7  type: Integer 
-// 20: a[3]:PARAM()  = 3  type: Integer  [3]
-// 21: a[2]:PARAM()  = 2  type: Integer  [3]
-// 22: a[1]:PARAM()  = 1  type: Integer  [3]
-// 23: s:PARAM(final = true )  = 3  type: Integer 
-// 24: p2:PARAM(final = true )  = 3  type: Integer 
-// 25: p1:PARAM(final = true )  = 3  type: Integer 
+// 1: a3[10]:PARAM()  = 1  type: Integer [10]
+// 2: a3[9]:PARAM()  = 1  type: Integer [10]
+// 3: a3[8]:PARAM()  = 1  type: Integer [10]
+// 4: a3[7]:PARAM()  = 1  type: Integer [10]
+// 5: a3[6]:PARAM()  = 1  type: Integer [10]
+// 6: a3[5]:PARAM()  = 1  type: Integer [10]
+// 7: a3[4]:PARAM()  = 1  type: Integer [10]
+// 8: a3[3]:PARAM()  = 1  type: Integer [10]
+// 9: a3[2]:PARAM()  = 1  type: Integer [10]
+// 10: a3[1]:PARAM()  = 1  type: Integer [10]
+// 11: s3:PARAM(final = true )  = 10  type: Integer
+// 12: a2[7]:PARAM()  = 1  type: Integer [7]
+// 13: a2[6]:PARAM()  = 1  type: Integer [7]
+// 14: a2[5]:PARAM()  = 1  type: Integer [7]
+// 15: a2[4]:PARAM()  = 1  type: Integer [7]
+// 16: a2[3]:PARAM()  = 1  type: Integer [7]
+// 17: a2[2]:PARAM()  = 1  type: Integer [7]
+// 18: a2[1]:PARAM()  = 1  type: Integer [7]
+// 19: s2:PARAM(final = true )  = 7  type: Integer
+// 20: a[3]:PARAM()  = 3  type: Integer [3]
+// 21: a[2]:PARAM()  = 2  type: Integer [3]
+// 22: a[1]:PARAM()  = 1  type: Integer [3]
+// 23: s:PARAM(final = true )  = 3  type: Integer
+// 24: p2:PARAM(final = true )  = 3  type: Integer
+// 25: p1:PARAM(final = true )  = 3  type: Integer
 //
 //
 // mark: 1
@@ -301,31 +301,31 @@ system("./parameterTest7 -override p2=10,a[1]=10 -output=p1,p2,s,a[1],a[2],a[3]"
 //
 // globalKnownVars (25)
 // ========================================
-// 1: a3[10]:PARAM()  = 1  type: Integer  [10]
-// 2: a3[9]:PARAM()  = 1  type: Integer  [10]
-// 3: a3[8]:PARAM()  = 1  type: Integer  [10]
-// 4: a3[7]:PARAM()  = 1  type: Integer  [10]
-// 5: a3[6]:PARAM()  = 1  type: Integer  [10]
-// 6: a3[5]:PARAM()  = 1  type: Integer  [10]
-// 7: a3[4]:PARAM()  = 1  type: Integer  [10]
-// 8: a3[3]:PARAM()  = 1  type: Integer  [10]
-// 9: a3[2]:PARAM()  = 1  type: Integer  [10]
-// 10: a3[1]:PARAM()  = 1  type: Integer  [10]
-// 11: s3:PARAM(final = true )  = 10  type: Integer 
-// 12: a2[7]:PARAM()  = 1  type: Integer  [7]
-// 13: a2[6]:PARAM()  = 1  type: Integer  [7]
-// 14: a2[5]:PARAM()  = 1  type: Integer  [7]
-// 15: a2[4]:PARAM()  = 1  type: Integer  [7]
-// 16: a2[3]:PARAM()  = 1  type: Integer  [7]
-// 17: a2[2]:PARAM()  = 1  type: Integer  [7]
-// 18: a2[1]:PARAM()  = 1  type: Integer  [7]
-// 19: s2:PARAM(final = true )  = 7  type: Integer 
-// 20: a[3]:PARAM()  = 3  type: Integer  [3]
-// 21: a[2]:PARAM()  = 2  type: Integer  [3]
-// 22: a[1]:PARAM()  = 1  type: Integer  [3]
-// 23: s:PARAM(final = true )  = 3  type: Integer 
-// 24: p2:PARAM(final = true )  = 3  type: Integer 
-// 25: p1:PARAM(final = true )  = 3  type: Integer 
+// 1: a3[10]:PARAM()  = 1  type: Integer [10]
+// 2: a3[9]:PARAM()  = 1  type: Integer [10]
+// 3: a3[8]:PARAM()  = 1  type: Integer [10]
+// 4: a3[7]:PARAM()  = 1  type: Integer [10]
+// 5: a3[6]:PARAM()  = 1  type: Integer [10]
+// 6: a3[5]:PARAM()  = 1  type: Integer [10]
+// 7: a3[4]:PARAM()  = 1  type: Integer [10]
+// 8: a3[3]:PARAM()  = 1  type: Integer [10]
+// 9: a3[2]:PARAM()  = 1  type: Integer [10]
+// 10: a3[1]:PARAM()  = 1  type: Integer [10]
+// 11: s3:PARAM(final = true )  = 10  type: Integer
+// 12: a2[7]:PARAM()  = 1  type: Integer [7]
+// 13: a2[6]:PARAM()  = 1  type: Integer [7]
+// 14: a2[5]:PARAM()  = 1  type: Integer [7]
+// 15: a2[4]:PARAM()  = 1  type: Integer [7]
+// 16: a2[3]:PARAM()  = 1  type: Integer [7]
+// 17: a2[2]:PARAM()  = 1  type: Integer [7]
+// 18: a2[1]:PARAM()  = 1  type: Integer [7]
+// 19: s2:PARAM(final = true )  = 7  type: Integer
+// 20: a[3]:PARAM()  = 3  type: Integer [3]
+// 21: a[2]:PARAM()  = 2  type: Integer [3]
+// 22: a[1]:PARAM()  = 1  type: Integer [3]
+// 23: s:PARAM(final = true )  = 3  type: Integer
+// 24: p2:PARAM(final = true )  = 3  type: Integer
+// 25: p1:PARAM(final = true )  = 3  type: Integer
 //
 //
 // mark: 1
@@ -349,31 +349,31 @@ system("./parameterTest7 -override p2=10,a[1]=10 -output=p1,p2,s,a[1],a[2],a[3]"
 //
 // Known variables only depending on parameters and constants - globalKnownVars (25)
 // ========================================
-// 1: a3[10]:PARAM()  = 1  type: Integer  [10]
-// 2: a3[9]:PARAM()  = 1  type: Integer  [10]
-// 3: a3[8]:PARAM()  = 1  type: Integer  [10]
-// 4: a3[7]:PARAM()  = 1  type: Integer  [10]
-// 5: a3[6]:PARAM()  = 1  type: Integer  [10]
-// 6: a3[5]:PARAM()  = 1  type: Integer  [10]
-// 7: a3[4]:PARAM()  = 1  type: Integer  [10]
-// 8: a3[3]:PARAM()  = 1  type: Integer  [10]
-// 9: a3[2]:PARAM()  = 1  type: Integer  [10]
-// 10: a3[1]:PARAM()  = 1  type: Integer  [10]
-// 11: s3:PARAM(final = true )  = 10  type: Integer 
-// 12: a2[7]:PARAM()  = 1  type: Integer  [7]
-// 13: a2[6]:PARAM()  = 1  type: Integer  [7]
-// 14: a2[5]:PARAM()  = 1  type: Integer  [7]
-// 15: a2[4]:PARAM()  = 1  type: Integer  [7]
-// 16: a2[3]:PARAM()  = 1  type: Integer  [7]
-// 17: a2[2]:PARAM()  = 1  type: Integer  [7]
-// 18: a2[1]:PARAM()  = 1  type: Integer  [7]
-// 19: s2:PARAM(final = true )  = 7  type: Integer 
-// 20: a[3]:PARAM()  = 3  type: Integer  [3]
-// 21: a[2]:PARAM()  = 2  type: Integer  [3]
-// 22: a[1]:PARAM()  = 1  type: Integer  [3]
-// 23: s:PARAM(final = true )  = 3  type: Integer 
-// 24: p2:PARAM(final = true )  = 3  type: Integer 
-// 25: p1:PARAM(final = true )  = 3  type: Integer 
+// 1: a3[10]:PARAM()  = 1  type: Integer [10]
+// 2: a3[9]:PARAM()  = 1  type: Integer [10]
+// 3: a3[8]:PARAM()  = 1  type: Integer [10]
+// 4: a3[7]:PARAM()  = 1  type: Integer [10]
+// 5: a3[6]:PARAM()  = 1  type: Integer [10]
+// 6: a3[5]:PARAM()  = 1  type: Integer [10]
+// 7: a3[4]:PARAM()  = 1  type: Integer [10]
+// 8: a3[3]:PARAM()  = 1  type: Integer [10]
+// 9: a3[2]:PARAM()  = 1  type: Integer [10]
+// 10: a3[1]:PARAM()  = 1  type: Integer [10]
+// 11: s3:PARAM(final = true )  = 10  type: Integer
+// 12: a2[7]:PARAM()  = 1  type: Integer [7]
+// 13: a2[6]:PARAM()  = 1  type: Integer [7]
+// 14: a2[5]:PARAM()  = 1  type: Integer [7]
+// 15: a2[4]:PARAM()  = 1  type: Integer [7]
+// 16: a2[3]:PARAM()  = 1  type: Integer [7]
+// 17: a2[2]:PARAM()  = 1  type: Integer [7]
+// 18: a2[1]:PARAM()  = 1  type: Integer [7]
+// 19: s2:PARAM(final = true )  = 7  type: Integer
+// 20: a[3]:PARAM()  = 3  type: Integer [3]
+// 21: a[2]:PARAM()  = 2  type: Integer [3]
+// 22: a[1]:PARAM()  = 1  type: Integer [3]
+// 23: s:PARAM(final = true )  = 3  type: Integer
+// 24: p2:PARAM(final = true )  = 3  type: Integer
+// 25: p1:PARAM(final = true )  = 3  type: Integer
 //
 //
 //

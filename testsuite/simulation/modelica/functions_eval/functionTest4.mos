@@ -33,7 +33,7 @@ getErrorString();
 // 1/1 (1): c = r2.y + a   [dynamic |0|0|0|0|]
 //
 // SingleEquation: 1
-// 1: d:STATE(1,c)(fixed = true )  type: Real
+// 1: d:STATE(1,c)()  type: Real
 // 1/1 (1): der(d) = c   [dynamic |0|0|0|0|]
 //
 //

@@ -49,8 +49,8 @@ readFile("fmi_attributes_01.xml"); getErrorString();
 //     valueReference=\"1\"
 //     variability=\"continuous\"
 //     causality=\"local\"
-//     initial=\"approx\">
-//     <Real start=\"0.0\" derivative=\"1\"/>
+//     initial=\"calculated\">
+//     <Real derivative=\"1\"/>
 //   </ScalarVariable>
 //   </ModelVariables>
 // "
@@ -61,9 +61,6 @@ readFile("fmi_attributes_01.xml"); getErrorString();
 //     <Derivatives>
 //       <Unknown index=\"2\" dependencies=\"1\" dependenciesKind=\"dependent\" />
 //     </Derivatives>
-//     <InitialUnknowns>
-//       <Unknown index=\"2\" dependencies=\"1\" dependenciesKind=\"dependent\" />
-//     </InitialUnknowns>
 //   </ModelStructure>
 // "
 // ""

@@ -45,12 +45,12 @@ simulate(parameterTest4); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (6)
 // ========================================
-// 1: p4:PARAM()  = if b2 then 0.0 else p3  type: Real 
-// 2: p3:PARAM()  = if b2 then p4 else 0.0  type: Real 
-// 3: p2:PARAM()  = if b1 then 0.0 else p1  type: Real 
-// 4: p1:PARAM()  = if b1 then p2 else 0.0  type: Real 
-// 5: b2:PARAM(final = true )  = true  type: Boolean 
-// 6: b1:PARAM(final = true )  = true  type: Boolean 
+// 1: p4:PARAM()  = if b2 then 0.0 else p3  type: Real
+// 2: p3:PARAM()  = if b2 then p4 else 0.0  type: Real
+// 3: p2:PARAM()  = if b1 then 0.0 else p1  type: Real
+// 4: p1:PARAM()  = if b1 then p2 else 0.0  type: Real
+// 5: b2:PARAM(final = true )  = true  type: Boolean
+// 6: b1:PARAM(final = true )  = true  type: Boolean
 //
 //
 //
@@ -63,7 +63,7 @@ simulate(parameterTest4); getErrorString();
 // Selected parameters for evaluation:
 // 6,5
 //
-// Adjacency Matrix (row: equation)
+// Incidence Matrix (row: equation)
 // ========================================
 // number of rows: 6
 // 1: 5 2
@@ -73,7 +73,7 @@ simulate(parameterTest4); getErrorString();
 // 5:
 // 6:
 //
-// Transposed Adjacency Matrix (row: variable)
+// Transposed Incidence Matrix (row: variable)
 // ========================================
 // number of rows: 6
 // 1: 2 1
@@ -101,12 +101,12 @@ simulate(parameterTest4); getErrorString();
 //
 // globalKnownVars (6)
 // ========================================
-// 1: p4:PARAM()  = if b2 then 0.0 else p3  type: Real 
-// 2: p3:PARAM()  = if b2 then p4 else 0.0  type: Real 
-// 3: p2:PARAM()  = if b1 then 0.0 else p1  type: Real 
-// 4: p1:PARAM()  = if b1 then p2 else 0.0  type: Real 
-// 5: b2:PARAM(final = true )  = true  type: Boolean 
-// 6: b1:PARAM(final = true )  = true  type: Boolean 
+// 1: p4:PARAM()  = if b2 then 0.0 else p3  type: Real
+// 2: p3:PARAM()  = if b2 then p4 else 0.0  type: Real
+// 3: p2:PARAM()  = if b1 then 0.0 else p1  type: Real
+// 4: p1:PARAM()  = if b1 then p2 else 0.0  type: Real
+// 5: b2:PARAM(final = true )  = true  type: Boolean
+// 6: b1:PARAM(final = true )  = true  type: Boolean
 //
 //
 // mark: 1
@@ -142,12 +142,12 @@ simulate(parameterTest4); getErrorString();
 //
 // globalKnownVars (6)
 // ========================================
-// 1: p4:PARAM(final = true )  = 0.0  type: Real 
-// 2: p3:PARAM()  = p4  type: Real 
-// 3: p2:PARAM(final = true )  = 0.0  type: Real 
-// 4: p1:PARAM()  = p2  type: Real 
-// 5: b2:PARAM(final = true )  = true  type: Boolean 
-// 6: b1:PARAM(final = true )  = true  type: Boolean 
+// 1: p4:PARAM(final = true )  = 0.0  type: Real
+// 2: p3:PARAM()  = p4  type: Real
+// 3: p2:PARAM(final = true )  = 0.0  type: Real
+// 4: p1:PARAM()  = p2  type: Real
+// 5: b2:PARAM(final = true )  = true  type: Boolean
+// 6: b1:PARAM(final = true )  = true  type: Boolean
 //
 //
 // mark: 1
@@ -174,12 +174,12 @@ simulate(parameterTest4); getErrorString();
 //
 // globalKnownVars (6)
 // ========================================
-// 1: p4:PARAM(final = true )  = 0.0  type: Real 
-// 2: p3:PARAM()  = p4  type: Real 
-// 3: p2:PARAM(final = true )  = 0.0  type: Real 
-// 4: p1:PARAM()  = p2  type: Real 
-// 5: b2:PARAM(final = true )  = true  type: Boolean 
-// 6: b1:PARAM(final = true )  = true  type: Boolean 
+// 1: p4:PARAM(final = true )  = 0.0  type: Real
+// 2: p3:PARAM()  = p4  type: Real
+// 3: p2:PARAM(final = true )  = 0.0  type: Real
+// 4: p1:PARAM()  = p2  type: Real
+// 5: b2:PARAM(final = true )  = true  type: Boolean
+// 6: b1:PARAM(final = true )  = true  type: Boolean
 //
 //
 // mark: 1
@@ -203,12 +203,12 @@ simulate(parameterTest4); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (6)
 // ========================================
-// 1: p4:PARAM(final = true )  = 0.0  type: Real 
-// 2: p3:PARAM()  = p4  type: Real 
-// 3: p2:PARAM(final = true )  = 0.0  type: Real 
-// 4: p1:PARAM()  = p2  type: Real 
-// 5: b2:PARAM(final = true )  = true  type: Boolean 
-// 6: b1:PARAM(final = true )  = true  type: Boolean 
+// 1: p4:PARAM(final = true )  = 0.0  type: Real
+// 2: p3:PARAM()  = p4  type: Real
+// 3: p2:PARAM(final = true )  = 0.0  type: Real
+// 4: p1:PARAM()  = p2  type: Real
+// 5: b2:PARAM(final = true )  = true  type: Boolean
+// 6: b1:PARAM(final = true )  = true  type: Boolean
 //
 //
 //

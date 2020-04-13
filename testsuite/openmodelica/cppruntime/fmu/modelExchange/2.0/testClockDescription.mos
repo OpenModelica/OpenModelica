@@ -109,45 +109,50 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x1\"
 //     valueReference=\"0\"
 //     variability=\"discrete\"
+//     causality=\"local\"
 //     clockIndex=\"4\"
-//     >
-//     <Real/>
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"2\" -->
 //   <ScalarVariable
 //     name=\"x2\"
 //     valueReference=\"1\"
 //     variability=\"discrete\"
+//     causality=\"local\"
 //     clockIndex=\"3\"
-//     >
-//     <Real/>
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"3\" -->
 //   <ScalarVariable
 //     name=\"x3\"
 //     valueReference=\"2\"
 //     variability=\"discrete\"
+//     causality=\"local\"
 //     clockIndex=\"2\"
-//     >
-//     <Real/>
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"4\" -->
 //   <ScalarVariable
 //     name=\"x4\"
 //     valueReference=\"3\"
 //     variability=\"discrete\"
+//     causality=\"local\"
 //     clockIndex=\"1\"
-//     >
-//     <Real/>
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"5\" -->
 //   <ScalarVariable
 //     name=\"x5\"
 //     valueReference=\"4\"
 //     variability=\"discrete\"
+//     causality=\"local\"
 //     clockIndex=\"5\"
-//     >
-//     <Real/>
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
 //   </ScalarVariable>
 //   </ModelVariables>
 //   <ModelStructure>

@@ -46,7 +46,7 @@ simulate(ParameterTest16.parameterTest16); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: bar.x:VARIABLE()  type: Real 
+// 1: bar.x:VARIABLE()  type: Real
 //
 //
 // Equations (1, 1)
@@ -63,8 +63,8 @@ simulate(ParameterTest16.parameterTest16); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (2)
 // ========================================
-// 1: bar.b:PARAM(final = true )  = true  type: Boolean 
-// 2: b:PARAM()  = true  type: Boolean 
+// 1: bar.b:PARAM(final = true )  = true  type: Boolean
+// 2: b:PARAM()  = true  type: Boolean
 //
 //
 //
@@ -77,13 +77,13 @@ simulate(ParameterTest16.parameterTest16); getErrorString();
 // Selected parameters for evaluation:
 // 1
 //
-// Adjacency Matrix (row: equation)
+// Incidence Matrix (row: equation)
 // ========================================
 // number of rows: 2
 // 1:
 // 2:
 //
-// Transposed Adjacency Matrix (row: variable)
+// Transposed Incidence Matrix (row: variable)
 // ========================================
 // number of rows: 2
 // 1: 1
@@ -105,8 +105,8 @@ simulate(ParameterTest16.parameterTest16); getErrorString();
 //
 // globalKnownVars (2)
 // ========================================
-// 1: bar.b:PARAM(final = true )  = true  type: Boolean 
-// 2: b:PARAM()  = true  type: Boolean 
+// 1: bar.b:PARAM(final = true )  = true  type: Boolean
+// 2: b:PARAM()  = true  type: Boolean
 //
 //
 // mark: 1
@@ -134,8 +134,8 @@ simulate(ParameterTest16.parameterTest16); getErrorString();
 //
 // globalKnownVars (2)
 // ========================================
-// 1: bar.b:PARAM(final = true )  = true  type: Boolean 
-// 2: b:PARAM()  = true  type: Boolean 
+// 1: bar.b:PARAM(final = true )  = true  type: Boolean
+// 2: b:PARAM()  = true  type: Boolean
 //
 //
 // mark: 1
@@ -156,8 +156,8 @@ simulate(ParameterTest16.parameterTest16); getErrorString();
 //
 // globalKnownVars (2)
 // ========================================
-// 1: bar.b:PARAM(final = true )  = true  type: Boolean 
-// 2: b:PARAM()  = true  type: Boolean 
+// 1: bar.b:PARAM(final = true )  = true  type: Boolean
+// 2: b:PARAM()  = true  type: Boolean
 //
 //
 // mark: 1
@@ -174,7 +174,7 @@ simulate(ParameterTest16.parameterTest16); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: bar.x:VARIABLE()  type: Real 
+// 1: bar.x:VARIABLE()  type: Real
 //
 //
 // Equations (1, 1)
@@ -191,8 +191,8 @@ simulate(ParameterTest16.parameterTest16); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (2)
 // ========================================
-// 1: bar.b:PARAM(final = true )  = true  type: Boolean 
-// 2: b:PARAM()  = true  type: Boolean 
+// 1: bar.b:PARAM(final = true )  = true  type: Boolean
+// 2: b:PARAM()  = true  type: Boolean
 //
 //
 //

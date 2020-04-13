@@ -641,7 +641,7 @@ readFile("homotopy4_solver_system.log"); remove("homotopy4_solver_system.log");
 // |                 | |       | | | [17] Real z2(start=0, nominal=1) = 9 (pre: 0)
 // |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
 // LOG_INIT          | info    | ### END INITIALIZATION ###
-// LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The initialization finished successfully with 2 homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // true
@@ -740,7 +740,7 @@ readFile("homotopy4_solver_system.log"); remove("homotopy4_solver_system.log");
 // |                 | |       | | | [17] Real z2(start=0, nominal=1) = 9 (pre: 0)
 // |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
 // LOG_INIT          | info    | ### END INITIALIZATION ###
-// LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The initialization finished successfully with 2 homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // true
@@ -839,7 +839,7 @@ readFile("homotopy4_solver_system.log"); remove("homotopy4_solver_system.log");
 // |                 | |       | | | [17] Real z2(start=0, nominal=1) = 9 (pre: 0)
 // |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
 // LOG_INIT          | info    | ### END INITIALIZATION ###
-// LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The initialization finished successfully with 2 homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // true
@@ -938,7 +938,7 @@ readFile("homotopy4_solver_system.log"); remove("homotopy4_solver_system.log");
 // |                 | |       | | | [17] Real z2(start=0, nominal=1) = 9 (pre: 0)
 // |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
 // LOG_INIT          | info    | ### END INITIALIZATION ###
-// LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The initialization finished successfully with 2 homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // true
@@ -1037,7 +1037,7 @@ readFile("homotopy4_solver_system.log"); remove("homotopy4_solver_system.log");
 // |                 | |       | | | [17] Real z2(start=0, nominal=1) = 9 (pre: 0)
 // |                 | |       | | | [18] Real z3(start=0, nominal=1) = -1 (pre: 0)
 // LOG_INIT          | info    | ### END INITIALIZATION ###
-// LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The initialization finished successfully with 2 homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // true

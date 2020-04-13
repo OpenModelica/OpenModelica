@@ -53,9 +53,9 @@ simulate(ParameterTest11.parameterTest11); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: obj.x[3]:VARIABLE()  type: Real  [3]
-// 2: obj.x[2]:VARIABLE()  type: Real  [3]
-// 3: obj.x[1]:VARIABLE()  type: Real  [3]
+// 1: obj.x[3]:VARIABLE()  type: Real [3]
+// 2: obj.x[2]:VARIABLE()  type: Real [3]
+// 3: obj.x[1]:VARIABLE()  type: Real [3]
 //
 //
 // Equations (3, 3)
@@ -74,12 +74,12 @@ simulate(ParameterTest11.parameterTest11); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (6)
 // ========================================
-// 1: obj.b2:PARAM()  = b2  type: Boolean 
-// 2: obj.b1:PARAM(final = true )  = b1  type: Boolean 
-// 3: obj.s1:PARAM(final = true )  = s1  type: Integer 
-// 4: b2:PARAM()  = false  type: Boolean 
-// 5: b1:PARAM()  = true  type: Boolean 
-// 6: s1:PARAM(final = true )  = 3  type: Integer 
+// 1: obj.b2:PARAM()  = b2  type: Boolean
+// 2: obj.b1:PARAM(final = true )  = b1  type: Boolean
+// 3: obj.s1:PARAM(final = true )  = s1  type: Integer
+// 4: b2:PARAM()  = false  type: Boolean
+// 5: b1:PARAM()  = true  type: Boolean
+// 6: s1:PARAM(final = true )  = 3  type: Integer
 //
 //
 //
@@ -92,7 +92,7 @@ simulate(ParameterTest11.parameterTest11); getErrorString();
 // Selected parameters for evaluation:
 // 6,3,2
 //
-// Adjacency Matrix (row: equation)
+// Incidence Matrix (row: equation)
 // ========================================
 // number of rows: 6
 // 1: 4
@@ -102,7 +102,7 @@ simulate(ParameterTest11.parameterTest11); getErrorString();
 // 5:
 // 6:
 //
-// Transposed Adjacency Matrix (row: variable)
+// Transposed Incidence Matrix (row: variable)
 // ========================================
 // number of rows: 6
 // 1: 1
@@ -134,12 +134,12 @@ simulate(ParameterTest11.parameterTest11); getErrorString();
 //
 // globalKnownVars (6)
 // ========================================
-// 1: obj.b2:PARAM()  = b2  type: Boolean 
-// 2: obj.b1:PARAM(final = true )  = true  type: Boolean 
-// 3: obj.s1:PARAM(final = true )  = 3  type: Integer 
-// 4: b2:PARAM()  = false  type: Boolean 
-// 5: b1:PARAM(final = true )  = true  type: Boolean 
-// 6: s1:PARAM(final = true )  = 3  type: Integer 
+// 1: obj.b2:PARAM()  = b2  type: Boolean
+// 2: obj.b1:PARAM(final = true )  = true  type: Boolean
+// 3: obj.s1:PARAM(final = true )  = 3  type: Integer
+// 4: b2:PARAM()  = false  type: Boolean
+// 5: b1:PARAM(final = true )  = true  type: Boolean
+// 6: s1:PARAM(final = true )  = 3  type: Integer
 //
 //
 // mark: 1
@@ -177,12 +177,12 @@ simulate(ParameterTest11.parameterTest11); getErrorString();
 //
 // globalKnownVars (6)
 // ========================================
-// 1: obj.b2:PARAM()  = b2  type: Boolean 
-// 2: obj.b1:PARAM(final = true )  = true  type: Boolean 
-// 3: obj.s1:PARAM(final = true )  = 3  type: Integer 
-// 4: b2:PARAM()  = false  type: Boolean 
-// 5: b1:PARAM(final = true )  = true  type: Boolean 
-// 6: s1:PARAM(final = true )  = 3  type: Integer 
+// 1: obj.b2:PARAM()  = b2  type: Boolean
+// 2: obj.b1:PARAM(final = true )  = true  type: Boolean
+// 3: obj.s1:PARAM(final = true )  = 3  type: Integer
+// 4: b2:PARAM()  = false  type: Boolean
+// 5: b1:PARAM(final = true )  = true  type: Boolean
+// 6: s1:PARAM(final = true )  = 3  type: Integer
 //
 //
 // mark: 1
@@ -209,12 +209,12 @@ simulate(ParameterTest11.parameterTest11); getErrorString();
 //
 // globalKnownVars (6)
 // ========================================
-// 1: obj.b2:PARAM()  = b2  type: Boolean 
-// 2: obj.b1:PARAM(final = true )  = true  type: Boolean 
-// 3: obj.s1:PARAM(final = true )  = 3  type: Integer 
-// 4: b2:PARAM()  = false  type: Boolean 
-// 5: b1:PARAM(final = true )  = true  type: Boolean 
-// 6: s1:PARAM(final = true )  = 3  type: Integer 
+// 1: obj.b2:PARAM()  = b2  type: Boolean
+// 2: obj.b1:PARAM(final = true )  = true  type: Boolean
+// 3: obj.s1:PARAM(final = true )  = 3  type: Integer
+// 4: b2:PARAM()  = false  type: Boolean
+// 5: b1:PARAM(final = true )  = true  type: Boolean
+// 6: s1:PARAM(final = true )  = 3  type: Integer
 //
 //
 // mark: 1
@@ -231,9 +231,9 @@ simulate(ParameterTest11.parameterTest11); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: obj.x[3]:VARIABLE()  type: Real  [3]
-// 2: obj.x[2]:VARIABLE()  type: Real  [3]
-// 3: obj.x[1]:VARIABLE()  type: Real  [3]
+// 1: obj.x[3]:VARIABLE()  type: Real [3]
+// 2: obj.x[2]:VARIABLE()  type: Real [3]
+// 3: obj.x[1]:VARIABLE()  type: Real [3]
 //
 //
 // Equations (3, 3)
@@ -252,12 +252,12 @@ simulate(ParameterTest11.parameterTest11); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (6)
 // ========================================
-// 1: obj.b2:PARAM()  = b2  type: Boolean 
-// 2: obj.b1:PARAM(final = true )  = true  type: Boolean 
-// 3: obj.s1:PARAM(final = true )  = 3  type: Integer 
-// 4: b2:PARAM()  = false  type: Boolean 
-// 5: b1:PARAM(final = true )  = true  type: Boolean 
-// 6: s1:PARAM(final = true )  = 3  type: Integer 
+// 1: obj.b2:PARAM()  = b2  type: Boolean
+// 2: obj.b1:PARAM(final = true )  = true  type: Boolean
+// 3: obj.s1:PARAM(final = true )  = 3  type: Integer
+// 4: b2:PARAM()  = false  type: Boolean
+// 5: b1:PARAM(final = true )  = true  type: Boolean
+// 6: s1:PARAM(final = true )  = 3  type: Integer
 //
 //
 //
