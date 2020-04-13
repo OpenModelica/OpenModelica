@@ -30,6 +30,7 @@ taskGraph.log \
 debugDumps.log \
 dumpCruntime.log \
 omsic.log \
+omsicpp.log \
 optimization.log \
 xmlFiles.log \
 resolveLoops.log \
@@ -61,6 +62,7 @@ simulationexternal-functions.log \
 simulationindexreduction.log \
 simulationinheritances.log \
 simulationinlineFunction.log \
+simulationjacobian.log \
 simulationjapaneselanguage.log \
 simualtionlinear_system.log \
 simulationnonlinear_system.log \
@@ -338,6 +340,9 @@ simulationinlineFunction.log: omc-diff
 simulationinStream.log: omc-diff
 	$(MAKE) -C simulation/modelica/inStream -f Makefile test > $@
 	@echo $@ done
+simulationjacobian.log: omc-diff
+	$(MAKE) -C simulation/modelica/jacobian -f Makefile test > $@
+	@echo $@ done
 simulationjapaneselanguage.log: omc-diff
 	$(MAKE) -C simulation/modelica/japaneselanguage -f Makefile test > $@
 	@echo $@ done
@@ -552,6 +557,9 @@ dumpCruntime.log: omc-diff
 omsic.log: omc-diff
 	$(MAKE) -j1 -C openmodelica/omsi/omsic -f Makefile test  > $@
 	@echo $@ done
+omsicpp.log: omc-diff
+	$(MAKE) -j1 -C openmodelica/omsi/omsicpp -f Makefile test  > $@
+	@echo $@ done
 resolveLoops.log: omc-diff
 	$(MAKE) -C simulation/modelica/resolveLoops -f Makefile test > $@
 	@echo $@ done
@@ -651,6 +659,7 @@ clean_g_2 :
 	$(MAKE) -C openmodelica/cruntime/optimization/basic -f Makefile clean
 	$(MAKE) -C openmodelica/cruntime/xmlFiles -f Makefile clean
 	$(MAKE) -C openmodelica/omsi/omsic -f Makefile clean
+	$(MAKE) -C openmodelica/omsi/omsicpp -f Makefile clean
 	$(MAKE) -C openmodelica/debugDumps -f Makefile clean
 	$(MAKE) -C openmodelica/interactive-API -f Makefile clean
 	$(MAKE) -C openmodelica/parser -f Makefile clean

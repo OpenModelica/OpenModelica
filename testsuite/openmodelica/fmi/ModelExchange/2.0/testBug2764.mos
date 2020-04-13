@@ -91,11 +91,13 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"./util/varinfo.c\" />
 //       <File name=\"./util/ModelicaUtilities.c\" />
 //       <File name=\"./util/omc_msvc.c\" />
+//       <File name=\"./util/parallel_helper.c\" />
 //       <File name=\"./util/simulation_options.c\" />
 //       <File name=\"./util/rational.c\" />
 //       <File name=\"./util/modelica_string_lit.c\" />
 //       <File name=\"./util/omc_init.c\" />
 //       <File name=\"./util/omc_mmap.c\" />
+//       <File name=\"./util/jacobian_util.c\" />
 //       <File name=\"./math-support/pivot.c\" />
 //       <File name=\"./simulation/simulation_info_json.c\" />
 //       <File name=\"./simulation/options.c\" />
@@ -124,49 +126,40 @@ readFile("modelDescription.tmp.xml");
 //     <Category name=\"logAll\" />
 //     <Category name=\"logFmi2Call\" />
 //   </LogCategories>
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\"/>
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-006\"/>
 //   <ModelVariables>
 //   <!-- Index of variable = \"1\" -->
 //   <ScalarVariable
 //     name=\"_D_outputAlias_y1\"
 //     valueReference=\"0\"
-//     variability=\"continuous\"
-//     causality=\"local\"
-//     initial=\"calculated\">
-//     <Real/>
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"2\" -->
 //   <ScalarVariable
 //     name=\"_D_outputAlias_y2\"
 //     valueReference=\"1\"
-//     variability=\"continuous\"
-//     causality=\"local\"
-//     initial=\"calculated\">
-//     <Real/>
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"3\" -->
 //   <ScalarVariable
 //     name=\"der(_D_outputAlias_y1)\"
 //     valueReference=\"2\"
-//     variability=\"continuous\"
-//     causality=\"local\"
-//     initial=\"calculated\">
+//     >
 //     <Real derivative=\"1\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"4\" -->
 //   <ScalarVariable
 //     name=\"der(_D_outputAlias_y2)\"
 //     valueReference=\"3\"
-//     variability=\"continuous\"
-//     causality=\"local\"
-//     initial=\"calculated\">
+//     >
 //     <Real derivative=\"2\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"5\" -->
 //   <ScalarVariable
 //     name=\"u\"
 //     valueReference=\"4\"
-//     variability=\"continuous\"
 //     causality=\"input\"
 //     >
 //     <Real start=\"-2.0\"/>
@@ -175,18 +168,16 @@ readFile("modelDescription.tmp.xml");
 //   <ScalarVariable
 //     name=\"y1\"
 //     valueReference=\"5\"
-//     variability=\"continuous\"
 //     causality=\"output\"
-//     initial=\"calculated\">
+//     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"7\" -->
 //   <ScalarVariable
 //     name=\"y2\"
 //     valueReference=\"6\"
-//     variability=\"continuous\"
 //     causality=\"output\"
-//     initial=\"calculated\">
+//     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"8\" -->
@@ -195,7 +186,7 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"7\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
-//     initial=\"exact\">
+//     >
 //     <Real start=\"23.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"9\" -->
@@ -203,27 +194,15 @@ readFile("modelDescription.tmp.xml");
 //     name=\"i\"
 //     valueReference=\"0\"
 //     variability=\"discrete\"
-//     causality=\"local\"
-//     initial=\"calculated\">
-//     <Integer/>
+//     initial=\"exact\">
+//     <Integer start=\"0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"10\" -->
-//   <ScalarVariable
-//     name=\"_D_whenCondition1\"
-//     valueReference=\"0\"
-//     description=\"b\"
-//     variability=\"discrete\"
-//     causality=\"local\"
-//     initial=\"calculated\">
-//     <Boolean/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"11\" -->
 //   <ScalarVariable
 //     name=\"b\"
 //     valueReference=\"1\"
 //     variability=\"discrete\"
-//     causality=\"local\"
-//     initial=\"calculated\">
+//     >
 //     <Boolean/>
 //   </ScalarVariable>
 //   </ModelVariables>
@@ -236,6 +215,12 @@ readFile("modelDescription.tmp.xml");
 //       <Unknown index=\"3\" dependencies=\"5\" dependenciesKind=\"dependent\" />
 //       <Unknown index=\"4\" dependencies=\"1\" dependenciesKind=\"dependent\" />
 //     </Derivatives>
+//     <InitialUnknowns>
+//       <Unknown index=\"3\" dependencies=\"5 8\" dependenciesKind=\"dependent dependent\" />
+//       <Unknown index=\"4\" dependencies=\"1\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"6\" dependencies=\"1\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"7\" dependencies=\"2\" dependenciesKind=\"dependent\" />
+//     </InitialUnknowns>
 //   </ModelStructure>
 // </fmiModelDescription>
 // "

@@ -3,16 +3,17 @@ TEST = ../rtest -v
 TESTFILES = \
 DualMassOscillator_cs.mos \
 DualMassOscillator_me.mos \
-initialization.mos \
-initialization2.mos \
-outputState.mos \
-reset.mos \
 DualMassOscillator.mos \
 initialization_omc.mos \
+initialization.mos \
 initialization2_omc.mos \
+initialization2.mos \
 outputState_omc.mos \
+outputState.mos \
 reset_omc.mos \
+reset.mos \
 test03.mos \
+testDirectionalDerivatives.mos \
 
 FAILINGTESTFILES = \
 

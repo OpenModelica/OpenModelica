@@ -1,0 +1,53 @@
+// name: Ticket5696.mos
+// keywords:
+// status: correct
+//
+// Tests if you can use both -override and -overrideFile at the same time
+// teardown_command: rm -rf TestOverride* logOverride.txt override.txt
+//
+
+loadString("
+model TestOverride
+  parameter Real a = 1;
+  parameter Real b = 2;
+  parameter Real c = 3;
+  parameter Real d = 3;
+  Real x(start=a, fixed=true);
+equation
+  der(x) = b*c*d*x;
+end TestOverride;
+"); getErrorString();
+
+buildModel(TestOverride); getErrorString();
+
+writeFile("override.txt",
+"
+b=5
+c=6
+"); getErrorString();
+writeFile("logOverride.txt", ""); getErrorString();
+system("./TestOverride -override=stopTime=0,b=1 -overrideFile=override.txt -lv=LOG_ALL | grep overrid", "logOverride.txt"); getErrorString();
+readFile("logOverride.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// {"TestOverride","TestOverride_init.xml"}
+// ""
+// true
+// ""
+// true
+// ""
+// 0
+// ""
+// "LOG_SOLVER        | info    | using -override=stopTime=0,b=1 and -overrideFile=override.txt
+// LOG_SOLVER        | info    | read override values from file: override.txt
+// LOG_SOLVER        | info    | -override=stopTime=0,b=1
+// LOG_SOLVER        | info    | -overrideFile=b=5,c=6
+// stdout            | warning | You are overriding variable: b=1 again with b=5.
+// LOG_SOLVER        | info    | override b = 5
+// LOG_SOLVER        | info    | override c = 6
+// LOG_SOLVER        | info    | override done!
+// "
+// ""
+// endResult

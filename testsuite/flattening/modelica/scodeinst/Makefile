@@ -54,6 +54,7 @@ BuiltinAttribute16.mo \
 BuiltinAttribute17.mo \
 BuiltinAttribute18.mo \
 BuiltinAttribute19.mo \
+BuiltinAttribute20.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 BuiltinTimeSubscripted.mo \
@@ -110,6 +111,7 @@ CevalFuncRecord2.mo \
 CevalFuncRecord3.mo \
 CevalFuncRecord4.mo \
 CevalFuncRecord5.mo \
+CevalFuncRecord6.mo \
 CevalFuncRecursive1.mo \
 CevalFuncRecursive2.mo \
 CevalFuncSubscript1.mo \
@@ -711,9 +713,9 @@ RecordBinding5.mo \
 RecordBinding6.mo \
 RecordBinding7.mo \
 RecordConstructor1.mo \
-RecordConstructor2.mo \
 RecordExtends1.mo \
 RecordExtends2.mo \
+RecordUnknownDim1.mo \
 RecursiveExtends1.mo \
 RecursiveExtends3.mo \
 RecursiveInst1.mo \
@@ -789,6 +791,7 @@ StatementInvalidType1.mo \
 StateSelectVariability1.mo \
 StateSelect1.mo \
 StateSelect2.mo \
+StateSelect3.mo \
 Subscript1.mo \
 Subscript2.mo \
 Subscript3.mo \
@@ -812,6 +815,7 @@ TerminateInvalid1.mo \
 TerminateInvalid2.mo \
 TestSampleNoClock.mos \
 Ticket5249.mo \
+Ticket5821.mo \
 Time1.mo \
 Time2.mo \
 Time3.mo \
@@ -878,6 +882,7 @@ OCGTests.mos \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+RecordConstructor2.mo \
 FinalParameter1.mo \
 FinalParameter2.mo \
 FinalParameter3.mo \

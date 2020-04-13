@@ -99,11 +99,17 @@ readFile("Bug5670.xml"); getErrorString();
 // ""
 // "  <ModelStructure>
 //     <Outputs>
+//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"3\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"4\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"6\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"8\" dependencies=\"\" dependenciesKind=\"\" />
 //     </Outputs>
+//     <InitialUnknowns>
+//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"3\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"4\" dependencies=\"\" dependenciesKind=\"\" />
+//     </InitialUnknowns>
 //   </ModelStructure>
 // "
 // ""

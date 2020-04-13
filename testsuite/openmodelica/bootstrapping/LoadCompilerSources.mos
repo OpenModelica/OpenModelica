@@ -15,7 +15,6 @@ if true then /* Suppress output */
     prefixPath + "FrontEnd/ClassInf.mo",
     prefixPath + "FrontEnd/ClassLoader.mo",
     prefixPath + "FrontEnd/ComponentReference.mo",
-    prefixPath + "FrontEnd/Connect.mo",
     prefixPath + "FrontEnd/ConnectionGraph.mo",
     prefixPath + "FrontEnd/ConnectUtil.mo",
     prefixPath + "FrontEnd/Constants.mo",

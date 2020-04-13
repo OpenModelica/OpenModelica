@@ -44,58 +44,6 @@ runScript(modelTesting);getErrorString();
 //
 // Files Equal!
 // Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
-// Warning: The linear system:
-// 1 : fixedTranslationOfConstraint.frame_b.R.T[1,3] = (-0.1411940808771254) * freeMotionScalarInit.initAngle.R_rel.T[1,1] + 0.8130157214783864 * freeMotionScalarInit.initAngle.R_rel.T[1,2] + 0.5648625214636235 * freeMotionScalarInit.initAngle.R_rel.T[1,3]
-// 2 : 0.0 = 0.8191520442889918 * fixedTranslationOfConstraint.frame_b.R.T[1,1] + (-0.09960050292505122) * fixedTranslationOfConstraint.frame_b.R.T[1,2] + 0.5648625214636235 * fixedTranslationOfConstraint.frame_b.R.T[1,3]
-// 3 : fixedTranslationOfConstraint.frame_b.R.T[1,1] = 0.2148655148851041 * freeMotionScalarInit.initAngle.R_rel.T[1,1] + (-0.5318108111446446) * freeMotionScalarInit.initAngle.R_rel.T[1,2] + 0.8191520442889918 * freeMotionScalarInit.initAngle.R_rel.T[1,3]
-// 4 : fixedTranslationOfConstraint.frame_b.R.T[1,2] = 0.9663834860128886 * freeMotionScalarInit.initAngle.R_rel.T[1,1] + 0.2370288965055821 * freeMotionScalarInit.initAngle.R_rel.T[1,2] + (-0.09960050292505122) * freeMotionScalarInit.initAngle.R_rel.T[1,3]
-// [
-//   0.0 , -0.8130157214783864 , 0.0 , 1.0 ;
-//   0.09960050292505122 , 0.0 , -0.8191520442889918 , -0.5648625214636235 ;
-//   0.0 , 0.5318108111446446 , 1.0 , 0.0 ;
-//   1.0 , -0.2370288965055821 , 0.0 , 0.0
-// ]
-//   *
-// [
-//   fixedTranslationOfConstraint.frame_b.R.T[1,2] ;
-//   freeMotionScalarInit.initAngle.R_rel.T[1,2] ;
-//   fixedTranslationOfConstraint.frame_b.R.T[1,1] ;
-//   fixedTranslationOfConstraint.frame_b.R.T[1,3]
-// ]
-//   =
-// [
-//   (-0.1411940808771254) * freeMotionScalarInit.initAngle.R_rel.T[1,1] + 0.5648625214636235 * freeMotionScalarInit.initAngle.R_rel.T[1,3] ;
-//   -0.0 ;
-//   0.2148655148851041 * freeMotionScalarInit.initAngle.R_rel.T[1,1] + 0.8191520442889918 * freeMotionScalarInit.initAngle.R_rel.T[1,3] ;
-//   0.9663834860128886 * freeMotionScalarInit.initAngle.R_rel.T[1,1] + (-0.09960050292505122) * freeMotionScalarInit.initAngle.R_rel.T[1,3]
-// ]
-//  might be structurally or numerically singular for variable fixedTranslationOfConstraint.frame_b.R.T[1,3] since U(4,4) = 0.0. It might be hard to solve. Compilation continues anyway.
-// Warning: The linear system:
-// 1 : fixedTranslationOfConstraint.frame_b.R.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,3] = (-0.1411940808771254) * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,1] + 0.8130157214783864 * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,2] + 0.5648625214636235 * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,3]
-// 2 : 0.0 = 0.8191520442889918 * fixedTranslationOfConstraint.frame_b.R.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,1] + (-0.09960050292505122) * fixedTranslationOfConstraint.frame_b.R.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,2] + 0.5648625214636235 * fixedTranslationOfConstraint.frame_b.R.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,3]
-// 3 : fixedTranslationOfConstraint.frame_b.R.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,1] = 0.2148655148851041 * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,1] + (-0.5318108111446446) * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,2] + 0.8191520442889918 * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,3]
-// 4 : fixedTranslationOfConstraint.frame_b.R.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,2] = 0.9663834860128886 * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,1] + 0.2370288965055821 * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,2] + (-0.09960050292505122) * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,3]
-// [
-//   0.0 , -0.8130157214783864 , 0.0 , 1.0 ;
-//   0.09960050292505122 , 0.0 , -0.8191520442889918 , -0.5648625214636235 ;
-//   0.0 , 0.5318108111446446 , 1.0 , 0.0 ;
-//   1.0 , -0.2370288965055821 , 0.0 , 0.0
-// ]
-//   *
-// [
-//   fixedTranslationOfConstraint.frame_b.R.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,2] ;
-//   freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,2] ;
-//   fixedTranslationOfConstraint.frame_b.R.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,1] ;
-//   fixedTranslationOfConstraint.frame_b.R.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,3]
-// ]
-//   =
-// [
-//   (-0.1411940808771254) * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,1] + 0.5648625214636235 * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,3] ;
-//   -0.0 ;
-//   0.2148655148851041 * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,1] + 0.8191520442889918 * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,3] ;
-//   0.9663834860128886 * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,1] + (-0.09960050292505122) * freeMotionScalarInit.initAngle.R_rel.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,3]
-// ]
-//  might be structurally or numerically singular for variable fixedTranslationOfConstraint.frame_b.R.T.$pDERStateSetJac0.dummyVarStateSetJac0[1,3] since U(4,4) = 0.0. It might be hard to solve. Compilation continues anyway.
 //
 // "true
 // "

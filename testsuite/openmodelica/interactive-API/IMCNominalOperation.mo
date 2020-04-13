@@ -104,6 +104,7 @@ package IMCNominalOperation
       annotation (Placement(transformation(extent={{-10,-50},{10,-30}})));
     Modelica.Magnetic.QuasiStatic.FundamentalWave.BasicMachines.InductionMachines.IM_SquirrelCage
       imc(
+      inertiaRotor(w(start=wNominal)),
       m=m,
       Jr=Jr,
       useSupport=false,

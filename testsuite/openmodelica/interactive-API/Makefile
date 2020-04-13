@@ -18,6 +18,7 @@ Bug3979.mos \
 Bug4209.mos \
 Bug4248.mos \
 ConvertUnits.mos \
+ConversionVersions.mos \
 CopyClass.mos \
 choicesAllMatching.mos \
 DefaultComponentName.mos \
@@ -81,9 +82,9 @@ Ticket5548.mos \
 Ticket5571.mos \
 Ticket5565.mos \
 Ticket5680.mos \
+Ticket5696.mos \
 Ticket5871.mos \
 ReadOnlyPkg.mos
-
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

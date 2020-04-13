@@ -1,0 +1,73 @@
+// name: fmi_attributes_03.mos
+// status: correct
+// teardown_command: rm -rf fmi_attributes_03.fmu fmi_attributes_03.log fmi_attributes_03.xml fmi_attributes_03_tmp.xml fmi_attributes_03.fmutmp/
+
+loadString("
+model fmi_attributes_03
+  Real x(fixed=true, start=x_start);
+  parameter Real x_start = 1.0;
+equation
+  der(x) = 0.0;
+end fmi_attributes_03;
+"); getErrorString();
+
+translateModelFMU(fmi_attributes_03); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq fmi_attributes_03.fmu modelDescription.xml > fmi_attributes_03_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi_attributes_03_tmp.xml > fmi_attributes_03.xml"); getErrorString();
+readFile("fmi_attributes_03.xml"); getErrorString();
+
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi_attributes_03_tmp.xml > fmi_attributes_03.xml"); getErrorString();
+readFile("fmi_attributes_03.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// "fmi_attributes_03.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"x\"
+//     valueReference=\"0\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"der(x)\"
+//     valueReference=\"1\"
+//     >
+//     <Real derivative=\"1\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"x_start\"
+//     valueReference=\"2\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     >
+//     <Real start=\"1.0\"/>
+//   </ScalarVariable>
+//   </ModelVariables>
+// "
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <Derivatives>
+//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//     </Derivatives>
+//     <InitialUnknowns>
+//       <Unknown index=\"1\" dependencies=\"3\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//     </InitialUnknowns>
+//   </ModelStructure>
+// "
+// ""
+// endResult

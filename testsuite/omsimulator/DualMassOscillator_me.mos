@@ -43,7 +43,7 @@ oms_terminate(\"DualMassOscillator\")
 oms_delete(\"DualMassOscillator\")
 "); getErrorString();
 
-system(getInstallationDirectoryPath() + "/bin/OMSimulator --ignoreInitialUnknowns=true DualMassOscillator_me.lua", "DualMassOscillator_me_systemCall.log");
+system(getInstallationDirectoryPath() + "/bin/OMSimulator DualMassOscillator_me.lua", "DualMassOscillator_me_systemCall.log");
 readFile("DualMassOscillator_me_systemCall.log");
 
 

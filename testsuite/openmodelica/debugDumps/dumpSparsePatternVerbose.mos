@@ -227,7 +227,7 @@ buildModel(testDumpSparsePatternVerbose); getErrorString();
 // 97/97 (1): 0.0 = 2.0 * x[98] + 0.5 * (0.009900990099009901 * (1.97029702970297 + x[98])) ^ 2.0 + (-x[99]) - x[97]    [dynamic]
 // 98/98 (1): 0.0 = 2.0 * x[99] + 0.5 * (0.009900990099009901 * (1.98019801980198 + x[99])) ^ 2.0 - x[98]    [dynamic]
 //
-// Incidence Matrix (row: equation)
+// Adjacency Matrix (row: equation)
 // ========================================
 // number of rows: 98
 // 1: 3 2 1
@@ -329,7 +329,7 @@ buildModel(testDumpSparsePatternVerbose); getErrorString();
 // 97: 97 99 98
 // 98: 98 99
 //
-// Transposed Incidence Matrix (row: variable)
+// Transposed Adjacency Matrix (row: variable)
 // ========================================
 // number of rows: 99
 // 1: 1
@@ -1044,7 +1044,7 @@ buildModel(testDumpSparsePatternVerbose); getErrorString();
 // 98/98 (1): 0.0 = 2.0 * x[3] + 0.5 * (0.009900990099009901 * (1.02970297029703 + x[3])) ^ 2.0 + (-x[4]) - x[2]    [dynamic]
 // 99/99 (1): 0.0 = 2.0 * x[2] + 0.5 * (0.009900990099009901 * (1.01980198019802 + x[2])) ^ 2.0 - x[3]    [dynamic]
 //
-// Incidence Matrix (row: equation)
+// Adjacency Matrix (row: equation)
 // ========================================
 // number of rows: 99
 // 1: 99
@@ -1147,7 +1147,7 @@ buildModel(testDumpSparsePatternVerbose); getErrorString();
 // 98: 98 96 97
 // 99: 97 98
 //
-// Transposed Incidence Matrix (row: variable)
+// Transposed Adjacency Matrix (row: variable)
 // ========================================
 // number of rows: 100
 // 1: 3 2
@@ -1768,7 +1768,7 @@ buildModel(testDumpSparsePatternVerbose); getErrorString();
 // 97/97 (1): 0.0 = 2.0 * x[3] + 0.5 * (0.009900990099009901 * (1.02970297029703 + x[3])) ^ 2.0 + (-x[4]) - x[2]    [dynamic]
 // 98/98 (1): 0.0 = 2.0 * x[2] + 0.5 * (0.009900990099009901 * (1.01980198019802 + x[2])) ^ 2.0 - x[3]    [dynamic]
 //
-// Incidence Matrix (row: equation)
+// Adjacency Matrix (row: equation)
 // ========================================
 // number of rows: 98
 // 1: 3 2 1
@@ -1870,7 +1870,7 @@ buildModel(testDumpSparsePatternVerbose); getErrorString();
 // 97: 99 97 98
 // 98: 98 99
 //
-// Transposed Incidence Matrix (row: variable)
+// Transposed Adjacency Matrix (row: variable)
 // ========================================
 // number of rows: 99
 // 1: 1

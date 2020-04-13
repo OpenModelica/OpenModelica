@@ -36,8 +36,8 @@ simulate(CSE.wrapFunctionCalls11); getErrorString();
 //
 // ########### Updated Variable List (jacobian) (2)
 // ========================================
-// 1: $res1.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real  unreplaceable
-// 2: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
+// 1: $res1.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real unreplaceable
+// 2: $cse1:VARIABLE(protected = true )  type: Real unreplaceable
 //
 //
 // ########### Updated Equation List (jacobian) (2, 2)
@@ -48,8 +48,8 @@ simulate(CSE.wrapFunctionCalls11); getErrorString();
 //
 // ########### Updated globalKnownVars (jacobian) (2)
 // ========================================
-// 1: input y.SeedNLSJac0:STATE_DER()  type: Real  unreplaceable
-// 2: input $res1:VARIABLE()  type: Real
+// 1: $res1:VARIABLE()  type: Real
+// 2: input y.SeedNLSJac0:STATE_DER()  type: Real unreplaceable
 //
 //
 // ########### CSE Replacements (1/43)
@@ -64,7 +64,7 @@ simulate(CSE.wrapFunctionCalls11); getErrorString();
 //
 // ########### Updated Variable List (simulation) (1)
 // ========================================
-// 1: y:VARIABLE()  type: Real 
+// 1: y:VARIABLE()  type: Real
 //
 //
 // ########### Updated Equation List (simulation) (1, 1)
@@ -74,12 +74,12 @@ simulate(CSE.wrapFunctionCalls11); getErrorString();
 //
 // ########### Updated globalKnownVars (simulation) (6)
 // ========================================
-// 1: z:VARIABLE(fixed = true )  = 2.0 * p1  type: Real 
-// 2: c:VARIABLE(fixed = true )  = 2.0 * p1  type: Real 
-// 3: p1:PARAM()  = 5.0  type: Real 
-// 4: b:VARIABLE(fixed = true )  = cos(c)  type: Real 
-// 5: a:VARIABLE(fixed = true )  = sin(b)  type: Real 
-// 6: x:VARIABLE(fixed = true )  = cos(z)  type: Real 
+// 1: z:VARIABLE(fixed = true )  = 2.0 * p1  type: Real
+// 2: c:VARIABLE(fixed = true )  = 2.0 * p1  type: Real
+// 3: p1:PARAM()  = 5.0  type: Real
+// 4: b:VARIABLE(fixed = true )  = cos(c)  type: Real
+// 5: a:VARIABLE(fixed = true )  = sin(b)  type: Real
+// 6: x:VARIABLE(fixed = true )  = cos(z)  type: Real
 //
 //
 // ########### CSE Replacements (4/46)
@@ -97,8 +97,8 @@ simulate(CSE.wrapFunctionCalls11); getErrorString();
 //
 // ########### Updated Variable List (jacobian) (2)
 // ========================================
-// 1: $res1.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real  unreplaceable
-// 2: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
+// 1: $res1.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real unreplaceable
+// 2: $cse2:VARIABLE(protected = true )  type: Real unreplaceable
 //
 //
 // ########### Updated Equation List (jacobian) (2, 2)
@@ -109,9 +109,9 @@ simulate(CSE.wrapFunctionCalls11); getErrorString();
 //
 // ########### Updated globalKnownVars (jacobian) (3)
 // ========================================
-// 1: input y.SeedNLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: input x:VARIABLE(fixed = true )  = cos(z)  type: Real 
-// 3: input $res1:VARIABLE()  type: Real 
+// 1: x:VARIABLE(fixed = true )  = cos(z)  type: Real
+// 2: $res1:VARIABLE()  type: Real
+// 3: input y.SeedNLSJac1:STATE_DER()  type: Real unreplaceable
 //
 //
 // ########### CSE Replacements (1/43)

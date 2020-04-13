@@ -4,7 +4,18 @@ TESTFILES = \
 BooleanNetwork1.mos \
 BouncingBall.mos \
 EnumerationTest.mos \
+fmi_attributes_01.mos \
+fmi_attributes_02.mos \
+fmi_attributes_03.mos \
+fmi_attributes_04.mos \
+fmi_attributes_05.mos \
+fmi_attributes_06.mos \
+fmi_attributes_07.mos \
+fmi_attributes_08.mos \
+fmi_attributes_09.mos \
+fmi_attributes_10.mos \
 FMIExercise.mos \
+FMUResourceTest.mos \
 HelloFMIWorld.mos \
 HelloFMIWorldEvent.mos \
 IntegerNetwork1.mos \
@@ -13,24 +24,25 @@ Modelica.Blocks.Sources.BooleanPulse.mos \
 Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
 testAssert.mos \
 testBug2764.mos \
+testBug2765.mos \
 testBug3034.mos \
 testBug3049.mos \
 testBug3763.mos \
 testBug3846.mos \
+testBug5673.mos \
 testChangeParam.mos \
 testDisableDep.mos \
 testDiscreteStructe.mos \
 testInitialEquationsFMI.mos \
 TestSourceCodeFMU.mos \
-ZeroStates.mos \
 ticket5670.mos \
-testBug5673.mos \
+ZeroStates.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES= \
 Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.mos \
-testExperimentalFMU.mos
+testExperimentalFMU.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
@@ -38,8 +50,6 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile \
-
-
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 

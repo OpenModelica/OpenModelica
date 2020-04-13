@@ -11,40 +11,15 @@ buildModelFMU(DualMassOscillator.System2, version="2.0", fmuType="me_cs", fileNa
 
 echo(false);
 
-loadString("
-function printStatus
-  input Integer status;
-  input Integer expected;
-protected
-  String outstatus;
-  String cmp=\" \";
-algorithm
-  if (status==expected) then
-    cmp := \"correct\";
-  else
-    cmp := \"wrong\";
-  end if;
-  if 0 == status then
-    outstatus := \" ok\";
-  elseif 1 == status then
-    outstatus := \" warning\";
-  elseif 3 == status then
-    outstatus := \" error\";
-  end if;
-  print(\"status:  [\" + cmp  + \"]\" + outstatus);
-  print(\"\n\");
-end printStatus;");
-
 loadOMSimulator();
-oms_setCommandLineOption("--suppressPath=true --ignoreInitialUnknowns=true");
-status:=oms_setTempDirectory("./temp_dualmassoscillator/");
+oms_setCommandLineOption("--suppressPath=true");
+oms_setTempDirectory("./temp_dualmassoscillator/");
+
 oms_newModel("DualMassOscillator");
-//oms_addSystem("DualMassOscillator.root", "oms_system_sc");
 oms_addSystem("DualMassOscillator.root", OpenModelica.Scripting.oms_system.oms_system_sc);
 
 //instantiate FMUs
 oms_addSubModel("DualMassOscillator.root.system1", "DualMassOscillator.System1.fmu");
-
 oms_addSubModel("DualMassOscillator.root.system2", "DualMassOscillator.System2.fmu");
 
 //add connections
@@ -67,6 +42,7 @@ oms_initialize("DualMassOscillator");
 print("info:    Initialization\n");
 print("info:      system1.s1: " + realString(v1)+"\n");
 print("info:      system2.s2: " + realString(v2)+"\n");
+
 oms_simulate("DualMassOscillator");
 (v1,_):=oms_getReal("DualMassOscillator.root.system1.s1");
 (v2,_):=oms_getReal("DualMassOscillator.root.system2.s2");
@@ -77,8 +53,6 @@ print("info:      system2.s2: " + realString(v2)+"\n");
 oms_terminate("DualMassOscillator");
 oms_delete("DualMassOscillator");
 unloadOMSimulator();
-
-
 
 // Result:
 // true

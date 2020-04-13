@@ -106,7 +106,7 @@ simulate(parameterTest9); getErrorString();
 // Selected parameters for evaluation:
 // 26,23,19,11
 //
-// Incidence Matrix (row: equation)
+// Adjacency Matrix (row: equation)
 // ========================================
 // number of rows: 26
 // 1:
@@ -136,7 +136,7 @@ simulate(parameterTest9); getErrorString();
 // 25: 24
 // 26:
 //
-// Transposed Incidence Matrix (row: variable)
+// Transposed Adjacency Matrix (row: variable)
 // ========================================
 // number of rows: 26
 // 1: 1

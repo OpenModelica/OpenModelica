@@ -6,12 +6,11 @@
 //
 
 loadModel(Modelica, {"3.2.2"}); getErrorString();
-
 loadFile("./IMCNominalOperation.mo"); getErrorString();
 
 getComponentAnnotations(Modelica.Magnetic.QuasiStatic.FundamentalWave.BasicMachines.BaseClasses.PartialBasicMachine); getErrorString();
 
-simulate(IMCNominalOperation.NominalOperation);
+simulate(IMCNominalOperation.NominalOperation); getErrorString();
 
 val(powerSensor.y.re, 0.001);
 val(imc.powerBalance.powerStator, 0.001);
@@ -26,11 +25,13 @@ val(imc.powerBalance.powerStator, 0.001);
 // ""
 // record SimulationResult
 //     resultFile = "IMCNominalOperation.NominalOperation_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 10000, tolerance = 1e-005, method = 'dassl', fileNamePrefix = 'IMCNominalOperation.NominalOperation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 10000, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'IMCNominalOperation.NominalOperation', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// 25149.45842709194
-// 25149.45842709194
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 25149.45842709193
+// 25149.45842709193
 // endResult

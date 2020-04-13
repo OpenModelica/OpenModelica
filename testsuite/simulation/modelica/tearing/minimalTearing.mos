@@ -28,8 +28,7 @@ diffPrefix = "diff", vars = {"Inductor3.i","Capacitor1.v","Capacitor2.v"}); getE
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: Minimal Tearing is ignoring tearingSelect annotation for discrete variables.
-// "
+// ""
 // (true,{})
 // ""
 // endResult

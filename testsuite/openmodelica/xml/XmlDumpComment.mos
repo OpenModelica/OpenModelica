@@ -1496,7 +1496,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // <stateSelect>
 // Prefer
 // </stateSelect>
-// <nominal string=\"if damper.phi_nominal &gt;= 1e-015 then damper.phi_nominal else 1.0\">
+// <nominal string=\"if damper.phi_nominal &gt;= 1e-15 then damper.phi_nominal else 1.0\">
 // </nominal>
 // <initialValue string=\"0.0\">
 // </initialValue>
@@ -1519,6 +1519,9 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </quantity>
 // <unit string=\"&quot;rad/s&quot;\">
 // </unit>
+// <stateSelect>
+// Never
+// </stateSelect>
 // </attributesValues>
 // </variable>
 // <variable id=\"81\" name=\"rev.R_rel.w[2]\" variability=\"continuousDummyState\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute angular velocity of local frame, resolved in local frame\">
@@ -1538,6 +1541,9 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </quantity>
 // <unit string=\"&quot;rad/s&quot;\">
 // </unit>
+// <stateSelect>
+// Never
+// </stateSelect>
 // </attributesValues>
 // </variable>
 // <variable id=\"82\" name=\"rev.R_rel.w[1]\" variability=\"continuousDummyState\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute angular velocity of local frame, resolved in local frame\">
@@ -1557,6 +1563,9 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </quantity>
 // <unit string=\"&quot;rad/s&quot;\">
 // </unit>
+// <stateSelect>
+// Never
+// </stateSelect>
 // </attributesValues>
 // </variable>
 // <variable id=\"83\" name=\"rev.tau\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Driving torque in direction of axis of rotation\">
@@ -1869,49 +1878,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </unit>
 // </attributesValues>
 // </variable>
-// <variable id=\"99\" name=\"$DER.body.w_a[1]\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute angular velocity of frame_a resolved in frame_a\">
-// <classesNames>
-// <element>
-// Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum
-// </element>
-// <element>
-// Modelica.Mechanics.MultiBody.Parts.Body$body
-// </element>
-// </classesNames>
-// <attributesValues>
-// <fixed string=\"false\">
-// </fixed>
-// </attributesValues>
-// </variable>
-// <variable id=\"100\" name=\"$DER.body.w_a[2]\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute angular velocity of frame_a resolved in frame_a\">
-// <classesNames>
-// <element>
-// Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum
-// </element>
-// <element>
-// Modelica.Mechanics.MultiBody.Parts.Body$body
-// </element>
-// </classesNames>
-// <attributesValues>
-// <fixed string=\"false\">
-// </fixed>
-// </attributesValues>
-// </variable>
-// <variable id=\"101\" name=\"$DER.body.w_a[3]\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute angular velocity of frame_a resolved in frame_a\">
-// <classesNames>
-// <element>
-// Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum
-// </element>
-// <element>
-// Modelica.Mechanics.MultiBody.Parts.Body$body
-// </element>
-// </classesNames>
-// <attributesValues>
-// <fixed string=\"false\">
-// </fixed>
-// </attributesValues>
-// </variable>
-// <variable id=\"102\" name=\"$DER.rev.R_rel.w[1]\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute angular velocity of local frame, resolved in local frame\">
+// <variable id=\"99\" name=\"$DER.rev.R_rel.w[1]\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute angular velocity of local frame, resolved in local frame\">
 // <classesNames>
 // <element>
 // Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum
@@ -1928,7 +1895,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </fixed>
 // </attributesValues>
 // </variable>
-// <variable id=\"103\" name=\"$DER.rev.R_rel.w[2]\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute angular velocity of local frame, resolved in local frame\">
+// <variable id=\"100\" name=\"$DER.rev.R_rel.w[2]\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute angular velocity of local frame, resolved in local frame\">
 // <classesNames>
 // <element>
 // Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum
@@ -1945,7 +1912,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </fixed>
 // </attributesValues>
 // </variable>
-// <variable id=\"104\" name=\"$DER.rev.R_rel.w[3]\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute angular velocity of local frame, resolved in local frame\">
+// <variable id=\"101\" name=\"$DER.rev.R_rel.w[3]\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute angular velocity of local frame, resolved in local frame\">
 // <classesNames>
 // <element>
 // Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum
@@ -1955,6 +1922,48 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </element>
 // <element>
 // Modelica.Mechanics.MultiBody.Frames.Orientation
+// </element>
+// </classesNames>
+// <attributesValues>
+// <fixed string=\"false\">
+// </fixed>
+// </attributesValues>
+// </variable>
+// <variable id=\"102\" name=\"$DER.body.w_a[1]\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute angular velocity of frame_a resolved in frame_a\">
+// <classesNames>
+// <element>
+// Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum
+// </element>
+// <element>
+// Modelica.Mechanics.MultiBody.Parts.Body$body
+// </element>
+// </classesNames>
+// <attributesValues>
+// <fixed string=\"false\">
+// </fixed>
+// </attributesValues>
+// </variable>
+// <variable id=\"103\" name=\"$DER.body.w_a[2]\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute angular velocity of frame_a resolved in frame_a\">
+// <classesNames>
+// <element>
+// Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum
+// </element>
+// <element>
+// Modelica.Mechanics.MultiBody.Parts.Body$body
+// </element>
+// </classesNames>
+// <attributesValues>
+// <fixed string=\"false\">
+// </fixed>
+// </attributesValues>
+// </variable>
+// <variable id=\"104\" name=\"$DER.body.w_a[3]\" variability=\"continuousDummyDer\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Absolute angular velocity of frame_a resolved in frame_a\">
+// <classesNames>
+// <element>
+// Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum
+// </element>
+// <element>
+// Modelica.Mechanics.MultiBody.Parts.Body$body
 // </element>
 // </classesNames>
 // <attributesValues>
@@ -10653,7 +10662,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </attributesValues>
 // </variable>
 // <variable id=\"440\" name=\"body.g_0[2]\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Gravity acceleration resolved in world frame\">
-// <bindExpression string=\"-9.810000000000001\">
+// <bindExpression string=\"-9.81\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -11064,7 +11073,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </attributesValues>
 // </variable>
 // <variable id=\"463\" name=\"world.g\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Constant gravity acceleration\">
-// <bindExpression string=\"9.810000000000001\">
+// <bindExpression string=\"9.81\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -12512,7 +12521,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </quantity>
 // <unit string=\"&quot;kg.m2&quot;\">
 // </unit>
-// <minValue string=\"-1e+060\">
+// <minValue string=\"-9.999999999999999e+59\">
 // </minValue>
 // </attributesValues>
 // </variable>
@@ -12532,7 +12541,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </quantity>
 // <unit string=\"&quot;kg.m2&quot;\">
 // </unit>
-// <minValue string=\"-1e+060\">
+// <minValue string=\"-9.999999999999999e+59\">
 // </minValue>
 // </attributesValues>
 // </variable>
@@ -12552,7 +12561,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </quantity>
 // <unit string=\"&quot;kg.m2&quot;\">
 // </unit>
-// <minValue string=\"-1e+060\">
+// <minValue string=\"-9.999999999999999e+59\">
 // </minValue>
 // </attributesValues>
 // </variable>
@@ -21507,11 +21516,11 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </equation>
 // <equation id=\"68\">body.z_a[3] = $DER.body.w_a[3]
 // </equation>
-// <equation id=\"69\">-rev.frame_b.f[1] = (9.810000000000001 * body.frame_a.R.T[1,2] + body.z_a[2] * body.r_CM[3] + body.w_a[2] * (body.w_a[1] * body.r_CM[2] - body.w_a[2] * body.r_CM[1]) + body.w_a[3] * (body.w_a[1] * body.r_CM[3] - body.w_a[3] * body.r_CM[1]) - body.z_a[3] * body.r_CM[2]) * body.m
+// <equation id=\"69\">-rev.frame_b.f[1] = (9.81 * body.frame_a.R.T[1,2] + body.z_a[2] * body.r_CM[3] + body.w_a[2] * (body.w_a[1] * body.r_CM[2] - body.w_a[2] * body.r_CM[1]) + body.w_a[3] * (body.w_a[1] * body.r_CM[3] - body.w_a[3] * body.r_CM[1]) - body.z_a[3] * body.r_CM[2]) * body.m
 // </equation>
-// <equation id=\"70\">-rev.frame_b.f[2] = (9.810000000000001 * body.frame_a.R.T[2,2] + body.z_a[3] * body.r_CM[1] + body.w_a[3] * (body.w_a[2] * body.r_CM[3] - body.w_a[3] * body.r_CM[2]) + body.w_a[1] * (body.w_a[2] * body.r_CM[1] - body.w_a[1] * body.r_CM[2]) - body.z_a[1] * body.r_CM[3]) * body.m
+// <equation id=\"70\">-rev.frame_b.f[2] = (9.81 * body.frame_a.R.T[2,2] + body.z_a[3] * body.r_CM[1] + body.w_a[3] * (body.w_a[2] * body.r_CM[3] - body.w_a[3] * body.r_CM[2]) + body.w_a[1] * (body.w_a[2] * body.r_CM[1] - body.w_a[1] * body.r_CM[2]) - body.z_a[1] * body.r_CM[3]) * body.m
 // </equation>
-// <equation id=\"71\">-rev.frame_b.f[3] = (9.810000000000001 * body.frame_a.R.T[3,2] + body.z_a[1] * body.r_CM[2] + body.w_a[1] * (body.w_a[3] * body.r_CM[1] - body.w_a[1] * body.r_CM[3]) + body.w_a[2] * (body.w_a[3] * body.r_CM[2] - body.w_a[2] * body.r_CM[3]) - body.z_a[2] * body.r_CM[1]) * body.m
+// <equation id=\"71\">-rev.frame_b.f[3] = (9.81 * body.frame_a.R.T[3,2] + body.z_a[1] * body.r_CM[2] + body.w_a[1] * (body.w_a[3] * body.r_CM[1] - body.w_a[1] * body.r_CM[3]) + body.w_a[2] * (body.w_a[3] * body.r_CM[2] - body.w_a[2] * body.r_CM[3]) - body.z_a[2] * body.r_CM[1]) * body.m
 // </equation>
 // <equation id=\"72\">-rev.frame_b.t[1] = body.I[1,1] * body.z_a[1] + body.I[1,2] * body.z_a[2] + body.I[1,3] * body.z_a[3] + body.w_a[2] * (body.I[3,1] * body.w_a[1] + body.I[3,2] * body.w_a[2] + body.I[3,3] * body.w_a[3]) + body.r_CM[3] * rev.frame_b.f[2] + (-body.r_CM[2]) * rev.frame_b.f[3] - body.w_a[3] * (body.I[2,1] * body.w_a[1] + body.I[2,2] * body.w_a[2] + body.I[2,3] * body.w_a[3])
 // </equation>
@@ -21551,7 +21560,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // <function name=\"Modelica.Math.Vectors.normalize\">
 // <ModelicaImplementation>function(v :: array(Real)[:] * eps :: Real) =&gt; array(Real)[size(v, 1)].Modelica.Math.Vectors.normalizefunction Modelica.Math.Vectors.normalize &quot;Inline before index reduction&quot; &quot;Return normalized vector such that length = 1 and prevent zero-division for zero vector&quot;
 //   input Real[:] v &quot;Vector&quot;;
-//   input Real eps(min = 0.0) = 1e-013 &quot;if |v| &lt; eps then result = v/eps&quot;;
+//   input Real eps(min = 0.0) = 1e-13 &quot;if |v| &lt; eps then result = v/eps&quot;;
 //   output Real[size(v, 1)] result &quot;Input vector v normalized to length=1&quot;;
 // algorithm
 //   result := smooth(0, if noEvent(Modelica.Math.Vectors.length(v) &gt;= eps) then v / Modelica.Math.Vectors.length(v) else v / eps);
@@ -21642,7 +21651,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 //   e3_2 := if sequence[3] == 1 then {1.0, 0.0, 0.0} else if sequence[3] == 2 then {0.0, 1.0, 0.0} else {0.0, 0.0, 1.0};
 //   A := e2_1a[1] * e3_1[1] + e2_1a[2] * e3_1[2] + e2_1a[3] * e3_1[3];
 //   B := (e1_1[2] * e2_1a[3] - e1_1[3] * e2_1a[2]) * e3_1[1] + (e1_1[3] * e2_1a[1] - e1_1[1] * e2_1a[3]) * e3_1[2] + (e1_1[1] * e2_1a[2] - e1_1[2] * e2_1a[1]) * e3_1[3];
-//   if abs(A) &lt;= 1e-012 and abs(B) &lt;= 1e-012 then
+//   if abs(A) &lt;= 1e-12 and abs(B) &lt;= 1e-12 then
 //     angles[1] := guessAngle1;
 //   else
 //     angle_1a := atan2(A, -B);
@@ -21896,9 +21905,9 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 //   input Real[3] n_y(unit = &quot;1&quot;) &quot;Vector in direction of y-axis of frame 2, resolved in frame 1&quot;;
 //   output Real[3, 3] T &quot;Orientation object to rotate frame 1 into frame 2&quot;;
 //   protected Real abs_n_x = sqrt(n_x[1] ^ 2.0 + n_x[2] ^ 2.0 + n_x[3] ^ 2.0);
-//   protected Real[3] e_x(unit = &quot;1&quot;) = if abs_n_x &lt; 1e-010 then {1.0, 0.0, 0.0} else {n_x[1] / abs_n_x, n_x[2] / abs_n_x, n_x[3] / abs_n_x};
+//   protected Real[3] e_x(unit = &quot;1&quot;) = if abs_n_x &lt; 1e-10 then {1.0, 0.0, 0.0} else {n_x[1] / abs_n_x, n_x[2] / abs_n_x, n_x[3] / abs_n_x};
 //   protected Real[3] n_z_aux(unit = &quot;1&quot;) = {e_x[2] * n_y[3] - e_x[3] * n_y[2], e_x[3] * n_y[1] - e_x[1] * n_y[3], e_x[1] * n_y[2] - e_x[2] * n_y[1]};
-//   protected Real[3] n_y_aux(unit = &quot;1&quot;) = if n_z_aux[1] ^ 2.0 + n_z_aux[2] ^ 2.0 + n_z_aux[3] ^ 2.0 &gt; 1e-006 then {n_y[1], n_y[2], n_y[3]} else if abs(e_x[1]) &gt; 1e-006 then {0.0, 1.0, 0.0} else {1.0, 0.0, 0.0};
+//   protected Real[3] n_y_aux(unit = &quot;1&quot;) = if n_z_aux[1] ^ 2.0 + n_z_aux[2] ^ 2.0 + n_z_aux[3] ^ 2.0 &gt; 1e-06 then {n_y[1], n_y[2], n_y[3]} else if abs(e_x[1]) &gt; 1e-06 then {0.0, 1.0, 0.0} else {1.0, 0.0, 0.0};
 //   protected Real[3] e_z_aux(unit = &quot;1&quot;) = {e_x[2] * n_y_aux[3] - e_x[3] * n_y_aux[2], e_x[3] * n_y_aux[1] - e_x[1] * n_y_aux[3], e_x[1] * n_y_aux[2] - e_x[2] * n_y_aux[1]};
 //   protected Real[3] e_z(unit = &quot;1&quot;) = {e_z_aux[1] / sqrt(e_z_aux[1] ^ 2.0 + e_z_aux[2] ^ 2.0 + e_z_aux[3] ^ 2.0), e_z_aux[2] / sqrt(e_z_aux[1] ^ 2.0 + e_z_aux[2] ^ 2.0 + e_z_aux[3] ^ 2.0), e_z_aux[3] / sqrt(e_z_aux[1] ^ 2.0 + e_z_aux[2] ^ 2.0 + e_z_aux[3] ^ 2.0)};
 // algorithm
@@ -21971,7 +21980,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </function>
 // </functions>
 // <additionalInfo>
-// <originalIncidenceMatrix>
+// <originalAdjacencyMatrix>
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
 // <matrix>
@@ -22276,19 +22285,19 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"3\">
-// <ci>78
+// <ci>75
 // </ci>
 // <ci>60
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"4\">
-// <ci>79
+// <ci>76
 // </ci>
 // <ci>60
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"5\">
-// <ci>80
+// <ci>77
 // </ci>
 // <ci>60
 // </ci>
@@ -22348,19 +22357,19 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"15\">
-// <ci>78
+// <ci>75
 // </ci>
 // <ci>39
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"16\">
-// <ci>79
+// <ci>76
 // </ci>
 // <ci>38
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"17\">
-// <ci>80
+// <ci>77
 // </ci>
 // <ci>37
 // </ci>
@@ -22504,19 +22513,19 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"30\">
-// <ci>75
+// <ci>78
 // </ci>
 // <ci>39
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"31\">
-// <ci>76
+// <ci>79
 // </ci>
 // <ci>38
 // </ci>
 // </matrixrow>
 // <matrixrow id=\"32\">
-// <ci>77
+// <ci>80
 // </ci>
 // <ci>37
 // </ci>
@@ -22680,7 +22689,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </matrix>
 // </math>
 // </MathML>
-// </originalIncidenceMatrix>
+// </originalAdjacencyMatrix>
 // <solvingInfo>
 // <matchingAlgorithm>
 // <solvedIn variableId=\"1\" equationId=\"10\" />
@@ -22781,12 +22790,12 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // <solvedIn variableId=\"96\" equationId=\"80\" />
 // <solvedIn variableId=\"97\" equationId=\"79\" />
 // <solvedIn variableId=\"98\" equationId=\"78\" />
-// <solvedIn variableId=\"99\" equationId=\"90\" />
-// <solvedIn variableId=\"100\" equationId=\"91\" />
-// <solvedIn variableId=\"101\" equationId=\"92\" />
-// <solvedIn variableId=\"102\" equationId=\"63\" />
-// <solvedIn variableId=\"103\" equationId=\"76\" />
-// <solvedIn variableId=\"104\" equationId=\"65\" />
+// <solvedIn variableId=\"99\" equationId=\"63\" />
+// <solvedIn variableId=\"100\" equationId=\"76\" />
+// <solvedIn variableId=\"101\" equationId=\"65\" />
+// <solvedIn variableId=\"102\" equationId=\"90\" />
+// <solvedIn variableId=\"103\" equationId=\"91\" />
+// <solvedIn variableId=\"104\" equationId=\"92\" />
 // <solvedIn variableId=\"105\" equationId=\"89\" />
 // <solvedIn variableId=\"106\" equationId=\"88\" />
 // </matchingAlgorithm>
