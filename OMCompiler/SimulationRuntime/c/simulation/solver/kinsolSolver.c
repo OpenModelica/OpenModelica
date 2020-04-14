@@ -244,6 +244,112 @@ void checkReturnFlag_KINLS(int flag, const char *functionName) {
   }
 }
 
+/* TODO: Unify checkReturnFlag_... functions by comparign first part of string
+ * of funcvtion name and choosing correct function */
+
+/**
+ * @brief Checks given SUNLS flag and reports potential error.
+ *
+ * @param flag          Return value of Kinsol routine.
+ * @param functionName  Name of Kinsol function that returned the flag.
+ */
+void checkReturnFlag_SUNLS(int flag, const char *functionName) {
+  switch (flag) {
+  case SUNLS_SUCCESS:
+    break;
+  case SUNLS_MEM_NULL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Mem argument is NULL.",
+                     functionName);
+    break;
+  case SUNLS_ILL_INPUT:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Illegal function input.",
+                     functionName);
+    break;
+  case SUNLS_MEM_FAIL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Failed memory access.",
+                     functionName);
+    break;
+  case SUNLS_ATIMES_FAIL_UNREC:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Atimes unrecoverable failure.",
+                     functionName);
+    break;
+  case SUNLS_PSET_FAIL_UNREC:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Pset unrecoverable failure.",
+                     functionName);
+    break;
+  case SUNLS_PSOLVE_FAIL_UNREC:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Psolve unrecoverable failure.",
+                     functionName);
+    break;
+  case SUNLS_PACKAGE_FAIL_UNREC:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: External package unrec. fail.",
+                     functionName);
+    break;
+  case SUNLS_GS_FAIL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Gram-Schmidt failuret.",
+                     functionName);
+    break;
+  case SUNLS_QRSOL_FAIL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: QRsol found singular R.",
+                     functionName);
+    break;
+  case SUNLS_VECTOROP_ERR:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Vector operation error.",
+                     functionName);
+    break;
+  case SUNLS_RES_REDUCED:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Monconv. solve, resid reduced.",
+                     functionName);
+    break;
+  case SUNLS_CONV_FAIL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Nonconvergent solve.",
+                     functionName);
+    break;
+  case SUNLS_ATIMES_FAIL_REC:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Atimes failed recoverably.",
+                     functionName);
+    break;
+  case SUNLS_PSET_FAIL_REC:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Pset failed recoverably.",
+                     functionName);
+    break;
+  case SUNLS_PSOLVE_FAIL_REC:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Psolve failed recoverably.",
+                     functionName);
+    break;
+  case SUNLS_PACKAGE_FAIL_REC:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: External package recov. fail.",
+                     functionName);
+    break;
+  case SUNLS_QRFACT_FAIL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: QRfact found singular matrix.",
+                     functionName);
+    break;
+  case SUNLS_LUFACT_FAIL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: LUfact found singular matrix.",
+                     functionName);
+    break;
+  }
+}
+
 /**
  * @brief Set KINSOL configuration.
  *
@@ -1018,13 +1124,12 @@ static void nlsKinsolSetMaxNewtonStep(NLS_KINSOL_DATA *kinsolData,
   /* Variables */
   int flag;
 
-  /* set maximum step size */
   N_VConst(maxstepfactor, kinsolData->fTmp);
-  flag = KINSetMaxNewtonStep(kinsolData->kinsolMemory,
-                             N_VWL2Norm(kinsolData->xScale, kinsolData->fTmp));
-  checkReturnFlag_KIN(flag, "KINSetMaxNewtonStep");
+  kinsolData->mxnstepin = N_VWL2Norm(kinsolData->xScale, kinsolData->fTmp);
 
-  kinsolData->mxnstepin = ...;
+  /* Set maximum step size */
+  flag = KINSetMaxNewtonStep(kinsolData->kinsolMemory, kinsolData->mxnstepin);
+  checkReturnFlag_KIN(flag, "KINSetMaxNewtonStep");
 }
 
 /**
@@ -1163,9 +1268,7 @@ static void nlsKinsolFScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
       denseJac = SUNDenseMatrix(kinsolData->size, kinsolData->size);
       nlsDenseJac(nlsData->size, x, kinsolData->fTmp, denseJac,
                   &kinsolData->userData, tmp1, tmp2);
-      spJac = SUNSparseFromDenseMatrix(
-          denseJac, ..., CSC_MAT); /* TODO: Is it possible to use the same
-                                      matrix for dense and sparse? */
+      spJac = SUNSparseFromDenseMatrix(denseJac, DBL_MIN, CSC_MAT);
       if (spJac == NULL) {
         errorStreamPrint(
             LOG_STDOUT, 0,
@@ -1317,15 +1420,15 @@ static int nlsKinsolErrorHandler(int errorCode, DATA *data,
     kinsolData->retries--;
     return 1;
     break;
-  /* Maybe happened because of an out-dated factorization, so just retry  */
+  /* Maybe happened because of an out-dated factorization, so just retry */
   case KIN_LSOLVE_FAIL:
     warningStreamPrint(LOG_NLS_V, 0,
                        "kinsols matrix need new factorization. Try again.\n");
     if (nlsData->isPatternAvailable) {
-      /* Reinitializes Jacobian and flag for new symbolic and numeric KLU
-       * factorizations */
-      KINKLUReInit(kinsolData->kinsolMemory, kinsolData->size, kinsolData->nnz,
-                   2);
+      /* Complete symbolic and numeric factorizations */
+      flag = SUNLinSol_KLUReInit(kinsolData->linSol, kinsolData->J,
+                                 kinsolData->nnz, SUNKLU_REINIT_PARTIAL);
+      checkReturnFlag_SUNLS(flag, "SUNLinSol_KLUReInit");
     }
     return 1;
     break;
@@ -1342,12 +1445,13 @@ static int nlsKinsolErrorHandler(int errorCode, DATA *data,
     if (kinsolData->linearSolverMethod == NLS_LS_KLU &&
         nlsData->isPatternAvailable &&
         nlsData->analyticalJacobianColumn != NULL) {
-      flag = KINSlsSetSparseJacFn(kinsolData->kinsolMemory, nlsSparseJac);
+      warningStreamPrint(LOG_NLS_V, 0,
+                         "kinsols runs into issues with symbolic Jacobian, "
+                         "retry with the numerical.\n");
+      flag = KINSetJacFn(kinsolData->kinsolMemory, nlsSparseJac);
+      checkReturnFlag_KINLS(flag, "KINSetJacFn");
     }
-    if (checkReturnFlag(flag)) {
-      errorStreamPrint(LOG_STDOUT, 0,
-                       "##KINSOL## Something goes wrong while initialize "
-                       "KINSOL Sparse Solver!");
+    if (flag < 0) {
       return flag;
     } else {
       retValue = 1;
