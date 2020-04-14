@@ -1,0 +1,372 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+ * ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs: http://www.openmodelica.org or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
+ * distribution. GNU version 3 is obtained from:
+ * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
+ * http://www.opensource.org/licenses/BSD-3-Clause.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
+ * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
+ * CONDITIONS OF OSMC-PL.
+ *
+ */
+
+/** \file sundials_error.c
+ */
+
+#include <sundials_error.h>
+
+#ifdef WITH_SUNDIALS
+
+/* Internal function prototypes */
+void checkReturnFlag_KIN(int flag, const char *functionName);
+void checkReturnFlag_KINLS(int flag, const char *functionName);
+void checkReturnFlag_SUNLS(int flag, const char *functionName);
+
+
+/**
+ * @brief Checks given flag and reports potential error.
+ *
+ * Checky sundialsFlagType type to decide what kind given flag is.
+ * Possible kinds are: SUNDIALS_KIN_FLAG, SUNDIALS_KINLS_FLAG,
+ * SUNDIALS_SUNLS_FLAG or SUNDIALS_UNKNOWN_FLAG.
+ *
+ * @param flag          Return value of Sundials routine.
+ * @param type          Type of Sundials flag returned by routine specifyied by
+ *                      functionName.
+ * @param functionName  Name of Sundials function that returned the flag.
+ */
+void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
+                              const char *functionName) {
+  switch (type) {
+  case SUNDIALS_UNKNOWN_FLAG:
+    if (flag < 0) {
+      errorStreamPrint(
+          LOG_STDOUT, 0,
+          "##SUNDIALS##: Some error with value %u occured in function %s.",
+          flag, functionName);
+    }
+  case SUNDIALS_KIN_FLAG:
+    checkReturnFlag_KIN(flag, functionName);
+    break;
+  case SUNDIALS_KINLS_FLAG:
+    checkReturnFlag_KINLS(flag, functionName);
+    break;
+  case SUNDIALS_SUNLS_FLAG:
+    checkReturnFlag_SUNLS(flag, functionName);
+    break;
+  default:
+    errorStreamPrint(
+        LOG_STDOUT, 0,
+        "In function checkReturnFlag_SUNDIALS: Invalid sundialsFlagType %u.",
+        type);
+    break;
+  }
+}
+
+/**
+ * @brief Checks given KINSOL flag and reports potential error.
+ *
+ * @param flag          Return value of Kinsol routine.
+ * @param functionName  Name of Kinsol function that returned the flag.
+ */
+void checkReturnFlag_KIN(int flag, const char *functionName) {
+  switch (flag) {
+  case KIN_SUCCESS:
+  case KIN_INITIAL_GUESS_OK:
+  case KIN_STEP_LT_STPTOL:
+    break;
+  case KIN_WARNING:
+    warningStreamPrint(LOG_STDOUT, 0,
+                       "##KINSOL## In function %s: Got some warning.",
+                       functionName);
+    break;
+  case KIN_MEM_NULL:
+    errorStreamPrint(LOG_STDOUT, 0, "##KINSOL## In function %s: Out of memory.",
+                     functionName);
+    break;
+  case KIN_ILL_INPUT:
+    errorStreamPrint(
+        LOG_STDOUT, 0,
+        "##KINSOL## In function %s: An input argument has an illegal value.",
+        functionName);
+    break;
+  case KIN_NO_MALLOC:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINSOL## In function %s: Kinsol memory was not "
+                     "allocated by a call to KINCreate.",
+                     functionName);
+    break;
+  case KIN_MEM_FAIL:
+    errorStreamPrint(
+        LOG_STDOUT, 0,
+        "##KINSOL## In function %s: A memory allocation request has failed.",
+        functionName);
+    break;
+  case KIN_LINESEARCH_NONCONV:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINSOL## In function %s: The line search algorithm was "
+                     "unable to find an iterate sufficiently distinct from the "
+                     "current iterate, or could not find an iterate satisfying "
+                     "the sufficient decrease condition.",
+                     functionName);
+    break;
+  case KIN_MAXITER_REACHED:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINSOL## In function %s: The maximum number of "
+                     "nonlinear iterations has been reached.",
+                     functionName);
+    break;
+  case KIN_MXNEWT_5X_EXCEEDED:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINSOL## In function %s: Error KIN_MXNEWT_5X_EXCEEDED.",
+                     functionName);
+    break;
+  case KIN_LINESEARCH_BCFAIL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINSOL## In function %s: Error KIN_LINESEARCH_BCFAIL.",
+                     functionName);
+    break;
+  case KIN_LINSOLV_NO_RECOVERY:
+    errorStreamPrint(
+        LOG_STDOUT, 0,
+        "##KINSOL## In function %s: Error KIN_LINSOLV_NO_RECOVERY.",
+        functionName);
+    break;
+  case KIN_LINIT_FAIL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINSOL## In function %s: Error KIN_LINIT_FAIL.",
+                     functionName);
+    break;
+  case KIN_LSETUP_FAIL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINSOL## In function %s: Error KIN_LSETUP_FAIL.",
+                     functionName);
+    break;
+  case KIN_LSOLVE_FAIL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINSOL## In function %s: Error KIN_LSOLVE_FAIL.",
+                     functionName);
+    break;
+  case KIN_SYSFUNC_FAIL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINSOL## In function %s: Error KIN_SYSFUNC_FAIL.",
+                     functionName);
+    break;
+  case KIN_FIRST_SYSFUNC_ERR:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINSOL## In function %s: Error KIN_FIRST_SYSFUNC_ERR.",
+                     functionName);
+    break;
+  case KIN_REPTD_SYSFUNC_ERR:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINSOL## In function %s: Error KIN_REPTD_SYSFUNC_ERR.",
+                     functionName);
+    break;
+  case KIN_VECTOROP_ERR:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINSOL## In function %s: Error KIN_VECTOROP_ERR.",
+                     functionName);
+    break;
+  default:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINSOL## In function %s: Error with flag %i.",
+                     functionName, flag);
+  }
+}
+
+/**
+ * @brief Checks given KINLS flag and reports potential error.
+ *
+ * @param flag          Return value of Kinsol routine.
+ * @param functionName  Name of Kinsol function that returned the flag.
+ */
+void checkReturnFlag_KINLS(int flag, const char *functionName) {
+  switch (flag) {
+  case KINLS_SUCCESS:
+    break;
+  case KINLS_MEM_NULL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: The kin_mem pointer is NULL.",
+                     functionName);
+    break;
+  case KINLS_ILL_INPUT:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: An input argument has an "
+                     "illegal value or is incompatible.",
+                     functionName);
+    break;
+  case KINLS_MEM_FAIL:
+    errorStreamPrint(
+        LOG_STDOUT, 0,
+        "##KINLS## In function %s: A memory allocation request failed.",
+        functionName);
+    break;
+  case KINLS_PMEM_NULL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: TODO: ADD ERROR MESSAGE.",
+                     functionName);
+    break;
+  case KINLS_JACFUNC_ERR:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: TODO: ADD ERROR MESSAGE.",
+                     functionName);
+    break;
+  case KINLS_SUNMAT_FAIL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: TODO: ADD ERROR MESSAGE.",
+                     functionName);
+    break;
+  case KINLS_SUNLS_FAIL:
+    errorStreamPrint(
+        LOG_STDOUT, 0,
+        "##KINLS## In function %s: A call to the LS object failed.",
+        functionName);
+    break;
+  default:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Error with flag %i.",
+                     functionName, flag);
+  }
+}
+
+/**
+ * @brief Checks given SUNLS flag and reports potential error.
+ *
+ * @param flag          Return value of Kinsol routine.
+ * @param functionName  Name of Kinsol function that returned the flag.
+ */
+void checkReturnFlag_SUNLS(int flag, const char *functionName) {
+  switch (flag) {
+  case SUNLS_SUCCESS:
+    break;
+  case SUNLS_MEM_NULL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Mem argument is NULL.",
+                     functionName);
+    break;
+  case SUNLS_ILL_INPUT:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Illegal function input.",
+                     functionName);
+    break;
+  case SUNLS_MEM_FAIL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Failed memory access.",
+                     functionName);
+    break;
+  case SUNLS_ATIMES_FAIL_UNREC:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Atimes unrecoverable failure.",
+                     functionName);
+    break;
+  case SUNLS_PSET_FAIL_UNREC:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Pset unrecoverable failure.",
+                     functionName);
+    break;
+  case SUNLS_PSOLVE_FAIL_UNREC:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Psolve unrecoverable failure.",
+                     functionName);
+    break;
+  case SUNLS_PACKAGE_FAIL_UNREC:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: External package unrec. fail.",
+                     functionName);
+    break;
+  case SUNLS_GS_FAIL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Gram-Schmidt failuret.",
+                     functionName);
+    break;
+  case SUNLS_QRSOL_FAIL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: QRsol found singular R.",
+                     functionName);
+    break;
+  case SUNLS_VECTOROP_ERR:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Vector operation error.",
+                     functionName);
+    break;
+  case SUNLS_RES_REDUCED:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Monconv. solve, resid reduced.",
+                     functionName);
+    break;
+  case SUNLS_CONV_FAIL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Nonconvergent solve.",
+                     functionName);
+    break;
+  case SUNLS_ATIMES_FAIL_REC:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Atimes failed recoverably.",
+                     functionName);
+    break;
+  case SUNLS_PSET_FAIL_REC:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Pset failed recoverably.",
+                     functionName);
+    break;
+  case SUNLS_PSOLVE_FAIL_REC:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: Psolve failed recoverably.",
+                     functionName);
+    break;
+  case SUNLS_PACKAGE_FAIL_REC:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: External package recov. fail.",
+                     functionName);
+    break;
+  case SUNLS_QRFACT_FAIL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: QRfact found singular matrix.",
+                     functionName);
+    break;
+  case SUNLS_LUFACT_FAIL:
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "##KINLS## In function %s: LUfact found singular matrix.",
+                     functionName);
+    break;
+  }
+}
+
+#else
+/**
+ * @brief Checks given flag and reports potential error.
+ *
+ * Checky sundialsFlagType type to decide what kind given flag is.
+ * Possible kinds are: SUNDIALS_KIN_FLAG, SUNDIALS_KINLS_FLAG,
+ * SUNDIALS_SUNLS_FLAG or SUNDIALS_UNKNOWN_FLAG.
+ *
+ * @param flag          Return value of Sundials routine.
+ * @param type          Type of Sundials flag returned by routine specifyied by
+ *                      functionName.
+ * @param functionName  Name of Sundials function that returned the flag.
+ */
+void checkReturnFlag_SUNDIALS(int flag, int type,
+                              const char *functionName) {
+    throwStreamPrint(NULL, "No sundials/kinsol support activated.");
+}
+
+
+#endif /* WITH_SUNDIALS */

@@ -38,6 +38,7 @@
 #include "simulation/options.h"
 #include "simulation/simulation_info_json.h"
 #include "util/omc_error.h"
+#include "util/sundials_error.h"
 
 #ifdef WITH_SUNDIALS
 
@@ -45,10 +46,6 @@
 #if defined(__MINGW32__)
 #define LINK_SUNDIALS_STATIC
 #endif
-
-#include <math.h>
-#include <stdlib.h>
-#include <string.h> /* memcpy */
 
 #include "events.h"
 #include "model_help.h"
@@ -79,278 +76,6 @@ static void nlsKinsolJacSumSparse(SUNMatrix A);
 static void nlsKinsolJacSumDense(SUNMatrix A);
 
 /**
- * @brief Checks given KINSOL flag and reports potential error.
- *
- * @param flag          Return value of Kinsol routine.
- * @param functionName  Name of Kinsol function that returned the flag.
- */
-void checkReturnFlag_KIN(int flag, const char *functionName) {
-  switch (flag) {
-  case KIN_SUCCESS:
-  case KIN_INITIAL_GUESS_OK:
-  case KIN_STEP_LT_STPTOL:
-    break;
-  case KIN_WARNING:
-    warningStreamPrint(LOG_STDOUT, 0,
-                       "##KINSOL## In function %s: Got some warning.",
-                       functionName);
-    break;
-  case KIN_MEM_NULL:
-    errorStreamPrint(LOG_STDOUT, 0, "##KINSOL## In function %s: Out of memory.",
-                     functionName);
-    break;
-  case KIN_ILL_INPUT:
-    errorStreamPrint(
-        LOG_STDOUT, 0,
-        "##KINSOL## In function %s: An input argument has an illegal value.",
-        functionName);
-    break;
-  case KIN_NO_MALLOC:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## In function %s: Kinsol memory was not "
-                     "allocated by a call to KINCreate.",
-                     functionName);
-    break;
-  case KIN_MEM_FAIL:
-    errorStreamPrint(
-        LOG_STDOUT, 0,
-        "##KINSOL## In function %s: A memory allocation request has failed.",
-        functionName);
-    break;
-  case KIN_LINESEARCH_NONCONV:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## In function %s: The line search algorithm was "
-                     "unable to find an iterate sufficiently distinct from the "
-                     "current iterate, or could not find an iterate satisfying "
-                     "the sufficient decrease condition.",
-                     functionName);
-    break;
-  case KIN_MAXITER_REACHED:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## In function %s: The maximum number of "
-                     "nonlinear iterations has been reached.",
-                     functionName);
-    break;
-  case KIN_MXNEWT_5X_EXCEEDED:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## In function %s: Error KIN_MXNEWT_5X_EXCEEDED.",
-                     functionName);
-    break;
-  case KIN_LINESEARCH_BCFAIL:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## In function %s: Error KIN_LINESEARCH_BCFAIL.",
-                     functionName);
-    break;
-  case KIN_LINSOLV_NO_RECOVERY:
-    errorStreamPrint(
-        LOG_STDOUT, 0,
-        "##KINSOL## In function %s: Error KIN_LINSOLV_NO_RECOVERY.",
-        functionName);
-    break;
-  case KIN_LINIT_FAIL:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## In function %s: Error KIN_LINIT_FAIL.",
-                     functionName);
-    break;
-  case KIN_LSETUP_FAIL:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## In function %s: Error KIN_LSETUP_FAIL.",
-                     functionName);
-    break;
-  case KIN_LSOLVE_FAIL:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## In function %s: Error KIN_LSOLVE_FAIL.",
-                     functionName);
-    break;
-  case KIN_SYSFUNC_FAIL:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## In function %s: Error KIN_SYSFUNC_FAIL.",
-                     functionName);
-    break;
-  case KIN_FIRST_SYSFUNC_ERR:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## In function %s: Error KIN_FIRST_SYSFUNC_ERR.",
-                     functionName);
-    break;
-  case KIN_REPTD_SYSFUNC_ERR:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## In function %s: Error KIN_REPTD_SYSFUNC_ERR.",
-                     functionName);
-    break;
-  case KIN_VECTOROP_ERR:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## In function %s: Error KIN_VECTOROP_ERR.",
-                     functionName);
-    break;
-  default:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## In function %s: Error with flag %i.",
-                     functionName, flag);
-  }
-}
-
-/**
- * @brief Checks given KINLS flag and reports potential error.
- *
- * @param flag          Return value of Kinsol routine.
- * @param functionName  Name of Kinsol function that returned the flag.
- */
-void checkReturnFlag_KINLS(int flag, const char *functionName) {
-  switch (flag) {
-  case KINLS_SUCCESS:
-    break;
-  case KINLS_MEM_NULL:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: The kin_mem pointer is NULL.",
-                     functionName);
-    break;
-  case KINLS_ILL_INPUT:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: An input argument has an "
-                     "illegal value or is incompatible.",
-                     functionName);
-    break;
-  case KINLS_MEM_FAIL:
-    errorStreamPrint(
-        LOG_STDOUT, 0,
-        "##KINLS## In function %s: A memory allocation request failed.",
-        functionName);
-    break;
-  case KINLS_PMEM_NULL:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: TODO: ADD ERROR MESSAGE.",
-                     functionName);
-    break;
-  case KINLS_JACFUNC_ERR:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: TODO: ADD ERROR MESSAGE.",
-                     functionName);
-    break;
-  case KINLS_SUNMAT_FAIL:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: TODO: ADD ERROR MESSAGE.",
-                     functionName);
-    break;
-  case KINLS_SUNLS_FAIL:
-    errorStreamPrint(
-        LOG_STDOUT, 0,
-        "##KINLS## In function %s: A call to the LS object failed.",
-        functionName);
-    break;
-  default:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: Error with flag %i.",
-                     functionName, flag);
-  }
-}
-
-/* TODO: Unify checkReturnFlag_... functions by comparign first part of string
- * of funcvtion name and choosing correct function */
-
-/**
- * @brief Checks given SUNLS flag and reports potential error.
- *
- * @param flag          Return value of Kinsol routine.
- * @param functionName  Name of Kinsol function that returned the flag.
- */
-void checkReturnFlag_SUNLS(int flag, const char *functionName) {
-  switch (flag) {
-  case SUNLS_SUCCESS:
-    break;
-  case SUNLS_MEM_NULL:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: Mem argument is NULL.",
-                     functionName);
-    break;
-  case SUNLS_ILL_INPUT:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: Illegal function input.",
-                     functionName);
-    break;
-  case SUNLS_MEM_FAIL:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: Failed memory access.",
-                     functionName);
-    break;
-  case SUNLS_ATIMES_FAIL_UNREC:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: Atimes unrecoverable failure.",
-                     functionName);
-    break;
-  case SUNLS_PSET_FAIL_UNREC:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: Pset unrecoverable failure.",
-                     functionName);
-    break;
-  case SUNLS_PSOLVE_FAIL_UNREC:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: Psolve unrecoverable failure.",
-                     functionName);
-    break;
-  case SUNLS_PACKAGE_FAIL_UNREC:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: External package unrec. fail.",
-                     functionName);
-    break;
-  case SUNLS_GS_FAIL:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: Gram-Schmidt failuret.",
-                     functionName);
-    break;
-  case SUNLS_QRSOL_FAIL:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: QRsol found singular R.",
-                     functionName);
-    break;
-  case SUNLS_VECTOROP_ERR:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: Vector operation error.",
-                     functionName);
-    break;
-  case SUNLS_RES_REDUCED:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: Monconv. solve, resid reduced.",
-                     functionName);
-    break;
-  case SUNLS_CONV_FAIL:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: Nonconvergent solve.",
-                     functionName);
-    break;
-  case SUNLS_ATIMES_FAIL_REC:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: Atimes failed recoverably.",
-                     functionName);
-    break;
-  case SUNLS_PSET_FAIL_REC:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: Pset failed recoverably.",
-                     functionName);
-    break;
-  case SUNLS_PSOLVE_FAIL_REC:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: Psolve failed recoverably.",
-                     functionName);
-    break;
-  case SUNLS_PACKAGE_FAIL_REC:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: External package recov. fail.",
-                     functionName);
-    break;
-  case SUNLS_QRFACT_FAIL:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: QRfact found singular matrix.",
-                     functionName);
-    break;
-  case SUNLS_LUFACT_FAIL:
-    errorStreamPrint(LOG_STDOUT, 0,
-                     "##KINLS## In function %s: LUfact found singular matrix.",
-                     functionName);
-    break;
-  }
-}
-
-/**
  * @brief Set KINSOL configuration.
  *
  * @param kinsolData    Kinsol data with configuration settings.
@@ -363,17 +88,17 @@ static void nlsKinsolConfigSetup(NLS_KINSOL_DATA *kinsolData) {
   flag = KINSetFuncNormTol(
       kinsolData->kinsolMemory,
       kinsolData->fnormtol); /* Set function-norm stopping tolerance */
-  checkReturnFlag_KIN(flag, "KINSetFuncNormTol");
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetFuncNormTol");
 
   flag = KINSetScaledStepTol(
       kinsolData->kinsolMemory,
       kinsolData->scsteptol); /* Set scaled-step stopping tolerance */
-  checkReturnFlag_KIN(flag, "KINSetScaledStepTol");
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetScaledStepTol");
 
   flag = KINSetNumMaxIters(
       kinsolData->kinsolMemory,
       100 * kinsolData->size); /* Set max. number of nonlinear iterations */
-  checkReturnFlag_KIN(flag, "KINSetNumMaxIters");
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetNumMaxIters");
 
   kinsolData->kinsolStrategy =
       KIN_LINESEARCH; /* Newton with globalization strategy to solve nonlinear
@@ -389,7 +114,7 @@ static void nlsKinsolConfigSetup(NLS_KINSOL_DATA *kinsolData) {
       KINSetNoInitSetup(kinsolData->kinsolMemory,
                         SUNFALSE); /* TODO: This is the default value. Is there
                                       a point in calling this function? */
-  checkReturnFlag_KIN(flag, "KINSetNoInitSetup");
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetNoInitSetup");
 
   kinsolData->retries = 0;
   kinsolData->countResCalls = 0;
@@ -431,25 +156,25 @@ static void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData,
     printLevel = 0;
   }
   flag = KINSetPrintLevel(kinsolData->kinsolMemory, printLevel);
-  checkReturnFlag_KIN(flag, "KINSetPrintLevel");
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetPrintLevel");
 
   flag = KINSetErrHandlerFn(kinsolData->kinsolMemory, nlsKinsolErrorPrint,
                             kinsolData);
-  checkReturnFlag_KIN(flag, "KINSetErrHandlerFn");
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetErrHandlerFn");
 
   flag = KINSetInfoHandlerFn(kinsolData->kinsolMemory, nlsKinsolInfoPrint,
                              kinsolData);
-  checkReturnFlag_KIN(flag, "KINSetInfoHandlerFn");
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetInfoHandlerFn");
 
   /* Set user data given to KINSOL */
   flag =
       KINSetUserData(kinsolData->kinsolMemory, (void *)&(kinsolData->userData));
-  checkReturnFlag_KIN(flag, "KINSetUserData");
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetUserData");
 
   /* Initialize KINSOL object */
   flag = KINInit(kinsolData->kinsolMemory, nlsKinsolResiduals,
                  kinsolData->initialGuess);
-  checkReturnFlag_KIN(flag, "KINInit");
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINInit");
 
   /* Create matrix object */
   if (kinsolData->linearSolverMethod == NLS_LS_DEFAULT) {
@@ -497,13 +222,13 @@ static void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData,
       flag = KINSetJacFn(kinsolData->kinsolMemory,
                          nlsSparseJac); /* Use numeric Jacobian */
     }
-    checkReturnFlag_KINLS(flag, "KINSetJacFn");
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
   }
 
   /* Set linear solver */
   flag = KINSetLinearSolver(kinsolData->kinsolMemory, kinsolData->linSol,
                             kinsolData->J);
-  checkReturnFlag_KINLS(flag, "KINSetLinearSolver");
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetLinearSolver");
 
   /* Configuration */
   nlsKinsolConfigSetup(kinsolData);
@@ -1129,7 +854,7 @@ static void nlsKinsolSetMaxNewtonStep(NLS_KINSOL_DATA *kinsolData,
 
   /* Set maximum step size */
   flag = KINSetMaxNewtonStep(kinsolData->kinsolMemory, kinsolData->mxnstepin);
-  checkReturnFlag_KIN(flag, "KINSetMaxNewtonStep");
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetMaxNewtonStep");
 }
 
 /**
@@ -1386,12 +1111,8 @@ static int nlsKinsolErrorHandler(int errorCode, DATA *data,
   double *xScaling = NV_DATA_S(kinsolData->xScale);
   long outL;
 
-  /* check what kind of error
-   *   retValue < 0 -> a non recoverable issue
-   *   retValue == 1 -> try with other settings
-   */
   flag = KINSetNoInitSetup(kinsolData->kinsolMemory, FALSE);
-  checkReturnFlag_KIN(flag, "KINSetNoInitSetup");
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetNoInitSetup");
 
   switch (errorCode) {
   case KIN_MEM_NULL:
@@ -1428,7 +1149,7 @@ static int nlsKinsolErrorHandler(int errorCode, DATA *data,
       /* Complete symbolic and numeric factorizations */
       flag = SUNLinSol_KLUReInit(kinsolData->linSol, kinsolData->J,
                                  kinsolData->nnz, SUNKLU_REINIT_PARTIAL);
-      checkReturnFlag_SUNLS(flag, "SUNLinSol_KLUReInit");
+      checkReturnFlag_SUNDIALS(flag, SUNDIALS_SUNLS_FLAG, "SUNLinSol_KLUReInit");
     }
     return 1;
     break;
@@ -1449,7 +1170,7 @@ static int nlsKinsolErrorHandler(int errorCode, DATA *data,
                          "kinsols runs into issues with symbolic Jacobian, "
                          "retry with the numerical.\n");
       flag = KINSetJacFn(kinsolData->kinsolMemory, nlsSparseJac);
-      checkReturnFlag_KINLS(flag, "KINSetJacFn");
+      checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
     }
     if (flag < 0) {
       return flag;
@@ -1646,19 +1367,19 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber) {
 int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nlsData,
                       int linearSolverMethod) {
 
-  throwStreamPrint(NULL, "no sundials/kinsol support activated");
+  throwStreamPrint(NULL, "No sundials/kinsol support activated.");
   return 0;
 }
 
 int nlsKinsolFree(void **solverData) {
 
-  throwStreamPrint(NULL, "no sundials/kinsol support activated");
+  throwStreamPrint(NULL, "No sundials/kinsol support activated.");
   return 0;
 }
 
 int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber) {
 
-  throwStreamPrint(threadData, "no sundials/kinsol support activated");
+  throwStreamPrint(threadData, "No sundials/kinsol support activated.");
   return 0;
 }
 

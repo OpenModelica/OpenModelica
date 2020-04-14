@@ -28,6 +28,7 @@ SET(util_sources ../gc/memory_pool.c
                   rtclock.c
                   simulation_options.c
                   string_array.c
+                  sundials_error.c
                   utility.c
                   varinfo.c
                   write_csv.c)
@@ -63,6 +64,7 @@ SET(util_headers ../gc/memory_pool.h
                  rtclock.h
                  simulation_options.h
                  string_array.h
+                 sundials_error.h
                  utility.h
                  varinfo.h)
 
