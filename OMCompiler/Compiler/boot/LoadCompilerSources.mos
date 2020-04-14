@@ -389,8 +389,8 @@ if true then /* Suppress output */
     "../Script/Binding.mo",
     "../Script/OpenModelicaScriptingAPI.mo",
     "../Script/CevalScriptBackend.mo",
-    "../Script/MMToJuliaUtil.mo",
     "../Script/MMToJuliaKeywords.mo",
+    "../Script/MMToJuliaUtil.mo",
 
     "../SimCode/HpcOmSimCodeMain.mo",
     "../SimCode/SerializeInitXML.mo",

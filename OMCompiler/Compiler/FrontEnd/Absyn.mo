@@ -232,7 +232,7 @@ uniontype ClassPart "A class definition contains several parts.  There are publi
   sections and algorithm sections. The EXTERNAL part is used only by functions
   which can be declared as external C or FORTRAN functions."
   record PUBLIC
-    list<ElementItem> contents ;
+    list<ElementItem> contents;
   end PUBLIC;
 
   record PROTECTED

@@ -33,14 +33,15 @@ encapsulated package MMToJuliaUtil
 " file:        MMToJuliaUtil.mo
   package:     MMToJuliaUtil
   description: MMToJuliaUtil contains utility functions for Julia translation.
- It makes use of a global hash table indexed with MM_TO_JL_HT_INDEX "
+  It makes use of a global hash table indexed with MM_TO_JL_HT_INDEX."
 
 protected
 import Absyn;
 import AbsynUtil;
 import Global;
-import Util;
 import MMToJuliaHT;
+import MMToJuliaKeywords;
+import Util;
 
 public
 uniontype Context
@@ -242,6 +243,8 @@ protected
   Absyn.ClassDef tmpClassDef;
   Boolean classHasSubClassesOfTypeFunctionOrUniontype = false;
   Boolean isUniontype = false;
+  Boolean subClassesOfTypeFunction = false;
+  Boolean subClassesOfTypeUniontype = false;
   MMToJuliaHT.HashTable hashTable;
   Option<Absyn.Path> inPath;
   String className;
@@ -251,8 +254,10 @@ algorithm
   (inClass, inPath, hashTable) := inTpl;
   isUniontype := AbsynUtil.isUniontype(inClass);
   /* Julia also does not support the concept of having uniontypes within uniontypes */
-  classHasSubClassesOfTypeFunctionOrUniontype := AbsynUtil.classHasLocalClassesThatAreFunctions(inClass)
-                                              or  AbsynUtil.classHasLocalClassesThatAreUniontypes(inClass);
+  subClassesOfTypeUniontype := AbsynUtil.classHasLocalClassesThatAreUniontypes(inClass);
+  subClassesOfTypeFunction := AbsynUtil.classHasLocalClassesThatAreFunctions(inClass);
+  classHasSubClassesOfTypeFunctionOrUniontype := subClassesOfTypeUniontype
+                                              or subClassesOfTypeFunction;
   if not (isUniontype and classHasSubClassesOfTypeFunctionOrUniontype) then
     outTpl := inTpl;
     return;
@@ -366,8 +371,23 @@ algorithm
 end algorithmItemsContainsReturn;
 
 function mMKeywordToJLKeyword
+"Maps the inName to a Julia comptatible outName.
+If there exists no such name. Returns the empty string."
+  input String inName;
+  output String outName;
+algorithm
+  outName := match inName
+    case MMToJuliaKeywords.REAL then "AbstractFloat";
+    case MMToJuliaKeywords.BOOLEAN then "Bool";
+    case MMToJuliaKeywords.LIST then "List";
+    case MMToJuliaKeywords.ARRAY then "Array";
+    case MMToJuliaKeywords.TUPLE then "Tuple";
+    case MMToJuliaKeywords.POLYMORPHIC then "Any";
+    case MMToJuliaKeywords.MUTABLE then "MutableType";
+    case MMToJuliaKeywords.TYPE then "M_Type";
+    else "";
+  end match;
 end mMKeywordToJLKeyword;
-
 
 annotation(__OpenModelica_Interface="backend");
 end MMToJuliaUtil;

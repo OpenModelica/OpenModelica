@@ -39,6 +39,9 @@ TODOS:
      <In progress>
      TODO: Make sure renamning of imports work as they should
      TODO: How to handle stand alone modules?
+  TODO: Linear ordering of generated packages.
+        Check for cycles? Fail if that is the case..
+        Generate interfaces or Topological Sort?
 */
 
 import interface AbsynToJuliaTV;
@@ -187,13 +190,14 @@ match class
   case CLASS(body=parts as ENUMERATION(__), restriction=R_TYPE(__)) then
     let _ = System.tmpTickReset(1)
     let comment = dumpCommentOpt(parts.comment, context)
-    let enumArgs = dumpEnumDef(parts.enumLiterals)
+    let enumArgs = dumpEnumDef(parts.enumLiterals, context)
     <<
       <%name%> = #= Enumeration =# (() -> begin
       <%match parts.enumLiterals
         case ENUMLITERALS(__) then
-          (enumLiterals |> lit => '<%dumpEnumLiteral(lit)%> = <%intString(System.tmpTick())%>' ;separator="\n")
+          (enumLiterals |> lit => '<%dumpEnumLiteral(lit, context)%> = <%intString(System.tmpTick())%>' ;separator="\n")
        %>
+       <%comment%>
        ()->(<%enumArgs%>)
       end)()
     >>
@@ -310,24 +314,25 @@ match cdef
   case CLASS_EXTENDS(__) then
     AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassDef: CLASS_EXETENDS not yet supported.")
   case ENUMERATION(__) then
-    let enum_str = dumpEnumDef(enumLiterals)
-    ' =  @enum(<%enum_str%>)'
+    let enum_str = dumpEnumDef(enumLiterals, context)
+    let cmt_str = dumpCommentOpt(comment, context)
+    ' =  @enum(<%enum_str%>) <%cmt_str%>'
   else "TODO Unkown class definition"
 end dumpClassDef;
 
-template dumpEnumDef(Absyn.EnumDef enum_def)
+template dumpEnumDef(Absyn.EnumDef enum_def, Context context)
 ::=
 match enum_def
   case ENUMLITERALS(__) then
-    (enumLiterals |> lit => dumpEnumLiteral(lit) ;separator=";")
+    (enumLiterals |> lit => dumpEnumLiteral(lit, context); separator=";")
   case ENUM_COLON() then ":"
 end dumpEnumDef;
 
-template dumpEnumLiteral(Absyn.EnumLiteral lit)
+template dumpEnumLiteral(Absyn.EnumLiteral lit, Context context)
 ::=
 match lit
   case ENUMLITERAL(__) then
-    '<%literal%>'
+    '<%literal%> <%dumpCommentOpt(comment, context)%>'
 end dumpEnumLiteral;
 
 template dumpClassType(Absyn.Restriction restriction)
@@ -418,7 +423,7 @@ template dumpElementItem(Absyn.ElementItem eitem, DumpOptions options, Context c
 ::=
 match eitem
   case ELEMENTITEM(__) then '<%dumpElement(element, options, context)%>'
-  case LEXER_COMMENT(__) then dumpCommentStr(comment)
+  case LEXER_COMMENT(__) then '<%dumpCommentStr(comment)%>'
 end dumpElementItem;
 
 template dumpElementItemRaw(Absyn.ElementItem eitem, DumpOptions options, Context context)
@@ -702,13 +707,16 @@ template dumpImport(Absyn.Import imp)
 ::=
 match imp
   case NAMED_IMPORT(__) then
-    'import <%dumpPathJL2(path, MMToJuliaUtil.makeImportContext())%>; <%name%>=<%dumpPathJL2(path, MMToJuliaUtil.makeImportContext())%>'
+    'import Main.<%dumpPathJL2(path, MMToJuliaUtil.makeImportContext())%>; Main.<%name%>=<%dumpPathJL2(path, MMToJuliaUtil.makeImportContext())%>'
   case QUAL_IMPORT(__) then
     let path_str = dumpPathJL2(path,  MMToJuliaUtil.makeImportContext())
-    match path_str /* Some package need different names */
+    match path_str /* Some package need different names. This is true for packages that already exists */
       case "Array" then 'import ArrayUtil'
       case "List" then  'import ListUtil'
-      else 'import <%path_str%>'
+      case "Absyn" then  'import Absyn'
+      case "DAE" then 'import DAE'
+      case "DoubleEnded" then 'import DoubleEnded'
+      else 'import Main.<%path_str%>'
   case UNQUAL_IMPORT(__) then 'using <%dumpPathJL2(path, MMToJuliaUtil.makeImportContext())%>'
   case GROUP_IMPORT(__) then
     let prefix_str = dumpPathJL2(prefix, MMToJuliaUtil.makeImportContext())
@@ -833,24 +841,20 @@ template dumpPathJL(Absyn.Path path)
       case topPath as QUALIFIED(__) then
         '<%MMToJuliaHT.returnThePathOfTheWrapperPackageInHT(topPath)%>'
       case IDENT(__) then
-       let tmpName = name
-        match name
-          case "Real" then 'AbstractFloat'
-          case "Integer" then 'Integer'
-          case "Boolean" then 'Bool'
-          case "list" then 'List'
-          case "array" then 'Array'
-          case "tuple" then 'Tuple'
-          case "polymorphic" then 'Any'
-          case "Mutable" then 'MutableType'
-          else
-            match MMToJuliaHT.get(name) /* Check for direct reference. If so add wrapper package and dot before. Uniontypes do not really have a scope in Julia (I cheat a bit..) */
+       let tmpName = MMToJuliaUtil.mMKeywordToJLKeyword(name)
+        match tmpName
+          case "" then
+          /* Check for direct reference. If so add wrapper package and dot before.
+             Uniontypes do not really have a scope in Julia (I cheat a bit..) */
+            match MMToJuliaHT.get(tmpName)
               case SOME(CLASS_INFO(originalClass = CLASS(name = name1), wrapperClass = CLASS(name = name2))) then
                 '<%name2%>.<%name1%>'
               else
                 '<%name%>'
-      else
-        AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path.")
+        case _ then
+          '<%tmpName%>'
+    else
+      AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path.")
 end dumpPathJL;
 
 template dumpPathJL2(Absyn.Path path, Context context)
@@ -863,47 +867,20 @@ template dumpPathJL2(Absyn.Path path, Context context)
         case topPath as QUALIFIED(__) then
           '<%MMToJuliaHT.returnThePathOfTheWrapperPackageInHT(topPath)%>'
         case IDENT(__) then
-         let tmpName = name
-          match name
-            case "Real" then 'AbstractFloat'
-            case "Integer" then 'Integer'
-            case "Boolean" then 'Bool'
-            case "list" then 'List'
-            case "array" then 'Array'
-            case "tuple" then 'Tuple'
-            case "polymorphic" then 'Any'
-            case "Mutable" then 'MutableType'
-            else
-              match MMToJuliaHT.get(name) /* Check for direct reference. If so add wrapper package and dot before. Uniontypes do not really have a scope in Julia (I cheat a bit..) */
-              case SOME(CLASS_INFO(originalClass = CLASS(name = name1), wrapperClass = CLASS(name = name2))) then
-                '<%name2%>'
-              else
-                '<%name%>'
-        else
-          AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path.")
-    else
-      match path
-        case topPath as QUALIFIED(__) then
-        '<%MMToJuliaHT.returnThePathOfTheWrapperPackageInHT(topPath)%>'
-        case IDENT(__) then
-          match name
-            case "Real" then 'AbstractFloat'
-            case "Integer" then 'Integer'
-            case "Boolean" then 'Bool'
-            case "list" then 'List'
-            case "array" then 'Array'
-            case "tuple" then 'Tuple'
-            case "polymorphic" then 'Any'
-            case "Mutable" then 'MutableType'
-            else
-              /* Check for direct reference. If so add wrapper package and dot before. Uniontypes do not really have a scope in Julia (I cheat a bit..) */
+         let tmpName = MMToJuliaUtil.mMKeywordToJLKeyword(name)
+          match tmpName
+            case "" then
               match MMToJuliaHT.get(name)
                 case SOME(CLASS_INFO(originalClass = CLASS(name = name1), wrapperClass = CLASS(name = name2))) then
                   '<%name2%>'
                 else
                   '<%name%>'
+            else
+              '<%name%>'
         else
           AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path.")
+    else
+       '<%dumpPathJL(path)%>'
 end dumpPathJL2;
 
 template dumpPathNoQual(Absyn.Path path)
@@ -1305,7 +1282,6 @@ template dumpOperator(Absyn.Operator op)
     else AbsynDumpTpl.dumpOperator(op)
 end dumpOperator;
 
-//TODO check here instead in cref
 template dumpCref(Absyn.ComponentRef cref, Context context)
 ::=
 match cref
@@ -1383,7 +1359,8 @@ end dumpForIteratorName;
 
 template dumpOutputsJL(list<ElementItem> elements)
 ::=
-  let outputStr = (listReverse(elements) |> e => dumpTypeSpecOpt(AbsynUtil.getTypeSpecFromElementItemOpt(e), functionContext) ;separator=", ")
+  let outputStr = (listReverse(elements) |>
+                  e => dumpTypeSpecOpt(AbsynUtil.getTypeSpecFromElementItemOpt(e), functionContext) ;separator=", ")
   '<%outputStr%>'
 end dumpOutputsJL;
 
