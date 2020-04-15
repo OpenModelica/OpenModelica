@@ -1219,8 +1219,7 @@ void LineAnnotation::updateConnectionAnnotation()
     QString annotationString = QString("annotate=$annotation(%1)").arg(getShapeAnnotation());
     // update the connection
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-    pOMCProxy->updateConnection(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(),
-                                getStartComponentName(), getEndComponentName(), annotationString);
+    pOMCProxy->updateConnection(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), getStartComponentName(), getEndComponentName(), annotationString);
   }
 }
 
@@ -1295,13 +1294,13 @@ void LineAnnotation::duplicate()
 
 void LineAnnotation::redraw(const QString& annotation, std::function<void()> updateAnnotationFunction)
 {
+  prepareGeometryChange();
   parseShapeAnnotation(annotation);
   removeCornerItems();
   drawCornerItems();
   applyTransformation();
   adjustGeometries();
   setCornerItemsActiveOrPassive();
-  update();
   emitChanged();
   updateAnnotationFunction();
 }

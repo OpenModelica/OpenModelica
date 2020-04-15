@@ -133,14 +133,17 @@ UpdateShapeCommand::UpdateShapeCommand(ShapeAnnotation *pShapeAnnotation, QStrin
  */
 void UpdateShapeCommand::redoInternal()
 {
-//  mpShapeAnnotation->resetTransform();
-//  bool state = mpShapeAnnotation->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
-//  mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
-//  mpShapeAnnotation->setPos(0, 0);
-//  mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
   mpShapeAnnotation->parseShapeAnnotation(mNewAnnotation);
-  mpShapeAnnotation->applyTransformation();
+  /* If the shape is LineAnnotation then remove and draw the corner items
+   * since they might have been changed in number based on the annotation.
+   */
+  LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
+  if (pLineAnnotation) {
+    pLineAnnotation->removeCornerItems();
+    pLineAnnotation->drawCornerItems();
+  }
   mpShapeAnnotation->setCornerItemsActiveOrPassive();
+  mpShapeAnnotation->applyTransformation();
   mpShapeAnnotation->emitChanged();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
 }
@@ -151,14 +154,17 @@ void UpdateShapeCommand::redoInternal()
  */
 void UpdateShapeCommand::undo()
 {
-//  mpShapeAnnotation->resetTransform();
-//  bool state = mpShapeAnnotation->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
-//  mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
-//  mpShapeAnnotation->setPos(0, 0);
-//  mpShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
   mpShapeAnnotation->parseShapeAnnotation(mOldAnnotation);
-  mpShapeAnnotation->applyTransformation();
+  /* If the shape is LineAnnotation then remove and draw the corner items
+   * since they might have been changed in number based on the annotation.
+   */
+  LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
+  if (pLineAnnotation) {
+    pLineAnnotation->removeCornerItems();
+    pLineAnnotation->drawCornerItems();
+  }
   mpShapeAnnotation->setCornerItemsActiveOrPassive();
+  mpShapeAnnotation->applyTransformation();
   mpShapeAnnotation->emitChanged();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
 }

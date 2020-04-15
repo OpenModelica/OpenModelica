@@ -2005,7 +2005,6 @@ void GraphicsView::addConnection(Component *pComponent)
       newPos = snapPointToGrid(pComponent->mapToScene(pComponent->boundingRect().center()));
     }
     mpConnectionLineAnnotation->updateEndPoint(newPos);
-    mpConnectionLineAnnotation->update();
     // check if connection is valid
     Component *pStartComponent = mpConnectionLineAnnotation->getStartComponent();
     MainWindow *pMainWindow = MainWindow::instance();
@@ -3306,16 +3305,12 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
     } else {
       mpConnectionLineAnnotation->updateEndPoint(snappedPoint);
     }
-    mpConnectionLineAnnotation->update();
   } else if (isCreatingTransition()) {
     mpTransitionLineAnnotation->updateEndPoint(snappedPoint);
-    mpTransitionLineAnnotation->update();
   } else if (isCreatingLineShape()) {
     mpLineShapeAnnotation->updateEndPoint(snappedPoint);
-    mpLineShapeAnnotation->update();
   } else if (isCreatingPolygonShape()) {
     mpPolygonShapeAnnotation->updateEndPoint(snappedPoint);
-    mpPolygonShapeAnnotation->update();
   } else if (isCreatingRectangleShape()) {
     mpRectangleShapeAnnotation->updateExtent(1, snappedPoint);
   } else if (isCreatingEllipseShape()) {
