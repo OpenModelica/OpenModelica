@@ -5056,7 +5056,7 @@ algorithm
 end printStringAsCorbaString;
 
 public function writePath
-  input File.File file;
+  input File.FileHandler file;
   input Absyn.Path path;
   input Escape escape=Escape.None;
   input String delimiter=".";

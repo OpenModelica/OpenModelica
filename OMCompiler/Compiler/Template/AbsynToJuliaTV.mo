@@ -1166,6 +1166,10 @@ package MMToJuliaUtil
     input String iS;
     output String oS;
   end mMKeywordToJLKeyword;
+  function ifMMKeywordReturnSelf
+    input String inName;
+    output String outName;
+  end ifMMKeywordReturnSelf;
 end MMToJuliaUtil;
 
 package AbsynUtil

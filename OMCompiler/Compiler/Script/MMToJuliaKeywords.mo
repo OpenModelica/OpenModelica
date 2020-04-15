@@ -13,7 +13,7 @@ constant String  CONTINUE = "continue";
 constant String  DO = "do";
 constant String  EXPORT = "export";
 constant String  FOR = "for";
-constant String  FUNCTION = "function";
+constant String  FUNCTION_LC = "function";
 constant String  GLOBAL = "global";
 constant String  IF = "if";
 constant String  IMPORT = "import";
@@ -31,10 +31,12 @@ constant String  RETURN = "return";
 constant String  STRUCT = "struct";
 constant String  TRY = "try";
 constant String  TUPLE = "tuple";
-constant String  TYPE = "type";
+constant String  TYPE_LC = "type";
+constant String  TYPE_UC = "Type";
 constant String  TYPEALIAS = "typealias";
 constant String  USING = "using";
 constant String  WHILE = "while";
+constant String  FUNCTION_UC = "Function";
 
 encapsulated package MM_INDEPENDENT_PACKAGES
 "Some modules can be readily used without refeering to the Main module.
