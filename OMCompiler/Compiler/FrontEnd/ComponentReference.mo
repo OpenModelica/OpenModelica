@@ -3905,7 +3905,7 @@ algorithm
 end crefAppendedSubs;
 
 public function writeCref
-  input File.File file;
+  input File.FileHandler file;
   input DAE.ComponentRef cref;
   input File.Escape escape = File.Escape.None;
 protected
@@ -3944,7 +3944,7 @@ algorithm
 end writeCref;
 
 public function writeSubscripts
-  input File.File file;
+  input File.FileHandler file;
   input list<DAE.Subscript> subs;
   input File.Escape escape = File.Escape.None;
 protected

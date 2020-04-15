@@ -935,7 +935,7 @@ algorithm
 end tokensString;
 
 protected function tokensFile
-  input File.File file;
+  input File.FileHandler file;
   input Tokens inTokens;
   input output Integer actualPositionOnLine;
   input output Boolean atStartOfLine;
@@ -1034,7 +1034,7 @@ protected function tokFileText
   input StringToken inStringToken;
   input Boolean doHandleTok=true;
 protected
-  File.File file = File.File(getTextOpaqueFile(inText));
+  File.FileHandler file = File.FileHandler(getTextOpaqueFile(inText));
   Integer nchars, aind;
   Boolean isstart;
 algorithm
@@ -1056,7 +1056,7 @@ algorithm
 end tokFileText;
 
 protected function tokFile
-  input File.File file;
+  input File.FileHandler file;
   input StringToken inStringToken;
   input output Integer nchars;
   input output Boolean isstart;
@@ -1184,7 +1184,7 @@ algorithm
 end stringListString;
 
 protected function stringListFile
-  input File.File file;
+  input File.FileHandler file;
   input list<String> inStringList;
   input output Integer nchars;
   input output Boolean isstart;
@@ -1590,7 +1590,7 @@ end tryWrapString;
 
 
 protected function blockFile
-  input File.File file;
+  input File.FileHandler file;
   input BlockType inBlockType;
   input Tokens inTokens;
   input Integer inActualPositionOnLine;
@@ -1759,7 +1759,7 @@ algorithm
 end blockFile;
 
 protected function iterSeparatorFile
-  input File.File file;
+  input File.FileHandler file;
   input Tokens inTokens;
   input StringToken inSeparator;
   input Integer inActualPositionOnLine;
@@ -1793,7 +1793,7 @@ end iterSeparatorFile;
 
 
 protected function iterSeparatorAlignWrapFile
-  input File.File file;
+  input File.FileHandler file;
   input Tokens inTokens;
   input StringToken inSeparator;
   input Integer inActualIndex;
@@ -1836,7 +1836,7 @@ end iterSeparatorAlignWrapFile;
 
 
 protected function iterAlignWrapFile
-  input File.File file;
+  input File.FileHandler file;
   input Tokens inTokens;
   input Integer inActualIndex;
   input Integer inAlignNum;
@@ -1912,7 +1912,7 @@ end iterAlignWrapFile;
 
 
 protected function tryWrapFile
-  input File.File file;
+  input File.FileHandler file;
   input Integer inWrapWidth;
   input StringToken inWrapSeparator;
   input Integer inActualPositionOnLine;
@@ -2413,7 +2413,7 @@ public function redirectToFile
   input output Text text;
   input String fileName;
 protected
-  File.File file = File.File();
+  File.FileHandler file = File.FileHandler();
 algorithm
   if Testsuite.isRunning() then
     System.appendFile(Testsuite.getTempFilesFile(), fileName + "\n");
@@ -2426,7 +2426,7 @@ public function closeFile
 "Magic sourceInfo() function implementation"
   input output Text text;
 protected
-  File.File file = File.File(getTextOpaqueFile(text));
+  File.FileHandler file = File.FileHandler(getTextOpaqueFile(text));
 algorithm
   File.releaseReference(file);
   text := emptyTxt;
@@ -2458,7 +2458,7 @@ protected function stringFile "Like ST_STRING or ST_LINE"
   input Boolean line;
   input Boolean recurseSeparator=true;
 protected
-  File.File file = File.File(getTextOpaqueFile(inText));
+  File.FileHandler file = File.FileHandler(getTextOpaqueFile(inText));
   Integer nchars;
   IterOptions iopts;
   StringToken septok;
@@ -2494,7 +2494,7 @@ end stringFile;
 protected function newlineFile "Like ST_NEWLINE"
   input Text inText;
 protected
-  File.File file = File.File(getTextOpaqueFile(inText));
+  File.FileHandler file = File.FileHandler(getTextOpaqueFile(inText));
   Integer nchars;
 algorithm
   _ := match inText
@@ -2511,7 +2511,7 @@ protected function textFileTell
   input Text inText;
   output Integer tell;
 protected
-  File.File file = File.File(getTextOpaqueFile(inText));
+  File.FileHandler file = File.FileHandler(getTextOpaqueFile(inText));
 algorithm
   tell := File.tell(file);
 end textFileTell;

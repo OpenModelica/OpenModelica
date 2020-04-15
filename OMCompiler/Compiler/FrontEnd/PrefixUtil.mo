@@ -1442,7 +1442,7 @@ algorithm
 end componentPrefix;
 
 public function writeComponentPrefix
-  input File.File file;
+  input File.FileHandler file;
   input DAE.ComponentPrefix pre;
   input File.Escape escape=File.Escape.None;
 algorithm

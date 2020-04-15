@@ -372,7 +372,7 @@ end algorithmItemsContainsReturn;
 
 function mMKeywordToJLKeyword
 "Maps the inName to a Julia comptatible outName.
-If there exists no such name. Returns the empty string."
+If there exists no such name. Returns the original string"
   input String inName;
   output String outName;
 algorithm
@@ -384,10 +384,19 @@ algorithm
     case MMToJuliaKeywords.TUPLE then "Tuple";
     case MMToJuliaKeywords.POLYMORPHIC then "Any";
     case MMToJuliaKeywords.MUTABLE then "MutableType";
-    case MMToJuliaKeywords.TYPE then "M_Type";
+    case MMToJuliaKeywords.TYPE_LC then "M_type";
+    case MMToJuliaKeywords.TYPE_UC then "M_Type";
+    case MMToJuliaKeywords.FUNCTION_UC then "M_Function";
+    case MMToJuliaKeywords.FUNCTION_LC then "M_function";
+    case MMToJuliaKeywords.CONST then "M_const";
     else "";
   end match;
 end mMKeywordToJLKeyword;
+
+function ifMMKeywordReturnSelf
+  input String inName;
+  output String outName;
+end ifMMKeywordReturnSelf;
 
 annotation(__OpenModelica_Interface="backend");
 end MMToJuliaUtil;

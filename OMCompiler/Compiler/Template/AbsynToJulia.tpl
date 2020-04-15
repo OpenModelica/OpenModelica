@@ -42,6 +42,7 @@ TODOS:
   TODO: Linear ordering of generated packages.
         Check for cycles? Fail if that is the case..
         Generate interfaces or Topological Sort?
+  TODO: Fix extends
 */
 
 import interface AbsynToJuliaTV;
@@ -574,10 +575,12 @@ match specification
   case CLASSDEF(__) then dumpClassElement(class_, options, context)
   case EXTENDS(__) then
     let bc_str = dumpPathJL(path)
-    let args_str = (elementArg |> earg => dumpElementArg(earg, context) ;separator=", ")
-    let mod_str = if args_str then '(<%args_str%>)'
+    let args_str = (elementArg |> earg => dumpElementArg(earg, context) ;separator="\n")
+    let mod_str = if args_str then '<%args_str%>'
     let ann_str = dumpAnnotationOptSpace(annotationOpt, context)
-    'using #= Modelica extend clause =# <%bc_str%><%mod_str%><%ann_str%>'
+    'using #= Modelica extend clause =# <%bc_str%>
+     <%mod_str%>
+     <%ann_str%>'
   case COMPONENTS(__) then
     let attr_str = dumpElementAttr(attributes)
     /* Remove all items with input-output specification. They are handled earlier and separate! */
@@ -685,7 +688,7 @@ match comp
   case COMPONENT(__) then
     let dim_str = dumpSubscripts(arrayDim, context)
     let mod_str = match modification case SOME(mod) then dumpModification(mod, context)
-    let component_name = '<%name%>'
+    let component_name = '<%MMToJuliaUtil.ifMMKeywordReturnSelf(name)%>'
     /*REFACTOR INVERSE NAME INVERSE MEANING!*/
     match context
       case FUNCTION_RETURN_CONTEXT(__) then '<%component_name%>::<%ty_str%><%dim_str%><%mod_str%>'
@@ -707,7 +710,7 @@ template dumpImport(Absyn.Import imp)
 ::=
 match imp
   case NAMED_IMPORT(__) then
-    'import Main.<%dumpPathJL2(path, MMToJuliaUtil.makeImportContext())%>; Main.<%name%>=<%dumpPathJL2(path, MMToJuliaUtil.makeImportContext())%>'
+    'import Main.<%dumpPathJL2(path, MMToJuliaUtil.makeImportContext())%>; <%name%>=Main.<%dumpPathJL2(path, MMToJuliaUtil.makeImportContext())%>'
   case QUAL_IMPORT(__) then
     let path_str = dumpPathJL2(path,  MMToJuliaUtil.makeImportContext())
     match path_str /* Some package need different names. This is true for packages that already exists */

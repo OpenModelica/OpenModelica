@@ -31,44 +31,44 @@
 
 encapsulated package File
 
-class File
+class FileHandler
   extends ExternalObject;
   function constructor<T> "File constructor."
     input Option<Integer> fromID = noReference() "Never pass this an actual Option<Integer>. Only use File.getReference(file) or File.noReference(). Determines if we should restore from another File object or create a new File.";
-    output File file;
+    output FileHandler file;
   external "C" file=om_file_new(fromID) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
   end constructor;
 
   function destructor
-    input File file;
+    input FileHandler file;
   external "C" om_file_free(file) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
   end destructor;
-end File;
+end FileHandler;
 
 type Mode = enumeration(Read,Write);
 
 function open
-  input File file;
+  input FileHandler file;
   input String filename;
   input Mode mode = Mode.Read;
 external "C" om_file_open(file,filename,mode) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
 end open;
 
 function write
-  input File file;
+  input FileHandler file;
   input String data;
 external "C" om_file_write(file,data) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
 end write;
 
 function writeInt
-  input File file;
+  input FileHandler file;
   input Integer data;
   input String format="%d";
 external "C" om_file_write_int(file,data,format) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
 end writeInt;
 
 function writeReal
-  input File file;
+  input FileHandler file;
   input Real data;
   input String format="%.15g";
 external "C" om_file_write_real(file,data,format) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
@@ -80,7 +80,7 @@ type Escape = enumeration(None "No escape string",
                           XML "Escapes strings to XML text");
 
 function writeEscape
-  input File file;
+  input FileHandler file;
   input String data;
   input Escape escape;
 external "C" om_file_write_escape(file,data,escape) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
@@ -89,7 +89,7 @@ end writeEscape;
 type Whence = enumeration(Set "SEEK_SET 0=start of file",Current "SEEK_CUR 0=current byte",End "SEEK_END 0=end of file");
 
 function seek
-  input File file;
+  input FileHandler file;
   input Integer offset;
   input Whence whence = Whence.Set;
   output Boolean success;
@@ -97,7 +97,7 @@ external "C" success = om_file_seek(file,offset,whence) annotation(IncludeDirect
 end seek;
 
 function tell
-  input File file;
+  input FileHandler file;
   output Integer pos;
 external "C" pos = om_file_tell(file) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
 end tell;
@@ -114,29 +114,29 @@ external "C" reference = om_file_no_reference() annotation(IncludeDirectory="mod
 end noReference;
 
 function getReference "Returns an opaque pointer (not actually Option<Integer>)"
-  input File file;
+  input FileHandler file;
   output Option<Integer> reference;
 external "C" reference = om_file_get_reference(file) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
 end getReference;
 
 function releaseReference
-  input File file;
+  input FileHandler file;
 external "C" om_file_release_reference(file) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
 end releaseReference;
 
 function writeSpace
-  input File file;
+  input FileHandler file;
   input Integer n;
 algorithm
   for i in 1:n loop
-    File.write(file, " ");
+    FileHandler.write(file, " ");
   end for;
 end writeSpace;
 
 package Examples
 
   model WriteToFile
-    File file = File();
+    FileHandler file = FileHandler();
   algorithm
     open(file,"abc.txt",Mode.Write);
     write(file,"def.fafaf\n");

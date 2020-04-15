@@ -68,7 +68,7 @@ function serializeWork "Always succeeds in order to clean-up external objects"
   output Boolean success; // We always need to return in order to clean up external objects
   output String fileName;
 protected
-  File.File file = File.File();
+  File.FileHandler file = File.FileHandler();
 algorithm
   (success,fileName) := matchcontinue code
     local
@@ -118,7 +118,7 @@ algorithm
 end serializeWork;
 
 function serializeVars
-  input File.File file;
+  input File.FileHandler file;
   input SimCodeVar.SimVars vars;
   input Boolean withOperations;
 algorithm
@@ -153,7 +153,7 @@ algorithm
 end serializeVars;
 
 function serializeVarsHelp
-  input File.File file;
+  input File.FileHandler file;
   input list<SimCodeVar.SimVar> vars;
   input Boolean withOperations;
   input Boolean inFirst;
@@ -175,7 +175,7 @@ algorithm
 end serializeVarsHelp;
 
 function serializeVar
-  input File.File file;
+  input File.FileHandler file;
   input SimCodeVar.SimVar var;
   input Boolean withOperations;
   input Boolean first = false;
@@ -210,7 +210,7 @@ algorithm
 end serializeVar;
 
 function serializeTypeName
-  input File.File file;
+  input File.FileHandler file;
   input DAE.Type ty;
 algorithm
   _ := match ty
@@ -224,7 +224,7 @@ algorithm
 end serializeTypeName;
 
 function serializeSource
-  input File.File file;
+  input File.FileHandler file;
   input DAE.ElementSource source;
   input Boolean withOperations;
 protected
@@ -274,7 +274,7 @@ algorithm
 end serializeSource;
 
 function serializeInfo
-  input File.File file;
+  input File.FileHandler file;
   input SourceInfo info;
 algorithm
   _ := match i as info
@@ -296,7 +296,7 @@ algorithm
 end serializeInfo;
 
 function serializeOperation
-  input File.File file;
+  input File.FileHandler file;
   input DAE.SymbolicOperation op;
 algorithm
   _ := match op
@@ -428,7 +428,7 @@ algorithm
 end serializeOperation;
 
 function serializeEquation
-  input File.File file;
+  input File.FileHandler file;
   input SimCode.SimEqSystem eq;
   input String section;
   input Boolean withOperations;
@@ -1043,7 +1043,7 @@ algorithm
 end serializeEquation;
 
 function serializeLinearCell
-  input File.File file;
+  input File.FileHandler file;
   input tuple<Integer, Integer, SimCode.SimEqSystem> cell;
   input Boolean withOperations;
 algorithm
@@ -1071,7 +1071,7 @@ algorithm
 end serializeLinearCell;
 
 function serializeVarKind
-  input File.File file;
+  input File.FileHandler file;
   input BackendDAE.VarKind varKind;
 algorithm
   _ := match varKind
@@ -1163,7 +1163,7 @@ algorithm
 end serializeVarKind;
 
 function serializeUses
-  input File.File file;
+  input File.FileHandler file;
   input list<DAE.ComponentRef> crefs;
 algorithm
   _ := match crefs
@@ -1188,7 +1188,7 @@ algorithm
 end serializeUses;
 
 function serializeStatement
-  input File.File file;
+  input File.FileHandler file;
   input DAE.Statement stmt;
 algorithm
   File.write(file,"\"");
@@ -1197,12 +1197,12 @@ algorithm
 end serializeStatement;
 
 function serializeList<ArgType>
-  input File.File file;
+  input File.FileHandler file;
   input list<ArgType> lst;
   input FuncType func;
 
   partial function FuncType
-    input File.File file;
+    input File.FileHandler file;
     input ArgType a;
   end FuncType;
 algorithm
@@ -1225,13 +1225,13 @@ algorithm
 end serializeList;
 
 function serializeList1<ArgType,Extra>
-  input File.File file;
+  input File.FileHandler file;
   input list<ArgType> lst;
   input Extra extra;
   input FuncType func;
 
   partial function FuncType
-    input File.File file;
+    input File.FileHandler file;
     input ArgType a;
     input Extra extra;
   end FuncType;
@@ -1255,7 +1255,7 @@ algorithm
 end serializeList1;
 
 function serializeExp
-  input File.File file;
+  input File.FileHandler file;
   input DAE.Exp exp;
 algorithm
   File.write(file, "\"");
@@ -1264,7 +1264,7 @@ algorithm
 end serializeExp;
 
 function serializeCref
-  input File.File file;
+  input File.FileHandler file;
   input DAE.ComponentRef cr;
 algorithm
   File.write(file, "\"");
@@ -1273,7 +1273,7 @@ algorithm
 end serializeCref;
 
 function serializeString
-  input File.File file;
+  input File.FileHandler file;
   input String string;
 algorithm
   File.write(file, "\"");
@@ -1282,7 +1282,7 @@ algorithm
 end serializeString;
 
 function serializePath
-  input File.File file;
+  input File.FileHandler file;
   input Absyn.Path path;
 protected
   Absyn.Path p=path;
@@ -1308,14 +1308,14 @@ algorithm
 end serializePath;
 
 function serializeEquationIndex
-  input File.File file;
+  input File.FileHandler file;
   input SimCode.SimEqSystem eq;
 algorithm
   File.writeInt(file, SimCodeUtil.simEqSystemIndex(eq));
 end serializeEquationIndex;
 
 function serializeIfBranch
-  input File.File file;
+  input File.FileHandler file;
   input tuple<DAE.Exp,list<SimCode.SimEqSystem>> branch;
 protected
   DAE.Exp exp;
@@ -1330,7 +1330,7 @@ algorithm
 end serializeIfBranch;
 
 function writeEqExpStr
-  input File.File file;
+  input File.FileHandler file;
   input DAE.EquationExp eqExp;
 algorithm
   _ := match eqExp
@@ -1353,7 +1353,7 @@ algorithm
 end writeEqExpStr;
 
 function serializeFunction
-  input File.File file;
+  input File.FileHandler file;
   input SimCodeFunction.Function func;
 algorithm
   File.write(file, "\n");

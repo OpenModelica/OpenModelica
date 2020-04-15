@@ -72,7 +72,7 @@ protected
   ModelInfo modelInfo;
   VarInfo vi;
   SimulationSettings s;
-  File.File file = File.File();
+  File.FileHandler file = File.FileHandler();
   String FMUType;
 algorithm
   try
@@ -266,7 +266,7 @@ end simulationInitFileReturnBool;
 protected
 
 function modelVariables "Generates code for ModelVariables file for FMU target."
-  input File.File file;
+  input File.FileHandler file;
   input ModelInfo modelInfo;
 protected
   SimCodeVar.SimVars vars;
@@ -310,7 +310,7 @@ algorithm
 end modelVariables;
 
 function scalarVariables
-  input File.File file;
+  input File.FileHandler file;
   input list<SimVar> vars;
   input String classType;
   input output Integer valueReference;
@@ -324,7 +324,7 @@ algorithm
 end scalarVariables;
 
 function scalarVariable
-  input File.File file;
+  input File.FileHandler file;
   input SimVar var;
   input String classType;
   input Integer valueReference;
@@ -339,7 +339,7 @@ algorithm
 end scalarVariable;
 
 function scalarVariableAttribute "Generates code for ScalarVariable Attribute file for FMU target."
-  input File.File file;
+  input File.FileHandler file;
   input SimVar simVar;
   input String classType;
   input Integer valueReference;
@@ -416,7 +416,7 @@ algorithm
 end scalarVariableAttribute;
 
 function scalarVariableType "Generates code for ScalarVariable Type file for FMU target."
-  input File.File file;
+  input File.FileHandler file;
   input String unit, displayUnit;
   input Option<Exp> minValue, maxValue, startValue, nominalValue;
   input Boolean isFixed;
@@ -486,7 +486,7 @@ algorithm
 end scalarVariableType;
 
 function scalarVariableTypeUseAttribute
-  input File.File file;
+  input File.FileHandler file;
   input Option<Exp> startValue;
   input String use, name;
 protected
@@ -510,7 +510,7 @@ algorithm
 end scalarVariableTypeUseAttribute;
 
 function scalarVariableTypeFixedAttribute
-  input File.File file;
+  input File.FileHandler file;
   input Boolean isFixed;
 algorithm
   File.write(file, " fixed=\"");
@@ -519,7 +519,7 @@ algorithm
 end scalarVariableTypeFixedAttribute;
 
 function scalarVariableTypeAttribute
-  input File.File file;
+  input File.FileHandler file;
   input Option<Exp> attr;
   input String name;
 protected
@@ -539,7 +539,7 @@ algorithm
 end scalarVariableTypeAttribute;
 
 function scalarVariableTypeStringAttribute
-  input File.File file;
+  input File.FileHandler file;
   input String attr;
   input String name;
 algorithm
@@ -581,7 +581,7 @@ algorithm
 end getVariablity;
 
 function getAliasVar "Returns the alias Attribute of ScalarVariable."
-  input File.File file;
+  input File.FileHandler file;
   input SimCodeVar.SimVar simVar;
 algorithm
   _ := match simVar
@@ -606,7 +606,7 @@ algorithm
 end getAliasVar;
 
 function xsdateTime "YYYY-MM-DDThh:mm:ssZ"
-  input File.File file;
+  input File.FileHandler file;
   input Util.DateTime dt;
 algorithm
   File.writeInt(file, dt.year);
@@ -618,7 +618,7 @@ algorithm
 end xsdateTime;
 
 function writeExp
-  input File.File file;
+  input File.FileHandler file;
   input Exp exp;
 algorithm
   _ := match exp
