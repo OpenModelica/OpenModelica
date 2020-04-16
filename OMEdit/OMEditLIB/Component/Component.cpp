@@ -519,7 +519,7 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString an
     connect(mpLibraryTreeItem, SIGNAL(nameChanged()), SLOT(handleNameChanged()));
   }
   connect(this, SIGNAL(transformHasChanged()), SLOT(updatePlacementAnnotation()));
-  connect(this, SIGNAL(transformChange()), SLOT(updateOriginItem()));
+  connect(this, SIGNAL(transformChange(bool)), SLOT(updateOriginItem()));
   connect(this, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
   /* Ticket:4204
    * If the child class use text annotation from base class then we need to call this
@@ -647,7 +647,7 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   connect(mpReferenceComponent, SIGNAL(added()), SLOT(referenceComponentAdded()));
   connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceComponentTransformHasChanged()));
   connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
-  connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SIGNAL(transformChange()));
+  connect(mpReferenceComponent, SIGNAL(transformChange(bool)), SIGNAL(transformChange(bool)));
   connect(mpReferenceComponent, SIGNAL(displayTextChanged()), SIGNAL(displayTextChanged()));
   connect(mpReferenceComponent, SIGNAL(changed()), SLOT(referenceComponentChanged()));
   connect(mpReferenceComponent, SIGNAL(deleted()), SLOT(referenceComponentDeleted()));
@@ -1173,13 +1173,13 @@ void Component::applyRotation(qreal angle)
     angle = 0;
   }
   mTransformation.setRotateAngle(angle);
-  updateComponentTransformations(oldTransformation);
+  updateComponentTransformations(oldTransformation, false);
 }
 
 void Component::addConnectionDetails(LineAnnotation *pConnectorLineAnnotation)
 {
   // handle component position, rotation and scale changes
-  connect(this, SIGNAL(transformChange()), pConnectorLineAnnotation, SLOT(handleComponentMoved()), Qt::UniqueConnection);
+  connect(this, SIGNAL(transformChange(bool)), pConnectorLineAnnotation, SLOT(handleComponentMoved(bool)), Qt::UniqueConnection);
   if (!pConnectorLineAnnotation->isInheritedShape()) {
     connect(this, SIGNAL(transformChanging()), pConnectorLineAnnotation, SLOT(updateConnectionTransformation()), Qt::UniqueConnection);
   }
@@ -1187,7 +1187,7 @@ void Component::addConnectionDetails(LineAnnotation *pConnectorLineAnnotation)
 
 void Component::removeConnectionDetails(LineAnnotation *pConnectorLineAnnotation)
 {
-  disconnect(this, SIGNAL(transformChange()), pConnectorLineAnnotation, SLOT(handleComponentMoved()));
+  disconnect(this, SIGNAL(transformChange(bool)), pConnectorLineAnnotation, SLOT(handleComponentMoved(bool)));
   if (!pConnectorLineAnnotation->isInheritedShape()) {
     disconnect(this, SIGNAL(transformChanging()), pConnectorLineAnnotation, SLOT(updateConnectionTransformation()));
   }
@@ -1578,11 +1578,12 @@ void Component::adjustInterfacePoints()
  * \brief Component::updateComponentTransformations
  * Creates a UpdateComponentTransformationsCommand and emits the Component::transformChanging() SIGNAL.
  * \param oldTransformation
+ * \param positionChanged
  */
-void Component::updateComponentTransformations(const Transformation &oldTransformation)
+void Component::updateComponentTransformations(const Transformation &oldTransformation, const bool positionChanged)
 {
   mpGraphicsView->getModelWidget()->beginMacro("Update component transformations");
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation, positionChanged));
   emit transformChanging();
   mpGraphicsView->getModelWidget()->endMacro();
 }
@@ -2713,7 +2714,7 @@ void Component::resizeComponent(QPointF newPosition)
   mTransformation.setExtent2(extent2);
   setTransform(mTransformation.getTransformationMatrix());
   // let connections know that component has changed.
-  emit transformChange();
+  emit transformChange(false);
 }
 
 /*!
@@ -2735,7 +2736,7 @@ void Component::finishResizeComponent()
  */
 void Component::resizedComponent()
 {
-  updateComponentTransformations(mOldTransformation);
+  updateComponentTransformations(mOldTransformation, false);
   mpGraphicsView->getModelWidget()->updateModelText();
 }
 
@@ -2866,7 +2867,7 @@ void Component::flipHorizontal()
     mTransformation.setExtent1(QPointF(extent1.x(), extent2.y()));
     mTransformation.setExtent2(QPointF(extent2.x(), extent1.y()));
   }
-  updateComponentTransformations(oldTransformation);
+  updateComponentTransformations(oldTransformation, false);
   showResizerItems();
 }
 
@@ -2889,7 +2890,7 @@ void Component::flipVertical()
     mTransformation.setExtent1(QPointF(extent2.x(), extent1.y()));
     mTransformation.setExtent2(QPointF(extent1.x(), extent2.y()));
   }
-updateComponentTransformations(oldTransformation);
+  updateComponentTransformations(oldTransformation, false);
   showResizerItems();
 }
 
@@ -2903,7 +2904,7 @@ void Component::moveUp()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(0, mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep());
-  updateComponentTransformations(oldTransformation);
+  updateComponentTransformations(oldTransformation, true);
 }
 
 /*!
@@ -2916,7 +2917,7 @@ void Component::moveShiftUp()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(0, mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
-  updateComponentTransformations(oldTransformation);
+  updateComponentTransformations(oldTransformation, true);
 }
 
 /*!
@@ -2929,7 +2930,7 @@ void Component::moveCtrlUp()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(0, 1);
-  updateComponentTransformations(oldTransformation);
+  updateComponentTransformations(oldTransformation, true);
 }
 
 /*!
@@ -2942,7 +2943,7 @@ void Component::moveDown()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(0, -mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep());
-  updateComponentTransformations(oldTransformation);
+  updateComponentTransformations(oldTransformation, true);
 }
 
 /*!
@@ -2955,7 +2956,7 @@ void Component::moveShiftDown()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(0, -(mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5));
-  updateComponentTransformations(oldTransformation);
+  updateComponentTransformations(oldTransformation, true);
 }
 
 /*!
@@ -2968,7 +2969,7 @@ void Component::moveCtrlDown()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(0, -1);
-  updateComponentTransformations(oldTransformation);
+  updateComponentTransformations(oldTransformation, true);
 }
 
 /*!
@@ -2981,7 +2982,7 @@ void Component::moveLeft()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(-mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep(), 0);
-  updateComponentTransformations(oldTransformation);
+  updateComponentTransformations(oldTransformation, true);
 }
 
 /*!
@@ -2994,7 +2995,7 @@ void Component::moveShiftLeft()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(-(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5), 0);
-  updateComponentTransformations(oldTransformation);
+  updateComponentTransformations(oldTransformation, true);
 }
 
 /*!
@@ -3007,7 +3008,7 @@ void Component::moveCtrlLeft()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(-1, 0);
-  updateComponentTransformations(oldTransformation);
+  updateComponentTransformations(oldTransformation, true);
 }
 
 /*!
@@ -3020,7 +3021,7 @@ void Component::moveRight()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep(), 0);
-  updateComponentTransformations(oldTransformation);
+  updateComponentTransformations(oldTransformation, true);
 }
 
 /*!
@@ -3033,7 +3034,7 @@ void Component::moveShiftRight()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5, 0);
-  updateComponentTransformations(oldTransformation);
+  updateComponentTransformations(oldTransformation, true);
 }
 
 /*!
@@ -3046,7 +3047,7 @@ void Component::moveCtrlRight()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(1, 0);
-  updateComponentTransformations(oldTransformation);
+  updateComponentTransformations(oldTransformation, true);
 }
 
 //! Slot that opens up the component parameters dialog.
@@ -3224,7 +3225,7 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
     }
 #endif
   } else if (change == QGraphicsItem::ItemPositionHasChanged) {
-    emit transformChange();
+    emit transformChange(true);
   }
   else if (change == QGraphicsItem::ItemPositionChange) {
     // move by grid distance while dragging component

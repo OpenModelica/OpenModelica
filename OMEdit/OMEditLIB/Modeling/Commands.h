@@ -109,8 +109,8 @@ private:
 class UpdateComponentTransformationsCommand : public UndoCommand
 {
 public:
-  UpdateComponentTransformationsCommand(Component *pComponent, const Transformation &oldTransformation,
-                                        const Transformation &newTransformation, UndoCommand *pParent = 0);
+  UpdateComponentTransformationsCommand(Component *pComponent, const Transformation &oldTransformation, const Transformation &newTransformation,
+                                        const bool positionChanged, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
 private:
@@ -118,6 +118,7 @@ private:
   Component *mpIconOrDiagramComponent;
   Transformation mOldTransformation;
   Transformation mNewTransformation;
+  bool mPositionChanged;
 };
 
 class UpdateComponentAttributesCommand : public UndoCommand

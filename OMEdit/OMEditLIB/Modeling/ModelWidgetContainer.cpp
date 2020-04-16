@@ -3357,7 +3357,7 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
         Transformation oldTransformation = pComponent->mTransformation;
         QPointF positionDifference = pComponent->scenePos() - pComponent->getOldScenePosition();
         pComponent->mTransformation.adjustPosition(positionDifference.x(), positionDifference.y());
-        pComponent->updateComponentTransformations(oldTransformation);
+        pComponent->updateComponentTransformations(oldTransformation, true);
         hasComponentMoved = true;
       }
     }
