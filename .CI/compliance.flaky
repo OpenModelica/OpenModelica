@@ -1,2 +1,4 @@
 ModelicaCompliance.Algorithms.For.ImplicitMultiMixedIterator
 ModelicaCompliance.Functions.Calls.Vectorization.VectorizationMultiInputIllegal
+ModelicaCompliance.Scoping.InnerOuter.OuterInPackage
+ModelicaCompliance.Arrays.Operations.MatrixProduct.ArrayVectorVectorMul3
