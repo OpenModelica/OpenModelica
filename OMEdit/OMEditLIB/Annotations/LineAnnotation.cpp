@@ -48,7 +48,10 @@ LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
   mpOriginItem->setPassive();
   setLineType(LineAnnotation::ShapeType);
   setStartComponent(0);
+  setStartComponentName("");
   setEndComponent(0);
+  setEndComponentName("");
+  mStartAndEndComponentsSelected = false;
   setCondition("");
   setImmediate(true);
   setReset(true);
@@ -78,7 +81,10 @@ LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pPa
   updateShape(pShapeAnnotation);
   setLineType(LineAnnotation::ComponentType);
   setStartComponent(0);
+  setStartComponentName("");
   setEndComponent(0);
+  setEndComponentName("");
+  mStartAndEndComponentsSelected = false;
   setCondition("");
   setImmediate(true);
   setReset(true);
@@ -118,7 +124,10 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Component *pSt
   ShapeAnnotation::setDefaults();
   // set the start component
   setStartComponent(pStartComponent);
+  setStartComponentName("");
   setEndComponent(0);
+  setEndComponentName("");
+  mStartAndEndComponentsSelected = false;
   setCondition("");
   setImmediate(true);
   setReset(true);
@@ -187,8 +196,11 @@ LineAnnotation::LineAnnotation(QString annotation, Component *pStartComponent, C
   ShapeAnnotation::setDefaults();
   // set the start component
   setStartComponent(pStartComponent);
+  setStartComponentName("");
   // set the end component
   setEndComponent(pEndComponent);
+  setEndComponentName("");
+  mStartAndEndComponentsSelected = false;
   setCondition("");
   setImmediate(true);
   setReset(true);
@@ -228,8 +240,11 @@ LineAnnotation::LineAnnotation(QString annotation, QString text, Component *pSta
   ShapeAnnotation::setDefaults();
   // set the start component
   setStartComponent(pStartComponent);
+  setStartComponentName("");
   // set the end component
   setEndComponent(pEndComponent);
+  setEndComponentName("");
+  mStartAndEndComponentsSelected = false;
   setCondition(condition);
   setImmediate(immediate.contains("true"));
   setReset(reset.contains("true"));
@@ -268,8 +283,11 @@ LineAnnotation::LineAnnotation(QString annotation, Component *pComponent, Graphi
   ShapeAnnotation::setDefaults();
   // set the start component
   setStartComponent(pComponent);
+  setStartComponentName("");
   // set the end component
   setEndComponent(0);
+  setEndComponentName("");
+  mStartAndEndComponentsSelected = false;
   setCondition("");
   setImmediate(true);
   setReset(true);
@@ -302,7 +320,10 @@ LineAnnotation::LineAnnotation(Component *pParent)
   mpOriginItem = 0;
   setLineType(LineAnnotation::ComponentType);
   setStartComponent(0);
+  setStartComponentName("");
   setEndComponent(0);
+  setEndComponentName("");
+  mStartAndEndComponentsSelected = false;
   setCondition("");
   setImmediate(true);
   setReset(true);
@@ -340,7 +361,10 @@ LineAnnotation::LineAnnotation(GraphicsView *pGraphicsView)
   mpOriginItem = 0;
   setLineType(LineAnnotation::ShapeType);
   setStartComponent(0);
+  setStartComponentName("");
   setEndComponent(0);
+  setEndComponentName("");
+  mStartAndEndComponentsSelected = false;
   setCondition("");
   setImmediate(true);
   setReset(true);
@@ -1157,47 +1181,59 @@ QVariant LineAnnotation::itemChange(GraphicsItemChange change, const QVariant &v
 /*!
  * \brief LineAnnotation::handleComponentMoved
  * If the component associated with the connection is moved then update the connection accordingly.
+ * \param positionChanged
  */
-void LineAnnotation::handleComponentMoved()
+void LineAnnotation::handleComponentMoved(bool positionChanged)
 {
   if (mPoints.size() < 2) {
     return;
   }
   prepareGeometryChange();
-  if (mpStartComponent) {
-    Component *pComponent = qobject_cast<Component*>(sender());
-    if (pComponent == mpStartComponent->getRootParentComponent()) {
-      updateStartPoint(mpGraphicsView->roundPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center())));
-      if (mLineType == LineAnnotation::TransitionType) {
-        QRectF sceneRectF = mpStartComponent->sceneBoundingRect();
-        QList<QPointF> newPos = Utilities::liangBarskyClipper(sceneRectF.topLeft().x(), sceneRectF.topLeft().y(),
-                                                              sceneRectF.bottomRight().x(), sceneRectF.bottomRight().y(),
-                                                              mPoints.at(0).x(), mPoints.at(0).y(),
-                                                              mPoints.at(1).x(), mPoints.at(1).y());
-        updateStartPoint(mpGraphicsView->roundPoint(newPos.at(1)));
-        updateTransitionTextPosition();
-      } else if (mLineType == LineAnnotation::InitialStateType) {
-        QRectF sceneRectF = mpStartComponent->sceneBoundingRect();
-        QList<QPointF> newPos = Utilities::liangBarskyClipper(sceneRectF.topLeft().x(), sceneRectF.topLeft().y(),
-                                                              sceneRectF.bottomRight().x(), sceneRectF.bottomRight().y(),
-                                                              mPoints.at(0).x(), mPoints.at(0).y(),
-                                                              mPoints.at(1).x(), mPoints.at(1).y());
-        updateStartPoint(mpGraphicsView->roundPoint(newPos.at(1)));
+  // if both start and end component are selected and positionChanged is true
+  if (positionChanged && mpStartComponent && mpStartComponent->getRootParentComponent()->isSelected() && mpEndComponent && mpEndComponent->getRootParentComponent()->isSelected()) {
+    if (mpStartComponent) {
+      QPointF offset = mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()) - mPoints[0];
+      for (int i = 0 ; i < mPoints.size() ; i++) {
+        mPoints[i] = QPointF(mPoints[i].x() + offset.x(), mPoints[i].y() + offset.y());
+        updateCornerItem(i);
       }
     }
-  }
-  if (mpEndComponent) {
-    Component *pComponent = qobject_cast<Component*>(sender());
-    if (pComponent == mpEndComponent->getRootParentComponent()) {
-      updateEndPoint(mpGraphicsView->roundPoint(mpEndComponent->mapToScene(mpEndComponent->boundingRect().center())));
-      if (mLineType == LineAnnotation::TransitionType) {
-        QRectF sceneRectF = mpEndComponent->sceneBoundingRect();
-        QList<QPointF> newPos = Utilities::liangBarskyClipper(sceneRectF.topLeft().x(), sceneRectF.topLeft().y(),
-                                                              sceneRectF.bottomRight().x(), sceneRectF.bottomRight().y(),
-                                                              mPoints.at(mPoints.size() - 2).x(), mPoints.at(mPoints.size() - 2).y(),
-                                                              mPoints.at(mPoints.size() - 1).x(), mPoints.at(mPoints.size() - 1).y());
-        updateEndPoint(mpGraphicsView->roundPoint(newPos.at(0)));
-        updateTransitionTextPosition();
+  } else {
+    if (mpStartComponent) {
+      Component *pComponent = qobject_cast<Component*>(sender());
+      if (pComponent == mpStartComponent->getRootParentComponent()) {
+        updateStartPoint(mpGraphicsView->roundPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center())));
+        if (mLineType == LineAnnotation::TransitionType) {
+          QRectF sceneRectF = mpStartComponent->sceneBoundingRect();
+          QList<QPointF> newPos = Utilities::liangBarskyClipper(sceneRectF.topLeft().x(), sceneRectF.topLeft().y(),
+                                                                sceneRectF.bottomRight().x(), sceneRectF.bottomRight().y(),
+                                                                mPoints.at(0).x(), mPoints.at(0).y(),
+                                                                mPoints.at(1).x(), mPoints.at(1).y());
+          updateStartPoint(mpGraphicsView->roundPoint(newPos.at(1)));
+          updateTransitionTextPosition();
+        } else if (mLineType == LineAnnotation::InitialStateType) {
+          QRectF sceneRectF = mpStartComponent->sceneBoundingRect();
+          QList<QPointF> newPos = Utilities::liangBarskyClipper(sceneRectF.topLeft().x(), sceneRectF.topLeft().y(),
+                                                                sceneRectF.bottomRight().x(), sceneRectF.bottomRight().y(),
+                                                                mPoints.at(0).x(), mPoints.at(0).y(),
+                                                                mPoints.at(1).x(), mPoints.at(1).y());
+          updateStartPoint(mpGraphicsView->roundPoint(newPos.at(1)));
+        }
+      }
+    }
+    if (mpEndComponent) {
+      Component *pComponent = qobject_cast<Component*>(sender());
+      if (pComponent == mpEndComponent->getRootParentComponent()) {
+        updateEndPoint(mpGraphicsView->roundPoint(mpEndComponent->mapToScene(mpEndComponent->boundingRect().center())));
+        if (mLineType == LineAnnotation::TransitionType) {
+          QRectF sceneRectF = mpEndComponent->sceneBoundingRect();
+          QList<QPointF> newPos = Utilities::liangBarskyClipper(sceneRectF.topLeft().x(), sceneRectF.topLeft().y(),
+                                                                sceneRectF.bottomRight().x(), sceneRectF.bottomRight().y(),
+                                                                mPoints.at(mPoints.size() - 2).x(), mPoints.at(mPoints.size() - 2).y(),
+                                                                mPoints.at(mPoints.size() - 1).x(), mPoints.at(mPoints.size() - 1).y());
+          updateEndPoint(mpGraphicsView->roundPoint(newPos.at(0)));
+          updateTransitionTextPosition();
+        }
       }
     }
   }
@@ -1230,6 +1266,18 @@ void LineAnnotation::updateConnectionAnnotation()
  */
 void LineAnnotation::updateConnectionTransformation()
 {
+  /* If both start and end component are selected then this function is called twice.
+   * we use the flag mStartAndEndComponentSelected to make sure that we only use this function once in such case.
+   */
+  if (!mStartAndEndComponentsSelected
+      && mpStartComponent && mpStartComponent->getRootParentComponent()->isSelected()
+      && mpEndComponent && mpEndComponent->getRootParentComponent()->isSelected()) {
+      mStartAndEndComponentsSelected = true;
+      return;
+  } else if (mStartAndEndComponentsSelected) {
+    mStartAndEndComponentsSelected = false;
+  }
+
   assert(!mOldAnnotation.isEmpty());
   if (mLineType == LineAnnotation::ConnectionType) {
     mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateConnectionCommand(this, mOldAnnotation, getOMCShapeAnnotation()));

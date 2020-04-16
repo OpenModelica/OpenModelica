@@ -291,14 +291,15 @@ void AddComponentCommand::undo()
   mpDiagramGraphicsView->deleteComponentFromClass(mpDiagramComponent);
 }
 
-UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommand(Component *pComponent, const Transformation &oldTransformation,
-                                                                             const Transformation &newTransformation, UndoCommand *pParent)
+UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommand(Component *pComponent, const Transformation &oldTransformation, const Transformation &newTransformation,
+                                                                             const bool positionChanged, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpComponent = pComponent;
   mpIconOrDiagramComponent = 0;
   mOldTransformation = oldTransformation;
   mNewTransformation = newTransformation;
+  mPositionChanged = positionChanged;
   setText(QString("Update Component %1 Transformations").arg(mpComponent->getName()));
 }
 
@@ -321,7 +322,7 @@ void UpdateComponentTransformationsCommand::redoInternal()
       mpIconOrDiagramComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
       mpIconOrDiagramComponent->setTransform(mNewTransformation.getTransformationMatrix());
       mpIconOrDiagramComponent->mTransformation = mNewTransformation;
-      mpIconOrDiagramComponent->emitTransformChange();
+      mpIconOrDiagramComponent->emitTransformChange(mPositionChanged);
     }
   }
   mpComponent->resetTransform();
@@ -331,7 +332,7 @@ void UpdateComponentTransformationsCommand::redoInternal()
   mpComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
   mpComponent->setTransform(mNewTransformation.getTransformationMatrix());
   mpComponent->mTransformation = mNewTransformation;
-  mpComponent->emitTransformChange();
+  mpComponent->emitTransformChange(mPositionChanged);
   mpComponent->emitTransformHasChanged();
 }
 
@@ -354,7 +355,7 @@ void UpdateComponentTransformationsCommand::undo()
       mpIconOrDiagramComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
       mpIconOrDiagramComponent->setTransform(mOldTransformation.getTransformationMatrix());
       mpIconOrDiagramComponent->mTransformation = mOldTransformation;
-      mpIconOrDiagramComponent->emitTransformChange();
+      mpIconOrDiagramComponent->emitTransformChange(mPositionChanged);
     }
   }
   mpComponent->resetTransform();
@@ -364,7 +365,7 @@ void UpdateComponentTransformationsCommand::undo()
   mpComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
   mpComponent->setTransform(mOldTransformation.getTransformationMatrix());
   mpComponent->mTransformation = mOldTransformation;
-  mpComponent->emitTransformChange();
+  mpComponent->emitTransformChange(mPositionChanged);
   mpComponent->emitTransformHasChanged();
 }
 

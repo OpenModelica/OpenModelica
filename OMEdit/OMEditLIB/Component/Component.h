@@ -240,7 +240,7 @@ public:
   bool isActiveState() {return mActiveState;}
   void removeChildren();
   void emitAdded();
-  void emitTransformChange() {emit transformChange();}
+  void emitTransformChange(bool positionChanged) {emit transformChange(positionChanged);}
   void emitTransformHasChanged();
   void emitChanged();
   void emitDeleted();
@@ -255,7 +255,7 @@ public:
   void insertInterfacePoint(QString interfaceName, QString position, QString angle321, int dimensions, QString causality, QString domain);
   void removeInterfacePoint(QString interfaceName);
   void adjustInterfacePoints();
-  void updateComponentTransformations(const Transformation &oldTransformation);
+  void updateComponentTransformations(const Transformation &oldTransformation, const bool positionChanged);
   void handleOMSComponentDoubleClick();
   bool isInBus() {return mpBusComponent != 0;}
   void setBusComponent(Component *pBusComponent);
@@ -334,7 +334,7 @@ private:
   bool canUseDiagramAnnotation();
 signals:
   void added();
-  void transformChange();
+  void transformChange(bool positionChanged);
   void transformHasChanged();
   void transformChanging();
   void displayTextChanged();

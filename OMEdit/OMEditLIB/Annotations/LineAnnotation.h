@@ -150,6 +150,7 @@ protected:
   QString mStartComponentName;
   Component *mpEndComponent;
   QString mEndComponentName;
+  bool mStartAndEndComponentsSelected;
   QString mCondition;
   bool mImmediate;
   bool mReset;
@@ -166,7 +167,7 @@ protected:
   oms_connection_type_enu_t mOMSConnectionType;
   bool mActiveState;
 public slots:
-  void handleComponentMoved();
+  void handleComponentMoved(bool positionChanged);
   void updateConnectionAnnotation();
   void updateConnectionTransformation();
   void updateTransitionAnnotation(QString oldCondition, bool oldImmediate, bool oldReset, bool oldSynchronize, int oldPriority);
