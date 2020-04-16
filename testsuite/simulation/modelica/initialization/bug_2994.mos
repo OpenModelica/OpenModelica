@@ -20,11 +20,54 @@ simulate(initializationTests.bug_2994, simflags="-lv=LOG_INIT_V"); getErrorStrin
 simulate(initializationTests.bug_2994, simflags="-lv=LOG_INIT_V -override=a=2"); getErrorString();
 
 // Result:
-// Error processing file: bug_2994.mos
-// [simulation/modelica/initialization/bug_2994.mos:58:1-58:1:writable] Error: Parser error: Unexpected token near: < (LESS)
-//
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
-//
-// Execution failed!
+// true
+// ""
+// record SimulationResult
+//     resultFile = "initializationTests.bug_2994_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.bug_2994', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V'",
+//     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT_HOMOTOPY | info    | Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. To disable initialization with homotpy operator use \"-noHomotopyOnFirstTry\".
+// LOG_INIT_V        | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real a(start=1, fixed=true) = 1
+// |                 | |       | | | [2] parameter Real x(start=0, fixed=true) = 1
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real y(start=1, nominal=1) = 1 (pre: 1)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[<interactive>:6:5-6:30:writable] Warning: Parameter a has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// "
+// record SimulationResult
+//     resultFile = "initializationTests.bug_2994_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.bug_2994', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_INIT_V -override=a=2'",
+//     messages = "LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_INIT_HOMOTOPY | info    | Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. To disable initialization with homotpy operator use \"-noHomotopyOnFirstTry\".
+// LOG_INIT_V        | info    | parameter values
+// |                 | |       | | real parameters
+// |                 | |       | | | [1] parameter Real a(start=2, fixed=true) = 2
+// |                 | |       | | | [2] parameter Real x(start=0, fixed=true) = 2
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real y(start=1, nominal=1) = 2 (pre: 1)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[<interactive>:6:5-6:30:writable] Warning: Parameter a has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// "
 // endResult
