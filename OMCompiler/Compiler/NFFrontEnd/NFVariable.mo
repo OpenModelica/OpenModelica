@@ -207,6 +207,7 @@ public
   protected
     Boolean first;
     Binding b;
+    Integer var_dims, binding_dims;
   algorithm
     s := IOStream.append(s, indent);
 
@@ -223,6 +224,8 @@ public
       s := IOStream.append(s, "(");
 
       first := true;
+      var_dims := Type.dimensionCount(var.ty);
+
       for a in var.typeAttributes loop
         if first then
           first := false;
@@ -231,8 +234,9 @@ public
         end if;
 
         b := Util.tuple22(a);
+        binding_dims := Type.dimensionCount(Expression.typeOf(Expression.getBindingExp(Binding.getExp(b))));
 
-        if Binding.isEach(b) then
+        if var_dims > binding_dims then
           s := IOStream.append(s, "each ");
         end if;
 

@@ -1651,7 +1651,7 @@ public
       case BOOLEAN() then boolString(exp.value);
 
       case ENUM_LITERAL(ty = t as Type.ENUMERATION())
-        then AbsynUtil.pathString(t.typePath) + "." + exp.name;
+        then "'" + AbsynUtil.pathString(t.typePath) + "'." + exp.name;
 
       case CLKCONST(clk) then ClockKind.toString(clk);
 

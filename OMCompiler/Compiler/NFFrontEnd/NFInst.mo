@@ -177,7 +177,6 @@ algorithm
 
   if Flags.getConfigBool(Flags.FLAT_MODELICA) then
     FlatModel.printFlatString(flat_model, FunctionTree.listValues(funcs));
-    print("\n");
   end if;
 
   // Scalarize array components in the flat model.
