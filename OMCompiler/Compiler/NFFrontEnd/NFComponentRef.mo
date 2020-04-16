@@ -708,6 +708,11 @@ public
       case CREF()
         algorithm
           str := InstNode.name(cref.node) + Subscript.toFlatStringList(cref.subscripts);
+
+          if Type.isRecord(cref.ty) and not listEmpty(strl) then
+            strl := ("'" + listHead(strl)) :: listRest(strl);
+            str := str + "'";
+          end if;
         then
           toFlatString_impl(cref.restCref, str :: strl);
 

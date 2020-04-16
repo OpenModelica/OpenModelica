@@ -48,6 +48,8 @@ protected
   import NFClass.Class;
   import NFClassTree.ClassTree;
   import NFComponent.Component;
+  import NFComponentRef.ComponentRef;
+  import MetaModelica.Dangerous.listReverseInPlace;
 
   import FlatModel = NFFlatModel;
 
@@ -168,7 +170,11 @@ public
     input Boolean printBindingTypes = false;
     input output IOStream.IOStream s;
     output String str;
+  protected
+    FlatModel flat_model = flatModel;
   algorithm
+    flat_model.variables := reconstructRecordInstances(flat_model.variables);
+
     for fn in functions loop
       if not Function.isDefaultRecordConstructor(fn) then
         s := Function.toFlatStream(fn, s);
@@ -176,43 +182,43 @@ public
       end if;
     end for;
 
-    for ty in TypeTree.listValues(collectFlatTypes(flatModel, functions)) loop
+    for ty in TypeTree.listValues(collectFlatTypes(flat_model, functions)) loop
       s := Type.toFlatDeclarationStream(ty, s);
       s := IOStream.append(s, ";\n\n");
     end for;
 
-    s := IOStream.append(s, "class '" + flatModel.name + "'\n");
+    s := IOStream.append(s, "class '" + flat_model.name + "'\n");
 
-    for v in flatModel.variables loop
+    for v in flat_model.variables loop
       s := Variable.toFlatStream(v, "  ", printBindingTypes, s);
       s := IOStream.append(s, ";\n");
     end for;
 
-    if not listEmpty(flatModel.initialEquations) then
+    if not listEmpty(flat_model.initialEquations) then
       s := IOStream.append(s, "initial equation\n");
-      s := Equation.toFlatStreamList(flatModel.initialEquations, "  ", s);
+      s := Equation.toFlatStreamList(flat_model.initialEquations, "  ", s);
     end if;
 
-    if not listEmpty(flatModel.equations) then
+    if not listEmpty(flat_model.equations) then
       s := IOStream.append(s, "equation\n");
-      s := Equation.toFlatStreamList(flatModel.equations, "  ", s);
+      s := Equation.toFlatStreamList(flat_model.equations, "  ", s);
     end if;
 
-    for alg in flatModel.initialAlgorithms loop
+    for alg in flat_model.initialAlgorithms loop
       if not listEmpty(alg.statements) then
         s := IOStream.append(s, "initial algorithm\n");
         s := Statement.toFlatStreamList(alg.statements, "  ", s);
       end if;
     end for;
 
-    for alg in flatModel.algorithms loop
+    for alg in flat_model.algorithms loop
       if not listEmpty(alg.statements) then
         s := IOStream.append(s, "algorithm\n");
         s := Statement.toFlatStreamList(alg.statements, "  ", s);
       end if;
     end for;
 
-    s := IOStream.append(s, "end '" + flatModel.name + "';\n");
+    s := IOStream.append(s, "end '" + flat_model.name + "';\n");
 
     str := IOStream.string(s);
     IOStream.delete(s);
@@ -507,6 +513,79 @@ public
     name := Type.subscriptedTypeName(exp_ty, sub_tyl);
     types := TypeTree.add(types, Absyn.IDENT(name), Type.SUBSCRIPTED(name, exp_ty, sub_tyl, subscriptedTy));
   end collectSubscriptedFlatType;
+
+  function reconstructRecordInstances
+    input list<Variable> variables;
+    output list<Variable> outVariables = {};
+  protected
+    list<Variable> rest_vars = variables, record_vars;
+    Variable var;
+    ComponentRef parent_cr;
+    Type parent_ty;
+    Integer field_count;
+  algorithm
+    while not listEmpty(rest_vars) loop
+      var :: rest_vars := rest_vars;
+      parent_cr := ComponentRef.rest(var.name);
+
+      if not ComponentRef.isEmpty(parent_cr) then
+        parent_ty := ComponentRef.nodeType(parent_cr);
+
+        if Type.isRecord(parent_ty) then
+          field_count := listLength(Type.recordFields(parent_ty));
+          (record_vars, rest_vars) := List.split(rest_vars, field_count - 1);
+          record_vars := var :: record_vars;
+          var := reconstructRecordInstance(parent_cr, record_vars);
+        end if;
+      end if;
+
+      outVariables := var :: outVariables;
+    end while;
+
+    outVariables := listReverseInPlace(outVariables);
+  end reconstructRecordInstances;
+
+  function reconstructRecordInstance
+    input ComponentRef recordName;
+    input list<Variable> variables;
+    output Variable recordVar;
+  protected
+    InstNode record_node;
+    Component record_comp;
+    Type record_ty;
+    list<Expression> field_exps;
+    Expression record_exp;
+    Binding record_binding;
+  algorithm
+    record_node := ComponentRef.node(recordName);
+    record_comp := InstNode.component(record_node);
+    record_ty := ComponentRef.nodeType(recordName);
+
+    // Reconstruct the record instance binding if possible. If any field is
+    // missing a binding we assume that the record instance didn't have a
+    // binding in the first place, or that the binding was moved to an equation
+    // during flattening.
+    field_exps := {};
+    for v in variables loop
+      if Binding.hasExp(v.binding) then
+        field_exps := Binding.getExp(v.binding) :: field_exps;
+      else
+        field_exps := {};
+        break;
+      end if;
+    end for;
+
+    if listEmpty(field_exps) then
+      record_binding := NFBinding.EMPTY_BINDING;
+    else
+      field_exps := listReverseInPlace(field_exps);
+      record_exp := Expression.makeRecord(InstNode.scopePath(InstNode.classScope(record_node)), record_ty, field_exps);
+      record_binding := Binding.FLAT_BINDING(record_exp, Component.variability(record_comp));
+    end if;
+
+    recordVar := Variable.VARIABLE(recordName, record_ty, record_binding, InstNode.visibility(record_node),
+      Component.getAttributes(record_comp), {}, Component.comment(record_comp), InstNode.info(record_node));
+  end reconstructRecordInstance;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFFlatModel;
