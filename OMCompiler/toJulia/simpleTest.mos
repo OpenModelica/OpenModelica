@@ -1,0 +1,9 @@
+
+     setCommandLineOptions("-g=MetaModelica");getErrorString();
+
+
+      print("Translating New style into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFTranslationTest/NewStyle.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NFTranslationTest/NewStyle.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      deleteClass(StaticUniontypes); getErrorString();
