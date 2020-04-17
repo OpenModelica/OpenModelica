@@ -2037,35 +2037,6 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     QStringList list = pOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());
     if (list.size() > 0) {
-      bool showPlotWindow = true;
-#if !defined(WITHOUT_OSG)
-      // if simulated with animation then open the animation directly.
-      if (mpLaunchAnimationCheckBox->isChecked()) {
-        showPlotWindow = false;
-        if (simulationOptions.getFullResultFileName().endsWith(".mat")) {
-          MainWindow::instance()->getPlotWindowContainer()->addAnimationWindow(MainWindow::instance()->getPlotWindowContainer()->subWindowList().isEmpty());
-          AnimationWindow *pAnimationWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentAnimationWindow();
-          if (pAnimationWindow) {
-            pAnimationWindow->openAnimationFile(resultFileInfo.absoluteFilePath());
-          }
-        } else {
-          QString msg = tr("Animation is only supported with mat result files.");
-          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind,
-                                                                Helper::notificationLevel));
-        }
-      } else {
-        showPlotWindow = true;
-      }
-#endif
-      if (showPlotWindow) {
-        QList<QMdiSubWindow*> subWindowsList = MainWindow::instance()->getPlotWindowContainer()->subWindowList(QMdiArea::ActivationHistoryOrder);
-        if (!subWindowsList.isEmpty() && subWindowsList.last()->widget()->objectName().compare("diagramWindow") != 0) {
-          OMPlot::PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getTopPlotWindow();
-          if (pPlotWindow) {
-            MainWindow::instance()->getPlotWindowContainer()->setTopPlotWindowActive();
-          }
-        }
-      }
       /* ticket:5234 Make sure we always set the MainWindow as active after the simulation. */
       MainWindow::instance()->raise();
       MainWindow::instance()->activateWindow();
@@ -2075,6 +2046,31 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
       } else {
         // stay in current perspective and show variables browser
         MainWindow::instance()->getVariablesDockWidget()->show();
+      }
+      bool showPlotWindow = true;
+#if !defined(WITHOUT_OSG)
+      // if simulated with animation then open the animation directly.
+      if (simulationOptions.getSimulateWithAnimation()) {
+        showPlotWindow = false;
+        if (simulationOptions.getFullResultFileName().endsWith(".mat")) {
+          MainWindow::instance()->getPlotWindowContainer()->addAnimationWindow(MainWindow::instance()->getPlotWindowContainer()->subWindowList().isEmpty());
+          AnimationWindow *pAnimationWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentAnimationWindow();
+          if (pAnimationWindow) {
+            pAnimationWindow->openAnimationFile(resultFileInfo.absoluteFilePath());
+          }
+        } else {
+          QString msg = tr("Animation is only supported with mat result files.");
+          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::notificationLevel));
+        }
+      }
+#endif
+      if (showPlotWindow) {
+        OMPlot::PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getTopPlotWindow();
+        if (pPlotWindow) {
+          MainWindow::instance()->getPlotWindowContainer()->setTopPlotWindowActive();
+        } else {
+          MainWindow::instance()->getPlotWindowContainer()->addPlotWindow(true);
+        }
       }
       pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getFullResultFileName(), workingDirectory, list, simulationOptions);
     }
