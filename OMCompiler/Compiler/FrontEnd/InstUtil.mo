@@ -7258,7 +7258,7 @@ algorithm
         isBuiltin = if SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
         isOpenModelicaPure = not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
         // In Modelica 3.2 and before, external functions with side-effects are not marked
-        isImpure = SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__ModelicaAssociation_Impure") or SCodeUtil.isRestrictionImpure(restriction,hasOutVars or Config.languageStandardAtLeast(Config.LanguageStandard.'3.3'));
+        isImpure = SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__ModelicaAssociation_Impure") or SCodeUtil.isRestrictionImpure(restriction,hasOutVars or Config.languageStandardAtLeast(Config.LanguageStandard.V3_3));
       then DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,isImpure,false,isBuiltin,DAE.FP_NON_PARALLEL());
   end matchcontinue;
 end getFunctionAttributes;
