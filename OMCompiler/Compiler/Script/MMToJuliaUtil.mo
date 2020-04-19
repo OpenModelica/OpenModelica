@@ -396,6 +396,14 @@ end mMKeywordToJLKeyword;
 function ifMMKeywordReturnSelf
   input String inName;
   output String outName;
+protected
+  String tmp;
+algorithm
+  tmp := mMKeywordToJLKeyword(inName);
+  outName := match tmp
+    case "" then inName;
+    case _ then tmp;
+  end match;
 end ifMMKeywordReturnSelf;
 
 annotation(__OpenModelica_Interface="backend");
