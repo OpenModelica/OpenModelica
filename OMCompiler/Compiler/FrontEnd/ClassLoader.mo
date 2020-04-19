@@ -416,7 +416,7 @@ algorithm
   end if;
   s1 := AbsynUtil.withinString(w1);
   s2 := AbsynUtil.withinString(w2);
-  if not (AbsynUtil.withinEqual(w1,w2) or Config.languageStandardAtMost(Config.LanguageStandard.'2.x')) then
+  if not (AbsynUtil.withinEqual(w1,w2) or Config.languageStandardAtMost(Config.LanguageStandard.V2_x)) then
     Error.addSourceMessage(Error.LIBRARY_UNEXPECTED_WITHIN, {s1,s2}, info);
     fail();
   elseif expectPackage and not AbsynUtil.isParts(body) then

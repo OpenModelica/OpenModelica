@@ -1719,7 +1719,7 @@ try
   knvarlst := BackendVariable.varList(globalKnownVars);
   states := BackendVariable.getAllStateVarFromVariables(v);
 
-  if Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') then
+  if Config.languageStandardAtLeast(Config.LanguageStandard.V3_3) then
     states := listAppend(states, BackendVariable.getAllClockedStatesFromVariables(v));
   end if;
 

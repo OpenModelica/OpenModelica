@@ -711,7 +711,7 @@ protected
   SourceInfo cls_info, pre_info, info;
 algorithm
   if isSome(inInfo) and FGraph.isPartialScope(inEnv) and
-     Config.languageStandardAtLeast(Config.LanguageStandard.'3.2') then
+     Config.languageStandardAtLeast(Config.LanguageStandard.V3_2) then
     FCore.N(data = FCore.CL(e = el, pre = pre)) :=
       FNode.fromRef(FGraph.lastScopeRef(inEnv));
     name := SCodeUtil.elementName(el);

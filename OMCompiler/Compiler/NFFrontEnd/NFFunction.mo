@@ -2108,7 +2108,7 @@ protected
 
           // In Modelica 3.2 and before, external functions with side-effects are not marked.
           is_impure := SCodeUtil.isRestrictionImpure(res,
-              Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') or
+              Config.languageStandardAtLeast(Config.LanguageStandard.V3_3) or
               not listEmpty(outputs)) or
             SCodeUtil.commentHasBooleanNamedAnnotation(cmt, "__ModelicaAssociation_Impure");
         then

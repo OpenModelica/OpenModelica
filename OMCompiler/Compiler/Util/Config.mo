@@ -47,7 +47,7 @@ import System;
 
 public
 
-type LanguageStandard = enumeration('1.x', '2.x', '3.0', '3.1', '3.2', '3.3', latest)
+type LanguageStandard = enumeration(V1_x, V2_x, V3_0, V3_1, V3_2, V3_3, V_latest)
   "Defines the various modelica language versions that OMC can use.";
 
 public function typeinfo "+t"
@@ -460,13 +460,13 @@ protected function intLanguageStandard
   output LanguageStandard outStandard;
 algorithm
   outStandard := match(inValue)
-    case 10 then LanguageStandard.'1.x';
-    case 20 then LanguageStandard.'2.x';
-    case 30 then LanguageStandard.'3.0';
-    case 31 then LanguageStandard.'3.1';
-    case 32 then LanguageStandard.'3.2';
-    case 33 then LanguageStandard.'3.3';
-    case 1000 then LanguageStandard.latest;
+    case 10 then LanguageStandard.V1_x;
+    case 20 then LanguageStandard.V2_x;
+    case 30 then LanguageStandard.V3_0;
+    case 31 then LanguageStandard.V3_1;
+    case 32 then LanguageStandard.V3_2;
+    case 33 then LanguageStandard.V3_3;
+    case 1000 then LanguageStandard.V_latest;
   end match;
 end intLanguageStandard;
 
@@ -485,7 +485,7 @@ protected
   LanguageStandard current_std;
 algorithm
   current_std := getLanguageStandard();
-  if current_std <> LanguageStandard.latest then
+  if current_std <> LanguageStandard.V_latest then
     // If we selected an MSL version manually, we respect that choice.
     return;
   end if;
@@ -522,7 +522,7 @@ algorithm
   // If the old standard wasn't set by the user, then we consider it to have
   // changed only if the new standard is 3.0 or less. This is to avoid
   // printing a notice if the user loads e.g. MSL 3.1.
-  outHasChanged := languageStandardAtMost(LanguageStandard.'3.0');
+  outHasChanged := languageStandardAtMost(LanguageStandard.V3_0);
 end hasLanguageStandardChanged;
 
 public function versionStringToStd
@@ -540,13 +540,13 @@ protected function versionStringToStd2
   output LanguageStandard outStandard;
 algorithm
   outStandard := match(inVersion)
-    case "1" :: _ then LanguageStandard.'1.x';
-    case "2" :: _ then LanguageStandard.'2.x';
-    case "3" :: "0" :: _ then LanguageStandard.'3.0';
-    case "3" :: "1" :: _ then LanguageStandard.'3.1';
-    case "3" :: "2" :: _ then LanguageStandard.'3.2';
-    case "3" :: "3" :: _ then LanguageStandard.'3.3';
-    case "3" :: _ then LanguageStandard.latest;
+    case "1" :: _ then LanguageStandard.V1_x;
+    case "2" :: _ then LanguageStandard.V2_x;
+    case "3" :: "0" :: _ then LanguageStandard.V3_0;
+    case "3" :: "1" :: _ then LanguageStandard.V3_1;
+    case "3" :: "2" :: _ then LanguageStandard.V3_2;
+    case "3" :: "3" :: _ then LanguageStandard.V3_3;
+    case "3" :: _ then LanguageStandard.V_latest;
   end match;
 end versionStringToStd2;
 

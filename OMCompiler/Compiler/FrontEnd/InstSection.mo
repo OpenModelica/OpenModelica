@@ -2961,7 +2961,7 @@ algorithm
     Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR,{Dump.printExpStr(aexp),Types.unparseType(ty)},info);
     fail();
   end try;
-  if Config.languageStandardAtLeast(Config.LanguageStandard.'3.2') then
+  if Config.languageStandardAtLeast(Config.LanguageStandard.V3_2) then
     _ := match exp
       case DAE.CALL(path=Absyn.IDENT("initial")) then ();
       case DAE.CALL(path=Absyn.FULLYQUALIFIED(Absyn.IDENT("initial"))) then ();
