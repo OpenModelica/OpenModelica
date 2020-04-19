@@ -14274,6 +14274,13 @@ algorithm
     elts := fillScalarElements(elt, dims, 1, {}, {});
     elts := setVariableIndexHelper(elts, index, fmi_index);
   then elts;
+  case SimCodeVar.SIMVAR(type_=DAE.T_ARRAY(), index=index) algorithm
+    dims := List.map(List.lastN(var.numArrayElement, listLength(var.numArrayElement)), stringInt);
+    elt := var;
+    elt.type_ := Types.arrayElementType(var.type_);
+    elts := fillScalarElements(elt, dims, 1, {}, {});
+    elts := setVariableIndexHelper(elts, index, index);
+  then elts;
   else {var};
   end match;
 end getScalarElements;
