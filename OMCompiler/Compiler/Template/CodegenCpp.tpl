@@ -12947,7 +12947,11 @@ match simVar
     if createDebugCode then
       'template jacobianVarDefine: createDebugCode for arrays not implemented'
     else
-      '#define <%cref(name,false)%>(Idx) _<%getOption(matrixName)%>jac_<%typeName%>(<%index%>+((Idx)-1))' /* TODO currently only works for one-dimensional arrays */
+      /* TODO currently only works for one-dimensional arrays */
+      <<
+      #define <%cref(name,false)%>_arr (_<%getOption(matrixName)%>jac_<%typeName%>(<%index%>))
+      #define <%cref(name,false)%>(Idx) _<%getOption(matrixName)%>jac_<%typeName%>(<%index%>+((Idx)-1))
+      >>
 end jacobianVarDefine;
 
 

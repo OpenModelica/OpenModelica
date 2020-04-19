@@ -544,7 +544,7 @@ template daeExpCrefRhsArrayBox2(Text arrayData, DAE.Type ty, Boolean isRowMajorD
     let &tmpdecl = buffer "" /*BUFD*/
     let arrayVar = tempDecl(arrayType, &tmpdecl /*BUFD*/)
     let arrayAssign = if isRowMajorData then
-      'assignRowMajorData(&<%arrayData%>, <%arrayVar%>)' else
+      'assignRowMajorData(&<%arrayData%>_arr, <%arrayVar%>)' else
       '<%arrayVar%>.assign(&<%arrayData%>)'
     let &preExp +=
       <<
@@ -2846,7 +2846,7 @@ template assignJacArray(String lhsStr, String rhsStr, DAE.Type ty)
     let arrayWrapper = 'tmp<%System.tmpTick()%>'
     <<
     /*assign through wrapper array*/
-    StatArrayDim<%nDimsFlat(dims, elty, 0)%><<%expTypeShort(elty)%>, <%dimstr%>, true> <%arrayWrapper%>(&<%lhsStr%>);
+    StatArrayDim<%nDimsFlat(dims, elty, 0)%><<%expTypeShort(elty)%>, <%dimstr%>, true> <%arrayWrapper%>(&<%lhsStr%>_arr);
     assignRowMajorData(<%rhsStr%>.getData(), <%arrayWrapper%>);
     >>
 end assignJacArray;
