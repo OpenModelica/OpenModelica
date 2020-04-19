@@ -17,13 +17,14 @@ PATH = ARGS[1]
 #= Test and see if generated files follow Julia syntax =#
 for f in filter(x -> endswith(x, "jl"), readdir(PATH))
   local fullPath = abspath("$PATH")
-  fileContents = read("$(fullPath)/$(f)", String)
+  local pathToParse = "$(fullPath)/$(f)"
+  fileContents = read(pathToParse, String)
   println(abspath("$f"))
   CSTP_SUCEED = false
   try
    Meta.parse(fileContents)
    CSTParser.parse(fileContents, true)
-   format(PATH,
+   format_file(pathToParse,
           style=YASStyle(),
           indent=2,
           verbose=false,
@@ -37,7 +38,7 @@ for f in filter(x -> endswith(x, "jl"), readdir(PATH))
           always_use_return = true)
   catch error
     @info "Error parsing: $f"
-    @info error
+    #@info error
   end
 end
 
