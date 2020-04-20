@@ -314,8 +314,12 @@ enum IDA_LS
 extern const char *IDA_LS_METHOD[IDA_LS_MAX];
 extern const char *IDA_LS_METHOD_DESC[IDA_LS_MAX];
 
-enum NLS_LS
-{
+/**
+ * @brief Type of linear solver method
+ *
+ * Specify method to solve underlying linear systems.
+ */
+enum NLS_LS {
   NLS_LS_UNKNOWN = 0,
 
   NLS_LS_DEFAULT,
@@ -325,11 +329,16 @@ enum NLS_LS
   NLS_LS_KLU,
 
   NLS_LS_MAX
-};
+} NLS_LS;
 
 extern const char *NLS_LS_METHOD[NLS_LS_MAX];
 extern const char *NLS_LS_METHOD_DESC[NLS_LS_MAX];
 
+/**
+ * @brief Solver method for linear systems
+ *
+ * Will be used for implicit Runge-Kutta-Integrators.
+ */
 enum IMPRK_LS
 {
   IMPRK_LS_UNKNOWN = 0,
@@ -338,7 +347,7 @@ enum IMPRK_LS
   IMPRK_LS_DENSE,
 
   IMPRK_LS_MAX
-};
+}IMPRK_LS;
 
 extern const char *IMPRK_LS_METHOD[IMPRK_LS_MAX];
 extern const char *IMPRK_LS_METHOD_DESC[IMPRK_LS_MAX];

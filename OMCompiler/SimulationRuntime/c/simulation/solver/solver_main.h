@@ -44,6 +44,17 @@
 
 static const unsigned int numStatistics = 5;
 
+/**
+ * @brief Solver statistics.
+ */
+typedef struct SOLVERSTATS {
+  unsigned int nStepsTaken;                 /* Number of steps taken by the solver */
+  unsigned int nCallsODE;                   /* Number of calls on functionODE */
+  unsigned int nCallsJacobian;              /* Number of evaluations of Jacobian */
+  unsigned int nErrorTestFailures;          /* Number of error test failures */
+  unsigned int nConvergenveTestFailures;    /* Number of convergence test failures */
+} SOLVERSTATS;
+
 typedef struct SOLVER_INFO
 {
   double currentTime;
@@ -69,8 +80,9 @@ typedef struct SOLVER_INFO
   unsigned long stateEvents;
   unsigned long sampleEvents;
   /* integrator stats */
-  unsigned int* solverStats;
-  unsigned int* solverStatsTmp;
+  /* TODO: Change to SOLVERSTATS!!!! */
+  unsigned int* solverStats;          /* Statistic for integrator */
+  unsigned int* solverStatsTmp;       /* tmp solver stats to update solverStats with */
 
   /* further options */
   int integratorSteps;

@@ -34,13 +34,18 @@
 #ifndef _SUNDIALS_ERROR_H
 #define _SUNDIALS_ERROR_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdio.h>
 #include <string.h>
 
 #ifdef WITH_SUNDIALS
 #include <kinsol/kinsol.h>
+#include <ida/ida.h>
 
+#define UNUSED(x) (void)(x)   /* Surpress compiler warnings for unused function input */
 
 /**
  * @brief Specify type of flag used by different SUNDIALS module for error
@@ -51,13 +56,25 @@ typedef enum sundialsFlagType {
 
   SUNDIALS_KIN_FLAG,      /* KINSOL main solver module flags */
   SUNDIALS_KINLS_FLAG,    /* KINSOL linear solver interface flags */
+
+  SUNDIALS_IDA_FLAG,      /* IDA main solver module flags */
+
   SUNDIALS_SUNLS_FLAG     /* SUNDIALS linear solver flags */
 } sundialsFlagType;
 
 /* Function prototypes */
+void kinsolErrorHandlerFunction(int errorCode, const char *module,
+                                const char *function, char *msg,
+                                void *userData);
+void kinsolInfoHandlerFunction(const char *module, const char *function,
+                               char *msg, void *user_data);
 void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
                               const char *functionName);
 
 #endif /* WITH_SUNDIALS */
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* _SUNDIALS_ERROR_H */

@@ -61,11 +61,6 @@
 
 /* Function prototypes */
 static int nlsKinsolResiduals(N_Vector x, N_Vector f, void *userData);
-static void nlsKinsolErrorPrint(int errorCode, const char *module,
-                                const char *function, char *msg,
-                                void *userData);
-static void nlsKinsolInfoPrint(const char *module, const char *function,
-                               char *msg, void *user_data);
 static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
                         void *userData, N_Vector tmp1, N_Vector tmp2);
 int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
@@ -140,7 +135,7 @@ static void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData,
     KINFree((void *)&kinsolData->kinsolMemory);
   }
 
-  /* Create KINSOL meory block */
+  /* Create KINSOL memory block */
   kinsolData->kinsolMemory = KINCreate();
   if (kinsolData->kinsolMemory == NULL) {
     errorStreamPrint(LOG_STDOUT, 0,
@@ -158,17 +153,15 @@ static void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData,
   flag = KINSetPrintLevel(kinsolData->kinsolMemory, printLevel);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetPrintLevel");
 
-  flag = KINSetErrHandlerFn(kinsolData->kinsolMemory, nlsKinsolErrorPrint,
-                            kinsolData);
+  flag = KINSetErrHandlerFn(kinsolData->kinsolMemory, kinsolErrorHandlerFunction, kinsolData);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetErrHandlerFn");
 
-  flag = KINSetInfoHandlerFn(kinsolData->kinsolMemory, nlsKinsolInfoPrint,
-                             kinsolData);
+  flag = KINSetInfoHandlerFn(kinsolData->kinsolMemory, kinsolInfoHandlerFunction,
+                             NULL);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetInfoHandlerFn");
 
   /* Set user data given to KINSOL */
-  flag =
-      KINSetUserData(kinsolData->kinsolMemory, (void *)&(kinsolData->userData));
+  flag = KINSetUserData(kinsolData->kinsolMemory, (void *)&(kinsolData->userData));
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetUserData");
 
   /* Initialize KINSOL object */
@@ -237,15 +230,14 @@ static void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData,
 /**
  * @brief Allocate memory for kinsol solver data and initialize KINSOL solver
  *
- * @param size
+ * @param size                  Size of non-linear problem.
  * @param nlsData
- * @param linearSolverMethod
+ * @param linearSolverMethod    Type of linear solver method.
  * @return int
  */
 int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nlsData,
-                      int linearSolverMethod) {
-  NLS_KINSOL_DATA *kinsolData =
-      (NLS_KINSOL_DATA *)malloc(sizeof(NLS_KINSOL_DATA));
+                      enum NLS_LS linearSolverMethod) {
+  NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)malloc(sizeof(NLS_KINSOL_DATA));
 
   /* Allocate system data */
   nlsData->solverData = (void *)kinsolData;
@@ -286,11 +278,17 @@ int nlsKinsolFree(void **solverData) {
 
   KINFree((void *)&kinsolData->kinsolMemory);
 
-  N_VDestroy_Serial(kinsolData->initialGuess);
-  N_VDestroy_Serial(kinsolData->xScale);
-  N_VDestroy_Serial(kinsolData->fScale);
-  N_VDestroy_Serial(kinsolData->fRes);
-  N_VDestroy_Serial(kinsolData->fTmp);
+  N_VDestroy(kinsolData->initialGuess);   /* TODO: Or was N_VDestroy_Serial correct? It won't free internal data */
+  N_VDestroy(kinsolData->xScale);
+  N_VDestroy(kinsolData->fScale);
+  N_VDestroy(kinsolData->fRes);
+  N_VDestroy(kinsolData->fTmp);
+
+  /* Free linear solver data */
+  SUNLinSolFree(kinsolData->linSol);
+  SUNMatDestroy(kinsolData->J);
+  N_VDestroy(kinsolData->y);
+
   free(kinsolData);
 
   return 0;
@@ -406,24 +404,6 @@ static int nlsDenseJac(long int N, N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   return 0;
 }
 
-#if 0
-struct _SUNMatrixContent_Sparse {
-sunindextype M;   /* number of rows */
-sunindextype N;   /* number of columns */
-sunindextype NNZ; /* maximum number of nonzero entries in the matrix */
-sunindextype NP;  /* number of index pointers
-                    CSC: NP = N */
-realtype *data;   /* values of the nonzero entries in the matrix */
-int sparsetype;   /*  CSC_MAT */
-sunindextype *indexvals;    /* pointer to a contiguous block of int variables (of length NNZ), containing the row indices */
-sunindextype *indexptrs;    /* pointer to a contiguous block of int variables (of length NP+1), each
-entry provides the index of the first column entry into the data and indexvals arrays*/
-/* CSC indices */
-sunindextype **rowvals;
-sunindextype **colptrs;
-};
-#endif
-
 /**
  * @brief Set element of jacobian saved in CSC SUNMatrix.
  *
@@ -448,19 +428,6 @@ static void setJacElementKluSparse(int row, int col, double value, int nth,
   SM_INDEXVALS_S(A)[nth] = row;
   SM_DATA_S(A)[nth] = value;
 }
-
-#if 0
-/* Element function for sparse matrix set */
-static void setJacElementKluSparse(int row, int col, double value, int nth, void* spJac)
-{
-  SlsMat mat = (SlsMat)spJac;
-  if (col > 0 && mat->colptrs[col] == 0){
-      mat->colptrs[col] = nth;
-  }
-  mat->rowvals[nth] = row;
-  mat->data[nth] = value;
-}
-#endif
 
 /**
  * @brief Finish sparse matrix by fixing colprts.
@@ -786,56 +753,6 @@ static void nlsKinsolJacSumSparse(SUNMatrix A) {
 }
 
 /**
- * @brief Error handler function given to KINSOL.
- *
- * @param errorCode
- * @param module
- * @param function
- * @param msg
- * @param userData
- */
-static void nlsKinsolErrorPrint(int errorCode, const char *module,
-                                const char *function, char *msg,
-                                void *userData) {
-  NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)userData;
-  DATA *data = kinsolData->userData.data;
-  int sysNumber = kinsolData->userData.sysNumber;
-  long eqSystemNumber =
-      data->simulationInfo->nonlinearSystemData[sysNumber].equationIndex;
-
-  if (ACTIVE_STREAM(LOG_NLS_V)) {
-    warningStreamPrint(
-        LOG_NLS_V, 1, "kinsol failed for %d",
-        modelInfoGetEquation(&data->modelData->modelDataXml, eqSystemNumber)
-            .id);
-    warningStreamPrint(LOG_NLS_V, 0,
-                       "[module] %s | [function] %s | [error_code] %d", module,
-                       function, errorCode);
-    warningStreamPrint(LOG_NLS_V, 0, "%s", msg);
-
-    messageClose(LOG_NLS_V);
-  }
-}
-
-/**
- * @brief Info handler function given to KINSOL.
- *
- * @param module
- * @param function
- * @param msg
- * @param user_data
- */
-static void nlsKinsolInfoPrint(const char *module, const char *function,
-                               char *msg, void *user_data) {
-  if (ACTIVE_STREAM(LOG_NLS_V)) {
-    warningStreamPrint(LOG_NLS_V, 1, "%s %s:", module, function);
-    warningStreamPrint(LOG_NLS_V, 0, "%s", msg);
-
-    messageClose(LOG_NLS_V);
-  }
-}
-
-/**
  * @brief Set maximum scaled length of Newton step.
  *
  * Will be set to the weighted Euclidean l_2 norm of xScale with maxstepfactor
@@ -1111,7 +1028,7 @@ static int nlsKinsolErrorHandler(int errorCode, DATA *data,
   double *xScaling = NV_DATA_S(kinsolData->xScale);
   long outL;
 
-  flag = KINSetNoInitSetup(kinsolData->kinsolMemory, FALSE);
+  flag = KINSetNoInitSetup(kinsolData->kinsolMemory, SUNFALSE);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetNoInitSetup");
 
   switch (errorCode) {
