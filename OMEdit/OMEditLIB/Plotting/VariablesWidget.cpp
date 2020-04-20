@@ -615,7 +615,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     result = parser.parse(&infoFile, &ok).toMap();
     if (!ok) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(infoFile.fileName())
-                                                            .arg(infoFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
+                                                            .arg(parser.errorString()), Helper::scriptingKind, Helper::errorLevel));
       return;
     }
     QVariantMap vars = result["variables"].toMap();
