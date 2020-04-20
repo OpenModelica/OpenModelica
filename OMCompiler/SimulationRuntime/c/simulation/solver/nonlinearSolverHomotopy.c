@@ -484,11 +484,11 @@ void debugVectorDouble(int logName, char* vectorName, double* vector, int n)
     for(i=0; i<n;i++)
     {
       if (vector[i]<-1e+300)
-        sprintf(buffer, "%s -INF ", buffer);
+        sprintf(buffer, "%s -INF%s", buffer, (i<n-1)?" ":"");
       else if (vector[i]>1e+300)
-        sprintf(buffer, "%s +INF ", buffer);
+        sprintf(buffer, "%s +INF%s", buffer, (i<n-1)?" ":"");
       else
-        sprintf(buffer, "%s%16.8g ", buffer, vector[i]);
+        sprintf(buffer, "%s%16.8g%s", buffer, vector[i], (i<n-1)?" ":"");
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     messageClose(logName);
@@ -2141,19 +2141,19 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
     debugString(LOG_NLS_V, "SOLVING NON-LINEAR SYSTEM USING MIXED SOLVER (Newton/Homotopy solver)");
   else
     debugString(LOG_NLS_V, "SOLVING HOMOTOPY INITIALIZATION PROBLEM WITH THE HOMOTOPY SOLVER");
-  debugInt(LOG_NLS_V, "EQUATION NUMBER:", eqSystemNumber);
-  debugDouble(LOG_NLS_V, "TIME:", solverData->timeValue);
-  debugInt(LOG_NLS_V,   "number of function calls (so far!): ",numberOfFunctionEvaluationsOld);
+  debugInt(LOG_NLS_V, "EQUATION NUMBER: ", eqSystemNumber);
+  debugDouble(LOG_NLS_V, "TIME: ", solverData->timeValue);
+  debugInt(LOG_NLS_V, "number of function calls (so far!): ", numberOfFunctionEvaluationsOld);
 
   /* set x vector */
   if(data->simulationInfo->discreteCall)
   {
     vecCopy(solverData->n, systemData->nlsx, solverData->xStart);
-    debugVectorDouble(LOG_NLS_V,"System values", solverData->xStart, solverData->n);
+    debugVectorDouble(LOG_NLS_V, "System values", solverData->xStart, solverData->n);
   } else
   {
     vecCopy(solverData->n, systemData->nlsxExtrapolation, solverData->xStart);
-    debugVectorDouble(LOG_NLS_V,"System extrapolation", solverData->xStart, solverData->n);
+    debugVectorDouble(LOG_NLS_V, "System extrapolation", solverData->xStart, solverData->n);
   }
   vecCopy(solverData->n, solverData->xStart, solverData->x0);
   // Initialize lambda variable
@@ -2172,8 +2172,8 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
   }
   solverData->xScaling[solverData->n] = 1.0;
 
-  debugVectorDouble(LOG_NLS_V,"Nominal values", systemData->nominal, solverData->n);
-  debugVectorDouble(LOG_NLS_V,"Scaling values", solverData->xScaling, solverData->m);
+  debugVectorDouble(LOG_NLS_V, "Nominal values", systemData->nominal, solverData->n);
+  debugVectorDouble(LOG_NLS_V, "Scaling values", solverData->xScaling, solverData->m);
 
 
   if (!solverData->initHomotopy) {
@@ -2182,7 +2182,7 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
     giveUp = 1;
     while (tries<=2)
     {
-      debugVectorDouble(LOG_NLS_V,"x0", solverData->x0, solverData->n);
+      debugVectorDouble(LOG_NLS_V, "x0", solverData->x0, solverData->n);
       /* evaluate with discontinuities */
       if(data->simulationInfo->discreteCall)
       {
