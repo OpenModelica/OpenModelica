@@ -35,81 +35,108 @@
 #ifndef _RADAU_H_
 #define _RADAU_H_
 
+#include <string.h>
+#include <math.h>
+
+#include "omc_config.h"
 #include "simulation_data.h"
 #include "solver_main.h"
-#include "omc_config.h"
 
 #ifdef WITH_SUNDIALS
 
-  /* adrpo: on mingw link with static sundials */
-  #if defined(__MINGW32__)
-  #define LINK_SUNDIALS_STATIC
-  #endif
+/* adrpo: on mingw link with static sundials */
+#if defined(__MINGW32__)
+#define LINK_SUNDIALS_STATIC
+#endif
 
-  #define DEFAULT_IMPRK_ORDER 5
+#include "util/sundials_error.h"
 
-  #include <math.h>
-  #include <nvector/nvector_serial.h>
+#include <kinsol/kinsol.h>                  /* Main KINSOL header file */
+#include <sunlinsol/sunlinsol_dense.h>      /* Default dense linear solver */
+#include <sunlinsol/sunlinsol_spgmr.h>      /* Scaled, Preconditioned, Generalized Minimum Residual iterative linear solver */
+#include <sunlinsol/sunlinsol_spbcgs.h>     /* Scaled, Preconditioned, Bi-Conjugate Gradient, Stabilized iterative linear solver */
+#include <nvector/nvector_serial.h>         /* Serial vector implementation */
 
-  #ifdef __cplusplus
-  extern "C"
-  {
-  #endif
+#define DEFAULT_IMPRK_ORDER 5
 
-    typedef struct{
-      N_Vector x;
-      N_Vector sVars;
-      N_Vector sEqns;
-      N_Vector c;
-      void* kmem;
-      int glstr;
-      int error_code;
-      int mset;
-      double fnormtol;
-      double scsteptol;
-    }KDATAODE;
+#ifndef FALSE
+#define FALSE 0
+#endif
 
-    typedef struct{
-      double *x0;
-      double *f0;
-      double *x;
-      int nStates;
-      double dt;
-      double currentStep;
-      double t0;
-      double *min;
-      double *max;
-      double *derx;
-      double *s;
-      long double **c;
-      double *a;
-    }NLPODE;
+#ifndef TRUE
+#define TRUE 1
+#endif
 
-    typedef struct{
-      KDATAODE *kData;
-      NLPODE *nlp;
-      DATA *data;
-      threadData_t *threadData;
-      SOLVER_INFO *solverInfo;
-      int N;
-      int order;
-      int lsMethod;        /* specifies the method the used linear solver */
-    }KINODE;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct KDATAODE {
+  N_Vector x;         /* Initial guess on input; solution vector */
+  N_Vector sVars;     /* Scaling vector for variable x */
+  N_Vector sEqns;     /* scaling vector for residual eqns */
+  N_Vector c;         /* Vector with inequality constrains for solution vector x */
+
+  void *kin_mem;      /* KINSOL memory block */
+  int glstr;          /* Global strategy for KINSOL. Can be one of
+                       * KIN_NONE, KIN_LINESEARCH, KIN_PICARD or KIN_FP */
+  int mset;
+  double fnormtol;
+  double scsteptol;
+
+  /* Linear solver object data */
+  SUNLinearSolver linSol;   /* Linear solver object used by KINSOL */
+  N_Vector y;               /* Template for cloning vectors needed inside linear solver */
+  SUNMatrix J;              /* Sparse matrix template for cloning matrices needed within
+                             * linear solver */
+} KDATAODE;
+
+typedef struct NLPODE {
+  double *x0;
+  double *f0;
+  double *x;
+  int nStates;            /* Number of states */
+  double dt;
+  double currentStep;
+  double t0;
+  double *min;
+  double *max;
+  double *derx;
+  double *s;
+  long double **c;        /* vector c of Butcher tableau TODO> OR is it A____ */
+  double *a;
+} NLPODE;
+
+/**
+ * @brief Solver data for KINSOL solver
+ */
+typedef struct KINODE {
+  KDATAODE *kData;
+  NLPODE *nlp;
+  DATA *data;                   /* OMC data */
+  threadData_t *threadData;     /* OMC threadData block */
+  SOLVER_INFO *solverInfo;      /* Solver info */
+  int N;
+  int order;                    /* Integration order */
+  enum IMPRK_LS lsMethod;       /* Specifies method used for solving linear systems */
+} KINODE;
 
 #else
-    typedef struct{
-      void *kData;
-      void *nlp;
-      DATA *data;
-      SOLVER_INFO *solverInfo;
-      int N;
-      int order;
-    }KINODE;
+typedef struct {
+  void *kData;
+  void *nlp;
+  DATA *data;
+  SOLVER_INFO *solverInfo;
+  int N;
+  int order;
+} KINODE;
 
 #endif /* SUNDIALS */
-  int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, int order);
-  int freeKinOde(DATA* data, SOLVER_INFO* solverInfo);
-  int kinsolOde(SOLVER_INFO* solverInfo);
+int allocateKinOde(DATA *data, threadData_t *threadData,
+                   SOLVER_INFO *solverInfo, int order);
+void freeKinOde(KINODE *kinOde);
+int kinsolOde(SOLVER_INFO *solverInfo);
 #ifdef __cplusplus
 };
 #endif
