@@ -694,6 +694,23 @@ uniontype Class
     end if;
   end hasOperator;
 
+  function makeRecordExp
+    input InstNode clsNode;
+    output Expression exp;
+  protected
+    Class cls;
+    Type ty;
+    InstNode ty_node;
+    array<InstNode> fields;
+    list<Expression> args;
+  algorithm
+    cls := InstNode.getClass(clsNode);
+    ty as Type.COMPLEX(complexTy = ComplexType.RECORD(ty_node)) := getType(cls, clsNode);
+    fields := ClassTree.getComponents(classTree(cls));
+    args := list(Binding.getExp(Component.getImplicitBinding(InstNode.component(f))) for f in fields);
+    exp := Expression.makeRecord(InstNode.scopePath(ty_node), ty, args);
+  end makeRecordExp;
+
   function toFlatStream
     input Class cls;
     input InstNode clsNode;

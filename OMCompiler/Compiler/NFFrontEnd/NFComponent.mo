@@ -453,6 +453,31 @@ uniontype Component
     end match;
   end getBinding;
 
+  function getImplicitBinding
+    "Returns the component's binding. If the component does not have a binding
+     and is a record instance it will try to create a binding from the
+     component's children."
+    input Component component;
+    output Binding binding;
+  protected
+    InstNode cls_node;
+    Expression record_exp;
+  algorithm
+    binding := getBinding(component);
+
+    if Binding.isUnbound(binding) then
+      cls_node := classInstance(component);
+
+      if InstNode.isRecord(cls_node) then
+        try
+          record_exp := Class.makeRecordExp(cls_node);
+          binding := Binding.FLAT_BINDING(record_exp, Expression.variability(record_exp));
+        else
+        end try;
+      end if;
+    end if;
+  end getImplicitBinding;
+
   function setBinding
     input Binding binding;
     input output Component component;

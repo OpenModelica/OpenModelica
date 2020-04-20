@@ -29,6 +29,6 @@ end RecordConstructor2;
 //   Real r.x;
 //   constant Real r.y = 1.0;
 // algorithm
-//   r := R(time);
+//   r := R(time, 1.0);
 // end RecordConstructor2;
 // endResult
