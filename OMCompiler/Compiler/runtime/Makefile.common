@@ -25,7 +25,7 @@ OMC_OBJ_SHARED = Error_omc$(OBJEXT) \
   Lapack_omc.o Settings_omc$(OBJEXT) \
   UnitParserExt_omc.o unitparser.o \
   IOStreamExt_omc.o Socket_omc.o ZeroMQ_omc.o getMemorySize.o OMSimulator_omc.o \
-  is_utf8.o
+  is_utf8.o om_curl.o om_unzip.o
 
 OMC_OBJ_STUBS = corbaimpl_stub_omc.o
 

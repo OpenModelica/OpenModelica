@@ -314,3 +314,7 @@ or online http://opensource.org/licenses/LGPL-2.1.
            This product includes software developed by the University of Chicago,
            as Operator of Argonne National Laboratory.
            Disclaimer: http://www.netlib.org/minpack/disclaimer
+
+Dynamically links against (not exhaustive):
+
+[MIT-like] libcurl

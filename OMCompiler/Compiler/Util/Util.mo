@@ -1446,6 +1446,16 @@ algorithm
   b := i == 1;
 end isCIdentifier;
 
+public function isIntegerString
+  input String str;
+  output Boolean b;
+protected
+  Integer i;
+algorithm
+  (i,_) := System.regex(str, "^[0-9][0-9]*$", 0, true, false);
+  b := i == 1;
+end isIntegerString;
+
 public function stringTrunc
 "@author:adrpo
  if the string is bigger than len keep only until len
