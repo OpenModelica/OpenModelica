@@ -644,11 +644,9 @@ algorithm
 
     // A record field without an explicit binding, evaluate the parent's binding
     // if it has one and fetch the binding from it instead.
-    case (_, ComponentRef.CREF(restCref = rest_cr as ComponentRef.CREF(ty = ty)))
-      guard Type.isRecord(Type.arrayElementType(ty))
+    case (_, _)
       algorithm
-        exp := evalCref(rest_cr, Expression.EMPTY(ty), target);
-        exp := Expression.bindingExpMap(exp, function makeComponentBinding2(name = InstNode.name(node)));
+        exp := makeRecordFieldBindingFromParent(cref, target);
       then
         Binding.CEVAL_BINDING(exp);
 
@@ -656,7 +654,33 @@ algorithm
   end matchcontinue;
 end makeComponentBinding;
 
-function makeComponentBinding2
+function makeRecordFieldBindingFromParent
+  input ComponentRef cref;
+  input EvalTarget target;
+  output Expression exp;
+protected
+  ComponentRef parent_cr;
+  Type parent_ty;
+algorithm
+  parent_cr := ComponentRef.rest(cref);
+  parent_ty := ComponentRef.nodeType(parent_cr);
+  true := Type.isRecord(Type.arrayElementType(parent_ty));
+
+  try
+    // Pass an EMPTY expression here as the default expression instead of the
+    // cref. Otherwise evalCref might attempt to make a binding for the parent
+    // from its children, which would create an evaluation loop.
+    exp := evalCref(parent_cr, Expression.EMPTY(parent_ty), target);
+  else
+    // If the parent didn't have a binding, try the parent's parent.
+    exp := makeRecordFieldBindingFromParent(parent_cr, target);
+  end try;
+
+  exp := Expression.bindingExpMap(exp,
+    function lookupRecordFieldInExp(name = ComponentRef.firstName(cref)));
+end makeRecordFieldBindingFromParent;
+
+function lookupRecordFieldInExp
   input Expression exp;
   input String name;
   output Expression result;
@@ -669,7 +693,7 @@ algorithm
 
     case Expression.RECORD() then Expression.recordElement(name, exp);
 
-    // An empty array of records will still be empty, only the type needs to be changed.
+    // An empty array of records will still be empty, but the type needs to be changed.
     case Expression.ARRAY(elements = {})
       algorithm
         exp.ty := Type.lookupRecordFieldType(name, exp.ty);
@@ -682,16 +706,16 @@ algorithm
     //       element of the array so we only need to do lookup once.
     case Expression.ARRAY(ty = Type.ARRAY(dimensions = dim :: _))
       algorithm
-        expl := list(makeComponentBinding2(e, name) for e in exp.elements);
+        expl := list(lookupRecordFieldInExp(e, name) for e in exp.elements);
         ty := Type.liftArrayLeft(Expression.typeOf(listHead(expl)), dim);
       then
         Expression.makeArray(ty, expl, literal = true);
 
     case Expression.SUBSCRIPTED_EXP()
-      then Expression.SUBSCRIPTED_EXP(makeComponentBinding2(exp.exp, name), exp.subscripts, exp.ty);
+      then Expression.SUBSCRIPTED_EXP(lookupRecordFieldInExp(exp.exp, name), exp.subscripts, exp.ty);
 
   end match;
-end makeComponentBinding2;
+end lookupRecordFieldInExp;
 
 function makeRecordBindingExp
   input InstNode typeNode;

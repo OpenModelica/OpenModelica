@@ -77,6 +77,7 @@ import Array;
 import ElementSource;
 import SCodeUtil;
 import IOStream;
+import ComplexType = NFComplexType;
 
 public
 type NamedArg = tuple<String, Expression>;
@@ -1969,7 +1970,7 @@ protected
   algorithm
     try
       comp := InstNode.component(component);
-      default := Binding.typedExp(Component.getBinding(comp));
+      default := Binding.typedExp(Component.getImplicitBinding(comp));
       name := InstNode.name(component);
 
       // Remove $in_ for OM input output arguments.
