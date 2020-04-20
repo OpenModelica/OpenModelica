@@ -2422,18 +2422,18 @@ void GraphicsView::copyItems(bool cut)
  */
 void GraphicsView::modelicaGraphicsViewContextMenu(QMenu *pMenu)
 {
-  QMenu *pExportMenu = pMenu->addMenu(Helper::exportt);
-  pExportMenu->addAction(MainWindow::instance()->getExportToClipboardAction());
-  pExportMenu->addAction(MainWindow::instance()->getExportAsImageAction());
   if (!isVisualizationView()) {
+    QMenu *pExportMenu = pMenu->addMenu(Helper::exportt);
+    pExportMenu->addAction(MainWindow::instance()->getExportToClipboardAction());
+    pExportMenu->addAction(MainWindow::instance()->getExportAsImageAction());
     pExportMenu->addAction(MainWindow::instance()->getExportToOMNotebookAction());
     pMenu->addSeparator();
     mpPasteAction->setEnabled(QApplication::clipboard()->mimeData()->hasFormat(Helper::cutCopyPasteFormat) && qobject_cast<const MimeData*>(QApplication::clipboard()->mimeData()));
     pMenu->addAction(mpPasteAction);
+    pMenu->addSeparator();
+    pMenu->addAction(MainWindow::instance()->getPrintModelAction());
+    pMenu->addSeparator();
   }
-  pMenu->addSeparator();
-  pMenu->addAction(MainWindow::instance()->getPrintModelAction());
-  pMenu->addSeparator();
   pMenu->addAction(mpPropertiesAction);
 }
 

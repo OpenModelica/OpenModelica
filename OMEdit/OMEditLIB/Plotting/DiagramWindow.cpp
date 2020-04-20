@@ -80,6 +80,9 @@ void DiagramWindow::drawDiagram(ModelWidget *pModelWidget)
     mpGraphicsScene = new GraphicsScene(StringHandler::Diagram, pModelWidget);
     mpGraphicsView = new GraphicsView(StringHandler::Diagram, pModelWidget, true);
     mpGraphicsView->setScene(mpGraphicsScene);
+    mpGraphicsView->setCoOrdinateSystem(pModelWidget->getDiagramGraphicsView()->getCoOrdinateSystem());
+    mpGraphicsView->mMergedCoOrdinateSystem = pModelWidget->getDiagramGraphicsView()->mMergedCoOrdinateSystem;
+    mpGraphicsView->setExtentRectangle(pModelWidget->getDiagramGraphicsView()->mMergedCoOrdinateSystem.getExtentRectangle());
     mpMainLayout->addWidget(mpGraphicsView);
 
     foreach (ShapeAnnotation *pReferenceShapeAnnotation, pModelWidget->getDiagramGraphicsView()->getShapesList()) {
