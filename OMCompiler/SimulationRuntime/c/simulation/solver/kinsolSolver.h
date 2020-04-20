@@ -103,17 +103,18 @@ typedef struct NLS_KINSOL_DATA {
   N_Vector fRes;
   N_Vector fTmp;
 
-  N_Vector y;  /* Template for cloning vectors needed inside linear solver */
-  SUNMatrix J; /* Sparse matrix template for cloning matrices needed within
-                  linear solver */
-
   int iflag;
   long countResCalls; /* case of sparse function not avaiable */
 
   /* ### kinsol internal data */
   void *kinsolMemory;           /* Internal memroy block for KINSOL */
   NLS_KINSOL_USERDATA userData; /* User data provided to KINSOL */
-  SUNLinearSolver linSol;       /* Linear solver object used by KINSOL */
+
+  /* linear solver data */
+  SUNLinearSolver linSol; /* Linear solver object used by KINSOL */
+  N_Vector y;  /* Template for cloning vectors needed inside linear solver */
+  SUNMatrix J; /* Sparse matrix template for cloning matrices needed within
+                  linear solver */
 
   /* Properties of non-linear system */
   int size;   /* Size of non-linear problem */

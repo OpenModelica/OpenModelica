@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2016, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -37,6 +37,7 @@
 #include "openmodelica.h"
 #include "simulation_data.h"
 #include "util/simulation_options.h"
+#include "util/sundials_error.h"
 #include "simulation/solver/solver_main.h"
 
 #ifdef WITH_SUNDIALS
@@ -46,17 +47,61 @@
 #define LINK_SUNDIALS_STATIC
 #endif
 
+
+#include <idas/idas.h>
+#include <nvector/nvector_serial.h>
+#include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
+#include <sunlinsol/sunlinsol_klu.h>         /* Linear solver KLU */
+//#include <sunlinsol/sunlinsol_lapackdense.h> /* Lapack dense linear solver */
+#include <sunlinsol/sunlinsol_spgmr.h>
+#include <sunlinsol/sunlinsol_spbcgs.h>
+#include <sunlinsol/sunlinsol_sptfqmr.h>
+
+
+#if 0 /* TODO: Remove */
+#include <sundials/sundials_types.h>
 #include <sundials/sundials_nvector.h>
 #include <nvector/nvector_serial.h>
-#include <idas/idas.h>
+
+#include <idas/idas_dense.h>
+#include <idas/idas_klu.h>
+#include <idas/idas_spgmr.h>
+#include <idas/idas_spbcgs.h>
+#include <idas/idas_sptfqmr.h>
+
+
+#include <sundials/sundials_nvector.h>
+#include <nvector/nvector_serial.h>
+
 #include <idas/idas_dense.h>
 #include <idas/idas_sparse.h>
+#endif
+
+
+/* readability */
+#define SCALE_MODE 0
+#define RESCALE_MODE 1
+
+#define MINIMAL_SCALE_FACTOR 1e-8
+
+#ifndef booleantype
+#define booleantype int
+#endif
+
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+#ifndef TRUE
+#define TRUE 1
+#endif
+
 
 typedef struct IDA_USERDATA
 {
   DATA* data;
   threadData_t* threadData;
-}IDA_USERDATA;
+} IDA_USERDATA;
 
 typedef struct IDA_SOLVER
 {
@@ -78,7 +123,7 @@ typedef struct IDA_SOLVER
   double *resScale;
   int disableScaling;           /* = 1 disables scaling temporary for particular calculations */
 
-  /* ### work array used in jacobian calculation */
+  /* ### work array used in jacobian calculation ### */
   double sqrteps;
   double *ysave;
   double *ypsave;
@@ -86,17 +131,24 @@ typedef struct IDA_SOLVER
   N_Vector errwgt;
   N_Vector newdelta;
 
-  /* ### ida internal data */
+  /* ### ida internal data ### */
   void* ida_mem;
   int (*residualFunction)(double time, N_Vector yy, N_Vector yp, N_Vector res, void* userData);
-  IDA_USERDATA* simData;
-  SlsMat tmpJac;
-  DlsMat denseJac;
+  IDA_USERDATA* userData;
+  SUNMatrix tmpJac;
+  SUNMatrix denseJac;
+
+  /* linear solver data */
+  SUNLinearSolver linSol; /* Linear solver object used by KINSOL */
+  N_Vector y_linSol; /* Template for cloning vectors needed inside linear solver */
+  SUNMatrix J; /* Sparse matrix template for cloning matrices needed within
+                  linear solver */
+  /* TODO: AHeu: Free memory !!! */
 
   /* ### daeMode ### */
-  int daeMode;                  /* if TRUE then solve dae more with a reals residual function */
-  long int N;
-  long int NNZ;
+  booleantype daeMode;          /* If TRUE then solve dae more with a reals residual function */
+  long int N;                   /* Number of unknowns */
+  long int NNZ;                 /* Number of non-zero elemetes of ... */
   double *states;
   double *statesDer;
 
@@ -111,8 +163,7 @@ typedef struct IDA_SOLVER
   ANALYTIC_JACOBIAN* jacColumns;
 #endif
   int allocatedParMem; /* indicated if parallel memory was allocated, 0=false, 1=true*/
-
-}IDA_SOLVER;
+} IDA_SOLVER;
 
 /* initialize main ida Data */
 int ida_solver_initial(DATA* data, threadData_t *threadData,
