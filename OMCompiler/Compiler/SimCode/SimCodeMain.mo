@@ -1393,7 +1393,7 @@ algorithm
     simCode := SimCode.SIMCODE(modelInfo,
                               {}, // Set by the traversal below...
                               recordDecls,
-                              includeDirs,
+                              includes,
                               {},
                               {},
                               {},
