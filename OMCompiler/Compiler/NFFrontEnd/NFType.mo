@@ -544,7 +544,7 @@ public
     output Type ty;
   algorithm
     ty := match arrayTy
-      case ARRAY() then ARRAY(elementTy, arrayTy.dimensions);
+      case ARRAY() then liftArrayLeftList(elementTy, arrayTy.dimensions);
       else elementTy;
     end match;
   end setArrayElementType;
