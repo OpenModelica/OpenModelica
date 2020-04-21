@@ -811,7 +811,8 @@ void TransformationsWidget::loadTransformations()
     QVariantMap result;
     result = parser.parse(&file, &ok).toMap();
     if (!ok) {
-      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::parsingFailedJson), Helper::parsingFailedJson + ": " + mInfoJSONFullFileName, Helper::ok);
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(mInfoJSONFullFileName)
+                                                            .arg(parser.errorString()), Helper::scriptingKind, Helper::errorLevel));
       return;
     }
     QVariantMap vars = result["variables"].toMap();
@@ -1320,19 +1321,24 @@ void TransformationsWidget::parseProfiling(QString fileName)
   QJson::Parser parser;
   bool ok;
   QVariantMap result = parser.parse(file, &ok).toMap();
-  double totalStepsTime = result["totalTimeProfileBlocks"].toDouble();
-  QVariantList functions = result["functions"].toList();
-  QVariantList list = result["profileBlocks"].toList();
-  profilingNumSteps = result["numStep"].toInt() + 1; // Initialization is not a step, but part of the file
-  for (int i=0; i<list.size(); i++) {
-    QVariantMap eq = list[i].toMap();
-    long id = eq["id"].toInt();
-    double time = eq["time"].toDouble();
-    mEquations[id]->ncall = eq["ncall"].toInt();
-    mEquations[id]->maxTime = eq["maxTime"].toDouble();
-    mEquations[id]->time = time;
-    mEquations[id]->fraction = time / totalStepsTime;
-    mEquations[id]->profileBlock = i + functions.size();
+  if (ok) {
+    double totalStepsTime = result["totalTimeProfileBlocks"].toDouble();
+    QVariantList functions = result["functions"].toList();
+    QVariantList list = result["profileBlocks"].toList();
+    profilingNumSteps = result["numStep"].toInt() + 1; // Initialization is not a step, but part of the file
+    for (int i=0; i<list.size(); i++) {
+      QVariantMap eq = list[i].toMap();
+      long id = eq["id"].toInt();
+      double time = eq["time"].toDouble();
+      mEquations[id]->ncall = eq["ncall"].toInt();
+      mEquations[id]->maxTime = eq["maxTime"].toDouble();
+      mEquations[id]->time = time;
+      mEquations[id]->fraction = time / totalStepsTime;
+      mEquations[id]->profileBlock = i + functions.size();
+    }
+  } else {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(fileName)
+                                                          .arg(parser.errorString()), Helper::scriptingKind, Helper::errorLevel));
   }
   delete file;
 }
