@@ -33,7 +33,7 @@ encapsulated package Causalize
 " file:        Causalize.mo
   package:     Causalize
   description: Causalize contains functions to causalize the equation system.
-               This includes algorithms to check if the system is singulare,
+               This includes algorithms to check if the system is singular,
                match the equations with variables and sorting to BLT-Form."
 
 
