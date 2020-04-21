@@ -698,7 +698,7 @@ algorithm
           // A typed binding, get the dimension from the binding's type.
           case Binding.TYPED_BINDING()
             algorithm
-              dim_index := index + Binding.propagatedDimCount(b) + parent_dims;
+              dim_index := index + parent_dims;
               (dim, ty_err) := nthDimensionBoundsChecked(b.bindingType, dim_index);
 
               // If the deduced dimension is unknown, evaluate the binding and try again.
