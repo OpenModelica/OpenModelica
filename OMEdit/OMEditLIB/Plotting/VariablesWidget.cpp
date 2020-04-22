@@ -2358,6 +2358,7 @@ void VariablesWidget::timeUnitChanged(QString unit)
  */
 void VariablesWidget::updateVariablesTree(QMdiSubWindow *pSubWindow)
 {
+  MainWindow::instance()->getModelWidgetContainer()->currentModelWidgetChanged(0);
   if (!pSubWindow && MainWindow::instance()->getPlotWindowContainer()->subWindowList().size() != 0) {
     return;
   }

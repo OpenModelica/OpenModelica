@@ -55,6 +55,7 @@
 #include "OMS/BusDialog.h"
 #include "OMS/SystemSimulationInformationDialog.h"
 #include "Util/ResourceCache.h"
+#include "Plotting/PlotWindowContainer.h"
 
 #include <QNetworkReply>
 #include <QMessageBox>
@@ -7874,9 +7875,11 @@ bool ModelWidgetContainer::openRecentModelWidget(QListWidgetItem *pListWidgetIte
 void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
 {
   bool enabled = false;
+  bool zoomEnabled = false;
   bool modelica = false;
   bool compositeModel = false;
   bool oms = false;
+  bool plottingDiagram = false;
   bool omsModel = false;
   bool omsSystem = false;
   bool omsSubmodel = false;
@@ -7889,6 +7892,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   LibraryTreeItem *pLibraryTreeItem = 0;
   if (pSubWindow) {
     enabled = true;
+    zoomEnabled = true;
     pModelWidget = qobject_cast<ModelWidget*>(pSubWindow->widget());
     pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
     iconGraphicsView = pModelWidget->getIconViewToolButton()->isChecked();
@@ -7919,6 +7923,10 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
         omsConnector = true;
       }
     }
+  } else if (MainWindow::instance()->isPlottingPerspectiveActive() && MainWindow::instance()->getPlotWindowContainer()->currentSubWindow()
+             && MainWindow::instance()->getPlotWindowContainer()->isDiagramWindow(MainWindow::instance()->getPlotWindowContainer()->currentSubWindow()->widget())) {
+    zoomEnabled = true;
+    plottingDiagram = true;
   }
   // update the actions of the menu and toolbars
   MainWindow::instance()->getSaveAction()->setEnabled(enabled);
@@ -7926,9 +7934,9 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   //  MainWindow::instance()->getSaveAllAction()->setEnabled(enabled);
   MainWindow::instance()->getSaveTotalAction()->setEnabled(enabled && modelica);
   MainWindow::instance()->getShowGridLinesAction()->setEnabled(enabled && (modelica || compositeModel || oms) && !textView && !pModelWidget->getLibraryTreeItem()->isSystemLibrary());
-  MainWindow::instance()->getResetZoomAction()->setEnabled(enabled && (modelica || compositeModel || oms));
-  MainWindow::instance()->getZoomInAction()->setEnabled(enabled && (modelica || compositeModel || oms));
-  MainWindow::instance()->getZoomOutAction()->setEnabled(enabled && (modelica || compositeModel || oms));
+  MainWindow::instance()->getResetZoomAction()->setEnabled(zoomEnabled && (modelica || compositeModel || oms || plottingDiagram));
+  MainWindow::instance()->getZoomInAction()->setEnabled(zoomEnabled && (modelica || compositeModel || oms || plottingDiagram));
+  MainWindow::instance()->getZoomOutAction()->setEnabled(zoomEnabled && (modelica || compositeModel || oms || plottingDiagram));
   MainWindow::instance()->getLineShapeAction()->setEnabled(enabled && modelica && !textView);
   MainWindow::instance()->getPolygonShapeAction()->setEnabled(enabled && modelica && !textView);
   MainWindow::instance()->getRectangleShapeAction()->setEnabled(enabled && modelica && !textView);

@@ -1958,14 +1958,20 @@ void MainWindow::setShowGridLines(bool showLines)
  */
 void MainWindow::resetZoom()
 {
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
-    if (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()) {
-      pModelWidget->getDiagramGraphicsView()->resetZoom();
-    } else if (pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) {
-      pModelWidget->getIconGraphicsView()->resetZoom();
-    } else if (pModelWidget->getEditor() && pModelWidget->getEditor()->isVisible()) {
-      pModelWidget->getEditor()->getPlainTextEdit()->resetZoom();
+  if (isModelingPerspectiveActive()) {
+    ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+    if (pModelWidget) {
+      if (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()) {
+        pModelWidget->getDiagramGraphicsView()->resetZoom();
+      } else if (pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) {
+        pModelWidget->getIconGraphicsView()->resetZoom();
+      } else if (pModelWidget->getEditor() && pModelWidget->getEditor()->isVisible()) {
+        pModelWidget->getEditor()->getPlainTextEdit()->resetZoom();
+      }
+    }
+  } else if (isPlottingPerspectiveActive()) {
+    if (mpPlotWindowContainer->currentSubWindow() && mpPlotWindowContainer->isDiagramWindow(mpPlotWindowContainer->currentSubWindow()->widget())) {
+      mpPlotWindowContainer->getDiagramWindow()->getGraphicsView()->resetZoom();
     }
   }
 }
@@ -1978,14 +1984,20 @@ void MainWindow::resetZoom()
  */
 void MainWindow::zoomIn()
 {
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
-    if (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()) {
-      pModelWidget->getDiagramGraphicsView()->zoomIn();
-    } else if (pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) {
-      pModelWidget->getIconGraphicsView()->zoomIn();
-    } else if (pModelWidget->getEditor() && pModelWidget->getEditor()->isVisible()) {
-      pModelWidget->getEditor()->getPlainTextEdit()->zoomIn();
+  if (isModelingPerspectiveActive()) {
+    ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+    if (pModelWidget) {
+      if (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()) {
+        pModelWidget->getDiagramGraphicsView()->zoomIn();
+      } else if (pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) {
+        pModelWidget->getIconGraphicsView()->zoomIn();
+      } else if (pModelWidget->getEditor() && pModelWidget->getEditor()->isVisible()) {
+        pModelWidget->getEditor()->getPlainTextEdit()->zoomIn();
+      }
+    }
+  } else if (isPlottingPerspectiveActive()) {
+    if (mpPlotWindowContainer->currentSubWindow() && mpPlotWindowContainer->isDiagramWindow(mpPlotWindowContainer->currentSubWindow()->widget())) {
+      mpPlotWindowContainer->getDiagramWindow()->getGraphicsView()->zoomIn();
     }
   }
 }
@@ -1998,14 +2010,20 @@ void MainWindow::zoomIn()
  */
 void MainWindow::zoomOut()
 {
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
-    if (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()) {
-      pModelWidget->getDiagramGraphicsView()->zoomOut();
-    } else if (pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) {
-      pModelWidget->getIconGraphicsView()->zoomOut();
-    } else if (pModelWidget->getEditor() && pModelWidget->getEditor()->isVisible()) {
-      pModelWidget->getEditor()->getPlainTextEdit()->zoomOut();
+  if (isModelingPerspectiveActive()) {
+    ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+    if (pModelWidget) {
+      if (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()) {
+        pModelWidget->getDiagramGraphicsView()->zoomOut();
+      } else if (pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) {
+        pModelWidget->getIconGraphicsView()->zoomOut();
+      } else if (pModelWidget->getEditor() && pModelWidget->getEditor()->isVisible()) {
+        pModelWidget->getEditor()->getPlainTextEdit()->zoomOut();
+      }
+    }
+  } else if (isPlottingPerspectiveActive()) {
+    if (mpPlotWindowContainer->currentSubWindow() && mpPlotWindowContainer->isDiagramWindow(mpPlotWindowContainer->currentSubWindow()->widget())) {
+      mpPlotWindowContainer->getDiagramWindow()->getGraphicsView()->zoomOut();
     }
   }
 }
@@ -4104,7 +4122,7 @@ void MainWindow::switchToPlottingPerspective()
   mpVariablesDockWidget->show();
   // show/hide toolbars
   mpEditToolBar->setVisible(false);
-  mpViewToolBar->setVisible(false);
+  mpViewToolBar->setVisible(true);
   mpShapesToolBar->setVisible(false);
   mpModelSwitcherToolBar->setVisible(false);
   mpCheckToolBar->setVisible(false);
