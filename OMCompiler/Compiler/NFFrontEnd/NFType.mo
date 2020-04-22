@@ -982,6 +982,8 @@ public
     fieldType := match recordType
       case COMPLEX()
         then InstNode.getType(Class.lookupElement(name, InstNode.getClass(recordType.cls)));
+      case ARRAY()
+        then liftArrayLeftList(lookupRecordFieldType(name, recordType.elementType), recordType.dimensions);
     end match;
   end lookupRecordFieldType;
 
