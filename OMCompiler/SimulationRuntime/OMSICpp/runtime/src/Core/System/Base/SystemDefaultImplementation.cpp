@@ -73,7 +73,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(shared_ptr<IGlobalSetti
       , _event_system(NULL)
       , _modelName(modelName)
       , _freeVariablesLock(false)
-      , _omsu(NULL)
+     
 {
     _simObjects = shared_ptr<ISimObjects>(new SimObjects(globalSettings->getRuntimeLibrarypath(),
                                                          globalSettings->getRuntimeLibrarypath(), globalSettings));
@@ -83,8 +83,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(shared_ptr<IGlobalSetti
 }
 
 
-SystemDefaultImplementation::SystemDefaultImplementation(shared_ptr<IGlobalSettings> globalSettings, string modelName,
-                                                         omsi_t* omsu)
+SystemDefaultImplementation::SystemDefaultImplementation(shared_ptr<IGlobalSettings> globalSettings, string modelName)
     : _simTime(0.0)
       , __daeResidual(NULL)
       , _conditions(NULL)
@@ -119,12 +118,9 @@ SystemDefaultImplementation::SystemDefaultImplementation(shared_ptr<IGlobalSetti
       , _event_system(NULL)
       , _modelName(modelName)
       , _freeVariablesLock(false)
-      , _omsu(omsu)
+     
 {
-    _simObjects = shared_ptr<ISimObjects>(new SimObjects(globalSettings->getRuntimeLibrarypath(),
-                                                         globalSettings->getRuntimeLibrarypath(), globalSettings));
-    _simObjects->LoadSimVars(_modelName, _omsu);
-    __z = _simObjects->getSimVars(modelName)->getStateVector();
+      __z = _simObjects->getSimVars(modelName)->getStateVector();
     __zDot = _simObjects->getSimVars(modelName)->getDerStateVector();
 }
 
@@ -464,10 +460,7 @@ string SystemDefaultImplementation::getModelName() const
     return _modelName;
 }
 
-shared_ptr<ISimData> SystemDefaultImplementation::getSimData()
-{
-    return _simObjects->getSimData(_modelName);
-}
+
 
 shared_ptr<ISimVars> SystemDefaultImplementation::getSimVars()
 {

@@ -149,7 +149,7 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
   class <%lastIdentOfPath(modelInfo.name)%>WriteOutput  : public IWriteOutput,public <%lastIdentOfPath(modelInfo.name)%>StateSelection
   {
    public:
-    <%lastIdentOfPath(modelInfo.name)%>WriteOutput(shared_ptr<IGlobalSettings> globalSettings,omsi_t* omsu = NULL): <%lastIdentOfPath(modelInfo.name)%>StateSelection(globalSettings,omsu) {}
+    <%lastIdentOfPath(modelInfo.name)%>WriteOutput(shared_ptr<IGlobalSettings> globalSettings): <%lastIdentOfPath(modelInfo.name)%>StateSelection(globalSettings) {}
     virtual ~<%lastIdentOfPath(modelInfo.name)%>WriteOutput() {}
 
     virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT) {}
@@ -676,7 +676,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   MODELICA_UTILITIES_LIB=OMCppModelicaUtilities_static.lib
   EXTRA_LIBS=<%dirExtra%> <%libsExtra%>
 
-  LDFLAGS=/link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/omsicpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/debug"  /LIBPATH:"<%makefileParams.omhome%>/bin" OMCppSystem_static.lib OMCppMath_static.lib OMCppExtensionUtilities_static.lib OMCppDataExchange_static.lib OMCppFMU_static.lib  $(OMCPP_SOLVER_LIBS)  $(EXTRA_LIBS) $(MODELICA_UTILITIES_LIB)
+  LDFLAGS=/link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/omsicpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/debug"  /LIBPATH:"<%makefileParams.omhome%>/bin" OMCppSystemBase_static.lib OMCppMath_static.lib OMCppExtensionUtilities_static.lib OMCppDataExchange_static.lib OMCppFMU_static.lib  $(OMCPP_SOLVER_LIBS)  $(EXTRA_LIBS) $(MODELICA_UTILITIES_LIB)
 
   PLATFORM="<%makefileParams.platform%>"
 
@@ -774,7 +774,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   BINARIES=<%fileNamePrefix%>$(DLLEXT)
 
-  OMCPP_LIBS=-lOMCppSystem_static -lOMCppMath_static -lOMCppDataExchange_static -lOMCppFMU_static $(OMCPP_SOLVER_LIBS) -lOMCppExtensionUtilities_static
+  OMCPP_LIBS=-lOMCppSystemBase_static -lOMCppMath_static  -lOMCppFMU_static $(OMCPP_SOLVER_LIBS) -lOMCppExtensionUtilities_static
   MODELICA_UTILITIES_LIB=-lOMCppModelicaUtilities_static
   EXTRA_LIBS=<%dirExtra%> <%libsExtra%>
   LIBS=$(OMCPP_LIBS) $(MODELICA_UTILITIES_LIB) $(BASE_LIB) $(EXTRA_LIBS)

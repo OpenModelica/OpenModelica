@@ -10,13 +10,8 @@
 
 Services for the implementation of an algebraic loop in open modelica.
 
-\date     October, 1st, 2008
-\author
-
 */
-/*****************************************************************************
-Copyright (c) 2008, OSMC
-*****************************************************************************/
+
 
 class BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL LinearAlgLoopDefaultImplementation
 {

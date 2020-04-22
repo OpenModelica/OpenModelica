@@ -9,13 +9,8 @@
 
 Abstract interface class for continous systems in open modelica.
 
-\date     October, 1st, 2008
-\author
-
 */
-/*****************************************************************************
-Copyright (c) 2008, OSMC
-*****************************************************************************/
+
 
 class IContinuous
 {

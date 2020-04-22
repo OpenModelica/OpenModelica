@@ -1,4 +1,4 @@
-#include <Core/System/SystemDefaultImplementation.h>
+#include <Core/System/ExtendedSystem.h>
 #include <fmilib.h>
 
 //Forward declaration to speed-up the compilation process
@@ -16,16 +16,16 @@ typedef vector<tuple<fmi2_value_reference_t, unsigned int>> out_vars_vr_t;
 
 class omsi_me;
 
-class OSUSystem : public IContinuous, public IEvent, public IStepEvent, public IStateSelection, public ITime,
+class OMSUSystem : public IContinuous, public IEvent, public IStepEvent, public IStateSelection, public ITime,
                   public ISystemProperties, public ISystemInitialization, public IMixedSystem, public IWriteOutput,
-                  public SystemDefaultImplementation
+                  public ExtendedSystem
 {
 public:
 
-    OSUSystem(shared_ptr<IGlobalSettings> globalSettings, string _osu_name);
-    OSUSystem(OSUSystem& instance);
+    OMSUSystem(shared_ptr<IGlobalSettings> globalSettings, string _osu_name);
+    OMSUSystem(OMSUSystem& instance);
 
-    virtual ~OSUSystem();
+    virtual ~OMSUSystem();
     virtual void initialize();
     virtual void initEquations();
     virtual void setInitial(bool);

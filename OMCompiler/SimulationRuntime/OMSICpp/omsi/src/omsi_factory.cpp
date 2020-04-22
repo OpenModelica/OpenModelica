@@ -35,6 +35,8 @@
 //Cpp Simulation kernel includes
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
+#include <Core/System/FactoryExport.h>
+#include <Core/System/IOMSI.h>
 #include <omsi_global_settings.h>
 #include <omsi_factory.h>
 #include <Core/System/SimObjects.h>

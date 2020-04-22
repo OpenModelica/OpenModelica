@@ -72,82 +72,16 @@ public:
             simvars_iter->second.create(dim_real, dim_int, dim_bool, dim_string, dim_pre_vars, dim_z, z_i));
         return simVars;
     }
+    
+       
 
-    virtual shared_ptr<ISimVars> createSimVars(omsi_t* omsu)
-    {
-        std::map<std::string, factory<ISimVars, omsi_t*>>::iterator simvars_iter;
-        std::map<std::string, factory<ISimVars, omsi_t*>>& simvars_factory(_simobject_type_map->get());
-        simvars_iter = simvars_factory.find("SimVars2");
-        if (simvars_iter == simvars_factory.end())
-        {
-            throw ModelicaSimulationError(MODEL_FACTORY, "No simvars found");
-        }
-        shared_ptr<ISimVars> simVars(simvars_iter->second.create(omsu));
-        return simVars;
-    }
-
-    shared_ptr<IHistory> createMatFileWriter(shared_ptr<IGlobalSettings> settings, size_t dim)
-    {
-        std::map<std::string, factory<IHistory, shared_ptr<IGlobalSettings>, size_t>>::iterator writer_iter;
-        std::map<std::string, factory<IHistory, shared_ptr<IGlobalSettings>, size_t>>& writer_factory(
-            _simobject_type_map->get());
-        writer_iter = writer_factory.find("MatFileWriter");
-        if (writer_iter == writer_factory.end())
-        {
-            throw ModelicaSimulationError(MODEL_FACTORY, "No MatfileWriter found");
-        }
-        shared_ptr<IHistory> writer(writer_iter->second.create(settings, dim));
-        return writer;
-    }
-
-    shared_ptr<IHistory> createTextFileWriter(shared_ptr<IGlobalSettings> settings, size_t dim)
-    {
-        std::map<std::string, factory<IHistory, shared_ptr<IGlobalSettings>, size_t>>::iterator writer_iter;
-        std::map<std::string, factory<IHistory, shared_ptr<IGlobalSettings>, size_t>>& writer_factory(
-            _simobject_type_map->get());
-        writer_iter = writer_factory.find("TextFileWriter");
-        if (writer_iter == writer_factory.end())
-        {
-            throw ModelicaSimulationError(MODEL_FACTORY, "No MatfileWriter found");
-        }
-        shared_ptr<IHistory> writer(writer_iter->second.create(settings, dim));
-        return writer;
-    }
-
-    shared_ptr<IHistory> createBufferReaderWriter(shared_ptr<IGlobalSettings> settings, size_t dim)
-    {
-        std::map<std::string, factory<IHistory, shared_ptr<IGlobalSettings>, size_t>>::iterator writer_iter;
-        std::map<std::string, factory<IHistory, shared_ptr<IGlobalSettings>, size_t>>& writer_factory(
-            _simobject_type_map->get());
-        writer_iter = writer_factory.find("BufferReaderWriter");
-        if (writer_iter == writer_factory.end())
-        {
-            throw ModelicaSimulationError(MODEL_FACTORY, "No MatfileWriter found");
-        }
-        shared_ptr<IHistory> writer(writer_iter->second.create(settings, dim));
-        return writer;
-    }
-
-    shared_ptr<IHistory> createDefaultWriter(shared_ptr<IGlobalSettings> settings, size_t dim)
-    {
-        std::map<std::string, factory<IHistory, shared_ptr<IGlobalSettings>, size_t>>::iterator writer_iter;
-        std::map<std::string, factory<IHistory, shared_ptr<IGlobalSettings>, size_t>>& writer_factory(
-            _simobject_type_map->get());
-        writer_iter = writer_factory.find("DefaultWriter");
-        if (writer_iter == writer_factory.end())
-        {
-            throw ModelicaSimulationError(MODEL_FACTORY, "No MatfileWriter found");
-        }
-        shared_ptr<IHistory> writer(writer_iter->second.create(settings, dim));
-        return writer;
-    }
 
 
 protected:
     virtual void initializeLibraries(PATH library_path, PATH modelicasystem_path, PATH config_path)
     {
         fs::path systemfactory_path = ObjectFactory<CreationPolicy>::_library_path;
-        fs::path system_name(SYSTEM_LIB);
+        fs::path system_name(SYSTEMBASE_LIB);
         systemfactory_path /= system_name;
 
         LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(
@@ -158,6 +92,7 @@ protected:
             tmp << "Failed loading System library!" << std::endl << systemfactory_path.string();
             throw ModelicaSimulationError(MODEL_FACTORY, tmp.str());
         }
+
 
         fs::path dataexchange_path = ObjectFactory<CreationPolicy>::_library_path;
         fs::path dataexchange_name(DATAEXCHANGE_LIB);

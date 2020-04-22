@@ -27,10 +27,9 @@ SimVars::SimVars(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_st
     create(dim_real, dim_int, dim_bool, dim_string, dim_pre_vars, dim_state_vars, state_index);
 }
 
-SimVars::SimVars(omsi_t* omsu)
-    : _use_omsu(true)
+SimVars::SimVars()
 {
-    create(omsu);
+
 }
 
 SimVars::SimVars(SimVars& instance)
@@ -109,70 +108,6 @@ void SimVars::create(size_t dim_real, size_t dim_int, size_t dim_bool, size_t di
         std::fill(_real_vars, _real_vars + dim_real, 0.0);
 }
 
-void SimVars::create(omsi_t* omsu)
-{
-    _dim_real = omsu->sim_data->model_vars_and_params->n_reals;
-    _dim_int = omsu->sim_data->model_vars_and_params->n_ints;
-    _dim_bool = omsu->sim_data->model_vars_and_params->n_bools;
-    _dim_z = omsu->model_data->n_states;
-    _dim_string = omsu->sim_data->model_vars_and_params->n_strings;
-    _dim_pre_vars = _dim_real + _dim_int + _dim_bool;
-    _z_i = 0;
-
-    /*Todo:
-    if (dim_string > 0) {
-        _string_vars = new string[dim_string];
-    }
-    else {
-        _string_vars = NULL;
-    }
-    */
-    if (_dim_bool > 0)
-    {
-        if (!omsu->sim_data->model_vars_and_params->bools)
-            throw ModelicaSimulationError(MODEL_EQ_SYSTEM, "omsu integer model variables are not allocated");
-        if (!omsu->sim_data->pre_vars->bools)
-            throw ModelicaSimulationError(MODEL_EQ_SYSTEM, "omsu integer model variables are not allocated");
-        _omsi_bool_vars = omsu->sim_data->model_vars_and_params->bools;
-        _pre_omsi_bool_vars = omsu->sim_data->pre_vars->bools;
-    }
-    else
-    {
-        _omsi_bool_vars = NULL;
-        _pre_omsi_bool_vars = NULL;
-    }
-    if (_dim_int > 0)
-    {
-        if (!omsu->sim_data->model_vars_and_params->ints)
-            throw ModelicaSimulationError(MODEL_EQ_SYSTEM, "omsu integer model variables are not allocated");
-        if (!omsu->sim_data->pre_vars->ints)
-            throw ModelicaSimulationError(MODEL_EQ_SYSTEM, "omsu integer model variables are not allocated");
-        _int_vars = omsu->sim_data->model_vars_and_params->ints;
-        _pre_int_vars = omsu->sim_data->pre_vars->ints;
-    }
-    else
-    {
-        _int_vars = NULL;
-        _pre_int_vars = NULL;
-    }
-    if (_dim_real > 0)
-    {
-        if (!omsu->sim_data->model_vars_and_params->reals)
-            throw ModelicaSimulationError(MODEL_EQ_SYSTEM, "omsu real model variables are not allocated");
-        if (!omsu->sim_data->pre_vars->reals)
-            throw ModelicaSimulationError(MODEL_EQ_SYSTEM, "omsu real model variables are not allocated");
-        _real_vars = omsu->sim_data->model_vars_and_params->reals;
-        _pre_real_vars = omsu->sim_data->pre_vars->reals;
-    }
-
-    /*ToDo:
-    _dim_string = dim_string;
-    _dim_pre_vars = omsu->sim_data->;
-
-    _dim_z = dim_state_vars;
-    _z_i = 0;
-*/
-}
 
 SimVars::~SimVars()
 {

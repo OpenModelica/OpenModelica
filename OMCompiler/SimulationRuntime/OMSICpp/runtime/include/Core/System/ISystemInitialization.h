@@ -8,13 +8,9 @@
 
 Abstract interface class for system properties in open modelica.
 
-\date     October, 1st, 2008
-\author
 
 */
-/*****************************************************************************
-Copyright (c) 2008, OSMC
-*****************************************************************************/
+
 class ISystemInitialization
 {
 public:
