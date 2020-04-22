@@ -5254,6 +5254,13 @@ public
         then Expression.bindingExpMap(recordExp,
           function recordElement(elementName = elementName));
 
+      case SUBSCRIPTED_EXP()
+        algorithm
+          outExp := recordElement(elementName, recordExp.exp);
+        then
+          SUBSCRIPTED_EXP(outExp, recordExp.subscripts,
+            Type.lookupRecordFieldType(elementName, recordExp.ty));
+
       case EMPTY() then fail();
 
       else
