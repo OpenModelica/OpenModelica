@@ -8,11 +8,7 @@ template <typename T>
 /**
  * An array-wrapper that will align the array along full cache lines.
  */
-/*
-#ifdef RUNTIME_STATIC_LINKING
-class AlignedArray
-#else
- */
+
 
 class BOOST_EXTENSION_SIMVARS_DECL AlignedArray
     /*#endif*/
@@ -80,9 +76,9 @@ ISimVars
 {
   public:
     SimVars(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_string, size_t dim_pre_vars, size_t dim_state_vars, size_t state_index);
-    SimVars(omsi_t* omsu);
+  
     SimVars(SimVars& instance);
-
+    SimVars();
     ISimVars* clone();
     virtual ~SimVars();
     virtual double& initRealVar(size_t i);
@@ -131,7 +127,7 @@ ISimVars
 
   protected:
     void create(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_string, size_t dim_pre_vars, size_t dim_state_vars, size_t state_index);
-      void create(omsi_t* omsu);
+   
     virtual size_t getDimString() const;
     virtual size_t getDimBool() const;
     virtual size_t getDimInt() const;
@@ -143,12 +139,15 @@ ISimVars
     void *alignedMalloc(size_t required_bytes, size_t alignment);
     void alignedFree(void* p);
 
-  private:
     double* getRealVarPtr(size_t i);
     int* getIntVarPtr(size_t i);
     bool* getBoolVarPtr(size_t i);
     int* getOMSIBoolVarPtr(size_t i);
     string* getStringVarPtr(size_t i);
+   
+    
+    
+    
     size_t _dim_real;  //number of all real variables (real algebraic vars,discrete algebraic vars, state vars, der state vars)
     size_t _dim_int;  // number of all integer variables (integer algebraic vars)
     size_t _dim_bool;  // number of all bool variables (boolean algebraic vars)
@@ -169,8 +168,8 @@ ISimVars
     bool* _pre_bool_vars;
     int* _pre_omsi_bool_vars; //The OpenModelica Simulation Interface uses int for boolean variables
     std::string* _pre_string_vars;
-
     bool _use_omsu;
+   
 };
 
 /** @} */ // end of coreSystem

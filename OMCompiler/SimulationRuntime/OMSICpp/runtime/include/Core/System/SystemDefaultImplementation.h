@@ -15,17 +15,8 @@ The order of variables in the extended state vector perserved (see: "Sorting
 variables by using the index" in "Design proposal for a general solver interface
 for Open Modelica", September, 10 th, 2008
 
-
-\date     October, 1st, 2008
-\author
-
 */
-/*****************************************************************************
-Copyright (c) 2008, OSMC
-*****************************************************************************/
 
-//omsi header
-#include <omsi.h>
 
 #define MODELICA_TERMINATE(msg) Terminate(msg)
 
@@ -48,7 +39,9 @@ public:
     SystemDefaultImplementation(shared_ptr<IGlobalSettings> globalSettings, string modelName,
                              size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_string, size_t dim_pre_vars,
                                 size_t dim_z, size_t z_i);
-    SystemDefaultImplementation(shared_ptr<IGlobalSettings> globalSettings, string modelName, omsi_t * omsu);
+    
+    SystemDefaultImplementation(shared_ptr<IGlobalSettings> globalSettings, string modelName);
+  
     SystemDefaultImplementation(shared_ptr<IGlobalSettings> globalSettings);
     SystemDefaultImplementation(SystemDefaultImplementation & instance);
   virtual ~SystemDefaultImplementation();
@@ -177,9 +170,7 @@ protected:
     bool isConsistent();
 
     shared_ptr<ISimObjects > _simObjects;
-    //optional OMSI instance
-    omsi_t * _omsu;
-
+    
     double
     _simTime;             ///< current simulation time (given by the solver)
 

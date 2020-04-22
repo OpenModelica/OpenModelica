@@ -50,10 +50,10 @@ public:
         std::map<std::string, factory<IMixedSystem, shared_ptr<IGlobalSettings>, string>>::iterator system_iter;
         std::map<std::string, factory<IMixedSystem, shared_ptr<IGlobalSettings>, string>>& factories(
             _system_type_map->get());
-        system_iter = factories.find("OSUSystem");
+        system_iter = factories.find("OMSUSystem");
         if (system_iter == factories.end())
         {
-            throw ModelicaSimulationError(MODEL_FACTORY, "No system found");
+            throw ModelicaSimulationError(MODEL_FACTORY, "No omsi system found");
         }
 
         shared_ptr<IMixedSystem> system(system_iter->second.create(globalSettings, osu_name));
@@ -98,7 +98,7 @@ protected:
     virtual void initializeLibraries(PATH library_path, PATH modelicasystem_path, PATH config_path)
     {
         fs::path systemfactory_path = ObjectFactory<CreationPolicy>::_library_path;
-        fs::path system_name(SYSTEM_LIB);
+        fs::path system_name(SYSTEMBASE_LIB);
         systemfactory_path /= system_name;
 
         LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(
@@ -107,6 +107,33 @@ protected:
         {
             std::stringstream tmp;
             tmp << "Failed loading System library!" << std::endl << systemfactory_path.string();
+            throw ModelicaSimulationError(MODEL_FACTORY, tmp.str());
+        }
+
+        fs::path extendedystemfactory_path = ObjectFactory<CreationPolicy>::_library_path;
+        fs::path extendedsystem_name(EXTENDEDSYSTEM_LIB);
+        extendedystemfactory_path /= extendedsystem_name;
+
+        result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(
+            extendedystemfactory_path.string(), *_system_type_map);
+        if (result != LOADER_SUCCESS)
+        {
+            std::stringstream tmp;
+            tmp << "Failed loading extended system library!" << std::endl << extendedystemfactory_path.string();
+            throw ModelicaSimulationError(MODEL_FACTORY, tmp.str());
+        }
+
+
+        fs::path omsisystemfactory_path = ObjectFactory<CreationPolicy>::_library_path;
+        fs::path omsisystem_name(SYSTEMOMSI_LIB);
+        omsisystemfactory_path /= omsisystem_name;
+
+        result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(
+            omsisystemfactory_path.string(), *_system_type_map);
+        if (result != LOADER_SUCCESS)
+        {
+            std::stringstream tmp;
+            tmp << "Failed loading omsi system library!" << std::endl << omsisystemfactory_path.string();
             throw ModelicaSimulationError(MODEL_FACTORY, tmp.str());
         }
 

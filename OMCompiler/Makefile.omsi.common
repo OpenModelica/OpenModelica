@@ -105,7 +105,9 @@ OMSICPPinstall: copycppheader OMSICPP
 	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppNewton.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppNewton.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppSimulationSettings.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppSimulationSettings.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppSolver.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppSystem.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppSystem.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppSystemBase.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppSystemBase.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppExtendedSystem.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppExtendedSystem.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppSystemOMSI.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppSystemOMSI.dylib
 	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/OMSICpp/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppCVode.dylib
 	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/OMSICpp/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppEuler.dylib
 

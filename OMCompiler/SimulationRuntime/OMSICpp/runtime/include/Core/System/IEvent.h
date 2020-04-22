@@ -9,14 +9,10 @@
 
 Abstract interface class for discrete systems in open modelica.
 
-\date     October, 1st, 2008
-\author
 
 */
 
-/*****************************************************************************
-Copyright (c) 2008, OSMC
-*****************************************************************************/
+
 
 typedef std::map<double, unsigned long> event_times_type;
 

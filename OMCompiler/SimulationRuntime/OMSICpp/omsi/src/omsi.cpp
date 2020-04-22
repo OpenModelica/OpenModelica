@@ -37,6 +37,7 @@
 //Cpp Simulation kernel includes
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
+#include <Core/System/IOMSI.h>
 #include <Core/SimController/ISimController.h>
 #include <Core/System/FactoryExport.h>
 #include <Core/Utils/extension/logger.hpp>

@@ -214,7 +214,7 @@ typedef ublas::matrix<double, ublas::column_major> matrix_t;
 #include <Core/System/ITime.h>
 #include <Core/System/IEvent.h>
 #include <Core/System/IStepEvent.h>
-#include <Core/System/IOMSI.h>
+
 //OpenModelica Simulation Interface
 #include <Core/Solver/INonLinSolverSettings.h>
 #include <Core/Solver/ILinSolverSettings.h>

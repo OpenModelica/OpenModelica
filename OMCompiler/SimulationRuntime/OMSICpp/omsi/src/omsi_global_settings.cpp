@@ -35,6 +35,7 @@
 
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
+#include <Core/System/IOMSI.h>
 //#define BOOST_EXTENSION_GLOBALSETTINGS_DECL BOOST_EXTENSION_EXPORT_DECL
 #include <omsi_global_settings.h>
 

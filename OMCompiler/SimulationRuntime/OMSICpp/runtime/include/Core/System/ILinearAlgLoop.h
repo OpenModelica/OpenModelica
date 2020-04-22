@@ -9,13 +9,9 @@
 
 Abstract interface class for algebraic loop in equations in open modelica.
 
-\date     October, 1st, 2008
-\author
 
 */
-/*****************************************************************************
-Copyright (c) 2008, OSMC
-*****************************************************************************/
+
 
 
 class ILinearAlgLoop

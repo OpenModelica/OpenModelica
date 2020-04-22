@@ -11,7 +11,7 @@
 #include <Core/System/AlgLoopSolverFactory.h>
 #include <Core/System/SimVars.h>
 #include <Core/System/SimObjects.h>
-#include <Core/System/OSUSystem.h>
+
 /*OMC factory*/
 using boost::extensions::factory;
 
@@ -21,12 +21,9 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
     ["AlgLoopSolverFactory"].set<AlgLoopSolverFactory>();
   types.get<std::map<std::string, factory<ISimVars,size_t,size_t,size_t,size_t,size_t,size_t,size_t> > >()
     ["SimVars"].set<SimVars>();
-  types.get<std::map<std::string, factory<ISimVars,omsi_t*> > >()
-      ["SimVars2"].set<SimVars>();
   types.get<std::map<std::string, factory<ISimObjects,PATH,PATH,shared_ptr<IGlobalSettings> > > >()
     ["SimObjects"].set<SimObjects>();
-  types.get<std::map<std::string, factory<IMixedSystem,shared_ptr<IGlobalSettings>,string > > >()
-    ["OSUSystem"].set<OSUSystem>();
+ 
 
 }
 #elif defined(OMC_BUILD) && defined(RUNTIME_STATIC_LINKING)
@@ -48,12 +45,6 @@ shared_ptr<ISimObjects> createSimObjects(PATH library_path, PATH modelicasystem_
  {
       shared_ptr<ISimVars>  simvars = shared_ptr<ISimVars> (new SimVars( dim_real, dim_int, dim_bool, dim_string, dim_pre_vars, dim_z, z_i));
       return simvars;
- }
-
- shared_ptr<ISimVars>  createSimVarsFunction(omsi_t* omsu)
- {
-     shared_ptr<ISimVars>  simvars = shared_ptr<ISimVars>(new SimVars(omsu));
-     return simvars;
  }
 
 #else

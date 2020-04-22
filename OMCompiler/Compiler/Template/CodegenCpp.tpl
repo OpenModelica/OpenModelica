@@ -171,7 +171,7 @@ let initparameqs   =  generateEquationMemberFuncDecls(parameterEquations,"initPa
     {
      public:
 
-      <%lastIdentOfPath(modelInfo.name)%>Initialize(shared_ptr<IGlobalSettings> globalSettings,omsi_t* omsu = NULL);
+      <%lastIdentOfPath(modelInfo.name)%>Initialize(shared_ptr<IGlobalSettings> globalSettings);
       <%lastIdentOfPath(modelInfo.name)%>Initialize(<%lastIdentOfPath(modelInfo.name)%>Initialize& instance);
       virtual ~<%lastIdentOfPath(modelInfo.name)%>Initialize();
       virtual bool initial();
@@ -272,7 +272,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
      ;separator="")
   %>
   public:
-    <%lastIdentOfPath(modelInfo.name)%>Jacobian(shared_ptr<IGlobalSettings> globalSettings,omsi_t* omsu = NULL);
+    <%lastIdentOfPath(modelInfo.name)%>Jacobian(shared_ptr<IGlobalSettings> globalSettings);
     <%lastIdentOfPath(modelInfo.name)%>Jacobian(<%lastIdentOfPath(modelInfo.name)%>Jacobian& instance);
     virtual ~<%lastIdentOfPath(modelInfo.name)%>Jacobian();
 
@@ -333,7 +333,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   class <%lastIdentOfPath(modelInfo.name)%>StateSelection: public IStateSelection, public <%lastIdentOfPath(modelInfo.name)%>Mixed
   {
   public:
-    <%lastIdentOfPath(modelInfo.name)%>StateSelection(shared_ptr<IGlobalSettings> globalSettings,omsi_t* omsu = NULL);
+    <%lastIdentOfPath(modelInfo.name)%>StateSelection(shared_ptr<IGlobalSettings> globalSettings);
     virtual ~<%lastIdentOfPath(modelInfo.name)%>StateSelection();
     int getDimStateSets() const;
     int getDimStates(unsigned int index) const;
@@ -373,7 +373,7 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
   class <%lastIdentOfPath(modelInfo.name)%>WriteOutput : public IWriteOutput,public <%lastIdentOfPath(modelInfo.name)%>StateSelection
   {
   public:
-    <%lastIdentOfPath(modelInfo.name)%>WriteOutput(shared_ptr<IGlobalSettings> globalSettings,omsi_t* omsu = NULL);
+    <%lastIdentOfPath(modelInfo.name)%>WriteOutput(shared_ptr<IGlobalSettings> globalSettings);
     <%lastIdentOfPath(modelInfo.name)%>WriteOutput(<%lastIdentOfPath(modelInfo.name)%>WriteOutput& instance);
     virtual ~<%lastIdentOfPath(modelInfo.name)%>WriteOutput();
 
@@ -418,7 +418,7 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
   class <%lastIdentOfPath(modelInfo.name)%>Mixed:  public IMixedSystem, public <%lastIdentOfPath(modelInfo.name)%>Jacobian
   {
   public:
-     <%lastIdentOfPath(modelInfo.name)%>Mixed(shared_ptr<IGlobalSettings> globalSettings,omsi_t* omsu = NULL);
+     <%lastIdentOfPath(modelInfo.name)%>Mixed(shared_ptr<IGlobalSettings> globalSettings);
      <%lastIdentOfPath(modelInfo.name)%>Mixed(<%lastIdentOfPath(modelInfo.name)%>Mixed &instance);
     virtual ~ <%lastIdentOfPath(modelInfo.name)%>Mixed();
 
@@ -496,11 +496,10 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
    <%algloopfilesInclude(listAppend(listAppend(allEquations, initialEquations), getClockedEquations(getSubPartitions(clockedPartitions))), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
-   //omsi header
-   #include <omsi.h>
+   
 
-   <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(shared_ptr<IGlobalSettings> globalSettings,omsi_t* omsu)
-   : <%lastIdentOfPath(modelInfo.name)%>WriteOutput(globalSettings,omsu)
+   <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(shared_ptr<IGlobalSettings> globalSettings)
+   : <%lastIdentOfPath(modelInfo.name)%>WriteOutput(globalSettings)
    , _constructedExternalObjects(false)
    {
      InitializeDummyTypeElems();
@@ -626,8 +625,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        (mat |> JAC_COLUMN(columnEqns=eqs) =>  algloopfilesInclude(eqs, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace) ;separator="")
      ;separator="")
    %>
-   <%lastIdentOfPath(modelInfo.name)%>Jacobian::<%lastIdentOfPath(modelInfo.name)%>Jacobian(shared_ptr<IGlobalSettings> globalSettings,omsi_t* omsu)
-       : <%lastIdentOfPath(modelInfo.name)%>(globalSettings,omsu)
+   <%lastIdentOfPath(modelInfo.name)%>Jacobian::<%lastIdentOfPath(modelInfo.name)%>Jacobian(shared_ptr<IGlobalSettings> globalSettings)
+       : <%lastIdentOfPath(modelInfo.name)%>(globalSettings)
        , _AColorOfColumn(NULL)
        , _AMaxColors(0)
        <%initialjacMats%>
@@ -671,8 +670,8 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
 
-   <%lastIdentOfPath(modelInfo.name)%>StateSelection::<%lastIdentOfPath(modelInfo.name)%>StateSelection(shared_ptr<IGlobalSettings> globalSettings,omsi_t* omsu)
-       : <%lastIdentOfPath(modelInfo.name)%>Mixed(globalSettings,omsu)
+   <%lastIdentOfPath(modelInfo.name)%>StateSelection::<%lastIdentOfPath(modelInfo.name)%>StateSelection(shared_ptr<IGlobalSettings> globalSettings)
+       : <%lastIdentOfPath(modelInfo.name)%>Mixed(globalSettings)
    {
    }
 
@@ -698,11 +697,22 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
 
 
-   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::<%lastIdentOfPath(modelInfo.name)%>WriteOutput(shared_ptr<IGlobalSettings> globalSettings,omsi_t* omsu)
-       : <%lastIdentOfPath(modelInfo.name)%>StateSelection(globalSettings,omsu)
+   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::<%lastIdentOfPath(modelInfo.name)%>WriteOutput(shared_ptr<IGlobalSettings> globalSettings)
+       : <%lastIdentOfPath(modelInfo.name)%>StateSelection(globalSettings)
    {
 
-      _writeOutput = getSimObjects()->LoadWriter(<%numAlgvars(modelInfo)%> + <%numAliasvars(modelInfo)%> + 2*<%numStatevars(modelInfo)%>).lock();
+      
+      shared_ptr<IExtendedSimObjects> extended_simObjects = dynamic_pointer_cast<IExtendedSimObjects>( getSimObjects());
+
+        if (extended_simObjects)
+             _writeOutput = extended_simObjects->LoadWriter(<%numAlgvars(modelInfo)%> + <%numAliasvars(modelInfo)%> + 2*<%numStatevars(modelInfo)%>).lock();
+        else
+        {
+            string error = string("Simulation data was not found for model <%lastIdentOfPath(modelInfo.name)%> ");
+            throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
+        }
+      
+     
 
    }
 
@@ -730,9 +740,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
          <<
              if(getGlobalSettings()->getOutputPointType()!= OPT_NONE)
              {
-              _writeOutput = getSimObjects()->LoadWriter(<%numalgvars%> + <%numaliasvars%> + 2*<%numstatevars%>).lock();
-              _writeOutput->init();
-              _writeOutput->clear();
+              
+                _writeOutput->init();
+                _writeOutput->clear();
              }
          >>
        %>
@@ -1057,8 +1067,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        ;separator="\n")
 
    <<
-   <%classname%>Mixed::<%classname%>Mixed(shared_ptr<IGlobalSettings> globalSettings,omsi_t* omsu)
-       : <%classname%>Jacobian(globalSettings,omsu)
+   <%classname%>Mixed::<%classname%>Mixed(shared_ptr<IGlobalSettings> globalSettings)
+       : <%classname%>Jacobian(globalSettings)
 
 
 
@@ -1087,7 +1097,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    shared_ptr<ISimObjects> <%classname%>Mixed::getSimObjects()
    {
-      return SystemDefaultImplementation::getSimObjects();
+      return BASECLASS::getSimObjects();
    }
    const matrix_t& <%classname%>Mixed::getJacobian( )
    {
@@ -2789,7 +2799,7 @@ template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDe
     #include <Core/System/EventHandling.h>
     #include <Core/DataExchange/XmlPropertyReader.h>
     #include <Core/Utils/extension/logger.hpp>
-
+    #include <Core/System/IExtendedSimObjects.h>
     #include "OMCpp<%fileNamePrefix%>Types.h"
     #include "OMCpp<%fileNamePrefix%>Functions.h"
     #include "OMCpp<%fileNamePrefix%>.h"
@@ -3171,10 +3181,10 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CDFLAGS = /ZI
   !IF "$(PCH_FILE)" == ""
 
-  LDSYSTEMFLAGS=  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/omsicpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/debug"  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib OMCppDataExchange.lib  OMCppOMCFactory.lib <%timeMeasureLink%> WSock32.lib Ws2_32.lib
+  LDSYSTEMFLAGS=  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/omsicpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/debug"  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystemBase.lib  OMCppExtendedSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib OMCppDataExchange.lib  OMCppOMCFactory.lib <%timeMeasureLink%> WSock32.lib Ws2_32.lib
   LDMAINFLAGS=/link /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/omsicpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc" OMCppOMCFactory.lib OMCppModelicaUtilities.lib  <%timeMeasureLink%> /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
   !ELSE
-  LDSYSTEMFLAGS=  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/omsicpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/debug"  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib OMCppDataExchange.lib  OMCppOMCFactory.lib $(PCH_LIB) <%timeMeasureLink%> WSock32.lib Ws2_32.lib
+  LDSYSTEMFLAGS=  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/omsicpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/debug"  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystemBase.lib OMCppExtendedSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib OMCppDataExchange.lib  OMCppOMCFactory.lib $(PCH_LIB) <%timeMeasureLink%> WSock32.lib Ws2_32.lib
   LDMAINFLAGS=/link /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/omsicpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc" OMCppOMCFactory.lib OMCppModelicaUtilities.lib $(PCH_LIB) <%timeMeasureLink%> /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
 
   !ENDIF
@@ -3211,7 +3221,7 @@ case "gcc" then
             let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
             let libsPos1 = if not dirExtra then libsStr //else ""
             let libsPos2 = if dirExtra then libsStr // else ""
-            let staticLibs = '-Wl,--start-group -lOMCppOMCFactory_static -lOMCppSystem_static -lOMCppSimController_static -Wl,--end-group -lOMCppSimulationSettings_static -lOMCppDataExchange_static -lOMCppDgesvSolver_static -lOMCppNewton_static -lOMCppLinearSolver_static -lOMCppEuler_static -lOMCppKinsol_static -lOMCppCVode_static -lOMCppIDA_static -lOMCppSolver_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppExtensionUtilities_static -L$(SUNDIALS_LIBS) -L$(UMFPACK_LIBS) -L$(LAPACK_LIBS)'
+            let staticLibs = '-Wl,--start-group -lOMCppOMCFactory_static -lOMCppSystemBase_static lOMCppExtendedSystem_static -lOMCppSimController_static -Wl,--end-group -lOMCppSimulationSettings_static -lOMCppDataExchange_static -lOMCppDgesvSolver_static -lOMCppNewton_static -lOMCppLinearSolver_static -lOMCppEuler_static -lOMCppKinsol_static -lOMCppCVode_static -lOMCppIDA_static -lOMCppSolver_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppExtensionUtilities_static -L$(SUNDIALS_LIBS) -L$(UMFPACK_LIBS) -L$(LAPACK_LIBS)'
             let staticIncludes = '-I"$(SUNDIALS_INCLUDE)" -I"$(SUNDIALS_INCLUDE)/kinsol" -I"$(SUNDIALS_INCLUDE)/nvector"'
             let _extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then ""
             let extraCflags = '<%_extraCflags%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g"%>'
@@ -3264,7 +3274,7 @@ case "gcc" then
             $(eval LDSYSTEMFLAGS_COMMON=$(LDSYSTEMFLAGS_COMMON) <%papiLibs%>)
             endif
 
-            LDSYSTEMFLAGS_DYNAMIC=-lOMCppSystem -lOMCppModelicaUtilities -lOMCppDataExchange -lOMCppMath -lOMCppExtensionUtilities -lOMCppOMCFactory $(LDSYSTEMFLAGS_COMMON)
+            LDSYSTEMFLAGS_DYNAMIC=-lOMCppSystemBase -lOMCppExtendedSystem -lOMCppModelicaUtilities -lOMCppDataExchange -lOMCppMath -lOMCppExtensionUtilities -lOMCppOMCFactory $(LDSYSTEMFLAGS_COMMON)
             LDSYSTEMFLAGS_STATIC=$(LDSYSTEMFLAGS_COMMON) <%staticLibs%>
 
             LDMAINFLAGS_DYNAMIC= -lOMCppOMCFactory -lOMCppModelicaUtilities -lOMCppExtensionUtilities $(LDMAINFLAGS_COMMON)
@@ -3311,276 +3321,7 @@ case "gcc" then
             %>
             >>
   end match
-case "vxworks69" then
-    match simCode
-        case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
-      <<
-      BUILD_SPEC=ATOMgnu
-      DEBUG_MODE=1
-      TRACE=1
 
-      MODEL_NAME = <%fileNamePrefix%>
-
-      OPENMODELICAHOME := $(subst \,/,$(OPENMODELICAHOME))
-      WIND_HOME := $(subst \,/,$(WIND_HOME))
-      WIND_BASE := $(WIND_HOME)/customBosch/vxworks-6.9
-      export WIND_BASE
-      MLPI_SDK_01 := $(subst \,/,$(MLPI_SDK_01))
-
-
-      all : clean pre_build main_all post_build
-
-      _clean ::
-      <%\t%>@echo "make: removing targets and objects of `pwd`"
-
-      TRACE=0
-      TRACEON=$(TRACE:0=@)
-      TRACE_FLAG=$(TRACEON:1=)
-
-      JOBS?=1
-      TARGET_JOBS?=$(JOBS)
-
-      MAKEFILE := Makefile
-
-      FLEXIBLE_BUILD := 1
-
-      BUILD_SPEC = ATOMgnu
-      DEBUG_MODE = 1
-      ifeq ($(DEBUG_MODE),1)
-      MODE_DIR := Debug
-      else
-      MODE_DIR := NonDebug
-      endif
-      OBJ_DIR := .
-
-
-
-
-      #Global Build Macros
-      PROJECT_TYPE = DKM
-      DEFINES =
-      EXPAND_DBG = 0
-
-
-      #BuildSpec specific Build Macros
-      VX_CPU_FAMILY = pentium
-      CPU = ATOM
-      TOOL_FAMILY = gnu
-      TOOL = gnu
-      TOOL_PATH = $(WIND_HOME)/gnu/4.3.3-vxworks-6.9/x86-win32/bin/
-      CC_ARCH_SPEC = -march=atom -nostdlib -fno-builtin -fno-defer-pop -fno-implicit-fp
-      VSB_DIR = $(WIND_BASE)/target/lib
-      VSB_CONFIG_FILE = $(VSB_DIR)/h/config/vsbConfig.h
-      LIBPATH =
-      LIBS =
-
-      IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI_SDK_01)/mlpiCore/include -I$(OPENMODELICAHOME)/include/omc/omsicpp -I$(OPENMODELICAHOME)/include/omc/omsicpp/Core -I$(OPENMODELICAHOME)/include/omc/omsicpp
-
-      IDE_LIBRARIES = $(OPENMODELICAHOME)/lib/omc/omsicpp/vxworks/SimCore.a
-
-      IDE_DEFINES = -DCPU=_VX_$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL -D_VSB_CONFIG_FILE=\"$(VSB_DIR)/h/config/vsbConfig.h\"
-
-
-
-      #BuildTool flags
-      ifeq ($(DEBUG_MODE),1)
-      DEBUGFLAGS_C-Compiler = -g
-      DEBUGFLAGS_C++-Compiler = -g
-      DEBUGFLAGS_Linker = -g
-      DEBUGFLAGS_Partial-Image-Linker =
-      DEBUGFLAGS_Librarian =
-      DEBUGFLAGS_Assembler = -g
-      else
-      DEBUGFLAGS_C-Compiler =  -O2
-      DEBUGFLAGS_C++-Compiler =  -O2
-      DEBUGFLAGS_Linker =  -O2
-      DEBUGFLAGS_Partial-Image-Linker =
-      DEBUGFLAGS_Librarian =
-      DEBUGFLAGS_Assembler =  -O2
-      endif
-
-
-      #Project Targets
-      PROJECT_TARGETS = com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME).out \
-      <%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage.o
-
-
-      #Rules
-
-      # com.boschrexroth.$(MODEL_NAME)
-      ifeq ($(DEBUG_MODE),1)
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_C-Compiler = -g
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_C++-Compiler = -g
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Linker = -g
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Partial-Image-Linker =
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Librarian =
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Assembler = -g
-      else
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_C-Compiler =  -O2
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_C++-Compiler =  -O2
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Linker =  -O2
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Partial-Image-Linker =
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Librarian =
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEBUGFLAGS_Assembler =  -O2
-      endif
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI_SDK_01)/mlpiCore/include -I$(OPENMODELICAHOME)/include/omc/omsicpp -I$(OPENMODELICAHOME)/include/omc/omsicpp/Core -I$(OPENMODELICAHOME)/include/omc/omsicpp
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_LIBRARIES = $(OPENMODELICAHOME)/lib/omc/omsicpp/vxworks/SimCore.a
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : IDE_DEFINES = -DCPU=_VX_$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL -D_VSB_CONFIG_FILE=\"$(VSB_DIR)/h/config/vsbConfig.h\"
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : PROJECT_TYPE = DKM
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : DEFINES =
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : EXPAND_DBG = 0
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : VX_CPU_FAMILY = pentium
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : CPU = ATOM
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : TOOL_FAMILY = gnu
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : TOOL = gnu
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : TOOL_PATH = $(WIND_HOME)/gnu/4.3.3-vxworks-6.9/x86-win32/bin/
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : CC_ARCH_SPEC = -march=atom -nostdlib -fno-builtin -fno-defer-pop -fno-implicit-fp
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : VSB_DIR = $(WIND_BASE)/target/lib
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : VSB_CONFIG_FILE = $(VSB_DIR)/h/config/vsbConfig.h
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : LIBPATH =
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : LIBS =
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/% : OBJ_DIR := com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)
-
-      OBJECTS_com.boschrexroth.$(MODEL_NAME) = com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage.o
-
-      ifeq ($(TARGET_JOBS),1)
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME).out : $(OBJECTS_com.boschrexroth.$(MODEL_NAME))
-      <%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@";rm -f "$@";nmpentium $(OBJECTS_com.boschrexroth.$(MODEL_NAME)) | $(WIND_HOME)/workbench-3.3/foundation/x86-win32/bin/tclsh $(WIND_BASE)/host/resource/hutils/tcl/munch.tcl -c pentium -tags $(VSB_DIR)/tags/pentium/ATOM/common/dkm.tags > $(OBJ_DIR)/ctdt.c; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_Linker) $(CC_ARCH_SPEC) -fdollars-in-identifiers -Wall -Wsystem-headers  $(ADDED_CFLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES)  $(IDE_DEFINES) $(DEFINES) -o $(OBJ_DIR)/ctdt.o -c $(OBJ_DIR)/ctdt.c; $(TOOL_PATH)ccpentium -r -nostdlib -Wl,-X -T $(WIND_BASE)/target/h/tool/gnu/ldscripts/link.OUT -o "$@" $(OBJ_DIR)/ctdt.o $(OBJECTS_com.boschrexroth.$(MODEL_NAME)) $(IDE_LIBRARIES) $(LIBPATH) $(LIBS) $(ADDED_LIBPATH) $(ADDED_LIBS) && if [ "$(EXPAND_DBG)" = "1" ]; then plink "$@";fi
-
-      else
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME).out : com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME).out_jobs
-
-      endif
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_compile_file : $(FILE) ;
-
-      _clean :: com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_clean
-
-      com.boschrexroth.$(MODEL_NAME)/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_clean :
-      <%\t%>$(TRACE_FLAG)if [ -d "com.boschrexroth.$(MODEL_NAME)" ]; then cd "com.boschrexroth.$(MODEL_NAME)"; rm -rf $(MODE_DIR); fi
-
-
-      # com.boschrexroth.$(MODEL_NAME)_partialImage
-      ifeq ($(DEBUG_MODE),1)
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_C-Compiler = -g
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_C++-Compiler = -g
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Linker = -g
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Partial-Image-Linker =
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Librarian =
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Assembler = -g
-      else
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_C-Compiler =  -O2
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_C++-Compiler =  -O2
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Linker =  -O2
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Partial-Image-Linker =
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Librarian =
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEBUGFLAGS_Assembler =  -O2
-      endif
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_INCLUDES = -I$(WIND_BASE)/target/h -I$(WIND_BASE)/target/h/wrn/coreip -I$(MLPI_SDK_01)/mlpiCore/include -I$(OPENMODELICAHOME)/include/omc/omsicpp -I$(OPENMODELICAHOME)/include/omc/omsicpp/Core -I$(OPENMODELICAHOME)/include/omc/omsicpp
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_LIBRARIES = $(OPENMODELICAHOME)/lib/omc/omsicpp/vxworks/SimCore.a
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : IDE_DEFINES = -DCPU=_VX_$(CPU) -DTOOL_FAMILY=$(TOOL_FAMILY) -DTOOL=$(TOOL) -D_WRS_KERNEL -D_VSB_CONFIG_FILE=\"$(VSB_DIR)/h/config/vsbConfig.h\"
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : PROJECT_TYPE = DKM
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : DEFINES =
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : EXPAND_DBG = 0
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : VX_CPU_FAMILY = pentium
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : CPU = ATOM
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : TOOL_FAMILY = gnu
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : TOOL = gnu
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : TOOL_PATH = $(WIND_HOME)/gnu/4.3.3-vxworks-6.9/x86-win32/bin/
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : CC_ARCH_SPEC = -march=atom -nostdlib -fno-builtin -fno-defer-pop -fno-implicit-fp
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : VSB_DIR = $(WIND_BASE)/target/lib
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : VSB_CONFIG_FILE = $(VSB_DIR)/h/config/vsbConfig.h
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : LIBPATH =
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : LIBS =
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/% : OBJ_DIR := com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)
-
-
-
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain.o : OMCpp$(MODEL_NAME)CalcHelperMain.cpp $(FORCE_FILE_BUILD)
-      <%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_C++-Compiler) $(CC_ARCH_SPEC) -ansi -fno-zero-initialized-in-bss  -Wall -Wsystem-headers   -MD -MP $(IDE_DEFINES) $(DEFINES) $(ADDED_C++FLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -o "$@" -c "$<"
-
-
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)Main.o : OMCpp$(MODEL_NAME)Main.cpp $(FORCE_FILE_BUILD)
-      <%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium $(DEBUGFLAGS_C++-Compiler) $(CC_ARCH_SPEC) -ansi -fno-zero-initialized-in-bss  -Wall -Wsystem-headers   -MD -MP $(IDE_DEFINES) $(DEFINES) $(ADDED_C++FLAGS) $(IDE_INCLUDES) $(ADDED_INCLUDES) -o "$@" -c "$<"
-
-
-      OBJECTS_com.boschrexroth.$(MODEL_NAME)_partialImage = com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain.o \
-      <%\t%>com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)Main.o
-
-      ifeq ($(TARGET_JOBS),1)
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage.o : $(OBJECTS_com.boschrexroth.$(MODEL_NAME)_partialImage)
-      <%\t%>$(TRACE_FLAG)if [ ! -d "`dirname "$@"`" ]; then mkdir -p "`dirname "$@"`"; fi;echo "building $@"; $(TOOL_PATH)ccpentium -r -nostdlib -Wl,-X  -o "$@" $(OBJECTS_com.boschrexroth.$(MODEL_NAME)_partialImage) $(ADDED_OBJECTS) $(IDE_LIBRARIES) $(LIBPATH) $(LIBS) $(ADDED_LIBPATH) $(ADDED_LIBS) && if [ "$(EXPAND_DBG)" = "1" ]; then plink "$@";fi
-
-      else
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage.o : com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage.o_jobs
-
-      endif
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage_compile_file : $(FILE) ;
-
-      _clean :: com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage_clean
-
-      com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/com.boschrexroth.$(MODEL_NAME)_partialImage_clean :
-      <%\t%>$(TRACE_FLAG)if [ -d "com.boschrexroth.$(MODEL_NAME)_partialImage" ]; then cd "com.boschrexroth.$(MODEL_NAME)_partialImage"; rm -rf $(MODE_DIR); fi
-
-      force :
-
-      TARGET_JOBS_RULE?=echo "Update the makefile template via File > Import > Build Settings : Update makefile template";exit 1
-      %_jobs :
-      <%\t%>$(TRACE_FLAG)$(TARGET_JOBS_RULE)
-
-      DEP_FILES := com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)CalcHelperMain.d com.boschrexroth.$(MODEL_NAME)_partialImage/$(MODE_DIR)/Objects/com.boschrexroth.$(MODEL_NAME)/OMCpp$(MODEL_NAME)Main.d
-      -include $(DEP_FILES)
-
-
-      WIND_SCOPETOOLS_BASE := $(subst \,/,$(WIND_SCOPETOOLS_BASE))
-
-      clean_scopetools :
-      <%\t%>$(TRACE_FLAG)rm -rf .coveragescope/db
-
-      CLEAN_STEP := clean_scopetools
-
-
-      #-include *.makefile
-
-      #-include *.makefile
-
-      TARGET_JOBS_RULE=$(MAKE) -f $(MAKEFILE) --jobs $(TARGET_JOBS) $(MFLAGS) $* TARGET_JOBS=1
-      ifeq ($(JOBS),1)
-      main_all : external_build  $(PROJECT_TARGETS)
-      <%\t%>@echo "make: built targets of `pwd`"
-      else
-      main_all : external_build
-      <%\t%>@$(MAKE) -f $(MAKEFILE) --jobs $(JOBS) $(MFLAGS) $(PROJECT_TARGETS) TARGET_JOBS=1 &&\
-      <%\t%>echo "make: built targets of `pwd`"
-      endif
-
-      # entry point for extending the build
-      external_build ::
-      <%\t%>@echo ""
-
-      # main entry point for pre processing prior to the build
-      pre_build :: $(PRE_BUILD_STEP) generate_sources
-      <%\t%>@echo ""
-
-      # entry point for generating sources prior to the build
-      generate_sources ::
-      <%\t%>@echo ""
-
-      # main entry point for post processing after the build
-      post_build :: $(POST_BUILD_STEP) deploy_output
-      <%\t%>@echo ""
-
-      # entry point for deploying output after the build
-      deploy_output ::
-      <%\t%>@echo ""
-
-      clean :: external_clean $(CLEAN_STEP) _clean
-
-      # entry point for extending the build clean
-      external_clean ::
-      <%\t%>@echo ""
-
-      >>
-end match
 end simulationMakefile;
 
 
@@ -3599,14 +3340,13 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let constVariableInitialize = simulationInitFile(simCode, &extraFuncsDecl, stateDerVectorName, false)
 
     <<
-    #if defined(__TRICORE__) || defined(__vxworks)
-      #include <Core/DataExchange/SimDouble.h>
-    #endif
+   
 
     /* Constructor */
-    <%className%>::<%className%>(shared_ptr<IGlobalSettings> globalSettings,omsi_t* omsu)
-              
-        : SystemDefaultImplementation(globalSettings, "<%className%>",<%numRealVars%>,<%numIntVars%>,<%numBoolVars%>,<%numStringVars%>,<%numPreVars%>,<%numStatevars(modelInfo)%>,<%numStateVarIndex(modelInfo)%>)
+    <%className%>::<%className%>(shared_ptr<IGlobalSettings> globalSettings)
+        <%
+        ': BASECLASS(globalSettings, "<%className%>",<%numRealVars%>,<%numIntVars%>,<%numBoolVars%>,<%numStringVars%>,<%numPreVars%>,<%numStatevars(modelInfo)%>,<%numStateVarIndex(modelInfo)%>)'
+        %>
         , _algLoopSolverFactory(_simObjects->getAlgLoopSolverFactory())
         , _pointerToRealVars(getSimVars()->getRealVarsVector())
         , _pointerToIntVars(getSimVars()->getIntVarsVector())
@@ -3618,7 +3358,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         <%additionalConstructorBodyStatements%>
     }
 
-    <%className%>::<%className%>(<%className%> &instance) : SystemDefaultImplementation(instance)
+    <%className%>::<%className%>(<%className%> &instance) : BASECLASS(instance)
         , _algLoopSolverFactory(instance.getAlgLoopSolverFactory())
         , _pointerToRealVars(getSimVars()->getRealVarsVector())
         , _pointerToIntVars(getSimVars()->getIntVarsVector())
@@ -3787,7 +3527,7 @@ match simCode
         <%partitionInit%>
 
         //Initialize the state vector
-        SystemDefaultImplementation::initialize();
+        BASECLASS::initialize();
         //Instantiate auxiliary object for event handling functionality
         //_event_handling.getCondition =  boost::bind(&<%className%>::getCondition, this, _1);
 
@@ -5886,10 +5626,7 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__),init
       >>
       %>
 
-   #if defined(__TRICORE__) || defined(__vxworks)
-      //init inputs
-      stepStarted(0.0);
-   #endif
+  
 
       /*Start complex expressions */
       <%complexStartExpressions%>
@@ -6827,11 +6564,7 @@ template generateHeaderIncludeString(SimCode simCode ,Text& extraFuncs,Text& ext
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   <<
-  #pragma once
-  #if defined(__TRICORE__) || defined(__vxworks)
-    #define BOOST_EXTENSION_SYSTEM_DECL
-    #define BOOST_EXTENSION_EVENTHANDLING_DECL
-  #endif
+ 
 
   <%
   match(getConfigString(PROFILING_LEVEL))
@@ -6862,9 +6595,15 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
        >>
   end match
   %>
-
-  #include <Core/System/SystemDefaultImplementation.h>
-
+    
+  
+  #if defined(FMU_BUILD)
+    #include <Core/System/SystemDefaultImplementation.h>
+    #define BASECLASS  SystemDefaultImplementation
+  #else
+    #include <Core/System/ExtendedSystem.h>
+    #define BASECLASS  ExtendedSystem
+  #endif
   //Forward declaration to speed-up the compilation process
   class Functions;
   class EventHandling;
@@ -6941,14 +6680,14 @@ match modelInfo
   <<
   #define MEASURETIME_MODELFUNCTIONS
   >>%>
-
-  class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent, public IStepEvent, public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>  ,public SystemDefaultImplementation
+ 
+  class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent, public IStepEvent, public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>  ,public BASECLASS
   {
   <%friendclasses%>
   public:
       <%additionalPublicMembers%>
 
-      <%lastIdentOfPath(modelInfo.name)%>(shared_ptr<IGlobalSettings> globalSettings,omsi_t* omsu = NULL);
+      <%lastIdentOfPath(modelInfo.name)%>(shared_ptr<IGlobalSettings> globalSettings);
       <%lastIdentOfPath(modelInfo.name)%>(<%lastIdentOfPath(modelInfo.name)%> &instance);
 
       virtual ~<%lastIdentOfPath(modelInfo.name)%>();
@@ -7211,59 +6950,59 @@ template DefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extr
       // Set current integration time
       void <%lastIdentOfPath(modelInfo.name)%>::setTime(const double& t)
       {
-        SystemDefaultImplementation::setTime(t);
+        BASECLASS::setTime(t);
       }
       double <%lastIdentOfPath(modelInfo.name)%>::getTime()
       {
-        return SystemDefaultImplementation::getTime();
+        return BASECLASS::getTime();
       }
 
       // Computes the conditions of time event samplers for the current time
       double <%lastIdentOfPath(modelInfo.name)%>::computeNextTimeEvents(double currTime)
       {
-        return SystemDefaultImplementation::computeNextTimeEvents(currTime, getTimeEventData());
+        return BASECLASS::computeNextTimeEvents(currTime, getTimeEventData());
       }
       // Computes the conditions of time event samplers for the current time
       void <%lastIdentOfPath(modelInfo.name)%>::computeTimeEventConditions(double currTime)
       {
-        SystemDefaultImplementation::computeTimeEventConditions(currTime);
+        BASECLASS::computeTimeEventConditions(currTime);
       }
       // Resets the conditions of time event samplers to false
       void <%lastIdentOfPath(modelInfo.name)%>::resetTimeConditions()
       {
-        SystemDefaultImplementation::resetTimeConditions();
+        BASECLASS::resetTimeConditions();
       }
       // Provide number (dimension) of variables according to the index
       int <%lastIdentOfPath(modelInfo.name)%>::getDimContinuousStates() const
       {
-        return(SystemDefaultImplementation::getDimContinuousStates());
+        return(BASECLASS::getDimContinuousStates());
       }
       int <%lastIdentOfPath(modelInfo.name)%>::getDimAE() const
       {
-        return(SystemDefaultImplementation::getDimAE());
+        return(BASECLASS::getDimAE());
       }
       // Provide number (dimension) of variables according to the index
       int <%lastIdentOfPath(modelInfo.name)%>::getDimBoolean() const
       {
-        return(SystemDefaultImplementation::getDimBoolean());
+        return(BASECLASS::getDimBoolean());
       }
 
       // Provide number (dimension) of variables according to the index
       int <%lastIdentOfPath(modelInfo.name)%>::getDimInteger() const
       {
-        return(SystemDefaultImplementation::getDimInteger());
+        return(BASECLASS::getDimInteger());
       }
 
       // Provide number (dimension) of variables according to the index
       int <%lastIdentOfPath(modelInfo.name)%>::getDimReal() const
       {
-        return(SystemDefaultImplementation::getDimReal());
+        return(BASECLASS::getDimReal());
       }
 
       // Provide number (dimension) of variables according to the index
       int <%lastIdentOfPath(modelInfo.name)%>::getDimString() const
       {
-        return(SystemDefaultImplementation::getDimString());
+        return(BASECLASS::getDimString());
       }
 
       // Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
@@ -7274,12 +7013,12 @@ template DefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extr
         return <%numResidues(allEquations,modelInfo)%>;
         }
         else
-        return(SystemDefaultImplementation::getDimRHS());
+        return(BASECLASS::getDimRHS());
       }
 
       void <%lastIdentOfPath(modelInfo.name)%>::getContinuousStates(double* z)
       {
-        SystemDefaultImplementation::getContinuousStates(z);
+        BASECLASS::getContinuousStates(z);
       }
       void <%lastIdentOfPath(modelInfo.name)%>::getNominalStates(double* z)
       {
@@ -7289,47 +7028,47 @@ template DefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extr
       // Set variables with given index to the system
       void <%lastIdentOfPath(modelInfo.name)%>::setContinuousStates(const double* z)
       {
-        SystemDefaultImplementation::setContinuousStates(z);
+        BASECLASS::setContinuousStates(z);
       }
 
       double& <%lastIdentOfPath(modelInfo.name)%>::getRealStartValue(double& var)
       {
-         return SystemDefaultImplementation::getRealStartValue(var);
+         return BASECLASS::getRealStartValue(var);
        }
 
        bool& <%lastIdentOfPath(modelInfo.name)%>::getBoolStartValue(bool& var)
        {
-         return SystemDefaultImplementation::getBoolStartValue(var);
+         return BASECLASS::getBoolStartValue(var);
        }
 
        int& <%lastIdentOfPath(modelInfo.name)%>::getIntStartValue(int& var)
        {
-         return SystemDefaultImplementation::getIntStartValue(var);
+         return BASECLASS::getIntStartValue(var);
        }
 
        string& <%lastIdentOfPath(modelInfo.name)%>::getStringStartValue(string& var)
        {
-         return SystemDefaultImplementation::getStringStartValue(var);
+         return BASECLASS::getStringStartValue(var);
        }
 
        void <%lastIdentOfPath(modelInfo.name)%>::setRealStartValue(double& var,double val)
        {
-         SystemDefaultImplementation::setRealStartValue(var, val);
+         BASECLASS::setRealStartValue(var, val);
        }
 
        void <%lastIdentOfPath(modelInfo.name)%>::setBoolStartValue(bool& var,bool val)
        {
-         SystemDefaultImplementation::setBoolStartValue(var, val);
+         BASECLASS::setBoolStartValue(var, val);
        }
 
        void <%lastIdentOfPath(modelInfo.name)%>::setIntStartValue(int& var,int val)
        {
-         SystemDefaultImplementation::setIntStartValue(var, val);
+         BASECLASS::setIntStartValue(var, val);
        }
 
        void <%lastIdentOfPath(modelInfo.name)%>::setStringStartValue(string& var,string val)
        {
-         SystemDefaultImplementation::setStringStartValue(var, val);
+         BASECLASS::setStringStartValue(var, val);
        }
 
        void <%lastIdentOfPath(modelInfo.name)%>::setNumPartitions(int numPartitions)
@@ -7367,17 +7106,17 @@ template DefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extr
         double residues [] = {<%(allEquations |> eqn => writeoutput3(eqn, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation));separator=","%>};
         for(int i=0;i<<%numResidues(allEquations,modelInfo)%>;i++) *(f+i) = residues[i];
       }
-      else SystemDefaultImplementation::getRHS(f);
+      else BASECLASS::getRHS(f);
       >>
       else
       <<
-        SystemDefaultImplementation::getRHS(f);
+        BASECLASS::getRHS(f);
       >>%>
       }
 
       void <%lastIdentOfPath(modelInfo.name)%>::setStateDerivatives(const double* f)
       {
-        SystemDefaultImplementation::setStateDerivatives(f);
+        BASECLASS::setStateDerivatives(f);
       }
 
       void <%lastIdentOfPath(modelInfo.name)%>::setTerminal(bool terminal)
@@ -7412,11 +7151,11 @@ end DefaultImplementationCode;
         double residues [] = {<%(allEquations |> eqn => writeoutput3(eqn, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation));separator=","%>};
         for(int i=0;i<<%numResidues(allEquations)%>;i++) *(f+i) = residues[i];
       }
-      else SystemDefaultImplementation::getRHS(f);
+      else BASECLASS::getRHS(f);
       >>
       else
       <<
-        SystemDefaultImplementation::getRHS(f);
+        BASECLASS::getRHS(f);
       >>%>
 */
 template getNominalStateValues(list<SimVar> stateVars,SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -9523,12 +9262,12 @@ template initValst(Text &varDecls, Text type, list<SimVar> varsLst, SimCode simC
         let vStr = daeExp(v, contextOther, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
         <<
         <%preExp%>
-        SystemDefaultImplementation::set<%type%>StartValue(<%crefStr%>, <%vStr%>);
+        BASECLASS::set<%type%>StartValue(<%crefStr%>, <%vStr%>);
         >>
       else
         <<
         <%preExp%>
-        SystemDefaultImplementation::set<%type%>StartValue(<%crefStr%>, <%startValue(sv.type_)%>);
+        BASECLASS::set<%type%>StartValue(<%crefStr%>, <%startValue(sv.type_)%>);
         >>
       ;separator="\n")
   else
@@ -9541,8 +9280,8 @@ template initValst(Text &varDecls, Text type, list<SimVar> varsLst, SimCode simC
       case SOME(v) then
         let &startValue += daeExp(v, contextOther, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
         '<%preExp%>
-        if(!IsEqual(SystemDefaultImplementation::get<%type%>StartValue(<%crefStr%>), <%startValue%>))
-          std::cerr << "Wrong start value for variable <%crefStr%> detected. Got " << SystemDefaultImplementation::get<%type%>StartValue(<%crefStr%>) << " Expected: " << <%startValue%> << std::endl;'
+        if(!IsEqual(BASECLASS::get<%type%>StartValue(<%crefStr%>), <%startValue%>))
+          std::cerr << "Wrong start value for variable <%crefStr%> detected. Got " << BASECLASS::get<%type%>StartValue(<%crefStr%>) << " Expected: " << <%startValue%> << std::endl;'
         else
           let &startValue += startValue(sv.type_)
         ''
@@ -10121,29 +9860,13 @@ template generateStepCompleted(list<SimEqSystem> allEquations,SimCode simCode ,T
 case SIMCODE(modelInfo = MODELINFO(__))
 then
 let store_delay_expr = functionStoreDelay(delayedExps, simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-
-   let outputBounds = match simCode
-             case simCode as SIMCODE(__) then
-                 match modelInfo
-                   case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
-                    let &varOptDecls = buffer "" /*BUFD*/
-          let &optpreExp = buffer "" /*BUFD*/
-
-          let outputnames = vars.outputVars |>  SIMVAR(__) hasindex i0 =>
-             'dynamic_cast<SimDouble*>( _simObjects->getSimData(_modelName)->Get("<%cref(name, useFlatArrayNotation)%>"))->getValue() = <%cref(name, useFlatArrayNotation)%>;';separator="\n"
-          <<
-          #if defined(__TRICORE__) || defined(__vxworks)
-              <%outputnames%>
-          #endif
-          >>
-
   <<
+   
   bool <%lastIdentOfPath(modelInfo.name)%>::stepCompleted(double time)
   {
 
   <%store_delay_expr%>
   <%save_algloop_start_values%>
-  <%outputBounds%>
 
   saveAll();
   return _terminate;
@@ -10279,26 +10002,13 @@ template generateStepStarted(list<SimEqSystem> allEquations,SimCode simCode ,Tex
   match simCode
 case SIMCODE(modelInfo = MODELINFO(__))
 then
-   let inputBounds = match simCode
-             case simCode as SIMCODE(__) then
-                 match modelInfo
-                   case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
-                    let &varOptDecls = buffer "" /*BUFD*/
-          let &optpreExp = buffer "" /*BUFD*/
-
-          let inputnames = vars.inputVars |>  SIMVAR(__) hasindex i0 =>
-             '<%cref(name, useFlatArrayNotation)%> = dynamic_cast<SimDouble*>(_simObjects->getSimData(_modelName)->Get("<%cref(name, useFlatArrayNotation)%>"))->getValue();';separator="\n"
-          <<
-          #if defined(__TRICORE__) || defined(__vxworks)
-              <%inputnames%>
-          #endif
-          >>
+  
+       
 
   <<
   bool <%lastIdentOfPath(modelInfo.name)%>::stepStarted(double time)
   {
-  <%inputBounds%>
-
+ 
   return true;
   }
   >>
@@ -11421,7 +11131,7 @@ case SES_SIMPLE_ASSIGN(__) then
     let startValueType = crefStartValueType(cref)
     let lvalue = cref1(cref, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
     let assignExp = if boolAnd(assignToStartValues, boolNot(stringEq(startValueType, "ExternalObject"))) then
-      'SystemDefaultImplementation::set<%startValueType%>StartValue(<%lvalue%>, <%expPart%>, <%overwriteOldStartValue%>);' else
+      'BASECLASS::set<%startValueType%>StartValue(<%lvalue%>, <%expPart%>, <%overwriteOldStartValue%>);' else
       '<%lvalue%> = <%expPart%>;'
     <<
     <%if not assignToStartValues then '<%startFixedExp%>'%>
@@ -12070,15 +11780,15 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   }
   double* <%lastIdentOfPath(modelInfo.name)%>::clockInterval()
   {
-    return SystemDefaultImplementation::clockInterval();
+    return BASECLASS::clockInterval();
   }
   void <%lastIdentOfPath(modelInfo.name)%>::setIntervalInTimEventData(int clockIdx, double interval)
   {
-    SystemDefaultImplementation::setIntervalInTimEventData(clockIdx, interval);
+    BASECLASS::setIntervalInTimEventData(clockIdx, interval);
   }
   void <%lastIdentOfPath(modelInfo.name)%>::setClock(const bool* tick, const bool* subactive)
   {
-    SystemDefaultImplementation::setClock(tick,subactive);
+    BASECLASS::setClock(tick,subactive);
   }
   >>
 end dimZeroFunc;
@@ -12401,7 +12111,7 @@ template setConditions(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Te
  <<
  void <%lastIdentOfPath(modelInfo.name)%>::setConditions(bool* c)
  {
-   SystemDefaultImplementation::setConditions(c);
+   BASECLASS::setConditions(c);
  }
  >>
 end setConditions;
@@ -12413,11 +12123,11 @@ template getConditions(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Te
  <<
  void <%lastIdentOfPath(modelInfo.name)%>::getConditions(bool* c)
  {
-     SystemDefaultImplementation::getConditions(c);
+     BASECLASS::getConditions(c);
  }
  void <%lastIdentOfPath(modelInfo.name)%>::getClockConditions(bool* c)
  {
-     SystemDefaultImplementation::getClockConditions(c);
+     BASECLASS::getClockConditions(c);
  }
  >>
 end getConditions;
@@ -12429,7 +12139,7 @@ template isConsistent(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Tex
 <<
 bool <%lastIdentOfPath(modelInfo.name)%>::isConsistent()
 {
-  return SystemDefaultImplementation::isConsistent();
+  return BASECLASS::isConsistent();
 }
 >>
 end isConsistent;
@@ -12441,7 +12151,7 @@ template saveConditions(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,T
 <<
 void <%lastIdentOfPath(modelInfo.name)%>::saveConditions()
 {
-  SystemDefaultImplementation::saveConditions();
+  BASECLASS::saveConditions();
 }
 >>
 end saveConditions;
@@ -14130,7 +13840,7 @@ template simulationDAEMethods(SimCode simCode,Text& extraFuncs,Text& extraFuncsD
      <%equationResidualFunctions(daeEquations,simCode ,extraFuncs,extraFuncsDecl,extraFuncsNamespace, context, stateDerVectorName ,  useFlatArrayNotation,  enableMeasureTime)%>
      void <%modelNamePrefixStr%>Mixed::getResidual(double* f)
      {
-        SystemDefaultImplementation::getResidual(f);
+        BASECLASS::getResidual(f);
      }
      >>
      /* adrpo: leave a newline at the end of file to get rid of the warning */

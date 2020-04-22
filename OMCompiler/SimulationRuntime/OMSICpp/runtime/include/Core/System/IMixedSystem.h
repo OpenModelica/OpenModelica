@@ -10,13 +10,9 @@
 Abstract interface class for possibly hybrid (continous and discrete)
 systems of equations in open modelica.
 
-\date     October, 1st, 2008
-\author
 
 */
-/*****************************************************************************
-Copyright (c) 2008, OSMC
-*****************************************************************************/
+
 /// typedef for sparse matrices
 typedef double* SparsityPattern;
 

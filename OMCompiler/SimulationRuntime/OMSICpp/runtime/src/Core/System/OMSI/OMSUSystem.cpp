@@ -4,9 +4,10 @@
 #include <Core/System/FactoryExport.h>
 #include <Core/Utils/extension/logger.hpp>
 #include <Core/System/EventHandling.h>
-#include <Core/System/SystemDefaultImplementation.h>
+#include <Core/System/ExtendedSystem.h>
 #include <Core/System/SimObjects.h>
-#include <Core/System/OSUSystem.h>
+#include <Core/System/IExtendedSimObjects.h>
+#include <Core/System/OMSUSystem.h>
 //OpenModelica Simulation Interface
 #include <omsi.h>
 //3rdparty header
@@ -54,8 +55,8 @@ void fmi2logger(fmi2_component_environment_t env, fmi2_string_t instanceName, fm
 /**
  *   Constructor for osu system
  */
-OSUSystem::OSUSystem(shared_ptr<IGlobalSettings> globalSettings, string osu_name)
-    : SystemDefaultImplementation(globalSettings)
+OMSUSystem::OMSUSystem(shared_ptr<IGlobalSettings> globalSettings, string osu_name)
+    : ExtendedSystem(globalSettings)
       , _osu_name(osu_name)
       , _osu_me(NULL)
       , _instantiated(false)
@@ -141,7 +142,7 @@ OSUSystem::OSUSystem(shared_ptr<IGlobalSettings> globalSettings, string osu_name
     }
 }
 
-OSUSystem::OSUSystem(OSUSystem& instance) : SystemDefaultImplementation(instance)
+OMSUSystem::OMSUSystem(OMSUSystem& instance) : ExtendedSystem(instance)
 {
     throw ModelicaSimulationError(MODEL_EQ_SYSTEM, "copy of osu system is not implemented yet");
 }
@@ -149,7 +150,7 @@ OSUSystem::OSUSystem(OSUSystem& instance) : SystemDefaultImplementation(instance
 /**
  *   Destructor
  */
-OSUSystem::~OSUSystem()
+OMSUSystem::~OMSUSystem()
 {
     fmi2_import_terminate(_osu_me->instance);
     fmi2_import_free_instance(_osu_me->instance);
@@ -170,7 +171,7 @@ OSUSystem::~OSUSystem()
 /**
  *  Initializes osu
  */
-void OSUSystem::initialize()
+void OMSUSystem::initialize()
 {
     fs::path resources_foler("resources");
     fs::path resource_location = fs::path(_osu_working_dir);
@@ -288,18 +289,20 @@ void OSUSystem::initialize()
 
     if (getGlobalSettings()->getOutputPointType() != OPT_NONE)
     {
-        _writeOutput = getSimObjects()->LoadWriter(
+       
+        _writeOutput = (dynamic_pointer_cast<IExtendedSimObjects>(_simObjects))->LoadWriter(
             _dimReal + _dimInteger + _dimBoolean).lock();
         _writeOutput->init();
         _writeOutput->clear();
+       
     }
 }
 
-void OSUSystem::initEquations()
+void OMSUSystem::initEquations()
 {
 }
 
-void OSUSystem::setInitial(bool status)
+void OMSUSystem::setInitial(bool status)
 {
     _initial = status;
     if (_initial)
@@ -308,7 +311,7 @@ void OSUSystem::setInitial(bool status)
         _callType = IContinuous::CONTINUOUS;
 }
 
-bool OSUSystem::initial()
+bool OMSUSystem::initial()
 {
     return _initial;
 }
@@ -323,7 +326,7 @@ bool OSUSystem::initial()
  *   Creates a SimVars object which holds memory for all simulation variables
  *   Therefore it parses ModelDescription to get the model variable information
  */
-void OSUSystem::initializeMemory()
+void OMSUSystem::initializeMemory()
 {
     size_t nv, i;
     bool isParameter;
@@ -392,7 +395,7 @@ void OSUSystem::initializeMemory()
  *
  *  \details Details
  */
-bool OSUSystem::addValueReference(fmi2_import_variable_t* v,
+bool OMSUSystem::addValueReference(fmi2_import_variable_t* v,
                                   out_vars_vr_t& output_value_references,
                                   out_vars_vr_t& param_value_references,
                                   unsigned int var_idx)
@@ -412,7 +415,7 @@ bool OSUSystem::addValueReference(fmi2_import_variable_t* v,
     }
 }
 
-void OSUSystem::initializeResultOutputVars()
+void OMSUSystem::initializeResultOutputVars()
 {
     //add real output variables to writeoutput structure
     for (out_vars_vr_t::iterator iter = _real_out_vars_vr.begin();
@@ -508,26 +511,26 @@ void OSUSystem::initializeResultOutputVars()
     }
 }
 
-void OSUSystem::initializeFreeVariables()
+void OMSUSystem::initializeFreeVariables()
 {
     _simTime = 0.0;
 }
 
-void OSUSystem::initializeBoundVariables()
+void OMSUSystem::initializeBoundVariables()
 {
 }
 
-void OSUSystem::saveAll()
+void OMSUSystem::saveAll()
 {
 }
 
-string OSUSystem::getModelName()
+string OMSUSystem::getModelName()
 {
     return _osu_name;
 }
 
 
-bool OSUSystem::handleSystemEvents(bool* events)
+bool OMSUSystem::handleSystemEvents(bool* events)
 {
     if ((_osu_me->solving_mode == omsi_continuousTime_mode))
     {
@@ -599,18 +602,18 @@ bool OSUSystem::handleSystemEvents(bool* events)
     return true;
 }
 
-IMixedSystem* OSUSystem::clone()
+IMixedSystem* OMSUSystem::clone()
 {
     throw ModelicaSimulationError(MATH_FUNCTION, "clone is for osu system not supported");
 }
 
-bool OSUSystem::evaluateAll(const UPDATETYPE command)
+bool OMSUSystem::evaluateAll(const UPDATETYPE command)
 {
     evaluateODE(command);
     return false;
 }
 
-void OSUSystem::evaluateODE(const UPDATETYPE command)
+void OMSUSystem::evaluateODE(const UPDATETYPE command)
 {
     if ((_osu_me->solving_mode == omsi_continuousTime_mode)
         || (_osu_me->solving_mode == omsi_event_mode))
@@ -625,13 +628,13 @@ void OSUSystem::evaluateODE(const UPDATETYPE command)
    
 }
 
-void OSUSystem::evaluateDAE(const UPDATETYPE command)
+void OMSUSystem::evaluateDAE(const UPDATETYPE command)
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
                                   "evaluateAll is for osu system not supported");
 }
 
-void OSUSystem::evaluateZeroFuncs(const UPDATETYPE command)
+void OMSUSystem::evaluateZeroFuncs(const UPDATETYPE command)
 {
     if ((_osu_me->solving_mode == omsi_continuousTime_mode)
         || (_osu_me->solving_mode == omsi_event_mode))
@@ -645,19 +648,19 @@ void OSUSystem::evaluateZeroFuncs(const UPDATETYPE command)
     }
 }
 
-bool OSUSystem::evaluateConditions(const UPDATETYPE command)
+bool OMSUSystem::evaluateConditions(const UPDATETYPE command)
 {
     return false;
 }
 
 // Release instance
-void OSUSystem::destroy()
+void OMSUSystem::destroy()
 {
     delete this;
 }
 
 // Set current integration time
-void OSUSystem::setTime(const double& t)
+void OMSUSystem::setTime(const double& t)
 {
     if ((_instantiated) && (_osu_me->solving_mode == omsi_continuousTime_mode))
     {
@@ -673,13 +676,13 @@ void OSUSystem::setTime(const double& t)
     }
 }
 
-double OSUSystem::getTime()
+double OMSUSystem::getTime()
 {
     return SystemDefaultImplementation::getTime();
 }
 
 // Computes the conditions of time event samplers for the current time
-double OSUSystem::computeNextTimeEvents(double currTime)
+double OMSUSystem::computeNextTimeEvents(double currTime)
 {
    
         //fmi2_event_info_t* eventInfo = _osu_me->event_info;
@@ -697,59 +700,59 @@ double OSUSystem::computeNextTimeEvents(double currTime)
 }
 
 // Computes the conditions of time event samplers for the current time
-void OSUSystem::computeTimeEventConditions(double currTime)
+void OMSUSystem::computeTimeEventConditions(double currTime)
 {
     SystemDefaultImplementation::computeTimeEventConditions(currTime);
 }
 
 // Resets the conditions of time event samplers to false
-void OSUSystem::resetTimeConditions()
+void OMSUSystem::resetTimeConditions()
 {
     SystemDefaultImplementation::resetTimeConditions();
 }
 
 // Provide number (dimension) of variables according to the index
-int OSUSystem::getDimContinuousStates() const
+int OMSUSystem::getDimContinuousStates() const
 {
     return (SystemDefaultImplementation::getDimContinuousStates());
 }
 
-int OSUSystem::getDimAE() const
+int OMSUSystem::getDimAE() const
 {
     return (SystemDefaultImplementation::getDimAE());
 }
 
 // Provide number (dimension) of variables according to the index
-int OSUSystem::getDimBoolean() const
+int OMSUSystem::getDimBoolean() const
 {
     return (SystemDefaultImplementation::getDimBoolean());
 }
 
 // Provide number (dimension) of variables according to the index
-int OSUSystem::getDimInteger() const
+int OMSUSystem::getDimInteger() const
 {
     return (SystemDefaultImplementation::getDimInteger());
 }
 
 // Provide number (dimension) of variables according to the index
-int OSUSystem::getDimReal() const
+int OMSUSystem::getDimReal() const
 {
     return (SystemDefaultImplementation::getDimReal());
 }
 
 // Provide number (dimension) of variables according to the index
-int OSUSystem::getDimString() const
+int OMSUSystem::getDimString() const
 {
     return (SystemDefaultImplementation::getDimString());
 }
 
 // Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
-int OSUSystem::getDimRHS() const
+int OMSUSystem::getDimRHS() const
 {
     return (SystemDefaultImplementation::getDimRHS());
 }
 
-void OSUSystem::getContinuousStates(double* z)
+void OMSUSystem::getContinuousStates(double* z)
 {
     if ((_osu_me->solving_mode == omsi_continuousTime_mode)
         || (_osu_me->solving_mode == omsi_event_mode))
@@ -767,7 +770,7 @@ void OSUSystem::getContinuousStates(double* z)
     }
 }
 
-void OSUSystem::getNominalStates(double* z)
+void OMSUSystem::getNominalStates(double* z)
 {
     if (_osu_me->solving_mode == omsi_continuousTime_mode)
     {
@@ -784,7 +787,7 @@ void OSUSystem::getNominalStates(double* z)
     }
 }
 
-void OSUSystem::setContinuousStates(const double* z)
+void OMSUSystem::setContinuousStates(const double* z)
 {
     if (_osu_me->solving_mode == omsi_continuousTime_mode)
     {
@@ -801,70 +804,70 @@ void OSUSystem::setContinuousStates(const double* z)
     }
 }
 
-double& OSUSystem::getRealStartValue(double& var)
+double& OMSUSystem::getRealStartValue(double& var)
 {
     return SystemDefaultImplementation::getRealStartValue(var);
 }
 
-bool& OSUSystem::getBoolStartValue(bool& var)
+bool& OMSUSystem::getBoolStartValue(bool& var)
 {
     return SystemDefaultImplementation::getBoolStartValue(var);
 }
 
-int& OSUSystem::getIntStartValue(int& var)
+int& OMSUSystem::getIntStartValue(int& var)
 {
     return SystemDefaultImplementation::getIntStartValue(var);
 }
 
-string& OSUSystem::getStringStartValue(string& var)
+string& OMSUSystem::getStringStartValue(string& var)
 {
     return SystemDefaultImplementation::getStringStartValue(var);
 }
 
-void OSUSystem::setRealStartValue(double& var, double val)
+void OMSUSystem::setRealStartValue(double& var, double val)
 {
     SystemDefaultImplementation::setRealStartValue(var, val);
 }
 
-void OSUSystem::setBoolStartValue(bool& var, bool val)
+void OMSUSystem::setBoolStartValue(bool& var, bool val)
 {
     SystemDefaultImplementation::setBoolStartValue(var, val);
 }
 
-void OSUSystem::setIntStartValue(int& var, int val)
+void OMSUSystem::setIntStartValue(int& var, int val)
 {
     SystemDefaultImplementation::setIntStartValue(var, val);
 }
 
-void OSUSystem::setStringStartValue(string& var, string val)
+void OMSUSystem::setStringStartValue(string& var, string val)
 {
     SystemDefaultImplementation::setStringStartValue(var, val);
 }
 
-void OSUSystem::setNumPartitions(int numPartitions)
+void OMSUSystem::setNumPartitions(int numPartitions)
 {
 }
 
-int OSUSystem::getNumPartitions()
+int OMSUSystem::getNumPartitions()
 {
     return 0;
 }
 
-void OSUSystem::setPartitionActivation(bool* partitions)
+void OMSUSystem::setPartitionActivation(bool* partitions)
 {
 }
 
-void OSUSystem::getPartitionActivation(bool* partitions)
+void OMSUSystem::getPartitionActivation(bool* partitions)
 {
 }
 
-int OSUSystem::getActivator(int state)
+int OMSUSystem::getActivator(int state)
 {
     return 0;
 }
 
 // Provide the right hand side (according to the index)
-void OSUSystem::getRHS(double* f)
+void OMSUSystem::getRHS(double* f)
 {
     if ((_osu_me->solving_mode == omsi_continuousTime_mode)
         || (_osu_me->solving_mode == omsi_event_mode))
@@ -882,13 +885,13 @@ void OSUSystem::getRHS(double* f)
     }
 }
 
-void OSUSystem::setStateDerivatives(const double* f)
+void OMSUSystem::setStateDerivatives(const double* f)
 {
     throw ModelicaSimulationError(MODEL_EQ_SYSTEM,
                                   "setStateDerivatives is not yet implemented");
 }
 
-bool OSUSystem::stepCompleted(double time)
+bool OMSUSystem::stepCompleted(double time)
 {
     if (_osu_me->solving_mode == omsi_continuousTime_mode)
     {
@@ -910,37 +913,37 @@ bool OSUSystem::stepCompleted(double time)
     return false;
 }
 
-void OSUSystem::setTerminal(bool terminal)
+void OMSUSystem::setTerminal(bool terminal)
 {
     _terminal = terminal;
 }
 
-bool OSUSystem::terminal()
+bool OMSUSystem::terminal()
 {
     return _terminal;
 }
 
-bool OSUSystem::isAlgebraic()
+bool OMSUSystem::isAlgebraic()
 {
     return false; // Indexreduction is enabled
 }
 
-bool OSUSystem::provideSymbolicJacobian()
+bool OMSUSystem::provideSymbolicJacobian()
 {
     throw ModelicaSimulationError(MODEL_EQ_SYSTEM,
                                   "provideSymbolicJacobian is not yet implemented");
 }
 
-void OSUSystem::handleEvent(const bool* events)
+void OMSUSystem::handleEvent(const bool* events)
 {
 }
 
-bool OSUSystem::checkForDiscreteEvents()
+bool OMSUSystem::checkForDiscreteEvents()
 {
     return false;
 }
 
-void OSUSystem::getZeroFunc(double* f)
+void OMSUSystem::getZeroFunc(double* f)
 {
     if ((_osu_me->solving_mode == omsi_continuousTime_mode)
         || (_osu_me->solving_mode == omsi_event_mode))
@@ -966,95 +969,95 @@ void OSUSystem::getZeroFunc(double* f)
     }
 }
 
-void OSUSystem::setConditions(bool* c)
+void OMSUSystem::setConditions(bool* c)
 {
     SystemDefaultImplementation::setConditions(c);
 }
 
-void OSUSystem::getConditions(bool* c)
+void OMSUSystem::getConditions(bool* c)
 {
     SystemDefaultImplementation::getConditions(c);
 }
 
-void OSUSystem::getClockConditions(bool* c)
+void OMSUSystem::getClockConditions(bool* c)
 {
     SystemDefaultImplementation::getClockConditions(c);
 }
 
-/*bool OSUSystem::isConsistent()
+/*bool OMSUSystem::isConsistent()
  {
  return SystemDefaultImplementation::isConsistent();
  }
  */
 
-void OSUSystem::restoreOldValues()
+void OMSUSystem::restoreOldValues()
 {
 }
 
-void OSUSystem::restoreNewValues()
+void OMSUSystem::restoreNewValues()
 {
 }
 
-int OSUSystem::getDimTimeEvent() const
+int OMSUSystem::getDimTimeEvent() const
 {
     return _dimTimeEvent;
 }
 
-std::pair<double, double>* OSUSystem::getTimeEventData() const
+std::pair<double, double>* OMSUSystem::getTimeEventData() const
 {
     return _timeEventData;
 }
 
-void OSUSystem::initTimeEventData()
+void OMSUSystem::initTimeEventData()
 {
 }
 
-bool OSUSystem::isODE()
+bool OMSUSystem::isODE()
 {
     return true;
 }
 
-int OSUSystem::getDimZeroFunc()
+int OMSUSystem::getDimZeroFunc()
 {
     return _dimZeroFunc;
 }
 
-int OSUSystem::getDimClock()
+int OMSUSystem::getDimClock()
 {
     return _dimClock;
 }
 
-double* OSUSystem::clockInterval()
+double* OMSUSystem::clockInterval()
 {
     return SystemDefaultImplementation::clockInterval();
 }
 
-void OSUSystem::setIntervalInTimEventData(int clockIdx, double interval)
+void OMSUSystem::setIntervalInTimEventData(int clockIdx, double interval)
 {
     SystemDefaultImplementation::setIntervalInTimEventData(clockIdx, interval);
 }
 
-void OSUSystem::setClock(const bool* tick, const bool* subactive)
+void OMSUSystem::setClock(const bool* tick, const bool* subactive)
 {
     SystemDefaultImplementation::setClock(tick, subactive);
 }
 
-bool OSUSystem::getCondition(unsigned int index)
+bool OMSUSystem::getCondition(unsigned int index)
 {
     return false;
 }
 
-shared_ptr<ISimObjects> OSUSystem::getSimObjects()
+shared_ptr<ISimObjects> OMSUSystem::getSimObjects()
 {
     return _simObjects;
 }
 
-shared_ptr < IHistory> OSUSystem::getHistory()
+shared_ptr < IHistory> OMSUSystem::getHistory()
 {
     return _writeOutput;
 }
 
-void OSUSystem::writeOutput(const IWriteOutput::OUTPUT command)
+void OMSUSystem::writeOutput(const IWriteOutput::OUTPUT command)
 {
     if (command & IWriteOutput::HEAD_LINE)
     {
@@ -1101,7 +1104,7 @@ void OSUSystem::writeOutput(const IWriteOutput::OUTPUT command)
     }
 }
 
-void OSUSystem::getReal(double* z)
+void OMSUSystem::getReal(double* z)
 {
     if (_real_out_vars_vr.size() > 0)
     {
@@ -1121,11 +1124,11 @@ void OSUSystem::getReal(double* z)
     }
 }
 
-void OSUSystem::setReal(const double* z)
+void OMSUSystem::setReal(const double* z)
 {
 }
 
-void OSUSystem::getInteger(int* z)
+void OMSUSystem::getInteger(int* z)
 {
     if (_int_out_vars_vr.size() > 0)
     {
@@ -1145,7 +1148,7 @@ void OSUSystem::getInteger(int* z)
     }
 }
 
-void OSUSystem::getBoolean(bool* z)
+void OMSUSystem::getBoolean(bool* z)
 {
     if (_bool_out_vars_vr.size() > 0)
     {
@@ -1165,147 +1168,147 @@ void OSUSystem::getBoolean(bool* z)
     }
 }
 
-void OSUSystem::getString(string* z)
+void OMSUSystem::getString(string* z)
 {
 }
 
-void OSUSystem::setInteger(const int* z)
+void OMSUSystem::setInteger(const int* z)
 {
 }
 
-void OSUSystem::setBoolean(const bool* z)
+void OMSUSystem::setBoolean(const bool* z)
 {
 }
 
-void OSUSystem::setString(const string* z)
+void OMSUSystem::setString(const string* z)
 {
 }
 
-int OSUSystem::getDimStateSets() const
-{
-    return 0;
-}
-
-int OSUSystem::getDimStates(unsigned int index) const
+int OMSUSystem::getDimStateSets() const
 {
     return 0;
 }
 
-int OSUSystem::getDimCanditates(unsigned int index) const
+int OMSUSystem::getDimStates(unsigned int index) const
 {
     return 0;
 }
 
-int OSUSystem::getDimDummyStates(unsigned int index) const
+int OMSUSystem::getDimCanditates(unsigned int index) const
 {
     return 0;
 }
 
-void OSUSystem::getStates(unsigned int index, double* z)
+int OMSUSystem::getDimDummyStates(unsigned int index) const
+{
+    return 0;
+}
+
+void OMSUSystem::getStates(unsigned int index, double* z)
 {
 }
 
-void OSUSystem::setStates(unsigned int index, const double* z)
+void OMSUSystem::setStates(unsigned int index, const double* z)
 {
 }
 
-void OSUSystem::getStateCanditates(unsigned int index, double* z)
+void OMSUSystem::getStateCanditates(unsigned int index, double* z)
 {
 }
 
-bool OSUSystem::getAMatrix(unsigned int index, DynArrayDim2<int>& A)
+bool OMSUSystem::getAMatrix(unsigned int index, DynArrayDim2<int>& A)
 {
     return false;
 }
 
-bool OSUSystem::getAMatrix(unsigned int index, DynArrayDim1<int>& A)
+bool OMSUSystem::getAMatrix(unsigned int index, DynArrayDim1<int>& A)
 {
     return false;
 }
 
-void OSUSystem::setAMatrix(unsigned int index, DynArrayDim2<int>& A)
+void OMSUSystem::setAMatrix(unsigned int index, DynArrayDim2<int>& A)
 {
 }
 
-void OSUSystem::setAMatrix(unsigned int index, DynArrayDim1<int>& A)
+void OMSUSystem::setAMatrix(unsigned int index, DynArrayDim1<int>& A)
 {
 }
 
-bool OSUSystem::isJacobianSparse()
+bool OMSUSystem::isJacobianSparse()
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
                                   "isJacobianSparse is for osu system not supported");
 }
 
 /* DAE residuals is empty */
-void OSUSystem::getResidual(double* f)
+void OMSUSystem::getResidual(double* f)
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
                                   "getResidual is for osu system not supported");
 }
 
-void OSUSystem::setAlgebraicDAEVars(const double* y)
+void OMSUSystem::setAlgebraicDAEVars(const double* y)
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
                                   "setAlgebraicDAEVars is for osu system not supported");
 }
 
 /* get algebraic variables */
-void OSUSystem::getAlgebraicDAEVars(double* y)
+void OMSUSystem::getAlgebraicDAEVars(double* y)
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
                                   "getAlgebraicDAEVars is for osu system not supported");
 }
 
-bool OSUSystem::isAnalyticJacobianGenerated()
+bool OMSUSystem::isAnalyticJacobianGenerated()
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
                                   "isAnalyticJacobianGenerated is for osu system not supported");
 }
 
-const matrix_t& OSUSystem::getJacobian()
+const matrix_t& OMSUSystem::getJacobian()
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
                                   "getJacobian is for osu system not supported");
 }
 
-const matrix_t& OSUSystem::getJacobian(unsigned int index)
+const matrix_t& OMSUSystem::getJacobian(unsigned int index)
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
                                   "getJacobian is for osu system not supported");
 }
 
-sparsematrix_t& OSUSystem::getSparseJacobian()
+sparsematrix_t& OMSUSystem::getSparseJacobian()
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
                                   "getSparseJacobian is for osu system not supported");
 }
 
-sparsematrix_t& OSUSystem::getSparseJacobian(unsigned int index)
+sparsematrix_t& OMSUSystem::getSparseJacobian(unsigned int index)
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
                                   "getSparseJacobian is for osu system not supported");
 }
 
-const matrix_t& OSUSystem::getStateSetJacobian(unsigned int index)
+const matrix_t& OMSUSystem::getStateSetJacobian(unsigned int index)
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
                                   "getStateSetJacobian is for osu system not supported");
 }
 
-sparsematrix_t& OSUSystem::getStateSetSparseJacobian(unsigned int index)
+sparsematrix_t& OMSUSystem::getStateSetSparseJacobian(unsigned int index)
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
                                   "getStateSetSparseJacobian is for osu system not supported");
 }
 
-void OSUSystem::getAColorOfColumn(int* aSparsePatternColorCols, int size)
+void OMSUSystem::getAColorOfColumn(int* aSparsePatternColorCols, int size)
 {
     throw ModelicaSimulationError(MATH_FUNCTION,
                                   "getAColorOfColumn is for osu system not supported");
 }
 
-int OSUSystem::getAMaxColors()
+int OMSUSystem::getAMaxColors()
 {
     return _dimContinuousStates;
 }
