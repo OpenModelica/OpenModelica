@@ -287,7 +287,9 @@ if true then /* Suppress output */
 
   // "NBackend" kabdelhak: Have this also behind an environment var?
     "../NBackEnd/NBackendDAE.mo",
-    "../NBackEnd/NBackendDAECreate.mo",
+    "../NBackEnd/NBAdjacencyMatrix.mo",
+    "../NBackEnd/NBVariable.mo",
+
 
     "../FFrontEnd/FGraphDump.mo",
     "../FFrontEnd/FGraphStream.mo",
@@ -324,6 +326,7 @@ if true then /* Suppress output */
   // "NFFrontEnd";
     "../NFFrontEnd/NFAlgorithm.mo",
     "../NFFrontEnd/NFArrayConnections.mo",
+    "../NFFrontEnd/NFBackendExtension.mo",
     "../NFFrontEnd/NFBinding.mo",
     "../NFFrontEnd/NFBuiltinCall.mo",
     "../NFFrontEnd/NFBuiltinFuncs.mo",

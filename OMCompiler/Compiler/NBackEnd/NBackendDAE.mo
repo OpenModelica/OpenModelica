@@ -1,7 +1,7 @@
 /*
 * This file is part of OpenModelica.
 *
-* Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
 * c/o Linköpings universitet, Department of Computer and Information Science,
 * SE-58183 Linköping, Sweden.
 *
@@ -28,16 +28,131 @@
 * See the full OSMC Public License conditions for more details.
 *
 */
-encapsulated package NBackendDAE
+encapsulated uniontype NBackendDAE
 " file:        NBackendDAE.mo
  package:     NBackendDAE
  description: This file contains the data-types used by the back end.
 "
- uniontype BackendStructure
- record BDAE
-   /* Stuff here! */
- end BDAE;
-end BackendStructure;
+
+protected
+  import BackendDAE = NBackendDAE;
+  import FlatModel = NFFlatModel;
+  import NFFlatten.FunctionTree;
+  import Variable = NFVariable;
+  import BVariable = NBVariable;
+  import BackendExtension = NFBackendExtension;
+
+record BDAE
+  /* Stuff here! */
+  BVariable.VarData VariableData "Variable data.";
+end BDAE;
+
+public function lower
+  "This function transforms the FlatModel structure to BackendDAE."
+  input FlatModel flatModel;
+  input FunctionTree funcTree;
+  output NBackendDAE bdae;
+protected
+  BVariable.VarData variableData;
+algorithm
+  print(FlatModel.toString(flatModel, true));
+  variableData := lowerVariableData(flatModel.variables);
+  bdae := BDAE(variableData);
+end lower;
+
+protected function lowerVariableData
+  input list<Variable> varList;
+  output BVariable.VarData variableData;
+protected
+  BVariable.Variables variables;
+  Variable lowVar;
+  list<Pointer<Variable>> unknowns_lst = {}, knowns_lst = {}, auxiliaries_lst = {}, aliasVars_lst = {};
+  list<Pointer<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, previous_lst = {};
+  list<Pointer<Variable>> parameters_lst = {}, constants_lst = {};
+  BVariable.VariablePointers unknowns, knowns, auxiliaries, aliasVars;
+  BVariable.VariablePointers states, derivatives, algebraics, discretes, previous;
+  BVariable.VariablePointers parameters, constants;
+  BVariable.StateOrder stateOrder;
+algorithm
+
+  // instantiate variable data and stateOrder
+  variables := BVariable.emptyVariables(listLength(varList));
+  stateOrder := BVariable.STATE_ORDER();
+
+  // sort vars to have sorting independent heuristic behaviours
+
+  // routine to prepare the lists for pointer arrays
+  for var in varList loop
+    lowVar := lowerVar(var);
+    variables := BVariable.addVar(lowVar, variables);
+    _ := match lowVar.backendinfo.varKind
+
+      case BackendExtension.ALGEBRAIC() algorithm
+        algebraics_lst := Pointer.create(lowVar) :: algebraics_lst;
+        unknowns_lst := Pointer.create(lowVar) :: unknowns_lst;
+      then ();
+
+      case BackendExtension.STATE() algorithm
+        states_lst := Pointer.create(lowVar) :: states_lst;
+        knowns_lst := Pointer.create(lowVar) :: knowns_lst;
+      then ();
+
+      case BackendExtension.STATE_DER() algorithm
+        derivatives_lst := Pointer.create(lowVar) :: derivatives_lst;
+        unknowns_lst := Pointer.create(lowVar) :: unknowns_lst;
+      then ();
+
+      case BackendExtension.DISCRETE() algorithm
+        discretes_lst := Pointer.create(lowVar) :: discretes_lst;
+        unknowns_lst := Pointer.create(lowVar) :: unknowns_lst;
+      then ();
+
+      case BackendExtension.PREVIOUS() algorithm
+        previous_lst := Pointer.create(lowVar) :: previous_lst;
+        knowns_lst := Pointer.create(lowVar) :: knowns_lst;
+      then ();
+
+      case BackendExtension.PARAMETER() algorithm
+        parameters_lst := Pointer.create(lowVar) :: parameters_lst;
+        knowns_lst := Pointer.create(lowVar) :: knowns_lst;
+      then ();
+
+      case BackendExtension.CONSTANT() algorithm
+        constants_lst := Pointer.create(lowVar) :: constants_lst;
+        knowns_lst := Pointer.create(lowVar) :: knowns_lst;
+      then ();
+
+      /* other cases should not occur up until now */
+      else fail();
+
+    end match;
+  end for;
+
+  // create pointer arrays
+  unknowns := BVariable.fromPointerList(unknowns_lst);
+  knowns := BVariable.fromPointerList(knowns_lst);
+  auxiliaries := BVariable.fromPointerList(auxiliaries_lst);
+  aliasVars := BVariable.fromPointerList(aliasVars_lst);
+
+  states := BVariable.fromPointerList(states_lst);
+  derivatives := BVariable.fromPointerList(derivatives_lst);
+  algebraics := BVariable.fromPointerList(algebraics_lst);
+  discretes := BVariable.fromPointerList(discretes_lst);
+  previous := BVariable.fromPointerList(previous_lst);
+
+  parameters := BVariable.fromPointerList(parameters_lst);
+  constants := BVariable.fromPointerList(constants_lst);
+
+  /* create variable data */
+  variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, auxiliaries, aliasVars,
+                  stateOrder, states, derivatives, algebraics, discretes, previous, parameters, constants);
+end lowerVariableData;
+
+function lowerVar
+  input output Variable var;
+algorithm
+  /* change varKind here */
+end lowerVar;
 
 annotation(__OpenModelica_Interface="backend");
 end NBackendDAE;

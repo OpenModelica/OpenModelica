@@ -48,6 +48,7 @@ import Algorithm = NFAlgorithm;
 import CardinalityTable = NFCardinalityTable;
 
 protected
+import DummyBackendInfo = NFBackendExtension.DummyBackendInfo;
 import ComponentRef = NFComponentRef;
 import Dimension = NFDimension;
 import ExecStat.execStat;
@@ -464,7 +465,9 @@ algorithm
     ty_attrs := ("fixed", Binding.FLAT_BINDING(Expression.BOOLEAN(false), Variability.CONSTANT)) :: ty_attrs;
   end if;
 
-  vars := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, cmt, info) :: vars;
+  // kabdelhak: add dummy backend info, will be changed to actual value in
+  // conversion to backend process. NBackendDAE.lower
+  vars := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, cmt, info, DummyBackendInfo) :: vars;
 end flattenSimpleComponent;
 
 function flattenTypeAttribute

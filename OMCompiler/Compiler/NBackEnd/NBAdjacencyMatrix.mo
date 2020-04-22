@@ -28,11 +28,24 @@
 * See the full OSMC Public License conditions for more details.
 *
 */
-encapsulated uniontype NAdjacencyMatrix
+encapsulated uniontype NBAdjacencyMatrix
 " file:         NAdjacencyMatrix.mo
   description:  This file contains the data-types used for the adjacency matrix
                 and matching and the corresponding functions.
 "
+
+public uniontype AdjacencyMatrix
+  record ARRAY_ADJACENCY_MATRIX
+    AdjacencyMatrixQuarter adjacencyMatrix;
+    AdjacencyMatrixQuarterT adjacencyMatrixT;
+    /* Maybe add optional markings here */
+  end ARRAY_ADJACENCY_MATRIX;
+
+  record SCALAR_ADJACENCY_MATRIX
+    /* support old structure? */
+  end SCALAR_ADJACENCY_MATRIX;
+end AdjacencyMatrix;
+
 
 /*
   Regular slice. Always has three elements.
@@ -100,11 +113,6 @@ end AdjacencyRow;
 type AdjacencyMatrixQuarter = array<AdjacencyRow> "Normal or Transposed.";
 type AdjacencyMatrixQuarterT = AdjacencyMatrixQuarter;
 
-record ARRAY_ADJACENCY_MATRIX
-  AdjacencyMatrixQuarter adjacencyMatrix;
-  AdjacencyMatrixQuarterT adjacencyMatrixT;
-  /* Maybe add markings here */
-end ARRAY_ADJACENCY_MATRIX;
 
 /* add scalar Adjacency Matrix for simple stuff */
 
@@ -121,8 +129,9 @@ uniontype SliceAssignment
   end SLICE_ASSIGNMENT;
 end SliceAssignment;
 
+
 type Matching = array<list<SliceAssignment>>;
 
 
 annotation(__OpenModelica_Interface="backend");
-end NAdjacencyMatrix;
+end NBAdjacencyMatrix;

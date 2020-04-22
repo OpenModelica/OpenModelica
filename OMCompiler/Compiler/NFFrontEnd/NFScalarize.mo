@@ -35,6 +35,7 @@ import FlatModel = NFFlatModel;
 import NFFlatten.FunctionTree;
 
 protected
+import BackendInfo = NFBackendExtension.BackendInfo;
 import ExecStat.execStat;
 import ComponentRef = NFComponentRef;
 import Type = NFType;
@@ -99,10 +100,11 @@ protected
   list<String> ty_attr_names;
   array<ExpressionIterator> ty_attr_iters;
   Variability bind_var;
+  BackendInfo binfo;
 algorithm
   if Type.isArray(var.ty) then
     try
-      Variable.VARIABLE(name, ty, binding, vis, attr, ty_attr, cmt, info) := var;
+      Variable.VARIABLE(name, ty, binding, vis, attr, ty_attr, cmt, info, binfo) := var;
       crefs := ComponentRef.scalarize(name);
 
       if listEmpty(crefs) then
@@ -120,12 +122,12 @@ algorithm
           (binding_iter, exp) := ExpressionIterator.next(binding_iter);
           binding := Binding.FLAT_BINDING(exp, bind_var);
           ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
-          vars := Variable.VARIABLE(cr, ty, binding, vis, attr, ty_attr, cmt, info) :: vars;
+          vars := Variable.VARIABLE(cr, ty, binding, vis, attr, ty_attr, cmt, info, binfo) :: vars;
         end for;
       else
         for cr in crefs loop
           ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
-          vars := Variable.VARIABLE(cr, ty, binding, vis, attr, ty_attr, cmt, info) :: vars;
+          vars := Variable.VARIABLE(cr, ty, binding, vis, attr, ty_attr, cmt, info, binfo) :: vars;
         end for;
       end if;
     else

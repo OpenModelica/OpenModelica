@@ -39,6 +39,8 @@ encapsulated uniontype NFVariable
   import NFPrefixes.Variability;
   import NFPrefixes.ConnectorType;
   import Type = NFType;
+  import BackendInfo = NFBackendExtension.BackendInfo;
+  import DummyBackendInfo = NFBackendExtension.DummyBackendInfo;
 
 protected
   import Variable = NFVariable;
@@ -52,9 +54,10 @@ public
     Binding binding;
     Visibility visibility;
     Component.Attributes attributes;
-    list<tuple<String, Binding>> typeAttributes;
+    list<tuple<String, Binding>> typeAttributes "Will be empty for Backend and moved to BackendInfo.";
     Option<SCode.Comment> comment;
     SourceInfo info;
+    BackendInfo backendinfo "DummyBackendInfo for all of frontend. Only used in Backend.";
   end VARIABLE;
 
   function fromCref
@@ -78,7 +81,9 @@ public
     attr := Component.getAttributes(comp);
     cmt := Component.comment(comp);
     info := InstNode.info(node);
-    variable := VARIABLE(cref, ty, binding, vis, attr, {}, cmt, info);
+    // kabdelhak: add dummy backend info, will be changed to actual value in
+    // conversion to backend process. NBackendDAE.lower
+    variable := VARIABLE(cref, ty, binding, vis, attr, {}, cmt, info, DummyBackendInfo);
   end fromCref;
 
   function isStructural

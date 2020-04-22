@@ -55,6 +55,7 @@ import Restriction = NFRestriction;
 import NFClassTree.ClassTree;
 import SCodeUtil;
 import IOStream;
+import Variable = NFVariable;
 
 public
 uniontype InstNodeType
@@ -269,6 +270,11 @@ uniontype InstNode
   record EXP_NODE
     Expression exp;
   end EXP_NODE;
+
+  record VAR_NODE
+    "This is an extension for better use in the backend. Not used in the Frontend."
+    Pointer<Variable> varPointer;
+  end VAR_NODE;
 
   record EMPTY_NODE end EMPTY_NODE;
 
