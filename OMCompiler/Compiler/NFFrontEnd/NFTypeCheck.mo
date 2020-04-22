@@ -3197,5 +3197,66 @@ algorithm
   end for;
 end checkSumComplexType;
 
+function matchIfBranches
+  input output Expression trueBranch;
+  input Type trueType;
+  input output Expression falseBranch;
+  input Type falseType;
+  input Expression condition;
+  input Variability conditionVar;
+  input Boolean allowUnknown = false;
+        output Type compatibleType;
+        output MatchKind matchKind;
+protected
+  Expression tdim_exp, fdim_exp;
+  Type tety, fety;
+  list<Dimension> tdims, fdims, dims;
+  Dimension fdim;
+  Variability var;
+algorithm
+  tety := Type.arrayElementType(trueType);
+  fety := Type.arrayElementType(falseType);
+  tdims := Type.arrayDims(trueType);
+  fdims := Type.arrayDims(falseType);
+
+  // Both branches must have the same number of dimensions.
+  if listLength(tdims) <> listLength(fdims) then
+    matchKind := MatchKind.NOT_COMPATIBLE;
+    compatibleType := trueType;
+    return;
+  end if;
+
+  (trueBranch, falseBranch, compatibleType, matchKind) :=
+    matchExpressions(trueBranch, tety, falseBranch, fety);
+
+  // Both branches must have the same element type.
+  if isIncompatibleMatch(matchKind) then
+    return;
+  end if;
+
+  dims := {};
+
+  for tdim in tdims loop
+    fdim :: fdims := fdims;
+
+    if Dimension.isEqual(tdim, fdim) then
+      dims := tdim :: dims;
+    elseif conditionVar <= Variability.PARAMETER and
+           Dimension.isKnown(tdim, allowExp = true) and
+           Dimension.isKnown(fdim, allowExp = true) then
+      tdim_exp := Dimension.sizeExp(tdim);
+      fdim_exp := Dimension.sizeExp(fdim);
+      var := Prefixes.variabilityMax(Expression.variability(tdim_exp),
+                                     Expression.variability(fdim_exp));
+      dims := Dimension.fromExp(Expression.IF(condition, tdim_exp, fdim_exp), var) :: dims;
+    else
+      matchKind := MatchKind.NOT_COMPATIBLE;
+      return;
+    end if;
+  end for;
+
+  compatibleType := Type.liftArrayLeftList(compatibleType, listReverse(dims));
+end matchIfBranches;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFTypeCheck;

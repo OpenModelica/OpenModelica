@@ -15,6 +15,6 @@ end IfExpression4;
 //   Real x[1];
 //   Real x[2];
 // equation
-//   x = {1.0, 2.0};
+//   x = if b then {1.0, 2.0} else {3.0, 4.0, 5.0};
 // end IfExpression4;
 // endResult
