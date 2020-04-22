@@ -32,13 +32,13 @@
  */
 
 #include "kinsolSolver.h"
+
 #include "nonlinearSystem.h"
 #include "omc_config.h"
 #include "omc_math.h"
 #include "simulation/options.h"
 #include "simulation/simulation_info_json.h"
 #include "util/omc_error.h"
-#include "util/sundials_error.h"
 
 #ifdef WITH_SUNDIALS
 

@@ -37,7 +37,7 @@
 #include "openmodelica.h"
 #include "simulation_data.h"
 #include "util/simulation_options.h"
-#include "util/sundials_error.h"
+#include "sundials_error.h"
 #include "simulation/solver/solver_main.h"
 
 #ifdef WITH_SUNDIALS

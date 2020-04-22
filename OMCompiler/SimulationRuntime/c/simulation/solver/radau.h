@@ -49,7 +49,7 @@
 #define LINK_SUNDIALS_STATIC
 #endif
 
-#include "util/sundials_error.h"
+#include "sundials_error.h"
 
 #include <kinsol/kinsol.h>                  /* Main KINSOL header file */
 #include <sunlinsol/sunlinsol_dense.h>      /* Default dense linear solver */

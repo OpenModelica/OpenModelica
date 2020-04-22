@@ -2176,7 +2176,7 @@ algorithm
     case Absyn.STRING("omcruntime")
       equation
         true = "Windows_NT" == Autoconf.os;
-        strs = {"f2c.lib", "initialization.lib", "libexpat.lib", "math-support.lib", "meta.lib", "ModelicaExternalC.lib", "results.lib", "simulation.lib", "solver.lib", "sundials_kinsol.lib", "sundials_nvecserial.lib", "util.lib", "lapack_win32_MT.lib"};
+        strs = {"f2c.lib", "initialization.lib", "libexpat.lib", "math-support.lib", "meta.lib", "ModelicaExternalC.lib", "results.lib", "simulation.lib", "solver.lib", "sundials_kinsol.lib", "sundials_nvecserial.lib", "sundials_sunlinsolklu", "util.lib", "lapack_win32_MT.lib"};
       then
         (strs, {});
 

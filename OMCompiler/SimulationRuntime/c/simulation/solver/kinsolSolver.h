@@ -38,6 +38,7 @@
 extern "C" {
 #endif
 
+#include "sundials_error.h"
 #include "simulation_data.h"
 #include "util/simulation_options.h"
 

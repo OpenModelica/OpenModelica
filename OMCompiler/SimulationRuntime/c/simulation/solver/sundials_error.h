@@ -41,7 +41,13 @@ extern "C" {
 #include <stdio.h>
 #include <string.h>
 
+#include "omc_config.h"
+#include "util/omc_error.h"
+#include "simulation/simulation_info_json.h"
+
 #ifdef WITH_SUNDIALS
+#include "kinsolSolver.h"
+
 #include <kinsol/kinsol.h>
 #include <ida/ida.h>
 

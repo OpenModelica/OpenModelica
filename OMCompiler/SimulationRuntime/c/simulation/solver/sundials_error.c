@@ -31,15 +31,15 @@
 /** \file sundials_error.c
  */
 
-#include <sundials_error.h>
+#include "sundials_error.h"
 
 #ifdef WITH_SUNDIALS
 
 /* Internal function prototypes */
-void checkReturnFlag_KIN(int flag, const char *functionName);
-void checkReturnFlag_KINLS(int flag, const char *functionName);
-void checkReturnFlag_IDA(int flag, const char *functionName);
-void checkReturnFlag_SUNLS(int flag, const char *functionName);
+static void checkReturnFlag_KIN(int flag, const char *functionName);
+static void checkReturnFlag_KINLS(int flag, const char *functionName);
+static void checkReturnFlag_IDA(int flag, const char *functionName);
+static void checkReturnFlag_SUNLS(int flag, const char *functionName);
 
 
 
@@ -99,7 +99,7 @@ void kinsolErrorHandlerFunction(int errorCode, const char *module,
  */
 void kinsolInfoHandlerFunction(const char *module, const char *function,
                                char *msg, void *user_data) {
-  UNUSED(user_data);
+  UNUSED(user_data);  /* DIsables compiler warning */
 
   if (ACTIVE_STREAM(LOG_NLS_V)) {
     warningStreamPrint(LOG_NLS_V, 1, "[module] %s | [function] %s:", module, function);
@@ -127,10 +127,7 @@ void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
   switch (type) {
   case SUNDIALS_UNKNOWN_FLAG:
     if (flag < 0) {
-      throwStreamPrint(
-          LOG_STDOUT, 0,
-          "##SUNDIALS##: Some error with value %u occured in function %s.",
-          flag, functionName);
+      throwStreamPrint(NULL, "##SUNDIALS##: Some error with value %u occured in function %s.", flag, functionName);
     }
   case SUNDIALS_KIN_FLAG:
     checkReturnFlag_KIN(flag, functionName);
@@ -145,10 +142,7 @@ void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
     checkReturnFlag_SUNLS(flag, functionName);
     break;
   default:
-    throwStreamPrint(
-        LOG_STDOUT, 0,
-        "In function checkReturnFlag_SUNDIALS: Invalid sundialsFlagType %u.",
-        type);
+    throwStreamPrint(NULL, "In function checkReturnFlag_SUNDIALS: Invalid sundialsFlagType %u.", type);
     break;
   }
 }
@@ -159,9 +153,9 @@ void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
  * @param flag          Return value of Kinsol routine.
  * @param functionName  Name of Kinsol function that returned the flag.
  */
-void checkReturnFlag_KIN(int flag, const char *functionName) {
+static void checkReturnFlag_KIN(int flag, const char *functionName) {
 
-  const char* flagName = KINGetLinReturnFlagName(flag)
+  const char* flagName = KINGetLinReturnFlagName(flag);
 
   switch (flag) {
   case KIN_SUCCESS:
@@ -170,99 +164,88 @@ void checkReturnFlag_KIN(int flag, const char *functionName) {
     break;
   case KIN_WARNING:
     warningStreamPrint(LOG_STDOUT, 0,
-                       "##KINSOL## %s In function %s: Got some warning.", flagName
-                       functionName);
+                       "##KINSOL## %s In function %s: Got some warning.", flagName, functionName);
     break;
   case KIN_MEM_NULL:
-    throwStreamPrint(LOG_STDOUT, 0, "##KINSOL## %s In function %s: Out of memory.", flagName
-                     functionName);
+    throwStreamPrint(NULL, "##KINSOL## %s In function %s: Out of memory.", flagName, functionName);
     break;
   case KIN_ILL_INPUT:
-    throwStreamPrint(
-        LOG_STDOUT, 0,
-        "##KINSOL## %s In function %s: An input argument has an illegal value.", flagName
-        functionName);
+    throwStreamPrint(NULL, "##KINSOL## %s In function %s: An input argument has an illegal value.", flagName, functionName);
     break;
   case KIN_NO_MALLOC:
-    throwStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## %s In function %s: Kinsol memory was not "
-                     "allocated by a call to KINCreate.", flagName
-                     functionName);
+    throwStreamPrint(NULL, "##KINSOL## %s In function %s: Kinsol memory was not allocated by a call to KINCreate.", flagName, functionName);
     break;
   case KIN_MEM_FAIL:
-    throwStreamPrint(
-        LOG_STDOUT, 0,
-        "##KINSOL## %s In function %s: A memory allocation request has failed.", flagName
-        functionName);
+    throwStreamPrint(NULL, "##KINSOL## %s In function %s: A memory allocation request has failed.", flagName, functionName);
     break;
   case KIN_LINESEARCH_NONCONV:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##KINSOL## %s In function %s: The line search algorithm was "
                      "unable to find an iterate sufficiently distinct from the "
                      "current iterate, or could not find an iterate satisfying "
-                     "the sufficient decrease condition.", flagName
+                     "the sufficient decrease condition.", flagName,
                      functionName);
     break;
   case KIN_MAXITER_REACHED:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##KINSOL## %s In function %s: The maximum number of "
-                     "nonlinear iterations has been reached.", flagName
+                     "nonlinear iterations has been reached.", flagName,
                      functionName);
     break;
   case KIN_MXNEWT_5X_EXCEEDED:
-    throwStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## %s In function %s: Error KIN_MXNEWT_5X_EXCEEDED.", flagName
+    throwStreamPrint(NULL,
+                     "##KINSOL## %s In function %s: Error KIN_MXNEWT_5X_EXCEEDED.", flagName,
                      functionName);
     break;
   case KIN_LINESEARCH_BCFAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## %s In function %s: Error KIN_LINESEARCH_BCFAIL.", flagName
+    throwStreamPrint(NULL,
+                     "##KINSOL## %s In function %s: Error KIN_LINESEARCH_BCFAIL.", flagName,
                      functionName);
     break;
   case KIN_LINSOLV_NO_RECOVERY:
     throwStreamPrint(
-        LOG_STDOUT, 0,
-        "##KINSOL## %s In function %s: Error KIN_LINSOLV_NO_RECOVERY.", flagName
+        NULL,
+        "##KINSOL## %s In function %s: Error KIN_LINSOLV_NO_RECOVERY.", flagName,
         functionName);
     break;
   case KIN_LINIT_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## %s In function %s: Error KIN_LINIT_FAIL.", flagName
+    throwStreamPrint(NULL,
+                     "##KINSOL## %s In function %s: Error KIN_LINIT_FAIL.", flagName,
                      functionName);
     break;
   case KIN_LSETUP_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## %s In function %s: Error KIN_LSETUP_FAIL.", flagName
+    throwStreamPrint(NULL,
+                     "##KINSOL## %s In function %s: Error KIN_LSETUP_FAIL.", flagName,
                      functionName);
     break;
   case KIN_LSOLVE_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## %s In function %s: Error KIN_LSOLVE_FAIL.", flagName
+    throwStreamPrint(NULL,
+                     "##KINSOL## %s In function %s: Error KIN_LSOLVE_FAIL.", flagName,
                      functionName);
     break;
   case KIN_SYSFUNC_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## %s In function %s: Error KIN_SYSFUNC_FAIL.", flagName
+    throwStreamPrint(NULL,
+                     "##KINSOL## %s In function %s: Error KIN_SYSFUNC_FAIL.", flagName,
                      functionName);
     break;
   case KIN_FIRST_SYSFUNC_ERR:
-    throwStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## %s In function %s: Error KIN_FIRST_SYSFUNC_ERR.", flagName
+    throwStreamPrint(NULL,
+                     "##KINSOL## %s In function %s: Error KIN_FIRST_SYSFUNC_ERR.", flagName,
                      functionName);
     break;
   case KIN_REPTD_SYSFUNC_ERR:
-    throwStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## %s In function %s: Error KIN_REPTD_SYSFUNC_ERR.", flagName
+    throwStreamPrint(NULL,
+                     "##KINSOL## %s In function %s: Error KIN_REPTD_SYSFUNC_ERR.", flagName,
                      functionName);
     break;
   case KIN_VECTOROP_ERR:
-    throwStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## %s In function %s: Error KIN_VECTOROP_ERR.", flagName
+    throwStreamPrint(NULL,
+                     "##KINSOL## %s In function %s: Error KIN_VECTOROP_ERR.", flagName,
                      functionName);
     break;
   default:
-    throwStreamPrint(LOG_STDOUT, 0,
-                     "##KINSOL## %s In function %s: Error with flag %i.", flagName
+    throwStreamPrint(NULL,
+                     "##KINSOL## %s In function %s: Error with flag %i.", flagName,
                      functionName, flag);
   }
 }
@@ -273,50 +256,50 @@ void checkReturnFlag_KIN(int flag, const char *functionName) {
  * @param flag          Return value of Kinsol routine.
  * @param functionName  Name of Kinsol function that returned the flag.
  */
-void checkReturnFlag_KINLS(int flag, const char *functionName) {
+static void checkReturnFlag_KINLS(int flag, const char *functionName) {
   switch (flag) {
   case KINLS_SUCCESS:
     break;
   case KINLS_MEM_NULL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##KINLS## In function %s: The kin_mem pointer is NULL.",
                      functionName);
     break;
   case KINLS_ILL_INPUT:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##KINLS## In function %s: An input argument has an "
                      "illegal value or is incompatible.",
                      functionName);
     break;
   case KINLS_MEM_FAIL:
     throwStreamPrint(
-        LOG_STDOUT, 0,
+        NULL,
         "##KINLS## In function %s: A memory allocation request failed.",
         functionName);
     break;
   case KINLS_PMEM_NULL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##KINLS## In function %s: TODO: ADD ERROR MESSAGE.",
                      functionName);
     break;
   case KINLS_JACFUNC_ERR:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##KINLS## In function %s: TODO: ADD ERROR MESSAGE.",
                      functionName);
     break;
   case KINLS_SUNMAT_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##KINLS## In function %s: TODO: ADD ERROR MESSAGE.",
                      functionName);
     break;
   case KINLS_SUNLS_FAIL:
     throwStreamPrint(
-        LOG_STDOUT, 0,
+        NULL,
         "##KINLS## In function %s: A call to the LS object failed.",
         functionName);
     break;
   default:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##KINLS## In function %s: Error with flag %i.",
                      functionName, flag);
   }
@@ -328,7 +311,7 @@ void checkReturnFlag_KINLS(int flag, const char *functionName) {
  * @param flag          Return value of Kinsol routine.
  * @param functionName  Name of IDA function that returned the flag.
  */
-void checkReturnFlag_IDA(int flag, const char *functionName) {
+static void checkReturnFlag_IDA(int flag, const char *functionName) {
   switch (flag) {
   case IDA_SUCCESS:
   case IDA_TSTOP_RETURN:
@@ -340,150 +323,150 @@ void checkReturnFlag_IDA(int flag, const char *functionName) {
                        functionName);
     break;
   case IDA_TOO_MUCH_WORK:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: The solver took mxstep internal "
                      "steps but could not reach tout.",
                      functionName);
     break;
   case IDA_TOO_MUCH_ACC:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: The solver could not satisfy the "
                      "accuracy demanded by the user for some internal step..",
                      functionName);
     break;
   case IDA_ERR_FAIL:
     throwStreamPrint(
-        LOG_STDOUT, 0,
+        NULL,
         "##IDA## In function %s: Error test failures occurred too many times "
         "during one internal time step or minimum step size was reached.",
         functionName);
     break;
   case IDA_CONV_FAIL:
     throwStreamPrint(
-        LOG_STDOUT, 0,
+        NULL,
         "##IDA## In function %s: Convergence test failures occurred too many "
         "times during one internal time step or minimum step size was reached.",
         functionName);
     break;
   case IDA_LINIT_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: The linear solver's "
                      "initialization function failed.",
                      functionName);
     break;
   case IDA_LSETUP_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: The linear solver's setup "
                      "function failed in an unrecoverable manner.",
                      functionName);
     break;
   case IDA_LSOLVE_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: The linear solver's solve "
                      "function failed in an unrecoverable manner.",
                      functionName);
     break;
   case IDA_RES_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: The user-provided residual "
                      "function failed in an unrecoverable manner.",
                      functionName);
     break;
   case IDA_REP_RES_ERR:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: The user-provided residual "
                      "function repeatedly returned a recoverable error flag, "
                      "but the solver was unable to recover.",
                      functionName);
     break;
   case IDA_RTFUNC_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: The rootnding function failed "
                      "in an unrecoverable manner.",
                      functionName);
     break;
   case IDA_CONSTR_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: The inequality constraints were "
                      "violated and the solver was unable to recover.",
                      functionName);
     break;
   case IDA_FIRST_RES_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: The user-provided residual "
                      "function failed recoverably on the rst call.",
                      functionName);
     break;
   case IDA_LINESEARCH_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: The line search failed.",
                      functionName);
     break;
   case IDA_NO_RECOVERY:
     throwStreamPrint(
-        LOG_STDOUT, 0,
+        NULL,
         "##IDA## In function %s: The residual function, linear solver setup "
         "function, or linear solver solve function had a recoverable failure, "
         "but IDACalcIC could not recover.",
         functionName);
     break;
   case IDA_NLS_INIT_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: The nonlinear solver's init routine failed.",
                      functionName);
     break;
   case IDA_NLS_SETUP_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: The nonlinear solver's setup routine failed.",
                      functionName);
     break;
   case IDA_NLS_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: IDA_NLS_FAIL.",
                      functionName);
     break;
   case IDA_MEM_NULL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: The ida_mem argument was NULL.",
                      functionName);
     break;
   case IDA_MEM_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: A memory allocation failed.",
                      functionName);
     break;
   case IDA_ILL_INPUT:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: One of the function inputs is illegal.",
                      functionName);
     break;
   case IDA_NO_MALLOC:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: The ida memory was not allocated by a call to IDAInit.",
                      functionName);
     break;
   case IDA_BAD_EWT:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: Zero value of some error weight component.",
                      functionName);
     break;
   case IDA_BAD_K:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: The k-th derivative is not available.",
                      functionName);
     break;
   case IDA_BAD_T:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: The time t is outside the last step taken.",
                      functionName);
     break;
   case IDA_BAD_DKY:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: The vector argument where derivative should be stored is NULL.",
                      functionName);
     break;
   default:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##IDA## In function %s: Error with flag %i.",
                      functionName, flag);
   }
@@ -495,102 +478,102 @@ void checkReturnFlag_IDA(int flag, const char *functionName) {
  * @param flag          Return value of Kinsol routine.
  * @param functionName  Name of Kinsol function that returned the flag.
  */
-void checkReturnFlag_SUNLS(int flag, const char *functionName) {
+static void checkReturnFlag_SUNLS(int flag, const char *functionName) {
   switch (flag) {
   case SUNLS_SUCCESS:
     break;
   case SUNLS_MEM_NULL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##SUNLS## In function %s: Mem argument is NULL.",
                      functionName);
     break;
   case SUNLS_ILL_INPUT:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##SUNLS## In function %s: Illegal function input.",
                      functionName);
     break;
   case SUNLS_MEM_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##SUNLS## In function %s: Failed memory access.",
                      functionName);
     break;
   case SUNLS_ATIMES_FAIL_UNREC:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##SUNLS## In function %s: Atimes unrecoverable failure.",
                      functionName);
     break;
   case SUNLS_PSET_FAIL_UNREC:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##SUNLS## In function %s: Pset unrecoverable failure.",
                      functionName);
     break;
   case SUNLS_PSOLVE_FAIL_UNREC:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##SUNLS## In function %s: Psolve unrecoverable failure.",
                      functionName);
     break;
   case SUNLS_PACKAGE_FAIL_UNREC:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##SUNLS## In function %s: External package unrec. fail.",
                      functionName);
     break;
   case SUNLS_GS_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##SUNLS## In function %s: Gram-Schmidt failuret.",
                      functionName);
     break;
   case SUNLS_QRSOL_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##SUNLS## In function %s: QRsol found singular R.",
                      functionName);
     break;
   case SUNLS_VECTOROP_ERR:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##SUNLS## In function %s: Vector operation error.",
                      functionName);
     break;
   case SUNLS_RES_REDUCED:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##SUNLS## In function %s: Monconv. solve, resid reduced.",
                      functionName);
     break;
   case SUNLS_CONV_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##SUNLS## In function %s: Nonconvergent solve.",
                      functionName);
     break;
   case SUNLS_ATIMES_FAIL_REC:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##SUNLS## In function %s: Atimes failed recoverably.",
                      functionName);
     break;
   case SUNLS_PSET_FAIL_REC:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##SUNLS## In function %s: Pset failed recoverably.",
                      functionName);
     break;
   case SUNLS_PSOLVE_FAIL_REC:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##SUNLS## In function %s: Psolve failed recoverably.",
                      functionName);
     break;
   case SUNLS_PACKAGE_FAIL_REC:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##SUNLS## In function %s: External package recov. fail.",
                      functionName);
     break;
   case SUNLS_QRFACT_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##SUNLS## In function %s: QRfact found singular matrix.",
                      functionName);
     break;
   case SUNLS_LUFACT_FAIL:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##SUNLS## In function %s: LUfact found singular matrix.",
                      functionName);
     break;
   default:
-    throwStreamPrint(LOG_STDOUT, 0,
+    throwStreamPrint(NULL,
                      "##SUNLS## In function %s: Error with flag %i.",
                      functionName, flag);
   }
@@ -606,6 +589,27 @@ void checkReturnFlag_SUNLS(int flag, const char *functionName) {
  * @param functionName
  */
 void checkReturnFlag_SUNDIALS(int flag, int type, const char *functionName) {
+  throwStreamPrint(NULL, "No sundials/kinsol support activated.");
+}
+
+
+/**
+ * @brief Function not supported
+ *
+ * @param errorCode
+ * @param module
+ * @param function
+ * @param msg
+ * @param userData
+ */
+void kinsolErrorHandlerFunction(int errorCode, const char *module,
+                                const char *function, char *msg,
+                                void *userData) {
+  throwStreamPrint(NULL, "No sundials/kinsol support activated.");
+}
+
+void kinsolInfoHandlerFunction(const char *module, const char *function,
+                               char *msg, void *user_data) {
   throwStreamPrint(NULL, "No sundials/kinsol support activated.");
 }
 
