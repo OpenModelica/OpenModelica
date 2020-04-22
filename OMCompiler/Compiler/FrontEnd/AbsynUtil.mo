@@ -6423,9 +6423,11 @@ public function getComponentItemsFromElementSpec
   output list<Absyn.ComponentItem> componentItems;
 algorithm
   componentItems := match elemSpec
-    local list<Absyn.ComponentItem> components;
+    local
+      list<Absyn.ComponentItem> components;
+      Import importTmp;
     case Absyn.COMPONENTS(components=components) then components;
-    else {};
+    else {}; //TODO do not fail in silence
   end match;
 end getComponentItemsFromElementSpec;
 
@@ -6438,7 +6440,7 @@ algorithm
   componentItems := match getElementSpecificationFromElementItemOpt(inElementItem)
     local Absyn.ElementSpec elementSpec;
     case SOME(elementSpec) then getComponentItemsFromElementSpec(elementSpec);
-    else {};
+    else {}; //TODO do not fail in silence
   end match;
 end getComponentItemsFromElementItem;
 
@@ -6530,13 +6532,31 @@ algorithm
   elementItems := getElementItemsInClass(cls);
   elementSpecs := Util.listOfOptionToList(List.map(elementItems,
                                           getElementSpecificationFromElementItemOpt));
+//  print("\nELEMENTITEMS:" + anyString(elementItems) + "\n");
+//  print("\nELEMENT SPECS:" + anyString(elementSpecs) + "\n");
   classes := Util.listOfOptionToList(List.map(elementSpecs, getClassFromElementSpecOpt));
+//  print("\nCLASSES:" + anyString(classes) + "\n");
+  /*Filter out the remaining components to be consed to nonRecordParts*/
+  elementItems := List.map(List.filterOnTrue(elementSpecs, elementSpecsIscomponentsOrImports), makeElementItemFromElementSpec);
   (recordParts, nonRecordParts) := ({makePublicClassPartFromElementItems(
                                       List.map(List.filterOnTrue(classes, classRestrictionisRecord), makeClassElement))}
-                                    ,
-                                    {makePublicClassPartFromElementItems(
+                                    , /* Place element items first */
+                                    makePublicClassPartFromElementItems(elementItems) :: {makePublicClassPartFromElementItems(
                                     List.map(List.filterOnTrue(classes, classRestrictionisNotRecord), makeClassElement))});
 end splitRecordsAndOtherElements;
+
+protected function makeElementItemFromElementSpec
+  input Absyn.ElementSpec spec;
+  output Absyn.ElementItem ei;
+algorithm
+  ei := Absyn.ELEMENTITEM(ELEMENT(
+                          false,
+                          NONE(),
+                          Absyn.NOT_INNER_OUTER(),
+                          spec,
+                          dummyInfo,
+                          NONE()));
+end makeElementItemFromElementSpec;
 
 public function getClassFromElementSpecOpt
 "Returns the class from an element spec iff the elementspec is a CLASSDEF.
@@ -6583,6 +6603,33 @@ protected
 algorithm
   b := classHasLocalClassOfType(cls, uniontype_restriction);
 end classHasLocalClassesThatAreUniontypes;
+
+protected function elementSpecsIscomponentsOrImports
+  input ElementSpec es;
+  output Boolean b;
+algorithm
+  b := elementSpecIsImport(es) or elementSpecIsComponents(es);
+end elementSpecsIscomponentsOrImports;
+
+protected function elementSpecIsImport
+  input ElementSpec es;
+  output Boolean isImport;
+algorithm
+  isImport := match es
+    case Absyn.IMPORT(__) then true;
+    else false;
+  end match;
+end elementSpecIsImport;
+
+protected function elementSpecIsComponents
+  input ElementSpec es;
+  output Boolean isComponents;
+algorithm
+  isComponents := match es
+    case Absyn.COMPONENTS(__) then true;
+    else false;
+  end match;
+end elementSpecIsComponents;
 
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

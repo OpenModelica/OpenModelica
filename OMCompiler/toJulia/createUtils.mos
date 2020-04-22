@@ -154,11 +154,11 @@
       deleteClass(DiffAlgorithm); getErrorString();
 
 
-      print("Translating DisjointSets into Julia!\n"); getErrorString();
-      loadFile("Compiler/Util/DisjointSets.mo"); getErrorString();
-      writeFile("toJulia/toJuliaOutput/Util/DisjointSets.jl",
-      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
-      deleteClass(DisjointSets); getErrorString();
+      // print("Translating DisjointSets into Julia!\n"); getErrorString();
+      // loadFile("Compiler/Util/DisjointSets.mo"); getErrorString();
+      // writeFile("toJulia/toJuliaOutput/Util/DisjointSets.jl",
+      // OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      // deleteClass(DisjointSets); getErrorString();
 
 
       print("Translating DynLoad into Julia!\n"); getErrorString();
@@ -189,11 +189,11 @@
       deleteClass(ExecStat); getErrorString();
 
 
-      print("Translating ExpandableArray into Julia!\n"); getErrorString();
-      loadFile("Compiler/Util/ExpandableArray.mo"); getErrorString();
-      writeFile("toJulia/toJuliaOutput/Util/ExpandableArray.jl",
-      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
-      deleteClass(ExpandableArray); getErrorString();
+      // print("Translating ExpandableArray into Julia!\n"); getErrorString();
+      // loadFile("Compiler/Util/ExpandableArray.mo"); getErrorString();
+      // writeFile("toJulia/toJuliaOutput/Util/ExpandableArray.jl",
+      // OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      // deleteClass(ExpandableArray); getErrorString();
 
 
       print("Translating File into Julia!\n"); getErrorString();
@@ -606,3 +606,5 @@
       writeFile("toJulia/toJuliaOutput/Util/ZeroMQ.jl",
       OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
       deleteClass(ZeroMQ); getErrorString();
+
+      system("julia toJulia/formatGeneratedJuliaCode.jl ./toJulia/toJuliaOutput/Util")

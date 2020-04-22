@@ -372,7 +372,7 @@ end algorithmItemsContainsReturn;
 
 function mMKeywordToJLKeyword
 "Maps the inName to a Julia comptatible outName.
-If there exists no such name. Returns the original string"
+If there exists no such name. Returns the empty string"
   input String inName;
   output String outName;
 algorithm
@@ -389,6 +389,7 @@ algorithm
     case MMToJuliaKeywords.FUNCTION_UC then "M_Function";
     case MMToJuliaKeywords.FUNCTION_LC then "M_function";
     case MMToJuliaKeywords.CONST then "M_const";
+    case MMToJuliaKeywords.QUOTE then "M_quote";
     else "";
   end match;
 end mMKeywordToJLKeyword;

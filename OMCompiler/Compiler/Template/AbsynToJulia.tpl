@@ -79,7 +79,7 @@ template dumpSCodeElements2(list<SCode.Element> elements)
       case CLASS(classDef = parts as SCode.PARTS(__), partialPrefix = SCode.NOT_PARTIAL(), restriction=SCode.R_FUNCTION(__)) then
         dumpSCodeElements2(parts.elementLst)
       case CLASS(partialPrefix = SCode.PARTIAL(), restriction=SCode.R_FUNCTION(__)) then
-       '<%name%> = Function<%\n%>'
+       '<%MMToJuliaUtil.ifMMKeywordReturnSelf(name)%> = Function<%\n%>'
       else ''
   )
   if str then
@@ -125,7 +125,7 @@ match class
     */
     <<
     <%cmt2%>
-    function <%name%>(<%if header then typevar_inputs else inputs_str%>) <%if header then "" else returnType%> <%header%>
+    function <%MMToJuliaUtil.ifMMKeywordReturnSelf(name)%>(<%if header then typevar_inputs else inputs_str%>) <%if header then "" else returnType%> <%header%>
       <%functionBodyStr%>
       <%return_str%>
     end
@@ -868,22 +868,22 @@ template dumpPathJL2(Absyn.Path path, Context context)
     case IMPORT_CONTEXT() then
       match path
         case topPath as QUALIFIED(__) then
-          '<%MMToJuliaHT.returnThePathOfTheWrapperPackageInHT(topPath)%>'
+          MMToJuliaHT.returnThePathOfTheWrapperPackageInHT(topPath)
         case IDENT(__) then
-         let tmpName = MMToJuliaUtil.mMKeywordToJLKeyword(name)
+           let tmpName = MMToJuliaUtil.mMKeywordToJLKeyword(name)
           match tmpName
             case "" then
               match MMToJuliaHT.get(name)
                 case SOME(CLASS_INFO(originalClass = CLASS(name = name1), wrapperClass = CLASS(name = name2))) then
-                  '<%name2%>'
+                  name2
                 else
-                  '<%name%>'
+                  name
             else
-              '<%name%>'
+              name
         else
           AbsynDumpTpl.errorMsg("AbsynToJulia.dumpPathJL: Unknown path.")
     else
-       '<%dumpPathJL(path)%>'
+      dumpPathJL(path)
 end dumpPathJL2;
 
 template dumpPathNoQual(Absyn.Path path)
@@ -1097,7 +1097,9 @@ match exp
   case CONS(__) then
     let consOp = dumpCons(dumpPattern(head, context, &as_str), dumpPattern(rest, context, &as_str))
     '<%consOp%>'
-  case _ then '#= AbsynDumpTpl.dumpPattern: UNHANDLED Abyn.Exp  =#'
+  case exp as UNARY(__) then
+    '<%dumpExp(exp, context)%>'
+  case _ then '#= AbsyntoJulia.dumpPattern: UNHANDLED Abyn.Exp  =# <%%>'
 end dumpPattern;
 
 template dumpCons(String headString, String tailString)
