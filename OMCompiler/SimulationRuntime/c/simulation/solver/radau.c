@@ -198,7 +198,7 @@ int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
       kinsolData->J = NULL;
       if (kinOde->nlp->nStates < 10) {    /* TODO: Is tis still a valid criteria? */
         kinsolData->linSol = SUNLinSol_SPGMR(
-            kinsolData->y, PREC_NONE, kinOde->N * kinOde->nlp->nStates + 1);
+            kinsolData->y, PREC_NONE, kinOde->N * kinOde->nlp->nStates + 1);    /* TODO: Default number of Krylov vectors is 5. Seems we are using  some more... */
         if (kinsolData->linSol == NULL) {
           errorStreamPrint(
               LOG_STDOUT, 0,
@@ -302,6 +302,8 @@ static KDATAODE* allocateKINSOLODE(KINODE *kinOde, int size) {
   kData->sVars = N_VNew_Serial(size);
   kData->sEqns = N_VNew_Serial(size);
   kData->c = N_VNew_Serial(size);
+
+  kData->y = N_VNew_Serial(size);
 
   /* Create KINSOL memory block */
   kData->kin_mem = KINCreate();
