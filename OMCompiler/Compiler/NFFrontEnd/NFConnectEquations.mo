@@ -807,6 +807,11 @@ algorithm
 
   if isSome(attr_oexp) then
     SOME(attr_exp) := attr_oexp;
+
+    if Expression.variability(attr_exp) <= Variability.STRUCTURAL_PARAMETER then
+      attr_exp := Ceval.evalExp(attr_exp);
+    end if;
+
     isZero := Expression.isZero(Expression.getBindingExp(attr_exp));
   else
     isZero := false;

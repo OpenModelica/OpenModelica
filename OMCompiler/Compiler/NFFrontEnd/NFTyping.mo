@@ -2219,39 +2219,19 @@ algorithm
     fail();
   end if;
 
-  if cond_var <= Variability.STRUCTURAL_PARAMETER and
-    not Expression.contains(cond, isNonConstantIfCondition) then
-    // If the condition is constant, always do branch selection.
-    if evaluateCondition(cond, origin, info) then
-      (ifExp, ty, var) := typeExp(tb, next_origin, info);
-    else
-      (ifExp, ty, var) := typeExp(fb, next_origin, info);
-    end if;
-  else
-    // Otherwise type both of the branches.
-    (tb, tb_ty, tb_var) := typeExp(tb, next_origin, info);
-    (fb, fb_ty, fb_var) := typeExp(fb, next_origin, info);
+  (tb, tb_ty, tb_var) := typeExp(tb, next_origin, info);
+  (fb, fb_ty, fb_var) := typeExp(fb, next_origin, info);
+  (tb2, fb2, ty, ty_match) := TypeCheck.matchIfBranches(tb, tb_ty, fb, fb_ty, cond, cond_var);
 
-    (tb2, fb2, ty, ty_match) := TypeCheck.matchExpressions(tb, tb_ty, fb, fb_ty);
-
-    if TypeCheck.isIncompatibleMatch(ty_match) then
-      if cond_var <= Variability.PARAMETER then
-        // If the branches have different types but the condition is a parameter
-        // expression, do branch selection.
-        (ifExp, ty, var) := if evaluateCondition(cond, origin, info) then (tb, tb_ty, tb_var) else (fb, fb_ty, fb_var);
-      else
-        // Otherwise give a type mismatch error.
-        Error.addSourceMessage(Error.TYPE_MISMATCH_IF_EXP,
-          {"", Expression.toString(tb), Type.toString(tb_ty),
-               Expression.toString(fb), Type.toString(fb_ty)}, info);
-        fail();
-      end if;
-    else
-      // If the types match, return a typed if-expression.
-      ifExp := Expression.IF(cond, tb2, fb2);
-      var := Prefixes.variabilityMax(cond_var, Prefixes.variabilityMax(tb_var, fb_var));
-    end if;
+  if TypeCheck.isIncompatibleMatch(ty_match) then
+    Error.addSourceMessage(Error.TYPE_MISMATCH_IF_EXP,
+      {"", Expression.toString(tb), Type.toString(tb_ty),
+           Expression.toString(fb), Type.toString(fb_ty)}, info);
+    fail();
   end if;
+
+  ifExp := Expression.IF(cond, tb2, fb2);
+  var := Prefixes.variabilityMax(cond_var, Prefixes.variabilityMax(tb_var, fb_var));
 end typeIfExpression;
 
 function evaluateCondition
