@@ -676,46 +676,8 @@ algorithm
     exp := makeRecordFieldBindingFromParent(parent_cr, target);
   end try;
 
-  exp := Expression.bindingExpMap(exp,
-    function lookupRecordFieldInExp(name = ComponentRef.firstName(cref)));
+  exp := Expression.recordElement(ComponentRef.firstName(cref), exp);
 end makeRecordFieldBindingFromParent;
-
-function lookupRecordFieldInExp
-  input Expression exp;
-  input String name;
-  output Expression result;
-algorithm
-  result := match exp
-    local
-      list<Expression> expl;
-      Type ty;
-      Dimension dim;
-
-    case Expression.RECORD() then Expression.recordElement(name, exp);
-
-    // An empty array of records will still be empty, but the type needs to be changed.
-    case Expression.ARRAY(elements = {})
-      algorithm
-        exp.ty := Type.lookupRecordFieldType(name, exp.ty);
-      then
-        exp;
-
-    // For a non-empty array of records, look up the field in each record and
-    // create an array from them.
-    // TODO: Optimize this, the index of the field will be the same for each
-    //       element of the array so we only need to do lookup once.
-    case Expression.ARRAY(ty = Type.ARRAY(dimensions = dim :: _))
-      algorithm
-        expl := list(lookupRecordFieldInExp(e, name) for e in exp.elements);
-        ty := Type.liftArrayLeft(Expression.typeOf(listHead(expl)), dim);
-      then
-        Expression.makeArray(ty, expl, literal = true);
-
-    case Expression.SUBSCRIPTED_EXP()
-      then Expression.SUBSCRIPTED_EXP(lookupRecordFieldInExp(exp.exp, name), exp.subscripts, exp.ty);
-
-  end match;
-end lookupRecordFieldInExp;
 
 function makeRecordBindingExp
   input InstNode typeNode;

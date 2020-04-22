@@ -5254,6 +5254,8 @@ public
         then Expression.bindingExpMap(recordExp,
           function recordElement(elementName = elementName));
 
+      case EMPTY() then fail();
+
       else
         algorithm
           ty := typeOf(recordExp);
