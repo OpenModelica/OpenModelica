@@ -64,6 +64,7 @@ typedef enum sundialsFlagType {
   SUNDIALS_KINLS_FLAG,    /* KINSOL linear solver interface flags */
 
   SUNDIALS_IDA_FLAG,      /* IDA main solver module flags */
+  SUNDIALS_IDALS_FLAG,    /* IDA linear solver module flags */
 
   SUNDIALS_SUNLS_FLAG     /* SUNDIALS linear solver flags */
 } sundialsFlagType;

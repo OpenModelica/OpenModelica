@@ -39,6 +39,7 @@
 static void checkReturnFlag_KIN(int flag, const char *functionName);
 static void checkReturnFlag_KINLS(int flag, const char *functionName);
 static void checkReturnFlag_IDA(int flag, const char *functionName);
+static void checkReturnFlag_IDALS(int flag, const char *functionName);
 static void checkReturnFlag_SUNLS(int flag, const char *functionName);
 
 
@@ -137,6 +138,9 @@ void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
     break;
   case SUNDIALS_IDA_FLAG:
     checkReturnFlag_IDA(flag, functionName);
+    break;
+  case SUNDIALS_IDALS_FLAG:
+    checkReturnFlag_IDALS(flag, functionName);
     break;
   case SUNDIALS_SUNLS_FLAG:
     checkReturnFlag_SUNLS(flag, functionName);
@@ -331,7 +335,7 @@ static void checkReturnFlag_IDA(int flag, const char *functionName) {
   case IDA_TOO_MUCH_ACC:
     throwStreamPrint(NULL,
                      "##IDA## In function %s: The solver could not satisfy the "
-                     "accuracy demanded by the user for some internal step..",
+                     "accuracy demanded by the user for some internal step.",
                      functionName);
     break;
   case IDA_ERR_FAIL:
@@ -468,6 +472,74 @@ static void checkReturnFlag_IDA(int flag, const char *functionName) {
   default:
     throwStreamPrint(NULL,
                      "##IDA## In function %s: Error with flag %i.",
+                     functionName, flag);
+  }
+}
+
+/**
+ * @brief Checks given IDALS flag and reports potential error.
+ *
+ * @param flag          Return value of Kinsol routine.
+ * @param functionName  Name of IDALS function that returned the flag.
+ */
+static void checkReturnFlag_IDALS(int flag, const char *functionName) {
+  switch (flag) {
+  case IDALS_SUCCESS:
+    break;
+  case IDALS_MEM_NULL:
+    throwStreamPrint(NULL,
+                     "##IDALS## In function %s: The ida_mem argument was NULL.",
+                     functionName);
+    break;
+  case IDALS_LMEM_NULL:
+    throwStreamPrint(NULL,
+                     "##IDALS## In function %s: The IDALS linear solver has "
+                     "not been initialized.",
+                     functionName);
+    break;
+  case IDALS_ILL_INPUT:
+    throwStreamPrint(NULL,
+                     "##IDALS## In function %s: The IDALS solver is not "
+                     "compatible with the current NVECTOR module.",
+                     functionName);
+    break;
+  case IDALS_MEM_FAIL:
+    throwStreamPrint(
+        NULL, "##IDALS## In function %s: A memory allocation request failed.",
+        functionName);
+    break;
+  case IDALS_PMEM_NULL:
+    throwStreamPrint(NULL,
+                     "##IDALS## In function %s: The preconditioner module has "
+                     "not been initialized.",
+                     functionName);
+    break;
+  case IDALS_JACFUNC_UNRECVR:
+    throwStreamPrint(NULL,
+                     "##IDALS## In function %s: The Jacobian function failed "
+                     "in an unrecoverable manner.",
+                     functionName);
+    break;
+  case IDALS_JACFUNC_RECVR:
+    throwStreamPrint(NULL,
+                     "##IDALS## In function %s: The Jacobian function had a "
+                     "recoverable error.",
+                     functionName);
+    break;
+  case IDALS_SUNMAT_FAIL:
+    throwStreamPrint(NULL,
+                     "##IDALS## In function %s: An error occurred with the "
+                     "current SUNMATRIX module.",
+                     functionName);
+    break;
+  case IDALS_SUNLS_FAIL:
+    throwStreamPrint(NULL,
+                     "##IDALS## In function %s: An error occurred with the "
+                     "current SUNLINSOL module.",
+                     functionName);
+    break;
+  default:
+    throwStreamPrint(NULL, "##IDALS## In function %s: Error with flag %i.",
                      functionName, flag);
   }
 }

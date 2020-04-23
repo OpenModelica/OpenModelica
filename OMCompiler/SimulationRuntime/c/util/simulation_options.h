@@ -286,11 +286,11 @@ enum JACOBIAN_METHOD
 {
   JAC_UNKNOWN = 0,
 
-  COLOREDNUMJAC,
-  INTERNALNUMJAC,
-  COLOREDSYMJAC,
-  NUMJAC,
-  SYMJAC,
+  COLOREDNUMJAC,      /* Colored numeric Jacobian */
+  INTERNALNUMJAC,     /* Internal numeric Jacobian */
+  COLOREDSYMJAC,      /* Colored symbolic Jacobian */
+  NUMJAC,             /* Non-colored numeric Jacobian */
+  SYMJAC,             /* Non-colored symbolic Jacobian */
 
   JAC_MAX
 };

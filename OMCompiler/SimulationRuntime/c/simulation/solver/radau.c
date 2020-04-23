@@ -302,7 +302,6 @@ static KDATAODE* allocateKINSOLODE(KINODE *kinOde, int size) {
   kData->sVars = N_VNew_Serial(size);
   kData->sEqns = N_VNew_Serial(size);
   kData->c = N_VNew_Serial(size);
-
   kData->y = N_VNew_Serial(size);
 
   /* Create KINSOL memory block */
@@ -436,7 +435,7 @@ static int initKinsol(KINODE *kinOde)
  *  1st try: KINDense dense linear solver
  *  2nd try: KINSptfqmr iterative linear solver
  *  3rd try: KINSpbcg iterative linear solver
- * AFter that the function will give up and fail, returning -1.
+ * After that the function will give up and fail, returning -1.
  *
  * @param solverInfo
  * @return int              Return 0 on success and -1 if an error occured.
@@ -448,7 +447,7 @@ int kinsolOde(SOLVER_INFO* solverInfo)  /* TODO: Unify this function with nlsKin
   int flag, kinsol_flag;
   int use_dense = FALSE;
   int try_again = TRUE;
-  int solvedSuccessfully = 0;
+  int solvedSuccessfully = -1 /* FALSE */;
   int retries = 0;
   long int tmp;
 
@@ -518,7 +517,7 @@ int kinsolOde(SOLVER_INFO* solverInfo)  /* TODO: Unify this function with nlsKin
         break;
       }
     } else {
-      solvedSuccessfully = -1;
+      solvedSuccessfully = 0;
     }
     retries++;
   } while (kinsol_flag < 0 && try_again);
@@ -542,7 +541,11 @@ int kinsolOde(SOLVER_INFO* solverInfo)  /* TODO: Unify this function with nlsKin
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSpilsGetNumJtimesEvals");
   solverInfo->solverStatsTmp[4] += tmp;               /* beta-condition failures evaluations */
 
-  infoStreamPrint(LOG_SOLVER, 0, "##IMPRK## Integration step finished .");
+  if (solvedSuccessfully != 0) {
+    infoStreamPrint(LOG_SOLVER, 0, "##IMPRK## Integration step finished unsuccessful.");
+  } else {
+    infoStreamPrint(LOG_SOLVER, 0, "##IMPRK## Integration step finished successful.");
+  }
   messageClose(LOG_SOLVER);
 
   return solvedSuccessfully;

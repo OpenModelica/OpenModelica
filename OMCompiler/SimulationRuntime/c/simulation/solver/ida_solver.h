@@ -114,8 +114,8 @@ typedef struct IDA_SOLVER
   double stepsTime;              /* value specifies the time increment when output happens. Used in internal steps mode. */
 
   /* ### work arrays ### */
-  N_Vector y;
-  N_Vector yp;
+  N_Vector y;                   /* State vector */
+  N_Vector yp;                  /* State derivative vector */
 
   /* ### scaling data ### */
   double *yScale;

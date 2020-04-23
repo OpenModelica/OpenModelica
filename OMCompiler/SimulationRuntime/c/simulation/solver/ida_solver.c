@@ -179,6 +179,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     idaData->N = (long int) data->modelData->nStates;
   }
   infoStreamPrint(LOG_SOLVER, 1, "## IDA ## Initializing solver of size %ld %s.", idaData->N, idaData->daeMode?"in DAE mode":"");
+  idaData->NNZ = -1;
 
   /* initialize states and der(states) */
   if (idaData->daeMode)
@@ -210,6 +211,9 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   idaData->delta_hh = (double*) malloc(idaData->N*sizeof(double));
   idaData->errwgt = N_VNew_Serial(idaData->N);
   idaData->newdelta = N_VNew_Serial(idaData->N);
+
+  /* Allocate memory for linear solver */
+  idaData->y_linSol = N_VNew_Serial(idaData->N);
 
   /* Set user data */
   idaData->userData = (IDA_USERDATA*) malloc(sizeof(IDA_USERDATA));
@@ -344,73 +348,6 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
      infoStreamPrint(LOG_SOLVER, 0, "as the output frequency time step control is used: %f", idaData->stepsTime);
   }
 
-  /* if FLAG_IDA_LS is set, choose ida linear solver method */
-  if (omc_flag[FLAG_IDA_LS])
-  {
-    for(i=1; i< IDA_LS_MAX;i++)
-    {
-      if(!strcmp((const char*)omc_flagValue[FLAG_IDA_LS], IDA_LS_METHOD[i])){
-        idaData->linearSolverMethod = (int)i;
-        break;
-      }
-    }
-    if(idaData->linearSolverMethod == IDA_LS_UNKNOWN)
-    {
-      if (ACTIVE_WARNING_STREAM(LOG_SOLVER))
-      {
-        warningStreamPrint(LOG_SOLVER, 1, "unrecognized ida linear solver method %s, current options are:", (const char*)omc_flagValue[FLAG_IDA_LS]);
-        for(i=1; i < IDA_LS_MAX; ++i)
-        {
-          warningStreamPrint(LOG_SOLVER, 0, "%-15s [%s]", IDA_LS_METHOD[i], IDA_LS_METHOD_DESC[i]);
-        }
-        messageClose(LOG_SOLVER);
-      }
-      throwStreamPrint(threadData,"unrecognized ida linear solver method %s", (const char*)omc_flagValue[FLAG_IDA_LS]);
-    }
-  }
-  else
-  {
-    idaData->linearSolverMethod = IDA_LS_KLU;
-  }
-
-  switch (idaData->linearSolverMethod){
-  case IDA_LS_SPGMR:
-    idaData->linSol = SUNLinSol_SPGMR(idaData->y_linSol, PREC_LEFT, 5 /* default value */);
-    if (idaData->linSol == NULL) {
-      throwStreamPrint(threadData, "##IDA## In function SUNLinSol_SPGMR: Input incompatible.");
-    }
-    break;
-  case IDA_LS_SPBCG:
-    idaData->linSol = SUNLinSol_SPBCGS(idaData->y_linSol, PREC_LEFT, 5 /* default value */);
-    if (idaData->linSol == NULL) {
-      throwStreamPrint(threadData, "##IDA## In function SUNLinSol_SPBCGS: Input incompatible.");
-    }
-    break;
-  case IDA_LS_SPTFQMR:
-    idaData->linSol = SUNLinSol_SPTFQMR(idaData->y_linSol, PREC_LEFT, 5 /* default value */);
-    if (idaData->linSol == NULL) {
-      throwStreamPrint(threadData, "##IDA## In function SUNLinSol_SPTFQMR: Input incompatible.");
-    }
-    break;
-  case IDA_LS_DENSE:
-    idaData->linSol = SUNLinSol_Dense(idaData->y_linSol, idaData->J);   /* TODO: Size of J: idaData->N */
-    if (idaData->linSol == NULL) {
-      throwStreamPrint(threadData, "##IDA## In function SUNLinSol_Dense: Input incompatible.");
-    }
-    break;
-  case IDA_LS_KLU:
-    /* Set KLU after initialized sparse pattern of the jacobian for nnz */
-    idaData->linSol = SUNLinSol_KLU(idaData->y_linSol, idaData->J);
-    if (idaData->linSol == NULL) {
-      throwStreamPrint(threadData, "##IDA## In function SUNLinSol_KLU: Input incompatible.");
-    }
-    break;
-  default:
-    throwStreamPrint(threadData,"unrecognized linear solver method %s", (const char*)omc_flagValue[FLAG_IDA_LS]);
-    break;
-  }
-  infoStreamPrint(LOG_SOLVER, 0, "IDA linear solver method selected %s", IDA_LS_METHOD_DESC[idaData->linearSolverMethod]);
-
 
   /* if FLAG_JACOBIAN is set, choose jacobian calculation method */
   if (omc_flag[FLAG_JACOBIAN])
@@ -483,58 +420,130 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     }
   }
 
-  /* Create matrix object */
-  if (idaData->linearSolverMethod == NLS_LS_DEFAULT) {
-    idaData->J = SUNDenseMatrix(idaData->N, idaData->N);
-  } else if (idaData->linearSolverMethod == IDA_LS_KLU) {
-    if (idaData->daeMode) {
-      idaData->NNZ = data->simulationInfo->daeModeData->sparsePattern->numberOfNoneZeros;
-    } else {
-      idaData->NNZ = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern->numberOfNoneZeros;
+  /* Set NNZ */
+  if (idaData->daeMode) {
+    idaData->NNZ = data->simulationInfo->daeModeData->sparsePattern->numberOfNoneZeros;
+  } else {
+    idaData->NNZ = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern->numberOfNoneZeros;
+  }
+
+  /* if FLAG_IDA_LS is set, choose ida linear solver method */
+  if (omc_flag[FLAG_IDA_LS])
+  {
+    for(i=1; i< IDA_LS_MAX;i++)
+    {
+      if(!strcmp((const char*)omc_flagValue[FLAG_IDA_LS], IDA_LS_METHOD[i])){
+        idaData->linearSolverMethod = (int)i;
+        break;
+      }
     }
-    idaData->J = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ, CSC_MAT);
+    if(idaData->linearSolverMethod == IDA_LS_UNKNOWN)
+    {
+      if (ACTIVE_WARNING_STREAM(LOG_SOLVER))
+      {
+        warningStreamPrint(LOG_SOLVER, 1, "unrecognized ida linear solver method %s, current options are:", (const char*)omc_flagValue[FLAG_IDA_LS]);
+        for(i=1; i < IDA_LS_MAX; ++i)
+        {
+          warningStreamPrint(LOG_SOLVER, 0, "%-15s [%s]", IDA_LS_METHOD[i], IDA_LS_METHOD_DESC[i]);
+        }
+        messageClose(LOG_SOLVER);
+      }
+      throwStreamPrint(threadData,"unrecognized ida linear solver method %s", (const char*)omc_flagValue[FLAG_IDA_LS]);
+    }
+  }
+  else
+  {
+    idaData->linearSolverMethod = IDA_LS_KLU;
+  }
+
+  /* Allocate memory for linear solver matrix */
+  if (idaData->linearSolverMethod == IDA_LS_DENSE) {
+    idaData->J = SUNDenseMatrix(idaData->N, idaData->N);    /* TODO AHeu: Free memory!! */
+  }
+  else if (idaData->linearSolverMethod == IDA_LS_KLU) {
+    if (idaData->NNZ < 0) {
+      throwStreamPrint(threadData, "##IDA## idaData->NNZ not set.");
+    }
+    idaData->J = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ, CSC_MAT);    /* TODO AHeu: Free memory!! */
   } else {
     idaData->J = NULL;
   }
+  idaData->tmpJac = NULL;
 
-  /* set up the appropriate function pointer */
+  switch (idaData->linearSolverMethod){
+  case IDA_LS_SPGMR:
+    idaData->linSol = SUNLinSol_SPGMR(idaData->y_linSol, PREC_LEFT, 5 /* default value */);
+    if (idaData->linSol == NULL) {
+      throwStreamPrint(threadData, "##IDA## In function SUNLinSol_SPGMR: Input incompatible.");
+    }
+    idaData->jacobianMethod = INTERNALNUMJAC;
+    break;
+  case IDA_LS_SPBCG:
+    idaData->linSol = SUNLinSol_SPBCGS(idaData->y_linSol, PREC_LEFT, 5 /* default value */);
+    if (idaData->linSol == NULL) {
+      throwStreamPrint(threadData, "##IDA## In function SUNLinSol_SPBCGS: Input incompatible.");
+    }
+    idaData->jacobianMethod = INTERNALNUMJAC;
+    break;
+  case IDA_LS_SPTFQMR:
+    idaData->linSol = SUNLinSol_SPTFQMR(idaData->y_linSol, PREC_LEFT, 5 /* default value */);
+    if (idaData->linSol == NULL) {
+      throwStreamPrint(threadData, "##IDA## In function SUNLinSol_SPTFQMR: Input incompatible.");
+    }
+    idaData->jacobianMethod = INTERNALNUMJAC;
+    break;
+  case IDA_LS_DENSE:
+    idaData->linSol = SUNLinSol_Dense(idaData->y_linSol, idaData->J);   /* TODO: Size of J: idaData->N */
+    if (idaData->linSol == NULL) {
+      throwStreamPrint(threadData, "##IDA## In function SUNLinSol_Dense: Input incompatible.");
+    }
+    break;
+  case IDA_LS_KLU:
+    /* Set KLU after initialized sparse pattern of the jacobian for nnz */
+    idaData->linSol = SUNLinSol_KLU(idaData->y_linSol, idaData->J);
+    if (idaData->linSol == NULL) {
+      throwStreamPrint(threadData, "##IDA## In function SUNLinSol_KLU: Input incompatible.");
+    }
+    break;
+  default:
+    throwStreamPrint(threadData,"unrecognized linear solver method %s", (const char*)omc_flagValue[FLAG_IDA_LS]);
+    break;
+  }
+
+  if (idaData->jacobianMethod == INTERNALNUMJAC) {
+    flag = IDASetLinearSolver(idaData->ida_mem, idaData->linSol, NULL);
+  } else {
+    flag = IDASetLinearSolver(idaData->ida_mem, idaData->linSol, idaData->J);
+  }
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDALS_FLAG, "IDASetLinearSolver");
+  infoStreamPrint(LOG_SOLVER, 0, "IDA linear solver method selected %s", IDA_LS_METHOD_DESC[idaData->linearSolverMethod]);
+
+  /* Set Jacobian function */
   if (idaData->linearSolverMethod == IDA_LS_KLU)
   {
     if (idaData->daeMode)
     {
-      idaData->linSol = SUNLinSol_KLU(idaData->y_linSol, idaData->J);
-      if (idaData->linSol == NULL) {
-        errorStreamPrint(
-            LOG_STDOUT, 0,
-            "##IDA## In function SUNLinSol_KLU: Input incompatible.");
-      }
       idaData->jacobianMethod = COLOREDNUMJAC; /* In DAE mode only numerical matrix is supported */
     }
     else
     {
-      idaData->linSol = SUNLinSol_KLU(idaData->y_linSol, idaData->J);
-      if (idaData->linSol == NULL) {
-        errorStreamPrint(
-            LOG_STDOUT, 0,
-            "##IDA## In function SUNLinSol_KLU: Input incompatible.");
-      }
       /* to add a cj identety matrix */
-      idaData->tmpJac = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ, CSC_MAT);
-    }
-    if (checkIDAflag(flag)){
-      throwStreamPrint(threadData, "##IDA## Setup of linear solver KLU failed!");
+      if (idaData->NNZ < 0) {
+        throwStreamPrint(threadData, "##IDA## idaData->NNZ not set.");
+      }
+      idaData->tmpJac = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ, CSC_MAT);   /* TODO AHeu: Only allocate memory if realy needed. ANd free memory */
     }
 
     idaData->allocatedParMem = 0;   /* FALSE */
 
-    /* Set Jacobian function */
+    /* Set Jacobian function for matrix based linear solvers */
     switch (idaData->jacobianMethod){
     case SYMJAC:
     case NUMJAC:
     case COLOREDSYMJAC:
     case COLOREDNUMJAC:
       flag = IDASetJacFn(idaData->ida_mem, callSparseJacobian);
-      checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetJacFn");
+      checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDALS_FLAG, "IDASetJacFn");
 #ifdef USE_PARJAC
       allocateThreadLocalJacobians(data, &(idaData->jacColumns));
       idaData->allocatedParMem = 1;   /* TRUE */
@@ -549,11 +558,11 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   {
     switch (idaData->jacobianMethod){
     case SYMJAC:
+    case NUMJAC:
     case COLOREDSYMJAC:
     case COLOREDNUMJAC:
-    case NUMJAC:
       flag = IDASetJacFn(idaData->ida_mem, callDenseJacobian);
-      checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetJacFn");
+      checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDALS_FLAG, "IDASetJacFn");
 #ifdef USE_PARJAC
       allocateThreadLocalJacobians(data, &(idaData->jacColumns));
       idaData->allocatedParMem = 1;   /* TRUE */
@@ -566,14 +575,9 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
       break;
     }
   }
+  infoStreamPrint(LOG_SOLVER, 0, "Jacobian is calculated by \"%s\"", JACOBIAN_METHOD_DESC[idaData->jacobianMethod]);
 
-  if (checkIDAflag(flag)){
-    throwStreamPrint(threadData, "##IDA## Setting jacobian function fails while initialize IDA solver!");
-  } else {
-    infoStreamPrint(LOG_SOLVER, 0, "jacobian is calculated by %s", JACOBIAN_METHOD_DESC[idaData->jacobianMethod]);
-  }
-
-  /* set max error test fails */
+  /* Set max error test fails */
   if (omc_flag[FLAG_IDA_MAXERRORTESTFAIL])
   {
     int maxErrorTestFails = atoi(omc_flagValue[FLAG_IDA_MAXERRORTESTFAIL]);
@@ -782,16 +786,19 @@ int ida_event_update(DATA* data, threadData_t *threadData)
 
       infoStreamPrint(LOG_SOLVER, 0, "##IDA## do event update at %.15g", data->localData[0]->timeValue);
       flag = IDAReInit(idaData->ida_mem,
-          data->localData[0]->timeValue,
-          idaData->y,
-          idaData->yp);
+                       data->localData[0]->timeValue,
+                       idaData->y,
+                       idaData->yp);
+      checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAReInit");
 
       /* get initial step to provide a direction of the solution */
-      IDAGetActualInitStep(idaData->ida_mem, &init_h);
+      flag = IDAGetActualInitStep(idaData->ida_mem, &init_h);
+      checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetActualInitStep");
       /* provide a feasible step-size if it's too small */
       if (init_h < DBL_EPSILON){
         init_h = DBL_EPSILON;
-        IDASetInitStep(idaData->ida_mem, init_h);
+        flag = IDASetInitStep(idaData->ida_mem, init_h);
+        checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetInitStep");
         infoStreamPrint(LOG_SOLVER, 0, "##IDA## corrected step-size at %.15g", init_h);
       }
 
@@ -801,6 +808,7 @@ int ida_event_update(DATA* data, threadData_t *threadData)
       IDASetMaxNumItersIC(idaData->ida_mem, 2*idaData->N*10);
       /* Calc Consistent y_algebraic and y_prime with current y */
       flag = IDACalcIC(idaData->ida_mem, IDA_YA_YDP_INIT, data->localData[0]->timeValue+init_h);
+      checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDACalcIC");
 
       /* debug */
       IDAGetNumNonlinSolvIters(idaData->ida_mem, &nonLinIters);
@@ -1870,10 +1878,10 @@ static int callSparseJacobian(double currentTime, double cj,
                               N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
 {
   TRACE_PUSH
-
   IDA_SOLVER* idaData = (IDA_SOLVER*)user_data;
   DATA* data = (DATA*)(((IDA_USERDATA*)idaData->userData)->data);
   threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)((IDA_SOLVER*)user_data)->userData)->threadData);
+  int i;
 
   /* profiling */
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
@@ -1895,16 +1903,16 @@ static int callSparseJacobian(double currentTime, double cj,
   }
 
   /* add cj to diagonal elements and store in Jac */
+  SUNMatZero(idaData->tmpJac);      /* TODO AHeu: Is this needed? Seems usefull to be on the safe side. */
   if (!idaData->daeMode)
   {
-    int i;
     for (i=0; i < idaData->N; ++i){
       SM_INDEXPTRS_S(idaData->tmpJac)[i] = i;
       SM_INDEXVALS_S(idaData->tmpJac)[i] = i;
       SM_DATA_S(idaData->tmpJac)[i] = -cj;
     }
     SM_INDEXPTRS_S(idaData->tmpJac)[idaData->N] = idaData->N;
-    SUNMatScaleAdd(1, Jac, idaData->tmpJac);
+    SUNMatScaleAdd(1.0, Jac, idaData->tmpJac);
   }
 
   /* profiling */
@@ -1946,7 +1954,10 @@ static int getScalingFactors(DATA* data, IDA_SOLVER *idaData, SUNMatrix inScaleM
     /*  choose the jacobian sparse vs. dense */
     if (idaData->linearSolverMethod == IDA_LS_KLU)
     {
-      scaleMatrix = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ, CSC_MAT);
+      if (idaData->NNZ < 0) {
+        throwStreamPrint(NULL, "##IDA## idaData->NNZ not set.");
+      }
+      scaleMatrix = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ, CSC_MAT);   /* TODO: Is NNZ initialized? */
       callSparseJacobian(data->localData[0]->timeValue, 1.0, idaData->y, idaData->yp, rres,
                         scaleMatrix, idaData, tmp1, tmp2, tmp3);
     }
