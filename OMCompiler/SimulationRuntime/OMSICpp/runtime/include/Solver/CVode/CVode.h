@@ -7,15 +7,14 @@
 #include "FactoryExport.h"
 
 #include <Core/Solver/SolverDefaultImplementation.h>
+
 #include <cvode/cvode.h>
-#ifdef USE_SUNDIALS_LAPACK
-  #include <cvode/cvode_lapack.h>
-#else
-#include <cvode/cvode_spgmr.h>
-#include <cvode/cvode_dense.h>
-#endif //USE_SUNDIALS_LAPACK
 #include <nvector/nvector_serial.h>
-#include <sundials/sundials_direct.h>
+#include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
+#ifdef USE_SUNDIALS_LAPACK
+  #include <sunlinsol/sunlinsol_lapackdense.h> /* Lapack dense linear solver */
+#endif //USE_SUNDIALS_LAPACK
+#include <sunlinsol/sunlinsol_spgmr.h>       /* Iterative linear solver */
 
 #ifdef RUNTIME_PROFILING
   #include <Core/Utils/extension/measure_time.hpp>
@@ -162,7 +161,14 @@ private:
         _CV_y0, ///< Temp      - Initial values in the Cvode Format
         _CV_y, ///< Temp      - State in Cvode Format
         _CV_yWrite, ///< Temp      - Vector for dense out
-        _CV_absTol;
+        _CV_absTol,
+        _CV_ySolver;
+
+    SUNLinearSolver
+        _CV_linSol; ///< Linear solver object used by CVODE
+
+    SUNMatrix
+        _CV_J; ///< Matrix template for cloning matrices needed within linear solver
 
     // Variables for Coloured Jacobians
     int* _colorOfColumn;

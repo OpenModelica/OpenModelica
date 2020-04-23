@@ -114,7 +114,7 @@ typedef struct NLS_KINSOL_DATA {
   /* linear solver data */
   SUNLinearSolver linSol; /* Linear solver object used by KINSOL */
   N_Vector y;  /* Template for cloning vectors needed inside linear solver */
-  SUNMatrix J; /* Sparse matrix template for cloning matrices needed within
+  SUNMatrix J; /* (Non-)Sparse matrix template for cloning matrices needed within
                   linear solver */
 
   /* Properties of non-linear system */

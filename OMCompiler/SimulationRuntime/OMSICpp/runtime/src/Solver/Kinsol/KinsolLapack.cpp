@@ -4,15 +4,15 @@
 *
 *  @{
 */
-#include <kinsol/kinsol_direct.h>
-#include <sundials/sundials_dense.h>
-#include <kinsol/kinsol_impl.h>
-#include <kinsol/kinsol_spbcgs.h>
-#include <kinsol/kinsol_sptfqmr.h>
-//#include <kinsol/kinsol_klu.h>
+#include <kinsol/kinsol.h>
 #include <nvector/nvector_serial.h>
-#include <Solver/Kinsol/KinsolLapack.h>
+#include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
+/* Will be used with new sundials version */
+//#include <sunlinsol/sunlinsol_klu.h>         /* Linear solver KLU */
+#include <sunlinsol/sunlinsol_spbcgs.h>
+#include <sunlinsol/sunlinsol_sptfqmr.h>
 
+#include <Solver/Kinsol/KinsolLapack.h>
 
 /**
  *  \file KinsolLapack.cpp
@@ -40,7 +40,7 @@ int KINLapackCompletePivoting(void* kinmem, int N)
     kin_mem->kin_lsetup = KINLapackCompletePivotingSetup;
     kin_mem->kin_lsolve = KINLapackCompletePivotingSolve;
     kin_mem->kin_lfree = KINLapackCompletePivotingFree;
-    kin_mem->kin_setupNonNull = TRUE;
+    kin_mem->kin_setupNonNull = SUNTRUE;
     linSysData* data = new linSysData();
     data->jac = new double[N * N];
     data->scale = new double[N];

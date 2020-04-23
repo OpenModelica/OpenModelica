@@ -83,7 +83,14 @@ private:
         _Kin_y, ///< Temp   - Initial values in the Sundials Format
         _Kin_y0,
         _Kin_yScale,
-        _Kin_fScale;
+        _Kin_fScale,
+        _Kin_ySolver;
+
+    SUNLinearSolver
+        _Kin_linSol; ///< Linear solver object used by KINSOL
+
+    SUNMatrix
+        _Kin_J; ///< Matrix template for cloning matrices needed within linear solver
 
     void
         *_kinMem, ///< Temp   - Memory for the solver

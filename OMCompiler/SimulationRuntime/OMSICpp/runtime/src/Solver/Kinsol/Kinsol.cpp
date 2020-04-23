@@ -16,20 +16,11 @@
 #include<Core/Math/ILapack.h>
 #include <Solver/Kinsol/FactoryExport.h>
 
-#include <nvector/nvector_serial.h>
 #include <kinsol/kinsol.h>
-
-#include <kinsol/kinsol_spgmr.h>
-#include <kinsol/kinsol_dense.h>
-
-#include <kinsol/kinsol_spbcgs.h>
-#include <kinsol/kinsol_sptfqmr.h>
-/*will be used with new sundials version
-#include <kinsol/kinsol_klu.h>
-*/
-#include <kinsol/kinsol_direct.h>
-#include <sundials/sundials_dense.h>
-#include <kinsol/kinsol_impl.h>
+#include <nvector/nvector_serial.h>
+#include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
+/* Will be used with new sundials version */
+//#include <sunlinsol/sunlinsol_klu.h>         /* Linear solver KLU */
 
 
 #include <Core/Utils/extension/logger.hpp>
@@ -37,7 +28,7 @@
 #include <Solver/Kinsol/Kinsol.h>
 #include <Solver/Kinsol/KinsolSettings.h>
 #if defined(__TRICORE__)
-#include <include/kinsol/kinsol.h>
+#include <include/kinsol/kinsol.h>          /* TODO: Duplicate or not enough? */
 #endif
 
 //#include <Core/Utils/numeric/bindings/lapack/driver/gesv.hpp>
@@ -129,6 +120,9 @@ Kinsol::Kinsol(INonLinSolverSettings* settings, shared_ptr<INonLinearAlgLoop> al
       , _Kin_y0(NULL)
       , _Kin_yScale(NULL)
       , _Kin_fScale(NULL)
+      , _Kin_ySolver(NULL)
+      , _Kin_linSol(NULL)
+      , _Kin_J(NULL)
       , _kinMem(NULL)
       /*
       , _kluSymbolic             (NULL)
@@ -182,6 +176,12 @@ Kinsol::~Kinsol()
         N_VDestroy_Serial(_Kin_yScale);
     if (_Kin_fScale)
         N_VDestroy_Serial(_Kin_fScale);
+    if (_Kin_ySolver)
+        N_VDestroy(_Kin_ySolver);
+    if (_Kin_J)
+        SUNMatDestroy(_Kin_J);
+    if (_Kin_linSol)
+        SUNLinSolFree(_Kin_linSol);
     if (_kinMem)
         KINFree(&_kinMem);
 
@@ -274,6 +274,12 @@ void Kinsol::initialize()
         N_VDestroy_Serial(_Kin_yScale);
     if (_Kin_fScale)
         N_VDestroy_Serial(_Kin_fScale);
+    if (_Kin_ySolver)
+        N_VDestroy(_Kin_ySolver);
+    if (_Kin_J)
+        SUNMatDestroy(_Kin_J);
+    if (_Kin_linSol)
+        SUNLinSolFree(_Kin_linSol);
     if (_kinMem)
         KINFree(&_kinMem);
 
@@ -281,6 +287,7 @@ void Kinsol::initialize()
     _Kin_y0 = N_VMake_Serial(_dimSys, _y0);
     _Kin_yScale = N_VMake_Serial(_dimSys, _yScale);
     _Kin_fScale = N_VMake_Serial(_dimSys, _fScale);
+    _Kin_ySolver = N_VNew_Serial(_dimSys);
     _kinMem = KINCreate();
 
     /*
@@ -324,7 +331,14 @@ void Kinsol::initialize()
     if (check_flag(&idid, (char *)"KINSetUserData", 1))
         throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::initialize()");
 
-    KINDense(_kinMem, _dimSys);
+    // Initialize dense linear solver
+    _Kin_J = SUNDenseMatrix(_dimSys, _dimSys);
+    _Kin_linSol = SUNLinSol_Dense(_Kin_ySolver, _Kin_J);
+    /* TODO AHeu: Check for error (==NULL) */
+    /* TODO AHeu: Free memory */
+    idid = KINSetLinearSolver(_kinMem, _Kin_linSol, _Kin_J);
+    if (check_flag(&idid, (char *)"KINSetUserData", 1))
+        throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::initialize()");
 
     /*will be used with new sundials version
     if(_algLoop->isLinearTearing())

@@ -51,7 +51,7 @@
 #include <idas/idas.h>
 #include <nvector/nvector_serial.h>
 #include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
-#include <sunlinsol/sunlinsol_klu.h>         /* Linear solver KLU */
+#include <sunlinsol/sunlinsol_klu.h>         /* Sparse linear solver KLU */
 //#include <sunlinsol/sunlinsol_lapackdense.h> /* Lapack dense linear solver */
 #include <sunlinsol/sunlinsol_spgmr.h>
 #include <sunlinsol/sunlinsol_spbcgs.h>

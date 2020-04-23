@@ -3,11 +3,10 @@
 #include "FactoryExport.h"
 
 #include <Core/Solver/SolverDefaultImplementation.h>
+
 #include <idas/idas.h>
 #include <nvector/nvector_serial.h>
-#include <sundials/sundials_direct.h>
-#include <idas/idas_dense.h>
-
+#include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
 
 #ifdef RUNTIME_PROFILING
   #include <Core/Utils/extension/measure_time.hpp>
@@ -163,7 +162,14 @@ private:
         _CV_yp, ///<Temp   - Stateders in ida Format
         _CV_yWrite, ///< Temp      - Vector for dense out
         _CV_ypWrite,
-        _CV_absTol;
+        _CV_absTol,
+        _ida_ySolver;
+
+    SUNLinearSolver
+        _ida_linSol; ///< Linear solver object used by IDA
+
+    SUNMatrix
+        _ida_J; ///< Matrix template for cloning matrices needed within linear solver
 
     // Variables for Coloured Jacobians
     int* _colorOfColumn;

@@ -6,20 +6,20 @@
 #include <Core/Modelica.h>
 
 #if defined(OMC_BUILD)  && !defined(RUNTIME_STATIC_LINKING)
-#include <nvector/nvector_serial.h>
 #include <kinsol/kinsol.h>
+#include <nvector/nvector_serial.h>
+
+/* Will be used with new sundials version */
+//#include <sunlinsol/sunlinsol_klu.h>         /* Linear solver KLU */
 #ifdef USE_SUNDIALS_LAPACK
-  #include <kinsol/kinsol_lapack.h>
+  #include <sunlinsol/sunlinsol_klu.h>         /* Linear solver KLU */
 #else
-  #include <kinsol/kinsol_spgmr.h>
-  #include <kinsol/kinsol_dense.h>
+  #include <sunlinsol/sunlinsol_spgmr.h>
+  #include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
 #endif //USE_SUNDIALS_LAPACK
-#include <kinsol/kinsol_spbcgs.h>
-#include <kinsol/kinsol_sptfqmr.h>
-//#include <kinsol/kinsol_klu.h>
-#include <kinsol/kinsol_direct.h>
-#include <sundials/sundials_dense.h>
-#include <kinsol/kinsol_impl.h>
+#include <sunlinsol/sunlinsol_spbcgs.h>
+#include <sunlinsol/sunlinsol_sptfqmr.h>
+
 #include <Solver/Kinsol/Kinsol.h>
 #include <Solver/Kinsol/KinsolSettings.h>
 
@@ -32,20 +32,19 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
     ["kinsolSettings"].set<KinsolSettings>();
 }
 #elif defined(OMC_BUILD) && defined(RUNTIME_STATIC_LINKING)
-#include <nvector/nvector_serial.h>
 #include <kinsol/kinsol.h>
+#include <nvector/nvector_serial.h>
+
+/* Will be used with new sundials version */
+//#include <sunlinsol/sunlinsol_klu.h>         /* Linear solver KLU */
 #ifdef USE_SUNDIALS_LAPACK
-  #include <kinsol/kinsol_lapack.h>
+  #include <sunlinsol/sunlinsol_klu.h>         /* Linear solver KLU */
 #else
-  #include <kinsol/kinsol_spgmr.h>
-  #include <kinsol/kinsol_dense.h>
+  #include <sunlinsol/sunlinsol_spgmr.h>
+  #include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
 #endif //USE_SUNDIALS_LAPACK
-#include <kinsol/kinsol_spbcgs.h>
-#include <kinsol/kinsol_sptfqmr.h>
-//#include <kinsol/kinsol_klu.h>
-#include <kinsol/kinsol_direct.h>
-#include <sundials/sundials_dense.h>
-#include <kinsol/kinsol_impl.h>
+#include <sunlinsol/sunlinsol_spbcgs.h>
+#include <sunlinsol/sunlinsol_sptfqmr.h>
 #include <Solver/Kinsol/Kinsol.h>
 #include <Solver/Kinsol/KinsolSettings.h>
 #else
