@@ -258,6 +258,8 @@ int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nlsData,
   kinsolData->fRes = N_VNew_Serial(size);
   kinsolData->fTmp = N_VNew_Serial(size);
 
+  kinsolData->y = N_VNew_Serial(size);
+
   kinsolData->kinsolMemory = NULL;
 
   resetKinsolMemory(kinsolData, nlsData);
