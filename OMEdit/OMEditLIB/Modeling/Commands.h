@@ -115,7 +115,6 @@ public:
   void undo();
 private:
   Component *mpComponent;
-  Component *mpIconOrDiagramComponent;
   Transformation mOldTransformation;
   Transformation mNewTransformation;
   bool mPositionChanged;
@@ -159,9 +158,6 @@ public:
   void undo();
 private:
   Component *mpComponent;
-  Component *mpIconComponent;
-  GraphicsView *mpIconGraphicsView;
-  GraphicsView *mpDiagramGraphicsView;
   GraphicsView *mpGraphicsView;
   QStringList mParameterNames;
   QStringList mParameterValues;

@@ -296,7 +296,6 @@ UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommand(Com
   : UndoCommand(pParent)
 {
   mpComponent = pComponent;
-  mpIconOrDiagramComponent = 0;
   mOldTransformation = oldTransformation;
   mNewTransformation = newTransformation;
   mPositionChanged = positionChanged;
@@ -311,18 +310,23 @@ void UpdateComponentTransformationsCommand::redoInternal()
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() &&
-      mpComponent->getGraphicsView()->getViewType() == StringHandler::Diagram &&
       pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    mpIconOrDiagramComponent = pModelWidget->getIconGraphicsView()->getComponentObject(mpComponent->getName());
-    if (mpIconOrDiagramComponent && (mOldTransformation == mpIconOrDiagramComponent->mTransformation)) {
-      mpIconOrDiagramComponent->resetTransform();
-      bool state = mpIconOrDiagramComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
-      mpIconOrDiagramComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
-      mpIconOrDiagramComponent->setPos(0, 0);
-      mpIconOrDiagramComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
-      mpIconOrDiagramComponent->setTransform(mNewTransformation.getTransformationMatrix());
-      mpIconOrDiagramComponent->mTransformation = mNewTransformation;
-      mpIconOrDiagramComponent->emitTransformChange(mPositionChanged);
+    GraphicsView *pGraphicsView;
+    if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
+      pGraphicsView = pModelWidget->getDiagramGraphicsView();
+    } else {
+      pGraphicsView = pModelWidget->getIconGraphicsView();
+    }
+    Component *pComponent = pGraphicsView->getComponentObject(mpComponent->getName());
+    if (pComponent && (mOldTransformation == pComponent->mTransformation)) {
+      pComponent->resetTransform();
+      bool state = pComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
+      pComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
+      pComponent->setPos(0, 0);
+      pComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
+      pComponent->setTransform(mNewTransformation.getTransformationMatrix());
+      pComponent->mTransformation = mNewTransformation;
+      pComponent->emitTransformChange(mPositionChanged);
     }
   }
   mpComponent->resetTransform();
@@ -344,18 +348,23 @@ void UpdateComponentTransformationsCommand::undo()
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() &&
-      mpComponent->getGraphicsView()->getViewType() == StringHandler::Diagram &&
       pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    mpIconOrDiagramComponent = pModelWidget->getIconGraphicsView()->getComponentObject(mpComponent->getName());
-    if (mpIconOrDiagramComponent && (mpComponent->mTransformation == mpIconOrDiagramComponent->mTransformation)) {
-      mpIconOrDiagramComponent->resetTransform();
-      bool state = mpIconOrDiagramComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
-      mpIconOrDiagramComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
-      mpIconOrDiagramComponent->setPos(0, 0);
-      mpIconOrDiagramComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
-      mpIconOrDiagramComponent->setTransform(mOldTransformation.getTransformationMatrix());
-      mpIconOrDiagramComponent->mTransformation = mOldTransformation;
-      mpIconOrDiagramComponent->emitTransformChange(mPositionChanged);
+    GraphicsView *pGraphicsView;
+    if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
+      pGraphicsView = pModelWidget->getDiagramGraphicsView();
+    } else {
+      pGraphicsView = pModelWidget->getIconGraphicsView();
+    }
+    Component *pComponent = pGraphicsView->getComponentObject(mpComponent->getName());
+    if (pComponent && (mpComponent->mTransformation == pComponent->mTransformation)) {
+      pComponent->resetTransform();
+      bool state = pComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
+      pComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
+      pComponent->setPos(0, 0);
+      pComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
+      pComponent->setTransform(mOldTransformation.getTransformationMatrix());
+      pComponent->mTransformation = mOldTransformation;
+      pComponent->emitTransformChange(mPositionChanged);
     }
   }
   mpComponent->resetTransform();
@@ -634,9 +643,6 @@ DeleteComponentCommand::DeleteComponentCommand(Component *pComponent, GraphicsVi
   : UndoCommand(pParent)
 {
   mpComponent = pComponent;
-  mpIconComponent = 0;
-  mpIconGraphicsView = pGraphicsView->getModelWidget()->getIconGraphicsView();
-  mpDiagramGraphicsView = pGraphicsView->getModelWidget()->getDiagramGraphicsView();
   mpGraphicsView = pGraphicsView;
   // save component modifiers before deleting if any
   mpComponent->getComponentInfo()->getModifiersMap(MainWindow::instance()->getOMCProxy(), mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mpComponent);
@@ -659,20 +665,26 @@ void DeleteComponentCommand::redoInternal()
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
   if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    // Connector type components exists on icon view as well
-    mpIconComponent = mpIconGraphicsView->getComponentObject(mpComponent->getName());
-    if (mpIconComponent) {
-      mpIconGraphicsView->removeItem(mpIconComponent);
-      mpIconGraphicsView->removeItem(mpIconComponent->getOriginItem());
-      mpIconGraphicsView->deleteComponentFromList(mpIconComponent);
-      mpIconGraphicsView->addComponentToOutOfSceneList(mpIconComponent);
-      mpIconComponent->emitDeleted();
+    // Connector type components exists on both icon and diagram views
+    GraphicsView *pGraphicsView;
+    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+      pGraphicsView = mpGraphicsView->getModelWidget()->getDiagramGraphicsView();
+    } else {
+      pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
+    }
+    Component *pComponent = pGraphicsView->getComponentObject(mpComponent->getName());
+    if (pComponent) {
+      pGraphicsView->removeItem(pComponent);
+      pGraphicsView->removeItem(pComponent->getOriginItem());
+      pGraphicsView->deleteComponentFromList(pComponent);
+      pGraphicsView->addComponentToOutOfSceneList(pComponent);
+      pComponent->emitDeleted();
     }
   }
-  mpDiagramGraphicsView->removeItem(mpComponent);
-  mpDiagramGraphicsView->removeItem(mpComponent->getOriginItem());
-  mpDiagramGraphicsView->deleteComponentFromList(mpComponent);
-  mpDiagramGraphicsView->addComponentToOutOfSceneList(mpComponent);
+  mpGraphicsView->removeItem(mpComponent);
+  mpGraphicsView->removeItem(mpComponent->getOriginItem());
+  mpGraphicsView->deleteComponentFromList(mpComponent);
+  mpGraphicsView->addComponentToOutOfSceneList(mpComponent);
   mpComponent->emitDeleted();
   mpGraphicsView->deleteComponentFromClass(mpComponent);
 }
@@ -686,19 +698,26 @@ void DeleteComponentCommand::undo()
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
   if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    // Connector type components exists on icon view as well
-    if (mpIconComponent) {
-      mpIconGraphicsView->addItem(mpIconComponent);
-      mpIconGraphicsView->addItem(mpIconComponent->getOriginItem());
-      mpIconGraphicsView->addComponentToList(mpIconComponent);
-      mpIconGraphicsView->deleteComponentFromOutOfSceneList(mpIconComponent);
-      mpIconComponent->emitAdded();
+    // Connector type components exists on both icon and diagram views
+    GraphicsView *pGraphicsView;
+    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+      pGraphicsView = mpGraphicsView->getModelWidget()->getDiagramGraphicsView();
+    } else {
+      pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
+    }
+    Component *pComponent = pGraphicsView->getComponentObject(mpComponent->getName());
+    if (pComponent) {
+      pGraphicsView->addItem(pComponent);
+      pGraphicsView->addItem(pComponent->getOriginItem());
+      pGraphicsView->addComponentToList(pComponent);
+      pGraphicsView->deleteComponentFromOutOfSceneList(pComponent);
+      pComponent->emitAdded();
     }
   }
-  mpDiagramGraphicsView->addItem(mpComponent);
-  mpDiagramGraphicsView->addItem(mpComponent->getOriginItem());
-  mpDiagramGraphicsView->addComponentToList(mpComponent);
-  mpDiagramGraphicsView->deleteComponentFromOutOfSceneList(mpComponent);
+  mpGraphicsView->addItem(mpComponent);
+  mpGraphicsView->addItem(mpComponent->getOriginItem());
+  mpGraphicsView->addComponentToList(mpComponent);
+  mpGraphicsView->deleteComponentFromOutOfSceneList(mpComponent);
   mpComponent->emitAdded();
   mpGraphicsView->addComponentToClass(mpComponent);
   UpdateComponentAttributesCommand::updateComponentModifiers(mpComponent, *mpComponent->getComponentInfo());
