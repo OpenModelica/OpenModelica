@@ -37,7 +37,7 @@ BUILDTYPE=Debug
 endif
 
 
-.PHONY: omc omc-diff omlibrary-core omplot omedit omedit-testsuite omsimulator omnotebook omshell omoptim omsens omsens_qt
+.PHONY: omc omc-diff omlibrary-core omplot omedit omedit-testsuite omsimulator omnotebook omshell omoptim omsens omsens_qt omparser
 
 all: omc omc-diff omlibrary-core
 
