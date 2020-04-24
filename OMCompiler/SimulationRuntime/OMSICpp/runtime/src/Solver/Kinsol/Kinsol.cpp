@@ -430,7 +430,7 @@ void Kinsol::solve()
     ////////////////////////////
     if (_usedCompletePivoting || _usedIterativeSolver)
     {
-        KINDense(_kinMem, _dimSys);
+        //KINDense(_kinMem, _dimSys);
         _usedCompletePivoting = false;
         _usedIterativeSolver = false;
     }
@@ -512,6 +512,7 @@ void Kinsol::solve()
 
     //Try iterative Solvers
     /////////////////////////////////
+    /*
     _usedIterativeSolver = true;
 
     for (int i = 0; i < _dimSys; i++) // Reset Scaling
@@ -585,6 +586,7 @@ void Kinsol::solve()
         _algLoop->evaluate();
         return;
     }
+    */
 
     if (_eventRetry)
     {

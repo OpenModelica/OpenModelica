@@ -479,6 +479,7 @@ int kinsolOde(SOLVER_INFO* solverInfo)  /* TODO: Unify this function with nlsKin
               LOG_SOLVER, 0,
               "Restart Kinsol: change linear solver to KINDense.");
 #if 0
+        /* TODO AHeu: Do something with this... */
         } else if (retries == 1) {
           KINSptfqmr(kinOde->kData->kin_mem, kinOde->N * kinOde->nlp->nStates); /* TODO: Is now part of spgmr */
           use_dense = FALSE;

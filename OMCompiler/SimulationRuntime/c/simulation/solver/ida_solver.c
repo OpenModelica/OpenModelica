@@ -569,6 +569,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
 #endif
       break;
     case INTERNALNUMJAC:
+      /* TODO: Set a preconditioner if possible */
       break;
     default:
       throwStreamPrint(threadData,"unrecognized jacobian calculation method %s", (const char*)omc_flagValue[FLAG_JACOBIAN]);
