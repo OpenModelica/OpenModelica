@@ -839,3 +839,17 @@ void SimulationOutputWidget::keyPressEvent(QKeyEvent *event)
   }
   QWidget::keyPressEvent(event);
 }
+
+/*!
+ * \brief SimulationOutputWidget::closeEvent
+ * Reimplementation of QWidget::closeEvent(). Ignores the event if compilation or simulation process is running.
+ * \param event
+ */
+void SimulationOutputWidget::closeEvent(QCloseEvent *event)
+{
+  if (mpSimulationProcessThread->isCompilationProcessRunning() || mpSimulationProcessThread->isSimulationProcessRunning()) {
+    event->ignore();
+  } else {
+    event->accept();
+  }
+}

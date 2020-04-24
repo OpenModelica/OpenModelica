@@ -131,6 +131,7 @@ public slots:
   void openTransformationBrowser(QUrl url);
 protected:
   virtual void keyPressEvent(QKeyEvent *event) override;
+  virtual void closeEvent(QCloseEvent *event) override;
 };
 
 #endif // SIMULATIONOUTPUTWIDGET_H
