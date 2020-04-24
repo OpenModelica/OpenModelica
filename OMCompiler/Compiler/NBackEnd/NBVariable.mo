@@ -40,19 +40,27 @@ encapsulated package NBVariable
 "
 
 public
-  //import ExpandableArray;
-  import Variable = NFVariable;
-  import Type = NFType;
-  import Binding = NFBinding;
-  import Prefixes = NFPrefixes;
-  import Component = NFComponent;
+  //OF Imports
+  import SCodeUtil;
+
+  //NF Imports
   import BackendExtension = NFBackendExtension;
   import BackendInfo = NFBackendExtension.BackendInfo;
-  import VariableKind = NFBackendExtension.VariableKind;
+  import Binding = NFBinding;
+  import Component = NFComponent;
   import ComponentRef = NFComponentRef;
-  import BaseHashTable;
-  import Util;
+  import Prefixes = NFPrefixes;
+  import Type = NFType;
+  import Variable = NFVariable;
+  import VariableKind = NFBackendExtension.VariableKind;
+
+  //Util Imports
   import Array;
+  import BaseHashTable;
+  import HashTable3;
+  import HashTableCG;
+  import StringUtil;
+  import Util;
 
   /* ==========================================================================
       We define two different arrays of variables.
@@ -61,6 +69,12 @@ public
   ========================================================================== */
 public
 
+  // ToDo! Add BackendInfo to Variable.toString or make own dump.
+
+  constant Variable DUMMY_VARIABLE = Variable.VARIABLE(ComponentRef.EMPTY(), Type.ANY(),
+    NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PROTECTED, NFComponent.DEFAULT_ATTR,
+    {}, NONE(), SCodeUtil.dummyInfo, NFBackendExtension.DUMMY_BACKEND_INFO);
+
   uniontype Variables
     record VARIABLES
       array<list<CrefIndex>> crefIndices "HashTB, cref->indx";
@@ -68,15 +82,31 @@ public
       Integer bucketSize "bucket size";
       Integer numberOfVars "no. of vars";
     end VARIABLES;
+
+    function toString
+      input Variables variables;
+      input output String str = "";
+    algorithm
+        str := StringUtil.headline_3(str + " Variables " + "(" + intString(variables.numberOfVars) + ")") + "\n";
+        str := str + VariableArray.toString(variables.varArr);
+    end toString;
   end Variables;
 
   uniontype VariablePointers
     record VARIABLE_POINTERS
       array<list<CrefIndex>> crefIndices "HashTB, cref->indx";
-      VariablePointerArray varArr "Array of variables";
+      VariablePointerArray varArr "Array of variable pointers";
       Integer bucketSize "bucket size";
-      Integer numberOfVars "no. of vars";
+      Integer numberOfVars "no. of variable pointers";
     end VARIABLE_POINTERS;
+
+    function toString
+      input VariablePointers variables;
+      input output String str = "";
+    algorithm
+        str := StringUtil.headline_4(str + " VariablePointers " + "(" + intString(variables.numberOfVars) + ")") + "\n";
+        str := str + VariablePointerArray.toString(variables.varArr);
+    end toString;
   end VariablePointers;
 
   uniontype CrefIndex
@@ -94,6 +124,20 @@ public
       Integer numberOfElements "no. elements";
       array<Option<Variable>> varOptArr;
     end VARIABLE_ARRAY;
+
+    function toString
+      input VariableArray varArr;
+      output String str = "";
+    protected
+      Variable var;
+    algorithm
+      for i in 1:arrayLength(varArr.varOptArr) loop
+        if isSome(varArr.varOptArr[i]) then
+          SOME(var) := varArr.varOptArr[i];
+          str := str + "[" + intString(i) + "] " + Variable.toString(var) + "\n";
+        end if;
+      end for;
+    end toString;
   end VariableArray;
 
   uniontype VariablePointerArray
@@ -101,6 +145,20 @@ public
       Integer numberOfElements "no. elements";
       array<Option<Pointer<Variable>>> varOptArr;
     end VARIABLE_POINTER_ARRAY;
+
+    function toString
+      input VariablePointerArray varArr;
+      output String str = "";
+    protected
+      Pointer<Variable> var;
+    algorithm
+      for i in 1:arrayLength(varArr.varOptArr) loop
+        if isSome(varArr.varOptArr[i]) then
+          SOME(var) := varArr.varOptArr[i];
+          str := str + "[" + intString(i) + "] " + Variable.toString(Pointer.access(var)) + "\n";
+        end if;
+      end for;
+    end toString;
   end VariablePointerArray;
 
   uniontype VarData
@@ -109,93 +167,181 @@ public
 
     record VAR_DATA_SIM
       "Only to be used for simulation systems."
-      Variables variables         "All variables";
+      Variables variables                 "All variables";
       /* subset of full variable array */
-      VariablePointers unknowns          "All state derivatives, algebraic variables,
-                                  discrete variables";
-      VariablePointers knowns            "Parameters, constants";
-      VariablePointers auxiliaries       "Variables created by the backend known to be solved
-                                  by given binding. E.g. $cse";
-      VariablePointers aliasVars         "Variables removed due to alias removal";
+      VariablePointers unknowns           "All state derivatives, algebraic variables,
+                                          discrete variables";
+      VariablePointers knowns             "Parameters, constants";
+      VariablePointers auxiliaries        "Variables created by the backend known to be solved
+                                          by given binding. E.g. $cse";
+      VariablePointers aliasVars          "Variables removed due to alias removal";
 
-      StateOrder stateOrder       "StateOrder dy/dt = x";
+      StateOrder stateOrder               "StateOrder dy/dt = x";
       /* subset of unknowns */
-      VariablePointers states            "States";
-      VariablePointers derivatives       "State derivatives (der(x) -> $DER.x)";
-      VariablePointers algebraics        "Algebraic variables";
-      VariablePointers discretes         "Discrete variables";
-      VariablePointers previous          "Previous discrete variables (pre(d) -> $PRE.d)";
+      VariablePointers states             "States";
+      VariablePointers derivatives        "State derivatives (der(x) -> $DER.x)";
+      VariablePointers algebraics         "Algebraic variables";
+      VariablePointers discretes          "Discrete variables";
+      VariablePointers previous           "Previous discrete variables (pre(d) -> $PRE.d)";
       /* subset of knowns */
-      VariablePointers parameters        "Parameters";
-      VariablePointers constants         "Constants";
+      VariablePointers parameters         "Parameters";
+      VariablePointers constants          "Constants";
     end VAR_DATA_SIM;
 
     record VAR_DATA_JAC
       "Only to be used for Jacobians."
-      Variables variables         "All variables";
+      Variables variables                 "All jacobian variables";
       /* subset of full variable array */
-      VariablePointers unknowns          "All state derivatives, algebraic variables,
-                                  discrete variables";
-      VariablePointers knowns            "Parameters, constants";
-      VariablePointers auxiliaries       "Variables created by the backend known to be solved
-                                  by given binding. E.g. $cse";
-      VariablePointers aliasVars         "Variables removed due to alias removal";
+      VariablePointers unknowns           "All state derivatives, algebraic variables,
+                                          discrete variables";
+      VariablePointers knowns             "Parameters, constants";
+      VariablePointers auxiliaries        "Variables created by the backend known to be solved
+                                          by given binding. E.g. $cse";
+      VariablePointers aliasVars          "Variables removed due to alias removal";
 
       /* subset of global full variable array */
-      VariablePointers diffVars          "Differentiation variables z where J = dF/dz";
-      VariablePointers dependencies      "All occurring unknowns for linearity analysis";
+      VariablePointers diffVars           "Differentiation variables z where J = dF/dz";
+      VariablePointers dependencies       "All occurring unknowns for linearity analysis";
 
       /* subset of local unknowns */
-      VariablePointers resultVars        "Result variable depending on current seed
-                                  ($RES.[jacname].[eq_idx])";
-      VariablePointers tmpVars           "Temporary variables (inner partial derivatives)
-                                  dy/dz with y!=z for all y and z
-                                  ($TMP.[jacname].y)";
+      VariablePointers resultVars         "Result variable depending on current seed
+                                          ($RES.[jacname].[eq_idx])";
+      VariablePointers tmpVars            "Temporary variables (inner partial derivatives)
+                                          dy/dz with y!=z for all y and z
+                                          ($TMP.[jacname].y)";
 
       /* subset of auxiliaries */
-      VariablePointers seedVars          "Seed variables representing a generic derivative
-                                  dx/dz which is 1 for x==z and 0 otherwise.
-                                  ($SEED.[jacname].x)";
+      VariablePointers seedVars           "Seed variables representing a generic derivative
+                                          dx/dz which is 1 for x==z and 0 otherwise.
+                                          ($SEED.[jacname].x)";
     end VAR_DATA_JAC;
 
     record VAR_DATA_HESS
       "Only to be used for Hessians."
-      Variables variables         "All variables";
+      Variables variables                 "All hessian variables";
       /* subset of full variable array */
-      VariablePointers unknowns          "All state derivatives, algebraic variables,
-                                  discrete variables";
-      VariablePointers knowns            "Parameters, constants";
-      VariablePointers auxiliaries       "Variables created by the backend known to be solved
-                                  by given binding. E.g. $cse";
-      VariablePointers aliasVars         "Variables removed due to alias removal";
+      VariablePointers unknowns           "All state derivatives, algebraic variables,
+                                          discrete variables";
+      VariablePointers knowns             "Parameters, constants";
+      VariablePointers auxiliaries        "Variables created by the backend known to be solved
+                                          by given binding. E.g. $cse";
+      VariablePointers aliasVars          "Variables removed due to alias removal";
 
       /* subset of global full variable array */
-      VariablePointers diffVars          "Differentiation variables z where J = dF/dz";
-      VariablePointers dependencies      "All occurring unknowns for linearity analysis";
+      VariablePointers diffVars           "Differentiation variables z where J = dF/dz";
+      VariablePointers dependencies       "All occurring unknowns for linearity analysis";
 
       /* subset of local unknowns */
-      VariablePointers resultVars        "Result variable depending on current seed
-                                  ($RES.[jacname].[eq_idx])";
-      VariablePointers tmpVars           "Temporary variables (inner partial derivatives)
-                                  dy/dz with y!=z for all y and z
-                                  ($TMP.[jacname].y)";
+      VariablePointers resultVars         "Result variable depending on current seed
+                                          ($RES.[jacname].[eq_idx])";
+      VariablePointers tmpVars            "Temporary variables (inner partial derivatives)
+                                          dy/dz with y!=z for all y and z
+                                          ($TMP.[jacname].y)";
 
       /* subset of auxiliaries */
-      VariablePointers seedVars          "Seed variables representing a generic derivative
-                                  dx/dz which is 1 for x==z and 0 otherwise.
-                                  ($SEED.[jacname].x)";
+      VariablePointers seedVars           "Seed variables representing a generic derivative
+                                          dx/dz which is 1 for x==z and 0 otherwise.
+                                          ($SEED.[jacname].x)";
       /* subset of auxiliaries */
       VariablePointers seedVars2          "Second seed variables representing a generic
                                           derivative dx/dz which is 1 for x==z and 0 otherwise.
                                           ($SEED2.[jacname].x)";
       Option<VariablePointers> lambdaVars "Lambda variables for optimization";
     end VAR_DATA_HESS;
+
+    function toString
+      /* ToDo! Add StateOrder */
+      input VarData varData;
+      output String str;
+    algorithm
+      str := match varData
+        local
+          VarData qualVarData;
+        case qualVarData as VAR_DATA_SIM() then Variables.toString(varData.variables, "Simulation");
+        case qualVarData as VAR_DATA_JAC() then Variables.toString(varData.variables, "Jacobian");
+        case qualVarData as VAR_DATA_HESS() then Variables.toString(varData.variables, "Hessian");
+        else fail();
+      end match;
+    end toString;
+
+    function toStringVerbose
+      input VarData varData;
+      input Boolean full = false;
+      output String str;
+    algorithm
+      str := match varData
+        local
+          VarData qualVarData;
+          String tmp = "";
+          VariablePointers lambdaVars;
+        case qualVarData as VAR_DATA_SIM() algorithm
+          tmp := StringUtil.headline_2("Variable Data Simulation") + "\n" +
+            Variables.toString(varData.variables, "All") + "\n" +
+            VariablePointers.toString(varData.unknowns, "Unknown") + "\n" +
+            VariablePointers.toString(varData.knowns, "Known") + "\n" +
+            VariablePointers.toString(varData.auxiliaries, "Auxiliary") + "\n" +
+            VariablePointers.toString(varData.aliasVars, "Alias") + "\n";
+          if full then
+            tmp := tmp + VariablePointers.toString(varData.states, "State") + "\n" +
+              VariablePointers.toString(varData.derivatives, "Derivative") + "\n" +
+              VariablePointers.toString(varData.algebraics, "Algebraic") + "\n" +
+              VariablePointers.toString(varData.discretes, "Discrete") + "\n" +
+              VariablePointers.toString(varData.previous, "Previous") + "\n" +
+              VariablePointers.toString(varData.parameters, "Parameter") + "\n" +
+              VariablePointers.toString(varData.constants, "Constant") + "\n";
+          end if;
+        then tmp;
+
+        case qualVarData as VAR_DATA_JAC() algorithm
+          tmp := StringUtil.headline_2("Variable Data Jacobian") + "\n" +
+            Variables.toString(varData.variables, "All") + "\n" +
+            VariablePointers.toString(varData.unknowns, "Unknown") + "\n" +
+            VariablePointers.toString(varData.knowns, "Known") + "\n" +
+            VariablePointers.toString(varData.auxiliaries, "Auxiliary") + "\n" +
+            VariablePointers.toString(varData.aliasVars, "Alias") + "\n";
+          if full then
+            tmp := tmp + VariablePointers.toString(varData.diffVars, "Differentiation") + "\n" +
+              VariablePointers.toString(varData.dependencies, "Dependencies") + "\n" +
+              VariablePointers.toString(varData.resultVars, "Result") + "\n" +
+              VariablePointers.toString(varData.tmpVars, "Temporary") + "\n" +
+              VariablePointers.toString(varData.seedVars, "Seed") + "\n";
+          end if;
+        then tmp;
+
+        case qualVarData as VAR_DATA_HESS()algorithm
+          tmp := StringUtil.headline_2("Variable Data Hessian") + "\n" +
+            Variables.toString(varData.variables, "All") + "\n" +
+            VariablePointers.toString(varData.unknowns, "Unknown") + "\n" +
+            VariablePointers.toString(varData.knowns, "Known") + "\n" +
+            VariablePointers.toString(varData.auxiliaries, "Auxiliary") + "\n" +
+            VariablePointers.toString(varData.aliasVars, "Alias") + "\n";
+          if full then
+            tmp := tmp + VariablePointers.toString(varData.diffVars, "Differentiation") + "\n" +
+              VariablePointers.toString(varData.dependencies, "Dependencies") + "\n" +
+              VariablePointers.toString(varData.resultVars, "Result") + "\n" +
+              VariablePointers.toString(varData.tmpVars, "Temporary") + "\n" +
+              VariablePointers.toString(varData.seedVars, "First Seed") + "\n" +
+              VariablePointers.toString(varData.seedVars2, "Second Seed") + "\n";
+              if isSome(varData.lambdaVars) then
+                SOME(lambdaVars) := varData.lambdaVars;
+                tmp := tmp + VariablePointers.toString(lambdaVars, "Lagrangian Lambda") + "\n";
+              end if;
+          end if;
+        then tmp;
+
+        else fail();
+      end match;
+    end toStringVerbose;
   end VarData;
 
   uniontype StateOrder
     record STATE_ORDER
-      /* MOAR HERE */
+      HashTableCG.HashTable hashTable "x -> dx";
+      HashTable3.HashTable invHashTable "dx -> {x,y,z}";
     end STATE_ORDER;
+    record NO_STATE_ORDER
+      "Index reduction disabled; don't need big hashtables"
+    end NO_STATE_ORDER;
   end StateOrder;
 
   function emptyVariables
@@ -204,31 +350,30 @@ public
     output Variables variables;
   protected
     Integer arr_size, bucketSize;
-    Variable dummy = Variable.fromCref(ComponentRef.EMPTY());
     VariableArray varArr;
   algorithm
     arr_size := max(size, BaseHashTable.lowBucketSize);
-    bucketSize :=  Util.nextPrime(realInt(intReal(arr_size) * 1.4));
-    varArr := VARIABLE_ARRAY(0, arrayCreate(arr_size, SOME(dummy)));
+    bucketSize :=  realInt(intReal(arr_size) * 1.4);
+    varArr := VARIABLE_ARRAY(0, arrayCreate(arr_size, NONE()));
     variables := VARIABLES(arrayCreate(bucketSize, {}), varArr, bucketSize, 0);
   end emptyVariables;
 
   function emptyVariablePointers
-    "Creates an empty VariablePointers object with minimal given size."
+    "Creates an empty VariablePointers using given size * 1.4."
     input Integer size = BaseHashTable.bigBucketSize;
     output VariablePointers variables;
   protected
     Integer arr_size, bucketSize;
-    Variable dummy = Variable.fromCref(ComponentRef.EMPTY());
     VariablePointerArray varArr;
   algorithm
     arr_size := max(size, BaseHashTable.lowBucketSize);
-    bucketSize :=  Util.nextPrime(realInt(intReal(arr_size) * 1.4));
-    varArr := VARIABLE_POINTER_ARRAY(0, arrayCreate(arr_size, SOME(Pointer.create(dummy))));
+    bucketSize :=  realInt(intReal(arr_size) * 1.4);
+    varArr := VARIABLE_POINTER_ARRAY(0, arrayCreate(arr_size, NONE()));
     variables := VARIABLE_POINTERS(arrayCreate(bucketSize, {}), varArr, bucketSize, 0);
   end emptyVariablePointers;
 
   function fromList
+    "Creates Variables from a Variable list."
     input list<Variable> var_lst;
     output Variables variables;
   algorithm
@@ -237,6 +382,7 @@ public
   end fromList;
 
   function fromPointerList
+    "Creates VariablePointers from a VariablePointer list."
     input list<Pointer<Variable>> var_lst;
     output VariablePointers variables;
   algorithm
@@ -286,7 +432,7 @@ public
   end addVar;
 
   function addVarPointer
-    "Adds a variable to the set, or updates it if it already exists."
+    "Adds a variable pointer to the set, or updates it if it already exists."
     input Pointer<Variable> varPointer;
     input output VariablePointers variables;
   protected
@@ -311,6 +457,7 @@ public
   end addVarPointer;
 
   function setVarArrayAt
+    "Sets a Variable at a specific index in the VariableArray."
     input output VariableArray varArr;
     input Integer index;
     input Variable var;
@@ -320,6 +467,7 @@ public
   end setVarArrayAt;
 
   function setVarPointerArrayAt
+    "Sets a VariablePointer at a specific index in the VariablePointerArray."
     input output VariablePointerArray varArr;
     input Integer index;
     input Pointer<Variable> var;
@@ -329,6 +477,7 @@ public
   end setVarPointerArrayAt;
 
   function setVarAt
+    "Sets a Variable at a specific index in the VariableArray."
     input output Variables variables;
     input Integer index;
     input Variable var;
@@ -337,6 +486,7 @@ public
   end setVarAt;
 
   function setVarPointerAt
+    "Sets a Variable pointer at a specific index in the VariablePointerArray."
     input output VariablePointers variables;
     input Integer index;
     input Pointer<Variable> var;
@@ -359,9 +509,8 @@ public
   end appendVar;
 
   function appendVarPointer
-  "author: PA
-    Adds a variable last to the VariableArray, increasing array size
-    if no space left by factor 1.4"
+    "Adds a variable pointer last to the VariablePointerArray, increasing array
+    size if no space left by factor 1.4"
     input output VariablePointerArray varArr;
     input Pointer<Variable> var;
   protected
@@ -373,6 +522,7 @@ public
   end appendVarPointer;
 
   function getVarAt
+    "Returns the variable at given index. If there is none it fails."
     input Variables variables;
     input Integer index;
     output Variable var;
@@ -385,6 +535,7 @@ public
   end getVarAt;
 
   function getVarPointerAt
+    "Returns the variable pointer at given index. If there is none it fails."
     input VariablePointers variables;
     input Integer index;
     output Pointer<Variable> var;
@@ -395,22 +546,37 @@ public
       fail();
     end try;
   end getVarPointerAt;
-/*
-  function getVarBackendInfo
-    input Integer index;
-    input Variables variables;
-    output BackendInfo backendInfo;
-  protected
-    Variable var;
+
+  function setVariableKind
+    input output Variable var;
+    input BackendExtension.VariableKind varKind;
   algorithm
-    var := ExpandableArray.get(index, variables);
-    backendInfo := var.backendinfo;
-  end getVarBackendInfo;
-*/
+    var := match var
+      local
+        BackendExtension.BackendInfo backendinfo;
+      case NFVariable.VARIABLE(backendinfo = backendinfo) algorithm
+        backendinfo.varKind := varKind;
+        var.backendinfo := backendinfo;
+      then var;
+    end match;
+  end setVariableKind;
 
+  function isDummyVariable
+    "Returns true, if the variable is a dummy variable.
+    Note: !Only works in the backend, will return true for any variable if used
+    during frontend!"
+    input Variable var;
+    output Boolean isDummy;
+  algorithm
+    isDummy := match var
+      case NFVariable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.FRONTEND_DUMMY())) then true;
+      else false;
+    end match;
+  end isDummyVariable;
 protected
-
   function crefIndexEqualCref
+    "Checks the component reference of a CrefIndex object and a reference cref
+    for equality."
     input ComponentRef cr1;
     input CrefIndex crefIndex;
     output Boolean outMatch;

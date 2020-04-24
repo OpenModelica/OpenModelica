@@ -35,7 +35,6 @@ encapsulated uniontype NFFlatModel
   import Variable = NFVariable;
 
 protected
-  import DummyBackendInfo = NFBackendExtension.DummyBackendInfo;
   import Statement = NFStatement;
   import NFFunction.Function;
   import Expression = NFExpression;
@@ -614,7 +613,7 @@ public
     end if;
 
     recordVar := Variable.VARIABLE(recordName, record_ty, record_binding, InstNode.visibility(record_node),
-      Component.getAttributes(record_comp), {}, Component.comment(record_comp), InstNode.info(record_node), DummyBackendInfo);
+      Component.getAttributes(record_comp), {}, Component.comment(record_comp), InstNode.info(record_node), NFBackendExtension.DUMMY_BACKEND_INFO);
   end reconstructRecordInstance;
 
   annotation(__OpenModelica_Interface="frontend");

@@ -46,7 +46,7 @@ public
     end BACKEND_INFO;
   end BackendInfo;
 
-  constant BackendInfo DummyBackendInfo = BACKEND_INFO(FRONTEND_DUMMY());
+  constant BackendInfo DUMMY_BACKEND_INFO = BACKEND_INFO(FRONTEND_DUMMY());
 
   uniontype VariableKind
     record ALGEBRAIC end ALGEBRAIC;
