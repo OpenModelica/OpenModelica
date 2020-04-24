@@ -15,3 +15,14 @@ QMAKE_CXXFLAGS = @CXXFLAGS@ @CPPFLAGS@
 QMAKE_LFLAGS += @LDFLAGS@
 
 @QMAKE_CONFIG_OSG@
+
+# required for backtrace
+# On unix we use backtrace of execinfo.h which requires -rdynamic
+# The symbol names may be unavailable without the use of special linker
+# options.  For systems using the GNU linker, it is necessary to use
+# the -rdynamic linker option.  Note that names of "static" functions
+# are not exposed, and won't be available in the backtrace.
+CONFIG(release, debug|release) {
+  QMAKE_CXXFLAGS += -g
+  QMAKE_LFLAGS_RELEASE = -rdynamic
+}

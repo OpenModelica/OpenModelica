@@ -123,8 +123,19 @@ void signalHandler(int signalNumber)
     // create readable strings to each frame.
     char** symbollist = backtrace_symbols(addrlist, addrlen);
     // print the stack trace.
-    for (int i = 4; i < addrlen; i++) {
+    for (int i = 0; i < addrlen; i++) {
       stackTrace.append(QString("%1\n").arg(symbollist[i]));
+
+      char syscom[PATH_MAX];
+      sprintf(syscom,"addr2line %p -e %s > addr2lineOutput.txt", addrlist[i], qApp->applicationFilePath().toStdString().c_str());
+      system(syscom);
+      QFile file(QString("addr2lineOutput.txt"));
+      if (file.open(QIODevice::ReadOnly)) {
+        stackTrace.append(QString(file.readAll()));
+        file.close();
+      } else {
+        stackTrace.append(QString("Cannot read addr2lineOutput.txt file %1. addr2line has probably failed.").arg(file.errorString()));
+      }
     }
     free(symbollist);
   }
