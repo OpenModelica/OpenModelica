@@ -891,30 +891,11 @@ algorithm
           if not (Config.getGraphicsExpMode() and stringEq(name, "graphics")) then
             binding := TypeCheck.matchBinding(binding, c.ty, name, node);
           end if;
-          comp_var := Component.variability(c);
-          comp_eff_var := Prefixes.effectiveVariability(comp_var);
-          bind_var := Binding.variability(binding);
-          bind_eff_var := Prefixes.effectiveVariability(bind_var);
 
-          if bind_eff_var > comp_eff_var and ExpOrigin.flagNotSet(origin, ExpOrigin.FUNCTION) then
-            Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING, {
-              name, Prefixes.variabilityString(comp_eff_var),
-              "'" + Binding.toString(c.binding) + "'", Prefixes.variabilityString(bind_eff_var)},
-              Binding.getInfo(binding));
-            fail();
-          end if;
+          comp_var := checkComponentBindingVariability(name, c, binding, origin);
 
-          // Mark parameters that have a structural cref as binding as also
-          // structural. This is perhaps not optimal, but is required right now
-          // to avoid structural singularity and other issues.
-          if bind_var == Variability.STRUCTURAL_PARAMETER and
-             comp_var == Variability.PARAMETER and
-             Binding.isCrefExp(binding) then
-            attrs.variability := bind_var;
-            c.attributes := attrs;
-          elseif bind_var == Variability.NON_STRUCTURAL_PARAMETER and
-                 comp_var == Variability.PARAMETER then
-            attrs.variability := bind_var;
+          if comp_var <> attrs.variability then
+            attrs.variability := comp_var;
             c.attributes := attrs;
           end if;
         else
@@ -946,6 +927,10 @@ algorithm
       algorithm
         checkBindingEach(c.binding);
 
+        if Binding.isTyped(c.binding) then
+          c.binding := TypeCheck.matchBinding(c.binding, c.ty, InstNode.name(component), node);
+        end if;
+
         if Binding.isBound(c.condition) then
           c.condition := typeComponentCondition(c.condition, origin);
           InstNode.updateComponent(c, node);
@@ -954,6 +939,26 @@ algorithm
         if typeChildren then
           typeBindings(c.classInst, component, origin);
         end if;
+      then
+        ();
+
+    // An untyped component with a binding. This might happen when typing a
+    // dimension and having to evaluate the binding of a not yet typed
+    // component. Type only the binding and let the case above handle the rest.
+    case Component.UNTYPED_COMPONENT(binding = Binding.UNTYPED_BINDING(), attributes = attrs)
+      algorithm
+        name := InstNode.name(component);
+        checkBindingEach(c.binding);
+        binding := typeBinding(c.binding, ExpOrigin.setFlag(origin, ExpOrigin.BINDING));
+        comp_var := checkComponentBindingVariability(name, c, binding, origin);
+
+        if comp_var <> attrs.variability then
+          attrs.variability := comp_var;
+          c.attributes := attrs;
+        end if;
+
+        c.binding := binding;
+        InstNode.updateComponent(c, node);
       then
         ();
 
@@ -975,6 +980,43 @@ algorithm
 
   end match;
 end typeComponentBinding;
+
+function checkComponentBindingVariability
+  input String name;
+  input Component component;
+  input Binding binding;
+  input ExpOrigin.Type origin;
+  output Variability var;
+protected
+  Variability comp_var, comp_eff_var, bind_var, bind_eff_var;
+algorithm
+  comp_var := Component.variability(component);
+  comp_eff_var := Prefixes.effectiveVariability(comp_var);
+  bind_var := Binding.variability(binding);
+  bind_eff_var := Prefixes.effectiveVariability(bind_var);
+
+  if bind_eff_var > comp_eff_var and ExpOrigin.flagNotSet(origin, ExpOrigin.FUNCTION) then
+    Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING, {
+        name,
+        Prefixes.variabilityString(comp_eff_var),
+        "'" + Binding.toString(Component.getBinding(component)) + "'",
+        Prefixes.variabilityString(bind_eff_var)
+      },
+      Binding.getInfo(binding));
+    fail();
+  end if;
+
+  // Mark parameters that have a structural cref as binding as also
+  // structural. This is perhaps not optimal, but is required right now
+  // to avoid structural singularity and other issues.
+  if comp_var == Variability.PARAMETER and
+     ((bind_var == Variability.STRUCTURAL_PARAMETER and Binding.isCrefExp(binding)) or
+      bind_var == Variability.NON_STRUCTURAL_PARAMETER) then
+    var := bind_var;
+  else
+    var := comp_var;
+  end if;
+end checkComponentBindingVariability;
 
 function typeBinding
   input output Binding binding;
