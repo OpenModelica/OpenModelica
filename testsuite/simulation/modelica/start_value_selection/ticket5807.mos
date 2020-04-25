@@ -34,20 +34,20 @@ simulate(TestInitStart); getErrorString();
 // LOG_NLS_V         | info    | TIME:   0.0000000000e+00
 // LOG_NLS_V         | info    | number of function calls (so far!):  0
 // LOG_NLS_V         | info    | System values [1-dim]
-// |                 | |       | |               -2 
+// |                 | |       | |               -2
 // LOG_NLS_V         | info    | Nominal values [1-dim]
-// |                 | |       | |                1 
+// |                 | |       | |                1
 // LOG_NLS_V         | info    | Scaling values [2-dim]
-// |                 | |       | |                2                1 
+// |                 | |       | |                2                1
 // LOG_NLS_V         | info    | x0 [1-dim]
-// |                 | |       | |               -2 
+// |                 | |       | |               -2
 // LOG_NLS_V         | info    | NO ITERATION NECESSARY!!!
 // LOG_NLS_V         | info    | ******************************************************
 // LOG_NLS_V         | info    | SYSTEM SOLVED
 // LOG_NLS_V         | info    | number of function calls:  1
 // LOG_NLS_V         | info    | ------------------------------------------------------
 // LOG_NLS_V         | info    | Solution [1-dim]
-// |                 | |       | |               -2 
+// |                 | |       | |               -2
 // LOG_NLS           | info    | | Solution status: SOLVED
 // |                 | |       | | |  number of iterations           : 0
 // |                 | |       | | |  number of function evaluations : 1
