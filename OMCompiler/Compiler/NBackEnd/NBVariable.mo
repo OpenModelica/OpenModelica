@@ -561,6 +561,20 @@ public
     end match;
   end setVariableKind;
 
+  function setVariableAttributes
+    input output Variable var;
+    input Option<DAE.VariableAttributes> variableAttributes;
+  algorithm
+    var := match var
+      local
+        BackendExtension.BackendInfo backendinfo;
+      case NFVariable.VARIABLE(backendinfo = backendinfo) algorithm
+        backendinfo.attributes := variableAttributes;
+        var.backendinfo := backendinfo;
+      then var;
+    end match;
+  end setVariableAttributes;
+
   function isDummyVariable
     "Returns true, if the variable is a dummy variable.
     Note: !Only works in the backend, will return true for any variable if used

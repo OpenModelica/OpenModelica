@@ -227,7 +227,7 @@ algorithm
   end match;
 end getComponentDirection;
 
-function convertVarAttributes
+public function convertVarAttributes
   input list<tuple<String, Binding>> attrs;
   input Type ty;
   input Component.Attributes compAttrs;
@@ -258,7 +258,7 @@ algorithm
   end match;
 end convertVarAttributes;
 
-function convertRealVarAttributes
+protected function convertRealVarAttributes
   input list<tuple<String, Binding>> attrs;
   input Option<Boolean> isFinal;
   output Option<DAE.VariableAttributes> attributes;

@@ -39,12 +39,14 @@ protected
   // New Frontend imports
   import BackendExtension = NFBackendExtension;
   import ComponentRef = NFComponentRef;
+  import ConvertDAE = NFConvertDAE;
   import Dimension = NFDimension;
   import Expression = NFExpression;
   import FEquation = NFEquation;
   import FlatModel = NFFlatModel;
   import InstNode = NFInstNode.InstNode;
   import NFFlatten.FunctionTree;
+  import Prefixes = NFPrefixes;
   import Type = NFType;
   import Variable = NFVariable;
 
@@ -89,7 +91,8 @@ public
     bdae := BDAE(variableData, equations);
   end lower;
 
-  protected function lowerVariableData
+protected
+  function lowerVariableData
     input list<Variable> varList;
     output BVariable.VarData variableData;
   protected
@@ -180,14 +183,66 @@ public
 
   function lowerVariable
     input output Variable var;
+  protected
+    Option<DAE.VariableAttributes> attributes;
+    BackendExtension.VariableKind varKind;
   algorithm
-    // ToDo!
-    // change varKind here
-    var := BVariable.setVariableKind(var, BackendExtension.ALGEBRAIC());
+    // ToDo! extract tearing select option
+    try
+      attributes := ConvertDAE.convertVarAttributes(var.typeAttributes, var.ty, var.attributes);
+      varKind := lowerVariableKind(Variable.variability(var), attributes, var.ty);
+      var.backendinfo := BackendExtension.BACKEND_INFO(varKind, attributes, NONE());
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerVariable failed for " + Variable.toString(var)});
+      fail();
+    end try;
   end lowerVariable;
 
+  function lowerVariableKind
+    "ToDo: Merge this part from old backend conversion:
+      /* Consider toplevel inputs as known unless they are protected. Ticket #5591 */
+      false := DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType, protection);"
+    input Prefixes.Variability variability;
+    input Option<DAE.VariableAttributes> attributes;
+    input Type ty;
+    output BackendExtension.VariableKind varKind;
+  algorithm
+    varKind := match(variability, attributes, ty)
+
+      // variable -> artificial state if it has stateSelect = StateSelect.always
+      case (NFPrefixes.Variability.CONTINUOUS, SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS()))), _)
+        guard(variability == NFPrefixes.Variability.CONTINUOUS)
+        then BackendExtension.STATE(1, NONE(), false);
+
+      // variable -> artificial state if it has stateSelect = StateSelect.prefer
+      /* I WANT TO REMOVE THIS AND CATCH IT PROPERLY IN STATE SELECTION!
+      case (Prefixes.Variability.CONTINUOUS(), SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.PREFER()))))
+        then BackendExtension.STATE(1, NONE(), false);
+      */
+
+      // is this just a hack? Do we need those cases, or do we need even more?
+      case (NFPrefixes.Variability.CONTINUOUS, _, Type.BOOLEAN())     then BackendExtension.DISCRETE();
+      case (NFPrefixes.Variability.CONTINUOUS, _, Type.INTEGER())     then BackendExtension.DISCRETE();
+      case (NFPrefixes.Variability.CONTINUOUS, _, Type.ENUMERATION()) then BackendExtension.DISCRETE();
+      case (NFPrefixes.Variability.CONTINUOUS, _, _)                  then BackendExtension.ALGEBRAIC();
+
+      case (NFPrefixes.Variability.DISCRETE, _, _)                    then BackendExtension.DISCRETE();
+      case (NFPrefixes.Variability.IMPLICITLY_DISCRETE, _, _)         then BackendExtension.DISCRETE();
+
+      case (NFPrefixes.Variability.PARAMETER, _, _)                   then BackendExtension.PARAMETER();
+      case (NFPrefixes.Variability.STRUCTURAL_PARAMETER, _, _)        then BackendExtension.PARAMETER();
+      case (NFPrefixes.Variability.NON_STRUCTURAL_PARAMETER, _, _)    then BackendExtension.PARAMETER();
+      case (NFPrefixes.Variability.CONSTANT, _, _)                    then BackendExtension.CONSTANT();
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerVariableKind failed."});
+      then fail();
+    end match;
+  end lowerVariableKind;
+
   protected function lowerEquations
-    "Todo! and algorithms"
+    "ToDo! and algorithms
+    ToDo! Replace instNode in all Crefs"
     input list<FEquation> eq_lst;
     output BEquation.Equations equations;
   protected
