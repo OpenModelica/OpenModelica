@@ -32,18 +32,30 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#ifndef TESTGUI_H
-#define TESTGUI_H
+#include "TransformationTest.h"
+#include "Util.h"
+#include "OMEditApplication.h"
+#include "Component/Transformation.h"
 
-#include <QObject>
+#define GC_THREADS
+extern "C" {
+#include "meta/meta_modelica.h"
+}
 
-class Test: public QObject
+OMEDITTEST_MAIN(TransformationTest)
+
+void TransformationTest::wrongPlacementAnnotation()
 {
-  Q_OBJECT
+  QString placementAnnotationString = "{Placement(true,-,{{-140.0, 40.0}, {-100.0, 80.0}},-,-,-,)}";
 
-private slots:
-  void wrongPlacementAnnotation();
-  void correctPlacementAnnotation();
-};
+  Transformation transformation;
+  transformation.parseTransformationString(placementAnnotationString, 200, 200);
+}
 
-#endif // TESTGUI_H
+void TransformationTest::correctPlacementAnnotation()
+{
+  QString placementAnnotationString = "{Placement(true,-75.0,38.0,-25.0,-25.0,25.0,25.0,270.0,-,-,-,-,-,-,)}";
+
+  Transformation transformation;
+  transformation.parseTransformationString(placementAnnotationString, 200, 200);
+}

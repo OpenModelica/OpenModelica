@@ -32,12 +32,12 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#ifndef TESTGUI_H
-#define TESTGUI_H
+#ifndef DIAGRAM_H
+#define DIAGRAM_H
 
 #include <QObject>
 
-class Test: public QObject
+class Diagram: public QObject
 {
   Q_OBJECT
 
@@ -45,4 +45,4 @@ private slots:
   void chuaCircuit();
 };
 
-#endif // TESTGUI_H
+#endif // DIAGRAM_H

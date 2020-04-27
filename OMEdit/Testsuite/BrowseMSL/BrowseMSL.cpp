@@ -32,18 +32,40 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#ifndef TESTGUI_H
-#define TESTGUI_H
+#include "BrowseMSL.h"
+#include "Util.h"
+#include "OMEditApplication.h"
+#include "MainWindow.h"
+#include "Modeling/LibraryTreeWidget.h"
 
-#include <QObject>
+#define GC_THREADS
+extern "C" {
+#include "meta/meta_modelica.h"
+}
 
-class Test: public QObject
+OMEDITTEST_MAIN(BrowseMSL)
+
+/*!
+ * \brief Test::electricalAnalogBasic
+ * Browses the Modelica.Electrical.Analog.Basic
+ */
+void BrowseMSL::electricalAnalogBasic()
 {
-  Q_OBJECT
+  if (!Util::expandLibraryTreeItemParentHierarchy(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem("Modelica.Electrical.Analog.Basic"))) {
+    QFAIL("Expanding to Modelica.Electrical.Analog.Basic failed.");
+  }
+  MainWindow::instance()->close();
+}
 
-private slots:
-  void electricalAnalogBasic();
-  void mediaAir();
-};
-
-#endif // TESTGUI_H
+/*!
+ * \brief Test::mediaAir
+ * Browses the Modelica.Media.Air
+ */
+void BrowseMSL::mediaAir()
+{
+  OMEDITTEST_SKIP("Enable this testcase by removing this line once the ticket#5669 (https://trac.openmodelica.org/OpenModelica/ticket/5669) is fixed.");
+  if (!Util::expandLibraryTreeItemParentHierarchy(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem("Modelica.Media.Air"))) {
+    QFAIL("Expanding to Modelica.Media.Air failed.");
+  }
+  MainWindow::instance()->close();
+}

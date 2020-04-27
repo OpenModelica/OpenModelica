@@ -32,37 +32,18 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "Test.h"
-#include "Util.h"
-#include "OMEditApplication.h"
-#include "MainWindow.h"
-#include "Modeling/LibraryTreeWidget.h"
+#ifndef TRANSFORMATIONTEST_H
+#define TRANSFORMATIONTEST_H
 
-#define GC_THREADS
-extern "C" {
-#include "meta/meta_modelica.h"
-}
+#include <QObject>
 
-OMEDITTEST_MAIN(Test)
-
-/*!
- * \brief Test::chuaCircuit
- * Browses to Modelica.Electrical.Analog.Examples.ChuaCircuit and loads it diagram view.
- */
-void Test::chuaCircuit()
+class TransformationTest: public QObject
 {
-  LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem("Modelica.Electrical.Analog.Examples.ChuaCircuit");
-  if (!pLibraryTreeItem) {
-    QFAIL("Failed to find Modelica.Electrical.Analog.Examples.ChuaCircuit. Makesure MSL is loaded.");
-  }
-  if (!Util::expandLibraryTreeItemParentHierarchy(pLibraryTreeItem)) {
-    QFAIL("Expanding to Modelica.Electrical.Analog.Examples failed.");
-  }
+  Q_OBJECT
 
-  // Open the Modelica.Electrical.Analog.Examples.ChuaCircuit diagram.
-  QModelIndex modelIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->libraryTreeItemIndex(pLibraryTreeItem);
-  QModelIndex proxyIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
-  MainWindow::instance()->getLibraryWidget()->getLibraryTreeView()->libraryTreeItemDoubleClicked(proxyIndex);
+private slots:
+  void wrongPlacementAnnotation();
+  void correctPlacementAnnotation();
+};
 
-  MainWindow::instance()->close();
-}
+#endif // TRANSFORMATIONTEST_H

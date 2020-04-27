@@ -2165,11 +2165,10 @@ void SimulationDialog::enableDasslIdaOptions(QString method)
  */
 void SimulationDialog::showIntegrationHelp()
 {
-  QUrl integrationAlgorithmsPath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
-                                  .append("/share/doc/omc/simulationflags.html#integration-methods"));
+  QUrl integrationAlgorithmsPath (QString("file:///%1/share/doc/omc/OpenModelicaUsersGuide/simulationflags.html#integration-methods").arg(Helper::OpenModelicaHome));
   if (!QDesktopServices::openUrl(integrationAlgorithmsPath)) {
-    QString errorMessage = GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(integrationAlgorithmsPath.toString());
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, errorMessage, Helper::scriptingKind, Helper::errorLevel));
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(integrationAlgorithmsPath.toString()), Helper::ok);
   }
 }
 
@@ -2252,11 +2251,10 @@ void SimulationDialog::browseDataReconciliationInputFile()
  */
 void SimulationDialog::showSimulationFlagsHelp()
 {
-  QUrl integrationAlgorithmsPath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
-                                  .append("/share/doc/omc/simulationflags.html"));
-  if (!QDesktopServices::openUrl(integrationAlgorithmsPath)) {
-    QString errorMessage = GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(integrationAlgorithmsPath.toString());
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, errorMessage, Helper::scriptingKind, Helper::errorLevel));
+  QUrl simulationflagsPath (QString("file:///%1/share/doc/omc/OpenModelicaUsersGuide/simulationflags.html").arg(Helper::OpenModelicaHome));
+  if (!QDesktopServices::openUrl(simulationflagsPath)) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(simulationflagsPath.toString()), Helper::ok);
   }
 }
 
