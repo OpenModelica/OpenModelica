@@ -138,6 +138,5 @@ public
     record ALWAYS end ALWAYS;
   end TearingSelect;
 
-
     annotation(__OpenModelica_Interface="frontend");
 end NFBackendExtension;

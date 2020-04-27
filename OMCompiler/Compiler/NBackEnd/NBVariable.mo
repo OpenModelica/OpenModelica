@@ -165,7 +165,7 @@ public
       for i in 1:arrayLength(varArr.varOptArr) loop
         if isSome(varArr.varOptArr[i]) then
           SOME(var) := varArr.varOptArr[i];
-          str := str + "[" + intString(i) + "] " + BVariable.toString(Pointer.access(var)) + "\n";
+          str := str + "(" + intString(i) + ")\t" + BVariable.toString(Pointer.access(var)) + "\n";
         end if;
       end for;
     end toString;
@@ -262,16 +262,19 @@ public
     function toString
       /* ToDo! Add StateOrder */
       input VarData varData;
+      input Integer level = 0;
       output String str;
     algorithm
-      str := match varData
-        local
-          VarData qualVarData;
-        case qualVarData as VAR_DATA_SIM() then Variables.toString(varData.variables, "Simulation");
-        case qualVarData as VAR_DATA_JAC() then Variables.toString(varData.variables, "Jacobian");
-        case qualVarData as VAR_DATA_HESS() then Variables.toString(varData.variables, "Hessian");
-        else fail();
-      end match;
+      str := if level == 0 then match varData
+          local
+            VarData qualVarData;
+          case qualVarData as VAR_DATA_SIM() then Variables.toString(varData.variables, "Simulation");
+          case qualVarData as VAR_DATA_JAC() then Variables.toString(varData.variables, "Jacobian");
+          case qualVarData as VAR_DATA_HESS() then Variables.toString(varData.variables, "Hessian");
+          else fail();
+        end match
+      elseif level == 1 then toStringVerbose(varData, false)
+      else toStringVerbose(varData, true);
     end toString;
 
     function toStringVerbose
@@ -286,7 +289,6 @@ public
           VariablePointers lambdaVars;
         case qualVarData as VAR_DATA_SIM() algorithm
           tmp := StringUtil.headline_2("Variable Data Simulation") + "\n" +
-            Variables.toString(varData.variables, "All") + "\n" +
             VariablePointers.toString(varData.unknowns, "Unknown") + "\n" +
             VariablePointers.toString(varData.knowns, "Known") + "\n" +
             VariablePointers.toString(varData.auxiliaries, "Auxiliary") + "\n" +
@@ -304,7 +306,6 @@ public
 
         case qualVarData as VAR_DATA_JAC() algorithm
           tmp := StringUtil.headline_2("Variable Data Jacobian") + "\n" +
-            Variables.toString(varData.variables, "All") + "\n" +
             VariablePointers.toString(varData.unknowns, "Unknown") + "\n" +
             VariablePointers.toString(varData.knowns, "Known") + "\n" +
             VariablePointers.toString(varData.auxiliaries, "Auxiliary") + "\n" +
@@ -320,7 +321,6 @@ public
 
         case qualVarData as VAR_DATA_HESS()algorithm
           tmp := StringUtil.headline_2("Variable Data Hessian") + "\n" +
-            Variables.toString(varData.variables, "All") + "\n" +
             VariablePointers.toString(varData.unknowns, "Unknown") + "\n" +
             VariablePointers.toString(varData.knowns, "Known") + "\n" +
             VariablePointers.toString(varData.auxiliaries, "Auxiliary") + "\n" +

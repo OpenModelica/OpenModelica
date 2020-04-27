@@ -60,6 +60,7 @@ protected
   // Util imports
   import Error;
   import StringUtil;
+  import IOStream;
 
 public
   record BDAE
@@ -73,7 +74,7 @@ public
     input output String str = "";
   algorithm
     str := StringUtil.headline_1("BackendDAE: " + str) + "\n" +
-          BVariable.VarData.toString(bdae.varData) + "\n" +
+          BVariable.VarData.toString(bdae.varData, 1) + "\n" +
           BEquation.Equation.equationsToString(bdae.equations);
   end toString;
 
@@ -245,8 +246,7 @@ protected
   end lowerVariableKind;
 
   function lowerEquationsAndAlgorithms
-    "ToDo! and algorithms
-    ToDo! Replace instNode in all Crefs
+    "ToDo! Replace instNode in all Crefs
     Converts all frontend equations and algorithms to backend equations.
     Also needs the variables, because it replaces all InstNodes with
     VariablePointers for the Backend."
@@ -256,16 +256,28 @@ protected
     output BEquation.Equations equations;
   protected
     Integer index = 1;
+    Integer arraySize;
     list<Equation> backend_equations;
   algorithm
-  equations := ExpandableArray.new(realInt(listLength(eq_lst)*1.4), BEquation.DUMMY_EQUATION());
+    arraySize := realInt((listLength(eq_lst) + listLength(al_lst))*1.4);
+    equations := ExpandableArray.new(arraySize, BEquation.DUMMY_EQUATION());
+
+    // convert all equations
     for eq in eq_lst loop
+      // returns a list of equations since for and if equations might be split up
       backend_equations := lowerEquation(eq, varData);
       for b_eq in backend_equations loop
         equations := ExpandableArray.set(index, b_eq, equations);
         index := index + 1;
       end for;
     end for;
+
+    // convert all algorithms
+    for alg in al_lst loop
+      equations := ExpandableArray.set(index, lowerAlgorithm(alg), equations);
+      index := index + 1;
+    end for;
+
     ExpandableArray.compress(equations);
   end lowerEquationsAndAlgorithms;
 
@@ -277,7 +289,7 @@ protected
     backend_equations := match frontend_equation
       local
         list<Equation> result = {}, new_body;
-        Expression lhs, rhs, range, e1, e2, e3;
+        Expression lhs, rhs, range;
         ComponentRef lhs_cref, rhs_cref;
         list<FEquation> body;
         Type ty;
@@ -323,25 +335,21 @@ protected
           // ToDo! inherit findZeroCrossings
       then {BEquation.DUMMY_EQUATION()};
 
-      case FEquation.WHEN(branches = branches, source = source)
-          // ToDo! inherit findZeroCrossings
-      then {BEquation.DUMMY_EQUATION()};
+      // When equation cases
+      case FEquation.WHEN()       then {lowerWhenEquation(frontend_equation)};
+      case FEquation.ASSERT()     then {lowerWhenEquation(frontend_equation)};
 
-      case FEquation.ASSERT(condition = e1, message = e2, level = e3, source = source)
-          // ToDo! inherit findZeroCrossings
-      then {BEquation.DUMMY_EQUATION()};
-
-      case FEquation.TERMINATE(message = e1, source = source)
-          // ToDo! inherit findZeroCrossings
-      then {BEquation.DUMMY_EQUATION()};
-
-      case FEquation.REINIT(cref = e1, reinitExp = e2, source = source)
-          // ToDo! inherit findZeroCrossings
-      then {BEquation.DUMMY_EQUATION()};
-
-      case FEquation.NORETCALL(exp = e1, source = source)
-          // ToDo! inherit findZeroCrossings
-      then {BEquation.DUMMY_EQUATION()};
+      // These have to be called inside a when equation body since they need
+      // to get passed a condition from surrounding when equation.
+      case FEquation.TERMINATE() algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerEquation failed for TERMINATE expression without condition:\n" + FEquation.toString(frontend_equation)});
+      then fail();
+      case FEquation.REINIT() algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerEquation failed for REINIT expression without condition:\n" + FEquation.toString(frontend_equation)});
+      then fail();
+      case FEquation.NORETCALL() algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerEquation failed for NORETCALL expression without condition:\n" + FEquation.toString(frontend_equation)});
+      then fail();
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerEquation failed for " + FEquation.toString(frontend_equation)});
@@ -350,11 +358,162 @@ protected
     end match;
   end lowerEquation;
 
+  function lowerWhenEquation
+    // ToDo! inherit findZeroCrossings or implement own routine to be applied after lowering
+    input FEquation frontend_equation;
+    output Equation backend_equation;
+  algorithm
+    backend_equation := match frontend_equation
+      local
+        list<FEquation.Branch> branches;
+        DAE.ElementSource source;
+        Expression condition, message, level;
+        BEquation.WhenEquationBody whenEqBody, elseWhenEq;
+
+      case FEquation.WHEN(branches = branches, source = source)
+        algorithm
+          SOME(whenEqBody) := lowerWhenEquationBody(branches);
+      then BEquation.WHEN_EQUATION(0, whenEqBody, source, NBEquation.EQ_ATTR_DEFAULT_DISCRETE);
+
+      case FEquation.ASSERT(condition = condition, message = message, level = level, source = source)
+        algorithm
+          whenEqBody := BEquation.WHEN_EQUATION_BODY(condition, {BEquation.ASSERT(condition, message, level, source)}, NONE());
+      then BEquation.WHEN_EQUATION(0, whenEqBody, source, NBEquation.EQ_ATTR_DEFAULT_DISCRETE);
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerWhenEquation failed for " + FEquation.toString(frontend_equation)});
+      then fail();
+
+    end match;
+  end lowerWhenEquation;
+
+  function lowerWhenEquationBody
+    input list<FEquation.Branch> branches;
+    output Option<BEquation.WhenEquationBody> whenEq;
+  algorithm
+    whenEq := match branches
+      local
+        FEquation.Branch branch;
+        list<FEquation.Branch> rest;
+        list<BEquation.WhenStatement> stmts;
+        Expression condition;
+
+      // End of the line
+      case {} then NONE();
+
+      // lower current branch
+      case branch::rest
+        algorithm
+          (stmts, condition) := lowerWhenBranch(branch);
+      then SOME(BEquation.WHEN_EQUATION_BODY(condition, stmts, lowerWhenEquationBody(rest)));
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerWhenEquationBody failed."});
+      then fail();
+
+    end match;
+  end lowerWhenEquationBody;
+
+  function lowerWhenBranch
+    input FEquation.Branch branch;
+    output list<BEquation.WhenStatement> stmts;
+    output Expression cond;
+  algorithm
+    (stmts, cond) := match branch
+      local
+        Expression condition;
+        list<FEquation.Equation> body;
+      case FEquation.BRANCH(condition = condition, body = body)
+        // ToDo! Use condition variability here to have proper type of the
+        // auxiliary that will be created for the condition.
+      then (lowerWhenBranchBody(condition, body), condition);
+
+      case FEquation.INVALID_BRANCH() algorithm
+        // what to do with error message from invalid branch? Is that even needed?
+        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerWhenBranch failed for invalid branch that should not exist outside of frontend."});
+      then fail();
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerWhenBranch failed without proper error message."});
+      then fail();
+
+    end match;
+  end lowerWhenBranch;
+
+  function lowerWhenBranchBody
+    input Expression condition;
+    input list<FEquation.Equation> body;
+    input output list<BEquation.WhenStatement> stmts = {};
+  algorithm
+    stmts := match body
+      local
+        FEquation.Equation elem;
+        list<FEquation.Equation> rest;
+      case {}         then stmts;
+      case elem::rest then lowerWhenBranchBody(condition, rest, lowerWhenBranchStatement(elem, condition) :: stmts);
+    end match;
+  end lowerWhenBranchBody;
+
+  function lowerWhenBranchStatement
+    input FEquation.Equation eq;
+    input Expression condition;
+    output BEquation.WhenStatement stmt;
+  algorithm
+    stmt := match eq
+      local
+        Expression message, exp, lhs, rhs;
+        ComponentRef cref, lhs_cref, rhs_cref;
+        Type lhs_ty, rhs_ty;
+        DAE.ElementSource source;
+      // These should hopefully not occur, check assert for same condition?
+      // case FEquation.WHEN()       then fail();
+      // case FEquation.ASSERT()     then fail();
+
+      // These do not provide their own conditions and are therefore body branches
+      case FEquation.TERMINATE(message = message, source = source)
+      then BEquation.TERMINATE(message, source);
+
+      case FEquation.REINIT(cref = Expression.CREF(cref = cref), reinitExp = exp, source = source)
+      then BEquation.REINIT(cref, exp, source);
+
+      case FEquation.NORETCALL(exp = exp, source = source)
+      then BEquation.NORETCALL(exp, source);
+
+      // Convert other equations to assignments
+      case FEquation.EQUALITY(lhs = lhs, rhs = rhs, source = source)
+      then BEquation.ASSIGN(lhs, rhs, source);
+
+      case FEquation.CREF_EQUALITY(lhs = lhs_cref as NFComponentRef.CREF(ty = lhs_ty), rhs = rhs_cref as NFComponentRef.CREF(ty = rhs_ty), source = source)
+      then BEquation.ASSIGN(Expression.CREF(lhs_ty, lhs_cref), Expression.CREF(rhs_ty, rhs_cref), source);
+
+      case FEquation.ARRAY_EQUALITY(lhs = lhs, rhs = rhs, source = source)
+      then BEquation.ASSIGN(lhs, rhs, source);
+
+      /* ToDo! implement proper cases for FOR and IF --> need FOR_ASSIGN and IF_ASSIGN ?
+      case FEquation.FOR(iterator = iterator, range = SOME(range), body = body, source = source)
+      case FEquation.IF(branches = branches, source = source)
+      */
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerWhenBranchStatement for " + FEquation.toString(eq)});
+      then fail();
+    end match;
+  end lowerWhenBranchStatement;
+
   function lowerAlgorithm
     input Algorithm alg;
     output Equation eq;
+  protected
+    Integer size;
+    list<ComponentRef> inputs, outputs;
   algorithm
-    // ToDo!
+    // ToDo! check algorithm outputs and inputs if discrete (?)
+    // ToDo! Wait until input, output was migrated from OF CheckModel to NF
+    // and use it here
+    //(inputs, outputs) := Algorithm.getInputsAndOutputs(alg);
+    (inputs, outputs) := ({}, {});
+    size := listLength(outputs);
+    eq := Equation.ALGORITHM(size, alg, inputs, outputs, alg.source, DAE.EXPAND(), NBEquation.EQ_ATTR_DEFAULT_DYNAMIC);
   end lowerAlgorithm;
 
   function lowerEquationAttributes

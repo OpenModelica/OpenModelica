@@ -58,65 +58,67 @@ public
 
   uniontype Equation
     record SCALAR_EQUATION
-      Expression lhs "left hand side";
-      Expression rhs "right hand side";
-      DAE.ElementSource source "origin of equation";
-      EquationAttributes attr "additional attributes";
+      Expression lhs                  "left hand side expression";
+      Expression rhs                  "right hand side expression";
+      DAE.ElementSource source        "origin of equation";
+      EquationAttributes attr         "Additional Attributes";
     end SCALAR_EQUATION;
 
     record ARRAY_EQUATION
-      list<Integer> dimSize "dimension sizes";
-      Expression lhs "left hand side";
-      Expression rhs "right hand side";
-      DAE.ElementSource source "origin of equation";
-      EquationAttributes attr;
-      Option<Integer> recordSize "NONE() if not a record";
+      list<Integer> dimSize           "dimension sizes";
+      Expression lhs                  "left hand side expression";
+      Expression rhs                  "right hand side expression";
+      DAE.ElementSource source        "origin of equation";
+      EquationAttributes attr         "Additional Attributes";
+      Option<Integer> recordSize      "NONE() if not a record";
     end ARRAY_EQUATION;
 
     record SIMPLE_EQUATION
-      ComponentRef lhs;
-      ComponentRef rhs;
-      DAE.ElementSource source "origin of equation";
-      EquationAttributes attr;
+      ComponentRef lhs                "left hand side component reference";
+      ComponentRef rhs                "right hand side component reference";
+      DAE.ElementSource source        "origin of equation";
+      EquationAttributes attr         "Additional Attributes";
     end SIMPLE_EQUATION;
 
     record RECORD_EQUATION
-      Integer size "size of equation";
-      Expression lhs "lhs";
-      Expression rhs "rhs";
-      DAE.ElementSource source "origin of equation";
-      EquationAttributes attr;
-    end RECORD_EQUATION;
+      Integer size                    "size of equation";
+      Expression lhs                  "left hand side expression";
+      Expression rhs                  "right hand side expression";
+      DAE.ElementSource source        "origin of equation";
+      EquationAttributes attr         "Additional Attributes";
+  end RECORD_EQUATION;
 
     record ALGORITHM
-      Integer size "return value size";
-      Algorithm alg;
-      DAE.ElementSource source "origin of algorithm";
-      DAE.Expand expand "this algorithm was translated from an equation. we should not expand array crefs!";
-      EquationAttributes attr;
+      Integer size                    "output size";
+      Algorithm alg                   "Algorithm statements";
+      list<ComponentRef> inputs       "list of all (external) inputs, dependencies";
+      list<ComponentRef> outputs      "list of all outputs";
+      DAE.ElementSource source        "origin of algorithm";
+      DAE.Expand expand               "this algorithm was translated from an equation. we should not expand array crefs!";
+      EquationAttributes attr         "Additional Attributes";
     end ALGORITHM;
 
     record IF_EQUATION
-      list<Expression> conditions "Condition";
-      list<list<Equation>> eqnstrue "Equations of true branch";
-      list<Equation> eqnsfalse "Equations of false branch";
-      DAE.ElementSource source "origin of equation";
-      EquationAttributes attr;
+      list<Expression> conditions     "Condition";
+      list<list<Equation>> eqnstrue   "Equations of true branch";
+      list<Equation> eqnsfalse        "Equations of false branch";
+      DAE.ElementSource source        "origin of equation";
+      EquationAttributes attr         "Additional Attributes";
     end IF_EQUATION;
 
     record FOR_EQUATION
-      InstNode iter "the iterator variable"; // Should this be a cref?
-      Expression range "Start - (Step) - Stop";
-      Equation body "iterated equation";
-      DAE.ElementSource source "origin of equation";
+      InstNode iter                   "the iterator variable"; // Should this be a cref?
+      Expression range                "Start - (Step) - Stop";
+      Equation body                   "iterated equation";
+      DAE.ElementSource source        "origin of equation";
       EquationAttributes attr;
     end FOR_EQUATION;
 
     record WHEN_EQUATION
-      Integer size "size of equation";
-      WhenEquationBody body;
-      DAE.ElementSource source "origin of equation";
-      EquationAttributes attr;
+      Integer size                    "size of equation";
+      WhenEquationBody body           "Actual equation body";
+      DAE.ElementSource source        "origin of equation";
+      EquationAttributes attr         "Additional Attributes";
     end WHEN_EQUATION;
 
     record AUX_EQUATION
@@ -124,8 +126,8 @@ public
       that are known to always be solved in this specific equation. E.G. $CSE
       The variable binding contains the equation, but this equation is also
       allowed to have a body for special cases."
-      Pointer<Variable> auxiliary;
-      Option<Equation> body;
+      Pointer<Variable> auxiliary     "Corresponding auxiliary variable";
+      Option<Equation> body           "Optional body equation";
     end AUX_EQUATION;
 
     record DUMMY_EQUATION
@@ -133,7 +135,7 @@ public
 
     function toString
       input Equation eq;
-      output String str;
+      input output String str = "";
     algorithm
       str := match eq
         local
@@ -145,7 +147,7 @@ public
         case qualEq as ALGORITHM() then       "[ALGO] \n" + Algorithm.toString(qualEq.alg);
         case qualEq as IF_EQUATION() then     "[-IF-] ";
         case qualEq as FOR_EQUATION() then    "[FOR-] ";
-        case qualEq as WHEN_EQUATION() then   "[WHEN] ";
+        case qualEq as WHEN_EQUATION() then   WhenEquationBody.toString(qualEq.body, "", str + "[----] ", "[WHEN] ");
         case qualEq as AUX_EQUATION() then    "[AUX-] ";
         case qualEq as DUMMY_EQUATION() then  "[DUMY] Dummy equation.";
         else                                  "[FAIL] Equation.toString failed!";
@@ -160,7 +162,7 @@ public
     algorithm
       str := StringUtil.headline_3(str + " Equations (" + intString(numberOfElements) + ")") + "\n";
       for i in 1:numberOfElements loop
-        str := str + "(" + intString(i) + ")\t" + toString(ExpandableArray.get(i, equations)) + "\n";
+        str := str + "(" + intString(i) + ")\t" + toString(ExpandableArray.get(i, equations), "\t") + "\n";
       end for;
     end equationsToString;
 
@@ -172,7 +174,7 @@ public
     algorithm
       str := StringUtil.headline_4(str + " Equation Pointers (" + intString(numberOfElements) + ")") + "\n";
       for i in 1:numberOfElements loop
-        str := str + "(" + intString(i) + ")\t" + toString(Pointer.access(ExpandableArray.get(i, equations))) + "\n";
+        str := str + "(" + intString(i) + ")\t" + toString(Pointer.access(ExpandableArray.get(i, equations)), "\t") + "\n";
       end for;
     end equationPointersToString;
 
@@ -204,6 +206,25 @@ public
       list<WhenStatement> when_stmts;
       Option<WhenEquationBody> else_when "elsewhen equation with the same cref on the left hand side.";
     end WHEN_EQUATION_BODY;
+
+    function toString
+      input WhenEquationBody body;
+      input output String str = "";
+      input String indent = "";
+      input String elseStr = "";
+    protected
+      WhenEquationBody elseWhen;
+    algorithm
+      str := str + elseStr + "when " + Expression.toString(body.condition) + " then \n";
+      for stmt in body.when_stmts loop
+        str := str + WhenStatement.toString(stmt, indent + "  ") + "\n";
+      end for;
+      if isSome(body.else_when) then
+        SOME(elseWhen) := body.else_when;
+        str := str + WhenEquationBody.toString(elseWhen, indent, indent +"else ");
+      end if;
+      str := str + indent + "end when;";
+    end toString;
   end WhenEquationBody;
 
   uniontype WhenStatement
@@ -239,6 +260,23 @@ public
       Expression exp;
       DAE.ElementSource source "the origin of the component/equation/algorithm";
     end NORETCALL;
+
+    function toString
+      input WhenStatement stmt;
+      input output String str = "";
+    algorithm
+      str := match stmt
+        local
+          Expression lhs, rhs, value, condition, message, level;
+          ComponentRef stateVar;
+        case ASSIGN(lhs = lhs, rhs = rhs)                                     then str + Expression.toString(lhs) + " := " + Expression.toString(rhs);
+        case REINIT(stateVar = stateVar, value = value)                       then str + "reinit(" + ComponentRef.toString(stateVar) + ", " + Expression.toString(value) + ")";
+        case ASSERT(condition = condition, message = message, level = level)  then str + "assert(" + Expression.toString(condition) + ", " + Expression.toString(message) + ", " + Expression.toString(level) + ")";
+        case TERMINATE(message = message)                                     then str + "terminate(" + Expression.toString(message) + ")";
+        case NORETCALL(exp = value)                                           then str + Expression.toString(value);
+                                                                              else str + "NBEquation.WhenStatement.toString failed.";
+      end match;
+    end toString;
   end WhenStatement;
 
   uniontype EquationAttributes
