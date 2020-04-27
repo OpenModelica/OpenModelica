@@ -33,7 +33,7 @@ include(../Common/Testsuite.pri)
 TARGET = BrowseMSL
 
 SOURCES += ../Common/Util.cpp \
-  Test.cpp
+  BrowseMSL.cpp
 
 HEADERS += ../Common/Util.h \
-  Test.h
+  BrowseMSL.h

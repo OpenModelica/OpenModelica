@@ -32,7 +32,7 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "Test.h"
+#include "Diagram.h"
 #include "Util.h"
 #include "OMEditApplication.h"
 #include "MainWindow.h"
@@ -43,29 +43,26 @@ extern "C" {
 #include "meta/meta_modelica.h"
 }
 
-OMEDITTEST_MAIN(Test)
+OMEDITTEST_MAIN(Diagram)
 
 /*!
- * \brief Test::electricalAnalogBasic
- * Browses the Modelica.Electrical.Analog.Basic
+ * \brief Test::chuaCircuit
+ * Browses to Modelica.Electrical.Analog.Examples.ChuaCircuit and loads it diagram view.
  */
-void Test::electricalAnalogBasic()
+void Diagram::chuaCircuit()
 {
-  if (!Util::expandLibraryTreeItemParentHierarchy(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem("Modelica.Electrical.Analog.Basic"))) {
-    QFAIL("Expanding to Modelica.Electrical.Analog.Basic failed.");
+  LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem("Modelica.Electrical.Analog.Examples.ChuaCircuit");
+  if (!pLibraryTreeItem) {
+    QFAIL("Failed to find Modelica.Electrical.Analog.Examples.ChuaCircuit. Makesure MSL is loaded.");
   }
-  MainWindow::instance()->close();
-}
+  if (!Util::expandLibraryTreeItemParentHierarchy(pLibraryTreeItem)) {
+    QFAIL("Expanding to Modelica.Electrical.Analog.Examples failed.");
+  }
 
-/*!
- * \brief Test::mediaAir
- * Browses the Modelica.Media.Air
- */
-void Test::mediaAir()
-{
-  OMEDITTEST_SKIP("Enable this testcase by removing this line once the ticket#5669 (https://trac.openmodelica.org/OpenModelica/ticket/5669) is fixed.");
-  if (!Util::expandLibraryTreeItemParentHierarchy(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem("Modelica.Media.Air"))) {
-    QFAIL("Expanding to Modelica.Media.Air failed.");
-  }
+  // Open the Modelica.Electrical.Analog.Examples.ChuaCircuit diagram.
+  QModelIndex modelIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->libraryTreeItemIndex(pLibraryTreeItem);
+  QModelIndex proxyIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeView()->libraryTreeItemDoubleClicked(proxyIndex);
+
   MainWindow::instance()->close();
 }

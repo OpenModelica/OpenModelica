@@ -2693,11 +2693,9 @@ void MainWindow::runOMSensPlugin()
  */
 void MainWindow::openUsersGuide()
 {
-  QUrl usersGuidePath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
-                       .append("/share/doc/omc/index.html"));
+  QUrl usersGuidePath (QString("file:///%1/share/doc/omc/OpenModelicaUsersGuide/index.html").arg(Helper::OpenModelicaHome));
   if (!QDesktopServices::openUrl(usersGuidePath)) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
                                                           Helper::scriptingKind, Helper::errorLevel));
   }
 }
@@ -2709,11 +2707,9 @@ void MainWindow::openUsersGuide()
  */
 void MainWindow::openUsersGuidePdf()
 {
-  QUrl usersGuidePath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
-                       .append("/share/doc/omc/OpenModelicaUsersGuide-latest.pdf"));
+  QUrl usersGuidePath (QString("file:///%1/share/doc/omc/OpenModelicaUsersGuide-latest.pdf").arg(Helper::OpenModelicaHome));
   if (!QDesktopServices::openUrl(usersGuidePath)) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(usersGuidePath.toString()),
                                                           Helper::scriptingKind, Helper::errorLevel));
   }
 }
@@ -2725,11 +2721,9 @@ void MainWindow::openUsersGuidePdf()
  */
 void MainWindow::openSystemDocumentation()
 {
-  QUrl systemDocumentationPath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
-                                .append("/share/doc/omc/OpenModelicaSystem.pdf"));
+  QUrl systemDocumentationPath (QString("file:///%1/share/doc/omc/SystemDocumentation/OpenModelicaSystem.pdf").arg(Helper::OpenModelicaHome));
   if (!QDesktopServices::openUrl(systemDocumentationPath)) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(systemDocumentationPath.toString()),
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(systemDocumentationPath.toString()),
                                                           Helper::scriptingKind, Helper::errorLevel));
   }
 }
@@ -2782,13 +2776,10 @@ void MainWindow::openOMSimulatorUsersGuide()
  */
 void MainWindow::openOpenModelicaTLMSimulatorDocumentation()
 {
-  QUrl openModelicaTLMSimulatorDocumentation (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
-                                              .append("/OMTLMSimulator/Documentation/OMTLMSimulator.pdf"));
+  QUrl openModelicaTLMSimulatorDocumentation (QString("file:///%1/OMTLMSimulator/Documentation/OMTLMSimulator.pdf").arg(Helper::OpenModelicaHome));
   if (!QDesktopServices::openUrl(openModelicaTLMSimulatorDocumentation)) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE)
-                                                          .arg(openModelicaTLMSimulatorDocumentation.toString()),
-                                                          Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE)
+                                                          .arg(openModelicaTLMSimulatorDocumentation.toString()), Helper::scriptingKind, Helper::errorLevel));
   }
 }
 

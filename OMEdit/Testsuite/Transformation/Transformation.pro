@@ -33,7 +33,7 @@ include(../Common/Testsuite.pri)
 TARGET = Transformation
 
 SOURCES += ../Common/Util.cpp \
-  Test.cpp
+  TransformationTest.cpp
 
 HEADERS += ../Common/Util.h \
-  Test.h
+  TransformationTest.h

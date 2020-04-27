@@ -32,30 +32,18 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "Test.h"
-#include "Util.h"
-#include "OMEditApplication.h"
-#include "Component/Transformation.h"
+#ifndef BROWSEMSL_H
+#define BROWSEMSL_H
 
-#define GC_THREADS
-extern "C" {
-#include "meta/meta_modelica.h"
-}
+#include <QObject>
 
-OMEDITTEST_MAIN(Test)
-
-void Test::wrongPlacementAnnotation()
+class BrowseMSL: public QObject
 {
-  QString placementAnnotationString = "{Placement(true,-,{{-140.0, 40.0}, {-100.0, 80.0}},-,-,-,)}";
+  Q_OBJECT
 
-  Transformation transformation;
-  transformation.parseTransformationString(placementAnnotationString, 200, 200);
-}
+private slots:
+  void electricalAnalogBasic();
+  void mediaAir();
+};
 
-void Test::correctPlacementAnnotation()
-{
-  QString placementAnnotationString = "{Placement(true,-75.0,38.0,-25.0,-25.0,25.0,25.0,270.0,-,-,-,-,-,-,)}";
-
-  Transformation transformation;
-  transformation.parseTransformationString(placementAnnotationString, 200, 200);
-}
+#endif // BROWSEMSL_H

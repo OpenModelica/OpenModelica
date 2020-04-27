@@ -251,7 +251,7 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   // get OpenModelica version
   Helper::OpenModelicaVersion = getVersion();
   // set OpenModelicaHome variable
-  Helper::OpenModelicaHome = mpOMCInterface->getInstallationDirectoryPath();
+  Helper::OpenModelicaHome = mpOMCInterface->getInstallationDirectoryPath().replace("\\", "/");
 #ifdef WIN32
   MMC_TRY_TOP_INTERNAL()
   omc_Main_setWindowsPaths(threadData, mmc_mk_scon(Helper::OpenModelicaHome.toUtf8().constData()));

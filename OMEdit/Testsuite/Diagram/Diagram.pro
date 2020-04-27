@@ -33,7 +33,7 @@ include(../Common/Testsuite.pri)
 TARGET = Diagram
 
 SOURCES += ../Common/Util.cpp \
-  Test.cpp
+  Diagram.cpp
 
 HEADERS += ../Common/Util.h \
-  Test.h
+  Diagram.h
