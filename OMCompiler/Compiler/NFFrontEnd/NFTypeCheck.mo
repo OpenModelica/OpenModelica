@@ -80,6 +80,7 @@ import OperatorOverloading = NFOperatorOverloading;
 import ExpandExp = NFExpandExp;
 import NFFunction.Slot;
 import Util;
+import NFComponent.Component;
 
 public
 type MatchKind = enumeration(
@@ -2273,6 +2274,7 @@ protected
   Expression e;
   list<Expression> elements, matched_elements = {};
   MatchKind mk;
+  Component comp1, comp2;
 algorithm
   Type.COMPLEX(cls = anode) := actualType;
   Type.COMPLEX(cls = enode) := expectedType;
@@ -2349,11 +2351,16 @@ algorithm
           matchKind := MatchKind.NOT_COMPATIBLE;
         else
           for i in 1:arrayLength(comps1) loop
-            (_, _, mk) := matchTypes(InstNode.getType(comps1[i]), InstNode.getType(comps2[i]), expression, allowUnknown);
+            comp1 := InstNode.component(comps1[i]);
+            comp2 := InstNode.component(comps2[i]);
 
-            if not isValidPlugCompatibleMatch(mk) then
-              matchKind := MatchKind.NOT_COMPATIBLE;
-              break;
+            if Component.isTyped(comp2) then
+              (_, _, mk) := matchTypes(Component.getType(comp1), Component.getType(comp2), expression, allowUnknown);
+
+              if not isValidPlugCompatibleMatch(mk) then
+                matchKind := MatchKind.NOT_COMPATIBLE;
+                break;
+              end if;
             end if;
           end for;
         end if;
