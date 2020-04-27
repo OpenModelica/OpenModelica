@@ -487,41 +487,66 @@ extern void ErrorImpl__clearMessages(threadData_t *threadData)
   }
 }
 
+static void* get_message_alloc(errorext_members *members)
+{
+  void *id = mmc_mk_icon(members->errorMessageQueue->back()->getID());
+  void *ty,*severity;
+
+  switch (members->errorMessageQueue->back()->getSeverity()) {
+    case ErrorLevel_internal:     severity = Error__INTERNAL;     break;
+    case ErrorLevel_error:        severity = Error__ERROR;        break;
+    case ErrorLevel_warning:      severity = Error__WARNING;      break;
+    case ErrorLevel_notification: severity = Error__NOTIFICATION; break;
+  }
+
+  switch (members->errorMessageQueue->back()->getType()) {
+    case ErrorType_syntax:      ty=Error__SYNTAX;      break;
+    case ErrorType_grammar:     ty=Error__GRAMMAR;     break;
+    case ErrorType_translation: ty=Error__TRANSLATION; break;
+    case ErrorType_symbolic:    ty=Error__SYMBOLIC;    break;
+    case ErrorType_runtime:     ty=Error__SIMULATION;  break;
+    case ErrorType_scripting:   ty=Error__SCRIPTING;   break;
+  }
+
+  void *message = Util__notrans(mmc_mk_scon(members->errorMessageQueue->back()->getShortMessage().c_str()));
+  void *msg = Error__MESSAGE(id,ty,severity,message);
+  void *sl = mmc_mk_icon(members->errorMessageQueue->back()->getStartLineNo());
+  void *sc = mmc_mk_icon(members->errorMessageQueue->back()->getStartColumnNo());
+  void *el = mmc_mk_icon(members->errorMessageQueue->back()->getEndLineNo());
+  void *ec = mmc_mk_icon(members->errorMessageQueue->back()->getEndColumnNo());
+  void *filename = mmc_mk_scon(members->errorMessageQueue->back()->getFileName().c_str());
+  void *readonly = mmc_mk_icon(members->errorMessageQueue->back()->getIsFileReadOnly());
+  void *info = SourceInfo__SOURCEINFO(filename,readonly,sl,sc,el,ec,mmc_mk_rcon(0));
+  return Error__TOTALMESSAGE(msg, info);
+}
+
 // TODO: Use a string builder instead of creating intermediate results all the time?
 extern void* ErrorImpl__getMessages(threadData_t *threadData)
 {
   errorext_members *members = getMembers(threadData);
   void *res = mmc_mk_nil();
   while(!members->errorMessageQueue->empty()) {
-    void *id = mmc_mk_icon(members->errorMessageQueue->back()->getID());
-    void *ty,*severity;
-    switch (members->errorMessageQueue->back()->getSeverity()) {
-    case ErrorLevel_internal: severity=Error__INTERNAL; break;
-    case ErrorLevel_error: severity=Error__ERROR; break;
-    case ErrorLevel_warning: severity=Error__WARNING; break;
-    case ErrorLevel_notification: severity=Error__NOTIFICATION; break;
-    }
-    switch (members->errorMessageQueue->back()->getType()) {
-    case ErrorType_syntax: ty=Error__SYNTAX; break;
-    case ErrorType_grammar: ty=Error__GRAMMAR; break;
-    case ErrorType_translation: ty=Error__TRANSLATION; break;
-    case ErrorType_symbolic: ty=Error__SYMBOLIC; break;
-    case ErrorType_runtime: ty=Error__SIMULATION; break;
-    case ErrorType_scripting: ty=Error__SCRIPTING; break;
-    }
-    void *message = Util__notrans(mmc_mk_scon(members->errorMessageQueue->back()->getShortMessage().c_str()));
-    void *msg = Error__MESSAGE(id,ty,severity,message);
-    void *sl = mmc_mk_icon(members->errorMessageQueue->back()->getStartLineNo());
-    void *sc = mmc_mk_icon(members->errorMessageQueue->back()->getStartColumnNo());
-    void *el = mmc_mk_icon(members->errorMessageQueue->back()->getEndLineNo());
-    void *ec = mmc_mk_icon(members->errorMessageQueue->back()->getEndColumnNo());
-    void *filename = mmc_mk_scon(members->errorMessageQueue->back()->getFileName().c_str());
-    void *readonly = mmc_mk_icon(members->errorMessageQueue->back()->getIsFileReadOnly());
-    void *info = SourceInfo__SOURCEINFO(filename,readonly,sl,sc,el,ec,mmc_mk_rcon(0));
-    void *totmsg = Error__TOTALMESSAGE(msg,info);
-    res = mmc_mk_cons(totmsg,res);
-    pop_message(threadData,false);
+    void *msg = get_message_alloc(members);
+    res = mmc_mk_cons(msg, res);
+    pop_message(threadData, false);
   }
+  return res;
+}
+
+extern void* ErrorImpl__getCheckpointMessages(threadData_t *threadData)
+{
+  errorext_members *members = getMembers(threadData);
+  void *res = mmc_mk_nil();
+
+  if (members->checkPoints->size() == 0) return res;
+
+  int id = members->checkPoints->back().first;
+  while (members->errorMessageQueue->size() > id) {
+    void *msg = get_message_alloc(members);
+    res = mmc_mk_cons(msg, res);
+    pop_message(threadData, false);
+  }
+
   return res;
 }
 
