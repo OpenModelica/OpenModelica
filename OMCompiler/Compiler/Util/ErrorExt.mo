@@ -91,10 +91,18 @@ function getNumWarningMessages
 end getNumWarningMessages;
 
 function getMessages
+  "Returns all error messages and pops them from the message queue."
   output list<ErrorTypes.TotalMessage> res;
 
   external "C" res=Error_getMessages(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end getMessages;
+
+function getCheckpointMessages
+  "Returns all error messages since the last checkpoint and pops them from the message queue."
+  output list<ErrorTypes.TotalMessage> res;
+
+  external "C" res=ErrorImpl__getCheckpointMessages(OpenModelica.threadData()) annotation(Library = "omcruntime");
+end getCheckpointMessages;
 
 function clearMessages
   external "C" ErrorImpl__clearMessages(OpenModelica.threadData()) annotation(Library = "omcruntime");

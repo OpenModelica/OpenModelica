@@ -900,7 +900,7 @@ algorithm
           end if;
         else
           if Binding.isBound(c.condition) then
-            binding := Binding.INVALID_BINDING(binding, ErrorExt.getMessages());
+            binding := Binding.INVALID_BINDING(binding, ErrorExt.getCheckpointMessages());
           else
             ErrorExt.delCheckpoint(getInstanceName());
             fail();
@@ -3017,7 +3017,7 @@ algorithm
       bl2 := Equation.makeBranch(cond, eql, var) :: bl2;
     else
       bl2 := Equation.INVALID_BRANCH(Equation.makeBranch(cond, eql, var),
-                                     ErrorExt.getMessages()) :: bl2;
+                                     ErrorExt.getCheckpointMessages()) :: bl2;
     end try;
     ErrorExt.delCheckpoint(getInstanceName());
   end for;
