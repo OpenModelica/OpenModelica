@@ -41,6 +41,7 @@ public
   import DAEDump;
 
   // New Frontend imports
+  import Algorithm = NFAlgorithm;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import InstNode = NFInstNode.InstNode;
@@ -89,7 +90,7 @@ public
 
     record ALGORITHM
       Integer size "return value size";
-      DAE.Algorithm alg;
+      Algorithm alg;
       DAE.ElementSource source "origin of algorithm";
       DAE.Expand expand "this algorithm was translated from an equation. we should not expand array crefs!";
       EquationAttributes attr;
@@ -141,7 +142,7 @@ public
         case qualEq as ARRAY_EQUATION() then  "[ARRY] " + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
         case qualEq as SIMPLE_EQUATION() then "[SIMP] " + ComponentRef.toString(qualEq.lhs) + " = " + ComponentRef.toString(qualEq.rhs);
         case qualEq as RECORD_EQUATION() then "[RECD] " + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
-        case qualEq as ALGORITHM() then       "[ALGO] \n" + DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(qualEq.alg, qualEq.source)});
+        case qualEq as ALGORITHM() then       "[ALGO] \n" + Algorithm.toString(qualEq.alg);
         case qualEq as IF_EQUATION() then     "[-IF-] ";
         case qualEq as FOR_EQUATION() then    "[FOR-] ";
         case qualEq as WHEN_EQUATION() then   "[WHEN] ";

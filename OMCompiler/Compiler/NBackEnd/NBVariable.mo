@@ -54,6 +54,9 @@ public
   import Variable = NFVariable;
   import VariableKind = NFBackendExtension.VariableKind;
 
+  // Backend Imports
+  import BVariable = NBVariable;
+
   //Util Imports
   import Array;
   import BaseHashTable;
@@ -69,11 +72,18 @@ public
   ========================================================================== */
 public
 
-  // ToDo! Add BackendInfo to Variable.toString or make own dump.
 
   constant Variable DUMMY_VARIABLE = Variable.VARIABLE(ComponentRef.EMPTY(), Type.ANY(),
     NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PROTECTED, NFComponent.DEFAULT_ATTR,
     {}, NONE(), SCodeUtil.dummyInfo, NFBackendExtension.DUMMY_BACKEND_INFO);
+
+
+  function toString
+    input Variable var;
+    output String str;
+  algorithm
+    str := VariableKind.toString(var.backendinfo.varKind) + " " + Variable.toString(var);
+  end toString;
 
   uniontype Variables
     record VARIABLES
@@ -134,7 +144,7 @@ public
       for i in 1:arrayLength(varArr.varOptArr) loop
         if isSome(varArr.varOptArr[i]) then
           SOME(var) := varArr.varOptArr[i];
-          str := str + "[" + intString(i) + "] " + Variable.toString(var) + "\n";
+          str := str + "(" + intString(i) + ")\t" + BVariable.toString(var) + "\n";
         end if;
       end for;
     end toString;
@@ -155,7 +165,7 @@ public
       for i in 1:arrayLength(varArr.varOptArr) loop
         if isSome(varArr.varOptArr[i]) then
           SOME(var) := varArr.varOptArr[i];
-          str := str + "[" + intString(i) + "] " + Variable.toString(Pointer.access(var)) + "\n";
+          str := str + "[" + intString(i) + "] " + BVariable.toString(Pointer.access(var)) + "\n";
         end if;
       end for;
     end toString;

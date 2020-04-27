@@ -37,6 +37,7 @@ encapsulated uniontype NBackendDAE
 protected
 
   // New Frontend imports
+  import Algorithm = NFAlgorithm;
   import BackendExtension = NFBackendExtension;
   import ComponentRef = NFComponentRef;
   import ConvertDAE = NFConvertDAE;
@@ -87,7 +88,7 @@ public
   algorithm
     //print(FlatModel.toString(flatModel, true));
     variableData := lowerVariableData(flatModel.variables);
-    equations := lowerEquations(flatModel.equations);
+    equations := lowerEquationsAndAlgorithms(flatModel.equations, flatModel.algorithms, variableData);
     bdae := BDAE(variableData, equations);
   end lower;
 
@@ -192,6 +193,9 @@ protected
       attributes := ConvertDAE.convertVarAttributes(var.typeAttributes, var.ty, var.attributes);
       varKind := lowerVariableKind(Variable.variability(var), attributes, var.ty);
       var.backendinfo := BackendExtension.BACKEND_INFO(varKind, attributes, NONE());
+
+      // Remove old type attribute information since it has been converted.
+      var.typeAttributes := {};
     else
       Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerVariable failed for " + Variable.toString(var)});
       fail();
@@ -240,10 +244,15 @@ protected
     end match;
   end lowerVariableKind;
 
-  protected function lowerEquations
+  function lowerEquationsAndAlgorithms
     "ToDo! and algorithms
-    ToDo! Replace instNode in all Crefs"
+    ToDo! Replace instNode in all Crefs
+    Converts all frontend equations and algorithms to backend equations.
+    Also needs the variables, because it replaces all InstNodes with
+    VariablePointers for the Backend."
     input list<FEquation> eq_lst;
+    input list<Algorithm> al_lst;
+    input BVariable.VarData varData;
     output BEquation.Equations equations;
   protected
     Integer index = 1;
@@ -251,17 +260,18 @@ protected
   algorithm
   equations := ExpandableArray.new(realInt(listLength(eq_lst)*1.4), BEquation.DUMMY_EQUATION());
     for eq in eq_lst loop
-      backend_equations := lowerEquation(eq);
+      backend_equations := lowerEquation(eq, varData);
       for b_eq in backend_equations loop
         equations := ExpandableArray.set(index, b_eq, equations);
         index := index + 1;
       end for;
     end for;
     ExpandableArray.compress(equations);
-  end lowerEquations;
+  end lowerEquationsAndAlgorithms;
 
-  protected function lowerEquation
+  function lowerEquation
     input FEquation frontend_equation;
+    input BVariable.VarData varData;
     output list<Equation> backend_equations;
   algorithm
     backend_equations := match frontend_equation
@@ -300,7 +310,7 @@ protected
         // Treat each body equation individually because they can have different equation attributes
         // E.g.: DISCRETE, EvalStages
         for eq in body loop
-          new_body := lowerEquation(eq);
+          new_body := lowerEquation(eq, varData);
           for body_elem in new_body loop
             result := BEquation.FOR_EQUATION(iterator, range, body_elem, source, Equation.getAttributes(body_elem)) :: result;
           end for;
@@ -340,12 +350,21 @@ protected
     end match;
   end lowerEquation;
 
-  protected function lowerEquationAttributes
+  function lowerAlgorithm
+    input Algorithm alg;
+    output Equation eq;
+  algorithm
+    // ToDo!
+  end lowerAlgorithm;
+
+  function lowerEquationAttributes
     input Type ty;
     output BEquation.EquationAttributes attr;
   algorithm
     attr := if Type.isDiscrete(ty) then NBEquation.EQ_ATTR_DEFAULT_DISCRETE else NBEquation.EQ_ATTR_DEFAULT_DYNAMIC;
   end lowerEquationAttributes;
+
+
 
   annotation(__OpenModelica_Interface="backend");
 end NBackendDAE;

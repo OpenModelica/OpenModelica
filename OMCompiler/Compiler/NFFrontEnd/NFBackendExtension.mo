@@ -93,6 +93,41 @@ public
     record LOOP_ITERATION   "used in SIMCODE, iteration variables in algebraic loops" end LOOP_ITERATION;
     record LOOP_SOLVED      "used in SIMCODE, inner variables of a torn algebraic loop" end LOOP_SOLVED;
     record FRONTEND_DUMMY   "Undefined variable type. Only to be used during frontend phase." end FRONTEND_DUMMY;
+
+    function toString
+      input VariableKind varKind;
+      output String str;
+    algorithm
+      str := match varKind
+        case ALGEBRAIC() then           "[ALGB]";
+        case STATE() then               "[STAT]";
+        case STATE_DER() then           "[DER ]";
+        case DUMMY_DER() then           "[DDER]";
+        case DUMMY_STATE() then         "[DSTA]";
+        case CLOCKED_STATE() then       "[CLCK]";
+        case DISCRETE() then            "[DISC]";
+        case PREVIOUS() then            "[PREV]";
+        case PARAMETER() then           "[PRMT]";
+        case CONSTANT() then            "[CNST]";
+        case EXTOBJ() then              "[EXTO]";
+        case JAC_VAR() then             "[JACV]";
+        case JAC_DIFF_VAR() then        "[JACD]";
+        case SEED_VAR() then            "[SEED]";
+        case OPT_CONSTR() then          "[OPT][CONS]";
+        case OPT_FCONSTR() then         "[OPT][FCON]]";
+        case OPT_INPUT_WITH_DER() then  "[OPT][INWD]";
+        case OPT_INPUT_DER() then       "[OPT][INPD]";
+        case OPT_TGRID() then           "[OPT][TGRD]";
+        case OPT_LOOP_INPUT() then      "[OPT][LOOP]";
+        case ALG_STATE() then           "[ASTA]";
+        case DAE_RESIDUAL_VAR() then    "[RES ]";
+        case DAE_AUX_VAR() then         "[AUX ]";
+        case LOOP_ITERATION() then      "[LOOP]";
+        case LOOP_SOLVED() then         "[INNR]";
+        case FRONTEND_DUMMY() then      "[DUMY] Dummy Variable.";
+        else "[FAIL] NFBackendExtension.VariableKind.toString failed.";
+      end match;
+    end toString;
   end VariableKind;
 
   uniontype TearingSelect
