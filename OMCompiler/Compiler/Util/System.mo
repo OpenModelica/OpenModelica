@@ -1109,17 +1109,15 @@ public function numProcessors
   external "C" result = System_numProcessors() annotation(Library = {"omcruntime"});
 end numProcessors;
 
-public function launchParallelTasks "Takes a list of inputs and produces a list of Boolean (true if the function call was successful). The function is called by not using forks (experimental version using threads because fork doesn't play nice). Only returns if all functions return."
+public function launchParallelTasks<TI,TO> "Takes a list of inputs and produces a list of Boolean (true if the function call was successful). The function is called by not using forks (experimental version using threads because fork doesn't play nice). Only returns if all functions return."
   input Integer numThreads;
-  input list<AnyInput> inData;
+  input list<TI> inData;
   input ForkFunction func;
-  output list<AnyOutput> result;
+  output list<TO> result;
   partial function ForkFunction
-    input AnyInput inData;
-    output AnyOutput outData;
+    input TI inData;
+    output TO outData;
   end ForkFunction;
-  replaceable type AnyInput subtypeof Any;
-  replaceable type AnyOutput subtypeof Any;
 external "C" result = System_launchParallelTasks(OpenModelica.threadData(), numThreads, inData, func) annotation(Library = {"omcruntime"});
 end launchParallelTasks;
 
