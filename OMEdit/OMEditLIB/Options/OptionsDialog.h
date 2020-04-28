@@ -241,10 +241,6 @@ public:
   bool getShowProtectedClasses() {return mpShowProtectedClasses->isChecked();}
   void setShowHiddenClasses(bool value) {mpShowHiddenClasses->setChecked(value);}
   bool getShowHiddenClasses() {return mpShowHiddenClasses->isChecked();}
-  void setModelingViewMode(QString value);
-  QString getModelingViewMode();
-  void setDefaultView(QString value);
-  QString getDefaultView();
   QGroupBox* getEnableAutoSaveGroupBox() {return mpEnableAutoSaveGroupBox;}
   QSpinBox* getAutoSaveIntervalSpinBox() {return mpAutoSaveIntervalSpinBox;}
   int getWelcomePageView();
@@ -277,14 +273,6 @@ private:
   QSpinBox *mpLibraryIconTextLengthSpinBox;
   QCheckBox *mpShowProtectedClasses;
   QCheckBox *mpShowHiddenClasses;
-  QGroupBox *mpModelingViewModeGroupBox;
-  QRadioButton *mpModelingTabbedViewRadioButton;
-  QRadioButton *mpModelingSubWindowViewRadioButton;
-  QGroupBox *mpDefaultViewGroupBox;
-  QRadioButton *mpIconViewRadioButton;
-  QRadioButton *mpDiagramViewRadioButton;
-  QRadioButton *mpTextViewRadioButton;
-  QRadioButton *mpDocumentationViewRadioButton;
   QGroupBox *mpEnableAutoSaveGroupBox;
   Label *mpAutoSaveIntervalLabel;
   QSpinBox *mpAutoSaveIntervalSpinBox;
@@ -533,6 +521,11 @@ class GraphicalViewsPage : public QWidget
   Q_OBJECT
 public:
   GraphicalViewsPage(OptionsDialog *pOptionsDialog);
+  void setModelingViewMode(QString value);
+  QString getModelingViewMode();
+  void setDefaultView(QString value);
+  QString getDefaultView();
+  QCheckBox *getMoveConnectorsTogetherCheckBox() const {return mpMoveConnectorsTogetherCheckBox;}
   void setIconViewExtentLeft(double extentLeft);
   double getIconViewExtentLeft();
   void setIconViewExtentBottom(double extentBottom);
@@ -567,43 +560,27 @@ public:
   bool getDiagramViewPreserveAspectRation();
 private:
   OptionsDialog *mpOptionsDialog;
-  QTabWidget *mpGraphicalViewsTabWidget;
-  QWidget *mpIconViewWidget;
-  QGroupBox *mpIconViewExtentGroupBox;
-  Label *mpIconViewLeftLabel;
+  QRadioButton *mpModelingTabbedViewRadioButton;
+  QRadioButton *mpModelingSubWindowViewRadioButton;
+  QRadioButton *mpIconViewRadioButton;
+  QRadioButton *mpDiagramViewRadioButton;
+  QRadioButton *mpTextViewRadioButton;
+  QRadioButton *mpDocumentationViewRadioButton;
+  QCheckBox *mpMoveConnectorsTogetherCheckBox;
   DoubleSpinBox *mpIconViewLeftSpinBox;
-  Label *mpIconViewBottomLabel;
   DoubleSpinBox *mpIconViewBottomSpinBox;
-  Label *mpIconViewRightLabel;
   DoubleSpinBox *mpIconViewRightSpinBox;
-  Label *mpIconViewTopLabel;
   DoubleSpinBox *mpIconViewTopSpinBox;
-  QGroupBox *mpIconViewGridGroupBox;
-  Label *mpIconViewGridHorizontalLabel;
   DoubleSpinBox *mpIconViewGridHorizontalSpinBox;
-  Label *mpIconViewGridVerticalLabel;
   DoubleSpinBox *mpIconViewGridVerticalSpinBox;
-  QGroupBox *mpIconViewComponentGroupBox;
-  Label *mpIconViewScaleFactorLabel;
   DoubleSpinBox *mpIconViewScaleFactorSpinBox;
   QCheckBox *mpIconViewPreserveAspectRatioCheckBox;
-  QWidget *mpDiagramViewWidget;
-  QGroupBox *mpDiagramViewExtentGroupBox;
-  Label *mpDiagramViewLeftLabel;
   DoubleSpinBox *mpDiagramViewLeftSpinBox;
-  Label *mpDiagramViewBottomLabel;
   DoubleSpinBox *mpDiagramViewBottomSpinBox;
-  Label *mpDiagramViewRightLabel;
   DoubleSpinBox *mpDiagramViewRightSpinBox;
-  Label *mpDiagramViewTopLabel;
   DoubleSpinBox *mpDiagramViewTopSpinBox;
-  QGroupBox *mpDiagramViewGridGroupBox;
-  Label *mpDiagramViewGridHorizontalLabel;
   DoubleSpinBox *mpDiagramViewGridHorizontalSpinBox;
-  Label *mpDiagramViewGridVerticalLabel;
   DoubleSpinBox *mpDiagramViewGridVerticalSpinBox;
-  QGroupBox *mpDiagramViewComponentGroupBox;
-  Label *mpDiagramViewScaleFactorLabel;
   DoubleSpinBox *mpDiagramViewScaleFactorSpinBox;
   QCheckBox *mpDiagramViewPreserveAspectRatioCheckBox;
 };

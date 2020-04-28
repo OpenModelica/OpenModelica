@@ -41,6 +41,7 @@
 #include "Plotting/VariablesWidget.h"
 #include "OMS/BusDialog.h"
 #include "Util/ResourceCache.h"
+#include "Options/OptionsDialog.h"
 
 #include <QMessageBox>
 #include <QMenu>
@@ -1583,7 +1584,8 @@ void Component::adjustInterfacePoints()
 void Component::updateComponentTransformations(const Transformation &oldTransformation, const bool positionChanged)
 {
   mpGraphicsView->getModelWidget()->beginMacro("Update component transformations");
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation, positionChanged));
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation, positionChanged,
+                                                                                                   OptionsDialog::instance()->getGraphicalViewsPage()->getMoveConnectorsTogetherCheckBox()->isChecked()));
   emit transformChanging();
   mpGraphicsView->getModelWidget()->endMacro();
 }
