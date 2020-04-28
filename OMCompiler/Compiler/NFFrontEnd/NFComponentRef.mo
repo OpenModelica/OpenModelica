@@ -108,18 +108,16 @@ public
 
   function fromAbsynCref
     input Absyn.ComponentRef acref;
+    input ComponentRef restCref = EMPTY();
     output ComponentRef cref;
   algorithm
     cref := match acref
       case Absyn.ComponentRef.CREF_IDENT()
-        then CREF(InstNode.NAME_NODE(acref.name),
-          list(Subscript.RAW_SUBSCRIPT(s) for s in acref.subscripts),
-          Type.UNKNOWN(), Origin.CREF, EMPTY());
+        then fromAbsyn(InstNode.NAME_NODE(acref.name), acref.subscripts, restCref);
 
       case Absyn.ComponentRef.CREF_QUAL()
-        then CREF(InstNode.NAME_NODE(acref.name),
-          list(Subscript.RAW_SUBSCRIPT(s) for s in acref.subscripts),
-          Type.UNKNOWN(), Origin.CREF, fromAbsynCref(acref.componentRef));
+        then fromAbsynCref(acref.componentRef,
+               fromAbsyn(InstNode.NAME_NODE(acref.name), acref.subscripts, restCref));
 
       case Absyn.ComponentRef.CREF_FULLYQUALIFIED()
         then fromAbsynCref(acref.componentRef);

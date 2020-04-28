@@ -897,7 +897,7 @@ public
     Dimension dim;
     list<Dimension> dims, subbed_dims = {};
   algorithm
-    if listEmpty(subs) then
+    if listEmpty(subs) or isUnknown(ty) then
       return;
     end if;
 

@@ -799,8 +799,9 @@ algorithm
     (n, is_import) := Class.lookupElement(name, cls);
   else
     true := InstNode.isComponent(node);
-    n := InstNode.NAME_NODE(name);
-    is_import := false;
+    true := Class.isExpandableConnectorClass(cls);
+    foundCref := ComponentRef.fromAbsynCref(cref, foundCref);
+    return;
   end try;
 
   if is_import then
