@@ -49,6 +49,7 @@ public
   import Binding = NFBinding;
   import Component = NFComponent;
   import ComponentRef = NFComponentRef;
+  import InstNode = NFInstNode.InstNode;
   import Prefixes = NFPrefixes;
   import Type = NFType;
   import Variable = NFVariable;
@@ -177,6 +178,48 @@ public
         fail();
       end try;
     end getVarAt;
+
+    public function getVar
+      "Use only for lowering purposes! Otherwise use the InstNode in the
+      ComponentRef."
+      input ComponentRef cref;
+      input Variables variables;
+      output Variable var;
+    protected
+      Integer hash_idx, index;
+      list<CrefIndex> cr_indices;
+      ComponentRef cr;
+    algorithm
+      try
+        hash_idx := ComponentRef.hash(cref, variables.bucketSize) + 1;
+        cr_indices := variables.crefIndices[hash_idx];
+        CREFINDEX(index = index) := List.getMemberOnTrue(cref, cr_indices, crefIndexEqualCref);
+        var as NFVariable.VARIABLE(name = cr) := getVarAt(variables, index + 1);
+        true := ComponentRef.isEqual(cr, cref);
+      else
+        Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.Variables.getVar failed for " + ComponentRef.toString(cref)});
+      end try;
+    end getVar;
+
+    function updateInstNode
+      input output ComponentRef cref;
+      input Variables variables;
+    algorithm
+      cref := match cref
+        local
+          ComponentRef qualCref;
+
+        case qualCref as ComponentRef.CREF()
+          algorithm
+            qualCref.node := InstNode.VAR_NODE(Pointer.create(getVar(cref, variables)));
+        then qualCref;
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.Variables.setVarPointer failed for " + ComponentRef.toString(cref)});
+        then fail();
+
+      end match;
+    end updateInstNode;
   end Variables;
 
   uniontype VariableArray
@@ -545,6 +588,20 @@ public
         else fail();
       end match;
     end toStringVerbose;
+
+    function getVariables
+      input VarData varData;
+      output Variables variables;
+    algorithm
+      variables := match varData
+        local
+          Variables tmp;
+        case VAR_DATA_SIM(variables = tmp) then tmp;
+        case VAR_DATA_JAC(variables = tmp) then tmp;
+        case VAR_DATA_HESS(variables = tmp) then tmp;
+        else fail();
+      end match;
+    end getVariables;
   end VarData;
 
   uniontype StateOrder

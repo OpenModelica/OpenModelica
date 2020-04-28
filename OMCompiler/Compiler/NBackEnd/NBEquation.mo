@@ -82,7 +82,7 @@ public
       Expression rhs                  "right hand side expression";
       DAE.ElementSource source        "origin of equation";
       EquationAttributes attr         "Additional Attributes";
-  end RECORD_EQUATION;
+    end RECORD_EQUATION;
 
     record ALGORITHM
       Integer size                    "output size";
@@ -170,6 +170,92 @@ public
         else EQ_ATTR_DEFAULT_UNKNOWN;
       end match;
     end getAttributes;
+
+    // TODO! use referenceEq when updating stuff
+    function map
+      "Traverses all expressions of the equations and applies a function to it.
+      Optional second input to also traverse crefs, only needed for simple
+      eqns, when eqns and algorithms."
+      input output Equation eq;
+      input MapFuncExp funcExp;
+      input Option<MapFuncCref> funcCrefOpt = NONE();
+      partial function MapFuncExp
+        input output Expression e;
+      end MapFuncExp;
+      partial function MapFuncCref
+        input output ComponentRef c;
+      end MapFuncCref;
+    algorithm
+      eq := match eq
+        local
+          Equation qualEq, body;
+          MapFuncCref funcCref;
+          list<list<Equation>> eqnstrue = {};
+
+        case qualEq as SCALAR_EQUATION()
+          algorithm
+            qualEq.lhs := funcExp(qualEq.lhs);
+            qualEq.rhs := funcExp(qualEq.rhs);
+        then qualEq;
+
+        case qualEq as ARRAY_EQUATION()
+          algorithm
+            qualEq.lhs := funcExp(qualEq.lhs);
+            qualEq.rhs := funcExp(qualEq.rhs);
+        then qualEq;
+
+        case qualEq as SIMPLE_EQUATION() guard(isSome(funcCrefOpt))
+          algorithm
+            SOME(funcCref) := funcCrefOpt;
+            qualEq.lhs := funcCref(qualEq.lhs);
+            qualEq.rhs := funcCref(qualEq.rhs);
+        then qualEq;
+
+        case qualEq as RECORD_EQUATION()
+          algorithm
+            qualEq.lhs := funcExp(qualEq.lhs);
+            qualEq.rhs := funcExp(qualEq.rhs);
+        then qualEq;
+
+        case qualEq as ALGORITHM()
+          algorithm
+            qualEq.alg := Algorithm.mapExp(qualEq.alg, funcExp);
+            if isSome(funcCrefOpt) then
+              SOME(funcCref) := funcCrefOpt;
+              qualEq.inputs := List.map(qualEq.inputs, funcCref);
+              qualEq.outputs := List.map(qualEq.outputs, funcCref);
+            end if;
+        then qualEq;
+
+        case qualEq as IF_EQUATION()
+          algorithm
+            qualEq.conditions := List.map(qualEq.conditions, funcExp);
+            for eqn_lst in qualEq.eqnstrue loop
+              eqnstrue := List.map2(eqn_lst, map, funcExp, funcCrefOpt) :: eqnstrue;
+            end for;
+            qualEq.eqnstrue := listReverse(eqnstrue);
+            qualEq.eqnsfalse := List.map2(qualEq.eqnsfalse, map, funcExp, funcCrefOpt);
+        then qualEq;
+
+        case qualEq as FOR_EQUATION()
+          algorithm
+            qualEq.range := funcExp(qualEq.range);
+            qualEq.body := map(qualEq.body, funcExp, funcCrefOpt);
+            qualEq.range := funcExp(qualEq.range);
+        then qualEq;
+
+        case qualEq as WHEN_EQUATION()
+          algorithm
+            qualEq.body := WhenEquationBody.map(qualEq.body, funcExp, funcCrefOpt);
+        then qualEq;
+
+        case qualEq as AUX_EQUATION(body = SOME(body))
+          algorithm
+            qualEq.body := SOME(map(body, funcExp, funcCrefOpt));
+        then qualEq;
+      end match;
+    end map;
+
   end Equation;
 
   uniontype WhenEquationBody
@@ -197,6 +283,21 @@ public
       end if;
       str := str + indent + "end when;";
     end toString;
+
+    function map
+      input output WhenEquationBody whenBody;
+      input MapFuncExp funcExp;
+      input Option<MapFuncCref> funcCrefOpt;
+      partial function MapFuncExp
+        input output Expression e;
+      end MapFuncExp;
+      partial function MapFuncCref
+        input output ComponentRef c;
+      end MapFuncCref;
+    algorithm
+      whenBody.condition := funcExp(whenBody.condition);
+      whenBody.when_stmts := List.map2(whenBody.when_stmts, WhenStatement.map, funcExp, funcCrefOpt);
+    end map;
   end WhenEquationBody;
 
   uniontype WhenStatement
@@ -249,6 +350,60 @@ public
                                                                               else str + "NBEquation.WhenStatement.toString failed.";
       end match;
     end toString;
+
+    function map
+      input output WhenStatement stmt;
+      input MapFunc funcExp;
+      input Option<MapFuncCref> funcCrefOpt;
+      partial function MapFunc
+        input output Expression e;
+      end MapFunc;
+      partial function MapFuncCref
+        input output ComponentRef c;
+      end MapFuncCref;
+    algorithm
+      stmt := match stmt
+        local
+          WhenStatement qual;
+          MapFuncCref funcCref;
+
+        case qual as ASSIGN()
+          algorithm
+            qual.lhs := funcExp(qual.lhs);
+            qual.rhs := funcExp(qual.rhs);
+        then qual;
+
+        case qual as REINIT()
+          algorithm
+            if isSome(funcCrefOpt) then
+              SOME(funcCref) := funcCrefOpt;
+              qual.stateVar := funcCref(qual.stateVar);
+            end if;
+            qual.value := funcExp(qual.value);
+        then qual;
+
+        case qual as ASSERT()
+          algorithm
+            qual.condition := funcExp(qual.condition);
+            // These might not be neccessary
+            qual.message := funcExp(qual.message);
+            qual.level := funcExp(qual.level);
+        then qual;
+
+        case qual as TERMINATE()
+          algorithm
+            // This might not be neccessary
+            qual.message := funcExp(qual.message);
+        then qual;
+
+        case qual as NORETCALL()
+          algorithm
+            qual.exp := funcExp(qual.exp);
+        then qual;
+
+        else stmt;
+      end match;
+    end map;
   end WhenStatement;
 
   uniontype EquationAttributes
@@ -267,6 +422,7 @@ public
   constant EquationAttributes EQ_ATTR_DEFAULT_UNKNOWN = EQUATION_ATTRIBUTES(false, UNKNOWN_EQUATION_KIND(), DEFAULT_EVALUATION_STAGES);
 
   uniontype EquationKind
+
     record BINDING_EQUATION
     end BINDING_EQUATION;
     record DYNAMIC_EQUATION
@@ -314,7 +470,6 @@ public
       end for;
     end toString;
 
-
     function fromList
       input list<Equation> eq_lst;
       output Equations equations;
@@ -324,6 +479,54 @@ public
         equations.eqArr := ExpandableArray.add(eq, equations.eqArr);
       end for;
     end fromList;
+
+    function map
+      "Traverses all equations and applies a function to them."
+      input output Equations equations;
+      input MapFunc func;
+      partial function MapFunc
+        input output Equation e;
+      end MapFunc;
+    protected
+      Equation eq, new_eq;
+    algorithm
+      for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
+        if ExpandableArray.occupied(i, equations.eqArr) then
+          eq := ExpandableArray.get(i, equations.eqArr);
+          new_eq := func(eq);
+          if not referenceEq(eq, new_eq) then
+            ExpandableArray.update(i, new_eq, equations.eqArr);
+          end if;
+        end if;
+      end for;
+    end map;
+
+    function mapExp
+      "Traverses all expressions of all equations and applies a function to it.
+      Optional second input to also traverse crefs, only needed for simple
+      eqns, when eqns and algorithms."
+      input output Equations equations;
+      input MapFuncExp funcExp;
+      input Option<MapFuncCref> funcCrefOpt = NONE();
+      partial function MapFuncExp
+        input output Expression e;
+      end MapFuncExp;
+      partial function MapFuncCref
+        input output ComponentRef c;
+      end MapFuncCref;
+    protected
+      Equation eq, new_eq;
+    algorithm
+      for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
+        if ExpandableArray.occupied(i, equations.eqArr) then
+          eq := ExpandableArray.get(i, equations.eqArr);
+          new_eq := Equation.map(eq, funcExp, funcCrefOpt);
+          if not referenceEq(eq, new_eq) then
+            ExpandableArray.update(i, new_eq, equations.eqArr);
+          end if;
+        end if;
+      end for;
+    end mapExp;
   end Equations;
 
   uniontype EquationPointers
@@ -352,6 +555,54 @@ public
         equationPointers.eqArr := ExpandableArray.add(eq, equationPointers.eqArr);
       end for;
     end fromList;
+
+    function map
+      "Traverses all equations and applies a function to them."
+      input output EquationPointers equations;
+      input MapFunc func;
+      partial function MapFunc
+        input output Equation e;
+      end MapFunc;
+    protected
+      Equation eq, new_eq;
+    algorithm
+      for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
+        if ExpandableArray.occupied(i, equations.eqArr) then
+          eq := Pointer.access(ExpandableArray.get(i, equations.eqArr));
+          new_eq := func(eq);
+          if not referenceEq(eq, new_eq) then
+            ExpandableArray.update(i, Pointer.create(new_eq), equations.eqArr);
+          end if;
+        end if;
+      end for;
+    end map;
+
+    function mapExp
+      "Traverses all expressions of all equations and applies a function to it.
+      Optional second input to also traverse crefs, only needed for simple
+      eqns, when eqns and algorithms."
+      input output EquationPointers equations;
+      input MapFuncExp funcExp;
+      input Option<MapFuncCref> funcCrefOpt = NONE();
+      partial function MapFuncExp
+        input output Expression e;
+      end MapFuncExp;
+      partial function MapFuncCref
+        input output ComponentRef c;
+      end MapFuncCref;
+    protected
+      Equation eq, new_eq;
+    algorithm
+      for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
+        if ExpandableArray.occupied(i, equations.eqArr) then
+          eq := Pointer.access(ExpandableArray.get(i, equations.eqArr));
+          new_eq := Equation.map(eq, funcExp, funcCrefOpt);
+          if not referenceEq(eq, new_eq) then
+            ExpandableArray.update(i, Pointer.create(new_eq), equations.eqArr);
+          end if;
+        end if;
+      end for;
+    end mapExp;
   end EquationPointers;
 
   uniontype EqData

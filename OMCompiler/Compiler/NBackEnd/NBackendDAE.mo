@@ -88,7 +88,7 @@ public
   algorithm
     //print(FlatModel.toString(flatModel, true));
     variableData := lowerVariableData(flatModel.variables);
-    equationData := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, variableData);
+    equationData := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, BVariable.VarData.getVariables(variableData));
     bdae := BDAE(variableData, equationData);
   end lower;
 
@@ -257,7 +257,7 @@ protected
     input list<Algorithm> al_lst;
     input list<FEquation> init_eq_lst;
     input list<Algorithm> init_al_lst;
-    input BVariable.VarData varData;
+    input BVariable.Variables variables;
     output BEquation.EqData eqData;
   protected
     list<Equation> equation_lst;
@@ -265,8 +265,9 @@ protected
     BEquation.Equations equations;
     BEquation.EquationPointers continuous, discretes, initials, auxiliaries;
   algorithm
-    equation_lst := lowerEquationsAndAlgorithms(eq_lst, al_lst, init_eq_lst, init_al_lst, varData);
+    equation_lst := lowerEquationsAndAlgorithms(eq_lst, al_lst, init_eq_lst, init_al_lst);
     equations := BEquation.Equations.fromList(equation_lst);
+    equations := lowerComponentReferences(equations, variables);
 
     for eq in equation_lst loop
       _:= match Equation.getAttributes(eq)
@@ -303,14 +304,11 @@ protected
 
   function lowerEquationsAndAlgorithms
     "ToDo! Replace instNode in all Crefs
-    Converts all frontend equations and algorithms to backend equations.
-    Also needs the variables, because it replaces all InstNodes with
-    VariablePointers for the Backend."
+    Converts all frontend equations and algorithms to backend equations."
     input list<FEquation> eq_lst;
     input list<Algorithm> al_lst;
     input list<FEquation> init_eq_lst;
     input list<Algorithm> init_al_lst;
-    input BVariable.VarData varData;
     output list<Equation> equations = {};
   algorithm
     // ---------------------------
@@ -318,7 +316,7 @@ protected
     // ---------------------------
     for eq in eq_lst loop
       // returns a list of equations since for and if equations might be split up
-      equations := listAppend(lowerEquation(eq, varData, false), equations);
+      equations := listAppend(lowerEquation(eq, false), equations);
     end for;
 
     // ---------------------------
@@ -333,7 +331,7 @@ protected
     // ---------------------------
     for eq in init_eq_lst loop
       // returns a list of equations since for and if equations might be split up
-      equations := listAppend(lowerEquation(eq, varData, true), equations);
+      equations := listAppend(lowerEquation(eq, true), equations);
     end for;
 
     // ---------------------------
@@ -346,7 +344,6 @@ protected
 
   function lowerEquation
     input FEquation frontend_equation         "Original Frontend equation.";
-    input BVariable.VarData varData           "Variable Data for InstNode replacement.";
     input Boolean init                        "True if an initial equation should be created.";
     output list<Equation> backend_equations   "Resulting Backend equations.";
   algorithm
@@ -386,7 +383,7 @@ protected
         // Treat each body equation individually because they can have different equation attributes
         // E.g.: DISCRETE, EvalStages
         for eq in body loop
-          new_body := lowerEquation(eq, varData, init);
+          new_body := lowerEquation(eq, init);
           for body_elem in new_body loop
             result := BEquation.FOR_EQUATION(iterator, range, body_elem, source, Equation.getAttributes(body_elem)) :: result;
           end for;
@@ -599,6 +596,45 @@ protected
             elseif Type.isDiscrete(ty) then NBEquation.EQ_ATTR_DEFAULT_DISCRETE
             else NBEquation.EQ_ATTR_DEFAULT_DYNAMIC;
   end lowerEquationAttributes;
+
+  function lowerComponentReferences
+    input output BEquation.Equations equations;
+    input BVariable.Variables variables;
+  algorithm
+    equations := BEquation.Equations.mapExp(equations,function lowerComponentReferenceExp(variables = variables), SOME(function lowerComponentReference(variables = variables)));
+  end lowerComponentReferences;
+
+  function lowerComponentReferenceExp
+    input output Expression exp;
+    input BVariable.Variables variables;
+  algorithm
+    exp := match exp
+      local
+        Type ty;
+        ComponentRef cref;
+      case Expression.CREF(ty = ty, cref = cref) then Expression.CREF(ty, lowerComponentReference(cref, variables));
+      else exp;
+    end match;
+  end lowerComponentReferenceExp;
+
+  function lowerComponentReference
+    input output ComponentRef cref;
+    input BVariable.Variables variables;
+  algorithm
+    cref := match cref
+      local
+        ComponentRef qual;
+        Variable var;
+
+      case qual as ComponentRef.CREF()
+        algorithm
+          var := BVariable.Variables.getVar(qual, variables);
+          qual.node := InstNode.VAR_NODE(Pointer.create(var));
+      then qual;
+
+      else cref;
+    end match;
+  end lowerComponentReference;
 
   annotation(__OpenModelica_Interface="backend");
 end NBackendDAE;
