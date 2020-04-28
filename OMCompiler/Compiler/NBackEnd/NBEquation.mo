@@ -38,7 +38,6 @@ encapsulated package NBEquation
 public
   // Old Frontend imports
   import DAE;
-  import DAEDump;
 
   // New Frontend imports
   import Algorithm = NFAlgorithm;
@@ -52,9 +51,6 @@ public
   // Util imports
   import ExpandableArray;
   import StringUtil;
-
-  type Equations = ExpandableArray<Equation>;
-  type EquationPointers = ExpandableArray<Pointer<Equation>>;
 
   uniontype Equation
     record SCALAR_EQUATION
@@ -153,30 +149,6 @@ public
         else                                  "[FAIL] Equation.toString failed!";
       end match;
     end toString;
-
-    function equationsToString
-      input Equations equations;
-      input output String str = "";
-    protected
-      Integer numberOfElements = ExpandableArray.getNumberOfElements(equations);
-    algorithm
-      str := StringUtil.headline_3(str + " Equations (" + intString(numberOfElements) + ")") + "\n";
-      for i in 1:numberOfElements loop
-        str := str + "(" + intString(i) + ")\t" + toString(ExpandableArray.get(i, equations), "\t") + "\n";
-      end for;
-    end equationsToString;
-
-    function equationPointersToString
-      input EquationPointers equations;
-      input output String str = "";
-    protected
-      Integer numberOfElements = ExpandableArray.getNumberOfElements(equations);
-    algorithm
-      str := StringUtil.headline_4(str + " Equation Pointers (" + intString(numberOfElements) + ")") + "\n";
-      for i in 1:numberOfElements loop
-        str := str + "(" + intString(i) + ")\t" + toString(Pointer.access(ExpandableArray.get(i, equations)), "\t") + "\n";
-      end for;
-    end equationPointersToString;
 
     function getAttributes
       input Equation eq;
@@ -323,6 +295,135 @@ public
   end EvaluationStages;
 
   constant EvaluationStages DEFAULT_EVALUATION_STAGES = EVALUATION_STAGES(false,false,false,false);
+
+
+  uniontype Equations
+    record EQUATIONS
+      ExpandableArray<Equation> eqArr;
+    end EQUATIONS;
+
+    function toString
+      input Equations equations;
+      input output String str = "";
+    protected
+      Integer numberOfElements = ExpandableArray.getNumberOfElements(equations.eqArr);
+    algorithm
+      str := StringUtil.headline_3(str + " Equations (" + intString(numberOfElements) + ")") + "\n";
+      for i in 1:numberOfElements loop
+        str := str + "(" + intString(i) + ")\t" + Equation.toString(ExpandableArray.get(i, equations.eqArr), "\t") + "\n";
+      end for;
+    end toString;
+
+
+    function fromList
+      input list<Equation> eq_lst;
+      output Equations equations;
+    algorithm
+    equations := EQUATIONS(ExpandableArray.new(listLength(eq_lst), DUMMY_EQUATION()));
+      for eq in eq_lst loop
+        equations.eqArr := ExpandableArray.add(eq, equations.eqArr);
+      end for;
+    end fromList;
+  end Equations;
+
+  uniontype EquationPointers
+    record EQUATION_POINTERS
+      ExpandableArray<Pointer<Equation>> eqArr;
+    end EQUATION_POINTERS;
+
+    function toString
+      input EquationPointers equations;
+      input output String str = "";
+    protected
+      Integer numberOfElements = ExpandableArray.getNumberOfElements(equations.eqArr);
+    algorithm
+      str := StringUtil.headline_4(str + " EquationPointers (" + intString(numberOfElements) + ")") + "\n";
+      for i in 1:numberOfElements loop
+        str := str + "(" + intString(i) + ")\t" + Equation.toString(Pointer.access(ExpandableArray.get(i, equations.eqArr)), "\t") + "\n";
+      end for;
+    end toString;
+
+    function fromList
+      input list<Pointer<Equation>> eq_lst;
+      output EquationPointers equationPointers;
+    algorithm
+    equationPointers := EQUATION_POINTERS(ExpandableArray.new(listLength(eq_lst), Pointer.create(DUMMY_EQUATION())));
+      for eq in eq_lst loop
+        equationPointers.eqArr := ExpandableArray.add(eq, equationPointers.eqArr);
+      end for;
+    end fromList;
+  end EquationPointers;
+
+  uniontype EqData
+    record EQ_DATA_SIM
+      Equations equations           "All equations";
+      EquationPointers continuous   "Continuous equations";
+      EquationPointers discretes    "Discrete equations";
+      EquationPointers initials     "(Exclusively) Initial equations";
+      EquationPointers auxiliaries  "Auxiliary equations";
+    end EQ_DATA_SIM;
+
+    record EQ_DATA_JAC
+      Equations equations           "All equations";
+      EquationPointers results      "Result equations";
+      EquationPointers temporary    "Temporary inner equations";
+      EquationPointers auxiliaries  "Auxiliary equations";
+    end EQ_DATA_JAC;
+
+    record EQ_DATA_HESS
+      Equations equations           "All equations";
+      Pointer<Equation> result      "Result equation";
+      EquationPointers temporary    "Temporary inner equations";
+      EquationPointers auxiliaries  "Auxiliary equations";
+    end EQ_DATA_HESS;
+
+    function toString
+      input EqData eqData;
+      input Integer level = 0;
+      output String str;
+    algorithm
+      str := match eqData
+        local
+          EqData qualEqData;
+          String tmp;
+        case qualEqData as EQ_DATA_SIM()
+          algorithm
+            if level == 0 then
+              tmp :=  Equations.toString(qualEqData.equations, "Simulation");
+            else
+              tmp :=  EquationPointers.toString(qualEqData.continuous, "Continuous") + "\n" +
+                      EquationPointers.toString(qualEqData.discretes, "Discrete") + "\n" +
+                      EquationPointers.toString(qualEqData.initials, "(Exclusively) Initial") + "\n" +
+                      EquationPointers.toString(qualEqData.auxiliaries, "Auxiliary");
+            end if;
+        then tmp;
+        case qualEqData as EQ_DATA_JAC()
+          algorithm
+            if level == 0 then
+              tmp :=  Equations.toString(qualEqData.equations, "Jacobian");
+            else
+              tmp :=  EquationPointers.toString(qualEqData.results, "Result") + "\n" +
+                      EquationPointers.toString(qualEqData.temporary, "Temporary Inner") + "\n" +
+                      EquationPointers.toString(qualEqData.auxiliaries, "Auxiliary");
+            end if;
+        then tmp;
+        case qualEqData as EQ_DATA_HESS()
+          algorithm
+            if level == 0 then
+              tmp :=  Equations.toString(qualEqData.equations, "Hessian");
+            else
+              tmp :=  StringUtil.headline_4("Result Equation Pointer") + "\n" +
+                      Equation.toString(Pointer.access(qualEqData.result)) + "\n" +
+                      EquationPointers.toString(qualEqData.temporary, "Temporary Inner") + "\n" +
+                      EquationPointers.toString(qualEqData.auxiliaries, "Auxiliary");
+            end if;
+        then tmp;
+
+      else "NBEquation.EqData.toString failed!\n";
+      end match;
+    end toString;
+
+  end EqData;
 
   annotation(__OpenModelica_Interface="backend");
 end NBEquation;

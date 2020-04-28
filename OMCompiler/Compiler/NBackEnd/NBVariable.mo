@@ -100,32 +100,84 @@ public
         str := StringUtil.headline_3(str + " Variables " + "(" + intString(variables.numberOfVars) + ")") + "\n";
         str := str + VariableArray.toString(variables.varArr);
     end toString;
-  end Variables;
 
-  uniontype VariablePointers
-    record VARIABLE_POINTERS
-      array<list<CrefIndex>> crefIndices "HashTB, cref->indx";
-      VariablePointerArray varArr "Array of variable pointers";
-      Integer bucketSize "bucket size";
-      Integer numberOfVars "no. of variable pointers";
-    end VARIABLE_POINTERS;
-
-    function toString
-      input VariablePointers variables;
-      input output String str = "";
+    function empty
+      "Creates an empty Variables object with minimal given size."
+      input Integer size = BaseHashTable.defaultBucketSize;
+      output Variables variables;
+    protected
+      Integer arr_size, bucketSize;
+      VariableArray varArr;
     algorithm
-        str := StringUtil.headline_4(str + " VariablePointers " + "(" + intString(variables.numberOfVars) + ")") + "\n";
-        str := str + VariablePointerArray.toString(variables.varArr);
-    end toString;
-  end VariablePointers;
+      arr_size := max(size, BaseHashTable.lowBucketSize);
+      bucketSize :=  realInt(intReal(arr_size) * 1.4);
+      varArr := VARIABLE_ARRAY(0, arrayCreate(arr_size, NONE()));
+      variables := VARIABLES(arrayCreate(bucketSize, {}), varArr, bucketSize, 0);
+    end empty;
 
-  uniontype CrefIndex
-    "Component Reference Index"
-    record CREFINDEX
-      ComponentRef cref;
-      Integer index;
-    end CREFINDEX;
-  end CrefIndex;
+    function fromList
+      "Creates Variables from a Variable list."
+      input list<Variable> var_lst;
+      output Variables variables;
+    algorithm
+      variables := empty(listLength(var_lst));
+      variables := addVars(var_lst, variables);
+    end fromList;
+
+    public function addVars
+      "Adds a list of variables to the Variables structure. If any variable already
+      exists it's updated instead."
+      input list<Variable> var_lst;
+      input output Variables variables;
+    algorithm
+      variables := List.fold(var_lst, addVar, variables);
+    end addVars;
+
+    function addVar
+      "Adds a variable to the set, or updates it if it already exists."
+      input Variable var;
+      input output Variables variables;
+    protected
+      Integer hash_idx, arr_idx;
+      list<CrefIndex> indices;
+    algorithm
+      hash_idx := ComponentRef.hash(var.name, variables.bucketSize) + 1;
+      indices := arrayGet(variables.crefIndices, hash_idx);
+
+      try
+        // If the variable already exists, overwrite it
+        CREFINDEX(index = arr_idx) := List.getMemberOnTrue(var.name, indices, crefIndexEqualCref);
+        variables.varArr := VariableArray.setVarAt(variables.varArr, arr_idx + 1, var);
+      else
+        // otherwise create new variable at the end of the array and expand if neccessary
+        variables.varArr := VariableArray.appendVar(variables.varArr, var);
+        arrayUpdate(variables.crefIndices, hash_idx, (CREFINDEX(var.name, variables.numberOfVars) :: indices));
+        variables.numberOfVars := variables.numberOfVars + 1;
+      end try;
+    end addVar;
+
+    function setVarAt
+      "Sets a Variable at a specific index in the VariableArray."
+      input output Variables variables;
+      input Integer index;
+      input Variable var;
+    algorithm
+      variables.varArr := VariableArray.setVarAt(variables.varArr, index, var);
+    end setVarAt;
+
+    function getVarAt
+      "Returns the variable at given index. If there is none it fails."
+      input Variables variables;
+      input Integer index;
+      output Variable var;
+    algorithm
+      try
+        SOME(var) := variables.varArr.varOptArr[index];
+      else
+        fail();
+      end try;
+    end getVarAt;
+  end Variables;
 
   uniontype VariableArray
     "array of variables are expandable, to amortize the cost of adding
@@ -148,7 +200,127 @@ public
         end if;
       end for;
     end toString;
+
+    function setVarAt
+      "Sets a Variable at a specific index in the VariableArray."
+      input output VariableArray varArr;
+      input Integer index;
+      input Variable var;
+    algorithm
+      true := index <= varArr.numberOfElements;
+      arrayUpdate(varArr.varOptArr, index, SOME(var));
+    end setVarAt;
+
+    function appendVar
+    "author: PA
+      Adds a variable last to the VariableArray, increasing array size
+      if no space left by factor 1.4"
+      input output VariableArray varArr;
+      input Variable var;
+    protected
+      array<Option<Variable>> arr;
+    algorithm
+      varArr.numberOfElements := varArr.numberOfElements + 1;
+      varArr.varOptArr := Array.expandOnDemand(varArr.numberOfElements, varArr.varOptArr, 1.4, NONE());
+      arrayUpdate(varArr.varOptArr, varArr.numberOfElements, SOME(var));
+    end appendVar;
   end VariableArray;
+
+  uniontype VariablePointers
+    record VARIABLE_POINTERS
+      array<list<CrefIndex>> crefIndices "HashTB, cref->indx";
+      VariablePointerArray varArr "Array of variable pointers";
+      Integer bucketSize "bucket size";
+      Integer numberOfVars "no. of variable pointers";
+    end VARIABLE_POINTERS;
+
+    function toString
+      input VariablePointers variables;
+      input output String str = "";
+    algorithm
+        str := StringUtil.headline_4(str + " VariablePointers " + "(" + intString(variables.numberOfVars) + ")") + "\n";
+        str := str + VariablePointerArray.toString(variables.varArr);
+    end toString;
+
+    function empty
+      "Creates an empty VariablePointers using given size * 1.4."
+      input Integer size = BaseHashTable.bigBucketSize;
+      output VariablePointers variables;
+    protected
+      Integer arr_size, bucketSize;
+      VariablePointerArray varArr;
+    algorithm
+      arr_size := max(size, BaseHashTable.lowBucketSize);
+      bucketSize :=  realInt(intReal(arr_size) * 1.4);
+      varArr := VARIABLE_POINTER_ARRAY(0, arrayCreate(arr_size, NONE()));
+      variables := VARIABLE_POINTERS(arrayCreate(bucketSize, {}), varArr, bucketSize, 0);
+    end empty;
+
+    function fromList
+      "Creates VariablePointers from a VariablePointer list."
+      input list<Pointer<Variable>> var_lst;
+      output VariablePointers variables;
+    algorithm
+      variables := empty(listLength(var_lst));
+      variables := addVars(var_lst, variables);
+    end fromList;
+
+    function addVars
+      "Adds a list of variables to the Variables structure. If any variable already
+      exists it's updated instead."
+      input list<Pointer<Variable>> var_lst;
+      input output VariablePointers variables;
+    algorithm
+      variables := List.fold(var_lst, addVar, variables);
+    end addVars;
+
+    function addVar
+      "Adds a variable pointer to the set, or updates it if it already exists."
+      input Pointer<Variable> varPointer;
+      input output VariablePointers variables;
+    protected
+      Variable var;
+      Integer hash_idx, arr_idx;
+      list<CrefIndex> indices;
+    algorithm
+      var := Pointer.access(varPointer);
+      hash_idx := ComponentRef.hash(var.name, variables.bucketSize) + 1;
+      indices := arrayGet(variables.crefIndices, hash_idx);
+
+      try
+        // If the variable already exists, overwrite it
+        CREFINDEX(index = arr_idx) := List.getMemberOnTrue(var.name, indices, crefIndexEqualCref);
+        variables.varArr := VariablePointerArray.setVarAt(variables.varArr, arr_idx + 1, varPointer);
+      else
+        // otherwise create new variable at the end of the array and expand if neccessary
+        variables.varArr := VariablePointerArray.appendVar(variables.varArr, varPointer);
+        arrayUpdate(variables.crefIndices, hash_idx, (CREFINDEX(var.name, variables.numberOfVars) :: indices));
+        variables.numberOfVars := variables.numberOfVars + 1;
+      end try;
+    end addVar;
+
+    function setVarAt
+      "Sets a Variable pointer at a specific index in the VariablePointerArray."
+      input output VariablePointers variables;
+      input Integer index;
+      input Pointer<Variable> var;
+    algorithm
+      variables.varArr := VariablePointerArray.setVarAt(variables.varArr, index, var);
+    end setVarAt;
+
+    function getVarAt
+      "Returns the variable pointer at given index. If there is none it fails."
+      input VariablePointers variables;
+      input Integer index;
+      output Pointer<Variable> var;
+    algorithm
+      try
+        SOME(var) := variables.varArr.varOptArr[index];
+      else
+        fail();
+      end try;
+    end getVarAt;
+  end VariablePointers;
 
   uniontype VariablePointerArray
     record VARIABLE_POINTER_ARRAY
@@ -169,7 +341,38 @@ public
         end if;
       end for;
     end toString;
+
+    function setVarAt
+      "Sets a VariablePointer at a specific index in the VariablePointerArray."
+      input output VariablePointerArray varArr;
+      input Integer index;
+      input Pointer<Variable> var;
+    algorithm
+      true := index <= varArr.numberOfElements;
+      arrayUpdate(varArr.varOptArr, index, SOME(var));
+    end setVarAt;
+
+    function appendVar
+      "Adds a variable pointer last to the VariablePointerArray, increasing array
+      size if no space left by factor 1.4"
+      input output VariablePointerArray varArr;
+      input Pointer<Variable> var;
+    protected
+      array<Option<Pointer<Variable>>> arr;
+    algorithm
+      varArr.numberOfElements := varArr.numberOfElements + 1;
+      varArr.varOptArr := Array.expandOnDemand(varArr.numberOfElements, varArr.varOptArr, 1.4, NONE());
+      arrayUpdate(varArr.varOptArr, varArr.numberOfElements, SOME(var));
+    end appendVar;
   end VariablePointerArray;
+
+  uniontype CrefIndex
+    "Component Reference Index"
+    record CREFINDEX
+      ComponentRef cref;
+      Integer index;
+    end CREFINDEX;
+  end CrefIndex;
 
   uniontype VarData
     "All variable arrays are pointer subsets of an array of variables indicated
@@ -354,209 +557,6 @@ public
     end NO_STATE_ORDER;
   end StateOrder;
 
-  function emptyVariables
-    "Creates an empty Variables object with minimal given size."
-    input Integer size = BaseHashTable.defaultBucketSize;
-    output Variables variables;
-  protected
-    Integer arr_size, bucketSize;
-    VariableArray varArr;
-  algorithm
-    arr_size := max(size, BaseHashTable.lowBucketSize);
-    bucketSize :=  realInt(intReal(arr_size) * 1.4);
-    varArr := VARIABLE_ARRAY(0, arrayCreate(arr_size, NONE()));
-    variables := VARIABLES(arrayCreate(bucketSize, {}), varArr, bucketSize, 0);
-  end emptyVariables;
-
-  function emptyVariablePointers
-    "Creates an empty VariablePointers using given size * 1.4."
-    input Integer size = BaseHashTable.bigBucketSize;
-    output VariablePointers variables;
-  protected
-    Integer arr_size, bucketSize;
-    VariablePointerArray varArr;
-  algorithm
-    arr_size := max(size, BaseHashTable.lowBucketSize);
-    bucketSize :=  realInt(intReal(arr_size) * 1.4);
-    varArr := VARIABLE_POINTER_ARRAY(0, arrayCreate(arr_size, NONE()));
-    variables := VARIABLE_POINTERS(arrayCreate(bucketSize, {}), varArr, bucketSize, 0);
-  end emptyVariablePointers;
-
-  function fromList
-    "Creates Variables from a Variable list."
-    input list<Variable> var_lst;
-    output Variables variables;
-  algorithm
-    variables := emptyVariables(listLength(var_lst));
-    variables := addVars(var_lst, variables);
-  end fromList;
-
-  function fromPointerList
-    "Creates VariablePointers from a VariablePointer list."
-    input list<Pointer<Variable>> var_lst;
-    output VariablePointers variables;
-  algorithm
-    variables := emptyVariablePointers(listLength(var_lst));
-    variables := addVarPointers(var_lst, variables);
-  end fromPointerList;
-
-  public function addVars
-    "Adds a list of variables to the Variables structure. If any variable already
-    exists it's updated instead."
-    input list<Variable> var_lst;
-    input output Variables variables;
-  algorithm
-    variables := List.fold(var_lst, addVar, variables);
-  end addVars;
-
-  public function addVarPointers
-    "Adds a list of variables to the Variables structure. If any variable already
-    exists it's updated instead."
-    input list<Pointer<Variable>> var_lst;
-    input output VariablePointers variables;
-  algorithm
-    variables := List.fold(var_lst, addVarPointer, variables);
-  end addVarPointers;
-
-  function addVar
-    "Adds a variable to the set, or updates it if it already exists."
-    input Variable var;
-    input output Variables variables;
-  protected
-    Integer hash_idx, arr_idx;
-    list<CrefIndex> indices;
-  algorithm
-    hash_idx := ComponentRef.hash(var.name, variables.bucketSize) + 1;
-    indices := arrayGet(variables.crefIndices, hash_idx);
-
-    try
-      // If the variable already exists, overwrite it
-      CREFINDEX(index = arr_idx) := List.getMemberOnTrue(var.name, indices, crefIndexEqualCref);
-      variables.varArr := setVarArrayAt(variables.varArr, arr_idx + 1, var);
-    else
-      // otherwise create new variable at the end of the array and expand if neccessary
-      variables.varArr := appendVar(variables.varArr, var);
-      arrayUpdate(variables.crefIndices, hash_idx, (CREFINDEX(var.name, variables.numberOfVars) :: indices));
-      variables.numberOfVars := variables.numberOfVars + 1;
-    end try;
-  end addVar;
-
-  function addVarPointer
-    "Adds a variable pointer to the set, or updates it if it already exists."
-    input Pointer<Variable> varPointer;
-    input output VariablePointers variables;
-  protected
-    Variable var;
-    Integer hash_idx, arr_idx;
-    list<CrefIndex> indices;
-  algorithm
-    var := Pointer.access(varPointer);
-    hash_idx := ComponentRef.hash(var.name, variables.bucketSize) + 1;
-    indices := arrayGet(variables.crefIndices, hash_idx);
-
-    try
-      // If the variable already exists, overwrite it
-      CREFINDEX(index = arr_idx) := List.getMemberOnTrue(var.name, indices, crefIndexEqualCref);
-      variables.varArr := setVarPointerArrayAt(variables.varArr, arr_idx + 1, varPointer);
-    else
-      // otherwise create new variable at the end of the array and expand if neccessary
-      variables.varArr := appendVarPointer(variables.varArr, varPointer);
-      arrayUpdate(variables.crefIndices, hash_idx, (CREFINDEX(var.name, variables.numberOfVars) :: indices));
-      variables.numberOfVars := variables.numberOfVars + 1;
-    end try;
-  end addVarPointer;
-
-  function setVarArrayAt
-    "Sets a Variable at a specific index in the VariableArray."
-    input output VariableArray varArr;
-    input Integer index;
-    input Variable var;
-  algorithm
-    true := index <= varArr.numberOfElements;
-    arrayUpdate(varArr.varOptArr, index, SOME(var));
-  end setVarArrayAt;
-
-  function setVarPointerArrayAt
-    "Sets a VariablePointer at a specific index in the VariablePointerArray."
-    input output VariablePointerArray varArr;
-    input Integer index;
-    input Pointer<Variable> var;
-  algorithm
-    true := index <= varArr.numberOfElements;
-    arrayUpdate(varArr.varOptArr, index, SOME(var));
-  end setVarPointerArrayAt;
-
-  function setVarAt
-    "Sets a Variable at a specific index in the VariableArray."
-    input output Variables variables;
-    input Integer index;
-    input Variable var;
-  algorithm
-    variables.varArr := setVarArrayAt(variables.varArr, index, var);
-  end setVarAt;
-
-  function setVarPointerAt
-    "Sets a Variable pointer at a specific index in the VariablePointerArray."
-    input output VariablePointers variables;
-    input Integer index;
-    input Pointer<Variable> var;
-  algorithm
-    variables.varArr := setVarPointerArrayAt(variables.varArr, index, var);
-  end setVarPointerAt;
-
-  function appendVar
-  "author: PA
-    Adds a variable last to the VariableArray, increasing array size
-    if no space left by factor 1.4"
-    input output VariableArray varArr;
-    input Variable var;
-  protected
-    array<Option<Variable>> arr;
-  algorithm
-    varArr.numberOfElements := varArr.numberOfElements + 1;
-    varArr.varOptArr := Array.expandOnDemand(varArr.numberOfElements, varArr.varOptArr, 1.4, NONE());
-    arrayUpdate(varArr.varOptArr, varArr.numberOfElements, SOME(var));
-  end appendVar;
-
-  function appendVarPointer
-    "Adds a variable pointer last to the VariablePointerArray, increasing array
-    size if no space left by factor 1.4"
-    input output VariablePointerArray varArr;
-    input Pointer<Variable> var;
-  protected
-    array<Option<Pointer<Variable>>> arr;
-  algorithm
-    varArr.numberOfElements := varArr.numberOfElements + 1;
-    varArr.varOptArr := Array.expandOnDemand(varArr.numberOfElements, varArr.varOptArr, 1.4, NONE());
-    arrayUpdate(varArr.varOptArr, varArr.numberOfElements, SOME(var));
-  end appendVarPointer;
-
-  function getVarAt
-    "Returns the variable at given index. If there is none it fails."
-    input Variables variables;
-    input Integer index;
-    output Variable var;
-  algorithm
-    try
-      SOME(var) := variables.varArr.varOptArr[index];
-    else
-      fail();
-    end try;
-  end getVarAt;
-
-  function getVarPointerAt
-    "Returns the variable pointer at given index. If there is none it fails."
-    input VariablePointers variables;
-    input Integer index;
-    output Pointer<Variable> var;
-  algorithm
-    try
-      SOME(var) := variables.varArr.varOptArr[index];
-    else
-      fail();
-    end try;
-  end getVarPointerAt;
-
   function setVariableKind
     input output Variable var;
     input BackendExtension.VariableKind varKind;
@@ -597,6 +597,7 @@ public
       else false;
     end match;
   end isDummyVariable;
+
 protected
   function crefIndexEqualCref
     "Checks the component reference of a CrefIndex object and a reference cref

@@ -60,22 +60,21 @@ protected
   // Util imports
   import Error;
   import StringUtil;
-  import IOStream;
 
 public
   record BDAE
     /* Stuff here! */
-    BVariable.VarData varData  "Variable data.";
-    BEquation.Equations equations   "All equations";
+    BVariable.VarData varData   "Variable data.";
+    BEquation.EqData eqData     "Equation data.";
   end BDAE;
 
   function toString
     input BackendDAE bdae;
     input output String str = "";
   algorithm
-    str := StringUtil.headline_1("BackendDAE: " + str) + "\n" +
-          BVariable.VarData.toString(bdae.varData, 1) + "\n" +
-          BEquation.Equation.equationsToString(bdae.equations);
+    str :=  StringUtil.headline_1("BackendDAE: " + str) + "\n" +
+            BVariable.VarData.toString(bdae.varData, 1) + "\n" +
+            BEquation.EqData.toString(bdae.eqData, 1);
   end toString;
 
   public function lower
@@ -85,16 +84,20 @@ public
     output BackendDAE bdae;
   protected
     BVariable.VarData variableData;
-    BEquation.Equations equations;
+    BEquation.EqData equationData;
   algorithm
     //print(FlatModel.toString(flatModel, true));
     variableData := lowerVariableData(flatModel.variables);
-    equations := lowerEquationsAndAlgorithms(flatModel.equations, flatModel.algorithms, variableData);
-    bdae := BDAE(variableData, equations);
+    equationData := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, variableData);
+    bdae := BDAE(variableData, equationData);
   end lower;
 
 protected
   function lowerVariableData
+    "Lowers all variables to backend structure.
+    kabdelhak: Splitting up the creation of the variable array and the variable
+    pointer arrays in two steps is slightly less effective, but way more readable
+    and maintainable."
     input list<Variable> varList;
     output BVariable.VarData variableData;
   protected
@@ -109,7 +112,7 @@ protected
     BVariable.StateOrder stateOrder;
   algorithm
     // instantiate variable data and stateOrder
-    variables := BVariable.emptyVariables(listLength(varList));
+    variables := BVariable.Variables.empty(listLength(varList));
     stateOrder := BVariable.NO_STATE_ORDER();
     // sort vars to have sorting independent heuristic behaviours
     // ToDo! kabdelhak: use already existing hash values for this?
@@ -117,7 +120,7 @@ protected
     // routine to prepare the lists for pointer arrays
     for var in varList loop
       lowVar := lowerVariable(var);
-      variables := BVariable.addVar(lowVar, variables);
+      variables := BVariable.Variables.addVar(lowVar, variables);
       _ := match lowVar.backendinfo.varKind
 
         case BackendExtension.ALGEBRAIC() algorithm
@@ -164,19 +167,19 @@ protected
     end for;
 
     // create pointer arrays
-    unknowns := BVariable.fromPointerList(unknowns_lst);
-    knowns := BVariable.fromPointerList(knowns_lst);
-    auxiliaries := BVariable.fromPointerList(auxiliaries_lst);
-    aliasVars := BVariable.fromPointerList(aliasVars_lst);
+    unknowns := BVariable.VariablePointers.fromList(unknowns_lst);
+    knowns := BVariable.VariablePointers.fromList(knowns_lst);
+    auxiliaries := BVariable.VariablePointers.fromList(auxiliaries_lst);
+    aliasVars := BVariable.VariablePointers.fromList(aliasVars_lst);
 
-    states := BVariable.fromPointerList(states_lst);
-    derivatives := BVariable.fromPointerList(derivatives_lst);
-    algebraics := BVariable.fromPointerList(algebraics_lst);
-    discretes := BVariable.fromPointerList(discretes_lst);
-    previous := BVariable.fromPointerList(previous_lst);
+    states := BVariable.VariablePointers.fromList(states_lst);
+    derivatives := BVariable.VariablePointers.fromList(derivatives_lst);
+    algebraics := BVariable.VariablePointers.fromList(algebraics_lst);
+    discretes := BVariable.VariablePointers.fromList(discretes_lst);
+    previous := BVariable.VariablePointers.fromList(previous_lst);
 
-    parameters := BVariable.fromPointerList(parameters_lst);
-    constants := BVariable.fromPointerList(constants_lst);
+    parameters := BVariable.VariablePointers.fromList(parameters_lst);
+    constants := BVariable.VariablePointers.fromList(constants_lst);
 
     /* create variable data */
     variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, auxiliaries, aliasVars,
@@ -245,6 +248,59 @@ protected
     end match;
   end lowerVariableKind;
 
+  function lowerEquationData
+    "Lowers all equations to backend structure.
+    kabdelhak: Splitting up the creation of the equation array and the equation
+    pointer arrays in two steps is slightly less effective, but way more readable
+    and maintainable."
+    input list<FEquation> eq_lst;
+    input list<Algorithm> al_lst;
+    input list<FEquation> init_eq_lst;
+    input list<Algorithm> init_al_lst;
+    input BVariable.VarData varData;
+    output BEquation.EqData eqData;
+  protected
+    list<Equation> equation_lst;
+    list<Pointer<Equation>> continuous_lst = {}, discretes_lst = {}, initials_lst = {}, auxiliaries_lst = {};
+    BEquation.Equations equations;
+    BEquation.EquationPointers continuous, discretes, initials, auxiliaries;
+  algorithm
+    equation_lst := lowerEquationsAndAlgorithms(eq_lst, al_lst, init_eq_lst, init_al_lst, varData);
+    equations := BEquation.Equations.fromList(equation_lst);
+
+    for eq in equation_lst loop
+      _:= match Equation.getAttributes(eq)
+        case BEquation.EQUATION_ATTRIBUTES(kind = BEquation.DYNAMIC_EQUATION())
+          algorithm
+            continuous_lst := Pointer.create(eq) :: continuous_lst;
+        then ();
+
+        case BEquation.EQUATION_ATTRIBUTES(kind = BEquation.DISCRETE_EQUATION())
+          algorithm
+            discretes_lst := Pointer.create(eq) :: discretes_lst;
+        then ();
+
+        case BEquation.EQUATION_ATTRIBUTES(kind = BEquation.INITIAL_EQUATION())
+          algorithm
+            initials_lst := Pointer.create(eq) :: initials_lst;
+        then ();
+
+        case BEquation.EQUATION_ATTRIBUTES(kind = BEquation.AUX_EQUATION())
+          algorithm
+            auxiliaries_lst := Pointer.create(eq) :: auxiliaries_lst;
+        then ();
+      end match;
+    end for;
+
+    continuous := BEquation.EquationPointers.fromList(continuous_lst);
+    discretes := BEquation.EquationPointers.fromList(discretes_lst);
+    initials := BEquation.EquationPointers.fromList(initials_lst);
+    auxiliaries := BEquation.EquationPointers.fromList(auxiliaries_lst);
+
+    eqData := BEquation.EQ_DATA_SIM(equations, continuous, discretes, initials, auxiliaries);
+  end lowerEquationData;
+
+
   function lowerEquationsAndAlgorithms
     "ToDo! Replace instNode in all Crefs
     Converts all frontend equations and algorithms to backend equations.
@@ -252,39 +308,47 @@ protected
     VariablePointers for the Backend."
     input list<FEquation> eq_lst;
     input list<Algorithm> al_lst;
+    input list<FEquation> init_eq_lst;
+    input list<Algorithm> init_al_lst;
     input BVariable.VarData varData;
-    output BEquation.Equations equations;
-  protected
-    Integer index = 1;
-    Integer arraySize;
-    list<Equation> backend_equations;
+    output list<Equation> equations = {};
   algorithm
-    arraySize := realInt((listLength(eq_lst) + listLength(al_lst))*1.4);
-    equations := ExpandableArray.new(arraySize, BEquation.DUMMY_EQUATION());
-
+    // ---------------------------
     // convert all equations
+    // ---------------------------
     for eq in eq_lst loop
       // returns a list of equations since for and if equations might be split up
-      backend_equations := lowerEquation(eq, varData);
-      for b_eq in backend_equations loop
-        equations := ExpandableArray.set(index, b_eq, equations);
-        index := index + 1;
-      end for;
+      equations := listAppend(lowerEquation(eq, varData, false), equations);
     end for;
 
+    // ---------------------------
     // convert all algorithms
+    // ---------------------------
     for alg in al_lst loop
-      equations := ExpandableArray.set(index, lowerAlgorithm(alg), equations);
-      index := index + 1;
+      equations := lowerAlgorithm(alg, false) :: equations;
     end for;
 
-    ExpandableArray.compress(equations);
+    // ---------------------------
+    // convert all initial equations
+    // ---------------------------
+    for eq in init_eq_lst loop
+      // returns a list of equations since for and if equations might be split up
+      equations := listAppend(lowerEquation(eq, varData, true), equations);
+    end for;
+
+    // ---------------------------
+    // convert all initial algorithms
+    // ---------------------------
+    for alg in init_al_lst loop
+      equations := lowerAlgorithm(alg, true) :: equations;
+    end for;
   end lowerEquationsAndAlgorithms;
 
   function lowerEquation
-    input FEquation frontend_equation;
-    input BVariable.VarData varData;
-    output list<Equation> backend_equations;
+    input FEquation frontend_equation         "Original Frontend equation.";
+    input BVariable.VarData varData           "Variable Data for InstNode replacement.";
+    input Boolean init                        "True if an initial equation should be created.";
+    output list<Equation> backend_equations   "Resulting Backend equations.";
   algorithm
     backend_equations := match frontend_equation
       local
@@ -300,20 +364,20 @@ protected
 
       case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
         algorithm
-          attr := lowerEquationAttributes(ty);
+          attr := lowerEquationAttributes(ty, init);
           result := if Type.isComplex(ty) then {BEquation.RECORD_EQUATION(Type.dimensionCount(ty), lhs, rhs, source, attr)}
                                           else {BEquation.SCALAR_EQUATION(lhs, rhs, source, attr)};
       then result;
 
       case FEquation.CREF_EQUALITY(lhs = lhs_cref as NFComponentRef.CREF(ty = ty), rhs = rhs_cref, source = source)
         algorithm
-          attr := lowerEquationAttributes(ty);
+          attr := lowerEquationAttributes(ty, init);
           // No check for complex. Simple equation is more important than complex. -> alias removal!
       then {BEquation.SIMPLE_EQUATION(lhs_cref, rhs_cref, source, attr)};
 
       case FEquation.ARRAY_EQUALITY(lhs = lhs, rhs = rhs, ty = ty as Type.ARRAY(), source = source)
         algorithm
-          attr := lowerEquationAttributes(Type.arrayElementType(ty));
+          attr := lowerEquationAttributes(Type.arrayElementType(ty), init);
           //ToDo! How to get Record size and replace NONE()?
       then {BEquation.ARRAY_EQUATION(List.map(ty.dimensions, Dimension.size), lhs, rhs, source, attr, NONE())};
 
@@ -322,7 +386,7 @@ protected
         // Treat each body equation individually because they can have different equation attributes
         // E.g.: DISCRETE, EvalStages
         for eq in body loop
-          new_body := lowerEquation(eq, varData);
+          new_body := lowerEquation(eq, varData, init);
           for body_elem in new_body loop
             result := BEquation.FOR_EQUATION(iterator, range, body_elem, source, Equation.getAttributes(body_elem)) :: result;
           end for;
@@ -336,8 +400,9 @@ protected
       then {BEquation.DUMMY_EQUATION()};
 
       // When equation cases
-      case FEquation.WHEN()       then {lowerWhenEquation(frontend_equation)};
-      case FEquation.ASSERT()     then {lowerWhenEquation(frontend_equation)};
+      case FEquation.WHEN() then {lowerWhenEquation(frontend_equation, init)};
+      case FEquation.ASSERT() then {lowerWhenEquation(frontend_equation, init)};
+
 
       // These have to be called inside a when equation body since they need
       // to get passed a condition from surrounding when equation.
@@ -361,6 +426,7 @@ protected
   function lowerWhenEquation
     // ToDo! inherit findZeroCrossings or implement own routine to be applied after lowering
     input FEquation frontend_equation;
+    input Boolean init;
     output Equation backend_equation;
   algorithm
     backend_equation := match frontend_equation
@@ -369,16 +435,19 @@ protected
         DAE.ElementSource source;
         Expression condition, message, level;
         BEquation.WhenEquationBody whenEqBody, elseWhenEq;
+        BEquation.EquationAttributes attr;
 
       case FEquation.WHEN(branches = branches, source = source)
         algorithm
+          attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL else NBEquation.EQ_ATTR_DEFAULT_DISCRETE;
           SOME(whenEqBody) := lowerWhenEquationBody(branches);
-      then BEquation.WHEN_EQUATION(0, whenEqBody, source, NBEquation.EQ_ATTR_DEFAULT_DISCRETE);
+      then BEquation.WHEN_EQUATION(0, whenEqBody, source, attr);
 
       case FEquation.ASSERT(condition = condition, message = message, level = level, source = source)
         algorithm
+          attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL else NBEquation.EQ_ATTR_DEFAULT_DISCRETE;
           whenEqBody := BEquation.WHEN_EQUATION_BODY(condition, {BEquation.ASSERT(condition, message, level, source)}, NONE());
-      then BEquation.WHEN_EQUATION(0, whenEqBody, source, NBEquation.EQ_ATTR_DEFAULT_DISCRETE);
+      then BEquation.WHEN_EQUATION(0, whenEqBody, source, attr);
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerWhenEquation failed for " + FEquation.toString(frontend_equation)});
@@ -502,28 +571,34 @@ protected
 
   function lowerAlgorithm
     input Algorithm alg;
+    input Boolean init;
     output Equation eq;
   protected
     Integer size;
     list<ComponentRef> inputs, outputs;
+    BEquation.EquationAttributes attr;
   algorithm
-    // ToDo! check algorithm outputs and inputs if discrete (?)
+    // ToDo! check if always DAE.EXPAND() can be used
     // ToDo! Wait until input, output was migrated from OF CheckModel to NF
     // and use it here
     //(inputs, outputs) := Algorithm.getInputsAndOutputs(alg);
     (inputs, outputs) := ({}, {});
     size := listLength(outputs);
-    eq := Equation.ALGORITHM(size, alg, inputs, outputs, alg.source, DAE.EXPAND(), NBEquation.EQ_ATTR_DEFAULT_DYNAMIC);
+    attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL
+            elseif ComponentRef.listHasDiscrete(outputs) then NBEquation.EQ_ATTR_DEFAULT_DISCRETE
+            else NBEquation.EQ_ATTR_DEFAULT_DYNAMIC;
+    eq := Equation.ALGORITHM(size, alg, inputs, outputs, alg.source, DAE.EXPAND(), attr);
   end lowerAlgorithm;
 
   function lowerEquationAttributes
     input Type ty;
+    input Boolean init;
     output BEquation.EquationAttributes attr;
   algorithm
-    attr := if Type.isDiscrete(ty) then NBEquation.EQ_ATTR_DEFAULT_DISCRETE else NBEquation.EQ_ATTR_DEFAULT_DYNAMIC;
+    attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL
+            elseif Type.isDiscrete(ty) then NBEquation.EQ_ATTR_DEFAULT_DISCRETE
+            else NBEquation.EQ_ATTR_DEFAULT_DYNAMIC;
   end lowerEquationAttributes;
-
-
 
   annotation(__OpenModelica_Interface="backend");
 end NBackendDAE;
