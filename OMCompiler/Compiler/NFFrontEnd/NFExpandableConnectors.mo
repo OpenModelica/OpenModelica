@@ -382,6 +382,14 @@ protected
 algorithm
   exp_name := Connector.name(conn);
   exp_node := ComponentRef.node(exp_name);
+
+  if InstNode.isName(exp_node) then
+    Error.addInternalError(
+      "Augmenting a virtual element in an expandable connector is not yet supported.",
+      Connector.getInfo(conn));
+    fail();
+  end if;
+
   cls_node := InstNode.classScope(exp_node);
   cls := InstNode.getClass(cls_node);
   cls_tree := Class.classTree(cls);
