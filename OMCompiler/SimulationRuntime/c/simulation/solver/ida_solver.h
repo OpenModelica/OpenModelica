@@ -47,7 +47,7 @@
 #define LINK_SUNDIALS_STATIC
 #endif
 
-
+#include <sundials/sundials_config.h>
 #include <idas/idas.h>
 #include <nvector/nvector_serial.h>
 #include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
