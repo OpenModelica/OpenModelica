@@ -76,6 +76,9 @@ uniontype Context
   record IMPORT_CONTEXT
   end IMPORT_CONTEXT;
 
+  record TYPE_SPECIFICATION_CONTEXT
+  end TYPE_SPECIFICATION_CONTEXT;
+
 end Context;
 
 constant Context packageContext = PACKAGE();
@@ -83,6 +86,7 @@ constant Context noContext = NO_CONTEXT();
 constant Context functionContext = FUNCTION("");
 constant Context returnContext = FUNCTION_RETURN_CONTEXT("","");
 constant Context inputContext = INPUT_CONTEXT("");
+constant Context TYPE_SPECIFICATION = TYPE_SPECIFICATION_CONTEXT();
 
 function makeUniontypeContext
   input String name;
@@ -231,7 +235,6 @@ algorithm
                                                        mmToJuliaHT,
                                                        visitProtected);
   outProgram := tmpProgram;
-//  BaseHashTable.dumpHashTable(mmToJuliaHT);
 end simplifyAbsyn;
 
 function refactorUniontypesWithFunctions
@@ -278,7 +281,7 @@ algorithm
       case Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, ann = ann, comment = comment) algorithm
         inClass.body := Absyn.PARTS(typeVars, classAttrs,  records, ann, comment);
         newClassPart := AbsynUtil.makePublicClassPartFromElementItem(AbsynUtil.makeClassElement(inClass));
-        tmpClassDef := Absyn.PARTS(typeVars, classAttrs,  newClassPart :: nonRecords, ann, comment);
+        tmpClassDef := Absyn.PARTS(typeVars, classAttrs,  listAppend(nonRecords, {newClassPart}), ann, comment);
         then ();
       else fail();
    end match;

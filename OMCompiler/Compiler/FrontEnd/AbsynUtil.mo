@@ -6526,23 +6526,22 @@ public function splitRecordsAndOtherElements
   output list<Absyn.ClassPart> nonRecordParts = {};
 protected
   list<Absyn.ElementItem> elementItems = {};
+  list<Absyn.ElementItem> nonClassDefs;
   list<Absyn.ElementSpec> elementSpecs = {};
   list <Absyn.Class> classes = {};
 algorithm
   elementItems := getElementItemsInClass(cls);
   elementSpecs := Util.listOfOptionToList(List.map(elementItems,
                                           getElementSpecificationFromElementItemOpt));
-//  print("\nELEMENTITEMS:" + anyString(elementItems) + "\n");
-//  print("\nELEMENT SPECS:" + anyString(elementSpecs) + "\n");
   classes := Util.listOfOptionToList(List.map(elementSpecs, getClassFromElementSpecOpt));
-//  print("\nCLASSES:" + anyString(classes) + "\n");
   /*Filter out the remaining components to be consed to nonRecordParts*/
-  elementItems := List.map(List.filterOnTrue(elementSpecs, elementSpecsIscomponentsOrImports), makeElementItemFromElementSpec);
+  nonClassDefs := List.map(List.filterOnTrue(elementSpecs, elementSpecsIscomponentsOrImports), makeElementItemFromElementSpec);
   (recordParts, nonRecordParts) := ({makePublicClassPartFromElementItems(
                                       List.map(List.filterOnTrue(classes, classRestrictionisRecord), makeClassElement))}
                                     , /* Place element items first */
-                                    makePublicClassPartFromElementItems(elementItems) :: {makePublicClassPartFromElementItems(
+                                    {makePublicClassPartFromElementItems(
                                     List.map(List.filterOnTrue(classes, classRestrictionisNotRecord), makeClassElement))});
+  nonRecordParts :=  makePublicClassPartFromElementItems(nonClassDefs) :: nonRecordParts;
 end splitRecordsAndOtherElements;
 
 protected function makeElementItemFromElementSpec

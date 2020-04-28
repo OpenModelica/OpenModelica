@@ -28,22 +28,10 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-package AbsynToJulia
+package AbsynToJuliaGenInterfaces
 "
  Translates Absyn IR  to Julia.
  @Authors: John Tinnerholm & Martin Sjölund"
-
-/*
-TODOS:
-  TODO: Module renamning and Julia adaptation of uniontypes
-     <In progress>
-     TODO: Make sure renamning of imports work as they should
-  TODO: Linear ordering of generated packages.
-        Generate interfaces:
-          Topological Sort on interfaces.
-          Same ordering for regular packages
-  TODO: Fix extends
-*/
 
 import interface AbsynToJuliaTV;
 import AbsynDumpTpl;
@@ -113,11 +101,9 @@ match class
   case CLASS(partialPrefix=false, body=parts as PARTS(__), restriction=R_FUNCTION(__)) then
     let commentStr = dumpCommentStrOpt(parts.comment)
     let returnType = (parts.classParts |> cp => dumpReturnTypeJL(getElementItemsInClassPart(cp)))
-    let return_str = '<%(parts.classParts |> cp => dumpReturnStrJL(getElementItemsInClassPart(cp), functionContext))%>'
     let inputs_str = (parts.classParts |> cp => dumpInputsJL(getElementItemsInClassPart(cp), inputContext))
     let typevar_inputs = System.stringReplace(inputs_str, "<:", "")
     let header = dumpClassHeader(parts, restriction)
-    let functionBodyStr = dumpClassDef(parts, makeFunctionContext(return_str), options)
     let cmt2 = if commentStr then '"""<%commentStr%>"""' else ""
     /*
       Input output variables are treated as parameters
@@ -126,8 +112,6 @@ match class
     <<
     <%cmt2%>
     function <%MMToJuliaUtil.ifMMKeywordReturnSelf(name)%>(<%if header then typevar_inputs else inputs_str%>) <%if header then "" else returnType%> <%header%>
-      <%functionBodyStr%>
-      <%return_str%>
     end
     >>
   case CLASS(body=parts as PARTS(__)) then
@@ -1372,4 +1356,4 @@ template dumpOutputsJL(list<ElementItem> elements)
 end dumpOutputsJL;
 
 annotation(__OpenModelica_Interface="backend");
-end AbsynToJulia;
+end AbsynToJuliaGenInterfaces;

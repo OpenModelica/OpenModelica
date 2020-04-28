@@ -93,6 +93,26 @@ public type HashTable = tuple<array<list<tuple<Key, Integer>>>,
                               tuple<Integer, Integer, array<Option<tuple<Key, Value>>>>,
                               Integer,
                               HashTableCrefFunctionsType>;
+protected type HashNode = list<tuple<Key, Integer>>;
+protected type HashVector = array<HashNode>;
+
+public function dumpHashTableStatistics "
+author: PA.
+dump statistics on how many entries per hash value. Useful to see how hash function behaves"
+  input HashTable hashTable;
+algorithm
+ _ := match(hashTable)
+ local HashVector hvec;
+   case((hvec,_,_,_)) equation
+      print("index list lengths:\n");
+      print(stringDelimitList(list(intString(listLength(l)) for l in hvec),","));
+      print("\n");
+      print("non-zero: " + String(sum(1 for l guard not listEmpty(l) in hvec)) + "/" + String(arrayLength(hvec)) +"\n");
+      print("max element: " + String(max(listLength(l) for l in hvec)) + "\n");
+      print("total entries: " + String(sum(listLength(l) for l in hvec)) + "\n");
+   then ();
+ end match;
+end dumpHashTableStatistics;
 
 function dumpClassInfo
   input Value exp;
@@ -241,13 +261,12 @@ algorithm
 end exists;
 
 function init
+  "Init the HT. If not empty reuse the one that is in use."
 protected
   HashTable ht;
 algorithm
   try
     ht := getGlobalRoot(Global.MM_TO_JL_HT_INDEX);
-    ht := BaseHashTable.clear(ht);
-    setGlobalRoot(Global.MM_TO_JL_HT_INDEX, ht);
   else /* If we do not have a HT */
     setGlobalRoot(Global.MM_TO_JL_HT_INDEX, createHT());
   end try;
