@@ -590,7 +590,7 @@ SUNDIALS_TARGET="sundials"
 AC_CHECK_HEADERS(curl/curl.h, [], [AC_MSG_ERROR(Missing header files)])
 
 LIBS=""
-AC_CHECK_LIB(curl,curl_global_init, [OMCRUNTIME_SHARED_LDFLAGS="$OMCRUNTIME_SHARED_LDFLAGS -lcurl"], [AC_MSG_ERROR([Missing libcurl])])
+AC_CHECK_LIB(curl,curl_global_init, [RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL -lcurl"], [AC_MSG_ERROR([Missing libcurl])])
 
 AC_CHECK_HEADERS(locale.h libintl.h,[],[HAVE_GETTEXT="#define NO_GETTEXT 1"])
 

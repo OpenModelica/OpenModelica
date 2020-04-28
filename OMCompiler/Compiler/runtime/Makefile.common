@@ -11,6 +11,8 @@ builddir_inc=$(OMBUILDDIR)/include
 builddir_doc=$(OMBUILDDIR)/doc
 builddir_share=$(OMBUILDDIR)/share
 
+LDFLAGS += ../../3rdParty/FMIL/build/Config.cmake/Minizip/libminizip.a
+
 SimRuntimeCDir = $(top_builddir)/SimulationRuntime/c/
 
 ifndef OMDEV
