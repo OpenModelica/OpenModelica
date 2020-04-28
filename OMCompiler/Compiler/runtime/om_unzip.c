@@ -4,6 +4,7 @@
 #include "../../3rdParty/FMIL/ThirdParty/Minizip/minizip/unzip.h"
 #include "util/modelica_string.h"
 #include "errorext.h"
+#include "systemimpl.h"
 
 #define dir_delimter '/'
 #define MAX_FILENAME 2048
@@ -83,7 +84,7 @@ int om_unzip(const char *zipFileName, const char *pathToExtract, const char *des
     } else if (filenameStart[ filename_length-1 ] == dir_delimter) {
       /* Directory */
       GC_asprintf(&renamedPrefix, "%s%s%s", destPath, filenameStart[pathToExtractLen] == '/' || filenameStart[pathToExtractLen] == '\0' ? "" : "/", filenameStart+pathToExtractLen);
-      mkdir(renamedPrefix, S_IRWXU);
+      SystemImpl__createDirectory(renamedPrefix);
     } else {
       /* File */
       GC_asprintf(&renamedPrefix, "%s%s%s", destPath, filenameStart[pathToExtractLen] == '/' || filenameStart[pathToExtractLen] == '\0' ? "" : "/", filenameStart+pathToExtractLen);
