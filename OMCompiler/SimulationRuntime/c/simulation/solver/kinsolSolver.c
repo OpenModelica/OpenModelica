@@ -42,11 +42,6 @@
 
 #ifdef WITH_SUNDIALS
 
-/* adrpo: on mingw link with static sundials */
-#if defined(__MINGW32__)
-#define LINK_SUNDIALS_STATIC
-#endif
-
 #include "events.h"
 #include "model_help.h"
 #include "openmodelica.h"

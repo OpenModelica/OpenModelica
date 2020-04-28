@@ -42,10 +42,6 @@
 #include "simulation/options.h"
 #ifdef WITH_SUNDIALS
 
-/* adrpo: on mingw link with static sundials */
-#if defined(__MINGW32__)
-#define LINK_SUNDIALS_STATIC
-#endif
 
 /* Private function prototypes */
 static int allocateNlpOde(KINODE *kinOde, int order);

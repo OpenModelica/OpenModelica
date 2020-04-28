@@ -65,11 +65,6 @@
 
 #ifdef WITH_SUNDIALS
 
-/* adrpo: on mingw link with static sundials */
-#if defined(__MINGW32__)
-#define LINK_SUNDIALS_STATIC
-#endif
-
 
 /* Extern function prototypes */
 int IDADlsSetDenseJacFn(void* ida_mem, void*);
