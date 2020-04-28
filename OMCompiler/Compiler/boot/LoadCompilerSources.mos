@@ -226,6 +226,7 @@ if true then /* Suppress output */
     "../Stubs/NFApi.mo",
     "../Stubs/NFInstDump.mo",
     "../Stubs/NFUnitCheck.mo",
+    "../Stubs/PackageManagement.mo",
     "../Stubs/Refactor.mo",
     "../Stubs/RewriteRules.mo",
     "../Stubs/SimCode.mo",
