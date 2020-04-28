@@ -56,7 +56,7 @@ function installPackage
   output Boolean res;
 algorithm
   res := false;
-end getInstalledLibraries;
+end installPackage;
 
 function updateIndex
   output Boolean res;
@@ -70,11 +70,6 @@ function upgradeInstalledPackages
 algorithm
   res := false;
 end upgradeInstalledPackages;
-
-OMCompiler/Compiler/Script/CevalScriptBackend.mo:        v := Values.BOOL(PackageManagement.installPackage(str1, str2, b));
-OMCompiler/Compiler/Script/CevalScriptBackend.mo:        v := Values.BOOL(PackageManagement.updateIndex());
-OMCompiler/Compiler/Script/CevalScriptBackend.mo:        v := Values.BOOL(PackageManagement.upgradeInstalledPackages(b));
-
 
 annotation(__OpenModelica_Interface="frontend");
 end PackageManagement;
