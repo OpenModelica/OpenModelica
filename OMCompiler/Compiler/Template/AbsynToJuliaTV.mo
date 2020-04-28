@@ -1098,11 +1098,14 @@ package MMToJuliaUtil
     end MATCH_CONTEXT;
     record IMPORT_CONTEXT
     end IMPORT_CONTEXT;
+    record TYPE_SPECIFICATION_CONTEXT
+    end TYPE_SPECIFICATION_CONTEXT;
   end Context;
   constant Context packageContext;
   constant Context functionContext;
   constant Context noContext;
   constant Context inputContext;
+  constant Context TYPE_SPECIFICATION;
   function makeUniontypeContext
     input String name;
     output Context context;

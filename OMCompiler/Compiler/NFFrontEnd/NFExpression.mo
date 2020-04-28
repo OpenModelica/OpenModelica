@@ -39,18 +39,17 @@ protected
   import Flags;
 
   import Builtin = NFBuiltin;
-  import BuiltinCall = NFBuiltinCall;
   import Expression = NFExpression;
   import Function = NFFunction;
   import NFPrefixes.Variability;
   import Prefixes = NFPrefixes;
   import Ceval = NFCeval;
-  import ComplexType = NFComplexType;
   import ExpandExp = NFExpandExp;
   import TypeCheck = NFTypeCheck;
   import ValuesUtil;
   import MetaModelica.Dangerous.listReverseInPlace;
   import RangeIterator = NFRangeIterator;
+//  type Expression = NFExpression;
 
 public
   import Absyn.Path;

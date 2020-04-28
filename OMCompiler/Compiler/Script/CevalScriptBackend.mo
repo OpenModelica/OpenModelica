@@ -54,6 +54,7 @@ import Values;
 // protected imports
 protected
 import AbsynToJulia;
+import AbsynToJuliaGenInterfaces;
 import AbsynToSCode;
 import Autoconf;
 import BackendDAECreate;
@@ -3150,6 +3151,16 @@ algorithm
         p := MMToJuliaUtil.simplifyAbsyn(SymbolTable.getAbsyn());
         try
           str := Tpl.tplString(AbsynToJulia.dumpProgram, p);
+        else
+          Error.addInternalError("Julia translation error", sourceInfo());
+        end try;
+      then (cache,Values.STRING(str));
+
+    case (cache,_,"toJuliaInterface",{},_)
+      algorithm
+        p := MMToJuliaUtil.simplifyAbsyn(SymbolTable.getAbsyn());
+        try
+          str := Tpl.tplString(AbsynToJuliaGenInterfaces.dumpProgram, p);
         else
           Error.addInternalError("Julia translation error", sourceInfo());
         end try;

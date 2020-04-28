@@ -4912,6 +4912,11 @@ function toJulia
 external "builtin";
 end toJulia;
 
+function toJuliaInterface
+  output String res;
+external "builtin";
+end toJuliaInterface;
+
 function interactiveDumpAbsynToJL
   output String res;
 external "builtin";

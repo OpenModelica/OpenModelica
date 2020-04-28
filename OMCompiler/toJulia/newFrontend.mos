@@ -4,9 +4,179 @@
      *     @author Emacs Translation Template Script
      */
 
-     setCommandLineOptions("-g=MetaModelica"); getErrorString();
+setCommandLineOptions("-g=MetaModelica"); getErrorString();
+//Genarate interfaces twice such that we have all knowledge within the HT.
+
+//Interface needs to be generated twice
+for i in 1:3 loop
+  runScript("./toJulia/newFrontendInterfaces.mos"); getErrorString();
+end for;
 
 
+print("Done generating interfaces\n");
+//Does not cooporate
+      // print("Translating NFModelicaBuiltin into Julia!\n"); getErrorString();
+      // loadFile("Compiler/NFFrontEnd/NFModelicaBuiltin.mo"); getErrorString();
+      // writeFile("toJulia/toJuliaOutput/NF_Interfaces/NFModelicaBuiltin.jl",
+      // OpenModelica.Scripting.Experimental.toJuliaInterface()); getErrorString();
+      // deleteClass(NFModelicaBuiltin); getErrorString();
+
+
+      print("Translating NFModifier into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFFrontEnd/NFModifier.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NF/NFModifier.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      deleteClass(NFModifier); getErrorString();
+
+
+      print("Translating NFOCConnectionGraph into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFFrontEnd/NFOCConnectionGraph.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NF/NFOCConnectionGraph.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      deleteClass(NFOCConnectionGraph); getErrorString();
+
+
+      print("Translating NFOperator into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFFrontEnd/NFOperator.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NF/NFOperator.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      deleteClass(NFOperator); getErrorString();
+
+
+      print("Translating NFOperatorOverloading into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFFrontEnd/NFOperatorOverloading.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NF/NFOperatorOverloading.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      deleteClass(NFOperatorOverloading); getErrorString();
+
+
+      print("Translating NFPackage into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFFrontEnd/NFPackage.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NF/NFPackage.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      deleteClass(NFPackage); getErrorString();
+
+
+      print("Translating NFPrefixes into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFFrontEnd/NFPrefixes.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NF/NFPrefixes.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      deleteClass(NFPrefixes); getErrorString();
+
+
+      print("Translating NFRangeIterator into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFFrontEnd/NFRangeIterator.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NF/NFRangeIterator.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      deleteClass(NFRangeIterator); getErrorString();
+
+
+      print("Translating NFRecord into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFFrontEnd/NFRecord.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NF/NFRecord.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      deleteClass(NFRecord); getErrorString();
+
+
+      print("Translating NFRestriction into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFFrontEnd/NFRestriction.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NF/NFRestriction.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      deleteClass(NFRestriction); getErrorString();
+
+
+      print("Translating NFScalarize into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFFrontEnd/NFScalarize.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NF/NFScalarize.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      deleteClass(NFScalarize); getErrorString();
+
+
+      print("Translating NFSections into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFFrontEnd/NFSections.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NF/NFSections.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      deleteClass(NFSections); getErrorString();
+
+
+      print("Translating NFSimplifyExp into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFFrontEnd/NFSimplifyExp.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NF/NFSimplifyExp.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      deleteClass(NFSimplifyExp); getErrorString();
+
+
+      print("Translating NFSimplifyModel into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFFrontEnd/NFSimplifyModel.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NF/NFSimplifyModel.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+       deleteClass(NFSimplifyModel); getErrorString();
+
+
+      print("Translating NFStatement into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFFrontEnd/NFStatement.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NF/NFStatement.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      deleteClass(NFStatement); getErrorString();
+
+
+      print("Translating NFSubscript into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFFrontEnd/NFSubscript.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NF/NFSubscript.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      deleteClass(NFSubscript); getErrorString();
+
+
+      print("Translating NFTypeCheck into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFFrontEnd/NFTypeCheck.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NF/NFTypeCheck.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      deleteClass(NFTypeCheck); getErrorString();
+
+
+      print("Translating NFType into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFFrontEnd/NFType.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NF/NFType.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      deleteClass(NFType); getErrorString();
+
+
+      print("Translating NFTyping into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFFrontEnd/NFTyping.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NF/NFTyping.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      deleteClass(NFTyping); getErrorString();
+
+
+      print("Translating NFUnitCheck into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFFrontEnd/NFUnitCheck.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NF/NFUnitCheck.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      deleteClass(NFUnitCheck); getErrorString();
+
+
+      print("Translating NFUnit into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFFrontEnd/NFUnit.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NF/NFUnit.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      deleteClass(NFUnit); getErrorString();
+
+
+      print("Translating NFVariable into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFFrontEnd/NFVariable.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NF/NFVariable.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      deleteClass(NFVariable); getErrorString();
+
+
+      print("Translating NFVerifyModel into Julia!\n"); getErrorString();
+      loadFile("Compiler/NFFrontEnd/NFVerifyModel.mo"); getErrorString();
+      writeFile("toJulia/toJuliaOutput/NF/NFVerifyModel.jl",
+      OpenModelica.Scripting.Experimental.toJulia()); getErrorString();
+      deleteClass(NFVerifyModel); getErrorString();
+
+
+//Real modules
       print("Translating NFAlgorithm into Julia!\n"); getErrorString();
       loadFile("Compiler/NFFrontEnd/NFAlgorithm.mo"); getErrorString();
       writeFile("toJulia/toJuliaOutput/NF/NFAlgorithm.jl",
