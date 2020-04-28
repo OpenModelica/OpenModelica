@@ -292,13 +292,14 @@ void AddComponentCommand::undo()
 }
 
 UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommand(Component *pComponent, const Transformation &oldTransformation, const Transformation &newTransformation,
-                                                                             const bool positionChanged, UndoCommand *pParent)
+                                                                             const bool positionChanged, const bool moveConnectorsTogether, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpComponent = pComponent;
   mOldTransformation = oldTransformation;
   mNewTransformation = newTransformation;
   mPositionChanged = positionChanged;
+  mMoveConnectorsTogether = moveConnectorsTogether;
   setText(QString("Update Component %1 Transformations").arg(mpComponent->getName()));
 }
 
@@ -309,7 +310,7 @@ UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommand(Com
 void UpdateComponentTransformationsCommand::redoInternal()
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
-  if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() &&
+  if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() && mMoveConnectorsTogether &&
       pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     GraphicsView *pGraphicsView;
     if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
@@ -347,7 +348,7 @@ void UpdateComponentTransformationsCommand::redoInternal()
 void UpdateComponentTransformationsCommand::undo()
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
-  if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() &&
+  if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() && mMoveConnectorsTogether &&
       pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     GraphicsView *pGraphicsView;
     if (mpComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {

@@ -7429,7 +7429,7 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
 #if QT_VERSION >= 0x040800
   setTabsClosable(true);
 #endif
-  if (OptionsDialog::instance()->getGeneralSettingsPage()->getModelingViewMode().compare(Helper::subWindow) == 0) {
+  if (OptionsDialog::instance()->getGraphicalViewsPage()->getModelingViewMode().compare(Helper::subWindow) == 0) {
     setViewMode(QMdiArea::SubWindowView);
   } else {
     setViewMode(QMdiArea::TabbedView);
@@ -7533,7 +7533,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
   } else if (pModelWidget->getModelWidgetContainer()->getPreviousViewType() != StringHandler::NoView) {
     loadPreviousViewType(pModelWidget);
   } else {
-    QString defaultView = OptionsDialog::instance()->getGeneralSettingsPage()->getDefaultView();
+    QString defaultView = OptionsDialog::instance()->getGraphicalViewsPage()->getDefaultView();
     if (defaultView.compare(Helper::iconView) == 0) {
       pModelWidget->getIconViewToolButton()->setChecked(true);
     } else if (defaultView.compare(Helper::textView) == 0) {

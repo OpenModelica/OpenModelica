@@ -110,7 +110,7 @@ class UpdateComponentTransformationsCommand : public UndoCommand
 {
 public:
   UpdateComponentTransformationsCommand(Component *pComponent, const Transformation &oldTransformation, const Transformation &newTransformation,
-                                        const bool positionChanged, UndoCommand *pParent = 0);
+                                        const bool positionChanged, const bool moveConnectorsTogether, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
 private:
@@ -118,6 +118,7 @@ private:
   Transformation mOldTransformation;
   Transformation mNewTransformation;
   bool mPositionChanged;
+  bool mMoveConnectorsTogether;
 };
 
 class UpdateComponentAttributesCommand : public UndoCommand

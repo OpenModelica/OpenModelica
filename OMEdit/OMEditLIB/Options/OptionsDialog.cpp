@@ -230,14 +230,6 @@ void OptionsDialog::readGeneralSettings()
   if (mpSettings->contains("showHiddenClasses")) {
     mpGeneralSettingsPage->setShowHiddenClasses(mpSettings->value("showHiddenClasses").toBool());
   }
-  // read the modeling view mode
-  if (mpSettings->contains("modeling/viewmode")) {
-    mpGeneralSettingsPage->setModelingViewMode(mpSettings->value("modeling/viewmode").toString());
-  }
-  // read the default view
-  if (mpSettings->contains("defaultView")) {
-    mpGeneralSettingsPage->setDefaultView(mpSettings->value("defaultView").toString());
-  }
   // read auto save
   if (mpSettings->contains("autoSave/enable")) {
     mpGeneralSettingsPage->getEnableAutoSaveGroupBox()->setChecked(mpSettings->value("autoSave/enable").toBool());
@@ -511,6 +503,18 @@ void OptionsDialog::readHTMLEditorSettings()
 //! Reads the GraphicsViews section settings from omedit.ini
 void OptionsDialog::readGraphicalViewsSettings()
 {
+  // read the modeling view mode
+  if (mpSettings->contains("modeling/viewmode")) {
+    mpGraphicalViewsPage->setModelingViewMode(mpSettings->value("modeling/viewmode").toString());
+  }
+  // read the default view
+  if (mpSettings->contains("defaultView")) {
+    mpGraphicalViewsPage->setDefaultView(mpSettings->value("defaultView").toString());
+  }
+  // read move connectors together
+  if (mpSettings->contains("modeling/moveConnectorsTogether")) {
+    mpGraphicalViewsPage->getMoveConnectorsTogetherCheckBox()->setChecked(mpSettings->value("modeling/moveConnectorsTogether").toBool());
+  }
   if (mpSettings->contains("iconView/extentLeft"))
     mpGraphicalViewsPage->setIconViewExtentLeft(mpSettings->value("iconView/extentLeft").toDouble());
   if (mpSettings->contains("iconView/extentBottom"))
@@ -1016,20 +1020,6 @@ void OptionsDialog::saveGeneralSettings()
   mpSettings->setValue("showHiddenClasses", mpGeneralSettingsPage->getShowHiddenClasses());
   // show/hide the protected classes
   MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showHideProtectedClasses();
-  // save modeling view mode
-  mpSettings->setValue("modeling/viewmode", mpGeneralSettingsPage->getModelingViewMode());
-  if (mpGeneralSettingsPage->getModelingViewMode().compare(Helper::subWindow) == 0) {
-    MainWindow::instance()->getModelWidgetContainer()->setViewMode(QMdiArea::SubWindowView);
-    ModelWidget *pModelWidget = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget();
-    if (pModelWidget) {
-      pModelWidget->show();
-      pModelWidget->setWindowState(Qt::WindowMaximized);
-    }
-  } else {
-    MainWindow::instance()->getModelWidgetContainer()->setViewMode(QMdiArea::TabbedView);
-  }
-  // save default view
-  mpSettings->setValue("defaultView", mpGeneralSettingsPage->getDefaultView());
   // save auto save
   mpSettings->setValue("autoSave/enable", mpGeneralSettingsPage->getEnableAutoSaveGroupBox()->isChecked());
   mpSettings->setValue("autoSave/interval", mpGeneralSettingsPage->getAutoSaveIntervalSpinBox()->value());
@@ -1192,6 +1182,22 @@ void OptionsDialog::saveHTMLEditorSettings()
 //! Saves the GraphicsViews section settings to omedit.ini
 void OptionsDialog::saveGraphicalViewsSettings()
 {
+  // save modeling view mode
+  mpSettings->setValue("modeling/viewmode", mpGraphicalViewsPage->getModelingViewMode());
+  if (mpGraphicalViewsPage->getModelingViewMode().compare(Helper::subWindow) == 0) {
+    MainWindow::instance()->getModelWidgetContainer()->setViewMode(QMdiArea::SubWindowView);
+    ModelWidget *pModelWidget = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget();
+    if (pModelWidget) {
+      pModelWidget->show();
+      pModelWidget->setWindowState(Qt::WindowMaximized);
+    }
+  } else {
+    MainWindow::instance()->getModelWidgetContainer()->setViewMode(QMdiArea::TabbedView);
+  }
+  // save move connectors together
+  mpSettings->setValue("modeling/moveConnectorsTogether", mpGraphicalViewsPage->getMoveConnectorsTogetherCheckBox()->isChecked());
+  // save default view
+  mpSettings->setValue("defaultView", mpGraphicalViewsPage->getDefaultView());
   mpSettings->setValue("iconView/extentLeft", mpGraphicalViewsPage->getIconViewExtentLeft());
   mpSettings->setValue("iconView/extentBottom", mpGraphicalViewsPage->getIconViewExtentBottom());
   mpSettings->setValue("iconView/extentRight", mpGraphicalViewsPage->getIconViewExtentRight());
@@ -1929,47 +1935,6 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pLibrariesBrowserLayout->addWidget(mpShowProtectedClasses, 2, 0, 1, 2);
   pLibrariesBrowserLayout->addWidget(mpShowHiddenClasses, 3, 0, 1, 2);
   mpLibrariesBrowserGroupBox->setLayout(pLibrariesBrowserLayout);
-  // Modeling View Mode
-  mpModelingViewModeGroupBox = new QGroupBox(tr("Default Modeling View Mode"));
-  mpModelingTabbedViewRadioButton = new QRadioButton(tr("Tabbed View"));
-  mpModelingTabbedViewRadioButton->setChecked(true);
-  mpModelingSubWindowViewRadioButton = new QRadioButton(tr("SubWindow View"));
-  QButtonGroup *pModelingViewModeButtonGroup = new QButtonGroup;
-  pModelingViewModeButtonGroup->addButton(mpModelingTabbedViewRadioButton);
-  pModelingViewModeButtonGroup->addButton(mpModelingSubWindowViewRadioButton);
-  // modeling view radio buttons layout
-  QHBoxLayout *pModelingRadioButtonsLayout = new QHBoxLayout;
-  pModelingRadioButtonsLayout->addWidget(mpModelingTabbedViewRadioButton);
-  pModelingRadioButtonsLayout->addWidget(mpModelingSubWindowViewRadioButton);
-  // set the layout of modeling view mode group
-  QGridLayout *modelingViewModeLayout = new QGridLayout;
-  modelingViewModeLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  modelingViewModeLayout->addLayout(pModelingRadioButtonsLayout, 0, 0);
-  mpModelingViewModeGroupBox->setLayout(modelingViewModeLayout);
-  // Default View
-  mpDefaultViewGroupBox = new QGroupBox(tr("Default View"));
-  mpDefaultViewGroupBox->setToolTip(tr("This settings will be used when no preferredView annotation is defined."));
-  mpIconViewRadioButton = new QRadioButton(Helper::iconView);
-  mpDiagramViewRadioButton = new QRadioButton(Helper::diagramView);
-  mpDiagramViewRadioButton->setChecked(true);
-  mpTextViewRadioButton = new QRadioButton(Helper::textView);
-  mpDocumentationViewRadioButton = new QRadioButton(Helper::documentationView);
-  QButtonGroup *pDefaultViewButtonGroup = new QButtonGroup;
-  pDefaultViewButtonGroup->addButton(mpIconViewRadioButton);
-  pDefaultViewButtonGroup->addButton(mpDiagramViewRadioButton);
-  pDefaultViewButtonGroup->addButton(mpTextViewRadioButton);
-  pDefaultViewButtonGroup->addButton(mpDocumentationViewRadioButton);
-  // default view radio buttons layout
-  QGridLayout *pDefaultViewRadioButtonsGridLayout = new QGridLayout;
-  pDefaultViewRadioButtonsGridLayout->addWidget(mpIconViewRadioButton, 0, 0);
-  pDefaultViewRadioButtonsGridLayout->addWidget(mpDiagramViewRadioButton, 0, 1);
-  pDefaultViewRadioButtonsGridLayout->addWidget(mpTextViewRadioButton, 1, 0);
-  pDefaultViewRadioButtonsGridLayout->addWidget(mpDocumentationViewRadioButton, 1, 1);
-  // set the layout of default view group
-  QGridLayout *pDefaultViewLayout = new QGridLayout;
-  pDefaultViewLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pDefaultViewLayout->addLayout(pDefaultViewRadioButtonsGridLayout, 0, 0);
-  mpDefaultViewGroupBox->setLayout(pDefaultViewLayout);
   // Auto Save
   mpEnableAutoSaveGroupBox = new QGroupBox(tr("Enable Auto Save"));
   mpEnableAutoSaveGroupBox->setToolTip("Auto save feature is experimental. If you encounter unexpected crashes then disable it.");
@@ -2019,75 +1984,9 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pMainLayout->addWidget(mpGeneralSettingsGroupBox);
   pMainLayout->addWidget(mpLibrariesBrowserGroupBox);
-  pMainLayout->addWidget(mpModelingViewModeGroupBox);
-  pMainLayout->addWidget(mpDefaultViewGroupBox);
   pMainLayout->addWidget(mpEnableAutoSaveGroupBox);
   pMainLayout->addWidget(mpWelcomePageGroupBox);
   setLayout(pMainLayout);
-}
-
-/*!
- * \brief GeneralSettingsPage::setModelingViewMode
- * Sets the Modeling view mode.
- * \param value
- */
-void GeneralSettingsPage::setModelingViewMode(QString value)
-{
-  if (value.compare(Helper::subWindow) == 0) {
-    mpModelingSubWindowViewRadioButton->setChecked(true);
-  } else {
-    mpModelingTabbedViewRadioButton->setChecked(true);
-  }
-}
-
-/*!
- * \brief GeneralSettingsPage::getModelingViewMode
- * Gets the Modeling view mode.
- * \return
- */
-QString GeneralSettingsPage::getModelingViewMode()
-{
-  if (mpModelingSubWindowViewRadioButton->isChecked()) {
-    return Helper::subWindow;
-  } else {
-    return Helper::tabbed;
-  }
-}
-
-/*!
- * \brief GeneralSettingsPage::setDefaultView
- * Sets the default view.
- * \param value
- */
-void GeneralSettingsPage::setDefaultView(QString value)
-{
-  if (value.compare(Helper::iconView) == 0) {
-    mpIconViewRadioButton->setChecked(true);
-  } else if (value.compare(Helper::textView) == 0) {
-    mpTextViewRadioButton->setChecked(true);
-  } else if (value.compare(Helper::documentationView) == 0) {
-    mpDocumentationViewRadioButton->setChecked(true);
-  } else {
-    mpDiagramViewRadioButton->setChecked(true);
-  }
-}
-
-/*!
- * \brief GeneralSettingsPage::getDefaultView
- * Returns the default view as QString.
- * \return
- */
-QString GeneralSettingsPage::getDefaultView()
-{
-  if (mpIconViewRadioButton->isChecked()) {
-    return Helper::iconView;
-  } else if (mpTextViewRadioButton->isChecked()) {
-    return Helper::textView;
-  } else if (mpDocumentationViewRadioButton->isChecked()) {
-    return Helper::documentationView;
-  } else {
-    return Helper::diagramView;
-  }
 }
 
 /*!
@@ -3306,28 +3205,80 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
   : QWidget(pOptionsDialog)
 {
   mpOptionsDialog = pOptionsDialog;
+  QGroupBox *pGeneralGroupBox = new QGroupBox(Helper::general);
+  // Modeling View Mode
+  QGroupBox *pModelingViewModeGroupBox = new QGroupBox(tr("Default Modeling View Mode"));
+  mpModelingTabbedViewRadioButton = new QRadioButton(tr("Tabbed View"));
+  mpModelingTabbedViewRadioButton->setChecked(true);
+  mpModelingSubWindowViewRadioButton = new QRadioButton(tr("SubWindow View"));
+  QButtonGroup *pModelingViewModeButtonGroup = new QButtonGroup;
+  pModelingViewModeButtonGroup->addButton(mpModelingTabbedViewRadioButton);
+  pModelingViewModeButtonGroup->addButton(mpModelingSubWindowViewRadioButton);
+  // modeling view radio buttons layout
+  QHBoxLayout *pModelingRadioButtonsLayout = new QHBoxLayout;
+  pModelingRadioButtonsLayout->addWidget(mpModelingTabbedViewRadioButton);
+  pModelingRadioButtonsLayout->addWidget(mpModelingSubWindowViewRadioButton);
+  // set the layout of modeling view mode group
+  QGridLayout *modelingViewModeLayout = new QGridLayout;
+  modelingViewModeLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  modelingViewModeLayout->addLayout(pModelingRadioButtonsLayout, 0, 0);
+  pModelingViewModeGroupBox->setLayout(modelingViewModeLayout);
+  // Default View
+  QGroupBox *pDefaultViewGroupBox = new QGroupBox(tr("Default View"));
+  pDefaultViewGroupBox->setToolTip(tr("This settings will be used when no preferredView annotation is defined."));
+  mpIconViewRadioButton = new QRadioButton(Helper::iconView);
+  mpDiagramViewRadioButton = new QRadioButton(Helper::diagramView);
+  mpDiagramViewRadioButton->setChecked(true);
+  mpTextViewRadioButton = new QRadioButton(Helper::textView);
+  mpDocumentationViewRadioButton = new QRadioButton(Helper::documentationView);
+  QButtonGroup *pDefaultViewButtonGroup = new QButtonGroup;
+  pDefaultViewButtonGroup->addButton(mpIconViewRadioButton);
+  pDefaultViewButtonGroup->addButton(mpDiagramViewRadioButton);
+  pDefaultViewButtonGroup->addButton(mpTextViewRadioButton);
+  pDefaultViewButtonGroup->addButton(mpDocumentationViewRadioButton);
+  // default view radio buttons layout
+  QGridLayout *pDefaultViewRadioButtonsGridLayout = new QGridLayout;
+  pDefaultViewRadioButtonsGridLayout->addWidget(mpIconViewRadioButton, 0, 0);
+  pDefaultViewRadioButtonsGridLayout->addWidget(mpDiagramViewRadioButton, 0, 1);
+  pDefaultViewRadioButtonsGridLayout->addWidget(mpTextViewRadioButton, 1, 0);
+  pDefaultViewRadioButtonsGridLayout->addWidget(mpDocumentationViewRadioButton, 1, 1);
+  // set the layout of default view group
+  QGridLayout *pDefaultViewLayout = new QGridLayout;
+  pDefaultViewLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pDefaultViewLayout->addLayout(pDefaultViewRadioButtonsGridLayout, 0, 0);
+  pDefaultViewGroupBox->setLayout(pDefaultViewLayout);
+  // move connectors together checkbox
+  mpMoveConnectorsTogetherCheckBox = new QCheckBox(tr("Move connectors together on both icon and diagram layers"));
+  mpMoveConnectorsTogetherCheckBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  // set the layout of general groupbox
+  QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;
+  pGeneralGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pGeneralGroupBoxLayout->addWidget(pModelingViewModeGroupBox, 0, 0);
+  pGeneralGroupBoxLayout->addWidget(pDefaultViewGroupBox, 1, 0);
+  pGeneralGroupBoxLayout->addWidget(mpMoveConnectorsTogetherCheckBox, 2, 0);
+  pGeneralGroupBox->setLayout(pGeneralGroupBoxLayout);
   // graphical view tab widget
-  mpGraphicalViewsTabWidget = new QTabWidget;
+  QTabWidget *pGraphicalViewsTabWidget = new QTabWidget;
   // Icon View Widget
-  mpIconViewWidget = new QWidget;
+  QWidget *pIconViewWidget = new QWidget;
   // create Icon View extent points group box
-  mpIconViewExtentGroupBox = new QGroupBox(Helper::extent);
-  mpIconViewLeftLabel = new Label(QString(Helper::left).append(":"));
+  QGroupBox *pIconViewExtentGroupBox = new QGroupBox(Helper::extent);
+  Label *pIconViewLeftLabel = new Label(QString(Helper::left).append(":"));
   mpIconViewLeftSpinBox = new DoubleSpinBox;
   mpIconViewLeftSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpIconViewLeftSpinBox->setValue(-100);
   mpIconViewLeftSpinBox->setSingleStep(10);
-  mpIconViewBottomLabel = new Label(Helper::bottom);
+  Label *pIconViewBottomLabel = new Label(Helper::bottom);
   mpIconViewBottomSpinBox = new DoubleSpinBox;
   mpIconViewBottomSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpIconViewBottomSpinBox->setValue(-100);
   mpIconViewBottomSpinBox->setSingleStep(10);
-  mpIconViewRightLabel = new Label(QString(Helper::right).append(":"));
+  Label *pIconViewRightLabel = new Label(QString(Helper::right).append(":"));
   mpIconViewRightSpinBox = new DoubleSpinBox;
   mpIconViewRightSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpIconViewRightSpinBox->setValue(100);
   mpIconViewRightSpinBox->setSingleStep(10);
-  mpIconViewTopLabel = new Label(Helper::top);
+  Label *pIconViewTopLabel = new Label(Helper::top);
   mpIconViewTopSpinBox = new DoubleSpinBox;
   mpIconViewTopSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpIconViewTopSpinBox->setValue(100);
@@ -3337,23 +3288,23 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
   pIconViewExtentLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pIconViewExtentLayout->setColumnStretch(1, 1);
   pIconViewExtentLayout->setColumnStretch(3, 1);
-  pIconViewExtentLayout->addWidget(mpIconViewLeftLabel, 0, 0);
+  pIconViewExtentLayout->addWidget(pIconViewLeftLabel, 0, 0);
   pIconViewExtentLayout->addWidget(mpIconViewLeftSpinBox, 0, 1);
-  pIconViewExtentLayout->addWidget(mpIconViewBottomLabel, 0, 2);
+  pIconViewExtentLayout->addWidget(pIconViewBottomLabel, 0, 2);
   pIconViewExtentLayout->addWidget(mpIconViewBottomSpinBox, 0, 3);
-  pIconViewExtentLayout->addWidget(mpIconViewRightLabel, 1, 0);
+  pIconViewExtentLayout->addWidget(pIconViewRightLabel, 1, 0);
   pIconViewExtentLayout->addWidget(mpIconViewRightSpinBox, 1, 1);
-  pIconViewExtentLayout->addWidget(mpIconViewTopLabel, 1, 2);
+  pIconViewExtentLayout->addWidget(pIconViewTopLabel, 1, 2);
   pIconViewExtentLayout->addWidget(mpIconViewTopSpinBox, 1, 3);
-  mpIconViewExtentGroupBox->setLayout(pIconViewExtentLayout);
+  pIconViewExtentGroupBox->setLayout(pIconViewExtentLayout);
   // create the Icon View grid group box
-  mpIconViewGridGroupBox = new QGroupBox(Helper::grid);
-  mpIconViewGridHorizontalLabel = new Label(QString(Helper::horizontal).append(":"));
+  QGroupBox *pIconViewGridGroupBox = new QGroupBox(Helper::grid);
+  Label *pIconViewGridHorizontalLabel = new Label(QString(Helper::horizontal).append(":"));
   mpIconViewGridHorizontalSpinBox = new DoubleSpinBox;
   mpIconViewGridHorizontalSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpIconViewGridHorizontalSpinBox->setValue(2);
   mpIconViewGridHorizontalSpinBox->setSingleStep(1);
-  mpIconViewGridVerticalLabel = new Label(QString(Helper::vertical).append(":"));
+  Label *pIconViewGridVerticalLabel = new Label(QString(Helper::vertical).append(":"));
   mpIconViewGridVerticalSpinBox = new DoubleSpinBox;
   mpIconViewGridVerticalSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpIconViewGridVerticalSpinBox->setValue(2);
@@ -3362,14 +3313,14 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
   QGridLayout *pIconViewGridLayout = new QGridLayout;
   pIconViewGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pIconViewGridLayout->setColumnStretch(1, 1);
-  pIconViewGridLayout->addWidget(mpIconViewGridHorizontalLabel, 0, 0);
+  pIconViewGridLayout->addWidget(pIconViewGridHorizontalLabel, 0, 0);
   pIconViewGridLayout->addWidget(mpIconViewGridHorizontalSpinBox, 0, 1);
-  pIconViewGridLayout->addWidget(mpIconViewGridVerticalLabel, 1, 0);
+  pIconViewGridLayout->addWidget(pIconViewGridVerticalLabel, 1, 0);
   pIconViewGridLayout->addWidget(mpIconViewGridVerticalSpinBox, 1, 1);
-  mpIconViewGridGroupBox->setLayout(pIconViewGridLayout);
+  pIconViewGridGroupBox->setLayout(pIconViewGridLayout);
   // create the Icon View Component group box
-  mpIconViewComponentGroupBox = new QGroupBox(Helper::component);
-  mpIconViewScaleFactorLabel = new Label(Helper::scaleFactor);
+  QGroupBox *pIconViewComponentGroupBox = new QGroupBox(Helper::component);
+  Label *pIconViewScaleFactorLabel = new Label(Helper::scaleFactor);
   mpIconViewScaleFactorSpinBox = new DoubleSpinBox;
   mpIconViewScaleFactorSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpIconViewScaleFactorSpinBox->setValue(0.1);
@@ -3380,39 +3331,39 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
   QGridLayout *pIconViewComponentLayout = new QGridLayout;
   pIconViewComponentLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pIconViewComponentLayout->setColumnStretch(1, 1);
-  pIconViewComponentLayout->addWidget(mpIconViewScaleFactorLabel, 0, 0);
+  pIconViewComponentLayout->addWidget(pIconViewScaleFactorLabel, 0, 0);
   pIconViewComponentLayout->addWidget(mpIconViewScaleFactorSpinBox, 0, 1);
   pIconViewComponentLayout->addWidget(mpIconViewPreserveAspectRatioCheckBox, 1, 0, 1, 2);
-  mpIconViewComponentGroupBox->setLayout(pIconViewComponentLayout);
+  pIconViewComponentGroupBox->setLayout(pIconViewComponentLayout);
   // Icon View Widget Layout
   QVBoxLayout *pIconViewMainLayout = new QVBoxLayout;
   pIconViewMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pIconViewMainLayout->addWidget(mpIconViewExtentGroupBox);
-  pIconViewMainLayout->addWidget(mpIconViewGridGroupBox);
-  pIconViewMainLayout->addWidget(mpIconViewComponentGroupBox);
-  mpIconViewWidget->setLayout(pIconViewMainLayout);
+  pIconViewMainLayout->addWidget(pIconViewExtentGroupBox);
+  pIconViewMainLayout->addWidget(pIconViewGridGroupBox);
+  pIconViewMainLayout->addWidget(pIconViewComponentGroupBox);
+  pIconViewWidget->setLayout(pIconViewMainLayout);
   // add Icon View Widget as a tab
-  mpGraphicalViewsTabWidget->addTab(mpIconViewWidget, tr("Icon View"));
+  pGraphicalViewsTabWidget->addTab(pIconViewWidget, tr("Icon View"));
   // Digram View Widget
-  mpDiagramViewWidget = new QWidget;
+  QWidget *pDiagramViewWidget = new QWidget;
   // create Diagram View extent points group box
-  mpDiagramViewExtentGroupBox = new QGroupBox(Helper::extent);
-  mpDiagramViewLeftLabel = new Label(QString(Helper::left).append(":"));
+  QGroupBox *pDiagramViewExtentGroupBox = new QGroupBox(Helper::extent);
+  Label *pDiagramViewLeftLabel = new Label(QString(Helper::left).append(":"));
   mpDiagramViewLeftSpinBox = new DoubleSpinBox;
   mpDiagramViewLeftSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpDiagramViewLeftSpinBox->setValue(-100);
   mpDiagramViewLeftSpinBox->setSingleStep(10);
-  mpDiagramViewBottomLabel = new Label(Helper::bottom);
+  Label *pDiagramViewBottomLabel = new Label(Helper::bottom);
   mpDiagramViewBottomSpinBox = new DoubleSpinBox;
   mpDiagramViewBottomSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpDiagramViewBottomSpinBox->setValue(-100);
   mpDiagramViewBottomSpinBox->setSingleStep(10);
-  mpDiagramViewRightLabel = new Label(QString(Helper::right).append(":"));
+  Label *pDiagramViewRightLabel = new Label(QString(Helper::right).append(":"));
   mpDiagramViewRightSpinBox = new DoubleSpinBox;
   mpDiagramViewRightSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpDiagramViewRightSpinBox->setValue(100);
   mpDiagramViewRightSpinBox->setSingleStep(10);
-  mpDiagramViewTopLabel = new Label(Helper::top);
+  Label *pDiagramViewTopLabel = new Label(Helper::top);
   mpDiagramViewTopSpinBox = new DoubleSpinBox;
   mpDiagramViewTopSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpDiagramViewTopSpinBox->setValue(100);
@@ -3422,23 +3373,23 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
   pDiagramViewExtentLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pDiagramViewExtentLayout->setColumnStretch(1, 1);
   pDiagramViewExtentLayout->setColumnStretch(3, 1);
-  pDiagramViewExtentLayout->addWidget(mpDiagramViewLeftLabel, 0, 0);
+  pDiagramViewExtentLayout->addWidget(pDiagramViewLeftLabel, 0, 0);
   pDiagramViewExtentLayout->addWidget(mpDiagramViewLeftSpinBox, 0, 1);
-  pDiagramViewExtentLayout->addWidget(mpDiagramViewBottomLabel, 0, 2);
+  pDiagramViewExtentLayout->addWidget(pDiagramViewBottomLabel, 0, 2);
   pDiagramViewExtentLayout->addWidget(mpDiagramViewBottomSpinBox, 0, 3);
-  pDiagramViewExtentLayout->addWidget(mpDiagramViewRightLabel, 1, 0);
+  pDiagramViewExtentLayout->addWidget(pDiagramViewRightLabel, 1, 0);
   pDiagramViewExtentLayout->addWidget(mpDiagramViewRightSpinBox, 1, 1);
-  pDiagramViewExtentLayout->addWidget(mpDiagramViewTopLabel, 1, 2);
+  pDiagramViewExtentLayout->addWidget(pDiagramViewTopLabel, 1, 2);
   pDiagramViewExtentLayout->addWidget(mpDiagramViewTopSpinBox, 1, 3);
-  mpDiagramViewExtentGroupBox->setLayout(pDiagramViewExtentLayout);
+  pDiagramViewExtentGroupBox->setLayout(pDiagramViewExtentLayout);
   // create the Diagram View grid group box
-  mpDiagramViewGridGroupBox = new QGroupBox(Helper::grid);
-  mpDiagramViewGridHorizontalLabel = new Label(QString(Helper::horizontal).append(":"));
+  QGroupBox *pDiagramViewGridGroupBox = new QGroupBox(Helper::grid);
+  Label *pDiagramViewGridHorizontalLabel = new Label(QString(Helper::horizontal).append(":"));
   mpDiagramViewGridHorizontalSpinBox = new DoubleSpinBox;
   mpDiagramViewGridHorizontalSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpDiagramViewGridHorizontalSpinBox->setValue(2);
   mpDiagramViewGridHorizontalSpinBox->setSingleStep(1);
-  mpDiagramViewGridVerticalLabel = new Label(QString(Helper::vertical).append(":"));
+  Label *pDiagramViewGridVerticalLabel = new Label(QString(Helper::vertical).append(":"));
   mpDiagramViewGridVerticalSpinBox = new DoubleSpinBox;
   mpDiagramViewGridVerticalSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpDiagramViewGridVerticalSpinBox->setValue(2);
@@ -3447,14 +3398,14 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
   QGridLayout *pDiagramViewGridLayout = new QGridLayout;
   pDiagramViewGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pDiagramViewGridLayout->setColumnStretch(1, 1);
-  pDiagramViewGridLayout->addWidget(mpDiagramViewGridHorizontalLabel, 0, 0);
+  pDiagramViewGridLayout->addWidget(pDiagramViewGridHorizontalLabel, 0, 0);
   pDiagramViewGridLayout->addWidget(mpDiagramViewGridHorizontalSpinBox, 0, 1);
-  pDiagramViewGridLayout->addWidget(mpDiagramViewGridVerticalLabel, 1, 0);
+  pDiagramViewGridLayout->addWidget(pDiagramViewGridVerticalLabel, 1, 0);
   pDiagramViewGridLayout->addWidget(mpDiagramViewGridVerticalSpinBox, 1, 1);
-  mpDiagramViewGridGroupBox->setLayout(pDiagramViewGridLayout);
+  pDiagramViewGridGroupBox->setLayout(pDiagramViewGridLayout);
   // create the Diagram View Component group box
-  mpDiagramViewComponentGroupBox = new QGroupBox(Helper::component);
-  mpDiagramViewScaleFactorLabel = new Label(Helper::scaleFactor);
+  QGroupBox *pDiagramViewComponentGroupBox = new QGroupBox(Helper::component);
+  Label *pDiagramViewScaleFactorLabel = new Label(Helper::scaleFactor);
   mpDiagramViewScaleFactorSpinBox = new DoubleSpinBox;
   mpDiagramViewScaleFactorSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpDiagramViewScaleFactorSpinBox->setValue(0.1);
@@ -3465,24 +3416,96 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
   QGridLayout *pDiagramViewComponentLayout = new QGridLayout;
   pDiagramViewComponentLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pDiagramViewComponentLayout->setColumnStretch(1, 1);
-  pDiagramViewComponentLayout->addWidget(mpDiagramViewScaleFactorLabel, 0, 0);
+  pDiagramViewComponentLayout->addWidget(pDiagramViewScaleFactorLabel, 0, 0);
   pDiagramViewComponentLayout->addWidget(mpDiagramViewScaleFactorSpinBox, 0, 1);
   pDiagramViewComponentLayout->addWidget(mpDiagramViewPreserveAspectRatioCheckBox, 1, 0, 1, 2);
-  mpDiagramViewComponentGroupBox->setLayout(pDiagramViewComponentLayout);
+  pDiagramViewComponentGroupBox->setLayout(pDiagramViewComponentLayout);
   // Diagram View Widget Layout
   QVBoxLayout *pDiagramViewMainLayout = new QVBoxLayout;
   pDiagramViewMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pDiagramViewMainLayout->addWidget(mpDiagramViewExtentGroupBox);
-  pDiagramViewMainLayout->addWidget(mpDiagramViewGridGroupBox);
-  pDiagramViewMainLayout->addWidget(mpDiagramViewComponentGroupBox);
-  mpDiagramViewWidget->setLayout(pDiagramViewMainLayout);
+  pDiagramViewMainLayout->addWidget(pDiagramViewExtentGroupBox);
+  pDiagramViewMainLayout->addWidget(pDiagramViewGridGroupBox);
+  pDiagramViewMainLayout->addWidget(pDiagramViewComponentGroupBox);
+  pDiagramViewWidget->setLayout(pDiagramViewMainLayout);
   // add Diagram View Widget as a tab
-  mpGraphicalViewsTabWidget->addTab(mpDiagramViewWidget, tr("Diagram View"));
+  pGraphicalViewsTabWidget->addTab(pDiagramViewWidget, tr("Diagram View"));
+  // Graphics groupbox and layout
+  QGroupBox *pGraphicsGroupBox = new QGroupBox(tr("Graphics"));
+  QGridLayout *pGraphicsGridLayout = new QGridLayout;
+  pGraphicsGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pGraphicsGridLayout->addWidget(pGraphicalViewsTabWidget, 0, 0);
+  pGraphicsGroupBox->setLayout(pGraphicsGridLayout);
   // set Main Layout
-  QHBoxLayout *pHBoxLayout = new QHBoxLayout;
-  pHBoxLayout->setContentsMargins(0, 0, 0, 0);
-  pHBoxLayout->addWidget(mpGraphicalViewsTabWidget);
-  setLayout(pHBoxLayout);
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pMainLayout->addWidget(pGeneralGroupBox);
+  pMainLayout->addWidget(pGraphicsGroupBox, 0, Qt::AlignTop);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief GraphicalViewsPage::setModelingViewMode
+ * Sets the Modeling view mode.
+ * \param value
+ */
+void GraphicalViewsPage::setModelingViewMode(QString value)
+{
+  if (value.compare(Helper::subWindow) == 0) {
+    mpModelingSubWindowViewRadioButton->setChecked(true);
+  } else {
+    mpModelingTabbedViewRadioButton->setChecked(true);
+  }
+}
+
+/*!
+ * \brief GraphicalViewsPage::getModelingViewMode
+ * Gets the Modeling view mode.
+ * \return
+ */
+QString GraphicalViewsPage::getModelingViewMode()
+{
+  if (mpModelingSubWindowViewRadioButton->isChecked()) {
+    return Helper::subWindow;
+  } else {
+    return Helper::tabbed;
+  }
+}
+
+/*!
+ * \brief GraphicalViewsPage::setDefaultView
+ * Sets the default view.
+ * \param value
+ */
+void GraphicalViewsPage::setDefaultView(QString value)
+{
+  if (value.compare(Helper::iconView) == 0) {
+    mpIconViewRadioButton->setChecked(true);
+  } else if (value.compare(Helper::textView) == 0) {
+    mpTextViewRadioButton->setChecked(true);
+  } else if (value.compare(Helper::documentationView) == 0) {
+    mpDocumentationViewRadioButton->setChecked(true);
+  } else {
+    mpDiagramViewRadioButton->setChecked(true);
+  }
+}
+
+/*!
+ * \brief GraphicalViewsPage::getDefaultView
+ * Returns the default view as QString.
+ * \return
+ */
+QString GraphicalViewsPage::getDefaultView()
+{
+  if (mpIconViewRadioButton->isChecked()) {
+    return Helper::iconView;
+  } else if (mpTextViewRadioButton->isChecked()) {
+    return Helper::textView;
+  } else if (mpDocumentationViewRadioButton->isChecked()) {
+    return Helper::documentationView;
+  } else {
+    return Helper::diagramView;
+  }
 }
 
 void GraphicalViewsPage::setIconViewExtentLeft(double extentLeft)
