@@ -53,7 +53,6 @@ import HashTableStringToProgram;
 import List;
 import PackageManagement;
 import Parser;
-import Settings;
 import System;
 import Testsuite;
 import Util;

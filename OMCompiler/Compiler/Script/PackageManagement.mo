@@ -32,7 +32,6 @@
 encapsulated package PackageManagement
 
 import BaseAvlTree;
-import BaseAvlSet;
 import JSON;
 import SemanticVersion;
 
