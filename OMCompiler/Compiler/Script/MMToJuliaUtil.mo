@@ -410,5 +410,31 @@ algorithm
   end match;
 end ifMMKeywordReturnSelf;
 
+function makeNewReferenceForWrapperPackageUpdateHT
+  input String name;
+  input Absyn.Path inPath;
+protected
+  MMToJuliaHT.Value entry;
+  MMToJuliaHT.ClassInfo unboxedValue;
+algorithm
+ entry := MMToJuliaHT.get(AbsynUtil.pathStringDefault(inPath));
+ () := match entry
+   local
+     Absyn.Class newWrapperClass;
+     Absyn.Class newOriginalClass;
+     MMToJuliaHT.Value newEntry;
+   case SOME(unboxedValue)
+     algorithm
+       newWrapperClass := unboxedValue.wrapperClass;
+       newWrapperClass.name := "P_" + name;
+       newOriginalClass := unboxedValue.originalClass;
+       newEntry := SOME(MMToJuliaHT.CLASS_INFO(newOriginalClass,
+                        newWrapperClass));
+       MMToJuliaHT.add(name, newEntry);
+     then ();
+   case NONE() then();
+ end match;
+end makeNewReferenceForWrapperPackageUpdateHT;
+
 annotation(__OpenModelica_Interface="backend");
 end MMToJuliaUtil;

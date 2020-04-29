@@ -1173,6 +1173,10 @@ package MMToJuliaUtil
     input String inName;
     output String outName;
   end ifMMKeywordReturnSelf;
+  function makeNewReferenceForWrapperPackageUpdateHT
+    input String name;
+    input Absyn.Path inPath;
+  end makeNewReferenceForWrapperPackageUpdateHT;
 end MMToJuliaUtil;
 
 package AbsynUtil

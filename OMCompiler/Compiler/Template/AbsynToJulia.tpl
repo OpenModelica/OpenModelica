@@ -221,8 +221,6 @@ match class
         @ExtendedFunction <%name_of_new_function%> <%spec%>(<%args%>)
       >>
 //TODO: case CLASS(restriction=R_ENUMERATION(__)) then
-   //let cdef_str = dumpClassDef(parts, packageContext, options)
-   //AbsynDumpTpl.errorMsg("AbsynToJulia.dumpClassHeader:")
   /* PDER. Should not occur. Derived, and Overload might? */
 end dumpClassElement;
 
@@ -710,7 +708,18 @@ template dumpImport(Absyn.Import imp)
 ::=
 match imp
   case NAMED_IMPORT(__) then
-    'import Main.<%dumpPathJL2(path, MMToJuliaUtil.makeImportContext())%>; <%MMToJuliaUtil.ifMMKeywordReturnSelf(name)%>=Main.<%dumpPathJL2(path, MMToJuliaUtil.makeImportContext())%>'
+    let changed_name = MMToJuliaUtil.ifMMKeywordReturnSelf(name)
+    let _ = MMToJuliaUtil.makeNewReferenceForWrapperPackageUpdateHT(changed_name, path)
+    match MMToJuliaHT.get(changed_name)
+      case SOME(CLASS_INFO(originalClass = CLASS(name = name1), wrapperClass = CLASS(name = name2))) then
+        <<
+         import Main.<%dumpPathJL2(path, MMToJuliaUtil.makeImportContext())%>
+         P_<%changed_name%>=Main.<%dumpPathJL2(path, MMToJuliaUtil.makeImportContext())%>
+         <%changed_name%>=Main.<%dumpPathJL2(path, MMToJuliaUtil.makeImportContext())%>.<%name1%>
+        >>
+      case NONE() then
+        'import Main.<%dumpPathJL2(path, MMToJuliaUtil.makeImportContext())%>; <%changed_name%>=Main.<%dumpPathJL2(path, MMToJuliaUtil.makeImportContext())%>'
+      else AbsynDumpTpl.errorMsg("Unkown sideffect during HT lookup")
   case QUAL_IMPORT(__) then
     let path_str = dumpPathJL2(path,  MMToJuliaUtil.makeImportContext())
     match path_str /* Some package need different names. This is true for packages that already exists */
