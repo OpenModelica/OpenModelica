@@ -56,11 +56,13 @@ public
   import VariableKind = NFBackendExtension.VariableKind;
 
   // Backend Imports
+  import BackendDAE = NBackendDAE;
   import BVariable = NBVariable;
 
   //Util Imports
   import Array;
   import BaseHashTable;
+  import Flags;
   import HashTable3;
   import HashTableCG;
   import StringUtil;
@@ -72,8 +74,6 @@ public
       2: Pointer array to the original variables to avoid duplicates.
   ========================================================================== */
 public
-
-
   constant Variable DUMMY_VARIABLE = Variable.VARIABLE(ComponentRef.EMPTY(), Type.ANY(),
     NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PROTECTED, NFComponent.DEFAULT_ATTR,
     {}, NONE(), SCodeUtil.dummyInfo, NFBackendExtension.DUMMY_BACKEND_INFO);
@@ -85,6 +85,17 @@ public
   algorithm
     str := VariableKind.toString(var.backendinfo.varKind) + " " + Variable.toString(var);
   end toString;
+
+  function getVarName
+    "Returns the component reference representing the name of the variable.
+     NOTE: Always use this function to get the variable name and never just
+     get the name. It won't have the pointer to this variable since cyclic
+     pointers are not allowed."
+    input Variable var;
+    output ComponentRef cref;
+  algorithm
+    cref := BackendDAE.lowerComponentReferenceInstNode(var.name, Pointer.create(var));
+  end getVarName;
 
   uniontype Variables
     record VARIABLES
@@ -181,7 +192,7 @@ public
 
     public function getVar
       "Use only for lowering purposes! Otherwise use the InstNode in the
-      ComponentRef."
+      ComponentRef. Fails if the component ref cannot be found."
       input ComponentRef cref;
       input Variables variables;
       output Variable var;
@@ -198,6 +209,7 @@ public
         true := ComponentRef.isEqual(cr, cref);
       else
         Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.Variables.getVar failed for " + ComponentRef.toString(cref)});
+        fail();
       end try;
     end getVar;
 
@@ -205,20 +217,24 @@ public
       input output ComponentRef cref;
       input Variables variables;
     algorithm
-      cref := match cref
-        local
-          ComponentRef qualCref;
-
-        case qualCref as ComponentRef.CREF()
-          algorithm
+      try
+        cref := match cref
+          local
+            ComponentRef qualCref;
+          case qualCref as ComponentRef.CREF() algorithm
             qualCref.node := InstNode.VAR_NODE(Pointer.create(getVar(cref, variables)));
-        then qualCref;
-
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.Variables.setVarPointer failed for " + ComponentRef.toString(cref)});
-        then fail();
-
-      end match;
+          then qualCref;
+          else algorithm
+            if Flags.isSet(Flags.FAILTRACE) then
+              Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.Variables.updateInstNode failed because of wrong component reference type for: " + ComponentRef.toString(cref)});
+            end if;
+          then fail();
+        end match;
+      else
+        if Flags.isSet(Flags.FAILTRACE) then
+          Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.updateInstNode failed because variable cannot be found for compenent reference: " + ComponentRef.toString(cref)});
+        end if;
+      end try;
     end updateInstNode;
   end Variables;
 

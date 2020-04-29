@@ -136,21 +136,38 @@ public
       str := match eq
         local
           Equation qualEq;
-        case qualEq as SCALAR_EQUATION() then "[SCAL] " + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
-        case qualEq as ARRAY_EQUATION() then  "[ARRY] " + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
-        case qualEq as SIMPLE_EQUATION() then "[SIMP] " + ComponentRef.toString(qualEq.lhs) + " = " + ComponentRef.toString(qualEq.rhs);
-        case qualEq as RECORD_EQUATION() then "[RECD] " + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
-        case qualEq as ALGORITHM() then       "[ALGO] \n" + Algorithm.toString(qualEq.alg);
-        case qualEq as IF_EQUATION() then     "[-IF-] ";
-        case qualEq as FOR_EQUATION() then    "[FOR-] ";
-        case qualEq as WHEN_EQUATION() then   WhenEquationBody.toString(qualEq.body, "", str + "[----] ", "[WHEN] ");
-        case qualEq as AUX_EQUATION() then    "[AUX-] ";
-        case qualEq as DUMMY_EQUATION() then  "[DUMY] Dummy equation.";
-        else                                  "[FAIL] Equation.toString failed!";
+        case qualEq as SCALAR_EQUATION() then str + "[SCAL] " + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
+        case qualEq as ARRAY_EQUATION() then  str + "[ARRY] " + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
+        case qualEq as SIMPLE_EQUATION() then str + "[SIMP] " + ComponentRef.toString(qualEq.lhs) + " = " + ComponentRef.toString(qualEq.rhs);
+        case qualEq as RECORD_EQUATION() then str + "[RECD] " + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
+        case qualEq as ALGORITHM() then       str + "[ALGO] \n" + Algorithm.toString(qualEq.alg);
+        case qualEq as IF_EQUATION() then     str + "[-IF-] ";
+        case qualEq as FOR_EQUATION() then    str + forEquationToString(qualEq.iter, qualEq.range, qualEq.body, "", str + "[----] ", "[FOR-] ");
+        case qualEq as WHEN_EQUATION() then   str + WhenEquationBody.toString(qualEq.body, str + "[----] ", "[WHEN] ");
+        case qualEq as AUX_EQUATION() then    str + "[AUX-] Auxiliary equation for " + Variable.toString(Pointer.access(qualEq.auxiliary));
+        case qualEq as DUMMY_EQUATION() then  str + "[DUMY] Dummy equation.";
+        else                                  str + "[FAIL] Equation.toString failed!";
       end match;
     end toString;
 
-    function getAttributes
+  protected
+    function forEquationToString
+      input InstNode iter                   "the iterator variable";
+      input Expression range                "Start - (Step) - Stop";
+      input Equation body                   "iterated equation";
+      input output String str = "";
+      input String indent = "";
+      input String indicator = "";
+    protected
+      WhenEquationBody elseWhen;
+    algorithm
+      str := str + indicator + "for " + InstNode.name(iter) + " in " + Expression.toString(range) + "\n";
+      str := str + toString(body, indent + "  ") + "\n";
+      str := str + indent + "end for;\n";
+    end forEquationToString;
+
+  public
+     function getAttributes
       input Equation eq;
       output EquationAttributes attr;
     algorithm
@@ -241,7 +258,6 @@ public
           algorithm
             qualEq.range := funcExp(qualEq.range);
             qualEq.body := map(qualEq.body, funcExp, funcCrefOpt);
-            qualEq.range := funcExp(qualEq.range);
         then qualEq;
 
         case qualEq as WHEN_EQUATION()
@@ -267,21 +283,24 @@ public
 
     function toString
       input WhenEquationBody body;
-      input output String str = "";
       input String indent = "";
       input String elseStr = "";
+      input Boolean selfCall = false;
+      output String str;
     protected
       WhenEquationBody elseWhen;
     algorithm
-      str := str + elseStr + "when " + Expression.toString(body.condition) + " then \n";
+      str := elseStr + "when " + Expression.toString(body.condition) + " then \n";
       for stmt in body.when_stmts loop
         str := str + WhenStatement.toString(stmt, indent + "  ") + "\n";
       end for;
       if isSome(body.else_when) then
         SOME(elseWhen) := body.else_when;
-        str := str + WhenEquationBody.toString(elseWhen, indent, indent +"else ");
+        str := str + toString(elseWhen, indent, indent +"else ", true);
       end if;
-      str := str + indent + "end when;";
+      if not selfCall then
+        str := str + indent + "end when;\n";
+      end if;
     end toString;
 
     function map
@@ -422,7 +441,6 @@ public
   constant EquationAttributes EQ_ATTR_DEFAULT_UNKNOWN = EQUATION_ATTRIBUTES(false, UNKNOWN_EQUATION_KIND(), DEFAULT_EVALUATION_STAGES);
 
   uniontype EquationKind
-
     record BINDING_EQUATION
     end BINDING_EQUATION;
     record DYNAMIC_EQUATION
@@ -452,7 +470,6 @@ public
 
   constant EvaluationStages DEFAULT_EVALUATION_STAGES = EVALUATION_STAGES(false,false,false,false);
 
-
   uniontype Equations
     record EQUATIONS
       ExpandableArray<Equation> eqArr;
@@ -466,7 +483,7 @@ public
     algorithm
       str := StringUtil.headline_3(str + " Equations (" + intString(numberOfElements) + ")") + "\n";
       for i in 1:numberOfElements loop
-        str := str + "(" + intString(i) + ")\t" + Equation.toString(ExpandableArray.get(i, equations.eqArr), "\t") + "\n";
+        str := str + "(" + intString(i) + ")" + Equation.toString(ExpandableArray.get(i, equations.eqArr), "\t") + "\n";
       end for;
     end toString;
 
@@ -542,7 +559,7 @@ public
     algorithm
       str := StringUtil.headline_4(str + " EquationPointers (" + intString(numberOfElements) + ")") + "\n";
       for i in 1:numberOfElements loop
-        str := str + "(" + intString(i) + ")\t" + Equation.toString(Pointer.access(ExpandableArray.get(i, equations.eqArr)), "\t") + "\n";
+        str := str + "(" + intString(i) + ")" + Equation.toString(Pointer.access(ExpandableArray.get(i, equations.eqArr)), "\t") + "\n";
       end for;
     end toString;
 

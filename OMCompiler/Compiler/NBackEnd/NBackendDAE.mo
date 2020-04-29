@@ -59,6 +59,7 @@ protected
 
   // Util imports
   import Error;
+  import Flags;
   import StringUtil;
 
 public
@@ -86,7 +87,7 @@ public
     BVariable.VarData variableData;
     BEquation.EqData equationData;
   algorithm
-    //print(FlatModel.toString(flatModel, true));
+    print(FlatModel.toString(flatModel, true));
     variableData := lowerVariableData(flatModel.variables);
     equationData := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, BVariable.VarData.getVariables(variableData));
     bdae := BDAE(variableData, equationData);
@@ -198,6 +199,9 @@ protected
       varKind := lowerVariableKind(Variable.variability(var), attributes, var.ty);
       var.backendinfo := BackendExtension.BACKEND_INFO(varKind, attributes, NONE());
 
+      // ToDo! This somehow breaks the pipeline. Cyclic pointers not allowed?
+      // var.name := lowerComponentReferenceInstNode(var.name, Pointer.create(var));
+
       // Remove old type attribute information since it has been converted.
       var.typeAttributes := {};
     else
@@ -290,6 +294,11 @@ protected
           algorithm
             auxiliaries_lst := Pointer.create(eq) :: auxiliaries_lst;
         then ();
+
+        else
+          algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerEquationData failed for \n" + Equation.toString(eq)});
+        then fail();
       end match;
     end for;
 
@@ -300,7 +309,6 @@ protected
 
     eqData := BEquation.EQ_DATA_SIM(equations, continuous, discretes, initials, auxiliaries);
   end lowerEquationData;
-
 
   function lowerEquationsAndAlgorithms
     "ToDo! Replace instNode in all Crefs
@@ -400,7 +408,6 @@ protected
       case FEquation.WHEN() then {lowerWhenEquation(frontend_equation, init)};
       case FEquation.ASSERT() then {lowerWhenEquation(frontend_equation, init)};
 
-
       // These have to be called inside a when equation body since they need
       // to get passed a condition from surrounding when equation.
       case FEquation.TERMINATE() algorithm
@@ -436,12 +443,14 @@ protected
 
       case FEquation.WHEN(branches = branches, source = source)
         algorithm
+          // When equation inside initial actually not allowed. Throw error?
           attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL else NBEquation.EQ_ATTR_DEFAULT_DISCRETE;
           SOME(whenEqBody) := lowerWhenEquationBody(branches);
       then BEquation.WHEN_EQUATION(0, whenEqBody, source, attr);
 
       case FEquation.ASSERT(condition = condition, message = message, level = level, source = source)
         algorithm
+          // Assert in initial section is allowed!
           attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL else NBEquation.EQ_ATTR_DEFAULT_DISCRETE;
           whenEqBody := BEquation.WHEN_EQUATION_BODY(condition, {BEquation.ASSERT(condition, message, level, source)}, NONE());
       then BEquation.WHEN_EQUATION(0, whenEqBody, source, attr);
@@ -531,7 +540,7 @@ protected
         ComponentRef cref, lhs_cref, rhs_cref;
         Type lhs_ty, rhs_ty;
         DAE.ElementSource source;
-      // These should hopefully not occur, check assert for same condition?
+      // These should hopefully not occur since they have their own top level condition, check assert for same condition?
       // case FEquation.WHEN()       then fail();
       // case FEquation.ASSERT()     then fail();
 
@@ -620,21 +629,41 @@ protected
   function lowerComponentReference
     input output ComponentRef cref;
     input BVariable.Variables variables;
+  protected
+    Variable var;
+  algorithm
+    try
+      var := BVariable.Variables.getVar(cref, variables);
+      cref := lowerComponentReferenceInstNode(cref, Pointer.create(var));
+    else
+      if Flags.isSet(Flags.FAILTRACE) then
+        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerComponentReference failed for " + ComponentRef.toString(cref)});
+      end if;
+    end try;
+  end lowerComponentReference;
+
+public
+  function lowerComponentReferenceInstNode
+    "Adds the pointer to a variable to a component reference. This function needs
+    to be public since it is needed whenever a component reference is extracted
+    from a variable."
+    input output ComponentRef cref;
+    input Pointer<Variable> var;
   algorithm
     cref := match cref
       local
         ComponentRef qual;
-        Variable var;
 
       case qual as ComponentRef.CREF()
         algorithm
-          var := BVariable.Variables.getVar(qual, variables);
-          qual.node := InstNode.VAR_NODE(Pointer.create(var));
+          qual.node := InstNode.VAR_NODE(var);
       then qual;
 
       else cref;
     end match;
-  end lowerComponentReference;
+  end lowerComponentReferenceInstNode;
+
+protected
 
   annotation(__OpenModelica_Interface="backend");
 end NBackendDAE;

@@ -101,7 +101,7 @@ public
       str := match varKind
         case ALGEBRAIC() then           "[ALGB]";
         case STATE() then               "[STAT]";
-        case STATE_DER() then           "[DER ]";
+        case STATE_DER() then           "[DER-]";
         case DUMMY_DER() then           "[DDER]";
         case DUMMY_STATE() then         "[DSTA]";
         case CLOCKED_STATE() then       "[CLCK]";
@@ -120,8 +120,8 @@ public
         case OPT_TGRID() then           "[OPT][TGRD]";
         case OPT_LOOP_INPUT() then      "[OPT][LOOP]";
         case ALG_STATE() then           "[ASTA]";
-        case DAE_RESIDUAL_VAR() then    "[RES ]";
-        case DAE_AUX_VAR() then         "[AUX ]";
+        case DAE_RESIDUAL_VAR() then    "[RES-]";
+        case DAE_AUX_VAR() then         "[AUX-]";
         case LOOP_ITERATION() then      "[LOOP]";
         case LOOP_SOLVED() then         "[INNR]";
         case FRONTEND_DUMMY() then      "[DUMY] Dummy Variable.";
