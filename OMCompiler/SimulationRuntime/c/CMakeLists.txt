@@ -47,7 +47,6 @@ if(MSVC)
   FIND_LIBRARY(SUNDIALS_LIBRARY_SPGMR         NAMES sundials_sunlinsolspgmr           PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
   FIND_LIBRARY(SUNDIALS_LIBRARY_SPBCGS        NAMES sundials_sunlinsolspbcgs          PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
   FIND_LIBRARY(SUNDIALS_LIBRARY_SPTFQMR       NAMES sundials_sunlinsolsptfqmr         PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
-#TODO Add additional libraries for msvc here!
 else(MSVC)
   FIND_LIBRARY(SUNDIALS_LIBRARY_CVODE         NAMES libsundials_cvode                 PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
   FIND_LIBRARY(SUNDIALS_LIBRARY_IDA           NAMES libsundials_ida                   PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
@@ -60,26 +59,55 @@ else(MSVC)
   FIND_LIBRARY(SUNDIALS_LIBRARY_SPTFQMR       NAMES libsundials_sunlinsolsptfqmr      PATHS /usr/lib /usr/local/lib $ENV{LIB} $(Sundials_Path)/lib)
 endif(MSVC)
 
+if(NOT SUNDIALS_LIBRARY_CVODE)
+  MESSAGE(FATAL_ERROR "Library libsundials_cvode not found")
+endif(NOT SUNDIALS_LIBRARY_CVODE)
+
+if(NOT SUNDIALS_LIBRARY_IDA)
+  MESSAGE(FATAL_ERROR "Library libsundials_ida not found")
+endif(NOT SUNDIALS_LIBRARY_CVODE)
+
+if(NOT SUNDIALS_LIBRARY_NVEC)
+  MESSAGE(FATAL_ERROR "Library sundials_nvecserial not found")
+endif(NOT SUNDIALS_LIBRARY_CVODE)
+
+if(NOT SUNDIALS_LIBRARY_KINSOL)
+  MESSAGE(FATAL_ERROR "Library sundials_kinsol not found")
+endif(NOT SUNDIALS_LIBRARY_CVODE)
+
+if(NOT SUNDIALS_LIBRARY_LINSOL_LAPACK)
+  MESSAGE(FATAL_ERROR "Library sundials_sunlinsollapackdense not found")
+endif(NOT SUNDIALS_LIBRARY_CVODE)
+
+if(NOT SUNDIALS_LIBRARY_LINSOL_KLU)
+  MESSAGE(FATAL_ERROR "Library sundials_sunlinsolklu not found")
+endif(NOT SUNDIALS_LIBRARY_CVODE)
+
+if(NOT SUNDIALS_LIBRARY_SPGMR)
+  MESSAGE(FATAL_ERROR "Library sundials_sunlinsolspgmr not found")
+endif(NOT SUNDIALS_LIBRARY_CVODE)
+
+if(NOT SUNDIALS_LIBRARY_SPBCGS)
+  MESSAGE(FATAL_ERROR "Library sundials_sunlinsolspbcgs not found")
+endif(NOT SUNDIALS_LIBRARY_CVODE)
+
+if(NOT SUNDIALS_LIBRARY_SPTFQMR)
+  MESSAGE(FATAL_ERROR "Library sundials_sunlinsolsptfqmr not found")
+endif(NOT SUNDIALS_LIBRARY_CVODE)
+
+
 IF(SUNDIALS_INCLUDE_DIR)
 
   INCLUDE_DIRECTORIES(${SUNDIALS_INCLUDE_DIR})
 
-  IF(SUNDIALS_LIBRARY_CVODE AND SUNDIALS_LIBRARY_IDA AND SUNDIALS_LIBRARY_NVEC AND
-     SUNDIALS_LIBRARY_KINSOL AND SUNDIALS_LIBRARY_LINSOL_LAPACK AND SUNDIALS_LIBRARY_LINSOL_KLU
-     SUNDIALS_LIBRARY_SPGMR AND SUNDIALS_LIBRARY_SPBCGS AND SUNDIALS_LIBRARY_SPTFQMR)
+  SET(SUNDIALS_LIBRARIES ${SUNDIALS_LIBRARY_CVODE} ${SUNDIALS_LIBRARY_IDA} ${SUNDIALS_LIBRARY_NVEC}
+                         ${SUNDIALS_LIBRARY_KINSOL} ${SUNDIALS_LIBRARY_LINSOL_LAPACK} ${SUNDIALS_LIBRARY_LINSOL_KLU}
+                         ${SUNDIALS_LIBRARY_SPGMR} ${SUNDIALS_LIBRARY_SPBCGS} ${SUNDIALS_LIBRARY_SPTFQMR})
+  MESSAGE(STATUS "${SUNDIALS_LIBRARIES}")
 
-    SET(SUNDIALS_LIBRARIES ${SUNDIALS_LIBRARY_CVODE} ${SUNDIALS_LIBRARY_IDA} ${SUNDIALS_LIBRARY_NVEC}
-                           ${SUNDIALS_LIBRARY_KINSOL} ${SUNDIALS_LIBRARY_LINSOL_LAPACK} ${SUNDIALS_LIBRARY_LINSOL_KLU}
-                           ${SUNDIALS_LIBRARY_SPGMR} ${SUNDIALS_LIBRARY_SPBCGS} ${SUNDIALS_LIBRARY_SPTFQMR})
-    MESSAGE(STATUS "AHEU: Using following SUNDIALS libraries:")
-    MESSAGE(STATUS "${SUNDIALS_LIBRARIES}")
-    MESSAGE(FATAL_ERROR "AHEU: STOP")
-  ELSE()
-    MESSAGE(FATAL_ERROR "Some SUNDIALS library not found!")
-  ENDIF()
-
+ELSE (SUNDIALS_INCLUDE_DIR)
+  MESSAGE(FATAL_ERROR "Sundials include directory not found.")
 ENDIF(SUNDIALS_INCLUDE_DIR)
-MESSAGE(FATAL_ERROR "AHEU: STOP STOP")
 
 # Defines for Visual Studio
 if(MSVC)
