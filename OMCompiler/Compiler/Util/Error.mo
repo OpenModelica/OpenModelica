@@ -546,15 +546,15 @@ public constant ErrorTypes.Message LIBRARY_UNEXPECTED_WITHIN = ErrorTypes.MESSAG
   Gettext.gettext("Expected the package to have %s but got %s."));
 public constant ErrorTypes.Message LIBRARY_UNEXPECTED_NAME = ErrorTypes.MESSAGE(236, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("Expected the package to have name %s, but got %s."));
-public constant ErrorTypes.Message PACKAGE_MO_NOT_IN_ORDER = ErrorTypes.MESSAGE(237, ErrorTypes.GRAMMAR(), ErrorTypes.ERROR(),
+public constant ErrorTypes.Message PACKAGE_MO_NOT_IN_ORDER = ErrorTypes.MESSAGE(237, ErrorTypes.GRAMMAR(), ErrorTypes.WARNING(),
   Gettext.gettext("Elements in the package.mo-file need to be in the same relative order as the package.order file. Got element named %s but it was already added because it was not the next element in the list at that time."));
 public constant ErrorTypes.Message LIBRARY_EXPECTED_PARTS = ErrorTypes.MESSAGE(238, ErrorTypes.GRAMMAR(), ErrorTypes.ERROR(),
   Gettext.gettext("%s is a package.mo-file and needs to be based on class parts (i.e. not class extends, derived class, or enumeration)."));
-public constant ErrorTypes.Message PACKAGE_ORDER_FILE_NOT_FOUND = ErrorTypes.MESSAGE(239, ErrorTypes.GRAMMAR(), ErrorTypes.ERROR(),
+public constant ErrorTypes.Message PACKAGE_ORDER_FILE_NOT_FOUND = ErrorTypes.MESSAGE(239, ErrorTypes.GRAMMAR(), ErrorTypes.WARNING(),
   Gettext.gettext("%1 was referenced in the package.order file, but was not found in package.mo, %1/package.mo or %1.mo."));
-public constant ErrorTypes.Message FOUND_ELEMENT_NOT_IN_ORDER_FILE = ErrorTypes.MESSAGE(240, ErrorTypes.GRAMMAR(), ErrorTypes.ERROR(),
+public constant ErrorTypes.Message FOUND_ELEMENT_NOT_IN_ORDER_FILE = ErrorTypes.MESSAGE(240, ErrorTypes.GRAMMAR(), ErrorTypes.WARNING(),
   Gettext.gettext("Got element %1 that was not referenced in the package.order file."));
-public constant ErrorTypes.Message ORDER_FILE_COMPONENTS = ErrorTypes.MESSAGE(241, ErrorTypes.GRAMMAR(), ErrorTypes.ERROR(),
+public constant ErrorTypes.Message ORDER_FILE_COMPONENTS = ErrorTypes.MESSAGE(241, ErrorTypes.GRAMMAR(), ErrorTypes.WARNING(),
   Gettext.gettext("Components referenced in the package.order file must be moved in full chunks. Either split the constants to different lines or make them subsequent in the package.order file."));
 public constant ErrorTypes.Message GUARD_EXPRESSION_TYPE_MISMATCH = ErrorTypes.MESSAGE(242, ErrorTypes.GRAMMAR(), ErrorTypes.ERROR(),
   Gettext.gettext("Guard expressions need to be Boolean, got expression of type %s."));
@@ -566,7 +566,7 @@ public constant ErrorTypes.Message WARNING_DEF_USE = ErrorTypes.MESSAGE(245, Err
   Gettext.gettext("%s was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed."));
 public constant ErrorTypes.Message EXP_TYPE_MISMATCH = ErrorTypes.MESSAGE(246, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Expression '%1' has type %3, expected type %2."));
-public constant ErrorTypes.Message PACKAGE_ORDER_DUPLICATES = ErrorTypes.MESSAGE(247, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+public constant ErrorTypes.Message PACKAGE_ORDER_DUPLICATES = ErrorTypes.MESSAGE(247, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("Found duplicate names in package.order file: %s."));
 public constant ErrorTypes.Message ERRONEOUS_TYPE_ERROR = ErrorTypes.MESSAGE(248, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Got type mismatch error, but matching types %s.\nThis is a ***COMPILER BUG***, please report it to https://trac.openmodelica.org/OpenModelica."));
