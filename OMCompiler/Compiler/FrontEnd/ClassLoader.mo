@@ -51,8 +51,8 @@ import Error;
 import Flags;
 import HashTableStringToProgram;
 import List;
+import PackageManagement;
 import Parser;
-import Settings;
 import System;
 import Testsuite;
 import Util;
@@ -143,28 +143,31 @@ protected
   String mp, name, pwd, cmd, version, userLibraries;
   Boolean isDir, impactOK;
   Absyn.Class cl;
+  list<String> versionsThatProvideTheWanted, commands;
 algorithm
   try
     (mp,name,isDir) := System.getLoadModelPath(id,prios,mps,requireExactVersion);
   else
-    pwd := System.pwd();
-    userLibraries := Settings.getHomeDir(Testsuite.isRunning()) + "/.openmodelica/libraries/";
-    true := System.directoryExists(userLibraries);
-    true := listMember(userLibraries, mps);
-    System.cd(userLibraries);
     version := match prios
-      case version::_ guard version <> "default" then version;
-      else "";
+      case version::_ then version;
+      else "default";
     end match;
-    cmd := "impact install \"" + id + (if version<>"" then "#" + version else "") + "\"";
-    impactOK := 0==System.systemCall(cmd, "/dev/null");
-    System.cd(pwd);
-    if impactOK then
-      Error.addMessage(Error.NOTIFY_IMPACT_FOUND, {id, (if version <> "" then (" "+version) else ""), userLibraries});
-      (mp,name,isDir) := System.getLoadModelPath(id,prios,mps,true);
-    else
-      fail();
+    versionsThatProvideTheWanted := PackageManagement.versionsThatProvideTheWanted(id, version, printError=false);
+    if not listEmpty(versionsThatProvideTheWanted) then
+      if version=="default" or version=="" then
+        commands := {"  packageInstall("+id+")"};
+      else
+        commands := {
+          "  packageInstall("+id+", \""+version+"\", exactMatch=false)",
+          "  packageInstall("+id+", \""+version+"\", exactMatch="+String(listMember(version,versionsThatProvideTheWanted))+")"
+        };
+      end if;
+      if listHead(versionsThatProvideTheWanted) <> version then
+        commands := "  packageInstall("+id+", \""+listHead(versionsThatProvideTheWanted)+"\", exactMatch=true)" :: commands;
+      end if;
+      Error.addMessage(Error.NOTIFY_PKG_FOUND, {stringDelimitList(commands, "\n")});
     end if;
+    fail();
   end try;
   // print("System.getLoadModelPath: " + id + " {" + stringDelimitList(prios,",") + "} " + stringDelimitList(mps,",") + " => " + mp + " " + name + " " + boolString(isDir));
   Config.setLanguageStandardFromMSL(name);

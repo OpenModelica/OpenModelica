@@ -106,6 +106,7 @@ import NFSCodeEnv;
 import NFSCodeFlatten;
 import NFSCodeLookup;
 import OpenTURNS;
+import PackageManagement;
 import Parser;
 import Print;
 import Refactor;
@@ -1520,9 +1521,9 @@ algorithm
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,_)
       algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-        
+
         if Config.simCodeTarget() == "omsicpp" then
-        
+
          filenameprefix := AbsynUtil.pathString(className);
           try
              (cache, Values.STRING(str)) := buildModelFMU(cache, env, className, "2.0", "me", "<default>", true, {"static"});
@@ -1533,12 +1534,12 @@ algorithm
           else
             b := false;
           end try;
-          
+
           compileDir := System.pwd() + Autoconf.pathDelimiter;
            executable := filenameprefix;
           initfilename := filenameprefix + "_init_xml";
-		  simflags:="";
-		  resultValues:={};
+      simflags:="";
+      resultValues:={};
         elseif not Config.simCodeTarget() == "omsic" then
           (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals) := buildModel(cache,env,vals,msg);
         else
@@ -1552,10 +1553,10 @@ algorithm
            SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) := simSettings;
            result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
             // result file might have been set by simflags (-r ...)
-        
-			result_file := selectResultFile(result_file, simflags);
-		  
-			executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
+
+      result_file := selectResultFile(result_file, simflags);
+
+      executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
             logFile := stringAppend(executable,".log");
             // adrpo: log file is deleted by buildModel! do NOT DELETE IT AGAIN!
             // we should really have different log files for simulation/compilation!
@@ -1566,11 +1567,11 @@ algorithm
             sim_call := stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
             System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
             SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
-            
-			resI := System.systemCall(sim_call,logFile);
-			
+
+      resI := System.systemCall(sim_call,logFile);
+
             timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
-			
+
          else
            result_file := "";
            resI := 1;
@@ -1578,7 +1579,7 @@ algorithm
          end if;
 
         timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-		
+
         (cache,simValue) := createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,cache,className,vals,result_file,logFile);
       then
         (cache,simValue);
@@ -2356,22 +2357,31 @@ algorithm
         (cache,ValuesUtil.makeArray(vals));
 
     case (cache,_,"getAvailableLibraries",{},_)
-      equation
-        mp = Settings.getModelicaPath(Testsuite.isRunning());
-        gd = Autoconf.groupDelimiter;
-        mps = System.strtok(mp, gd);
-        files = List.flatten(List.map(mps, System.moFiles));
-        dirs = List.flatten(List.map(mps, getLibrarySubdirectories));
-        files = List.map(List.map1(listAppend(files,dirs), System.strtok, ". "), listHead);
-        (str, status) = System.popen("impact search '' 2>&1 | perl -pe 's/\\e\\[?.*?[\\@-~]//g' | grep '[^ :]*:' | cut -d: -f1 2>&1");
-        if 0==status then
-          files = listAppend(System.strtok(str,"\n"), files);
-        end if;
-        files = List.sort(files,Util.strcmpBool);
-        files = List.sortedUnique(files, stringEqual);
-        v = ValuesUtil.makeArray(List.map(files, ValuesUtil.makeString));
+      algorithm
+        files := PackageManagement.AvailableLibraries.listKeys(PackageManagement.getInstalledLibraries());
+        v := ValuesUtil.makeArray(List.map(files, ValuesUtil.makeString));
       then
         (cache,v);
+
+    case (cache,_,"installPackage",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1))), Values.STRING(str2), Values.BOOL(b)},_)
+      algorithm
+        v := Values.BOOL(PackageManagement.installPackage(str1, str2, b));
+      then (cache,v);
+
+    case (cache,_,"installPackage",{Values.CODE(Absyn.C_TYPENAME(path as Absyn.QUALIFIED())), _, _},_)
+      algorithm
+        Error.addMessage(Error.ERROR_PKG_NOT_IDENT, {AbsynUtil.pathString(path)});
+      then fail();
+
+    case (cache,_,"updatePackageIndex",{},_)
+      algorithm
+        v := Values.BOOL(PackageManagement.updateIndex());
+      then (cache,v);
+
+    case (cache,_,"upgradeInstalledPackages",{Values.BOOL(b)},_)
+      algorithm
+        v := Values.BOOL(PackageManagement.upgradeInstalledPackages(b));
+      then (cache,v);
 
     case (cache,_,"getUses",{Values.CODE(Absyn.C_TYPENAME(classpath))},_)
       equation
@@ -3142,21 +3152,6 @@ algorithm
 
  end matchcontinue;
 end cevalInteractiveFunctions4;
-
-protected function getLibrarySubdirectories "author: lochel
-  This function returns a list of subdirectories that contain a package.mo file."
-  input String inPath;
-  output list<String> outSubdirectories = {};
-protected
-  list<String> allSubdirectories = System.subDirectories(inPath);
-  String pd = Autoconf.pathDelimiter;
-algorithm
-  for dir in allSubdirectories loop
-    if System.regularFileExists(inPath + pd + dir + pd + "package.mo") then
-      outSubdirectories := dir::outSubdirectories;
-    end if;
-  end for;
-end getLibrarySubdirectories;
 
 protected function getSimulationExtension
 input String inString;

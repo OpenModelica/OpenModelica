@@ -630,8 +630,8 @@ public constant ErrorTypes.Message ENUM_DUPLICATES = ErrorTypes.MESSAGE(277, Err
   Gettext.gettext("Enumeration has duplicate names: %s in list of names %s."));
 public constant ErrorTypes.Message RESERVED_IDENTIFIER = ErrorTypes.MESSAGE(278, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Identifier %s is reserved for the built-in element with the same name."));
-public constant ErrorTypes.Message NOTIFY_IMPACT_FOUND = ErrorTypes.MESSAGE(279, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
-  Gettext.gettext("The impact package manager downloaded package %s%s to directory %s."));
+public constant ErrorTypes.Message NOTIFY_PKG_FOUND = ErrorTypes.MESSAGE(279, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("You can install the requested package using one of the commands:\n%s."));
 public constant ErrorTypes.Message DERIVATIVE_FUNCTION_CONTEXT = ErrorTypes.MESSAGE(280, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("The der() operator is not allowed in function context (possible solutions: pass the derivative as an explicit input; use a block instead of function)."));
 public constant ErrorTypes.Message RETURN_OUTSIDE_FUNCTION = ErrorTypes.MESSAGE(281, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -991,6 +991,30 @@ public constant ErrorTypes.Message STATE_STATESELECT_NEVER_FORCED = ErrorTypes.M
   Gettext.gettext("Following variables have attribute stateSelect=StateSelect.never, but cant be statically chosen. %s"));
 public constant ErrorTypes.Message STATE_STATESELECT_PREFER_REVERT = ErrorTypes.MESSAGE(600, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("Some equations could not be differentiated for following variables having attribute stateSelect=StateSelect.prefer. %s"));
+public constant ErrorTypes.Message ERROR_PKG_NOT_IDENT = ErrorTypes.MESSAGE(601, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  Gettext.gettext("The package manager only accepts simple identifiers (%s has a dot in it)."));
+public constant ErrorTypes.Message ERROR_PKG_NOT_FOUND_VERSION = ErrorTypes.MESSAGE(602, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  Gettext.gettext("The package index did not contain an entry for package %s that provides version %s."));
+public constant ErrorTypes.Message ERROR_PKG_NOT_EXACT_MATCH = ErrorTypes.MESSAGE(603, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  Gettext.gettext("The package index did not contain an entry for package %s of version %s. There are other versions that claim to be compatible: %s."));
+public constant ErrorTypes.Message ERROR_PKG_INDEX_NOT_ON_PATH = ErrorTypes.MESSAGE(604, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  Gettext.gettext("The MODELICAPATH (%s) does not contain %s, so the package index cannot be used."));
+public constant ErrorTypes.Message ERROR_PKG_INDEX_NOT_FOUND = ErrorTypes.MESSAGE(605, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  Gettext.gettext("The package index does not exist: %s."));
+public constant ErrorTypes.Message ERROR_PKG_INDEX_NOT_PARSED = ErrorTypes.MESSAGE(606, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  Gettext.gettext("The package index %s could not be parsed."));
+public constant ErrorTypes.Message ERROR_PKG_INDEX_FAILED_DOWNLOAD = ErrorTypes.MESSAGE(607, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  Gettext.gettext("Failed to download package index %s to file %s."));
+public constant ErrorTypes.Message NOTIFY_PKG_INDEX_DOWNLOAD = ErrorTypes.MESSAGE(608, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("Downloaded package index from URL %s."));
+public constant ErrorTypes.Message NOTIFY_PKG_INSTALL_DONE = ErrorTypes.MESSAGE(609, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("Package installed successfully (SHA %s)."));
+public constant ErrorTypes.Message NOTIFY_PKG_UPGRADE_DONE = ErrorTypes.MESSAGE(609, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("Package upgraded successfully (SHA %s from %s)."));
+public constant ErrorTypes.Message ERROR_PKG_INSTALL_NO_PACKAGE_MO = ErrorTypes.MESSAGE(611, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("After extracting %s, %s does not exist. Removing the failed installation."));
+public constant ErrorTypes.Message WARNING_PKG_CONFLICTING_VERSIONS = ErrorTypes.MESSAGE(612, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  Gettext.gettext("Conflicting versions for loading package %s: %s is to be installed, but another package requires version %s which is not provided by this version."));
 
 public constant ErrorTypes.Message MATCH_SHADOWING = ErrorTypes.MESSAGE(5001, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Local variable '%s' shadows another variable."));

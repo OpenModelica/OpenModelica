@@ -226,6 +226,7 @@ if true then /* Suppress output */
     "../Stubs/NFApi.mo",
     "../Stubs/NFInstDump.mo",
     "../Stubs/NFUnitCheck.mo",
+    "../Stubs/PackageManagement.mo",
     "../Stubs/Refactor.mo",
     "../Stubs/RewriteRules.mo",
     "../Stubs/SimCode.mo",
@@ -388,6 +389,7 @@ if true then /* Suppress output */
     "../Script/Binding.mo",
     "../Script/OpenModelicaScriptingAPI.mo",
     "../Script/CevalScriptBackend.mo",
+    "../Script/PackageManagement.mo",
     "../Script/MMToJuliaUtil.mo",
     "../Script/MMToJuliaKeywords.mo",
 
@@ -437,6 +439,7 @@ if true then /* Suppress output */
     "../Util/AvlTreeString.mo",
     "../Util/AvlSetInt.mo",
 
+    "../Util/Curl.mo",
     "../Util/DiffAlgorithm.mo",
     "../Util/FMI.mo",
     "../Util/FMIExt.mo",
@@ -454,8 +457,10 @@ if true then /* Suppress output */
     "../Util/HashTableStringToUnit.mo",
     "../Util/HashTableUnitToString.mo",
     "../Util/PriorityQueue.mo",
+    "../Util/SemanticVersion.mo",
     "../Util/SimulationResults.mo",
     "../Util/TaskGraphResults.mo",
+    "../Util/Unzip.mo",
 
     "../../SimulationRuntime/c/RuntimeSources.mo"
   };

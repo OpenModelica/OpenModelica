@@ -89,6 +89,12 @@ end FALSE;
 record NULL
 end NULL;
 
+function emptyObject
+  output JSON obj;
+algorithm
+  obj := OBJECT({},{},AvlTree.EMPTY());
+end emptyObject;
+
 function toString
   input JSON value;
   output String str;
@@ -124,6 +130,45 @@ algorithm
   reportErrors(errTokens);
   value := parse_value_check_empty(tokens);
 end parseFile;
+
+function hasKey
+  input JSON obj;
+  input String str;
+  output Boolean b;
+algorithm
+  b := match obj
+    case OBJECT() then AvlTree.hasKey(obj.dict, str);
+  end match;
+end hasKey;
+
+function get
+  input JSON obj;
+  input String str;
+  output JSON out;
+algorithm
+  out := match obj
+    case OBJECT() then AvlTree.get(obj.dict, str);
+  end match;
+end get;
+
+function getOrDefault
+  input JSON obj;
+  input String str;
+  input JSON default;
+  output JSON out;
+algorithm
+  out := matchcontinue obj
+    case OBJECT() then AvlTree.get(obj.dict, str);
+    else default;
+  end matchcontinue;
+end getOrDefault;
+
+function getString
+  input JSON obj;
+  output String str;
+algorithm
+  JSON.STRING(str) := obj;
+end getString;
 
 function parse
   input String content;

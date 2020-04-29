@@ -41,6 +41,7 @@ Generated on |date| at |time|
   omjulia
   jupyteropenmodelica
   scripting_api
+  packagemanager
   omchelptext
   simulationflags
   technical_details
