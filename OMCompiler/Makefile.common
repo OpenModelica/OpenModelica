@@ -512,14 +512,13 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials/CMakeLists.txt
 	cp 3rdParty/sundials/src/kinsol/kinsol_impl.h $(OMBUILDDIR)/include/omc/c/sundials/kinsol/
 	# copy the libs to the build/lib/omc directory
 	(cp -pf 3rdParty/sundials/build/lib/* $(builddir_lib_omc))
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_arkode.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvode.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvodes.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_ida.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_idas.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_kinsol.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_nvecserial.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
-	# TODO AHeu: Add test for new libs!
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_arkode.dylib "$(builddir_lib_omc)/libsundials_nvecserial.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvode.dylib "$(builddir_lib_omc)/libsundials_nvecserial.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvodes.dylib "$(builddir_lib_omc)/libsundials_nvecserial.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_ida.dylib "$(builddir_lib_omc)/libsundials_nvecserial.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_idas.dylib "$(builddir_lib_omc)/libsundials_nvecserial.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_kinsol.dylib "$(builddir_lib_omc)/libsundials_nvecserial.dylib"
+	# TODO AHeu: Add install_name_tool for new libs!!
 	# copy the dlls to the build bin directory
 	test ! "$(SHREXT)" = ".dll" || (cp -pf 3rdParty/sundials/build/lib/*$(SHREXT) $(builddir_bin))
 	@touch "$@"
