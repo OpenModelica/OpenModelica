@@ -94,9 +94,8 @@ loadModel(Invalid);getErrorString();
 // {}
 // true
 // "3.5 beta1"
-// false
-// "[TestLibrary//Modelica 3.5 beta1/package.order:0:0-0:0:readonly] Error: Found duplicate names in package.order file: A.
-// Error: Failed to load package Modelica (3.5 beta1) using MODELICAPATH TestLibrary/.
+// true
+// "[TestLibrary//Modelica 3.5 beta1/package.order:0:0-0:0:readonly] Warning: Found duplicate names in package.order file: A.
 // "
 // "CustomSort"
 // true

@@ -451,54 +451,55 @@ algorithm
       list<PackageOrder> po1, po2;
 
     case (Absyn.CLASS(body=Absyn.PARTS(classParts=cp),info=info),_,_,_)
-      equation
-        if (System.regularFileExists(filename)) then
-          contents = System.readFile(filename);
-          namesToFind = System.strtok(contents, "\n");
-          namesToFind = List.removeOnTrue("",stringEqual,List.map(namesToFind,System.trimWhitespace));
-          duplicates = List.sortedDuplicates(List.sort(namesToFind,Util.strcmpBool),stringEq);
-          duplicatesStr = stringDelimitList(duplicates, ", ");
+      algorithm
+        try
+          true := System.regularFileExists(filename);
+          contents := System.readFile(filename);
+          namesToFind := System.strtok(contents, "\n");
+          namesToFind := List.removeOnTrue("",stringEqual,List.map(namesToFind,System.trimWhitespace));
+          duplicates := List.sortedDuplicates(List.sort(namesToFind,Util.strcmpBool),stringEq);
+          duplicatesStr := stringDelimitList(duplicates, ", ");
           Error.assertionOrAddSourceMessage(listEmpty(duplicates),Error.PACKAGE_ORDER_DUPLICATES,{duplicatesStr},SOURCEINFO(filename,true,0,0,0,0,0.0));
 
           if encrypted then
             // get all the .moc files in the directory!
-            mofiles = List.map(System.mocFiles(mp), Util.removeLast4Char);
+            mofiles := List.map(System.mocFiles(mp), Util.removeLast4Char);
           else
             // get all the .mo files in the directory!
-            mofiles = List.map(System.moFiles(mp), Util.removeLast3Char);
+            mofiles := List.map(System.moFiles(mp), Util.removeLast3Char);
           end if;
           // get all the subdirs
-          subdirs = System.subDirectories(mp);
-          subdirs = List.filter2OnTrue(subdirs, existPackage, mp, encrypted);
+          subdirs := System.subDirectories(mp);
+          subdirs := List.filter2OnTrue(subdirs, existPackage, mp, encrypted);
           // build a list
-          intersection = List.intersectionOnTrue(subdirs,mofiles,stringEq);
-          differencesStr = stringDelimitList(List.map1(intersection, getBothPackageAndFilename, mp), ", ");
+          intersection := List.intersectionOnTrue(subdirs,mofiles,stringEq);
+          differencesStr := stringDelimitList(List.map1(intersection, getBothPackageAndFilename, mp), ", ");
           Error.assertionOrAddSourceMessage(listEmpty(intersection),Error.PACKAGE_DUPLICATE_CHILDREN,{differencesStr},SOURCEINFO(filename,true,0,0,0,0,0.0));
-          mofiles = listAppend(subdirs,mofiles);
+          mofiles := listAppend(subdirs,mofiles);
           // check if all are present in the package.order
-          differences = List.setDifference(mofiles, namesToFind);
-          (po1) = getPackageContentNamesinParts(namesToFind,cp,{});
-          (po1,differences) = List.map3Fold(po1,checkPackageOrderFilesExist,mp,info,encrypted,differences);
+          differences := List.setDifference(mofiles, namesToFind);
+          (po1) := getPackageContentNamesinParts(namesToFind,cp,{});
+          (po1,differences) := List.map3Fold(po1,checkPackageOrderFilesExist,mp,info,encrypted,differences);
 
           // issue a warning if not all are present
-          differencesStr = stringDelimitList(differences, "\n\t");
+          differencesStr := stringDelimitList(differences, "\n\t");
           Error.assertionOrAddSourceMessage(listEmpty(differences),Error.PACKAGE_ORDER_FILE_NOT_COMPLETE,{differencesStr},SOURCEINFO(filename,true,0,0,0,0,0.0));
 
-          po2 = List.map(differences, makeClassLoad);
+          po2 := List.map(differences, makeClassLoad);
 
-          po = listAppend(po2, po1);
+          po := listAppend(po2, po1);
         else // file not found
-          mofiles = List.map(System.moFiles(mp), Util.removeLast3Char) "Here .mo files in same directory as package.mo should be loaded as sub-packages";
-          subdirs = System.subDirectories(mp);
-          subdirs = List.filter2OnTrue(subdirs, existPackage, mp, encrypted);
-          mofiles = List.sort(listAppend(subdirs,mofiles), Util.strcmpBool);
+          mofiles := List.map(System.moFiles(mp), Util.removeLast3Char) "Here .mo files in same directory as package.mo should be loaded as sub-packages";
+          subdirs := System.subDirectories(mp);
+          subdirs := List.filter2OnTrue(subdirs, existPackage, mp, encrypted);
+          mofiles := List.sort(listAppend(subdirs,mofiles), Util.strcmpBool);
           // Look for duplicates
-          intersection = List.sortedDuplicates(mofiles,stringEq);
-          differencesStr = stringDelimitList(List.map1(intersection, getBothPackageAndFilename, mp), ", ");
+          intersection := List.sortedDuplicates(mofiles,stringEq);
+          differencesStr := stringDelimitList(List.map1(intersection, getBothPackageAndFilename, mp), ", ");
           Error.assertionOrAddSourceMessage(listEmpty(intersection),Error.PACKAGE_DUPLICATE_CHILDREN,{differencesStr},info);
 
-          po = listAppend(List.map(cp, makeClassPart),List.map(mofiles, makeClassLoad));
-        end if;
+          po := listAppend(List.map(cp, makeClassPart),List.map(mofiles, makeClassLoad));
+        end try;
       then
         po;
 
@@ -652,14 +653,16 @@ algorithm
         load = makeClassLoad(name2);
         Error.assertionOrAddSourceMessage(not listMember(load,po), Error.PACKAGE_MO_NOT_IN_ORDER, {name2}, info);
         Error.addSourceMessage(Error.FOUND_ELEMENT_NOT_IN_ORDER_FILE, {name2}, info);
-      then fail();
+        (outOrder,names) = getPackageContentNamesinElts(name2 :: inNamesToSort, inElts, po, pub);
+      then (outOrder,names);
 
     case ({},Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.COMPONENTS(components=Absyn.COMPONENTITEM(component=Absyn.COMPONENT(name=name2))::_),info=info))::_,_,_)
       equation
         load = makeClassLoad(name2);
         Error.assertionOrAddSourceMessage(not listMember(load,po), Error.PACKAGE_MO_NOT_IN_ORDER, {name2}, info);
         Error.addSourceMessage(Error.FOUND_ELEMENT_NOT_IN_ORDER_FILE, {name2}, info);
-      then fail();
+        (outOrder,names) = getPackageContentNamesinElts(name2 :: inNamesToSort, inElts, po, pub);
+      then (outOrder,names);
 
     case (namesToSort,ei::elts,_,_)
       equation
