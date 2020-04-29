@@ -346,6 +346,9 @@ algorithm
 end applyReplacementsDim;
 
 function buildRecordBinding
+  "Builds a binding for a record instance that doesn't have an explicit binding.
+   Binding expressions will be taken from the record fields when available, and
+   filled with empty expressions when not."
   input InstNode recordNode;
   input ReplTree.Tree repl;
   output Expression result;
@@ -355,15 +358,32 @@ protected
   array<InstNode> comps;
   list<Expression> bindings;
   Expression exp;
+  ReplTree.Tree local_repl;
 algorithm
   result := match cls
     case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps))
       algorithm
         bindings := {};
+        // Create a replacement tree for just the record instance. This is
+        // needed for records that contain local references such as:
+        //   record R
+        //     Real x;
+        //     Real y = x;
+        //   end R;
+        // In that case we need to replace the 'x' in the binding of 'y' with
+        // the binding expression of 'x'.
+        local_repl := ReplTree.new();
 
         for i in arrayLength(comps):-1:1 loop
-          bindings := Expression.makeMutable(getBindingExp(comps[i], repl)) :: bindings;
+          exp := Expression.makeMutable(getBindingExp(comps[i], repl));
+          // Add the expression to both the replacement tree and the list of bindings.
+          local_repl := ReplTree.add(local_repl, comps[i], exp);
+          bindings := exp :: bindings;
         end for;
+
+        // Replace references to record fields with those fields' bindings in the tree.
+        // This will also update the list of bindings since they share mutable expresions.
+        ReplTree.map(local_repl, function applyBindingReplacement(repl = local_repl));
       then
         Expression.makeRecord(InstNode.scopePath(cls_node), cls.ty, bindings);
 
@@ -401,9 +421,6 @@ function applyReplacements2
   input output Expression exp;
 algorithm
   exp := match exp
-    local
-      Option<Expression> repl_exp;
-
     case Expression.CREF() then applyReplacementCref(repl, exp.cref, exp);
     else exp;
   end match;
