@@ -112,6 +112,7 @@ CevalFuncRecord3.mo \
 CevalFuncRecord4.mo \
 CevalFuncRecord5.mo \
 CevalFuncRecord6.mo \
+CevalFuncRecord7.mo \
 CevalFuncRecursive1.mo \
 CevalFuncRecursive2.mo \
 CevalFuncSubscript1.mo \
