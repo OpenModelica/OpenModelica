@@ -42,7 +42,6 @@
 
 #ifdef WITH_SUNDIALS
 
-#include <sundials/sundials_config.h>
 #include <idas/idas.h>
 #include <nvector/nvector_serial.h>
 #include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
@@ -118,14 +117,13 @@ typedef struct IDA_SOLVER
   N_Vector y_linSol;        /* Template for cloning vectors needed inside linear solver */
   SUNMatrix J;              /* Sparse matrix template for cloning matrices needed within
                                linear solver */
-  /* TODO: AHeu: Free memory !!! */
 
   /* ### daeMode ### */
-  booleantype daeMode;          /* If TRUE then solve dae more with a reals residual function */
-  long int N;                   /* Number of unknowns */
-  long int NNZ;                 /* Number of non-zero elemetes of ... */
-  double *states;
-  double *statesDer;
+  booleantype daeMode;      /* If TRUE then solve dae more with a reals residual function */
+  long int N;               /* Number of unknowns */
+  long int NNZ;             /* Number of non-zero elemetes of ... */
+  double *states;           /* Array of states. Only used in DAE mode, NULL otherwise */
+  double *statesDer;        /* Array of state derivatives. Only used in DAE mode, NULL otherwise */
 
   /* ### ida sensitivities ### */
   int idaSmode;
