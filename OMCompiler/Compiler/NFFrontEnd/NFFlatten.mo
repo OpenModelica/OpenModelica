@@ -861,7 +861,7 @@ protected
 algorithm
   par := listHead(parents);
 
-  if InstNode.isComponent(par) then
+  if InstNode.isComponent(par) and not ComponentRef.isEmpty(pre) then
     pre_node := ComponentRef.node(pre);
 
     while not InstNode.refEqual(pre_node, par) loop
