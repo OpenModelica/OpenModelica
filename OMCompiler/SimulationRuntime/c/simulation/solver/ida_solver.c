@@ -1857,6 +1857,9 @@ static int callSparseJacobian(double currentTime, double cj,
   }
 
   /* add cj to diagonal elements and store in Jac */
+  if (idaData->tmpJac == NULL) {
+    throwStreamPrint(threadData, "tmpJac is NULL");
+  }
   SUNMatZero(idaData->tmpJac);      /* TODO AHeu: Is this needed? Seems usefull to be on the safe side. */
   if (!idaData->daeMode)
   {

@@ -148,11 +148,11 @@ static void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData,
   flag = KINSetPrintLevel(kinsolData->kinsolMemory, printLevel);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetPrintLevel");
 
+  kinsolData->userData.sysNumber = -1;
   flag = KINSetErrHandlerFn(kinsolData->kinsolMemory, kinsolErrorHandlerFunction, kinsolData);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetErrHandlerFn");
 
-  flag = KINSetInfoHandlerFn(kinsolData->kinsolMemory, kinsolInfoHandlerFunction,
-                             NULL);
+  flag = KINSetInfoHandlerFn(kinsolData->kinsolMemory, kinsolInfoHandlerFunction, NULL);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetInfoHandlerFn");
 
   /* Set user data given to KINSOL */
@@ -201,6 +201,11 @@ static void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData,
     errorStreamPrint(LOG_STDOUT, 0, "##KINSOL## Unknown linear solver method.");
   }
 
+  /* Set linear solver */
+  flag = KINSetLinearSolver(kinsolData->kinsolMemory, kinsolData->linSol,
+                            kinsolData->J);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetLinearSolver");
+
   /* Set Jacobian for linear solver */
   if (kinsolData->linearSolverMethod == NLS_LS_KLU) {
     if (nlsData->analyticalJacobianColumn != NULL) {
@@ -212,11 +217,6 @@ static void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData,
     }
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
   }
-
-  /* Set linear solver */
-  flag = KINSetLinearSolver(kinsolData->kinsolMemory, kinsolData->linSol,
-                            kinsolData->J);
-  checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetLinearSolver");
 
   /* Configuration */
   nlsKinsolConfigSetup(kinsolData);
@@ -1223,7 +1223,11 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber) {
         kinsolData->xScale,         /* scaling vector, for the variable cc */
         kinsolData->fScale); /* scaling vector for function values fval */
 
-    infoStreamPrint(LOG_NLS_V, 0, "KINSol finished with errorCode %d.", flag);
+    if (flag < 0) {
+      warningStreamPrint(LOG_NLS, 0, "KINSol finished with errorCode %d.", flag);
+    } else {
+      infoStreamPrint(LOG_NLS_V, 0, "KINSol finished with errorCode %d.", flag);
+    }
     /* Try to handle recoverable errors */
     if (flag < 0) {
       retry = nlsKinsolErrorHandler(flag, data, nlsData, kinsolData);

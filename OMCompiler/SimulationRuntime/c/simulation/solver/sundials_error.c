@@ -66,23 +66,29 @@ void kinsolErrorHandlerFunction(int errorCode, const char *module,
     kinsolData = (NLS_KINSOL_DATA *)userData;
     data = kinsolData->userData.data;
     sysNumber = kinsolData->userData.sysNumber;
-    eqSystemNumber = data->simulationInfo->nonlinearSystemData[sysNumber].equationIndex;
+    if (sysNumber > 0) {
+      eqSystemNumber = data->simulationInfo->nonlinearSystemData[sysNumber].equationIndex;
+    } else {
+      eqSystemNumber = -1;
+    }
   }
 
   if (ACTIVE_STREAM(LOG_NLS)) {
-    if (userData != NULL) {
+    if (userData != NULL && eqSystemNumber > 0) {
       warningStreamPrint(
           LOG_NLS, 1, "kinsol failed for system %d",
           modelInfoGetEquation(&data->modelData->modelDataXml, eqSystemNumber).id);
     } else {
       warningStreamPrint(
-          LOG_NLS, 1, "kinsol failed for some system");
+          LOG_NLS, 1, "kinsol failed");
     }
 
     warningStreamPrint(LOG_NLS, 0,
                        "[module] %s | [function] %s | [error_code] %d", module,
                        function, errorCode);
-    warningStreamPrint(LOG_NLS, 0, "%s", msg);
+    if (msg) {
+      warningStreamPrint(LOG_NLS, 0, "%s", msg);
+    }
 
     messageClose(LOG_NLS);
   }
@@ -104,7 +110,9 @@ void kinsolInfoHandlerFunction(const char *module, const char *function,
 
   if (ACTIVE_STREAM(LOG_NLS_V)) {
     warningStreamPrint(LOG_NLS_V, 1, "[module] %s | [function] %s:", module, function);
-    warningStreamPrint(LOG_NLS_V, 0, "%s", msg);
+    if (msg) {
+      warningStreamPrint(LOG_NLS_V, 0, "%s", msg);
+    }
 
     messageClose(LOG_NLS_V);
   }
