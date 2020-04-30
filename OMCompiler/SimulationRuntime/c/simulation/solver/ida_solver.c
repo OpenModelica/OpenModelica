@@ -92,8 +92,8 @@ static int idaReScaleVector(N_Vector vec, double* factors, unsigned int size);
 int ida_event_update(DATA* data, threadData_t *threadData);
 
 /* Static variables */
+/* TODO: Don't use global variables */
 static IDA_SOLVER *idaDataGlobal;
-static int initializedSolver = 0;
 
 
 /* TODO: Move to sundials_Error.c or remove */
@@ -705,7 +705,6 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   }
   if (compiledInDAEMode){
     idaDataGlobal = idaData;
-    initializedSolver = 1;
     data->callback->functionDAE = ida_event_update;
   }
   messageClose(LOG_SOLVER);
@@ -759,90 +758,95 @@ int ida_solver_deinitial(IDA_SOLVER *idaData)
   return 0;
 }
 
+
+/**
+ * @brief EventHandle for DAE mode
+ *
+ * Handles events by reinitialize main IDA solver, initializing next step and
+ * evaluate DAE residual equations.
+ *
+ * @param data
+ * @param threadData
+ * @return int
+ */
 int ida_event_update(DATA* data, threadData_t *threadData)
 {
   IDA_SOLVER *idaData = idaDataGlobal;
   int flag;
   long nonLinIters;
   double init_h;
-  if (compiledInDAEMode){
-    if (initializedSolver){
 
-      data->simulationInfo->needToIterate = 0;
+  if (!compiledInDAEMode){
+    throwStreamPrint(threadData, "Function ida_event_update only callable in DAE mode");
+  }
 
-      memcpy(idaData->states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
-      getAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
-      memcpy(idaData->statesDer, data->localData[0]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
+  data->simulationInfo->needToIterate = 0 /* FALSE */;
 
-      /* update inner algebraic get new values from data */
-      if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
-      evaluateDAEResiduals_wrapperEventUpdate(data, threadData);
-      getAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
-      if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
+  memcpy(idaData->states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
+  getAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
+  memcpy(idaData->statesDer, data->localData[0]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
 
-      infoStreamPrint(LOG_SOLVER, 0, "##IDA## do event update at %.15g", data->localData[0]->timeValue);
-      flag = IDAReInit(idaData->ida_mem,
-                       data->localData[0]->timeValue,
-                       idaData->y,
-                       idaData->yp);
-      checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAReInit");
+  /* update inner algebraic get new values from data */
+  if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
+  evaluateDAEResiduals_wrapperEventUpdate(data, threadData);
+  getAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
+  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
-      /* get initial step to provide a direction of the solution */
-      flag = IDAGetActualInitStep(idaData->ida_mem, &init_h);
-      checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetActualInitStep");
-      /* provide a feasible step-size if it's too small */
-      if (init_h < DBL_EPSILON){
-        init_h = DBL_EPSILON;
-        flag = IDASetInitStep(idaData->ida_mem, init_h);
-        checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetInitStep");
-        infoStreamPrint(LOG_SOLVER, 0, "##IDA## corrected step-size at %.15g", init_h);
-      }
+  infoStreamPrint(LOG_SOLVER, 0, "##IDA## do event update at %.15g", data->localData[0]->timeValue);
+  flag = IDAReInit(idaData->ida_mem,
+                    data->localData[0]->timeValue,
+                    idaData->y,
+                    idaData->yp);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAReInit");
 
-      /* increase limits of the non-linear solver */
-      IDASetMaxNumStepsIC(idaData->ida_mem, 2*idaData->N*10);
-      IDASetMaxNumJacsIC(idaData->ida_mem, 2*idaData->N*10);
-      IDASetMaxNumItersIC(idaData->ida_mem, 2*idaData->N*10);
-      /* Calc Consistent y_algebraic and y_prime with current y */
-      flag = IDACalcIC(idaData->ida_mem, IDA_YA_YDP_INIT, data->localData[0]->timeValue+init_h);
-      checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDACalcIC");
+  /* get initial step to provide a direction of the solution */
+  flag = IDAGetActualInitStep(idaData->ida_mem, &init_h);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetActualInitStep");
+  /* provide a feasible step-size if it's too small */
+  if (init_h < DBL_EPSILON){
+    init_h = DBL_EPSILON;
+    flag = IDASetInitStep(idaData->ida_mem, init_h);
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetInitStep");
+    infoStreamPrint(LOG_SOLVER, 0, "##IDA## corrected step-size at %.15g", init_h);
+  }
 
-      /* debug */
-      IDAGetNumNonlinSolvIters(idaData->ida_mem, &nonLinIters);
-      infoStreamPrint(LOG_SOLVER, 0, "##IDA## IDACalcIC run status %d.\nIterations : %ld\n", flag, nonLinIters);
+  /* increase limits of the non-linear solver */
+  IDASetMaxNumStepsIC(idaData->ida_mem, 2*idaData->N*10);
+  IDASetMaxNumJacsIC(idaData->ida_mem, 2*idaData->N*10);
+  IDASetMaxNumItersIC(idaData->ida_mem, 2*idaData->N*10);
+  /* Calc Consistent y_algebraic and y_prime with current y */
+  flag = IDACalcIC(idaData->ida_mem, IDA_YA_YDP_INIT, data->localData[0]->timeValue+init_h);
 
-      /* try again without line search if first try fails */
-      if (checkIDAflag(flag)){
-        infoStreamPrint(LOG_SOLVER, 0, "##IDA## first event iteration failed. Start next try without line search!");
-        IDASetLineSearchOffIC(idaData->ida_mem, 1 /* TRUE */);
-        flag = IDACalcIC(idaData->ida_mem, IDA_YA_YDP_INIT, data->localData[0]->timeValue+data->simulationInfo->tolerance);
-        IDAGetNumNonlinSolvIters(idaData->ida_mem, &nonLinIters);
-        infoStreamPrint(LOG_SOLVER, 0, "##IDA## IDACalcIC run status %d.\nIterations : %ld\n", flag, nonLinIters);
-        if (checkIDAflag(flag)){
-          throwStreamPrint(threadData, "##IDA## discrete update failed flag %d!", flag);
-        }
-      }
-      /* obtain consistent values of y_algebraic and y_prime */
-      IDAGetConsistentIC(idaData->ida_mem, idaData->y, idaData->yp);
+  /* debug */
+  IDAGetNumNonlinSolvIters(idaData->ida_mem, &nonLinIters);
+  infoStreamPrint(LOG_SOLVER, 0, "##IDA## IDACalcIC run status %d.\nIterations : %ld\n", flag, nonLinIters);
 
-      /* update inner algebraic variables */
-      if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
-      evaluateDAEResiduals_wrapperEventUpdate(data, threadData);
-
-      memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
-      // and  also algebraic vars
-      setAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
-      memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
-      if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
-
-      /* reset initial step size again to default */
-      IDASetInitStep(idaData->ida_mem, 0.0);
+  /* try again without line search if first try fails */
+  if (checkIDAflag(flag)){
+    infoStreamPrint(LOG_SOLVER, 0, "##IDA## first event iteration failed. Start next try without line search!");
+    IDASetLineSearchOffIC(idaData->ida_mem, 1 /* TRUE */);
+    flag = IDACalcIC(idaData->ida_mem, IDA_YA_YDP_INIT, data->localData[0]->timeValue+data->simulationInfo->tolerance);
+    IDAGetNumNonlinSolvIters(idaData->ida_mem, &nonLinIters);
+    infoStreamPrint(LOG_SOLVER, 0, "##IDA## IDACalcIC run status %d.\nIterations : %ld\n", flag, nonLinIters);
+    if (checkIDAflag(flag)){
+      throwStreamPrint(threadData, "##IDA## discrete update failed flag %d!", flag);
     }
   }
-  else{
-    if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
-    data->callback->functionDAE(data, threadData);
-    if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
-  }
+  /* obtain consistent values of y_algebraic and y_prime */
+  IDAGetConsistentIC(idaData->ida_mem, idaData->y, idaData->yp);
+
+  /* update inner algebraic variables */
+  if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
+  evaluateDAEResiduals_wrapperEventUpdate(data, threadData);
+
+  memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
+  // and  also algebraic vars
+  setAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
+  memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
+  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
+
+  /* reset initial step size again to default */
+  IDASetInitStep(idaData->ida_mem, 0.0);
 
   return 0;
 }

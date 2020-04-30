@@ -53,26 +53,6 @@
 #include <sunlinsol/sunlinsol_sptfqmr.h>
 
 
-#if 0 /* TODO: Remove */
-#include <sundials/sundials_types.h>
-#include <sundials/sundials_nvector.h>
-#include <nvector/nvector_serial.h>
-
-#include <idas/idas_dense.h>
-#include <idas/idas_klu.h>
-#include <idas/idas_spgmr.h>
-#include <idas/idas_spbcgs.h>
-#include <idas/idas_sptfqmr.h>
-
-
-#include <sundials/sundials_nvector.h>
-#include <nvector/nvector_serial.h>
-
-#include <idas/idas_dense.h>
-#include <idas/idas_sparse.h>
-#endif
-
-
 /* readability */
 #define SCALE_MODE 0
 #define RESCALE_MODE 1
@@ -134,10 +114,10 @@ typedef struct IDA_SOLVER
   SUNMatrix denseJac;
 
   /* linear solver data */
-  SUNLinearSolver linSol; /* Linear solver object used by KINSOL */
-  N_Vector y_linSol; /* Template for cloning vectors needed inside linear solver */
-  SUNMatrix J; /* Sparse matrix template for cloning matrices needed within
-                  linear solver */
+  SUNLinearSolver linSol;   /* Linear solver object used by KINSOL */
+  N_Vector y_linSol;        /* Template for cloning vectors needed inside linear solver */
+  SUNMatrix J;              /* Sparse matrix template for cloning matrices needed within
+                               linear solver */
   /* TODO: AHeu: Free memory !!! */
 
   /* ### daeMode ### */
