@@ -10646,11 +10646,11 @@ public function shouldParenthesize
   input Boolean inLhs;
   output Boolean outShouldParenthesize;
 algorithm
-  outShouldParenthesize := match(inOperand, inOperator, inLhs)
+  outShouldParenthesize := match inOperand
     local
       Integer diff;
 
-    case (DAE.UNARY(), _, _) then true;
+    case DAE.UNARY() then true;
 
     else
       equation
@@ -10668,9 +10668,10 @@ protected function shouldParenthesize2
   input Boolean inLhs;
   output Boolean outShouldParenthesize;
 algorithm
-  outShouldParenthesize := match(inPrioDiff, inOperand, inLhs)
-    case (1, _, _) then true;
-    case (0, _, false) then not isAssociativeExp(inOperand);
+  outShouldParenthesize := match inPrioDiff
+    case 1 then true;
+    case 0 then if inLhs then isNonAssociativeExp(inOperand) else
+                              not isAssociativeExp(inOperand);
     else false;
   end match;
 end shouldParenthesize2;
@@ -10687,7 +10688,6 @@ algorithm
     case DAE.BINARY(operator = op) then isAssociativeOp(op);
     case DAE.LBINARY() then true;
     else false;
-
   end match;
 end isAssociativeExp;
 
@@ -10696,7 +10696,7 @@ protected function isAssociativeOp
   input DAE.Operator inOperator;
   output Boolean outIsAssociative;
 algorithm
-  outIsAssociative := match(inOperator)
+  outIsAssociative := match inOperator
     case DAE.ADD() then true;
     case DAE.MUL() then true;
     case DAE.ADD_ARR() then true;
@@ -10705,6 +10705,30 @@ algorithm
     else false;
   end match;
 end isAssociativeOp;
+
+protected function isNonAssociativeExp
+  input DAE.Exp exp;
+  output Boolean isNonAssociative;
+algorithm
+  isNonAssociative := match exp
+    case DAE.BINARY() then isNonAssociativeOp(exp.operator);
+    else false;
+  end match;
+end isNonAssociativeExp;
+
+protected function isNonAssociativeOp
+  input DAE.Operator inOperator;
+  output Boolean isNonAssociative;
+algorithm
+  isNonAssociative := match inOperator
+    case DAE.POW() then true;
+    case DAE.POW_ARRAY_SCALAR() then true;
+    case DAE.POW_SCALAR_ARRAY() then true;
+    case DAE.POW_ARR() then true;
+    case DAE.POW_ARR2() then true;
+    else false;
+  end match;
+end isNonAssociativeOp;
 
 public function priority
   "Returns an integer priority given an expression, which is used by
