@@ -2511,11 +2511,11 @@ public function shouldParenthesize
   input Boolean inLhs;
   output Boolean outShouldParenthesize;
 algorithm
-  outShouldParenthesize := match(inOperand, inOperator, inLhs)
+  outShouldParenthesize := match inOperand
     local
       Integer diff;
 
-    case (Absyn.UNARY(), _, _) then true;
+    case Absyn.UNARY() then true;
 
     else
       equation
@@ -2533,9 +2533,10 @@ protected function shouldParenthesize2
   input Boolean inLhs;
   output Boolean outShouldParenthesize;
 algorithm
-  outShouldParenthesize := match(inPrioDiff, inOperand, inLhs)
-    case (1, _, _) then true;
-    case (0, _, false) then not isAssociativeExp(inOperand);
+  outShouldParenthesize := match inPrioDiff
+    case 1 then true;
+    case 0 then if inLhs then isNonAssociativeExp(inOperand) else
+                              not isAssociativeExp(inOperand);
     else false;
   end match;
 end shouldParenthesize2;
@@ -2567,6 +2568,27 @@ algorithm
     else false;
   end match;
 end isAssociativeOp;
+
+protected function isNonAssociativeExp
+  input Absyn.Exp exp;
+  output Boolean isNonAssociative;
+algorithm
+  isNonAssociative := match exp
+    case Absyn.BINARY() then isNonAssociativeOp(exp.op);
+    else false;
+  end match;
+end isNonAssociativeExp;
+
+protected function isNonAssociativeOp
+  input Absyn.Operator operator;
+  output Boolean isNonAssociative;
+algorithm
+  isNonAssociative := match operator
+    case Absyn.POW() then true;
+    case Absyn.POW_EW() then true;
+    else false;
+  end match;
+end isNonAssociativeOp;
 
 public function expPriority
   "Returns an integer priority given an expression, which is used by

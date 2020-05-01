@@ -306,6 +306,20 @@ public
     end match;
   end isAssociative;
 
+  function isNonAssociative
+    input Operator op;
+    output Boolean isNonAssociative;
+  algorithm
+    isNonAssociative := match op.op
+      case Op.POW then true;
+      case Op.POW_EW then true;
+      case Op.POW_SCALAR_ARRAY then true;
+      case Op.POW_ARRAY_SCALAR then true;
+      case Op.POW_MATRIX then true;
+      else false;
+    end match;
+  end isNonAssociative;
+
   function makeAdd
     input Type ty;
     output Operator op = OPERATOR(ty, Op.ADD);

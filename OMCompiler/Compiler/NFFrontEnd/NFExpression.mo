@@ -1754,19 +1754,26 @@ public
     output String str;
   protected
     Integer operand_prio, operator_prio;
+    Boolean parenthesize = false;
   algorithm
     str := toString(operand);
     operand_prio := priority(operand, lhs);
 
     if operand_prio == 4 then
-      str := "(" + str + ")";
+      parenthesize := true;
     else
       operator_prio := priority(operator, lhs);
 
-      if operand_prio > operator_prio or
-         not lhs and operand_prio == operator_prio and not isAssociativeExp(operand) then
-        str := "(" + str + ")";
+      if operand_prio > operator_prio then
+        parenthesize := true;
+      elseif operand_prio == operator_prio then
+        parenthesize := if lhs then isNonAssociativeExp(operand) else not
+                                    isAssociativeExp(operand);
       end if;
+    end if;
+
+    if parenthesize then
+      str := "(" + str + ")";
     end if;
   end operandString;
 
@@ -1778,19 +1785,26 @@ public
     output String str;
   protected
     Integer operand_prio, operator_prio;
+    Boolean parenthesize = false;
   algorithm
     str := toFlatString(operand);
     operand_prio := priority(operand, lhs);
 
     if operand_prio == 4 then
-      str := "(" + str + ")";
+      parenthesize := true;
     else
       operator_prio := priority(operator, lhs);
 
-      if operand_prio > operator_prio or
-         not lhs and operand_prio == operator_prio and not isAssociativeExp(operand) then
-        str := "(" + str + ")";
+      if operand_prio > operator_prio then
+        parenthesize := true;
+      elseif operand_prio == operator_prio then
+        parenthesize := if lhs then isNonAssociativeExp(operand) else not
+                                    isAssociativeExp(operand);
       end if;
+    end if;
+
+    if parenthesize then
+      str := "(" + str + ")";
     end if;
   end operandFlatString;
 
@@ -1823,6 +1837,17 @@ public
       else false;
     end match;
   end isAssociativeExp;
+
+  function isNonAssociativeExp
+    input Expression exp;
+    output Boolean isAssociative;
+  algorithm
+    isAssociative := match exp
+      case BINARY() then Operator.isNonAssociative(exp.operator);
+      case LBINARY() then true;
+      else false;
+    end match;
+  end isNonAssociativeExp;
 
   function toDAEOpt
     input Option<Expression> exp;
