@@ -142,7 +142,7 @@ algorithm
   end if;
   // handle alias equations
   (vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns) := handleAliasEquations(aliaseqns, vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns);
-  (ieqns, eqns, extAliasVars, extVars) := getExternalObjectAlias(ieqns, eqns, extVars);
+  (ieqns, eqns, reqns, extAliasVars, extVars) := getExternalObjectAlias(ieqns, eqns, reqns, extVars);
   aliasVars := BackendVariable.addVariables(extAliasVars,aliasVars);
 
   vars_1 := detectImplicitDiscrete(vars, globalKnownVars, eqns);
@@ -194,9 +194,11 @@ If yes, assign alias var, replace equations, remove alias equation.
 author: waurich TUD 2016-10"
   input list<BackendDAE.Equation> inInitEqs;
   input list<BackendDAE.Equation> inEqs;
+  input list<BackendDAE.Equation> inRemEqs;
   input BackendDAE.Variables extVars;
   output list<BackendDAE.Equation> oInitEqs;
   output list<BackendDAE.Equation> oEqs;
+  output list<BackendDAE.Equation> oRemEqs;
   output BackendDAE.Variables extAliasVars;
   output BackendDAE.Variables extVarsOut;
 protected
@@ -211,6 +213,7 @@ algorithm
   // get alias equations for external objects
   (oEqs,aliasEqs) := List.fold1(inEqs,getExternalObjectAlias2,extCrefs,({},{}));
   (oInitEqs,aliasEqs) := List.fold1(inInitEqs,getExternalObjectAlias2,extCrefs,({},aliasEqs));
+  (oRemEqs,aliasEqs) := List.fold1(inRemEqs,getExternalObjectAlias2,extCrefs,({},aliasEqs));
 
   if (not listEmpty(aliasEqs)) then
     Error.addCompilerWarning("Alias equations of external objects are not Modelica compliant as in:\n    "+stringDelimitList(List.map(aliasEqs,BackendDump.equationString),"\n    ")+"\n");
@@ -227,8 +230,11 @@ algorithm
   //replace in equations
   (oEqs,_) := BackendVarTransform.replaceEquations(oEqs,repl,NONE());
   (oInitEqs,_) := BackendVarTransform.replaceEquations(oInitEqs,repl,NONE());
+  (oRemEqs,_) := BackendVarTransform.replaceEquations(oRemEqs,repl,NONE());
+
   oEqs := listReverse(oEqs);
   oInitEqs := listReverse(oInitEqs);
+  oRemEqs := listReverse(oRemEqs);
 end getExternalObjectAlias;
 
 protected function getExternalObjectAlias3 "Gets the alias var and sim var for the given alias equation and adds a replacement rule
