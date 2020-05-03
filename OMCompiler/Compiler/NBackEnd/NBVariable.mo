@@ -78,6 +78,7 @@ public
     NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PROTECTED, NFComponent.DEFAULT_ATTR,
     {}, NONE(), SCodeUtil.dummyInfo, NFBackendExtension.DUMMY_BACKEND_INFO);
 
+  constant String DERIVATIVE_STR = "$DER";
 
   function toString
     input Variable var;
@@ -208,7 +209,9 @@ public
         var as NFVariable.VARIABLE(name = cr) := getVarAt(variables, index + 1);
         true := ComponentRef.isEqual(cr, cref);
       else
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.Variables.getVar failed for " + ComponentRef.toString(cref)});
+        if Flags.isSet(Flags.FAILTRACE) then
+          Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.Variables.getVar failed for " + ComponentRef.toString(cref)});
+        end if;
         fail();
       end try;
     end getVar;
@@ -222,7 +225,7 @@ public
           local
             ComponentRef qualCref;
           case qualCref as ComponentRef.CREF() algorithm
-            qualCref.node := InstNode.VAR_NODE(Pointer.create(getVar(cref, variables)));
+            qualCref.node := InstNode.VAR_NODE(InstNode.name(qualCref.node), Pointer.create(getVar(cref, variables)));
           then qualCref;
           else algorithm
             if Flags.isSet(Flags.FAILTRACE) then

@@ -956,6 +956,10 @@ algorithm
         bdae := NBackendDAE.lower(flatModel, funcTree);
         print(NBackendDAE.toString(bdae, "(After Lowering)"));
 
+        bdae := NBackendDAE.solve(bdae);
+
+        print(NBackendDAE.toString(bdae, "(After Solve)"));
+
         /* Dummy output for now */
         libs := {"DUMMY"};
         file_dir := "DUMMY";

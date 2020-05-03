@@ -288,7 +288,9 @@ if true then /* Suppress output */
   // "NBackend" kabdelhak: Have this also behind an environment var?
     "../NBackEnd/NBackendDAE.mo",
     "../NBackEnd/NBAdjacencyMatrix.mo",
+    "../NBackEnd/NBDetectStates.mo",
     "../NBackEnd/NBEquation.mo",
+    "../NBackEnd/NBModule.mo",
     "../NBackEnd/NBVariable.mo",
 
 

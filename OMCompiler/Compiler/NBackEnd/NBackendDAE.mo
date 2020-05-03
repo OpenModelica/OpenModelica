@@ -55,6 +55,7 @@ protected
   import BackendDAE = NBackendDAE;
   import BVariable = NBVariable;
   import BEquation = NBEquation;
+  import DetectStates = NBDetectStates;
   import Equation = NBEquation.Equation;
 
   // Util imports
@@ -78,7 +79,7 @@ public
             BEquation.EqData.toString(bdae.eqData, 1);
   end toString;
 
-  public function lower
+  function lower
     "This function transforms the FlatModel structure to BackendDAE."
     input FlatModel flatModel;
     input FunctionTree funcTree;
@@ -92,6 +93,13 @@ public
     equationData := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, BVariable.VarData.getVariables(variableData));
     bdae := BDAE(variableData, equationData);
   end lower;
+
+  function solve
+    input output BackendDAE bdae;
+  algorithm
+    // SHELL AROUND THIS FOR ALL SELECTED MODULES!
+    bdae := DetectStates.main(bdae);
+  end solve;
 
 protected
   function lowerVariableData
@@ -398,11 +406,8 @@ protected
         end for;
       then result;
 
-      case FEquation.IF(branches = branches, source = source)
-        algorithm
-          // ToDo! split up the body equations with simplify if equations
-          // ToDo! inherit findZeroCrossings
-      then {BEquation.DUMMY_EQUATION()};
+      // if equation
+      case FEquation.IF() then {lowerIfEquation(frontend_equation, init)};
 
       // When equation cases
       case FEquation.WHEN() then {lowerWhenEquation(frontend_equation, init)};
@@ -427,6 +432,101 @@ protected
     end match;
   end lowerEquation;
 
+  function lowerIfEquation
+    input FEquation frontend_equation;
+    input Boolean init;
+    output Equation backend_equation;
+  algorithm
+    backend_equation := match frontend_equation
+      local
+        list<FEquation.Branch> branches;
+        DAE.ElementSource source;
+        BEquation.IfEquationBody ifEqBody;
+        BEquation.EquationAttributes attr;
+
+      case FEquation.IF(branches = branches, source = source)
+        algorithm
+          attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL else NBEquation.EQ_ATTR_DEFAULT_DISCRETE;
+          SOME(ifEqBody) := lowerIfEquationBody(branches, init);
+          // ToDo: compute correct size
+      then BEquation.IF_EQUATION(0, ifEqBody, source, attr);
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerIfEquation failed for " + FEquation.toString(frontend_equation)});
+      then fail();
+
+    end match;
+  end lowerIfEquation;
+
+  function lowerIfEquationBody
+    input list<FEquation.Branch> branches;
+    input Boolean init;
+    output Option<BEquation.IfEquationBody> ifEq;
+  algorithm
+    ifEq := match branches
+      local
+        FEquation.Branch branch;
+        list<FEquation.Branch> rest;
+        list<Equation> eqns;
+        Expression condition;
+
+      // End of the line
+      case {} then NONE();
+
+      // lower current branch
+      case branch::rest
+        algorithm
+          (eqns, condition) := lowerIfBranch(branch, init);
+      then SOME(BEquation.IF_EQUATION_BODY(condition, eqns, lowerIfEquationBody(rest, init)));
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerIfEquationBody failed."});
+      then fail();
+
+    end match;
+  end lowerIfEquationBody;
+
+  function lowerIfBranch
+    input FEquation.Branch branch;
+    input Boolean init;
+    output list<Equation> eqns;
+    output Expression cond;
+  algorithm
+    (eqns, cond) := match branch
+      local
+        Expression condition;
+        list<FEquation.Equation> body;
+      case FEquation.BRANCH(condition = condition, body = body)
+        // ToDo! Use condition variability here to have proper type of the
+        // auxiliary that will be created for the condition.
+      then (lowerIfBranchBody(body, init), condition);
+
+      case FEquation.INVALID_BRANCH() algorithm
+        // what to do with error message from invalid branch? Is that even needed?
+        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerIfBranch failed for invalid branch that should not exist outside of frontend."});
+      then fail();
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerIfBranch failed without proper error message."});
+      then fail();
+
+    end match;
+  end lowerIfBranch;
+
+  function lowerIfBranchBody
+    input list<FEquation.Equation> body;
+    input Boolean init;
+    input output list<Equation> eqns = {};
+  algorithm
+      eqns := match body
+        local
+          FEquation.Equation elem;
+          list<FEquation.Equation> rest;
+      case {}         then eqns;
+      case elem::rest then lowerIfBranchBody(rest, init, listAppend(lowerEquation(elem, init), eqns));
+    end match;
+  end lowerIfBranchBody;
+
   function lowerWhenEquation
     // ToDo! inherit findZeroCrossings or implement own routine to be applied after lowering
     input FEquation frontend_equation;
@@ -438,7 +538,7 @@ protected
         list<FEquation.Branch> branches;
         DAE.ElementSource source;
         Expression condition, message, level;
-        BEquation.WhenEquationBody whenEqBody, elseWhenEq;
+        BEquation.WhenEquationBody whenEqBody;
         BEquation.EquationAttributes attr;
 
       case FEquation.WHEN(branches = branches, source = source)
@@ -446,6 +546,7 @@ protected
           // When equation inside initial actually not allowed. Throw error?
           attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL else NBEquation.EQ_ATTR_DEFAULT_DISCRETE;
           SOME(whenEqBody) := lowerWhenEquationBody(branches);
+          // ToDo: compute correct size
       then BEquation.WHEN_EQUATION(0, whenEqBody, source, attr);
 
       case FEquation.ASSERT(condition = condition, message = message, level = level, source = source)
@@ -656,7 +757,7 @@ public
 
       case qual as ComponentRef.CREF()
         algorithm
-          qual.node := InstNode.VAR_NODE(var);
+          qual.node := InstNode.VAR_NODE(InstNode.name(qual.node), var);
       then qual;
 
       else cref;

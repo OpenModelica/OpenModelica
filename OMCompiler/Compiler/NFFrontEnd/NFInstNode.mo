@@ -273,6 +273,7 @@ uniontype InstNode
 
   record VAR_NODE
     "This is an extension for better use in the backend. Not used in the Frontend."
+    String name;
     Pointer<Variable> varPointer;
   end VAR_NODE;
 
@@ -508,13 +509,13 @@ uniontype InstNode
       case CLASS_NODE() then node.name;
       case COMPONENT_NODE() then node.name;
       case INNER_OUTER_NODE() then name(node.innerNode);
+      case VAR_NODE() then node.name;
       // For bug catching, these names should never be used.
       case REF_NODE() then "$REF[" + String(node.index) + "]";
       case NAME_NODE() then node.name;
       case IMPLICIT_SCOPE() then "$IMPLICIT";
       case EXP_NODE() then "$EXP(" + Expression.toString(node.exp) + ")";
       case EMPTY_NODE() then "$EMPTY";
-      case VAR_NODE() then "$VAR";
     end match;
   end name;
 
