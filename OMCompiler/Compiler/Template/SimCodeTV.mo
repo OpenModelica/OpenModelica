@@ -687,6 +687,9 @@ package SimCode
     record MODELINFO
       Absyn.Path name;
       String description;
+      String stateInfo;
+      String inputInfo;
+      String outputInfo;
       String directory;
       VarInfo varInfo;
       SimCodeVar.SimVars vars;
