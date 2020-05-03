@@ -36,7 +36,10 @@ list(linear_testSteamPipeLin);
 // end SimulationResult;
 // ""
 // true
-// "model linear_testSteamPipeLin
+// "model linear_testSteamPipeLin \"
+//   states[4] = [h[1], h[2], p[1], p[2]]
+//   inputs[0] = []
+//   outputs[0] = []\"
 //   parameter Integer n = 4 \"number of states\";
 //   parameter Integer p = 0 \"number of inputs\";
 //   parameter Integer q = 0 \"number of outputs\";

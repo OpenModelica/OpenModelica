@@ -7211,7 +7211,7 @@ public function createModelInfo
   input list<SimCodeVar.SimVar> tempVars;
   output SimCode.ModelInfo modelInfo;
 protected
-  String description, directory;
+  String description, directory, stateInfo = "", inputInfo = "", outputInfo = "";
   SimCode.VarInfo varInfo;
   SimCodeVar.SimVars vars;
   Integer nx, ny, ndy, np, na, next, numOutVars, numInVars, ny_int, np_int, na_int, ny_bool, np_bool, dim_1, dim_2, numOptimizeConstraints, numOptimizeFinalConstraints;
@@ -7225,6 +7225,13 @@ algorithm
     // name = AbsynUtil.pathStringNoQual(class_);
     directory := System.trim(fileDir, "\"");
     vars := createVars(dlow, inInitDAE, tempVars);
+
+    // Somehow this flag is not always active when needed...
+    //if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION) then
+      stateInfo := createInfoString(vars.stateVars, "states");
+      inputInfo := createInfoString(vars.inputVars, "inputs");
+      outputInfo := createInfoString(vars.outputVars, "outputs");
+    //end if;
 
     if debug then execStat("simCode: createVars"); end if;
     BackendDAE.DAE(shared=BackendDAE.SHARED(info=BackendDAE.EXTRA_INFO(description=description))) := dlow;
@@ -7254,8 +7261,8 @@ algorithm
     if debug then execStat("simCode: createVarInfo"); end if;
     hasLargeEqSystems := hasLargeEquationSystems(dlow, inInitDAE);
     if debug then execStat("simCode: hasLargeEquationSystems"); end if;
-    modelInfo := SimCode.MODELINFO(class_, dlow.shared.info.description, directory, varInfo, vars, functions,
-                                   labels,
+    modelInfo := SimCode.MODELINFO(class_, dlow.shared.info.description, stateInfo, inputInfo, outputInfo,
+                                   directory, varInfo, vars, functions, labels,
                                    if Flags.getConfigBool(Flags.BUILDING_FMU) then getResources(program.classes, dlow, inInitDAE) else {},
                                    List.sort(program.classes, AbsynUtil.classNameGreater),
                                    arrayLength(dlow.shared.partitionsInfo.basePartitions),
@@ -8211,7 +8218,6 @@ algorithm
    end match;
 end simVarString;
 
-
 protected function printVarIndx
   input Option<Integer> i;
   output String s;
@@ -8234,7 +8240,6 @@ algorithm
   end if;
 end dumpVarLst;
 
-
 public function printVarLstCrefs
     input list<SimCodeVar.SimVar> inVars;
     output String str;
@@ -8248,6 +8253,29 @@ algorithm
         str := str + ComponentReference.debugPrintComponentRefTypeStr(cref) + " , ";
     end for;
 end printVarLstCrefs;
+
+public function createInfoString
+  input list<SimCodeVar.SimVar> inVars;
+  input String name;
+  output String str = "";
+protected
+  SimCodeVar.SimVar var;
+  list<SimCodeVar.SimVar> rest;
+  DAE.ComponentRef cref;
+algorithm
+  str := name + "[" + intString(listLength(inVars))+ "] = [";
+  try
+    var :: rest := inVars;
+    SimCodeVar.SIMVAR(name= cref) := var;
+    str := str + ComponentReference.printComponentRefStr(cref);
+    for var in rest loop
+      SimCodeVar.SIMVAR(name= cref) := var;
+      str := str + ", " + ComponentReference.printComponentRefStr(cref);
+    end for;
+  else
+  end try;
+  str := str + "]";
+end createInfoString;
 
 protected function dumpVariablesString "dumps a list of SimCode.Variables to stdout.
 author: Waurich TUD 2014-09"
