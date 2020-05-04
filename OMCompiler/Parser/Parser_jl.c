@@ -329,15 +329,22 @@ static void* parseStream(pANTLR3_INPUT_STREAM input)
   return res;
 }
 
-DLLDirection jl_value_t* parseFile(jl_value_t *fileName)
+DLLDirection jl_value_t* parseFile(jl_value_t *fileName, int acceptedGrammar)
 {
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;
 
   parser_members members;
 
+  int flags = PARSE_MODELICA;
+  if(acceptedGrammar == 2) flags |= PARSE_META_MODELICA;
+  else if(acceptedGrammar == 3) flags |= PARSE_PARMODELICA;
+  else if(acceptedGrammar == 4) flags |= PARSE_OPTIMICA;
+  else if(acceptedGrammar == 5) flags |= PARSE_PDEMODELICA;
+
   pthread_once(&parser_once_create_key,make_key);
   pthread_setspecific(modelicaParserKey,&members);
+
 
   jl_gc_enable(1);
 
@@ -345,7 +352,7 @@ DLLDirection jl_value_t* parseFile(jl_value_t *fileName)
   members.filename_C = fileName;
   members.filename_C_testsuiteFriendly = fileName;
   members.filename_OMC = fileName;
-  members.flags = 0;
+  members.flags = flags;
   members.readonly = 1;
   omc_first_comment = 0;
 

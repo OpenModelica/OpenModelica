@@ -14,11 +14,42 @@ jl_value_t* omc_jl_nil = NULL;
 
 void OpenModelica_initMetaModelicaJuliaLayer()
 {
+  jl_eval_string("using MetaModelica");
   jl_module_t *MetaModelicaModule = (jl_module_t*)jl_eval_string("MetaModelica");
-  jl_module_t *ListDefModule = (jl_module_t*)jl_eval_string("MetaModelica.ListDef");
+  jl_eval_string("using ImmutableList");
+  jl_module_t *ImmutableList = (jl_module_t*)jl_eval_string("ImmutableList");
+  jl_module_t *ListDefModule = (jl_module_t*)jl_eval_string("ImmutableList.ListDef");
+  jl_eval_string("using OpenModelicaParser");
   jl_module_t *parserModule = (jl_module_t*)jl_eval_string("OpenModelicaParser");
+
+  if (!MetaModelicaModule)
+  {
+    fprintf(stderr, "module MetaModelica not loaded, load it via using.");
+    fflush(NULL);
+  }
   assert(jl_is_module(MetaModelicaModule));
+
+  if (!ImmutableList)
+  {
+    fprintf(stderr, "module ImmutableList not loaded, load it via using.");
+    fflush(NULL);
+  }
+  assert(jl_is_module(ImmutableList));
+
+  if (!ListDefModule)
+  {
+    fprintf(stderr, "module ImmutableList.ListDef not loaded, load it via using.");
+    fflush(NULL);
+  }
+  assert(jl_is_module(ListDefModule));
+
+  if (!parserModule)
+  {
+    fprintf(stderr, "module OpenModelicaParser not loaded, load it via using.");
+    fflush(NULL);
+  }
   assert(jl_is_module(parserModule));
+
   assert((omc_jl_some = jl_get_function(MetaModelicaModule, "SOME")));
   assert((omc_jl_cons = jl_get_function(ListDefModule, "cons")));
   assert((omc_jl_cons_typed = jl_get_function(ListDefModule, "consExternalC")));

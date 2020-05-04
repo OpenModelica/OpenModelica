@@ -175,8 +175,14 @@ template classExternalHeaderJulia(Text &buf1, Text &buf2, SCode.Element cl, Stri
 match cl case c as SCode.CLASS(__) then
   let &buf2 +=
     <<
-    jl_module_t* <%c.name%>;
-    assert((<%c.name%> = (jl_module_t *) jl_eval_string("<%c.name%>")));<%\n%>
+    jl_eval_string("using <%c.name%>");
+    jl_module_t* <%c.name%> = (jl_module_t *) jl_eval_string("<%c.name%>");
+    if (!<%c.name%>)
+    {
+      fprintf(stderr, "module <%c.name%> not loaded, load it via using.");
+      fflush(NULL);
+    }
+    assert(jl_is_module(<%c.name%>));<%\n%>
     >>
   classExternalHeaderJuliaWork(&buf1,&buf2,cl,pack)
 end classExternalHeaderJulia;
