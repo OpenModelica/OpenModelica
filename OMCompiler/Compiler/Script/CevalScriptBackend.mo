@@ -2371,7 +2371,10 @@ algorithm
     case (cache,_,"installPackage",{Values.CODE(Absyn.C_TYPENAME(path as Absyn.QUALIFIED())), _, _},_)
       algorithm
         Error.addMessage(Error.ERROR_PKG_NOT_IDENT, {AbsynUtil.pathString(path)});
-      then fail();
+      then (cache, Values.BOOL(false));
+
+    case (cache,_,"installPackage",_,_)
+      then (cache, Values.BOOL(false));
 
     case (cache,_,"updatePackageIndex",{},_)
       algorithm

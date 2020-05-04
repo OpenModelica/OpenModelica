@@ -429,7 +429,7 @@ algorithm
   // We know which version we want now. Check with the installed ones
   installedLibraries := getInstalledLibraries();
 
-  if exactMatch and listEmpty(candidates) then
+  if listEmpty(candidates) then
     versionToInstall := version;
     semverToInstall := semver;
   elseif exactMatch and not listEmpty(exactMatches) then
