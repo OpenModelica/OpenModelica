@@ -1468,7 +1468,7 @@ algorithm
     case (cache,_,"parseEncryptedPackage",Values.STRING(filename)::Values.STRING(workdir)::_,_)
       equation
         vals = {};
-        (b, filename_1) = unZipEncryptedPackageAndCheckFile(workdir, filename);
+        (b, filename_1) = unZipEncryptedPackageAndCheckFile(workdir, filename, false);
         if (b) then
           // clear the errors before!
           Error.clearMessages() "Clear messages";
@@ -1479,9 +1479,9 @@ algorithm
         end if;
       then (cache,ValuesUtil.makeArray(vals));
 
-    case (_,_,"loadEncryptedPackage",Values.STRING(filename)::Values.STRING(workdir)::_,_)
+    case (_,_,"loadEncryptedPackage",Values.STRING(filename)::Values.STRING(workdir)::Values.BOOL(bval)::_,_)
       equation
-        (b, filename_1) = unZipEncryptedPackageAndCheckFile(workdir, filename);
+        (b, filename_1) = unZipEncryptedPackageAndCheckFile(workdir, filename, bval);
         if (b) then
           execStatReset();
           filename_1 = Testsuite.friendlyPath(filename_1);
@@ -3193,6 +3193,7 @@ end findModelicaPath2;
 protected function unZipEncryptedPackageAndCheckFile
   input String inWorkdir;
   input String filename;
+  input Boolean skipUnzip;
   output Boolean success;
   output String outFilename;
 protected
@@ -3203,7 +3204,7 @@ algorithm
   if (System.regularFileExists(filename)) then
 	  if (Util.endsWith(filename, ".mol")) then
 	    workdir := if System.directoryExists(inWorkdir) then inWorkdir else System.pwd();
-	    if (0 == System.systemCall("unzip -q -o -d \"" + workdir + "\" \"" +  filename + "\"")) then
+	    if (skipUnzip or 0 == System.systemCall("unzip -q -o -d \"" + workdir + "\" \"" +  filename + "\"")) then
 	      s1 := System.basename(filename);
 	      s2 := Util.removeLast4Char(s1);
 	      s3 := listGet(Util.stringSplitAtChar(s2," "),1);

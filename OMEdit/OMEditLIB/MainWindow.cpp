@@ -630,6 +630,13 @@ void MainWindow::beforeClosingMainWindow()
     }
     mFMUDirectoriesList.clear();
   }
+  // Delete the MOL directories
+  foreach (QString molDirectory, mMOLDirectoriesList) {
+    if (QDir().exists(molDirectory)) {
+      Utilities::removeDirectoryRecursivly(molDirectory);
+    }
+  }
+  mMOLDirectoriesList.clear();
   delete pSettings;
   // delete the OptionsDialog object
   OptionsDialog::destroy();

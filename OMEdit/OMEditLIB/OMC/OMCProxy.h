@@ -265,7 +265,7 @@ public:
   QList<QList<QString > > getUses(QString className);
   bool buildEncryptedPackage(QString className, bool encrypt = true);
   QList<QString> parseEncryptedPackage(QString fileName, QString workingDirectory);
-  bool loadEncryptedPackage(QString fileName, QString workingDirectory);
+  bool loadEncryptedPackage(QString fileName, QString workingDirectory, bool skipUnzip);
 signals:
   void commandFinished();
 public slots:

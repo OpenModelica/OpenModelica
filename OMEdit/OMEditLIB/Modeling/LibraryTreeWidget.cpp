@@ -4246,7 +4246,17 @@ void LibraryWidget::openEncrytpedModelicaLibrary(QString fileName, QString encod
     MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileName));
   }
 
-  QStringList classesList = MainWindow::instance()->getOMCProxy()->parseEncryptedPackage(fileName, Utilities::tempDirectory());
+  // create unique directory to extract .mol contents
+  QFileInfo fileInfo(fileName);
+  QString tempDirectoryPath = Utilities::tempDirectory();
+  QString outputDirectory = QString("%1/%2%3").arg(Utilities::tempDirectory(), fileInfo.baseName(), QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz"));
+  if (!QDir().exists(outputDirectory)) {
+    QDir().mkpath(outputDirectory);
+    MainWindow::instance()->mMOLDirectoriesList.append(outputDirectory);
+    tempDirectoryPath = outputDirectory;
+  }
+
+  QStringList classesList = MainWindow::instance()->getOMCProxy()->parseEncryptedPackage(fileName, tempDirectoryPath);
   if (!classesList.isEmpty()) {
     if (multipleTopLevelClasses(classesList, fileName)) {
       if (showProgress) {
@@ -4277,7 +4287,8 @@ void LibraryWidget::openEncrytpedModelicaLibrary(QString fileName, QString encod
       pMessageBox->exec();
     } else { // if no conflicting model found then just load the file simply
       // load the encrypted package in OMC
-      if (MainWindow::instance()->getOMCProxy()->loadEncryptedPackage(fileName, Utilities::tempDirectory())) {
+      // we pass true for skipUnzip as we have alredy extracted mol with parseEncryptedPackage earlier.
+      if (MainWindow::instance()->getOMCProxy()->loadEncryptedPackage(fileName, tempDirectoryPath, true)) {
         // create library tree nodes for loaded models
         int progressvalue = 0;
         if (showProgress) {

@@ -253,6 +253,7 @@ public:
                                    const char* variables);
 
   QList<QString> mFMUDirectoriesList;
+  QList<QString> mMOLDirectoriesList;
 private:
   bool mDebug;
   bool mTestsuiteRunning;
