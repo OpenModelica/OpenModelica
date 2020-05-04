@@ -61,7 +61,7 @@ import ComponentRef = NFComponentRef;
 import NFComponentRef.Origin;
 import Restriction = NFRestriction;
 import NFClassTree.LookupTree;
-import NFClassTree.DuplicateTree;
+import NFDuplicateTree;
 
 protected
 import MetaModelica.Dangerous.*;
@@ -193,7 +193,7 @@ constant ClassTree REAL_CLASS_TREE = ClassTree.FLAT_TREE(
       Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP())
   }),
   listArray({}), // TODO: #4895: This should be listArrayLiteral too, but causes compilation issues.
-  DuplicateTree.EMPTY());
+  NFDuplicateTree.EMPTY());
 
 constant InstNode REAL_NODE = InstNode.CLASS_NODE("Real",
   Elements.REAL, Visibility.PUBLIC,
@@ -237,7 +237,7 @@ constant ClassTree INTEGER_CLASS_TREE = ClassTree.FLAT_TREE(
       Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP())
   }),
   listArray({}), // TODO: #4895: This should be listArrayLiteral too, but causes compilation issues.
-  DuplicateTree.EMPTY());
+  NFDuplicateTree.EMPTY());
 
 constant InstNode INTEGER_NODE = InstNode.CLASS_NODE("Integer",
   Elements.INTEGER, Visibility.PUBLIC,
@@ -269,7 +269,7 @@ constant ClassTree BOOLEAN_CLASS_TREE = ClassTree.FLAT_TREE(
       Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP())
   }),
   listArray({}), // TODO: #4895: This should be listArrayLiteral too, but causes compilation issues.
-  DuplicateTree.EMPTY());
+  NFDuplicateTree.EMPTY());
 
 constant InstNode BOOLEAN_NODE = InstNode.CLASS_NODE("Boolean",
   Elements.BOOLEAN, Visibility.PUBLIC,
@@ -304,7 +304,7 @@ constant ClassTree STRING_CLASS_TREE = ClassTree.FLAT_TREE(
       Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP())
   }),
   listArray({}), // TODO: #4895: This should be listArrayLiteral too, but causes compilation issues.
-  DuplicateTree.EMPTY());
+  NFDuplicateTree.EMPTY());
 
 constant InstNode STRING_NODE = InstNode.CLASS_NODE("String",
   Elements.STRING, Visibility.PUBLIC,
@@ -370,7 +370,7 @@ constant ClassTree CLOCK_CLASS_TREE = ClassTree.FLAT_TREE(
       Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP())
   }),
   listArray({}), // TODO: #4895: This should be listArrayLiteral too, but causes compilation issues.
-  DuplicateTree.EMPTY());
+  NFDuplicateTree.EMPTY());
 
 constant InstNode CLOCK_NODE = InstNode.CLASS_NODE("Clock",
   Elements.CLOCK, Visibility.PUBLIC,
