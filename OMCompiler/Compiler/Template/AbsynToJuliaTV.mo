@@ -1162,6 +1162,10 @@ package MMToJuliaUtil
     input Absyn.ElementSpec spec;
     output Boolean isOutput;
   end elementSpecIsOUTPUT_OR_BIDIR;
+  function mMKeywordToJLKeyword
+    input String iS;
+    output String oS;
+  end mMKeywordToJLKeyword;
 end MMToJuliaUtil;
 
 package AbsynUtil

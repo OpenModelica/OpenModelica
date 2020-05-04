@@ -4501,7 +4501,7 @@ algorithm
 end filterNestedClasses;
 
 protected function filterNestedClassesParts
-  "Helper function for filterNestedClassesParts."
+  "Helper function for filterNestedClasses"
   input ClassPart classPart;
   input list<ClassPart> inClassParts;
   output list<ClassPart> outClassPart;
@@ -6065,7 +6065,7 @@ algorithm
       list<Absyn.ElementItem> elts;
     case Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF())) :: _ then true;
     case _ :: elts then eltsHasLocalClass(elts);
-    else false;
+    case {} then false;
   end match;
 end eltsHasLocalClass;
 
@@ -6075,15 +6075,16 @@ public function classHasLocalClassOfType
   input Absyn.Restriction inRestriction;
   output Boolean res;
 algorithm
-  res := match cl
+  res := matchcontinue cl
     local
       list<Absyn.ClassPart> parts;
-    case (Absyn.CLASS(body= Absyn.PARTS(classParts = parts)))
+    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
       then partsHasLocalClassOfType(parts, inRestriction);
-    case (Absyn.CLASS(body= Absyn.CLASS_EXTENDS(parts = parts)))
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
       then partsHasLocalClassOfType(parts, inRestriction);
-    else false;
-  end match;
+    else
+      then false;
+  end matchcontinue;
 end classHasLocalClassOfType;
 
 protected function partsHasLocalClassOfType
@@ -6092,41 +6093,44 @@ protected function partsHasLocalClassOfType
   input Absyn.Restriction inRestriction;
   output Boolean res;
 algorithm
-  res := match inParts
+  res := matchcontinue inParts
     local
       list<Absyn.ElementItem> elts;
       list<Absyn.ClassPart> parts;
-    case Absyn.PUBLIC(elts) :: _
+    case Absyn.PUBLIC(contents = elts) :: _
       then
         eltsHasLocalClassOfType(elts, inRestriction);
-    case Absyn.PROTECTED(elts) :: _
+    case Absyn.PROTECTED(contents = elts) :: _
       then
         eltsHasLocalClassOfType(elts, inRestriction);
     case _ :: parts then partsHasLocalClassOfType(parts, inRestriction);
-    case {} then false;
-  end match;
+    case {} then fail();
+  end matchcontinue;
 end partsHasLocalClassOfType;
 
 protected function eltsHasLocalClassOfType
-"Returns true if there exists a local class which is restricted to the supplied restriction"
+"Returns true if there exists a local class which is restricted to the supplied restriction.
+Otherwise fails"
   input list<Absyn.ElementItem> inElts;
   input Absyn.Restriction inRestriction;
   output Boolean res;
 algorithm
-  res := match inElts
+  res := matchcontinue inElts
     local
       list<Absyn.ElementItem> elts;
-      Restriction restriction_;
+      Restriction restriction;
     case Absyn.ELEMENTITEM(Absyn.ELEMENT(
-          specification = Absyn.CLASSDEF(class_ = CLASS(restriction = restriction_)))) :: _
+          specification = Absyn.CLASSDEF(class_ = CLASS(restriction = restriction)))) :: _
       algorithm
-        res := valueEq(restriction_, inRestriction);
+        res := valueEq(restriction, inRestriction);
+        if res == false then
+          fail(); //Go to next
+        end if;
       then res;
     case _ :: elts
       then eltsHasLocalClassOfType(elts, inRestriction);
-    else
-      false;
-  end match;
+    case {} then fail();
+  end matchcontinue;
 end eltsHasLocalClassOfType;
 
 protected function traverseInnerClass
@@ -6559,7 +6563,13 @@ algorithm
     or
       classHasLocalClassOfType(cls, Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.PURE())))
     or
-      classHasLocalClassOfType(cls, Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.IMPURE())));
+      classHasLocalClassOfType(cls, Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.IMPURE())))
+    or
+      classHasLocalClassOfType(cls, Absyn.R_FUNCTION(FR_OPERATOR_FUNCTION()))
+    or
+      classHasLocalClassOfType(cls, Absyn.R_FUNCTION(FR_KERNEL_FUNCTION()))
+    or
+      classHasLocalClassOfType(cls, Absyn.R_FUNCTION(FR_PARALLEL_FUNCTION()));
 end classHasLocalClassesThatAreFunctions;
 
 public function classHasLocalClassesThatAreUniontypes

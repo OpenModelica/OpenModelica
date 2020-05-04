@@ -1,12 +1,20 @@
 uniontype StaticUniontypes
+protected
+  record TOPDUMMY
+  end TOPDUMMY;
+public
+//Basic arithmetic operators
+  type Op = enumeration(
+    ADD               "+",
+    SUB               "-",
+    MUL               "*",
+    DIV               "/",
+    POW               "^"
+  );
 
 uniontype topNested
 uniontype Nested
 function foo
-  input Real x;
-  output Real y;
-algorithm
-  y := x - 3;
 end foo;
 
 record fR
@@ -36,11 +44,6 @@ end test;
 function testMatch
   input Nested n;
   output Integer i;
-algorithm
-  i := match n
-    case fr(__) then 1;
-    case _ then 2;
-  end match;
 end testMatch;
 
 end TestPackage;
