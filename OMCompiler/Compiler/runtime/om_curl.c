@@ -1,3 +1,8 @@
+
+
+#if defined(__MINGW32__)
+#define CURL_STATICLIB 1
+#endif
 #include <curl/curl.h>
 #include "meta/meta_modelica.h"
 #include "util/omc_file.h"
