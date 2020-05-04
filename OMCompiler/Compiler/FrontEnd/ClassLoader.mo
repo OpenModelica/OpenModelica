@@ -414,14 +414,18 @@ algorithm
       fail();
     end if;
   end if;
-  s1 := AbsynUtil.withinString(w1);
-  s2 := AbsynUtil.withinString(w2);
-  if not (AbsynUtil.withinEqual(w1,w2) or Config.languageStandardAtMost(Config.LanguageStandard.'2.x')) then
-    Error.addSourceMessage(Error.LIBRARY_UNEXPECTED_WITHIN, {s1,s2}, info);
-    fail();
-  elseif expectPackage and not AbsynUtil.isParts(body) then
+  if expectPackage and not AbsynUtil.isParts(body) then
     Error.addSourceMessage(Error.LIBRARY_EXPECTED_PARTS, {pack}, info);
     fail();
+  elseif not (AbsynUtil.withinEqual(w1,w2) or Config.languageStandardAtMost(Config.LanguageStandard.'2.x')) then
+     s1 := AbsynUtil.withinString(w1);
+     s2 := AbsynUtil.withinString(w2);
+     if AbsynUtil.withinEqualCaseInsensitive(w1,w2) then
+       Error.addSourceMessage(Error.LIBRARY_WITHIN_WRONG_CASE, {s1,s2}, info);
+     else
+       Error.addSourceMessage(Error.LIBRARY_UNEXPECTED_WITHIN, {s1,s2}, info);
+       fail();
+     end if;
   end if;
 end parsePackageFile;
 

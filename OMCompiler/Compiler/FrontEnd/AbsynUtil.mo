@@ -1439,6 +1439,33 @@ algorithm
   end match;
 end pathEqual;
 
+public function pathEqualCaseInsensitive "Returns true if two paths are equal."
+  input Path inPath1;
+  input Path inPath2;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inPath1, inPath2)
+    local
+      String id1,id2;
+      Boolean res;
+      Path path1,path2;
+    // fully qual vs. path
+    case (FULLYQUALIFIED(path1),path2) then pathEqualCaseInsensitive(path1,path2);
+    // path vs. fully qual
+    case (path1,FULLYQUALIFIED(path2)) then pathEqualCaseInsensitive(path1,path2);
+    // ident vs. ident
+    case (IDENT(id1),IDENT(id2))
+      then stringEq(System.tolower(id1), System.tolower(id2));
+    // qual ident vs. qual ident
+    case (QUALIFIED(id1, path1),QUALIFIED(id2, path2))
+      equation
+        res = if stringEq(System.tolower(id1), System.tolower(id2)) then pathEqualCaseInsensitive(path1, path2) else false;
+      then res;
+    // other return false
+    else false;
+  end match;
+end pathEqualCaseInsensitive;
+
 public function typeSpecEqual
   "Author BZ 2009-01
    Check whether two type specs are equal or not."
@@ -4063,6 +4090,20 @@ algorithm
     else false;
   end match;
 end withinEqual;
+
+public function withinEqualCaseInsensitive
+  input Within within1;
+  input Within within2;
+  output Boolean b;
+algorithm
+  b := match (within1,within2)
+    local
+      Path p1,p2;
+    case (TOP(),TOP()) then true;
+    case (WITHIN(p1),WITHIN(p2)) then pathEqualCaseInsensitive(p1,p2);
+    else false;
+  end match;
+end withinEqualCaseInsensitive;
 
 public function withinString
   input Within w1;
