@@ -796,6 +796,8 @@ public constant ErrorTypes.Message W_INVALID_ARGUMENT_TYPE_BRANCH_FIRST = ErrorT
   Gettext.gettext("The first argument '%s' of %s must have the form A.R, where A is a connector and R an over-determined type/record."));
 public constant ErrorTypes.Message W_INVALID_ARGUMENT_TYPE_BRANCH_SECOND = ErrorTypes.MESSAGE(362, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The second argument '%s' of %s must have the form A.R, where A is a connector and R an over-determined type/record."));
+public constant ErrorTypes.Message LIBRARY_WITHIN_WRONG_CASE = ErrorTypes.MESSAGE(363, ErrorTypes.GRAMMAR(), ErrorTypes.WARNING(),
+  Gettext.gettext("Expected the package to have %s but got %s (ignoring the potential error; the class might have been inserted at an unexpected location)."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
