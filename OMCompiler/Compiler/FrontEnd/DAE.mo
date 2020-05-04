@@ -49,20 +49,15 @@ import SCode;
 import Values;
 
 public type Ident = String;
-
 public type InstDims = list<Dimension>;
-
 public type StartValue = Option<Exp>;
-
 public constant String UNIQUEIO = "$unique$outer$";
-
 public constant String derivativeNamePrefix = "$DER";
 public constant String partialDerivativeNamePrefix = "$pDER";
 public constant String preNamePrefix = "$PRE";
 public constant String previousNamePrefix = "$CLKPRE";
 public constant String startNamePrefix = "$START";
 public constant String auxNamePrefix = "$AUX";
-
 
 public uniontype VarKind
   record VARIABLE "variable" end VARIABLE;

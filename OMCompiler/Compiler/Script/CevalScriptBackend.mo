@@ -38,8 +38,8 @@ encapsulated package CevalScriptBackend
 
 // public imports
 import Absyn;
-import AbsynUtil;
 import AbsynJLDumpTpl;
+import AbsynUtil;
 import BackendDAE;
 import Ceval;
 import DAE;
@@ -47,9 +47,9 @@ import FCore;
 import GlobalScript;
 import Interactive;
 import InteractiveUtil;
-import Values;
 import SimCode;
 import UnitAbsyn;
+import Values;
 
 // protected imports
 protected
@@ -78,21 +78,21 @@ import Debug;
 import DiffAlgorithm;
 import Dump;
 import Error;
-import ErrorTypes;
 import ErrorExt;
+import ErrorTypes;
 import ExecStat;
 import Expression;
 import ExpressionDump;
 import FBuiltin;
 import FGraph;
 import FGraphDump;
-import Figaro;
-import FindZeroCrossings;
 import FInst;
-import Flags;
-import FlagsUtil;
 import FMI;
 import FMIExt;
+import Figaro;
+import FindZeroCrossings;
+import Flags;
+import FlagsUtil;
 import GC;
 import Graph;
 import HashSetString;
@@ -101,6 +101,7 @@ import Inst;
 import LexerModelicaDiff;
 import List;
 import Lookup;
+import MMToJuliaUtil;
 import NFInst;
 import NFSCodeEnv;
 import NFSCodeFlatten;
@@ -120,8 +121,8 @@ import SimpleModelicaParser;
 import SimulationResults;
 import StaticScript;
 import StringUtil;
-import SymbolicJacobian;
 import SymbolTable;
+import SymbolicJacobian;
 import System;
 import TaskGraphResults;
 import Tpl;
@@ -1554,9 +1555,9 @@ algorithm
            result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
             // result file might have been set by simflags (-r ...)
 
-      result_file := selectResultFile(result_file, simflags);
+			result_file := selectResultFile(result_file, simflags);
 
-      executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
+			executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
             logFile := stringAppend(executable,".log");
             // adrpo: log file is deleted by buildModel! do NOT DELETE IT AGAIN!
             // we should really have different log files for simulation/compilation!
@@ -1568,7 +1569,11 @@ algorithm
             System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
             SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
 
+<<<<<<< abe7693d5158c3ea9565c78b63eeef3977809f71
       resI := System.systemCall(sim_call,logFile);
+=======
+			resI := System.systemCall(sim_call,logFile);
+>>>>>>> NFJuliaTranslation: Implemented basic remaning and ht for import handling
 
             timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
 
@@ -3142,7 +3147,8 @@ algorithm
 
     case (cache,_,"toJulia",{},_)
       algorithm
-        str := Tpl.tplString(AbsynToJulia.dumpProgram, SymbolTable.getAbsyn());
+        p := MMToJuliaUtil.simplifyAbsyn(SymbolTable.getAbsyn());
+        str := Tpl.tplString(AbsynToJulia.dumpProgram, p);
       then (cache,Values.STRING(str));
 
     case (cache,_,"interactiveDumpAbsynToJL",{},_)

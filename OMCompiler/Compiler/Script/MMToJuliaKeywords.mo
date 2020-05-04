@@ -1,32 +1,33 @@
 encapsulated package MMToJuliaKeywords
 
-// public constant String ABSTRACT = "abstract";
-// public String constant BAREMODULE = "baremodule";
-// public String constant BEGIN = "begin";
-// public String constant BITSTYPE = "bitstype";
-// public String constant BREAK = "break";
-// public String constant CONST = "const";
-// public String constant CONTINUE = "continue";
-// public String constant DO = "do";
-// public String constant EXPORT = "export";
-// public String constant FOR = "for";
-// public String constant FUNCTION = "function";
-// public String constant GLOBAL = "global";
-// public String constant IF = "if";
-// public String constant IMPORT = "import";
-// public String constant IMPORTALL = "importall";
-// public String constant LET =  "let";
-// public String constant LOCAL = "local";
-// public String constant MACRO = "macro";
-// public String constant MODULE = "module";
-// public String constant QUOTE = "quote";
-// public String constant RETURN = "return";
-// public String constant STRUCT = "struct";
-// public String constant TRY = "try";
-// public String constant TYPE = "type";
-// public String constant TYPEALIAS = "typealias";
-// public String constant USING = "using";
-// public String constant WHILE = "while";
+public
+constant String ABSTRACT = "abstract";
+constant String BAREMODULE = "baremodule";
+constant String  BEGIN = "begin";
+constant String  BITSTYPE = "bitstype";
+constant String  BREAK = "break";
+constant String  CONST = "const";
+constant String  CONTINUE = "continue";
+constant String  DO = "do";
+constant String  EXPORT = "export";
+constant String  FOR = "for";
+constant String  FUNCTION = "function";
+constant String  GLOBAL = "global";
+constant String  IF = "if";
+constant String  IMPORT = "import";
+constant String  IMPORTALL = "importall";
+constant String  LET =  "let";
+constant String  LOCAL = "local";
+constant String  MACRO = "macro";
+constant String  MODULE = "module";
+constant String  QUOTE = "quote";
+constant String  RETURN = "return";
+constant String  STRUCT = "struct";
+constant String  TRY = "try";
+constant String  TYPE = "type";
+constant String  TYPEALIAS = "typealias";
+constant String  USING = "using";
+constant String  WHILE = "while";
 
 // public constant list<String> KEYWORDS := list(ABSTRACT,
 //                                               BITSTYPE,

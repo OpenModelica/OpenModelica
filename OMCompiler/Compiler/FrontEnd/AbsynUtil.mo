@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -1335,6 +1335,16 @@ algorithm
     else false;
   end match;
 end isClassdef;
+
+public function elementSpecificationIsClassDef
+  input ElementSpec es;
+  output Boolean b;
+algorithm
+  b := match es
+    case Absyn.CLASSDEF(__) then true;
+    else false;
+  end match;
+end elementSpecificationIsClassDef;
 
 public function printImportString
   "This function takes a Import and prints it as a flat-string."
@@ -4491,7 +4501,7 @@ algorithm
 end filterNestedClasses;
 
 protected function filterNestedClassesParts
-  "Helper funciton for filterNestedClassesParts."
+  "Helper function for filterNestedClassesParts."
   input ClassPart classPart;
   input list<ClassPart> inClassParts;
   output list<ClassPart> outClassPart;
@@ -5180,6 +5190,20 @@ algorithm
     else {};
   end match;
 end getElementItemsInClassPart;
+
+public function makePublicClassPartFromElementItems
+  input list<ElementItem> elementItems;
+  output ClassPart classParts;
+algorithm
+  classParts := PUBLIC(elementItems);
+end makePublicClassPartFromElementItems;
+
+public function makePublicClassPartFromElementItem
+  input ElementItem ei;
+  output ClassPart classParts;
+algorithm
+  classParts := PUBLIC({ei});
+end makePublicClassPartFromElementItem;
 
 public function traverseClassComponents<ArgT>
   input Class inClass;
@@ -6016,26 +6040,19 @@ protected function partsHasLocalClass
   input list<Absyn.ClassPart> inParts;
   output Boolean res;
 algorithm
-  res := matchcontinue(inParts)
+  res := match inParts
     local
       list<Absyn.ElementItem> elts;
       list<Absyn.ClassPart> parts;
-
     case Absyn.PUBLIC(elts) :: _
-      equation
-        true = eltsHasLocalClass(elts);
       then
-        true;
-
+        eltsHasLocalClass(elts);
     case Absyn.PROTECTED(elts) :: _
-      equation
-        true = eltsHasLocalClass(elts);
       then
-        true;
-
+        eltsHasLocalClass(elts);
     case _ :: parts then partsHasLocalClass(parts);
     else false;
-  end matchcontinue;
+  end match;
 end partsHasLocalClass;
 
 protected function eltsHasLocalClass
@@ -6043,15 +6060,74 @@ protected function eltsHasLocalClass
   input list<Absyn.ElementItem> inElts;
   output Boolean res;
 algorithm
-  res := matchcontinue(inElts)
+  res := match(inElts)
     local
       list<Absyn.ElementItem> elts;
-
     case Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF())) :: _ then true;
     case _ :: elts then eltsHasLocalClass(elts);
     else false;
-  end matchcontinue;
+  end match;
 end eltsHasLocalClass;
+
+public function classHasLocalClassOfType
+"Returns true if class contains a local class with a supplied restriction"
+  input Absyn.Class cl;
+  input Absyn.Restriction inRestriction;
+  output Boolean res;
+algorithm
+  res := match cl
+    local
+      list<Absyn.ClassPart> parts;
+    case (Absyn.CLASS(body= Absyn.PARTS(classParts = parts)))
+      then partsHasLocalClassOfType(parts, inRestriction);
+    case (Absyn.CLASS(body= Absyn.CLASS_EXTENDS(parts = parts)))
+      then partsHasLocalClassOfType(parts, inRestriction);
+    else false;
+  end match;
+end classHasLocalClassOfType;
+
+protected function partsHasLocalClassOfType
+"Help function to classHasLocalClassOfType"
+  input list<Absyn.ClassPart> inParts;
+  input Absyn.Restriction inRestriction;
+  output Boolean res;
+algorithm
+  res := match inParts
+    local
+      list<Absyn.ElementItem> elts;
+      list<Absyn.ClassPart> parts;
+    case Absyn.PUBLIC(elts) :: _
+      then
+        eltsHasLocalClassOfType(elts, inRestriction);
+    case Absyn.PROTECTED(elts) :: _
+      then
+        eltsHasLocalClassOfType(elts, inRestriction);
+    case _ :: parts then partsHasLocalClassOfType(parts, inRestriction);
+    else false;
+  end match;
+end partsHasLocalClassOfType;
+
+protected function eltsHasLocalClassOfType
+"Returns true if there exists a local class which is restricted to the supplied restriction"
+  input list<Absyn.ElementItem> inElts;
+  input Absyn.Restriction inRestriction;
+  output Boolean res;
+algorithm
+  res := match inElts
+    local
+      list<Absyn.ElementItem> elts;
+      Restriction restriction_;
+    case Absyn.ELEMENTITEM(Absyn.ELEMENT(
+          specification = Absyn.CLASSDEF(class_ = CLASS(restriction = restriction_)))) :: _
+      algorithm
+        res := valueEq(restriction_, inRestriction);
+      then res;
+    case _ :: elts
+      then eltsHasLocalClassOfType(elts, inRestriction);
+    else
+      false;
+  end match;
+end eltsHasLocalClassOfType;
 
 protected function traverseInnerClass
 " Helperfunction to traverseClasses2. This function traverses all inner classes of a class."
@@ -6396,8 +6472,7 @@ algorithm
 end isNamedPathIdent;
 
 function isUniontype
-" @author johti17: Returns true if the class is of type uniontype
-"
+"@author johti17: Returns true if the class restriction is uniontype"
 input Absyn.Class cls;
 output Boolean b;
 algorithm
@@ -6406,6 +6481,86 @@ algorithm
     else false;
  end match;
 end isUniontype;
+
+function classRestrictionisRecord
+"Returns true if the class restriction is a record"
+  input Absyn.Class cls;
+  output Boolean restrictionIsRecord = false;
+algorithm
+  restrictionIsRecord := match cls
+    case CLASS(__) then restrictionIsRecord(cls.restriction);
+    else then false;
+  end match;
+end classRestrictionisRecord;
+
+function classRestrictionisNotRecord
+"Returns true if the class restriction is not a record"
+  input Absyn.Class cls;
+  output Boolean restrictionIsNotRecord = false;
+algorithm
+  restrictionIsNotRecord := not classRestrictionisRecord(cls);
+end classRestrictionisNotRecord;
+
+function restrictionIsRecord
+ "@Author johti17: Returns true if the given restriction is a record"
+  input Absyn.Restriction restriction;
+  output Boolean isRecord;
+algorithm
+  isRecord := match restriction
+    case R_RECORD(__) then true;
+    else false;
+  end match;
+end restrictionIsRecord;
+
+public function splitRecordsAndOtherElements
+  "@Author johti17:
+    Returns all first level parts in a given class which are not records."
+  input Absyn.Class cls;
+  output list<Absyn.ClassPart> recordParts = {};
+  output list<Absyn.ClassPart> nonRecordParts = {};
+protected
+  list<Absyn.ElementItem> elementItems = {};
+  list<Absyn.ElementSpec> elementSpecs = {};
+  list <Absyn.Class> classes = {};
+algorithm
+  elementItems := getElementItemsInClass(cls);
+  elementSpecs := Util.listOfOptionToList(List.map(elementItems,
+                                          getElementSpecificationFromElementItemOpt));
+  classes := Util.listOfOptionToList(List.map(elementSpecs, getClassFromElementSpecOpt));
+  (recordParts, nonRecordParts) := ({makePublicClassPartFromElementItems(
+                                      List.map(List.filterOnTrue(classes, classRestrictionisRecord), makeClassElement))}
+                                    ,
+                                    {makePublicClassPartFromElementItems(
+                                    List.map(List.filterOnTrue(classes, classRestrictionisNotRecord), makeClassElement))});
+end splitRecordsAndOtherElements;
+
+public function getClassFromElementSpecOpt
+"Returns the class from an element spec iff the elementspec is a CLASSDEF.
+ Otherwise returns NONE."
+  input ElementSpec es;
+  output Option<Absyn.Class> outClass;
+algorithm
+ outClass := match es
+   case CLASSDEF(__) then SOME(es.class_);
+   else NONE();
+ end match;
+end getClassFromElementSpecOpt;
+
+public function classHasLocalClassesThatAreFunctions
+"@Author johti17:
+ Same as classHasLocalClasses.
+ However, only returns true if those local classes are functions."
+  input Absyn.Class cls;
+  output Boolean b;
+protected
+  Absyn.Restriction function_restriction = Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.NO_PURITY()));
+algorithm
+  b := classHasLocalClassOfType(cls, function_restriction)
+    or
+      classHasLocalClassOfType(cls, Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.PURE())))
+    or
+      classHasLocalClassOfType(cls, Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.IMPURE())));
+end classHasLocalClassesThatAreFunctions;
 
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

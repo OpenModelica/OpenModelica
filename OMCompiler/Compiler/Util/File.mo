@@ -137,7 +137,7 @@ package Examples
 
   model WriteToFile
     File file = File();
-  initial algorithm
+  algorithm
     open(file,"abc.txt",Mode.Write);
     write(file,"def.fafaf\n");
     writeEscape(file,"xx<def.\"\nfaf>af\n",escape=Escape.JSON);

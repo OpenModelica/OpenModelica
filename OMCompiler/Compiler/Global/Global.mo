@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -67,8 +67,10 @@ constant Integer operatorOverloadingCache = 23;
 constant Integer optionSimCode = 24;
 constant Integer interactiveCache = 25;
 constant Integer isInStream = 26;
-constant Integer MMToJLListIndex = 27;
+constant Integer MM_TO_JL_HT_INDEX = 27;
 constant Integer packageIndexCacheIndex = 28;
+
+
 
 // indexes in System.tick
 // ----------------------
