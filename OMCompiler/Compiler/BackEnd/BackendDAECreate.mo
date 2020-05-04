@@ -226,6 +226,7 @@ algorithm
 
   //remove alias from extVarArray
   extVarsOut := BackendVariable.deleteVars(extAliasVars,extVars);
+  extVarsOut := removeExtAliasBinding(extVarsOut,repl);
 
   //replace in equations
   (oEqs,_) := BackendVarTransform.replaceEquations(oEqs,repl,NONE());
@@ -236,6 +237,33 @@ algorithm
   oInitEqs := listReverse(oInitEqs);
   oRemEqs := listReverse(oRemEqs);
 end getExternalObjectAlias;
+
+
+protected function removeExtAliasBinding "Removes the binding of an external variable if the binding cref ist already detected as an alias variable.
+author: Waurich TUD 2020-05"
+  input BackendDAE.Variables extVarsIn;
+  input BackendVarTransform.VariableReplacements repl;
+  output BackendDAE.Variables extVarsOut;
+protected
+  list<BackendDAE.Var> varLst,extVarLst;
+  DAE.ComponentRef cref;
+algorithm
+  varLst := BackendVariable.varList(extVarsIn);
+  extVarLst := {};
+  for var in varLst loop
+		var := matchcontinue(var)
+	    case (BackendDAE.VAR(bindExp = SOME(DAE.CREF(componentRef=cref))))
+	      algorithm
+	        if BackendVarTransform.hasReplacement(repl,cref) then
+	          var.bindExp := NONE();
+	        end if;
+	    then var;
+	    else var;
+	  end matchcontinue;
+  extVarLst := var::extVarLst;
+  end for;
+  extVarsOut := BackendVariable.listVar(extVarLst);
+end removeExtAliasBinding;
 
 protected function getExternalObjectAlias3 "Gets the alias var and sim var for the given alias equation and adds a replacement rule
 author: waurich TUD 2016-10"
