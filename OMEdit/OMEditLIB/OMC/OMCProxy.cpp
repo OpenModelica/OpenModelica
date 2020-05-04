@@ -3175,9 +3175,9 @@ QList<QString> OMCProxy::parseEncryptedPackage(QString fileName, QString working
  * \param workingDirectory
  * \return
  */
-bool OMCProxy::loadEncryptedPackage(QString fileName, QString workingDirectory)
+bool OMCProxy::loadEncryptedPackage(QString fileName, QString workingDirectory, bool skipUnzip)
 {
-  bool result = mpOMCInterface->loadEncryptedPackage(fileName, workingDirectory);
+  bool result = mpOMCInterface->loadEncryptedPackage(fileName, workingDirectory, skipUnzip);
   printMessagesStringInternal();
   return result;
 }

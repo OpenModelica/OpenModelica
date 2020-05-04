@@ -1169,6 +1169,7 @@ end parseEncryptedPackage;
 function loadEncryptedPackage
   input String fileName;
   input String workdir = "<default>" "The output directory for imported encrypted files. <default> will put the files to current working directory.";
+  input Boolean skipUnzip = false "Skips the unzip of .mol if true. In that case we expect the files are already extracted e.g., because of parseEncryptedPackage() call.";
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
