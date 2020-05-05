@@ -60,7 +60,7 @@ import NFPrefixes.Visibility;
 import ComponentRef = NFComponentRef;
 import NFComponentRef.Origin;
 import Restriction = NFRestriction;
-import NFClassTree.LookupTree;
+import LookupTree = NFLookupTree;
 import NFDuplicateTree;
 
 protected
