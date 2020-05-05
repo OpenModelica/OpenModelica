@@ -37,6 +37,7 @@ encapsulated package NFClassTree
   import NFModifier.Modifier;
   import Import = NFImport;
   import NFBuiltin;
+  import NFDuplicateTree;
 
 protected
   import Array;
@@ -121,71 +122,10 @@ public
     annotation(__OpenModelica_Interface="util");
   end LookupTree;
 
-  encapsulated package DuplicateTree
-    import NFClassTree.LookupTree;
-    import NFInstNode.InstNode;
-
-    type EntryType = enumeration(DUPLICATE, REDECLARE, ENTRY);
-
-    uniontype Entry
-      record ENTRY
-        LookupTree.Entry entry;
-        Option<InstNode> node;
-        list<Entry> children;
-        EntryType ty;
-      end ENTRY;
-    end Entry;
-
-    extends BaseAvlTree(redeclare type Key = String,
-                        redeclare type Value = Entry);
-
-    redeclare function extends keyStr
-    algorithm
-      outString := inKey;
-    end keyStr;
-
-    redeclare function extends valueStr
-    algorithm
-      outString := "";
-    end valueStr;
-
-    redeclare function extends keyCompare
-    algorithm
-      outResult := stringCompare(inKey1, inKey2);
-    end keyCompare;
-
-    function newRedeclare
-      input LookupTree.Entry entry;
-      output Entry redecl = ENTRY(entry, NONE(), {}, EntryType.REDECLARE);
-    end newRedeclare;
-
-    function newDuplicate
-      input LookupTree.Entry kept;
-      input LookupTree.Entry duplicate;
-      output Entry entry = ENTRY(kept, NONE(), {newEntry(duplicate)}, EntryType.DUPLICATE);
-    end newDuplicate;
-
-    function newEntry
-      input LookupTree.Entry lentry;
-      output Entry entry = ENTRY(lentry, NONE(), {}, EntryType.ENTRY);
-    end newEntry;
-
-    function idExistsInEntry
-      input LookupTree.Entry id;
-      input Entry entry;
-      output Boolean exists;
-    algorithm
-      exists := LookupTree.Entry.isEqual(id, entry.entry) or
-                List.exist(entry.children, function idExistsInEntry(id = id));
-    end idExistsInEntry;
-
-    annotation(__OpenModelica_Interface="util");
-  end DuplicateTree;
-
   constant ClassTree EMPTY = ClassTree.PARTIAL_TREE(LookupTree.EMPTY(),
-      listArray({}), listArray({}), listArray({}), listArray({}), DuplicateTree.EMPTY());
+      listArray({}), listArray({}), listArray({}), listArray({}), NFDuplicateTree.EMPTY());
   constant ClassTree EMPTY_FLAT = ClassTree.FLAT_TREE(LookupTree.EMPTY(),
-      listArray({}), listArray({}), listArray({}), DuplicateTree.EMPTY());
+      listArray({}), listArray({}), listArray({}), NFDuplicateTree.EMPTY());
 
   uniontype ClassTree
     record PARTIAL_TREE
@@ -195,7 +135,7 @@ public
       array<InstNode> components;
       array<InstNode> exts;
       array<Import> imports;
-      DuplicateTree.Tree duplicates;
+      NFDuplicateTree.Tree duplicates;
     end PARTIAL_TREE;
 
     record EXPANDED_TREE
@@ -207,7 +147,7 @@ public
       array<InstNode> components;
       array<InstNode> exts;
       array<Import> imports;
-      DuplicateTree.Tree duplicates;
+      NFDuplicateTree.Tree duplicates;
     end EXPANDED_TREE;
 
     record INSTANTIATED_TREE
@@ -218,7 +158,7 @@ public
       list<Integer> localComponents;
       array<InstNode> exts;
       array<Import> imports;
-      DuplicateTree.Tree duplicates;
+      NFDuplicateTree.Tree duplicates;
     end INSTANTIATED_TREE;
 
     record FLAT_TREE
@@ -227,7 +167,7 @@ public
       array<InstNode> classes;
       array<InstNode> components;
       array<Import> imports;
-      DuplicateTree.Tree duplicates;
+      NFDuplicateTree.Tree duplicates;
     end FLAT_TREE;
 
     record EMPTY_TREE
@@ -245,7 +185,7 @@ public
       Integer clsc, compc, extc, i;
       array<InstNode> clss, comps, exts;
       Integer cls_idx = 0, ext_idx = 0, comp_idx = 0;
-      DuplicateTree.Tree dups;
+      NFDuplicateTree.Tree dups;
       list<Import> imps = {};
       array<Import> imps_arr;
       SourceInfo info;
@@ -265,7 +205,7 @@ public
       clss := arrayCreateNoInit(clsc, InstNode.EMPTY_NODE());
       comps := arrayCreateNoInit(compc + extc, InstNode.EMPTY_NODE());
       exts := arrayCreateNoInit(extc, InstNode.EMPTY_NODE());
-      dups := DuplicateTree.new();
+      dups := NFDuplicateTree.new();
       // Make a temporary class tree so we can do lookup for error reporting.
       tree := PARTIAL_TREE(ltree, clss, comps, exts, listArray({}), dups);
 
@@ -291,7 +231,7 @@ public
               // If the class is an element redeclare, add an entry in the duplicate
               // tree so we can check later that it actually redeclares something.
               if SCodeUtil.isElementRedeclare(e) or SCodeUtil.isClassExtends(e) then
-                dups := DuplicateTree.add(dups, e.name, DuplicateTree.newRedeclare(lentry));
+                dups := NFDuplicateTree.add(dups, e.name, NFDuplicateTree.newRedeclare(lentry));
               end if;
             then
               ();
@@ -399,7 +339,7 @@ public
       end for;
 
       // Enumerations can't contain extends, so we can go directly to a flat tree here.
-      tree := FLAT_TREE(ltree, listArray({}), comps, listArray({}), DuplicateTree.EMPTY());
+      tree := FLAT_TREE(ltree, listArray({}), comps, listArray({}), NFDuplicateTree.EMPTY());
     end fromEnumeration;
 
     function addElementsToFlatTree
@@ -414,7 +354,7 @@ public
       array<InstNode> cls_arr, comp_arr;
       list<InstNode> cls_lst = {}, comp_lst = {};
       array<Import> imports;
-      DuplicateTree.Tree duplicates;
+      NFDuplicateTree.Tree duplicates;
       Integer cls_idx, comp_idx;
       LookupTree.Entry lentry;
     algorithm
@@ -454,8 +394,8 @@ public
       array<Import> imps;
       list<tuple<Integer, Integer>> ext_idxs = {};
       Integer ccount, cls_idx, comp_idx = 1;
-      DuplicateTree.Tree dups;
-      Mutable<DuplicateTree.Tree> dups_ptr;
+      NFDuplicateTree.Tree dups;
+      Mutable<NFDuplicateTree.Tree> dups_ptr;
     algorithm
       PARTIAL_TREE(ltree, clss, comps, exts, imps, dups) := tree;
       cls_idx := arrayLength(clss) + 1;
@@ -474,7 +414,7 @@ public
               // If the component is an element redeclare, add an entry in the duplicate
               // tree so we can check later that it actually redeclares something.
               if InstNode.isRedeclare(c) then
-                dups := DuplicateTree.add(dups, c.name, DuplicateTree.newRedeclare(lentry));
+                dups := NFDuplicateTree.add(dups, c.name, NFDuplicateTree.newRedeclare(lentry));
               end if;
 
               comp_idx := comp_idx + 1;
@@ -545,7 +485,7 @@ public
       list<Integer> local_comps = {};
       Integer cls_idx = 1, comp_idx = 1, cls_count, comp_count;
       InstNode node, parent_scope, inner_node, inst_scope;
-      DuplicateTree.Tree dups;
+      NFDuplicateTree.Tree dups;
       Component comp;
       SCode.Element ext_def;
       Boolean is_typish;
@@ -755,7 +695,7 @@ public
       comps[i] := out;
       ltree := addLocalElement(InstNode.name(out), LookupTree.Entry.COMPONENT(i), tree, ltree);
 
-      tree := FLAT_TREE(ltree, listArray({}), comps, listArray({}), DuplicateTree.new());
+      tree := FLAT_TREE(ltree, listArray({}), comps, listArray({}), NFDuplicateTree.new());
     end fromRecordConstructor;
 
     function clone
@@ -786,9 +726,9 @@ public
       end FuncT;
     algorithm
       () := match tree
-        case INSTANTIATED_TREE() guard not DuplicateTree.isEmpty(tree.duplicates)
+        case INSTANTIATED_TREE() guard not NFDuplicateTree.isEmpty(tree.duplicates)
           algorithm
-            DuplicateTree.map(tree.duplicates,
+            NFDuplicateTree.map(tree.duplicates,
               function mapRedeclareChain(func = func, tree = tree));
           then
             ();
@@ -803,9 +743,9 @@ public
       input output ClassTree tree;
     algorithm
       () := match tree
-        case INSTANTIATED_TREE() guard not DuplicateTree.isEmpty(tree.duplicates)
+        case INSTANTIATED_TREE() guard not NFDuplicateTree.isEmpty(tree.duplicates)
           algorithm
-            tree.duplicates := DuplicateTree.map(tree.duplicates,
+            tree.duplicates := NFDuplicateTree.map(tree.duplicates,
               function replaceDuplicates2(tree = tree));
           then
             ();
@@ -1012,10 +952,10 @@ public
       input ClassTree tree;
       output list<Mutable<InstNode>> elements;
     protected
-      DuplicateTree.Entry dup_entry;
+      NFDuplicateTree.Entry dup_entry;
     algorithm
       try
-        dup_entry := DuplicateTree.get(getDuplicates(tree), name);
+        dup_entry := NFDuplicateTree.get(getDuplicates(tree), name);
         elements := resolveDuplicateEntriesPtr(dup_entry, tree);
       else
         elements := {lookupElementPtr(name, tree)};
@@ -1307,9 +1247,9 @@ public
       input ClassTree tree;
     algorithm
       () := match tree
-        case INSTANTIATED_TREE() guard not DuplicateTree.isEmpty(tree.duplicates)
+        case INSTANTIATED_TREE() guard not NFDuplicateTree.isEmpty(tree.duplicates)
           algorithm
-            DuplicateTree.fold(tree.duplicates, checkDuplicates2, tree);
+            NFDuplicateTree.fold(tree.duplicates, checkDuplicates2, tree);
           then
             ();
 
@@ -1319,7 +1259,7 @@ public
 
     function checkDuplicates2
       input String name;
-      input DuplicateTree.Entry entry;
+      input NFDuplicateTree.Entry entry;
       input output ClassTree tree;
     protected
       InstNode kept, dup;
@@ -1327,7 +1267,7 @@ public
       SOME(kept) := entry.node;
 
       () := match entry.ty
-        case DuplicateTree.EntryType.REDECLARE
+        case NFDuplicateTree.EntryType.REDECLARE
           algorithm
 
           then
@@ -1357,10 +1297,10 @@ public
       input ClassTree tree;
       output InstNode node;
     protected
-      DuplicateTree.Entry entry;
+      NFDuplicateTree.Entry entry;
     algorithm
       try
-        entry := DuplicateTree.get(getDuplicates(tree), name);
+        entry := NFDuplicateTree.get(getDuplicates(tree), name);
         entry := listHead(entry.children);
 
         if isSome(entry.node) then
@@ -1495,7 +1435,7 @@ public
 
     function getDuplicates
       input ClassTree tree;
-      output DuplicateTree.Tree duplicates;
+      output NFDuplicateTree.Tree duplicates;
     algorithm
       duplicates := match tree
         case PARTIAL_TREE() then tree.duplicates;
@@ -1681,23 +1621,23 @@ public
       input String name;
       input LookupTree.Entry duplicateEntry;
       input LookupTree.Entry keptEntry;
-      input output Mutable<DuplicateTree.Tree> duplicates;
+      input output Mutable<NFDuplicateTree.Tree> duplicates;
     algorithm
       Mutable.update(duplicates,
-        DuplicateTree.add(Mutable.access(duplicates), name,
-          DuplicateTree.newDuplicate(keptEntry, duplicateEntry), addDuplicateConflict));
+        NFDuplicateTree.add(Mutable.access(duplicates), name,
+          NFDuplicateTree.newDuplicate(keptEntry, duplicateEntry), addDuplicateConflict));
     end addDuplicate;
 
     function addDuplicateConflict
-      input DuplicateTree.Entry newEntry;
-      input DuplicateTree.Entry oldEntry;
+      input NFDuplicateTree.Entry newEntry;
+      input NFDuplicateTree.Entry oldEntry;
       input String name;
-      output DuplicateTree.Entry entry;
+      output NFDuplicateTree.Entry entry;
     algorithm
       // The previously kept entry should be either kept or dup, since it's the
       // one found during lookup. So we can ignore it here.
-      entry := DuplicateTree.ENTRY(newEntry.entry, NONE(),
-        listHead(newEntry.children) :: oldEntry.children, DuplicateTree.EntryType.DUPLICATE);
+      entry := NFDuplicateTree.ENTRY(newEntry.entry, NONE(),
+        listHead(newEntry.children) :: oldEntry.children, NFDuplicateTree.EntryType.DUPLICATE);
     end addDuplicateConflict;
 
     function resolveEntry
@@ -1737,7 +1677,7 @@ public
     end resolveEntryPtr;
 
     function resolveDuplicateEntriesPtr
-      input DuplicateTree.Entry entry;
+      input NFDuplicateTree.Entry entry;
       input ClassTree tree;
       input output list<Mutable<InstNode>> elements = {};
     protected
@@ -1870,11 +1810,11 @@ public
       input output LookupTree.Tree tree "The lookup tree to add names to";
       input Integer classOffset "The index of the first class";
       input Integer componentOffset "The index of the first component";
-      input Mutable<DuplicateTree.Tree> duplicates "Duplicate elements info.";
+      input Mutable<NFDuplicateTree.Tree> duplicates "Duplicate elements info.";
     protected
       ClassTree cls_tree;
       LookupTree.Tree ext_tree;
-      DuplicateTree.Tree ext_dups, dups;
+      NFDuplicateTree.Tree ext_dups, dups;
       LookupTree.ConflictFunc conf_func;
     algorithm
       // The extends node's lookup tree should at this point contain all the
@@ -1887,16 +1827,16 @@ public
       (ext_tree, ext_dups) := match cls_tree
         case EXPANDED_TREE() then (cls_tree.tree, cls_tree.duplicates);
         case FLAT_TREE() then (cls_tree.tree, cls_tree.duplicates);
-        else algorithm return; then (tree, DuplicateTree.new());
+        else algorithm return; then (tree, NFDuplicateTree.new());
       end match;
 
       // Copy entries from the extends node's duplicate tree if there are any.
-      if not DuplicateTree.isEmpty(ext_dups) then
+      if not NFDuplicateTree.isEmpty(ext_dups) then
         // Offset the entries so they're correct for the inheriting class tree.
-        dups := DuplicateTree.map(ext_dups,
+        dups := NFDuplicateTree.map(ext_dups,
           function offsetDuplicates(classOffset = classOffset, componentOffset = componentOffset));
         // Join the two duplicate trees together.
-        dups := DuplicateTree.join(Mutable.access(duplicates), dups, joinDuplicates);
+        dups := NFDuplicateTree.join(Mutable.access(duplicates), dups, joinDuplicates);
         Mutable.update(duplicates, dups);
       end if;
 
@@ -1946,16 +1886,16 @@ public
       input LookupTree.Entry newEntry;
       input LookupTree.Entry oldEntry;
       input String name;
-      input Mutable<DuplicateTree.Tree> duplicates;
-      input DuplicateTree.Tree extDuplicates;
+      input Mutable<NFDuplicateTree.Tree> duplicates;
+      input NFDuplicateTree.Tree extDuplicates;
       output LookupTree.Entry entry;
     protected
-      DuplicateTree.Tree dups;
-      Option<DuplicateTree.Entry> opt_dup_entry;
-      DuplicateTree.Entry dup_entry;
+      NFDuplicateTree.Tree dups;
+      Option<NFDuplicateTree.Entry> opt_dup_entry;
+      NFDuplicateTree.Entry dup_entry;
       Integer new_id = LookupTree.Entry.index(newEntry);
       Integer old_id = LookupTree.Entry.index(oldEntry);
-      DuplicateTree.EntryType ty;
+      NFDuplicateTree.EntryType ty;
     algorithm
       // Overwrite the existing entry if it's an import. This happens when a
       // class both imports and inherits the same name.
@@ -1965,19 +1905,19 @@ public
       end if;
 
       dups := Mutable.access(duplicates);
-      opt_dup_entry := DuplicateTree.getOpt(dups, name);
+      opt_dup_entry := NFDuplicateTree.getOpt(dups, name);
 
       if isNone(opt_dup_entry) then
         // If no duplicate entry yet exists, add a new one.
         if new_id < old_id then
           entry := newEntry;
-          dup_entry := DuplicateTree.newDuplicate(newEntry, oldEntry);
+          dup_entry := NFDuplicateTree.newDuplicate(newEntry, oldEntry);
         else
           entry := oldEntry;
-          dup_entry := DuplicateTree.newDuplicate(oldEntry, newEntry);
+          dup_entry := NFDuplicateTree.newDuplicate(oldEntry, newEntry);
         end if;
 
-        dups := DuplicateTree.add(dups, name, dup_entry);
+        dups := NFDuplicateTree.add(dups, name, dup_entry);
         Mutable.update(duplicates, dups);
       else
         SOME(dup_entry) := opt_dup_entry;
@@ -1987,12 +1927,12 @@ public
         // The new might not exist simply because it hasn't been added yet, while the old might not
         // exist because it wasn't a duplicate in its own scope. At least one of them must exist though,
         // since duplicate entries are added for any name occurring more than once.
-        if not DuplicateTree.idExistsInEntry(newEntry, dup_entry) then
-          if ty == DuplicateTree.EntryType.REDECLARE then
+        if not NFDuplicateTree.idExistsInEntry(newEntry, dup_entry) then
+          if ty == NFDuplicateTree.EntryType.REDECLARE then
             // If the existing entry is for a redeclare, then the position of the element
             // doesn't matter and the new entry should be added as a child to the redeclare.
             entry := newEntry;
-            dup_entry.children := DuplicateTree.newEntry(newEntry) :: dup_entry.children;
+            dup_entry.children := NFDuplicateTree.newEntry(newEntry) :: dup_entry.children;
           else
             // Otherwise we need to keep the 'first' element as the parent.
             // Note that this only actually works for components, since we don't
@@ -2001,28 +1941,28 @@ public
             // component to a class here, but that will be caught in checkDuplicates.
             if new_id < old_id then
               entry := newEntry;
-              dup_entry := DuplicateTree.Entry.ENTRY(newEntry, NONE(),
-                DuplicateTree.newEntry(oldEntry) :: dup_entry.children, dup_entry.ty);
+              dup_entry := NFDuplicateTree.Entry.ENTRY(newEntry, NONE(),
+                NFDuplicateTree.newEntry(oldEntry) :: dup_entry.children, dup_entry.ty);
             else
               entry := oldEntry;
-              dup_entry.children := DuplicateTree.newEntry(newEntry) :: dup_entry.children;
+              dup_entry.children := NFDuplicateTree.newEntry(newEntry) :: dup_entry.children;
             end if;
           end if;
 
-          dups := DuplicateTree.update(dups, name, dup_entry);
+          dups := NFDuplicateTree.update(dups, name, dup_entry);
           Mutable.update(duplicates, dups);
-        elseif not DuplicateTree.idExistsInEntry(oldEntry, dup_entry) then
+        elseif not NFDuplicateTree.idExistsInEntry(oldEntry, dup_entry) then
           // Same as above but we add the old entry instead.
-          if ty == DuplicateTree.EntryType.REDECLARE or new_id < old_id then
+          if ty == NFDuplicateTree.EntryType.REDECLARE or new_id < old_id then
             entry := newEntry;
-            dup_entry.children := DuplicateTree.newEntry(oldEntry) :: dup_entry.children;
+            dup_entry.children := NFDuplicateTree.newEntry(oldEntry) :: dup_entry.children;
           else
             entry := newEntry;
-            dup_entry := DuplicateTree.Entry.ENTRY(newEntry, NONE(),
-              DuplicateTree.newEntry(oldEntry) :: dup_entry.children, dup_entry.ty);
+            dup_entry := NFDuplicateTree.Entry.ENTRY(newEntry, NONE(),
+              NFDuplicateTree.newEntry(oldEntry) :: dup_entry.children, dup_entry.ty);
           end if;
 
-          dups := DuplicateTree.update(dups, name, dup_entry);
+          dups := NFDuplicateTree.update(dups, name, dup_entry);
           Mutable.update(duplicates, dups);
         else
           // If both the old and the new entry already exists, which can happen if the
@@ -2036,17 +1976,17 @@ public
       "Offsets all values in the given entry so that they become valid for the
        inheriting class."
       input String name;
-      input DuplicateTree.Entry entry;
+      input NFDuplicateTree.Entry entry;
       input Integer classOffset;
       input Integer componentOffset;
-      output DuplicateTree.Entry offsetEntry;
+      output NFDuplicateTree.Entry offsetEntry;
     protected
       LookupTree.Entry parent;
-      list<DuplicateTree.Entry> children;
+      list<NFDuplicateTree.Entry> children;
     algorithm
       parent := offsetDuplicate(entry.entry, classOffset, componentOffset);
       children := list(offsetDuplicates(name, c, classOffset, componentOffset) for c in entry.children);
-      offsetEntry := DuplicateTree.ENTRY(parent, NONE(), children, entry.ty);
+      offsetEntry := NFDuplicateTree.ENTRY(parent, NONE(), children, entry.ty);
     end offsetDuplicates;
 
     function offsetDuplicate
@@ -2065,10 +2005,10 @@ public
 
     function joinDuplicates
       "Joins two duplicate tree entries together."
-      input DuplicateTree.Entry newEntry;
-      input DuplicateTree.Entry oldEntry;
+      input NFDuplicateTree.Entry newEntry;
+      input NFDuplicateTree.Entry oldEntry;
       input String name;
-      output DuplicateTree.Entry entry = oldEntry;
+      output NFDuplicateTree.Entry entry = oldEntry;
     algorithm
       // Add the new entry as a child of the old entry.
       entry.children := newEntry :: entry.children;
@@ -2077,15 +2017,15 @@ public
     function enumerateDuplicates
       "Returns the indices of the duplicate classes and components,
        not including the ones that should be kept."
-      input DuplicateTree.Tree duplicates;
+      input NFDuplicateTree.Tree duplicates;
       output list<Integer> classes;
       output list<Integer> components;
     algorithm
-      if DuplicateTree.isEmpty(duplicates) then
+      if NFDuplicateTree.isEmpty(duplicates) then
         classes := {};
         components := {};
       else
-        (classes, components) := DuplicateTree.fold_2(duplicates, enumerateDuplicates2, {}, {});
+        (classes, components) := NFDuplicateTree.fold_2(duplicates, enumerateDuplicates2, {}, {});
         classes := List.sort(classes, intGt);
         components := List.sort(components, intGt);
       end if;
@@ -2093,7 +2033,7 @@ public
 
     function enumerateDuplicates2
       input String name;
-      input DuplicateTree.Entry entry;
+      input NFDuplicateTree.Entry entry;
       input output list<Integer> classes;
       input output list<Integer> components;
     algorithm
@@ -2103,7 +2043,7 @@ public
     end enumerateDuplicates2;
 
     function enumerateDuplicates3
-      input DuplicateTree.Entry entry;
+      input NFDuplicateTree.Entry entry;
       input output list<Integer> classes;
       input output list<Integer> components;
     algorithm
@@ -2136,7 +2076,7 @@ public
 
     function mapRedeclareChain
       input String name;
-      input output DuplicateTree.Entry entry;
+      input output NFDuplicateTree.Entry entry;
       input FuncT func;
       input ClassTree tree;
 
@@ -2154,7 +2094,7 @@ public
     end mapRedeclareChain;
 
     function getRedeclareChain
-      input DuplicateTree.Entry entry;
+      input NFDuplicateTree.Entry entry;
       input ClassTree tree;
       input output list<Mutable<InstNode>> chain = {};
     algorithm
@@ -2163,7 +2103,7 @@ public
           Mutable<InstNode> node_ptr;
           InstNode node;
 
-        case DuplicateTree.EntryType.REDECLARE
+        case NFDuplicateTree.EntryType.REDECLARE
           algorithm
             node_ptr := resolveEntryPtr(entry.entry, tree);
 
@@ -2183,7 +2123,7 @@ public
           then
             getRedeclareChain(listHead(entry.children), tree, node_ptr :: chain);
 
-        case DuplicateTree.EntryType.ENTRY
+        case NFDuplicateTree.EntryType.ENTRY
           algorithm
             node_ptr := resolveEntryPtr(entry.entry, tree);
           then
@@ -2195,25 +2135,25 @@ public
 
     function replaceDuplicates2
       input String name;
-      input output DuplicateTree.Entry entry;
+      input output NFDuplicateTree.Entry entry;
       input ClassTree tree;
     protected
       InstNode kept;
       Mutable<InstNode> node_ptr;
-      list<DuplicateTree.Entry> children;
-      DuplicateTree.Entry kept_entry;
+      list<NFDuplicateTree.Entry> children;
+      NFDuplicateTree.Entry kept_entry;
     algorithm
       node_ptr := resolveEntryPtr(entry.entry, tree);
 
       () := match entry.ty
-        case DuplicateTree.EntryType.REDECLARE
+        case NFDuplicateTree.EntryType.REDECLARE
           algorithm
             kept := Mutable.access(resolveEntryPtr(entry.entry, tree));
             entry := replaceDuplicates4(entry, kept);
           then
             ();
 
-        case DuplicateTree.EntryType.DUPLICATE
+        case NFDuplicateTree.EntryType.DUPLICATE
           algorithm
             kept := Mutable.access(node_ptr);
             entry.node := SOME(kept);
@@ -2226,7 +2166,7 @@ public
     end replaceDuplicates2;
 
     function replaceDuplicates3
-      input output DuplicateTree.Entry entry;
+      input output NFDuplicateTree.Entry entry;
       input InstNode kept;
       input ClassTree tree;
     protected
@@ -2241,7 +2181,7 @@ public
     end replaceDuplicates3;
 
     function replaceDuplicates4
-      input output DuplicateTree.Entry entry;
+      input output NFDuplicateTree.Entry entry;
       input InstNode node;
     algorithm
       entry.node := SOME(node);
