@@ -4315,6 +4315,9 @@ void LibraryWidget::openEncrytpedModelicaLibrary(QString fileName, QString encod
       }
     }
   }
+  if (showProgress) {
+    MainWindow::instance()->getStatusBar()->clearMessage();
+  }
 }
 
 /*!
