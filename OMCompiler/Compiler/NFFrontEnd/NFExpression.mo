@@ -4330,6 +4330,16 @@ public
     end match;
   end isEmpty;
 
+  function isEnd
+    input Expression exp;
+    output Boolean isend;
+  algorithm
+    isend := match exp
+      case END() then true;
+      else false;
+    end match;
+  end isEnd;
+
   function enumIndexExp
     input Expression enumExp;
     output Expression indexExp;

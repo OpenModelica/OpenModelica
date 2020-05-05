@@ -316,7 +316,7 @@ public
   uniontype IfEquationBody
     record IF_EQUATION_BODY
       Expression condition                  "the if-condition" ;
-      list<Equation> then_eqns              "body equations";
+      list<Pointer<Equation>> then_eqns     "body equations";
       Option<IfEquationBody> else_if        "optional elseif equation";
     end IF_EQUATION_BODY;
 
@@ -329,13 +329,13 @@ public
     protected
       IfEquationBody elseIf;
     algorithm
-      if not Expression.isEmpty(body.condition) then
+      if not Expression.isEnd(body.condition) then
         str := elseStr + "if " + Expression.toString(body.condition) + " then \n";
       else
         str := elseStr + "\n";
       end if;
       for eqn in body.then_eqns loop
-        str := str + Equation.toString(eqn, indent + "  ") + "\n";
+        str := str + Equation.toString(Pointer.access(eqn), indent + "  ") + "\n";
       end for;
       if isSome(body.else_if) then
         SOME(elseIf) := body.else_if;
@@ -365,7 +365,7 @@ public
       end if;
 
       // referenceEq for lists?
-      ifBody.then_eqns := List.map(ifBody.then_eqns,function Equation.map(funcExp = funcExp, funcCrefOpt = funcCrefOpt));
+      ifBody.then_eqns := List.map(ifBody.then_eqns, function Pointer.apply(func = function Equation.map(funcExp = function funcExp(), funcCrefOpt = function funcCrefOpt())));
     end map;
   end IfEquationBody;
 
@@ -585,82 +585,6 @@ public
 
   constant EvaluationStages DEFAULT_EVALUATION_STAGES = EVALUATION_STAGES(false,false,false,false);
 
-  uniontype Equations
-    record EQUATIONS
-      ExpandableArray<Equation> eqArr;
-    end EQUATIONS;
-
-    function toString
-      input Equations equations;
-      input output String str = "";
-    protected
-      Integer numberOfElements = ExpandableArray.getNumberOfElements(equations.eqArr);
-    algorithm
-      str := StringUtil.headline_3(str + " Equations (" + intString(numberOfElements) + ")") + "\n";
-      for i in 1:numberOfElements loop
-        str := str + "(" + intString(i) + ")" + Equation.toString(ExpandableArray.get(i, equations.eqArr), "\t") + "\n";
-      end for;
-    end toString;
-
-    function fromList
-      input list<Equation> eq_lst;
-      output Equations equations;
-    algorithm
-    equations := EQUATIONS(ExpandableArray.new(listLength(eq_lst), DUMMY_EQUATION()));
-      for eq in eq_lst loop
-        equations.eqArr := ExpandableArray.add(eq, equations.eqArr);
-      end for;
-    end fromList;
-
-    function map
-      "Traverses all equations and applies a function to them."
-      input output Equations equations;
-      input MapFunc func;
-      partial function MapFunc
-        input output Equation e;
-      end MapFunc;
-    protected
-      Equation eq, new_eq;
-    algorithm
-      for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
-        if ExpandableArray.occupied(i, equations.eqArr) then
-          eq := ExpandableArray.get(i, equations.eqArr);
-          new_eq := func(eq);
-          if not referenceEq(eq, new_eq) then
-            ExpandableArray.update(i, new_eq, equations.eqArr);
-          end if;
-        end if;
-      end for;
-    end map;
-
-    function mapExp
-      "Traverses all expressions of all equations and applies a function to it.
-      Optional second input to also traverse crefs, only needed for simple
-      eqns, when eqns and algorithms."
-      input output Equations equations;
-      input MapFuncExp funcExp;
-      input Option<MapFuncCref> funcCrefOpt = NONE();
-      partial function MapFuncExp
-        input output Expression e;
-      end MapFuncExp;
-      partial function MapFuncCref
-        input output ComponentRef c;
-      end MapFuncCref;
-    protected
-      Equation eq, new_eq;
-    algorithm
-      for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
-        if ExpandableArray.occupied(i, equations.eqArr) then
-          eq := ExpandableArray.get(i, equations.eqArr);
-          new_eq := Equation.map(eq, funcExp, funcCrefOpt);
-          if not referenceEq(eq, new_eq) then
-            ExpandableArray.update(i, new_eq, equations.eqArr);
-          end if;
-        end if;
-      end for;
-    end mapExp;
-  end Equations;
-
   uniontype EquationPointers
     record EQUATION_POINTERS
       ExpandableArray<Pointer<Equation>> eqArr;
@@ -682,7 +606,7 @@ public
       input list<Pointer<Equation>> eq_lst;
       output EquationPointers equationPointers;
     algorithm
-    equationPointers := EQUATION_POINTERS(ExpandableArray.new(listLength(eq_lst), Pointer.create(DUMMY_EQUATION())));
+      equationPointers := EQUATION_POINTERS(ExpandableArray.new(listLength(eq_lst), Pointer.create(DUMMY_EQUATION())));
       for eq in eq_lst loop
         equationPointers.eqArr := ExpandableArray.add(eq, equationPointers.eqArr);
       end for;
@@ -723,14 +647,17 @@ public
         input output ComponentRef c;
       end MapFuncCref;
     protected
+      Pointer<Equation> eq_ptr;
       Equation eq, new_eq;
     algorithm
       for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
         if ExpandableArray.occupied(i, equations.eqArr) then
-          eq := Pointer.access(ExpandableArray.get(i, equations.eqArr));
+          eq_ptr := ExpandableArray.get(i, equations.eqArr);
+          eq := Pointer.access(eq_ptr);
           new_eq := Equation.map(eq, funcExp, funcCrefOpt);
           if not referenceEq(eq, new_eq) then
-            ExpandableArray.update(i, Pointer.create(new_eq), equations.eqArr);
+            // Do not update the expandable array entry, but the pointer itself
+            Pointer.update(eq_ptr, new_eq);
           end if;
         end if;
       end for;
@@ -739,7 +666,7 @@ public
 
   uniontype EqData
     record EQ_DATA_SIM
-      Equations equations           "All equations";
+      EquationPointers equations           "All equations";
       EquationPointers continuous   "Continuous equations";
       EquationPointers discretes    "Discrete equations";
       EquationPointers initials     "(Exclusively) Initial equations";
@@ -747,14 +674,14 @@ public
     end EQ_DATA_SIM;
 
     record EQ_DATA_JAC
-      Equations equations           "All equations";
+      EquationPointers equations           "All equations";
       EquationPointers results      "Result equations";
       EquationPointers temporary    "Temporary inner equations";
       EquationPointers auxiliaries  "Auxiliary equations";
     end EQ_DATA_JAC;
 
     record EQ_DATA_HESS
-      Equations equations           "All equations";
+      EquationPointers equations           "All equations";
       Pointer<Equation> result      "Result equation";
       EquationPointers temporary    "Temporary inner equations";
       EquationPointers auxiliaries  "Auxiliary equations";
@@ -772,7 +699,7 @@ public
         case qualEqData as EQ_DATA_SIM()
           algorithm
             if level == 0 then
-              tmp :=  Equations.toString(qualEqData.equations, "Simulation");
+              tmp :=  EquationPointers.toString(qualEqData.equations, "Simulation");
             else
               tmp :=  EquationPointers.toString(qualEqData.continuous, "Continuous") + "\n" +
                       EquationPointers.toString(qualEqData.discretes, "Discrete") + "\n" +
@@ -783,7 +710,7 @@ public
         case qualEqData as EQ_DATA_JAC()
           algorithm
             if level == 0 then
-              tmp :=  Equations.toString(qualEqData.equations, "Jacobian");
+              tmp :=  EquationPointers.toString(qualEqData.equations, "Jacobian");
             else
               tmp :=  EquationPointers.toString(qualEqData.results, "Result") + "\n" +
                       EquationPointers.toString(qualEqData.temporary, "Temporary Inner") + "\n" +
@@ -793,7 +720,7 @@ public
         case qualEqData as EQ_DATA_HESS()
           algorithm
             if level == 0 then
-              tmp :=  Equations.toString(qualEqData.equations, "Hessian");
+              tmp :=  EquationPointers.toString(qualEqData.equations, "Hessian");
             else
               tmp :=  StringUtil.headline_4("Result Equation Pointer") + "\n" +
                       Equation.toString(Pointer.access(qualEqData.result)) + "\n" +
@@ -808,7 +735,7 @@ public
 
     function setEquations
       input output EqData eqData;
-      input Equations equations;
+      input EquationPointers equations;
     algorithm
       eqData := match eqData
         local

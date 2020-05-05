@@ -60,6 +60,7 @@ protected
 
   // Util imports
   import Error;
+  import ExpandableArray;
   import Flags;
   import StringUtil;
 
@@ -110,61 +111,60 @@ protected
     input list<Variable> varList;
     output BVariable.VarData variableData;
   protected
-    BVariable.Variables variables;
     Variable lowVar;
+    Pointer<Variable> lowVar_ptr;
     list<Pointer<Variable>> unknowns_lst = {}, knowns_lst = {}, auxiliaries_lst = {}, aliasVars_lst = {};
     list<Pointer<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, previous_lst = {};
     list<Pointer<Variable>> parameters_lst = {}, constants_lst = {};
-    BVariable.VariablePointers unknowns, knowns, auxiliaries, aliasVars;
+    BVariable.VariablePointers variables, unknowns, knowns, auxiliaries, aliasVars;
     BVariable.VariablePointers states, derivatives, algebraics, discretes, previous;
     BVariable.VariablePointers parameters, constants;
-    BVariable.StateOrder stateOrder;
   algorithm
-    // instantiate variable data and stateOrder
-    variables := BVariable.Variables.empty(listLength(varList));
-    stateOrder := BVariable.NO_STATE_ORDER();
+    // instantiate variable data
+    variables := BVariable.VariablePointers.empty(listLength(varList));
     // sort vars to have sorting independent heuristic behaviours
     // ToDo! kabdelhak: use already existing hash values for this?
 
     // routine to prepare the lists for pointer arrays
     for var in varList loop
       lowVar := lowerVariable(var);
-      variables := BVariable.Variables.addVar(lowVar, variables);
+      lowVar_ptr := Pointer.create(lowVar);
+      variables := BVariable.VariablePointers.addVar(lowVar_ptr, variables);
       _ := match lowVar.backendinfo.varKind
 
         case BackendExtension.ALGEBRAIC() algorithm
-          algebraics_lst := Pointer.create(lowVar) :: algebraics_lst;
-          unknowns_lst := Pointer.create(lowVar) :: unknowns_lst;
+          algebraics_lst := lowVar_ptr :: algebraics_lst;
+          unknowns_lst := lowVar_ptr :: unknowns_lst;
         then ();
 
         case BackendExtension.STATE() algorithm
-          states_lst := Pointer.create(lowVar) :: states_lst;
-          knowns_lst := Pointer.create(lowVar) :: knowns_lst;
+          states_lst := lowVar_ptr :: states_lst;
+          knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
 
         case BackendExtension.STATE_DER() algorithm
-          derivatives_lst := Pointer.create(lowVar) :: derivatives_lst;
-          unknowns_lst := Pointer.create(lowVar) :: unknowns_lst;
+          derivatives_lst := lowVar_ptr :: derivatives_lst;
+          unknowns_lst := lowVar_ptr :: unknowns_lst;
         then ();
 
         case BackendExtension.DISCRETE() algorithm
-          discretes_lst := Pointer.create(lowVar) :: discretes_lst;
-          unknowns_lst := Pointer.create(lowVar) :: unknowns_lst;
+          discretes_lst := lowVar_ptr :: discretes_lst;
+          unknowns_lst := lowVar_ptr :: unknowns_lst;
         then ();
 
         case BackendExtension.PREVIOUS() algorithm
-          previous_lst := Pointer.create(lowVar) :: previous_lst;
-          knowns_lst := Pointer.create(lowVar) :: knowns_lst;
+          previous_lst := lowVar_ptr :: previous_lst;
+          knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
 
         case BackendExtension.PARAMETER() algorithm
-          parameters_lst := Pointer.create(lowVar) :: parameters_lst;
-          knowns_lst := Pointer.create(lowVar) :: knowns_lst;
+          parameters_lst := lowVar_ptr :: parameters_lst;
+          knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
 
         case BackendExtension.CONSTANT() algorithm
-          constants_lst := Pointer.create(lowVar) :: constants_lst;
-          knowns_lst := Pointer.create(lowVar) :: knowns_lst;
+          constants_lst := lowVar_ptr :: constants_lst;
+          knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
 
         /* other cases should not occur up until now */
@@ -192,7 +192,7 @@ protected
 
     /* create variable data */
     variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, auxiliaries, aliasVars,
-                    stateOrder, states, derivatives, algebraics, discretes, previous, parameters, constants);
+                    states, derivatives, algebraics, discretes, previous, parameters, constants);
   end lowerVariableData;
 
   function lowerVariable
@@ -207,8 +207,8 @@ protected
       varKind := lowerVariableKind(Variable.variability(var), attributes, var.ty);
       var.backendinfo := BackendExtension.BACKEND_INFO(varKind, attributes, NONE());
 
-      // ToDo! This somehow breaks the pipeline. Cyclic pointers not allowed?
-      // var.name := lowerComponentReferenceInstNode(var.name, Pointer.create(var));
+      // This creates a cyclic dependency, be aware of that!
+      var.name := lowerComponentReferenceInstNode(var.name, Pointer.create(var));
 
       // Remove old type attribute information since it has been converted.
       var.typeAttributes := {};
@@ -269,45 +269,47 @@ protected
     input list<Algorithm> al_lst;
     input list<FEquation> init_eq_lst;
     input list<Algorithm> init_al_lst;
-    input BVariable.Variables variables;
+    input BVariable.VariablePointers variables;
     output BEquation.EqData eqData;
   protected
-    list<Equation> equation_lst;
-    list<Pointer<Equation>> continuous_lst = {}, discretes_lst = {}, initials_lst = {}, auxiliaries_lst = {};
-    BEquation.Equations equations;
-    BEquation.EquationPointers continuous, discretes, initials, auxiliaries;
+    list<Pointer<Equation>> equation_lst, continuous_lst = {}, discretes_lst = {}, initials_lst = {}, auxiliaries_lst = {};
+    BEquation.EquationPointers equations, continuous, discretes, initials, auxiliaries;
+    Pointer<Equation> eq;
   algorithm
     equation_lst := lowerEquationsAndAlgorithms(eq_lst, al_lst, init_eq_lst, init_al_lst);
-    equations := BEquation.Equations.fromList(equation_lst);
+    equations := BEquation.EquationPointers.fromList(equation_lst);
     equations := lowerComponentReferences(equations, variables);
 
-    for eq in equation_lst loop
-      _:= match Equation.getAttributes(eq)
-        case BEquation.EQUATION_ATTRIBUTES(kind = BEquation.DYNAMIC_EQUATION())
-          algorithm
-            continuous_lst := Pointer.create(eq) :: continuous_lst;
-        then ();
+    for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
+      if ExpandableArray.occupied(i, equations.eqArr) then
+        eq := ExpandableArray.get(i, equations.eqArr);
+        _:= match Equation.getAttributes(Pointer.access(eq))
+          case BEquation.EQUATION_ATTRIBUTES(kind = BEquation.DYNAMIC_EQUATION())
+            algorithm
+              continuous_lst := eq :: continuous_lst;
+          then ();
 
-        case BEquation.EQUATION_ATTRIBUTES(kind = BEquation.DISCRETE_EQUATION())
-          algorithm
-            discretes_lst := Pointer.create(eq) :: discretes_lst;
-        then ();
+          case BEquation.EQUATION_ATTRIBUTES(kind = BEquation.DISCRETE_EQUATION())
+            algorithm
+              discretes_lst := eq :: discretes_lst;
+          then ();
 
-        case BEquation.EQUATION_ATTRIBUTES(kind = BEquation.INITIAL_EQUATION())
-          algorithm
-            initials_lst := Pointer.create(eq) :: initials_lst;
-        then ();
+          case BEquation.EQUATION_ATTRIBUTES(kind = BEquation.INITIAL_EQUATION())
+            algorithm
+              initials_lst := eq :: initials_lst;
+          then ();
 
-        case BEquation.EQUATION_ATTRIBUTES(kind = BEquation.AUX_EQUATION())
-          algorithm
-            auxiliaries_lst := Pointer.create(eq) :: auxiliaries_lst;
-        then ();
+          case BEquation.EQUATION_ATTRIBUTES(kind = BEquation.AUX_EQUATION())
+            algorithm
+              auxiliaries_lst := eq :: auxiliaries_lst;
+          then ();
 
-        else
-          algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerEquationData failed for \n" + Equation.toString(eq)});
-        then fail();
-      end match;
+          else
+            algorithm
+              Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerEquationData failed for \n" + Equation.toString(Pointer.access(eq))});
+          then fail();
+        end match;
+      end if;
     end for;
 
     continuous := BEquation.EquationPointers.fromList(continuous_lst);
@@ -325,7 +327,7 @@ protected
     input list<Algorithm> al_lst;
     input list<FEquation> init_eq_lst;
     input list<Algorithm> init_al_lst;
-    output list<Equation> equations = {};
+    output list<Pointer<Equation>> equations = {};
   algorithm
     // ---------------------------
     // convert all equations
@@ -361,11 +363,11 @@ protected
   function lowerEquation
     input FEquation frontend_equation         "Original Frontend equation.";
     input Boolean init                        "True if an initial equation should be created.";
-    output list<Equation> backend_equations   "Resulting Backend equations.";
+    output list<Pointer<Equation>> backend_equations   "Resulting Backend equations.";
   algorithm
     backend_equations := match frontend_equation
       local
-        list<Equation> result = {}, new_body;
+        list<Pointer<Equation>> result = {}, new_body;
         Expression lhs, rhs, range;
         ComponentRef lhs_cref, rhs_cref;
         list<FEquation> body;
@@ -378,21 +380,21 @@ protected
       case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
         algorithm
           attr := lowerEquationAttributes(ty, init);
-          result := if Type.isComplex(ty) then {BEquation.RECORD_EQUATION(Type.dimensionCount(ty), lhs, rhs, source, attr)}
-                                          else {BEquation.SCALAR_EQUATION(lhs, rhs, source, attr)};
+          result := if Type.isComplex(ty) then {Pointer.create(BEquation.RECORD_EQUATION(Type.dimensionCount(ty), lhs, rhs, source, attr))}
+                                          else {Pointer.create(BEquation.SCALAR_EQUATION(lhs, rhs, source, attr))};
       then result;
 
       case FEquation.CREF_EQUALITY(lhs = lhs_cref as NFComponentRef.CREF(ty = ty), rhs = rhs_cref, source = source)
         algorithm
           attr := lowerEquationAttributes(ty, init);
           // No check for complex. Simple equation is more important than complex. -> alias removal!
-      then {BEquation.SIMPLE_EQUATION(lhs_cref, rhs_cref, source, attr)};
+      then {Pointer.create(BEquation.SIMPLE_EQUATION(lhs_cref, rhs_cref, source, attr))};
 
       case FEquation.ARRAY_EQUALITY(lhs = lhs, rhs = rhs, ty = ty as Type.ARRAY(), source = source)
         algorithm
           attr := lowerEquationAttributes(Type.arrayElementType(ty), init);
           //ToDo! How to get Record size and replace NONE()?
-      then {BEquation.ARRAY_EQUATION(List.map(ty.dimensions, Dimension.size), lhs, rhs, source, attr, NONE())};
+      then {Pointer.create(BEquation.ARRAY_EQUATION(List.map(ty.dimensions, Dimension.size), lhs, rhs, source, attr, NONE()))};
 
       case FEquation.FOR(iterator = iterator, range = SOME(range), body = body, source = source)
         algorithm
@@ -401,17 +403,17 @@ protected
         for eq in body loop
           new_body := lowerEquation(eq, init);
           for body_elem in new_body loop
-            result := BEquation.FOR_EQUATION(iterator, range, body_elem, source, Equation.getAttributes(body_elem)) :: result;
+            result := Pointer.create(BEquation.FOR_EQUATION(iterator, range, Pointer.access(body_elem), source, Equation.getAttributes(Pointer.access(body_elem)))) :: result;
           end for;
         end for;
       then result;
 
       // if equation
-      case FEquation.IF() then {lowerIfEquation(frontend_equation, init)};
+      case FEquation.IF() then {Pointer.create(lowerIfEquation(frontend_equation, init))};
 
       // When equation cases
-      case FEquation.WHEN() then {lowerWhenEquation(frontend_equation, init)};
-      case FEquation.ASSERT() then {lowerWhenEquation(frontend_equation, init)};
+      case FEquation.WHEN() then {Pointer.create(lowerWhenEquation(frontend_equation, init))};
+      case FEquation.ASSERT() then {Pointer.create(lowerWhenEquation(frontend_equation, init))};
 
       // These have to be called inside a when equation body since they need
       // to get passed a condition from surrounding when equation.
@@ -424,7 +426,6 @@ protected
       case FEquation.NORETCALL() algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerEquation failed for NORETCALL expression without condition:\n" + FEquation.toString(frontend_equation)});
       then fail();
-
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerEquation failed for " + FEquation.toString(frontend_equation)});
       then fail();
@@ -467,18 +468,30 @@ protected
       local
         FEquation.Branch branch;
         list<FEquation.Branch> rest;
-        list<Equation> eqns;
+        list<Pointer<Equation>> eqns;
         Expression condition;
-
-      // End of the line
-      case {} then NONE();
+        Option<BEquation.IfEquationBody> result;
 
       // lower current branch
       case branch::rest
         algorithm
           (eqns, condition) := lowerIfBranch(branch, init);
-      then SOME(BEquation.IF_EQUATION_BODY(condition, eqns, lowerIfEquationBody(rest, init)));
+          // just exit when a condition is found to be true because following
+          // branches can never be reached. Also the last plain else case
+          // has default Boolean true value in the NF.
+          // discard a branch and continue with the rest if a condition is
+          // found to be false, because it can never be reached.
+          if Expression.isTrue(condition) then
+            result := SOME(BEquation.IF_EQUATION_BODY(Expression.END(), eqns, NONE()));
+          elseif Expression.isFalse(condition) then
+            result := lowerIfEquationBody(rest, init);
+          else
+            result := SOME(BEquation.IF_EQUATION_BODY(condition, eqns, lowerIfEquationBody(rest, init)));
+          end if;
+      then result;
 
+      // We should never get an empty list here since the last condition has to
+      // be TRUE. If-Equations have to have a plain else case for consistency!
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerIfEquationBody failed."});
       then fail();
@@ -489,17 +502,22 @@ protected
   function lowerIfBranch
     input FEquation.Branch branch;
     input Boolean init;
-    output list<Equation> eqns;
+    output list<Pointer<Equation>> eqns;
     output Expression cond;
   algorithm
     (eqns, cond) := match branch
       local
         Expression condition;
         list<FEquation.Equation> body;
-      case FEquation.BRANCH(condition = condition, body = body)
+
+      case FEquation.BRANCH(condition = condition, body = body) guard(not Expression.isFalse(condition))
         // ToDo! Use condition variability here to have proper type of the
         // auxiliary that will be created for the condition.
       then (lowerIfBranchBody(body, init), condition);
+
+      // Save some time by not lowering body if condition is false.
+      case FEquation.BRANCH(condition = condition, body = body) guard(Expression.isFalse(condition))
+      then ({}, condition);
 
       case FEquation.INVALID_BRANCH() algorithm
         // what to do with error message from invalid branch? Is that even needed?
@@ -516,7 +534,7 @@ protected
   function lowerIfBranchBody
     input list<FEquation.Equation> body;
     input Boolean init;
-    input output list<Equation> eqns = {};
+    input output list<Pointer<Equation>> eqns = {};
   algorithm
       eqns := match body
         local
@@ -679,7 +697,7 @@ protected
   function lowerAlgorithm
     input Algorithm alg;
     input Boolean init;
-    output Equation eq;
+    output Pointer<Equation> eq;
   protected
     Integer size;
     list<ComponentRef> inputs, outputs;
@@ -694,7 +712,7 @@ protected
     attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL
             elseif ComponentRef.listHasDiscrete(outputs) then NBEquation.EQ_ATTR_DEFAULT_DISCRETE
             else NBEquation.EQ_ATTR_DEFAULT_DYNAMIC;
-    eq := Equation.ALGORITHM(size, alg, inputs, outputs, alg.source, DAE.EXPAND(), attr);
+    eq := Pointer.create(Equation.ALGORITHM(size, alg, inputs, outputs, alg.source, DAE.EXPAND(), attr));
   end lowerAlgorithm;
 
   function lowerEquationAttributes
@@ -708,15 +726,15 @@ protected
   end lowerEquationAttributes;
 
   function lowerComponentReferences
-    input output BEquation.Equations equations;
-    input BVariable.Variables variables;
+    input output BEquation.EquationPointers equations;
+    input BVariable.VariablePointers variables;
   algorithm
-    equations := BEquation.Equations.mapExp(equations,function lowerComponentReferenceExp(variables = variables), SOME(function lowerComponentReference(variables = variables)));
+    equations := BEquation.EquationPointers.mapExp(equations,function lowerComponentReferenceExp(variables = variables), SOME(function lowerComponentReference(variables = variables)));
   end lowerComponentReferences;
 
   function lowerComponentReferenceExp
     input output Expression exp;
-    input BVariable.Variables variables;
+    input BVariable.VariablePointers variables;
   algorithm
     exp := match exp
       local
@@ -729,13 +747,13 @@ protected
 
   function lowerComponentReference
     input output ComponentRef cref;
-    input BVariable.Variables variables;
+    input BVariable.VariablePointers variables;
   protected
-    Variable var;
+    Pointer<Variable> var;
   algorithm
     try
-      var := BVariable.Variables.getVar(cref, variables);
-      cref := lowerComponentReferenceInstNode(cref, Pointer.create(var));
+      var := BVariable.VariablePointers.getVarSafe(cref, variables);
+      cref := lowerComponentReferenceInstNode(cref, var);
     else
       if Flags.isSet(Flags.FAILTRACE) then
         Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerComponentReference failed for " + ComponentRef.toString(cref)});

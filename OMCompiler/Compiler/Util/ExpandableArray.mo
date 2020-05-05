@@ -278,11 +278,13 @@ algorithm
   Dangerous.arrayUpdateNoBoundsChecking(exarray.data, 1, newData);
 end shrink;
 
-function dump "O(n)
+function toString "O(n)
   Dumps all elements with the given print function."
   input ExpandableArray<T> exarray;
   input String header;
   input PrintFunction func;
+  input Boolean debug = false;
+  output String str;
 
   partial function PrintFunction
     input T t;
@@ -294,24 +296,29 @@ protected
   T value;
   array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
 algorithm
-  print(header + " (" + intString(numberOfElements) + "/" + intString(capacity) + ")\n");
-  print("========================================\n");
+  if debug then
+    str := header + " (" + intString(numberOfElements) +  "/" + intString(capacity) + ")\n";
+  else
+    str := header + " (" + intString(numberOfElements) + ")\n";
+  end if;
+
+  str := str + "========================================\n";
 
   if numberOfElements == 0 then
-    print("<empty>\n");
+    str := str + "<empty>\n";
   else
     for i in 1:capacity loop
       if isSome(Dangerous.arrayGetNoBoundsChecking(data, i)) then
         SOME(value) := Dangerous.arrayGetNoBoundsChecking(data, i);
         numberOfElements := numberOfElements-1;
-        print(intString(i) + ": " + func(value) + "\n");
+        str := str + intString(i) + ": " + func(value) + "\n";
         if numberOfElements == 0 then
           return;
         end if;
       end if;
     end for;
   end if;
-end dump;
+end toString;
 
 function getNumberOfElements
   input ExpandableArray<T> exarray;

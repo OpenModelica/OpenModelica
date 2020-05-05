@@ -272,7 +272,9 @@ uniontype InstNode
   end EXP_NODE;
 
   record VAR_NODE
-    "This is an extension for better use in the backend. Not used in the Frontend."
+    "This is an extension for better use in the backend. Not used in the Frontend.
+    NOTE: Map and traversal functions are not allowed to follow the variable
+    pointer, it would create cyclic behaviour! Var->cref->pointer->Var"
     String name;
     Pointer<Variable> varPointer;
   end VAR_NODE;

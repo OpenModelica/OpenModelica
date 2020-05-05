@@ -46,7 +46,7 @@ public
   //NF Imports
   import BackendExtension = NFBackendExtension;
   import BackendInfo = NFBackendExtension.BackendInfo;
-  import Binding = NFBinding;
+  import Binding = NFBinding.Binding;
   import Component = NFComponent;
   import ComponentRef = NFComponentRef;
   import InstNode = NFInstNode.InstNode;
@@ -62,6 +62,7 @@ public
   //Util Imports
   import Array;
   import BaseHashTable;
+  import ExpandableArray;
   import Flags;
   import HashTable3;
   import HashTableCG;
@@ -75,7 +76,7 @@ public
   ========================================================================== */
 public
   constant Variable DUMMY_VARIABLE = Variable.VARIABLE(ComponentRef.EMPTY(), Type.ANY(),
-    NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PROTECTED, NFComponent.DEFAULT_ATTR,
+    NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PUBLIC, NFComponent.DEFAULT_ATTR,
     {}, NONE(), SCodeUtil.dummyInfo, NFBackendExtension.DUMMY_BACKEND_INFO);
 
   constant String DERIVATIVE_STR = "$DER";
@@ -84,224 +85,64 @@ public
     input Variable var;
     output String str;
   algorithm
-    str := VariableKind.toString(var.backendinfo.varKind) + " " + Variable.toString(var);
+    str := VariableKind.toString(var.backendinfo.varKind) + " " + Variable.toString(var) + " " + InstNode.typeName(ComponentRef.node(var.name));
   end toString;
 
-  function getVarName
-    "Returns the component reference representing the name of the variable.
-     NOTE: Always use this function to get the variable name and never just
-     get the name. It won't have the pointer to this variable since cyclic
-     pointers are not allowed."
-    input Variable var;
-    output ComponentRef cref;
+  function fromCref
+    input ComponentRef cref;
+    output Variable variable;
+  protected
+    InstNode node;
+    Type ty;
+    Binding binding;
+    Prefixes.Visibility vis;
+    SourceInfo info;
   algorithm
-    cref := BackendDAE.lowerComponentReferenceInstNode(var.name, Pointer.create(var));
-  end getVarName;
+    node := ComponentRef.node(cref);
+    ty := ComponentRef.getSubscriptedType(cref);
+    vis := InstNode.visibility(node);
+    info := InstNode.info(node);
+    variable := Variable.VARIABLE(cref, ty, NFBinding.EMPTY_BINDING, vis, NFComponent.DEFAULT_ATTR, {}, NONE(), info, NFBackendExtension.DUMMY_BACKEND_INFO);
+  end fromCref;
 
-  uniontype Variables
-    record VARIABLES
-      array<list<CrefIndex>> crefIndices "HashTB, cref->indx";
-      VariableArray varArr "Array of variables";
-      Integer bucketSize "bucket size";
-      Integer numberOfVars "no. of vars";
-    end VARIABLES;
+  function getVar
+    input ComponentRef cref;
+    output Variable var;
+  algorithm
+    var := Pointer.access(getVarPointer(cref));
+  end getVar;
 
-    function toString
-      input Variables variables;
-      input output String str = "";
-    algorithm
-        str := StringUtil.headline_3(str + " Variables " + "(" + intString(variables.numberOfVars) + ")") + "\n";
-        str := str + VariableArray.toString(variables.varArr);
-    end toString;
-
-    function empty
-      "Creates an empty Variables object with minimal given size."
-      input Integer size = BaseHashTable.defaultBucketSize;
-      output Variables variables;
-    protected
-      Integer arr_size, bucketSize;
-      VariableArray varArr;
-    algorithm
-      arr_size := max(size, BaseHashTable.lowBucketSize);
-      bucketSize :=  realInt(intReal(arr_size) * 1.4);
-      varArr := VARIABLE_ARRAY(0, arrayCreate(arr_size, NONE()));
-      variables := VARIABLES(arrayCreate(bucketSize, {}), varArr, bucketSize, 0);
-    end empty;
-
-    function fromList
-      "Creates Variables from a Variable list."
-      input list<Variable> var_lst;
-      output Variables variables;
-    algorithm
-      variables := empty(listLength(var_lst));
-      variables := addVars(var_lst, variables);
-    end fromList;
-
-    public function addVars
-      "Adds a list of variables to the Variables structure. If any variable already
-      exists it's updated instead."
-      input list<Variable> var_lst;
-      input output Variables variables;
-    algorithm
-      variables := List.fold(var_lst, addVar, variables);
-    end addVars;
-
-    function addVar
-      "Adds a variable to the set, or updates it if it already exists."
-      input Variable var;
-      input output Variables variables;
-    protected
-      Integer hash_idx, arr_idx;
-      list<CrefIndex> indices;
-    algorithm
-      hash_idx := ComponentRef.hash(var.name, variables.bucketSize) + 1;
-      indices := arrayGet(variables.crefIndices, hash_idx);
-
-      try
-        // If the variable already exists, overwrite it
-        CREFINDEX(index = arr_idx) := List.getMemberOnTrue(var.name, indices, crefIndexEqualCref);
-        variables.varArr := VariableArray.setVarAt(variables.varArr, arr_idx + 1, var);
-      else
-        // otherwise create new variable at the end of the array and expand if neccessary
-        variables.varArr := VariableArray.appendVar(variables.varArr, var);
-        arrayUpdate(variables.crefIndices, hash_idx, (CREFINDEX(var.name, variables.numberOfVars) :: indices));
-        variables.numberOfVars := variables.numberOfVars + 1;
-      end try;
-    end addVar;
-
-    function setVarAt
-      "Sets a Variable at a specific index in the VariableArray."
-      input output Variables variables;
-      input Integer index;
-      input Variable var;
-    algorithm
-      variables.varArr := VariableArray.setVarAt(variables.varArr, index, var);
-    end setVarAt;
-
-    function getVarAt
-      "Returns the variable at given index. If there is none it fails."
-      input Variables variables;
-      input Integer index;
-      output Variable var;
-    algorithm
-      try
-        SOME(var) := variables.varArr.varOptArr[index];
-      else
-        fail();
-      end try;
-    end getVarAt;
-
-    public function getVar
-      "Use only for lowering purposes! Otherwise use the InstNode in the
-      ComponentRef. Fails if the component ref cannot be found."
-      input ComponentRef cref;
-      input Variables variables;
-      output Variable var;
-    protected
-      Integer hash_idx, index;
-      list<CrefIndex> cr_indices;
-      ComponentRef cr;
-    algorithm
-      try
-        hash_idx := ComponentRef.hash(cref, variables.bucketSize) + 1;
-        cr_indices := variables.crefIndices[hash_idx];
-        CREFINDEX(index = index) := List.getMemberOnTrue(cref, cr_indices, crefIndexEqualCref);
-        var as NFVariable.VARIABLE(name = cr) := getVarAt(variables, index + 1);
-        true := ComponentRef.isEqual(cr, cref);
-      else
+  function getVarPointer
+    input ComponentRef cref;
+    output Pointer<Variable> var;
+  algorithm
+    var := match cref
+      local
+        Pointer<Variable> varPointer;
+      case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer)) then varPointer;
+      else algorithm
         if Flags.isSet(Flags.FAILTRACE) then
-          Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.Variables.getVar failed for " + ComponentRef.toString(cref)});
+          Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.Variables.getVarPointer failed for " + ComponentRef.toString(cref) + ", because of wrong InstNode (not VAR_NODE).
+          Please use NBVariable.getVarSafe if it should not fail here."});
         end if;
-        fail();
-      end try;
-    end getVar;
-
-    function updateInstNode
-      input output ComponentRef cref;
-      input Variables variables;
-    algorithm
-      try
-        cref := match cref
-          local
-            ComponentRef qualCref;
-          case qualCref as ComponentRef.CREF() algorithm
-            qualCref.node := InstNode.VAR_NODE(InstNode.name(qualCref.node), Pointer.create(getVar(cref, variables)));
-          then qualCref;
-          else algorithm
-            if Flags.isSet(Flags.FAILTRACE) then
-              Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.Variables.updateInstNode failed because of wrong component reference type for: " + ComponentRef.toString(cref)});
-            end if;
-          then fail();
-        end match;
-      else
-        if Flags.isSet(Flags.FAILTRACE) then
-          Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.updateInstNode failed because variable cannot be found for compenent reference: " + ComponentRef.toString(cref)});
-        end if;
-      end try;
-    end updateInstNode;
-  end Variables;
-
-  uniontype VariableArray
-    "array of variables are expandable, to amortize the cost of adding
-    equations in a more efficient manner"
-    record VARIABLE_ARRAY
-      Integer numberOfElements "no. elements";
-      array<Option<Variable>> varOptArr;
-    end VARIABLE_ARRAY;
-
-    function toString
-      input VariableArray varArr;
-      output String str = "";
-    protected
-      Variable var;
-    algorithm
-      for i in 1:arrayLength(varArr.varOptArr) loop
-        if isSome(varArr.varOptArr[i]) then
-          SOME(var) := varArr.varOptArr[i];
-          str := str + "(" + intString(i) + ")\t" + BVariable.toString(var) + "\n";
-        end if;
-      end for;
-    end toString;
-
-    function setVarAt
-      "Sets a Variable at a specific index in the VariableArray."
-      input output VariableArray varArr;
-      input Integer index;
-      input Variable var;
-    algorithm
-      true := index <= varArr.numberOfElements;
-      arrayUpdate(varArr.varOptArr, index, SOME(var));
-    end setVarAt;
-
-    function appendVar
-    "author: PA
-      Adds a variable last to the VariableArray, increasing array size
-      if no space left by factor 1.4"
-      input output VariableArray varArr;
-      input Variable var;
-    protected
-      array<Option<Variable>> arr;
-    algorithm
-      varArr.numberOfElements := varArr.numberOfElements + 1;
-      varArr.varOptArr := Array.expandOnDemand(varArr.numberOfElements, varArr.varOptArr, 1.4, NONE());
-      arrayUpdate(varArr.varOptArr, varArr.numberOfElements, SOME(var));
-    end appendVar;
-  end VariableArray;
+      then fail();
+    end match;
+  end getVarPointer;
 
   uniontype VariablePointers
     record VARIABLE_POINTERS
+      Integer bucketSize;
       array<list<CrefIndex>> crefIndices "HashTB, cref->indx";
-      VariablePointerArray varArr "Array of variable pointers";
-      Integer bucketSize "bucket size";
-      Integer numberOfVars "no. of variable pointers";
+      ExpandableArray<Pointer<Variable>> varArr "Array of variable pointers";
     end VARIABLE_POINTERS;
 
     function toString
       input VariablePointers variables;
       input output String str = "";
+    protected
+      Pointer<Variable> var;
     algorithm
-        str := StringUtil.headline_4(str + " VariablePointers " + "(" + intString(variables.numberOfVars) + ")") + "\n";
-        str := str + VariablePointerArray.toString(variables.varArr);
+       str := ExpandableArray.toString(variables.varArr, str + " VariablePointers", function Pointer.applyFold(func = function BVariable.toString()));
     end toString;
 
     function empty
@@ -310,12 +151,10 @@ public
       output VariablePointers variables;
     protected
       Integer arr_size, bucketSize;
-      VariablePointerArray varArr;
     algorithm
       arr_size := max(size, BaseHashTable.lowBucketSize);
       bucketSize :=  realInt(intReal(arr_size) * 1.4);
-      varArr := VARIABLE_POINTER_ARRAY(0, arrayCreate(arr_size, NONE()));
-      variables := VARIABLE_POINTERS(arrayCreate(bucketSize, {}), varArr, bucketSize, 0);
+      variables := VARIABLE_POINTERS(bucketSize, arrayCreate(bucketSize, {}), ExpandableArray.new(arr_size, Pointer.create(DUMMY_VARIABLE)));
     end empty;
 
     function fromList
@@ -333,7 +172,7 @@ public
       input list<Pointer<Variable>> var_lst;
       input output VariablePointers variables;
     algorithm
-      variables := List.fold(var_lst, addVar, variables);
+      variables := List.fold(var_lst, function addVar(), variables);
     end addVars;
 
     function addVar
@@ -342,7 +181,7 @@ public
       input output VariablePointers variables;
     protected
       Variable var;
-      Integer hash_idx, arr_idx;
+      Integer hash_idx, arr_idx, new_idx;
       list<CrefIndex> indices;
     algorithm
       var := Pointer.access(varPointer);
@@ -352,22 +191,45 @@ public
       try
         // If the variable already exists, overwrite it
         CREFINDEX(index = arr_idx) := List.getMemberOnTrue(var.name, indices, crefIndexEqualCref);
-        variables.varArr := VariablePointerArray.setVarAt(variables.varArr, arr_idx + 1, varPointer);
+        ExpandableArray.set(arr_idx + 1, varPointer, variables.varArr);
       else
         // otherwise create new variable at the end of the array and expand if neccessary
-        variables.varArr := VariablePointerArray.appendVar(variables.varArr, varPointer);
-        arrayUpdate(variables.crefIndices, hash_idx, (CREFINDEX(var.name, variables.numberOfVars) :: indices));
-        variables.numberOfVars := variables.numberOfVars + 1;
+        (_, new_idx) := ExpandableArray.add(varPointer, variables.varArr);
+        arrayUpdate(variables.crefIndices, hash_idx, (CREFINDEX(var.name, new_idx - 1) :: indices));
       end try;
     end addVar;
 
+    function removeVar
+      "Removes a variable pointer identified by its name from the set."
+      input Pointer<Variable> var_ptr;
+      input output VariablePointers variables "only an output for mapping";
+    protected
+      Variable var;
+      Integer hash_idx, arr_idx;
+      list<CrefIndex> indices;
+    algorithm
+      var := Pointer.access(var_ptr);
+      hash_idx := ComponentRef.hash(var.name, variables.bucketSize) + 1;
+      indices := arrayGet(variables.crefIndices, hash_idx);
+
+      try
+        // If the variable exists, delete it
+        CREFINDEX(index = arr_idx) := List.getMemberOnTrue(var.name, indices, crefIndexEqualCref);
+        ExpandableArray.delete(arr_idx + 1, variables.varArr);
+        indices := List.deleteMemberOnTrue(var.name, indices, crefIndexEqualCref);
+        arrayUpdate(variables.crefIndices, hash_idx, indices);
+      else
+        // otherwise do nothing
+      end try;
+    end removeVar;
+
     function setVarAt
-      "Sets a Variable pointer at a specific index in the VariablePointerArray."
-      input output VariablePointers variables;
+      "Sets a Variable pointer at a specific index in the VariablePointers."
+      input VariablePointers variables;
       input Integer index;
       input Pointer<Variable> var;
     algorithm
-      variables.varArr := VariablePointerArray.setVarAt(variables.varArr, index, var);
+      ExpandableArray.set(index, var, variables.varArr);
     end setVarAt;
 
     function getVarAt
@@ -376,57 +238,35 @@ public
       input Integer index;
       output Pointer<Variable> var;
     algorithm
+      var := ExpandableArray.get(index, variables.varArr);
+    end getVarAt;
+
+    function getVarSafe
+      "Use only for lowering purposes! Otherwise use the InstNode in the
+      ComponentRef. Fails if the component ref cannot be found."
+      input ComponentRef cref;
+      input VariablePointers variables;
+      output Pointer<Variable> var;
+    protected
+      Integer hash_idx, index;
+      list<CrefIndex> cr_indices;
+      ComponentRef cr;
+    algorithm
       try
-        SOME(var) := variables.varArr.varOptArr[index];
+        hash_idx := ComponentRef.hash(cref, variables.bucketSize) + 1;
+        cr_indices := variables.crefIndices[hash_idx];
+        CREFINDEX(index = index) := List.getMemberOnTrue(cref, cr_indices, crefIndexEqualCref);
+        var := getVarAt(variables, index + 1);
+        NFVariable.VARIABLE(name = cr) := Pointer.access(var);
+        true := ComponentRef.isEqual(cr, cref);
       else
+        if Flags.isSet(Flags.FAILTRACE) then
+          Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.Variables.getVarSafe failed for " + ComponentRef.toString(cref)});
+        end if;
         fail();
       end try;
-    end getVarAt;
+    end getVarSafe;
   end VariablePointers;
-
-  uniontype VariablePointerArray
-    record VARIABLE_POINTER_ARRAY
-      Integer numberOfElements "no. elements";
-      array<Option<Pointer<Variable>>> varOptArr;
-    end VARIABLE_POINTER_ARRAY;
-
-    function toString
-      input VariablePointerArray varArr;
-      output String str = "";
-    protected
-      Pointer<Variable> var;
-    algorithm
-      for i in 1:arrayLength(varArr.varOptArr) loop
-        if isSome(varArr.varOptArr[i]) then
-          SOME(var) := varArr.varOptArr[i];
-          str := str + "(" + intString(i) + ")\t" + BVariable.toString(Pointer.access(var)) + "\n";
-        end if;
-      end for;
-    end toString;
-
-    function setVarAt
-      "Sets a VariablePointer at a specific index in the VariablePointerArray."
-      input output VariablePointerArray varArr;
-      input Integer index;
-      input Pointer<Variable> var;
-    algorithm
-      true := index <= varArr.numberOfElements;
-      arrayUpdate(varArr.varOptArr, index, SOME(var));
-    end setVarAt;
-
-    function appendVar
-      "Adds a variable pointer last to the VariablePointerArray, increasing array
-      size if no space left by factor 1.4"
-      input output VariablePointerArray varArr;
-      input Pointer<Variable> var;
-    protected
-      array<Option<Pointer<Variable>>> arr;
-    algorithm
-      varArr.numberOfElements := varArr.numberOfElements + 1;
-      varArr.varOptArr := Array.expandOnDemand(varArr.numberOfElements, varArr.varOptArr, 1.4, NONE());
-      arrayUpdate(varArr.varOptArr, varArr.numberOfElements, SOME(var));
-    end appendVar;
-  end VariablePointerArray;
 
   uniontype CrefIndex
     "Component Reference Index"
@@ -442,7 +282,7 @@ public
 
     record VAR_DATA_SIM
       "Only to be used for simulation systems."
-      Variables variables                 "All variables";
+      VariablePointers variables          "All variables";
       /* subset of full variable array */
       VariablePointers unknowns           "All state derivatives, algebraic variables,
                                           discrete variables";
@@ -451,7 +291,6 @@ public
                                           by given binding. E.g. $cse";
       VariablePointers aliasVars          "Variables removed due to alias removal";
 
-      StateOrder stateOrder               "StateOrder dy/dt = x";
       /* subset of unknowns */
       VariablePointers states             "States";
       VariablePointers derivatives        "State derivatives (der(x) -> $DER.x)";
@@ -465,7 +304,7 @@ public
 
     record VAR_DATA_JAC
       "Only to be used for Jacobians."
-      Variables variables                 "All jacobian variables";
+      VariablePointers variables                 "All jacobian variables";
       /* subset of full variable array */
       VariablePointers unknowns           "All state derivatives, algebraic variables,
                                           discrete variables";
@@ -493,7 +332,7 @@ public
 
     record VAR_DATA_HESS
       "Only to be used for Hessians."
-      Variables variables                 "All hessian variables";
+      VariablePointers variables                 "All hessian variables";
       /* subset of full variable array */
       VariablePointers unknowns           "All state derivatives, algebraic variables,
                                           discrete variables";
@@ -525,7 +364,6 @@ public
     end VAR_DATA_HESS;
 
     function toString
-      /* ToDo! Add StateOrder */
       input VarData varData;
       input Integer level = 0;
       output String str;
@@ -533,9 +371,9 @@ public
       str := if level == 0 then match varData
           local
             VarData qualVarData;
-          case qualVarData as VAR_DATA_SIM() then Variables.toString(varData.variables, "Simulation");
-          case qualVarData as VAR_DATA_JAC() then Variables.toString(varData.variables, "Jacobian");
-          case qualVarData as VAR_DATA_HESS() then Variables.toString(varData.variables, "Hessian");
+          case qualVarData as VAR_DATA_SIM() then VariablePointers.toString(varData.variables, "Simulation");
+          case qualVarData as VAR_DATA_JAC() then VariablePointers.toString(varData.variables, "Jacobian");
+          case qualVarData as VAR_DATA_HESS() then VariablePointers.toString(varData.variables, "Hessian");
           else fail();
         end match
       elseif level == 1 then toStringVerbose(varData, false)
@@ -610,28 +448,32 @@ public
 
     function getVariables
       input VarData varData;
-      output Variables variables;
+      output VariablePointers variables;
     algorithm
       variables := match varData
         local
-          Variables tmp;
+          VariablePointers tmp;
         case VAR_DATA_SIM(variables = tmp) then tmp;
         case VAR_DATA_JAC(variables = tmp) then tmp;
         case VAR_DATA_HESS(variables = tmp) then tmp;
         else fail();
       end match;
     end getVariables;
-  end VarData;
 
-  uniontype StateOrder
-    record STATE_ORDER
-      HashTableCG.HashTable hashTable "x -> dx";
-      HashTable3.HashTable invHashTable "dx -> {x,y,z}";
-    end STATE_ORDER;
-    record NO_STATE_ORDER
-      "Index reduction disabled; don't need big hashtables"
-    end NO_STATE_ORDER;
-  end StateOrder;
+    function setVariables
+      input output VarData varData;
+      input VariablePointers variables;
+    algorithm
+      varData := match varData
+        local
+          VarData qual;
+        case qual as VAR_DATA_SIM() algorithm qual.variables := variables; then qual;
+        case qual as VAR_DATA_JAC() algorithm qual.variables := variables; then qual;
+        case qual as VAR_DATA_HESS() algorithm qual.variables := variables; then qual;
+        else fail();
+      end match;
+    end setVariables;
+  end VarData;
 
   function setVariableKind
     input output Variable var;

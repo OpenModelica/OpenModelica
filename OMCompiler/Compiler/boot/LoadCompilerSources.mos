@@ -186,6 +186,7 @@ if true then /* Suppress output */
     "../Util/List.mo",
     "../Util/ModelicaExternalC.mo",
     "../Util/Mutable.mo",
+    "../Util/NHashTable.mo",
     "../Util/Pointer.mo",
     "../Util/Print.mo",
     "../Util/SemanticVersion.mo",

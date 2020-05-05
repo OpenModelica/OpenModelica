@@ -81,5 +81,27 @@ static inline void* pointerAccess(void *ptr)
 ");
 end access;
 
+function apply
+  input output Pointer<T> mutable;
+  input Func func;
+  partial function Func
+    input output T value;
+  end Func;
+algorithm
+  func(access(mutable));
+end apply;
+
+function applyFold<Arg>
+  input Pointer<T> mutable;
+  input Func func;
+  output Arg arg;
+  partial function Func
+    input T value;
+    output Arg arg;
+  end Func;
+algorithm
+  arg := func(access(mutable));
+end applyFold;
+
 annotation(__OpenModelica_Interface="util");
 end Pointer;
