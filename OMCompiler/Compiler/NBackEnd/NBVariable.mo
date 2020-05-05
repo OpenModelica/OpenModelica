@@ -64,8 +64,6 @@ public
   import BaseHashTable;
   import ExpandableArray;
   import Flags;
-  import HashTable3;
-  import HashTableCG;
   import StringUtil;
   import Util;
 
@@ -142,7 +140,7 @@ public
     protected
       Pointer<Variable> var;
     algorithm
-       str := ExpandableArray.toString(variables.varArr, str + " VariablePointers", function Pointer.applyFold(func = function BVariable.toString()));
+       str := ExpandableArray.toString(variables.varArr, str + " VariablePointers", function Pointer.applyFold(func = function BVariable.toString()), false);
     end toString;
 
     function empty

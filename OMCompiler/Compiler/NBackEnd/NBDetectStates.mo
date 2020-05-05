@@ -58,7 +58,7 @@ protected
 
   // Util imports
   import Error;
-  import NHashTable;
+  import HashTable = NBHashTable;
 
 /* =========================================================================
                       MAIN ROUTINE, PLEASE DO NOT CHANGE
@@ -132,7 +132,7 @@ protected
   protected
     Pointer<list<Pointer<Variable>>> acc_states = Pointer.create({});
     Pointer<list<Pointer<Variable>>> acc_derivatives = Pointer.create({});
-    Pointer<NHashTable.HashTable> hashTable = Pointer.create(NHashTable.emptyHashTable());
+    Pointer<HashTable.HashTable> hashTable = Pointer.create(HashTable.emptyHashTable());
   algorithm
     BEquation.EquationPointers.mapExp(equations, function collectStateCrefs(acc_states = acc_states, acc_derivatives = acc_derivatives, hashTable = hashTable));
     (variables, unknowns, knowns, states, derivatives, algebraics) := updateStatesAndDerivatives(variables, unknowns, knowns, states, derivatives, algebraics, Pointer.access(acc_states), Pointer.access(acc_derivatives));
@@ -145,12 +145,12 @@ protected
     input output Expression exp;
     input Pointer<list<Pointer<Variable>>> acc_states;
     input Pointer<list<Pointer<Variable>>> acc_derivatives;
-    input Pointer<NHashTable.HashTable> hashTable;
+    input Pointer<HashTable.HashTable> hashTable;
   algorithm
     exp := match exp
       local
         ComponentRef state_cref, der_cref;
-        NHashTable.HashTable ht;
+        HashTable.HashTable ht;
         Pointer<Variable> state_var, der_var;
       // ToDo need Call.TYPED_REDUCTION?
       case Expression.CALL(call = Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "der")),

@@ -186,7 +186,6 @@ if true then /* Suppress output */
     "../Util/List.mo",
     "../Util/ModelicaExternalC.mo",
     "../Util/Mutable.mo",
-    "../Util/NHashTable.mo",
     "../Util/Pointer.mo",
     "../Util/Print.mo",
     "../Util/SemanticVersion.mo",
@@ -291,6 +290,7 @@ if true then /* Suppress output */
     "../NBackEnd/NBAdjacencyMatrix.mo",
     "../NBackEnd/NBDetectStates.mo",
     "../NBackEnd/NBEquation.mo",
+    "../NBackEnd/NBHashTable.mo",
     "../NBackEnd/NBModule.mo",
     "../NBackEnd/NBVariable.mo",
 

@@ -283,7 +283,7 @@ function toString "O(n)
   input ExpandableArray<T> exarray;
   input String header;
   input PrintFunction func;
-  input Boolean debug = false;
+  input Boolean debug = true;
   output String str;
 
   partial function PrintFunction

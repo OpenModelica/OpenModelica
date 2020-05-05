@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated package NHashTable
+encapsulated package NBHashTable
 
 /* Below is the instance specific code. For each hashtable the user must define:
 
@@ -94,5 +94,5 @@ algorithm
   hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentRef.hash,ComponentRef.isEqual,ComponentRef.toString,intString));
 end emptyHashTableSized;
 
-annotation(__OpenModelica_Interface="frontend");
-end NHashTable;
+annotation(__OpenModelica_Interface="backend");
+end NBHashTable;
