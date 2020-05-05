@@ -199,8 +199,8 @@ protected
       case qual as InstNode.VAR_NODE()
         algorithm
           state := BVariable.getVarPointer(cref);
-          qual.name := NBVariable.DERIVATIVE_STR + "_" + qual.name;
-          cref := ComponentRef.fromNode(qual, ComponentRef.nodeType(cref));
+          qual.name := NBVariable.DERIVATIVE_STR;
+          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
           var := BVariable.fromCref(cref);
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.STATE_DER(state));
           var_ptr := Pointer.create(var);
