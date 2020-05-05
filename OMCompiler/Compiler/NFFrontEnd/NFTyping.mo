@@ -70,7 +70,7 @@ import InstUtil = NFInstUtil;
 import Lookup = NFLookup;
 import MatchKind = NFTypeCheck.MatchKind;
 import NFCall.Call;
-import NFClass.ClassTree;
+import NFClassTree.ClassTree;
 import Subscript = NFSubscript;
 import TypeCheck = NFTypeCheck;
 import Types;
