@@ -21,7 +21,7 @@ endif
 TOP_DIR=../../
 OMHOME=$(OMBUILDDIR)
 ifeq ($(OMENCRYPTION),yes)
-OMENCRYPTIONLIBS=-L$(OMBUILDDIR)/lib/omc/SEMLA -ltool -lssl -lcrypto -lcrypt32 -lgdi32 -lws2_32
+OMENCRYPTIONLIBS=-L$(OMBUILDDIR)/lib/omc/SEMLA -ltool
 else
 OMENCRYPTIONLIBS=
 endif
@@ -35,7 +35,7 @@ LDFLAGS=-L./ $(LOMPARSE) $(LCOMPILERRUNTIME) -L"$(OMHOME)/lib/omc" \
 -lgfortran -ltre -lomniORB420_rt -lomnithread40_rt \
 -lzmq \
 $(OMENCRYPTIONLIBS) \
--Wl,-Bstatic -lcurl -lidn -lrtmp -lssh2 -lssl -lcrypto -lgdi32 -lwldap32 -lz -lws2_32 -lgnutls -ltasn1 -lhogweed -lgmp -lnettle -Wl,-Bdynamic -lcrypt32 -lintl -lp11-kit -lwinmm -lgdi32 \
+-Wl,-Bstatic -lcurl -lidn -lrtmp -lssh2 -lssl -lcrypto -lwldap32 -lz -lws2_32 -lgnutls -ltasn1 -lhogweed -lgmp -lnettle -Wl,-Bdynamic -lcrypt32 -lintl -lp11-kit -lwinmm -lgdi32 \
 $(EXTRA_LD_FLAGS)
 
 FMILIB = -L$(TOP_DIR)/3rdParty/FMIL/install/lib -lfmilib

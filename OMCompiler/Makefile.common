@@ -72,12 +72,14 @@ ifeq ($(OMENCRYPTION),yes)
 semla:
 	mkdir -p ../OMEncryption/3rdParty/SEMLA/build
 	# Build SEMLA
-	(cd ../OMEncryption/3rdParty/SEMLA/build && test -f Makefile || $(CMAKE) -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DCMAKE_INSTALL_PREFIX:String=../install ../src -G $(CMAKE_TARGET))
+	(cd ../OMEncryption/3rdParty/SEMLA/build && test -f Makefile || $(CMAKE) -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DUSE_OPENSSL_10_API:Bool=TRUE -DCMAKE_INSTALL_PREFIX:String=../install ../src -G $(CMAKE_TARGET))
 	(cd ../OMEncryption/3rdParty/SEMLA/build && $(CMAKE) --build .)
 	(cd ../OMEncryption/3rdParty/SEMLA/build && $(CMAKE) --build . --target install)
 	mkdir -p $(builddir_lib)/omc/SEMLA/LVE
 	cp -pPR ../OMEncryption/3rdParty/SEMLA/install/bin/* $(builddir_lib)/omc/SEMLA
-	cp -pPR ../OMEncryption/3rdParty/SEMLA/install/lib/* $(builddir_lib)/omc/SEMLA
+	cp -pPR ../OMEncryption/3rdParty/SEMLA/install/lib/libtool.a $(builddir_lib)/omc/SEMLA
+	cp -pPR ../OMEncryption/3rdParty/SEMLA/install/lib/libcrypto.a $(builddir_lib)/omc/SEMLA/libcrypto_semla.a
+	cp -pPR ../OMEncryption/3rdParty/SEMLA/install/lib/libssl.a $(builddir_lib)/omc/SEMLA/libssl_semla.a
 
 semla-clean:
 	rm -rf ../OMEncryption/3rdParty/SEMLA/build
