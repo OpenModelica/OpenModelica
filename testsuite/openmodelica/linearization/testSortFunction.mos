@@ -41,10 +41,7 @@ list(linear_SortTest);
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // true
-// "model linear_SortTest \"
-//   states[1] = [x]
-//   inputs[1] = [u]
-//   outputs[4] = [N[1,1], N[1,2], N[2,1], N[2,2]]\"
+// "model linear_SortTest
 //   parameter Integer n = 1 \"number of states\";
 //   parameter Integer p = 1 \"number of inputs\";
 //   parameter Integer q = 4 \"number of outputs\";

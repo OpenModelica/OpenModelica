@@ -4619,7 +4619,7 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
   Generates function in simulation file."
 ::=
   match modelInfo
-  case MODELINFO(stateInfo=stateInfo, inputInfo=inputInfo, outputInfo=outputInfo, varInfo=VARINFO(__), vars=SIMVARS(__)) then
+  case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
     let matrixA = genMatrix("A", "n", "n", varInfo.numStateVars, varInfo.numStateVars)
     let matrixB = genMatrix("B", "n", "p", varInfo.numStateVars, varInfo.numInVars)
     let matrixC = genMatrix("C", "q", "n", varInfo.numOutVars, varInfo.numStateVars)
@@ -4634,12 +4634,7 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
     <<
     const char *<%symbolName(modelNamePrefix,"linear_model_frame")%>()
     {
-      return ""
-      "model linear_<%underscorePath(name)%> \"\n"
-      "  <%stateInfo%>\n"
-      "  <%inputInfo%>\n"
-      "  <%outputInfo%>\"\n"
-      "  parameter Integer n = <%varInfo.numStateVars%> \"number of states\";\n  parameter Integer p = <%varInfo.numInVars%> \"number of inputs\";\n  parameter Integer q = <%varInfo.numOutVars%> \"number of outputs\";\n"
+      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%> \"number of states\";\n  parameter Integer p = <%varInfo.numInVars%> \"number of inputs\";\n  parameter Integer q = <%varInfo.numOutVars%> \"number of outputs\";\n"
       "\n"
       "  parameter Real x0[n] = %s;\n"
       "  parameter Real u0[p] = %s;\n"
@@ -4660,12 +4655,7 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
     {
-      return ""
-      "model linear_<%underscorePath(name)%> \"\n"
-      "  <%stateInfo%>\n"
-      "  <%inputInfo%>\n"
-      "  <%outputInfo%>\"\n"
-      "  parameter Integer n = <%varInfo.numStateVars%> \"number of states\";\n  parameter Integer p = <%varInfo.numInVars%> \"number of inputs\";\n  parameter Integer q = <%varInfo.numOutVars%> \"number of outputs\";\n  parameter Integer nz = <%varInfo.numAlgVars%> \"data recovery variables\";\n"
+      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%> \"number of states\";\n  parameter Integer p = <%varInfo.numInVars%> \"number of inputs\";\n  parameter Integer q = <%varInfo.numOutVars%> \"number of outputs\";\n  parameter Integer nz = <%varInfo.numAlgVars%> \"data recovery variables\";\n"
       "\n"
       "  parameter Real x0[<%varInfo.numStateVars%>] = %s;\n"
       "  parameter Real u0[<%varInfo.numInVars%>] = %s;\n"

@@ -70,10 +70,7 @@ readFile("linear_extfunction.log"); // Check that output log is empty
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // true
-// "model linear_extfunction \"
-//   states[2] = [x, y]
-//   inputs[0] = []
-//   outputs[0] = []\"
+// "model linear_extfunction
 //   parameter Integer n = 2 \"number of states\";
 //   parameter Integer p = 0 \"number of inputs\";
 //   parameter Integer q = 0 \"number of outputs\";
@@ -126,10 +123,7 @@ readFile("linear_extfunction.log"); // Check that output log is empty
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // true
-// "model linear_extfunction \"
-//   states[2] = [x, y]
-//   inputs[0] = []
-//   outputs[0] = []\"
+// "model linear_extfunction
 //   parameter Integer n = 2 \"number of states\";
 //   parameter Integer p = 0 \"number of inputs\";
 //   parameter Integer q = 0 \"number of outputs\";
@@ -182,10 +176,7 @@ readFile("linear_extfunction.log"); // Check that output log is empty
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // true
-// "model linear_extfunction \"
-//   states[2] = [x, y]
-//   inputs[0] = []
-//   outputs[0] = []\"
+// "model linear_extfunction
 //   parameter Integer n = 2 \"number of states\";
 //   parameter Integer p = 0 \"number of inputs\";
 //   parameter Integer q = 0 \"number of outputs\";
@@ -230,10 +221,7 @@ readFile("linear_extfunction.log"); // Check that output log is empty
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // true
-// "model linear_extfunction \"
-//   states[2] = [x, y]
-//   inputs[0] = []
-//   outputs[0] = []\"
+// "model linear_extfunction
 //   parameter Integer n = 2 \"number of states\";
 //   parameter Integer p = 0 \"number of inputs\";
 //   parameter Integer q = 0 \"number of outputs\";
