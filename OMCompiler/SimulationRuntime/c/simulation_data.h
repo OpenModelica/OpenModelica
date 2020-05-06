@@ -530,6 +530,10 @@ typedef struct MODEL_DATA
   const char* initXMLData;
   char* resourcesDir;
 
+  const char* linFileName;
+  char* resultFilePath;          /* path to where the linearized model is created */
+  int linearizationDumpLanguage;       /* default is 0-modelica, options: 1-matlab, 2-julia, 3-pythong */
+
   long nSamples;                       /* number of different sample-calls */
   SAMPLE_INFO* samplesInfo;            /* array containing each sample-call */
 
