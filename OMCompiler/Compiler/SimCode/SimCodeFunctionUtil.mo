@@ -1439,12 +1439,17 @@ algorithm
       list<SimCodeFunction.RecordDeclaration> accRecDecls;
       DAE.Algorithm algorithm_;
       list<DAE.Exp> expl;
+      Option<DAE.Exp> binding;
 
     case ({}, accRecDecls, rt) then (accRecDecls, rt);
 
-    case (((DAE.VAR(ty = ft)) :: rest), accRecDecls, rt)
+    case (((DAE.VAR(ty = ft, binding = binding)) :: rest), accRecDecls, rt)
       equation
         (accRecDecls, rt_1) = elaborateRecordDeclarationsForRecord(ft, accRecDecls, rt);
+        if Util.isSome(binding) and Config.acceptMetaModelicaGrammar() then
+          (_, expl) = Expression.traverseExpBottomUp(Util.getOption(binding), matchMetarecordCalls, {});
+          (accRecDecls, rt_1) = elaborateRecordDeclarationsForMetarecords(expl, accRecDecls, rt_1);
+        end if;
         (accRecDecls, rt_2) = elaborateRecordDeclarations(rest, accRecDecls, rt_1);
       then
         (accRecDecls, rt_2);
@@ -2559,6 +2564,7 @@ algorithm
     else (inExp,itpl);
   end matchcontinue;
 end matchNonBuiltinCallsAndFnRefPaths;
+
 protected function aliasRecordDeclarations
   input SimCodeFunction.RecordDeclaration inDecl;
   input HashTableStringToPath.HashTable inHt;
