@@ -1,8 +1,4 @@
 encapsulated package NFLookupTree
-
-import BaseAvlTree;
-extends BaseAvlTree(redeclare type Key = String,
-                    redeclare type Value = NFLookupTree.Entry);
 public
   uniontype Entry
     record CLASS
@@ -43,8 +39,11 @@ public
           else false;
         end match;
        end isImport;
-     end Entry;
-
+  end Entry;
+public
+import BaseAvlTree;
+extends BaseAvlTree(redeclare type Key = String,
+                    redeclare type Value = Entry);
      redeclare function extends keyStr
      algorithm
       outString := inKey;
