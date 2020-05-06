@@ -912,7 +912,7 @@ protected
 algorithm
   FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, true);
   (success, outStringLst, outFileDir) :=
-  matchcontinue (inEnv,inFileNamePrefix)
+  match (inEnv,inFileNamePrefix)
     local
       String filenameprefix, file_dir, resstr, description;
       DAE.DAElist dae, dae1;
@@ -942,7 +942,7 @@ algorithm
 
         /* ================================
                        FRONTEND
-        ================================ */
+           ================================ */
         System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
         ExecStat.execStatReset();
         (SOME(flatModel), SOME(funcTree)) := CevalScriptBackend.runNewFrontEnd(cache, graph, className, false);
@@ -1101,7 +1101,7 @@ algorithm
           timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
         end if;
       then (false, {}, "");
-  end matchcontinue;
+  end match;
   if generateFunctions then
     FlagsUtil.set(Flags.GEN, true);
   end if;

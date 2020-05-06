@@ -620,14 +620,17 @@ public
         input output Equation e;
       end MapFunc;
     protected
+      Pointer<Equation> eq_ptr;
       Equation eq, new_eq;
     algorithm
       for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
         if ExpandableArray.occupied(i, equations.eqArr) then
-          eq := Pointer.access(ExpandableArray.get(i, equations.eqArr));
+          eq_ptr := ExpandableArray.get(i, equations.eqArr);
+          eq := Pointer.access(eq_ptr);
           new_eq := func(eq);
           if not referenceEq(eq, new_eq) then
-            ExpandableArray.update(i, Pointer.create(new_eq), equations.eqArr);
+            // Do not update the expandable array entry, but the pointer itself
+            Pointer.update(eq_ptr, new_eq);
           end if;
         end if;
       end for;
@@ -666,7 +669,7 @@ public
 
   uniontype EqData
     record EQ_DATA_SIM
-      EquationPointers equations           "All equations";
+      EquationPointers equations    "All equations";
       EquationPointers continuous   "Continuous equations";
       EquationPointers discretes    "Discrete equations";
       EquationPointers initials     "(Exclusively) Initial equations";
@@ -674,7 +677,7 @@ public
     end EQ_DATA_SIM;
 
     record EQ_DATA_JAC
-      EquationPointers equations           "All equations";
+      EquationPointers equations    "All equations";
       EquationPointers results      "Result equations";
       EquationPointers temporary    "Temporary inner equations";
       EquationPointers auxiliaries  "Auxiliary equations";

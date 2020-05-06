@@ -58,7 +58,6 @@ protected
 
   // Util imports
   import Error;
-  import HashTable = NBHashTable;
 
 /* =========================================================================
                       MAIN ROUTINE, PLEASE DO NOT CHANGE
@@ -132,46 +131,40 @@ protected
   protected
     Pointer<list<Pointer<Variable>>> acc_states = Pointer.create({});
     Pointer<list<Pointer<Variable>>> acc_derivatives = Pointer.create({});
-    Pointer<HashTable.HashTable> hashTable = Pointer.create(HashTable.emptyHashTable());
   algorithm
-    BEquation.EquationPointers.mapExp(equations, function collectStateCrefs(acc_states = acc_states, acc_derivatives = acc_derivatives, hashTable = hashTable));
+    BEquation.EquationPointers.mapExp(equations, function collectStateCrefs(acc_states = acc_states, acc_derivatives = acc_derivatives));
     (variables, unknowns, knowns, states, derivatives, algebraics) := updateStatesAndDerivatives(variables, unknowns, knowns, states, derivatives, algebraics, Pointer.access(acc_states), Pointer.access(acc_derivatives));
   end detectContinuousStatesDefault;
 
   function detectDiscreteStatesDefault extends Module.detectDiscreteStatesInterface;
+    // ToDo pre(d) -> $PRE.d
   end detectDiscreteStatesDefault;
 
   function collectStateCrefs
     input output Expression exp;
     input Pointer<list<Pointer<Variable>>> acc_states;
     input Pointer<list<Pointer<Variable>>> acc_derivatives;
-    input Pointer<HashTable.HashTable> hashTable;
   algorithm
     exp := match exp
       local
         ComponentRef state_cref, der_cref;
-        HashTable.HashTable ht;
         Pointer<Variable> state_var, der_var;
       // ToDo need Call.TYPED_REDUCTION?
       case Expression.CALL(call = Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "der")),
         arguments = {Expression.CREF(cref = state_cref)}))
         algorithm
-
-          ht := Pointer.access(hashTable);
-          if not BaseHashTable.hasKey(state_cref, ht) then
-            state_var := BVariable.getVarPointer(state_cref);
+          state_var := BVariable.getVarPointer(state_cref);
+          if BVariable.isState(state_var) then
+            // this derivative was already created -> the variable should already have a pointer to its derivative
+            der_cref := getDerVar(state_cref);
+          else
             (der_cref, der_var) := makeDerVar(state_cref);
             state_var := makeStateVar(state_var, der_var);
             Pointer.update(acc_states, state_var :: Pointer.access(acc_states));
             Pointer.update(acc_derivatives, der_var :: Pointer.access(acc_derivatives));
-            Pointer.update(hashTable, BaseHashTable.add((state_cref, 0), ht));
-          else
-            // this derivative was already created -> the variable should already have a pointer to its derivative
-            der_cref := getDerVar(state_cref);
           end if;
       then Expression.fromCref(der_cref);
       // ToDo! General expressions inside call! -> ticket #5934
-
       else exp;
     end match;
   end collectStateCrefs;

@@ -57,8 +57,8 @@ public
      Sub-Modules:
       - DetectContinuousStates
       - DetectDiscreteStates"
-    input output BVariable.VarData varData                       "Data containing variable pointers";
-    input output BEquation.EqData eqData                         "Data containing equation pointers";
+    input output BVariable.VarData varData                "Data containing variable pointers";
+    input output BEquation.EqData eqData                  "Data containing equation pointers";
     input detectContinuousStatesInterface continuousFunc  "Subroutine for continous states";
     input detectDiscreteStatesInterface discreteFunc      "Subroutine for discrete states";
   end detectStatesInterface;
@@ -67,23 +67,23 @@ public
     "DetectContinuousStates
      This function is only allowed to read and change equations, change algebraic
      variables to states and create state derivatives."
-    input output BVariable.VariablePointers variables      "All variables";
-    input output BEquation.EquationPointers equations      "System equations";
-    input output BVariable.VariablePointers unknowns       "Unknowns";
-    input output BVariable.VariablePointers knowns         "Knowns";
-    input output BVariable.VariablePointers states         "States";
-    input output BVariable.VariablePointers derivatives    "State derivatives (der(x) -> $DER.x)";
-    input output BVariable.VariablePointers algebraics     "Algebraic variables";
+    input output BVariable.VariablePointers variables     "All variables";
+    input output BEquation.EquationPointers equations     "System equations";
+    input output BVariable.VariablePointers unknowns      "Unknowns";
+    input output BVariable.VariablePointers knowns        "Knowns";
+    input output BVariable.VariablePointers states        "States";
+    input output BVariable.VariablePointers derivatives   "State derivatives (der(x) -> $DER.x)";
+    input output BVariable.VariablePointers algebraics    "Algebraic variables";
   end detectContinuousStatesInterface;
 
   partial function detectDiscreteStatesInterface
     "DetectDiscreteStates
      This function is only allowed to read and change equations, change algebraic
      variables to discrete and create previous discrete variables."
-    input output BVariable.VariablePointers variables      "All variables";
-    input output BEquation.EquationPointers equations      "System equations";
-    input output BVariable.VariablePointers discretes      "Discrete variables";
-    input output BVariable.VariablePointers previous       "Previous discrete variables (pre(d) -> $PRE.d)";
+    input output BVariable.VariablePointers variables     "All variables";
+    input output BEquation.EquationPointers equations     "System equations";
+    input output BVariable.VariablePointers discretes     "Discrete variables";
+    input output BVariable.VariablePointers previous      "Previous discrete variables (pre(d) -> $PRE.d)";
   end detectDiscreteStatesInterface;
 
   annotation(__OpenModelica_Interface="backend");

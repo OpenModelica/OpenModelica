@@ -127,6 +127,16 @@ public
     end match;
   end getVarPointer;
 
+  function isState
+    input Pointer<Variable> var;
+    output Boolean isstate;
+  algorithm
+    isstate := match Pointer.access(var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE())) then true;
+      else false;
+    end match;
+  end isState;
+
   uniontype VariablePointers
     record VARIABLE_POINTERS
       Integer bucketSize;
