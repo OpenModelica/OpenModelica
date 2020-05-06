@@ -5,6 +5,7 @@
 #include "Options/OptionsDialog.h"
 #include "Modeling/ModelWidgetContainer.h"
 #include "Git/GitCommands.h"
+#include "Util/NetworkAccessManager.h"
 
 /*!
  * \class TraceabilityInformationURI
@@ -120,16 +121,15 @@ void TraceabilityInformationURI::sendTraceabilityInformation(QString jsonMessage
   QNetworkRequest networkRequest(url);
   networkRequest.setHeader(QNetworkRequest::ContentTypeHeader, "application/json" );
   networkRequest.setRawHeader( "Accept-Charset", "UTF-8");
-  QNetworkAccessManager * pNetworkAccessManager = new QNetworkAccessManager;
-  QNetworkReply *pNetworkReply =   pNetworkAccessManager->post(networkRequest, traceabilityInformation);
-  pNetworkReply->ignoreSslErrors();
+  NetworkAccessManager *pNetworkAccessManager = new NetworkAccessManager;
+  pNetworkAccessManager->post(networkRequest, traceabilityInformation);
   connect(pNetworkAccessManager, SIGNAL(finished(QNetworkReply*)),this, SLOT(traceabilityInformationSent(QNetworkReply*)));
 }
 
 /*!
  * \brief TraceabilityInformationURI::traceabilityInformationSent
  * \param pNetworkReply
- * Slot activated when QNetworkAccessManager finished signal is raised.\n
+ * Slot activated when NetworkAccessManager finished signal is raised.\n
  * Shows an error message if the traceability information was not send correctly.\n
  * Deletes QNetworkReply object
  */
@@ -137,8 +137,7 @@ void TraceabilityInformationURI::traceabilityInformationSent(QNetworkReply *pNet
 {
   if (pNetworkReply->error() != QNetworkReply::NoError) {
     QMessageBox::critical(0, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          QString("Following error has occurred while sending the traceability information \n\n%1").arg(pNetworkReply->errorString()),
-                          Helper::ok);
+                          QString("Following error has occurred while sending the traceability information \n\n%1").arg(pNetworkReply->errorString()), Helper::ok);
   }
   else
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel,

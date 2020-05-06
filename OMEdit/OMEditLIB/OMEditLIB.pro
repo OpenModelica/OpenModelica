@@ -167,7 +167,8 @@ SOURCES += Util/Helper.cpp \
   OMS/OMSSimulationDialog.cpp \
   OMS/OMSSimulationOutputWidget.cpp \
   Animation/TimeManager.cpp \
-  Util/ResourceCache.cpp
+  Util/ResourceCache.cpp \
+  Util/NetworkAccessManager.cpp
 
 HEADERS  += Util/Helper.h \
   Util/Utilities.h \
@@ -262,7 +263,8 @@ HEADERS  += Util/Helper.h \
   Animation/TimeManager.h \
   Interfaces/InformationInterface.h \
   Interfaces/ModelInterface.h \
-  Util/ResourceCache.h
+  Util/ResourceCache.h \
+  Util/NetworkAccessManager.h
 
 CONFIG(osg) {
 

@@ -56,6 +56,7 @@
 #include "OMS/SystemSimulationInformationDialog.h"
 #include "Util/ResourceCache.h"
 #include "Plotting/PlotWindowContainer.h"
+#include "Util/NetworkAccessManager.h"
 
 #include <QNetworkReply>
 #include <QMessageBox>
@@ -3932,7 +3933,7 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   latestNewsFrameVBLayout->addLayout(latestNewsFrameHBLayout);
   mpLatestNewsFrame->setLayout(latestNewsFrameVBLayout);
   // create http object for request
-  mpLatestNewsNetworkAccessManager = new QNetworkAccessManager;
+  mpLatestNewsNetworkAccessManager = new NetworkAccessManager;
   connect(mpLatestNewsNetworkAccessManager, SIGNAL(finished(QNetworkReply*)), SLOT(readLatestNewsXML(QNetworkReply*)));
   addLatestNewsListItems();
   // splitter
@@ -4020,47 +4021,38 @@ void WelcomePageWidget::addLatestNewsListItems()
 {
   mpLatestNewsListWidget->clear();
   /* if show latest news settings is not set then don't fetch the latest news items. */
-  if (OptionsDialog::instance()->getGeneralSettingsPage()->getShowLatestNewsCheckBox()->isChecked())
-  {
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getShowLatestNewsCheckBox()->isChecked()) {
     QUrl newsUrl("https://openmodelica.org/index.php?option=com_content&view=category&id=23&format=feed&amp;type=rss");
-    QNetworkReply *pNetworkReply = mpLatestNewsNetworkAccessManager->get(QNetworkRequest(newsUrl));
-    pNetworkReply->ignoreSslErrors();
+    mpLatestNewsNetworkAccessManager->get(QNetworkRequest(newsUrl));
   }
 }
 
 void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
 {
-  if (pNetworkReply->error() == QNetworkReply::HostNotFoundError)
-  {
+  if (pNetworkReply->error() == QNetworkReply::HostNotFoundError) {
     mpNoLatestNewsLabel->setVisible(true);
     mpNoLatestNewsLabel->setText(tr("Sorry, no internet no news items."));
-  }
-  else if (pNetworkReply->error() == QNetworkReply::NoError)
-  {
+  } else if (pNetworkReply->error() == QNetworkReply::NoError) {
     QByteArray response(pNetworkReply->readAll());
     QXmlStreamReader xml(response);
     int count = 0;
     QString title, link;
-    while (!xml.atEnd())
-    {
+    while (!xml.atEnd()) {
       mpNoLatestNewsLabel->setVisible(false);
       xml.readNext();
-      if (xml.tokenType() == QXmlStreamReader::StartElement)
-      {
-        if (xml.name() == "item")
-        {
-          while (!xml.atEnd())
-          {
+      if (xml.tokenType() == QXmlStreamReader::StartElement) {
+        if (xml.name() == "item") {
+          while (!xml.atEnd()) {
             xml.readNext();
-            if (xml.tokenType() == QXmlStreamReader::StartElement)
-            {
-              if (xml.name() == "title")
+            if (xml.tokenType() == QXmlStreamReader::StartElement) {
+              if (xml.name() == "title") {
                 title = xml.readElementText();
-              if (xml.name() == "link")
-              {
+              }
+              if (xml.name() == "link") {
                 link = xml.readElementText();
-                if (count >= (int)MainWindow::instance()->MaxRecentFiles)
+                if (count >= (int)MainWindow::instance()->MaxRecentFiles) {
                   break;
+                }
                 count++;
                 QListWidgetItem *listItem = new QListWidgetItem(mpLatestNewsListWidget);
                 listItem->setIcon(ResourceCache::getIcon(":/Resources/icons/next.svg"));
@@ -4072,15 +4064,15 @@ void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
           }
         }
       }
-      if (count >= (int)MainWindow::instance()->MaxRecentFiles)
+      if (count >= (int)MainWindow::instance()->MaxRecentFiles) {
         break;
+      }
     }
-  }
-  else
-  {
+  } else {
     mpNoLatestNewsLabel->setVisible(true);
     mpNoLatestNewsLabel->setText(QString(Helper::error).append(" - ").append(pNetworkReply->errorString()));
   }
+  pNetworkReply->deleteLater();
 }
 
 void WelcomePageWidget::openRecentFileItem(QListWidgetItem *pItem)

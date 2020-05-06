@@ -35,6 +35,7 @@
 #include "Util/Helper.h"
 #include "omc_config.h"
 #include "GDBBacktrace.h"
+#include "Util/NetworkAccessManager.h"
 
 #include <QGridLayout>
 #include <QMessageBox>
@@ -298,17 +299,16 @@ void CrashReportDialog::sendReport()
   // create the request
   QUrl url("https://dev.openmodelica.org/omeditcrashreports/cgi-bin/server.py");
   QNetworkRequest networkRequest(url);
-  QNetworkAccessManager *pNetworkAccessManager = new QNetworkAccessManager;
+  NetworkAccessManager *pNetworkAccessManager = new NetworkAccessManager;
   connect(pNetworkAccessManager, SIGNAL(finished(QNetworkReply*)), SLOT(reportSent(QNetworkReply*)));
   QNetworkReply *pNetworkReply = pNetworkAccessManager->post(networkRequest, pHttpMultiPart);
-  pNetworkReply->ignoreSslErrors();
   pHttpMultiPart->setParent(pNetworkReply); // delete the pHttpMultiPart with the pNetworkReply
 }
 
 /*!
  * \brief CrashReportDialog::reportSent
  * \param pNetworkReply
- * Slot activated when QNetworkAccessManager finished signal is raised.\n
+ * Slot activated when NetworkAccessManager finished signal is raised.\n
  * Shows an error message if crash report was not send correctly.\n
  * Deletes QNetworkReply object which deletes the QHttpMultiPart and QFile objects attached with it.
  */
@@ -318,8 +318,7 @@ void CrashReportDialog::reportSent(QNetworkReply *pNetworkReply)
   mpProgressBar->hide();
   if (pNetworkReply->error() != QNetworkReply::NoError) {
     QMessageBox::critical(0, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          QString("Following error has occurred while sending crash report \n\n%1").arg(pNetworkReply->errorString()),
-                          Helper::ok);
+                          QString("Following error has occurred while sending crash report \n\n%1").arg(pNetworkReply->errorString()), Helper::ok);
   }
   pNetworkReply->deleteLater();
   accept();

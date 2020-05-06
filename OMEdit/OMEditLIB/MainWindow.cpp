@@ -82,6 +82,8 @@
 MainWindow::MainWindow(QWidget *parent)
   : QMainWindow(parent), mExitApplicationStatus(false)
 {
+  // Make sure we honor the system's proxy settings
+  QNetworkProxyFactory::setUseSystemConfiguration(true);
   // This is a very convoluted way of asking for the default system font in Qt
   QFont systmFont("Monospace");
   systmFont.setStyleHint(QFont::System);
