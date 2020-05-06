@@ -68,6 +68,7 @@ class RectangleAnnotation;
 class EllipseAnnotation;
 class TextAnnotation;
 class BitmapAnnotation;
+class NetworkAccessManager;
 
 class GraphicsScene : public QGraphicsScene
 {
@@ -421,7 +422,7 @@ private:
   QListWidget *mpLatestNewsListWidget;
   QPushButton *mpReloadLatestNewsButton;
   Label *mpVisitWebsiteLabel;
-  QNetworkAccessManager *mpLatestNewsNetworkAccessManager;
+  NetworkAccessManager *mpLatestNewsNetworkAccessManager;
   QSplitter *mpSplitter;
   QFrame *mpBottomFrame;
   QPushButton *mpCreateModelButton;
