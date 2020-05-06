@@ -147,12 +147,13 @@ void ElementInfo::updateElementInfo(const ElementInfo *pElementInfo)
   mDomain = pElementInfo->getDomain();
 }
 
+
 /*!
  * \brief ElementInfo::parseElementInfoString
  * Parses the component info string.
  * \param value
  */
-void ElementInfo::parseElementInfoString(QString value)
+void ElementInfo::parseComponentInfoString(QString value)
 {
   if (value.isEmpty()) {
     return;
@@ -238,6 +239,131 @@ void ElementInfo::parseElementInfoString(QString value)
     setArrayIndex(list.at(11));
   }
 }
+
+
+/*!
+ * \brief ElementInfo::parseElementInfoString
+ * Parses the component info string.
+ * \param value
+ */
+void ElementInfo::parseElementInfoString(QString value)
+{
+  /*
+  00 co/cl
+  01 type
+  02 name (component or class name)
+  03 comment
+  04 public/protected
+  05 final
+  06 flow
+  07 stream
+  08 replaceable
+  09 variability
+  10 inner
+  11 input/output
+  12 constrainedby
+  13 elementDims, TypeDims
+  */
+
+  if (value.isEmpty()) {
+    return;
+  }
+  QStringList list = StringHandler::unparseStrings(value);
+
+  // read the classifier component "co" vs class "cl"
+  if (list.size() > 0) {
+    mIsElement = StringHandler::removeFirstLastQuotes(list.at(0)).contains("cl");
+  } else {
+    return;
+  }
+  // read the class name, i.e. type name
+  if (list.size() > 1) {
+    mClassName = list.at(1);
+  } else {
+    return;
+  }
+  // read the name
+  if (list.size() > 2) {
+    mName = list.at(2);
+  } else {
+    return;
+  }
+  // read the class comment
+  if (list.size() > 3) {
+    mComment = list.at(3);
+  } else {
+    return;
+  }
+  // read the class access
+  if (list.size() > 4) {
+    mIsProtected = StringHandler::removeFirstLastQuotes(list.at(4)).contains("protected");
+  } else {
+    return;
+  }
+  // read the final attribute
+  if (list.size() > 5) {
+    mIsFinal = list.at(5).contains("true");
+  } else {
+    return;
+  }
+  // read the flow attribute
+  if (list.size() > 6) {
+    mIsFlow = list.at(6).contains("true");
+  } else {
+    return;
+  }
+  // read the stream attribute
+  if (list.size() > 7) {
+    mIsStream = list.at(7).contains("true");
+  } else {
+    return;
+  }
+  // read the replaceable attribute
+  if (list.size() > 8) {
+    mIsReplaceable = list.at(8).contains("true");
+  } else {
+    return;
+  }
+  // read the variability attribute
+  if (list.size() > 9) {
+    QMap<QString, QString>::iterator variability_it;
+    for (variability_it = mVariabilityMap.begin(); variability_it != mVariabilityMap.end(); ++variability_it) {
+      if (variability_it.key().compare(StringHandler::removeFirstLastQuotes(list.at(9))) == 0) {
+        mVariability = variability_it.value();
+        break;
+      }
+    }
+  }
+  // read the inner attribute
+  if (list.size() > 10) {
+    mIsInner = list.at(10).contains("inner");
+    mIsOuter = list.at(10).contains("outer");
+  } else {
+    return;
+  }
+  // read the casuality attribute
+  if (list.size() > 11) {
+    QMap<QString, QString>::iterator casuality_it;
+    for (casuality_it = mCasualityMap.begin(); casuality_it != mCasualityMap.end(); ++casuality_it) {
+      if (casuality_it.key().compare(StringHandler::removeFirstLastQuotes(list.at(11))) == 0) {
+        mCasuality = casuality_it.value();
+        break;
+      }
+    }
+  }
+  // read the constrainedby class name
+  if (list.size() > 12) {
+    mConstrainedByClassName = list.at(12);
+  } else {
+    return;
+  }
+  // read the array index value
+  if (list.size() > 13) {
+    setArrayIndex(list.at(13));
+  }
+}
+
+
 
 /*!
  * \brief ElementInfo::fetchParameterValue
@@ -515,11 +641,11 @@ Element::Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annota
   createResizerItems();
   updateToolTip();
   if (mpLibraryTreeItem) {
-    connect(mpLibraryTreeItem, SIGNAL(loadedForElement()), SLOT(handleLoaded()));
-    connect(mpLibraryTreeItem, SIGNAL(unLoadedForElement()), SLOT(handleUnloaded()));
-    connect(mpLibraryTreeItem, SIGNAL(coOrdinateSystemUpdatedForElement()), SLOT(handleCoOrdinateSystemUpdated()));
-    connect(mpLibraryTreeItem, SIGNAL(shapeAddedForElement()), SLOT(handleShapeAdded()));
-    connect(mpLibraryTreeItem, SIGNAL(componentAddedForElement()), SLOT(handleElementAdded()));
+    connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
+    connect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), SLOT(handleUnloaded()));
+    connect(mpLibraryTreeItem, SIGNAL(coOrdinateSystemUpdatedForComponent()), SLOT(handleCoOrdinateSystemUpdated()));
+    connect(mpLibraryTreeItem, SIGNAL(shapeAddedForComponent()), SLOT(handleShapeAdded()));
+    connect(mpLibraryTreeItem, SIGNAL(componentAddedForComponent()), SLOT(handleElementAdded()));
     connect(mpLibraryTreeItem, SIGNAL(nameChanged()), SLOT(handleNameChanged()));
   }
   connect(this, SIGNAL(transformHasChanged()), SLOT(updatePlacementAnnotation()));
@@ -565,10 +691,10 @@ Element::Element(LibraryTreeItem *pLibraryTreeItem, Element *pParentElement)
   mpTopRightResizerItem = 0;
   mpBottomRightResizerItem = 0;
   if (mpLibraryTreeItem) {
-    connect(mpLibraryTreeItem, SIGNAL(loadedForElement()), SLOT(handleLoaded()));
-    connect(mpLibraryTreeItem, SIGNAL(unLoadedForElement()), SLOT(handleUnloaded()));
-    connect(mpLibraryTreeItem, SIGNAL(shapeAddedForElement()), SLOT(handleShapeAdded()));
-    connect(mpLibraryTreeItem, SIGNAL(componentAddedForElement()), SLOT(handleElementAdded()));
+    connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
+    connect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), SLOT(handleUnloaded()));
+    connect(mpLibraryTreeItem, SIGNAL(shapeAddedForComponent()), SLOT(handleShapeAdded()));
+    connect(mpLibraryTreeItem, SIGNAL(componentAddedForComponent()), SLOT(handleElementAdded()));
   }
 }
 
@@ -602,10 +728,10 @@ Element::Element(Element *pElement, Element *pParentElement, Element *pRootParen
   updateToolTip();
   setVisible(!mpReferenceComponent->isInBus());
   if (mpLibraryTreeItem) {
-    connect(mpLibraryTreeItem, SIGNAL(loadedForElement()), SLOT(handleLoaded()));
-    connect(mpLibraryTreeItem, SIGNAL(unLoadedForElement()), SLOT(handleUnloaded()));
-    connect(mpLibraryTreeItem, SIGNAL(shapeAddedForElement()), SLOT(handleShapeAdded()));
-    connect(mpLibraryTreeItem, SIGNAL(componentAddedForElement()), SLOT(handleElementAdded()));
+    connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
+    connect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), SLOT(handleUnloaded()));
+    connect(mpLibraryTreeItem, SIGNAL(shapeAddedForComponent()), SLOT(handleShapeAdded()));
+    connect(mpLibraryTreeItem, SIGNAL(componentAddedForComponent()), SLOT(handleElementAdded()));
   }
   connect(mpReferenceComponent, SIGNAL(added()), SLOT(referenceElementAdded()));
   connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceElementTransformHasChanged()));
@@ -645,8 +771,8 @@ Element::Element(Element *pElement, GraphicsView *pGraphicsView)
   mpGraphicsView->addItem(this);
   updateToolTip();
   if (mpLibraryTreeItem) {
-    connect(mpLibraryTreeItem, SIGNAL(loadedForElement()), SLOT(handleLoaded()));
-    connect(mpLibraryTreeItem, SIGNAL(unLoadedForElement()), SLOT(handleUnloaded()));
+    connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
+    connect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), SLOT(handleUnloaded()));
   }
   connect(mpReferenceComponent, SIGNAL(added()), SLOT(referenceElementAdded()));
   connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceElementTransformHasChanged()));
@@ -1183,7 +1309,7 @@ void Element::applyRotation(qreal angle)
 void Element::addConnectionDetails(LineAnnotation *pConnectorLineAnnotation)
 {
   // handle component position, rotation and scale changes
-  connect(this, SIGNAL(transformChange(bool)), pConnectorLineAnnotation, SLOT(handleElementMoved(bool)), Qt::UniqueConnection);
+  connect(this, SIGNAL(transformChange(bool)), pConnectorLineAnnotation, SLOT(handleComponentMoved(bool)), Qt::UniqueConnection);
   if (!pConnectorLineAnnotation->isInheritedShape()) {
     connect(this, SIGNAL(transformChanging()), pConnectorLineAnnotation, SLOT(updateConnectionTransformation()), Qt::UniqueConnection);
   }
@@ -1191,7 +1317,7 @@ void Element::addConnectionDetails(LineAnnotation *pConnectorLineAnnotation)
 
 void Element::removeConnectionDetails(LineAnnotation *pConnectorLineAnnotation)
 {
-  disconnect(this, SIGNAL(transformChange(bool)), pConnectorLineAnnotation, SLOT(handleElementMoved(bool)));
+  disconnect(this, SIGNAL(transformChange(bool)), pConnectorLineAnnotation, SLOT(handleComponentMoved(bool)));
   if (!pConnectorLineAnnotation->isInheritedShape()) {
     disconnect(this, SIGNAL(transformChanging()), pConnectorLineAnnotation, SLOT(updateConnectionTransformation()));
   }
@@ -2493,7 +2619,7 @@ void Element::handleCoOrdinateSystemUpdated()
 
 /*!
  * \brief Element::handleShapeAdded
- * Slot activated when a new shape is added to Element's class and LibraryTreeItem::shapeAddedForElement() SIGNAL is raised.
+ * Slot activated when a new shape is added to Element's class and LibraryTreeItem::shapeAddedForComponent() SIGNAL is raised.
  */
 void Element::handleShapeAdded()
 {
@@ -2503,7 +2629,7 @@ void Element::handleShapeAdded()
 
 /*!
  * \brief Element::handleElementAdded
- * Slot activated when a new component is added to Element's class and LibraryTreeItem::componentAddedForElement() SIGNAL is raised.
+ * Slot activated when a new component is added to Element's class and LibraryTreeItem::componentAddedForComponent() SIGNAL is raised.
  */
 void Element::handleElementAdded()
 {

@@ -54,6 +54,8 @@ evil_hack_to_fool_lupdate {
 
 # Windows libraries and includes
 win32 {
+  QMAKE_CXXFLAGS += -g -DUA_DYNAMIC_LINKING
+
   OPENMODELICAHOME = $$(OMBUILDDIR)
   host_short =
 

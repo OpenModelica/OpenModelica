@@ -244,6 +244,10 @@ void OptionsDialog::readGeneralSettings()
   if (mpSettings->contains("welcomePage/showLatestNews")) {
     mpGeneralSettingsPage->getShowLatestNewsCheckBox()->setChecked(mpSettings->value("welcomePage/showLatestNews").toBool());
   }
+  // replaceable support
+  if (mpSettings->contains("replaceableSupport")) {
+    mpGeneralSettingsPage->setReplaceableSupport(mpSettings->value("replaceableSupport").toBool());
+  }
 }
 
 //! Reads the Libraries section settings from omedit.ini
@@ -1056,6 +1060,8 @@ void OptionsDialog::saveGeneralSettings()
     MainWindow::instance()->getWelcomePageWidget()->getLatestNewsFrame()->hide();
   }
   mpSettings->setValue("welcomePage/showLatestNews", showLatestNews);
+  // save replaceable support
+  mpSettings->setValue("replaceableSupport", mpGeneralSettingsPage->getReplaceableSupport());
 }
 
 //! Saves the Libraries section settings to omedit.ini
@@ -1992,6 +1998,16 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pWelcomePageGridLayout->addLayout(pWelcomePageViewButtonsLayout, 0, 0);
   pWelcomePageGridLayout->addWidget(mpShowLatestNewsCheckBox, 1, 0);
   mpWelcomePageGroupBox->setLayout(pWelcomePageGridLayout);
+
+  // Optional Features Box
+  mpOptionalFeaturesGroupBox = new QGroupBox(tr("Optional Features"));
+  // handle replaceable support
+  mpReplaceableSupport = new QCheckBox(tr("Enable Replaceable Support"));
+  // Optional Features Layout
+  QGridLayout *pOptionalFeaturesLayout = new QGridLayout;
+  pOptionalFeaturesLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pOptionalFeaturesLayout->addWidget(mpReplaceableSupport, 0, 0);
+  mpOptionalFeaturesGroupBox->setLayout(pOptionalFeaturesLayout);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
@@ -2000,6 +2016,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pMainLayout->addWidget(mpLibrariesBrowserGroupBox);
   pMainLayout->addWidget(mpEnableAutoSaveGroupBox);
   pMainLayout->addWidget(mpWelcomePageGroupBox);
+  pMainLayout->addWidget(mpOptionalFeaturesGroupBox);
   setLayout(pMainLayout);
 }
 

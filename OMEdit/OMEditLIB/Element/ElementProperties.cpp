@@ -81,6 +81,10 @@ Parameter::Parameter(Element *pComponent, bool showStartAttribute, QString tab, 
     mValueType = Parameter::Normal;
   } else if (pOMCProxy->isWhat(StringHandler::Enumeration, mpComponent->getComponentInfo()->getClassName())) {
     mValueType = Parameter::Enumeration;
+  } else if (mpComponent->getComponentInfo()->getReplaceable()) { // replaceable component or short element definition
+    mValueType = mpComponent->getComponentInfo()->getIsElement()?Parameter::ReplaceableClass:Parameter::ReplaceableComponent;
+  } else if (mpComponent->getComponentInfo()->getIsElement()) { // non replaceable short element definition
+    mValueType = Parameter::ReplaceableClass;
   } else {
     mValueType = Parameter::Normal;
   }
@@ -170,6 +174,8 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
   switch (mValueType) {
     case Parameter::Boolean:
     case Parameter::Enumeration:
+    case Parameter::ReplaceableClass:
+    case Parameter::ReplaceableComponent:
       if (defaultValue) {
         mpValueComboBox->lineEdit()->setPlaceholderText(value);
       } else {
@@ -208,6 +214,8 @@ QWidget* Parameter::getValueWidget()
   switch (mValueType) {
     case Parameter::Boolean:
     case Parameter::Enumeration:
+    case Parameter::ReplaceableClass:
+    case Parameter::ReplaceableComponent:
       return mpValueComboBox;
     case Parameter::CheckBox:
       return mpValueCheckBox;
@@ -227,6 +235,8 @@ bool Parameter::isValueModified()
   switch (mValueType) {
     case Parameter::Boolean:
     case Parameter::Enumeration:
+    case Parameter::ReplaceableClass:
+    case Parameter::ReplaceableComponent:
       return mpValueComboBox->lineEdit()->isModified();
     case Parameter::CheckBox:
       return mValueCheckBoxModified;
@@ -246,6 +256,8 @@ QString Parameter::getValue()
   switch (mValueType) {
     case Parameter::Boolean:
     case Parameter::Enumeration:
+    case Parameter::ReplaceableClass:
+    case Parameter::ReplaceableComponent:
       return mpValueComboBox->lineEdit()->text().trimmed();
     case Parameter::CheckBox:
       return mpValueCheckBox->isChecked() ? "true" : "false";
@@ -279,6 +291,8 @@ void Parameter::setEnabled(bool enable)
   switch (mValueType) {
     case Parameter::Boolean:
     case Parameter::Enumeration:
+    case Parameter::ReplaceableComponent:
+    case Parameter::ReplaceableClass:
       mpValueComboBox->setEnabled(enable);
       break;
     case Parameter::CheckBox:
@@ -296,7 +310,8 @@ void Parameter::createValueWidget()
   int i;
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   QString className = mpComponent->getComponentInfo()->getClassName();
-  QStringList enumerationLiterals;
+  QString constrainedByClassName = "$Any";
+  QStringList enumerationLiterals, replaceableChoices;
   switch (mValueType) {
     case Parameter::Boolean:
       mpValueComboBox = new QComboBox;
@@ -319,6 +334,22 @@ void Parameter::createValueWidget()
     case Parameter::CheckBox:
       mpValueCheckBox = new QCheckBox;
       connect(mpValueCheckBox, SIGNAL(toggled(bool)), SLOT(valueCheckBoxChanged(bool)));
+      break;
+    case Parameter::ReplaceableComponent:
+    case Parameter::ReplaceableClass:
+      constrainedByClassName = mpComponent->getComponentInfo()->getConstrainedByClassName();
+      mpValueComboBox = new QComboBox;
+      mpValueComboBox->setEditable(true);
+      mpValueComboBox->addItem("", "");
+      if (constrainedByClassName.contains("$Any"))
+      {
+        constrainedByClassName = className;
+      }
+      replaceableChoices = pOMCProxy->getAllSubtypeOf(constrainedByClassName, mpComponent->getComponentInfo()->getParentClassName());
+      for (i = 0 ; i < replaceableChoices.size(); i++) {
+        mpValueComboBox->addItem(replaceableChoices[i], constrainedByClassName + " / " + replaceableChoices[i]);
+      }
+      connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
       break;
     case Parameter::Normal:
     default:
@@ -917,7 +948,7 @@ void ElementParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeItem 
     // if showStartAttribute true and group name is empty or Parameters then we should make group name Initialization
     if (showStartAttribute && groupBox.isEmpty()) {
       groupBox = "Initialization";
-    } else if (groupBox.isEmpty() && (isParameter || (dialogAnnotation.size() > 0))) {
+    } else if (groupBox.isEmpty() && (isParameter || (dialogAnnotation.size() > 0) || (pComponent->getComponentInfo()->getReplaceable()))) {
       groupBox = "Parameters";
     }
     if (!mTabsMap.contains(tab)) {

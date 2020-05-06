@@ -47,7 +47,9 @@ public:
     Normal,  /* Integer, Real etc. */
     Boolean,
     CheckBox,
-    Enumeration
+    Enumeration,
+    ReplaceableComponent,
+    ReplaceableClass
   };
   Parameter(Element *pComponent, bool showStartAttribute, QString tab, QString groupBox);
   Element* getComponent() {return mpComponent;}

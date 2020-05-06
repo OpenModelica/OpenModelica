@@ -67,6 +67,7 @@ public:
   ElementInfo(QObject *pParent = 0);
   ElementInfo(ElementInfo *pElementInfo, QObject *pParent = 0);
   void updateElementInfo(const ElementInfo *pElementInfo);
+  void parseComponentInfoString(QString value);
   void parseElementInfoString(QString value);
   void fetchParameterValue(OMCProxy *pOMCProxy, const QString &className);
   void applyDefaultPrefixes(QString defaultPrefixes);
@@ -100,6 +101,10 @@ public:
   QString getCausality() const {return mCasuality;}
   void setIsElement(bool isElement) {mIsElement = isElement;}
   bool getIsElement() const {return mIsElement;}
+  void setParentClassName(const QString &parentClassName) {mParentClassName = parentClassName;}
+  QString getParentClassName() const {return mParentClassName;}
+  void setConstrainedByClassName(const QString &constrainedByClassName) {mConstrainedByClassName = constrainedByClassName;}
+  QString getConstrainedByClassName() const {return mConstrainedByClassName;}
   void setArrayIndex(const QString &arrayIndex);
   QString getArrayIndex() const {return mArrayIndex;}
   int getArrayIndexAsNumber(bool *ok) const;
@@ -137,6 +142,7 @@ public:
   bool operator!=(const ElementInfo &componentInfo) const;
   QString getHTMLDescription() const;
 private:
+  QString mParentClassName;
   QString mClassName;
   QString mName;
   QString mComment;
@@ -154,6 +160,7 @@ private:
   bool mIsOuter;
   QMap<QString, QString> mCasualityMap;
   QString mCasuality;
+  QString mConstrainedByClassName;
   QString mArrayIndex;
   bool mIsArray;
   bool mModifiersLoaded;
