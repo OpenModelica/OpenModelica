@@ -2,9 +2,7 @@ encapsulated package NFLookupTree
 
 import BaseAvlTree;
 extends BaseAvlTree(redeclare type Key = String,
-                    redeclare type Value = Entry);
-
-
+                    redeclare type Value = NFLookupTree.Entry);
 public
   uniontype Entry
     record CLASS
@@ -23,34 +21,34 @@ public
       input Entry entry;
       output Integer index;
       algorithm
-     index := match entry
-        case CLASS() then entry.index;
-        case COMPONENT() then entry.index;
-        case IMPORT() then entry.index;
-      end match;
+       index := match entry
+          case CLASS() then entry.index;
+          case COMPONENT() then entry.index;
+          case IMPORT() then entry.index;
+        end match;
     end index;
 
     function isEqual
-      input Entry entry1;
-      input Entry entry2;
-      output Boolean isEqual = index(entry1) == index(entry2);
-    end isEqual;
+        input Entry entry1;
+        input Entry entry2;
+        output Boolean isEqual = index(entry1) == index(entry2);
+     end isEqual;
 
-    function isImport
-      input Entry entry;
-      output Boolean isImport;
-    algorithm
-       isImport := match entry
+     function isImport
+        input Entry entry;
+        output Boolean isImport;
+      algorithm
+        isImport := match entry
           case IMPORT() then true;
           else false;
         end match;
-      end isImport;
-    end Entry;
+       end isImport;
+     end Entry;
 
-    redeclare function extends keyStr
-    algorithm
+     redeclare function extends keyStr
+     algorithm
       outString := inKey;
-    end keyStr;
+     end keyStr;
 
     redeclare function extends valueStr
     algorithm
@@ -66,4 +64,4 @@ public
     end keyCompare;
 
     annotation(__OpenModelica_Interface="util");
-  end NFLookupTree;
+end NFLookupTree;

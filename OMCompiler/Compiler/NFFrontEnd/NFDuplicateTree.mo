@@ -1,20 +1,23 @@
 encapsulated package NFDuplicateTree
-  import NFLookupTree = NFClassTree.LookupTree;
-  import NFInstNode.InstNode;
+public
+  import BaseAvlTree;
+  import NFLookupTree;
+  import NFInstNode;
+  import List;
 
-  type EntryType = enumeration(DUPLICATE, REDECLARE, ENTRY);
+type EntryType = enumeration(DUPLICATE, REDECLARE, ENTRY);
 
   uniontype Entry
     record ENTRY
-    NFLookupTree.Entry entry;
-    Option<NFInstNode.InstNode> node;
-    list<Entry> children;
-    EntryType ty;
+      NFLookupTree.Entry entry;
+      Option<NFInstNode.InstNode> node;
+      list<Entry> children;
+      EntryType ty;
     end ENTRY;
   end Entry;
 
-  extends BaseAvlTree(redeclare type Key = String,
-            redeclare type Value = Entry);
+extends BaseAvlTree(redeclare type Key = String,
+                    redeclare type Value = NFDuplicateTree.Entry);
 
   redeclare function extends keyStr
   algorithm
