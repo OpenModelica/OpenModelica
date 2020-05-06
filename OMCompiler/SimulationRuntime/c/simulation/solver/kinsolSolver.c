@@ -1075,14 +1075,13 @@ static int nlsKinsolErrorHandler(int errorCode, DATA *data,
     retValue = 1;
     break;
   case KIN_LSETUP_FAIL:
-    /* In case something goes wrong with the symbolic jacobian try the numerical
-     */
+    /* In case something goes wrong with the symbolic jacobian try the numerical */
     if (kinsolData->linearSolverMethod == NLS_LS_KLU &&
         nlsData->isPatternAvailable &&
         nlsData->analyticalJacobianColumn != NULL) {
       warningStreamPrint(LOG_NLS_V, 0,
-                         "kinsols runs into issues with symbolic Jacobian, "
-                         "retry with the numerical.\n");
+                         "The kinls setup routine (lsetup) encountered an error. "
+                         "Retry with numerical Jacobian.\n");
       flag = KINSetJacFn(kinsolData->kinsolMemory, nlsSparseJac);
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetJacFn");
     }
@@ -1217,11 +1216,11 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber) {
     nlsKinsolConfigPrint(kinsolData, nlsData);
 
     flag = KINSol(
-        kinsolData->kinsolMemory, /* KINSol memory block */
-        kinsolData->initialGuess, /* initial guess on input; solution vector */
+        kinsolData->kinsolMemory,   /* KINSol memory block */
+        kinsolData->initialGuess,   /* initial guess on input; solution vector */
         kinsolData->kinsolStrategy, /* global strategy choice */
         kinsolData->xScale,         /* scaling vector, for the variable cc */
-        kinsolData->fScale); /* scaling vector for function values fval */
+        kinsolData->fScale);        /* scaling vector for function values fval */
 
     if (flag < 0) {
       warningStreamPrint(LOG_NLS, 0, "KINSol finished with errorCode %d.", flag);

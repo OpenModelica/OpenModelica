@@ -260,12 +260,12 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     /* daeMode: set nominal values for algebraic variables */
     if (idaData->daeMode) {
       getAlgebraicDAEVarNominals(data, idaData->yScale + data->modelData->nStates);
-      for(i=data->modelData->nStates; i < idaData->N; ++i) {
+      for (i=data->modelData->nStates; i < idaData->N; ++i) {
         idaData->ypScale[i] = 1.0;
       }
     }
     infoStreamPrint(LOG_SOLVER_V, 1, "The scale factors for all ida states: ");
-    for(i=0; i < idaData->N; ++i) {
+    for (i=0; i < idaData->N; ++i) {
       infoStreamPrint(LOG_SOLVER_V, 0, "%ld. scaleFactor: %g", i+1, idaData->yScale[i]);
     }
     messageClose(LOG_SOLVER_V);
@@ -278,8 +278,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   idaData->disableScaling = 0;
 
   /* Set root functions unless flag FLAG_NO_ROOTFINDING is set */
-  if(!omc_flag[FLAG_NO_ROOTFINDING])
-  {
+  if (!omc_flag[FLAG_NO_ROOTFINDING]) {
     solverInfo->solverRootFinding = 1;
     flag = IDARootInit(idaData->ida_mem, data->modelData->nZeroCrossings, rootsFunctionIDA);
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDARootInit");
@@ -428,7 +427,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   case IDA_LS_SPGMR:
     idaData->J = NULL;
     idaData->tmpJac = NULL;
-    idaData->linSol = SUNLinSol_SPGMR(idaData->y_linSol, PREC_LEFT, 5 /* default value */);
+    idaData->linSol = SUNLinSol_SPGMR(idaData->y_linSol, PREC_NONE, 5 /* default value */);
     if (idaData->linSol == NULL) {
       throwStreamPrint(threadData, "##IDA## In function SUNLinSol_SPGMR: Input incompatible.");
     }
@@ -437,7 +436,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   case IDA_LS_SPBCG:
     idaData->J = NULL;
     idaData->tmpJac = NULL;
-    idaData->linSol = SUNLinSol_SPBCGS(idaData->y_linSol, PREC_LEFT, 5 /* default value */);
+    idaData->linSol = SUNLinSol_SPBCGS(idaData->y_linSol, PREC_NONE, 5 /* default value */);
     if (idaData->linSol == NULL) {
       throwStreamPrint(threadData, "##IDA## In function SUNLinSol_SPBCGS: Input incompatible.");
     }
@@ -446,7 +445,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   case IDA_LS_SPTFQMR:
     idaData->J = NULL;
     idaData->tmpJac = NULL;
-    idaData->linSol = SUNLinSol_SPTFQMR(idaData->y_linSol, PREC_LEFT, 5 /* default value */);
+    idaData->linSol = SUNLinSol_SPTFQMR(idaData->y_linSol, PREC_NONE, 5 /* default value */);
     if (idaData->linSol == NULL) {
       throwStreamPrint(threadData, "##IDA## In function SUNLinSol_SPTFQMR: Input incompatible.");
     }
@@ -568,41 +567,35 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   }
 
   /* configure algebraic variables as such */
-  if (idaData->daeMode)
-  {
-    if (omc_flag[FLAG_NO_SUPPRESS_ALG])
-    {
+  if (idaData->daeMode) {
+    if (omc_flag[FLAG_NO_SUPPRESS_ALG]) {
       flag = IDASetSuppressAlg(idaData->ida_mem, 1 /* TRUE */);
-      if (checkIDAflag(flag)){
+      if (checkIDAflag(flag)) {
         throwStreamPrint(threadData, "##IDA## Suppress algebraic variables in the local error test failed");
       }
     }
-    for(i=0; i<idaData->N; ++i)
-    {
+    for (i=0; i<idaData->N; ++i) {
       tmp[i] = (i<data->modelData->nStates)? 1.0: 0.0;
     }
 
     flag = IDASetId(idaData->ida_mem, N_VMake_Serial(idaData->N,tmp));
-    if (checkIDAflag(flag)){
+    if (checkIDAflag(flag)) {
       throwStreamPrint(threadData, "##IDA## Mark algebraic variables as such failed!");
     }
   }
 
   /* define initial step size */
-  if (omc_flag[FLAG_INITIAL_STEP_SIZE])
-  {
+  if (omc_flag[FLAG_INITIAL_STEP_SIZE]) {
     double initialStepSize = atof(omc_flagValue[FLAG_INITIAL_STEP_SIZE]);
 
     assertStreamPrint(threadData, initialStepSize >= DASSL_STEP_EPS, "Selected initial step size %e is too small.", initialStepSize);
 
     flag = IDASetInitStep(idaData->ida_mem, initialStepSize);
-    if (checkIDAflag(flag)){
+    if (checkIDAflag(flag)) {
       throwStreamPrint(threadData, "##IDA## Set initial step size failed!");
     }
     infoStreamPrint(LOG_SOLVER, 0, "initial step size: %g", initialStepSize);
-  }
-  else
-  {
+  } else {
     infoStreamPrint(LOG_SOLVER, 0, "initial step size is set automatically.");
   }
 
