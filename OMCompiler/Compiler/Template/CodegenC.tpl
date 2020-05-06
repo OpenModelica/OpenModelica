@@ -4709,6 +4709,11 @@ template functionlinearmodelMatlab(ModelInfo modelInfo, String modelNamePrefix) 
       <%matrixB%>
       <%matrixC%>
       <%matrixD%>
+      "\n"
+      <%getVarNameMatlab(vars.stateVars, "x")%>
+      <%getVarNameMatlab(vars.inputVars, "u")%>
+      <%getVarNameMatlab(vars.outputVars, "y")%>
+      <%getVarNameMatlab(vars.algVars, "z")%>
       "end";
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
@@ -4724,6 +4729,11 @@ template functionlinearmodelMatlab(ModelInfo modelInfo, String modelNamePrefix) 
       <%matrixB%>
       <%matrixC%>
       <%matrixD%>
+      "\n"
+      <%getVarNameMatlab(vars.stateVars, "x")%>
+      <%getVarNameMatlab(vars.inputVars, "u")%>
+      <%getVarNameMatlab(vars.outputVars, "y")%>
+      <%getVarNameMatlab(vars.algVars, "z")%>
       "end";
     }
     >>
@@ -4756,6 +4766,12 @@ template functionlinearmodelJulia(ModelInfo modelInfo, String modelNamePrefix) "
       <%matrixB%>
       <%matrixC%>
       <%matrixD%>
+      "\n"
+      <%getVarNameJulia(vars.stateVars, "x")%>
+      <%getVarNameJulia(vars.inputVars, "u")%>
+      <%getVarNameJulia(vars.outputVars, "y")%>
+      <%getVarNameJulia(vars.algVars, "z")%>
+      "\n"
       "  (n, p, q, x0, u0, A, B, C, D)\n"
       "end";
     }
@@ -4772,13 +4788,18 @@ template functionlinearmodelJulia(ModelInfo modelInfo, String modelNamePrefix) "
       <%matrixB%>
       <%matrixC%>
       <%matrixD%>
+      "\n"
+      <%getVarNameJulia(vars.stateVars, "x")%>
+      <%getVarNameJulia(vars.inputVars, "u")%>
+      <%getVarNameJulia(vars.outputVars, "y")%>
+      <%getVarNameJulia(vars.algVars, "z")%>
+      "\n"
       "  (n, p, q, x0, u0, A, B, C, D)\n"
       "end";
     }
     >>
   end match
 end functionlinearmodelJulia;
-
 
 template functionlinearmodelPython(ModelInfo modelInfo, String modelNamePrefix) "template functionlinearmodelPython
   Generates python functions in simulation file."
@@ -4806,6 +4827,12 @@ template functionlinearmodelPython(ModelInfo modelInfo, String modelNamePrefix) 
       <%matrixB%>
       <%matrixC%>
       <%matrixD%>
+      "\n"
+      <%getVarNameMatlab(vars.stateVars, "x")%>
+      <%getVarNameMatlab(vars.inputVars, "u")%>
+      <%getVarNameMatlab(vars.outputVars, "y")%>
+      <%getVarNameMatlab(vars.algVars, "z")%>
+      "\n"
       "  return (n, p, q, x0, u0, A, B, C, D)\n"
       "end";
     }
@@ -4822,6 +4849,12 @@ template functionlinearmodelPython(ModelInfo modelInfo, String modelNamePrefix) 
       <%matrixB%>
       <%matrixC%>
       <%matrixD%>
+      "\n"
+      <%getVarNameMatlab(vars.stateVars, "x")%>
+      <%getVarNameMatlab(vars.inputVars, "u")%>
+      <%getVarNameMatlab(vars.outputVars, "y")%>
+      <%getVarNameMatlab(vars.algVars, "z")%>
+      "\n"
       "  return (n, p, q, x0, u0, A, B, C, D)\n"
       "end";
     }
@@ -4839,6 +4872,28 @@ template getVarName(list<SimVar> simVars, String arrayName) "template getVarName
     end match)
   ; empty
 end getVarName;
+
+template getVarNameMatlab(list<SimVar> simVars, String arrayName) "template getVarName
+  Generates name for a varables."
+::=
+  simVars |> var hasindex arrindex fromindex 1 =>
+    (match var
+    case SIMVAR(__) then
+      <<"  <%arrayName%>_<%Util.stringReplaceChar(crefStrNoUnderscore(name), '.', "_")%> = <%arrayName%>[<%arrindex%>];\n">>
+    end match)
+  ; empty
+end getVarNameMatlab;
+
+template getVarNameJulia(list<SimVar> simVars, String arrayName) "template getVarName
+  Generates name for a varables."
+::=
+  simVars |> var hasindex arrindex fromindex 1 =>
+    (match var
+    case SIMVAR(__) then
+      <<"  local <%arrayName%>_<%Util.stringReplaceChar(crefStrNoUnderscore(name), '.', "_")%> = <%arrayName%>[<%arrindex%>];\n">>
+    end match)
+  ; empty
+end getVarNameJulia;
 
 template genMatrix(String name, String row, String col, Integer rowI, Integer colI) "template genMatrix
   Generates Matrix for linear model"

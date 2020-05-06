@@ -3234,6 +3234,13 @@ package Util
     end DATETIME;
   end DateTime;
 
+  function stringReplaceChar
+    input String inString1;
+    input String inString2;
+    input String inString3;
+    output String outString;
+  end stringReplaceChar;
+
   function escapeModelicaStringToCString
     input String modelicaString;
     output String cString;
