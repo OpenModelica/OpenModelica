@@ -514,7 +514,7 @@ algorithm
   // traverse all systems and remove simple equations
   (outDAE, (repl, b, _, _, warnAliasConflicts)) := BackendDAEUtil.mapEqSystemAndFold(inDAE, fastAcausal1, (repl, false, unReplaceable, Flags.getConfigInt(Flags.MAXTRAVERSALS), false));
   if warnAliasConflicts and BackendDAEUtil.isSimulationDAE(inDAE.shared) then
-    Error.addMessage(Error.CONFLICTING_ALIAS_SET, {});
+    Error.addMessage(Error.REDUNDANT_ALIAS_SET, {});
   end if;
   // traverse the shared parts
   outDAE := removeSimpleEquationsShared(b, outDAE, repl);
@@ -702,7 +702,7 @@ algorithm
   end if;
   (outDAE, (repl, _, b, warnAliasConflicts)) := BackendDAEUtil.mapEqSystemAndFold(inDAE, allAcausal1, (repl, unReplaceable, false, false));
   if warnAliasConflicts and BackendDAEUtil.isSimulationDAE(inDAE.shared) then
-    Error.addMessage(Error.CONFLICTING_ALIAS_SET, {});
+    Error.addMessage(Error.REDUNDANT_ALIAS_SET, {});
   end if;
   outDAE := removeSimpleEquationsShared(b, outDAE, repl);
   // until remove simple equations does not update assignments and comps remove them
@@ -780,7 +780,7 @@ algorithm
   end if;
   (outDAE, (repl, _, b, warnAliasConflicts)) := BackendDAEUtil.mapEqSystemAndFold(inDAE, causal1, (repl, unReplaceable, false, false));
   if warnAliasConflicts and BackendDAEUtil.isSimulationDAE(inDAE.shared) then
-    Error.addMessage(Error.CONFLICTING_ALIAS_SET, {});
+    Error.addMessage(Error.REDUNDANT_ALIAS_SET, {});
   end if;
   outDAE := removeSimpleEquationsShared(b, outDAE, repl);
   // until remove simple equations does not update assignments and comps remove them
@@ -3111,10 +3111,14 @@ algorithm
     local
       DAE.ComponentRef cr;
       Option<DAE.Exp> start, start1;
+      DAE.Exp startExp;
       list<tuple<Option<DAE.Exp>, DAE.ComponentRef>> values;
       list<tuple<DAE.Exp, DAE.ComponentRef>> zerofreevalues;
       BackendDAE.Var v;
       BackendDAE.Variables globalKnownVars;
+      String str;
+      Integer i;
+      Boolean hardcoded;
 
     // default value
     case (_, _, (_, {}), _) then inVar;
@@ -3129,14 +3133,28 @@ algorithm
       v = BackendVariable.setVarFixed(inVar, true);
       start1 = optExpReplaceCrefWithBindExp(start, globalKnownVars);
       ((_, start, _)) = equalNonFreeStartValues(values, globalKnownVars, (start1, start, cr));
+      warnAliasConflicts = not Flags.isSet(Flags.ALIAS_CONFLICTS);
     then BackendVariable.setVarStartValueOption(v, start);
 
-    case (_, true, (_, values), BackendDAE.SHARED(globalKnownVars=globalKnownVars)) equation
-      v = BackendVariable.setVarFixed(inVar, true);
+    case (_, true, (_, values), BackendDAE.SHARED(globalKnownVars=globalKnownVars)) algorithm
+      v := BackendVariable.setVarFixed(inVar, true);
       // get all nonzero values
-      zerofreevalues = List.fold(values, getZeroFreeValues, {});
-      warnAliasConflicts = not Flags.isSet(Flags.ALIAS_CONFLICTS);
-    then selectFreeValue1(zerofreevalues, {}, "Fixed Alias set with conflicting start values\n", "start", BackendVariable.setVarStartValue, v, globalKnownVars);
+      zerofreevalues := List.fold(values, getZeroFreeValues, {});
+      if not Flags.isSet(Flags.ALIAS_CONFLICTS) then
+        Error.addMessage(Error.CONFLICTING_ALIAS_SET, {});
+      else
+        str := "Conflicting start values for fixed states:\n";
+        for value in zerofreevalues loop
+          (startExp, cr) := value;
+          (_, (i, hardcoded)) := Expression.traverseExpTopDown(startExp, selectMinDepth, (ComponentReference.crefDepth(cr), true));
+          if hardcoded then
+            i := i + 5;
+          end if;
+          str := str + " * Candidate: " + ComponentReference.printComponentRefStr(cr) + "(start = " + ExpressionDump.printExpStr(startExp) + ", confidence number = " + intString(i) + ")\n";
+        end for;
+      end if;
+      Error.addCompilerError(str);
+    then fail(); //selectFreeValue1(zerofreevalues, {}, "Fixed Alias set with conflicting start values\n", "start", BackendVariable.setVarStartValue, v, globalKnownVars);
 
     // fixed false only one start value -> nothing changed
     case (_, false, (_, {(start, _)}), _)

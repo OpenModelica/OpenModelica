@@ -1151,10 +1151,10 @@ public constant ErrorTypes.Message FMU_EXPORT_NOT_SUPPORTED_CPP = ErrorTypes.MES
   Gettext.gettext("Export of FMU type %s is not supported with Cpp target. FMU will be for Model Exchange (me)."));
 public constant ErrorTypes.Message DEPRECATED_API_CALL = ErrorTypes.MESSAGE(7016, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   Gettext.gettext("'%1' is deprecated. It is recommended to use '%2' instead."));
-public constant ErrorTypes.Message CONFLICTING_ALIAS_SET = ErrorTypes.MESSAGE(7017, ErrorTypes.SYMBOLIC(), ErrorTypes.WARNING(),
-  Gettext.gettext("The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts."));
-public constant ErrorTypes.Message ENCRYPTION_NOT_SUPPORTED = ErrorTypes.MESSAGE(7018, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  Gettext.gettext("File not Found: %s. Compile OpenModelica with Encryption support."));
+public constant ErrorTypes.Message REDUNDANT_ALIAS_SET = ErrorTypes.MESSAGE(7017, ErrorTypes.SYMBOLIC(), ErrorTypes.WARNING(),
+  Gettext.gettext("The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts."));
+public constant ErrorTypes.Message CONFLICTING_ALIAS_SET = ErrorTypes.MESSAGE(7018, ErrorTypes.SYMBOLIC(), ErrorTypes.ERROR(),
+  Gettext.gettext("The model contains alias variables with conflicting fixed start values. It is necessary to resolve the conflicts, because otherwise the initial system is impossible to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts."));
 public constant ErrorTypes.Message PACKAGE_FILE_NOT_FOUND_ERROR = ErrorTypes.MESSAGE(7019, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("Unable to find the package definition file. Looked for \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\" and \"%s\"."));
 public constant ErrorTypes.Message UNABLE_TO_UNZIP_FILE = ErrorTypes.MESSAGE(7020, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
@@ -1169,6 +1169,8 @@ public constant ErrorTypes.Message INVALID_NONLINEAR_JACOBIAN_COMPONENT = ErrorT
   Gettext.gettext("Jacobian %s contains non-linear components. This indicates a singular system or internal generation errors."));
 public constant ErrorTypes.Message DUPLICATE_VARIABLE_ERROR = ErrorTypes.MESSAGE(7025, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Duplicate elements:\n %s."));
+public constant ErrorTypes.Message ENCRYPTION_NOT_SUPPORTED = ErrorTypes.MESSAGE(7026, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  Gettext.gettext("File not Found: %s. Compile OpenModelica with Encryption support."));
 constant SourceInfo dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
 
 public function clearCurrentComponent
