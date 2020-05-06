@@ -54,10 +54,7 @@ getErrorString();
 // end SimulationResult;
 // ""
 // true
-// "model linear_ticket4545_Test__vector \"
-//   states[2] = [x[1], x[2]]
-//   inputs[0] = []
-//   outputs[0] = []\"
+// "model linear_ticket4545_Test__vector
 //   parameter Integer n = 2 \"number of states\";
 //   parameter Integer p = 0 \"number of inputs\";
 //   parameter Integer q = 0 \"number of outputs\";

@@ -65,10 +65,7 @@ list(linear_simple__test);
 // "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
-// "model linear_simple__test \"
-//   states[2] = [z1, z2]
-//   inputs[0] = []
-//   outputs[0] = []\"
+// "model linear_simple__test
 //   parameter Integer n = 2 \"number of states\";
 //   parameter Integer p = 0 \"number of inputs\";
 //   parameter Integer q = 0 \"number of outputs\";
@@ -111,10 +108,7 @@ list(linear_simple__test);
 // "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
-// "model linear_simple__test \"
-//   states[2] = [z1, z2]
-//   inputs[0] = []
-//   outputs[0] = []\"
+// "model linear_simple__test
 //   parameter Integer n = 2 \"number of states\";
 //   parameter Integer p = 0 \"number of inputs\";
 //   parameter Integer q = 0 \"number of outputs\";
