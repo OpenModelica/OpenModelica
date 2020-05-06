@@ -485,7 +485,7 @@ int linearize(DATA* data, threadData_t *threadData)
     double* matrixD = (double*)calloc(size_Outputs*size_Inputs,sizeof(double));
     double* matrixCz = 0;
     double* matrixDz = 0;
-    string strA, strB, strC, strD, strCz, strDz, strX, strU, strZ0, filename;
+    string strA, strB, strC, strD, strCz, strDz, strX, strU, strZ0, filename, ext, fullpath;
 	std::size_t pos, pos1, pos2;
 
     assertStreamPrint(threadData,0!=matrixA,"calloc failed");
@@ -584,18 +584,23 @@ int linearize(DATA* data, threadData_t *threadData)
         free(matrixCz);
         free(matrixDz);
     }
-
-    /* Use the result file name rather than the model name so that the linear file name can be changed with the -r flag, however strip _res.mat from the filename */
-    filename = string(data->modelData->resultFileName) + ".mo";
+    switch(data->modelData->linearizationDumpLanguage){
+      case 0: ext = ".mo";  break;
+      case 1: ext = ".m";   break;
+      case 2: ext = ".jl";  break;
+      case 3: ext = ".py";  break;
+    }
+  /* Use the result file name rather than the model name so that the linear file name can be changed with the -r flag, however strip _res.mat from the filename */
+  filename = string(data->modelData->resultFileName) + string(ext);
 	pos = filename.rfind("_res.mat");
 	if (pos != std::string::npos)
 	{
       // not found, use the modelFilePrefix
-	  filename = string(data->modelData->modelFilePrefix) + ".mo";
+	  filename = string(data->modelData->modelFilePrefix) + string(ext);
 	}
 	else
 	{
-      filename = filename.substr(0, pos) + ".mo";
+      filename = filename.substr(0, pos) + string(ext);
 	}
 #if defined(__MINGW32__) || defined(_MSC_VER)
     pos1 = filename.rfind('\\');
@@ -623,6 +628,16 @@ int linearize(DATA* data, threadData_t *threadData)
 
     FILE *fout = omc_fopen(filename.c_str(),"wb");
     assertStreamPrint(threadData,0!=fout,"Cannot open File %s",filename.c_str());
+    char* buffer;
+    if( (buffer=getcwd(NULL, 0)) == NULL) {
+      fullpath = "";
+      free(buffer);
+    } else {
+      filename = "/" + filename;
+    }
+    data->modelData->resultFilePath = buffer;
+    data->modelData->linFileName = filename.c_str();
+
     if(do_data_recovery > 0){
         fprintf(fout, data->callback->linear_model_datarecovery_frame(), strX.c_str(), strU.c_str(), strZ0.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str(), strCz.c_str(), strDz.c_str());
     }else{

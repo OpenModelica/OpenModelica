@@ -1330,6 +1330,13 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nSensitivityParamVars = <%varInfo.numSensitivityParameters%>;
     data->modelData->nSetcVars = <%varInfo.numSetcVars%>;
     data->modelData->ndataReconVars = <%varInfo.numDataReconVars%>;
+    data->modelData->linearizationDumpLanguage =
+    <%
+    if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"modelica") then '0'
+    else if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"matlab") then '1'
+    else if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"julia") then '2'
+    else if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"python") then '3'
+    %>;
     >>
   end match
 end populateModelInfo;
@@ -4713,7 +4720,6 @@ template functionlinearmodelMatlab(ModelInfo modelInfo, String modelNamePrefix) 
       <%getVarNameMatlab(vars.stateVars, "x")%>
       <%getVarNameMatlab(vars.inputVars, "u")%>
       <%getVarNameMatlab(vars.outputVars, "y")%>
-      <%getVarNameMatlab(vars.algVars, "z")%>
       "end";
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
@@ -4733,7 +4739,6 @@ template functionlinearmodelMatlab(ModelInfo modelInfo, String modelNamePrefix) 
       <%getVarNameMatlab(vars.stateVars, "x")%>
       <%getVarNameMatlab(vars.inputVars, "u")%>
       <%getVarNameMatlab(vars.outputVars, "y")%>
-      <%getVarNameMatlab(vars.algVars, "z")%>
       "end";
     }
     >>
@@ -4770,7 +4775,6 @@ template functionlinearmodelJulia(ModelInfo modelInfo, String modelNamePrefix) "
       <%getVarNameJulia(vars.stateVars, "x")%>
       <%getVarNameJulia(vars.inputVars, "u")%>
       <%getVarNameJulia(vars.outputVars, "y")%>
-      <%getVarNameJulia(vars.algVars, "z")%>
       "\n"
       "  (n, p, q, x0, u0, A, B, C, D)\n"
       "end";
@@ -4792,7 +4796,6 @@ template functionlinearmodelJulia(ModelInfo modelInfo, String modelNamePrefix) "
       <%getVarNameJulia(vars.stateVars, "x")%>
       <%getVarNameJulia(vars.inputVars, "u")%>
       <%getVarNameJulia(vars.outputVars, "y")%>
-      <%getVarNameJulia(vars.algVars, "z")%>
       "\n"
       "  (n, p, q, x0, u0, A, B, C, D)\n"
       "end";
@@ -4831,7 +4834,6 @@ template functionlinearmodelPython(ModelInfo modelInfo, String modelNamePrefix) 
       <%getVarNameMatlab(vars.stateVars, "x")%>
       <%getVarNameMatlab(vars.inputVars, "u")%>
       <%getVarNameMatlab(vars.outputVars, "y")%>
-      <%getVarNameMatlab(vars.algVars, "z")%>
       "\n"
       "  return (n, p, q, x0, u0, A, B, C, D)\n"
       "end";
@@ -4853,7 +4855,6 @@ template functionlinearmodelPython(ModelInfo modelInfo, String modelNamePrefix) 
       <%getVarNameMatlab(vars.stateVars, "x")%>
       <%getVarNameMatlab(vars.inputVars, "u")%>
       <%getVarNameMatlab(vars.outputVars, "y")%>
-      <%getVarNameMatlab(vars.algVars, "z")%>
       "\n"
       "  return (n, p, q, x0, u0, A, B, C, D)\n"
       "end";
