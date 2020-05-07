@@ -872,6 +872,8 @@ algorithm
       var = BackendVariable.setVarFixed(extObj, true);
       globalKnownVars = BackendVariable.addVar(var, globalKnownVars);
     then (globalKnownVars);
+    else
+      then (globalKnownVars);
   end match;
 end addExtObjToGlobalKnownVars;
 
