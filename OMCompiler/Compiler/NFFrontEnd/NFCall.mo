@@ -35,10 +35,11 @@ import Absyn;
 import AbsynUtil;
 import DAE;
 import Expression = NFExpression;
+import NFCallAttributes;
 import NFInstNode.InstNode;
 import NFPrefixes.Variability;
-import Type = NFType;
 import Record = NFRecord;
+import Type = NFType;
 
 protected
 import BuiltinCall = NFBuiltinCall;
@@ -47,12 +48,14 @@ import ComponentRef = NFComponentRef;
 import Config;
 import Dimension = NFDimension;
 import ErrorExt;
+import EvalFunction = NFEvalFunction;
 import Inline = NFInline;
 import Inst = NFInst;
 import List;
 import Lookup = NFLookup;
 import MetaModelica.Dangerous.listReverseInPlace;
 import NFBinding.Binding;
+
 import NFClass.Class;
 import NFComponent.Component;
 import NFFunction.Function;
@@ -63,35 +66,13 @@ import NFFunction.TypedArg;
 import NFFunction.TypedNamedArg;
 import NFInstNode.CachedData;
 import NFTyping.ExpOrigin;
+import Operator = NFOperator;
 import Prefixes = NFPrefixes;
 import SCodeUtil;
+import Subscript = NFSubscript;
 import TypeCheck = NFTypeCheck;
 import Typing = NFTyping;
 import Util;
-import Subscript = NFSubscript;
-import Operator = NFOperator;
-import EvalFunction = NFEvalFunction;
-
-public
-  uniontype CallAttributes
-    record CALL_ATTR
-      Boolean tuple_ "tuple" ;
-      Boolean builtin "builtin Function call" ;
-      Boolean isImpure "if the function has prefix *impure* is true, else false";
-      Boolean isFunctionPointerCall;
-      DAE.InlineType inlineType;
-      DAE.TailCall tailCall "Input variables of the function if the call is tail-recursive";
-    end CALL_ATTR;
-
-    function toDAE
-      input CallAttributes attr;
-      input Type returnType;
-      output DAE.CallAttributes fattr;
-    algorithm
-      fattr := DAE.CALL_ATTR(Type.toDAE(returnType), attr.tuple_, attr.builtin,
-        attr.isImpure, attr.isFunctionPointerCall, attr.inlineType, attr.tailCall);
-    end toDAE;
-  end CallAttributes;
 
 protected
   import NFParameterTree;
@@ -118,7 +99,7 @@ uniontype Call
     Type ty;
     Variability var;
     list<Expression> arguments;
-    CallAttributes attributes;
+    NFCallAttributes attributes;
   end TYPED_CALL;
 
   record UNTYPED_ARRAY_CONSTRUCTOR
@@ -276,9 +257,9 @@ uniontype Call
     input Type returnType = fn.returnType;
     output Call call;
   protected
-    CallAttributes ca;
+    NFCallAttributes ca;
   algorithm
-    ca := CallAttributes.CALL_ATTR(
+    ca := NFCallAttributes.CALL_ATTR(
       Type.isTuple(returnType),
       Function.isBuiltin(fn),
       Function.isImpure(fn),
@@ -506,7 +487,7 @@ uniontype Call
     output DAE.InlineType inlineTy;
   algorithm
     inlineTy := match call
-      case TYPED_CALL(attributes = CallAttributes.CALL_ATTR(inlineType = inlineTy))
+      case TYPED_CALL(attributes = NFCallAttributes.CALL_ATTR(inlineType = inlineTy))
         then inlineTy;
       else DAE.InlineType.NO_INLINE();
     end match;
@@ -742,7 +723,7 @@ uniontype Call
         then DAE.CALL(
           Function.nameConsiderBuiltin(call.fn),
           list(Expression.toDAE(e) for e in call.arguments),
-          CallAttributes.toDAE(call.attributes, call.ty));
+          NFCallAttributes.toDAE(call.attributes, call.ty));
 
       case TYPED_ARRAY_CONSTRUCTOR()
         algorithm

@@ -70,7 +70,6 @@ import NFFunction.FunctionMatchKind;
 import NFFunction.MatchedFunction;
 import NFCall.Call;
 import BuiltinCall = NFBuiltinCall;
-import NFCall.CallAttributes;
 import ComponentRef = NFComponentRef;
 import ErrorExt;
 import NFBuiltin;
