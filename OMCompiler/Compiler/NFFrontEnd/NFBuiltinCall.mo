@@ -32,7 +32,7 @@
 encapsulated package NFBuiltinCall
   import Absyn;
   import AbsynUtil;
-  import NFCall.Call;
+  import NFCall;
   import NFCallAttributes;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
@@ -67,11 +67,11 @@ protected
 
 public
   function needSpecialHandling
-    input Call call;
+    input NFCall call;
     output Boolean special;
   algorithm
     () := match call
-      case Call.UNTYPED_CALL()
+      case NFCall.UNTYPED_CALL()
         algorithm
           CachedData.FUNCTION(specialBuiltin = special) :=
             InstNode.getFuncCache(InstNode.classScope(ComponentRef.node(call.ref)));
@@ -81,14 +81,14 @@ public
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown call: " +
-            Call.toString(call), sourceInfo());
+            NFCall.toString(call), sourceInfo());
         then
           fail();
     end match;
   end needSpecialHandling;
 
   function typeSpecial
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -102,7 +102,7 @@ public
     String name;
     ExpOrigin.Type next_origin;
   algorithm
-    Call.UNTYPED_CALL(ref = cref) := call;
+    NFCall.UNTYPED_CALL(ref = cref) := call;
     next_origin := ExpOrigin.setFlag(origin, ExpOrigin.SUBEXPRESSION);
 
     (callExp, ty, variability) := match ComponentRef.firstName(cref)
@@ -157,7 +157,7 @@ public
       */
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unhandled builtin function: " + Call.toString(call), sourceInfo());
+          Error.assertion(false, getInstanceName() + " got unhandled builtin function: " + NFCall.toString(call), sourceInfo());
         then
           fail();
     end match;
@@ -324,7 +324,7 @@ public
     // We have all except dimension n having equal sizes; with matching types
 
     ty := resTy;
-    callExp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.CAT, Expression.INTEGER(n)::res, variability, resTy));
+    callExp := Expression.CALL(NFCall.makeTypedCall(NFBuiltinFuncs.CAT, Expression.INTEGER(n)::res, variability, resTy));
   end makeCatExp;
 
 protected
@@ -341,7 +341,7 @@ protected
   end assertNoNamedParams;
 
   function typeStringCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -351,9 +351,9 @@ protected
     Type arg_ty;
     list<TypedArg> args;
     list<TypedNamedArg> named_args;
-    Call ty_call;
+    NFCall ty_call;
   algorithm
-    ty_call as Call.ARG_TYPED_CALL(_, args, named_args) := Call.typeNormalCall(call, origin, info);
+    ty_call as NFCall.ARG_TYPED_CALL(_, args, named_args) := NFCall.typeNormalCall(call, origin, info);
     (_, arg_ty, _) :: _ := args;
     arg_ty := Type.arrayElementType(arg_ty);
 
@@ -365,18 +365,18 @@ protected
   end typeStringCall;
 
   function typeBuiltinStringCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
     output Variability var;
   protected
-    Call ty_call;
+    NFCall ty_call;
   algorithm
-    ty_call := Call.matchTypedNormalCall(call, origin, info);
-    ty := Call.typeOf(ty_call);
-    var := Call.variability(ty_call);
+    ty_call := NFCall.matchTypedNormalCall(call, origin, info);
+    ty := NFCall.typeOf(ty_call);
+    var := NFCall.variability(ty_call);
     callExp := Expression.CALL(ty_call);
   end typeBuiltinStringCall;
 
@@ -384,7 +384,7 @@ protected
     input Type overloadedType;
     input list<TypedArg> args;
     input list<TypedNamedArg> namedArgs;
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -417,7 +417,7 @@ protected
     exactMatches := MatchedFunction.getExactMatches(matchedFunctions);
     if listEmpty(exactMatches) then
       Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.typedString(call), Function.candidateFuncListString(candidates)}, info);
+        {NFCall.typedString(call), Function.candidateFuncListString(candidates)}, info);
       fail();
     end if;
 
@@ -430,7 +430,7 @@ protected
       end for;
 
       callExp := Expression.CALL(
-        Call.makeTypedCall(
+        NFCall.makeTypedCall(
           matchedFunc.func,
           list(Util.tuple31(a) for a in matchedFunc.args),
           var,
@@ -438,7 +438,7 @@ protected
       return;
     else
       Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_FUNCTIONS_NFINST,
-        {Call.typedString(call), Function.candidateFuncListString(list(mfn.func for mfn in matchedFunctions))}, info);
+        {NFCall.typedString(call), Function.candidateFuncListString(list(mfn.func for mfn in matchedFunctions))}, info);
       fail();
     end if;
   end typeOverloadedStringCall;
@@ -446,25 +446,25 @@ protected
   function typeDiscreteCall
     "Types a function call that can be typed normally, but which always has
      discrete variability regardless of the variability of the arguments."
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
     output Variability var = Variability.DISCRETE;
   protected
-    Call argtycall;
+    NFCall argtycall;
     Function fn;
     list<TypedArg> args;
     TypedArg start,interval;
   algorithm
-    argtycall := Call.typeMatchNormalCall(call, origin, info);
-    ty := Call.typeOf(argtycall);
-    callExp := Expression.CALL(Call.unboxArgs(argtycall));
+    argtycall := NFCall.typeMatchNormalCall(call, origin, info);
+    ty := NFCall.typeOf(argtycall);
+    callExp := Expression.CALL(NFCall.unboxArgs(argtycall));
   end typeDiscreteCall;
 
   function typeNdimsCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -475,13 +475,13 @@ protected
     list<NamedArg> named_args;
     Type arg_ty;
   algorithm
-    Call.UNTYPED_CALL(arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(arguments = args, named_args = named_args) := call;
 
     assertNoNamedParams("ndims", named_args, info);
 
     if listLength(args) <> 1 then
       Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), "ndims(Any) => Integer"}, info);
+        {NFCall.toString(call), "ndims(Any) => Integer"}, info);
       fail();
     end if;
 
@@ -492,7 +492,7 @@ protected
   end typeNdimsCall;
 
   function typePreCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -503,7 +503,7 @@ protected
   end typePreCall;
 
   function typeChangeCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -516,7 +516,7 @@ protected
 
   function typePreChangeCall
     input String name;
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -530,13 +530,13 @@ protected
     Variability var;
     Function fn;
   algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
 
     assertNoNamedParams(name, named_args, info);
 
     if listLength(args) <> 1 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), ComponentRef.toString(fn_ref) + "(Any) => Any"}, info);
+        {NFCall.toString(call), ComponentRef.toString(fn_ref) + "(Any) => Any"}, info);
     end if;
 
     // pre/change may not be used in a function context.
@@ -560,11 +560,11 @@ protected
     end if;
 
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, ty));
+    callExp := Expression.CALL(NFCall.makeTypedCall(fn, {arg}, var, ty));
   end typePreChangeCall;
 
   function typeDerCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -584,12 +584,12 @@ protected
       fail();
     end if;
 
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("der", named_args, info);
 
     if listLength(args) <> 1 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), "der(Real) => Real"}, info);
+        {NFCall.toString(call), "der(Real) => Real"}, info);
     end if;
 
     {arg} := args;
@@ -607,11 +607,11 @@ protected
     end if;
 
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
+    callExp := Expression.CALL(NFCall.makeTypedCall(fn, {arg}, variability, ty));
   end typeDerCall;
 
   function typeDiagonalCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -625,12 +625,12 @@ protected
     Dimension dim;
     Function fn;
   algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("diagonal", named_args, info);
 
     if listLength(args) <> 1 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), "diagonal(Any[n]) => Any[n, n]"}, info);
+        {NFCall.toString(call), "diagonal(Any[n]) => Any[n, n]"}, info);
     end if;
 
     (arg, ty, variability) := Typing.typeExp(listHead(args), origin, info);
@@ -649,18 +649,18 @@ protected
     end match;
 
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
+    callExp := Expression.CALL(NFCall.makeTypedCall(fn, {arg}, variability, ty));
   end typeDiagonalCall;
 
   function typeEdgeCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
     output Variability variability = Variability.DISCRETE;
   protected
-    Call argtycall;
+    NFCall argtycall;
     Function fn;
     list<TypedArg> args;
     TypedArg arg;
@@ -673,10 +673,10 @@ protected
       fail();
     end if;
 
-    argtycall as Call.ARG_TYPED_CALL(ComponentRef.CREF(node = fn_node), args, _) := Call.typeNormalCall(call, origin, info);
-    argtycall := Call.matchTypedNormalCall(argtycall, origin, info);
-    ty := Call.typeOf(argtycall);
-    callExp := Expression.CALL(Call.unboxArgs(argtycall));
+    argtycall as NFCall.ARG_TYPED_CALL(ComponentRef.CREF(node = fn_node), args, _) := NFCall.typeNormalCall(call, origin, info);
+    argtycall := NFCall.matchTypedNormalCall(argtycall, origin, info);
+    ty := NFCall.typeOf(argtycall);
+    callExp := Expression.CALL(NFCall.unboxArgs(argtycall));
 
     {arg} := args;
     if not Expression.isCref(Util.tuple31(arg)) then
@@ -688,7 +688,7 @@ protected
 
   function typeMinMaxCall
     input String name;
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -705,7 +705,7 @@ protected
     Variability var1, var2;
     TypeCheck.MatchKind mk;
   algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams(name, named_args, info);
 
     (args, ty, var) := match args
@@ -747,7 +747,7 @@ protected
 
           if not TypeCheck.isValidArgumentMatch(mk) then
             Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-              {Call.toString(call), name + "(Any[:, ...]) => Any\n" + name + "(Any, Any) => Any"}, info);
+              {NFCall.toString(call), name + "(Any[:, ...]) => Any\n" + name + "(Any, Any) => Any"}, info);
           end if;
         then
           ({arg1, arg2}, ty, Prefixes.variabilityMax(var1, var2));
@@ -755,17 +755,17 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-            {Call.toString(call), name + "(Any[:, ...]) => Any\n" + name + "(Any, Any) => Any"}, info);
+            {NFCall.toString(call), name + "(Any[:, ...]) => Any\n" + name + "(Any, Any) => Any"}, info);
         then
           fail();
     end match;
 
     fn := listHead(Function.typeRefCache(fn_ref));
-    callExp := Expression.CALL(Call.makeTypedCall(fn, args, var, ty));
+    callExp := Expression.CALL(NFCall.makeTypedCall(fn, args, var, ty));
   end typeMinMaxCall;
 
   function typeSumCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -780,23 +780,23 @@ protected
     Boolean expanded;
     Operator op;
   algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("sum", named_args, info);
 
     if listLength(args) <> 1 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), "sum(Any[:, ...]) => Any"}, info);
+        {NFCall.toString(call), "sum(Any[:, ...]) => Any"}, info);
     end if;
 
     (arg, ty, variability) := Typing.typeExp(listHead(args), origin, info);
     ty := Type.arrayElementType(ty);
 
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
+    callExp := Expression.CALL(NFCall.makeTypedCall(fn, {arg}, variability, ty));
   end typeSumCall;
 
   function typeProductCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -811,23 +811,23 @@ protected
     Boolean expanded;
     Operator op;
   algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("product", named_args, info);
 
     if listLength(args) <> 1 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), "product(Any[:, ...]) => Any"}, info);
+        {NFCall.toString(call), "product(Any[:, ...]) => Any"}, info);
     end if;
 
     (arg, ty, variability) := Typing.typeExp(listHead(args), origin, info);
     ty := Type.arrayElementType(ty);
 
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
+    callExp := Expression.CALL(NFCall.makeTypedCall(fn, {arg}, variability, ty));
   end typeProductCall;
 
   function typeSmoothCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -843,12 +843,12 @@ protected
     Function fn;
     TypeCheck.MatchKind mk;
   algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("smooth", named_args, info);
 
     if listLength(args) <> 2 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), "smooth(Integer, Any) => Any"}, info);
+        {NFCall.toString(call), "smooth(Integer, Any) => Any"}, info);
     end if;
 
     {arg1, arg2} := args;
@@ -881,11 +881,11 @@ protected
     end if;
 
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2}, var, ty));
+    callExp := Expression.CALL(NFCall.makeTypedCall(fn, {arg1, arg2}, var, ty));
   end typeSmoothCall;
 
   function typeFillCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -897,13 +897,13 @@ protected
     list<NamedArg> named_args;
     Expression fill_arg;
   algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("fill", named_args, info);
 
     // fill can take any number of arguments, but needs at least two.
     if listLength(args) < 2 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), "fill(Any, Integer, ...) => Any[:, ...]"}, info);
+        {NFCall.toString(call), "fill(Any, Integer, ...) => Any[:, ...]"}, info);
     end if;
 
     fill_arg :: args := args;
@@ -970,13 +970,13 @@ protected
     if evaluated then
       callExp := Ceval.evalBuiltinFill(ty_args);
     else
-      callExp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.FILL_FUNC, ty_args, variability, ty));
+      callExp := Expression.CALL(NFCall.makeTypedCall(NFBuiltinFuncs.FILL_FUNC, ty_args, variability, ty));
     end if;
   end typeFillCall2;
 
   function typeZerosOnesCall
     input String name;
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -988,13 +988,13 @@ protected
     list<NamedArg> named_args;
     Expression fill_arg;
   algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams(name, named_args, info);
 
     // zeros/ones can take any number of arguments, but needs at least one.
     if listEmpty(args) then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), ComponentRef.toString(fn_ref) + "(Integer, ...) => Integer[:, ...]"}, info);
+        {NFCall.toString(call), ComponentRef.toString(fn_ref) + "(Integer, ...) => Integer[:, ...]"}, info);
     end if;
 
     fill_arg := Expression.INTEGER(if name == "ones" then 1 else 0);
@@ -1002,7 +1002,7 @@ protected
   end typeZerosOnesCall;
 
   function typeScalarCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -1016,12 +1016,12 @@ protected
     Function fn;
     Boolean expanded;
   algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("scalar", named_args, info);
 
     if listLength(args) <> 1 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), "scalar(Any[1, ...]) => Any"}, info);
+        {NFCall.toString(call), "scalar(Any[1, ...]) => Any"}, info);
     end if;
 
     (arg, ty, variability) := Typing.typeExp(listHead(args), origin, info);
@@ -1048,12 +1048,12 @@ protected
       callExp := listHead(args);
     else
       {fn} := Function.typeRefCache(fn_ref);
-      callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
+      callExp := Expression.CALL(NFCall.makeTypedCall(fn, {arg}, variability, ty));
     end if;
   end typeScalarCall;
 
   function typeVectorCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -1069,12 +1069,12 @@ protected
     Dimension vector_dim = Dimension.fromInteger(1);
     Boolean dim_found = false;
   algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("vector", named_args, info);
 
     if listLength(args) <> 1 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), "vector(Any) => Any[:]\n  vector(Any[:, ...]) => Any[:]"}, info);
+        {NFCall.toString(call), "vector(Any) => Any[:]\n  vector(Any[:, ...]) => Any[:]"}, info);
     end if;
 
     (arg, ty, variability) := Typing.typeExp(listHead(args), origin, info);
@@ -1085,7 +1085,7 @@ protected
       if not Dimension.isKnown(dim) or Dimension.size(dim) > 1 then
         if dim_found then
           Error.addSourceMessageAndFail(Error.NF_VECTOR_INVALID_DIMENSIONS,
-            {Type.toString(ty), Call.toString(call)}, info);
+            {Type.toString(ty), NFCall.toString(call)}, info);
         else
           vector_dim := dim;
           dim_found := true;
@@ -1095,11 +1095,11 @@ protected
 
     ty := Type.ARRAY(Type.arrayElementType(ty), {vector_dim});
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
+    callExp := Expression.CALL(NFCall.makeTypedCall(fn, {arg}, variability, ty));
   end typeVectorCall;
 
   function typeMatrixCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -1116,12 +1116,12 @@ protected
     Dimension dim1, dim2;
     Integer i, ndims;
   algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("matrix", named_args, info);
 
     if listLength(args) <> 1 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), "vector(Any) => Any[:]\n  vector(Any[:, ...]) => Any[:]"}, info);
+        {NFCall.toString(call), "vector(Any) => Any[:]\n  vector(Any[:, ...]) => Any[:]"}, info);
     end if;
 
     (arg, ty, variability) := Typing.typeExp(listHead(args), origin, info);
@@ -1150,12 +1150,12 @@ protected
 
       ty := Type.ARRAY(Type.arrayElementType(ty), {dim1, dim2});
       {fn} := Function.typeRefCache(fn_ref);
-      callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
+      callExp := Expression.CALL(NFCall.makeTypedCall(fn, {arg}, variability, ty));
     end if;
   end typeMatrixCall;
 
   function typeCatCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -1172,12 +1172,12 @@ protected
     Function fn;
     Integer n;
   algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("cat", named_args, info);
 
     if listLength(args) < 2 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), "cat(Integer, Any[:,:], ...) => Any[:]"}, info);
+        {NFCall.toString(call), "cat(Integer, Any[:,:], ...) => Any[:]"}, info);
     end if;
 
     arg::args := args;
@@ -1204,7 +1204,7 @@ protected
   end typeCatCall;
 
   function typeSymmetricCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -1217,12 +1217,12 @@ protected
     Expression arg;
     Function fn;
   algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("symmetric", named_args, info);
 
     if listLength(args) <> 1 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), "symmetric(Any[n, n]) => Any[n, n]"}, info);
+        {NFCall.toString(call), "symmetric(Any[n, n]) => Any[n, n]"}, info);
     end if;
 
     (arg, ty, variability) := Typing.typeExp(listHead(args), origin, info);
@@ -1234,11 +1234,11 @@ protected
     end if;
 
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
+    callExp := Expression.CALL(NFCall.makeTypedCall(fn, {arg}, variability, ty));
   end typeSymmetricCall;
 
   function typeTransposeCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -1253,12 +1253,12 @@ protected
     list<Dimension> rest_dims;
     Function fn;
   algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("transpose", named_args, info);
 
     if listLength(args) <> 1 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), "transpose(Any[n, m, ...]) => Any[m, n, ...]"}, info);
+        {NFCall.toString(call), "transpose(Any[n, m, ...]) => Any[m, n, ...]"}, info);
     end if;
 
     (arg, ty, variability) := Typing.typeExp(listHead(args), origin, info);
@@ -1277,11 +1277,11 @@ protected
     end match;
 
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
+    callExp := Expression.CALL(NFCall.makeTypedCall(fn, {arg}, variability, ty));
   end typeTransposeCall;
 
   function typeCardinalityCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -1304,12 +1304,12 @@ protected
       Error.addSourceMessageAndFail(Error.INVALID_CARDINALITY_CONTEXT, {}, info);
     end if;
 
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("cardinality", named_args, info);
 
     if listLength(args) <> 1 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector) => Integer"}, info);
+        {NFCall.toString(call), ComponentRef.toString(fn_ref) + "(Connector) => Integer"}, info);
     end if;
 
     if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
@@ -1334,14 +1334,14 @@ protected
 
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.INTEGER();
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, ty));
+    callExp := Expression.CALL(NFCall.makeTypedCall(fn, {arg}, var, ty));
     // TODO: Check cardinality restrictions, 3.7.2.3.
 
     System.setUsesCardinality(true);
   end typeCardinalityCall;
 
   function typeBranchCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -1354,12 +1354,12 @@ protected
     Expression arg1, arg2;
     Function fn;
   algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("Connections.branch", named_args, info);
 
     if listLength(args) <> 2 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector, Connector)"}, info);
+        {NFCall.toString(call), ComponentRef.toString(fn_ref) + "(Connector, Connector)"}, info);
     end if;
 
     if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
@@ -1376,11 +1376,11 @@ protected
 
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.NORETCALL();
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2}, var, ty));
+    callExp := Expression.CALL(NFCall.makeTypedCall(fn, {arg1, arg2}, var, ty));
   end typeBranchCall;
 
   function typeIsRootCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -1393,12 +1393,12 @@ protected
     Expression arg;
     Function fn;
   algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("Connections.isRoot", named_args, info);
 
     if listLength(args) <> 1 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector)"}, info);
+        {NFCall.toString(call), ComponentRef.toString(fn_ref) + "(Connector)"}, info);
     end if;
 
     if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
@@ -1411,11 +1411,11 @@ protected
 
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.BOOLEAN();
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, ty));
+    callExp := Expression.CALL(NFCall.makeTypedCall(fn, {arg}, var, ty));
   end typeIsRootCall;
 
   function typePotentialRootCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -1430,7 +1430,7 @@ protected
     Integer args_len;
     String name;
   algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
 
     for narg in named_args loop
       (name, arg2) := narg;
@@ -1446,7 +1446,7 @@ protected
     args_len := listLength(args);
     if args_len < 1 or args_len > 2 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector, Integer = 0)"}, info);
+        {NFCall.toString(call), ComponentRef.toString(fn_ref) + "(Connector, Integer = 0)"}, info);
     end if;
 
     if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
@@ -1474,11 +1474,11 @@ protected
 
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.NORETCALL();
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2}, var, ty));
+    callExp := Expression.CALL(NFCall.makeTypedCall(fn, {arg1, arg2}, var, ty));
   end typePotentialRootCall;
 
   function typeRootCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -1491,12 +1491,12 @@ protected
     Expression arg;
     Function fn;
   algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("Connections.root", named_args, info);
 
     if listLength(args) <> 1 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector)"}, info);
+        {NFCall.toString(call), ComponentRef.toString(fn_ref) + "(Connector)"}, info);
     end if;
 
     if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
@@ -1509,11 +1509,11 @@ protected
 
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.NORETCALL();
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, ty));
+    callExp := Expression.CALL(NFCall.makeTypedCall(fn, {arg}, var, ty));
   end typeRootCall;
 
   function typeRootedCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -1526,12 +1526,12 @@ protected
     Expression arg;
     Function fn;
   algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("Connections.rooted", named_args, info);
 
     if listLength(args) <> 1 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector)"}, info);
+        {NFCall.toString(call), ComponentRef.toString(fn_ref) + "(Connector)"}, info);
     end if;
 
     if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
@@ -1548,12 +1548,12 @@ protected
 
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.BOOLEAN();
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, ty));
+    callExp := Expression.CALL(NFCall.makeTypedCall(fn, {arg}, var, ty));
   end typeRootedCall;
 
   function typeUniqueRootCall
     "see also typeUniqueRootIndicesCall"
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -1570,7 +1570,7 @@ protected
   algorithm
     Error.addSourceMessage(Error.NON_STANDARD_OPERATOR, {"Connections.uniqueRoot"}, info);
 
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
 
     for narg in named_args loop
       (name, arg2) := narg;
@@ -1586,7 +1586,7 @@ protected
     args_len := listLength(args);
     if args_len < 1 or args_len > 2 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector, String = \"\")"}, info);
+        {NFCall.toString(call), ComponentRef.toString(fn_ref) + "(Connector, String = \"\")"}, info);
     end if;
 
     if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
@@ -1614,7 +1614,7 @@ protected
 
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.NORETCALL();
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2}, var, ty));
+    callExp := Expression.CALL(NFCall.makeTypedCall(fn, {arg1, arg2}, var, ty));
   end typeUniqueRootCall;
 
   function typeUniqueRootIndicesCall
@@ -1625,7 +1625,7 @@ protected
     and
     http://www.ep.liu.se/ecp/043/041/ecp09430108.pdf
     for a specification of this operator"
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -1643,7 +1643,7 @@ protected
   algorithm
     Error.addSourceMessage(Error.NON_STANDARD_OPERATOR, {"Connections.uniqueRootIndices"}, info);
 
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
 
     for narg in named_args loop
       (name, arg3) := narg;
@@ -1659,7 +1659,7 @@ protected
     args_len := listLength(args);
     if args_len < 2 or args_len > 3 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector, Connector, String = \"\")"}, info);
+        {NFCall.toString(call), ComponentRef.toString(fn_ref) + "(Connector, Connector, String = \"\")"}, info);
     end if;
 
     if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
@@ -1690,7 +1690,7 @@ protected
     {fn} := Function.typeRefCache(fn_ref);
     assert(listLength(Type.arrayDims(ty1)) == listLength(Type.arrayDims(ty2)), "the first two parameters need to have the same size");
     ty := Type.ARRAY(Type.Type.INTEGER(), Type.arrayDims(ty1));
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2}, var, ty));
+    callExp := Expression.CALL(NFCall.makeTypedCall(fn, {arg1, arg2}, var, ty));
 
   end typeUniqueRootIndicesCall;
 
@@ -1763,7 +1763,7 @@ protected
   end checkConnectionsArgument;
 
   function typeNoEventCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -1776,48 +1776,48 @@ protected
     Expression arg;
     Function fn;
   algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("noEvent", named_args, info);
 
     // noEvent takes exactly one argument.
     if listLength(args) <> 1 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), "noEvent(Any) => Any"}, info);
+        {NFCall.toString(call), "noEvent(Any) => Any"}, info);
     end if;
 
     {arg} := args;
     (arg, ty, variability) := Typing.typeExp(arg, ExpOrigin.setFlag(origin, ExpOrigin.NOEVENT), info);
 
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
+    callExp := Expression.CALL(NFCall.makeTypedCall(fn, {arg}, variability, ty));
   end typeNoEventCall;
 
   function typeGetInstanceName
-    input Call call;
+    input NFCall call;
     output Expression result;
     output Type ty = Type.STRING();
     output Variability var = Variability.CONSTANT;
   protected
     InstNode scope;
   algorithm
-    Call.UNTYPED_CALL(call_scope = scope) := call;
+    NFCall.UNTYPED_CALL(call_scope = scope) := call;
     result := Expression.STRING(AbsynUtil.pathString(InstNode.scopePath(scope, includeRoot = true)));
   end typeGetInstanceName;
 
   function typeClockCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type outType = Type.CLOCK();
     output Variability var = Variability.PARAMETER;
   protected
-    Call ty_call;
+    NFCall ty_call;
     list<Expression> args;
     Integer args_count;
     Expression e1, e2;
   algorithm
-    Call.TYPED_CALL(arguments = args) := Call.typeMatchNormalCall(call, origin, info);
+    NFCall.TYPED_CALL(arguments = args) := NFCall.typeMatchNormalCall(call, origin, info);
     args_count := listLength(args);
 
     callExp := match args
@@ -1853,14 +1853,14 @@ protected
   end typeClockCall;
 
   function typeSampleCall
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type outType;
     output Variability var;
   protected
-    Call ty_call;
+    NFCall ty_call;
     Type arg_ty;
     list<TypedArg> args;
     list<TypedNamedArg> namedArgs;
@@ -1871,7 +1871,7 @@ protected
     Function normalSample, clockedSample;
     InstNode recopnode;
   algorithm
-    Call.ARG_TYPED_CALL(fn_ref, args, namedArgs) := Call.typeNormalCall(call, origin, info);
+    NFCall.ARG_TYPED_CALL(fn_ref, args, namedArgs) := NFCall.typeNormalCall(call, origin, info);
 
     recopnode := ComponentRef.node(fn_ref);
 
@@ -1886,7 +1886,7 @@ protected
           if valueEq(t, Type.INTEGER()) then
             e := Expression.CAST(Type.REAL(), e);
           end if;
-          ty_call := Call.makeTypedCall(normalSample, {e, Expression.CAST(Type.REAL(), e1)}, Variability.PARAMETER, Type.BOOLEAN());
+          ty_call := NFCall.makeTypedCall(normalSample, {e, Expression.CAST(Type.REAL(), e1)}, Variability.PARAMETER, Type.BOOLEAN());
         then
           (Expression.CALL(ty_call), Type.BOOLEAN(), Variability.PARAMETER);
 
@@ -1896,7 +1896,7 @@ protected
           if valueEq(t, Type.INTEGER()) then
             e := Expression.CAST(Type.REAL(), e);
           end if;
-          ty_call := Call.makeTypedCall(normalSample, {e, e1}, Variability.PARAMETER, Type.BOOLEAN());
+          ty_call := NFCall.makeTypedCall(normalSample, {e, e1}, Variability.PARAMETER, Type.BOOLEAN());
         then
           (Expression.CALL(ty_call), Type.BOOLEAN(), Variability.PARAMETER);
 
@@ -1906,34 +1906,34 @@ protected
           if valueEq(t, Type.INTEGER()) then
             e := Expression.CAST(Type.REAL(), e);
           end if;
-          ty_call := Call.makeTypedCall(normalSample, {e, e1}, Variability.PARAMETER, Type.BOOLEAN());
+          ty_call := NFCall.makeTypedCall(normalSample, {e, e1}, Variability.PARAMETER, Type.BOOLEAN());
         then
           (Expression.CALL(ty_call), Type.BOOLEAN(), Variability.PARAMETER);
 
       // sample(u) - inferred clock
       case ({(e, t, v)}, {}) guard Config.synchronousFeaturesAllowed()
         algorithm
-          ty_call := Call.makeTypedCall(clockedSample, {e, Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK())}, v, t);
+          ty_call := NFCall.makeTypedCall(clockedSample, {e, Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK())}, v, t);
         then
           (Expression.CALL(ty_call), t, v);
 
       // sample(u, c) - specified clock
       case ({(e, t, v), (e1, Type.CLOCK(), v1)}, {}) guard Config.synchronousFeaturesAllowed()
         algorithm
-          ty_call := Call.makeTypedCall(clockedSample, {e, e1}, v, t);
+          ty_call := NFCall.makeTypedCall(clockedSample, {e, e1}, v, t);
         then
           (Expression.CALL(ty_call), t, v);
 
       // sample(u, Clock c = c) - specified clock
       case ({(e, t, v)}, {("c", e1, Type.CLOCK(), v1)}) guard Config.synchronousFeaturesAllowed()
         algorithm
-          ty_call := Call.makeTypedCall(clockedSample, {e, e1}, v, t);
+          ty_call := NFCall.makeTypedCall(clockedSample, {e, e1}, v, t);
         then
           (Expression.CALL(ty_call), t, v);
 
       else
         algorithm
-          Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {Call.toString(call), "<NO COMPONENT>"}, info);
+          Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {NFCall.toString(call), "<NO COMPONENT>"}, info);
         then
           fail();
     end match;
@@ -1941,7 +1941,7 @@ protected
 
   function typeActualInStreamCall
     input String name;
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -1956,12 +1956,12 @@ protected
     Function fn;
     InstNode arg_node;
   algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams(name, named_args, info);
 
     if listLength(args) <> 1 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), ComponentRef.toString(fn_ref) + "(stream variable) => Real"}, info);
+        {NFCall.toString(call), ComponentRef.toString(fn_ref) + "(stream variable) => Real"}, info);
     end if;
 
     (arg, ty, var) := Typing.typeExp(listHead(args), origin, info);
@@ -2002,7 +2002,7 @@ protected
             end if;
           end for;
         then
-          Expression.CALL(Call.makeTypedCall(fn, {arg}, var, arg.ty));
+          Expression.CALL(NFCall.makeTypedCall(fn, {arg}, var, arg.ty));
 
       case Expression.ARRAY()
         algorithm
@@ -2022,7 +2022,7 @@ protected
 
   function typeDynamicSelectCall
     input String name;
-    input Call call;
+    input NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
@@ -2039,12 +2039,12 @@ protected
     Type ty1, ty2;
     Expression expStatic, expDynamic;
   algorithm
-    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    NFCall.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams(name, named_args, info);
 
     if listLength(args) <> 2 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {Call.toString(call), ComponentRef.toString(fn_ref) + "(static expression, dynamic expression)"}, info);
+        {NFCall.toString(call), ComponentRef.toString(fn_ref) + "(static expression, dynamic expression)"}, info);
     end if;
 
     {expStatic, expDynamic} := list(Expression.unbox(arg) for arg in args);
@@ -2068,7 +2068,7 @@ protected
     {fn} := Function.typeRefCache(fn_ref);
 
     if Flags.isSet(Flags.NF_API_DYNAMIC_SELECT) then
-      callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2}, variability, ty1));
+      callExp := Expression.CALL(NFCall.makeTypedCall(fn, {arg1, arg2}, variability, ty1));
     else
       variability := var1;
       callExp := arg1;

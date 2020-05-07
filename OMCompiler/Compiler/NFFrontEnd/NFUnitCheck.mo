@@ -25,7 +25,7 @@ import HashTableCrToUnit = NFHashTableCrToUnit;
 import HashTableStringToUnit = NFHashTableStringToUnit;
 import HashTableUnitToString = NFHashTableUnitToString;
 import NFBinding.Binding;
-import NFCall.Call;
+import NFCall;
 import NFComponent.Component;
 import NFFunction.Function;
 import NFInstNode.InstNode;
@@ -309,9 +309,9 @@ algorithm
 
     case Equation.EQUALITY(lhs = lhs as Expression.TUPLE(),
                            rhs = rhs as Expression.CALL())
-      guard not Function.isBuiltin(Call.typedFunction(rhs.call))
+      guard not Function.isBuiltin(NFCall.typedFunction(rhs.call))
       algorithm
-        fn_name := AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(Call.functionName(rhs.call)));
+        fn_name := AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(NFCall.functionName(rhs.call)));
         (_, out_vars, _, out_units) := getCallUnits(fn_name, rhs.call, fnCache);
         (htCr2U, htS2U, htU2S, fnCache, icu1) :=
           foldCallArg1(lhs.elements, htCr2U, htS2U, htU2S, fnCache, Unit.MASTER({}), out_units, out_vars, fn_name);
@@ -321,9 +321,9 @@ algorithm
         List.append_reverse(icu1, icu2);
 
     case Equation.EQUALITY(rhs = rhs as Expression.CALL())
-      guard not Function.isBuiltin(Call.typedFunction(rhs.call))
+      guard not Function.isBuiltin(NFCall.typedFunction(rhs.call))
       algorithm
-        fn_name := AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(Call.functionName(rhs.call)));
+        fn_name := AbsynUtil.pathString(AbsynUtil.makeNotFullyQualified(NFCall.functionName(rhs.call)));
         (_, out_vars, _, out_units, fnCache) := getCallUnits(fn_name, rhs.call, fnCache);
         (unit1, htCr2U, htS2U, htU2S, fnCache, _) :=
           insertUnitInEquation(eq.lhs, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
@@ -741,7 +741,7 @@ end insertUnitInEquation;
 
 function insertUnitInEquationCall
   "Inserts the units in the equation and checks if the equation is consistent or not."
-  input Call call;
+  input NFCall call;
   input output Unit.Unit unit;
   input output HashTableCrToUnit.HashTable htCr2U;
   input output HashTableStringToUnit.HashTable htS2U;
@@ -756,8 +756,8 @@ protected
   list<ComponentRef> vars;
   list<String> var_names, unit_names;
 algorithm
-  fn_path := Call.functionName(call);
-  call_args := Call.arguments(call);
+  fn_path := NFCall.functionName(call);
+  call_args := NFCall.arguments(call);
 
   (unit, inconsistentUnits) := matchcontinue fn_path
     case Absyn.IDENT("pre")
@@ -807,7 +807,7 @@ algorithm
         (op_unit, inconsistentUnits);
 
     case Absyn.IDENT()
-      guard Function.isBuiltin(Call.typedFunction(call))
+      guard Function.isBuiltin(NFCall.typedFunction(call))
       algorithm
         (htCr2U, htS2U, htU2S, fnCache, inconsistentUnits) :=
           foldCallArg(call_args, htCr2U, htS2U, htU2S, fnCache);
@@ -841,7 +841,7 @@ end insertUnitString;
 
 function getCallUnits
   input String fnName;
-  input Call call;
+  input NFCall call;
   input FunctionUnitCache.Cache fnCache;
   output list<String> inputVars;
   output list<String> outputVars;
@@ -854,7 +854,7 @@ algorithm
   try
     args := BaseHashTable.get(fnName, fnCache);
   else
-    args := parseFunctionUnits(fnName, Call.typedFunction(call));
+    args := parseFunctionUnits(fnName, NFCall.typedFunction(call));
     outFnCache := BaseHashTable.addUnique((fnName, args), outFnCache);
   end try;
 
@@ -1151,4 +1151,3 @@ end parse;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFUnitCheck;
-

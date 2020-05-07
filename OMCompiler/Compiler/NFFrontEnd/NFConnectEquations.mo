@@ -55,7 +55,7 @@ import NFPrefixes.ConnectorType;
 import NFPrefixes.Variability;
 import Operator = NFOperator;
 import Type = NFType;
-import NFCall.Call;
+import NFCall;
 import NFBuiltinFuncs;
 import NFInstNode.InstNode;
 import NFClass.Class;
@@ -127,12 +127,12 @@ function evaluateOperators
 algorithm
   evalExp := match exp
     local
-      Call call;
+      NFCall call;
       Boolean expanded;
 
     case Expression.CALL(call = call)
       then match call
-        case Call.TYPED_CALL()
+        case NFCall.TYPED_CALL()
           then match Function.name(call.fn)
             case Absyn.IDENT("inStream")
               then evaluateInStream(Expression.toCref(listHead(call.arguments)), sets, setsArray, ctable);
@@ -146,11 +146,11 @@ algorithm
 
         // inStream/actualStream can't handle non-literal subscripts, so reductions and array
         // constructors containing such calls needs to be expanded to get rid of the iterators.
-        case Call.TYPED_REDUCTION()
+        case NFCall.TYPED_REDUCTION()
           guard Expression.contains(call.exp, isStreamCall)
           then evaluateOperatorReductionExp(exp, sets, setsArray, ctable);
 
-        case Call.TYPED_ARRAY_CONSTRUCTOR()
+        case NFCall.TYPED_ARRAY_CONSTRUCTOR()
           guard Expression.contains(call.exp, isStreamCall)
           then evaluateOperatorArrayConstructorExp(exp, sets, setsArray, ctable);
 
@@ -160,11 +160,11 @@ algorithm
 
     case Expression.BINARY(exp1 = Expression.CREF(),
                            operator = Operator.OPERATOR(op = Op.MUL),
-                           exp2 = Expression.CALL(call = call as Call.TYPED_CALL()))
+                           exp2 = Expression.CALL(call = call as NFCall.TYPED_CALL()))
       guard AbsynUtil.isNamedPathIdent(Function.name(call.fn), "actualStream")
       then evaluateActualStreamMul(exp.exp1, listHead(call.arguments), exp.operator, sets, setsArray, ctable);
 
-    case Expression.BINARY(exp1 = Expression.CALL(call = call as Call.TYPED_CALL()),
+    case Expression.BINARY(exp1 = Expression.CALL(call = call as NFCall.TYPED_CALL()),
                            operator = Operator.OPERATOR(op = Op.MUL),
                            exp2 = Expression.CREF())
       guard AbsynUtil.isNamedPathIdent(Function.name(call.fn), "actualStream")
@@ -279,7 +279,7 @@ algorithm
     // Modelica doesn't allow == for Reals, so to keep the flat Modelica
     // somewhat valid we use 'abs(lhs - rhs) <= 0' instead.
     exp := Expression.BINARY(lhs_exp, Operator.makeSub(ty), rhs_exp);
-    exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.ABS_REAL, {exp}, Expression.variability(exp)));
+    exp := Expression.CALL(NFCall.makeTypedCall(NFBuiltinFuncs.ABS_REAL, {exp}, Expression.variability(exp)));
     exp := Expression.RELATION(exp, Operator.makeLessEq(ty), Expression.REAL(0.0));
   else
     // For any other type, generate assertion for 'lhs == rhs'.
@@ -579,7 +579,7 @@ function makeInStreamCall
   output Expression inStreamCall;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  inStreamCall := Expression.CALL(Call.makeTypedCall(
+  inStreamCall := Expression.CALL(NFCall.makeTypedCall(
     NFBuiltinFuncs.IN_STREAM, {streamExp}, Expression.variability(streamExp)));
 end makeInStreamCall;
 
@@ -605,7 +605,7 @@ algorithm
     flow_threshold := flowThreshold;
   end if;
 
-  positiveMaxCall := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.POSITIVE_MAX_REAL,
+  positiveMaxCall := Expression.CALL(NFCall.makeTypedCall(NFBuiltinFuncs.POSITIVE_MAX_REAL,
     {flowExp, flow_threshold}, Connector.variability(element)));
 
   setGlobalRoot(Global.isInStream, SOME(true));
@@ -620,7 +620,7 @@ algorithm
       String name;
 
     case Expression.CALL()
-      then match Function.name(Call.typedFunction(exp.call))
+      then match Function.name(NFCall.typedFunction(exp.call))
         case Absyn.IDENT("inStream") then true;
         case Absyn.IDENT("actualStream") then true;
         else false;
@@ -637,7 +637,7 @@ function evaluateOperatorReductionExp
   input CardinalityTable.Table ctable;
   output Expression evalExp;
 protected
-  Call call;
+  NFCall call;
   Function fn;
   Type ty;
   Expression arg, iter_exp;
@@ -645,7 +645,7 @@ protected
   InstNode iter_node;
 algorithm
   evalExp := match exp
-    case Expression.CALL(call = call as Call.TYPED_REDUCTION())
+    case Expression.CALL(call = call as NFCall.TYPED_REDUCTION())
       algorithm
         ty := Expression.typeOf(call.exp);
 
@@ -665,7 +665,7 @@ algorithm
         iters := listReverseInPlace(iters);
         arg := ExpandExp.expandArrayConstructor(call.exp, ty, iters);
       then
-        Expression.CALL(Call.makeTypedCall(call.fn, {arg}, call.var, call.ty));
+        Expression.CALL(NFCall.makeTypedCall(call.fn, {arg}, call.var, call.ty));
 
   end match;
 
@@ -926,7 +926,7 @@ function makeSmoothCall
   input Integer order;
   output Expression callExp;
 algorithm
-  callExp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.SMOOTH,
+  callExp := Expression.CALL(NFCall.makeTypedCall(NFBuiltinFuncs.SMOOTH,
     {DAE.INTEGER(order), arg}, Expression.variability(arg)));
 end makeSmoothCall;
 

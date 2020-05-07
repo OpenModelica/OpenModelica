@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated package NFCall
+encapsulated uniontype NFCall
 
 import Absyn;
 import AbsynUtil;
@@ -38,8 +38,8 @@ import Expression = NFExpression;
 import NFCallAttributes;
 import NFInstNode.InstNode;
 import NFPrefixes.Variability;
-import Record = NFRecord;
 import Type = NFType;
+import Record = NFRecord;
 
 protected
 import BuiltinCall = NFBuiltinCall;
@@ -55,7 +55,6 @@ import List;
 import Lookup = NFLookup;
 import MetaModelica.Dangerous.listReverseInPlace;
 import NFBinding.Binding;
-
 import NFClass.Class;
 import NFComponent.Component;
 import NFFunction.Function;
@@ -77,9 +76,7 @@ import Util;
 protected
   import NFParameterTree;
   type ParameterTree = NFParameterTree.Tree;
-
 public
-uniontype Call
   record UNTYPED_CALL
     ComponentRef ref;
     list<Expression> arguments;
@@ -156,7 +153,7 @@ uniontype Call
     output Type ty;
     output Variability var;
   protected
-    Call call, ty_call;
+    NFCall call, ty_call;
     list<Expression> args;
     ComponentRef cref;
   algorithm
@@ -175,8 +172,8 @@ uniontype Call
             if isRecordConstructor(ty_call) then
               outExp := toRecordExpression(ty_call, ty);
             else
-              if Function.hasUnboxArgs(Call.typedFunction(ty_call)) then
-                outExp := Expression.CALL(Call.unboxArgs(ty_call));
+              if Function.hasUnboxArgs(NFCall.typedFunction(ty_call)) then
+                outExp := Expression.CALL(NFCall.unboxArgs(ty_call));
               else
                 outExp := Expression.CALL(ty_call);
               end if;
@@ -227,7 +224,7 @@ uniontype Call
   end typeCall;
 
   function typeNormalCall
-    input output Call call;
+    input output NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
   algorithm
@@ -255,7 +252,7 @@ uniontype Call
     input list<Expression> args;
     input Variability variability;
     input Type returnType = fn.returnType;
-    output Call call;
+    output NFCall call;
   protected
     NFCallAttributes ca;
   algorithm
@@ -272,7 +269,7 @@ uniontype Call
   end makeTypedCall;
 
   function unboxArgs
-    input output Call call;
+    input output NFCall call;
   algorithm
     () := match call
       case TYPED_CALL()
@@ -284,18 +281,18 @@ uniontype Call
   end unboxArgs;
 
   function typeMatchNormalCall
-    input output Call call;
+    input output NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
   protected
-    Call argtycall;
+    NFCall argtycall;
   algorithm
     argtycall := typeNormalCall(call, origin, info);
     call := matchTypedNormalCall(argtycall, origin, info);
   end typeMatchNormalCall;
 
   function matchTypedNormalCall
-    input output Call call;
+    input output NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
   protected
@@ -356,7 +353,7 @@ uniontype Call
   end matchTypedNormalCall;
 
   function typeOf
-    input Call call;
+    input NFCall call;
     output Type ty;
   algorithm
     ty := match call
@@ -368,7 +365,7 @@ uniontype Call
   end typeOf;
 
   function setType
-    input output Call call;
+    input output NFCall call;
     input Type ty;
   algorithm
     call := match call
@@ -379,7 +376,7 @@ uniontype Call
   end setType;
 
   function variability
-    input Call call;
+    input NFCall call;
     output Variability var;
   algorithm
     var := match call
@@ -423,8 +420,8 @@ uniontype Call
   end variability;
 
   function compare
-    input Call call1;
-    input Call call2;
+    input NFCall call1;
+    input NFCall call2;
     output Integer comp;
   algorithm
     comp := match (call1, call2)
@@ -447,7 +444,7 @@ uniontype Call
   end compare;
 
   function isExternal
-    input Call call;
+    input NFCall call;
     output Boolean isExternal;
   algorithm
     isExternal := match call
@@ -459,7 +456,7 @@ uniontype Call
   end isExternal;
 
   function isImpure
-    input Call call;
+    input NFCall call;
     output Boolean isImpure;
   algorithm
     isImpure := match call
@@ -470,7 +467,7 @@ uniontype Call
   end isImpure;
 
   function isRecordConstructor
-    input Call call;
+    input NFCall call;
     output Boolean isConstructor;
   algorithm
     isConstructor := match call
@@ -483,7 +480,7 @@ uniontype Call
   end isRecordConstructor;
 
   function inlineType
-    input Call call;
+    input NFCall call;
     output DAE.InlineType inlineTy;
   algorithm
     inlineTy := match call
@@ -494,7 +491,7 @@ uniontype Call
   end inlineType;
 
   function typedFunction
-    input Call call;
+    input NFCall call;
     output Function fn;
   algorithm
     fn := match call
@@ -510,7 +507,7 @@ uniontype Call
   end typedFunction;
 
   function functionName
-    input Call call;
+    input NFCall call;
     output Absyn.Path name;
   algorithm
     name := match call
@@ -525,7 +522,7 @@ uniontype Call
   end functionName;
 
   function arguments
-    input Call call;
+    input NFCall call;
     output list<Expression> arguments;
   algorithm
     arguments := match call
@@ -535,7 +532,7 @@ uniontype Call
   end arguments;
 
   function toRecordExpression
-    input Call call;
+    input NFCall call;
     input Type ty;
     output Expression exp;
   algorithm
@@ -553,7 +550,7 @@ uniontype Call
   end toRecordExpression;
 
   function toString
-    input Call call;
+    input NFCall call;
     output String str;
   protected
     String name, arg_str,c;
@@ -626,7 +623,7 @@ uniontype Call
   end toString;
 
   function toFlatString
-    input Call call;
+    input NFCall call;
     output String str;
   protected
     String name, arg_str,c;
@@ -678,7 +675,7 @@ uniontype Call
 
   function typedString
     "Like toString, but prefixes each argument with its type as a comment."
-    input Call call;
+    input NFCall call;
     output String str;
   protected
     String name, arg_str,c;
@@ -711,7 +708,7 @@ uniontype Call
   end typedString;
 
   function toDAE
-    input Call call;
+    input NFCall call;
     output DAE.Exp daeCall;
   algorithm
     daeCall := match call
@@ -767,7 +764,7 @@ uniontype Call
   end toDAE;
 
   function isVectorizeable
-    input Call call;
+    input NFCall call;
     output Boolean isVect;
   algorithm
     isVect := match call
@@ -787,7 +784,7 @@ uniontype Call
   end isVectorizeable;
 
   function retype
-    input output Call call;
+    input output NFCall call;
   algorithm
     () := match call
       local
@@ -814,7 +811,7 @@ uniontype Call
     input output Expression callExp;
     input Type ty;
   protected
-    Call call;
+    NFCall call;
     Type cast_ty;
   algorithm
     Expression.CALL(call = call) := callExp;
@@ -1006,7 +1003,7 @@ protected
   end instIterators;
 
   function typeArrayConstructor
-    input output Call call;
+    input output NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
           output Type ty;
@@ -1062,7 +1059,7 @@ protected
   end typeArrayConstructor;
 
   function typeReduction
-    input output Call call;
+    input output NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
           output Type ty;
@@ -1187,7 +1184,7 @@ protected
         case "listReverse" then NONE();
 
         else
-          SOME(Expression.CALL(Call.makeTypedCall(reductionFn,
+          SOME(Expression.CALL(NFCall.makeTypedCall(reductionFn,
             {reductionFoldIterator(foldId, reductionType),
              reductionFoldIterator(resultId, reductionType)},
             reductionVar, reductionType)));
@@ -1205,7 +1202,7 @@ protected
   end reductionFoldIterator;
 
   function typeArgs
-    input output Call call;
+    input output NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
   algorithm
@@ -1245,7 +1242,7 @@ protected
   end typeArgs;
 
   function checkMatchingFunctions
-    input Call call;
+    input NFCall call;
     input SourceInfo info;
     output MatchedFunction matchedFunc;
   protected
@@ -1338,11 +1335,11 @@ protected
   end iteratorToDAE;
 
   function vectorizeCall
-    input Call base_call;
+    input NFCall base_call;
     input FunctionMatchKind mk;
     input InstNode scope;
     input SourceInfo info;
-    output Call vectorized_call;
+    output NFCall vectorized_call;
   protected
     Type ty, vect_ty;
     Expression exp;
@@ -1400,7 +1397,7 @@ protected
   end vectorizeCall;
 
   function isVectorized
-    input Call call;
+    input NFCall call;
     output Boolean vectorized;
   algorithm
     vectorized := match call
@@ -1416,8 +1413,8 @@ protected
     "Transforms a vectorized call into a non-vectorized one. This function is
      used as a helper to output valid flat Modelica, and should probably not
      be used where e.g. correct types are required."
-    input Call call;
-    output Call outCall;
+    input NFCall call;
+    output NFCall outCall;
   protected
     Expression exp, iter_exp;
     list<tuple<InstNode, Expression>> iters;
@@ -1573,7 +1570,6 @@ protected
           fail();
     end match;
   end getSpecialReturnType;
-end Call;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFCall;

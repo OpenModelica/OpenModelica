@@ -61,7 +61,7 @@ public
   import Dimension = NFDimension;
   import Type = NFType;
   import ComponentRef = NFComponentRef;
-  import NFCall.Call;
+  import NFCall;
   import NFBinding.Binding;
   import NFComponent.Component;
   import NFClassTree.ClassTree;
@@ -238,7 +238,7 @@ public
   end RECORD;
 
   record CALL
-    Call call;
+    NFCall call;
   end CALL;
 
   record SIZE
@@ -487,7 +487,7 @@ public
         Option<Expression> oe;
         Path p;
         Operator op;
-        Call c;
+        NFCall c;
         list<Subscript> subs;
         ClockKind clk1, clk2;
         Mutable<Expression> me;
@@ -576,7 +576,7 @@ public
         algorithm
           CALL(call = c) := exp2;
         then
-          Call.compare(exp1.call, c);
+          NFCall.compare(exp1.call, c);
 
       case SIZE()
         algorithm
@@ -810,7 +810,7 @@ public
       case RANGE()           then exp.ty;
       case TUPLE()           then exp.ty;
       case RECORD()          then exp.ty;
-      case CALL()            then Call.typeOf(exp.call);
+      case CALL()            then NFCall.typeOf(exp.call);
       case SIZE()            then if isSome(exp.dimIndex) then
                                     Type.INTEGER() else Type.sizeType(typeOf(exp.exp));
       case END()             then Type.INTEGER();
@@ -846,7 +846,7 @@ public
       case RANGE()           algorithm exp.ty := ty; then ();
       case TUPLE()           algorithm exp.ty := ty; then ();
       case RECORD()          algorithm exp.ty := ty; then ();
-      case CALL()            algorithm exp.call := Call.setType(exp.call, ty); then ();
+      case CALL()            algorithm exp.call := NFCall.setType(exp.call, ty); then ();
       case BINARY()          algorithm exp.operator := Operator.setType(ty, exp.operator); then ();
       case UNARY()           algorithm exp.operator := Operator.setType(ty, exp.operator); then ();
       case LBINARY()         algorithm exp.operator := Operator.setType(ty, exp.operator); then ();
@@ -923,9 +923,9 @@ public
       case (IF(), _)
         then IF(exp.condition, typeCast(exp.trueBranch, ety), typeCast(exp.falseBranch, ety));
 
-      // Calls are handled by Call.typeCast, which has special rules for some functions.
+      // NFCall. are handled by NFCall.typeCast, which has special rules for some functions.
       case (CALL(), _)
-        then Call.typeCast(exp, ety);
+        then NFCall.typeCast(exp, ety);
 
       // Casting a cast expression overrides its current cast type.
       case (CAST(), _) then typeCast(exp.exp, ty);
@@ -1089,7 +1089,7 @@ public
       case RANGE() guard listEmpty(restSubscripts)
         then applySubscriptRange(subscript, exp);
 
-      case CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR())
+      case CALL(call = NFCall.TYPED_ARRAY_CONSTRUCTOR())
         then applySubscriptArrayConstructor(subscript, exp.call, restSubscripts);
 
       case CALL()
@@ -1345,7 +1345,7 @@ public
     input list<Subscript> restSubscripts;
     output Expression outExp;
   protected
-    Call call;
+    NFCall call;
   algorithm
     CALL(call = call) := exp;
 
@@ -1354,15 +1354,15 @@ public
         Expression arg;
         Type ty;
 
-      case Call.TYPED_CALL(arguments = {arg})
+      case NFCall.TYPED_CALL(arguments = {arg})
         guard Function.Function.isSubscriptableBuiltin(call.fn)
         algorithm
           arg := applySubscript(subscript, arg, restSubscripts);
           ty := Type.copyDims(typeOf(arg), call.ty);
         then
-          CALL(Call.TYPED_CALL(call.fn, ty, call.var, {arg}, call.attributes));
+          CALL(NFCall.TYPED_CALL(call.fn, ty, call.var, {arg}, call.attributes));
 
-      case Call.TYPED_ARRAY_CONSTRUCTOR()
+      case NFCall.TYPED_ARRAY_CONSTRUCTOR()
         then applySubscriptArrayConstructor(subscript, call, restSubscripts);
 
       else makeSubscriptedExp(subscript :: restSubscripts, exp);
@@ -1371,7 +1371,7 @@ public
 
   function applySubscriptArrayConstructor
     input Subscript subscript;
-    input Call call;
+    input NFCall call;
     input list<Subscript> restSubscripts;
     output Expression outExp;
   algorithm
@@ -1384,7 +1384,7 @@ public
   end applySubscriptArrayConstructor;
 
   function applyIndexSubscriptArrayConstructor
-    input Call call;
+    input NFCall call;
     input Subscript index;
     output Expression subscriptedExp;
   protected
@@ -1394,13 +1394,13 @@ public
     list<tuple<InstNode, Expression>> iters;
     InstNode iter;
   algorithm
-    Call.TYPED_ARRAY_CONSTRUCTOR(ty, var, exp, iters) := call;
+    NFCall.TYPED_ARRAY_CONSTRUCTOR(ty, var, exp, iters) := call;
     ((iter, iter_exp), iters) := List.splitLast(iters);
     iter_exp := applySubscript(index, iter_exp);
     subscriptedExp := replaceIterator(exp, iter, iter_exp);
 
     if not listEmpty(iters) then
-      subscriptedExp := CALL(Call.TYPED_ARRAY_CONSTRUCTOR(Type.unliftArray(ty), var, subscriptedExp, iters));
+      subscriptedExp := CALL(NFCall.TYPED_ARRAY_CONSTRUCTOR(Type.unliftArray(ty), var, subscriptedExp, iters));
     end if;
   end applyIndexSubscriptArrayConstructor;
 
@@ -1589,7 +1589,7 @@ public
 
       case TUPLE() then "(" + stringDelimitList(list(toString(e) for e in exp.elements), ", ") + ")";
       case RECORD() then List.toString(exp.elements, toString, AbsynUtil.pathString(exp.path), "(", ", ", ")", true);
-      case CALL() then Call.toString(exp.call);
+      case CALL() then NFCall.toString(exp.call);
       case SIZE() then "size(" + toString(exp.exp) +
                         (
                         if isSome(exp.dimIndex)
@@ -1669,7 +1669,7 @@ public
 
       case TUPLE() then "(" + stringDelimitList(list(toFlatString(e) for e in exp.elements), ", ") + ")";
       case RECORD() then List.toString(exp.elements, toFlatString, "'" + AbsynUtil.pathString(exp.path), "'(", ", ", ")", true);
-      case CALL() then Call.toFlatString(exp.call);
+      case CALL() then NFCall.toFlatString(exp.call);
       case SIZE() then "size(" + toFlatString(exp.exp) +
                         (
                         if isSome(exp.dimIndex)
@@ -1909,7 +1909,7 @@ public
                toDAE(exp.stop));
 
       case TUPLE() then DAE.TUPLE(list(toDAE(e) for e in exp.elements));
-      case CALL() then Call.toDAE(exp.call);
+      case CALL() then NFCall.toDAE(exp.call);
 
       case SIZE()
         then DAE.SIZE(toDAE(exp.exp),
@@ -2316,9 +2316,9 @@ public
   end mapOpt;
 
   function mapCall
-    input Call call;
+    input NFCall call;
     input MapFunc func;
-    output Call outCall;
+    output NFCall outCall;
 
     partial function MapFunc
       input output Expression e;
@@ -2338,7 +2338,7 @@ public
         Option<Expression> default_exp;
         tuple<Option<Expression>, String, String> fold_exp;
 
-      case Call.UNTYPED_CALL()
+      case NFCall.UNTYPED_CALL()
         algorithm
           args := list(map(arg, func) for arg in call.arguments);
           nargs := {};
@@ -2349,9 +2349,9 @@ public
             nargs := (s, e) :: nargs;
           end for;
         then
-          Call.UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
+          NFCall.UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
 
-      case Call.ARG_TYPED_CALL()
+      case NFCall.ARG_TYPED_CALL()
         algorithm
           targs := {};
           tnargs := {};
@@ -2368,43 +2368,43 @@ public
             tnargs := (s, e, t, v) :: tnargs;
           end for;
         then
-          Call.ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
+          NFCall.ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
 
-      case Call.TYPED_CALL()
+      case NFCall.TYPED_CALL()
         algorithm
           args := list(map(arg, func) for arg in call.arguments);
         then
-          Call.TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
+          NFCall.TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
 
-      case Call.UNTYPED_ARRAY_CONSTRUCTOR()
+      case NFCall.UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
           e := map(call.exp, func);
           iters := mapCallIterators(call.iters, func);
         then
-          Call.UNTYPED_ARRAY_CONSTRUCTOR(e, iters);
+          NFCall.UNTYPED_ARRAY_CONSTRUCTOR(e, iters);
 
-      case Call.TYPED_ARRAY_CONSTRUCTOR()
+      case NFCall.TYPED_ARRAY_CONSTRUCTOR()
         algorithm
           e := map(call.exp, func);
           iters := mapCallIterators(call.iters, func);
         then
-          Call.TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, iters);
+          NFCall.TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, iters);
 
-      case Call.UNTYPED_REDUCTION()
+      case NFCall.UNTYPED_REDUCTION()
         algorithm
           e := map(call.exp, func);
           iters := mapCallIterators(call.iters, func);
         then
-          Call.UNTYPED_REDUCTION(call.ref, e, iters);
+          NFCall.UNTYPED_REDUCTION(call.ref, e, iters);
 
-      case Call.TYPED_REDUCTION()
+      case NFCall.TYPED_REDUCTION()
         algorithm
           e := map(call.exp, func);
           iters := mapCallIterators(call.iters, func);
           default_exp := mapOpt(call.defaultExp, func);
           fold_exp := Util.applyTuple31(call.foldExp, function mapOpt(func = func));
         then
-          Call.TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
+          NFCall.TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
 
     end match;
   end mapCall;
@@ -2687,9 +2687,9 @@ public
   end mapCrefShallow;
 
   function mapCallShallow
-    input Call call;
+    input NFCall call;
     input MapFunc func;
-    output Call outCall;
+    output NFCall outCall;
 
     partial function MapFunc
       input output Expression e;
@@ -2709,7 +2709,7 @@ public
         Option<Expression> default_exp;
         tuple<Option<Expression>, String, String> fold_exp;
 
-      case Call.UNTYPED_CALL()
+      case NFCall.UNTYPED_CALL()
         algorithm
           args := list(func(arg) for arg in call.arguments);
           nargs := {};
@@ -2720,9 +2720,9 @@ public
             nargs := (s, e) :: nargs;
           end for;
         then
-          Call.UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
+          NFCall.UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
 
-      case Call.ARG_TYPED_CALL()
+      case NFCall.ARG_TYPED_CALL()
         algorithm
           targs := {};
           tnargs := {};
@@ -2739,40 +2739,40 @@ public
             tnargs := (s, e, t, v) :: tnargs;
           end for;
         then
-          Call.ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
+          NFCall.ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
 
-      case Call.TYPED_CALL()
+      case NFCall.TYPED_CALL()
         algorithm
           args := list(func(arg) for arg in call.arguments);
         then
-          Call.TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
+          NFCall.TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
 
-      case Call.UNTYPED_ARRAY_CONSTRUCTOR()
+      case NFCall.UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
           e := func(call.exp);
         then
-          Call.UNTYPED_ARRAY_CONSTRUCTOR(e, call.iters);
+          NFCall.UNTYPED_ARRAY_CONSTRUCTOR(e, call.iters);
 
-      case Call.TYPED_ARRAY_CONSTRUCTOR()
+      case NFCall.TYPED_ARRAY_CONSTRUCTOR()
         algorithm
           e := func(call.exp);
         then
-          Call.TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, call.iters);
+          NFCall.TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, call.iters);
 
-      case Call.UNTYPED_REDUCTION()
+      case NFCall.UNTYPED_REDUCTION()
         algorithm
           e := func(call.exp);
         then
-          Call.UNTYPED_REDUCTION(call.ref, e, call.iters);
+          NFCall.UNTYPED_REDUCTION(call.ref, e, call.iters);
 
-      case Call.TYPED_REDUCTION()
+      case NFCall.TYPED_REDUCTION()
         algorithm
           e := func(call.exp);
           iters := mapCallShallowIterators(call.iters, func);
           default_exp := mapShallowOpt(call.defaultExp, func);
           fold_exp := Util.applyTuple31(call.foldExp, function mapShallowOpt(func = func));
         then
-          Call.TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
+          NFCall.TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
 
     end match;
   end mapCallShallow;
@@ -2979,7 +2979,7 @@ public
   end fold;
 
   function foldCall<ArgT>
-    input Call call;
+    input NFCall call;
     input FoldFunc func;
     input output ArgT foldArg;
 
@@ -2992,7 +2992,7 @@ public
       local
         Expression e;
 
-      case Call.UNTYPED_CALL()
+      case NFCall.UNTYPED_CALL()
         algorithm
           foldArg := foldList(call.arguments, func, foldArg);
 
@@ -3003,7 +3003,7 @@ public
         then
           ();
 
-      case Call.ARG_TYPED_CALL()
+      case NFCall.ARG_TYPED_CALL()
         algorithm
           for arg in call.arguments loop
             (e, _, _) := arg;
@@ -3017,13 +3017,13 @@ public
         then
           ();
 
-      case Call.TYPED_CALL()
+      case NFCall.TYPED_CALL()
         algorithm
           foldArg := foldList(call.arguments, func, foldArg);
         then
           ();
 
-      case Call.UNTYPED_ARRAY_CONSTRUCTOR()
+      case NFCall.UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
           foldArg := fold(call.exp, func, foldArg);
 
@@ -3033,7 +3033,7 @@ public
         then
           ();
 
-      case Call.TYPED_ARRAY_CONSTRUCTOR()
+      case NFCall.TYPED_ARRAY_CONSTRUCTOR()
         algorithm
           foldArg := fold(call.exp, func, foldArg);
 
@@ -3043,7 +3043,7 @@ public
         then
           ();
 
-      case Call.UNTYPED_REDUCTION()
+      case NFCall.UNTYPED_REDUCTION()
         algorithm
           foldArg := fold(call.exp, func, foldArg);
 
@@ -3053,7 +3053,7 @@ public
         then
           ();
 
-      case Call.TYPED_REDUCTION()
+      case NFCall.TYPED_REDUCTION()
         algorithm
           foldArg := fold(call.exp, func, foldArg);
 
@@ -3240,7 +3240,7 @@ public
   end apply;
 
   function applyCall
-    input Call call;
+    input NFCall call;
     input ApplyFunc func;
 
     partial function ApplyFunc
@@ -3251,7 +3251,7 @@ public
       local
         Expression e;
 
-      case Call.UNTYPED_CALL()
+      case NFCall.UNTYPED_CALL()
         algorithm
           applyList(call.arguments, func);
 
@@ -3262,7 +3262,7 @@ public
         then
           ();
 
-      case Call.ARG_TYPED_CALL()
+      case NFCall.ARG_TYPED_CALL()
         algorithm
           for arg in call.arguments loop
             (e, _, _) := arg;
@@ -3276,13 +3276,13 @@ public
         then
           ();
 
-      case Call.TYPED_CALL()
+      case NFCall.TYPED_CALL()
         algorithm
           applyList(call.arguments, func);
         then
           ();
 
-      case Call.UNTYPED_ARRAY_CONSTRUCTOR()
+      case NFCall.UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
           apply(call.exp, func);
 
@@ -3292,7 +3292,7 @@ public
         then
           ();
 
-      case Call.TYPED_ARRAY_CONSTRUCTOR()
+      case NFCall.TYPED_ARRAY_CONSTRUCTOR()
         algorithm
           apply(call.exp, func);
 
@@ -3302,7 +3302,7 @@ public
         then
           ();
 
-      case Call.UNTYPED_REDUCTION()
+      case NFCall.UNTYPED_REDUCTION()
         algorithm
           apply(call.exp, func);
 
@@ -3312,7 +3312,7 @@ public
         then
           ();
 
-      case Call.TYPED_REDUCTION()
+      case NFCall.TYPED_REDUCTION()
         algorithm
           apply(call.exp, func);
 
@@ -3382,7 +3382,7 @@ public
         Expression e1, e2, e3, e4;
         ComponentRef cr;
         list<Expression> expl;
-        Call call;
+        NFCall call;
         list<Subscript> subs;
 
       case CLKCONST(ClockKind.INTEGER_CLOCK(e1, e2))
@@ -3607,9 +3607,9 @@ public
   end mapFoldOpt;
 
   function mapFoldCall<ArgT>
-    input Call call;
+    input NFCall call;
     input MapFunc func;
-          output Call outCall;
+          output NFCall outCall;
     input output ArgT foldArg;
 
     partial function MapFunc
@@ -3632,7 +3632,7 @@ public
         tuple<Option<Expression>, String, String> fold_exp;
         Option<Expression> oe;
 
-      case Call.UNTYPED_CALL()
+      case NFCall.UNTYPED_CALL()
         algorithm
           (args, foldArg) := List.map1Fold(call.arguments, mapFold, func, foldArg);
           nargs := {};
@@ -3643,9 +3643,9 @@ public
             nargs := (s, e) :: nargs;
           end for;
         then
-          Call.UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
+          NFCall.UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
 
-      case Call.ARG_TYPED_CALL()
+      case NFCall.ARG_TYPED_CALL()
         algorithm
           targs := {};
           tnargs := {};
@@ -3662,33 +3662,33 @@ public
             tnargs := (s, e, t, v) :: tnargs;
           end for;
         then
-          Call.ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
+          NFCall.ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
 
-      case Call.TYPED_CALL()
+      case NFCall.TYPED_CALL()
         algorithm
           (args, foldArg) := List.map1Fold(call.arguments, mapFold, func, foldArg);
         then
-          Call.TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
+          NFCall.TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
 
-      case Call.UNTYPED_ARRAY_CONSTRUCTOR()
+      case NFCall.UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
           (e, foldArg) := mapFold(call.exp, func, foldArg);
         then
-          Call.UNTYPED_ARRAY_CONSTRUCTOR(e, call.iters);
+          NFCall.UNTYPED_ARRAY_CONSTRUCTOR(e, call.iters);
 
-      case Call.TYPED_ARRAY_CONSTRUCTOR()
+      case NFCall.TYPED_ARRAY_CONSTRUCTOR()
         algorithm
           (e, foldArg) := mapFold(call.exp, func, foldArg);
         then
-          Call.TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, call.iters);
+          NFCall.TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, call.iters);
 
-      case Call.UNTYPED_REDUCTION()
+      case NFCall.UNTYPED_REDUCTION()
         algorithm
           (e, foldArg) := mapFold(call.exp, func, foldArg);
         then
-          Call.UNTYPED_REDUCTION(call.ref, e, call.iters);
+          NFCall.UNTYPED_REDUCTION(call.ref, e, call.iters);
 
-      case Call.TYPED_REDUCTION()
+      case NFCall.TYPED_REDUCTION()
         algorithm
           (e, foldArg) := mapFold(call.exp, func, foldArg);
           (iters, foldArg) := mapFoldCallIterators(call.iters, func, foldArg);
@@ -3702,7 +3702,7 @@ public
             fold_exp := call.foldExp;
           end if;
         then
-          Call.TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
+          NFCall.TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
     end match;
   end mapFoldCall;
 
@@ -3773,7 +3773,7 @@ public
         Option<Expression> oe;
         ComponentRef cr;
         list<Expression> expl;
-        Call call;
+        NFCall call;
         list<Subscript> subs;
         Boolean unchanged;
 
@@ -4007,9 +4007,9 @@ public
   end mapFoldOptShallow;
 
   function mapFoldCallShallow<ArgT>
-    input Call call;
+    input NFCall call;
     input MapFunc func;
-          output Call outCall;
+          output NFCall outCall;
     input output ArgT foldArg;
 
     partial function MapFunc
@@ -4032,7 +4032,7 @@ public
         tuple<Option<Expression>, String, String> fold_exp;
         Option<Expression> oe;
 
-      case Call.UNTYPED_CALL()
+      case NFCall.UNTYPED_CALL()
         algorithm
           (args, foldArg) := List.mapFold(call.arguments, func, foldArg);
           nargs := {};
@@ -4043,9 +4043,9 @@ public
             nargs := (s, e) :: nargs;
           end for;
         then
-          Call.UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
+          NFCall.UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
 
-      case Call.ARG_TYPED_CALL()
+      case NFCall.ARG_TYPED_CALL()
         algorithm
           targs := {};
           tnargs := {};
@@ -4062,36 +4062,36 @@ public
             tnargs := (s, e, t, v) :: tnargs;
           end for;
         then
-          Call.ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
+          NFCall.ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
 
-      case Call.TYPED_CALL()
+      case NFCall.TYPED_CALL()
         algorithm
           (args, foldArg) := List.mapFold(call.arguments, func, foldArg);
         then
-          Call.TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
+          NFCall.TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
 
-      case Call.UNTYPED_ARRAY_CONSTRUCTOR()
+      case NFCall.UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
           (e, foldArg) := func(call.exp, foldArg);
           iters := mapFoldCallIteratorsShallow(call.iters, func, foldArg);
         then
-          Call.UNTYPED_ARRAY_CONSTRUCTOR(e, iters);
+          NFCall.UNTYPED_ARRAY_CONSTRUCTOR(e, iters);
 
-      case Call.TYPED_ARRAY_CONSTRUCTOR()
+      case NFCall.TYPED_ARRAY_CONSTRUCTOR()
         algorithm
           (e, foldArg) := func(call.exp, foldArg);
           iters := mapFoldCallIteratorsShallow(call.iters, func, foldArg);
         then
-          Call.TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, iters);
+          NFCall.TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, iters);
 
-      case Call.UNTYPED_REDUCTION()
+      case NFCall.UNTYPED_REDUCTION()
         algorithm
           (e, foldArg) := func(call.exp, foldArg);
           iters := mapFoldCallIteratorsShallow(call.iters, func, foldArg);
         then
-          Call.UNTYPED_REDUCTION(call.ref, e, iters);
+          NFCall.UNTYPED_REDUCTION(call.ref, e, iters);
 
-      case Call.TYPED_REDUCTION()
+      case NFCall.TYPED_REDUCTION()
         algorithm
           (e, foldArg) := func(call.exp, foldArg);
           iters := mapFoldCallIteratorsShallow(call.iters, func, foldArg);
@@ -4105,7 +4105,7 @@ public
             fold_exp := call.foldExp;
           end if;
         then
-          Call.TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
+          NFCall.TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
 
     end match;
   end mapFoldCallShallow;
@@ -4276,7 +4276,7 @@ public
   end listContains;
 
   function callContains
-    input Call call;
+    input NFCall call;
     input ContainsPred func;
     output Boolean res;
   algorithm
@@ -4284,7 +4284,7 @@ public
       local
         Expression e;
 
-      case Call.UNTYPED_CALL()
+      case NFCall.UNTYPED_CALL()
         algorithm
           res := listContains(call.arguments, func);
 
@@ -4301,7 +4301,7 @@ public
         then
           res;
 
-      case Call.ARG_TYPED_CALL()
+      case NFCall.ARG_TYPED_CALL()
         algorithm
           for arg in call.arguments loop
             (e, _, _) := arg;
@@ -4321,11 +4321,11 @@ public
         then
           false;
 
-      case Call.TYPED_CALL() then listContains(call.arguments, func);
-      case Call.UNTYPED_ARRAY_CONSTRUCTOR() then contains(call.exp, func);
-      case Call.TYPED_ARRAY_CONSTRUCTOR() then contains(call.exp, func);
-      case Call.UNTYPED_REDUCTION() then contains(call.exp, func);
-      case Call.TYPED_REDUCTION() then contains(call.exp, func);
+      case NFCall.TYPED_CALL() then listContains(call.arguments, func);
+      case NFCall.UNTYPED_ARRAY_CONSTRUCTOR() then contains(call.exp, func);
+      case NFCall.TYPED_ARRAY_CONSTRUCTOR() then contains(call.exp, func);
+      case NFCall.UNTYPED_REDUCTION() then contains(call.exp, func);
+      case NFCall.TYPED_REDUCTION() then contains(call.exp, func);
     end match;
   end callContains;
 
@@ -4414,7 +4414,7 @@ public
   end listContainsShallow;
 
   function callContainsShallow
-    input Call call;
+    input NFCall call;
     input ContainsPred func;
     output Boolean res;
   algorithm
@@ -4422,7 +4422,7 @@ public
       local
         Expression e;
 
-      case Call.UNTYPED_CALL()
+      case NFCall.UNTYPED_CALL()
         algorithm
           res := listContainsShallow(call.arguments, func);
 
@@ -4439,7 +4439,7 @@ public
         then
           res;
 
-      case Call.ARG_TYPED_CALL()
+      case NFCall.ARG_TYPED_CALL()
         algorithm
           for arg in call.arguments loop
             (e, _, _) := arg;
@@ -4461,11 +4461,11 @@ public
         then
           false;
 
-      case Call.TYPED_CALL() then listContainsShallow(call.arguments, func);
-      case Call.UNTYPED_ARRAY_CONSTRUCTOR() then func(call.exp);
-      case Call.TYPED_ARRAY_CONSTRUCTOR() then func(call.exp);
-      case Call.UNTYPED_REDUCTION() then func(call.exp);
-      case Call.TYPED_REDUCTION() then func(call.exp);
+      case NFCall.TYPED_CALL() then listContainsShallow(call.arguments, func);
+      case NFCall.UNTYPED_ARRAY_CONSTRUCTOR() then func(call.exp);
+      case NFCall.TYPED_ARRAY_CONSTRUCTOR() then func(call.exp);
+      case NFCall.UNTYPED_REDUCTION() then func(call.exp);
+      case NFCall.TYPED_REDUCTION() then func(call.exp);
     end match;
   end callContainsShallow;
 
@@ -4743,7 +4743,7 @@ public
     op_node := Class.lookupElement("'0'", InstNode.getClass(recordNode));
     Function.Function.instFunctionNode(op_node);
     {fn} := Function.Function.typeNodeCache(op_node);
-    zeroExp := Expression.CALL(Call.makeTypedCall(fn, {}, Variability.CONSTANT));
+    zeroExp := Expression.CALL(NFCall.makeTypedCall(fn, {}, Variability.CONSTANT));
     zeroExp := Ceval.evalExp(zeroExp);
   end makeOperatorRecordZero;
 
@@ -4901,21 +4901,21 @@ public
     input Expression exp;
     output Boolean hasArrayCall;
   protected
-    Call call;
+    NFCall call;
     Type ty;
   algorithm
     hasArrayCall := match exp
       case CALL(call = call)
         algorithm
-          ty := Call.typeOf(call);
+          ty := NFCall.typeOf(call);
         then
-          Type.isArray(ty) and Call.isVectorizeable(call);
+          Type.isArray(ty) and NFCall.isVectorizeable(call);
 
       case TUPLE_ELEMENT(tupleExp = CALL(call = call))
         algorithm
-          ty := Type.nthTupleType(Call.typeOf(call), exp.index);
+          ty := Type.nthTupleType(NFCall.typeOf(call), exp.index);
         then
-          Type.isArray(ty) and Call.isVectorizeable(call);
+          Type.isArray(ty) and NFCall.isVectorizeable(call);
 
       else false;
     end match;
@@ -5039,7 +5039,7 @@ public
           if expanded then
             outExp := promote2(outExp, true, dims, types);
           else
-            outExp := CALL(Call.makeTypedCall(
+            outExp := CALL(NFCall.makeTypedCall(
               NFBuiltinFuncs.PROMOTE, {exp, INTEGER(dims)}, variability(exp), listHead(types)));
           end if;
         then
@@ -5087,7 +5087,7 @@ public
 
       case TUPLE() then variabilityList(exp.elements);
       case RECORD() then variabilityList(exp.elements);
-      case CALL() then Call.variability(exp.call);
+      case CALL() then NFCall.variability(exp.call);
       case SIZE()
         algorithm
           if isSome(exp.dimIndex) then
@@ -5182,7 +5182,7 @@ public
   algorithm
     indexExp := match enumExp
       case ENUM_LITERAL() then INTEGER(enumExp.index);
-      else CALL(Call.makeTypedCall(
+      else CALL(NFCall.makeTypedCall(
         NFBuiltinFuncs.INTEGER_ENUM, {enumExp}, variability(enumExp)));
     end match;
   end enumIndexExp;
@@ -5397,9 +5397,9 @@ public
         then
           ();
 
-      case CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR())
+      case CALL(call = NFCall.TYPED_ARRAY_CONSTRUCTOR())
         algorithm
-          exp.call := Call.retype(exp.call);
+          exp.call := NFCall.retype(exp.call);
         then
           ();
 
@@ -5523,7 +5523,7 @@ public
   end vectorize;
 
   function bindingExpMap
-    "Calls the given function on each element of a binding expression."
+    "NFCall. the given function on each element of a binding expression."
     input Expression exp;
     input EvalFunc evalFunc;
     output Expression result;

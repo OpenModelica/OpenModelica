@@ -40,7 +40,7 @@ import NFInstNode.InstNode;
 import Operator = NFOperator;
 import NFOperator.Op;
 import Typing = NFTyping;
-import NFCall.Call;
+import NFCall;
 import Dimension = NFDimension;
 import Type = NFType;
 import NFTyping.ExpOrigin;
@@ -155,7 +155,7 @@ algorithm
       Binding binding;
       Expression exp1, exp2, exp3;
       list<Expression> expl = {};
-      Call call;
+      NFCall call;
       Component comp;
       Option<Expression> oexp;
       ComponentRef cref;
@@ -1763,17 +1763,17 @@ algorithm
 end evalCast;
 
 function evalCall
-  input Call call;
+  input NFCall call;
   input EvalTarget target;
   output Expression exp;
 protected
-  Call c = call;
+  NFCall c = call;
 algorithm
   exp := match c
     local
       list<Expression> args;
 
-    case Call.TYPED_CALL()
+    case NFCall.TYPED_CALL()
       algorithm
         c.arguments := list(evalExp_impl(arg, target) for arg in c.arguments);
       then
@@ -1782,10 +1782,10 @@ algorithm
         else
           Expression.bindingExpMap(Expression.CALL(c), evalNormalCallExp);
 
-    case Call.TYPED_ARRAY_CONSTRUCTOR()
+    case NFCall.TYPED_ARRAY_CONSTRUCTOR()
       then evalArrayConstructor(c.exp, c.iters);
 
-    case Call.TYPED_REDUCTION()
+    case NFCall.TYPED_REDUCTION()
       then evalReduction(c.fn, c.exp, c.iters);
 
     else
@@ -1805,7 +1805,7 @@ protected
   Function fn;
   list<Expression> args;
 algorithm
-  Expression.CALL(call = Call.TYPED_CALL(fn = fn, arguments = args)) := callExp;
+  Expression.CALL(call = NFCall.TYPED_CALL(fn = fn, arguments = args)) := callExp;
   result := evalBuiltinCall(fn, args, target);
 end evalBuiltinCallExp;
 
@@ -1892,7 +1892,7 @@ protected
   Function fn;
   list<Expression> args;
 algorithm
-  Expression.CALL(call = Call.TYPED_CALL(fn = fn, arguments = args)) := callExp;
+  Expression.CALL(call = NFCall.TYPED_CALL(fn = fn, arguments = args)) := callExp;
   result := evalNormalCall(fn, args);
 end evalNormalCallExp;
 
@@ -2366,7 +2366,7 @@ algorithm
         result := Expression.fold(e1, evalBuiltinMax2, Expression.EMPTY(ty));
 
         if Expression.isEmpty(result) then
-          result := Expression.CALL(Call.makeTypedCall(fn,
+          result := Expression.CALL(NFCall.makeTypedCall(fn,
             {Expression.makeEmptyArray(ty)}, Variability.CONSTANT, Type.arrayElementType(ty)));
         end if;
       then
@@ -2412,7 +2412,7 @@ algorithm
         result := Expression.fold(e1, evalBuiltinMin2, Expression.EMPTY(ty));
 
         if Expression.isEmpty(result) then
-          result := Expression.CALL(Call.makeTypedCall(fn,
+          result := Expression.CALL(NFCall.makeTypedCall(fn,
             {Expression.makeEmptyArray(ty)}, Variability.CONSTANT, Type.arrayElementType(ty)));
         end if;
       then
@@ -2878,7 +2878,7 @@ algorithm
         e := Expression.STRING(s);
         if Flags.getConfigBool(Flags.BUILDING_FMU) then
           f := Function.setName(Absyn.IDENT("OpenModelica_fmuLoadResource"), fn);
-          e := Expression.CALL(Call.makeTypedCall(f, {e}, Variability.PARAMETER, Expression.typeOf(e)));
+          e := Expression.CALL(NFCall.makeTypedCall(f, {e}, Variability.PARAMETER, Expression.typeOf(e)));
         end if;
       then e;
 
@@ -3039,7 +3039,7 @@ algorithm
   {s, d} := list(Expression.unbox(arg) for arg in args);
   s := evalExp(s, target);
   if Flags.isSet(Flags.NF_API_DYNAMIC_SELECT) then
-    result := Expression.CALL(Call.makeTypedCall(fn, {s, d}, Variability.CONTINUOUS, Expression.typeOf(s)));
+    result := Expression.CALL(NFCall.makeTypedCall(fn, {s, d}, Variability.CONTINUOUS, Expression.typeOf(s)));
   else
     result := s;
   end if;

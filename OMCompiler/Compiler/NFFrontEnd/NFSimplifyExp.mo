@@ -34,7 +34,7 @@ encapsulated package NFSimplifyExp
 import Expression = NFExpression;
 import Operator = NFOperator;
 import Type = NFType;
-import NFCall.Call;
+import NFCall;
 import Subscript = NFSubscript;
 import NFOperator.Op;
 import NFPrefixes.Variability;
@@ -140,14 +140,14 @@ end simplifyRange;
 function simplifyCall
   input output Expression callExp;
 protected
-  Call call;
+  NFCall call;
   list<Expression> args;
   Boolean builtin, is_pure;
 algorithm
   Expression.CALL(call = call) := callExp;
 
   callExp := match call
-    case Call.TYPED_CALL(arguments = args) guard not Call.isExternal(call)
+    case NFCall.TYPED_CALL(arguments = args) guard not NFCall.isExternal(call)
       algorithm
         if Flags.isSet(Flags.NF_EXPAND_FUNC_ARGS) then
           args := list(if Expression.hasArrayCall(arg) then arg else ExpandExp.expand(arg) for arg in args);
@@ -190,9 +190,9 @@ algorithm
       then
         callExp;
 
-    case Call.TYPED_ARRAY_CONSTRUCTOR() then simplifyArrayConstructor(call);
+    case NFCall.TYPED_ARRAY_CONSTRUCTOR() then simplifyArrayConstructor(call);
 
-    case Call.TYPED_REDUCTION()
+    case NFCall.TYPED_REDUCTION()
       algorithm
         call.exp := simplify(call.exp);
         call.iters := list((Util.tuple21(i), simplify(Util.tuple22(i))) for i in call.iters);
@@ -204,7 +204,7 @@ algorithm
 end simplifyCall;
 
 function simplifyCall2
-  input Call call;
+  input NFCall call;
   output Expression outExp;
 algorithm
   ErrorExt.setCheckpoint(getInstanceName());
@@ -216,7 +216,7 @@ algorithm
   else
     if Flags.isSet(Flags.FAILTRACE) then
       ErrorExt.delCheckpoint(getInstanceName());
-      Debug.traceln("- " + getInstanceName() + " failed to evaluate " + Call.toString(call) + "\n");
+      Debug.traceln("- " + getInstanceName() + " failed to evaluate " + NFCall.toString(call) + "\n");
     else
       ErrorExt.rollBack(getInstanceName());
     end if;
@@ -228,7 +228,7 @@ end simplifyCall2;
 function simplifyBuiltinCall
   input Absyn.Path name;
   input list<Expression> args;
-  input Call call;
+  input NFCall call;
   output Expression exp;
 algorithm
   exp := match AbsynUtil.pathFirstIdent(name)
@@ -248,7 +248,7 @@ end simplifyBuiltinCall;
 
 function simplifySumProduct
   input Expression arg;
-  input Call call;
+  input NFCall call;
   input Boolean isSum;
   output Expression exp;
 protected
@@ -281,7 +281,7 @@ end simplifySumProduct;
 
 function simplifyTranspose
   input Expression arg;
-  input Call call;
+  input NFCall call;
   output Expression exp;
 protected
   Expression e;
@@ -298,7 +298,7 @@ algorithm
 end simplifyTranspose;
 
 function simplifyArrayConstructor
-  input Call call;
+  input NFCall call;
   output Expression outExp;
 protected
   Type ty;
@@ -310,7 +310,7 @@ protected
   Integer dim_size;
   Boolean expanded;
 algorithm
-  Call.TYPED_ARRAY_CONSTRUCTOR(ty, var, exp, iters) := call;
+  NFCall.TYPED_ARRAY_CONSTRUCTOR(ty, var, exp, iters) := call;
   iters := list((Util.tuple21(i), simplify(Util.tuple22(i))) for i in iters);
 
   outExp := matchcontinue (iters)
@@ -338,7 +338,7 @@ algorithm
       algorithm
         exp := simplify(exp);
       then
-        Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(ty, var, exp, iters));
+        Expression.CALL(NFCall.TYPED_ARRAY_CONSTRUCTOR(ty, var, exp, iters));
   end matchcontinue;
 end simplifyArrayConstructor;
 
