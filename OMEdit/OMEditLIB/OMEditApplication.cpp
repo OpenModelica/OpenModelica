@@ -40,6 +40,8 @@
 #include <locale.h>
 #include <QMessageBox>
 
+#include "../../OMCompiler/Compiler/runtime/settingsimpl.h"
+
 /*!
  * \class OMEditApplication
  * \brief It is a subclass for QApplication so that we can handle QFileOpenEvent sent by OSX at startup.
@@ -65,17 +67,13 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   setAttribute(Qt::AA_DontShowIconsInMenus, false);
   // Localization
   //*a.severin/ add localization
-  const char *omhome = getenv("OPENMODELICAHOME");
-#ifdef WIN32
+  const char *omhome = SettingsImpl__getInstallationDirectoryPath();
   if (!omhome) {
     QMessageBox::critical(0, QString(Helper::applicationName).append(" - ").append(Helper::error),
                           GUIMessages::getMessage(GUIMessages::OPENMODELICAHOME_NOT_FOUND), Helper::ok);
     quit();
     exit(1);
   }
-#else /* unix */
-  omhome = omhome ? omhome : CONFIG_DEFAULT_OPENMODELICAHOME;
-#endif
   QSettings *pSettings = Utilities::getApplicationSettings();
   QLocale settingsLocale = QLocale(pSettings->value("language").toString());
   settingsLocale = settingsLocale.name() == "C" ? pSettings->value("language").toLocale() : settingsLocale;
