@@ -275,16 +275,16 @@ int nlsKinsolFree(void **solverData) {
 
   KINFree((void *)&kinsolData->kinsolMemory);
 
-  N_VDestroy(kinsolData->initialGuess);   /* TODO: Or was N_VDestroy_Serial correct? It won't free internal data */
-  N_VDestroy(kinsolData->xScale);
-  N_VDestroy(kinsolData->fScale);
-  N_VDestroy(kinsolData->fRes);
-  N_VDestroy(kinsolData->fTmp);
+  N_VDestroy_Serial(kinsolData->initialGuess);   /* TODO: Or was N_VDestroy_Serial correct? It won't free internal data */
+  N_VDestroy_Serial(kinsolData->xScale);
+  N_VDestroy_Serial(kinsolData->fScale);
+  N_VDestroy_Serial(kinsolData->fRes);
+  N_VDestroy_Serial(kinsolData->fTmp);
 
   /* Free linear solver data */
   SUNLinSolFree(kinsolData->linSol);
   SUNMatDestroy(kinsolData->J);
-  N_VDestroy(kinsolData->y);
+  N_VDestroy_Serial(kinsolData->y);
 
   free(kinsolData);
 
@@ -1188,7 +1188,7 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber) {
 
   /* Solve nonlinear system with KINSol() */
   do {
-#if 0
+
       /* TODO: Is this still true?
       /* It seems if we don't free KINSol on every iteration, it leaks memory.
        * But if we reset KINSol, it takes an enormous amount of time...
@@ -1199,7 +1199,7 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber) {
         /* reset configuration settings */
         nlsKinsolConfigSetup(kinsolData);
       }
-#endif
+
 
     nlsKinsolResetInitial(data, kinsolData, nlsData, INITIAL_EXTRAPOLATION);
 

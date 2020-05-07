@@ -178,7 +178,7 @@ Kinsol::~Kinsol()
     if (_Kin_fScale)
         N_VDestroy_Serial(_Kin_fScale);
     if (_Kin_ySolver)
-        N_VDestroy(_Kin_ySolver);
+        N_VDestroy_Serial(_Kin_ySolver);
     if (_Kin_J)
         SUNMatDestroy(_Kin_J);
     if (_Kin_linSol)

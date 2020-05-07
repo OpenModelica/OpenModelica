@@ -454,7 +454,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   case IDA_LS_DENSE:
     idaData->J = SUNDenseMatrix(idaData->N, idaData->N);
     idaData->tmpJac = NULL;
-    idaData->linSol = SUNLinSol_Dense(idaData->y_linSol, idaData->J);   /* TODO: Size of J: idaData->N */
+    idaData->linSol = SUNLinSol_Dense(idaData->y_linSol, idaData->J);
     if (idaData->linSol == NULL) {
       throwStreamPrint(threadData, "##IDA## In function SUNLinSol_Dense: Input incompatible.");
     }
@@ -464,7 +464,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     if (idaData->NNZ < 0) {
       throwStreamPrint(threadData, "##IDA## idaData->NNZ not set.");
     }
-    idaData->J = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ, CSC_MAT);    /* TODO AHeu: Free memory!! */
+    idaData->J = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ, CSC_MAT);
     idaData->tmpJac = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ, CSC_MAT);
     idaData->linSol = SUNLinSol_KLU(idaData->y_linSol, idaData->J);
     if (idaData->linSol == NULL) {
@@ -599,29 +599,21 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     infoStreamPrint(LOG_SOLVER, 0, "initial step size is set automatically.");
   }
 
-  /* configure the sensitivities part */
+  /* Initialize sensitivities analysis */
   idaData->idaSmode = omc_flag[FLAG_IDAS] ? 1 : 0;
 
-  if (idaData->idaSmode)
-  {
-    idaData->Np = data->modelData->nSensitivityParamVars;
-    idaData->yS = N_VCloneVectorArray_Serial(idaData->Np, idaData->y);
-    idaData->ySp = N_VCloneVectorArray_Serial(idaData->Np, idaData->yp);
+  if (idaData->idaSmode) {
+    idaData->Ns = data->modelData->nSensitivityParamVars;
+    idaData->yS = N_VCloneVectorArray_Serial(idaData->Ns, idaData->y);
+    idaData->ySp = N_VCloneVectorArray_Serial(idaData->Ns, idaData->yp);
 
-    for(i=0; i<idaData->Np; ++i)
-    {
-      int j;
-      for(j=0; j<idaData->N; ++j)
-      {
-        NV_Ith_S(idaData->yS[i],j) = 0;
-        NV_Ith_S(idaData->ySp[i],j) = 0;
-      }
+    for (i=0; i<idaData->Ns; ++i) {
+      N_VConst_Serial(0.0, idaData->yS[i]);
+      N_VConst_Serial(0.0, idaData->ySp[i]);
     }
 
-    flag = IDASensInit(idaData->ida_mem, idaData->Np, IDA_SIMULTANEOUS, NULL, idaData->yS, idaData->ySp);
-    if (checkIDAflag(flag)){
-      throwStreamPrint(threadData, "##IDA## set IDASensInit failed!");
-    }
+    flag = IDASensInit(idaData->ida_mem, idaData->Ns, IDA_SIMULTANEOUS, NULL, idaData->yS, idaData->ySp);
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASensInit");
 
     flag = IDASetSensParams(idaData->ida_mem, data->simulationInfo->realParameter, NULL, data->simulationInfo->sensitivityParList);
     if (checkIDAflag(flag)){
@@ -644,8 +636,8 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     }
 */
     /* allocate result workspace */
-    idaData->ySResult = N_VCloneVectorArrayEmpty_Serial(idaData->Np, idaData->y);
-    for(i = 0; i < idaData->Np; ++i)
+    idaData->ySResult = N_VCloneVectorArrayEmpty_Serial(idaData->Ns, idaData->y);
+    for(i = 0; i < idaData->Ns; ++i)
     {
       N_VSetArrayPointer_Serial((data->simulationInfo->sensitivityMatrix + i*idaData->N), idaData->ySResult[i]);
     }
@@ -672,25 +664,28 @@ int ida_solver_deinitial(IDA_SOLVER *idaData)
   free(idaData->ysave);
   free(idaData->ypsave);
   free(idaData->delta_hh);
-  if (!idaData->daeMode && idaData->linearSolverMethod == IDA_LS_KLU){
-    SUNMatDestroy(idaData->tmpJac);
-  }
 
-  if (idaData->daeMode)
-  {
+  /* Free linear solver data */
+  N_VDestroy_Serial(idaData->y_linSol);
+  SUNMatDestroy(idaData->J);
+  SUNMatDestroy(idaData->tmpJac);
+  SUNLinSolFree(idaData->linSol);
+
+  /* Free dae-mode data */
+  if (idaData->daeMode) {
     free(idaData->states);
     free(idaData->statesDer);
   }
 
-  if (idaData->idaSmode)
-  {
-    N_VDestroyVectorArray(idaData->yS, idaData->Np);      /* TODO: Or was N_VDestroyVectorArray_Serial correct? */
-    N_VDestroyVectorArray(idaData->ySp, idaData->Np);
-    N_VDestroyVectorArray(idaData->ySResult, idaData->Np);
+  /* Free sensitivity-mode data */
+  if (idaData->idaSmode) {
+    N_VDestroyVectorArray_Serial(idaData->yS, idaData->Ns);
+    N_VDestroyVectorArray_Serial(idaData->ySp, idaData->Ns);
+    N_VDestroyVectorArray_Serial(idaData->ySResult, idaData->Ns);
   }
 
-  N_VDestroy(idaData->errwgt);
-  N_VDestroy(idaData->newdelta);
+  N_VDestroy_Serial(idaData->errwgt);
+  N_VDestroy_Serial(idaData->newdelta);
 
 #ifdef USE_PARJAC
   if (idaData->allocatedParMem) {
@@ -823,8 +818,8 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   /* alloc all work arrays */
   if (!idaData->daeMode)
   {
-    N_VSetArrayPointer(data->localData[0]->realVars, idaData->y);
-    N_VSetArrayPointer(data->localData[1]->realVars + data->modelData->nStates, idaData->yp);
+    N_VSetArrayPointer_Serial(data->localData[0]->realVars, idaData->y);
+    N_VSetArrayPointer_Serial(data->localData[1]->realVars + data->modelData->nStates, idaData->yp);
   }
 
   if (solverInfo->didEventStep)
@@ -875,7 +870,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
 
     if (idaData->idaSmode)
     {
-      for(i=0; i<idaData->Np; ++i)
+      for(i=0; i<idaData->Ns; ++i)
       {
         int j;
         for(j=0; j<idaData->N; ++j)
@@ -1147,9 +1142,9 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
   long int i;
   int saveJumpState;
   int success = 0, retVal = 0;
-  double *states = N_VGetArrayPointer(yy);
-  double *statesDer = N_VGetArrayPointer(yp);
-  double *delta  = N_VGetArrayPointer(res);
+  double *states = N_VGetArrayPointer_Serial(yy);
+  double *statesDer = N_VGetArrayPointer_Serial(yp);
+  double *delta  = N_VGetArrayPointer_Serial(res);
 
   infoStreamPrint(LOG_SOLVER_V, 1, "### eval residualFunctionIDA ###");
   /* rescale idaData->y and idaData->yp */
@@ -1267,8 +1262,8 @@ int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* 
   IDA_SOLVER* idaData = (IDA_SOLVER*)userData;
   DATA* data = (DATA*)(((IDA_USERDATA*)idaData->userData)->data);
   threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)((IDA_SOLVER*)userData)->userData)->threadData);
-  double *states = N_VGetArrayPointer(yy);
-  double *statesDer = N_VGetArrayPointer(yp);
+  double *states = N_VGetArrayPointer_Serial(yy);
+  double *statesDer = N_VGetArrayPointer_Serial(yp);
 
   int saveJumpState;
 
@@ -1347,11 +1342,11 @@ int jacColoredNumericalDense(double currentTime, N_Vector yy, N_Vector yp,
   const int index = data->callback->INDEX_JAC_A;
 
   /* prepare variables */
-  double *states = N_VGetArrayPointer(yy);
-  double *yprime = N_VGetArrayPointer(yp);
-  double *delta  = N_VGetArrayPointer(rr);
-  double *newdelta = N_VGetArrayPointer(idaData->newdelta);
-  double *errwgt = N_VGetArrayPointer(idaData->errwgt);
+  double *states = N_VGetArrayPointer_Serial(yy);
+  double *yprime = N_VGetArrayPointer_Serial(yp);
+  double *delta  = N_VGetArrayPointer_Serial(rr);
+  double *newdelta = N_VGetArrayPointer_Serial(idaData->newdelta);
+  double *errwgt = N_VGetArrayPointer_Serial(idaData->errwgt);
 
   double *delta_hh = idaData->delta_hh;
   double *ysave = idaData->ysave;
@@ -1454,8 +1449,8 @@ static int jacColoredSymbolicalDense(double currentTime, N_Vector yy,
   ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
 
   /* prepare variables */
-  double *states = N_VGetArrayPointer(yy);
-  double *yprime = N_VGetArrayPointer(yp);
+  double *states = N_VGetArrayPointer_Serial(yy);
+  double *yprime = N_VGetArrayPointer_Serial(yp);
 
   setContext(data, &currentTime, CONTEXT_SYM_JACOBIAN);      /* Reuse jacobian matrix in KLU solver */
 
@@ -1646,11 +1641,11 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
   const int index = data->callback->INDEX_JAC_A;
 
   /* prepare variables */
-  double *states = N_VGetArrayPointer(yy);
-  double *yprime = N_VGetArrayPointer(yp);
-  double *delta  = N_VGetArrayPointer(rr);
-  double *newdelta = N_VGetArrayPointer(idaData->newdelta);
-  double *errwgt = N_VGetArrayPointer(idaData->errwgt);
+  double *states = N_VGetArrayPointer_Serial(yy);
+  double *yprime = N_VGetArrayPointer_Serial(yp);
+  double *delta  = N_VGetArrayPointer_Serial(rr);
+  double *newdelta = N_VGetArrayPointer_Serial(idaData->newdelta);
+  double *errwgt = N_VGetArrayPointer_Serial(idaData->errwgt);
 
   SPARSE_PATTERN* sparsePattern;
 
@@ -1783,8 +1778,8 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
   ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
 
   /* prepare variables */
-  double *states = N_VGetArrayPointer(yy);
-  double *yprime = N_VGetArrayPointer(yp);
+  double *states = N_VGetArrayPointer_Serial(yy);
+  double *yprime = N_VGetArrayPointer_Serial(yp);
 
 #ifdef USE_PARJAC
   ANALYTIC_JACOBIAN* t_jac = (idaData->jacColumns);
@@ -1885,7 +1880,7 @@ static int getScalingFactors(DATA* data, IDA_SOLVER *idaData, SUNMatrix inScaleM
   N_Vector rres = N_VNew_Serial(idaData->N);
 
   /* fill errwgt, since it is needed by the Jacobian calculation function */
-  double *errwgt = N_VGetArrayPointer(idaData->errwgt);
+  double *errwgt = N_VGetArrayPointer_Serial(idaData->errwgt);
   _omc_fillVector(_omc_createVector(idaData->N, errwgt), 1.);
 
   SUNMatrix scaleMatrix;
@@ -1960,7 +1955,7 @@ static int getScalingFactors(DATA* data, IDA_SOLVER *idaData, SUNMatrix inScaleM
 static int idaScaleVector(N_Vector vec, double* factors, unsigned int size)
 {
   int i;
-  double *data = N_VGetArrayPointer(vec);
+  double *data = N_VGetArrayPointer_Serial(vec);
   printVector(LOG_SOLVER_V, "un-scaled", data, size, 0.0);
   for(i=0; i < size; ++i)
   {
@@ -1973,7 +1968,7 @@ static int idaScaleVector(N_Vector vec, double* factors, unsigned int size)
 static int idaReScaleVector(N_Vector vec, double* factors, unsigned int size)
 {
   int i;
-  double *data = N_VGetArrayPointer(vec);
+  double *data = N_VGetArrayPointer_Serial(vec);
 
   printVector(LOG_SOLVER_V, "scaled", data, size, 0.0);
   for(i=0; i < size; ++i)

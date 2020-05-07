@@ -47,8 +47,8 @@
 #include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
 #include <sunlinsol/sunlinsol_klu.h>         /* Sparse linear solver KLU */
 //#include <sunlinsol/sunlinsol_lapackdense.h> /* Lapack dense linear solver */
-#include <sunlinsol/sunlinsol_spgmr.h>
-#include <sunlinsol/sunlinsol_spbcgs.h>
+#include <sunlinsol/sunlinsol_spgmr.h>      /* Scaled, Preconditioned, Generalized Minimum Residual iterative linear solver */
+#include <sunlinsol/sunlinsol_spbcgs.h>     /* Scaled, Preconditioned, Bi-Conjugate Gradient, Stabilized iterative linear solver */
 #include <sunlinsol/sunlinsol_sptfqmr.h>
 
 
@@ -126,10 +126,10 @@ typedef struct IDA_SOLVER
   double *statesDer;        /* Array of state derivatives. Only used in DAE mode, NULL otherwise */
 
   /* ### ida sensitivities ### */
-  int idaSmode;
-  int Np;
-  N_Vector* yS;
-  N_Vector* ySp;
+  int idaSmode;             /* 1 if used, 0 else */
+  int Ns;                   /* Number of sensitivitys parameters which the IVP depends on */
+  N_Vector* yS;             /* Array of sensitifity vectors of state vector */
+  N_Vector* ySp;            /* Array of sensitfity vectors of state derivatives */
   N_Vector* ySResult;
 
 #ifdef USE_PARJAC
