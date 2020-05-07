@@ -251,16 +251,16 @@ algorithm
   varLst := BackendVariable.varList(extVarsIn);
   extVarLst := {};
   for var in varLst loop
-		var := matchcontinue(var)
-	    case (BackendDAE.VAR(bindExp = SOME(DAE.CREF(componentRef=cref))))
-	      algorithm
-	        if BackendVarTransform.hasReplacement(repl,cref) then
-	          var.bindExp := NONE();
-	        end if;
-	    then var;
-	    else var;
-	  end matchcontinue;
-  extVarLst := var::extVarLst;
+    var := match var
+      case BackendDAE.VAR(bindExp = SOME(DAE.CREF(componentRef=cref)))
+      algorithm
+        if BackendVarTransform.hasReplacement(repl,cref) then
+	  var.bindExp := NONE();
+	end if;
+        then var;
+      else var;
+    end match;
+    extVarLst := var::extVarLst;
   end for;
   extVarsOut := BackendVariable.listVar(extVarLst);
 end removeExtAliasBinding;
