@@ -1,35 +1,20 @@
 encapsulated package NFDuplicateTree
-  import NFLookupTree = NFClassTree.LookupTree;
-  import NFInstNode.InstNode;
 
-  type EntryType = enumeration(DUPLICATE, REDECLARE, ENTRY);
+type EntryType = enumeration(DUPLICATE, REDECLARE, ENTRY);
 
-  uniontype Entry
+public
+  import NFLookupTree;
+  import NFInstNode;
+  import List;
+
+ uniontype Entry
     record ENTRY
-    NFLookupTree.Entry entry;
-    Option<NFInstNode.InstNode> node;
-    list<Entry> children;
-    EntryType ty;
+      NFLookupTree.Entry entry;
+      Option<NFInstNode.InstNode> node;
+      list<Entry> children;
+      EntryType ty;
     end ENTRY;
   end Entry;
-
-  extends BaseAvlTree(redeclare type Key = String,
-            redeclare type Value = Entry);
-
-  redeclare function extends keyStr
-  algorithm
-    outString := inKey;
-  end keyStr;
-
-  redeclare function extends valueStr
-  algorithm
-    outString := "";
-  end valueStr;
-
-  redeclare function extends keyCompare
-  algorithm
-    outResult := stringCompare(inKey1, inKey2);
-  end keyCompare;
 
   function newRedeclare
     input NFLookupTree.Entry entry;
@@ -55,6 +40,25 @@ encapsulated package NFDuplicateTree
     exists := NFLookupTree.Entry.isEqual(id, entry.entry) or
         List.exist(entry.children, function idExistsInEntry(id = id));
   end idExistsInEntry;
+
+import BaseAvlTree;
+extends BaseAvlTree(redeclare type Key = String,
+                    redeclare type Value = Entry);
+
+  redeclare function extends keyStr
+  algorithm
+    outString := inKey;
+  end keyStr;
+
+  redeclare function extends valueStr
+  algorithm
+    outString := "";
+  end valueStr;
+
+  redeclare function extends keyCompare
+  algorithm
+    outResult := stringCompare(inKey1, inKey2);
+  end keyCompare;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFDuplicateTree;
