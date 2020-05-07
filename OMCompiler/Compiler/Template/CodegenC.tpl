@@ -1278,6 +1278,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->modelDataXml.infoXMLData = NULL;
     >>
     %>
+    data->modelData->runTestsuite = <%if Testsuite.isRunning() then "1" else "0"%>;
 
     data->modelData->nStates = <%varInfo.numStateVars%>;
     data->modelData->nVariablesReal = <%nVariablesReal(varInfo)%>;
@@ -1332,10 +1333,10 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->ndataReconVars = <%varInfo.numDataReconVars%>;
     data->modelData->linearizationDumpLanguage =
     <%
-    if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"modelica") then '0'
-    else if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"matlab") then '1'
-    else if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"julia") then '2'
-    else if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"python") then '3'
+    if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"modelica") then 'OMC_LINEARIZE_DUMP_LANGUAGE_MODELICA'
+    else if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"matlab") then 'OMC_LINEARIZE_DUMP_LANGUAGE_MATLAB'
+    else if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"julia") then 'OMC_LINEARIZE_DUMP_LANGUAGE_JULIA'
+    else if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"python") then 'OMC_LINEARIZE_DUMP_LANGUAGE_PYTHON'
     %>;
     >>
   end match
@@ -4628,23 +4629,23 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
   match modelInfo
   case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
     let matrixA = genMatrix("A", "n", "n", varInfo.numStateVars, varInfo.numStateVars)
-    let matrixB = genMatrix("B", "n", "p", varInfo.numStateVars, varInfo.numInVars)
-    let matrixC = genMatrix("C", "q", "n", varInfo.numOutVars, varInfo.numStateVars)
-    let matrixD = genMatrix("D", "q", "p", varInfo.numOutVars, varInfo.numInVars)
+    let matrixB = genMatrix("B", "n", "m", varInfo.numStateVars, varInfo.numInVars)
+    let matrixC = genMatrix("C", "p", "n", varInfo.numOutVars, varInfo.numStateVars)
+    let matrixD = genMatrix("D", "p", "m", varInfo.numOutVars, varInfo.numInVars)
     let matrixCz = genMatrix("Cz", "nz", "n", varInfo.numAlgVars, varInfo.numStateVars)
-    let matrixDz = genMatrix("Dz", "nz", "p", varInfo.numAlgVars, varInfo.numInVars)
+    let matrixDz = genMatrix("Dz", "nz", "m", varInfo.numAlgVars, varInfo.numInVars)
     let vectorX = genVector("x", "n", varInfo.numStateVars, 0)
-    let vectorU = genVector("u", "p", varInfo.numInVars, 1)
-    let vectorY = genVector("y", "q", varInfo.numOutVars, 2)
+    let vectorU = genVector("u", "m", varInfo.numInVars, 1)
+    let vectorY = genVector("y", "p", varInfo.numOutVars, 2)
     let vectorZ = genVector("z", "nz", varInfo.numAlgVars, 2)
     //string def_proctedpart("\n  Real x[<%varInfo.numStateVars%>](start=x0);\n  Real u[<%varInfo.numInVars%>](start=u0);\n  output Real y[<%varInfo.numOutVars%>];\n");
     <<
     const char *<%symbolName(modelNamePrefix,"linear_model_frame")%>()
     {
-      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%> \"number of states\";\n  parameter Integer p = <%varInfo.numInVars%> \"number of inputs\";\n  parameter Integer q = <%varInfo.numOutVars%> \"number of outputs\";\n"
+      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%> \"number of states\";\n  parameter Integer m = <%varInfo.numInVars%> \"number of inputs\";\n  parameter Integer p = <%varInfo.numOutVars%> \"number of outputs\";\n"
       "\n"
       "  parameter Real x0[n] = %s;\n"
-      "  parameter Real u0[p] = %s;\n"
+      "  parameter Real u0[m] = %s;\n"
       "\n"
       <%matrixA%>
       <%matrixB%>
@@ -4662,7 +4663,7 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
     {
-      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%> \"number of states\";\n  parameter Integer p = <%varInfo.numInVars%> \"number of inputs\";\n  parameter Integer q = <%varInfo.numOutVars%> \"number of outputs\";\n  parameter Integer nz = <%varInfo.numAlgVars%> \"data recovery variables\";\n"
+      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%> \"number of states\";\n  parameter Integer m = <%varInfo.numInVars%> \"number of inputs\";\n  parameter Integer p = <%varInfo.numOutVars%> \"number of outputs\";\n  parameter Integer nz = <%varInfo.numAlgVars%> \"data recovery variables\";\n"
       "\n"
       "  parameter Real x0[<%varInfo.numStateVars%>] = %s;\n"
       "  parameter Real u0[<%varInfo.numInVars%>] = %s;\n"
@@ -4696,50 +4697,31 @@ template functionlinearmodelMatlab(ModelInfo modelInfo, String modelNamePrefix) 
   match modelInfo
   case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
     let matrixA = genMatrixMatlab("A", "n", "n", varInfo.numStateVars, varInfo.numStateVars)
-    let matrixB = genMatrixMatlab("B", "n", "p", varInfo.numStateVars, varInfo.numInVars)
-    let matrixC = genMatrixMatlab("C", "q", "n", varInfo.numOutVars, varInfo.numStateVars)
-    let matrixD = genMatrixMatlab("D", "q", "p", varInfo.numOutVars, varInfo.numInVars)
-    let matrixCz = genMatrixMatlab("Cz", "nz", "n", varInfo.numAlgVars, varInfo.numStateVars)
-    let matrixDz = genMatrixMatlab("Dz", "nz", "p", varInfo.numAlgVars, varInfo.numInVars)
+    let matrixB = genMatrixMatlab("B", "n", "m", varInfo.numStateVars, varInfo.numInVars)
+    let matrixC = genMatrixMatlab("C", "p", "n", varInfo.numOutVars, varInfo.numStateVars)
+    let matrixD = genMatrixMatlab("D", "p", "m", varInfo.numOutVars, varInfo.numInVars)
     //string def_proctedpart("\n  Real x[<%varInfo.numStateVars%>](start=x0);\n  Real u[<%varInfo.numInVars%>](start=u0);\n  output Real y[<%varInfo.numOutVars%>];\n");
     <<
     const char *<%symbolName(modelNamePrefix,"linear_model_frame")%>()
     {
-      return "function [n, p, q, x0, u0, A, B, C, D] = <%symbolName(modelNamePrefix,"GetLinearModel")%>()\n"
+      return "function [sys, x0, u0, n, m, p] = <%symbolName(modelNamePrefix,"GetLinearModel")%>()\n"
       "%% der(x) = A * x + B * u\n%% y = C * x + D * u \n"
-      "  n = <%varInfo.numStateVars%>; %% number of states \n  p = <%varInfo.numInVars%>; %% number of inputs \n  q = <%varInfo.numOutVars%>; %% number of outputs \n"
+      "  n = <%varInfo.numStateVars%>; %% number of states \n  m = <%varInfo.numInVars%>; %% number of inputs \n  p = <%varInfo.numOutVars%>; %% number of outputs \n"
       "\n"
       "  x0 = %s;\n"
       "  u0 = %s;\n"
+      "  Ts = %g; %% stop time\n"
       "\n"
       <%matrixA%>
       <%matrixB%>
       <%matrixC%>
       <%matrixD%>
-      "\n"
-      <%getVarNameMatlab(vars.stateVars, "x")%>
-      <%getVarNameMatlab(vars.inputVars, "u")%>
-      <%getVarNameMatlab(vars.outputVars, "y")%>
+      "  %% The Control System Toolbox is required for this. Alternatively just return the matrices A,B,C,D instead.\n"
+      "  sys = ss(A,B,C,D,Ts,'StateName',{<%getVarNameMatlab(vars.stateVars, "x")%>}, 'InputName',{<%getVarNameMatlab(vars.inputVars, "u")%>}, 'OutputName', {<%getVarNameMatlab(vars.outputVars, "y")%>});\n"
       "end";
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
     {
-      return "function [n, p, q, x0, u0, A, B, C, D] = <%symbolName(modelNamePrefix,"GetLinearModel")%>()\n"
-      "%% der(x) = A * x + B * u\n%% y = C * x + D * u \n"
-      "  n = <%varInfo.numStateVars%>; %% number of states \n  p = <%varInfo.numInVars%>; %% number of inputs \n  q = <%varInfo.numOutVars%>; %% number of outputs \n"
-      "\n"
-      "  x0 = %s;\n"
-      "  u0 = %s;\n"
-      "\n"
-      <%matrixA%>
-      <%matrixB%>
-      <%matrixC%>
-      <%matrixD%>
-      "\n"
-      <%getVarNameMatlab(vars.stateVars, "x")%>
-      <%getVarNameMatlab(vars.inputVars, "u")%>
-      <%getVarNameMatlab(vars.outputVars, "y")%>
-      "end";
     }
     >>
   end match
@@ -4751,18 +4733,18 @@ template functionlinearmodelJulia(ModelInfo modelInfo, String modelNamePrefix) "
   match modelInfo
   case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
     let matrixA = genMatrixJulia("A", "n", "n", varInfo.numStateVars, varInfo.numStateVars)
-    let matrixB = genMatrixJulia("B", "n", "p", varInfo.numStateVars, varInfo.numInVars)
-    let matrixC = genMatrixJulia("C", "q", "n", varInfo.numOutVars, varInfo.numStateVars)
-    let matrixD = genMatrixJulia("D", "q", "p", varInfo.numOutVars, varInfo.numInVars)
+    let matrixB = genMatrixJulia("B", "n", "m", varInfo.numStateVars, varInfo.numInVars)
+    let matrixC = genMatrixJulia("C", "p", "n", varInfo.numOutVars, varInfo.numStateVars)
+    let matrixD = genMatrixJulia("D", "p", "m", varInfo.numOutVars, varInfo.numInVars)
     let matrixCz = genMatrixJulia("Cz", "nz", "n", varInfo.numAlgVars, varInfo.numStateVars)
-    let matrixDz = genMatrixJulia("Dz", "nz", "p", varInfo.numAlgVars, varInfo.numInVars)
+    let matrixDz = genMatrixJulia("Dz", "nz", "m", varInfo.numAlgVars, varInfo.numInVars)
     //string def_proctedpart("\n  Real x[<%varInfo.numStateVars%>](start=x0);\n  Real u[<%varInfo.numInVars%>](start=u0);\n  output Real y[<%varInfo.numOutVars%>];\n");
     <<
     const char *<%symbolName(modelNamePrefix,"linear_model_frame")%>()
     {
       return "function <%symbolName(modelNamePrefix,"GetLinearModel")%>()\n"
       "#= der(x) = A * x + B * u =#\n#= y = C * x + D * u =#\n"
-      "  local n = <%varInfo.numStateVars%> #= number of states =#\n  local p = <%varInfo.numInVars%> #= number of inputs =#\n  local q = <%varInfo.numOutVars%> #= number of outputs =#  \n"
+      "  local n = <%varInfo.numStateVars%> #= number of states =#\n  local m = <%varInfo.numInVars%> #= number of inputs =#\n  local p = <%varInfo.numOutVars%> #= number of outputs =#  \n"
       "\n"
       "  local x0 = %s\n"
       "  local u0 = %s\n"
@@ -4771,34 +4753,15 @@ template functionlinearmodelJulia(ModelInfo modelInfo, String modelNamePrefix) "
       <%matrixB%>
       <%matrixC%>
       <%matrixD%>
-      "\n"
       <%getVarNameJulia(vars.stateVars, "x")%>
       <%getVarNameJulia(vars.inputVars, "u")%>
       <%getVarNameJulia(vars.outputVars, "y")%>
       "\n"
-      "  (n, p, q, x0, u0, A, B, C, D)\n"
+      "  (n, m, p, x0, u0, A, B, C, D)\n"
       "end";
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
     {
-      return "function <%symbolName(modelNamePrefix,"GetLinearModel")%>()\n"
-      "#= der(x) = A * x + B * u =#\n#= y = C * x + D * u =#\n"
-      "  local n = <%varInfo.numStateVars%> #= number of states =#\n  local p = <%varInfo.numInVars%> #= number of inputs =#\n  local q = <%varInfo.numOutVars%> #= number of outputs =#  \n"
-      "\n"
-      "  local x0 = %s\n"
-      "  local u0 = %s\n"
-      "\n"
-      <%matrixA%>
-      <%matrixB%>
-      <%matrixC%>
-      <%matrixD%>
-      "\n"
-      <%getVarNameJulia(vars.stateVars, "x")%>
-      <%getVarNameJulia(vars.inputVars, "u")%>
-      <%getVarNameJulia(vars.outputVars, "y")%>
-      "\n"
-      "  (n, p, q, x0, u0, A, B, C, D)\n"
-      "end";
     }
     >>
   end match
@@ -4810,18 +4773,18 @@ template functionlinearmodelPython(ModelInfo modelInfo, String modelNamePrefix) 
   match modelInfo
   case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
     let matrixA = genMatrixMatlab("A", "n", "n", varInfo.numStateVars, varInfo.numStateVars)
-    let matrixB = genMatrixMatlab("B", "n", "p", varInfo.numStateVars, varInfo.numInVars)
-    let matrixC = genMatrixMatlab("C", "q", "n", varInfo.numOutVars, varInfo.numStateVars)
-    let matrixD = genMatrixMatlab("D", "q", "p", varInfo.numOutVars, varInfo.numInVars)
+    let matrixB = genMatrixMatlab("B", "n", "m", varInfo.numStateVars, varInfo.numInVars)
+    let matrixC = genMatrixMatlab("C", "p", "n", varInfo.numOutVars, varInfo.numStateVars)
+    let matrixD = genMatrixMatlab("D", "p", "m", varInfo.numOutVars, varInfo.numInVars)
     let matrixCz = genMatrixMatlab("Cz", "nz", "n", varInfo.numAlgVars, varInfo.numStateVars)
-    let matrixDz = genMatrixMatlab("Dz", "nz", "p", varInfo.numAlgVars, varInfo.numInVars)
+    let matrixDz = genMatrixMatlab("Dz", "nz", "m", varInfo.numAlgVars, varInfo.numInVars)
     //string def_proctedpart("\n  Real x[<%varInfo.numStateVars%>](start=x0);\n  Real u[<%varInfo.numInVars%>](start=u0);\n  output Real y[<%varInfo.numOutVars%>];\n");
     <<
     const char *<%symbolName(modelNamePrefix,"linear_model_frame")%>()
     {
       return "def <%symbolName(modelNamePrefix,"GetLinearModel")%>()\n"
       "# der(x) = A * x + B * u \n# y = C * x + D * u \n"
-      "  n = <%varInfo.numStateVars%> # number of states\n  p = <%varInfo.numInVars%> # number of inputs\n  q = <%varInfo.numOutVars%> # number of outputs\n"
+      "  n = <%varInfo.numStateVars%> # number of states\n  m = <%varInfo.numInVars%> # number of inputs\n  p = <%varInfo.numOutVars%> # number of outputs\n"
       "\n"
       "  x0 = %s\n"
       "  u0 = %s\n"
@@ -4830,34 +4793,15 @@ template functionlinearmodelPython(ModelInfo modelInfo, String modelNamePrefix) 
       <%matrixB%>
       <%matrixC%>
       <%matrixD%>
+      <%getVarNameJulia(vars.stateVars, "x")%>
+      <%getVarNameJulia(vars.inputVars, "u")%>
+      <%getVarNameJulia(vars.outputVars, "y")%>
       "\n"
-      <%getVarNameMatlab(vars.stateVars, "x")%>
-      <%getVarNameMatlab(vars.inputVars, "u")%>
-      <%getVarNameMatlab(vars.outputVars, "y")%>
-      "\n"
-      "  return (n, p, q, x0, u0, A, B, C, D)\n"
+      "  return (n, m, p, x0, u0, A, B, C, D)\n"
       "end";
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
     {
-      return "def <%symbolName(modelNamePrefix,"GetLinearModel")%>()\n"
-      "# der(x) = A * x + B * u \n# y = C * x + D * u \n"
-      "  n = <%varInfo.numStateVars%> # number of states\n  p = <%varInfo.numInVars%> # number of inputs\n  q = <%varInfo.numOutVars%> # number of outputs\n"
-      "\n"
-      "  x0 = %s\n"
-      "  u0 = %s\n"
-      "\n"
-      <%matrixA%>
-      <%matrixB%>
-      <%matrixC%>
-      <%matrixD%>
-      "\n"
-      <%getVarNameMatlab(vars.stateVars, "x")%>
-      <%getVarNameMatlab(vars.inputVars, "u")%>
-      <%getVarNameMatlab(vars.outputVars, "y")%>
-      "\n"
-      "  return (n, p, q, x0, u0, A, B, C, D)\n"
-      "end";
     }
     >>
   end match
@@ -4877,12 +4821,12 @@ end getVarName;
 template getVarNameMatlab(list<SimVar> simVars, String arrayName) "template getVarName
   Generates name for a varables."
 ::=
-  simVars |> var hasindex arrindex fromindex 1 =>
-    (match var
+<<
+<%simVars |> var hasindex arrindex fromindex 1 => (match var
     case SIMVAR(__) then
-      <<"  <%arrayName%>_<%Util.stringReplaceChar(crefStrNoUnderscore(name), '.', "_")%> = <%arrayName%>[<%arrindex%>];\n">>
-    end match)
-  ; empty
+      <<'<%arrayName%>_<%crefStrMatlabSafe(name)%>'>>
+    end match) ;separator=","%>
+>>
 end getVarNameMatlab;
 
 template getVarNameJulia(list<SimVar> simVars, String arrayName) "template getVarName
@@ -4891,7 +4835,7 @@ template getVarNameJulia(list<SimVar> simVars, String arrayName) "template getVa
   simVars |> var hasindex arrindex fromindex 1 =>
     (match var
     case SIMVAR(__) then
-      <<"  local <%arrayName%>_<%Util.stringReplaceChar(crefStrNoUnderscore(name), '.', "_")%> = <%arrayName%>[<%arrindex%>];\n">>
+      <<"  # <%arrayName%>_<%crefStrMatlabSafe(name)%> = <%arrayName%>(<%arrindex%>);\n">>
     end match)
   ; empty
 end getVarNameJulia;
@@ -4901,13 +4845,13 @@ template genMatrix(String name, String row, String col, Integer rowI, Integer co
 ::=
   match rowI
   case 0 then
-    <<"  parameter Real <%name%>[<%row%>, <%col%>] = zeros(<%row%>, <%col%>);%s\n">>
+    <<"  parameter Real <%name%>[<%row%>, <%col%>] = zeros(<%row%>, <%col%>);%s\n\n">>
   case _ then
     match colI
     case 0 then
-      <<"  parameter Real <%name%>[<%row%>, <%col%>] = zeros(<%row%>, <%col%>);%s\n">>
+      <<"  parameter Real <%name%>[<%row%>, <%col%>] = zeros(<%row%>, <%col%>);%s\n\n">>
     case _ then
-      <<"  parameter Real <%name%>[<%row%>, <%col%>] = [%s];\n">>
+      <<"  parameter Real <%name%>[<%row%>, <%col%>] =\n\t[%s];\n\n">>
     end match
   end match
 end genMatrix;
@@ -4917,13 +4861,13 @@ template genMatrixMatlab(String name, String row, String col, Integer rowI, Inte
 ::=
   match rowI
   case 0 then
-    <<"  <%name%> = zeros(<%row%>, <%col%>);%s\n">>
+    <<"  <%name%> = zeros(<%row%>, <%col%>);%s\n\n">>
   case _ then
     match colI
     case 0 then
-      <<"  <%name%> = zeros(<%row%>, <%col%>);%s\n">>
+      <<"  <%name%> = zeros(<%row%>, <%col%>);%s\n\n">>
     case _ then
-      <<"  <%name%> = [%s];\n">>
+      <<"  <%name%> =\t[%s];\n\n">>
     end match
   end match
 end genMatrixMatlab;
@@ -4939,7 +4883,7 @@ template genMatrixJulia(String name, String row, String col, Integer rowI, Integ
     case 0 then
       <<"  local <%name%> = zeros(<%row%>, <%col%>)%s\n">>
     case _ then
-      <<"  local <%name%> = [%s]\n">>
+      <<"  local <%name%> =\t[%s]\n\n">>
     end match
   end match
 end genMatrixJulia;

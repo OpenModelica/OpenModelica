@@ -48,6 +48,11 @@
 #define omc_dummyFunctionInfo {-1,"",omc_dummyFileInfo}
 #define omc_dummyRealAttribute {NULL,NULL,-DBL_MAX,DBL_MAX,0,0,1.0,0.0}
 
+#define OMC_LINEARIZE_DUMP_LANGUAGE_MODELICA 0
+#define OMC_LINEARIZE_DUMP_LANGUAGE_MATLAB 1
+#define OMC_LINEARIZE_DUMP_LANGUAGE_JULIA 2
+#define OMC_LINEARIZE_DUMP_LANGUAGE_PYTHON 3
+
 #if defined(_MSC_VER)
 #define set_struct(TYPE, x, info) { const TYPE tmp = info; x = tmp; }
 #else
@@ -529,9 +534,8 @@ typedef struct MODEL_DATA
   const char* modelGUID;
   const char* initXMLData;
   char* resourcesDir;
+  modelica_boolean runTestsuite; /* true if this model was generated during testing */
 
-  const char* linFileName;
-  char* resultFilePath;          /* path to where the linearized model is created */
   int linearizationDumpLanguage;       /* default is 0-modelica, options: 1-matlab, 2-julia, 3-pythong */
 
   long nSamples;                       /* number of different sample-calls */

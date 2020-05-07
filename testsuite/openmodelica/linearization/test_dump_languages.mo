@@ -1,4 +1,4 @@
-// name:     test_04.mo
+// name:     test_dump_languages.mo
 // keywords: <insert keywords here>
 // status:   correct
 //
@@ -6,18 +6,17 @@
 //
 
 model simple_test
- number x1(x(start=1));
- Real x2(start=2);
+ number num(x(start={1, 2}));
  parameter Real a=6,b=2,c=4;
  input Real u = sin(0);
  output Real y;
  class number
-   Real x;
+   Real x[2];
  end number;
 equation
- der(x1.x) = x1.x*(a-b*x1.x-x2);
- der(x2) = x2*(c-x1.x-x2);
- y = x1.x * u + x2 * u;
+ der(num.x[1]) = num.x[1]*(a-b*num.x[1]-num.x[2]);
+ der(num.x[2]) = num.x[2]*(c-num.x[1]-num.x[2]);
+ y = num.x[1] * u + num.x[2] * u;
 end simple_test;
 
 // Result:

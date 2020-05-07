@@ -62,7 +62,7 @@ static string array2string(double* array, int row, int col)
     }
     if((i+1 != row) && (col != 0))
     {
-      retVal << "; ";
+      retVal << ";\n\t";
     }
   }
   return retVal.str();
@@ -485,7 +485,7 @@ int linearize(DATA* data, threadData_t *threadData)
     double* matrixD = (double*)calloc(size_Outputs*size_Inputs,sizeof(double));
     double* matrixCz = 0;
     double* matrixDz = 0;
-    string strA, strB, strC, strD, strCz, strDz, strX, strU, strZ0, filename, ext, fullpath;
+    string strA, strB, strC, strD, strCz, strDz, strX, strU, strZ0, filename, ext;
 	std::size_t pos, pos1, pos2;
 
     assertStreamPrint(threadData,0!=matrixA,"calloc failed");
@@ -585,10 +585,10 @@ int linearize(DATA* data, threadData_t *threadData)
         free(matrixDz);
     }
     switch(data->modelData->linearizationDumpLanguage){
-      case 0: ext = ".mo";  break;
-      case 1: ext = ".m";   break;
-      case 2: ext = ".jl";  break;
-      case 3: ext = ".py";  break;
+      case OMC_LINEARIZE_DUMP_LANGUAGE_MODELICA: ext = ".mo";  break;
+      case OMC_LINEARIZE_DUMP_LANGUAGE_MATLAB: ext = ".m";   break;
+      case OMC_LINEARIZE_DUMP_LANGUAGE_JULIA: ext = ".jl";  break;
+      case OMC_LINEARIZE_DUMP_LANGUAGE_PYTHON: ext = ".py";  break;
     }
   /* Use the result file name rather than the model name so that the linear file name can be changed with the -r flag, however strip _res.mat from the filename */
   filename = string(data->modelData->resultFileName) + string(ext);
@@ -628,29 +628,35 @@ int linearize(DATA* data, threadData_t *threadData)
 
     FILE *fout = omc_fopen(filename.c_str(),"wb");
     assertStreamPrint(threadData,0!=fout,"Cannot open File %s",filename.c_str());
-    char* buffer;
-    if( (buffer=getcwd(NULL, 0)) == NULL) {
-      fullpath = "";
-      free(buffer);
-    } else {
-      filename = "/" + filename;
-    }
-    data->modelData->resultFilePath = buffer;
-    data->modelData->linFileName = filename.c_str();
+
 
     if(do_data_recovery > 0){
         fprintf(fout, data->callback->linear_model_datarecovery_frame(), strX.c_str(), strU.c_str(), strZ0.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str(), strCz.c_str(), strDz.c_str());
     }else{
-        fprintf(fout, data->callback->linear_model_frame(), strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());
+        fprintf(fout, data->callback->linear_model_frame(), strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str(), (double) data->simulationInfo->stopTime);
     }
     if(ACTIVE_STREAM(LOG_STATS)) {
-      infoStreamPrint(LOG_STATS, 0, data->callback->linear_model_frame(), strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());
+      infoStreamPrint(LOG_STATS, 0, data->callback->linear_model_frame(), strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str(), (double) data->simulationInfo->stopTime);
     }
     fflush(fout);
     fclose(fout);
-
+    char cwd[PATH_MAX];
+    if (data->modelData->runTestsuite) {
+        infoStreamPrint(LOG_STDOUT, 0, "Linear model is created.");
+    }
+    else {
+        char* success = getcwd(cwd, sizeof(cwd));
+        if(!success) {
+          infoStreamPrint(LOG_STDOUT, 0, "Linear model %s is created, but getting the full path failed.", filename.c_str());
+        }
+        else {
+          infoStreamPrint(LOG_STDOUT, 0, "Linear model is created at %s/%s", cwd, filename.c_str());
+        }
+        infoStreamPrint(LOG_STDOUT, 0, "The output format can be changed with the command line option --linearizationDumpLanguage.");
+        infoStreamPrint(LOG_STDOUT, 0, "The options are: --linearizationDumpLanguage=modelica, matlab, julia, python.");
+    }
     TRACE_POP
     return 0;
-}
+  }
 
 }
