@@ -26,10 +26,10 @@ list(linear_testDrumBoilerLin);
 // record SimulationResult
 //     resultFile = "testDrumBoilerLin_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testDrumBoilerLin', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "stdout            | info    | Linearization will performed at point of time: 0.000000
+//     messages = "stdout            | info    | Linearization will be performed at point of time: 0.000000
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
-// stdout            | info    | Linear model is created!
+// stdout            | info    | Linear model is created.
 // "
 // end SimulationResult;
 // "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
@@ -37,17 +37,17 @@ list(linear_testDrumBoilerLin);
 // true
 // "model linear_testDrumBoilerLin
 //   parameter Integer n = 3 \"number of states\";
-//   parameter Integer p = 2 \"number of inputs\";
-//   parameter Integer q = 4 \"number of outputs\";
+//   parameter Integer m = 2 \"number of inputs\";
+//   parameter Integer p = 4 \"number of outputs\";
 //   parameter Real x0[n] = {0, 67, 100000};
-//   parameter Real u0[p] = {0, 0};
+//   parameter Real u0[m] = {0, 0};
 //   parameter Real A[n, n] = [-0, -0.008333333333333333, -0; 0.01043953430921842, -0.01043953430921842, 0; 0.1178989396709848, -0.1178989396709848, 4.135580766728708e-15];
-//   parameter Real B[n, p] = [0, 0; -0.001308242749261165, 0.0001170710024614632; -19.14622757506175, 8.475892309753029];
-//   parameter Real C[q, n] = [0, 0, 0.0001439468903880623; 0, 1, 0; 0, 0, 1e-05; 0, 0, 0];
-//   parameter Real D[q, p] = [0, 0; 0, 0; 0, 0; 1, 0];
+//   parameter Real B[n, m] = [0, 0; -0.001308242749261165, 0.0001170710024614629; -19.14622757506173, 8.475892309753018];
+//   parameter Real C[p, n] = [0, 0, 0.0001439468903880623; 0, 1, 0; 0, 0, 1e-05; 0, 0, 0];
+//   parameter Real D[p, m] = [0, 0; 0, 0; 0, 0; 1, 0];
 //   Real x[n](start = x0);
-//   input Real u[p](start = u0);
-//   output Real y[q];
+//   input Real u[m](start = u0);
+//   output Real y[p];
 //   Real 'x_controller.x' = x[1];
 //   Real 'x_evaporator.V_l' = x[2];
 //   Real 'x_evaporator.p' = x[3];

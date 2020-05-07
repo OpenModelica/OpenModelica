@@ -597,9 +597,6 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     rt_tick(SIM_TIMER_JACOBIAN);
     retVal = linearize(data, threadData);
     rt_accumulate(SIM_TIMER_JACOBIAN);
-    infoStreamPrint(LOG_STDOUT, 0, "Linear model is created at %s%s", data->modelData->resultFilePath, data->modelData->linFileName);
-    infoStreamPrint(LOG_STDOUT, 0, "The output format can be changed with the command line option --linearizationDumpLanguage.");
-    infoStreamPrint(LOG_STDOUT, 0, "The options are: --linearizationDumpLanguage=modelica, matlab, julia, python.");
   }
 
   /* Use the saved state of measure_time_flag.
