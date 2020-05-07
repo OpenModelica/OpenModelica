@@ -1,7 +1,7 @@
-/*
+ /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -94,32 +94,8 @@ public
   end CallAttributes;
 
 protected
-  type ParameterTree = ParameterTreeImpl.Tree;
-
-  encapsulated package ParameterTreeImpl
-    import BaseAvlTree;
-    import Expression = NFExpression;
-
-    extends BaseAvlTree(redeclare type Key = String,
-                        redeclare type Value = Expression);
-
-    redeclare function extends keyStr
-    algorithm
-      outString := inKey;
-    end keyStr;
-
-    redeclare function extends valueStr
-    algorithm
-      outString := Expression.toString(inValue);
-    end valueStr;
-
-    redeclare function extends keyCompare
-    algorithm
-      outResult := stringCompare(inKey1, inKey2);
-    end keyCompare;
-
-    annotation(__OpenModelica_Interface="util");
-  end ParameterTreeImpl;
+  import NFParameterTree;
+  type ParameterTree = NFParameterTree.Tree;
 
 public
 uniontype Call

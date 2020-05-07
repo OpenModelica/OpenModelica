@@ -357,6 +357,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFOperator.mo",
     "../NFFrontEnd/NFOperatorOverloading.mo",
     "../NFFrontEnd/NFPrefixes.mo",
+    "../NFFrontEnd/NFParameterTree.mo",
     "../NFFrontEnd/NFRangeIterator.mo",
     "../NFFrontEnd/NFRecord.mo",
     "../NFFrontEnd/NFRestriction.mo",
