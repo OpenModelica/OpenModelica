@@ -18,17 +18,18 @@
 
 #include <kinsol/kinsol.h>
 #include <nvector/nvector_serial.h>
-#include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
+#include <sunlinsol/sunlinsol_dense.h>      /* Default dense linear solver */
 /* Will be used with new sundials version */
-//#include <sunlinsol/sunlinsol_klu.h>         /* Linear solver KLU */
-
+//#include <sunlinsol/sunlinsol_klu.h>      /* Linear solver KLU */
+#include <sunlinsol/sunlinsol_spgmr.h>      /* Scaled, Preconditioned, Generalized Minimum Residual iterative linear solver */
+#include <sunlinsol/sunlinsol_spbcgs.h>     /* Scaled, Preconditioned, Bi-Conjugate Gradient, Stabilized iterative linear solver */
 
 #include <Core/Utils/extension/logger.hpp>
 #include <Solver/Kinsol/KinsolLapack.h>
 #include <Solver/Kinsol/Kinsol.h>
 #include <Solver/Kinsol/KinsolSettings.h>
 #if defined(__TRICORE__)
-#include <include/kinsol/kinsol.h>          /* TODO: Duplicate or not enough? */
+#include <include/kinsol/kinsol.h>          /* TODO AHeu: Duplicate or not enough? */
 #endif
 
 //#include <Core/Utils/numeric/bindings/lapack/driver/gesv.hpp>
@@ -334,10 +335,14 @@ void Kinsol::initialize()
     // Initialize dense linear solver
     _Kin_J = SUNDenseMatrix(_dimSys, _dimSys);
     _Kin_linSol = SUNLinSol_Dense(_Kin_ySolver, _Kin_J);
-    /* TODO AHeu: Check for error (==NULL) */
-    /* TODO AHeu: Free memory */
+    if (_Kin_linSol == NULL)
+    {
+        fprintf(stderr,
+                "\nSUNDIALS_ERROR: SUNLinSol_Dense() failed - returned NULL pointer\n\n");
+        throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::solve()");
+    }
     idid = KINSetLinearSolver(_kinMem, _Kin_linSol, _Kin_J);
-    if (check_flag(&idid, (char *)"KINSetUserData", 1))
+    if (check_flag(&idid, (char *)"KINSetLinearSolver", 1))
         throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::initialize()");
 
     /*will be used with new sundials version
@@ -430,7 +435,22 @@ void Kinsol::solve()
     ////////////////////////////
     if (_usedCompletePivoting || _usedIterativeSolver)
     {
-        //KINDense(_kinMem, _dimSys);
+        // Last call was with comlpete pivoting or iterative solver
+        // Reinitialize dense solve again
+        idid = SUNLinSolFree(_Kin_linSol);
+        if (check_flag(&idid, (char *)"SUNLinSolFree", 1))
+            throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::solve()");
+        _Kin_linSol = SUNLinSol_Dense(_Kin_ySolver, _Kin_J);
+        if (_Kin_linSol == NULL)
+        {
+            fprintf(stderr,
+                    "\nSUNDIALS_ERROR: SUNLinSol_Dense() failed - returned NULL pointer\n\n");
+            throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::solve()");
+        }
+        idid = KINSetLinearSolver(_kinMem, _Kin_linSol, _Kin_J);
+        if (check_flag(&idid, (char *)"KINSetUserData", 1))
+            throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::initialize()");
+
         _usedCompletePivoting = false;
         _usedIterativeSolver = false;
     }
@@ -446,25 +466,24 @@ void Kinsol::solve()
 
         return;
     }
-    else // Try Scaling
+
+    // Try Dense with scaling
+    ////////////////////////////
+    _iterationStatus = CONTINUE;
+    _algLoop->setReal(_y0);
+    _algLoop->evaluate();
+    _algLoop->getRHS(_fScale);
+    for (int i = 0; i < _dimSys; i++)
     {
-        _iterationStatus = CONTINUE;
-        _algLoop->setReal(_y0);
-        _algLoop->evaluate();
-        _algLoop->getRHS(_fScale);
-        for (int i = 0; i < _dimSys; i++)
-        {
-            if (abs(_fScale[i]) > 1.0)
-                _fScale[i] = abs(1 / _fScale[i]);
-            else
-                _fScale[i] = 1;
-        }
-
-        _iterationStatus = CONTINUE;
-
-        solveNLS();
+        if (abs(_fScale[i]) > 1.0)
+            _fScale[i] = abs(1 / _fScale[i]);
+        else
+            _fScale[i] = 1;
     }
 
+    _iterationStatus = CONTINUE;
+
+    solveNLS();
     if (_iterationStatus == DONE)
     {
         _algLoop->setReal(_y);
@@ -510,15 +529,29 @@ void Kinsol::solve()
     //if(_iterationStatus == DONE)
     //    return;
 
-    //Try iterative Solvers
+    // Try SPGMR solver
+    // Scaled, Preconditioned, Generalized Minimum Residual iterative linear solver
     /////////////////////////////////
-    /*
     _usedIterativeSolver = true;
 
     for (int i = 0; i < _dimSys; i++) // Reset Scaling
         _fScale[i] = 1.0;
 
-    KINSpgmr(_kinMem, _dimSys);
+    /* Free linear solver and initialize linear solver */
+    // TODO AHeu: Reset _Kin_ySolver?
+    idid = SUNLinSolFree(_Kin_linSol);
+    if (check_flag(&idid, (char *)"SUNLinSolFree", 1))
+        throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::solve()");
+    _Kin_linSol = SUNLinSol_SPGMR(_Kin_ySolver, PREC_NONE, 5 /* default value */);
+    if (_Kin_linSol == NULL)
+    {
+        fprintf(stderr,
+                "\nSUNDIALS_ERROR: SUNLinSol_SPGMR() failed - returned NULL pointer\n\n");
+        throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::solve()");
+    }
+    idid = KINSetLinearSolver(_kinMem, _Kin_linSol, NULL);
+    if (check_flag(&idid, (char *)"KINSetLinearSolver", 1))
+        throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::solve()");
 
     _iterationStatus = CONTINUE;
     solveNLS();
@@ -530,22 +563,23 @@ void Kinsol::solve()
 
         return;
     }
-    else // Try Scaling
+
+    // Try SPGMR solver with scaling
+    /////////////////////////////////
+    _iterationStatus = CONTINUE;
+    _algLoop->setReal(_y0);
+    _algLoop->evaluate();
+    _algLoop->getRHS(_fScale);
+    for (int i = 0; i < _dimSys; i++)
     {
-        _iterationStatus = CONTINUE;
-        _algLoop->setReal(_y0);
-        _algLoop->evaluate();
-        _algLoop->getRHS(_fScale);
-        for (int i = 0; i < _dimSys; i++)
-        {
-            if (abs(_fScale[i]) > 1.0)
-                _fScale[i] = abs(1 / _fScale[i]);
-            else
-                _fScale[i] = 1;
-        }
-        _iterationStatus = CONTINUE;
-        solveNLS();
+        if (abs(_fScale[i]) > 1.0)
+            _fScale[i] = abs(1 / _fScale[i]);
+        else
+            _fScale[i] = 1;
     }
+    _iterationStatus = CONTINUE;
+    solveNLS();
+
     if (_iterationStatus == DONE)
     {
         _algLoop->setReal(_y);
@@ -553,10 +587,27 @@ void Kinsol::solve()
         return;
     }
 
+    // Try SPBCG solver
+    // Scaled, Preconditioned, Generalized Minimum Residual iterative linear solver
+    /////////////////////////////////
     for (int i = 0; i < _dimSys; i++) // Reset Scaling
         _fScale[i] = 1.0;
 
-    KINSpbcg(_kinMem, _dimSys);
+    /* Free linear solver and initialize linear solver */
+    idid = SUNLinSolFree(_Kin_linSol);
+    if (check_flag(&idid, (char *)"SUNLinSolFree", 1))
+        throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::solve()");
+    _Kin_linSol = SUNLinSol_SPBCGS(_Kin_ySolver, PREC_NONE, 5 /* default value */);
+    if (_Kin_linSol == NULL)
+    {
+        fprintf(stderr,
+                "\nSUNDIALS_ERROR: SUNLinSol_SPGMR() failed - returned NULL pointer\n\n");
+        throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::solve()");
+    }
+    idid = KINSetLinearSolver(_kinMem, _Kin_linSol, _Kin_J);
+    if (check_flag(&idid, (char *)"KINSetLinearSolver", 1))
+        throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::solve()");
+
     _iterationStatus = CONTINUE;
     solveNLS();
     if (_iterationStatus == DONE)
@@ -565,28 +616,28 @@ void Kinsol::solve()
         _algLoop->evaluate();
         return;
     }
-    else // Try Scaling
+
+    // Try SPBCG solver with scaling
+    /////////////////////////////////
+    _iterationStatus = CONTINUE;
+    _algLoop->setReal(_y0);
+    _algLoop->evaluate();
+    _algLoop->getRHS(_fScale);
+    for (int i = 0; i < _dimSys; i++)
     {
-        _iterationStatus = CONTINUE;
-        _algLoop->setReal(_y0);
-        _algLoop->evaluate();
-        _algLoop->getRHS(_fScale);
-        for (int i = 0; i < _dimSys; i++)
-        {
-            if (abs(_fScale[i]) > 1.0)
-                _fScale[i] = abs(1 / _fScale[i]);
-            else
-                _fScale[i] = 1;
-        }
-        solveNLS();
+        if (abs(_fScale[i]) > 1.0)
+            _fScale[i] = abs(1 / _fScale[i]);
+        else
+            _fScale[i] = 1;
     }
+    solveNLS();
+
     if (_iterationStatus == DONE)
     {
         _algLoop->setReal(_y);
         _algLoop->evaluate();
         return;
     }
-    */
 
     if (_eventRetry)
     {
@@ -595,6 +646,8 @@ void Kinsol::solve()
         return;
     }
 
+    // Give up
+    /////////////////////////////////
     if (_iterationStatus == SOLVERERROR && !_eventRetry)
     {
         if (_kinsolSettings->getContinueOnError())
@@ -608,7 +661,6 @@ void Kinsol::solve()
             }
         }
         else
-
             throw ModelicaSimulationError(ALGLOOP_SOLVER, "Nonlinear solver failed!");
     }
 }
@@ -728,7 +780,7 @@ int Kinsol::check_flag(void* flagvalue, char* funcname, int opt)
         return (1);
     }
 
-        /* Check if flag < 0 */
+    /* Check if flag < 0 */
     else if (opt == 1)
     {
         errflag = (int *)flagvalue;
@@ -741,7 +793,7 @@ int Kinsol::check_flag(void* flagvalue, char* funcname, int opt)
         }
     }
 
-        /* Check if function returned NULL pointer - no memory allocated */
+    /* Check if function returned NULL pointer - no memory allocated */
     else if (opt == 2 && flagvalue == NULL)
     {
         fprintf(stderr,

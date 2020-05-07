@@ -424,7 +424,7 @@ void Ida::solve(const SOLVERCALL action)
             return;
         }
 
-        // Nach einem TimeEvent wird der neue Zustand recorded
+        // Record new state after a time event
         if (action & RECALL)
         {
             _firstStep = true;
@@ -447,7 +447,7 @@ void Ida::solve(const SOLVERCALL action)
             // Solveraufruf
             if (_idid == 0)
             {
-                // ZÃ¤hler zurÃ¼cksetzen
+                // Reset counters
                 _accStps = 0;
                 _locStps = 0;
 
