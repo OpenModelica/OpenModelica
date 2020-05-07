@@ -2198,36 +2198,6 @@ end Test_total;
 //   external "C" ModelicaStandardTables_CombiTimeTable_close(externalCombiTimeTable);
 // end Modelica.Blocks.Types.ExternalCombiTimeTable.destructor;
 //
-// function Modelica.Utilities.Strings.Advanced.skipWhiteSpace "Scan white space"
-//   input String string;
-//   input Integer startIndex(min = 1) = 1;
-//   output Integer nextIndex;
-//
-//   external "C" nextIndex = ModelicaStrings_skipWhiteSpace(string, startIndex);
-// end Modelica.Utilities.Strings.Advanced.skipWhiteSpace;
-//
-// function Modelica.Utilities.Strings.isEmpty "Return true if a string is empty (has only white space characters)"
-//   input String string;
-//   output Boolean result "True, if string is empty";
-//   protected Integer nextIndex;
-//   protected Integer len;
-// algorithm
-//   nextIndex := Modelica.Utilities.Strings.Advanced.skipWhiteSpace(string, 1);
-//   len := Modelica.Utilities.Strings.length(string);
-//   if len < 1 or nextIndex > len then
-//     result := true;
-//   else
-//     result := false;
-//   end if;
-// end Modelica.Utilities.Strings.isEmpty;
-//
-// function Modelica.Utilities.Strings.length "Return length of string"
-//   input String string;
-//   output Integer result "Number of characters of string";
-//
-//   external "C" result = ModelicaStrings_length(string);
-// end Modelica.Utilities.Strings.length;
-//
 // function Modelica_StateGraph2.Blocks.BooleanFunctions.anyTrue "Returns true, if at least on element of the Boolean input vector is true ('or')"
 //   input Boolean[:] b;
 //   output Boolean result;
@@ -2294,7 +2264,7 @@ end Test_total;
 //   final parameter Integer booleanTable.combiTimeTable.columns[1] = 2 "Columns of table to be interpolated";
 //   final parameter enumeration(LinearSegments, ContinuousDerivative, ConstantSegments, MonotoneContinuousDerivative1, MonotoneContinuousDerivative2) booleanTable.combiTimeTable.smoothness = Modelica.Blocks.Types.Smoothness.ConstantSegments "Smoothness of table interpolation";
 //   final parameter enumeration(HoldLastPoint, LastTwoPoints, Periodic, NoExtrapolation) booleanTable.combiTimeTable.extrapolation = Modelica.Blocks.Types.Extrapolation.HoldLastPoint "Extrapolation of data outside the definition range";
-//   final parameter Real booleanTable.combiTimeTable.timeScale(quantity = "Time", unit = "s", min = 1e-015) = 1.0 "Time scale of first table column";
+//   final parameter Real booleanTable.combiTimeTable.timeScale(quantity = "Time", unit = "s", min = 1e-15) = 1.0 "Time scale of first table column";
 //   final parameter Real booleanTable.combiTimeTable.offset[1] = 0.0 "Offsets of output signals";
 //   final parameter Real booleanTable.combiTimeTable.startTime(quantity = "Time", unit = "s") = booleanTable.startTime "Output = offset for time < startTime";
 //   final parameter Real booleanTable.combiTimeTable.shiftTime(quantity = "Time", unit = "s") = booleanTable.shiftTime "Shift time of first table column";
@@ -2305,7 +2275,7 @@ end Test_total;
 //   final parameter Real booleanTable.combiTimeTable.t_minScaled = Modelica.Blocks.Tables.Internal.getTimeTableTmin(booleanTable.combiTimeTable.tableID) "Minimum (scaled) abscissa value defined in table";
 //   final parameter Real booleanTable.combiTimeTable.t_maxScaled = Modelica.Blocks.Tables.Internal.getTimeTableTmax(booleanTable.combiTimeTable.tableID) "Maximum (scaled) abscissa value defined in table";
 //   protected final parameter Real booleanTable.combiTimeTable.p_offset[1] = 0.0 "Offsets of output signals";
-//   protected parameter Modelica.Blocks.Types.ExternalCombiTimeTable booleanTable.combiTimeTable.tableID = Modelica.Blocks.Types.ExternalCombiTimeTable.constructor(if false then booleanTable.combiTimeTable.tableName else "NoName", if false and booleanTable.combiTimeTable.fileName <> "NoName" and not Modelica.Utilities.Strings.isEmpty(booleanTable.combiTimeTable.fileName) then booleanTable.combiTimeTable.fileName else "NoName", booleanTable.combiTimeTable.table, booleanTable.combiTimeTable.startTime / 1.0, {2}, Modelica.Blocks.Types.Smoothness.ConstantSegments, Modelica.Blocks.Types.Extrapolation.HoldLastPoint, booleanTable.combiTimeTable.shiftTime / 1.0, if Modelica.Blocks.Types.Smoothness.ConstantSegments == Modelica.Blocks.Types.Smoothness.LinearSegments then booleanTable.combiTimeTable.timeEvents else if Modelica.Blocks.Types.Smoothness.ConstantSegments == Modelica.Blocks.Types.Smoothness.ConstantSegments then Modelica.Blocks.Types.TimeEvents.Always else Modelica.Blocks.Types.TimeEvents.NoTimeEvents, if false then booleanTable.combiTimeTable.verboseRead else false) "External table object";
+//   protected parameter Modelica.Blocks.Types.ExternalCombiTimeTable booleanTable.combiTimeTable.tableID = Modelica.Blocks.Types.ExternalCombiTimeTable.constructor("NoName", "NoName", booleanTable.combiTimeTable.table, booleanTable.combiTimeTable.startTime / 1.0, {2}, Modelica.Blocks.Types.Smoothness.ConstantSegments, Modelica.Blocks.Types.Extrapolation.HoldLastPoint, booleanTable.combiTimeTable.shiftTime / 1.0, Modelica.Blocks.Types.TimeEvents.Always, false) "External table object";
 //   protected discrete Real booleanTable.combiTimeTable.nextTimeEvent(quantity = "Time", unit = "s", start = 0.0, fixed = true) "Next time event instant";
 //   protected discrete Real booleanTable.combiTimeTable.nextTimeEventScaled(start = 0.0, fixed = true) "Next scaled time event instant";
 //   protected Real booleanTable.combiTimeTable.timeScaled "Scaled time";
@@ -2367,7 +2337,7 @@ end Test_total;
 //   Boolean logicalDelayStateGraph.T1.conditionPort "Fire condition as Boolean input.";
 //   Boolean logicalDelayStateGraph.T1.fire "= true, if transition fires";
 //   Boolean logicalDelayStateGraph.T1.enableFire "= true, if firing condition is true";
-//   protected constant Real logicalDelayStateGraph.T1.minimumWaitTime(quantity = "Time", unit = "s") = 1e-013;
+//   protected constant Real logicalDelayStateGraph.T1.minimumWaitTime(quantity = "Time", unit = "s") = 1e-13;
 //   protected Real logicalDelayStateGraph.T1.t_start(quantity = "Time", unit = "s") "Time instant at which the transition would fire, if waitTime would be zero";
 //   protected Boolean logicalDelayStateGraph.T1.localCondition;
 //   final parameter Integer logicalDelayStateGraph.Y0D0.nIn(min = 0) = 2 "Number of input connections";
@@ -2420,7 +2390,7 @@ end Test_total;
 //   Boolean logicalDelayStateGraph.T2.conditionPort "Fire condition as Boolean input.";
 //   Boolean logicalDelayStateGraph.T2.fire "= true, if transition fires";
 //   Boolean logicalDelayStateGraph.T2.enableFire "= true, if firing condition is true";
-//   protected constant Real logicalDelayStateGraph.T2.minimumWaitTime(quantity = "Time", unit = "s") = 1e-013;
+//   protected constant Real logicalDelayStateGraph.T2.minimumWaitTime(quantity = "Time", unit = "s") = 1e-13;
 //   protected Real logicalDelayStateGraph.T2.t_start(quantity = "Time", unit = "s") "Time instant at which the transition would fire, if waitTime would be zero";
 //   protected Boolean logicalDelayStateGraph.T2.localCondition;
 //   final parameter Integer logicalDelayStateGraph.Y0D1.nIn(min = 0) = 1 "Number of input connections";
@@ -2464,7 +2434,7 @@ end Test_total;
 //   Boolean logicalDelayStateGraph.T3.conditionPort "Fire condition as Boolean input.";
 //   Boolean logicalDelayStateGraph.T3.fire "= true, if transition fires";
 //   Boolean logicalDelayStateGraph.T3.enableFire "= true, if firing condition is true";
-//   protected constant Real logicalDelayStateGraph.T3.minimumWaitTime(quantity = "Time", unit = "s") = 1e-013;
+//   protected constant Real logicalDelayStateGraph.T3.minimumWaitTime(quantity = "Time", unit = "s") = 1e-13;
 //   protected Real logicalDelayStateGraph.T3.t_start(quantity = "Time", unit = "s") "Time instant at which the transition would fire, if waitTime would be zero";
 //   protected Boolean logicalDelayStateGraph.T3.localCondition;
 //   final parameter Boolean logicalDelayStateGraph.T4.use_conditionPort = true "= true, if conditionPort enabled";
@@ -2486,7 +2456,7 @@ end Test_total;
 //   Boolean logicalDelayStateGraph.T4.conditionPort "Fire condition as Boolean input.";
 //   Boolean logicalDelayStateGraph.T4.fire "= true, if transition fires";
 //   Boolean logicalDelayStateGraph.T4.enableFire "= true, if firing condition is true";
-//   protected constant Real logicalDelayStateGraph.T4.minimumWaitTime(quantity = "Time", unit = "s") = 1e-013;
+//   protected constant Real logicalDelayStateGraph.T4.minimumWaitTime(quantity = "Time", unit = "s") = 1e-13;
 //   protected Real logicalDelayStateGraph.T4.t_start(quantity = "Time", unit = "s") "Time instant at which the transition would fire, if waitTime would be zero";
 //   protected Boolean logicalDelayStateGraph.T4.localCondition;
 // initial equation
@@ -2553,7 +2523,7 @@ end Test_total;
 //   booleanTable.combiTimeTable.timeScaled = time;
 //   when {time >= pre(booleanTable.combiTimeTable.nextTimeEvent), initial()} then
 //     booleanTable.combiTimeTable.nextTimeEventScaled = Modelica.Blocks.Tables.Internal.getNextTimeEvent(booleanTable.combiTimeTable.tableID, booleanTable.combiTimeTable.timeScaled);
-//     booleanTable.combiTimeTable.nextTimeEvent = if booleanTable.combiTimeTable.nextTimeEventScaled < 1e+060 then booleanTable.combiTimeTable.nextTimeEventScaled else 1e+060;
+//     booleanTable.combiTimeTable.nextTimeEvent = if booleanTable.combiTimeTable.nextTimeEventScaled < 9.999999999999999e+59 then booleanTable.combiTimeTable.nextTimeEventScaled else 9.999999999999999e+59;
 //   end when;
 //   booleanTable.combiTimeTable.y[1] = booleanTable.combiTimeTable.p_offset[1] + Modelica.Blocks.Tables.Internal.getTimeTableValueNoDer(booleanTable.combiTimeTable.tableID, 1, booleanTable.combiTimeTable.timeScaled, booleanTable.combiTimeTable.nextTimeEventScaled, pre(booleanTable.combiTimeTable.nextTimeEventScaled));
 //   booleanTable.realToBoolean.y = booleanTable.realToBoolean.u >= booleanTable.realToBoolean.threshold;
@@ -2612,7 +2582,7 @@ end Test_total;
 //   logicalDelayStateGraph.T2.inPort.fire = logicalDelayStateGraph.T2.fire;
 //   logicalDelayStateGraph.T2.outPort.fire = logicalDelayStateGraph.T2.fire;
 //   logicalDelayStateGraph.T2.outPort.node = logicalDelayStateGraph.T2.inPort.node;
-//   assert(logicalDelayStateGraph.T2.waitTime > 1e-013, "Either set delayTransition = false, or set waitTime (= " + String(logicalDelayStateGraph.T2.waitTime, 6, 0, true) + ") > " + String(1e-013, 6, 0, true));
+//   assert(logicalDelayStateGraph.T2.waitTime > 1e-13, "Either set delayTransition = false, or set waitTime (= " + String(logicalDelayStateGraph.T2.waitTime, 6, 0, true) + ") > " + String(1e-13, 6, 0, true));
 //   logicalDelayStateGraph.Y0D1.inport_fire = Modelica_StateGraph2.Blocks.BooleanFunctions.anyTrue({logicalDelayStateGraph.Y0D1.inPort[1].fire});
 //   logicalDelayStateGraph.Y0D1.outport_fire = Modelica_StateGraph2.Blocks.BooleanFunctions.anyTrue({logicalDelayStateGraph.Y0D1.outPort[1].fire});
 //   logicalDelayStateGraph.Y0D1.newActive = if logicalDelayStateGraph.Y0D1.node.resume then logicalDelayStateGraph.Y0D1.oldActive else logicalDelayStateGraph.Y0D1.inport_fire or logicalDelayStateGraph.Y0D1.active and not logicalDelayStateGraph.Y0D1.outport_fire and not logicalDelayStateGraph.Y0D1.node.suspend;
@@ -2641,7 +2611,7 @@ end Test_total;
 //   logicalDelayStateGraph.T4.inPort.fire = logicalDelayStateGraph.T4.fire;
 //   logicalDelayStateGraph.T4.outPort.fire = logicalDelayStateGraph.T4.fire;
 //   logicalDelayStateGraph.T4.outPort.node = logicalDelayStateGraph.T4.inPort.node;
-//   assert(logicalDelayStateGraph.T4.waitTime > 1e-013, "Either set delayTransition = false, or set waitTime (= " + String(logicalDelayStateGraph.T4.waitTime, 6, 0, true) + ") > " + String(1e-013, 6, 0, true));
+//   assert(logicalDelayStateGraph.T4.waitTime > 1e-13, "Either set delayTransition = false, or set waitTime (= " + String(logicalDelayStateGraph.T4.waitTime, 6, 0, true) + ") > " + String(1e-13, 6, 0, true));
 // end Test_total;
 // [flattening/modelica/scodeinst/Ticket5821.mo:39:7-39:47:writable] Warning: The second argument 'logicalDelayStateGraph.Y1D0.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
 // [flattening/modelica/scodeinst/Ticket5821.mo:43:7-49:9:writable] Warning: Usage of non-standard operator (not specified in the Modelica specification): Connections.uniqueRoot. Functionality might be partially supported but is not guaranteed.

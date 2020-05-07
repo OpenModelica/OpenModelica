@@ -55,6 +55,7 @@ import ExecStat.execStat;
 import NFPrefixes.Variability;
 import Ceval = NFCeval;
 import Package = NFPackage;
+import SimplifyExp = NFSimplifyExp;
 
 public
 function evaluate
@@ -131,13 +132,13 @@ function evaluateExp
   input Variability constVariability;
   output Expression outExp;
 algorithm
-  outExp := evaluateExpTraverser(exp, constVariability, false);
+  outExp := evaluateExpTraverser(exp, constVariability);
 end evaluateExp;
 
 function evaluateExpTraverser
   input Expression exp;
   input Variability constVariability;
-  input Boolean changed;
+  input Boolean changed = false;
   output Expression outExp;
   output Boolean outChanged;
 protected
@@ -163,6 +164,12 @@ algorithm
           // If the cref's subscripts changed, recalculate its type.
           outExp := Expression.CREF(ComponentRef.getSubscriptedType(cref), cref);
         end if;
+      then
+        outExp;
+
+    case Expression.IF()
+      algorithm
+        (outExp, outChanged) := evaluateIfExp(exp, constVariability);
       then
         outExp;
 
@@ -194,6 +201,39 @@ algorithm
     else dim;
   end match;
 end evaluateDimension;
+
+function evaluateIfExp
+  input Expression exp;
+  input Variability constVariability;
+  output Expression outExp;
+  output Boolean outChanged;
+protected
+  Expression cond, tb, fb;
+  Boolean c1, c2;
+algorithm
+  Expression.IF(cond, tb, fb) := exp;
+  (cond, outChanged) := evaluateExpTraverser(cond, constVariability);
+
+  // Simplify the condition in case it can be reduced to a literal value.
+  cond := SimplifyExp.simplify(cond);
+
+  (outExp, outChanged) := match cond
+    // Only evaluate constants in and return one of the branches if the
+    // condition is a literal boolean value.
+    case Expression.BOOLEAN()
+      then evaluateExpTraverser(if cond.value then tb else fb, constVariability);
+
+    // Otherwise evaluate constants in both branches and return the whole
+    // if-expression.
+    else
+      algorithm
+        (tb, c1) := evaluateExpTraverser(tb, constVariability);
+        (fb, c2) := evaluateExpTraverser(fb, constVariability);
+      then
+        (Expression.IF(cond, tb, fb), outChanged or c1 or c2);
+
+  end match;
+end evaluateIfExp;
 
 function evaluateEquations
   input list<Equation> eql;
