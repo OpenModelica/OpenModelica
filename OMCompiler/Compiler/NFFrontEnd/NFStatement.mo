@@ -257,6 +257,94 @@ public
     stmt := func(stmt);
   end map;
 
+  function applyExpList
+    input list<Statement> stmt;
+    input FoldFunc func;
+
+    partial function FoldFunc
+      input Expression exp;
+    end FoldFunc;
+  algorithm
+    for s in stmt loop
+      applyExp(s, func);
+    end for;
+  end applyExpList;
+
+  function applyExp
+    input Statement stmt;
+    input ApplyFunc func;
+
+    partial function ApplyFunc
+      input Expression exp;
+    end ApplyFunc;
+  algorithm
+    () := match stmt
+      case Statement.ASSIGNMENT()
+        algorithm
+          func(stmt.lhs);
+          func(stmt.rhs);
+        then
+          ();
+
+      case Statement.FOR()
+        algorithm
+          applyExpList(stmt.body, func);
+
+          if isSome(stmt.range) then
+            func(Util.getOption(stmt.range));
+          end if;
+        then
+          ();
+
+      case Statement.IF()
+        algorithm
+          for b in stmt.branches loop
+            func(Util.tuple21(b));
+            applyExpList(Util.tuple22(b), func);
+          end for;
+        then
+          ();
+
+      case Statement.WHEN()
+        algorithm
+          for b in stmt.branches loop
+            func(Util.tuple21(b));
+            applyExpList(Util.tuple22(b), func);
+          end for;
+        then
+          ();
+
+      case Statement.ASSERT()
+        algorithm
+          func(stmt.condition);
+          func(stmt.message);
+          func(stmt.level);
+        then
+          ();
+
+      case Statement.TERMINATE()
+        algorithm
+          func(stmt.message);
+        then
+          ();
+
+      case Statement.NORETCALL()
+        algorithm
+          func(stmt.exp);
+        then
+          ();
+
+      case Statement.WHILE()
+        algorithm
+          func(stmt.condition);
+          applyExpList(stmt.body, func);
+        then
+          ();
+
+      else ();
+    end match;
+  end applyExp;
+
   function mapExpList
     input output list<Statement> stmtl;
     input MapFunc func;

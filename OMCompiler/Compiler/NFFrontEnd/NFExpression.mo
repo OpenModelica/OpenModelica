@@ -1545,7 +1545,7 @@ public
   algorithm
     i := match exp
       case INTEGER() then exp.value;
-      case BOOLEAN() then if exp.value then 1 else 0;
+      case BOOLEAN() then if exp.value then 2 else 1;
       case ENUM_LITERAL() then exp.index;
     end match;
   end toInteger;

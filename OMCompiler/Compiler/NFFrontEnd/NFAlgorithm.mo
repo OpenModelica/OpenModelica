@@ -67,6 +67,32 @@ public
     end for;
   end apply;
 
+  function applyExp
+    input Algorithm alg;
+    input ApplyFunc func;
+
+    partial function ApplyFunc
+      input Expression exp;
+    end ApplyFunc;
+  algorithm
+    for s in alg.statements loop
+      Statement.applyExp(s, func);
+    end for;
+  end applyExp;
+
+  function applyExpList
+    input list<Algorithm> algs;
+    input ApplyFunc func;
+
+    partial function ApplyFunc
+      input Expression exp;
+    end ApplyFunc;
+  algorithm
+    for alg in algs loop
+      applyExp(alg, func);
+    end for;
+  end applyExpList;
+
   function mapExp
     input output Algorithm alg;
     input MapFunc func;

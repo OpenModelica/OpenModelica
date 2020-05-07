@@ -9,6 +9,12 @@ ActualStreamVariability1.mo \
 Algorithm1.mo \
 Algorithm2.mo \
 Algorithm3.mo \
+ArrayBounds1.mo \
+ArrayBounds2.mo \
+ArrayBounds3.mo \
+ArrayBoundsAlg1.mo \
+ArrayBoundsBinding1.mo \
+ArrayBoundsEq1.mo\
 ArrayConstructorComplex1.mo \
 arrfunc.mo \
 Assert1.mo \
