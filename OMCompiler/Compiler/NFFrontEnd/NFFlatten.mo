@@ -56,7 +56,7 @@ import Expression = NFExpression;
 import Flags;
 import Inst = NFInst;
 import List;
-import NFCall;
+import Call = NFCall;
 import NFClass.Class;
 import NFClassTree.ClassTree;
 import NFComponent.Component;
@@ -1121,7 +1121,7 @@ algorithm
       Function fn;
 
     case Equation.CONNECT() then true;
-    case Equation.NORETCALL(exp = Expression.CALL(call = NFCall.TYPED_CALL(fn = fn)))
+    case Equation.NORETCALL(exp = Expression.CALL(call = Call.TYPED_CALL(fn = fn)))
       then AbsynUtil.pathFirstIdent(Function.name(fn)) == "Connections";
     else false;
   end match;
@@ -1642,7 +1642,7 @@ algorithm
 
     case Expression.CALL()
       algorithm
-        funcs := flattenFunction(NFCall.typedFunction(exp.call), funcs);
+        funcs := flattenFunction(Call.typedFunction(exp.call), funcs);
       then
         ();
 

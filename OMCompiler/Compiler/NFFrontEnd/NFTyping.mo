@@ -69,7 +69,7 @@ import Inst = NFInst;
 import InstUtil = NFInstUtil;
 import Lookup = NFLookup;
 import MatchKind = NFTypeCheck.MatchKind;
-import NFCall;
+import Call = NFCall;
 import NFClassTree.ClassTree;
 import Subscript = NFSubscript;
 import TypeCheck = NFTypeCheck;
@@ -1273,7 +1273,7 @@ algorithm
 
     case Expression.CALL()
       algorithm
-        (e1, ty, var1) := NFCall.typeCall(exp, origin, info);
+        (e1, ty, var1) := Call.typeCall(exp, origin, info);
 
         // If the call has multiple outputs and isn't alone on either side of an
         // equation/algorithm, select the first output.
@@ -3036,11 +3036,11 @@ algorithm
       Function fn;
 
     case Expression.CREF() then ComponentRef.isIterator(exp.cref);
-    case Expression.CALL(call = NFCall.TYPED_CALL(fn = fn))
+    case Expression.CALL(call = Call.TYPED_CALL(fn = fn))
       then match AbsynUtil.pathFirstIdent(fn.path)
         case "Connections" then true;
         case "cardinality" then true;
-        else NFCall.isImpure(exp.call);
+        else Call.isImpure(exp.call);
       end match;
     else false;
   end match;

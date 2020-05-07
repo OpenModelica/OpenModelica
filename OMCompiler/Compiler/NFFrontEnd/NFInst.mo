@@ -77,7 +77,7 @@ import ExecStat.{execStat,execStatReset};
 import SCodeDump;
 import SCodeUtil;
 import System;
-import NFCall;
+import Call = NFCall;
 import Absyn.Path;
 import NFClassTree.ClassTree;
 import NFSections.Sections;
@@ -2480,7 +2480,7 @@ algorithm
         Expression.IF(e1, e2, e3);
 
     case Absyn.Exp.CALL()
-      then NFCall.instantiate(absynExp.function_, absynExp.functionArgs, scope, info);
+      then Call.instantiate(absynExp.function_, absynExp.functionArgs, scope, info);
 
     case Absyn.Exp.PARTEVALFUNCTION()
       then instPartEvalFunction(absynExp.function_, absynExp.functionArgs, scope, info);
@@ -3504,7 +3504,7 @@ algorithm
 
     case Expression.CALL()
       algorithm
-        if NFCall.isImpure(exp.call) or NFCall.isExternal(exp.call) then
+        if Call.isImpure(exp.call) or Call.isExternal(exp.call) then
           isNotFixed := true;
         else
           isNotFixed := Expression.containsShallow(exp,
@@ -3618,7 +3618,7 @@ algorithm
     local
       list<tuple<InstNode, Expression>> iters;
 
-    case Expression.CALL(call = NFCall.UNTYPED_ARRAY_CONSTRUCTOR(iters = iters))
+    case Expression.CALL(call = Call.UNTYPED_ARRAY_CONSTRUCTOR(iters = iters))
       algorithm
         for iter in iters loop
           markStructuralParamsExp(Util.tuple22(iter));

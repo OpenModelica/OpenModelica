@@ -74,8 +74,8 @@ import Typing = NFTyping;
 import Util;
 
 protected
-  import NFParameterTree;
-  type ParameterTree = NFParameterTree.Tree;
+  import NFCallParameterTree;
+  type ParameterTree = NFCallParameterTree.Tree;
 public
   record UNTYPED_CALL
     ComponentRef ref;
@@ -172,8 +172,8 @@ public
             if isRecordConstructor(ty_call) then
               outExp := toRecordExpression(ty_call, ty);
             else
-              if Function.hasUnboxArgs(NFCall.typedFunction(ty_call)) then
-                outExp := Expression.CALL(NFCall.unboxArgs(ty_call));
+              if Function.hasUnboxArgs(typedFunction(ty_call)) then
+                outExp := Expression.CALL(unboxArgs(ty_call));
               else
                 outExp := Expression.CALL(ty_call);
               end if;
@@ -1184,7 +1184,7 @@ protected
         case "listReverse" then NONE();
 
         else
-          SOME(Expression.CALL(NFCall.makeTypedCall(reductionFn,
+          SOME(Expression.CALL(makeTypedCall(reductionFn,
             {reductionFoldIterator(foldId, reductionType),
              reductionFoldIterator(resultId, reductionType)},
             reductionVar, reductionType)));

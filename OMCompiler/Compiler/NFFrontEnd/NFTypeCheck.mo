@@ -68,7 +68,7 @@ import NFFunction.Function;
 import NFFunction.TypedArg;
 import NFFunction.FunctionMatchKind;
 import NFFunction.MatchedFunction;
-import NFCall;
+import Call = NFCall;
 import BuiltinCall = NFBuiltinCall;
 import ComponentRef = NFComponentRef;
 import ErrorExt;
@@ -275,7 +275,7 @@ algorithm
     fn := matchedFunc.func;
     outType := Function.returnType(fn);
     outExp := Expression.CALL(
-      NFCall.makeTypedCall(
+      Call.makeTypedCall(
         matchedFunc.func,
         list(Util.tuple31(a) for a in matchedFunc.args),
         Prefixes.variabilityMax(var1, var2),
@@ -763,7 +763,7 @@ algorithm
   if listLength(matchedfuncs) == 1 then
     (operfn, {exp1,exp2}, var)::_ := matchedfuncs;
     outType := Function.returnType(operfn);
-    outExp := Expression.CALL(NFCall.makeTypedCall(operfn, {exp1, exp2}, var, outType));
+    outExp := Expression.CALL(Call.makeTypedCall(operfn, {exp1, exp2}, var, outType));
   else
     Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_OPERATOR_FUNCTIONS_NFINST,
       {Expression.toString(Expression.BINARY(exp1, op, exp2)),
@@ -798,8 +798,8 @@ algorithm
   // Default constructors are not considered.
   if mk == MatchKind.EXACT then
     fn_ref := Function.instFunction(Absyn.CREF_IDENT("'constructor'", {}), scope, paramInfo2);
-    e2 := Expression.CALL(NFCall.UNTYPED_CALL(fn_ref, {exp2}, {}, scope));
-    (e2, ty, var) := NFCall.typeCall(e2, 0, paramInfo1);
+    e2 := Expression.CALL(Call.UNTYPED_CALL(fn_ref, {exp2}, {}, scope));
+    (e2, ty, var) := Call.typeCall(e2, 0, paramInfo1);
     (_, _, mk) := matchTypes(paramType2, ty, e2, false);
 
     if mk == MatchKind.EXACT then
@@ -1351,7 +1351,7 @@ algorithm
     matchedFunc ::_ := exactMatches;
     outType := Function.returnType(matchedFunc.func);
     outExp := Expression.CALL(
-      NFCall.makeTypedCall(
+      Call.makeTypedCall(
         matchedFunc.func,
         list(Util.tuple31(a) for a in matchedFunc.args),
         var,
@@ -2862,11 +2862,11 @@ algorithm
         if isSome(stepExp) then
           SOME(step_exp) := stepExp;
           var := Prefixes.variabilityMax(var, Expression.variability(step_exp));
-          dim_exp := Expression.CALL(NFCall.makeTypedCall(NFBuiltinFuncs.DIV_INT, {dim_exp, step_exp}, var));
+          dim_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.DIV_INT, {dim_exp, step_exp}, var));
         end if;
 
         dim_exp := Expression.BINARY(dim_exp, Operator.makeAdd(Type.INTEGER()), Expression.INTEGER(1));
-        dim_exp := Expression.CALL(NFCall.makeTypedCall(NFBuiltinFuncs.MAX_INT, {dim_exp, Expression.INTEGER(0)}, var));
+        dim_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.MAX_INT, {dim_exp, Expression.INTEGER(0)}, var));
         dim_exp := SimplifyExp.simplify(dim_exp);
       then
         Dimension.fromExp(dim_exp, var);
@@ -2917,8 +2917,8 @@ algorithm
           dim_exp := Expression.BINARY(dim_exp, Operator.makeAdd(Type.REAL()), Expression.REAL(5e-15));
         end if;
 
-        dim_exp := Expression.CALL(NFCall.makeTypedCall(NFBuiltinFuncs.FLOOR, {dim_exp}, var));
-        dim_exp := Expression.CALL(NFCall.makeTypedCall(NFBuiltinFuncs.INTEGER_REAL, {dim_exp}, var));
+        dim_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.FLOOR, {dim_exp}, var));
+        dim_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.INTEGER_REAL, {dim_exp}, var));
         dim_exp := Expression.BINARY(dim_exp, Operator.makeAdd(Type.INTEGER()), Expression.INTEGER(1));
         dim_exp := SimplifyExp.simplify(dim_exp);
       then

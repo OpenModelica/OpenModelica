@@ -37,7 +37,7 @@ protected
   import ExpressionIterator = NFExpressionIterator;
   import Subscript = NFSubscript;
   import Type = NFType;
-  import NFCall;
+  import Call = NFCall;
   import NFCallAttributes;
   import Dimension = NFDimension;
   import ComponentRef = NFComponentRef;
@@ -247,17 +247,17 @@ public
   end expandRange;
 
   function expandCall
-    input NFCall call;
+    input Call call;
     input Expression exp;
     output Expression outExp;
     output Boolean expanded;
   algorithm
     (outExp, expanded) := matchcontinue call
-      case NFCall.TYPED_CALL()
+      case Call.TYPED_CALL()
         guard Function.isBuiltin(call.fn) and not Function.isImpure(call.fn)
         then expandBuiltinCall(call.fn, call.arguments, call);
 
-      case NFCall.TYPED_ARRAY_CONSTRUCTOR()
+      case Call.TYPED_ARRAY_CONSTRUCTOR()
         then expandArrayConstructor(call.exp, call.ty, call.iters);
 
       else expandGeneric(exp);
@@ -267,7 +267,7 @@ public
   function expandBuiltinCall
     input Function fn;
     input list<Expression> args;
-    input NFCall call;
+    input Call call;
     output Expression outExp;
     output Boolean expanded;
   protected
@@ -286,7 +286,7 @@ public
 
   function expandBuiltinCat
     input list<Expression> args;
-    input NFCall call;
+    input Call call;
     output Expression exp;
     output Boolean expanded;
   protected
@@ -343,7 +343,7 @@ public
   end expandBuiltinTranspose;
 
   function expandBuiltinGeneric
-    input NFCall call;
+    input Call call;
     output Expression outExp;
     output Boolean expanded = true;
   protected
@@ -354,7 +354,7 @@ public
     Expression arg;
     list<Expression> args, expl;
   algorithm
-    NFCall.TYPED_CALL(fn, ty, var, {arg}, attr) := call;
+    Call.TYPED_CALL(fn, ty, var, {arg}, attr) := call;
     ty := Type.arrayElementType(ty);
 
     (arg, true) := expand(arg);
@@ -380,7 +380,7 @@ public
         then
           Expression.makeArray(Type.setArrayElementType(exp.ty, ty), expl);
 
-      else Expression.CALL(NFCall.TYPED_CALL(fn, ty, var, {exp}, attr));
+      else Expression.CALL(Call.TYPED_CALL(fn, ty, var, {exp}, attr));
     end match;
   end expandBuiltinGeneric2;
 

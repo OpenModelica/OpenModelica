@@ -36,7 +36,7 @@ import DAE.InlineType;
 import Dimension = NFDimension;
 import Expression = NFExpression;
 import Flags;
-import NFCall;
+import Call = NFCall;
 import NFFunction.Function;
 import NFInstNode.InstNode;
 import Statement = NFStatement;
@@ -49,12 +49,12 @@ function inlineCallExp
 algorithm
   result := match callExp
     local
-      NFCall call;
+      Call call;
       Boolean shouldInline;
 
-    case Expression.CALL(call = call as NFCall.TYPED_CALL())
+    case Expression.CALL(call = call as Call.TYPED_CALL())
       algorithm
-        shouldInline := match NFCall.inlineType(call)
+        shouldInline := match Call.inlineType(call)
           case DAE.InlineType.BUILTIN_EARLY_INLINE() then true;
           case DAE.InlineType.EARLY_INLINE()
             guard Flags.isSet(Flags.INLINE_FUNCTIONS) then true;
@@ -68,7 +68,7 @@ algorithm
 end inlineCallExp;
 
 function inlineCall
-  input NFCall call;
+  input Call call;
   output Expression exp;
 algorithm
   exp := match call
@@ -80,7 +80,7 @@ algorithm
       list<Statement> body;
       Statement stmt;
 
-    case NFCall.TYPED_CALL(fn = fn as Function.FUNCTION(inputs = inputs, outputs = outputs, locals = locals),
+    case Call.TYPED_CALL(fn = fn as Function.FUNCTION(inputs = inputs, outputs = outputs, locals = locals),
                          arguments = args)
       algorithm
         body := Function.getBody(fn);
@@ -167,7 +167,7 @@ end replaceDimExp;
 function getOutputExp
   input Statement stmt;
   input InstNode outputNode;
-  input NFCall call;
+  input Call call;
   output Expression exp;
 algorithm
   exp := match stmt

@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated package NFParameterTree
+encapsulated package NFCallParameterTree
 import BaseAvlTree;
 import NFExpression;
 
@@ -52,4 +52,4 @@ extends BaseAvlTree(redeclare type Key = String,
   end keyCompare;
 
   annotation(__OpenModelica_Interface="frontend");
-end NFParameterTree;
+end NFCallParameterTree;

@@ -44,7 +44,7 @@ protected
   import NFComponent.Component;
   import NFBinding.Binding;
   import Expression = NFExpression;
-  import NFCall;
+  import Call = NFCall;
   import SCodeUtil;
 
 public
@@ -234,7 +234,7 @@ protected
     Type ty;
   algorithm
     outExp := match exp
-      case Expression.CALL(call = NFCall.TYPED_CALL(fn = fn, ty = ty, arguments = args))
+      case Expression.CALL(call = Call.TYPED_CALL(fn = fn, ty = ty, arguments = args))
         guard referenceEq(constructorFn.node, fn.node)
         then Expression.makeRecord(Function.name(constructorFn), ty, args);
 

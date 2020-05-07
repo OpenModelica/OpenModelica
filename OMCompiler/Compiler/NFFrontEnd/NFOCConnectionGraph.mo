@@ -81,7 +81,7 @@ type FlatEdges = NFConnections.BrokenEdges
 protected
 import Absyn;
 import NFBuiltin;
-import NFCall;
+import Call = NFCall;
 import NFClass.Class;
 import Dimension = NFDimension;
 import NFFunction.Function;
@@ -166,7 +166,7 @@ protected
   NFOCConnectionGraph graph = EMPTY;
   list<Equation> eql = {}, eqlBroken, ieql;
   FlatEdges broken, connected;
-  NFCall call;
+  Call call;
   list<Expression> lst;
   Integer priority;
   Expression root, msg;
@@ -194,7 +194,7 @@ algorithm
 
   for eq in flatModel.equations loop
     eql := match eq
-      case Equation.NORETCALL(exp = Expression.CALL(call as NFCall.TYPED_CALL(arguments = lst)), source = source)
+      case Equation.NORETCALL(exp = Expression.CALL(call as Call.TYPED_CALL(arguments = lst)), source = source)
         then match identifyConnectionsOperator(Function.name(call.fn))
           case ConnectionsOperator.ROOT
             algorithm
@@ -301,13 +301,13 @@ algorithm
 
             fcref_rhs := Function.lookupFunctionSimple("equalityConstraint", InstNode.classScope(ComponentRef.node(lhs)));
             (fcref_rhs, fn_node_rhs, _) := Function.instFunctionRef(fcref_rhs, ElementSource.getInfo(source));
-            expRHS := Expression.CALL(NFCall.UNTYPED_CALL(fcref_rhs, {Expression.CREF(ty1, lhsArr), Expression.CREF(ty2, rhsArr)}, {}, fn_node_rhs));
+            expRHS := Expression.CALL(Call.UNTYPED_CALL(fcref_rhs, {Expression.CREF(ty1, lhsArr), Expression.CREF(ty2, rhsArr)}, {}, fn_node_rhs));
 
             (expRHS, ty, var) := Typing.typeExp(expRHS, origin, ElementSource.getInfo(source));
 
             fcref_lhs := Function.lookupFunctionSimple("fill", InstNode.topScope(ComponentRef.node(clhs)));
             (fcref_lhs, fn_node_lhs, _) := Function.instFunctionRef(fcref_lhs, ElementSource.getInfo(source));
-            expLHS := Expression.CALL(NFCall.UNTYPED_CALL(fcref_lhs, Expression.REAL(0.0)::List.map(Type.arrayDims(ty), Dimension.sizeExp), {}, fn_node_lhs));
+            expLHS := Expression.CALL(Call.UNTYPED_CALL(fcref_lhs, Expression.REAL(0.0)::List.map(Type.arrayDims(ty), Dimension.sizeExp), {}, fn_node_lhs));
 
             (expLHS, ty, var) := Typing.typeExp(expLHS, origin, ElementSource.getInfo(source));
 
@@ -1182,10 +1182,10 @@ algorithm
       Boolean result;
       Edges branches;
       list<Expression> lst;
-      NFCall call;
+      Call call;
       String str;
 
-    case Expression.CALL(call = call as NFCall.TYPED_CALL())
+    case Expression.CALL(call = call as Call.TYPED_CALL())
       then match identifyConnectionsOperator(Function.name(call.fn))
         // handle rooted - with zero size array or the normal call
         case ConnectionsOperator.ROOTED
