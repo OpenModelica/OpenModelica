@@ -43,19 +43,61 @@ protected
   import Equation = NFEquation;
   import Expression = NFExpression;
   import ExpandExp = NFExpandExp;
+  import Variable = NFVariable;
+  import Algorithm = NFAlgorithm;
+  import Statement = NFStatement;
+  import NFBinding.Binding;
+  import Subscript = NFSubscript;
+  import Dimension = NFDimension;
+  import Util;
+  import Type = NFType;
 
 public
   function verify
     input FlatModel flatModel;
   algorithm
+    for var in flatModel.variables loop
+      verifyVariable(var);
+    end for;
+
     for eq in flatModel.equations loop
       verifyEquation(eq);
+    end for;
+
+    for ieq in flatModel.initialEquations loop
+      verifyEquation(ieq);
+    end for;
+
+    for alg in flatModel.algorithms loop
+      verifyAlgorithm(alg);
+    end for;
+
+    for ialg in flatModel.initialAlgorithms loop
+      verifyAlgorithm(ialg);
     end for;
 
     execStat(getInstanceName());
   end verify;
 
 protected
+  function verifyVariable
+    input Variable var;
+  algorithm
+    verifyBinding(var.binding);
+
+    for attr in var.typeAttributes loop
+      verifyBinding(Util.tuple22(attr));
+    end for;
+  end verifyVariable;
+
+  function verifyBinding
+    input Binding binding;
+  algorithm
+    if Binding.isBound(binding) then
+      checkSubscriptBounds(Binding.getTypedExp(binding), Binding.getInfo(binding));
+    end if;
+  end verifyBinding;
+
   function verifyEquation
     input Equation eq;
   algorithm
@@ -68,6 +110,8 @@ protected
 
       else ();
     end match;
+
+    Equation.applyExp(eq, function checkSubscriptBounds(info = Equation.info(eq)));
   end verifyEquation;
 
   function verifyWhenEquation
@@ -196,6 +240,80 @@ protected
     outCrefs := List.sort(outCrefs, ComponentRef.isGreater);
     outCrefs := List.sortedUnique(outCrefs, ComponentRef.isEqual);
   end expandCrefSet;
+
+  function verifyAlgorithm
+    input Algorithm alg;
+  algorithm
+    Algorithm.apply(alg, verifyStatement);
+  end verifyAlgorithm;
+
+  function verifyStatement
+    input Statement stmt;
+  algorithm
+    Statement.applyExp(stmt, function checkSubscriptBounds(info = Statement.info(stmt)));
+  end verifyStatement;
+
+  function checkSubscriptBounds
+    input Expression exp;
+    input SourceInfo info;
+  algorithm
+    Expression.apply(exp, function checkSubscriptBounds_traverser(info = info));
+  end checkSubscriptBounds;
+
+  function checkSubscriptBounds_traverser
+    input Expression exp;
+    input SourceInfo info;
+  algorithm
+    () := match exp
+      case Expression.CREF()
+        algorithm
+          checkSubscriptBoundsCref(exp.cref, info);
+        then
+          ();
+
+      else ();
+    end match;
+  end checkSubscriptBounds_traverser;
+
+  function checkSubscriptBoundsCref
+    input ComponentRef cref;
+    input SourceInfo info;
+  algorithm
+    () := match cref
+      local
+        list<Dimension> dims;
+        list<Subscript> subs;
+        Dimension d;
+        Integer int_sub, index;
+
+      case ComponentRef.CREF(subscripts = subs as _ :: _, ty = Type.ARRAY(dimensions = dims))
+        algorithm
+          index := 1;
+
+          for s in subs loop
+            d :: dims := dims;
+
+            if Subscript.isScalarLiteral(s) and Dimension.isKnown(d) then
+              int_sub := Subscript.toInteger(s);
+
+              if int_sub < 1 or int_sub > Dimension.size(d) then
+                Error.addSourceMessage(Error.ARRAY_INDEX_OUT_OF_BOUNDS,
+                  {Subscript.toString(s), String(index),
+                   Dimension.toString(d), ComponentRef.firstName(cref)}, info);
+                fail();
+              end if;
+            end if;
+
+            index := index + 1;
+          end for;
+
+          checkSubscriptBoundsCref(cref.restCref, info);
+        then
+          ();
+
+      else ();
+    end match;
+  end checkSubscriptBoundsCref;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFVerifyModel;
