@@ -923,7 +923,7 @@ public
       case (IF(), _)
         then IF(exp.condition, typeCast(exp.trueBranch, ety), typeCast(exp.falseBranch, ety));
 
-      // Call. are handled by Call.typeCast, which has special rules for some functions.
+      // Calls are handled by Call.typeCast, which has special rules for some functions.
       case (CALL(), _)
         then Call.typeCast(exp, ety);
 
@@ -5523,7 +5523,7 @@ public
   end vectorize;
 
   function bindingExpMap
-    "Call. the given function on each element of a binding expression."
+    "Calls the given function on each element of a binding expression."
     input Expression exp;
     input EvalFunc evalFunc;
     output Expression result;
