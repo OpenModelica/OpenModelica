@@ -81,7 +81,8 @@ public
      This function is only allowed to read and change equations, change algebraic
      variables to discrete and create previous discrete variables."
     input output BVariable.VariablePointers variables     "All variables";
-    input output BEquation.EquationPointers equations     "System equations";
+    input output BEquation.EquationPointers equations     "ONLY Discrete equations!";
+    input output BVariable.VariablePointers knowns        "Knowns";
     input output BVariable.VariablePointers discretes     "Discrete variables";
     input output BVariable.VariablePointers previous      "Previous discrete variables (pre(d) -> $PRE.d)";
   end detectDiscreteStatesInterface;

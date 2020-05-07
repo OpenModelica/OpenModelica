@@ -56,9 +56,6 @@ protected
   import BEquation = NBEquation;
   import BVariable = NBVariable;
 
-  // Util imports
-  import Error;
-
 /* =========================================================================
                       MAIN ROUTINE, PLEASE DO NOT CHANGE
 ========================================================================= */
@@ -109,6 +106,7 @@ protected
   protected
    BVariable.VariablePointers variables      "All variables";
    BEquation.EquationPointers equations      "System equations";
+   BEquation.EquationPointers disc_eqns      "Discrete equations";
    BVariable.VariablePointers unknowns       "Unknowns";
    BVariable.VariablePointers knowns         "Knowns";
    BVariable.VariablePointers states         "States";
@@ -120,9 +118,9 @@ protected
 
   algorithm
     BVariable.VAR_DATA_SIM(variables = variables, unknowns = unknowns, knowns = knowns, auxiliaries = auxiliaries, aliasVars = aliasVars, states = states, derivatives = derivatives, algebraics = algebraics, discretes = discretes, previous = previous, parameters = parameters, constants = constants) := varData;
-    BEquation.EQ_DATA_SIM(equations = equations) := eqData;
+    BEquation.EQ_DATA_SIM(equations = equations, discretes = disc_eqns) := eqData;
     (variables, equations, unknowns, knowns, states, derivatives, algebraics) := continuousFunc(variables, equations, unknowns, knowns, states, derivatives, algebraics);
-    (variables, equations, discretes, previous) := discreteFunc(variables, equations, discretes, previous);
+    (variables, disc_eqns, knowns, discretes, previous) := discreteFunc(variables, disc_eqns, knowns, discretes, previous);
     varData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, states, auxiliaries, aliasVars, derivatives, algebraics, discretes, previous, parameters, constants);
     eqData := BEquation.EqData.setEquations(eqData, equations);
   end detectStatesDefault;
@@ -132,15 +130,21 @@ protected
     Pointer<list<Pointer<Variable>>> acc_states = Pointer.create({});
     Pointer<list<Pointer<Variable>>> acc_derivatives = Pointer.create({});
   algorithm
-    BEquation.EquationPointers.mapExp(equations, function collectStateCrefs(acc_states = acc_states, acc_derivatives = acc_derivatives));
+    BEquation.EquationPointers.mapExp(equations, function collectStatesAndDerivatives(acc_states = acc_states, acc_derivatives = acc_derivatives));
     (variables, unknowns, knowns, states, derivatives, algebraics) := updateStatesAndDerivatives(variables, unknowns, knowns, states, derivatives, algebraics, Pointer.access(acc_states), Pointer.access(acc_derivatives));
   end detectContinuousStatesDefault;
 
   function detectDiscreteStatesDefault extends Module.detectDiscreteStatesInterface;
-    // ToDo pre(d) -> $PRE.d
+  protected
+    Pointer<list<Pointer<Variable>>> acc_discrete_states = Pointer.create({});
+    Pointer<list<Pointer<Variable>>> acc_previous = Pointer.create({});
+  algorithm
+    BEquation.EquationPointers.mapExp(equations, function collectDiscreteStatesAndPrevious(acc_discrete_states = acc_discrete_states, acc_previous = acc_previous));
+    (variables, knowns, discretes, previous) := updateDiscreteStatesAndPrevious(variables, knowns, discretes, previous, Pointer.access(acc_discrete_states), Pointer.access(acc_previous));
   end detectDiscreteStatesDefault;
 
-  function collectStateCrefs
+  function collectStatesAndDerivatives
+    "Collects all states and creates a derivative variable for each."
     input output Expression exp;
     input Pointer<list<Pointer<Variable>>> acc_states;
     input Pointer<list<Pointer<Variable>>> acc_derivatives;
@@ -156,10 +160,10 @@ protected
           state_var := BVariable.getVarPointer(state_cref);
           if BVariable.isState(state_var) then
             // this derivative was already created -> the variable should already have a pointer to its derivative
-            der_cref := getDerVar(state_cref);
+            der_cref := BVariable.getDerCref(state_cref);
           else
-            (der_cref, der_var) := makeDerVar(state_cref);
-            state_var := makeStateVar(state_var, der_var);
+            (der_cref, der_var) := BVariable.makeDerVar(state_cref);
+            state_var := BVariable.makeStateVar(state_var, der_var);
             Pointer.update(acc_states, state_var :: Pointer.access(acc_states));
             Pointer.update(acc_derivatives, der_var :: Pointer.access(acc_derivatives));
           end if;
@@ -167,68 +171,10 @@ protected
       // ToDo! General expressions inside call! -> ticket #5934
       else exp;
     end match;
-  end collectStateCrefs;
-
-  function makeStateVar
-    input output Pointer<Variable> varPointer;
-    input Pointer<Variable> derivative;
-  protected
-    Variable var;
-  algorithm
-    var := Pointer.access(varPointer);
-    var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.STATE(1, SOME(derivative), true));
-    Pointer.update(varPointer, var);
-  end makeStateVar;
-
-  function makeDerVar
-    input output ComponentRef cref;
-    output Pointer<Variable> var_ptr;
-  algorithm
-    _ := match ComponentRef.node(cref)
-      local
-        InstNode qual;
-        Pointer<Variable> state;
-        Variable var;
-      case qual as InstNode.VAR_NODE()
-        algorithm
-          state := BVariable.getVarPointer(cref);
-          qual.name := NBVariable.DERIVATIVE_STR;
-          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
-          var := BVariable.fromCref(cref);
-          var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.STATE_DER(state));
-          var_ptr := Pointer.create(var);
-          cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
-      then ();
-
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBDetectStates.makeDerCref failed for " + ComponentRef.toString(cref)});
-      then fail();
-    end match;
-  end makeDerVar;
-
-  function getDerVar
-    input output ComponentRef cref;
-  algorithm
-    cref := match cref
-      local
-        Pointer<Variable> state, derivative;
-        Variable derVar;
-      case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = state)) then match Pointer.access(state)
-        case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE(derivative = SOME(derivative))))
-          algorithm
-            derVar := Pointer.access(derivative);
-        then derVar.name;
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{"NBDetectStates.getDerVar failed for " + ComponentRef.toString(cref) + " because of wrong variable kind."});
-        then fail();
-      end match;
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBDetectStates.getDerVar failed for " + ComponentRef.toString(cref) + " because of wrong InstNode type."});
-      then fail();
-    end match;
-  end getDerVar;
+  end collectStatesAndDerivatives;
 
   function updateStatesAndDerivatives
+    "Updates the variable pointer arrays with the new information about states and derivatives."
     input output BVariable.VariablePointers variables      "All variables";
     input output BVariable.VariablePointers unknowns       "Unknowns";
     input output BVariable.VariablePointers knowns         "Knowns";
@@ -252,5 +198,51 @@ protected
     algebraics := List.fold(acc_states, function BVariable.VariablePointers.removeVar(), algebraics);
   end updateStatesAndDerivatives;
 
+  function collectDiscreteStatesAndPrevious
+    "Collects all discrete states and creates a previous variable for each. Only to be used on discrete equations!"
+    input output Expression exp;
+    input Pointer<list<Pointer<Variable>>> acc_discrete_states;
+    input Pointer<list<Pointer<Variable>>> acc_previous;
+  algorithm
+    exp := match exp
+      local
+        ComponentRef state_cref, pre_cref;
+        Pointer<Variable> state_var, pre_var;
+      // ToDo need Call.TYPED_REDUCTION?
+      case Expression.CALL(call = Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "pre")),
+        arguments = {Expression.CREF(cref = state_cref)}))
+        algorithm
+          state_var := BVariable.getVarPointer(state_cref);
+          if BVariable.isDiscreteState(state_var) then
+            // this previous was already created -> the variable should already have a pointer to its previous variable
+            pre_cref := BVariable.getPreCref(state_cref);
+          else
+            (pre_cref, pre_var) := BVariable.makePreVar(state_cref);
+            state_var := BVariable.makeDiscreteStateVar(state_var, pre_var);
+            Pointer.update(acc_discrete_states, state_var :: Pointer.access(acc_discrete_states));
+            Pointer.update(acc_previous, pre_var :: Pointer.access(acc_previous));
+          end if;
+      then Expression.fromCref(pre_cref);
+      // ToDo! General expressions inside pre call!
+      // ToDo! edge and change replacement!
+      else exp;
+    end match;
+  end collectDiscreteStatesAndPrevious;
+
+
+  function updateDiscreteStatesAndPrevious
+    "Updates the variable pointer arrays with the new information about states and derivatives."
+    input output BVariable.VariablePointers variables       "All variables";
+    input output BVariable.VariablePointers knowns          "Knowns";
+    input output BVariable.VariablePointers discretes       "Discrete variables";
+    input output BVariable.VariablePointers previous        "Previous (left limit) variables";
+    input list<Pointer<Variable>> acc_discrete_states;
+    input list<Pointer<Variable>> acc_previous;
+  algorithm
+    // Add the new derivatives to variables, unknowns and derivative pointer arrays
+    variables := List.fold(acc_previous, function BVariable.VariablePointers.addVar(), variables);
+    knowns := List.fold(acc_previous, function BVariable.VariablePointers.addVar(), knowns);
+    previous := List.fold(acc_previous, function BVariable.VariablePointers.addVar(), previous);
+  end updateDiscreteStatesAndPrevious;
   annotation(__OpenModelica_Interface="backend");
 end NBDetectStates;

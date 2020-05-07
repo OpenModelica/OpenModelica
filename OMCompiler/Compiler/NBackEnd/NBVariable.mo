@@ -68,9 +68,7 @@ public
   import Util;
 
   /* ==========================================================================
-      We define two different arrays of variables.
-      1: The actual array where all the variables are stored.
-      2: Pointer array to the original variables to avoid duplicates.
+      All variable arrays are pointer arrays to avoid duplicates
   ========================================================================== */
 public
   constant Variable DUMMY_VARIABLE = Variable.VARIABLE(ComponentRef.EMPTY(), Type.ANY(),
@@ -78,12 +76,13 @@ public
     {}, NONE(), SCodeUtil.dummyInfo, NFBackendExtension.DUMMY_BACKEND_INFO);
 
   constant String DERIVATIVE_STR = "$DER";
+  constant String PREVIOUS_STR = "$PRE";
 
   function toString
     input Variable var;
     output String str;
   algorithm
-    str := VariableKind.toString(var.backendinfo.varKind) + " " + Variable.toString(var) + " " + InstNode.typeName(ComponentRef.node(var.name));
+    str := VariableKind.toString(var.backendinfo.varKind) + " " + Variable.toString(var);
   end toString;
 
   function fromCref
@@ -136,6 +135,16 @@ public
       else false;
     end match;
   end isState;
+
+  function isDiscreteState
+    input Pointer<Variable> var;
+    output Boolean isstate;
+  algorithm
+    isstate := match Pointer.access(var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE_STATE())) then true;
+      else false;
+    end match;
+  end isDiscreteState;
 
   uniontype VariablePointers
     record VARIABLE_POINTERS
@@ -523,6 +532,132 @@ public
       else false;
     end match;
   end isDummyVariable;
+
+  function makeStateVar
+    "Updates a variable pointer to be a state, requires the pointer to its derivative."
+    input output Pointer<Variable> varPointer;
+    input Pointer<Variable> derivative;
+  protected
+    Variable var;
+  algorithm
+    var := Pointer.access(varPointer);
+    var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.STATE(1, SOME(derivative), true));
+    Pointer.update(varPointer, var);
+  end makeStateVar;
+
+  function makeDerVar
+    "Creates a derivative variable pointer from the state cref."
+    input output ComponentRef cref;
+    output Pointer<Variable> var_ptr;
+  algorithm
+    _ := match ComponentRef.node(cref)
+      local
+        InstNode qual;
+        Pointer<Variable> state;
+        Variable var;
+      case qual as InstNode.VAR_NODE()
+        algorithm
+          state := BVariable.getVarPointer(cref);
+          qual.name := NBVariable.DERIVATIVE_STR;
+          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
+          var := BVariable.fromCref(cref);
+          var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.STATE_DER(state, NONE()));
+          var_ptr := Pointer.create(var);
+          cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
+      then ();
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.makeDerVar failed for " + ComponentRef.toString(cref)});
+      then fail();
+    end match;
+  end makeDerVar;
+
+  function getDerCref
+    "Returns the derivative variable component reference from a state componet reference.
+    Only works after the state has been detected by the DetectStates module and fails for non-state crefs!"
+    input output ComponentRef cref;
+  algorithm
+    cref := match cref
+      local
+        Pointer<Variable> state, derivative;
+        Variable derVar;
+      case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = state)) then match Pointer.access(state)
+        case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE(derivative = SOME(derivative))))
+          algorithm
+            derVar := Pointer.access(derivative);
+        then derVar.name;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.getDerCref failed for " + ComponentRef.toString(cref) + " because of wrong variable kind."});
+        then fail();
+      end match;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.getDerCref failed for " + ComponentRef.toString(cref) + " because of wrong InstNode type."});
+      then fail();
+    end match;
+  end getDerCref;
+
+  function makeDiscreteStateVar
+    "Updates a discrete variable pointer to be a discrete state, requires the pointer to its left limit variable."
+    input output Pointer<Variable> varPointer;
+    input Pointer<Variable> previous;
+  protected
+    Variable var;
+  algorithm
+    var := Pointer.access(varPointer);
+    var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.DISCRETE_STATE(previous));
+    Pointer.update(varPointer, var);
+  end makeDiscreteStateVar;
+
+  function makePreVar
+    "Creates a previous variable pointer from the discrete variable cref."
+    input output ComponentRef cref;
+    output Pointer<Variable> var_ptr;
+  algorithm
+    _ := match ComponentRef.node(cref)
+      local
+        InstNode qual;
+        Pointer<Variable> disc;
+        Variable var;
+      case qual as InstNode.VAR_NODE()
+        algorithm
+          disc := BVariable.getVarPointer(cref);
+          qual.name := NBVariable.PREVIOUS_STR;
+          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
+          var := BVariable.fromCref(cref);
+          var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.PREVIOUS(disc));
+          var_ptr := Pointer.create(var);
+          cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
+      then ();
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.makePreVar failed for " + ComponentRef.toString(cref)});
+      then fail();
+    end match;
+  end makePreVar;
+
+  function getPreCref
+    "Returns the previous variable component reference from a discrete componet reference.
+    Only works after the discrete state has been detected by the DetectStates module and fails for non-discrete-state crefs!"
+    input output ComponentRef cref;
+  algorithm
+    cref := match cref
+      local
+        Pointer<Variable> disc, previous;
+        Variable preVar;
+      case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = disc)) then match Pointer.access(disc)
+        case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE_STATE(previous = previous)))
+          algorithm
+            preVar := Pointer.access(previous);
+        then preVar.name;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.getPreCref failed for " + ComponentRef.toString(cref) + " because of wrong variable kind."});
+        then fail();
+      end match;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.getPreCref failed for " + ComponentRef.toString(cref) + " because of wrong InstNode type."});
+      then fail();
+    end match;
+  end getPreCref;
 
 protected
   function crefIndexEqualCref
