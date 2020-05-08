@@ -77,7 +77,7 @@ void kinsolInfoHandlerFunction(const char *module, const char *function,
                                char *msg, void *user_data);
 void checkReturnFlag_SUNDIALS(int flag, sundialsFlagType type,
                               const char *functionName);
-
+void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel);
 #endif /* WITH_SUNDIALS */
 
 #ifdef __cplusplus

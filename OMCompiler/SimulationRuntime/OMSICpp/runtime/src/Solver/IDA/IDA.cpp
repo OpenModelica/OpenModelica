@@ -126,6 +126,9 @@ Ida::~Ida()
         N_VDestroy_Serial(_CV_yp);
         N_VDestroy_Serial(_CV_yWrite);
         N_VDestroy_Serial(_CV_absTol);
+        N_VDestroy_Serial(_ida_ySolver);
+        SUNMatDestroy(_ida_J);
+        SUNLinSolFree(_ida_linSol);
         IDAFree(&_idaMem);
     }
 
@@ -331,8 +334,6 @@ void Ida::initialize()
         // Initialize dense linear solver
         _ida_J = SUNDenseMatrix(_dimSys, _dimSys);
         _ida_linSol = SUNLinSol_Dense(_ida_ySolver, _ida_J);
-        /* TODO AHeu: Check for error (==NULL) */
-        /* TODO AHeu: Free memory */
         _idid = IDASetLinearSolver(_idaMem, _ida_linSol, _ida_J);
         if (_idid < 0)
             throw std::invalid_argument("IDA::initialize()");

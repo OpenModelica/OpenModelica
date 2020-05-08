@@ -46,10 +46,9 @@
 #include <nvector/nvector_serial.h>
 #include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
 #include <sunlinsol/sunlinsol_klu.h>         /* Sparse linear solver KLU */
-//#include <sunlinsol/sunlinsol_lapackdense.h> /* Lapack dense linear solver */
 #include <sunlinsol/sunlinsol_spgmr.h>      /* Scaled, Preconditioned, Generalized Minimum Residual iterative linear solver */
 #include <sunlinsol/sunlinsol_spbcgs.h>     /* Scaled, Preconditioned, Bi-Conjugate Gradient, Stabilized iterative linear solver */
-#include <sunlinsol/sunlinsol_sptfqmr.h>
+#include <sunlinsol/sunlinsol_sptfqmr.h>    /* Scaled, Preconditioned Transpose-Free Quasi-Minimal Residual iterative linear solver */
 
 
 /* readability */

@@ -659,10 +659,80 @@ static void checkReturnFlag_SUNLS(int flag, const char *functionName) {
   }
 }
 
+/**
+ * @brief Debug print function for CSC SunMatrix
+ *
+ * @param A           CSC SUNMatrix
+ * @param name        Name of matrix A
+ * @param logLevel    Stream to print output to
+ */
+void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel) {
+
+  int i;
+  long int columns, rows, nnz, np;
+  int lengthData, lengthIndexptrs;
+
+  double* data;
+  long int* indexvals;
+  long int* indexptrs;
+
+  assertStreamPrint(NULL, NULL != SM_DATA_S(A), "matrix data is NULL pointer");
+
+  if (SM_SPARSETYPE_S(A) != CSC_MAT) {
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "In function sundialsPrintSparseMatrix: Wrong sparse format "
+                     "of SUNMatrix A%s.", name);
+  }
+
+  if (ACTIVE_STREAM(logLevel)) {
+    nnz = SUNSparseMatrix_NNZ(A);
+    np = SM_NP_S(A);
+    columns = SUNSparseMatrix_Columns(A);
+    rows = SUNSparseMatrix_Rows(A);
+
+    data = SM_DATA_S(A);
+    indexvals = SM_INDEXVALS_S(A);
+    indexptrs = SM_INDEXPTRS_S(A);
+
+    char *buffer = (char*)malloc(sizeof(char)*columns*20);
+
+    infoStreamPrint(logLevel, 1, "##SUNDIALS## Sparse Matrix %s", name);
+    infoStreamPrint(logLevel, 0, "Columns: N=%li, Rows: M=%li, CSC matrix, NNZ: %li, NP: %li", columns, rows, nnz, np);
+
+    /* Print data array */
+    lengthData = indexptrs[SUNSparseMatrix_NP(A)];
+    buffer[0] = 0;
+    for (i=0; i<lengthData-1; i++) {
+      sprintf(buffer, "%s%10g, ", buffer, data[i]);
+    }
+    sprintf(buffer, "%s%10g", buffer, data[lengthData-1]);
+    infoStreamPrint(logLevel, 0, "data = {%s}", buffer);
+
+    /* Print indexvals array */
+    buffer[0] = 0;
+    for (i=0; i<lengthData-1; i++) {
+      sprintf(buffer, "%s%li, ", buffer, indexvals[i]);
+    }
+    sprintf(buffer, "%s%li", buffer, indexvals[lengthData-1]);
+    infoStreamPrint(logLevel, 0, "indexvals = {%s}", buffer);
+
+    /* Print indexptrs array */
+    buffer[0] = 0;
+    for (i=0; i<SUNSparseMatrix_NP(A); i++) {
+      sprintf(buffer, "%s%li, ", buffer, indexptrs[i]);
+    }
+    sprintf(buffer, "%s%li", buffer, indexptrs[SUNSparseMatrix_NP(A)]);
+    infoStreamPrint(logLevel, 0, "indexvals = {%s}", buffer);
+
+    messageClose(logLevel);
+    free(buffer);
+  }
+}
+
 #else
 
 /**
- * @brief Function not supported
+ * @brief Function not supported without WITH_SUNDIALS
  *
  * @param flag
  * @param type
@@ -674,7 +744,7 @@ void checkReturnFlag_SUNDIALS(int flag, int type, const char *functionName) {
 
 
 /**
- * @brief Function not supported
+ * @brief Function not supported without WITH_SUNDIALS
  *
  * @param errorCode
  * @param module
@@ -688,8 +758,27 @@ void kinsolErrorHandlerFunction(int errorCode, const char *module,
   throwStreamPrint(NULL, "No sundials/kinsol support activated.");
 }
 
+/**
+ * @brief  Function not supported without WITH_SUNDIALS
+ *
+ * @param module
+ * @param function
+ * @param msg
+ * @param user_data
+ */
 void kinsolInfoHandlerFunction(const char *module, const char *function,
                                char *msg, void *user_data) {
+  throwStreamPrint(NULL, "No sundials/kinsol support activated.");
+}
+
+/**
+ * @brief  Function not supported without WITH_SUNDIALS
+ *
+ * @param A
+ * @param name
+ * @param logLevel
+ */
+void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel) {
   throwStreamPrint(NULL, "No sundials/kinsol support activated.");
 }
 

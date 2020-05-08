@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2020, Linköpings University,
  * Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -47,10 +47,11 @@
 #include "sundials_error.h"
 
 #include <kinsol/kinsol.h>                  /* Main KINSOL header file */
+#include <nvector/nvector_serial.h>         /* Serial vector implementation */
 #include <sunlinsol/sunlinsol_dense.h>      /* Default dense linear solver */
 #include <sunlinsol/sunlinsol_spgmr.h>      /* Scaled, Preconditioned, Generalized Minimum Residual iterative linear solver */
 #include <sunlinsol/sunlinsol_spbcgs.h>     /* Scaled, Preconditioned, Bi-Conjugate Gradient, Stabilized iterative linear solver */
-#include <nvector/nvector_serial.h>         /* Serial vector implementation */
+#include <sunlinsol/sunlinsol_sptfqmr.h>    /* Scaled, Preconditioned Transpose-Free Quasi-Minimal Residual iterative linear solver */
 
 #define DEFAULT_IMPRK_ORDER 5
 

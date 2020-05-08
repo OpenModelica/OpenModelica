@@ -324,9 +324,8 @@ ENDIF(OMC_BUILD)
 # Handle OMDEV
 #  - On windows boost,blas,lapack and sundial solvers from omdev are used else the installed versions are used
 IF(WIN32)
-set(Boost_DEBUG 1)
+  SET(Boost_DEBUG 1)
 
- 
   MESSAGE(STATUS "MINGW:")
   MESSAGE(STATUS ${IS_MINGW32})
   MESSAGE(STATUS ${IS_MINGW64})

@@ -10,8 +10,8 @@
 #include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
 /* Will be used with new sundials version */
 //#include <sunlinsol/sunlinsol_klu.h>         /* Linear solver KLU */
-#include <sunlinsol/sunlinsol_spbcgs.h>
-#include <sunlinsol/sunlinsol_sptfqmr.h>
+#include <sunlinsol/sunlinsol_spgmr.h>      /* Scaled, Preconditioned, Generalized Minimum Residual iterative linear solver */
+#include <sunlinsol/sunlinsol_spbcgs.h>     /* Scaled, Preconditioned, Bi-Conjugate Gradient, Stabilized iterative linear solver */
 
 int KINLapackCompletePivoting(void* kinmem, int N);
 static int KINLapackCompletePivotingInit(KINMem kin_mem);

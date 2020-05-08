@@ -28,9 +28,6 @@
 #include <Solver/Kinsol/KinsolLapack.h>
 #include <Solver/Kinsol/Kinsol.h>
 #include <Solver/Kinsol/KinsolSettings.h>
-#if defined(__TRICORE__)
-#include <include/kinsol/kinsol.h>          /* TODO AHeu: Duplicate or not enough? */
-#endif
 
 //#include <Core/Utils/numeric/bindings/lapack/driver/gesv.hpp>
 #include <Core/Utils/numeric/bindings/ublas.hpp>
@@ -538,7 +535,6 @@ void Kinsol::solve()
         _fScale[i] = 1.0;
 
     /* Free linear solver and initialize linear solver */
-    // TODO AHeu: Reset _Kin_ySolver?
     idid = SUNLinSolFree(_Kin_linSol);
     if (check_flag(&idid, (char *)"SUNLinSolFree", 1))
         throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::solve()");

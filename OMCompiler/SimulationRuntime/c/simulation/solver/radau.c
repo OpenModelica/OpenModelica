@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -364,13 +364,14 @@ static void freeImOde(NLPODE *nlp, int N) {
  */
 static void freeKinsol(KDATAODE* kData)
 {
-  N_VDestroy(kData->x);        /* TODO: Or was N_VDestroy_Serial correct? It won't free internal data */
-  N_VDestroy(kData->sVars);
-  N_VDestroy(kData->sEqns);
-  N_VDestroy(kData->c);
+  N_VDestroy_Serial(kData->x);
+  N_VDestroy_Serial(kData->sVars);
+  N_VDestroy_Serial(kData->sEqns);
+  N_VDestroy_Serial(kData->c);
+  N_VDestroy_Serial(kData->y);
 
   SUNMatDestroy(kData->J);
-  N_VDestroy(kData->y);
+  SUNLinSolFree(kData->linSol);
 
   KINFree(&kData->kin_mem);
 }
@@ -452,53 +453,56 @@ int kinsolOde(SOLVER_INFO* solverInfo)  /* TODO: Unify this function with nlsKin
 
   do {
     kinsol_flag = KINSol(kData->kin_mem,        /* KINSol memory block */
-                  kData->x,              /* initial guess on input; solution vector */
-                  kData->glstr,          /* global strategy choice */
-                  kData->sVars,          /* scaling vector for variable x */
-                  kData->sEqns           /* scaling vector for residual eqns */
-                  );
+                         kData->x,              /* initial guess on input; solution vector */
+                         kData->glstr,          /* global strategy choice */
+                         kData->sVars,          /* scaling vector for variable x */
+                         kData->sEqns           /* scaling vector for residual eqns */
+                         );
 
     if (kinsol_flag < 0) {
-      switch (kinOde->lsMethod) { /* TODO: Is changing the linear solver even a good idea? */
+      switch (kinOde->lsMethod) {
       case IMPRK_LS_ITERATIVE:
         if (retries == 0) {
-          SUNLinSolFree(kData->linSol);
-          if (kData->J != NULL) {
-            throwStreamPrint(NULL, "Jacobian pointer is not NULL but should be!");
-          }
+          /* Change from matrix-free to dense linear solver */
+          flag = SUNLinSolFree(kData->linSol);
+          checkReturnFlag_SUNDIALS(flag, SUNDIALS_SUNLS_FLAG, "SUNLinSolFree");
+          SUNMatDestroy(kData->J);
+
           kData->J = SUNDenseMatrix(kinOde->N*kinOde->nlp->nStates, kinOde->N*kinOde->nlp->nStates);
           kData->linSol = SUNLinSol_Dense(kData->y, kData->J);
           flag = KINSetLinearSolver(kData->kin_mem, kData->linSol, kData->J);
           checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetLinearSolver");
           use_dense = TRUE;
-          warningStreamPrint(
-              LOG_SOLVER, 0,
-              "Restart Kinsol: change linear solver to KINDense.");
-#if 0
-        /* TODO AHeu: Do something with this... */
+          warningStreamPrint(LOG_SOLVER, 0, "Restart Kinsol: Change linear solver to SUNLinSol_Dense.");
         } else if (retries == 1) {
-          KINSptfqmr(kinOde->kData->kin_mem, kinOde->N * kinOde->nlp->nStates); /* TODO: Is now part of spgmr */
+          /* Change from dense linear solver to SPTFQMR*/
+          flag = SUNLinSolFree(kData->linSol);
+          checkReturnFlag_SUNDIALS(flag, SUNDIALS_SUNLS_FLAG, "SUNLinSolFree");
+
+          kData->linSol = SUNLinSol_SPTFQMR(kData->y, PREC_NONE, 5 /* default value */);
+          flag = KINSetLinearSolver(kData->kin_mem, kData->linSol, NULL);
+          checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetLinearSolver");
           use_dense = FALSE;
-          warningStreamPrint(
-              LOG_SOLVER, 0,
-              "Restart Kinsol: change linear solver to KINSptfqmr.");
+          warningStreamPrint(LOG_SOLVER, 0, "Restart Kinsol: change linear solver to SUNLinSol_SPTFQMR.");
         } else if (retries == 2) {
-          KINSpbcg(kinOde->kData->kin_mem, kinOde->N * kinOde->nlp->nStates);
+          /* Change from SPTFQMR solver to SPBCG*/
+          flag = SUNLinSolFree(kData->linSol);
+          checkReturnFlag_SUNDIALS(flag, SUNDIALS_SUNLS_FLAG, "SUNLinSolFree");
+
+          kData->linSol = SUNLinSol_SPBCGS(kData->y, PREC_NONE, 5 /* default value */);
+          flag = KINSetLinearSolver(kData->kin_mem, kData->linSol, NULL);
+          checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetLinearSolver");
           use_dense = FALSE;
-          warningStreamPrint(
-              LOG_SOLVER, 0,
-              "Restart Kinsol: change linear solver to KINSpbcg.");
-#endif
+          warningStreamPrint(LOG_SOLVER, 0, "Restart Kinsol: change linear solver to SUNLinSol_SPBCGS.");
         } else {
+          /* Give up */
           try_again = FALSE;
         }
         break;
       case IMPRK_LS_DENSE:
         use_dense = TRUE;
         if (retries == 1) {
-          warningStreamPrint(
-              LOG_SOLVER, 0,
-              "Restart Kinsol: change KINSOL strategy to basic newton iteration.");
+          warningStreamPrint(LOG_SOLVER, 0, "Restart Kinsol: change KINSOL strategy to basic newton iteration.");
           kinOde->kData->glstr = KIN_NONE;    /* Switch to basic newton iteration */
         } else {
           try_again = FALSE;

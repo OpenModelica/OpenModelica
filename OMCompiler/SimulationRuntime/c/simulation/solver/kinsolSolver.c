@@ -434,7 +434,7 @@ static void setJacElementKluSparse(int row, int col, double value, int nth,
  *
  * @param A   CSC matrix
  */
-static void finishSparseColPtr(SUNMatrix A) {
+static void finishSparseColPtr(SUNMatrix A, int nnz) {
   int i;
 
   /* TODO: Remove this check for performance reasons? */
@@ -445,7 +445,7 @@ static void finishSparseColPtr(SUNMatrix A) {
   }
 
   /* Set last value of indexptrs to nnz */
-  SM_INDEXPTRS_S(A)[SM_COLUMNS_S(A)] = SM_NNZ_S(A);
+  SM_INDEXPTRS_S(A)[SM_COLUMNS_S(A)] = nnz;
 
   /* Check for empty rows */
   for (i = 1; i < SM_COLUMNS_S(A) + 1; ++i) {
@@ -556,9 +556,12 @@ static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   /* Debug print */
   if (ACTIVE_STREAM(LOG_NLS_JAC)) {
     infoStreamPrint(LOG_NLS_JAC, 1, "##KINSOL## Sparse Matrix.");
-    SUNSparseMatrix_Print(Jac, stdout); /* TODO: Print in LOG_NLS_JAC */
+    SUNSparseMatrix_Print(Jac, stdout);
     nlsKinsolJacSumSparse(Jac);
     messageClose(LOG_NLS_JAC);
+  }
+  if (ACTIVE_STREAM(LOG_DEBUG)) {
+    sundialsPrintSparseMatrix(Jac, "A", LOG_JAC);
   }
 
   /* performance measurement and statistics */
@@ -662,7 +665,7 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   }
 
   /* Finish sparse matrix and do a cheap check for singularity */
-  finishSparseColPtr(Jac);
+  finishSparseColPtr(Jac, nnz);
 
   /* Debug print */
   if (ACTIVE_STREAM(LOG_NLS_JAC)) {
@@ -695,11 +698,10 @@ static void nlsKinsolJacSumDense(SUNMatrix A) {
   for (i = 0; i < SM_ROWS_D(A); ++i) {
     sum = 0.0;
     for (j = 0; j < SM_COLUMNS_D(A); ++j) {
-      sum += fabs(SM_ELEMENT_D(A, j, i)); /* TODO: Or A(i,j)? */
+      sum += fabs(SM_ELEMENT_D(A, j, i)); /* TODO AHeu: Or A(i,j)? */
     }
 
-    if (sum ==
-        0.0) { /* TODO: Don't check for equality(!), maybe use DBL_EPSILON */
+    if (sum == 0.0) { /* TODO: Don't check for equality(!), maybe use DBL_EPSILON */
       warningStreamPrint(LOG_NLS_V, 0,
                          "Column %d of Jacobian is zero. Jacobian is singular.",
                          i);
@@ -737,8 +739,7 @@ static void nlsKinsolJacSumSparse(SUNMatrix A) {
       sum += fabs(SM_DATA_S(A)[j]);
     }
 
-    if (sum ==
-        0.0) { /* TODO: Don't check for equality(!), maybe use DBL_EPSILON */
+    if (sum == 0.0) { /* TODO: Don't check for equality(!), maybe use DBL_EPSILON */
       warningStreamPrint(LOG_NLS_V, 0,
                          "Column %d of Jacobian is zero. Jacobian is singular.",
                          i);
@@ -1189,7 +1190,7 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber) {
   /* Solve nonlinear system with KINSol() */
   do {
 
-      /* TODO: Is this still true?
+      /* TODO AHeu: Is this still true? */
       /* It seems if we don't free KINSol on every iteration, it leaks memory.
        * But if we reset KINSol, it takes an enormous amount of time...
        */

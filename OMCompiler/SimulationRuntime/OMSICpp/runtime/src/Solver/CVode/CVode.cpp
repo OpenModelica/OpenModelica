@@ -108,7 +108,7 @@ Cvode::~Cvode()
         N_VDestroy_Serial(_CV_y);
         N_VDestroy_Serial(_CV_yWrite);
         N_VDestroy_Serial(_CV_absTol);
-        N_VDestroy(_CV_ySolver);
+        N_VDestroy_Serial(_CV_ySolver);
         SUNMatDestroy(_CV_J);
         SUNLinSolFree(_CV_linSol);
         CVodeFree(&_cvodeMem);

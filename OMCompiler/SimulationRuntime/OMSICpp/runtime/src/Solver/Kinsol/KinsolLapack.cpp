@@ -36,7 +36,6 @@ int KINLapackCompletePivoting(void* kinmem, int N)
     kin_mem->kin_lsetup = KINLapackCompletePivotingSetup;
     kin_mem->kin_lsolve = KINLapackCompletePivotingSolve;
     kin_mem->kin_lfree = KINLapackCompletePivotingFree;
-    //kin_mem->kin_setupNonNull = SUNTRUE;
     linSysData* data = new linSysData();
     data->jac = new double[N * N];
     data->scale = new double[N];
