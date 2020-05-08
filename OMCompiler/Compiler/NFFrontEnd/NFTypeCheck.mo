@@ -68,9 +68,8 @@ import NFFunction.Function;
 import NFFunction.TypedArg;
 import NFFunction.FunctionMatchKind;
 import NFFunction.MatchedFunction;
-import NFCall.Call;
+import Call = NFCall;
 import BuiltinCall = NFBuiltinCall;
-import NFCall.CallAttributes;
 import ComponentRef = NFComponentRef;
 import ErrorExt;
 import NFBuiltin;
@@ -799,7 +798,7 @@ algorithm
   // Default constructors are not considered.
   if mk == MatchKind.EXACT then
     fn_ref := Function.instFunction(Absyn.CREF_IDENT("'constructor'", {}), scope, paramInfo2);
-    e2 := Expression.CALL(NFCall.UNTYPED_CALL(fn_ref, {exp2}, {}, scope));
+    e2 := Expression.CALL(Call.UNTYPED_CALL(fn_ref, {exp2}, {}, scope));
     (e2, ty, var) := Call.typeCall(e2, 0, paramInfo1);
     (_, _, mk) := matchTypes(paramType2, ty, e2, false);
 

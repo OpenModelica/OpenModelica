@@ -34,7 +34,7 @@ encapsulated package NFSimplifyExp
 import Expression = NFExpression;
 import Operator = NFOperator;
 import Type = NFType;
-import NFCall.Call;
+import Call = NFCall;
 import Subscript = NFSubscript;
 import NFOperator.Op;
 import NFPrefixes.Variability;

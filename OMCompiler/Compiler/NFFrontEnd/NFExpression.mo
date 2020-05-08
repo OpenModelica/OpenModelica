@@ -61,7 +61,7 @@ public
   import Dimension = NFDimension;
   import Type = NFType;
   import ComponentRef = NFComponentRef;
-  import NFCall.Call;
+  import Call = NFCall;
   import NFBinding.Binding;
   import NFComponent.Component;
   import NFClassTree.ClassTree;

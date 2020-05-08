@@ -36,7 +36,7 @@ import DAE.InlineType;
 import Dimension = NFDimension;
 import Expression = NFExpression;
 import Flags;
-import NFCall.Call;
+import Call = NFCall;
 import NFFunction.Function;
 import NFInstNode.InstNode;
 import Statement = NFStatement;
@@ -186,4 +186,3 @@ end getOutputExp;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFInline;
-

@@ -32,8 +32,8 @@
 encapsulated package NFBuiltinCall
   import Absyn;
   import AbsynUtil;
-  import NFCall.Call;
-  import NFCall.CallAttributes;
+  import Call = NFCall;
+  import NFCallAttributes;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import NFPrefixes.Variability;
@@ -665,7 +665,7 @@ protected
     list<TypedArg> args;
     TypedArg arg;
     InstNode fn_node;
-    CallAttributes ca;
+    NFCallAttributes ca;
   algorithm
     // edge may not be used in a function context.
     if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then

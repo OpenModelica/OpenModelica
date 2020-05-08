@@ -56,7 +56,7 @@ import Expression = NFExpression;
 import Flags;
 import Inst = NFInst;
 import List;
-import NFCall.Call;
+import Call = NFCall;
 import NFClass.Class;
 import NFClassTree.ClassTree;
 import NFComponent.Component;

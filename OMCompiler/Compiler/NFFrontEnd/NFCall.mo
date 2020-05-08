@@ -1,7 +1,7 @@
-/*
+ /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -29,12 +29,13 @@
  *
  */
 
-encapsulated package NFCall
+encapsulated uniontype NFCall
 
 import Absyn;
 import AbsynUtil;
 import DAE;
 import Expression = NFExpression;
+import NFCallAttributes;
 import NFInstNode.InstNode;
 import NFPrefixes.Variability;
 import Type = NFType;
@@ -47,6 +48,7 @@ import ComponentRef = NFComponentRef;
 import Config;
 import Dimension = NFDimension;
 import ErrorExt;
+import EvalFunction = NFEvalFunction;
 import Inline = NFInline;
 import Inst = NFInst;
 import List;
@@ -63,66 +65,18 @@ import NFFunction.TypedArg;
 import NFFunction.TypedNamedArg;
 import NFInstNode.CachedData;
 import NFTyping.ExpOrigin;
+import Operator = NFOperator;
 import Prefixes = NFPrefixes;
 import SCodeUtil;
+import Subscript = NFSubscript;
 import TypeCheck = NFTypeCheck;
 import Typing = NFTyping;
 import Util;
-import Subscript = NFSubscript;
-import Operator = NFOperator;
-import EvalFunction = NFEvalFunction;
-
-public
-  uniontype CallAttributes
-    record CALL_ATTR
-      Boolean tuple_ "tuple" ;
-      Boolean builtin "builtin Function call" ;
-      Boolean isImpure "if the function has prefix *impure* is true, else false";
-      Boolean isFunctionPointerCall;
-      DAE.InlineType inlineType;
-      DAE.TailCall tailCall "Input variables of the function if the call is tail-recursive";
-    end CALL_ATTR;
-
-    function toDAE
-      input CallAttributes attr;
-      input Type returnType;
-      output DAE.CallAttributes fattr;
-    algorithm
-      fattr := DAE.CALL_ATTR(Type.toDAE(returnType), attr.tuple_, attr.builtin,
-        attr.isImpure, attr.isFunctionPointerCall, attr.inlineType, attr.tailCall);
-    end toDAE;
-  end CallAttributes;
 
 protected
-  type ParameterTree = ParameterTreeImpl.Tree;
-
-  encapsulated package ParameterTreeImpl
-    import BaseAvlTree;
-    import Expression = NFExpression;
-
-    extends BaseAvlTree(redeclare type Key = String,
-                        redeclare type Value = Expression);
-
-    redeclare function extends keyStr
-    algorithm
-      outString := inKey;
-    end keyStr;
-
-    redeclare function extends valueStr
-    algorithm
-      outString := Expression.toString(inValue);
-    end valueStr;
-
-    redeclare function extends keyCompare
-    algorithm
-      outResult := stringCompare(inKey1, inKey2);
-    end keyCompare;
-
-    annotation(__OpenModelica_Interface="util");
-  end ParameterTreeImpl;
-
+  import NFCallParameterTree;
+  type ParameterTree = NFCallParameterTree.Tree;
 public
-uniontype Call
   record UNTYPED_CALL
     ComponentRef ref;
     list<Expression> arguments;
@@ -142,7 +96,7 @@ uniontype Call
     Type ty;
     Variability var;
     list<Expression> arguments;
-    CallAttributes attributes;
+    NFCallAttributes attributes;
   end TYPED_CALL;
 
   record UNTYPED_ARRAY_CONSTRUCTOR
@@ -199,7 +153,7 @@ uniontype Call
     output Type ty;
     output Variability var;
   protected
-    Call call, ty_call;
+    NFCall call, ty_call;
     list<Expression> args;
     ComponentRef cref;
   algorithm
@@ -218,8 +172,8 @@ uniontype Call
             if isRecordConstructor(ty_call) then
               outExp := toRecordExpression(ty_call, ty);
             else
-              if Function.hasUnboxArgs(Call.typedFunction(ty_call)) then
-                outExp := Expression.CALL(Call.unboxArgs(ty_call));
+              if Function.hasUnboxArgs(typedFunction(ty_call)) then
+                outExp := Expression.CALL(unboxArgs(ty_call));
               else
                 outExp := Expression.CALL(ty_call);
               end if;
@@ -270,7 +224,7 @@ uniontype Call
   end typeCall;
 
   function typeNormalCall
-    input output Call call;
+    input output NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
   algorithm
@@ -298,11 +252,11 @@ uniontype Call
     input list<Expression> args;
     input Variability variability;
     input Type returnType = fn.returnType;
-    output Call call;
+    output NFCall call;
   protected
-    CallAttributes ca;
+    NFCallAttributes ca;
   algorithm
-    ca := CallAttributes.CALL_ATTR(
+    ca := NFCallAttributes.CALL_ATTR(
       Type.isTuple(returnType),
       Function.isBuiltin(fn),
       Function.isImpure(fn),
@@ -315,7 +269,7 @@ uniontype Call
   end makeTypedCall;
 
   function unboxArgs
-    input output Call call;
+    input output NFCall call;
   algorithm
     () := match call
       case TYPED_CALL()
@@ -327,18 +281,18 @@ uniontype Call
   end unboxArgs;
 
   function typeMatchNormalCall
-    input output Call call;
+    input output NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
   protected
-    Call argtycall;
+    NFCall argtycall;
   algorithm
     argtycall := typeNormalCall(call, origin, info);
     call := matchTypedNormalCall(argtycall, origin, info);
   end typeMatchNormalCall;
 
   function matchTypedNormalCall
-    input output Call call;
+    input output NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
   protected
@@ -399,7 +353,7 @@ uniontype Call
   end matchTypedNormalCall;
 
   function typeOf
-    input Call call;
+    input NFCall call;
     output Type ty;
   algorithm
     ty := match call
@@ -411,7 +365,7 @@ uniontype Call
   end typeOf;
 
   function setType
-    input output Call call;
+    input output NFCall call;
     input Type ty;
   algorithm
     call := match call
@@ -422,7 +376,7 @@ uniontype Call
   end setType;
 
   function variability
-    input Call call;
+    input NFCall call;
     output Variability var;
   algorithm
     var := match call
@@ -466,8 +420,8 @@ uniontype Call
   end variability;
 
   function compare
-    input Call call1;
-    input Call call2;
+    input NFCall call1;
+    input NFCall call2;
     output Integer comp;
   algorithm
     comp := match (call1, call2)
@@ -490,7 +444,7 @@ uniontype Call
   end compare;
 
   function isExternal
-    input Call call;
+    input NFCall call;
     output Boolean isExternal;
   algorithm
     isExternal := match call
@@ -502,7 +456,7 @@ uniontype Call
   end isExternal;
 
   function isImpure
-    input Call call;
+    input NFCall call;
     output Boolean isImpure;
   algorithm
     isImpure := match call
@@ -513,7 +467,7 @@ uniontype Call
   end isImpure;
 
   function isRecordConstructor
-    input Call call;
+    input NFCall call;
     output Boolean isConstructor;
   algorithm
     isConstructor := match call
@@ -526,18 +480,18 @@ uniontype Call
   end isRecordConstructor;
 
   function inlineType
-    input Call call;
+    input NFCall call;
     output DAE.InlineType inlineTy;
   algorithm
     inlineTy := match call
-      case TYPED_CALL(attributes = CallAttributes.CALL_ATTR(inlineType = inlineTy))
+      case TYPED_CALL(attributes = NFCallAttributes.CALL_ATTR(inlineType = inlineTy))
         then inlineTy;
       else DAE.InlineType.NO_INLINE();
     end match;
   end inlineType;
 
   function typedFunction
-    input Call call;
+    input NFCall call;
     output Function fn;
   algorithm
     fn := match call
@@ -553,7 +507,7 @@ uniontype Call
   end typedFunction;
 
   function functionName
-    input Call call;
+    input NFCall call;
     output Absyn.Path name;
   algorithm
     name := match call
@@ -568,7 +522,7 @@ uniontype Call
   end functionName;
 
   function arguments
-    input Call call;
+    input NFCall call;
     output list<Expression> arguments;
   algorithm
     arguments := match call
@@ -578,7 +532,7 @@ uniontype Call
   end arguments;
 
   function toRecordExpression
-    input Call call;
+    input NFCall call;
     input Type ty;
     output Expression exp;
   algorithm
@@ -596,7 +550,7 @@ uniontype Call
   end toRecordExpression;
 
   function toString
-    input Call call;
+    input NFCall call;
     output String str;
   protected
     String name, arg_str,c;
@@ -669,7 +623,7 @@ uniontype Call
   end toString;
 
   function toFlatString
-    input Call call;
+    input NFCall call;
     output String str;
   protected
     String name, arg_str,c;
@@ -721,7 +675,7 @@ uniontype Call
 
   function typedString
     "Like toString, but prefixes each argument with its type as a comment."
-    input Call call;
+    input NFCall call;
     output String str;
   protected
     String name, arg_str,c;
@@ -754,7 +708,7 @@ uniontype Call
   end typedString;
 
   function toDAE
-    input Call call;
+    input NFCall call;
     output DAE.Exp daeCall;
   algorithm
     daeCall := match call
@@ -766,7 +720,7 @@ uniontype Call
         then DAE.CALL(
           Function.nameConsiderBuiltin(call.fn),
           list(Expression.toDAE(e) for e in call.arguments),
-          CallAttributes.toDAE(call.attributes, call.ty));
+          NFCallAttributes.toDAE(call.attributes, call.ty));
 
       case TYPED_ARRAY_CONSTRUCTOR()
         algorithm
@@ -810,7 +764,7 @@ uniontype Call
   end toDAE;
 
   function isVectorizeable
-    input Call call;
+    input NFCall call;
     output Boolean isVect;
   algorithm
     isVect := match call
@@ -830,7 +784,7 @@ uniontype Call
   end isVectorizeable;
 
   function retype
-    input output Call call;
+    input output NFCall call;
   algorithm
     () := match call
       local
@@ -857,7 +811,7 @@ uniontype Call
     input output Expression callExp;
     input Type ty;
   protected
-    Call call;
+    NFCall call;
     Type cast_ty;
   algorithm
     Expression.CALL(call = call) := callExp;
@@ -1049,7 +1003,7 @@ protected
   end instIterators;
 
   function typeArrayConstructor
-    input output Call call;
+    input output NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
           output Type ty;
@@ -1105,7 +1059,7 @@ protected
   end typeArrayConstructor;
 
   function typeReduction
-    input output Call call;
+    input output NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
           output Type ty;
@@ -1230,7 +1184,7 @@ protected
         case "listReverse" then NONE();
 
         else
-          SOME(Expression.CALL(Call.makeTypedCall(reductionFn,
+          SOME(Expression.CALL(makeTypedCall(reductionFn,
             {reductionFoldIterator(foldId, reductionType),
              reductionFoldIterator(resultId, reductionType)},
             reductionVar, reductionType)));
@@ -1248,7 +1202,7 @@ protected
   end reductionFoldIterator;
 
   function typeArgs
-    input output Call call;
+    input output NFCall call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
   algorithm
@@ -1288,7 +1242,7 @@ protected
   end typeArgs;
 
   function checkMatchingFunctions
-    input Call call;
+    input NFCall call;
     input SourceInfo info;
     output MatchedFunction matchedFunc;
   protected
@@ -1381,11 +1335,11 @@ protected
   end iteratorToDAE;
 
   function vectorizeCall
-    input Call base_call;
+    input NFCall base_call;
     input FunctionMatchKind mk;
     input InstNode scope;
     input SourceInfo info;
-    output Call vectorized_call;
+    output NFCall vectorized_call;
   protected
     Type ty, vect_ty;
     Expression exp;
@@ -1443,7 +1397,7 @@ protected
   end vectorizeCall;
 
   function isVectorized
-    input Call call;
+    input NFCall call;
     output Boolean vectorized;
   algorithm
     vectorized := match call
@@ -1459,8 +1413,8 @@ protected
     "Transforms a vectorized call into a non-vectorized one. This function is
      used as a helper to output valid flat Modelica, and should probably not
      be used where e.g. correct types are required."
-    input Call call;
-    output Call outCall;
+    input NFCall call;
+    output NFCall outCall;
   protected
     Expression exp, iter_exp;
     list<tuple<InstNode, Expression>> iters;
@@ -1616,7 +1570,6 @@ protected
           fail();
     end match;
   end getSpecialReturnType;
-end Call;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFCall;

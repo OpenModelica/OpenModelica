@@ -77,7 +77,7 @@ import ExecStat.{execStat,execStatReset};
 import SCodeDump;
 import SCodeUtil;
 import System;
-import NFCall.Call;
+import Call = NFCall;
 import Absyn.Path;
 import NFClassTree.ClassTree;
 import NFSections.Sections;

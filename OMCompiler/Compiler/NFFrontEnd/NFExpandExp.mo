@@ -37,7 +37,8 @@ protected
   import ExpressionIterator = NFExpressionIterator;
   import Subscript = NFSubscript;
   import Type = NFType;
-  import NFCall.Call;
+  import Call = NFCall;
+  import NFCallAttributes;
   import Dimension = NFDimension;
   import ComponentRef = NFComponentRef;
   import NFFunction.Function;
@@ -349,7 +350,7 @@ public
     Function fn;
     Type ty;
     Variability var;
-    NFCall.CallAttributes attr;
+    NFCallAttributes attr;
     Expression arg;
     list<Expression> args, expl;
   algorithm
@@ -365,7 +366,7 @@ public
     input Function fn;
     input Type ty;
     input Variability var;
-    input NFCall.CallAttributes attr;
+    input NFCallAttributes attr;
   algorithm
     exp := match exp
       local

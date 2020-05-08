@@ -43,7 +43,6 @@ import NFClass.Class;
 import NFComponent.Component;
 import Dimension = NFDimension;
 import Expression = NFExpression;
-import NFExpression.CallAttributes;
 import NFInstNode.InstNode;
 import NFInstNode.InstNodeType;
 import Type = NFType;

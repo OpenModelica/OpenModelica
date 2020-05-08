@@ -40,7 +40,7 @@ import NFInstNode.InstNode;
 import Operator = NFOperator;
 import NFOperator.Op;
 import Typing = NFTyping;
-import NFCall.Call;
+import Call = NFCall;
 import Dimension = NFDimension;
 import Type = NFType;
 import NFTyping.ExpOrigin;

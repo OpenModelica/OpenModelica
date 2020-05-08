@@ -44,7 +44,7 @@ protected
   import NFComponent.Component;
   import NFBinding.Binding;
   import Expression = NFExpression;
-  import NFCall.Call;
+  import Call = NFCall;
   import SCodeUtil;
 
 public

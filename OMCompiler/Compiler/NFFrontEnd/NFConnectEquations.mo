@@ -55,7 +55,7 @@ import NFPrefixes.ConnectorType;
 import NFPrefixes.Variability;
 import Operator = NFOperator;
 import Type = NFType;
-import NFCall.Call;
+import Call = NFCall;
 import NFBuiltinFuncs;
 import NFInstNode.InstNode;
 import NFClass.Class;

@@ -25,7 +25,7 @@ import HashTableCrToUnit = NFHashTableCrToUnit;
 import HashTableStringToUnit = NFHashTableStringToUnit;
 import HashTableUnitToString = NFHashTableUnitToString;
 import NFBinding.Binding;
-import NFCall.Call;
+import Call = NFCall;
 import NFComponent.Component;
 import NFFunction.Function;
 import NFInstNode.InstNode;
@@ -1151,4 +1151,3 @@ end parse;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFUnitCheck;
-

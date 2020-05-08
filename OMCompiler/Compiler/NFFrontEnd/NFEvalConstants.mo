@@ -45,7 +45,6 @@ import Sections = NFSections;
 import NFBinding.Binding;
 import Variable = NFVariable;
 import Algorithm = NFAlgorithm;
-import NFCall.Call;
 import NFEquation.Branch;
 import Dimension = NFDimension;
 

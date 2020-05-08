@@ -69,7 +69,7 @@ import Inst = NFInst;
 import InstUtil = NFInstUtil;
 import Lookup = NFLookup;
 import MatchKind = NFTypeCheck.MatchKind;
-import NFCall.Call;
+import Call = NFCall;
 import NFClassTree.ClassTree;
 import Subscript = NFSubscript;
 import TypeCheck = NFTypeCheck;

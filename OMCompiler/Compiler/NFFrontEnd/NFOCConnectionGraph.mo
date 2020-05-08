@@ -81,7 +81,7 @@ type FlatEdges = NFConnections.BrokenEdges
 protected
 import Absyn;
 import NFBuiltin;
-import NFCall.Call;
+import Call = NFCall;
 import NFClass.Class;
 import Dimension = NFDimension;
 import NFFunction.Function;
