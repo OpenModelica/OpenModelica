@@ -96,7 +96,11 @@ int om_curl_multi_download(void *urlPathList, int maxParallel)
       }
     }
     if (still_alive) {
+#if LIBCURL_VERSION_NUM >= 0x071c00 /* curl_multi_wait available since 7.28.0, not on CentOS el6 */
       curl_multi_wait(cm, NULL, 0, 1000, NULL);
+#else /* just sleep a bit */
+      sleep(2);
+#endif
     }
   } while (still_alive || !listEmpty(urlPathList));
 
