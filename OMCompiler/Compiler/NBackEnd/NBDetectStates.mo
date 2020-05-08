@@ -44,7 +44,7 @@ protected
 
   // New Frontend Imports
   import BackendExtension = NFBackendExtension;
-  import Call = NFCall.Call;
+  import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import Function = NFFunction;
@@ -190,7 +190,6 @@ protected
     derivatives := List.fold(acc_derivatives, function BVariable.VariablePointers.addVar(), derivatives);
 
     // add states to knowns and state pointer array
-    knowns := List.fold(acc_states, function BVariable.VariablePointers.addVar(), knowns);
     states := List.fold(acc_states, function BVariable.VariablePointers.addVar(), states);
 
     // remove states from unknowns and algebraics

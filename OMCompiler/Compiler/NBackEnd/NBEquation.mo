@@ -122,7 +122,7 @@ public
       The variable binding contains the equation, but this equation is also
       allowed to have a body for special cases."
       Pointer<Variable> auxiliary     "Corresponding auxiliary variable";
-      Option<Equation> body           "Optional body equation";
+      Option<Equation> body           "Optional body equation"; // -> Expression
     end AUX_EQUATION;
 
     record DUMMY_EQUATION
@@ -139,13 +139,13 @@ public
         case qualEq as ARRAY_EQUATION() then  str + "[ARRY] " + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
         case qualEq as SIMPLE_EQUATION() then str + "[SIMP] " + ComponentRef.toString(qualEq.lhs) + " = " + ComponentRef.toString(qualEq.rhs);
         case qualEq as RECORD_EQUATION() then str + "[RECD] " + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
-        case qualEq as ALGORITHM() then       str + "[ALGO] \n" + Algorithm.toString(qualEq.alg);
+        case qualEq as ALGORITHM() then       str + "[ALGO] algorithm\n" + Algorithm.toString(qualEq.alg, str + "[----] ");
         case qualEq as IF_EQUATION() then     str + IfEquationBody.toString(qualEq.body, str + "[----] ", "[-IF-] ");
         case qualEq as FOR_EQUATION() then    str + forEquationToString(qualEq.iter, qualEq.range, qualEq.body, "", str + "[----] ", "[FOR-] ");
         case qualEq as WHEN_EQUATION() then   str + WhenEquationBody.toString(qualEq.body, str + "[----] ", "[WHEN] ");
         case qualEq as AUX_EQUATION() then    str + "[AUX-] Auxiliary equation for " + Variable.toString(Pointer.access(qualEq.auxiliary));
         case qualEq as DUMMY_EQUATION() then  str + "[DUMY] Dummy equation.";
-        else                                  str + "[FAIL] Equation.toString failed!";
+        else                                  str + "[FAIL] " + getInstanceName() +  " failed!";
       end match;
     end toString;
 
@@ -468,7 +468,7 @@ public
         case ASSERT(condition = condition, message = message, level = level)  then str + "assert(" + Expression.toString(condition) + ", " + Expression.toString(message) + ", " + Expression.toString(level) + ")";
         case TERMINATE(message = message)                                     then str + "terminate(" + Expression.toString(message) + ")";
         case NORETCALL(exp = value)                                           then str + Expression.toString(value);
-                                                                              else str + "NBEquation.WhenStatement.toString failed.";
+                                                                              else str + getInstanceName() + " failed.";
       end match;
     end toString;
 
@@ -596,7 +596,7 @@ public
     protected
       Integer numberOfElements = ExpandableArray.getNumberOfElements(equations.eqArr);
     algorithm
-      str := StringUtil.headline_4(str + " EquationPointers (" + intString(numberOfElements) + ")") + "\n";
+      str := StringUtil.headline_4(str + " EquationPointers (" + intString(numberOfElements) + ")");
       for i in 1:numberOfElements loop
         str := str + "(" + intString(i) + ")" + Equation.toString(Pointer.access(ExpandableArray.get(i, equations.eqArr)), "\t") + "\n";
       end for;
@@ -732,7 +732,7 @@ public
             end if;
         then tmp;
 
-      else "NBEquation.EqData.toString failed!\n";
+      else getInstanceName() + " failed!\n";
       end match;
     end toString;
 

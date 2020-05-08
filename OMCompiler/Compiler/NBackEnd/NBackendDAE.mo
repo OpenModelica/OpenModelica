@@ -169,7 +169,7 @@ protected
 
         /* other cases should not occur up until now */
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerVariableData failed for " + Variable.toString(var)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Variable.toString(var)});
       then fail();
 
       end match;
@@ -198,14 +198,14 @@ protected
   function lowerVariable
     input output Variable var;
   protected
-    Option<DAE.VariableAttributes> attributes;
+    Option<BackendExtension.VariableAttributes> attributes;
     BackendExtension.VariableKind varKind;
   algorithm
     // ToDo! extract tearing select option
     try
-      attributes := ConvertDAE.convertVarAttributes(var.typeAttributes, var.ty, var.attributes);
+      attributes := BackendExtension.VariableAttributes.create(var.typeAttributes, var.ty, var.attributes, var.comment);
       varKind := lowerVariableKind(Variable.variability(var), attributes, var.ty);
-      var.backendinfo := BackendExtension.BACKEND_INFO(varKind, attributes, NONE());
+      var.backendinfo := BackendExtension.BACKEND_INFO(varKind, attributes);
 
       // This creates a cyclic dependency, be aware of that!
       var.name := lowerComponentReferenceInstNode(var.name, Pointer.create(var));
@@ -213,7 +213,7 @@ protected
       // Remove old type attribute information since it has been converted.
       var.typeAttributes := {};
     else
-      Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerVariable failed for " + Variable.toString(var)});
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Variable.toString(var)});
       fail();
     end try;
   end lowerVariable;
@@ -223,14 +223,14 @@ protected
       /* Consider toplevel inputs as known unless they are protected. Ticket #5591 */
       false := DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType, protection);"
     input Prefixes.Variability variability;
-    input Option<DAE.VariableAttributes> attributes;
+    input Option<BackendExtension.VariableAttributes> attributes;
     input Type ty;
     output BackendExtension.VariableKind varKind;
   algorithm
     varKind := match(variability, attributes, ty)
 
       // variable -> artificial state if it has stateSelect = StateSelect.always
-      case (NFPrefixes.Variability.CONTINUOUS, SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS()))), _)
+      case (NFPrefixes.Variability.CONTINUOUS, SOME(BackendExtension.VAR_ATTR_REAL(stateSelect = SOME(NFBackendExtension.StateSelect.ALWAYS))), _)
         guard(variability == NFPrefixes.Variability.CONTINUOUS)
         then BackendExtension.STATE(1, NONE(), false);
 
@@ -255,7 +255,7 @@ protected
       case (NFPrefixes.Variability.CONSTANT, _, _)                    then BackendExtension.CONSTANT();
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerVariableKind failed."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
       then fail();
     end match;
   end lowerVariableKind;
@@ -306,7 +306,7 @@ protected
 
           else
             algorithm
-              Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerEquationData failed for \n" + Equation.toString(Pointer.access(eq))});
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Equation.toString(Pointer.access(eq))});
           then fail();
         end match;
       end if;
@@ -418,16 +418,16 @@ protected
       // These have to be called inside a when equation body since they need
       // to get passed a condition from surrounding when equation.
       case FEquation.TERMINATE() algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerEquation failed for TERMINATE expression without condition:\n" + FEquation.toString(frontend_equation)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for TERMINATE expression without condition:\n" + FEquation.toString(frontend_equation)});
       then fail();
       case FEquation.REINIT() algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerEquation failed for REINIT expression without condition:\n" + FEquation.toString(frontend_equation)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for REINIT expression without condition:\n" + FEquation.toString(frontend_equation)});
       then fail();
       case FEquation.NORETCALL() algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerEquation failed for NORETCALL expression without condition:\n" + FEquation.toString(frontend_equation)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for NORETCALL expression without condition:\n" + FEquation.toString(frontend_equation)});
       then fail();
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerEquation failed for " + FEquation.toString(frontend_equation)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + FEquation.toString(frontend_equation)});
       then fail();
 
     end match;
@@ -453,7 +453,7 @@ protected
       then BEquation.IF_EQUATION(0, ifEqBody, source, attr);
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerIfEquation failed for " + FEquation.toString(frontend_equation)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + FEquation.toString(frontend_equation)});
       then fail();
 
     end match;
@@ -493,7 +493,7 @@ protected
       // We should never get an empty list here since the last condition has to
       // be TRUE. If-Equations have to have a plain else case for consistency!
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerIfEquationBody failed."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
       then fail();
 
     end match;
@@ -521,11 +521,11 @@ protected
 
       case FEquation.INVALID_BRANCH() algorithm
         // what to do with error message from invalid branch? Is that even needed?
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerIfBranch failed for invalid branch that should not exist outside of frontend."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for invalid branch that should not exist outside of frontend."});
       then fail();
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerIfBranch failed without proper error message."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed without proper error message."});
       then fail();
 
     end match;
@@ -575,7 +575,7 @@ protected
       then BEquation.WHEN_EQUATION(0, whenEqBody, source, attr);
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerWhenEquation failed for " + FEquation.toString(frontend_equation)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + FEquation.toString(frontend_equation)});
       then fail();
 
     end match;
@@ -602,7 +602,7 @@ protected
       then SOME(BEquation.WHEN_EQUATION_BODY(condition, stmts, lowerWhenEquationBody(rest)));
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerWhenEquationBody failed."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
       then fail();
 
     end match;
@@ -624,11 +624,11 @@ protected
 
       case FEquation.INVALID_BRANCH() algorithm
         // what to do with error message from invalid branch? Is that even needed?
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerWhenBranch failed for invalid branch that should not exist outside of frontend."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for invalid branch that should not exist outside of frontend."});
       then fail();
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerWhenBranch failed without proper error message."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed without proper error message."});
       then fail();
 
     end match;
@@ -756,7 +756,7 @@ protected
       cref := lowerComponentReferenceInstNode(cref, var);
     else
       if Flags.isSet(Flags.FAILTRACE) then
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerComponentReference failed for " + ComponentRef.toString(cref)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
       end if;
     end try;
   end lowerComponentReference;

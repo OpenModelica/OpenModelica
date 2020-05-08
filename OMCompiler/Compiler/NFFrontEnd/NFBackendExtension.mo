@@ -38,11 +38,22 @@ encapsulated package NFBackendExtension
 protected
   // OF imports
   import Absyn;
+  import AbsynUtil;
   import DAE;
+  import SCode;
+  import SCodeUtil;
+
   //NF imports
+  import NFBinding.Binding;
+  import NFComponent.Component;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
+  import NFPrefixes.Direction;
+  import NFInstNode.InstNode;
+  import NFPrefixes.Variability;
+  import Type = NFType;
   import Variable = NFVariable;
+
   // Util imports
   import Pointer;
 
@@ -51,8 +62,7 @@ public
     record BACKEND_INFO
       VariableKind varKind                          "Structural kind: state, algebraic...";
       // Merge Tearing Select to VariableAttributes?
-      Option<DAE.VariableAttributes> attributes     "values on built-in attributes";
-      Option<TearingSelect> tearingSelect           "value for TearingSelect";
+      Option<VariableAttributes> attributes     "values on built-in attributes";
     end BACKEND_INFO;
 
     function setVarKind
@@ -63,7 +73,7 @@ public
     end setVarKind;
   end BackendInfo;
 
-  constant BackendInfo DUMMY_BACKEND_INFO = BACKEND_INFO(FRONTEND_DUMMY(), NONE(), NONE());
+  constant BackendInfo DUMMY_BACKEND_INFO = BACKEND_INFO(FRONTEND_DUMMY(), NONE());
 
   uniontype VariableKind
     record ALGEBRAIC end ALGEBRAIC;
@@ -77,7 +87,7 @@ public
       Option<Pointer<Expression>> alias     "Optional alias state expression. Result of differentiating the state if existant!";
     end STATE_DER;
     record DUMMY_DER end DUMMY_DER;
-    record DUMMY_STATE end DUMMY_STATE;
+    record DUMMY_STATE end DUMMY_STATE; // ToDo: maybe dynamic state for dynamic state seleciton in index reduction
     record CLOCKED_STATE
       ComponentRef previousName             "the name of the previous variable";
       Boolean isStartFixed                  "is fixed at first clock tick";
@@ -105,6 +115,7 @@ public
     record OPT_LOOP_INPUT
       ComponentRef replaceCref;
     end OPT_LOOP_INPUT;
+    // ToDo maybe deprecated:
     record ALG_STATE        "algebraic state used by inline solver" end ALG_STATE;
     record ALG_STATE_OLD    "algebraic state old value used by inline solver" end ALG_STATE_OLD;
     record DAE_RESIDUAL_VAR "variable kind used for DAEmode" end DAE_RESIDUAL_VAR;
@@ -126,7 +137,7 @@ public
         case CLOCKED_STATE() then       "[CLCK]";
         case DISCRETE() then            "[DISC]";
         case DISCRETE_STATE() then      "[DSTA]";
-        case PREVIOUS() then            "[PREV]";
+        case PREVIOUS() then            "[PRE-]";
         case PARAMETER() then           "[PRMT]";
         case CONSTANT() then            "[CNST]";
         case EXTOBJ() then              "[EXTO]";
@@ -145,18 +156,508 @@ public
         case LOOP_ITERATION() then      "[LOOP]";
         case LOOP_SOLVED() then         "[INNR]";
         case FRONTEND_DUMMY() then      "[DUMY] Dummy Variable.";
-        else "[FAIL] NFBackendExtension.VariableKind.toString failed.";
+        else "[FAIL] " + getInstanceName() + " failed.";
       end match;
     end toString;
   end VariableKind;
 
-  uniontype TearingSelect
-    record NEVER end NEVER;
-    record AVOID end AVOID;
-    record DEFAULT end DEFAULT;
-    record PREFER end PREFER;
-    record ALWAYS end ALWAYS;
-  end TearingSelect;
+  uniontype VariableAttributes
+    record VAR_ATTR_REAL
+      Option<Expression> quantity             "quantity";
+      Option<Expression> unit                 "SI Unit for actual computation value";
+      Option<Expression> displayUnit          "SI Unit only for displaying";
+      Option<Expression> min                  "Lower boundry";
+      Option<Expression> max                  "Upper boundy";
+      Option<Expression> start                "start value";
+      Option<Expression> fixed                "fixed - true: default for parameter/constant, false - default for other variables";
+      Option<Expression> nominal              "nominal";
+      Option<StateSelect> stateSelect         "Priority to be selected as a state during index reduction";
+      Option<TearingSelect> tearingSelect     "Priority to be selected as an iteration variable during tearing";
+      Option<Uncertainty> uncertainty         "Attributes from data reconcilliation";
+      Option<Distribution> distribution       "ToDo: ???";
+      Option<Expression> binding              "A binding expression for certain types. E.G. parameters";
+      Option<Boolean> isProtected             "Defined in protected scope";
+      Option<Boolean> finalPrefix             "Defined as final";
+      Option<Expression> startOrigin          "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
+    end VAR_ATTR_REAL;
+
+    record VAR_ATTR_INT
+      Option<Expression> quantity             "quantity";
+      Option<Expression> min                  "Lower boundry";
+      Option<Expression> max                  "Upper boundy";
+      Option<Expression> start                "start value";
+      Option<Expression> fixed                "fixed - true: default for parameter/constant, false - default for other variables";
+      Option<Uncertainty> uncertainty         "Attributes from data reconcilliation";
+      Option<Distribution> distribution       "ToDo: ???";
+      Option<Expression> binding              "A binding expression for certain types. E.G. parameters";
+      Option<Boolean> isProtected             "Defined in protected scope";
+      Option<Boolean> finalPrefix             "Defined as final";
+      Option<Expression> startOrigin          "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
+    end VAR_ATTR_INT;
+
+    record VAR_ATTR_BOOL
+      Option<Expression> quantity             "quantity";
+      Option<Expression> start                "start value";
+      Option<Expression> fixed                "fixed - true: default for parameter/constant, false - default for other variables";
+      Option<Expression> binding              "A binding expression for certain types. E.G. parameters";
+      Option<Boolean> isProtected             "Defined in protected scope";
+      Option<Boolean> finalPrefix             "Defined as final";
+      Option<Expression> startOrigin          "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
+    end VAR_ATTR_BOOL;
+
+    record VAR_ATTR_CLOCK
+      Option<Boolean> isProtected             "Defined in protected scope";
+      Option<Boolean> finalPrefix             "Defined as final";
+    end VAR_ATTR_CLOCK;
+
+    record VAR_ATTR_STRING
+      "kabdelhak: why does string have quantity/start/fixed?"
+      Option<Expression> quantity             "quantity";
+      Option<Expression> start                "start value";
+      Option<Expression> fixed                "fixed - true: default for parameter/constant, false - default for other variables";
+      Option<Expression> binding              "A binding expression for certain types. E.G. parameters";
+      Option<Boolean> isProtected             "Defined in protected scope";
+      Option<Boolean> finalPrefix             "Defined as final";
+      Option<Expression> startOrigin          "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
+    end VAR_ATTR_STRING;
+
+    record VAR_ATTR_ENUMERATION
+      Option<Expression> quantity             "quantity";
+      Option<Expression> min                  "Lower boundry";
+      Option<Expression> max                  "Upper boundy";
+      Option<Expression> start                "start value";
+      Option<Expression> fixed                "fixed - true: default for parameter/constant, false - default for other variables";
+      Option<Expression> binding              "A binding expression for certain types. E.G. parameters";
+      Option<Boolean> isProtected             "Defined in protected scope";
+      Option<Boolean> finalPrefix             "Defined as final";
+      Option<Expression> startOrigin          "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
+    end VAR_ATTR_ENUMERATION;
+
+    function toString
+      "For usability this takes an option instead of the object itself."
+      input Option<VariableAttributes> optAttributes;
+      output String str;
+    protected
+      VariableAttributes attributes;
+    algorithm
+      if isSome(optAttributes) then
+        SOME(attributes) := optAttributes;
+        str := match attributes
+          local
+            VariableAttributes qual;
+          case qual as VAR_ATTR_REAL()
+            then "(" + attributesToString({("fixed", qual.fixed), ("start", qual.start), ("min", qual.min), ("max", qual.max), ("nominal", qual.nominal)}, qual.stateSelect, qual.tearingSelect) + ")";
+
+          case qual as VAR_ATTR_INT()
+            then "(" + attributesToString({("fixed", qual.fixed), ("start", qual.start), ("min", qual.min), ("max", qual.max)}, NONE(), NONE()) + ")";
+
+          case qual as VAR_ATTR_BOOL()
+            then "(" + attributesToString({("fixed", qual.fixed), ("start", qual.start)}, NONE(), NONE()) + ")";
+
+          case VAR_ATTR_CLOCK()
+            then "";
+
+          case qual as VAR_ATTR_STRING()
+            then "(" + attributesToString({("fixed", qual.fixed), ("start", qual.start)}, NONE(), NONE()) + ")";
+
+          case qual as VAR_ATTR_ENUMERATION()
+            then "(" + attributesToString({("fixed", qual.fixed), ("start", qual.start), ("min", qual.min), ("max", qual.max)}, NONE(), NONE()) + ")";
+
+          else "(" + getInstanceName() + " failed. Attribute string could not be created.)";
+        end match;
+      else
+        str := "";
+      end if;
+    end toString;
+
+    function create
+      input list<tuple<String, Binding>> attrs;
+      input Type ty;
+      input Component.Attributes compAttrs;
+      input Option<SCode.Comment> comment;
+      output Option<VariableAttributes> attributes;
+    protected
+      Boolean is_final;
+      Option<Boolean> is_final_opt;
+      Type elTy;
+      Boolean is_array = false;
+    algorithm
+      is_final := compAttrs.isFinal or
+                  compAttrs.variability == Variability.STRUCTURAL_PARAMETER;
+
+      if listEmpty(attrs) and not is_final then
+        // kabdelhak: i think we should create a default one here and do not have it as an option
+        // more robust in the backend than always checking for NONE() and having to interprete it
+        attributes := NONE();
+        return;
+      end if;
+
+      is_final_opt := SOME(is_final);
+
+      attributes := match Type.arrayElementType(ty)
+        case Type.REAL() then createReal(attrs, is_final_opt, comment);
+        case Type.INTEGER() then createInt(attrs, is_final_opt);
+        case Type.BOOLEAN() then createBool(attrs, is_final_opt);
+        case Type.STRING() then createString(attrs, is_final_opt);
+        case Type.ENUMERATION() then createEnum(attrs, is_final_opt);
+        else NONE();
+      end match;
+    end create;
+
+  protected
+    function attributesToString
+      input list<tuple<String, Option<Expression>>> tpl_lst;
+      input Option<StateSelect> stateSelect;
+      input Option<TearingSelect> tearingSelect;
+      output String str = "";
+    protected
+      list<String> buffer = {};
+      String name;
+    algorithm
+      for tpl in tpl_lst loop
+        buffer := attributeToString(tpl, buffer);
+      end for;
+
+      buffer := stateSelectString(stateSelect, buffer);
+      buffer := tearingSelectString(tearingSelect, buffer);
+
+      buffer := listReverse(buffer);
+
+      if not listEmpty(buffer) then
+        name :: buffer := buffer;
+        str := str + name;
+        for name in buffer loop
+          str := str + ", " + name;
+        end for;
+      end if;
+    end attributesToString;
+
+    function attributeToString
+      "Creates an optional string for an optional attribute."
+      input tuple<String, Option<Expression>> tpl;
+      input output list<String> buffer;
+    protected
+      String name;
+      Option<Expression> optAttr;
+      Expression attr;
+    algorithm
+      (name, optAttr) := tpl;
+      if isSome(optAttr) then
+        SOME(attr) := optAttr;
+        buffer := name + " = " + Expression.toString(attr) :: buffer;
+      end if;
+    end attributeToString;
+
+    function stateSelectString
+      input Option<StateSelect> optStateSelect;
+      input output list<String> buffer;
+    protected
+      StateSelect stateSelect;
+    algorithm
+      if isSome(optStateSelect) then
+        SOME(stateSelect) := optStateSelect;
+        buffer := match stateSelect
+          case StateSelect.NEVER then "StateSelect = never" :: buffer;
+          case StateSelect.AVOID then "StateSelect = avoid" :: buffer;
+          case StateSelect.DEFAULT then "StateSelect = default" :: buffer;
+          case StateSelect.PREFER then "StateSelect = prefer" :: buffer;
+          case StateSelect.ALWAYS then "StateSelect = always" :: buffer;
+        end match;
+      end if;
+    end stateSelectString;
+
+    function tearingSelectString
+      input Option<TearingSelect> optTearingSelect;
+      input output list<String> buffer;
+    protected
+      TearingSelect tearingSelect;
+    algorithm
+      if isSome(optTearingSelect) then
+        SOME(tearingSelect) := optTearingSelect;
+        buffer := match tearingSelect
+          case TearingSelect.NEVER then "TearingSelect = never" :: buffer;
+          case TearingSelect.AVOID then "TearingSelect = avoid" :: buffer;
+          case TearingSelect.DEFAULT then "TearingSelect = default" :: buffer;
+          case TearingSelect.PREFER then "TearingSelect = prefer" :: buffer;
+          case TearingSelect.ALWAYS then "TearingSelect = always" :: buffer;
+        end match;
+      end if;
+    end tearingSelectString;
+
+    function createReal
+      input list<tuple<String, Binding>> attrs;
+      input Option<Boolean> isFinal;
+      input Option<SCode.Comment> comment;
+      output Option<VariableAttributes> attributes;
+    protected
+      String name;
+      Binding b;
+      Option<Expression> quantity = NONE(), unit = NONE(), displayUnit = NONE();
+      Option<Expression> min = NONE(), max = NONE(), start = NONE(), fixed = NONE(), nominal = NONE();
+      Option<StateSelect> state_select = NONE();
+      Option<TearingSelect> tearing_select = NONE();
+    algorithm
+      for attr in attrs loop
+        (name, b) := attr;
+        print(name + " found!\n");
+        () := match name
+          case "displayUnit"    algorithm displayUnit := createAttribute(b); then ();
+          case "fixed"          algorithm fixed := createAttribute(b); then ();
+          case "max"            algorithm max := createAttribute(b); then ();
+          case "min"            algorithm min := createAttribute(b); then ();
+          case "nominal"        algorithm nominal := createAttribute(b); then ();
+          case "quantity"       algorithm quantity := createAttribute(b); then ();
+          case "start"          algorithm start := createAttribute(b); then ();
+          case "stateSelect"    algorithm state_select := createStateSelect(b); then ();
+          // TODO: VAR_ATTR_REAL has no field for unbounded.
+          case "unbounded"      then ();
+          case "unit"           algorithm unit := createAttribute(b); then ();
+
+          // The attributes should already be type checked, so we shouldn't get any
+          // unknown attributes here.
+          else
+            algorithm
+              Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+            then
+              fail();
+        end match;
+      end for;
+      tearing_select := createTearingSelect(comment);
+
+      attributes := SOME(VariableAttributes.VAR_ATTR_REAL(
+        quantity, unit, displayUnit, min, max, start, fixed, nominal,
+        state_select, tearing_select, NONE(), NONE(), NONE(), NONE(), isFinal, NONE()));
+    end createReal;
+
+    function createInt
+      input list<tuple<String, Binding>> attrs;
+      input Option<Boolean> isFinal;
+      output Option<VariableAttributes> attributes;
+    protected
+      String name;
+      Binding b;
+      Option<Expression> quantity = NONE(), min = NONE(), max = NONE();
+      Option<Expression> start = NONE(), fixed = NONE();
+    algorithm
+      for attr in attrs loop
+        (name, b) := attr;
+
+        () := match name
+          case "quantity" algorithm quantity := createAttribute(b); then ();
+          case "min"      algorithm min := createAttribute(b); then ();
+          case "max"      algorithm max := createAttribute(b); then ();
+          case "start"    algorithm start := createAttribute(b); then ();
+          case "fixed"    algorithm fixed := createAttribute(b); then ();
+
+          // The attributes should already be type checked, so we shouldn't get any
+          // unknown attributes here.
+          else
+            algorithm
+              Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+            then
+              fail();
+        end match;
+      end for;
+
+      attributes := SOME(VariableAttributes.VAR_ATTR_INT(
+        quantity, min, max, start, fixed,
+        NONE(), NONE(), NONE(), NONE(), isFinal, NONE()));
+    end createInt;
+
+    function createBool
+      input list<tuple<String, Binding>> attrs;
+      input Option<Boolean> isFinal;
+      output Option<VariableAttributes> attributes;
+    protected
+      String name;
+      Binding b;
+      Option<Expression> quantity = NONE(), start = NONE(), fixed = NONE();
+    algorithm
+      for attr in attrs loop
+        (name, b) := attr;
+
+        () := match name
+          case "quantity" algorithm quantity := createAttribute(b); then ();
+          case "start"    algorithm start := createAttribute(b); then ();
+          case "fixed"    algorithm fixed := createAttribute(b); then ();
+
+          // The attributes should already be type checked, so we shouldn't get any
+          // unknown attributes here.
+          else
+            algorithm
+              Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+            then
+              fail();
+        end match;
+      end for;
+
+      attributes := SOME(VariableAttributes.VAR_ATTR_BOOL(
+        quantity, start, fixed, NONE(), NONE(), isFinal, NONE()));
+    end createBool;
+
+    function createString
+      input list<tuple<String, Binding>> attrs;
+      input Option<Boolean> isFinal;
+      output Option<VariableAttributes> attributes;
+    protected
+      String name;
+      Binding b;
+      Option<Expression> quantity = NONE(), start = NONE(), fixed = NONE();
+    algorithm
+      for attr in attrs loop
+        (name, b) := attr;
+
+        () := match name
+          case "quantity" algorithm quantity := createAttribute(b); then ();
+          case "start"    algorithm start := createAttribute(b); then ();
+          case "fixed"    algorithm fixed := createAttribute(b); then ();
+
+          // The attributes should already be type checked, so we shouldn't get any
+          // unknown attributes here.
+          else
+            algorithm
+              Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+            then
+              fail();
+        end match;
+      end for;
+
+      attributes := SOME(VariableAttributes.VAR_ATTR_STRING(
+        quantity, start, fixed, NONE(), NONE(), isFinal, NONE()));
+    end createString;
+
+    function createEnum
+      input list<tuple<String, Binding>> attrs;
+      input Option<Boolean> isFinal;
+      output Option<VariableAttributes> attributes;
+    protected
+      String name;
+      Binding b;
+      Option<Expression> quantity = NONE(), min = NONE(), max = NONE();
+      Option<Expression> start = NONE(), fixed = NONE();
+    algorithm
+      for attr in attrs loop
+        (name, b) := attr;
+
+        () := match name
+          case "fixed"       algorithm fixed := createAttribute(b); then ();
+          case "max"         algorithm max := createAttribute(b); then ();
+          case "min"         algorithm min := createAttribute(b); then ();
+          case "quantity"    algorithm quantity := createAttribute(b); then ();
+          case "start"       algorithm start := createAttribute(b); then ();
+
+          // The attributes should already be type checked, so we shouldn't get any
+          // unknown attributes here.
+          else
+            algorithm
+              Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+            then
+              fail();
+        end match;
+      end for;
+
+      attributes := SOME(VariableAttributes.VAR_ATTR_ENUMERATION(
+        quantity, min, max, start, fixed, NONE(), NONE(), isFinal, NONE()));
+    end createEnum;
+
+    function createAttribute
+      input Binding binding;
+      output Option<Expression> attribute = SOME(Binding.getTypedExp(binding));
+    end createAttribute;
+
+    function createStateSelect
+      input Binding binding;
+      output Option<StateSelect> stateSelect;
+    protected
+      InstNode node;
+      String name;
+      Expression exp = Expression.getBindingExp(Binding.getTypedExp(binding));
+    algorithm
+      name := match exp
+        case Expression.ENUM_LITERAL() then exp.name;
+        case Expression.CREF(cref = ComponentRef.CREF(node = node)) then InstNode.name(node);
+        else
+          algorithm
+            Error.assertion(false, getInstanceName() +
+              " got invalid StateSelect expression " + Expression.toString(exp), sourceInfo());
+          then
+            fail();
+      end match;
+
+      stateSelect := SOME(lookupStateSelectMember(name));
+    end createStateSelect;
+
+    function createTearingSelect
+      "tearingSelect is an annotation and has to be extracted from the comment."
+      input Option<SCode.Comment> optComment;
+      output Option<TearingSelect> tearingSelect;
+    protected
+      SCode.Annotation anno;
+      Absyn.Exp val;
+      String name;
+    algorithm
+      try
+        SOME(SCode.COMMENT(annotation_=SOME(anno))) := optComment;
+        val := SCodeUtil.getNamedAnnotation(anno, "tearingSelect");
+        name := AbsynUtil.crefIdent(AbsynUtil.expCref(val));
+        tearingSelect := SOME(lookupTearingSelectMember(name));
+      else
+        tearingSelect := NONE();
+      end try;
+    end createTearingSelect;
+
+    function lookupStateSelectMember
+      input String name;
+      output StateSelect stateSelect;
+    algorithm
+      stateSelect := match name
+        case "never" then StateSelect.NEVER;
+        case "avoid" then StateSelect.AVOID;
+        case "default" then StateSelect.DEFAULT;
+        case "prefer" then StateSelect.PREFER;
+        case "always" then StateSelect.ALWAYS;
+        else
+          algorithm
+            Error.assertion(false, getInstanceName() + " got unknown StateSelect literal " + name, sourceInfo());
+          then
+            fail();
+      end match;
+    end lookupStateSelectMember;
+
+    function lookupTearingSelectMember
+      input String name;
+      output StateSelect stateSelect;
+    algorithm
+      stateSelect := match name
+        case "never" then TearingSelect.NEVER;
+        case "avoid" then TearingSelect.AVOID;
+        case "default" then TearingSelect.DEFAULT;
+        case "prefer" then TearingSelect.PREFER;
+        case "always" then TearingSelect.ALWAYS;
+        else
+          algorithm
+            Error.assertion(false, getInstanceName() + " got unknown TearingSelect literal " + name, sourceInfo());
+          then
+            fail();
+      end match;
+    end lookupTearingSelectMember;
+
+  end VariableAttributes;
+
+  constant VariableAttributes emptyVarAttrReal = VAR_ATTR_REAL(NONE(),NONE(),NONE(), NONE(), NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+  constant VariableAttributes emptyVarAttrBool = VAR_ATTR_BOOL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+
+  type StateSelect = enumeration(NEVER, AVOID, DEFAULT, PREFER, ALWAYS);
+  type TearingSelect = enumeration(NEVER, AVOID, DEFAULT, PREFER, ALWAYS);
+  type Uncertainty = enumeration(GIVEN, SOUGHT, REFINE);
+
+  uniontype Distribution
+    record DISTRIBUTION
+      Expression name;
+      Expression params;
+      Expression paramNames;
+    end DISTRIBUTION;
+  end Distribution;
 
     annotation(__OpenModelica_Interface="frontend");
 end NFBackendExtension;

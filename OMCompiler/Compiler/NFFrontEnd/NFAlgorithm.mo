@@ -147,9 +147,10 @@ public
 
   function toString
     input Algorithm alg;
+    input String indent = "";
     output String str;
   algorithm
-    str := Statement.toStringList(alg.statements);
+    str := Statement.toStringList(alg.statements, indent);
   end toString;
 
   annotation(__OpenModelica_Interface="frontend");

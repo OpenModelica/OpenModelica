@@ -82,7 +82,7 @@ public
     input Variable var;
     output String str;
   algorithm
-    str := VariableKind.toString(var.backendinfo.varKind) + " " + Variable.toString(var);
+    str := VariableKind.toString(var.backendinfo.varKind) + " " + Variable.toString(var) + " " + BackendExtension.VariableAttributes.toString(var.backendinfo.attributes);
   end toString;
 
   function fromCref
@@ -119,7 +119,7 @@ public
       case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer)) then varPointer;
       else algorithm
         if Flags.isSet(Flags.FAILTRACE) then
-          Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.Variables.getVarPointer failed for " + ComponentRef.toString(cref) + ", because of wrong InstNode (not VAR_NODE).
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + ", because of wrong InstNode (not VAR_NODE).
           Please use NBVariable.getVarSafe if it should not fail here."});
         end if;
       then fail();
@@ -159,7 +159,7 @@ public
     protected
       Pointer<Variable> var;
     algorithm
-       str := ExpandableArray.toString(variables.varArr, str + " VariablePointers", function Pointer.applyFold(func = function BVariable.toString()), false);
+       str := ExpandableArray.toString(variables.varArr, str + " Variables", function Pointer.applyFold(func = function BVariable.toString()), false);
     end toString;
 
     function empty
@@ -278,7 +278,7 @@ public
         true := ComponentRef.isEqual(cr, cref);
       else
         if Flags.isSet(Flags.FAILTRACE) then
-          Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.Variables.getVarSafe failed for " + ComponentRef.toString(cref)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
         end if;
         fail();
       end try;
@@ -303,18 +303,19 @@ public
       /* subset of full variable array */
       VariablePointers unknowns           "All state derivatives, algebraic variables,
                                           discrete variables";
-      VariablePointers knowns             "Parameters, constants";
+      VariablePointers knowns             "Parameters, constants, states";
       VariablePointers auxiliaries        "Variables created by the backend known to be solved
                                           by given binding. E.g. $cse";
       VariablePointers aliasVars          "Variables removed due to alias removal";
 
       /* subset of unknowns */
-      VariablePointers states             "States";
       VariablePointers derivatives        "State derivatives (der(x) -> $DER.x)";
       VariablePointers algebraics         "Algebraic variables";
       VariablePointers discretes          "Discrete variables";
       VariablePointers previous           "Previous discrete variables (pre(d) -> $PRE.d)";
+
       /* subset of knowns */
+      VariablePointers states             "States";
       VariablePointers parameters         "Parameters";
       VariablePointers constants          "Constants";
     end VAR_DATA_SIM;
@@ -410,7 +411,8 @@ public
         case qualVarData as VAR_DATA_SIM() algorithm
           tmp := StringUtil.headline_2("Variable Data Simulation") + "\n" +
             VariablePointers.toString(varData.unknowns, "Unknown") + "\n" +
-            VariablePointers.toString(varData.knowns, "Known") + "\n" +
+            VariablePointers.toString(varData.states, "Local Known") + "\n" +
+            VariablePointers.toString(varData.knowns, "Global Known") + "\n" +
             VariablePointers.toString(varData.auxiliaries, "Auxiliary") + "\n" +
             VariablePointers.toString(varData.aliasVars, "Alias") + "\n";
           if full then
@@ -508,7 +510,7 @@ public
 
   function setVariableAttributes
     input output Variable var;
-    input Option<DAE.VariableAttributes> variableAttributes;
+    input Option<BackendExtension.VariableAttributes> variableAttributes;
   algorithm
     var := match var
       local
@@ -567,7 +569,7 @@ public
       then ();
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.makeDerVar failed for " + ComponentRef.toString(cref)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
       then fail();
     end match;
   end makeDerVar;
@@ -587,11 +589,11 @@ public
             derVar := Pointer.access(derivative);
         then derVar.name;
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.getDerCref failed for " + ComponentRef.toString(cref) + " because of wrong variable kind."});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + " because of wrong variable kind."});
         then fail();
       end match;
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.getDerCref failed for " + ComponentRef.toString(cref) + " because of wrong InstNode type."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + " because of wrong InstNode type."});
       then fail();
     end match;
   end getDerCref;
@@ -630,7 +632,7 @@ public
       then ();
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.makePreVar failed for " + ComponentRef.toString(cref)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
       then fail();
     end match;
   end makePreVar;
@@ -650,11 +652,11 @@ public
             preVar := Pointer.access(previous);
         then preVar.name;
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.getPreCref failed for " + ComponentRef.toString(cref) + " because of wrong variable kind."});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + " because of wrong variable kind."});
         then fail();
       end match;
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBVariable.getPreCref failed for " + ComponentRef.toString(cref) + " because of wrong InstNode type."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + " because of wrong InstNode type."});
       then fail();
     end match;
   end getPreCref;
