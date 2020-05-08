@@ -551,7 +551,7 @@ static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
     }
   }
   /* Finish sparse matrix */
-  finishSparseColPtr(Jac);
+  finishSparseColPtr(Jac, sparsePattern->numberOfNoneZeros);
 
   /* Debug print */
   if (ACTIVE_STREAM(LOG_NLS_JAC)) {
@@ -599,7 +599,7 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   double *xScaling;
 
   long int i, j, ii;
-  int nth, nnz;
+  int nth;
 
   /* Access userData and nonlinear system data */
   kinsolUserData = (NLS_KINSOL_USERDATA *)userData;
@@ -618,7 +618,6 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   xScaling = NV_DATA_S(kinsolData->xScale);
 
   nth = 0;
-  nnz = sparsePattern->numberOfNoneZeros;
 
   /* performance measurement */
   rt_ext_tp_tick(&nlsData->jacobianTimeClock);
@@ -665,7 +664,7 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   }
 
   /* Finish sparse matrix and do a cheap check for singularity */
-  finishSparseColPtr(Jac, nnz);
+  finishSparseColPtr(Jac, sparsePattern->numberOfNoneZeros);
 
   /* Debug print */
   if (ACTIVE_STREAM(LOG_NLS_JAC)) {
