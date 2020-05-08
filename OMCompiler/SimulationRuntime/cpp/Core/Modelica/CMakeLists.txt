@@ -60,7 +60,7 @@ FUNCTION(prepareBoostVar targetVar releaseVar debugVar)
 		SET(targetVar_ ${debugVar})
 	ENDIF(CMAKE_BUILD_TYPE MATCHES "RELEASE")
 	GET_FILENAME_COMPONENT(${targetVar_} "${${targetVar_}}" NAME_WE)
-	STRING(REGEX REPLACE "^lib" "" ${targetVar_} ${${targetVar_}})
+	STRING(REGEX REPLACE "^lib" "" "${targetVar_}" "${${targetVar_}}")
 	SET(${targetVar} ${${targetVar_}} PARENT_SCOPE)
 ENDFUNCTION()
 
