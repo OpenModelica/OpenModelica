@@ -740,8 +740,8 @@ QString GUIMessages::getMessage(int type)
       return tr("<b>%1</b> <i>%2</i> already exists in <b>%3</b>.");
     case ITEM_ALREADY_EXISTS:
       return tr("An item with the same name already exists. Please try some other name.");
-    case OPENMODELICAHOME_NOT_FOUND:
-      return tr("Could not find environment variable OPENMODELICAHOME. Please make sure OpenModelica is installed properly.");
+    case INSTALLATIONDIRECTORY_NOT_FOUND:
+      return tr("Could not find installation directory path. Please make sure OpenModelica is installed properly.");
     case ERROR_OCCURRED:
       return tr("Following error has occurred.<br />%1");
     case ERROR_IN_TEXT:
