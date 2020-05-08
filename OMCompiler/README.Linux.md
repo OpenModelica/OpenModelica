@@ -3,8 +3,8 @@
 ## Debian/Ubuntu Compile Cheat Sheet (or read on for the full guide)
 
 ```bash
-echo deb http://build.openmodelica.org/apt precise nightly | sudo tee -a /etc/apt/sources.list
-echo deb-src http://build.openmodelica.org/apt precise nightly | sudo tee -a /etc/apt/sources.list
+echo deb http://build.openmodelica.org/apt bionic nightly | sudo tee -a /etc/apt/sources.list
+echo deb-src http://build.openmodelica.org/apt bionic nightly | sudo tee -a /etc/apt/sources.list
 sudo apt-get update
 sudo apt-get build-dep openmodelica
 git clone --recursive https://openmodelica.org/git-readonly/OpenModelica.git OpenModelica
