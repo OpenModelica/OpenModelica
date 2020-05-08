@@ -128,6 +128,77 @@ void errOutputIDA(int error_code, const char *module, const char *function,
   TRACE_POP
 }
 
+
+/**
+ * @brief Debug print function for CSC SunMatrix
+ *
+ * @param A           CSC SUNMatrix
+ * @param name        Name of matrix A
+ * @param logLevel    Stream to print output to
+ */
+static void idaPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel) {
+
+  int i;
+  long int columns, rows, nnz, np;
+  int lengthData, lengthIndexptrs;
+
+  double* data;
+  long int* indexvals;
+  long int* indexptrs;
+
+  assertStreamPrint(NULL, NULL != SM_DATA_S(A), "matrix data is NULL pointer");
+
+  if (SM_SPARSETYPE_S(A) != CSC_MAT) {
+    errorStreamPrint(LOG_STDOUT, 0,
+                     "In function idaPrintSparseMatrix: Wrong sparse format "
+                     "of SUNMatrix A%s.", name);
+  }
+
+  if (ACTIVE_STREAM(logLevel)) {
+    nnz = SUNSparseMatrix_NNZ(A);
+    np = SM_NP_S(A);
+    columns = SUNSparseMatrix_Columns(A);
+    rows = SUNSparseMatrix_Rows(A);
+
+    data = SM_DATA_S(A);
+    indexvals = SM_INDEXVALS_S(A);
+    indexptrs = SM_INDEXPTRS_S(A);
+
+    char *buffer = (char*)malloc(sizeof(char)*columns*20);
+
+    infoStreamPrint(logLevel, 1, "##IDA## Sparse Matrix %s", name);
+    infoStreamPrint(logLevel, 0, "Columns: N=%li, Rows: M=%li, CSC matrix, NNZ: %li, NP: %li", columns, rows, nnz, np);
+
+    /* Print data array */
+    lengthData = indexptrs[SUNSparseMatrix_NP(A)];
+    buffer[0] = 0;
+    for (i=0; i<lengthData-1; i++) {
+      sprintf(buffer, "%s%10g, ", buffer, data[i]);
+    }
+    sprintf(buffer, "%s%10g", buffer, data[lengthData-1]);
+    infoStreamPrint(logLevel, 0, "data = {%s}", buffer);
+
+    /* Print indexvals array */
+    buffer[0] = 0;
+    for (i=0; i<lengthData-1; i++) {
+      sprintf(buffer, "%s%li, ", buffer, indexvals[i]);
+    }
+    sprintf(buffer, "%s%li", buffer, indexvals[lengthData-1]);
+    infoStreamPrint(logLevel, 0, "indexvals = {%s}", buffer);
+
+    /* Print indexptrs array */
+    buffer[0] = 0;
+    for (i=0; i<SUNSparseMatrix_NP(A); i++) {
+      sprintf(buffer, "%s%li, ", buffer, indexptrs[i]);
+    }
+    sprintf(buffer, "%s%li", buffer, indexptrs[SUNSparseMatrix_NP(A)]);
+    infoStreamPrint(logLevel, 0, "indexvals = {%s}", buffer);
+
+    messageClose(logLevel);
+    free(buffer);
+  }
+}
+
 /**
  * @brief Initialize main IDA data.
  *
@@ -1613,17 +1684,13 @@ static void finishSparseColPtr(SUNMatrix A, int nnz)
 
   /* Check for empty rows */
   for (i = 1; i < SM_COLUMNS_S(A) + 1; ++i) {
-    if (SM_INDEXPTRS_S(A)[i] == SM_INDEXPTRS_S(A)[i - 1]) {
-      warningStreamPrint(LOG_STDOUT, 0,
-                         "##KINSOL## Jacobian row %d singular. See LOG_NLS for "
-                         "more information.",
-                         i);
-      SM_INDEXPTRS_S(A)[i] = SM_INDEXPTRS_S(A)[i - 1];
+    if (SM_INDEXPTRS_S(A)[i] == 0) {
+      SM_INDEXPTRS_S(A)[i] = SM_INDEXPTRS_S(A)[i-1];
     }
   }
 
   /* Set last value of indexptrs to nnz */
-  SM_INDEXPTRS_S(A)[SM_COLUMNS_S(A)] = SM_NNZ_S(A);
+  SM_INDEXPTRS_S(A)[SM_COLUMNS_S(A)] = nnz;
 }
 
 /*
@@ -1730,7 +1797,6 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
         while(nth < sparsePattern->leadindex[ii+1])
         {
           j  =  sparsePattern->index[nth];
-          //setJacElementKluSparse(j, ii, nth, (newdelta[j] - delta[j]) * delta_hh[ii], Jac, -1);
           /* use row scaling for jacobian elements */
           if (idaData->disableScaling == 1 || !omc_flag[FLAG_IDA_SCALING]){
             setJacElementKluSparse(j, ii, nth, (newdelta[j] - delta[j]) * delta_hh[ii], Jac, -1);
@@ -1839,16 +1905,19 @@ static int callSparseJacobian(double currentTime, double cj,
   }
 
   /* debug */
-  if (ACTIVE_STREAM(LOG_JAC)){
+  if (ACTIVE_STREAM(LOG_JAC)) {
     infoStreamPrint(LOG_JAC, 0, "##IDA## Sparse Matrix A.");
-    SUNSparseMatrix_Print(Jac, stdout); /* TODO: Use LOG_JAC stream */
+    SUNSparseMatrix_Print(Jac, stdout);
+  }
+  if (ACTIVE_STREAM(LOG_DEBUG)) {
+    idaPrintSparseMatrix(Jac, "A", LOG_JAC);
   }
 
   /* add cj to diagonal elements and store in Jac */
   if (idaData->tmpJac == NULL) {
     throwStreamPrint(threadData, "tmpJac is NULL");
   }
-  SUNMatZero(idaData->tmpJac);      /* TODO AHeu: Is this needed? Seems usefull to be on the safe side. */
+  SUNMatZero(idaData->tmpJac);
   if (!idaData->daeMode)
   {
     for (i=0; i < idaData->N; ++i){
@@ -1902,7 +1971,7 @@ static int getScalingFactors(DATA* data, IDA_SOLVER *idaData, SUNMatrix inScaleM
       if (idaData->NNZ < 0) {
         throwStreamPrint(NULL, "##IDA## idaData->NNZ not set.");
       }
-      scaleMatrix = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ, CSC_MAT);   /* TODO: Is NNZ initialized? */
+      scaleMatrix = SUNSparseMatrix(idaData->N, idaData->N, idaData->NNZ, CSC_MAT);
       callSparseJacobian(data->localData[0]->timeValue, 1.0, idaData->y, idaData->yp, rres,
                         scaleMatrix, idaData, tmp1, tmp2, tmp3);
     }
