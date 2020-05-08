@@ -67,10 +67,10 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   setAttribute(Qt::AA_DontShowIconsInMenus, false);
   // Localization
   //*a.severin/ add localization
-  const char *omhome = SettingsImpl__getInstallationDirectoryPath();
-  if (!omhome) {
+  const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();
+  if (!installationDirectoryPath) {
     QMessageBox::critical(0, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::OPENMODELICAHOME_NOT_FOUND), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::INSTALLATIONDIRECTORY_NOT_FOUND), Helper::ok);
     quit();
     exit(1);
   }
@@ -83,7 +83,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
    */
   QLocale::setDefault(QLocale::c());
 
-  QString translationDirectory = omhome + QString("/share/omedit/nls");
+  QString translationDirectory = installationDirectoryPath + QString("/share/omedit/nls");
   // install Qt's default translations
   QTranslator *pQtTranslator = new QTranslator(this);
 #ifdef Q_OS_WIN
