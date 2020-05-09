@@ -39,6 +39,7 @@ protected
   // Backend imports
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
+  import System = NBSystem;
   import BVariable = NBVariable;
 
 public
@@ -46,9 +47,12 @@ public
     input output BackendDAE bdae;
   end moduleWrapper;
 
-/* =========================================================================
-                        MANDATORY PRE-OPT MODULES
-========================================================================= */
+// =========================================================================
+//                         MANDATORY PRE-OPT MODULES
+// =========================================================================
+
+//                               DETECT STATES
+// *************************************************************************
   partial function detectStatesInterface
     "DetectStates
      This function is only allowed to read and change equations, change algebraic
@@ -86,6 +90,18 @@ public
     input output BVariable.VariablePointers discretes     "Discrete variables";
     input output BVariable.VariablePointers previous      "Previous discrete variables (pre(d) -> $PRE.d)";
   end detectDiscreteStatesInterface;
+
+//                               PARTITIONING
+// *************************************************************************
+  partial function partitioningInterface
+    "Partitioning
+     This function is only allowed to create systems of specialized SystemType
+     by creating an adjacency matrix using provided variables and equations."
+    input System.SystemType systemType;
+    input BVariable.VariablePointers variables;
+    input BEquation.EquationPointers equations;
+    output list<System.System> systems;
+  end partitioningInterface;
 
   annotation(__OpenModelica_Interface="backend");
 end NBModule;

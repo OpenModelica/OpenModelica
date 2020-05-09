@@ -56,9 +56,9 @@ protected
   import BEquation = NBEquation;
   import BVariable = NBVariable;
 
-/* =========================================================================
-                      MAIN ROUTINE, PLEASE DO NOT CHANGE
-========================================================================= */
+// =========================================================================
+//                      MAIN ROUTINE, PLEASE DO NOT CHANGE
+// =========================================================================
 public
   function main
     "Wrapper function for any detect states function. This will be

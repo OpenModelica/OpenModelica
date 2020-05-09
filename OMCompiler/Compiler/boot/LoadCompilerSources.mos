@@ -292,6 +292,9 @@ if true then /* Suppress output */
     "../NBackEnd/NBEquation.mo",
     "../NBackEnd/NBHashTable.mo",
     "../NBackEnd/NBModule.mo",
+    "../NBackEnd/NBPartitioning.mo",
+    "../NBackEnd/NBStrongComponent.mo",
+    "../NBackEnd/NBSystem.mo",
     "../NBackEnd/NBVariable.mo",
 
 

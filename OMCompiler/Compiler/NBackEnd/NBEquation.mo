@@ -394,7 +394,7 @@ public
         str := str + toString(elseWhen, indent, indent +"else ", true);
       end if;
       if not selfCall then
-        str := str + indent + "end when;\n";
+        str := str + indent + "end when;";
       end if;
     end toString;
 

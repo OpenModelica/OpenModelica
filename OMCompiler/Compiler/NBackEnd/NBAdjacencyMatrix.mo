@@ -28,7 +28,7 @@
 * See the full OSMC Public License conditions for more details.
 *
 */
-encapsulated uniontype NBAdjacencyMatrix
+encapsulated package NBAdjacencyMatrix
 " file:         NAdjacencyMatrix.mo
   description:  This file contains the data-types used for the adjacency matrix
                 and matching and the corresponding functions.
@@ -128,7 +128,6 @@ uniontype SliceAssignment
     IndexSlice indSlice          "Assigned tensor slice of indexed column";
   end SLICE_ASSIGNMENT;
 end SliceAssignment;
-
 
 type Matching = array<list<SliceAssignment>>;
 

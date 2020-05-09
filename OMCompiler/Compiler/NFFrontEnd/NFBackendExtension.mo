@@ -399,7 +399,6 @@ public
     algorithm
       for attr in attrs loop
         (name, b) := attr;
-        print(name + " found!\n");
         () := match name
           case "displayUnit"    algorithm displayUnit := createAttribute(b); then ();
           case "fixed"          algorithm fixed := createAttribute(b); then ();

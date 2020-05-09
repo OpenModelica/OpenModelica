@@ -31,7 +31,8 @@
 encapsulated uniontype NBackendDAE
 "file:        NBackendDAE.mo
  package:     NBackendDAE
- description: This file contains the data-types used by the back end.
+ description: This file contains the main data type for the backend containing
+              all data. It further contains the lower and solve main function.
 "
 
 protected
@@ -57,6 +58,9 @@ protected
   import BEquation = NBEquation;
   import DetectStates = NBDetectStates;
   import Equation = NBEquation.Equation;
+  import NBSystem;
+  import NBSystem.System;
+  import Partitioning = NBPartitioning;
 
   // Util imports
   import Error;
@@ -67,18 +71,89 @@ protected
 public
   record BDAE
     /* Stuff here! */
-    BVariable.VarData varData   "Variable data.";
-    BEquation.EqData eqData     "Equation data.";
+    list<System> ode              "Systems for simulation";
+    list<System> event            "Systems for event iteration";
+    list<System> init             "Systems for Initialization";
+    Option<list<System>> init_0   "Systems for lambda 0 (homotopy) Initialization";
+    Option<list<System>> dae      "Systems for dae mode";
+
+    BVariable.VarData varData     "Variable data.";
+    BEquation.EqData eqData       "Equation data.";
   end BDAE;
+
+  record JAC
+    BVariable.VarData varData     "Variable data.";
+    BEquation.EqData eqData       "Equation data.";
+  end JAC;
+
+  record HESS
+    BVariable.VarData varData     "Variable data.";
+    BEquation.EqData eqData       "Equation data.";
+  end HESS;
 
   function toString
     input BackendDAE bdae;
     input output String str = "";
   algorithm
-    str :=  StringUtil.headline_1("BackendDAE: " + str) + "\n" +
-            BVariable.VarData.toString(bdae.varData, 1) + "\n" +
-            BEquation.EqData.toString(bdae.eqData, 1);
+    // ToDo: Add init, dae, event...
+    str := match bdae
+      local
+        String tmp;
+        BackendDAE qual;
+      case qual as BDAE()
+        algorithm
+          tmp := StringUtil.headline_1("BackendDAE: " + str) + "\n";
+          if listEmpty(qual.ode) then
+            tmp := tmp +  BVariable.VarData.toString(qual.varData, 1) + "\n" +
+                          BEquation.EqData.toString(qual.eqData, 1);
+          else
+            for syst in qual.ode loop
+              tmp := tmp + System.toString(syst);
+            end for;
+          end if;
+      then tmp;
+
+      case qual as JAC() then StringUtil.headline_1("Jacobian: " + str) + "\n" +
+                              BVariable.VarData.toString(qual.varData, 1) + "\n" +
+                              BEquation.EqData.toString(qual.eqData, 1);
+
+      case qual as HESS() then StringUtil.headline_1("Hessian: " + str) + "\n" +
+                              BVariable.VarData.toString(qual.varData, 1) + "\n" +
+                              BEquation.EqData.toString(qual.eqData, 1);
+    end match;
   end toString;
+
+  function getVarData
+    input BackendDAE bdae;
+    output BVariable.VarData varData;
+  algorithm
+    varData := match bdae
+      local
+        BackendDAE qual;
+      case qual as BDAE() then qual.varData;
+      case qual as JAC() then qual.varData;
+      case qual as HESS() then qual.varData;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+      then fail();
+    end match;
+  end getVarData;
+
+  function getEqData
+    input BackendDAE bdae;
+    output BEquation.EqData eqData;
+  algorithm
+    eqData := match bdae
+      local
+        BackendDAE qual;
+      case qual as BDAE() then qual.eqData;
+      case qual as JAC() then qual.eqData;
+      case qual as HESS() then qual.eqData;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+      then fail();
+    end match;
+  end getEqData;
 
   function lower
     "This function transforms the FlatModel structure to BackendDAE."
@@ -92,7 +167,7 @@ public
     print(FlatModel.toString(flatModel, true));
     variableData := lowerVariableData(flatModel.variables);
     equationData := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, BVariable.VarData.getVariables(variableData));
-    bdae := BDAE(variableData, equationData);
+    bdae := BDAE({}, {}, {}, NONE(), NONE(), variableData, equationData);
   end lower;
 
   function solve
@@ -100,6 +175,7 @@ public
   algorithm
     // SHELL AROUND THIS FOR ALL SELECTED MODULES!
     bdae := DetectStates.main(bdae);
+    bdae := Partitioning.main(bdae, NBSystem.SystemType.ODE);
   end solve;
 
 protected
