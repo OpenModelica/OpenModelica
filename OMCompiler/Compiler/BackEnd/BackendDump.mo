@@ -3359,7 +3359,13 @@ protected
   BackendDAE.Var var;
 algorithm
   for sel in selList loop
-    var := listGet(varList, sel);
+    try
+      var := listGet(varList, sel);
+    else
+      Error.addInternalError("function dumpMarkedVarList failed", sourceInfo());
+      Error.addCompilerNotification("Could not get variable " + intString(sel) + " from varList \n" + varListString(varList,""));
+      fail();
+    end try;
     outString := outString + "  " + varString(var) + "\n";
   end for;
 end dumpMarkedVarList;
