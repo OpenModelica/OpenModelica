@@ -519,6 +519,7 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials/CMakeLists.txt
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_idas.dylib "$(builddir_lib_omc)/libsundials_nvecserial.dylib"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_kinsol.dylib "$(builddir_lib_omc)/libsundials_nvecserial.dylib"
 	# TODO AHeu: Add install_name_tool for new libs!!
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsollapackdense.dylib"$(builddir_lib_omc)/libsundials_sunlinsollapackdense.dylib"
 	# copy the dlls to the build bin directory
 	test ! "$(SHREXT)" = ".dll" || (cp -pf 3rdParty/sundials/build/lib/*$(SHREXT) $(builddir_bin))
 	@touch "$@"
