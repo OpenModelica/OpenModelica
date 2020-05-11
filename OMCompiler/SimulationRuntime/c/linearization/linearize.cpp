@@ -640,17 +640,18 @@ int linearize(DATA* data, threadData_t *threadData)
     }
     fflush(fout);
     fclose(fout);
-    char cwd[PATH_MAX];
+
     if (data->modelData->runTestsuite) {
         infoStreamPrint(LOG_STDOUT, 0, "Linear model is created.");
     }
     else {
-        char* success = getcwd(cwd, sizeof(cwd));
-        if(!success) {
+        char* cwd = getcwd(NULL, 0); /* call with NULL and 0 to allocate the buffer dynamically (no pathmax needed) */
+        if(!cwd) {
           infoStreamPrint(LOG_STDOUT, 0, "Linear model %s is created, but getting the full path failed.", filename.c_str());
         }
         else {
           infoStreamPrint(LOG_STDOUT, 0, "Linear model is created at %s/%s", cwd, filename.c_str());
+          free(cwd);
         }
         infoStreamPrint(LOG_STDOUT, 0, "The output format can be changed with the command line option --linearizationDumpLanguage.");
         infoStreamPrint(LOG_STDOUT, 0, "The options are: --linearizationDumpLanguage=modelica, matlab, julia, python.");
