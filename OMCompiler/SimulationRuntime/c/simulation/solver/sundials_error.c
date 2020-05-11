@@ -673,8 +673,8 @@ void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel
   int lengthData, lengthIndexptrs;
 
   double* data;
-  long int* indexvals;
-  long int* indexptrs;
+  sunindextype* indexvals;
+  sunindextype* indexptrs;
 
   assertStreamPrint(NULL, NULL != SM_DATA_S(A), "matrix data is NULL pointer");
 
