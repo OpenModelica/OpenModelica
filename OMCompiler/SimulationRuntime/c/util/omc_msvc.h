@@ -194,6 +194,9 @@ static OMC_INLINE int dladdr(void *addr, Dl_info *info) {
 #endif
 char *realpath(const char *path, char resolved_path[PATH_MAX]);
 
+#include <direct.h> /* for getcwd */
+#define getcwd _getcwd
+
 #else
 
 #include <limits.h>
