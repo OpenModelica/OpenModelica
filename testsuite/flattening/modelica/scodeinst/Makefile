@@ -582,6 +582,7 @@ ImportSubPackage2.mo \
 ImportUnqualified1.mo \
 ImportUnqualified2.mo \
 ImportUnqualified3.mo \
+Inline1.mo \
 InnerOuter1.mo \
 InnerOuter2.mo \
 InnerOuter3.mo \

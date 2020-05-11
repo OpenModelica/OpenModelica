@@ -348,13 +348,15 @@ public
   function applySubscripts
     input list<Subscript> subscripts;
     input output ComponentRef cref;
+    input Boolean applyToScope = false;
   algorithm
-    ({}, cref) := applySubscripts2(subscripts, cref);
+    ({}, cref) := applySubscripts2(subscripts, cref, applyToScope);
   end applySubscripts;
 
   function applySubscripts2
     input output list<Subscript> subscripts;
     input output ComponentRef cref;
+    input Boolean applyToScope;
   algorithm
     (subscripts, cref) := match cref
       local
@@ -362,8 +364,9 @@ public
         list<Subscript> cref_subs;
 
       case CREF(subscripts = cref_subs)
+        guard applyToScope or cref.origin == Origin.CREF
         algorithm
-          (subscripts, rest_cref) := applySubscripts2(subscripts, cref.restCref);
+          (subscripts, rest_cref) := applySubscripts2(subscripts, cref.restCref, applyToScope);
 
           if not listEmpty(subscripts) then
             (cref_subs, subscripts) :=
