@@ -3,14 +3,15 @@
 ## Debian/Ubuntu Compile Cheat Sheet (or read on for the full guide)
 
 ```bash
-echo deb http://build.openmodelica.org/apt bionic nightly | sudo tee -a /etc/apt/sources.list
-echo deb-src http://build.openmodelica.org/apt bionic nightly | sudo tee -a /etc/apt/sources.list
+echo Linux name: `lsb_release --short --codename`
+echo deb http://build.openmodelica.org/apt `lsb_release --short --codename` nightly | sudo tee -a /etc/apt/sources.list
+echo deb-src http://build.openmodelica.org/apt `lsb_release --short --codename` nightly | sudo tee -a /etc/apt/sources.list
 sudo apt-get update
 sudo apt-get build-dep openmodelica
 git clone --recursive https://openmodelica.org/git-readonly/OpenModelica.git OpenModelica
 cd OpenModelica
 autoconf
-./configure --with-omniORB
+./configure --with-cppruntime
 make -j4
 ```
 
@@ -27,7 +28,7 @@ sudo make install
 
 But first you need to install dependencies:
 - autoconf, automake, libtool, pkgconfig, g++, gfortran (pretty standard compilers)
-- boost (optional; used with configure --with-cppruntime)
+- boost (optional, used with configure --with-cppruntime)
 - [clang](http://clang.llvm.org/), clang++ (optional, but *highly recommended*; if you use gcc instead, use gcc 4.4 or 4.9+, not 4.5-4.8 as they are very slow)
 - [cmake](http://www.cmake.org)
 - hwloc (optional; queries the number of hardware CPU cores instead of logical CPU cores)
@@ -38,6 +39,7 @@ But first you need to install dependencies:
 - [lpsolve55](http://lpsolve.sourceforge.net)
 - omniORB or mico (optional; CORBA is used by OMOptim, OMShell, and OMPython)
 - [Sundials](http://www.llnl.gov/CASC/sundials/) (optional; adds more numerical solvers to the simulation runtime)
+- libcurl (libcurl4-gnutls-dev)
 
 # Setting your environment for compiling OpenModelica
 If you plan to use mico corba with OMC you need to:
@@ -146,6 +148,22 @@ autoconf
 ./configure
 make -j8
 ```
+
+## How to update your local git repository from github
+```bash
+cd OpenModelica
+git checkout master
+git fetch origin && git submodule foreach git fetch origin
+git pull --recurse-submodules && git submodule update --init --recursive
+git submodule foreach --recursive "git checkout master"
+git submodule foreach --recursive "git pull"
+# make sure all the submodules are set to the commits in OpenModelica glue project
+git submodule update --force --init --recursive
+# just to see what the status of your repo is
+git status
+git submodule status --recursive
+```
+
 ## GENERAL NOTES:
 - Fedora Core 4 has a missing symlink. To fix it, in /usr/lib do:
 ```bash
