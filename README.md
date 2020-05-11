@@ -23,6 +23,7 @@ To get everything running, you will need a few extras:
 - OpenSceneGraph
 - Qt5 or Qt4, Webkit, QtOpenGL
 - [Sundials](http://www.llnl.gov/CASC/sundials/) (optional; adds more numerical solvers to the simulation runtime)
+- libcurl (libcurl4-gnutls-dev)
 
 ## Compilation
 
@@ -46,13 +47,20 @@ OpenModelica.git is a superproject. Clone the project using one of:
 > MY_FORK=MyGitHubUserName ; git clone https://openmodelica.org/git-readonly/OpenModelica.git --recursive && (cd OpenModelica && git remote set-url --push origin git@github.com:$MY_FORK/OpenModelica.git && git submodule foreach --recursive 'git remote set-url --push origin `git config --get remote.origin.url | sed s,^.*/,git@github.com:'$MY_FORK'/,`')
 ```
 
-If you are a developer and want to track the latest heads, use:
+If you are a developer and want to update your local git repository to the latest developments or latest heads, use:
 
 ```bash
 # After cloning
+> cd OpenModelica
+> git checkout master
+> git pull
 > git submodule foreach --recursive "git checkout master"
 # To update; you will need to merge each submodule, but your changes will remain
 > git submodule foreach --recursive "git pull"
+# Running master on all submodules might lead to build errors
+# so use this to make sure you force all submodules to the commits
+# from the OpenModelica glue project which are properly tested
+> git submodule update --force --init --recursive
 ```
 
 In order to push to the repository, you will push to your own fork of OpenModelica.git, etc. You will need to create a fork of each repository that you want to push to (by clicking the Fork button in the GitHub web interface).
