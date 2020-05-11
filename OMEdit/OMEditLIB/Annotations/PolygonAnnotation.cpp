@@ -269,12 +269,14 @@ QString PolygonAnnotation::getShapeAnnotation()
 
 void PolygonAnnotation::addPoint(QPointF point)
 {
+  prepareGeometryChange();
   mPoints.append(point);
   mPoints.back() = mPoints.first();
 }
 
 void PolygonAnnotation::removePoint(int index)
 {
+  prepareGeometryChange();
   if (mPoints.size() > index) {
     mPoints.removeAt(index);
   }
@@ -287,6 +289,7 @@ void PolygonAnnotation::clearPoints()
 
 void PolygonAnnotation::updateEndPoint(QPointF point)
 {
+  prepareGeometryChange();
   // we update the second last point for polygon since the last point is connected to first one
   mPoints.replace(mPoints.size() - 2, point);
 }
