@@ -133,6 +133,10 @@ UpdateShapeCommand::UpdateShapeCommand(ShapeAnnotation *pShapeAnnotation, QStrin
  */
 void UpdateShapeCommand::redoInternal()
 {
+  mpShapeAnnotation->GraphicItem::setDefaults();
+  mpShapeAnnotation->FilledShape::setDefaults();
+  mpShapeAnnotation->setDefaults();
+  mpShapeAnnotation->setUserDefaults();
   mpShapeAnnotation->parseShapeAnnotation(mNewAnnotation);
   /* If the shape is LineAnnotation then remove and draw the corner items
    * since they might have been changed in number based on the annotation.
@@ -154,6 +158,10 @@ void UpdateShapeCommand::redoInternal()
  */
 void UpdateShapeCommand::undo()
 {
+  mpShapeAnnotation->GraphicItem::setDefaults();
+  mpShapeAnnotation->FilledShape::setDefaults();
+  mpShapeAnnotation->setDefaults();
+  mpShapeAnnotation->setUserDefaults();
   mpShapeAnnotation->parseShapeAnnotation(mOldAnnotation);
   /* If the shape is LineAnnotation then remove and draw the corner items
    * since they might have been changed in number based on the annotation.

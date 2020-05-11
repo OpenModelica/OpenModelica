@@ -371,10 +371,14 @@ void ShapeAnnotation::setDefaults()
   mLineColor = QColor(0, 0, 0);
   mLinePattern = StringHandler::LineSolid;
   mLineThickness = 0.25;
+  mPoints.clear();
+  mGeometries.clear();
+  mArrow.clear();
   mArrow.append(StringHandler::ArrowNone);
   mArrow.append(StringHandler::ArrowNone);
   mArrowSize = 3;
   mSmooth = StringHandler::SmoothNone;
+  mExtents.clear();
   mExtents.append(QPointF(0, 0));
   mExtents.append(QPointF(0, 0));
   mBorderPattern = StringHandler::BorderNone;
@@ -385,6 +389,7 @@ void ShapeAnnotation::setDefaults()
   mTextString = "";
   mFontSize = 0;
   mFontName = Helper::systemFontInfo.family();
+  mTextStyles.clear();
   mHorizontalAlignment = StringHandler::TextAlignmentCenter;
   mOriginalFileName = "";
   mFileName = "";
