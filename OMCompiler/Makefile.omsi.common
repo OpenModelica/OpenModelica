@@ -27,25 +27,13 @@ OMSI-clean: OMSIBaseClean OMSICClean
 # Rules for OMSIBase library
 #############################
 
-OMSIBase: sundials fmil
+OMSIBaseInstall: $(SUNDIALS_TARGET) fmil
 	cd SimulationRuntime/OMSI; \
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  mkdir -p Build_$(PLATFORM); \
 	  (cd ./Build_$(PLATFORM); echo "change to Build_$(PLATFORM)"; \
 		 $(CMAKE_CALL); \
-	   $(MAKE) );)
-
-OMSIBaseMSVC: fmil_msvc sundials_msvc
-	$(MAKE) -C SimulationRuntime/OMSI/ -f Makefile.omdev.mingw OMSIBaseMSVC OMBUILDDIR=$(OMBUILDDIR)
-	# move folder to build dir
-	cp -R --verbose SimulationRuntime/OMSI/Build_MSVC/tmp/* $(builddir_build)
-
-
-OMSIBaseInstall: OMSIBase
-	cd SimulationRuntime/OMSI; \
-	$(foreach PLATFORM, $(PLATFORMS), \
-	  (cd Build_$(PLATFORM); $(MAKE) install);) \
-
+	   $(MAKE) install);)
 	test ! `uname` = Darwin || install_name_tool -id @rpath/omsi/libOMSIBase.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/omsi/libOMSISolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
 
@@ -55,6 +43,10 @@ OMSIBaseInstall: OMSIBase
 	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.0.dylib @rpath/libsundials_nvecserial.0.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
 	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.1.dylib @rpath/libsundials_kinsol.1.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
 
+OMSIBaseMSVC: fmil_msvc sundials_msvc
+	$(MAKE) -C SimulationRuntime/OMSI/ -f Makefile.omdev.mingw OMSIBaseMSVC OMBUILDDIR=$(OMBUILDDIR)
+	# move folder to build dir
+	cp -R --verbose SimulationRuntime/OMSI/Build_MSVC/tmp/* $(builddir_build)
 
 OMSIBaseClean:
 	cd SimulationRuntime/OMSI; \
@@ -69,19 +61,13 @@ OMSIBaseClean:
 #############################
 
 
-OMSIC: OMSIBaseInstall
+OMSICInstall: OMSIBaseInstall
 	cd SimulationRuntime/OMSIC; \
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  mkdir -p Build_$(PLATFORM); \
 	  (cd ./Build_$(PLATFORM); echo "change to Build_$(PLATFORM)"; \
 		 $(CMAKE_CALL); \
-		 $(MAKE) ); )
-
-OMSICInstall: OMSIC
-	cd SimulationRuntime/OMSIC; \
-	$(foreach PLATFORM, $(PLATFORMS), \
-	  (cd Build_$(PLATFORM); $(MAKE) install);)
-
+		 $(MAKE) install);)
 
 OMSICClean:
 	cd SimulationRuntime/OMSIC; \

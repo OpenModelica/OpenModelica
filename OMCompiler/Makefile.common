@@ -97,7 +97,7 @@ bootstrap-dependencies-post-compiler-builtin:
 bootstrap-dependencies-post-parser: $(SEMLA_LIB)
 	$(MAKE) -f $(defaultMakefileTarget) -C Parser install_bootstrapping OMBUILDDIR=$(OMBUILDDIR) OMENCRYPTION=$(OMENCRYPTION)
 
-bootstrap-dependencies: $(BOOTSTRAP_FMIL_DEP) interactive-common cppzmq interactive-short
+bootstrap-dependencies: $(BOOTSTRAP_FMIL_DEP) cppzmq interactive-short
 	$(MAKE) -f $(defaultMakefileTarget) bootstrap-dependencies-post
 
 antlr-copy:
@@ -113,12 +113,12 @@ $(builddir_share)/omc/omc_communication.idl: Compiler/runtime/omc_communication.
 	cp -a "$<" "$@"
 idl: $(builddir_share)/omc/omc_communication.idl
 
-interactive-common: .testvariables graphstream boehm-gc idl ModelicaExternalC antlr-copy $(MINGW_EXTRA_LIBS) OMSI $(SEMLA_LIB)
+interactive-common: .testvariables graphstream boehm-gc idl ModelicaExternalC antlr-copy $(MINGW_EXTRA_LIBS)
 
 interactive-short: .testvariables interactive-common
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies OMBUILDDIR=$(OMBUILDDIR)
 
-interactive: .testvariables interactive-common fmil lis Cdaskr CMinpack docs cppzmq $(SUNDIALS_TARGET) $(IPOPT_TARGET) $(UMFPACK_TARGET) antlr-copy $(MINGW_EXTRA_LIBS) $(SEMLA_LIB)
+interactive: .testvariables interactive-common lis Cdaskr CMinpack docs cppzmq $(IPOPT_TARGET) $(UMFPACK_TARGET) antlr-copy $(MINGW_EXTRA_LIBS) OMSI $(SEMLA_LIB)
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) bootstrap-dependencies-post
 
@@ -223,17 +223,13 @@ breakprocess:
 
 runtimeCPPinstall: all-runtimeCPPinstall
 
-all-runtimeCPPinstall:  CMinpack sundials ModelicaExternalC fmil OMSI
-	$(MAKE) all OMSICPPinstall OMBUILDDIR=$(OMBUILDDIR)
+all-runtimeCPPinstall: omc-and-runtimeCPPinstall
 
-omc-and-runtimeCPPinstall:  CMinpack sundials ModelicaExternalC fmil OMSI
-	$(MAKE) omc OMSICPPinstall OMBUILDDIR=$(OMBUILDDIR)
-
-
+# OMSICPPinstall depends on omc which compiles everything needed such as FMI, sundials, OMSI, etc
+omc-and-runtimeCPPinstall:
+	$(MAKE) -f $(defaultMakefileTarget) OMSICPPinstall OMBUILDDIR=$(OMBUILDDIR)
 
 CMAKE_ARGS=$(filter CMAKE_%, $(MAKEFLAGS))
-
-
 
 omcCAPIinstall: ModelicaExternalC
 	$(MAKE) -C SimulationRuntime/OMSICpp/ -f $(defaultMakefileTarget) omcCAPIinstall CC="$(CC)" CXX="$(CXX)" $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR)
