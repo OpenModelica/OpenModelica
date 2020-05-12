@@ -1313,36 +1313,39 @@ constant ConfigFlag NO_ASSC = CONFIG_FLAG(131, "noASSC",
   NONE(), EXTERNAL(),  BOOL_FLAG(false), NONE(),
   Gettext.gettext("Disables analytical to structural singularity conversion."));
 
-
 constant ConfigFlag FULL_ASSC = CONFIG_FLAG(132, "fullASSC",
   NONE(), EXTERNAL(),  BOOL_FLAG(false), NONE(),
   Gettext.gettext("Enables full equation replacement for BLT transformation from the ASSC algorithm."));
 
-constant ConfigFlag USE_ZEROMQ_IN_SIM = CONFIG_FLAG(133, "useZeroMQInSim",
+constant ConfigFlag MAX_SIZE_ASSC = CONFIG_FLAG(133, "maxSizeASSC",
+  NONE(), EXTERNAL(), INT_FLAG(200), NONE(),
+  Gettext.gettext("Sets the maximum system size for the analytical to structural conversion algorithm (default 200)."));
+
+constant ConfigFlag USE_ZEROMQ_IN_SIM = CONFIG_FLAG(134, "useZeroMQInSim",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Configures to use zeroMQ in simulation runtime to exchange information via ZeroMQ with other applications"));
 
-constant ConfigFlag ZEROMQ_PUB_PORT = CONFIG_FLAG(134, "zeroMQPubPort",
+constant ConfigFlag ZEROMQ_PUB_PORT = CONFIG_FLAG(135, "zeroMQPubPort",
   NONE(), EXTERNAL(), INT_FLAG(3203), NONE(),
   Gettext.gettext("Configures port number for simulation runtime to send information via ZeroMQ"));
 
-constant ConfigFlag ZEROMQ_SUB_PORT = CONFIG_FLAG(135, "zeroMQSubPort",
+constant ConfigFlag ZEROMQ_SUB_PORT = CONFIG_FLAG(136, "zeroMQSubPort",
   NONE(), EXTERNAL(), INT_FLAG(3204), NONE(),
   Gettext.gettext("Configures port number for simulation runtime to receive information via ZeroMQ"));
 
-constant ConfigFlag ZEROMQ_JOB_ID = CONFIG_FLAG(136, "zeroMQJOBID",
+constant ConfigFlag ZEROMQ_JOB_ID = CONFIG_FLAG(137, "zeroMQJOBID",
   NONE(), EXTERNAL(), STRING_FLAG("empty"), NONE(),
   Gettext.gettext("Configures the ID with which the omc api call is labelled for zeroMQ communication."));
-constant ConfigFlag ZEROMQ_SERVER_ID = CONFIG_FLAG(137, "zeroMQServerID",
+constant ConfigFlag ZEROMQ_SERVER_ID = CONFIG_FLAG(138, "zeroMQServerID",
   NONE(), EXTERNAL(), STRING_FLAG("empty"), NONE(),
   Gettext.gettext("Configures the ID with which server application is labelled for zeroMQ communication."));
-constant ConfigFlag ZEROMQ_CLIENT_ID = CONFIG_FLAG(138, "zeroMQClientID",
+constant ConfigFlag ZEROMQ_CLIENT_ID = CONFIG_FLAG(139, "zeroMQClientID",
   NONE(), EXTERNAL(), STRING_FLAG("empty"), NONE(),
   Gettext.gettext("Configures the ID with which the client application is labelled for zeroMQ communication."));
-constant ConfigFlag FMI_VERSION = CONFIG_FLAG(139,
+constant ConfigFlag FMI_VERSION = CONFIG_FLAG(140,
   "", NONE(), INTERNAL(), STRING_FLAG(""), NONE(),
   Gettext.gettext("returns the FMI Version either 1.0 or 2.0."));
-constant ConfigFlag FLAT_MODELICA = CONFIG_FLAG(140, "flatModelica",
+constant ConfigFlag FLAT_MODELICA = CONFIG_FLAG(141, "flatModelica",
   SOME("f"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Outputs experimental flat Modelica."));
 

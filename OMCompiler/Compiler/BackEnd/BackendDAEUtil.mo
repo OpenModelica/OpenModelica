@@ -8103,30 +8103,32 @@ algorithm
       loopVars := (BackendVariable.getVarAt(syst.orderedVars, ass1[eqnIndex]), ass1[eqnIndex]) :: loopVars;
     end for;
 
-    try
-      /* generate linear integer sub jacobian from system */
-      linIntJac := SymbolicJacobian.generateLinearIntegerJacobian(loopEqs, loopVars, ass1);
+    if listLength(loopEqs) <= Flags.getConfigInt(Flags.MAX_SIZE_ASSC) then
+      try
+        /* generate linear integer sub jacobian from system */
+        linIntJac := SymbolicJacobian.generateLinearIntegerJacobian(loopEqs, loopVars, ass1);
 
-      if not SymbolicJacobian.emptyOrSingleLinearIntegerJacobian(linIntJac) then
-        if Flags.isSet(Flags.DUMP_ASSC) then
-          BackendDump.dumpLinearIntegerJacobianSparse(linIntJac, "Original");
+        if not SymbolicJacobian.emptyOrSingleLinearIntegerJacobian(linIntJac) then
+          if Flags.isSet(Flags.DUMP_ASSC) then
+            BackendDump.dumpLinearIntegerJacobianSparse(linIntJac, "Original");
+          end if;
+
+          /* solve jacobian with gaussian elimination */
+          linIntJac := SymbolicJacobian.solveLinearIntegerJacobian(linIntJac);
+          if Flags.isSet(Flags.DUMP_ASSC) then
+            BackendDump.dumpLinearIntegerJacobianSparse(linIntJac, "Solved");
+          end if;
+
+          /* set changed to true if it was true before, or any row changed in the jacobian */
+          changed := changed or SymbolicJacobian.anyRowChanged(linIntJac);
+
+          /* resolve zero rows to new equations and update assignments / adjacency matrix */
+          (ass1, ass2, syst) := SymbolicJacobian.resolveAnalyticalSingularities(linIntJac, ass1, ass2, syst);
         end if;
-
-        /* solve jacobian with gaussian elimination */
-        linIntJac := SymbolicJacobian.solveLinearIntegerJacobian(linIntJac);
-        if Flags.isSet(Flags.DUMP_ASSC) then
-          BackendDump.dumpLinearIntegerJacobianSparse(linIntJac, "Solved");
-        end if;
-
-        /* set changed to true if it was true before, or any row changed in the jacobian */
-        changed := changed or SymbolicJacobian.anyRowChanged(linIntJac);
-
-        /* resolve zero rows to new equations and update assignments / adjacency matrix */
-        (ass1, ass2, syst) := SymbolicJacobian.resolveAnalyticalSingularities(linIntJac, ass1, ass2, syst);
-      end if;
-    else
-      /* possibly fails if jacobian is empty --- nothing to do */
-    end try;
+      else
+        /* possibly fails if jacobian is empty --- nothing to do */
+      end try;
+    end if;
   end if;
 end analyticalToStructuralSingularity;
 

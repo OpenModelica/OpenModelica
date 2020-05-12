@@ -390,6 +390,7 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.LINEARIZATION_DUMP_LANGUAGE,
   Flags.NO_ASSC,
   Flags.FULL_ASSC,
+  Flags.MAX_SIZE_ASSC,
   Flags.USE_ZEROMQ_IN_SIM,
   Flags.ZEROMQ_PUB_PORT,
   Flags.ZEROMQ_SUB_PORT,
