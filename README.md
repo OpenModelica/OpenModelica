@@ -43,16 +43,16 @@ OpenModelica.git is a superproject. Clone the project using one of:
 # Faster pulling by using openmodelica.org read-only mirror (low latency in Europe; very important when updating all submodules)
 # Replace the openmodelica.org pull URL with https://github.com/OpenModelica/OpenModelica.git if you want to pull directly from github
 # The default choice is to push to your fork on github.com (SSH). Replace MY_FORK with OpenModelica to push directly to the OpenModelica repositories (if you have access)
-> MY_FORK=MyGitHubUserName ; git clone https://openmodelica.org/git-readonly/OpenModelica.git --recursive && (cd OpenModelica && git remote set-url --push origin git@github.com:$MY_FORK/OpenModelica.git && git submodule foreach --recursive 'git remote set-url --push origin `git config --get remote.origin.url | sed s,^.*/,git@github.com:'$MY_FORK'/,`')
+> MY_FORK=MyGitHubUserName ; git clone https://openmodelica.org/git-readonly/OpenModelica.git --recursive && (cd OpenModelica && git remote set-url --push origin git@github.com:$MY_FORK/OpenModelica.git && git submodule foreach --recursive 'git remote set-url --push origin `git config --get remote.origin.url | sed s,^.*/,git@github.com:'$MY_FORK'/,`' && git submodule update --recursive)
 ```
 
 If you are a developer and want to track the latest heads, use:
 
 ```bash
-# After cloning
-> git submodule foreach --recursive "git checkout master"
-# To update; you will need to merge each submodule, but your changes will remain
-> git submodule foreach --recursive "git pull"
+# After cloning checkout latest master
+> git checkout master
+# To update; you will need to update each submodule, but your changes will remain
+> git submodule update --init --recursive
 ```
 
 In order to push to the repository, you will push to your own fork of OpenModelica.git, etc. You will need to create a fork of each repository that you want to push to (by clicking the Fork button in the GitHub web interface).
