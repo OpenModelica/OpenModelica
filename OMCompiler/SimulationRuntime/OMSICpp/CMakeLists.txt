@@ -1166,16 +1166,6 @@ ADD_SUBDIRECTORY(omsi)
 
 
 
-GET_TARGET_PROPERTY(libOSU ${OSUName} LOCATION)
-GET_FILENAME_COMPONENT(OSUName ${libOSU} NAME)
-set (OSU_LIB ${OSUName})
-configure_file (
-  "${PROJECT_SOURCE_DIR}/runtime/src/LibrariesConfig.h.in"
-  "${PROJECT_BINARY_DIR}/LibrariesConfig.h"
-  )
-
-
-
 #install 3rdparty libraries
 if(INSTALL_OMDEV_LIBS)
   #if(USE_SUNDIALS)
