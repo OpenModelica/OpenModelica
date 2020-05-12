@@ -2,6 +2,16 @@
 
 ## Debian/Ubuntu Compile Cheat Sheet (or read on for the full guide)
 
+Find out what Linux distribution you have via:
+```bash
+lsb_release --short --codename
+```
+
+Check if is supported here: [Supported Distributions](http://build.openmodelica.org/apt/dists/)
+
+If is supported then go ahead and compile the code via the commands below.
+If your distribution is not supported, it might still work if you use an appropriate name instead of `lsb_release --short --codename` below.
+
 ```bash
 echo Linux name: `lsb_release --short --codename`
 echo deb http://build.openmodelica.org/apt `lsb_release --short --codename` nightly | sudo tee -a /etc/apt/sources.list

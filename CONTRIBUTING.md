@@ -20,28 +20,17 @@ git pull && git rebase
 git fetch origin && git rebase origin/master
 ```
 
-Note that [@OpenModelica-Hudson](https://github.com/OpenModelica-Hudson/)
-will rebase your changes on top of master, which means that if you create
-new commits on top of your topic branch, your changes might be hard to
-merge with the master. It also means that if you do not base your commits
-on origin/master, you might be adding your commits two times if you merge
-again (the commits Hudson rebased and the commits that you made, plus an
-empty merge commit).
-
 Commits that are pushed to this repository should pass the [test suite](https://github.com/OpenModelica/OpenModelica-testsuite),
-and [@OpenModelica-Hudson](https://github.com/OpenModelica-Hudson/) makes sure this is true.
+and our CI server [@OpenModelica-Jenkins](https://test.openmodelica.org/jenkins/) makes sure this is true.
 
-Developers can trigger the Hudson job [OpenModelica hudson job](https://test.openmodelica.org/hudson/job/OpenModelica_TEST_PULL_REQUEST/build?delay=0sec)
-after creating a pull request to trigger a build+test+push from a pull
-request (or directly from the developer's own branch). The Hudson job
-refuses to build any hash other than the latest hash in the pull request,
-which automatically syncs to the fork. It is thus important that if the
-pull request is finished, no more commits are pushed unless they fix
-something.
+Pull requests are automatically checked:
+* against the testsuite by Jenkins CI
+* for contribution agreement signature
 
-All commits should adhere to the following simple guidelines (the Hudson
-job checks some of these restrictions, and will automatically reject your
-submission if the reviewer missed it):
+When creating the PR, if needed, add labels: "CI/Build MINGW" or "CI/Build OSX" to test the build on Windows and MacOS.
+One of our developers will review and merge the PR.
+
+All commits should adhere to the following simple guidelines (the Jenkins job checks some of these restrictions, and will not pass your submission):
 
 * Use UTF-8 as file encoding.
 * No trailing whitespace in text-files.
@@ -50,4 +39,12 @@ submission if the reviewer missed it):
 * No adding+deleting the same file or line (debug lines/etc). Do an interactive rebase to squash the commits into one.
 * If you have many added+deleted files/etc - squash all commits into a single commit instead.
 * For OpenModelica-testsuite: Any added or modified reference file needs to use [filterSimulationResults](https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/scripting_api.html#filtersimulationresults) to create a file with a minimal number of trajectories and output points in order to reduce the file size. It is often possible to reduce a file from 20MB to 10kB without significant losses.
-* Use short lines in commit messages in order for github and git tools to display properly in terminal /web GUI. Hudson enforces a 50-character summary followed by 72-character lines.
+* Use short lines in commit messages in order for github and git tools to display properly in terminal / web GUI.
+
+If you need to make changes to OMCompiler-3rdParty the procedure is as follows:
+* push to a branch in OMCompiler-3rdParty (ask us for access via OpenModelica mailing list)
+* make a PR to OpenMoelica glue project with OMCompiler/3rdParty submodule pointing ar your commit from the pushed branch in OMCompiler-3rdParty
+
+After Jenkins checks that all is OK a developer will:
+* rebase the commit from the OMCompiler-3rdParty branch to master
+* merge the PR in the OpenModelica glue project
