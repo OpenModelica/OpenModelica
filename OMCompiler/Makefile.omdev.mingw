@@ -398,7 +398,7 @@ Umfpack_msvc: getMSVCversion
 	(cp -pur 3rdParty/SuiteSparse/install_msvc/include/omc/c/suitesparse/Include/ $(OMBUILDDIR)/include/omc/msvc/suitesparse)
 
 # build sundials
-sundials_msvc: getMSVCversion 3rdParty/sundials/CMakeLists.txt
+sundials_msvc: Umfpack_msvc getMSVCversion 3rdParty/sundials/CMakeLists.txt
 	rm -f $(OMBUILDDIR)/lib/omc/msvc/sundials*
 	rm -f $(OMBUILDDIR)/bin/sundials*
 	rm -rf 3rdParty/sundials/build_msvc
@@ -413,7 +413,7 @@ sundials_msvc: getMSVCversion 3rdParty/sundials/CMakeLists.txt
 	echo @echo on > 3rdParty/sundials/build_msvc/build.bat
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> 3rdParty/sundials/build_msvc/build.bat
 	echo echo Calling CMake >> 3rdParty/sundials/build_msvc/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DEXAMPLES_ENABLE_C:Bool=OFF -DEXAMPLES_ENABLE_CXX:Bool=OFF  -DBUILD_STATIC_LIBS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=. ../ -G  "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/sundials/build_msvc/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DEXAMPLES_ENABLE_C:Bool=OFF -DEXAMPLES_ENABLE_CXX:Bool=OFF -DCMAKE_Fortran_COMPILER="$(FC)" -DLAPACK_ENABLE:Bool=ON -DKLU_ENABLE:Bool=ON -DKLU_LIBRARY_DIR="$(OMBUILDDIR)/lib/omc/msvc/" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/msvc/suitesparse/Include" -DBUILD_STATIC_LIBS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=. ../ -G  "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/sundials/build_msvc/build.bat
 	echo echo Building sundials >> 3rdParty/sundials/build_msvc/build.bat
 	echo @echo on >> 3rdParty/sundials/build_msvc/build.bat
 	echo set MAKE= >> 3rdParty/sundials/build_msvc/build.bat
@@ -424,7 +424,7 @@ sundials_msvc: getMSVCversion 3rdParty/sundials/CMakeLists.txt
 	cd ./3rdParty/sundials/build_msvc; echo "change to 3rdParty/sundials/build_msvc";\
 	cmd /c build.bat
 
-   	# copy dll to lib and bin folder
+	# copy dll to lib and bin folder
 	mkdir -p $(OMBUILDDIR)/include/omc/msvc/sundials
 	(cp -pufr 3rdParty/sundials/build_msvc/include/* $(OMBUILDDIR)/include/omc/msvc/sundials)
 	(cp 3rdParty/sundials/src/kinsol/kinsol_impl.h $(OMBUILDDIR)/include/omc/msvc/sundials/kinsol/)
