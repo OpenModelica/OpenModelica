@@ -64,7 +64,7 @@ public
     "Wrapper function for any detect states function. This will be
      called during simulation and gets the corresponding subfunction from
      Config."
-    extends Module.moduleWrapper;
+    extends Module.wrapper;
   protected
     Module.detectStatesInterface mainFunc;
     Module.detectContinuousStatesInterface contFunc;

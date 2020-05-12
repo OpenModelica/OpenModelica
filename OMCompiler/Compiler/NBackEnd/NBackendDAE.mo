@@ -58,6 +58,7 @@ protected
   import BEquation = NBEquation;
   import DetectStates = NBDetectStates;
   import Equation = NBEquation.Equation;
+  import Jacobian = NBJacobian;
   import NBSystem;
   import NBSystem.System;
   import Partitioning = NBPartitioning;
@@ -79,6 +80,8 @@ public
 
     BVariable.VarData varData     "Variable data.";
     BEquation.EqData eqData       "Equation data.";
+
+    FunctionTree funcTree         "Function bodies.";
   end BDAE;
 
   record JAC
@@ -167,7 +170,7 @@ public
     print(FlatModel.toString(flatModel, true));
     variableData := lowerVariableData(flatModel.variables);
     equationData := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, BVariable.VarData.getVariables(variableData));
-    bdae := BDAE({}, {}, {}, NONE(), NONE(), variableData, equationData);
+    bdae := BDAE({}, {}, {}, NONE(), NONE(), variableData, equationData, funcTree);
   end lower;
 
   function solve
@@ -176,6 +179,7 @@ public
     // SHELL AROUND THIS FOR ALL SELECTED MODULES!
     bdae := DetectStates.main(bdae);
     bdae := Partitioning.main(bdae, NBSystem.SystemType.ODE);
+    //Jacobian.main(bdae);
   end solve;
 
 protected

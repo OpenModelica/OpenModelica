@@ -51,7 +51,7 @@ public
     "Wrapper function for any partitioning function. This will be
      called during simulation and gets the corresponding subfunction from
      Config."
-    extends Module.moduleWrapper;
+    extends Module.wrapper;
     input System.SystemType systemType;
   protected
     Module.partitioningInterface func;

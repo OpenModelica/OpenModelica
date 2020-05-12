@@ -44,6 +44,7 @@ protected
   // Backend Imports
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
+  import Jacobian = NBackendDAE.BackendDAE;
   import BVariable = NBVariable;
 
   // Util imports
@@ -60,7 +61,7 @@ public
       Option<array<StrongComponent>> strongComponents "Strong Components";
       PartitionKind partitionKind                     "Clocked/Continuous partition kind";
       Option<Integer> subPartitionIndex               "For clocked partitions";
-      Option<BackendDAE.BackendDAE> analyticJacobian  "Optional analytic jacobian for the integrator";
+      Option<Jacobian> jacobian                       "Analytic jacobian for the integrator";
     end SYSTEM;
 
     function toString

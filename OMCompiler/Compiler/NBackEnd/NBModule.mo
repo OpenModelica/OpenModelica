@@ -36,16 +36,20 @@ encapsulated package NBModule
 "
 
 protected
+  // NF imports
+  import NFFlatten.FunctionTree;
+
   // Backend imports
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import System = NBSystem;
+  import Jacobian = NBackendDAE.BackendDAE;
   import BVariable = NBVariable;
+  import System = NBSystem;
 
 public
-  partial function moduleWrapper
+  partial function wrapper
     input output BackendDAE bdae;
-  end moduleWrapper;
+  end wrapper;
 
 // =========================================================================
 //                         MANDATORY PRE-OPT MODULES
@@ -102,6 +106,22 @@ public
     input BEquation.EquationPointers equations;
     output list<System.System> systems;
   end partitioningInterface;
+
+//                               JACOBIAN
+// *************************************************************************
+  partial function jacobianInterface
+    "The jacobian is only allowed to read the variables and equations of current
+    system and additionally the global known variables. It needs a unique name
+    and is allowed to manipulate the function tree.
+    [!] This function can not only be used as an optimization module but also for
+    nonlinear systems, state sets, linearization and dynamic optimization."
+    input String name                           "Name of jacobian";
+    input BVariable.VariablePointers unknowns   "Variable array of unknowns";
+    input BEquation.EquationPointers equations  "Equations array";
+    input BVariable.VariablePointers knowns     "Variable array of knowns";
+    output Option<Jacobian> jacobian            "Resulting jacobian";
+    input output FunctionTree funcTree          "Function call bodies";
+  end jacobianInterface;
 
   annotation(__OpenModelica_Interface="backend");
 end NBModule;
