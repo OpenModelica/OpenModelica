@@ -263,7 +263,7 @@ OMS::OMS( QWidget* parent )
   // create command compleation instance
   QString openmodelica( delegate_->OpenModelicaHome() );
   if( openmodelica.isEmpty() )
-    QMessageBox::critical( 0, "OMShell Error", "Could not find environment variable OPENMODELICAHOME, command completion will not work" );
+    QMessageBox::critical( 0, "OMShell Error", "Could not find installation directory path, command completion will not work. Please make sure OpenModelica is installed properly." );
 
   try
   {
