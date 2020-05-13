@@ -784,15 +784,13 @@ protected
     BEquation.EquationAttributes attr;
   algorithm
     // ToDo! check if always DAE.EXPAND() can be used
-    // ToDo! Wait until input, output was migrated from OF CheckModel to NF
-    // and use it here
-    //(inputs, outputs) := Algorithm.getInputsAndOutputs(alg);
-    (inputs, outputs) := ({}, {});
-    size := listLength(outputs);
+    // ToDo! export inputs
+    // ToDo! get array sizes instead of only list length
+    size := listLength(alg.outputs);
     attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL
-            elseif ComponentRef.listHasDiscrete(outputs) then NBEquation.EQ_ATTR_DEFAULT_DISCRETE
+            elseif ComponentRef.listHasDiscrete(alg.outputs) then NBEquation.EQ_ATTR_DEFAULT_DISCRETE
             else NBEquation.EQ_ATTR_DEFAULT_DYNAMIC;
-    eq := Pointer.create(Equation.ALGORITHM(size, alg, inputs, outputs, alg.source, DAE.EXPAND(), attr));
+    eq := Pointer.create(Equation.ALGORITHM(size, alg, alg.source, DAE.EXPAND(), attr));
   end lowerAlgorithm;
 
   function lowerEquationAttributes

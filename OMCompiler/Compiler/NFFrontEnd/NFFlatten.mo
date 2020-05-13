@@ -761,8 +761,7 @@ algorithm
           stmt := Statement.FOR(iter, SOME(range), body, alg.source);
         end while;
       then
-        Algorithm.ALGORITHM({stmt}, alg.source);
-
+        Algorithm.ALGORITHM({Statement.FOR(iter, SOME(range), body, alg.source)}, alg.outputs, alg.source);
   end match;
 end vectorizeAlgorithm;
 

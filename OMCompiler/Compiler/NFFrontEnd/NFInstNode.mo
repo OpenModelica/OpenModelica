@@ -267,9 +267,9 @@ uniontype InstNode
     list<InstNode> locals;
   end IMPLICIT_SCOPE;
 
-  record EXP_NODE
+  record ITERATOR_NODE
     Expression exp;
-  end EXP_NODE;
+  end ITERATOR_NODE;
 
   record VAR_NODE
     "This is an extension for better use in the backend. Not used in the Frontend.
@@ -516,7 +516,7 @@ uniontype InstNode
       case REF_NODE() then "$REF[" + String(node.index) + "]";
       case NAME_NODE() then node.name;
       case IMPLICIT_SCOPE() then "$IMPLICIT";
-      case EXP_NODE() then "$EXP(" + Expression.toString(node.exp) + ")";
+      case ITERATOR_NODE() then "$ITERATOR(" + Expression.toString(node.exp) + ")";
       case EMPTY_NODE() then "$EMPTY";
     end match;
   end name;

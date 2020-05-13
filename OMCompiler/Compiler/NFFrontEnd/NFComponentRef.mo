@@ -993,6 +993,25 @@ public
     end match;
   end stripSubscriptsAll;
 
+  function stripSubscriptsExceptModel
+  "Removes all subscript of a componentref expcept for model subscripts"
+    input output ComponentRef cref;
+  algorithm
+    cref := match cref
+      local
+        InstNode node;
+        ComponentRef restCref;
+
+      case CREF(node = node, restCref = restCref) guard(InstNode.isModel(node))
+      then CREF(cref.node, cref.subscripts, cref.ty, cref.origin, stripSubscriptsExceptModel(restCref));
+
+      case CREF(restCref = restCref)
+      then CREF(cref.node, {}, cref.ty, cref.origin, stripSubscriptsExceptModel(restCref));
+
+      else cref;
+    end match;
+  end stripSubscriptsExceptModel;
+
   function simplifySubscripts
     input output ComponentRef cref;
   algorithm
@@ -1328,6 +1347,12 @@ public
       else cref;
     end match;
   end mapFoldExpShallow;
+
+  function isTime
+    input ComponentRef cref;
+    output Boolean b = firstName(cref) == "time";
+  end isTime;
+
   /* ========================================
       Backend Extension functions
   ========================================= */

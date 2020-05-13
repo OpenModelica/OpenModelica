@@ -87,8 +87,6 @@ public
     record ALGORITHM
       Integer size                    "output size";
       Algorithm alg                   "Algorithm statements";
-      list<ComponentRef> inputs       "list of all (external) inputs, dependencies";
-      list<ComponentRef> outputs      "list of all outputs";
       DAE.ElementSource source        "origin of algorithm";
       DAE.Expand expand               "this algorithm was translated from an equation. we should not expand array crefs!";
       EquationAttributes attr         "Additional Attributes";
@@ -136,15 +134,15 @@ public
         local
           Equation qualEq;
         case qualEq as SCALAR_EQUATION() then str + "[SCAL] " + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
-        case qualEq as ARRAY_EQUATION() then  str + "[ARRY] " + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
+        case qualEq as ARRAY_EQUATION()  then str + "[ARRY] " + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
         case qualEq as SIMPLE_EQUATION() then str + "[SIMP] " + ComponentRef.toString(qualEq.lhs) + " = " + ComponentRef.toString(qualEq.rhs);
         case qualEq as RECORD_EQUATION() then str + "[RECD] " + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
-        case qualEq as ALGORITHM() then       str + "[ALGO] algorithm\n" + Algorithm.toString(qualEq.alg, str + "[----] ");
-        case qualEq as IF_EQUATION() then     str + IfEquationBody.toString(qualEq.body, str + "[----] ", "[-IF-] ");
-        case qualEq as FOR_EQUATION() then    str + forEquationToString(qualEq.iter, qualEq.range, qualEq.body, "", str + "[----] ", "[FOR-] ");
-        case qualEq as WHEN_EQUATION() then   str + WhenEquationBody.toString(qualEq.body, str + "[----] ", "[WHEN] ");
-        case qualEq as AUX_EQUATION() then    str + "[AUX-] Auxiliary equation for " + Variable.toString(Pointer.access(qualEq.auxiliary));
-        case qualEq as DUMMY_EQUATION() then  str + "[DUMY] Dummy equation.";
+        case qualEq as ALGORITHM()       then str + "[ALGO] size " + intString(qualEq.size) + "\n" + Algorithm.toString(qualEq.alg, str + "[----] ");
+        case qualEq as IF_EQUATION()     then str + IfEquationBody.toString(qualEq.body, str + "[----] ", "[-IF-] ");
+        case qualEq as FOR_EQUATION()    then str + forEquationToString(qualEq.iter, qualEq.range, qualEq.body, "", str + "[----] ", "[FOR-] ");
+        case qualEq as WHEN_EQUATION()   then str + WhenEquationBody.toString(qualEq.body, str + "[----] ", "[WHEN] ");
+        case qualEq as AUX_EQUATION()    then str + "[AUX-] Auxiliary equation for " + Variable.toString(Pointer.access(qualEq.auxiliary));
+        case qualEq as DUMMY_EQUATION()  then str + "[DUMY] Dummy equation.";
         else                                  str + "[FAIL] " + getInstanceName() +  " failed!";
       end match;
     end toString;
@@ -208,6 +206,7 @@ public
           MapFuncCref funcCref;
           Expression lhs, rhs, range;
           ComponentRef lhs_cref, rhs_cref;
+          Algorithm alg;
           IfEquationBody ifEqBody;
           WhenEquationBody whenEqBody;
           Equation body, new_body;
@@ -265,13 +264,14 @@ public
 
         case qualEq as ALGORITHM()
           algorithm
-            qualEq.alg := Algorithm.mapExp(qualEq.alg, funcExp);
+            alg := Algorithm.mapExp(qualEq.alg, funcExp);
             if isSome(funcCrefOpt) then
               SOME(funcCref) := funcCrefOpt;
               // ToDo referenceEq for lists?
-              qualEq.inputs := List.map(qualEq.inputs, funcCref);
-              qualEq.outputs := List.map(qualEq.outputs, funcCref);
+              //alg.inputs := List.map(alg.inputs, funcCref);
+              alg.outputs := List.map(alg.outputs, funcCref);
             end if;
+            qualEq.alg := alg;
         then qualEq;
 
         case qualEq as IF_EQUATION()
