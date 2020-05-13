@@ -24,7 +24,7 @@ link_directories(${OMDEV}/lib/lapack-win32-msvc)
 
 # Check for KLU
 IF(MSVC)
-  FIND_PATH(KLU_INCLUDE NAMES klu.h PATHS ${OMCTRUNCHOME}/build/include/omc/msvc/suitsparse/Include)
+  FIND_PATH(KLU_INCLUDE NAMES klu.h PATHS ${OMCTRUNCHOME}/build/include/omc/msvc/suitesparse ${OMCTRUNCHOME}/build/include/omc/msvc/suitsparse/Include)
 ELSEIF(MSVC)
   FIND_PATH(KLU_INCLUDE NAMES klu.h PATHS ${OMCTRUNCHOME}/build/include/omc/c/suitsparse/Include)
 ENDIF(MSVC)
@@ -43,7 +43,7 @@ IF(MSVC)
 ELSEIF(MSVC)
   SET(Sundials_Path ${OMCTRUNCHOME}/OMCompiler/3rdParty/sundials/build)
 ENDIF(MSVC)
-FIND_PATH(SUNDIALS_LIB_DIR NAMES sundials_nvecserial libsundials_nvecserial sundials_nvecserial.dll libsundials_nvecserial.so sundials_nvecserial.a libsundials_nvecserial.a sundials_nvecserial.lib PATHS ${Sundials_Path}/lib)
+FIND_PATH(SUNDIALS_LIB_DIR NAMES sundials_nvecserial libsundials_nvecserial sundials_nvecserial.dll libsundials_nvecserial.so sundials_nvecserial.a libsundials_nvecserial.a sundials_nvecserial.lib PATHS /usr/lib /usr/local/lib $ENV{LIB} ${Sundials_Path}/lib)
 
 MESSAGE(STATUS "Sundials libs:")
 MESSAGE(STATUS "${SUNDIALS_LIB_DIR}")
