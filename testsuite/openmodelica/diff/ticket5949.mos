@@ -1,0 +1,20 @@
+// status: correct
+// depends: BadClassDiagram.mo.xz
+// From ticket:5949
+
+// The file has been compressed since it is huge, but very repetitive
+system("xz --keep --decompress --force BadClassDiagram.mo.xz");
+
+echo(false);
+a := readFile("BadClassDiagram.mo");
+b := readFile("BadClassDiagram.mo");
+echo(true);
+
+a == diffModelicaFileListings(a, b, OpenModelica.Scripting.DiffFormat.plain);getErrorString();
+
+// Result:
+// 0
+// true
+// true
+// ""
+// endResult
