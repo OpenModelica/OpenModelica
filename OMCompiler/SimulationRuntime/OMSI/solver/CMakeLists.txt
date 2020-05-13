@@ -45,28 +45,25 @@ ENDIF(MSVC)
 # Find SUNDIALS  libraries #
 ############################
 IF(MSVC)
-  SET(SUNDIALS_PATH "${OMCTRUNCHOME}/OMCompiler/3rdParty/sundials/build_msvc")
+  SET(SUNDIALS_PATH ${OMCTRUNCHOME}/OMCompiler/3rdParty/sundials/build_msvc)
 ELSE(MSVC)
-  SET(SUNDIALS_PATH "${OMCTRUNCHOME}/OMCompiler/3rdParty/sundials/build")
+  SET(SUNDIALS_PATH ${OMCTRUNCHOME}/OMCompiler/3rdParty/sundials/build)
 ENDIF(MSVC)
-FIND_PATH(SUNDIALS_LIB_DIR NAMES sundials_nvecserial sundials_nvecserial.dll sundials_nvecserial.a sundials_nvecserial.lib PATHS ${SUNDIALS_PATH}/lib)
+FIND_PATH(SUNDIALS_LIB_DIR NAMES sundials_nvecserial libsundials_nvecserial sundials_nvecserial.dll libsundials_nvecserial.so sundials_nvecserial.a libsundials_nvecserial.a sundials_nvecserial.lib PATHS /usr/lib /usr/local/lib $ENV{LIB} ${SUNDIALS_PATH}/lib)
 
 MESSAGE(STATUS "Sundials libs:")
 MESSAGE(STATUS "${SUNDIALS_LIB_DIR}")
 
 # SUNDIALS Header
-FIND_PATH(SUNDIALS_INCLUDE_DIR "sundials/sundials_config.h" ${SUNDIALS_LIB_DIR}/include NO_DEFAULT_PATH)
-IF (NOT SUNDIALS_INCLUDE_DIR)
-  MESSAGE(FATAL_ERROR "Could not find Sundials; compile omc first")
-ENDIF(NOT SUNDIALS_INCLUDE_DIR)
+FIND_PATH(SUNDIALS_INCLUDE_DIR "sundials/sundials_config.h" ${SUNDIALS_PATH}/include NO_DEFAULT_PATH)
 
 MESSAGE(STATUS "Sundials include:")
 MESSAGE(STATUS "${SUNDIALS_INCLUDE_DIR}")
 INCLUDE_DIRECTORIES(${SUNDIALS_INCLUDE_DIR})
 
 # SUNDIALS Libraires
-FIND_LIBRARY(SUNDIALS_LIBRARY_NVEC    NAMES sundials_nvecserial    PATHS ${SUNDIALS_LIB_DIR}/lib NO_DEFAULT_PATH)
-FIND_LIBRARY(SUNDIALS_KINSOL          NAMES sundials_kinsol        PATHS ${SUNDIALS_LIB_DIR}/lib NO_DEFAULT_PATH)
+FIND_LIBRARY(SUNDIALS_LIBRARY_NVEC    NAMES sundials_nvecserial    PATHS /usr/lib /usr/local/lib $ENV{LIB} ${SUNDIALS_LIB_DIR})
+FIND_LIBRARY(SUNDIALS_KINSOL          NAMES sundials_kinsol        PATHS /usr/lib /usr/local/lib $ENV{LIB} ${SUNDIALS_LIB_DIR})
 
 # Check if all libraries found
 IF(NOT SUNDIALS_LIBRARY_NVEC)
