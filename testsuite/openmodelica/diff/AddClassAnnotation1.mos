@@ -28,11 +28,13 @@ answer := "model M1
       Line(points={{-60,50},{60,50}}, color={0,0,255}), Rectangle(origin = {-30, -43}, extent = {{-74, 49}, {74, -49}})}));
 end M1;";
 s2 := listFile(M1);
-if answer<>diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.plain) then
+s3 := diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.plain);
+if answer<>s3 then
   print("\nFailed \n");
   print("\nStart model:\n\n" + s1 + "\n");
   print("\nAdded rectangle+listFile:\n\n" + s2 + "\n");
   print("\nDiff:\n\n" + diffModelicaFileListings(s1, s2) + "\n");
+  print("\nPlain diff:\n\n" + s3 + "\n");
   print("\nXML Diff:\n\n" + diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.xml) + "\n");
   print(getErrorString());
   exit(1);

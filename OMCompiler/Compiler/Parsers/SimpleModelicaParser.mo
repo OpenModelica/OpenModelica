@@ -1303,24 +1303,39 @@ protected
   TokenId id;
   Boolean b;
   list<ParseTree> tree2;
+  list<list<ParseTree>> trees;
 algorithm
-  (tokens, tree, b) := LAk(tokens, tree, {{TokenId.IDENT}, {TokenId.EQUALS}});
-  if b then
-    (tokens, tree) := named_arguments(tokens, tree);
-  else
-    (tokens, tree) := function_argument(tokens, tree);
-    (tokens, tree2, b) := scanOpt(tokens, {}, TokenId.COMMA);
+  trees := {};
+  while true loop
+    (tokens, tree, b) := LAk(tokens, tree, {{TokenId.IDENT}, {TokenId.EQUALS}});
     if b then
-      tree := makeNode(listReverse(tree2))::tree;
-      (tokens, tree) := function_arguments(tokens, tree);
+      (tokens, tree) := named_arguments(tokens, tree);
+      trees := tree :: trees;
+      tree := {};
+      break;
     else
-      (tokens, tree, b) := scanOpt(tokens, tree, TokenId.FOR);
+      (tokens, tree) := function_argument(tokens, tree);
+      (tokens, tree2, b) := scanOpt(tokens, {}, TokenId.COMMA);
       if b then
-        (tokens, tree) := for_indices(tokens, tree);
+        (tokens, tree2) := eatWhitespace(tokens, tree2);
+      end if;
+      if b then
+        tree := makeNode(listReverse(tree2))::tree;
+      else
+        (tokens, tree, b) := scanOpt(tokens, tree, TokenId.FOR);
+        if b then
+          (tokens, tree) := for_indices(tokens, tree);
+        end if;
+        trees := tree :: trees;
+        tree := {};
+        break;
       end if;
     end if;
-  end if;
-  outTree := makeNodePrependTree(listReverse(tree), inTree);
+  end while;
+  outTree := inTree;
+  for tree in listReverse(trees) loop
+    outTree := makeNodePrependTree(listReverse(tree), outTree);
+  end for;
 end function_arguments;
 
 function function_argument

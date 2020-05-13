@@ -1769,7 +1769,7 @@ for_or_expression_list returns [void* ast, int isFor]
 @init{ OM_PUSHZ3(e.ast, el, forind); } :
   ( {LA(1)==IDENT || (LA(1)==OPERATOR && LA(2) == EQUALS) || LA(1) == RPAR || LA(1) == RBRACE}? { $ast = mmc_mk_nil(); $isFor = 0; }
   | ( e=expression[1]
-      ( (COMMA el=for_or_expression_list2)
+      ( ({LA(1)==COMMA}? el=for_or_expression_list2)
       | (threaded=THREADED? FOR forind=for_indices)
       )?
     )
@@ -1788,9 +1788,11 @@ for_or_expression_list returns [void* ast, int isFor]
   finally{ OM_POP(3); }
 
 for_or_expression_list2 returns [void* ast]
-@init{ OM_PUSHZ2(e.ast, el); } :
-    {LA(2) == EQUALS}? { ast = mmc_mk_nil(); }
-  | e=expression[1] (COMMA el=for_or_expression_list2)? { ast = mmc_mk_cons_typed(Absyn_Exp, e.ast, or_nil(el)); }
+@init{
+  OM_PUSHZ2(e.ast, ast);
+  ast = mmc_mk_nil();
+} :
+  (COMMA (e=expression[1] { ast = mmc_mk_cons_typed(Absyn_Exp, e.ast, or_nil(ast)); } | {LA(1) != COMMA && LA(2) == EQUALS}? ))* {ast = listReverseInPlace(ast);}
   ;
   finally{ OM_POP(2); }
 
