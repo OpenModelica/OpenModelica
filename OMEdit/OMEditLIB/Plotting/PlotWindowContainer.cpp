@@ -525,38 +525,46 @@ void PlotWindowContainer::exportVariables()
 {
   PlotWindow *pPlotWindow = getCurrentWindow();
   if (!pPlotWindow) {
-    QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information),
                              tr("No plot window is active for exporting variables."), Helper::ok);
     return;
   }
   if (pPlotWindow->getPlot()->getPlotCurvesList().isEmpty()) {
-    QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information),
                              tr("No variables are selected for exporting."), Helper::ok);
     return;
   }
+
+  PlotCurve *pFirstPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().first();
+  int dataPoints = pFirstPlotCurve->mXAxisVector.size();
+  QString filePath = pFirstPlotCurve->getAbsoluteFilePath();
+  QStringList headers;
+  headers << "\"time\"";
+  foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
+    headers << "\"" + pPlotCurve->getName() + "\"";
+    if (filePath.compare(pPlotCurve->getAbsoluteFilePath()) != 0) {
+      QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information),
+                               tr("Not possible to export variables from different result files."), Helper::ok);
+      return;
+    }
+  }
+
   QString name = QString("exportedVariables");
   QString fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::exportVariables), NULL,
                                                     "CSV Files (*.csv)", NULL, "csv", &name);
   if (fileName.isEmpty()) { // if user press ESC
     return;
   }
-  QString contents;
-  QStringList headers;
-  int dataPoints = 0;
-  headers << "\"time\"";
-  foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
-    headers << "\"" + pPlotCurve->getName() + "\"";
-    dataPoints = pPlotCurve->mXAxisVector.size();
-  }
+
   // write the csv header
+  QString contents;
   contents.append(headers.join(",")).append("\n");
   // write csv data
   for (int i = 0 ; i < dataPoints ; ++i) {
     QStringList data;
     // write time data
-    data << QString::number(pPlotWindow->getPlot()->getPlotCurvesList().at(0)->mXAxisVector.at(i));
-    for (int j = 0; j < headers.size() - 1; ++j) {
-      PlotCurve *pPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().at(j);
+    data << QString::number(pFirstPlotCurve->mXAxisVector.at(i));
+    foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
       OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pPlotCurve->getDisplayUnit(), pPlotCurve->getUnit());
       if (convertUnit.unitsCompatible) {
         data << StringHandler::number(Utilities::convertUnit(pPlotCurve->mYAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));

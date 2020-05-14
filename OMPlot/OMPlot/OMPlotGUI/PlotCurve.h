@@ -45,6 +45,7 @@ private:
   QString mName;
   QString mNameStructure;
   QString mFileName;
+  QString mAbsoluteFilePath;
   QString mXVariable;
   QString mYVariable;
   bool mCustomColor;
@@ -57,8 +58,8 @@ private:
   QwtPlotDirectPainter *mpPlotDirectPainter;
   QwtPlotMarker *mpPointMarker;
 public:
-  PlotCurve(QString fileName, QString name, QString xVariableName, QString yVariableName, QString unit, QString displayUnit, Plot *pParent);
-  ~PlotCurve();
+  PlotCurve(const QString &fileName, const QString &absoluteFilePath, const QString &name, const QString &xVariableName, const QString &yVariableName,
+            const QString &unit, const QString &displayUnit, Plot *pParent);
 
   QwtArray<double> mXAxisVector;
   QwtArray<double> mYAxisVector;
@@ -88,7 +89,8 @@ public:
   int getSize();
   QString getName() {return mName;}
   void setFileName(QString fileName);
-  QString getFileName();
+  QString getFileName() const;
+  QString getAbsoluteFilePath() const;
   void setNameStructure(QString variableName);
   QString getNameStructure() {return mNameStructure;}
   void setXVariable(QString xVariable);
