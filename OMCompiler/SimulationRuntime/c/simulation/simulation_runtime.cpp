@@ -60,6 +60,7 @@
 
 #include "util/omc_error.h"
 #include "util/omc_file.h"
+#include "util/omc_numbers.h"
 #include "simulation_data.h"
 #include "openmodelica_func.h"
 #include "meta/meta_modelica.h"
@@ -253,10 +254,10 @@ void setGlobalLoggingTime(int argc, char**argv, SIMULATION_INFO *simulationInfo)
   }
 
   /* Parse flagStr */
-  loggingStartTime = strtod(flagStr, &endptr);
+  loggingStartTime = om_strtod(flagStr, &endptr);
   endptr = endptr+1;
   secondPart = endptr;
-  loggingStopTime = strtod(secondPart, &endptr);
+  loggingStopTime = om_strtod(secondPart, &endptr);
   if (*endptr)
   {
     throwStreamPrint(NULL, "Simulation flag %s expects two real numbers, seperated by a comata. Got: %s", FLAG_NAME[FLAG_LV_TIME], flagStr);
@@ -308,7 +309,7 @@ static double getFlagReal(enum _FLAG flag, double res)
   if (flagStr==NULL || *flagStr=='\0') {
     return res;
   }
-  res = strtod(flagStr, &endptr);
+  res = om_strtod(flagStr, &endptr);
   if (*endptr) {
     throwStreamPrint(NULL, "Simulation flag %s expects a real number, got: %s", FLAG_NAME[flag], flagStr);
   }
@@ -587,10 +588,10 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
 
   if(0 == retVal && omc_flag[FLAG_DATA_RECONCILE])
   {
-	infoStreamPrint(LOG_STDOUT, 0, "DataReconciliation Starting!");
-	infoStreamPrint(LOG_STDOUT, 0, "%s", data->modelData->modelName);
-	retVal = dataReconciliation(data, threadData);
-	infoStreamPrint(LOG_STDOUT, 0, "DataReconciliation Completed!");
+  infoStreamPrint(LOG_STDOUT, 0, "DataReconciliation Starting!");
+  infoStreamPrint(LOG_STDOUT, 0, "%s", data->modelData->modelName);
+  retVal = dataReconciliation(data, threadData);
+  infoStreamPrint(LOG_STDOUT, 0, "DataReconciliation Completed!");
   }
 
   if(0 == retVal && create_linearmodel) {

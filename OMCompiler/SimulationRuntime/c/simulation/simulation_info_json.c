@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include "../util/rtclock.h"
 #include "../util/omc_mmap.h"
+#include "../util/omc_numbers.h"
 #include "solver/model_help.h"
 
 static inline const char* skipSpace(const char* str)
@@ -135,7 +136,7 @@ static const char* skipValue(const char* str)
   case '9':
   {
     char *endptr = NULL;
-    strtod(str,&endptr);
+    om_strtod(str,&endptr);
     if (str == endptr) {
       fprintf(stderr, "Not a number, got %.20s\n", str);
        abort();
@@ -175,7 +176,7 @@ static inline const char* assertNumber(const char *str, double expected)
   char *endptr = NULL;
   double d;
   str = skipSpace(str);
-  d = strtod(str, &endptr);
+  d = om_strtod(str, &endptr);
   if (str == endptr) {
     fprintf(stderr, "Expected number, got: %.20s\n", str);
     abort();
