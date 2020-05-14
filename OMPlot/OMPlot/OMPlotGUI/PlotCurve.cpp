@@ -41,7 +41,8 @@
 
 using namespace OMPlot;
 
-PlotCurve::PlotCurve(QString fileName, QString name, QString xVariableName, QString yVariableName, QString unit, QString displayUnit, Plot *pParent)
+PlotCurve::PlotCurve(const QString &fileName, const QString &absoluteFilePath, const QString &name, const QString &xVariableName, const QString &yVariableName,
+                     const QString &unit, const QString &displayUnit, Plot *pParent)
   : mCustomColor(false)
 {
   mName = name;
@@ -49,6 +50,7 @@ PlotCurve::PlotCurve(QString fileName, QString name, QString xVariableName, QStr
   mYVariable = yVariableName;
   mNameStructure = fileName + "." + name;
   mFileName = fileName;
+  mAbsoluteFilePath = absoluteFilePath;
   mCustomColor = false;
   setUnit(unit);
   setDisplayUnit(displayUnit);
@@ -66,11 +68,6 @@ PlotCurve::PlotCurve(QString fileName, QString name, QString xVariableName, QStr
   mpPointMarker->attach(mpParentPlot);
   mpPointMarker->setVisible(false);
   mpPointMarker->setSymbol(new QwtSymbol(QwtSymbol::Rect, QColor(Qt::red), QColor(Qt::red), QSize(6, 6)));
-}
-
-PlotCurve::~PlotCurve()
-{
-
 }
 
 void PlotCurve::setTitleLocal()
@@ -186,9 +183,14 @@ void PlotCurve::setFileName(QString fileName)
   mFileName = fileName;
 }
 
-QString PlotCurve::getFileName()
+QString PlotCurve::getFileName() const
 {
   return mFileName;
+}
+
+QString PlotCurve::getAbsoluteFilePath() const
+{
+  return mAbsoluteFilePath;
 }
 
 void PlotCurve::setNameStructure(QString variableName)

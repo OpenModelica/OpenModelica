@@ -406,7 +406,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
         {
           variablesPlotted.append(currentVariable);
           if (!editCase) {
-            pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), currentVariable, "time", currentVariable, getUnit(), getDisplayUnit(), mpPlot);
+            pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), currentVariable, "time", currentVariable, getUnit(), getDisplayUnit(), mpPlot);
             mpPlot->addPlotCurve(pPlotCurve);
           }
           // clear previous curve data
@@ -474,7 +474,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
         }
 
         if (!editCase) {
-          pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), csvReader->variables[i], "time", csvReader->variables[i], getUnit(), getDisplayUnit(), mpPlot);
+          pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), csvReader->variables[i], "time", csvReader->variables[i], getUnit(), getDisplayUnit(), mpPlot);
           mpPlot->addPlotCurve(pPlotCurve);
         }
         // clear previous curve data
@@ -526,7 +526,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
         variablesPlotted.append(reader.allInfo[i].name);
         // create the plot curve for variable
         if (!editCase) {
-          pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), reader.allInfo[i].name, "time", reader.allInfo[i].name, getUnit(), getDisplayUnit(), mpPlot);
+          pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), reader.allInfo[i].name, "time", reader.allInfo[i].name, getUnit(), getDisplayUnit(), mpPlot);
           mpPlot->addPlotCurve(pPlotCurve);
         }
         // read the variable values
@@ -645,7 +645,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
             if (variablesPlotted.size() == 1)
             {
               if (!editCase) {
-                pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), yVariable + " vs " + xVariable, xVariable, yVariable, getUnit(), getDisplayUnit(), mpPlot);
+                pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), yVariable + " vs " + xVariable, xVariable, yVariable, getUnit(), getDisplayUnit(), mpPlot);
                 pPlotCurve->setXVariable(xVariable);
                 pPlotCurve->setYVariable(yVariable);
                 mpPlot->addPlotCurve(pPlotCurve);
@@ -719,7 +719,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
       }
 
       if (!editCase) {
-        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), yVariable + " vs " + xVariable, xVariable, yVariable, getUnit(), getDisplayUnit(), mpPlot);
+        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), yVariable + " vs " + xVariable, xVariable, yVariable, getUnit(), getDisplayUnit(), mpPlot);
         pPlotCurve->setXVariable(xVariable);
         pPlotCurve->setYVariable(yVariable);
         mpPlot->addPlotCurve(pPlotCurve);
@@ -753,7 +753,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
         throw PlotException(msg);
 
       if (!editCase) {
-        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), yVariable + " vs " + xVariable, xVariable, yVariable, getUnit(), getDisplayUnit(), mpPlot);
+        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), yVariable + " vs " + xVariable, xVariable, yVariable, getUnit(), getDisplayUnit(), mpPlot);
         pPlotCurve->setXVariable(xVariable);
         pPlotCurve->setYVariable(yVariable);
         mpPlot->addPlotCurve(pPlotCurve);
@@ -962,7 +962,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
         pPlotCurve->clearXAxisVector();
         pPlotCurve->clearYAxisVector();
       } else {
-        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), currentVariable, "array index", currentVariable, getUnit(), getDisplayUnit(), mpPlot);
+        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), currentVariable, "array index", currentVariable, getUnit(), getDisplayUnit(), mpPlot);
         mpPlot->addPlotCurve(pPlotCurve);
       }
       QList<double> arrLst;
@@ -1003,7 +1003,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
     QStringList::Iterator itVarList;
     for (itVarList = mVariablesList.begin(); itVarList != mVariablesList.end(); itVarList++){
       if (!editCase) {
-        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), *itVarList, "array index", *itVarList, getUnit(), getDisplayUnit(), mpPlot);
+        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), *itVarList, "array index", *itVarList, getUnit(), getDisplayUnit(), mpPlot);
         mpPlot->addPlotCurve(pPlotCurve);
       }
       QList<double> res;
@@ -1066,7 +1066,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
       QStringList::Iterator itVarList;
       for (itVarList = mVariablesList.begin(); itVarList != mVariablesList.end(); itVarList++){
         if (!editCase) {
-          pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), *itVarList, "array index", *itVarList, getUnit(), getDisplayUnit(), mpPlot);
+          pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), *itVarList, "array index", *itVarList, getUnit(), getDisplayUnit(), mpPlot);
           mpPlot->addPlotCurve(pPlotCurve);
         }
         int i = 1;
@@ -1176,7 +1176,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
         pPlotCurve->clearXAxisVector();
         pPlotCurve->clearYAxisVector();
       } else {
-        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), yVariable + " vs " + xVariable, xVariable, yVariable, getUnit(), getDisplayUnit(), mpPlot);
+        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), yVariable + " vs " + xVariable, xVariable, yVariable, getUnit(), getDisplayUnit(), mpPlot);
         pPlotCurve->setXVariable(xVariable);
         pPlotCurve->setYVariable(yVariable);
         mpPlot->addPlotCurve(pPlotCurve);
@@ -1222,7 +1222,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
         throw PlotException("Time out of bounds.");
       }
       if (!editCase) {
-        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), yVariable + " vs " + xVariable, xVariable, yVariable, getUnit(), getDisplayUnit(), mpPlot);
+        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), yVariable + " vs " + xVariable, xVariable, yVariable, getUnit(), getDisplayUnit(), mpPlot);
         pPlotCurve->setXVariable(xVariable);
         pPlotCurve->setYVariable(yVariable);
         mpPlot->addPlotCurve(pPlotCurve);
@@ -1283,7 +1283,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
         throw PlotException(msg);
 
       if (!editCase) {
-        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), yVariable + " vs " + xVariable, xVariable, yVariable, getUnit(), getDisplayUnit(), mpPlot);
+        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), yVariable + " vs " + xVariable, xVariable, yVariable, getUnit(), getDisplayUnit(), mpPlot);
         pPlotCurve->setXVariable(xVariable);
         pPlotCurve->setYVariable(yVariable);
         mpPlot->addPlotCurve(pPlotCurve);
@@ -1354,7 +1354,7 @@ QPair<QVector<double>*, QVector<double>*> PlotWindow::plotInteractive(PlotCurve 
     throw NoVariableException(QString(tr("Could not determine the variable name!")).toStdString().c_str());
   }
   QString variableName = mVariablesList.at(0);
-  pPlotCurve = new PlotCurve(mInteractiveModelName, variableName, "time", variableName, getUnit(), getDisplayUnit(), mpPlot);
+  pPlotCurve = new PlotCurve(mInteractiveModelName, "", variableName, "time", variableName, getUnit(), getDisplayUnit(), mpPlot);
   // clear previous curve data
   pPlotCurve->clearXAxisVector();
   pPlotCurve->clearYAxisVector();
