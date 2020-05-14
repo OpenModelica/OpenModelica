@@ -37,7 +37,9 @@
 #include "OpenModelicaBootstrappingHeader.h"
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
+#define OMC_GROUP_DELIMITER ";"
 #else
+#define OMC_GROUP_DELIMITER ":"
 #include <unistd.h>
 #include <pwd.h>
 #endif
@@ -56,9 +58,25 @@ static char* compilePath = 0;
 static char* tempDirectoryPath = 0;
 static int   echo = 1; //true
 
+static char* omc_installationPath = NULL;
+static char* omc_modelicaPath = NULL;
+static char* omc_userHome = NULL;
+
 extern char* _replace(char* source_str,char* search_str,char* replace_str); //Defined in systemimpl.c
 
-static char* winPath = NULL;
+static void commonSetEnvVar(const char *var, const char *value);
+
+/* convert to fowaard slahes in place */
+char* covertToForwardSlashesInPlace(char* path) {
+#if defined(__MINGW32__) || defined(__MINGW64__) || defined(_MSC_VER) /* Not linux or Apple */
+  int i = 0;
+  while(path[i] != '\0') {
+    if (path[i] == '\\') path[i] = '/';
+    i++;
+  }
+#endif
+  return path;
+}
 
 #if !defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1) && (defined(__linux__) || defined(__APPLE_CC__))
 /* Helper function to strip /bin/... or /lib/... from the executable path of omc */
@@ -91,9 +109,8 @@ const char* SettingsImpl__getInstallationDirectoryPath(void) {
 
 const char* SettingsImpl__getInstallationDirectoryPath(void) {
   int ret;
-  static char *omhome = NULL;
-  if (omhome) {
-    return omhome;
+  if (omc_installationPath) {
+    return omc_installationPath;
   }
 
   Dl_info info;
@@ -101,124 +118,103 @@ const char* SettingsImpl__getInstallationDirectoryPath(void) {
     fprintf(stderr, "dladdr() failed: %s\n", strerror(errno));
     exit(EXIT_FAILURE);
   } else {
-    omhome = omc_alloc_interface.malloc_strdup(info.dli_fname);
-    stripbinpath(omhome);
+    omc_installationPath = omc_alloc_interface.malloc_strdup(info.dli_fname);
+    stripbinpath(omc_installationPath);
   }
-  if (!(omhome && omhome[0])) {
+  if (!(omc_installationPath && omc_installationPath[0])) {
     fprintf(stderr, "Failed to get binary path from dladdr path: %s\n", info.dli_fname);
     exit(EXIT_FAILURE);
   }
-  return omhome;
+
+  commonSetEnvVar("OPENMODELICAHOME", omc_installationPath);
+  return omc_installationPath;
 }
 
-#else /* Not linux or Apple */
+#elif defined(__MINGW32__) || defined(__MINGW64__) || defined(_MSC_VER) /* Not linux or Apple */
+
 const char* SettingsImpl__getInstallationDirectoryPath(void) {
-  const char *path = getenv("OPENMODELICAHOME");
   int i = 0;
-  if (path == NULL) {
-#if defined(__MINGW32__) || defined(__MINGW64__) || defined(_MSC_VER)
+  if (omc_installationPath) {
+    return omc_installationPath;
+  }
+  if (omc_installationPath == NULL) {
     char filename[MAX_PATH];
     if (0 != GetModuleFileName(NULL, filename, MAX_PATH)) {
-      path = filename;
-      *strrchr(path, '\\') = '\0';
-      *strrchr(path, '\\') = '\0';
-    } else
-#endif
+      omc_installationPath = strdup(filename); /* duplicate the path */
+      *strrchr(omc_installationPath, '\\') = '\0';
+      *strrchr(omc_installationPath, '\\') = '\0';
+    }
+    else
     {
       return CONFIG_DEFAULT_OPENMODELICAHOME; // On Windows, this is NULL; on Unix it is the configured --prefix
     }
   }
-#if defined(__MINGW64__) || defined(__MINGW32__) || defined(_MSC_VER)
-  /* adrpo: translate this to forward slashes! */
-  /* already set, set it only once! */
-  if (winPath != NULL) {
-    return (const char*)winPath;
-  }
 
-  /* duplicate the path */
-  winPath = strdup(path);
+  omc_installationPath = covertToForwardSlashesInPlace(omc_installationPath);
 
-  /* ?? not enough memory for duplication */
-  if (!winPath) {
-    return path;
-  }
-
-  /* convert \\ to / */
-  while(winPath[i] != '\0') {
-    if (winPath[i] == '\\') winPath[i] = '/';
-    i++;
-  }
-  return (const char*)winPath;
-#endif
-  return path;
+  commonSetEnvVar("OPENMODELICAHOME", omc_installationPath);
+  return (const char*)omc_installationPath;
 }
-#endif
 
-char* winLibPath = NULL;
+#endif
 
 char* Settings_getHomeDir(int runningTestsuite)
 {
-  const char *homePath = NULL;
-#if !(defined(_MSC_VER) || defined(__MINGW32__))
-  homePath = getenv("HOME");
-  if (homePath == NULL) {
-    homePath = getpwuid(getuid())->pw_dir;
-  }
-#else
-  return "%APPDATA%";
-#endif
-  if (homePath == NULL || runningTestsuite) {
+  if (runningTestsuite) {
     return omc_alloc_interface.malloc_strdup("");
   }
-  return omc_alloc_interface.malloc_strdup(homePath);
+
+  if (omc_userHome)
+  {
+    return omc_userHome;
+  }
+
+#if !(defined(_MSC_VER) || defined(__MINGW32__))
+  omc_userHome = getenv("HOME");
+  if (omc_userHome == NULL) {
+    omc_userHome = getpwuid(getuid())->pw_dir;
+  }
+#else /* windows & mingw */
+  omc_userHome = getenv("APPDATA");
+  if (omc_userHome == NULL) {
+    omc_userHome = getenv("HOME");
+  }
+#endif
+  if (omc_userHome == NULL || runningTestsuite) {
+    return omc_alloc_interface.malloc_strdup("");
+  }
+  omc_userHome = omc_alloc_interface.malloc_strdup(omc_userHome);
+  return covertToForwardSlashesInPlace(omc_userHome);
 }
+
 
 // Do not free the returned variable. It's malloc'ed
 char* SettingsImpl__getModelicaPath(int runningTestsuite) {
-  const char *path = getenv("OPENMODELICALIBRARY");
-  int i = 0;
-  if (path == NULL) {
+  if (omc_modelicaPath) {
+    return omc_modelicaPath;
+  }
+
+  {
     // By default, this is <omhome>/lib/omlibrary/
     const char *omhome = SettingsImpl__getInstallationDirectoryPath();
     if (omhome == NULL)
       return NULL;
     int lenOmhome = strlen(omhome);
-    char *buffer;
-#if !(defined(_MSC_VER) || defined(__MINGW32__))
+    char *omc_modelicaPath;
     const char *homePath = Settings_getHomeDir(runningTestsuite);
     if (homePath == NULL || runningTestsuite) {
-#endif
-      buffer = (char*) malloc(lenOmhome+15);
-      snprintf(buffer,lenOmhome+15,"%s/lib/omlibrary",omhome);
-#if !(defined(_MSC_VER) || defined(__MINGW32__))
+      omc_modelicaPath = (char*) malloc(lenOmhome+15);
+      snprintf(omc_modelicaPath, lenOmhome+15,"%s/lib/omlibrary", omhome);
     } else {
       int lenHome = strlen(homePath);
-      buffer = (char*) omc_alloc_interface.malloc_atomic(lenOmhome+lenHome+41);
-      snprintf(buffer,lenOmhome+lenHome+41,"%s/lib/omlibrary:%s/.openmodelica/libraries/",omhome,homePath);
+      omc_modelicaPath = (char*) omc_alloc_interface.malloc_atomic(lenOmhome+lenHome+41);
+      snprintf(omc_modelicaPath, lenOmhome+lenHome+41,"%s/lib/omlibrary%s%s/.openmodelica/libraries/", omhome, OMC_GROUP_DELIMITER, homePath);
     }
-#endif
-    return buffer;
+
+    if (!runningTestsuite)
+      commonSetEnvVar("OPENMODELICALIBRARY", omc_modelicaPath);
+    return covertToForwardSlashesInPlace(omc_modelicaPath);
   }
-
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  /* adrpo: translate this to forward slashes! */
-  /* duplicate the path */
-  winLibPath = omc_alloc_interface.malloc_strdup(path);
-
-  /* ?? not enough memory for duplication */
-  if (!winLibPath)
-    return omc_alloc_interface.malloc_strdup(path);
-
-  /* convert \\ to / */
-  while(winLibPath[i] != '\0')
-  {
-    if (winLibPath[i] == '\\') winLibPath[i] = '/';
-    i++;
-  }
-  return winLibPath;
-#endif
-
-  return omc_alloc_interface.malloc_strdup(path);
 }
 
 static const char* SettingsImpl__getCompileCommand(void)
@@ -277,12 +273,26 @@ static void commonSetEnvVar(const char *var, const char *value)
 
 extern void SettingsImpl__setInstallationDirectoryPath(const char *value)
 {
-  commonSetEnvVar("OPENMODELICAHOME",value);
+  if (value[0] == '\0') /* clear it if is empty */
+  {
+    omc_installationPath = NULL;
+    return;
+  }
+  omc_installationPath = strdup(value);
+  omc_installationPath = covertToForwardSlashesInPlace(omc_installationPath);
+  commonSetEnvVar("OPENMODELICAHOME", omc_installationPath);
 }
 
 extern void SettingsImpl__setModelicaPath(const char *value)
 {
-  commonSetEnvVar("OPENMODELICALIBRARY",value);
+  if (value[0] == '\0') /* clear it if is empty */
+  {
+    omc_modelicaPath = NULL;
+    return;
+  }
+  omc_modelicaPath = strdup(value);
+  omc_modelicaPath = covertToForwardSlashesInPlace(omc_modelicaPath);
+  commonSetEnvVar("OPENMODELICALIBRARY", omc_modelicaPath);
 }
 
 extern void SettingsImpl__setTempDirectoryPath(const char *path)
@@ -322,6 +332,7 @@ extern const char* SettingsImpl__getTempDirectoryPath(void)
   }
   return tempDirectoryPath;
 }
+
 
 #ifdef __cplusplus
 }

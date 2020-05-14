@@ -77,7 +77,7 @@ public function getTempDirectoryPath
   external "C" outString=Settings_getTempDirectoryPath() annotation(Library = "omcruntime");
 end getTempDirectoryPath;
 
-public function setInstallationDirectoryPath
+public function setInstallationDirectoryPath "set it to empty string to clear it"
   input String inString;
 
   external "C" SettingsImpl__setInstallationDirectoryPath(inString) annotation(Library = "omcruntime");
@@ -88,7 +88,7 @@ public function getInstallationDirectoryPath
   external "C"  outString=Settings_getInstallationDirectoryPath() annotation(Library = "omcruntime");
 end getInstallationDirectoryPath;
 
-public function setModelicaPath
+public function setModelicaPath "set it to empty string to clear it"
   input String inString;
   external "C" SettingsImpl__setModelicaPath(inString) annotation(Library = "omcruntime");
 end setModelicaPath;
