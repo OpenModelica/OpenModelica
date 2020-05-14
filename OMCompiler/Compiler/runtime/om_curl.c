@@ -2,6 +2,8 @@
 
 #if defined(__MINGW32__)
 #define CURL_STATICLIB 1
+#include "systemimpl.h"
+#include "settingsimpl.h"
 #endif
 #include <curl/curl.h>
 #include "meta/meta_modelica.h"
@@ -42,6 +44,30 @@ static void* addTransfer(CURLM *cm, void *urlPathList, int *result)
   p->fout = fout;
   p->filename = file;
 
+#if defined(__MINGW32__)
+  {
+    /* mingw/windows horror, let's find the curl CA bundle! */
+    char* ca_bundle_file = NULL;
+    const char* omhome = SettingsImpl__getInstallationDirectoryPath();
+#if defined(__MINGW64__)
+#define CURL_CA_BUNDLE_SUFFIX "/tools/msys/mingw64/ssl/certs/ca-bundle.crt"
+#else
+#define CURL_CA_BUNDLE_SUFFIX "/tools/msys/mingw32/ssl/certs/ca-bundle.crt"
+#endif
+    ca_bundle_file = (char*)malloc(sizeof(char*)*strlen(omhome) + strlen(CURL_CA_BUNDLE_SUFFIX) + 1);
+    sprintf(ca_bundle_file, "%s/%s", omhome, CURL_CA_BUNDLE_SUFFIX);
+    /* check if file exists */
+    if (!SystemImpl__regularFileExists(ca_bundle_file))
+    {
+      /* oh nooo, this is not an installation, is just a repo, try with OMDEV */
+      free(ca_bundle_file);
+      omhome = getenv("OMDEV");
+      ca_bundle_file = (char*)malloc(sizeof(char*)*strlen(omhome) + strlen(CURL_CA_BUNDLE_SUFFIX) + 1);
+      sprintf(ca_bundle_file, "%s/%s", omhome, CURL_CA_BUNDLE_SUFFIX);
+    }
+    curl_easy_setopt(eh, CURLOPT_CAINFO, ca_bundle_file);
+  }
+#endif
   curl_easy_setopt(eh, CURLOPT_FOLLOWLOCATION, 1);
   curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, writeDataCallback);
   curl_easy_setopt(eh, CURLOPT_URL, url);
