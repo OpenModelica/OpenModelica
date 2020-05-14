@@ -1408,7 +1408,7 @@ algorithm
   usedfuncs := BackendDAEUtil.traverseBackendDAEExpsVars(inShared.aliasVars, func, usedfuncs);
   usedfuncs := BackendDAEUtil.traverseBackendDAEExpsEqns(inShared.removedEqs, func, usedfuncs);
   usedfuncs := BackendDAEUtil.traverseBackendDAEExpsEqns(inShared.initialEqs, func, usedfuncs);
-  usedfuncs := removeUnusedFunctionsSymJacs(inShared.symjacs, funcs, usedfuncs);
+  usedfuncs := removeUnusedFunctionsSymJacs(inShared, funcs, usedfuncs);
 
   outFunctionTree := usedfuncs;
 end removeUnusedFunctions;
@@ -1471,18 +1471,17 @@ algorithm
 end copyRecordConstructorAndExternalObjConstructorDestructor;
 
 protected function removeUnusedFunctionsSymJacs
-  input BackendDAE.SymbolicJacobians inSymJacs;
+  input BackendDAE.Shared inShared;
   input DAE.FunctionTree inFunctions;
   input DAE.FunctionTree inUsedFunctions;
   output DAE.FunctionTree outUsedFunctions = inUsedFunctions;
+protected
+  BackendDAE.BackendDAE bdae;
+  DAE.FunctionTree usedfuncs;
+  BackendDAE.Shared shared;
 algorithm
-  for sjac in inSymJacs loop
+  for sjac in inShared.symjacs loop
     _ := match(sjac)
-      local
-        BackendDAE.BackendDAE bdae;
-        DAE.FunctionTree usedfuncs;
-        BackendDAE.Shared shared;
-
       case (SOME((bdae, _, _, _, _, _)), _, _)
         equation
           bdae = BackendDAEUtil.setFunctionTree(bdae, inFunctions);
@@ -1495,6 +1494,26 @@ algorithm
       else ();
     end match;
   end for;
+
+  // Collect function if there is a data recon structure.
+  () := match inShared.dataReconciliationData
+    case NONE() then ();
+
+    case SOME(BackendDAE.DATA_RECON(symbolicJacobian =
+                      BackendDAE.GENERIC_JACOBIAN(jacobian=SOME((bdae, _, _, _, _, _)))))
+      algorithm
+        bdae := BackendDAEUtil.setFunctionTree(bdae, inFunctions);
+        shared := bdae.shared;
+        usedfuncs := removeUnusedFunctions(bdae.eqs, shared, {}, shared.functionTree, inUsedFunctions);
+        outUsedFunctions := DAE.AvlTreePathFunction.join(outUsedFunctions, usedfuncs);
+      then ();
+
+    // If data isSome and we have non generic jacobian what do we do?
+    else algorithm
+      Error.addInternalError(getInstanceName()
+                  + ": Unexpected data reconciliation jacobian structure. ", sourceInfo());
+      then fail();
+  end match;
 end removeUnusedFunctionsSymJacs;
 
 protected function checkUnusedFunctions
