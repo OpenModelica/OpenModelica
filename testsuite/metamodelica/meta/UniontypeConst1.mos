@@ -1,0 +1,17 @@
+// name:     UniontypeConst1
+// keywords: uniontype const
+// status:   correct
+// cflags:   -g=MetaModelica -d=gen
+//
+// Tests constants inside of uniontypes.
+//
+
+loadFile("UniontypeConst1.mo"); getErrorString();
+test(); getErrorString();
+
+// Result:
+// true
+// ""
+// 1.0
+// ""
+// endResult

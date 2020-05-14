@@ -3130,19 +3130,14 @@ algorithm
       SCode.Final f1,f2;
       Absyn.InnerOuter io1,io2;
       SCode.Replaceable rpl1,rpl2;
-
     case(SCode.PREFIXES(v1,rd1,f1,io1,rpl1),SCode.PREFIXES(v2,rd2,f2,io2,rpl2))
-      equation
-        true = valueEq(v1, v2);
-        true = valueEq(rd1, rd2);
-        true = valueEq(f1, f2);
-        true = AbsynUtil.innerOuterEqual(io1, io2);
-        true = replaceableEqual(rpl1, rpl2);
+      guard valueEq(v1, v2) and valueEq(rd1, rd2)
+                            and valueEq(f1, f2)
+                            and AbsynUtil.innerOuterEqual(io1, io2)
+                            and replaceableEqual(rpl1, rpl2)
       then
         true;
-
     else false;
-
   end matchcontinue;
 end prefixesEqual;
 
@@ -4953,10 +4948,10 @@ public function propagateIsField
   input Absyn.IsField inNewIsField;
   output Absyn.IsField outNewIsField;
 algorithm
-  outNewIsField := matchcontinue(inOriginalIsField, inNewIsField)
+  outNewIsField := match (inOriginalIsField, inNewIsField)
     case (_, Absyn.NONFIELD()) then inOriginalIsField;
     else inNewIsField;
-  end matchcontinue;
+  end match;
 end propagateIsField;
 
 
@@ -5089,18 +5084,12 @@ functions, destructor and constructor. "
   input  list<SCode.Element> els;
   output Boolean res;
 algorithm
-  res := matchcontinue(els)
-    case _
-      equation
-        3 = listLength(els);
-        true = hasExtendsOfExternalObject(els);
-        true = hasExternalObjectDestructor(els);
-        true = hasExternalObjectConstructor(els);
-      then
-        true;
-
-    else false;
-  end matchcontinue;
+  res := if listLength(els) == 3 then
+           hasExtendsOfExternalObject(els)
+	   and hasExternalObjectDestructor(els)
+	   and hasExternalObjectConstructor(els)
+         else
+	   false;
 end isExternalObject;
 
 protected function hasExtendsOfExternalObject
