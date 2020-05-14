@@ -24,9 +24,9 @@ link_directories(${OMDEV}/lib/lapack-win32-msvc)
 
 # Check for KLU
 IF(MSVC)
-  FIND_PATH(KLU_INCLUDE NAMES klu.h PATHS ${OMCTRUNCHOME}/build/include/omc/msvc/suitesparse ${OMCTRUNCHOME}/build/include/omc/msvc/suitsparse/Include)
+  FIND_PATH(KLU_INCLUDE NAMES klu.h PATHS ${OMBUILDDIR}/include/omc/msvc/suitesparse ${OMBUILDDIR}/include/omc/msvc/suitsparse/Include)
 ELSEIF(MSVC)
-  FIND_PATH(KLU_INCLUDE NAMES klu.h PATHS ${OMCTRUNCHOME}/build/include/omc/c/suitsparse/Include)
+  FIND_PATH(KLU_INCLUDE NAMES klu.h PATHS ${OMBUILDDIR}/include/omc/c/suitsparse/Include)
 ENDIF(MSVC)
 IF(NOT KLU_INCLUDE)
   MESSAGE(FATAL_ERROR "Can't find KLU header files. Build SuiteSparse first.")

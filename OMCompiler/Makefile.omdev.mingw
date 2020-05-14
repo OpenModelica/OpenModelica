@@ -395,7 +395,7 @@ Umfpack_msvc: getMSVCversion
 	# copy dll to bin folder
 	(mkdir -p $(OMBUILDDIR)/include/omc/msvc/suitesparse)
 	(cp -puf 3rdParty/SuiteSparse/install_msvc/lib/omc/*.lib $(OMBUILDDIR)/lib/omc/msvc/)
-	(cp -pur 3rdParty/SuiteSparse/install_msvc/include/omc/c/suitesparse/Include/ $(OMBUILDDIR)/include/omc/msvc/suitesparse)
+	(cp -pur 3rdParty/SuiteSparse/install_msvc/include/omc/c/suitesparse/Include/*.h $(OMBUILDDIR)/include/omc/msvc/suitesparse/)
 
 # build sundials
 sundials_msvc: Umfpack_msvc getMSVCversion 3rdParty/sundials/CMakeLists.txt
@@ -485,7 +485,7 @@ simulationruntimecmsvc:  getMSVCversion Umfpack_msvc CMinpack_msvc fmil_msvc sun
 	mkdir -p SimulationRuntime/build_c
 	echo @echo on > SimulationRuntime/build_c/build.bat
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> SimulationRuntime/build_c/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:String=../../build ../c -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> SimulationRuntime/build_c/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:String=../../build ../c -DOMBUILDDIR=$(OMBUILDDIR) -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> SimulationRuntime/build_c/build.bat
 	echo @echo on >> SimulationRuntime/build_c/build.bat
 	echo set MAKE= >> SimulationRuntime/build_c/build.bat
 	echo set MAKEFLAGS= >> SimulationRuntime/build_c/build.bat
