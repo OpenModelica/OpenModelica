@@ -41,9 +41,11 @@ All commits should adhere to the following simple guidelines (the Jenkins job ch
 * For OpenModelica-testsuite: Any added or modified reference file needs to use [filterSimulationResults](https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/scripting_api.html#filtersimulationresults) to create a file with a minimal number of trajectories and output points in order to reduce the file size. It is often possible to reduce a file from 20MB to 10kB without significant losses.
 * Use short lines in commit messages in order for github and git tools to display properly in terminal / web GUI.
 
+## Working with the OpenModelica/OMCompiler/3rdParty submodule
+
 If you need to make changes to OMCompiler-3rdParty the procedure is as follows:
 * push to a branch in OMCompiler-3rdParty (ask us for access via OpenModelica mailing list)
-* make a PR to OpenModelica glue project with OMCompiler/3rdParty submodule pointing ar your commit from the pushed branch in OMCompiler-3rdParty
+* make a PR to OpenModelica glue project with OpenModelica/OMCompiler/3rdParty submodule pointing at your commit from the pushed branch in OMCompiler-3rdParty
 
 After Jenkins checks that all is OK a developer will:
 * rebase the commit from the OMCompiler-3rdParty branch to master
