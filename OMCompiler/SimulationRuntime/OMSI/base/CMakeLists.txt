@@ -4,14 +4,15 @@ PROJECT(OMSIBASE)
 SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 # Set exapat lib for visual studio compiler
+# TODO AHeu: This relies on the static expat libexpat.a on MSVC but it's only build for mingw target!
 IF(MSVC)
   INCLUDE_DIRECTORIES($ENV{OMDEV}/lib/expat-win32-msvc)
-  FIND_LIBRARY(LIB_EXPAT NAMES libexpat.a PATHS NO_DEFAULT_PATH ${OMBUILDDIR}/lib/omc ${OMBUILDDIR}/lib/omc/msvc ${CMAKE_SOURCE_DIR}/../../3rdParty/FMIL/build/ExpatEx/ $ENV{OMDEV}/lib/expat-win32-msvc $ENV{OMDEV}/lib/lapack-win32-msvc)
+  FIND_LIBRARY(LIB_EXPAT NAMES expat libexpat PATHS ${OMBUILDDIR}/lib/omc ${OMBUILDDIR}/lib/omc/msvc ${CMAKE_SOURCE_DIR}/../../3rdParty/FMIL/build/ExpatEx/ $ENV{OMDEV}/lib/expat-win32-msvc $ENV{OMDEV}/lib/lapack-win32-msvc)
 ELSE(MSVC)
   FIND_LIBRARY(LIB_EXPAT NAMES expat libexpat PATHS ${OMBUILDDIR}/lib/omc ${CMAKE_SOURCE_DIR}/../../3rdParty/FMIL/build/ExpatEx/)
 ENDIF(MSVC)
 IF(NOT LIB_EXPAT)
-  MESSAGE(FATAL_ERROR "Could not find static expat library in ${OMBUILDDIR}/lib/omc/ ${CMAKE_SOURCE_DIR}/../../3rdParty/FMIL/build_msvc/ExpatEx/")
+  MESSAGE(FATAL_ERROR "Could not find static expat library!\nSearched in:\n${OMBUILDDIR}/lib/omc ${OMBUILDDIR}/lib/omc/msvc ${CMAKE_SOURCE_DIR}/../../3rdParty/FMIL/build/ExpatEx/ $ENV{OMDEV}/lib/expat-win32-msvc $ENV{OMDEV}/lib/lapack-win32-msvc")
 ENDIF(NOT LIB_EXPAT)
 MESSAGE(STATUS "Using expat library ${LIB_EXPAT}")
 

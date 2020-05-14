@@ -471,7 +471,7 @@ runtimeCPPmsvcinstall: CMinpack_msvc  copycppmsvcheader OMSIBaseMSVC
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.dll $(OMBUILDDIR)/bin/msvc
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.lib $(OMBUILDDIR)/lib/omc/omsicpp/msvc
 
-
+# TODO AHeu: This relies on the static expat libexpat.a on MSVC but it's only build for mingw target!
 runtimeOMSIBaseMSVCInstall:
 	$(MAKE) -C SimulationRuntime/OMSI/ -f Makefile.omdev.mingw OMSIBaseMSVC OMBUILDDIR=$(OMBUILDDIR)
 
