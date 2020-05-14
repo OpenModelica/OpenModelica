@@ -96,6 +96,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"./util/varinfo.c\" />
 //       <File name=\"./util/ModelicaUtilities.c\" />
 //       <File name=\"./util/omc_msvc.c\" />
+//       <File name=\"./util/omc_numbers.c\" />
 //       <File name=\"./util/parallel_helper.c\" />
 //       <File name=\"./util/simulation_options.c\" />
 //       <File name=\"./util/rational.c\" />

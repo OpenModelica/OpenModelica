@@ -111,6 +111,7 @@ RUNTIMEUTIL_HEADERS = \
 ./util/omc_file.h \
 ./util/omc_mmap.h \
 ./util/omc_msvc.h \
+./util/omc_numbers.h \
 ./util/omc_spinlock.h \
 ./util/parallel_helper.h \
 ./util/read_matlab4.c \

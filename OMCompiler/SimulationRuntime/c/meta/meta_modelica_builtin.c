@@ -40,6 +40,7 @@
 
 #define GEN_META_MODELICA_BUILTIN_BOXPTR
 #include "meta_modelica_builtin_boxptr.h"
+#include "../util/omc_numbers.h"
 
 metamodelica_string intString(modelica_integer i)
 {
@@ -99,7 +100,7 @@ modelica_real nobox_stringReal(threadData_t *threadData,metamodelica_string s)
   char *endptr,*str=MMC_STRINGDATA(s);
   MMC_CHECK_STRING(s);
   errno = 0;
-  res = strtod(str,&endptr);
+  res = om_strtod(str,&endptr);
   if (errno != 0 || str == endptr)
     MMC_THROW_INTERNAL();
   if (*endptr != '\0')

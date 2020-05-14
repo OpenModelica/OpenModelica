@@ -35,10 +35,7 @@
 #include "read_matlab4.h"
 #include "libcsv.h"
 #include "omc_file.h"
-
-#if defined(__cplusplus)
-#include <sstream>
-#endif
+#include "omc_numbers.h"
 
 struct cell_row_count
 {
@@ -182,20 +179,11 @@ static void add_cell(void *data, size_t len, void *t)
     body->res[body->size++] = 0.0;
     return;
   }
-#if !defined(__cplusplus)
-  body->res[body->size++] = data ? strtod((const char*)data,&endptr) : 0;
+  body->res[body->size++] = data ? om_strtod((const char*)data,&endptr) : 0;
   if (*endptr) {
     fprintf(stderr,"Found non-double data in csv result-file: %s\n", (char*) data);
     body->error = 1;
   }
-#else
-  std::istringstream str((const char*)data);
-  str >> body->res[body->size++];
-  if (!str.eof()) {
-    fprintf(stderr,"Found non-double data in csv result-file: %s\n", (char*) data);
-    body->error = 1;
-  }
-#endif
 }
 
 static void add_row(int c, void *t)

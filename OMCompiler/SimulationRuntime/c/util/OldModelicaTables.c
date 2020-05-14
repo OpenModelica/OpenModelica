@@ -39,6 +39,7 @@
 #ifdef _MSC_VER
 #include "omc_msvc.h"
 #endif
+#include "omc_numbers.h"
 
 /* Definition to get some Debug information if interface is called */
 /* #define INFOS */
@@ -530,7 +531,7 @@ static void Text_readTable(TEXT_FILE *f, double *buf, size_t rows, size_t cols)
     for(j = 0; j < cols; ++j)
     {
       /* remove sufix whitespaces */
-      buf[i*cols+j] = strtod(number,&entp);
+      buf[i*cols+j] = om_strtod(number,&entp);
       /* move to next number */
       number = entp;
     }
@@ -920,7 +921,7 @@ static void csv_readTable(CSV_FILE *f, const char *tableName, double *data, size
         number = strLn;
         for(col=0;col<cols;col++)
         {
-          data[row*cols+col] = strtod(number,&entp);
+          data[row*cols+col] = om_strtod(number,&entp);
           trim((const char**)&entp,&lh);
           number = entp+1;
         }
