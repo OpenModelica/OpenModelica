@@ -60,8 +60,8 @@ protected
 public
   uniontype BackendInfo
     record BACKEND_INFO
-      VariableKind varKind                          "Structural kind: state, algebraic...";
-      Option<VariableAttributes> attributes     "values on built-in attributes";
+      VariableKind varKind                  "Structural kind: state, algebraic...";
+      Option<VariableAttributes> attributes "values on built-in attributes";
     end BACKEND_INFO;
 
     function setVarKind

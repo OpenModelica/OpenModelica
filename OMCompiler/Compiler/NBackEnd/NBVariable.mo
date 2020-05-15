@@ -632,7 +632,7 @@ public
                                           ($SEED.[jacname].x)";
     end VAR_DATA_JAC;
 
-    record VAR_DATA_HESS
+    record VAR_DATA_HES
       "Only to be used for Hessians."
       VariablePointers variables                 "All hessian variables";
       /* subset of full variable array */
@@ -663,7 +663,7 @@ public
                                           derivative dx/dz which is 1 for x==z and 0 otherwise.
                                           ($SEED2.[jacname].x)";
       Option<VariablePointers> lambdaVars "Lambda variables for optimization";
-    end VAR_DATA_HESS;
+    end VAR_DATA_HES;
 
     function toString
       input VarData varData;
@@ -675,7 +675,7 @@ public
             VarData qualVarData;
           case qualVarData as VAR_DATA_SIM() then VariablePointers.toString(varData.variables, "Simulation");
           case qualVarData as VAR_DATA_JAC() then VariablePointers.toString(varData.variables, "Jacobian");
-          case qualVarData as VAR_DATA_HESS() then VariablePointers.toString(varData.variables, "Hessian");
+          case qualVarData as VAR_DATA_HES() then VariablePointers.toString(varData.variables, "Hessian");
           else fail();
         end match
       elseif level == 1 then toStringVerbose(varData, false)
@@ -725,7 +725,7 @@ public
           end if;
         then tmp;
 
-        case qualVarData as VAR_DATA_HESS()algorithm
+        case qualVarData as VAR_DATA_HES() algorithm
           tmp := StringUtil.headline_2("Variable Data Hessian") + "\n" +
             VariablePointers.toString(varData.unknowns, "Unknown") + "\n" +
             VariablePointers.toString(varData.knowns, "Known") + "\n" +
@@ -758,7 +758,7 @@ public
           VariablePointers tmp;
         case VAR_DATA_SIM(variables = tmp) then tmp;
         case VAR_DATA_JAC(variables = tmp) then tmp;
-        case VAR_DATA_HESS(variables = tmp) then tmp;
+        case VAR_DATA_HES(variables = tmp) then tmp;
         else fail();
       end match;
     end getVariables;
@@ -772,7 +772,7 @@ public
           VarData qual;
         case qual as VAR_DATA_SIM() algorithm qual.variables := variables; then qual;
         case qual as VAR_DATA_JAC() algorithm qual.variables := variables; then qual;
-        case qual as VAR_DATA_HESS() algorithm qual.variables := variables; then qual;
+        case qual as VAR_DATA_HES() algorithm qual.variables := variables; then qual;
         else fail();
       end match;
     end setVariables;

@@ -94,7 +94,7 @@ public
     (mainFunc, contFunc, discFunc) := match flag
       case "default" then (detectStatesDefault, detectContinuousStatesDefault, detectDiscreteStatesDefault);
       /* ... New detect states modules have to be added here */
-    else fail();
+      else fail();
     end match;
   end getModule;
 
@@ -104,19 +104,18 @@ public
 protected
   function detectStatesDefault extends Module.detectStatesInterface;
   protected
-   BVariable.VariablePointers variables      "All variables";
-   BEquation.EquationPointers equations      "System equations";
-   BEquation.EquationPointers disc_eqns      "Discrete equations";
-   BVariable.VariablePointers unknowns       "Unknowns";
-   BVariable.VariablePointers knowns         "Knowns";
-   BVariable.VariablePointers initials       "Initial unknowns";
-   BVariable.VariablePointers states         "States";
-   BVariable.VariablePointers derivatives    "State derivatives (der(x) -> $DER.x)";
-   BVariable.VariablePointers algebraics     "Algebraic variables";
-   BVariable.VariablePointers discretes      "Discrete variables";
-   BVariable.VariablePointers previous       "Previous discrete variables (pre(d) -> $PRE.d)";
-   BVariable.VariablePointers auxiliaries, aliasVars, parameters, constants     "(only to reconstruct VAR_DATA_SIM)";
-
+    BVariable.VariablePointers variables      "All variables";
+    BEquation.EquationPointers equations      "System equations";
+    BEquation.EquationPointers disc_eqns      "Discrete equations";
+    BVariable.VariablePointers unknowns       "Unknowns";
+    BVariable.VariablePointers knowns         "Knowns";
+    BVariable.VariablePointers initials       "Initial unknowns";
+    BVariable.VariablePointers states         "States";
+    BVariable.VariablePointers derivatives    "State derivatives (der(x) -> $DER.x)";
+    BVariable.VariablePointers algebraics     "Algebraic variables";
+    BVariable.VariablePointers discretes      "Discrete variables";
+    BVariable.VariablePointers previous       "Previous discrete variables (pre(d) -> $PRE.d)";
+    BVariable.VariablePointers auxiliaries, aliasVars, parameters, constants     "(only to reconstruct VAR_DATA_SIM)";
   algorithm
     BVariable.VAR_DATA_SIM(variables = variables, unknowns = unknowns, knowns = knowns, initials = initials, auxiliaries = auxiliaries, aliasVars = aliasVars, states = states, derivatives = derivatives, algebraics = algebraics, discretes = discretes, previous = previous, parameters = parameters, constants = constants) := varData;
     BEquation.EQ_DATA_SIM(equations = equations, discretes = disc_eqns) := eqData;
@@ -169,7 +168,7 @@ protected
             Pointer.update(acc_derivatives, der_var :: Pointer.access(acc_derivatives));
           end if;
       then Expression.fromCref(der_cref);
-      // ToDo! General expressions inside call! -> ticket #5934
+      // ToDo! General expressions inside der call! -> ticket #5934
       else exp;
     end match;
   end collectStatesAndDerivatives;
@@ -230,7 +229,6 @@ protected
       else exp;
     end match;
   end collectDiscreteStatesAndPrevious;
-
 
   function updateDiscreteStatesAndPrevious
     "Updates the variable pointer arrays with the new information about states and derivatives."

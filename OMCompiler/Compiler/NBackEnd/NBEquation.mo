@@ -104,7 +104,7 @@ public
       Expression range                "Start - (Step) - Stop";
       Equation body                   "iterated equation";
       DAE.ElementSource source        "origin of equation";
-      EquationAttributes attr;
+      EquationAttributes attr         "Additional Attributes";
     end FOR_EQUATION;
 
     record WHEN_EQUATION
@@ -172,7 +172,7 @@ public
     end forEquationToString;
 
   public
-     function getAttributes
+    function getAttributes
       input Equation eq;
       output EquationAttributes attr;
     algorithm
@@ -323,7 +323,7 @@ public
 
   uniontype IfEquationBody
     record IF_EQUATION_BODY
-      Expression condition                  "the if-condition" ;
+      Expression condition                  "the if-condition";
       list<Pointer<Equation>> then_eqns     "body equations";
       Option<IfEquationBody> else_if        "optional elseif equation";
     end IF_EQUATION_BODY;
