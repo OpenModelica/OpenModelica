@@ -4132,7 +4132,7 @@ algorithm
         failure(_ = List.threadMap(dim1, dim2, compatibleArraydim));
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
-        dim_str = printDimStr(dim1);
+        dim_str = ExpressionDump.dimensionsString(dim1);
         Error.addMultiSourceMessage(Error.ARRAY_DIMENSION_MISMATCH, {e_str,t_str,dim_str}, info2::info::{});
       then
         fail();
@@ -4149,18 +4149,6 @@ algorithm
         fail();
   end matchcontinue;
 end elabArraydim;
-
-protected function printDimStr
-"This function prints array dimensions.
-  The code is not included in the report."
-  input DAE.Dimensions inDimensionLst;
-  output String outString;
-protected
-  list<String> dim_strings;
-algorithm
-  dim_strings := List.map(inDimensionLst, ExpressionDump.dimensionString);
-  outString := stringDelimitList(dim_strings, ",");
-end printDimStr;
 
 protected function compatibleArraydim
   "Given two, possibly incomplete, array dimension size specifications, this

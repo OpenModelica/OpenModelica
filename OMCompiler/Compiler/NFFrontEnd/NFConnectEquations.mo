@@ -851,6 +851,7 @@ algorithm
     op := Operator.makeGreater(ComponentRef.nodeType(flow_cr));
 
     exp := Expression.IF(
+      Type.REAL(),
       Expression.RELATION(flow_exp, op, Expression.REAL(0.0)),
       instream_exp, stream_exp);
 

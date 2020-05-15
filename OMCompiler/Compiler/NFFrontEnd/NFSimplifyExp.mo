@@ -665,9 +665,10 @@ end simplifyRelation;
 function simplifyIf
   input output Expression ifExp;
 protected
+  Type ty;
   Expression cond, tb, fb;
 algorithm
-  Expression.IF(cond, tb, fb) := ifExp;
+  Expression.IF(ty, cond, tb, fb) := ifExp;
   cond := simplify(cond);
 
   ifExp := match cond
@@ -679,7 +680,7 @@ algorithm
         tb := simplify(tb);
         fb := simplify(fb);
       then
-        if Expression.isEqual(tb, fb) then tb else Expression.IF(cond, tb, fb);
+        if Expression.isEqual(tb, fb) then tb else Expression.IF(ty, cond, tb, fb);
 
   end match;
 end simplifyIf;

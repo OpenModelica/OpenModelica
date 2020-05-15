@@ -1420,6 +1420,13 @@ algorithm
       else
         algorithm
           (e, ty, _) := typeExp(e, origin, info);
+
+          if Type.isConditionalArray(ty) then
+            e := Ceval.evalExp(e, Ceval.EvalTarget.GENERIC(info));
+            Inst.markStructuralParamsExp(e);
+            ty := Expression.typeOf(e);
+          end if;
+
           typedExp := SOME(e);
         then
           nthDimensionBoundsChecked(ty, dimIndex);
@@ -2221,7 +2228,7 @@ algorithm
 
   (tb, tb_ty, tb_var) := typeExp(tb, next_origin, info);
   (fb, fb_ty, fb_var) := typeExp(fb, next_origin, info);
-  (tb2, fb2, ty, ty_match) := TypeCheck.matchIfBranches(tb, tb_ty, fb, fb_ty, cond, cond_var);
+  (tb2, fb2, ty, ty_match) := TypeCheck.matchIfBranches(tb, tb_ty, fb, fb_ty);
 
   if TypeCheck.isIncompatibleMatch(ty_match) then
     Error.addSourceMessage(Error.TYPE_MISMATCH_IF_EXP,
@@ -2230,7 +2237,7 @@ algorithm
     fail();
   end if;
 
-  ifExp := Expression.IF(cond, tb2, fb2);
+  ifExp := Expression.IF(ty, cond, tb2, fb2);
   var := Prefixes.variabilityMax(cond_var, Prefixes.variabilityMax(tb_var, fb_var));
 end typeIfExpression;
 

@@ -560,6 +560,7 @@ IfExpression2.mo \
 IfExpression3.mo \
 IfExpression4.mo \
 IfExpression5.mo \
+IfExpression7.mo \
 IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \

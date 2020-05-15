@@ -10,7 +10,7 @@ end IfExpression5;
 
 // Result:
 // Error processing file: IfExpression5.mo
-// [flattening/modelica/scodeinst/IfExpression5.mo:8:3-8:53:writable] Error: Type mismatch in if-expression in component . True branch: {1, 2} has type Integer[2], false branch: {3, 4, 5} has type Integer[3].
+// [flattening/modelica/scodeinst/IfExpression5.mo:8:3-8:53:writable] Error: Type mismatch in if-expression in component . True branch: {1.0, 2.0} has type Real[2], false branch: {3.0, 4.0, 5.0} has type Real[3].
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

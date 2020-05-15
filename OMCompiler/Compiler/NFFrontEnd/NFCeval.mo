@@ -1712,10 +1712,11 @@ function evalIfExp
   input EvalTarget target;
   output Expression result;
 protected
+  Type ty;
   Expression cond, btrue, bfalse;
 algorithm
-  Expression.IF(condition = cond, trueBranch = btrue, falseBranch = bfalse) := ifExp;
-  result := Expression.IF(evalExp_impl(cond, target), btrue, bfalse);
+  Expression.IF(ty, cond, btrue, bfalse) := ifExp;
+  result := Expression.IF(ty, evalExp_impl(cond, target), btrue, bfalse);
   result := Expression.bindingExpMap(result, function evalIfExp2(target = target));
 end evalIfExp;
 
@@ -1724,18 +1725,29 @@ function evalIfExp2
   input EvalTarget target;
   output Expression result;
 protected
-  Expression cond, btrue, bfalse;
+  Type ty;
+  Expression cond, tb, fb;
 algorithm
-  Expression.IF(condition = cond, trueBranch = btrue, falseBranch = bfalse) := ifExp;
+  Expression.IF(ty = ty, condition = cond, trueBranch = tb, falseBranch = fb) := ifExp;
 
   result := match cond
     case Expression.BOOLEAN()
-      then evalExp_impl(if cond.value then btrue else bfalse, target);
+      algorithm
+        if Type.isConditionalArray(ty) and not Type.isMatchedBranch(cond.value, ty) then
+          (tb, fb) := Util.swap(cond.value, fb, tb);
+          Error.addSourceMessage(Error.ARRAY_DIMENSION_MISMATCH,
+            {Expression.toString(tb), Type.toString(Expression.typeOf(tb)),
+             Dimension.toStringList(Type.arrayDims(Expression.typeOf(fb)), brackets = false)},
+             EvalTarget.getInfo(target));
+          fail();
+        end if;
+      then
+        evalExp_impl(if cond.value then tb else fb, target);
 
     else
       algorithm
         Error.addInternalError(getInstanceName() + ": unimplemented case for " +
-          Expression.toString(Expression.IF(cond, btrue, bfalse)), sourceInfo());
+          Expression.toString(ifExp), sourceInfo());
       then
         fail();
   end match;

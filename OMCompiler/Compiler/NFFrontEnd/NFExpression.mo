@@ -278,6 +278,7 @@ public
   end RELATION;
 
   record IF
+    Type ty;
     Expression condition;
     Expression trueBranch;
     Expression falseBranch;
@@ -348,7 +349,7 @@ public
        BINDING_EXP({{1, 2}, {3, 4}, {5, 6}}, Real[3, 2], Real[2], {x, a}, false);
     "
     Expression exp;
-    Type expType      "The actual type of exp.";
+    Type expType     "The actual type of exp.";
     Type bindingType "The type of the propagated binding.";
     list<InstNode> parents;
     Boolean isEach;
@@ -819,7 +820,7 @@ public
       case LBINARY()         then Operator.typeOf(exp.operator);
       case LUNARY()          then Operator.typeOf(exp.operator);
       case RELATION()        then Operator.typeOf(exp.operator);
-      case IF()              then typeOf(exp.trueBranch);
+      case IF()              then exp.ty;
       case CAST()            then exp.ty;
       case UNBOX()           then exp.ty;
       case SUBSCRIPTED_EXP() then exp.ty;
@@ -838,29 +839,62 @@ public
     input Type ty;
     input output Expression exp;
   algorithm
-    () := match exp
-      case ENUM_LITERAL()    algorithm exp.ty := ty; then ();
-      case CREF()            algorithm exp.ty := ty; then ();
-      case TYPENAME()        algorithm exp.ty := ty; then ();
-      case ARRAY()           algorithm exp.ty := ty; then ();
-      case RANGE()           algorithm exp.ty := ty; then ();
-      case TUPLE()           algorithm exp.ty := ty; then ();
-      case RECORD()          algorithm exp.ty := ty; then ();
-      case CALL()            algorithm exp.call := Call.setType(exp.call, ty); then ();
-      case BINARY()          algorithm exp.operator := Operator.setType(ty, exp.operator); then ();
-      case UNARY()           algorithm exp.operator := Operator.setType(ty, exp.operator); then ();
-      case LBINARY()         algorithm exp.operator := Operator.setType(ty, exp.operator); then ();
-      case LUNARY()          algorithm exp.operator := Operator.setType(ty, exp.operator); then ();
-      case RELATION()        algorithm exp.operator := Operator.setType(ty, exp.operator); then ();
-      case CAST()            algorithm exp.ty := ty; then ();
-      case UNBOX()           algorithm exp.ty := ty; then ();
-      case SUBSCRIPTED_EXP() algorithm exp.ty := ty; then ();
-      case TUPLE_ELEMENT()   algorithm exp.ty := ty; then ();
-      case RECORD_ELEMENT()  algorithm exp.ty := ty; then ();
-      case PARTIAL_FUNCTION_APPLICATION() algorithm exp.ty := ty; then ();
-      else ();
+    exp := match exp
+      case ENUM_LITERAL()    algorithm exp.ty := ty; then exp;
+      case CREF()            algorithm exp.ty := ty; then exp;
+      case TYPENAME()        algorithm exp.ty := ty; then exp;
+      case ARRAY()           algorithm exp.ty := ty; then exp;
+      case RANGE()           algorithm exp.ty := ty; then exp;
+      case TUPLE()           algorithm exp.ty := ty; then exp;
+      case RECORD()          algorithm exp.ty := ty; then exp;
+      case CALL()            algorithm exp.call := Call.setType(exp.call, ty); then exp;
+      case BINARY()          algorithm exp.operator := Operator.setType(ty, exp.operator); then exp;
+      case UNARY()           algorithm exp.operator := Operator.setType(ty, exp.operator); then exp;
+      case LBINARY()         algorithm exp.operator := Operator.setType(ty, exp.operator); then exp;
+      case LUNARY()          algorithm exp.operator := Operator.setType(ty, exp.operator); then exp;
+      case RELATION()        algorithm exp.operator := Operator.setType(ty, exp.operator); then exp;
+      case IF()              algorithm exp.ty := ty; then exp;
+      case CAST()            algorithm exp.ty := ty; then exp;
+      case UNBOX()           algorithm exp.ty := ty; then exp;
+      case SUBSCRIPTED_EXP() algorithm exp.ty := ty; then exp;
+      case TUPLE_ELEMENT()   algorithm exp.ty := ty; then exp;
+      case RECORD_ELEMENT()  algorithm exp.ty := ty; then exp;
+      case PARTIAL_FUNCTION_APPLICATION() algorithm exp.ty := ty; then exp;
+      case BINDING_EXP()     then setBindingExpType(ty, exp);
+      else exp;
     end match;
   end setType;
+
+  function setBindingExpType
+    "Sets the type of a binding expression while taking into account any extra
+     dimensions the expression contained in the binding expression might have
+     due to modifier propagation."
+    input Type ty;
+    input output Expression bindingExp;
+  protected
+    Expression exp;
+    Type exp_ty, bind_ty;
+    list<InstNode> parents;
+    Boolean is_each;
+    Integer dim_diff;
+  algorithm
+    BINDING_EXP(exp, exp_ty, bind_ty, parents, is_each) := bindingExp;
+    dim_diff := Type.dimensionDiff(exp_ty, bind_ty);
+    bind_ty := ty;
+
+    if dim_diff > 0 then
+      // If the expression type has more dimensions than the binding type, add
+      // those dimensions to the new binding type.
+      exp_ty := Type.liftArrayLeftList(ty, List.firstN(Type.arrayDims(exp_ty), dim_diff));
+    else
+      // Otherwise the expression type and the binding type is the same.
+      exp_ty := ty;
+    end if;
+
+    // Also set the type of the contained expression.
+    exp := setType(exp_ty, exp);
+    bindingExp := BINDING_EXP(exp, exp_ty, bind_ty, parents, is_each);
+  end setBindingExpType;
 
   function typeCastOpt
     input Option<Expression> exp;
@@ -881,56 +915,65 @@ public
   protected
     Type t, t2, ety;
     list<Expression> el;
+    Expression e1, e2;
   algorithm
     ety := Type.arrayElementType(ty);
 
-    exp := match (exp, ety)
+    exp := match exp
       // Integer can be cast to Real.
-      case (INTEGER(), Type.REAL())
-        then REAL(intReal(exp.value));
+      case INTEGER()
+        then if Type.isReal(ety) then REAL(intReal(exp.value)) else typeCastGeneric(exp, ety);
 
       // Boolean can be cast to Real (only if -d=nfAPI is on)
       // as there are annotations having expressions such as Boolean x > 0.5
-      case (BOOLEAN(), Type.REAL()) guard Flags.isSet(Flags.NF_API)
-        then REAL(if exp.value then 1.0 else 0.0);
+      case BOOLEAN()
+        then if Type.isReal(ety) and Flags.isSet(Flags.NF_API) then
+          REAL(if exp.value then 1.0 else 0.0) else typeCastGeneric(exp, ety);
 
       // Real doesn't need to be cast to Real, since we convert e.g. array with
       // a mix of Integers and Reals to only Reals.
-      case (REAL(), Type.REAL()) then exp;
+      case REAL()
+        then if Type.isReal(ety) then exp else typeCastGeneric(exp, ety);
 
       // For arrays we typecast each element and update the type of the array.
-      case (ARRAY(ty = t, elements = el), _)
+      case ARRAY(ty = t, elements = el)
         algorithm
           el := list(typeCast(e, ety) for e in el);
           t := Type.setArrayElementType(t, ety);
         then
           ARRAY(t, el, exp.literal);
 
-      case (RANGE(ty = t), _)
+      case RANGE(ty = t)
         algorithm
           t := Type.setArrayElementType(t, ety);
         then
           RANGE(t, typeCast(exp.start, ety), typeCastOpt(exp.step, ety), typeCast(exp.stop, ety));
 
       // Unary operators (i.e. -) are handled by casting the operand.
-      case (UNARY(), _)
+      case UNARY()
         algorithm
           t := Type.setArrayElementType(Operator.typeOf(exp.operator), ety);
         then
           UNARY(Operator.setType(t, exp.operator), typeCast(exp.exp, ety));
 
       // If-expressions are handled by casting each of the branches.
-      case (IF(), _)
-        then IF(exp.condition, typeCast(exp.trueBranch, ety), typeCast(exp.falseBranch, ety));
+      case IF()
+        algorithm
+          e1 := typeCast(exp.trueBranch, ety);
+          e2 := typeCast(exp.falseBranch, ety);
+          t := if Type.isConditionalArray(exp.ty) then
+            Type.setConditionalArrayTypes(exp.ty, typeOf(e1), typeOf(e2)) else typeOf(e1);
+        then
+          IF(t, exp.condition, e1, e2);
 
       // Calls are handled by Call.typeCast, which has special rules for some functions.
-      case (CALL(), _)
+      case CALL()
         then Call.typeCast(exp, ety);
 
       // Casting a cast expression overrides its current cast type.
-      case (CAST(), _) then typeCast(exp.exp, ty);
+      case CAST() then typeCast(exp.exp, ty);
 
-      case (BINDING_EXP(), _)
+      case BINDING_EXP()
         algorithm
           t := Type.setArrayElementType(exp.expType, ety);
           t2 := Type.setArrayElementType(exp.bindingType, ety);
@@ -938,15 +981,16 @@ public
           BINDING_EXP(typeCast(exp.exp, ety), t, t2, exp.parents, exp.isEach);
 
       // Other expressions are handled by making a CAST expression.
-      else
-        algorithm
-          t := typeOf(exp);
-          t := Type.setArrayElementType(t, ety);
-        then
-          CAST(t, exp);
-
+      else typeCastGeneric(exp, ety);
     end match;
   end typeCast;
+
+  function typeCastGeneric
+    input output Expression exp;
+    input Type ty;
+  algorithm
+    exp := CAST(Type.setArrayElementType(typeOf(exp), ty), exp);
+  end typeCastGeneric;
 
   function realValue
     input Expression exp;
@@ -1411,11 +1455,14 @@ public
     output Expression outExp;
   protected
     Expression cond, tb, fb;
+    Type ty;
   algorithm
-    Expression.IF(cond, tb, fb) := exp;
+    Expression.IF(ty, cond, tb, fb) := exp;
     tb := applySubscript(subscript, tb, restSubscripts);
     fb := applySubscript(subscript, fb, restSubscripts);
-    outExp := Expression.IF(cond, tb, fb);
+    ty := if Type.isConditionalArray(ty) then
+      Type.setConditionalArrayTypes(ty, typeOf(tb), typeOf(fb)) else typeOf(tb);
+    outExp := Expression.IF(ty, cond, tb, fb);
   end applySubscriptIf;
 
   function makeSubscriptedExp
@@ -1894,7 +1941,7 @@ public
         then toDAE(ExpandExp.expandTypename(exp.ty));
 
       case ARRAY()
-        then DAE.ARRAY(Type.toDAE(exp.ty), Type.isScalarArray(exp.ty),
+        then DAE.ARRAY(Type.toDAE(exp.ty), Type.isVector(exp.ty),
           list(toDAE(e) for e in exp.elements));
 
       case RECORD() then toDAERecord(exp.ty, exp.path, exp.elements);
@@ -2239,7 +2286,7 @@ public
           e3 := map(exp.falseBranch, func);
         then
           if referenceEq(exp.condition, e1) and referenceEq(exp.trueBranch, e2) and
-             referenceEq(exp.falseBranch, e3) then exp else IF(e1, e2, e3);
+             referenceEq(exp.falseBranch, e3) then exp else IF(exp.ty, e1, e2, e3);
 
       case CAST()
         algorithm
@@ -2587,7 +2634,7 @@ public
           e3 := func(exp.falseBranch);
         then
           if referenceEq(exp.condition, e1) and referenceEq(exp.trueBranch, e2) and
-             referenceEq(exp.falseBranch, e3) then exp else IF(e1, e2, e3);
+             referenceEq(exp.falseBranch, e3) then exp else IF(exp.ty, e1, e2, e3);
 
       case CAST()
         algorithm
@@ -3523,7 +3570,7 @@ public
           (e3, arg) := mapFold(exp.falseBranch, func, arg);
         then
           if referenceEq(exp.condition, e1) and referenceEq(exp.trueBranch, e2) and
-             referenceEq(exp.falseBranch, e3) then exp else IF(e1, e2, e3);
+             referenceEq(exp.falseBranch, e3) then exp else IF(exp.ty, e1, e2, e3);
 
       case CAST()
         algorithm
@@ -3873,7 +3920,7 @@ public
           (e3, arg) := func(exp.falseBranch, arg);
         then
           if referenceEq(exp.condition, e1) and referenceEq(exp.trueBranch, e2) and
-             referenceEq(exp.falseBranch, e3) then exp else IF(e1, e2, e3);
+             referenceEq(exp.falseBranch, e3) then exp else IF(exp.ty, e1, e2, e3);
 
       case CAST()
         algorithm

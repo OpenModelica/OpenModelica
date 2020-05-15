@@ -2471,13 +2471,13 @@ algorithm
         for branch in listReverse(absynExp.elseIfBranch) loop
           e1 := instExp(Util.tuple21(branch), scope, info);
           e2 := instExp(Util.tuple22(branch), scope, info);
-          e3 := Expression.IF(e1, e2, e3);
+          e3 := Expression.IF(Type.UNKNOWN(), e1, e2, e3);
         end for;
 
         e1 := instExp(absynExp.ifExp, scope, info);
         e2 := instExp(absynExp.trueBranch, scope, info);
       then
-        Expression.IF(e1, e2, e3);
+        Expression.IF(Type.UNKNOWN(), e1, e2, e3);
 
     case Absyn.Exp.CALL()
       then Call.instantiate(absynExp.function_, absynExp.functionArgs, scope, info);
