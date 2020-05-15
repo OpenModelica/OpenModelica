@@ -152,7 +152,9 @@ function checkBinaryOperation
   output Expression binaryExp;
   output Type resultType;
 algorithm
-  if Type.isComplex(Type.arrayElementType(type1)) or
+  if Type.isConditionalArray(type1) or Type.isConditionalArray(type2) then
+    (binaryExp, resultType) := checkConditionalBinaryOperator(exp1, type1, var1, operator, exp2, type2, var2, info);
+  elseif Type.isComplex(Type.arrayElementType(type1)) or
      Type.isComplex(Type.arrayElementType(type2)) then
     (binaryExp, resultType) := checkOverloadedBinaryOperator(exp1, type1, var1, operator, exp2, type2, var2, info);
   elseif Type.isBoxed(type1) and Type.isBoxed(type2) then
@@ -311,6 +313,42 @@ algorithm
 end checkBinaryOperationBoxed;
 
 protected
+function checkConditionalBinaryOperator
+  input Expression exp1;
+  input Type type1;
+  input Variability var1;
+  input Operator op;
+  input Expression exp2;
+  input Type type2;
+  input Variability var2;
+  input SourceInfo info;
+  output Expression outExp;
+  output Type outType;
+algorithm
+  (outExp, outType) := match (type1, type2)
+    local
+      Type ty1, ty2;
+
+    case (Type.CONDITIONAL_ARRAY(), _)
+      algorithm
+        (outExp, ty1) := checkBinaryOperation(exp1, type1.trueType, var1, op, exp2, type2, var2, info);
+        (     _, ty2) := checkBinaryOperation(exp1, type1.falseType, var1, op, exp2, type2, var2, info);
+        outType := Type.CONDITIONAL_ARRAY(ty1, ty2, type1.matchedBranch);
+        outExp := Expression.setType(outType, outExp);
+      then
+        (outExp, outType);
+
+    case (_, Type.CONDITIONAL_ARRAY())
+      algorithm
+        (outExp, ty1) := checkBinaryOperation(exp1, type1, var1, op, exp2, type2.trueType, var2, info);
+        (     _, ty2) := checkBinaryOperation(exp1, type1, var1, op, exp2, type2.falseType, var2, info);
+        outType := Type.CONDITIONAL_ARRAY(ty1, ty2, type2.matchedBranch);
+        outExp := Expression.setType(outType, outExp);
+      then
+        (outExp, outType);
+  end match;
+end checkConditionalBinaryOperator;
+
 function checkOverloadedBinaryArrayAddSub
   input Expression exp1;
   input Type type1;
@@ -2252,6 +2290,20 @@ algorithm
       then
         (Type.box(type2), MatchKind.GENERIC);
 
+    case (Type.CONDITIONAL_ARRAY(), _)
+      algorithm
+        (exp1, exp2, compatibleType, matchKind) :=
+          matchConditionalArrayExp(exp1, type1, exp2, type2, allowUnknown);
+      then
+        (compatibleType, matchKind);
+
+    case (_, Type.CONDITIONAL_ARRAY())
+      algorithm
+        (exp2, exp1, compatibleType, matchKind) :=
+          matchConditionalArrayExp(exp2, type2, exp1, type1, allowUnknown);
+      then
+        (compatibleType, matchKind);
+
     else (Type.UNKNOWN(), MatchKind.NOT_COMPATIBLE);
   end match;
 end matchExpressions_cast;
@@ -2680,6 +2732,85 @@ algorithm
   compatibleType := Type.box(compatibleType);
 end matchBoxedExpressions;
 
+function matchConditionalArrayExp
+  input output Expression condExp;
+  input Type condType;
+  input output Expression otherExp;
+  input Type otherType;
+  input Boolean allowUnknown;
+        output Type compatibleType;
+        output MatchKind matchKind;
+protected
+  Type true_ty, false_ty, cond_ty;
+  Expression e1, e2;
+algorithm
+  // The two types in a conditional array type should have the same element type
+  // but different dimensions, so only one of them can match. If either type
+  // matches we note which one in the new type, to allow us to check that the
+  // correct branch is selected later when the condition can be evaluated.
+  Type.CONDITIONAL_ARRAY(trueType = true_ty, falseType = false_ty) := condType;
+
+  (e1, e2, compatibleType, matchKind) :=
+    matchExpressions(condExp, true_ty, otherExp, otherType, allowUnknown);
+
+  if isCompatibleMatch(matchKind) then
+    cond_ty := Type.CONDITIONAL_ARRAY(compatibleType, false_ty, NFType.Branch.TRUE);
+    condExp := Expression.setType(cond_ty, e1);
+    otherExp := e2;
+    return;
+  end if;
+
+  (e1, e2, compatibleType, matchKind) :=
+    matchExpressions(condExp, false_ty, otherExp, otherType, allowUnknown);
+
+  if isCompatibleMatch(matchKind) then
+    cond_ty := Type.CONDITIONAL_ARRAY(true_ty, compatibleType, NFType.Branch.FALSE);
+    condExp := Expression.setType(cond_ty, e1);
+    otherExp := e2;
+    return;
+  end if;
+
+  matchKind := MatchKind.NOT_COMPATIBLE;
+end matchConditionalArrayExp;
+
+function matchConditionalArrayTypes
+  input Type condType;
+  input Type expectedType;
+  input output Expression exp;
+  input Boolean allowUnknown;
+        output Type compatibleType;
+        output MatchKind matchKind;
+protected
+  Type true_ty, false_ty, cond_ty;
+  Expression e;
+algorithm
+  // The two types in a conditional array type should have the same element type
+  // but different dimensions, so only one of them can match. If either type
+  // matches we note which one in the new type, to allow us to check that the
+  // correct branch is selected later when the condition can be evaluated.
+  Type.CONDITIONAL_ARRAY(trueType = true_ty, falseType = false_ty) := condType;
+
+  (e, compatibleType, matchKind) :=
+    matchTypes(true_ty, expectedType, exp, allowUnknown);
+
+  if isCompatibleMatch(matchKind) then
+    cond_ty := Type.CONDITIONAL_ARRAY(compatibleType, false_ty, NFType.Branch.TRUE);
+    exp := Expression.setType(cond_ty, e);
+    return;
+  end if;
+
+  (e, compatibleType, matchKind) :=
+    matchTypes(false_ty, expectedType, exp, allowUnknown);
+
+  if isCompatibleMatch(matchKind) then
+    cond_ty := Type.CONDITIONAL_ARRAY(true_ty, compatibleType, NFType.Branch.FALSE);
+    exp := Expression.setType(cond_ty, e);
+    return;
+  end if;
+
+  matchKind := MatchKind.NOT_COMPATIBLE;
+end matchConditionalArrayTypes;
+
 function matchTypes_cast
   input Type actualType;
   input Type expectedType;
@@ -2764,6 +2895,13 @@ algorithm
 
     // Expected type is any, any actual type matches.
     case (_, Type.ANY()) then (expectedType, MatchKind.EXACT);
+
+    case (Type.CONDITIONAL_ARRAY(), _)
+      algorithm
+        (expression, compatibleType, matchKind) :=
+          matchConditionalArrayTypes(actualType, expectedType, expression, allowUnknown);
+      then
+        (compatibleType, matchKind);
 
     // Anything else is not compatible.
     else (Type.UNKNOWN(), MatchKind.NOT_COMPATIBLE);
@@ -2953,10 +3091,13 @@ algorithm
         else
           var := Prefixes.variabilityMax(Expression.variability(startExp),
                                          Expression.variability(stopExp));
+          // [if start == stop then 1 else if start < stop then 2 else 0]
           dim_exp := Expression.IF(
+            Type.INTEGER(),
             Expression.RELATION(startExp, Operator.makeEqual(Type.BOOLEAN()), stopExp),
             Expression.INTEGER(1),
             Expression.IF(
+              Type.INTEGER(),
               Expression.RELATION(startExp, Operator.makeLess(Type.BOOLEAN()), stopExp),
               Expression.INTEGER(2),
               Expression.INTEGER(0)));
@@ -3197,64 +3338,95 @@ algorithm
 end checkSumComplexType;
 
 function matchIfBranches
+  "Matches the types of the branches of an if-expression. The branches must have
+   the same element type and number of dimensions, but might have different
+   dimensions as long as the condition can be evaluated later to select one of
+   the branches."
   input output Expression trueBranch;
   input Type trueType;
   input output Expression falseBranch;
   input Type falseType;
-  input Expression condition;
-  input Variability conditionVar;
   input Boolean allowUnknown = false;
         output Type compatibleType;
         output MatchKind matchKind;
-protected
-  Expression tdim_exp, fdim_exp;
-  Type tety, fety;
-  list<Dimension> tdims, fdims, dims;
-  Dimension fdim;
-  Variability var;
 algorithm
-  tety := Type.arrayElementType(trueType);
-  fety := Type.arrayElementType(falseType);
-  tdims := Type.arrayDims(trueType);
-  fdims := Type.arrayDims(falseType);
+  (compatibleType, matchKind) := match (trueType, falseType)
+    local
+      MatchKind mk1, mk2;
+      Type cty1, cty2;
 
-  // Both branches must have the same number of dimensions.
-  if listLength(tdims) <> listLength(fdims) then
-    matchKind := MatchKind.NOT_COMPATIBLE;
-    compatibleType := trueType;
-    return;
-  end if;
+    case (Type.ARRAY(), Type.ARRAY())
+      algorithm
+        // Check that both branches have the same element type.
+        (trueBranch, falseBranch, compatibleType, matchKind) :=
+          matchExpressions(trueBranch, trueType.elementType,
+                           falseBranch, falseType.elementType, allowUnknown);
 
-  (trueBranch, falseBranch, compatibleType, matchKind) :=
-    matchExpressions(trueBranch, tety, falseBranch, fety);
+        if isIncompatibleMatch(matchKind) then
+          return;
+        end if;
 
-  // Both branches must have the same element type.
-  if isIncompatibleMatch(matchKind) then
-    return;
-  end if;
+        // Check that both branches have the same dimensions.
+        (compatibleType, matchKind) :=
+          matchArrayDims(trueType.dimensions, falseType.dimensions,
+                         compatibleType, matchKind, allowUnknown);
 
-  dims := {};
+        if isIncompatibleMatch(matchKind) and
+           listLength(trueType.dimensions) == listLength(falseType.dimensions) then
+          // If the branches have the same element type and number of dimensions
+          // but the dimensions aren't the same, create a conditional array type.
+          compatibleType := Type.CONDITIONAL_ARRAY(Type.setArrayElementType(trueType, compatibleType),
+                                                   Type.setArrayElementType(falseType, compatibleType),
+                                                   NFType.Branch.NONE);
+          matchKind := MatchKind.EXACT;
+        end if;
+      then
+        (compatibleType, matchKind);
 
-  for tdim in tdims loop
-    fdim :: fdims := fdims;
+    // If either type is itself a conditional array type, match against each
+    // branch of that type and create a new conditional array type.
+    case (Type.CONDITIONAL_ARRAY(), _)
+      algorithm
+        (trueBranch, falseBranch, cty1, mk1) :=
+          matchIfBranches(trueBranch, trueType.trueType, falseBranch, falseType, allowUnknown);
+        (_, _, cty2, mk2) :=
+          matchIfBranches(trueBranch, trueType.falseType, falseBranch, falseType, allowUnknown);
 
-    if Dimension.isEqual(tdim, fdim) then
-      dims := tdim :: dims;
-    elseif conditionVar <= Variability.PARAMETER and
-           Dimension.isKnown(tdim, allowExp = true) and
-           Dimension.isKnown(fdim, allowExp = true) then
-      tdim_exp := Dimension.sizeExp(tdim);
-      fdim_exp := Dimension.sizeExp(fdim);
-      var := Prefixes.variabilityMax(Expression.variability(tdim_exp),
-                                     Expression.variability(fdim_exp));
-      dims := Dimension.fromExp(Expression.IF(condition, tdim_exp, fdim_exp), var) :: dims;
+        if isCompatibleMatch(mk1) or isCompatibleMatch(mk2) then
+          compatibleType := Type.CONDITIONAL_ARRAY(cty1, cty2, NFType.Branch.NONE);
+          matchKind := MatchKind.EXACT;
+        else
+          compatibleType := trueType;
+          matchKind := MatchKind.NOT_COMPATIBLE;
+        end if;
+      then
+        (compatibleType, matchKind);
+
+    case (_, Type.CONDITIONAL_ARRAY())
+      algorithm
+        (trueBranch, falseBranch, cty1, mk1) :=
+          matchIfBranches(trueBranch, trueType, falseBranch, falseType.trueType, allowUnknown);
+        (_, _, cty2, mk2) :=
+          matchIfBranches(trueBranch, trueType, falseBranch, falseType.falseType, allowUnknown);
+
+        if isCompatibleMatch(mk1) or isCompatibleMatch(mk2) then
+          compatibleType := Type.CONDITIONAL_ARRAY(cty1, cty2, NFType.Branch.NONE);
+          matchKind := MatchKind.EXACT;
+        else
+          compatibleType := trueType;
+          matchKind := MatchKind.NOT_COMPATIBLE;
+        end if;
+      then
+        (compatibleType, matchKind);
+
     else
-      matchKind := MatchKind.NOT_COMPATIBLE;
-      return;
-    end if;
-  end for;
+      algorithm
+        (trueBranch, falseBranch, compatibleType, matchKind) :=
+          matchExpressions(trueBranch, trueType, falseBranch, falseType, allowUnknown);
+      then
+        (compatibleType, matchKind);
 
-  compatibleType := Type.liftArrayLeftList(compatibleType, listReverse(dims));
+  end match;
 end matchIfBranches;
 
 annotation(__OpenModelica_Interface="frontend");

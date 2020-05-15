@@ -276,8 +276,14 @@ public
 
   function toStringList
     input list<Dimension> dims;
-    output String str = "[" + stringDelimitList(List.map(dims, toString), ", ") + "]";
+    input Boolean brackets = true;
+    output String str;
   algorithm
+    str := stringDelimitList(list(toString(d) for d in dims), ", ");
+
+    if brackets then
+      str := "[" + str + "]";
+    end if;
   end toStringList;
 
   function endExp

@@ -59,40 +59,37 @@ import SimplifyExp = NFSimplifyExp;
 public
 function evaluate
   input output FlatModel flatModel;
-protected
-  Variability const_var = Variability.STRUCTURAL_PARAMETER;
 algorithm
-  flatModel.variables := list(evaluateVariable(v, const_var) for v in flatModel.variables);
-  flatModel.equations := evaluateEquations(flatModel.equations, const_var);
-  flatModel.initialEquations := evaluateEquations(flatModel.initialEquations, const_var);
-  flatModel.algorithms := evaluateAlgorithms(flatModel.algorithms, const_var);
-  flatModel.initialAlgorithms := evaluateAlgorithms(flatModel.initialAlgorithms, const_var);
+  flatModel.variables := list(evaluateVariable(v) for v in flatModel.variables);
+  flatModel.equations := evaluateEquations(flatModel.equations);
+  flatModel.initialEquations := evaluateEquations(flatModel.initialEquations);
+  flatModel.algorithms := evaluateAlgorithms(flatModel.algorithms);
+  flatModel.initialAlgorithms := evaluateAlgorithms(flatModel.initialAlgorithms);
 
   execStat(getInstanceName());
 end evaluate;
 
 function evaluateVariable
   input output Variable var;
-  input Variability constVariability;
 protected
   Binding binding;
 algorithm
   binding := evaluateBinding(var.binding,
-    Variable.variability(var) <= constVariability, constVariability);
+    Variable.variability(var) <= Variability.STRUCTURAL_PARAMETER);
 
   if not referenceEq(binding, var.binding) then
     var.binding := binding;
   end if;
 
-  var.typeAttributes := list(evaluateTypeAttribute(a, Variability.STRUCTURAL_PARAMETER) for a in var.typeAttributes);
+  var.typeAttributes := list(evaluateTypeAttribute(a) for a in var.typeAttributes);
 end evaluateVariable;
 
 function evaluateBinding
   input output Binding binding;
   input Boolean structural;
-  input Variability constVariability;
 protected
   Expression exp, eexp;
+  SourceInfo info;
 algorithm
   if Binding.isBound(binding) then
     exp := Binding.getTypedExp(binding);
@@ -100,7 +97,8 @@ algorithm
     if structural then
       eexp := Ceval.evalExp(exp, Ceval.EvalTarget.ATTRIBUTE(binding));
     else
-      eexp := evaluateExp(exp, constVariability);
+      info := Binding.getInfo(binding);
+      eexp := evaluateExp(exp, info);
     end if;
 
     if not referenceEq(exp, eexp) then
@@ -111,7 +109,6 @@ end evaluateBinding;
 
 function evaluateTypeAttribute
   input output tuple<String, Binding> attribute;
-  input Variability constVariability;
 protected
   String name;
   Binding binding, sbinding;
@@ -119,7 +116,7 @@ protected
 algorithm
   (name, binding) := attribute;
   structural := name == "fixed" or name == "stateSelect";
-  sbinding := evaluateBinding(binding, structural, constVariability);
+  sbinding := evaluateBinding(binding, structural);
 
   if not referenceEq(binding, sbinding) then
     attribute := (name, sbinding);
@@ -128,15 +125,15 @@ end evaluateTypeAttribute;
 
 function evaluateExp
   input Expression exp;
-  input Variability constVariability;
+  input SourceInfo info;
   output Expression outExp;
 algorithm
-  outExp := evaluateExpTraverser(exp, constVariability);
+  outExp := evaluateExpTraverser(exp, info);
 end evaluateExp;
 
 function evaluateExpTraverser
   input Expression exp;
-  input Variability constVariability;
+  input SourceInfo info;
   input Boolean changed = false;
   output Expression outExp;
   output Boolean outChanged;
@@ -151,10 +148,10 @@ algorithm
       algorithm
         (outExp as Expression.CREF(cref = cref, ty = ty), outChanged) :=
           Expression.mapFoldShallow(exp,
-            function evaluateExpTraverser(constVariability = constVariability), false);
+            function evaluateExpTraverser(info = info), false);
 
         // Evaluate constants and structural parameters.
-        if ComponentRef.nodeVariability(cref) <= constVariability then
+        if ComponentRef.nodeVariability(cref) <= Variability.STRUCTURAL_PARAMETER then
           // Evaluate all constants and structural parameters.
           outExp := Ceval.evalCref(cref, outExp, Ceval.EvalTarget.IGNORE_ERRORS(), evalSubscripts = false);
           outExp := Expression.stripBindingInfo(outExp);
@@ -168,14 +165,14 @@ algorithm
 
     case Expression.IF()
       algorithm
-        (outExp, outChanged) := evaluateIfExp(exp, constVariability);
+        (outExp, outChanged) := evaluateIfExp(exp, info);
       then
         outExp;
 
     else
       algorithm
         (outExp, outChanged) := Expression.mapFoldShallow(exp,
-          function evaluateExpTraverser(constVariability = constVariability), false);
+          function evaluateExpTraverser(info = info), false);
       then
         if outChanged then Expression.retype(outExp) else outExp;
   end match;
@@ -185,6 +182,7 @@ end evaluateExpTraverser;
 
 function evaluateDimension
   input Dimension dim;
+  input SourceInfo info;
   output Dimension outDim;
 algorithm
   outDim := match dim
@@ -193,7 +191,7 @@ algorithm
 
     case Dimension.EXP()
       algorithm
-        e := evaluateExp(dim.exp, constVariability = Variability.STRUCTURAL_PARAMETER);
+        e := evaluateExp(dim.exp, info);
       then
         if referenceEq(e, dim.exp) then dim else Dimension.fromExp(e, dim.var);
 
@@ -202,47 +200,82 @@ algorithm
 end evaluateDimension;
 
 function evaluateIfExp
+  "Evaluates constants in an if-expression. This is done by first checking if
+   the condition can be evaluated, in which case branch selection is done to
+   avoid issues that can arise when evaluating constants in branches that are
+   expected to be discarded. This function also makes sure that if-expressions
+   with branches that have different dimensions are resolved to the correct
+   branch based on the type matching in earlier stages of the compilation."
   input Expression exp;
-  input Variability constVariability;
+  input SourceInfo info;
   output Expression outExp;
   output Boolean outChanged;
 protected
+  Type ty;
   Expression cond, tb, fb;
   Boolean c1, c2;
+  Type.Branch matched_branch;
 algorithm
-  Expression.IF(cond, tb, fb) := exp;
-  (cond, outChanged) := evaluateExpTraverser(cond, constVariability);
+  Expression.IF(ty, cond, tb, fb) := exp;
+  (cond, outChanged) := evaluateExpTraverser(cond, info);
 
   // Simplify the condition in case it can be reduced to a literal value.
   cond := SimplifyExp.simplify(cond);
 
-  (outExp, outChanged) := match cond
-    // Only evaluate constants in and return one of the branches if the
-    // condition is a literal boolean value.
-    case Expression.BOOLEAN()
-      then evaluateExpTraverser(if cond.value then tb else fb, constVariability);
+  if Type.isConditionalArray(ty) then
+    (outExp, outChanged) := match cond
+      case Expression.BOOLEAN()
+        algorithm
+          if not Type.isMatchedBranch(cond.value, ty) then
+            // The branch with the incompatible dimensions was chosen, print an error and fail.
+            (tb, fb) := Util.swap(cond.value, fb, tb);
+            Error.addSourceMessage(Error.ARRAY_DIMENSION_MISMATCH,
+              {Expression.toString(tb), Type.toString(Expression.typeOf(tb)),
+               Dimension.toStringList(Type.arrayDims(Expression.typeOf(fb)), brackets = false)}, info);
+            fail();
+          end if;
+        then
+          evaluateExpTraverser(if cond.value then tb else fb, info);
 
-    // Otherwise evaluate constants in both branches and return the whole
-    // if-expression.
-    else
-      algorithm
-        (tb, c1) := evaluateExpTraverser(tb, constVariability);
-        (fb, c2) := evaluateExpTraverser(fb, constVariability);
-      then
-        (Expression.IF(cond, tb, fb), outChanged or c1 or c2);
+      else
+        algorithm
+          // The condition could not be evaluated to a literal. This is required
+          // if the branches have different dimensions, so print an error and fail.
+          Error.addSourceMessage(Error.TYPE_MISMATCH_IF_EXP,
+            {"", Expression.toString(tb), Type.toString(Expression.typeOf(tb)),
+                 Expression.toString(fb), Type.toString(Expression.typeOf(fb))}, info);
+        then
+          fail();
+    end match;
+  else
+    (outExp, outChanged) := match cond
+      // Only evaluate constants in and return one of the branches if the
+      // condition is a literal boolean value.
+      case Expression.BOOLEAN()
+        then evaluateExpTraverser(if cond.value then tb else fb, info);
 
-  end match;
+      // Otherwise evaluate constants in both branches and return the whole
+      // if-expression.
+      else
+        algorithm
+          (tb, c1) := evaluateExpTraverser(tb, info);
+          (fb, c2) := evaluateExpTraverser(fb, info);
+        then
+          (Expression.IF(ty, cond, tb, fb), outChanged or c1 or c2);
+
+    end match;
+  end if;
 end evaluateIfExp;
 
 function evaluateEquations
   input list<Equation> eql;
-  input Variability constVariability;
-  output list<Equation> outEql = list(evaluateEquation(e, constVariability) for e in eql);
+  output list<Equation> outEql = list(evaluateEquation(e) for e in eql);
 end evaluateEquations;
 
 function evaluateEquation
   input output Equation eq;
-  input Variability constVariability;
+protected
+  SourceInfo info = Equation.info(eq);
 algorithm
   eq := match eq
     local
@@ -251,62 +284,62 @@ algorithm
 
     case Equation.EQUALITY()
       algorithm
-        ty := Type.mapDims(eq.ty, evaluateDimension);
-        e1 := evaluateExp(eq.lhs, constVariability);
-        e2 := evaluateExp(eq.rhs, constVariability);
+        ty := Type.mapDims(eq.ty, function evaluateDimension(info = info));
+        e1 := evaluateExp(eq.lhs, info);
+        e2 := evaluateExp(eq.rhs, info);
       then
         Equation.EQUALITY(e1, e2, ty, eq.source);
 
     case Equation.ARRAY_EQUALITY()
       algorithm
-        ty := Type.mapDims(eq.ty, evaluateDimension);
-        e2 := evaluateExp(eq.rhs, constVariability);
+        ty := Type.mapDims(eq.ty, function evaluateDimension(info = info));
+        e2 := evaluateExp(eq.rhs, info);
       then
         Equation.ARRAY_EQUALITY(eq.lhs, e2, ty, eq.source);
 
     case Equation.FOR()
       algorithm
         eq.range := Util.applyOption(eq.range,
-          function evaluateExp(constVariability = constVariability));
-        eq.body := evaluateEquations(eq.body, constVariability);
+          function evaluateExp(info = info));
+        eq.body := evaluateEquations(eq.body);
       then
         eq;
 
     case Equation.IF()
       algorithm
-        eq.branches := list(evaluateEqBranch(b, constVariability) for b in eq.branches);
+        eq.branches := list(evaluateEqBranch(b, info) for b in eq.branches);
       then
         eq;
 
     case Equation.WHEN()
       algorithm
-        eq.branches := list(evaluateEqBranch(b, constVariability) for b in eq.branches);
+        eq.branches := list(evaluateEqBranch(b, info) for b in eq.branches);
       then
         eq;
 
     case Equation.ASSERT()
       algorithm
-        e1 := evaluateExp(eq.condition, constVariability);
-        e2 := evaluateExp(eq.message, constVariability);
-        e3 := evaluateExp(eq.level, constVariability);
+        e1 := evaluateExp(eq.condition, info);
+        e2 := evaluateExp(eq.message, info);
+        e3 := evaluateExp(eq.level, info);
       then
         Equation.ASSERT(e1, e2, e3, eq.source);
 
     case Equation.TERMINATE()
       algorithm
-        eq.message := evaluateExp(eq.message, constVariability);
+        eq.message := evaluateExp(eq.message, info);
       then
         eq;
 
     case Equation.REINIT()
       algorithm
-        eq.reinitExp := evaluateExp(eq.reinitExp, constVariability);
+        eq.reinitExp := evaluateExp(eq.reinitExp, info);
       then
         eq;
 
     case Equation.NORETCALL()
       algorithm
-        eq.exp := evaluateExp(eq.exp, constVariability);
+        eq.exp := evaluateExp(eq.exp, info);
       then
         eq;
 
@@ -316,7 +349,7 @@ end evaluateEquation;
 
 function evaluateEqBranch
   input Branch branch;
-  input Variability constVariability;
+  input SourceInfo info;
   output Branch outBranch;
 algorithm
   outBranch := match branch
@@ -326,8 +359,8 @@ algorithm
 
     case Branch.BRANCH(condition = condition, body = body)
       algorithm
-        condition := evaluateExp(condition, constVariability = Variability.STRUCTURAL_PARAMETER);
-        body := evaluateEquations(body, constVariability);
+        condition := evaluateExp(condition, info);
+        body := evaluateEquations(body);
       then
         Branch.BRANCH(condition, branch.conditionVar, body);
 
@@ -337,26 +370,24 @@ end evaluateEqBranch;
 
 function evaluateAlgorithms
   input list<Algorithm> algs;
-  input Variability constVariability;
-  output list<Algorithm> outAlgs = list(evaluateAlgorithm(a, constVariability) for a in algs);
+  output list<Algorithm> outAlgs = list(evaluateAlgorithm(a) for a in algs);
 end evaluateAlgorithms;
 
 function evaluateAlgorithm
   input output Algorithm alg;
-  input Variability constVariability;
 algorithm
-  alg.statements := evaluateStatements(alg.statements, constVariability);
+  alg.statements := evaluateStatements(alg.statements);
 end evaluateAlgorithm;
 
 function evaluateStatements
   input list<Statement> stmts;
-  input Variability constVariability;
-  output list<Statement> outStmts = list(evaluateStatement(s, constVariability) for s in stmts);
+  output list<Statement> outStmts = list(evaluateStatement(s) for s in stmts);
 end evaluateStatements;
 
 function evaluateStatement
   input output Statement stmt;
-  input Variability constVariability;
+protected
+  SourceInfo info = Statement.info(stmt);
 algorithm
   stmt := match stmt
     local
@@ -365,56 +396,56 @@ algorithm
 
     case Statement.ASSIGNMENT()
       algorithm
-        ty := Type.mapDims(stmt.ty, evaluateDimension);
-        e1 := evaluateExp(stmt.lhs, constVariability);
-        e2 := evaluateExp(stmt.rhs, constVariability);
+        ty := Type.mapDims(stmt.ty, function evaluateDimension(info = info));
+        e1 := evaluateExp(stmt.lhs, info);
+        e2 := evaluateExp(stmt.rhs, info);
       then
         Statement.ASSIGNMENT(e1, e2, ty, stmt.source);
 
     case Statement.FOR()
       algorithm
         stmt.range := Util.applyOption(stmt.range,
-          function evaluateExp(constVariability = constVariability));
-        stmt.body := evaluateStatements(stmt.body, constVariability);
+          function evaluateExp(info = info));
+        stmt.body := evaluateStatements(stmt.body);
       then
         stmt;
 
     case Statement.IF()
       algorithm
-        stmt.branches := list(evaluateStmtBranch(b, constVariability) for b in stmt.branches);
+        stmt.branches := list(evaluateStmtBranch(b, info) for b in stmt.branches);
       then
         stmt;
 
     case Statement.WHEN()
       algorithm
-        stmt.branches := list(evaluateStmtBranch(b, constVariability) for b in stmt.branches);
+        stmt.branches := list(evaluateStmtBranch(b, info) for b in stmt.branches);
       then
         stmt;
 
     case Statement.ASSERT()
       algorithm
-        e1 := evaluateExp(stmt.condition, constVariability);
-        e2 := evaluateExp(stmt.message, constVariability);
-        e3 := evaluateExp(stmt.level, constVariability);
+        e1 := evaluateExp(stmt.condition, info);
+        e2 := evaluateExp(stmt.message, info);
+        e3 := evaluateExp(stmt.level, info);
       then
         Statement.ASSERT(e1, e2, e3, stmt.source);
 
     case Statement.TERMINATE()
       algorithm
-        stmt.message := evaluateExp(stmt.message, constVariability);
+        stmt.message := evaluateExp(stmt.message, info);
       then
         stmt;
 
     case Statement.NORETCALL()
       algorithm
-        stmt.exp := evaluateExp(stmt.exp, constVariability);
+        stmt.exp := evaluateExp(stmt.exp, info);
       then
         stmt;
 
     case Statement.WHILE()
       algorithm
-        stmt.condition := evaluateExp(stmt.condition, constVariability);
-        stmt.body := evaluateStatements(stmt.body, constVariability);
+        stmt.condition := evaluateExp(stmt.condition, info);
+        stmt.body := evaluateStatements(stmt.body);
       then
         stmt;
 
@@ -424,15 +455,15 @@ end evaluateStatement;
 
 function evaluateStmtBranch
   input tuple<Expression, list<Statement>> branch;
-  input Variability constVariability;
+  input SourceInfo info;
   output tuple<Expression, list<Statement>> outBranch;
 protected
   Expression cond;
   list<Statement> body;
 algorithm
   (cond, body) := branch;
-  cond := evaluateExp(cond, constVariability = Variability.STRUCTURAL_PARAMETER);
-  body := evaluateStatements(body, constVariability);
+  cond := evaluateExp(cond, info);
+  body := evaluateStatements(body);
   outBranch := (cond, body);
 end evaluateStmtBranch;
 

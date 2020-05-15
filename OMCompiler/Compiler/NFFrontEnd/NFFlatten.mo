@@ -908,9 +908,25 @@ algorithm
         exp;
 
     case Expression.BINDING_EXP() then flattenBindingExp(exp, prefix);
+    case Expression.IF(ty = Type.CONDITIONAL_ARRAY()) then flattenConditionalArrayIfExp(exp);
+
     else exp;
   end match;
 end flattenExp_traverse;
+
+function flattenConditionalArrayIfExp
+  input output Expression exp;
+protected
+  Expression cond;
+  Variability cond_var;
+algorithm
+  Expression.IF(condition = cond) := exp;
+  cond_var := Expression.variability(cond);
+
+  if Expression.variability(cond) == Variability.PARAMETER then
+    Inst.markStructuralParamsExp(cond);
+  end if;
+end flattenConditionalArrayIfExp;
 
 function flattenSections
   input Sections sections;
