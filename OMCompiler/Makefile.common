@@ -507,9 +507,9 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials/CMakeLists.txt
 	(cd 3rdParty/sundials/build && \
 	    $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX="`pwd`"\
 	    -DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc) $(LDFLAGS) $(EXTRA_LDFLAGS)" -DLDFLAGS="$(LDFLAGS)" \
-	    -DKLU_ENABLE:Bool=ON -DKLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse/Include/" \
+	    -DKLU_ENABLE:Bool=ON -DKLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse/Include/" $(SUITESPARSE_LIBS) -DSUITESPARSECONFIG_LIBRARY="" \
 	    -DEXAMPLES_ENABLE_C:Bool=ON -DEXAMPLES_ENABLE_CXX:Bool=ON -DEXAMPLES_INSTALL=ON -DEXAMPLES_INSTALL_PATH=./examples_install \
-	    $(SUITESPARSE_LIBS) $(IS_MINGW32) $(IS_MINGW64) -DSUITESPARSECONFIG_LIBRARY="" \
+	    $(IS_MINGW32) $(IS_MINGW64) \
 	    -DLAPACK_ENABLE:Bool=ON -DLAPACK_LIBRARIES="$(LD_LAPACK)" -DCMAKE_Fortran_COMPILER="$(FC)")
 	$(MAKE) -C 3rdParty/sundials/build install
 	# Test SUNDIALS but allow it to fail
