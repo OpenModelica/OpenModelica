@@ -282,17 +282,6 @@ install: bootstrap-dependencies $(LIBSIMULATION) $(LIBFMIRUNTIME) $(ALL_OBJS) fm
 	# copy libraries
 	cp -p $(LIBSIMULATION) $(LIBFMIRUNTIME) $(LIBSIMULATIONFMI) $(builddir_lib)
 	test ! -f libSimulationRuntimeC.bc || cp libSimulationRuntimeC.bc $(builddir_lib)/emcc/libSimulationRuntimeC.so
-	test ! `uname` = Darwin || install_name_tool -change libsundials_idas.dylib @rpath/libsundials_idas.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_ida.dylib @rpath/libsundials_ida.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.dylib @rpath/libsundials_nvecserial.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.dylib @rpath/libsundials_kinsol.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_sunlinsollapackdense.dylib @rpath/libsundials_sunlinsollapackdense.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
-
-	test ! `uname` = Darwin || install_name_tool -change libsundials_idas.dylib @rpath/libsundials_idas.dylib $(builddir_lib)/$(LIBSIMULATION)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_ida.dylib @rpath/libsundials_ida.dylib $(builddir_lib)/$(LIBSIMULATION)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.dylib @rpath/libsundials_nvecserial.dylib $(builddir_lib)/$(LIBSIMULATION)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.dylib @rpath/libsundials_kinsol.dylib $(builddir_lib)/$(LIBSIMULATION)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_sunlinsollapackdense.dylib @rpath/libsundials_sunlinsollapackdense.dylib $(builddir_lib)/$(LIBSIMULATION)
 
 	test ! `uname` = Darwin || install_name_tool -change liblis.dylib @rpath/liblis.dylib $(builddir_lib)/$(LIBSIMULATION)
 	# copy fmi stuff
