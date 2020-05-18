@@ -32,7 +32,6 @@
 encapsulated uniontype NFAlgorithm
   // OF imports
   import DAE;
-  import PrefixUtil;
 
   // NF imports
   import ComponentRef = NFComponentRef;

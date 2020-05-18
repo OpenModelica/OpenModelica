@@ -670,6 +670,7 @@ public
   uniontype EqData
     record EQ_DATA_SIM
       EquationPointers equations    "All equations";
+      EquationPointers simulation   "All equations for simulation (without initial)";
       EquationPointers continuous   "Continuous equations";
       EquationPointers discretes    "Discrete equations";
       EquationPointers initials     "(Exclusively) Initial equations";

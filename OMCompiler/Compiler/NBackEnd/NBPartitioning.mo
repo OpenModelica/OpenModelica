@@ -65,7 +65,7 @@ public
         BEquation.EquationPointers equations;
 
       // ToDo have equations without initial equations here
-      case (System.SystemType.ODE, qual as BackendDAE.BDAE(varData = BVariable.VAR_DATA_SIM(unknowns = variables), eqData = BEquation.EQ_DATA_SIM(equations = equations)))
+      case (System.SystemType.ODE, qual as BackendDAE.BDAE(varData = BVariable.VAR_DATA_SIM(unknowns = variables), eqData = BEquation.EQ_DATA_SIM(simulation = equations)))
         algorithm
           qual.ode := func(systemType, variables, equations);
         then qual;

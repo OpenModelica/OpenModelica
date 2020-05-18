@@ -299,6 +299,10 @@ if true then /* Suppress output */
     "../NBackEnd/NBSystem.mo",
     "../NBackEnd/NBVariable.mo",
 
+  // "NSimCode"
+    "../NSimCode/NSimCode.mo",
+    "../NSimCode/NSimStrongComponent.mo",
+    "../NSimCode/NSimVar.mo",
 
     "../FFrontEnd/FGraphDump.mo",
     "../FFrontEnd/FGraphStream.mo",

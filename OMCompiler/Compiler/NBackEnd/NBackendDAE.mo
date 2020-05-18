@@ -352,8 +352,8 @@ protected
     input BVariable.VariablePointers variables;
     output BEquation.EqData eqData;
   protected
-    list<Pointer<Equation>> equation_lst, continuous_lst = {}, discretes_lst = {}, initials_lst = {}, auxiliaries_lst = {};
-    BEquation.EquationPointers equations, continuous, discretes, initials, auxiliaries;
+    list<Pointer<Equation>> equation_lst, continuous_lst = {}, discretes_lst = {}, initials_lst = {}, auxiliaries_lst = {}, simulation_lst = {};
+    BEquation.EquationPointers equations, continuous, discretes, initials, auxiliaries, simulation;
     Pointer<Equation> eq;
   algorithm
     equation_lst := lowerEquationsAndAlgorithms(eq_lst, al_lst, init_eq_lst, init_al_lst);
@@ -367,11 +367,13 @@ protected
           case BEquation.EQUATION_ATTRIBUTES(kind = BEquation.DYNAMIC_EQUATION())
             algorithm
               continuous_lst := eq :: continuous_lst;
+              simulation_lst := eq :: simulation_lst;
           then ();
 
           case BEquation.EQUATION_ATTRIBUTES(kind = BEquation.DISCRETE_EQUATION())
             algorithm
               discretes_lst := eq :: discretes_lst;
+              simulation_lst := eq :: simulation_lst;
           then ();
 
           case BEquation.EQUATION_ATTRIBUTES(kind = BEquation.INITIAL_EQUATION())
@@ -382,6 +384,7 @@ protected
           case BEquation.EQUATION_ATTRIBUTES(kind = BEquation.AUX_EQUATION())
             algorithm
               auxiliaries_lst := eq :: auxiliaries_lst;
+              simulation_lst := eq :: simulation_lst;
           then ();
 
           else
@@ -392,12 +395,13 @@ protected
       end if;
     end for;
 
+    simulation := BEquation.EquationPointers.fromList(simulation_lst);
     continuous := BEquation.EquationPointers.fromList(continuous_lst);
     discretes := BEquation.EquationPointers.fromList(discretes_lst);
     initials := BEquation.EquationPointers.fromList(initials_lst);
     auxiliaries := BEquation.EquationPointers.fromList(auxiliaries_lst);
 
-    eqData := BEquation.EQ_DATA_SIM(equations, continuous, discretes, initials, auxiliaries);
+    eqData := BEquation.EQ_DATA_SIM(equations, simulation, continuous, discretes, initials, auxiliaries);
   end lowerEquationData;
 
   function lowerEquationsAndAlgorithms
