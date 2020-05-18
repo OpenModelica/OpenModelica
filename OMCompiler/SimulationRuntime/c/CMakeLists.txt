@@ -24,7 +24,7 @@ link_directories(${OMDEV}/lib/lapack-win32-msvc)
 
 # Check for KLU
 IF(MSVC)
-  FIND_PATH(KLU_INCLUDE NAMES klu.h PATHS ${OMBUILDDIR}/include/omc/msvc/suitesparse ${OMBUILDDIR}/include/omc/msvc/suitsparse/Include FIND_PATH(KLU_INCLUDE NAMES klu.h PATHS ${OMBUILDDIR}/include/omc/msvc/suitesparse/ ${OMBUILDDIR}/include/omc/msvc/suitsparse/Include/ ${OMCTRUNCHOME}/OMCompiler/3rdParty/SuiteSparse/install_msvc/include/omc/c/suitesparse/Include)
+  FIND_PATH(KLU_INCLUDE NAMES klu.h PATHS ${OMBUILDDIR}/include/omc/msvc/suitesparse/ ${OMBUILDDIR}/include/omc/msvc/suitsparse/Include/ ${OMCTRUNCHOME}/OMCompiler/3rdParty/SuiteSparse/install_msvc/include/omc/c/suitesparse/Include )
 ELSEIF(MSVC)
   FIND_PATH(KLU_INCLUDE NAMES klu.h PATHS ${OMBUILDDIR}/include/omc/c/suitsparse/Include)
 ENDIF(MSVC)
@@ -94,11 +94,23 @@ if(NOT SUNDIALS_LIBRARY_KINSOL)
 endif(NOT SUNDIALS_LIBRARY_KINSOL)
 
 if(NOT SUNDIALS_LIBRARY_LINSOL_LAPACK)
-  MESSAGE(FATAL_ERROR "Library sundials_sunlinsollapackdense not found")
+  if(MSVC)
+    # LAPACK support for MSVC in Sundials currently broken :-/
+    MESSAGE(WARNING "Library sundials_sunlinsollapackdense not found")
+    SET(SUNDIALS_LIBRARY_LINSOL_LAPACK "")
+  else(MSVC)
+    MESSAGE(FATAL_ERROR "Library sundials_sunlinsollapackdense not found")
+  endif(MSVC)
 endif(NOT SUNDIALS_LIBRARY_LINSOL_LAPACK)
 
 if(NOT SUNDIALS_LIBRARY_LINSOL_KLU)
-  MESSAGE(FATAL_ERROR "Library sundials_sunlinsolklu not found")
+  if(MSVC)
+    # KLU support for MSVC in Sundials currently broken :-/
+    MESSAGE(WARNING "Library sundials_sunlinsolklu not found")
+    SET(SUNDIALS_LIBRARY_LINSOL_KLU "")
+  else(MSVC)
+    MESSAGE(FATAL_ERROR "Library sundials_sunlinsolklu not found")
+  endif(MSVC)
 endif(NOT SUNDIALS_LIBRARY_LINSOL_KLU)
 
 if(NOT SUNDIALS_LIBRARY_SPGMR)
