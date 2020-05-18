@@ -925,9 +925,9 @@ IF(ZeroMQ_FOUND AND cppzmq_FOUND)
     message(STATUS "cppzmq version ${cppzmq_VERSION}")
     message (STATUS "Using ZMQ Header ${ZeroMQ_INCLUDE_DIR}" )
     message (STATUS "Using CPPZMQ Header ${cppzmq_INCLUDE_DIR}" )
-ELSE(ZeroMQ_found AND cppzmq_found)
+ELSE(ZeroMQ_FOUND AND cppzmq_FOUND)
     SET(USE_ZEROMQ OFF)
-ENDIF(ZeroMQ_found AND cppzmq_found)
+ENDIF(ZeroMQ_FOUND AND cppzmq_FOUND)
 
 #Write the defines into the ADDITIONAL_DEFINES variable
 # GET_DIRECTORY_PROPERTY(ADDITIONAL_DEFINES DEFINITIONS)
