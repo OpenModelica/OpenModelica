@@ -1996,50 +1996,41 @@ algorithm
       Absyn.Path path;
       FCore.Cache cache;
       DAE.Function mainFunction;
-      list<DAE.Function> d;
+      list<DAE.Function> dependencies;
       list<DAE.Type> metarecordTypes;
       DAE.FunctionTree funcs;
     // template based translation
-    case (cache, env, _, path)
-      equation
-        true = Flags.isSet(Flags.GEN);
-        false = Flags.isSet(Flags.GENERATE_CODE_CHEAT);
-
-        (cache, mainFunction, d, metarecordTypes) = collectDependencies(cache, env, path);
-
-        pathstr  = generateFunctionName(path);
-        fileName = generateFunctionFileName(path);
-        SimCodeFunction.translateFunctions(program, fileName, SOME(mainFunction), d, metarecordTypes, {});
+    case (cache, env, _, path) guard Flags.isSet(Flags.GEN) and (not Flags.isSet(Flags.GENERATE_CODE_CHEAT))
+      algorithm
+        (cache, mainFunction, dependencies, metarecordTypes) := collectDependencies(cache, env, path);
+        pathstr  := generateFunctionName(path);
+        fileName := generateFunctionFileName(path);
+        funcs := FCore.getFunctionTree(cache);
+        SimCodeFunction.translateFunctions(program, fileName, SOME(mainFunction), dependencies, metarecordTypes, {});
         compileModel(fileName, {});
       then
         (cache, pathstr, fileName);
-
     // Cheat if we want to generate code for Main.main
     // * Don't do dependency analysis of what functions to generate; just generate all of them
     // * Don't generate extra code for unreferenced MetaRecord types (for external functions)
     //   This could be an annotation instead anyway.
     // * Don't compile the generated files
-    case (cache, _, _, path)
-      equation
-        true = Flags.isSet(Flags.GEN);
-        true = Flags.isSet(Flags.GENERATE_CODE_CHEAT);
-        funcs = FCore.getFunctionTree(cache);
+    case (cache, _, _, path) guard Flags.isSet(Flags.GEN) and Flags.isSet(Flags.GENERATE_CODE_CHEAT)
+      algorithm
+        funcs := FCore.getFunctionTree(cache);
         // First check if the main function exists... If it does not it might be an interactive function...
-        pathstr = generateFunctionName(path);
-        fileName = generateFunctionFileName(path);
+        pathstr := generateFunctionName(path);
+        fileName := generateFunctionFileName(path);
         // The list of functions is not ordered, so we need to filter out the main function...
-        d = DAEUtil.getFunctionList(funcs);
-        SimCodeFunction.translateFunctions(program, fileName, NONE(), d, {}, {});
+        dependencies := DAEUtil.getFunctionList(funcs);
+        SimCodeFunction.translateFunctions(program, fileName, NONE(), dependencies, {}, {});
       then
         (cache, pathstr, fileName);
-
-    case (cache, env, _, path)
-      equation
-        true = Flags.isSet(Flags.GEN);
-        true = Flags.isSet(Flags.FAILTRACE);
-        (cache,false) = Static.isExternalObjectFunction(cache,env,path);
-        pathstr = generateFunctionName(path);
-        fileName = generateFunctionFileName(path);
+    case (cache, env, _, path) guard Flags.isSet(Flags.GEN) and Flags.isSet(Flags.FAILTRACE)
+      algorithm
+        (cache,false) := Static.isExternalObjectFunction(cache,env,path);
+        pathstr := generateFunctionName(path);
+        fileName := generateFunctionFileName(path);
         Debug.trace("CevalScript.cevalGenerateFunction failed:\nfunction: " + pathstr + "\nfile: " + fileName + "\n");
       then
         fail();

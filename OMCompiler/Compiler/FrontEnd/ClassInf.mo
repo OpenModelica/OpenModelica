@@ -506,6 +506,7 @@ algorithm
     case (TYPE_CLOCK(),FOUND_COMPONENT()) then inState;
     case (TYPE_ENUM(),FOUND_COMPONENT()) then inState;
     case (META_RECORD(),FOUND_COMPONENT()) then inState;  // Added 2009-08-19. sjoelund
+    case (META_UNIONTYPE(), FOUND_COMPONENT()) then inState;
 
    /* Event `FOUND_EQUATION\' */
     case (UNKNOWN(path = p),FOUND_EQUATION()) then HAS_RESTRICTIONS(p,true,false,false);
@@ -784,4 +785,3 @@ end isMetaRecord;
 
 annotation(__OpenModelica_Interface="frontend");
 end ClassInf;
-

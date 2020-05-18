@@ -131,7 +131,8 @@ Uniontype12.mos \
 Uniontype13.mos \
 Uniontype14.mos \
 Uniontype15.mos \
-UniontypeFunc1.mos
+UniontypeFunc1.mos \
+UniontypeConst1.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
