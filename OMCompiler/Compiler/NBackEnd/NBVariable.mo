@@ -78,6 +78,7 @@ public
   constant String DERIVATIVE_STR = "$DER";
   constant String PREVIOUS_STR = "$PRE";
   constant String AUXILIARY_STR = "$AUX";
+  constant String START_STR = "$START";
   constant String RESULT_STR = "$RES";
   constant String TEMPORARY_STR = "$TMP";
   constant String SEED_STR = "$SEED";
@@ -207,8 +208,8 @@ public
   function makeDerVar
     "Creates a derivative variable pointer from the state cref.
     e.g. height -> $DER.height"
-    input output ComponentRef cref;
-    output Pointer<Variable> var_ptr;
+    input output ComponentRef cref    "old component reference to new component reference";
+    output Pointer<Variable> var_ptr  "pointer to new variable";
   algorithm
     _ := match ComponentRef.node(cref)
       local
@@ -271,8 +272,8 @@ public
   function makePreVar
     "Creates a previous variable pointer from the discrete variable cref.
     e.g. isOpen -> $PRE.isOpen"
-    input output ComponentRef cref;
-    output Pointer<Variable> var_ptr;
+    input output ComponentRef cref    "old component reference to new component reference";
+    output Pointer<Variable> var_ptr  "pointer to new variable";
   algorithm
     _ := match ComponentRef.node(cref)
       local
@@ -326,7 +327,7 @@ public
     e.g: (speed, 'Jac') -> $SEED_Jac.speed"
     input output ComponentRef cref    "old component reference to new component reference";
     input String name                 "name of the matrix this seed belongs to";
-    output Pointer<Variable> var_ptr  "pointer tonew variable";
+    output Pointer<Variable> var_ptr  "pointer to new variable";
   algorithm
     _ := match ComponentRef.node(cref)
       local
@@ -354,6 +355,39 @@ public
     end match;
   end makeSeedVar;
 
+  function makeStartVar
+    "Creates a start variable pointer from a cref. Used in NBInitialization.
+    e.g: angle -> $START.angle"
+    input output ComponentRef cref    "old component reference to new component reference";
+    output Pointer<Variable> var_ptr  "pointer to new variable";
+  algorithm
+    _ := match ComponentRef.node(cref)
+      local
+        InstNode qual;
+        Pointer<Variable> old_var_ptr;
+        Variable var;
+      case qual as InstNode.VAR_NODE()
+        algorithm
+          // get the variable pointer from the old cref to later on link back to it
+          old_var_ptr := BVariable.getVarPointer(cref);
+          // prepend the seed str and the matrix name and create the new cref
+          qual.name := START_STR;
+          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
+          var := BVariable.fromCref(cref);
+          // update the variable to be a seed and pass the pointer to the original variable
+          var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.START(old_var_ptr));
+          // create the new variable pointer and safe it to the component reference
+          var_ptr := Pointer.create(var);
+          cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
+      then ();
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
+      then fail();
+    end match;
+  end makeStartVar;
+
+
   // ==========================================================================
   //                        Variable Array Stuff
   //    All variable arrays are pointer arrays to avoid duplicates
@@ -374,6 +408,32 @@ public
        str := ExpandableArray.toString(variables.varArr, str + " Variables", function Pointer.applyFold(func = function BVariable.toString()), false);
     end toString;
 
+    function map
+      "Traverses all variables and applies a function to them.
+       NOTE: Do not changes names with this, it will mess up the HashTable.
+       Introduce new variables and delete old variables for that!"
+      input output VariablePointers variables;
+      input MapFunc func;
+      partial function MapFunc
+        input output Variable v;
+      end MapFunc;
+    protected
+      Pointer<Variable> var_ptr;
+      Variable var, new_var;
+    algorithm
+      for i in 1:ExpandableArray.getLastUsedIndex(variables.varArr) loop
+        if ExpandableArray.occupied(i, variables.varArr) then
+          var_ptr := ExpandableArray.get(i, variables.varArr);
+          var := Pointer.access(var_ptr);
+          new_var := func(var);
+          if not referenceEq(var, new_var) then
+            // Do not update the expandable array entry, but the pointer itself
+            Pointer.update(var_ptr, new_var);
+          end if;
+        end if;
+      end for;
+    end map;
+
     function empty
       "Creates an empty VariablePointers using given size * 1.4."
       input Integer size = BaseHashTable.bigBucketSize;
@@ -392,19 +452,27 @@ public
       output VariablePointers variables;
     algorithm
       variables := empty(listLength(var_lst));
-      variables := addVars(var_lst, variables);
+      variables := addList(var_lst, variables);
     end fromList;
 
-    function addVars
+    function addList
       "Adds a list of variables to the Variables structure. If any variable already
       exists it's updated instead."
       input list<Pointer<Variable>> var_lst;
       input output VariablePointers variables;
     algorithm
-      variables := List.fold(var_lst, function addVar(), variables);
-    end addVars;
+      variables := List.fold(var_lst, function add(), variables);
+    end addList;
 
-    function addVar
+    function removeList
+      "Removes a list of variables from the Variables structure."
+      input list<Pointer<Variable>> var_lst;
+      input output VariablePointers variables;
+    algorithm
+      variables := List.fold(var_lst, function remove(), variables);
+    end removeList;
+
+    function add
       "Adds a variable pointer to the set, or updates it if it already exists."
       input Pointer<Variable> varPointer;
       input output VariablePointers variables;
@@ -426,9 +494,9 @@ public
         (_, new_idx) := ExpandableArray.add(varPointer, variables.varArr);
         arrayUpdate(variables.crefIndices, hash_idx, (CREFINDEX(var.name, new_idx - 1) :: indices));
       end try;
-    end addVar;
+    end add;
 
-    function removeVar
+    function remove
       "Removes a variable pointer identified by its name from the set."
       input Pointer<Variable> var_ptr;
       input output VariablePointers variables "only an output for mapping";
@@ -450,7 +518,7 @@ public
       else
         // otherwise do nothing
       end try;
-    end removeVar;
+    end remove;
 
     function setVarAt
       "Sets a Variable pointer at a specific index in the VariablePointers."
@@ -520,6 +588,7 @@ public
       VariablePointers unknowns           "All state derivatives, algebraic variables,
                                           discrete variables";
       VariablePointers knowns             "Parameters, constants, states";
+      VariablePointers initials           "All initial unknowns (unknowns + states + previous)";
       VariablePointers auxiliaries        "Variables created by the backend known to be solved
                                           by given binding. E.g. $cse";
       VariablePointers aliasVars          "Variables removed due to alias removal";

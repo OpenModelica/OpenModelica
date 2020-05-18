@@ -61,7 +61,6 @@ public
   uniontype BackendInfo
     record BACKEND_INFO
       VariableKind varKind                          "Structural kind: state, algebraic...";
-      // Merge Tearing Select to VariableAttributes?
       Option<VariableAttributes> attributes     "values on built-in attributes";
     end BACKEND_INFO;
 
@@ -101,6 +100,9 @@ public
     end PREVIOUS;
     record PARAMETER end PARAMETER;
     record CONSTANT end CONSTANT;
+    record START
+      Pointer<Variable> original            "Pointer to the corresponding original variable.";
+    end START;
     record EXTOBJ
       Absyn.Path fullClassName;
     end EXTOBJ;
@@ -142,6 +144,7 @@ public
         case PREVIOUS() then            "[PRE-]";
         case PARAMETER() then           "[PRMT]";
         case CONSTANT() then            "[CNST]";
+        case START() then               "[STRT]";
         case EXTOBJ() then              "[EXTO]";
         case JAC_VAR() then             "[JACV]";
         case JAC_DIFF_VAR() then        "[JACD]";
@@ -157,7 +160,7 @@ public
         case DAE_AUX_VAR() then         "[AUX-]";
         case LOOP_ITERATION() then      "[LOOP]";
         case LOOP_SOLVED() then         "[INNR]";
-        case FRONTEND_DUMMY() then      "[DUMY] Dummy Variable.";
+        case FRONTEND_DUMMY() then      "[DMMY] Dummy Variable.";
         else "[FAIL] " + getInstanceName() + " failed.";
       end match;
     end toString;

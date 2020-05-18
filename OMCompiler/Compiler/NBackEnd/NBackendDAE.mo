@@ -58,6 +58,7 @@ protected
   import BEquation = NBEquation;
   import DetectStates = NBDetectStates;
   import Equation = NBEquation.Equation;
+  import Initialization = NBInitialization;
   import Jacobian = NBJacobian;
   import NBSystem;
   import NBSystem.System;
@@ -105,14 +106,21 @@ public
         BackendDAE qual;
       case qual as BDAE()
         algorithm
-          tmp := StringUtil.headline_1("BackendDAE: " + str) + "\n";
           if listEmpty(qual.ode) then
+            tmp := StringUtil.headline_1("Not partitioned BackendDAE: " + str) + "\n";
             tmp := tmp +  BVariable.VarData.toString(qual.varData, 1) + "\n" +
                           BEquation.EqData.toString(qual.eqData, 1);
           else
+            tmp := StringUtil.headline_1("[ODE] Simulation: " + str) + "\n";
             for syst in qual.ode loop
               tmp := tmp + System.toString(syst);
             end for;
+            if not listEmpty(qual.init) then
+              tmp := tmp + StringUtil.headline_1("[INIT] Initialization: " + str) + "\n";
+              for syst in qual.init loop
+                tmp := tmp + System.toString(syst);
+              end for;
+            end if;
           end if;
       then tmp;
 
@@ -180,6 +188,7 @@ public
     bdae := DetectStates.main(bdae);
     bdae := Partitioning.main(bdae, NBSystem.SystemType.ODE);
     //Jacobian.main(bdae);
+    bdae := Initialization.main(bdae);
   end solve;
 
 protected
@@ -193,10 +202,10 @@ protected
   protected
     Variable lowVar;
     Pointer<Variable> lowVar_ptr;
-    list<Pointer<Variable>> unknowns_lst = {}, knowns_lst = {}, auxiliaries_lst = {}, aliasVars_lst = {};
+    list<Pointer<Variable>> unknowns_lst = {}, knowns_lst = {}, initials_lst = {}, auxiliaries_lst = {}, aliasVars_lst = {};
     list<Pointer<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, previous_lst = {};
     list<Pointer<Variable>> parameters_lst = {}, constants_lst = {};
-    BVariable.VariablePointers variables, unknowns, knowns, auxiliaries, aliasVars;
+    BVariable.VariablePointers variables, unknowns, knowns, initials, auxiliaries, aliasVars;
     BVariable.VariablePointers states, derivatives, algebraics, discretes, previous;
     BVariable.VariablePointers parameters, constants;
   algorithm
@@ -209,32 +218,37 @@ protected
     for var in varList loop
       lowVar := lowerVariable(var);
       lowVar_ptr := Pointer.create(lowVar);
-      variables := BVariable.VariablePointers.addVar(lowVar_ptr, variables);
+      variables := BVariable.VariablePointers.add(lowVar_ptr, variables);
       _ := match lowVar.backendinfo.varKind
 
         case BackendExtension.ALGEBRAIC() algorithm
           algebraics_lst := lowVar_ptr :: algebraics_lst;
           unknowns_lst := lowVar_ptr :: unknowns_lst;
+          initials_lst := lowVar_ptr :: initials_lst;
         then ();
 
         case BackendExtension.STATE() algorithm
           states_lst := lowVar_ptr :: states_lst;
           knowns_lst := lowVar_ptr :: knowns_lst;
+          initials_lst := lowVar_ptr :: initials_lst;
         then ();
 
         case BackendExtension.STATE_DER() algorithm
           derivatives_lst := lowVar_ptr :: derivatives_lst;
           unknowns_lst := lowVar_ptr :: unknowns_lst;
+          initials_lst := lowVar_ptr :: initials_lst;
         then ();
 
         case BackendExtension.DISCRETE() algorithm
           discretes_lst := lowVar_ptr :: discretes_lst;
           unknowns_lst := lowVar_ptr :: unknowns_lst;
+          initials_lst := lowVar_ptr :: initials_lst;
         then ();
 
         case BackendExtension.PREVIOUS() algorithm
           previous_lst := lowVar_ptr :: previous_lst;
           knowns_lst := lowVar_ptr :: knowns_lst;
+          initials_lst := lowVar_ptr :: initials_lst;
         then ();
 
         case BackendExtension.PARAMETER() algorithm
@@ -258,6 +272,7 @@ protected
     // create pointer arrays
     unknowns := BVariable.VariablePointers.fromList(unknowns_lst);
     knowns := BVariable.VariablePointers.fromList(knowns_lst);
+    initials := BVariable.VariablePointers.fromList(initials_lst);
     auxiliaries := BVariable.VariablePointers.fromList(auxiliaries_lst);
     aliasVars := BVariable.VariablePointers.fromList(aliasVars_lst);
 
@@ -271,7 +286,7 @@ protected
     constants := BVariable.VariablePointers.fromList(constants_lst);
 
     /* create variable data */
-    variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, auxiliaries, aliasVars,
+    variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, auxiliaries, aliasVars,
                     states, derivatives, algebraics, discretes, previous, parameters, constants);
   end lowerVariableData;
 

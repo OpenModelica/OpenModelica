@@ -68,13 +68,13 @@ public
       input System system;
       output String str;
     algorithm
-      str :=  StringUtil.headline_2(partitionKindStr(system.partitionKind) + " " + systemTypeStr(system.systemType) + " EquationSystem") + "\n" +
+      str :=  StringUtil.headline_2(partitionKindStr(system.partitionKind) + " " + systemTypeStr(system.systemType) + " System") + "\n" +
               BVariable.VariablePointers.toString(system.unknowns, "Unknown") + "\n" +
               BEquation.EquationPointers.toString(system.equations, "Equations") + "\n";
       // ToDo: add adjacency and matching etc.
     end toString;
-  protected
 
+  protected
     function systemTypeStr
       input SystemType systemType;
       output String str;

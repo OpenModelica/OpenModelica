@@ -285,13 +285,13 @@ if true then /* Suppress output */
     "../BackEnd/XMLDump.mo",
     "../BackEnd/ZeroCrossings.mo",
 
-  // "NBackend" kabdelhak: Have this also behind an environment var?
+  // "NBackend"
     "../NBackEnd/NBackendDAE.mo",
     "../NBackEnd/NBAdjacencyMatrix.mo",
     "../NBackEnd/NBDetectStates.mo",
     "../NBackEnd/NBDifferentiate.mo",
     "../NBackEnd/NBEquation.mo",
-    "../NBackEnd/NBHashTable.mo",
+    "../NBackEnd/NBInitialization.mo",
     "../NBackEnd/NBJacobian.mo",
     "../NBackEnd/NBModule.mo",
     "../NBackEnd/NBPartitioning.mo",

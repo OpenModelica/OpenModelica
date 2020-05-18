@@ -109,6 +109,7 @@ protected
    BEquation.EquationPointers disc_eqns      "Discrete equations";
    BVariable.VariablePointers unknowns       "Unknowns";
    BVariable.VariablePointers knowns         "Knowns";
+   BVariable.VariablePointers initials       "Initial unknowns";
    BVariable.VariablePointers states         "States";
    BVariable.VariablePointers derivatives    "State derivatives (der(x) -> $DER.x)";
    BVariable.VariablePointers algebraics     "Algebraic variables";
@@ -117,11 +118,11 @@ protected
    BVariable.VariablePointers auxiliaries, aliasVars, parameters, constants     "(only to reconstruct VAR_DATA_SIM)";
 
   algorithm
-    BVariable.VAR_DATA_SIM(variables = variables, unknowns = unknowns, knowns = knowns, auxiliaries = auxiliaries, aliasVars = aliasVars, states = states, derivatives = derivatives, algebraics = algebraics, discretes = discretes, previous = previous, parameters = parameters, constants = constants) := varData;
+    BVariable.VAR_DATA_SIM(variables = variables, unknowns = unknowns, knowns = knowns, initials = initials, auxiliaries = auxiliaries, aliasVars = aliasVars, states = states, derivatives = derivatives, algebraics = algebraics, discretes = discretes, previous = previous, parameters = parameters, constants = constants) := varData;
     BEquation.EQ_DATA_SIM(equations = equations, discretes = disc_eqns) := eqData;
-    (variables, equations, unknowns, knowns, states, derivatives, algebraics) := continuousFunc(variables, equations, unknowns, knowns, states, derivatives, algebraics);
-    (variables, disc_eqns, knowns, discretes, previous) := discreteFunc(variables, disc_eqns, knowns, discretes, previous);
-    varData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, states, auxiliaries, aliasVars, derivatives, algebraics, discretes, previous, parameters, constants);
+    (variables, equations, unknowns, knowns, initials, states, derivatives, algebraics) := continuousFunc(variables, equations, unknowns, knowns, initials, states, derivatives, algebraics);
+    (variables, disc_eqns, knowns, initials, discretes, previous) := discreteFunc(variables, disc_eqns, knowns, initials, discretes, previous);
+    varData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, states, auxiliaries, aliasVars, derivatives, algebraics, discretes, previous, parameters, constants);
     eqData := BEquation.EqData.setEquations(eqData, equations);
   end detectStatesDefault;
 
@@ -131,7 +132,7 @@ protected
     Pointer<list<Pointer<Variable>>> acc_derivatives = Pointer.create({});
   algorithm
     BEquation.EquationPointers.mapExp(equations, function collectStatesAndDerivatives(acc_states = acc_states, acc_derivatives = acc_derivatives));
-    (variables, unknowns, knowns, states, derivatives, algebraics) := updateStatesAndDerivatives(variables, unknowns, knowns, states, derivatives, algebraics, Pointer.access(acc_states), Pointer.access(acc_derivatives));
+    (variables, unknowns, knowns, states, derivatives, algebraics) := updateStatesAndDerivatives(variables, unknowns, knowns, initials, states, derivatives, algebraics, Pointer.access(acc_states), Pointer.access(acc_derivatives));
   end detectContinuousStatesDefault;
 
   function detectDiscreteStatesDefault extends Module.detectDiscreteStatesInterface;
@@ -140,7 +141,7 @@ protected
     Pointer<list<Pointer<Variable>>> acc_previous = Pointer.create({});
   algorithm
     BEquation.EquationPointers.mapExp(equations, function collectDiscreteStatesAndPrevious(acc_discrete_states = acc_discrete_states, acc_previous = acc_previous));
-    (variables, knowns, discretes, previous) := updateDiscreteStatesAndPrevious(variables, knowns, discretes, previous, Pointer.access(acc_discrete_states), Pointer.access(acc_previous));
+    (variables, knowns, discretes, previous) := updateDiscreteStatesAndPrevious(variables, knowns, initials, discretes, previous, Pointer.access(acc_discrete_states), Pointer.access(acc_previous));
   end detectDiscreteStatesDefault;
 
   function collectStatesAndDerivatives
@@ -178,6 +179,7 @@ protected
     input output BVariable.VariablePointers variables      "All variables";
     input output BVariable.VariablePointers unknowns       "Unknowns";
     input output BVariable.VariablePointers knowns         "Knowns";
+    input output BVariable.VariablePointers initials       "Initial unknowns";
     input output BVariable.VariablePointers states         "States";
     input output BVariable.VariablePointers derivatives    "State derivatives (der(x) -> $DER.x)";
     input output BVariable.VariablePointers algebraics     "Algebraic variables";
@@ -185,16 +187,17 @@ protected
     input list<Pointer<Variable>> acc_derivatives;
   algorithm
     // Add the new derivatives to variables, unknowns and derivative pointer arrays
-    variables := List.fold(acc_derivatives, function BVariable.VariablePointers.addVar(), variables);
-    unknowns := List.fold(acc_derivatives, function BVariable.VariablePointers.addVar(), unknowns);
-    derivatives := List.fold(acc_derivatives, function BVariable.VariablePointers.addVar(), derivatives);
+    variables := BVariable.VariablePointers.addList(acc_derivatives, variables);
+    unknowns := BVariable.VariablePointers.addList(acc_derivatives, unknowns);
+    initials := BVariable.VariablePointers.addList(acc_derivatives, initials);
+    derivatives := BVariable.VariablePointers.addList(acc_derivatives, derivatives);
 
     // add states to knowns and state pointer array
-    states := List.fold(acc_states, function BVariable.VariablePointers.addVar(), states);
+    states := BVariable.VariablePointers.addList(acc_states, states);
 
     // remove states from unknowns and algebraics
-    unknowns := List.fold(acc_states, function BVariable.VariablePointers.removeVar(), unknowns);
-    algebraics := List.fold(acc_states, function BVariable.VariablePointers.removeVar(), algebraics);
+    unknowns := BVariable.VariablePointers.removeList(acc_states, unknowns);
+    algebraics := BVariable.VariablePointers.removeList(acc_states, algebraics);
   end updateStatesAndDerivatives;
 
   function collectDiscreteStatesAndPrevious
@@ -233,15 +236,17 @@ protected
     "Updates the variable pointer arrays with the new information about states and derivatives."
     input output BVariable.VariablePointers variables       "All variables";
     input output BVariable.VariablePointers knowns          "Knowns";
+    input output BVariable.VariablePointers initials        "initial unknowns";
     input output BVariable.VariablePointers discretes       "Discrete variables";
     input output BVariable.VariablePointers previous        "Previous (left limit) variables";
     input list<Pointer<Variable>> acc_discrete_states;
     input list<Pointer<Variable>> acc_previous;
   algorithm
     // Add the new derivatives to variables, unknowns and derivative pointer arrays
-    variables := List.fold(acc_previous, function BVariable.VariablePointers.addVar(), variables);
-    knowns := List.fold(acc_previous, function BVariable.VariablePointers.addVar(), knowns);
-    previous := List.fold(acc_previous, function BVariable.VariablePointers.addVar(), previous);
+    variables := BVariable.VariablePointers.addList(acc_previous, variables);
+    knowns := BVariable.VariablePointers.addList(acc_previous, knowns);
+    initials := BVariable.VariablePointers.addList(acc_previous, initials);
+    previous := BVariable.VariablePointers.addList(acc_previous, previous);
   end updateDiscreteStatesAndPrevious;
   annotation(__OpenModelica_Interface="backend");
 end NBDetectStates;

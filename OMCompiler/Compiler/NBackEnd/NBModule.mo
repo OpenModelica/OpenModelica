@@ -34,15 +34,16 @@ encapsulated package NBModule
   description:  This file contains all functions and structures regarding
                 generic backend modules and interfaces.
 "
+public
+  import BackendDAE = NBackendDAE;
 
 protected
   // NF imports
   import NFFlatten.FunctionTree;
 
   // Backend imports
-  import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import Jacobian = NBackendDAE.BackendDAE;
+  import Jacobian = NBackendDAE;
   import BVariable = NBVariable;
   import System = NBSystem;
 
@@ -79,6 +80,7 @@ public
     input output BEquation.EquationPointers equations     "System equations";
     input output BVariable.VariablePointers unknowns      "Unknowns";
     input output BVariable.VariablePointers knowns        "Knowns";
+    input output BVariable.VariablePointers initials      "Initial unknowns";
     input output BVariable.VariablePointers states        "States";
     input output BVariable.VariablePointers derivatives   "State derivatives (der(x) -> $DER.x)";
     input output BVariable.VariablePointers algebraics    "Algebraic variables";
@@ -91,6 +93,7 @@ public
     input output BVariable.VariablePointers variables     "All variables";
     input output BEquation.EquationPointers equations     "ONLY Discrete equations!";
     input output BVariable.VariablePointers knowns        "Knowns";
+    input output BVariable.VariablePointers initials      "Initial unknowns";
     input output BVariable.VariablePointers discretes     "Discrete variables";
     input output BVariable.VariablePointers previous      "Previous discrete variables (pre(d) -> $PRE.d)";
   end detectDiscreteStatesInterface;

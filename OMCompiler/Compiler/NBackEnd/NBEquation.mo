@@ -147,6 +147,14 @@ public
       end match;
     end toString;
 
+    function makeStartEq
+      input ComponentRef lhs;
+      input ComponentRef rhs;
+      output Equation eq;
+    algorithm
+      eq := SIMPLE_EQUATION(lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL);
+    end makeStartEq;
+
   protected
     function forEquationToString
       input InstNode iter                   "the iterator variable";
@@ -607,10 +615,17 @@ public
       output EquationPointers equationPointers;
     algorithm
       equationPointers := EQUATION_POINTERS(ExpandableArray.new(listLength(eq_lst), Pointer.create(DUMMY_EQUATION())));
+      equationPointers := addList(eq_lst, equationPointers);
+    end fromList;
+
+    function addList
+      input list<Pointer<Equation>> eq_lst;
+      input output EquationPointers equationPointers;
+    algorithm
       for eq in eq_lst loop
         equationPointers.eqArr := ExpandableArray.add(eq, equationPointers.eqArr);
       end for;
-    end fromList;
+    end addList;
 
     function map
       "Traverses all equations and applies a function to them."
@@ -685,7 +700,7 @@ public
     end EQ_DATA_JAC;
 
     record EQ_DATA_HESS
-      EquationPointers equations           "All equations";
+      EquationPointers equations    "All equations";
       Pointer<Equation> result      "Result equation";
       EquationPointers temporary    "Temporary inner equations";
       EquationPointers auxiliaries  "Auxiliary equations";
