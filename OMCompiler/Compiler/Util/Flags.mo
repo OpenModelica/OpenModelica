@@ -160,6 +160,13 @@ public constant Integer METAMODELICA = 2;
 public constant Integer PARMODELICA = 3;
 public constant Integer OPTIMICA = 4;
 public constant Integer PDEMODELICA = 5;
+
+// FMI-ModelDescription-ENUM-FLAGS
+public constant Integer FMI_NONE = 6;
+public constant Integer FMI_INTERNAL = 7;
+public constant Integer FMI_PROTECTED = 8;
+public constant Integer FMI_BLACKBOX = 9;
+
 constant Gettext.TranslatableContent collapseArrayExpressionsText = Gettext.gettext("Simplifies {x[1],x[2],x[3]} → x for arrays of whole variable references (simplifies code generation).");
 
 // DEBUG FLAGS
@@ -553,8 +560,6 @@ constant DebugFlag NF_DUMP_FLAT = DEBUG_FLAG(192, "nfDumpFlat", false,
   Gettext.gettext("Dumps the flat model structure before generating the DAE."));
 constant DebugFlag DUMP_FORCE_FMI_ATTRIBUTES = DEBUG_FLAG(193, "force-fmi-attributes", false,
   Gettext.gettext("Force to export all fmi attributes to the modelDescription.xml, including those which have default values"));
-constant DebugFlag DUMP_FORCE_FMI_INTERNAL_VARIABLES = DEBUG_FLAG(194, "force-fmi-internal-variables", false,
-  Gettext.gettext("Force to export all internal variables (eg: $CSE) to the modelDescription.xml"));
 
 public
 // CONFIGURATION FLAGS
@@ -1348,6 +1353,10 @@ constant ConfigFlag FMI_VERSION = CONFIG_FLAG(140,
 constant ConfigFlag FLAT_MODELICA = CONFIG_FLAG(141, "flatModelica",
   SOME("f"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Outputs experimental flat Modelica."));
+constant ConfigFlag FMI_FILTER = CONFIG_FLAG(142, "fmiFilter", NONE(), EXTERNAL(),
+  ENUM_FLAG(FMI_INTERNAL, {("none", FMI_NONE), ("internal", FMI_INTERNAL), ("protected", FMI_PROTECTED), ("blackBox", FMI_BLACKBOX)}),
+  SOME(STRING_OPTION({"none", "internal", "protected", "blackBox"})),
+  Gettext.gettext("Filters the FMI-ModelDescription Vars in the ModelDescription.xml"));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

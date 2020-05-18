@@ -8004,9 +8004,20 @@ algorithm
     derivSimvar := clearUpDefaultFmiAttributes(derivSimvar) "just in case";
   end if;
 
-  // clear up internal variable starting with '$' except for states and "$CLKPRE"
-  if not Flags.isSet(Flags.DUMP_FORCE_FMI_INTERNAL_VARIABLES) and (ComponentReference.isInternalCref(simVar.name) and not BackendVariable.isStateVar(dlowVar) and not BackendVariable.isClockedStateVar(dlowVar)) then
+
+  //default is FMI_INTERNAL, clear up internal variable starting with '$' except for states and "$CLKPRE"
+  if ComponentReference.isInternalCref(simVar.name) and (not BackendVariable.isStateVar(dlowVar) and not BackendVariable.isClockedStateVar(dlowVar)) then
     simVar.exportVar := false;
+  end if;
+
+  // check for other fmiFilter configFlags (e.g) protected, blackBox and none
+  if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_PROTECTED and simVar.isProtected then
+    simVar.exportVar := false;
+  elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX and (not BackendVariable.isInput(dlowVar) and not BackendVariable.isOutputVar(dlowVar) and not BackendVariable.isStateVar(dlowVar) and not BackendVariable.isClockedStateVar(dlowVar)) then
+    //TODO, rename the states and derivatives vars to concealed as defined in specification
+    simVar.exportVar := false;
+  elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_NONE then // export all the vars
+    simVar.exportVar := true;
   end if;
 
   // filter parameters of type string that doesn't have constant start values
