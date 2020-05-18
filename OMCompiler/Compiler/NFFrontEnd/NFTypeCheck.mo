@@ -324,29 +324,49 @@ function checkConditionalBinaryOperator
   input SourceInfo info;
   output Expression outExp;
   output Type outType;
+protected
+  Type tty1, fty1, tty2, fty2, ty1, ty2;
+  Expression e1, e2;
+  Boolean valid1, valid2;
+  NFType.Branch branch;
 algorithm
-  (outExp, outType) := match (type1, type2)
-    local
-      Type ty1, ty2;
-
+  (tty1, fty1, tty2, fty2, branch) := match (type1, type2)
     case (Type.CONDITIONAL_ARRAY(), _)
-      algorithm
-        (outExp, ty1) := checkBinaryOperation(exp1, type1.trueType, var1, op, exp2, type2, var2, info);
-        (     _, ty2) := checkBinaryOperation(exp1, type1.falseType, var1, op, exp2, type2, var2, info);
-        outType := Type.CONDITIONAL_ARRAY(ty1, ty2, type1.matchedBranch);
-        outExp := Expression.setType(outType, outExp);
-      then
-        (outExp, outType);
-
+      then (type1.trueType, type1.falseType, type2, type2, type1.matchedBranch);
     case (_, Type.CONDITIONAL_ARRAY())
-      algorithm
-        (outExp, ty1) := checkBinaryOperation(exp1, type1, var1, op, exp2, type2.trueType, var2, info);
-        (     _, ty2) := checkBinaryOperation(exp1, type1, var1, op, exp2, type2.falseType, var2, info);
-        outType := Type.CONDITIONAL_ARRAY(ty1, ty2, type2.matchedBranch);
-        outExp := Expression.setType(outType, outExp);
-      then
-        (outExp, outType);
+      then (type1, type1, type2.trueType, type2.falseType, type2.matchedBranch);
   end match;
+
+  ErrorExt.setCheckpoint(getInstanceName());
+  try
+    (e1, ty1) := checkBinaryOperation(exp1, tty1, var1, op, exp2, tty2, var2, info);
+    valid1 := true;
+  else
+    valid1 := false;
+  end try;
+
+  try
+    (e2, ty2) := checkBinaryOperation(exp1, fty1, var1, op, exp2, fty2, var2, info);
+    valid2 := true;
+  else
+    valid2 := false;
+  end try;
+  ErrorExt.rollBack(getInstanceName());
+
+  if valid1 and valid2 then
+    outType := Type.CONDITIONAL_ARRAY(ty1, ty2, branch);
+    outExp := e1;
+  elseif valid1 then
+    outType := Type.CONDITIONAL_ARRAY(ty1, Type.UNKNOWN(), NFType.Branch.TRUE);
+    outExp := e1;
+  elseif valid2 then
+    outType := Type.CONDITIONAL_ARRAY(Type.UNKNOWN(), ty2, NFType.Branch.FALSE);
+    outExp := e2;
+  else
+    printUnresolvableTypeError(exp1, {type1, type2}, info);
+  end if;
+
+  outExp := Expression.setType(outType, outExp);
 end checkConditionalBinaryOperator;
 
 function checkOverloadedBinaryArrayAddSub
@@ -2743,34 +2763,49 @@ function matchConditionalArrayExp
 protected
   Type true_ty, false_ty, cond_ty;
   Expression e1, e2;
+  NFType.Branch branch;
 algorithm
   // The two types in a conditional array type should have the same element type
   // but different dimensions, so only one of them can match. If either type
   // matches we note which one in the new type, to allow us to check that the
   // correct branch is selected later when the condition can be evaluated.
-  Type.CONDITIONAL_ARRAY(trueType = true_ty, falseType = false_ty) := condType;
+  Type.CONDITIONAL_ARRAY(trueType = true_ty, falseType = false_ty, matchedBranch = branch) := condType;
 
-  (e1, e2, compatibleType, matchKind) :=
-    matchExpressions(condExp, true_ty, otherExp, otherType, allowUnknown);
+  if branch == NFType.Branch.NONE then
+    (e1, e2, compatibleType, matchKind) :=
+      matchExpressions(condExp, true_ty, otherExp, otherType, allowUnknown);
 
-  if isCompatibleMatch(matchKind) then
-    cond_ty := Type.CONDITIONAL_ARRAY(compatibleType, false_ty, NFType.Branch.TRUE);
-    condExp := Expression.setType(cond_ty, e1);
-    otherExp := e2;
-    return;
+    if isCompatibleMatch(matchKind) then
+      cond_ty := Type.CONDITIONAL_ARRAY(compatibleType, false_ty, NFType.Branch.TRUE);
+      condExp := Expression.setType(cond_ty, e1);
+      otherExp := e2;
+      return;
+    end if;
+
+    (e1, e2, compatibleType, matchKind) :=
+      matchExpressions(condExp, false_ty, otherExp, otherType, allowUnknown);
+
+    if isCompatibleMatch(matchKind) then
+      cond_ty := Type.CONDITIONAL_ARRAY(true_ty, compatibleType, NFType.Branch.FALSE);
+      condExp := Expression.setType(cond_ty, e1);
+      otherExp := e2;
+      return;
+    end if;
+  else
+    if branch == NFType.Branch.TRUE then
+      (condExp, otherExp, compatibleType, matchKind) :=
+        matchExpressions(condExp, true_ty, otherExp, otherType, allowUnknown);
+      cond_ty := Type.CONDITIONAL_ARRAY(compatibleType, false_ty, branch);
+    else
+      (condExp, otherExp, compatibleType, matchKind) :=
+        matchExpressions(condExp, false_ty, otherExp, otherType, allowUnknown);
+      cond_ty := Type.CONDITIONAL_ARRAY(true_ty, compatibleType, branch);
+    end if;
+
+    if isCompatibleMatch(matchKind) then
+      condExp := Expression.setType(cond_ty, condExp);
+    end if;
   end if;
-
-  (e1, e2, compatibleType, matchKind) :=
-    matchExpressions(condExp, false_ty, otherExp, otherType, allowUnknown);
-
-  if isCompatibleMatch(matchKind) then
-    cond_ty := Type.CONDITIONAL_ARRAY(true_ty, compatibleType, NFType.Branch.FALSE);
-    condExp := Expression.setType(cond_ty, e1);
-    otherExp := e2;
-    return;
-  end if;
-
-  matchKind := MatchKind.NOT_COMPATIBLE;
 end matchConditionalArrayExp;
 
 function matchConditionalArrayTypes
@@ -2783,32 +2818,45 @@ function matchConditionalArrayTypes
 protected
   Type true_ty, false_ty, cond_ty;
   Expression e;
+  NFType.Branch branch;
 algorithm
   // The two types in a conditional array type should have the same element type
   // but different dimensions, so only one of them can match. If either type
   // matches we note which one in the new type, to allow us to check that the
   // correct branch is selected later when the condition can be evaluated.
-  Type.CONDITIONAL_ARRAY(trueType = true_ty, falseType = false_ty) := condType;
+  Type.CONDITIONAL_ARRAY(trueType = true_ty, falseType = false_ty, matchedBranch = branch) := condType;
 
-  (e, compatibleType, matchKind) :=
-    matchTypes(true_ty, expectedType, exp, allowUnknown);
+  if branch == NFType.Branch.NONE then
+    (e, compatibleType, matchKind) :=
+      matchTypes(true_ty, expectedType, exp, allowUnknown);
 
-  if isCompatibleMatch(matchKind) then
-    cond_ty := Type.CONDITIONAL_ARRAY(compatibleType, false_ty, NFType.Branch.TRUE);
-    exp := Expression.setType(cond_ty, e);
-    return;
+    if isCompatibleMatch(matchKind) then
+      cond_ty := Type.CONDITIONAL_ARRAY(compatibleType, false_ty, NFType.Branch.TRUE);
+      exp := Expression.setType(cond_ty, e);
+      return;
+    end if;
+
+    (e, compatibleType, matchKind) :=
+      matchTypes(false_ty, expectedType, exp, allowUnknown);
+
+    if isCompatibleMatch(matchKind) then
+      cond_ty := Type.CONDITIONAL_ARRAY(true_ty, compatibleType, NFType.Branch.FALSE);
+      exp := Expression.setType(cond_ty, e);
+      return;
+    end if;
+  else
+    if branch == NFType.Branch.TRUE then
+      (exp, compatibleType, matchKind) := matchTypes(true_ty, expectedType, exp, allowUnknown);
+      cond_ty := Type.CONDITIONAL_ARRAY(compatibleType, false_ty, branch);
+    else
+      (exp, compatibleType, matchKind) := matchTypes(false_ty, expectedType, exp, allowUnknown);
+      cond_ty := Type.CONDITIONAL_ARRAY(true_ty, compatibleType, branch);
+    end if;
+
+    if isCompatibleMatch(matchKind) then
+      exp := Expression.setType(cond_ty, exp);
+    end if;
   end if;
-
-  (e, compatibleType, matchKind) :=
-    matchTypes(false_ty, expectedType, exp, allowUnknown);
-
-  if isCompatibleMatch(matchKind) then
-    cond_ty := Type.CONDITIONAL_ARRAY(true_ty, compatibleType, NFType.Branch.FALSE);
-    exp := Expression.setType(cond_ty, e);
-    return;
-  end if;
-
-  matchKind := MatchKind.NOT_COMPATIBLE;
 end matchConditionalArrayTypes;
 
 function matchTypes_cast
