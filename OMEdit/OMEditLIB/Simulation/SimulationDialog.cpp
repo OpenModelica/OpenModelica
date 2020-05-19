@@ -2032,7 +2032,7 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
    */
   bool resultFileNonZeroSize = MainWindow::instance()->getOMCProxy()->readSimulationResultSize(resultFileInfo.absoluteFilePath()) > 0;
 
-  if (resultFileKnown && resultFileExists && resultFileNewer && resultFileNonZeroSize) {
+  if (resultFileKnown && resultFileExists && resultFileNewer) {
     VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     QStringList list = pOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());
@@ -2041,11 +2041,13 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
       MainWindow::instance()->raise();
       MainWindow::instance()->activateWindow();
       MainWindow::instance()->setWindowState(MainWindow::instance()->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
-      if (OptionsDialog::instance()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
+      if (resultFileNonZeroSize && OptionsDialog::instance()->getSimulationPage()->getSwitchToPlottingPerspectiveCheckBox()->isChecked()) {
         MainWindow::instance()->switchToPlottingPerspectiveSlot();
       } else {
         // stay in current perspective and show variables browser
-        MainWindow::instance()->getVariablesDockWidget()->show();
+        if (resultFileNonZeroSize) {
+          MainWindow::instance()->getVariablesDockWidget()->show();
+        }
       }
       bool showPlotWindow = true;
 #if !defined(WITHOUT_OSG)
