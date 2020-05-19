@@ -2231,7 +2231,7 @@ static int getLoadModelPathFromSingleTarget(const char *searchTarget, modelicaPa
 
         if (modelicaPathEntryVersionEqual(entries[i].version,version,j)
             && (j==MODELICAPATH_LEVELS || modelicaPathEntryVersionGreater(entries[i].version,version,MODELICAPATH_LEVELS))
-            && entries[i].versionExtra[0] == '\0') {
+            && (entries[i].versionExtra[0] == '\0' || entries[i].versionExtra[0] == '+' || entries[i].versionExtra[0] == '-')) {
           if (modelicaPathEntryVersionGreater(entries[i].version,foundVersion,MODELICAPATH_LEVELS)) {
             memcpy(foundVersion,entries[i].version,sizeof(long)*MODELICAPATH_LEVELS);
             foundIndex = i;
