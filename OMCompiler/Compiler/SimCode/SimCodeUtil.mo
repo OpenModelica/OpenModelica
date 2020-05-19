@@ -13770,6 +13770,8 @@ algorithm
       // add subscripts to array element
       subs := listReverse(subs);
       elt.name := ComponentReference.crefSetLastSubs(elt.name, subs);
+      // copy the array subscripts to exportVar as it is used export vars in modeldescription.xml in CodegenFMUCommon.tpl
+      elt.exportVar := SOME(ComponentReference.crefSetLastSubs(Util.getOption(elt.exportVar), subs));
       // add subscripts to previousName
       _ := match elt
         local
