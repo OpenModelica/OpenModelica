@@ -156,7 +156,7 @@ case SIMVAR(__) then
   else if stringEq(crefStr(name),"der($dummy)") then
   <<>>
   else if isFMIVersion20(FMUVersion) then
-    if exportVar then
+    if isSome(exportVar) then
       <<
       <!-- Index of variable = "<%getVariableFMIIndex(simVar)%>" -->
       <ScalarVariable
@@ -484,7 +484,7 @@ match simVar
   let caus = getCausality2(causality)
   let initial = getInitialType2(initial_)
   <<
-  name="<%System.stringReplace(crefStrNoUnderscore(name),"$", "_D_")%>"
+  name="<%System.stringReplace(crefStrNoUnderscore(Util.getOption(exportVar)),"$", "_D_")%>"
   valueReference="<%valueReference%>"
   <%description%>
   <%if boolNot(stringEq(variability_, "")) then 'variability="'+variability_+'"' %>

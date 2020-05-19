@@ -105,7 +105,7 @@ public uniontype SimVar "Information about a variable in a Modelica model."
     Option<String> matrixName "if the varibale is a jacobian var, this is the corresponding matrix";
     Option<Variability> variability "FMI-2.0 variabilty attribute";
     Option<Initial> initial_ "FMI-2.0 initial attribute";
-    Boolean exportVar "variables will only be exported to the modelDescription.xml if this attribute is true";
+    Option<DAE.ComponentRef> exportVar "variables will only be exported to the modelDescription.xml if this attribute is SOME(cref) and this cref is only used in ModelDescription.xml for FMI-2.0 export";
   end SIMVAR;
 end SimVar;
 

@@ -249,8 +249,7 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DUMP_ASSC,
   Flags.SPLIT_CONSTANT_PARTS_SYMJAC,
   Flags.NF_DUMP_FLAT,
-  Flags.DUMP_FORCE_FMI_ATTRIBUTES,
-  Flags.DUMP_FORCE_FMI_INTERNAL_VARIABLES
+  Flags.DUMP_FORCE_FMI_ATTRIBUTES
 };
 
 protected
@@ -398,8 +397,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.ZEROMQ_SERVER_ID,
   Flags.ZEROMQ_CLIENT_ID,
   Flags.FMI_VERSION,
-  Flags.FLAT_MODELICA
-
+  Flags.FLAT_MODELICA,
+  Flags.FMI_FILTER
 };
 
 public function new

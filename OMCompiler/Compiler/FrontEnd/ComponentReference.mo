@@ -2101,6 +2101,16 @@ algorithm
   outCref := makeCrefQual(DAE.preNamePrefix, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
 end crefPrefixPre;
 
+public function getConcealedCref "public function getConcealedCref
+  Replaces a cref to concealed so a => $concealed1"
+  output DAE.ComponentRef outCref;
+protected
+  String ident;
+algorithm
+  ident := "$concealed" + intString(System.tmpTick()+1);
+  outCref := makeCrefIdent(ident, DAE.T_UNKNOWN_DEFAULT, {});
+end getConcealedCref;
+
 public function crefPrefixPrevious "public function crefPrefixPrevious
   Appends $CLKPRE to a cref, so a => $CLKPRE.a"
   input DAE.ComponentRef inCref;

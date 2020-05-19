@@ -1,0 +1,97 @@
+// name: fmi_attributes_11.mos
+// keywords: FMI 2.0 export
+// status: correct
+// teardown_command: rm -rf fmi_attributes_11.fmu fmi_attributes_11.log fmi_attributes_11.xml fmi_attributes_11_tmp.xml fmi_attributes_11.fmutmp/
+
+loadString("
+model fmi_attributes_11
+  input Real u;
+  Real x;
+  output Real y;
+  Real a, b;
+  parameter Real z=30;
+initial equation
+  x = 0.0;
+equation
+  a = 2.0*u;
+  b = 0.5*a;
+  der(x) = b+z;
+  y = x;
+end fmi_attributes_11;
+"); getErrorString();
+
+setCommandLineOptions("--fmiFilter=blackBox"); getErrorString();
+translateModelFMU(fmi_attributes_11); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq fmi_attributes_11.fmu modelDescription.xml > fmi_attributes_11_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi_attributes_11_tmp.xml > fmi_attributes_11.xml"); getErrorString();
+readFile("fmi_attributes_11.xml"); getErrorString();
+
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi_attributes_11_tmp.xml > fmi_attributes_11.xml"); getErrorString();
+readFile("fmi_attributes_11.xml"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi_attributes_11.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"_D_concealed1\"
+//     valueReference=\"0\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"_D_concealed2\"
+//     valueReference=\"1\"
+//     >
+//     <Real derivative=\"1\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"u\"
+//     valueReference=\"4\"
+//     causality=\"input\"
+//     >
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
+//     name=\"y\"
+//     valueReference=\"5\"
+//     causality=\"output\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   </ModelVariables>
+// "
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <Outputs>
+//       <Unknown index=\"4\" dependencies=\"1\" dependenciesKind=\"dependent\" />
+//     </Outputs>
+//     <Derivatives>
+//       <Unknown index=\"2\" dependencies=\"3\" dependenciesKind=\"dependent\" />
+//     </Derivatives>
+//     <InitialUnknowns>
+//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"2\" dependencies=\"3\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"4\" dependencies=\"\" dependenciesKind=\"\" />
+//     </InitialUnknowns>
+//   </ModelStructure>
+// "
+// ""
+// endResult
