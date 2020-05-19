@@ -51,7 +51,7 @@ import Expression = NFExpression;
 import MetaModelica.Dangerous.listReverseInPlace;
 import NFClass.Class;
 import NFClassTree.ClassTree;
-import NFComponent.Component;
+import Component = NFComponent;
 import NFInstNode.InstNode;
 import NFPrefixes.ConnectorType;
 import NFPrefixes.Visibility;

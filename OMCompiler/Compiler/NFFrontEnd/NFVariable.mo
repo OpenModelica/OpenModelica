@@ -31,7 +31,7 @@
 
 encapsulated uniontype NFVariable
   import NFBinding.Binding;
-  import NFComponent.Component;
+  import Component = NFComponent;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import NFInstNode.InstNode;

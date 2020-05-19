@@ -47,7 +47,7 @@ import SCode;
 import NFBinding;
 import NFClass.Class;
 import NFClassTree.ClassTree;
-import NFComponent.Component;
+import Component = NFComponent;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
 import NFInstNode.InstNodeType;

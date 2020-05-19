@@ -39,7 +39,7 @@ encapsulated package NFTyping
 "
 
 import NFBinding.Binding;
-import NFComponent.Component;
+import Component = NFComponent;
 import Dimension = NFDimension;
 import Equation = NFEquation;
 import NFClass.Class;

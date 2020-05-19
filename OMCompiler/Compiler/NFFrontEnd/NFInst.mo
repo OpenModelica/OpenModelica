@@ -44,7 +44,7 @@ import DAE;
 
 import Builtin = NFBuiltin;
 import NFBinding.Binding;
-import NFComponent.Component;
+import Component = NFComponent;
 import ComponentRef = NFComponentRef;
 import Dimension = NFDimension;
 import Expression = NFExpression;

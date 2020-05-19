@@ -31,7 +31,7 @@
 
 encapsulated uniontype NFComponentRef
 protected
-  import NFComponent.Component;
+  import Component = NFComponent;
   import Absyn;
   import DAE;
   import Subscript = NFSubscript;

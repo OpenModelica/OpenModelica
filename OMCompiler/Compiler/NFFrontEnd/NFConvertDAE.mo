@@ -54,7 +54,7 @@ import Function = NFFunction.Function;
 import MetaModelica.Dangerous.listReverseInPlace;
 import NFClass.Class;
 import NFClassTree.ClassTree;
-import NFComponent.Component;
+import Component = NFComponent;
 import NFModifier.Modifier;
 import NFPrefixes.ConnectorType;
 import NFPrefixes.Direction;

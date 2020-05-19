@@ -63,7 +63,6 @@ public
   import ComponentRef = NFComponentRef;
   import Call = NFCall;
   import NFBinding.Binding;
-  import NFComponent.Component;
   import NFClassTree.ClassTree;
   import NFClass.Class;
   import NFComponentRef.Origin;

@@ -34,7 +34,7 @@ encapsulated package NFCeval
 import NFBinding.Binding;
 import ComponentRef = NFComponentRef;
 import Error;
-import NFComponent.Component;
+import Component = NFComponent;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
 import Operator = NFOperator;

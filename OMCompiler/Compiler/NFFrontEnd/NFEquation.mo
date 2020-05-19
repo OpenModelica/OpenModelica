@@ -43,7 +43,6 @@ protected
   import Equation = NFEquation;
   import Error;
   import IOStream;
-  import NFComponent.Component;
   import Util;
 
 public

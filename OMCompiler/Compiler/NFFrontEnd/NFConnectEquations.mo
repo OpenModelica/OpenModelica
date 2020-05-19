@@ -66,7 +66,7 @@ import BuiltinCall = NFBuiltinCall;
 import ComplexType = NFComplexType;
 import ExpandExp = NFExpandExp;
 import Prefixes = NFPrefixes;
-import NFComponent.Component;
+import Component = NFComponent;
 import Ceval = NFCeval;
 import MetaModelica.Dangerous.listReverseInPlace;
 import SimplifyExp = NFSimplifyExp;

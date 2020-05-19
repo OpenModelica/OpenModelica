@@ -40,7 +40,7 @@ encapsulated package NFRecord
 
 import NFBinding.Binding;
 import NFClass.Class;
-import NFComponent.Component;
+import Component = NFComponent;
 import Dimension = NFDimension;
 import Expression = NFExpression;
 import NFInstNode.InstNode;

@@ -44,7 +44,7 @@ protected
   import NFInstNode.InstNode;
   import ElementSource;
   import Flags;
-  import NFComponent.Component;
+  import Component = NFComponent;
   import NFClassTree.ClassTree;
   import NFClass.Class;
   import Restriction = NFRestriction;

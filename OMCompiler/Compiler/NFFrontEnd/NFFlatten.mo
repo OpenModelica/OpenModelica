@@ -59,7 +59,7 @@ import List;
 import Call = NFCall;
 import NFClass.Class;
 import NFClassTree.ClassTree;
-import NFComponent.Component;
+import Component = NFComponent;
 import NFModifier.Modifier;
 import Sections = NFSections;
 import NFOCConnectionGraph;

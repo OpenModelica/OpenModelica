@@ -79,7 +79,7 @@ import OperatorOverloading = NFOperatorOverloading;
 import ExpandExp = NFExpandExp;
 import NFFunction.Slot;
 import Util;
-import NFComponent.Component;
+import Component = NFComponent;
 
 public
 type MatchKind = enumeration(

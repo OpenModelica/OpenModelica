@@ -39,7 +39,7 @@ import Sections = NFSections;
 import Statement = NFStatement;
 import ComponentRef = NFComponentRef;
 import NFBinding.Binding;
-import NFComponent.Component;
+import Component = NFComponent;
 import Type = NFType;
 import Dimension = NFDimension;
 import NFClassTree.ClassTree;

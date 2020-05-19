@@ -41,7 +41,7 @@ protected
   import ComponentRef = NFComponentRef;
   import NFClassTree.ClassTree;
   import NFClass.Class;
-  import NFComponent.Component;
+  import Component = NFComponent;
   import NFBinding.Binding;
   import Expression = NFExpression;
   import Call = NFCall;

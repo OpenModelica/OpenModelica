@@ -47,7 +47,7 @@ protected
   import NFSubscript.Subscript;
   import NFClass.Class;
   import NFClassTree.ClassTree;
-  import NFComponent.Component;
+  import Component = NFComponent;
   import NFComponentRef.ComponentRef;
   import MetaModelica.Dangerous.listReverseInPlace;
 

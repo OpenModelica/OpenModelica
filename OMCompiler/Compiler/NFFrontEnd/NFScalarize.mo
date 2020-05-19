@@ -46,7 +46,7 @@ import Dimension = NFDimension;
 import MetaModelica.Dangerous.listReverseInPlace;
 import MetaModelica.Dangerous.arrayCreateNoInit;
 import Variable = NFVariable;
-import NFComponent.Component;
+import Component = NFComponent;
 import NFPrefixes.Visibility;
 import NFPrefixes.Variability;
 import List;
