@@ -933,6 +933,12 @@ algorithm
       equation
       then (cache,DAE.META_OPTION(NONE()));
 
+    case (DAE.METARECORDCALL(), _)
+      algorithm
+        (cache, expl) := prefixExpList(cache, env, ih, inExp.args, pre);
+      then
+        (cache, DAE.METARECORDCALL(inExp.path, expl, inExp.fieldNames, inExp.index, inExp.typeVars));
+
     case (e as DAE.UNBOX(e1),_)
       equation
         (cache,e1) = prefixExpWork(cache, env, ih, e1, pre);
