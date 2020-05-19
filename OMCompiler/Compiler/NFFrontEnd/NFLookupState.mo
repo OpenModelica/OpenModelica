@@ -35,7 +35,6 @@ import Absyn;
 import AbsynUtil;
 import SCode;
 import NFInstNode.InstNode;
-import NFComponent.Component;
 
 protected
 import Dump;

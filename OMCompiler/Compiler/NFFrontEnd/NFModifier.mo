@@ -44,7 +44,6 @@ import Absyn;
 import AbsynUtil;
 import BaseAvlTree;
 import NFBinding.Binding;
-import NFComponent.Component;
 import NFInstNode.InstNode;
 import SCode;
 import Inst = NFInst;

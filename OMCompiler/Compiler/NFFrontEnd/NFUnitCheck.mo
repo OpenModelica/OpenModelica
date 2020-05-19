@@ -26,7 +26,7 @@ import HashTableStringToUnit = NFHashTableStringToUnit;
 import HashTableUnitToString = NFHashTableUnitToString;
 import NFBinding.Binding;
 import Call = NFCall;
-import NFComponent.Component;
+import Component = NFComponent;
 import NFFunction.Function;
 import NFInstNode.InstNode;
 import Operator = NFOperator;

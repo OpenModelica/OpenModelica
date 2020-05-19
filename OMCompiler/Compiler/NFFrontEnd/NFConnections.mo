@@ -43,7 +43,7 @@ protected
   import Expression = NFExpression;
   import Flags;
   import MetaModelica.Dangerous.listReverseInPlace;
-  import NFComponent.Component;
+  import Component = NFComponent;
   import NFInstNode.InstNode;
   import Type = NFType;
 

@@ -41,7 +41,7 @@ protected
   import Equation = NFEquation;
   import Statement = NFStatement;
   import List;
-  import NFComponent.Component;
+  import Component = NFComponent;
   import NFInstNode.InstNode;
   import Typing = NFTyping;
   import Ceval = NFCeval;

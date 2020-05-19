@@ -36,7 +36,7 @@ import NFModifier.Modifier;
 import NFStatement.Statement;
 import SCode.Element;
 import Type = NFType;
-import NFComponent.Component;
+import Component = NFComponent;
 import Dimension = NFDimension;
 import NFClassTree.ClassTree;
 import NFSections.Sections;

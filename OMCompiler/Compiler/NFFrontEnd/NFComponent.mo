@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated package NFComponent
+encapsulated uniontype NFComponent
 
 import DAE;
 import NFBinding.Binding;
@@ -49,71 +49,70 @@ import List;
 import Prefixes = NFPrefixes;
 import SCodeUtil;
 import Restriction = NFRestriction;
+import Component = NFComponent;
 
 public
-constant Component.Attributes DEFAULT_ATTR =
-  Component.Attributes.ATTRIBUTES(
-    ConnectorType.NON_CONNECTOR,
-    Parallelism.NON_PARALLEL,
-    Variability.CONTINUOUS,
-    Direction.NONE,
-    InnerOuter.NOT_INNER_OUTER,
-    false,
-    false,
-    Replaceable.NOT_REPLACEABLE()
-  );
-constant Component.Attributes INPUT_ATTR =
-  Component.Attributes.ATTRIBUTES(
-    ConnectorType.NON_CONNECTOR,
-    Parallelism.NON_PARALLEL,
-    Variability.CONTINUOUS,
-    Direction.INPUT,
-    InnerOuter.NOT_INNER_OUTER,
-    false,
-    false,
-    Replaceable.NOT_REPLACEABLE()
-  );
+  constant Attributes DEFAULT_ATTR =
+    Attributes.ATTRIBUTES(
+      ConnectorType.NON_CONNECTOR,
+      Parallelism.NON_PARALLEL,
+      Variability.CONTINUOUS,
+      Direction.NONE,
+      InnerOuter.NOT_INNER_OUTER,
+      false,
+      false,
+      Replaceable.NOT_REPLACEABLE()
+    );
 
-constant Component.Attributes OUTPUT_ATTR =
-  Component.Attributes.ATTRIBUTES(
-    ConnectorType.NON_CONNECTOR,
-    Parallelism.NON_PARALLEL,
-    Variability.CONTINUOUS,
-    Direction.OUTPUT,
-    InnerOuter.NOT_INNER_OUTER,
-    false,
-    false,
-    Replaceable.NOT_REPLACEABLE()
-  );
+  constant Attributes INPUT_ATTR =
+    Attributes.ATTRIBUTES(
+      ConnectorType.NON_CONNECTOR,
+      Parallelism.NON_PARALLEL,
+      Variability.CONTINUOUS,
+      Direction.INPUT,
+      InnerOuter.NOT_INNER_OUTER,
+      false,
+      false,
+      Replaceable.NOT_REPLACEABLE()
+    );
 
-constant Component.Attributes CONSTANT_ATTR =
-  Component.Attributes.ATTRIBUTES(
-    ConnectorType.NON_CONNECTOR,
-    Parallelism.NON_PARALLEL,
-    Variability.CONSTANT,
-    Direction.NONE,
-    InnerOuter.NOT_INNER_OUTER,
-    false,
-    false,
-    Replaceable.NOT_REPLACEABLE()
-  );
+  constant Attributes OUTPUT_ATTR =
+    Attributes.ATTRIBUTES(
+      ConnectorType.NON_CONNECTOR,
+      Parallelism.NON_PARALLEL,
+      Variability.CONTINUOUS,
+      Direction.OUTPUT,
+      InnerOuter.NOT_INNER_OUTER,
+      false,
+      false,
+      Replaceable.NOT_REPLACEABLE()
+    );
 
-constant Component.Attributes IMPL_DISCRETE_ATTR =
-  Component.Attributes.ATTRIBUTES(
-    ConnectorType.NON_CONNECTOR,
-    Parallelism.NON_PARALLEL,
-    Variability.IMPLICITLY_DISCRETE,
-    Direction.NONE,
-    InnerOuter.NOT_INNER_OUTER,
-    false,
-    false,
-    Replaceable.NOT_REPLACEABLE()
-  );
+  constant Attributes CONSTANT_ATTR =
+    Attributes.ATTRIBUTES(
+      ConnectorType.NON_CONNECTOR,
+      Parallelism.NON_PARALLEL,
+      Variability.CONSTANT,
+      Direction.NONE,
+      InnerOuter.NOT_INNER_OUTER,
+      false,
+      false,
+      Replaceable.NOT_REPLACEABLE()
+    );
 
-uniontype Component
+  constant Attributes IMPL_DISCRETE_ATTR =
+    Attributes.ATTRIBUTES(
+      ConnectorType.NON_CONNECTOR,
+      Parallelism.NON_PARALLEL,
+      Variability.IMPLICITLY_DISCRETE,
+      Direction.NONE,
+      InnerOuter.NOT_INNER_OUTER,
+      false,
+      false,
+      Replaceable.NOT_REPLACEABLE()
+    );
+
   uniontype Attributes
-    import SCode;
-
     record ATTRIBUTES
       // adrpo: keep the order in DAE.ATTR
       ConnectorType.Type connectorType;
@@ -1002,7 +1001,6 @@ uniontype Component
       else false;
     end match;
   end isTypeAttribute;
-end Component;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFComponent;

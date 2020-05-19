@@ -62,7 +62,7 @@ protected
   import Util;
   import ExpandExp = NFExpandExp;
   import Operator = NFOperator;
-  import NFComponent.Component;
+  import Component = NFComponent;
   import NFPrefixes.ConnectorType;
 
 public

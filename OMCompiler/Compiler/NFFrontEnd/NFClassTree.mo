@@ -44,7 +44,7 @@ protected
   import Error;
   import MetaModelica.Dangerous.*;
   import NFClass.Class;
-  import NFComponent.Component;
+  import Component = NFComponent;
   import Inst = NFInst;
   import List;
   import Lookup = NFLookup;

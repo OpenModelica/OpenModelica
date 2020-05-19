@@ -52,7 +52,7 @@ import ComponentRef = NFComponentRef;
 protected
 import NFInstNode.NodeTree;
 import NFInstNode.CachedData;
-import NFComponent.Component;
+import Component = NFComponent;
 import Subscript = NFSubscript;
 import ComplexType = NFComplexType;
 import Config;

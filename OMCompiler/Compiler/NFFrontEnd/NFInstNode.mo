@@ -31,7 +31,7 @@
 
 encapsulated package NFInstNode
 
-import NFComponent.Component;
+import Component = NFComponent;
 import NFClass.Class;
 import SCode;
 import Absyn;

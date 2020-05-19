@@ -40,7 +40,7 @@ import NFFunction.FuncType;
 import NFInstNode.CachedData;
 import NFInstNode.InstNode;
 import NFInstNode.InstNodeType;
-import NFComponent.Component;
+import Component = NFComponent;
 import Type = NFType;
 import Expression = NFExpression;
 import Absyn;
