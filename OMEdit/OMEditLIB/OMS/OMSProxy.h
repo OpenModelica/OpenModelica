@@ -112,6 +112,7 @@ public:
   bool initialize(QString cref);
   bool list(QString cref, QString *pContents);
   bool loadModel(QString filename, QString* pModelName);
+  bool loadSnapshot(QString cref, QString snapshot);
   bool newModel(QString cref);
   bool omsDelete(QString cref);
   bool saveModel(QString cref, QString filename);
@@ -142,9 +143,6 @@ public:
   void setWorkingDirectory(QString path);
   bool simulate_asynchronous(QString cref);
   bool terminate(QString cref);
-
-  bool parseString(QString contents, QString* pModelName);
-  bool loadString(QString contents, QString* pModelName);
 signals:
   void logGUIMessage(MessageItem messageItem);
 };
