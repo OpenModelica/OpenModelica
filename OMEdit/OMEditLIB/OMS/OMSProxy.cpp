@@ -1063,6 +1063,24 @@ bool OMSProxy::loadModel(QString filename, QString* pModelName)
 }
 
 /*!
+ * \brief OMSProxy::loadSnapshot
+ * Loads the snapshot of the model.
+ * \param cref
+ * \param snapshot
+ * \return
+ */
+bool OMSProxy::loadSnapshot(QString cref, QString snapshot)
+{
+  QString command = "oms_loadSnapshot";
+  QStringList args;
+  args << "\"" + cref + "\"" << "\"" + snapshot + "\"";
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms_loadSnapshot(cref.toUtf8().constData(), snapshot.toUtf8().constData());
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
  * \brief OMSProxy::newModel
  * \param cref
  * \return
@@ -1578,43 +1596,4 @@ bool OMSProxy::terminate(QString cref)
   oms_status_enu_t status = oms_terminate(cref.toUtf8().constData());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::parseString
- * Parses a model string and returns a model name.
- * \param contents
- * \param pModelName
- * \return
- */
-bool OMSProxy::parseString(QString contents, QString *pModelName)
-{
-  Q_UNUSED(contents);
-  Q_UNUSED(pModelName);
-  //  char* ident = NULL;
-  //  oms_status_enu_t status = oms2_parseString(contents.toUtf8().constData(), &ident);
-  //  if (ident) {
-  //    *pModelName = QString(ident);
-  //    free(ident);
-  //  }
-  //  return statusToBool(status);
-  return false;
-}
-
-/*!
- * \brief OMSProxy::loadString
- * Loads the model from a string.
- * \param contents
- * \param pModelName
- * \return
- */
-bool OMSProxy::loadString(QString contents, QString* pModelName)
-{
-  Q_UNUSED(contents);
-  Q_UNUSED(pModelName);
-  //  char* ident = NULL;
-  //  oms_status_enu_t status = oms2_loadString(contents.toUtf8().constData(), &ident);
-  //  *pModelName = QString(ident);
-  //  return statusToBool(status);
-  return false;
 }

@@ -560,14 +560,6 @@ void MainWindow::beforeClosingMainWindow()
 {
   mpOMCProxy->quitOMC();
   delete mpOMCProxy;
-  // Unload the OMSimulator models
-  LibraryTreeItem* pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getRootLibraryTreeItem();
-  for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
-    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
-    if (pChildLibraryTreeItem && pChildLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
-      mpLibraryWidget->getLibraryTreeModel()->unloadOMSModel(pChildLibraryTreeItem, false);
-    }
-  }
   // delete the OMSProxy object
   OMSProxy::destroy();
   delete mpModelWidgetContainer;
@@ -1740,8 +1732,7 @@ void MainWindow::createNewOMSModel()
 void MainWindow::openOMSModelFile()
 {
   QStringList fileNames;
-  fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles), NULL,
-                                              Helper::omsFileTypes, NULL);
+  fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles), NULL, Helper::omsFileTypes, NULL);
   if (fileNames.isEmpty()) {
     return;
   }

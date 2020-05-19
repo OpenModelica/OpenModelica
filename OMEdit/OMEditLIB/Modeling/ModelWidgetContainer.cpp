@@ -4867,11 +4867,12 @@ void ModelWidget::createModelWidgetComponents()
         pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
         // create an editor
         mpEditor = new OMSimulatorEditor(this);
-        mpEditor->getPlainTextEdit()->setReadOnly(true);
+        if (!mpLibraryTreeItem->isTopLevel()) {
+          mpEditor->getPlainTextEdit()->setReadOnly(true);
+        }
         OMSimulatorEditor *pOMSimulatorEditor = dynamic_cast<OMSimulatorEditor*>(mpEditor);
         pOMSimulatorEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()), false);
-        OMSimulatorHighlighter *pOMSimulatorHighlighter = new OMSimulatorHighlighter(OptionsDialog::instance()->getOMSimulatorEditorPage(),
-                                                                                     mpEditor->getPlainTextEdit());
+        OMSimulatorHighlighter *pOMSimulatorHighlighter = new OMSimulatorHighlighter(OptionsDialog::instance()->getOMSimulatorEditorPage(), mpEditor->getPlainTextEdit());
         mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
         connect(OptionsDialog::instance(), SIGNAL(omsimulatorEditorSettingsChanged()), pOMSimulatorHighlighter, SLOT(settingsChanged()));
       }
@@ -5283,56 +5284,17 @@ void ModelWidget::updateChildClasses(LibraryTreeItem *pLibraryTreeItem)
  */
 bool ModelWidget::omsimulatorEditorTextChanged()
 {
-  OMSimulatorEditor *pOMSimulatorEditor = dynamic_cast<OMSimulatorEditor*>(mpEditor);
-  QFileInfo fileInfo(mpLibraryTreeItem->getFileName());
-  if (fileInfo.exists()) {
-    OMSProxy::instance()->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
-  }
-  QString modelName;
-  bool success = false;
-  if (OMSProxy::instance()->parseString(pOMSimulatorEditor->getPlainTextEdit()->toPlainText(), &modelName)) {
-    if (mpLibraryTreeItem->getNameStructure().compare(modelName) != 0
-        && MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(modelName)) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                            GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS)
-                                                            .arg("Composite model").arg(modelName).arg("scope"),
-                                                            Helper::scriptingKind, Helper::errorLevel));
-      return false;
-    }
-    success = OMSProxy::instance()->loadString(pOMSimulatorEditor->getPlainTextEdit()->toPlainText(), &modelName);
-  }
-  if (fileInfo.exists()) {
-    OMSProxy::instance()->setWorkingDirectory(OptionsDialog::instance()->getOMSimulatorPage()->getWorkingDirectory());
-  }
-  if (success) {
-    // model name has changed
-    if (mpLibraryTreeItem->getNameStructure().compare(modelName) != 0) {
-      // unload the old model from OMSimulator
-      OMSProxy::instance()->omsDelete(mpLibraryTreeItem->getNameStructure());
-      // Update to the new name
-      mpLibraryTreeItem->setName(modelName);
-      mpLibraryTreeItem->setNameStructure(modelName);
-      setWindowTitle(mpLibraryTreeItem->getName() + (mpLibraryTreeItem->isSaved() ? "" : "*"));
-      setModelClassPathLabel(mpLibraryTreeItem->getNameStructure());
-    }
-    // Update the OMS element
-    oms_element_t *pOMSElement = 0;
-    OMSProxy::instance()->getElement(mpLibraryTreeItem->getNameStructure(), &pOMSElement);
-    mpLibraryTreeItem->setOMSElement(pOMSElement);
-    // remove the children
-    int i = 0;
-    while (i < mpLibraryTreeItem->childrenSize()) {
-      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->removeLibraryTreeItem(mpLibraryTreeItem->child(i), LibraryTreeItem::OMS);
-      i = 0;  //Restart iteration
-    }
-    // create the children
-    QModelIndex modelIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->libraryTreeItemIndex(mpLibraryTreeItem);
-    QModelIndex proxyIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
-    MainWindow::instance()->getLibraryWidget()->getLibraryTreeView()->collapse(proxyIndex);
-    mpLibraryTreeItem->setExpanded(false);
-    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->createLibraryTreeItems(mpLibraryTreeItem);
+  if (OMSProxy::instance()->loadSnapshot(mpLibraryTreeItem->getNameStructure(), mpEditor->getPlainTextEdit()->toPlainText())) {
+    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+    mpLibraryTreeItem->setModelWidget(0);
+    QString modelName = mpLibraryTreeItem->getNameStructure();
+    QString filePath = mpLibraryTreeItem->getFileName();
+    pLibraryTreeModel->unloadOMSModel(mpLibraryTreeItem, false, false);
+    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(modelName, modelName, filePath, false, pLibraryTreeModel->getRootLibraryTreeItem());
+    pLibraryTreeItem->setModelWidget(this);
+    setLibraryTreeItem(pLibraryTreeItem);
     reDrawModelWidget();
-    mpLibraryTreeItem->setClassText(pOMSimulatorEditor->getPlainTextEdit()->toPlainText());
+    pLibraryTreeItem->setClassText(mpEditor->getPlainTextEdit()->toPlainText());
     return true;
   } else {
     return false;

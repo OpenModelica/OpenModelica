@@ -1306,8 +1306,7 @@ LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QRegExp &regExp, Li
  * \param pLibraryTreeItem
  * \return
  */
-LibraryTreeItem* LibraryTreeModel::findLibraryTreeItemOneLevel(const QString &name, LibraryTreeItem *pLibraryTreeItem,
-                                                               Qt::CaseSensitivity caseSensitivity) const
+LibraryTreeItem* LibraryTreeModel::findLibraryTreeItemOneLevel(const QString &name, LibraryTreeItem *pLibraryTreeItem, Qt::CaseSensitivity caseSensitivity) const
 {
   if (!pLibraryTreeItem) {
     pLibraryTreeItem = mpRootLibraryTreeItem;
@@ -1480,9 +1479,8 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(LibraryTreeItem::Librar
  * \param row
  * \return
  */
-LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, QString nameStructure, QString path, bool isSaved,
-                                                         LibraryTreeItem *pParentLibraryTreeItem, oms_element_t *pOMSElement,
-                                                         oms_connector_t *pOMSConnector, oms_busconnector_t *pOMSBusConnector,
+LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, QString nameStructure, QString path, bool isSaved, LibraryTreeItem *pParentLibraryTreeItem,
+                                                         oms_element_t *pOMSElement, oms_connector_t *pOMSConnector, oms_busconnector_t *pOMSBusConnector,
                                                          oms_tlmbusconnector_t *pOMSTLMBusConnector, int row)
 {
   if (row == -1) {
@@ -1997,10 +1995,11 @@ bool LibraryTreeModel::unloadCompositeModelOrTextFile(LibraryTreeItem *pLibraryT
  * \brief LibraryTreeModel::unloadOMSModel
  * Unloads/deletes the OMSimulator model.
  * \param pLibraryTreeItem
+ * \param doDelete
  * \param askQuestion
  * \return
  */
-bool LibraryTreeModel::unloadOMSModel(LibraryTreeItem *pLibraryTreeItem, bool askQuestion)
+bool LibraryTreeModel::unloadOMSModel(LibraryTreeItem *pLibraryTreeItem, bool doDelete, bool askQuestion)
 {
   if (askQuestion) {
     QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
@@ -2024,16 +2023,7 @@ bool LibraryTreeModel::unloadOMSModel(LibraryTreeItem *pLibraryTreeItem, bool as
     }
   }
   // unload OMSimulator model
-  bool deleted = false;
-  if (pLibraryTreeItem->isTopLevel() && OMSProxy::instance()->omsDelete(pLibraryTreeItem->getNameStructure())) {
-    deleted = true;
-  } else if (!pLibraryTreeItem->isTopLevel()) {
-    deleted = true;
-  } else {
-    deleted = false;
-  }
-  // if deleted
-  if (deleted) {
+  if (!doDelete || OMSProxy::instance()->omsDelete(pLibraryTreeItem->getNameStructure())) {
     /* QSortFilterProxy::filterAcceptRows changes the expand/collapse behavior of indexes or I am using it in some stupid way.
      * If index is expanded and we delete it then the next sibling index automatically becomes expanded.
      * The following code overcomes this issue. It stores the next index expand state and then apply it after deletion.
@@ -2758,8 +2748,7 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
                                                                 oms_tlmbusconnector_t *pOMSTLMBusConnector)
 {
   OMCInterface::getClassInformation_res classInformation;
-  LibraryTreeItem *pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::OMS, name, nameStructure, classInformation,
-                                                          path, isSaved, pParentLibraryTreeItem);
+  LibraryTreeItem *pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::OMS, name, nameStructure, classInformation, path, isSaved, pParentLibraryTreeItem);
   pLibraryTreeItem->setOMSElement(pOMSElement);
   if (pLibraryTreeItem->isSystemElement()) {
     oms_system_enu_t systemType;
@@ -4414,8 +4403,7 @@ void LibraryWidget::openOMSModelFile(QFileInfo fileInfo, bool showProgress)
     }
     // create a LibraryTreeItem
     LibraryTreeItem *pLibraryTreeItem = 0;
-    pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(modelName, modelName, fileInfo.absoluteFilePath(), true,
-                                                                 mpLibraryTreeModel->getRootLibraryTreeItem());
+    pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(modelName, modelName, fileInfo.absoluteFilePath(), true, mpLibraryTreeModel->getRootLibraryTreeItem());
     // add the item to recent files list
     if (pLibraryTreeItem) {
       MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
@@ -4648,6 +4636,10 @@ bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     result = saveTextLibraryTreeItem(pLibraryTreeItem);
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     if (pLibraryTreeItem->isTopLevel()) {
+      /* if user has done some changes in the OMSimulator text view then save & validate it before saving it to file. */
+      if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+        return false;
+      }
       result = saveOMSLibraryTreeItem(pLibraryTreeItem);
     } else {
       result = saveLibraryTreeItem(pLibraryTreeItem->parent());
