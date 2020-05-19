@@ -46,14 +46,14 @@ readFile("fmi_attributes_11.xml"); getErrorString();
 // "  <ModelVariables>
 //   <!-- Index of variable = \"1\" -->
 //   <ScalarVariable
-//     name=\"x\"
+//     name=\"_D_concealed1\"
 //     valueReference=\"0\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"2\" -->
 //   <ScalarVariable
-//     name=\"der(x)\"
+//     name=\"_D_concealed2\"
 //     valueReference=\"1\"
 //     >
 //     <Real derivative=\"1\"/>

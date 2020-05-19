@@ -162,10 +162,10 @@ public constant Integer OPTIMICA = 4;
 public constant Integer PDEMODELICA = 5;
 
 // FMI-ModelDescription-ENUM-FLAGS
-public constant Integer FMI_NONE = 6;
-public constant Integer FMI_INTERNAL = 7;
-public constant Integer FMI_PROTECTED = 8;
-public constant Integer FMI_BLACKBOX = 9;
+public constant Integer FMI_NONE = 1;
+public constant Integer FMI_INTERNAL = 2;
+public constant Integer FMI_PROTECTED = 3;
+public constant Integer FMI_BLACKBOX = 4;
 
 constant Gettext.TranslatableContent collapseArrayExpressionsText = Gettext.gettext("Simplifies {x[1],x[2],x[3]} → x for arrays of whole variable references (simplifies code generation).");
 

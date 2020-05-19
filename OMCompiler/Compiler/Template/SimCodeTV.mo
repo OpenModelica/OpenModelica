@@ -270,7 +270,7 @@ package SimCodeVar
       Option<String> matrixName;
       Option<Variability> variability "FMI-2.0 variabilty attribute";
       Option<Initial> initial_ "FMI-2.0 initial attribute";
-      Boolean exportVar "true for internal variables that are introduced in the symbolic transformation process";
+      Option<DAE.ComponentRef> exportVar "variables will only be exported to the modelDescription.xml if this attribute is SOME(cref)";
     end SIMVAR;
   end SimVar;
 
