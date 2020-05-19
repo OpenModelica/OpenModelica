@@ -94,30 +94,32 @@ public:
   void writeSimulationMessage(SimulationMessage *pSimulationMessage);
   void embeddedServerInitialized();
 private:
-  SimulationOptions mSimulationOptions;
+  ArchivedSimulationItem *mpArchivedSimulationItem;
   Label *mpProgressLabel;
+  QDateTime mResultFileLastModifiedDateTime;
+  QList<QString> mGeneratedAlgLoopFilesList;
+  QList<QString> mGeneratedFilesList;
+  QPlainTextEdit *mpCompilationOutputTextBox;
   QProgressBar *mpProgressBar;
   QPushButton *mpCancelButton;
-  QToolButton *mpOpenTransformationalDebuggerButton;
   QPushButton *mpOpenOutputFileButton;
   QTabWidget *mpGeneratedFilesTabWidget;
-  QList<QString> mGeneratedFilesList;
-  QList<QString> mGeneratedAlgLoopFilesList;
-  SimulationOutputHandler *mpSimulationOutputHandler;
-  bool mIsOutputStructured;
-  QTextBrowser *mpSimulationOutputTextBrowser;
-  SimulationOutputTree *mpSimulationOutputTree;
-  QPlainTextEdit *mpCompilationOutputTextBox;
-  ArchivedSimulationItem *mpArchivedSimulationItem;
   QTcpServer *mpTcpServer;
-  bool mSocketDisconnected;
+  QTextBrowser *mpSimulationOutputTextBrowser;
+  QToolButton *mpOpenTransformationalDebuggerButton;
+  QToolButton *mpResimulateButton;
+  SimulationOptions mSimulationOptions;
+  SimulationOutputHandler *mpSimulationOutputHandler;
+  SimulationOutputTree *mpSimulationOutputTree;
   SimulationProcessThread *mpSimulationProcessThread;
-  QDateTime mResultFileLastModifiedDateTime;
+  bool mIsOutputStructured;
+  bool mSocketDisconnected;
 
   void deleteIntermediateCompilationFiles();
 public slots:
   void createSimulationProgressSocket();
   void readSimulationProgress();
+  void reSimulate();
   void socketDisconnected();
   void compilationProcessStarted();
   void writeCompilationOutput(QString output, QColor color);

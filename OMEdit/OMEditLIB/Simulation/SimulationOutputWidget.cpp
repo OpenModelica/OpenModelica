@@ -227,7 +227,7 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   : mSimulationOptions(simulationOptions)
 {
   Q_UNUSED(pParent);
-  setWindowTitle(QString("%1 - %2 %3").arg(Helper::applicationName).arg(mSimulationOptions.getClassName()).arg(Helper::simulationOutput));
+  setWindowTitle(QString("%1 - %2 %3 blah").arg(Helper::applicationName).arg(mSimulationOptions.getClassName()).arg(Helper::simulationOutput));
   // progress label
   mpProgressLabel = new Label;
   mpProgressLabel->setElideMode(Qt::ElideMiddle);
@@ -241,6 +241,11 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   mpOpenOutputFileButton = new QPushButton(tr("Open Output File"));
   mpOpenOutputFileButton->setEnabled(false);
   connect(mpOpenOutputFileButton, SIGNAL(clicked()), SLOT(openSimulationLogFile()));
+  mpResimulateButton = new QToolButton;
+  mpResimulateButton->setIcon(QIcon(":/Resources/icons/re-simulate.svg"));
+  mpResimulateButton->setToolTip(tr("Resimulate"));
+  mpResimulateButton->setEnabled(true);
+  connect(mpResimulateButton, SIGNAL(clicked()), SLOT(reSimulate()));
   mpProgressBar = new QProgressBar;
   mpProgressBar->setAlignment(Qt::AlignHCenter);
   // Generated Files tab widget
@@ -389,6 +394,7 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   pMainLayout->addWidget(mpCancelButton, 1, 1);
   pMainLayout->addWidget(mpOpenTransformationalDebuggerButton, 1, 2);
   pMainLayout->addWidget(mpOpenOutputFileButton, 1, 3);
+  pMainLayout->addWidget(mpResimulateButton, 1, 4);
   pMainLayout->addWidget(mpGeneratedFilesTabWidget, 2, 0, 1, 4);
   setLayout(pMainLayout);
   // create the ArchivedSimulationItem
@@ -766,6 +772,18 @@ void SimulationOutputWidget::openTransformationalDebugger()
                           GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), Helper::ok);
   }
 }
+
+
+/*!
+ * \brief SimulationOutputWidget::reSimulate
+ * Slot activated when mpResimulateButton clicked SIGNAL is raised.\n
+ * Resimulates the simulation.
+ */
+void SimulationOutputWidget::reSimulate()
+{
+
+}
+
 
 /*!
  * \brief SimulationOutputWidget::openSimulationLogFile
