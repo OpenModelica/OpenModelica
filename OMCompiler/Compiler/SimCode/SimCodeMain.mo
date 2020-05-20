@@ -769,7 +769,12 @@ algorithm
         dgesvFiles :=  if varInfo.numLinearSystems > 0 or varInfo.numNonLinearSystems > 0 then RuntimeSources.dgesvFiles else {};
         defaultFiles := list(simCode.fileNamePrefix + f for f in RuntimeSources.defaultFileSuffixes);
         runtimeFiles := list(f for f guard Util.endsWith(f, ".c") in allFiles);
-        sourceFiles := listAppend(defaultFiles, runtimeFiles);
+        // check for fmiSource=false or --fmiFilter=blackBox
+        if not Flags.getConfigBool(Flags.FMI_SOURCES) or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
+          sourceFiles := {}; // set the sourceFiles to empty, to remove the sources in modeldescription.xml
+        else
+          sourceFiles := listAppend(defaultFiles, runtimeFiles);
+        end if;
         Tpl.tplNoret(function CodegenFMU.translateModel(in_a_FMUVersion=FMUVersion, in_a_FMUType=FMUType, in_a_sourceFiles=sourceFiles), simCode);
         extraFiles := SimCodeUtil.getFunctionIndex();
         copyFiles(listAppend(dgesvFiles, allFiles), source=Settings.getInstallationDirectoryPath() + "/include/omc/c/", destination=fmutmp+"/sources/");

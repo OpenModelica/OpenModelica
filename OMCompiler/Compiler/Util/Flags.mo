@@ -1357,6 +1357,9 @@ constant ConfigFlag FMI_FILTER = CONFIG_FLAG(142, "fmiFilter", NONE(), EXTERNAL(
   ENUM_FLAG(FMI_INTERNAL, {("none", FMI_NONE), ("internal", FMI_INTERNAL), ("protected", FMI_PROTECTED), ("blackBox", FMI_BLACKBOX)}),
   SOME(STRING_OPTION({"none", "internal", "protected", "blackBox"})),
   Gettext.gettext("Filters the FMI-ModelDescription Vars in the ModelDescription.xml"));
+constant ConfigFlag FMI_SOURCES = CONFIG_FLAG(143, "fmiSources", NONE(), EXTERNAL(),
+  BOOL_FLAG(true), NONE(),
+  Gettext.gettext("Defines if FMUs will be exported with sources or not. --fmiFilter=blackBox might override this, because black box FMUs do never contain their source code."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
