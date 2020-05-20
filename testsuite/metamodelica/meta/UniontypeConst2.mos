@@ -1,0 +1,17 @@
+// name:     UniontypeConst2
+// keywords: uniontype const recursion
+// status:   correct
+// cflags:   -g=MetaModelica -d=gen
+//
+// Tests self recursive constants inside of uniontypes.
+//
+
+loadFile("UniontypeConst2.mo"); getErrorString();
+test(); getErrorString();
+
+// Result:
+// true
+// ""
+// 1.0
+// ""
+// endResult

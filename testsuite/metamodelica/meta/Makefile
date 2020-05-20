@@ -136,7 +136,7 @@ UniontypeConst1.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
-FAILINGTESTFILES= \
+FAILINGTESTFILES= UniontypeConst2.mos\
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
