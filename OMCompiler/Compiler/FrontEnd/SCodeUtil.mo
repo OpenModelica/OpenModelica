@@ -459,6 +459,17 @@ algorithm
   end match;
 end isFunction;
 
+public function isUniontype
+"Return true if Class is a uniontype."
+  input SCode.Element inClass;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match(inClass)
+    case SCode.CLASS(restriction = SCode.R_UNIONTYPE()) then true;
+    else false;
+  end match;
+end isUniontype;
+
 public function isFunctionRestriction
 "Return true if restriction is a function."
   input SCode.Restriction inRestriction;

@@ -3136,7 +3136,7 @@ protected
 algorithm
   cache := InstUtil.pushStructuralParameters(inCache);
 
-  // Sort elements based on their dependencies.
+  // Sort elements based on their dependencies. This is not done for MetaModelica
   el := InstUtil.sortElementList(inElements, inEnv, FGraph.inFunctionScope(inEnv));
   // adrpo: MAKE SURE inner objects ARE FIRST in the list for instantiation!
   el := InstUtil.sortInnerFirstTplLstElementMod(el);
