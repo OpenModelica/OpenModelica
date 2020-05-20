@@ -1,0 +1,148 @@
+// name: fmi_attributes_13.mos
+// keywords: FMI 2.0 export
+// status: correct
+// teardown_command: rm -rf fmi_attributes_13.fmu fmi_attributes_13.log fmi_attributes_13.xml fmi_attributes_13_tmp.xml fmi_attributes_13.fmutmp/
+
+loadString("
+model fmi_attributes_13
+  input Real u;
+  Real x;
+  output Real y;
+  Real a, b;
+  parameter Real z=30;
+protected
+  Real m, n;
+initial equation
+  x = 0.0;
+equation
+  a = 2.0*u;
+  b = 0.5*a;
+  der(x) = b+z;
+  y = x;
+  m = z;
+  n = a;
+end fmi_attributes_13;
+"); getErrorString();
+
+setCommandLineOptions("--fmiFilter=none"); getErrorString();
+translateModelFMU(fmi_attributes_13); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq fmi_attributes_13.fmu modelDescription.xml > fmi_attributes_13_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi_attributes_13_tmp.xml > fmi_attributes_13.xml"); getErrorString();
+readFile("fmi_attributes_13.xml"); getErrorString();
+
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi_attributes_13_tmp.xml > fmi_attributes_13.xml"); getErrorString();
+readFile("fmi_attributes_13.xml"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi_attributes_13.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"x\"
+//     valueReference=\"0\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"der(x)\"
+//     valueReference=\"1\"
+//     >
+//     <Real derivative=\"1\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"a\"
+//     valueReference=\"2\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
+//     name=\"b\"
+//     valueReference=\"3\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"5\" -->
+//   <ScalarVariable
+//     name=\"u\"
+//     valueReference=\"4\"
+//     causality=\"input\"
+//     >
+//     <Real start=\"0.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"6\" -->
+//   <ScalarVariable
+//     name=\"y\"
+//     valueReference=\"5\"
+//     causality=\"output\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"7\" -->
+//   <ScalarVariable
+//     name=\"m\"
+//     valueReference=\"6\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"8\" -->
+//   <ScalarVariable
+//     name=\"z\"
+//     valueReference=\"7\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     >
+//     <Real start=\"30.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"9\" -->
+//   <ScalarVariable
+//     name=\"_D_outputAlias_y\"
+//     valueReference=\"0\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"10\" -->
+//   <ScalarVariable
+//     name=\"n\"
+//     valueReference=\"2\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   </ModelVariables>
+// "
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <Outputs>
+//       <Unknown index=\"6\" dependencies=\"1\" dependenciesKind=\"dependent\" />
+//     </Outputs>
+//     <Derivatives>
+//       <Unknown index=\"2\" dependencies=\"5\" dependenciesKind=\"dependent\" />
+//     </Derivatives>
+//     <InitialUnknowns>
+//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"2\" dependencies=\"5 8\" dependenciesKind=\"dependent dependent\" />
+//       <Unknown index=\"6\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"7\" dependencies=\"8\" dependenciesKind=\"dependent\" />
+//     </InitialUnknowns>
+//   </ModelStructure>
+// "
+// ""
+// endResult

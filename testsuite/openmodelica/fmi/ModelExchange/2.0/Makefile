@@ -16,6 +16,8 @@ fmi_attributes_09.mos \
 fmi_attributes_10.mos \
 fmi_attributes_11.mos \
 fmi_attributes_12.mos \
+fmi_attributes_13.mos \
+fmi_attributes_14.mos \
 FMIExercise.mos \
 FMUResourceTest.mos \
 HelloFMIWorld.mos \
