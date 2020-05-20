@@ -421,15 +421,15 @@ end updatePartition;
 
 template functionSystemsSynchronous(list<SubPartition> subPartitions, String modelNamePrefix)
 ::=
-  let systs = subPartitions |> subPartition hasindex i =>
+  let systs = subPartitions |> subPartition hasindex clockIndex =>
     match subPartition
        case SUBPARTITION(__) then
-        functionEquationsSynchronous(i, vars, listAppend(equations, removedEquations), modelNamePrefix)
+        functionEquationsSynchronous(clockIndex, vars, listAppend(equations, removedEquations), modelNamePrefix)
     ; separator = "\n"
-  let cases = subPartitions |> subPartition hasindex i =>
-    let name = 'functionEquationsSynchronous_system<%i%>'
+  let cases = subPartitions |> subPartition hasindex clockIndex =>
+    let name = 'functionEquationsSynchronous_system<%clockIndex%>'
     <<
-    case <%i%>:
+    case <%clockIndex%>:
       ret = <%symbolName(modelNamePrefix, name)%>(data, threadData);
       break;
     >>; separator = "\n"
@@ -458,12 +458,12 @@ template functionSystemsSynchronous(list<SubPartition> subPartitions, String mod
 
 end functionSystemsSynchronous;
 
-template functionEquationsSynchronous(Integer i, list<tuple<SimCodeVar.SimVar, Boolean>> vars, list<SimEqSystem> equations, String modelNamePrefix)
+template functionEquationsSynchronous(Integer clockIndex, list<tuple<SimCodeVar.SimVar, Boolean>> vars, list<SimEqSystem> equations, String modelNamePrefix)
 ::=
   <<
-  <%equations |> eq => equation_impl(i, eq, contextOther, modelNamePrefix, false) ; separator="\n"%>
+  <%equations |> eq => equation_impl(clockIndex, eq, contextOther, modelNamePrefix, false) ; separator="\n"%>
 
-  int <%symbolName(modelNamePrefix, 'functionEquationsSynchronous_system<%i%>')%>(DATA *data, threadData_t *threadData)
+  int <%symbolName(modelNamePrefix, 'functionEquationsSynchronous_system<%clockIndex%>')%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
     int i;
@@ -2808,7 +2808,9 @@ match system
       DATA *data = (DATA*) ((void**)dataIn[0]);
       threadData_t *threadData = (threadData_t*) ((void**)dataIn[1]);
       const int equationIndexes[2] = {1,<%nls.index%>};
-      int i;
+      int i;<% if clockIndex then <<
+      const int clockIndex = <%clockIndex%>;
+      >> %>
       <%varDecls%>
       <% if profileAll() then 'SIM_PROF_TICK_EQ(<%nls.index%>);' %>
       <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%nls.index%>).profileBlockIndex,1);' %>

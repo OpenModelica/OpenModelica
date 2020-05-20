@@ -668,6 +668,7 @@ package SimCode
       Boolean homotopySupport;
       Boolean mixedSystem;
       Boolean tornSystem;
+      Option<Integer> clockIndex;
     end NONLINEARSYSTEM;
   end NonlinearSystem;
 
