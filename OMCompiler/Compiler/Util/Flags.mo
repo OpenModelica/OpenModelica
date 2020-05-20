@@ -1359,7 +1359,7 @@ constant ConfigFlag FMI_FILTER = CONFIG_FLAG(142, "fmiFilter", NONE(), EXTERNAL(
   Gettext.gettext("Filters the FMI-ModelDescription Vars in the ModelDescription.xml"));
 constant ConfigFlag FMI_SOURCES = CONFIG_FLAG(143, "fmiSources", NONE(), EXTERNAL(),
   BOOL_FLAG(true), NONE(),
-  Gettext.gettext("Export the FMUs without sources when set to --fmiSources= false, used along with --fmiFilter=blackBox"));
+  Gettext.gettext("Defines if FMUs will be exported with sources or not. --fmiFilter=blackBox might override this, because black box FMUs do never contain their source code."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
