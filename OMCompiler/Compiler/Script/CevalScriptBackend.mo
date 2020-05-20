@@ -3835,6 +3835,16 @@ algorithm
     ExecStat.execStat("buildModelFMU: Generate platform " + platform);
   end for;
 
+  // check for fmiSource=false or --fmiFilter=blackBox  and remove the sources directory before zipping to .fmu
+  if not Flags.getConfigBool(Flags.FMI_SOURCES) or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
+    if not System.removeDirectory(fmutmp + "/sources/") then
+      Error.addInternalError("Failed to remove directory: " + fmutmp , sourceInfo());
+    end if;
+    if 0 <> System.removeFile(logfile) then // windows is not removing the log files due to long name
+      Error.addInternalError("Failed to remove File: " + logfile , sourceInfo());
+    end if;
+  end if;
+
   cmd := "rm -f \"" + fmuTargetName + ".fmu\" && cd \"" +  fmutmp + "\" && zip -r \"../" + fmuTargetName + ".fmu\" *";
   if 0 <> System.systemCall(cmd, outFile=logfile) then
     Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + "\n\n" + System.readFile(logfile)});
