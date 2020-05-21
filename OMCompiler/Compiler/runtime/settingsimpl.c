@@ -139,7 +139,7 @@ const char* SettingsImpl__getInstallationDirectoryPath(void) {
   }
   if (omc_installationPath == NULL) {
     char filename[MAX_PATH];
-    if (0 != GetModuleFileName(NULL, filename, MAX_PATH)) {
+    if (0 != GetModuleFileName(GetModuleHandle("libOpenModelicaCompiler.dll"), filename, MAX_PATH)) {
       omc_installationPath = strdup(filename); /* duplicate the path */
       *strrchr(omc_installationPath, '\\') = '\0';
       *strrchr(omc_installationPath, '\\') = '\0';
@@ -188,19 +188,21 @@ char* Settings_getHomeDir(int runningTestsuite)
 }
 
 
-// Do not free the returned variable. It's malloc'ed
+/*
+ * - if already set, use it
+ * - if not set, get the installation path and use that
+ */
 char* SettingsImpl__getModelicaPath(int runningTestsuite) {
   if (omc_modelicaPath) {
     return omc_modelicaPath;
   }
 
   {
-    // By default, this is <omhome>/lib/omlibrary/
+    /* get the install directory */
     const char *omhome = SettingsImpl__getInstallationDirectoryPath();
     if (omhome == NULL)
       return NULL;
     int lenOmhome = strlen(omhome);
-    char *omc_modelicaPath;
     const char *homePath = Settings_getHomeDir(runningTestsuite);
     if (homePath == NULL || runningTestsuite) {
       omc_modelicaPath = (char*) malloc(lenOmhome+15);
@@ -211,10 +213,13 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
       snprintf(omc_modelicaPath, lenOmhome+lenHome+41,"%s/lib/omlibrary%s%s/.openmodelica/libraries/", omhome, OMC_GROUP_DELIMITER, homePath);
     }
 
+    omc_modelicaPath = covertToForwardSlashesInPlace(omc_modelicaPath);
+
     if (!runningTestsuite)
       commonSetEnvVar("OPENMODELICALIBRARY", omc_modelicaPath);
-    return covertToForwardSlashesInPlace(omc_modelicaPath);
   }
+
+  return omc_modelicaPath;
 }
 
 static const char* SettingsImpl__getCompileCommand(void)
