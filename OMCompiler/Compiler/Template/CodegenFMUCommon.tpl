@@ -64,6 +64,7 @@ case SIMCODE(__) then
     modelIdentifier="<%modelIdentifier%>"<%pdd%>>
     <%SourceFiles(sourceFiles)%>
   </ModelExchange>
+  <%UnitDefinitions(simCode)%>
   >>
 end ModelExchange;
 
@@ -659,12 +660,24 @@ template UnitDefinitions(SimCode simCode)
  "Generates code for UnitDefinitions file for FMU target."
 ::=
 match simCode
-case SIMCODE(__) then
-  <<
-  <UnitDefinitions>
-  </UnitDefinitions>
-  >>
+case SIMCODE(modelInfo=modelInfo) then
+match modelInfo
+case MODELINFO(unitDefinitions = unitDefinitions) then
+    <<
+      <%UnitDefinitionsHelper(unitDefinitions)%>
+    >>
 end UnitDefinitions;
+
+template UnitDefinitionsHelper(list<UnitDefinition> unitDefinitions)
+ "Generates code for UnitDefinition for FMU target."
+::=
+  if unitDefinitions then
+    <<
+    <UnitDefinitions>
+    </UnitDefinitions>
+    >>
+   /*TODO! Populate the list of units */
+end UnitDefinitionsHelper;
 
 template fmiTypeDefinitions(SimCode simCode, String FMUVersion)
  "Generates code for TypeDefinitions for FMU target."

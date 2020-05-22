@@ -698,8 +698,31 @@ package SimCode
       Integer nSubClocks;
       list<SimEqSystem> linearSystems;
       list<SimEqSystem> nonLinearSystems;
+      list<UnitDefinition> unitDefinitions "export unitDefintion in modelDescription.xml";
     end MODELINFO;
   end ModelInfo;
+
+  uniontype UnitDefinition "unitDefinitions for fmi modelDescription.xml"
+    record UNITDEFINITION
+      String name;
+      BaseUnit baseUnit;
+      //TODO DisplayUnit
+    end UNITDEFINITION;
+  end UnitDefinition;
+
+  uniontype BaseUnit
+    record BASEUNIT
+      Integer mol "exponent";
+      Integer cd  "exponent";
+      Integer m   "exponent";
+      Integer s   "exponent";
+      Integer A   "exponent";
+      Integer K   "exponent";
+      Integer g   "exponent";
+      Real factor "prefix";
+      Real offset;
+    end BASEUNIT;
+  end BaseUnit;
 
   uniontype VarInfo
     record VARINFO

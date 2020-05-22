@@ -55,6 +55,7 @@ import Tpl;
 import Types;
 import Unit;
 import Values;
+import HashSetString;
 
 // protected imports
 protected
@@ -7241,12 +7242,13 @@ protected
   list<SimCodeVar.SimVar> states1, states_lst, states_lst2, der_states_lst;
   list<SimCodeVar.SimVar> states_2, derivatives_2;
   Boolean hasLargeEqSystems;
+  list<SimCode.UnitDefinition> unitDefinitions;
   constant Boolean debug = false;
 algorithm
   try
     // name = AbsynUtil.pathStringNoQual(class_);
     directory := System.trim(fileDir, "\"");
-    vars := createVars(dlow, inInitDAE, tempVars);
+    (vars, unitDefinitions) := createVars(dlow, inInitDAE, tempVars);
 
     if debug then execStat("simCode: createVars"); end if;
     BackendDAE.DAE(shared=BackendDAE.SHARED(info=BackendDAE.EXTRA_INFO(description=description))) := dlow;
@@ -7282,7 +7284,7 @@ algorithm
                                    List.sort(program.classes, AbsynUtil.classNameGreater),
                                    arrayLength(dlow.shared.partitionsInfo.basePartitions),
                                    arrayLength(dlow.shared.partitionsInfo.subPartitions),
-                                   hasLargeEqSystems, {}, {});
+                                   hasLargeEqSystems, {}, {}, unitDefinitions);
   else
     Error.addInternalError("createModelInfo failed", sourceInfo());
     fail();
@@ -7783,6 +7785,7 @@ protected function createVars
   input BackendDAE.BackendDAE inInitDAE "initialization";
   input list<SimCodeVar.SimVar> tempvars;
   output SimCodeVar.SimVars outVars;
+  output list<SimCode.UnitDefinition> unitDefinitions = {} "list of unitDefintions which are exported in modelDescription.xml";
 protected
   BackendDAE.Variables globalKnownVars1, globalKnownVars2;
   BackendDAE.Variables localKnownVars1, localKnownVars2;
@@ -7879,6 +7882,10 @@ algorithm
   // Index of algebraic and parameters need to fix due to separation of integer variables
   fixIndex(simVars);
   setVariableIndex(simVars);
+
+  // get the list of unitDefintions from simVars
+  unitDefinitions := getFmiUnitDefinitions(simVars);
+
   if debug then execStat("createVars: fix and set index"); end if;
 
   outVars := SimCodeVar.SIMVARS(
@@ -9099,6 +9106,54 @@ algorithm
 
   tpl := (index, fmi_index);
 end setVariableIndexHelper2;
+
+protected function getFmiUnitDefinitions
+  "returs the list<UnitDefinitions> which needs to exported in modelDescription.xml"
+  input array<list<SimCodeVar.SimVar>> simVars;
+  output list<SimCode.UnitDefinition> unitDefinitions = {};
+protected
+  HashSetString.HashSet unitNameKeys;
+algorithm
+  //special order for fmi: real => intger => boolean => string => external
+  unitNameKeys := HashSetString.emptyHashSet();
+  for i in SimVarsIndex.state : SimVarsIndex.stringConst loop
+    (unitDefinitions, unitNameKeys) := getFmiUnitDefinitionsHelper(Dangerous.arrayGetNoBoundsChecking(simVars, Integer(i)), unitDefinitions, unitNameKeys);
+  end for;
+  //print("\n Final Units List :" + anyString(unitDefinitions));
+end getFmiUnitDefinitions;
+
+protected function getFmiUnitDefinitionsHelper
+  "helper function which creates the list<UnitDefintions> to be exported in modelDescription.xml"
+  input list<SimCodeVar.SimVar> inVars;
+  input output list<SimCode.UnitDefinition> unitDefinitions;
+  input output HashSetString.HashSet unitNameKeys;
+protected
+  Unit.Unit unit;
+  SimCode.BaseUnit baseUnit;
+algorithm
+  for var in inVars loop
+    if isSome(var.exportVar) then
+      // check if the var has unit and also check if the unit is already added to hashset
+      if not stringEq(var.unit, "") and not BaseHashSet.has(var.unit, unitNameKeys) then
+        unitNameKeys := BaseHashSet.add(var.unit, unitNameKeys);
+        unit := Unit.parseUnitString(var.unit); // get the SI- units information
+        unitDefinitions := SimCode.UNITDEFINITION(var.unit, transformUnitToBaseUnit(unit)) :: unitDefinitions;
+      end if;
+    end if;
+  end for;
+end getFmiUnitDefinitionsHelper;
+
+public function transformUnitToBaseUnit
+  "translate Unit.UNIT to SimCode.BASEUNIT"
+  input Unit.Unit unit;
+  output SimCode.BaseUnit baseUnit;
+protected
+  Integer mol, cd, m, s, A, K, g;
+  Real factors;
+algorithm
+  Unit.UNIT(factors, mol, cd, m, s, A, K, g) := unit;
+  baseUnit := SimCode.BASEUNIT(mol, cd, m, s, A, K, g, factors, 0.0);
+end transformUnitToBaseUnit;
 
 public function createCrefToSimVarHT "author: unknown and marcusw
  Create a hash table that maps all variable names (crefs) to the simVar objects."
