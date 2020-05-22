@@ -926,8 +926,7 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   mpProgressBar->setRange(0, 0);
   showProgressBar();
   // create a folder with model name to dump the files in it.
-  QString modelDirectoryPath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(),
-                                                    pLibraryTreeItem->getNameStructure());
+  QString modelDirectoryPath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), pLibraryTreeItem->getNameStructure());
   if (!QDir().exists(modelDirectoryPath)) {
     QDir().mkpath(modelDirectoryPath);
   }
@@ -955,6 +954,8 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
                                                           GUIMessages::getMessage(GUIMessages::FMU_EMPTY_PLATFORMS).arg(Helper::toolsOptionsPath),
                                                           Helper::scriptingKind, Helper::warningLevel));
   }
+  mpOMCProxy->setCommandLineOptions(QString("--fmiFilter=%1").arg(OptionsDialog::instance()->getFMIPage()->getModelDescriptionFiltersComboBox()->currentText()));
+  mpOMCProxy->setCommandLineOptions(QString("--fmiSources=%1").arg(OptionsDialog::instance()->getFMIPage()->getIncludeSourceCodeCheckBox()->isChecked() ? "true" : "false"));
   QString fmuFileName = mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms);
   if (!fmuFileName.isEmpty()) { // FMU was generated
     if (!newFmuName.isEmpty()) { // FMU should be moved
