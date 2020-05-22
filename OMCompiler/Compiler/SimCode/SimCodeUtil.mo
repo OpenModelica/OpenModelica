@@ -9136,8 +9136,12 @@ algorithm
       // check if the var has unit and also check if the unit is already added to hashset
       if not stringEq(var.unit, "") and not BaseHashSet.has(var.unit, unitNameKeys) then
         unitNameKeys := BaseHashSet.add(var.unit, unitNameKeys);
-        unit := Unit.parseUnitString(var.unit); // get the SI- units information
-        unitDefinitions := SimCode.UNITDEFINITION(var.unit, transformUnitToBaseUnit(unit)) :: unitDefinitions;
+        try
+          unit := Unit.parseUnitString(var.unit); // get the SI- units information
+          unitDefinitions := SimCode.UNITDEFINITION(var.unit, transformUnitToBaseUnit(unit)) :: unitDefinitions;
+        else
+          // catch the units which are not calculated
+        end try;
       end if;
     end if;
   end for;
