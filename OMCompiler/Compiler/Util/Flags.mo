@@ -1355,8 +1355,13 @@ constant ConfigFlag FLAT_MODELICA = CONFIG_FLAG(141, "flatModelica",
   Gettext.gettext("Outputs experimental flat Modelica."));
 constant ConfigFlag FMI_FILTER = CONFIG_FLAG(142, "fmiFilter", NONE(), EXTERNAL(),
   ENUM_FLAG(FMI_INTERNAL, {("none", FMI_NONE), ("internal", FMI_INTERNAL), ("protected", FMI_PROTECTED), ("blackBox", FMI_BLACKBOX)}),
-  SOME(STRING_OPTION({"none", "internal", "protected", "blackBox"})),
-  Gettext.gettext("Filters the FMI-ModelDescription Vars in the ModelDescription.xml"));
+  SOME(STRING_DESC_OPTION({
+    ("none", Gettext.gettext("All variables will be exposed, even variables that are introduced by the symbolic transformations. Hence, this is intended to be used for debugging.")),
+    ("internal", Gettext.gettext("All internal variables introduced by the symbolic transformations are filtered out. Only the variables from the actual Modelica model are exposed (with minor exceptions, e.g. for state sets).")),
+    ("protected", Gettext.gettext("All protected model variables will be filtered out in addition to --fmiFilter=internal.")),
+    ("blackBox", Gettext.gettext("This option is used to hide everything except for inputs and outputs. Additional variables that need to be present in the modelDescription file for structrial reasons will have concealed names."))
+    })),
+  Gettext.gettext("Specifies which model variables get exposed by the modelDescription.xml"));
 constant ConfigFlag FMI_SOURCES = CONFIG_FLAG(143, "fmiSources", NONE(), EXTERNAL(),
   BOOL_FLAG(true), NONE(),
   Gettext.gettext("Defines if FMUs will be exported with sources or not. --fmiFilter=blackBox might override this, because black box FMUs do never contain their source code."));

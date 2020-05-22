@@ -915,6 +915,8 @@ public:
   QLineEdit* getMoveFMUTextBox() {return mpMoveFMUTextBox;}
   QGroupBox* getPlatformsGroupBox() {return mpPlatformsGroupBox;}
   QComboBox* getLinkingComboBox() {return mpLinkingComboBox;}
+  QComboBox *getModelDescriptionFiltersComboBox() const {return mpModelDescriptionFiltersComboBox;}
+  QCheckBox *getIncludeSourceCodeCheckBox() const {return mpIncludeSourceCodeCheckBox;}
   QCheckBox* getDeleteFMUDirectoryAndModelCheckBox() {return mpDeleteFMUDirectoryAndModelCheckBox;}
 
   static const QString FMU_FULL_CLASS_NAME_DOTS_PLACEHOLDER;
@@ -937,10 +939,13 @@ private:
   QPushButton *mpBrowseFMUDirectoryButton;
   QGroupBox *mpPlatformsGroupBox;
   QComboBox *mpLinkingComboBox;
+  QComboBox *mpModelDescriptionFiltersComboBox;
+  QCheckBox *mpIncludeSourceCodeCheckBox;
   QGroupBox *mpImportGroupBox;
   QCheckBox *mpDeleteFMUDirectoryAndModelCheckBox;
 public slots:
   void selectFMUDirectory();
+  void enableIncludeSourcesCheckBox(QString modelDescriptionFilter);
 };
 
 class TLMPage : public QWidget

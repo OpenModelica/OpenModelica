@@ -896,6 +896,18 @@ void OptionsDialog::readFMISettings()
       }
     }
   }
+  // read model description filter
+  if (mpSettings->contains("FMIExport/ModelDescriptionFilter")) {
+    int currentIndex = mpFMIPage->getModelDescriptionFiltersComboBox()->findText(mpSettings->value("FMIExport/ModelDescriptionFilter").toString());
+    if (currentIndex > -1) {
+      mpFMIPage->getModelDescriptionFiltersComboBox()->setCurrentIndex(currentIndex);
+    }
+  }
+  // read include source code
+  if (mpSettings->contains("FMIExport/IncludeSourceCode")) {
+    mpFMIPage->getIncludeSourceCodeCheckBox()->setChecked(mpSettings->value("FMIExport/IncludeSourceCode").toBool());
+  }
+  // read delete FMU directory
   if (mpSettings->contains("FMIImport/DeleteFMUDirectoyAndModel")) {
     mpFMIPage->getDeleteFMUDirectoryAndModelCheckBox()->setChecked(mpSettings->value("FMIImport/DeleteFMUDirectoyAndModel").toBool());
   }
@@ -1453,6 +1465,8 @@ void OptionsDialog::saveFMISettings()
     i++;
   }
   mpSettings->setValue("FMIExport/Platforms", platforms);
+  mpSettings->setValue("FMIExport/ModelDescriptionFilter", mpFMIPage->getModelDescriptionFiltersComboBox()->currentText());
+  mpSettings->setValue("FMIExport/IncludeSourceCode", mpFMIPage->getIncludeSourceCodeCheckBox()->isChecked());
   mpSettings->setValue("FMIImport/DeleteFMUDirectoyAndModel", mpFMIPage->getDeleteFMUDirectoryAndModelCheckBox()->isChecked());
 }
 
@@ -4833,6 +4847,22 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
     pPlatformsLayout->addWidget(pCheckBox);
   }
   mpPlatformsGroupBox->setLayout(pPlatformsLayout);
+  // Model description filters
+  OMCInterface::getConfigFlagValidOptions_res fmiFilters = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("fmiFilter");
+  mpModelDescriptionFiltersComboBox = new QComboBox;
+  mpModelDescriptionFiltersComboBox->addItems(fmiFilters.validOptions);
+  mpModelDescriptionFiltersComboBox->setToolTip(fmiFilters.mainDescription);
+  int i = 0;
+  foreach (QString description, fmiFilters.descriptions) {
+    mpModelDescriptionFiltersComboBox->setItemData(i, description, Qt::ToolTipRole);
+    i++;
+  }
+  mpModelDescriptionFiltersComboBox->setCurrentIndex(mpModelDescriptionFiltersComboBox->findText("internal"));
+  connect(mpModelDescriptionFiltersComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(enableIncludeSourcesCheckBox(QString)));
+  // include source code checkbox
+  mpIncludeSourceCodeCheckBox = new QCheckBox(tr("Include Source Code (model description filter \"blackBox\" will override this, because black box FMUs do never contain their source code.)"));
+  mpIncludeSourceCodeCheckBox->setChecked(true);
+  enableIncludeSourcesCheckBox(mpModelDescriptionFiltersComboBox->currentText());
   // set the export group box layout
   QGridLayout *pExportLayout = new QGridLayout;
   pExportLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -4844,6 +4874,9 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   pExportLayout->addWidget(mpMoveFMUTextBox, 3, 1);
   pExportLayout->addWidget(mpBrowseFMUDirectoryButton, 3, 2);
   pExportLayout->addWidget(mpPlatformsGroupBox, 4, 0, 1, 3);
+  pExportLayout->addWidget(new Label(tr("Model Description Filters:")), 5, 0);
+  pExportLayout->addWidget(mpModelDescriptionFiltersComboBox, 5, 1);
+  pExportLayout->addWidget(mpIncludeSourceCodeCheckBox, 6, 0, 1, 3);
   mpExportGroupBox->setLayout(pExportLayout);
   // import groupbox
   mpImportGroupBox = new QGroupBox(tr("Import"));
@@ -4926,10 +4959,27 @@ QString FMIPage::getFMIExportType()
   }
 }
 
+/*!
+ * \brief FMIPage::selectFMUDirectory
+ * Selects the FMU directory.
+ */
 void FMIPage::selectFMUDirectory()
 {
-  mpMoveFMUTextBox->setText(StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName)
-                                                                .arg(Helper::chooseDirectory), NULL));
+  mpMoveFMUTextBox->setText(StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseDirectory), NULL));
+}
+
+/*!
+ * \brief FMIPage::enableIncludeSourcesCheckBox
+ * Enables/Disables the includes sources checkbox.
+ * \param modelDescriptionFilter
+ */
+void FMIPage::enableIncludeSourcesCheckBox(QString modelDescriptionFilter)
+{
+  if (modelDescriptionFilter.compare(QStringLiteral("blackBox")) == 0) {
+    mpIncludeSourceCodeCheckBox->setEnabled(false);
+  } else {
+    mpIncludeSourceCodeCheckBox->setEnabled(true);
+  }
 }
 
 /*!
