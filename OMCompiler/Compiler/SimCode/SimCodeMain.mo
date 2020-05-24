@@ -736,6 +736,23 @@ algorithm
             Error.addInternalError("Failed to copy path " + path + " to " + fmutmp + "/resources/" + dirname, sourceInfo());
           end if;
         end for;
+
+        // Add optional _flags.json to resources
+        _ := match simCode.fmiSimulationFlags
+          local
+            SimCode.FmiSimulationFlags fmiSimFlags;
+            String pathToFlagsJson;
+          case SOME(fmiSimFlags as SimCode.FMISIMULATIONFLAGSFILE(path=pathToFlagsJson))
+            algorithm
+            if 0 <> System.systemCall("cp -rf \"" + pathToFlagsJson + "\" \"" + fmutmp + "/resources/" + simCode.fileNamePrefix+"_flags.json\"") then
+              Error.addInternalError("Failed to copy " + pathToFlagsJson + " to " + fmutmp + "/resources/" + simCode.fileNamePrefix + "_flags.json", sourceInfo());
+            end if;
+            listAppend(simCode.modelInfo.resourcePaths, {pathToFlagsJson});
+            then();
+          else
+            then();
+          end match;
+
         SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
         str := fmutmp + "/sources/" + simCode.fileNamePrefix;
         if FMUVersion == "1.0" then
@@ -1440,6 +1457,7 @@ algorithm
                               HashTableCrILst.emptyHashTable(),
                               crefToSimVarHT,
                               HashTable.emptyHashTable(),
+                              NONE(),
                               NONE(),
                               NONE(),
                               SimCode.emptyPartitionData,

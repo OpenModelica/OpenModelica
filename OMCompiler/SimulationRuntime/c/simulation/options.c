@@ -104,7 +104,8 @@ int checkCommandLineArguments(int argc, char **argv)
     {
       if((FLAG_TYPE[j] == FLAG_TYPE_FLAG) && flagSet(FLAG_NAME[j], 1, argv+i))
       {
-        if(omc_flag[j]) {
+        if(omc_flag[j])
+        {
           warningStreamPrint(LOG_STDOUT, 0, "each command line option can only be used once: %s", argv[i]);
           return 1;
         }
@@ -117,8 +118,11 @@ int checkCommandLineArguments(int argc, char **argv)
 #endif
 
         break;
-      } else if((FLAG_TYPE[j] == FLAG_TYPE_OPTION) && flagSet(FLAG_NAME[j], 1, argv+i) && (i+1 < argc)) {
-        if(omc_flag[j]) {
+      }
+      else if((FLAG_TYPE[j] == FLAG_TYPE_OPTION) && flagSet(FLAG_NAME[j], 1, argv+i) && (i+1 < argc))
+      {
+        if(omc_flag[j])
+        {
           warningStreamPrint(LOG_STDOUT, 0, "each command line option can only be used once: %s", argv[i]);
           return 1;
         }
@@ -133,8 +137,11 @@ int checkCommandLineArguments(int argc, char **argv)
 #endif
 
         break;
-      } else if((FLAG_TYPE[j] == FLAG_TYPE_OPTION) && optionSet(FLAG_NAME[j], 1, argv+i)) {
-        if(omc_flag[j]) {
+      }
+      else if((FLAG_TYPE[j] == FLAG_TYPE_OPTION) && optionSet(FLAG_NAME[j], 1, argv+i))
+      {
+        if(omc_flag[j])
+        {
           warningStreamPrint(LOG_STDOUT, 0, "each command line option can only be used once: %s", argv[i]);
           return 1;
         }
@@ -153,7 +160,7 @@ int checkCommandLineArguments(int argc, char **argv)
     if(!found)
     {
 #ifdef USE_DEBUG_OUTPUT
-  messageClose(LOG_STDOUT);
+      messageClose(LOG_STDOUT);
 #endif
       warningStreamPrint(LOG_STDOUT, 0, "invalid command line option: %s", argv[i]);
       return 1;

@@ -86,6 +86,15 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
 
   let()= textFile(fmuModelDescriptionFile(simCode, guid, FMUVersion, FMUType, sourceFiles), '<%fileNamePrefix%>.fmutmp/modelDescription.xml')
 
+  // Generate optional <fmiPrefix>_flags.json
+  let _ = match sc.fmiSimulationFlags
+    case SOME(fmiSimFlags as FMISIMULATIONFLAGS(__)) then
+      let() = textFile(fmuSimulationFlagsFile(fmiSimFlags), '<%fileNamePrefix%>.fmutmp/resources/<%fileNamePrefix%>_flags.json')
+      ""
+    else
+      ""
+    end match
+
   let()= textFile(fmudeffile(simCode,FMUVersion), '<%fileNamePrefix%>.fmutmp/sources/<%fileNamePrefix%>.def')
   let()= textFile('# Dummy file so OMDEV Compile.bat works<%\n%>include Makefile<%\n%>', '<%fileNamePrefix%>.fmutmp/sources/<%fileNamePrefix%>.makefile')
   let()= textFile(fmuSourceMakefile(simCode,FMUVersion), '<%fileNamePrefix%>_FMU.makefile')
@@ -191,6 +200,19 @@ case SIMCODE(__) then
   >>
 end fmuModelDescriptionFile;
 
+template fmuSimulationFlagsFile(FmiSimulationFlags fmiSimulationFlags)
+  "Generates <fmiPrefix>_flags.json file for FMUs with custom simulation flags."
+ ::=
+  match fmiSimulationFlags
+  case flags as FMISIMULATIONFLAGS(__) then
+    <<
+    {
+      "s" : "<%flags.solver%>",
+      "nls" : "<%flags.nonLinearSolver%>"
+    }
+    >>
+end fmuSimulationFlagsFile;
+
 template VendorAnnotations(SimCode simCode)
  "Generates code for VendorAnnotations file for FMU target."
 ::=
@@ -224,7 +246,10 @@ case SIMCODE(__) then
   #include "simulation/solver/initialization/initialization.h"
   #include "simulation/solver/events.h"
   <%if isFMIVersion20(FMUVersion) then
-  '#include "fmi-export/fmu2_model_interface.h"'
+  <<
+  #include "fmi-export/fmu2_model_interface.h"
+  #include "fmi-export/fmu_read_flags.h"
+  >>
   else
   '#include "fmi-export/fmu1_model_interface.h"'%>
 
@@ -272,6 +297,7 @@ case SIMCODE(__) then
     extern void <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>(DATA *data, threadData_t *threadData);
     #define fmu2_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
     #include "fmi-export/fmu2_model_interface.c.inc"
+    #include "fmi-export/fmu_read_flags.c.inc"
     >>
   else
     <<

@@ -359,6 +359,18 @@ enum HOMOTOPY_BACKTRACE_STRATEGY
 extern const char *HOM_BACK_STRAT_NAME[HOM_BACK_STRAT_MAX];
 extern const char *HOM_BACK_STRAT_DESC[HOM_BACK_STRAT_MAX];
 
+enum FMU_FLAG
+{
+  FMU_FLAG_UNKNOWN = 0,
+
+  FMU_FLAG_SOLVER,
+  FMU_FLAG_NLS,
+
+  FMU_FLAG_MAX
+};
+
+/* Flag mapping to use the same descriptions and names for FMU.*/
+extern const int FMU_FLAG_MAP[FMU_FLAG_MAX];
 
 #if defined(__cplusplus)
   }

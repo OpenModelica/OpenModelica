@@ -1367,6 +1367,10 @@ constant ConfigFlag FMI_SOURCES = CONFIG_FLAG(143, "fmiSources", NONE(), EXTERNA
   BOOL_FLAG(true), NONE(),
   Gettext.gettext("Defines if FMUs will be exported with sources or not. --fmiFilter=blackBox might override this, because black box FMUs do never contain their source code."));
 
+constant ConfigFlag FMI_FLAGS = CONFIG_FLAG(144, "fmiFlags", NONE(), EXTERNAL(),
+  STRING_LIST_FLAG({}), NONE(),
+  Gettext.gettext("Add simulation flags to FMU. Will create flags.json in resources folder with given flags, e.g. --fmiFlags for the default or --fmiFlags=s=euler. See --help=fmiFlags for more info."));
+
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
   input Boolean initialize = true;

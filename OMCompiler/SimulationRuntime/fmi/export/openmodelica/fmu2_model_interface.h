@@ -79,6 +79,7 @@ typedef struct {
   fmi2ComponentEnvironment componentEnvironment;
   ModelState state;
   fmi2EventInfo eventInfo;
+  SOLVER_INFO* solverInfo;
 
   DATA* fmuData;
   threadData_t *threadData, *threadDataParent;

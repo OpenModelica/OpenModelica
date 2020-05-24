@@ -224,6 +224,7 @@ protected
   Integer maxDelayedExpIndex, uniqueEqIndex, numberofEqns, numStateSets, numberOfJacobians, sccOffset;
   Integer numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberofFixedParameters, reasonableSize;
   Option<SimCode.FmiModelStructure> modelStructure = NONE();
+  Option<SimCode.FmiSimulationFlags> fmiSimulationFlags = NONE();
   SimCode.BackendMapping backendMapping;
   SimCode.ExtObjInfo extObjInfo;
   SimCode.HashTableCrefToSimVar crefToSimVarHT;
@@ -535,11 +536,17 @@ algorithm
     if debug then execStat("simCode: collect and index LS/NLS in modelInfo"); end if;
 
     // collect fmi partial derivative
-    if FMI.isFMIVersion20(FMUVersion)   then
+    if FMI.isFMIVersion20(FMUVersion) then
       (SymbolicJacsFMI, modelStructure, modelInfo, SymbolicJacsTemp, uniqueEqIndex) := createFMIModelStructure(inFMIDer, modelInfo, uniqueEqIndex, inInitDAE, inBackendDAE);
       SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
       if debug then execStat("simCode: create FMI model structure"); end if;
     end if;
+
+    // Collect FMI sim flags
+    if isFMU then
+      fmiSimulationFlags := createFMISimulationFlags();
+    end if;
+
     // collect symbolic jacobians in linear loops of the overall jacobians
     (LinearMatrices, uniqueEqIndex) := createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex, shared);
     (SymbolicJacs, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs(LinearMatrices, modelInfo);
@@ -664,7 +671,7 @@ algorithm
     end if;
 
     // Set fullPathPrefix for FMUs
-  if isFMU then
+    if isFMU then
       if (Config.simCodeTarget()=="omsic")  or (Config.simCodeTarget() ==  "omsicpp")then
         fullPathPrefix := filenamePrefix+".fmutmp";
       else
@@ -718,6 +725,7 @@ algorithm
                               crefToClockIndexHT,
                               SOME(backendMapping),
                               modelStructure,
+                              fmiSimulationFlags,
                               SimCode.emptyPartitionData,
                               NONE(),
                               inlineEquations,
@@ -13225,6 +13233,89 @@ algorithm
   end for;
 end derivativeMatrixString;
 
+public function createFMISimulationFlags
+  "Function reads FMI simulation flags from user input --fmiFlags
+   and creates FmiSimulationFlags record for code generation.
+   Author: AnHeuermann"
+  output Option<SimCode.FmiSimulationFlags> fmiSimulationFlags;
+protected
+  list<String> fmiFlagsList;
+  String pathToFile;
+  String msg;
+  String tmpName, tmpValue;
+  list<String> tmpSplitted;
+  String solverName = "euler";
+  String nonLinearSolverName = "homotopy";
+  Integer i = 0;
+algorithm
+  fmiFlagsList := Flags.getConfigStringList(Flags.FMI_FLAGS);
+
+  // No flag given
+  // --fmiFlags or --fmiFlags=none
+  if listEmpty(fmiFlagsList) then
+    fmiSimulationFlags := NONE();
+  elseif listLength(fmiFlagsList) == 1 and stringEqual(List.first(fmiFlagsList), "none") then
+    fmiSimulationFlags := NONE();
+
+  // Default case
+  // --fmiFlags=default
+  elseif listLength(fmiFlagsList) == 1 and stringEqual(List.first(fmiFlagsList), "default") then
+    fmiSimulationFlags := SOME(SimCode.defaultFmiSimulationFlags);
+
+  // User supplied file
+  // --fmiFlags=none
+  elseif listLength(fmiFlagsList) == 1 and stringEqual( List.last(Util.stringSplitAtChar(List.first(fmiFlagsList),".")) , "json" )  then
+    pathToFile := List.first(fmiFlagsList);
+    if System.regularFileExists(pathToFile) then
+      fmiSimulationFlags := SOME(SimCode.FMISIMULATIONFLAGSFILE(path=pathToFile));
+      return;
+    elseif System.regularFileExists(Util.absoluteOrRelative(pathToFile)) then
+      fmiSimulationFlags := SOME(SimCode.FMISIMULATIONFLAGSFILE(path=Util.absoluteOrRelative(pathToFile)));
+      return;
+    else
+      msg := "Could not find file \"" + pathToFile + "\nIgnoring \"--fmiFlags=" + pathToFile + "\" and using default setting.\n";
+      Error.addCompilerWarning(msg);
+      fmiSimulationFlags := SOME(SimCode.defaultFmiSimulationFlags);
+      return;
+    end if;
+
+  // User supplied flags
+  // --fmiFlags=s:cvode,nls:homotopy
+  else
+    for flag in fmiFlagsList loop
+      // Check each flag
+      tmpSplitted := Util.stringSplitAtChar(flag,":");
+      if not listLength(tmpSplitted) == 2 then
+        msg := "Can't process flag \"" + flag + "\".\nSeperate flag name and flag value with \":\".\n";
+        Error.addCompilerWarning(msg);
+        fmiSimulationFlags := SOME(SimCode.defaultFmiSimulationFlags);
+        return;
+      end if;
+      {tmpName, tmpValue} := tmpSplitted;
+
+      // Save value
+      if stringEqual(tmpName, "s") then
+        if not stringEqual(tmpValue, "euler") and not stringEqual(tmpValue, "cvode") then
+          msg := "Unknown value \"" + tmpValue + "\" for flag \"s\". Using \"euler\"";
+          Error.addCompilerWarning(msg);
+        else
+          solverName := tmpValue;
+        end if;
+      elseif stringEqual(tmpName, "nls") then
+        if not stringEqual(tmpValue, "homotopy") then
+          msg := "Unknown value \"" + tmpValue + "\" for flag \"nls\". Using \"homotopy\"";
+          Error.addCompilerWarning(msg);
+        else
+          nonLinearSolverName := tmpValue;
+        end if;
+      else
+        msg := "Ignoring unknown flag \"" + tmpName + "\".";
+        Error.addCompilerWarning(msg);
+      end if;
+    end for;
+    fmiSimulationFlags := SOME(SimCode.FMISIMULATIONFLAGS(solver=solverName, nonLinearSolver=nonLinearSolverName));
+  end if;
+end createFMISimulationFlags;
 
 public function createFMIModelStructure
 " function detectes the model stucture for FMI 2.0
