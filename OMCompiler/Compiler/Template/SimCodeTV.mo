@@ -439,6 +439,7 @@ package SimCode
       HpcOmSimCode.HpcOmData hpcomData;
       HashTableCrIListArray.HashTable varToArrayIndexMapping;
       Option<FmiModelStructure> modelStructure;
+      Option<FmiSimulationFlags> fmiSimulationFlags;
       PartitionData partitionData;
       Option<DaeModeData> daeModeData;
       list<SimEqSystem> inlineEquations;
@@ -831,6 +832,17 @@ package SimCode
       FmiInitialUnknowns fmiInitialUnknowns;
     end FMIMODELSTRUCTURE;
   end FmiModelStructure;
+
+  uniontype FmiSimulationFlags
+    record FMISIMULATIONFLAGS
+      String solver;
+      String nonLinearSolver;
+    end FMISIMULATIONFLAGS;
+
+    record FMISIMULATIONFLAGSFILE
+      String path;
+    end FMISIMULATIONFLAGSFILE;
+  end FmiSimulationFlags;
 
 end SimCode;
 

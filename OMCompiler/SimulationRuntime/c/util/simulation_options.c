@@ -920,3 +920,9 @@ const char *HOM_BACK_STRAT_DESC[HOM_BACK_STRAT_MAX] = {
   /* HOM_BACK_STRAT_FIX */          "go back to the path by fixing one coordinate",
   /* HOM_BACK_STRAT_ORTHOGONAL */   "go back to the path in an orthogonal direction to the tangent vector"
 };
+
+const int FMU_FLAG_MAP[FMU_FLAG_MAX] = {
+ /* FMU_FLAG_UNKNOWN */             FLAG_UNKNOWN,
+ /* FMU_FLAG_SOLVER */              FLAG_S,
+ /* FMU_FLAG_NLS */                 FLAG_NLS
+};

@@ -29,6 +29,7 @@
  */
 
 #include "fmu2_model_interface.h"
+#include "fmu_read_flags.h"
 #include "../simulation/solver/stateset.h"
 #include "../simulation/solver/model_help.h"
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
@@ -44,6 +45,10 @@
 #include "../simulation/solver/fmi_events.h"
 #include "../simulation/simulation_info_json.h"
 #include "../simulation/simulation_input_xml.h"
+#include "../simulation/options.h"
+#include "../util/simulation_options.h"
+#include "../util/omc_error.h"
+
 /*
 DLLExport pthread_key_t fmu2_thread_data_key;
 */
@@ -454,15 +459,17 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   }
 
   /* intialize modelData */
-  fmu2_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
   useStream[LOG_STDOUT] = 1;
   useStream[LOG_ASSERT] = 1;
+  fmu2_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
   initializeDataStruc(comp->fmuData, comp->threadData);
+
   /* setup model data with default start data */
   setDefaultStartValues(comp);
   setAllParamsToStart(comp->fmuData);
   setAllVarsToStart(comp->fmuData);
   comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData, comp->fmuData->simulationInfo);
+
 #if !defined(OMC_MINIMAL_METADATA)
   modelInfoInit(&(comp->fmuData->modelData->modelDataXml));
 #endif
