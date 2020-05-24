@@ -150,6 +150,7 @@ uniontype SimCode
     Option<BackendMapping> backendMapping;
     //FMI 2.0 data for model structure
     Option<FmiModelStructure> modelStructure;
+    Option<FmiSimulationFlags> fmiSimulationFlags;
     PartitionData partitionData;
     Option<DaeModeData> daeModeData;
     list<SimEqSystem> inlineEquations;
@@ -616,6 +617,19 @@ public uniontype FmiModelStructure
     FmiInitialUnknowns fmiInitialUnknowns;
   end FMIMODELSTRUCTURE;
 end FmiModelStructure;
+
+public uniontype FmiSimulationFlags
+  record FMISIMULATIONFLAGS
+    String solver;
+    String nonLinearSolver;
+  end FMISIMULATIONFLAGS;
+
+  record FMISIMULATIONFLAGSFILE
+    String path;
+  end FMISIMULATIONFLAGSFILE;
+end FmiSimulationFlags;
+
+constant FmiSimulationFlags defaultFmiSimulationFlags = FMISIMULATIONFLAGS(solver="euler", nonLinearSolver="homotopy");
 
 annotation(__OpenModelica_Interface="backend");
 end SimCode;

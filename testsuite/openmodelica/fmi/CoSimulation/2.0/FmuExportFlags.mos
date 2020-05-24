@@ -1,0 +1,133 @@
+// name:     FmuExportFlags
+// keywords: fmu export simulation flags
+// status: correct
+// teardown_command: rm -rf BouncingBallFMI20* exampleFlags.json
+//
+// Export of 2.0 CS FMU with simulation flags
+
+loadString("
+model BouncingBallFMI20
+  parameter Real e=0.7 \"coefficient of restitution\";
+  parameter Real g=9.81 \"gravity acceleration\";
+  Real h(start=1) \"height of ball\";
+  Real v \"velocity of ball\";
+  Real v_new;
+equation
+  der(v) = -g;
+  der(h) = v;
+
+  when h <= 0.0 then
+    v_new = -e*pre(v);
+    reinit(v, v_new);
+  end when;
+
+end BouncingBallFMI20;
+"); getErrorString();
+
+
+// Don't generate simulation settings file
+setCommandLineOptions("--fmiFlags=none"); getErrorString();
+translateModelFMU(BouncingBallFMI20, version = "2.0", fmuType="cs"); getErrorString();
+
+system("unzip -cqq BouncingBallFMI20.fmu resources/BouncingBallFMI20_flags.json > BouncingBallFMI20_flags.json"); getErrorString();
+
+// Generate default simulation settings file
+setCommandLineOptions("--fmiFlags=default"); getErrorString();
+translateModelFMU(BouncingBallFMI20, version = "2.0", fmuType="cs"); getErrorString();
+
+system("unzip -cqq BouncingBallFMI20.fmu resources/BouncingBallFMI20_flags.json > BouncingBallFMI20_flags.json"); getErrorString();
+readFile("BouncingBallFMI20_flags.json"); getErrorString();
+
+// Comandline options for simflags
+setCommandLineOptions("--fmiFlags=s:cvode,nls:homotopy"); getErrorString();
+translateModelFMU(BouncingBallFMI20, version = "2.0", fmuType="cs"); getErrorString();
+
+system("unzip -cqq BouncingBallFMI20.fmu resources/BouncingBallFMI20_flags.json > BouncingBallFMI20_flags.json"); getErrorString();
+readFile("BouncingBallFMI20_flags.json"); getErrorString();
+
+// Give file with simflags as relative path
+writeFile("exampleFlags.json",
+"{
+  \"s\" : \"someSuperExcitingSolver\",
+  \"nls\" : \"homotopy\",
+  \"SomeAwesomFlag\" : \"crazyStuff\"
+}"); getErrorString();
+
+setCommandLineOptions("--fmiFlags=exampleFlags.json"); getErrorString();
+translateModelFMU(BouncingBallFMI20, version = "2.0", fmuType="cs"); getErrorString();
+
+system("unzip -cqq BouncingBallFMI20.fmu resources/BouncingBallFMI20_flags.json > BouncingBallFMI20_flags.json"); getErrorString();
+readFile("BouncingBallFMI20_flags.json"); getErrorString();
+
+// Give file with simflags as absolute path
+setCommandLineOptions("--fmiFlags=" + realpath(".") + "/exampleFlags.json"); getErrorString();
+translateModelFMU(BouncingBallFMI20, version = "2.0", fmuType="cs"); getErrorString();
+
+system("unzip -cqq BouncingBallFMI20.fmu resources/BouncingBallFMI20_flags.json > BouncingBallFMI20_flags.json"); getErrorString();
+readFile("BouncingBallFMI20_flags.json"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "BouncingBallFMI20.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// caution: filename not matched:  resources/BouncingBallFMI20_flags.json
+// 11
+// ""
+// true
+// ""
+// "BouncingBallFMI20.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 0
+// ""
+// "{
+//   \"s\" : \"euler\",
+//   \"nls\" : \"homotopy\"
+// }"
+// ""
+// true
+// ""
+// "BouncingBallFMI20.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 0
+// ""
+// "{
+//   \"s\" : \"cvode\",
+//   \"nls\" : \"homotopy\"
+// }"
+// ""
+// true
+// ""
+// true
+// ""
+// "BouncingBallFMI20.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 0
+// ""
+// "{
+//   \"s\" : \"someSuperExcitingSolver\",
+//   \"nls\" : \"homotopy\",
+//   \"SomeAwesomFlag\" : \"crazyStuff\"
+// }"
+// ""
+// true
+// ""
+// "BouncingBallFMI20.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 0
+// ""
+// "{
+//   \"s\" : \"someSuperExcitingSolver\",
+//   \"nls\" : \"homotopy\",
+//   \"SomeAwesomFlag\" : \"crazyStuff\"
+// }"
+// ""
+// endResult
