@@ -42,6 +42,7 @@
 #include "util/rtclock.h"
 #include "util/rational.h"
 #include "util/list.h"
+#include "util/simulation_options.h"
 
 #define omc_dummyVarInfo {-1,-1,"","",omc_dummyFileInfo}
 #define omc_dummyEquationInfo {-1,0,0,-1,NULL}

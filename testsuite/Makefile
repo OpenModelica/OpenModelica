@@ -490,6 +490,9 @@ fmi_me_20.log: omc-diff
 omsimulator.log: omc-diff
 	$(MAKE) -C omsimulator/ -f Makefile test > $@
 	@echo $@ done
+fmi_cs.log: omc-diff
+	$(MAKE) -C openmodelica/fmi/CoSimulation/2.0 -f Makefile test > $@
+	@echo $@ done
 fmi_cs_st.log: omc-diff
 	$(MAKE) -C openmodelica/fmi/CoSimulationStandAlone -f Makefile test > $@
 	@echo $@ done
@@ -711,6 +714,7 @@ clean_g_4:
 	$(MAKE) -C flattening/libraries/msl32 -f Makefile clean
 	$(MAKE) -C flattening/libraries/msl32_cpp -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/libraries/msl32 -f Makefile clean
+	$(MAKE) -C openmodelica/fmi/CoSimulation/2.0 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/CoSimulationStandAlone -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/ModelExchange/1.0 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/ModelExchange/2.0 -f Makefile clean
