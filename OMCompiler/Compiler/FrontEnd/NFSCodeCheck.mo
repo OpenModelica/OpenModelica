@@ -78,7 +78,7 @@ algorithm
       equation
         ty = Dump.unparseTypeSpec(inTypeSpec);
         Error.addSourceMessage(Error.RECURSIVE_SHORT_CLASS_DEFINITION,
-          {inTypeName, ty}, inInfo);
+        {inTypeName, ty}, inInfo);
       then
         fail();
 
@@ -112,19 +112,9 @@ algorithm
     local
       SourceInfo info;
       String name;
-
     case (NFSCodeEnv.CLASS(cls = SCode.CLASS(prefixes = SCode.PREFIXES(
         replaceablePrefix = SCode.REPLACEABLE()))), _)
       then ();
-
-    //case (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = name, prefixes = SCode.PREFIXES(
-    //    replaceablePrefix = SCode.NOT_REPLACEABLE()), info = info)), _)
-    //  equation
-    //    Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
-    //    Error.addSourceMessage(Error.NON_REPLACEABLE_CLASS_EXTENDS,
-    //      {name}, info);
-    //  then
-    //    fail();
   end match;
 end checkClassExtendsReplaceability;
 
@@ -469,7 +459,7 @@ algorithm
       then
         ();
 
-    // Make an exception for components in functions.
+    // Make an exception for components in functions
     case (_, _, _, _, NFSCodeEnv.FRAME(name = SOME(cls_name)) ::
         NFSCodeEnv.FRAME(clsAndVars = tree) :: _)
       equation
@@ -478,9 +468,19 @@ algorithm
       then
         ();
 
+    // Make an exception for components in uniontypes
+    case (_, _, _, _, NFSCodeEnv.FRAME(name = SOME(cls_name)) ::
+        NFSCodeEnv.FRAME(clsAndVars = tree) :: _)
+      algorithm
+        NFSCodeEnv.CLASS(cls = el) := EnvTree.get(tree, cls_name);
+        true := SCodeUtil.isUniontype(el);
+      then
+        ();
+
     else
       equation
         ty_name = NFSCodeEnv.getItemName(inTypeItem);
+
         Error.addSourceMessage(Error.RECURSIVE_DEFINITION,
           {inComponentName, ty_name}, inComponentInfo);
       then

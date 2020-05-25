@@ -1073,34 +1073,37 @@ algorithm
       inInstDims, inImpl, inComment, inInfo, inGraph, inSets)
 
     local
-      String cls_name;
+      Absyn.InnerOuter io;
+      Boolean implicitInstantiation = false;
+      Boolean inStateAndClassNameIsEqual = false;
+      ClassInf.State ci_state;
+      Connect.Sets csets;
+      ConnectionGraph.ConnectionGraph graph;
+      DAE.ComponentRef cr;
+      DAE.DAElist dae, dae1, dae2;
+      DAE.ElementSource source;
+      DAE.Mod mod;
+      DAE.Prefix pre;
+      DAE.StartValue start;
+      DAE.Type ident_ty;
+      DAE.Type ty;
       FCore.Cache cache;
       FCore.Graph env, env_1;
       InstanceHierarchy ih;
-      UnitAbsyn.InstStore store;
-      Connect.Sets csets;
+      Option<DAE.Exp> opt_binding;
+      Option<DAE.VariableAttributes> dae_var_attr;
+      Option<SCode.Attributes> opt_attr;
+      SCode.Attributes attr;
+      SCode.Element classWithElementsRemoved;
+      SCode.Final fin;
       SCode.Restriction res;
       SCode.Variability vt;
-      list<DAE.Subscript> idxs;
-      DAE.Prefix pre;
-      ClassInf.State ci_state;
-      ConnectionGraph.ConnectionGraph graph;
-      DAE.DAElist dae, dae1, dae2;
-      DAE.Type ty;
-      DAE.Type ident_ty;
-      DAE.ComponentRef cr;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<DAE.Exp> opt_binding;
-      DAE.ElementSource source;
-      SCode.Attributes attr;
       SCode.Visibility vis;
-      SCode.Final fin;
-      Absyn.InnerOuter io;
-      DAE.StartValue start;
-      Option<SCode.Attributes> opt_attr;
-      DAE.Mod mod;
+      String cls_name;
+      String stateName;
+      UnitAbsyn.InstStore store;
       list<DAE.Dimension> predims;
-
+      list<DAE.Subscript> idxs;
     case (cache, env, ih, store, _, mod, _, _,
         SCode.CLASS(name = cls_name, restriction = res), SCode.ATTR(variability = vt),
         SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io),
@@ -1111,27 +1114,42 @@ algorithm
         ci_state = ClassInf.start(res, Absyn.IDENT(cls_name));
         predims = List.lastListOrEmpty(inInstDims);
         pre = PrefixUtil.prefixAdd(inName, predims, idxs, inPrefix, vt, ci_state, inInfo);
-        (cache, env_1, ih, store, dae1, csets, ty,_, opt_attr, graph) =
+        if Config.acceptMetaModelicaGrammar() then
+          stateName = AbsynUtil.pathString(ClassInf.getStateName(inState), delimiter = "");
+          inStateAndClassNameIsEqual = stringEqual(stateName, cls_name);
+          implicitInstantiation = SCodeUtil.isUniontype(inClass)
+                                and SCodeUtil.isConstant(inAttributes.variability)
+                                and inStateAndClassNameIsEqual;
+          /*
+            In the case we have a cycle.
+            Remove all cruft before instantiating and continue.
+            In this case we DO NOT cache the result.
+            Basically create an interface for the type so that it does not cycle.
+            TODO: Keep records?
+          */
+          if implicitInstantiation then
+            classWithElementsRemoved = SCodeUtil.setElementClassDefinition(SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()), inClass);
+            (_, env_1, ih, store, dae1, csets, ty,_, opt_attr, graph) =
+            Inst.instClass(cache, env, ih, store, inMod, pre, classWithElementsRemoved, inInstDims,
+                           inImpl, InstTypes.INNER_CALL(), inGraph, inSets);
+          else /* Continue as usual */
+            (cache, env_1, ih, store, dae1, csets, ty,_, opt_attr, graph) =
+              Inst.instClass(cache, env, ih, store, inMod, pre, inClass, inInstDims,
+                         inImpl, InstTypes.INNER_CALL(), inGraph, inSets);
+          end if;
+       else
+       (cache, env_1, ih, store, dae1, csets, ty,_, opt_attr, graph) =
           Inst.instClass(cache, env, ih, store, inMod, pre, inClass, inInstDims,
-            inImpl, InstTypes.INNER_CALL(), inGraph, inSets);
-
+                         inImpl, InstTypes.INNER_CALL(), inGraph, inSets);
+       end if;
         // Propagate and instantiate attributes.
         (cache, dae_var_attr) = InstBinding.instDaeVariableAttributes(cache, env_1, inMod, ty, {});
         attr = InstUtil.propagateAbSCDirection(vt, inAttributes, opt_attr, inInfo);
         attr = SCodeUtil.removeAttributeDimensions(attr);
-
-        // Attempt to set the correct type for array variable if splitArrays is
-        // false. Does not work correctly yet.
-        /* TODO: mahge: this should be removed
-        ty = Debug.bcallret2(not Config.splitArrays(), Types.liftArraySubscriptList,
-          ty, List.flatten(inInstDims), ty);
-          */
-
         // Make a component reference for the component.
         ident_ty = InstUtil.makeCrefBaseType(ty, inInstDims);
         cr = ComponentReference.makeCrefIdent(inName, ident_ty, idxs);
         (cache, cr) = PrefixUtil.prefixCref(cache, env, ih, inPrefix, cr);
-
         // adrpo: we cannot check this here as:
         //        we might have modifications on inner that we copy here
         //        Dymola doesn't report modifications on outer as error!
@@ -1139,38 +1157,30 @@ algorithm
         //        as the one on inner
         InstUtil.checkModificationOnOuter(cache, env_1, ih, inPrefix, inName, cr, inMod,
           vt, io, inImpl, inInfo);
-
         // Set the source of this element.
         source = ElementSource.createElementSource(inInfo, FGraph.getScopePath(env_1), inPrefix);
-
         // Instantiate the components binding.
         mod = if not listEmpty(inSubscripts) and not SCodeUtil.isParameterOrConst(vt) and not ClassInf.isFunctionOrRecord(inState) and not Types.isComplexType(Types.arrayElementType(ty)) and not Types.isExternalObject(Types.arrayElementType(ty)) and not Config.scalarizeBindings()
                  then DAE.NOMOD()
                  else inMod;
         opt_binding = InstBinding.makeVariableBinding(ty, mod, NFInstUtil.toConst(vt), inPrefix, inName);
         start = InstBinding.instStartBindingExp(inMod /* Yup, let's keep the start-binding. It seems sane. */, ty, vt);
-
         // Propagate the final prefix from the modifier.
         //fin = InstUtil.propagateModFinal(mod, fin);
-
         if not Flags.getConfigBool(Flags.USE_LOCAL_DIRECTION) then
           attr = stripVarAttrDirection(cr, ih, inState, inPrefix, attr);
         end if;
-
         // Propagate prefixes to any elements inside this components if it's a
         // structured component.
         dae1 = InstUtil.propagateAttributes(dae1, attr, inPrefixes, inInfo);
-
         // Add the component to the DAE.
         dae2 = InstDAE.daeDeclare(cache, env, env_1, cr, inState, ty, attr, vis, opt_binding, inInstDims,
           start, dae_var_attr, inComment, io, fin, source, false);
         store = UnitAbsynBuilder.instAddStore(store, ty, cr);
-
         // The remaining work is done in instScalar2.
         dae = instScalar2(cr, ty, vt, inMod, dae2, dae1, source, inImpl);
       then
         (cache, env_1, ih, store, dae, csets, ty, graph);
-
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
