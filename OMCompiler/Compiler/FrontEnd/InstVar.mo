@@ -1174,7 +1174,7 @@ algorithm
         // structured component.
         dae1 = InstUtil.propagateAttributes(dae1, attr, inPrefixes, inInfo);
         // Add the component to the DAE.
-        dae2 = InstDAE.daeDeclare(cache, inEnv, env_1, cr, inState, ty, attr, vis, opt_binding, inInstDims,
+        dae2 = InstDAE.daeDeclare(cache, env, env_1, cr, inState, ty, attr, vis, opt_binding, inInstDims,
           start, dae_var_attr, inComment, io, fin, source, false);
         store = UnitAbsynBuilder.instAddStore(store, ty, cr);
         // The remaining work is done in instScalar2.

@@ -257,16 +257,6 @@ algorithm
           {"component", name, ty}, {inInfo, info});
       then
         fail();
-
-    case (NFSCodeEnv.CLASS(cls = SCode.CLASS(restriction = res, info = info)),
-          SCode.COMPONENT(name = name))
-      algorithm
-        ty := SCodeDump.restrictionStringPP(res);
-        Error.addMultiSourceMessage(Error.INVALID_REDECLARE_AS,
-          {ty, name, "a component"}, {inInfo, info});
-      then
-        fail();
-
     else ();
   end match;
 end checkRedeclaredElementPrefix;
