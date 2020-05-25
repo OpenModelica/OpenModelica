@@ -223,7 +223,7 @@ uniontype BaseUnit
     Integer s   "exponent";
     Integer A   "exponent";
     Integer K   "exponent";
-    Integer g   "exponent";
+    Integer kg  "exponent";
     Real factor "prefix";
     Real offset "offset";
   end BASEUNIT;
