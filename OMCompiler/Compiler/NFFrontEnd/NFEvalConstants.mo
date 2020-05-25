@@ -42,7 +42,7 @@ import NFClass.Class;
 import NFInstNode.InstNode;
 import NFFunction.Function;
 import Sections = NFSections;
-import NFBinding.Binding;
+import Binding = NFBinding;
 import Variable = NFVariable;
 import Algorithm = NFAlgorithm;
 import NFEquation.Branch;

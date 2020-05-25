@@ -43,7 +43,7 @@ import SCode;
 import DAE;
 
 import Builtin = NFBuiltin;
-import NFBinding.Binding;
+import Binding = NFBinding;
 import Component = NFComponent;
 import ComponentRef = NFComponentRef;
 import Dimension = NFDimension;

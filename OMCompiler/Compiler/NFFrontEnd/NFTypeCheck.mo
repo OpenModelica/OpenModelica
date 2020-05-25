@@ -42,7 +42,7 @@ import DAE;
 import Dimension = NFDimension;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
-import NFBinding.Binding;
+import Binding = NFBinding;
 import NFPrefixes.Variability;
 
 protected

@@ -38,7 +38,7 @@ protected
 
 public
   import Expression = NFExpression;
-  import NFBinding.Binding;
+  import Binding = NFBinding;
 
   record ARRAY_ITERATOR
     list<Expression> array;

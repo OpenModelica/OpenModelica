@@ -31,7 +31,7 @@
 
 encapsulated package NFCeval
 
-import NFBinding.Binding;
+import Binding = NFBinding;
 import ComponentRef = NFComponentRef;
 import Error;
 import Component = NFComponent;

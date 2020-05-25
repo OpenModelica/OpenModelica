@@ -38,7 +38,7 @@ encapsulated package NFTyping
   Functions used by NFInst for typing.
 "
 
-import NFBinding.Binding;
+import Binding = NFBinding;
 import Component = NFComponent;
 import Dimension = NFDimension;
 import Equation = NFEquation;

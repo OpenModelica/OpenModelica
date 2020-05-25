@@ -42,7 +42,7 @@ protected
   import NFClassTree.ClassTree;
   import NFClass.Class;
   import Component = NFComponent;
-  import NFBinding.Binding;
+  import Binding = NFBinding;
   import Expression = NFExpression;
   import Call = NFCall;
   import SCodeUtil;

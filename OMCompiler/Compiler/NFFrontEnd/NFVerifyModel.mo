@@ -46,7 +46,7 @@ protected
   import Variable = NFVariable;
   import Algorithm = NFAlgorithm;
   import Statement = NFStatement;
-  import NFBinding.Binding;
+  import Binding = NFBinding;
   import Subscript = NFSubscript;
   import Dimension = NFDimension;
   import Util;

@@ -38,7 +38,7 @@ encapsulated package NFFlatten
   New instantiation, enable with -d=newInst.
 "
 
-import NFBinding.Binding;
+import Binding = NFBinding;
 import Equation = NFEquation;
 import NFFunction.Function;
 import NFInstNode.InstNode;
