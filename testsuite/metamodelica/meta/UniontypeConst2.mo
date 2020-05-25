@@ -6,7 +6,7 @@ uniontype UT
   function f
     output Real ro;
   algorithm
-    ro := CONST_UT.r;
+    FOO(r = ro) := CONST_UT;
   end f;
 end UT;
 
