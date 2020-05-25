@@ -695,7 +695,12 @@ public
   algorithm
     (cr, subs) := stripSubscripts(cref);
     strl := toFlatString_impl(cr, strl);
-    str := stringAppendList({"'", stringDelimitList(strl, "."), "'", Subscript.toFlatStringList(subs)});
+
+    str := match listHead(strl)
+      case "time" then "time";
+      case "_" then "_";
+      else stringAppendList({"'", stringDelimitList(strl, "."), "'", Subscript.toFlatStringList(subs)});
+    end match;
   end toFlatString;
 
   function toFlatString_impl
