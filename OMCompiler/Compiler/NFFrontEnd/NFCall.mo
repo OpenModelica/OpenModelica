@@ -578,7 +578,7 @@ public
 
       case UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
-          name := AbsynUtil.pathString(Function.name(NFBuiltinFuncs.ARRAY_FUNC));
+          name := AbsynUtil.pathString(Function.nameConsiderBuiltin(NFBuiltinFuncs.ARRAY_FUNC));
           arg_str := Expression.toString(call.exp);
           c := stringDelimitList(list(InstNode.name(Util.tuple21(iter)) + " in " +
             Expression.toString(Util.tuple22(iter)) for iter in call.iters), ", ");
@@ -596,14 +596,14 @@ public
 
       case TYPED_CALL()
         algorithm
-          name := AbsynUtil.pathString(Function.name(call.fn));
+          name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
           arg_str := stringDelimitList(list(Expression.toString(arg) for arg in call.arguments), ", ");
         then
           name + "(" + arg_str + ")";
 
       case TYPED_ARRAY_CONSTRUCTOR()
         algorithm
-          name := AbsynUtil.pathString(Function.name(NFBuiltinFuncs.ARRAY_FUNC));
+          name := AbsynUtil.pathString(Function.nameConsiderBuiltin(NFBuiltinFuncs.ARRAY_FUNC));
           arg_str := Expression.toString(call.exp);
           c := stringDelimitList(list(InstNode.name(Util.tuple21(iter)) + " in " +
             Expression.toString(Util.tuple22(iter)) for iter in call.iters), ", ");
@@ -612,7 +612,7 @@ public
 
       case TYPED_REDUCTION()
         algorithm
-          name := AbsynUtil.pathString(Function.name(call.fn));
+          name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
           arg_str := Expression.toString(call.exp);
           c := stringDelimitList(list(InstNode.name(Util.tuple21(iter)) + " in " +
             Expression.toString(Util.tuple22(iter)) for iter in call.iters), ", ");
@@ -633,7 +633,7 @@ public
     str := match call
       case TYPED_CALL()
         algorithm
-          name := AbsynUtil.pathString(Function.name(call.fn));
+          name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
           arg_str := stringDelimitList(list(Expression.toFlatString(arg) for arg in call.arguments), ", ");
         then
           if Function.isBuiltin(call.fn) then
@@ -649,7 +649,7 @@ public
             // calls are reverted to their original form here.
             str := toFlatString(devectorizeCall(call));
           else
-            name := AbsynUtil.pathString(Function.name(NFBuiltinFuncs.ARRAY_FUNC));
+            name := AbsynUtil.pathString(Function.nameConsiderBuiltin(NFBuiltinFuncs.ARRAY_FUNC));
             arg_str := Expression.toFlatString(call.exp);
             c := stringDelimitList(list(InstNode.name(Util.tuple21(iter)) + " in " +
               Expression.toFlatString(Util.tuple22(iter)) for iter in call.iters), ", ");
@@ -660,7 +660,7 @@ public
 
       case TYPED_REDUCTION()
         algorithm
-          name := AbsynUtil.pathString(Function.name(call.fn));
+          name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
           arg_str := Expression.toFlatString(call.exp);
           c := stringDelimitList(list(InstNode.name(Util.tuple21(iter)) + " in " +
             Expression.toFlatString(Util.tuple22(iter)) for iter in call.iters), ", ");

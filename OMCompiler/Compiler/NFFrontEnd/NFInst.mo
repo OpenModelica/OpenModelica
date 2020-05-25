@@ -175,10 +175,6 @@ algorithm
   // to the model.
   flatModel := Package.collectConstants(flatModel, functions);
 
-  //if Config.flatModelica() then
-  //  FlatModel.printFlatString(flatModel, FunctionTree.listValues(functions));
-  //end if;
-
   // Scalarize array components in the flat model.
   if Flags.isSet(Flags.NF_SCALARIZE) then
     flatModel := Scalarize.scalarize(flatModel);
