@@ -444,7 +444,7 @@ algorithm
 
         Print.clearBuf();
         execStat("Transformations before Dump");
-        s := if Config.silent() or Flags.getConfigBool(Flags.FLAT_MODELICA) then "" else DAEDump.dumpStr(d, funcs);
+        s := if Config.silent() or Config.flatModelica() then "" else DAEDump.dumpStr(d, funcs);
         execStat("DAEDump done");
         Print.printBuf(s);
         if Flags.isSet(Flags.DAE_DUMP_GRAPHV) then
@@ -530,7 +530,8 @@ algorithm
   // If no class was explicitly specified, instantiate the last class in the
   // program. Otherwise, instantiate the given class name.
   cname := if stringEmpty(cls) then AbsynUtil.lastClassname(SymbolTable.getAbsyn()) else AbsynUtil.stringPath(cls);
-  (cache, env, SOME(dae)) := CevalScriptBackend.runFrontEnd(FCore.emptyCache(), FGraph.empty(), cname, true);
+  (cache, env, SOME(dae)) := CevalScriptBackend.runFrontEnd(FCore.emptyCache(),
+    FGraph.empty(), cname, relaxedFrontEnd = true, dumpFlat = Config.flatModelica());
 end instantiate;
 
 protected function optimizeDae

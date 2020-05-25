@@ -137,7 +137,7 @@ algorithm
   end match;
 end addAnnotation;
 
-function getCommentsFromSource
+function getComments
   input DAE.ElementSource source;
   output list<SCode.Comment> outComments;
 algorithm
@@ -148,7 +148,19 @@ algorithm
     case (DAE.SOURCE(comment = comment)) then comment;
 
   end match;
-end getCommentsFromSource;
+end getComments;
+
+function getOptComment
+  "Returns the first added comment if there is one, otherwise NONE."
+  input DAE.ElementSource source;
+  output Option<SCode.Comment> outComment;
+algorithm
+  if not listEmpty(source.comment) then
+    outComment := SOME(List.last(source.comment));
+  else
+    outComment := NONE();
+  end if;
+end getOptComment;
 
 function addSymbolicTransformation
   input output DAE.ElementSource source;

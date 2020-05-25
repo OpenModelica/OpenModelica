@@ -635,14 +635,14 @@ protected
   SCode.Mod smod;
 algorithm
   // Type the class.
-  Typing.typeClass(inst_cls, name);
+  Typing.typeClass(inst_cls);
 
   // Flatten and simplify the model.
   flat_model := Flatten.flatten(inst_cls, name);
   flat_model := EvalConstants.evaluate(flat_model);
   flat_model := UnitCheck.checkUnits(flat_model);
   flat_model := SimplifyModel.simplify(flat_model);
-  funcs := Flatten.collectFunctions(flat_model, name);
+  funcs := Flatten.collectFunctions(flat_model);
 
   // Collect package constants that couldn't be substituted with their values
   // (e.g. because they where used with non-constant subscripts), and add them
@@ -651,7 +651,7 @@ algorithm
 
   // Scalarize array components in the flat model.
   if Flags.isSet(Flags.NF_SCALARIZE) then
-    flat_model := Scalarize.scalarize(flat_model, name);
+    flat_model := Scalarize.scalarize(flat_model);
   else
     // Remove empty arrays from variables
     flat_model.variables := List.filterOnFalse(flat_model.variables, Variable.isEmptyArray);
@@ -660,7 +660,7 @@ algorithm
   VerifyModel.verify(flat_model);
 
   // Convert the flat model to a DAE.
-  (dae, daeFuncs) := ConvertDAE.convert(flat_model, funcs, name, InstNode.info(inst_cls));
+  (dae, daeFuncs) := ConvertDAE.convert(flat_model, funcs);
 end frontEndBack;
 
   annotation(__OpenModelica_Interface="backend");

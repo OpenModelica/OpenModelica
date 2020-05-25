@@ -642,5 +642,18 @@ algorithm
   outRes := intGe(languageStandardInt(std), 33);
 end synchronousFeaturesAllowed;
 
+public function flatModelica
+  output Boolean value;
+algorithm
+  value := Flags.getConfigBool(Flags.FLAT_MODELICA);
+
+  // Ignore the flag unless the new frontend is enabled, otherwise it won't work.
+  if value and not Flags.isSet(Flags.SCODE_INST) then
+    Error.addMessage(Error.INVALID_FLAG_CONDITION,
+      {"-f", "flat modelica requires flag -d=newInst to be set"});
+    value := false;
+  end if;
+end flatModelica;
+
 annotation(__OpenModelica_Interface="util");
 end Config;

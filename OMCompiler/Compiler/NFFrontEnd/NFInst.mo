@@ -77,6 +77,7 @@ import ExecStat.{execStat,execStatReset};
 import SCodeDump;
 import SCodeUtil;
 import System;
+import Config;
 import Call = NFCall;
 import Absyn.Path;
 import NFClassTree.ClassTree;
@@ -103,18 +104,17 @@ import EvalConstants = NFEvalConstants;
 import VerifyModel = NFVerifyModel;
 
 public
+
 function instClassInProgram
   "Instantiates a class given by its fully qualified path, with the result being
    a DAE."
   input Absyn.Path classPath;
   input SCode.Program program;
-  output DAE.DAElist dae;
-  output DAE.FunctionTree daeFuncs;
+  output FlatModel flatModel;
+  output FunctionTree functions;
 protected
   InstNode top, cls, inst_cls;
   String name;
-  FlatModel flat_model;
-  FunctionTree funcs;
 algorithm
   // gather here all the flags to disable expansion
   // and scalarization if -d=-nfScalarize is on
@@ -142,59 +142,56 @@ algorithm
   // Instantiate the class.
   inst_cls := instantiate(cls);
   insertGeneratedInners(inst_cls, top);
-  execStat("NFInst.instantiate("+ name +")");
+  execStat("NFInst.instantiate(" + name + ")");
 
   // Instantiate expressions (i.e. anything that can contains crefs, like
   // bindings, dimensions, etc). This is done as a separate step after
   // instantiation to make sure that lookup is able to find the correct nodes.
   instExpressions(inst_cls);
-  execStat("NFInst.instExpressions("+ name +")");
+  execStat("NFInst.instExpressions");
 
   // Mark structural parameters.
   updateImplicitVariability(inst_cls, Flags.isSet(Flags.EVAL_PARAM));
   execStat("NFInst.updateImplicitVariability");
 
   // Type the class.
-  Typing.typeClass(inst_cls, name);
+  Typing.typeClass(inst_cls);
 
   // Flatten the model and evaluate constants in it.
-  flat_model := Flatten.flatten(inst_cls, name);
-  flat_model := EvalConstants.evaluate(flat_model);
+  flatModel := Flatten.flatten(inst_cls, name);
+  flatModel := EvalConstants.evaluate(flatModel);
 
   // Do unit checking
-  flat_model := UnitCheck.checkUnits(flat_model);
+  flatModel := UnitCheck.checkUnits(flatModel);
 
   // Apply simplifications to the model.
-  flat_model := SimplifyModel.simplify(flat_model);
+  flatModel := SimplifyModel.simplify(flatModel);
 
   // Collect a tree of all functions that are still used in the flat model.
-  funcs := Flatten.collectFunctions(flat_model, name);
+  functions := Flatten.collectFunctions(flatModel);
 
   // Collect package constants that couldn't be substituted with their values
   // (e.g. because they where used with non-constant subscripts), and add them
   // to the model.
-  flat_model := Package.collectConstants(flat_model, funcs);
+  flatModel := Package.collectConstants(flatModel, functions);
 
-  if Flags.getConfigBool(Flags.FLAT_MODELICA) then
-    FlatModel.printFlatString(flat_model, FunctionTree.listValues(funcs));
-  end if;
+  //if Config.flatModelica() then
+  //  FlatModel.printFlatString(flatModel, FunctionTree.listValues(functions));
+  //end if;
 
   // Scalarize array components in the flat model.
   if Flags.isSet(Flags.NF_SCALARIZE) then
-    flat_model := Scalarize.scalarize(flat_model, name);
+    flatModel := Scalarize.scalarize(flatModel);
   else
     // Remove empty arrays from variables
-    flat_model.variables := List.filterOnFalse(flat_model.variables, Variable.isEmptyArray);
+    flatModel.variables := List.filterOnFalse(flatModel.variables, Variable.isEmptyArray);
   end if;
 
-  VerifyModel.verify(flat_model);
+  VerifyModel.verify(flatModel);
 
   if Flags.isSet(Flags.NF_DUMP_FLAT) then
-    print("FlatModel:\n" + FlatModel.toString(flat_model) + "\n");
+    print("FlatModel:\n" + FlatModel.toString(flatModel) + "\n");
   end if;
-
-  // Convert the flat model to a DAE.
-  (dae, daeFuncs) := ConvertDAE.convert(flat_model, funcs, name, InstNode.info(inst_cls));
 end instClassInProgram;
 
 function instantiate

@@ -59,7 +59,6 @@ import ExpandExp = NFExpandExp;
 public
 function scalarize
   input output FlatModel flatModel;
-  input String name;
 protected
   list<Variable> vars = {};
   list<Equation> eql = {}, ieql = {};
@@ -77,7 +76,7 @@ algorithm
   flatModel.algorithms := list(scalarizeAlgorithm(a) for a in flatModel.algorithms);
   flatModel.initialAlgorithms := list(scalarizeAlgorithm(a) for a in flatModel.initialAlgorithms);
 
-  execStat(getInstanceName() + "(" + name + ")");
+  execStat(getInstanceName());
 end scalarize;
 
 protected

@@ -181,15 +181,14 @@ end ExpOrigin;
 public
 function typeClass
   input InstNode cls;
-  input String name;
 algorithm
   typeClassType(cls, NFBinding.EMPTY_BINDING, ExpOrigin.CLASS, cls);
   typeComponents(cls, ExpOrigin.CLASS);
-  execStat("NFTyping.typeComponents(" + name + ")");
+  execStat("NFTyping.typeComponents");
   typeBindings(cls, cls, ExpOrigin.CLASS);
-  execStat("NFTyping.typeBindings(" + name + ")");
+  execStat("NFTyping.typeBindings");
   typeClassSections(cls, ExpOrigin.CLASS);
-  execStat("NFTyping.typeClassSections(" + name + ")");
+  execStat("NFTyping.typeClassSections");
 end typeClass;
 
 function typeComponents

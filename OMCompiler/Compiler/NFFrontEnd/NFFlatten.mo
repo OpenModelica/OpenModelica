@@ -91,6 +91,7 @@ import SimplifyModel = NFSimplifyModel;
 import InstNodeType = NFInstNode.InstNodeType;
 import ExpandableConnectors = NFExpandableConnectors;
 import SCodeUtil;
+import DAE;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;
@@ -131,10 +132,13 @@ protected
   list<Variable> vars;
   list<Equation> eql, ieql;
   list<Algorithm> alg, ialg;
+  DAE.ElementSource src;
   Option<SCode.Comment> cmt;
 algorithm
   sections := Sections.EMPTY();
-  cmt := SCodeUtil.getElementComment(InstNode.definition(classInst));
+  src := ElementSource.createElementSource(InstNode.info(classInst));
+  src := ElementSource.addCommentToSource(src,
+    SCodeUtil.getElementComment(InstNode.definition(classInst)));
 
   (vars, sections) := flattenClass(InstNode.getClass(classInst), ComponentRef.EMPTY(),
     Visibility.PUBLIC, NONE(), {}, sections);
@@ -148,18 +152,17 @@ algorithm
         alg := listReverseInPlace(sections.algorithms);
         ialg := listReverseInPlace(sections.initialAlgorithms);
       then
-        FlatModel.FLAT_MODEL(name, vars, eql, ieql, alg, ialg, cmt);
+        FlatModel.FLAT_MODEL(name, vars, eql, ieql, alg, ialg, src);
 
-      else FlatModel.FLAT_MODEL(name, vars, {}, {}, {}, {}, cmt);
+      else FlatModel.FLAT_MODEL(name, vars, {}, {}, {}, {}, src);
   end match;
 
-  execStat(getInstanceName() + "(" + name + ")");
-  flatModel := resolveConnections(flatModel, name);
+  execStat(getInstanceName());
+  flatModel := resolveConnections(flatModel);
 end flatten;
 
 function collectFunctions
   input FlatModel flatModel;
-  input String name;
   output FunctionTree funcs;
 algorithm
   funcs := FunctionTree.new();
@@ -168,7 +171,7 @@ algorithm
   funcs := List.fold(flatModel.initialEquations, collectEquationFuncs, funcs);
   funcs := List.fold(flatModel.algorithms, collectAlgorithmFuncs, funcs);
   funcs := List.fold(flatModel.initialAlgorithms, collectAlgorithmFuncs, funcs);
-  execStat(getInstanceName() + "(" + name + ")");
+  execStat(getInstanceName());
 end collectFunctions;
 
 protected
@@ -1287,7 +1290,6 @@ end addElementSourceArrayPrefix;
 function resolveConnections
 "Generates the connect equations and adds them to the equation list"
   input output FlatModel flatModel;
-  input String name;
 protected
   Connections conns;
   list<Equation> conn_eql;
@@ -1306,7 +1308,7 @@ algorithm
   // - generate the equations to replace the broken connects
   // - return the broken connects + the equations
   if  System.getHasOverconstrainedConnectors() then
-    (flatModel, broken) := NFOCConnectionGraph.handleOverconstrainedConnections(flatModel, conns, name);
+    (flatModel, broken) := NFOCConnectionGraph.handleOverconstrainedConnections(flatModel, conns);
   end if;
   // add the broken connections
   conns := Connections.addBroken(broken, conns);
@@ -1332,7 +1334,7 @@ algorithm
     flatModel := evaluateConnectionOperators(flatModel, csets, csets_array, ctable);
   end if;
 
-  execStat(getInstanceName() + "(" + name + ")");
+  execStat(getInstanceName());
 end resolveConnections;
 
 function evaluateConnectionOperators

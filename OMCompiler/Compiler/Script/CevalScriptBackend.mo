@@ -78,8 +78,8 @@ import Debug;
 import DiffAlgorithm;
 import Dump;
 import Error;
-import ErrorTypes;
 import ErrorExt;
+import ErrorTypes;
 import ExecStat;
 import Expression;
 import ExpressionDump;
@@ -101,6 +101,8 @@ import Inst;
 import LexerModelicaDiff;
 import List;
 import Lookup;
+import NFFlatModel;
+import NFFlatten;
 import NFInst;
 import NFSCodeEnv;
 import NFSCodeFlatten;
@@ -702,7 +704,6 @@ algorithm
       Absyn.ClassDef cdef;
       Absyn.Exp aexp;
       DAE.DAElist dae;
-      Option<DAE.DAElist> odae;
       BackendDAE.BackendDAE daelow,optdae;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqnarr;
@@ -1754,51 +1755,8 @@ algorithm
         simValue = createSimulationResultFailure(res, simOptionsAsString(vals));
      then (cache,simValue);
 
-    // handle encryption
-    case (cache,_,"instantiateModel",_,_)
-      equation
-        // if AST contains encrypted class show nothing
-        p = SymbolTable.getAbsyn();
-        true = Interactive.astContainsEncryptedClass(p);
-        Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
-      then
-        (cache,Values.STRING(""));
-
-    case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(className))},_)
-      equation
-        ExecStat.execStatReset();
-        (cache,env,odae) = runFrontEnd(cache,env,className,true);
-        ExecStat.execStat("runFrontEnd");
-        if isNone(odae) then
-          str = "";
-        elseif Config.silent() then
-          str = "model " + AbsynUtil.pathString(className) + "\n  /* Silent mode */\nend" + AbsynUtil.pathString(className) + ";\n"; // Not the empty string, so we can
-        else
-          str = DAEDump.dumpStr(Util.getOption(odae),FCore.getFunctionTree(cache));
-          ExecStat.execStat("DAEDump.dumpStr");
-        end if;
-      then
-        (cache,Values.STRING(str));
-
-    case (cache,_,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(path))},_)
-      equation
-        cr_1 = AbsynUtil.pathToCref(path);
-        false = Interactive.existClass(cr_1, SymbolTable.getAbsyn());
-        str = AbsynUtil.pathString(path);
-        Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
-      then
-        (cache,Values.STRING(""));
-
-    case (cache,_,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(path))},_)
-      equation
-        b = Error.getNumMessages() == 0;
-        str = AbsynUtil.pathString(path);
-        str = "Instantiation of " + str + " failed with no error message";
-        if b then
-          Error.addMessage(Error.INTERNAL_ERROR, {str,"<TOP>"});
-        end if;
-      then
-        (cache,Values.STRING(""));
+    case (_, _, "instantiateModel", {Values.CODE(Absyn.C_TYPENAME(className))}, _)
+      then instantiateModel(inCache, inEnv, className);
 
     case (cache,_,"importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(inputConnectors), Values.BOOL(outputConnectors)},_)
       equation
@@ -3243,6 +3201,7 @@ public function runFrontEnd
   input Absyn.Path className;
   output Option<DAE.DAElist> odae = NONE();
   input Boolean relaxedFrontEnd "Do not check for illegal simulation models, so we allow instantation of packages, etc";
+  input Boolean dumpFlat = false;
 protected
   DAE.DAElist dae;
   Boolean b;
@@ -3257,7 +3216,7 @@ algorithm
       print(GC.profStatsStr(GC.getProfStats(), head="GC stats before front-end:") + "\n");
     end if;
     ExecStat.execStat("FrontEnd - loaded program");
-    (cache,env,dae) := runFrontEndWork(cache,env,className,relaxedFrontEnd,Error.getNumErrorMessages());
+    (cache,env,dae) := runFrontEndWork(cache,env,className,relaxedFrontEnd,dumpFlat);
     if Flags.isSet(Flags.GC_PROF) then
       print(GC.profStatsStr(GC.getProfStats(), head="GC stats after front-end:") + "\n");
     end if;
@@ -3268,6 +3227,30 @@ algorithm
   end try;
   FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, false);
 end runFrontEnd;
+
+function runFrontEndNF
+  input Absyn.Path className;
+  output NFFlatModel flatModel;
+  output NFFlatten.FunctionTree functions;
+protected
+  Boolean gc_prof = Flags.isSet(Flags.GC_PROF);
+algorithm
+  FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, true);
+  true := runFrontEndLoadProgram(className);
+  ExecStat.execStat("FrontEnd - loaded program");
+
+  if gc_prof then
+    print(GC.profStatsStr(GC.getProfStats(), head="GC stats before front-end:") + "\n");
+  end if;
+
+  (flatModel, functions) := runFrontEndWorkNF(className);
+
+  if gc_prof then
+    print(GC.profStatsStr(GC.getProfStats(), head="GC stats after front-end:") + "\n");
+  end if;
+
+  FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, false);
+end runFrontEndNF;
 
 protected function runFrontEndLoadProgram
   input Absyn.Path className;
@@ -3304,10 +3287,12 @@ protected function runFrontEndWork
   input FCore.Graph inEnv;
   input Absyn.Path className;
   input Boolean relaxedFrontEnd "Do not check for illegal simulation models, so we allow instantation of packages, etc";
-  input Integer numError;
+  input Boolean dumpFlat;
   output FCore.Cache cache;
   output FCore.Graph env;
   output DAE.DAElist dae;
+protected
+  Integer numError = Error.getNumErrorMessages();
 algorithm
   (cache,env,dae) := matchcontinue (inCache,inEnv,className)
     local
@@ -3318,6 +3303,8 @@ algorithm
       SCode.Program scodeP, scodePNew, scode_builtin, graphicProgramSCode;
       Absyn.Program p,ptot,p_builtin, placementProgram;
       DAE.FunctionTree funcs;
+      NFFlatModel flat_model;
+      NFFlatten.FunctionTree nf_funcs;
 
    case (cache,env,_)
       equation
@@ -3341,19 +3328,13 @@ algorithm
         false := Flags.isSet(Flags.GRAPH_INST);
         true := Flags.isSet(Flags.SCODE_INST);
 
-        (_,scode_builtin) := FBuiltin.getInitialFunctions();
-        scodeP := listAppend(scode_builtin, SymbolTable.getSCode());
-        ExecStat.execStat("FrontEnd - Absyn->SCode");
+        (flat_model, nf_funcs) := runFrontEndWorkNF(className);
 
-        // add also the graphics annotations if we are using the NF_API
-        if Flags.isSet(Flags.NF_API) then
-          placementProgram := Interactive.modelicaAnnotationProgram(Config.getAnnotationVersion());
-          graphicProgramSCode := AbsynToSCode.translateAbsyn2SCode(placementProgram);
-          scodeP := listAppend(scode_builtin, SymbolTable.getSCode());
-          scodeP := listAppend(scodeP, graphicProgramSCode);
+        if dumpFlat then
+          NFFlatModel.printFlatString(flat_model, NFFlatten.FunctionTree.listValues(nf_funcs));
         end if;
 
-        (dae, funcs) := NFInst.instClassInProgram(className, scodeP);
+        (dae, funcs) := NFConvertDAE.convert(flat_model, nf_funcs);
 
         cache := FCore.emptyCache();
         FCore.setCachedFunctionTree(cache, funcs);
@@ -3414,6 +3395,28 @@ algorithm
       then fail();
   end matchcontinue;
 end runFrontEndWork;
+
+function runFrontEndWorkNF
+  input Absyn.Path className;
+  output NFFlatModel flatModel;
+  output NFFlatten.FunctionTree functions;
+protected
+  SCode.Program builtin_p, scode_p, graphic_p;
+  Absyn.Program placement_p;
+algorithm
+  (_, builtin_p) := FBuiltin.getInitialFunctions();
+  scode_p := listAppend(builtin_p, SymbolTable.getSCode());
+  ExecStat.execStat("FrontEnd - Absyn->SCode");
+
+  // add also the graphics annotations if we are using the NF_API
+  if Flags.isSet(Flags.NF_API) then
+    placement_p := Interactive.modelicaAnnotationProgram(Config.getAnnotationVersion());
+    graphic_p := AbsynToSCode.translateAbsyn2SCode(placement_p);
+    scode_p := listAppend(scode_p, graphic_p);
+  end if;
+
+  (flatModel, functions) := NFInst.instClassInProgram(className, scode_p);
+end runFrontEndWorkNF;
 
 protected function translateModel " author: x02lucpo
  translates a model into cpp code and writes also a makefile"
@@ -8484,6 +8487,77 @@ algorithm
     // do nothing
   end try;
 end selectResultFile;
+
+function instantiateModel
+  input output FCore.Cache cache;
+  input FCore.Graph env;
+  input Absyn.Path path;
+        output Values.Value result;
+protected
+  String str;
+  Absyn.Program p;
+  Option<DAE.DAElist> odae;
+  NFFlatModel flat_model;
+  NFFlatten.FunctionTree funcs;
+algorithm
+  str := matchcontinue ()
+    // handle encryption
+    case ()
+      algorithm
+        // if AST contains encrypted class show nothing
+        p := SymbolTable.getAbsyn();
+        true := Interactive.astContainsEncryptedClass(p);
+        Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+      then
+        "";
+
+    case () guard Config.flatModelica()
+      algorithm
+        ExecStat.execStatReset();
+        (flat_model, funcs) := runFrontEndNF(path);
+        str := NFFlatModel.toFlatString(flat_model, NFFlatten.FunctionTree.listValues(funcs));
+        ExecStat.execStat("FlatModel.toFlatString");
+      then
+        str;
+
+    case ()
+      algorithm
+        ExecStat.execStatReset();
+        (cache, _, odae) := runFrontEnd(cache, env, path, relaxedFrontEnd = true);
+        ExecStat.execStat("runFrontEnd");
+
+        if isNone(odae) then
+          str := "";
+        elseif Config.silent() then
+          str := "model " + AbsynUtil.pathString(path) + "\n  /* Silent mode */\nend" +
+            AbsynUtil.pathString(path) + ";\n"; // Not the empty string, so we can
+        else
+          str := DAEDump.dumpStr(Util.getOption(odae), FCore.getFunctionTree(cache));
+          ExecStat.execStat("DAEDump.dumpStr");
+        end if;
+      then
+        str;
+
+    case ()
+      algorithm
+        false := Interactive.existClass(AbsynUtil.pathToCref(path), SymbolTable.getAbsyn());
+        Error.addMessage(Error.LOOKUP_ERROR, {AbsynUtil.pathString(path), "<TOP>"});
+      then
+        "";
+
+    else
+      algorithm
+        if Error.getNumMessages() == 0 then
+          str := "Instantiation of " + AbsynUtil.pathString(path) +
+                 " failed with no error message";
+          Error.addMessage(Error.INTERNAL_ERROR, {str, "<TOP>"});
+        end if;
+      then
+        "";
+  end matchcontinue;
+
+  result := Values.STRING(str);
+end instantiateModel;
 
 annotation(__OpenModelica_Interface="backend");
 
