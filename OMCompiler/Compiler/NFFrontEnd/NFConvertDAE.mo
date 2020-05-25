@@ -31,7 +31,7 @@
 
 encapsulated package NFConvertDAE
 
-import NFBinding.Binding;
+import Binding = NFBinding;
 import DAE;
 import Equation = NFEquation;
 import FlatModel = NFFlatModel;

@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated package NFBinding
+encapsulated uniontype NFBinding
 
 public
   import Expression = NFExpression;
@@ -39,11 +39,12 @@ public
   import ErrorTypes;
 
 protected
+  import Binding = NFBinding;
   import Dump;
   import Error;
 
 public
-  constant Binding EMPTY_BINDING = Binding.UNBOUND({}, false, AbsynUtil.dummyInfo);
+  constant Binding EMPTY_BINDING = UNBOUND({}, false, AbsynUtil.dummyInfo);
 
   type EachType = enumeration(
     NOT_EACH,
@@ -51,7 +52,6 @@ public
     REPEAT
   );
 
-uniontype Binding
   record UNBOUND
     // NOTE: Use the EMPTY_BINDING constant above when a default unbound binding
     //       is needed, to save memory. UNBOUND contains this information to be
@@ -121,7 +121,7 @@ public
       case SOME(exp)
         then RAW_BINDING(exp, scope, parents, eachPrefix, info);
 
-      else if eachPrefix then UNBOUND(parents, true, info) else NFBinding.EMPTY_BINDING;
+      else if eachPrefix then UNBOUND(parents, true, info) else EMPTY_BINDING;
     end match;
   end fromAbsyn;
 
@@ -713,7 +713,6 @@ public
       else false;
     end match;
   end containsExp;
-end Binding;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBinding;

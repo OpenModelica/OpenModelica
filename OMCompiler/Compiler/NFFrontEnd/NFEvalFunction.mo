@@ -38,7 +38,7 @@ import NFInstNode.InstNode;
 import Sections = NFSections;
 import Statement = NFStatement;
 import ComponentRef = NFComponentRef;
-import NFBinding.Binding;
+import Binding = NFBinding;
 import Component = NFComponent;
 import Type = NFType;
 import Dimension = NFDimension;

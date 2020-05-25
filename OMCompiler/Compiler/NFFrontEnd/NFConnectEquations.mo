@@ -59,7 +59,7 @@ import Call = NFCall;
 import NFBuiltinFuncs;
 import NFInstNode.InstNode;
 import NFClass.Class;
-import NFBinding.Binding;
+import Binding = NFBinding;
 import NFFunction.Function;
 import Global;
 import BuiltinCall = NFBuiltinCall;

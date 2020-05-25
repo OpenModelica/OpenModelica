@@ -39,7 +39,7 @@ protected
   import NFFunction.Function;
   import Expression = NFExpression;
   import Type = NFType;
-  import NFBinding.Binding;
+  import Binding = NFBinding;
   import Dimension = NFDimension;
   import ComplexType = NFComplexType;
   import NFInstNode.InstNode;

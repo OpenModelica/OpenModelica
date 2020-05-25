@@ -32,7 +32,7 @@
 encapsulated uniontype NFComponent
 
 import DAE;
-import NFBinding.Binding;
+import Binding = NFBinding;
 import NFClass.Class;
 import NFClassTree.ClassTree;
 import Dimension = NFDimension;

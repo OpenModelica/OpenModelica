@@ -43,7 +43,7 @@ public
 import Absyn;
 import AbsynUtil;
 import BaseAvlTree;
-import NFBinding.Binding;
+import Binding = NFBinding;
 import NFInstNode.InstNode;
 import SCode;
 import Inst = NFInst;

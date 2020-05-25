@@ -45,7 +45,7 @@ import NFModifier.Modifier;
 protected
 import ErrorExt;
 import Inst = NFInst;
-import NFBinding.Binding;
+import Binding = NFBinding;
 import Config;
 import DAE;
 import Error;

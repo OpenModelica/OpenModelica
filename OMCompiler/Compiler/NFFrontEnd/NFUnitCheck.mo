@@ -24,7 +24,7 @@ import Expression = NFExpression;
 import HashTableCrToUnit = NFHashTableCrToUnit;
 import HashTableStringToUnit = NFHashTableStringToUnit;
 import HashTableUnitToString = NFHashTableUnitToString;
-import NFBinding.Binding;
+import Binding = NFBinding;
 import Call = NFCall;
 import Component = NFComponent;
 import NFFunction.Function;

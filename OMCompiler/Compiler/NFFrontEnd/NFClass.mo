@@ -44,7 +44,7 @@ import Restriction = NFRestriction;
 import Expression = NFExpression;
 
 protected
-import NFBinding.Binding;
+import Binding = NFBinding;
 import ComplexType = NFComplexType;
 import System;
 import AbsynUtil;
