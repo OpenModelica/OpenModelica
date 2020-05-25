@@ -70,8 +70,6 @@ public
 function convert
   input FlatModel flatModel;
   input FunctionTree functions;
-  input String name;
-  input SourceInfo info;
   output DAE.DAElist dae;
   output DAE.FunctionTree daeFunctions;
 protected
@@ -86,10 +84,10 @@ algorithm
   elems := convertAlgorithms(flatModel.algorithms, elems);
   elems := convertInitialAlgorithms(flatModel.initialAlgorithms, elems);
 
-  class_elem := DAE.COMP(name, elems, ElementSource.createElementSource(info), flatModel.comment);
+  class_elem := DAE.COMP(flatModel.name, elems, flatModel.source, ElementSource.getOptComment(flatModel.source));
   dae := DAE.DAE({class_elem});
 
-  execStat(getInstanceName() + "(" + name + ")");
+  execStat(getInstanceName());
 end convert;
 
 protected

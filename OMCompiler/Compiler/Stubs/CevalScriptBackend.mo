@@ -11,6 +11,7 @@ function runFrontEnd
   input FCore.Graph inEnv;
   input Absyn.Path className;
   input Boolean relaxedFrontEnd "Do not check for illegal simulation models, so we allow instantation of packages, etc";
+  input Boolean dumpFlat = false;
   output FCore.Cache cache;
   output FCore.Graph env;
   output Option<DAE.DAElist> dae;

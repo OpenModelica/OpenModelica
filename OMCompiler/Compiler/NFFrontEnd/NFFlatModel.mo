@@ -49,6 +49,7 @@ protected
   import NFClassTree.ClassTree;
   import Component = NFComponent;
   import NFComponentRef.ComponentRef;
+  import DAE.ElementSource;
   import MetaModelica.Dangerous.listReverseInPlace;
 
   import FlatModel = NFFlatModel;
@@ -90,7 +91,7 @@ public
     list<Equation> initialEquations;
     list<Algorithm> algorithms;
     list<Algorithm> initialAlgorithms;
-    Option<SCode.Comment> comment;
+    ElementSource source;
   end FLAT_MODEL;
 
   function toString

@@ -158,7 +158,6 @@ function handleOverconstrainedConnections
    - Connections.uniqueRootIndices"
   input output FlatModel flatModel;
   input Connections conns;
-  input String modelNameQualified;
   output FlatEdges outBroken;
 protected
   ComponentRef lhs, rhs, cref;
@@ -238,7 +237,7 @@ algorithm
   // now we have the graph, remove the broken connects and evaluate the equation operators
   eql := listReverseInPlace(eql);
   ieql := flatModel.initialEquations;
-  (eql, ieql, connected, broken) := handleOverconstrainedConnections_dispatch(graph, modelNameQualified, eql, ieql);
+  (eql, ieql, connected, broken) := handleOverconstrainedConnections_dispatch(graph, flatModel.name, eql, ieql);
 
   eql := removeBrokenConnects(eql, connected, broken);
 
