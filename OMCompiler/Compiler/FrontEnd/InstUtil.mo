@@ -1420,7 +1420,7 @@ protected
   list<tuple<Element, list<Element>>> g;
 algorithm
   // no sorting for meta-modelica!
-  if not Config.acceptMetaModelicaGrammar() then
+  //if not Config.acceptMetaModelicaGrammar() then
     // sort the elements according to the dependencies
     g := Graph.buildGraph(inElements, getElementDependencies, (inElements,isFunctionScope));
     (outE, cycles) := Graph.topologicalSort(g, isElementEqual);
@@ -1428,7 +1428,7 @@ algorithm
     // append the elements in the cycles as they might not actually be cycles, but they depend on elements not in the list (i.e. package constants, etc)!
     inElements := listAppend(outE, List.map(cycles, Util.tuple21));
     checkCyclicalComponents(cycles, inEnv);
-  end if;
+//  end if;
 end sortElementList;
 
 protected function printGraph
