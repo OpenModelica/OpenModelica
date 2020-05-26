@@ -352,6 +352,7 @@ EvaluateAllParams2.mo \
 ExpandableConnector1.mo \
 ExpandableConnector2.mo \
 ExpandableConnector3.mo \
+ExpandableConnector4.mo \
 ExpandableConnectorFlow1.mo \
 ExpandableConnectorFlow2.mo \
 ExpandableConnectorNonDecl1.mo \

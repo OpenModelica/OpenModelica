@@ -1600,6 +1600,7 @@ uniontype InstNode
     () := match node
       local
         Class cls;
+        Component comp;
 
       case CLASS_NODE()
         algorithm
@@ -1607,6 +1608,14 @@ uniontype InstNode
           cls := Class.classTreeApply(cls, ClassTree.clone);
           node.cls := Pointer.create(cls);
           node.caches := CachedData.empty();
+        then
+          ();
+
+      case COMPONENT_NODE()
+        algorithm
+          comp := Pointer.access(node.component);
+          comp := Component.setClassInstance(InstNode.clone(Component.classInstance(comp)), comp);
+          node.component := Pointer.create(comp);
         then
           ();
 
