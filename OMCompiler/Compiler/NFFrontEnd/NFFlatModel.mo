@@ -141,36 +141,42 @@ public
   end toString;
 
   function toFlatString
+    "Returns a string containing the flat Modelica representation of the given model."
     input FlatModel flatModel;
     input list<Function> functions;
     input Boolean printBindingTypes = false;
-    output String str;
-  protected
-    IOStream.IOStream s;
-  algorithm
-    s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
-    s := toFlatStream(flatModel, functions, printBindingTypes, s);
-    str := IOStream.string(s);
+    output String str = IOStream.string(toFlatStream(flatModel, functions, printBindingTypes));
   end toFlatString;
 
   function printFlatString
+    "Prints a flat Modelica representation of the given model to standard output."
     input FlatModel flatModel;
     input list<Function> functions;
     input Boolean printBindingTypes = false;
   protected
     IOStream.IOStream s;
   algorithm
-    s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
-    s := toFlatStream(flatModel, functions, printBindingTypes, s);
+    s := toFlatStream(flatModel, functions, printBindingTypes);
     IOStream.print(s, IOStream.stdOutput);
   end printFlatString;
 
   function toFlatStream
+    "Returns a new IOStream containing the flat Modelica representation of the given model."
+    input FlatModel flatModel;
+    input list<Function> functions;
+    input Boolean printBindingTypes = false;
+    output IOStream.IOStream s;
+  algorithm
+    s := IOStream.create(flatModel.name, IOStream.IOStreamType.LIST());
+    s := appendFlatStream(flatModel, functions, printBindingTypes, s);
+  end toFlatStream;
+
+  function appendFlatStream
+    "Appends the flat Modelica representation of the given model to an existing IOStream."
     input FlatModel flatModel;
     input list<Function> functions;
     input Boolean printBindingTypes = false;
     input output IOStream.IOStream s;
-    output String str;
   protected
     FlatModel flat_model = flatModel;
   algorithm
@@ -220,10 +226,7 @@ public
     end for;
 
     s := IOStream.append(s, "end '" + flat_model.name + "';\n");
-
-    str := IOStream.string(s);
-    IOStream.delete(s);
-  end toFlatStream;
+  end appendFlatStream;
 
   function collectFlatTypes
     input FlatModel flatModel;

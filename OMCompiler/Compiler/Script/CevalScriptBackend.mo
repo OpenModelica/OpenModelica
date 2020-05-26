@@ -691,9 +691,8 @@ algorithm
       list<Values.Value> vals;
       Absyn.Path path,classpath,className,baseClassPath;
       SCode.Program scodeP,sp;
-      Option<list<SCode.Element>> fp;
       FCore.Graph env;
-      Absyn.Program p,ip,pnew,newp,ptot;
+      Absyn.Program p,ip,pnew;
       list<Absyn.Program> newps;
       GlobalScript.SimulationOptions simOpt;
       Real startTime,stopTime,tolerance,reltol,reltolDiffMinMax,rangeDelta;
@@ -1882,9 +1881,8 @@ algorithm
       list<Values.Value> vals;
       Absyn.Path path,classpath,className,baseClassPath;
       SCode.Program scodeP,sp;
-      Option<list<SCode.Element>> fp;
       FCore.Graph env;
-      Absyn.Program p,ip,pnew,newp,ptot;
+      Absyn.Program p,ip,pnew,newp;
       list<Absyn.Program> newps;
       GlobalScript.SimulationOptions simOpt;
       Real startTime,stopTime,tolerance,reltol,reltolDiffMinMax,rangeDelta;
@@ -3199,9 +3197,10 @@ public function runFrontEnd
   input output FCore.Cache cache;
   input output FCore.Graph env;
   input Absyn.Path className;
-  output Option<DAE.DAElist> odae = NONE();
   input Boolean relaxedFrontEnd "Do not check for illegal simulation models, so we allow instantation of packages, etc";
   input Boolean dumpFlat = false;
+  output Option<DAE.DAElist> odae = NONE();
+  output String flatString = "";
 protected
   DAE.DAElist dae;
   Boolean b;
@@ -3216,7 +3215,7 @@ algorithm
       print(GC.profStatsStr(GC.getProfStats(), head="GC stats before front-end:") + "\n");
     end if;
     ExecStat.execStat("FrontEnd - loaded program");
-    (cache,env,dae) := runFrontEndWork(cache,env,className,relaxedFrontEnd,dumpFlat);
+    (cache,env,dae,flatString) := runFrontEndWork(cache,env,className,relaxedFrontEnd,dumpFlat);
     if Flags.isSet(Flags.GC_PROF) then
       print(GC.profStatsStr(GC.getProfStats(), head="GC stats after front-end:") + "\n");
     end if;
@@ -3228,40 +3227,15 @@ algorithm
   FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, false);
 end runFrontEnd;
 
-function runFrontEndNF
-  input Absyn.Path className;
-  output NFFlatModel flatModel;
-  output NFFlatten.FunctionTree functions;
-protected
-  Boolean gc_prof = Flags.isSet(Flags.GC_PROF);
-algorithm
-  FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, true);
-  true := runFrontEndLoadProgram(className);
-  ExecStat.execStat("FrontEnd - loaded program");
-
-  if gc_prof then
-    print(GC.profStatsStr(GC.getProfStats(), head="GC stats before front-end:") + "\n");
-  end if;
-
-  (flatModel, functions) := runFrontEndWorkNF(className);
-
-  if gc_prof then
-    print(GC.profStatsStr(GC.getProfStats(), head="GC stats after front-end:") + "\n");
-  end if;
-
-  FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, false);
-end runFrontEndNF;
-
 protected function runFrontEndLoadProgram
   input Absyn.Path className;
   output Boolean success;
 protected
   Absyn.Restriction restriction;
   Absyn.Class absynClass;
-  String str,re;
-  Option<SCode.Program> fp;
-  SCode.Program scodeP, scodePNew, scode_builtin;
-  Absyn.Program p,ptot,p_builtin;
+  String str;
+  SCode.Program scodeP;
+  Absyn.Program p;
   DAE.FunctionTree funcs;
   Boolean b;
 algorithm
@@ -3291,6 +3265,7 @@ protected function runFrontEndWork
   output FCore.Cache cache;
   output FCore.Graph env;
   output DAE.DAElist dae;
+  output String flatString = "";
 protected
   Integer numError = Error.getNumErrorMessages();
 algorithm
@@ -3299,9 +3274,8 @@ algorithm
       Absyn.Restriction restriction;
       Absyn.Class absynClass;
       String str,re;
-      Option<SCode.Program> fp;
-      SCode.Program scodeP, scodePNew, scode_builtin, graphicProgramSCode;
-      Absyn.Program p,ptot,p_builtin, placementProgram;
+      SCode.Program scodeP;
+      Absyn.Program p;
       DAE.FunctionTree funcs;
       NFFlatModel flat_model;
       NFFlatten.FunctionTree nf_funcs;
@@ -3328,12 +3302,7 @@ algorithm
         false := Flags.isSet(Flags.GRAPH_INST);
         true := Flags.isSet(Flags.SCODE_INST);
 
-        (flat_model, nf_funcs) := runFrontEndWorkNF(className);
-
-        if dumpFlat then
-          NFFlatModel.printFlatString(flat_model, NFFlatten.FunctionTree.listValues(nf_funcs));
-        end if;
-
+        (flat_model, nf_funcs, flatString) := runFrontEndWorkNF(className, dumpFlat);
         (dae, funcs) := NFConvertDAE.convert(flat_model, nf_funcs);
 
         cache := FCore.emptyCache();
@@ -3398,11 +3367,13 @@ end runFrontEndWork;
 
 function runFrontEndWorkNF
   input Absyn.Path className;
+  input Boolean dumpFlat = false;
   output NFFlatModel flatModel;
   output NFFlatten.FunctionTree functions;
+  output String flatString;
 protected
-  SCode.Program builtin_p, scode_p, graphic_p;
   Absyn.Program placement_p;
+  SCode.Program builtin_p, scode_p, graphic_p;
 algorithm
   (_, builtin_p) := FBuiltin.getInitialFunctions();
   scode_p := listAppend(builtin_p, SymbolTable.getSCode());
@@ -3415,7 +3386,7 @@ algorithm
     scode_p := listAppend(scode_p, graphic_p);
   end if;
 
-  (flatModel, functions) := NFInst.instClassInProgram(className, scode_p);
+  (flatModel, functions, flatString) := NFInst.instClassInProgram(className, scode_p, dumpFlat);
 end runFrontEndWorkNF;
 
 protected function translateModel " author: x02lucpo
@@ -5493,7 +5464,7 @@ algorithm
 
     case(cache,_,{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(templateFile),Values.BOOL(showFlatModelica)},_)
       equation
-        (cache,env,SOME(dae)) = runFrontEnd(cache,inEnv,className,false);
+        (cache,env,SOME(dae),_) = runFrontEnd(cache,inEnv,className,false);
         //print("instantiated class\n");
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
         funcs = FCore.getFunctionTree(cache);
@@ -8511,22 +8482,16 @@ algorithm
       then
         "";
 
-    case () guard Config.flatModelica()
-      algorithm
-        ExecStat.execStatReset();
-        (flat_model, funcs) := runFrontEndNF(path);
-        str := NFFlatModel.toFlatString(flat_model, NFFlatten.FunctionTree.listValues(funcs));
-        ExecStat.execStat("FlatModel.toFlatString");
-      then
-        str;
-
     case ()
       algorithm
         ExecStat.execStatReset();
-        (cache, _, odae) := runFrontEnd(cache, env, path, relaxedFrontEnd = true);
+        (cache, _, odae, str) := runFrontEnd(cache, env, path, relaxedFrontEnd = true,
+          dumpFlat = Config.flatModelica() and not Config.silent());
         ExecStat.execStat("runFrontEnd");
 
-        if isNone(odae) then
+        if not stringEmpty(str) then
+          // str already contains flat model.
+        elseif isNone(odae) then
           str := "";
         elseif Config.silent() then
           str := "model " + AbsynUtil.pathString(path) + "\n  /* Silent mode */\nend" +

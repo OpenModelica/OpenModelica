@@ -435,7 +435,7 @@ algorithm
         execStat("Parsed file");
 
         // Instantiate the program.
-        (cache, env, d, cname) := instantiate();
+        (cache, env, d, cname, s) := instantiate();
         p := SymbolTable.getAbsyn();
 
         d := if Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP) then DAEUtil.transformationsBeforeBackend(cache,env,d) else d;
@@ -444,8 +444,10 @@ algorithm
 
         Print.clearBuf();
         execStat("Transformations before Dump");
-        s := if Config.silent() or Config.flatModelica() then "" else DAEDump.dumpStr(d, funcs);
-        execStat("DAEDump done");
+        if stringEmpty(s) and not Config.silent() then
+          s := DAEDump.dumpStr(d, funcs);
+          execStat("DAEDump done");
+        end if;
         Print.printBuf(s);
         if Flags.isSet(Flags.DAE_DUMP_GRAPHV) then
           DAEDump.dumpGraphviz(d);
@@ -523,6 +525,7 @@ protected function instantiate
   output FCore.Graph env;
   output DAE.DAElist dae;
   output Absyn.Path cname;
+  output String flatString;
 protected
   String cls;
 algorithm
@@ -530,8 +533,9 @@ algorithm
   // If no class was explicitly specified, instantiate the last class in the
   // program. Otherwise, instantiate the given class name.
   cname := if stringEmpty(cls) then AbsynUtil.lastClassname(SymbolTable.getAbsyn()) else AbsynUtil.stringPath(cls);
-  (cache, env, SOME(dae)) := CevalScriptBackend.runFrontEnd(FCore.emptyCache(),
-    FGraph.empty(), cname, relaxedFrontEnd = true, dumpFlat = Config.flatModelica());
+  (cache, env, SOME(dae), flatString) := CevalScriptBackend.runFrontEnd(FCore.emptyCache(),
+    FGraph.empty(), cname, relaxedFrontEnd = true,
+    dumpFlat = Config.flatModelica() and not Config.silent());
 end instantiate;
 
 protected function optimizeDae

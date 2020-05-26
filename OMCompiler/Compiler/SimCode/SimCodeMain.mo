@@ -1097,7 +1097,7 @@ algorithm
       // calculate stuff that we need to create SimCode data structure
       System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
       ExecStat.execStatReset();
-      (outCache, graph, SOME(dae)) := CevalScriptBackend.runFrontEnd(inCache, inEnv, className, false);
+      (outCache, graph, SOME(dae), _) := CevalScriptBackend.runFrontEnd(inCache, inEnv, className, false);
       ExecStat.execStat("FrontEnd");
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then

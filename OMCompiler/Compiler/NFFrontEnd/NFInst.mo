@@ -110,8 +110,10 @@ function instClassInProgram
    a DAE."
   input Absyn.Path classPath;
   input SCode.Program program;
+  input Boolean dumpFlat = false;
   output FlatModel flatModel;
   output FunctionTree functions;
+  output String flatString "The flat model as a string if dumpFlat = true.";
 protected
   InstNode top, cls, inst_cls;
   String name;
@@ -174,6 +176,10 @@ algorithm
   // (e.g. because they where used with non-constant subscripts), and add them
   // to the model.
   flatModel := Package.collectConstants(flatModel, functions);
+
+  // Dump the flat model to a stream if dumpFlat = true.
+  flatString := if dumpFlat then
+    FlatModel.toFlatString(flatModel, FunctionTree.listValues(functions)) else "";
 
   // Scalarize array components in the flat model.
   if Flags.isSet(Flags.NF_SCALARIZE) then
