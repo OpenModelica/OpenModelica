@@ -391,6 +391,7 @@ algorithm
   end if;
 
   cls_node := InstNode.classScope(exp_node);
+  cls_node := InstNode.clone(cls_node);
   cls := InstNode.getClass(cls_node);
   cls_tree := Class.classTree(cls);
 
@@ -418,7 +419,6 @@ algorithm
         ElementSource.getInfo(c.source));
       vars := var :: vars;
     else
-      comp_node := ClassTree.lookupElement(InstNode.name(node), cls_tree);
       comp_node := InstNode.resolveInner(comp_node);
 
       if InstNode.isComponent(comp_node) then
