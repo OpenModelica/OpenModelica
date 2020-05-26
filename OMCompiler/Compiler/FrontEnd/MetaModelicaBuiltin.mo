@@ -387,6 +387,14 @@ algorithm
   annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end realAbs;
 
+function realAlmostEq
+  input Real a;
+  input Real b;
+  input Real absTol = 1e-6;
+  output Boolean c = realGt(absTol, realAbs(a-b));
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
+end realAlmostEq;
+
 function realNeg
   input Real x;
   output Real y;

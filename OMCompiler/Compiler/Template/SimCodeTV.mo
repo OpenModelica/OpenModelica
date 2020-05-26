@@ -97,6 +97,13 @@ package builtin
     output Boolean c;
   end realEq;
 
+  function realAlmostEq
+    input Real a;
+    input Real b;
+    input Real absTol;
+    output Boolean c;
+  end realAlmostEq;
+
   function intNe
     input Integer a;
     input Integer b;
