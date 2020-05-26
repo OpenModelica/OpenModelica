@@ -77,6 +77,7 @@ MatchShadowing.mo \
 OptimizeContinue.mo \
 OptimizeMatchToIfExp.mo \
 OptionInteractive.mos \
+PackageConst1.mos \
 PartialFn1.mo \
 PartialFn2.mo \
 PartialFn3.mos \
@@ -133,7 +134,8 @@ Uniontype14.mos \
 Uniontype15.mos \
 UniontypeFunc1.mos \
 UniontypeConst1.mos \
-UniontypeConst2.mos
+UniontypeConst2.mos \
+UniontypeConst3.mos \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=
