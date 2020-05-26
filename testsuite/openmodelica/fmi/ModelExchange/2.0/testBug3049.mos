@@ -107,7 +107,7 @@ readFile("modelDescription.tmp.xml");
 //   </ModelExchange>
 //   <UnitDefinitions>
 //     <Unit name =\"Pa\">
-//       <BaseUnit  m=\"-1\" s=\"-2\" kg=\"1\" factor=\"1000.0\"/>
+//       <BaseUnit  m=\"-1\" s=\"-2\" kg=\"1\"/>
 //     </Unit>
 //   </UnitDefinitions>
 //   <LogCategories>

@@ -9153,10 +9153,10 @@ public function transformUnitToBaseUnit
   output SimCode.BaseUnit baseUnit;
 protected
   Integer mol, cd, m, s, A, K, kg;
-  Real factors;
+  Real factor;
 algorithm
-  Unit.UNIT(factors, mol, cd, m, s, A, K, kg) := unit;
-  baseUnit := SimCode.BASEUNIT(mol, cd, m, s, A, K, kg, factors, 0.0);
+  Unit.UNIT(factor, mol, cd, m, s, A, K, kg) := unit;
+  baseUnit := SimCode.BASEUNIT(mol, cd, m, s, A, K, kg, factor*10^(-3*kg), 0.0);
 end transformUnitToBaseUnit;
 
 public function createCrefToSimVarHT "author: unknown and marcusw
