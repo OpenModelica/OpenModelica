@@ -91,6 +91,12 @@ package builtin
     output Boolean c;
   end intEq;
 
+  function realEq
+    input Real a;
+    input Real b;
+    output Boolean c;
+  end realEq;
+
   function intNe
     input Integer a;
     input Integer b;
