@@ -15,6 +15,7 @@ function runFrontEnd
   output FCore.Cache cache;
   output FCore.Graph env;
   output Option<DAE.DAElist> dae;
+  output String flatString;
 algorithm
   assert(false, getInstanceName());
 end runFrontEnd;
