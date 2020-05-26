@@ -3805,7 +3805,10 @@ algorithm
     if isWindows then
       configureLogFile := "\""+configureLogFile+"\"";
     end if;
-    configureFMU(platform, fmutmp, configureLogFile, isWindows);
+    // do not create static.log in resource directory when --fmiFilter=blackBox
+    if not Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
+      configureFMU(platform, fmutmp, configureLogFile, isWindows);
+    end if;
     ExecStat.execStat("buildModelFMU: Generate platform " + platform);
   end for;
 

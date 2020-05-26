@@ -745,8 +745,11 @@ algorithm
             fail();
           end if;
         else
-          if 0 <> System.systemCall("mv '"+simCode.fileNamePrefix+"_info.json"+"' '" + fmutmp+"/resources/" + "'") then
-            Error.addInternalError("Failed to info.json file", sourceInfo());
+          // check for _info.json file in resource directory  when --fmiFilter=blackBox is not set
+          if not Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
+            if 0 <> System.systemCall("mv '"+simCode.fileNamePrefix+"_info.json"+"' '" + fmutmp+"/resources/" + "'") then
+              Error.addInternalError("Failed to info.json file", sourceInfo());
+            end if;
           end if;
         end if;
         SimCodeUtil.resetFunctionIndex();
