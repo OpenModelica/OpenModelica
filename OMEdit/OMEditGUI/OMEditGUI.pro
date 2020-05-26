@@ -36,6 +36,8 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 TARGET = OMEdit
 TEMPLATE = app
 
+PRE_TARGETDEPS += ../bin/libOMEdit.a
+
 LIBS += -L../bin -lOMEdit
 
 OMEDIT_ROOT = ../
