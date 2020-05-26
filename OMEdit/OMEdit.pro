@@ -30,8 +30,6 @@
 
 TEMPLATE = subdirs
 
-CONFIG += ordered
-
 SUBDIRS = OMEditLIB \
   OMEditGUI
 
