@@ -65,6 +65,7 @@ case SIMCODE(__) then
     <%fmiModelDescriptionAttributes(simCode,guid)%>>
     <%if isFMIMEType(FMUType) then ModelExchange(simCode, sourceFiles)%>
     <%if isFMICSType(FMUType) then CoSimulation(simCode, sourceFiles)%>
+    <%UnitDefinitions(simCode)%>
     <%fmiTypeDefinitions(simCode, "2.0")%>
     <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then
     <<

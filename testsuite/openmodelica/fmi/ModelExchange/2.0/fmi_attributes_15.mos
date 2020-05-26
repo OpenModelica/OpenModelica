@@ -1,65 +1,62 @@
-// name:  testBug3049
+// name: fmi_attributes_15.mos
 // keywords: FMI 2.0 export
 // status: correct
-// teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml test_Bug3049* output.log
-//
+// teardown_command: rm -rf fmi_attributes_15.fmu fmi_attributes_15.log fmi_attributes_15_tmp.xml fmi_attributes_15.fmutmp/
 
-loadModel(Modelica);
 loadString("
-model test_Bug3049
-   output Modelica.SIunits.AbsolutePressure p1 = 1e5;
-   output Modelica.Media.Water.StandardWater.AbsolutePressure p2 = 2e5;
-   output Modelica.SIunits.AbsolutePressure p3(nominal = 1e7) = 1e5;
-end test_Bug3049;
-");
-getErrorString();
+model fmi_attributes_15
+  Real x(unit = \"kg2\");
+equation
+  x=10;
+end fmi_attributes_15;
+"); getErrorString();
 
-translateModelFMU(test_Bug3049, version="2.0");
-getErrorString();
+translateModelFMU(fmi_attributes_15); getErrorString();
 
 // unzip to console, quiet, extra quiet
-system("unzip -cqq test_Bug3049.fmu modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > modelDescription.tmp.xml");
-readFile("modelDescription.tmp.xml");
+system("unzip -cqq fmi_attributes_15.fmu modelDescription.xml | grep -v guid | grep -v generationDateAndTime | grep -v generationTool > fmi_attributes_15_tmp.xml"); getErrorString();
+readFile("fmi_attributes_15_tmp.xml")
+
 
 // Result:
 // true
-// true
 // ""
-// "test_Bug3049.fmu"
+// "fmi_attributes_15.fmu"
 // ""
 // 0
+// ""
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <fmiModelDescription
 //   fmiVersion=\"2.0\"
-//   modelName=\"test_Bug3049\"
+//   modelName=\"fmi_attributes_15\"
 //   description=\"\"
 //   variableNamingConvention=\"structured\"
 //   numberOfEventIndicators=\"0\">
 //   <ModelExchange
-//     modelIdentifier=\"test_Bug3049\">
+//     modelIdentifier=\"fmi_attributes_15\">
 //     <SourceFiles>
-//       <File name=\"test_Bug3049.c\" />
-//       <File name=\"test_Bug3049_functions.c\" />
-//       <File name=\"test_Bug3049_records.c\" />
-//       <File name=\"test_Bug3049_01exo.c\" />
-//       <File name=\"test_Bug3049_02nls.c\" />
-//       <File name=\"test_Bug3049_03lsy.c\" />
-//       <File name=\"test_Bug3049_04set.c\" />
-//       <File name=\"test_Bug3049_05evt.c\" />
-//       <File name=\"test_Bug3049_06inz.c\" />
-//       <File name=\"test_Bug3049_07dly.c\" />
-//       <File name=\"test_Bug3049_08bnd.c\" />
-//       <File name=\"test_Bug3049_09alg.c\" />
-//       <File name=\"test_Bug3049_10asr.c\" />
-//       <File name=\"test_Bug3049_11mix.c\" />
-//       <File name=\"test_Bug3049_12jac.c\" />
-//       <File name=\"test_Bug3049_13opt.c\" />
-//       <File name=\"test_Bug3049_14lnz.c\" />
-//       <File name=\"test_Bug3049_15syn.c\" />
-//       <File name=\"test_Bug3049_16dae.c\" />
-//       <File name=\"test_Bug3049_17inl.c\" />
-//       <File name=\"test_Bug3049_init_fmu.c\" />
-//       <File name=\"test_Bug3049_FMU.c\" />
+//       <File name=\"fmi_attributes_15.c\" />
+//       <File name=\"fmi_attributes_15_functions.c\" />
+//       <File name=\"fmi_attributes_15_records.c\" />
+//       <File name=\"fmi_attributes_15_01exo.c\" />
+//       <File name=\"fmi_attributes_15_02nls.c\" />
+//       <File name=\"fmi_attributes_15_03lsy.c\" />
+//       <File name=\"fmi_attributes_15_04set.c\" />
+//       <File name=\"fmi_attributes_15_05evt.c\" />
+//       <File name=\"fmi_attributes_15_06inz.c\" />
+//       <File name=\"fmi_attributes_15_07dly.c\" />
+//       <File name=\"fmi_attributes_15_08bnd.c\" />
+//       <File name=\"fmi_attributes_15_09alg.c\" />
+//       <File name=\"fmi_attributes_15_10asr.c\" />
+//       <File name=\"fmi_attributes_15_11mix.c\" />
+//       <File name=\"fmi_attributes_15_12jac.c\" />
+//       <File name=\"fmi_attributes_15_13opt.c\" />
+//       <File name=\"fmi_attributes_15_14lnz.c\" />
+//       <File name=\"fmi_attributes_15_15syn.c\" />
+//       <File name=\"fmi_attributes_15_16dae.c\" />
+//       <File name=\"fmi_attributes_15_17inl.c\" />
+//       <File name=\"fmi_attributes_15_init_fmu.c\" />
+//       <File name=\"fmi_attributes_15_FMU.c\" />
 //       <File name=\"./util/read_matlab4.c\" />
 //       <File name=\"./util/read_csv.c\" />
 //       <File name=\"./util/libcsv.c\" />
@@ -106,8 +103,8 @@ readFile("modelDescription.tmp.xml");
 //     </SourceFiles>
 //   </ModelExchange>
 //   <UnitDefinitions>
-//     <Unit name =\"Pa\">
-//       <BaseUnit  m=\"-1\" s=\"-2\" kg=\"1\"/>
+//     <Unit name =\"kg2\">
+//       <BaseUnit  kg=\"2\"/>
 //     </Unit>
 //   </UnitDefinitions>
 //   <LogCategories>
@@ -127,40 +124,13 @@ readFile("modelDescription.tmp.xml");
 //   <ModelVariables>
 //   <!-- Index of variable = \"1\" -->
 //   <ScalarVariable
-//     name=\"p1\"
-//     valueReference=\"3\"
-//     causality=\"output\"
-//     >
-//     <Real min=\"0.0\" nominal=\"100000.0\" unit=\"Pa\"/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"2\" -->
-//   <ScalarVariable
-//     name=\"p2\"
-//     valueReference=\"4\"
-//     causality=\"output\"
-//     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
-//   </ScalarVariable>
-//   <!-- Index of variable = \"3\" -->
-//   <ScalarVariable
-//     name=\"p3\"
-//     valueReference=\"5\"
-//     causality=\"output\"
-//     >
-//     <Real min=\"0.0\" nominal=\"10000000.0\" unit=\"Pa\"/>
+//     name=\"x\"
+//     valueReference=\"0\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\" unit=\"kg2\"/>
 //   </ScalarVariable>
 //   </ModelVariables>
 //   <ModelStructure>
-//     <Outputs>
-//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"3\" dependencies=\"\" dependenciesKind=\"\" />
-//     </Outputs>
-//     <InitialUnknowns>
-//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"3\" dependencies=\"\" dependenciesKind=\"\" />
-//     </InitialUnknowns>
 //   </ModelStructure>
 // </fmiModelDescription>
 // "

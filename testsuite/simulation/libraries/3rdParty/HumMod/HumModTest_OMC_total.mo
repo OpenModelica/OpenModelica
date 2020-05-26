@@ -168,7 +168,7 @@ end VascularElasticBloodCompartment;
 
 model LungBloodFlow
 Physiolibrary.Interfaces.RealInput_ CardiacOutput;
-parameter Real BasicRLShuntPercentage(final unit = "%") = 2 "basic percentage of total blood flow not exposed to lung air";
+parameter Real BasicRLShuntPercentage = 2 "basic percentage of total blood flow not exposed to lung air";
 parameter Real RightHemithorax_Pressure(final unit = "mmHg") = -4;
 parameter Real LeftHemithorax_Pressure(final unit = "mmHg") = -4;
 Real PressureGradientRightLeft(final unit = "mmHg") "difference between right and left hemithorax pressure";
@@ -8504,14 +8504,14 @@ y = k;
 end Constant;
 
 block FractConstant  "Generate constant signal in part from 1"
-parameter Real k(start = 1, final unit = "%") "Part in percent";
+parameter Real k(start = 1) "Part in percent";
 Physiolibrary.Interfaces.RealOutput_ y(final unit = "1") "Connector of Real output signal";
 equation
 y = k / 100;
 end FractConstant;
 
 block Fract2Constant  "Generate constant signal y as part on interval <0,1> and signal 1-y"
-parameter Real k(start = 1, final unit = "%") "Part in percent";
+parameter Real k(start = 1) "Part in percent";
 Physiolibrary.Interfaces.RealOutput_ y(final unit = "1") "Connector of Real output signal";
 Physiolibrary.Interfaces.RealOutput_ y2(final unit = "1") "Connector of Real output signal";
 equation
@@ -9127,7 +9127,7 @@ end SimpleReaction2;
 
 model UnlimitedStorage
 Physiolibrary.ConcentrationFlow.NegativeConcentrationFlow q_out;
-parameter Real concentration(final unit = "%");
+parameter Real concentration;
 equation
 q_out.conc = 0.01 * concentration;
 end UnlimitedStorage;
