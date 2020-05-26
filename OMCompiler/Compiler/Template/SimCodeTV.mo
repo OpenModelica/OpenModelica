@@ -97,16 +97,12 @@ package builtin
     output Boolean c;
   end realEq;
 
-  function realGt
-    input Real x1;
-    input Real x2;
-    output Boolean b;
-  end realGt;
-
-  function realAbs
-    input Real x;
-    output Real y;
-  end realAbs;
+  function realAlmostEq
+    input Real a;
+    input Real b;
+    input Real absTol;
+    output Boolean c;
+  end realAlmostEq;
 
   function intNe
     input Integer a;
@@ -184,12 +180,6 @@ package builtin
     input Real y;
     output Real z;
   end realDiv;
-
-  function realSub
-    input Real r1;
-    input Real r2;
-    output Real r;
-  end realSub;
 
   function stringLength
     input String str;
