@@ -712,8 +712,9 @@ case (BASEUNIT(mol = mol, cd = cd, m = m, s = s, A = A, K = K, kg = kg, factor =
   let K_Value = if not intEq(K, 0) then ' K="<% K %>"' else ""
   let kg_Value = if not intEq(kg, 0) then ' kg="<% kg %>"' else ""
   let factor_Value = if not intEq(realInt(factor), 1) then ' factor="<% factor %>"' else ""
+  let offset_Value = if not intEq(realInt(offset), 0) then ' offset="<% offset %>"' else ""
   <<
-  <%mol_Value%><%cd_Value%><%m_Value%><%s_Value%><%A_Value%><%K_Value%><%kg_Value%><%factor_Value%>
+  <%mol_Value%><%cd_Value%><%m_Value%><%s_Value%><%A_Value%><%K_Value%><%kg_Value%><%factor_Value%><%offset_Value%>
   >>
 end baseUnitAttributes;
 
