@@ -1409,7 +1409,8 @@ end addNomod;
 
 public function sortElementList
   "Sorts constants and parameters by dependencies, so that they are instantiated
-  before they are used."
+  before they are used.
+  For MetaModelica we just check for cycles. We do not do reordering"
   input output list<Element> inElements;
   input FCore.Graph inEnv;
   input Boolean isFunctionScope;
@@ -1419,16 +1420,14 @@ protected
   list<tuple<Element, list<Element>>> cycles;
   list<tuple<Element, list<Element>>> g;
 algorithm
-  // no sorting for meta-modelica!
+  // sort the elements according to the dependencies
+  g := Graph.buildGraph(inElements, getElementDependencies, (inElements,isFunctionScope));
+  (outE, cycles) := Graph.topologicalSort(g, isElementEqual);
   if not Config.acceptMetaModelicaGrammar() then
-    // sort the elements according to the dependencies
-    g := Graph.buildGraph(inElements, getElementDependencies, (inElements,isFunctionScope));
-    (outE, cycles) := Graph.topologicalSort(g, isElementEqual);
-    // printGraph(inEnv, g, outE, cycles);
     // append the elements in the cycles as they might not actually be cycles, but they depend on elements not in the list (i.e. package constants, etc)!
     inElements := listAppend(outE, List.map(cycles, Util.tuple21));
-    checkCyclicalComponents(cycles, inEnv);
   end if;
+  checkCyclicalComponents(cycles, inEnv);
 end sortElementList;
 
 protected function printGraph

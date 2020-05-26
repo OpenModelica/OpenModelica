@@ -1,0 +1,24 @@
+// name:     UniontypeConst3
+// keywords: uniontype const recursion
+// status:   correct
+// cflags:   -g=MetaModelica -d=gen
+//
+// Tests self recursive constants inside of uniontypes.
+//
+
+loadFile("UniontypeConst3.mo"); getErrorString();
+test(); getErrorString();
+
+// Result:
+// true
+// ""
+//
+//"Error: Cyclically dependent constants or parameters found in scope UT: {CONST2,CONST1} (ignore with -d=ignoreCycles).
+//[metamodelica/meta/UniontypeConst3.mo:14:3-14:14:writable] Error: Class UT.f not found in scope test (looking for a function or record).
+//Error: Cyclically dependent constants or parameters found in scope UT: {CONST2,CONST1} (ignore with -d=ignoreCycles).
+//[metamodelica/meta/UniontypeConst3.mo:14:3-14:14:writable] Error: Class UT.f not found in scope test (looking for a function or record).
+//Error: Cyclically dependent constants or parameters found in scope UT: {CONST2,CONST1} (ignore with -d=ignoreCycles).
+//[metamodelica/meta/UniontypeConst3.mo:14:3-14:14:writable] Error: Class UT.f not found in scope test (looking for a function or record).
+//"
+
+// endResult

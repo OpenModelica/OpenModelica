@@ -1,0 +1,24 @@
+// name:     PackageConst1
+// keywords: package const recursion
+// status:   correct
+// cflags:   -g=MetaModelica -d=gen
+//
+// Tests self recursive constants inside of packages
+//
+
+loadFile("PackageConst1.mo"); getErrorString();
+test(); getErrorString();
+
+// Result:
+// true
+// ""
+//
+// "Error: Cyclically dependent constants or parameters found in scope PKT: {CONST2,CONST1} (ignore with -d=ignoreCycles).
+// [metamodelica/meta/PackageConst1.mo:14:3-14:15:writable] Error: Class PKT.f not found in scope test (looking for a function or record).
+// Error: Cyclically dependent constants or parameters found in scope PKT: {CONST2,CONST1} (ignore with -d=ignoreCycles).
+// [metamodelica/meta/PackageConst1.mo:14:3-14:15:writable] Error: Class PKT.f not found in scope test (looking for a function or record).
+// Error: Cyclically dependent constants or parameters found in scope PKT: {CONST2,CONST1} (ignore with -d=ignoreCycles).
+// [metamodelica/meta/PackageConst1.mo:14:3-14:15:writable] Error: Class PKT.f not found in scope test (looking for a function or record).
+// "
+
+// endResult
