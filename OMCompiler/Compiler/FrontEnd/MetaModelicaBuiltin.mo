@@ -391,7 +391,9 @@ function realAlmostEq
   input Real a;
   input Real b;
   input Real absTol = 1e-6;
-  output Boolean c = absTol > abs(a-b);
+  output Boolean c;
+algorithm
+  c := absTol > abs(a-b);
   annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end realAlmostEq;
 
