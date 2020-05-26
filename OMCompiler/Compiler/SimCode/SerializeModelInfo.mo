@@ -83,7 +83,7 @@ algorithm
           fileName = code.fileNamePrefix + "_info.json";
         end if;
         /* do not create the _info.json file in resource directory when blackBox option is set */
-        if not Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
+        if intLt(Flags.getConfigEnum(Flags.FMI_FILTER), Flags.FMI_BLACKBOX) then
           File.open(file,fileName,File.Mode.Write);
           File.write(file, "{\"format\":\"Transformational debugger info\",\"version\":1,\n\"info\":{\"name\":");
           serializePath(file, mi.name);

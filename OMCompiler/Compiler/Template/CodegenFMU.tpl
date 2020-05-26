@@ -1166,9 +1166,9 @@ match platform
   <%\t%>$(LD) -o <%modelNamePrefix%>$(DLLEXT) $(OFILES) $(RUNTIMEFILES) <%dirExtra%> <%libsPos1%> @BSTATIC@ <%libsPos2%> @BDYNAMIC@ $(LDFLAGS)
   <%\t%>cp <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>_FMU.libs ../binaries/$(FMIPLATFORM)/
   endif
-  if not Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
-  <%\t%>head -n20 Makefile > ../resources/$(FMIPLATFORM).summary
-  endif
+  <%if intLt(Flags.getConfigEnum(Flags.FMI_FILTER), 4) then
+  '<%\t%>head -n20 Makefile > ../resources/$(FMIPLATFORM).summary'
+   %>
   ifeq (@LIBTYPE_STATIC@,1)
   <%\t%>rm -f <%modelNamePrefix%>.a
   <%\t%>$(AR) -rsu <%modelNamePrefix%>.a $(OFILES) $(RUNTIMEFILES)
