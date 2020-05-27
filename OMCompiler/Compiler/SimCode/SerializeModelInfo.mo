@@ -82,36 +82,33 @@ algorithm
         else
           fileName = code.fileNamePrefix + "_info.json";
         end if;
-        /* do not create the _info.json file in resource directory when blackBox option is set */
-        if intLt(Flags.getConfigEnum(Flags.FMI_FILTER), Flags.FMI_BLACKBOX) then
-          File.open(file,fileName,File.Mode.Write);
-          File.write(file, "{\"format\":\"Transformational debugger info\",\"version\":1,\n\"info\":{\"name\":");
-          serializePath(file, mi.name);
-          File.write(file, ",\"description\":\"");
-          File.writeEscape(file, mi.description, escape=JSON);
-          File.write(file, "\"},\n\"variables\":{\n");
-          serializeVars(file,vars,withOperations);
-          File.write(file, "\n},\n\"equations\":[");
-          // Handle no comma for the first equation
-          File.write(file,"{\"eqIndex\":0,\"tag\":\"dummy\"}");
-          min(serializeEquation(file,eq,"initial",withOperations) for eq in SimCodeUtil.sortEqSystems(code.initialEquations));
-          min(serializeEquation(file,eq,"initial-lambda0",withOperations) for eq in SimCodeUtil.sortEqSystems(code.initialEquations_lambda0));
-          min(serializeEquation(file,eq,"removed-initial",withOperations) for eq in SimCodeUtil.sortEqSystems(code.removedInitialEquations));
-          min(serializeEquation(file,eq,"regular",withOperations) for eq in SimCodeUtil.sortEqSystems(code.allEquations));
-          min(serializeEquation(file,eq,"synchronous",withOperations) for eq in SimCodeUtil.sortEqSystems(SimCodeUtil.getClockedEquations(SimCodeUtil.getSubPartitions(code.clockedPartitions))));
-          min(serializeEquation(file,eq,"start",withOperations) for eq in SimCodeUtil.sortEqSystems(code.startValueEquations));
-          min(serializeEquation(file,eq,"nominal",withOperations) for eq in SimCodeUtil.sortEqSystems(code.nominalValueEquations));
-          min(serializeEquation(file,eq,"min",withOperations) for eq in SimCodeUtil.sortEqSystems(code.minValueEquations));
-          min(serializeEquation(file,eq,"max",withOperations) for eq in SimCodeUtil.sortEqSystems(code.maxValueEquations));
-          min(serializeEquation(file,eq,"parameter",withOperations) for eq in SimCodeUtil.sortEqSystems(code.parameterEquations));
-          min(serializeEquation(file,eq,"assertions",withOperations) for eq in SimCodeUtil.sortEqSystems(code.algorithmAndEquationAsserts));
-          min(serializeEquation(file,eq,"inline",withOperations) for eq in SimCodeUtil.sortEqSystems(code.inlineEquations));
-          min(serializeEquation(file,eq,"residuals",withOperations) for eq in SimCodeUtil.sortEqSystems(List.flatten(SimCodeUtil.getSimCodeDAEModeDataEqns(code.daeModeData))));
-          min(serializeEquation(file,eq,"jacobian",withOperations) for eq in SimCodeUtil.sortEqSystems(code.jacobianEquations));
-          File.write(file, "\n],\n\"functions\":[");
-          serializeList(file,mi.functions,serializeFunction);
-          File.write(file, "\n]\n}");
-        end if;
+        File.open(file,fileName,File.Mode.Write);
+        File.write(file, "{\"format\":\"Transformational debugger info\",\"version\":1,\n\"info\":{\"name\":");
+        serializePath(file, mi.name);
+        File.write(file, ",\"description\":\"");
+        File.writeEscape(file, mi.description, escape=JSON);
+        File.write(file, "\"},\n\"variables\":{\n");
+        serializeVars(file,vars,withOperations);
+        File.write(file, "\n},\n\"equations\":[");
+        // Handle no comma for the first equation
+        File.write(file,"{\"eqIndex\":0,\"tag\":\"dummy\"}");
+        min(serializeEquation(file,eq,"initial",withOperations) for eq in SimCodeUtil.sortEqSystems(code.initialEquations));
+        min(serializeEquation(file,eq,"initial-lambda0",withOperations) for eq in SimCodeUtil.sortEqSystems(code.initialEquations_lambda0));
+        min(serializeEquation(file,eq,"removed-initial",withOperations) for eq in SimCodeUtil.sortEqSystems(code.removedInitialEquations));
+        min(serializeEquation(file,eq,"regular",withOperations) for eq in SimCodeUtil.sortEqSystems(code.allEquations));
+        min(serializeEquation(file,eq,"synchronous",withOperations) for eq in SimCodeUtil.sortEqSystems(SimCodeUtil.getClockedEquations(SimCodeUtil.getSubPartitions(code.clockedPartitions))));
+        min(serializeEquation(file,eq,"start",withOperations) for eq in SimCodeUtil.sortEqSystems(code.startValueEquations));
+        min(serializeEquation(file,eq,"nominal",withOperations) for eq in SimCodeUtil.sortEqSystems(code.nominalValueEquations));
+        min(serializeEquation(file,eq,"min",withOperations) for eq in SimCodeUtil.sortEqSystems(code.minValueEquations));
+        min(serializeEquation(file,eq,"max",withOperations) for eq in SimCodeUtil.sortEqSystems(code.maxValueEquations));
+        min(serializeEquation(file,eq,"parameter",withOperations) for eq in SimCodeUtil.sortEqSystems(code.parameterEquations));
+        min(serializeEquation(file,eq,"assertions",withOperations) for eq in SimCodeUtil.sortEqSystems(code.algorithmAndEquationAsserts));
+        min(serializeEquation(file,eq,"inline",withOperations) for eq in SimCodeUtil.sortEqSystems(code.inlineEquations));
+        min(serializeEquation(file,eq,"residuals",withOperations) for eq in SimCodeUtil.sortEqSystems(List.flatten(SimCodeUtil.getSimCodeDAEModeDataEqns(code.daeModeData))));
+        min(serializeEquation(file,eq,"jacobian",withOperations) for eq in SimCodeUtil.sortEqSystems(code.jacobianEquations));
+        File.write(file, "\n],\n\"functions\":[");
+        serializeList(file,mi.functions,serializeFunction);
+        File.write(file, "\n]\n}");
       then (true,fileName);
     else
       equation
