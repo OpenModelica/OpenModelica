@@ -485,6 +485,7 @@ public
     cref := match (srcCref, dstCref)
       case (EMPTY(), _) then dstCref;
       case (_, EMPTY()) then dstCref;
+      case (_, WILD()) then dstCref;
       case (_, CREF(origin = Origin.ITERATOR)) then dstCref;
 
       case (CREF(), CREF(origin = Origin.CREF))

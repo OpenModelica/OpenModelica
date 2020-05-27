@@ -534,6 +534,7 @@ FunctionMultiOutput1.mo \
 FunctionMultiOutput2.mo \
 FunctionMultiOutput3.mo \
 FunctionMultiOutput4.mo \
+FunctionMultiOutput5.mo \
 FunctionNoOutput1.mo \
 FunctionNonInputOutputParameter.mo \
 FunctionRecordArg1.mo \
