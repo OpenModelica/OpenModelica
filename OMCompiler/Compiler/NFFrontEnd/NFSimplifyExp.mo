@@ -718,7 +718,8 @@ protected
 algorithm
   Expression.SUBSCRIPTED_EXP(e, subs, ty) := subscriptedExp;
   subscriptedExp := simplify(e);
-  subscriptedExp := Expression.applySubscripts(list(Subscript.simplify(s) for s in subs), subscriptedExp);
+  subs := Subscript.simplifyList(subs, Type.arrayDims(Expression.typeOf(e)));
+  subscriptedExp := Expression.applySubscripts(subs, subscriptedExp);
 end simplifySubscriptedExp;
 
 function simplifyTupleElement

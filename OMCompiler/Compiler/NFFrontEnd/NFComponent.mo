@@ -50,6 +50,7 @@ import Prefixes = NFPrefixes;
 import SCodeUtil;
 import Restriction = NFRestriction;
 import Component = NFComponent;
+import IOStream;
 
 public
   constant Attributes DEFAULT_ATTR =
@@ -155,14 +156,22 @@ public
              Prefixes.unparseDirection(attr.direction);
     end toString;
 
-    function toFlatString
+    function toFlatStream
       input Attributes attr;
       input Type ty;
-      output String str;
+      input output IOStream.IOStream s;
+      input Boolean isTopLevel = true;
     algorithm
-      str := Prefixes.unparseVariability(attr.variability, ty) +
-             Prefixes.unparseDirection(attr.direction);
-    end toFlatString;
+      if attr.isFinal then
+        s := IOStream.append(s, "final ");
+      end if;
+
+      s := IOStream.append(s, Prefixes.unparseVariability(attr.variability, ty));
+
+      if isTopLevel then
+        s := IOStream.append(s, Prefixes.unparseDirection(attr.direction));
+      end if;
+    end toFlatStream;
   end Attributes;
 
   record COMPONENT_DEF
@@ -851,23 +860,92 @@ public
     end match;
   end toString;
 
+  function toFlatStream
+    input String name;
+    input Component component;
+    input output IOStream.IOStream s;
+  protected
+    list<tuple<String, Binding>> ty_attrs;
+  algorithm
+    () := match component
+      case TYPED_COMPONENT()
+        algorithm
+          s := Attributes.toFlatStream(component.attributes, component.ty, s);
+          s := IOStream.append(s, Type.toFlatString(component.ty));
+          s := IOStream.append(s, " '");
+          s := IOStream.append(s, name);
+          s := IOStream.append(s, "'");
+
+          ty_attrs := list((Modifier.name(a), Modifier.binding(a)) for a in
+            Class.getTypeAttributes(InstNode.getClass(component.classInst)));
+          s := typeAttrsToFlatStream(ty_attrs, component.ty, s);
+
+          s := IOStream.append(s, Binding.toFlatString(component.binding, " = "));
+        then
+          ();
+
+      case TYPE_ATTRIBUTE()
+        algorithm
+          s := IOStream.append(s, name);
+          s := IOStream.append(s, Modifier.toFlatString(component.modifier, printName = false));
+        then
+          ();
+    end match;
+  end toFlatStream;
+
+  function typeAttrsToFlatStream
+    input list<tuple<String, Binding>> typeAttrs;
+    input Type componentType;
+    input output IOStream.IOStream s;
+  protected
+    Integer var_dims, binding_dims;
+    list<tuple<String, Binding>> ty_attrs = typeAttrs;
+    String name;
+    Binding binding;
+    Expression bind_exp;
+  algorithm
+    if listEmpty(ty_attrs) then
+      return;
+    end if;
+
+    s := IOStream.append(s, "(");
+    var_dims := Type.dimensionCount(componentType);
+
+    while true loop
+      (name, binding) := listHead(ty_attrs);
+      bind_exp := Expression.getBindingExp(Binding.getExp(binding));
+      binding_dims := Type.dimensionCount(Expression.typeOf(bind_exp));
+
+      if var_dims > binding_dims then
+        s := IOStream.append(s, "each ");
+      end if;
+
+      s := IOStream.append(s, name);
+      s := IOStream.append(s, " = ");
+      s := IOStream.append(s, Binding.toFlatString(binding));
+
+      ty_attrs := listRest(ty_attrs);
+      if listEmpty(ty_attrs) then
+        break;
+      else
+        s := IOStream.append(s, ", ");
+      end if;
+    end while;
+
+    s := IOStream.append(s, ")");
+  end typeAttrsToFlatStream;
+
   function toFlatString
     input String name;
     input Component component;
     output String str;
+  protected
+    IOStream.IOStream s;
   algorithm
-    str := match component
-      local
-        SCode.Element def;
-
-      case TYPED_COMPONENT()
-        then Attributes.toFlatString(component.attributes, component.ty) +
-             Type.toFlatString(component.ty) + " '" + name + "'" +
-             Binding.toFlatString(component.binding, " = ");
-
-      case TYPE_ATTRIBUTE()
-        then name + Modifier.toFlatString(component.modifier, printName = false);
-    end match;
+    s := IOStream.create(name, IOStream.IOStreamType.LIST());
+    s := toFlatStream(name, component, s);
+    str := IOStream.string(s);
+    IOStream.delete(s);
   end toFlatString;
 
   function setDimensions

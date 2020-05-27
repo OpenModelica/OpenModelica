@@ -201,6 +201,8 @@ public
       s := IOStream.append(s, ";\n");
     end for;
 
+    s := IOStream.append(s, "public\n");
+
     if not listEmpty(flat_model.initialEquations) then
       s := IOStream.append(s, "initial equation\n");
       s := Equation.toFlatStreamList(flat_model.initialEquations, "  ", s);

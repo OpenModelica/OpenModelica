@@ -286,6 +286,20 @@ public
     end if;
   end toStringList;
 
+  function toFlatString
+    input Dimension dim;
+    output String str;
+  algorithm
+    str := match dim
+      case INTEGER() then String(dim.size);
+      case BOOLEAN() then "Boolean";
+      case ENUM() then Type.toFlatString(dim.enumType);
+      case EXP() then Expression.toFlatString(dim.exp);
+      case UNKNOWN() then ":";
+      case UNTYPED() then Expression.toFlatString(dim.dimension);
+    end match;
+  end toFlatString;
+
   function endExp
     "Returns an expression for the last index in a dimension."
     input Dimension dim;
@@ -324,6 +338,37 @@ public
       case EXP() then dim.exp;
     end match;
   end sizeExp;
+
+  function expIsLowerBound
+    "Returns true if the expression represents the lower bound of a dimension."
+    input Expression exp;
+    output Boolean isStart;
+  algorithm
+    isStart := match exp
+      case Expression.INTEGER() then exp.value == 1;
+      case Expression.BOOLEAN() then exp.value == false;
+      case Expression.ENUM_LITERAL() then exp.index == 1;
+      else false;
+    end match;
+  end expIsLowerBound;
+
+  function expIsUpperBound
+    "Returns true if the expression represents the upper bound of the given dimension."
+    input Expression exp;
+    input Dimension dim;
+    output Boolean isEnd;
+  algorithm
+    isEnd := match (exp, dim)
+      local
+        Type ty;
+
+      case (Expression.INTEGER(), INTEGER()) then exp.value == dim.size;
+      case (Expression.BOOLEAN(), _) then exp.value == true;
+      case (Expression.ENUM_LITERAL(), ENUM(enumType = ty as Type.ENUMERATION()))
+        then exp.index == listLength(ty.literals);
+      else false;
+    end match;
+  end expIsUpperBound;
 
   function variability
     input Dimension dim;

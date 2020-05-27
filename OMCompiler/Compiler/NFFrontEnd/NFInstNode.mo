@@ -1366,6 +1366,7 @@ uniontype InstNode
     input output IOStream.IOStream s;
   algorithm
     s := match node
+      case COMPONENT_NODE() then Component.toFlatStream(node.name, Pointer.access(node.component), s);
       case CLASS_NODE() then Class.toFlatStream(Pointer.access(node.cls), node, s);
       else IOStream.append(s, toFlatString(node));
     end match;

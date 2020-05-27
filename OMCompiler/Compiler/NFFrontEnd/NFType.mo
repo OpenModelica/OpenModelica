@@ -835,8 +835,8 @@ public
       case Type.CLOCK() then "Clock";
       case Type.ENUMERATION() then "'" + AbsynUtil.pathString(ty.typePath) + "'";
       case Type.ENUMERATION_ANY() then "enumeration(:)";
-      case Type.ARRAY() then toString(ty.elementType) + "[" + stringDelimitList(List.map(ty.dimensions, Dimension.toString), ", ") + "]";
-      case Type.TUPLE() then "(" + stringDelimitList(List.map(ty.types, toString), ", ") + ")";
+      case Type.ARRAY() then toFlatString(ty.elementType) + "[" + stringDelimitList(List.map(ty.dimensions, Dimension.toFlatString), ", ") + "]";
+      case Type.TUPLE() then "(" + stringDelimitList(List.map(ty.types, toFlatString), ", ") + ")";
       case Type.NORETCALL() then "()";
       case Type.UNKNOWN() then "unknown()";
       case Type.COMPLEX() then "'" + AbsynUtil.pathString(InstNode.scopePath(ty.cls)) + "'";
@@ -889,13 +889,13 @@ public
           s := IOStream.append(s, ty.name);
           s := IOStream.append(s, "'\n");
 
-          s := IOStream.append(s, "input ");
+          s := IOStream.append(s, "  input ");
           s := IOStream.append(s, toString(ty.ty));
           s := IOStream.append(s, " exp;\n");
 
           index := 1;
           for sub in ty.subs loop
-            s := IOStream.append(s, "input ");
+            s := IOStream.append(s, "  input ");
             s := IOStream.append(s, toString(sub));
             s := IOStream.append(s, " s");
             s := IOStream.append(s, String(index));
@@ -903,7 +903,7 @@ public
             index := index + 1;
           end for;
 
-          s := IOStream.append(s, "output ");
+          s := IOStream.append(s, "  output ");
           s := IOStream.append(s, toString(ty.subscriptedTy));
           s := IOStream.append(s, " result = exp[");
           s := IOStream.append(s,

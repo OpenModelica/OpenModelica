@@ -52,6 +52,7 @@ protected
 import Error;
 import List;
 import SCodeUtil;
+import IOStream;
 
 constant Modifier EMPTY_MOD = NOMOD();
 
@@ -540,33 +541,73 @@ public
     end match;
   end toString;
 
-  function toFlatString
-    input Modifier mod;
-    input Boolean printName = true;
-    output String string;
+  function toFlatStreamList
+    input list<Modifier> modifiers;
+    input output IOStream.IOStream s;
+    input String delimiter = ", ";
+  protected
+    list<Modifier> mods = modifiers;
   algorithm
-    string := match mod
-      local
-        list<Modifier> submods;
-        String subs_str, binding_str, binding_sep;
+    if listEmpty(mods) then
+      return;
+    end if;
 
+    while true loop
+      s := toFlatStream(listHead(mods), s);
+      mods := listRest(mods);
+
+      if listEmpty(mods) then
+        break;
+      else
+        s := IOStream.append(s, delimiter);
+      end if;
+    end while;
+  end toFlatStreamList;
+
+  function toFlatStream
+    input Modifier mod;
+    input output IOStream.IOStream s;
+    input Boolean printName = true;
+  protected
+    list<Modifier> submods;
+    String subs_str, binding_str, binding_sep;
+  algorithm
+    () := match mod
       case MODIFIER()
         algorithm
+          if printName then
+            s := IOStream.append(s, mod.name);
+          end if;
+
           submods := ModTable.listValues(mod.subModifiers);
           if not listEmpty(submods) then
-            subs_str := "(" + stringDelimitList(list(toFlatString(s) for s in submods), ", ") + ")";
+            s := IOStream.append(s, "(");
+            s := toFlatStreamList(submods, s);
+            s := IOStream.append(s, ")");
             binding_sep := " = ";
           else
-            subs_str := "";
             binding_sep := if printName then " = " else "= ";
           end if;
 
-          binding_str := Binding.toFlatString(mod.binding, binding_sep);
+          s := IOStream.append(s, Binding.toFlatString(mod.binding, binding_sep));
         then
-          if printName then mod.name + subs_str + binding_str else subs_str + binding_str;
+          ();
 
-      else "";
+      else ();
     end match;
+  end toFlatStream;
+
+  function toFlatString
+    input Modifier mod;
+    input Boolean printName = true;
+    output String str;
+  protected
+    IOStream.IOStream s;
+  algorithm
+    s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
+    s := toFlatStream(mod, s, printName);
+    str := IOStream.string(s);
+    IOStream.delete(s);
   end toFlatString;
 
 protected
