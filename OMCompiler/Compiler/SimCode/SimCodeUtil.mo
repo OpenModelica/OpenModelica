@@ -8202,56 +8202,25 @@ algorithm
 end derVarFromStateVar;
 
 public function simVarString
+  "returns the string representation of a SimVar in the following form
+  index: <index>: <name> (alias <aliasvar>) [ protected ][ hideResult ] initial: <initialValue>\tarrCref:<arrayCref> index:(<variable_index>) [<numArrayElement>]"
   input SimCodeVar.SimVar inVar;
   output String s;
 algorithm
-  s := match(inVar)
-  local
-    Boolean isProtected,hideResult;
-    Integer i;
-    DAE.ComponentRef name, name2;
-    Option<DAE.Exp> init;
-    Option<DAE.ComponentRef> arrCref;
-    Option<Integer> variable_index;
-    SimCodeVar.AliasVariable aliasvar;
-    String s1, s2, s3, sProt, sRes;
-    list<String> numArrayElement;
-    case (SimCodeVar.SIMVAR(name= name, aliasvar = SimCodeVar.NOALIAS(), index = i, initialValue=init, arrayCref=arrCref, variable_index=variable_index, numArrayElement=numArrayElement, isProtected=isProtected, hideResult=hideResult))
-    equation
-        s1 = ComponentReference.printComponentRefStr(name);
-        if Util.isSome(arrCref) then s3 = " \tarrCref:"+ComponentReference.printComponentRefStr(Util.getOption(arrCref)); else s3="\tno arrCref"; end if;
-        sProt = if isProtected then " protected " else "";
-        sRes = if hideResult then " hideResult " else "";
-        s = "index: "+intString(i)+": "+s1+" (no alias) "+sProt+sRes+" initial: "+ExpressionDump.printOptExpStr(init) + s3 + " index:("+printVarIndx(variable_index)+")" +" [" + stringDelimitList(numArrayElement,",")+"] ";
-     then s;
-    case (SimCodeVar.SIMVAR(name= name, aliasvar = SimCodeVar.ALIAS(varName = name2), index = i, initialValue=init, arrayCref=arrCref, variable_index=variable_index, numArrayElement=numArrayElement, isProtected=isProtected, hideResult=hideResult))
-    equation
-        s1 = ComponentReference.printComponentRefStr(name);
-        s2 = ComponentReference.printComponentRefStr(name2);
-        sProt = if isProtected then " protected "else "";
-        sRes = if hideResult then " hideResult " else "";
-        if Util.isSome(arrCref) then s3 = " \tarrCref:"+ComponentReference.printComponentRefStr(Util.getOption(arrCref)); else s3="\tno arrCref"; end if;
-        s = "index: "+intString(i)+": "+s1+" (alias: "+s2+") "+sProt+sRes+" initial: "+ExpressionDump.printOptExpStr(init) + s3 + " index:("+printVarIndx(variable_index)+")" +" [" + stringDelimitList(numArrayElement,",")+"] ";
-    then s;
-    case (SimCodeVar.SIMVAR(name= name, aliasvar = SimCodeVar.NEGATEDALIAS(varName = name2), index = i, initialValue=init, arrayCref=arrCref,variable_index=variable_index, numArrayElement=numArrayElement, isProtected=isProtected, hideResult=hideResult))
-    equation
-        s1 = ComponentReference.printComponentRefStr(name);
-        s2 = ComponentReference.printComponentRefStr(name2);
-        sProt = if isProtected then " protected "else "";
-        sRes = if hideResult then " hideResult " else "";
-        if Util.isSome(arrCref) then s3 = " \tarrCref:"+ComponentReference.printComponentRefStr(Util.getOption(arrCref)); else s3="\tno arrCref"; end if;
-        s = "index: "+intString(i)+": "+s1+" (negated alias: "+s2+") "+sProt+sRes+" initial: "+ExpressionDump.printOptExpStr(init) + s3 + " index:("+printVarIndx(variable_index)+")" +" [" + stringDelimitList(numArrayElement,",")+"] ";
-     then s;
-   end match;
+  s := "index:" + intString(inVar.index) + ": " + ComponentReference.printComponentRefStr(inVar.name);
+  s := s + (match inVar.aliasvar
+    local DAE.ComponentRef cr;
+    case SimCodeVar.NOALIAS() then " (no alias) ";
+    case SimCodeVar.ALIAS(varName = cr) then " (alias: " + ComponentReference.printComponentRefStr(cr) + ") ";
+    case SimCodeVar.NEGATEDALIAS(varName = cr) then " (negated alias: " + ComponentReference.printComponentRefStr(cr) + ") ";
+  end match);
+  s := s + (if inVar.isProtected then " protected " else "");
+  s := s + (if inVar.hideResult then " hideResult " else "");
+  s := s + " initial: " + (if Util.isSome(inVar.initialValue) then ExpressionDump.printOptExpStr(inVar.initialValue) else "");
+  s := s + (if Util.isSome(inVar.arrayCref) then "\tarrCref:" + ComponentReference.printComponentRefStr(Util.getOption(inVar.arrayCref)) else "\tno arrCref");
+  s := s + " index:(" + (if Util.isSome(inVar.variable_index) then intString(Util.getOption(inVar.variable_index)) else "") + ")";
+  s := s + " [" + stringDelimitList(inVar.numArrayElement, ",") + "]";
 end simVarString;
-
-
-protected function printVarIndx
-  input Option<Integer> i;
-  output String s;
-algorithm
-  if Util.isSome(i) then s:=intString(Util.getOption(i)); else s := ""; end if;
-end printVarIndx;
 
 public function dumpVarLst"dumps a list of SimVars to stdout.
 author:Waurich TUD 2014-05"
@@ -8267,7 +8236,6 @@ algorithm
   end for;
   end if;
 end dumpVarLst;
-
 
 public function printVarLstCrefs
     input list<SimCodeVar.SimVar> inVars;
