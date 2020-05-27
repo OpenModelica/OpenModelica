@@ -495,7 +495,7 @@ algorithm
     case Statement.FOR()
       algorithm
         // Make a mutable expression with a placeholder value.
-        iter_exp := Expression.makeMutable(Expression.EMPTY(Type.UNKNOWN()));
+        iter_exp := Expression.makeMutable(Expression.EMPTY(InstNode.getType(stmt.iterator)));
         // Replace the iterator with the expression in the body of the for loop.
         stmt.body := list(
           Statement.mapExp(s, function Expression.replaceIterator(

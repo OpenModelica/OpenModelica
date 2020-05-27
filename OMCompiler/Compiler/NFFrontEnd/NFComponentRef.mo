@@ -857,7 +857,7 @@ public
 
       case CREF(origin = Origin.CREF)
         algorithm
-          subs := list(Subscript.simplify(s) for s in cref.subscripts);
+          subs := Subscript.simplifyList(cref.subscripts, Type.arrayDims(cref.ty));
         then
           CREF(cref.node, subs, cref.ty, cref.origin, simplifySubscripts(cref.restCref));
 

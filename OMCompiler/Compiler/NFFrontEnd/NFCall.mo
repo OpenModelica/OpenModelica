@@ -42,8 +42,10 @@ import Type = NFType;
 import Record = NFRecord;
 
 protected
+import Binding = NFBinding;
 import BuiltinCall = NFBuiltinCall;
 import Ceval = NFCeval;
+import Component = NFComponent;
 import ComponentRef = NFComponentRef;
 import Config;
 import Dimension = NFDimension;
@@ -54,9 +56,7 @@ import Inst = NFInst;
 import List;
 import Lookup = NFLookup;
 import MetaModelica.Dangerous.listReverseInPlace;
-import Binding = NFBinding;
 import Class = NFClass;
-import Component = NFComponent;
 import NFFunction.Function;
 import NFFunction.FunctionMatchKind;
 import NFFunction.MatchedFunction;
@@ -68,6 +68,7 @@ import NFTyping.ExpOrigin;
 import Operator = NFOperator;
 import Prefixes = NFPrefixes;
 import SCodeUtil;
+import SimplifyExp = NFSimplifyExp;
 import Subscript = NFSubscript;
 import TypeCheck = NFTypeCheck;
 import Typing = NFTyping;
@@ -1427,6 +1428,7 @@ protected
       exp := Expression.replaceIterator(exp, iter_node, iter_exp);
     end for;
 
+    exp := SimplifyExp.simplify(exp);
     Expression.CALL(call = outCall) := exp;
   end devectorizeCall;
 

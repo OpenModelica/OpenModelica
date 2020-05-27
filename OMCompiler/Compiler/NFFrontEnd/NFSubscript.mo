@@ -86,6 +86,13 @@ public
     end match;
   end fromExp;
 
+  function fromTypedExp
+    input Expression exp;
+    output Subscript subscript;
+  algorithm
+    subscript := if Type.isArray(Expression.typeOf(exp)) then SLICE(exp) else INDEX(exp);
+  end fromTypedExp;
+
   function toExp
     input Subscript subscript;
     output Expression exp;
@@ -384,13 +391,13 @@ public
         algorithm
           e2 := Expression.map(e1, func);
         then
-          if referenceEq(e1, e2) then subscript else INDEX(e2);
+          if referenceEq(e1, e2) then subscript else fromTypedExp(e2);
 
       case SLICE(slice = e1)
         algorithm
           e2 := Expression.map(e1, func);
         then
-          if referenceEq(e1, e2) then subscript else SLICE(e2);
+          if referenceEq(e1, e2) then subscript else fromTypedExp(e2);
 
       else subscript;
     end match;
@@ -419,13 +426,13 @@ public
         algorithm
           e2 := func(e1);
         then
-          if referenceEq(e1, e2) then subscript else INDEX(e2);
+          if referenceEq(e1, e2) then subscript else fromTypedExp(e2);
 
       case SLICE(slice = e1)
         algorithm
           e2 := func(e1);
         then
-          if referenceEq(e1, e2) then subscript else SLICE(e2);
+          if referenceEq(e1, e2) then subscript else fromTypedExp(e2);
 
       else subscript;
     end match;
@@ -475,13 +482,13 @@ public
         algorithm
           (exp, arg) := Expression.mapFold(subscript.index, func, arg);
         then
-          if referenceEq(subscript.index, exp) then subscript else INDEX(exp);
+          if referenceEq(subscript.index, exp) then subscript else fromTypedExp(exp);
 
       case SLICE()
         algorithm
           (exp, arg) := Expression.mapFold(subscript.slice, func, arg);
         then
-          if referenceEq(subscript.slice, exp) then subscript else SLICE(exp);
+          if referenceEq(subscript.slice, exp) then subscript else fromTypedExp(exp);
 
       else subscript;
     end match;
@@ -512,13 +519,13 @@ public
         algorithm
           (exp, arg) := func(subscript.index, arg);
         then
-          if referenceEq(subscript.index, exp) then subscript else INDEX(exp);
+          if referenceEq(subscript.index, exp) then subscript else fromTypedExp(exp);
 
       case SLICE()
         algorithm
           (exp, arg) := func(subscript.slice, arg);
         then
-          if referenceEq(subscript.slice, exp) then subscript else SLICE(exp);
+          if referenceEq(subscript.slice, exp) then subscript else fromTypedExp(exp);
 
       else subscript;
     end match;
@@ -614,14 +621,65 @@ public
 
   function simplify
     input Subscript subscript;
+    input Dimension dimension;
     output Subscript outSubscript;
   algorithm
     outSubscript := match subscript
       case INDEX() then INDEX(SimplifyExp.simplify(subscript.index));
-      case SLICE() then SLICE(SimplifyExp.simplify(subscript.slice));
+      case SLICE() then simplifySlice(subscript.slice, dimension);
       else subscript;
     end match;
   end simplify;
+
+  function simplifySlice
+    input Expression slice;
+    input Dimension dimension;
+    output Subscript outSubscript;
+  protected
+    Expression exp;
+  algorithm
+    exp := SimplifyExp.simplify(slice);
+
+    outSubscript := match exp
+      // If the slice is equivalent to 1:size(dim), replace it with :
+      case Expression.RANGE()
+        guard (isNone(exp.step) or Expression.isOne(Util.getOption(exp.step))) and
+              Dimension.expIsLowerBound(exp.start) and
+              Dimension.expIsUpperBound(exp.stop, dimension)
+        then WHOLE();
+
+      // Otherwise return a new slice with the simplified expression.
+      else SLICE(exp);
+    end match;
+  end simplifySlice;
+
+  function simplifyList
+    input list<Subscript> subscripts;
+    input list<Dimension> dimensions;
+    output list<Subscript> outSubscripts = {};
+  protected
+    Dimension d;
+    list<Dimension> rest_d = dimensions;
+  algorithm
+    if listEmpty(dimensions) then
+      // If the type of the subscript owner isn't known, for example when dealing
+      // with expandable connector elements, treat the dimensions as unknown.
+      outSubscripts := list(simplify(s, Dimension.UNKNOWN()) for s in subscripts);
+    else
+      rest_d := List.lastN(dimensions, listLength(subscripts));
+
+      for s in subscripts loop
+        d :: rest_d := rest_d;
+        outSubscripts := simplify(s, d) :: outSubscripts;
+      end for;
+
+      while not listEmpty(outSubscripts) and isWhole(listHead(outSubscripts)) loop
+        outSubscripts := listRest(outSubscripts);
+      end while;
+
+      outSubscripts := listReverseInPlace(outSubscripts);
+    end if;
+  end simplifyList;
 
   function toDimension
     "Returns a dimension representing the size of the given subscript."
