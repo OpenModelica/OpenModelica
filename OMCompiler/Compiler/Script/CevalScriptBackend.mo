@@ -3805,9 +3805,9 @@ algorithm
     if isWindows then
       configureLogFile := "\""+configureLogFile+"\"";
     end if;
-    // do not create static.log in resource directory when --fmiFilter=blackBox
-    if intLt(Flags.getConfigEnum(Flags.FMI_FILTER), Flags.FMI_BLACKBOX) then
-      configureFMU(platform, fmutmp, configureLogFile, isWindows);
+    configureFMU(platform, fmutmp, configureLogFile, isWindows);
+    if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
+      System.removeFile(configureLogFile);
     end if;
     ExecStat.execStat("buildModelFMU: Generate platform " + platform);
   end for;
@@ -3815,7 +3815,7 @@ algorithm
   // check for '--fmiSource=false' or '--fmiFilter=blackBox' and remove the sources directory before packing the fmu
   if not Flags.getConfigBool(Flags.FMI_SOURCES) or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
     if not System.removeDirectory(fmutmp + "/sources/") then
-      Error.addInternalError("Failed to remove directory: " + fmutmp , sourceInfo());
+      Error.addInternalError("Failed to remove directory: " + fmutmp, sourceInfo());
     end if;
   end if;
 
