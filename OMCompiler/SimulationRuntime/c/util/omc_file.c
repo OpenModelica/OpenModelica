@@ -78,15 +78,25 @@ int omc_stat(const char *filename, struct stat *statbuf)
 
 int omc_unlink(const char *filename)
 {
+  int result = 0;
 #if defined(__MINGW32__) || defined(_MSC_VER)
   MULTIBYTE_TO_WIDECHAR_LENGTH(filename, unicodeFilenameLength);
   MULTIBYTE_TO_WIDECHAR_VAR(filename, unicodeFilename, unicodeFilenameLength);
-  int result = _wunlink(unicodeFilename);
+  result = _wunlink(unicodeFilename);
   MULTIBYTE_OR_WIDECHAR_VAR_FREE(unicodeFilename);
-  return result;
 #else /* unix */
-  return unlink(filename);
+  result = unlink(filename);
 #endif
+  /* uncomment for debugging
+  if (result == -1)
+  {
+    const char* s = "Could not delete file: ";
+    char *msg = (char*)malloc(strlen(s) + strlen(filename) + 1);
+    sprintf(msg, "%s%s", s, filename);
+    perror(msg);
+  }
+  */
+  return result;
 }
 
 #ifdef __cplusplus

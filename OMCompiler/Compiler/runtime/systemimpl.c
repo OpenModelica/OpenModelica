@@ -630,8 +630,8 @@ int SystemImpl__systemCall(const char* str, const char* outFile)
   fflush(NULL); /* flush output so the testsuite is deterministic */
 #if defined(__MINGW32__) || defined(_MSC_VER)
   if (*outFile) {
-    char *command = (char *)omc_alloc_interface.malloc_atomic(strlen(str) + strlen(outFile) + 10);
-    sprintf(command, "%s >> %s 2>&1", str, outFile);
+    char *command = (char *)omc_alloc_interface.malloc_atomic(strlen(str) + strlen(outFile) + 12);
+    sprintf(command, "%s >> \"%s\" 2>&1", str, outFile);
     status = runProcess(command);
     GC_free((void*)command);
   } else {

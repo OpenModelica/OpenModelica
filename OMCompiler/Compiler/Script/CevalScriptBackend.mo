@@ -3802,9 +3802,6 @@ algorithm
 
   for platform in platforms loop
     configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log";
-    if isWindows then
-      configureLogFile := "\""+configureLogFile+"\"";
-    end if;
     configureFMU(platform, fmutmp, configureLogFile, isWindows);
     if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
       System.removeFile(configureLogFile);
