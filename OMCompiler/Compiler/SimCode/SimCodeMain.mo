@@ -266,7 +266,7 @@ protected
   list<tuple<String, String>> program;
   Integer numCheckpoints;
   String fmuVersion;
- 
+
 algorithm
   numCheckpoints:=ErrorExt.getNumCheckpoints();
   try
@@ -514,7 +514,7 @@ algorithm
         end for;
       then ();
 
-   
+
 
     case "Adevs" equation
       Tpl.tplNoret(CodegenAdevs.translateModel, simCode);
@@ -681,7 +681,7 @@ protected function callTargetTemplatesOMSICpp
   protected
   String fmuVersion;
   String fmuType;
- 
+
 algorithm
     fmuVersion:="2.0";
     fmuType:="me";
@@ -745,8 +745,11 @@ algorithm
             fail();
           end if;
         else
-          if 0 <> System.systemCall("mv '"+simCode.fileNamePrefix+"_info.json"+"' '" + fmutmp+"/resources/" + "'") then
-            Error.addInternalError("Failed to info.json file", sourceInfo());
+          // check for _info.json file in resource directory  when --fmiFilter=blackBox is not set
+          if Flags.getConfigEnum(Flags.FMI_FILTER) <> Flags.FMI_BLACKBOX then
+            if 0 <> System.systemCall("mv '" + simCode.fileNamePrefix + "_info.json"+"' '" + fmutmp+"/resources/" + "'") then
+              Error.addInternalError("Failed to move " + simCode.fileNamePrefix + "_info.json file", sourceInfo());
+            end if;
           end if;
         end if;
         SimCodeUtil.resetFunctionIndex();
@@ -840,10 +843,10 @@ algorithm
         runTplWriteFile(func = function CodegenOMSIC.generateOMSIC(a_simCode=simCode), file=simCode.fullPathPrefix+"/"+fileprefix+"_omsic.c");
 
         runTpl(func = function CodegenOMSI_common.generateEquationsCode(a_simCode=simCode, a_FileNamePrefix=fileprefix));
-        
+
            runTpl(func = function CodegenOMSICpp.translateModel(a_simCode=simCode, a_FMUVersion=FMUVersion, a_FMUType=FMUType));
       then ();
-    
+
     case (_,"Cpp")
       equation
         if(Flags.isSet(Flags.HPCOM)) then
