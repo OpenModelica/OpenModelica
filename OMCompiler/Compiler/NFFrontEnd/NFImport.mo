@@ -36,7 +36,7 @@ protected
   import Inst = NFInst;
   import Lookup = NFLookup;
   import NFClassTree.ClassTree;
-  import NFClass.Class;
+  import Class = NFClass;
 
   import Import = NFImport;
   import Error;

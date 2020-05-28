@@ -29,31 +29,32 @@
  *
  */
 
-encapsulated package NFClass
+encapsulated uniontype NFClass
 
-import NFInstNode.InstNode;
-import NFModifier.Modifier;
-import NFStatement.Statement;
-import SCode.Element;
-import Type = NFType;
 import Component = NFComponent;
 import Dimension = NFDimension;
-import NFClassTree.ClassTree;
-import NFSections.Sections;
-import Restriction = NFRestriction;
 import Expression = NFExpression;
+import NFClassTree.ClassTree;
+import NFInstNode.InstNode;
+import NFModifier.Modifier;
+import NFSections.Sections;
+import NFStatement.Statement;
+import Restriction = NFRestriction;
+import SCode.Element;
+import Type = NFType;
 
 protected
-import Binding = NFBinding;
-import ComplexType = NFComplexType;
-import System;
 import AbsynUtil;
-import SCodeUtil;
+import Binding = NFBinding;
+import Class = NFClass;
+import ComplexType = NFComplexType;
 import IOStream;
+import SCodeUtil;
+import System;
 
 public
 
-constant Class.Prefixes DEFAULT_PREFIXES = Class.Prefixes.PREFIXES(
+constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
   SCode.Encapsulated.NOT_ENCAPSULATED(),
   SCode.Partial.NOT_PARTIAL(),
   SCode.Final.NOT_FINAL(),
@@ -61,7 +62,6 @@ constant Class.Prefixes DEFAULT_PREFIXES = Class.Prefixes.PREFIXES(
   SCode.Replaceable.NOT_REPLACEABLE()
 );
 
-uniontype Class
   uniontype Prefixes
     record PREFIXES
       SCode.Encapsulated encapsulatedPrefix;
@@ -83,21 +83,21 @@ uniontype Class
   record PARTIAL_CLASS
     ClassTree elements;
     Modifier modifier;
-    Class.Prefixes prefixes;
+    Prefixes prefixes;
   end PARTIAL_CLASS;
 
   record PARTIAL_BUILTIN
     Type ty;
     ClassTree elements;
     Modifier modifier;
-    Class.Prefixes prefixes;
+    Prefixes prefixes;
     Restriction restriction;
   end PARTIAL_BUILTIN;
 
   record EXPANDED_CLASS
     ClassTree elements;
     Modifier modifier;
-    Class.Prefixes prefixes;
+    Prefixes prefixes;
     Restriction restriction;
   end EXPANDED_CLASS;
 
@@ -105,7 +105,7 @@ uniontype Class
     InstNode baseClass;
     Modifier modifier;
     array<Dimension> dims;
-    Class.Prefixes prefixes;
+    Prefixes prefixes;
     Component.Attributes attributes;
     Restriction restriction;
   end EXPANDED_DERIVED;
@@ -775,7 +775,6 @@ uniontype Class
     str := IOStream.string(s);
     IOStream.delete(s);
   end toFlatString;
-end Class;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFClass;

@@ -34,7 +34,7 @@ protected
   import Type = NFType;
   import List;
   import Restriction = NFRestriction;
-  import NFClass.Class;
+  import Class = NFClass;
   import IOStream;
 
 public

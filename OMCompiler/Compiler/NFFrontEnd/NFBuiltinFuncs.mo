@@ -31,7 +31,7 @@
 
 encapsulated package NFBuiltinFuncs
 
-import NFClass.Class;
+import Class = NFClass;
 import NFClassTree.ClassTree;
 import NFFunction.Function;
 import NFFunction.Slot;

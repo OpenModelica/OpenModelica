@@ -41,7 +41,7 @@ import Dump;
 import Error;
 import SCodeUtil;
 import System;
-import NFClass.Class;
+import Class = NFClass;
 
 public
 uniontype LookupStateName

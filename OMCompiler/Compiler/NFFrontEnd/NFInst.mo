@@ -48,7 +48,7 @@ import Component = NFComponent;
 import ComponentRef = NFComponentRef;
 import Dimension = NFDimension;
 import Expression = NFExpression;
-import NFClass.Class;
+import Class = NFClass;
 import NFInstNode.InstNode;
 import NFInstNode.InstNodeType;
 import NFModifier.Modifier;

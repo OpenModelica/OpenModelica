@@ -46,7 +46,7 @@ protected
   import Flags;
   import Component = NFComponent;
   import NFClassTree.ClassTree;
-  import NFClass.Class;
+  import Class = NFClass;
   import Restriction = NFRestriction;
   import ComplexType = NFComplexType;
   import Dimension = NFDimension;

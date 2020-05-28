@@ -39,7 +39,7 @@ encapsulated package NFRecord
 "
 
 import Binding = NFBinding;
-import NFClass.Class;
+import Class = NFClass;
 import Component = NFComponent;
 import Dimension = NFDimension;
 import Expression = NFExpression;

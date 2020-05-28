@@ -52,7 +52,7 @@ import Expression = NFExpression;
 import Flags;
 import Function = NFFunction.Function;
 import MetaModelica.Dangerous.listReverseInPlace;
-import NFClass.Class;
+import Class = NFClass;
 import NFClassTree.ClassTree;
 import Component = NFComponent;
 import NFModifier.Modifier;

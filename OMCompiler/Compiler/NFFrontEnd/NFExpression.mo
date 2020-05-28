@@ -64,7 +64,7 @@ public
   import Call = NFCall;
   import Binding = NFBinding;
   import NFClassTree.ClassTree;
-  import NFClass.Class;
+  import Class = NFClass;
   import NFComponentRef.Origin;
   import NFTyping.ExpOrigin;
   import Values;

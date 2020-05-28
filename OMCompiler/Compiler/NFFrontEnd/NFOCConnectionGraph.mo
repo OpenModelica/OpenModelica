@@ -82,7 +82,7 @@ protected
 import Absyn;
 import NFBuiltin;
 import Call = NFCall;
-import NFClass.Class;
+import Class = NFClass;
 import Dimension = NFDimension;
 import NFFunction.Function;
 import NFHashTable;

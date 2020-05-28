@@ -47,7 +47,7 @@ protected
   import Dimension = NFDimension;
   import List;
   import MetaModelica.Dangerous.listReverseInPlace;
-  import NFClass.Class;
+  import Class = NFClass;
   import NFFunction.Function;
   import NFFunction.FunctionMatchKind;
   import NFFunction.MatchedFunction;

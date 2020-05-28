@@ -43,7 +43,7 @@ import ErrorTypes;
 import Global;
 import NFBuiltin;
 import Inst = NFInst;
-import NFClass.Class;
+import Class = NFClass;
 import NFInstNode.InstNode;
 import NFLookupState.LookupState;
 import Type = NFType;

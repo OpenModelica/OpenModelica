@@ -49,7 +49,7 @@ import Error;
 import ErrorTypes;
 import Expression = NFExpression;
 import MetaModelica.Dangerous.listReverseInPlace;
-import NFClass.Class;
+import Class = NFClass;
 import NFClassTree.ClassTree;
 import Component = NFComponent;
 import NFInstNode.InstNode;

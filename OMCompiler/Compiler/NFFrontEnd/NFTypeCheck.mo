@@ -56,7 +56,7 @@ import List;
 import Types;
 import Operator = NFOperator;
 import Type = NFType;
-import Class = NFClass.Class;
+import Class = NFClass;
 import ClassTree = NFClassTree;
 import InstUtil = NFInstUtil;
 import Prefixes = NFPrefixes;

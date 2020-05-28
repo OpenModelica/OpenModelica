@@ -42,7 +42,7 @@ import Binding = NFBinding;
 import Component = NFComponent;
 import Dimension = NFDimension;
 import Equation = NFEquation;
-import NFClass.Class;
+import Class = NFClass;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
 import NFModifier.Modifier;
