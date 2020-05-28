@@ -45,7 +45,7 @@ protected
   import NFInstNode.InstNode;
   import IOStream;
   import NFSubscript.Subscript;
-  import NFClass.Class;
+  import Class = NFClass;
   import NFClassTree.ClassTree;
   import Component = NFComponent;
   import NFComponentRef.ComponentRef;

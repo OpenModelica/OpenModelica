@@ -38,7 +38,7 @@ import Expression = NFExpression;
 import Type = NFType;
 import ComponentRef = NFComponentRef;
 import NFFlatten.FunctionTree;
-import NFClass.Class;
+import Class = NFClass;
 import NFInstNode.InstNode;
 import NFFunction.Function;
 import Sections = NFSections;

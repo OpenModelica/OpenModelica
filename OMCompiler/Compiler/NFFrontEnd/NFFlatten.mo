@@ -57,7 +57,7 @@ import Flags;
 import Inst = NFInst;
 import List;
 import Call = NFCall;
-import NFClass.Class;
+import Class = NFClass;
 import NFClassTree.ClassTree;
 import Component = NFComponent;
 import NFModifier.Modifier;

@@ -55,7 +55,7 @@ import List;
 import Lookup = NFLookup;
 import MetaModelica.Dangerous.listReverseInPlace;
 import Binding = NFBinding;
-import NFClass.Class;
+import Class = NFClass;
 import Component = NFComponent;
 import NFFunction.Function;
 import NFFunction.FunctionMatchKind;

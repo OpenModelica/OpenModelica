@@ -60,7 +60,7 @@ import List;
 import System;
 import ExpressionIterator = NFExpressionIterator;
 import MetaModelica.Dangerous.*;
-import NFClass.Class;
+import Class = NFClass;
 import TypeCheck = NFTypeCheck;
 import ExpandExp = NFExpandExp;
 import ElementSource;

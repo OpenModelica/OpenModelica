@@ -45,7 +45,7 @@ import Absyn;
 import AbsynUtil;
 import SCode;
 import NFBinding;
-import NFClass.Class;
+import Class = NFClass;
 import NFClassTree.ClassTree;
 import Component = NFComponent;
 import Expression = NFExpression;

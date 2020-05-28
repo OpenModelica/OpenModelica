@@ -40,7 +40,7 @@ protected
   import Record = NFRecord;
   import ComponentRef = NFComponentRef;
   import NFClassTree.ClassTree;
-  import NFClass.Class;
+  import Class = NFClass;
   import Component = NFComponent;
   import Binding = NFBinding;
   import Expression = NFExpression;

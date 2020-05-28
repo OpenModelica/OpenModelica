@@ -41,7 +41,7 @@ protected
   import Dimension = NFDimension;
   import Expression = NFExpression;
   import NFPrefixes.Variability;
-  import NFClass.Class;
+  import Class = NFClass;
   import List;
   import Prefixes = NFPrefixes;
 

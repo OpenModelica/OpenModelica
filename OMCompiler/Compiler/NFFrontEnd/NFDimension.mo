@@ -38,7 +38,7 @@ protected
 
 public
   import Absyn.{Exp, Path, Subscript};
-  import NFClass.Class;
+  import Class = NFClass;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import Type = NFType;

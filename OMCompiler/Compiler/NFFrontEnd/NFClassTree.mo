@@ -43,7 +43,7 @@ protected
   import Array;
   import Error;
   import MetaModelica.Dangerous.*;
-  import NFClass.Class;
+  import Class = NFClass;
   import Component = NFComponent;
   import Inst = NFInst;
   import List;

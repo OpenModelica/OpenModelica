@@ -46,7 +46,7 @@ protected
   import Typing = NFTyping;
   import Ceval = NFCeval;
   import NFFunction.Function;
-  import NFClass.Class;
+  import Class = NFClass;
   import Sections = NFSections;
   import ClassTree = NFClassTree;
   import NFTyping.ExpOrigin;

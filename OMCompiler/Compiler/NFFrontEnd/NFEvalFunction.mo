@@ -32,7 +32,7 @@
 encapsulated package NFEvalFunction
 
 import Expression = NFExpression;
-import NFClass.Class;
+import Class = NFClass;
 import NFFunction.Function;
 import NFInstNode.InstNode;
 import Sections = NFSections;

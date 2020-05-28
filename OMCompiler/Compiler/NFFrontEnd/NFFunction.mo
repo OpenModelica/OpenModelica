@@ -50,7 +50,7 @@ import Config;
 import DAE;
 import Error;
 import InstUtil;
-import NFClass.Class;
+import Class = NFClass;
 import Component = NFComponent;
 import NFComponent.Attributes;
 import Typing = NFTyping;
