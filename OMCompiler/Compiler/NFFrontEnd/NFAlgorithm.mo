@@ -50,6 +50,7 @@ protected
 public
   record ALGORITHM
     list<Statement> statements;
+    list<ComponentRef> inputs;
     list<ComponentRef> outputs;
     DAE.ElementSource source;
   end ALGORITHM;
@@ -164,97 +165,111 @@ public
     str := Statement.toStringList(alg.statements, indent);
   end toString;
 
-  function getOutputs "This function finds the outputs of an algorithm.
-    An input is all values that are reffered on the right hand side of any
+  function getInputsOutputs "This function finds the inputs and outputs of an
+    algorithm. Inputs are values that are reffered on the right hand side of any
     statement in the algorithm and an output is a variables belonging to the
     variables that are assigned a value in the algorithm. If a variable is an
     input and an output it will be treated as an output."
-    input Algorithm alg;
-    output list<ComponentRef> cref_lst;
+    input list<Statement> statements "statements of the algorithm";
+    output list<ComponentRef> inputs_lst;
+    output list<ComponentRef> outputs_lst;
   protected
-    list<Statement> stmts;
-    HashSet.HashSet hashSet = HashSet.emptyHashSet();
+    HashSet.HashSet inputs_hs = HashSet.emptyHashSet();
+    HashSet.HashSet outputs_hs = HashSet.emptyHashSet();
   algorithm
     try
-      ALGORITHM(statements = stmts) := alg;
-      hashSet := List.fold(stmts, function statementOutputs(), hashSet);
-      cref_lst := BaseHashSet.hashSetList(hashSet);
+      (inputs_hs, outputs_hs) := List.fold(statements, function statementInputsOutputs(), (inputs_hs, outputs_hs));
+      inputs_lst := BaseHashSet.hashSetList(inputs_hs);
+      outputs_lst := BaseHashSet.hashSetList(outputs_hs);
     else
       Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
     end try;
-  end getOutputs;
+  end getInputsOutputs;
 
 protected
-  function statementOutputs "Helper relation to getOutputs"
+  function statementInputsOutputs "Helper for getInputsOutputs.
+    Traverse statements and find inputs and outputs"
     input Statement statement;
-    input output HashSet.HashSet hashSet;
+    input output tuple<HashSet.HashSet, HashSet.HashSet> hashSets "inputs and outputs";
   algorithm
-    hashSet := match statement
+    hashSets := match statement
       local
-        Expression lhs;
+        HashSet.HashSet inputs_hs, outputs_hs;
+        Expression lhs, rhs;
         list<Expression> elements;
         list<Statement> stmts;
         list<tuple<Expression, list<Statement>>> branches;
 
       // a := expr;
-      case Statement.ASSIGNMENT(lhs = lhs as Expression.CREF())
+      case Statement.ASSIGNMENT(lhs = lhs as Expression.CREF(), rhs = rhs)
         algorithm
+          (inputs_hs, outputs_hs) := hashSets;
           // TODO extend for array, matrix?
           // TODO has to be scalarized if scalarize
-          hashSet := statementOutputsCrefFinder(lhs, hashSet);
-      then hashSet;
+          inputs_hs := Expression.fold(rhs, function expressionInputs(outputs_hs = outputs_hs), inputs_hs);
+      then expressionOutput(lhs, (inputs_hs, outputs_hs));
 
       // (a, b, c, ...) := expr;
-      case Statement.ASSIGNMENT(lhs=lhs as Expression.TUPLE(elements = elements))
+      case Statement.ASSIGNMENT(lhs = Expression.TUPLE(elements = elements), rhs = rhs)
         algorithm
+          (inputs_hs, outputs_hs) := hashSets;
           // TODO extend for array, matrix?
+          inputs_hs := Expression.fold(rhs, function expressionInputs(outputs_hs = outputs_hs), inputs_hs);
+          hashSets := (inputs_hs, outputs_hs);
           for exp in elements loop
-            hashSet := statementOutputsCrefFinder(exp, hashSet);
+            hashSets := expressionOutput(exp, hashSets);
           end for;
-      then hashSet;
+      then hashSets;
 
       // ToDo: Statement.ASSIGNMENT(lhs=lhs as Expression.RECORD_ELEMENT())
 
       case Statement.FOR(body = stmts)
         algorithm
+          // add iterator to inputs?
           for stmt in stmts loop
-            hashSet := statementOutputs(stmt, hashSet);
+            hashSets := statementInputsOutputs(stmt, hashSets);
           end for;
-      then hashSet;
+          // remove iterator from inputs?
+      then hashSets;
 
       case Statement.IF(branches = branches)
         algorithm
           for branch in branches loop
             (_, stmts) := branch;
+            // what about using unassigned outputs in condition?
             for stmt in stmts loop
-              hashSet := statementOutputs(stmt, hashSet);
+              hashSets := statementInputsOutputs(stmt, hashSets);
             end for;
           end for;
-      then hashSet;
+          // TODO input in one branch can't be output in another etc...
+      then hashSets;
 
       case Statement.WHEN(branches = branches)
         algorithm
           for branch in branches loop
             (_, stmts) := branch;
+            // what about using unassigned outputs in condition?
             for stmt in stmts loop
-              hashSet := statementOutputs(stmt, hashSet);
+              hashSets := statementInputsOutputs(stmt, hashSets);
             end for;
           end for;
-      then hashSet;
+          // TODO input in one branch can't be output in another etc...
+      then hashSets;
 
       case Statement.WHILE(body = stmts)
         algorithm
+          // what about using unassigned outputs in condition?
           for stmt in stmts loop
-            hashSet := statementOutputs(stmt, hashSet);
+            hashSets := statementInputsOutputs(stmt, hashSets);
           end for;
-      then hashSet;
+      then hashSets;
 
-      case Statement.ASSERT() then hashSet;
-      case Statement.TERMINATE() then hashSet;
-      case Statement.NORETCALL() then hashSet;
-      case Statement.RETURN() then hashSet;
-      case Statement.BREAK() then hashSet;
-      case Statement.FAILURE() then hashSet; // does this need to do sth ?
+      case Statement.ASSERT() then hashSets;
+      case Statement.TERMINATE() then hashSets;
+      case Statement.NORETCALL() then hashSets;
+      case Statement.RETURN() then hashSets;
+      case Statement.BREAK() then hashSets;
+      case Statement.FAILURE() then hashSets; // does this need to do sth ?
 
       case Statement.FUNCTION_ARRAY_INIT()
         algorithm
@@ -269,52 +284,94 @@ protected
       then fail();
 
     end match;
-  end statementOutputs;
+  end statementInputsOutputs;
 
-  function statementOutputsCrefFinder "author: Frenkel TUD 2012-06"
+  function expressionInputs
+    "finds all inputs on the rhs of a statement"
     input Expression exp;
-    input output HashSet.HashSet hashSet;
+    input HashSet.HashSet outputs_hs "outputs from previous statements";
+    input output HashSet.HashSet inputs_hs;
   algorithm
-    hashSet := match exp
+    inputs_hs := match exp
       local
         ComponentRef cr;
         Type ty;
-        DAE.Expand expand;
-
-      // Skip wild
-      case Expression.CREF(cref = ComponentRef.WILD()) then hashSet;
 
       // Skip time
-      case Expression.CREF(cref = cr) guard(ComponentRef.isTime(cr)) then hashSet;
+      case Expression.CREF(cref = cr) guard(ComponentRef.isTime(cr)) then inputs_hs;
 
       // Skip external Objects
-      case Expression.CREF(ty = ty) guard(Type.isExternalObject(ty)) then hashSet;
+      case Expression.CREF(ty = ty) guard(Type.isExternalObject(ty)) then inputs_hs;
 
-      case Expression.CREF(cref = cr, ty = ty) guard(Type.isRecord(ty))
+      case Expression.CREF(cref = cr)
         algorithm
+          // since outputs get stripped, also strip inputs
           cr := ComponentRef.stripSubscriptsExceptModel(cr);
-          hashSet := BaseHashSet.add(cr, hashSet);
-      then hashSet;
+          if not BaseHashSet.has(cr, outputs_hs) then
+            inputs_hs := BaseHashSet.add(cr, inputs_hs);
+          end if;
+      then inputs_hs;
 
-      // EXPAND
-      /* mahge:
-        Modelica spec 3.3 rev 11.1.2
-        "If at least one element of an array appears on the left hand side of the assignment operator, then the
-         complete array is initialized in this algorithm section"
-        So we strip the all subs except for model subs and send the whole array to expansion. i.e. we consider the whole array as modified.
-      */
-      case Expression.CREF(cref=cr)
+      else inputs_hs;
+    end match;
+  end expressionInputs;
+
+  function expressionOutput "author: Frenkel TUD 2012-06
+    detects outputs by looking at crefs in the lhs of a statement"
+    input Expression exp "should be a cref, otherwise fail";
+    input output tuple<HashSet.HashSet, HashSet.HashSet> hashSets "inputs and outputs";
+  algorithm
+    hashSets := match exp
+      local
+        ComponentRef cr;
+        Type ty;
+        HashSet.HashSet inputs_hs, outputs_hs;
+
+      // Skip wild
+      case Expression.CREF(cref = ComponentRef.WILD()) then hashSets;
+
+      // time is not an output in algorithms
+      case Expression.CREF(cref = cr) guard(ComponentRef.isTime(cr))
         algorithm
+          Error.addMessage(Error.COMPILER_ERROR, {"Trying to assign to time."});
+      then fail();
+
+      // Skip external Objects
+      // or error?
+      case Expression.CREF(ty = ty) guard(Type.isExternalObject(ty)) then hashSets;
+
+      case Expression.CREF(cref = cr)
+        algorithm
+          (inputs_hs, outputs_hs) := hashSets;
+          /* mahge:
+          Modelica spec 3.3 rev 11.1.2
+            "If at least one element of an array appears on the left hand side of
+             the assignment operator, then the complete array is initialized in
+             this algorithm section"
+          So we strip the all subs except for model subs and send the whole array to expansion. i.e. we consider the whole array as modified.
+          */
           cr := ComponentRef.stripSubscriptsExceptModel(cr);
-          hashSet := BaseHashSet.add(cr, hashSet);
-      then hashSet;
+
+          /* Modelica spec 3.4 11.1.2
+            "A non-discrete variable is initialized with its start value (i.e. the
+             value of the start-attribute)."
+          phannebohm: This is very weird behavior. TODO change the spec!
+          */
+          if BaseHashSet.has(cr, inputs_hs) then
+            Error.addMessage(Error.COMPILER_WARNING, {"Using output variable in RHS before it is assigned (former occurences will be set to initial value): " + Expression.toString(exp)});
+            inputs_hs := BaseHashSet.delete(cr, inputs_hs);
+            outputs_hs := BaseHashSet.add(cr, outputs_hs);
+          else
+            outputs_hs := BaseHashSet.add(cr, outputs_hs);
+          end if;
+      then (inputs_hs, outputs_hs);
 
       else
         algorithm
           Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed due to wrong expression type in LHS of algorithm statement: " + Expression.toString(exp)});
       then fail();
     end match;
-  end statementOutputsCrefFinder;
+  end expressionOutput;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFAlgorithm;
