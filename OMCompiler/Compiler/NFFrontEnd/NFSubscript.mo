@@ -673,11 +673,9 @@ public
         outSubscripts := simplify(s, d) :: outSubscripts;
       end for;
 
-      while not listEmpty(outSubscripts) and isWhole(listHead(outSubscripts)) loop
-        outSubscripts := listRest(outSubscripts);
-      end while;
-
-      outSubscripts := listReverseInPlace(outSubscripts);
+      if not List.all(outSubscripts, isWhole) then
+        outSubscripts := listReverseInPlace(outSubscripts);
+      end if;
     end if;
   end simplifyList;
 
