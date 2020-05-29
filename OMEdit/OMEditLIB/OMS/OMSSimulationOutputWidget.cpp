@@ -37,25 +37,23 @@
 #include "OMSSimulationDialog.h"
 #include "OMSProxy.h"
 #include "Modeling/LibraryTreeWidget.h"
+#include "Options/OptionsDialog.h"
 
 #include <QGridLayout>
 #include <QtCore/qmath.h>
 
-OMSSimulationOutputWidget::OMSSimulationOutputWidget(OMSSimulationOptions omsSimulationOptions, QWidget *pParent)
-  : mOMSSimulationOptions(omsSimulationOptions)
+OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, QWidget *pParent)
+  : QWidget(pParent), mCref(cref)
 {
-  Q_UNUSED(pParent);
-  setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName)
-                 .arg(mOMSSimulationOptions.getModelName()).arg(Helper::simulationOutput));
+  setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName, mCref, Helper::simulationOutput));
   resize(640, 120);
   // simulation widget heading
-  mpSimulationHeading = Utilities::getHeadingLabel(QString("%1 - %2")
-                                                   .arg(tr("OMSimulator Simulation"), mOMSSimulationOptions.getModelName()));
+  mpSimulationHeading = Utilities::getHeadingLabel(QString("%1 - %2").arg(tr("OMSimulator Simulation"), mCref));
   mpSimulationHeading->setElideMode(Qt::ElideMiddle);
   // Horizontal separator
   mpHorizontalLine = Utilities::getHeadingLine();
   // progress label
-  mpProgressLabel = new Label(tr("Running simulation of <b>%1</b>. Please wait for a while.").arg(mOMSSimulationOptions.getModelName()));
+  mpProgressLabel = new Label(tr("Running simulation of <b>%1</b>. Please wait for a while.").arg(mCref));
   mpProgressLabel->setTextFormat(Qt::RichText);
   mpCancelSimulationButton = new QPushButton(Helper::cancelSimulation);
   mpCancelSimulationButton->setEnabled(false);
@@ -74,11 +72,19 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(OMSSimulationOptions omsSim
   pMainLayout->addWidget(mpProgressBar, 3, 0);
   pMainLayout->addWidget(mpCancelSimulationButton, 3, 1);
   setLayout(pMainLayout);
+  // save the model start time
+  OMSProxy::instance()->getStartTime(mCref, &mStartTime);
+  // save the model stop time
+  OMSProxy::instance()->getStopTime(mCref, &mStopTime);
   // create the ArchivedSimulationItem
-  mpArchivedOMSSimulationItem = new ArchivedOMSSimulationItem(mOMSSimulationOptions, this);
+  mpArchivedOMSSimulationItem = new ArchivedOMSSimulationItem(mCref, mStartTime, mStopTime, this);
   MainWindow::instance()->getOMSSimulationDialog()->getArchivedSimulationsTreeWidget()->addTopLevelItem(mpArchivedOMSSimulationItem);
   // save the last modified datetime of result file.
-  QFileInfo resultFileInfo(mOMSSimulationOptions.getWorkingDirectory() + "/" + mOMSSimulationOptions.getResultFileName());
+  char *fileName = (char*)"";
+  int bufferSize;
+  OMSProxy::instance()->getResultFile(mCref, &fileName, &bufferSize);
+  mResultFilePath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), QString(fileName));
+  QFileInfo resultFileInfo(mResultFilePath);
   if (resultFileInfo.exists()) {
     mResultFileLastModifiedDateTime = resultFileInfo.lastModified();
   } else {
@@ -86,29 +92,25 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(OMSSimulationOptions omsSim
   }
   mIsSimulationRunning = false;
   // initialize the model
-  if (OMSProxy::instance()->initialize(mOMSSimulationOptions.getModelName())) {
+  if (OMSProxy::instance()->initialize(mCref)) {
     // start the asynchronous simulation
     qRegisterMetaType<oms_status_enu_t>("oms_status_enu_t");
     connect(this, SIGNAL(sendSimulationProgress(QString,double,oms_status_enu_t)), SLOT(simulationProgress(QString,double,oms_status_enu_t)));
-    if (OMSProxy::instance()->simulate_asynchronous(mOMSSimulationOptions.getModelName())) {
+    if (OMSProxy::instance()->simulate_asynchronous(mCref)) {
       mIsSimulationRunning = true;
       mpCancelSimulationButton->setEnabled(true);
     } else {
-      mpProgressLabel->setText(tr("Simulation using the <b>%1</b> model is failed. %2")
-                               .arg(mOMSSimulationOptions.getModelName())
-                               .arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER)));
+      mpProgressLabel->setText(tr("Simulation using the <b>%1</b> model is failed. %2").arg(mCref).arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER)));
       mpProgressBar->setValue(mpProgressBar->maximum());
       mpArchivedOMSSimulationItem->setStatus(tr("Simulation failed!"));
     }
   } else {
     LibraryTreeItem *pLibraryTreeItem;
-    pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(mOMSSimulationOptions.getModelName());
+    pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(mCref);
     if (pLibraryTreeItem) {
       MainWindow::instance()->instantiateOMSModel(pLibraryTreeItem, false);
     }
-    mpProgressLabel->setText(tr("Initialization using the <b>%1</b> model is failed. %2")
-                             .arg(mOMSSimulationOptions.getModelName())
-                             .arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER)));
+    mpProgressLabel->setText(tr("Initialization using the <b>%1</b> model is failed. %2").arg(mCref).arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER)));
     mpProgressBar->setValue(mpProgressBar->maximum());
     mpArchivedOMSSimulationItem->setStatus(tr("Initialization failed!"));
   }
@@ -135,13 +137,13 @@ void OMSSimulationOutputWidget::simulateCallback(const char* ident, double time,
 void OMSSimulationOutputWidget::cancelSimulation()
 {
   // cancel the simulation
-  if (OMSProxy::instance()->cancelSimulation_asynchronous(mOMSSimulationOptions.getModelName())) {
+  if (OMSProxy::instance()->cancelSimulation_asynchronous(mCref)) {
     LibraryTreeItem *pLibraryTreeItem;
-    pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(mOMSSimulationOptions.getModelName());
+    pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(mCref);
     if (pLibraryTreeItem) {
       MainWindow::instance()->instantiateOMSModel(pLibraryTreeItem, false);
     }
-    mpProgressLabel->setText(tr("Simulation using the <b>%1</b> model is cancelled.").arg(mOMSSimulationOptions.getModelName()));
+    mpProgressLabel->setText(tr("Simulation using the <b>%1</b> model is cancelled.").arg(mCref));
     mpProgressBar->setValue(mpProgressBar->maximum());
     mIsSimulationRunning = false;
     mpCancelSimulationButton->setEnabled(false);
@@ -159,10 +161,10 @@ void OMSSimulationOutputWidget::cancelSimulation()
 void OMSSimulationOutputWidget::simulationProgress(QString ident, double time, oms_status_enu_t status)
 {
   if (status < oms_status_warning) {
-    int progress = (time * 100) / mOMSSimulationOptions.getStopTime();
+    int progress = (time * 100) / mStopTime;
     mpProgressBar->setValue(progress);
-    if (time >= mOMSSimulationOptions.getStopTime()) {
-      mpProgressLabel->setText(tr("Simulation using the <b>%1</b> model is finished.").arg(mOMSSimulationOptions.getModelName()));
+    if (time >= mStopTime) {
+      mpProgressLabel->setText(tr("Simulation using the <b>%1</b> model is finished.").arg(mCref));
       mpProgressBar->setValue(mpProgressBar->maximum());
       mIsSimulationRunning = false;
       mpCancelSimulationButton->setEnabled(false);
@@ -174,7 +176,7 @@ void OMSSimulationOutputWidget::simulationProgress(QString ident, double time, o
         MainWindow::instance()->instantiateOMSModel(pLibraryTreeItem, false);
       }
       // simulation finished show the results
-      MainWindow::instance()->getOMSSimulationDialog()->simulationFinished(mOMSSimulationOptions, mResultFileLastModifiedDateTime);
+      MainWindow::instance()->getOMSSimulationDialog()->simulationFinished(mResultFilePath, mResultFileLastModifiedDateTime);
     }
   }
 }

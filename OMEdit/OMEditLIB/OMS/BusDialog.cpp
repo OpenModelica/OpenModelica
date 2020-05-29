@@ -417,6 +417,12 @@ AddBusDialog::AddBusDialog(QList<Element *> components, LibraryTreeItem *pLibrar
   // name
   mpNameLabel = new Label(Helper::name);
   mpNameTextBox = new QLineEdit(mpLibraryTreeItem ? mpLibraryTreeItem->getName() : "");
+  if (mpLibraryTreeItem) {
+    /*! @todo Remove the following line once oms_rename is available for elements.
+   * And then fix the OMSRenameCommand accordingly.
+   */
+    mpNameTextBox->setDisabled(true);
+  }
   // input connectors
   mpInputConnectorsTreeModel = new ConnectorsModel(this);
   mpInputConnectorsTreeView = new ConnectorsTreeView;
@@ -455,6 +461,7 @@ AddBusDialog::AddBusDialog(QList<Element *> components, LibraryTreeItem *pLibrar
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
+  mpOkButton->setEnabled(!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary());
   connect(mpOkButton, SIGNAL(clicked()), SLOT(addBus()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
@@ -537,11 +544,8 @@ void AddBusDialog::addBus()
   QString bus = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mpNameTextBox->text());
 
   if (mpLibraryTreeItem) {  // edit case
-    mpGraphicsView->getModelWidget()->beginMacro("Edit bus");
-
     /*! @todo Rename the bus here.
      */
-
     QStringList existingConnectors;
     if (mpLibraryTreeItem->getOMSBusConnector() && mpLibraryTreeItem->getOMSBusConnector()->connectors) {
       for (int i = 0 ; mpLibraryTreeItem->getOMSBusConnector()->connectors[i] ; i++) {
@@ -549,42 +553,28 @@ void AddBusDialog::addBus()
                                   .arg(QString(mpLibraryTreeItem->getOMSBusConnector()->connectors[i])));
       }
     }
-
     // add connectors to the bus
     QSet<QString> addConnectors = connectors.toSet().subtract(existingConnectors.toSet());
     foreach (QString connector, addConnectors) {
-      AddConnectorToBusCommand *pAddConnectorToBusCommand = new AddConnectorToBusCommand(bus, connector, mpGraphicsView);
-      mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddConnectorToBusCommand);
+      OMSProxy::instance()->addConnectorToBus(bus, connector);
     }
     // delete connectors from the bus
     QSet<QString> deleteConnectors = existingConnectors.toSet().subtract(connectors.toSet());
     foreach (QString connector, deleteConnectors) {
-      DeleteConnectorFromBusCommand *pDeleteConnectorFromBusCommand = new DeleteConnectorFromBusCommand(bus, connector, mpGraphicsView);
-      mpGraphicsView->getModelWidget()->getUndoStack()->push(pDeleteConnectorFromBusCommand);
+      OMSProxy::instance()->deleteConnectorFromBus(bus, connector);
     }
+    mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Edit bus %1").arg(bus));
     mpGraphicsView->getModelWidget()->updateModelText();
-    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
     accept();
-    mpGraphicsView->getModelWidget()->endMacro();
   } else {  // add case
-    mpGraphicsView->getModelWidget()->beginMacro("Add bus");
-    QString annotation = QString("Placement(true,%1,%2,-10.0,-10.0,10.0,10.0,0,%1,%2,-10.0,-10.0,10.0,10.0,)")
-                         .arg(Utilities::mapToCoOrdinateSystem(0.5, 0, 1, -100, 100))
-                         .arg(Utilities::mapToCoOrdinateSystem(0.5, 0, 1, -100, 100));
-    AddBusCommand *pAddBusCommand = new AddBusCommand(mpNameTextBox->text(), 0, annotation, mpGraphicsView, false);
-    mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddBusCommand);
-    if (!pAddBusCommand->isFailed()) {
-      // add connectors to the bus
+    if (OMSProxy::instance()->addBus(bus)) {
       foreach (QString connector, connectors) {
-        AddConnectorToBusCommand *pAddConnectorToBusCommand = new AddConnectorToBusCommand(bus, connector, mpGraphicsView);
-        mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddConnectorToBusCommand);
+        OMSProxy::instance()->addConnectorToBus(bus, connector);
       }
-      mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitComponentAddedForComponent();
+      mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Add bus %1").arg(bus));
       mpGraphicsView->getModelWidget()->updateModelText();
-      mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
       accept();
     }
-    mpGraphicsView->getModelWidget()->endMacro();
   }
 }
 
@@ -613,6 +603,12 @@ AddTLMBusDialog::AddTLMBusDialog(QList<Element *> components, LibraryTreeItem *p
   // name
   mpNameLabel = new Label(Helper::name);
   mpNameTextBox = new QLineEdit(mpLibraryTreeItem ? mpLibraryTreeItem->getName() : "");
+  if (mpLibraryTreeItem) {
+    /*! @todo Remove the following line once oms_rename is available for elements.
+   * And then fix the OMSRenameCommand accordingly.
+   */
+    mpNameTextBox->setDisabled(true);
+  }
   // domain
   mpDomainLabel = new Label(tr("Domain:"));
   mpDomainComboBox = new QComboBox;
@@ -693,6 +689,7 @@ AddTLMBusDialog::AddTLMBusDialog(QList<Element *> components, LibraryTreeItem *p
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
+  mpOkButton->setEnabled(!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary());
   connect(mpOkButton, SIGNAL(clicked()), SLOT(addTLMBus()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
@@ -835,11 +832,8 @@ void AddTLMBusDialog::addTLMBus()
   QString tlmBus = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mpNameTextBox->text());
 
   if (mpLibraryTreeItem) {  // edit case
-    mpGraphicsView->getModelWidget()->beginMacro("Edit TLM bus");
-
     /*! @todo Rename the tlm bus here.
      */
-
     QSet<QPair<QString, QString> > existingConnectors;
     if (mpLibraryTreeItem->getOMSTLMBusConnector() && mpLibraryTreeItem->getOMSTLMBusConnector()->connectornames) {
       for (int i = 0 ; mpLibraryTreeItem->getOMSTLMBusConnector()->connectornames[i] ; i++) {
@@ -853,47 +847,29 @@ void AddTLMBusDialog::addTLMBus()
     deleteConnectors.subtract(connectors);
     QPair<QString, QString> connector;
     foreach (connector, deleteConnectors) {
-      DeleteConnectorFromTLMBusCommand *pDeleteConnectorFromTLMBusCommand;
-      pDeleteConnectorFromTLMBusCommand = new DeleteConnectorFromTLMBusCommand(tlmBus, connector.first, connector.second, mpGraphicsView);
-      mpGraphicsView->getModelWidget()->getUndoStack()->push(pDeleteConnectorFromTLMBusCommand);
+      OMSProxy::instance()->deleteConnectorFromTLMBus(tlmBus, connector.first);
     }
     // add connectors to the bus
     QSet<QPair<QString, QString> > addConnectors = connectors;
     addConnectors.subtract(existingConnectors);
     foreach (connector, addConnectors) {
-      AddConnectorToTLMBusCommand *pAddConnectorToBusCommand = new AddConnectorToTLMBusCommand(tlmBus, connector.first,
-                                                                                               connector.second, mpGraphicsView);
-      mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddConnectorToBusCommand);
+      OMSProxy::instance()->addConnectorToTLMBus(tlmBus, connector.first, connector.second);
     }
-
+    mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Edit tlm bus %1").arg(tlmBus));
     mpGraphicsView->getModelWidget()->updateModelText();
-    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
     accept();
-    mpGraphicsView->getModelWidget()->endMacro();
   } else {  // add case
-    mpGraphicsView->getModelWidget()->beginMacro("Add TLM bus");
-    QString annotation = QString("Placement(true,%1,%2,-10.0,-10.0,10.0,10.0,0,%1,%2,-10.0,-10.0,10.0,10.0,)")
-                         .arg(Utilities::mapToCoOrdinateSystem(0.5, 0, 1, -100, 100))
-                         .arg(Utilities::mapToCoOrdinateSystem(0.5, 0, 1, -100, 100));
-    AddTLMBusCommand *pAddTLMBusCommand = new AddTLMBusCommand(mpNameTextBox->text(), 0, annotation, mpGraphicsView, false,
-                                                               (oms_tlm_domain_t)mpDomainComboBox->itemData(mpDomainComboBox->currentIndex()).toInt(),
-                                                               mpDimensionSpinBox->value(),
-                                                               (oms_tlm_interpolation_t)mpInterpolationComboBox->itemData(mpInterpolationComboBox->currentIndex()).toInt());
-    mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddTLMBusCommand);
-    if (!pAddTLMBusCommand->isFailed()) {
+    if (OMSProxy::instance()->addTLMBus(tlmBus, (oms_tlm_domain_t)mpDomainComboBox->itemData(mpDomainComboBox->currentIndex()).toInt(), mpDimensionSpinBox->value(),
+                                        (oms_tlm_interpolation_t)mpInterpolationComboBox->itemData(mpInterpolationComboBox->currentIndex()).toInt())) {
       // add connectors to the bus
       QPair<QString, QString> connector;
       foreach (connector, connectors) {
-        AddConnectorToTLMBusCommand *pAddConnectorToTLMBusCommand = new AddConnectorToTLMBusCommand(tlmBus, connector.first,
-                                                                                                    connector.second, mpGraphicsView);
-        mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddConnectorToTLMBusCommand);
+        OMSProxy::instance()->addConnectorToTLMBus(tlmBus, connector.first, connector.second);
       }
-      mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitComponentAddedForComponent();
+      mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Add tlm bus %1").arg(tlmBus));
       mpGraphicsView->getModelWidget()->updateModelText();
-      mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
       accept();
     }
-    mpGraphicsView->getModelWidget()->endMacro();
   }
 }
 
@@ -1504,6 +1480,7 @@ BusConnectionDialog::BusConnectionDialog(GraphicsView *pGraphicsView, LineAnnota
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
+  mpOkButton->setEnabled(!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary());
   connect(mpOkButton, SIGNAL(clicked()), SLOT(addBusConnection()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
@@ -1571,20 +1548,42 @@ void BusConnectionDialog::addOrDeleteAtomicConnections(ConnectionsModel *pConnec
  */
 void BusConnectionDialog::deleteAtomicConnection(QString startConnectorName, QString endConnectorName)
 {
-  LibraryTreeItem *pStartLibraryTreeItem = mpConnectionLineAnnotation->getStartComponent()->getLibraryTreeItem();
-  LibraryTreeItem *pStartParentLibraryTreeItem = pStartLibraryTreeItem->parent();
-  LibraryTreeItem *pEndLibraryTreeItem = mpConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem();
-  LibraryTreeItem *pEndParentLibraryTreeItem = pEndLibraryTreeItem->parent();
-
-  Element *pStartComponent = pStartParentLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentObject(startConnectorName);
-  Element *pEndComponent = pEndParentLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentObject(endConnectorName);
-
+  // get start connector
+  Element *pStartComponent = 0;
+  Element *pBusStartComponent = mpConnectionLineAnnotation->getStartComponent();
+  if (pBusStartComponent && pBusStartComponent->getRootParentComponent()) {
+    pStartComponent = mpGraphicsView->getModelWidget()->getConnectorComponent(pBusStartComponent->getRootParentComponent(), startConnectorName);
+  } else if (pBusStartComponent) {
+    pStartComponent = mpGraphicsView->getComponentObject(startConnectorName);
+  }
+  // get end connector
+  Element *pEndComponent = 0;
+  Element *pBusEndComponent = mpConnectionLineAnnotation->getEndComponent();
+  if (pBusEndComponent && pBusEndComponent->getRootParentComponent()) {
+    pEndComponent = mpGraphicsView->getModelWidget()->getConnectorComponent(pBusEndComponent->getRootParentComponent(), endConnectorName);
+  } else if (pBusEndComponent) {
+    pEndComponent = mpGraphicsView->getComponentObject(endConnectorName);
+  }
+  // delete connection once we have both start and end connectors
   if (pStartComponent && pEndComponent) {
+    QString startComponentName = QStringLiteral("");
+    if (pStartComponent->getParentComponent()) {
+      startComponentName = QString("%1.%2").arg(pStartComponent->getRootParentComponent()->getName()).arg(pStartComponent->getName());
+    } else {
+      startComponentName = pStartComponent->getName();
+    }
+
+    QString endComponentName = QStringLiteral("");
+    if (pEndComponent->getParentComponent()) {
+      endComponentName = QString("%1.%2").arg(pEndComponent->getRootParentComponent()->getName()).arg(pEndComponent->getName());
+    } else {
+      endComponentName = pEndComponent->getName();
+    }
+
     foreach (LineAnnotation *pConnectionLineAnnotation, mpGraphicsView->getConnectionsList()) {
-      if ((pConnectionLineAnnotation->getStartComponentName().compare(pStartComponent->getLibraryTreeItem()->getNameStructure()) == 0)
-          && (pConnectionLineAnnotation->getEndComponentName().compare(pEndComponent->getLibraryTreeItem()->getNameStructure()) == 0)) {
-        DeleteConnectionCommand *pDeleteConnectionCommand = new DeleteConnectionCommand(pConnectionLineAnnotation);
-        mpGraphicsView->getModelWidget()->getUndoStack()->push(pDeleteConnectionCommand);
+      if ((pConnectionLineAnnotation->getStartComponentName().compare(startComponentName) == 0) && (pConnectionLineAnnotation->getEndComponentName().compare(endComponentName) == 0)) {
+        mpGraphicsView->removeConnectionFromView(pConnectionLineAnnotation);
+        mpGraphicsView->deleteConnectionFromClass(pConnectionLineAnnotation);
       }
     }
   }
@@ -1598,25 +1597,53 @@ void BusConnectionDialog::deleteAtomicConnection(QString startConnectorName, QSt
  */
 void BusConnectionDialog::addAtomicConnection(QString startConnectorName, QString endConnectorName)
 {
+  // get start connector
   LibraryTreeItem *pStartLibraryTreeItem = mpConnectionLineAnnotation->getStartComponent()->getLibraryTreeItem();
-  LibraryTreeItem *pStartParentLibraryTreeItem = pStartLibraryTreeItem->parent();
+  Element *pStartComponent = 0;
+  Element *pBusStartComponent = mpConnectionLineAnnotation->getStartComponent();
+  if (pBusStartComponent && pBusStartComponent->getRootParentComponent()) {
+    pStartComponent = mpGraphicsView->getModelWidget()->getConnectorComponent(pBusStartComponent->getRootParentComponent(), startConnectorName);
+  } else if (pBusStartComponent) {
+    pStartComponent = mpGraphicsView->getComponentObject(startConnectorName);
+  }
+  // get end connector
   LibraryTreeItem *pEndLibraryTreeItem = mpConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem();
-  LibraryTreeItem *pEndParentLibraryTreeItem = pEndLibraryTreeItem->parent();
-
-  Element *pStartComponent = pStartParentLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentObject(startConnectorName);
-  Element *pEndComponent = pEndParentLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentObject(endConnectorName);
-
+  Element *pEndComponent = 0;
+  Element *pBusEndComponent = mpConnectionLineAnnotation->getEndComponent();
+  if (pBusEndComponent && pBusEndComponent->getRootParentComponent()) {
+    pEndComponent = mpGraphicsView->getModelWidget()->getConnectorComponent(pBusEndComponent->getRootParentComponent(), endConnectorName);
+  } else if (pBusEndComponent) {
+    pEndComponent = mpGraphicsView->getComponentObject(endConnectorName);
+  }
+  // add connection once we have both start and end connectors
   if (pStartComponent && pEndComponent) {
     LineAnnotation *pNewConnectionLineAnnotation = new LineAnnotation("", 0, 0, mpGraphicsView);
     pNewConnectionLineAnnotation->updateShape(mpConnectionLineAnnotation);
     pNewConnectionLineAnnotation->setOMSConnectionType(oms_connection_single);
-    pNewConnectionLineAnnotation->setStartComponentName(pStartComponent->getLibraryTreeItem()->getNameStructure());
-    pNewConnectionLineAnnotation->setEndComponentName(pEndComponent->getLibraryTreeItem()->getNameStructure());
-    AddConnectionCommand *pAddConnectionCommand = new AddConnectionCommand(pNewConnectionLineAnnotation, true);
-    mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddConnectionCommand);
-    if (pNewConnectionLineAnnotation->getStartComponent()->getLibraryTreeItem()->getOMSBusConnector()
-        && pNewConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem()->getOMSBusConnector()) {
+
+    QString startComponentName = QStringLiteral("");
+    if (pStartComponent->getParentComponent()) {
+      startComponentName = QString("%1.%2").arg(pStartComponent->getRootParentComponent()->getName()).arg(pStartComponent->getName());
+    } else {
+      startComponentName = pStartComponent->getName();
+    }
+    pNewConnectionLineAnnotation->setStartComponent(pStartComponent);
+    pNewConnectionLineAnnotation->setStartComponentName(startComponentName);
+
+    QString endComponentName = QStringLiteral("");
+    if (pEndComponent->getParentComponent()) {
+      endComponentName = QString("%1.%2").arg(pEndComponent->getRootParentComponent()->getName()).arg(pEndComponent->getName());
+    } else {
+      endComponentName = pEndComponent->getName();
+    }
+    pNewConnectionLineAnnotation->setEndComponent(pEndComponent);
+    pNewConnectionLineAnnotation->setEndComponentName(endComponentName);
+
+    mpGraphicsView->addConnectionToView(pNewConnectionLineAnnotation);
+    if (mpGraphicsView->addConnectionToClass(pNewConnectionLineAnnotation) && pStartLibraryTreeItem->getOMSBusConnector() && pEndLibraryTreeItem->getOMSBusConnector()) {
       pNewConnectionLineAnnotation->setVisible(false);
+    } else {
+      mpGraphicsView->removeConnectionFromView(pNewConnectionLineAnnotation);
     }
   }
 }
@@ -1627,39 +1654,50 @@ void BusConnectionDialog::addAtomicConnection(QString startConnectorName, QStrin
  */
 void BusConnectionDialog::addBusConnection()
 {
-  if (mAddCase) {
-    mpGraphicsView->getModelWidget()->beginMacro(Helper::addBusConnection);
-  } else {
-    mpGraphicsView->getModelWidget()->beginMacro(Helper::editBusConnection);
-  }
-
-  addOrDeleteAtomicConnections(mpInputOutputConnectionsModel);
-  addOrDeleteAtomicConnections(mpOutputInputConnectionsModel);
-
-  if (mAddCase
-      && mpConnectionLineAnnotation->getStartComponent()->getLibraryTreeItem()->getOMSBusConnector()
+  if (mAddCase && mpConnectionLineAnnotation->getStartComponent()->getLibraryTreeItem()->getOMSBusConnector()
       && mpConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem()->getOMSBusConnector()) {
-    LibraryTreeItem *pStartLibraryTreeItem = mpConnectionLineAnnotation->getStartComponent()->getLibraryTreeItem();
-    mpConnectionLineAnnotation->setStartComponentName(pStartLibraryTreeItem->getNameStructure());
-
-    LibraryTreeItem *pEndLibraryTreeItem = mpConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem();
-    mpConnectionLineAnnotation->setEndComponentName(pEndLibraryTreeItem->getNameStructure());
-
+    QString startComponentName, endComponentName;
+    Element *pStartComponent = mpConnectionLineAnnotation->getStartComponent();
+    if (pStartComponent->getParentComponent()) {
+      startComponentName = QString("%1.%2").arg(pStartComponent->getRootParentComponent()->getName()).arg(pStartComponent->getName());
+    } else {
+      startComponentName = pStartComponent->getName();
+    }
+    mpConnectionLineAnnotation->setStartComponentName(startComponentName);
+    Element *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
+    if (pEndComponent->getParentComponent()) {
+      endComponentName = QString("%1.%2").arg(pEndComponent->getRootParentComponent()->getName()).arg(pEndComponent->getName());
+    } else {
+      endComponentName = pEndComponent->getName();
+    }
+    mpConnectionLineAnnotation->setEndComponentName(endComponentName);
     mpConnectionLineAnnotation->setOMSConnectionType(oms_connection_bus);
     mpConnectionLineAnnotation->setLineThickness(0.5);
-
-    AddConnectionCommand *pAddConnectionCommand = new AddConnectionCommand(mpConnectionLineAnnotation, true);
-    mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddConnectionCommand);
+    mpGraphicsView->addConnectionToView(mpConnectionLineAnnotation);
+    if (mpGraphicsView->addConnectionToClass(mpConnectionLineAnnotation)) {
+      addOrDeleteAtomicConnections(mpInputOutputConnectionsModel);
+      addOrDeleteAtomicConnections(mpOutputInputConnectionsModel);
+      mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Bus Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartComponentName(),
+                                                                                                                   mpConnectionLineAnnotation->getEndComponentName()));
+      mpGraphicsView->getModelWidget()->updateModelText();
+    } else {
+      mpGraphicsView->removeCurrentConnection();
+    }
   } else if (mAddCase) {
     /* When connecting a connector to a bus connector
-     * We don't want a bus connection in that case so we have to delete it since the atomic connection
-     * already created above.
+     * We don't want a bus connection in that case so we just create the atomic connections
      */
-    mpGraphicsView->removeCurrentConnection();
+    addOrDeleteAtomicConnections(mpInputOutputConnectionsModel);
+    addOrDeleteAtomicConnections(mpOutputInputConnectionsModel);
+    mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Connector %1 to Bus Connection").arg(mpConnectionLineAnnotation->getStartComponentName()));
+    mpGraphicsView->getModelWidget()->updateModelText();
+  } else {
+    addOrDeleteAtomicConnections(mpInputOutputConnectionsModel);
+    addOrDeleteAtomicConnections(mpOutputInputConnectionsModel);
+    mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Edit Bus Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartComponentName(),
+                                                                                                                      mpConnectionLineAnnotation->getEndComponentName()));
+    mpGraphicsView->getModelWidget()->updateModelText();
   }
-
-  mpGraphicsView->getModelWidget()->updateModelText();
-  mpGraphicsView->getModelWidget()->endMacro();
   accept();
 }
 
@@ -1705,6 +1743,7 @@ TLMConnectionDialog::TLMConnectionDialog(GraphicsView *pGraphicsView, LineAnnota
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
+  mpOkButton->setEnabled(!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary());
   connect(mpOkButton, SIGNAL(clicked()), SLOT(addTLMConnection()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
@@ -1733,57 +1772,74 @@ TLMConnectionDialog::TLMConnectionDialog(GraphicsView *pGraphicsView, LineAnnota
 void TLMConnectionDialog::addTLMConnection()
 {
   if (mpDelayTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("Delay")), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("Delay")), Helper::ok);
     return;
   }
 
   if (mpAlphaTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("Alpha")), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("Alpha")), Helper::ok);
     return;
   }
 
   if (mpLinearImpedanceTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("Linear Impedance")), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("Linear Impedance")), Helper::ok);
     return;
   }
 
   if (mpAngularImpedanceTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("Angular Impedance")), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("Angular Impedance")), Helper::ok);
     return;
   }
 
   if (mAddCase) {
-    mpConnectionLineAnnotation->setStartComponentName(mpConnectionLineAnnotation->getStartComponent()->getLibraryTreeItem()->getNameStructure());
-    mpConnectionLineAnnotation->setEndComponentName(mpConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem()->getNameStructure());
+    Element *pStartElement = mpConnectionLineAnnotation->getStartComponent();
+    QString startComponentName = QStringLiteral("");
+    if (pStartElement->getParentComponent()) {
+      startComponentName = QString("%1.%2").arg(pStartElement->getRootParentComponent()->getName()).arg(pStartElement->getName());
+    } else {
+      startComponentName = pStartElement->getName();
+    }
+    mpConnectionLineAnnotation->setStartComponentName(startComponentName);
+
+    QString endComponentName = QStringLiteral("");
+    Element *pEndElement = mpConnectionLineAnnotation->getEndComponent();
+    if (pEndElement->getParentComponent()) {
+      endComponentName = QString("%1.%2").arg(pEndElement->getRootParentComponent()->getName()).arg(pEndElement->getName());
+    } else {
+      endComponentName = pEndElement->getName();
+    }
+    mpConnectionLineAnnotation->setEndComponentName(endComponentName);
+
     mpConnectionLineAnnotation->setDelay(mpDelayTextBox->text());
     mpConnectionLineAnnotation->setAlpha(mpAlphaTextBox->text());
     mpConnectionLineAnnotation->setZf(mpLinearImpedanceTextBox->text());
     mpConnectionLineAnnotation->setZfr(mpAngularImpedanceTextBox->text());
     mpConnectionLineAnnotation->setOMSConnectionType(oms_connection_tlm);
 
-    AddConnectionCommand *pAddConnectionCommand = new AddConnectionCommand(mpConnectionLineAnnotation, true);
-    mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddConnectionCommand);
+    mpConnectionLineAnnotation->drawCornerItems();
+    mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
+    mpGraphicsView->addConnectionToView(mpConnectionLineAnnotation);
+    if (mpGraphicsView->addConnectionToClass(mpConnectionLineAnnotation)) {
+      mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Add TLM Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartComponentName(),
+                                                                                                                       mpConnectionLineAnnotation->getEndComponentName()));
+      mpGraphicsView->getModelWidget()->updateModelText();
+      accept();
+    } else {
+      reject();
+    }
   } else {
-    oms_tlm_connection_parameters_t oldTLMParameters;
-    oldTLMParameters.delay = mpConnectionLineAnnotation->getDelay().toDouble();
-    oldTLMParameters.alpha = mpConnectionLineAnnotation->getAlpha().toDouble();
-    oldTLMParameters.linearimpedance = mpConnectionLineAnnotation->getZf().toDouble();
-    oldTLMParameters.angularimpedance = mpConnectionLineAnnotation->getZfr().toDouble();
+    oms_tlm_connection_parameters_t tlmConnectionParameters;
+    tlmConnectionParameters.delay = mpDelayTextBox->text().toDouble();
+    tlmConnectionParameters.alpha = mpAlphaTextBox->text().toDouble();
+    tlmConnectionParameters.linearimpedance = mpLinearImpedanceTextBox->text().toDouble();
+    tlmConnectionParameters.angularimpedance = mpAngularImpedanceTextBox->text().toDouble();
 
-    oms_tlm_connection_parameters_t newTLMParameters;
-    newTLMParameters.delay = mpDelayTextBox->text().toDouble();
-    newTLMParameters.alpha = mpAlphaTextBox->text().toDouble();
-    newTLMParameters.linearimpedance = mpLinearImpedanceTextBox->text().toDouble();
-    newTLMParameters.angularimpedance = mpAngularImpedanceTextBox->text().toDouble();
-
-    UpdateTLMParametersCommand *pUpdateTLMParametersCommand = new UpdateTLMParametersCommand(mpConnectionLineAnnotation, oldTLMParameters,
-                                                                                             newTLMParameters);
-    mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateTLMParametersCommand);
+    if (OMSProxy::instance()->setTLMConnectionParameters(mpConnectionLineAnnotation->getStartComponent()->getLibraryTreeItem()->getNameStructure(),
+                                                         mpConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem()->getNameStructure(), &tlmConnectionParameters)) {
+      mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Edit TLM Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartComponentName(),
+                                                                                                                        mpConnectionLineAnnotation->getEndComponentName()));
+      mpGraphicsView->getModelWidget()->updateModelText();
+      accept();
+    }
   }
-  mpGraphicsView->getModelWidget()->updateModelText();
-  accept();
 }

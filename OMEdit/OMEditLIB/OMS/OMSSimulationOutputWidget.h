@@ -34,7 +34,6 @@
 #ifndef OMSSIMULATIONOUTPUTWIDGET_H
 #define OMSSIMULATIONOUTPUTWIDGET_H
 
-#include "OMSSimulationOptions.h"
 #include "Util/Utilities.h"
 #include "OMSimulator.h"
 
@@ -48,12 +47,15 @@ class OMSSimulationOutputWidget : public QWidget
 {
   Q_OBJECT
 public:
-  OMSSimulationOutputWidget(OMSSimulationOptions omsSimulationOptions, QWidget *pParent = 0);
+  OMSSimulationOutputWidget(const QString &cref, QWidget *pParent = 0);
   void simulateCallback(const char* ident, double time, oms_status_enu_t status);
-  OMSSimulationOptions getOMSSimulationOptions() {return mOMSSimulationOptions;}
+  QString getCref() const {return mCref;}
   int isSimulationRunning() {return mIsSimulationRunning;}
 private:
-  OMSSimulationOptions mOMSSimulationOptions;
+  QString mCref;
+  double mStartTime;
+  double mStopTime;
+  QString mResultFilePath;
   Label *mpSimulationHeading;
   QFrame *mpHorizontalLine;
   Label *mpProgressLabel;

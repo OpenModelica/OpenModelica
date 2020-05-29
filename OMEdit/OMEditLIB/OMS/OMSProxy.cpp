@@ -75,12 +75,11 @@ void loggingCallback(oms_message_type_enu_t type, const char *message)
 
 void simulateCallback(const char* ident, double time, oms_status_enu_t status)
 {
-  //  qDebug() << "simulateCallback" << ident << time << status;
+//  qDebug() << "simulateCallback" << ident << time << status;
   QList<OMSSimulationOutputWidget*> OMSSimulationOutputWidgetList;
   OMSSimulationOutputWidgetList = MainWindow::instance()->getOMSSimulationDialog()->getOMSSimulationOutputWidgetsList();
   foreach (OMSSimulationOutputWidget *pOMSSimulationOutputWidget, OMSSimulationOutputWidgetList) {
-    if (pOMSSimulationOutputWidget->isSimulationRunning()
-        && pOMSSimulationOutputWidget->getOMSSimulationOptions().getModelName().compare(QString(ident)) == 0) {
+    if (pOMSSimulationOutputWidget->isSimulationRunning() && pOMSSimulationOutputWidget->getCref().compare(QString(ident)) == 0) {
       pOMSSimulationOutputWidget->simulateCallback(ident, time, status);
       break;
     }
@@ -796,6 +795,24 @@ bool OMSProxy::getInteger(QString cref, int *value)
 }
 
 /*!
+ * \brief OMSProxy::getModelState
+ * Gets the model state.
+ * \param cref
+ * \param modelState
+ * \return
+ */
+bool OMSProxy::getModelState(const QString &cref, oms_modelState_enu_t *modelState)
+{
+  QString command = "oms_getModelState";
+  QStringList args;
+  args << "\"" + cref + "\"";
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms_getModelState(cref.toUtf8().constData(), modelState);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
  * \brief OMSProxy::getReal
  * Gets the real variable value.
  * \param cref
@@ -1097,13 +1114,36 @@ bool OMSProxy::newModel(QString cref)
 }
 
 /*!
+ * \brief OMSProxy::rename
+ * Renames the OMSimulator model/elements.
+ * \param cref
+ * \param newCref
+ * \return
+ */
+bool OMSProxy::rename(const QString &cref, const QString &newCref)
+{
+  QString command = "oms_rename";
+  QStringList args;
+  args << "\"" + cref + "\"" << "\"" + newCref + "\"";
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms_rename(cref.toUtf8().constData(), newCref.toUtf8().constData());
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
  * \brief OMSProxy::omsDelete
  * \param cref
  * \return
  */
 bool OMSProxy::omsDelete(QString cref)
 {
+  QString command = "oms_delete";
+  QStringList args;
+  args << "\"" + cref + "\"";
+  LOG_COMMAND(command, args);
   oms_status_enu_t status = oms_delete(cref.toUtf8().constData());
+  logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
 
@@ -1363,6 +1403,17 @@ bool OMSProxy::setResultFile(QString cref, QString filename, int bufferSize)
   args << "\"" + cref + "\"" << "\"" + filename + "\"" << QString::number(bufferSize);
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms_setResultFile(cref.toUtf8().constData(), filename.toUtf8().constData(), bufferSize);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+bool OMSProxy::getResultFile(QString cref, char **pFilename, int *pBufferSize)
+{
+  QString command = "oms_getResultFile";
+  QStringList args;
+  args << "\"" + cref + "\"";
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms_getResultFile(cref.toUtf8().constData(), pFilename, pBufferSize);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }

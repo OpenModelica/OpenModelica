@@ -1112,7 +1112,7 @@ void LineAnnotation::updateOMSConnection()
     connectionGeometry.pointsY[i] = points.at(i).y();
   }
 
-  OMSProxy::instance()->setConnectionGeometry(getStartComponentName(), getEndComponentName(), &connectionGeometry);
+  OMSProxy::instance()->setConnectionGeometry(mpStartComponent->getLibraryTreeItem()->getNameStructure(), mpEndComponent->getLibraryTreeItem()->getNameStructure(), &connectionGeometry);
 }
 
 void LineAnnotation::updateToolTip()
@@ -1248,8 +1248,6 @@ void LineAnnotation::updateConnectionAnnotation()
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
     pCompositeModelEditor->updateConnection(this);
-  } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
-    updateOMSConnection();
   } else {
     // get the connection line annotation.
     QString annotationString = QString("annotate=$annotation(%1)").arg(getShapeAnnotation());
@@ -1278,16 +1276,20 @@ void LineAnnotation::updateConnectionTransformation()
     mStartAndEndComponentsSelected = false;
   }
 
-  assert(!mOldAnnotation.isEmpty());
-  if (mLineType == LineAnnotation::ConnectionType) {
-    mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateConnectionCommand(this, mOldAnnotation, getOMCShapeAnnotation()));
-  } else if (mLineType == LineAnnotation::TransitionType) {
-    mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateTransitionCommand(this, mCondition, mImmediate, mReset,
-                                                                                       mSynchronize, mPriority, mOldAnnotation,
-                                                                                       mCondition, mImmediate, mReset, mSynchronize,
-                                                                                       mPriority, getOMCShapeAnnotation()));
-  } else if (mLineType == LineAnnotation::InitialStateType) {
-    mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateInitialStateCommand(this, mOldAnnotation, getOMCShapeAnnotation()));
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    updateOMSConnection();
+  } else {
+    assert(!mOldAnnotation.isEmpty());
+    if (mLineType == LineAnnotation::ConnectionType) {
+      mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateConnectionCommand(this, mOldAnnotation, getOMCShapeAnnotation()));
+    } else if (mLineType == LineAnnotation::TransitionType) {
+      mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateTransitionCommand(this, mCondition, mImmediate, mReset,
+                                                                                         mSynchronize, mPriority, mOldAnnotation,
+                                                                                         mCondition, mImmediate, mReset, mSynchronize,
+                                                                                         mPriority, getOMCShapeAnnotation()));
+    } else if (mLineType == LineAnnotation::InitialStateType) {
+      mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateInitialStateCommand(this, mOldAnnotation, getOMCShapeAnnotation()));
+    }
   }
 }
 

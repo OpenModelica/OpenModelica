@@ -44,36 +44,12 @@
 class ModelWidget;
 class Label;
 
-class TLMSystemSimulationInformation
-{
-public:
-  TLMSystemSimulationInformation();
-
-  QString mIpAddress;
-  int mManagerPort;
-  int mMonitorPort;
-};
-
-class WCSCSystemSimulationInformation
-{
-public:
-  WCSCSystemSimulationInformation();
-
-  oms_solver_enu_t mDescription;
-  double mFixedStepSize;
-  double mInitialStepSize;
-  double mMinimumStepSize;
-  double mMaximumStepSize;
-  double mAbsoluteTolerance;
-  double mRelativeTolerance;
-};
-
 class SystemSimulationInformationWidget : public QWidget
 {
   Q_OBJECT
 public:
   SystemSimulationInformationWidget(ModelWidget *pModelWidget);
-  bool setSystemSimulationInformation();
+  bool setSystemSimulationInformation(bool pushOnStack);
 private:
   ModelWidget *mpModelWidget;
   // TLM system simulation information

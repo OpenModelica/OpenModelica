@@ -64,7 +64,6 @@
 #include "Simulation/SimulationDialog.h"
 #include "TLM/TLMCoSimulationDialog.h"
 #include "FMI/ImportFMUDialog.h"
-#include "OMS/InstantiateDialog.h"
 #include "FMI/ImportFMUModelDescriptionDialog.h"
 #include "Git/CommitChangesDialog.h"
 #include "Git/RevertCommitsDialog.h"
@@ -691,16 +690,27 @@ void MainWindow::openResultFiles(QStringList fileNames)
 
 void MainWindow::simulate(LibraryTreeItem *pLibraryTreeItem)
 {
-  if (!mpSimulationDialog) {
-    mpSimulationDialog = new SimulationDialog(this);
-  }
-  /* if Modelica text is changed manually by user then validate it before saving. */
-  if (pLibraryTreeItem->getModelWidget()) {
-    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
-      return;
+  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+    if (!mpSimulationDialog) {
+      mpSimulationDialog = new SimulationDialog(this);
+    }
+    /* if Modelica text is changed manually by user then validate it before saving. */
+    if (pLibraryTreeItem->getModelWidget()) {
+      if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+        return;
+      }
+    }
+    mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false, false);
+  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+    // get the top level LibraryTreeItem
+    LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pLibraryTreeItem);
+    if (pTopLevelLibraryTreeItem) {
+      if (!mpOMSSimulationDialog) {
+        mpOMSSimulationDialog = new OMSSimulationDialog(this);
+      }
+      mpOMSSimulationDialog->simulate(pTopLevelLibraryTreeItem);
     }
   }
-  mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false, false);
 }
 
 void MainWindow::simulateWithTransformationalDebugger(LibraryTreeItem *pLibraryTreeItem)
@@ -749,16 +759,27 @@ void MainWindow::simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem)
 
 void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
 {
-  if (!mpSimulationDialog) {
-    mpSimulationDialog = new SimulationDialog(this);
-  }
-  /* if Modelica text is changed manually by user then validate it before saving. */
-  if (pLibraryTreeItem->getModelWidget()) {
-    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
-      return;
+  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+    if (!mpSimulationDialog) {
+      mpSimulationDialog = new SimulationDialog(this);
+    }
+    /* if Modelica text is changed manually by user then validate it before saving. */
+    if (pLibraryTreeItem->getModelWidget()) {
+      if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+        return;
+      }
+    }
+    mpSimulationDialog->show(pLibraryTreeItem, false, SimulationOptions());
+  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+    // get the top level LibraryTreeItem
+    LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pLibraryTreeItem);
+    if (pTopLevelLibraryTreeItem) {
+      if (!mpOMSSimulationDialog) {
+        mpOMSSimulationDialog = new OMSSimulationDialog(this);
+      }
+      mpOMSSimulationDialog->exec(pTopLevelLibraryTreeItem->getNameStructure(), pLibraryTreeItem);
     }
   }
-  mpSimulationDialog->show(pLibraryTreeItem, false, SimulationOptions());
 }
 
 /*!
@@ -770,22 +791,29 @@ void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
 void MainWindow::instantiateOMSModel(LibraryTreeItem *pLibraryTreeItem, bool checked)
 {
   // get the top level LibraryTreeItem
-  LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()));
+  LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pLibraryTreeItem);
   if (pTopLevelLibraryTreeItem) {
+    if (!pLibraryTreeItem->getModelWidget()) {
+      mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem, false);
+    }
+    ModelWidget *pModelWidget = pLibraryTreeItem->getModelWidget();
     if (checked) {
-      InstantiateDialog *pInstantiateDialog = new InstantiateDialog(pTopLevelLibraryTreeItem);
-      // if user cancels the instantiation
-      if (!pInstantiateDialog->exec()) {
+      if (OMSProxy::instance()->instantiate(pTopLevelLibraryTreeItem->getNameStructure())) {
+        pModelWidget->getUndoStack()->setEnabled(false);
+        pModelWidget->createOMSimulatorUndoCommand("Instantiate Model", false);
+        pModelWidget->getUndoStack()->setEnabled(true);
+        mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
+      } else {
         mpOMSInstantiateModelAction->setChecked(false);
       }
     } else {
-      if (!OMSProxy::instance()->terminate(pTopLevelLibraryTreeItem->getNameStructure())) {
-        mpOMSInstantiateModelAction->setChecked(true);
+      if (OMSProxy::instance()->terminate(pTopLevelLibraryTreeItem->getNameStructure())) {
+        pModelWidget->getUndoStack()->setEnabled(false);
+        pModelWidget->createOMSimulatorUndoCommand("Terminate Model", false);
+        pModelWidget->getUndoStack()->setEnabled(true);
+        mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
       } else {
-        mpOMSInstantiateModelAction->setText(Helper::instantiateModel);
-        mpOMSInstantiateModelAction->setText(Helper::instantiateOMSModelTip);
-        mpOMSSimulateAction->setEnabled(false);
-        pTopLevelLibraryTreeItem->setModelState(oms_modelState_virgin);
+        mpOMSInstantiateModelAction->setChecked(true);
       }
     }
   }
@@ -799,7 +827,7 @@ void MainWindow::instantiateOMSModel(LibraryTreeItem *pLibraryTreeItem, bool che
 void MainWindow::simulateOMSModel(LibraryTreeItem *pLibraryTreeItem)
 {
   // get the top level LibraryTreeItem
-  LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()));
+  LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pLibraryTreeItem);
   if (pTopLevelLibraryTreeItem) {
     if (!mpOMSSimulationDialog) {
       mpOMSSimulationDialog = new OMSSimulationDialog(this);
@@ -1454,6 +1482,26 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
 }
 
 /*!
+ * \brief MainWindow::OMSSimulationFinished
+ * Called by OMSSimulationOutputWidget when the simulation is finished.\n
+ * Reads the result file and plots the result.
+ * \param resultFilePath
+ * \param resultFileLastModifiedDateTime
+ */
+void MainWindow::OMSSimulationFinished(const QString &resultFilePath, QDateTime resultFileLastModifiedDateTime)
+{
+  // read the result file
+  QFileInfo resultFileInfo(resultFilePath);
+  if (resultFileInfo.exists() && resultFileLastModifiedDateTime <= resultFileInfo.lastModified()) {
+    VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
+    MainWindow::instance()->switchToPlottingPerspectiveSlot();
+    QStringList list = MainWindow::instance()->getOMCProxy()->readSimulationResultVars(resultFileInfo.absoluteFilePath());
+    pVariablesWidget->insertVariablesItemsToTree(resultFileInfo.fileName(), resultFileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
+    MainWindow::instance()->getVariablesDockWidget()->show();
+  }
+}
+
+/*!
  * \brief MainWindow::showMessagesBrowser
  * Slot activated when MessagesWidget::MessageAdded signal is raised.\n
  * Shows the Messages Browser.
@@ -1526,7 +1574,10 @@ void MainWindow::showSearchBrowser()
   mpSearchWidget->getSearchHistoryCombobox()->setCurrentIndex(0);
 }
 
-//! Opens the new model widget.
+/*!
+ * \brief MainWindow::createNewModelicaClass
+ * Opens the new model dialog.
+ */
 void MainWindow::createNewModelicaClass()
 {
   ModelicaClassDialog *pModelicaClassDialog = new ModelicaClassDialog(this);
@@ -1536,8 +1587,7 @@ void MainWindow::createNewModelicaClass()
 void MainWindow::openModelicaFile()
 {
   QStringList fileNames;
-  fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles),
-                                              NULL, Helper::omFileTypes, NULL);
+  fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles), NULL, Helper::omFileTypes, NULL);
   if (fileNames.isEmpty()) {
     return;
   }
@@ -1716,7 +1766,7 @@ void MainWindow::openCompositeModelFile()
 
 /*!
  * \brief MainWindow::createNewOMSModel
- * Create a new OMSimulator model.
+ * Opens the new OMSimulator model dialog.
  */
 void MainWindow::createNewOMSModel()
 {
@@ -2205,6 +2255,32 @@ void MainWindow::checkAllModels()
 }
 
 /*!
+ * \brief MainWindow::openSimulationDialog
+ * Opens the Simualtion Dialog.
+ */
+void MainWindow::openSimulationDialog()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget) {
+    simulationSetup(pModelWidget->getLibraryTreeItem());
+  }
+}
+
+/*!
+ * \brief MainWindow::instantiateOMSModel
+ * Slot activated when mpOMSInstantiateModelAction triggered signal is raised.
+ * Calls MainWindow::instantiateOMSModel(LibraryTreeItem*)
+ * \param checked
+ */
+void MainWindow::instantiateOMSModel(bool checked)
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget) {
+    instantiateOMSModel(pModelWidget->getLibraryTreeItem(), checked);
+  }
+}
+
+/*!
   Simualtes the model directly.
   */
 //!
@@ -2251,17 +2327,6 @@ void MainWindow::simulateModelWithAlgorithmicDebugger()
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget) {
     simulateWithAlgorithmicDebugger(pModelWidget->getLibraryTreeItem());
-  }
-}
-
-/*!
-  Opens the Simualtion Dialog
-  */
-void MainWindow::openSimulationDialog()
-{
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
-    simulationSetup(pModelWidget->getLibraryTreeItem());
   }
 }
 
@@ -2565,45 +2630,6 @@ void MainWindow::TLMSimulate()
   if (pModelWidget) {
     TLMSimulate(pModelWidget->getLibraryTreeItem());
   }
-}
-
-/*!
- * \brief MainWindow::instantiateOMSModel
- * Slot activated when mpOMSInstantiateModelAction triggered signal is raised.
- * Calls MainWindow::instantiateOMSModel(LibraryTreeItem*)
- * \param checked
- */
-void MainWindow::instantiateOMSModel(bool checked)
-{
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
-    instantiateOMSModel(pModelWidget->getLibraryTreeItem(), checked);
-  }
-}
-
-/*!
- * \brief MainWindow::simulateOMSModel
- * Slot activated when mpOMSSimulationSetupAction triggered signal is raised.
- * Calls MainWindow::simulateOMSModel(LibraryTreeItem*)
- */
-void MainWindow::simulateOMSModel()
-{
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
-    simulateOMSModel(pModelWidget->getLibraryTreeItem());
-  }
-}
-
-/*!
- * \brief MainWindow::showOMSArchivedSimulations
- * Shows the archived simulations.
- */
-void MainWindow::showOMSArchivedSimulations()
-{
-  if (!mpOMSSimulationDialog) {
-    mpOMSSimulationDialog = new OMSSimulationDialog(this);
-  }
-  mpOMSSimulationDialog->show();
 }
 
 /*!
@@ -3249,13 +3275,13 @@ void MainWindow::createActions()
   mpLoadExternModelAction->setStatusTip(tr("Loads the External Model(s) for the TLM co-simulation"));
   connect(mpLoadExternModelAction, SIGNAL(triggered()), SLOT(loadExternalModels()));
   // create new OMSimulator Model action
-  mpNewOMSimulatorModelAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newModel, this);
-  mpNewOMSimulatorModelAction->setStatusTip(tr("Creates a new OMSimulator Model"));
+  mpNewOMSimulatorModelAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newOMSimulatorModel, this);
+  mpNewOMSimulatorModelAction->setStatusTip(Helper::newOMSimulatorModelTip);
   mpNewOMSimulatorModelAction->setShortcut(QKeySequence("Ctrl+t"));
   connect(mpNewOMSimulatorModelAction, SIGNAL(triggered()), SLOT(createNewOMSModel()));
   // open OMSimulator Model file action
-  mpOpenOMSModelFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open OMSimulator Model(s)"), this);
-  mpOpenOMSModelFileAction->setStatusTip(tr("Opens the OMSimulator model file(s)"));
+  mpOpenOMSModelFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open SSP Model(s)"), this);
+  mpOpenOMSModelFileAction->setStatusTip(tr("Opens the SSP model file(s)"));
   connect(mpOpenOMSModelFileAction, SIGNAL(triggered()), SLOT(openOMSModelFile()));
   // open the directory action
   mpOpenDirectoryAction = new QAction(tr("Open Directory"), this);
@@ -3434,6 +3460,16 @@ void MainWindow::createActions()
   mpCheckAllModelsAction->setStatusTip(Helper::checkAllModelsTip);
   mpCheckAllModelsAction->setEnabled(false);
   connect(mpCheckAllModelsAction, SIGNAL(triggered()), SLOT(checkAllModels()));
+  // simulation setup action
+  mpSimulationSetupAction = new QAction(QIcon(":/Resources/icons/simulation-center.svg"), Helper::simulationSetup, this);
+  mpSimulationSetupAction->setStatusTip(Helper::simulationSetupTip);
+  mpSimulationSetupAction->setEnabled(false);
+  connect(mpSimulationSetupAction, SIGNAL(triggered()), SLOT(openSimulationDialog()));
+  // OMSimulator instantiation action
+  mpOMSInstantiateModelAction = new QAction(QIcon(":/Resources/icons/instantiate.svg"), Helper::instantiateModel, this);
+  mpOMSInstantiateModelAction->setStatusTip(Helper::instantiateOMSModelTip);
+  mpOMSInstantiateModelAction->setCheckable(true);
+  connect(mpOMSInstantiateModelAction, SIGNAL(triggered(bool)), SLOT(instantiateOMSModel(bool)));
   // simulate action
   mpSimulateModelAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::simulate, this);
   mpSimulateModelAction->setStatusTip(Helper::simulateTip);
@@ -3456,11 +3492,6 @@ void MainWindow::createActions()
   mpSimulateWithAnimationAction->setEnabled(false);
   connect(mpSimulateWithAnimationAction, SIGNAL(triggered()), SLOT(simulateModelWithAnimation()));
 #endif
-  // simulation setup action
-  mpSimulationSetupAction = new QAction(QIcon(":/Resources/icons/simulation-center.svg"), Helper::simulationSetup, this);
-  mpSimulationSetupAction->setStatusTip(Helper::simulationSetupTip);
-  mpSimulationSetupAction->setEnabled(false);
-  connect(mpSimulationSetupAction, SIGNAL(triggered()), SLOT(openSimulationDialog()));
   // Debug Menu
   // Debug configurations
   mpDebugConfigurationsAction = new QAction(Helper::debugConfigurations, this);
@@ -3708,19 +3739,6 @@ void MainWindow::createActions()
   // Add SubModel Action
   mpAddSubModelAction = new QAction(QIcon(":/Resources/icons/import-fmu.svg"), Helper::addSubModel, this);
   mpAddSubModelAction->setStatusTip(Helper::addSubModelTip);
-  // OMSimulator simulation setup action
-  mpOMSInstantiateModelAction = new QAction(QIcon(":/Resources/icons/instantiate.svg"), Helper::instantiateModel, this);
-  mpOMSInstantiateModelAction->setStatusTip(Helper::instantiateOMSModelTip);
-  mpOMSInstantiateModelAction->setCheckable(true);
-  connect(mpOMSInstantiateModelAction, SIGNAL(triggered(bool)), SLOT(instantiateOMSModel(bool)));
-  // OMSimulator simulation setup action
-  mpOMSSimulateAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::simulate, this);
-  mpOMSSimulateAction->setStatusTip(Helper::OMSSimulateTip);
-  connect(mpOMSSimulateAction, SIGNAL(triggered()), SLOT(simulateOMSModel()));
-  // Archived simulations
-  mpOMSArchivedSimulationsAction = new QAction(Helper::archivedSimulations, this);
-  mpOMSArchivedSimulationsAction->setStatusTip(Helper::archivedSimulations);
-  connect(mpOMSArchivedSimulationsAction, SIGNAL(triggered()), SLOT(showOMSArchivedSimulations()));
 }
 
 //! Creates the menus
@@ -3882,13 +3900,14 @@ void MainWindow::createMenus()
   pSimulationMenu->addAction(mpInstantiateModelAction);
   pSimulationMenu->addAction(mpCheckModelAction);
   pSimulationMenu->addAction(mpCheckAllModelsAction);
+  pSimulationMenu->addAction(mpSimulationSetupAction);
+  pSimulationMenu->addAction(mpOMSInstantiateModelAction);
   pSimulationMenu->addAction(mpSimulateModelAction);
   pSimulationMenu->addAction(mpSimulateWithTransformationalDebuggerAction);
   pSimulationMenu->addAction(mpSimulateWithAlgorithmicDebuggerAction);
 #if !defined(WITHOUT_OSG)
   pSimulationMenu->addAction(mpSimulateWithAnimationAction);
 #endif
-  pSimulationMenu->addAction(mpSimulationSetupAction);
   // add Simulation menu to menu bar
   menuBar()->addAction(pSimulationMenu->menuAction());
   // Debug menu
@@ -3901,7 +3920,7 @@ void MainWindow::createMenus()
   menuBar()->addAction(pDebugMenu->menuAction());
   // OMSimulator menu
   QMenu *pOMSimulatorMenu = new QMenu(menuBar());
-  pOMSimulatorMenu->setTitle(tr("&OMSimulator"));
+  pOMSimulatorMenu->setTitle(tr("&SSP"));
   // add actions to OMSimulator menu
   pOMSimulatorMenu->addAction(mpNewOMSimulatorModelAction);
   pOMSimulatorMenu->addAction(mpOpenOMSModelFileAction);
@@ -3916,10 +3935,6 @@ void MainWindow::createMenus()
   pOMSimulatorMenu->addAction(mpAddTLMBusAction);
   pOMSimulatorMenu->addSeparator();
   pOMSimulatorMenu->addAction(mpAddSubModelAction);
-  pOMSimulatorMenu->addSeparator();
-  pOMSimulatorMenu->addAction(mpOMSInstantiateModelAction);
-  pOMSimulatorMenu->addAction(mpOMSSimulateAction);
-  pOMSimulatorMenu->addAction(mpOMSArchivedSimulationsAction);
   // add OMSimulator menu to menu bar
   menuBar()->addAction(pOMSimulatorMenu->menuAction());
 #ifndef Q_OS_MAC
@@ -4316,13 +4331,14 @@ void MainWindow::createToolbars()
   mpSimulationToolBar->setObjectName("Simulation Toolbar");
   mpSimulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
   // add actions to Simulation Toolbar
+  mpSimulationToolBar->addAction(mpSimulationSetupAction);
+  mpSimulationToolBar->addAction(mpOMSInstantiateModelAction);
   mpSimulationToolBar->addAction(mpSimulateModelAction);
   mpSimulationToolBar->addAction(mpSimulateWithTransformationalDebuggerAction);
   mpSimulationToolBar->addAction(mpSimulateWithAlgorithmicDebuggerAction);
 #if !defined(WITHOUT_OSG)
   mpSimulationToolBar->addAction(mpSimulateWithAnimationAction);
 #endif
-  mpSimulationToolBar->addAction(mpSimulationSetupAction);
   // Re-simulation Toolbar
   mpReSimulationToolBar = addToolBar(tr("Re-simulation Toolbar"));
   mpReSimulationToolBar->setObjectName("Re-simulation Toolbar");
@@ -4374,11 +4390,11 @@ void MainWindow::createToolbars()
   mpTLMSimulationToolbar->addAction(mpAlignInterfacesAction);
   mpTLMSimulationToolbar->addSeparator();
   mpTLMSimulationToolbar->addAction(mpTLMCoSimulationAction);
-  // OMSimulator Toolbar
-  mpOMSimulatorToobar = addToolBar(tr("OMSimulator Toolbar"));
-  mpOMSimulatorToobar->setObjectName("OMSimulator Toolbar");
+  // SSP Toolbar
+  mpOMSimulatorToobar = addToolBar(tr("SSP Toolbar"));
+  mpOMSimulatorToobar->setObjectName("SSP Toolbar");
   mpOMSimulatorToobar->setAllowedAreas(Qt::TopToolBarArea);
-  // add actions to OMSimulator Toolbar
+  // add actions to SSP Toolbar
   mpOMSimulatorToobar->addAction(mpAddSystemAction);
   mpOMSimulatorToobar->addSeparator();
   mpOMSimulatorToobar->addAction(mpAddOrEditIconAction);
@@ -4389,9 +4405,6 @@ void MainWindow::createToolbars()
   mpOMSimulatorToobar->addAction(mpAddTLMBusAction);
   mpOMSimulatorToobar->addSeparator();
   mpOMSimulatorToobar->addAction(mpAddSubModelAction);
-  mpOMSimulatorToobar->addSeparator();
-  mpOMSimulatorToobar->addAction(mpOMSInstantiateModelAction);
-  mpOMSimulatorToobar->addAction(mpOMSSimulateAction);
 }
 
 //! when the dragged object enters the main window

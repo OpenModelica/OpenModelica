@@ -36,30 +36,31 @@
 
 #include "Util/Utilities.h"
 #include "Util/Helper.h"
-#include "OMSSimulationOptions.h"
 
 #include <QDateTime>
 #include <QDialog>
 #include <QTreeWidget>
 #include <QDialogButtonBox>
+#include <QHBoxLayout>
 
 class LibraryTreeItem;
 class OMSSimulationOutputWidget;
+class SystemSimulationInformationWidget;
 
 class ArchivedOMSSimulationItem : public QTreeWidgetItem
 {
 public:
-  ArchivedOMSSimulationItem(OMSSimulationOptions omsSimulationOptions, OMSSimulationOutputWidget *pOMSSimulationOutputWidget)
+  ArchivedOMSSimulationItem(const QString &cref, const double startTime, const double stopTime, OMSSimulationOutputWidget *pOMSSimulationOutputWidget)
     : mpOMSSimulationOutputWidget(pOMSSimulationOutputWidget)
   {
-    setText(0, omsSimulationOptions.getModelName());
-    setToolTip(0, omsSimulationOptions.getModelName());
+    setText(0, cref);
+    setToolTip(0, cref);
     setText(1, QDateTime::currentDateTime().toString());
     setToolTip(1, QDateTime::currentDateTime().toString());
-    setText(2, QString::number(omsSimulationOptions.getStartTime()));
-    setToolTip(2, QString::number(omsSimulationOptions.getStartTime()));
-    setText(3, QString::number(omsSimulationOptions.getStopTime()));
-    setToolTip(3, QString::number(omsSimulationOptions.getStopTime()));
+    setText(2, QString::number(startTime));
+    setToolTip(2, QString::number(startTime));
+    setText(3, QString::number(stopTime));
+    setToolTip(3, QString::number(stopTime));
     setStatus(Helper::running);
   }
   OMSSimulationOutputWidget* getOMSSimulationOutputWidget() {return mpOMSSimulationOutputWidget;}
@@ -77,13 +78,31 @@ class OMSSimulationDialog : public QDialog
 public:
   OMSSimulationDialog(QWidget *pParent = 0);
   ~OMSSimulationDialog();
-  void simulationFinished(OMSSimulationOptions omsSimulationOptions, QDateTime resultFileLastModifiedDateTime);
+  int exec(const QString &modelCref, LibraryTreeItem *pLibraryTreeItem);
+  void simulate(LibraryTreeItem *pLibraryTreeItem);
+  void simulationFinished(const QString &resultFilePath, QDateTime resultFileLastModifiedDateTime);
 
   QTreeWidget* getArchivedSimulationsTreeWidget() {return mpArchivedSimulationsTreeWidget;}
   QList<OMSSimulationOutputWidget*> getOMSSimulationOutputWidgetsList() {return mOMSSimulationOutputWidgetsList;}
 private:
+  QString mModelCref;
+  LibraryTreeItem *mpLibraryTreeItem;
   Label *mpSimulationHeading;
   QFrame *mpHorizontalLine;
+  SystemSimulationInformationWidget *mpSystemSimulationInformationWidget;
+  QGroupBox *mpSystemSimulationInformationGroupBox;
+  Label *mpStartTimeLabel;
+  QLineEdit *mpStartTimeTextBox;
+  Label *mpStopTimeLabel;
+  QLineEdit *mpStopTimeTextBox;
+  Label *mpResultFileLabel;
+  QLineEdit *mpResultFileTextBox;
+  Label *mpResultFileBufferSizeLabel;
+  QSpinBox *mpResultFileBufferSizeSpinBox;
+  Label *mpLoggingIntervalLabel;
+  QLineEdit *mpLoggingIntervalTextBox;
+  Label *mpSignalFilterLabel;
+  QLineEdit *mpSignalFilterTextBox;
   QTreeWidget *mpArchivedSimulationsTreeWidget;
   // buttons
   QPushButton *mpOkButton;
@@ -92,7 +111,7 @@ private:
   QList<OMSSimulationOutputWidget*> mOMSSimulationOutputWidgetsList;
 public slots:
   void showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem);
-  void simulate(LibraryTreeItem *pLibraryTreeItem);
+  void saveSimulationSettings();
 };
 
 #endif // OMSSIMULATIONDIALOG_H
