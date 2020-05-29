@@ -986,22 +986,15 @@ class OMSimulatorPage : public QWidget
   Q_OBJECT
 public:
   OMSimulatorPage(OptionsDialog *pOptionsDialog);
-  void setWorkingDirectory(QString value) {mpWorkingDirectoryTextBox->setText(value);}
-  QString getWorkingDirectory() {return mpWorkingDirectoryTextBox->text();}
   QComboBox* getLoggingLevelComboBox() {return mpLoggingLevelComboBox;}
   QLineEdit* getCommandLineOptionsTextBox() {return mpCommandLineOptionsTextBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralGroupBox;
-  Label *mpWorkingDirectoryLabel;
-  QLineEdit *mpWorkingDirectoryTextBox;
-  QPushButton *mpBrowseWorkingDirectoryButton;
   Label *mpLoggingLevelLabel;
   QComboBox *mpLoggingLevelComboBox;
   Label *mpCommandLineOptionsLabel;
   QLineEdit *mpCommandLineOptionsTextBox;
-private slots:
-  void browseWorkingDirectory();
 };
 
 class TraceabilityPage : public QWidget

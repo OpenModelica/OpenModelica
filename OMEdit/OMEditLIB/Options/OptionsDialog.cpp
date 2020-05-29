@@ -950,9 +950,8 @@ void OptionsDialog::readOMSimulatorSettings()
     OMSProxy::instance()->setCommandLineOption(commandLineOptions);
   }
   // read working directory
-  if (mpSettings->contains("OMSimulator/workingDirectory")) {
-    mpOMSimulatorPage->setWorkingDirectory(mpSettings->value("OMSimulator/workingDirectory").toString());
-    OMSProxy::instance()->setWorkingDirectory(mpSettings->value("OMSimulator/workingDirectory").toString());
+  if (mpSettings->contains("workingDirectory")) {
+    OMSProxy::instance()->setWorkingDirectory(mpSettings->value("workingDirectory").toString());
   }
   // read logging level
   int index;
@@ -1502,8 +1501,7 @@ void OptionsDialog::saveOMSimulatorSettings()
   OMSProxy::instance()->setCommandLineOption("--clearAllOptions");
   OMSProxy::instance()->setCommandLineOption(mpOMSimulatorPage->getCommandLineOptionsTextBox()->text());
   // set working directory
-  mpSettings->setValue("OMSimulator/workingDirectory", mpOMSimulatorPage->getWorkingDirectory());
-  OMSProxy::instance()->setWorkingDirectory(mpOMSimulatorPage->getWorkingDirectory());
+  OMSProxy::instance()->setWorkingDirectory(mpGeneralSettingsPage->getWorkingDirectory());
   // set logging level
   mpSettings->setValue("OMSimulator/loggingLevel", mpOMSimulatorPage->getLoggingLevelComboBox()->itemData(mpOMSimulatorPage->getLoggingLevelComboBox()->currentIndex()).toInt());
   OMSProxy::instance()->setLoggingLevel(mpOMSimulatorPage->getLoggingLevelComboBox()->itemData(mpOMSimulatorPage->getLoggingLevelComboBox()->currentIndex()).toInt());
@@ -1666,7 +1664,7 @@ void OptionsDialog::addListItems()
   // OMSimulator Item
   QListWidgetItem *pOMSimulatorItem = new QListWidgetItem(mpOptionsList);
   pOMSimulatorItem->setIcon(QIcon(":/Resources/icons/tlm-icon.svg"));
-  pOMSimulatorItem->setText(tr("OMSimulator"));
+  pOMSimulatorItem->setText(tr("SSP"));
   // Traceability Item
   QListWidgetItem *pTraceabilityItem = new QListWidgetItem(mpOptionsList);
   pTraceabilityItem->setIcon(QIcon(":/Resources/icons/traceability.svg"));
@@ -5154,12 +5152,6 @@ OMSimulatorPage::OMSimulatorPage(OptionsDialog *pOptionsDialog)
   mpCommandLineOptionsLabel = new Label(tr("Command Line Options:"));
   mpCommandLineOptionsTextBox = new QLineEdit("--suppressPath=true");
   mpCommandLineOptionsTextBox->setToolTip(tr("Space separated list of command line options e.g., --suppressPath=true --ignoreInitialUnknowns=true"));
-  // working directory
-  mpWorkingDirectoryLabel = new Label(Helper::workingDirectory);
-  mpWorkingDirectoryTextBox = new QLineEdit(Utilities::tempDirectory());
-  mpBrowseWorkingDirectoryButton = new QPushButton(Helper::browse);
-  mpBrowseWorkingDirectoryButton->setAutoDefault(false);
-  connect(mpBrowseWorkingDirectoryButton, SIGNAL(clicked()), SLOT(browseWorkingDirectory()));
   // logging level
   mpLoggingLevelLabel = new Label(tr("Logging Level:"));
   mpLoggingLevelComboBox = new QComboBox;
@@ -5170,29 +5162,15 @@ OMSimulatorPage::OMSimulatorPage(OptionsDialog *pOptionsDialog)
   QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;
   pGeneralGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pGeneralGroupBoxLayout->addWidget(mpCommandLineOptionsLabel, 0, 0);
-  pGeneralGroupBoxLayout->addWidget(mpCommandLineOptionsTextBox, 0, 1, 1, 2);
-  pGeneralGroupBoxLayout->addWidget(mpWorkingDirectoryLabel, 1, 0);
-  pGeneralGroupBoxLayout->addWidget(mpWorkingDirectoryTextBox, 1, 1);
-  pGeneralGroupBoxLayout->addWidget(mpBrowseWorkingDirectoryButton, 1, 2);
-  pGeneralGroupBoxLayout->addWidget(mpLoggingLevelLabel, 2, 0);
-  pGeneralGroupBoxLayout->addWidget(mpLoggingLevelComboBox, 2, 1, 1, 2);
+  pGeneralGroupBoxLayout->addWidget(mpCommandLineOptionsTextBox, 0, 1);
+  pGeneralGroupBoxLayout->addWidget(mpLoggingLevelLabel, 1, 0);
+  pGeneralGroupBoxLayout->addWidget(mpLoggingLevelComboBox, 1, 1);
   mpGeneralGroupBox->setLayout(pGeneralGroupBoxLayout);
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setAlignment(Qt::AlignTop);
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->addWidget(mpGeneralGroupBox);
   setLayout(pMainLayout);
-}
-
-/*!
- * \brief OMSimulatorPage::browseWorkingDirectory
- * Slot activated when mpBrowseWorkingDirectoryButton clicked signal is raised.
- * Allows user to choose a new working directory.
- */
-void OMSimulatorPage::browseWorkingDirectory()
-{
-  mpWorkingDirectoryTextBox->setText(StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName)
-                                                                         .arg(Helper::chooseDirectory), NULL));
 }
 
 /*!

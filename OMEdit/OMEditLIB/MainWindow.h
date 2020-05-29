@@ -159,13 +159,14 @@ public:
   QAction* getZoomOutAction() {return mpZoomOutAction;}
   QAction* getCloseAllWindowsAction() {return mpCloseAllWindowsAction;}
   QAction* getCloseAllWindowsButThisAction() {return mpCloseAllWindowsButThisAction;}
+  QAction* getSimulationSetupAction() {return mpSimulationSetupAction;}
+  QAction* getOMSInstantiateModelAction() {return mpOMSInstantiateModelAction;}
   QAction* getSimulateModelAction() {return mpSimulateModelAction;}
   QAction* getSimulateWithTransformationalDebuggerAction() {return mpSimulateWithTransformationalDebuggerAction;}
   QAction* getSimulateWithAlgorithmicDebuggerAction() {return mpSimulateWithAlgorithmicDebuggerAction;}
 #if !defined(WITHOUT_OSG)
   QAction* getSimulateWithAnimationAction() {return mpSimulateWithAnimationAction;}
 #endif
-  QAction* getSimulationSetupAction() {return mpSimulationSetupAction;}
   QAction* getInstantiateModelAction() {return mpInstantiateModelAction;}
   QAction* getCheckModelAction() {return mpCheckModelAction;}
   QAction* getCheckAllModelsAction() {return mpCheckAllModelsAction;}
@@ -200,8 +201,6 @@ public:
   QAction* getAddBusAction() {return mpAddBusAction;}
   QAction* getAddTLMBusAction() {return mpAddTLMBusAction;}
   QAction* getAddSubModelAction() {return mpAddSubModelAction;}
-  QAction* getOMSInstantiateModelAction() {return mpOMSInstantiateModelAction;}
-  QAction* getOMSSimulationSetupAction() {return mpOMSSimulateAction;}
   QAction* getLogCurrentFileAction() {return mpLogCurrentFileAction;}
   QAction* getStageCurrentFileForCommitAction() {return mpStageCurrentFileForCommitAction;}
   QAction* getUnstageCurrentFileFromCommitAction() {return mpUnstageCurrentFileFromCommitAction;}
@@ -251,6 +250,7 @@ public:
                                    const char* x1, const char* x2, const char* y1, const char* y2, const char* curveWidth,
                                    const char* curveStyle, const char* legendPosition, const char* footer, const char* autoScale,
                                    const char* variables);
+  static void OMSSimulationFinished(const QString &resultFilePath, QDateTime resultFileLastModifiedDateTime);
 
   QList<QString> mFMUDirectoriesList;
   QList<QString> mMOLDirectoriesList;
@@ -359,13 +359,14 @@ private:
   QAction *mpInstantiateModelAction;
   QAction *mpCheckModelAction;
   QAction *mpCheckAllModelsAction;
+  QAction *mpSimulationSetupAction;
+  QAction *mpOMSInstantiateModelAction;
   QAction *mpSimulateModelAction;
   QAction *mpSimulateWithTransformationalDebuggerAction;
   QAction *mpSimulateWithAlgorithmicDebuggerAction;
 #if !defined(WITHOUT_OSG)
   QAction *mpSimulateWithAnimationAction;
 #endif
-  QAction *mpSimulationSetupAction;
   // Debug Menu
   QAction *mpDebugConfigurationsAction;
   QAction *mpAttachDebuggerToRunningProcessAction;
@@ -435,9 +436,7 @@ private:
   QAction *mpAddBusAction;
   QAction *mpAddTLMBusAction;
   QAction *mpAddSubModelAction;
-  QAction *mpOMSInstantiateModelAction;
   QAction *mpOMSSimulateAction;
-  QAction *mpOMSArchivedSimulationsAction;
   // Toolbars
   QMenu *mpRecentFilesMenu;
   QMenu *mpLibrariesMenu;
@@ -500,11 +499,12 @@ public slots:
   void instantiateModel();
   void checkModel();
   void checkAllModels();
+  void openSimulationDialog();
+  void instantiateOMSModel(bool checked);
   void simulateModel();
   void simulateModelWithTransformationalDebugger();
   void simulateModelWithAlgorithmicDebugger();
   void simulateModelWithAnimation();
-  void openSimulationDialog();
   void exportModelFMU();
   void importModelFMU();
   void importFMUModelDescription();
@@ -521,9 +521,6 @@ public slots:
   void exportToClipboard();
   void fetchInterfaceData();
   void TLMSimulate();
-  void instantiateOMSModel(bool checked);
-  void simulateOMSModel();
-  void showOMSArchivedSimulations();
   void openWorkingDirectory();
   void openTerminal();
   void openConfigurationOptions();

@@ -1712,11 +1712,23 @@ void Element::adjustInterfacePoints()
  */
 void Element::updateElementTransformations(const Transformation &oldTransformation, const bool positionChanged)
 {
-  mpGraphicsView->getModelWidget()->beginMacro("Update component transformations");
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation, positionChanged,
-                                                                                                   OptionsDialog::instance()->getGraphicalViewsPage()->getMoveConnectorsTogetherCheckBox()->isChecked()));
-  emit transformChanging();
-  mpGraphicsView->getModelWidget()->endMacro();
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    resetTransform();
+    bool state = flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
+    setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
+    setPos(0, 0);
+    setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
+    setTransform(mTransformation.getTransformationMatrix());
+    emit transformChange(positionChanged);
+    emit transformHasChanged();
+    emit transformChanging();
+  } else {
+    mpGraphicsView->getModelWidget()->beginMacro("Update component transformations");
+    const bool moveConnectorsTogether = OptionsDialog::instance()->getGraphicalViewsPage()->getMoveConnectorsTogetherCheckBox()->isChecked();
+    mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation, positionChanged, moveConnectorsTogether));
+    emit transformChanging();
+    mpGraphicsView->getModelWidget()->endMacro();
+  }
 }
 
 /*!
@@ -2719,7 +2731,7 @@ void Element::referenceElementChanged()
 
 /*!
  * \brief Element::referenceElementDeleted
- * Delets the referenced components when reference component is deleted.
+ * Deletes the referenced components when reference component is deleted.
  */
 void Element::referenceElementDeleted()
 {

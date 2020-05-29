@@ -36,15 +36,6 @@
 
 #include "Element/Element.h"
 
-class ElementProperties
-{
-public:
-  ElementProperties();
-
-  QList<QString> mParameterValues;
-  QList<QString> mInputValues;
-};
-
 class ElementPropertiesDialog : public QDialog
 {
   Q_OBJECT
@@ -97,7 +88,6 @@ private:
   QList<QLineEdit*> mParameterLineEdits;
   QList<Label*> mInputLabels;
   QList<QLineEdit*> mInputLineEdits;
-  ElementProperties mOldElementProperties;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;

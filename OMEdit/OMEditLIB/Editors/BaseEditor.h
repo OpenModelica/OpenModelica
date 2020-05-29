@@ -259,6 +259,7 @@ public:
   bool isUndoAvailable() {return mIsUndoAvailable;}
   bool isRedoAvailable() {return mIsRedoAvailable;}
   void setCompletionCharacters(QString chars) { mCompletionCharacters = chars; }
+  void setReadOnlyStyleSheet();
 private:
   BaseEditor *mpBaseEditor;
   LineNumberArea *mpLineNumberArea;

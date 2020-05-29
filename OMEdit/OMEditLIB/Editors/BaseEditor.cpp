@@ -662,6 +662,7 @@ PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   : QPlainTextEdit(pBaseEditor), mpBaseEditor(pBaseEditor)
 {
   setObjectName("BaseEditor");
+  setReadOnlyStyleSheet();
   QTextDocument *pTextDocument = document();
   pTextDocument->setDocumentMargin(2);
   BaseEditorDocumentLayout *pModelicaTextDocumentLayout = new BaseEditorDocumentLayout(pTextDocument);
@@ -1555,6 +1556,16 @@ void PlainTextEdit::resizeEvent(QResizeEvent *pEvent)
 QCompleter *PlainTextEdit::completer()
 {
   return mpCompleter;
+}
+
+/*!
+ * \brief PlainTextEdit::setReadOnlyStyleSheet
+ * Sets the stylesheet for read-only editor to make it look like disabled.
+ */
+void PlainTextEdit::setReadOnlyStyleSheet()
+{
+  // read-only PlainTextEdit with gray background
+  setStyleSheet(QString("QPlainTextEdit[readOnly=\"true\"] { background-color: #f0f0f0 }"));
 }
 
 /*!

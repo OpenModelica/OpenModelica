@@ -38,24 +38,6 @@
 #include <QGridLayout>
 #include <QMessageBox>
 
-TLMSystemSimulationInformation::TLMSystemSimulationInformation()
-{
-  mIpAddress = "";
-  mManagerPort = 0;
-  mMonitorPort = 0;
-}
-
-WCSCSystemSimulationInformation::WCSCSystemSimulationInformation()
-{
-  mDescription = oms_solver_none;
-  mFixedStepSize = 0.0;
-  mInitialStepSize = 0.0;
-  mMinimumStepSize = 0.0;
-  mMaximumStepSize = 0.0;
-  mAbsoluteTolerance = 0.0;
-  mRelativeTolerance = 0.0;
-}
-
 SystemSimulationInformationWidget::SystemSimulationInformationWidget(ModelWidget *pModelWidget)
   : QWidget(pModelWidget)
 {
@@ -105,8 +87,7 @@ SystemSimulationInformationWidget::SystemSimulationInformationWidget(ModelWidget
     mpMaximumStepSizeTextBox->setValidator(pDoubleValidator);
 
     double initialStepSize, minimumStepSize, maximumStepSize;
-    if (OMSProxy::instance()->getVariableStepSize(mpModelWidget->getLibraryTreeItem()->getNameStructure(),
-                                                  &initialStepSize, &minimumStepSize, &maximumStepSize)) {
+    if (OMSProxy::instance()->getVariableStepSize(mpModelWidget->getLibraryTreeItem()->getNameStructure(), &initialStepSize, &minimumStepSize, &maximumStepSize)) {
       mpInitialStepSizeTextBox->setText(QString::number(initialStepSize));
       mpMinimumStepSizeTextBox->setText(QString::number(minimumStepSize));
       mpMaximumStepSizeTextBox->setText(QString::number(maximumStepSize));
@@ -136,8 +117,7 @@ SystemSimulationInformationWidget::SystemSimulationInformationWidget(ModelWidget
     mpSolverComboBox->addItem("explicit-euler", oms_solver_sc_explicit_euler);
   }
 
-  if (mpModelWidget->getLibraryTreeItem()->isWCSystem()
-      || mpModelWidget->getLibraryTreeItem()->isSCSystem()) {
+  if (mpModelWidget->getLibraryTreeItem()->isWCSystem() || mpModelWidget->getLibraryTreeItem()->isSCSystem()) {
     oms_solver_enu_t solver;
     if (OMSProxy::instance()->getSolver(mpModelWidget->getLibraryTreeItem()->getNameStructure(), &solver)) {
       int currentIndex = mpSolverComboBox->findData(solver);
@@ -213,9 +193,10 @@ void SystemSimulationInformationWidget::solverChanged(int index)
 /*!
  * \brief SystemSimulationInformationWidget::setSystemSimulationInformation
  * Sets the simulation information of the system.
+ * \param pushOnStack
  * \return
  */
-bool SystemSimulationInformationWidget::setSystemSimulationInformation()
+bool SystemSimulationInformationWidget::setSystemSimulationInformation(bool pushOnStack)
 {
   if (mpModelWidget->getLibraryTreeItem()->isTLMSystem()) {
     if (mpIpAddressTextBox->text().isEmpty()) {
@@ -233,9 +214,7 @@ bool SystemSimulationInformationWidget::setSystemSimulationInformation()
                             GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Monitor Port"), Helper::ok);
       return false;
     }
-  } else if (mpModelWidget->getLibraryTreeItem()->isWCSystem()
-             || mpModelWidget->getLibraryTreeItem()->isSCSystem()) {
-
+  } else if (mpModelWidget->getLibraryTreeItem()->isWCSystem() || mpModelWidget->getLibraryTreeItem()->isSCSystem()) {
     oms_solver_enu_t solver = (oms_solver_enu_t)mpSolverComboBox->itemData(mpSolverComboBox->currentIndex()).toInt();
     switch (solver) {
       case oms_solver_wc_mav:
@@ -281,33 +260,47 @@ bool SystemSimulationInformationWidget::setSystemSimulationInformation()
     }
   }
 
-  TLMSystemSimulationInformation tlmSystemSimulationInformation;
-  WCSCSystemSimulationInformation wcscSystemSimulationInformation;
-
-  if (mpModelWidget->getLibraryTreeItem()->isTLMSystem()) {
-    tlmSystemSimulationInformation.mIpAddress = mpIpAddressTextBox->text();
-    tlmSystemSimulationInformation.mManagerPort = mpManagerPortTextBox->text().toInt();
-    tlmSystemSimulationInformation.mMonitorPort = mpMonitorPortTextBox->text().toInt();
-  } else if (mpModelWidget->getLibraryTreeItem()->isWCSystem() || mpModelWidget->getLibraryTreeItem()->isSCSystem()) {
-    wcscSystemSimulationInformation.mDescription = (oms_solver_enu_t)mpSolverComboBox->itemData(mpSolverComboBox->currentIndex()).toInt();
-    wcscSystemSimulationInformation.mFixedStepSize = mpFixedStepSizeTextBox->text().toDouble();
-    wcscSystemSimulationInformation.mInitialStepSize = mpInitialStepSizeTextBox->text().toDouble();
-    wcscSystemSimulationInformation.mMinimumStepSize = mpMinimumStepSizeTextBox->text().toDouble();
-    wcscSystemSimulationInformation.mMaximumStepSize = mpMaximumStepSizeTextBox->text().toDouble();
-    wcscSystemSimulationInformation.mAbsoluteTolerance = mpAbsoluteToleranceTextBox->text().toDouble();
-    wcscSystemSimulationInformation.mRelativeTolerance = mpRelativeToleranceTextBox->text().toDouble();
+  LibraryTreeItem *pLibraryTreeItem = mpModelWidget->getLibraryTreeItem();
+  const QString cref = pLibraryTreeItem->getNameStructure();
+  if (pLibraryTreeItem->isTLMSystem()) {
+    if (!OMSProxy::instance()->setTLMSocketData(cref, mpIpAddressTextBox->text(), mpManagerPortTextBox->text().toInt(), mpMonitorPortTextBox->text().toInt())) {
+      return false;
+    }
+  } else if (pLibraryTreeItem->isWCSystem() || pLibraryTreeItem->isSCSystem()) {
+    // set solver
+    oms_solver_enu_t solver = (oms_solver_enu_t)mpSolverComboBox->itemData(mpSolverComboBox->currentIndex()).toInt();
+    if (!OMSProxy::instance()->setSolver(cref, solver)) {
+      return false;
+    }
+    // set step size
+    switch (solver) {
+      case oms_solver_wc_mav:
+      case oms_solver_wc_mav2:
+      case oms_solver_sc_cvode:
+        if (!OMSProxy::instance()->setVariableStepSize(cref, mpInitialStepSizeTextBox->text().toDouble(), mpMinimumStepSizeTextBox->text().toDouble(),
+                                                       mpMaximumStepSizeTextBox->text().toDouble())) {
+          return false;
+        }
+        break;
+      case oms_solver_wc_ma:
+      case oms_solver_sc_explicit_euler:
+      default:
+        if (!OMSProxy::instance()->setFixedStepSize(cref, mpFixedStepSizeTextBox->text().toDouble())) {
+          return false;
+        }
+        break;
+    }
+    // set tolerance
+    if (!OMSProxy::instance()->setTolerance(cref, mpAbsoluteToleranceTextBox->text().toDouble(), mpRelativeToleranceTextBox->text().toDouble())) {
+      return false;
+    }
   }
-  // system simulation information command
-  SystemSimulationInformationCommand *pSystemSimulationInformationCommand;
-  pSystemSimulationInformationCommand = new SystemSimulationInformationCommand(&tlmSystemSimulationInformation,
-                                                                               &wcscSystemSimulationInformation,
-                                                                               mpModelWidget->getLibraryTreeItem());
-  mpModelWidget->getUndoStack()->push(pSystemSimulationInformationCommand);
-  if (!pSystemSimulationInformationCommand->isFailed()) {
+  // push on stack
+  if (pushOnStack) {
+    mpModelWidget->createOMSimulatorUndoCommand(QString("System %1 simulation information").arg(cref));
     mpModelWidget->updateModelText();
-    return true;
   }
-  return false;
+  return true;
 }
 
 /*!
@@ -321,12 +314,10 @@ bool SystemSimulationInformationWidget::setSystemSimulationInformation()
 SystemSimulationInformationDialog::SystemSimulationInformationDialog(ModelWidget *pModelWidget)
   : QDialog(pModelWidget)
 {
-  setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName, Helper::systemSimulationInformation,
-                                             pModelWidget->getLibraryTreeItem()->getName()));
+  setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName, Helper::systemSimulationInformation, pModelWidget->getLibraryTreeItem()->getName()));
   setAttribute(Qt::WA_DeleteOnClose);
   // set heading
-  mpHeading = Utilities::getHeadingLabel(QString("%1 - %2").arg(Helper::systemSimulationInformation,
-                                                                pModelWidget->getLibraryTreeItem()->getName()));
+  mpHeading = Utilities::getHeadingLabel(QString("%1 - %2").arg(Helper::systemSimulationInformation, pModelWidget->getLibraryTreeItem()->getName()));
   // set separator line
   mpHorizontalLine = Utilities::getHeadingLine();
   // system simulation information widget
@@ -334,6 +325,7 @@ SystemSimulationInformationDialog::SystemSimulationInformationDialog(ModelWidget
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
+  mpOkButton->setEnabled(!pModelWidget->getLibraryTreeItem()->isSystemLibrary());
   connect(mpOkButton, SIGNAL(clicked()), SLOT(setSystemSimulationInformation()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
@@ -358,7 +350,7 @@ SystemSimulationInformationDialog::SystemSimulationInformationDialog(ModelWidget
  */
 void SystemSimulationInformationDialog::setSystemSimulationInformation()
 {
-  if (mpSystemSimulationInformationWidget->setSystemSimulationInformation()) {
+  if (mpSystemSimulationInformationWidget->setSystemSimulationInformation(true)) {
     accept();
   }
 }

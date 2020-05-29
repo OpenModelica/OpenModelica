@@ -372,7 +372,8 @@ public:
   static QString animationRepeatTip;
   static QString simulationParams;
   static QString simulationParamsTip;
-  static QString newModel;
+  static QString newOMSimulatorModel;
+  static QString newOMSimulatorModelTip;
   static QString addSystem;
   static QString addSystemTip;
   static QString addSubModel;

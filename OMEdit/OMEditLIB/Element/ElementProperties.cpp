@@ -1850,9 +1850,7 @@ void CompositeModelConnectionAttributes::createCompositeModelConnection()
       newCompositeModelConnection.mAlpha = mpAlphaTextBox->text();
     }
 
-    mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateCompositeModelConnection(mpConnectionLineAnnotation,
-                                                                                              oldCompositeModelConnection,
-                                                                                              newCompositeModelConnection));
+    mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateCompositeModelConnection(mpConnectionLineAnnotation, oldCompositeModelConnection, newCompositeModelConnection));
   } else {
     mpConnectionLineAnnotation->setDelay(mpDelayTextBox->text());
     if(tlm) { //Only update TLM parameters if this is a TLM connection

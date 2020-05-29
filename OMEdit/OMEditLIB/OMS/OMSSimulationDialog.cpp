@@ -34,10 +34,11 @@
 #include "OMSSimulationDialog.h"
 #include "MainWindow.h"
 #include "Util/Helper.h"
+#include "SystemSimulationInformationDialog.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/ItemDelegate.h"
 #include "OMSSimulationOutputWidget.h"
-#include "Options/OptionsDialog.h"
+#include "Modeling/ModelWidgetContainer.h"
 #include "Plotting/VariablesWidget.h"
 
 #include <QGridLayout>
@@ -55,12 +56,62 @@
 OMSSimulationDialog::OMSSimulationDialog(QWidget *pParent)
   : QDialog(pParent)
 {
-  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::archivedSimulations));
   // heading
-  mpSimulationHeading = Utilities::getHeadingLabel(Helper::archivedSimulations);
+  mpSimulationHeading = Utilities::getHeadingLabel(QString("%1 - %2").arg(Helper::simulationSetup, mModelCref));
   mpSimulationHeading->setElideMode(Qt::ElideMiddle);
   // Horizontal separator
   mpHorizontalLine = Utilities::getHeadingLine();
+  // tab widget
+  QTabWidget *pTabWidget = new QTabWidget;
+  // General tab
+  QWidget *pGeneralWidget = new QWidget;
+  // system simulation information groupbox
+  mpSystemSimulationInformationWidget = 0;
+  mpSystemSimulationInformationGroupBox = new QGroupBox(Helper::systemSimulationInformation);
+  // start time
+  mpStartTimeLabel = new Label(QString("%1:").arg(Helper::startTime));
+  mpStartTimeTextBox = new QLineEdit;
+  // stop time
+  mpStopTimeLabel = new Label(QString("%1:").arg(Helper::stopTime));
+  mpStopTimeTextBox = new QLineEdit;
+  // result file
+  mpResultFileLabel = new Label(tr("Result File:"));
+  mpResultFileTextBox = new QLineEdit;
+  // result file buffer size
+  mpResultFileBufferSizeLabel = new Label(tr("Result File Buffer Size:"));
+  mpResultFileBufferSizeSpinBox = new QSpinBox;
+  mpResultFileBufferSizeSpinBox->setRange(1, INT_MAX);
+  // logging interval
+  mpLoggingIntervalLabel = new Label(tr("Logging Interval:"));
+  mpLoggingIntervalTextBox = new QLineEdit("0");
+  // signal filter
+  mpSignalFilterLabel = new Label(tr("Signal Filter:"));
+  mpSignalFilterTextBox = new QLineEdit;
+  mpSignalFilterTextBox->setToolTip(tr("Leave empty to include all signals otherwise use a regex to filter."));
+  // Add the validators
+  QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
+  mpStartTimeTextBox->setValidator(pDoubleValidator);
+  mpStopTimeTextBox->setValidator(pDoubleValidator);
+  // General tab widget layout
+  QGridLayout *pGeneralTabWidgetGridLayout = new QGridLayout;
+  pGeneralTabWidgetGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pGeneralTabWidgetGridLayout->addWidget(mpSystemSimulationInformationGroupBox, 1, 0, 1, 2);
+  pGeneralTabWidgetGridLayout->addWidget(mpStartTimeLabel, 2, 0);
+  pGeneralTabWidgetGridLayout->addWidget(mpStartTimeTextBox, 2, 1);
+  pGeneralTabWidgetGridLayout->addWidget(mpStopTimeLabel, 3, 0);
+  pGeneralTabWidgetGridLayout->addWidget(mpStopTimeTextBox, 3, 1);
+  pGeneralTabWidgetGridLayout->addWidget(mpResultFileLabel, 4, 0);
+  pGeneralTabWidgetGridLayout->addWidget(mpResultFileTextBox, 4, 1);
+  pGeneralTabWidgetGridLayout->addWidget(mpResultFileBufferSizeLabel, 5, 0);
+  pGeneralTabWidgetGridLayout->addWidget(mpResultFileBufferSizeSpinBox, 5, 1);
+  pGeneralTabWidgetGridLayout->addWidget(mpLoggingIntervalLabel, 6, 0);
+  pGeneralTabWidgetGridLayout->addWidget(mpLoggingIntervalTextBox, 6, 1);
+  pGeneralTabWidgetGridLayout->addWidget(mpSignalFilterLabel, 7, 0);
+  pGeneralTabWidgetGridLayout->addWidget(mpSignalFilterTextBox, 7, 1);
+  pGeneralWidget->setLayout(pGeneralTabWidgetGridLayout);
+  pTabWidget->addTab(pGeneralWidget, Helper::general);
+  // Archived simulation tab layout
+  QWidget *pArchivedSimulationsTab = new QWidget;
   // archived simulation tree widget
   mpArchivedSimulationsTreeWidget = new QTreeWidget;
   mpArchivedSimulationsTreeWidget->setItemDelegate(new ItemDelegate(mpArchivedSimulationsTreeWidget));
@@ -71,10 +122,16 @@ OMSSimulationDialog::OMSSimulationDialog(QWidget *pParent)
   mpArchivedSimulationsTreeWidget->setHeaderLabels(headers);
   mpArchivedSimulationsTreeWidget->setIndentation(0);
   connect(mpArchivedSimulationsTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(showArchivedSimulation(QTreeWidgetItem*)));
+  QGridLayout *pArchivedSimulationsTabGridLayout = new QGridLayout;
+  pArchivedSimulationsTabGridLayout->setAlignment(Qt::AlignTop);
+  pArchivedSimulationsTabGridLayout->addWidget(mpArchivedSimulationsTreeWidget, 0, 0);
+  pArchivedSimulationsTab->setLayout(pArchivedSimulationsTabGridLayout);
+  // add Archived simulations Tab to Simulation TabWidget
+  pTabWidget->addTab(pArchivedSimulationsTab, Helper::archivedSimulations);
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(accept()));
+  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(saveSimulationSettings()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
   connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
@@ -83,13 +140,13 @@ OMSSimulationDialog::OMSSimulationDialog(QWidget *pParent)
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   // Create a layout
-  QGridLayout *pMainLayout = new QGridLayout;
-  pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pMainLayout->addWidget(mpSimulationHeading, 0, 0);
-  pMainLayout->addWidget(mpHorizontalLine, 1, 0);
-  pMainLayout->addWidget(mpArchivedSimulationsTreeWidget, 2, 0);
-  pMainLayout->addWidget(mpButtonBox, 3, 0);
-  setLayout(pMainLayout);
+  QGridLayout *pMainGridLayout = new QGridLayout;
+  pMainGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pMainGridLayout->addWidget(mpSimulationHeading, 0, 0);
+  pMainGridLayout->addWidget(mpHorizontalLine, 1, 0);
+  pMainGridLayout->addWidget(pTabWidget, 2, 0);
+  pMainGridLayout->addWidget(mpButtonBox, 3, 0);
+  setLayout(pMainGridLayout);
 }
 
 /*!
@@ -104,28 +161,92 @@ OMSSimulationDialog::~OMSSimulationDialog()
   mOMSSimulationOutputWidgetsList.clear();
 }
 
+int OMSSimulationDialog::exec(const QString &modelCref, LibraryTreeItem *pLibraryTreeItem)
+{
+  mModelCref = modelCref;
+  mpLibraryTreeItem = pLibraryTreeItem;
+
+  setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName, Helper::simulationSetup, mModelCref));
+  mpSimulationHeading->setText(QString("%1 - %2").arg(Helper::simulationSetup, mModelCref));
+  // initialize system simulation information
+  if (mpSystemSimulationInformationWidget) {
+    delete mpSystemSimulationInformationGroupBox->layout();
+    delete mpSystemSimulationInformationWidget;
+    mpSystemSimulationInformationWidget = 0;
+  }
+  LibraryTreeItem *pTopLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+  LibraryTreeItem *pRootSystemLibraryTreeItem = 0;
+  if (pTopLibraryTreeItem && pTopLibraryTreeItem->childrenSize() > 0) {
+    pRootSystemLibraryTreeItem = pTopLibraryTreeItem->childAt(0);
+    if (pRootSystemLibraryTreeItem) {
+      if (!pRootSystemLibraryTreeItem->getModelWidget()) {
+        MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pRootSystemLibraryTreeItem, false);
+      }
+      mpSystemSimulationInformationWidget = new SystemSimulationInformationWidget(pRootSystemLibraryTreeItem->getModelWidget());
+      QHBoxLayout *pSystemSimulationInformationGroupBoxLayout = new QHBoxLayout;
+      pSystemSimulationInformationGroupBoxLayout->addWidget(mpSystemSimulationInformationWidget);
+      mpSystemSimulationInformationGroupBox->setLayout(pSystemSimulationInformationGroupBoxLayout);
+    }
+  }
+  // start time
+  double startTime;
+  OMSProxy::instance()->getStartTime(mModelCref, &startTime);
+  mpStartTimeTextBox->setText(QString::number(startTime));
+  // stop time
+  double stopTime;
+  OMSProxy::instance()->getStopTime(mModelCref, &stopTime);
+  mpStopTimeTextBox->setText(QString::number(stopTime));
+  // result file
+  char *fileName = (char*)"";
+  int bufferSize;
+  OMSProxy::instance()->getResultFile(mModelCref, &fileName, &bufferSize);
+  mpResultFileTextBox->setText(QString(fileName));
+  // result file buffer size
+  mpResultFileBufferSizeSpinBox->setValue(bufferSize);
+
+  mpOkButton->setEnabled(!mpLibraryTreeItem->isSystemLibrary());
+
+  return QDialog::exec();
+}
+
+/*!
+ * \brief OMSSimulationDialog::simulate
+ * Simulates the OMSimulator model.
+ * \param pLibraryTreeItem
+ */
+void OMSSimulationDialog::simulate(LibraryTreeItem *pLibraryTreeItem)
+{
+  OMSSimulationOutputWidget *pOMSSimulationOutputWidget = new OMSSimulationOutputWidget(pLibraryTreeItem->getNameStructure());
+  mOMSSimulationOutputWidgetsList.append(pOMSSimulationOutputWidget);
+  int xPos = QApplication::desktop()->availableGeometry().width() - pOMSSimulationOutputWidget->frameSize().width() - 20;
+  int yPos = QApplication::desktop()->availableGeometry().height() - pOMSSimulationOutputWidget->frameSize().height() - 20;
+  pOMSSimulationOutputWidget->setGeometry(xPos, yPos, pOMSSimulationOutputWidget->width(), pOMSSimulationOutputWidget->height());
+  pOMSSimulationOutputWidget->show();
+}
+
 /*!
  * \brief OMSSimulationDialog::simulationFinished
  * Called by OMSSimulationOutputWidget when the simulation is finished.\n
  * Reads the result file and plots the result.
- * \param omsSimulationOptions
+ * \param resultFilePath
  * \param resultFileLastModifiedDateTime
  */
-void OMSSimulationDialog::simulationFinished(OMSSimulationOptions omsSimulationOptions, QDateTime resultFileLastModifiedDateTime)
+void OMSSimulationDialog::simulationFinished(const QString &resultFilePath, QDateTime resultFileLastModifiedDateTime)
 {
   // read the result file
-  QFileInfo resultFileInfo(omsSimulationOptions.getWorkingDirectory() + "/" + omsSimulationOptions.getResultFileName());
-  if (resultFileInfo.exists() && resultFileLastModifiedDateTime <= resultFileInfo.lastModified()) {
-    VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
-    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-    QStringList list = pOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());
-    if (list.size() > 0) {
-      MainWindow::instance()->switchToPlottingPerspectiveSlot();
-      pVariablesWidget->insertVariablesItemsToTree(resultFileInfo.fileName(), omsSimulationOptions.getWorkingDirectory(),
-                                                   list, SimulationOptions());
-      MainWindow::instance()->getVariablesDockWidget()->show();
-    }
+  QFileInfo resultFileInfo(resultFilePath);
+  if (!resultFileInfo.exists() || resultFileLastModifiedDateTime > resultFileInfo.lastModified()) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Unable to find the result file <b>%1</b>.").arg(resultFileInfo.absoluteFilePath()),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+    return;
   }
+  qDebug() << resultFilePath << resultFileLastModifiedDateTime << resultFileInfo.lastModified();
+  VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+  QStringList list = pOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());
+  MainWindow::instance()->switchToPlottingPerspectiveSlot();
+  pVariablesWidget->insertVariablesItemsToTree(resultFileInfo.fileName(), resultFileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
+  MainWindow::instance()->getVariablesDockWidget()->show();
 }
 
 /*!
@@ -146,16 +267,38 @@ void OMSSimulationDialog::showArchivedSimulation(QTreeWidgetItem *pTreeWidgetIte
 }
 
 /*!
- * \brief OMSSimulationDialog::simulate
- * Simulates the OMSimulator model.
- * \param pLibraryTreeItem
+ * \brief OMSSimulationDialog::saveSimulationSettings
+ * Saves the simulation settings.
  */
-void OMSSimulationDialog::simulate(LibraryTreeItem *pLibraryTreeItem)
+void OMSSimulationDialog::saveSimulationSettings()
 {
-  OMSSimulationOutputWidget *pOMSSimulationOutputWidget = new OMSSimulationOutputWidget(pLibraryTreeItem->mOMSSimulationOptions);
-  mOMSSimulationOutputWidgetsList.append(pOMSSimulationOutputWidget);
-  int xPos = QApplication::desktop()->availableGeometry().width() - pOMSSimulationOutputWidget->frameSize().width() - 20;
-  int yPos = QApplication::desktop()->availableGeometry().height() - pOMSSimulationOutputWidget->frameSize().height() - 20;
-  pOMSSimulationOutputWidget->setGeometry(xPos, yPos, pOMSSimulationOutputWidget->width(), pOMSSimulationOutputWidget->height());
-  pOMSSimulationOutputWidget->show();
+  if (mpStartTimeTextBox->text().isEmpty()) {
+    mpStartTimeTextBox->setText("0");
+  }
+  if (mpStopTimeTextBox->text().isEmpty()) {
+    mpStopTimeTextBox->setText("1");
+  }
+  if (mpStartTimeTextBox->text().toDouble() > mpStopTimeTextBox->text().toDouble()) {
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME), Helper::ok);
+    return;
+  }
+
+  if (mpSystemSimulationInformationWidget) {
+    mpSystemSimulationInformationWidget->setSystemSimulationInformation(false);
+  }
+
+  // set the simulation settings
+  OMSProxy::instance()->setStartTime(mModelCref, mpStartTimeTextBox->text().toDouble());
+  OMSProxy::instance()->setStopTime(mModelCref, mpStopTimeTextBox->text().toDouble());
+  OMSProxy::instance()->setResultFile(mModelCref, mpResultFileTextBox->text(), mpResultFileBufferSizeSpinBox->value());
+  OMSProxy::instance()->setLoggingInterval(mModelCref, mpLoggingIntervalTextBox->text().toDouble());
+  if (!mpSignalFilterTextBox->text().isEmpty()) {
+    OMSProxy::instance()->setSignalFilter(mModelCref, mpSignalFilterTextBox->text());
+  }
+
+  ModelWidget *pModelWidget = mpLibraryTreeItem->getModelWidget();
+  pModelWidget->createOMSimulatorUndoCommand(QString("Simulation setup %1").arg(mModelCref));
+  pModelWidget->updateModelText();
+  accept();
 }
