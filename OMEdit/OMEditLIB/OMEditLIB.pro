@@ -173,7 +173,6 @@ SOURCES += Util/Helper.cpp \
   OMS/BusDialog.cpp \
   OMS/ElementPropertiesDialog.cpp \
   OMS/SystemSimulationInformationDialog.cpp \
-  OMS/InstantiateDialog.cpp \
   OMS/OMSSimulationDialog.cpp \
   OMS/OMSSimulationOutputWidget.cpp \
   Animation/TimeManager.cpp \
@@ -266,8 +265,6 @@ HEADERS  += Util/Helper.h \
   OMS/BusDialog.h \
   OMS/ElementPropertiesDialog.h \
   OMS/SystemSimulationInformationDialog.h \
-  OMS/InstantiateDialog.h \
-  OMS/OMSSimulationOptions.h \
   OMS/OMSSimulationDialog.h \
   OMS/OMSSimulationOutputWidget.h \
   Animation/TimeManager.h \

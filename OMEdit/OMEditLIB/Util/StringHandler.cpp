@@ -1659,7 +1659,9 @@ QColor StringHandler::getSimulationMessageTypeColor(StringHandler::SimulationMes
  */
 QString StringHandler::makeClassNameRelative(QString draggedClassName, QString droppedClassName)
 {
-  if (getFirstWordBeforeDot(draggedClassName).compare(getFirstWordBeforeDot(droppedClassName)) == 0) {
+  if (draggedClassName.compare(droppedClassName) == 0) {
+    return getLastWordAfterDot(draggedClassName);
+  } else if (getFirstWordBeforeDot(draggedClassName).compare(getFirstWordBeforeDot(droppedClassName)) == 0) {
     return makeClassNameRelative(removeFirstWordAfterDot(draggedClassName), removeFirstWordAfterDot(droppedClassName));
   } else {
     return draggedClassName;
