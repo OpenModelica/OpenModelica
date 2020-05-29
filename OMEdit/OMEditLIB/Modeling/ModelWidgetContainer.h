@@ -224,6 +224,7 @@ public:
   QList<Element*> getInheritedElementsList() {return mInheritedComponentsList;}
   QList<LineAnnotation*> getConnectionsList() {return mConnectionsList;}
   QList<LineAnnotation*> getInheritedConnectionsList() {return mInheritedConnectionsList;}
+  void addConnectionToView(LineAnnotation *pConnectionLineAnnotation);
   bool addConnectionToClass(LineAnnotation *pConnectionLineAnnotation, bool deleteUndo = false);
   void deleteConnectionFromClass(LineAnnotation *pConnectionLineAnnotation);
   void updateConnectionInClass(LineAnnotation *pConnectionLineAnnotation);
@@ -232,6 +233,7 @@ public:
   void addInheritedConnectionToList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.append(pConnectionLineAnnotation);}
   void deleteConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.removeOne(pConnectionLineAnnotation);}
   void deleteConnectionFromOutOfSceneList(LineAnnotation *pConnectionLineAnnotation) {mOutOfSceneConnectionsList.removeOne(pConnectionLineAnnotation);}
+  void removeConnectionFromView(LineAnnotation *pConnectionLineAnnotation);
   void removeConnectionsFromView();
   void deleteInheritedConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.removeOne(pConnectionLineAnnotation);}
   int numberOfComponentConnections(Element *pComponent, LineAnnotation *pExcludeConnectionLineAnnotation = 0);
@@ -538,6 +540,7 @@ public:
   void addConnection(QStringList connectionList, QString connectionAnnotationString, bool addToOMC, bool select);
   void createModelWidgetComponents();
   ShapeAnnotation* drawOMSModelElement();
+  void addUpdateDeleteOMSElementIcon(const QString &iconPath);
   Element* getConnectorComponent(Element *pConnectorComponent, QString connectorName);
   void clearGraphicsViews();
   void reDrawModelWidget();
@@ -559,6 +562,7 @@ public:
   void dissociateBusWithConnector(QString busName, QString connectorName);
   void associateBusWithConnectors(QString busName);
   QList<QVariant> toOMSensData();
+  void createOMSimulatorUndoCommand(const QString &commandText, const bool doSnapShot = true);
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   LibraryTreeItem *mpLibraryTreeItem;
@@ -597,6 +601,8 @@ private:
   QList<ElementInfo*> mComponentsList;
   QStringList mComponentsAnnotationsList;
 
+  void createUndoStack();
+  void handleCanUndoRedoChanged();
   IconDiagramMap getIconDiagramMap(QString mapAnnotation);
   void getModelInheritedClasses();
   void drawModelInheritedClassShapes(ModelWidget *pModelWidget, StringHandler::ViewType viewType);
@@ -617,6 +623,7 @@ private:
   void getCompositeModelConnections();
   void drawOMSModelIconElements();
   void drawOMSModelDiagramElements();
+  void drawOMSElement(LibraryTreeItem *pLibraryTreeItem, const QString &annotation);
   void drawOMSModelConnections();
   void associateBusWithConnector(QString busName, QString connectorName, GraphicsView *pGraphicsView);
   void dissociateBusWithConnector(QString busName, QString connectorName, GraphicsView *pGraphicsView);
@@ -657,6 +664,9 @@ public:
   void updateThreeDViewer(ModelWidget *pModelWidget);
 #endif
   bool validateText();
+  void getOpenedModelWidgetsOfOMSimulatorModel(const QString &modelName, QStringList *pOpenedModelWidgetsList);
+  void getCurrentModelWidgetSelectedComponents(QStringList *pIconSelectedItemsList, QStringList *pDiagramSelectedItemsList);
+  void selectCurrentModelWidgetComponents(QStringList iconSelectedItemsList, QStringList diagramSelectedItemsList);
 private:
   StringHandler::ViewType mPreviousViewType;
   bool mShowGridLines;

@@ -39,7 +39,6 @@
 #include "Util/StringHandler.h"
 #include "Simulation/SimulationOptions.h"
 #include "OMS/OMSProxy.h"
-#include "OMS/OMSSimulationOptions.h"
 
 #include <QTreeView>
 #include <QSortFilterProxyModel>
@@ -155,8 +154,13 @@ public:
   const oms_external_tlm_model_info_t* getExternalTLMModelInfo() const {return mpExternalTLMModelInfo;}
   void setSubModelPath(QString subModelPath) {mSubModelPath = subModelPath;}
   QString getSubModelPath() const {return mSubModelPath;}
-  oms_modelState_enu_t getModelState() const {return mModelState;}
   void setModelState(const oms_modelState_enu_t &modelState) {mModelState = modelState;}
+  /*!
+   * \brief isOMSModelInstantiated
+   * Returns true if OMSimulator model in oms_modelState_instantiated state.
+   * \return
+   */
+  bool isOMSModelInstantiated() const {return mModelState == oms_modelState_instantiated;}
   QString getTooltip() const;
   QIcon getLibraryTreeItemIcon() const;
   bool inRange(int lineNumber);
@@ -188,12 +192,10 @@ public:
   void updateChildrenNameStructure();
   void emitConnectionAdded(LineAnnotation *pConnectionLineAnnotation) {emit connectionAdded(pConnectionLineAnnotation);}
   void emitCoOrdinateSystemUpdated(GraphicsView *pGraphicsView);
-  bool isInstantiated();
   QString getHTMLDescription() const;
 
   OMCInterface::getClassInformation_res mClassInformation;
   SimulationOptions mSimulationOptions;
-  OMSSimulationOptions mOMSSimulationOptions;
   const QList<ElementInfo *> &getComponentsList();
 private:
   bool mIsRootItem;
@@ -307,6 +309,7 @@ public:
   void updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName);
   void readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* getContainingFileParentLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  LibraryTreeItem* getTopLevelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeItem);
   void loadDependentLibraries(QStringList libraries);
   LibraryTreeItem* getLibraryTreeItemFromFile(QString fileName, int lineNumber);
@@ -315,6 +318,9 @@ public:
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadCompositeModelOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadOMSModel(LibraryTreeItem *pLibraryTreeItem, bool doDelete = true, bool askQuestion = true);
+  void getExpandedLibraryTreeItemsList(LibraryTreeItem *pLibraryTreeItem, QStringList *pExpandedLibraryTreeItemsList);
+  void expandLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem, QStringList expandedLibraryTreeItemsList);
+  void reLoadOMSimulatorModel(const QString &modelName, const QString &editedCref, const QString &snapShot);
   bool unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool doDeleteClass);
   bool removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem::LibraryType type);
   bool deleteTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
@@ -331,12 +337,10 @@ private:
   QModelIndex libraryTreeItemIndexHelper(const LibraryTreeItem *pLibraryTreeItem, const LibraryTreeItem *pParentLibraryTreeItem,
                                          const QModelIndex &parentIndex) const;
   LibraryTreeItem* getLibraryTreeItemFromFileHelper(LibraryTreeItem *pLibraryTreeItem, QString fileName, int lineNumber);
-  void updateOMSLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   void readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents);
   QString readLibraryTreeItemClassTextFromFile(LibraryTreeItem *pLibraryTreeItem);
 public:
   void createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
-  void updateOMSChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
 private:
   LibraryTreeItem* createLibraryTreeItemImpl(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
                                              bool isSystemLibrary = false, bool load = false, int row = -1, bool activateAccessAnnotations = false);
@@ -413,8 +417,8 @@ private:
   QAction *mpGenerateVerificationScenariosAction;
   QAction *mpFetchInterfaceDataAction;
   QAction *mpTLMCoSimulationAction;
+  QAction *mpNewOMSimulatorModelEmptyAction;
   QAction *mpOMSRenameAction;
-  QAction *mpOMSSimulationSetupAction;
   QAction *mpUnloadOMSModelAction;
   void createActions();
   LibraryTreeItem* getSelectedLibraryTreeItem();
@@ -461,7 +465,7 @@ public slots:
   void generateVerificationScenarios();
   void fetchInterfaceData();
   void TLMSimulate();
-  void openOMSSimulationDialog();
+  void createNewOMSModelEmpty();
   void OMSRename();
   void unloadOMSModel();
 protected:

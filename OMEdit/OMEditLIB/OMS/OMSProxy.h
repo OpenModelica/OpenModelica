@@ -97,6 +97,7 @@ public:
   bool getFixedStepSize(QString cref, double* stepSize);
   bool getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo);
   bool getInteger(QString signal, int* value);
+  bool getModelState(const QString &cref, oms_modelState_enu_t* modelState);
   bool getReal(QString cref, double* value);
   bool getSolver(QString cref, oms_solver_enu_t* solver);
   bool getStartTime(QString cref, double* startTime);
@@ -114,6 +115,7 @@ public:
   bool loadModel(QString filename, QString* pModelName);
   bool loadSnapshot(QString cref, QString snapshot);
   bool newModel(QString cref);
+  bool rename(const QString &cref, const QString &newCref);
   bool omsDelete(QString cref);
   bool saveModel(QString cref, QString filename);
   bool setBoolean(QString signal, bool value);
@@ -130,6 +132,7 @@ public:
   bool setInteger(QString signal, int value);
   bool setReal(QString cref, double value);
   bool setResultFile(QString cref, QString filename, int bufferSize);
+  bool getResultFile(QString cref, char **pFilename, int *pBufferSize);
   bool setSignalFilter(QString cref, QString regex);
   bool setSolver(QString cref, oms_solver_enu_t solver);
   bool setStartTime(QString cref, double startTime);
