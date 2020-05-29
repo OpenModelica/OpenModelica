@@ -73,6 +73,35 @@ solver and furthermore it has the following IDA specific flags:
 :ref:`idaNonLinConvCoef <simflag-idaNonLinConvCoef>`,
 :ref:`idaMaxErrorTestFails <simflag-idaMaxErrorTestFails>`.
 
+
+.. _sundials_cvode :
+
+CVODE
+~~~~~
+
+The CVODE solver is part of sundials: SUite of Nonlinear and
+DIfferential/ALgebraic equation Solvers :cite:`Hindmarsh:2005`.
+CVODE solves initial value problems for ordinary differential equation (ODE)
+systems with variable-order, variable-step multistep methods.
+
+In OpenModelica, CVODE uses a combination of Backward Differentiation
+Formulas (varying order 1 to 5) as linear multi-step method and a modified
+Newton iteration with fixed Jacobian as non-linear solver per default.
+This setting is advised for stiff problems which are very common for Modelica
+models.
+For non-stiff problems an combination of an Adams-Moulton formula (varying
+order 1 to 12) as linear multi-step method together with a fixed-point
+iteration as non-linear solver method can be choosen.
+
+Both non-linear solver methods are internal functions of CVODE and use its
+internal direct dense linear solver CVDense.
+For the Jacobian of the ODE CVODE will use its internal dense difference
+quotient approximation.
+
+CVODE has the following solver specific flags:
+:ref:`cvodeNonlinearSolverIteration <simflag-cvodeNonlinearSolverIteration>`,
+:ref:`cvodeLinearMultistepMethod <simflag-cvodeLinearMultistepMethod>`.
+
 Basic Explicit Solvers
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -106,6 +135,7 @@ Experimental Solvers
 The following solvers are marked as experimental, mostly because they
 are till now not tested very well.
 
+- cvode - experimental implementation of SUNDIALS CVODE solver - BDF or Adams-Moulton method - step size control, order 1-12
 - rungekuttaSsc - Runge-Kutta based on Novikov (2016) - explicit, step-size control, order 4-5
 - irksco - Own developed Runge-Kutta solver - implicit, step-size control, order 1-2
 - symSolver - Symbolic inline solver (requires :ref:`--symSolver <omcflag-symSolver>`) - fixed step-size, order 1
