@@ -1335,6 +1335,7 @@ public
     Expression index_exp, start_exp, stop_exp;
     Option<Expression> step_exp;
     Type ty;
+    list<Subscript> subs;
   algorithm
     Subscript.INDEX(index = index_exp) := index;
 
@@ -1343,7 +1344,9 @@ public
       outExp := applyIndexSubscriptRange2(start_exp, step_exp, stop_exp, toInteger(index_exp));
     else
       RANGE(ty = ty) := rangeExp;
-      outExp := SUBSCRIPTED_EXP(rangeExp, {index}, ty);
+      subs := {index};
+      ty := Type.subscript(ty, subs);
+      outExp := SUBSCRIPTED_EXP(rangeExp, subs, ty);
     end if;
   end applyIndexSubscriptRange;
 
