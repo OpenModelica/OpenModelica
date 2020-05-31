@@ -57,31 +57,39 @@ public function fixUniontype
 algorithm
   outType := match (inState, inClassDef)
     local
+      Absyn.Path p, p2, utPathOfRestriction;
       Boolean isSingleton;
-      Absyn.Path p,p2;
+      DAE.EvaluateSingletonType singletonType;
+      FCore.Graph env_1;
+      SCode.Element c;
+      String name;
+      String utName;
       list<Absyn.Path> paths;
       list<DAE.Type> typeVarsTypes;
       list<String> names, typeVars;
-      DAE.EvaluateSingletonType singletonType;
-      SCode.Element c;
-      FCore.Graph env_1;
-
     case (ClassInf.META_UNIONTYPE(typeVars=typeVars), SCode.PARTS())
       algorithm
+        utName := AbsynUtil.pathString(inState.path, "");
         p := AbsynUtil.makeFullyQualified(inState.path);
-        names := SCodeUtil.elementNames(list(e for e guard match e case SCode.CLASS(restriction=SCode.R_METARECORD()) then true; else false; end match in inClassDef.elementLst));
+        names := SCodeUtil.elementNames(list(
+                                             e for e
+                                               guard match e
+                                                 case SCode.CLASS(restriction=SCode.R_METARECORD(name = utPathOfRestriction))
+                                                   then stringEqual(utName, AbsynUtil.pathString(utPathOfRestriction));
+                                                 else false;
+                                               end match
+                                        in inClassDef.elementLst));
         paths := list(AbsynUtil.suffixPath(p, n) for n in names);
-        isSingleton := listLength(paths)==1;
+        isSingleton := listLength(paths) == 1;
         if isSingleton then
           p2 := listGet(paths, 1);
-          singletonType := DAE.EVAL_SINGLETON_TYPE_FUNCTION(function fixUniontype2(arr=arrayCreate(1, (cache,inEnv,p2,NONE()))));
+          singletonType := DAE.EVAL_SINGLETON_TYPE_FUNCTION(function fixUniontype2(arr=arrayCreate(1, (cache, inEnv, p2, NONE()))));
         else
           singletonType := DAE.NOT_SINGLETON();
         end if;
         typeVarsTypes := list(DAE.T_METAPOLYMORPHIC(tv) for tv in typeVars);
       then
-        SOME(DAE.T_METAUNIONTYPE(paths,typeVarsTypes,isSingleton,singletonType,p));
-
+        SOME(DAE.T_METAUNIONTYPE(paths, typeVarsTypes, isSingleton, singletonType, p));
     else NONE();
   end match;
 end fixUniontype;
