@@ -434,24 +434,6 @@ public
     str := "Clock(" + str + ")";
   end toString;
 
-  function toFlatString
-    input ClockKind ck;
-    output String str;
-  algorithm
-    str := match ck
-      local
-        Expression e1, e2;
-
-      case INFERRED_CLOCK()      then "";
-      case INTEGER_CLOCK(e1, e2) then Expression.toFlatString(e1) + ", " + Expression.toFlatString(e2);
-      case REAL_CLOCK(e1)        then Expression.toFlatString(e1);
-      case BOOLEAN_CLOCK(e1, e2) then Expression.toFlatString(e1) + ", " + Expression.toFlatString(e2);
-      case SOLVER_CLOCK(e1, e2)  then Expression.toFlatString(e1) + ", " + Expression.toFlatString(e2);
-    end match;
-
-    str := "Clock(" + str + ")";
-  end toFlatString;
-
 annotation(__OpenModelica_Interface="frontend");
 end NFClockKind;
 
