@@ -57,25 +57,24 @@ public function fixUniontype
 algorithm
   outType := match (inState, inClassDef)
     local
-      Absyn.Path p, p2, utPathOfRestriction;
+      Absyn.Path p, p2, utPathOfRestriction, utPath;
       Boolean isSingleton;
       DAE.EvaluateSingletonType singletonType;
       FCore.Graph env_1;
       SCode.Element c;
       String name;
-      String utName;
       list<Absyn.Path> paths;
       list<DAE.Type> typeVarsTypes;
       list<String> names, typeVars;
     case (ClassInf.META_UNIONTYPE(typeVars=typeVars), SCode.PARTS())
       algorithm
-        utName := AbsynUtil.pathString(inState.path, "");
+        utPath := inState.path;
         p := AbsynUtil.makeFullyQualified(inState.path);
         names := SCodeUtil.elementNames(list(
                                              e for e
                                                guard match e
                                                  case SCode.CLASS(restriction=SCode.R_METARECORD(name = utPathOfRestriction))
-                                                   then stringEqual(utName, AbsynUtil.pathString(utPathOfRestriction));
+                                                   then AbsynUtil.pathSuffixOf(utPathOfRestriction, utPath);
                                                  else false;
                                                end match
                                         in inClassDef.elementLst));
