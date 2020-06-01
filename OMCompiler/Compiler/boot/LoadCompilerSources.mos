@@ -319,6 +319,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFCallAttributes.mo",
     "../NFFrontEnd/NFCardinalityTable.mo",
     "../NFFrontEnd/NFCeval.mo",
+    "../NFFrontEnd/NFClockKind.mo",
     "../NFFrontEnd/NFComplexType.mo",
     "../NFFrontEnd/NFComponent.mo",
     "../NFFrontEnd/NFComponentRef.mo",

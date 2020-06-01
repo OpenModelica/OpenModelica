@@ -69,112 +69,7 @@ public
   import NFTyping.ExpOrigin;
   import Values;
   import Record = NFRecord;
-
-  uniontype ClockKind
-    record INFERRED_CLOCK
-    end INFERRED_CLOCK;
-
-    record INTEGER_CLOCK
-      Expression intervalCounter;
-      Expression resolution " integer type >= 1 ";
-    end INTEGER_CLOCK;
-
-    record REAL_CLOCK
-      Expression interval;
-    end REAL_CLOCK;
-
-    record BOOLEAN_CLOCK
-      Expression condition;
-      Expression startInterval " real type >= 0.0 ";
-    end BOOLEAN_CLOCK;
-
-    record SOLVER_CLOCK
-      Expression c;
-      Expression solverMethod " string type ";
-    end SOLVER_CLOCK;
-
-    function compare
-      input ClockKind ck1;
-      input ClockKind ck2;
-      output Integer comp;
-    algorithm
-      comp := match (ck1, ck2)
-        local
-          Expression i1, ic1, r1, c1, si1, sm1, i2, ic2, r2, c2, si2, sm2;
-        case (INFERRED_CLOCK(), INFERRED_CLOCK()) then 0;
-        case (INTEGER_CLOCK(i1, r1),INTEGER_CLOCK(i2, r2))
-          algorithm
-            comp := Expression.compare(i1, i2);
-            if (comp == 0) then
-              comp := Expression.compare(r1, r2);
-            end if;
-          then comp;
-        case (REAL_CLOCK(i1), REAL_CLOCK(i2)) then Expression.compare(i1, i2);
-        case (BOOLEAN_CLOCK(c1, si1), BOOLEAN_CLOCK(c2, si2))
-          algorithm
-            comp := Expression.compare(c1, c2);
-            if (comp == 0) then
-              comp := Expression.compare(si1, si2);
-            end if;
-          then comp;
-        case (SOLVER_CLOCK(c1, sm2), SOLVER_CLOCK(c2, sm1))
-          algorithm
-            comp := Expression.compare(c1, c2);
-            if (comp == 0) then
-              comp := Expression.compare(sm1, sm2);
-            end if;
-          then comp;
-      end match;
-    end compare;
-
-    function toDAE
-      input ClockKind ick;
-      output DAE.ClockKind ock;
-    algorithm
-      ock := match ick
-        local
-          Expression i, ic, r, c, si, sm;
-        case INFERRED_CLOCK()     then DAE.INFERRED_CLOCK();
-        case INTEGER_CLOCK(i, r)  then DAE.INTEGER_CLOCK(Expression.toDAE(i), Expression.toDAE(r));
-        case REAL_CLOCK(i)        then DAE.REAL_CLOCK(Expression.toDAE(i));
-        case BOOLEAN_CLOCK(c, si) then DAE.BOOLEAN_CLOCK(Expression.toDAE(c), Expression.toDAE(si));
-        case SOLVER_CLOCK(c, sm)  then DAE.SOLVER_CLOCK(Expression.toDAE(c), Expression.toDAE(sm));
-      end match;
-    end toDAE;
-
-    function toDebugString
-      input ClockKind ick;
-      output String ock;
-    algorithm
-      ock := match ick
-        local
-          Expression i, ic, r, c, si, sm;
-        case INFERRED_CLOCK()     then "INFERRED_CLOCK()";
-        case INTEGER_CLOCK(i, r)  then "INTEGER_CLOCK(" + Expression.toString(i) + ", " + Expression.toString(r) + ")";
-        case REAL_CLOCK(i)        then "REAL_CLOCK(" + Expression.toString(i) + ")";
-        case BOOLEAN_CLOCK(c, si) then "BOOLEAN_CLOCK(" + Expression.toString(c) + ", " + Expression.toString(si) + ")";
-        case SOLVER_CLOCK(c, sm)  then "SOLVER_CLOCK(" + Expression.toString(c) + ", " + Expression.toString(sm) + ")";
-      end match;
-    end toDebugString;
-
-    function toString
-      input ClockKind ck;
-      output String str;
-    algorithm
-      str := match ck
-        local
-          Expression e1, e2;
-
-        case INFERRED_CLOCK()      then "";
-        case INTEGER_CLOCK(e1, e2) then Expression.toString(e1) + ", " + Expression.toString(e2);
-        case REAL_CLOCK(e1)        then Expression.toString(e1);
-        case BOOLEAN_CLOCK(e1, e2) then Expression.toString(e1) + ", " + Expression.toString(e2);
-        case SOLVER_CLOCK(e1, e2)  then Expression.toString(e1) + ", " + Expression.toString(e2);
-      end match;
-
-      str := "Clock(" + str + ")";
-    end toString;
-  end ClockKind;
+  import ClockKind = NFClockKind;
 
   record INTEGER
     Integer value;
@@ -2169,42 +2064,8 @@ public
       local
         Expression e1, e2, e3, e4;
 
-      case CLKCONST(ClockKind.INTEGER_CLOCK(e1, e2))
-        algorithm
-          e3 := map(e1, func);
-          e4 := map(e2, func);
-       then
-          if referenceEq(e1, e3) and referenceEq(e2, e4)
-          then exp
-          else CLKCONST(ClockKind.INTEGER_CLOCK(e3, e4));
-
-      case CLKCONST(ClockKind.REAL_CLOCK(e1))
-        algorithm
-          e2 := map(e1, func);
-       then
-          if referenceEq(e1, e2)
-          then exp
-          else CLKCONST(ClockKind.REAL_CLOCK(e2));
-
-      case CLKCONST(ClockKind.BOOLEAN_CLOCK(e1, e2))
-        algorithm
-          e3 := map(e1, func);
-          e4 := map(e2, func);
-        then
-          if referenceEq(e1, e3) and referenceEq(e2, e4)
-          then exp
-          else CLKCONST(ClockKind.BOOLEAN_CLOCK(e3, e4));
-
-      case CLKCONST(ClockKind.SOLVER_CLOCK(e1, e2))
-        algorithm
-          e3 := map(e1, func);
-          e4 := map(e2, func);
-        then
-          if referenceEq(e1, e3) and referenceEq(e2, e4)
-          then exp
-          else CLKCONST(ClockKind.SOLVER_CLOCK(e3, e4));
-
-      case CREF() then CREF(exp.ty, mapCref(exp.cref, func));
+      case CLKCONST() then CLKCONST(ClockKind.mapExp(exp.clk, func));
+      case CREF() then CREF(exp.ty, ComponentRef.mapExp(exp.cref, func));
       case ARRAY() then ARRAY(exp.ty, list(map(e, func) for e in exp.elements), exp.literal);
       case MATRIX() then MATRIX(list(list(map(e, func) for e in row) for row in exp.elements));
 
@@ -2230,7 +2091,7 @@ public
       case RECORD()
         then RECORD(exp.path, exp.ty, list(map(e, func) for e in exp.elements));
 
-      case CALL() then CALL(mapCall(exp.call, func));
+      case CALL() then CALL(Call.mapExp(exp.call, func));
 
       case SIZE(dimIndex = SOME(e2))
         algorithm
@@ -2364,146 +2225,6 @@ public
     end match;
   end mapOpt;
 
-  function mapCall
-    input Call call;
-    input MapFunc func;
-    output Call outCall;
-
-    partial function MapFunc
-      input output Expression e;
-    end MapFunc;
-  algorithm
-    outCall := match call
-      local
-        list<Expression> args;
-        list<Function.NamedArg> nargs;
-        list<Function.TypedArg> targs;
-        list<Function.TypedNamedArg> tnargs;
-        String s;
-        Expression e;
-        Type t;
-        Variability v;
-        list<tuple<InstNode, Expression>> iters;
-        Option<Expression> default_exp;
-        tuple<Option<Expression>, String, String> fold_exp;
-
-      case Call.UNTYPED_CALL()
-        algorithm
-          args := list(map(arg, func) for arg in call.arguments);
-          nargs := {};
-
-          for arg in call.named_args loop
-            (s, e) := arg;
-            e := map(e, func);
-            nargs := (s, e) :: nargs;
-          end for;
-        then
-          Call.UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
-
-      case Call.ARG_TYPED_CALL()
-        algorithm
-          targs := {};
-          tnargs := {};
-
-          for arg in call.arguments loop
-            (e, t, v) := arg;
-            e := map(e, func);
-            targs := (e, t, v) :: targs;
-          end for;
-
-          for arg in call.named_args loop
-            (s, e, t, v) := arg;
-            e := map(e, func);
-            tnargs := (s, e, t, v) :: tnargs;
-          end for;
-        then
-          Call.ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
-
-      case Call.TYPED_CALL()
-        algorithm
-          args := list(map(arg, func) for arg in call.arguments);
-        then
-          Call.TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
-
-      case Call.UNTYPED_ARRAY_CONSTRUCTOR()
-        algorithm
-          e := map(call.exp, func);
-          iters := mapCallIterators(call.iters, func);
-        then
-          Call.UNTYPED_ARRAY_CONSTRUCTOR(e, iters);
-
-      case Call.TYPED_ARRAY_CONSTRUCTOR()
-        algorithm
-          e := map(call.exp, func);
-          iters := mapCallIterators(call.iters, func);
-        then
-          Call.TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, iters);
-
-      case Call.UNTYPED_REDUCTION()
-        algorithm
-          e := map(call.exp, func);
-          iters := mapCallIterators(call.iters, func);
-        then
-          Call.UNTYPED_REDUCTION(call.ref, e, iters);
-
-      case Call.TYPED_REDUCTION()
-        algorithm
-          e := map(call.exp, func);
-          iters := mapCallIterators(call.iters, func);
-          default_exp := mapOpt(call.defaultExp, func);
-          fold_exp := Util.applyTuple31(call.foldExp, function mapOpt(func = func));
-        then
-          Call.TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
-
-    end match;
-  end mapCall;
-
-  function mapCallIterators
-    input list<tuple<InstNode, Expression>> iters;
-    input MapFunc func;
-    output list<tuple<InstNode, Expression>> outIters = {};
-
-    partial function MapFunc
-      input output Expression e;
-    end MapFunc;
-  protected
-    InstNode node;
-    Expression exp, new_exp;
-  algorithm
-    for i in iters loop
-      (node, exp) := i;
-      new_exp := map(exp, func);
-      outIters := (if referenceEq(new_exp, exp) then i else (node, new_exp)) :: outIters;
-    end for;
-
-    outIters := listReverseInPlace(outIters);
-  end mapCallIterators;
-
-  function mapCref
-    input ComponentRef cref;
-    input MapFunc func;
-    output ComponentRef outCref;
-
-    partial function MapFunc
-      input output Expression e;
-    end MapFunc;
-  algorithm
-    outCref := match cref
-      local
-        list<Subscript> subs;
-        ComponentRef rest;
-
-      case ComponentRef.CREF(origin = Origin.CREF)
-        algorithm
-          subs := list(Subscript.mapExp(s, func) for s in cref.subscripts);
-          rest := mapCref(cref.restCref, func);
-        then
-          ComponentRef.CREF(cref.node, subs, cref.ty, cref.origin, rest);
-
-      else cref;
-    end match;
-  end mapCref;
-
   function mapShallow
     input Expression exp;
     input MapFunc func;
@@ -2517,42 +2238,8 @@ public
       local
         Expression e1, e2, e3, e4;
 
-      case CLKCONST(ClockKind.INTEGER_CLOCK(e1, e2))
-        algorithm
-          e3 := func(e1);
-          e4 := func(e2);
-       then
-          if referenceEq(e1, e3) and referenceEq(e2, e4)
-          then exp
-          else CLKCONST(ClockKind.INTEGER_CLOCK(e3, e4));
-
-      case CLKCONST(ClockKind.REAL_CLOCK(e1))
-        algorithm
-          e2 := func(e1);
-       then
-          if referenceEq(e1, e2)
-          then exp
-          else CLKCONST(ClockKind.REAL_CLOCK(e2));
-
-      case CLKCONST(ClockKind.BOOLEAN_CLOCK(e1, e2))
-        algorithm
-          e3 := func(e1);
-          e4 := func(e2);
-       then
-          if referenceEq(e1, e3) and referenceEq(e2, e4)
-          then exp
-          else CLKCONST(ClockKind.BOOLEAN_CLOCK(e3, e4));
-
-      case CLKCONST(ClockKind.SOLVER_CLOCK(e1, e2))
-        algorithm
-          e3 := func(e1);
-          e4 := func(e2);
-       then
-          if referenceEq(e1, e3) and referenceEq(e2, e4)
-          then exp
-          else CLKCONST(ClockKind.SOLVER_CLOCK(e3, e4));
-
-      case CREF() then CREF(exp.ty, mapCrefShallow(exp.cref, func));
+      case CLKCONST() then CLKCONST(ClockKind.mapExpShallow(exp.clk, func));
+      case CREF() then CREF(exp.ty, ComponentRef.mapExpShallow(exp.cref, func));
       case ARRAY() then ARRAY(exp.ty, list(func(e) for e in exp.elements), exp.literal);
       case MATRIX() then MATRIX(list(list(func(e) for e in row) for row in exp.elements));
 
@@ -2578,7 +2265,7 @@ public
       case RECORD()
         then RECORD(exp.path, exp.ty, list(func(e) for e in exp.elements));
 
-      case CALL() then CALL(mapCallShallow(exp.call, func));
+      case CALL() then CALL(Call.mapExpShallow(exp.call, func));
 
       case SIZE(dimIndex = SOME(e2))
         algorithm
@@ -2710,143 +2397,6 @@ public
     end match;
   end mapShallowOpt;
 
-  function mapCrefShallow
-    input ComponentRef cref;
-    input MapFunc func;
-    output ComponentRef outCref;
-
-    partial function MapFunc
-      input output Expression e;
-    end MapFunc;
-  algorithm
-    outCref := match cref
-      local
-        list<Subscript> subs;
-        ComponentRef rest;
-
-      case ComponentRef.CREF(origin = Origin.CREF)
-        algorithm
-          subs := list(Subscript.mapShallowExp(s, func) for s in cref.subscripts);
-          rest := mapCref(cref.restCref, func);
-        then
-          ComponentRef.CREF(cref.node, subs, cref.ty, cref.origin, rest);
-
-      else cref;
-    end match;
-  end mapCrefShallow;
-
-  function mapCallShallow
-    input Call call;
-    input MapFunc func;
-    output Call outCall;
-
-    partial function MapFunc
-      input output Expression e;
-    end MapFunc;
-  algorithm
-    outCall := match call
-      local
-        list<Expression> args;
-        list<Function.NamedArg> nargs;
-        list<Function.TypedArg> targs;
-        list<Function.TypedNamedArg> tnargs;
-        String s;
-        Expression e;
-        Type t;
-        Variability v;
-        list<tuple<InstNode, Expression>> iters;
-        Option<Expression> default_exp;
-        tuple<Option<Expression>, String, String> fold_exp;
-
-      case Call.UNTYPED_CALL()
-        algorithm
-          args := list(func(arg) for arg in call.arguments);
-          nargs := {};
-
-          for arg in call.named_args loop
-            (s, e) := arg;
-            e := func(e);
-            nargs := (s, e) :: nargs;
-          end for;
-        then
-          Call.UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
-
-      case Call.ARG_TYPED_CALL()
-        algorithm
-          targs := {};
-          tnargs := {};
-
-          for arg in call.arguments loop
-            (e, t, v) := arg;
-            e := func(e);
-            targs := (e, t, v) :: targs;
-          end for;
-
-          for arg in call.named_args loop
-            (s, e, t, v) := arg;
-            e := func(e);
-            tnargs := (s, e, t, v) :: tnargs;
-          end for;
-        then
-          Call.ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
-
-      case Call.TYPED_CALL()
-        algorithm
-          args := list(func(arg) for arg in call.arguments);
-        then
-          Call.TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
-
-      case Call.UNTYPED_ARRAY_CONSTRUCTOR()
-        algorithm
-          e := func(call.exp);
-        then
-          Call.UNTYPED_ARRAY_CONSTRUCTOR(e, call.iters);
-
-      case Call.TYPED_ARRAY_CONSTRUCTOR()
-        algorithm
-          e := func(call.exp);
-        then
-          Call.TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, call.iters);
-
-      case Call.UNTYPED_REDUCTION()
-        algorithm
-          e := func(call.exp);
-        then
-          Call.UNTYPED_REDUCTION(call.ref, e, call.iters);
-
-      case Call.TYPED_REDUCTION()
-        algorithm
-          e := func(call.exp);
-          iters := mapCallShallowIterators(call.iters, func);
-          default_exp := mapShallowOpt(call.defaultExp, func);
-          fold_exp := Util.applyTuple31(call.foldExp, function mapShallowOpt(func = func));
-        then
-          Call.TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
-
-    end match;
-  end mapCallShallow;
-
-  function mapCallShallowIterators
-    input list<tuple<InstNode, Expression>> iters;
-    input MapFunc func;
-    output list<tuple<InstNode, Expression>> outIters = {};
-
-    partial function MapFunc
-      input output Expression e;
-    end MapFunc;
-  protected
-    InstNode node;
-    Expression exp, new_exp;
-  algorithm
-    for i in iters loop
-      (node, exp) := i;
-      new_exp := func(exp);
-      outIters := (if referenceEq(new_exp, exp) then i else (node, new_exp)) :: outIters;
-    end for;
-
-    outIters := listReverseInPlace(outIters);
-  end mapCallShallowIterators;
-
   function mapArrayElements
     "Applies the given function to each scalar elements of an array."
     input Expression exp;
@@ -2919,34 +2469,8 @@ public
       local
         Expression e, e1, e2;
 
-      case CLKCONST(ClockKind.INTEGER_CLOCK(e1, e2))
-        algorithm
-          result := fold(e1, func, arg);
-          result := fold(e2, func, result);
-       then
-          result;
-
-      case CLKCONST(ClockKind.REAL_CLOCK(e1))
-        algorithm
-          result := fold(e1, func, arg);
-       then
-          result;
-
-      case CLKCONST(ClockKind.BOOLEAN_CLOCK(e1, e2))
-        algorithm
-          result := fold(e1, func, arg);
-          result := fold(e2, func, result);
-       then
-          result;
-
-      case CLKCONST(ClockKind.SOLVER_CLOCK(e1, e2))
-        algorithm
-          result := fold(e1, func, arg);
-          result := fold(e2, func, result);
-       then
-          result;
-
-      case CREF() then foldCref(exp.cref, func, arg);
+      case CLKCONST() then ClockKind.foldExp(exp.clk, func, arg);
+      case CREF() then ComponentRef.foldExp(exp.cref, func, arg);
       case ARRAY() then foldList(exp.elements, func, arg);
 
       case MATRIX()
@@ -2967,7 +2491,7 @@ public
 
       case TUPLE() then foldList(exp.elements, func, arg);
       case RECORD() then foldList(exp.elements, func, arg);
-      case CALL() then foldCall(exp.call, func, arg);
+      case CALL() then Call.foldExp(exp.call, func, arg);
 
       case SIZE(dimIndex = SOME(e))
         algorithm
@@ -3027,118 +2551,6 @@ public
     result := func(exp, result);
   end fold;
 
-  function foldCall<ArgT>
-    input Call call;
-    input FoldFunc func;
-    input output ArgT foldArg;
-
-    partial function FoldFunc
-      input Expression exp;
-      input output ArgT arg;
-    end FoldFunc;
-  algorithm
-    () := match call
-      local
-        Expression e;
-
-      case Call.UNTYPED_CALL()
-        algorithm
-          foldArg := foldList(call.arguments, func, foldArg);
-
-          for arg in call.named_args loop
-            (_, e) := arg;
-            foldArg := fold(e, func, foldArg);
-          end for;
-        then
-          ();
-
-      case Call.ARG_TYPED_CALL()
-        algorithm
-          for arg in call.arguments loop
-            (e, _, _) := arg;
-            foldArg := fold(e, func, foldArg);
-          end for;
-
-          for arg in call.named_args loop
-            (_, e, _, _) := arg;
-            foldArg := fold(e, func, foldArg);
-          end for;
-        then
-          ();
-
-      case Call.TYPED_CALL()
-        algorithm
-          foldArg := foldList(call.arguments, func, foldArg);
-        then
-          ();
-
-      case Call.UNTYPED_ARRAY_CONSTRUCTOR()
-        algorithm
-          foldArg := fold(call.exp, func, foldArg);
-
-          for i in call.iters loop
-            foldArg := fold(Util.tuple22(i), func, foldArg);
-          end for;
-        then
-          ();
-
-      case Call.TYPED_ARRAY_CONSTRUCTOR()
-        algorithm
-          foldArg := fold(call.exp, func, foldArg);
-
-          for i in call.iters loop
-            foldArg := fold(Util.tuple22(i), func, foldArg);
-          end for;
-        then
-          ();
-
-      case Call.UNTYPED_REDUCTION()
-        algorithm
-          foldArg := fold(call.exp, func, foldArg);
-
-          for i in call.iters loop
-            foldArg := fold(Util.tuple22(i), func, foldArg);
-          end for;
-        then
-          ();
-
-      case Call.TYPED_REDUCTION()
-        algorithm
-          foldArg := fold(call.exp, func, foldArg);
-
-          for i in call.iters loop
-            foldArg := fold(Util.tuple22(i), func, foldArg);
-          end for;
-
-          foldArg := foldOpt(call.defaultExp, func, foldArg);
-          foldArg := foldOpt(Util.tuple31(call.foldExp), func, foldArg);
-        then
-          ();
-    end match;
-  end foldCall;
-
-  function foldCref<ArgT>
-    input ComponentRef cref;
-    input FoldFunc func;
-    input output ArgT arg;
-
-    partial function FoldFunc
-      input Expression exp;
-      input output ArgT arg;
-    end FoldFunc;
-  algorithm
-    () := match cref
-      case ComponentRef.CREF(origin = Origin.CREF)
-        algorithm
-          arg := List.fold(cref.subscripts, function Subscript.foldExp(func = func), arg);
-          arg := foldCref(cref.restCref, func, arg);
-        then
-          ();
-
-      else ();
-    end match;
-  end foldCref;
-
   function applyList
     input list<Expression> expl;
     input ApplyFunc func;
@@ -3152,6 +2564,22 @@ public
     end for;
   end applyList;
 
+  function applyOpt
+    input Option<Expression> exp;
+    input ApplyFunc func;
+
+    partial function ApplyFunc
+      input Expression exp;
+    end ApplyFunc;
+  protected
+    Expression e;
+  algorithm
+    if isSome(exp) then
+      SOME(e) := exp;
+      apply(e, func);
+    end if;
+  end applyOpt;
+
   function apply
     input Expression exp;
     input ApplyFunc func;
@@ -3164,34 +2592,8 @@ public
       local
         Expression e, e1, e2;
 
-      case CLKCONST(ClockKind.INTEGER_CLOCK(e1, e2))
-        algorithm
-          apply(e1, func);
-          apply(e2, func);
-       then
-          ();
-
-      case CLKCONST(ClockKind.REAL_CLOCK(e1))
-        algorithm
-          apply(e1, func);
-       then
-         ();
-
-      case CLKCONST(ClockKind.BOOLEAN_CLOCK(e1, e2))
-        algorithm
-          apply(e1, func);
-          apply(e2, func);
-       then
-          ();
-
-      case CLKCONST(ClockKind.SOLVER_CLOCK(e1, e2))
-        algorithm
-          apply(e1, func);
-          apply(e2, func);
-       then
-          ();
-
-      case CREF() algorithm applyCref(exp.cref, func); then ();
+      case CLKCONST() algorithm ClockKind.applyExp(exp.clk, func); then ();
+      case CREF() algorithm ComponentRef.applyExp(exp.cref, func); then ();
       case ARRAY() algorithm applyList(exp.elements, func); then ();
 
       case MATRIX()
@@ -3219,7 +2621,7 @@ public
 
       case TUPLE() algorithm applyList(exp.elements, func); then ();
       case RECORD() algorithm applyList(exp.elements, func); then ();
-      case CALL() algorithm applyCall(exp.call, func); then ();
+      case CALL() algorithm Call.applyExp(exp.call, func); then ();
 
       case SIZE(dimIndex = SOME(e))
         algorithm
@@ -3288,132 +2690,133 @@ public
     func(exp);
   end apply;
 
-  function applyCall
-    input Call call;
+  function applyListShallow
+    input list<Expression> expl;
     input ApplyFunc func;
 
     partial function ApplyFunc
       input Expression exp;
     end ApplyFunc;
   algorithm
-    () := match call
+    for e in expl loop
+      func(e);
+    end for;
+  end applyListShallow;
+
+  function applyShallow
+    input Expression exp;
+    input ApplyFunc func;
+
+    partial function ApplyFunc
+      input Expression exp;
+    end ApplyFunc;
+  algorithm
+    () := match exp
       local
         Expression e;
 
-      case Call.UNTYPED_CALL()
-        algorithm
-          applyList(call.arguments, func);
+      case CLKCONST() algorithm ClockKind.applyExpShallow(exp.clk, func); then ();
+      case CREF() algorithm ComponentRef.applyExpShallow(exp.cref, func); then ();
+      case ARRAY() algorithm applyListShallow(exp.elements, func); then ();
 
-          for arg in call.named_args loop
-            (_, e) := arg;
-            apply(e, func);
+      case MATRIX()
+        algorithm
+          for row in exp.elements loop
+            applyList(row, func);
           end for;
         then
           ();
 
-      case Call.ARG_TYPED_CALL()
+      case RANGE()
         algorithm
-          for arg in call.arguments loop
-            (e, _, _) := arg;
-            apply(e, func);
-          end for;
+          func(exp.start);
+          applyShallowOpt(exp.step, func);
+          func(exp.stop);
+        then
+          ();
 
-          for arg in call.named_args loop
-            (_, e, _, _) := arg;
-            apply(e, func);
+      case TUPLE() algorithm applyListShallow(exp.elements, func); then ();
+      case RECORD() algorithm applyListShallow(exp.elements, func); then ();
+      case CALL() algorithm Call.applyExpShallow(exp.call, func); then ();
+
+      case SIZE()
+        algorithm
+          func(exp.exp);
+          applyShallowOpt(exp.dimIndex, func);
+        then
+          ();
+
+      case BINARY()
+        algorithm
+          func(exp.exp1);
+          func(exp.exp2);
+        then
+          ();
+
+      case UNARY() algorithm func(exp.exp); then ();
+
+      case LBINARY()
+        algorithm
+          func(exp.exp1);
+          func(exp.exp2);
+        then
+          ();
+
+      case LUNARY() algorithm func(exp.exp); then ();
+
+      case RELATION()
+        algorithm
+          func(exp.exp1);
+          func(exp.exp2);
+        then
+          ();
+
+      case IF()
+        algorithm
+          func(exp.condition);
+          func(exp.trueBranch);
+          func(exp.falseBranch);
+        then
+          ();
+
+      case CAST() algorithm func(exp.exp); then ();
+      case UNBOX() algorithm func(exp.exp); then ();
+
+      case SUBSCRIPTED_EXP()
+        algorithm
+          func(exp.exp);
+
+          for s in exp.subscripts loop
+            Subscript.applyExpShallow(s, func);
           end for;
         then
           ();
 
-      case Call.TYPED_CALL()
-        algorithm
-          applyList(call.arguments, func);
-        then
-          ();
-
-      case Call.UNTYPED_ARRAY_CONSTRUCTOR()
-        algorithm
-          apply(call.exp, func);
-
-          for i in call.iters loop
-            apply(Util.tuple22(i), func);
-          end for;
-        then
-          ();
-
-      case Call.TYPED_ARRAY_CONSTRUCTOR()
-        algorithm
-          apply(call.exp, func);
-
-          for i in call.iters loop
-            apply(Util.tuple22(i), func);
-          end for;
-        then
-          ();
-
-      case Call.UNTYPED_REDUCTION()
-        algorithm
-          apply(call.exp, func);
-
-          for i in call.iters loop
-            apply(Util.tuple22(i), func);
-          end for;
-        then
-          ();
-
-      case Call.TYPED_REDUCTION()
-        algorithm
-          apply(call.exp, func);
-
-          for i in call.iters loop
-            apply(Util.tuple22(i), func);
-          end for;
-
-          Util.applyOption(call.defaultExp, func);
-          Util.applyOption(Util.tuple31(call.foldExp), func);
-        then
-          ();
-    end match;
-  end applyCall;
-
-  function applyCref
-    input ComponentRef cref;
-    input ApplyFunc func;
-
-    partial function ApplyFunc
-      input Expression exp;
-    end ApplyFunc;
-  algorithm
-    () := match cref
-      case ComponentRef.CREF(origin = Origin.CREF)
-        algorithm
-          for s in cref.subscripts loop
-            applyCrefSubscript(s, func);
-          end for;
-
-          applyCref(cref.restCref, func);
-        then
-          ();
-
+      case TUPLE_ELEMENT() algorithm func(exp.tupleExp); then ();
+      case RECORD_ELEMENT() algorithm func(exp.recordExp); then ();
+      case BOX() algorithm func(exp.exp); then ();
+      case MUTABLE() algorithm func(Mutable.access(exp.exp)); then ();
+      case PARTIAL_FUNCTION_APPLICATION() algorithm applyListShallow(exp.args, func); then ();
+      case BINDING_EXP() algorithm func(exp.exp); then ();
       else ();
     end match;
-  end applyCref;
+  end applyShallow;
 
-  function applyCrefSubscript
-    input Subscript subscript;
+  function applyShallowOpt
+    input Option<Expression> exp;
     input ApplyFunc func;
 
     partial function ApplyFunc
       input Expression exp;
     end ApplyFunc;
+  protected
+    Expression e;
   algorithm
-    () := match subscript
-      case Subscript.UNTYPED() algorithm apply(subscript.exp, func); then ();
-      case Subscript.INDEX()   algorithm apply(subscript.index, func); then ();
-      case Subscript.SLICE()   algorithm apply(subscript.slice, func); then ();
-      case Subscript.WHOLE()   then ();
-    end match;
-  end applyCrefSubscript;
+    if isSome(exp) then
+      SOME(e) := exp;
+      func(e);
+    end if;
+  end applyShallowOpt;
 
   function mapFold<ArgT>
     input Expression exp;
@@ -3433,45 +2836,17 @@ public
         list<Expression> expl;
         Call call;
         list<Subscript> subs;
+        ClockKind ck;
 
-      case CLKCONST(ClockKind.INTEGER_CLOCK(e1, e2))
+      case CLKCONST()
         algorithm
-          (e3, arg) := mapFold(e1, func, arg);
-          (e4, arg) := mapFold(e2, func, arg);
-       then
-          if referenceEq(e1, e3) and referenceEq(e2, e4)
-          then exp
-          else CLKCONST(ClockKind.INTEGER_CLOCK(e3, e4));
-
-      case CLKCONST(ClockKind.REAL_CLOCK(e1))
-        algorithm
-          (e2, arg) := mapFold(e1, func, arg);
-       then
-          if referenceEq(e1, e2)
-          then exp
-          else CLKCONST(ClockKind.REAL_CLOCK(e2));
-
-      case CLKCONST(ClockKind.BOOLEAN_CLOCK(e1, e2))
-        algorithm
-          (e3, arg) := mapFold(e1, func, arg);
-          (e4, arg) := mapFold(e2, func, arg);
-       then
-          if referenceEq(e1, e3) and referenceEq(e2, e4)
-          then exp
-          else CLKCONST(ClockKind.BOOLEAN_CLOCK(e3, e4));
-
-      case CLKCONST(ClockKind.SOLVER_CLOCK(e1, e2))
-        algorithm
-          (e3, arg) := mapFold(e1, func, arg);
-          (e4, arg) := mapFold(e2, func, arg);
-       then
-          if referenceEq(e1, e3) and referenceEq(e2, e4)
-          then exp
-          else CLKCONST(ClockKind.SOLVER_CLOCK(e3, e4));
+          (ck, arg) := ClockKind.mapFoldExp(exp.clk, func, arg);
+        then
+          if referenceEq(exp.clk, ck) then exp else CLKCONST(ck);
 
       case CREF()
         algorithm
-          (cr, arg) := mapFoldCref(exp.cref, func, arg);
+          (cr, arg) := ComponentRef.mapFoldExp(exp.cref, func, arg);
        then
           if referenceEq(exp.cref, cr) then exp else CREF(exp.ty, cr);
 
@@ -3512,7 +2887,7 @@ public
 
       case CALL()
         algorithm
-          (call, arg) := mapFoldCall(exp.call, func, arg);
+          (call, arg) := Call.mapFoldExp(exp.call, func, arg);
         then
           if referenceEq(exp.call, call) then exp else CALL(call);
 
@@ -3655,156 +3030,6 @@ public
     end match;
   end mapFoldOpt;
 
-  function mapFoldCall<ArgT>
-    input Call call;
-    input MapFunc func;
-          output Call outCall;
-    input output ArgT foldArg;
-
-    partial function MapFunc
-      input output Expression e;
-      input output ArgT arg;
-    end MapFunc;
-  algorithm
-    outCall := match call
-      local
-        list<Expression> args;
-        list<Function.NamedArg> nargs;
-        list<Function.TypedArg> targs;
-        list<Function.TypedNamedArg> tnargs;
-        String s;
-        Expression e;
-        Type t;
-        Variability v;
-        list<tuple<InstNode, Expression>> iters;
-        Option<Expression> default_exp;
-        tuple<Option<Expression>, String, String> fold_exp;
-        Option<Expression> oe;
-
-      case Call.UNTYPED_CALL()
-        algorithm
-          (args, foldArg) := List.map1Fold(call.arguments, mapFold, func, foldArg);
-          nargs := {};
-
-          for arg in call.named_args loop
-            (s, e) := arg;
-            (e, foldArg) := mapFold(e, func, foldArg);
-            nargs := (s, e) :: nargs;
-          end for;
-        then
-          Call.UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
-
-      case Call.ARG_TYPED_CALL()
-        algorithm
-          targs := {};
-          tnargs := {};
-
-          for arg in call.arguments loop
-            (e, t, v) := arg;
-            (e, foldArg) := mapFold(e, func, foldArg);
-            targs := (e, t, v) :: targs;
-          end for;
-
-          for arg in call.named_args loop
-            (s, e, t, v) := arg;
-            (e, foldArg) := mapFold(e, func, foldArg);
-            tnargs := (s, e, t, v) :: tnargs;
-          end for;
-        then
-          Call.ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
-
-      case Call.TYPED_CALL()
-        algorithm
-          (args, foldArg) := List.map1Fold(call.arguments, mapFold, func, foldArg);
-        then
-          Call.TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
-
-      case Call.UNTYPED_ARRAY_CONSTRUCTOR()
-        algorithm
-          (e, foldArg) := mapFold(call.exp, func, foldArg);
-        then
-          Call.UNTYPED_ARRAY_CONSTRUCTOR(e, call.iters);
-
-      case Call.TYPED_ARRAY_CONSTRUCTOR()
-        algorithm
-          (e, foldArg) := mapFold(call.exp, func, foldArg);
-        then
-          Call.TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, call.iters);
-
-      case Call.UNTYPED_REDUCTION()
-        algorithm
-          (e, foldArg) := mapFold(call.exp, func, foldArg);
-        then
-          Call.UNTYPED_REDUCTION(call.ref, e, call.iters);
-
-      case Call.TYPED_REDUCTION()
-        algorithm
-          (e, foldArg) := mapFold(call.exp, func, foldArg);
-          (iters, foldArg) := mapFoldCallIterators(call.iters, func, foldArg);
-          (default_exp, foldArg) := mapFoldOpt(call.defaultExp, func, foldArg);
-          oe := Util.tuple31(call.foldExp);
-
-          if isSome(oe) then
-            (oe, foldArg) := mapFoldOpt(oe, func, foldArg);
-            fold_exp := Util.applyTuple31(call.foldExp, function Util.replace(arg = oe));
-          else
-            fold_exp := call.foldExp;
-          end if;
-        then
-          Call.TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
-    end match;
-  end mapFoldCall;
-
-  function mapFoldCallIterators<ArgT>
-    input list<tuple<InstNode, Expression>> iters;
-    input MapFunc func;
-          output list<tuple<InstNode, Expression>> outIters = {};
-    input output ArgT arg;
-
-    partial function MapFunc
-      input output Expression e;
-      input output ArgT arg;
-    end MapFunc;
-  protected
-    InstNode node;
-    Expression exp, new_exp;
-  algorithm
-    for i in iters loop
-      (node, exp) := i;
-      (new_exp, arg) := mapFold(exp, func, arg);
-      outIters := (if referenceEq(new_exp, exp) then i else (node, new_exp)) :: outIters;
-    end for;
-
-    outIters := listReverseInPlace(outIters);
-  end mapFoldCallIterators;
-
-  function mapFoldCref<ArgT>
-    input ComponentRef cref;
-    input MapFunc func;
-          output ComponentRef outCref;
-    input output ArgT arg;
-
-    partial function MapFunc
-      input output Expression e;
-      input output ArgT arg;
-    end MapFunc;
-  algorithm
-    outCref := match cref
-      local
-        list<Subscript> subs;
-        ComponentRef rest;
-
-      case ComponentRef.CREF(origin = Origin.CREF)
-        algorithm
-          (subs, arg) := List.map1Fold(cref.subscripts, Subscript.mapFoldExp, func, arg);
-          (rest, arg) := mapFoldCref(cref.restCref, func, arg);
-        then
-          ComponentRef.CREF(cref.node, subs, cref.ty, cref.origin, rest);
-
-      else cref;
-    end match;
-  end mapFoldCref;
-
   function mapFoldShallow<ArgT>
     input Expression exp;
     input MapFunc func;
@@ -3825,16 +3050,17 @@ public
         Call call;
         list<Subscript> subs;
         Boolean unchanged;
+        ClockKind ck;
 
       case CLKCONST()
         algorithm
-          (outExp, arg) := mapFoldClockShallow(exp, func, arg);
+          (ck, arg) := ClockKind.mapFoldExpShallow(exp.clk, func, arg);
         then
-          outExp;
+          if referenceEq(exp.clk, ck) then exp else CLKCONST(ck);
 
       case CREF()
         algorithm
-          (cr, arg) := mapFoldCrefShallow(exp.cref, func, arg);
+          (cr, arg) := ComponentRef.mapFoldExpShallow(exp.cref, func, arg);
        then
           if referenceEq(exp.cref, cr) then exp else CREF(exp.ty, cr);
 
@@ -3867,7 +3093,7 @@ public
 
       case CALL()
         algorithm
-          (call, arg) := mapFoldCallShallow(exp.call, func, arg);
+          (call, arg) := Call.mapFoldExpShallow(exp.call, func, arg);
         then
           if referenceEq(exp.call, call) then exp else CALL(call);
 
@@ -3979,58 +3205,6 @@ public
     end match;
   end mapFoldShallow;
 
-  function mapFoldClockShallow<ArgT>
-    input Expression clockExp;
-    input MapFunc func;
-          output Expression outExp;
-    input output ArgT arg;
-
-    partial function MapFunc
-      input output Expression e;
-      input output ArgT arg;
-    end MapFunc;
-  protected
-    ClockKind clk;
-    Expression e1, e2, e3, e4;
-  algorithm
-    CLKCONST(clk = clk) := clockExp;
-
-    outExp := match clk
-      case ClockKind.INTEGER_CLOCK(e1, e2)
-        algorithm
-          (e3, arg) := func(e1, arg);
-          (e4, arg) := func(e2, arg);
-        then
-          if referenceEq(e1, e3) and referenceEq(e2, e4) then
-            clockExp else CLKCONST(ClockKind.INTEGER_CLOCK(e3, e4));
-
-      case ClockKind.REAL_CLOCK(e1)
-        algorithm
-          (e2, arg) := func(e1, arg);
-        then
-          if referenceEq(e1, e2) then
-            clockExp else CLKCONST(ClockKind.REAL_CLOCK(e2));
-
-      case ClockKind.BOOLEAN_CLOCK(e1, e2)
-        algorithm
-          (e3, arg) := func(e1, arg);
-          (e4, arg) := func(e2, arg);
-        then
-          if referenceEq(e1, e3) and referenceEq(e2, e4) then
-            clockExp else CLKCONST(ClockKind.BOOLEAN_CLOCK(e3, e4));
-
-      case ClockKind.SOLVER_CLOCK(e1, e2)
-        algorithm
-          (e3, arg) := func(e1, arg);
-          (e4, arg) := func(e2, arg);
-        then
-          if referenceEq(e1, e3) and referenceEq(e2, e4) then
-            clockExp else CLKCONST(ClockKind.SOLVER_CLOCK(e3, e4));
-
-      else clockExp;
-    end match;
-  end mapFoldClockShallow;
-
   function mapFoldOptShallow<ArgT>
     input Option<Expression> exp;
     input MapFunc func;
@@ -4055,169 +3229,15 @@ public
     end match;
   end mapFoldOptShallow;
 
-  function mapFoldCallShallow<ArgT>
-    input Call call;
-    input MapFunc func;
-          output Call outCall;
-    input output ArgT foldArg;
-
-    partial function MapFunc
-      input output Expression e;
-      input output ArgT arg;
-    end MapFunc;
-  algorithm
-    outCall := match call
-      local
-        list<Expression> args;
-        list<Function.NamedArg> nargs;
-        list<Function.TypedArg> targs;
-        list<Function.TypedNamedArg> tnargs;
-        String s;
-        Expression e;
-        Type t;
-        Variability v;
-        list<tuple<InstNode, Expression>> iters;
-        Option<Expression> default_exp;
-        tuple<Option<Expression>, String, String> fold_exp;
-        Option<Expression> oe;
-
-      case Call.UNTYPED_CALL()
-        algorithm
-          (args, foldArg) := List.mapFold(call.arguments, func, foldArg);
-          nargs := {};
-
-          for arg in call.named_args loop
-            (s, e) := arg;
-            (e, foldArg) := func(e, foldArg);
-            nargs := (s, e) :: nargs;
-          end for;
-        then
-          Call.UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
-
-      case Call.ARG_TYPED_CALL()
-        algorithm
-          targs := {};
-          tnargs := {};
-
-          for arg in call.arguments loop
-            (e, t, v) := arg;
-            (e, foldArg) := func(e, foldArg);
-            targs := (e, t, v) :: targs;
-          end for;
-
-          for arg in call.named_args loop
-            (s, e, t, v) := arg;
-            (e, foldArg) := func(e, foldArg);
-            tnargs := (s, e, t, v) :: tnargs;
-          end for;
-        then
-          Call.ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
-
-      case Call.TYPED_CALL()
-        algorithm
-          (args, foldArg) := List.mapFold(call.arguments, func, foldArg);
-        then
-          Call.TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
-
-      case Call.UNTYPED_ARRAY_CONSTRUCTOR()
-        algorithm
-          (e, foldArg) := func(call.exp, foldArg);
-          iters := mapFoldCallIteratorsShallow(call.iters, func, foldArg);
-        then
-          Call.UNTYPED_ARRAY_CONSTRUCTOR(e, iters);
-
-      case Call.TYPED_ARRAY_CONSTRUCTOR()
-        algorithm
-          (e, foldArg) := func(call.exp, foldArg);
-          iters := mapFoldCallIteratorsShallow(call.iters, func, foldArg);
-        then
-          Call.TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, iters);
-
-      case Call.UNTYPED_REDUCTION()
-        algorithm
-          (e, foldArg) := func(call.exp, foldArg);
-          iters := mapFoldCallIteratorsShallow(call.iters, func, foldArg);
-        then
-          Call.UNTYPED_REDUCTION(call.ref, e, iters);
-
-      case Call.TYPED_REDUCTION()
-        algorithm
-          (e, foldArg) := func(call.exp, foldArg);
-          iters := mapFoldCallIteratorsShallow(call.iters, func, foldArg);
-          (default_exp, foldArg) := mapFoldOptShallow(call.defaultExp, func, foldArg);
-          oe := Util.tuple31(call.foldExp);
-
-          if isSome(oe) then
-            (oe, foldArg) := mapFoldOptShallow(oe, func, foldArg);
-            fold_exp := Util.applyTuple31(call.foldExp, function Util.replace(arg = oe));
-          else
-            fold_exp := call.foldExp;
-          end if;
-        then
-          Call.TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
-
-    end match;
-  end mapFoldCallShallow;
-
-  function mapFoldCallIteratorsShallow<ArgT>
-    input list<tuple<InstNode, Expression>> iters;
-    input MapFunc func;
-          output list<tuple<InstNode, Expression>> outIters = {};
-    input output ArgT arg;
-
-    partial function MapFunc
-      input output Expression e;
-      input output ArgT arg;
-    end MapFunc;
-  protected
-    InstNode node;
-    Expression exp, new_exp;
-  algorithm
-    for i in iters loop
-      (node, exp) := i;
-      (new_exp, arg) := func(exp, arg);
-      outIters := (if referenceEq(new_exp, exp) then i else (node, new_exp)) :: outIters;
-    end for;
-
-    outIters := listReverseInPlace(outIters);
-  end mapFoldCallIteratorsShallow;
-
-  function mapFoldCrefShallow<ArgT>
-    input ComponentRef cref;
-    input MapFunc func;
-          output ComponentRef outCref;
-    input output ArgT arg;
-
-    partial function MapFunc
-      input output Expression e;
-      input output ArgT arg;
-    end MapFunc;
-  algorithm
-    outCref := match cref
-      local
-        list<Subscript> subs;
-        ComponentRef rest;
-
-      case ComponentRef.CREF(origin = Origin.CREF)
-        algorithm
-          (subs, arg) := List.map1Fold(cref.subscripts, Subscript.mapFoldExpShallow, func, arg);
-          (rest, arg) := mapFoldCrefShallow(cref.restCref, func, arg);
-        then
-          ComponentRef.CREF(cref.node, subs, cref.ty, cref.origin, rest);
-
-      else cref;
-    end match;
-  end mapFoldCrefShallow;
-
-  partial function ContainsPred
-    input Expression exp;
-    output Boolean res;
-  end ContainsPred;
-
   function containsOpt
     input Option<Expression> exp;
     input ContainsPred func;
     output Boolean res;
+
+    partial function ContainsPred
+      input Expression exp;
+      output Boolean res;
+    end ContainsPred;
   protected
     Expression e;
   algorithm
@@ -4231,6 +3251,11 @@ public
     input Expression exp;
     input ContainsPred func;
     output Boolean res;
+
+    partial function ContainsPred
+      input Expression exp;
+      output Boolean res;
+    end ContainsPred;
   algorithm
     if func(exp) then
       res := true;
@@ -4241,7 +3266,7 @@ public
       local
         Expression e;
 
-      case CREF() then crefContains(exp.cref, func);
+      case CREF() then ComponentRef.containsExp(exp.cref, func);
       case ARRAY() then listContains(exp.elements, func);
 
       case MATRIX()
@@ -4264,7 +3289,7 @@ public
 
       case TUPLE() then listContains(exp.elements, func);
       case RECORD() then listContains(exp.elements, func);
-      case CALL() then callContains(exp.call, func);
+      case CALL() then Call.containsExp(exp.call, func);
 
       case SIZE()
         then containsOpt(exp.dimIndex, func) or
@@ -4295,24 +3320,15 @@ public
     end match;
   end contains;
 
-  function crefContains
-    input ComponentRef cref;
-    input ContainsPred func;
-    output Boolean res;
-  algorithm
-    res := match cref
-      case ComponentRef.CREF()
-        then Subscript.listContainsExp(cref.subscripts, func) or
-             crefContains(cref.restCref, func);
-
-      else false;
-    end match;
-  end crefContains;
-
   function listContains
     input list<Expression> expl;
     input ContainsPred func;
     output Boolean res;
+
+    partial function ContainsPred
+      input Expression exp;
+      output Boolean res;
+    end ContainsPred;
   algorithm
     for e in expl loop
       if contains(e, func) then
@@ -4324,67 +3340,18 @@ public
     res := false;
   end listContains;
 
-  function callContains
-    input Call call;
-    input ContainsPred func;
-    output Boolean res;
-  algorithm
-    res := match call
-      local
-        Expression e;
-
-      case Call.UNTYPED_CALL()
-        algorithm
-          res := listContains(call.arguments, func);
-
-          if not res then
-            for arg in call.named_args loop
-              (_, e) := arg;
-
-              if contains(e, func) then
-                res := true;
-                break;
-              end if;
-            end for;
-          end if;
-        then
-          res;
-
-      case Call.ARG_TYPED_CALL()
-        algorithm
-          for arg in call.arguments loop
-            (e, _, _) := arg;
-            if contains(e, func) then
-              res := true;
-              return;
-            end if;
-          end for;
-
-          for arg in call.named_args loop
-            (_, e, _, _) := arg;
-            if contains(e, func) then
-              res := true;
-              return;
-            end if;
-          end for;
-        then
-          false;
-
-      case Call.TYPED_CALL() then listContains(call.arguments, func);
-      case Call.UNTYPED_ARRAY_CONSTRUCTOR() then contains(call.exp, func);
-      case Call.TYPED_ARRAY_CONSTRUCTOR() then contains(call.exp, func);
-      case Call.UNTYPED_REDUCTION() then contains(call.exp, func);
-      case Call.TYPED_REDUCTION() then contains(call.exp, func);
-    end match;
-  end callContains;
-
   function containsShallow
     input Expression exp;
     input ContainsPred func;
     output Boolean res;
+
+    partial function ContainsPred
+      input Expression exp;
+      output Boolean res;
+    end ContainsPred;
   algorithm
     res := match exp
-      case CREF() then crefContainsShallow(exp.cref, func);
+      case CREF() then ComponentRef.containsExpShallow(exp.cref, func);
       case ARRAY() then listContainsShallow(exp.elements, func);
 
       case MATRIX()
@@ -4407,7 +3374,7 @@ public
 
       case TUPLE() then listContainsShallow(exp.elements, func);
       case RECORD() then listContainsShallow(exp.elements, func);
-      case CALL() then callContainsShallow(exp.call, func);
+      case CALL() then Call.containsExpShallow(exp.call, func);
 
       case SIZE()
         then Util.applyOptionOrDefault(exp.dimIndex, func, false) or
@@ -4433,24 +3400,15 @@ public
     end match;
   end containsShallow;
 
-  function crefContainsShallow
-    input ComponentRef cref;
-    input ContainsPred func;
-    output Boolean res;
-  algorithm
-    res := match cref
-      case ComponentRef.CREF()
-        then Subscript.listContainsExpShallow(cref.subscripts, func) or
-             crefContainsShallow(cref.restCref, func);
-
-      else false;
-    end match;
-  end crefContainsShallow;
-
   function listContainsShallow
     input list<Expression> expl;
     input ContainsPred func;
     output Boolean res;
+
+    partial function ContainsPred
+      input Expression exp;
+      output Boolean res;
+    end ContainsPred;
   algorithm
     for e in expl loop
       if func(e) then
@@ -4461,62 +3419,6 @@ public
 
     res := false;
   end listContainsShallow;
-
-  function callContainsShallow
-    input Call call;
-    input ContainsPred func;
-    output Boolean res;
-  algorithm
-    res := match call
-      local
-        Expression e;
-
-      case Call.UNTYPED_CALL()
-        algorithm
-          res := listContainsShallow(call.arguments, func);
-
-          if not res then
-            for arg in call.named_args loop
-              (_, e) := arg;
-
-              if func(e) then
-                res := true;
-                break;
-              end if;
-            end for;
-          end if;
-        then
-          res;
-
-      case Call.ARG_TYPED_CALL()
-        algorithm
-          for arg in call.arguments loop
-            (e, _, _) := arg;
-
-            if func(e) then
-              res := true;
-              return;
-            end if;
-          end for;
-
-          for arg in call.named_args loop
-            (_, e, _, _) := arg;
-
-            if func(e) then
-              res := true;
-              return;
-            end if;
-          end for;
-        then
-          false;
-
-      case Call.TYPED_CALL() then listContainsShallow(call.arguments, func);
-      case Call.UNTYPED_ARRAY_CONSTRUCTOR() then func(call.exp);
-      case Call.TYPED_ARRAY_CONSTRUCTOR() then func(call.exp);
-      case Call.UNTYPED_REDUCTION() then func(call.exp);
-      case Call.TYPED_REDUCTION() then func(call.exp);
-    end match;
-  end callContainsShallow;
 
   function arrayFirstScalar
     "Returns the first scalar element of an array. Fails if the array is empty."
