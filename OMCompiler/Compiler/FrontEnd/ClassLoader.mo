@@ -155,15 +155,15 @@ algorithm
     versionsThatProvideTheWanted := PackageManagement.versionsThatProvideTheWanted(id, version, printError=false);
     if not listEmpty(versionsThatProvideTheWanted) then
       if version=="default" or version=="" then
-        commands := {"  packageInstall("+id+")"};
+        commands := {"  installPackage("+id+")"};
       else
         commands := {
-          "  packageInstall("+id+", \""+version+"\", exactMatch=false)",
-          "  packageInstall("+id+", \""+version+"\", exactMatch="+String(listMember(version,versionsThatProvideTheWanted))+")"
+          "  installPackage("+id+", \""+version+"\", exactMatch=false)",
+          "  installPackage("+id+", \""+version+"\", exactMatch="+String(listMember(version,versionsThatProvideTheWanted))+")"
         };
       end if;
       if listHead(versionsThatProvideTheWanted) <> version then
-        commands := "  packageInstall("+id+", \""+listHead(versionsThatProvideTheWanted)+"\", exactMatch=true)" :: commands;
+        commands := "  installPackage("+id+", \""+listHead(versionsThatProvideTheWanted)+"\", exactMatch=true)" :: commands;
       end if;
       Error.addMessage(Error.NOTIFY_PKG_FOUND, {stringDelimitList(commands, "\n")});
     end if;
