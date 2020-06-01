@@ -31,17 +31,9 @@
 #ifndef CVODE_SOLVER_H
 #define CVODE_SOLVER_H
 
-#include "simulation_data.h"
-#include "util/simulation_options.h"
-#include "omc_config.h" /* for WITH_SUNDIALS */
-
-#ifdef WITH_SUNDIALS
-
-/* adrpo: on mingw link with static sundials */
-#if defined(__MINGW32__)
-#if !defined(LINK_SUNDIALS_STATIC)
+/* link sundials static on Windows */
+#if defined(__MINGW32__) || defined(_MSV_VER)
 #define LINK_SUNDIALS_STATIC 1
-#endif
 #endif
 
 #include "cvode/cvode.h"             /* prototypes for CVODE fcts., consts. */
