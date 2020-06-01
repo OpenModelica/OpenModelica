@@ -298,8 +298,13 @@ public
 
   function containsExp
     input Subscript subscript;
-    input Expression.ContainsPred func;
+    input ContainsPred func;
     output Boolean res;
+
+    partial function ContainsPred
+      input Expression exp;
+      output Boolean res;
+    end ContainsPred;
   algorithm
     res := match subscript
       case UNTYPED() then Expression.contains(subscript.exp, func);
@@ -311,8 +316,13 @@ public
 
   function listContainsExp
     input list<Subscript> subscripts;
-    input Expression.ContainsPred func;
+    input ContainsPred func;
     output Boolean res;
+
+    partial function ContainsPred
+      input Expression exp;
+      output Boolean res;
+    end ContainsPred;
   algorithm
     for s in subscripts loop
       if containsExp(s, func) then
@@ -326,8 +336,13 @@ public
 
   function containsExpShallow
     input Subscript subscript;
-    input Expression.ContainsPred func;
+    input ContainsPred func;
     output Boolean res;
+
+    partial function ContainsPred
+      input Expression exp;
+      output Boolean res;
+    end ContainsPred;
   algorithm
     res := match subscript
       case UNTYPED() then func(subscript.exp);
@@ -339,8 +354,13 @@ public
 
   function listContainsExpShallow
     input list<Subscript> subscripts;
-    input Expression.ContainsPred func;
+    input ContainsPred func;
     output Boolean res;
+
+    partial function ContainsPred
+      input Expression exp;
+      output Boolean res;
+    end ContainsPred;
   algorithm
     for s in subscripts loop
       if containsExpShallow(s, func) then
@@ -367,6 +387,22 @@ public
       else ();
     end match;
   end applyExp;
+
+  function applyExpShallow
+    input Subscript subscript;
+    input ApplyFunc func;
+
+    partial function ApplyFunc
+      input Expression exp;
+    end ApplyFunc;
+  algorithm
+    () := match subscript
+      case UNTYPED() algorithm func(subscript.exp); then ();
+      case INDEX() algorithm func(subscript.index); then ();
+      case SLICE() algorithm func(subscript.slice); then ();
+      else ();
+    end match;
+  end applyExpShallow;
 
   function mapExp
     input Subscript subscript;

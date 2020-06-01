@@ -968,5 +968,215 @@ public
     end match;
   end isComplexArray2;
 
+  function containsExp
+    input ComponentRef cref;
+    input ContainsPred func;
+    output Boolean res;
+
+    partial function ContainsPred
+      input Expression exp;
+      output Boolean res;
+    end ContainsPred;
+  algorithm
+    res := match cref
+      case CREF()
+        then Subscript.listContainsExp(cref.subscripts, func) or
+             containsExp(cref.restCref, func);
+
+      else false;
+    end match;
+  end containsExp;
+
+  function containsExpShallow
+    input ComponentRef cref;
+    input ContainsPred func;
+    output Boolean res;
+
+    partial function ContainsPred
+      input Expression exp;
+      output Boolean res;
+    end ContainsPred;
+  algorithm
+    res := match cref
+      case ComponentRef.CREF()
+        then Subscript.listContainsExpShallow(cref.subscripts, func) or
+             containsExpShallow(cref.restCref, func);
+
+      else false;
+    end match;
+  end containsExpShallow;
+
+  function applyExp
+    input ComponentRef cref;
+    input ApplyFunc func;
+
+    partial function ApplyFunc
+      input Expression exp;
+    end ApplyFunc;
+  algorithm
+    () := match cref
+      case CREF(origin = Origin.CREF)
+        algorithm
+          for s in cref.subscripts loop
+            Subscript.applyExp(s, func);
+          end for;
+
+          applyExp(cref.restCref, func);
+        then
+          ();
+
+      else ();
+    end match;
+  end applyExp;
+
+  function applyExpShallow
+    input ComponentRef cref;
+    input ApplyFunc func;
+
+    partial function ApplyFunc
+      input Expression exp;
+    end ApplyFunc;
+  algorithm
+    () := match cref
+      case CREF(origin = Origin.CREF)
+        algorithm
+          for s in cref.subscripts loop
+            Subscript.applyExpShallow(s, func);
+          end for;
+
+          applyExpShallow(cref.restCref, func);
+        then
+          ();
+
+      else ();
+    end match;
+  end applyExpShallow;
+
+  function mapExp
+    input ComponentRef cref;
+    input MapFunc func;
+    output ComponentRef outCref;
+
+    partial function MapFunc
+      input output Expression e;
+    end MapFunc;
+  algorithm
+    outCref := match cref
+      local
+        list<Subscript> subs;
+        ComponentRef rest;
+
+      case CREF(origin = Origin.CREF)
+        algorithm
+          subs := list(Subscript.mapExp(s, func) for s in cref.subscripts);
+          rest := mapExp(cref.restCref, func);
+        then
+          CREF(cref.node, subs, cref.ty, cref.origin, rest);
+
+      else cref;
+    end match;
+  end mapExp;
+
+  function mapExpShallow
+    input ComponentRef cref;
+    input MapFunc func;
+    output ComponentRef outCref;
+
+    partial function MapFunc
+      input output Expression e;
+    end MapFunc;
+  algorithm
+    outCref := match cref
+      local
+        list<Subscript> subs;
+        ComponentRef rest;
+
+      case CREF(origin = Origin.CREF)
+        algorithm
+          subs := list(Subscript.mapShallowExp(s, func) for s in cref.subscripts);
+          rest := mapExpShallow(cref.restCref, func);
+        then
+          CREF(cref.node, subs, cref.ty, cref.origin, rest);
+
+      else cref;
+    end match;
+  end mapExpShallow;
+
+  function foldExp<ArgT>
+    input ComponentRef cref;
+    input FoldFunc func;
+    input output ArgT arg;
+
+    partial function FoldFunc
+      input Expression exp;
+      input output ArgT arg;
+    end FoldFunc;
+  algorithm
+    () := match cref
+      case CREF(origin = Origin.CREF)
+        algorithm
+          arg := List.fold(cref.subscripts, function Subscript.foldExp(func = func), arg);
+          arg := foldExp(cref.restCref, func, arg);
+        then
+          ();
+
+      else ();
+    end match;
+  end foldExp;
+
+  function mapFoldExp<ArgT>
+    input ComponentRef cref;
+    input MapFunc func;
+          output ComponentRef outCref;
+    input output ArgT arg;
+
+    partial function MapFunc
+      input output Expression e;
+      input output ArgT arg;
+    end MapFunc;
+  algorithm
+    outCref := match cref
+      local
+        list<Subscript> subs;
+        ComponentRef rest;
+
+      case CREF(origin = Origin.CREF)
+        algorithm
+          (subs, arg) := List.map1Fold(cref.subscripts, Subscript.mapFoldExp, func, arg);
+          (rest, arg) := mapFoldExp(cref.restCref, func, arg);
+        then
+          CREF(cref.node, subs, cref.ty, cref.origin, rest);
+
+      else cref;
+    end match;
+  end mapFoldExp;
+
+  function mapFoldExpShallow<ArgT>
+    input ComponentRef cref;
+    input MapFunc func;
+          output ComponentRef outCref;
+    input output ArgT arg;
+
+    partial function MapFunc
+      input output Expression e;
+      input output ArgT arg;
+    end MapFunc;
+  algorithm
+    outCref := match cref
+      local
+        list<Subscript> subs;
+        ComponentRef rest;
+
+      case CREF(origin = Origin.CREF)
+        algorithm
+          (subs, arg) := List.map1Fold(cref.subscripts, Subscript.mapFoldExpShallow, func, arg);
+          (rest, arg) := mapFoldExpShallow(cref.restCref, func, arg);
+        then
+          CREF(cref.node, subs, cref.ty, cref.origin, rest);
+
+      else cref;
+    end match;
+  end mapFoldExpShallow;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFComponentRef;
