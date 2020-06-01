@@ -136,6 +136,7 @@ UniontypeFunc1.mos \
 UniontypeConst1.mos \
 UniontypeConst2.mos \
 UniontypeConst3.mos \
+UniontypeNestedSingelton.mos
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=
