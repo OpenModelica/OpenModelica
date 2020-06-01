@@ -2223,15 +2223,26 @@ end Test_total;
 //   result := true;
 // end Modelica_StateGraph2.Internal.Utilities.propagateLoopCheck;
 //
+// function Test_total.booleanTable.isValidTable "Check if table is valid"
+//   input Real[:] table "Vector of time instants";
+//   protected Integer n = size(table, 1) "Number of table points";
+// algorithm
+//   if n > 0 then
+//     for i in 2:n loop
+//       assert(table[i] > table[i - 1], "Time values of table not strict monotonically increasing: table[" + String(i - 1, 0, true) + "] = " + String(table[i - 1], 6, 0, true) + ", table[" + String(i, 0, true) + "] = " + String(table[i], 6, 0, true));
+//     end for;
+//   end if;
+// end Test_total.booleanTable.isValidTable;
+//
 // class Test_total
-//   final parameter Real booleanTable.table[1](quantity = "Time", unit = "s") = 0.5 "Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})";
-//   final parameter Real booleanTable.table[2](quantity = "Time", unit = "s") = 1.0 "Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})";
-//   final parameter Real booleanTable.table[3](quantity = "Time", unit = "s") = 1.5 "Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})";
-//   final parameter Real booleanTable.table[4](quantity = "Time", unit = "s") = 1.55 "Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})";
-//   final parameter Real booleanTable.table[5](quantity = "Time", unit = "s") = 1.6 "Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})";
-//   final parameter Real booleanTable.table[6](quantity = "Time", unit = "s") = 2.0 "Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})";
-//   final parameter Real booleanTable.table[7](quantity = "Time", unit = "s") = 2.05 "Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})";
-//   final parameter Real booleanTable.table[8](quantity = "Time", unit = "s") = 2.1 "Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})";
+//   parameter Real booleanTable.table[1](quantity = "Time", unit = "s") = 0.5 "Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})";
+//   parameter Real booleanTable.table[2](quantity = "Time", unit = "s") = 1.0 "Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})";
+//   parameter Real booleanTable.table[3](quantity = "Time", unit = "s") = 1.5 "Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})";
+//   parameter Real booleanTable.table[4](quantity = "Time", unit = "s") = 1.55 "Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})";
+//   parameter Real booleanTable.table[5](quantity = "Time", unit = "s") = 1.6 "Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})";
+//   parameter Real booleanTable.table[6](quantity = "Time", unit = "s") = 2.0 "Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})";
+//   parameter Real booleanTable.table[7](quantity = "Time", unit = "s") = 2.05 "Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})";
+//   parameter Real booleanTable.table[8](quantity = "Time", unit = "s") = 2.1 "Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})";
 //   parameter Boolean booleanTable.startValue = false "Start value of y. At time = table[1], y changes to 'not startValue'";
 //   parameter enumeration(HoldLastPoint, LastTwoPoints, Periodic, NoExtrapolation) booleanTable.extrapolation = Modelica.Blocks.Types.Extrapolation.HoldLastPoint "Extrapolation of data outside the definition range";
 //   parameter Real booleanTable.startTime(quantity = "Time", unit = "s") = 0.1 "Output = false for time < startTime";
@@ -2240,23 +2251,23 @@ end Test_total;
 //   final parameter Integer booleanTable.combiTimeTable.nout(min = 1) = 1 "Number of outputs";
 //   Real booleanTable.combiTimeTable.y[1] "Connector of Real output signals";
 //   final parameter Boolean booleanTable.combiTimeTable.tableOnFile = false "= true, if table is defined on file or in function usertab";
-//   final parameter Real booleanTable.combiTimeTable.table[1,1] = if booleanTable.startValue then 0.5 else 0.5 "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
+//   final parameter Real booleanTable.combiTimeTable.table[1,1] = if booleanTable.startValue then booleanTable.table[1] else booleanTable.table[1] "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
 //   final parameter Real booleanTable.combiTimeTable.table[1,2] = if booleanTable.startValue then 1.0 else 0.0 "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
-//   final parameter Real booleanTable.combiTimeTable.table[2,1] = if booleanTable.startValue then 0.5 else 0.5 "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
+//   final parameter Real booleanTable.combiTimeTable.table[2,1] = if booleanTable.startValue then booleanTable.table[1] else booleanTable.table[1] "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
 //   final parameter Real booleanTable.combiTimeTable.table[2,2] = if booleanTable.startValue then 0.0 else 1.0 "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
-//   final parameter Real booleanTable.combiTimeTable.table[3,1] = if booleanTable.startValue then 1.0 else 1.0 "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
+//   final parameter Real booleanTable.combiTimeTable.table[3,1] = if booleanTable.startValue then booleanTable.table[2] else booleanTable.table[2] "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
 //   final parameter Real booleanTable.combiTimeTable.table[3,2] = if booleanTable.startValue then 1.0 else 0.0 "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
-//   final parameter Real booleanTable.combiTimeTable.table[4,1] = if booleanTable.startValue then 1.5 else 1.5 "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
+//   final parameter Real booleanTable.combiTimeTable.table[4,1] = if booleanTable.startValue then booleanTable.table[3] else booleanTable.table[3] "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
 //   final parameter Real booleanTable.combiTimeTable.table[4,2] = if booleanTable.startValue then 0.0 else 1.0 "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
-//   final parameter Real booleanTable.combiTimeTable.table[5,1] = if booleanTable.startValue then 1.55 else 1.55 "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
+//   final parameter Real booleanTable.combiTimeTable.table[5,1] = if booleanTable.startValue then booleanTable.table[4] else booleanTable.table[4] "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
 //   final parameter Real booleanTable.combiTimeTable.table[5,2] = if booleanTable.startValue then 1.0 else 0.0 "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
-//   final parameter Real booleanTable.combiTimeTable.table[6,1] = if booleanTable.startValue then 1.6 else 1.6 "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
+//   final parameter Real booleanTable.combiTimeTable.table[6,1] = if booleanTable.startValue then booleanTable.table[5] else booleanTable.table[5] "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
 //   final parameter Real booleanTable.combiTimeTable.table[6,2] = if booleanTable.startValue then 0.0 else 1.0 "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
-//   final parameter Real booleanTable.combiTimeTable.table[7,1] = if booleanTable.startValue then 2.0 else 2.0 "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
+//   final parameter Real booleanTable.combiTimeTable.table[7,1] = if booleanTable.startValue then booleanTable.table[6] else booleanTable.table[6] "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
 //   final parameter Real booleanTable.combiTimeTable.table[7,2] = if booleanTable.startValue then 1.0 else 0.0 "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
-//   final parameter Real booleanTable.combiTimeTable.table[8,1] = if booleanTable.startValue then 2.05 else 2.05 "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
+//   final parameter Real booleanTable.combiTimeTable.table[8,1] = if booleanTable.startValue then booleanTable.table[7] else booleanTable.table[7] "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
 //   final parameter Real booleanTable.combiTimeTable.table[8,2] = if booleanTable.startValue then 0.0 else 1.0 "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
-//   final parameter Real booleanTable.combiTimeTable.table[9,1] = if booleanTable.startValue then 2.1 else 2.1 "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
+//   final parameter Real booleanTable.combiTimeTable.table[9,1] = if booleanTable.startValue then booleanTable.table[8] else booleanTable.table[8] "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
 //   final parameter Real booleanTable.combiTimeTable.table[9,2] = if booleanTable.startValue then 1.0 else 0.0 "Table matrix (time = first column; e.g., table=[0, 0; 1, 1; 2, 4])";
 //   parameter String booleanTable.combiTimeTable.tableName = "NoName" "Table name on file or in function usertab (see docu)";
 //   parameter String booleanTable.combiTimeTable.fileName = "NoName" "File where matrix is stored";
@@ -2467,6 +2478,8 @@ end Test_total;
 //   pre(logicalDelayStateGraph.T3.enableFire) = false;
 //   pre(logicalDelayStateGraph.T4.enableFire) = false;
 //   pre(logicalDelayStateGraph.T4.t_start) = 0.0;
+// initial algorithm
+//   Test_total.booleanTable.isValidTable(booleanTable.table);
 // equation
 //   booleanTable.combiTimeTable.y[1] = booleanTable.realToBoolean.u;
 //   booleanTable.realToBoolean.y = booleanTable.y;

@@ -3558,19 +3558,13 @@ end markStructuralParamsDim;
 
 function markStructuralParamsExp
   input Expression exp;
-algorithm
-  Expression.apply(exp, markStructuralParamsExp_traverser);
-end markStructuralParamsExp;
-
-function markStructuralParamsExp_traverser
-  input Expression exp;
   import NFComponentRef.Origin;
 algorithm
   () := match exp
     local
       InstNode node;
       Component comp;
-      Option<Expression> binding;
+      Expression e;
 
     case Expression.CREF(cref = ComponentRef.CREF(node = node, origin = Origin.CREF))
       algorithm
@@ -3581,12 +3575,51 @@ algorithm
             markStructuralParamsComp(comp, node);
           end if;
         end if;
+
+        Expression.applyShallow(exp, markStructuralParamsExp);
       then
         ();
 
-    else ();
+    case Expression.SIZE()
+      algorithm
+        // The expression in the size expression should not be marked as
+        // structural, since only the type of it matters to determine the size.
+        // Subscripts in the expression should be marked as structural though.
+        markStructuralParamsExpSubs(exp.exp);
+
+        // The optional index should be marked as structural.
+        if isSome(exp.dimIndex) then
+          SOME(e) := exp.dimIndex;
+          markStructuralParamsExp(e);
+        end if;
+      then
+        ();
+
+    else
+      algorithm
+        Expression.applyShallow(exp, markStructuralParamsExp);
+      then
+        ();
   end match;
-end markStructuralParamsExp_traverser;
+end markStructuralParamsExp;
+
+function markStructuralParamsExpSubs
+  input Expression exp;
+algorithm
+  () := match exp
+    case Expression.CREF()
+      algorithm
+        ComponentRef.foldSubscripts(exp.cref, markStructuralParamsSub, 0);
+      then
+        ();
+
+    else
+      algorithm
+        Expression.applyShallow(exp, markStructuralParamsExpSubs);
+      then
+        ();
+  end match;
+end markStructuralParamsExpSubs;
 
 function markStructuralParamsComp
   input Component component;
