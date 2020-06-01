@@ -74,6 +74,8 @@ import TypeCheck = NFTypeCheck;
 import Typing = NFTyping;
 import Util;
 
+import Call = NFCall;
+
 protected
   import NFCallParameterTree;
   type ParameterTree = NFCallParameterTree.Tree;
@@ -848,6 +850,869 @@ public
       else Expression.CAST(Type.setArrayElementType(typeOf(call), ty), callExp);
     end match;
   end typeCast;
+
+  function containsExp
+    input Call call;
+    input ContainsPred func;
+    output Boolean res;
+
+    partial function ContainsPred
+      input Expression exp;
+      output Boolean res;
+    end ContainsPred;
+  algorithm
+    res := match call
+      local
+        Expression e;
+
+      case UNTYPED_CALL()
+        algorithm
+          res := Expression.listContains(call.arguments, func);
+
+          if not res then
+            for arg in call.named_args loop
+              (_, e) := arg;
+
+              if Expression.contains(e, func) then
+                res := true;
+                break;
+              end if;
+            end for;
+          end if;
+        then
+          res;
+
+      case ARG_TYPED_CALL()
+        algorithm
+          for arg in call.arguments loop
+            (e, _, _) := arg;
+            if Expression.contains(e, func) then
+              res := true;
+              return;
+            end if;
+          end for;
+
+          for arg in call.named_args loop
+            (_, e, _, _) := arg;
+            if Expression.contains(e, func) then
+              res := true;
+              return;
+            end if;
+          end for;
+        then
+          false;
+
+      case TYPED_CALL() then Expression.listContains(call.arguments, func);
+      case UNTYPED_ARRAY_CONSTRUCTOR() then Expression.contains(call.exp, func);
+      case TYPED_ARRAY_CONSTRUCTOR() then Expression.contains(call.exp, func);
+      case UNTYPED_REDUCTION() then Expression.contains(call.exp, func);
+      case TYPED_REDUCTION() then Expression.contains(call.exp, func);
+    end match;
+  end containsExp;
+
+  function containsExpShallow
+    input Call call;
+    input ContainsPred func;
+    output Boolean res;
+
+    partial function ContainsPred
+      input Expression exp;
+      output Boolean res;
+    end ContainsPred;
+  algorithm
+    res := match call
+      local
+        Expression e;
+
+      case UNTYPED_CALL()
+        algorithm
+          res := Expression.listContainsShallow(call.arguments, func);
+
+          if not res then
+            for arg in call.named_args loop
+              (_, e) := arg;
+
+              if func(e) then
+                res := true;
+                break;
+              end if;
+            end for;
+          end if;
+        then
+          res;
+
+      case ARG_TYPED_CALL()
+        algorithm
+          for arg in call.arguments loop
+            (e, _, _) := arg;
+
+            if func(e) then
+              res := true;
+              return;
+            end if;
+          end for;
+
+          for arg in call.named_args loop
+            (_, e, _, _) := arg;
+
+            if func(e) then
+              res := true;
+              return;
+            end if;
+          end for;
+        then
+          false;
+
+      case TYPED_CALL() then Expression.listContainsShallow(call.arguments, func);
+      case UNTYPED_ARRAY_CONSTRUCTOR() then func(call.exp);
+      case TYPED_ARRAY_CONSTRUCTOR() then func(call.exp);
+      case UNTYPED_REDUCTION() then func(call.exp);
+      case TYPED_REDUCTION() then func(call.exp);
+    end match;
+  end containsExpShallow;
+
+  function applyExp
+    input Call call;
+    input ApplyFunc func;
+
+    partial function ApplyFunc
+      input Expression exp;
+    end ApplyFunc;
+  algorithm
+    () := match call
+      local
+        Expression e;
+
+      case UNTYPED_CALL()
+        algorithm
+          Expression.applyList(call.arguments, func);
+
+          for arg in call.named_args loop
+            (_, e) := arg;
+            Expression.apply(e, func);
+          end for;
+        then
+          ();
+
+      case ARG_TYPED_CALL()
+        algorithm
+          for arg in call.arguments loop
+            (e, _, _) := arg;
+            Expression.apply(e, func);
+          end for;
+
+          for arg in call.named_args loop
+            (_, e, _, _) := arg;
+            Expression.apply(e, func);
+          end for;
+        then
+          ();
+
+      case TYPED_CALL()
+        algorithm
+          Expression.applyList(call.arguments, func);
+        then
+          ();
+
+      case UNTYPED_ARRAY_CONSTRUCTOR()
+        algorithm
+          Expression.apply(call.exp, func);
+
+          for i in call.iters loop
+            Expression.apply(Util.tuple22(i), func);
+          end for;
+        then
+          ();
+
+      case TYPED_ARRAY_CONSTRUCTOR()
+        algorithm
+          Expression.apply(call.exp, func);
+
+          for i in call.iters loop
+            Expression.apply(Util.tuple22(i), func);
+          end for;
+        then
+          ();
+
+      case UNTYPED_REDUCTION()
+        algorithm
+          Expression.apply(call.exp, func);
+
+          for i in call.iters loop
+            Expression.apply(Util.tuple22(i), func);
+          end for;
+        then
+          ();
+
+      case TYPED_REDUCTION()
+        algorithm
+          Expression.apply(call.exp, func);
+
+          for i in call.iters loop
+            Expression.apply(Util.tuple22(i), func);
+          end for;
+
+          Expression.applyOpt(call.defaultExp, func);
+          Expression.applyOpt(Util.tuple31(call.foldExp), func);
+        then
+          ();
+    end match;
+  end applyExp;
+
+  function applyExpShallow
+    input Call call;
+    input ApplyFunc func;
+
+    partial function ApplyFunc
+      input Expression exp;
+    end ApplyFunc;
+  algorithm
+    () := match call
+      local
+        Expression e;
+
+      case UNTYPED_CALL()
+        algorithm
+          Expression.applyListShallow(call.arguments, func);
+
+          for arg in call.named_args loop
+            (_, e) := arg;
+            func(e);
+          end for;
+        then
+          ();
+
+      case ARG_TYPED_CALL()
+        algorithm
+          for arg in call.arguments loop
+            (e, _, _) := arg;
+            func(e);
+          end for;
+
+          for arg in call.named_args loop
+            (_, e, _, _) := arg;
+            func(e);
+          end for;
+        then
+          ();
+
+      case TYPED_CALL()
+        algorithm
+          Expression.applyListShallow(call.arguments, func);
+        then
+          ();
+
+      case UNTYPED_ARRAY_CONSTRUCTOR()
+        algorithm
+          func(call.exp);
+
+          for i in call.iters loop
+            func(Util.tuple22(i));
+          end for;
+        then
+          ();
+
+      case TYPED_ARRAY_CONSTRUCTOR()
+        algorithm
+          func(call.exp);
+
+          for i in call.iters loop
+            func(Util.tuple22(i));
+          end for;
+        then
+          ();
+
+      case UNTYPED_REDUCTION()
+        algorithm
+          func(call.exp);
+
+          for i in call.iters loop
+            func(Util.tuple22(i));
+          end for;
+        then
+          ();
+
+      case TYPED_REDUCTION()
+        algorithm
+          func(call.exp);
+
+          for i in call.iters loop
+            func(Util.tuple22(i));
+          end for;
+
+          Expression.applyShallowOpt(call.defaultExp, func);
+          Expression.applyShallowOpt(Util.tuple31(call.foldExp), func);
+        then
+          ();
+    end match;
+  end applyExpShallow;
+
+  function foldExp<ArgT>
+    input Call call;
+    input FoldFunc func;
+    input output ArgT foldArg;
+
+    partial function FoldFunc
+      input Expression exp;
+      input output ArgT arg;
+    end FoldFunc;
+  algorithm
+    () := match call
+      local
+        Expression e;
+
+      case UNTYPED_CALL()
+        algorithm
+          foldArg := Expression.foldList(call.arguments, func, foldArg);
+
+          for arg in call.named_args loop
+            (_, e) := arg;
+            foldArg := Expression.fold(e, func, foldArg);
+          end for;
+        then
+          ();
+
+      case ARG_TYPED_CALL()
+        algorithm
+          for arg in call.arguments loop
+            (e, _, _) := arg;
+            foldArg := Expression.fold(e, func, foldArg);
+          end for;
+
+          for arg in call.named_args loop
+            (_, e, _, _) := arg;
+            foldArg := Expression.fold(e, func, foldArg);
+          end for;
+        then
+          ();
+
+      case TYPED_CALL()
+        algorithm
+          foldArg := Expression.foldList(call.arguments, func, foldArg);
+        then
+          ();
+
+      case UNTYPED_ARRAY_CONSTRUCTOR()
+        algorithm
+          foldArg := Expression.fold(call.exp, func, foldArg);
+
+          for i in call.iters loop
+            foldArg := Expression.fold(Util.tuple22(i), func, foldArg);
+          end for;
+        then
+          ();
+
+      case TYPED_ARRAY_CONSTRUCTOR()
+        algorithm
+          foldArg := Expression.fold(call.exp, func, foldArg);
+
+          for i in call.iters loop
+            foldArg := Expression.fold(Util.tuple22(i), func, foldArg);
+          end for;
+        then
+          ();
+
+      case UNTYPED_REDUCTION()
+        algorithm
+          foldArg := Expression.fold(call.exp, func, foldArg);
+
+          for i in call.iters loop
+            foldArg := Expression.fold(Util.tuple22(i), func, foldArg);
+          end for;
+        then
+          ();
+
+      case TYPED_REDUCTION()
+        algorithm
+          foldArg := Expression.fold(call.exp, func, foldArg);
+
+          for i in call.iters loop
+            foldArg := Expression.fold(Util.tuple22(i), func, foldArg);
+          end for;
+
+          foldArg := Expression.foldOpt(call.defaultExp, func, foldArg);
+          foldArg := Expression.foldOpt(Util.tuple31(call.foldExp), func, foldArg);
+        then
+          ();
+    end match;
+  end foldExp;
+
+  function mapExp
+    input Call call;
+    input MapFunc func;
+    output Call outCall;
+
+    partial function MapFunc
+      input output Expression e;
+    end MapFunc;
+  algorithm
+    outCall := match call
+      local
+        list<Expression> args;
+        list<NamedArg> nargs;
+        list<TypedArg> targs;
+        list<TypedNamedArg> tnargs;
+        String s;
+        Expression e;
+        Type t;
+        Variability v;
+        list<tuple<InstNode, Expression>> iters;
+        Option<Expression> default_exp;
+        tuple<Option<Expression>, String, String> fold_exp;
+
+      case UNTYPED_CALL()
+        algorithm
+          args := list(Expression.map(arg, func) for arg in call.arguments);
+          nargs := {};
+
+          for arg in call.named_args loop
+            (s, e) := arg;
+            e := Expression.map(e, func);
+            nargs := (s, e) :: nargs;
+          end for;
+        then
+          UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
+
+      case ARG_TYPED_CALL()
+        algorithm
+          targs := {};
+          tnargs := {};
+
+          for arg in call.arguments loop
+            (e, t, v) := arg;
+            e := Expression.map(e, func);
+            targs := (e, t, v) :: targs;
+          end for;
+
+          for arg in call.named_args loop
+            (s, e, t, v) := arg;
+            e := Expression.map(e, func);
+            tnargs := (s, e, t, v) :: tnargs;
+          end for;
+        then
+          ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
+
+      case TYPED_CALL()
+        algorithm
+          args := list(Expression.map(arg, func) for arg in call.arguments);
+        then
+          TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
+
+      case UNTYPED_ARRAY_CONSTRUCTOR()
+        algorithm
+          e := Expression.map(call.exp, func);
+          iters := mapIteratorsExp(call.iters, func);
+        then
+          UNTYPED_ARRAY_CONSTRUCTOR(e, iters);
+
+      case TYPED_ARRAY_CONSTRUCTOR()
+        algorithm
+          e := Expression.map(call.exp, func);
+          iters := mapIteratorsExp(call.iters, func);
+        then
+          TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, iters);
+
+      case UNTYPED_REDUCTION()
+        algorithm
+          e := Expression.map(call.exp, func);
+          iters := mapIteratorsExp(call.iters, func);
+        then
+          UNTYPED_REDUCTION(call.ref, e, iters);
+
+      case TYPED_REDUCTION()
+        algorithm
+          e := Expression.map(call.exp, func);
+          iters := mapIteratorsExp(call.iters, func);
+          default_exp := Expression.mapOpt(call.defaultExp, func);
+          fold_exp := Util.applyTuple31(call.foldExp, function Expression.mapOpt(func = func));
+        then
+          TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
+
+    end match;
+  end mapExp;
+
+  function mapIteratorsExp
+    input list<tuple<InstNode, Expression>> iters;
+    input MapFunc func;
+    output list<tuple<InstNode, Expression>> outIters = {};
+
+    partial function MapFunc
+      input output Expression e;
+    end MapFunc;
+  protected
+    InstNode node;
+    Expression exp, new_exp;
+  algorithm
+    for i in iters loop
+      (node, exp) := i;
+      new_exp := Expression.map(exp, func);
+      outIters := (if referenceEq(new_exp, exp) then i else (node, new_exp)) :: outIters;
+    end for;
+
+    outIters := listReverseInPlace(outIters);
+  end mapIteratorsExp;
+
+  function mapExpShallow
+    input Call call;
+    input MapFunc func;
+    output Call outCall;
+
+    partial function MapFunc
+      input output Expression e;
+    end MapFunc;
+  algorithm
+    outCall := match call
+      local
+        list<Expression> args;
+        list<NamedArg> nargs;
+        list<TypedArg> targs;
+        list<TypedNamedArg> tnargs;
+        String s;
+        Expression e;
+        Type t;
+        Variability v;
+        list<tuple<InstNode, Expression>> iters;
+        Option<Expression> default_exp;
+        tuple<Option<Expression>, String, String> fold_exp;
+
+      case UNTYPED_CALL()
+        algorithm
+          args := list(func(arg) for arg in call.arguments);
+          nargs := {};
+
+          for arg in call.named_args loop
+            (s, e) := arg;
+            e := func(e);
+            nargs := (s, e) :: nargs;
+          end for;
+        then
+          UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
+
+      case ARG_TYPED_CALL()
+        algorithm
+          targs := {};
+          tnargs := {};
+
+          for arg in call.arguments loop
+            (e, t, v) := arg;
+            e := func(e);
+            targs := (e, t, v) :: targs;
+          end for;
+
+          for arg in call.named_args loop
+            (s, e, t, v) := arg;
+            e := func(e);
+            tnargs := (s, e, t, v) :: tnargs;
+          end for;
+        then
+          ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
+
+      case TYPED_CALL()
+        algorithm
+          args := list(func(arg) for arg in call.arguments);
+        then
+          TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
+
+      case UNTYPED_ARRAY_CONSTRUCTOR()
+        algorithm
+          e := func(call.exp);
+        then
+          UNTYPED_ARRAY_CONSTRUCTOR(e, call.iters);
+
+      case TYPED_ARRAY_CONSTRUCTOR()
+        algorithm
+          e := func(call.exp);
+        then
+          TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, call.iters);
+
+      case UNTYPED_REDUCTION()
+        algorithm
+          e := func(call.exp);
+        then
+          UNTYPED_REDUCTION(call.ref, e, call.iters);
+
+      case TYPED_REDUCTION()
+        algorithm
+          e := func(call.exp);
+          iters := mapIteratorsExpShallow(call.iters, func);
+          default_exp := Expression.mapShallowOpt(call.defaultExp, func);
+          fold_exp := Util.applyTuple31(call.foldExp, function Expression.mapShallowOpt(func = func));
+        then
+          TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
+
+    end match;
+  end mapExpShallow;
+
+  function mapIteratorsExpShallow
+    input list<tuple<InstNode, Expression>> iters;
+    input MapFunc func;
+    output list<tuple<InstNode, Expression>> outIters = {};
+
+    partial function MapFunc
+      input output Expression e;
+    end MapFunc;
+  protected
+    InstNode node;
+    Expression exp, new_exp;
+  algorithm
+    for i in iters loop
+      (node, exp) := i;
+      new_exp := func(exp);
+      outIters := (if referenceEq(new_exp, exp) then i else (node, new_exp)) :: outIters;
+    end for;
+
+    outIters := listReverseInPlace(outIters);
+  end mapIteratorsExpShallow;
+
+  function mapFoldExp<ArgT>
+    input Call call;
+    input MapFunc func;
+          output Call outCall;
+    input output ArgT foldArg;
+
+    partial function MapFunc
+      input output Expression e;
+      input output ArgT arg;
+    end MapFunc;
+  algorithm
+    outCall := match call
+      local
+        list<Expression> args;
+        list<NamedArg> nargs;
+        list<TypedArg> targs;
+        list<TypedNamedArg> tnargs;
+        String s;
+        Expression e;
+        Type t;
+        Variability v;
+        list<tuple<InstNode, Expression>> iters;
+        Option<Expression> default_exp;
+        tuple<Option<Expression>, String, String> fold_exp;
+        Option<Expression> oe;
+
+      case UNTYPED_CALL()
+        algorithm
+          (args, foldArg) := List.map1Fold(call.arguments, Expression.mapFold, func, foldArg);
+          nargs := {};
+
+          for arg in call.named_args loop
+            (s, e) := arg;
+            (e, foldArg) := Expression.mapFold(e, func, foldArg);
+            nargs := (s, e) :: nargs;
+          end for;
+        then
+          UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
+
+      case ARG_TYPED_CALL()
+        algorithm
+          targs := {};
+          tnargs := {};
+
+          for arg in call.arguments loop
+            (e, t, v) := arg;
+            (e, foldArg) := Expression.mapFold(e, func, foldArg);
+            targs := (e, t, v) :: targs;
+          end for;
+
+          for arg in call.named_args loop
+            (s, e, t, v) := arg;
+            (e, foldArg) := Expression.mapFold(e, func, foldArg);
+            tnargs := (s, e, t, v) :: tnargs;
+          end for;
+        then
+          ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
+
+      case TYPED_CALL()
+        algorithm
+          (args, foldArg) := List.map1Fold(call.arguments, Expression.mapFold, func, foldArg);
+        then
+          TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
+
+      case UNTYPED_ARRAY_CONSTRUCTOR()
+        algorithm
+          (e, foldArg) := Expression.mapFold(call.exp, func, foldArg);
+        then
+          UNTYPED_ARRAY_CONSTRUCTOR(e, call.iters);
+
+      case TYPED_ARRAY_CONSTRUCTOR()
+        algorithm
+          (e, foldArg) := Expression.mapFold(call.exp, func, foldArg);
+        then
+          TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, call.iters);
+
+      case UNTYPED_REDUCTION()
+        algorithm
+          (e, foldArg) := Expression.mapFold(call.exp, func, foldArg);
+        then
+          UNTYPED_REDUCTION(call.ref, e, call.iters);
+
+      case TYPED_REDUCTION()
+        algorithm
+          (e, foldArg) := Expression.mapFold(call.exp, func, foldArg);
+          (iters, foldArg) := mapFoldIteratorsExp(call.iters, func, foldArg);
+          (default_exp, foldArg) := Expression.mapFoldOpt(call.defaultExp, func, foldArg);
+          oe := Util.tuple31(call.foldExp);
+
+          if isSome(oe) then
+            (oe, foldArg) := Expression.mapFoldOpt(oe, func, foldArg);
+            fold_exp := Util.applyTuple31(call.foldExp, function Util.replace(arg = oe));
+          else
+            fold_exp := call.foldExp;
+          end if;
+        then
+          TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
+    end match;
+  end mapFoldExp;
+
+  function mapFoldIteratorsExp<ArgT>
+    input list<tuple<InstNode, Expression>> iters;
+    input MapFunc func;
+          output list<tuple<InstNode, Expression>> outIters = {};
+    input output ArgT arg;
+
+    partial function MapFunc
+      input output Expression e;
+      input output ArgT arg;
+    end MapFunc;
+  protected
+    InstNode node;
+    Expression exp, new_exp;
+  algorithm
+    for i in iters loop
+      (node, exp) := i;
+      (new_exp, arg) := Expression.mapFold(exp, func, arg);
+      outIters := (if referenceEq(new_exp, exp) then i else (node, new_exp)) :: outIters;
+    end for;
+
+    outIters := listReverseInPlace(outIters);
+  end mapFoldIteratorsExp;
+
+  function mapFoldExpShallow<ArgT>
+    input Call call;
+    input MapFunc func;
+          output Call outCall;
+    input output ArgT foldArg;
+
+    partial function MapFunc
+      input output Expression e;
+      input output ArgT arg;
+    end MapFunc;
+  algorithm
+    outCall := match call
+      local
+        list<Expression> args;
+        list<NamedArg> nargs;
+        list<TypedArg> targs;
+        list<TypedNamedArg> tnargs;
+        String s;
+        Expression e;
+        Type t;
+        Variability v;
+        list<tuple<InstNode, Expression>> iters;
+        Option<Expression> default_exp;
+        tuple<Option<Expression>, String, String> fold_exp;
+        Option<Expression> oe;
+
+      case UNTYPED_CALL()
+        algorithm
+          (args, foldArg) := List.mapFold(call.arguments, func, foldArg);
+          nargs := {};
+
+          for arg in call.named_args loop
+            (s, e) := arg;
+            (e, foldArg) := func(e, foldArg);
+            nargs := (s, e) :: nargs;
+          end for;
+        then
+          UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
+
+      case ARG_TYPED_CALL()
+        algorithm
+          targs := {};
+          tnargs := {};
+
+          for arg in call.arguments loop
+            (e, t, v) := arg;
+            (e, foldArg) := func(e, foldArg);
+            targs := (e, t, v) :: targs;
+          end for;
+
+          for arg in call.named_args loop
+            (s, e, t, v) := arg;
+            (e, foldArg) := func(e, foldArg);
+            tnargs := (s, e, t, v) :: tnargs;
+          end for;
+        then
+          ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
+
+      case TYPED_CALL()
+        algorithm
+          (args, foldArg) := List.mapFold(call.arguments, func, foldArg);
+        then
+          TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
+
+      case UNTYPED_ARRAY_CONSTRUCTOR()
+        algorithm
+          (e, foldArg) := func(call.exp, foldArg);
+          iters := mapFoldIteratorsExpShallow(call.iters, func, foldArg);
+        then
+          UNTYPED_ARRAY_CONSTRUCTOR(e, iters);
+
+      case TYPED_ARRAY_CONSTRUCTOR()
+        algorithm
+          (e, foldArg) := func(call.exp, foldArg);
+          iters := mapFoldIteratorsExpShallow(call.iters, func, foldArg);
+        then
+          TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, iters);
+
+      case UNTYPED_REDUCTION()
+        algorithm
+          (e, foldArg) := func(call.exp, foldArg);
+          iters := mapFoldIteratorsExpShallow(call.iters, func, foldArg);
+        then
+          UNTYPED_REDUCTION(call.ref, e, iters);
+
+      case TYPED_REDUCTION()
+        algorithm
+          (e, foldArg) := func(call.exp, foldArg);
+          iters := mapFoldIteratorsExpShallow(call.iters, func, foldArg);
+          (default_exp, foldArg) := Expression.mapFoldOptShallow(call.defaultExp, func, foldArg);
+          oe := Util.tuple31(call.foldExp);
+
+          if isSome(oe) then
+            (oe, foldArg) := Expression.mapFoldOptShallow(oe, func, foldArg);
+            fold_exp := Util.applyTuple31(call.foldExp, function Util.replace(arg = oe));
+          else
+            fold_exp := call.foldExp;
+          end if;
+        then
+          TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
+
+    end match;
+  end mapFoldExpShallow;
+
+  function mapFoldIteratorsExpShallow<ArgT>
+    input list<tuple<InstNode, Expression>> iters;
+    input MapFunc func;
+          output list<tuple<InstNode, Expression>> outIters = {};
+    input output ArgT arg;
+
+    partial function MapFunc
+      input output Expression e;
+      input output ArgT arg;
+    end MapFunc;
+  protected
+    InstNode node;
+    Expression exp, new_exp;
+  algorithm
+    for i in iters loop
+      (node, exp) := i;
+      (new_exp, arg) := func(exp, arg);
+      outIters := (if referenceEq(new_exp, exp) then i else (node, new_exp)) :: outIters;
+    end for;
+
+    outIters := listReverseInPlace(outIters);
+  end mapFoldIteratorsExpShallow;
 
 protected
   function instNormalCall
