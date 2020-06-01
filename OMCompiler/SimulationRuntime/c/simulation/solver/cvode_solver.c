@@ -34,6 +34,7 @@
 #include <stdlib.h>
 
 /* OMC headers */
+#include "openmodelica.h"
 #include "simulation_data.h"
 #include "simulation/options.h"
 #include "simulation/solver/external_input.h"
@@ -48,6 +49,8 @@
 #include "epsilon.h"
 
 #include "cvode_solver.h"
+
+#ifdef WITH_SUNDIALS
 
 /* Macros for better readability */
 #define CVODE_LMM_MAX 2
@@ -926,3 +929,5 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
 
   return retVal;
 }
+
+# endif /* WITH_SUNDIALS */
