@@ -31,6 +31,11 @@
 #ifndef CVODE_SOLVER_H
 #define CVODE_SOLVER_H
 
+/* link sundials static on Windows */
+#if defined(__MINGW32__) || defined(_MSV_VER)
+#define LINK_SUNDIALS_STATIC 1
+#endif
+
 #include "cvode/cvode.h"             /* prototypes for CVODE fcts., consts. */
 #include "cvode/cvode_impl.h"        /* prototypes for CVODE internal consts.*/
 #include "cvode/cvode_dense.h"       /* prototype for CVODE dense matrix functions and constants */
