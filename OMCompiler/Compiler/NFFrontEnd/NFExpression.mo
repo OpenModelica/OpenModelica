@@ -1039,6 +1039,14 @@ public
         then bindingExpMap(exp,
           function applySubscript(subscript = subscript, restSubscripts = restSubscripts));
 
+      case UNBOX()
+        algorithm
+          outExp := applySubscript(subscript, exp.exp, restSubscripts);
+        then
+          unbox(outExp);
+
+      case BOX() then BOX(applySubscript(subscript, exp.exp, restSubscripts));
+
       else makeSubscriptedExp(subscript :: restSubscripts, exp);
     end match;
   end applySubscript;
