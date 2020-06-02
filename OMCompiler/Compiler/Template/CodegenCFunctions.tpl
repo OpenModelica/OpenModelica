@@ -4447,7 +4447,7 @@ template contextCrefNoPrevExp(ComponentRef cr, Context context, Text &auxFunctio
   contextCref(cr, context, &preExp, &varDecls, auxFunction)
 end contextCrefNoPrevExp;
 
-template contextCref(ComponentRef cr, Context context, Text &varDecls, Text &preExp, Text &auxFunction)
+template contextCref(ComponentRef cr, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
   "Generates code for a component reference depending on which context we're in."
 ::=
   match context
