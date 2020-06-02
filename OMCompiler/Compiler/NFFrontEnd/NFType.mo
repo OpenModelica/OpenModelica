@@ -1025,8 +1025,15 @@ public
                                subscript(ty.falseType, subs),
                                ty.matchedBranch);
 
-      case UNKNOWN()
-        then ty;
+      case METABOXED() then METABOXED(subscript(ty.ty, subs));
+      case UNKNOWN() then ty;
+
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() +
+            " got unsubscriptable type " + toString(ty) + "\n", sourceInfo());
+        then
+          fail();
 
     end match;
   end subscript;
