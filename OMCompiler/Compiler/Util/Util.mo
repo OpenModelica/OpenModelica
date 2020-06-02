@@ -1480,17 +1480,20 @@ end anyReturnTrue;
 
 public function absoluteOrRelative
 "@author: adrpo
- returns the given path if it exists if not it considers it relative and returns that"
+ returns the given path if it exists
+ if not it considers it relative and if it exists returns that
+ if the releative path does not exists it returns the given path"
  input String inFileName;
- output String outFileName;
+ output String outFileName = inFileName;
 protected
- String pwd, pd;
+ String pwd, pd, f;
 algorithm
  pwd := System.pwd();
  pd := Autoconf.pathDelimiter;
- outFileName := if System.regularFileExists(inFileName)
-                then inFileName
-                else stringAppendList({pwd,pd,inFileName});
+ if not System.regularFileExists(inFileName) then
+   f := stringAppendList({pwd,pd,inFileName});
+   outFileName := if System.regularFileExists(f) then f else outFileName;
+ end if;
 end absoluteOrRelative;
 
 public function intLstString

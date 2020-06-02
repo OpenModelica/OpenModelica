@@ -37,14 +37,17 @@
 
 #include "simulation_data.h"
 #include "solver_main.h"
-#include "omc_config.h"
+#include "omc_config.h" /* for WITH_SUNDIALS */
 
 #ifdef WITH_SUNDIALS
 
-  /* adrpo: on mingw link with static sundials */
-  #if defined(__MINGW32__)
-  #define LINK_SUNDIALS_STATIC
-  #endif
+/* adrpo: on mingw link with static sundials */
+#if defined(__MINGW32__)
+#if !defined(LINK_SUNDIALS_STATIC)
+#define LINK_SUNDIALS_STATIC 1
+#endif
+#endif
+
 
   #define DEFAULT_IMPRK_ORDER 5
 

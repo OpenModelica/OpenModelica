@@ -190,7 +190,7 @@ elseif (modelTestingType == OpenModelicaModelTesting.Kind.VerifiedSimulation) or
         res := false;
       end if;
     elseif diffAlgorithm == OpenModelicaModelTesting.DiffAlgorithm.diffSimulationResults then
-      print(if debug then "Trying diffSimulationResults.\n" else "");
+      print(if debug then "Trying diffSimulationResults(" + resultFile + ", " + referenceFile + ").\n" else "");
       (res,failVars) := OpenModelica.Scripting.diffSimulationResults(resultFile,referenceFile,csvFile+"diff.",relTol,vars=compareVars);
       print(if debug then "diffSimulationResults returns "+String(res)+".\n" else "");
     else
