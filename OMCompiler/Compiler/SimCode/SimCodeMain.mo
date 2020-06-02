@@ -945,7 +945,7 @@ algorithm
            ================================ */
         System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
         ExecStat.execStatReset();
-        (SOME(flatModel), SOME(funcTree)) := CevalScriptBackend.runNewFrontEnd(cache, graph, className, false);
+        (flatModel, funcTree, _) := CevalScriptBackend.runFrontEndWorkNF(className);
         ExecStat.execStat("FrontEnd");
 
         /* ================================

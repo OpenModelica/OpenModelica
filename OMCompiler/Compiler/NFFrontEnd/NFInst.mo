@@ -207,98 +207,6 @@ algorithm
   end if;
 end instClassInProgram;
 
-function instClassInProgramNewFrontend
-  "Instantiates a class given by its fully qualified path, with the result being
-   a flat model and a function tree. Bypasses old dae structures for new backend."
-  input Absyn.Path classPath;
-  input SCode.Program program;
-  output FlatModel flat_model;
-  output FunctionTree funcs;
-  output String name;
-  output SourceInfo info;
-protected
-  InstNode top, cls, inst_cls;
-algorithm
-  // gather here all the flags to disable expansion
-  // and scalarization if -d=-nfScalarize is on
-  if not Flags.isSet(Flags.NF_SCALARIZE) then
-    // make sure we don't expand anything
-    FlagsUtil.set(Flags.NF_EXPAND_OPERATIONS, false);
-    FlagsUtil.set(Flags.NF_EXPAND_FUNC_ARGS, false);
-  end if;
-
-  System.setUsesCardinality(false);
-  System.setHasOverconstrainedConnectors(false);
-  System.setHasStreamConnectors(false);
-
-  // Create a root node from the given top-level classes.
-  top := makeTopNode(program);
-  name := AbsynUtil.pathString(classPath);
-
-  // Look up the class to instantiate and mark it as the root class.
-  cls := Lookup.lookupClassName(classPath, top, AbsynUtil.dummyInfo, checkAccessViolations = false);
-  cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
-
-  // Initialize the storage for automatically generated inner elements.
-  top := InstNode.setInnerOuterCache(top, CachedData.TOP_SCOPE(NodeTree.new(), cls));
-
-  // Instantiate the class.
-  inst_cls := instantiate(cls);
-  insertGeneratedInners(inst_cls, top);
-  execStat("NFInst.instantiate("+ name +")");
-
-  // Instantiate expressions (i.e. anything that can contains crefs, like
-  // bindings, dimensions, etc). This is done as a separate step after
-  // instantiation to make sure that lookup is able to find the correct nodes.
-  instExpressions(inst_cls);
-  execStat("NFInst.instExpressions("+ name +")");
-
-  // Mark structural parameters.
-  updateImplicitVariability(inst_cls, Flags.isSet(Flags.EVAL_PARAM));
-  execStat("NFInst.updateImplicitVariability");
-
-  // Type the class.
-  Typing.typeClass(inst_cls, name);
-
-  // Flatten the model and evaluate constants in it.
-  flat_model := Flatten.flatten(inst_cls, name);
-  flat_model := EvalConstants.evaluate(flat_model);
-
-  // Do unit checking
-  flat_model := UnitCheck.checkUnits(flat_model);
-
-  // Apply simplifications to the model.
-  flat_model := SimplifyModel.simplify(flat_model);
-
-  // Collect a tree of all functions that are still used in the flat model.
-  funcs := Flatten.collectFunctions(flat_model, name);
-
-  // Collect package constants that couldn't be substituted with their values
-  // (e.g. because they where used with non-constant subscripts), and add them
-  // to the model.
-  flat_model := Package.collectConstants(flat_model, funcs);
-
-  if Flags.getConfigBool(Flags.FLAT_MODELICA) then
-    FlatModel.printFlatString(flat_model, FunctionTree.listValues(funcs));
-  end if;
-
-  // Scalarize array components in the flat model.
-  if Flags.isSet(Flags.NF_SCALARIZE) then
-    flat_model := Scalarize.scalarize(flat_model, name);
-  else
-    // Remove empty arrays from variables
-    flat_model.variables := List.filterOnFalse(flat_model.variables, Variable.isEmptyArray);
-  end if;
-
-  VerifyModel.verify(flat_model);
-
-  if Flags.isSet(Flags.NF_DUMP_FLAT) then
-    print("FlatModel:\n" + FlatModel.toString(flat_model) + "\n");
-  end if;
-
-  info := InstNode.info(inst_cls);
-end instClassInProgramNewFrontend;
-
 function instantiate
   input output InstNode node;
   input InstNode parent = InstNode.EMPTY_NODE();
@@ -3200,13 +3108,13 @@ function instAlgorithmSection
   input InstContext.Type context;
   output Algorithm alg;
 protected
+  list<Statement> statements;
   list<ComponentRef> inputs_lst;
   list<ComponentRef> outputs_lst;
-  list<Statement> stmts;
 algorithm
-  stmts := instStatements(algorithmSection.statements, scope, origin);
-  (inputs_lst, outputs_lst) := Algorithm.getInputsOutputs(stmts);
-  alg := Algorithm.ALGORITHM(stmts, inputs_lst, outputs_lst, DAE.emptyElementSource);
+  statements := instStatements(algorithmSection.statements, scope, origin);
+  (inputs_lst, outputs_lst) := Algorithm.getInputsOutputs(statements);
+  alg := Algorithm.ALGORITHM(statements, inputs_lst, outputs_lst, DAE.emptyElementSource);
 end instAlgorithmSection;
 
 function instStatements

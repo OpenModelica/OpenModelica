@@ -3398,7 +3398,7 @@ algorithm
   end matchcontinue;
 end runFrontEndWork;
 
-function runFrontEndWorkNF
+public function runFrontEndWorkNF
   input Absyn.Path className;
   input Boolean dumpFlat = false;
   output NFFlatModel flatModel;
