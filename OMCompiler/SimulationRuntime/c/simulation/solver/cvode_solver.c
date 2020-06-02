@@ -49,6 +49,8 @@
 
 #include "cvode_solver.h"
 
+#ifdef WITH_SUNDIALS
+
 /* Macros for better readability */
 #define CVODE_LMM_MAX 2
 const char *CVODE_LMM_NAME[CVODE_LMM_MAX + 1] = {
@@ -926,3 +928,5 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
 
   return retVal;
 }
+
+#endif /* #ifdef WITH_SUNDIALS */

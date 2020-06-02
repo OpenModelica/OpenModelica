@@ -38,12 +38,15 @@
 #include "simulation_data.h"
 #include "util/simulation_options.h"
 #include "simulation/solver/solver_main.h"
+#include "omc_config.h" /* for WITH_SUNDIALS */
 
 #ifdef WITH_SUNDIALS
 
 /* adrpo: on mingw link with static sundials */
 #if defined(__MINGW32__)
-#define LINK_SUNDIALS_STATIC
+#if !defined(LINK_SUNDIALS_STATIC)
+#define LINK_SUNDIALS_STATIC 1
+#endif
 #endif
 
 #include <sundials/sundials_nvector.h>

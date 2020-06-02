@@ -34,6 +34,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#if defined(__MINGW32__)
+#define FMILIB_STATIC_LIB_ONLY 1
+#endif
+
 #include "fmilib.h"
 #include "../ModelicaUtilities.h"
 
