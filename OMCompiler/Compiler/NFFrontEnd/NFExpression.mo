@@ -4340,6 +4340,7 @@ public
     () := match exp
       local
         list<Dimension> dims;
+        Type ty;
 
       case RANGE()
         algorithm
@@ -4354,7 +4355,17 @@ public
         then
           ();
 
-      else ();
+      else
+        algorithm
+          ty := typeOf(exp);
+
+          if Type.isConditionalArray(ty) then
+            ty := Type.simplifyConditionalArray(ty);
+            exp := setType(ty, exp);
+          end if;
+        then
+          ();
+
     end match;
   end retype;
 

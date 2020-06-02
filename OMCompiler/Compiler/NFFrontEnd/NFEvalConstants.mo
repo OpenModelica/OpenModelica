@@ -234,8 +234,10 @@ algorithm
                Dimension.toStringList(Type.arrayDims(Expression.typeOf(fb)), brackets = false)}, info);
             fail();
           end if;
+
+          outExp := evaluateExpTraverser(if cond.value then tb else fb, info);
         then
-          evaluateExpTraverser(if cond.value then tb else fb, info);
+          (outExp, true);
 
       else
         algorithm
@@ -252,7 +254,10 @@ algorithm
       // Only evaluate constants in and return one of the branches if the
       // condition is a literal boolean value.
       case Expression.BOOLEAN()
-        then evaluateExpTraverser(if cond.value then tb else fb, info);
+        algorithm
+          outExp := evaluateExpTraverser(if cond.value then tb else fb, info);
+        then
+          (outExp, true);
 
       // Otherwise evaluate constants in both branches and return the whole
       // if-expression.
