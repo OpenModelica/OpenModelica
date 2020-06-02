@@ -31,9 +31,17 @@
 #ifndef CVODE_SOLVER_H
 #define CVODE_SOLVER_H
 
-/* link sundials static on Windows */
-#if defined(__MINGW32__) || defined(_MSV_VER)
+#include "simulation_data.h"
+#include "util/simulation_options.h"
+#include "omc_config.h" /* for WITH_SUNDIALS */
+
+#ifdef WITH_SUNDIALS
+
+/* adrpo: on mingw link with static sundials */
+#if defined(__MINGW32__)
+#if !defined(LINK_SUNDIALS_STATIC)
 #define LINK_SUNDIALS_STATIC 1
+#endif
 #endif
 
 #include "cvode/cvode.h"             /* prototypes for CVODE fcts., consts. */
@@ -41,9 +49,6 @@
 #include "cvode/cvode_dense.h"       /* prototype for CVODE dense matrix functions and constants */
 #include "nvector/nvector_serial.h"  /* serial N_Vector types, fcts., macros */
 #include "sundials/sundials_types.h" /* definition of type realtype */
-
-#include "simulation_data.h"
-#include "util/simulation_options.h"
 
 typedef struct CVODE_USERDATA
 {
@@ -99,5 +104,7 @@ typedef struct CVODE_SOLVER
 int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData);
 int cvode_solver_deinitial(CVODE_SOLVER *cvodeData);
 int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo);
+
+#endif  /* #ifdef WITH_SUNDIALS */
 
 #endif /* #ifndef CVODE_SOLVER_H */
