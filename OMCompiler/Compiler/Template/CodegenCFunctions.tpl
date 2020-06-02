@@ -5376,6 +5376,37 @@ template daeExpCrefLhsFunContext(Exp ecr, Context context, Text &preExp,
                         Text &varDecls, Text &auxFunction)
  "Generates code for a component reference on the left hand side!"
 ::=
+match context
+  case FUNCTION_CONTEXT(is_parallel=true) then daeExpCrefLhsFunContextParModExpl(ecr, context, &preExp, &varDecls, &auxFunction)
+  case FUNCTION_CONTEXT(__) then daeExpCrefLhsFunContextNormal(ecr, context, &preExp, &varDecls, &auxFunction)
+  else
+    error(sourceInfo(),'This should have been handled in the new daeExpCrefLhsSimContext function. <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
+end daeExpCrefLhsFunContext;
+
+template daeExpCrefLhsFunContextNormal(Exp ecr, Context context, Text &preExp,
+                        Text &varDecls, Text &auxFunction)
+ "Generates code for a component reference on the left hand side!
+  For a normal function."
+::=
+  match ecr
+  case ecr as CREF(componentRef=cr, ty=ty) then
+    if crefIsScalar(cr, context) then
+      contextCref(cr, context, &preExp, &varDecls, &auxFunction)
+    else if crefSubIsScalar(cr) then
+      contextCref(cr, context, &preExp, &varDecls, &auxFunction)
+    else
+      error(sourceInfo(),'This should have been handled in indexed assign and should not have gotten here. <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
+
+  case ecr then
+    error(sourceInfo(), 'SimCodeC.tpl template: daeExpCrefLhsFunContextNormal: UNHANDLED EXPRESSION:  <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
+end daeExpCrefLhsFunContextNormal;
+
+// TODO: Needs revision
+template daeExpCrefLhsFunContextParModExpl(Exp ecr, Context context, Text &preExp,
+                        Text &varDecls, Text &auxFunction)
+ "Generates code for a component reference on the left hand side!
+  For a parmodelica explicit parallel function."
+::=
   match ecr
   case ecr as CREF(componentRef=cr, ty=ty) then
     if crefIsScalar(cr, context) then
@@ -5387,23 +5418,17 @@ template daeExpCrefLhsFunContext(Exp ecr, Context context, Text &preExp,
         let arrayType = expTypeArray(ty)
         let subsLenStr = listLength(crefSubs(cr))
         let subsValuesStr = (crefSubs(cr) |> INDEX(__) =>
-            daeSubscriptExp(exp, context, &preExp, &varDecls, &auxFunction)
-          ;separator=", ")
-        match context
-          case FUNCTION_CONTEXT(is_parallel=true) then
-               <<
-               (*<%arrayType%>_element_addr_c99_<%subsLenStr%>(&<%arrName%>, <%subsLenStr%>, <%subsValuesStr%>))
-               >>
-           case FUNCTION_CONTEXT(__) then contextCref(cr, context, &preExp, &varDecls, &auxFunction)
-           else
-             error(sourceInfo(),'This should have been handled in the new daeExpCrefLhsSimContext function. <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
-
+        daeSubscriptExp(exp, context, &preExp, &varDecls, &auxFunction)
+                ;separator=", ")
+        <<
+        (*<%arrayType%>_element_addr_c99_<%subsLenStr%>(&<%arrName%>, <%subsLenStr%>, <%subsValuesStr%>))
+        >>
       else
         error(sourceInfo(),'This should have been handled in indexed assign and should not have gotten here. <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 
   case ecr then
-    error(sourceInfo(), 'SimCodeC.tpl template: daeExpCrefLhsFunContext: UNHANDLED EXPRESSION:  <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
-end daeExpCrefLhsFunContext;
+    error(sourceInfo(), 'SimCodeC.tpl template: daeExpCrefLhsFunContextParModExpl: UNHANDLED EXPRESSION:  <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
+end daeExpCrefLhsFunContextParModExpl;
 
 template daeExpCrefIndexSpec(list<Subscript> subs, Context context,
                                 Text &preExp, Text &varDecls, Text &auxFunction)
