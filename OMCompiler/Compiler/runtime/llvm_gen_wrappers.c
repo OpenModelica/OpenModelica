@@ -31,6 +31,7 @@ modelica_metatype mmc_rcon_to_value_wrapper(modelica_metatype mmc)
   return NULL;
 }
 
+
 modelica_metatype mmc_mk_scon_to_value_wrapper(modelica_metatype mmc)
 {
   modelica_metatype v;
@@ -105,13 +106,14 @@ modelica_metatype mmc_arrcon_to_value_wrapper(modelica_metatype arr, const int t
 modelica_metatype mmc_mtcon_to_value(modelica_metatype varlst)
 {
   modelica_metatype tpl = (void*) Values__META_5fTUPLE(varlst);
+  printf(anyString(varlst));
   return tpl;
 }
 
 modelica_metatype mmc_tcon_to_value(modelica_metatype vl)
 {
   modelica_metatype tp = Values__TUPLE(vl);
-  return vl;
+  return tp;
 }
 
 /* Wrapper functions */

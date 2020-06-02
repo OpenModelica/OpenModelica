@@ -449,6 +449,7 @@ if true then /* Suppress output */
     "../Template/SimCodeDump.mo",
     "../Template/TaskSystemDump.mo",
     "../Template/VisualXMLTpl.mo",
+    "../Template/MidCodeDump.mo",
 
     "../Util/AvlTree.mo",
     "../Util/AvlTreeString.mo",

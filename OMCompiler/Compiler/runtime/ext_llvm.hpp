@@ -129,5 +129,9 @@ extern "C"
   int storeLiteralReal (const double,const char *);
 
   int storeLiteralIntForPtrTy(const uint64_t addr,const char *dest);
+
+  /*Structs*/
+  int createStructSignature(const char *sName);
+
 } // end extern C
 #endif //_EXT_LLVM_H

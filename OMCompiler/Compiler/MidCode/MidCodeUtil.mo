@@ -30,75 +30,18 @@
 
 encapsulated package MidCodeUtil
 protected
-import MidCode;
-import SimCode.{RecordDeclaration};
-import DAE;
+import Absyn;
 import DAE.{AvlTreePathFunction};
+import DAE;
 import DAEDump;
 import FCore;
-import Absyn;
 import List;
+import MidCode;
+import MidCodeDump;
+import SimCode.{RecordDeclaration};
+import Tpl;
 public
 type cacheValue = AvlTreePathFunction.Value;
-
-/*Functions for experimental MidCode cache. Not Included for now.*/
-// function addMidCodeFunctions
-//   "Adds function(s) to the cache, we save both
-//   SOME of the current DAE function (retrofitting..) and SOME of the MidCode function"
-//   input list<MidCode.Function> functions;
-//   input output FCore.Cache cache;
-// protected
-//   cacheValue value;
-//   Mutable<DAE.FunctionTree> functionTree;
-// algorithm
-//   functionTree := match cache
-//     case (FCore.CACHE(_, functionTree, _, _)) then functionTree;
-//     else fail();
-//   end match;
-//   for func in functions loop
-// 	value := SOME((AvlTreePathFunction.get(Mutable.access(functionTree), func.name), SOME(func)));
-// 	Mutable.update(functionTree ,AvlTreePathFunction.add2(Mutable.access(functionTree), func.name, value));
-//   end for;
-//   cache := cache;
-// end addMidCodeFunctions;
-
-// function getFunctionDependencies
-// "Returns all function dependencies as paths, also the main function and the function tree"
-//   input FCore.Cache cache;
-//   input Absyn.Path functionName;
-//   output list<MidCode.Function> dependencies;
-// protected
-//   DAE.FunctionTree functionTree;
-//   MidCode.Function mainFunction;
-//   list<Absyn.Path> depencyPaths;
-// algorithm
-//   functionTree := FCore.getFunctionTree(cache);
-//   // First check if the main function exists.
-//   mainFunction := getNamedFunction(functionName, functionTree);
-//   depencyPaths := getCalledFunctionsInFunction(functionName, mainFunction);
-//   dependencies := mainFunction :: List.map1(depencyPaths, getNamedFunction, functionTree);
-// end getFunctionDependencies;
-
-// function getNamedFunction
-//   "Return a MidCode.Function with the given name. Fails if not found."
-//   input Absyn.Path functionName;
-//   input DAE.FunctionTree functionTree;
-//   output MidCode.Function outElement;
-// algorithm
-//   try
-//     outElement := Util.getOption(getOptMidCodeFunc(AvlTreePathFunction.get2(functionTree, functionName)));
-//   else
-//     fail();
-//   end try;
-// end getNamedFunction;
-
-// function getOptMidCodeFunc
-//   "Given Option(<Option<DAE.Function>, Option<MidCode.Function>)> returns Option<MidCode.Function>"
-//   input cacheValue value;
-//   output Option<MidCode.Function> outFunction;
-// algorithm
-//   outFunction := Util.optTuple22(value);
-// end getOptMidCodeFunc;
 
 function getCalledFunctionsInFunction
   input Absyn.Path functionName;
@@ -310,7 +253,7 @@ function isAllocStmt
   input MidCode.Stmt stmt;
 algorithm
   () := match stmt
-    case MidCode.ALLOCARRAY(__) then ();
+    case MidCode.ALLOC_ARRAY(__) then ();
     else fail();
   end match;
 end isAllocStmt;
@@ -359,6 +302,13 @@ function varString
 algorithm
   str := "(" + DAEDump.daeTypeStr(var.ty) + ") " + var.name;
 end varString;
+
+function dumpProgram
+  input MidCode.Program iProgram;
+  output String textString;
+algorithm
+  textString := Tpl.tplString(MidCodeDump.dumpProgram, iProgram);
+end dumpProgram;
 
 annotation(__OpenModelica_Interface="backendInterface");
 end MidCodeUtil;

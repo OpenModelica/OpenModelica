@@ -182,7 +182,7 @@ algorithm
   dims := List.map(MidCodeUtil.getDimensions(var.ty),Expression.dimensionSizeExpHandleUnkown);
   dimSize := RValueToVar(ExpToMid(DAE.ICONST(listLength(dims)),state),state);
   args := List.map1(List.map1(dims,ExpToMid,state),RValueToVar,state);
-  stateAddStmt(MidCode.ALLOCARRAY(getArrayAllocaCall(DAEUtil.expTypeElementType(var.ty))
+  stateAddStmt(MidCode.ALLOC_ARRAY(getArrayAllocaCall(DAEUtil.expTypeElementType(var.ty))
                                   ,var
                                   ,dimSize
                                   ,args), state);
@@ -198,7 +198,6 @@ protected
   list<DAE.Subscript> subscripts;
 algorithm
   subscripts := ComponentReference.crefLastSubs(cref);
-  //print("CREFINDEXVAR:" + anyString(subscripts) + "\n");
   (var1,var2) := match subscripts
     local
       DAE.Subscript subscript1;
@@ -373,7 +372,6 @@ protected
   Integer labelFirst;
   Integer labelNext;
 algorithm
-//  print(anyString(simfunc) + "\n");
   System.tmpTickReset(47); //jump buffers
   System.tmpTickReset(46); //variables
   System.tmpTickReset(45); //block ids
@@ -410,11 +408,11 @@ algorithm
                    Mutable.create({}),
                    Mutable.create(HashTableMidVar.emptyHashTable()));
     for simcodeVar in outVars loop
-      tmpVar := ConvertSimCodeVars(simcodeVar, state,true);
-      DoubleEnded.push_back(outputs,tmpVar);
+      tmpVar := ConvertSimCodeVars(simcodeVar, state, true);
+      DoubleEnded.push_back(outputs, tmpVar);
     end for;
     for simcodeVar in variableDeclarations loop
-      tmpVar := ConvertSimCodeVars(simcodeVar, state,true);
+      tmpVar := ConvertSimCodeVars(simcodeVar, state, true);
       DoubleEnded.push_back(state.locals, tmpVar);
     end for;
     for simcodeVar in functionArguments loop
@@ -697,17 +695,13 @@ algorithm
       then ();
       case DAE.STMT_ASSIGN_ARR(__) //Right side seem to be CREFS, LEFTSIDE seem to be SHARED_LITERAL, source can be ignored?.
       algorithm
-//      print("Assign array\n");
         varCref := CrefToMidVar(unpackCrefFromExp(stmt.lhs),state);
-//      print(anyString(stmt.exp) + "\n");
         stateAddStmt(MidCode.ASSIGN(varCref, ExpToMid(stmt.exp/*rhs*/, state)), state);
       then();
       else
       algorithm
-//      print(anyString(stmt) + "\n");
         Error.addInternalError("DAE.Statement to Mid conversion failed " + DAEDump.ppStatementStr(stmt), sourceInfo());
       then fail();
-
       end match;
 
       StmtsToMid(tail, state);
@@ -728,42 +722,42 @@ algorithm
 //  print("\n Calling ExpToMid" + anyString(exp) + "\n\n\n");
   rval := match exp
   local
-    MidCode.Var varExp;
-    MidCode.Var varExp2;
-    MidCode.Var varCref;
-    MidCode.Var varCar;
-    MidCode.Var varCdr;
-    MidCode.Var varTmp;
-    MidCode.Var varArray;
-    MidCode.Var varIndex;
-    MidCode.Var varSize;
-    Option<MidCode.Var> optVarExp1;
-    Option<MidCode.Var> optVarExp2;
-    MidCode.BinaryOp binop;
-    MidCode.UnaryOp unop;
+    Absyn.Path path;
+    DAE.CallAttributes callattrs;
+    DAE.ComponentRef cref;
     DAE.Exp exp1;
     DAE.Exp exp2;
     DAE.Exp exp3;
     DAE.Operator operator;
     DAE.Type ty;
-    DAE.ComponentRef cref;
+    DoubleEnded.MutableList<MidCode.RValue> rValues;
+    DoubleEnded.MutableList<MidCode.Var> values;
+    Integer index;
     Integer labelBody;
     Integer labelElse;
     Integer labelNext;
-    Integer index;
     Integer length;
     Integer numTailTypes;
+    MidCode.BinaryOp binop;
     MidCode.Block block_;
-    MidCode.Terminator terminator;
-    Absyn.Path path;
-    list<DAE.Exp> expLst;
-    DoubleEnded.MutableList<MidCode.Var> values;
-    list<MidCode.OutVar> outvars;
-    Option<DAE.Exp> option;
-    DAE.CallAttributes callattrs;
-    list<DAE.Subscript> subscripts;
     MidCode.RValue rvalue;
-    DoubleEnded.MutableList<MidCode.RValue> rValues;
+    MidCode.Terminator terminator;
+    MidCode.UnaryOp unop;
+    MidCode.Var varArray;
+    MidCode.Var varCar;
+    MidCode.Var varCdr;
+    MidCode.Var varCref;
+    MidCode.Var varExp2;
+    MidCode.Var varExp;
+    MidCode.Var varIndex;
+    MidCode.Var varSize;
+    MidCode.Var varTmp;
+    Option<DAE.Exp> option;
+    Option<MidCode.Var> optVarExp1;
+    Option<MidCode.Var> optVarExp2;
+    list<DAE.Exp> expLst;
+    list<DAE.Subscript> subscripts;
+    list<MidCode.OutVar> outvars;
   case DAE.SIZE(exp1,SOME(exp2)) //To options for size operator. We only generate code for the one with the argument.
     algorithm
       varIndex := RValueToVar(ExpToMid(exp2,state),state);
@@ -865,18 +859,14 @@ algorithm
   then rvalue;
   case DAE.ASUB(exp1, expLst) //Array subscripts are not supported.
   algorithm
-//  print("\n EXPRESSION IN ASUB:" + anyString(exp1) + "\n");
     varExp := RValueToVar(ExpToMid(exp1, state), state);
     varExp2 := match expLst
       local
         DAE.Exp indexexp;
       case {indexexp} then RValueToVar(ExpToMid(indexexp, state), state);
     end match;
-
     varTmp := GenTmpVar(Types.complicateType(Expression.typeof(exp)),state);
-
     labelNext := GenBlockId();
-
     stateTerminate(labelNext,
       MidCode.CALL(Absyn.IDENT("arrayGet"), true, {varExp, varExp2}, {MidCode.OUT_VAR(varTmp)}, labelNext,DAE.T_ARRAY_INT_NODIM),
       state);
@@ -891,9 +881,7 @@ algorithm
       case DAE.T_TUPLE(actualType::tailTypes) then (actualType, listLength(tailTypes));
       else fail();
     end match;
-
     varTmp := GenTmpVar(Types.complicateType(ty),state);
-
     outvars := {};
     for i in 1:numTailTypes loop
       outvars := MidCode.OUT_WILD() :: outvars;
@@ -1061,12 +1049,12 @@ function ForToMid
   input list<DAE.Statement> daestmtLst;
   input State state;
 protected
-  MidCode.Var varCref;
-  MidCode.Var varCondition;
-  Integer labelCondition;
-  Integer labelStep;
   Integer labelBody;
+  Integer labelCondition;
   Integer labelNext;
+  Integer labelStep;
+  MidCode.Var varCondition;
+  MidCode.Var varCref;
 algorithm
   varCref := CrefToMidVar(DAE.CREF_IDENT(iter, type_, {}), state);
   DoubleEnded.push_back(state.locals, varCref);
@@ -1084,17 +1072,17 @@ algorithm
   () := match range //TODO, add sum over real arrays.
     local
       DAE.Exp start;
-      Option<DAE.Exp> step;
       DAE.Exp stop;
-      MidCode.Var varRange;
-      MidCode.Var varFirst;
-      MidCode.Var varIter;
-      MidCode.Var varLast;
-      MidCode.Var varStep;
+      DAE.Type rangeTy;
       Integer labelBody2;
       Integer labelCondition2;
       MidCode.RValue rvalueStep;
-      DAE.Type rangeTy;
+      MidCode.Var varFirst;
+      MidCode.Var varIter;
+      MidCode.Var varLast;
+      MidCode.Var varRange;
+      MidCode.Var varStep;
+      Option<DAE.Exp> step;
     case DAE.RANGE(rangeTy, start, step, stop) //TODO Only supports integer ranges, seem to be boolean ranges etc aswell...
     algorithm
       labelCondition2 := GenBlockId();

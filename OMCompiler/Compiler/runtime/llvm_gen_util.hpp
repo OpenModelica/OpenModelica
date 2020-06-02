@@ -78,7 +78,6 @@ extern "C"
     case MODELICA_BOOLEAN_PTR: return llvm::Type::getInt1PtrTy(program->context);
     case MODELICA_REAL_PTR: return llvm::Type::getDoublePtrTy(program->context);
     case MODELICA_METATYPE_PTR: return llvm::PointerType::get(llvm::Type::getInt8PtrTy(program->context), 0);
-    case MODELICA_TUPLE_PTR: return nullptr; //TODO! not supported.
     default: fprintf(stderr,"Attempted to deduce unknown type:%u\n",type); return nullptr;
     }
   }
@@ -96,7 +95,8 @@ extern "C"
       return 1;
     } else if (type == getLLVMType(MODELICA_TUPLE)) {
       //TODO add struct parameter, does however seem to work but can give problems.
-      fprintf(stderr,"TODO SIZE OF STRUCT REQUESTED, NOT SUPPORTED!\n");
+      //fprintf(stderr,"TODO SIZE OF STRUCT REQUESTED, NOT SUPPORTED!\n");
+      return 8;
     }
     return 8; //All other types should have 8. Yes Linux only probably..
   }
@@ -131,22 +131,14 @@ extern "C"
     Also referenced in createFunctionBody */
   llvm::AllocaInst *createAllocaInst(llvm::StringRef name, llvm::Type *type)
   {
-    DBG("create allocaInst for:%s\n",name,__LINE__);
-    llvm::AllocaInst *ai {program->builder.CreateAlloca(type,0,name)};
+    DBG("create allocaInst for:%s \n", name);
     if (!type) {
       fprintf(stderr,"Attempted allocation with unknown type\n");
-      return nullptr;
+      MMC_THROW();
     }
-    if (type == getLLVMType(MODELICA_TUPLE)) {
-      //The size of the struct alloca type is the same as the size of it's largest member?
-      llvm::StructType *sType = llvm::cast<llvm::StructType>(type);
-      unsigned short maxVal = 0;
-      for (auto &m : sType->elements()) {
-        maxVal = std::max(maxVal,getAlignment(m));
-      }
-    } else {
-      ai->setAlignment(getAlignment(type));
-    }
+    DBG("Type is OK trying to allocate and set alignment:");
+    llvm::AllocaInst *ai {program->builder.CreateAlloca(type, 0, name)};
+    ai->setAlignment(getAlignment(type));
     return ai;
   }
 
@@ -231,6 +223,8 @@ extern "C++"
       program->module->print(llvm::errs(), nullptr);
     }
   }
+
+
   /*
     Some signatures have to be generated before processing input.
     (Should be done for all variadic runtime/simruntime functions).

@@ -298,13 +298,13 @@ int createFunctionProtArg(const uint8_t type, const char *name) {
      the function
      parameters.
    */
-  llvm::Type *ty = {getLLVMType(type)};
+  llvm::Type *ty = {getLLVMType(type, name)};
 
   if (!ty) {
     fprintf(stderr,
-            "Tried to generate a function argument with an invalid type\n");
-    return 1;
-  }
+            "Tried to generate a function argument: %s with an invalid type. Type was: %s\n", name, getModelicaLLVMTypeString(type));
+    MMC_THROW();
+    }
   program->currentFunc->getPrototypeArgs().push_back(ty);
   program->nameArgument(name);
 
@@ -314,6 +314,7 @@ int createFunctionProtArg(const uint8_t type, const char *name) {
  * currently generated */
 int createFunctionType(uint8_t type,
                        const char *structName /*To fetch the correct struct*/) {
+  DBG("Calling createFunctionType type: %s structName: %s \n", getModelicaLLVMTypeString(type), structName);
   program->currentFunc->setPrototypeFunctionType(
       llvm::FunctionType::get(getLLVMType(type, structName),
                               program->currentFunc->getPrototypeArgs(), false));
@@ -455,7 +456,7 @@ int createCall(const char *name, const uint8_t functionTy, const char *dest,
     f = createExternalCallDecl(name, functionTy, args, isVariadic);
     if (!f) {
       fprintf(stderr, "Error calling external function:%s \n", name);
-      return 1;
+      MMC_THROW();
     }
   }
   /* If the call that is generated is supposed to assign to a variable. */
@@ -1169,7 +1170,7 @@ int createStructElement(const uint8_t ty) {
 
 /*Creates the signature for a llvm struct*/
 int createStructSignature(const char *sName) {
-  DBG("Calling createStructSignature for:%s", sName);
+  DBG("Calling createStructSignature for:%s \n", sName);
   /*Get the sField. The destructor will be called automatically at the end of
    * this function*/
   std::vector<llvm::Type *> sField =
@@ -1195,11 +1196,16 @@ int createStructSignature(const char *sName) {
   return 0;
 }
 
-/*Creates a struct of type structName, adds the struct to the alloca map.*/
+/*
+  Creates a struct of type structName, adds the struct to the alloca map.
+  The signature must be called before calling this function.
+*/
 int createStruct(const char *structName) {
+  DBG("Calling Create struct with structName: %s \n", structName);
   llvm::StructType *sType{program->module->getTypeByName(structName)};
   if (!sType) {
-    fprintf(stderr, "Attempted to create struct without signature\n");
+    fprintf(stderr, "Attempted to create struct without signature for: %s \n", structName);
+    MMC_THROW();
     return 1;
   }
 
@@ -1221,8 +1227,7 @@ int createGlobalStructFieldConstant(const char *varName) {
                     "unallocated variable:%s\n",
             varName);
     dumpIR();
-    abort(); // TODO change to some mmc_function.
-    return 1;
+    MMC_THROW();
   }
 
   program->globalStructField.push_back(c);
@@ -1326,7 +1331,7 @@ int createStoreToStruct(const char *varName, const char *structName,
   if (!sv) {
     fprintf(stderr, "Error no struct named:%s\n", structName);
     dumpIR();
-    return 1;
+    MMC_THROW();
   }
 
   llvm::Value *vIdx0{llvm::ConstantInt::get(
@@ -1357,7 +1362,7 @@ int createStoreFromStruct(const char *varName, const char *structName,
             "No variable named:%s in struct dest:%s in file:%s at line:%d\n",
             varName, structName, __FILE__, __LINE__);
 
-    return 1;
+    MMC_THROW();
   }
 
   /*Indices for the GEP instruction*/
