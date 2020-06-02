@@ -493,6 +493,7 @@ if true then /* Suppress output */
     "../Template/NFInstDumpTpl.mo",
     "../Template/SimCodeDump.mo",
     "../Template/VisualXMLTpl.mo",
+    "../Template/MidCodeDump.mo",
 
     "../Util/Autoconf.mo",
     "../Util/AvlTree.mo",

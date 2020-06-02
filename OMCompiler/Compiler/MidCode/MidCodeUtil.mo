@@ -30,14 +30,16 @@
 
 encapsulated package MidCodeUtil
 protected
-import MidCode;
-import SimCode.{RecordDeclaration};
-import DAE;
+import Absyn;
 import DAE.{AvlTreePathFunction};
+import DAE;
 import DAEDump;
 import FCore;
-import Absyn;
 import List;
+import MidCode;
+import MidCodeDump;
+import SimCode.{RecordDeclaration};
+import Tpl;
 public
 type cacheValue = AvlTreePathFunction.Value;
 
@@ -310,7 +312,7 @@ function isAllocStmt
   input MidCode.Stmt stmt;
 algorithm
   () := match stmt
-    case MidCode.ALLOCARRAY(__) then ();
+    case MidCode.ALLOC_ARRAY(__) then ();
     else fail();
   end match;
 end isAllocStmt;
@@ -359,6 +361,13 @@ function varString
 algorithm
   str := "(" + DAEDump.daeTypeStr(var.ty) + ") " + var.name;
 end varString;
+
+function dumpProgram
+  input MidCode.Program iProgram;
+  output String textString;
+algorithm
+  textString := Tpl.tplString(MidCodeDump.dumpProgram, iProgram);
+end dumpProgram;
 
 annotation(__OpenModelica_Interface="backendInterface");
 end MidCodeUtil;

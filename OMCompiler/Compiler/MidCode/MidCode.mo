@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2019, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -165,16 +165,18 @@ uniontype Stmt
     RValue src;
   end ASSIGN;
 
-  record ALLOCARRAY
+  record ALLOC_ARRAY "This statement represent an array allocation"
     String func "runtime function to do the allocation";
     Var array "The array to be allocated";
     Var dimSize "Variable that describes the dimension of the allocation";
     list<Var> sizeOfDims "Specifies the size of the dimensions";
-  end ALLOCARRAY;
+  end ALLOC_ARRAY;
 
 end Stmt;
 
 uniontype RValue
+  "An expression that could not be on the left hand side of an assignment.
+   Only at the right hand side."
 
   record VARIABLE
     Var src;
@@ -213,11 +215,13 @@ uniontype RValue
   end LITERALMETATYPE;
 
   record LITERALARRAY
-  "Represents T_ARRAY, e.g normal arrays for Scalars."
+  "Represents T_ARRAY, e.g normal arrays for Scalars. 
+   An Array that consists of literals.
+   All Literals must be RValues"
   list<RValue> elements; //As a list since we need to support multidimensional arrays.
   DAE.Type ty;
   DAE.Dimensions dims;
-  //TODO extend with dimensions. ?
+	//TODO extend with dimensions. ?
   end LITERALARRAY;
 
 /*
@@ -256,7 +260,7 @@ CTOR    SLOTS
 
 end RValue;
 
-uniontype UnaryOp
+uniontype UnaryOp "Unary operator"
   record MOVE DAE.Type originalType; end MOVE; //TODO, rename MOVE to cast.
   record UMINUS end UMINUS;
   record NOT end NOT;
@@ -264,7 +268,7 @@ uniontype UnaryOp
   record BOX end BOX;
 end UnaryOp;
 
-uniontype BinaryOp
+uniontype BinaryOp "Binary operator"
   record ADD end ADD;
   record SUB end SUB;
   record MUL end MUL;

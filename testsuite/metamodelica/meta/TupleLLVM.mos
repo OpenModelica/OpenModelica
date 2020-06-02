@@ -1,7 +1,7 @@
 // name:     TupleInteractive
 // keywords: Tuple
 // status:   correct
-// cflags:   +g=MetaModelica -d=jit_eval_func
+// cflags:   +g=MetaModelica -d=jit_eval_func,jit_dump_ir
 //
 // Tuple Testing
 //
@@ -12,8 +12,8 @@ i:=1;
 res := TupleInteractive.tupleToInt((3,7.5));
 res := TupleInteractive.tupleToInt((3,7.0 /*TODO:Allow Integer here again?*/));
 res := TupleInteractive.tupleIdent((1,1.5));
-res := TupleInteractive.intRealToTuple(2,2.5);
-TupleInteractive.tupleToMultipleCompiled((2,3.5));
+//res := TupleInteractive.intRealToTuple(2,2.5);
+//TupleInteractive.tupleToMultipleCompiled((2,3.5));
 
 // Problems: Algoritm:385 type conversions of several output args are not clearly defined
 

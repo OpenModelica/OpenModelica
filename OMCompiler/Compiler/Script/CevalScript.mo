@@ -2296,7 +2296,6 @@ algorithm
         /*Generate LLVM IR in memory*/
         MidToLLVM.genProgram(MidCode.PROGRAM(name, midFuncs));
         /*JIT compile. Return a newval.*/
-//        print("Before JIT COMPILE\n");
         newval := match midFuncs
           local MidCode.Function H; List<MidCode.Function> T = {};
     case H::T then MidToLLVM.JIT(H,vallst);
@@ -2304,7 +2303,6 @@ algorithm
             Error.addInternalError("Error occured when attempting JIT evaluation", sourceInfo());
           then fail();
         end match;
-//       print("END OF JIT!\n");
        then (cache,newval);
     // try function interpretation
     case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, _, msg, _)

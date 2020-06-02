@@ -1,6 +1,9 @@
 # BuiltinReal.mos fails when using Cevalfunc.mo! the values are OK, the display is different!
 TEST = ../../rtest -v
 
+#Run with TEST_LLVM to try the JIT
+TEST_LLVM = ../../rtest -v --with-llvm
+
 TESTFILES = \
 AlgPatternm.mos \
 AllWild.mos \
@@ -140,17 +143,35 @@ UniontypeConst1.mos \
 UniontypeConst2.mos \
 UniontypeConst3.mos \
 UniontypeNestedSingelton.mos
-# test that currently fail. Move up when fixed.
-# Run make testfailing
-TESTFILESLLVM = \
-ListInteractiveLLVM.mos \
-ThreadedReductionLLVM.mos \
-AlgorithmsLLVM.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
-FAILINGTESTFILES= \
-TupleLLVM.mos \
+FAILINGTESTFILES=
+
+
+# Tests for LLVM
+TESTFILESLLVM = \
+ListInteractiveLLVM.mos \
+ThreadedReductionLLVM.mos \
+AlgorithmsLLVM.mos \
+Uniontype1.mos \
+Uniontype2.mos \
+Uniontype3.mos \
+Uniontype4.mos \
+Uniontype5.mos \
+Uniontype6.mos \
+Uniontype7.mos \
+Uniontype8.mos \
+Uniontype9.mos \
+Uniontype10.mos \
+Uniontype11.mos \
+Uniontype12.mos \
+Uniontype13.mos \
+Uniontype14.mos \
+Uniontype15.mos \
+
+# Test that currently fail for LLVM.
+FAILINGTESTFILES_LLVM= \
 ComplicatedInteractiveLLVM.mos \
 BuiltinIntegerLLVM.mos \
 BuiltinRealLLVM.mos \
@@ -171,20 +192,28 @@ CLEAN = `ls | grep -w -v -f deps.tmp`
 
 .PHONY : test clean getdeps failingtest
 
-test:   testLLVM
+test:   test_llvm
 	@echo
 	@echo Running tests...
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(TEST) $(TESTFILES)
 
-testLLVM:
+test_llvm:
 	@echo
 	@echo Running LLVM tests...
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
+	@echo Enabling JIT Testing...
 	@$(TEST) $(TESTFILESLLVM)
-
+#TODO this is work in progress
+test_llvm_all:
+	@echo
+	@echo Running LLVM tests...
+	@echo
+	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
+	@echo Running all tests using LLVM JIT
+	@$(TEST_LLVM) $(TESTFILESLLVM)
 # Cleans all files that are not listed as dependencies
 clean :
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
@@ -208,3 +237,9 @@ failingtest :
 	@echo Running failing tests...
 	@echo
 	@$(TEST) $(FAILINGTESTFILES)
+
+failingtestLLVM :
+	@echo
+	@echo Running failing llvm tests...
+	@echo
+	@$(TEST_LLVM) $(FAILINGTESTFILES_LLVM)
