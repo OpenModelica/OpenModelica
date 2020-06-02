@@ -147,16 +147,16 @@ simulate(testCSE); getErrorString();
 // ========================================
 // 1: $cse5.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE(protected = true )  type: Real unreplaceable
 // 2: $cse3.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE(protected = true )  type: Real unreplaceable
-// 3: $res2.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real unreplaceable
-// 4: $res1.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real unreplaceable
+// 3: $res_NLSJac1_2.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real unreplaceable
+// 4: $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real unreplaceable
 // 5: $cse7:VARIABLE(protected = true )  type: Real unreplaceable
 // 6: $cse6:VARIABLE(protected = true )  type: Real unreplaceable
 //
 //
 // ########### Updated Equation List (jacobian) (6, 6)
 // ========================================
-// 1/1 (1): $res2.$pDERNLSJac1.dummyVarNLSJac1 = 1.1 * $cse2 * $cse3.$pDERNLSJac1.dummyVarNLSJac1 + $cse1 * y.SeedNLSJac1   [dynamic |0|0|0|0|]
-// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = (-$cse4) * (1.1 * z.SeedNLSJac1 + $cse5.$pDERNLSJac1.dummyVarNLSJac1)   [dynamic |0|0|0|0|]
+// 1/1 (1): $res_NLSJac1_2.$pDERNLSJac1.dummyVarNLSJac1 = 1.1 * $cse2 * $cse3.$pDERNLSJac1.dummyVarNLSJac1 + $cse1 * y.SeedNLSJac1   [dynamic |0|0|0|0|]
+// 2/2 (1): $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1 = (-$cse4) * (1.1 * z.SeedNLSJac1 + $cse5.$pDERNLSJac1.dummyVarNLSJac1)   [dynamic |0|0|0|0|]
 // 3/3 (1): $cse5.$pDERNLSJac1.dummyVarNLSJac1 = y.SeedNLSJac1 * $cse6   [unknown |0|0|0|0|]
 // 4/4 (1): $cse3.$pDERNLSJac1.dummyVarNLSJac1 = z.SeedNLSJac1 * $cse7   [unknown |0|0|0|0|]
 // 5/5 (1): $cse7 = cosh(z)   [unknown |0|0|0|0|]
@@ -165,8 +165,8 @@ simulate(testCSE); getErrorString();
 //
 // ########### Updated globalKnownVars (jacobian) (6)
 // ========================================
-// 1: $res1:VARIABLE()  type: Real
-// 2: $res2:VARIABLE()  type: Real
+// 1: $res_NLSJac1_1:VARIABLE()  type: Real
+// 2: $res_NLSJac1_2:VARIABLE()  type: Real
 // 3: $cse3:VARIABLE(protected = true )  type: Real unreplaceable
 // 4: $cse5:VARIABLE(protected = true )  type: Real unreplaceable
 // 5: input y.SeedNLSJac1:STATE_DER()  type: Real unreplaceable

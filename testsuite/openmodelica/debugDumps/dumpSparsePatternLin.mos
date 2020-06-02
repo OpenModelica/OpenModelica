@@ -29,16 +29,16 @@ buildModel(problem3); getErrorString();
 // Independents [or inputs] (2)
 // {x[1], x[2]}
 // Dependents [or outputs] (2)
-// {$res1, $res2}
+// {$res_LSJac0_1, $res_LSJac0_2}
 // x[1] affects the following (2) outputs
-//   {$res2, $res1}
+//   {$res_LSJac0_2, $res_LSJac0_1}
 // x[2] affects the following (2) outputs
-//   {$res2, $res1}
+//   {$res_LSJac0_2, $res_LSJac0_1}
 //
 // Transposed pattern
-// $res1 affects the following (2) outputs
+// $res_LSJac0_1 affects the following (2) outputs
 //   {x[1], x[2]}
-// $res2 affects the following (2) outputs
+// $res_LSJac0_2 affects the following (2) outputs
 //   {x[1], x[2]}
 //
 //  --- Sparsity Coloring ---
@@ -55,16 +55,16 @@ buildModel(problem3); getErrorString();
 // Independents [or inputs] (2)
 // {x[1], x[2]}
 // Dependents [or outputs] (2)
-// {$res1, $res2}
+// {$res_LSJac1_1, $res_LSJac1_2}
 // x[1] affects the following (2) outputs
-//   {$res2, $res1}
+//   {$res_LSJac1_2, $res_LSJac1_1}
 // x[2] affects the following (2) outputs
-//   {$res2, $res1}
+//   {$res_LSJac1_2, $res_LSJac1_1}
 //
 // Transposed pattern
-// $res1 affects the following (2) outputs
+// $res_LSJac1_1 affects the following (2) outputs
 //   {x[1], x[2]}
-// $res2 affects the following (2) outputs
+// $res_LSJac1_2 affects the following (2) outputs
 //   {x[1], x[2]}
 //
 //  --- Sparsity Coloring ---

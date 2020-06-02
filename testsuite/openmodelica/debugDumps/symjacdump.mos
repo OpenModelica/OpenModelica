@@ -33,11 +33,11 @@ buildModel(testSymjacdump); getErrorString();
 // 1: x[2]:VARIABLE(start = 0.5 )  type: Real [100]
 // Dependent Variables
 // ========================================
-// 1: $res1:VARIABLE()  type: Real
+// 1: $res_NLSJac0_1:VARIABLE()  type: Real
 // Basic equation system:
 // differentiated equations
 // ========================================
-// 1/1 (1): $res1 := 2.0 * x[99] + 0.5 * (0.009900990099009901 * (1.98019801980198 + x[99])) ^ 2.0 - x[98]
+// 1/1 (1): $res_NLSJac0_1 := 2.0 * x[99] + 0.5 * (0.009900990099009901 * (1.98019801980198 + x[99])) ^ 2.0 - x[98]
 // 2/2 (1): 0.0 = 2.0 * x[98] + 0.5 * (0.009900990099009901 * (1.97029702970297 + x[98])) ^ 2.0 + (-x[99]) - x[97]
 // 3/3 (1): 0.0 = 2.0 * x[97] + 0.5 * (0.009900990099009901 * (1.96039603960396 + x[97])) ^ 2.0 + (-x[98]) - x[96]
 // 4/4 (1): 0.0 = 2.0 * x[96] + 0.5 * (0.009900990099009901 * (1.95049504950495 + x[96])) ^ 2.0 + (-x[97]) - x[95]
@@ -234,7 +234,7 @@ buildModel(testSymjacdump); getErrorString();
 // 95: x[5]:VARIABLE(start = 0.5 )  type: Real [100]
 // 96: x[4]:VARIABLE(start = 0.5 )  type: Real [100]
 // 97: x[3]:VARIABLE(start = 0.5 )  type: Real [100]
-// 98: $res1:VARIABLE()  type: Real
+// 98: $res_NLSJac0_1:VARIABLE()  type: Real
 // known variables
 // ========================================
 // Symbolic Jacobian:
@@ -341,12 +341,12 @@ buildModel(testSymjacdump); getErrorString();
 // 95: x.$pDERNLSJac0.dummyVarNLSJac0[5]:VARIABLE(start = 0.5 )  type: Real [100]
 // 96: x.$pDERNLSJac0.dummyVarNLSJac0[4]:VARIABLE(start = 0.5 )  type: Real [100]
 // 97: x.$pDERNLSJac0.dummyVarNLSJac0[3]:VARIABLE(start = 0.5 )  type: Real [100]
-// 98: $res1.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real unreplaceable
+// 98: $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real unreplaceable
 //
 //
 // Equations (98, 98)
 // ========================================
-// 1/1 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = 2.0 * x.$pDERNLSJac0.dummyVarNLSJac0[99] + 9.80296049406921e-05 * (1.98019801980198 + x[99]) * x.$pDERNLSJac0.dummyVarNLSJac0[99] - x.$pDERNLSJac0.dummyVarNLSJac0[98]   [dynamic |0|0|0|0|]
+// 1/1 (1): $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0 = 2.0 * x.$pDERNLSJac0.dummyVarNLSJac0[99] + 9.80296049406921e-05 * (1.98019801980198 + x[99]) * x.$pDERNLSJac0.dummyVarNLSJac0[99] - x.$pDERNLSJac0.dummyVarNLSJac0[98]   [dynamic |0|0|0|0|]
 // 2/2 (1): 0.0 = 2.0 * x.$pDERNLSJac0.dummyVarNLSJac0[98] + 9.80296049406921e-05 * (1.97029702970297 + x[98]) * x.$pDERNLSJac0.dummyVarNLSJac0[98] + (-x.$pDERNLSJac0.dummyVarNLSJac0[99]) - x.$pDERNLSJac0.dummyVarNLSJac0[97]   [dynamic |0|0|0|0|]
 // 3/3 (1): 0.0 = 2.0 * x.$pDERNLSJac0.dummyVarNLSJac0[97] + 9.80296049406921e-05 * (1.96039603960396 + x[97]) * x.$pDERNLSJac0.dummyVarNLSJac0[97] + (-x.$pDERNLSJac0.dummyVarNLSJac0[98]) - x.$pDERNLSJac0.dummyVarNLSJac0[96]   [dynamic |0|0|0|0|]
 // 4/4 (1): 0.0 = 2.0 * x.$pDERNLSJac0.dummyVarNLSJac0[96] + 9.80296049406921e-05 * (1.95049504950495 + x[96]) * x.$pDERNLSJac0.dummyVarNLSJac0[96] + (-x.$pDERNLSJac0.dummyVarNLSJac0[97]) - x.$pDERNLSJac0.dummyVarNLSJac0[95]   [dynamic |0|0|0|0|]
@@ -553,7 +553,7 @@ buildModel(testSymjacdump); getErrorString();
 // 96: x[5]:VARIABLE(start = 0.5 )  type: Real [100]
 // 97: x[4]:VARIABLE(start = 0.5 )  type: Real [100]
 // 98: x[3]:VARIABLE(start = 0.5 )  type: Real [100]
-// 99: $res1:VARIABLE()  type: Real
+// 99: $res_NLSJac0_1:VARIABLE()  type: Real
 //
 // Symbolic Jacobian:
 //
@@ -659,12 +659,12 @@ buildModel(testSymjacdump); getErrorString();
 // 95: x.$pDERNLSJac0.dummyVarNLSJac0[5]:VARIABLE(start = 0.5 )  type: Real [100]
 // 96: x.$pDERNLSJac0.dummyVarNLSJac0[4]:VARIABLE(start = 0.5 )  type: Real [100]
 // 97: x.$pDERNLSJac0.dummyVarNLSJac0[3]:VARIABLE(start = 0.5 )  type: Real [100]
-// 98: $res1.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real unreplaceable
+// 98: $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real unreplaceable
 //
 //
 // Equations (98, 98)
 // ========================================
-// 1/1 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = 2.0 * x.$pDERNLSJac0.dummyVarNLSJac0[99] + 9.80296049406921e-05 * (1.98019801980198 + x[99]) * x.$pDERNLSJac0.dummyVarNLSJac0[99] - x.$pDERNLSJac0.dummyVarNLSJac0[98]   [dynamic |0|0|0|0|]
+// 1/1 (1): $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0 = 2.0 * x.$pDERNLSJac0.dummyVarNLSJac0[99] + 9.80296049406921e-05 * (1.98019801980198 + x[99]) * x.$pDERNLSJac0.dummyVarNLSJac0[99] - x.$pDERNLSJac0.dummyVarNLSJac0[98]   [dynamic |0|0|0|0|]
 // 2/2 (1): x.$pDERNLSJac0.dummyVarNLSJac0[99] = 2.0 * x.$pDERNLSJac0.dummyVarNLSJac0[98] + 9.80296049406921e-05 * (1.97029702970297 + x[98]) * x.$pDERNLSJac0.dummyVarNLSJac0[98] - x.$pDERNLSJac0.dummyVarNLSJac0[97]   [dynamic |0|0|0|0|]
 // 3/3 (1): x.$pDERNLSJac0.dummyVarNLSJac0[98] = 2.0 * x.$pDERNLSJac0.dummyVarNLSJac0[97] + 9.80296049406921e-05 * (1.96039603960396 + x[97]) * x.$pDERNLSJac0.dummyVarNLSJac0[97] - x.$pDERNLSJac0.dummyVarNLSJac0[96]   [dynamic |0|0|0|0|]
 // 4/4 (1): x.$pDERNLSJac0.dummyVarNLSJac0[97] = 2.0 * x.$pDERNLSJac0.dummyVarNLSJac0[96] + 9.80296049406921e-05 * (1.95049504950495 + x[96]) * x.$pDERNLSJac0.dummyVarNLSJac0[96] - x.$pDERNLSJac0.dummyVarNLSJac0[95]   [dynamic |0|0|0|0|]
@@ -975,7 +975,7 @@ buildModel(testSymjacdump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (99)
 // ========================================
-// 1: $res1:VARIABLE()  type: Real
+// 1: $res_NLSJac0_1:VARIABLE()  type: Real
 // 2: x[3]:VARIABLE(start = 0.5 )  type: Real [100]
 // 3: x[4]:VARIABLE(start = 0.5 )  type: Real [100]
 // 4: x[5]:VARIABLE(start = 0.5 )  type: Real [100]
@@ -1081,11 +1081,11 @@ buildModel(testSymjacdump); getErrorString();
 // 1: x[99]:VARIABLE(start = 0.5 )  type: Real [100]
 // Dependent Variables
 // ========================================
-// 1: $res1:VARIABLE()  type: Real
+// 1: $res_NLSJac1_1:VARIABLE()  type: Real
 // Basic equation system:
 // differentiated equations
 // ========================================
-// 1/1 (1): $res1 := 2.0 * x[2] + 0.5 * (0.009900990099009901 * (1.01980198019802 + x[2])) ^ 2.0 - x[3]
+// 1/1 (1): $res_NLSJac1_1 := 2.0 * x[2] + 0.5 * (0.009900990099009901 * (1.01980198019802 + x[2])) ^ 2.0 - x[3]
 // 2/2 (1): 0.0 = 2.0 * x[3] + 0.5 * (0.009900990099009901 * (1.02970297029703 + x[3])) ^ 2.0 + (-x[4]) - x[2]
 // 3/3 (1): 0.0 = 2.0 * x[4] + 0.5 * (0.009900990099009901 * (1.03960396039604 + x[4])) ^ 2.0 + (-x[5]) - x[3]
 // 4/4 (1): 0.0 = 2.0 * x[5] + 0.5 * (0.009900990099009901 * (1.04950495049505 + x[5])) ^ 2.0 + (-x[6]) - x[4]
@@ -1282,7 +1282,7 @@ buildModel(testSymjacdump); getErrorString();
 // 95: x[96]:VARIABLE(start = 0.5 )  type: Real [100]
 // 96: x[97]:VARIABLE(start = 0.5 )  type: Real [100]
 // 97: x[98]:VARIABLE(start = 0.5 )  type: Real [100]
-// 98: $res1:VARIABLE()  type: Real
+// 98: $res_NLSJac1_1:VARIABLE()  type: Real
 // known variables
 // ========================================
 // Symbolic Jacobian:
@@ -1389,12 +1389,12 @@ buildModel(testSymjacdump); getErrorString();
 // 95: x.$pDERNLSJac1.dummyVarNLSJac1[96]:VARIABLE(start = 0.5 )  type: Real [100]
 // 96: x.$pDERNLSJac1.dummyVarNLSJac1[97]:VARIABLE(start = 0.5 )  type: Real [100]
 // 97: x.$pDERNLSJac1.dummyVarNLSJac1[98]:VARIABLE(start = 0.5 )  type: Real [100]
-// 98: $res1.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real unreplaceable
+// 98: $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real unreplaceable
 //
 //
 // Equations (98, 98)
 // ========================================
-// 1/1 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = 2.0 * x.$pDERNLSJac1.dummyVarNLSJac1[2] + 9.80296049406921e-05 * (1.01980198019802 + x[2]) * x.$pDERNLSJac1.dummyVarNLSJac1[2] - x.$pDERNLSJac1.dummyVarNLSJac1[3]   [dynamic |0|0|0|0|]
+// 1/1 (1): $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1 = 2.0 * x.$pDERNLSJac1.dummyVarNLSJac1[2] + 9.80296049406921e-05 * (1.01980198019802 + x[2]) * x.$pDERNLSJac1.dummyVarNLSJac1[2] - x.$pDERNLSJac1.dummyVarNLSJac1[3]   [dynamic |0|0|0|0|]
 // 2/2 (1): 0.0 = 2.0 * x.$pDERNLSJac1.dummyVarNLSJac1[3] + 9.80296049406921e-05 * (1.02970297029703 + x[3]) * x.$pDERNLSJac1.dummyVarNLSJac1[3] + (-x.$pDERNLSJac1.dummyVarNLSJac1[4]) - x.$pDERNLSJac1.dummyVarNLSJac1[2]   [dynamic |0|0|0|0|]
 // 3/3 (1): 0.0 = 2.0 * x.$pDERNLSJac1.dummyVarNLSJac1[4] + 9.80296049406921e-05 * (1.03960396039604 + x[4]) * x.$pDERNLSJac1.dummyVarNLSJac1[4] + (-x.$pDERNLSJac1.dummyVarNLSJac1[5]) - x.$pDERNLSJac1.dummyVarNLSJac1[3]   [dynamic |0|0|0|0|]
 // 4/4 (1): 0.0 = 2.0 * x.$pDERNLSJac1.dummyVarNLSJac1[5] + 9.80296049406921e-05 * (1.04950495049505 + x[5]) * x.$pDERNLSJac1.dummyVarNLSJac1[5] + (-x.$pDERNLSJac1.dummyVarNLSJac1[6]) - x.$pDERNLSJac1.dummyVarNLSJac1[4]   [dynamic |0|0|0|0|]
@@ -1601,7 +1601,7 @@ buildModel(testSymjacdump); getErrorString();
 // 96: x[96]:VARIABLE(start = 0.5 )  type: Real [100]
 // 97: x[97]:VARIABLE(start = 0.5 )  type: Real [100]
 // 98: x[98]:VARIABLE(start = 0.5 )  type: Real [100]
-// 99: $res1:VARIABLE()  type: Real
+// 99: $res_NLSJac1_1:VARIABLE()  type: Real
 //
 // Symbolic Jacobian:
 //
@@ -1707,12 +1707,12 @@ buildModel(testSymjacdump); getErrorString();
 // 95: x.$pDERNLSJac1.dummyVarNLSJac1[96]:VARIABLE(start = 0.5 )  type: Real [100]
 // 96: x.$pDERNLSJac1.dummyVarNLSJac1[97]:VARIABLE(start = 0.5 )  type: Real [100]
 // 97: x.$pDERNLSJac1.dummyVarNLSJac1[98]:VARIABLE(start = 0.5 )  type: Real [100]
-// 98: $res1.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real unreplaceable
+// 98: $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real unreplaceable
 //
 //
 // Equations (98, 98)
 // ========================================
-// 1/1 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = 2.0 * x.$pDERNLSJac1.dummyVarNLSJac1[2] + 9.80296049406921e-05 * (1.01980198019802 + x[2]) * x.$pDERNLSJac1.dummyVarNLSJac1[2] - x.$pDERNLSJac1.dummyVarNLSJac1[3]   [dynamic |0|0|0|0|]
+// 1/1 (1): $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1 = 2.0 * x.$pDERNLSJac1.dummyVarNLSJac1[2] + 9.80296049406921e-05 * (1.01980198019802 + x[2]) * x.$pDERNLSJac1.dummyVarNLSJac1[2] - x.$pDERNLSJac1.dummyVarNLSJac1[3]   [dynamic |0|0|0|0|]
 // 2/2 (1): x.$pDERNLSJac1.dummyVarNLSJac1[2] = 2.0 * x.$pDERNLSJac1.dummyVarNLSJac1[3] + 9.80296049406921e-05 * (1.02970297029703 + x[3]) * x.$pDERNLSJac1.dummyVarNLSJac1[3] - x.$pDERNLSJac1.dummyVarNLSJac1[4]   [dynamic |0|0|0|0|]
 // 3/3 (1): x.$pDERNLSJac1.dummyVarNLSJac1[3] = 2.0 * x.$pDERNLSJac1.dummyVarNLSJac1[4] + 9.80296049406921e-05 * (1.03960396039604 + x[4]) * x.$pDERNLSJac1.dummyVarNLSJac1[4] - x.$pDERNLSJac1.dummyVarNLSJac1[5]   [dynamic |0|0|0|0|]
 // 4/4 (1): x.$pDERNLSJac1.dummyVarNLSJac1[4] = 2.0 * x.$pDERNLSJac1.dummyVarNLSJac1[5] + 9.80296049406921e-05 * (1.04950495049505 + x[5]) * x.$pDERNLSJac1.dummyVarNLSJac1[5] - x.$pDERNLSJac1.dummyVarNLSJac1[6]   [dynamic |0|0|0|0|]
@@ -2023,7 +2023,7 @@ buildModel(testSymjacdump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (99)
 // ========================================
-// 1: $res1:VARIABLE()  type: Real
+// 1: $res_NLSJac1_1:VARIABLE()  type: Real
 // 2: x[98]:VARIABLE(start = 0.5 )  type: Real [100]
 // 3: x[97]:VARIABLE(start = 0.5 )  type: Real [100]
 // 4: x[96]:VARIABLE(start = 0.5 )  type: Real [100]
