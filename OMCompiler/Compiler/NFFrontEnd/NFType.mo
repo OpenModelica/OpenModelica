@@ -345,6 +345,22 @@ public
     end if;
   end isMatchedBranch;
 
+  function simplifyConditionalArray
+    input Type ty;
+    output Type outType;
+  algorithm
+    outType := match ty
+      case CONDITIONAL_ARRAY()
+        then match ty.matchedBranch
+            case Branch.TRUE then ty.trueType;
+            case Branch.FALSE then ty.falseType;
+            else ty;
+          end match;
+
+      else ty;
+    end match;
+  end simplifyConditionalArray;
+
   function isVector
     "Return whether the type is a vector type or not, i.e. a 1-dimensional array."
     input Type ty;
