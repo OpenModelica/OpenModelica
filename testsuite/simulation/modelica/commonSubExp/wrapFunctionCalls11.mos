@@ -36,19 +36,19 @@ simulate(CSE.wrapFunctionCalls11); getErrorString();
 //
 // ########### Updated Variable List (jacobian) (2)
 // ========================================
-// 1: $res1.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real unreplaceable
+// 1: $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real unreplaceable
 // 2: $cse1:VARIABLE(protected = true )  type: Real unreplaceable
 //
 //
 // ########### Updated Equation List (jacobian) (2, 2)
 // ========================================
-// 1/1 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = (-$cse1) * y.SeedNLSJac0   [dynamic |0|0|0|0|]
+// 1/1 (1): $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0 = (-$cse1) * y.SeedNLSJac0   [dynamic |0|0|0|0|]
 // 2/2 (1): $cse1 = cos(y)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (jacobian) (2)
 // ========================================
-// 1: $res1:VARIABLE()  type: Real
+// 1: $res_NLSJac0_1:VARIABLE()  type: Real
 // 2: input y.SeedNLSJac0:STATE_DER()  type: Real unreplaceable
 //
 //
@@ -97,20 +97,20 @@ simulate(CSE.wrapFunctionCalls11); getErrorString();
 //
 // ########### Updated Variable List (jacobian) (2)
 // ========================================
-// 1: $res1.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real unreplaceable
+// 1: $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real unreplaceable
 // 2: $cse2:VARIABLE(protected = true )  type: Real unreplaceable
 //
 //
 // ########### Updated Equation List (jacobian) (2, 2)
 // ========================================
-// 1/1 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = (-$cse2) * y.SeedNLSJac1   [unknown |0|0|0|0|]
+// 1/1 (1): $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1 = (-$cse2) * y.SeedNLSJac1   [unknown |0|0|0|0|]
 // 2/2 (1): $cse2 = cos(y)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (jacobian) (3)
 // ========================================
 // 1: x:VARIABLE(fixed = true )  = cos(z)  type: Real
-// 2: $res1:VARIABLE()  type: Real
+// 2: $res_NLSJac1_1:VARIABLE()  type: Real
 // 3: input y.SeedNLSJac1:STATE_DER()  type: Real unreplaceable
 //
 //

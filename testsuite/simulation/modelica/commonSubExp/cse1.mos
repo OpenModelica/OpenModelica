@@ -48,16 +48,16 @@ simulate(Tearing15); getErrorString();
 // ========================================
 // 1: v7.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE(start = 3.0 )  type: Real
 // 2: v2.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE(start = 1.0 )  type: Real
-// 3: $res2.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real unreplaceable
-// 4: $res1.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real unreplaceable
+// 3: $res_NLSJac0_2.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real unreplaceable
+// 4: $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real unreplaceable
 // 5: $cse2:VARIABLE(protected = true )  type: Real unreplaceable
 // 6: $cse1:VARIABLE(protected = true )  type: Real unreplaceable
 //
 //
 // ########### Updated Equation List (jacobian) (6, 6)
 // ========================================
-// 1/1 (1): $res2.$pDERNLSJac0.dummyVarNLSJac0 = 2.0 * (v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2) + v2.$pDERNLSJac0.dummyVarNLSJac0 + v7.$pDERNLSJac0.dummyVarNLSJac0 - v3.SeedNLSJac0   [dynamic |0|0|0|0|]
-// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = 3.0 * (v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2) + (-7.0) * v2.$pDERNLSJac0.dummyVarNLSJac0 + (-2.0) * v3.SeedNLSJac0 + 3.0 * source * v7.$pDERNLSJac0.dummyVarNLSJac0   [dynamic |0|0|0|0|]
+// 1/1 (1): $res_NLSJac0_2.$pDERNLSJac0.dummyVarNLSJac0 = 2.0 * (v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2) + v2.$pDERNLSJac0.dummyVarNLSJac0 + v7.$pDERNLSJac0.dummyVarNLSJac0 - v3.SeedNLSJac0   [dynamic |0|0|0|0|]
+// 2/2 (1): $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0 = 3.0 * (v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2) + (-7.0) * v2.$pDERNLSJac0.dummyVarNLSJac0 + (-2.0) * v3.SeedNLSJac0 + 3.0 * source * v7.$pDERNLSJac0.dummyVarNLSJac0   [dynamic |0|0|0|0|]
 // 3/3 (1): v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2 + v2.$pDERNLSJac0.dummyVarNLSJac0 + (-v3.SeedNLSJac0) * source - v7.$pDERNLSJac0.dummyVarNLSJac0 = 0.0   [dynamic |0|0|0|0|]
 // 4/4 (1): v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2 + v2.$pDERNLSJac0.dummyVarNLSJac0 = 0.0   [dynamic |0|0|0|0|]
 // 5/5 (1): $cse2 = sin(v1)   [unknown |0|0|0|0|]
@@ -66,8 +66,8 @@ simulate(Tearing15); getErrorString();
 //
 // ########### Updated globalKnownVars (jacobian) (6)
 // ========================================
-// 1: $res1:VARIABLE()  type: Real
-// 2: $res2:VARIABLE()  type: Real
+// 1: $res_NLSJac0_1:VARIABLE()  type: Real
+// 2: $res_NLSJac0_2:VARIABLE()  type: Real
 // 3: v2:VARIABLE(start = 1.0 )  type: Real
 // 4: v7:VARIABLE(start = 3.0 )  type: Real
 // 5: input v1.SeedNLSJac0:STATE_DER()  type: Real unreplaceable
@@ -88,14 +88,14 @@ simulate(Tearing15); getErrorString();
 // ########### Updated Variable List (jacobian) (4)
 // ========================================
 // 1: v5.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE(start = 1.0 )  type: Real
-// 2: $res1.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real unreplaceable
+// 2: $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real unreplaceable
 // 3: $cse4:VARIABLE(protected = true )  type: Real unreplaceable
 // 4: $cse3:VARIABLE(protected = true )  type: Real unreplaceable
 //
 //
 // ########### Updated Equation List (jacobian) (4, 4)
 // ========================================
-// 1/1 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = v5.$pDERNLSJac1.dummyVarNLSJac1 + v6 * $cse3 * v6.SeedNLSJac1 * source + v6.SeedNLSJac1 * $cse4 * source   [dynamic |0|0|0|0|]
+// 1/1 (1): $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1 = v5.$pDERNLSJac1.dummyVarNLSJac1 + v6 * $cse3 * v6.SeedNLSJac1 * source + v6.SeedNLSJac1 * $cse4 * source   [dynamic |0|0|0|0|]
 // 2/2 (1): 3.0 * v5.$pDERNLSJac1.dummyVarNLSJac1 + (-v6) * $cse3 * v6.SeedNLSJac1 - v6.SeedNLSJac1 * $cse4 = 0.0   [dynamic |0|0|0|0|]
 // 3/3 (1): $cse4 = sin(v6)   [unknown |0|0|0|0|]
 // 4/4 (1): $cse3 = cos(v6)   [unknown |0|0|0|0|]
@@ -103,7 +103,7 @@ simulate(Tearing15); getErrorString();
 //
 // ########### Updated globalKnownVars (jacobian) (3)
 // ========================================
-// 1: $res1:VARIABLE()  type: Real
+// 1: $res_NLSJac1_1:VARIABLE()  type: Real
 // 2: v5:VARIABLE(start = 1.0 )  type: Real
 // 3: input v6.SeedNLSJac1:STATE_DER()  type: Real unreplaceable
 //
@@ -194,20 +194,20 @@ simulate(Tearing15); getErrorString();
 // ########### Updated Variable List (jacobian) (3)
 // ========================================
 // 1: $cse5.$pDERNLSJac3.dummyVarNLSJac3:VARIABLE(protected = true )  type: Real unreplaceable
-// 2: $res1.$pDERNLSJac3.dummyVarNLSJac3:VARIABLE()  type: Real unreplaceable
+// 2: $res_NLSJac3_1.$pDERNLSJac3.dummyVarNLSJac3:VARIABLE()  type: Real unreplaceable
 // 3: $cse7:VARIABLE(protected = true )  type: Real unreplaceable
 //
 //
 // ########### Updated Equation List (jacobian) (3, 3)
 // ========================================
-// 1/1 (1): $res1.$pDERNLSJac3.dummyVarNLSJac3 = v1 * $cse5.$pDERNLSJac3.dummyVarNLSJac3 + v1.SeedNLSJac3 * $cse5   [binding |0|0|0|0|]
+// 1/1 (1): $res_NLSJac3_1.$pDERNLSJac3.dummyVarNLSJac3 = v1 * $cse5.$pDERNLSJac3.dummyVarNLSJac3 + v1.SeedNLSJac3 * $cse5   [binding |0|0|0|0|]
 // 2/2 (1): $cse5.$pDERNLSJac3.dummyVarNLSJac3 = $cse7 * v1.SeedNLSJac3   [unknown |0|0|0|0|]
 // 3/3 (1): $cse7 = cos(v1)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (jacobian) (3)
 // ========================================
-// 1: $res1:VARIABLE()  type: Real
+// 1: $res_NLSJac3_1:VARIABLE()  type: Real
 // 2: $cse5:VARIABLE(protected = true )  type: Real unreplaceable
 // 3: input v1.SeedNLSJac3:STATE_DER()  type: Real unreplaceable
 //
@@ -226,13 +226,13 @@ simulate(Tearing15); getErrorString();
 // ========================================
 // 1: v5.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE(start = 1.0 )  type: Real
 // 2: $cse6.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE(protected = true )  type: Real unreplaceable
-// 3: $res1.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE()  type: Real unreplaceable
+// 3: $res_NLSJac4_1.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE()  type: Real unreplaceable
 // 4: $cse8:VARIABLE(protected = true )  type: Real unreplaceable
 //
 //
 // ########### Updated Equation List (jacobian) (4, 4)
 // ========================================
-// 1/1 (1): $res1.$pDERNLSJac4.dummyVarNLSJac4 = v5.$pDERNLSJac4.dummyVarNLSJac4 + v6 * $cse6.$pDERNLSJac4.dummyVarNLSJac4 * source + v6.SeedNLSJac4 * $cse6 * source   [dynamic |0|0|0|0|]
+// 1/1 (1): $res_NLSJac4_1.$pDERNLSJac4.dummyVarNLSJac4 = v5.$pDERNLSJac4.dummyVarNLSJac4 + v6 * $cse6.$pDERNLSJac4.dummyVarNLSJac4 * source + v6.SeedNLSJac4 * $cse6 * source   [dynamic |0|0|0|0|]
 // 2/2 (1): 3.0 * v5.$pDERNLSJac4.dummyVarNLSJac4 + (-v6) * $cse6.$pDERNLSJac4.dummyVarNLSJac4 - v6.SeedNLSJac4 * $cse6 = 0.0   [dynamic |0|0|0|0|]
 // 3/3 (1): $cse6.$pDERNLSJac4.dummyVarNLSJac4 = $cse8 * v6.SeedNLSJac4   [unknown |0|0|0|0|]
 // 4/4 (1): $cse8 = cos(v6)   [unknown |0|0|0|0|]
@@ -240,7 +240,7 @@ simulate(Tearing15); getErrorString();
 //
 // ########### Updated globalKnownVars (jacobian) (4)
 // ========================================
-// 1: $res1:VARIABLE()  type: Real
+// 1: $res_NLSJac4_1:VARIABLE()  type: Real
 // 2: $cse6:VARIABLE(protected = true )  type: Real unreplaceable
 // 3: v5:VARIABLE(start = 1.0 )  type: Real
 // 4: input v6.SeedNLSJac4:STATE_DER()  type: Real unreplaceable
