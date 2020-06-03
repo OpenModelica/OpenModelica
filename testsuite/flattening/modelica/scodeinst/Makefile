@@ -461,6 +461,8 @@ FuncBuiltinOnes.mo \
 FuncBuiltinOuterProduct.mo \
 FuncBuiltinPre.mo \
 FuncBuiltinProduct.mo \
+FuncBuiltinPromote.mo \
+FuncBuiltinPromoteInvalid1.mo \
 FuncBuiltinReduction.mo \
 FuncBuiltinRem.mo \
 FuncBuiltinSample.mo \
