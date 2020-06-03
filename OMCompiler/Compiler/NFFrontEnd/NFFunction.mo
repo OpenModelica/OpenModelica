@@ -1511,6 +1511,7 @@ uniontype Function
           case "pre" then true;
           // needs unboxing and return type fix.
           case "product" then true;
+          case "promote" then true;
           case "root" then true;
           case "rooted" then true;
           case "uniqueRoot" then true;

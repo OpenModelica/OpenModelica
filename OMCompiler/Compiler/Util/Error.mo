@@ -800,6 +800,10 @@ public constant ErrorTypes.Message LIBRARY_WITHIN_WRONG_CASE = ErrorTypes.MESSAG
   Gettext.gettext("Expected the package to have %s but got %s (ignoring the potential error; the class might have been inserted at an unexpected location)."));
 public constant ErrorTypes.Message INVALID_FLAG_CONDITION = ErrorTypes.MESSAGE(364, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   Gettext.gettext("Flag %s ignored: %s."));
+public constant ErrorTypes.Message EXPERIMENTAL_REQUIRED = ErrorTypes.MESSAGE(365, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("%s is an experimental feature and requires the --std=experimental flag."));
+public constant ErrorTypes.Message INVALID_NUMBER_OF_DIMENSIONS_FOR_PROMOTE = ErrorTypes.MESSAGE(366, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("The second argument ‘%s‘ of promote may not be smaller than the number of dimensions (%s) of the first argument."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
