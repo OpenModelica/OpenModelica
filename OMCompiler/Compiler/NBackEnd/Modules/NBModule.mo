@@ -126,5 +126,22 @@ public
     input output FunctionTree funcTree          "Function call bodies";
   end jacobianInterface;
 
+
+// =========================================================================
+//                         Optional PRE-OPT MODULES
+// =========================================================================
+
+//                          REMOVE SIMPLE EQUATIONS
+// *************************************************************************
+  partial function removeSimpleEquationsInterface
+    "RemoveSimpleEquations
+     This module is allowed to read and remove equations and move variables from
+     unknowns to knows. Since this can also affects all other pointer arrays, the
+     full variable data is needed. All things that are allowed to be changed
+     are pointers, so no return value."
+    input BVariable.VarData varData         "Data containing variable pointers";
+    input BEquation.EqData eqData           "Data containing equation pointers";
+  end removeSimpleEquationsInterface;
+
   annotation(__OpenModelica_Interface="backend");
 end NBModule;

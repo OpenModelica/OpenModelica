@@ -60,6 +60,7 @@ protected
   import Equation = NBEquation.Equation;
   import Initialization = NBInitialization;
   import Jacobian = NBJacobian;
+  import RemoveSimpleEquations = NBRemoveSimpleEquations;
   import NBSystem;
   import NBSystem.System;
   import Partitioning = NBPartitioning;
@@ -186,6 +187,7 @@ public
   algorithm
     // SHELL AROUND THIS FOR ALL SELECTED MODULES!
     bdae := DetectStates.main(bdae);
+    bdae := RemoveSimpleEquations.main(bdae);
     bdae := Partitioning.main(bdae, NBSystem.SystemType.ODE);
     //Jacobian.main(bdae);
     bdae := Initialization.main(bdae);

@@ -151,6 +151,26 @@ public
     end match;
   end isDiscreteState;
 
+  function isDiscrete
+    input Pointer<Variable> var;
+    output Boolean isstate;
+  algorithm
+    isstate := match Pointer.access(var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE())) then true;
+      else false;
+    end match;
+  end isDiscrete;
+
+  function isParamOrConstant
+    input Pointer<Variable> var;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER())) then true;
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.CONSTANT())) then true;
+      else false;
+    end match;
+  end isParamOrConstant;
 
   function setVariableKind
     input output Variable var;
@@ -563,6 +583,13 @@ public
         fail();
       end try;
     end getVarSafe;
+
+    function size
+      input VariablePointers variables;
+      output Integer i;
+    algorithm
+      i := ExpandableArray.getNumberOfElements(variables.varArr);
+    end size;
   end VariablePointers;
 
   uniontype CrefIndex

@@ -3582,6 +3582,33 @@ public
     CREF(cref = cref) := exp;
   end toCref;
 
+  function extract
+    "author: kabdelhak 2020-06
+    Extracts all sub expressions from an expression using a filter function."
+    input Expression exp;
+    input filter func;
+    output list<Expression> exp_lst;
+    partial function filter
+      input Expression exp;
+      output Boolean b;
+    end filter;
+  protected
+    // traverse helper function only needed in this function
+    function traverser
+      input Expression exp;
+      input filter func;
+      input output list<Expression> exp_lst;
+      partial function filter
+        input Expression exp;
+        output Boolean b;
+      end filter;
+    algorithm
+      exp_lst := if func(exp) then exp :: exp_lst else exp_lst;
+    end traverser;
+  algorithm
+    exp_lst := fold(exp, function traverser(func = func), {});
+  end extract;
+
   function isIterator
     input Expression exp;
     output Boolean isIterator;

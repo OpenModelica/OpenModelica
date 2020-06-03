@@ -319,6 +319,38 @@ public
         then qualEq;
       end match;
     end map;
+
+    public function getRHS
+      "gets the right hand side expression of an equation."
+      input Equation eq;
+      output Expression rhs;
+    algorithm
+      rhs := match(eq)
+        local
+          ComponentRef cref;
+        case SCALAR_EQUATION(rhs = rhs) then rhs;
+        case ARRAY_EQUATION(rhs = rhs) then rhs;
+        case RECORD_EQUATION(rhs = rhs) then rhs;
+        case SIMPLE_EQUATION(rhs = cref) then Expression.fromCref(cref);
+        else fail();
+      end match;
+    end getRHS;
+
+    public function getLHS
+      "gets the left hand side expression of an equation."
+      input Equation eq;
+      output Expression lhs;
+    algorithm
+      lhs := match(eq)
+        local
+          ComponentRef cref;
+        case SCALAR_EQUATION(lhs = lhs) then lhs;
+        case ARRAY_EQUATION(lhs = lhs) then lhs;
+        case RECORD_EQUATION(lhs = lhs) then lhs;
+        case SIMPLE_EQUATION(lhs = cref) then Expression.fromCref(cref);
+        else fail();
+      end match;
+    end getLHS;
   end Equation;
 
   uniontype IfEquationBody
