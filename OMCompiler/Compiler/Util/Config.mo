@@ -47,7 +47,7 @@ import System;
 
 public
 
-type LanguageStandard = enumeration('1.x', '2.x', '3.0', '3.1', '3.2', '3.3', latest)
+type LanguageStandard = enumeration('1.x', '2.x', '3.0', '3.1', '3.2', '3.3', '3.4', latest, '3.5', experimental)
   "Defines the various modelica language versions that OMC can use.";
 
 public function typeinfo "+t"
@@ -450,7 +450,7 @@ protected function languageStandardInt
   input LanguageStandard inStandard;
   output Integer outValue;
 protected
-  constant Integer lookup[LanguageStandard] = array(10, 20, 30, 31, 32, 33, 1000);
+  constant Integer lookup[LanguageStandard] = array(10, 20, 30, 31, 32, 33, 34, 1000, 1035, 9999);
 algorithm
   outValue := lookup[inStandard];
 end languageStandardInt;
@@ -466,7 +466,10 @@ algorithm
     case 31 then LanguageStandard.'3.1';
     case 32 then LanguageStandard.'3.2';
     case 33 then LanguageStandard.'3.3';
+    case 34 then LanguageStandard.'3.4';
     case 1000 then LanguageStandard.latest;
+    case 1035 then LanguageStandard.'3.5';
+    case 9999 then LanguageStandard.experimental;
   end match;
 end intLanguageStandard;
 
@@ -474,7 +477,7 @@ public function languageStandardString
   input LanguageStandard inStandard;
   output String outString;
 protected
-  constant String lookup[LanguageStandard] = array("1.x","2.x","3.0","3.1","3.2","3.3","3.3" /*Change this to latest version if you add more versions!*/);
+  constant String lookup[LanguageStandard] = array("1.x","2.x","3.0","3.1","3.2","3.3","3.4","3.4","3.5","experimental" /*Change this to latest version if you add more versions!*/);
 algorithm
   outString := lookup[inStandard];
 end languageStandardString;
@@ -492,22 +495,21 @@ algorithm
 
   _ := matchcontinue(inLibraryName)
     local
-      String version, new_std_str;
+      String version;
       LanguageStandard new_std;
-      Boolean show_warning;
 
     case _
       algorithm
         "Modelica" :: version :: _ := System.strtok(inLibraryName, " ");
         new_std := versionStringToStd(version);
-        if new_std==current_std then
-          return;
-        end if;
-        setLanguageStandard(new_std);
-        show_warning := hasLanguageStandardChanged(current_std);
-        new_std_str := languageStandardString(new_std);
-        if show_warning then
-          Error.addMessage(Error.CHANGED_STD_VERSION, {new_std_str, version});
+
+        if new_std <> current_std then
+          setLanguageStandard(new_std);
+
+          if hasLanguageStandardChanged(current_std) then
+            Error.addMessage(Error.CHANGED_STD_VERSION,
+              {languageStandardString(new_std), version});
+          end if;
         end if;
       then ();
 
@@ -544,6 +546,7 @@ algorithm
     case "2" :: _ then LanguageStandard.'2.x';
     case "3" :: "0" :: _ then LanguageStandard.'3.0';
     case "3" :: "1" :: _ then LanguageStandard.'3.1';
+    //case "3" :: "2" :: "3" :: _ then LanguageStandard.'3.3';
     case "3" :: "2" :: _ then LanguageStandard.'3.2';
     case "3" :: "3" :: _ then LanguageStandard.'3.3';
     case "3" :: _ then LanguageStandard.latest;
@@ -635,11 +638,7 @@ end adaptiveHomotopy;
 public function synchronousFeaturesAllowed
 "@autor: adrpo
  checks returns true if language standard is above or equal to Modelica 3.3"
-  output Boolean outRes;
-protected
-  LanguageStandard std = getLanguageStandard();
-algorithm
-  outRes := intGe(languageStandardInt(std), 33);
+  output Boolean outRes = getLanguageStandard() >= LanguageStandard.'3.3';
 end synchronousFeaturesAllowed;
 
 public function flatModelica
