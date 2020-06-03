@@ -505,13 +505,33 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials/CMakeLists.txt
 	(cp -pfr 3rdParty/sundials/build/include/* $(OMBUILDDIR)/include/omc/c/sundials)
 	# copy the libs to the build/lib/omc directory
 	(cp -pf 3rdParty/sundials/build/lib/* $(builddir_lib_omc))
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_arkode.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvode.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvodes.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_ida.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_idas.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_kinsol.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_nvecserial.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_arkode.1.0.0.dylib "$(builddir_lib_omc)/libsundials_arkode.1.0.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_arkode.1.dylib     "$(builddir_lib_omc)/libsundials_arkode.1.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_arkode.dylib       "$(builddir_lib_omc)/libsundials_arkode.dylib"
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvode.1.0.0.dylib "$(builddir_lib_omc)/libsundials_cvode.1.0.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvode.1.dylib     "$(builddir_lib_omc)/libsundials_cvode.1.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvode.dylib       "$(builddir_lib_omc)/libsundials_cvode.dylib"
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvodes.2.0.0.dylib "$(builddir_lib_omc)/libsundials_cvodes.2.0.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvodes.2.dylib     "$(builddir_lib_omc)/libsundials_cvodes.2.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvodes.dylib       "$(builddir_lib_omc)/libsundials_cvodes.dylib"
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_ida.2.0.0.dylib "$(builddir_lib_omc)/libsundials_ida.2.0.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_ida.2.dylib     "$(builddir_lib_omc)/libsundials_ida.2.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_ida.dylib       "$(builddir_lib_omc)/libsundials_ida.dylib"
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_idas.0.0.0.dylib "$(builddir_lib_omc)/libsundials_idas.0.0.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_idas.0.dylib     "$(builddir_lib_omc)/libsundials_idas.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_idas.dylib       "$(builddir_lib_omc)/libsundials_idas.dylib"
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_kinsol.1.0.0.dylib "$(builddir_lib_omc)/libsundials_kinsol.1.0.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_kinsol.1.dylib     "$(builddir_lib_omc)/libsundials_kinsol.1.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_kinsol.dylib       "$(builddir_lib_omc)/libsundials_kinsol.dylib"
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_nvecserial.0.0.2.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.0.2.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_nvecserial.0.dylib     "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_nvecserial.dylib       "$(builddir_lib_omc)/libsundials_nvecserial.dylib"
 	# copy the dlls to the build bin directory
 	test ! "$(SHREXT)" = ".dll" || (cp -pf 3rdParty/sundials/build/lib/*$(SHREXT) $(builddir_bin))
 	@touch "$@"
