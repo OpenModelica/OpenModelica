@@ -713,12 +713,7 @@ uniontype Function
         end for;
       end if;
 
-      fn_body := getBody(fn);
-
-      if not listEmpty(fn_body) then
-        s := IOStream.append(s, "algorithm\n");
-        s := Statement.toFlatStreamList(fn_body, "  ", s);
-      end if;
+      s := Sections.toFlatStream(InstNode.getSections(fn.node), s);
 
       s := IOStream.append(s, "end '");
       s := IOStream.append(s, fn_name);
@@ -2199,26 +2194,26 @@ protected
     input InstNode node;
     output list<Statement> body;
   protected
-    Class cls = InstNode.getClass(node);
     Algorithm fn_body;
   algorithm
-    body := match cls
-      case Class.INSTANCED_CLASS(sections = Sections.SECTIONS(algorithms = {fn_body})) then fn_body.statements;
-      case Class.INSTANCED_CLASS(sections = Sections.EMPTY()) then {};
+    body := match InstNode.getSections(node)
+      case Sections.SECTIONS(algorithms = {}) then {};
+      case Sections.SECTIONS(algorithms = {fn_body}) then fn_body.statements;
+      case Sections.EMPTY() then {};
+      case Sections.EXTERNAL()
+        algorithm
+          Error.assertion(false, getInstanceName() + " got function with external section (not algorithm section)", sourceInfo());
+        then fail();
 
-      case Class.INSTANCED_CLASS(sections = Sections.SECTIONS(algorithms = _ :: _))
+      case Sections.SECTIONS()
         algorithm
           Error.assertion(false, getInstanceName() + " got function with multiple algorithm sections", sourceInfo());
-        then
-          fail();
-
-      case Class.TYPED_DERIVED() then getBody2(cls.baseClass);
+        then fail();
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown function", sourceInfo());
-        then
-          fail();
+          Error.assertion(false, getInstanceName() + " got unknown sections", sourceInfo());
+        then fail();
 
     end match;
   end getBody2;

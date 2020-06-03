@@ -63,6 +63,21 @@ end SCodeDumpOptions;
 
 public constant SCodeDumpOptions defaultOptions = OPTIONS(false,false,false,false,true,true,false,false,false);
 
+function generateOptions
+  input Boolean stripAlgorithmSections = false;
+  input Boolean stripProtectedImports = false;
+  input Boolean stripProtectedClasses = false;
+  input Boolean stripProtectedComponents = false;
+  input Boolean stripMetaRecords = true;
+  input Boolean stripGraphicalAnnotations = true;
+  input Boolean stripStringComments = false;
+  input Boolean stripExternalDecl = false;
+  input Boolean stripOutputBindings = false;
+  output SCodeDumpOptions options;
+algorithm
+  options := OPTIONS(stripAlgorithmSections, stripProtectedImports, stripProtectedClasses, stripProtectedComponents, stripMetaRecords,stripGraphicalAnnotations, stripStringComments, stripExternalDecl, stripOutputBindings);
+end generateOptions;
+
 public function programStr
   input SCode.Program inProgram;
   input SCodeDumpOptions options = defaultOptions;

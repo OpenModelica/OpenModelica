@@ -39,6 +39,7 @@ encapsulated uniontype NFSections
 
 protected
   import Sections = NFSections;
+  import IOStream;
 
 public
   record SECTIONS
@@ -365,6 +366,43 @@ public
       else false;
     end match;
   end isEmpty;
+
+  function toFlatStream
+    input Sections sections;
+    input output IOStream.IOStream s;
+  algorithm
+    () := match sections
+      case SECTIONS()
+        algorithm
+          for alg in sections.algorithms loop
+            s := IOStream.append(s, "algorithm\n");
+            s := Statement.toFlatStreamList(alg.statements, "  ", s);
+          end for;
+        then ();
+      case EXTERNAL()
+        algorithm
+          s := IOStream.append(s, "external \"");
+          s := IOStream.append(s, sections.language);
+          s := IOStream.append(s, "\"");
+          if sections.explicit then
+            if not ComponentRef.isEmpty(sections.outputRef) then
+              s := IOStream.append(s, " ");
+              s := IOStream.append(s, ComponentRef.toFlatString(sections.outputRef));
+              s := IOStream.append(s, " =");
+            end if;
+            s := IOStream.append(s, " ");
+            s := IOStream.append(s, sections.name);
+            s := IOStream.append(s, "(");
+            s := IOStream.append(s, stringDelimitList(list(Expression.toFlatString(e) for e in sections.args), ", "));
+            s := IOStream.append(s, ")");
+          end if;
+          if isSome(sections.ann) then
+            s := IOStream.append(s, SCodeDump.printAnnotationStr(SCode.COMMENT(sections.ann, NONE())));
+          end if;
+          s := IOStream.append(s, ";\n");
+        then ();
+    end match;
+  end toFlatStream;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFSections;
