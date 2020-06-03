@@ -287,6 +287,8 @@ install: bootstrap-dependencies $(LIBSIMULATION) $(LIBFMIRUNTIME) $(ALL_OBJS) fm
 	test ! -f libSimulationRuntimeC.bc || cp libSimulationRuntimeC.bc $(builddir_lib)/emcc/libSimulationRuntimeC.so
 	test ! `uname` = Darwin || install_name_tool -change libsundials_idas.0.dylib @rpath/libsundials_idas.0.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
 	test ! `uname` = Darwin || install_name_tool -change libsundials_ida.2.dylib @rpath/libsundials_ida.2.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
+	test ! `uname` = Darwin || install_name_tool -change libsundials_cvodes.2.dylib @rpath/libsundials_cvodes.2.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
+	test ! `uname` = Darwin || install_name_tool -change libsundials_cvode.1.dylib @rpath/libsundials_cvode.1.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
 	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.0.dylib @rpath/libsundials_nvecserial.0.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
 	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.1.dylib @rpath/libsundials_kinsol.1.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
 	# C runtime libs
