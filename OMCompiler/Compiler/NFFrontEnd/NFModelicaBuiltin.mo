@@ -409,6 +409,10 @@ function product<ArrayType, ScalarBasicType> "Product of all array elements"
 </html>"));
 end product;
 
+function promote
+  external "builtin";
+end promote;
+
 function transpose<T> "Transpose a matrix"
   input T a;
   output T b;

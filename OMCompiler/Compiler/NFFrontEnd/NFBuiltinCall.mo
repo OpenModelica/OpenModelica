@@ -130,6 +130,7 @@ public
       case "potentialRoot" then typePotentialRootCall(call, next_origin, info);
       case "pre" then typePreCall(call, next_origin, info);
       case "product" then typeProductCall(call, next_origin, info);
+      case "promote" then typePromoteCall(call, next_origin, info);
       case "root" then typeRootCall(call, next_origin, info);
       case "rooted" then typeRootedCall(call, next_origin, info);
       case "uniqueRoot" then typeUniqueRootCall(call, next_origin, info);
@@ -826,6 +827,61 @@ protected
     {fn} := Function.typeRefCache(fn_ref);
     callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
   end typeProductCall;
+
+  function typePromoteCall
+    input Call call;
+    input ExpOrigin.Type origin;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+    output Variability variability;
+  protected
+    ComponentRef fn_ref;
+    list<Expression> args;
+    list<NamedArg> named_args;
+    Expression exp_arg, n_arg;
+    Type exp_ty, n_ty;
+    Variability n_var;
+    Function fn;
+    Integer n;
+  algorithm
+    if not Config.languageStandardAtLeast(Config.LanguageStandard.experimental) then
+      Error.addSourceMessageAndFail(Error.EXPERIMENTAL_REQUIRED, {"promote"}, info);
+    end if;
+
+    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    assertNoNamedParams("promote", named_args, info);
+
+    if listLength(args) <> 2 then
+      Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
+        {Call.toString(call), "promote(Any[...], Integer) => Any[...]"}, info);
+    end if;
+
+    {exp_arg, n_arg} := args;
+    (exp_arg, exp_ty, variability) := Typing.typeExp(exp_arg, origin, info);
+    (n_arg, n_ty, n_var) := Typing.typeExp(n_arg, origin, info);
+
+    if not Type.isInteger(n_ty) then
+      Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
+        {"2", "promote", "", Expression.toString(n_arg), Type.toString(n_ty), "Integer"}, info);
+    end if;
+
+    if n_var > Variability.CONSTANT then
+      Error.addSourceMessageAndFail(Error.INVALID_ARGUMENT_VARIABILITY,
+        {"2", "promote", Prefixes.variabilityString(Variability.CONSTANT),
+         Expression.toString(n_arg), Prefixes.variabilityString(n_var)}, info);
+    end if;
+
+    n_arg := Ceval.evalExp(n_arg, Ceval.EvalTarget.GENERIC(info));
+    n := Expression.integerValue(n_arg);
+
+    if n < Type.dimensionCount(exp_ty) then
+      Error.addSourceMessageAndFail(Error.INVALID_NUMBER_OF_DIMENSIONS_FOR_PROMOTE,
+        {String(n), String(Type.dimensionCount(exp_ty))}, info);
+    end if;
+
+    (callExp, ty) := Expression.promote(exp_arg, Expression.typeOf(exp_arg), Expression.integerValue(n_arg));
+  end typePromoteCall;
 
   function typeSmoothCall
     input Call call;
