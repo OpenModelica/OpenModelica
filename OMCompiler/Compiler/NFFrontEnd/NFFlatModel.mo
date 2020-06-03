@@ -486,8 +486,10 @@ public
   algorithm
     types := ClassTree.foldComponents(Class.classTree(InstNode.getClass(fn.node)),
       collectComponentFlatTypes, types);
-    body := Function.getBody(fn);
-    types := List.fold(body, collectStatementFlatTypes, types);
+    if not Function.isExternal(fn) then
+      body := Function.getBody(fn);
+      types := List.fold(body, collectStatementFlatTypes, types);
+    end if;
   end collectFunctionFlatTypes;
 
   function collectComponentFlatTypes
