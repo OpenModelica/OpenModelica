@@ -789,7 +789,7 @@ public
         algorithm
           s := IOStream.append(s, "while ");
           s := IOStream.append(s, Expression.toFlatString(stmt.condition));
-          s := IOStream.append(s, " then\n");
+          s := IOStream.append(s, " loop\n");
           s := toFlatStreamList(stmt.body, indent + "  ", s);
           s := IOStream.append(s, indent);
           s := IOStream.append(s, "end while");
