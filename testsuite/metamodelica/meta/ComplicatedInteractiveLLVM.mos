@@ -38,5 +38,4 @@ res4 := ComplicatedInteractive.listOfTuple((2,3.5));
 //     rcf = (1.0,{(7.5,SOME({1,2,3}))})
 // end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;)
 // {(2,3.5),(2,3.5),(2,3.5),(1,7.5),(2,3.5),(2,3.5)}
-//
 // endResult

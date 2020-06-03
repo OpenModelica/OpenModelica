@@ -154,30 +154,12 @@ TESTFILESLLVM = \
 ListInteractiveLLVM.mos \
 ThreadedReductionLLVM.mos \
 AlgorithmsLLVM.mos \
-Uniontype1.mos \
-Uniontype2.mos \
-Uniontype3.mos \
-Uniontype4.mos \
-Uniontype5.mos \
-Uniontype6.mos \
-Uniontype7.mos \
-Uniontype8.mos \
-Uniontype9.mos \
-Uniontype10.mos \
-Uniontype11.mos \
-Uniontype12.mos \
-Uniontype13.mos \
-Uniontype14.mos \
-Uniontype15.mos \
+TupleLLVM.mos\
+ComplicatedInteractiveLLVM.mos
 
 # Test that currently fail for LLVM.
 FAILINGTESTFILES_LLVM= \
-ComplicatedInteractiveLLVM.mos \
-BuiltinIntegerLLVM.mos \
-BuiltinRealLLVM.mos \
-BuiltinListLLVM.mos \
-BuiltinStringLLVM.mos \
-BuiltinArrayLLVM.mos
+
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
@@ -242,4 +224,4 @@ failingtestLLVM :
 	@echo
 	@echo Running failing llvm tests...
 	@echo
-	@$(TEST_LLVM) $(FAILINGTESTFILES_LLVM)
+	@$(TEST) $(FAILINGTESTFILES_LLVM)
