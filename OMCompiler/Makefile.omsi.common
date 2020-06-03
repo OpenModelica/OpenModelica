@@ -85,17 +85,95 @@ OMSICPP: omc
 
 OMSICPPinstall: copycppheader OMSICPP
 	$(MAKE) -C SimulationRuntime/OMSICpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)" $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR) LIB_OMC=$(LIB_OMC)
-	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppCVode.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppCVode.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppDataExchange.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppDataExchange.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppEuler.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppEuler.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppNewton.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppNewton.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppSimulationSettings.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppSimulationSettings.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppSolver.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppSystemBase.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppSystemBase.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppExtendedSystem.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppExtendedSystem.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/OMSICpp/libOMCppSystemOMSI.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppSystemOMSI.dylib
-	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/OMSICpp/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppCVode.dylib
-	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/OMSICpp/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/OMSICpp/libOMCppEuler.dylib
+	# TODO: Fix this chaos!
+	# Correct every lib directly after it is compiled and before it is linked to the next target!
+	# Add RPATH handling to SimulationRuntime/OMSICpp/CMakeLists.txt
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppDataExchange.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppDataExchange.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppExtensionUtilities.dylib @rpath/libOMCppDataExchange.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppDataExchange.dylib
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppMath.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppMath.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppExtensionUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppExtensionUtilities.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppModelicaUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppModelicaUtilities.dylib
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppEuler.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppEuler.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppEuler.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppMath.dylib @rpath/libOMCppMath.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppEuler.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppExtensionUtilities.dylib @rpath/libOMCppExtensionUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppEuler.dylib
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppRTEuler.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppRTEuler.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppRTEuler.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppMath.dylib @rpath/libOMCppMath.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppRTEuler.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppExtensionUtilities.dylib @rpath/libOMCppExtensionUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppRTEuler.dylib
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppRK12.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppRK12.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppRK12.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppMath.dylib @rpath/libOMCppMath.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppRK12.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppExtensionUtilities.dylib @rpath/libOMCppExtensionUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppRK12.dylib
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppNewton.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppNewton.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppNewton.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppMath.dylib @rpath/libOMCppMath.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppNewton.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppExtensionUtilities.dylib @rpath/libOMCppExtensionUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppNewton.dylib
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppSimulationSettings.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppSimulationSettings.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppExtensionUtilities.dylib @rpath/libOMCppExtensionUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppSimulationSettings.dylib
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppSolver.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppMath.dylib @rpath/libOMCppMath.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppSolver.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppExtensionUtilities.dylib @rpath/libOMCppExtensionUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppSolver.dylib
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppSystemBase.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppSystemBase.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppSimulationSettings.dylib @rpath/libOMCppSimulationSettings.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppSystemBase.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppExtensionUtilities.dylib @rpath/libOMCppExtensionUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppSystemBase.dylib
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppIDA.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppIDA.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppIDA.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppExtensionUtilities.dylib @rpath/libOMCppExtensionUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppIDA.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppMath.dylib @rpath/libOMCppMath.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppIDA.dylib
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppFMU.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppFMU.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppExtensionUtilities.dylib @rpath/libOMCppExtensionUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppFMU.dylib
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppKinsol.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppKinsol.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppKinsol.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppExtensionUtilities.dylib @rpath/libOMCppExtensionUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppKinsol.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppMath.dylib @rpath/libOMCppMath.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppKinsol.dylib
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppExtendedSystem.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppExtendedSystem.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppSystemBase.dylib @rpath/libOMCppSystemBase.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppExtendedSystem.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppSimulationSettings.dylib @rpath/libOMCppSimulationSettings.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppExtendedSystem.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppExtensionUtilities.dylib @rpath/libOMCppExtensionUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppExtendedSystem.dylib
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppSystemOMSI.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppSystemOMSI.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppExtendedSystem.dylib @rpath/libOMCppExtendedSystem.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppSystemOMSI.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppSystemBase.dylib @rpath/libOMCppSystemBase.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppSystemOMSI.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppSimulationSettings.dylib @rpath/libOMCppSimulationSettings.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppSystemOMSI.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppExtensionUtilities.dylib @rpath/libOMCppExtensionUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppSystemOMSI.dylib
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppCVode.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppCVode.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppCVode.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppExtensionUtilities.dylib @rpath/libOMCppExtensionUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppCVode.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppMath.dylib @rpath/libOMCppMath.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppCVode.dylib
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppUmfPack.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppUmfPack.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppUmfPack.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppMath.dylib @rpath/libOMCppMath.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppUmfPack.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppExtensionUtilities.dylib @rpath/libOMCppExtensionUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppUmfPack.dylib
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppLinearSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppLinearSolver.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppLinearSolver.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppExtensionUtilities.dylib @rpath/libOMCppExtensionUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppLinearSolver.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppMath.dylib @rpath/libOMCppMath.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppLinearSolver.dylib
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppSimController.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppSimController.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppModelicaUtilities.dylib @rpath/libOMCppModelicaUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppSimController.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppExtensionUtilities.dylib @rpath/libOMCppExtensionUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsicpp/libOMCppSimController.dylib
+
+	# This should be done somewhere else as well...
+	test ! `uname` = Darwin || install_name_tool -add_rpath @executable_path/../$(LIB_OMC)/omsicpp/ $(OMBUILDDIR)/bin/OMCppOSUSimulation
+	test ! `uname` = Darwin || install_name_tool -change libOMCppExtensionUtilities.dylib @rpath/libOMCppExtensionUtilities.dylib $(OMBUILDDIR)/bin/OMCppOSUSimulation
+	test ! `uname` = Darwin || install_name_tool -change libOMCppModelicaUtilities.dylib @rpath/libOMCppModelicaUtilities.dylib $(OMBUILDDIR)/bin/OMCppOSUSimulation
 
 OMSICPPclean:
 	$(MAKE) -C SimulationRuntime/OMSICpp/ -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
+	rm -rf $(OMBUILDDIR)/$(LIB_OMC)/omsicpp
