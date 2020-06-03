@@ -594,8 +594,9 @@ constant ConfigFlag ANNOTATION_VERSION = CONFIG_FLAG(7, "annotationVersion",
 
 constant ConfigFlag LANGUAGE_STANDARD = CONFIG_FLAG(8, "std", NONE(), EXTERNAL(),
   ENUM_FLAG(1000,
-    {("1.x", 10), ("2.x", 20), ("3.0", 30), ("3.1", 31), ("3.2", 32), ("3.3", 33), ("latest",1000)}),
-  SOME(STRING_OPTION({"1.x", "2.x", "3.1", "3.2", "3.3", "latest"})),
+    {("1.x", 10), ("2.x", 20), ("3.0", 30), ("3.1", 31), ("3.2", 32), ("3.3", 33),
+     ("3.4", 34), ("latest",1000), ("3.5", 1035), ("experimental", 9999)}),
+  SOME(STRING_OPTION({"1.x", "2.x", "3.1", "3.2", "3.3", "3.4", "latest", "3.5", "experimental"})),
   Gettext.gettext("Sets the language standard that should be used."));
 
 constant ConfigFlag SHOW_ERROR_MESSAGES = CONFIG_FLAG(9, "showErrorMessages",
