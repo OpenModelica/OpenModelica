@@ -38,6 +38,7 @@ import Absyn;
 import AbsynUtil;
 import Type = NFType;
 import NFFunction.Function;
+import Sections = NFSections;
 import Pointer;
 import Error;
 import Prefixes = NFPrefixes;
@@ -1692,6 +1693,23 @@ uniontype InstNode
       else false;
     end match;
   end hasBinding;
+
+  function getSections
+    input InstNode node;
+    output Sections sections;
+  protected
+    Class cls = InstNode.getClass(node);
+  algorithm
+    sections := match cls
+      case Class.INSTANCED_CLASS() then cls.sections;
+      case Class.TYPED_DERIVED() then getSections(cls.baseClass);
+
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " did not get an instanced class", sourceInfo());
+        then fail();
+    end match;
+  end getSections;
 
 end InstNode;
 
