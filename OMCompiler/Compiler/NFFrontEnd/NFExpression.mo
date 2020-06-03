@@ -1605,7 +1605,7 @@ public
       case ENUM_LITERAL(ty = t as Type.ENUMERATION())
         then "'" + AbsynUtil.pathString(t.typePath) + "'." + exp.name;
 
-      case CLKCONST(clk) then ClockKind.toString(clk);
+      case CLKCONST(clk) then ClockKind.toFlatString(clk);
 
       case CREF() then ComponentRef.toFlatString(exp.cref);
       case TYPENAME() then Type.typenameString(Type.arrayElementType(exp.ty));
