@@ -5501,7 +5501,7 @@ case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
   <<
   <%modelicaLine(eqInfo(eq))%>
   <%preExp%>
-  <%contextCref(cref, context, auxFunction)%> = <%expPart%>;
+  <%contextCref(cref, context, &preExp, &varDecls, auxFunction)%> = <%expPart%>;
     <%postExp%>
   <%endModelicaLine()%>
   >>
@@ -5634,7 +5634,7 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = at) th
     <%returnval2%>
   }
   /* write solution */
-  <%ls.vars |> SIMVAR(__) hasindex i0 => '<%contextCref(name, context, auxFunctions)%> = aux_x[<%i0%>];' ;separator="\n"%>
+  <%ls.vars |> SIMVAR(__) hasindex i0 => '<%contextCrefNoPrevExp(name, context, auxFunctions)%> = aux_x[<%i0%>];' ;separator="\n"%>
   <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%ls.index%>).profileBlockIndex);' %>
 
   <%returnval%>
@@ -5660,12 +5660,12 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(a
   <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%at.index%>).profileBlockIndex);' %>
   if (data->simulationInfo->linearSystemData[<%at.indexLinearSystem%>].checkConstraints(data, threadData) == 1)
   {
-    double aux_x[<%listLength(at.vars)%>] = { <%at.vars |> SIMVAR(__) hasindex i0 => '<%contextCref(name, context, auxFunctions)%>' ;separator=","%> };
+    double aux_x[<%listLength(at.vars)%>] = { <%at.vars |> SIMVAR(__) hasindex i0 => '<%contextCrefNoPrevExp(name, context, auxFunctions)%>' ;separator=","%> };
     retValue = solve_linear_system(data, threadData, <%at.indexLinearSystem%>, &aux_x[0]);
     /* The casual tearing set found a solution */
     if (retValue == 0){
       /* write solution */
-      <%at.vars |> SIMVAR(__) hasindex i0 => '<%contextCref(name, context, auxFunctions)%> = aux_x[<%i0%>];' ;separator="\n"%>
+      <%at.vars |> SIMVAR(__) hasindex i0 => '<%contextCrefNoPrevExp(name, context, auxFunctions)%> = aux_x[<%i0%>];' ;separator="\n"%>
       <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%at.index%>).profileBlockIndex);' %>
     }
   }
@@ -5970,7 +5970,7 @@ match ty
     //   case T_ARRAY(__) then
     //     copyArrayData(var.ty, '<%tmp%>._<%var.name%>', appendStringCref(var.name,left), context, &preExp, &varDecls, &auxFunction)
     //   else
-    //     let varPart = contextCref(appendStringCref(var.name,left),context, &auxFunction)
+    //     let varPart = contextCref(appendStringCref(var.name,left), context, &preExp, &varDecls, &auxFunction)
     //     '<%varPart%> = <%tmp%>._<%var.name%>;'
     // ; separator="\n"
     // %>
