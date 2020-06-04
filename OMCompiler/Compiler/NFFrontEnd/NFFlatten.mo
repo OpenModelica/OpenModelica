@@ -573,6 +573,7 @@ algorithm
   if listEmpty(dims) then
     (vars, sections) := flattenClass(cls, name, visibility, opt_binding, vars, sections, scalarize);
   elseif scalarize then
+    dims := list(flattenDimension(d, name) for d in dims);
     (vars, sections) := flattenArray(cls, dims, name, visibility, opt_binding, vars, sections);
   else
     (vars, sections) := vectorizeArray(cls, dims, name, visibility, opt_binding, vars, sections);
