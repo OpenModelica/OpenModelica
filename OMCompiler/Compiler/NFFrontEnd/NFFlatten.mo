@@ -432,6 +432,7 @@ algorithm
     end if;
   end if;
 
+  ty := flattenType(ty, prefix);
   name := ComponentRef.prefixScope(comp_node, ty, {}, prefix);
   ty_attrs := list(flattenTypeAttribute(m, name) for m in typeAttrs);
 
@@ -572,6 +573,7 @@ algorithm
   if listEmpty(dims) then
     (vars, sections) := flattenClass(cls, name, visibility, opt_binding, vars, sections, scalarize);
   elseif scalarize then
+    dims := list(flattenDimension(d, name) for d in dims);
     (vars, sections) := flattenArray(cls, dims, name, visibility, opt_binding, vars, sections);
   else
     (vars, sections) := vectorizeArray(cls, dims, name, visibility, opt_binding, vars, sections);
@@ -941,6 +943,25 @@ algorithm
     Inst.markStructuralParamsExp(cond);
   end if;
 end flattenConditionalArrayIfExp;
+
+function flattenType
+  input output Type ty;
+  input ComponentRef prefix;
+algorithm
+  ty := Type.mapDims(ty, function flattenDimension(prefix = prefix));
+end flattenType;
+
+function flattenDimension
+  input output Dimension dim;
+  input ComponentRef prefix;
+algorithm
+  dim := match dim
+    case Dimension.EXP()
+      then Dimension.fromExp(flattenExp(dim.exp, prefix), dim.var);
+
+    else dim;
+  end match;
+end flattenDimension;
 
 function flattenSections
   input Sections sections;
