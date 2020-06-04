@@ -1212,5 +1212,19 @@ public
     str := stringAppendList(strl);
   end subscriptedTypeName;
 
+  function simplify
+    input output Type ty;
+  algorithm
+    () := match ty
+      case ARRAY()
+        algorithm
+          ty.dimensions := list(Dimension.simplify(d) for d in ty.dimensions);
+        then
+          ();
+
+      else ();
+    end match;
+  end simplify;
+
   annotation(__OpenModelica_Interface="frontend");
 end NFType;

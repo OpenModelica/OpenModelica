@@ -757,9 +757,13 @@ protected
   Integer max_prop_count;
 algorithm
   Expression.RANGE(ty = ty, start = start_exp, step = step_exp, stop = stop_exp) := rangeExp;
-  start_exp := evalExp(start_exp, target);
+  start_exp := evalExp_impl(start_exp, target);
   step_exp := evalExpOpt(step_exp, target);
-  stop_exp := evalExp(stop_exp, target);
+  stop_exp := evalExp_impl(stop_exp, target);
+
+  start_exp := Expression.getScalarBindingExp(start_exp);
+  step_exp := Util.applyOption(step_exp, Expression.getScalarBindingExp);
+  stop_exp := Expression.getScalarBindingExp(stop_exp);
 
   if EvalTarget.isRange(target) then
     ty := TypeCheck.getRangeType(start_exp, step_exp, stop_exp,

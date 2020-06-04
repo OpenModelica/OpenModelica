@@ -4407,6 +4407,19 @@ public
     end match;
   end getBindingExp;
 
+  function getScalarBindingExp
+    "Returns the expression contained in a binding expression if it's a scalar,
+     otherwise returns the given binding expression."
+    input Expression bindingExp;
+    output Expression outExp;
+  algorithm
+    outExp := getBindingExp(bindingExp);
+
+    if Type.isArray(typeOf(outExp)) then
+      outExp := bindingExp;
+    end if;
+  end getScalarBindingExp;
+
   function setBindingExp
     "Replaces the expression contained in a binding expression with the given
      expression. The given expression is assumed to have the same type as the

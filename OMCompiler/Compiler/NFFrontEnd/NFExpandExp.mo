@@ -59,6 +59,12 @@ public
       local
         list<Expression> expl;
 
+      case Expression.INTEGER()      then (exp, true);
+      case Expression.REAL()         then (exp, true);
+      case Expression.STRING()       then (exp, true);
+      case Expression.BOOLEAN()      then (exp, true);
+      case Expression.ENUM_LITERAL() then (exp, true);
+
       case Expression.CREF(ty = Type.ARRAY()) then expandCref(exp);
 
       // One-dimensional arrays are already expanded.

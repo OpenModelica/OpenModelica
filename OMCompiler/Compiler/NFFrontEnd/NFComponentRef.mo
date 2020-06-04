@@ -195,6 +195,21 @@ public
     CREF(ty = ty) := cref;
   end nodeType;
 
+  function setNodeType
+    input Type ty;
+    input output ComponentRef cref;
+  algorithm
+    () := match cref
+      case CREF()
+        algorithm
+          cref.ty := ty;
+        then
+          ();
+
+      else ();
+    end match;
+  end setNodeType;
+
   function updateNodeType
     input output ComponentRef cref;
   algorithm
