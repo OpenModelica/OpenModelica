@@ -344,7 +344,7 @@ algorithm
     oldSha := "";
     if System.regularFileExists(destPathPkgInfo) then
       try
-        oldSha := JSON.getString(JSON.get(JSON.parseFile(destPathPkgInfo),"sha"));
+        oldSha := getShaOrZipfile(JSON.parseFile(destPathPkgInfo));
       else
       end try;
     end if;
@@ -485,9 +485,9 @@ algorithm
   end if;
   versionObj := JSON.get(versionsObj, versionToInstall);
 
-  if (not success) or (sha <> "" and sha <> JSON.getString(JSON.get(versionObj, "sha"))) then
+  if (not success) or (sha <> "" and sha <> getShaOrZipfile(versionObj)) then
     success := true;
-    packageToInstall := PKG_INSTALL_INFO(true, pkg, semverToInstall, JSON.getString(JSON.get(versionObj, "zipfile")), JSON.getString(JSON.get(versionObj, "path")), JSON.getString(JSON.get(versionObj, "sha")), versionObj);
+    packageToInstall := PKG_INSTALL_INFO(true, pkg, semverToInstall, JSON.getString(JSON.get(versionObj, "zipfile")), JSON.getString(JSON.get(versionObj, "path")), getShaOrZipfile(versionObj), versionObj);
   end if;
 
   (usesObj as JSON.OBJECT(orderedKeys=usesPackages)) := JSON.getOrDefault(versionObj, "uses", JSON.emptyObject());
@@ -502,6 +502,13 @@ algorithm
     end if;
   end for;
 end installPackageWork;
+
+function getShaOrZipfile
+  input JSON obj;
+  output String res;
+algorithm
+  res := if JSON.hasKey(obj, "sha") then JSON.getString(JSON.get(obj, "sha")) else System.basename(JSON.getString(JSON.get(obj, "zipfile")));
+end getShaOrZipfile;
 
 function getUserLibraryPath
   output String path;

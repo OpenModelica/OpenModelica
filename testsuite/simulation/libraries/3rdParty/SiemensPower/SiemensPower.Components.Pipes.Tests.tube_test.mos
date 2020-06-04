@@ -7,13 +7,11 @@
 //
 
 setCommandLineOptions("+d=acceptTooManyFields");
-loadModel(Modelica, {"3.2"}); getErrorString();
-loadFile("SiemensPower/package.mo"); getErrorString();
+loadModel(SiemensPower, {"2.2"}); getErrorString();
 
 simulate(SiemensPower.Components.Pipes.Tests.tube_test); getErrorString();
 
 // Result:
-// true
 // true
 // ""
 // true

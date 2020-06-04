@@ -2227,7 +2227,7 @@ static int getLoadModelPathFromDefaultTarget(const char *name, modelicaPathEntry
 
   /* Look for best release version */
   for (i=0; i<numEntries; i++) {
-    if (modelicaPathEntryVersionGreater(entries[i].version,foundVersion,MODELICAPATH_LEVELS) && entries[i].versionExtra[0] == '\0') {
+    if (modelicaPathEntryVersionGreater(entries[i].version,foundVersion,MODELICAPATH_LEVELS) && (entries[i].versionExtra[0] == '\0' || entries[i].versionExtra[0] == '+' || entries[i].versionExtra[0] == '-')) {
       memcpy(foundVersion,entries[i].version,sizeof(long)*MODELICAPATH_LEVELS);
       foundIndex = i;
     }

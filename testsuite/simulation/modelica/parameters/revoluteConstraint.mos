@@ -19,16 +19,16 @@ simulate(revoluteConstraint); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[Modelica 3.2.1/Mechanics/MultiBody/Joints.mo:7908:7-7909:73:writable] Error: Variable n_b[1] not found in scope Modelica.Mechanics.MultiBody.Joints.Internal.RevoluteWithLengthConstraint$planares_dreigelenk_R$jointUSR$revolute.
-// [Modelica 3.2.1/Mechanics/MultiBody/Joints.mo:8067:7-8067:58:writable] Error: Variable n_b[1] not found in scope Modelica.Mechanics.MultiBody.Joints.Internal.RevoluteWithLengthConstraint$planares_dreigelenk_R$jointUSR$revolute.
-// [Modelica 3.2.1/Mechanics/MultiBody/Joints.mo:8075:7-8075:20:writable] Error: Variable n_b[1] not found in scope Modelica.Mechanics.MultiBody.Joints.Internal.RevoluteWithLengthConstraint$planares_dreigelenk_R$jointUSR$revolute.
-// [Modelica 3.2.1/Mechanics/MultiBody/Joints.mo:8076:7-8076:20:writable] Error: Variable n_b[1] not found in scope Modelica.Mechanics.MultiBody.Joints.Internal.RevoluteWithLengthConstraint$planares_dreigelenk_R$jointUSR$revolute.
-// [Modelica 3.2.1/Mechanics/MultiBody/Joints.mo:8078:7-8078:30:writable] Error: Variable n_b[1] not found in scope Modelica.Mechanics.MultiBody.Joints.Internal.RevoluteWithLengthConstraint$planares_dreigelenk_R$jointUSR$revolute.
-// [Modelica 3.2.1/Mechanics/MultiBody/Joints.mo:8079:7-8079:80:writable] Error: Variable rod1Length not found in scope Modelica.Mechanics.MultiBody.Joints.Internal.RevoluteWithLengthConstraint$planares_dreigelenk_R$jointUSR$revolute.
-// [Modelica 3.2.1/Mechanics/MultiBody/Joints.mo:8054:7-8055:33:writable] Error: Variable rod1Length not found in scope Modelica.Mechanics.MultiBody.Joints.Internal.RevoluteWithLengthConstraint$planares_dreigelenk_R$jointUSR$revolute.
-// [Modelica 3.2.1/Mechanics/MultiBody/Joints.mo:8054:7-8055:33:writable] Error: Variable n_b[1] not found in scope Modelica.Mechanics.MultiBody.Joints.Internal.RevoluteWithLengthConstraint$planares_dreigelenk_R$jointUSR$revolute.
-// [Modelica 3.2.1/Mechanics/MultiBody/Joints.mo:4739:7-4740:40:writable] Error: Variable n[1] not found in scope Modelica.Mechanics.MultiBody.Joints.Assemblies.JointUSR$planares_dreigelenk_R$jointUSR.
-// [Modelica 3.2.1/Mechanics/MultiBody/Joints.mo:4741:7-4744:31:writable] Error: Variable n[1] not found in scope Modelica.Mechanics.MultiBody.Joints.Assemblies.JointUSR$planares_dreigelenk_R$jointUSR.
-// [Modelica 3.2.1/Mechanics/MultiBody/Joints.mo:6410:7-6411:90:writable] Error: Variable n[1] not found in scope Modelica.Mechanics.MultiBody.Joints.Assemblies.JointRRR$planares_dreigelenk_R.
+// "[Modelica 3.2.1+maint.om/Mechanics/MultiBody/Joints.mo:7908:7-7909:73:writable] Error: Variable n_b[1] not found in scope Modelica.Mechanics.MultiBody.Joints.Internal.RevoluteWithLengthConstraint$planares_dreigelenk_R$jointUSR$revolute.
+// [Modelica 3.2.1+maint.om/Mechanics/MultiBody/Joints.mo:8067:7-8067:58:writable] Error: Variable n_b[1] not found in scope Modelica.Mechanics.MultiBody.Joints.Internal.RevoluteWithLengthConstraint$planares_dreigelenk_R$jointUSR$revolute.
+// [Modelica 3.2.1+maint.om/Mechanics/MultiBody/Joints.mo:8075:7-8075:20:writable] Error: Variable n_b[1] not found in scope Modelica.Mechanics.MultiBody.Joints.Internal.RevoluteWithLengthConstraint$planares_dreigelenk_R$jointUSR$revolute.
+// [Modelica 3.2.1+maint.om/Mechanics/MultiBody/Joints.mo:8076:7-8076:20:writable] Error: Variable n_b[1] not found in scope Modelica.Mechanics.MultiBody.Joints.Internal.RevoluteWithLengthConstraint$planares_dreigelenk_R$jointUSR$revolute.
+// [Modelica 3.2.1+maint.om/Mechanics/MultiBody/Joints.mo:8078:7-8078:30:writable] Error: Variable n_b[1] not found in scope Modelica.Mechanics.MultiBody.Joints.Internal.RevoluteWithLengthConstraint$planares_dreigelenk_R$jointUSR$revolute.
+// [Modelica 3.2.1+maint.om/Mechanics/MultiBody/Joints.mo:8079:7-8079:80:writable] Error: Variable rod1Length not found in scope Modelica.Mechanics.MultiBody.Joints.Internal.RevoluteWithLengthConstraint$planares_dreigelenk_R$jointUSR$revolute.
+// [Modelica 3.2.1+maint.om/Mechanics/MultiBody/Joints.mo:8054:7-8055:33:writable] Error: Variable rod1Length not found in scope Modelica.Mechanics.MultiBody.Joints.Internal.RevoluteWithLengthConstraint$planares_dreigelenk_R$jointUSR$revolute.
+// [Modelica 3.2.1+maint.om/Mechanics/MultiBody/Joints.mo:8054:7-8055:33:writable] Error: Variable n_b[1] not found in scope Modelica.Mechanics.MultiBody.Joints.Internal.RevoluteWithLengthConstraint$planares_dreigelenk_R$jointUSR$revolute.
+// [Modelica 3.2.1+maint.om/Mechanics/MultiBody/Joints.mo:4739:7-4740:40:writable] Error: Variable n[1] not found in scope Modelica.Mechanics.MultiBody.Joints.Assemblies.JointUSR$planares_dreigelenk_R$jointUSR.
+// [Modelica 3.2.1+maint.om/Mechanics/MultiBody/Joints.mo:4741:7-4744:31:writable] Error: Variable n[1] not found in scope Modelica.Mechanics.MultiBody.Joints.Assemblies.JointUSR$planares_dreigelenk_R$jointUSR.
+// [Modelica 3.2.1+maint.om/Mechanics/MultiBody/Joints.mo:6410:7-6411:90:writable] Error: Variable n[1] not found in scope Modelica.Mechanics.MultiBody.Joints.Assemblies.JointRRR$planares_dreigelenk_R.
 // "
 // endResult

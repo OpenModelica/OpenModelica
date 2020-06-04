@@ -6,7 +6,7 @@
 //  Test SiemensPower component SolidComponents
 //
 
-loadModel(SiemensPower,{"2.1 beta"});getErrorString();
+loadModel(SiemensPower,{"2.1.0-beta"});getErrorString();
 
 // test simple model
 simulate(SiemensPower.Components.SolidComponents.Tests.wall_test, stopTime=25, method="dassl");
