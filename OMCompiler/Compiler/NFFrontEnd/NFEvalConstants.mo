@@ -47,6 +47,7 @@ import Variable = NFVariable;
 import Algorithm = NFAlgorithm;
 import NFEquation.Branch;
 import Dimension = NFDimension;
+import NFTyping.ExpOrigin;
 
 protected
 import MetaModelica.Dangerous.*;
@@ -140,7 +141,7 @@ function evaluateExpTraverser
 protected
   Expression e;
   ComponentRef cref;
-  Type ty;
+  Type ty, ty2;
   Variability var;
 algorithm
   outExp := match exp
@@ -150,15 +151,18 @@ algorithm
           Expression.mapFoldShallow(exp,
             function evaluateExpTraverser(info = info), false);
 
-        // Evaluate constants and structural parameters.
         if ComponentRef.nodeVariability(cref) <= Variability.STRUCTURAL_PARAMETER then
           // Evaluate all constants and structural parameters.
           outExp := Ceval.evalCref(cref, outExp, Ceval.EvalTarget.IGNORE_ERRORS(), evalSubscripts = false);
           outExp := Expression.stripBindingInfo(outExp);
           outChanged := true;
         elseif outChanged then
-          // If the cref's subscripts changed, recalculate its type.
-          outExp := Expression.CREF(ComponentRef.getSubscriptedType(cref), cref);
+          ty := ComponentRef.getSubscriptedType(cref);
+        end if;
+
+        ty2 := evaluateType(ty, info);
+        if not referenceEq(ty, ty2) then
+          outExp := Expression.setType(ty2, outExp);
         end if;
       then
         outExp;
@@ -173,12 +177,33 @@ algorithm
       algorithm
         (outExp, outChanged) := Expression.mapFoldShallow(exp,
           function evaluateExpTraverser(info = info), false);
+
+        ty := Expression.typeOf(outExp);
+        ty2 := evaluateType(ty, info);
       then
-        if outChanged then Expression.retype(outExp) else outExp;
+        if referenceEq(ty, ty2) then outExp else Expression.setType(ty2, outExp);
   end match;
 
   outChanged := changed or outChanged;
 end evaluateExpTraverser;
+
+function evaluateType
+  input output Type ty;
+  input SourceInfo info;
+algorithm
+  ty := match ty
+    case Type.ARRAY()
+      algorithm
+        ty.dimensions := list(evaluateDimension(d, info) for d in ty.dimensions);
+      then
+        ty;
+
+    case Type.CONDITIONAL_ARRAY()
+      then Type.simplifyConditionalArray(ty);
+
+    else ty;
+  end match;
+end evaluateType;
 
 function evaluateDimension
   input Dimension dim;
@@ -191,7 +216,12 @@ algorithm
 
     case Dimension.EXP()
       algorithm
-        e := evaluateExp(dim.exp, info);
+        if dim.var <= Variability.STRUCTURAL_PARAMETER and not
+           Expression.containsIterator(dim.exp, ExpOrigin.FOR) then
+          e := Ceval.evalExp(dim.exp, Ceval.EvalTarget.GENERIC(info));
+        else
+          e := evaluateExp(dim.exp, info);
+        end if;
       then
         if referenceEq(e, dim.exp) then dim else Dimension.fromExp(e, dim.var);
 
