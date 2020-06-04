@@ -4707,17 +4707,17 @@ template functionlinearmodelMatlab(ModelInfo modelInfo, String modelNamePrefix) 
     const char *<%symbolName(modelNamePrefix,"linear_model_frame")%>()
     {
       return "function [sys, x0, u0, n, m, p] = <%symbolName(modelNamePrefix,"GetLinearModel")%>()\n"
-      "%% der(x) = A * x + B * u\n%% y = C * x + D * u \n"
-      "  n = <%varInfo.numStateVars%>; %% number of states \n  m = <%varInfo.numInVars%>; %% number of inputs \n  p = <%varInfo.numOutVars%>; %% number of outputs \n"
+      "%% der(x) = A * x + B * u\n%% y = C * x + D * u\n"
+      "  n = <%varInfo.numStateVars%>; %% number of states\n  m = <%varInfo.numInVars%>; %% number of inputs\n  p = <%varInfo.numOutVars%>; %% number of outputs\n"
       "\n"
       "  x0 = %s;\n"
       "  u0 = %s;\n"
-      "  Ts = %g; %% stop time\n"
       "\n"
       <%matrixA%>
       <%matrixB%>
       <%matrixC%>
       <%matrixD%>
+      "  Ts = %g; %% stop time\n\n"
       "  %% The Control System Toolbox is required for this. Alternatively just return the matrices A,B,C,D instead.\n"
       "  sys = ss(A,B,C,D,Ts,'StateName',{<%getVarNameMatlab(vars.stateVars, "x")%>}, 'InputName',{<%getVarNameMatlab(vars.inputVars, "u")%>}, 'OutputName', {<%getVarNameMatlab(vars.outputVars, "y")%>});\n"
       "end";
@@ -4746,7 +4746,7 @@ template functionlinearmodelJulia(ModelInfo modelInfo, String modelNamePrefix) "
     {
       return "function <%symbolName(modelNamePrefix,"GetLinearModel")%>()\n"
       "#= der(x) = A * x + B * u =#\n#= y = C * x + D * u =#\n"
-      "  local n = <%varInfo.numStateVars%> #= number of states =#\n  local m = <%varInfo.numInVars%> #= number of inputs =#\n  local p = <%varInfo.numOutVars%> #= number of outputs =#  \n"
+      "  local n = <%varInfo.numStateVars%> #= number of states =#\n  local m = <%varInfo.numInVars%> #= number of inputs =#\n  local p = <%varInfo.numOutVars%> #= number of outputs =#\n"
       "\n"
       "  local x0 = %s\n"
       "  local u0 = %s\n"
