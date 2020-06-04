@@ -573,7 +573,7 @@ function typeDimension
 algorithm
   dimension := match dimension
     local
-      Expression exp;
+      Expression exp, dim_exp;
       Option<Expression> oexp;
       Variability var;
       Dimension dim;
@@ -617,31 +617,35 @@ algorithm
         if ExpOrigin.flagNotSet(origin, ExpOrigin.FUNCTION) then
           // Dimensions must be parameter expressions in a non-function class.
           if var <= Variability.PARAMETER then
-            exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
+            dim_exp := Ceval.evalExpBinding(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
           else
-            Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN,
-              {Expression.toString(exp)}, info);
-              fail();
+            Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN, {Expression.toString(exp)}, info);
+            fail();
           end if;
         else
           // For functions, only evaluate constant and structural parameter expressions.
           if var <= Variability.STRUCTURAL_PARAMETER then
-            exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
+            dim_exp := Ceval.evalExpBinding(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
+          else
+            dim_exp := exp;
           end if;
         end if;
 
         // It's possible to get an array expression here, for example if the
         // dimension expression is a parameter whose binding comes from a
         // modifier on an array component. If all the elements are equal we can
-        // just take one of them and use that, but we don't yet support the case
-        // where they are different. Creating a dimension from an array leads to
-        // weird things happening, so for now we print an error instead.
-        if not Expression.arrayAllEqual(exp) then
-          Error.addSourceMessage(Error.RAGGED_DIMENSION, {Expression.toString(exp)}, info);
-          fail();
+        // just take on of them and use that, otherwise we use the binding
+        // expression but replace the expression in it with the evaluated one.
+        exp := Expression.getBindingExp(dim_exp);
+        if Expression.isArray(exp) then
+          if Expression.arrayAllEqual(exp) then
+            exp := Expression.arrayFirstScalar(exp);
+          else
+            exp := Expression.setBindingExp(exp, dim_exp);
+          end if;
         end if;
 
-        dim := Dimension.fromExp(Expression.arrayFirstScalar(exp), var);
+        dim := Dimension.fromExp(exp, var);
         arrayUpdate(dimensions, index, dim);
       then
         dim;
@@ -770,6 +774,25 @@ algorithm
     else ();
   end match;
 end verifyDimension;
+
+function makeDimension
+  input Expression dimExp;
+  input Expression unevaledExp;
+  input Variability variability;
+  output Dimension outDimension;
+protected
+  Expression exp = dimExp;
+algorithm
+  if Expression.isArray(exp) then
+    if Expression.arrayAllEqual(exp) then
+      exp := Expression.arrayFirstScalar(exp);
+    else
+
+    end if;
+  end if;
+
+  outDimension := Dimension.fromExp(exp, variability);
+end makeDimension;
 
 function getRecordElementBinding
   "Tries to fetch the binding for a given record field by using the binding of

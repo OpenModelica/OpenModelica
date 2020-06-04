@@ -4407,6 +4407,25 @@ public
     end match;
   end getBindingExp;
 
+  function setBindingExp
+    "Replaces the expression contained in a binding expression with the given
+     expression. The given expression is assumed to have the same type as the
+     old expression, and only the innermost expression in a nested binding will
+     be replaced."
+    input Expression exp;
+    input output Expression bindingExp;
+  algorithm
+    bindingExp := match bindingExp
+      case BINDING_EXP()
+        algorithm
+          bindingExp.exp := setBindingExp(exp, bindingExp.exp);
+        then
+          bindingExp;
+
+      else exp;
+    end match;
+  end setBindingExp;
+
   function stripBindingInfo
     "Replaces all binding expressions in the given expression with the
      expressions they contain."
