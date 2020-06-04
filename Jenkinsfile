@@ -647,6 +647,7 @@ pipeline {
       when {
         beforeAgent true
         branch 'omlib-staging'
+        expression { return currentBuild.currentResult == 'SUCCESS' }
       }
       steps {
         githubNotify status: 'SUCCESS', description: 'The staged library changes are working', context: 'continuous-integration/jenkins/pr-merge'
