@@ -203,8 +203,13 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
     if (omhome == NULL)
       return NULL;
     int lenOmhome = strlen(omhome);
-    const char *homePath = Settings_getHomeDir(runningTestsuite);
-    if (homePath == NULL || runningTestsuite) {
+    const char *homePath = Settings_getHomeDir(0);
+    assert(homePath != NULL || !runningTestsuite);
+    if (runningTestsuite) {
+      int lenHome = strlen(homePath);
+      omc_modelicaPath = (char*) malloc(lenHome+26);
+      snprintf(omc_modelicaPath, lenHome+26,"%s/.openmodelica/libraries/", homePath);
+    } else if (homePath == NULL) {
       omc_modelicaPath = (char*) malloc(lenOmhome+15);
       snprintf(omc_modelicaPath, lenOmhome+15,"%s/lib/omlibrary", omhome);
     } else {
@@ -215,8 +220,9 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
 
     omc_modelicaPath = covertToForwardSlashesInPlace(omc_modelicaPath);
 
-    if (!runningTestsuite)
+    if (!runningTestsuite) {
       commonSetEnvVar("OPENMODELICALIBRARY", omc_modelicaPath);
+    }
   }
 
   return omc_modelicaPath;

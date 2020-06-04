@@ -139,11 +139,12 @@ void makeLibsAndCache(libs='core') {
   sh "cp -f ${env.RUNTESTDB}/${cacheBranchEscape()}/runtest.db.* testsuite/ || " +
      "cp -f ${env.RUNTESTDB}/master/runtest.db.* testsuite/ || true"
   // env.WORKSPACE is null in the docker agent, so link the svn/git cache afterwards
-  sh "mkdir -p '${env.LIBRARIES}/svn' '${env.LIBRARIES}/git'"
-  sh "find libraries"
-  sh "ln -s '${env.LIBRARIES}/svn' '${env.LIBRARIES}/git' libraries/"
+  sh "mkdir -p '${env.LIBRARIES}/om-pkg-cache'"
+  sh "mkdir -p testsuite/libraries-for-testing/.openmodelica/"
+  sh "ln -s '${env.LIBRARIES}/om-pkg-cache' testsuite/libraries-for-testing/.openmodelica/"
   generateTemplates()
-  def cmd = "${makeCommand()} -j${numLogicalCPU()} --output-sync omlibrary-${libs} ReferenceFiles omc-diff"
+  sh "touch omc.skip"
+  def cmd = "${makeCommand()} -j${numLogicalCPU()} --output-sync libs-for-testing ReferenceFiles omc-diff"
   if (env.SHARED_LOCK) {
     lock(env.SHARED_LOCK) {
       sh cmd
@@ -279,6 +280,7 @@ void buildAndRunOMEditTestsuite(stash) {
      echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
      echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/build/lib/omlibrary"
      echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omedit-testsuite
+     echo export "APPDATA=\${PWD}/testsuite/libraries-for-testing"
      echo cd build/bin
      echo ./RunOMEditTestsuite.sh
      ) > buildOMEditTestsuiteWindows.sh
@@ -301,6 +303,7 @@ void buildAndRunOMEditTestsuite(stash) {
   sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip && ${makeCommand()} -q omc omc-diff ReferenceFiles omsimulator omedit omplot" // Pretend we already built omc since we already did so
   sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync omedit-testsuite" // Builds the OMEdit testsuite
   sh label: 'RunOMEditTestsuite', script: '''
+  HOME="\$PWD/testsuite/libraries-for-testing"
   cd build/bin
   xvfb-run ./RunOMEditTestsuite.sh
   '''
@@ -335,8 +338,7 @@ void compliance() {
   standardSetup()
   unstash 'omc-clang'
   makeLibsAndCache('all')
-  // we need HOME to be defined so that the package manager can install libraries
-  sh "HOME='${env.WORKSPACE}' ./build/bin/omc -g=MetaModelica ./build/share/doc/omc/testmodels/ComplianceSuite.mos"
+  sh 'HOME=$PWD/testsuite/libraries-for-testing/ build/bin/omc -g=MetaModelica build/share/doc/omc/testmodels/ComplianceSuite.mos'
   sh "mv ${env.COMPLIANCEPREFIX}.html ${env.COMPLIANCEPREFIX}-current.html"
   sh "test -f ${env.COMPLIANCEPREFIX}.xml"
   // Only publish openmodelica-current.html if we are running master

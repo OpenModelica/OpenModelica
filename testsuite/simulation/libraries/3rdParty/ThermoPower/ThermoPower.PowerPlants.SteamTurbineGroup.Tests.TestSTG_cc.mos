@@ -10,8 +10,8 @@ translateModel(ThermoPower.PowerPlants.SteamTurbineGroup.Tests.TestSTG_cc); getE
 // true
 // ""
 // false
-// "[ThermoPower 3.1/PowerPlants.mo:3950:70-3951:22:writable] Error: Variable q_nom not found in scope ThermoPower.PowerPlants.HRSG.Components.
-// [ThermoPower 3.1/PowerPlants.mo:3960:21-3960:69:writable] Error: Cyclically dependent constants or parameters found in scope : {q_nom}, {head_nom} (ignore with -d=ignoreCycles).
+// "[ThermoPower 3.1.0-master/PowerPlants.mo:3950:70-3951:22:writable] Error: Variable q_nom not found in scope ThermoPower.PowerPlants.HRSG.Components.
+// [ThermoPower 3.1.0-master/PowerPlants.mo:3960:21-3960:69:writable] Error: Cyclically dependent constants or parameters found in scope : {q_nom}, {head_nom} (ignore with -d=ignoreCycles).
 // Error: Error occurred while flattening model ThermoPower.PowerPlants.SteamTurbineGroup.Tests.TestSTG_cc
 // "
 // endResult

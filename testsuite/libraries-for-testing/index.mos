@@ -1,0 +1,159 @@
+
+setEnvironmentVar("HOME", OpenModelica.Scripting.cd());
+setEnvironmentVar("APPDATA", OpenModelica.Scripting.cd());
+getEnvironmentVar("HOME");
+getErrorString();
+setModelicaPath(OpenModelica.Scripting.cd() + "/.openmodelica/libraries/");
+getModelicaPath();
+echo(false);
+OpenModelica.Scripting.mkdir(".openmodelica");
+if not OpenModelica.Scripting.mkdir(".openmodelica/libraries/") then
+  print("
+mkdir failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if 0 <> system("cp index.json .openmodelica/libraries/") then
+  print("Failed to cp index.json");
+  exit(1);
+end if;
+if not installPackage(BioChem, "1.0.1+msl.3.2.1", exactMatch=true) then
+  print("BioChem 1.0.1+msl.3.2.1 failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(Complex, "3.2.3+maint.om", exactMatch=true) then
+  print("Complex 3.2.3+maint.om failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(Complex, "3.2.2+maint.om", exactMatch=true) then
+  print("Complex 3.2.2+maint.om failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(Complex, "3.2.1+maint.om", exactMatch=true) then
+  print("Complex 3.2.1+maint.om failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(Modelica, "3.2.1+maint.om", exactMatch=true) then
+  print("Modelica 3.2.1+maint.om failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(Modelica, "3.1.0+maint.om", exactMatch=true) then
+  print("Modelica 3.1.0+maint.om failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(Modelica, "3.2.3+maint.om", exactMatch=true) then
+  print("Modelica 3.2.3+maint.om failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(Modelica, "3.2.2+maint.om", exactMatch=true) then
+  print("Modelica 3.2.2+maint.om failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(Modelica, "2.2.2+maint.om", exactMatch=true) then
+  print("Modelica 2.2.2+maint.om failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(ModelicaServices, "3.2.3+maint.om", exactMatch=true) then
+  print("ModelicaServices 3.2.3+maint.om failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(ModelicaServices, "3.2.1+maint.om", exactMatch=true) then
+  print("ModelicaServices 3.2.1+maint.om failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(ModelicaServices, "3.2.2+maint.om", exactMatch=true) then
+  print("ModelicaServices 3.2.2+maint.om failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(ModelicaServices, "1.0.0", exactMatch=true) then
+  print("ModelicaServices 1.0.0 failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(ModelicaTest, "3.2.3+maint.om", exactMatch=true) then
+  print("ModelicaTest 3.2.3+maint.om failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(ModelicaCompliance, "3.2.0-master", exactMatch=true) then
+  print("ModelicaCompliance 3.2.0-master failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(Modelica_DeviceDrivers, "1.8.2", exactMatch=true) then
+  print("Modelica_DeviceDrivers 1.8.2 failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(Modelica_Synchronous, "0.92.2", exactMatch=true) then
+  print("Modelica_Synchronous 0.92.2 failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(SiemensPower, "0.0.0-OMCtest", exactMatch=true) then
+  print("SiemensPower 0.0.0-OMCtest failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(SiemensPower, "2.1.0-beta", exactMatch=true) then
+  print("SiemensPower 2.1.0-beta failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(SiemensPower, "2.2.0", exactMatch=true) then
+  print("SiemensPower 2.2.0 failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(ThermoPower, "3.1.0-master", exactMatch=true) then
+  print("ThermoPower 3.1.0-master failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(ThermoSysPro, "3.2.0", exactMatch=true) then
+  print("ThermoSysPro 3.2.0 failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(WasteWater, "2.1.0", exactMatch=true) then
+  print("WasteWater 2.1.0 failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+system("touch .openmodelica/libraries/20200610130629.stamp")
