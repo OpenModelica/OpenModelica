@@ -35,6 +35,7 @@ protected
   import Operator = NFOperator;
   import Prefixes = NFPrefixes;
   import List;
+  import SimplifyExp = NFSimplifyExp;
 
 public
   import Absyn.{Exp, Path, Subscript};
@@ -444,6 +445,20 @@ public
       arg := foldExp(dim, func, arg);
     end for;
   end foldExpList;
+
+  function simplify
+    input output Dimension dim;
+  algorithm
+    () := match dim
+      case EXP()
+        algorithm
+          dim.exp := SimplifyExp.simplify(dim.exp);
+        then
+          ();
+
+      else ();
+    end match;
+  end simplify;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFDimension;

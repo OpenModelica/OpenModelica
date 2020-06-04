@@ -807,6 +807,7 @@ algorithm
         end if;
 
         binding.bindingExp := flattenBindingExp(binding.bindingExp, prefix, isTypeAttribute);
+        binding.bindingType := flattenType(binding.bindingType, prefix);
         binding.isFlattened := true;
       then
         binding;
@@ -917,18 +918,34 @@ function flattenExp_traverse
   input ComponentRef prefix;
 algorithm
   exp := match exp
-    case Expression.CREF()
+    case Expression.CREF(cref = ComponentRef.CREF())
       algorithm
-        exp.cref := ComponentRef.transferSubscripts(prefix, exp.cref);
+        exp.cref := flattenCref(exp.cref, prefix);
       then
         exp;
 
     case Expression.BINDING_EXP() then flattenBindingExp(exp, prefix);
     case Expression.IF(ty = Type.CONDITIONAL_ARRAY()) then flattenConditionalArrayIfExp(exp);
-
     else exp;
   end match;
+
+  exp := flattenExpType(exp, prefix);
 end flattenExp_traverse;
+
+function flattenCref
+  input output ComponentRef cref;
+  input ComponentRef prefix;
+protected
+  Type ty, ty2;
+algorithm
+  cref := ComponentRef.transferSubscripts(prefix, cref);
+  ty := ComponentRef.nodeType(cref);
+  ty2 := flattenType(ty, prefix);
+
+  if not referenceEq(ty, ty2) then
+    cref := ComponentRef.setNodeType(ty2, cref);
+  end if;
+end flattenCref;
 
 function flattenConditionalArrayIfExp
   input output Expression exp;
@@ -943,6 +960,20 @@ algorithm
     Inst.markStructuralParamsExp(cond);
   end if;
 end flattenConditionalArrayIfExp;
+
+function flattenExpType
+  input output Expression exp;
+  input ComponentRef prefix;
+protected
+  Type ty;
+algorithm
+  ty := Expression.typeOf(exp);
+
+  if Type.isArray(ty) then
+    ty := flattenType(ty, prefix);
+    exp := Expression.setType(ty, exp);
+  end if;
+end flattenExpType;
 
 function flattenType
   input output Type ty;
@@ -1213,6 +1244,7 @@ algorithm
   // Unroll the loop by replacing the iterator with each of its values in the for loop body.
   range := flattenExp(range, prefix);
   range := Ceval.evalExp(range, Ceval.EvalTarget.RANGE(Equation.info(forLoop)));
+  range := Expression.stripBindingInfo(range);
   range_iter := RangeIterator.fromExp(range);
 
   while RangeIterator.hasNext(range_iter) loop

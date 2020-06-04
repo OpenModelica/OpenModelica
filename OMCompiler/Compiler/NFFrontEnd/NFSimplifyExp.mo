@@ -118,17 +118,19 @@ function simplifyRange
 protected
   Expression start_exp1, stop_exp1, start_exp2, stop_exp2;
   Option<Expression> step_exp1, step_exp2;
-  Type ty;
+  Type ty, ty2;
 algorithm
   Expression.RANGE(ty = ty, start = start_exp1, step = step_exp1, stop = stop_exp1) := range;
 
   start_exp2 := simplify(start_exp1);
   step_exp2 := simplifyOpt(step_exp1);
   stop_exp2 := simplify(stop_exp1);
+  ty2 := Type.simplify(ty);
 
   if referenceEq(start_exp1, start_exp2) and
      referenceEq(step_exp1, step_exp2) and
-     referenceEq(stop_exp1, stop_exp2) then
+     referenceEq(stop_exp1, stop_exp2) and
+     referenceEq(ty, ty2) then
     exp := range;
   else
     ty := TypeCheck.getRangeType(start_exp2, step_exp2, stop_exp2,
@@ -337,6 +339,7 @@ algorithm
     else
       algorithm
         exp := simplify(exp);
+        ty := Type.simplify(ty);
       then
         Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(ty, var, exp, iters));
   end matchcontinue;
