@@ -5,7 +5,7 @@ defaultMakefileTarget = Makefile.unix
 all: @ALL_TARGETS@ @OMLIBRARY_TARGET@
 
 .PRECIOUS: Makefile
-.PHONY: omc omlibrary-all omlibrary-core omplot omedit omedit-testsuite omparser omnotebook omoptim omshell omc-diff omsimulator ReferenceFiles testsuite-depends omsens_qt
+.PHONY: omc omlibrary-all omlibrary-core omplot omedit omedit-testsuite omparser omnotebook omoptim omshell omc-diff omsimulator ReferenceFiles libs-for-testing testsuite-depends omsens_qt
 
 omc: omc.skip
 omc.skip:
