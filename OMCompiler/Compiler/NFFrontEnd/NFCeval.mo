@@ -145,6 +145,13 @@ algorithm
   exp := Expression.getBindingExp(evalExp_impl(exp, target));
 end evalExp;
 
+function evalExpBinding
+  input output Expression exp;
+  input EvalTarget target = EvalTarget.IGNORE_ERRORS();
+algorithm
+  exp := evalExp_impl(exp, target);
+end evalExpBinding;
+
 function evalExp_impl
   input output Expression exp;
   input EvalTarget target;

@@ -1,6 +1,6 @@
 // name: DimRagged1
 // keywords:
-// status: incorrect
+// status: correct
 // cflags: -d=newInst
 //
 
@@ -14,11 +14,13 @@ model DimRagged1
 end DimRagged1;
 
 // Result:
-// Error processing file: DimRagged1.mo
-// [flattening/modelica/scodeinst/DimRagged1.mo:9:3-9:12:writable] Error: Ragged dimensions are not yet supported (from dimension '{2, 3}')
-//
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
-//
-// Execution failed!
+// class DimRagged1
+//   final parameter Integer arr[1].n = 2;
+//   Real arr[1].a[1];
+//   Real arr[1].a[2];
+//   final parameter Integer arr[2].n = 3;
+//   Real arr[2].a[1];
+//   Real arr[2].a[2];
+//   Real arr[2].a[3];
+// end DimRagged1;
 // endResult
