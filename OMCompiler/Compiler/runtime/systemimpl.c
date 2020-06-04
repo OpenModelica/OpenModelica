@@ -1720,121 +1720,39 @@ extern char* SystemImpl__unescapedString(const char* str)
   return res;
 }
 
-
-static int compute_sanitized_string_size(const char* str) {
-  int i, count;
-
-  for (i=0, count=0; str[i]; i++, count++) {
-    char c = str[i];
-    // Each non-alphanum character needs one more char for its
-    // two char ascii representation.
-    if (!isalnum(c) && c != '_') {
-      count++;
-    }
-  }
-
-  return count;
-}
-
-static char* sanitize_string(const char* src, char* dst, int nrchars) {
+extern char* System_forceQuotedIdentifier(const char* str)
+{
   const char lookupTbl[] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
-
-  int i;
-  for (i = 0; i < nrchars; i++) {
-    unsigned char c = src[i];
-    if (isalnum(c) || c == '_') {
-      *dst = c;
-      dst++;
-    }
-    else {
-      *dst = lookupTbl[c/16];
-      dst++;
-      *dst = lookupTbl[c%16];
-      dst++;
-    }
-  }
-
-  return dst;
-}
-
-// This function assumes the input is actually a quoted string e.g 'gb' or 'ab[!%'
-extern char* System_sanitizeQuotedIdentifier(const char* str)
-{
   char *res,*cur;
-
-  const char openquote[]="Q_";
-  const char closequote[]="_Q";
-  const int qsize = sizeof(openquote) - 1;
-
-  int nrchars_org = strlen(str);
-
-  // Each non-alphanum character needs one more char for its
-  // two char ascii representation.
-  int nrchars_needed = compute_sanitized_string_size(str);
-
-  // ignore the count for opening and closing quotes in the original string
-  nrchars_needed = nrchars_needed - 4;
-  nrchars_org = nrchars_org - 2;
-
-  nrchars_needed += 2*qsize; // opening and closing quoute rep.
-  nrchars_needed++; /*null terminator*/
-  res = (char*) omc_alloc_interface.malloc_atomic(nrchars_needed * sizeof(char));
-
+  int len,i;
+  const int offset = 10;
+  const char _omcQuot[]="_omcQuot_";
+  len = strlen(str);
+  res = (char*) omc_alloc_interface.malloc_atomic(2*len+offset+64);
   cur = res;
-  cur += sprintf(cur, "%s", openquote);
-  cur = sanitize_string(str + 1, cur, nrchars_org);
-  cur += sprintf(cur,"%s", closequote);
+  cur += sprintf(cur,"%s",_omcQuot);
+  for (i=0; i<len; i++) {
+    unsigned char c = str[i];
+    *cur = lookupTbl[c/16];
+    cur++;
+    *cur = lookupTbl[c%16];
+    cur++;
+  }
   *cur = '\0';
-
-  ++cur;
-  assert((cur == res + nrchars_needed) && "Allocated memory does not exactly fit the unquoted string output");
-
   return res;
 }
 
-extern char* System_sanitizeIdentifier(const char* str)
+extern const char* SystemImpl__unquoteIdentifier(const char* str)
 {
-  char *res,*cur;
-
-  int nrchars_org = strlen(str);
-
-  // Each non-alphanum character needs one more char for its
-  // two char ascii representation.
-  int nrchars_needed = compute_sanitized_string_size(str);
-
-  // if the first char is not alphanum then the result will start with a number(ascii)
-  // we do not want that. So make it always start with a char.
-  const char openquote[]="D_";
-  const int qsize = sizeof(openquote) - 1;
-  nrchars_needed += qsize;
-
-  nrchars_needed++; /*null terminator*/
-  res = (char*) omc_alloc_interface.malloc_atomic(nrchars_needed * sizeof(char));
-
-  cur = res;
-  cur += sprintf(cur, "%s", openquote);
-  cur = sanitize_string(str, cur, nrchars_org);
-  *cur = '\0';
-
-  ++cur;
-  assert((cur == res + nrchars_needed) && "Allocated memory does not exactly fit the unquoted string output");
-
-  return res;
-}
-
-extern char* SystemImpl__unquoteIdentifier(char* str)
-{
-
-  if (str[0] == '\'') {
-    return System_sanitizeQuotedIdentifier(str);
-  }
-
+  char c = *str;
+  if ((c == '\'')
 #if !defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
-  if (strstr(str, "$")) {
-    return System_sanitizeIdentifier(str);
-  }
+   || strstr(str, "$")
 #endif
-
+  )
+  {
+    return System_forceQuotedIdentifier(str);
+  }
   return str;
 }
 

@@ -693,7 +693,7 @@ extern char* System_unescapedString(char* str)
   return res;
 }
 
-extern char* System_unquoteIdentifier(char *str)
+extern const char* System_unquoteIdentifier(char *str)
 {
   return SystemImpl__unquoteIdentifier(str);
 }

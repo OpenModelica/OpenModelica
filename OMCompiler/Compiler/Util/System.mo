@@ -864,10 +864,10 @@ literal in C. For example unescapedStringLength('\"')=1, unescapedStringLength('
 end unescapedStringLength;
 
 public function unquoteIdentifier
-  "Quoted identifiers which can use Modelica's allowed Q-CHARs need to be translated into canonical (valid c89 identifier) form
-   using ascii representations; for example,
-    '+' ->  QQ_2B_QQ
-    'xyz@d!' -> QQ_xyz40d21_QQ "
+  "Quoted identifiers, for example 'xyz' need to be translated into canonical form; for example _omcQuot_0x2778797A27
+  This name presents a unique mapping that is also reversible (so the debugger can show the quoted identifier's name.
+  The returned name is a valid C89 identifier.
+  "
   input String str;
   output String outStr;
   external "C" outStr=System_unquoteIdentifier(str) annotation(Library = "omcruntime");

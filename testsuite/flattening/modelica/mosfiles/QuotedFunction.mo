@@ -10,9 +10,9 @@ end 'オーペンモーデリッカー・ロックス';
 */
 
 function '\"\''
-  input Real '\"';
-  output Real '\'';
+  input Real '#';
+  output Real '23'; // Same hex code as # to test this better...
 algorithm
-  '\'' := sin('\"');
+  '23' := sin('#');
 end '\"\'';
 
