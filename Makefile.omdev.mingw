@@ -37,15 +37,20 @@ BUILDTYPE=Debug
 endif
 
 
-.PHONY: omc omc-diff omlibrary-core omplot omedit omedit-testsuite omparser omsimulator omnotebook omshell omoptim omsens omsens_qt qtclientsDLLs qtclientsDLLs simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall all-runtimes nox
+.PHONY: omc omc-diff omlibrary-core omplot omedit omedit-testsuite omparser omsimulator omnotebook omshell omoptim omsens omsens_qt qtclientsDLLs qtclientsDLLs simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall all-runtimes nox testsuite-depends libs-for-testing
 
-all: omc omc-diff omlibrary-core
+all: omc testsuite-depends omlibrary-core
 
 omc:
 	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler OMBUILDDIR=$(OMBUILDDIR) OMENCRYPTION=$(OMENCRYPTION)
 
-omc-diff: omc
+omc-diff:
 	$(MAKE) -C testsuite/ -f Makefile omc-diff OMBUILDDIR=$(OMBUILDDIR)
+ReferenceFiles:
+	$(MAKE) -C testsuite/ReferenceFiles
+libs-for-testing: omc
+	$(MAKE) -C testsuite/libraries-for-testing/
+testsuite-depends: omc-diff ReferenceFiles libs-for-testing
 
 omlibrary-core:
 	$(MAKE) -C libraries BUILD_DIR=$(OMBUILDDIR)/lib/omlibrary core
@@ -59,7 +64,7 @@ omplot: omc qtclientsDLLs
 omedit: omparser omplot omsimulator qtclientsDLLs
 	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit OMBUILDDIR=$(OMBUILDDIR)
 
-omedit-testsuite: omedit
+omedit-testsuite: omedit testsuite-depends
 	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit/Testsuite OMBUILDDIR=$(OMBUILDDIR)
 
 omparser:
@@ -221,6 +226,7 @@ nox:
 
 testlogwindows:
 	$(MAKE) -C testsuite -f Makefile ReferenceFiles > testsuite/testsuite-trace.txt
+	$(MAKE) -C testsuite/libs-for-testing -f Makefile >> testsuite/testsuite-trace.txt
 	(time $(MAKE) -C testsuite -f Makefile 2>&1 | tee testsuite/testsuite-trace.txt) || true
 	(time $(MAKE) -C testsuite/openmodelica/cruntime/msvc/ -f Makefile >> testsuite/testsuite-trace.txt 2>&1) || true
 	(export RTEST_OMCFLAGS=+target=msvc ; time $(MAKE) -C testsuite/openmodelica/cppruntime/ -f Makefile >> testsuite/testsuite-trace.txt 2>&1) || true

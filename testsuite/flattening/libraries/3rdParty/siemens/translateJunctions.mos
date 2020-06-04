@@ -6,7 +6,7 @@
 //  Test SiemensPower component Junctions
 //
 
-loadModel(SiemensPower,{"2.1 beta"});
+loadModel(SiemensPower,{"2.1.0-beta"});
 getErrorString();
 
 // test simple model

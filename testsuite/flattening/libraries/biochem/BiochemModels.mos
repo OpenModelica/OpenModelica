@@ -2027,10 +2027,10 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 // "Check of BioChem.Examples.CircadianOscillator.Container completed successfully.
 // Class BioChem.Examples.CircadianOscillator.Container has 252 equation(s) and 252 variable(s).
 // 180 of these are trivial equation(s)."
-// "[BioChem 1.0.1/Examples/package.mo:1086:7-1086:129:writable] Warning: Connecting two signal sources while connecting cytoplasm.y5_node.V to nucleus.y5_node.V.
-// [BioChem 1.0.1/Examples/package.mo:1087:7-1087:128:writable] Warning: Connecting two signal sources while connecting nucleus.y6_node.V to cytoplasm.y6_node.V.
-// [BioChem 1.0.1/Examples/package.mo:1088:7-1088:128:writable] Warning: Connecting two signal sources while connecting cytoplasm.y2_node.V to nucleus.y2_node.V.
-// [BioChem 1.0.1/Examples/package.mo:1089:7-1089:129:writable] Warning: Connecting two signal sources while connecting nucleus.y3_node.V to cytoplasm.y3_node.V.
+// "[BioChem 1.0.1+msl.3.2.1/Examples/package.mo:1086:7-1086:129:writable] Warning: Connecting two signal sources while connecting cytoplasm.y5_node.V to nucleus.y5_node.V.
+// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:1087:7-1087:128:writable] Warning: Connecting two signal sources while connecting nucleus.y6_node.V to cytoplasm.y6_node.V.
+// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:1088:7-1088:128:writable] Warning: Connecting two signal sources while connecting cytoplasm.y2_node.V to nucleus.y2_node.V.
+// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:1089:7-1089:129:writable] Warning: Connecting two signal sources while connecting nucleus.y3_node.V to cytoplasm.y3_node.V.
 // "
 // "Check of BioChem.Examples.CircadianOscillator.Nucleus completed successfully.
 // Class BioChem.Examples.CircadianOscillator.Nucleus has 99 equation(s) and 101 variable(s).
@@ -2047,7 +2047,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 // "Check of BioChem.Examples.CaOscillations.Cytosol completed successfully.
 // Class BioChem.Examples.CaOscillations.Cytosol has 60 equation(s) and 60 variable(s).
 // 44 of these are trivial equation(s)."
-// "[BioChem 1.0.1/Examples/package.mo:2195:7-2195:211:writable] Warning: Connecting two signal sources while connecting Ca_Cyt.n1.V to endoplasmicReticulum.Ca_Cyt_node.V.
+// "[BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2195:7-2195:211:writable] Warning: Connecting two signal sources while connecting Ca_Cyt.n1.V to endoplasmicReticulum.Ca_Cyt_node.V.
 // "
 // "Check of BioChem.Examples.CaOscillations.Endoplasmic_Reticulum completed successfully.
 // Class BioChem.Examples.CaOscillations.Endoplasmic_Reticulum has 34 equation(s) and 35 variable(s).
@@ -2056,22 +2056,22 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 // "Check of BioChem.Examples.GlucoseInsulinModel.GlucoseInsulinModel completed successfully.
 // Class BioChem.Examples.GlucoseInsulinModel.GlucoseInsulinModel has 687 equation(s) and 687 variable(s).
 // 530 of these are trivial equation(s)."
-// "[BioChem 1.0.1/Examples/package.mo:2450:11-2450:101:writable] Warning: Connecting two signal sources while connecting Ra_calc.n1.V to Ra_connector.V.
-// [BioChem 1.0.1/Examples/package.mo:2666:11-2666:131:writable] Warning: Connecting two signal sources while connecting G_t.n1.V to U_idm_connector.V.
-// [BioChem 1.0.1/Examples/package.mo:2667:11-2667:130:writable] Warning: Connecting two signal sources while connecting G_t.n1.V to U_idf_connector.V.
-// [BioChem 1.0.1/Examples/package.mo:2668:11-2668:96:writable] Warning: Connecting two signal sources while connecting G_t.n1.V to G_connector.V.
-// [BioChem 1.0.1/Examples/package.mo:2640:11-2640:105:writable] Warning: connect(G_p_connector, G_p_connector) connects the same connector instance! The connect equation will be ignored.
-// [BioChem 1.0.1/Examples/package.mo:2560:11-2560:127:writable] Warning: Connecting two signal sources while connecting G_p.n1.V to E_connector.V.
-// [BioChem 1.0.1/Examples/package.mo:2561:11-2561:95:writable] Warning: Connecting two signal sources while connecting G_p.n1.V to G_connector.V.
-// [BioChem 1.0.1/Examples/package.mo:2562:11-2562:120:writable] Warning: Connecting two signal sources while connecting G_p_signal.n1.V to G_p_connector.V.
-// [BioChem 1.0.1/Examples/package.mo:2563:11-2563:110:writable] Warning: Connecting two signal sources while connecting G_signal.n1.V to G_signal_connector.V.
-// [BioChem 1.0.1/Examples/package.mo:2525:11-2525:109:writable] Warning: Connecting two signal sources while connecting I_signal.n1.V to I_signal_connector.V.
-// [BioChem 1.0.1/Examples/package.mo:2526:11-2526:135:writable] Warning: Connecting two signal sources while connecting I_p_signal.n1.V to I_p_connector.V.
-// [BioChem 1.0.1/Examples/package.mo:2527:11-2527:96:writable] Warning: Connecting two signal sources while connecting I_p.n1.V to I_connector.V.
-// [BioChem 1.0.1/Examples/package.mo:2584:11-2584:138:writable] Warning: Connecting two signal sources while connecting I_connector.V to I_l.n1.V.
-// [BioChem 1.0.1/Examples/package.mo:2621:11-2621:103:writable] Warning: Connecting two signal sources while connecting EGP_calc.n1.V to EGP_connector.V.
-// [BioChem 1.0.1/Examples/package.mo:2499:11-2499:108:writable] Warning: Connecting two signal sources while connecting I_po_connector.V to I_po_signal.n1.V.
-// [BioChem 1.0.1/Examples/package.mo:2502:11-2502:132:writable] Warning: Connecting two signal sources while connecting S_calc.n1.V to S_connector.V.
+// "[BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2450:11-2450:101:writable] Warning: Connecting two signal sources while connecting Ra_calc.n1.V to Ra_connector.V.
+// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2666:11-2666:131:writable] Warning: Connecting two signal sources while connecting G_t.n1.V to U_idm_connector.V.
+// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2667:11-2667:130:writable] Warning: Connecting two signal sources while connecting G_t.n1.V to U_idf_connector.V.
+// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2668:11-2668:96:writable] Warning: Connecting two signal sources while connecting G_t.n1.V to G_connector.V.
+// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2640:11-2640:105:writable] Warning: connect(G_p_connector, G_p_connector) connects the same connector instance! The connect equation will be ignored.
+// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2560:11-2560:127:writable] Warning: Connecting two signal sources while connecting G_p.n1.V to E_connector.V.
+// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2561:11-2561:95:writable] Warning: Connecting two signal sources while connecting G_p.n1.V to G_connector.V.
+// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2562:11-2562:120:writable] Warning: Connecting two signal sources while connecting G_p_signal.n1.V to G_p_connector.V.
+// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2563:11-2563:110:writable] Warning: Connecting two signal sources while connecting G_signal.n1.V to G_signal_connector.V.
+// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2525:11-2525:109:writable] Warning: Connecting two signal sources while connecting I_signal.n1.V to I_signal_connector.V.
+// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2526:11-2526:135:writable] Warning: Connecting two signal sources while connecting I_p_signal.n1.V to I_p_connector.V.
+// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2527:11-2527:96:writable] Warning: Connecting two signal sources while connecting I_p.n1.V to I_connector.V.
+// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2584:11-2584:138:writable] Warning: Connecting two signal sources while connecting I_connector.V to I_l.n1.V.
+// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2621:11-2621:103:writable] Warning: Connecting two signal sources while connecting EGP_calc.n1.V to EGP_connector.V.
+// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2499:11-2499:108:writable] Warning: Connecting two signal sources while connecting I_po_connector.V to I_po_signal.n1.V.
+// [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2502:11-2502:132:writable] Warning: Connecting two signal sources while connecting S_calc.n1.V to S_connector.V.
 // "
 // "Check of BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.FlowReaction completed successfully.
 // Class BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.FlowReaction has 7 equation(s) and 7 variable(s).
