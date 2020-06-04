@@ -171,13 +171,25 @@ void buildOMC(CC, CXX, extraFlags) {
      echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/build/lib/omlibrary"
      echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omc omc-diff omlibrary-core
      echo cd \${MSYS_WORKSPACE}
-     echo sed -i.bak 's/mingw32-make/..\\..\\usr\\bin\\make/g' build/share/omc/scripts/Compile.bat
-     echo cd \${MSYS_WORKSPACE}
-     echo make -f Makefile.omdev.mingw \${MAKETHREADS} BUILDTYPE=Release simulationruntimecmsvc BuildType=Release
-     echo cd \${MSYS_WORKSPACE}
-     echo make -f 'Makefile.omdev.mingw' \${MAKETHREADS} BUILDTYPE=Release runtimeCPPmsvcinstall
-     echo cd \${MSYS_WORKSPACE}
-     echo make -f 'Makefile.omdev.mingw' \${MAKETHREADS} BUILDTYPE=Release runtimeCPPinstall
+     echo make -f Makefile.omdev.mingw \${MAKETHREADS} BUILDTYPE=Release all-runtimes
+     echo echo Check that omc can be started and a model can be build for NF OF with runtimes C Cpp FMU
+     echo ./build/bin/omc --version
+     echo mkdir .sanity-check
+     echo cd .sanity-check
+     echo cp ../testsuite/sanity-check/testSanity.mos .
+     echo ../build/bin/omc --linearizationDumpLanguage=matlab testSanity.mos
+     echo export PATH=\$PATH:../build/bin/:../build/lib/omc/omsicpp:../build/lib/omc/cpp
+     echo ./M
+     echo ./M -l=1.0
+     echo ls linear_M.m
+     echo ls M.fmu
+     echo rm -rf M* OMCppM* linear_M*
+     echo ../build/bin/omc --simCodeTarget=Cpp testSanity.mos
+     echo ./M
+     echo ls M.fmu
+     echo rm -rf M* OMCppM*
+     echo cd ..
+     echo rm -rf .sanity-check
      ) > buildOMCWindows.sh
 
      set MSYSTEM=MINGW64
@@ -221,6 +233,8 @@ void buildGUI(stash, isQt5) {
      echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
      echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/build/lib/omlibrary"
      echo time make -f Makefile.omdev.mingw \${MAKETHREADS} qtclients
+     echo echo Check that at least OMEdit can be started
+     echo ./build/bin/OMEdit --help
      ) > buildGUIWindows.sh
 
      set MSYSTEM=MINGW64
