@@ -1000,7 +1000,8 @@ protected
       if arg_var <= Variability.STRUCTURAL_PARAMETER and
          not ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) and
          not Expression.containsIterator(arg, origin) then
-        arg := Ceval.evalExp(arg);
+        arg := Ceval.evalExpBinding(arg);
+        arg := Expression.getScalarBindingExp(arg);
         arg_ty := Expression.typeOf(arg);
       else
         evaluated := false;
@@ -1011,6 +1012,12 @@ protected
         Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
           {intString(listLength(ty_args) + 1), ComponentRef.toString(fnRef), "",
           Expression.toString(arg), Type.toString(arg_ty), "Integer"}, info);
+      end if;
+
+      if not Expression.isInteger(arg) then
+        // Argument might be a binding expression that needs to be flattened
+        // before we can evaluate the fill call.
+        evaluated := false;
       end if;
 
       variability := Prefixes.variabilityMax(variability, arg_var);
