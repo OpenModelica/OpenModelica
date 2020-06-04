@@ -5,7 +5,7 @@
 //  Siemens fluid test.
 //
 
-loadModel(SiemensPower, {"OMCtest"});
+loadModel(SiemensPower, {"0.0.0-OMCtest"});
 getErrorString();
 checkModel(SiemensPowerOMCtest.Components.HeatExchanger.Tests.paralleFlowEVA_test);
 getErrorString();

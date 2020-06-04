@@ -6,7 +6,7 @@
 //  Test SiemensPower component SolidComponents
 //
 
-loadModel(SiemensPower, {"2.1 beta"});getErrorString();
+loadModel(SiemensPower, {"2.1.0-beta"});getErrorString();
 
 // test jacobians
 setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();

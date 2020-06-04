@@ -57,9 +57,9 @@ int om_unzip(const char *zipFileName, const char *pathToExtract, const char *des
     commonLength--;
   }
   commonPrefix[commonLength] = '\0';
-  if (commonPrefix > 0 && commonLength > pathToExtractLen && (0==strncmp(commonPrefix-pathToExtractLen-1, pathToExtract, pathToExtractLen))) {
-    commonLength = 0;
-    commonPrefix[0] = '\0';
+  if (commonLength > 0 && commonLength > pathToExtractLen && (0==strncmp(commonPrefix+commonLength-pathToExtractLen-1, pathToExtract, pathToExtractLen))) {
+    commonLength = commonLength-pathToExtractLen-1;
+    commonPrefix[commonLength] = '\0';
   }
   if (unzGoToFirstFile(zipfile) != UNZ_OK) {
     c_add_message(NULL, -1, ErrorType_runtime,ErrorLevel_error, "minizip failed to reset to first file in %s", &zipFileName, 1);

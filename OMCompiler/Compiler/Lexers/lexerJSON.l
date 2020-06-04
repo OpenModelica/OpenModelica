@@ -40,7 +40,7 @@ null return NULL;
 "," return COMMA;
 ":" return COLON;
 
-[ \t\n]+ /* whitespace */;
+[ \t\n\r]+ /* whitespace */;
 
 %%
 

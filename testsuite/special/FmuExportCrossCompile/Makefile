@@ -7,7 +7,7 @@
 OMC=../../../build/bin/omc
 
 test: clean
-	$(OMC) fmuExportCrossCompile.mos
+	HOME=$(CURDIR)/../../libraries-for-testing/ $(OMC) fmuExportCrossCompile.mos
 	unzip -q FmuExportCrossCompile.fmu -d FmuExportCrossCompile.fmutmp
 	$(MAKE) check-files
 dockerpull:

@@ -33,7 +33,7 @@ runScript(modelTesting);getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
-// [Modelica 3.1/Mechanics/MultiBody/Forces.mo:2094:5-2094:78:writable] Warning: The parameter spring.c has fixed = false and a binding equation spring.c = 100.0, which is probably redundant. The binding equation will be ignored, as it is expected for Modelica 3.1.
+// [Modelica 3.1.0+maint.om/Mechanics/MultiBody/Forces.mo:2094:5-2094:78:writable] Warning: The parameter spring.c has fixed = false and a binding equation spring.c = 100.0, which is probably redundant. The binding equation will be ignored, as it is expected for Modelica 3.1.
 //
 // "true
 // "

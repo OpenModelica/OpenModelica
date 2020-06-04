@@ -6,7 +6,7 @@
 //  Siemens fluid test.
 //
 
-loadModel(SiemensPower, {"OMCtest"});
+loadModel(SiemensPower, {"0.0.0-OMCtest"});
 getErrorString();
 checkModel(SiemensPower.Components.Valves.Tests.valve_test);
 getErrorString();
