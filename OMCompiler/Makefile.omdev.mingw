@@ -102,6 +102,8 @@ SEMLA_LIB=semla
 SEMLA_CLEAN=semla-clean
 endif
 
+main.PHONY: simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall nox getMSVCversion omdev_extra_dlls install-openturns copycppheader copycppmsvcheader boehm-gc-lib fmil_msvc sundials_msvc CMinpack_msvc Umfpack_msvc runtimeOMSIBaseMSVCInstall omcCAPImsvcinstall
+
 include Makefile.common
 include Makefile.omsi.common
 
@@ -299,7 +301,8 @@ omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cd
 
 boehm-gc-lib: $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.a
 
-fmil_msvc: getMSVCversion
+fmil_msvc: $(OMBUILDDIR)/bin/msvc/fmilib_shared.dll
+$(OMBUILDDIR)/bin/msvc/fmilib_shared.dll: getMSVCversion
 	rm -f $(OMBUILDDIR)/lib/omc/msvc/fmil*
 	rm -rf 3rdParty/FMIL/install_msvc
 	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/
@@ -335,7 +338,8 @@ fmil_msvc: getMSVCversion
 	(cp -puf 3rdParty/FMIL/install_msvc/lib/fmilib_shared.dll $(OMBUILDDIR)/lib/omc/msvc/fmilib_shared.dll)
 	(cp -puf 3rdParty/FMIL/install_msvc/lib/fmilib_shared.lib $(OMBUILDDIR)/lib/omc/msvc/fmilib_shared.lib)
 
-CMinpack_msvc: getMSVCversion
+CMinpack_msvc: $(OMBUILDDIR)/lib/omc/msvc/cminpack.lib
+$(OMBUILDDIR)/lib/omc/msvc/cminpack.lib: getMSVCversion
 	rm -f $(OMBUILDDIR)/lib/omc/msvc/cminpack.*
 	rm -rf 3rdParty/CMinpack/build_msvc
 	rm -rf 3rdParty/CMinpack/install_msvc
@@ -356,15 +360,14 @@ CMinpack_msvc: getMSVCversion
 	echo set MAKE= >> 3rdParty/CMinpack/build_msvc/build.bat
 	echo set MAKEFLAGS= >> 3rdParty/CMinpack/build_msvc/build.bat
 	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> 3rdParty/CMinpack/build_msvc/build.bat
-
 	# Change into directory and run batch file
 	cd ./3rdParty/CMinpack/build_msvc; echo "change to 3rdParty/CMinpack/build_msvc";\
 	cmd /c build.bat
-
-   	# copy dll to bin folder
+	# copy dll to bin folder
 	(cp -puf 3rdParty/CMinpack/install_msvc/lib/cminpack.lib $(OMBUILDDIR)/lib/omc/msvc/)
 
-Umfpack_msvc: getMSVCversion
+Umfpack_msvc: $(OMBUILDDIR)/lib/omc/msvc/umfpack.lib
+$(OMBUILDDIR)/lib/omc/msvc/umfpack.lib: getMSVCversion
 	rm -f $(OMBUILDDIR)/lib/omc/msvc/amd.lib
 	rm -f $(OMBUILDDIR)/lib/omc/msvc/umfpack.lib
 	rm -rf $(OMBUILDDIR)/include/omc/msvc/suitesparse
@@ -398,7 +401,8 @@ Umfpack_msvc: getMSVCversion
 	(cp -pur 3rdParty/SuiteSparse/install_msvc/include/omc/c/suitesparse/Include/ $(OMBUILDDIR)/include/omc/msvc/suitesparse)
 
 # build sundials
-sundials_msvc: getMSVCversion 3rdParty/sundials/CMakeLists.txt
+sundials_msvc: $(OMBUILDDIR)/lib/omc/msvc/sundials_ida.dll
+$(OMBUILDDIR)/lib/omc/msvc/sundials_ida.dll: getMSVCversion 3rdParty/sundials/CMakeLists.txt
 	rm -f $(OMBUILDDIR)/lib/omc/msvc/sundials*
 	rm -f $(OMBUILDDIR)/bin/sundials*
 	rm -rf 3rdParty/sundials/build_msvc
@@ -406,7 +410,6 @@ sundials_msvc: getMSVCversion 3rdParty/sundials/CMakeLists.txt
 	# Goto build msvc directory
 	test -d 3rdParty/sundials
 	mkdir -p 3rdParty/sundials/build_msvc
-
 	# Create batch file, that builds with CMake and Visual Studio
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
 	echo 'Building sundials with MSVC'
@@ -419,12 +422,10 @@ sundials_msvc: getMSVCversion 3rdParty/sundials/CMakeLists.txt
 	echo set MAKE= >> 3rdParty/sundials/build_msvc/build.bat
 	echo set MAKEFLAGS= >> 3rdParty/sundials/build_msvc/build.bat
 	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> 3rdParty/sundials/build_msvc/build.bat
-
 	# Change into directory and run batch file
 	cd ./3rdParty/sundials/build_msvc; echo "change to 3rdParty/sundials/build_msvc";\
 	cmd /c build.bat
-
-   	# copy dll to lib and bin folder
+	# copy dll to lib and bin folder
 	mkdir -p $(OMBUILDDIR)/include/omc/msvc/sundials
 	(cp -pufr 3rdParty/sundials/build_msvc/include/* $(OMBUILDDIR)/include/omc/msvc/sundials)
 	(cp -puf 3rdParty/sundials/build_msvc/lib/* $(OMBUILDDIR)/lib/omc/msvc/)
@@ -440,7 +441,6 @@ nox_msvc: getMSVCversion 3rdParty/trilinos-nox/CMakeLists.txt
 	# Goto build msvc directory
 	test -d 3rdParty/trilinos-nox
 	mkdir -p 3rdParty/trilinos-nox/build_msvc
-
 	# Create batch file, that builds with CMake and Visual Studio
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
 	echo 'Building trilinos-nox with MSVC'
@@ -453,28 +453,22 @@ nox_msvc: getMSVCversion 3rdParty/trilinos-nox/CMakeLists.txt
 	echo set MAKE= >> 3rdParty/trilinos-nox/build_msvc/build.bat
 	echo set MAKEFLAGS= >> 3rdParty/trilinos-nox/build_msvc/build.bat
 	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> 3rdParty/trilinos-nox/build_msvc/build.bat
-
 	# Change into directory and run batch file
 	cd ./3rdParty/trilinos-nox/build_msvc; echo "change to 3rdParty/trilinos-nox/build_msvc";\
 	cmd /c build.bat
 
-
-
 omcCAPImsvcinstall:
 	$(MAKE) -C SimulationRuntime/OMSICpp/ -f Makefile.omdev.mingw omcCAPImsvc OMBUILDDIR=$(OMBUILDDIR)
 
-
-runtimeCPPmsvcinstall: CMinpack_msvc  copycppmsvcheader OMSIBaseMSVC
+runtimeCPPmsvcinstall: getMSVCversion Umfpack_msvc CMinpack_msvc fmil_msvc sundials_msvc OMSIBaseMSVC copycppmsvcheader
 	$(MAKE) -C SimulationRuntime/OMSICpp/ -f Makefile.omdev.mingw runtimeCPPmsvc OMBUILDDIR=$(OMBUILDDIR)
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.dll $(OMBUILDDIR)/bin/msvc
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.lib $(OMBUILDDIR)/lib/omc/omsicpp/msvc
 
-
 runtimeOMSIBaseMSVCInstall:
 	$(MAKE) -C SimulationRuntime/OMSI/ -f Makefile.omdev.mingw OMSIBaseMSVC OMBUILDDIR=$(OMBUILDDIR)
 
-
-simulationruntimecmsvc:  getMSVCversion Umfpack_msvc CMinpack_msvc fmil_msvc sundials_msvc
+simulationruntimecmsvc: getMSVCversion Umfpack_msvc CMinpack_msvc fmil_msvc sundials_msvc
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
 	mkdir -p $(OMBUILDDIR)/include/omc/msvc/
 	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/debug

@@ -1,0 +1,17 @@
+// script to test the sanity of the OpenModelica compiler
+
+// load the model
+loadString("
+model M
+  Real x(start=1.0, fixed=true);
+  parameter Real a = -1.0;
+equation
+  der(x) = a * x;
+end M;"); getErrorString();
+
+// build and FMU out of the model
+buildModelFMU(M); getErrorString();
+
+// build an simulation executable out of the model
+buildModel(M); getErrorString();
+
