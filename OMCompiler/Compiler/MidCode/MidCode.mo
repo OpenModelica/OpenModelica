@@ -34,9 +34,12 @@ encapsulated package MidCode
 import DAE;
 
 uniontype Program
+  "A MidCode Program. Consists of a sequence of functions"
   record PROGRAM
-    String name;
-    list<Function> functions;
+    String name "Name of the program";
+    list<Function> functions "Functions";
+    //list<MidCode.Record> recordDeclarations
+    //list<MidCode.Var> literals
   end PROGRAM;
 end Program;
 
@@ -281,6 +284,35 @@ uniontype BinaryOp "Binary operator"
   record EQUAL end EQUAL;
   record NEQUAL end NEQUAL;
 end BinaryOp;
+
+/*Work in progress. Not Yet used*/
+// uniontype Type
+// "
+//   MidCode Types.
+//   The generic type does not exist. Instead it is infereed and converted to one of the concrete types.
+// "
+//   record Integer end Integer;
+//   record Boolean end Boolean;
+//   record Real end Real;
+//   record String end String;
+//   record Tuple end Tuple;
+//   record Array
+//     Type ty;
+//   end Array;
+//   record Tuple
+//     list<Type> types "The type of each individual element";
+//   end Tuple;
+//   /* MetaModelica specific */
+//   record T_METATYPE "this type contains all the meta types"
+//     Type ty;
+//   end T_METATYPE;
+//   record List
+//     Type ty;
+//   end List;
+//   record MetaArray
+//     Type ty;
+//   end MetaArray;
+// end Type;
 
 annotation(__OpenModelica_Interface="backendInterface");
 end MidCode;

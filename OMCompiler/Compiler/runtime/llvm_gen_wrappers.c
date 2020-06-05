@@ -1,16 +1,16 @@
 #include "llvm_gen_wrappers.h"
 #ifdef __cplusplus
-extern "C" {
+gextern "C" {
 #endif
 
 double mmc_unbox_real_no_inline(modelica_metatype v)
 {
-  mmc_prim_get_real(v);
+  return mmc_prim_get_real(v);
 }
 
 modelica_integer mmc_unbox_integer_no_inline(modelica_metatype v)
 {
-  MMC_UNTAGFIXNUM(v);
+  return MMC_UNTAGFIXNUM(v);
 }
 
 modelica_metatype mmc_icon_to_value_wrapper(modelica_metatype mmc)
@@ -106,13 +106,18 @@ modelica_metatype mmc_arrcon_to_value_wrapper(modelica_metatype arr, const int t
 modelica_metatype mmc_mtcon_to_value(modelica_metatype varlst)
 {
   modelica_metatype tpl = (void*) Values__META_5fTUPLE(varlst);
-  printf(anyString(varlst));
   return tpl;
 }
 
 modelica_metatype mmc_tcon_to_value(modelica_metatype vl)
 {
-  modelica_metatype tp = Values__TUPLE(vl);
+  modelica_metatype tp = mmc_to_value(vl);
+  return tp;
+}
+
+modelica_metatype mmc_utcon_to_value(modelica_metatype vl)
+{
+  modelica_metatype tp = mmc_to_value(vl);
   return tp;
 }
 
@@ -729,7 +734,7 @@ modelica_metatype valueLst_to_type_descs(modelica_metatype value)
     ++arg;
     value = MMC_CDR(value);
   }
-  //For Compatability with the existing read and write functions.
+  /* For Compatability with the existing read and write functions. */
   init_type_description(arg);
   return descs;
 }
@@ -1027,6 +1032,59 @@ int size_of_dimension_base_array_jit(const base_array_t *a, int i)
   }
   fprintf(stderr, "size_of_dimension_base_array failed for i=%d, ndims=%d (ndims out of bounds)\n", i, a->ndims);
   abort();
+}
+
+/*Builtin string operations */
+
+modelica_integer stringLength_jit(modelica_metatype str)
+{
+  return MMC_STRLEN(str);
+}
+
+modelica_metatype stringGetStringChar_jit(threadData_t *threadData, metamodelica_string str, modelica_integer ix) {
+  MMC_CHECK_STRING(str);
+  if (ix < 1 || ix > (long) MMC_STRLEN(str))
+    MMC_THROW_INTERNAL();
+  return mmc_strings_len1[(size_t)MMC_STRINGDATA(str)[ix-1]];
+}
+
+modelica_metatype stringUpdateStringChar_jit(threadData_t *threadData,metamodelica_string str, metamodelica_string c, modelica_integer ix)
+{
+  int length = 0;
+  unsigned header = MMC_GETHDR(str);
+  unsigned nwords = MMC_HDRSLOTS(header) + 1;
+  struct mmc_string *p = NULL;
+  void *res = NULL;
+  MMC_CHECK_STRING(str);
+  MMC_CHECK_STRING(c);
+  if (ix < 1 || MMC_STRLEN(c) != 1)
+    MMC_THROW_INTERNAL();
+  length = MMC_STRLEN(str);
+  if (ix > length)
+    MMC_THROW_INTERNAL();
+  p = (struct mmc_string *) mmc_alloc_words_atomic(nwords);
+  p->header = header;
+  memcpy(p->data, MMC_STRINGDATA(str), length+1 /* include NULL */);
+  p->data[ix-1] = MMC_STRINGDATA(c)[0];
+  res = MMC_TAGPTR(p);
+  MMC_CHECK_STRING(res);
+  return res;
+}
+
+/*Builtin Integer operations*/
+modelica_integer iMin(modelica_integer x, modelica_integer y)
+{
+  return x <  y ? x : y;
+}
+
+modelica_integer iMax(modelica_integer x, modelica_integer y)
+{
+  return x > y ? x : y;
+}
+
+modelica_integer iMod(modelica_integer x, modelica_integer y)
+{
+  return (x % y + y) % y;
 }
 
 #ifdef __cplusplus

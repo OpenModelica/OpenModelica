@@ -34,7 +34,6 @@ import Absyn;
 import DAE.{AvlTreePathFunction};
 import DAE;
 import DAEDump;
-import FCore;
 import List;
 import MidCode;
 import MidCodeDump;
@@ -368,6 +367,13 @@ function dumpProgram
 algorithm
   textString := Tpl.tplString(MidCodeDump.dumpProgram, iProgram);
 end dumpProgram;
+
+function outVarToVar
+  input MidCode.OutVar outVar;
+  output MidCode.Var var;
+algorithm
+  MidCode.OUT_VAR(var) := outVar;
+end outVarToVar;
 
 annotation(__OpenModelica_Interface="backendInterface");
 end MidCodeUtil;

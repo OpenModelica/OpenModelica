@@ -152,7 +152,7 @@ function genCall
   input Integer functionTy "The type of the function.";
   input String dest "The destination variable for the call.";
   input Boolean assignment "If the function call shall result in an assignment or not.";
-  input Boolean isVariadic "Is the call variadic or not, some external functions are.";
+  input Boolean isVariadic = false "Is the call variadic or not, some external functions are. Default value is false.";
   external "C" createCall(name,functionTy,dest,assignment,isVariadic) annotation(Library ="omcruntime");
 end genCall;
 
@@ -161,7 +161,6 @@ function genLongJmp
 end genLongJmp;
 
 /*Calls related to the construction and maintenance of basic blocks. */
-
 function setNewActiveBlock
   "Sets the current block we are inserting to.
   If no block with the specified identifier is present a new one is created. "

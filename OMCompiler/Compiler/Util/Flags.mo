@@ -566,7 +566,8 @@ constant DebugFlag JIT_DUMP_IR = DEBUG_FLAG(196, "jit_dump_ir", false,
  Util.gettext("Dumps LLVM-IR before execution"));
 constant DebugFlag JIT_NO_OPT = DEBUG_FLAG(197, "jit_no_opt", false,
  Util.gettext("Generates LLVM-IR without optimization."));
-
+constant DebugFlag DUMP_MIDCODE = DEBUG_FLAG(198, "dumpMidCode", false,
+ Gettext.gettext("Dumps MidCode after generation in a human readble format"));
 public
 // CONFIGURATION FLAGS
 constant ConfigFlag DEBUG = CONFIG_FLAG(1, "debug",

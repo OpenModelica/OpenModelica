@@ -4,7 +4,7 @@
 // cflags:   +g=MetaModelica -d=jit_eval_func
 //
 // List Testing
-loadFile("ListInteractive.mo");
+loadFile("../ListInteractive.mo");
 lst := {2,3};
 lst1 := {1, 2, 3};
 lst2 := ListInteractive.listPrepend(lst, 1);

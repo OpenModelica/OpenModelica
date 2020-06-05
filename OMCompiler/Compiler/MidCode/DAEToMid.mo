@@ -29,6 +29,7 @@
  *
  */
 encapsulated package DAEToMid
+protected
 import BaseHashTable;
 import ComponentReference;
 import DAE;
@@ -46,7 +47,6 @@ import SimCode;
 import SimCodeFunction;
 import System;
 import Types;
-protected
 import MetaModelica.Dangerous.{arrayGetNoBoundsChecking, arrayUpdateNoBoundsChecking, arrayCreateNoInit};
 import List;
 import Error;
@@ -355,8 +355,18 @@ end RValueToVarCast;
 function DAEFunctionsToMid
   input list<SimCodeFunction.Function> simfuncs;
   output list<MidCode.Function> midfuncs;
+protected
+  list<MidCode.Function> tmpMid = list(DAEFunctionToMid(simfunc) for simfunc in simfuncs);
 algorithm
-  midfuncs := list(DAEFunctionToMid(simfunc) for simfunc in simfuncs);
+  if Flags.isSet(Flags.DUMP_MIDCODE) then
+    try
+      print(MidCodeUtil.dumpProgram(MidCode.PROGRAM("dump", tmpMid)));
+    else
+      Error.addInternalError("Failed to dump MidCode\n", sourceInfo());
+      fail();
+    end try;
+  end if;
+  midfuncs := tmpMid;
 end DAEFunctionsToMid;
 
 function DAEFunctionToMid
@@ -719,7 +729,6 @@ function ExpToMid
   input State state;
   output MidCode.RValue rval;
 algorithm
-//  print("\n Calling ExpToMid" + anyString(exp) + "\n\n\n");
   rval := match exp
   local
     Absyn.Path path;
@@ -1014,7 +1023,7 @@ function CallToMid
   input list<MidCode.OutVar> outvars;
   input State state;
 algorithm
-  //TODO: maybe handle isFunctionPointerCall/isImpure
+  //TODO: maybe handle isFunctionPointerCall/isImpure. Also check for tail recursion.
   () := match call
   local
     Absyn.Path path;
@@ -1023,18 +1032,30 @@ algorithm
     Integer labelNext;
     DoubleEnded.MutableList<MidCode.Var> inputs;
     MidCode.Var var1;
+    MidCode.Var var2;
     MidCode.Block block_;
+  /*If noEvent. Do not generate the call*/
+  case DAE.CALL(Absyn.IDENT("noEvent"), expLst, callattr)
+  algorithm
+    labelNext := GenBlockId();
+    assert(listLength(outvars) == 1, "MidCode: Length of output is assumed to be 1 for builtin calls of type noEvent");
+    for exp1 in expLst loop
+      var1 := RValueToVar(ExpToMid(exp1, state), state);
+    end for;
+    var2 := MidCodeUtil.outVarToVar(listHead(outvars));
+    stateAddStmt(MidCode.ASSIGN(var2, MidCode.VARIABLE(var1)), state);
+    stateTerminate(labelNext,
+                   MidCode.GOTO(labelNext),
+                   state);
+  then();
   case DAE.CALL(path, expLst, callattr)
   algorithm
     labelNext := GenBlockId();
-
     inputs := DoubleEnded.fromList({});
-
     for exp1 in expLst loop
       var1 := RValueToVar(ExpToMid(exp1, state), state);
       DoubleEnded.push_back(inputs, var1);
     end for;
-
     stateTerminate(labelNext,
                     MidCode.CALL(path,callattr.builtin,DoubleEnded.toListAndClear(inputs),outvars,labelNext,callattr.ty),
                     state);

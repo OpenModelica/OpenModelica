@@ -148,19 +148,6 @@ UniontypeNestedSingelton.mos
 # Run make testfailing
 FAILINGTESTFILES=
 
-
-# Tests for LLVM
-TESTFILESLLVM = \
-ListInteractiveLLVM.mos \
-ThreadedReductionLLVM.mos \
-AlgorithmsLLVM.mos \
-TupleLLVM.mos\
-ComplicatedInteractiveLLVM.mos
-
-# Test that currently fail for LLVM.
-FAILINGTESTFILES_LLVM= \
-
-
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
 DEPENDENCIES = \
@@ -184,10 +171,8 @@ test:   test_llvm
 test_llvm:
 	@echo
 	@echo Running LLVM tests...
-	@echo
-	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
-	@echo Enabling JIT Testing...
-	@$(TEST) $(TESTFILESLLVM)
+	$(MAKE) -C llvm Makefile test
+
 #TODO this is work in progress
 test_llvm_all:
 	@echo

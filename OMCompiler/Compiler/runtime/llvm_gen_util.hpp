@@ -56,11 +56,9 @@ extern "C"
     Variable *rightVariable = program->currentFunc->symTab[rhs].get();
     Variable *destVariable = program->currentFunc->symTab[dest].get();
     DBG("Creating load instructions\n");
-
     l = leftVariable->getAllocaInst();
     r = rightVariable->getAllocaInst();
     d = destVariable->getAllocaInst();
-
     l = program->builder.CreateLoad(l, leftVariable->isVolatile(), lhs);
     r = program->builder.CreateLoad(r, rightVariable->isVolatile(), rhs);
   }
@@ -206,7 +204,7 @@ extern "C++"
     DBG("Creating external call for:%s of type:%d\n",name,functionTy);
     llvm::FunctionType *ft = llvm::FunctionType::get(getLLVMType(functionTy), args, isVariadic);
     if (!ft) {
-      fprintf(stderr,"Unknown function type. Generating external call declaration for:%s failed\n",name);
+      fprintf(stderr,"Unknown function type. Generating external call declaration for:%s failed\n", name);
       return nullptr;
     }
     llvm::Function *f { program->module->getFunction(name) };

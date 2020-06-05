@@ -1,7 +1,7 @@
 // name:     TupleInteractive
 // keywords: Tuple
 // status:   correct
-// cflags:   +g=MetaModelica -d=jit_eval_func
+// cflags:   +g=MetaModelica
 //
 // Tuple Testing
 //

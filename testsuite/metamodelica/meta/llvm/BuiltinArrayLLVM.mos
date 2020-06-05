@@ -6,7 +6,7 @@
 // Builtin function testing
 //
 
-loadFile("BuiltinArray.mo");
+loadFile("../BuiltinArray.mo");
 BuiltinArray.test(3,2,1);
 getErrorString();
 
