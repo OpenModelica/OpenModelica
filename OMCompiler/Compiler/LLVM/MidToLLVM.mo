@@ -40,7 +40,6 @@ encapsulated package MidToLLVM
 "
 public
 import EXT_LLVM;
-
 protected
 import Absyn;
 import AbsynUtil;
@@ -54,7 +53,6 @@ import ExecStat.{execStat,execStatReset};
 import Flags;
 import MidCode;
 import MidCodeUtil;
-import MidCodeDump;
 import MidToLLVMUtil;
 import SimCode;
 import SimCodeFunction;
@@ -75,6 +73,12 @@ constant Integer MODELICA_BOOLEAN_PTR = 22;
 constant Integer MODELICA_REAL_PTR = 33;
 constant Integer MODELICA_METATYPE_PTR = 44;
 constant Integer MODELICA_TUPLE_PTR = 55;
+//Other constants
+constant String THREAD_DATA = "threadData";
+constant String FINAL_VALUE_PTR = "finalValuePTR";
+
+type TypeIdentifierID = Integer;
+
 public
 function JIT
   input MidCode.Function functionToBeCalled;
@@ -84,7 +88,6 @@ function JIT
   constant String FUNCTION_NAME = "omc_" + textString(underscorePath(Tpl.MEM_TEXT({},{}),functionToBeCalled.name));
   constant String VAL_LST = "valLst";
   constant String TOP_LEVEL_EXPRESSION = "top_level_expression";
-  constant String THREAD_DATA = "threadData";
   Values.Value res "The resulting Values.Value";
   list<MidCode.Var> functionArgs "The actual function arguments deduced from functionArgsTS";
   list<String> valFuncArgs "Represents both Value.Values objects and typedescs";
@@ -142,10 +145,10 @@ algorithm
                      ,assignment=false
                      ,isVariadic=false);
   end if;
-  /*Convert the result of the call to mmc and then to Value.Values*/
+  /* Convert the result of the call to mmc (MetaModelica constants) and then to Value.Values */
   mmcVars := list(MidCode.VAR("mmc_" + v.name, v.ty, v.volatile) for v in functionToBeCalled.outputs);
-  List.map_0(List.map(mmcVars,genVarName),EXT_LLVM.genAllocaModelicaMetaTy);
-  genmkCalls(functionToBeCalled.outputs,mmcVars);
+  List.map_0(List.map(mmcVars, genVarName), EXT_LLVM.genAllocaModelicaMetaTy);
+  genmkCalls(functionToBeCalled.outputs, mmcVars);
   res := match mmcVars
     local
       MidCode.Var H;
@@ -154,19 +157,19 @@ algorithm
         EXT_LLVM.genReturnVoid();
         EXT_LLVM.finnishGen();
         runJit(AbsynUtil.pathString(functionToBeCalled.name),valLst);
-      then Values.Value.NORETCALL(); //Silly to generate a Values..NORETCALL in llvm to much fuzz..., I do it here.
+      then Values.Value.NORETCALL();
     case H :: {} //Functions returning a single value.
       algorithm
-        genmmcToValueCall(H,"finalValuePTR");
-        EXT_LLVM.genReturn(retVar="finalValuePTR");
+        genmmcToValueCall(H,FINAL_VALUE_PTR);
+        EXT_LLVM.genReturn(retVar=FINAL_VALUE_PTR);
         EXT_LLVM.finnishGen();
       then runJit(AbsynUtil.pathString(functionToBeCalled.name),valLst);
     case H :: _ //For functions returning tuples
       algorithm
         valuePTRVars := listReverse(MidCode.VAR("valuePTR"+v.name,v.ty,v.volatile) for v in mmcVars);
         genmmcToValueCalls(listReverse(mmcVars),valuePTRVars);
-        genmmcToValueTuple("finalValuePTR",valuePTRVars);
-        EXT_LLVM.genReturn(retVar="finalValuePTR");
+        genmmcToValueTuple(FINAL_VALUE_PTR,valuePTRVars);
+        EXT_LLVM.genReturn(retVar=FINAL_VALUE_PTR);
         EXT_LLVM.finnishGen();
         then runJit(AbsynUtil.pathString(functionToBeCalled.name),valLst);
     else algorithm Error.addInternalError("Error running Jit\n", sourceInfo()); then fail();
@@ -207,7 +210,8 @@ algorithm
     case DAE.T_STRING(__) then "read_modelica_metatype";
     case DAE.T_METALIST(__) then "read_modelica_metatype";
     case DAE.T_ENUMERATION(__) then fail();
-    case DAE.T_COMPLEX(__) then "read_modelica_complex";
+    //For some reason...
+    case DAE.T_COMPLEX(__) then "read_modelica_metatype";
     case DAE.T_METAUNIONTYPE(__) then "read_modelica_metatype";
     case DAE.T_METAARRAY(__) then "read_modelica_metatype";
     case DAE.T_METAOPTION(__) then "read_modelica_metatype";
@@ -299,7 +303,8 @@ algorithm
 end genRecordDeclDef;
 
 function genProgram
-  "Given a MidCodeProgram. Lower each function to a corresponding LLVM-IR function"
+  "Given a MidCodeProgram.
+   Lower each function to LLVM-IR function"
   input MidCode.Program p;
 algorithm
   try
@@ -322,7 +327,6 @@ function runJit
   input String name "Name of the function the top level expr is calling.";
   input list<Values.Value> valLst "Values passed to the top level function";
   output Values.Value newVal "The computed return value";
-  protected Integer I;
 algorithm
   if Flags.isSet(Flags.JIT_DUMP_IR) then
     print("Dumping LLVM-IR\n");
@@ -343,6 +347,7 @@ function genmkCalls
   input list<MidCode.Var> outputVars;
   input list<MidCode.Var> inputVars;
 algorithm
+  assert(listLength(outputVars) == listLength(inputVars) , "MidToLLVM.All input must be assigned output\n");
   if not listEmpty(outputVars) then
     genmkCall(listHead(outputVars),listHead(inputVars));
     genmkCalls(listRest(outputVars),listRest(inputVars));
@@ -378,34 +383,40 @@ algorithm
       algorithm
          EXT_LLVM.genCallArg(inputVar.name); EXT_LLVM.genCall(name="mmc_mk_rcon",functionTy=MODELICA_METATYPE,dest=genVarName(mmcVar),assignment=true,isVariadic=false);
        then ();
+    //Strings can just be passed further along
     case DAE.T_STRING(__)
       algorithm
         EXT_LLVM.genStoreVarInst(genVarName(inputVar),genVarName(mmcVar));
        then ();
-          /*TODO, add these if Martin deems it neccessary.. */
+
     case DAE.T_METALIST(__) algorithm EXT_LLVM.genStoreVarInst(genVarName(inputVar),genVarName(mmcVar)); then ();
     case DAE.T_ENUMERATION(__) then ();
     case DAE.T_COMPLEX(__) then ();
-    case DAE.T_METAUNIONTYPE(__) then();
+    case DAE.T_METAUNIONTYPE(__)
+    algorithm
+      EXT_LLVM.genStoreVarInst(genVarName(inputVar),genVarName(mmcVar));
+    then();
     case DAE.T_METAARRAY(__) algorithm EXT_LLVM.genStoreVarInst(genVarName(inputVar),genVarName(mmcVar)); then();
     case DAE.T_METAOPTION(__) then ();
-    case DAE.T_METATUPLE(__) then ();
+    case DAE.T_METATUPLE(__) algorithm EXT_LLVM.genStoreVarInst(genVarName(inputVar),genVarName(mmcVar)); then ();
     case DAE.T_ARRAY(__) algorithm
       //We do nothing. We should already have a modelica_array, However we need to keep chaining the calls. LLVM will remove this during opt.
-      EXT_LLVM.genStoreVarInst(genVarName(inputVar),genVarName(mmcVar));
+      EXT_LLVM.genStoreVarInst(genVarName(inputVar) ,genVarName(mmcVar));
     then();
     else algorithm print("UNKOWN TYPE IN GENMKCALLS" + anyString(inputVar.ty) + "\n"); then();
   end match;
 end genmkCall;
 
 function genmmcToValueCall
-  "This function is used for all functions called from the top level that returns one element."
+  "This function is used for all functions called from the top level that returns one element.
+   We add the variable to the call vector. We then proceed by allocating the result variable on the stack.
+  "
   input MidCode.Var var;
   input String resultVar;
 algorithm
   //Create the pointer variable we want to assign the result to.
-  EXT_LLVM.genAllocaModelicaMetaTy(resultVar);
   EXT_LLVM.genCallArg(genVarName(var));
+  EXT_LLVM.genAllocaModelicaMetaTy(resultVar);
   () := match var.ty
     case DAE.T_INTEGER(__)
       algorithm
@@ -425,7 +436,10 @@ algorithm
       then();
     case DAE.T_ENUMERATION(__) then ();
     case DAE.T_COMPLEX(__) then ();
-    case DAE.T_METAUNIONTYPE(__) then();
+    case DAE.T_METAUNIONTYPE(__)
+    algorithm
+      EXT_LLVM.genCall(name="mmc_utcon_to_value",functionTy=MODELICA_METATYPE,dest=resultVar,assignment=true,isVariadic=false);
+    then();
     case DAE.T_METALIST(__)
       algorithm
         EXT_LLVM.genCall(name="mmc_lcon_to_value_wrapper",functionTy=MODELICA_METATYPE,dest=resultVar,assignment=true,isVariadic=false);
@@ -439,7 +453,7 @@ algorithm
     case DAE.T_METAOPTION(__) then ();
     case DAE.T_METATUPLE(__)
       algorithm
-        EXT_LLVM.genCall(name="mmc_mtcon_to_value",functionTy=MODELICA_METATYPE,dest=resultVar,assignment=true,isVariadic=false);
+        EXT_LLVM.genCall(name="mmc_tcon_to_value",functionTy=MODELICA_METATYPE,dest=resultVar,assignment=true,isVariadic=false);
        then ();
     else algorithm print("Failed to elaborate" + anyString(var) + "in genmmcToValueCall\n"); then fail();
   end match;
@@ -518,7 +532,7 @@ protected
   Integer typeDescriptor;
 algorithm
   //TODO Thread_data_t is added separate at the moment. add a builtin bool here.
-  addThreadData_t(MODELICA_METATYPE,"threadData");
+  addThreadData_t(MODELICA_METATYPE, THREAD_DATA);
   for inp in inputs loop
     typeDescriptor := getTypeIdentifierForVar(inp);
     /* If the function takes a tuple we pass a pointer */
@@ -780,7 +794,7 @@ function genCall
   "Generates an llvm, call instruction, observe that a call is a terminator in MidCode, but not
    a terminator in LLVM IR. The arguments for this functions must have been created before this function is called."
   input MidCode.Terminator term "The call expression, a terminator in MidCode not a terminator in LLVM!";
-  input Integer functionTy;
+  input Integer functionTy "The type of the function";
 protected
   String dest "The destination variable, it get's assigned IFF there is an assignment call.";
   String functionName "The name of the function to be called";
@@ -793,12 +807,12 @@ algorithm
     case MidCode.CALL(func=pPath,builtin=false,inputs=_,outputs=_,next=_,ty=_)
       algorithm
           functionName := "omc_" + textString(underscorePath(Tpl.MEM_TEXT({},{}),pPath));
-          EXT_LLVM.genAllocaModelicaMetaTy("threadData");
-          EXT_LLVM.genCallArg("threadData");
+          EXT_LLVM.genAllocaModelicaMetaTy(THREAD_DATA);
+          EXT_LLVM.genCallArg(THREAD_DATA);
         then();
      case MidCode.CALL(func=pPath,builtin=true,inputs=_,outputs=_,next=_,ty=_)
        algorithm
-         functionName := identBuiltinCall(pPath);
+         functionName := identBuiltinCall(pPath, functionTy);
        then();
   end match;
   () := match term
@@ -860,27 +874,27 @@ function genLLVMInst
   input MidCode.Var dest;
   input MidCode.RValue rValue;
 algorithm
-//print("LLVM INST:" + anyString(dest.ty) + "&:" + anyString(rValue) + "\n");
   () := match (dest,rValue)
     local
-    String psrc_name;
-    Boolean pBoolean;
-    DAE.Type ty;
-    Integer index;
-    Integer pInteger;
-    MidCode.BinaryOp pbinop;
-    MidCode.UnaryOp pUnop;
-    MidCode.Var pVarSrc;
-    MidCode.Var plsrc;
-    MidCode.Var prsrc;
-    MidCode.Var src;
-    Real pReal;
-    String lsrc_name;
-    String pString;
-    String rsrc_name;
-    String stringValue;
-    list<MidCode.Var> elements;
-  case (_,MidCode.DEREFERENCE(src=pVarSrc,ty=ty)) //Expand to function when more types are supported.
+      Boolean pBoolean;
+      DAE.Type ty;
+      Integer index;
+      Integer pInteger;
+      MidCode.BinaryOp pbinop;
+      MidCode.UnaryOp pUnop;
+      MidCode.Var pVarSrc;
+      MidCode.Var plsrc;
+      MidCode.Var prsrc;
+      MidCode.Var src;
+      Real pReal;
+      String lsrc_name;
+      String pString;
+      String psrc_name;
+      String rsrc_name;
+      String stringValue;
+      list<MidCode.Var> elements;
+  //Expand to function when more types are supported.
+  case (_,MidCode.DEREFERENCE(src=pVarSrc,ty=ty))
     algorithm
       EXT_LLVM.getDoubleFromPtr(genVarName(pVarSrc),genVarName(dest),0);
     then();
@@ -1041,7 +1055,7 @@ algorithm
         EXT_LLVM.genCallArg(genVarName(dest));
         EXT_LLVM.genCallArgConstInt(ix);
         EXT_LLVM.genCallArg(e);
-        EXT_LLVM.genCall(name="arrayUpdate",functionTy=MODELICA_METATYPE,dest=genVarName(dest),assignment=true,isVariadic=false);
+        EXT_LLVM.genCall(name="arrayUpdate",functionTy=MODELICA_METATYPE,dest=genVarName(dest),assignment=true);
         ix := ix + 1;
       end for;
       then ();
@@ -1179,13 +1193,13 @@ algorithm
       algorithm
        EXT_LLVM.genCallArg(genVarName(lsrc));
        EXT_LLVM.genCallArg(genVarName(rsrc));
-       EXT_LLVM.genCall(name="stringAppend",functionTy=MODELICA_METATYPE,dest=dest_name,assignment=true,isVariadic=false);
+       EXT_LLVM.genCall(name="stringAppend", functionTy=MODELICA_METATYPE, dest=dest_name, assignment=true);
     then();
     case MidCode.EQUAL()
       algorithm
        EXT_LLVM.genCallArg(genVarName(lsrc));
        EXT_LLVM.genCallArg(genVarName(rsrc));
-       EXT_LLVM.genCall(name="stringEqual",functionTy=MODELICA_BOOLEAN,dest=dest_name,assignment=true,isVariadic=false);
+       EXT_LLVM.genCall(name="stringEqual", functionTy=MODELICA_BOOLEAN, dest=dest_name, assignment=true);
       then();
     else algorithm Error.addInternalError("Unsupported string operation\n",sourceInfo()); then();
   end match;
@@ -1317,22 +1331,76 @@ function genVarName
   end match;
 end genVarName;
 
+constant list<String> BUILT_IN_OPERATORS = {"max", "min", "mod"};
+constant list<String> INT_FUNCTIONS = {"iMax", "iMin", "iMod"};
+constant list<String> REAL_FUNCTIONS = {"fmax", "fmin", "fmod"};
+
 function identBuiltinCall
+  "Returns the identifier for a builtin call.
+   Note that some calls need threaddata and others do not
+   This function also specialises call for certain builtin functions such as min.
+   Inlining of this functions are done at a later stage by LLVM.
+  "
   input Absyn.Path path;
+  input Integer functionType;
   output String name;
+protected
+  String pathAsString;
 algorithm
-  name := match path
+  Absyn.IDENT(name=pathAsString) := path;
+  if listMember(pathAsString, BUILT_IN_OPERATORS) then
+    name := match functionType
+      case MODELICA_INTEGER
+        then listGet(INT_FUNCTIONS, List.position(pathAsString, BUILT_IN_OPERATORS));
+      case MODELICA_REAL
+        then listGet(REAL_FUNCTIONS, List.position(pathAsString, BUILT_IN_OPERATORS));
+    end match;
+    return;
+  end if;
+/* Other builtin functions that are not operators. */
+  name := match (path, functionType)
     local Absyn.Path Ppath;
-    case Absyn.IDENT(name="clock") then "mmc_clock";
-    case Absyn.IDENT(name="anyString") then "mmc_anyString";
-    case Absyn.IDENT(name="fail") then "MMC_THROW_INTERNAL";
-    case Absyn.IDENT(name="intMod") then "modelica_mod_integer";
-    case Ppath as Absyn.IDENT(__) then Ppath.name;
-    else  algorithm Error.addInternalError("Called unsupported builtin function\n",sourceInfo()); then fail();
+    case (Absyn.IDENT(name="clock"), _) then "mmc_clock";
+    case (Absyn.IDENT(name="anyString"),_) then "mmc_anyString";
+    case (Absyn.IDENT(name="fail"), _)then "MMC_THROW_INTERNAL";
+    case (Absyn.IDENT(name="listGet"), _)
+    algorithm
+      EXT_LLVM.genCallArg(THREAD_DATA);
+      then "boxptr_listGet";
+    case (Absyn.IDENT(name="stringCharInt"), _)
+    algorithm
+      EXT_LLVM.genCallArg(THREAD_DATA);
+      then "nobox_stringCharInt";
+    case (Absyn.IDENT(name="stringUpdateStringChar"), _)
+    algorithm
+      EXT_LLVM.genCallArg(THREAD_DATA);
+      then "stringUpdateStringChar_jit";
+    case (Absyn.IDENT(name="intStringChar"), _)
+    algorithm
+      EXT_LLVM.genCallArg(THREAD_DATA);
+      then "nobox_intStringChar";
+    case (Absyn.IDENT(name="stringGet"), _)
+    algorithm
+      EXT_LLVM.genCallArg(THREAD_DATA);
+      then "nobox_stringGetStringChar";
+    case (Absyn.IDENT(name="stringGetStringChar"), _)
+    algorithm
+      EXT_LLVM.genCallArg(THREAD_DATA);
+      then "stringGetStringChar_jit";
+    case (Absyn.IDENT(name="stringInt"), _)
+    algorithm
+      EXT_LLVM.genCallArg(THREAD_DATA);
+      then "nobox_stringInt";
+    case (Absyn.IDENT(name="stringReal"), _)
+    algorithm
+      EXT_LLVM.genCallArg(THREAD_DATA);
+      then "nobox_stringReal";
+    case (Absyn.IDENT(name="stringLength"), _) then "stringLength_jit";
+    case (Ppath as Absyn.IDENT(__), _) then Ppath.name;
+    else  algorithm Error.addInternalError("Called unsupported builtin function\n", sourceInfo()); then fail();
   end match;
 end identBuiltinCall;
 
-//Translated from Patrick & Simon.
 function genTypeCtorIndex
   "Generate the c-tag that indicates which record of a uniontype we have."
   input list<MidCode.Var> elements;
@@ -1405,7 +1473,7 @@ function unboxAndAssign
   input Integer functionTy;
 algorithm
   EXT_LLVM.genCallArg(genVarName(boxedVar));
-  EXT_LLVM.genCall(functionName,functionTy,dest=genVarName(unboxedVar),assignment=true,isVariadic=false);
+  EXT_LLVM.genCall(functionName,functionTy,dest=genVarName(unboxedVar),assignment=true);
 end unboxAndAssign;
 
 annotation(__OpenModelica_Interface="backendInterface");

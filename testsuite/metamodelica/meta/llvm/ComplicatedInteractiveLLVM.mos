@@ -4,7 +4,7 @@
 // cflags:   +g=MetaModelica -d=jit_eval_func
 //
 // Testing nested complex datatypes, like tuple, list, option...
-loadFile("ComplicatedInteractive.mo");
+loadFile("../ComplicatedInteractive.mo");
 res := ComplicatedInteractive.RecordWithComplicatedTypes((1.0, {}));
 res := ComplicatedInteractive.RecordWithComplicatedTypes((1.0, {(1.0, SOME({}))}));
 res := ComplicatedInteractive.RecordWithComplicatedTypes((1.0, {(1.0, NONE()), (1.0, SOME({1,2,3}))}));

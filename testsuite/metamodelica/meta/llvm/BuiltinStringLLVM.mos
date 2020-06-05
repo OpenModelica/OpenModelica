@@ -5,7 +5,7 @@
 //
 // Builtin function testing
 //
-loadFile("BuiltinString.mo");
+loadFile("../BuiltinString.mo");
 
 BuiltinString.func("123","456","x",5);
 getErrorString();

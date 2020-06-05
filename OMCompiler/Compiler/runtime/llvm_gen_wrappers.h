@@ -36,6 +36,7 @@
 #include "ModelicaUtilities.h"
 #include "openmodelica.h"
 #include "meta_modelica.h"
+#include "meta_modelica_data.h"
 #define ADD_METARECORD_DEFINITIONS static
 #define UNBOX_OFFSET 1
 #include "OpenModelicaBootstrappingHeader.h"

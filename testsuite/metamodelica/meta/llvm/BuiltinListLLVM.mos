@@ -5,7 +5,7 @@
 //
 // Builtin function testing
 //
-loadFile("BuiltinList.mo");
+loadFile("../BuiltinList.mo");
 
 listAppend({1,2,3},{4.0,5,6});
 getErrorString();

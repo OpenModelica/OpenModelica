@@ -2536,6 +2536,7 @@ algorithm
         /* Start measuring JIT compile time. */
         execStatReset();
         p := SymbolTable.getAbsyn();
+//        p := loadFile("../FrontEnd/MetaModelicaBuiltin.mo", "utf-8", p, false);
         name := generateFunctionName(funcpath);
         (cache, daeMainFunction, daeElements, metarecordTypes) := collectDependencies(cache, env, funcpath);
         /* Translate DAE to SimCode */

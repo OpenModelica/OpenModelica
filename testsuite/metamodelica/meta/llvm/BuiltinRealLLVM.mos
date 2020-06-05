@@ -5,7 +5,7 @@
 //
 // Builtin function testing
 //
-loadFile("BuiltinReal.mo");
+loadFile("../BuiltinReal.mo");
 
 BuiltinReal.funcRealRealToReal(1.5,2.5);getErrorString();
 

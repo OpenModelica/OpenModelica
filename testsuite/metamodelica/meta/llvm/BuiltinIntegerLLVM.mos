@@ -5,10 +5,9 @@
 //
 // Builtin function testing
 //
-loadFile("BuiltinInteger.mo");
+loadFile("../BuiltinInteger.mo");
 
 BuiltinInteger.funcIntIntToInt(-17,3);getErrorString();
-
 BuiltinInteger.funcIntegerRelations( 1, 1);getErrorString();
 BuiltinInteger.funcIntegerRelations(-1, 1);getErrorString();
 BuiltinInteger.funcIntegerRelations( 1,-1);getErrorString();
