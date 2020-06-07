@@ -1,8 +1,9 @@
-TEST = ../../../rtest -v
+ROOT_DIR = $(realpath ..)
+TEST = ../../../rtest -v +d=jit_eval_func
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
-FAILINGTESTFILES=
+FAILINGTESTFILES =
 
 # Tests for LLVM
 TESTFILES = \
@@ -14,6 +15,16 @@ BuiltinStringLLVM.mos\
 ComplicatedInteractiveLLVM.mos\
 ListInteractiveLLVM.mos \
 TupleInteractiveLLVM.mos
+
+TESTFILES_META = \
+$(ROOT_DIR)/Uniontype7.mos \
+$(ROOT_DIR)/Uniontype8.mos \
+$(ROOT_DIR)/Uniontype9.mos \
+$(ROOT_DIR)/Uniontype10.mos \
+$(ROOT_DIR)/Uniontype11.mos \
+$(ROOT_DIR)/Uniontype12.mos \
+$(ROOT_DIR)/Uniontype14.mos \
+$(ROOT_DIR)/Uniontype15.mos
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
@@ -29,9 +40,10 @@ CLEAN = `ls | grep -w -v -f deps.tmp`
 .PHONY : test clean getdeps failingtest
 
 test:
-	@echo
-	@echo Running LLVM tests...
-	@echo
+	@echo test
+	@echo Running standard tests
+	@$(TEST) $(TESTFILES_META)
+	@echo Running LLVM Specific tests...
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(TEST) $(TESTFILES)
 
