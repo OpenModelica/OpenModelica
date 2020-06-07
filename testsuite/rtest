@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 use Cwd;
 use File::Temp qw/ tempfile /;
+use File::Basename;
 
 my $OPENMODELICAHOME = "";
 
@@ -220,8 +221,8 @@ sub runone
     my $stack_size = $info{"stack_size"};
     my $ulimit = ulimit_cmd($stack_size);
     my $start_t = time;
-
-    $log = "$tmpdir/log-$f";
+    $concrete_f = basename($f);
+    $log = "$tmpdir/log-$concrete_f";
     system "rm -f $log";
     if ($setup_command) {
       if ( system "$setup_command >>$log 2>&1" ) {
@@ -329,7 +330,8 @@ sub dofile
         "env" => "",
         "teardown_command" => "",
         "stack_size" => "");
-    $log = "$tmpdir/log-$f";
+    $concrete_f = basename($f);
+    $log = "$tmpdir/log-$concrete_f";
     $tc_err = 1;
     # Find the expected result
     open(OUT,">$expected");
