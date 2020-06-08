@@ -623,27 +623,7 @@ template recordModelicaCallConstrctor(String rec_name, list<Variable> variables)
   }
   */
   >>
-end recordCopyFromVarsDef;
-
-template recordCopyToVarsDef(String rec_name, list<Variable> variables)
- "Generates structs for a record declaration."
-::=
-  let &varCopies = buffer ""
-  let &auxFunction = buffer ""
-  let dst_pref = ' *in'
-  let src_pref = 'src->'
-  let _ = (variables |> var => recordMemberCopy(var, src_pref, dst_pref, &varCopies, &auxFunction) ;separator="\n")
-  let inputs = (variables |> var as VARIABLE(__) =>
-                            (", " + varType(var) + " " + dst_pref + contextCrefNoPrevExp(var.name, contextFunction, &auxFunction))
-                )
-
-  <<
-  void <%rec_name%>_copy_to_vars_p(void* v_src <%inputs%>) {
-    <%rec_name%>* src = (<%rec_name%>*)(v_src);
-    <%varCopies%>
-  }
-  >>
-end recordCopyToVarsDef;
+end recordModelicaCallConstrctor;
 
 template recordMemberCopy(Variable var, String src_pref, String dst_pref, Text &varCopies, Text &auxFunction)
   "Generates code for copying memembers of a record during a record copy operation.
