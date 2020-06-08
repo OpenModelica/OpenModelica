@@ -995,7 +995,7 @@ algorithm
     guard(unitString <> "")
     equation
       cr = BackendVariable.varCref(var);
-      (ut, HtS2U, HtU2S) = parse(unitString, cr, HtS2U, HtU2S);
+      (ut, HtS2U, HtU2S) = parse(unitString, cr, var.source.info, HtS2U, HtU2S);
       HtCr2U = BaseHashTable.add((cr,ut),HtCr2U);
   then ((HtCr2U, HtS2U, HtU2S));
 
@@ -1016,6 +1016,7 @@ end convertUnitString2unit;
 protected function parse "author: lochel"
   input String inUnitString;
   input DAE.ComponentRef inCref;
+  input SourceInfo info;
   input HashTableStringToUnit.HashTable inHtS2U;
   input HashTableUnitToString.HashTable inHtU2S;
   output Unit.Unit outUnit;
@@ -1030,7 +1031,7 @@ algorithm
       then Unit.MASTER({inCref});
 
       case _
-      then Unit.parseUnitString(inUnitString, inHtS2U);
+      then Unit.parseUnitString(inUnitString, info, inHtS2U);
 
       else Unit.UNKNOWN(inUnitString);
     end matchcontinue;

@@ -563,6 +563,7 @@ end prefix2String;
 public function parseUnitString "author: lochel
   The second argument is optional."
   input String inUnitString;
+  input SourceInfo info;
   input HashTableStringToUnit.HashTable inKnownUnits = getKnownUnits();
   output Unit outUnit;
 protected
@@ -573,7 +574,7 @@ algorithm
   if listEmpty(charList) then
     fail();
   end if;
-  tokenList := lexer(charList);
+  tokenList := lexer(charList, info);
   outUnit := parser3({true, true}, tokenList, UNIT(1e0, 0, 0, 0, 0, 0, 0, 0), inKnownUnits);
   if not isUnit(outUnit) then
     fail();
@@ -809,6 +810,7 @@ end getPrefix;
 protected function lexer "author: lochel
   Tokenizer: charList to tokenList"
   input list<String> inCharList;
+  input SourceInfo info;
   output list<Token> outTokenList;
 algorithm
   outTokenList := matchcontinue(inCharList)
@@ -822,50 +824,50 @@ algorithm
     case {} then {};
 
     case "."::charList equation
-      tokenList = lexer(charList);
+      tokenList = lexer(charList, info);
     then T_MUL()::tokenList;
 
     case "("::charList equation
-      tokenList = lexer(charList);
+      tokenList = lexer(charList, info);
     then T_LPAREN()::tokenList;
 
     case ")"::charList equation
-      tokenList = lexer(charList);
+      tokenList = lexer(charList, info);
     then T_RPAREN()::tokenList;
 
     case "/"::charList equation
-      tokenList = lexer(charList);
+      tokenList = lexer(charList, info);
     then T_DIV()::tokenList;
 
     case "+"::charList equation
       (charList, number) = popNumber(charList);
       false = (number == "");
-      tokenList = lexer(charList);
+      tokenList = lexer(charList, info);
       i = stringInt(number);
     then T_NUMBER(i)::tokenList;
 
     case "-"::charList equation
       (charList, number) = popNumber(charList);
       false = (number == "");
-      tokenList = lexer(charList);
+      tokenList = lexer(charList, info);
       i = -stringInt(number);
     then T_NUMBER(i)::tokenList;
 
     case charList equation
       (charList, number) = popNumber(charList);
       false = (number == "");
-      tokenList = lexer(charList);
+      tokenList = lexer(charList, info);
       i = stringInt(number);
     then T_NUMBER(i)::tokenList;
 
     case charList equation
       (charList, unit) = popUnit(charList);
       false = (unit == "");
-      tokenList = lexer(charList);
+      tokenList = lexer(charList, info);
     then T_UNIT(unit)::tokenList;
 
     else equation
-      Error.addInternalError("function lexer failed", sourceInfo());
+      Error.addInternalError("function lexer failed: " + stringDelimitList(list("'" + c + "'" for c in inCharList), " "), info);
     then fail();
   end matchcontinue;
 end lexer;
