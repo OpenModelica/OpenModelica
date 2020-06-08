@@ -8184,7 +8184,7 @@ algorithm
     deriv.comment := "der(" + deriv.comment + ")";
   end if;
   try
-    unit := Unit.parseUnitString(deriv.unit);
+    unit := Unit.parseUnitString(deriv.unit, state.source.info);
     unit := Unit.unitDiv(unit, Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0));
     deriv.unit := Unit.unitString(unit);
   else
@@ -9137,7 +9137,7 @@ algorithm
       if not stringEq(var.unit, "") and not BaseHashSet.has(var.unit, unitNameKeys) then
         unitNameKeys := BaseHashSet.add(var.unit, unitNameKeys);
         try
-          unit := Unit.parseUnitString(var.unit); // get the SI- units information
+          unit := Unit.parseUnitString(var.unit, var.source.info); // get the SI- units information
           unitDefinitions := SimCode.UNITDEFINITION(var.unit, transformUnitToBaseUnit(unit)) :: unitDefinitions;
         else
           // catch the units which are not calculated
