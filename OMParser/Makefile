@@ -10,9 +10,8 @@ else
 CMAKE_TARGET = "Unix Makefiles"
 endif
 
-CFLAGS=-O3
-CXXFLAGS=$(CFLAGS) -Iinstall/include/antlr4-runtime -std=c++11 -DANTLR4CPP_STATIC
-LDFLAGS=-Linstall/lib -Bstatic -lantlr4-runtime -lstdc++ -Bdynamic -static-libgcc
+override CXXFLAGS += -Iinstall/include/antlr4-runtime -std=c++11 -DANTLR4CPP_STATIC
+override LDFLAGS +=-Linstall/lib -Bstatic -lantlr4-runtime -lstdc++ -Bdynamic -static-libgcc
 
 CPP_FILES=modelicaBaseListener.cpp  modelicaBaseVisitor.cpp  modelicaLexer.cpp  modelicaListener.cpp  modelicaParser.cpp  modelicaVisitor.cpp
 H_FILES=$(patsubst %.cpp,%.h,$(CPP_FILES))
@@ -22,8 +21,8 @@ all: libomcparserantlr4.a
 
 libomcparserantlr4.a: $(OBJS)
 	$(AR) -s -r $@ $(OBJS)
-	cp -puR $@ $(OMBUILDDIR)/lib/$(host_short)/omc/
-	cp -pur install/include/antlr4-runtime $(OMBUILDDIR)/include/$(host_short)/omc/
+	cp -pR $@ $(OMBUILDDIR)/lib/$(host_short)/omc/
+	cp -pR install/include/antlr4-runtime $(OMBUILDDIR)/include/$(host_short)/omc/
 
 $(OBJS): $(CPP_FILES) install/lib/libantlr4-runtime.a
 

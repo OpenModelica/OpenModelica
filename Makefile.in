@@ -25,7 +25,7 @@ omedit-testsuite.skip: omedit.skip
 	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit/Testsuite
 omparser: omparser.skip
 omparser.skip:
-	$(MAKE) -C OMParser OMBUILDDIR=@OMBUILDDIR@ "host_short=@host_short@"
+	test -f $@ || $(MAKE) -C OMParser OMBUILDDIR=@OMBUILDDIR@ "host_short=@host_short@" CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@"
 omsimulator: omsimulator.skip
 omsimulator.skip:
 	$(MAKE) -C OMSimulator config-3rdParty CERES=OFF "host_short=@host_short@" CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@"

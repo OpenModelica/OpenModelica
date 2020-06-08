@@ -54,7 +54,15 @@ evil_hack_to_fool_lupdate {
 
 # Windows libraries and includes
 win32 {
+
+CONFIG(release, debug|release) { # release
+  # required for backtrace
+  # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
+  # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
+  # -s will remove all symbol table and relocation information from the executable.
   QMAKE_CXXFLAGS += -g -DUA_DYNAMIC_LINKING
+  QMAKE_LFLAGS_RELEASE =
+}
 
   OPENMODELICAHOME = $$(OMBUILDDIR)
   host_short =

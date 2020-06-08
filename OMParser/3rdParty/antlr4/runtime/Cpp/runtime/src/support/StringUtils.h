@@ -9,6 +9,13 @@
 
 namespace antlrcpp {
 
+// oh the horor!
+#if defined(__APPLE__) && defined(__clang__)
+#if !__has_feature(cxx_thread_local)
+#define thread_local /* no support */
+#endif
+#endif
+
   // For all conversions utf8 <-> utf32.
   // VS 2015 and VS 2017 have different bugs in std::codecvt_utf8<char32_t> (VS 2013 works fine).
 #if defined(_MSC_VER) && _MSC_VER >= 1900 && _MSC_VER < 2000
