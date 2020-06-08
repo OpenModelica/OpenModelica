@@ -24,7 +24,12 @@ $(ROOT_DIR)/Uniontype10.mos \
 $(ROOT_DIR)/Uniontype11.mos \
 $(ROOT_DIR)/Uniontype12.mos \
 $(ROOT_DIR)/Uniontype14.mos \
-$(ROOT_DIR)/Uniontype15.mos
+$(ROOT_DIR)/Uniontype15.mos \
+$(ROOT_DIR)/SwitchString.mos \
+$(ROOT_DIR)/Recursive.mos \
+$(ROOT_DIR)/BuiltinMisc.mos \
+$(ROOT_DIR)/ThreadedReduction.mos \
+$(ROOT_DIR)/PackageConst1.mos
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
@@ -41,7 +46,7 @@ CLEAN = `ls | grep -w -v -f deps.tmp`
 
 test:
 	@echo test
-	@echo Running standard tests
+	@echo Running a set of standard tests with LLVM
 	@$(TEST) $(TESTFILES_META)
 	@echo Running LLVM Specific tests...
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
