@@ -3137,12 +3137,12 @@ algorithm
     then BackendVariable.setVarStartValueOption(v, start);
 
     case (_, true, (_, values), BackendDAE.SHARED(globalKnownVars=globalKnownVars)) algorithm
-      v := BackendVariable.setVarFixed(inVar, true);
-      // get all nonzero values
-      zerofreevalues := List.fold(values, getZeroFreeValues, {});
       if not Flags.isSet(Flags.ALIAS_CONFLICTS) then
         Error.addMessage(Error.CONFLICTING_ALIAS_SET, {});
       else
+        v := BackendVariable.setVarFixed(inVar, true);
+        // get all nonzero values
+        zerofreevalues := List.fold(values, getZeroFreeValues, {});
         str := "Conflicting start values for fixed states:\n";
         for value in zerofreevalues loop
           (startExp, cr) := value;
@@ -3152,9 +3152,10 @@ algorithm
           end if;
           str := str + " * Candidate: " + ComponentReference.printComponentRefStr(cr) + "(start = " + ExpressionDump.printExpStr(startExp) + ", confidence number = " + intString(i) + ")\n";
         end for;
+        Error.addCompilerError(str);
       end if;
-      Error.addCompilerError(str);
-    then fail(); //selectFreeValue1(zerofreevalues, {}, "Fixed Alias set with conflicting start values\n", "start", BackendVariable.setVarStartValue, v, globalKnownVars);
+    then
+      fail(); //selectFreeValue1(zerofreevalues, {}, "Fixed Alias set with conflicting start values\n", "start", BackendVariable.setVarStartValue, v, globalKnownVars);
 
     // fixed false only one start value -> nothing changed
     case (_, false, (_, {(start, _)}), _)
