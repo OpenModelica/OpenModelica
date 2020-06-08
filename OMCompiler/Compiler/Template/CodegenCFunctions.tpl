@@ -424,10 +424,9 @@ template recordDeclaration(RecordDeclaration recDecl)
                       listLength(variables))%>
 
     <%recordConstructorDef(r.name, r.name, r.variables)%>
-    <%recordCopyFromVarsDef(r.name, r.variables)%>
+    <%recordModelicaCallConstrctor(r.name, r.variables)%>
 
     <%recordCopyDef(r.name, r.variables)%>
-    <%recordCopyToVarsDef(r.name, r.variables)%>
     >>
   case r as RECORD_DECL_ADD_CONSTRCTOR(__) then
     <<
@@ -453,7 +452,27 @@ template recordDeclarationHeader(RecordDeclaration recDecl)
 end recordDeclarationHeader;
 
 template recordDeclarationExtraCtor(RecordDeclaration recDecl)
- "Generates structs for a record declaration."
+ "Generates structs for a extra record declaration. An extra
+  record declration is a constrctor with some of its elements provided
+  from outside. Modelica puts a lot of freedom on record creation. You can
+  generaly provide none, some or all elements to create a record without
+  providing a single constructor. Which means a record with N elements
+  can have 2^N possible constructions.
+  e.g.,
+  record R
+    Real a=1,b=1,c=1;
+  end R;
+  R r1(a=2);
+  R r2(a=3,c=4);
+  ....
+
+  These will be created by additional constructors:
+  R_1_construct(r1,2);
+  R_1_3_construct(r2,3,4);
+  ...
+
+  Do not worry, these are created once for every use case and ONLY if they
+  are actually used by something."
 ::=
   match recDecl
   case r as RECORD_DECL_ADD_CONSTRCTOR(__) then
@@ -477,7 +496,11 @@ template recordDeclarationExtraCtor(RecordDeclaration recDecl)
 end recordDeclarationExtraCtor;
 
 template recordDeclarationFullHeader(RecordDeclaration recDecl)
- "Generates structs for a record declaration."
+ "Generates structs for a record declaration. This will generate
+  a default record construtor function (no argumens) and a record copy function.
+  These generated functions are fully recursive. That means records in records
+  will be handled properly.
+  It will also generate (#define) array versions of these functions."
 ::=
   match recDecl
   case r as RECORD_DECL_FULL(__) then
@@ -517,13 +540,16 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
       void <%cpy_func_name%>(void* v_src, void* v_dst);
       #define <%cpy_macro_name%>(src,dst) <%cpy_func_name%>(&src, &dst)
 
+      // This function should eventualy replace the default 'modelica' record constructor funcition
+      // that omc used to generate, i.e., replace functionBodyRecordConstructor template.
       // <%rec_name%> <%modelica_ctor_name%>(threadData_t *threadData <%modelica_ctor_inputs%>);
 
-      /* This function is used to copy a records members to simvars. Since simvars
-        have no structure yet we can not directly copy records. Insted we pass the
-        corresponding simvars to this function and then copy each element one by one.*/
-      void <%copy_to_vars_name_p%>(void* v_src <%copy_to_vars_inputs%>);
-      #define <%copy_to_vars_name%>(src,...) <%copy_to_vars_name_p%>(&src, __VA_ARGS__)
+      // This function is not needed anymore. If you want to know how a record
+      // is 'assigned to' in simulation context see assignRhsExpToRecordCrefSimContext and
+      // splitRecordAssignmentToMemberAssignments (simCode). Basically the record is
+      // split up assignments generated for each memeber individualy.
+      // void <%copy_to_vars_name_p%>(void* v_src <%copy_to_vars_inputs%>);
+      // #define <%copy_to_vars_name%>(src,...) <%copy_to_vars_name_p%>(&src, __VA_ARGS__)
 
       typedef base_array_t <%rec_name%>_array;
       #define alloc_<%rec_name%>_array(dst,ndims,...) generic_array_create(NULL, dst, <%ctor_func_name%>, ndims, sizeof(<%rec_name%>), __VA_ARGS__)
@@ -537,7 +563,8 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
 end recordDeclarationFullHeader;
 
 template recordCopyDef(String rec_name, list<Variable> variables)
- "Generates structs for a record declaration."
+ "Generates code for copying one instance of a record to another
+  instance of the same record type."
 ::=
   let &varCopies = buffer ""
   let &auxFunction = buffer ""
@@ -553,8 +580,26 @@ template recordCopyDef(String rec_name, list<Variable> variables)
   >>
 end recordCopyDef;
 
-template recordCopyFromVarsDef(String rec_name, list<Variable> variables)
- "Generates structs for a record declaration."
+template recordModelicaCallConstrctor(String rec_name, list<Variable> variables)
+ "Generates code for creating and initializing a record given values for
+  ALL its memebers. This is basically what we used to generate before. However
+  that one did not handle arrays and record record memebers properly. This
+  should replace that function. For now it is commented until I have time to
+  clean out uses of the other one and replace it with this.
+
+  Note that this is defferent from the constructors we have. This is the function
+  to be used when you do R(...). not for cases where you have
+
+  R r1; (uses default constructor, i e., recordDeclarationFullHeader and recordConstructorDef)
+  R r2(a=2); (uses extra constructor, i e., recordDeclarationExtraCtor and  recordConstructorDef)
+  ...
+
+  But for cases like these.
+  a := R() (should use this function)
+
+  The difference is this function creates and returns a NEW record instance. The others
+  accept an instance and initialize it (including any allocations needed by the MEMBERS).
+  "
 ::=
   let &varCopies = buffer ""
   let &auxFunction = buffer ""
@@ -565,6 +610,8 @@ template recordCopyFromVarsDef(String rec_name, list<Variable> variables)
                             (", " + varType(var) + " " + src_pref + contextCrefNoPrevExp(var.name, contextFunction, &auxFunction))
                 )
   <<
+  // This function should eventualy replace the default 'modelica' record constructor funcition
+  // that omc used to generate, i.e., replace functionBodyRecordConstructor template.
   /*
   <%rec_name%> omc_<%rec_name%>(threadData_t *threadData <%inputs%>) {
     <%rec_name%> dst;
@@ -576,29 +623,13 @@ template recordCopyFromVarsDef(String rec_name, list<Variable> variables)
   }
   */
   >>
-end recordCopyFromVarsDef;
-
-template recordCopyToVarsDef(String rec_name, list<Variable> variables)
- "Generates structs for a record declaration."
-::=
-  let &varCopies = buffer ""
-  let &auxFunction = buffer ""
-  let dst_pref = ' *in'
-  let src_pref = 'src->'
-  let _ = (variables |> var => recordMemberCopy(var, src_pref, dst_pref, &varCopies, &auxFunction) ;separator="\n")
-  let inputs = (variables |> var as VARIABLE(__) =>
-                            (", " + varType(var) + " " + dst_pref + contextCrefNoPrevExp(var.name, contextFunction, &auxFunction))
-                )
-
-  <<
-  void <%rec_name%>_copy_to_vars_p(void* v_src <%inputs%>) {
-    <%rec_name%>* src = (<%rec_name%>*)(v_src);
-    <%varCopies%>
-  }
-  >>
-end recordCopyToVarsDef;
+end recordModelicaCallConstrctor;
 
 template recordMemberCopy(Variable var, String src_pref, String dst_pref, Text &varCopies, Text &auxFunction)
+  "Generates code for copying memembers of a record during a record copy operation.
+   This function is needed because we need to have a 'localized' operation. Localized as
+   in references in these copy operations need to be resolved to other mememers of the
+   record. So we use prefixes (e.g. src->) to generate crefs in these operations."
 ::=
 match var
 case var as VARIABLE(__) then
@@ -622,7 +653,12 @@ case var as VARIABLE(__) then
 end recordMemberCopy;
 
 template recordConstructorDef(String ctor_name, String rec_name, list<Variable> variables)
- "Generates structs for a record declaration."
+ "Generates code for constructing a record. This means allocating memory for all
+  memebers of the record and then initializing them with their default values. Sometimes
+  we can have modelica derived records (e.g. record A = B(c=exp)), this will be a new
+  record type whcih needs an exp to be passed to to be initialized correctly. This is
+  also handled by these function. Check markDerivedRecordOutsideBindings and makeTypeRecordVar
+  in the OF and NF respectively."
 ::=
   let &varDecls = buffer ""
   let &auxFunction = buffer ""
@@ -752,6 +788,9 @@ template arrayVarAllocInit(ComponentRef var_cref, Type var_type, list<DAE.Dimens
         >>
 
     case NONE() then
+      // If an array variable has unknown dimensions but does not have a default value (declaration binding)
+      // then the variable is flexible. That means it can actually change its dimensions whenever it is
+      // assigned to. Ya it is allowed :/
       if Expression.hasUnknownDims(var_dims) then
         <<
         generic_array_create_flexible(&<%var_name%>, <%listLength(var_dims)%>); // <%var_name%> has unknown size and no default value. It is flexible.<%\n%>
