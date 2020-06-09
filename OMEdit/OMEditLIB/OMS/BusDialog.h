@@ -45,15 +45,15 @@
 #include <QComboBox>
 #include <QTableView>
 
-class Component;
+class Element;
 class ConnectorItem : public QObject
 {
   Q_OBJECT
 public:
-  ConnectorItem(Component *pComponent, ConnectorItem *pParent);
+  ConnectorItem(Element *pComponent, ConnectorItem *pParent);
   QString getText() const {return mText;}
   void setText(const QString &text) {mText = text;}
-  Component* getComponent() {return mpComponent;}
+  Element* getComponent() {return mpComponent;}
   QString getTLMType() const {return mTLMType;}
   void setTLMType(const QString &tlmType) {mTLMType = tlmType;}
   QString getTLMTypeDescription() const {return mTLMTypeDescription;}
@@ -69,7 +69,7 @@ public:
   int row() const;
 private:
   QString mText;
-  Component *mpComponent;
+  Element *mpComponent;
   QString mTLMType;
   QString mTLMTypeDescription;
   ConnectorItem *mpParentConnectorItem;
@@ -90,7 +90,7 @@ public:
   QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
   Qt::ItemFlags flags(const QModelIndex &index) const;
   QModelIndex connectorItemIndex(const ConnectorItem *pConnectorItem, const int column = 0) const;
-  ConnectorItem* createConnectorItem(Component *pComponent, ConnectorItem *pParent);
+  ConnectorItem* createConnectorItem(Element *pComponent, ConnectorItem *pParent);
 
   ConnectorItem* getRootConnectorItem() {return mpRootConnectorItem;}
   void setColumnCount(int columnCount) {mColumnCount = columnCount;}
@@ -122,7 +122,7 @@ class AddBusDialog : public QDialog
 {
   Q_OBJECT
 public:
-  AddBusDialog(QList<Component*> components, LibraryTreeItem *pLibraryTreeItem, GraphicsView *pGraphicsView);
+  AddBusDialog(QList<Element*> components, LibraryTreeItem *pLibraryTreeItem, GraphicsView *pGraphicsView);
 private:
   LibraryTreeItem *mpLibraryTreeItem;
   GraphicsView *mpGraphicsView;
@@ -137,7 +137,7 @@ private:
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
-  void markExistingBusConnectors(ConnectorItem *pParentConnectorItem, QList<Component*> components);
+  void markExistingBusConnectors(ConnectorItem *pParentConnectorItem, QList<Element*> components);
 private slots:
   void addBus();
 };
@@ -146,7 +146,7 @@ class AddTLMBusDialog : public QDialog
 {
   Q_OBJECT
 public:
-  AddTLMBusDialog(QList<Component*> components, LibraryTreeItem *pLibraryTreeItem, GraphicsView *pGraphicsView);
+  AddTLMBusDialog(QList<Element*> components, LibraryTreeItem *pLibraryTreeItem, GraphicsView *pGraphicsView);
 private:
   LibraryTreeItem *mpLibraryTreeItem;
   GraphicsView *mpGraphicsView;
@@ -167,7 +167,7 @@ private:
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
-  void markExistingTLMBusConnectors(ConnectorItem *pParentConnectorItem, QList<Component*> components);
+  void markExistingTLMBusConnectors(ConnectorItem *pParentConnectorItem, QList<Element*> components);
 private slots:
   void fetchTLMTypes();
   void addTLMBus();

@@ -5,7 +5,7 @@ defaultMakefileTarget = Makefile.unix
 all: @ALL_TARGETS@ @OMLIBRARY_TARGET@
 
 .PRECIOUS: Makefile
-.PHONY: omc omlibrary-all omlibrary-core omplot omedit omedit-testsuite omnotebook omoptim omshell omc-diff omsimulator ReferenceFiles testsuite-depends omsens_qt
+.PHONY: omc omlibrary-all omlibrary-core omplot omedit omedit-testsuite omparser omnotebook omoptim omshell omc-diff omsimulator ReferenceFiles testsuite-depends omsens_qt
 
 omc: omc.skip
 omc.skip:
@@ -18,11 +18,14 @@ omplot: omplot.skip
 omplot.skip: omc
 	test -f $@ || $(MAKE) -C OMPlot
 omedit: omedit.skip
-omedit.skip: omc omplot omsimulator
+omedit.skip: omc omplot omsimulator omparser
 	test -f $@ || $(MAKE) -f $(defaultMakefileTarget) -C OMEdit
 omedit-testsuite: omedit-testsuite.skip
 omedit-testsuite.skip: omedit.skip
 	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit/Testsuite
+omparser: omparser.skip
+omparser.skip:
+	test -f $@ || $(MAKE) -C OMParser OMBUILDDIR=@OMBUILDDIR@ "host_short=@host_short@" CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@"
 omsimulator: omsimulator.skip
 omsimulator.skip:
 	$(MAKE) -C OMSimulator config-3rdParty CERES=OFF "host_short=@host_short@" CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@"

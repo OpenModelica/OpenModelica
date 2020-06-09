@@ -2771,9 +2771,9 @@ annotation(preferredView="text");
 end getPackages;
 
 function getAllSubtypeOf
-  "Returns the list of all classes that extend from class_ given a parentClass where the lookup for class_ should start"
+  "Returns the list of all classes that extend from className given a parentClass where the lookup for className should start"
+  input TypeName className;
   input TypeName parentClass = $TypeName(AllLoadedClasses);
-  input TypeName class_;
   input Boolean qualified = false;
   input Boolean includePartial = false;
   input Boolean sort = false;
@@ -3092,7 +3092,7 @@ function getComponentModifierValue
 external "builtin";
 annotation(
   Documentation(info="<html>
-  <p>Returns the modifier value (only the binding exculding submodifiers) of component.
+  <p>Returns the modifier value (only the binding excluding submodifiers) of component.
     For instance,
       model A
         B b1(a1(p1=5,p2=4));
@@ -3122,17 +3122,6 @@ annotation(
   preferredView="text");
 end getComponentModifierValues;
 
-function getInstantiatedParametersAndValues
-  input TypeName cls;
-  output String[:] values;
-external "builtin";
-annotation(
-  Documentation(info="<html>
-  <p>Returns the parameter names and values from the DAE.</p>
-</html>"),
-  preferredView="text");
-end getInstantiatedParametersAndValues;
-
 function removeComponentModifiers
   input TypeName class_;
   input String componentName;
@@ -3145,6 +3134,84 @@ annotation(
 </html>"),
   preferredView="text");
 end removeComponentModifiers;
+
+function getElementModifierNames
+  input TypeName className;
+  input String elementName;
+  output String[:] modifiers;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the list of element (component or short class) modifiers in a class.
+</html>"),
+  preferredView="text");
+end getElementModifierNames;
+
+function getElementModifierValue
+  input TypeName className;
+  input TypeName modifier;
+  output String value;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  <p>Returns the modifier value (only the binding excluding submodifiers) of element (component or short class).
+    For instance,
+      model A
+        B b1(a1(p1=5,p2=4));
+        model X = Y(a1(p1=5,p2=4));
+      end A;
+      getElementModifierValue(A,b1.a1.p1) => 5
+      getElementModifierValue(A,b1.a1.p2) => 4
+      getElementModifierValue(A,X.a1.p1) => 5
+      getElementModifierValue(A,X.a1.p2) => 4
+    See also <a href=\"modelica://OpenModelica.Scripting.getElementModifierValues\">getElementModifierValues()</a>.</p>
+</html>"),
+  preferredView="text");
+end getElementModifierValue;
+
+function getElementModifierValues
+  input TypeName className;
+  input TypeName modifier;
+  output String value;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  <p>Returns the modifier value (including the submodfiers) of element (component or short class).
+    For instance,
+      model A
+        B b1(a1(p1=5,p2=4));
+        model X = Y(a1(p1=5,p2=4));
+      end A;
+      getElementModifierValues(A,b1.a1) => (p1 = 5, p2 = 4)
+      getElementModifierValues(A,X.a1) => (p1 = 5, p2 = 4)
+    See also <a href=\"modelica://OpenModelica.Scripting.getElementModifierValue\">getElementModifierValue()</a>.</p>
+</html>"),
+  preferredView="text");
+end getElementModifierValues;
+
+function removeElementModifiers
+  input TypeName className;
+  input String componentName;
+  input Boolean keepRedeclares = false;
+  output Boolean success;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Removes the element (component or short class) modifiers.
+</html>"),
+  preferredView="text");
+end removeElementModifiers;
+
+function getInstantiatedParametersAndValues
+  input TypeName cls;
+  output String[:] values;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  <p>Returns the parameter names and values from the DAE.</p>
+</html>"),
+  preferredView="text");
+end getInstantiatedParametersAndValues;
 
 function removeExtendsModifiers
   input TypeName className;

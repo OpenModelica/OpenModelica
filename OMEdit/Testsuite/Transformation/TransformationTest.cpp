@@ -35,7 +35,7 @@
 #include "TransformationTest.h"
 #include "Util.h"
 #include "OMEditApplication.h"
-#include "Component/Transformation.h"
+#include "Element/Transformation.h"
 
 #define GC_THREADS
 extern "C" {

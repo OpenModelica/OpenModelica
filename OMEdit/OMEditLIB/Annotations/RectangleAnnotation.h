@@ -37,7 +37,7 @@
 
 #include "ShapeAnnotation.h"
 
-class Component;
+class Element;
 class RectangleAnnotation : public ShapeAnnotation
 {
   Q_OBJECT
@@ -45,11 +45,11 @@ public:
   // Used for icon/diagram shape
   RectangleAnnotation(QString annotation, GraphicsView *pGraphicsView);
   // Used for shape inside a component
-  RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
+  RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   // Used for icon/diagram inherited shape
   RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   // Used for default component
-  RectangleAnnotation(Component *pParent);
+  RectangleAnnotation(Element *pParent);
   // Used for OMSimulator FMU
   RectangleAnnotation(GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation) override;

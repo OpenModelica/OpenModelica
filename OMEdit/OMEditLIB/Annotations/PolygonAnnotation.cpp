@@ -50,7 +50,7 @@ PolygonAnnotation::PolygonAnnotation(QString annotation, GraphicsView *pGraphics
   setShapeFlags(true);
 }
 
-PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
+PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent)
 {
   mpOriginItem = 0;
@@ -70,7 +70,7 @@ PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Graphics
   mpGraphicsView->addItem(mpOriginItem);
 }
 
-PolygonAnnotation::PolygonAnnotation(Component *pParent)
+PolygonAnnotation::PolygonAnnotation(Element *pParent)
   : ShapeAnnotation(0, pParent)
 {
   mpOriginItem = 0;
