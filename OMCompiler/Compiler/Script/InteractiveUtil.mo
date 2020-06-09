@@ -7962,24 +7962,25 @@ public function getElements
    a list of all elements"
   input Absyn.ComponentRef cr;
   input Boolean inBoolean;
+  input Integer inAccess;
   output String outString;
 algorithm
-  outString := getElements2(cr,inBoolean);
+  outString := getElements2(cr,inBoolean,inAccess);
 end getElements;
 
 protected function getElements2
-" This function takes a `ComponentRef\', a `Program\' and an int and  returns
-   a list of all elements"
+" This function takes a `ComponentRef\', a `Program\' and returns the list of all elements"
   input Absyn.ComponentRef inComponentRef;
   input Boolean inBoolean;
+  input Integer inAccess;
   output String outString;
 algorithm
-  outString := matchcontinue (inComponentRef,inBoolean)
+  outString := matchcontinue (inComponentRef,inBoolean,inAccess)
     local
       Absyn.Path modelpath;
       Absyn.Class cdef;
       list<SCode.Element> p_1;
-      FCore.Graph env,env_1,env2,env_2;
+      FCore.Graph env,env_1,env2;
       SCode.Element c;
       String id,s1,s2,str,res;
       SCode.Encapsulated encflag;
@@ -7990,26 +7991,37 @@ algorithm
       Absyn.Program p;
       FCore.Cache cache;
       Boolean b, permissive;
+      GraphicEnvCache genv;
+      Integer access;
 
-    case (model_,b)
+    case (model_,b,access)
       equation
         modelpath = AbsynUtil.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
         p_1 = SymbolTable.getSCode();
-        (cache,env) = Inst.makeEnvFromProgram(p_1);
-        (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache,env, modelpath);
-        env2 = FGraph.openScope(env_1, encflag, id, FGraph.restrictionToScopeType(restr));
-        ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
-        permissive = Flags.getConfigBool(Flags.PERMISSIVE);
-        FlagsUtil.setConfigBool(Flags.PERMISSIVE, true);
-        (_,env_2,_,_,_) =
-          Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),
-            DAE.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
-        FlagsUtil.setConfigBool(Flags.PERMISSIVE, permissive);
+        if Flags.isSet(Flags.NF_API) then
+          genv = Interactive.GRAPHIC_ENV_FULL_CACHE(SymbolTable.getAbsyn(), modelpath, FCore.emptyCache(), FGraph.emptyGraph);
+        else
+          (cache,env) = Inst.makeEnvFromProgram(p_1);
+          (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache, env, modelpath);
+          env2 = FGraph.openScope(env_1, encflag, id, FGraph.restrictionToScopeType(restr));
+          ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
+          permissive = Flags.getConfigBool(Flags.PERMISSIVE);
+          FlagsUtil.setConfigBool(Flags.PERMISSIVE, true);
+          (_,env2,_,_,_) =
+            Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),
+              DAE.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
+          FlagsUtil.setConfigBool(Flags.PERMISSIVE, permissive);
+          genv = Interactive.GRAPHIC_ENV_FULL_CACHE(SymbolTable.getAbsyn(), modelpath, cache, env2);
+        end if;
         comps1 = getPublicElementsInClass(cdef);
-        s1 = getElementsInfo(comps1, b, "\"public\"", env_2);
-        comps2 = getProtectedElementsInClass(cdef);
-        s2 = getElementsInfo(comps2, b, "\"protected\"", env_2);
+        s1 = getElementsInfo(comps1, b, "\"public\"", genv);
+        if (access >= 4) then // i.e., Access.diagram
+          comps2 = getProtectedElementsInClass(cdef);
+          s2 = getElementsInfo(comps2, b, "\"protected\"", genv);
+        else
+          s2 = "";
+        end if;
         str = Util.stringDelimitListNonEmptyElts({s1,s2}, ",");
         res = stringAppendList({"{",str,"}"});
       then res;
@@ -8017,14 +8029,14 @@ algorithm
   end matchcontinue;
 end getElements2;
 
-protected function getComponentAnnotations " This function takes a `ComponentRef\', a `Program\' and
-   returns a list of all component annotations, as returned by
-   get_nth_component_annotation.
+public function getElementAnnotations " This function takes a `ComponentRef\', a `Program\' and
+   returns a list of all element annotations.
    Both public and protected components are returned, but they need to
    be in the same order as get_componentsfunctions, i.e. first public
    components then protected ones."
   input Absyn.ComponentRef inClassPath;
   input Absyn.Program inProgram;
+  input Integer inAccess;
   output String outString;
 protected
   Absyn.Path model_path;
@@ -8035,14 +8047,18 @@ algorithm
     model_path := AbsynUtil.crefToPath(inClassPath);
     cdef := getPathedClassInProgram(model_path, inProgram);
     comps1 := getPublicElementsInClass(cdef);
-    comps2 := getProtectedElementsInClass(cdef);
+    if (inAccess >= 4) then // i.e., Access.diagram
+      comps2 := getProtectedElementsInClass(cdef);
+    else
+      comps2 := {};
+    end if;
     comps := listAppend(comps1, comps2);
-    outString := getComponentAnnotationsFromElts(comps, cdef, inProgram, model_path);
+    outString := getElementAnnotationsFromElts(comps, cdef, inProgram, model_path);
     outString := stringAppendList({"{", outString, "}"});
   else
     outString := "Error";
   end try;
-end getComponentAnnotations;
+end getElementAnnotations;
 
 protected function getComponentCondition
 " Helper function to getNthComponentCondition."
@@ -11090,8 +11106,8 @@ algorithm
   end match;
 end getConnectionsInEquations;
 
-protected function getComponentAnnotationsFromElts
-"Helper function to getComponentAnnotations."
+protected function getElementAnnotationsFromElts
+"Helper function to getElementAnnotations."
   input list<Absyn.Element> comps;
   input Absyn.Class inClass;
   input Absyn.Program inFullProgram;
@@ -11108,12 +11124,12 @@ algorithm
   graphicProgramSCode := AbsynToSCode.translateAbsyn2SCode(placementProgram);
   (_,env) := Inst.makeEnvFromProgram(graphicProgramSCode);
   cache := Interactive.GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath);
-  res := getComponentitemsAnnotations(comps, env, inClass, cache);
+  res := getElementitemsAnnotations(comps, env, inClass, cache);
   resStr := stringDelimitList(res, ",");
-end getComponentAnnotationsFromElts;
+end getElementAnnotationsFromElts;
 
-protected function getComponentitemsAnnotations
-"Helper function to getComponentAnnotationsFromElts"
+protected function getElementitemsAnnotations
+"Helper function to getElementAnnotationsFromElts"
   input list<Absyn.Element> inElements;
   input FCore.Graph inEnv;
   input Absyn.Class inClass;
@@ -11124,12 +11140,28 @@ protected
   GraphicEnvCache cache = inCache;
   list<Absyn.ComponentItem> items;
   Option<Absyn.ConstrainClass> cc;
+  list<Absyn.ElementArg> annotations;
+  Option<Absyn.Comment> cmt;
 algorithm
   for e in listReverse(inElements) loop
     outStringLst := matchcontinue e
       case Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = items), constrainClass = cc)
         algorithm
-          (res, cache) := getComponentitemsAnnotationsFromItems(items,
+          (res, cache) := getElementitemsAnnotationsFromItems(items,
+            getAnnotationsFromConstraintClass(cc), inEnv, inClass, cache);
+        then
+          listAppend(res, outStringLst);
+
+      case Absyn.ELEMENT(specification = Absyn.CLASSDEF(
+           class_ = Absyn.CLASS(body = Absyn.DERIVED(comment = cmt))),
+           constrainClass = cc)
+        algorithm
+          annotations := match cmt
+            case SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(annotations))))
+              then annotations;
+            else {};
+          end match;
+          (res, cache) := getElementitemsAnnotationsFromElArgs(annotations,
             getAnnotationsFromConstraintClass(cc), inEnv, inClass, cache);
         then
           listAppend(res, outStringLst);
@@ -11137,10 +11169,33 @@ algorithm
       case Absyn.ELEMENT(specification = Absyn.COMPONENTS())
         then "{}" :: outStringLst;
 
+      case Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(body = Absyn.DERIVED())))
+        then "{}" :: outStringLst;
+
       else outStringLst;
     end matchcontinue;
   end for;
-end getComponentitemsAnnotations;
+end getElementitemsAnnotations;
+
+protected function getElementitemsAnnotationsFromElArgs
+"Helper function to getElementitemsAnnotations."
+  input list<Absyn.ElementArg> inAnnotations;
+  input list<Absyn.ElementArg> ccAnnotations;
+  input FCore.Graph inEnv;
+  input Absyn.Class inClass;
+  input GraphicEnvCache inCache;
+  output list<String> outStringLst = {};
+  output GraphicEnvCache outCache = inCache;
+protected
+  list<Absyn.ElementArg> annotations;
+  list<String> res;
+  String str;
+algorithm
+  annotations := listAppend(inAnnotations, ccAnnotations);
+  (res, outCache) := getElementitemsAnnotationsElArgs(annotations, inEnv, inClass, outCache);
+  str := stringDelimitList(res, ", ");
+  outStringLst := stringAppendList({"{", str, "}"}) :: outStringLst;
+end getElementitemsAnnotationsFromElArgs;
 
 protected function getAnnotationsFromConstraintClass
   input Option<Absyn.ConstrainClass> inCC;
@@ -11154,8 +11209,8 @@ algorithm
   end match;
 end getAnnotationsFromConstraintClass;
 
-protected function getComponentitemsAnnotationsElArgs
-"Helper function to getComponentitemsAnnotationsFromItems."
+protected function getElementitemsAnnotationsElArgs
+"Helper function to getElementitemsAnnotationsFromItems."
   input list<Absyn.ElementArg> inElementArgs;
   input FCore.Graph inEnv;
   input Absyn.Class inClass;
@@ -11241,10 +11296,10 @@ algorithm
 
     outStringLst := str :: outStringLst;
   end for;
-end getComponentitemsAnnotationsElArgs;
+end getElementitemsAnnotationsElArgs;
 
-protected function getComponentitemsAnnotationsFromItems
-"Helper function to getComponentitemsAnnotations."
+protected function getElementitemsAnnotationsFromItems
+"Helper function to getElementitemsAnnotations."
   input list<Absyn.ComponentItem> inComponentItems;
   input list<Absyn.ElementArg> ccAnnotations;
   input FCore.Graph inEnv;
@@ -11265,11 +11320,11 @@ algorithm
       else ccAnnotations;
     end match;
 
-    (res, outCache) := getComponentitemsAnnotationsElArgs(annotations, inEnv, inClass, outCache);
+    (res, outCache) := getElementitemsAnnotationsElArgs(annotations, inEnv, inClass, outCache);
     str := stringDelimitList(res, ", ");
     outStringLst := stringAppendList({"{", str, "}"}) :: outStringLst;
   end for;
-end getComponentitemsAnnotationsFromItems;
+end getElementitemsAnnotationsFromItems;
 
 protected function getComponentAnnotation
 "This function takes an Element and returns a comma separated string
@@ -11878,13 +11933,13 @@ protected function getElementInfo
   input Absyn.Element inElement;
   input Boolean inQuoteNames;
   input String inVisibility;
-  input FCore.Graph inEnv;
+  input GraphicEnvCache inEnv;
   output list<String> outStringLst;
 algorithm
   outStringLst := match inElement
     local
       Absyn.ElementAttributes attr;
-      Absyn.Path p, env_path, pkg_path, tp_path;
+      Absyn.Path p, env_path, pkg_path, tp_path, qpath;
       list<Absyn.ComponentItem> comps;
       FCore.Graph env;
       list<String> names, dims;
@@ -11902,7 +11957,12 @@ algorithm
         attributes = attr, typeSpec = Absyn.TPATH(path = p), components = comps),
         constrainClass = occ)
       algorithm
-        typename := qualifyType(inEnv, p);
+        if Flags.isSet(Flags.NF_API) then
+          (_, qpath) := Interactive.mkFullyQual(inEnv, p);
+          typename := AbsynUtil.pathString(qpath);
+        else
+          typename := qualifyType(Interactive.envFromGraphicEnvCache(inEnv), p);
+        end if;
 
         names := getComponentItemsNameAndComment(comps, inQuoteNames);
         dims := getComponentitemsDimension(comps);
@@ -11936,7 +11996,12 @@ algorithm
            class_ = c as Absyn.CLASS(name = name, body = Absyn.DERIVED(typeSpec = Absyn.TPATH(p, oadim), attributes = attr, comment = ocmt))),
            constrainClass = occ)
       algorithm
-        typename := qualifyType(inEnv, p);
+        if Flags.isSet(Flags.NF_API) then
+          (_, qpath) := Interactive.mkFullyQual(inEnv, p);
+          typename := AbsynUtil.pathString(qpath);
+        else
+          typename := qualifyType(Interactive.envFromGraphicEnvCache(inEnv), p);
+        end if;
 
         cmt_str := getClassCommentInCommentOpt(ocmt);
 
@@ -11979,16 +12044,21 @@ algorithm
 end getElementInfo;
 
 public function getConstrainClassStr
-  input FCore.Graph inEnv;
+  input GraphicEnvCache inEnv;
   input Option<Absyn.ConstrainClass> occ;
   output String s;
 protected
-  Absyn.Path p;
+  Absyn.Path p, qpath;
 algorithm
   s := matchcontinue(occ)
     case SOME(Absyn.CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path = p)))
       algorithm
-        s := qualifyType(inEnv, p);
+        if Flags.isSet(Flags.NF_API) then
+          (_, qpath) := Interactive.mkFullyQual(inEnv, p);
+          s := AbsynUtil.pathString(qpath);
+        else
+          s := qualifyType(Interactive.envFromGraphicEnvCache(inEnv), p);
+        end if;
       then s;
     else "$Any";
   end matchcontinue;
@@ -12091,7 +12161,7 @@ protected function getElementsInfo
   input list<Absyn.Element> inAbsynElementLst;
   input Boolean inBoolean;
   input String inString;
-  input FCore.Graph inEnv;
+  input Interactive.GraphicEnvCache inEnv;
   output String outString;
 algorithm
   outString:=
@@ -12100,7 +12170,7 @@ algorithm
       list<String> lst;
       String lst_1,res,access;
       list<Absyn.Element> elts;
-      FCore.Graph env;
+      Interactive.GraphicEnvCache env;
       Boolean b;
     case (elts,_,access,env)
       equation
@@ -12120,7 +12190,7 @@ protected function getElementsInfo2
   input list<Absyn.Element> inAbsynElementLst;
   input Boolean inBoolean;
   input String inString;
-  input FCore.Graph inEnv;
+  input Interactive.GraphicEnvCache inEnv;
   input list<String> acc;
   output list<String> outStringLst;
 algorithm
@@ -12130,7 +12200,7 @@ algorithm
       Absyn.Element elt;
       list<Absyn.Element> rest;
       String access;
-      FCore.Graph env;
+      Interactive.GraphicEnvCache env;
       Boolean b;
     case ({},_,_,_,_) then listReverse(acc);
     case ((elt :: rest),b,access,env,_)
@@ -15895,8 +15965,8 @@ end excludeElementsFromFile;
 
 public function getAllSubtypeOf
   "Returns the list of all classes that extend from class_ given a parentClass where the lookup for class_ should start"
-  input Absyn.Path inParentClass;
   input Absyn.Path inClass;
+  input Absyn.Path inParentClass;
   input Absyn.Program inProgram;
   input Boolean qualified;
   input Boolean includePartial;
@@ -15966,7 +16036,7 @@ algorithm
 end getRecursiveInheritedClasses;
 
 public function getNFComponentitemsAnnotations
-"Helper function to getComponentAnnotationsFromElts"
+"Helper function to getElementAnnotationsFromElts"
   input list<Absyn.Element> inElements;
   input FCore.Graph inEnv;
   input Absyn.Class inClass;
@@ -16008,7 +16078,7 @@ algorithm
 end getNFAnnotationsFromConstraintClass;
 
 protected function getNFComponentitemsAnnotationsElArgs
-"Helper function to getComponentitemsAnnotationsFromItems."
+"Helper function to getElementitemsAnnotationsFromItems."
   input list<Absyn.ElementArg> inElementArgs;
   input FCore.Graph inEnv;
   input Absyn.Class inClass;
@@ -16097,7 +16167,7 @@ algorithm
 end getNFComponentitemsAnnotationsElArgs;
 
 protected function getNFComponentitemsAnnotationsFromItems
-"Helper function to getComponentitemsAnnotations."
+"Helper function to getElementitemsAnnotations."
   input list<Absyn.ComponentItem> inComponentItems;
   input list<Absyn.ElementArg> ccAnnotations;
   input FCore.Graph inEnv;

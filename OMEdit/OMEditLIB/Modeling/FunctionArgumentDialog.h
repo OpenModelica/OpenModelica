@@ -35,7 +35,7 @@
 #include <QDialog>
 
 class LibraryTreeItem;
-class ComponentInfo;
+class ElementInfo;
 class QLineEdit;
 
 class FunctionArgumentDialog : public QDialog
@@ -44,10 +44,10 @@ public:
   explicit FunctionArgumentDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *parent = 0);
   QString getFunctionCallCommand();
 private:
-  bool isInput(ComponentInfo *pComponentInfo);
+  bool isInput(ElementInfo *pComponentInfo);
 
   LibraryTreeItem *mpLibraryTreeItem;
-  QList<ComponentInfo*> mComponents;
+  QList<ElementInfo*> mComponents;
   QList<QLineEdit*> mEditors;
 };
 

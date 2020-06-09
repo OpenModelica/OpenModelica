@@ -241,6 +241,7 @@ QString Helper::grid;
 QString Helper::horizontal;
 QString Helper::vertical;
 QString Helper::component;
+QString Helper::element;
 QString Helper::scaleFactor;
 QString Helper::preserveAspectRatio;
 QString Helper::originX;
@@ -537,6 +538,7 @@ void Helper::initHelperVariables()
   Helper::horizontal = tr("Horizontal");
   Helper::vertical = tr("Vertical");
   Helper::component = tr("Component");
+  Helper::element = tr("Element");
   Helper::scaleFactor = tr("Scale factor:");
   Helper::preserveAspectRatio = tr("Preserve aspect ratio");
   Helper::originX = tr("OriginX:");

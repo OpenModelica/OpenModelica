@@ -54,7 +54,7 @@ void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 
 #include "OMCProxy.h"
 #include "MainWindow.h"
-#include "Component/Component.h"
+#include "Element/Element.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
 #include "simulation_options.h"
@@ -1302,24 +1302,59 @@ QString OMCProxy::getNthInheritedClassDiagramMapAnnotation(QString className, in
 /*!
  * \brief OMCProxy::getComponents
  * Returns the components of a model with their attributes.\n
- * Creates an object of ComponentInfo for each component.
+ * Creates an object of ElementInfo for each component.
  * \param className - is the name of the model.
  * \return the list of components
  */
-QList<ComponentInfo*> OMCProxy::getComponents(QString className)
+QList<ElementInfo*> OMCProxy::getComponents(QString className)
 {
+
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport())
+  {
+    return getElements(className);
+  }
+
   QString expression = "getComponents(" + className + ", useQuotes = true)";
   sendCommand(expression);
   QString result = getResult();
-  QList<ComponentInfo*> componentInfoList;
+  QList<ElementInfo*> componentInfoList;
   QStringList list = StringHandler::unparseArrays(result);
 
   for (int i = 0 ; i < list.size() ; i++) {
     if (list.at(i) == "Error") {
       continue;
     }
-    ComponentInfo *pComponentInfo = new ComponentInfo();
+    ElementInfo *pComponentInfo = new ElementInfo();
+    pComponentInfo->setParentClassName(className);
     pComponentInfo->parseComponentInfoString(list.at(i));
+    componentInfoList.append(pComponentInfo);
+  }
+
+  return componentInfoList;
+}
+
+/*!
+ * \brief OMCProxy::getComponents
+ * Returns the components of a model with their attributes.\n
+ * Creates an object of ElementInfo for each component.
+ * \param className - is the name of the model.
+ * \return the list of components
+ */
+QList<ElementInfo*> OMCProxy::getElements(QString className)
+{
+  QString expression = "getElements(" + className + ", useQuotes = true)";
+  sendCommand(expression);
+  QString result = getResult();
+  QList<ElementInfo*> componentInfoList;
+  QStringList list = StringHandler::unparseArrays(result);
+
+  for (int i = 0 ; i < list.size() ; i++) {
+    if (list.at(i) == "Error") {
+      continue;
+    }
+    ElementInfo *pComponentInfo = new ElementInfo();
+    pComponentInfo->setParentClassName(className);
+    pComponentInfo->parseElementInfoString(list.at(i));
     componentInfoList.append(pComponentInfo);
   }
 
@@ -1333,10 +1368,28 @@ QList<ComponentInfo*> OMCProxy::getComponents(QString className)
   */
 QStringList OMCProxy::getComponentAnnotations(QString className)
 {
+
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport())
+  {
+    return getElementAnnotations(className);
+  }
   QString expression = "getComponentAnnotations(" + className + ")";
   sendCommand(expression);
   return StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(getResult()));
 }
+
+/*!
+  Returns the element annotations of a model.
+  \param className - is the name of the model.
+  \return the list of element annotations.
+  */
+QStringList OMCProxy::getElementAnnotations(QString className)
+{
+  QString expression = "getElementAnnotations(" + className + ")";
+  sendCommand(expression);
+  return StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(getResult()));
+}
+
 
 QString OMCProxy::getDocumentationAnnotationInfoHeader(LibraryTreeItem *pLibraryTreeItem, QString infoHeader)
 {
@@ -1348,6 +1401,7 @@ QString OMCProxy::getDocumentationAnnotationInfoHeader(LibraryTreeItem *pLibrary
     return infoHeader;
   }
 }
+
 
 /*!
  * \brief OMCProxy::getDocumentationAnnotation
@@ -2846,6 +2900,23 @@ int OMCProxy::numProcessors()
 {
   return mpOMCInterface->numProcessors();
 }
+
+
+/*!
+ * \brief OMCProxy::getAllSubtypeOf
+ * Returns the list of all classes that extend from className given a parentClass where the lookup for className should start.
+ * \param parentClassName = $TypeName(AllLoadedClasses) - is the name of the class whose sub classes are retrieved.
+ * \param className - the name of the class that is subtype of
+ * \param qualified = false
+ * \param includePartial = false
+ * \param sort = false
+ * \return
+ */
+QStringList OMCProxy::getAllSubtypeOf(QString className, QString parentClassName, bool qualified, bool includePartial, bool sort)
+{
+  return mpOMCInterface->getAllSubtypeOf(className, parentClassName, qualified, includePartial, sort);
+}
+
 
 /*!
  * \brief OMCProxy::help

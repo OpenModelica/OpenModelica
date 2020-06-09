@@ -11,7 +11,10 @@
 #ifndef BACKTRACE_H
 #define BACKTRACE_H
 
-#ifdef QT_NO_DEBUG
+
+/* adrpo commented this out as this is a C file compiled with gcc so it NEVER get QT_NO_DEBUG
+ * #ifdef QT_NO_DEBUG
+ */
 
 #define GCC_VERSION (__GNUC__ * 10000 \
                      + __GNUC_MINOR__ * 100 \
@@ -74,5 +77,10 @@ void release_set(struct bfd_set *set);
 } /* extern "C" */
 #endif
 #endif // #ifdef WIN32
-#endif // #ifdef QT_NO_DEBUG
+
+/*
+ * #endif // #ifdef QT_NO_DEBUG
+ */
+
+
 #endif // BACKTRACE_H

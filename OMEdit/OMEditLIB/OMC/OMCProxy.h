@@ -41,7 +41,7 @@
 #include "Util/Utilities.h"
 
 class CustomExpressionBox;
-class ComponentInfo;
+class ElementInfo;
 class StringHandler;
 class OMCInterface;
 class LibraryTreeItem;
@@ -145,8 +145,10 @@ public:
   QList<QString> getInheritedClasses(QString className);
   QString getNthInheritedClassIconMapAnnotation(QString className, int num);
   QString getNthInheritedClassDiagramMapAnnotation(QString className, int num);
-  QList<ComponentInfo*> getComponents(QString className);
+  QList<ElementInfo*> getComponents(QString className);
+  QList<ElementInfo*> getElements(QString className);
   QStringList getComponentAnnotations(QString className);
+  QStringList getElementAnnotations(QString className);
   QString getDocumentationAnnotationInfoHeader(LibraryTreeItem *pLibraryTreeItem, QString infoHeader);
   QString getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem);
   QList<QString> getDocumentationAnnotationInClass(LibraryTreeItem *pLibraryTreeItem);
@@ -240,6 +242,7 @@ public:
   QString getAnnotationModifierValue(QString className, QString annotation, QString modifier);
   QString getSimulationFlagsAnnotation(QString className);
   int numProcessors();
+  QStringList getAllSubtypeOf(QString className, QString parentClassName = QString("AllLoadedClasses"), bool qualified = false, bool includePartial = false, bool sort = false);
   QString help(QString topic);
   OMCInterface::getConfigFlagValidOptions_res getConfigFlagValidOptions(QString topic);
   QString getCompiler();
