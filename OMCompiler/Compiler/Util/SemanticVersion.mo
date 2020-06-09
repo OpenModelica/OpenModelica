@@ -53,31 +53,17 @@ function parse
   output Version v;
 protected
   Integer n;
-  String major, minor, patch, prerelease, meta, nextString, versions;
-  list<String> prereleaseLst, metaLst, matches, split, versionsLst;
-  constant String semverRegex = "^([0-9]*\\.?[0-9]*\\.?[0-9]*)([+-][0-9A-Za-z.-]*)?$";
+  String major, minor, patch, prerelease, meta, nextString;
+  list<String> prereleaseLst, metaLst, matches, split;
+  constant String semverRegex = "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)([+-][0-9A-Za-z.-]*)?$";
 algorithm
   (n, matches) := System.regex(s, semverRegex, maxMatches=5, extended=true);
-  if n < 2 then
+  if n < 4 then
     v := NONSEMVER(s);
     return;
   end if;
   // OSX regex cannot handle everything in the same regex, so we have manual splitting of prerelease and meta strings
-
-  _::versions::split := matches;
-  versionsLst := Util.stringSplitAtChar(versions, ".");
-  major::versionsLst := versionsLst;
-  if not listEmpty(versionsLst) then
-    minor::versionsLst := versionsLst;
-  else
-    minor := "0";
-  end if;
-  if not listEmpty(versionsLst) then
-    patch::versionsLst := versionsLst;
-  else
-    patch := "0";
-  end if;
-
+  _::major::minor::patch::split := matches;
   nextString := if listEmpty(split) then "" else listGet(split, 1);
   if stringEmpty(nextString) then
     prerelease := "";
