@@ -68,14 +68,28 @@ public
       input System system;
       output String str;
     algorithm
-      str :=  StringUtil.headline_2(partitionKindStr(system.partitionKind) + " " + systemTypeStr(system.systemType) + " System") + "\n" +
-              BVariable.VariablePointers.toString(system.unknowns, "Unknown") + "\n" +
-              BEquation.EquationPointers.toString(system.equations, "Equations") + "\n";
+      str := StringUtil.headline_2(partitionKindString(system.partitionKind) + " " + systemTypeString(system.systemType) + " System") + "\n";
+      str := match system.strongComponents
+        local
+          array<StrongComponent> comps;
+
+        case SOME(comps)
+          algorithm
+            for i in 1:arrayLength(comps) loop
+              str := str + StrongComponent.toString(comps[i], i) + "\n";
+            end for;
+        then str;
+
+        else
+          algorithm
+            str := str +  BVariable.VariablePointers.toString(system.unknowns, "Unknown") + "\n" +
+                          BEquation.EquationPointers.toString(system.equations, "Equations") + "\n";
+        then str;
+      end match;
       // ToDo: add adjacency and matching etc.
     end toString;
 
-  protected
-    function systemTypeStr
+    function systemTypeString
       input SystemType systemType;
       output String str;
     algorithm
@@ -84,9 +98,10 @@ public
         case SystemType.INIT  then "INIT";
         case SystemType.DAE   then "DAE";
       end match;
-    end systemTypeStr;
+    end systemTypeString;
 
-    function partitionKindStr
+  protected
+    function partitionKindString
       input PartitionKind partitionKind;
       output String str;
     algorithm
@@ -96,10 +111,11 @@ public
         case PartitionKind.CLOCKED      then "CLOCKED";
         case PartitionKind.CONTINUOUS   then "CONTINUOUS";
       end match;
-    end partitionKindStr;
+    end partitionKindString;
 
   end System;
 
+  // ToDo: Expand with Jacobian and Hessian later on
   type SystemType = enumeration(ODE, DAE, INIT);
   type PartitionKind = enumeration(UNKNOWN, UNSPECIFIED, CLOCKED, CONTINUOUS);
 

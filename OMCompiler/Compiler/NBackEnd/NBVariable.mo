@@ -466,6 +466,14 @@ public
       variables := VARIABLE_POINTERS(bucketSize, arrayCreate(bucketSize, {}), ExpandableArray.new(arr_size, Pointer.create(DUMMY_VARIABLE)));
     end empty;
 
+    function toList
+      "Creates a VariablePointer list from VariablePointers."
+      input VariablePointers variables;
+      output list<Pointer<Variable>> var_lst;
+    algorithm
+      var_lst := ExpandableArray.toList(variables.varArr);
+    end toList;
+
     function fromList
       "Creates VariablePointers from a VariablePointer list."
       input list<Pointer<Variable>> var_lst;

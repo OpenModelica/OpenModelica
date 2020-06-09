@@ -925,8 +925,23 @@ public
     input Expression exp;
     output String value;
   algorithm
-    STRING(value=value) := exp;
+    try
+      STRING(value=value) := exp;
+    else
+      value := "";
+    end try;
   end stringValue;
+
+  function booleanValue
+    input Expression exp;
+    output Boolean value;
+  algorithm
+    try
+      BOOLEAN(value=value) := exp;
+    else
+      value := false;
+    end try;
+  end booleanValue;
 
   function makeArray
     input Type ty;

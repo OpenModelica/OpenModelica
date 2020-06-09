@@ -28,7 +28,7 @@
 * See the full OSMC Public License conditions for more details.
 *
 */
-encapsulated uniontype NBInitialization
+encapsulated package NBInitialization
 "file:        NBInitialization.mo
  package:     NBInitialization
  description: This file contains the main data types for the initialization
@@ -46,9 +46,11 @@ protected
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
   import BVariable = NBVariable;
+  import Causalize = NBCausalize;
   import Module = NBModule;
   import NBSystem;
   import Partitioning = NBPartitioning;
+  import Tearing = NBTearing;
 
 public
   function main extends Module.wrapper;
@@ -75,9 +77,16 @@ public
           qual.varData := varData;
           qual.eqData := eqData;
       then qual;
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+      then fail();
     end match;
 
+    // Modules
     bdae := Partitioning.main(bdae, NBSystem.SystemType.INIT);
+    bdae := Causalize.main(bdae, NBSystem.SystemType.INIT);
+    bdae := Tearing.main(bdae, NBSystem.SystemType.INIT);
   end main;
 
 protected
@@ -99,16 +108,10 @@ protected
     start_vars := Pointer.access(ptr_start_vars);
     start_eqs := Pointer.access(ptr_start_eqs);
 
-  //  print("BEFORE: " + BVariable.VariablePointers.toString(initialVars) + "\n");
     variables := BVariable.VariablePointers.addList(start_vars, variables);
-
-    //    print("AFTER: " + BVariable.VariablePointers.toString(initialVars) + "\n");
-    print("BEFORE: " + BEquation.EquationPointers.toString(initialEqs) + "\n");
-
     equations := BEquation.EquationPointers.addList(start_eqs, equations);
     initialEqs := BEquation.EquationPointers.addList(start_eqs, initialEqs);
-    print("AFTER: " + BEquation.EquationPointers.toString(initialEqs) + "\n");
-end createStartEquations;
+  end createStartEquations;
 
   function createStartEquation
     input output Variable state;

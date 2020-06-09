@@ -34,9 +34,13 @@ encapsulated uniontype NBackendDAE
  description: This file contains the main data type for the backend containing
               all data. It further contains the lower and solve main function.
 "
+public
+  import NBSystem;
+  import NBSystem.System;
+  import BVariable = NBVariable;
+  import BEquation = NBEquation;
 
 protected
-
   // New Frontend imports
   import Algorithm = NFAlgorithm;
   import BackendExtension = NFBackendExtension;
@@ -54,16 +58,15 @@ protected
 
   // New Backend imports
   import BackendDAE = NBackendDAE;
-  import BVariable = NBVariable;
-  import BEquation = NBEquation;
+  import Causalize = NBCausalize;
   import DetectStates = NBDetectStates;
+  import DAEMode = NBDAEMode;
   import Equation = NBEquation.Equation;
   import Initialization = NBInitialization;
   import Jacobian = NBJacobian;
   import RemoveSimpleEquations = NBRemoveSimpleEquations;
-  import NBSystem;
-  import NBSystem.System;
   import Partitioning = NBPartitioning;
+  import Tearing = NBTearing;
 
   // Util imports
   import Error;
@@ -105,6 +108,7 @@ public
       local
         String tmp;
         BackendDAE qual;
+        list<System> dae;
       case qual as BDAE()
         algorithm
           if listEmpty(qual.ode) then
@@ -122,6 +126,14 @@ public
                 tmp := tmp + System.toString(syst);
               end for;
             end if;
+            if isSome(qual.dae) then
+              SOME(dae) := qual.dae;
+              tmp := tmp + StringUtil.headline_1("[DAE] DAEMode: " + str) + "\n";
+              for syst in dae loop
+                tmp := tmp + System.toString(syst);
+              end for;
+            end if;
+
           end if;
       then tmp;
 
@@ -185,12 +197,16 @@ public
   function solve
     input output BackendDAE bdae;
   algorithm
-    // SHELL AROUND THIS FOR ALL SELECTED MODULES!
+    // Modules
     bdae := DetectStates.main(bdae);
     bdae := RemoveSimpleEquations.main(bdae);
     bdae := Partitioning.main(bdae, NBSystem.SystemType.ODE);
+    bdae := Causalize.main(bdae, NBSystem.SystemType.ODE);
+    bdae := Tearing.main(bdae, NBSystem.SystemType.ODE);
     //Jacobian.main(bdae);
     bdae := Initialization.main(bdae);
+    // only if dae mode, but force it for now
+    bdae := DAEMode.main(bdae);
   end solve;
 
 protected

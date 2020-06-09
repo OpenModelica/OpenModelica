@@ -172,7 +172,7 @@ public
       Option<Expression> unit                 "SI Unit for actual computation value";
       Option<Expression> displayUnit          "SI Unit only for displaying";
       Option<Expression> min                  "Lower boundry";
-      Option<Expression> max                  "Upper boundy";
+      Option<Expression> max                  "Upper boundry";
       Option<Expression> start                "start value";
       Option<Expression> fixed                "fixed - true: default for parameter/constant, false - default for other variables";
       Option<Expression> nominal              "nominal";
@@ -189,7 +189,7 @@ public
     record VAR_ATTR_INT
       Option<Expression> quantity             "quantity";
       Option<Expression> min                  "Lower boundry";
-      Option<Expression> max                  "Upper boundy";
+      Option<Expression> max                  "Upper boundry";
       Option<Expression> start                "start value";
       Option<Expression> fixed                "fixed - true: default for parameter/constant, false - default for other variables";
       Option<Uncertainty> uncertainty         "Attributes from data reconcilliation";
@@ -229,7 +229,7 @@ public
     record VAR_ATTR_ENUMERATION
       Option<Expression> quantity             "quantity";
       Option<Expression> min                  "Lower boundry";
-      Option<Expression> max                  "Upper boundy";
+      Option<Expression> max                  "Upper boundry";
       Option<Expression> start                "start value";
       Option<Expression> fixed                "fixed - true: default for parameter/constant, false - default for other variables";
       Option<Expression> binding              "A binding expression for certain types. E.G. parameters";

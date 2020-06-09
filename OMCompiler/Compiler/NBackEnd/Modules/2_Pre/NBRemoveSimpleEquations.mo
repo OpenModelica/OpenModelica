@@ -28,7 +28,7 @@
 * See the full OSMC Public License conditions for more details.
 *
 */
-encapsulated uniontype NBRemoveSimpleEquations
+encapsulated package NBRemoveSimpleEquations
 "file:        NBRemoveSimpleEquations.mo
  package:     NBRemoveSimpleEquations
  description: This file contains the functions for the remove simple equations

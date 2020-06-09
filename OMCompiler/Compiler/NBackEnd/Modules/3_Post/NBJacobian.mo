@@ -101,8 +101,8 @@ public
     else fail();
     end match;
   end getModule;
-protected
 
+protected
   function jacobianDefault extends Module.jacobianInterface;
   algorithm
     jacobian := NONE();

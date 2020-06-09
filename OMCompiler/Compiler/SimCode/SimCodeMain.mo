@@ -50,6 +50,7 @@ import HashTableExpToIndex;
 import Tpl;
 import Values;
 import SimCode;
+import NSimCode; /* used for new backend */
 
 // protected imports
 protected
@@ -382,6 +383,15 @@ algorithm
     then tmpSimCode;
   end matchcontinue;
 end createSimCode;
+
+function generateNewModelCodeDAEMode
+  input NBackendDAE.BackendDAE bdae;
+  input Absyn.Path className;
+protected
+  NSimCode.SimCode simCode;
+algorithm
+  simCode := NSimCode.SimCode.create(bdae, className);
+end generateNewModelCodeDAEMode;
 
 protected
 partial function PartialRunTpl
@@ -959,6 +969,9 @@ algorithm
         bdae := NBackendDAE.solve(bdae);
 
         print(NBackendDAE.toString(bdae, "(After Solve)"));
+
+        // for now only dae mode
+        generateNewModelCodeDAEMode(bdae, className);
 
         /* Dummy output for now */
         libs := {"DUMMY"};

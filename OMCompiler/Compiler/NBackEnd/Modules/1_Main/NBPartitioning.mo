@@ -28,7 +28,7 @@
 * See the full OSMC Public License conditions for more details.
 *
 */
-encapsulated uniontype NBPartitioning
+encapsulated package NBPartitioning
 "file:        NBPartitioning.mo
  package:     NBPartitioning
  description: This file contains the functions for the partitioning module.
@@ -73,6 +73,10 @@ public
         algorithm
           qual.init := func(systemType, variables, equations);
         then qual;
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+      then fail();
     end match;
   end main;
 

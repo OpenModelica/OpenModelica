@@ -33,6 +33,25 @@ encapsulated package NBModule
   package:      NBModule
   description:  This file contains all functions and structures regarding
                 generic backend modules and interfaces.
+
+  This file contains following module wrappers:
+
+  *** MAIN
+   - partitioningInterface
+
+  *** PRE (Mandatory)
+   - detectStatesInterface
+   - detectContinuousStatesInterface
+   - detectDiscreteStatesInterface
+
+  *** PRE (Optional)
+   - removeSimpleEquationsInterface
+
+  *** POST (Mandatory)
+   - jacobianInterface
+
+  *** POST (Optional)
+   - tearingInterface
 "
 public
   import BackendDAE = NBackendDAE;
@@ -45,12 +64,30 @@ protected
   import BEquation = NBEquation;
   import Jacobian = NBackendDAE;
   import BVariable = NBVariable;
+  import StrongComponent = NBStrongComponent;
   import System = NBSystem;
 
 public
   partial function wrapper
     input output BackendDAE bdae;
   end wrapper;
+
+
+// =========================================================================
+//                                MAIN MODULES
+// =========================================================================
+
+//                               PARTITIONING
+// *************************************************************************
+  partial function partitioningInterface
+    "Partitioning
+     This function is only allowed to create systems of specialized SystemType
+     by creating an adjacency matrix using provided variables and equations."
+    input System.SystemType systemType;
+    input BVariable.VariablePointers variables;
+    input BEquation.EquationPointers equations;
+    output list<System.System> systems;
+  end partitioningInterface;
 
 // =========================================================================
 //                         MANDATORY PRE-OPT MODULES
@@ -98,35 +135,6 @@ public
     input output BVariable.VariablePointers previous      "Previous discrete variables (pre(d) -> $PRE.d)";
   end detectDiscreteStatesInterface;
 
-//                               PARTITIONING
-// *************************************************************************
-  partial function partitioningInterface
-    "Partitioning
-     This function is only allowed to create systems of specialized SystemType
-     by creating an adjacency matrix using provided variables and equations."
-    input System.SystemType systemType;
-    input BVariable.VariablePointers variables;
-    input BEquation.EquationPointers equations;
-    output list<System.System> systems;
-  end partitioningInterface;
-
-//                               JACOBIAN
-// *************************************************************************
-  partial function jacobianInterface
-    "The jacobian is only allowed to read the variables and equations of current
-    system and additionally the global known variables. It needs a unique name
-    and is allowed to manipulate the function tree.
-    [!] This function can not only be used as an optimization module but also for
-    nonlinear systems, state sets, linearization and dynamic optimization."
-    input String name                           "Name of jacobian";
-    input BVariable.VariablePointers unknowns   "Variable array of unknowns";
-    input BEquation.EquationPointers equations  "Equations array";
-    input BVariable.VariablePointers knowns     "Variable array of knowns";
-    output Option<Jacobian> jacobian            "Resulting jacobian";
-    input output FunctionTree funcTree          "Function call bodies";
-  end jacobianInterface;
-
-
 // =========================================================================
 //                         Optional PRE-OPT MODULES
 // =========================================================================
@@ -142,6 +150,42 @@ public
     input BVariable.VarData varData         "Data containing variable pointers";
     input BEquation.EqData eqData           "Data containing equation pointers";
   end removeSimpleEquationsInterface;
+
+
+  // =========================================================================
+  //                         MANDATORY POST-OPT MODULES
+  // =========================================================================
+
+  //                               JACOBIAN
+  // *************************************************************************
+    partial function jacobianInterface
+      "The jacobian is only allowed to read the variables and equations of current
+      system and additionally the global known variables. It needs a unique name
+      and is allowed to manipulate the function tree.
+      [!] This function can not only be used as an optimization module but also for
+      nonlinear systems, state sets, linearization and dynamic optimization."
+      input String name                           "Name of jacobian";
+      input BVariable.VariablePointers unknowns   "Variable array of unknowns";
+      input BEquation.EquationPointers equations  "Equations array";
+      input BVariable.VariablePointers knowns     "Variable array of knowns";
+      output Option<Jacobian> jacobian            "Resulting jacobian";
+      input output FunctionTree funcTree          "Function call bodies";
+    end jacobianInterface;
+
+// =========================================================================
+//                         Optional POST-OPT MODULES
+// =========================================================================
+
+//                                 TEARING
+// *************************************************************************
+  partial function tearingInterface
+    "Tearing
+     The tearing module analyzes each strong component and applies tearing if
+     necessary. Only has access to the strong component itself, everything else
+     accessable with pointers."
+    input output StrongComponent comp     "the suspected algebraic loop.";
+  end tearingInterface;
+
 
   annotation(__OpenModelica_Interface="backend");
 end NBModule;

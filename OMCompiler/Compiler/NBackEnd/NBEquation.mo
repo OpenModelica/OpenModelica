@@ -155,7 +155,6 @@ public
       eq := SIMPLE_EQUATION(lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL);
     end makeStartEq;
 
-  protected
     function forEquationToString
       input InstNode iter                   "the iterator variable";
       input Expression range                "Start - (Step) - Stop";
@@ -171,7 +170,6 @@ public
       str := str + indent + "end for;\n";
     end forEquationToString;
 
-  public
     function getAttributes
       input Equation eq;
       output EquationAttributes attr;
@@ -627,6 +625,10 @@ public
 
   uniontype EquationPointers
     record EQUATION_POINTERS
+      "author: kabdelhak 2020
+      This uniontype is not really necessary, but it makes it easier maintanable
+      since all utility functions are in the same place. Also it mirrors
+      VariablePointers behavior."
       ExpandableArray<Pointer<Equation>> eqArr;
     end EQUATION_POINTERS;
 
@@ -641,6 +643,14 @@ public
         str := str + "(" + intString(i) + ")" + Equation.toString(Pointer.access(ExpandableArray.get(i, equations.eqArr)), "\t") + "\n";
       end for;
     end toString;
+
+    function toList
+      "Creates a EquationPointer list from EquationPointers."
+      input EquationPointers equations;
+      output list<Pointer<Equation>> eqn_lst;
+    algorithm
+      eqn_lst := ExpandableArray.toList(equations.eqArr);
+    end toList;
 
     function fromList
       input list<Pointer<Equation>> eq_lst;
@@ -796,8 +806,16 @@ public
         case qual as EQ_DATA_HESS() algorithm qual.equations := equations; then qual;
       end match;
     end setEquations;
-
   end EqData;
+
+  uniontype InnerEquation
+    record INNER_EQUATION
+      "Inner equation for torn systems."
+      Pointer<Equation> eqn;
+      list<Pointer<Variable>> vars;
+      //Option<Constraints> cons;
+    end INNER_EQUATION;
+  end InnerEquation;
 
   annotation(__OpenModelica_Interface="backend");
 end NBEquation;
