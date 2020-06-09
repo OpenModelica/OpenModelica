@@ -1768,13 +1768,13 @@ algorithm
       then (cache,v);
 
     case (cache,_,"getAllSubtypeOf",{
-          Values.CODE(Absyn.C_TYPENAME(parentClass)),
           Values.CODE(Absyn.C_TYPENAME(path)),
+          Values.CODE(Absyn.C_TYPENAME(parentClass)),
           Values.BOOL(qualified),
           Values.BOOL(includePartial),
           Values.BOOL(sort)},_)
       equation
-        paths = InteractiveUtil.getAllSubtypeOf(parentClass, path, SymbolTable.getAbsyn(), qualified, includePartial);
+        paths = InteractiveUtil.getAllSubtypeOf(path, parentClass, SymbolTable.getAbsyn(), qualified, includePartial);
         paths = listReverse(paths);
         paths = if sort then List.sort(paths, AbsynUtil.pathGe) else paths;
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);

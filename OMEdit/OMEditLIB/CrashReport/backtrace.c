@@ -8,7 +8,9 @@
   as listed at <url: http://www.opensource.org/licenses/bsd-license.php >.
 */
 
-#ifdef QT_NO_DEBUG
+/* adrpo commented this out as this is a C file compiled with gcc so it NEVER get QT_NO_DEBUG
+ * #ifdef QT_NO_DEBUG
+ */
 #ifdef WIN32
 #include "backtrace.h"
 
@@ -257,4 +259,7 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
   }
 }
 #endif //#ifdef WIN32
-#endif // #ifdef QT_NO_DEBUG
+
+/*
+ * #endif // #ifdef QT_NO_DEBUG
+ */

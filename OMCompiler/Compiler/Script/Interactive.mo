@@ -1059,8 +1059,20 @@ algorithm
     case "getElements"
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
-        nargs := getApiFunctionNamedArgs(inStatement);
-        outResult := InteractiveUtil.getElements(cr, useQuotes(nargs));
+        Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
+        if (access >= 2) then // i.e., Access.icon
+          nargs := getApiFunctionNamedArgs(inStatement);
+          if not Flags.isSet(Flags.NF_API_NOISE) then
+            ErrorExt.setCheckpoint("getElements");
+          end if;
+          outResult := InteractiveUtil.getElements(cr, useQuotes(nargs), access);
+          if not Flags.isSet(Flags.NF_API_NOISE) then
+            ErrorExt.rollBack("getElements");
+          end if;
+        else
+          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+          outResult := "";
+        end if;
       then
         outResult;
 
@@ -1078,6 +1090,28 @@ algorithm
           Config.setEvaluateParametersInAnnotations(evalParamAnn);
           if not Flags.isSet(Flags.NF_API_NOISE) then
             ErrorExt.rollBack("getComponentAnnotations");
+          end if;
+        else
+          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+          outResult := "";
+        end if;
+      then
+        outResult;
+
+    case "getElementAnnotations"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
+        Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
+        if (access >= 4) then // i.e., Access.diagram
+          if not Flags.isSet(Flags.NF_API_NOISE) then
+            ErrorExt.setCheckpoint("getElementAnnotations");
+          end if;
+          evalParamAnn := Config.getEvaluateParametersInAnnotations();
+          Config.setEvaluateParametersInAnnotations(true);
+          outResult := InteractiveUtil.getElementAnnotations(cr, p, access);
+          Config.setEvaluateParametersInAnnotations(evalParamAnn);
+          if not Flags.isSet(Flags.NF_API_NOISE) then
+            ErrorExt.rollBack("getElementAnnotations");
           end if;
         else
           Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
@@ -13466,7 +13500,7 @@ algorithm
   end match;
 end cacheProgramAndPath;
 
-protected function envFromGraphicEnvCache
+public function envFromGraphicEnvCache
   input GraphicEnvCache inEnvCache;
   output FCore.Graph env;
 algorithm

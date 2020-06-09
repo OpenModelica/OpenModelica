@@ -61,7 +61,7 @@ TextAnnotation::TextAnnotation(QString annotation, GraphicsView *pGraphicsView)
   setShapeFlags(true);
 }
 
-TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent)
+TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
   : ShapeAnnotation(pShapeAnnotation, pParent), mpComponent(pParent)
 {
   mpOriginItem = 0;
@@ -83,7 +83,7 @@ TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *
   mpGraphicsView->addItem(mpOriginItem);
 }
 
-TextAnnotation::TextAnnotation(Component *pParent)
+TextAnnotation::TextAnnotation(Element *pParent)
   : ShapeAnnotation(0, pParent), mpComponent(pParent)
 {
   mpOriginItem = 0;
@@ -546,13 +546,13 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
       if (!variable.isEmpty()) {
         QString textValue;
         /* Ticket:4204
-         * If we have extend component then call Component::getParameterDisplayString from root component.
+         * If we have extend component then call Element::getParameterDisplayString from root component.
          */
         textValue = mpComponent->getRootParentComponent()->getParameterDisplayString(variable);
         if (!textValue.isEmpty()) {
           QString unit = "";
           QString displaytUnit = "";
-          Component *pComponent = mpComponent->getRootParentComponent()->getComponentByName(variable);
+          Element *pComponent = mpComponent->getRootParentComponent()->getComponentByName(variable);
           if (pComponent) {
             displaytUnit = pComponent->getDerivedClassModifierValue("displaytUnit");
             if (displaytUnit.isEmpty()) {

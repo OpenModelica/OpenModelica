@@ -246,6 +246,8 @@ public:
   int getWelcomePageView();
   void setWelcomePageView(int view);
   QCheckBox* getShowLatestNewsCheckBox() {return mpShowLatestNewsCheckBox;}
+  void setReplaceableSupport(bool value) {mpReplaceableSupport->setChecked(value);}
+  bool getReplaceableSupport() {return mpReplaceableSupport->isChecked();}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralSettingsGroupBox;
@@ -281,6 +283,8 @@ private:
   QRadioButton *mpHorizontalViewRadioButton;
   QRadioButton *mpVerticalViewRadioButton;
   QCheckBox *mpShowLatestNewsCheckBox;
+  QGroupBox *mpOptionalFeaturesGroupBox;
+  QCheckBox *mpReplaceableSupport;
 public slots:
   void selectWorkingDirectory();
   void selectTerminalCommand();

@@ -298,7 +298,7 @@ void buildAndRunOMEditTestsuite(stash) {
     patchConfigStatus()
   }
   sh 'CONFIG=`./config.status --config` && ./configure `eval $CONFIG`'
-  sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip && ${makeCommand()} -q omc omc-diff ReferenceFiles omsimulator omedit omplot" // Pretend we already built omc since we already did so
+  sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip omparser.skip && ${makeCommand()} -q omc omc-diff ReferenceFiles omsimulator omedit omplot omparser" // Pretend we already built omc since we already did so
   sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync omedit-testsuite" // Builds the OMEdit testsuite
   sh label: 'RunOMEditTestsuite', script: '''
   HOME="\$PWD/testsuite/libraries-for-testing"

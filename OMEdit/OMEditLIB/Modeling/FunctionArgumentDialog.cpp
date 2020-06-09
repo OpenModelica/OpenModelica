@@ -32,7 +32,7 @@
 #include "FunctionArgumentDialog.h"
 
 #include "LibraryTreeWidget.h"
-#include "Component/Component.h"
+#include "Element/Element.h"
 
 #include <QGridLayout>
 #include <QLineEdit>
@@ -54,13 +54,13 @@ FunctionArgumentDialog::FunctionArgumentDialog(LibraryTreeItem *pLibraryTreeItem
   pMainLayout->addWidget(pDescriptionGroupBox);
 
   // Function arguments
-  QList<ComponentInfo*> components = mpLibraryTreeItem->getModelWidget()->getComponentsList();
+  QList<ElementInfo*> components = mpLibraryTreeItem->getModelWidget()->getComponentsList();
   QGroupBox *pInputsGroupBox = new QGroupBox(Helper::inputs);
   QGridLayout *pInputsGridLayout = new QGridLayout;
   pInputsGridLayout->setAlignment(Qt::AlignTop);
   int row = 0;
   for (int i = 0; i < components.size(); ++i) {
-    ComponentInfo *pComponent = components[i];
+    ElementInfo *pComponent = components[i];
     if (!isInput(pComponent)) {
       continue;
     }
@@ -93,9 +93,9 @@ QString FunctionArgumentDialog::getFunctionCallCommand()
 {
   QString result = mpLibraryTreeItem->getNameStructure() + "(";
   int inputArgIndex = 0;
-  QList<ComponentInfo*> components = mpLibraryTreeItem->getModelWidget()->getComponentsList();
+  QList<ElementInfo*> components = mpLibraryTreeItem->getModelWidget()->getComponentsList();
   for (int i = 0; i < components.size(); ++i) {
-    ComponentInfo *pComponent = components[i];
+    ElementInfo *pComponent = components[i];
     if (!isInput(pComponent)) {
       continue;
     }
@@ -118,7 +118,7 @@ QString FunctionArgumentDialog::getFunctionCallCommand()
   return result;
 }
 
-bool FunctionArgumentDialog::isInput(ComponentInfo *pComponentInfo)
+bool FunctionArgumentDialog::isInput(ElementInfo *pComponentInfo)
 {
   return pComponentInfo->getCausality() == "input";
 }
