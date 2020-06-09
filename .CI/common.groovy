@@ -169,7 +169,7 @@ void buildOMC(CC, CXX, extraFlags) {
      echo set -e
      echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
      echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/build/lib/omlibrary"
-     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omc omc-diff omlibrary-core
+     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omc testsuite-depends
      echo cd \${MSYS_WORKSPACE}
      echo make -f Makefile.omdev.mingw \${MAKETHREADS} BUILDTYPE=Release all-runtimes
      echo echo Check that omc can be started and a model can be build for NF OF with runtimes C Cpp FMU
@@ -190,6 +190,8 @@ void buildOMC(CC, CXX, extraFlags) {
      echo rm -rf M* OMCppM*
      echo cd ..
      echo rm -rf .sanity-check
+     echo cd testsuite/flattening/libraries/biochem
+     echo ../../../rtest --return-with-error-code EnzMM.mos
      ) > buildOMCWindows.sh
 
      set MSYSTEM=MINGW64
