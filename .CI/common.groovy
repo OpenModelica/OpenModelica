@@ -191,6 +191,8 @@ void buildOMC(CC, CXX, extraFlags) {
      echo rm -rf M* OMCppM*
      echo cd ..
      echo rm -rf .sanity-check
+     echo cd testsuite/flattening/libraries/biochem
+     echo ../../../rtest --return-with-error-code EnzMM.mos
      ) > buildOMCWindows.sh
 
      set MSYSTEM=MINGW64
