@@ -53,16 +53,29 @@ function parse
   output Version v;
 protected
   Integer n;
-  String major, minor, patch, prerelease, meta;
-  list<String> prereleaseLst, metaLst, matches;
-  constant String semverRegex = "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]*|)([+][0-9A-Za-z.-]*|)$";
+  String major, minor, patch, prerelease, meta, nextString;
+  list<String> prereleaseLst, metaLst, matches, split;
+  constant String semverRegex = "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)([+-][0-9A-Za-z.-]*)?$";
 algorithm
-  (n, matches) := System.regex(s, semverRegex, maxMatches=6, extended=true);
-  if n <> 6 then
+  (n, matches) := System.regex(s, semverRegex, maxMatches=5, extended=true);
+  if n < 4 then
     v := NONSEMVER(s);
     return;
   end if;
-  {_,major,minor,patch,prerelease,meta} := matches;
+  // OSX regex cannot handle everything in the same regex, so we have manual splitting of prerelease and meta strings
+  _::major::minor::patch::split := matches;
+  nextString := if listEmpty(split) then "" else listGet(split, 1);
+  if stringEmpty(nextString) then
+    prerelease := "";
+    meta := "";
+  elseif stringGetStringChar(nextString, 1) == "+" then
+    prerelease := "";
+    meta := nextString;
+  else
+    split := Util.stringSplitAtChar(nextString, "+");
+    prerelease::split := split;
+    meta := if listEmpty(split) then "" else listGet(split, 1);
+  end if;
   prereleaseLst := if stringLength(prerelease) > 0 then Util.stringSplitAtChar(Util.stringRest(prerelease), ".") else {};
   metaLst := if stringLength(meta) > 0 then Util.stringSplitAtChar(Util.stringRest(meta), ".") else {};
   v := SEMVER(stringInt(major),stringInt(minor),stringInt(patch),prereleaseLst,metaLst);
