@@ -88,8 +88,8 @@ res := readSimulationResult("initializationTests.autoFixed.test6_res.mat", {time
 // "
 // end SimulationResult;
 // "Warning: Assuming fixed start value for the following 2 variables:
-//          b:VARIABLE(start = 2.0 fixed = true )  "comment b" type: Real
-//          a:DISCRETE(start = 1.0 fixed = true )  "comment a" type: Real
+//          b:VARIABLE(start = 2.0 fixed = true )  \"comment b\" type: Real
+//          a:DISCRETE(start = 1.0 fixed = true )  \"comment a\" type: Real
 // "
 // {{0.0,0.0},{1.0,1.0},{2.0,2.0}}
 // ""
@@ -101,7 +101,7 @@ res := readSimulationResult("initializationTests.autoFixed.test6_res.mat", {time
 // "
 // end SimulationResult;
 // "Warning: Assuming fixed start value for the following 1 variables:
-//          b:VARIABLE(start = 2.0 fixed = true )  "comment b" type: Real
+//          b:VARIABLE(start = 2.0 fixed = true )  \"comment b\" type: Real
 // "
 // {{0.0,0.0},{1.0,1.0},{2.0,2.0}}
 // ""
@@ -113,7 +113,7 @@ res := readSimulationResult("initializationTests.autoFixed.test6_res.mat", {time
 // "
 // end SimulationResult;
 // "Warning: Assuming fixed start value for the following 1 variables:
-//          a:DISCRETE(start = 1.0 fixed = true )  "comment a" type: Real
+//          a:DISCRETE(start = 1.0 fixed = true )  \"comment a\" type: Real
 // "
 // {{0.0,0.0},{1.0,1.0},{2.0,2.0}}
 // ""
@@ -125,7 +125,7 @@ res := readSimulationResult("initializationTests.autoFixed.test6_res.mat", {time
 // "
 // end SimulationResult;
 // "Warning: Assuming fixed start value for the following 1 variables:
-//          b:VARIABLE(start = 2.0 fixed = true )  "comment b" type: Real
+//          b:VARIABLE(start = 2.0 fixed = true )  \"comment b\" type: Real
 // "
 // record SimulationResult
 //     resultFile = "initializationTests.autoFixed.test5_res.mat",

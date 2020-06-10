@@ -64,8 +64,8 @@ simulate(initializationTests.homotopy4, simflags="-ils=3 -lv=LOG_INIT_HOMOTOPY")
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac3. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac6. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac3. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac6. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_res.mat",
@@ -89,7 +89,7 @@ simulate(initializationTests.homotopy4, simflags="-ils=3 -lv=LOG_INIT_HOMOTOPY")
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac14. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac17. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac14. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac17. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // endResult

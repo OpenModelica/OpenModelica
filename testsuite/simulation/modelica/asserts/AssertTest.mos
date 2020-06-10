@@ -21,7 +21,7 @@ getErrorString();
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'AssertTestDuringInst', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Failed to build model: AssertTestDuringInst"
 // end SimulationResult;
-// "[simulation/modelica/asserts/AssertTest.mo:22:3-22:55:writable] Error: Assertion triggered during translation: "Testing assert during instantiation".
+// "[simulation/modelica/asserts/AssertTest.mo:22:3-22:55:writable] Error: Assertion triggered during translation: \"Testing assert during instantiation\".
 // "
 // record SimulationResult
 //     resultFile = "",

@@ -546,6 +546,6 @@ instantiateModel(TypeTestArrayBug); getErrorString();
 //   Real a[5,4,10,2](quantity = \"SomeQ\", unit = \"m\", nominal = 5.0);
 // end TypeTestArrayBug;
 // "
-// "[flattening/modelica/arrays/TypeTestArrayBug.mo:3:24-3:34:writable] Warning: Non-array modification '"m"' for array component, possibly due to missing 'each'.
+// "[flattening/modelica/arrays/TypeTestArrayBug.mo:3:24-3:34:writable] Warning: Non-array modification '\"m\"' for array component, possibly due to missing 'each'.
 // "
 // endResult
