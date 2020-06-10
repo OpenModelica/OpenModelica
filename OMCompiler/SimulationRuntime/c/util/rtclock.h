@@ -34,18 +34,6 @@
 extern "C" {
 #endif
 
-#if defined(OMC_MINIMAL_RUNTIME)
-
-typedef int rtclock_t;
-static inline void rt_ext_tp_tick(rtclock_t* tick_tp) {}
-static inline double rt_ext_tp_tock(rtclock_t* tick_tp) {return 0.0;}
-static inline void rt_tick(int ix) {}
-static inline double rt_tock(int ix) {return 0.0;}
-
-#else
-
-#include <stdint.h>
-
 #define NUM_RT_CLOCKS 33
 #define NUM_USER_RT_CLOCKS 32
 #define RT_CLOCK_SPECIAL_STOPWATCH 32 /* The 33rd clock */
@@ -68,6 +56,20 @@ static inline double rt_tock(int ix) {return 0.0;}
 #define SIM_TIMER_INFO_XML       14
 #define SIM_TIMER_DAE            15
 #define SIM_TIMER_FIRST_FUNCTION 16
+
+#if defined(OMC_MINIMAL_RUNTIME)
+
+typedef int rtclock_t;
+static inline void rt_ext_tp_tick(rtclock_t* tick_tp) {}
+static inline double rt_ext_tp_tock(rtclock_t* tick_tp) {return 0.0;}
+static inline void rt_tick(int ix) {}
+static inline void rt_accumulate(int ix) {}
+static inline void rt_clear(int ix) {}
+static inline double rt_tock(int ix) {return 0.0;}
+
+#else
+
+#include <stdint.h>
 
 #define SIM_PROF_TICK_FN(ix) rt_tick(ix+SIM_TIMER_FIRST_FUNCTION)
 #define SIM_PROF_ACC_FN(ix) rt_accumulate(ix+SIM_TIMER_FIRST_FUNCTION)
