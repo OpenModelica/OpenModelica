@@ -619,17 +619,17 @@ public uniontype FmiModelStructure
 end FmiModelStructure;
 
 public uniontype FmiSimulationFlags
-  record FMISIMULATIONFLAGS
+  record FMI_SIMULATION_FLAGS
     String solver;
     String nonLinearSolver;
-  end FMISIMULATIONFLAGS;
+  end FMI_SIMULATION_FLAGS;
 
-  record FMISIMULATIONFLAGSFILE
+  record FMI_SIMULATION_FLAGS_FILE
     String path;
-  end FMISIMULATIONFLAGSFILE;
+  end FMI_SIMULATION_FLAGS_FILE;
 end FmiSimulationFlags;
 
-constant FmiSimulationFlags defaultFmiSimulationFlags = FMISIMULATIONFLAGS(solver="euler", nonLinearSolver="homotopy");
+constant FmiSimulationFlags defaultFmiSimulationFlags = FMI_SIMULATION_FLAGS(solver="euler", nonLinearSolver="homotopy");
 
 annotation(__OpenModelica_Interface="backend");
 end SimCode;

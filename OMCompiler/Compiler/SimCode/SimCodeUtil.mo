@@ -681,56 +681,57 @@ algorithm
       fullPathPrefix := "";
     end if;
 
-    simCode := SimCode.SIMCODE(modelInfo,
-                              {}, // Set by the traversal below...
-                              recordDecls,
-                              externalFunctionIncludes,
-                              localKnownVars,
-                              allEquations,
-                              odeEquations,
-                              algebraicEquations,
-                              clockedPartitions,
-                              initialEquations,
-                              initialEquations_lambda0,
-                              removedInitialEquations,
-                              startValueEquations,
-                              nominalValueEquations,
-                              minValueEquations,
-                              maxValueEquations,
-                              parameterEquations,
-                              removedEquations,
-                              algorithmAndEquationAsserts,
-                              equationsForZeroCrossings,
-                              jacobianEquations,
-                              stateSets,
-                              constraints,
-                              classAttributes,
-                              zeroCrossings,
-                              relations,
-                              timeEvents,
-                              discreteModelVars,
-                              extObjInfo,
-                              makefileParams,
-                              SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
-                              SymbolicJacs,
-                              simSettingsOpt,
-                              filenamePrefix,
-                              fullPathPrefix,
-                              fmuTargetName,
-                              HpcOmSimCode.emptyHpcomData,
-                              if isFMU then getValueReferenceMapping(modelInfo) else AvlTreeCRToInt.EMPTY(),
-                              varToArrayIndexMapping,
-                              varToIndexMapping,
-                              crefToSimVarHT,
-                              crefToClockIndexHT,
-                              SOME(backendMapping),
-                              modelStructure,
-                              fmiSimulationFlags,
-                              SimCode.emptyPartitionData,
-                              NONE(),
-                              inlineEquations,
-                              omsiOptData
-                              );
+    simCode := SimCode.SIMCODE(
+      modelInfo                   = modelInfo,
+      literals                    = {}, // Set by the traversal below...
+      recordDecls                 = recordDecls,
+      externalFunctionIncludes    = externalFunctionIncludes,
+      localKnownVars              = localKnownVars,
+      allEquations                = allEquations,
+      odeEquations                = odeEquations,
+      algebraicEquations          = algebraicEquations,
+      clockedPartitions           = clockedPartitions,
+      initialEquations            = initialEquations,
+      initialEquations_lambda0    = initialEquations_lambda0,
+      removedInitialEquations     = removedInitialEquations,
+      startValueEquations         = startValueEquations,
+      nominalValueEquations       = nominalValueEquations,
+      minValueEquations           = minValueEquations,
+      maxValueEquations           = maxValueEquations,
+      parameterEquations          = parameterEquations,
+      removedEquations            = removedEquations,
+      algorithmAndEquationAsserts = algorithmAndEquationAsserts,
+      equationsForZeroCrossings   = equationsForZeroCrossings,
+      jacobianEquations           = jacobianEquations,
+      stateSets                   = stateSets,
+      constraints                 = constraints,
+      classAttributes             = classAttributes,
+      zeroCrossings               = zeroCrossings,
+      relations                   = relations,
+      timeEvents                  = timeEvents,
+      discreteModelVars           = discreteModelVars,
+      extObjInfo                  = extObjInfo,
+      makefileParams              = makefileParams,
+      delayedExps                 = SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
+      jacobianMatrixes            = SymbolicJacs,
+      simulationSettingsOpt       = simSettingsOpt,
+      fileNamePrefix              = filenamePrefix,
+      fullPathPrefix              = fullPathPrefix,
+      fmuTargetName               = fmuTargetName,
+      hpcomData                   = HpcOmSimCode.emptyHpcomData,
+      valueReferences             = if isFMU then getValueReferenceMapping(modelInfo) else AvlTreeCRToInt.EMPTY(),
+      varToArrayIndexMapping      = varToArrayIndexMapping,
+      varToIndexMapping           = varToIndexMapping,
+      crefToSimVarHT              = crefToSimVarHT,
+      crefToClockIndexHT          = crefToClockIndexHT,
+      backendMapping              = SOME(backendMapping),
+      modelStructure              = modelStructure,
+      fmiSimulationFlags          = fmiSimulationFlags,
+      partitionData               = SimCode.emptyPartitionData,
+      daeModeData                 = NONE(),
+      inlineEquations             = inlineEquations,
+      omsiData                    = omsiOptData
+    );
 
     (simCode, (_, _, lits)) := traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literals);
 
@@ -13246,7 +13247,6 @@ protected
   list<String> tmpSplitted;
   String solverName = "euler";
   String nonLinearSolverName = "homotopy";
-  Integer i = 0;
 algorithm
   fmiFlagsList := Flags.getConfigStringList(Flags.FMI_FLAGS);
 
@@ -13267,10 +13267,10 @@ algorithm
   elseif listLength(fmiFlagsList) == 1 and stringEqual( List.last(Util.stringSplitAtChar(List.first(fmiFlagsList),".")) , "json" )  then
     pathToFile := List.first(fmiFlagsList);
     if System.regularFileExists(pathToFile) then
-      fmiSimulationFlags := SOME(SimCode.FMISIMULATIONFLAGSFILE(path=pathToFile));
+      fmiSimulationFlags := SOME(SimCode.FMI_SIMULATION_FLAGS_FILE(path=pathToFile));
       return;
     elseif System.regularFileExists(Util.absoluteOrRelative(pathToFile)) then
-      fmiSimulationFlags := SOME(SimCode.FMISIMULATIONFLAGSFILE(path=Util.absoluteOrRelative(pathToFile)));
+      fmiSimulationFlags := SOME(SimCode.FMI_SIMULATION_FLAGS_FILE(path=Util.absoluteOrRelative(pathToFile)));
       return;
     else
       msg := "Could not find file \"" + pathToFile + "\nIgnoring \"--fmiFlags=" + pathToFile + "\" and using default setting.\n";
@@ -13313,7 +13313,7 @@ algorithm
         Error.addCompilerWarning(msg);
       end if;
     end for;
-    fmiSimulationFlags := SOME(SimCode.FMISIMULATIONFLAGS(solver=solverName, nonLinearSolver=nonLinearSolverName));
+    fmiSimulationFlags := SOME(SimCode.FMI_SIMULATION_FLAGS(solver=solverName, nonLinearSolver=nonLinearSolverName));
   end if;
 end createFMISimulationFlags;
 

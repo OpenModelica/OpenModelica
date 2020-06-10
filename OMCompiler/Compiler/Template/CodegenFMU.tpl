@@ -88,7 +88,7 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
 
   // Generate optional <fmiPrefix>_flags.json
   let _ = match sc.fmiSimulationFlags
-    case SOME(fmiSimFlags as FMISIMULATIONFLAGS(__)) then
+    case SOME(fmiSimFlags as FMI_SIMULATION_FLAGS(__)) then
       let() = textFile(fmuSimulationFlagsFile(fmiSimFlags), '<%fileNamePrefix%>.fmutmp/resources/<%fileNamePrefix%>_flags.json')
       ""
     else
@@ -204,7 +204,7 @@ template fmuSimulationFlagsFile(FmiSimulationFlags fmiSimulationFlags)
   "Generates <fmiPrefix>_flags.json file for FMUs with custom simulation flags."
  ::=
   match fmiSimulationFlags
-  case flags as FMISIMULATIONFLAGS(__) then
+  case flags as FMI_SIMULATION_FLAGS(__) then
     <<
     {
       "s" : "<%flags.solver%>",
@@ -1173,12 +1173,12 @@ match platform
   <<
   <%fileNamePrefix%>_FMU: nozip
   <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fmuTargetName%>.fmu *
-  nozip: <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES) $(RUNTIMEFILES)
-  <%\t%>$(CXX) -shared -I. -o <%modelNamePrefix%>$(DLLEXT) $(RUNTIMEFILES) $(OFILES) $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -llis -Wl,--kill-at
+  nozip: <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
+  <%\t%>$(CXX) -shared -I. -o <%modelNamePrefix%>$(DLLEXT) $(RUNTIMEFILES) $(FMISUNDIALSFILES) $(OFILES) $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -llis -Wl,--kill-at
   <%\t%>mkdir.exe -p ../binaries/<%platform%>
   <%\t%>dlltool -d <%fileNamePrefix%>.def --dllname <%fileNamePrefix%>$(DLLEXT) --output-lib <%fileNamePrefix%>.lib --kill-at
   <%\t%>cp <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>.lib <%fileNamePrefix%>_FMU.libs ../binaries/<%platform%>/
-  <%\t%>rm -f *.o <%fileNamePrefix%>$(DLLEXT) $(OFILES) $(RUNTIMEFILES)
+  <%\t%>rm -f *.o <%fileNamePrefix%>$(DLLEXT) $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
   <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fmuTargetName%>.fmu *
 
   >>
@@ -1186,10 +1186,10 @@ match platform
   <<
   <%fileNamePrefix%>_FMU: nozip
   <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fmuTargetName%>.fmu *
-  nozip: <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES) $(RUNTIMEFILES)
+  nozip: <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
   <%\t%>mkdir -p ../binaries/$(FMIPLATFORM)
   ifeq (@LIBTYPE_DYNAMIC@,1)
-  <%\t%>$(LD) -o <%modelNamePrefix%>$(DLLEXT) $(OFILES) $(RUNTIMEFILES) <%dirExtra%> <%libsPos1%> @BSTATIC@ <%libsPos2%> @BDYNAMIC@ $(LDFLAGS)
+  <%\t%>$(LD) -o <%modelNamePrefix%>$(DLLEXT) $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES) <%dirExtra%> <%libsPos1%> @BSTATIC@ <%libsPos2%> @BDYNAMIC@ $(LDFLAGS)
   <%\t%>cp <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>_FMU.libs ../binaries/$(FMIPLATFORM)/
   endif
   <%if intLt(Flags.getConfigEnum(Flags.FMI_FILTER), 4) then
@@ -1197,21 +1197,22 @@ match platform
    %>
   ifeq (@LIBTYPE_STATIC@,1)
   <%\t%>rm -f <%modelNamePrefix%>.a
-  <%\t%>$(AR) -rsu <%modelNamePrefix%>.a $(OFILES) $(RUNTIMEFILES)
+  <%\t%>$(AR) -rsu <%modelNamePrefix%>.a $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
   <%\t%>cp <%fileNamePrefix%>.a <%fileNamePrefix%>_FMU.libs ../binaries/$(FMIPLATFORM)/
   endif
   <%\t%>$(MAKE) distclean
   distclean: clean
   <%\t%>rm -f Makefile config.status config.log
   clean:
-  <%\t%>rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>.a <%fileNamePrefix%>$(DLLEXT) $(MAINOBJ) $(OFILES) $(RUNTIMEFILES)
+  <%\t%>rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>.a <%fileNamePrefix%>$(DLLEXT) $(MAINOBJ) $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
   >>
 end getPlatformString2;
 
 template settingsfile(SimCode simCode)
+"Generates content of omc_simulation_settings.h"
 ::=
   match simCode
-  case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DELAYED_EXPRESSIONS(maxDelayedIndex=maxDelayedIndex)) then
+  case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DELAYED_EXPRESSIONS(maxDelayedIndex=maxDelayedIndex), fmiSimulationFlags=fmiSimulationFlags) then
   <<
   #if !defined(OMC_SIM_SETTINGS_CMDLINE)
   #define OMC_SIM_SETTINGS_CMDLINE
@@ -1224,144 +1225,145 @@ template settingsfile(SimCode simCode)
   #define OMC_MODEL_PREFIX "<%modelNamePrefix(simCode)%>"
   #define OMC_MINIMAL_RUNTIME 1
   #define OMC_FMI_RUNTIME 1
+  <%if isSome(fmiSimulationFlags) then "#define WITH_SUNDIALS 1"%>
   #endif
  >>
 end settingsfile;
 
-template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<String> sourceFiles, list<String> runtimeObjectFiles, list<String> dgesvObjectFiles)
+template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<String> sourceFiles, list<String> runtimeObjectFiles, list<String> dgesvObjectFiles, list <String> sundialsObjectFiles)
  "Generates the contents of the makefile for the simulation case. Copy libexpat & correct linux fmu"
 ::=
-let common =
-  match simCode
-  case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
-  <<
-  CFILES=<%sourceFiles ; separator=" "%>
-  OFILES=$(CFILES:.c=.o)
+  let common =
+    match simCode
+    case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
+    <<
+    CFILES = <%sourceFiles ; separator=" \\\n         "%>
+    OFILES=$(CFILES:.c=.o)
 
-  RUNTIMEDIR=.
-  ifneq ($(NEED_DGESV),)
-  DGESV_OBJS = <%dgesvObjectFiles ; separator = " "%>
-  endif
-  ifneq ($(NEED_RUNTIME),)
-  RUNTIMEFILES=<%runtimeObjectFiles ; separator = " "%> $(DGESV_OBJS)
-  endif
-  >>
-match getGeneralTarget(target)
-case "msvc" then
-match simCode
-case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
-  let dirExtra = if modelInfo.directory then '/LIBPATH:"<%modelInfo.directory%>"' //else ""
-  let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
-  let libsPos1 = if not dirExtra then libsStr //else ""
-  let libsPos2 = if dirExtra then libsStr // else ""
-  let fmudirname = '<%fileNamePrefix%>.fmutmp'
-  let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
-    '<%match s.method
-       case "inline-euler" then "-D_OMC_INLINE_EULER"
-       case "inline-rungekutta" then "-D_OMC_INLINE_RK"%>'
-  let compilecmds = getPlatformString2(modelNamePrefix(simCode), makefileParams.platform, fileNamePrefix, fmuTargetName, dirExtra, libsPos1, libsPos2, makefileParams.omhome, FMUVersion)
-  let mkdir = match makefileParams.platform case "win32" case "win64" then '"mkdir.exe"' else 'mkdir'
-  <<
-  # Makefile generated by OpenModelica
+    RUNTIMEDIR=.
+    ifneq ($(NEED_DGESV),)
+    DGESV_OBJS = <%dgesvObjectFiles ; separator = " "%>
+    endif
+    ifneq ($(NEED_RUNTIME),)
+    RUNTIMEFILES=<%runtimeObjectFiles ; separator = " "%> $(DGESV_OBJS)
+    endif
+    ifneq ($(NEED_SUNDIALS),)
+    FMISUNDIALSFILES=<%sundialsObjectFiles ; separator = " "%>
+    LDFLAGS+=-lsundials_cvode -lsundials_nvecserial
+    endif
+    >>
 
-  # Simulations use -O3 by default
-  SIM_OR_DYNLOAD_OPT_LEVEL=
-  MODELICAUSERCFLAGS=
-  CXX=cl
-  EXEEXT=.exe
-  DLLEXT=.dll
-  FMUEXT=.fmu
-  PLATWIN32 = win32
+  match getGeneralTarget(target)
+  case "msvc" then
+    match simCode
+    case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
+      let dirExtra = if modelInfo.directory then '/LIBPATH:"<%modelInfo.directory%>"' //else ""
+      let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
+      let libsPos1 = if not dirExtra then libsStr //else ""
+      let libsPos2 = if dirExtra then libsStr // else ""
+      let fmudirname = '<%fileNamePrefix%>.fmutmp'
+      let compilecmds = getPlatformString2(modelNamePrefix(simCode), makefileParams.platform, fileNamePrefix, fmuTargetName, dirExtra, libsPos1, libsPos2, makefileParams.omhome, FMUVersion)
+      let mkdir = match makefileParams.platform case "win32" case "win64" then '"mkdir.exe"' else 'mkdir'
+      <<
+      # Makefile generated by OpenModelica
 
-  # /Od - Optimization disabled
-  # /EHa enable C++ EH (w/ SEH exceptions)
-  # /fp:except - consider floating-point exceptions when generating code
-  # /arch:SSE2 - enable use of instructions available with SSE2 enabled CPUs
-  # /I - Include Directories
-  # /DNOMINMAX - Define NOMINMAX (does what it says)
-  # /TP - Use C++ Compiler
-  CFLAGS=/MP /Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" /I"<%makefileParams.omhome%>/include/omc/msvc/" <%if isFMIVersion20(FMUVersion) then '/I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '/I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY  <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then '/DFMU_EXPERIMENTAL'%>
+      # Simulations use -O3 by default
+      SIM_OR_DYNLOAD_OPT_LEVEL=
+      MODELICAUSERCFLAGS=
+      CXX=cl
+      EXEEXT=.exe
+      DLLEXT=.dll
+      FMUEXT=.fmu
+      PLATWIN32 = win32
 
-  # /ZI enable Edit and Continue debug info
-  CDFLAGS=/ZI
+      # /Od - Optimization disabled
+      # /EHa enable C++ EH (w/ SEH exceptions)
+      # /fp:except - consider floating-point exceptions when generating code
+      # /arch:SSE2 - enable use of instructions available with SSE2 enabled CPUs
+      # /I - Include Directories
+      # /DNOMINMAX - Define NOMINMAX (does what it says)
+      # /TP - Use C++ Compiler
+      CFLAGS=/MP /Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" /I"<%makefileParams.omhome%>/include/omc/msvc/" <%if isFMIVersion20(FMUVersion) then '/I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '/I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY  <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then '/DFMU_EXPERIMENTAL'%>
 
-  # /MD - link with MSVCRT.LIB
-  # /link - [linker options and libraries]
-  # /LIBPATH: - Directories where libs can be found
-  LDFLAGS=/MD /link /dll /debug /pdb:"<%fileNamePrefix%>.pdb" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/release/" <%dirExtra%> <%libsPos1%> <%libsPos2%> f2c.lib initialization.lib libexpat.lib math-support.lib meta.lib results.lib simulation.lib solver.lib sundials_kinsol.lib sundials_nvecserial.lib util.lib lapack_win32_MT.lib lis.lib  gc-lib.lib user32.lib pthreadVC2.lib wsock32.lib cminpack.lib umfpack.lib amd.lib
+      # /ZI enable Edit and Continue debug info
+      CDFLAGS=/ZI
 
-  # /MDd link with MSVCRTD.LIB debug lib
-  # lib names should not be appended with a d just switch to lib/omc/msvc/debug
+      # /MD - link with MSVCRT.LIB
+      # /link - [linker options and libraries]
+      # /LIBPATH: - Directories where libs can be found
+      LDFLAGS=/MD /link /dll /debug /pdb:"<%fileNamePrefix%>.pdb" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/release/" <%dirExtra%> <%libsPos1%> <%libsPos2%> f2c.lib initialization.lib libexpat.lib math-support.lib meta.lib results.lib simulation.lib solver.lib sundials_kinsol.lib sundials_nvecserial.lib util.lib lapack_win32_MT.lib lis.lib  gc-lib.lib user32.lib pthreadVC2.lib wsock32.lib cminpack.lib umfpack.lib amd.lib
+
+      # /MDd link with MSVCRTD.LIB debug lib
+      # lib names should not be appended with a d just switch to lib/omc/msvc/debug
 
 
-  <%common%>
+      <%common%>
 
-  <%fileNamePrefix%>$(FMUEXT): <%fileNamePrefix%>$(DLLEXT) modelDescription.xml
-      if not exist <%fmudirname%>\binaries\$(PLATWIN32) <%mkdir%> <%fmudirname%>\binaries\$(PLATWIN32)
-      if not exist <%fmudirname%>\sources <%mkdir%> <%fmudirname%>\sources
+      <%fileNamePrefix%>$(FMUEXT): <%fileNamePrefix%>$(DLLEXT) modelDescription.xml
+          if not exist <%fmudirname%>\binaries\$(PLATWIN32) <%mkdir%> <%fmudirname%>\binaries\$(PLATWIN32)
+          if not exist <%fmudirname%>\sources <%mkdir%> <%fmudirname%>\sources
 
-      copy <%fileNamePrefix%>.dll <%fmudirname%>\binaries\$(PLATWIN32)
-      copy <%fileNamePrefix%>.lib <%fmudirname%>\binaries\$(PLATWIN32)
-      copy <%fileNamePrefix%>.pdb <%fmudirname%>\binaries\$(PLATWIN32)
-      copy <%fileNamePrefix%>.c <%fmudirname%>\sources\<%fileNamePrefix%>.c
-      copy <%fileNamePrefix%>_model.h <%fmudirname%>\sources\<%fileNamePrefix%>_model.h
-      copy <%fileNamePrefix%>_FMU.c <%fmudirname%>\sources\<%fileNamePrefix%>_FMU.c
-      copy <%fileNamePrefix%>_info.c <%fmudirname%>\sources\<%fileNamePrefix%>_info.c
-      copy <%fileNamePrefix%>_init_fmu.c <%fmudirname%>\sources\<%fileNamePrefix%>_init_fmu.c
-      copy <%fileNamePrefix%>_functions.c <%fmudirname%>\sources\<%fileNamePrefix%>_functions.c
-      copy <%fileNamePrefix%>_functions.h <%fmudirname%>\sources\<%fileNamePrefix%>_functions.h
-      copy <%fileNamePrefix%>_records.c <%fmudirname%>\sources\<%fileNamePrefix%>_records.c
-      copy modelDescription.xml <%fmudirname%>\modelDescription.xml
-      copy <%stringReplace(makefileParams.omhome,"/","\\")%>\bin\SUNDIALS_KINSOL.DLL <%fmudirname%>\binaries\$(PLATWIN32)
-      copy <%stringReplace(makefileParams.omhome,"/","\\")%>\bin\SUNDIALS_NVECSERIAL.DLL <%fmudirname%>\binaries\$(PLATWIN32)
-      copy <%stringReplace(makefileParams.omhome,"/","\\")%>\bin\LAPACK_WIN32_MT.DLL <%fmudirname%>\binaries\$(PLATWIN32)
-      copy <%stringReplace(makefileParams.omhome,"/","\\")%>\bin\pthreadVC2.dll <%fmudirname%>\binaries\$(PLATWIN32)
-      cd <%fmudirname%>
-      "zip.exe" -r ../<%fmuTargetName%>.fmu *
-      cd ..
-      rm -rf <%fmudirname%>
+          copy <%fileNamePrefix%>.dll <%fmudirname%>\binaries\$(PLATWIN32)
+          copy <%fileNamePrefix%>.lib <%fmudirname%>\binaries\$(PLATWIN32)
+          copy <%fileNamePrefix%>.pdb <%fmudirname%>\binaries\$(PLATWIN32)
+          copy <%fileNamePrefix%>.c <%fmudirname%>\sources\<%fileNamePrefix%>.c
+          copy <%fileNamePrefix%>_model.h <%fmudirname%>\sources\<%fileNamePrefix%>_model.h
+          copy <%fileNamePrefix%>_FMU.c <%fmudirname%>\sources\<%fileNamePrefix%>_FMU.c
+          copy <%fileNamePrefix%>_info.c <%fmudirname%>\sources\<%fileNamePrefix%>_info.c
+          copy <%fileNamePrefix%>_init_fmu.c <%fmudirname%>\sources\<%fileNamePrefix%>_init_fmu.c
+          copy <%fileNamePrefix%>_functions.c <%fmudirname%>\sources\<%fileNamePrefix%>_functions.c
+          copy <%fileNamePrefix%>_functions.h <%fmudirname%>\sources\<%fileNamePrefix%>_functions.h
+          copy <%fileNamePrefix%>_records.c <%fmudirname%>\sources\<%fileNamePrefix%>_records.c
+          copy modelDescription.xml <%fmudirname%>\modelDescription.xml
+          copy <%stringReplace(makefileParams.omhome,"/","\\")%>\bin\SUNDIALS_CVODE.DLL <%fmudirname%>\binaries\$(PLATWIN32)
+          copy <%stringReplace(makefileParams.omhome,"/","\\")%>\bin\SUNDIALS_KINSOL.DLL <%fmudirname%>\binaries\$(PLATWIN32)
+          copy <%stringReplace(makefileParams.omhome,"/","\\")%>\bin\SUNDIALS_NVECSERIAL.DLL <%fmudirname%>\binaries\$(PLATWIN32)
+          copy <%stringReplace(makefileParams.omhome,"/","\\")%>\bin\LAPACK_WIN32_MT.DLL <%fmudirname%>\binaries\$(PLATWIN32)
+          copy <%stringReplace(makefileParams.omhome,"/","\\")%>\bin\pthreadVC2.dll <%fmudirname%>\binaries\$(PLATWIN32)
+          cd <%fmudirname%>
+          "zip.exe" -r ../<%fmuTargetName%>.fmu *
+          cd ..
+          rm -rf <%fmudirname%>
 
-  <%fileNamePrefix%>$(DLLEXT): $(MAINOBJ) $(CFILES)
-      $(CXX) /Fe<%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>_FMU.c $(CFILES) $(CFLAGS) $(LDFLAGS)
-  >>
-end match
-case "gcc" then
-match simCode
-case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DELAYED_EXPRESSIONS(maxDelayedIndex=maxDelayedIndex), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
-  let dirExtra = if modelInfo.directory then '-L"<%modelInfo.directory%>"' //else ""
-  let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
-  let libsPos1 = if not dirExtra then libsStr //else ""
-  let libsPos2 = if dirExtra then libsStr // else ""
-  let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
-    '<%match s.method
-       case "inline-euler" then "-D_OMC_INLINE_EULER"
-       case "inline-rungekutta" then "-D_OMC_INLINE_RK"%>'
-  let compilecmds = getPlatformString2(modelNamePrefix(simCode), makefileParams.platform, fileNamePrefix, fmuTargetName, dirExtra, libsPos1, libsPos2, makefileParams.omhome, FMUVersion)
-  let platformstr = makefileParams.platform
-  <<
-  # Makefile generated by OpenModelica
-  CC=@CC@
-  AR=@AR@
-  CFLAGS=@CFLAGS@
-  LD=$(CC) -shared
-  LDFLAGS=@LDFLAGS@ @LIBS@
-  DLLEXT=@DLLEXT@
-  NEED_RUNTIME=@NEED_RUNTIME@
-  NEED_DGESV=@NEED_DGESV@
-  FMIPLATFORM=@FMIPLATFORM@
-  # Note: Simulation of the fmu with dymola does not work with -finline-small-functions (enabled by most optimization levels)
-  CPPFLAGS=@CPPFLAGS@
+      <%fileNamePrefix%>$(DLLEXT): $(MAINOBJ) $(CFILES)
+          $(CXX) /Fe<%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>_FMU.c $(CFILES) $(CFLAGS) $(LDFLAGS)
+      >>
+    end match
+  case "gcc" then
+    match simCode
+    case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DELAYED_EXPRESSIONS(maxDelayedIndex=maxDelayedIndex), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt, fmiSimulationFlags = fmiSimulationFlags) then
+      let dirExtra = if modelInfo.directory then '-L"<%modelInfo.directory%>"' //else ""
+      let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
+      let libsPos1 = if not dirExtra then libsStr //else ""
+      let libsPos2 = if dirExtra then libsStr // else ""
+      let compilecmds = getPlatformString2(modelNamePrefix(simCode), makefileParams.platform, fileNamePrefix, fmuTargetName, dirExtra, libsPos1, libsPos2, makefileParams.omhome, FMUVersion)
+      let platformstr = makefileParams.platform
+      let thirdPartyInclude = match fmiSimulationFlags case SOME(__) then "-Isundials/ -I/util" else ""
+      <<
+      # Makefile generated by OpenModelica
+      CC=@CC@
+      AR=@AR@
+      CFLAGS=@CFLAGS@
+      LD=$(CC) -shared
+      LDFLAGS=@LDFLAGS@ @LIBS@
+      DLLEXT=@DLLEXT@
+      NEED_RUNTIME=@NEED_RUNTIME@
+      NEED_DGESV=@NEED_DGESV@
+      NEED_SUNDIALS=@NEED_SUNDIALS@
+      FMIPLATFORM=@FMIPLATFORM@
+      # Note: Simulation of the fmu with dymola does not work with -finline-small-functions (enabled by most optimization levels)
+      CPPFLAGS=@CPPFLAGS@
 
-  override CPPFLAGS += <%makefileParams.includes ; separator=" "%>
+      override CPPFLAGS += <%makefileParams.includes ; separator=" "%>
 
-  <%common%>
+      <%common%>
 
-  PHONY: <%fileNamePrefix%>_FMU
-  <%compilecmds%>
-  >>
-end match
-else
-  error(sourceInfo(), 'target <%target%> is not handled!')
+      PHONY: <%fileNamePrefix%>_FMU
+      <%compilecmds%>
+      >>
+    end match
+  else
+    error(sourceInfo(), 'target <%target%> is not handled!')
 end fmuMakefile;
 
 

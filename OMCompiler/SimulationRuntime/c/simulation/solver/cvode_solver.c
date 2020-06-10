@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -33,21 +33,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "cvode_solver.h"
+
 /* OMC headers */
-#include "simulation_data.h"
-#include "simulation/options.h"
-#include "simulation/solver/external_input.h"
-#include "solver_main.h"
+#include "../options.h"
+#include "../solver/external_input.h"
 #include "model_help.h"
 #include "omc_math.h"
 
-#include "util/omc_error.h"
-#include "gc/omc_gc.h"
+#include "../../util/omc_error.h"
+#include "../../gc/omc_gc.h"
 
 #include "dassl.h"
 #include "epsilon.h"
 
-#include "cvode_solver.h"
+
 
 #ifdef WITH_SUNDIALS
 
@@ -74,7 +74,8 @@ const char *CVODE_ITER_NAME[CVODE_ITER_MAX + 1] = {
 const char *CVODE_ITER_DESC[CVODE_ITER_MAX + 1] = {
     "undefined",
     "Nonlinear system solution through functional iterations",
-    "Nonlinear system solution through Newton iterations"};
+    "Nonlinear system solution through Newton iterations"
+};
 
 /* Internal function prototypes */
 int cvodeRightHandSideODEFunction(realtype time, N_Vector y, N_Vector ydot, void *userData);
@@ -137,7 +138,9 @@ int cvodeRightHandSideODEFunction(realtype time, N_Vector y, N_Vector ydot, void
   /* Read input vars (exclude from timer) */
   if (measure_time_flag)
     rt_accumulate(SIM_TIMER_SOLVER);
+#ifndef OMC_FMI_RUNTIME
   externalInputUpdate(data);
+#endif
   data->callback->input_function(data, threadData);
   if (measure_time_flag)
     rt_tick(SIM_TIMER_SOLVER);
@@ -301,8 +304,10 @@ int rootsFunctionCVODE(double time, N_Vector y, double *gout, void *userData)
   /* Read input vars (exclude from timer) */
   if (measure_time_flag)
     rt_accumulate(SIM_TIMER_SOLVER);
+#ifndef OMC_FMI_RUNTIME
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
+#endif
   /* eval needed equations (exclude from timer) */
   data->callback->function_ZeroCrossingsEquations(data, threadData);
   data->callback->function_ZeroCrossings(data, threadData, gout);
@@ -430,8 +435,8 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData)
   {
     warningStreamPrint(LOG_SOLVER, 0, "Ignoring user supplied flag \"%s\", using equidistant time grid.", omc_flagValue[FLAG_NOEQUIDISTANT_GRID]);
   }
-  config->internalSteps = FALSE;
-  infoStreamPrint(LOG_SOLVER, 0, "use equidistant time grid %s", config->internalSteps ? "NO" : "YES");
+  config->internalSteps = FALSE;    // TODO: Setting not used yet
+  infoStreamPrint(LOG_SOLVER, 0, "CVODE use equidistant time grid %s", config->internalSteps ? "NO" : "YES");
 
   /* Set jacobian method */
   if (omc_flag[FLAG_JACOBIAN])
@@ -552,7 +557,7 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   cvodeData->absoluteTolerance = N_VMake_Serial(data->modelData->nStates, abstol_tmp);
   assertStreamPrint(threadData, NULL != cvodeData->absoluteTolerance, "SUNDIALS_ERROR: N_VMake_Serial failed - returned NULL pointer.");
   CVodeSVtolerances(cvodeData->cvode_mem, data->simulationInfo->tolerance, cvodeData->absoluteTolerance);
-  infoStreamPrint(LOG_SOLVER, 0, "Tolreance %e", data->simulationInfo->tolerance);
+  infoStreamPrint(LOG_SOLVER, 0, "CVODE Using relative error tolerance %e", data->simulationInfo->tolerance);
 
   /* Provide cvodeData as user data */
   flag = CVodeSetUserData(cvodeData->cvode_mem, cvodeData);
@@ -637,7 +642,7 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   /* BDF stability limit detection */
   flag = CVodeSetStabLimDet(cvodeData->cvode_mem, cvodeData->config.BDFStabDetect);
   assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVodeSetStabLimDet failed with flag %i", flag);
-  infoStreamPrint(LOG_SOLVER, 0, "CVODE BDF stability limit detection algorithm %s", cvodeData->config.maxConvFailPerStep ? "ON" : "OFF");
+  infoStreamPrint(LOG_SOLVER, 0, "CVODE BDF stability limit detection algorithm %s", cvodeData->config.BDFStabDetect ? "ON" : "OFF");
 
   /* TODO: Add stuff in cvodeGetConfig for this */
   flag = CVodeSetMaxNonlinIters(cvodeData->cvode_mem, 5); /* Maximum number of iterations */
@@ -791,7 +796,7 @@ void cvode_save_statistics(void *cvode_mem, unsigned int *solverStatsTmp, thread
  * @param data              Runtime data struckt
  * @param threadData        Thread data for error handling
  * @param cvodeData         CVODE solver data struckt.
- * @return int            Returns 0 on success and return flag from CVode else.
+ * @return int              Returns 0 on success and return flag from CVode else.
  */
 int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 {
@@ -867,7 +872,9 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
     /* Read input vars (exclude from timer) */
     if (measure_time_flag)
       rt_accumulate(SIM_TIMER_SOLVER);
+#ifndef OMC_FMI_RUNTIME
     externalInputUpdate(data);
+#endif
     data->callback->input_function(data, threadData);
     if (measure_time_flag)
       rt_tick(SIM_TIMER_SOLVER);
@@ -927,6 +934,63 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
     rt_accumulate(SIM_TIMER_SOLVER);
 
   return retVal;
+}
+
+
+
+/**
+ * @brief Integration step with CVODE for fmi2DoStep
+ *
+ * @param data              Runtime data struckt
+ * @param threadData        Thread data for error handling.
+ * @param solverInfo        CVODE solver data struckt.
+ * @param tNext             Next desired time step for integrator to end.
+ * @param states            States vector.
+ * @param fmuComponent      FMU Data for fmu callback functions.
+ * @return int              Returns 0 on success and -1 else.
+ */
+int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double tNext, double* states, void* fmuComponent)
+{
+  /* Variabes */
+  int flag;
+  int retVal = 0;
+
+  CVODE_SOLVER *cvodeData;
+
+  cvodeData = (CVODE_SOLVER*) solverInfo->solverData;
+  solverInfo->currentTime = data->localData[0]->timeValue;
+
+  N_VSetArrayPointer(states, cvodeData->y);
+  if (solverInfo->didEventStep || !cvodeData->isInitialized)    // TODO Save if we have had an event
+  {
+    cvode_solver_reinit(data, threadData, solverInfo, cvodeData);
+    cvodeData->isInitialized = TRUE;
+  }
+  flag = CVodeSetStopTime(cvodeData->cvode_mem, tNext);
+  if (flag < 0) {
+    // TODO: Add logging
+    //FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: ##CVODE## CVodeSetStopTime failed with flag %i.", flag)
+    return -1;
+  }
+  flag = CVode(cvodeData->cvode_mem,
+          tNext,
+          cvodeData->y,
+          &(solverInfo->currentTime),
+          CV_NORMAL);
+  /* Error handling */
+  if ((flag == CV_SUCCESS || flag == CV_TSTOP_RETURN) && solverInfo->currentTime >= tNext)
+  {
+    //FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2DoStep:##CVODE## step done to time = %.15g.", comp->solverInfo->currentTime)
+  }
+  else
+  {
+    //FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: ##CVODE## %d error occurred at time = %.15g.", flag, fmuComponent->solverInfo->currentTime)
+    // TODO: Add logging
+    printf("fmi2DoStep: ##CVODE## %d error occurred at time = %.15g.", flag, solverInfo->currentTime);
+    return -1;
+  }
+
+  return 0;
 }
 
 #endif /* #ifdef WITH_SUNDIALS */
