@@ -27,7 +27,7 @@ readFile("testParameters_init.tmp.xml");
 // true
 // {"testParameters","testParameters_init.xml"}
 // "[<interactive>:3:3-3:20:writable] Warning: Parameter a0 has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
-// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // 0
 // "<?xml version = \"1.0\" encoding=\"UTF-8\"?>
@@ -77,7 +77,7 @@ readFile("testParameters_init.tmp.xml");
 //     startTime      = \"0\"
 //     stopTime       = \"1\"
 //     stepSize       = \"0.002\"
-//     tolerance      = \"1e-006\"
+//     tolerance      = \"1e-06\"
 //     solver        = \"dassl\"
 //     outputFormat      = \"mat\"
 //     variableFilter      = \".*\" />

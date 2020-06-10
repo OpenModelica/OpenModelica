@@ -30,7 +30,7 @@ translateModel(unitCheckTests.ticket3631); getErrorString();
 // {x,{1.0 * s^(1)}}
 // ######## UnitCheck COMPLETED ########
 // true
-// "Notification: "y" has the Unit "s"
-// "x" has the Unit "s"
+// "Notification: \"y\" has the Unit \"s\"
+// \"x\" has the Unit \"s\"
 // "
 // endResult

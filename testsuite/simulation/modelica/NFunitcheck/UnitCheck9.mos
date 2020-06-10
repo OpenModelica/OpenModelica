@@ -48,6 +48,6 @@ instantiateModel(unitCheckTests.UnitCheck9); getErrorString();
 //   V = E * C + S * (-A);
 // end unitCheckTests.UnitCheck9;
 // "
-// "Notification: "A" has the Unit "m/s"
+// "Notification: \"A\" has the Unit \"m/s\"
 // "
 // endResult

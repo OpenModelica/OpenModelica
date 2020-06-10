@@ -1103,11 +1103,11 @@ val(z2,1.1); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac1. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac1. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // x at time=0.0
-// 0.0
+// 6.93539324665225e-310
 // ""
 // x1 at time=0.0
 // 0.0
@@ -1119,13 +1119,13 @@ val(z2,1.1); getErrorString();
 // 0.0
 // ""
 // z at time=0.0
-// 0.0
+// 6.93539324665225e-310
 // ""
 // z1 at time=0.0
 // 0.0
 // ""
 // z2 at time=0.0
-// 0.0
+// 6.93539324665225e-310
 // ""
 // x at time=0.1
 // -1.0

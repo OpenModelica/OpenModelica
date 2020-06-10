@@ -36,7 +36,7 @@ translateModel(unitCheckTests.UnitCheck7); getErrorString();
 // {S,{1.0 * m^(1) * s^(-1)}}
 // ######## UnitCheck COMPLETED ########
 // true
-// "Notification: "V" has the Unit "m/s"
-// "S" has the Unit "m/s"
+// "Notification: \"V\" has the Unit \"m/s\"
+// \"S\" has the Unit \"m/s\"
 // "
 // endResult

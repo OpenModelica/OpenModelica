@@ -36,7 +36,7 @@ val(y,3.0);
 // Result:
 // true
 // "Pendulum.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // "Pendulum_me_FMU.mo"
 // ""
@@ -49,12 +49,12 @@ val(y,3.0);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// -0.9864424198203301
-// 0.795701435887842
-// -0.1832577744446704
-// -0.1641077462492606
-// -0.605689049699618
-// -0.9830648951649054
+// -0.9864424198203262
+// 0.7957014358878116
+// -0.1832577744445586
+// -0.1641077462492843
+// -0.6056890496996581
+// -0.9830648951649262
 // record SimulationResult
 //     resultFile = "Pendulum_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 300, tolerance = 1e-10, method = 'dassl', fileNamePrefix = 'Pendulum', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
@@ -62,10 +62,10 @@ val(y,3.0);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// -0.9864424195145796
-// 0.795701434659157
-// -0.1832577788991176
-// -0.1641077480871099
-// -0.6056890513137574
-// -0.9830648943345307
+// -0.9864424195145791
+// 0.7957014346590816
+// -0.1832577788990035
+// -0.1641077480871123
+// -0.6056890513138563
+// -0.983064894334552
 // endResult

@@ -33,7 +33,7 @@ val(i3,0.0); getErrorString();
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 7
 //  * Number of variables: 7
-// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 1
 //  * Number of states: 0 ('-d=stateselection' for list of states)
@@ -73,16 +73,16 @@ val(i3,0.0); getErrorString();
 //  * Linear torn systems: 0
 //  * Non-linear torn systems: 1 {7 0}
 // "
-// 1.090933356950908e-24
+// -9.183549615799121e-41
 // ""
-// 0.0
+// 9.042254664406747e-56
 // ""
-// 0.0
+// 9.042254664406747e-56
 // ""
-// 3.302928029719854e-13
+// 1.978838435460999e-13
 // ""
-// 3.302928029719854e-13
+// 1.978838435460999e-13
 // ""
-// 0.0
+// 9.042254664406747e-57
 // ""
 // endResult

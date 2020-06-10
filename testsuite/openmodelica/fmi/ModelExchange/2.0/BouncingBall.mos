@@ -35,7 +35,7 @@ val(h,3);
 // true
 // ""
 // "BouncingBallFMI20.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // "BouncingBallFMI20_me_FMU.mo"
 // ""
@@ -50,6 +50,6 @@ val(h,3);
 // end SimulationResult;
 // ""
 // 1.0
-// 0.225020520707377
-// -0.9555208445822925
+// 0.2250205209353687
+// -0.9555208441479278
 // endResult
