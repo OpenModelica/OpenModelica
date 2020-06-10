@@ -35,7 +35,7 @@ instantiateModel(unitCheckTests.ticket3631); getErrorString();
 //   x + y = sin(time);
 // end unitCheckTests.ticket3631;
 // "
-// "Notification: "x" has the Unit "s"
-// "y" has the Unit "s"
+// "Notification: \"x\" has the Unit \"s\"
+// \"y\" has the Unit \"s\"
 // "
 // endResult

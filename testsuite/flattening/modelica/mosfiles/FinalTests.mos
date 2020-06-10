@@ -22,7 +22,7 @@ getErrorString();
 // "
 // ""
 // "[flattening/modelica/mosfiles/FinalTests.mo:25:51-25:62:writable] Notification: From here:
-// [flattening/modelica/mosfiles/FinalTests.mo:27:12-27:22:writable] Error: Trying to override final element unit with modifier ' = "deg"'.
+// [flattening/modelica/mosfiles/FinalTests.mo:27:12-27:22:writable] Error: Trying to override final element unit with modifier ' = \"deg\"'.
 // Error: Error occurred while flattening model test2
 // "
 // ""
@@ -32,7 +32,7 @@ getErrorString();
 // "
 // ""
 // "[flattening/modelica/mosfiles/FinalTests.mo:48:31-48:39:writable] Notification: From here:
-// [flattening/modelica/mosfiles/FinalTests.mo:49:26-49:35:writable] Error: Trying to override final element unit with modifier ' = "mm"'.
+// [flattening/modelica/mosfiles/FinalTests.mo:49:26-49:35:writable] Error: Trying to override final element unit with modifier ' = \"mm\"'.
 // Error: Error occurred while flattening model test4
 // "
 // endResult

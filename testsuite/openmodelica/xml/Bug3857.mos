@@ -27,7 +27,7 @@ readFile("Bug3857.xml"); getErrorString();
 // true
 // ""
 // true
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // true
 // ""
@@ -36,7 +36,7 @@ readFile("Bug3857.xml"); getErrorString();
 // true
 // ""
 // true
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // 0
 // ""
@@ -58,7 +58,7 @@ readFile("Bug3857.xml"); getErrorString();
 //   <VendorAnnotations>
 //   </VendorAnnotations>
 //
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"4.0\" tolerance=\"1e-006\" />
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"4.0\" tolerance=\"1e-06\" />
 //
 //   <ModelVariables>
 //     <ScalarVariable name=\"PI.I.y\" description=\"Connector of Real output signal\" valueReference=\"0\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
@@ -1163,7 +1163,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.Nd\" description=\"The higher Nd, the more ideal the derivative block\" valueReference=\"87\" variability=\"parameter\" causality=\"parameter\" alias=\"noAlias\">
-//       <Real start=\"10.0\" fixed=\"true\" min=\"1e-013\"   />
+//       <Real start=\"10.0\" fixed=\"true\" min=\"1e-13\"   />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
 //         <exp:QualifiedNamePart name=\"Nd\"/>
@@ -1175,7 +1175,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.Ni\" description=\"Ni*Ti is time constant of anti-windup compensation\" valueReference=\"88\" variability=\"parameter\" causality=\"parameter\" alias=\"noAlias\">
-//       <Real start=\"0.1\" fixed=\"true\" min=\"1e-013\"   />
+//       <Real start=\"0.1\" fixed=\"true\" min=\"1e-13\"   />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
 //         <exp:QualifiedNamePart name=\"Ni\"/>
@@ -1212,7 +1212,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.Ti\" description=\"Time constant of Integrator block\" valueReference=\"91\" variability=\"parameter\" causality=\"parameter\" alias=\"noAlias\">
-//       <Real start=\"0.1\" fixed=\"true\" min=\"1e-060\"  unit=\"s\" />
+//       <Real start=\"0.1\" fixed=\"true\" min=\"1e-60\"  unit=\"s\" />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"PI\"/>
 //         <exp:QualifiedNamePart name=\"Ti\"/>
@@ -1659,7 +1659,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.qd_max[1]\" description=\"Maximum velocities der(q)\" valueReference=\"125\" variability=\"parameter\" causality=\"parameter\" alias=\"noAlias\">
-//       <Real start=\"1.0\" fixed=\"true\" min=\"1e-060\"   />
+//       <Real start=\"1.0\" fixed=\"true\" min=\"1e-60\"   />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //         <exp:QualifiedNamePart name=\"qd_max\">
@@ -1677,7 +1677,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.qdd_max[1]\" description=\"Maximum accelerations der(qd)\" valueReference=\"126\" variability=\"parameter\" causality=\"parameter\" alias=\"noAlias\">
-//       <Real start=\"1.0\" fixed=\"true\" min=\"1e-060\"   />
+//       <Real start=\"1.0\" fixed=\"true\" min=\"1e-60\"   />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //         <exp:QualifiedNamePart name=\"qdd_max\">
@@ -4469,7 +4469,7 @@ readFile("Bug3857.xml"); getErrorString();
 //   <VendorAnnotations>
 //   </VendorAnnotations>
 //
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-006\" />
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\" />
 //
 //   <ModelVariables>
 //     <ScalarVariable name=\"h\"  valueReference=\"0\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
@@ -4588,7 +4588,7 @@ readFile("Bug3857.xml"); getErrorString();
 //             <exp:QualifiedNamePart name=\"v\"/>
 //           </exp:Identifier>
 //         </exp:Der>
-//         <exp:RealLiteral>-9.810000000000001</exp:RealLiteral>
+//         <exp:RealLiteral>-9.81</exp:RealLiteral>
 //       </exp:Sub>
 //     </equ:Equation>
 //     <equ:Equation>
@@ -4709,7 +4709,7 @@ readFile("Bug3857.xml"); getErrorString();
 //   <VendorAnnotations>
 //   </VendorAnnotations>
 //
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-006\" />
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\" />
 //
 //   <ModelVariables>
 //     <ScalarVariable name=\"T\" description=\"Temperature\" valueReference=\"0\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
@@ -4974,7 +4974,7 @@ readFile("Bug3857.xml"); getErrorString();
 //   <VendorAnnotations>
 //   </VendorAnnotations>
 //
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-006\" />
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\" />
 //
 //   <ModelVariables>
 //     <ScalarVariable name=\"T\"  valueReference=\"0\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">

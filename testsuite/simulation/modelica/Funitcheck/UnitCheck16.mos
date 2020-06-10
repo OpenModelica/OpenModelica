@@ -31,6 +31,6 @@ getErrorString();
 //   der(x) = time;
 // end test;
 // "
-// "Notification: "x" has the Unit "s2"
+// "Notification: \"x\" has the Unit \"s2\"
 // "
 // endResult

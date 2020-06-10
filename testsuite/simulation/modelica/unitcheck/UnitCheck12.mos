@@ -36,7 +36,7 @@ translateModel(unitCheckTests.UnitCheck12); getErrorString();
 // {V,{1.0 * m^(1)}}
 // ######## UnitCheck COMPLETED ########
 // true
-// "Notification: "A" has the Unit "m4"
-// "V" has the Unit "m"
+// "Notification: \"A\" has the Unit \"m4\"
+// \"V\" has the Unit \"m\"
 // "
 // endResult

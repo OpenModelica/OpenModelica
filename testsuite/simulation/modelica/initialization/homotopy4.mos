@@ -133,10 +133,10 @@ val(f, 0.0);
 // "
 // end SimulationResult;
 // "Notification: Tearing is skipped for strong component 4 because of activated compiler flag 'noTearingForComponent=4'.
-// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac1. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac4. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac1. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac4. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// {{0.0,0.0},{-9.0,-9.0},{4.999999998926914,4.999999998926914},{-4.999999998926914,-4.999999998926914},{0.999999998926914,0.999999998926914},{-0.412118494041246,-0.412118494041246},{0.1698416531308245,0.1698416531308245},{-9.0,-9.0},{-0.956375928404503,-0.956375928404503},{-9.0,-9.0},{4.169841653130826,4.169841653130826},{-4.169841653130826,-4.169841653130826},{3.0,3.0},{-3.0,-3.0},{9.0,9.0},{-6.956375928404503,-6.956375928404503},{3.043624071595497,3.043624071595497},{-1.0,-1.0},{-23.11140462719703,-23.11140462719703}}
+// {{0.0,0.0},{-9.0,-9.0},{4.999999998926914,4.999999998926914},{-4.999999998926914,-4.999999998926914},{0.999999998926914,0.999999998926914},{-0.412118494041246,-0.412118494041246},{0.1698416531308245,0.1698416531308245},{-9.0,-9.0},{-0.956375928404503,-0.956375928404503},{-9.0,-9.0},{4.169841653130824,4.169841653130824},{-4.169841653130824,-4.169841653130824},{3.0,3.0},{-3.0,-3.0},{9.0,9.0},{-6.956375928404503,-6.956375928404503},{3.043624071595497,3.043624071595497},{-1.0,-1.0},{-23.11140462719703,-23.11140462719703}}
 // ""
 // x=
 // -9.0
@@ -151,10 +151,10 @@ val(f, 0.0);
 // -9.0
 //
 // y1=
-// 4.169841653130826
+// 4.169841653130824
 //
 // z1=
-// -4.169841653130826
+// -4.169841653130824
 //
 // x2=
 // 3.0

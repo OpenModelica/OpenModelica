@@ -18,7 +18,7 @@ val(x,1);
 // Result:
 // true
 // "HelloFMIWorld.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // "HelloFMIWorld_me_FMU.mo"
 // true
@@ -31,5 +31,5 @@ val(x,1);
 // "
 // end SimulationResult;
 // 1.0
-// 7.389089930116488
+// 7.389089930122204
 // endResult

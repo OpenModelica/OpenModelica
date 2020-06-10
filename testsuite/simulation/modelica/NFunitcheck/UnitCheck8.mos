@@ -44,8 +44,8 @@ instantiateModel(unitCheckTests.UnitCheck8); getErrorString();
 // "
 // "[<interactive>:10:5-10:12:writable] Warning: The following equation is INCONSISTENT due to specified unit information: 0.0 = V - A - S
 // Warning: The units of following sub-expressions need to be equal:
-// - sub-expression "V - A" has unit "m/s"
-// - sub-expression "S" has unit "s"
-// Notification: "V" has the Unit "m/s"
+// - sub-expression \"V - A\" has unit \"m/s\"
+// - sub-expression \"S\" has unit \"s\"
+// Notification: \"V\" has the Unit \"m/s\"
 // "
 // endResult

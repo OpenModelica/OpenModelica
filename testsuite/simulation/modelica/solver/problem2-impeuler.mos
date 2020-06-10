@@ -60,17 +60,17 @@ val(der(y[8]), stopTime);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {"Files Equal!"}
 // "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
 // "
-// 0.0007368273602676389
-// 0.0001441886650741511
-// 5.883073032968887e-05
-// 0.0011750850482795
-// 0.002377235867140891
-// 0.006210365768713381
-// 0.002843579530652771
-// 0.002856420469160948
+// 0.0007368273600530499
+// 0.0001441886650318589
+// 5.883073028969187e-05
+// 0.0011750850478804
+// 0.0023772358606737
+// 0.006210365748304785
+// 0.002843579526195892
+// 0.002856420473879454
 // endResult

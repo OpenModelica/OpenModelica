@@ -63,7 +63,7 @@ simulate(initializationTests.parameters, simflags="-lv=LOG_INIT_V"); getErrorStr
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[<interactive>:17:5-17:39:writable] Warning: Parameter s3 has no value, and is fixed during initialization (fixed=true), using available start value (start="three") as default value.
+// "[<interactive>:17:5-17:39:writable] Warning: Parameter s3 has no value, and is fixed during initialization (fixed=true), using available start value (start=\"three\") as default value.
 // [<interactive>:16:5-16:37:writable] Warning: Parameter b3 has no value, and is fixed during initialization (fixed=true), using available start value (start=true) as default value.
 // [<interactive>:15:5-15:34:writable] Warning: Parameter i3 has no value, and is fixed during initialization (fixed=true), using available start value (start=3) as default value.
 // [<interactive>:14:5-14:33:writable] Warning: Parameter r3 has no value, and is fixed during initialization (fixed=true), using available start value (start=3.0) as default value.

@@ -32,7 +32,7 @@ checkModel(test2); getErrorString();
 // 1 of these are trivial equation(s)."
 // "[<interactive>:10:3-10:16:writable] Warning: The following equation is INCONSISTENT due to specified unit information: der(x) = time
 // Warning: The units of following sub-expressions need to be equal:
-// - sub-expression "time" has unit "s"
-// - sub-expression "der(x)" has unit "km2.s-4.A-1.g"
+// - sub-expression \"time\" has unit \"s\"
+// - sub-expression \"der(x)\" has unit \"km2.s-4.A-1.g\"
 // "
 // endResult

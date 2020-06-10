@@ -48,7 +48,7 @@ getErrorString();
 // "
 // "[<interactive>:9:5-9:15:writable] Warning: The following equation is INCONSISTENT due to specified unit information: V = sin(S + C)
 // Warning: The units of following sub-expressions need to be equal:
-// - sub-expression "S" has unit "m"
-// - sub-expression "C" has unit "m/s"
+// - sub-expression \"S\" has unit \"m\"
+// - sub-expression \"C\" has unit \"m/s\"
 // "
 // endResult

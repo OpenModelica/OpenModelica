@@ -30,20 +30,20 @@ val(x5,1.0);
 // ""
 // record SimulationResult
 //     resultFile = "boolSubClocks_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'boolSubClocks', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'boolSubClocks', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// 2.000000000159155
+// 2.000000159154965
 // 0.0
 // 0.0
-// 2.000000000159155
+// 2.000000159154965
 // 0.3
 // 0.8999999999999999
 // 0.0
 // 0.8999999999999999
-// 2.4
+// 2.399999999999999
 // 0.5
 // 0.8
 // 0.4
