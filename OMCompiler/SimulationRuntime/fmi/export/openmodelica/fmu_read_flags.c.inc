@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -27,9 +27,12 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
+
+#include "fmu2_model_interface.h"
 #include "fmu_read_flags.h"
 #include "../simulation/options.h"
 #include "../util/simulation_options.h"
+#include "../simulation/solver/cvode_solver.h"
 #include "../util/omc_mmap.h"
 
 /**
@@ -121,7 +124,16 @@ void parseFlags(SOLVER_INFO *solverInfo, const char *str)
    }
 }
 
-void readFlags(DATA *fmudata, const char *str)
+/**
+ * @brief Initialize solver data.
+ *
+ * Reads optional FMU simulation flags from <fmiPrefix>.fmu/resources/<fmiPrefix>_flags.json.
+ * Initialize solver euler or CVODE.
+ *
+ * @param comp          FMU component.
+ * @return int          Return 0 on success and -1 when an error occured.
+ */
+int FMI2CS_initializeSolverData(ModelInstance* comp)
 {
   /* Variables */
   const fmi2CallbackFunctions* functions;
@@ -201,6 +213,51 @@ void readFlags(DATA *fmudata, const char *str)
   functions->freeMemory(flags_filename);
 
   comp->solverInfo = solverInfo;
+
+  return retValue;
+}
+
+/**
+ * @brief Deinitlaize solver data.
+ *
+ * Use for solver data allocated with FMI2CS_initializeSolverData.
+ * Frees everything inside comp->solverInfo.
+ *
+ * @param comp          FMU component.
+ * @return int          Return 0 on success and -1 else.
+ */
+int FMI2CS_deInitializeSolverData(ModelInstance* comp)
+{
+  /* Variables */
+  DATA* data;
+  threadData_t* threadData;
+  SOLVER_INFO* solverInfo;
+  const fmi2CallbackFunctions* functions;
+  int retValue;
+
+  functions = comp->functions;
+  data = comp->fmuData;
+  threadData = comp->threadData;
+  solverInfo = comp->solverInfo;
+
+  /* Log function call */
+  FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2FreeInstance: Freeing solver data.")
+
+  switch (solverInfo->solverMethod)
+  {
+    case S_EULER:
+      /* Needs no freeing */
+      retValue = 0;
+      break;
+    case S_CVODE:
+      retValue = cvode_solver_deinitial(solverInfo->solverData);
+      break;
+    default:
+      FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "fmi2FreeInstance: Unknown solver method.")
+      retValue = -1;
+  }
+
+  comp->functions->freeMemory(comp->solverInfo);
 
   return retValue;
 }

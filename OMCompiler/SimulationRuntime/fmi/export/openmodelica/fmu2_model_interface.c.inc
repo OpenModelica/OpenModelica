@@ -32,6 +32,7 @@
 #include "fmu_read_flags.h"
 #include "../simulation/solver/stateset.h"
 #include "../simulation/solver/model_help.h"
+#include "../simulation/solver/cvode_solver.h"
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
 #include "../simulation/solver/nonlinearSystem.h"
 #endif
@@ -505,6 +506,13 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
 
   comp->_need_update = 1;
 
+  /* Initialize solverInfo */
+  if (fmi2CoSimulation == comp->type) {
+    FMI2CS_initializeSolverData(comp);
+  } else {
+    comp->solverInfo = NULL;
+  }
+
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Instantiate: GUID=%s", fmuGUID)
   resetThreadData(comp);
   return comp;
@@ -556,6 +564,9 @@ void fmi2FreeInstance(fmi2Component c)
   }
 
   comp->functions->freeMemory(comp->fmuData->modelData->resourcesDir);
+  if (comp->solverInfo) {
+    FMI2CS_deInitializeSolverData(comp);
+  }
 
   /* free simuation data */
   comp->functions->freeMemory(comp->fmuData->modelData);
@@ -1407,6 +1418,9 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
   ModelInstance *comp = (ModelInstance *)c;
   fmi2CallbackFunctions* functions = (fmi2CallbackFunctions*)comp->functions;
   int i, zc_event = 0, time_event = 0;
+  int flag;
+
+  CVODE_SOLVER* cvodeData;
   fmi2Status status = fmi2OK;
   fmi2Real* states = (fmi2Real*)functions->allocateMemory(NUMBER_OF_STATES, sizeof(fmi2Real));
   fmi2Real* states_der = (fmi2Real*)functions->allocateMemory(NUMBER_OF_STATES, sizeof(fmi2Real));
@@ -1474,9 +1488,25 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
     }
 
     /* integrate */
-    for (i = 0; i < NUMBER_OF_STATES; i++)
+    switch(comp->solverInfo->solverMethod)
     {
-      states[i] = states[i] + (tNext - comp->fmuData->localData[0]->timeValue) * states_der[i];
+      case S_EULER:
+        for (i = 0; i < NUMBER_OF_STATES; i++)
+        {
+          states[i] = states[i] + (tNext - comp->fmuData->localData[0]->timeValue) * states_der[i];
+        }
+        break;
+      case S_CVODE:
+        flag = cvode_solver_fmi_step(comp->fmuData, comp->threadData, comp->solverInfo, tNext, states, comp);
+        if (flag < 0)
+        {
+          FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: CVODE integrator step failed.")
+          return fmi2Fatal;
+        }
+        break;
+      default:
+        FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: Unknown solver method %d.", comp->solverInfo->solverMethod)
+        return fmi2Fatal;
     }
     fmi2SetTime(c, tNext);
 
@@ -1507,6 +1537,8 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
       }
     }
 
+    comp->solverInfo->didEventStep = 0;
+
     if (enterEventMode || zc_event || time_event)
     {
       /* fprintf(stderr, "enterEventMode = %d, zc_event = %d, time_event = %d\n", enterEventMode, zc_event, time_event); */
@@ -1531,6 +1563,8 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
 
       status = fmi2EnterContinuousTimeMode(c);
       if (status != fmi2OK) {status=fmi2Error; break;}
+
+      comp->solverInfo->didEventStep = 1;
     }
   }
 

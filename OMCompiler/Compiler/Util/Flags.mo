@@ -1369,7 +1369,7 @@ constant ConfigFlag FMI_SOURCES = CONFIG_FLAG(143, "fmiSources", NONE(), EXTERNA
 
 constant ConfigFlag FMI_FLAGS = CONFIG_FLAG(144, "fmiFlags", NONE(), EXTERNAL(),
   STRING_LIST_FLAG({}), NONE(),
-  Gettext.gettext("Add simulation flags to FMU. Will create flags.json in resources folder with given flags, e.g. --fmiFlags for the default or --fmiFlags=s=euler. See --help=fmiFlags for more info."));
+  Gettext.gettext("Add simulation flags to FMU. Will create <fmiPrefix>_flags.json in resources folder with given flags. Use --fmiFlags or --fmiFlags=none to disable [default]. Use --fmiFlags=default for the default simulation flags. To pass flags use e.g. --fmiFlags=s:cvode,nls:homotopy or --fmiFlags=path/to/yourFlags.json."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

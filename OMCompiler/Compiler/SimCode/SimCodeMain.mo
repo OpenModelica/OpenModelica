@@ -703,8 +703,9 @@ algorithm
       String fmutmp;
       String guid;
       Boolean b;
+      Boolean needSundials = false;
       String fileprefix;
-      list<String> allFiles, sourceFiles, defaultFiles, extraFiles, runtimeFiles, dgesvFiles;
+      list<String> allFiles, sourceFiles, defaultFiles, extraFiles, runtimeFiles, dgesvFiles, sundialsFiles;
       SimCode.VarInfo varInfo;
     case (SimCode.SIMCODE(),"C")
       algorithm
@@ -742,12 +743,12 @@ algorithm
           local
             SimCode.FmiSimulationFlags fmiSimFlags;
             String pathToFlagsJson;
-          case SOME(fmiSimFlags as SimCode.FMISIMULATIONFLAGSFILE(path=pathToFlagsJson))
+          case SOME(fmiSimFlags as SimCode.FMI_SIMULATION_FLAGS_FILE(path=pathToFlagsJson))
             algorithm
+            needSundials := true;
             if 0 <> System.systemCall("cp -rf \"" + pathToFlagsJson + "\" \"" + fmutmp + "/resources/" + simCode.fileNamePrefix+"_flags.json\"") then
               Error.addInternalError("Failed to copy " + pathToFlagsJson + " to " + fmutmp + "/resources/" + simCode.fileNamePrefix + "_flags.json", sourceInfo());
             end if;
-            listAppend(simCode.modelInfo.resourcePaths, {pathToFlagsJson});
             then();
           else
             then();
@@ -774,6 +775,13 @@ algorithm
         allFiles := {};
         allFiles := listAppend(RuntimeSources.commonHeaders, listAppend(RuntimeSources.commonFiles, allFiles));
         allFiles := listAppend(if FMUVersion=="1.0" then RuntimeSources.fmi1Files else RuntimeSources.fmi2Files, allFiles);
+        if isSome(simCode.fmiSimulationFlags) then
+          allFiles := listAppend(RuntimeSources.external3rdPartyFiles, allFiles);
+          sundialsFiles := RuntimeSources.cvodeRuntimeFiles;
+          allFiles := listAppend(sundialsFiles, allFiles);
+        else
+          sundialsFiles := {""};
+        end if;
         if varInfo.numLinearSystems > 0 then
           allFiles := listAppend(RuntimeSources.lsFiles, allFiles);
         end if;
@@ -798,7 +806,7 @@ algorithm
         Tpl.tplNoret(function CodegenFMU.translateModel(in_a_FMUVersion=FMUVersion, in_a_FMUType=FMUType, in_a_sourceFiles=sourceFiles), simCode);
         extraFiles := SimCodeUtil.getFunctionIndex();
         copyFiles(listAppend(dgesvFiles, allFiles), source=Settings.getInstallationDirectoryPath() + "/include/omc/c/", destination=fmutmp+"/sources/");
-        Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(function CodegenFMU.fmuMakefile(a_target=Config.simulationCodeTarget(), a_simCode=simCode, a_FMUVersion=FMUVersion, a_sourceFiles=listAppend(extraFiles, defaultFiles), a_dgesvObjectFiles=list(System.stringReplace(f,".c",".o") for f guard Util.endsWith(f, ".c") in dgesvFiles), a_runtimeObjectFiles=list(System.stringReplace(f,".c",".o") for f in runtimeFiles)),
+        Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(function CodegenFMU.fmuMakefile(a_target=Config.simulationCodeTarget(), a_simCode=simCode, a_FMUVersion=FMUVersion, a_sourceFiles=listAppend(extraFiles, defaultFiles), a_runtimeObjectFiles=list(System.stringReplace(f,".c",".o") for f in runtimeFiles), a_dgesvObjectFiles=list(System.stringReplace(f,".c",".o") for f guard Util.endsWith(f, ".c") in dgesvFiles), a_sundialsObjectFiles=list(System.stringReplace(f,".c",".o") for f guard Util.endsWith(f, ".c") in sundialsFiles)),
                       txt=Tpl.redirectToFile(Tpl.emptyTxt, simCode.fileNamePrefix+".fmutmp/sources/Makefile.in")));
         Tpl.closeFile(Tpl.tplCallWithFailError(CodegenFMU.settingsfile, simCode,
                       txt=Tpl.redirectToFile(Tpl.emptyTxt, simCode.fileNamePrefix+".fmutmp/sources/omc_simulation_settings.h")));
@@ -1415,56 +1423,57 @@ algorithm
     // The updated variable 'numEquations' (by SimCodeUtil.addNumEqns) is not even used in createCrefToSimVarHT :/
     // crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
 
-    simCode := SimCode.SIMCODE(modelInfo,
-                              {}, // Set by the traversal below...
-                              recordDecls,
-                              includes,
-                              {},
-                              {},
-                              {},
-                              {},
-                              {},
-                              initialEquations,
-                              {},
-                              removedInitialEquations,
-                              startValueEquations,
-                              nominalValueEquations,
-                              minValueEquations,
-                              maxValueEquations,
-                              parameterEquations,
-                              {},
-                              {},
-                              {},
-                              {},
-                              {},
-                              {},
-                              {},
-                              zeroCrossings,
-                              relations,
-                              timeEvents,
-                              discreteModelVars,
-                              extObjInfo,
-                              makefileParams,
-                              SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
-                              SymbolicJacs,
-                              simSettingsOpt,
-                              filenamePrefix,
-                              "",
-                              "",
-                              HpcOmSimCode.emptyHpcomData,
-                              AvlTreeCRToInt.EMPTY(),
-                              HashTableCrIListArray.emptyHashTable(),
-                              HashTableCrILst.emptyHashTable(),
-                              crefToSimVarHT,
-                              HashTable.emptyHashTable(),
-                              NONE(),
-                              NONE(),
-                              NONE(),
-                              SimCode.emptyPartitionData,
-                              daeModeData,
-                              {},
-                              NONE()
-                              );
+    simCode := SimCode.SIMCODE(
+      modelInfo                   = modelInfo,
+      literals                    = {},               // Set by the traversal below...
+      recordDecls                 = recordDecls,
+      externalFunctionIncludes    = includes,
+      localKnownVars              = {},
+      allEquations                = {},
+      odeEquations                = {},
+      algebraicEquations          = {},
+      clockedPartitions           = {},
+      initialEquations            = initialEquations,
+      initialEquations_lambda0    = {},
+      removedInitialEquations     = removedInitialEquations,
+      startValueEquations         = startValueEquations,
+      nominalValueEquations       = nominalValueEquations,
+      minValueEquations           = minValueEquations,
+      maxValueEquations           = maxValueEquations,
+      parameterEquations          = parameterEquations,
+      removedEquations            = {},
+      algorithmAndEquationAsserts = {},
+      equationsForZeroCrossings   = {},
+      jacobianEquations           = {},
+      stateSets                   = {},
+      constraints                 = {},
+      classAttributes             = {},
+      zeroCrossings               = zeroCrossings,
+      relations                   = relations,
+      timeEvents                  = timeEvents,
+      discreteModelVars           = discreteModelVars,
+      extObjInfo                  = extObjInfo,
+      makefileParams              = makefileParams,
+      delayedExps                 = SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
+      jacobianMatrixes            = SymbolicJacs,
+      simulationSettingsOpt       = simSettingsOpt,
+      fileNamePrefix              = filenamePrefix,
+      fullPathPrefix              = "",
+      fmuTargetName               = "",
+      hpcomData                   = HpcOmSimCode.emptyHpcomData,
+      valueReferences             = AvlTreeCRToInt.EMPTY(),
+      varToArrayIndexMapping      = HashTableCrIListArray.emptyHashTable(),
+      varToIndexMapping           = HashTableCrILst.emptyHashTable(),
+      crefToSimVarHT              = crefToSimVarHT,
+      crefToClockIndexHT          = HashTable.emptyHashTable(),
+      backendMapping              = NONE(),
+      modelStructure              = NONE(),
+      fmiSimulationFlags          = NONE(),
+      partitionData               = SimCode.emptyPartitionData,
+      daeModeData                 = daeModeData,
+      inlineEquations             = {},
+      omsiData                    = NONE()
+    );
 
     (simCode, (_, _, lits)) := SimCodeUtil.traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literals);
     simCode.literals := listReverse(lits);
