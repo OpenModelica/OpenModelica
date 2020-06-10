@@ -13245,8 +13245,7 @@ protected
   String msg;
   String tmpName, tmpValue;
   list<String> tmpSplitted;
-  String solverName = "euler";
-  String nonLinearSolverName = "homotopy";
+  list<tuple<String,String>> nameValueTouples = {} ;
 algorithm
   fmiFlagsList := Flags.getConfigStringList(Flags.FMI_FLAGS);
 
@@ -13296,24 +13295,16 @@ algorithm
       // Save value
       if stringEqual(tmpName, "s") then
         if not stringEqual(tmpValue, "euler") and not stringEqual(tmpValue, "cvode") then
-          msg := "Unknown value \"" + tmpValue + "\" for flag \"s\". Using \"euler\"";
+          msg := "Unknown value \"" + tmpValue + "\" for flag \"s\".";
           Error.addCompilerWarning(msg);
-        else
-          solverName := tmpValue;
-        end if;
-      elseif stringEqual(tmpName, "nls") then
-        if not stringEqual(tmpValue, "homotopy") then
-          msg := "Unknown value \"" + tmpValue + "\" for flag \"nls\". Using \"homotopy\"";
-          Error.addCompilerWarning(msg);
-        else
-          nonLinearSolverName := tmpValue;
         end if;
       else
-        msg := "Ignoring unknown flag \"" + tmpName + "\".";
+        msg := "Adding unknown FMU simulation flag \"" + tmpName + "\" .";
         Error.addCompilerWarning(msg);
       end if;
+      nameValueTouples := listAppend(nameValueTouples, {(tmpName, tmpValue)});
     end for;
-    fmiSimulationFlags := SOME(SimCode.FMI_SIMULATION_FLAGS(solver=solverName, nonLinearSolver=nonLinearSolverName));
+    fmiSimulationFlags := SOME(SimCode.FMI_SIMULATION_FLAGS(nameValueTouples));
   end if;
 end createFMISimulationFlags;
 

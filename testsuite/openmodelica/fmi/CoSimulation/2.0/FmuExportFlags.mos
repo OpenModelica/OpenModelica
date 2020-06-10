@@ -1,9 +1,10 @@
 // name:     FmuExportFlags
 // keywords: fmu export simulation flags
 // status: correct
-// teardown_command: rm -rf BouncingBallFMI20* exampleFlags.json
+// teardown_command: rm -rf BouncingBallFMI20* exampleFlags.json BouncingBallFMI20-tmp/
 //
-// Export of 2.0 CS FMU with simulation flags
+// Export of 2.0 CS FMU with simulation flags.
+// Also tests example from users guide.
 
 loadString("
 model BouncingBallFMI20
@@ -24,7 +25,6 @@ equation
 end BouncingBallFMI20;
 "); getErrorString();
 
-
 // Don't generate simulation settings file
 setCommandLineOptions("--fmiFlags=none"); getErrorString();
 translateModelFMU(BouncingBallFMI20, version = "2.0", fmuType="cs"); getErrorString();
@@ -39,7 +39,7 @@ system("unzip -cqq BouncingBallFMI20.fmu resources/BouncingBallFMI20_flags.json 
 readFile("BouncingBallFMI20_flags.json"); getErrorString();
 
 // Comandline options for simflags
-setCommandLineOptions("--fmiFlags=s:cvode,nls:homotopy"); getErrorString();
+setCommandLineOptions("--fmiFlags=s:cvode,nls:homotopy,yourFlagName:here"); getErrorString();
 translateModelFMU(BouncingBallFMI20, version = "2.0", fmuType="cs"); getErrorString();
 
 system("unzip -cqq BouncingBallFMI20.fmu resources/BouncingBallFMI20_flags.json > BouncingBallFMI20_flags.json"); getErrorString();
@@ -48,8 +48,7 @@ readFile("BouncingBallFMI20_flags.json"); getErrorString();
 // Give file with simflags as relative path
 writeFile("exampleFlags.json",
 "{
-  \"s\" : \"someSuperExcitingSolver\",
-  \"nls\" : \"homotopy\",
+  \"s\" : \"cvode\",
   \"SomeAwesomFlag\" : \"crazyStuff\"
 }"); getErrorString();
 
@@ -65,6 +64,17 @@ translateModelFMU(BouncingBallFMI20, version = "2.0", fmuType="cs"); getErrorStr
 
 system("unzip -cqq BouncingBallFMI20.fmu resources/BouncingBallFMI20_flags.json > BouncingBallFMI20_flags.json"); getErrorString();
 readFile("BouncingBallFMI20_flags.json"); getErrorString();
+
+
+// Simulate FMU
+system(getInstallationDirectoryPath() + "/bin/OMSimulator BouncingBallFMI20.fmu --mode=cs --tolerance=1e-6 --resultFile=\"BouncingBallFMI20_res.mat\" --stopTime=1.0 --suppressPath=true --tempDir=\"BouncingBallFMI20-tmp\" --timeout=180", "BouncingBallFMI20_cs_systemCall.log"); getErrorString();
+readFile("BouncingBallFMI20_cs_systemCall.log");
+
+// Read results
+val(h, 0.0, "BouncingBallFMI20_res.mat"); getErrorString();
+val(v, 0.0, "BouncingBallFMI20_res.mat"); getErrorString();
+val(h, 1.0, "BouncingBallFMI20_res.mat"); getErrorString();
+val(v, 1.0, "BouncingBallFMI20_res.mat"); getErrorString();
 
 
 // Result:
@@ -86,8 +96,36 @@ readFile("BouncingBallFMI20_flags.json"); getErrorString();
 // 0
 // ""
 // "{
-//   \"s\" : \"euler\",
-//   \"nls\" : \"homotopy\"
+//   \"solver\" : \"euler\"
+// }"
+// ""
+// true
+// ""
+// "BouncingBallFMI20.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: Adding unknown FMU simulation flag "nls" .
+// Warning: Adding unknown FMU simulation flag "yourFlagName" .
+// "
+// 0
+// ""
+// "{
+//   \"s\" : \"cvode\",
+//   \"nls\" : \"homotopy\",
+//   \"yourFlagName\" : \"here\"
+// }"
+// ""
+// true
+// ""
+// true
+// ""
+// "BouncingBallFMI20.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 0
+// ""
+// "{
+//   \"s\" : \"cvode\",
+//   \"SomeAwesomFlag\" : \"crazyStuff\"
 // }"
 // ""
 // true
@@ -99,35 +137,30 @@ readFile("BouncingBallFMI20_flags.json"); getErrorString();
 // ""
 // "{
 //   \"s\" : \"cvode\",
-//   \"nls\" : \"homotopy\"
-// }"
-// ""
-// true
-// ""
-// true
-// ""
-// "BouncingBallFMI20.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// "
-// 0
-// ""
-// "{
-//   \"s\" : \"someSuperExcitingSolver\",
-//   \"nls\" : \"homotopy\",
 //   \"SomeAwesomFlag\" : \"crazyStuff\"
 // }"
 // ""
-// true
-// ""
-// "BouncingBallFMI20.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// "
 // 0
 // ""
-// "{
-//   \"s\" : \"someSuperExcitingSolver\",
-//   \"nls\" : \"homotopy\",
-//   \"SomeAwesomFlag\" : \"crazyStuff\"
-// }"
+// "LOG_SOLVER        | info    | CVODE linear multistep method CV_BDF
+// LOG_SOLVER        | info    | CVODE maximum integration order CV_NEWTON
+// LOG_SOLVER        | info    | CVODE use equidistant time grid YES
+// LOG_SOLVER        | info    | CVODE Using relative error tolerance 1.000000e-06
+// LOG_SOLVER        | info    | CVODE uses internal dense numeric jacobian method
+// LOG_SOLVER        | info    | CVODE uses internal root finding method NO
+// LOG_SOLVER        | info    | CVODE maximum absolut step size 0
+// LOG_SOLVER        | info    | CVODE initial step size is set automatically
+// LOG_SOLVER        | info    | CVODE maximum integration order 5
+// LOG_SOLVER        | info    | CVODE maximum number of nonlinear convergence failures permitted during one step 10
+// LOG_SOLVER        | info    | CVODE BDF stability limit detection algorithm OFF
+// info:    Result file: BouncingBallFMI20_res.mat (bufferSize=1)
+// "
+// 1.0
+// ""
+// 0.0
+// ""
+// 0.2929513314967939
+// ""
+// -2.061090909090879
 // ""
 // endResult

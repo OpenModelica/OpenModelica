@@ -835,8 +835,7 @@ package SimCode
 
   uniontype FmiSimulationFlags
     record FMI_SIMULATION_FLAGS
-      String solver;
-      String nonLinearSolver;
+      list<tuple<String,String>> nameValueTuples;
     end FMI_SIMULATION_FLAGS;
 
     record FMI_SIMULATION_FLAGS_FILE
