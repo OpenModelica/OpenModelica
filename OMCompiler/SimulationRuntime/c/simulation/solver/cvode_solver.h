@@ -87,6 +87,8 @@ typedef struct CVODE_CONFIG
                                 * Default value is 10. */
   booleantype BDFStabDetect;   /* BDF stability limit detection.
                                 * Only usable for lmm=CV_BDF. */
+  booleantype solverRootFinding;  /* True if internal root finding should be used, false otherwiese.
+                                   * Disable for FMI */
 } CVODE_CONFIG;
 
 typedef struct CVODE_SOLVER
@@ -104,7 +106,7 @@ typedef struct CVODE_SOLVER
 } CVODE_SOLVER;
 
 /* Function prototypes */
-int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData);
+int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData, int isFMI);
 int cvode_solver_reinit(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData);
 int cvode_solver_deinitial(CVODE_SOLVER *cvodeData);
 int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo);
@@ -114,7 +116,7 @@ int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
 typedef void CVODE_SOLVER;
 
 // TODO: Move to .c file
-int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData)
+int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData, int isFMI)
 {
 #ifdef OMC_FMI_RUNTIME
   printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");

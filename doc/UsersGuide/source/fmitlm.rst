@@ -52,10 +52,41 @@ By default an FMU that can be used for both Model Exchange and
 Co-Simulation is generated. We support FMI 1.0 & FMI 2.0 for Model Exchange FMUs
 and FMI 2.0 for Co-Simulation FMUs.
 
-Currently the Co-Simulation FMU supports only the forward Euler solver
+Currently the Co-Simulation FMU uses the forward Euler solver as default
 with root finding which does an Euler step of communicationStepSize
 in fmi2DoStep. Events are checked for before and after the call to
 fmi2GetDerivatives.
+
+For FMI 2.0 for Co-Simulation OpenModelica can export an experimental
+implementation of SUNDIALS CVODE (see [#f1]_) as internal integrator.
+
+To export a Co-Simulation FMU with CVODE for the bouncing ball example use the
+following commands:
+
+.. omc-mos ::
+  :erroratend:
+
+  loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/BouncingBall.mo")
+  setCommandLineOptions("--fmiFlags=s:cvode")
+  translateModelFMU(BouncingBall, version = "2.0", fmuType="cs")
+  system("unzip -cqq BouncingBall.fmu resources/BouncingBall_flags.json > BouncingBall_flags.json")
+
+
+The FMU BouncingBall.fmu will have a new file BouncingBall_flags.json in its
+resources directory. By manualy changing its contant users can change the
+solver method without recompiling the FMU.
+
+The BouncingBall_flags.json for this example is displayed in
+:numref:`BouncingBall FMI flags`.
+
+.. literalinclude :: ../tmp/BouncingBall_flags.json
+  :name: BouncingBall FMI flags
+  :caption: BouncingBall FMI flags
+
+For this to work OpenModelica will export all needed dependecies into the FMU
+if and only if the flag fmiFlags was set.
+To have CVODE in a SourceCode FMU the user needs to add all sources for
+SUNDIALS manualy and create a build script as well.
 
 FMI Import
 ~~~~~~~~~~
@@ -379,3 +410,6 @@ which you will be able to specify the simulation parameters.
   :name: tlm-change-cosimulation-parameters-dialog
 
   Changing Co-Simulation Parameters Dialog.
+
+.. rubric:: Footnotes
+.. [#f1] `Sundials Webpage <http://computation.llnl.gov/projects/sundials-suite-nonlinear-differential-algebraic-equation-solvers>`__
