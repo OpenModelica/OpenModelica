@@ -49,7 +49,7 @@ typedef struct SOLVER_INFO
   double currentTime;
   double currentStepSize;
   double laststep;
-  int solverMethod;
+  enum SOLVER_METHOD solverMethod;
   double solverStepSize; /* used by implicit radau solver */
 
   /* set by solver if an internal root finding method is activated  */

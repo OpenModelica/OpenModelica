@@ -1,0 +1,87 @@
+// name:     ExportCvodeFmu_static
+// keywords: fmu export simulation flags
+// status: correct
+// teardown_command: rm -rf Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum* Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum* Pendulum-static* Pendulum_static* Pendulum_me_cs_systemCall.log Pendulum_flags_static.json
+//
+// Export Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum as 2.0 CS FMU with CVODE solver
+
+// Generate FMU
+loadModel(Modelica); getErrorString();
+setCommandLineOptions("--fmiFlags=s:cvode"); getErrorString();
+translateModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version = "2.0", fmuType="me_cs"); getErrorString();
+
+// Check _flags.json for simulation flags
+system("unzip -cqq Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu resources/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_flags.json > Pendulum_flags_static.json"); getErrorString();
+readFile("Pendulum_flags_static.json"); getErrorString();
+
+// Simulate with OMSimulator
+system(getInstallationDirectoryPath() + "/bin/OMSimulator Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu --mode=cs --tolerance=1e-6 --stopTime=1.0 --resultFile=\"Pendulum_static_res.mat\" --suppressPath=true --tempDir=\"Pendulum-static-tmp\"", "Pendulum_me_cs_systemCall.log"); getErrorString();
+readFile("Pendulum_me_cs_systemCall.log"); getErrorString();
+
+// Check results
+// TODO: The results are wrong, but with the same error as when using euler.
+val(rev.phi, 0.0, "Pendulum_static_res.mat"); getErrorString();
+val(rev.w, 0.0, "Pendulum_static_res.mat"); getErrorString();
+val(rev.phi, 1.0, "Pendulum_static_res.mat"); getErrorString();
+val(rev.w, 1.0, "Pendulum_static_res.mat"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu"
+// ""
+// 0
+// ""
+// "{
+//   \"s\" : \"cvode\",
+//   \"nls\" : \"homotopy\"
+// }"
+// ""
+// 0
+// ""
+// "LOG_SOLVER        | info    | CVODE linear multistep method CV_BDF
+// LOG_SOLVER        | info    | CVODE maximum integration order CV_NEWTON
+// LOG_SOLVER        | info    | CVODE use equidistant time grid YES
+// LOG_SOLVER        | info    | CVODE Using relative error tolerance 1.000000e-06
+// LOG_SOLVER        | info    | CVODE uses internal dense numeric jacobian method
+// LOG_SOLVER        | info    | CVODE uses internal root finding method YES
+// LOG_SOLVER        | info    | CVODE maximum absolut step size 0
+// LOG_SOLVER        | info    | CVODE initial step size is set automatically
+// LOG_SOLVER        | info    | CVODE maximum integration order 5
+// LOG_SOLVER        | info    | CVODE maximum number of nonlinear convergence failures permitted during one step 10
+// LOG_SOLVER        | info    | CVODE BDF stability limit detection algorithm OFF
+// info:    Result file: Pendulum_static_res.mat (bufferSize=1)
+// info:    Variable model.root.fmu.body.cylinder.shapeType will not be stored in the result file, because the signal type is not supported
+// info:    Variable model.root.fmu.body.sphere.shapeType will not be stored in the result file, because the signal type is not supported
+// info:    Variable model.root.fmu.rev.cylinder.shapeType will not be stored in the result file, because the signal type is not supported
+// info:    Variable model.root.fmu.world.gravityArrowHead.shapeType will not be stored in the result file, because the signal type is not supported
+// info:    Variable model.root.fmu.world.gravityArrowLine.shapeType will not be stored in the result file, because the signal type is not supported
+// info:    Parameter model.root.fmu.world.label1 will not be stored in the result file, because the signal type is not supported
+// info:    Parameter model.root.fmu.world.label2 will not be stored in the result file, because the signal type is not supported
+// info:    Variable model.root.fmu.world.x_arrowHead.shapeType will not be stored in the result file, because the signal type is not supported
+// info:    Variable model.root.fmu.world.x_arrowLine.shapeType will not be stored in the result file, because the signal type is not supported
+// info:    Variable model.root.fmu.world.x_label.cylinders[1].shapeType will not be stored in the result file, because the signal type is not supported
+// info:    Variable model.root.fmu.world.x_label.cylinders[2].shapeType will not be stored in the result file, because the signal type is not supported
+// info:    Variable model.root.fmu.world.y_arrowHead.shapeType will not be stored in the result file, because the signal type is not supported
+// info:    Variable model.root.fmu.world.y_arrowLine.shapeType will not be stored in the result file, because the signal type is not supported
+// info:    Variable model.root.fmu.world.y_label.cylinders[1].shapeType will not be stored in the result file, because the signal type is not supported
+// info:    Variable model.root.fmu.world.y_label.cylinders[2].shapeType will not be stored in the result file, because the signal type is not supported
+// info:    Variable model.root.fmu.world.z_arrowHead.shapeType will not be stored in the result file, because the signal type is not supported
+// info:    Variable model.root.fmu.world.z_arrowLine.shapeType will not be stored in the result file, because the signal type is not supported
+// info:    Variable model.root.fmu.world.z_label.cylinders[1].shapeType will not be stored in the result file, because the signal type is not supported
+// info:    Variable model.root.fmu.world.z_label.cylinders[2].shapeType will not be stored in the result file, because the signal type is not supported
+// info:    Variable model.root.fmu.world.z_label.cylinders[3].shapeType will not be stored in the result file, because the signal type is not supported
+// "
+// ""
+// 0.0
+// ""
+// 0.0
+// ""
+// -2.697256534092101
+// ""
+// 3.193698935005396
+// ""
+// endResult

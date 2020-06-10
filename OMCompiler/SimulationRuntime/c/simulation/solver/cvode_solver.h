@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -31,9 +31,12 @@
 #ifndef CVODE_SOLVER_H
 #define CVODE_SOLVER_H
 
-#include "simulation_data.h"
-#include "util/simulation_options.h"
-#include "omc_config.h" /* for WITH_SUNDIALS */
+#ifndef OMC_FMI_RUNTIME
+  #include "omc_config.h"
+#endif
+#include "../../simulation_data.h"
+#include "../../util/simulation_options.h"
+#include "solver_main.h"
 
 #ifdef WITH_SUNDIALS
 
@@ -44,11 +47,11 @@
 #endif
 #endif
 
-#include "cvode/cvode.h"             /* prototypes for CVODE fcts., consts. */
-#include "cvode/cvode_impl.h"        /* prototypes for CVODE internal consts.*/
-#include "cvode/cvode_dense.h"       /* prototype for CVODE dense matrix functions and constants */
-#include "nvector/nvector_serial.h"  /* serial N_Vector types, fcts., macros */
-#include "sundials/sundials_types.h" /* definition of type realtype */
+#include <cvode/cvode.h>             /* prototypes for CVODE fcts., consts. */
+#include <cvode/cvode_impl.h>        /* prototypes for CVODE internal consts.*/
+#include <cvode/cvode_dense.h>       /* prototype for CVODE dense matrix functions and constants */
+#include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts., macros */
+#include <sundials/sundials_types.h> /* definition of type realtype */
 
 typedef struct CVODE_USERDATA
 {
@@ -102,9 +105,56 @@ typedef struct CVODE_SOLVER
 
 /* Function prototypes */
 int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData);
+int cvode_solver_reinit(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData);
 int cvode_solver_deinitial(CVODE_SOLVER *cvodeData);
 int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo);
+int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double tNext, double* states, void* fmuComponent);
 
-#endif  /* #ifdef WITH_SUNDIALS */
+#else /* WITH_SUNDIALS */
+typedef void CVODE_SOLVER;
+
+// TODO: Move to .c file
+int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData)
+{
+#ifdef OMC_FMI_RUNTIME
+  printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");
+  return -1;
+#else
+  throwStreamPrint(threadData, "##CVODE## SUNDIALS not available. Reconfigure omc with SUNDIALS.\n");
+#endif
+}
+
+int cvode_solver_deinitial(CVODE_SOLVER *cvodeData)
+{
+#ifdef OMC_FMI_RUNTIME
+  printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");
+  return -1;
+#else
+  throwStreamPrint(NULL, "##CVODE## SUNDIALS not available. Reconfigure omc with SUNDIALS.\n");
+#endif
+}
+
+int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
+{
+#ifdef OMC_FMI_RUNTIME
+  printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");
+  return -1;
+#else
+  throwStreamPrint(threadData, "##CVODE## SUNDIALS not available. Reconfigure omc with SUNDIALS.\n");
+#endif
+}
+
+int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double tNext, double* states, void* fmuComponent)
+{
+#ifdef OMC_FMI_RUNTIME
+  printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");
+  return -1;
+#else
+  throwStreamPrint(threadData, "##CVODE## SUNDIALS not available. Reconfigure omc with SUNDIALS.\n");
+#endif
+}
+
+
+#endif /* WITH_SUNDIALS */
 
 #endif /* #ifndef CVODE_SOLVER_H */

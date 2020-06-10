@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,16 +28,18 @@
  *
  */
 
- #ifndef __FMU_READ_FLAGS_H__
- #define __FMU_READ_FLAGS_H__
+#ifndef __FMU_READ_FLAGS_H__
+#define __FMU_READ_FLAGS_H__
 
- #include "fmi2Functions.h"
- #include "../simulation_data.h"
+#include "fmu2_model_interface.h"
+#include "fmi2Functions.h"
+#include "../simulation_data.h"
 
- #ifdef __cplusplus
- extern "C" {
- #endif
+#ifdef __cplusplus
+extern "C" {
+#endif
 
- void readFlags(DATA *fmudata, const char *str);
+int FMI2CS_initializeSolverData(ModelInstance* comp);
+int FMI2CS_deInitializeSolverData(ModelInstance* comp);
 
- #endif
+#endif

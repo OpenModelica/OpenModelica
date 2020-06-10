@@ -1,0 +1,76 @@
+// name:     simpleStiffFMU_dynamic
+// keywords: fmu export simulation flags
+// status: correct
+// teardown_command: rm -rf
+//
+// Export simple stiff model as 2.0 CS FMU with CVODE solver
+// For explicit Euler with step size bigger than 0.5 this will explode
+
+// Generate FMU
+loadString("
+model stiffProblem
+  Real x(start=x0, fixed=true);
+  Real solution;
+  parameter Real x0 = 1;
+equation
+  der(x)=-4*(x-2);
+  solution = 2-exp(-4*time);
+end stiffProblem;
+"); getErrorString();
+setCommandLineOptions("-d=newInst --fmiFlags=s:cvode"); getErrorString();
+translateModelFMU(stiffProblem, version = "2.0", fmuType="me_cs"); getErrorString();
+
+// Check _flags.json for simulation flags
+system("unzip -cqq stiffProblem.fmu resources/stiffProblem_flags.json > stiffProblem_flags_dynamic.json"); getErrorString();
+readFile("stiffProblem_flags_dynamic.json"); getErrorString();
+
+// Simulate with OMSimulator
+system(getInstallationDirectoryPath() + "/bin/OMSimulator stiffProblem.fmu --mode=cs --tolerance=1e-6 --stopTime=250.0 --resultFile=\"stiffProblem_Dynamic_res.mat\" --suppressPath=true --tempDir=\"stiffProblem-dynamic-tmp\"", "stiffProblem_cs_systemCall.log"); getErrorString();
+readFile("stiffProblem_cs_systemCall.log"); getErrorString();
+
+// Check results
+val(x, 0.0, "stiffProblem_Dynamic_res.mat"); getErrorString();
+val(solution, 0.0, "stiffProblem_Dynamic_res.mat"); getErrorString();
+val(x, 250.0, "stiffProblem_Dynamic_res.mat"); getErrorString();
+val(solution, 250.0, "stiffProblem_Dynamic_res.mat"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "stiffProblem.fmu"
+// ""
+// 0
+// ""
+// "{
+//   \"s\" : \"cvode\",
+//   \"nls\" : \"homotopy\"
+// }"
+// ""
+// 0
+// ""
+// "LOG_SOLVER        | info    | CVODE linear multistep method CV_BDF
+// LOG_SOLVER        | info    | CVODE maximum integration order CV_NEWTON
+// LOG_SOLVER        | info    | CVODE use equidistant time grid YES
+// LOG_SOLVER        | info    | CVODE Using relative error tolreance 1.000000e-06
+// LOG_SOLVER        | info    | CVODE uses internal dense numeric jacobian method
+// LOG_SOLVER        | info    | CVODE uses internal root finding method YES
+// LOG_SOLVER        | info    | CVODE maximum absolut step size 0
+// LOG_SOLVER        | info    | CVODE initial step size is set automatically
+// LOG_SOLVER        | info    | CVODE maximum integration order 5
+// LOG_SOLVER        | info    | CVODE maximum number of nonlinear convergence failures permitted during one step 10
+// LOG_SOLVER        | info    | CVODE BDF stability limit detection algorithm OFF
+// info:    Result file: stiffProblem_Dynamic_res.mat (bufferSize=1)
+// "
+// ""
+// 1.0
+// ""
+// 1.0
+// ""
+// 2.0
+// ""
+// 2.0
+// ""
+// endResult
