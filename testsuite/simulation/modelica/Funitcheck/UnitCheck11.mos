@@ -42,6 +42,6 @@ instantiateModel(unitCheckTests.UnitCheck11); getErrorString();
 //   V = S * A;
 // end unitCheckTests.UnitCheck11;
 // "
-// "Notification: "V" has the Unit "m2.s-2"
+// "Notification: \"V\" has the Unit \"m2.s-2\"
 // "
 // endResult

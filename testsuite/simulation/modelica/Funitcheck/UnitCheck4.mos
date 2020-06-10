@@ -41,6 +41,6 @@ instantiateModel(unitCheckTests.UnitCheck4); getErrorString();
 //   S = 5.0;
 // end unitCheckTests.UnitCheck4;
 // "
-// "Notification: "A" has the Unit "m.s-2"
+// "Notification: \"A\" has the Unit \"m.s-2\"
 // "
 // endResult

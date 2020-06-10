@@ -31,6 +31,6 @@ simulate(test); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Notification: "x" has the Unit "s2"
+// "Notification: \"x\" has the Unit \"s2\"
 // "
 // endResult

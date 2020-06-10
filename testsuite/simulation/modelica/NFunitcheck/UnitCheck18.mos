@@ -70,19 +70,19 @@ getErrorString();
 // "
 // "[<interactive>:20:3-20:22:writable] Warning: The following equation is INCONSISTENT due to specified unit information:  (y1, y2) = unitCheckTests.UnitCheck18.test(t1, t2);
 // Warning: The units of following sub-expressions need to be equal:
-// - sub-expression "y1" has unit "m/s"
-// - sub-expression "unitCheckTests.UnitCheck18.test().z" has unit "m"
+// - sub-expression \"y1\" has unit \"m/s\"
+// - sub-expression \"unitCheckTests.UnitCheck18.test().z\" has unit \"m\"
 // [<interactive>:20:3-20:22:writable] Warning: The following equation is INCONSISTENT due to specified unit information:  (y1, y2) = unitCheckTests.UnitCheck18.test(t1, t2);
 // Warning: The units of following sub-expressions need to be equal:
-// - sub-expression "y2" has unit "J"
-// - sub-expression "unitCheckTests.UnitCheck18.test().r" has unit "m/s"
+// - sub-expression \"y2\" has unit \"J\"
+// - sub-expression \"unitCheckTests.UnitCheck18.test().r\" has unit \"m/s\"
 // [<interactive>:20:3-20:22:writable] Warning: The following equation is INCONSISTENT due to specified unit information:  (y1, y2) = unitCheckTests.UnitCheck18.test(t1, t2);
 // Warning: The units of following sub-expressions need to be equal:
-// - sub-expression "t2" has unit "m/s"
-// - sub-expression "unitCheckTests.UnitCheck18.test().y" has unit "m"
+// - sub-expression \"t2\" has unit \"m/s\"
+// - sub-expression \"unitCheckTests.UnitCheck18.test().y\" has unit \"m\"
 // [<interactive>:21:4-21:15:writable] Warning: The following equation is INCONSISTENT due to specified unit information:  b = unitCheckTests.UnitCheck18.test2(t2);
 // Warning: The units of following sub-expressions need to be equal:
-// - sub-expression "t2" has unit "m/s"
-// - sub-expression "unitCheckTests.UnitCheck18.test2().a" has unit "s"
+// - sub-expression \"t2\" has unit \"m/s\"
+// - sub-expression \"unitCheckTests.UnitCheck18.test2().a\" has unit \"s\"
 // "
 // endResult

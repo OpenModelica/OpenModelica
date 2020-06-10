@@ -83,7 +83,7 @@ val(v, 1.0, "BouncingBallFMI20_res.mat"); getErrorString();
 // true
 // ""
 // "BouncingBallFMI20.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // caution: filename not matched:  resources/BouncingBallFMI20_flags.json
 // 11
@@ -91,7 +91,7 @@ val(v, 1.0, "BouncingBallFMI20_res.mat"); getErrorString();
 // true
 // ""
 // "BouncingBallFMI20.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // 0
 // ""
@@ -102,9 +102,9 @@ val(v, 1.0, "BouncingBallFMI20_res.mat"); getErrorString();
 // true
 // ""
 // "BouncingBallFMI20.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// Warning: Adding unknown FMU simulation flag "nls" .
-// Warning: Adding unknown FMU simulation flag "yourFlagName" .
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Warning: Adding unknown FMU simulation flag \"nls\" .
+// Warning: Adding unknown FMU simulation flag \"yourFlagName\" .
 // "
 // 0
 // ""
@@ -119,7 +119,7 @@ val(v, 1.0, "BouncingBallFMI20_res.mat"); getErrorString();
 // true
 // ""
 // "BouncingBallFMI20.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // 0
 // ""
@@ -131,7 +131,7 @@ val(v, 1.0, "BouncingBallFMI20_res.mat"); getErrorString();
 // true
 // ""
 // "BouncingBallFMI20.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // 0
 // ""

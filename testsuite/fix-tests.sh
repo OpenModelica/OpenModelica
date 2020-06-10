@@ -13,6 +13,6 @@ else
 fi
 echo Switched to directory: $(pwd)
 echo Baselining files from $FILE in parallel ...
-perl ./runtests.pl -b -file=$FILE
+perl ./runtests.pl -b -file=$FILE $2
 cd $CD
 

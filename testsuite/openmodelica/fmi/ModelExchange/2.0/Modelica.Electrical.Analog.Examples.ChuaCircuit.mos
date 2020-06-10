@@ -32,7 +32,7 @@ val(C2_v, 3);
 // Result:
 // true
 // "Modelica.Electrical.Analog.Examples.ChuaCircuit.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // "Modelica_Electrical_Analog_Examples_ChuaCircuit_me_FMU.mo"
 // ""
@@ -46,15 +46,15 @@ val(C2_v, 3);
 // "
 // end SimulationResult;
 // 0.0
-// 0.0006245340117113856
-// 0.002487686548357086
-// 0.005573487284199661
+// 0.0006245340115970231
+// 0.002487686548146364
+// 0.005573487283910849
 // 4.0
-// 3.973329565350411
-// 3.94832206647624
-// 3.924937636301487
+// 3.973329565353018
+// 3.94832206647875
+// 3.924937636303942
 // 0.0
-// 0.0224581617610272
-// 0.04463179079046596
-// 0.06651953357135959
+// 0.02245816175879643
+// 0.04463179078826605
+// 0.0665195335691923
 // endResult

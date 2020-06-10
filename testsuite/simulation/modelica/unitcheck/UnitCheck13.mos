@@ -33,7 +33,7 @@ translateModel(unitCheckTests.UnitCheck13); getErrorString();
 // true
 // "Warning: The following equation is INCONSISTENT due to specified unit information: V = A
 // The units of following sub-expressions need to be equal:
-// - sub-expression "A" has unit "m4"
-// - sub-expression "V" has unit "m"
+// - sub-expression \"A\" has unit \"m4\"
+// - sub-expression \"V\" has unit \"m\"
 // "
 // endResult

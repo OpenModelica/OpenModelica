@@ -42,7 +42,7 @@ instantiateModel(unitCheckTests.UnitCheck12); getErrorString();
 //   S = V ^ 2.0 + sqrt(A);
 // end unitCheckTests.UnitCheck12;
 // "
-// "Notification: "V" has the Unit "m"
-// "A" has the Unit "m4"
+// "Notification: \"V\" has the Unit \"m\"
+// \"A\" has the Unit \"m4\"
 // "
 // endResult

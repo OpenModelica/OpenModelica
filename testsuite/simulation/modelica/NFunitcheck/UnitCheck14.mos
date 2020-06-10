@@ -38,7 +38,7 @@ instantiateModel(unitCheckTests.UnitCheck14); getErrorString();
 //   A = der(S);
 // end unitCheckTests.UnitCheck14;
 // "
-// "Notification: "A" has the Unit "1"
-// "S" has the Unit "s"
+// "Notification: \"A\" has the Unit \"1\"
+// \"S\" has the Unit \"s\"
 // "
 // endResult

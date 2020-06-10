@@ -42,7 +42,7 @@ instantiateModel(unitCheckTests.UnitCheck7); getErrorString();
 //   0.0 = V - A - S;
 // end unitCheckTests.UnitCheck7;
 // "
-// "Notification: "S" has the Unit "m/s"
-// "V" has the Unit "m/s"
+// "Notification: \"S\" has the Unit \"m/s\"
+// \"V\" has the Unit \"m/s\"
 // "
 // endResult
