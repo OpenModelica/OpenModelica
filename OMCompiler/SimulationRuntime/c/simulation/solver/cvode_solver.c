@@ -79,6 +79,7 @@ const char *CVODE_ITER_DESC[CVODE_ITER_MAX + 1] = {
 
 /* Internal function prototypes */
 int cvodeRightHandSideODEFunction(realtype time, N_Vector y, N_Vector ydot, void *userData);
+void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype isFMI);
 
 /**
  * @brief Computes the ODE right-hand side for a given value of the independent variable t and state vector y
@@ -340,7 +341,7 @@ int rootsFunctionCVODE(double time, N_Vector y, double *gout, void *userData)
  * @param cvodeData       CVODE solver data struckt
  * @param threadData      Thread data for error handling
  */
-void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData)
+void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype isFMI)
 {
   /* Variables */
   int i;
@@ -492,6 +493,15 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData)
   {
     config->BDFStabDetect = FALSE;
   }
+
+  if(omc_flag[FLAG_NO_ROOTFINDING] || isFMI)
+  {
+    config->solverRootFinding = FALSE;
+  }
+  else
+  {
+    config->solverRootFinding = TRUE;
+  }
 }
 
 /**
@@ -503,7 +513,7 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData)
  * @param cvodeData         CVODE solver data struckt.
  * @return int              Return 0 on success.
  */
-int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData)
+int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData, int isFMI)
 {
   /* Variables */
   int flag;
@@ -522,7 +532,7 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   cvodeData->isInitialized = FALSE;
 
   /* Get CVODE settings from user flags */
-  cvodeGetConfig(&(cvodeData->config), threadData);
+  cvodeGetConfig(&(cvodeData->config), threadData, isFMI);
 
   /* Initialize states */
   cvodeData->y = N_VMake_Serial(data->modelData->nStates, (realtype *)data->localData[0]->realVars);
@@ -602,9 +612,12 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   }
 
   /* Set root finding function */
-  solverInfo->solverRootFinding = 1;
-  flag = CVodeRootInit(cvodeData->cvode_mem, data->modelData->nZeroCrossings, rootsFunctionCVODE);
-  assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVodeRootInit failed with flag %i", flag);
+  if (cvodeData->config.solverRootFinding)
+  {
+    solverInfo->solverRootFinding = 1;
+    flag = CVodeRootInit(cvodeData->cvode_mem, data->modelData->nZeroCrossings, rootsFunctionCVODE);
+    assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVodeRootInit failed with flag %i", flag);
+  }
   infoStreamPrint(LOG_SOLVER, 0, "CVODE uses internal root finding method %s", solverInfo->solverRootFinding ? "YES" : "NO");
 
   /* ### Set optional settings ### */
