@@ -205,10 +205,12 @@ template fmuSimulationFlagsFile(FmiSimulationFlags fmiSimulationFlags)
  ::=
   match fmiSimulationFlags
   case flags as FMI_SIMULATION_FLAGS(__) then
+  let fileContent = (flags.nameValueTuples |> (name, value) =>
+      '"<%name%>" : "<%value%>"'
+      ;separator=",\n")
     <<
     {
-      "s" : "<%flags.solver%>",
-      "nls" : "<%flags.nonLinearSolver%>"
+      <%fileContent%>
     }
     >>
 end fmuSimulationFlagsFile;

@@ -95,16 +95,20 @@ static inline const char* setSolverMethod(SOLVER_INFO *solverInfo, const char *s
  * @brief parses flags from resources/modelName_flags.json
  *
  * @param solverInfo
- * @param str        string read from file
+ * @param str           string read from file
  */
 void parseFlags(SOLVER_INFO *solverInfo, const char *str)
 {
   /* Variables */
-  int i;
+  int i, k;
+  const int k_max = 1000;
   char* value;
+
   str = skipTo(str, '\"');
-  while(*str != '\0')
+  k = 0;
+  while(*str != '\0' && k < k_max)
   {
+    k++;
     for(i=1; i<FMU_FLAG_MAX; i++)
     {
       // map the fmu flags to regular flags
@@ -155,6 +159,7 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
   solverInfo->currentTime = 0;
   solverInfo->currentStepSize = 0;
   solverInfo->laststep = 0;
+  solverInfo->solverMethod = 0;
   solverInfo->solverRootFinding = 0;
   solverInfo->solverNoEquidistantGrid = 0;
   solverInfo->lastdesiredStep = solverInfo->currentTime + solverInfo->currentStepSize;
@@ -201,7 +206,7 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
       if (!cvodeData) {
         FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "fmi2Instantiate: Out of memory.")
       }
-      retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData);   /* TODO: cvode_solver_initial needs to use malloc and free from fmi2CallbackFunctions */
+      retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData, 1 /* is FMI */);   /* TODO: cvode_solver_initial needs to use malloc and free from fmi2CallbackFunctions */
       solverInfo->solverData = cvodeData;
       useStream[LOG_SOLVER] = 0;
       break;

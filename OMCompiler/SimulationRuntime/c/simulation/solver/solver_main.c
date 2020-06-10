@@ -351,7 +351,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     infoStreamPrint(LOG_SOLVER, 0, "Initializing CVODE ODE Solver");
     cvodeData = (CVODE_SOLVER*) calloc(1, sizeof(CVODE_SOLVER));
     assertStreamPrint(threadData, cvodeData != NULL, "Out of memory");
-    retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData);
+    retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData, 0 /* not FMI */);
     solverInfo->solverData = cvodeData;
     break;
   }

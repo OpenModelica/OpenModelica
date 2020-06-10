@@ -620,8 +620,7 @@ end FmiModelStructure;
 
 public uniontype FmiSimulationFlags
   record FMI_SIMULATION_FLAGS
-    String solver;
-    String nonLinearSolver;
+    list<tuple<String,String>> nameValueTuples;
   end FMI_SIMULATION_FLAGS;
 
   record FMI_SIMULATION_FLAGS_FILE
@@ -629,7 +628,7 @@ public uniontype FmiSimulationFlags
   end FMI_SIMULATION_FLAGS_FILE;
 end FmiSimulationFlags;
 
-constant FmiSimulationFlags defaultFmiSimulationFlags = FMI_SIMULATION_FLAGS(solver="euler", nonLinearSolver="homotopy");
+constant FmiSimulationFlags defaultFmiSimulationFlags = FMI_SIMULATION_FLAGS({("solver","euler")});
 
 annotation(__OpenModelica_Interface="backend");
 end SimCode;
