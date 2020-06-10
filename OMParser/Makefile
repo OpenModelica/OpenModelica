@@ -27,7 +27,7 @@ libomcparserantlr4.a: $(OBJS)
 $(OBJS): $(CPP_FILES) install/lib/libantlr4-runtime.a
 
 3rdParty/antlr4/runtime/Cpp/build/Makefile:
-	(cd 3rdParty/antlr4/runtime/Cpp/build && $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DCMAKE_INSTALL_PREFIX:String=../../../../../install ../ -G $(CMAKE_TARGET))
+	(cd 3rdParty/antlr4/runtime/Cpp/build && $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DCMAKE_INSTALL_PREFIX:String=../../../../../install -DWITH_LIBCXX:Bool=OFF ../ -G $(CMAKE_TARGET))
 
 install/lib/libantlr4-runtime.a: 3rdParty/antlr4/runtime/Cpp/CMakeLists.txt
 	mkdir -p 3rdParty/antlr4/runtime/Cpp/build
