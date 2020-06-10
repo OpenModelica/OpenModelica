@@ -834,14 +834,14 @@ package SimCode
   end FmiModelStructure;
 
   uniontype FmiSimulationFlags
-    record FMISIMULATIONFLAGS
+    record FMI_SIMULATION_FLAGS
       String solver;
       String nonLinearSolver;
-    end FMISIMULATIONFLAGS;
+    end FMI_SIMULATION_FLAGS;
 
-    record FMISIMULATIONFLAGSFILE
+    record FMI_SIMULATION_FLAGS_FILE
       String path;
-    end FMISIMULATIONFLAGSFILE;
+    end FMI_SIMULATION_FLAGS_FILE;
   end FmiSimulationFlags;
 
 end SimCode;

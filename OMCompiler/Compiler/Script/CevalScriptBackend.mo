@@ -3541,12 +3541,14 @@ algorithm
 end callTranslateModel;
 
 protected function configureFMU
+"Configures Makefile.in of FMU for traget configuration."
   input String platform;
   input String fmutmp;
   input String logfile;
   input Boolean isWindows;
+  input Boolean needs3rdPartyLibs;
 protected
-  String CC, CFLAGS, LDFLAGS, makefileStr, container, host, nozip, path1, path2,
+  String CC, CFLAGS, CPPFLAGS, LDFLAGS, SUNDIALS, makefileStr, container, host, nozip, path1, path2,
     dir=fmutmp+"/sources/", cmd="",
     quote="'",
     dquote = if isWindows then "\"" else "'",
@@ -3554,17 +3556,26 @@ protected
   list<String> rest;
   Boolean finishedBuild;
   Integer uid, status;
+  Boolean verbose = false;
 algorithm
+  includeDefaultFmi := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
+
   CC := System.getCCompiler();
   CFLAGS := "-Os "+System.stringReplace(System.getCFlags(),"${MODELICAUSERCFLAGS}","");
   LDFLAGS := ("-L"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+Autoconf.triple+"/omc"+dquote+" "+
-                         "-Wl,-rpath,"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+Autoconf.triple+"/omc"+dquote+" "+
-                         System.getLDFlags()+" ");
+              "-Wl,-rpath,"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+Autoconf.triple+"/omc"+dquote+" "+
+              System.getLDFlags()+" ");
+  CPPFLAGS := "-I" + includeDefaultFmi + " -DOMC_FMI_RUNTIME=1";
+  if needs3rdPartyLibs then
+    SUNDIALS :=  "1";
+    CPPFLAGS := CPPFLAGS + " -DWITH_SUNDIALS=1" + " -Isundials";
+  else
+    SUNDIALS :=  "";
+  end if;
   if System.regularFileExists(logfile) then
     System.removeFile(logfile);
   end if;
   nozip := Autoconf.make+" -j"+intString(Config.noProc()) + " nozip";
-  includeDefaultFmi := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
   finishedBuild := match Util.stringSplitAtChar(platform, " ")
     case {"dynamic"}
       algorithm
@@ -3577,8 +3588,9 @@ algorithm
         makefileStr := System.stringReplace(makefileStr, "@DLLEXT@", Autoconf.dllExt);
         makefileStr := System.stringReplace(makefileStr, "@NEED_RUNTIME@", "");
         makefileStr := System.stringReplace(makefileStr, "@NEED_DGESV@", "");
+        makefileStr := System.stringReplace(makefileStr, "@NEED_SUNDIALS@", "");
         makefileStr := System.stringReplace(makefileStr, "@FMIPLATFORM@", System.modelicaPlatform());
-        makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", "-I" + includeDefaultFmi + " -DOMC_SIM_SETTINGS_CMDLINE -DOMC_FMI_RUNTIME=1");
+        makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", CPPFLAGS + " -DOMC_SIM_SETTINGS_CMDLINE");
         makefileStr := System.stringReplace(makefileStr, "@LIBTYPE_DYNAMIC@", "1");
         makefileStr := System.stringReplace(makefileStr, "@BSTATIC@", Autoconf.bstatic);
         makefileStr := System.stringReplace(makefileStr, "@BDYNAMIC@", Autoconf.bdynamic);
@@ -3598,8 +3610,9 @@ algorithm
         makefileStr := System.stringReplace(makefileStr, "@DLLEXT@", Autoconf.dllExt);
         makefileStr := System.stringReplace(makefileStr, "@NEED_RUNTIME@", "");
         makefileStr := System.stringReplace(makefileStr, "@NEED_DGESV@", "");
+        makefileStr := System.stringReplace(makefileStr, "@NEED_SUNDIALS@", SUNDIALS);
         makefileStr := System.stringReplace(makefileStr, "@FMIPLATFORM@", System.modelicaPlatform());
-        makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", "-DOMC_MINIMAL_RUNTIME=1 -DCMINPACK_NO_DLL=1 -I" + includeDefaultFmi);
+        makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", CPPFLAGS + " -DCMINPACK_NO_DLL=1");
         makefileStr := System.stringReplace(makefileStr, "@LIBTYPE_DYNAMIC@", "1");
         makefileStr := System.stringReplace(makefileStr, "@BSTATIC@", Autoconf.bstatic);
         makefileStr := System.stringReplace(makefileStr, "@BDYNAMIC@", Autoconf.bdynamic);
@@ -3610,8 +3623,9 @@ algorithm
       then false;
     case {_}
       algorithm
-        cmd := "cd \"" +  fmutmp + "/sources\" && ./configure --host="+quote+platform+quote+" CFLAGS="+quote+"-Os"+quote+" CPPFLAGS="+quote+"-I"+includeDefaultFmi+quote+" LDFLAGS= && " +
-               nozip;
+        cmd := "cd \"" +  fmutmp + "/sources\" && ./configure --host="+quote+platform+quote+
+               " CFLAGS=" + quote + "-Os" + quote + " CPPFLAGS=" + quote + CPPFLAGS + quote+
+               " LDFLAGS= && " + nozip;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
           System.removeFile(logfile);
@@ -3627,6 +3641,8 @@ algorithm
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + " failed:\n" + System.readFile(logfile)});
           fail();
+        elseif verbose then
+           print(cmd + "\n" + System.readFile(logfile) +"\n");
         end if;
         cidFile := fmutmp+".cidfile";
         if System.regularFileExists(cidFile) then
@@ -3639,6 +3655,8 @@ algorithm
           // Cleanup
           System.systemCall("docker volume rm " + volumeID);
           fail();
+        elseif verbose then
+           print(cmd + "\n" + System.readFile(logfile) +"\n");
         end if;
         containerID := System.trim(System.readFile(cidFile));
         System.removeFile(cidFile);
@@ -3650,6 +3668,8 @@ algorithm
           System.systemCall("docker rm " + containerID);
           System.systemCall("docker volume rm " + volumeID);
           fail();
+        elseif verbose then
+           print(cmd + "\n" + System.readFile(logfile) +"\n");
         end if;
         // Copy the FMI headers to the container
         cmd := "docker cp "+includeDefaultFmi+" "+containerID+":/data/fmiInclude";
@@ -3659,6 +3679,8 @@ algorithm
           System.systemCall("docker rm " + containerID);
           System.systemCall("docker volume rm " + volumeID);
           fail();
+        elseif verbose then
+           print(cmd + "\n" + System.readFile(logfile) +"\n");
         end if;
         cmd := "docker run "+(if uid<>0 then "--user " + String(uid) else "")+" --rm -w /fmu -v "+volumeID+":/fmu "+stringDelimitList(rest," ")+ " sh -c " + dquote +
                "cd " + dquote + "/fmu/" + System.basename(fmutmp) + "/sources" + dquote + " && " +
@@ -3671,12 +3693,16 @@ algorithm
           System.systemCall("docker rm " + containerID);
           System.systemCall("docker volume rm " + volumeID);
           fail();
+        elseif verbose then
+           print(cmd + "\n" + System.readFile(logfile) +"\n");
         end if;
         // Copy the files back from the volume (via the container) to the filesystem
         cmd := "docker cp " + quote + containerID + ":/data/" + fmutmp + quote + " .";
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + ":\n" + System.readFile(logfile)});
           fail();
+        elseif verbose then
+           print(cmd + "\n" + System.readFile(logfile) +"\n");
         end if;
         // Cleanup
         System.systemCall("docker rm " + containerID);
@@ -3703,8 +3729,9 @@ algorithm
   end if;
 end configureFMU;
 
-protected function buildModelFMU " author: Frenkel TUD
- translates a model into cpp code and writes also a makefile"
+protected function buildModelFMU
+ " Author: Frenkel TUD
+   Translates a model into target code and writes also a makefile."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.Path className "path for the model";
@@ -3723,7 +3750,10 @@ protected
   SimCode.SimulationSettings simSettings;
   list<String> libs;
   Boolean isWindows;
+  list<String> fmiFlagsList;
+  Boolean needs3rdPartyLibs;
   String FMUType = inFMUType;
+  Boolean debug = false;
 algorithm
   cache := inCache;
   if not FMI.checkFMIVersion(FMUVersion) then
@@ -3800,9 +3830,18 @@ algorithm
     return;
   end if;
 
+  // Check flag fmiFlags if we need additional 3rdParty runtime libs and files
+  fmiFlagsList := Flags.getConfigStringList(Flags.FMI_FLAGS);
+  if listLength(fmiFlagsList) >= 1 and not stringEqual(List.first(fmiFlagsList), "none") then
+    needs3rdPartyLibs := true;
+  else
+    needs3rdPartyLibs := false;
+  end if;
+
+  // Configure the FMU Makefile
   for platform in platforms loop
     configureLogFile := System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log";
-    configureFMU(platform, fmutmp, configureLogFile, isWindows);
+    configureFMU(platform, fmutmp, configureLogFile, isWindows, needs3rdPartyLibs);
     if Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
       System.removeFile(configureLogFile);
     end if;
@@ -3827,7 +3866,9 @@ algorithm
     fail();
   end if;
 
-  System.removeDirectory(fmutmp);
+  if not debug then
+    System.removeDirectory(fmutmp);
+  end if;
 end buildModelFMU;
 
 protected function buildEncryptedPackage
