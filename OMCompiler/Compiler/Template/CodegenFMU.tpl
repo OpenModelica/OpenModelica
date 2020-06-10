@@ -501,20 +501,24 @@ end initParams;
 
 template initValsDefault(SimVar var, String arrayName) ::=
   match var
+    case SIMVAR(type_ = T_ARRAY()) then
+      '<%getScalarElements(var) |> v => initValsDefault(v, arrayName) ;separator="\n"%>'
     case SIMVAR(index=index, type_=type_) then
-    let str = 'comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start'
-    '<%str%> = <%initValDefault(var)%>;'
+      let str = 'comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start'
+      '<%str%> = <%initValDefault(var)%>;'
 end initValsDefault;
 
 template initParamsDefault(SimVar var, String arrayName) ::=
   match var
+    case SIMVAR(type_ = T_ARRAY()) then
+      '<%getScalarElements(var) |> v => initParamsDefault(v, arrayName) ;separator="\n"%>'
     case SIMVAR(__) then
-    let str = 'comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start'
-    match initialValue
-      case SOME(v as SCONST(__)) then
-      '<%str%> = mmc_mk_scon_persist(<%initVal(v)%>); /* TODO: these are not freed currently, see #6161 */'
-      else
-      '<%str%> = <%initValDefault(var)%>;'
+      let str = 'comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start'
+      match initialValue
+        case SOME(v as SCONST(__)) then
+          '<%str%> = mmc_mk_scon_persist(<%initVal(v)%>); /* TODO: these are not freed currently, see #6161 */'
+        else
+          '<%str%> = <%initValDefault(var)%>;'
 end initParamsDefault;
 
 template initValDefault(SimVar var) ::=
@@ -3221,6 +3225,8 @@ template ScalarVariableFMU(SimVar simVar, String classType)
  "Generates code for ScalarVariable file for FMU target."
 ::=
   match simVar
+    case SIMVAR(type_ = T_ARRAY()) then
+      '<%getScalarElements(simVar) |> var => ScalarVariableFMU(var, classType) ;separator="\n"%>'
     case SIMVAR(source = SOURCE(info = info)) then
       let valueReference = System.tmpTick()
       let ci = System.tmpTickIndex(2)
