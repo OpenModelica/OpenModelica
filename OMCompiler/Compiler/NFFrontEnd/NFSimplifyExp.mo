@@ -193,14 +193,7 @@ algorithm
         callExp;
 
     case Call.TYPED_ARRAY_CONSTRUCTOR() then simplifyArrayConstructor(call);
-
-    case Call.TYPED_REDUCTION()
-      algorithm
-        call.exp := simplify(call.exp);
-        call.iters := list((Util.tuple21(i), simplify(Util.tuple22(i))) for i in call.iters);
-      then
-        Expression.CALL(call);
-
+    case Call.TYPED_REDUCTION() then simplifyReduction(call);
     else callExp;
   end match;
 end simplifyCall;
@@ -344,6 +337,52 @@ algorithm
         Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(ty, var, exp, iters));
   end matchcontinue;
 end simplifyArrayConstructor;
+
+function simplifyReduction
+  input Call call;
+  output Expression outExp;
+algorithm
+  outExp := match call
+    local
+      Expression exp, e;
+      list<tuple<InstNode, Expression>> iters;
+      InstNode iter;
+      Dimension dim;
+      Integer dim_size;
+
+    case Call.TYPED_REDUCTION()
+      algorithm
+        iters := list((Util.tuple21(i), simplify(Util.tuple22(i))) for i in call.iters);
+      then matchcontinue iters
+        case {(iter, e)}
+          algorithm
+            Type.ARRAY(dimensions = {dim}) := Expression.typeOf(e);
+            dim_size := Dimension.size(dim);
+
+            if dim_size == 0 then
+              // Iteration range is empty, return default value for reduction.
+              SOME(outExp) := call.defaultExp;
+            elseif dim_size == 1 then
+              // Iteration range is one, return reduction expression with iterator value applied.
+              (Expression.ARRAY(elements = {e}), _) := ExpandExp.expand(e);
+              outExp := Expression.replaceIterator(call.exp, iter, e);
+              outExp := simplify(outExp);
+            else
+              fail();
+            end if;
+          then
+            outExp;
+
+        else
+          algorithm
+            call.exp := simplify(call.exp);
+            call.iters := iters;
+          then
+            Expression.CALL(call);
+
+      end matchcontinue;
+  end match;
+end simplifyReduction;
 
 function simplifySize
   input output Expression sizeExp;
