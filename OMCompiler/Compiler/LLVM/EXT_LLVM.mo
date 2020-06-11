@@ -115,7 +115,8 @@ function addThreadData_t
 end addThreadData_t;
 
 function storeThreadData_t
-  external "C" storeThreadData_t(OpenModelica.threadData(),"threadData");
+  "Stores the thread data which is fetched from the OMC itself"
+  external "C" storeThreadData_t(OpenModelica.threadData(), "threadData");
 end storeThreadData_t;
 
 function addTypeDescription

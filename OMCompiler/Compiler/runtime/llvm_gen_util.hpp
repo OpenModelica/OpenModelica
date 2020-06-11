@@ -231,7 +231,9 @@ extern "C++"
   void generateInitialRuntimeSignatures ()
   {
     DBG("GenerateIntialRuntimeSignatures\n");
-    std::vector<llvm::Type*> args {getLLVMType(MODELICA_INTEGER),getLLVMType(MODELICA_INTEGER)};
+    std::vector<llvm::Type*> args {
+      getLLVMType(MODELICA_INTEGER),
+      getLLVMType(MODELICA_INTEGER)};
     createExternalCallDecl("mmc_mk_box",MODELICA_METATYPE,args,true);
     /*For records, we need a "struct record description" it is described in the C context as a utility
       function. We need to manually provide the signature to bridge between the C runtime and LLVM.

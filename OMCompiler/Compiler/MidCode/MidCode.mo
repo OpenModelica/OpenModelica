@@ -150,7 +150,7 @@ uniontype Terminator
   record LONGJMP "used for fail() stmts"
   end LONGJMP;
 
-  record PUSHJMP "used for match-continue fail() handling"
+  record PUSHJMP "Used for match-continue fail() handling"
     VarBufPtr old_buf "where to save old jmp_buf";
     VarBuf new_buf "what to use as new jmp_buf";
     Integer next "where to goto next and the setjmp target";

@@ -1403,7 +1403,8 @@ algorithm
     */
     //JOHN: All local variables in the match expression must be added to the list of variables...
     listOfElementsToMidCodeVars(localDecls,state); //Create variables for all local variables in the MATCHEXPRESSION
-    muxState := GenTmpVarVolatile(DAE.T_INTEGER_DEFAULT,state); // volatile since we mutate it after setjmp
+    // volatile since we mutate it after setjmp
+    muxState := GenTmpVarVolatile(DAE.T_INTEGER_DEFAULT, state);
     stateAddStmt(MidCode.ASSIGN(muxState, MidCode.LITERALINTEGER(0)), state);
     if matchContinue
     then
@@ -1449,13 +1450,31 @@ algorithm
     labelOut := GenBlockId();
     if matchContinue
     then
+      one := GenTmpVar(DAE.T_INTEGER_DEFAULT,state);
+      stateAddStmt(MidCode.ASSIGN(one, MidCode.LITERALINTEGER(1)) ,state);
+      stateAddStmt(MidCode.ASSIGN(muxState, MidCode.BINARYOP(MidCode.ADD(),muxState,one)),state);
+      stateTerminate(labelFin, MidCode.SWITCH( muxState, List.threadTuple( List.intRange(listLength(cases)+1), listAppend(caseLabels,{labelFin}) )  ), state);
+    else
+      stateTerminate(labelFin, MidCode.GOTO(if not listEmpty(caseLabels) then listHead(caseLabels) else labelFail), state);
+    end if;
+    /*
+    fin:
+      #IF MATCHCONTINUE
+        POPJMP(J_old)
+      if state == nr_cases+1
+        longjmp
+      else
+        goto next;
+    */
+    if matchContinue
+    then
       stateTerminate(labelFin2, MidCode.POPJMP( muxOldBuf, labelFin2  ), state);
     else
       stateTerminate(labelFin2, MidCode.GOTO(labelFin2), state);
     end if;
-    midvar := rValueToVar(MidCode.LITERALINTEGER(listLength(cases)+1),state);
-    midvar2 := rValueToVar(MidCode.BINARYOP(MidCode.EQUAL(),muxState, midvar),state);
-    stateTerminate(labelFail, MidCode.BRANCH(midvar2, labelFail, labelOut),state);
+    midvar := rValueToVar(MidCode.LITERALINTEGER(listLength(cases)+1), state);
+    midvar2 := rValueToVar(MidCode.BINARYOP(MidCode.EQUAL(), muxState, midvar), state);
+    stateTerminate(labelFail, MidCode.BRANCH(midvar2, labelFail, labelOut), state);
     stateTerminate(labelOut, MidCode.LONGJMP(),state);
     caseLabelIterator := caseLabels;
     // for each case
@@ -1553,10 +1572,10 @@ algorithm
               then ();
             case (NONE(), {}) // No result.
               then ();
-            /* This occurs if we return fail() in a then. */
+            /* This occurs if we return fail() in a then. for a else*/
             case (NONE(), _)
             algorithm
-              stateTerminate(labelFin2, MidCode.CALL(AbsynUtil.stringPath("fail"), true,
+              stateTerminate(labelFin2, MidCode.CALL(AbsynUtil. stringPath("fail"), true,
                              {}, {}, labelFin, DAE.T_NORETCALL_DEFAULT), state);
               then ();//fail();
           end match;

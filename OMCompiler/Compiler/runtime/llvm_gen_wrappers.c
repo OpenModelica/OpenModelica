@@ -426,6 +426,12 @@ void set_mmc_jumper(jmp_buf *jmpBuf)
   threadData_t *threadData = pthread_getspecific(mmc_thread_data_key);
   threadData->mmc_jumper = jmpBuf;
 }
+#include <setjmp.h>
+/* Same as longjump but passes the jmp_buf as a pointer */
+void longjump_jumpbufAsPtr(jmp_buf *envP, int val)
+{
+  longjmp(*envP, val);
+}
 
 modelica_metatype value_to_mmc(modelica_metatype value)
 {
