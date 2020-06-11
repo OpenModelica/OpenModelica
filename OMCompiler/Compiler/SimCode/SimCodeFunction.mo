@@ -305,7 +305,7 @@ algorithm
         if Config.simCodeTarget() == "MidC" then
           _ = Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
           midfuncs = DAEToMid.DAEFunctionsToMid(mainFunction::fns);
-          midCode = Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs));
+          midCode = Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs, {}));
           _ = Tpl.textFileConvertLines(midCode, name + ".c");
         else
           _ = Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
@@ -326,7 +326,7 @@ algorithm
         if Config.simCodeTarget() == "MidC" then
           _ = Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
           midfuncs = DAEToMid.DAEFunctionsToMid(fns);
-          midCode = Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs));
+          midCode = Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs, {}));
           _ = Tpl.textFileConvertLines(midCode, name + ".c");
         else
           _ = Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);

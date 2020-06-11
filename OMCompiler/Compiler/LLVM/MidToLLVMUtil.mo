@@ -4,15 +4,15 @@ encapsulated package MidToLLVMUtil
   description: Various utility procedures. Mainly used for the LLVM tests.
   author: John Tinnerholm
 "
-import MidCode;
+protected
 import CodegenUtil.{underscorePath,dotPath};
-import Tpl.{Text,textString};
-import Util;
-import List;
-import System;
 import EXT_LLVM;
+import List;
+import MidCode;
+import System;
+import Tpl.{Text,textString};
 import ValuesUtil;
-
+public
 function funcsAreJitCompiled
   input list<Absyn.Path> funcNames;
   output Boolean b;
@@ -43,9 +43,9 @@ function valueToMidVar
   input Values.Value val;
   output MidCode.Var midVar;
 algorithm
-//  print(anyString(val) + "\n");
   midVar := MidCode.VAR("_tmp_" + intString(System.tmpTickIndex(46)),ValuesUtil.valueExpType(val),false);
 end valueToMidVar;
+
 
 annotation(__OpenModelica_Interface="backendInterface");
 end MidToLLVMUtil;

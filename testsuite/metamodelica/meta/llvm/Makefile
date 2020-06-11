@@ -29,7 +29,8 @@ $(ROOT_DIR)/SwitchString.mos \
 $(ROOT_DIR)/Recursive.mos \
 $(ROOT_DIR)/BuiltinMisc.mos \
 $(ROOT_DIR)/ThreadedReduction.mos \
-$(ROOT_DIR)/PackageConst1.mos
+$(ROOT_DIR)/PackageConst1.mos \
+$(ROOT_DIR)/MatchElse1.mos
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

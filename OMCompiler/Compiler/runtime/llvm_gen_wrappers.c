@@ -3,6 +3,35 @@
 gextern "C" {
 #endif
 
+/**/
+modelica_metatype VALUES_FAIL() {
+  return Values__META_5fFAIL;
+}
+
+/* This functions run the JIT within the C environment of omc */
+ modelica_metatype run_jit_internal(modelica_metatype (*top_level_func)(modelica_metatype), modelica_metatype args) {
+  modelica_metatype res;
+  MMC_TRY()
+  res = top_level_func(args);
+  return res;
+  MMC_CATCH()
+  return VALUES_FAIL();
+}
+
+/* Calls MMC_THROW_INTERNAL, macro cannot be used in the JIT context */
+void mmc_throw_internal()
+{
+  threadData_t *threadData = (threadData_t *) pthread_getspecific(mmc_thread_data_key);
+  MMC_THROW();
+}
+
+/* Calls MMC_THROW, macro cannot be used in the JIT context */
+void mmc_throw()
+{
+  threadData_t *threadData = (threadData_t *) pthread_getspecific(mmc_thread_data_key);
+  MMC_THROW();
+}
+
 double mmc_unbox_real_no_inline(modelica_metatype v)
 {
   return mmc_prim_get_real(v);

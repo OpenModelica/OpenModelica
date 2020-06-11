@@ -237,7 +237,7 @@ extern "C++"
       function. We need to manually provide the signature to bridge between the C runtime and LLVM.
       When everything is compiled by LLVM this can probably be removed..
     */
-    auto record_description = llvm::StructType::create(program->context,"struct.record_description");
+    auto record_description = llvm::StructType::create(program->context, "struct.record_description");
     std::vector<llvm::Type*> fields {
                                      getLLVMType(MODELICA_METATYPE)
                                      ,getLLVMType(MODELICA_METATYPE)
