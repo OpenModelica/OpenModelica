@@ -100,6 +100,7 @@ template dumpExit(MidCode.Function fn)
     <<
     <%dumpLabel(exitId) %>%>
     RETURN
+
     >>
   end match
 end dumpExit;

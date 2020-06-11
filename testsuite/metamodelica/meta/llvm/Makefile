@@ -3,7 +3,7 @@ TEST = ../../../rtest -v +d=jit_eval_func
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
-FAILINGTESTFILES =
+FAILINGTESTFILES = $(ROOT_DIR)/MatchCase8.mos
 
 # Tests for LLVM
 TESTFILES = \
@@ -30,7 +30,13 @@ $(ROOT_DIR)/Recursive.mos \
 $(ROOT_DIR)/BuiltinMisc.mos \
 $(ROOT_DIR)/ThreadedReduction.mos \
 $(ROOT_DIR)/PackageConst1.mos \
-$(ROOT_DIR)/MatchElse1.mos
+$(ROOT_DIR)/MatchElse1.mos \
+$(ROOT_DIR)/MatchCase6.mos \
+$(ROOT_DIR)/MatchCase7.mos \
+$(ROOT_DIR)/MatchCase11.mos \
+$(ROOT_DIR)/MatchCase12.mos \
+$(ROOT_DIR)/MatchCase13.mos \
+
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

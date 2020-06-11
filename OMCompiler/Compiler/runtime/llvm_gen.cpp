@@ -485,7 +485,7 @@ int createLongJmp() {
                                    getLLVMType(MODELICA_INTEGER)};
     llvm::FunctionType *ft{llvm::FunctionType::get(
         llvm::Type::getVoidTy(program->context), args, false)};
-    f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, "longjmp",
+    f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, "longjump_jumpbufAsPtr",
                                program->module.get());
     /*Set attributes so that LLVM does not optimise away the function during opt
      * phase.*/
