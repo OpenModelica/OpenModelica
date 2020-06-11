@@ -35,7 +35,7 @@
 #include "llvm_gen_modelica_constants.h"
 #include "llvm_gen_util.hpp"
 
-/* The "program" currently being generated. */
+/* The program currently being generated. */
 extern std::unique_ptr<Program> program;
 
 /*Used for construction of binary instructions among other things to reduce
@@ -87,9 +87,10 @@ modelica_boolean fIsJitCompiled(const char *fName) {
   return true;
 }
 
+modelica_metatype run_jit_internal(modelica_metatype (*top_level_func)(modelica_metatype), modelica_metatype args);
 modelica_metatype runJIT(modelica_metatype valLst) {
   DBG("Calling run JIT with argument:%s\n", anyString(valLst));
-  void *valuePtr = program->top_level_func(valLst);
+  void *valuePtr = run_jit_internal(program->top_level_func, valLst);
   return valuePtr;
 }
 
@@ -377,10 +378,8 @@ int createCallArgAddr(const char *name) {
         program->currentFunc->symTab[name]->getAllocaInst());
     return 0;
   }
-
   fprintf(stderr, "llvm_gen:Failure to resolve:%s\n", name);
-
-  return 1;
+  MMC_THROW();
 }
 
 /*Adds a named argument to the callArgs vector. */

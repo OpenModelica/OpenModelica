@@ -4,7 +4,7 @@ function func
   input Integer x;
   output Integer y;
 algorithm
-  y := match (x)
+  y := match x
     case 1
       equation
         print("Sad thing\n");

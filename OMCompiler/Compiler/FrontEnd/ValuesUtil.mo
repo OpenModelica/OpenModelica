@@ -136,7 +136,7 @@ algorithm
       eltTp = if not listEmpty(valLst) then valueExpType(listHead(valLst)) else DAE.T_METALIST_DEFAULT;
     then DAE.T_METALIST(eltTp);
     case Values.META_TUPLE(valLst) equation
-		  eltTps = List.map(valLst, valueExpType);
+      eltTps = List.map(valLst, valueExpType);
     then DAE.T_METATUPLE(eltTps);
     case Values.META_ARRAY(valLst) equation
       eltTp = valueExpType(listHead(valLst));

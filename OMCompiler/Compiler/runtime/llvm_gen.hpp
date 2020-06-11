@@ -187,9 +187,8 @@ extern "C"
     llvm::legacy::PassManager ipoPassMngr;
     std::unique_ptr<llvm::orc::OMC_JIT> jit;
     modelica_boolean shallOptimize;
-    /*function pointer to the top level expression*/
+    /* Function pointer to the top level expression */
     modelica_metatype (*top_level_func)(modelica_metatype);
-
     //Creates the module and sets the pass mananger.
     //TODO: Can be extended to configure the different optimisations on setup.
     Program(const std::string &name) :  builder{context}

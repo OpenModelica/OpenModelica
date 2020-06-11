@@ -389,7 +389,7 @@ template dumpTypeCtorIndex(list<MidCode.Var> elements, DAE.Type ty)
     case DAE.T_METATUPLE(__) then 0
     case DAE.T_METAOPTION(__) then 1
     case DAE.T_METALIST(__) then (if listLength(elements) then 1 else 0)
-   else 0
+   else -100
   end match
 end dumpTypeCtorIndex;
 

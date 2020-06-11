@@ -33,15 +33,32 @@ encapsulated package MidCode
 
 import DAE;
 
+type identifier = String;
+
 uniontype Program
   "A MidCode Program. Consists of a sequence of functions"
   record PROGRAM
-    String name "Name of the program";
-    list<Function> functions "Functions";
-    //list<MidCode.Record> recordDeclarations
+    String name "Name of the program. Typically defaults to the name of the main method";
+    list<Function> functions;
+    list<MidCode.Record> records;
     //list<MidCode.Var> literals
   end PROGRAM;
 end Program;
+
+uniontype Record
+   " A record in MidCode IR may either be a full definition
+     or a declaration"
+  record RECORD_DEFINITION
+    String name;
+    String definitionPath "The lowered concrete path to this record";
+    list<MidCode.Var> variables "As a temporary measure just hold the string TODO";
+  end RECORD_DEFINITION;
+  record RECORD_DECLARATION
+    String definitionPath "The lowered concrete path to the definition of this record. E.g the path separated by dots as a string";
+    String encodedPath "Path according to the current interface in Codegen";
+    list<String> fieldNames "Variables of the record";
+  end RECORD_DECLARATION;
+end Record;
 
 uniontype Var
   record VAR
@@ -101,6 +118,7 @@ uniontype Block
 end Block;
 
 uniontype Terminator
+"Instructions that terminates a basic block and transfer the control to another"
   record GOTO
     Integer next;
   end GOTO;
@@ -110,14 +128,15 @@ uniontype Terminator
     Integer onTrue;
     Integer onFalse;
   end BRANCH;
-//TODO: In LLVM this would be more logical to have as a statement
+
   record CALL
     Absyn.Path func;
     Boolean builtin;
     list<Var> inputs;
     list<OutVar> outputs;
     Integer next;
-  DAE.Type ty;
+    DAE.Type ty;
+
   end CALL;
 
   record RETURN
@@ -137,7 +156,7 @@ uniontype Terminator
     Integer next "where to goto next and the setjmp target";
   end PUSHJMP;
 
-  /* POPJMP does not cause control flow but
+  /* POPJMP in itself does not cause control flow but
      if it is a terminator to simplify matching
      with their respective PUSHJMPS.
   */
@@ -217,6 +236,11 @@ uniontype RValue
     DAE.Type ty;
   end LITERALMETATYPE;
 
+  record LITERAL_RECORD "TODO: not used. Does not work in codegen Modelica style record"
+    String name "Name of the record";
+    list<Var> elements "Elements";
+  end LITERAL_RECORD;
+
   record LITERALARRAY
   "Represents T_ARRAY, e.g normal arrays for Scalars. 
    An Array that consists of literals.
@@ -224,18 +248,18 @@ uniontype RValue
   list<RValue> elements; //As a list since we need to support multidimensional arrays.
   DAE.Type ty;
   DAE.Dimensions dims;
-	//TODO extend with dimensions. ?
+  //TODO extend with dimensions. ?
   end LITERALARRAY;
 
 /*
 CTOR    SLOTS
-0       0       nil för list
-0       1+      tuple
-1       0       none för option
-1       1       some för option
-1       2       cons för list
-2       0+      array
-3+      0+      record
+0       0       NIL
+0       1+      TUPLE
+1       0       NONE
+1       1       SOME
+1       2       CONS
+2       0+      ARRAY
+3+      0+      RECORD
 */
 
   record UNIONTYPEVARIANT
@@ -289,29 +313,25 @@ end BinaryOp;
 // uniontype Type
 // "
 //   MidCode Types.
-//   The generic type does not exist. Instead it is infereed and converted to one of the concrete types.
-// "
 //   record Integer end Integer;
 //   record Boolean end Boolean;
 //   record Real end Real;
 //   record String end String;
-//   record Tuple end Tuple;
 //   record Array
 //     Type ty;
 //   end Array;
-//   record Tuple
+//   record Structure
 //     list<Type> types "The type of each individual element";
-//   end Tuple;
+//   end Structure;
 //   /* MetaModelica specific */
-//   record T_METATYPE "this type contains all the meta types"
-//     Type ty;
-//   end T_METATYPE;
 //   record List
 //     Type ty;
 //   end List;
-//   record MetaArray
+//   record BoxedArray
 //     Type ty;
-//   end MetaArray;
+//   end BoxedArray;
+//   record Option
+//   end Option;
 // end Type;
 
 annotation(__OpenModelica_Interface="backendInterface");

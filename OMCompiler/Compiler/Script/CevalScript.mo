@@ -2231,48 +2231,47 @@ function cevalCallFunctionEvaluateOrGenerate2
 algorithm
   (outCache,outValue) := matchcontinue (inCache,inEnv,inExp,inValuesValueLst,impl,inMsg,bIsCompleteFunction)
     local
-      Values.Value newval;
-      FCore.Graph env;
-      DAE.Exp e;
-      Absyn.Path funcpath;
-      list<DAE.Exp> expl;
-      Boolean  print_debug;
-      list<Values.Value> vallst;
+      Absyn.ClassDef    body;
+      Absyn.FunctionRestriction funcRest;
       Absyn.Msg msg;
-      FCore.Cache cache;
+      Absyn.Path funcpath;
       Absyn.Program p;
+      Absyn.Within      w;
+      Boolean  print_debug;
+      Boolean ppref, fpref, epref;
+      DAE.Exp e;
+      DAE.Function daeMainFunction;
+      DAE.Function func;
+      DAE.Type ty;
+      FCore.Cache cache;
+      FCore.Graph env;
       Integer libHandle, funcHandle;
-      String fNew,fOld;
-      Real buildTime, edit, build;
+      MidCode.Program midCodeProgram;
       Option<list<SCode.Element>> a;
-      list<GlobalScript.Variable> c;
+      Real buildTime, edit, build;
+      SCode.ClassDef cdef;
+      SCode.Element sc;
+      SCode.Restriction res;
+      SimCodeFunction.Function simMainFunction;
+      SourceInfo        info;
+      String error_Str;
+      String fNew,fOld;
       String funcstr,f,fileName;
       String name;
-      Boolean ppref, fpref, epref;
-      Absyn.ClassDef    body;
-      SourceInfo        info;
-      Absyn.Within      w;
+      Values.Value newval;
       list<Absyn.Path> functionDependencies;
-      SCode.Element sc;
-      SCode.ClassDef cdef;
-      String error_Str;
-      DAE.Function func;
-      DAE.Function daeMainFunction;
-      SimCodeFunction.Function simMainFunction;
-      SCode.Restriction res;
-      Absyn.FunctionRestriction funcRest;
-      DAE.Type ty;
+      list<DAE.Exp> expl;
+      list<DAE.Exp> literals;
       list<DAE.Function> daeElements;
       list<DAE.Type> metarecordTypes;
-      list<DAE.Exp> literals;
+      list<GlobalScript.Variable> c;
       list<SimCodeFunction.Function> simfns;
       list<SimCodeFunction.RecordDeclaration> recordDecls;
-      list<String> includes;
       list<String> includeDirs;
-      list<String> libs;
+      list<String> includes;
       list<String> libPaths;
-      /*MidCode specific*/
-      list<MidCode.Function> midFuncs;
+      list<String> libs;
+      list<Values.Value> vallst;
     case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, _, msg, _)
       guard Flags.isSet(Flags.JIT_EVAL_FUNC)
       algorithm
@@ -2280,24 +2279,19 @@ algorithm
         /* Start measuring JIT compile time. */
         execStatReset();
         p := SymbolTable.getAbsyn();
-//        p := loadFile("../FrontEnd/MetaModelicaBuiltin.mo", "utf-8", p, false);
         name := generateFunctionName(funcpath);
         (cache, daeMainFunction, daeElements, metarecordTypes) := collectDependencies(cache, env, funcpath);
         /* Translate DAE to SimCode */
         (daeElements, literals) := SimCodeFunctionUtil.findLiterals(daeMainFunction::daeElements);
         (simMainFunction::simfns, recordDecls, includes, includeDirs, libs, libPaths) := SimCodeFunctionUtil.elaborateFunctions(p, daeElements, metarecordTypes, literals, {});
         /* Generate MidCode IR */
-        midFuncs := DAEToMid.DAEFunctionsToMid(simMainFunction::simfns);
-        /*Cache result if we are running a model*/
-        //The cache is currently displayed due to changes in the API :((... - John 2019 Aug
-        //cache := MidCodeUtil.addMidCodeFunctions(midFuncs, cache);
+        midCodeProgram := DAEToMid.daeProgramToMidCode(name, simMainFunction::simfns, recordDecls);
         /* Set up the neccessary data structures in the LLVM context. */
         EXT_LLVM.initGen(name);
-        MidToLLVM.genRecordDecls(recordDecls);
         /*Generate LLVM IR in memory*/
-        MidToLLVM.genProgram(MidCode.PROGRAM(name, midFuncs));
+        MidToLLVM.genProgram(midCodeProgram);
         /*JIT compile. Return a newval.*/
-        newval := match midFuncs
+        newval := match midCodeProgram.functions
           local MidCode.Function H; List<MidCode.Function> T = {};
     case H::T then MidToLLVM.JIT(H,vallst);
           else algorithm

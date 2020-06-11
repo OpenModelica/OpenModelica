@@ -2323,8 +2323,10 @@ algorithm
          tys = List.map(exps, typeof);
       then DAE.T_TUPLE(tys, NONE());
     case DAE.META_OPTION() then DAE.T_METATYPE(DAE.T_NONE_DEFAULT);
-    case DAE.METARECORDCALL(path=p, index = i, typeVars=typeVars)
+    case DAE.METARECORDCALL(path=p, index = i, typeVars=typeVars) //These can occur for normal records asw..
       then DAE.T_METATYPE(DAE.T_METARECORD(p, AbsynUtil.stripLast(p), typeVars, i, {}, false));
+    case DAE.METARECORDCALL(path=p, index = i, typeVars=typeVars)
+      then DAE.T_METATYPE(DAE.T_METARECORD(p, p, typeVars, i, {}, false));
     case DAE.BOX(e)
       then DAE.T_METATYPE(DAE.T_METABOXED(typeof(e)));
     case DAE.MATCHEXPRESSION(et=tp)
@@ -2333,10 +2335,9 @@ algorithm
     case DAE.SHARED_LITERAL(exp = e) then typeof(e);
     // A little crazy, but sometimes we call typeof on things that will not be used in the end...
     case DAE.EMPTY(ty = tp) then tp;
-
     case e
       equation
-        msg = "- Expression.typeof failed for " + ExpressionDump.printExpStr(e);
+        msg = "- Expression.typeof failed for " + ExpressionDump.printExpStr(e) + anyString(e);
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then fail();
   end matchcontinue;

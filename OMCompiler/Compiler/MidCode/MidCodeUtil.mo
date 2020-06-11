@@ -31,6 +31,7 @@
 encapsulated package MidCodeUtil
 protected
 import Absyn;
+import CodegenUtil;
 import DAE.{AvlTreePathFunction};
 import DAE;
 import DAEDump;
@@ -374,6 +375,22 @@ function outVarToVar
 algorithm
   MidCode.OUT_VAR(var) := outVar;
 end outVarToVar;
+
+function encodeIdentifierDotPath
+"Encodes a absynPath dot path according to the scheme used by codegen."
+  input Absyn.Path p;
+  output String pStr;
+algorithm
+  pStr := Tpl.textString(CodegenUtil.dotPath(Tpl.MEM_TEXT({},{}), p));
+end encodeIdentifierDotPath;
+
+function encodeIdentifierUnderscorePath
+"Encodes a absynPath to a underscore path according to the scheme used by codegen."
+  input Absyn.Path p;
+  output String pStr;
+algorithm
+  pStr := Tpl.textString(CodegenUtil.underscorePath(Tpl.MEM_TEXT({},{}), p));
+end encodeIdentifierUnderscorePath;
 
 annotation(__OpenModelica_Interface="backendInterface");
 end MidCodeUtil;
