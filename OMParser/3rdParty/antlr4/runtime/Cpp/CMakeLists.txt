@@ -44,8 +44,13 @@ endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
   find_package(PkgConfig REQUIRED)
-  pkg_check_modules(UUID REQUIRED uuid)
+  pkg_check_modules(UUID uuid)
+  # try with ossp-uuid for CentOS
+  if (NOT UUID_FOUND)
+    pkg_check_modules(UUID REQUIRED ossp-uuid)
+  endif()
 endif()
+
 if(APPLE)
   find_library(COREFOUNDATION_LIBRARY CoreFoundation)
 endif()
