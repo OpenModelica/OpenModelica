@@ -219,7 +219,6 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
   if (nullPointer(comp, "fmi2EventUpdate", "eventInfo", eventInfo)) {
     return fmi2Error;
   }
-  eventInfo->valuesOfContinuousStatesChanged = fmi2False;
 
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EventUpdate: Start Event Update! Next Sample Event %g", eventInfo->nextEventTime)
 
@@ -260,15 +259,13 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
       }
     }
 
-    if (checkForDiscreteChanges(comp->fmuData, comp->threadData) || comp->fmuData->simulationInfo->needToIterate || checkRelations(comp->fmuData) || eventInfo->valuesOfContinuousStatesChanged) {
+    if (checkForDiscreteChanges(comp->fmuData, comp->threadData) || comp->fmuData->simulationInfo->needToIterate || checkRelations(comp->fmuData)) {
       FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EventUpdate: Need to iterate(discrete changes)!")
-      eventInfo->newDiscreteStatesNeeded  = fmi2True;
-      eventInfo->nominalsOfContinuousStatesChanged = fmi2False;
-      eventInfo->valuesOfContinuousStatesChanged  = fmi2True;
+      eventInfo->newDiscreteStatesNeeded = fmi2True;
+      eventInfo->valuesOfContinuousStatesChanged = fmi2True;
       eventInfo->terminateSimulation = fmi2False;
     } else {
-      eventInfo->newDiscreteStatesNeeded  = fmi2False;
-      eventInfo->nominalsOfContinuousStatesChanged = fmi2False;
+      eventInfo->newDiscreteStatesNeeded = fmi2False;
       eventInfo->terminateSimulation = fmi2False;
     }
     FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EventUpdate: newDiscreteStatesNeeded %s",eventInfo->newDiscreteStatesNeeded?"true":"false");
@@ -1151,6 +1148,15 @@ fmi2Status fmi2EnterEventMode(fmi2Component c)
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_EVENTS, "fmi2EnterEventMode")
   comp->state = modelEventMode;
+
+  // Reset eventInfo
+  comp->eventInfo.newDiscreteStatesNeeded = fmi2False;
+  comp->eventInfo.terminateSimulation = fmi2False;
+  comp->eventInfo.nominalsOfContinuousStatesChanged = fmi2False;
+  comp->eventInfo.valuesOfContinuousStatesChanged = fmi2False;
+  comp->eventInfo.nextEventTimeDefined = fmi2False;
+  comp->eventInfo.nextEventTime = 0;
+
   return fmi2OK;
 }
 
@@ -1163,13 +1169,6 @@ fmi2Status fmi2NewDiscreteStates(fmi2Component c, fmi2EventInfo* eventInfo)
   if (invalidState(comp, "fmi2NewDiscreteStates", modelEventMode, ~0))
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2NewDiscreteStates")
-
-  eventInfo->newDiscreteStatesNeeded = fmi2False;
-  eventInfo->terminateSimulation = fmi2False;
-  eventInfo->nominalsOfContinuousStatesChanged = fmi2False;
-  eventInfo->valuesOfContinuousStatesChanged = fmi2False;
-  eventInfo->nextEventTimeDefined = fmi2False;
-  eventInfo->nextEventTime = 0;
 
   returnValue = fmi2EventUpdate(comp, eventInfo);
 
