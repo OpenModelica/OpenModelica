@@ -82,7 +82,7 @@ Parameter::Parameter(Element *pComponent, bool showStartAttribute, QString tab, 
   } else if (pOMCProxy->isWhat(StringHandler::Enumeration, mpComponent->getComponentInfo()->getClassName())) {
     mValueType = Parameter::Enumeration;
   } else if (mpComponent->getComponentInfo()->getReplaceable()) { // replaceable component or short element definition
-    mValueType = mpComponent->getComponentInfo()->getIsElement()?Parameter::ReplaceableClass:Parameter::ReplaceableComponent;
+    mValueType = mpComponent->getComponentInfo()->getIsElement() ? Parameter::ReplaceableClass : Parameter::ReplaceableComponent;
   } else if (mpComponent->getComponentInfo()->getIsElement()) { // non replaceable short element definition
     mValueType = Parameter::ReplaceableClass;
   } else {
@@ -368,16 +368,22 @@ void Parameter::enableDisableUnitComboBox(const QString &value)
 {
   /* Enable/disable the unit combobox based on the literalConstant
    * Set the display unit as current when value is literalConstant otherwise use unit
+   * ticket:5618 Disable the unit drop down when we have a symbolic parameter
    */
   bool literalConstant = Utilities::isValueLiteralConstant(value);
   mpUnitComboBox->setEnabled(literalConstant);
-  bool state = mpUnitComboBox->blockSignals(true);
-  int index = mpUnitComboBox->findText(literalConstant ? mDisplayUnit : mUnit, Qt::MatchExactly);
-  if (index > -1 && index != mpUnitComboBox->currentIndex()) {
-    mpUnitComboBox->setCurrentIndex(index);
-    mPreviousUnit = mpUnitComboBox->currentText();
+  /* ticket:5976 don't change the unit combobox when the literalConstant is true
+   * We only want to disbale and switch to display unit when literalConstant is false and we got a symbolic or expression parameter.
+   */
+  if (!literalConstant) {
+    bool state = mpUnitComboBox->blockSignals(true);
+    int index = mpUnitComboBox->findText(literalConstant ? mDisplayUnit : mUnit, Qt::MatchExactly);
+    if (index > -1 && index != mpUnitComboBox->currentIndex()) {
+      mpUnitComboBox->setCurrentIndex(index);
+      mPreviousUnit = mpUnitComboBox->currentText();
+    }
+    mpUnitComboBox->blockSignals(state);
   }
-  mpUnitComboBox->blockSignals(state);
 }
 
 /*!
