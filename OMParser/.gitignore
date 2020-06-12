@@ -19,3 +19,4 @@ modelicaVisitor.cpp
 modelicaVisitor.h
 *.o
 *.a
+test/
