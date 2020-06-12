@@ -173,6 +173,16 @@ algorithm
       then
         outExp;
 
+    // TODO: The return type of calls can have dimensions that reference
+    //       function parameters, and thus can't be evaluated. This should be
+    //       fixed so that the return type reference the input arguments instead.
+    case Expression.CALL()
+      algorithm
+        (outExp, outChanged) := Expression.mapFoldShallow(exp,
+          function evaluateExpTraverser(info = info), false);
+      then
+        outExp;
+
     else
       algorithm
         (outExp, outChanged) := Expression.mapFoldShallow(exp,
