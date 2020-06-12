@@ -110,7 +110,7 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU" OR "${CMAKE_CXX_COMPILER_ID}" MATCHE
         COMMAND ${CMAKE_CXX_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
     # Just g++-5.0 and greater contain <codecvt> header. (test in ubuntu)
     if(NOT (GCC_VERSION VERSION_GREATER 5.0 OR GCC_VERSION VERSION_EQUAL 5.0))
-        message(FATAL_ERROR "${PROJECT_NAME} requires g++ 5.0 or greater.")
+        message(WARNING "${PROJECT_NAME} found a compiler that has no <codecvt> include, using alternative utf8 conversion")
     endif ()
 elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" AND ANDROID)
 	# Need -Os cflag and cxxflags here to work with exception handling on armeabi.
@@ -122,7 +122,7 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" AND ( CMAKE_SYSTEM_NAME MATCH
     execute_process(
         COMMAND ${CMAKE_CXX_COMPILER} -dumpversion OUTPUT_VARIABLE CLANG_VERSION)
     if(NOT (CLANG_VERSION VERSION_GREATER 4.2.1 OR CLANG_VERSION VERSION_EQUAL 4.2.1))
-        message(FATAL_ERROR "${PROJECT_NAME} requires clang 4.2.1 or greater.")
+        message(WARNING "${PROJECT_NAME} found a compiler that has no <codecvt> include, using alternative utf8 conversion")
     endif()
     # You can use libc++ to compile this project when g++ is NOT greater than or equal to 5.0.
     if(WITH_LIBCXX)

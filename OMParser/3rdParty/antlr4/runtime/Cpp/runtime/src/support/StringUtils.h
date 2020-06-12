@@ -9,6 +9,8 @@
 
 namespace antlrcpp {
 
+#if !defined(NO_CODECVT)
+
 // oh the horor!
 #if defined(__APPLE__) && defined(__clang__)
 #if !__has_feature(cxx_thread_local)
@@ -52,6 +54,25 @@ namespace antlrcpp {
 
     return s;
   }
+
+#else /* we don't have codecvt, use utfcpp */
+
+  // The conversion functions fails in VS2017, so we explicitly use a workaround.
+  template<typename T>
+  inline std::string utf32_to_utf8(T const& data)
+  {
+      return utf8::utf32to8(data);
+  }
+
+  inline UTF32String utf8_to_utf32(const char* first, const char* last)
+  {
+    std::u32string s;
+    utf8::utf8to32(first, last, std::back_inserter(s));
+    return s;
+  }
+
+
+#endif
 
   void replaceAll(std::string &str, std::string const& from, std::string const& to);
 
