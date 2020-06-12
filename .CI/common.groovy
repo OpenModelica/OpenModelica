@@ -174,6 +174,7 @@ void buildOMC(CC, CXX, extraFlags) {
      echo cd \${MSYS_WORKSPACE}
      echo make -f Makefile.omdev.mingw \${MAKETHREADS} BUILDTYPE=Release all-runtimes
      echo echo Check that omc can be started and a model can be build for NF OF with runtimes C Cpp FMU
+     echo echo Attempt to build things using \$OPENMODELICAHOME
      echo ./build/bin/omc --version
      echo mkdir .sanity-check
      echo cd .sanity-check
@@ -193,6 +194,34 @@ void buildOMC(CC, CXX, extraFlags) {
      echo rm -rf .sanity-check
      echo cd testsuite/flattening/libraries/biochem
      echo ../../../rtest --return-with-error-code EnzMM.mos
+     echo echo Testing if we can compile in a path with spaces
+     echo cd \${MSYS_WORKSPACE}
+     echo mkdir -p ./path\\ with\\ space/
+     echo mv build ./path\\ with\\ space/
+     echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/path with space/build"
+     echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/path with space/build/lib/omlibrary"
+     echo echo Attempt to build things using \$OPENMODELICAHOME
+     echo ./path\\ with\\ space/build/bin/omc --version
+     echo cd ./path\\ with\\ space/
+     echo mkdir .sanity-check
+     echo cd .sanity-check
+     echo cp ../../testsuite/sanity-check/testSanity.mos .
+     echo ../build/bin/omc --linearizationDumpLanguage=matlab testSanity.mos
+     echo export PATH=\$PATH:../build/bin/:../build/lib/omc/omsicpp:../build/lib/omc/cpp
+     echo ./M
+     echo ./M -l=1.0
+     echo ls linear_M.m
+     echo ls M.fmu
+     echo rm -rf M* OMCppM* linear_M*
+     echo ../build/bin/omc --simCodeTarget=Cpp testSanity.mos
+     echo ./M
+     echo ls M.fmu
+     echo rm -rf M* OMCppM*
+     echo cd ..
+     echo rm -rf .sanity-check
+     echo mv build/ ../.
+     echo cd ../../
+     echo rm -rf ./path\\ with\\ space/
      ) > buildOMCWindows.sh
 
      set MSYSTEM=MINGW64
