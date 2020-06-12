@@ -3123,6 +3123,8 @@ algorithm
        then ".bat";
     case ("Cpp","WIN64")
        then ".bat";
+    case ("Cpp","Unix")
+       then ".sh";
     case ("omsicpp","WIN64")
      then ".bat";
     case ("omsicpp","WIN32")
