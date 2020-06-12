@@ -19,6 +19,8 @@ void replaceAll(std::string& str, std::string const& from, std::string const& to
   }
 }
 
+#if !defined(NO_CODECVT)
+
 std::string ws2s(std::wstring const& wstr) {
   std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
   std::string narrow = converter.to_bytes(wstr);
@@ -32,5 +34,20 @@ std::wstring s2ws(const std::string &str) {
 
   return wide;
 }
+
+# else
+
+std::string ws2s(std::wstring const& wstr) {
+   std::u16string s(wstr.begin(), wstr.end());
+   return utf8::utf16to8(s);
+}
+
+std::wstring s2ws(const std::string &str) {
+  std::u16string s = utf8::utf8to16(str);
+  std::wstring r(s.begin(), s.end());
+  return r;
+}
+
+#endif
 
 } // namespace antrlcpp

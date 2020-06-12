@@ -8,7 +8,33 @@
 #include <algorithm>
 #include <assert.h>
 #include <atomic>
+
+#if defined(__GNUC__)
+#define GCC_VERSION (__GNUC__ * 10000 \
+                     + __GNUC_MINOR__ * 100 \
+                     + __GNUC_PATCHLEVEL__)
+
+#if (GCC_VERSION >= 50000) // we have codecvt
 #include <codecvt>
+#else
+#define NO_CODECVT
+#include "support/utf8.h"
+#endif
+
+#elif defined(__clang__) // non gcc
+#if __has_include(<codecvt>)
+#include <codecvt>
+#else
+#define NO_CODECVT
+#include "support/utf8.h"
+#endif
+
+#else // assume we have it
+
+#include <codecvt>
+
+#endif
+
 #include <chrono>
 #include <fstream>
 #include <iostream>
