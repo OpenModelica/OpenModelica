@@ -51,6 +51,11 @@ namespace antlrcpp {
           }
           // else fall through
 #ifndef _MSC_VER
+
+#ifndef __has_cpp_attribute         // For backwards compatibility
+  #define __has_cpp_attribute(x) 0
+#endif
+
 #if __has_cpp_attribute(clang::fallthrough)
           [[clang::fallthrough]];
 #endif
