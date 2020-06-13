@@ -1,6 +1,6 @@
 
 ifeq ($(OMBUILDDIR),)
-OMBUILDDIR=$(CURDIR)/build
+OMBUILDDIR=$(CURDIR)/../build
 endif
 
 CMAKE=cmake
