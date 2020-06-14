@@ -387,10 +387,45 @@ end createSimCode;
 function generateNewModelCodeDAEMode
   input NBackendDAE.BackendDAE bdae;
   input Absyn.Path className;
+  output list<String> libs;
+  output String fileDir;
+  output Real timeSimCode = 0.0;
+  output Real timeTemplates = 0.0;
 protected
+  Integer numCheckpoints;
   NSimCode.SimCode simCode;
+  SimCode.SimCode oldSimCode;
 algorithm
-  simCode := NSimCode.SimCode.create(bdae, className);
+  numCheckpoints := ErrorExt.getNumCheckpoints();
+  StackOverflow.clearStacktraceMessages();
+  try
+    System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
+    simCode := NSimCode.SimCode.create(bdae, className);
+    (fileDir, libs) := NSimCode.SimCode.getDirectoryAndLibs(simCode);
+    oldSimCode := NSimCode.SimCode.convert(simCode);
+    if Flags.isSet(Flags.DUMP_SIMCODE) then
+      print(NSimCode.SimCode.toString(simCode));
+    end if;
+    timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
+    ExecStat.execStat("SimCode");
+
+    if Flags.isSet(Flags.SERIALIZED_SIZE) then
+      serializeNotify(oldSimCode, "SimCode");
+      ExecStat.execStat("Serialize simCode");
+    end if;
+
+    System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
+      callTargetTemplates(oldSimCode, Config.simCodeTarget());
+      timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
+      ExecStat.execStat("Templates");
+    else
+        setGlobalRoot(Global.stackoverFlowIndex, NONE());
+        ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
+        Error.addInternalError("Stack overflow in "+getInstanceName()+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+        /* Do not fail or we can loop too much */
+        StackOverflow.clearStacktraceMessages();
+        fail();
+    end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
 end generateNewModelCodeDAEMode;
 
 protected
@@ -964,18 +999,19 @@ algorithm
 
         /*  BackendStuff can now be added here. */
         bdae := NBackendDAE.lower(flatModel, funcTree);
-        print(NBackendDAE.toString(bdae, "(After Lowering)"));
+        if Flags.isSet(Flags.OPT_DAE_DUMP) then
+          print(NBackendDAE.toString(bdae, "(After Lowering)"));
+        end if;
 
         bdae := NBackendDAE.solve(bdae);
 
-        print(NBackendDAE.toString(bdae, "(After Solve)"));
+        if Flags.isSet(Flags.OPT_DAE_DUMP) then
+          print(NBackendDAE.toString(bdae, "(After Solve)"));
+        end if;
 
         // for now only dae mode
-        generateNewModelCodeDAEMode(bdae, className);
+        (libs, file_dir, timeSimCode, timeTemplates) := generateNewModelCodeDAEMode(bdae, className);
 
-        /* Dummy output for now */
-        libs := {"DUMMY"};
-        file_dir := "DUMMY";
     then (true, libs, file_dir);
 
     /* old backend */

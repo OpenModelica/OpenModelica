@@ -111,9 +111,9 @@ public
         list<System> dae;
       case qual as BDAE()
         algorithm
-          if listEmpty(qual.ode) then
+          if listEmpty(qual.ode) or not Flags.isSet(Flags.BLT_DUMP) then
             tmp := StringUtil.headline_1("Not partitioned BackendDAE: " + str) + "\n";
-            tmp := tmp +  BVariable.VarData.toString(qual.varData, 1) + "\n" +
+            tmp := tmp +  BVariable.VarData.toString(qual.varData, 2) + "\n" +
                           BEquation.EqData.toString(qual.eqData, 1);
           else
             tmp := StringUtil.headline_1("[ODE] Simulation: " + str) + "\n";
@@ -179,6 +179,18 @@ public
     end match;
   end getEqData;
 
+  function getFunctionTree
+    input BackendDAE bdae;
+    output FunctionTree funcTree;
+  algorithm
+    funcTree := match bdae
+      case BackendDAE.BDAE(funcTree = funcTree) then funcTree;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed! Only the record type BDAE() has a function tree."});
+      then fail();
+    end match;
+  end getFunctionTree;
+
   function lower
     "This function transforms the FlatModel structure to BackendDAE."
     input FlatModel flatModel;
@@ -188,7 +200,6 @@ public
     BVariable.VarData variableData;
     BEquation.EqData equationData;
   algorithm
-    print(FlatModel.toString(flatModel, true));
     variableData := lowerVariableData(flatModel.variables);
     equationData := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, BVariable.VarData.getVariables(variableData));
     bdae := BDAE({}, {}, {}, NONE(), NONE(), variableData, equationData, funcTree);
@@ -202,11 +213,12 @@ public
     bdae := RemoveSimpleEquations.main(bdae);
     bdae := Partitioning.main(bdae, NBSystem.SystemType.ODE);
     bdae := Causalize.main(bdae, NBSystem.SystemType.ODE);
-    bdae := Tearing.main(bdae, NBSystem.SystemType.ODE);
     //Jacobian.main(bdae);
     bdae := Initialization.main(bdae);
     // only if dae mode, but force it for now
     bdae := DAEMode.main(bdae);
+    // do Tearing at the very end
+    bdae := Tearing.main(bdae, NBSystem.SystemType.ODE);
   end solve;
 
 protected
@@ -305,7 +317,7 @@ protected
 
     /* create variable data */
     variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, auxiliaries, aliasVars,
-                    states, derivatives, algebraics, discretes, previous, parameters, constants);
+                    derivatives, algebraics, discretes, previous, states, parameters, constants);
   end lowerVariableData;
 
   function lowerVariable

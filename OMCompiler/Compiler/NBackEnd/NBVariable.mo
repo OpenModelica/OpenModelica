@@ -79,7 +79,7 @@ public
   constant String PREVIOUS_STR = "$PRE";
   constant String AUXILIARY_STR = "$AUX";
   constant String START_STR = "$START";
-  constant String RESULT_STR = "$RES";
+  constant String RESIDUAL_STR = "$RES";
   constant String TEMPORARY_STR = "$TMP";
   constant String SEED_STR = "$SEED";
 
@@ -285,7 +285,7 @@ public
     Variable var;
   algorithm
     var := Pointer.access(varPointer);
-    var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.DISCRETE_STATE(previous));
+    var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.DISCRETE_STATE(previous, false));
     Pointer.update(varPointer, var);
   end makeDiscreteStateVar;
 
@@ -406,7 +406,6 @@ public
       then fail();
     end match;
   end makeStartVar;
-
 
   // ==========================================================================
   //                        Variable Array Stuff

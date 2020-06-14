@@ -87,13 +87,10 @@ public
     end STATE_DER;
     record DUMMY_DER end DUMMY_DER;
     record DUMMY_STATE end DUMMY_STATE; // ToDo: maybe dynamic state for dynamic state seleciton in index reduction
-    record CLOCKED_STATE
-      ComponentRef previousName             "the name of the previous variable";
-      Boolean isStartFixed                  "is fixed at first clock tick";
-    end CLOCKED_STATE;
     record DISCRETE end DISCRETE;
     record DISCRETE_STATE
       Pointer<Variable> previous            "Pointer to the left limit if existant.";
+      Boolean fixed                         "is fixed at first clock tick";
     end DISCRETE_STATE;
     record PREVIOUS
       Pointer<Variable> disc                "Pointer to the corresponding discrete variable.";
@@ -138,7 +135,6 @@ public
         case STATE_DER() then           "[DER-]";
         case DUMMY_DER() then           "[DDER]";
         case DUMMY_STATE() then         "[DSTA]";
-        case CLOCKED_STATE() then       "[CLCK]";
         case DISCRETE() then            "[DISC]";
         case DISCRETE_STATE() then      "[DSTA]";
         case PREVIOUS() then            "[PRE-]";

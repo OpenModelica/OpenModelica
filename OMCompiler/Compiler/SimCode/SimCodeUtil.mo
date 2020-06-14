@@ -11346,7 +11346,7 @@ algorithm
   end match;
 end getHideResult;
 
-protected function createVarToArrayIndexMapping "author: marcusw
+public function createVarToArrayIndexMapping "author: marcusw
   Creates a mapping for each array-cref to the array dimensions (int list) and to the indices (for the code generation) used to store the array content."
   input SimCode.ModelInfo iModelInfo;
   output HashTableCrIListArray.HashTable oVarToArrayIndexMapping;

@@ -36,6 +36,7 @@ encapsulated package NSimVar
 "
 protected
   // OF imports
+  import TplAbsyn;
   import DAE;
   import SCode;
 
@@ -43,11 +44,18 @@ protected
   import BackendExtension = NFBackendExtension;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
+  import NFInstNode.InstNode;
   import Type = NFType;
   import Variable = NFVariable;
 
+  // Old Backend imports
+  import OldBackendDAE = BackendDAE;
+
   // Backend imports
   import BVariable = NBVariable;
+
+  // Old Simcode imports
+  import OldSimCodeVar = SimCodeVar;
 
   // Util imports
   import Error;
@@ -85,7 +93,7 @@ public
       Option<String> matrixName "if the varibale is a jacobian var, this is the corresponding matrix";
       Option<Variability> variability "FMI-2.0 variabilty attribute";
       Option<Initial> initial_ "FMI-2.0 initial attribute";
-      Boolean exportVar "variables will only be exported to the modelDescription.xml if this attribute is true";
+      Option<ComponentRef> exportVar "variables will only be exported to the modelDescription.xml if this attribute is SOME(cref) and this cref is only used in ModelDescription.xml for FMI-2.0 export";
     end SIMVAR;
 
     function toString
@@ -104,6 +112,8 @@ public
         for var in var_lst loop
           str := str + toString(var, "  ") + "\n";
         end for;
+      else
+        str := "";
       end if;
     end listToString;
 
@@ -132,7 +142,7 @@ public
             (varKind, unit, displayUnit, min, max, start, nominal, isFixed, isDiscrete, isProtected) := parseAttributes(qual.backendinfo);
             result := SIMVAR(qual.name, varKind, comment, unit, displayUnit, uniqueIndex, min, max, start, nominal, isFixed, qual.ty,
                       isDiscrete, NONE(), Alias.NO_ALIAS(), qual.info, NONE(), SOME(uniqueIndex), SOME(uniqueIndex), {}, true,
-                      isProtected, false, NONE(), NONE(), NONE(), NONE(), true);
+                      isProtected, false, NONE(), NONE(), NONE(), NONE(), NONE());
             uniqueIndex := uniqueIndex + 1;
         then result;
 
@@ -151,6 +161,71 @@ public
       Pointer.update(acc, create(var, Pointer.access(uniqueIndexPtr)) :: Pointer.access(acc));
       Pointer.update(uniqueIndexPtr, Pointer.access(uniqueIndexPtr) + 1);
     end traverseCreate;
+
+    function createResidualVar
+      "Creates a residual variable pointer from a unique index and context name.
+      e.g. (4, \"DAE\") --> $RES_DAE_4"
+      input String name                 "context name e.g. DAE";
+      input Integer uniqueIndex         "unique identifier index";
+      output SimVar var                 "new SimVar";
+      output ComponentRef cref          "new component reference";
+    protected
+      InstNode node;
+    algorithm
+      // create inst node with dummy variable pointer and create cref from it
+      node := InstNode.VAR_NODE(NBVariable.RESIDUAL_STR + "_" + name + "_" + intString(uniqueIndex), Pointer.create(NBVariable.DUMMY_VARIABLE));
+      // Type for residuals is always REAL() !
+      cref := ComponentRef.CREF(node, {}, Type.REAL(), NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
+      // create variable and set its kind to dae_residual (change name?)
+      var := SIMVAR(cref, BackendExtension.DAE_RESIDUAL_VAR(), "", "", "", uniqueIndex, NONE(), NONE(), NONE(), NONE(), false,
+                Type.REAL(), false, NONE(), Alias.NO_ALIAS(), TplAbsyn.dummySourceInfo, NONE(), SOME(uniqueIndex), SOME(uniqueIndex),
+                {}, true, false, false, NONE(), NONE(), NONE(), NONE(), NONE());
+    end createResidualVar;
+
+    function convert
+      input SimVar simVar;
+      output OldSimCodeVar.SimVar oldSimVar;
+    algorithm
+      oldSimVar := OldSimCodeVar.SIMVAR(
+        name                = ComponentRef.toDAE(simVar.name),
+        varKind             = convertVarKind(simVar.varKind),
+        comment             = simVar.comment,
+        unit                = simVar.unit,
+        displayUnit         = simVar.displayUnit,
+        index               = simVar.index,
+        minValue            = if isSome(simVar.min) then SOME(Expression.toDAE(Util.getOption(simVar.min))) else NONE(),
+        maxValue            = if isSome(simVar.max) then SOME(Expression.toDAE(Util.getOption(simVar.max))) else NONE(),
+        initialValue        = if isSome(simVar.start) then SOME(Expression.toDAE(Util.getOption(simVar.start))) else NONE(),
+        nominalValue        = if isSome(simVar.nominal) then SOME(Expression.toDAE(Util.getOption(simVar.nominal))) else NONE(),
+        isFixed             = simVar.isFixed,
+        type_               = Type.toDAE(simVar.type_),
+        isDiscrete          = simVar.isDiscrete,
+        arrayCref           = if isSome(simVar.arrayCref) then SOME(ComponentRef.toDAE(Util.getOption(simVar.arrayCref))) else NONE(),
+        aliasvar            = Alias.convert(simVar.aliasvar),
+        source              = DAE.emptyElementSource, //ToDo update this!
+        causality           = NONE(),  //ToDo update this!
+        variable_index      = simVar.variable_index,
+        fmi_index           = simVar.fmi_index,
+        numArrayElement     = simVar.numArrayElement,
+        isValueChangeable   = simVar.isValueChangeable,
+        isProtected         = simVar.isProtected,
+        hideResult          = simVar.hideResult,
+        inputIndex          = simVar.inputIndex,
+        matrixName          = simVar.matrixName,
+        variability         = NONE(),  //ToDo update this!
+        initial_            = NONE(),  //ToDo update this!
+        exportVar           = if isSome(simVar.exportVar) then SOME(ComponentRef.toDAE(Util.getOption(simVar.exportVar))) else NONE());
+    end convert;
+
+    function convertList
+      input list<SimVar> simVar_lst;
+      output list<OldSimCodeVar.SimVar> oldSimVar_lst = {};
+    algorithm
+      for simVar in simVar_lst loop
+        oldSimVar_lst := convert(simVar) :: oldSimVar_lst;
+      end for;
+      oldSimVar_lst := listReverse(oldSimVar_lst);
+    end convertList;
 
   protected
     function parseAttributes
@@ -250,6 +325,70 @@ public
         else "";
       end match;
     end parseComment;
+
+    function convertVarKind
+      "Usually this function would belong to NFBackendExtension, but we want to
+      avoid Frontend -> Backend dependency."
+      input BackendExtension.VariableKind varKind;
+      output OldBackendDAE.VarKind oldVarKind;
+    algorithm
+      oldVarKind := match varKind
+        local
+          BackendExtension.VariableKind qual;
+          Variable var;
+          Option<DAE.ComponentRef> oldCrefOpt;
+          DAE.ComponentRef oldCref;
+
+        case BackendExtension.ALGEBRAIC() then OldBackendDAE.VARIABLE();
+        case qual as BackendExtension.STATE()
+          algorithm
+            if isSome(qual.derivative) then
+              var := Pointer.access(Util.getOption(qual.derivative));
+              oldCrefOpt := SOME(ComponentRef.toDAE(var.name));
+            else
+              oldCrefOpt := NONE();
+            end if;
+        then OldBackendDAE.STATE(qual.index, oldCrefOpt, qual.natural);
+        case BackendExtension.STATE_DER() then OldBackendDAE.STATE_DER();
+        case BackendExtension.DUMMY_DER() then OldBackendDAE.DUMMY_DER();
+        case BackendExtension.DUMMY_STATE() then OldBackendDAE.DUMMY_STATE();
+        case BackendExtension.DISCRETE() then OldBackendDAE.DISCRETE();
+        case qual as BackendExtension.DISCRETE_STATE()
+          algorithm
+            var := Pointer.access(qual.previous);
+            oldCref := ComponentRef.toDAE(var.name);
+        then OldBackendDAE.CLOCKED_STATE(oldCref, qual.fixed);
+        case BackendExtension.PREVIOUS() then OldBackendDAE.DISCRETE();
+        case BackendExtension.PARAMETER() then OldBackendDAE.PARAM();
+        case BackendExtension.CONSTANT() then OldBackendDAE.CONST();
+        case BackendExtension.START() then OldBackendDAE.VARIABLE(); //ToDo: check this! is this correct? need typechecking?
+        case qual as BackendExtension.EXTOBJ() then OldBackendDAE.EXTOBJ(qual.fullClassName);
+        case BackendExtension.JAC_VAR() then OldBackendDAE.JAC_VAR();
+        case BackendExtension.JAC_DIFF_VAR() then OldBackendDAE.JAC_DIFF_VAR();
+        case BackendExtension.SEED_VAR() then OldBackendDAE.SEED_VAR();
+        case BackendExtension.OPT_CONSTR() then OldBackendDAE.OPT_CONSTR();
+        case BackendExtension.OPT_FCONSTR() then OldBackendDAE.OPT_FCONSTR();
+        case BackendExtension.OPT_INPUT_WITH_DER() then OldBackendDAE.OPT_INPUT_WITH_DER();
+        case BackendExtension.OPT_INPUT_DER() then OldBackendDAE.OPT_INPUT_DER();
+        case BackendExtension.OPT_TGRID() then OldBackendDAE.OPT_TGRID();
+        case qual as BackendExtension.OPT_LOOP_INPUT() then OldBackendDAE.OPT_LOOP_INPUT(ComponentRef.toDAE(qual.replaceCref));
+        // ToDo maybe deprecated:
+        case BackendExtension.ALG_STATE() then OldBackendDAE.ALG_STATE();
+        case BackendExtension.ALG_STATE_OLD() then OldBackendDAE.ALG_STATE_OLD();
+        case BackendExtension.DAE_RESIDUAL_VAR() then OldBackendDAE.DAE_RESIDUAL_VAR();
+        case BackendExtension.DAE_AUX_VAR() then OldBackendDAE.DAE_AUX_VAR();
+        case BackendExtension.LOOP_ITERATION() then OldBackendDAE.LOOP_ITERATION();
+        case BackendExtension.LOOP_SOLVED() then OldBackendDAE.LOOP_SOLVED();
+        case BackendExtension.FRONTEND_DUMMY()
+          algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong VariableKind FRONTEND_DUMMY(). This should not exist after frontend."});
+        then fail();
+        else
+          algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unhandled VariableKind " + BackendExtension.VariableKind.toString(varKind) + "."});
+        then fail();
+      end match;
+    end convertVarKind;
   end SimVar;
 
   uniontype Alias
@@ -260,6 +399,27 @@ public
       ComponentRef alias    "The name of the alias variable.";
       Real coefficient      " = 1 for regular alias.";
     end ALIAS;
+
+    function convert
+      input Alias alias;
+      output OldSimCodeVar.AliasVariable oldAlias;
+    algorithm
+      oldAlias := match alias
+        local
+          Alias qual;
+        case NO_ALIAS() then OldSimCodeVar.NOALIAS();
+        case qual as ALIAS() guard(realEq(qual.coefficient, 1.0)) then OldSimCodeVar.ALIAS(ComponentRef.toDAE(qual.alias));
+        case qual as ALIAS() guard(realEq(qual.coefficient, -1.0)) then OldSimCodeVar.NEGATEDALIAS(ComponentRef.toDAE(qual.alias));
+        case qual as ALIAS()
+          algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the old SimCode can only parse a coefficent for ALIAS() of exactly 1 or -1. Got coefficient: " + realString(qual.coefficient)});
+        then fail();
+        else
+          algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown Alias type."});
+        then fail();
+      end match;
+    end convert;
   end Alias;
 
   // kabdelhak: i don't like "CALCULATED_PARAMETER", is there a better way to describe it?
@@ -306,10 +466,11 @@ public
       input SimVars vars;
       input output String str = "";
     algorithm
-      str := StringUtil.headline_2(str);
-      str := str + SimVar.listToString(vars.stateVars, "States");
-      str := str + SimVar.listToString(vars.derivativeVars, "Derivatives");
-      str := str + SimVar.listToString(vars.algVars, "Algebraic Variables");
+      str := StringUtil.headline_2("SimVars " + str);
+      str := str + SimVar.listToString(vars.stateVars, "States") + "\n";
+      str := str + SimVar.listToString(vars.derivativeVars, "Derivatives") + "\n";
+      str := str + SimVar.listToString(vars.algVars, "Algebraic Variables") + "\n";
+      str := str + SimVar.listToString(vars.intParamVars, "Integer Parameters") + "\n";
       // ToDo: all the other stuff
     end toString;
 
@@ -339,13 +500,13 @@ public
 
         case qual as BVariable.VAR_DATA_SIM()
           algorithm
-            ({stateVars}, uniqueIndex) := createSimVarList(qual.states, uniqueIndex);
-            ({derivativeVars}, uniqueIndex) := createSimVarList(qual.derivatives, uniqueIndex);
-            ({algVars}, uniqueIndex) := createSimVarList(qual.algebraics, uniqueIndex);
-            ({discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars}, uniqueIndex) := createSimVarList(qual.discretes, uniqueIndex, SplitType.TYPE);
-            ({aliasVars, intAliasVars, boolAliasVars, stringAliasVars}, uniqueIndex) := createSimVarList(qual.aliasVars, uniqueIndex, SplitType.TYPE);
-            ({paramVars, intParamVars, boolParamVars, stringParamVars}, uniqueIndex) := createSimVarList(qual.parameters, uniqueIndex, SplitType.TYPE);
-            ({constVars, intConstVars, boolConstVars, stringConstVars}, uniqueIndex) := createSimVarList(qual.constants, uniqueIndex, SplitType.TYPE);
+            ({stateVars}, uniqueIndex) := createSimVarLists(qual.states, uniqueIndex);
+            ({derivativeVars}, uniqueIndex) := createSimVarLists(qual.derivatives, uniqueIndex);
+            ({algVars}, uniqueIndex) := createSimVarLists(qual.algebraics, uniqueIndex);
+            ({discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars}, uniqueIndex) := createSimVarLists(qual.discretes, uniqueIndex, SplitType.TYPE);
+            ({aliasVars, intAliasVars, boolAliasVars, stringAliasVars}, uniqueIndex) := createSimVarLists(qual.aliasVars, uniqueIndex, SplitType.TYPE);
+            ({paramVars, intParamVars, boolParamVars, stringParamVars}, uniqueIndex) := createSimVarLists(qual.parameters, uniqueIndex, SplitType.TYPE);
+            ({constVars, intConstVars, boolConstVars, stringConstVars}, uniqueIndex) := createSimVarLists(qual.constants, uniqueIndex, SplitType.TYPE);
         then ();
 
         case qual as BVariable.VAR_DATA_JAC() then ();
@@ -365,10 +526,48 @@ public
         sensitivityVars, dataReconSetcVars, dataReconinputVars);
     end create;
 
+    function convert
+      input SimVars simVars;
+      output OldSimCodeVar.SimVars oldSimVars;
+    algorithm
+      oldSimVars := OldSimCodeVar.SIMVARS(
+        stateVars                         = SimVar.convertList(simVars.stateVars),
+        derivativeVars                    = SimVar.convertList(simVars.derivativeVars),
+        algVars                           = SimVar.convertList(simVars.algVars),
+        discreteAlgVars                   = SimVar.convertList(simVars.discreteAlgVars),
+        intAlgVars                        = SimVar.convertList(simVars.intAlgVars),
+        boolAlgVars                       = SimVar.convertList(simVars.boolAlgVars),
+        inputVars                         = SimVar.convertList(simVars.inputVars),
+        outputVars                        = SimVar.convertList(simVars.outputVars),
+        aliasVars                         = SimVar.convertList(simVars.aliasVars),
+        intAliasVars                      = SimVar.convertList(simVars.intAliasVars),
+        boolAliasVars                     = SimVar.convertList(simVars.boolAliasVars),
+        paramVars                         = SimVar.convertList(simVars.paramVars),
+        intParamVars                      = SimVar.convertList(simVars.intParamVars),
+        boolParamVars                     = SimVar.convertList(simVars.boolParamVars),
+        stringAlgVars                     = SimVar.convertList(simVars.stringAlgVars),
+        stringParamVars                   = SimVar.convertList(simVars.stringParamVars),
+        stringAliasVars                   = SimVar.convertList(simVars.stringAliasVars),
+        extObjVars                        = SimVar.convertList(simVars.extObjVars),
+        constVars                         = SimVar.convertList(simVars.constVars),
+        intConstVars                      = SimVar.convertList(simVars.intConstVars),
+        boolConstVars                     = SimVar.convertList(simVars.boolConstVars),
+        stringConstVars                   = SimVar.convertList(simVars.stringConstVars),
+        jacobianVars                      = SimVar.convertList(simVars.jacobianVars),
+        seedVars                          = SimVar.convertList(simVars.seedVars),
+        realOptimizeConstraintsVars       = SimVar.convertList(simVars.realOptimizeConstraintsVars),
+        realOptimizeFinalConstraintsVars  = SimVar.convertList(simVars.realOptimizeFinalConstraintsVars),
+        sensitivityVars                   = SimVar.convertList(simVars.sensitivityVars),
+        dataReconSetcVars                 = SimVar.convertList(simVars.dataReconSetcVars),
+        dataReconinputVars                = SimVar.convertList(simVars.dataReconinputVars));
+    end convert;
+
   protected
     type SplitType = enumeration(NONE, TYPE);
 
-    function createSimVarList
+    function createSimVarLists
+      "creates a list of simvar lists. SplitType.NONE always returns a list with only
+      one list as its element and SplitType.TYPE returns a list with four lists."
       input BVariable.VariablePointers vars;
       output list<list<SimVar>> simVars = {};
       input output Integer uniqueIndex;
@@ -395,7 +594,7 @@ public
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of invalid splitType."});
       end if;
-    end createSimVarList;
+    end createSimVarLists;
 
     function splitByType
       "Traverser function for splitting process. Target for SplitType.TYPE"

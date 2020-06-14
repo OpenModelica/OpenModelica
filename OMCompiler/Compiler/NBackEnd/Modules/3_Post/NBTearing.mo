@@ -164,7 +164,6 @@ protected
         Tearing tearingSet;
         InnerEquation dummy;
 
-
       // apply tearing if it is an algebraic loop
       case qual as StrongComponent.ALGEBRAIC_LOOP()
         algorithm

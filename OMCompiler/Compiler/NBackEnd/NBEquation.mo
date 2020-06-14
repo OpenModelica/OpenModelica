@@ -46,6 +46,9 @@ public
   import InstNode = NFInstNode.InstNode;
   import Variable = NFVariable;
 
+  // Old Backend imports
+  import OldBackendDAE = BackendDAE;
+
   // New Backend imports
 
   // Util imports
@@ -584,6 +587,16 @@ public
       EquationKind kind;
       EvaluationStages evalStages;
     end EQUATION_ATTRIBUTES;
+
+    function convert
+      input EquationAttributes attributes;
+      output OldBackendDAE.EquationAttributes oldAttributes;
+    algorithm
+      oldAttributes := OldBackendDAE.EQUATION_ATTRIBUTES(
+        differentiated  = attributes.differentiated,
+        kind            = EquationKind.convert(attributes.kind),
+        evalStages      = EvaluationStages.convert(attributes.evalStages));
+    end convert;
   end EquationAttributes;
 
   constant EquationAttributes EQ_ATTR_DEFAULT_DYNAMIC = EQUATION_ATTRIBUTES(false, DYNAMIC_EQUATION(), DEFAULT_EVALUATION_STAGES);
@@ -594,22 +607,31 @@ public
   constant EquationAttributes EQ_ATTR_DEFAULT_UNKNOWN = EQUATION_ATTRIBUTES(false, UNKNOWN_EQUATION_KIND(), DEFAULT_EVALUATION_STAGES);
 
   uniontype EquationKind
-    record BINDING_EQUATION
-    end BINDING_EQUATION;
-    record DYNAMIC_EQUATION
-    end DYNAMIC_EQUATION;
-    record INITIAL_EQUATION
-    end INITIAL_EQUATION;
-    record CLOCKED_EQUATION
-      Integer clk;
-    end CLOCKED_EQUATION;
-    record DISCRETE_EQUATION
-    end DISCRETE_EQUATION;
-    record AUX_EQUATION
-      "ToDo! Do we still need this?"
-    end AUX_EQUATION;
-    record UNKNOWN_EQUATION_KIND
-    end UNKNOWN_EQUATION_KIND;
+    record BINDING_EQUATION end BINDING_EQUATION;
+    record DYNAMIC_EQUATION end DYNAMIC_EQUATION;
+    record INITIAL_EQUATION end INITIAL_EQUATION;
+    record CLOCKED_EQUATION Integer clk; end CLOCKED_EQUATION;
+    record DISCRETE_EQUATION end DISCRETE_EQUATION;
+    record AUX_EQUATION "ToDo! Do we still need this?" end AUX_EQUATION;
+    record UNKNOWN_EQUATION_KIND end UNKNOWN_EQUATION_KIND;
+
+    function convert
+      input EquationKind eqKind;
+      output OldBackendDAE.EquationKind oldEqKind;
+    algorithm
+      oldEqKind := match eqKind
+        local
+          Integer clk;
+        case BINDING_EQUATION()           then OldBackendDAE.BINDING_EQUATION();
+        case DYNAMIC_EQUATION()           then OldBackendDAE.DYNAMIC_EQUATION();
+        case INITIAL_EQUATION()           then OldBackendDAE.INITIAL_EQUATION();
+        case CLOCKED_EQUATION(clk = clk)  then OldBackendDAE.CLOCKED_EQUATION(clk);
+        case DISCRETE_EQUATION()          then OldBackendDAE.DISCRETE_EQUATION();
+        case AUX_EQUATION()               then OldBackendDAE.AUX_EQUATION();
+        case UNKNOWN_EQUATION_KIND()      then OldBackendDAE.UNKNOWN_EQUATION_KIND();
+        else fail();
+      end match;
+    end convert;
   end EquationKind;
 
   uniontype EvaluationStages
@@ -619,6 +641,17 @@ public
       Boolean zerocrossEval;
       Boolean discreteEval;
     end EVALUATION_STAGES;
+
+    function convert
+      input EvaluationStages evalStages;
+      output OldBackendDAE.EvaluationStages oldEvalStages;
+    algorithm
+      oldEvalStages := OldBackendDAE.EVALUATION_STAGES(
+        dynamicEval   = evalStages.dynamicEval,
+        algebraicEval = evalStages.algebraicEval,
+        zerocrossEval = evalStages.zerocrossEval,
+        discreteEval  = evalStages.discreteEval);
+    end convert;
   end EvaluationStages;
 
   constant EvaluationStages DEFAULT_EVALUATION_STAGES = EVALUATION_STAGES(false,false,false,false);

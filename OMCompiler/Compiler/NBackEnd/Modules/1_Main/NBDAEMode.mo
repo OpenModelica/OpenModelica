@@ -67,6 +67,5 @@ public
     bdae := Tearing.main(bdae, NBSystem.SystemType.DAE);
   end main;
 
-
   annotation(__OpenModelica_Interface="backend");
 end NBDAEMode;

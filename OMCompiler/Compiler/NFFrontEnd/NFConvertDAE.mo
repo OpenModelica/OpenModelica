@@ -933,7 +933,7 @@ algorithm
   elements := DAE.INITIALALGORITHM(dalg, alg.source) :: elements;
 end convertInitialAlgorithm;
 
-function convertFunctionTree
+public function convertFunctionTree
   input FunctionTree funcs;
   output DAE.FunctionTree dfuncs;
 algorithm
@@ -962,7 +962,7 @@ algorithm
   end match;
 end convertFunctionTree;
 
-function convertFunction
+protected function convertFunction
   input Function func;
   output DAE.Function dfunc;
 protected
