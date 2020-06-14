@@ -29,10 +29,15 @@
 */
 
 encapsulated package MidCodeUtil
+" File:        MidCodeUtil
+  Package:     MidCodeUtil
+  Description: This package contains helper functions related to the MidCode representation.
+               All functions defined in this package are public.
+  Author: John Tinnerholm
+"
 protected
 import Absyn;
 import CodegenUtil;
-import DAE.{AvlTreePathFunction};
 import DAE;
 import DAEDump;
 import List;
@@ -41,6 +46,7 @@ import MidCodeDump;
 import SimCode.{RecordDeclaration};
 import Tpl;
 public
+
 type cacheValue = AvlTreePathFunction.Value;
 
 /*Functions for experimental MidCode cache. Not Included for now.*/
@@ -140,7 +146,7 @@ algorithm
 end getBBs;
 
 function getTerminators
-  "Given a list of BBs returns all terminators as a linked list"
+  "Returns the set of terminators for a set of basic blocks"
   input list<MidCode.Block> blcks;
   output list<MidCode.Terminator> terms;
 algorithm
@@ -336,6 +342,14 @@ algorithm
   b := stringEqual(variableName(v1),variableName(v2));
 end compareSimVars;
 
+function varToOutVar
+  "Converts a var to a outVar"
+  input MidCode.Var var;
+  output MidCode.OutVar ovar;
+algorithm
+ ovar := MidCode.OUT_VAR(var);
+end varToOutVar;
+
 function listZip<X,Y>
   "List.threadTuple fails for lists of unequal length
    but truncating is the more common semantics."
@@ -391,6 +405,32 @@ function encodeIdentifierUnderscorePath
 algorithm
   pStr := Tpl.textString(CodegenUtil.underscorePath(Tpl.MEM_TEXT({},{}), p));
 end encodeIdentifierUnderscorePath;
+
+function getArrayAllocaCall
+  input DAE.Type ty;
+  output String functionName;
+algorithm
+  functionName := match ty
+    case DAE.T_REAL(__) then "alloc_real_array";
+    else
+    algorithm
+      Error.addInternalError("getArrayAllocaCall" , sourceInfo());
+      then fail(); //TODO add more types.
+  end match;
+end getArrayAllocaCall;
+
+function getArrayType
+  "Given an inty from an array returns the scalar type of the array."
+  input DAE.Type inty;
+  output DAE.Type outTy;
+algorithm
+  outTy := match inty
+    case DAE.T_ARRAY(__) then inty.ty;
+    case DAE.T_METAARRAY(__) then inty.ty;
+    else algorithm Error.addInternalError("Erranous parameter passed to getArrayType\n", sourceInfo());
+      then fail();
+  end match;
+end getArrayType;
 
 annotation(__OpenModelica_Interface="backendInterface");
 end MidCodeUtil;

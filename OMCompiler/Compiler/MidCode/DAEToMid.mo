@@ -29,6 +29,168 @@
  *
  */
 encapsulated package DAEToMid
+
+public
+import MidCode;
+import MidCodeUtil;
+import MidToMid;
+import SimCode;
+import SimCodeFunction;
+
+function daeProgramToMid
+    input String name;
+    input list<SimCodeFunction.Function> simFuncs;
+    input list<SimCodeFunction.RecordDeclaration> recordDeclarations;
+    output MidCode.Program outProgram;
+protected
+  list<MidCode.Function> funcs = DAEFunctionsToMid(simFuncs);
+  list<MidCode.Record> records = daeRecordsToMid(recordDeclarations);
+algorithm
+  if Flags.isSet(Flags.DUMP_MIDCODE) then
+    try
+      print(MidCodeUtil.dumpProgram(MidCode.PROGRAM("dump", funcs, records)));
+    else
+      Error.addInternalError("Failed to dump MidCode\n", sourceInfo());
+      fail();
+    end try;
+  end if;
+  outProgram := MidCode.PROGRAM(name, funcs, records);
+end daeProgramToMid;
+
+function daeRecordsToMid
+  "Converts DAE records to corresponding MidCode records"
+    input list<SimCodeFunction.RecordDeclaration> recordDeclarations;
+    output list<MidCode.Record> midRecords;
+algorithm
+  midRecords := list(genRecordDecl(r) for r in recordDeclarations);
+end daeRecordsToMid;
+
+function DAEFunctionToMid
+  input SimCodeFunction.Function simfunc;
+  output MidCode.Function midfunc;
+protected
+  State state;
+  DoubleEnded.MutableList<MidCode.Var> inputs;
+  DoubleEnded.MutableList<MidCode.Var> outputs;
+  MidCode.Var tmpVar;
+  MidCode.Block block_;
+  Absyn.Path path;
+  Integer labelFirst;
+  Integer labelNext;
+algorithm
+  System.tmpTickReset(47); //jump buffers
+  System.tmpTickReset(46); //variables
+  System.tmpTickReset(45); //block ids
+  () := match simfunc
+  local
+    Absyn.Path name;
+    list<SimCodeFunction.Variable> outVars;
+    list<SimCodeFunction.Variable> functionArguments;
+    list<SimCodeFunction.Variable> variableDeclarations;
+    list<SimCodeFunction.Variable> inVars;
+    list<SimCodeFunction.Variable> biVars;
+    list<DAE.Statement> body;
+    list<SimCodeFunction.SimExtArg> extArgs;
+    list<String> includes;
+    list<MidCode.Var> midOutVars;
+    SCode.Visibility visibility;
+    SourceInfo info;
+    String extName;
+    SimCodeFunction.SimExtArg extReturn;
+  case SimCodeFunction.FUNCTION(name, outVars, functionArguments, variableDeclarations, body, visibility, info)
+    algorithm
+    labelFirst := GenBlockId();
+    path := name;
+    inputs := DoubleEnded.fromList({});
+    outputs := DoubleEnded.fromList({});
+    state := STATE(DoubleEnded.fromList({}),
+                   DoubleEnded.fromList({}),
+                   DoubleEnded.fromList({}),
+                   DoubleEnded.fromList({}),
+                   DoubleEnded.fromList({}),
+                   Mutable.create(labelFirst),
+                   Mutable.create({}),
+                   Mutable.create({}),
+                   Mutable.create(HashTableMidVar.emptyHashTable()));
+    for simcodeVar in outVars loop
+      tmpVar := ConvertSimCodeVars(simcodeVar, state, true);
+      DoubleEnded.push_back(outputs, tmpVar);
+    end for;
+    for simcodeVar in variableDeclarations loop
+      tmpVar := ConvertSimCodeVars(simcodeVar, state, true);
+      DoubleEnded.push_back(state.locals, tmpVar);
+    end for;
+    for simcodeVar in functionArguments loop
+      DoubleEnded.push_back(inputs, ConvertSimCodeVars(simcodeVar, state));
+    end for;
+    StmtsToMid(body, state);
+    stateTerminate(-1, MidCode.RETURN(), state);
+    midfunc := MidCode.FUNCTION(name=path,
+                                locals=DoubleEnded.toListAndClear(state.locals),
+                                localBufs=DoubleEnded.toListAndClear(state.localBufs),
+                                localBufPtrs=DoubleEnded.toListAndClear(state.localBufPtrs),
+                                inputs=DoubleEnded.toListAndClear(inputs),
+                                outputs=DoubleEnded.toListAndClear(outputs),
+                                body=DoubleEnded.toListAndClear(state.blocks),
+                                entryId=labelFirst,
+                                exitId=GenBlockId());
+    midfunc := MidToMid.longJmpGoto(midfunc);
+  then ();
+  /*TODO: Not completed
+     Add more external languages and more options here. Needs to be completed.*/
+  case SimCodeFunction.EXTERNAL_FUNCTION(name,extName,functionArguments,extArgs,extReturn,inVars,outVars,biVars,includes,_,"C",_,_,_)
+  algorithm
+    /*TODO: This will be needed in more then one place, a function should be written.*/
+    labelFirst := GenBlockId();
+    path := name;
+    inputs := DoubleEnded.fromList({});
+    outputs := DoubleEnded.fromList({});
+    state := STATE(DoubleEnded.fromList({}),
+                   DoubleEnded.fromList({}),
+                   DoubleEnded.fromList({}),
+                   DoubleEnded.fromList({}),
+                   DoubleEnded.fromList({}),
+                   Mutable.create(labelFirst),
+                   Mutable.create({}),
+                   Mutable.create({}),
+                   Mutable.create(HashTableMidVar.emptyHashTable()));
+    /*For now only functions with outputs are handled.*/
+    outputs := DoubleEnded.fromList({});
+    for simcodeVar in outVars loop
+      DoubleEnded.push_back(outputs, ConvertSimCodeVars(simcodeVar, state));
+    end for;
+    labelNext := GenBlockId();
+    midOutVars := DoubleEnded.toListAndClear(outputs);
+    /*TODO:For now call the external function.*/
+    stateTerminate(labelNext,MidCode.CALL(Absyn.IDENT(extName)
+                                          ,true
+                                          ,{}
+                                          ,List.map(midOutVars,varToOutVar)
+                                          ,labelNext
+                                          ,DAE.T_REAL_DEFAULT /* Should be output variable */)
+                   ,state);
+    /* After call assign result to temporary variables */
+    stateTerminate(-1, MidCode.RETURN(), state);
+    midfunc := MidCode.FUNCTION(name=path,
+                                locals=DoubleEnded.toListAndClear(state.locals),
+                                localBufs=DoubleEnded.toListAndClear(state.localBufs),
+                                localBufPtrs=DoubleEnded.toListAndClear(state.localBufPtrs),
+                                inputs=DoubleEnded.toListAndClear(inputs),
+                                outputs=midOutVars,
+                                body=DoubleEnded.toListAndClear(state.blocks),
+                                entryId=labelFirst,
+                                exitId=GenBlockId());
+    midfunc := MidToMid.longJmpGoto(midfunc);
+  then();
+  else
+  algorithm
+    Error.addInternalError("Unsupported SimCodeFunction.Function type\n", sourceInfo());
+    Error.addInternalError("DAEToMidDump " + anyString(simfunc) + "\n", sourceInfo());
+    fail();
+  then ();
+  end match;
+end DAEFunctionToMid;
+
 protected
 import Absyn;
 import AbsynUtil;
@@ -44,16 +206,10 @@ import Expression;
 import ExpressionDump;
 import HashTableMidVar;
 import List;
-import MidCode;
-import MidCodeUtil;
-import MidToMid;
 import Mutable;
-import SimCode;
-import SimCodeFunction;
 import System;
 import Types;
 
-public
 uniontype State
   record STATE
     DoubleEnded.MutableList<MidCode.Var> locals;
@@ -68,25 +224,16 @@ uniontype State
   end STATE;
 end State;
 
+/*
 function listZip<X,Y>
   "List.zip fails for lists of unequal length
    but truncating is the more common semantics."
   input  list<X>          xs;
   input  list<Y>          ys;
   output list<tuple<X,Y>> zs;
-protected
-  list<X> xs_;
-  list<Y> ys_;
-  X x;
-  Y y;
-algorithm
-  zs := match (xs,ys)
-    case ({}   ,  _)    then {};
-    case (_    , {})    then {};
-    case (x::xs_, y::ys_) then (x,y) :: listZip(xs_,ys_);
-  end match;
-end listZip;
+*/
 
+protected
 function getSimCodeVarName
   input SimCodeFunction.Variable simV;
   output DAE.ComponentRef cref;
@@ -354,33 +501,6 @@ var := match rvalue
 end match;
 end rValueToVarCast;
 
-function daeProgramToMidCode
-    input String name;
-    input list<SimCodeFunction.Function> simFuncs;
-    input list<SimCodeFunction.RecordDeclaration> recordDeclarations = {};
-    output MidCode.Program outProgram;
-protected
-  list<MidCode.Function> funcs = DAEFunctionsToMid(simFuncs);
-  list<MidCode.Record> records = daeRecordsToMid(recordDeclarations);
-algorithm
-  if Flags.isSet(Flags.DUMP_MIDCODE) then
-    try
-      print(MidCodeUtil.dumpProgram(MidCode.PROGRAM("dump", funcs, records)));
-    else
-      Error.addInternalError("Failed to dump MidCode\n", sourceInfo());
-      fail();
-    end try;
-  end if;
-  outProgram := MidCode.PROGRAM(name, funcs, records);
-end daeProgramToMidCode;
-
-function daeRecordsToMid
-  "Converts DAE records to corresponding MidCode records"
-    input list<SimCodeFunction.RecordDeclaration> recordDeclarations;
-    output list<MidCode.Record> midRecords;
-algorithm
-  midRecords := list(genRecordDecl(r) for r in recordDeclarations);
-end daeRecordsToMid;
 
 function genRecordDecl
   input SimCodeFunction.RecordDeclaration rDecl;
@@ -409,131 +529,6 @@ algorithm
   midfuncs := list(DAEFunctionToMid(simfunc) for simfunc in simfuncs);
 end DAEFunctionsToMid;
 
-function DAEFunctionToMid
-  input SimCodeFunction.Function simfunc;
-  output MidCode.Function midfunc;
-protected
-  State state;
-  DoubleEnded.MutableList<MidCode.Var> inputs;
-  DoubleEnded.MutableList<MidCode.Var> outputs;
-  MidCode.Var tmpVar;
-  MidCode.Block block_;
-  Absyn.Path path;
-  Integer labelFirst;
-  Integer labelNext;
-algorithm
-  System.tmpTickReset(47); //jump buffers
-  System.tmpTickReset(46); //variables
-  System.tmpTickReset(45); //block ids
-  () := match simfunc
-  local
-    Absyn.Path name;
-    list<SimCodeFunction.Variable> outVars;
-    list<SimCodeFunction.Variable> functionArguments;
-    list<SimCodeFunction.Variable> variableDeclarations;
-    list<SimCodeFunction.Variable> inVars;
-    list<SimCodeFunction.Variable> biVars;
-    list<DAE.Statement> body;
-    list<SimCodeFunction.SimExtArg> extArgs;
-    list<String> includes;
-    list<MidCode.Var> midOutVars;
-    SCode.Visibility visibility;
-    SourceInfo info;
-    String extName;
-    SimCodeFunction.SimExtArg extReturn;
-  case SimCodeFunction.FUNCTION(name, outVars, functionArguments, variableDeclarations, body, visibility, info)
-    algorithm
-    labelFirst := GenBlockId();
-    path := name;
-    inputs := DoubleEnded.fromList({});
-    outputs := DoubleEnded.fromList({});
-    state := STATE(DoubleEnded.fromList({}),
-                   DoubleEnded.fromList({}),
-                   DoubleEnded.fromList({}),
-                   DoubleEnded.fromList({}),
-                   DoubleEnded.fromList({}),
-                   Mutable.create(labelFirst),
-                   Mutable.create({}),
-                   Mutable.create({}),
-                   Mutable.create(HashTableMidVar.emptyHashTable()));
-    for simcodeVar in outVars loop
-      tmpVar := ConvertSimCodeVars(simcodeVar, state, true);
-      DoubleEnded.push_back(outputs, tmpVar);
-    end for;
-    for simcodeVar in variableDeclarations loop
-      tmpVar := ConvertSimCodeVars(simcodeVar, state, true);
-      DoubleEnded.push_back(state.locals, tmpVar);
-    end for;
-    for simcodeVar in functionArguments loop
-      DoubleEnded.push_back(inputs, ConvertSimCodeVars(simcodeVar, state));
-    end for;
-    StmtsToMid(body, state);
-    stateTerminate(-1, MidCode.RETURN(), state);
-    midfunc := MidCode.FUNCTION(name=path,
-                                locals=DoubleEnded.toListAndClear(state.locals),
-                                localBufs=DoubleEnded.toListAndClear(state.localBufs),
-                                localBufPtrs=DoubleEnded.toListAndClear(state.localBufPtrs),
-                                inputs=DoubleEnded.toListAndClear(inputs),
-                                outputs=DoubleEnded.toListAndClear(outputs),
-                                body=DoubleEnded.toListAndClear(state.blocks),
-                                entryId=labelFirst,
-                                exitId=GenBlockId());
-    midfunc := MidToMid.longJmpGoto(midfunc);
-  then ();
-  /*TODO: Not completed
-     Add more external languages and more options here. Needs to be completed.*/
-  case SimCodeFunction.EXTERNAL_FUNCTION(name,extName,functionArguments,extArgs,extReturn,inVars,outVars,biVars,includes,_,"C",_,_,_)
-  algorithm
-    /*TODO: This will be needed in more then one place, a function should be written.*/
-    labelFirst := GenBlockId();
-    path := name;
-    inputs := DoubleEnded.fromList({});
-    outputs := DoubleEnded.fromList({});
-    state := STATE(DoubleEnded.fromList({}),
-                   DoubleEnded.fromList({}),
-                   DoubleEnded.fromList({}),
-                   DoubleEnded.fromList({}),
-                   DoubleEnded.fromList({}),
-                   Mutable.create(labelFirst),
-                   Mutable.create({}),
-                   Mutable.create({}),
-                   Mutable.create(HashTableMidVar.emptyHashTable()));
-    /*For now only functions with outputs are handled.*/
-    outputs := DoubleEnded.fromList({});
-    for simcodeVar in outVars loop
-      DoubleEnded.push_back(outputs, ConvertSimCodeVars(simcodeVar, state));
-    end for;
-    labelNext := GenBlockId();
-    midOutVars := DoubleEnded.toListAndClear(outputs);
-    /*TODO:For now call the external function.*/
-    stateTerminate(labelNext,MidCode.CALL(Absyn.IDENT(extName)
-                                          ,true
-                                          ,{}
-                                          ,List.map(midOutVars,varToOutVar)
-                                          ,labelNext
-                                          ,DAE.T_REAL_DEFAULT /* Should be output variable */)
-                   ,state);
-    /* After call assign result to temporary variables */
-    stateTerminate(-1, MidCode.RETURN(), state);
-    midfunc := MidCode.FUNCTION(name=path,
-                                locals=DoubleEnded.toListAndClear(state.locals),
-                                localBufs=DoubleEnded.toListAndClear(state.localBufs),
-                                localBufPtrs=DoubleEnded.toListAndClear(state.localBufPtrs),
-                                inputs=DoubleEnded.toListAndClear(inputs),
-                                outputs=midOutVars,
-                                body=DoubleEnded.toListAndClear(state.blocks),
-                                entryId=labelFirst,
-                                exitId=GenBlockId());
-    midfunc := MidToMid.longJmpGoto(midfunc);
-  then();
-  else
-  algorithm
-    Error.addInternalError("Unsupported SimCodeFunction.Function type\n", sourceInfo());
-    Error.addInternalError("DAEToMidDump " + anyString(simfunc) + "\n", sourceInfo());
-    fail();
-  then ();
-  end match;
-end DAEFunctionToMid;
 function StmtsToMid
   input list<DAE.Statement> daestmts;
   input State state;
@@ -1541,7 +1536,7 @@ algorithm
               list<DAE.Exp> expList;
             case (SOME(DAE.TUPLE(expList)),_)
             algorithm
-              for outvarDaeExp in listZip(outvars, expList) loop
+              for outvarDaeExp in MidCodeUtil.listZip(outvars, expList) loop
                 (outvar, daeExp) := outvarDaeExp;
                 () := match outvar
                   local
@@ -1878,14 +1873,6 @@ algorithm
   List.map1_0(elements,DAEElementToVar,state);
 end listOfElementsToMidCodeVars;
 
-function varToOutVar
-  "Converts a var to a outVar"
-  input MidCode.Var var;
-  output MidCode.OutVar ovar;
-algorithm
- ovar := MidCode.OUT_VAR(var);
-end varToOutVar;
-
 function getIntLitFromExp
   input DAE.Exp exp;
   output Integer r;
@@ -1895,18 +1882,6 @@ algorithm
     else then fail();
   end match;
 end getIntLitFromExp;
-
-function getArrayType //TODO rewrite these functions so they switch accordingly now only arrays are supported.
-  "Given an inty from an array returns the scalar type of the array."
-  input DAE.Type inty;
-  output DAE.Type outTy;
-algorithm
-  outTy := match inty
-    case DAE.T_ARRAY(__) then inty.ty;
-    case DAE.T_METAARRAY(__) then inty.ty;
-    else algorithm Error.addInternalError("Erranous parameter passed to getArrayType\n", sourceInfo()); then fail();
-  end match;
-end getArrayType;
 
 function genArrayIxFunction
   input DAE.Type ty;
@@ -1950,7 +1925,8 @@ function getArrayAllocaCall
 algorithm
   functionName := match ty
     case DAE.T_REAL(__) then "alloc_real_array";
-    else fail(); //TODO add more types.
+    else algorithm Error.addInternalError("getArrayAllocaCall" , sourceInfo());
+      then fail(); //TODO add more types.
   end match;
 end getArrayAllocaCall;
 
@@ -1960,10 +1936,13 @@ function SubscriptToMid
   output MidCode.RValue rVal;
 algorithm
   rVal := match subscript
-      case DAE.INDEX(__) then ExpToMid(subscript.exp,state);
-      else algorithm print("sscript to mid fail" + anyString(subscript) + "\n"); then fail();
+      case DAE.INDEX(__)
+        then ExpToMid(subscript.exp,state);
+      else algorithm Error.addInternalError("SubscriptToMid failed" , sourceInfo());
+        then fail();
   end match;
 end SubscriptToMid;
 
 annotation(__OpenModelica_Interface="backendInterface");
 end DAEToMid;
+nd DAEToMid;

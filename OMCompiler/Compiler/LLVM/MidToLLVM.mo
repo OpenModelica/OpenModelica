@@ -40,22 +40,19 @@ encapsulated package MidToLLVM
 "
 public
 import EXT_LLVM;
+import MidToLLVMUtil;
 protected
 import Absyn;
 import AbsynUtil;
 import Array;
+import MidCode;
+import MidCodeUtil;
 import CodegenUtil.{underscorePath,dotPath};
 import DAE;
-import DAEToMid;
 import DAEUtil;
 import Debug;
 import ExecStat.{execStat,execStatReset};
 import Flags;
-import MidCode;
-import MidCodeUtil;
-import MidToLLVMUtil;
-import SimCode;
-import SimCodeFunction;
 import Tpl.{Text,textString}; //To convert underScorePath to strings.
 import Util;
 import List;
@@ -77,8 +74,6 @@ constant Integer MODELICA_TUPLE_PTR = 55;
 //Other constants
 constant String THREAD_DATA = "threadData";
 constant String FINAL_VALUE_PTR = "finalValuePTR";
-
-type TypeIdentifierID = Integer;
 
 public
 function JIT
@@ -138,7 +133,7 @@ algorithm
                      ,functionTy=MODELICA_TUPLE
                      ,assignment=true
                      ,isVariadic=false);
-   storeValsFromStruct(List.map(functionToBeCalled.outputs,DAEToMid.varToOutVar),"outStruct_"+FUNCTION_NAME,0);
+   storeValsFromStruct(List.map(functionToBeCalled.outputs, MidCodeUtil.varToOutVar),"outStruct_"+FUNCTION_NAME,0);
   else /*Void functions*/
     EXT_LLVM.genCall(name=FUNCTION_NAME
                      ,dest=""
@@ -234,8 +229,6 @@ algorithm
   end match;
 end readArrayString;
 
-//TODO: maybe move this stuff to DAEToMid?
-//(Unsure what the correct engineering practice would be, still MidCode does handle this correct and separate), same structure is also used in SimCode.
 function genRecordDecls
   "Only handles RECORD_DECL_DEF at the moment.
    they seem to be the ones that are interesting."
@@ -928,78 +921,78 @@ algorithm
   case (_, MidCode.BINARYOP(op=pbinop
                             ,lsrc=plsrc as MidCode.VAR(name=lsrc_name,ty=DAE.T_STRING(__))
                             ,rsrc=prsrc as MidCode.VAR(name=rsrc_name,ty=DAE.T_STRING(__))))
-    algorithm
-      genBinaryOPLLVMInst(genVarName(dest),pbinop,plsrc,prsrc);
+  algorithm
+    genBinaryOPLLVMInst(genVarName(dest),pbinop,plsrc,prsrc);
     then();
   case (_,MidCode.BINARYOP(op=MidCode.POW()
                            ,lsrc=MidCode.VAR(name=lsrc_name,ty=_)
                            ,rsrc=MidCode.VAR(name=rsrc_name,ty=_)))
-    algorithm
-      genLLVMPowInst(lsrc_name,rsrc_name,genVarName(dest));
+  algorithm
+    genLLVMPowInst(lsrc_name,rsrc_name,genVarName(dest));
     then();
   case (_,MidCode.BINARYOP(op=pbinop,lsrc=plsrc,rsrc=prsrc))
-    algorithm
-      genBinaryOPLLVMInst(genVarName(dest),pbinop,plsrc,prsrc);
+  algorithm
+    genBinaryOPLLVMInst(genVarName(dest),pbinop,plsrc,prsrc);
     then();
   case (_,MidCode.UNARYOP(op=MidCode.BOX(),src=src))
-    algorithm
+  algorithm
       genmkCall(src,dest); //TODO maybe change the name of genmkCall...
     then();
   case (_,MidCode.UNARYOP(op=MidCode.UNBOX(),src=src))
-    algorithm
-      unboxVar(src,dest);
+  algorithm
+    unboxVar(src,dest);
     then();
   case (_,MidCode.UNARYOP(op=pUnop,src=src))
-    algorithm
-      genUnaryOpLLVMInst(pUnop,src,dest);
+  algorithm
+    genUnaryOpLLVMInst(pUnop,src,dest);
     then();
   case (MidCode.VAR(_,DAE.T_INTEGER(__),_),MidCode.LITERALINTEGER(value=pInteger))
-    algorithm
-      EXT_LLVM.genStoreLiteralInt(pInteger,genVarName(dest));
+  algorithm
+    EXT_LLVM.genStoreLiteralInt(pInteger,genVarName(dest));
     then();
   case (MidCode.VAR(_,DAE.T_BOOL(__),_),MidCode.LITERALBOOLEAN(value=pBoolean))
-    algorithm
-      EXT_LLVM.genStoreLiteralBoolean(pBoolean, genVarName(dest));
+  algorithm
+    EXT_LLVM.genStoreLiteralBoolean(pBoolean, genVarName(dest));
     then();
   case (MidCode.VAR(_,DAE.T_REAL(__),_),MidCode.LITERALREAL(value=pReal))
-    algorithm
-      EXT_LLVM.genStoreLiteralReal(pReal,genVarName(dest));
+  algorithm
+    EXT_LLVM.genStoreLiteralReal(pReal,genVarName(dest));
     then();
   case (MidCode.VAR(_,DAE.T_ARRAY(__),_),MidCode.LITERALREAL(value=pReal)) //Note that T_ARRAY at the left side is always a dereferenced array for now
-    algorithm
-      EXT_LLVM.storeDoubleToPtr(pReal,genVarName(dest),0);
+  algorithm
+    EXT_LLVM.storeDoubleToPtr(pReal,genVarName(dest),0);
     then();
   case (MidCode.VAR(_,DAE.T_STRING(__),_), MidCode.LITERALSTRING(value=stringValue))
-    algorithm
+  algorithm
       EXT_LLVM.genStringConstant(stringValue,genVarName(dest));
     then();
   case (_,MidCode.LITERALMETATYPE(elements=elements,ty=ty))
-    algorithm
+  algorithm
       genLiteralMetatype(elements,ty,dest);
     then ();
   case (_,MidCode.METAFIELD(src=src,index=index,ty=ty))
-    algorithm
+  algorithm
       EXT_LLVM.genCallArg(genVarName(src));
       EXT_LLVM.genCallArgConstInt(index+1);
       EXT_LLVM.genCall(name="get_metafield",functionTy=MODELICA_METATYPE,dest=genVarName(dest),assignment=true,isVariadic=false);
     then();
   case (_,MidCode.UNIONTYPEVARIANT(src=src))
-    algorithm
+  algorithm
       EXT_LLVM.genCallArg(genVarName(src));
       EXT_LLVM.genCall(name="get_uniontypevariant",functionTy=MODELICA_INTEGER,dest=genVarName(dest),assignment=true,isVariadic=false);
     then();
   case (_,MidCode.ISCONS(src=src))
-    algorithm
+  algorithm
       EXT_LLVM.genCallArg(genVarName(src));
       EXT_LLVM.genCall(name="isCons",functionTy=MODELICA_BOOLEAN,dest=genVarName(dest),assignment=true,isVariadic=false);
     then ();
   case (_,MidCode.ISSOME(src=src))
-    algorithm
+  algorithm
       EXT_LLVM.genCallArg(genVarName(src));
       EXT_LLVM.genCall(name="isSome",functionTy=MODELICA_BOOLEAN,dest=genVarName(dest),assignment=true,isVariadic=false);
     then();
   case (_,MidCode.LITERALARRAY(__))
-    algorithm
+  algorithm
       genLiteralArray(genVarName(dest),rValue.elements,rValue.ty,listLength(rValue.elements));
     then ();
   else algorithm Error.addInternalError("Unknown operation in genLLVMinst:" + anyString(rValue) + "\n",sourceInfo()); then fail();
@@ -1007,26 +1000,26 @@ algorithm
 end genLLVMInst;
 
 function genLiteralArray
-  "Not fully implemented. Can be fixed easily though"
+  "Generates code to create a literal array of type Real."
   input String dest;
   input list<MidCode.RValue> elements;
   input DAE.Type arrayType;
   input Integer siz;
 algorithm
-  () := match DAEToMid.getArrayType(arrayType)
+  () := match MidCodeUtil.getArrayType(arrayType)
     local
       Real realArr[siz];
       Integer ix = 1;
     case DAE.T_REAL(__)
-      algorithm
+    algorithm
       for e in elements loop
         realArr[ix] := MidCodeUtil.rValueToLiteralReal(e);
         ix := ix + 1;
       end for;
       EXT_LLVM.assignRealArr(realArr,dest);
-    then();
+      then();
     case _
-      algorithm
+    algorithm
       Error.addInternalError("Mapping unknown array type\n",sourceInfo()); then fail();
   end match;
 end genLiteralArray;

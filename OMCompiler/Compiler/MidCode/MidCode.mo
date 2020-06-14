@@ -31,17 +31,15 @@
 
 encapsulated package MidCode
 
-import DAE;
+import DAE; /*TODO: remove DAE introduce custom type system */
 
-type identifier = String;
+public
 
 uniontype Program
-  "A MidCode Program. Consists of a sequence of functions"
   record PROGRAM
-    String name "Name of the program. Typically defaults to the name of the main method";
+    String name;
     list<Function> functions;
-    list<MidCode.Record> records;
-    //list<MidCode.Var> literals
+    list<Record> records;
   end PROGRAM;
 end Program;
 
@@ -309,30 +307,6 @@ uniontype BinaryOp "Binary operator"
   record NEQUAL end NEQUAL;
 end BinaryOp;
 
-/*Work in progress. Not Yet used*/
-// uniontype Type
-// "
-//   MidCode Types.
-//   record Integer end Integer;
-//   record Boolean end Boolean;
-//   record Real end Real;
-//   record String end String;
-//   record Array
-//     Type ty;
-//   end Array;
-//   record Structure
-//     list<Type> types "The type of each individual element";
-//   end Structure;
-//   /* MetaModelica specific */
-//   record List
-//     Type ty;
-//   end List;
-//   record BoxedArray
-//     Type ty;
-//   end BoxedArray;
-//   record Option
-//   end Option;
-// end Type;
 
 annotation(__OpenModelica_Interface="backendInterface");
 end MidCode;

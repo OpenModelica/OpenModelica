@@ -13,7 +13,8 @@ template dumpProgram(MidCode.Program p)
   case MidCode.PROGRAM(__) then
   <<
   PROGRAM:
-    <% functions |> fn => dumpFunction(fn) ; separator="\n\n"%>
+    <% records |> r => dumpRecord(r) ; separator="\n\n"%>
+    #<% functions |> fn => dumpFunction(fn) ; separator="\n\n"%>
   >>
   end match
 end dumpProgram;
@@ -47,6 +48,19 @@ template dumpFunction(MidCode.Function fn)
     >>
   end match
 end dumpFunction;
+
+template dumpRecord(MidCode.Record r)
+::=
+    match r
+      case MidCode.RECORD_DECLARATION(__) then
+        <<
+          RECORD_DECLARATION
+           <%definitionPath%>
+           <%encodedPath%>
+           <%fieldNames |> fieldName => fieldName; separator="\n\n"%>
+          end RECORD_DECLARATION;
+        >>
+end dumpRecord;
 
 template dumpLocalDecls(MidCode.Function fn, list<MidCode.Var> locals, list<MidCode.VarBuf> localBufs, list<MidCode.VarBufPtr> localBufPtrs)
 ::=

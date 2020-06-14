@@ -63,7 +63,6 @@ import Values;
 
 // protected imports
 protected
-
 import Autoconf;
 import BaseHashSet;
 import Builtin;
@@ -75,8 +74,8 @@ import CodegenCFunctions;
 import ComponentReference;
 import Config;
 import Corba;
-import DAEToMid;
 import DAEUtil;
+import DAEToMid;
 import Debug;
 import Dump;
 import DynLoad;
@@ -2285,11 +2284,14 @@ algorithm
         (daeElements, literals) := SimCodeFunctionUtil.findLiterals(daeMainFunction::daeElements);
         (simMainFunction::simfns, recordDecls, includes, includeDirs, libs, libPaths) := SimCodeFunctionUtil.elaborateFunctions(p, daeElements, metarecordTypes, literals, {});
         /* Generate MidCode IR */
-        midCodeProgram := DAEToMid.daeProgramToMidCode(name, simMainFunction::simfns, recordDecls);
-        /* Set up the neccessary data structures in the LLVM context. */
+        _ := DAEToMid.DAEFunctionsToMid({});
+        midCodeProgram := DAEToMid.daeProgramToMid(name, simMainFunction::simfns, recordDecls);
+        /* Set up the neccessary data structures in the LLVM context.*/
         EXT_LLVM.initGen(name);
         /*Generate LLVM IR in memory*/
         MidToLLVM.genProgram(midCodeProgram);
+        /* Check if the function is in the cache or not*/
+
         /*JIT compile. Return a newval.*/
         newval := match midCodeProgram.functions
           local MidCode.Function H; List<MidCode.Function> T = {};

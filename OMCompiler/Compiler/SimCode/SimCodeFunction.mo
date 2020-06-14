@@ -267,7 +267,7 @@ import CodegenMidToC;
 import Global;
 import SimCodeFunctionUtil;
 import MidCode;
-import DAEToMid;
+//import DAEToMid;
 
 public function translateFunctions "
   Entry point to translate Modelica/MetaModelica functions to C functions.
@@ -302,15 +302,7 @@ algorithm
         SimCodeFunctionUtil.checkValidMainFunction(name, mainFunction);
         makefileParams = SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, true);
         fnCode = FUNCTIONCODE(name, SOME(mainFunction), fns, literals, includes, makefileParams, extraRecordDecls);
-
-        if Config.simCodeTarget() == "MidC" then
-          _ = Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
-          midfuncs = DAEToMid.DAEFunctionsToMid(mainFunction::fns);
-          midCode = Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs, {}));
-          _ = Tpl.textFileConvertLines(midCode, name + ".c");
-        else
           _ = Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
-        end if;
       then
         ();
     case (_, _, NONE(), daeElements, _, includes)
@@ -323,15 +315,8 @@ algorithm
         fns = removeThreadDataFunction(fns, {});
         extraRecordDecls = removeThreadDataRecord(extraRecordDecls, {});
         fnCode = FUNCTIONCODE(name, NONE(), fns, literals, includes, makefileParams, extraRecordDecls);
-
-        if Config.simCodeTarget() == "MidC" then
-          _ = Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
-          midfuncs = DAEToMid.DAEFunctionsToMid(fns);
-          midCode = Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs, {}));
-          _ = Tpl.textFileConvertLines(midCode, name + ".c");
-        else
-          _ = Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
-        end if;
+        _ = Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
+        _ = Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
       then
         ();
 
