@@ -216,9 +216,10 @@ extern "C"
        *   We only do inlining for now to keep the JIT snappy
        *   TODO: Move to JIT Module?
        *
-       */
+      */
       ipoPassMngr.add(llvm::createReversePostOrderFunctionAttrsPass());
-      ipoPassMngr.add(llvm::createFunctionInliningPass());
+      /* Disable inlining */
+      //      ipoPassMngr.add(llvm::createFunctionInliningPass());
       ipoPassMngr.add(llvm::createArgumentPromotionPass());
       ipoPassMngr.add(llvm::createInstructionCombiningPass());
       ipoPassMngr.add(llvm::createCFGSimplificationPass());

@@ -9,16 +9,20 @@ import CodegenUtil.{underscorePath,dotPath};
 import EXT_LLVM;
 import List;
 import MidCode;
+import MidCodeUtil;
 import System;
 import Tpl.{Text,textString};
+import Values;
 import ValuesUtil;
+
 public
-function funcsAreJitCompiled
+function functionsAreJitted
+  "Given A set of function determine if they are jit compiled or not"
   input list<Absyn.Path> funcNames;
   output Boolean b;
 algorithm
   b := Util.boolAndList(List.map(funcNames,funcIsJitCompiled));
-end funcsAreJitCompiled;
+end functionsAreJitted;
 
 function funcIsJitCompiled
   "Checks if there exists a handler to a function with the given Absyn.path."
@@ -35,17 +39,16 @@ end funcIsJitCompiled;
 function valLstToMidVarLst
   input list<Values.Value> valLst;
   output list<MidCode.Var> midVarLst;
-  algorithm
+algorithm
   midVarLst := List.map(valLst,valueToMidVar);
 end valLstToMidVarLst;
 
-function valueToMidVar
+public function valueToMidVar
   input Values.Value val;
   output MidCode.Var midVar;
 algorithm
-  midVar := MidCode.VAR("_tmp_" + intString(System.tmpTickIndex(46)),ValuesUtil.valueExpType(val),false);
+  midVar := MidCode.VAR("_tmp_" + intString(System.tmpTickIndex(46)), ValuesUtil.valueExpType(val), false);
 end valueToMidVar;
-
 
 annotation(__OpenModelica_Interface="backendInterface");
 end MidToLLVMUtil;

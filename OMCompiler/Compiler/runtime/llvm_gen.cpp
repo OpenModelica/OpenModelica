@@ -87,6 +87,7 @@ modelica_boolean fIsJitCompiled(const char *fName) {
   return true;
 }
 
+/* The JIT is run internally in the C environment */
 modelica_metatype run_jit_internal(modelica_metatype (*top_level_func)(modelica_metatype), modelica_metatype args);
 modelica_metatype runJIT(modelica_metatype valLst) {
   DBG("Calling run JIT with argument:%s\n", anyString(valLst));
@@ -96,7 +97,7 @@ modelica_metatype runJIT(modelica_metatype valLst) {
 
 /*Init neccessary global variables  */
 void initGen(const char *name) {
-  DBG("Calling initGen\n");
+  DBG("Calling initGen with %name \n");
   /*Sets some global variables in LLVM, important program crashes without these
    * lines...*/
   llvm::InitializeNativeTarget();
@@ -108,27 +109,7 @@ void initGen(const char *name) {
   program.reset(new Program(name));
   /*Some functions and aggregate structures need to be declared before codegen*/
   generateInitialRuntimeSignatures();
-  /*
-    TODO: Some strange issues with this approach.
-    Almost works for most tests (Alot of the tests run with it),
-    will not waste more time on it however.
-    If there it is possible to do this and include all these functions we can
-    have inlined calls
-    for example mmc_mk_cons, increasing performance by a fair bit.
-    Maybe generate llvm IR when starting the compiler and move around the JIT so
-    that an eventual JIT always have access to these functions.
-   */
-  // if (false) {
-  //    llvm::SMDiagnostic Err = llvm::SMDiagnostic();
-  //    printf("BEFORE LOADING\n");
-  //    program->module  =
-  //    llvm::parseIRFile("SOME_FILE_PATH_TO_PRECOMPILED_BITCODE/llvm_gen_wrappers.bc"
-  //                                         ,Err
-  //                                         ,program->context);
-  //    if(!program->module) {
-  //      Err.print("llvmParse error",llvm::errs());
-  //    }
-  // }
+
 }
 
 /*
@@ -152,7 +133,7 @@ void startFuncGen(const char *name) {
 
   if (!func) {
     func = std::shared_ptr<Function>(
-        new Function(llvm::make_unique<FunctionPrototype>()));
+        new Function(std::make_unique<FunctionPrototype>()));
     program->functions[name] = func;
   }
   program->currentFunc = func;
@@ -358,7 +339,7 @@ int createFunctionBody(const char *name) {
     llvm::StoreInst *si{program->builder.CreateStore(&a, ai)};
     si->setAlignment(ai->getAlignment());
     program->currentFunc->symTab[a.getName()] =
-        llvm::make_unique<Variable>(ai, false);
+        std::make_unique<Variable>(ai, false);
   }
 
   return 0;
@@ -515,7 +496,7 @@ int allocaInt(const char *name, const bool isVolatile) {
   llvm::AllocaInst *alloci{
       createAllocaInst(name, llvm::Type::getIntNTy(program->context, NBITS_MODELICA_INTEGER))};
   program->currentFunc->symTab[alloci->getName()] =
-      llvm::make_unique<Variable>(alloci, isVolatile);
+      std::make_unique<Variable>(alloci, isVolatile);
   return 0;
 }
 
@@ -523,7 +504,7 @@ int allocaBoolean(const char *name, const bool isVolatile) {
   llvm::AllocaInst *alloci{
       createAllocaInst(name, llvm::Type::getIntNTy(program->context, 1))};
   program->currentFunc->symTab[alloci->getName()] =
-      llvm::make_unique<Variable>(alloci, isVolatile);
+      std::make_unique<Variable>(alloci, isVolatile);
   return 0;
 }
 
@@ -531,7 +512,7 @@ int allocaBoolean(const char *name, const bool isVolatile) {
 int allocaDouble(const char *name, const bool isVolatile) {
   llvm::AllocaInst *alloci{createAllocaInst(name, getLLVMType(MODELICA_REAL))};
   program->currentFunc->symTab[alloci->getName()] =
-      llvm::make_unique<Variable>(alloci, isVolatile);
+      std::make_unique<Variable>(alloci, isVolatile);
   return 0;
 }
 
@@ -543,7 +524,7 @@ int allocaInt8PtrTy(const char *name) {
   llvm::AllocaInst *alloci{
       createAllocaInst(name, getLLVMType(MODELICA_METATYPE))};
   program->currentFunc->symTab[alloci->getName()] =
-      llvm::make_unique<Variable>(alloci, false);
+      std::make_unique<Variable>(alloci, false);
   return 0;
 }
 
@@ -552,7 +533,7 @@ int allocaInt8PtrPtrTy(const char *name) {
   llvm::AllocaInst *alloci{
       createAllocaInst(name, getLLVMType(MODELICA_METATYPE_PTR))};
   program->currentFunc->symTab[alloci->getName()] =
-      llvm::make_unique<Variable>(alloci, false);
+      std::make_unique<Variable>(alloci, false);
   return 0;
 }
 
@@ -1212,7 +1193,7 @@ int createStruct(const char *structName) {
 
   DBG("after call to createAllocaInst\n");
   program->currentFunc->symTab[structName] =
-      llvm::make_unique<Variable>(structAi, false);
+    std::make_unique<Variable>(structAi, false);
   return 0;
 }
 

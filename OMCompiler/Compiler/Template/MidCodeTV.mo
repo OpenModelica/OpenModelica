@@ -37,8 +37,24 @@ uniontype Program
   record PROGRAM
     String name;
     list<Function> functions;
+    list<Record> records;
   end PROGRAM;
 end Program;
+
+uniontype Record
+   " A record in MidCode IR may either be a full definition
+     or a declaration"
+  record RECORD_DEFINITION
+    String name;
+    String definitionPath;
+    list<MidCode.Var> variables;
+  end RECORD_DEFINITION;
+  record RECORD_DECLARATION
+    String definitionPath;
+    String encodedPath;
+    list<String> fieldNames;
+  end RECORD_DECLARATION;
+end Record;
 
 uniontype Var
   record VAR
@@ -91,8 +107,8 @@ end Function;
 uniontype Block
   record BLOCK
   "Basic block.
-  No control flow within block.
-  Can branch or jump on exit, called the block's terminator."
+   No control flow within block.
+   Can branch or jump on exit, called the block's terminator."
     Integer id;
     list<Stmt> stmts;
     Terminator terminator;
