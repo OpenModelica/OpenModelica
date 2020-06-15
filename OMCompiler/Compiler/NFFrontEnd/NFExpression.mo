@@ -4253,7 +4253,7 @@ public
           Type.COMPLEX(cls = node) := Type.arrayElementType(ty);
           cls := InstNode.getClass(node);
           index := Class.lookupComponentIndex(elementName, cls);
-          ty := Type.liftArrayRightList(
+          ty := Type.liftArrayLeftList(
             InstNode.getType(Class.nthComponent(index, cls)),
             Type.arrayDims(ty));
         then
