@@ -619,6 +619,14 @@ protected
   ComponentRef rest_cr;
 algorithm
   binding := matchcontinue (component, cref)
+    // A record field without an explicit binding, evaluate the parent's binding
+    // if it has one and fetch the binding from it instead.
+    case (_, _)
+      algorithm
+        exp := makeRecordFieldBindingFromParent(cref, target);
+      then
+        Binding.CEVAL_BINDING(exp);
+
     // A record component without an explicit binding, create one from its children.
     case (Component.TYPED_COMPONENT(ty = Type.COMPLEX(complexTy = ComplexType.RECORD(rec_node))), _)
       algorithm
@@ -648,14 +656,6 @@ algorithm
         end if;
       then
         binding;
-
-    // A record field without an explicit binding, evaluate the parent's binding
-    // if it has one and fetch the binding from it instead.
-    case (_, _)
-      algorithm
-        exp := makeRecordFieldBindingFromParent(cref, target);
-      then
-        Binding.CEVAL_BINDING(exp);
 
     else NFBinding.EMPTY_BINDING;
   end matchcontinue;
