@@ -282,9 +282,19 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     const char sep[] = ",";
     if(ACTIVE_STREAM(LOG_INIT_HOMOTOPY))
     {
-      sprintf(buffer, "%s_equidistant_global_homotopy.csv", mData->modelFilePrefix);
+      if (omc_flag[FLAG_OUTPUT_PATH]) { /* Add output path to file name */
+        sprintf(buffer, "%s/%s_equidistant_global_homotopy.csv", omc_flagValue[FLAG_OUTPUT_PATH], mData->modelFilePrefix);
+      }
+      else
+      {
+        sprintf(buffer, "%s_equidistant_global_homotopy.csv", mData->modelFilePrefix);
+      }
       infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "The homotopy path will be exported to %s.", buffer);
       pFile = omc_fopen(buffer, "wt");
+      if (pFile == NULL)
+      {
+        throwStreamPrint(threadData, "Could not write to `%s`.", buffer);
+      }
       fprintf(pFile, "\"lambda\"");
       for(i=0; i<mData->nVariablesReal; ++i) {
         fprintf(pFile, "%s\"%s\"", sep, mData->realVarsData[i].info.name);
@@ -293,7 +303,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     }
 #endif
 
-    infoStreamPrint(LOG_INIT_HOMOTOPY, 1, "homotopy process\n---------------------------");
+    infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "homotopy process\n---------------------------");
     for(step=0; step<init_lambda_steps; ++step)
     {
       data->simulationInfo->lambda = ((double)step)/(init_lambda_steps-1);
@@ -326,7 +336,6 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 #endif
     }
     data->simulationInfo->homotopySteps += init_lambda_steps;
-    messageClose(LOG_INIT_HOMOTOPY);
 
 #if !defined(OMC_NO_FILESYSTEM)
     if(ACTIVE_STREAM(LOG_INIT_HOMOTOPY))
