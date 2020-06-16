@@ -18,6 +18,7 @@ bug_3052.mos \
 bug_3536.mos \
 bug_4387.mos \
 bug_4718.mos \
+bug_6001.mos \
 discreteTest01.mos \
 discreteTest02.mos \
 discreteTest03.mos \
