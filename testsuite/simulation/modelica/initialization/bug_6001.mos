@@ -1,0 +1,59 @@
+// name: bug_6001
+// keywords: initialization
+// status: correct
+// cflags:
+// teardown_command: rm -rf initializationTests.bug_6001* _initializationTests.bug_6001* output.log
+
+loadString("
+model M
+  Real level(start = level_start);
+  parameter Real level_start = 1.0;
+initial equation
+  level = level_start;
+equation
+  der(level) = sin(time);
+end M;
+
+model M2
+  Real x;
+  Real level(start = level_start);
+  parameter Real level_start = 1.0;
+initial equation
+  level = level_start;
+equation
+  homotopy(x^2 - 9, x - 9) = 0;
+  der(level) = sin(time);
+end M2;
+
+"); getErrorString();
+
+// override should work the same for models with and without homotopy
+simulate(M, simflags="-override=level_start=1.2"); getErrorString();
+val(level_start); getErrorString();
+
+simulate(M2, simflags="-override=level_start=1.2"); getErrorString();
+val(level_start); getErrorString();
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=level_start=1.2'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.2
+// ""
+// record SimulationResult
+//     resultFile = "M2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'M2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=level_start=1.2'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.2
+// ""
+// endResult
