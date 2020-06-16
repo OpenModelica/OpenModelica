@@ -1147,17 +1147,21 @@ def generateSvg(filename, iconGraphics, includeInvisibleText, warn_duplicates):
         hashName = os.path.join(hashName[:1],hashName)
     hashPath = os.path.join(os.path.dirname(filename),hashName)
     if not os.path.exists(hashPath):
-        dwg.saveas(hashPath)
-    if not os.path.islink(filename):
-        try:
-            os.symlink(hashName, filename)
-        except OSError as e:
-            logger.error('Target file {0} already exists'.format(filename))
-    else:
-        if warn_duplicates:
-            logger.warning('Target file {0} already exists'.format(filename))
+        if os.name == 'nt':
+            dwg.saveas(filename)
         else:
-            logger.error('Target file {0} already exists'.format(filename))
+            dwg.saveas(hashPath)
+    if os.name != 'nt': # no symlink on windows, do nothing as we saved it above
+        if not os.path.islink(filename):
+            try:
+                os.symlink(hashName, filename)
+            except OSError as e:
+                logger.error('Target file {0} already exists'.format(filename))
+        else:
+            if warn_duplicates:
+                logger.warning('Target file {0} already exists'.format(filename))
+            else:
+                logger.error('Target file {0} already exists'.format(filename))
 
     return dwg
 
