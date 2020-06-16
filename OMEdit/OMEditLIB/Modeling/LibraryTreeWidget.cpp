@@ -4097,6 +4097,7 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
   if (pLibraryTreeItem) {
     bool isSystemLibrary = pLibraryTreeItem->isSystemLibrary();
     bool isModelicaLibraryType = pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica ? true : false;
+    bool isOMSimulatorLibraryType = pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS ? true : false;
     bool isTopLevel = pLibraryTreeItem->isTopLevel() ? true : false;
     if (controlModifier && event->key() == Qt::Key_Up && !isSystemLibrary && isModelicaLibraryType && !isTopLevel) {
       moveClassUp();
@@ -4109,9 +4110,11 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
     } else if (controlModifier && event->key() == Qt::Key_C) {
       QApplication::clipboard()->setText(pLibraryTreeItem->getNameStructure());
     } else if (event->key() == Qt::Key_Delete) {
-      if (!isSystemLibrary && isModelicaLibraryType) {
+      if (isTopLevel && isModelicaLibraryType) {
         unloadClass();
-      } else if (!isSystemLibrary && isTopLevel) {
+      } else if (isTopLevel && isOMSimulatorLibraryType) {
+        unloadOMSModel();
+      } else if (isTopLevel) {
         unloadCompositeModelOrTextFile();
       }
     } else if (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return) {
