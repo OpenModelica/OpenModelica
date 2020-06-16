@@ -7640,6 +7640,10 @@ algorithm
     BackendDump.dumpLoops(outSimDAE);
     print("\n" + BackendDump.BORDER + "\n\n Algbraic Loops (Initialization): \n\n" + BackendDump.BORDER + "\n");
     BackendDump.dumpLoops(outInitDAE);
+    if Flags.isSet(Flags.DUMP_LOOPS_VERBOSE) and isSome(outInitDAE_lambda0_option) then
+      print("\n" + BackendDump.BORDER + "\n\n Algbraic Loops (Initialization Lambda=0 (Homotopy)): \n\n" + BackendDump.BORDER + "\n");
+      BackendDump.dumpLoops(Util.getOption(outInitDAE_lambda0_option));
+    end if;
   end if;
   checkBackendDAEWithErrorMsg(outSimDAE);
   return;
