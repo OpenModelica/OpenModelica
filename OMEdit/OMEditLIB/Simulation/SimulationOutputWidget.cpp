@@ -675,8 +675,6 @@ void SimulationOutputWidget::simulationProcessStarted()
  */
 void SimulationOutputWidget::writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat)
 {
-  mpGeneratedFilesTabWidget->setTabEnabled(0, true);
-
   if (textFormat) {
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
     QString escaped = QString(output).toHtmlEscaped();
@@ -696,8 +694,6 @@ void SimulationOutputWidget::writeSimulationOutput(QString output, StringHandler
   } else {
     mpSimulationOutputHandler->parseSimulationOutput(output);
   }
-  /* make the compilation tab the current one */
-  mpGeneratedFilesTabWidget->setCurrentIndex(0);
 }
 
 /*!
@@ -711,6 +707,9 @@ void SimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::E
 {
   Q_UNUSED(exitCode);
   Q_UNUSED(exitStatus);
+  mpGeneratedFilesTabWidget->setTabEnabled(0, true);
+  /* make the output tab the current one */
+  mpGeneratedFilesTabWidget->setCurrentIndex(0);
   mpProgressLabel->setText(tr("Simulation of %1 is finished.").arg(mSimulationOptions.getClassName()));
   mpProgressBar->setValue(mpProgressBar->maximum());
   mpCancelButton->setEnabled(false);

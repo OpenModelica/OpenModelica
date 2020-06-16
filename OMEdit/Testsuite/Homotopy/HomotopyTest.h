@@ -32,27 +32,38 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#ifndef BROWSEMSL_H
-#define BROWSEMSL_H
+#ifndef HOMOTOPYTEST_H
+#define HOMOTOPYTEST_H
 
 #include <QObject>
+#include <QProcess>
 
-class BrowseMSL: public QObject
+class HomotopyTest: public QObject
 {
   Q_OBJECT
-
+private:
+  bool mCompilationFinished;
+  QString mSimulationLogFileName;
 private slots:
   /*!
-   * \brief electricalAnalogBasic
-   * Browses the Modelica.Electrical.Analog.Basic
+   * \brief initTestCase
+   * Loads the HomotopyTest.mo file.
    */
-  void electricalAnalogBasic();
+  void initTestCase();
   /*!
-   * \brief mediaAir
-   * Browses the Modelica.Media.Air
+   * \brief simulateHomotopyTestM1
+   * Simulates the HomotopyTest.M1 model.
    */
-  void mediaAir();
+  void simulateHomotopyTestM1();
+  /*!
+   * \brief simulateHomotopyTestM2
+   * Simulates the HomotopyTest.M2 model.
+   */
+  void simulateHomotopyTestM2();
   void cleanupTestCase();
+public slots:
+  void compilationFinished(int exitCode, QProcess::ExitStatus exitStatus);
+  void simulationFinished(int exitCode, QProcess::ExitStatus exitStatus);
 };
 
-#endif // BROWSEMSL_H
+#endif // HOMOTOPYTEST_H

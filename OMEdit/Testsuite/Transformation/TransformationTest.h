@@ -44,6 +44,7 @@ class TransformationTest: public QObject
 private slots:
   void wrongPlacementAnnotation();
   void correctPlacementAnnotation();
+  void cleanupTestCase();
 };
 
 #endif // TRANSFORMATIONTEST_H

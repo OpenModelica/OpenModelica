@@ -42,7 +42,12 @@ class Diagram: public QObject
   Q_OBJECT
 
 private slots:
+  /*!
+   * \brief chuaCircuit
+   * Browses to Modelica.Electrical.Analog.Examples.ChuaCircuit and loads its diagram view.
+   */
   void chuaCircuit();
+  void cleanupTestCase();
 };
 
 #endif // DIAGRAM_H
