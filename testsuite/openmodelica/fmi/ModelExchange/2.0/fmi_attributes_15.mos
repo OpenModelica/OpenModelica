@@ -7,7 +7,7 @@ loadString("
 model fmi_attributes_15
   Real x(unit = \"kg2\");
   Real y(unit = \"bar\");
-  Real z(unit = \"barr\");
+  Real z(unit = \"xyz\");
 equation
   x=10;
   y=20;
@@ -107,11 +107,13 @@ readFile("fmi_attributes_15_tmp.xml")
 //     </SourceFiles>
 //   </ModelExchange>
 //   <UnitDefinitions>
+//     <Unit name =\"xyz\">
+//     </Unit>
 //     <Unit name =\"bar\">
-//       <BaseUnit m=\"-1\" s=\"-2\" kg=\"1\" factor=\"100000.0\"/>
+//       <BaseUnit  m=\"-1\" s=\"-2\" kg=\"1\" factor=\"100000.0\"/>
 //     </Unit>
 //     <Unit name =\"kg2\">
-//       <BaseUnit kg=\"2\"/>
+//       <BaseUnit  kg=\"2\"/>
 //     </Unit>
 //   </UnitDefinitions>
 //   <LogCategories>
@@ -148,7 +150,7 @@ readFile("fmi_attributes_15_tmp.xml")
 //     name=\"z\"
 //     valueReference=\"2\"
 //     initial=\"exact\">
-//     <Real start=\"0.0\"/>
+//     <Real start=\"0.0\" unit=\"xyz\"/>
 //   </ScalarVariable>
 //   </ModelVariables>
 //   <ModelStructure>
