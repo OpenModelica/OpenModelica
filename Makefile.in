@@ -98,7 +98,7 @@ utf8-iconv:
 
 clean:
 	test ! -d build || rm -r build/
-	for d in @subdirs@ testsuite/difftool testsuite/libs-for-testing; do $(MAKE) -C $$d clean; done
+	for d in @subdirs@ testsuite/difftool testsuite/libraries-for-testing; do $(MAKE) -C $$d clean; done
 
 LIBGITDIRS = `ls -f libraries/git`
 
