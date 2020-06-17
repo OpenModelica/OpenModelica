@@ -228,6 +228,9 @@ uniontype BaseUnit
     Real factor "prefix";
     Real offset "offset";
   end BASEUNIT;
+
+  record NOBASEUNIT "no baseunit definition available"
+  end NOBASEUNIT
 end BaseUnit;
 
 uniontype ModelInfo "Container for metadata about a Modelica model."
