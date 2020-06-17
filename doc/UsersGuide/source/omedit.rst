@@ -1663,3 +1663,21 @@ The users can perform multiple searches and go back to old search results using 
   :name: omedit-search-histroy
 
   Search History
+
+Temporary Directory, Working Directory and Log Files
+----------------------------------------------------
+
+On Unix/Linux systems temporary directory is the path in the `TMPDIR` environment variable
+or `/tmp` if `TMPDIR` is not defined appended with directory paths `OpenModelica<USERNAME>/OMEdit`
+so the complete path is usually `/tmp/OpenModelica<USERNAME>/OMEdit`.
+
+On Windows its the path in the `TEMP` or `TMP` environment variable appended with directory paths
+`OpenModelica/OMEdit` so the complete path is usually `%TEMP%/OpenModelica/OMEdit`.
+
+All the log files are always generated in the temporary directory.
+
+By default the working directory has the same path as the temporary directory. You can change
+the working directory from *Tools > Options > General* see section :ref:`omedit-options-general`.
+
+For each simulation a new directory with the model name is created in the working directory and
+then all the simulation intermediate and results files are generated in it.
