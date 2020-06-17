@@ -6,8 +6,10 @@
 loadString("
 model fmi_attributes_15
   Real x(unit = \"kg2\");
+  Real y(unit = \"bar\");
 equation
   x=10;
+  y=20;
 end fmi_attributes_15;
 "); getErrorString();
 
@@ -103,8 +105,11 @@ readFile("fmi_attributes_15_tmp.xml")
 //     </SourceFiles>
 //   </ModelExchange>
 //   <UnitDefinitions>
+//     <Unit name =\"bar\">
+//       <BaseUnit m=\"-1\" s=\"-2\" kg=\"1\" factor=\"100000.0\"/>
+//     </Unit>
 //     <Unit name =\"kg2\">
-//       <BaseUnit  kg=\"2\"/>
+//       <BaseUnit kg=\"2\"/>
 //     </Unit>
 //   </UnitDefinitions>
 //   <LogCategories>
@@ -120,7 +125,7 @@ readFile("fmi_attributes_15_tmp.xml")
 //     <Category name=\"logAll\" />
 //     <Category name=\"logFmi2Call\" />
 //   </LogCategories>
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-006\"/>
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\"/>
 //   <ModelVariables>
 //   <!-- Index of variable = \"1\" -->
 //   <ScalarVariable
@@ -128,6 +133,13 @@ readFile("fmi_attributes_15_tmp.xml")
 //     valueReference=\"0\"
 //     initial=\"exact\">
 //     <Real start=\"0.0\" unit=\"kg2\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"y\"
+//     valueReference=\"1\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\" unit=\"bar\"/>
 //   </ScalarVariable>
 //   </ModelVariables>
 //   <ModelStructure>
