@@ -685,7 +685,7 @@ match unitDefinition
 case UNITDEFINITION(name = name, baseUnit = baseUnit) then
   <<
   <Unit <%unitDefinitionAttribute(name)%>>
-    <BaseUnit <%baseUnitAttributes(baseUnit)%>/>
+    <BaseUnit<%baseUnitAttributes(baseUnit)%>/>
   </Unit>
   >>
 end UnitDefinitionsHelper1;
