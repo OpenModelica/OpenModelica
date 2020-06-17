@@ -738,7 +738,7 @@ package SimCode
     end BASEUNIT;
 
     record NOBASEUNIT "no baseunit definition available"
-    end NOBASEUNIT
+    end NOBASEUNIT;
   end BaseUnit;
 
   uniontype VarInfo
