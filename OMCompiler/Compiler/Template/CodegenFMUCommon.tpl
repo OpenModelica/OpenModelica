@@ -716,7 +716,7 @@ case (BASEUNIT(mol = mol, cd = cd, m = m, s = s, A = A, K = K, kg = kg, factor =
   <<
   <BaseUnit <%mol_Value%><%cd_Value%><%m_Value%><%s_Value%><%A_Value%><%K_Value%><%kg_Value%><%factor_Value%><%offset_Value%>/>
   >>
-  case (NOBASEUNIT()) then "";
+case (NOBASEUNIT()) then ""
 end baseUnitAttributes;
 
 template fmiTypeDefinitions(SimCode simCode, String FMUVersion)

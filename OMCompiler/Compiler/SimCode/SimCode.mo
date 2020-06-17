@@ -230,7 +230,7 @@ uniontype BaseUnit
   end BASEUNIT;
 
   record NOBASEUNIT "no baseunit definition available"
-  end NOBASEUNIT
+  end NOBASEUNIT;
 end BaseUnit;
 
 uniontype ModelInfo "Container for metadata about a Modelica model."
