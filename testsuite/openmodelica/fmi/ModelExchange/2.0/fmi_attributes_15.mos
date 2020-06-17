@@ -7,9 +7,11 @@ loadString("
 model fmi_attributes_15
   Real x(unit = \"kg2\");
   Real y(unit = \"bar\");
+  Real z(unit = \"barr\");
 equation
   x=10;
   y=20;
+  z=30;
 end fmi_attributes_15;
 "); getErrorString();
 
@@ -140,6 +142,13 @@ readFile("fmi_attributes_15_tmp.xml")
 //     valueReference=\"1\"
 //     initial=\"exact\">
 //     <Real start=\"0.0\" unit=\"bar\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"z\"
+//     valueReference=\"2\"
+//     initial=\"exact\">
+//     <Real start=\"0.0\"/>
 //   </ScalarVariable>
 //   </ModelVariables>
 //   <ModelStructure>
