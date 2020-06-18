@@ -102,21 +102,22 @@ public constant list<tuple<String, Unit>> LU_COMPLEXUNITS = {
 //("var",        UNIT(1e3, 0, 0, 2,-3, 0, 0, 1)), //Var=Watt
   ("Hz",         UNIT(1e0, 0, 0, 0,-1, 0, 0, 0)), //Hertz
   ("Ohm",        UNIT(1e3, 0, 0, 2,-3,-2, 0, 1)), //Ohm
-  ("F",         UNIT(1e-3, 0, 0,-2, 4, 2, 0,-1)), //Farad
+  ("F",          UNIT(1e-3, 0, 0,-2, 4, 2, 0,-1)), //Farad
   ("H",          UNIT(1e3, 0, 0, 2,-2,-2, 0, 1)), //Henry
   ("C",          UNIT(1e0, 0, 0, 0, 1, 1, 0, 0)), //Coulomb
   ("T",          UNIT(1e3, 0, 0, 0,-2,-1, 0, 1)), //Tesla
-  ("S",         UNIT(1e-3, 0, 0,-2, 3, 2, 0,-1)), //Siemens
+  ("S",          UNIT(1e-3, 0, 0,-2, 3, 2, 0,-1)), //Siemens
   ("Wb",         UNIT(1e3, 0, 0, 2,-2,-1, 0, 1)), //Weber
 //("lm",         UNIT(1e0, 0, 1, 0, 0, 0, 0, 0)), //Lumen=Candela
 //("lx",         UNIT(1e0, 0, 1,-2, 0, 0, 0, 0)), //Lux=lm/m^2
   ("N",          UNIT(1e3, 0, 0, 1,-2, 0, 0, 1)), //Newton
   ("Pa",         UNIT(1e3, 0, 0,-1,-2, 0, 0, 1)), //Pascal; displayUnit ="bar"
+  ("bar",        UNIT(1e8, 0, 0,-1,-2, 0, 0, 1)), //bar
   ("J",          UNIT(1e3, 0, 0, 2,-2, 0, 0, 1)), //Joule=N*m
   ("min",        UNIT(6e1, 0, 0, 0, 1, 0, 0, 0)), //Minute
-  ("h",        UNIT(3.6e3, 0, 0, 0, 1, 0, 0, 0)), //Stunde
-  ("d",       UNIT(8.64e4, 0, 0, 0, 1, 0, 0, 0)), //Tag
-  ("l",         UNIT(1e-3, 0, 0, 3, 0, 0, 0, 0)), //Liter
+  ("h",          UNIT(3.6e3, 0, 0, 0, 1, 0, 0, 0)), //Stunde
+  ("d",          UNIT(8.64e4, 0, 0, 0, 1, 0, 0, 0)), //Tag
+  ("l",          UNIT(1e-3, 0, 0, 3, 0, 0, 0, 0)), //Liter
   ("kg",         UNIT(1e3, 0, 0, 0, 0, 0, 0, 1)), //Kilogramm
 //("Bq",         UNIT(1e0, 0, 0, 0,-1, 0, 0, 0)), //Becquerel = Hertz
 //("Gy",         UNIT(1e0, 0, 0, 2,-2, 0, 0, 1)), //Gray
