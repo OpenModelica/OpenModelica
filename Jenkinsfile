@@ -151,7 +151,7 @@ pipeline {
             // It's really bad if we mess up the repo and can no longer build properly
             sh '! git submodule foreach --recursive git diff 2>&1 | grep CRLF'
             // TODO: trailing-whitespace-error tab-error
-            sh "make -f Makefile.in -j${common.numLogicalCPU()} --output-sync bom-error utf8-error thumbsdb-error spellcheck"
+            sh "make -f Makefile.in -j${common.numLogicalCPU()} --output-sync=recurse bom-error utf8-error thumbsdb-error spellcheck"
             sh '''
             cd doc/bibliography
             mkdir -p /tmp/openmodelica.org-bibgen
