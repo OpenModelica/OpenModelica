@@ -3189,6 +3189,12 @@ public
         then
           if referenceEq(exp.recordExp, e1) then exp else RECORD_ELEMENT(e1, exp.index, exp.fieldName, exp.ty);
 
+      case BOX()
+        algorithm
+          (e1, arg) := func(exp.exp, arg);
+        then
+          if referenceEq(exp.exp, e1) then exp else BOX(e1);
+
       case MUTABLE()
         algorithm
           (e1, arg) := func(Mutable.access(exp.exp), arg);
