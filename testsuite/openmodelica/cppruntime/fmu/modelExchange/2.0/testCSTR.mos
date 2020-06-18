@@ -67,41 +67,41 @@ getErrorString();
 //     modelIdentifier=\"CSTRModel\" providesDirectionalDerivative=\"true\">
 //   </ModelExchange>
 //   <UnitDefinitions>
-//     <Unit name =\"s\">
-//       <BaseUnit  s=\"1\"/>
+//     <Unit name=\"s\">
+//       <BaseUnit s=\"1\" />
 //     </Unit>
-//     <Unit name =\"kg/m3\">
-//       <BaseUnit  m=\"-3\" kg=\"1\"/>
+//     <Unit name=\"kg/m3\">
+//       <BaseUnit m=\"-3\" kg=\"1\" />
 //     </Unit>
-//     <Unit name =\"kg\">
-//       <BaseUnit  kg=\"1\"/>
+//     <Unit name=\"kg\">
+//       <BaseUnit kg=\"1\" />
 //     </Unit>
-//     <Unit name =\"W/(m2.K)\">
-//       <BaseUnit  s=\"-3\" K=\"-1\" kg=\"1\"/>
+//     <Unit name=\"W/(m2.K)\">
+//       <BaseUnit s=\"-3\" K=\"-1\" kg=\"1\" />
 //     </Unit>
-//     <Unit name =\"m3\">
-//       <BaseUnit  m=\"3\"/>
+//     <Unit name=\"m3\">
+//       <BaseUnit m=\"3\" />
 //     </Unit>
-//     <Unit name =\"J/mol\">
-//       <BaseUnit  mol=\"-1\" m=\"2\" s=\"-2\" kg=\"1\"/>
+//     <Unit name=\"J/mol\">
+//       <BaseUnit mol=\"-1\" m=\"2\" s=\"-2\" kg=\"1\" />
 //     </Unit>
-//     <Unit name =\"J/(kg.K)\">
-//       <BaseUnit  m=\"2\" s=\"-2\" K=\"-1\"/>
+//     <Unit name=\"J/(kg.K)\">
+//       <BaseUnit m=\"2\" s=\"-2\" K=\"-1\" />
 //     </Unit>
-//     <Unit name =\"m2\">
-//       <BaseUnit  m=\"2\"/>
+//     <Unit name=\"m2\">
+//       <BaseUnit m=\"2\" />
 //     </Unit>
-//     <Unit name =\"1/h\">
-//       <BaseUnit  s=\"-1\" factor=\"0.0002777777777777778\"/>
+//     <Unit name=\"1/h\">
+//       <BaseUnit s=\"-1\" factor=\"0.0002777777777777778\" />
 //     </Unit>
-//     <Unit name =\"kJ/h\">
-//       <BaseUnit  m=\"2\" s=\"-3\" kg=\"1\" factor=\"0.2777777777777779\"/>
+//     <Unit name=\"kJ/h\">
+//       <BaseUnit m=\"2\" s=\"-3\" kg=\"1\" factor=\"0.2777777777777779\" />
 //     </Unit>
-//     <Unit name =\"mol/l\">
-//       <BaseUnit  mol=\"1\" m=\"-3\" factor=\"1000.0\"/>
+//     <Unit name=\"mol/l\">
+//       <BaseUnit mol=\"1\" m=\"-3\" factor=\"1000.0\" />
 //     </Unit>
-//     <Unit name =\"degC\">
-//       <BaseUnit  K=\"1\"/>
+//     <Unit name=\"degC\">
+//       <BaseUnit K=\"1\" />
 //     </Unit>
 //   </UnitDefinitions>
 //   <TypeDefinitions>

@@ -9150,6 +9150,7 @@ algorithm
           unitDefinitions := SimCode.UNITDEFINITION(var.unit, transformUnitToBaseUnit(unit)) :: unitDefinitions;
         else
           // catch the units which are not calculated
+          unitDefinitions := SimCode.UNITDEFINITION(var.unit, SimCode.NOBASEUNIT()) :: unitDefinitions;
         end try;
       end if;
     end if;
