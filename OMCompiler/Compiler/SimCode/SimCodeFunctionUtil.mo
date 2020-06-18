@@ -2222,9 +2222,9 @@ algorithm
       String str, fopenmp;
       list<String> strs1, strs2, strs3, names1, names2, names3;
 
-    // Lapack is always included
-    case Absyn.STRING("lapack") then ({},{});
-    case Absyn.STRING("Lapack") then ({},{});
+    case Absyn.STRING("lapack") then ({"-llapack -lblas"},{});
+    case Absyn.STRING("Lapack") then ({"-llapack -lblas"},{});
+    case Absyn.STRING("openblas") then ({"-lopenblass"},{});
 
     //pthreads is already linked under windows
     case Absyn.STRING("pthread") guard Autoconf.os=="Windows_NT"
