@@ -2522,7 +2522,7 @@ algorithm
             then instCrefComponent(cref, cref.node, found_scope, info);
           case InstNode.CLASS_NODE()
             then if Class.isFunction(InstNode.getClass(cref.node)) then
-                   instCrefFunction(cref, info)
+                   instCrefFunction(cref, found_scope, info)
                  else
                    instCrefTypename(cref, cref.node, info);
           else
@@ -2581,12 +2581,15 @@ end instCrefComponent;
 
 function instCrefFunction
   input ComponentRef cref;
+  input InstNode scope;
   input SourceInfo info;
   output Expression crefExp;
 protected
   ComponentRef fn_ref;
 algorithm
-  fn_ref := Function.instFunctionRef(cref, info);
+  fn_ref := ComponentRef.fromNodeList(InstNode.scopeList(scope, includeRoot = true));
+  fn_ref := ComponentRef.append(cref, fn_ref);
+  fn_ref := Function.instFunctionRef(fn_ref, info);
   crefExp := Expression.CREF(Type.UNKNOWN(), fn_ref);
 end instCrefFunction;
 
