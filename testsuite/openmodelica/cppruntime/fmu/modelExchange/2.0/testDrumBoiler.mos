@@ -28,7 +28,7 @@ readFile("modelDescription.tmp.xml");
 importFMU("DrumBoilerModel.fmu"); getErrorString();
 loadFile("DrumBoilerModel_me_FMU.mo"); getErrorString();
 
-setCommandLineOptions("+simCodeTarget=C"); getErrorString();
+setCommandLineOptions("--simCodeTarget=C"); getErrorString();
 simulate(DrumBoilerModel_me_FMU, stopTime=100.0, simflags="-override=q_F=10,Y_Valve=1"); getErrorString();
 
 // inputs
@@ -68,73 +68,76 @@ val(evaporator_qm_S, 100);
 //   </ModelExchange>
 //   <UnitDefinitions>
 //     <Unit name =\"m/s2\">
-//       <BaseUnit  m=\"1\" s=\"-2\"/>
+//       <BaseUnit m=\"1\" s=\"-2\" />
 //     </Unit>
 //     <Unit name =\"1/K\">
-//       <BaseUnit  K=\"-1\"/>
+//       <BaseUnit K=\"-1\" />
 //     </Unit>
 //     <Unit name =\"s\">
-//       <BaseUnit  s=\"1\"/>
+//       <BaseUnit s=\"1\" />
 //     </Unit>
 //     <Unit name =\"kg/(s.Pa)\">
-//       <BaseUnit  m=\"1\" s=\"1\"/>
+//       <BaseUnit m=\"1\" s=\"1\" />
 //     </Unit>
 //     <Unit name =\"1\">
 //       <BaseUnit />
 //     </Unit>
 //     <Unit name =\"N/mm2\">
-//       <BaseUnit  m=\"-1\" s=\"-2\" kg=\"1\" factor=\"1000000.0\"/>
+//       <BaseUnit m=\"-1\" s=\"-2\" kg=\"1\" factor=\"1000000.0\" />
 //     </Unit>
 //     <Unit name =\"MW\">
-//       <BaseUnit  m=\"2\" s=\"-3\" kg=\"1\" factor=\"1000000.0\"/>
+//       <BaseUnit m=\"2\" s=\"-3\" kg=\"1\" factor=\"1000000.0\" />
+//     </Unit>
+//     <Unit name =\"bar\">
+//       <BaseUnit m=\"-1\" s=\"-2\" kg=\"1\" factor=\"100000.0\" />
 //     </Unit>
 //     <Unit name =\"kg/kg\">
 //       <BaseUnit />
 //     </Unit>
 //     <Unit name =\"degC\">
-//       <BaseUnit  K=\"1\"/>
+//       <BaseUnit K=\"1\" />
 //     </Unit>
 //     <Unit name =\"J/(kg.K)\">
-//       <BaseUnit  m=\"2\" s=\"-2\" K=\"-1\"/>
+//       <BaseUnit m=\"2\" s=\"-2\" K=\"-1\" />
 //     </Unit>
 //     <Unit name =\"kg/mol\">
-//       <BaseUnit  mol=\"-1\" kg=\"1\"/>
+//       <BaseUnit mol=\"-1\" kg=\"1\" />
 //     </Unit>
 //     <Unit name =\"kg/s\">
-//       <BaseUnit  s=\"-1\" kg=\"1\"/>
+//       <BaseUnit s=\"-1\" kg=\"1\" />
 //     </Unit>
 //     <Unit name =\"W\">
-//       <BaseUnit  m=\"2\" s=\"-3\" kg=\"1\"/>
+//       <BaseUnit m=\"2\" s=\"-3\" kg=\"1\" />
 //     </Unit>
 //     <Unit name =\"kg\">
-//       <BaseUnit  kg=\"1\"/>
+//       <BaseUnit kg=\"1\" />
 //     </Unit>
 //     <Unit name =\"J/kg\">
-//       <BaseUnit  m=\"2\" s=\"-2\"/>
+//       <BaseUnit m=\"2\" s=\"-2\" />
 //     </Unit>
 //     <Unit name =\"J\">
-//       <BaseUnit  m=\"2\" s=\"-2\" kg=\"1\"/>
+//       <BaseUnit m=\"2\" s=\"-2\" kg=\"1\" />
 //     </Unit>
 //     <Unit name =\"kg/m3\">
-//       <BaseUnit  m=\"-3\" kg=\"1\"/>
+//       <BaseUnit m=\"-3\" kg=\"1\" />
 //     </Unit>
 //     <Unit name =\"m3/s\">
-//       <BaseUnit  m=\"3\" s=\"-1\"/>
+//       <BaseUnit m=\"3\" s=\"-1\" />
 //     </Unit>
 //     <Unit name =\"K\">
-//       <BaseUnit  K=\"1\"/>
+//       <BaseUnit K=\"1\" />
 //     </Unit>
 //     <Unit name =\"km-1.s-3.g\">
-//       <BaseUnit  m=\"-1\" s=\"-3\" kg=\"1\" factor=\"1e-006\"/>
+//       <BaseUnit m=\"-1\" s=\"-3\" kg=\"1\" factor=\"1e-006\" />
 //     </Unit>
 //     <Unit name =\"m3.s-1\">
-//       <BaseUnit  m=\"3\" s=\"-1\"/>
+//       <BaseUnit m=\"3\" s=\"-1\" />
 //     </Unit>
 //     <Unit name =\"Pa\">
-//       <BaseUnit  m=\"-1\" s=\"-2\" kg=\"1\"/>
+//       <BaseUnit m=\"-1\" s=\"-2\" kg=\"1\" />
 //     </Unit>
 //     <Unit name =\"m3\">
-//       <BaseUnit  m=\"3\"/>
+//       <BaseUnit m=\"3\" />
 //     </Unit>
 //   </UnitDefinitions>
 //   <TypeDefinitions>
