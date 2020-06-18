@@ -314,28 +314,29 @@ View Menu
 Simulation Menu
 ---------------
 
--  *Instantiate Model* - Instantiates the current model.
 -  *Check Model* - Checks the current model.
 -  *Check All Models* - Checks all the models of a library.
+-  *Instantiate Model* - Instantiates the current model.
+-  *Simulation Setup* - Opens the simulation setup window.
+-  *Instantiate SSP Model* - Instantiates the current SSP model.
 -  *Simulate* - Simulates the current model.
 -  *Simulate with Transformational Debugger* - Simulates the current model and
    opens the transformational debugger.
 -  *Simulate with Algorithmic Debugger* - Simulates the current model and
    opens the algorithmic debugger.
 -  *Simulate with Animation* - Simulates the current model and open the animation.
--  *Simulation Setup* - Opens the simulation setup window.
 
-Debugger Menu
--------------
+Debug Menu
+----------
 
 -  *Debug Configurations* - Opens the debug configurations window.
 -  *Attach to Running Process* - Attaches the algorithmic debugger to a running process.
 
-OMSimulator Menu
-----------------
+SSP Menu
+--------
 
--  *New OMSimulator Model* - Creates a new OMSimulator model.
--  *Open OMSimulator Model(s)* - Opens the OMSimulator model(s).
+-  *New SSP Model* - Creates a new SSP model.
+-  *Open SSP Model(s)* - Opens the SSP model(s).
 -  *Add System* - Adds the system to a model.
 -  *Add/Edit Icon* - Add/Edit the system/submodel icon.
 -  *Delete Icon* - Deletes the system/submodel icon.
@@ -343,9 +344,11 @@ OMSimulator Menu
 -  *Add Bus* - Adds a bus to a system/submodel.
 -  *Add TLM Bus* - Adds a TLM bus to a system/submodel.
 -  *Add SubModel* - Adds a submodel to a system.
--  *Instantiate Model* - Instantiates the model.
--  *Simulate* - Simulates the model.
--  *Archived Simulations* - Opens the archived simulations window.
+
+Sensitivity Optimization Menu
+-----------------------------
+
+- *Run Sensitivity Analysis and Optimization* - Runs the sensitivity analysis and optimization.
 
 Tools Menu
 ----------
@@ -1015,39 +1018,34 @@ General
      for the non-encrypted libraries. Access annotations are always active
      for encrypted libraries.
 
+  -  *Create a model.bak-mo backup file when deleting a model*
+
 -  Libraries Browser
 
   -  *Library Icon Size* – Sets the size for library icons.
 
+  -  *Max. Library Icon Text Length to Show* – Sets the maximum text length that can be shown
+     in the icon in Libraries Browser.
+
   -  *Show Protected Classes* – If enabled then Libraries Browser will also list the protected classes.
 
--  Modeling View Mode
+  -  *Show Hidden Classes* – If enabled then Libraries Browser will also list the hidden classes.
+     Ignores the annotation(Protection(access = Access.hide))
 
-  -  *Tabbed View/SubWindow View* – Sets the view mode for modeling.
+-  Enable Auto Save - Enables/disables the auto save feature.
 
--  Default View
-
-  -  *Icon View/DiagramView/Modelica Text View/Documentation View* – If no
-     preferredView annotation is defined then this setting is used to show
-     the respective view when user double clicks on the class in the
-     Libraries Browser.
-
--  Enable Auto Save
-
-  -  *Auto Save interval* – Sets the auto save interval value. The minimum
-     possible interval value is 60 seconds.
-
-  -  *Enable Auto Save for single classes* – Enables the auto save for one
-     class saved in one file.
-
-  -  *Enable Auto Save for one file packages* – Enables the auto save for
-     packages saved in one file.
+-  *Auto Save interval* – Sets the auto save interval value. The minimum
+   possible interval value is 60 seconds.
 
 -  Welcome Page
 
   -  *Horizontal View/Vertical View* – Sets the view mode for welcome page.
 
-  -  *Show Latest News –* if true then displays the latest news.
+  -  *Show Latest News* - If enabled then the latest news from https://openmodelica.org/ are shown.
+
+-  Optional Features
+
+  -  *Enable replaceable support* - Enables/disables the replaceable support.
 
 Libraries
 ~~~~~~~~~
@@ -1097,7 +1095,7 @@ Text Editor
 
 -  Autocomplete
 
-  -  *Enable Autocomplete* – Enable/Disable the autocomplete.
+  -  *Enable Autocomplete* – Enables/Disables the autocomplete.
 
 -  Font
 
@@ -1141,8 +1139,30 @@ CompositeModel Editor
 
   -  *Preview* – Shows the demo of the syntax highlighting.
 
+SSP Editor
+~~~~~~~~~~
+
+-  Colors
+
+  -  *Items* – List of categories used of syntax highlighting the code.
+
+  -  *Item Color* – Sets the color for the selected item.
+
+  -  *Preview* – Shows the demo of the syntax highlighting.
+
 C/C++ Editor
 ~~~~~~~~~~~~
+
+-  Colors
+
+  -  *Items* – List of categories used of syntax highlighting the code.
+
+  -  *Item Color* – Sets the color for the selected item.
+
+  -  *Preview* – Shows the demo of the syntax highlighting.
+
+HTML Editor
+~~~~~~~~~~~
 
 -  Colors
 
@@ -1155,29 +1175,48 @@ C/C++ Editor
 Graphical Views
 ~~~~~~~~~~~~~~~
 
--  Extent
+- General
 
-  -  *Left* – Defines the left extent point for the view.
+  -  Modeling View Mode
 
-  -  *Bottom* – Defines the bottom extent point for the view.
+    -  *Tabbed View/SubWindow View* – Sets the view mode for modeling.
 
-  -  *Right* – Defines the right extent point for the view.
+  -  Default View
 
-  -  *Top* – Defines the top extent point for the view.
+    -  *Icon View/DiagramView/Modelica Text View/Documentation View* – If no
+       preferredView annotation is defined then this setting is used to show
+       the respective view when user double clicks on the class in the
+       Libraries Browser.
 
--  Grid
+  -  *Move connectors together on both icon and diagram layers*
 
-  -  *Horizontal* – Defines the horizontal size of the view grid.
+- Graphics
 
-  -  *Vertical* – Defines the vertical size of the view grid.
+  - Icon/Diagram View
 
--  Component
+    -  Extent
 
-  -  *Scale factor* – Defines the initial scale factor for the component
-     dragged on the view.
+      -  *Left* – Defines the left extent point for the view.
 
-  -  *Preserve aspect ratio* – If true then the component’s aspect ratio
-     is preserved while scaling.
+      -  *Bottom* – Defines the bottom extent point for the view.
+
+      -  *Right* – Defines the right extent point for the view.
+
+      -  *Top* – Defines the top extent point for the view.
+
+    -  Grid
+
+      -  *Horizontal* – Defines the horizontal size of the view grid.
+
+      -  *Vertical* – Defines the vertical size of the view grid.
+
+    -  Component
+
+      -  *Scale factor* – Defines the initial scale factor for the component
+         dragged on the view.
+
+      -  *Preserve aspect ratio* – If true then the component’s aspect ratio
+         is preserved while scaling.
 
 .. _omedit-options-simulation :
 
@@ -1208,7 +1247,9 @@ Simulation
 
     -  *Enable parallelization of independent systems of equations (Experimental)*
 
-    -  *Enable experimental new instantiation phase*
+    -  *Enable old frontend for code generation*
+
+    -  *Enable data reconciliation*
 
     -  *Additional Translation Flags* – sets the translation flags see :ref:`omcflags-options`
 
@@ -1226,8 +1267,12 @@ Simulation
   -  *Ignore __OpenModelica_simulationFlags annotation* – if true then ignores the __OpenModelica_simulationFlags
      annotation while running the simulation.
 
-  -  *Save class before simulation* – if true then always saves the class
-     before running the simulation.
+  -  *Enable new frontend use in OMC API (faster GUI response)* - if true then uses the new frontend in OMC API calls.
+
+  -  *Display errors/warnings when instantiating the graphical annotations* - if true then the errors/warnings
+     are shown when using OMC API for graphical annotations.
+
+  -  *Save class before simulation* – if true then always saves the class before running the simulation.
 
   -  *Switch to plotting perspective after simulation* – if true then GUI always switches to plotting
      perspective after the simulation.
@@ -1244,11 +1289,12 @@ Simulation
 
   -  Output
 
-    -  *Structured –* Shows the simulation output in the form of tree
-       structure.
+    -  *Structured* - Shows the simulation output in the form of tree structure.
 
-    -  *Formatted Text –* Shows the simulation output in the form of
-       formatted text.
+    -  *Formatted Text* - Shows the simulation output in the form of formatted text.
+
+    -  *Display Limit* - Sets the display limit for simulation output. A link to log file is shown
+       once the limit is reached.
 
 .. _omedit-options-messages :
 
@@ -1263,6 +1309,9 @@ Messages
 
   -  *Reset messages number before simulation* – Resets the messages
      counter before starting the simulation.
+
+  -  *Clear messages browser before checking, instantiation & simulation* – If enabled then the
+     messages browser is cleared before checking, instantiation & simulation of model.
 
 -  Font and Colors
 
@@ -1281,30 +1330,35 @@ Notifications
 
 -  Notifications
 
-  -  *Always quit without prompt* – If true then OMEdit will quit without
-     prompting the user.
+  -  *Always quit without prompt* – If true then OMEdit will quit without prompting the user.
 
   -  *Show item dropped on itself message* – If true then a message will
      pop-up when a class is dragged and dropped on itself.
 
-  -  *Show model is defined as partial and component will be added as
-     replaceable message* – If true then a message will pop-up when a
-     partial class is added to another class.
+  -  *Show model is partial and component is added as replaceable message* – If true then a
+     message will pop-up when a partial class is added to another class.
 
   -  *Show component is declared as inner message* – If true then a
-     message will pop-up when an inner component is added to another
-     class.
+     message will pop-up when an inner component is added to another class.
 
-  -  *Show save model for bitmap insertion message* – If true then a
-     message will pop-up when user tries to insert a bitmap from a local
-     directory to an unsaved class.
+  -  *Show save model for bitmap insertion message* – If true then a message will pop-up
+     when user tries to insert a bitmap from a local directory to an unsaved class.
 
-  -  *Always ask for the dragged component name* – If true then a
-     message will pop-up when user drag & drop the component on the
-     graphical view.
+  -  *Always ask for the dragged component name* – If true then a message will pop-up when
+     user drag & drop the component on the graphical view.
 
   -  *Always ask for what to do with the text editor error* – If true then a
      message will always pop-up when there is an error in the text editor.
+
+  -  If new frontend for code generation fails
+
+    -  *Always ask for old frontend*
+
+    -  *Try with old frontend once*
+
+    -  *Switch to old frontend permanently*
+
+    -  *Keep using new frontend*
 
 Line Style
 ~~~~~~~~~~
@@ -1351,10 +1405,26 @@ Plotting
 
   -  *Thickness* – Sets the curve thickness.
 
-Variable filter
+-  Variable filter
 
   - *Filter Interval* - Delay in filtering the variables. Set the value to 0
     if you don't want any delay.
+
+-  Font Size - sets the font size for plot window items
+
+  - *Title*
+
+  - *Vertical Axis Title*
+
+  - *Vertical Axis Numbers*
+
+  - *Horizontal Axis Title*
+
+  - *Horizontal Axis Numbers*
+
+  - *Footer*
+
+  - *Legend*
 
 Figaro
 ~~~~~~
@@ -1385,11 +1455,9 @@ Debugger
   -  *Display unknown frames* – if true then shows the unknown stack
      frames. Unknown stack frames means frames whose file path is unknown.
 
-  -  *Clear old output on a new run* – if true then clears the output
-     window on new run.
+  -  *Clear old output on a new run* – if true then clears the output window on new run.
 
-  -  *Clear old log on new run* – if true then clears the log window on
-     new run.
+  -  *Clear old log on new run* – if true then clears the log window on new run.
 
 -  Transformational Debugger
 
@@ -1423,13 +1491,19 @@ FMI
 
   -  *FMU Name* – Sets a prefix for generated FMU file.
 
-  -  Platforms - list of platforms to generate FMU binaries.
+  -  *Move FMU* – Moves the generated FMU to a specified path.
+
+  -  *Platforms* - list of platforms to generate FMU binaries.
+
+  -  *Model Description Filters* - Sets the variable filter for model description file.
+
+  -  *Include Source Code* - Sets if the exported FMU can contain source code.
+     Model Description Filter \"blackBox\" will override this, because black box FMUs do never contain their source code.
 
 -  Import
 
   -  *Delete FMU directory and generated model when OMEdit is closed* - If true
-     then the temporary FMU directory that is created for importing the FMU
-     will be deleted.
+     then the temporary FMU directory that is created for importing the FMU will be deleted.
 
 OMTLMSimulator
 ~~~~~~~~~~~~~~
@@ -1442,13 +1516,12 @@ OMTLMSimulator
 
   -  *Monitor Process* - path to OMTLMSimulator monitor process.
 
-OMSimulator
-~~~~~~~~~~~
+OMSimulator/SSP
+~~~~~~~~~~~~~~~
 
 -  General
 
-  -  *Working Directory* - working directory for OMSimulator files.
-
+  -  *Command Line Options* - sets the OMSimulator command line options.
   -  *Logging Level* - OMSimulator logging level.
 
 __OpenModelica_commandLineOptions Annotation
