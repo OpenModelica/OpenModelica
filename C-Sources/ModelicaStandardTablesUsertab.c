@@ -1,6 +1,6 @@
 /* ModelicaStandardTablesUsertab.c - A dummy usertab function
 
-   Copyright (C) 2013-2019, Modelica Association and contributors
+   Copyright (C) 2013-2020, Modelica Association and contributors
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@
 #include "ModelicaUtilities.h"
 
 #if defined(DUMMY_FUNCTION_USERTAB)
-#if (defined(__clang__) || defined(__GNUC__)) && !(defined(__apple_build_version__) || defined(__MINGW32__) || defined(__MINGW64__) || defined(__CYGWIN__))
+#if (defined(__clang__) || defined(__GNUC__)) && !(defined(__apple_build_version__) || defined(__APPLE__) || defined(__MINGW32__) || defined(__MINGW64__) || defined(__CYGWIN__))
 int usertab(char* tableName, int nipo, int dim[], int* colWise,
             double** table) __attribute__ ((weak, alias ("dummy_usertab")));
 #define USERTAB_NAME dummy_usertab

@@ -1,6 +1,6 @@
 /* ModelicaFFT.h - FFT functions header
 
-   Copyright (C) 2015-2019, Modelica Association and contributors
+   Copyright (C) 2015-2020, Modelica Association and contributors
    Copyright (C) 2003-2010, Mark Borgerding
    All rights reserved.
 
@@ -56,12 +56,15 @@
  *
  * The following macros handle nonnull attributes for GNU C and Microsoft SAL.
  */
+#undef MODELICA_NONNULLATTR
 #if defined(__GNUC__)
 #define MODELICA_NONNULLATTR __attribute__((nonnull))
 #else
 #define MODELICA_NONNULLATTR
 #endif
 #if !defined(__ATTR_SAL)
+#undef _In_
+#undef _Out_
 #define _In_
 #define _Out_
 #endif

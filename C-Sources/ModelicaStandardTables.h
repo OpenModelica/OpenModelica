@@ -1,6 +1,6 @@
 /* ModelicaStandardTables.h - External table functions header
 
-   Copyright (C) 2008-2019, Modelica Association and contributors
+   Copyright (C) 2008-2020, Modelica Association and contributors
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,7 @@
    DEBUG_TIME_EVENTS     : Trace time events of CombiTimeTable
    DUMMY_FUNCTION_USERTAB: Use a dummy function "usertab"
 
-   Release Notes:
+   Changelog:
       Aug. 03, 2019: by Thomas Beutlich
                      Added second derivatives (ticket #2901)
 
@@ -112,12 +112,16 @@
  *
  * The following macros handle nonnull attributes for GNU C and Microsoft SAL.
  */
+#undef MODELICA_NONNULLATTR
 #if defined(__GNUC__)
 #define MODELICA_NONNULLATTR __attribute__((nonnull))
 #else
 #define MODELICA_NONNULLATTR
 #endif
 #if !defined(__ATTR_SAL)
+#undef _In_
+#undef _In_z_
+#undef _Inout_
 #define _In_
 #define _In_z_
 #define _Inout_

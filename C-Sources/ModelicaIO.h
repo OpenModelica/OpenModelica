@@ -1,6 +1,6 @@
 /* ModelicaIO.h - Array I/O functions header
 
-   Copyright (C) 2016-2019, Modelica Association and contributors
+   Copyright (C) 2016-2020, Modelica Association and contributors
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@
                     - "__declspec(dllexport)" if included in a DLL and the
                       functions shall be visible outside of the DLL
 
-   Release Notes:
+   Changelog:
       Mar. 08, 2017: by Thomas Beutlich, ESI ITI GmbH
                      Added ModelicaIO_readRealTable from ModelicaStandardTables
                      (ticket #2192)
@@ -66,12 +66,17 @@
  *
  * The following macros handle nonnull attributes for GNU C and Microsoft SAL.
  */
+#undef MODELICA_NONNULLATTR
 #if defined(__GNUC__)
 #define MODELICA_NONNULLATTR __attribute__((nonnull))
 #else
 #define MODELICA_NONNULLATTR
 #endif
 #if !defined(__ATTR_SAL)
+#undef _In_
+#undef _In_z_
+#undef _Inout_
+#undef _Out_
 #define _In_
 #define _In_z_
 #define _Inout_

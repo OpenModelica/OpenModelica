@@ -1,6 +1,6 @@
 /* ModelicaFFT.c - FFT functions
 
-   Copyright (C) 2015-2019, Modelica Association and contributors
+   Copyright (C) 2015-2020, Modelica Association and contributors
    Copyright (C) 2003-2010, Mark Borgerding
    All rights reserved.
 
@@ -32,7 +32,7 @@
 
 /* Adapted to the needs of the Modelica Standard Library:
 
-   Release Notes:
+   Changelog:
       Dec. 02, 2015: by Martin Otter, DLR
                      Combined the C- and Header files of Kiss-FFT as needed for MSL
                      Adapted the memory allocation scheme so that for exponents of 2,3,5

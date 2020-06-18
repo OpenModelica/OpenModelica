@@ -1,6 +1,6 @@
 /* ModelicaMatIO.h - MAT file I/O functions header
 
-   Copyright (C) 2013-2019, Modelica Association and contributors
+   Copyright (C) 2013-2020, Modelica Association and contributors
    Copyright (C) 2005-2013, Christopher C. Hulbert
    All rights reserved.
 
@@ -54,20 +54,20 @@
 #define MATIO_MINOR_VERSION 5
 
 /* Matio release level number */
-#define MATIO_RELEASE_LEVEL 15
+#define MATIO_RELEASE_LEVEL 17
 
 /* Matio version number */
-#define MATIO_VERSION 1515
+#define MATIO_VERSION 1517
 
 /* Matio version string */
-#define MATIO_VERSION_STR "1.5.15"
+#define MATIO_VERSION_STR "1.5.17"
 
 /* Default file format */
 #define MAT_FT_DEFAULT MAT_FT_MAT5
 
 /* Have MAT int64 / uint64 */
 #if defined(_WIN32)
-#if defined(__WATCOMC__) || defined(__MINGW32__) || defined(__CYGWIN__)
+#if defined(__WATCOMC__) || defined(__MINGW32__) || defined(__CYGWIN__) || defined(__BORLANDC__)
 #define HAVE_MATIO_INT64_T 1
 #define HAVE_MATIO_UINT64_T 1
 #elif defined(_MSC_VER) && _MSC_VER > 1300
@@ -103,6 +103,12 @@
 /* Include integer type header */
 #if defined(HAVE_MATIO_STDINT_H)
 #include <stdint.h>
+#elif defined(_MSC_VER)
+#define HAVE_MATIO_STDINT_H 1
+#include "stdint_msvc.h"
+#endif
+
+#if defined(HAVE_MATIO_STDINT_H)
 typedef int16_t mat_int16_t;
 typedef int32_t mat_int32_t;
 typedef int64_t mat_int64_t;
@@ -115,7 +121,7 @@ typedef uint8_t mat_uint8_t;
 #define mat_int16_t short
 #define mat_int32_t int
 #if defined(HAVE_MATIO_INT64_T)
-#if defined(_MSC_VER) && _MSC_VER < 1300
+#if defined(__BORLANDC__) || (defined(_MSC_VER) && _MSC_VER < 1300)
 #define mat_int64_t __int64
 #else
 #define mat_int64_t long long
@@ -125,7 +131,7 @@ typedef uint8_t mat_uint8_t;
 #define mat_uint16_t unsigned short
 #define mat_uint32_t unsigned
 #if defined(HAVE_MATIO_UINT64_T)
-#if defined(_MSC_VER) && _MSC_VER < 1300
+#if defined(__BORLANDC__) || (defined(_MSC_VER) && _MSC_VER < 1300)
 #define mat_uint64_t unsigned __int64
 #else
 #define mat_uint64_t unsigned long long

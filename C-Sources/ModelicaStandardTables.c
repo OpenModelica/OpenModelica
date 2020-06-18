@@ -1,6 +1,6 @@
 /* ModelicaStandardTables.c - External table functions
 
-   Copyright (C) 2013-2019, Modelica Association and contributors
+   Copyright (C) 2013-2020, Modelica Association and contributors
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -33,11 +33,19 @@
    in the Modelica Standard Library:
 
       Modelica.Blocks.Sources.CombiTimeTable
-      Modelica.Blocks.Tables.CombiTable1D
       Modelica.Blocks.Tables.CombiTable1Ds
-      Modelica.Blocks.Tables.CombiTable2D
+      Modelica.Blocks.Tables.CombiTable1Dv
+      Modelica.Blocks.Tables.CombiTable2Ds
+      Modelica.Blocks.Tables.CombiTable2Dv
 
-   Release Notes:
+   Changelog:
+      May 27, 2020:  by Thomas Beutlich
+                     Fixed invalid memory access in error messages of
+                     isValidCombiTimeTable and isValidCombiTable1D (ticket #3562)
+
+      Nov. 01, 2019: by Thomas Beutlich
+                     Added univariate Makima-spline interpolation (ticket #1039)
+
       Aug. 03, 2019: by Thomas Beutlich
                      Added second derivatives (ticket #2901)
 
@@ -186,6 +194,7 @@ enum Smoothness {
     CONSTANT_SEGMENTS,
     FRITSCH_BUTLAND_MONOTONE_C1,
     STEFFEN_MONOTONE_C1,
+    MAKIMA_C1,
     AKIMA_C1 = CONTINUOUS_DERIVATIVE
 };
 
@@ -249,7 +258,7 @@ typedef struct CombiTimeTable {
     double startTime; /* Start time of inter-/extrapolation */
     double shiftTime; /* Shift time of first table column */
     CubicHermite1D* spline; /* Pre-calculated cubic Hermite spline coefficients,
-        only used if smoothness is AKIMA_C1 or
+        only used if smoothness is AKIMA_C1 or MAKIMA_C1 or
         FRITSCH_BUTLAND_MONOTONE_C1 or STEFFEN_MONOTONE_C1 */
     size_t nEvent; /* Time event counter, discrete */
     double preNextTimeEvent; /* Time of previous time event, discrete */
@@ -276,7 +285,7 @@ typedef struct CombiTable1D {
     int* cols; /* Columns of table to be interpolated */
     size_t nCols; /* Number of columns of table to be interpolated */
     CubicHermite1D* spline; /* Pre-calculated cubic Hermite spline coefficients,
-        only used if smoothness is AKIMA_C1 or
+        only used if smoothness is AKIMA_C1 or MAKIMA_C1 or
         FRITSCH_BUTLAND_MONOTONE_C1 or STEFFEN_MONOTONE_C1 */
 } CombiTable1D;
 
@@ -530,6 +539,15 @@ static CubicHermite1D* akimaSpline1DInit(_In_ const double* table, size_t nRow,
      <- RETURN: Pointer to array of coefficients
   */
 
+static CubicHermite1D* makimaSpline1DInit(_In_ const double* table, size_t nRow,
+                                         size_t nCol, _In_ const int* cols,
+                                         size_t nCols) MODELICA_NONNULLATTR;
+  /* Calculate the coefficients for univariate cubic Hermite spline
+     interpolation with the modified Akima slope approximation
+
+     <- RETURN: Pointer to array of coefficients
+  */
+
 static CubicHermite1D* fritschButlandSpline1DInit(_In_ const double* table,
                                                   size_t nRow, size_t nCol,
                                                   _In_ const int* cols,
@@ -753,6 +771,7 @@ void* ModelicaStandardTables_CombiTimeTable_init2(_In_z_ const char* fileName,
 
     if (tableID->nRow <= 2) {
         if (tableID->smoothness == AKIMA_C1 ||
+            tableID->smoothness == MAKIMA_C1 ||
             tableID->smoothness == FRITSCH_BUTLAND_MONOTONE_C1 ||
             tableID->smoothness == STEFFEN_MONOTONE_C1) {
             tableID->smoothness = LINEAR_SEGMENTS;
@@ -761,6 +780,11 @@ void* ModelicaStandardTables_CombiTimeTable_init2(_In_z_ const char* fileName,
     /* Initialization of the cubic Hermite spline coefficients */
     if (tableID->smoothness == AKIMA_C1) {
         tableID->spline = akimaSpline1DInit(
+            (const double*)tableID->table, tableID->nRow,
+            tableID->nCol, (const int*)tableID->cols, tableID->nCols);
+    }
+    else if (tableID->smoothness == MAKIMA_C1) {
+        tableID->spline = makimaSpline1DInit(
             (const double*)tableID->table, tableID->nRow,
             tableID->nCol, (const int*)tableID->cols, tableID->nCols);
     }
@@ -775,6 +799,7 @@ void* ModelicaStandardTables_CombiTimeTable_init2(_In_z_ const char* fileName,
             tableID->nCol, (const int*)tableID->cols, tableID->nCols);
     }
     if (tableID->smoothness == AKIMA_C1 ||
+        tableID->smoothness == MAKIMA_C1 ||
         tableID->smoothness == FRITSCH_BUTLAND_MONOTONE_C1 ||
         tableID->smoothness == STEFFEN_MONOTONE_C1) {
         if (NULL == tableID->spline) {
@@ -1023,6 +1048,7 @@ double ModelicaStandardTables_CombiTimeTable_getValue(void* _tableID, int iCol,
                             break;
 
                         case AKIMA_C1:
+                        case MAKIMA_C1:
                         case FRITSCH_BUTLAND_MONOTONE_C1:
                         case STEFFEN_MONOTONE_C1:
                             if (NULL != tableID->spline) {
@@ -1061,6 +1087,7 @@ double ModelicaStandardTables_CombiTimeTable_getValue(void* _tableID, int iCol,
                                 }
 
                                 case AKIMA_C1:
+                                case MAKIMA_C1:
                                 case FRITSCH_BUTLAND_MONOTONE_C1:
                                 case STEFFEN_MONOTONE_C1:
                                     if (NULL != tableID->spline) {
@@ -1284,6 +1311,7 @@ double ModelicaStandardTables_CombiTimeTable_getDerValue(void* _tableID, int iCo
                             break;
 
                         case AKIMA_C1:
+                        case MAKIMA_C1:
                         case FRITSCH_BUTLAND_MONOTONE_C1:
                         case STEFFEN_MONOTONE_C1:
                             if (NULL != tableID->spline) {
@@ -1318,6 +1346,7 @@ double ModelicaStandardTables_CombiTimeTable_getDerValue(void* _tableID, int iCo
                                 }
 
                                 case AKIMA_C1:
+                                case MAKIMA_C1:
                                 case FRITSCH_BUTLAND_MONOTONE_C1:
                                 case STEFFEN_MONOTONE_C1:
                                     if (NULL != tableID->spline) {
@@ -1541,6 +1570,7 @@ double ModelicaStandardTables_CombiTimeTable_getDer2Value(void* _tableID, int iC
                             break;
 
                         case AKIMA_C1:
+                        case MAKIMA_C1:
                         case FRITSCH_BUTLAND_MONOTONE_C1:
                         case STEFFEN_MONOTONE_C1:
                             if (NULL != tableID->spline) {
@@ -1576,6 +1606,7 @@ double ModelicaStandardTables_CombiTimeTable_getDer2Value(void* _tableID, int iC
                                 }
 
                                 case AKIMA_C1:
+                                case MAKIMA_C1:
                                 case FRITSCH_BUTLAND_MONOTONE_C1:
                                 case STEFFEN_MONOTONE_C1:
                                     if (NULL != tableID->spline) {
@@ -1798,6 +1829,7 @@ double ModelicaStandardTables_CombiTimeTable_nextTimeEvent(void* _tableID,
                     iEnd = 0;
                 }
                 else if (tableID->smoothness == AKIMA_C1 ||
+                    tableID->smoothness == MAKIMA_C1 ||
                     tableID->smoothness == FRITSCH_BUTLAND_MONOTONE_C1 ||
                     tableID->smoothness == STEFFEN_MONOTONE_C1) {
                     iStart = nRow - 1;
@@ -1959,6 +1991,7 @@ double ModelicaStandardTables_CombiTimeTable_read(void* _tableID, int force,
             }
             if (tableID->nRow <= 2) {
                 if (tableID->smoothness == AKIMA_C1 ||
+                    tableID->smoothness == MAKIMA_C1 ||
                     tableID->smoothness == FRITSCH_BUTLAND_MONOTONE_C1 ||
                     tableID->smoothness == STEFFEN_MONOTONE_C1) {
                     tableID->smoothness = LINEAR_SEGMENTS;
@@ -1968,6 +2001,12 @@ double ModelicaStandardTables_CombiTimeTable_read(void* _tableID, int force,
             if (tableID->smoothness == AKIMA_C1) {
                 spline1DClose(&tableID->spline);
                 tableID->spline = akimaSpline1DInit(
+                    (const double*)tableID->table, tableID->nRow,
+                    tableID->nCol, (const int*)tableID->cols, tableID->nCols);
+            }
+            else if (tableID->smoothness == MAKIMA_C1) {
+                spline1DClose(&tableID->spline);
+                tableID->spline = makimaSpline1DInit(
                     (const double*)tableID->table, tableID->nRow,
                     tableID->nCol, (const int*)tableID->cols, tableID->nCols);
             }
@@ -1984,6 +2023,7 @@ double ModelicaStandardTables_CombiTimeTable_read(void* _tableID, int force,
                     tableID->nCol, (const int*)tableID->cols, tableID->nCols);
             }
             if (tableID->smoothness == AKIMA_C1 ||
+                tableID->smoothness == MAKIMA_C1 ||
                 tableID->smoothness == FRITSCH_BUTLAND_MONOTONE_C1 ||
                 tableID->smoothness == STEFFEN_MONOTONE_C1) {
                 if (NULL == tableID->spline) {
@@ -2169,6 +2209,7 @@ void* ModelicaStandardTables_CombiTable1D_init2(_In_z_ const char* fileName,
 
     if (tableID->nRow <= 2) {
         if (tableID->smoothness == AKIMA_C1 ||
+            tableID->smoothness == MAKIMA_C1 ||
             tableID->smoothness == FRITSCH_BUTLAND_MONOTONE_C1 ||
             tableID->smoothness == STEFFEN_MONOTONE_C1) {
             tableID->smoothness = LINEAR_SEGMENTS;
@@ -2177,6 +2218,11 @@ void* ModelicaStandardTables_CombiTable1D_init2(_In_z_ const char* fileName,
     /* Initialization of the cubic Hermite spline coefficients */
     if (tableID->smoothness == AKIMA_C1) {
         tableID->spline = akimaSpline1DInit(
+            (const double*)tableID->table, tableID->nRow,
+            tableID->nCol, (const int*)tableID->cols, tableID->nCols);
+    }
+    else if (tableID->smoothness == MAKIMA_C1) {
+        tableID->spline = makimaSpline1DInit(
             (const double*)tableID->table, tableID->nRow,
             tableID->nCol, (const int*)tableID->cols, tableID->nCols);
     }
@@ -2191,6 +2237,7 @@ void* ModelicaStandardTables_CombiTable1D_init2(_In_z_ const char* fileName,
             tableID->nCol, (const int*)tableID->cols, tableID->nCols);
     }
     if (tableID->smoothness == AKIMA_C1 ||
+        tableID->smoothness == MAKIMA_C1 ||
         tableID->smoothness == FRITSCH_BUTLAND_MONOTONE_C1 ||
         tableID->smoothness == STEFFEN_MONOTONE_C1) {
         if (NULL == tableID->spline) {
@@ -2319,6 +2366,7 @@ double ModelicaStandardTables_CombiTable1D_getValue(void* _tableID, int iCol,
                         break;
 
                     case AKIMA_C1:
+                    case MAKIMA_C1:
                     case FRITSCH_BUTLAND_MONOTONE_C1:
                     case STEFFEN_MONOTONE_C1:
                         if (NULL != tableID->spline) {
@@ -2351,6 +2399,7 @@ double ModelicaStandardTables_CombiTable1D_getValue(void* _tableID, int iCol,
                             }
 
                             case AKIMA_C1:
+                            case MAKIMA_C1:
                             case FRITSCH_BUTLAND_MONOTONE_C1:
                             case STEFFEN_MONOTONE_C1:
                                 if (NULL != tableID->spline) {
@@ -2460,6 +2509,7 @@ double ModelicaStandardTables_CombiTable1D_getDerValue(void* _tableID, int iCol,
                         break;
 
                     case AKIMA_C1:
+                    case MAKIMA_C1:
                     case FRITSCH_BUTLAND_MONOTONE_C1:
                     case STEFFEN_MONOTONE_C1:
                         if (NULL != tableID->spline) {
@@ -2491,6 +2541,7 @@ double ModelicaStandardTables_CombiTable1D_getDerValue(void* _tableID, int iCol,
                             }
 
                             case AKIMA_C1:
+                            case MAKIMA_C1:
                             case FRITSCH_BUTLAND_MONOTONE_C1:
                             case STEFFEN_MONOTONE_C1:
                                 if (NULL != tableID->spline) {
@@ -2600,6 +2651,7 @@ double ModelicaStandardTables_CombiTable1D_getDer2Value(void* _tableID, int iCol
                         break;
 
                     case AKIMA_C1:
+                    case MAKIMA_C1:
                     case FRITSCH_BUTLAND_MONOTONE_C1:
                     case STEFFEN_MONOTONE_C1:
                         if (NULL != tableID->spline) {
@@ -2632,6 +2684,7 @@ double ModelicaStandardTables_CombiTable1D_getDer2Value(void* _tableID, int iCol
                             }
 
                             case AKIMA_C1:
+                            case MAKIMA_C1:
                             case FRITSCH_BUTLAND_MONOTONE_C1:
                             case STEFFEN_MONOTONE_C1:
                                 if (NULL != tableID->spline) {
@@ -2735,6 +2788,7 @@ double ModelicaStandardTables_CombiTable1D_read(void* _tableID, int force,
             }
             if (tableID->nRow <= 2) {
                 if (tableID->smoothness == AKIMA_C1 ||
+                    tableID->smoothness == MAKIMA_C1 ||
                     tableID->smoothness == FRITSCH_BUTLAND_MONOTONE_C1 ||
                     tableID->smoothness == STEFFEN_MONOTONE_C1) {
                     tableID->smoothness = LINEAR_SEGMENTS;
@@ -2744,6 +2798,12 @@ double ModelicaStandardTables_CombiTable1D_read(void* _tableID, int force,
             if (tableID->smoothness == AKIMA_C1) {
                 spline1DClose(&tableID->spline);
                 tableID->spline = akimaSpline1DInit(
+                    (const double*)tableID->table, tableID->nRow,
+                    tableID->nCol, (const int*)tableID->cols, tableID->nCols);
+            }
+            else if (tableID->smoothness == MAKIMA_C1) {
+                spline1DClose(&tableID->spline);
+                tableID->spline = makimaSpline1DInit(
                     (const double*)tableID->table, tableID->nRow,
                     tableID->nCol, (const int*)tableID->cols, tableID->nCols);
             }
@@ -2760,6 +2820,7 @@ double ModelicaStandardTables_CombiTable1D_read(void* _tableID, int force,
                     tableID->nCol, (const int*)tableID->cols, tableID->nCols);
             }
             if (tableID->smoothness == AKIMA_C1 ||
+                tableID->smoothness == MAKIMA_C1 ||
                 tableID->smoothness == FRITSCH_BUTLAND_MONOTONE_C1 ||
                 tableID->smoothness == STEFFEN_MONOTONE_C1) {
                 if (NULL == tableID->spline) {
@@ -3068,6 +3129,11 @@ double ModelicaStandardTables_CombiTable2D_getValue(void* _tableID, double u1,
                             }
                             break;
 
+                        case MAKIMA_C1:
+                            ModelicaError("Bivariate modified Akima interpolation is "
+                                "not implemented\n");
+                            return y;
+
                         case FRITSCH_BUTLAND_MONOTONE_C1:
                         case STEFFEN_MONOTONE_C1:
                             ModelicaError("Bivariate monotone C1 interpolation is "
@@ -3107,6 +3173,11 @@ double ModelicaStandardTables_CombiTable2D_getValue(void* _tableID, double u1,
                                         }
                                     }
                                     break;
+
+                                case MAKIMA_C1:
+                                    ModelicaError("Bivariate modified Akima interpolation is "
+                                        "not implemented\n");
+                                    return y;
 
                                 case FRITSCH_BUTLAND_MONOTONE_C1:
                                 case STEFFEN_MONOTONE_C1:
@@ -3209,6 +3280,11 @@ double ModelicaStandardTables_CombiTable2D_getValue(void* _tableID, double u1,
                             }
                             break;
 
+                        case MAKIMA_C1:
+                            ModelicaError("Bivariate modified Akima interpolation is "
+                                "not implemented\n");
+                            return y;
+
                         case FRITSCH_BUTLAND_MONOTONE_C1:
                         case STEFFEN_MONOTONE_C1:
                             ModelicaError("Bivariate monotone C1 interpolation is "
@@ -3248,6 +3324,11 @@ double ModelicaStandardTables_CombiTable2D_getValue(void* _tableID, double u1,
                                         }
                                     }
                                     break;
+
+                                case MAKIMA_C1:
+                                    ModelicaError("Bivariate modified Akima interpolation is "
+                                        "not implemented\n");
+                                    return y;
 
                                 case FRITSCH_BUTLAND_MONOTONE_C1:
                                 case STEFFEN_MONOTONE_C1:
@@ -3355,6 +3436,11 @@ double ModelicaStandardTables_CombiTable2D_getValue(void* _tableID, double u1,
                                 }
                                 break;
 
+                            case MAKIMA_C1:
+                                ModelicaError("Bivariate modified Akima interpolation is "
+                                    "not implemented\n");
+                                return y;
+
                             case FRITSCH_BUTLAND_MONOTONE_C1:
                             case STEFFEN_MONOTONE_C1:
                                 ModelicaError("Bivariate monotone C1 interpolation is "
@@ -3387,6 +3473,11 @@ double ModelicaStandardTables_CombiTable2D_getValue(void* _tableID, double u1,
                                             y += der_y2*(u2 - u2Min);
                                         }
                                         break;
+
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return y;
 
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
@@ -3427,6 +3518,11 @@ double ModelicaStandardTables_CombiTable2D_getValue(void* _tableID, double u1,
                                             y += ((c[3]*u1 + c[7])*u1 + c[11])*u1;
                                         }
                                         break;
+
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return y;
 
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
@@ -3488,6 +3584,11 @@ double ModelicaStandardTables_CombiTable2D_getValue(void* _tableID, double u1,
                                         }
                                         break;
 
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return y;
+
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
                                         ModelicaError("Bivariate monotone C1 interpolation is "
@@ -3533,6 +3634,11 @@ double ModelicaStandardTables_CombiTable2D_getValue(void* _tableID, double u1,
                                             y += ((p1*u1 + p2)*u1 + p3)*u1;
                                         }
                                         break;
+
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return y;
 
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
@@ -3585,6 +3691,11 @@ double ModelicaStandardTables_CombiTable2D_getValue(void* _tableID, double u1,
                                         }
                                         break;
 
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return y;
+
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
                                         ModelicaError("Bivariate monotone C1 interpolation is "
@@ -3624,6 +3735,11 @@ double ModelicaStandardTables_CombiTable2D_getValue(void* _tableID, double u1,
                                             y += ((c[12]*u2 + c[13])*u2 + c[14])*u2; /* p4 */
                                         }
                                         break;
+
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return y;
 
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
@@ -3671,6 +3787,11 @@ double ModelicaStandardTables_CombiTable2D_getValue(void* _tableID, double u1,
                                             y += c[11]*u1 + c[14]*u2 + c[10]*u1*u2;
                                         }
                                         break;
+
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return y;
 
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
@@ -3730,6 +3851,11 @@ double ModelicaStandardTables_CombiTable2D_getValue(void* _tableID, double u1,
                                             y += der_y1*u1 + der_y2*u2 + der_y12*u1*u2;
                                         }
                                         break;
+
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return y;
 
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
@@ -3795,6 +3921,11 @@ double ModelicaStandardTables_CombiTable2D_getValue(void* _tableID, double u1,
                                         }
                                         break;
 
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return y;
+
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
                                         ModelicaError("Bivariate monotone C1 interpolation is "
@@ -3840,6 +3971,11 @@ double ModelicaStandardTables_CombiTable2D_getValue(void* _tableID, double u1,
                                             y += ((p1*v1 + p2)*v1 + p3)*v1;
                                         }
                                         break;
+
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return y;
 
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
@@ -3893,6 +4029,10 @@ double ModelicaStandardTables_CombiTable2D_getValue(void* _tableID, double u1,
                                         }
                                         break;
 
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return y;
 
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
@@ -3962,6 +4102,11 @@ double ModelicaStandardTables_CombiTable2D_getValue(void* _tableID, double u1,
                                             y += der_y1*u1 + der_y2*u2 + der_y12*u1*u2;
                                         }
                                         break;
+
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return y;
 
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
@@ -4076,6 +4221,11 @@ double ModelicaStandardTables_CombiTable2D_getDerValue(void* _tableID, double u1
                             }
                             break;
 
+                        case MAKIMA_C1:
+                            ModelicaError("Bivariate modified Akima interpolation is "
+                                "not implemented\n");
+                            return der_y;
+
                         case FRITSCH_BUTLAND_MONOTONE_C1:
                         case STEFFEN_MONOTONE_C1:
                             ModelicaError("Bivariate monotone C1 interpolation is "
@@ -4114,6 +4264,11 @@ double ModelicaStandardTables_CombiTable2D_getDerValue(void* _tableID, double u1
                                         der_y *= der_u2;
                                     }
                                     break;
+
+                                case MAKIMA_C1:
+                                    ModelicaError("Bivariate modified Akima interpolation is "
+                                        "not implemented\n");
+                                    return der_y;
 
                                 case FRITSCH_BUTLAND_MONOTONE_C1:
                                 case STEFFEN_MONOTONE_C1:
@@ -4208,6 +4363,11 @@ double ModelicaStandardTables_CombiTable2D_getDerValue(void* _tableID, double u1
                             }
                             break;
 
+                        case MAKIMA_C1:
+                            ModelicaError("Bivariate modified Akima interpolation is "
+                                "not implemented\n");
+                            return der_y;
+
                         case FRITSCH_BUTLAND_MONOTONE_C1:
                         case STEFFEN_MONOTONE_C1:
                             ModelicaError("Bivariate monotone C1 interpolation is "
@@ -4246,6 +4406,11 @@ double ModelicaStandardTables_CombiTable2D_getDerValue(void* _tableID, double u1
                                         der_y *= der_u1;
                                     }
                                     break;
+
+                                case MAKIMA_C1:
+                                    ModelicaError("Bivariate modified Akima interpolation is "
+                                        "not implemented\n");
+                                    return der_y;
 
                                 case FRITSCH_BUTLAND_MONOTONE_C1:
                                 case STEFFEN_MONOTONE_C1:
@@ -4350,6 +4515,11 @@ double ModelicaStandardTables_CombiTable2D_getDerValue(void* _tableID, double u1
                                  }
                                  break;
 
+                            case MAKIMA_C1:
+                                ModelicaError("Bivariate modified Akima interpolation is "
+                                    "not implemented\n");
+                                return der_y;
+
                             case FRITSCH_BUTLAND_MONOTONE_C1:
                             case STEFFEN_MONOTONE_C1:
                                 ModelicaError("Bivariate monotone C1 interpolation is "
@@ -4383,6 +4553,11 @@ double ModelicaStandardTables_CombiTable2D_getDerValue(void* _tableID, double u1
                                             der_y = der_y1*der_u1 + der_y2*der_u2;
                                          }
                                          break;
+
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return der_y;
 
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
@@ -4447,6 +4622,11 @@ double ModelicaStandardTables_CombiTable2D_getDerValue(void* _tableID, double u1
                                          }
                                          break;
 
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return der_y;
+
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
                                         ModelicaError("Bivariate monotone C1 interpolation is "
@@ -4502,6 +4682,11 @@ double ModelicaStandardTables_CombiTable2D_getDerValue(void* _tableID, double u1
                                          }
                                          break;
 
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return der_y;
+
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
                                         ModelicaError("Bivariate monotone C1 interpolation is "
@@ -4551,6 +4736,11 @@ double ModelicaStandardTables_CombiTable2D_getDerValue(void* _tableID, double u1
                                             der_y += (c[14] + c[10]*u1)*der_u2;
                                          }
                                          break;
+
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return der_y;
 
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
@@ -4609,6 +4799,11 @@ double ModelicaStandardTables_CombiTable2D_getDerValue(void* _tableID, double u1
                                             der_y += (der_y2 + der_y12*u1)*der_u2;
                                          }
                                          break;
+
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return der_y;
 
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
@@ -4678,6 +4873,11 @@ double ModelicaStandardTables_CombiTable2D_getDerValue(void* _tableID, double u1
                                          }
                                          break;
 
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return der_y;
+
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
                                         ModelicaError("Bivariate monotone C1 interpolation is "
@@ -4732,6 +4932,11 @@ double ModelicaStandardTables_CombiTable2D_getDerValue(void* _tableID, double u1
                                             der_y += (der_y2 + der_y12*u1)*der_u2;
                                          }
                                          break;
+
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return der_y;
 
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
@@ -4800,6 +5005,11 @@ double ModelicaStandardTables_CombiTable2D_getDerValue(void* _tableID, double u1
                                             der_y += (der_y2 + der_y12*u1)*der_u2;
                                          }
                                          break;
+
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return der_y;
 
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
@@ -4915,6 +5125,11 @@ double ModelicaStandardTables_CombiTable2D_getDer2Value(void* _tableID, double u
                             }
                             break;
 
+                        case MAKIMA_C1:
+                            ModelicaError("Bivariate modified Akima interpolation is "
+                                "not implemented\n");
+                            return der2_y;
+
                         case FRITSCH_BUTLAND_MONOTONE_C1:
                         case STEFFEN_MONOTONE_C1:
                             ModelicaError("Bivariate monotone C1 interpolation is "
@@ -4953,6 +5168,11 @@ double ModelicaStandardTables_CombiTable2D_getDer2Value(void* _tableID, double u
                                         der2_y *= der2_u2;
                                     }
                                     break;
+
+                                case MAKIMA_C1:
+                                    ModelicaError("Bivariate modified Akima interpolation is "
+                                        "not implemented\n");
+                                    return der2_y;
 
                                 case FRITSCH_BUTLAND_MONOTONE_C1:
                                 case STEFFEN_MONOTONE_C1:
@@ -5048,6 +5268,11 @@ double ModelicaStandardTables_CombiTable2D_getDer2Value(void* _tableID, double u
                             }
                             break;
 
+                        case MAKIMA_C1:
+                            ModelicaError("Bivariate modified Akima interpolation is "
+                                "not implemented\n");
+                            return der2_y;
+
                         case FRITSCH_BUTLAND_MONOTONE_C1:
                         case STEFFEN_MONOTONE_C1:
                             ModelicaError("Bivariate monotone C1 interpolation is "
@@ -5086,6 +5311,11 @@ double ModelicaStandardTables_CombiTable2D_getDer2Value(void* _tableID, double u
                                         der2_y *= der2_u1;
                                     }
                                     break;
+
+                                case MAKIMA_C1:
+                                    ModelicaError("Bivariate modified Akima interpolation is "
+                                        "not implemented\n");
+                                    return der2_y;
 
                                 case FRITSCH_BUTLAND_MONOTONE_C1:
                                 case STEFFEN_MONOTONE_C1:
@@ -5199,6 +5429,11 @@ double ModelicaStandardTables_CombiTable2D_getDer2Value(void* _tableID, double u
                                  }
                                  break;
 
+                            case MAKIMA_C1:
+                                ModelicaError("Bivariate modified Akima interpolation is "
+                                    "not implemented\n");
+                                return der2_y;
+
                             case FRITSCH_BUTLAND_MONOTONE_C1:
                             case STEFFEN_MONOTONE_C1:
                                 ModelicaError("Bivariate monotone C1 interpolation is "
@@ -5235,6 +5470,11 @@ double ModelicaStandardTables_CombiTable2D_getDer2Value(void* _tableID, double u
                                             der2_y += der_y2*der2_u2;
                                          }
                                          break;
+
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return der2_y;
 
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
@@ -5301,6 +5541,11 @@ double ModelicaStandardTables_CombiTable2D_getDer2Value(void* _tableID, double u
                                          }
                                          break;
 
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return der2_y;
+
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
                                         ModelicaError("Bivariate monotone C1 interpolation is "
@@ -5358,6 +5603,11 @@ double ModelicaStandardTables_CombiTable2D_getDer2Value(void* _tableID, double u
                                          }
                                          break;
 
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return der2_y;
+
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
                                         ModelicaError("Bivariate monotone C1 interpolation is "
@@ -5408,6 +5658,11 @@ double ModelicaStandardTables_CombiTable2D_getDer2Value(void* _tableID, double u
                                             der2_y += (c[14] + c[10]*u1)*der2_u2;
                                          }
                                          break;
+
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return der2_y;
 
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
@@ -5467,6 +5722,11 @@ double ModelicaStandardTables_CombiTable2D_getDer2Value(void* _tableID, double u
                                             der2_y += (der_y2 + der_y12*u1)*der2_u2;
                                          }
                                          break;
+
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return der2_y;
 
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
@@ -5543,6 +5803,11 @@ double ModelicaStandardTables_CombiTable2D_getDer2Value(void* _tableID, double u
                                          }
                                          break;
 
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return der2_y;
+
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
                                         ModelicaError("Bivariate monotone C1 interpolation is "
@@ -5598,6 +5863,11 @@ double ModelicaStandardTables_CombiTable2D_getDer2Value(void* _tableID, double u
                                             der2_y += (der_y2 + der_y12*u1)*der2_u2;
                                          }
                                          break;
+
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return der2_y;
 
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
@@ -5667,6 +5937,11 @@ double ModelicaStandardTables_CombiTable2D_getDer2Value(void* _tableID, double u
                                             der2_y += (der_y2 + der_y12*u1)*der2_u2;
                                          }
                                          break;
+
+                                    case MAKIMA_C1:
+                                        ModelicaError("Bivariate modified Akima interpolation is "
+                                            "not implemented\n");
+                                        return der2_y;
 
                                     case FRITSCH_BUTLAND_MONOTONE_C1:
                                     case STEFFEN_MONOTONE_C1:
@@ -5905,8 +6180,8 @@ static int isValidCombiTimeTable(CombiTimeTable* tableID,
                 if (DO_CLEANUP == cleanUp) {
                     ModelicaStandardTables_CombiTimeTable_close(tableID);
                 }
-                ModelicaFormatError("The column index %d is out of range "
-                    "for table matrix \"%s(%lu,%lu)\".\n", tableID->cols[iCol],
+                ModelicaFormatError("The column index %lu is out of range "
+                    "for table matrix \"%s(%lu,%lu)\".\n", (unsigned long)col,
                     tableName, (unsigned long)nRow, (unsigned long)nCol);
             }
         }
@@ -5934,6 +6209,7 @@ static int isValidCombiTimeTable(CombiTimeTable* tableID,
             /* Check, whether first column values are monotonically or strictly
                increasing */
             if (tableID->smoothness == AKIMA_C1 ||
+                tableID->smoothness == MAKIMA_C1 ||
                 tableID->smoothness == FRITSCH_BUTLAND_MONOTONE_C1 ||
                 tableID->smoothness == STEFFEN_MONOTONE_C1) {
                 size_t i;
@@ -6012,8 +6288,8 @@ static int isValidCombiTable1D(CombiTable1D* tableID,
                 if (DO_CLEANUP == cleanUp) {
                     ModelicaStandardTables_CombiTable1D_close(tableID);
                 }
-                ModelicaFormatError("The column index %d is out of range "
-                    "for table matrix \"%s(%lu,%lu)\".\n", tableID->cols[iCol],
+                ModelicaFormatError("The column index %lu is out of range "
+                    "for table matrix \"%s(%lu,%lu)\".\n", (unsigned long)col,
                     tableName, (unsigned long)nRow, (unsigned long)nCol);
             }
         }
@@ -6216,6 +6492,86 @@ static CubicHermite1D* akimaSpline1DInit(_In_ const double* table, size_t nRow,
             }
             else {
                 c2 = 0.5*d[i + 2] + 0.5*d[i + 3];
+            }
+            c[1] = (3*d[i + 2] - 2*c[2] - c2)/dx;
+            c[0] = (c[2] + c2 - 2*d[i + 2])/(dx*dx);
+            /* No need to store the absolute term y0 */
+            /* c[3] = TABLE(i, cols[col] - 1); */
+        }
+    }
+
+    free(d);
+    return spline;
+}
+
+static CubicHermite1D* makimaSpline1DInit(_In_ const double* table, size_t nRow,
+                                         size_t nCol, _In_ const int* cols,
+                                         size_t nCols) {
+  /* Reference:
+     Method description taken from section "Modified Akima formula" of:
+
+     Cosmin Ionita. Makima piecewise cubic interpolation, April 2019.
+     (https://blogs.mathworks.com/cleve/?p=4707)
+  */
+
+    CubicHermite1D* spline = NULL;
+    double* d; /* Divided differences */
+    size_t col;
+
+    /* Actually there is no need for consecutive memory */
+    spline = (CubicHermite1D*)malloc((nRow - 1)*nCols*sizeof(CubicHermite1D));
+    if (NULL == spline) {
+        return NULL;
+    }
+
+    d = (double*)malloc((nRow + 3)*sizeof(double));
+    if (NULL == d) {
+        free(spline);
+        return NULL;
+    }
+
+    for (col = 0; col < nCols; col++) {
+        size_t i;
+        double c2;
+
+        /* Calculation of the divided differences */
+        for (i = 0; i < nRow - 1; i++) {
+            size_t c = (size_t)(cols[col] - 1);
+            d[i + 2] = (TABLE(i + 1, c) - TABLE(i, c))/
+                (TABLE_COL0(i + 1) - TABLE_COL0(i));
+        }
+
+        /* Extrapolation using non-periodic boundary conditions */
+        d[0] = 3*d[2] - 2*d[3];
+        d[1] = 2*d[2] - d[3];
+        d[nRow + 1] = 2*d[nRow] - d[nRow - 1];
+        d[nRow + 2] = 3*d[nRow] - 2*d[nRow - 1];
+
+        /* Initialization of the left boundary slope */
+        c2 = fabs(d[3] - d[2]) + fabs(d[1] - d[0]);
+        c2 += 0.5*fabs(d[3] + d[2]) + 0.5*fabs(d[1] + d[0]);
+        if (c2 > 0) {
+            const double a = (fabs(d[1] - d[0]) + 0.5*fabs(d[1] + d[0]))/c2;
+            c2 = (1 - a)*d[1] + a*d[2];
+        }
+        else {
+            c2 = 0.0;
+        }
+
+        /* Calculation of the 3(4) coefficients per interval */
+        for (i = 0; i < nRow - 1; i++) {
+            const double dx = TABLE_COL0(i + 1) - TABLE_COL0(i);
+            double* c = spline[IDX(i, col, nCols)];
+
+            c[2] = c2;
+            c2 = fabs(d[i + 4] - d[i + 3]) + fabs(d[i + 2] - d[i + 1]);
+            c2 += 0.5*fabs(d[i + 4] + d[i + 3]) + 0.5*fabs(d[i + 2] + d[i + 1]);
+            if (c2 > 0) {
+                const double a = (fabs(d[i + 2] - d[i + 1]) + 0.5*fabs(d[i + 2] + d[i + 1]))/c2;
+                c2 = (1 - a)*d[i + 2] + a*d[i + 3];
+            }
+            else {
+                c2 = 0;
             }
             c[1] = (3*d[i + 2] - 2*c[2] - c2)/dx;
             c[0] = (c[2] + c2 - 2*d[i + 2])/(dx*dx);

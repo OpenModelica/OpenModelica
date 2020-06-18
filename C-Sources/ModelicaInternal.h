@@ -1,6 +1,6 @@
 /* ModelicaInternal.h - External functions header for Modelica.Utilities
 
-   Copyright (C) 2002-2019, Modelica Association and contributors
+   Copyright (C) 2002-2020, Modelica Association and contributors
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -60,6 +60,8 @@
  *
  * The following macros handle nonnull attributes for GNU C and Microsoft SAL.
  */
+#undef MODELICA_NONNULLATTR
+#undef MODELICA_RETURNNONNULLATTR
 #if defined(__GNUC__)
 #define MODELICA_NONNULLATTR __attribute__((nonnull))
 #if defined(__GNUC_MINOR__) && (__GNUC__ > 3 && __GNUC_MINOR__ > 8)
@@ -75,6 +77,9 @@
 #define MODELICA_RETURNNONNULLATTR
 #endif
 #if !defined(__ATTR_SAL)
+#undef _In_z_
+#undef _Out_
+#undef _Ret_z_
 #define _In_z_
 #define _Out_
 #define _Ret_z_

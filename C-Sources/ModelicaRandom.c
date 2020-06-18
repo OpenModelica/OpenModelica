@@ -1,6 +1,6 @@
 /* ModelicaRandom.c - External functions for Modelica.Math.Random library
 
-   Copyright (C) 2015-2019, Modelica Association and contributors
+   Copyright (C) 2015-2020, Modelica Association and contributors
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,7 @@
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/* Release Notes:
+/* Changelog:
       Sep. 23, 2016: by Thomas Beutlich, ESI ITI GmbH
                      Fixed resource leak (ticket #2069)
 
@@ -44,7 +44,7 @@
 
 /* Have RANDOM int64 / uint64 */
 #if defined (_WIN32)
-#if defined(_MSC_VER) || defined(__WATCOMC__) || defined(__MINGW32__) || defined(__CYGWIN__)
+#if defined(_MSC_VER) || defined(__WATCOMC__) || defined(__MINGW32__) || defined(__CYGWIN__) || defined(__BORLANDC__)
 #define HAVE_RANDOM_INT64_T 1
 #define HAVE_RANDOM_UINT64_T 1
 #else
@@ -78,14 +78,14 @@
 #define int32_t  int
 #define uint32_t unsigned int
 #if defined(HAVE_RANDOM_INT64_T)
-#if defined(_MSC_VER) && _MSC_VER < 1300
+#if defined(__BORLANDC__) || (defined(_MSC_VER) && _MSC_VER < 1300)
 #define int64_t __int64
 #else
 #define int64_t long long
 #endif
 #endif
 #if defined(HAVE_RANDOM_UINT64_T)
-#if defined(_MSC_VER) && _MSC_VER < 1300
+#if defined(__BORLANDC__) || (defined(_MSC_VER) && _MSC_VER < 1300)
 #define uint64_t unsigned __int64
 #else
 #define uint64_t unsigned long long
@@ -210,7 +210,7 @@ void ModelicaRandom_xorshift64star(_In_ int* state_in,
     x ^= x >> 12; /* a */
     x ^= x << 25; /* b */
     x ^= x >> 27; /* c */
-#if defined(_MSC_VER)
+#if defined(__BORLANDC__) || (defined(_MSC_VER) && _MSC_VER < 1300)
     x  = x * 2685821657736338717i64;
 #else
     x  = x * 2685821657736338717LL;
@@ -318,7 +318,7 @@ static void ModelicaRandom_xorshift1024star_internal(uint64_t s[], int* p, doubl
     s[*p] = s0 ^ s1;
 
     /* Convert outputs */
-#if defined(_MSC_VER)
+#if defined(__BORLANDC__) || (defined(_MSC_VER) && _MSC_VER < 1300)
     *y = ModelicaRandom_RAND(s[*p]*1181783497276652981i64);
 #else
     *y = ModelicaRandom_RAND(s[*p]*1181783497276652981LL);

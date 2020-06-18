@@ -1,6 +1,6 @@
 /* ModelicaIO.c - Array I/O functions
 
-   Copyright (C) 2016-2019, Modelica Association and contributors
+   Copyright (C) 2016-2020, Modelica Association and contributors
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@
       Modelica.Utilities.Streams.readRealMatrix
       Modelica.Utilities.Streams.writeRealMatrix
 
-   Release Notes:
+   Changelog:
       Jan. 15, 2018: by Thomas Beutlich, ESI ITI GmbH
                      Added support to ignore UTF-8 BOM if reading text file
                      (ticket #2404)
@@ -177,6 +177,11 @@ static int IsNumber(char* token);
 
 static void transpose(_Inout_ double* table, size_t nRow, size_t nCol) MODELICA_NONNULLATTR;
   /* Cycle-based in-place array transposition */
+
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#endif
 
 void ModelicaIO_readMatrixSizes(_In_z_ const char* fileName,
                                 _In_z_ const char* matrixName,
@@ -1076,5 +1081,9 @@ static void transpose(_Inout_ double* table, size_t nRow, size_t nCol) {
         }
     }
 }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 #endif

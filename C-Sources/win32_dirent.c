@@ -21,6 +21,8 @@
  *     current directory can be changed after "opendir".
  */
 
+#if defined(_WIN32) && !defined(NO_FILE_SYSTEM) && !defined(__WATCOMC__) && !defined(__BORLANDC__) && !defined(__MINGW32__) && !defined(__CYGWIN__)
+
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -317,3 +319,5 @@ seekdir (DIR * dirp, long lPos)
             ;
     }
 }
+
+#endif

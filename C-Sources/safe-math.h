@@ -1,5 +1,5 @@
 /* Overflow-safe math functions
- * Portable Snippets - https://gitub.com/nemequ/portable-snippets
+ * Portable Snippets - https://github.com/nemequ/portable-snippets
  * Created by Evan Nemerson <evan@nemerson.com>
  *
  *   To the extent possible under law, the authors have waived all
@@ -23,7 +23,9 @@
 #    if __has_include(<intsafe.h>)
 #      define PSNIP_SAFE_HAVE_INTSAFE_H
 #    endif
-#  elif defined(_WIN32)
+#  elif defined(_MSC_VER) && _MSC_VER >= 1600
+#    define PSNIP_SAFE_HAVE_INTSAFE_H
+#  elif defined(__CYGWIN__) && defined(__GNUC__) && __GNUC__ >= 5
 #    define PSNIP_SAFE_HAVE_INTSAFE_H
 #  endif
 #endif /* !defined(PSNIP_SAFE_FORCE_PORTABLE) */
