@@ -1605,10 +1605,10 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pCompositeModelEditorItem = new QListWidgetItem(mpOptionsList);
   pCompositeModelEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
   pCompositeModelEditorItem->setText(tr("CompositeModel Editor"));
-  // OMSimulator Editor Item
+  // SSP Editor Item
   QListWidgetItem *pOMSimulatorEditorItem = new QListWidgetItem(mpOptionsList);
   pOMSimulatorEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
-  pOMSimulatorEditorItem->setText(tr("OMSimulator Editor"));
+  pOMSimulatorEditorItem->setText(tr("SSP Editor"));
   // C/C++ Editor Item
   QListWidgetItem *pCEditorItem = new QListWidgetItem(mpOptionsList);
   pCEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
@@ -1664,7 +1664,7 @@ void OptionsDialog::addListItems()
   // OMSimulator Item
   QListWidgetItem *pOMSimulatorItem = new QListWidgetItem(mpOptionsList);
   pOMSimulatorItem->setIcon(QIcon(":/Resources/icons/tlm-icon.svg"));
-  pOMSimulatorItem->setText(tr("SSP"));
+  pOMSimulatorItem->setText(tr("OMSimulator/SSP"));
   // Traceability Item
   QListWidgetItem *pTraceabilityItem = new QListWidgetItem(mpOptionsList);
   pTraceabilityItem->setIcon(QIcon(":/Resources/icons/traceability.svg"));

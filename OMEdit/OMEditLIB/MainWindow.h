@@ -167,9 +167,9 @@ public:
 #if !defined(WITHOUT_OSG)
   QAction* getSimulateWithAnimationAction() {return mpSimulateWithAnimationAction;}
 #endif
-  QAction* getInstantiateModelAction() {return mpInstantiateModelAction;}
   QAction* getCheckModelAction() {return mpCheckModelAction;}
   QAction* getCheckAllModelsAction() {return mpCheckAllModelsAction;}
+  QAction* getInstantiateModelAction() {return mpInstantiateModelAction;}
   QAction* getExportFMUAction() {return mpExportFMUAction;}
   QAction* getExportEncryptedPackageAction() {return mpExportEncryptedPackageAction;}
   QAction* getExportRealonlyPackageAction() {return mpExportReadonlyPackageAction;}
@@ -356,9 +356,9 @@ private:
   QAction *mpTileWindowsVerticallyAction;
   QAction *mpToggleTabOrSubWindowView;
   // Simulation Menu
-  QAction *mpInstantiateModelAction;
   QAction *mpCheckModelAction;
   QAction *mpCheckAllModelsAction;
+  QAction *mpInstantiateModelAction;
   QAction *mpSimulationSetupAction;
   QAction *mpOMSInstantiateModelAction;
   QAction *mpSimulateModelAction;
@@ -496,9 +496,9 @@ public slots:
   void tileSubWindowsHorizontally();
   void tileSubWindowsVertically();
   void toggleTabOrSubWindowView();
-  void instantiateModel();
   void checkModel();
   void checkAllModels();
+  void instantiateModel();
   void openSimulationDialog();
   void instantiateOMSModel(bool checked);
   void simulateModel();
