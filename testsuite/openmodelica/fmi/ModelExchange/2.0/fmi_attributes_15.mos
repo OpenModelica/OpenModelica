@@ -107,13 +107,13 @@ readFile("fmi_attributes_15_tmp.xml")
 //     </SourceFiles>
 //   </ModelExchange>
 //   <UnitDefinitions>
-//     <Unit name =\"xyz\">
+//     <Unit name=\"xyz\">
 //     </Unit>
-//     <Unit name =\"bar\">
-//       <BaseUnit  m=\"-1\" s=\"-2\" kg=\"1\" factor=\"100000.0\"/>
+//     <Unit name=\"bar\">
+//       <BaseUnit m=\"-1\" s=\"-2\" kg=\"1\" factor=\"100000.0\" />
 //     </Unit>
-//     <Unit name =\"kg2\">
-//       <BaseUnit  kg=\"2\"/>
+//     <Unit name=\"kg2\">
+//       <BaseUnit kg=\"2\" />
 //     </Unit>
 //   </UnitDefinitions>
 //   <LogCategories>
