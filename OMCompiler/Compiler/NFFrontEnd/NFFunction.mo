@@ -1467,6 +1467,7 @@ uniontype Function
           // Can have variable number of arguments.
           case "array" then true;
           case "actualStream" then true;
+          case "backSample" then true;
           case "branch" then true;
           case "cardinality" then true;
           case "cat" then true;
@@ -1516,10 +1517,13 @@ uniontype Function
           case "scalar" then true;
           // First argument can have any number of dimensions.
           case "size" then true;
+          case "shiftSample" then true;
           // Needs to check that second argument is real or array of real or record of reals.
           case "smooth" then true;
+          case "subSample" then true;
           // needs unboxing and return type fix.
           case "sum" then true;
+          case "superSample" then true;
           // unbox args and set return type.
           case "symmetric" then true;
           // Always discrete.

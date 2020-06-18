@@ -65,7 +65,6 @@ import ComponentRef = NFComponentRef;
 import Config;
 import Origin = NFComponentRef.Origin;
 import ExecStat.execStat;
-import Inst = NFInst;
 import InstUtil = NFInstUtil;
 import Lookup = NFLookup;
 import MatchKind = NFTypeCheck.MatchKind;
@@ -89,6 +88,7 @@ import System;
 import ErrorExt;
 import ErrorTypes;
 import OperatorOverloading = NFOperatorOverloading;
+import Structural = NFStructural;
 
 public
 uniontype TypingError
@@ -729,7 +729,7 @@ algorithm
         dim := match dim
           case Dimension.EXP(exp = exp)
             algorithm
-              Inst.markStructuralParamsExp(exp);
+              Structural.markExp(exp);
               exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
             then
               Dimension.fromExp(exp, dim.var);
@@ -1445,7 +1445,7 @@ algorithm
 
           if Type.isConditionalArray(ty) then
             e := Ceval.evalExp(e, Ceval.EvalTarget.GENERIC(info));
-            Inst.markStructuralParamsExp(e);
+            Structural.markExp(e);
             ty := Expression.typeOf(e);
           end if;
 
@@ -1756,7 +1756,7 @@ algorithm
     // TODO: Ideally this shouldn't be needed, but the old frontend does it and
     //       the backend relies on it.
     if var == Variability.PARAMETER then
-      Inst.markStructuralParamsSub(sub);
+      Structural.markSubscript(sub);
     end if;
   end for;
 
@@ -1789,7 +1789,7 @@ algorithm
           ty := Type.unliftArray(ty);
 
           if ExpOrigin.flagSet(origin, ExpOrigin.EQUATION) then
-            Inst.markStructuralParamsExp(e);
+            Structural.markExp(e);
           end if;
         else
           outSubscript := Subscript.INDEX(e);
@@ -2028,7 +2028,7 @@ algorithm
   rangeExp := Expression.RANGE(rangeType, start_exp, ostep_exp, stop_exp);
 
   if variability <= Variability.PARAMETER and not ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
-    Inst.markStructuralParamsExp(rangeExp);
+    Structural.markExp(rangeExp);
   end if;
 end typeRange;
 
@@ -2936,7 +2936,7 @@ algorithm
   if ExpOrigin.flagSet(origin, ExpOrigin.WHEN) and
      ExpOrigin.flagNotSet(origin, ExpOrigin.CLOCKED) then
     if checkLhsInWhen(lhsExp) then
-      Expression.fold(lhsExp, Inst.markStructuralParamsSubs, 0);
+      Structural.markSubscriptsInExp(lhsExp);
     else
       Error.addSourceMessage(Error.WHEN_EQ_LHS, {Expression.toString(lhsExp)}, info);
       fail();
@@ -3000,7 +3000,7 @@ algorithm
     Equation.Branch.BRANCH(cond, _, eql) := b;
     (cond, _, var) := typeCondition(cond, cond_origin, source, Error.IF_CONDITION_TYPE_ERROR);
 
-    if var > Variability.PARAMETER or Inst.isExpressionNotFixed(cond, maxDepth = 100) then
+    if var > Variability.PARAMETER or Structural.isExpressionNotFixed(cond, maxDepth = 100) then
       // If the condition doesn't fulfill the requirements for allowing
       // connections in the branch, mark the origin so we can check that when
       // typing the body of the branch.
@@ -3009,7 +3009,7 @@ algorithm
       // If all conditions up to and including this one are parameter
       // expressions, consider the condition to be structural.
       var := Variability.STRUCTURAL_PARAMETER;
-      Inst.markStructuralParamsExp(cond);
+      Structural.markExp(cond);
     end if;
 
     accum_var := Prefixes.variabilityMax(accum_var, var);
