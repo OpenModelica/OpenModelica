@@ -65,6 +65,7 @@ protected
   import Component = NFComponent;
   import NFPrefixes.ConnectorType;
   import ClockKind = NFClockKind;
+  import Structural = NFStructural;
 
 public
   function needSpecialHandling
@@ -107,17 +108,22 @@ public
     next_origin := ExpOrigin.setFlag(origin, ExpOrigin.SUBEXPRESSION);
 
     (callExp, ty, variability) := match ComponentRef.firstName(cref)
-      case "String" then typeStringCall(call, next_origin, info);
+      //case "activeState" guard Config.synchronousFeaturesAllowed() then typeActiveStateCall(call, next_origin, info);
       case "actualStream" then typeActualInStreamCall("actualStream", call, next_origin, info);
+      case "backSample" guard Config.synchronousFeaturesAllowed() then typeBackSampleCall(call, next_origin, info);
       case "branch" then typeBranchCall(call, next_origin, info);
       case "cardinality" then typeCardinalityCall(call, next_origin, info);
       case "cat" then typeCatCall(call, next_origin, info);
       case "change" then typeChangeCall(call, next_origin, info);
+      case "Clock" guard Config.synchronousFeaturesAllowed() then typeClockCall(call, next_origin, info);
       case "der" then typeDerCall(call, next_origin, info);
       case "diagonal" then typeDiagonalCall(call, next_origin, info);
+      case "DynamicSelect" then typeDynamicSelectCall("DynamicSelect", call, next_origin, info);
       case "edge" then typeEdgeCall(call, next_origin, info);
       case "fill" then typeFillCall(call, next_origin, info);
       case "getInstanceName" then typeGetInstanceName(call);
+      //case "hold" guard Config.synchronousFeaturesAllowed() then typeHoldCall(call, next_origin, info);
+      //case "initialState" guard Config.synchronousFeaturesAllowed() then typeInitialStateCall(call, next_origin, info);
       case "initial" then typeDiscreteCall(call, next_origin, info);
       case "inStream" then typeActualInStreamCall("inStream", call, next_origin, info);
       case "isRoot" then typeIsRootCall(call, next_origin, info);
@@ -125,38 +131,33 @@ public
       case "max" then typeMinMaxCall("max", call, next_origin, info);
       case "min" then typeMinMaxCall("min", call, next_origin, info);
       case "ndims" then typeNdimsCall(call, next_origin, info);
+      //case "noClock" guard Config.synchronousFeaturesAllowed() then typeNoClockCall(call, next_origin, info);
       case "noEvent" then typeNoEventCall(call, next_origin, info);
       case "ones" then typeZerosOnesCall("ones", call, next_origin, info);
       case "potentialRoot" then typePotentialRootCall(call, next_origin, info);
       case "pre" then typePreCall(call, next_origin, info);
       case "product" then typeProductCall(call, next_origin, info);
       case "promote" then typePromoteCall(call, next_origin, info);
-      case "root" then typeRootCall(call, next_origin, info);
       case "rooted" then typeRootedCall(call, next_origin, info);
-      case "uniqueRoot" then typeUniqueRootCall(call, next_origin, info);
-      case "uniqueRootIndices" then typeUniqueRootIndicesCall(call, next_origin, info);
+      case "root" then typeRootCall(call, next_origin, info);
+      case "sample" then typeSampleCall(call, next_origin, info);
       case "scalar" then typeScalarCall(call, next_origin, info);
+      case "shiftSample" guard Config.synchronousFeaturesAllowed() then typeShiftSampleCall(call, next_origin, info);
       case "smooth" then typeSmoothCall(call, next_origin, info);
+      case "String" then typeStringCall(call, next_origin, info);
+      case "subSample" guard Config.synchronousFeaturesAllowed() then typeSubSampleCall(call, next_origin, info);
       case "sum" then typeSumCall(call, next_origin, info);
+      case "superSample" guard Config.synchronousFeaturesAllowed() then typeSuperSampleCall(call, next_origin, info);
       case "symmetric" then typeSymmetricCall(call, next_origin, info);
       case "terminal" then typeDiscreteCall(call, next_origin, info);
+      //case "ticksInState" guard Config.synchronousFeaturesAllowed() then typeTicksInStateCall(call, next_origin, info);
+      //case "timeInState" guard Config.synchronousFeaturesAllowed() then typeTimeInStateCall(call, next_origin, info);
+      //case "transition" guard Config.synchronousFeaturesAllowed() then typeTransitionCall(call, next_origin, info);
       case "transpose" then typeTransposeCall(call, next_origin, info);
+      case "uniqueRootIndices" then typeUniqueRootIndicesCall(call, next_origin, info);
+      case "uniqueRoot" then typeUniqueRootCall(call, next_origin, info);
       case "vector" then typeVectorCall(call, next_origin, info);
       case "zeros" then typeZerosOnesCall("zeros", call, next_origin, info);
-      case "Clock" guard Config.synchronousFeaturesAllowed() then typeClockCall(call, next_origin, info);
-      case "sample" then typeSampleCall(call, next_origin, info);
-      case "DynamicSelect" then typeDynamicSelectCall("DynamicSelect", call, next_origin, info);
-      /*
-      case "hold" guard Config.synchronousFeaturesAllowed() then typeHoldCall(call, next_origin, info);
-      case "shiftSample" guard Config.synchronousFeaturesAllowed() then typeShiftSampleCall(call, next_origin, info);
-      case "backSample" guard Config.synchronousFeaturesAllowed() then typeBackSampleCall(call, next_origin, info);
-      case "noClock" guard Config.synchronousFeaturesAllowed() then typeNoClockCall(call, next_origin, info);
-      case "transition" guard Config.synchronousFeaturesAllowed() then typeTransitionCall(call, next_origin, info);
-      case "initialState" guard Config.synchronousFeaturesAllowed() then typeInitialStateCall(call, next_origin, info);
-      case "activeState" guard Config.synchronousFeaturesAllowed() then typeActiveStateCall(call, next_origin, info);
-      case "ticksInState" guard Config.synchronousFeaturesAllowed() then typeTicksInStateCall(call, next_origin, info);
-      case "timeInState" guard Config.synchronousFeaturesAllowed() then typeTimeInStateCall(call, next_origin, info);
-      */
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unhandled builtin function: " + Call.toString(call), sourceInfo());
@@ -2139,6 +2140,75 @@ protected
     end if;
   end typeDynamicSelectCall;
 
+  function typeBackSampleCall
+    input Call call;
+    input ExpOrigin.Type origin;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+    output Variability var;
+  protected
+    Call ty_call;
+    Expression counter, resolution;
+  algorithm
+    ty_call as Call.TYPED_CALL(arguments = {_, counter, resolution}, ty = ty, var = var) :=
+      Call.typeMatchNormalCall(call, origin, info);
+    Structural.markExp(counter);
+    Structural.markExp(resolution);
+    callExp := Expression.CALL(Call.unboxArgs(ty_call));
+  end typeBackSampleCall;
+
+  function typeShiftSampleCall
+    input Call call;
+    input ExpOrigin.Type origin;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+    output Variability var;
+  protected
+    Call ty_call;
+    Expression counter, resolution;
+  algorithm
+    ty_call as Call.TYPED_CALL(arguments = {_, counter, resolution}, ty = ty, var = var) :=
+      Call.typeMatchNormalCall(call, origin, info);
+    Structural.markExp(counter);
+    Structural.markExp(resolution);
+    callExp := Expression.CALL(Call.unboxArgs(ty_call));
+  end typeShiftSampleCall;
+
+  function typeSubSampleCall
+    input Call call;
+    input ExpOrigin.Type origin;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+    output Variability var;
+  protected
+    Call ty_call;
+    Expression factor;
+  algorithm
+    ty_call as Call.TYPED_CALL(arguments = {_, factor}, ty = ty, var = var) :=
+      Call.typeMatchNormalCall(call, origin, info);
+    Structural.markExp(factor);
+    callExp := Expression.CALL(Call.unboxArgs(ty_call));
+  end typeSubSampleCall;
+
+  function typeSuperSampleCall
+    input Call call;
+    input ExpOrigin.Type origin;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+    output Variability var;
+  protected
+    Call ty_call;
+    Expression factor;
+  algorithm
+    ty_call as Call.TYPED_CALL(arguments = {_, factor}, ty = ty, var = var) :=
+      Call.typeMatchNormalCall(call, origin, info);
+    Structural.markExp(factor);
+    callExp := Expression.CALL(Call.unboxArgs(ty_call));
+  end typeSuperSampleCall;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBuiltinCall;

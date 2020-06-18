@@ -360,15 +360,15 @@ public
     end match;
   end addSubscript;
 
-  function applySubscripts
+  function mergeSubscripts
     input list<Subscript> subscripts;
     input output ComponentRef cref;
     input Boolean applyToScope = false;
   algorithm
-    ({}, cref) := applySubscripts2(subscripts, cref, applyToScope);
-  end applySubscripts;
+    ({}, cref) := mergeSubscripts2(subscripts, cref, applyToScope);
+  end mergeSubscripts;
 
-  function applySubscripts2
+  function mergeSubscripts2
     input output list<Subscript> subscripts;
     input output ComponentRef cref;
     input Boolean applyToScope;
@@ -381,7 +381,7 @@ public
       case CREF(subscripts = cref_subs)
         guard applyToScope or cref.origin == Origin.CREF
         algorithm
-          (subscripts, rest_cref) := applySubscripts2(subscripts, cref.restCref, applyToScope);
+          (subscripts, rest_cref) := mergeSubscripts2(subscripts, cref.restCref, applyToScope);
 
           if not listEmpty(subscripts) then
             (cref_subs, subscripts) :=
@@ -392,7 +392,7 @@ public
 
       else (subscripts, cref);
     end match;
-  end applySubscripts2;
+  end mergeSubscripts2;
 
   function hasSubscripts
     input ComponentRef cref;
@@ -525,6 +525,29 @@ public
           fail();
     end match;
   end transferSubscripts;
+
+  function applySubscripts
+    input ComponentRef cref;
+    input FuncT func;
+
+    partial function FuncT
+      input Subscript subscript;
+    end FuncT;
+  algorithm
+    () := match cref
+      case CREF(origin = Origin.CREF)
+        algorithm
+          for sub in cref.subscripts loop
+            func(sub);
+          end for;
+
+          applySubscripts(cref.restCref, func);
+        then
+          ();
+
+      else ();
+    end match;
+  end applySubscripts;
 
   function foldSubscripts<ArgT>
     input ComponentRef cref;

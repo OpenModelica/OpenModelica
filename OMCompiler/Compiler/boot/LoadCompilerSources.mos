@@ -370,6 +370,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFSimplifyModel.mo",
     "../NFFrontEnd/NFSections.mo",
     "../NFFrontEnd/NFStatement.mo",
+    "../NFFrontEnd/NFStructural.mo",
     "../NFFrontEnd/NFSubscript.mo",
     "../NFFrontEnd/NFPackage.mo",
     "../NFFrontEnd/NFType.mo",
