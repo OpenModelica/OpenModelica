@@ -682,10 +682,10 @@ template UnitDefinitionsHelper1(UnitDefinition unitDefinition)
  "helper function to generates code for UnitDefinition for FMU target."
 ::=
 match unitDefinition
-case UNITDEFINITION(name = name, baseUnit = baseUnit) then
+case UNITDEFINITION(name=name, baseUnit=baseUnit) then
   <<
   <Unit <%unitDefinitionAttribute(name)%>>
-    <BaseUnit <%baseUnitAttributes(baseUnit)%>/>
+    <%baseUnitAttributes(baseUnit)%>
   </Unit>
   >>
 end UnitDefinitionsHelper1;
@@ -693,7 +693,7 @@ end UnitDefinitionsHelper1;
 template unitDefinitionAttribute(String unitName)
  "Generates code for UnitDefinition Attribute for FMU target."
 ::=
-  let unitString = if unitName then 'name ="<%unitName%>"'
+  let unitString = if unitName then 'name="<%unitName%>"'
   <<
   <%unitString%>
   >>
@@ -703,19 +703,20 @@ template baseUnitAttributes(BaseUnit baseUnit)
  "Generates code for BaseUnit for FMU target."
 ::=
 match baseUnit
-case (BASEUNIT(mol = mol, cd = cd, m = m, s = s, A = A, K = K, kg = kg, factor = factor, offset = offset)) then
-  let mol_Value = if not intEq(mol, 0) then ' mol="<% mol %>"' else ""
-  let cd_Value = if not intEq(cd, 0) then ' cd="<% cd %>"' else ""
-  let m_Value = if not intEq(m, 0) then ' m="<% m %>"' else ""
-  let s_Value = if not intEq(s, 0) then ' s="<% s %>"' else ""
-  let A_Value = if not intEq(A, 0) then ' A="<% A %>"' else ""
-  let K_Value = if not intEq(K, 0) then ' K="<% K %>"' else ""
-  let kg_Value = if not intEq(kg, 0) then ' kg="<% kg %>"' else ""
-  let factor_Value = if not realAlmostEq(factor, 1.0, 1e-6) then ' factor="<% factor %>"' else ""
-  let offset_Value = if not realAlmostEq(offset, 0.0, 1e-6) then ' offset="<% offset %>"' else ""
+case (BASEUNIT(mol=mol, cd=cd, m=m, s=s, A=A, K=K, kg=kg, factor=factor, offset=offset)) then
+  let mol_Value = if not intEq(mol, 0) then 'mol="<% mol %>" ' else ""
+  let cd_Value = if not intEq(cd, 0) then 'cd="<% cd %>" ' else ""
+  let m_Value = if not intEq(m, 0) then 'm="<% m %>" ' else ""
+  let s_Value = if not intEq(s, 0) then 's="<% s %>" ' else ""
+  let A_Value = if not intEq(A, 0) then 'A="<% A %>" ' else ""
+  let K_Value = if not intEq(K, 0) then 'K="<% K %>" ' else ""
+  let kg_Value = if not intEq(kg, 0) then 'kg="<% kg %>" ' else ""
+  let factor_Value = if not realAlmostEq(factor, 1.0, 1e-6) then 'factor="<% factor %>" ' else ""
+  let offset_Value = if not realAlmostEq(offset, 0.0, 1e-6) then 'offset="<% offset %>" ' else ""
   <<
-  <%mol_Value%><%cd_Value%><%m_Value%><%s_Value%><%A_Value%><%K_Value%><%kg_Value%><%factor_Value%><%offset_Value%>
+  <BaseUnit <%mol_Value%><%cd_Value%><%m_Value%><%s_Value%><%A_Value%><%K_Value%><%kg_Value%><%factor_Value%><%offset_Value%>/>
   >>
+case (NOBASEUNIT()) then ""
 end baseUnitAttributes;
 
 template fmiTypeDefinitions(SimCode simCode, String FMUVersion)
