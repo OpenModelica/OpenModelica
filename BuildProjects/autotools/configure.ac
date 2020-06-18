@@ -1,6 +1,6 @@
 dnl Init
 AC_PREREQ([2.63])
-AC_INIT([Modelica Standard Library Tables],[3.2.2],[https://trac.modelica.org/Modelica],[libmodelicastandardtables],[https://modelica.org])
+AC_INIT([Modelica Standard Library Tables],[4.0.0],[https://github.com/modelica/ModelicaStandardLibrary],[libmodelicastandardtables],[https://modelica.org])
 
 AM_INIT_AUTOMAKE([subdir-objects])
 AC_CONFIG_MACRO_DIR([m4])
@@ -12,7 +12,30 @@ AC_PROG_MAKE_SET
 LT_INIT([disable-static])
 AC_SUBST(LIBZLIB)
 AC_SUBST(LIBHDF5)
+AC_SUBST(LIBMATH)
 dnl Check for HDF5, etc
+
+LIBS_BEFORE="$LIBS"
+LIBS=""
+AC_SEARCH_LIBS([atan2], [m], [LIBMATH="$LIBS"], [
+  AC_MSG_ERROR([unable to find the atan2() function])
+])
+LIBS="$LIBS_BEFORE"
+
+AC_DEFUN([C_FLAG_CHECK_AND_ADD],
+[dnl
+  AC_MSG_CHECKING([if $CC supports $1])
+  AC_LANG_PUSH([C])
+  ac_saved_cflags="$CFLAGS"
+  CFLAGS="-Werror $1"
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
+    [AC_MSG_RESULT([yes])],
+    [AC_MSG_RESULT([no]) ; CFLAGS="$ac_saved_cflags"]
+  )
+  AC_LANG_POP([C])
+])
+
+C_FLAG_CHECK_AND_ADD([-fno-delete-null-pointer-checks])
 
 AC_SEARCH_LIBS([floor],[m])
 
