@@ -97,7 +97,7 @@ void partest(cache=true, extraArgs='') {
   """)
 
   } else {
-  sh "rm -f omc-diff.skip && ${makeCommand()} -C testsuite/difftool clean && ${makeCommand()} --output-sync -C testsuite/difftool"
+  sh "rm -f omc-diff.skip && ${makeCommand()} -C testsuite/difftool clean && ${makeCommand()} --output-sync=recurse -C testsuite/difftool"
   sh 'build/bin/omc-diff -v1.4'
 
   sh ("""#!/bin/bash -x
@@ -144,7 +144,7 @@ void makeLibsAndCache(libs='core') {
   sh "ln -s '${env.LIBRARIES}/om-pkg-cache' testsuite/libraries-for-testing/.openmodelica/"
   generateTemplates()
   sh "touch omc.skip"
-  def cmd = "${makeCommand()} -j${numLogicalCPU()} --output-sync libs-for-testing ReferenceFiles omc-diff"
+  def cmd = "${makeCommand()} -j${numLogicalCPU()} --output-sync=recurse libs-for-testing ReferenceFiles omc-diff"
   if (env.SHARED_LOCK) {
     lock(env.SHARED_LOCK) {
       sh cmd
@@ -233,7 +233,7 @@ void buildOMC(CC, CXX, extraFlags) {
   // Note: Do not use -march=native since we might use an incompatible machine in later stages
   sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os --with-cppruntime --without-omc --without-omlibrary --with-omniORB --enable-modelica3d ${extraFlags}"
   // OMSimulator requires HOME to be set and writeable
-  sh "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} --output-sync omc omc-diff omsimulator"
+  sh "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} --output-sync=recurse omc omc-diff omsimulator"
   sh 'find build/lib/*/omc/ -name "*.so" -exec strip {} ";"'
   sh '''
   mv build build.sanity-check
@@ -290,7 +290,7 @@ void buildGUI(stash, isQt5) {
   } else {
     sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omsens_qt.skip && ${makeCommand()} -q omc omc-diff ReferenceFiles omsimulator omsens_qt" // Pretend we already built omc since we already did so
   }
-  sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync" // Builds the GUI files
+  sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync=recurse" // Builds the GUI files
 
   }
 }
@@ -330,7 +330,7 @@ void buildAndRunOMEditTestsuite(stash) {
   }
   sh 'CONFIG=`./config.status --config` && ./configure `eval $CONFIG`'
   sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip omparser.skip && ${makeCommand()} -q omc omc-diff ReferenceFiles omsimulator omedit omplot omparser" // Pretend we already built omc since we already did so
-  sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync omedit-testsuite" // Builds the OMEdit testsuite
+  sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync=recurse omedit-testsuite" // Builds the OMEdit testsuite
   sh label: 'RunOMEditTestsuite', script: '''
   HOME="\$PWD/testsuite/libraries-for-testing"
   cd build/bin
