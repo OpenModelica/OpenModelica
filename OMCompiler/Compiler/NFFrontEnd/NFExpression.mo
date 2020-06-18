@@ -1060,7 +1060,7 @@ public
     ComponentRef cr;
     Type ty;
   algorithm
-    cr := ComponentRef.applySubscripts(subscript :: restSubscripts, cref);
+    cr := ComponentRef.mergeSubscripts(subscript :: restSubscripts, cref);
     ty := ComponentRef.getSubscriptedType(cr);
     outExp := CREF(ty, cr);
   end applySubscriptCref;
