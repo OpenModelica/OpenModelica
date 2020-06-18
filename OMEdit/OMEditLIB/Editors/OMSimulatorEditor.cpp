@@ -64,7 +64,7 @@ bool OMSimulatorEditor::validateText()
         NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::RevertPreviousOrFixErrorsManually,
                                                                             NotificationsDialog::CriticalIcon,
                                                                             MainWindow::instance());
-        pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::ERROR_IN_TEXT).arg("OMSimulator Model")
+        pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::ERROR_IN_TEXT).arg("SSP Model")
                                                          .append(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER))
                                                          .append(GUIMessages::getMessage(GUIMessages::REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY)));
         pNotificationsDialog->getOkButton()->setText(Helper::revertToLastCorrectVersion);

@@ -2221,17 +2221,6 @@ void MainWindow::toggleTabOrSubWindowView()
   }
 }
 
-void MainWindow::instantiateModel()
-{
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
-    instantiateModel(pModelWidget->getLibraryTreeItem());
-  } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                .arg(tr("instantiating")), Helper::scriptingKind, Helper::notificationLevel));
-  }
-}
-
 void MainWindow::checkModel()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
@@ -2251,6 +2240,17 @@ void MainWindow::checkAllModels()
   } else {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                 .arg(tr("checking")), Helper::scriptingKind, Helper::notificationLevel));
+  }
+}
+
+void MainWindow::instantiateModel()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget) {
+    instantiateModel(pModelWidget->getLibraryTreeItem());
+  } else {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                .arg(tr("instantiating")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
 
@@ -3445,11 +3445,6 @@ void MainWindow::createActions()
   mpToggleTabOrSubWindowView->setStatusTip(tr("Toggle between tab or sub-window view mode"));
   connect(mpToggleTabOrSubWindowView, SIGNAL(triggered()), SLOT(toggleTabOrSubWindowView()));
   // Simulation Menu
-  // instantiate model action
-  mpInstantiateModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.svg"), tr("Instantiate Model"), this);
-  mpInstantiateModelAction->setStatusTip(tr("Instantiates the modelica model"));
-  mpInstantiateModelAction->setEnabled(false);
-  connect(mpInstantiateModelAction, SIGNAL(triggered()), SLOT(instantiateModel()));
   // check model action
   mpCheckModelAction = new QAction(QIcon(":/Resources/icons/check.svg"), Helper::checkModel, this);
   mpCheckModelAction->setStatusTip(Helper::checkModelTip);
@@ -3460,6 +3455,11 @@ void MainWindow::createActions()
   mpCheckAllModelsAction->setStatusTip(Helper::checkAllModelsTip);
   mpCheckAllModelsAction->setEnabled(false);
   connect(mpCheckAllModelsAction, SIGNAL(triggered()), SLOT(checkAllModels()));
+  // instantiate model action
+  mpInstantiateModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.svg"), tr("Instantiate Model"), this);
+  mpInstantiateModelAction->setStatusTip(tr("Instantiates the modelica model"));
+  mpInstantiateModelAction->setEnabled(false);
+  connect(mpInstantiateModelAction, SIGNAL(triggered()), SLOT(instantiateModel()));
   // simulation setup action
   mpSimulationSetupAction = new QAction(QIcon(":/Resources/icons/simulation-center.svg"), Helper::simulationSetup, this);
   mpSimulationSetupAction->setStatusTip(Helper::simulationSetupTip);
@@ -3897,9 +3897,9 @@ void MainWindow::createMenus()
   QMenu *pSimulationMenu = new QMenu(menuBar());
   pSimulationMenu->setTitle(tr("&Simulation"));
   // add actions to Simulation menu
-  pSimulationMenu->addAction(mpInstantiateModelAction);
   pSimulationMenu->addAction(mpCheckModelAction);
   pSimulationMenu->addAction(mpCheckAllModelsAction);
+  pSimulationMenu->addAction(mpInstantiateModelAction);
   pSimulationMenu->addAction(mpSimulationSetupAction);
   pSimulationMenu->addAction(mpOMSInstantiateModelAction);
   pSimulationMenu->addAction(mpSimulateModelAction);

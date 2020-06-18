@@ -413,7 +413,6 @@ public:
   static QString priority;
   static QString secs;
   static QString saveContentsInOneFile;
-  static QString OMSSimulateTip;
   static QString dateTime;
   static QString startTime;
   static QString stopTime;
