@@ -54,7 +54,6 @@ import ExecStat.execStat;
 import ExpressionIterator = NFExpressionIterator;
 import Expression = NFExpression;
 import Flags;
-import Inst = NFInst;
 import List;
 import Call = NFCall;
 import Class = NFClass;
@@ -92,6 +91,7 @@ import InstNodeType = NFInstNode.InstNodeType;
 import ExpandableConnectors = NFExpandableConnectors;
 import SCodeUtil;
 import DAE;
+import Structural = NFStructural;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;
@@ -747,7 +747,7 @@ algorithm
       algorithm
         restString := ComponentRef.toString(restCref);
         if prefixLength <= stringLength(restString) and prefixString == substring(restString, 1, prefixLength) then
-          exp.cref := ComponentRef.applySubscripts({subscript}, exp.cref, applyToScope = true);
+          exp.cref := ComponentRef.mergeSubscripts({subscript}, exp.cref, applyToScope = true);
         end if;
       then
         exp;
@@ -957,7 +957,7 @@ algorithm
   cond_var := Expression.variability(cond);
 
   if Expression.variability(cond) == Variability.PARAMETER then
-    Inst.markStructuralParamsExp(cond);
+    Structural.markExp(cond);
   end if;
 end flattenConditionalArrayIfExp;
 

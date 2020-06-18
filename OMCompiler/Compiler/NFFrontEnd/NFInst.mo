@@ -77,7 +77,6 @@ import ExecStat.{execStat,execStatReset};
 import SCodeDump;
 import SCodeUtil;
 import System;
-import Config;
 import Call = NFCall;
 import Absyn.Path;
 import NFClassTree.ClassTree;
@@ -102,6 +101,7 @@ import Variable = NFVariable;
 import OperatorOverloading = NFOperatorOverloading;
 import EvalConstants = NFEvalConstants;
 import VerifyModel = NFVerifyModel;
+import Structural = NFStructural;
 
 public
 
@@ -3280,7 +3280,7 @@ algorithm
     case Class.EXPANDED_DERIVED()
       algorithm
         for dim in cls.dims loop
-          markStructuralParamsDim(dim);
+          Structural.markDimension(dim);
         end for;
 
         updateImplicitVariability(cls.baseClass, evalAllParams);
@@ -3312,23 +3312,23 @@ algorithm
 
     case Component.UNTYPED_COMPONENT(binding = binding, condition = condition)
       algorithm
-        if isStructuralComponent(c, c.attributes, binding, node, evalAllParams) then
-          markStructuralParamsComp(c, node);
+        if Structural.isStructuralComponent(c, c.attributes, binding, node, evalAllParams) then
+          Structural.markComponent(c, node);
         end if;
 
         // Parameters used in array dimensions are structural.
         for dim in c.dimensions loop
-          markStructuralParamsDim(dim);
+          Structural.markDimension(dim);
         end for;
 
         // Parameters that determine the size of a component binding are structural.
         if Binding.isBound(binding) then
-          markStructuralParamsExpSize(Binding.getUntypedExp(binding));
+          Structural.markExpSize(Binding.getUntypedExp(binding));
         end if;
 
         // Parameters used in a component condition are structural.
         if Binding.isBound(condition) then
-          markStructuralParamsExp(Binding.getUntypedExp(condition));
+          Structural.markExp(Binding.getUntypedExp(condition));
         end if;
 
         updateImplicitVariability(c.classInst, evalAllParams);
@@ -3341,7 +3341,7 @@ algorithm
         binding := Modifier.binding(c.modifier);
 
         if Binding.isBound(binding) then
-          markStructuralParamsExp(Binding.getUntypedExp(binding));
+          Structural.markExp(Binding.getUntypedExp(binding));
         end if;
       then
         ();
@@ -3349,318 +3349,6 @@ algorithm
     else ();
   end match;
 end updateImplicitVariabilityComp;
-
-function isStructuralComponent
-  input Component component;
-  input Component.Attributes compAttrs;
-  input Binding compBinding;
-  input InstNode compNode;
-  input Boolean evalAllParams;
-  output Boolean isStructural;
-protected
-  Boolean is_fixed;
-algorithm
-  if compAttrs.variability <> Variability.PARAMETER then
-    // Only parameters can be structural.
-    isStructural := false;
-  elseif evalAllParams or Component.getEvaluateAnnotation(component) then
-    // If -d=evaluateAllParameters is set or the parameter has an Evaluate=true
-    // annotation we should probably evaluate the parameter, which we do by
-    // marking it as structural.
-    if not Component.getFixedAttribute(component) then
-      // Except non-fixed parameters.
-      isStructural := false;
-    elseif Component.isExternalObject(component) then
-      // Except external objects.
-      isStructural := false;
-    elseif not InstNode.hasBinding(compNode) then
-      // Except parameters with no bindings.
-      if not evalAllParams and not Flags.getConfigBool(Flags.CHECK_MODEL) then
-        // Print a warning if a parameter has an Evaluate=true annotation but no binding.
-        Error.addSourceMessage(Error.UNBOUND_PARAMETER_EVALUATE_TRUE,
-          {InstNode.name(compNode)}, InstNode.info(compNode));
-      end if;
-
-      isStructural := false;
-    elseif isBindingNotFixed(compBinding, requireFinal = false) then
-      // Except parameters that depend on non-fixed parameters.
-      isStructural := false;
-    else
-      // All other parameters are considered structural in this case.
-      isStructural := true;
-    end if;
-  //elseif Component.isFinal(component) and Component.getFixedAttribute(component) then
-  //  // If a parameter is fixed and final we might also want to evaluate it,
-  //  // since its binding can't be modified. But only if all parameters it
-  //  // depends on are also fixed and final.
-  //  if Binding.isUnbound(compBinding) or isBindingNotFixed(compBinding, requireFinal = true) then
-  //    isStructural := false;
-  //  else
-  //    isStructural := true;
-  //  end if;
-  else
-    isStructural := false;
-  end if;
-end isStructuralComponent;
-
-function isBindingNotFixed
-  input Binding binding;
-  input Boolean requireFinal;
-  input Integer maxDepth = 4;
-  output Boolean isNotFixed;
-algorithm
-  if maxDepth == 0 then
-    isNotFixed := true;
-    return;
-  end if;
-
-  if Binding.hasExp(binding) then
-    isNotFixed := isExpressionNotFixed(Expression.getBindingExp(Binding.getExp(binding)), requireFinal, maxDepth);
-  else
-    isNotFixed := true;
-  end if;
-end isBindingNotFixed;
-
-function isComponentBindingNotFixed
-  input Component component;
-  input InstNode node;
-  input Boolean requireFinal;
-  input Integer maxDepth;
-  input Boolean isRecord = false;
-  output Boolean isNotFixed;
-protected
-  Binding binding;
-  InstNode parent;
-algorithm
-  binding := Component.getBinding(component);
-
-  if Binding.isUnbound(binding) then
-    if isRecord or InstNode.isRecord(node) then
-      // TODO: Check whether the record fields have bindings or not.
-      isNotFixed := false;
-    else
-      parent := InstNode.parent(node);
-
-      if InstNode.isComponent(parent) and InstNode.isRecord(parent) then
-        isNotFixed := isComponentBindingNotFixed(InstNode.component(parent), parent, requireFinal, maxDepth, true);
-      else
-        isNotFixed := true;
-      end if;
-    end if;
-  else
-    isNotFixed := isBindingNotFixed(binding, requireFinal, maxDepth);
-  end if;
-end isComponentBindingNotFixed;
-
-function isExpressionNotFixed
-  input Expression exp;
-  input Boolean requireFinal = false;
-  input Integer maxDepth = 4;
-  output Boolean isNotFixed;
-algorithm
-  isNotFixed := match exp
-    local
-      InstNode node;
-      Component c;
-      Variability var;
-      Expression e;
-
-    case Expression.CREF()
-      algorithm
-        node := ComponentRef.node(exp.cref);
-
-        if InstNode.isComponent(node) then
-          c := InstNode.component(node);
-          var := Component.variability(c);
-
-          if var <= Variability.STRUCTURAL_PARAMETER then
-            isNotFixed := false;
-          elseif var == Variability.PARAMETER and
-                 (not requireFinal or Component.isFinal(c)) and
-                 not Component.isExternalObject(c) and
-                 Component.getFixedAttribute(c) then
-            isNotFixed := isComponentBindingNotFixed(c, node, requireFinal, maxDepth - 1);
-          else
-            isNotFixed := true;
-          end if;
-        else
-          isNotFixed := true;
-        end if;
-      then
-        isNotFixed or
-        Expression.containsShallow(exp,
-          function isExpressionNotFixed(requireFinal = requireFinal, maxDepth = maxDepth));
-
-    case Expression.SIZE()
-      algorithm
-        if isSome(exp.dimIndex) then
-          isNotFixed := isExpressionNotFixed(Util.getOption(exp.dimIndex), requireFinal, maxDepth);
-        else
-          isNotFixed := false;
-        end if;
-      then
-        isNotFixed;
-
-    case Expression.CALL()
-      algorithm
-        if Call.isImpure(exp.call) or Call.isExternal(exp.call) then
-          isNotFixed := true;
-        else
-          isNotFixed := Expression.containsShallow(exp,
-            function isExpressionNotFixed(requireFinal = requireFinal, maxDepth = maxDepth));
-        end if;
-      then
-        isNotFixed;
-
-    else Expression.containsShallow(exp,
-      function isExpressionNotFixed(requireFinal = requireFinal, maxDepth = maxDepth));
-  end match;
-end isExpressionNotFixed;
-
-function getRecordFieldBinding
-  input Component comp;
-  input InstNode node;
-  output Binding binding;
-protected
-  InstNode parent;
-algorithm
-  binding := Component.getBinding(comp);
-
-  if Binding.isUnbound(binding) then
-    parent := InstNode.parent(node);
-
-    if InstNode.isComponent(parent) and
-       Restriction.isRecord(Class.restriction(InstNode.getClass(parent))) then
-      binding := getRecordFieldBinding(InstNode.component(parent), parent);
-    end if;
-  end if;
-end getRecordFieldBinding;
-
-function markStructuralParamsDim
-  input Dimension dimension;
-algorithm
-  () := match dimension
-    case Dimension.UNTYPED()
-      algorithm
-        markStructuralParamsExp(dimension.dimension);
-      then
-        ();
-
-    case Dimension.EXP()
-      algorithm
-        markStructuralParamsExp(dimension.exp);
-      then
-        ();
-
-    else ();
-  end match;
-end markStructuralParamsDim;
-
-function markStructuralParamsExp
-  input Expression exp;
-  import NFComponentRef.Origin;
-algorithm
-  () := match exp
-    local
-      InstNode node;
-      Component comp;
-      Expression e;
-
-    case Expression.CREF(cref = ComponentRef.CREF(node = node, origin = Origin.CREF))
-      algorithm
-        if InstNode.isComponent(node) then
-          comp := InstNode.component(node);
-
-          if Component.variability(comp) == Variability.PARAMETER then
-            markStructuralParamsComp(comp, node);
-          end if;
-        end if;
-
-        Expression.applyShallow(exp, markStructuralParamsExp);
-      then
-        ();
-
-    case Expression.SIZE()
-      algorithm
-        // The expression in the size expression should not be marked as
-        // structural, since only the type of it matters to determine the size.
-        // Subscripts in the expression should be marked as structural though.
-        markStructuralParamsExpSubs(exp.exp);
-
-        // The optional index should be marked as structural.
-        if isSome(exp.dimIndex) then
-          SOME(e) := exp.dimIndex;
-          markStructuralParamsExp(e);
-        end if;
-      then
-        ();
-
-    else
-      algorithm
-        Expression.applyShallow(exp, markStructuralParamsExp);
-      then
-        ();
-  end match;
-end markStructuralParamsExp;
-
-function markStructuralParamsExpSubs
-  input Expression exp;
-algorithm
-  () := match exp
-    case Expression.CREF()
-      algorithm
-        ComponentRef.foldSubscripts(exp.cref, markStructuralParamsSub, 0);
-      then
-        ();
-
-    else
-      algorithm
-        Expression.applyShallow(exp, markStructuralParamsExpSubs);
-      then
-        ();
-  end match;
-end markStructuralParamsExpSubs;
-
-function markStructuralParamsComp
-  input Component component;
-  input InstNode node;
-protected
-  Component comp;
-  Option<Expression> binding;
-algorithm
-  comp := Component.setVariability(Variability.STRUCTURAL_PARAMETER, component);
-  InstNode.updateComponent(comp, node);
-
-  binding := Binding.untypedExp(Component.getBinding(comp));
-  if isSome(binding) then
-    markStructuralParamsExp(Util.getOption(binding));
-  end if;
-end markStructuralParamsComp;
-
-function markStructuralParamsExpSize
-  input Expression exp;
-algorithm
-  Expression.apply(exp, markStructuralParamsExpSize_traverser);
-end markStructuralParamsExpSize;
-
-function markStructuralParamsExpSize_traverser
-  input Expression exp;
-algorithm
-  () := match exp
-    local
-      list<tuple<InstNode, Expression>> iters;
-
-    case Expression.CALL(call = Call.UNTYPED_ARRAY_CONSTRUCTOR(iters = iters))
-      algorithm
-        for iter in iters loop
-          markStructuralParamsExp(Util.tuple22(iter));
-        end for;
-      then
-        ();
-
-    else ();
-  end match;
-end markStructuralParamsExpSize_traverser;
 
 function updateImplicitVariabilityEql
   input list<Equation> eql;
@@ -3690,8 +3378,8 @@ algorithm
 
     case Equation.CONNECT()
       algorithm
-        Expression.fold(eq.lhs, markStructuralParamsSubs, 0);
-        Expression.fold(eq.rhs, markStructuralParamsSubs, 0);
+        Structural.markSubscriptsInExp(eq.lhs);
+        Structural.markSubscriptsInExp(eq.rhs);
       then
         ();
 
@@ -3804,33 +3492,6 @@ algorithm
     else ();
   end match;
 end updateImplicitVariabilityStmt;
-
-function markStructuralParamsSubs
-  input Expression exp;
-  input output Integer dummy;
-algorithm
-  () := match exp
-    case Expression.CREF()
-      algorithm
-        ComponentRef.foldSubscripts(exp.cref, markStructuralParamsSub, 0);
-      then
-        ();
-
-    else ();
-  end match;
-end markStructuralParamsSubs;
-
-function markStructuralParamsSub
-  input Subscript sub;
-  input output Integer dummy = 0;
-algorithm
-  () := match sub
-      case Subscript.UNTYPED() algorithm markStructuralParamsExp(sub.exp); then ();
-      case Subscript.INDEX() algorithm markStructuralParamsExp(sub.index); then ();
-      case Subscript.SLICE() algorithm markStructuralParamsExp(sub.slice); then ();
-    else ();
-  end match;
-end markStructuralParamsSub;
 
 function markImplicitWhenExp
   input Expression exp;
