@@ -1,8 +1,8 @@
 // name:     twoflattankmodel linearization
 // keywords: twoflattankmodel, linearization
 // status:   correct
-// teardown_command: rm -rf twoflattankmodel.* twoflattankmodel_* output.log linear_twoflattankmodel.* linear_twoflattankmodel_* linear_twoflattankmodel twoflattankmodel
-// 
+// teardown_command: rm -rf twoflattankmodel.* twoflattankmodel_* output.log linearized_model.* linearized_model_* linearized_model twoflattankmodel
+//
 //  Case for linearization of twoflattankmodel model
 //
 loadFile("modelTwoflattankmodel.mo");
@@ -12,25 +12,25 @@ setCommandLineOptions("--generateSymbolicLinearization");
 getErrorString();
 linearize(twoflattankmodel, stopTime=0);
 getErrorString();
-loadFile("linear_twoflattankmodel.mo");
-list(linear_twoflattankmodel);
-simulate(linear_twoflattankmodel,method="dassl");
+loadFile("linearized_model.mo");
+list(linearized_model);
+simulate(linearized_model,method="dassl");
 getErrorString();
-readFile("linear_twoflattankmodel.log"); // Check that output log is empty
+readFile("linearized_model.log"); // Check that output log is empty
 setCommandLineOptions("--generateSymbolicLinearization=false");
 getErrorString();
 
-// 
+//
 //  Case for numeric linearization of twoflattankmodel model
 //
 //linearize with numeric linearization and data recovery
 simulate(twoflattankmodel, simflags="-l=0 -l_datarec");
 getErrorString();
-loadFile("linear_twoflattankmodel.mo");
-list(linear_twoflattankmodel);
-simulate(linear_twoflattankmodel);
+loadFile("linearized_model.mo");
+list(linearized_model);
+simulate(linearized_model);
 getErrorString();
-readFile("linear_twoflattankmodel.log"); // Check that output log is empty
+readFile("linearized_model.log"); // Check that output log is empty
 
 // Result:
 // true
@@ -48,7 +48,7 @@ readFile("linear_twoflattankmodel.log"); // Check that output log is empty
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // true
-// "model linear_twoflattankmodel
+// "model linearized_model \"twoflattankmodel\"
 //   parameter Integer n = 2 \"number of states\";
 //   parameter Integer m = 1 \"number of inputs\";
 //   parameter Integer p = 1 \"number of outputs\";
@@ -68,10 +68,10 @@ readFile("linear_twoflattankmodel.log"); // Check that output log is empty
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;
-// end linear_twoflattankmodel;"
+// end linearized_model;"
 // record SimulationResult
-//     resultFile = "linear_twoflattankmodel_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_twoflattankmodel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "linearized_model_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linearized_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -95,7 +95,7 @@ readFile("linear_twoflattankmodel.log"); // Check that output log is empty
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // true
-// "model linear_twoflattankmodel
+// "model linearized_model \"twoflattankmodel\"
 //   parameter Integer n = 2 \"number of states\";
 //   parameter Integer m = 1 \"number of inputs\";
 //   parameter Integer p = 1 \"number of outputs\";
@@ -124,10 +124,10 @@ readFile("linear_twoflattankmodel.log"); // Check that output log is empty
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;
 //   z = Cz * x + Dz * u;
-// end linear_twoflattankmodel;"
+// end linearized_model;"
 // record SimulationResult
-//     resultFile = "linear_twoflattankmodel_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_twoflattankmodel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "linearized_model_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linearized_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
