@@ -45,10 +45,10 @@ HEADERS  += OMPlot.h \
 
 win32 {
   CONFIG(debug, debug|release){
-    LIBS += -L$$(OMBUILDDIR)/lib/omc -lomqwtd
+    LIBS += -L$$(OMBUILDDIR)/lib/omc -lqwtd
   }
   else {
-    LIBS += -L$$(OMBUILDDIR)/lib/omc -lomqwt
+    LIBS += -L$$(OMBUILDDIR)/lib/omc -lqwt
   }
   INCLUDEPATH += $$(OMBUILDDIR)/include/omplot/qwt $$(OMBUILDDIR)/include/omc/c
 } else {
