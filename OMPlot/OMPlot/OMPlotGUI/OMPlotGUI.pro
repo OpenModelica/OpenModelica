@@ -36,7 +36,7 @@ win32 {
   else {
     LIBS += -L$$(OMBUILDDIR)/lib/omc -lOMPlot -lqwt
   }
-  INCLUDEPATH += $$(OMBUILDDIR)/include/omplot/qwt $$(OMBUILDDIR)/include/omc/c
+  INCLUDEPATH += $$(OMBUILDDIR)/include/omc/c
 } else {
   include(OMPlotGUI.config)
   LIBS += -lOMPlot

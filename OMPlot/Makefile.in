@@ -28,24 +28,25 @@ else
 	mkdir -p ${DESTDIR}/Applications/
 	cp -a @OMBUILDDIR@/bin/OMPlot@APP@ ${DESTDIR}/Applications/
 endif
-	mkdir -p ${DESTDIR}/$(libdir) ${DESTDIR}/$(includedir)/omplot/qwt
+	mkdir -p ${DESTDIR}/$(libdir)
 	cp -a $(buildlib)/* ${DESTDIR}/$(libdir)
-	cp -a $(builddir_inc)/omplot/qwt ${DESTDIR}/$(includedir)/omplot
+	# ppenguin: remove internal qwt include, use the system's version
+	# cp -a $(builddir_inc)/omplot/qwt ${DESTDIR}/$(includedir)/omplot
 	cp -a OMPlot/OMPlotGUI/*.h ${DESTDIR}/$(includedir)/omplot
 
-qwt: $(buildlib)/libomqwt@SHREXT@
+# qwt: $(buildlib)/libomqwt@SHREXT@
 
-qwt-build: mkbuilddirs
-	$(MAKE) -C qwt -f Makefile.unix
-	test -f $(builddir_inc)/omplot/qwt/qwt_global.h || ($(MAKE) -C qwt install && chmod 644 qwt/build/include/*.h && cp -a qwt/build/include/*.h $(builddir_inc)/omplot/qwt)
+# qwt-build: mkbuilddirs
+#	$(MAKE) -C qwt -f Makefile.unix
+#	test -f $(builddir_inc)/omplot/qwt/qwt_global.h || ($(MAKE) -C qwt install && chmod 644 qwt/build/include/*.h && cp -a qwt/build/include/*.h $(builddir_inc)/omplot/qwt)
 
 mkbuilddirs:
-	mkdir -p $(builddir_inc)/omplot/qwt
+	# mkdir -p $(builddir_inc)/omplot/qwt
 	mkdir -p $(buildlib)
 	mkdir -p $(buildbin)
 
 clean:
-	$(MAKE) -C qwt -f Makefile.unix clean
+	# $(MAKE) -C qwt -f Makefile.unix clean
 	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix clean
 Makefile: Makefile.in config.status
 	./config.status
