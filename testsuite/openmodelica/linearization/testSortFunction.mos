@@ -20,8 +20,8 @@ end SortTest;
 setCommandLineOptions("--generateSymbolicLinearization");
 linearize(SortTest, stopTime=1.0);getErrorString();
 
-loadFile("linear_SortTest.mo");
-list(linear_SortTest);
+loadFile("linearized_model.mo");
+list(linearized_model);
 
 
 // Result:
@@ -41,7 +41,7 @@ list(linear_SortTest);
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // true
-// "model linear_SortTest
+// "model linearized_model \"SortTest\"
 //   parameter Integer n = 1 \"number of states\";
 //   parameter Integer m = 1 \"number of inputs\";
 //   parameter Integer p = 4 \"number of outputs\";
@@ -63,5 +63,5 @@ list(linear_SortTest);
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;
-// end linear_SortTest;"
+// end linearized_model;"
 // endResult

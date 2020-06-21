@@ -10,19 +10,19 @@ loadFile("test_dump_languages.mo"); getErrorString();
 
 setCommandLineOptions("--linearizationDumpLanguage=modelica");
 linearize(simple_test, stopTime=0.5); getErrorString();
-readFile("linear_simple_test.mo"); getErrorString();
+readFile("linearized_model.mo"); getErrorString();
 
 setCommandLineOptions("--linearizationDumpLanguage=matlab");
 linearize(simple_test, stopTime=0.5); getErrorString();
-readFile("linear_simple_test.m"); getErrorString();
+readFile("linearized_model.m"); getErrorString();
 
 setCommandLineOptions("--linearizationDumpLanguage=julia");
 linearize(simple_test, stopTime=0.5); getErrorString();
-readFile("linear_simple_test.jl"); getErrorString();
+readFile("linearized_model.jl"); getErrorString();
 
 setCommandLineOptions("--linearizationDumpLanguage=python");
 linearize(simple_test, stopTime=0.5); getErrorString();
-readFile("linear_simple_test.py"); getErrorString();
+readFile("linearized_model.py"); getErrorString();
 
 // Result:
 // true
@@ -39,11 +39,10 @@ readFile("linear_simple_test.py"); getErrorString();
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// "model linear_simple__test
+// "model linearized_model \"simple_test\"
 //   parameter Integer n = 2 \"number of states\";
 //   parameter Integer m = 1 \"number of inputs\";
 //   parameter Integer p = 1 \"number of outputs\";
-//
 //   parameter Real x0[n] = {1.626558527192664, 2.380918053900121};
 //   parameter Real u0[m] = {0};
 //
@@ -73,7 +72,7 @@ readFile("linear_simple_test.py"); getErrorString();
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;
-// end linear_simple__test;
+// end linearized_model;
 // "
 // ""
 // true
@@ -88,7 +87,8 @@ readFile("linear_simple_test.py"); getErrorString();
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// "function [sys, x0, u0, n, m, p] = simple_test_GetLinearModel()
+// "function [sys, x0, u0, n, m, p, Ts] = linearized_model()
+// % simple_test
 // % der(x) = A * x + B * u
 // % y = C * x + D * u
 //   n = 2; % number of states
@@ -111,7 +111,7 @@ readFile("linear_simple_test.py"); getErrorString();
 //   Ts = 0.5; % stop time
 //
 //   % The Control System Toolbox is required for this. Alternatively just return the matrices A,B,C,D instead.
-//   sys = ss(A,B,C,D,Ts,'StateName',{'x_num_x(1)','x_num_x(2)'}, 'InputName',{'u_u'}, 'OutputName', {'y_y'});
+//   sys = ss(A,B,C,D,'StateName',{'x_num_x(1)','x_num_x(2)'}, 'InputName',{'u_u'}, 'OutputName', {'y_y'});
 // end"
 // ""
 // true
@@ -126,7 +126,8 @@ readFile("linear_simple_test.py"); getErrorString();
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// "function simple_test_GetLinearModel()
+// "function linearized_model()
+// #= simple_test =#
 // #= der(x) = A * x + B * u =#
 // #= y = C * x + D * u =#
 //   local n = 2 #= number of states =#
@@ -166,7 +167,8 @@ readFile("linear_simple_test.py"); getErrorString();
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// "def simple_test_GetLinearModel()
+// "def linearized_model()
+// # simple_test
 // # der(x) = A * x + B * u
 // # y = C * x + D * u
 //   n = 2 # number of states

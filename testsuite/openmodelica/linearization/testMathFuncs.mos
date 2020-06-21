@@ -1,8 +1,8 @@
 // name:     testMathFuncs linearization
 // keywords: differentiation linearization
 // status:   correct
-// teardown_command: rm -rf mathFuncsTest* output.log linear_mathFuncsTest*
-//  
+// teardown_command: rm -rf mathFuncsTest* output.log linearized_model*
+//
 //
 
 
@@ -18,31 +18,31 @@ equation
   r3 = rem(x,y);
   r4 = ceil(x*y);
   r5 = floor(x*y);
-  r6 = integer(x*y);      
+  r6 = integer(x*y);
 end mathFuncsTest;
 ");
 
-// 
+//
 //  Case for numeric linearization of mathFuncsTest model
 //
 //linearize with numeric linearization and data recovery
 simulate(mathFuncsTest, simflags="-l=0 -l_datarec");
 getErrorString();
-loadFile("linear_mathFuncsTest.mo");
-list(linear_mathFuncsTest);
-simulate(linear_mathFuncsTest);
+loadFile("linearized_model.mo");
+list(linearized_model);
+simulate(linearized_model);
 getErrorString();
-readFile("linear_mathFuncsTest.log"); // Check that output log is empty
+readFile("linearized_model.log"); // Check that output log is empty
 
 // Symbolically linearize
 setCommandLineOptions("+generateSymbolicLinearization");
 linearize(mathFuncsTest,stopTime=0);
 getErrorString();
-loadFile("linear_mathFuncsTest.mo");
-list(linear_mathFuncsTest);
-simulate(linear_mathFuncsTest);
+loadFile("linearized_model.mo");
+list(linearized_model);
+simulate(linearized_model);
 getErrorString();
-readFile("linear_mathFuncsTest.log"); // Check that output log is empty
+readFile("linearized_model.log"); // Check that output log is empty
 
 
 // Result:
@@ -59,7 +59,7 @@ readFile("linear_mathFuncsTest.log"); // Check that output log is empty
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // true
-// "model linear_mathFuncsTest
+// "model linearized_model \"mathFuncsTest\"
 //   parameter Integer n = 2 \"number of states\";
 //   parameter Integer m = 0 \"number of inputs\";
 //   parameter Integer p = 6 \"number of outputs\";
@@ -97,10 +97,10 @@ readFile("linear_mathFuncsTest.log"); // Check that output log is empty
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;
 //   z = Cz * x + Dz * u;
-// end linear_mathFuncsTest;"
+// end linearized_model;"
 // record SimulationResult
-//     resultFile = "linear_mathFuncsTest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_mathFuncsTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "linearized_model_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linearized_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -123,7 +123,7 @@ readFile("linear_mathFuncsTest.log"); // Check that output log is empty
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // true
-// "model linear_mathFuncsTest
+// "model linearized_model \"mathFuncsTest\"
 //   parameter Integer n = 2 \"number of states\";
 //   parameter Integer m = 0 \"number of inputs\";
 //   parameter Integer p = 6 \"number of outputs\";
@@ -147,10 +147,10 @@ readFile("linear_mathFuncsTest.log"); // Check that output log is empty
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;
-// end linear_mathFuncsTest;"
+// end linearized_model;"
 // record SimulationResult
-//     resultFile = "linear_mathFuncsTest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_mathFuncsTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "linearized_model_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linearized_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

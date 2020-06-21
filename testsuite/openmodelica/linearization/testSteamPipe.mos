@@ -15,8 +15,8 @@ end testSteamPipeLin;
 setCommandLineOptions("--generateSymbolicLinearization");
 linearize(testSteamPipeLin, stopTime=0.0);getErrorString();
 
-loadFile("linear_testSteamPipeLin.mo");
-list(linear_testSteamPipeLin);
+loadFile("linearized_model.mo");
+list(linearized_model);
 
 
 // Result:
@@ -36,7 +36,7 @@ list(linear_testSteamPipeLin);
 // end SimulationResult;
 // ""
 // true
-// "model linear_testSteamPipeLin
+// "model linearized_model \"testSteamPipeLin\"
 //   parameter Integer n = 4 \"number of states\";
 //   parameter Integer m = 0 \"number of inputs\";
 //   parameter Integer p = 0 \"number of outputs\";
@@ -56,5 +56,5 @@ list(linear_testSteamPipeLin);
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;
-// end linear_testSteamPipeLin;"
+// end linearized_model;"
 // endResult

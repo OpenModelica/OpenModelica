@@ -146,7 +146,7 @@ sub enter_sandbox {
     if    (/$stop_expr/)               { last; }
     elsif (/setup_command.*\s(.*\.c)/) { make_link($1); }
     elsif (/depends: *([A-Za-z0-9_.-]*)/) { make_link($1); }
-    elsif (/loadFile.*\(\"linear_simple_test\.mo\"\)/) {}
+    elsif (/loadFile.*\(\"linearized_model\.mo\"\)/) {}
     elsif (/loadFile.*\(\"(.*)\"\)/)   { make_link($1); }
     elsif (/runScript.*\(\"(.*)\"\)/)  { make_link($1); }
     elsif (/importFMU.*\(\"(.*)\"\)/)  { make_link($1); }
@@ -241,7 +241,7 @@ while(<$test_log>) {
   elsif(/== Failed to set baseline.*time: (\d*)/) {
     $nfailed = 1;
     $time = $2;
-  }  
+  }
   elsif(/.*time: (\d*)/) {
     $nfailed = 0;
     $time = $1;
@@ -341,4 +341,3 @@ if ($exit_status == 0) {
   }
   exit $time;
 }
-

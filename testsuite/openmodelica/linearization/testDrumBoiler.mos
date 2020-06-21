@@ -14,8 +14,8 @@ end testDrumBoilerLin;
 setCommandLineOptions("--generateSymbolicLinearization");
 linearize(testDrumBoilerLin, stopTime=0.0);getErrorString();
 
-loadFile("linear_testDrumBoilerLin.mo");
-list(linear_testDrumBoilerLin);
+loadFile("linearized_model.mo");
+list(linearized_model);
 
 
 // Result:
@@ -35,7 +35,7 @@ list(linear_testDrumBoilerLin);
 // "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // "
 // true
-// "model linear_testDrumBoilerLin
+// "model linearized_model \"testDrumBoilerLin\"
 //   parameter Integer n = 3 \"number of states\";
 //   parameter Integer m = 2 \"number of inputs\";
 //   parameter Integer p = 4 \"number of outputs\";
@@ -60,5 +60,5 @@ list(linear_testDrumBoilerLin);
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;
-// end linear_testDrumBoilerLin;"
+// end linearized_model;"
 // endResult

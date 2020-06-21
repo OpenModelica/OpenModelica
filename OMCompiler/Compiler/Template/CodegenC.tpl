@@ -4644,8 +4644,7 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
     <<
     const char *<%symbolName(modelNamePrefix,"linear_model_frame")%>()
     {
-      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%> \"number of states\";\n  parameter Integer m = <%varInfo.numInVars%> \"number of inputs\";\n  parameter Integer p = <%varInfo.numOutVars%> \"number of outputs\";\n"
-      "\n"
+      return "model linearized_model \"<%modelNamePrefix%>\" \n  parameter Integer n = <%varInfo.numStateVars%> \"number of states\";\n  parameter Integer m = <%varInfo.numInVars%> \"number of inputs\";\n  parameter Integer p = <%varInfo.numOutVars%> \"number of outputs\";\n"
       "  parameter Real x0[n] = %s;\n"
       "  parameter Real u0[m] = %s;\n"
       "\n"
@@ -4661,12 +4660,11 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
       <%getVarName(vars.stateVars, "x")%>
       <%getVarName(vars.inputVars, "u")%>
       <%getVarName(vars.outputVars, "y")%>
-      "equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\nend linear_<%underscorePath(name)%>;\n";
+      "equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\nend linearized_model;\n";
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
     {
-      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%> \"number of states\";\n  parameter Integer m = <%varInfo.numInVars%> \"number of inputs\";\n  parameter Integer p = <%varInfo.numOutVars%> \"number of outputs\";\n  parameter Integer nz = <%varInfo.numAlgVars%> \"data recovery variables\";\n"
-      "\n"
+      return "model linearized_model \"<%modelNamePrefix%>\" \n parameter Integer n = <%varInfo.numStateVars%> \"number of states\";\n  parameter Integer m = <%varInfo.numInVars%> \"number of inputs\";\n  parameter Integer p = <%varInfo.numOutVars%> \"number of outputs\";\n  parameter Integer nz = <%varInfo.numAlgVars%> \"data recovery variables\";\n"
       "  parameter Real x0[<%varInfo.numStateVars%>] = %s;\n"
       "  parameter Real u0[<%varInfo.numInVars%>] = %s;\n"
       "  parameter Real z0[<%varInfo.numAlgVars%>] = %s;\n"
@@ -4687,7 +4685,7 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
       <%getVarName(vars.inputVars, "u")%>
       <%getVarName(vars.outputVars, "y")%>
       <%getVarName(vars.algVars, "z")%>
-      "equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\n  z = Cz * x + Dz * u;\nend linear_<%underscorePath(name)%>;\n";
+      "equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\n  z = Cz * x + Dz * u;\nend linearized_model;\n";
     }
     >>
   end match
@@ -4706,7 +4704,8 @@ template functionlinearmodelMatlab(ModelInfo modelInfo, String modelNamePrefix) 
     <<
     const char *<%symbolName(modelNamePrefix,"linear_model_frame")%>()
     {
-      return "function [sys, x0, u0, n, m, p] = <%symbolName(modelNamePrefix,"GetLinearModel")%>()\n"
+      return "function [sys, x0, u0, n, m, p, Ts] = linearized_model()\n"
+      "%% <%modelNamePrefix%>\n"
       "%% der(x) = A * x + B * u\n%% y = C * x + D * u\n"
       "  n = <%varInfo.numStateVars%>; %% number of states\n  m = <%varInfo.numInVars%>; %% number of inputs\n  p = <%varInfo.numOutVars%>; %% number of outputs\n"
       "\n"
@@ -4719,7 +4718,7 @@ template functionlinearmodelMatlab(ModelInfo modelInfo, String modelNamePrefix) 
       <%matrixD%>
       "  Ts = %g; %% stop time\n\n"
       "  %% The Control System Toolbox is required for this. Alternatively just return the matrices A,B,C,D instead.\n"
-      "  sys = ss(A,B,C,D,Ts,'StateName',{<%getVarNameMatlab(vars.stateVars, "x")%>}, 'InputName',{<%getVarNameMatlab(vars.inputVars, "u")%>}, 'OutputName', {<%getVarNameMatlab(vars.outputVars, "y")%>});\n"
+      "  sys = ss(A,B,C,D,'StateName',{<%getVarNameMatlab(vars.stateVars, "x")%>}, 'InputName',{<%getVarNameMatlab(vars.inputVars, "u")%>}, 'OutputName', {<%getVarNameMatlab(vars.outputVars, "y")%>});\n"
       "end";
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
@@ -4744,7 +4743,8 @@ template functionlinearmodelJulia(ModelInfo modelInfo, String modelNamePrefix) "
     <<
     const char *<%symbolName(modelNamePrefix,"linear_model_frame")%>()
     {
-      return "function <%symbolName(modelNamePrefix,"GetLinearModel")%>()\n"
+      return "function linearized_model()\n"
+      "#= <%modelNamePrefix%> =#\n"
       "#= der(x) = A * x + B * u =#\n#= y = C * x + D * u =#\n"
       "  local n = <%varInfo.numStateVars%> #= number of states =#\n  local m = <%varInfo.numInVars%> #= number of inputs =#\n  local p = <%varInfo.numOutVars%> #= number of outputs =#\n"
       "\n"
@@ -4784,7 +4784,8 @@ template functionlinearmodelPython(ModelInfo modelInfo, String modelNamePrefix) 
     <<
     const char *<%symbolName(modelNamePrefix,"linear_model_frame")%>()
     {
-      return "def <%symbolName(modelNamePrefix,"GetLinearModel")%>()\n"
+      return "def linearized_model()\n"
+      "# <%modelNamePrefix%>\n"
       "# der(x) = A * x + B * u \n# y = C * x + D * u \n"
       "  n = <%varInfo.numStateVars%> # number of states\n  m = <%varInfo.numInVars%> # number of inputs\n  p = <%varInfo.numOutVars%> # number of outputs\n"
       "\n"
