@@ -590,45 +590,11 @@ int linearize(DATA* data, threadData_t *threadData)
       case OMC_LINEARIZE_DUMP_LANGUAGE_JULIA: ext = ".jl";  break;
       case OMC_LINEARIZE_DUMP_LANGUAGE_PYTHON: ext = ".py";  break;
     }
-  /* Use the result file name rather than the model name so that the linear file name can be changed with the -r flag, however strip _res.mat from the filename */
-  filename = string(data->modelData->resultFileName) + string(ext);
-	pos = filename.rfind("_res.mat");
-	if (pos != std::string::npos)
-	{
-      // not found, use the modelFilePrefix
-	  filename = string(data->modelData->modelFilePrefix) + string(ext);
-	}
-	else
-	{
-      filename = filename.substr(0, pos) + string(ext);
-	}
-#if defined(__MINGW32__) || defined(_MSC_VER)
-    pos1 = filename.rfind('\\');
-	pos2 = filename.rfind('/');
-	if (pos1 < pos2)
-	{
-      pos = pos2;
-	}
-	else
-	{
-      pos = pos1;
-	}
-    if(pos >= filename.length()) {
-      filename = "linear_" + filename;
-    }else{
-      filename.replace(pos, 1, "/linear_");
-    }
-#else
-    if(filename.rfind('/') >= filename.length()) {
-      filename = "linear_" + filename;
-    }else{
-      filename.replace(filename.rfind('/'), 1, "/linear_");
-    }
-#endif
+    /* ticket #5927: Don't use the model name to prevent bad names for certain languages. */
+    filename = "linearized_model" + string(ext);
 
     FILE *fout = omc_fopen(filename.c_str(),"wb");
     assertStreamPrint(threadData,0!=fout,"Cannot open File %s",filename.c_str());
-
 
     if(do_data_recovery > 0){
         fprintf(fout, data->callback->linear_model_datarecovery_frame(), strX.c_str(), strU.c_str(), strZ0.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str(), strCz.c_str(), strDz.c_str());
@@ -638,6 +604,7 @@ int linearize(DATA* data, threadData_t *threadData)
     if(ACTIVE_STREAM(LOG_STATS)) {
       infoStreamPrint(LOG_STATS, 0, data->callback->linear_model_frame(), strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str(), (double) data->simulationInfo->stopTime);
     }
+
     fflush(fout);
     fclose(fout);
 

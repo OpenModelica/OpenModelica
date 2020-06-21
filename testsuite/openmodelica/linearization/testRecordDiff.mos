@@ -1,7 +1,7 @@
 // name:     testRecordDiff linearization
 // keywords: differentiation linearization records
 // status:   correct
-// teardown_command: rm -rf recordDiffTest* output.log linear_recordDiffTest*
+// teardown_command: rm -rf recordDiffTest* output.log linearized_model*
 //
 //
 
@@ -39,8 +39,8 @@ setCommandLineOptions("--generateSymbolicLinearization");
 linearize(recordDiffTest, stopTime=0.0);
 getErrorString();
 
-loadFile("linear_recordDiffTest.mo");
-list(linear_recordDiffTest);
+loadFile("linearized_model.mo");
+list(linearized_model);
 
 
 // Result:
@@ -59,7 +59,7 @@ list(linear_recordDiffTest);
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // true
-// "model linear_recordDiffTest
+// "model linearized_model \"recordDiffTest\"
 //   parameter Integer n = 1 \"number of states\";
 //   parameter Integer m = 0 \"number of inputs\";
 //   parameter Integer p = 1 \"number of outputs\";
@@ -77,5 +77,5 @@ list(linear_recordDiffTest);
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;
-// end linear_recordDiffTest;"
+// end linearized_model;"
 // endResult
