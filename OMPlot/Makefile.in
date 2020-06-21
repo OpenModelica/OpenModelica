@@ -8,17 +8,17 @@ bindir = @bindir@
 bindir = @includedir@
 libdir = @libdir@/@host_short@/omc
 
-omplot: mkbuilddirs qwt
+omplot: mkbuilddirs
 	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix
 	cp -a OMPlot/OMPlotGUI/*.h @OMBUILDDIR@/include/omplot
 
 .PHONY: install
 
-$(buildlib)/libomqwt.so: mkbuilddirs qwt-build
-	cp -a qwt/lib/libomqwt.so* $(buildlib)/
-$(buildlib)/libomqwt.dylib: mkbuilddirs qwt-build
-	cp -a qwt/lib/libomqwt*dylib $(buildlib)/
-	install_name_tool -id @rpath/libomqwt.6.2.0.dylib $(buildlib)/libomqwt.6.2.0.dylib
+#$(buildlib)/libomqwt.so: mkbuilddirs qwt-build
+#	cp -a qwt/lib/libomqwt.so* $(buildlib)/
+#$(buildlib)/libomqwt.dylib: mkbuilddirs qwt-build
+#	cp -a qwt/lib/libomqwt*dylib $(buildlib)/
+#	install_name_tool -id @rpath/libomqwt.6.2.0.dylib $(buildlib)/libomqwt.6.2.0.dylib
 
 install:
 ifeq (@APP@,)
