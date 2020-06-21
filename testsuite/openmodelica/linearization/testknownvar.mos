@@ -1,8 +1,8 @@
 // name:     Jacobian for Knownvars
 // keywords: linearization, Jacobian
 // status:   correct
-// teardown_command: rm -rf TestKV* linear_TestKV* output.log
-// 
+// teardown_command: rm -rf TestKV* linearized_model* output.log
+//
 //  Case for generating Jacobian for symstem with more simply equations
 //  test for Bugfixe
 //
@@ -18,23 +18,23 @@ getErrorString();
 setCommandLineOptions("--generateSymbolicLinearization=false");
 getErrorString();
 
-loadFile("linear_TestKV.mo");
-list(linear_TestKV);
-simulate(linear_TestKV);
+loadFile("linearized_model.mo");
+list(linearized_model);
+simulate(linearized_model);
 getErrorString();
-readFile("linear_TestKV.log"); // Check that output log is empty
+readFile("linearized_model.log"); // Check that output log is empty
 
-// 
+//
 //  Case for numeric linearization of TestKV model
 //
 //linearize with numeric linearization and data recovery
 simulate(TestKV, simflags="-l=0 -l_datarec");
 getErrorString();
-loadFile("linear_TestKV.mo");
-list(linear_TestKV);
-simulate(linear_TestKV);
+loadFile("linearized_model.mo");
+list(linearized_model);
+simulate(linearized_model);
 getErrorString();
-readFile("linear_TestKV.log"); // Check that output log is empty
+readFile("linearized_model.log"); // Check that output log is empty
 
 // Result:
 // true
@@ -54,7 +54,7 @@ readFile("linear_TestKV.log"); // Check that output log is empty
 // true
 // ""
 // true
-// "model linear_TestKV
+// "model linearized_model \"TestKV\"
 //   parameter Integer n = 1 \"number of states\";
 //   parameter Integer m = 0 \"number of inputs\";
 //   parameter Integer p = 0 \"number of outputs\";
@@ -71,10 +71,10 @@ readFile("linear_TestKV.log"); // Check that output log is empty
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;
-// end linear_TestKV;"
+// end linearized_model;"
 // record SimulationResult
-//     resultFile = "linear_TestKV_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_TestKV', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "linearized_model_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linearized_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -96,7 +96,7 @@ readFile("linear_TestKV.log"); // Check that output log is empty
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // true
-// "model linear_TestKV
+// "model linearized_model \"TestKV\"
 //   parameter Integer n = 1 \"number of states\";
 //   parameter Integer m = 0 \"number of inputs\";
 //   parameter Integer p = 0 \"number of outputs\";
@@ -120,10 +120,10 @@ readFile("linear_TestKV.log"); // Check that output log is empty
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;
 //   z = Cz * x + Dz * u;
-// end linear_TestKV;"
+// end linearized_model;"
 // record SimulationResult
-//     resultFile = "linear_TestKV_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_TestKV', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "linearized_model_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linearized_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

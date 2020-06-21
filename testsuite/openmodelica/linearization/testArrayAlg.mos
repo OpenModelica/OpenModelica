@@ -1,7 +1,7 @@
 // name:     testArrayAlgDiff
 // keywords: differentiation linearization array algorithm
 // status:   correct
-// teardown_command: rm -rf ticket4545* output.log linear_ticket4545*
+// teardown_command: rm -rf ticket4545* output.log linearized_model*
 //
 //
 
@@ -11,8 +11,8 @@ package ticket4545
     Real x[2](each start = 0, each fixed = true);
     discrete Real u[2](each start = 0, each fixed = true);
     Real y[2];
-  equation 
-    for i in 1:2 loop 
+  equation
+    for i in 1:2 loop
       der(x[i]) = u[i]+y[i];
       y[i] = 0.5*x[i];
     end for;
@@ -32,8 +32,8 @@ setCommandLineOptions("--generateSymbolicLinearization");
 getErrorString();
 linearize(ticket4545.Test_vector, stopTime=0);
 getErrorString();
-loadFile("linear_ticket4545.Test_vector.mo");
-list(linear_ticket4545_Test__vector);
+loadFile("linearized_model.mo");
+list(linearized_model);
 getErrorString();
 
 
@@ -54,7 +54,7 @@ getErrorString();
 // end SimulationResult;
 // ""
 // true
-// "model linear_ticket4545_Test__vector
+// "model linearized_model \"ticket4545_Test_vector\"
 //   parameter Integer n = 2 \"number of states\";
 //   parameter Integer m = 0 \"number of inputs\";
 //   parameter Integer p = 0 \"number of outputs\";
@@ -72,6 +72,6 @@ getErrorString();
 // equation
 //   der(x) = A * x + B * u;
 //   y = C * x + D * u;
-// end linear_ticket4545_Test__vector;"
+// end linearized_model;"
 // ""
 // endResult
