@@ -41,7 +41,7 @@ endif
 #	test -f $(builddir_inc)/omplot/qwt/qwt_global.h || ($(MAKE) -C qwt install && chmod 644 qwt/build/include/*.h && cp -a qwt/build/include/*.h $(builddir_inc)/omplot/qwt)
 
 mkbuilddirs:
-	# mkdir -p $(builddir_inc)/omplot/qwt
+	mkdir -p $(builddir_inc)/omplot
 	mkdir -p $(buildlib)
 	mkdir -p $(buildbin)
 
