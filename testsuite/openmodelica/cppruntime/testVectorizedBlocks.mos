@@ -59,7 +59,7 @@ val(y[10], 1.0);
 // ========================================
 // 1: output y:VARIABLE(flow=false )  type: Real[10] [10]
 // 2: integrator1.u:VARIABLE(flow=false )  "Connector of Real input signal" type: Real[10] [10]
-// 3: integrator1.y:VARIABLE(flow=false start = integrator1.y_start )  "Connector of Real output signal" type: Real[10] [10]
+// 3: integrator1.y:STATE(1)(flow=false start = integrator1.y_start )  "Connector of Real output signal" type: Real[10] [10]
 // 4: assignClock1.y:VARIABLE(flow=false )  "Connector of clocked, Real output signal" type: Real[10] [10]
 // 5: assignClock1.u:VARIABLE(flow=false )  "Connector of clocked, Real input signal" type: Real[10] [10]
 //
