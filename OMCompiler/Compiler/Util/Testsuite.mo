@@ -78,6 +78,13 @@ algorithm
         newName := if Autoconf.os == "Windows_NT" then System.stringReplace(name, "\\", "/") else name;
         (i,strs) := System.regex(newName, "^(.*/Compiler/)?(.*/testsuite/(libraries-for-testing/.openmodelica/libraries/)?)?(.*/lib/omlibrary/)?(.*/build/)?(.*)$", 7, true, false);
         friendly := listGet(strs,i);
+
+        // Remove the name of any temporary folders used to sandbox a test case,
+        // since they contain the process id which changes each time the test is run.
+        (i,strs) := System.regex(friendly, "^(.*)(/[_[:alnum:]]*\\.mos?_temp[0-9]*)(.*)$", 4, true, false);
+        if i == 4 then
+          friendly := listGet(strs, 2) + listGet(strs, 4);
+        end if;
       then
         friendly;
 
