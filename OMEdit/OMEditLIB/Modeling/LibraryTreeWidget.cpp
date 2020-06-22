@@ -3342,7 +3342,8 @@ void LibraryTreeView::libraryTreeItemDoubleClicked(const QModelIndex &index)
         } else {
           expand(index);
         }
-        return;
+      } else {
+        mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
       }
     } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
       if ((pLibraryTreeItem->getOMSConnector() || pLibraryTreeItem->getOMSBusConnector() || pLibraryTreeItem->getOMSTLMBusConnector())) {
@@ -4122,6 +4123,15 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
         QFileInfo fileInfo(pLibraryTreeItem->getFileName());
         if (fileInfo.isFile()) {
           mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+        } else {
+          mpLibraryWidget->getLibraryTreeModel()->libraryTreeItemIndex(pLibraryTreeItem);
+          QModelIndex modelIndex = mpLibraryWidget->getLibraryTreeModel()->libraryTreeItemIndex(pLibraryTreeItem);
+          QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+          if (isExpanded(proxyIndex)) {
+            collapse(proxyIndex);
+          } else {
+            expand(proxyIndex);
+          }
         }
       } else {
         mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
