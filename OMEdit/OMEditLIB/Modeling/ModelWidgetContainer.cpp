@@ -8113,7 +8113,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getBitmapShapeAction()->setEnabled(enabled && modelica && !textView);
   MainWindow::instance()->getConnectModeAction()->setEnabled(enabled && (modelica || compositeModel || (oms && !(omsSubmodel || omsConnector))) && !textView);
   MainWindow::instance()->getTransitionModeAction()->setEnabled(enabled && (modelica) && !textView);
-  MainWindow::instance()->getSimulateModelAction()->setEnabled(enabled && ((modelica && pLibraryTreeItem->isSimulationAllowed()) || (oms && isOMSModelInstantiated)));
+  MainWindow::instance()->getSimulateModelAction()->setEnabled(enabled && ((modelica && pLibraryTreeItem->isSimulationAllowed()) || (oms)));
   MainWindow::instance()->getSimulateWithTransformationalDebuggerAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
   MainWindow::instance()->getSimulateWithAlgorithmicDebuggerAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
 #if !defined(WITHOUT_OSG)
