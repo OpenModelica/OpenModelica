@@ -708,7 +708,13 @@ void MainWindow::simulate(LibraryTreeItem *pLibraryTreeItem)
       if (!mpOMSSimulationDialog) {
         mpOMSSimulationDialog = new OMSSimulationDialog(this);
       }
-      mpOMSSimulationDialog->simulate(pTopLevelLibraryTreeItem);
+      const QString modelName = pTopLevelLibraryTreeItem->getNameStructure();
+      instantiateOMSModel(pTopLevelLibraryTreeItem, !pTopLevelLibraryTreeItem->isOMSModelInstantiated());
+      // get the top level LibraryTreeItem again since instantiateOMSModel redraws them
+      LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItemOneLevel(modelName);
+      if (pTopLevelLibraryTreeItem) {
+        mpOMSSimulationDialog->simulate(pTopLevelLibraryTreeItem);
+      }
     }
   }
 }
@@ -816,23 +822,6 @@ void MainWindow::instantiateOMSModel(LibraryTreeItem *pLibraryTreeItem, bool che
         mpOMSInstantiateModelAction->setChecked(true);
       }
     }
-  }
-}
-
-/*!
- * \brief MainWindow::simulateOMSModel
- * Simulates the OMSimulator model.
- * \param pLibraryTreeItem
- */
-void MainWindow::simulateOMSModel(LibraryTreeItem *pLibraryTreeItem)
-{
-  // get the top level LibraryTreeItem
-  LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pLibraryTreeItem);
-  if (pTopLevelLibraryTreeItem) {
-    if (!mpOMSSimulationDialog) {
-      mpOMSSimulationDialog = new OMSSimulationDialog(this);
-    }
-    mpOMSSimulationDialog->simulate(pTopLevelLibraryTreeItem);
   }
 }
 

@@ -227,7 +227,6 @@ public:
 #endif
   void simulationSetup(LibraryTreeItem *pLibraryTreeItem);
   void instantiateOMSModel(LibraryTreeItem *pLibraryTreeItem, bool checked);
-  void simulateOMSModel(LibraryTreeItem *pLibraryTreeItem);
   void instantiateModel(LibraryTreeItem *pLibraryTreeItem);
   void checkModel(LibraryTreeItem *pLibraryTreeItem);
   void checkAllModels(LibraryTreeItem *pLibraryTreeItem);
