@@ -240,7 +240,6 @@ void OMSSimulationDialog::simulationFinished(const QString &resultFilePath, QDat
                                                           Helper::scriptingKind, Helper::errorLevel));
     return;
   }
-  qDebug() << resultFilePath << resultFileLastModifiedDateTime << resultFileInfo.lastModified();
   VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   QStringList list = pOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());
