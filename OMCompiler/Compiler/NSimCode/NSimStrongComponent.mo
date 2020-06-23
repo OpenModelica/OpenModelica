@@ -281,13 +281,12 @@ public
       blcks := match system.strongComponents
         local
           array<StrongComponent> comps;
-          list<Block> result = {};
-          Block tmp;
+          list<Block> result = {}, tmp = {};
         case SOME(comps)
           algorithm
             for i in 1:arrayLength(comps) loop
               (tmp, uniqueEqIndex, uniqueVarIndex, residual_vars) := fromStrongComponent(comps[i], uniqueEqIndex, daeMode, uniqueVarIndex, residual_vars);
-              result := tmp :: result;
+              result := listAppend(result, tmp);
             end for;
         then listReverse(result);
 
@@ -299,41 +298,45 @@ public
 
     function fromStrongComponent
       input StrongComponent comp;
-      output Block blck;
+      output list<Block> blck_lst;
       input output Integer uniqueEqIndex;
       // these inputs and outputs are only relevant for DAEMode
       input Boolean daeMode;
       input output Integer uniqueVarIndex;
       input output list<SimVar> residual_vars;
     algorithm
-      blck := match comp
+      blck_lst := match comp
         local
           StrongComponent qual;
           Tearing strict;
           NonlinearSystem system;
-          list<Block> eqns = {};
+          list<Block> result = {}, eqns = {};
           list<ComponentRef> crefs = {};
           Block tmp;
           Variable var;
 
         case qual as StrongComponent.TORN_LOOP(strict = strict)
           algorithm
-            for eqn_ptr in strict.residual_eqns loop
-              if daeMode then
+            if daeMode then
+              for eqn_ptr in strict.residual_eqns loop
                 (tmp, residual_vars, uniqueEqIndex, uniqueVarIndex) := createDAEModeResidual(Pointer.access(eqn_ptr), residual_vars, uniqueEqIndex, uniqueVarIndex);
-              else
+                result := tmp :: result;
+              end for;
+            else
+              for eqn_ptr in strict.residual_eqns loop
                 (tmp, uniqueEqIndex) := createResidual(Pointer.access(eqn_ptr), uniqueEqIndex);
-              end if;
-              eqns := tmp :: eqns;
-            end for;
-            for var_ptr in strict.iteration_vars loop
-              var := Pointer.access(var_ptr);
-              crefs := var.name :: crefs;
-            end for;
-            // ToDo: correct the following values: systemIndex, size, homotopy, torn
-            system := NONLINEAR_SYSTEM(uniqueEqIndex, listReverse(eqns), listReverse(crefs), uniqueEqIndex, listLength(crefs), NONE(), false, qual.mixed, true);
+                eqns := tmp :: eqns;
+              end for;
+              for var_ptr in strict.iteration_vars loop
+                var := Pointer.access(var_ptr);
+                crefs := var.name :: crefs;
+              end for;
+              // ToDo: correct the following values: systemIndex, size, homotopy, torn
+              system := NONLINEAR_SYSTEM(uniqueEqIndex, listReverse(eqns), listReverse(crefs), uniqueEqIndex, listLength(crefs), NONE(), false, qual.mixed, true);
+              result := {NONLINEAR(system, NONE())};
+            end if;
             uniqueEqIndex := uniqueEqIndex + 1;
-        then NONLINEAR(system, NONE());
+        then result;
       end match;
     end fromStrongComponent;
 

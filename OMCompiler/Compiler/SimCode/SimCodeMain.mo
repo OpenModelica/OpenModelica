@@ -405,6 +405,7 @@ algorithm
     oldSimCode := NSimCode.SimCode.convert(simCode);
     if Flags.isSet(Flags.DUMP_SIMCODE) then
       print(NSimCode.SimCode.toString(simCode));
+      SimCodeUtil.dumpSimCodeDebug(oldSimCode);
     end if;
     timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
     ExecStat.execStat("SimCode");

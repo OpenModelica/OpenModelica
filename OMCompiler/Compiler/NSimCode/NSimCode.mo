@@ -38,6 +38,7 @@ encapsulated package NSimCode
 protected
   // OF imports
   import Absyn;
+  import AbsynUtil;
 
   // NF imports
   import ComponentRef = NFComponentRef;
@@ -80,7 +81,6 @@ public
       list<String> externalFunctionIncludes             "Names of all external functions that are called";
       list<SimStrongComponent.Block> independent        "state and strictly input dependent variables. they are not inserted into any partion";
       list<SimStrongComponent.Block> allSim             "All simulation system blocks";
-      // kabdelhak: why nested lists?
       list<list<SimStrongComponent.Block>> ode          "Only ode blocks for integrator";
       list<list<SimStrongComponent.Block>> algebraic    "Additional purely algebraic blocks";
       //list<ClockedPartition> clockedPartitions;
@@ -135,7 +135,7 @@ public
     protected
       Integer idx = 1;
     algorithm
-      str := StringUtil.headline_1("SimCode " + str);
+      str := StringUtil.headline_1("SimCode " + str + "(" + AbsynUtil.pathString(simCode.modelInfo.name) + ")");
       str := str + ModelInfo.toString(simCode.modelInfo);
       str := str + SimStrongComponent.Block.listToString(simCode.init, "  ", "INIT") + "\n";
       for blck_lst in simCode.ode loop
@@ -305,7 +305,7 @@ public
         delayedExps                   = OldSimCode.DELAYED_EXPRESSIONS({}, 0), // ToDo: add this once delayed expressions are supported
         jacobianMatrixes              = {}, // ToDo: convert this to new structures
         simulationSettingsOpt         = NONE(),
-        fileNamePrefix                = "", // FMI stuff
+        fileNamePrefix                = AbsynUtil.pathString(simCode.modelInfo.name),
         fullPathPrefix                = "", // FMI stuff
         fmuTargetName                 = "", // FMI stuff
         hpcomData                     = HpcOmSimCode.emptyHpcomData,
@@ -472,7 +472,7 @@ public
         numStringAliasVars          = listLength(vars.stringAliasVars),
         numEquations                = numEquations,
         numLinearSystems            = 0,
-        numNonLinearSystems         = 1,
+        numNonLinearSystems         = 0,
         numMixedSystems             = 0,
         numStateSets                = 0,
         numJacobians                = 0,
