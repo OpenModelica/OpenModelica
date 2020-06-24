@@ -1160,7 +1160,14 @@ public
     output Type boxedType;
   algorithm
     boxedType := match ty
+      case STRING() then ty;
+      case TUPLE() then TUPLE(list(box(t) for t in ty.types), ty.names);
+      case FUNCTION() then ty;
       case METABOXED() then ty;
+      case POLYMORPHIC() then ty;
+      case ANY() then ty;
+      case CONDITIONAL_ARRAY()
+        then CONDITIONAL_ARRAY(box(ty.trueType), box(ty.falseType), ty.matchedBranch);
       else METABOXED(ty);
     end match;
   end box;
