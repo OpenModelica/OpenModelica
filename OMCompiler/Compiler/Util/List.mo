@@ -269,6 +269,44 @@ algorithm
   end match;
 end isEqualOnTrue;
 
+public function compare<T1, T2>
+  "Returns -1 if list1 is shorter than list2 or 1 if list1 is longer than list2.
+   If both lists are of equal length it applies the given compare function to
+   each pair of list elements and returns the first nonzero value, or 0 if no
+   nonzero value is received."
+  input list<T1> list1;
+  input list<T2> list2;
+  input CompFunc compareFn;
+  output Integer res;
+
+  partial function CompFunc
+    input T1 e1;
+    input T2 e2;
+    output Integer res;
+  end CompFunc;
+protected
+  Integer l1, l2;
+  T2 e2;
+  list<T2> rest_e2;
+algorithm
+  l1 := listLength(list1);
+  l2 := listLength(list2);
+  res := if l1 == l2 then 0 elseif l1 > l2 then 1 else -1;
+  if res <> 0 then
+    return;
+  end if;
+
+  rest_e2 := list2;
+  for e1 in list1 loop
+    e2 :: rest_e2 := rest_e2;
+    res := compareFn(e1, e2);
+
+    if res <> 0 then
+      return;
+    end if;
+  end for;
+end compare;
+
 public function isPrefixOnTrue<T1, T2>
   "Checks if the first list is a prefix of the second list, i.e. that all
    elements in the first list is equal to the corresponding elements in the
@@ -835,7 +873,7 @@ end sortedDuplicates;
 public function sortedListAllUnique<T>
   "The input is a sorted list. The functions checks if all elements are unique."
   input list<T> lst;
-  input CompareFunc compare;
+  input CompareFunc compareFn;
   output Boolean allUnique = false;
 
   partial function CompareFunc
@@ -854,7 +892,7 @@ algorithm
       case {_} then {};
       case e1::(rest as e2::_)
         algorithm
-          if compare(e1,e2) then
+          if compareFn(e1,e2) then
             return;
           end if;
         then rest;

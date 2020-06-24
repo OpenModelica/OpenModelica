@@ -2929,14 +2929,14 @@ algorithm
 
     case (_, Type.POLYMORPHIC())
       algorithm
-        expression := Expression.BOX(expression);
+        expression := Expression.box(expression);
         // matchKind := MatchKind.GENERIC(expectedType.b,actualType);
       then
         (Type.METABOXED(actualType), MatchKind.GENERIC);
 
     case (Type.POLYMORPHIC(), _)
       algorithm
-        // expression := Expression.UNBOX(expression, Expression.typeOf(expression));
+        // expression := Expression.unbox(expression);
         // matchKind := MatchKind.GENERIC(expectedType.b,actualType);
       then
         (expectedType, MatchKind.GENERIC);
