@@ -51,6 +51,9 @@ protected
   import Dimension = NFDimension;
   import Util;
   import Type = NFType;
+  import NFPrefixes.Variability;
+  import NFHashTable.HashTable;
+  import BaseHashTable;
 
 public
   function verify
@@ -75,6 +78,9 @@ public
     for ialg in flatModel.initialAlgorithms loop
       verifyAlgorithm(ialg);
     end for;
+
+    // check for discrete real variables not assigned in when equations (#5836)
+    checkDiscreteReal(flatModel);
 
     execStat(getInstanceName());
   end verify;
@@ -314,6 +320,223 @@ protected
       else ();
     end match;
   end checkSubscriptBoundsCref;
+
+  function checkDiscreteReal
+    "author: kabdelhak 2020-06
+    Checks if all discrete real variables are defined by a when-statement.
+    Linear with respect to the number of equations and variables. It traverses
+    each equation and collects all relevant component references and afterwards
+    checks if any discrete real variables were not defined by a when-statement.
+    Ticket: #5836"
+    input FlatModel flatModel;
+  protected
+    HashTable hashTable = NFHashTable.emptyHashTable();
+    list<Variable> illegal_discrete_vars = {};
+    String err_str = "";
+  algorithm
+    // collect all lhs crefs that are discrete and real from equations
+    for eqn in flatModel.equations loop
+      hashTable := match eqn
+        local
+          list<Equation.Branch> branches;
+
+        case Equation.WHEN(branches = branches)
+          algorithm
+            for branch in branches loop
+              hashTable := checkDiscreteRealBranch(branch, hashTable);
+            end for;
+        then hashTable;
+
+        else hashTable;
+      end match;
+    end for;
+
+    // collect all lhs crefs that are discrete and real from algorithms
+    for alg in flatModel.algorithms loop
+      hashTable := match alg
+        local
+          list<Statement> statements;
+
+        case Algorithm.ALGORITHM(statements = statements)
+          algorithm
+            for statement in statements loop
+              hashTable := checkDiscreteRealStatement(statement, hashTable);
+            end for;
+        then hashTable;
+
+        else hashTable;
+      end match;
+    end for;
+
+    // check if all discrete real variables are assigned in when bodys
+    for variable in flatModel.variables loop
+      // check variability and not type for discrete variables
+      if Variable.variability(variable) == Variability.DISCRETE and Type.isReal(variable.ty) and not BaseHashTable.hasKey(variable.name, hashTable) then
+        illegal_discrete_vars := variable :: illegal_discrete_vars;
+      end if;
+    end for;
+
+    // report error if there are any
+    if not listEmpty(illegal_discrete_vars) then
+      for var in illegal_discrete_vars loop
+        Error.addSourceMessage(Error.DISCRETE_REAL_UNDEFINED, {ComponentRef.toString(var.name)}, var.info);
+      end for;
+      fail();
+    end if;
+  end checkDiscreteReal;
+
+protected
+  function checkDiscreteRealBranch
+    "author: kabdelhak 2020-06
+    collects all single discrete real crefs on the LHS of the body eqns of a
+    when branch."
+    input Equation.Branch branch;
+    input output HashTable hashTable;
+  algorithm
+    hashTable := match branch
+      local
+        list<Equation> body;
+
+      case Equation.BRANCH(body = body)
+        algorithm
+          for eqn in body loop
+            hashTable := checkDiscreteRealBranchBodyEqn(eqn, hashTable);
+          end for;
+      then hashTable;
+
+      else hashTable;
+    end match;
+  end checkDiscreteRealBranch;
+
+  function checkDiscreteRealBranchBodyEqn
+    "author: kabdelhak 2020-06
+    collects all single discrete real crefs on the LHS of a branch which is
+    part of a when eqn body. Only use to analyze when equation bodys!"
+    input Equation body_eqn;
+    input output HashTable hashTable;
+  algorithm
+    hashTable := match body_eqn
+      local
+        Type ty;
+        ComponentRef cref;
+        list<Expression> elements;
+
+      // only add if it is a real variable, we cannot check for discrete here
+      // since only the variable has variablity information
+      // Type.isDiscrete does always return false for REAL
+      case Equation.EQUALITY(lhs = Expression.CREF(ty = ty, cref = cref)) guard(Type.isReal(ty))
+        algorithm
+          hashTable := BaseHashTable.add((cref, 0), hashTable);
+      then hashTable;
+
+      case Equation.CREF_EQUALITY(lhs = cref as ComponentRef.CREF(ty = ty)) guard(Type.isReal(ty))
+        algorithm
+          hashTable := BaseHashTable.add((cref, 0), hashTable);
+      then hashTable;
+
+      case Equation.ARRAY_EQUALITY(lhs = Expression.CREF(ty = ty, cref = cref)) guard(Type.isReal(ty))
+        algorithm
+          hashTable := BaseHashTable.add((cref, 0), hashTable);
+      then hashTable;
+
+      // check for tuples on LHS
+      case Equation.EQUALITY(lhs = Expression.TUPLE(elements = elements))
+      then checkDiscreteRealTupleLHS(elements, hashTable);
+
+      case Equation.ARRAY_EQUALITY(lhs = Expression.TUPLE(elements = elements))
+      then checkDiscreteRealTupleLHS(elements, hashTable);
+
+      else hashTable;
+    end match;
+  end checkDiscreteRealBranchBodyEqn;
+
+  function checkDiscreteRealStatement
+    "author: kabdelhak 2020-06
+    collects all single discrete real crefs on the LHS of the body statements of
+    a when algorithm."
+    input Statement statement;
+    input output HashTable hashTable;
+  algorithm
+    hashTable := match statement
+      local
+        list<tuple<Expression, list<Statement>>> branches;
+        list<Statement> body_statements;
+
+      case Statement.WHEN(branches = branches)
+        algorithm
+          for branch in branches loop
+            (_, body_statements) := branch;
+            for statement in body_statements loop
+              hashTable := checkDiscreteRealWhenBodyStatement(statement, hashTable);
+            end for;
+          end for;
+      then hashTable;
+
+      else hashTable;
+    end match;
+  end checkDiscreteRealStatement;
+
+  function checkDiscreteRealWhenBodyStatement
+    "author: kabdelhak 2020-06
+    collects all single discrete real crefs on the LHS of a statement which is
+    part of a when algorithm body. Only use to analyze when algorithm bodys!"
+    input Statement statement;
+    input output HashTable hashTable;
+  algorithm
+    hashTable := match statement
+      local
+        Type ty;
+        ComponentRef cref;
+        list<Statement> body;
+        list<Expression> elements;
+
+      // only add if it is a real variable, we cannot check for discrete here
+      // since only the variable has variablity information
+      // Type.isDiscrete does always return false for REAL
+      case Statement.ASSIGNMENT(lhs = Expression.CREF(ty = ty, cref = cref)) guard(Type.isReal(ty))
+        algorithm
+          hashTable := BaseHashTable.add((cref, 0), hashTable);
+      then hashTable;
+
+      // check if LHS is a tuple
+      case Statement.ASSIGNMENT(lhs = Expression.TUPLE(elements = elements))
+      then checkDiscreteRealTupleLHS(elements, hashTable);
+
+      // check the for body --- what if the lhs is indexed? :(
+      case Statement.FOR(body = body)
+        algorithm
+          for statement in body loop
+            hashTable := checkDiscreteRealWhenBodyStatement(statement, hashTable);
+          end for;
+      then hashTable;
+
+      else hashTable;
+    end match;
+  end checkDiscreteRealWhenBodyStatement;
+
+  function checkDiscreteRealTupleLHS
+    "author: kabdelhak 2020-06
+    collects all single discrete real crefs of a list of expressions."
+    input list<Expression> elements;
+    input output HashTable hashTable;
+  algorithm
+    for exp in elements loop
+      hashTable := match exp
+        local
+          Type ty;
+          ComponentRef cref;
+
+        case Expression.CREF(ty = ty, cref = cref) guard(Type.isReal(ty))
+          algorithm
+            hashTable := BaseHashTable.add((cref, 0), hashTable);
+        then hashTable;
+
+        else hashTable;
+
+      end match;
+    end for;
+  end checkDiscreteRealTupleLHS;
+
 
   annotation(__OpenModelica_Interface="frontend");
 end NFVerifyModel;
