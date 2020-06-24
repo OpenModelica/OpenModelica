@@ -299,6 +299,16 @@ public
     end match;
   end isCall;
 
+  function isImpureCall
+    input Expression exp;
+    output Boolean isImpure;
+  algorithm
+    isImpure := match exp
+      case CALL() then Call.isImpure(exp.call);
+      else false;
+    end match;
+  end isImpureCall;
+
   function isTrue
     input Expression exp;
     output Boolean isTrue;
@@ -1800,6 +1810,25 @@ public
       else false;
     end match;
   end isNonAssociativeExp;
+
+  function getName
+    "Returns the 'name' of an Expression, for example the function name of a
+     call or the record class name of a record expression."
+    input Expression exp;
+    output String name;
+  algorithm
+    name := match exp
+      case RECORD() then AbsynUtil.pathString(exp.path);
+      case CALL() then AbsynUtil.pathString(Call.functionName(exp.call));
+      case CAST() then getName(exp.exp);
+      case BOX() then getName(exp.exp);
+      case UNBOX() then getName(exp.exp);
+      case MUTABLE() then getName(Mutable.access(exp.exp));
+      case PARTIAL_FUNCTION_APPLICATION() then ComponentRef.toString(exp.fn);
+      case BINDING_EXP() then getName(exp.exp);
+      else toString(exp);
+    end match;
+  end getName;
 
   function toDAEOpt
     input Option<Expression> exp;

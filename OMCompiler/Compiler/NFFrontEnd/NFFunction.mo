@@ -1314,6 +1314,9 @@ uniontype Function
     "Types the body of a function, along with any bindings of local variables
      and outputs."
     input output Function fn;
+  protected
+    Boolean pure;
+    DAE.FunctionAttributes attr;
   algorithm
     // Type the bindings of the outputs and local variables.
     for c in fn.outputs loop
@@ -1331,7 +1334,39 @@ uniontype Function
     for fn_der in fn.derivatives loop
       FunctionDerivative.typeDerivative(fn_der);
     end for;
+
+    // If the function is pure, check that it doesn't contain any impure calls.
+    if not isImpure(fn) then
+      pure := foldExp(fn, function checkPureCall(fn = fn), true);
+
+      // The function does contain impure calls, mark the function as impure.
+      if not pure then
+        attr := fn.attributes;
+        attr.isImpure := true;
+        fn.attributes := attr;
+      end if;
+    end if;
   end typeFunctionBody;
+
+  function checkPureCall
+    input Expression exp;
+    input Function fn;
+    input output Boolean pure;
+  algorithm
+    if not pure then
+      return;
+    end if;
+
+    if Expression.isImpureCall(exp) then
+      pure := false;
+
+      if Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') then
+        Error.addSourceMessage(Error.PURE_FUNCTION_WITH_IMPURE_CALLS,
+          {AbsynUtil.pathString(Function.name(fn)), Expression.getName(exp)},
+          InstNode.info(fn.node));
+      end if;
+    end if;
+  end checkPureCall;
 
   function boxFunctionParameter
     input InstNode component;
