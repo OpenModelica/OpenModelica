@@ -806,6 +806,8 @@ public constant ErrorTypes.Message INVALID_NUMBER_OF_DIMENSIONS_FOR_PROMOTE = Er
   Gettext.gettext("The second argument ‘%s‘ of promote may not be smaller than the number of dimensions (%s) of the first argument."));
 public constant ErrorTypes.Message PURE_FUNCTION_WITH_IMPURE_CALLS = ErrorTypes.MESSAGE(367, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("Pure function ‘%s‘ contains a call to impure function ‘%s‘."));
+public constant ErrorTypes.Message DISCRETE_REAL_UNDEFINED = ErrorTypes.MESSAGE(368, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Following variable is discrete, but does not appear on the LHS of a when-statement: ‘%s‘."));
 public constant ErrorTypes.Message DER_OF_NONDIFFERENTIABLE_EXP = ErrorTypes.MESSAGE(369, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Argument ‘%s‘ of der is not differentiable."));
 
