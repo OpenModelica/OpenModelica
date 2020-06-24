@@ -804,6 +804,8 @@ public constant ErrorTypes.Message EXPERIMENTAL_REQUIRED = ErrorTypes.MESSAGE(36
   Gettext.gettext("%s is an experimental feature and requires the --std=experimental flag."));
 public constant ErrorTypes.Message INVALID_NUMBER_OF_DIMENSIONS_FOR_PROMOTE = ErrorTypes.MESSAGE(366, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("The second argument ‘%s‘ of promote may not be smaller than the number of dimensions (%s) of the first argument."));
+public constant ErrorTypes.Message PURE_FUNCTION_WITH_IMPURE_CALLS = ErrorTypes.MESSAGE(367, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  Gettext.gettext("Pure function ‘%s‘ contains a call to impure function ‘%s‘."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
