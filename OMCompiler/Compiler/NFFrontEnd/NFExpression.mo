@@ -93,6 +93,10 @@ public
     Integer index;
   end ENUM_LITERAL;
 
+  record CLKCONST "Clock constructors"
+    ClockKind clk "Clock kinds";
+  end CLKCONST;
+
   record CREF
     Type ty;
     ComponentRef cref;
@@ -183,6 +187,10 @@ public
     Expression exp;
   end CAST;
 
+  record BOX "MetaModelica boxed value"
+    Expression exp;
+  end BOX;
+
   record UNBOX "MetaModelica value unboxing (similar to a cast)"
     Expression exp;
     Type ty;
@@ -207,10 +215,6 @@ public
     Type ty;
   end RECORD_ELEMENT;
 
-  record BOX "MetaModelica boxed value"
-    Expression exp;
-  end BOX;
-
   record MUTABLE
     Mutable<Expression> exp;
   end MUTABLE;
@@ -218,10 +222,6 @@ public
   record EMPTY
     Type ty;
   end EMPTY;
-
-  record CLKCONST "Clock constructors"
-    ClockKind clk "Clock kinds";
-  end CLKCONST;
 
   record PARTIAL_FUNCTION_APPLICATION
     ComponentRef fn;
@@ -396,6 +396,7 @@ public
         list<Subscript> subs;
         ClockKind clk1, clk2;
         Mutable<Expression> me;
+        list<list<Expression>> mat;
 
       case INTEGER()
         algorithm
@@ -432,6 +433,12 @@ public
         then
           comp;
 
+      case CLKCONST(clk1)
+        algorithm
+          CLKCONST(clk2) := exp2;
+        then
+          ClockKind.compare(clk1, clk2);
+
       case CREF()
         algorithm
           CREF(cref = cr) := exp2;
@@ -449,7 +456,13 @@ public
           ARRAY(ty = ty, elements = expl) := exp2;
           comp := valueCompare(ty, exp1.ty);
         then
-          if comp == 0 then compareList(exp1.elements, expl) else comp;
+          if comp == 0 then List.compare(exp1.elements, expl, compare) else comp;
+
+      case MATRIX()
+        algorithm
+          MATRIX(elements = mat) := exp2;
+        then
+          List.compare(exp1.elements, mat, function List.compare(compareFn = compare));
 
       case RANGE()
         algorithm
@@ -468,14 +481,14 @@ public
         algorithm
           TUPLE(elements = expl) := exp2;
         then
-          compareList(exp1.elements, expl);
+          List.compare(exp1.elements, expl, compare);
 
       case RECORD()
         algorithm
           RECORD(path = p, elements = expl) := exp2;
           comp := AbsynUtil.pathCompare(exp1.path, p);
         then
-          if comp == 0 then compareList(exp1.elements, expl) else comp;
+          if comp == 0 then List.compare(exp1.elements, expl, compare) else comp;
 
       case CALL()
         algorithm
@@ -558,18 +571,24 @@ public
         then
           comp;
 
-      case UNBOX()
-        algorithm
-          UNBOX(exp = e1) := exp2;
-        then
-          compare(exp1.exp, e1);
-
       case CAST()
         algorithm
           e1 := match exp2
                   case CAST(exp = e1) then e1;
                   case e1 then e1;
                 end match;
+        then
+          compare(exp1.exp, e1);
+
+      case BOX()
+        algorithm
+          BOX(exp = e2) := exp2;
+        then
+          compare(exp1.exp, e2);
+
+      case UNBOX()
+        algorithm
+          UNBOX(exp = e1) := exp2;
         then
           compare(exp1.exp, e1);
 
@@ -606,12 +625,6 @@ public
         then
           comp;
 
-      case BOX()
-        algorithm
-          BOX(exp = e2) := exp2;
-        then
-          compare(exp1.exp, e2);
-
       case MUTABLE()
         algorithm
           MUTABLE(exp = me) := exp2;
@@ -624,19 +637,13 @@ public
         then
           valueCompare(exp1.ty, ty);
 
-      case CLKCONST(clk1)
-        algorithm
-          CLKCONST(clk2) := exp2;
-        then
-          ClockKind.compare(clk1, clk2);
-
       case PARTIAL_FUNCTION_APPLICATION()
         algorithm
           PARTIAL_FUNCTION_APPLICATION(fn = cr, args = expl) := exp2;
           comp := ComponentRef.compare(exp1.fn, cr);
 
           if comp == 0 then
-            comp := compareList(exp1.args, expl);
+            comp := List.compare(exp1.args, expl, compare);
           end if;
         then
           comp;
@@ -674,28 +681,7 @@ public
   function compareList
     input list<Expression> expl1;
     input list<Expression> expl2;
-    output Integer comp;
-  protected
-    Expression e2;
-    list<Expression> rest_expl2 = expl2;
-  algorithm
-    // Check that the lists have the same length, otherwise they can't be equal.
-    comp := Util.intCompare(listLength(expl1), listLength(expl2));
-    if comp <> 0 then
-      return;
-    end if;
-
-    for e1 in expl1 loop
-      e2 :: rest_expl2 := rest_expl2;
-      comp := compare(e1, e2);
-
-      // Return if the expressions are not equal.
-      if comp <> 0 then
-        return;
-      end if;
-    end for;
-
-    comp := 0;
+    output Integer comp = List.compare(expl1, expl2, compare);
   end compareList;
 
   function typeOf
@@ -726,11 +712,11 @@ public
       case RELATION()        then Operator.typeOf(exp.operator);
       case IF()              then exp.ty;
       case CAST()            then exp.ty;
+      case BOX()             then Type.METABOXED(typeOf(exp.exp));
       case UNBOX()           then exp.ty;
       case SUBSCRIPTED_EXP() then exp.ty;
       case TUPLE_ELEMENT()   then exp.ty;
       case RECORD_ELEMENT()  then exp.ty;
-      case BOX()             then Type.METABOXED(typeOf(exp.exp));
       case MUTABLE()         then typeOf(Mutable.access(exp.exp));
       case EMPTY()           then exp.ty;
       case PARTIAL_FUNCTION_APPLICATION() then exp.ty;
@@ -1055,7 +1041,7 @@ public
         then
           unbox(outExp);
 
-      case BOX() then BOX(applySubscript(subscript, exp.exp, restSubscripts));
+      case BOX() then box(applySubscript(subscript, exp.exp, restSubscripts));
 
       else makeSubscriptedExp(subscript :: restSubscripts, exp);
     end match;
@@ -1536,7 +1522,6 @@ public
         then AbsynUtil.pathString(t.typePath) + "." + exp.name;
 
       case CLKCONST(clk) then ClockKind.toString(clk);
-
       case CREF() then ComponentRef.toString(exp.cref);
       case TYPENAME() then Type.typenameString(Type.arrayElementType(exp.ty));
       case ARRAY() then "{" + stringDelimitList(list(toString(e) for e in exp.elements), ", ") + "}";
@@ -1580,11 +1565,13 @@ public
 
       case IF() then "if " + toString(exp.condition) + " then " + toString(exp.trueBranch) + " else " + toString(exp.falseBranch);
 
-      case UNBOX() then "UNBOX(" + toString(exp.exp) + ")";
+      case CAST() then if Flags.isSet(Flags.NF_API) then
+                         toString(exp.exp)
+                       else
+                         "CAST(" + Type.toString(exp.ty) + ", " + toString(exp.exp) + ")";
+
       case BOX() then "BOX(" + toString(exp.exp) + ")";
-      case CAST()
-        then
-          if Flags.isSet(Flags.NF_API) then toString(exp.exp) else "CAST(" + Type.toString(exp.ty) + ", " + toString(exp.exp) + ")";
+      case UNBOX() then "UNBOX(" + toString(exp.exp) + ")";
       case SUBSCRIPTED_EXP() then toString(exp.exp) + Subscript.toStringList(exp.subscripts);
       case TUPLE_ELEMENT() then toString(exp.tupleExp) + "[" + intString(exp.index) + "]";
       case RECORD_ELEMENT() then toString(exp.recordExp) + "[field: " + exp.fieldName + "]";
@@ -1660,9 +1647,9 @@ public
 
       case IF() then "if " + toFlatString(exp.condition) + " then " + toFlatString(exp.trueBranch) + " else " + toFlatString(exp.falseBranch);
 
+      case CAST() then toFlatString(exp.exp);
       case UNBOX() then "UNBOX(" + toFlatString(exp.exp) + ")";
       case BOX() then "BOX(" + toFlatString(exp.exp) + ")";
-      case CAST() then toFlatString(exp.exp);
 
       case SUBSCRIPTED_EXP() then toFlatSubscriptedString(exp.exp, exp.subscripts);
       case TUPLE_ELEMENT() then toFlatString(exp.tupleExp) + "[" + intString(exp.index) + "]";
@@ -1905,30 +1892,17 @@ public
           (daeOp, swap) := Operator.toDAE(exp.operator);
           dae1 := toDAE(exp.exp1);
           dae2 := toDAE(exp.exp2);
-        then DAE.BINARY(if swap then dae2 else dae1, daeOp, if swap then dae1 else dae2);
+        then
+          DAE.BINARY(if swap then dae2 else dae1, daeOp, if swap then dae1 else dae2);
 
-      case UNARY()
-        then DAE.UNARY(Operator.toDAE(exp.operator), toDAE(exp.exp));
-
-      case LBINARY()
-        then DAE.LBINARY(toDAE(exp.exp1), Operator.toDAE(exp.operator), toDAE(exp.exp2));
-
-      case LUNARY()
-        then DAE.LUNARY(Operator.toDAE(exp.operator), toDAE(exp.exp));
-
-      case RELATION()
-        then DAE.RELATION(toDAE(exp.exp1), Operator.toDAE(exp.operator), toDAE(exp.exp2), -1, NONE());
-
-      case IF()
-        then DAE.IFEXP(toDAE(exp.condition), toDAE(exp.trueBranch), toDAE(exp.falseBranch));
-
+      case UNARY() then DAE.UNARY(Operator.toDAE(exp.operator), toDAE(exp.exp));
+      case LBINARY() then DAE.LBINARY(toDAE(exp.exp1), Operator.toDAE(exp.operator), toDAE(exp.exp2));
+      case LUNARY() then DAE.LUNARY(Operator.toDAE(exp.operator), toDAE(exp.exp));
+      case RELATION() then DAE.RELATION(toDAE(exp.exp1), Operator.toDAE(exp.operator), toDAE(exp.exp2), -1, NONE());
+      case IF() then DAE.IFEXP(toDAE(exp.condition), toDAE(exp.trueBranch), toDAE(exp.falseBranch));
       case CAST() then DAE.CAST(Type.toDAE(exp.ty), toDAE(exp.exp));
-
-      case BOX()
-        then DAE.BOX(toDAE(exp.exp));
-
-      case UNBOX()
-        then DAE.UNBOX(toDAE(exp.exp), Type.toDAE(exp.ty));
+      case BOX() then DAE.BOX(toDAE(exp.exp));
+      case UNBOX() then DAE.UNBOX(toDAE(exp.exp), Type.toDAE(exp.ty));
 
       case SUBSCRIPTED_EXP()
         then DAE.ASUB(toDAE(exp.exp), list(Subscript.toDAEExp(s) for s in exp.subscripts));
@@ -1970,7 +1944,7 @@ public
     list<Expression> rest_args = args;
     list<DAE.Exp> dargs = {};
   algorithm
-    for field in Type.recordFields(ty) loop
+    for field in Type.recordFields(Type.unbox(ty)) loop
       arg :: rest_args := rest_args;
 
       () := match field
@@ -1997,7 +1971,11 @@ public
 
     field_names := listReverseInPlace(field_names);
     dargs := listReverseInPlace(dargs);
-    exp := DAE.RECORD(path, dargs, field_names, Type.toDAE(ty));
+
+    exp := if Type.isBoxed(ty) then
+        DAE.METARECORDCALL(path, dargs, field_names, -1, {})
+      else
+        DAE.RECORD(path, dargs, field_names, Type.toDAE(ty));
   end toDAERecord;
 
   function toDAEValueOpt
@@ -2194,11 +2172,17 @@ public
         then
           if referenceEq(exp.exp, e1) then exp else CAST(exp.ty, e1);
 
+      case BOX()
+        algorithm
+          e1 := map(exp.exp, func);
+        then
+          if referenceEq(exp.exp, e1) then exp else box(e1);
+
       case UNBOX()
         algorithm
           e1 := map(exp.exp, func);
         then
-          if referenceEq(exp.exp, e1) then exp else UNBOX(e1, exp.ty);
+          if referenceEq(exp.exp, e1) then exp else unbox(e1);
 
       case SUBSCRIPTED_EXP()
         then SUBSCRIPTED_EXP(map(exp.exp, func), list(Subscript.mapExp(s, func) for s in exp.subscripts), exp.ty);
@@ -2214,12 +2198,6 @@ public
           e1 := map(exp.recordExp, func);
         then
           if referenceEq(exp.recordExp, e1) then exp else RECORD_ELEMENT(e1, exp.index, exp.fieldName, exp.ty);
-
-      case BOX()
-        algorithm
-          e1 := map(exp.exp, func);
-        then
-          if referenceEq(exp.exp, e1) then exp else BOX(e1);
 
       case MUTABLE()
         algorithm
@@ -2368,11 +2346,17 @@ public
         then
           if referenceEq(exp.exp, e1) then exp else CAST(exp.ty, e1);
 
+      case BOX()
+        algorithm
+          e1 := func(exp.exp);
+        then
+          if referenceEq(exp.exp, e1) then exp else box(e1);
+
       case UNBOX()
         algorithm
           e1 := func(exp.exp);
         then
-          if referenceEq(exp.exp, e1) then exp else UNBOX(e1, exp.ty);
+          if referenceEq(exp.exp, e1) then exp else unbox(e1);
 
       case SUBSCRIPTED_EXP()
         then SUBSCRIPTED_EXP(func(exp.exp), list(Subscript.mapShallowExp(e, func) for e in exp.subscripts), exp.ty);
@@ -2388,12 +2372,6 @@ public
           e1 := func(exp.recordExp);
         then
           if referenceEq(exp.recordExp, e1) then exp else RECORD_ELEMENT(e1, exp.index, exp.fieldName, exp.ty);
-
-      case BOX()
-        algorithm
-          e1 := func(exp.exp);
-        then
-          if referenceEq(exp.exp, e1) then exp else BOX(e1);
 
       case MUTABLE()
         algorithm
@@ -2568,6 +2546,7 @@ public
           fold(exp.falseBranch, func, result);
 
       case CAST() then fold(exp.exp, func, arg);
+      case BOX() then fold(exp.exp, func, arg);
       case UNBOX() then fold(exp.exp, func, arg);
 
       case SUBSCRIPTED_EXP()
@@ -2578,7 +2557,6 @@ public
 
       case TUPLE_ELEMENT() then fold(exp.tupleExp, func, arg);
       case RECORD_ELEMENT() then fold(exp.recordExp, func, arg);
-      case BOX() then fold(exp.exp, func, arg);
       case MUTABLE() then fold(Mutable.access(exp.exp), func, arg);
       case PARTIAL_FUNCTION_APPLICATION() then foldList(exp.args, func, arg);
       case BINDING_EXP() then fold(exp.exp, func, arg);
@@ -2641,17 +2619,10 @@ public
         then
           ();
 
-      case RANGE(step = SOME(e))
-        algorithm
-          apply(exp.start, func);
-          apply(e, func);
-          apply(exp.stop, func);
-        then
-          ();
-
       case RANGE()
         algorithm
           apply(exp.start, func);
+          applyOpt(exp.step, func);
           apply(exp.stop, func);
         then
           ();
@@ -2660,14 +2631,12 @@ public
       case RECORD() algorithm applyList(exp.elements, func); then ();
       case CALL() algorithm Call.applyExp(exp.call, func); then ();
 
-      case SIZE(dimIndex = SOME(e))
+      case SIZE()
         algorithm
           apply(exp.exp, func);
-          apply(e, func);
+          applyOpt(exp.dimIndex, func);
         then
           ();
-
-      case SIZE() algorithm apply(exp.exp, func); then ();
 
       case BINARY()
         algorithm
@@ -2703,6 +2672,7 @@ public
           ();
 
       case CAST() algorithm apply(exp.exp, func); then ();
+      case BOX() algorithm apply(exp.exp, func); then ();
       case UNBOX() algorithm apply(exp.exp, func); then ();
 
       case SUBSCRIPTED_EXP()
@@ -2717,7 +2687,6 @@ public
 
       case TUPLE_ELEMENT() algorithm apply(exp.tupleExp, func); then ();
       case RECORD_ELEMENT() algorithm apply(exp.recordExp, func); then ();
-      case BOX() algorithm apply(exp.exp, func); then ();
       case MUTABLE() algorithm apply(Mutable.access(exp.exp), func); then ();
       case PARTIAL_FUNCTION_APPLICATION() algorithm applyList(exp.args, func); then ();
       case BINDING_EXP() algorithm apply(exp.exp, func); then ();
@@ -2817,6 +2786,7 @@ public
           ();
 
       case CAST() algorithm func(exp.exp); then ();
+      case BOX() algorithm func(exp.exp); then ();
       case UNBOX() algorithm func(exp.exp); then ();
 
       case SUBSCRIPTED_EXP()
@@ -2831,7 +2801,6 @@ public
 
       case TUPLE_ELEMENT() algorithm func(exp.tupleExp); then ();
       case RECORD_ELEMENT() algorithm func(exp.recordExp); then ();
-      case BOX() algorithm func(exp.exp); then ();
       case MUTABLE() algorithm func(Mutable.access(exp.exp)); then ();
       case PARTIAL_FUNCTION_APPLICATION() algorithm applyListShallow(exp.args, func); then ();
       case BINDING_EXP() algorithm func(exp.exp); then ();
@@ -2874,6 +2843,7 @@ public
         Call call;
         list<Subscript> subs;
         ClockKind ck;
+        list<list<Expression>> mat;
 
       case CLKCONST()
         algorithm
@@ -2892,6 +2862,12 @@ public
           (expl, arg) := List.map1Fold(exp.elements, mapFold, func, arg);
         then
           ARRAY(exp.ty, expl, exp.literal);
+
+      case MATRIX()
+        algorithm
+          (mat, arg) := List.mapFoldList(exp.elements, function mapFold(func = func), arg);
+        then
+          MATRIX(mat);
 
       case RANGE(step = SOME(e2))
         algorithm
@@ -2992,11 +2968,17 @@ public
         then
           if referenceEq(exp.exp, e1) then exp else CAST(exp.ty, e1);
 
+      case BOX()
+        algorithm
+          (e1, arg) := mapFold(exp.exp, func, arg);
+        then
+          if referenceEq(exp.exp, e1) then exp else box(e1);
+
       case UNBOX()
         algorithm
           (e1, arg) := mapFold(exp.exp, func, arg);
         then
-          if referenceEq(exp.exp, e1) then exp else UNBOX(e1, exp.ty);
+          if referenceEq(exp.exp, e1) then exp else unbox(e1);
 
       case SUBSCRIPTED_EXP()
         algorithm
@@ -3088,6 +3070,7 @@ public
         list<Subscript> subs;
         Boolean unchanged;
         ClockKind ck;
+        list<list<Expression>> mat;
 
       case CLKCONST()
         algorithm
@@ -3106,6 +3089,12 @@ public
           (expl, arg) := List.mapFold(exp.elements, func, arg);
         then
           ARRAY(exp.ty, expl, exp.literal);
+
+      case MATRIX()
+        algorithm
+          (mat, arg) := List.mapFoldList(exp.elements, func, arg);
+        then
+          MATRIX(mat);
 
       case RANGE(step = oe)
         algorithm
@@ -3193,11 +3182,17 @@ public
         then
           if referenceEq(exp.exp, e1) then exp else CAST(exp.ty, e1);
 
+      case BOX()
+        algorithm
+          (e1, arg) := func(exp.exp, arg);
+        then
+          if referenceEq(exp.exp, e1) then exp else box(e1);
+
       case UNBOX()
         algorithm
           (e1, arg) := func(exp.exp, arg);
         then
-          if referenceEq(exp.exp, e1) then exp else UNBOX(e1, exp.ty);
+          if referenceEq(exp.exp, e1) then exp else unbox(e1);
 
       case SUBSCRIPTED_EXP()
         algorithm
@@ -3217,12 +3212,6 @@ public
           (e1, arg) := func(exp.recordExp, arg);
         then
           if referenceEq(exp.recordExp, e1) then exp else RECORD_ELEMENT(e1, exp.index, exp.fieldName, exp.ty);
-
-      case BOX()
-        algorithm
-          (e1, arg) := func(exp.exp, arg);
-        then
-          if referenceEq(exp.exp, e1) then exp else BOX(e1);
 
       case MUTABLE()
         algorithm
@@ -3309,6 +3298,7 @@ public
       local
         Expression e;
 
+      case CLKCONST() then ClockKind.containsExp(exp.clk, func);
       case CREF() then ComponentRef.containsExp(exp.cref, func);
       case ARRAY() then listContains(exp.elements, func);
 
@@ -3350,6 +3340,7 @@ public
              contains(exp.falseBranch, func);
 
       case CAST() then contains(exp.exp, func);
+      case BOX() then contains(exp.exp, func);
       case UNBOX() then contains(exp.exp, func);
 
       case SUBSCRIPTED_EXP()
@@ -3357,8 +3348,9 @@ public
 
       case TUPLE_ELEMENT() then contains(exp.tupleExp, func);
       case RECORD_ELEMENT() then contains(exp.recordExp, func);
+      case MUTABLE() then contains(Mutable.access(exp.exp), func);
       case PARTIAL_FUNCTION_APPLICATION() then listContains(exp.args, func);
-      case BOX() then contains(exp.exp, func);
+      case BINDING_EXP() then contains(exp.exp, func);
       else false;
     end match;
   end contains;
@@ -3394,6 +3386,7 @@ public
     end ContainsPred;
   algorithm
     res := match exp
+      case CLKCONST() then ClockKind.containsExpShallow(exp.clk, func);
       case CREF() then ComponentRef.containsExpShallow(exp.cref, func);
       case ARRAY() then listContainsShallow(exp.elements, func);
 
@@ -3430,6 +3423,7 @@ public
       case RELATION() then func(exp.exp1) or func(exp.exp2);
       case IF() then func(exp.condition) or func(exp.trueBranch) or func(exp.falseBranch);
       case CAST() then func(exp.exp);
+      case BOX() then func(exp.exp);
       case UNBOX() then func(exp.exp);
 
       case SUBSCRIPTED_EXP()
@@ -3437,8 +3431,9 @@ public
 
       case TUPLE_ELEMENT() then func(exp.tupleExp);
       case RECORD_ELEMENT() then func(exp.recordExp);
+      case MUTABLE() then func(Mutable.access(exp.exp));
       case PARTIAL_FUNCTION_APPLICATION() then listContains(exp.args, func);
-      case BOX() then func(exp.exp);
+      case BINDING_EXP() then func(exp.exp);
       else false;
     end match;
   end containsShallow;
@@ -3795,8 +3790,11 @@ public
     output Expression boxedExp;
   algorithm
     boxedExp := match exp
-      case Expression.BOX() then exp;
-      else Expression.BOX(exp);
+      case Expression.STRING() then exp;
+      case Expression.RECORD()
+        then Expression.RECORD(exp.path, Type.box(exp.ty), list(box(e) for e in exp.elements));
+      case BOX() then exp;
+      else BOX(exp);
     end match;
   end box;
 
@@ -4062,7 +4060,7 @@ public
       case STRING() then Variability.CONSTANT;
       case BOOLEAN() then Variability.CONSTANT;
       case ENUM_LITERAL() then Variability.CONSTANT;
-      case CLKCONST(_) then Variability.DISCRETE;
+      case CLKCONST() then Variability.DISCRETE;
       case CREF() then ComponentRef.variability(exp.cref);
       case TYPENAME() then Variability.CONSTANT;
       case ARRAY() then variabilityList(exp.elements);
@@ -4108,12 +4106,14 @@ public
           Prefixes.variabilityMax(variability(exp.trueBranch), variability(exp.falseBranch)));
 
       case CAST() then variability(exp.exp);
+      case BOX() then variability(exp.exp);
       case UNBOX() then variability(exp.exp);
       case SUBSCRIPTED_EXP()
         then Prefixes.variabilityMax(variability(exp.exp), Subscript.variabilityList(exp.subscripts));
       case TUPLE_ELEMENT() then variability(exp.tupleExp);
       case RECORD_ELEMENT() then variability(exp.recordExp);
-      case BOX() then variability(exp.exp);
+      case MUTABLE() then variability(Mutable.access(exp.exp));
+      case EMPTY() then Variability.CONSTANT;
       case PARTIAL_FUNCTION_APPLICATION() then Variability.CONTINUOUS;
       case BINDING_EXP() then variability(exp.exp);
       else

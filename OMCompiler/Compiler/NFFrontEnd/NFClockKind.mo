@@ -93,6 +93,47 @@ public
     end match;
   end compare;
 
+  function containsExp
+    input ClockKind ck;
+    input ContainsPred func;
+    output Boolean res;
+
+    partial function ContainsPred
+      input Expression exp;
+      output Boolean res;
+    end ContainsPred;
+  algorithm
+    res := match ck
+      case INTEGER_CLOCK() then Expression.contains(ck.intervalCounter, func) or
+                                Expression.contains(ck.resolution, func);
+      case REAL_CLOCK()    then Expression.contains(ck.interval, func);
+      case BOOLEAN_CLOCK() then Expression.contains(ck.condition, func) or
+                                Expression.contains(ck.startInterval, func);
+      case SOLVER_CLOCK()  then Expression.contains(ck.c, func) or
+                                Expression.contains(ck.solverMethod, func);
+      else false;
+    end match;
+  end containsExp;
+
+  function containsExpShallow
+    input ClockKind ck;
+    input ContainsPred func;
+    output Boolean res;
+
+    partial function ContainsPred
+      input Expression exp;
+      output Boolean res;
+    end ContainsPred;
+  algorithm
+    res := match ck
+      case INTEGER_CLOCK() then func(ck.intervalCounter) or func(ck.resolution);
+      case REAL_CLOCK()    then func(ck.interval);
+      case BOOLEAN_CLOCK() then func(ck.condition) or func(ck.startInterval);
+      case SOLVER_CLOCK()  then func(ck.c) or func(ck.solverMethod);
+      else false;
+    end match;
+  end containsExpShallow;
+
   function applyExp
     input ClockKind ck;
     input ApplyFunc func;
