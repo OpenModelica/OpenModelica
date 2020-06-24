@@ -1,0 +1,75 @@
+// status: correct
+// https://trac.openmodelica.org/OpenModelica/ticket/6027
+
+loadModel(Modelica, {"3.2.3"});getErrorString();
+loadString("
+model '3.2.1'
+  annotation(uses(Modelica(version=\"3.2.1\")));
+end '3.2.1';
+");
+instantiateModel('3.2.1');getErrorString();
+clear();
+loadModel(Modelica, {"3.2.3"});getErrorString();
+loadString("
+model '2.2.2'
+  annotation(uses(Modelica(version=\"2.2.2\")));
+end '2.2.2';
+");getErrorString();
+instantiateModel('2.2.2');getErrorString();
+clear();
+loadModel(Modelica, {"3.2.3"});getErrorString();
+loadString("
+model '5.0.0'
+  annotation(uses(Modelica(version=\"5.0.0\")));
+end '5.0.0';
+");getErrorString();
+instantiateModel('5.0.0');getErrorString();
+clear();
+loadModel(Modelica, {"0.8.1"});getErrorString();
+loadString("
+model '0.8.1'
+  annotation(uses(Modelica(version=\"0.8.1\")));
+end '0.8.1';
+");getErrorString();
+instantiateModel('0.8.1');getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// "class '3.2.1'
+// end '3.2.1';
+// "
+// "Notification: '3.2.1' requested package Modelica of version 3.2.1. Modelica 3.2.3 is used instead which states that it is fully compatible without conversion script needed.
+// "
+// true
+// true
+// ""
+// true
+// ""
+// "class '2.2.2'
+// end '2.2.2';
+// "
+// "Warning: '2.2.2' requested package Modelica of version 2.2.2. Modelica 3.2.3 is used instead which states that it is only compatible with a conversion script. OpenModelica currently does not support conversion scripts and will proceed with potential issues as a result.
+// "
+// true
+// true
+// ""
+// true
+// ""
+// "class '5.0.0'
+// end '5.0.0';
+// "
+// "Warning: Requested package Modelica of version 5.0.0, but this package was already loaded with version 3.2.3. There are no conversion annotations for this version but 5.0.0 is newer than 3.2.3. There is a possibility that 3.2.3 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
+// "
+// true
+// true
+// ""
+// true
+// ""
+// "class '0.8.1'
+// end '0.8.1';
+// "
+// "Warning: Requested package Modelica of version 0.8.1, but this package was already loaded with version 3.2.3. There are no conversion annotations and 0.8.1 is older than 3.2.3, so the libraries are probably incompatible.
+// "
+// endResult

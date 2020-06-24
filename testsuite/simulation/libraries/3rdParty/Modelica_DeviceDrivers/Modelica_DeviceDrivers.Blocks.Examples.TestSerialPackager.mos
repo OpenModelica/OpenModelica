@@ -28,7 +28,7 @@ runScript(modelTesting);getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
-// Warning: Requested package Modelica_Synchronous of version 0.92.2, but this package was already loaded with version 0.93.0-dev. You might experience problems if these versions are incompatible.
+// Warning: Requested package Modelica_Synchronous of version 0.92.2, but this package was already loaded with version 0.93.0-dev. There are no conversion annotations and 0.92.2 is older than 0.93.0-dev, so the libraries are probably incompatible.
 // Warning: Alias equations of external objects are not Modelica compliant as in:
 //     addBoolean.pkgOut[1].pkg = resetPointer.pkgIn.pkg
 //     getBoolean.pkgIn.pkg = getInteger.pkgOut[1].pkg

@@ -724,10 +724,10 @@ getMessagesStringInternal(unique = false); // not unique
 //     lineEnd = 0,
 //     columnEnd = 0
 // end OpenModelica.Scripting.SourceInfo;,
-//     message = "Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.",
+//     message = "Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.1. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.1. There is a possibility that 3.2.1 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.",
 //     kind = .OpenModelica.Scripting.ErrorKind.scripting,
 //     level = .OpenModelica.Scripting.ErrorLevel.warning,
-//     id = 183
+//     id = 370
 // end OpenModelica.Scripting.ErrorMessage;}
 // Evaluating: translateModel(ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution)
 // true
@@ -806,10 +806,10 @@ getMessagesStringInternal(unique = false); // not unique
 //     lineEnd = 0,
 //     columnEnd = 0
 // end OpenModelica.Scripting.SourceInfo;,
-//     message = "Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.",
+//     message = "Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.1. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.1. There is a possibility that 3.2.1 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.",
 //     kind = .OpenModelica.Scripting.ErrorKind.scripting,
 //     level = .OpenModelica.Scripting.ErrorLevel.warning,
-//     id = 183
+//     id = 370
 // end OpenModelica.Scripting.ErrorMessage;}
 // Evaluating: translateModel(ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution)
 // true
@@ -1057,9 +1057,9 @@ getMessagesStringInternal(unique = false); // not unique
 //     lineEnd = 0,
 //     columnEnd = 0
 // end OpenModelica.Scripting.SourceInfo;,
-//     message = "Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.",
+//     message = "Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.1. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.1. There is a possibility that 3.2.1 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.",
 //     kind = .OpenModelica.Scripting.ErrorKind.scripting,
 //     level = .OpenModelica.Scripting.ErrorLevel.warning,
-//     id = 183
+//     id = 370
 // end OpenModelica.Scripting.ErrorMessage;}
 // endResult

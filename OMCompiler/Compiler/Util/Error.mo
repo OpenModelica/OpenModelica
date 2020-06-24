@@ -439,7 +439,7 @@ public constant ErrorTypes.Message LINEAR_SYSTEM_SINGULAR = ErrorTypes.MESSAGE(1
 public constant ErrorTypes.Message EMPTY_ARRAY = ErrorTypes.MESSAGE(182, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Array constructor may not be empty."));
 public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS = ErrorTypes.MESSAGE(183, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
-  Gettext.gettext("Requested package %s of version %s, but this package was already loaded with version %s. You might experience problems if these versions are incompatible."));
+  Gettext.gettext("Requested package %s of version %s, but this package was already loaded with version %s. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions."));
 public constant ErrorTypes.Message LOAD_MODEL = ErrorTypes.MESSAGE(184, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("Failed to load package %s (%s) using MODELICAPATH %s."));
 public constant ErrorTypes.Message REPLACEABLE_BASE_CLASS_SIMPLE = ErrorTypes.MESSAGE(185, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -808,6 +808,14 @@ public constant ErrorTypes.Message PURE_FUNCTION_WITH_IMPURE_CALLS = ErrorTypes.
   Gettext.gettext("Pure function ‘%s‘ contains a call to impure function ‘%s‘."));
 public constant ErrorTypes.Message DER_OF_NONDIFFERENTIABLE_EXP = ErrorTypes.MESSAGE(369, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Argument ‘%s‘ of der is not differentiable."));
+public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS_WITHOUT_CONVERSION = ErrorTypes.MESSAGE(370, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("%1 requested package %2 of version %3. %2 %4 is used instead which states that it is fully compatible without conversion script needed."));
+public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS_WITH_CONVERSION = ErrorTypes.MESSAGE(371, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  Gettext.gettext("%1 requested package %2 of version %3. %2 %4 is used instead which states that it is only compatible with a conversion script. OpenModelica currently does not support conversion scripts and will proceed with potential issues as a result."));
+public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS_OLDER = ErrorTypes.MESSAGE(372, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  Gettext.gettext("Requested package %1 of version %2, but this package was already loaded with version %3. There are no conversion annotations and %2 is older than %3, so the libraries are probably incompatible."));
+public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS_NEWER = ErrorTypes.MESSAGE(373, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  Gettext.gettext("Requested package %1 of version %2, but this package was already loaded with version %3. There are no conversion annotations for this version but %2 is newer than %3. There is a possibility that %3 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
