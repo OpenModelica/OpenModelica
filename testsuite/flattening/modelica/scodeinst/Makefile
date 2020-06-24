@@ -438,6 +438,7 @@ FuncBuiltinChange.mo \
 FuncBuiltinCross.mo \
 FuncBuiltinDelay.mo \
 FuncBuiltinDer.mo \
+FuncBuiltinDerInvalid1.mo \
 FuncBuiltinDiagonal.mo \
 FuncBuiltinDiv.mo \
 FuncBuiltinEdge.mo \

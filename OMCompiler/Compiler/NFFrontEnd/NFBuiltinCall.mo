@@ -598,6 +598,7 @@ protected
     {arg} := args;
     (arg, ty, variability) := Typing.typeExp(arg, origin, info);
 
+    // The argument of der must be a Real scalar or array.
     ety := Type.arrayElementType(ty);
 
     if Type.isInteger(ety) then
@@ -607,6 +608,13 @@ protected
       Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
         {"1", ComponentRef.toString(fn_ref), "", Expression.toString(arg),
          Type.toString(ty), "Real"}, info);
+    end if;
+
+    // The argument must be differentiable, i.e. not discrete, unless where in a
+    // scope where everything is discrete (like an initial equation).
+    if variability == Variability.DISCRETE and not ExpOrigin.flagSet(origin, ExpOrigin.DISCRETE_SCOPE) then
+      Error.addSourceMessageAndFail(Error.DER_OF_NONDIFFERENTIABLE_EXP,
+        {Expression.toString(arg)}, info);
     end if;
 
     {fn} := Function.typeRefCache(fn_ref);
