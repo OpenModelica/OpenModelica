@@ -333,7 +333,8 @@ void compliance() {
   standardSetup()
   unstash 'omc-clang'
   makeLibsAndCache('all')
-  sh 'build/bin/omc -g=MetaModelica build/share/doc/omc/testmodels/ComplianceSuite.mos'
+  // we need HOME to be defined so that the package manager can install libraries
+  sh "HOME='${env.WORKSPACE}' ./build/bin/omc -g=MetaModelica ./build/share/doc/omc/testmodels/ComplianceSuite.mos"
   sh "mv ${env.COMPLIANCEPREFIX}.html ${env.COMPLIANCEPREFIX}-current.html"
   sh "test -f ${env.COMPLIANCEPREFIX}.xml"
   // Only publish openmodelica-current.html if we are running master
