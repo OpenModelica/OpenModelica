@@ -148,7 +148,7 @@ function hasMetaInformation
   output Boolean b;
 algorithm
   b := match v
-    case SEMVER(meta="") then false;
+    case SEMVER(meta={}) then false;
     case NONSEMVER() then false;
     else true;
   end match;
