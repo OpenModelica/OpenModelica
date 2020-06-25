@@ -387,6 +387,7 @@ end createSimCode;
 function generateNewModelCodeDAEMode
   input NBackendDAE.BackendDAE bdae;
   input Absyn.Path className;
+  input Option<SimCode.SimulationSettings> simSettingsOpt;
   output list<String> libs;
   output String fileDir;
   output Real timeSimCode = 0.0;
@@ -400,7 +401,7 @@ algorithm
   StackOverflow.clearStacktraceMessages();
   try
     System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
-    simCode := NSimCode.SimCode.create(bdae, className);
+    simCode := NSimCode.SimCode.create(bdae, className, simSettingsOpt);
     (fileDir, libs) := NSimCode.SimCode.getDirectoryAndLibs(simCode);
     oldSimCode := NSimCode.SimCode.convert(simCode);
     if Flags.isSet(Flags.DUMP_SIMCODE) then
@@ -618,7 +619,7 @@ algorithm
         // Test the parallel code generator in the test suite. Should give decent results given that the task is disk-intensive.
         numThreads := max(1, if Testsuite.isRunning() then min(2, System.numProcessors()) else Config.noProc());
         if (not Flags.isSet(Flags.PARALLEL_CODEGEN)) or numThreads==1 then
-          res := list(func() for func in codegenFuncs);
+          res := list(codegen_func() for codegen_func in codegenFuncs);
         else
           res := System.launchParallelTasks(numThreads, codegenFuncs, runCodegenFunc);
         end if;
@@ -1011,7 +1012,7 @@ algorithm
         end if;
 
         // for now only dae mode
-        (libs, file_dir, timeSimCode, timeTemplates) := generateNewModelCodeDAEMode(bdae, className);
+        (libs, file_dir, timeSimCode, timeTemplates) := generateNewModelCodeDAEMode(bdae, className, inSimSettingsOpt);
 
     then (true, libs, file_dir);
 

@@ -51,6 +51,7 @@ protected
   import System = NBSystem;
 
   // SimCode imports
+  import SimCodeMain;
   import SimStrongComponent = NSimStrongComponent;
   import NSimVar.SimVar;
   import NSimVar.SimVars;
@@ -108,7 +109,7 @@ public
       OldSimCodeFunction.MakefileParams makefileParams;
       //DelayedExpression delayedExps;
       list<SimStrongComponent.Jacobian> jacobians       "List of symbolic jacobians";
-      //Option<SimulationSettings> simulationSettingsOpt;
+      Option<OldSimCode.SimulationSettings> simulationSettingsOpt; // replace this with new struct
       //String fileNamePrefix, fullPathPrefix "Used in FMI where files are generated in a special directory";
       //String fmuTargetName;
       //HpcOmSimCode.HpcOmData hpcomData;
@@ -150,6 +151,7 @@ public
     function create
       input BackendDAE bdae;
       input Absyn.Path name;
+      input Option<OldSimCode.SimulationSettings> simSettingsOpt;
       output SimCode simCode;
     algorithm
       simCode := match bdae
@@ -242,6 +244,7 @@ public
               discreteVars              = discreteVars,
               makefileParams            = makefileParams,
               jacobians                 = jacobians,
+              simulationSettingsOpt     = simSettingsOpt,
               daeModeData               = daeModeData,
               inlineEquations           = inlineEquations);
         then simCode;
@@ -304,7 +307,7 @@ public
         makefileParams                = simCode.makefileParams, // ToDo: convert this to new structures
         delayedExps                   = OldSimCode.DELAYED_EXPRESSIONS({}, 0), // ToDo: add this once delayed expressions are supported
         jacobianMatrixes              = {}, // ToDo: convert this to new structures
-        simulationSettingsOpt         = NONE(),
+        simulationSettingsOpt         = simCode.simulationSettingsOpt, // replace with new struct later on
         fileNamePrefix                = AbsynUtil.pathString(simCode.modelInfo.name),
         fullPathPrefix                = "", // FMI stuff
         fmuTargetName                 = "", // FMI stuff
@@ -584,5 +587,6 @@ public
   end DaeModeData;
 
   type DaeModeConfig = enumeration(ALL, DYNAMIC);
+
   annotation(__OpenModelica_Interface="backend");
 end NSimCode;
