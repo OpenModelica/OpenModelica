@@ -143,6 +143,17 @@ algorithm
   end match;
 end isPrerelease;
 
+function hasMetaInformation
+  input Version v;
+  output Boolean b;
+algorithm
+  b := match v
+    case SEMVER(meta="") then false;
+    case NONSEMVER() then false;
+    else true;
+  end match;
+end hasMetaInformation;
+
 protected
 
 function compareIdentifierList
