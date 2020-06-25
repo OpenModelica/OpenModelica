@@ -154,16 +154,6 @@ algorithm
   end match;
 end hasMetaInformation;
 
-function isSemVer
-  input Version v;
-  output Boolean b;
-algorithm
-  b := match v
-    case NONSEMVER() then false;
-    else true;
-  end match;
-end isSemVer;
-
 protected
 
 function compareIdentifierList
