@@ -7,17 +7,17 @@
 //
 
 model FuncBuiltinChange
-  discrete Real x;
+  Integer x = 1;
   Boolean y = change(x);
-  Boolean b;
+  Boolean b = true;
   Boolean z = change(b);
 end FuncBuiltinChange;
 
 // Result:
 // class FuncBuiltinChange
-//   discrete Real x;
+//   Integer x = 1;
 //   Boolean y = change(x);
-//   Boolean b;
+//   Boolean b = true;
 //   Boolean z = change(b);
 // end FuncBuiltinChange;
 // endResult
