@@ -411,7 +411,7 @@ algorithm
   candidates := versionsThatProvideTheWanted(pkg, version, printError=true);
   candidatesSemver := list(SemanticVersion.parse(candidate) for candidate in candidates);
   semver := SemanticVersion.parse(version);
-  exactMatches := list(candidate for candidate guard 0==SemanticVersion.compare(candidate, semver) in candidatesSemver);
+  exactMatches := list(candidate for candidate guard 0==SemanticVersion.compare(candidate, semver, compareBuildInformation=SemanticVersion.hasMetaInformation(semver)) in candidatesSemver);
   success := false;
 
   for pkgInfo in packagesToInstall loop
