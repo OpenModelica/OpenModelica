@@ -1901,6 +1901,7 @@ algorithm
     case "intBitXor" then evalIntBitXor(args);
     case "intBitLShift" then evalIntBitLShift(args);
     case "intBitRShift" then evalIntBitRShift(args);
+    case "intMaxLit" then Expression.INTEGER(System.intMaxLit());
     case "inferredClock" then evalInferredClock(args);
     case "rationalClock" then evalRationalClock(args);
     case "realClock" then evalRealClock(args);
