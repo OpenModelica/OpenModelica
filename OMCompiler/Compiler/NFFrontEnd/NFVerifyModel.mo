@@ -389,7 +389,7 @@ protected
   function checkDiscreteRealBranch
     "author: kabdelhak 2020-06
     collects all single discrete real crefs on the LHS of the body eqns of a
-    when branch."
+    when (or nested if inside when) branch."
     input Equation.Branch branch;
     input output HashTable hashTable;
   algorithm
@@ -417,34 +417,35 @@ protected
   algorithm
     hashTable := match body_eqn
       local
+        Expression lhs;
         Type ty;
         ComponentRef cref;
-        list<Expression> elements;
+        list<Equation> body;
+        list<Equation.Branch> branches;
 
-      // only add if it is a real variable, we cannot check for discrete here
-      // since only the variable has variablity information
-      // Type.isDiscrete does always return false for REAL
-      case Equation.EQUALITY(lhs = Expression.CREF(ty = ty, cref = cref)) guard(Type.isReal(ty))
-        algorithm
-          hashTable := BaseHashTable.add((cref, 0), hashTable);
-      then hashTable;
+      case Equation.EQUALITY(lhs = lhs)       then checkDiscreteRealExp(lhs, hashTable);
+      case Equation.ARRAY_EQUALITY(lhs = lhs) then checkDiscreteRealExp(lhs, hashTable);
 
       case Equation.CREF_EQUALITY(lhs = cref as ComponentRef.CREF(ty = ty)) guard(Type.isReal(ty))
         algorithm
           hashTable := BaseHashTable.add((cref, 0), hashTable);
       then hashTable;
 
-      case Equation.ARRAY_EQUALITY(lhs = Expression.CREF(ty = ty, cref = cref)) guard(Type.isReal(ty))
+      // traverse nested if equations. It suffices if the variable is defined in ANY branch.
+      case Equation.IF(branches = branches)
         algorithm
-          hashTable := BaseHashTable.add((cref, 0), hashTable);
+          for branch in branches loop
+            hashTable := checkDiscreteRealBranch(branch, hashTable);
+          end for;
       then hashTable;
 
-      // check for tuples on LHS
-      case Equation.EQUALITY(lhs = Expression.TUPLE(elements = elements))
-      then checkDiscreteRealTupleLHS(elements, hashTable);
-
-      case Equation.ARRAY_EQUALITY(lhs = Expression.TUPLE(elements = elements))
-      then checkDiscreteRealTupleLHS(elements, hashTable);
+      // what if LHS is indexed? :(
+      case Equation.FOR(body = body)
+        algorithm
+          for eqn in body loop
+            hashTable := checkDiscreteRealBranchBodyEqn(eqn, hashTable);
+          end for;
+      then hashTable;
 
       else hashTable;
     end match;
@@ -467,7 +468,7 @@ protected
           for branch in branches loop
             (_, body_statements) := branch;
             for statement in body_statements loop
-              hashTable := checkDiscreteRealWhenBodyStatement(statement, hashTable);
+              hashTable := checkDiscreteRealBodyStatement(statement, hashTable);
             end for;
           end for;
       then hashTable;
@@ -476,7 +477,7 @@ protected
     end match;
   end checkDiscreteRealStatement;
 
-  function checkDiscreteRealWhenBodyStatement
+  function checkDiscreteRealBodyStatement
     "author: kabdelhak 2020-06
     collects all single discrete real crefs on the LHS of a statement which is
     part of a when algorithm body. Only use to analyze when algorithm bodys!"
@@ -485,58 +486,66 @@ protected
   algorithm
     hashTable := match statement
       local
-        Type ty;
-        ComponentRef cref;
+        Expression lhs;
+        list<tuple<Expression, list<Statement>>> branches;
         list<Statement> body;
-        list<Expression> elements;
 
-      // only add if it is a real variable, we cannot check for discrete here
-      // since only the variable has variablity information
-      // Type.isDiscrete does always return false for REAL
-      case Statement.ASSIGNMENT(lhs = Expression.CREF(ty = ty, cref = cref)) guard(Type.isReal(ty))
+      case Statement.ASSIGNMENT(lhs = lhs) then checkDiscreteRealExp(lhs, hashTable);
+
+      // traverse nested if Algorithms. It suffices if the variable is defined in ANY branch.
+      case Statement.IF(branches = branches)
         algorithm
-          hashTable := BaseHashTable.add((cref, 0), hashTable);
+          for branch in branches loop
+            (_, body) := branch;
+            for stmt in body loop
+              hashTable := checkDiscreteRealBodyStatement(stmt, hashTable);
+            end for;
+          end for;
       then hashTable;
 
-      // check if LHS is a tuple
-      case Statement.ASSIGNMENT(lhs = Expression.TUPLE(elements = elements))
-      then checkDiscreteRealTupleLHS(elements, hashTable);
-
-      // check the for body --- what if the lhs is indexed? :(
+      // what if the LHS is indexed? :(
       case Statement.FOR(body = body)
         algorithm
           for statement in body loop
-            hashTable := checkDiscreteRealWhenBodyStatement(statement, hashTable);
+            hashTable := checkDiscreteRealBodyStatement(statement, hashTable);
           end for;
       then hashTable;
 
       else hashTable;
     end match;
-  end checkDiscreteRealWhenBodyStatement;
+  end checkDiscreteRealBodyStatement;
 
-  function checkDiscreteRealTupleLHS
+  function checkDiscreteRealExp
     "author: kabdelhak 2020-06
-    collects all single discrete real crefs of a list of expressions."
-    input list<Expression> elements;
+    collects all single discrete real crefs of a expression which represents the LHS."
+    input Expression exp;
     input output HashTable hashTable;
   algorithm
-    for exp in elements loop
-      hashTable := match exp
-        local
-          Type ty;
-          ComponentRef cref;
+    hashTable := match exp
+      local
+         Type ty;
+         ComponentRef cref;
+         list<Expression> elements;
 
-        case Expression.CREF(ty = ty, cref = cref) guard(Type.isReal(ty))
-          algorithm
-            hashTable := BaseHashTable.add((cref, 0), hashTable);
-        then hashTable;
+      // only add if it is a real variable, we cannot check for discrete here
+      // since only the variable has variablity information
+      // Type.isDiscrete does always return false for REAL
+      case Expression.CREF(ty = ty, cref = cref) guard(Type.isReal(ty))
+        algorithm
+          hashTable := BaseHashTable.add((cref, 0), hashTable);
+      then hashTable;
 
-        else hashTable;
+      case Expression.TUPLE(elements = elements)
+        algorithm
+          for element in elements loop
+            hashTable := checkDiscreteRealExp(element, hashTable);
+          end for;
+      then hashTable;
 
-      end match;
-    end for;
-  end checkDiscreteRealTupleLHS;
+      else hashTable;
 
+    end match;
+  end checkDiscreteRealExp;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFVerifyModel;
