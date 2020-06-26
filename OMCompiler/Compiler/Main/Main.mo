@@ -365,7 +365,7 @@ algorithm
         path = AbsynUtil.stringPath(inLib);
         mp = Settings.getModelicaPath(Testsuite.isRunning());
         p = SymbolTable.getAbsyn();
-        (pnew, true) = CevalScript.loadModel({(path, {"default"}, false)}, mp, p, true, true, true, false);
+        (pnew, true) = CevalScript.loadModel({(path, "command-line argument", {"default"}, false)}, mp, p, true, true, true, false);
         SymbolTable.setAbsyn(pnew);
       then ();
 

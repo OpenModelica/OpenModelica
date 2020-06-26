@@ -11390,7 +11390,7 @@ public function getUsesAnnotation
   input Absyn.Program program;
   output list<Annotation> outUses = {};
 
-  type Annotation = tuple<Absyn.Path, list<String>, Boolean>;
+  type Annotation = tuple<Absyn.Path, String, list<String>, Boolean>;
 protected
   Option<list<Annotation>> opt_uses;
   list<Annotation> uses;
@@ -11399,7 +11399,7 @@ algorithm
   Absyn.PROGRAM(classes = classes) := program;
 
   for cls in classes loop
-    opt_uses := AbsynUtil.getNamedAnnotationInClass(cls, USES_PATH, getUsesAnnotationString);
+    opt_uses := AbsynUtil.getNamedAnnotationInClass(cls, USES_PATH, function getUsesAnnotationString(classOrigin=cls.name));
 
     if isSome(opt_uses) then
       SOME(uses) := opt_uses;
@@ -11414,43 +11414,47 @@ public function getUsesAnnotationOrDefault
   first argument."
   input Absyn.Program p;
   input Boolean requireExactVersion;
-  output list<tuple<Absyn.Path,list<String>,Boolean>> usesStr;
+  output list<tuple<Absyn.Path,String,list<String>,Boolean>> usesStr;
 protected
   list<Absyn.Path> paths;
   list<list<String>> strs;
+  list<String> fromVersions;
 algorithm
   usesStr := getUsesAnnotation(p);
-  paths := List.map(usesStr,Util.tuple31);
-  strs := List.map(usesStr,Util.tuple32);
+  paths := List.map(usesStr,Util.tuple41);
+  fromVersions := List.map(usesStr,Util.tuple42);
+  strs := List.map(usesStr,Util.tuple43);
   if not requireExactVersion then
     strs := List.map1(strs,listAppend,{"default"});
   end if;
-  usesStr := list((p,s,false) threaded for p in paths, s in strs);
+  usesStr := list((p,f,s,false) threaded for p in paths, f in fromVersions, s in strs);
 end getUsesAnnotationOrDefault;
 
 protected function getUsesAnnotationString
   input Option<Absyn.Modification> mod;
-  output list<tuple<Absyn.Path,list<String>,Boolean>> usesStr;
+  input String classOrigin;
+  output list<tuple<Absyn.Path,String,list<String>,Boolean>> usesStr;
 algorithm
   usesStr := match (mod)
     local
       list<Absyn.ElementArg> arglst;
 
     case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
-      then getUsesAnnotationString2(arglst);
+      then getUsesAnnotationString2(arglst, classOrigin);
 
   end match;
 end getUsesAnnotationString;
 
 protected function getUsesAnnotationString2
   input list<Absyn.ElementArg> eltArgs;
-  output list<tuple<Absyn.Path,list<String>,Boolean>> strs;
+  input String classOrigin;
+  output list<tuple<Absyn.Path,String,list<String>,Boolean>> strs;
 algorithm
   strs := match eltArgs
     local
       list<Absyn.ElementArg> xs;
       String name,  version;
-      list<tuple<Absyn.Path,list<String>,Boolean>> ss;
+      list<tuple<Absyn.Path,String,list<String>,Boolean>> ss;
       Absyn.Info info;
 
     case ({}) then {};
@@ -11460,18 +11464,18 @@ algorithm
         Absyn.MODIFICATION(path = Absyn.IDENT(name="version"),modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.STRING(version)))))
       })))::xs)
       equation
-        ss = getUsesAnnotationString2(xs);
-      then (Absyn.IDENT(name),{version},false)::ss;
+        ss = getUsesAnnotationString2(xs, classOrigin);
+      then (Absyn.IDENT(name),classOrigin,{version},false)::ss;
 
     case (Absyn.MODIFICATION(info = info, path = Absyn.IDENT(name = name))::xs)
       equation
         Error.addSourceMessage(Error.USES_MISSING_VERSION, {name}, info);
-        ss = getUsesAnnotationString2(xs);
-      then (Absyn.IDENT(name),{"default"},false)::ss;
+        ss = getUsesAnnotationString2(xs, classOrigin);
+      then (Absyn.IDENT(name),classOrigin,{"default"},false)::ss;
 
     case (_::xs)
       equation
-        ss = getUsesAnnotationString2(xs);
+        ss = getUsesAnnotationString2(xs, classOrigin);
       then ss;
 
     end match;

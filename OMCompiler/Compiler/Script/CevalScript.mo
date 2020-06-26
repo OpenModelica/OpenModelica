@@ -103,6 +103,7 @@ import Print;
 import SCode;
 import SCodeDump;
 import SCodeUtil;
+import SemanticVersion;
 import Settings;
 import SimCodeFunction;
 import StackOverflow;
@@ -320,7 +321,7 @@ algorithm
     // see https://trac.openmodelica.org/OpenModelica/ticket/2422
     // prio = if_(stringEq(prio,""), "default", prio);
     mp := System.realpath(dir + "/../") + Autoconf.groupDelimiter + Settings.getModelicaPath(Testsuite.isRunning());
-    (outProgram,true) := loadModel((Absyn.IDENT(cname),{prio},true)::{}, mp, p, true, true, checkUses, true, filename == "package.moc");
+    (outProgram,true) := loadModel((Absyn.IDENT(cname),"loadFile automatically converted to loadModel",{prio},true)::{}, mp, p, true, true, checkUses, true, filename == "package.moc");
     return;
   end if;
   outProgram := Parser.parse(name,encoding);
@@ -334,7 +335,7 @@ protected function checkUsesAndUpdateProgram
   input Boolean checkUses;
   input String modelicaPath;
 protected
-  list<tuple<Absyn.Path,list<String>,Boolean>> modelsToLoad;
+  list<tuple<Absyn.Path,String,list<String>,Boolean>> modelsToLoad;
 algorithm
   modelsToLoad := if checkUses then Interactive.getUsesAnnotationOrDefault(newp, requireExactVersion=true) else {};
   p := Interactive.updateProgram(newp, p);
@@ -345,7 +346,7 @@ protected type LoadModelFoldArg =
   tuple<String /*modelicaPath*/, Boolean /*forceLoad*/, Boolean /*notifyLoad*/, Boolean /*checkUses*/, Boolean /*requireExactVersion*/, Boolean /*encrypted*/>;
 
 public function loadModel
-  input list<tuple<Absyn.Path,list<String>,Boolean /* Only use the first entry on the MODELICAPATH */>> imodelsToLoad;
+  input list<tuple<Absyn.Path,String,list<String>,Boolean /* Only use the first entry on the MODELICAPATH */>> imodelsToLoad;
   input String modelicaPath;
   input Absyn.Program ip;
   input Boolean forceLoad;
@@ -362,12 +363,12 @@ algorithm
 end loadModel;
 
 protected function loadModel1
-  input tuple<Absyn.Path,list<String>,Boolean> modelToLoad;
+  input tuple<Absyn.Path,String,list<String>,Boolean> modelToLoad;
   input LoadModelFoldArg inArg;
   input tuple<Absyn.Program, Boolean> inTpl;
   output tuple<Absyn.Program, Boolean> outTpl;
 protected
-  list<tuple<Absyn.Path,list<String>,Boolean>> modelsToLoad;
+  list<tuple<Absyn.Path,String,list<String>,Boolean>> modelsToLoad;
   Boolean b, b1, success, forceLoad, notifyLoad, checkUses, requireExactVersion, onlyCheckFirstModelicaPath, encrypted;
   Absyn.Path path;
   list<String> versionsLst;
@@ -375,7 +376,7 @@ protected
   Absyn.Program p, pnew;
   ErrorTypes.MessageTokens msgTokens;
 algorithm
-  (path, versionsLst, onlyCheckFirstModelicaPath) := modelToLoad;
+  (path, _, versionsLst, onlyCheckFirstModelicaPath) := modelToLoad;
   (modelicaPath, forceLoad, notifyLoad, checkUses, requireExactVersion, encrypted) := inArg;
   if onlyCheckFirstModelicaPath then
     /* Using loadFile() */
@@ -419,7 +420,7 @@ algorithm
 end loadModel1;
 
 protected function checkModelLoaded
-  input tuple<Absyn.Path,list<String>,Boolean> tpl;
+  input tuple<Absyn.Path,String,list<String>,Boolean> tpl;
   input Absyn.Program p;
   input Boolean forceLoad;
   input Option<String> failNonLoad;
@@ -428,19 +429,21 @@ algorithm
   loaded := matchcontinue (tpl,p,forceLoad,failNonLoad)
     local
       Absyn.Class cdef;
-      String str1,str2;
+      String str1,str2,requestOrigin;
       Option<String> ostr2;
       Absyn.Path path;
+      list<String> withoutConversion,withConversion;
 
     case (_,_,true,_) then false;
-    case ((path,str1::_,_),_,false,_)
+    case ((path,requestOrigin,str1::_,_),_,false,_)
       equation
         cdef = Interactive.getPathedClassInProgram(path,p);
         ostr2 = AbsynUtil.getNamedAnnotationInClass(cdef,Absyn.IDENT("version"),Interactive.getAnnotationStringValueOrFail);
-        checkValidVersion(path,str1,ostr2);
+        (withoutConversion,withConversion) = Interactive.getConversionAnnotation(cdef);
+        checkValidVersion(path,str1,ostr2,requestOrigin=requestOrigin,withConversion=withConversion,withoutConversion=withoutConversion);
       then true;
     case (_,_,_,NONE()) then false;
-    case ((path,_,_),_,_,SOME(str2))
+    case ((path,_,_,_),_,_,SOME(str2))
       equation
         str1 = AbsynUtil.pathString(path);
         Error.addMessage(Error.INST_NON_LOADED, {str1,str2});
@@ -452,25 +455,48 @@ protected function checkValidVersion
   input Absyn.Path path;
   input String version;
   input Option<String> actualVersion;
+  input String requestOrigin;
+  input list<String> withConversion;
+  input list<String> withoutConversion;
+protected
+  SemanticVersion.Version semverWanted, semverActual;
+  String actualVersionStr, pathStr;
 algorithm
-  _ := matchcontinue (path,version,actualVersion)
-    local
-      String pathStr,str1,str2;
-    case (_,str1,SOME(str2))
-      equation
-        true = stringEq(str1,str2);
+  semverWanted := SemanticVersion.parse(version);
+  _ := match actualVersion
+    case SOME(actualVersionStr)
       then ();
-    case (_,str1,SOME(str2))
-      equation
-        pathStr = AbsynUtil.pathString(path);
-        Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS,{pathStr,str1,str2});
+    case NONE()
+      algorithm
+        actualVersionStr := "";
       then ();
-    case (_,str1,NONE())
-      equation
-        pathStr = AbsynUtil.pathString(path);
-        Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS,{pathStr,str1,"unknown"});
-      then ();
-  end matchcontinue;
+  end match;
+  pathStr := AbsynUtil.pathString(path);
+  semverActual := SemanticVersion.parse(actualVersionStr);
+  if 0 == SemanticVersion.compare(semverWanted, semverActual, comparePrerelease=false) then
+    return;
+  end if;
+  if not (SemanticVersion.isSemVer(semverActual) and SemanticVersion.isSemVer(semverWanted)) then
+    Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS, {pathStr, version, actualVersionStr});
+    return;
+  end if;
+  for ver in withoutConversion loop
+    if 0 == SemanticVersion.compare(semverWanted, SemanticVersion.parse(ver), comparePrerelease=false) then
+      Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS_WITHOUT_CONVERSION, {requestOrigin, pathStr, version, actualVersionStr});
+      return;
+    end if;
+  end for;
+  for ver in withConversion loop
+    if 0 == SemanticVersion.compare(semverWanted, SemanticVersion.parse(ver), comparePrerelease=false) then
+      Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS_WITH_CONVERSION, {requestOrigin, pathStr, version, actualVersionStr});
+      return;
+    end if;
+  end for;
+  if SemanticVersion.compare(semverWanted, semverActual) > 0 then
+    Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS_NEWER, {pathStr, version, actualVersionStr});
+  else
+    Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS_OLDER, {pathStr, version, actualVersionStr});
+  end if;
 end checkValidVersion;
 
 public function cevalInteractiveFunctions
@@ -1422,7 +1448,7 @@ algorithm
         if b1 then
           Config.setLanguageStandard(Config.versionStringToStd(str));
         end if;
-        (p,b) = loadModel({(path,strings,false)},mp,p,true,b,true,requireExactVersion,false);
+        (p,b) = loadModel({(path,"call to loadModel",strings,false)},mp,p,true,b,true,requireExactVersion,false);
         if b1 then
           Config.setLanguageStandard(oldLanguageStd);
         end if;
@@ -3193,57 +3219,57 @@ algorithm
   success := false;
   outFilename := "";
   if (System.regularFileExists(filename)) then
-	  if (Util.endsWith(filename, ".mol")) then
-	    workdir := if System.directoryExists(inWorkdir) then inWorkdir else System.pwd();
-	    if (skipUnzip or 0 == System.systemCall("unzip -q -o -d \"" + workdir + "\" \"" +  filename + "\"")) then
-	      s1 := System.basename(filename);
-	      s2 := Util.removeLast4Char(s1);
-	      s3 := listGet(Util.stringSplitAtChar(s2," "),1);
-	      // possible .moc files to look for
-	      filename1 := workdir + "/" + s2 + "/package.moc";
-	      filename2 := workdir + "/" + s2 + "/" + s2 + ".moc";
-	      filename3 := workdir + "/" + s3 + "/package.moc";
-	      filename4 := workdir + "/" + s3 + "/" + s3 + ".moc";
-	      if System.regularFileExists(filename1) then
-	        filename_1 := filename1;
-	      elseif System.regularFileExists(filename2) then
-	        filename_1 := filename2;
-	      elseif System.regularFileExists(filename3) then
-	        filename_1 := filename3;
-	      else
-	        filename_1 := filename4;
-	      end if;
-	      // possible .mo files to look for
-	      str1 := workdir + "/" + s2 + "/package.mo";
-	      str2 := workdir + "/" + s2 + "/" + s2 + ".mo";
-	      str3 := workdir + "/" + s3 + "/package.mo";
-	      str4 := workdir + "/" + s3 + "/" + s3 + ".mo";
-	      if System.regularFileExists(str1) then
-	        str := str1;
-	      elseif System.regularFileExists(str2) then
-	        str := str2;
-	      elseif System.regularFileExists(str3) then
+    if (Util.endsWith(filename, ".mol")) then
+      workdir := if System.directoryExists(inWorkdir) then inWorkdir else System.pwd();
+      if (skipUnzip or 0 == System.systemCall("unzip -q -o -d \"" + workdir + "\" \"" +  filename + "\"")) then
+        s1 := System.basename(filename);
+        s2 := Util.removeLast4Char(s1);
+        s3 := listGet(Util.stringSplitAtChar(s2," "),1);
+        // possible .moc files to look for
+        filename1 := workdir + "/" + s2 + "/package.moc";
+        filename2 := workdir + "/" + s2 + "/" + s2 + ".moc";
+        filename3 := workdir + "/" + s3 + "/package.moc";
+        filename4 := workdir + "/" + s3 + "/" + s3 + ".moc";
+        if System.regularFileExists(filename1) then
+          filename_1 := filename1;
+        elseif System.regularFileExists(filename2) then
+          filename_1 := filename2;
+        elseif System.regularFileExists(filename3) then
+          filename_1 := filename3;
+        else
+          filename_1 := filename4;
+        end if;
+        // possible .mo files to look for
+        str1 := workdir + "/" + s2 + "/package.mo";
+        str2 := workdir + "/" + s2 + "/" + s2 + ".mo";
+        str3 := workdir + "/" + s3 + "/package.mo";
+        str4 := workdir + "/" + s3 + "/" + s3 + ".mo";
+        if System.regularFileExists(str1) then
+          str := str1;
+        elseif System.regularFileExists(str2) then
+          str := str2;
+        elseif System.regularFileExists(str3) then
           str := str3;
-	      else
-	        str := str4;
-	      end if;
-	      // check if .mol contains .moc or .mo files
-	      filename_1 := if System.regularFileExists(filename_1) then filename_1 else str;
-	      if (System.regularFileExists(filename_1)) then
-	        success := true;
-	        outFilename := filename_1;
-	      else
-	        Error.addMessage(Error.PACKAGE_FILE_NOT_FOUND_ERROR, {filename1, filename2, filename3, filename4, str1, str2, str3, str4});
-	      end if;
-	    else
-	      Error.addMessage(Error.UNABLE_TO_UNZIP_FILE, {filename});
-	    end if;
-	  else
-	    Error.addMessage(Error.EXPECTED_ENCRYPTED_PACKAGE, {filename});
-	  end if;
-	else
-	  Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {filename});
-	end if;
+        else
+          str := str4;
+        end if;
+        // check if .mol contains .moc or .mo files
+        filename_1 := if System.regularFileExists(filename_1) then filename_1 else str;
+        if (System.regularFileExists(filename_1)) then
+          success := true;
+          outFilename := filename_1;
+        else
+          Error.addMessage(Error.PACKAGE_FILE_NOT_FOUND_ERROR, {filename1, filename2, filename3, filename4, str1, str2, str3, str4});
+        end if;
+      else
+        Error.addMessage(Error.UNABLE_TO_UNZIP_FILE, {filename});
+      end if;
+    else
+      Error.addMessage(Error.EXPECTED_ENCRYPTED_PACKAGE, {filename});
+    end if;
+  else
+    Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {filename});
+  end if;
 end unZipEncryptedPackageAndCheckFile;
 
 annotation(__OpenModelica_Interface="backend");
