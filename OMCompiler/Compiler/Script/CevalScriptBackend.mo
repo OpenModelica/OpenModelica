@@ -740,7 +740,7 @@ algorithm
       GlobalScript.SimulationOptions defaulSimOpt;
       SimCode.SimulationSettings simSettings;
       Boolean dumpExtractionSteps, requireExactVersion;
-      list<tuple<Absyn.Path,list<String>,Boolean>> uses;
+      list<tuple<Absyn.Path,String,list<String>,Boolean>> uses;
       Config.LanguageStandard oldLanguageStd;
       SCode.Element cl;
       list<SCode.Element> cls, elts;
@@ -1931,7 +1931,7 @@ algorithm
       GlobalScript.SimulationOptions defaulSimOpt;
       SimCode.SimulationSettings simSettings;
       Boolean dumpExtractionSteps, requireExactVersion;
-      list<tuple<Absyn.Path,list<String>,Boolean>> uses;
+      list<tuple<Absyn.Path,String,list<String>,Boolean>> uses;
       list<String> withoutConversion, withConversion;
       Config.LanguageStandard oldLanguageStd;
       SCode.Element cl;
@@ -3244,7 +3244,7 @@ algorithm
     Interactive.getPathedClassInProgram(className, p, true);
   else
     str := AbsynUtil.pathFirstIdent(className);
-    (p,b) := CevalScript.loadModel({(Absyn.IDENT(str),{"default"},false)},Settings.getModelicaPath(Testsuite.isRunning()),p,true,true,true,false);
+    (p,b) := CevalScript.loadModel({(Absyn.IDENT(str),"the given model name to instantiate",{"default"},false)},Settings.getModelicaPath(Testsuite.isRunning()),p,true,true,true,false);
     Error.assertionOrAddSourceMessage(not b,Error.NOTIFY_NOT_LOADED,{str,"default"},AbsynUtil.dummyInfo);
     // print(stringDelimitList(list(AbsynUtil.pathString(path) for path in Interactive.getTopClassnames(p)), ",") + "\n");
     SymbolTable.setAbsyn(p);
@@ -7372,14 +7372,14 @@ algorithm
 end searchClassNames;
 
 protected function makeUsesArray
-  input tuple<Absyn.Path,list<String>,Boolean> inTpl;
+  input tuple<Absyn.Path,String,list<String>,Boolean> inTpl;
   output Values.Value v;
 algorithm
   v := match inTpl
     local
       Absyn.Path p;
       String pstr,ver;
-    case ((p,{ver},_))
+    case ((p,_,{ver},_))
       equation
         pstr = AbsynUtil.pathString(p);
       then ValuesUtil.makeArray({Values.STRING(pstr),Values.STRING(ver)});
