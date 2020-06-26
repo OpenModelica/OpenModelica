@@ -109,6 +109,7 @@ public:
                            char ***types, char ***descriptions);
   bool getTolerance(QString cref, double* absoluteTolerance, double* relativeTolerance);
   bool getVariableStepSize(QString cref, double* initialStepSize, double* minimumStepSize, double* maximumStepSize);
+  bool getSignalFilter(QString cref, char **regex);
   bool instantiate(QString cref);
   bool initialize(QString cref);
   bool list(QString cref, QString *pContents);
