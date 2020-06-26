@@ -35,7 +35,7 @@ system("rm -f ./ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestCentrifu
 // true
 // ""
 // true
-// "Warning: Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.
+// "Warning: Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.1. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.1. There is a possibility that 3.2.1 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
 // "
 // record SimulationResult
 //     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump1_res.mat",
@@ -44,7 +44,7 @@ system("rm -f ./ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestCentrifu
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.
+// "Warning: Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.1. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.1. There is a possibility that 3.2.1 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/ElectroMechanics/Connectors.mo:3:3-36:24:writable] Warning: Connector .ThermoSysPro.ElectroMechanics.Connectors.MechanichalTorque is not balanced: The number of potential variables (2) is not equal to the number of flow variables (0).

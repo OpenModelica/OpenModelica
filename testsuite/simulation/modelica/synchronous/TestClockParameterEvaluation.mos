@@ -16,8 +16,8 @@ simulate(Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWithDiscreti
 // true
 // ""
 // true
-// "Warning: Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.2. You might experience problems if these versions are incompatible.
-// Warning: Requested package ModelicaServices of version 3.2.3, but this package was already loaded with version 3.2.2. You might experience problems if these versions are incompatible.
+// "Warning: Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.2. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.2. There is a possibility that 3.2.2 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
+// Warning: Requested package ModelicaServices of version 3.2.3, but this package was already loaded with version 3.2.2. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.2. There is a possibility that 3.2.2 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
 // "
 // record SimulationResult
 //     resultFile = "Modelica_Synchronous.Examples.Systems.ControlledMixingUnit_res.mat",
@@ -26,8 +26,8 @@ simulate(Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWithDiscreti
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.2. You might experience problems if these versions are incompatible.
-// Warning: Requested package ModelicaServices of version 3.2.3, but this package was already loaded with version 3.2.2. You might experience problems if these versions are incompatible.
+// "Warning: Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.2. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.2. There is a possibility that 3.2.2 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
+// Warning: Requested package ModelicaServices of version 3.2.3, but this package was already loaded with version 3.2.2. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.2. There is a possibility that 3.2.2 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
 // "
 // record SimulationResult
 //     resultFile = "Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWithDiscretizedContinuousController_res.mat",
@@ -36,8 +36,8 @@ simulate(Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWithDiscreti
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.2. You might experience problems if these versions are incompatible.
-// Warning: Requested package ModelicaServices of version 3.2.3, but this package was already loaded with version 3.2.2. You might experience problems if these versions are incompatible.
+// "Warning: Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.2. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.2. There is a possibility that 3.2.2 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
+// Warning: Requested package ModelicaServices of version 3.2.3, but this package was already loaded with version 3.2.2. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.2. There is a possibility that 3.2.2 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
 // Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: PI.y = 0.0 (PI.y_start = 0.0)
 // Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "

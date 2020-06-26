@@ -77,6 +77,7 @@ getDefinitions.mos \
 StateMachine.mos \
 Ticket4674.mos \
 UsesAnnotation1.mos \
+UsesAnnotation2.mos \
 Ticket5506.mos \
 Ticket5548.mos \
 Ticket5571.mos \
