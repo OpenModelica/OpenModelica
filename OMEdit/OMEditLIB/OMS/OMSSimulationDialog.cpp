@@ -203,7 +203,10 @@ int OMSSimulationDialog::exec(const QString &modelCref, LibraryTreeItem *pLibrar
   mpResultFileTextBox->setText(QString(fileName));
   // result file buffer size
   mpResultFileBufferSizeSpinBox->setValue(bufferSize);
-
+  // signalFilter
+  char *regex = (char*)"";
+  OMSProxy::instance()->getSignalFilter(mModelCref, &regex);
+  mpSignalFilterTextBox->setText(QString(regex));
   mpOkButton->setEnabled(!mpLibraryTreeItem->isSystemLibrary());
 
   return QDialog::exec();
