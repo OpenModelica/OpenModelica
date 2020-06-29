@@ -289,10 +289,17 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile \
+cleanAll.cmd \
+cleanAllButMat.cmd \
+measureCompilerPerformance.py \
 ReferenceFiles \
-simulateAll.sh \
+simulate_parallel.cmd \
+simulate.cmd \
+simulateAll_Parallel.cmd \
 simulateAll.cmd \
-sortResults.py
+simulateAll.sh \
+sortResults.py \
+status.txt \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 

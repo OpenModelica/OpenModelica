@@ -54,6 +54,7 @@ testExperimentalFMU.mos \
 DEPENDENCIES = \
 *.mo \
 *.mos \
+FMUResourceTest \
 Makefile \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

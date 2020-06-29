@@ -50,9 +50,5 @@ make -j4    # Or 4 with the number of cores you have
 
 ## Test your build
 ```bash
-make omc-diff testsuite-depends -j4
-cd testsuite/runtests && ./runtests.pl
+make test -j4
 ```
-
-Tested on Windows 10 with Ubutnu 18.04 TLS.<br>
-Failing tests: 5 of 3995
