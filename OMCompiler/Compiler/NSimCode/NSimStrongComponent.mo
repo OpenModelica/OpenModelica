@@ -410,7 +410,7 @@ public
 
         case qual as BEquation.SCALAR_EQUATION()
           algorithm
-            operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.ADD);
+            operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.SUB);
             (residualVar, residualCref) := SimVar.createResidualVar("DAE", simCodeIndices.daeModeResidualIndex);
             residual_vars := residualVar :: residual_vars;
             tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, residualCref, Expression.BINARY(qual.lhs, operator, qual.rhs), qual.source, qual.attr);
