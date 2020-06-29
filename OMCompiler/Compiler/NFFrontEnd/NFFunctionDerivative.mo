@@ -32,7 +32,6 @@
 encapsulated uniontype NFFunctionDerivative
   import Absyn;
   import AbsynUtil;
-  import IOStream;
   import SCode;
   import NFInstNode.InstNode;
   import NFFunction.Function;
