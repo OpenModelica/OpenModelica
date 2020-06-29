@@ -59,8 +59,8 @@ public
   record FUNCTION_DER
     InstNode derivativeFn;
     InstNode derivedFn;
-    Expression order;
-    list<tuple<Integer, Condition>> conditions;
+    Expression order "Is evaluated to a literal Integer during typing";
+    list<tuple<Integer, String, Condition>> conditions;
     list<InstNode> lowerOrderDerivatives;
   end FUNCTION_DER;
 
@@ -131,13 +131,13 @@ public
   end toDAE;
 
   function conditionToDAE
-    input tuple<Integer, Condition> cond;
+    input tuple<Integer, String, Condition> cond;
     output tuple<Integer, DAE.derivativeCond> daeCond;
   protected
     Integer idx;
     Condition c;
   algorithm
-    (idx, c) := cond;
+    (idx, _, c) := cond;
 
     daeCond := match c
       case Condition.ZERO_DERIVATIVE
@@ -150,7 +150,47 @@ public
     end match;
   end conditionToDAE;
 
+  function toSubMod
+    input FunctionDerivative fnDer;
+    output SCode.SubMod subMod;
+  protected
+    tuple<Integer,Condition> tpl;
+    Condition condition;
+    String id;
+    SCode.Mod mod;
+    SCode.SubMod orderMod;
+    list<SCode.SubMod> subMods;
+    Integer order;
+    SourceInfo info;
+  algorithm
+    info := InstNode.info(fnDer.derivedFn);
+    Expression.INTEGER(order) := fnDer.order;
+    orderMod := SCode.NAMEMOD("order", SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.INTEGER(order)), info));
+
+    subMods := {};
+
+    for tpl in fnDer.conditions loop
+      (_, id, condition) := tpl;
+      subMods := SCode.NAMEMOD(conditionToString(condition), SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.CREF(Absyn.CREF_IDENT(Util.makeQuotedIdentifier(id), {}))), info)) :: subMods;
+    end for;
+
+    mod := SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), orderMod::subMods, SOME(Absyn.CREF(Absyn.CREF_IDENT(Util.makeQuotedIdentifier(AbsynUtil.pathString(InstNode.scopePath(fnDer.derivativeFn))),{}))), info);
+    subMod := SCode.NAMEMOD("derivative", mod);
+  end toSubMod;
+
 protected
+
+  function conditionToString
+    input Condition condition;
+    output String str;
+  algorithm
+    str := match condition
+      case Condition.NO_DERIVATIVE then "noDerivative";
+      case Condition.ZERO_DERIVATIVE then "zeroDerivative";
+      else String(condition);
+    end match;
+  end conditionToString;
+
   function getDerivativeAnnotations
     input SCode.Element definition;
     output list<SCode.Mod> derMods;
@@ -183,7 +223,7 @@ protected
         Absyn.ComponentRef acref;
         InstNode der_node;
         Expression order;
-        list<tuple<Integer, Condition>> conds;
+        list<tuple<Integer, String, Condition>> conds;
 
       case SCode.Mod.MOD(subModLst = attrs, binding = SOME(Absyn.CREF(acref)))
         algorithm
@@ -218,7 +258,7 @@ protected
     input InstNode scope;
     input SourceInfo info;
     output Expression order = Expression.EMPTY(Type.UNKNOWN());
-    output list<tuple<Integer, Condition>> conditions = {};
+    output list<tuple<Integer, String, Condition>> conditions = {};
   protected
     String id;
     SCode.Mod mod;
@@ -244,14 +284,14 @@ protected
         case ("noDerivative", SCode.Mod.MOD(binding = SOME(Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = id)))))
           algorithm
             index := getInputIndex(id, fn, info);
-            conditions := (index, Condition.NO_DERIVATIVE) :: conditions;
+            conditions := (index, id, Condition.NO_DERIVATIVE) :: conditions;
           then
             ();
 
         case ("zeroDerivative", SCode.Mod.MOD(binding = SOME(Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = id)))))
           algorithm
             index := getInputIndex(id, fn, info);
-            conditions := (index, Condition.ZERO_DERIVATIVE) :: conditions;
+            conditions := (index, id, Condition.ZERO_DERIVATIVE) :: conditions;
           then
             ();
 

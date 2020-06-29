@@ -180,10 +180,12 @@ public
   protected
     FlatModel flat_model = flatModel;
   algorithm
+    s := IOStream.append(s, "class '" + flat_model.name + "'\n");
+
     flat_model.variables := reconstructRecordInstances(flat_model.variables);
 
     for fn in functions loop
-      if not Function.isDefaultRecordConstructor(fn) then
+      if not (Function.isDefaultRecordConstructor(fn) or Function.isExternalObjectConstructorOrDestructor(fn)) then
         s := Function.toFlatStream(fn, s);
         s := IOStream.append(s, ";\n\n");
       end if;
@@ -193,8 +195,6 @@ public
       s := Type.toFlatDeclarationStream(ty, s);
       s := IOStream.append(s, ";\n\n");
     end for;
-
-    s := IOStream.append(s, "class '" + flat_model.name + "'\n");
 
     for v in flat_model.variables loop
       s := Variable.toFlatStream(v, "  ", printBindingTypes, s);
@@ -275,6 +275,12 @@ public
           ();
 
       case Type.COMPLEX(complexTy = ComplexType.RECORD())
+        algorithm
+          types := TypeTree.add(types, InstNode.scopePath(ty.cls), ty);
+        then
+          ();
+
+      case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())
         algorithm
           types := TypeTree.add(types, InstNode.scopePath(ty.cls), ty);
         then

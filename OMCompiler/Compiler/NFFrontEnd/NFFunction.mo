@@ -679,17 +679,26 @@ uniontype Function
   function toFlatStream
     input Function fn;
     input output IOStream.IOStream s;
+    input String overrideName = "";
   protected
     String fn_name;
     list<Statement> fn_body;
+    SCode.Comment cmt;
+    SCode.Mod annMod;
+    String str;
   algorithm
     if isDefaultRecordConstructor(fn) then
       s := IOStream.append(s, InstNode.toFlatString(fn.node));
     else
       fn_name := AbsynUtil.pathString(fn.path);
-      s := IOStream.append(s, "function '");
+      if stringEmpty(overrideName) then
+        fn_name := Util.makeQuotedIdentifier(fn_name);
+      else
+        fn_name := overrideName;
+      end if;
+      s := IOStream.append(s, "function ");
       s := IOStream.append(s, fn_name);
-      s := IOStream.append(s, "'\n");
+      s := IOStream.append(s, "\n");
 
       for i in fn.inputs loop
         s := IOStream.append(s, "  ");
@@ -713,11 +722,31 @@ uniontype Function
         end for;
       end if;
 
-      s := Sections.toFlatStream(InstNode.getSections(fn.node), s);
+      s := Sections.toFlatStream(InstNode.getSections(fn.node), fn.path, s);
 
-      s := IOStream.append(s, "end '");
+      cmt := Util.getOptionOrDefault(SCodeUtil.getElementComment(InstNode.definition(fn.node)), SCode.COMMENT(NONE(), NONE()));
+      if isSome(cmt.annotation_) then
+        SOME(SCode.ANNOTATION(modification=annMod)) := cmt.annotation_;
+      else
+        annMod := SCode.NOMOD();
+      end if;
+      // Generate derivative annotations from the instantiated model. Paths have changed.
+      annMod := SCodeUtil.filterSubMods(annMod, function SCodeUtil.removeGivenSubModNames(namesToRemove={"derivative"}));
+
+      for derivative in fn.derivatives loop
+        annMod := SCodeUtil.prependSubModToMod(FunctionDerivative.toSubMod(derivative), annMod);
+      end for;
+
+      if not SCodeUtil.emptyModOrEquality(annMod) then
+        str := SCodeDump.printAnnotationStr(SCode.COMMENT(SOME(SCode.ANNOTATION(annMod)),NONE()));
+        if not stringEmpty(str) then
+          s := IOStream.append(s, str);
+          s := IOStream.append(s, ";\n");
+        end if;
+      end if;
+
+      s := IOStream.append(s, "end ");
       s := IOStream.append(s, fn_name);
-      s := IOStream.append(s, "'");
     end if;
   end toFlatStream;
 
@@ -1628,6 +1657,25 @@ uniontype Function
                                 Class.isExternalFunction(InstNode.getClass(fn.node));
   end isExternal;
 
+  function isExternalObjectConstructorOrDestructor
+    input Function fn;
+    output Boolean isExternal;
+  protected
+    Absyn.Path path;
+    String lastIdent;
+  algorithm
+    path := name(fn);
+    lastIdent := AbsynUtil.pathLastIdent(path);
+    isExternal := false;
+    if lastIdent == "constructor" then
+      isExternal := Type.isExternalObject(fn.returnType);
+    elseif lastIdent == "destructor" then
+      if listLength(fn.inputs) == 1 then
+        isExternal := Type.isExternalObject(Component.getType(InstNode.component(listHead(fn.inputs))));
+      end if;
+    end if;
+  end isExternalObjectConstructorOrDestructor;
+
   function inlineBuiltin
     input Function fn;
     output DAE.InlineType inlineType;
@@ -1927,7 +1975,7 @@ protected
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got non-instantiated function", sourceInfo());
+          Error.assertion(false, getInstanceName() + " got non-instantiated function " + AbsynUtil.pathString(InstNode.scopePath(node)), sourceInfo());
         then
           fail();
     end match;
