@@ -15,9 +15,8 @@
 # NOTE: This is the official OpenModelica way of running the testsuite, so
 #       you should run this before committing any changes.
 #
-# NOTE: This script has been tested on Linux and OSX so far, and will
-#       probably work on all other platforms except Windows without any
-#       modifications.
+# NOTE: This script has been tested on Linux, Windows and OSX so far, and will
+#       probably work on all other platforms.
 #
 # TODO: MetaModelicaDev in meta is not run yet, since those tests are organized
 #       a bit differently.

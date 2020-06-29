@@ -34,7 +34,7 @@ test:
 clean :
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
 	@rm -rf $(CLEAN)
-	@rm *_me_FMU.mo
+	@rm -f *_me_FMU.mo
 
 getdeps:
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp

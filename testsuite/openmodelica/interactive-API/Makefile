@@ -96,6 +96,9 @@ FAILINGTESTFILES=differentiate.mos
 DEPENDENCIES = \
 *.mo \
 *.mos \
+ReadOnlyPkg \
+TestDirPkg \
+TestTicket5871 \
 Makefile
 
 

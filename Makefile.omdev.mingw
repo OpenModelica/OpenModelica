@@ -37,7 +37,7 @@ BUILDTYPE=Debug
 endif
 
 
-.PHONY: omc omc-diff omlibrary-core omplot omedit omedit-testsuite omparser omsimulator omnotebook omshell omoptim omsens omsens_qt qtclientsDLLs qtclientsDLLs simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall all-runtimes nox testsuite-depends libs-for-testing
+.PHONY: omc omc-diff omlibrary-core omplot omedit omedit-testsuite omparser omsimulator omnotebook omshell omoptim omsens omsens_qt qtclientsDLLs qtclientsDLLs simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall all-runtimes nox test fast-test testsuite-depends libs-for-testing
 
 all: omc testsuite-depends omlibrary-core
 
@@ -50,7 +50,15 @@ ReferenceFiles:
 	$(MAKE) -C testsuite/ReferenceFiles
 libs-for-testing: omc
 	$(MAKE) -C testsuite/libraries-for-testing/
-testsuite-depends: omc-diff ReferenceFiles libs-for-testing
+testsuite-depends: omc-diff ReferenceFiles libs-for-testing omsimulator
+test: testsuite-depends
+	$(MAKE) omc-diff
+	cd testsuite/partest && echo "Running all $(./runtests.pl -counttests) tests"
+	cd testsuite/partest && ./runtests.pl -with-txt
+fast-test: testsuite-depends
+	$(MAKE) omc-diff
+	cd testsuite/partest && echo "Running $(./runtests.pl -f -counttests) fast tests"
+	cd testsuite/partest && ./runtests.pl -f -with-txt
 
 omlibrary-core:
 	$(MAKE) -C libraries BUILD_DIR=$(OMBUILDDIR)/lib/omlibrary core
