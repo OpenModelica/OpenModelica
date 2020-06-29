@@ -4051,6 +4051,44 @@ annotation(
   preferredView="text");
 end getAvailableLibraries;
 
+function installPackage
+  input TypeName pkg;
+  input String version = "";
+  input Boolean exactMatch = false;
+  output Boolean result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Installs the package with the best matching version (or only the specified version if exactMatch is given).
+  To update the index, call <code>updatePackageIndex()</code>.
+</html>"),
+  preferredView="text");
+end installPackage;
+
+function updatePackageIndex
+  output Boolean result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Updates the package index from the internet.
+  This adds new packages to be able to install or upgrade packages.
+  To upgrade installed packages, call <code>upgradeInstalledPackages()</code>.
+</html>"),
+  preferredView="text");
+end updatePackageIndex;
+
+function upgradeInstalledPackages
+  input Boolean installNewestVersions = true;
+  output Boolean result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Upgrades installed packages that have been registered by the package manager.
+  To update the index, call <code>updatePackageIndex()</code>.
+</html>"),
+  preferredView="text");
+end upgradeInstalledPackages;
+
 function getUses
   input TypeName pack;
   output String[:,:] uses;
