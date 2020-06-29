@@ -482,6 +482,18 @@ public
     end match;
   end isRecordConstructor;
 
+  function isExternalObjectConstructor
+    input NFCall call;
+    output Boolean isConstructor;
+  algorithm
+    isConstructor := match call
+      // Only constructors may return external objects...
+      case TYPED_CALL()
+        then Type.isExternalObject(call.ty);
+      else false;
+    end match;
+  end isExternalObjectConstructor;
+
   function inlineType
     input NFCall call;
     output DAE.InlineType inlineTy;
@@ -641,8 +653,10 @@ public
         then
           if Function.isBuiltin(call.fn) then
             stringAppendList({name, "(", arg_str, ")"})
+          elseif isExternalObjectConstructor(call) then
+            stringAppendList({Type.toFlatString(call.ty), "(", arg_str, ")"})
           else
-            stringAppendList({"'", name, "'(", arg_str, ")"});
+            stringAppendList({Util.makeQuotedIdentifier(name), "(", arg_str, ")"});
 
       case TYPED_ARRAY_CONSTRUCTOR()
         algorithm
@@ -671,7 +685,7 @@ public
           if Function.isBuiltin(call.fn) then
             stringAppendList({name, "(", arg_str, " for ", c, ")"})
           else
-            stringAppendList({"'", name, "'(", arg_str, " for ", c, ")"});
+            stringAppendList({Util.makeQuotedIdentifier(name), "(", arg_str, " for ", c, ")"});
 
     end match;
   end toFlatString;

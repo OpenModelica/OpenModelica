@@ -39,6 +39,7 @@ encapsulated uniontype NFSections
 
 protected
   import Sections = NFSections;
+  import SCodeUtil;
   import IOStream;
 
 public
@@ -54,7 +55,7 @@ public
     list<Expression> args;
     ComponentRef outputRef;
     String language;
-    Option<SCode.Annotation> ann;
+    Option<Annotation> ann;
     Boolean explicit;
   end EXTERNAL;
 
@@ -369,7 +370,11 @@ public
 
   function toFlatStream
     input Sections sections;
+    input Absyn.Path scopeName;
     input output IOStream.IOStream s;
+  protected
+    Annotation ann;
+    SCode.Mod mod, modLib, modInc, modLibDir, modIncDir;
   algorithm
     () := match sections
       case SECTIONS()
@@ -397,7 +402,28 @@ public
             s := IOStream.append(s, ")");
           end if;
           if isSome(sections.ann) then
-            s := IOStream.append(s, SCodeDump.printAnnotationStr(SCode.COMMENT(sections.ann, NONE())));
+            SOME(ann) := sections.ann;
+            mod := ann.modification;
+            modLib := SCodeUtil.filterSubMods(mod, function SCodeUtil.filterGivenSubModNames(namesToKeep={"Library"}));
+            modInc := SCodeUtil.filterSubMods(mod, function SCodeUtil.filterGivenSubModNames(namesToKeep={"Include"}));
+            if SCodeUtil.isEmptyMod(modLib) then
+              modLibDir := SCode.NOMOD();
+            else
+              modLibDir := SCodeUtil.filterSubMods(mod, function SCodeUtil.filterGivenSubModNames(namesToKeep={"LibraryDirectory"}));
+              if SCodeUtil.isEmptyMod(modLibDir) then
+                modLibDir := SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {SCode.NAMEMOD("LibraryDirectory", SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.STRING("modelica://" + AbsynUtil.pathFirstIdent(scopeName) + "/Resources/Library")), Error.dummyInfo))}, NONE(), Error.dummyInfo);
+              end if;
+            end if;
+            if SCodeUtil.isEmptyMod(modInc) then
+              modIncDir := SCode.NOMOD();
+            else
+              modIncDir := SCodeUtil.filterSubMods(mod, function SCodeUtil.filterGivenSubModNames(namesToKeep={"IncludeDirectory"}));
+              if SCodeUtil.isEmptyMod(modLibDir) then
+                modLibDir := SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {SCode.NAMEMOD("IncludeDirectory", SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.STRING("modelica://" + AbsynUtil.pathFirstIdent(scopeName) + "/Resources/Include")), Error.dummyInfo))}, NONE(), Error.dummyInfo);
+              end if;
+            end if;
+            ann.modification := SCodeUtil.mergeSCodeMods(SCodeUtil.mergeSCodeMods(modLib, modLibDir), SCodeUtil.mergeSCodeMods(modInc, modIncDir));
+            s := IOStream.append(s, SCodeDump.printAnnotationStr(SCode.COMMENT(SOME(ann), NONE())));
           end if;
           s := IOStream.append(s, ";\n");
         then ();

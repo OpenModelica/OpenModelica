@@ -921,6 +921,23 @@ algorithm
   // xmlString := System.iconv(xmlString, "", "UTF-8");
 end escapeModelicaStringToXmlString;
 
+public function makeQuotedIdentifier
+  input String str;
+  output String quotedIdentifier;
+algorithm
+  quotedIdentifier := System.stringReplace(str, "\\", "\\\\");
+  quotedIdentifier := System.stringReplace(quotedIdentifier, "'", "\\'");
+  quotedIdentifier := "'" + quotedIdentifier + "'";
+end makeQuotedIdentifier;
+
+public function escapeQuotes
+  input String str;
+  output String quotes;
+algorithm
+  quotes := System.stringReplace(str, "\\", "\\\\");
+  quotes := System.stringReplace(quotes, "'", "\\'");
+end escapeQuotes;
+
 public function makeTuple<T1, T2>
   input T1 inValue1;
   input T2 inValue2;
