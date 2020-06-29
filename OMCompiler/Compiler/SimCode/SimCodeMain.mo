@@ -417,17 +417,17 @@ algorithm
     end if;
 
     System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
-      callTargetTemplates(oldSimCode, Config.simCodeTarget());
-      timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
-      ExecStat.execStat("Templates");
-    else
-        setGlobalRoot(Global.stackoverFlowIndex, NONE());
-        ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
-        Error.addInternalError("Stack overflow in "+getInstanceName()+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
-        /* Do not fail or we can loop too much */
-        StackOverflow.clearStacktraceMessages();
-        fail();
-    end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
+    callTargetTemplates(oldSimCode, Config.simCodeTarget());
+    timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
+    ExecStat.execStat("Templates");
+  else
+    setGlobalRoot(Global.stackoverFlowIndex, NONE());
+    ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
+    Error.addInternalError("Stack overflow in "+getInstanceName()+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+    /* Do not fail or we can loop too much */
+    StackOverflow.clearStacktraceMessages();
+    fail();
+  end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
 end generateNewModelCodeDAEMode;
 
 protected

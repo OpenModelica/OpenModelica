@@ -61,6 +61,7 @@ protected
   import OldSimCode = SimCode;
 
   // SimCode imports
+  import SimCode = NSimCode;
   import NSimVar.SimVar;
 
   // Util imports
@@ -228,12 +229,12 @@ public
     function createBlocks
       input list<System.System> systems;
       output list<list<Block>> blcks = {};
-      input output Integer uniqueIndex;
+      input output SimCode.SimCodeIndices simCodeIndices;
     protected
       list<Block> tmp;
     algorithm
       for system in systems loop
-        (tmp, uniqueIndex) := fromSystem(system, uniqueIndex);
+        (tmp, simCodeIndices, _) := fromSystem(system, simCodeIndices);
         blcks := tmp :: blcks;
       end for;
       blcks := listReverse(blcks);
@@ -242,12 +243,12 @@ public
     function createInitialBlocks
       input list<System.System> systems;
       output list<Block> blcks = {};
-      input output Integer uniqueIndex;
+      input output SimCode.SimCodeIndices simCodeIndices;
     protected
       list<Block> tmp;
     algorithm
       for system in systems loop
-        (tmp, uniqueIndex, _, _) := fromSystem(system, uniqueIndex);
+        (tmp, simCodeIndices, _) := fromSystem(system, simCodeIndices);
         blcks := listAppend(blcks, tmp);
       end for;
       blcks := listReverse(blcks);
@@ -257,13 +258,12 @@ public
       input list<System.System> systems;
       output list<list<Block>> blcks = {};
       output list<SimVar> vars = {};
-      input output Integer uniqueEqIndex;
+      input output SimCode.SimCodeIndices simCodeIndices;
     protected
       list<Block> tmp;
-      Integer uniqueVarIndex = 0;
     algorithm
       for system in systems loop
-        (tmp, uniqueEqIndex, uniqueVarIndex, vars) := fromSystem(system, uniqueEqIndex, true, uniqueVarIndex, vars);
+        (tmp, simCodeIndices, vars) := fromSystem(system, simCodeIndices, true, vars);
         blcks := tmp :: blcks;
       end for;
       blcks := listReverse(blcks);
@@ -272,10 +272,9 @@ public
     function fromSystem
       input System.System system;
       output list<Block> blcks;
-      input output Integer uniqueEqIndex;
+      input output SimCode.SimCodeIndices simCodeIndices;
       // these inputs and outputs are only relevant for DAEMode
       input Boolean daeMode = false;
-      input output Integer uniqueVarIndex = -1;
       input output list<SimVar> residual_vars = {};
     algorithm
       blcks := match system.strongComponents
@@ -285,7 +284,7 @@ public
         case SOME(comps)
           algorithm
             for i in 1:arrayLength(comps) loop
-              (tmp, uniqueEqIndex, uniqueVarIndex, residual_vars) := fromStrongComponent(comps[i], uniqueEqIndex, daeMode, uniqueVarIndex, residual_vars);
+              (tmp, simCodeIndices, residual_vars) := fromStrongComponent(comps[i], simCodeIndices, daeMode, residual_vars);
               result := listAppend(result, tmp);
             end for;
         then listReverse(result);
@@ -299,10 +298,9 @@ public
     function fromStrongComponent
       input StrongComponent comp;
       output list<Block> blck_lst;
-      input output Integer uniqueEqIndex;
+      input output SimCode.SimCodeIndices simCodeIndices;
       // these inputs and outputs are only relevant for DAEMode
       input Boolean daeMode;
-      input output Integer uniqueVarIndex;
       input output list<SimVar> residual_vars;
     algorithm
       blck_lst := match comp
@@ -319,23 +317,24 @@ public
           algorithm
             if daeMode then
               for eqn_ptr in strict.residual_eqns loop
-                (tmp, residual_vars, uniqueEqIndex, uniqueVarIndex) := createDAEModeResidual(Pointer.access(eqn_ptr), residual_vars, uniqueEqIndex, uniqueVarIndex);
+                (tmp, residual_vars, simCodeIndices) := createDAEModeResidual(Pointer.access(eqn_ptr), residual_vars, simCodeIndices);
                 result := tmp :: result;
               end for;
             else
               for eqn_ptr in strict.residual_eqns loop
-                (tmp, uniqueEqIndex) := createResidual(Pointer.access(eqn_ptr), uniqueEqIndex);
+                (tmp, simCodeIndices) := createResidual(Pointer.access(eqn_ptr), simCodeIndices);
                 eqns := tmp :: eqns;
               end for;
               for var_ptr in strict.iteration_vars loop
                 var := Pointer.access(var_ptr);
                 crefs := var.name :: crefs;
               end for;
-              // ToDo: correct the following values: systemIndex, size, homotopy, torn
-              system := NONLINEAR_SYSTEM(uniqueEqIndex, listReverse(eqns), listReverse(crefs), uniqueEqIndex, listLength(crefs), NONE(), false, qual.mixed, true);
+              // ToDo: correct the following values: size, homotopy, torn
+              system := NONLINEAR_SYSTEM(simCodeIndices.equationIndex, listReverse(eqns), listReverse(crefs), simCodeIndices.nonlinearSystemIndex, listLength(crefs), NONE(), false, qual.mixed, true);
+              simCodeIndices.nonlinearSystemIndex := simCodeIndices.nonlinearSystemIndex + 1;
               result := {NONLINEAR(system, NONE())};
             end if;
-            uniqueEqIndex := uniqueEqIndex + 1;
+            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then result;
       end match;
     end fromStrongComponent;
@@ -343,7 +342,7 @@ public
     function createResidual
       input BEquation.Equation eqn;
       output Block blck;
-      input output Integer uniqueIndex;
+      input output SimCode.SimCodeIndices simCodeIndices;
     algorithm
       blck := match eqn
         local
@@ -356,15 +355,15 @@ public
         case qual as BEquation.SCALAR_EQUATION()
           algorithm
             operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.ADD);
-            tmp := RESIDUAL(uniqueIndex, Expression.BINARY(qual.lhs, operator ,qual.rhs), qual.source, qual.attr);
-            uniqueIndex := uniqueIndex + 1;
+            tmp := RESIDUAL(simCodeIndices.equationIndex, Expression.BINARY(qual.lhs, operator ,qual.rhs), qual.source, qual.attr);
+            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
         case qual as BEquation.ARRAY_EQUATION()
           algorithm
             operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.ADD);
-            tmp := ARRAY_RESIDUAL(uniqueIndex, Expression.BINARY(qual.lhs, operator, qual.rhs), qual.source, qual.attr);
-            uniqueIndex := uniqueIndex + 1;
+            tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, Expression.BINARY(qual.lhs, operator, qual.rhs), qual.source, qual.attr);
+            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
         case qual as BEquation.SIMPLE_EQUATION()
@@ -374,11 +373,11 @@ public
             lhs := Expression.fromCref(qual.lhs);
             rhs := Expression.fromCref(qual.rhs);
             if Type.isArray(ty) then
-              tmp := ARRAY_RESIDUAL(uniqueIndex, Expression.BINARY(lhs, operator, rhs), qual.source, qual.attr);
+              tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, Expression.BINARY(lhs, operator, rhs), qual.source, qual.attr);
             else
-              tmp := RESIDUAL(uniqueIndex, Expression.BINARY(lhs, operator ,rhs), qual.source, qual.attr);
+              tmp := RESIDUAL(simCodeIndices.equationIndex, Expression.BINARY(lhs, operator ,rhs), qual.source, qual.attr);
             end if;
-            uniqueIndex := uniqueIndex + 1;
+            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
         // ToDo: add all other cases!
@@ -397,8 +396,7 @@ public
       input BEquation.Equation eqn;
       output Block blck;
       input output list<SimVar> residual_vars;
-      input output Integer uniqueEqIndex;
-      input output Integer uniqueVarIndex;
+      input output SimCode.SimCodeIndices simCodeIndices;
     algorithm
       blck := match eqn
         local
@@ -413,38 +411,39 @@ public
         case qual as BEquation.SCALAR_EQUATION()
           algorithm
             operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.ADD);
-            (residualVar, residualCref) := SimVar.createResidualVar("DAE", uniqueVarIndex);
+            (residualVar, residualCref) := SimVar.createResidualVar("DAE", simCodeIndices.daeModeResidualIndex);
             residual_vars := residualVar :: residual_vars;
-            tmp := SIMPLE_ASSIGN(uniqueEqIndex, residualCref, Expression.BINARY(qual.lhs, operator, qual.rhs), qual.source, qual.attr);
-            uniqueEqIndex := uniqueEqIndex + 1;
-            uniqueVarIndex := uniqueVarIndex + 1;
+            tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, residualCref, Expression.BINARY(qual.lhs, operator, qual.rhs), qual.source, qual.attr);
+            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+            simCodeIndices.daeModeResidualIndex := simCodeIndices.daeModeResidualIndex + 1;
         then tmp;
 
         case qual as BEquation.ARRAY_EQUATION()
           algorithm
             operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.ADD);
-            (residualVar, residualCref) := SimVar.createResidualVar("DAE", uniqueVarIndex);
+            (residualVar, residualCref) := SimVar.createResidualVar("DAE", simCodeIndices.daeModeResidualIndex); // array type?
             residual_vars := residualVar :: residual_vars;
-            tmp := ARRAY_ASSIGN(uniqueEqIndex, Expression.fromCref(residualCref), Expression.BINARY(qual.lhs, operator, qual.rhs), qual.source, qual.attr);
-            uniqueEqIndex := uniqueEqIndex + 1;
-            uniqueVarIndex := uniqueVarIndex + 1;
+            tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(residualCref), Expression.BINARY(qual.lhs, operator, qual.rhs), qual.source, qual.attr);
+            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+            simCodeIndices.daeModeResidualIndex := simCodeIndices.daeModeResidualIndex + 1;
         then tmp;
 
+        // remove simple equations should remove this, but if it is not activated we need this
         case qual as BEquation.SIMPLE_EQUATION()
           algorithm
             ty := ComponentRef.getComponentType(qual.lhs);
             operator := Operator.OPERATOR(ty, NFOperator.Op.ADD);
             lhs := Expression.fromCref(qual.lhs);
             rhs := Expression.fromCref(qual.rhs);
-            (residualVar, residualCref) := SimVar.createResidualVar("DAE", uniqueVarIndex);
+            (residualVar, residualCref) := SimVar.createResidualVar("DAE", simCodeIndices.daeModeResidualIndex);
             residual_vars := residualVar :: residual_vars;
             if Type.isArray(ty) then
-              tmp := ARRAY_ASSIGN(uniqueEqIndex, Expression.fromCref(residualCref), Expression.BINARY(lhs, operator, rhs), qual.source, qual.attr);
+              tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(residualCref), Expression.BINARY(lhs, operator, rhs), qual.source, qual.attr);
             else
-              tmp := SIMPLE_ASSIGN(uniqueEqIndex, residualCref, Expression.BINARY(lhs, operator, rhs), qual.source, qual.attr);
+              tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, residualCref, Expression.BINARY(lhs, operator, rhs), qual.source, qual.attr);
             end if;
-            uniqueEqIndex := uniqueEqIndex + 1;
-            uniqueVarIndex := uniqueVarIndex + 1;
+            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+            simCodeIndices.daeModeResidualIndex := simCodeIndices.daeModeResidualIndex + 1;
         then tmp;
 
         // ToDo: add all other cases!
@@ -455,6 +454,22 @@ public
 
       end match;
     end createDAEModeResidual;
+
+    function collectAlgebraicLoops
+      input list<list<Block>> blcks;
+      input output list<Block> linearLoops;
+      input output list<Block> nonlinearLoops;
+    algorithm
+      for blck_lst in blcks loop
+        for blck in blck_lst loop
+          (linearLoops, nonlinearLoops) := match blck
+            case LINEAR()     then (blck :: linearLoops, nonlinearLoops);
+            case NONLINEAR()  then (linearLoops, blck :: nonlinearLoops);
+                              else (linearLoops, nonlinearLoops);
+          end match;
+        end for;
+      end for;
+    end collectAlgebraicLoops;
 
     function convert
       input Block blck;

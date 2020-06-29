@@ -51,6 +51,7 @@ protected
   import System = NBSystem;
 
   // SimCode imports
+  import HashTableSimCode;
   import SimCodeMain;
   import SimStrongComponent = NSimStrongComponent;
   import NSimVar.SimVar;
@@ -69,11 +70,23 @@ protected
   import HashTable;
   import HashTableCrIListArray;
   import HashTableCrILst;
+  import HashTableCrefSimVar;
 
   // Script imports
   import CevalScriptBackend;
 
 public
+  uniontype SimCodeIndices
+    record SIM_CODE_INDICES
+      "Unique simulation code indices"
+	    Integer variableIndex;
+	    Integer equationIndex;
+	    Integer linearSystemIndex;
+	    Integer nonlinearSystemIndex;
+	    Integer daeModeResidualIndex;
+    end SIM_CODE_INDICES;
+  end SimCodeIndices;
+
   uniontype SimCode
     record SIM_CODE
       ModelInfo modelInfo;
@@ -119,7 +132,7 @@ public
       //HashTableCrIListArray.HashTable varToArrayIndexMapping;
       //*** a protected section *** not exported to SimCodeTV
       //HashTableCrILst.HashTable varToIndexMapping;
-      //HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
+      HashTableSimCode.HashTable crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
       //HashTable.HashTable crefToClockIndexHT "map variables to clock indices";
       //Option<BackendMapping> backendMapping;
       //FMI 2.0 data for model structure
@@ -167,20 +180,24 @@ public
           //tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
           // New SimCode structures
           ModelInfo modelInfo;
-          Integer uniqueEquationIndex = 0;
+          SimCodeIndices simCodeIndices;
           list<Expression> literals;
           list<String> externalFunctionIncludes;
           list<SimStrongComponent.Block> independent, allSim, nominal, min, max, param, no_ret, algorithms;
           list<SimStrongComponent.Block> zero_cross_blocks, jac_blocks;
           list<SimStrongComponent.Block> init, init_0, init_no_ret, start;
           list<list<SimStrongComponent.Block>> ode, algebraic;
+          list<SimStrongComponent.Block> linearLoops, nonlinearLoops;
           list<ComponentRef> discreteVars;
           list<SimStrongComponent.Jacobian> jacobians;
+          HashTableSimCode.HashTable crefToSimVarHT;
           Option<DaeModeData> daeModeData;
           list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
 
         case qual as BackendDAE.BDAE()
           algorithm
+            // somehow this cannot be set at definition (metamodelica bug?)
+            simCodeIndices := SIM_CODE_INDICES(0, 0, 0, 0, 0);
             // ToDo:
             // this has to be adapted at some point SimCodeFuntion needs to be translated
             // to new simcode and literals have to be based on new Expressions.
@@ -203,22 +220,30 @@ public
             algorithms := {};
             zero_cross_blocks := {};
             jac_blocks := {};
-            (init, uniqueEquationIndex) := SimStrongComponent.Block.createInitialBlocks(qual.init, uniqueEquationIndex);
+            (init, simCodeIndices) := SimStrongComponent.Block.createInitialBlocks(qual.init, simCodeIndices);
             init_0 := {};
             init_no_ret := {};
             start := {};
-            (ode, uniqueEquationIndex) := SimStrongComponent.Block.createBlocks(qual.ode, uniqueEquationIndex);
+            ode := {};
+            //(ode, simCodeIndices) := SimStrongComponent.Block.createBlocks(qual.ode, simCodeIndices);
             algebraic := {};
             discreteVars := {};
             jacobians := {};
+            crefToSimVarHT := HashTableSimCode.empty(); // fill this!
             if isSome(qual.dae) then
-              (daeModeData, uniqueEquationIndex) := DaeModeData.create(Util.getOption(qual.dae), uniqueEquationIndex);
+              (daeModeData, simCodeIndices) := DaeModeData.create(Util.getOption(qual.dae), simCodeIndices);
             else
               daeModeData := NONE();
             end if;
             inlineEquations := {};
 
-            modelInfo := ModelInfo.create(qual.varData, name, directory, functions, uniqueEquationIndex);
+            (linearLoops, nonlinearLoops) := collectAlgebraicLoops(init, daeModeData);
+            modelInfo := ModelInfo.create(qual.varData, name, directory, functions, simCodeIndices, linearLoops, nonlinearLoops);
+
+            // This needs to be done after the variables have been created by ModelInfo.create()
+            if isSome(daeModeData) then
+              daeModeData := DaeModeData.addAlgebraicsAndAuxiliaries(daeModeData, modelInfo);
+            end if;
 
             simCode := SIM_CODE(
               modelInfo                 = modelInfo,
@@ -245,6 +270,7 @@ public
               makefileParams            = makefileParams,
               jacobians                 = jacobians,
               simulationSettingsOpt     = simSettingsOpt,
+              crefToSimVarHT            = crefToSimVarHT,
               daeModeData               = daeModeData,
               inlineEquations           = inlineEquations);
         then simCode;
@@ -265,10 +291,15 @@ public
       HashTableCrILst.HashTable varToIndexMapping;
       OldSimCode.HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
       HashTable.HashTable crefToClockIndexHT "map variables to clock indices";
+      list<SimVar> residualVars;
     algorithm
       modelInfo := ModelInfo.convert(simCode.modelInfo);
       (varToArrayIndexMapping, varToIndexMapping) := OldSimCodeUtil.createVarToArrayIndexMapping(modelInfo);
       crefToSimVarHT := OldSimCodeUtil.createCrefToSimVarHT(modelInfo);
+      if isSome(simCode.daeModeData) then
+          SOME(DAE_MODE_DATA(residualVars = residualVars)) := simCode.daeModeData;
+          crefToSimVarHT:= List.fold(SimVar.SimVar.convertList(residualVars), HashTableCrefSimVar.addSimVarToHashTable, crefToSimVarHT);
+      end if;
       crefToClockIndexHT := HashTable.emptyHashTable();
       for cref in simCode.discreteVars loop
         discreteModelVars := ComponentRef.toDAE(cref) :: discreteModelVars;
@@ -306,7 +337,11 @@ public
         extObjInfo                    = OldSimCode.EXTOBJINFO({}, {}), // ToDo: add this once external object info is supported
         makefileParams                = simCode.makefileParams, // ToDo: convert this to new structures
         delayedExps                   = OldSimCode.DELAYED_EXPRESSIONS({}, 0), // ToDo: add this once delayed expressions are supported
-        jacobianMatrixes              = {}, // ToDo: convert this to new structures
+        jacobianMatrixes              = { OldSimCode.JAC_MATRIX({}, {}, "A", {}, {}, {}, 0, -1, 0, NONE()),
+                                          OldSimCode.JAC_MATRIX({}, {}, "B", {}, {}, {}, 0, -1, 0, NONE()),
+                                          OldSimCode.JAC_MATRIX({}, {}, "C", {}, {}, {}, 0, -1, 0, NONE()),
+                                          OldSimCode.JAC_MATRIX({}, {}, "D", {}, {}, {}, 0, -1, 0, NONE()),
+                                          OldSimCode.JAC_MATRIX({}, {}, "F", {}, {}, {}, 0, -1, 0, NONE())}, // ToDo: convert this to new structures
         simulationSettingsOpt         = simCode.simulationSettingsOpt, // replace with new struct later on
         fileNamePrefix                = AbsynUtil.pathString(simCode.modelInfo.name),
         fullPathPrefix                = "", // FMI stuff
@@ -337,6 +372,23 @@ public
         then fail();
       end match;
     end getDirectoryAndLibs;
+  protected
+    function collectAlgebraicLoops
+      "Collects algebraic loops from all systems (ode, init, init_0, dae, ...).
+      ToDo: Add other systems once implemented!"
+      input list<SimStrongComponent.Block> init;
+      input Option<DaeModeData> daeModeData;
+      output list<SimStrongComponent.Block> linearLoops = {};
+      output list<SimStrongComponent.Block> nonlinearLoops = {};
+    protected
+      list<list<SimStrongComponent.Block>> dae_mode_blcks;
+    algorithm
+      (linearLoops, nonlinearLoops) := SimStrongComponent.Block.collectAlgebraicLoops({init}, linearLoops, nonlinearLoops);
+      if isSome(daeModeData) then
+        SOME(DAE_MODE_DATA(blcks = dae_mode_blcks)) := daeModeData;
+        (linearLoops, nonlinearLoops) := SimStrongComponent.Block.collectAlgebraicLoops(dae_mode_blcks, linearLoops, nonlinearLoops);
+      end if;
+    end collectAlgebraicLoops;
   end SimCode;
 
   uniontype ModelInfo
@@ -354,8 +406,8 @@ public
       Integer nClocks;
       Integer nSubClocks;
       Boolean hasLargeLinearEquationSystems; // True if model has large linear eq. systems that are crucial for performance.
-      list<SimStrongComponent.Block> linearSystems;
-      list<SimStrongComponent.Block> nonLinearSystems;
+      list<SimStrongComponent.Block> linearLoops;
+      list<SimStrongComponent.Block> nonlinearLoops;
       //list<UnitDefinition> unitDefinitions "export unitDefintion in modelDescription.xml";
     end MODEL_INFO;
 
@@ -371,15 +423,17 @@ public
       input Absyn.Path name;
       input String directory;
       input list<OldSimCodeFunction.Function> functions;
-      input Integer numEquation;
+      input SimCodeIndices simCodeIndices;
+      input list<SimStrongComponent.Block> linearLoops;
+      input list<SimStrongComponent.Block> nonlinearLoops;
       output ModelInfo modelInfo;
     protected
       SimVars vars;
       VarInfo info;
     algorithm
       vars := SimVars.create(varData);
-      info := VarInfo.create(vars, numEquation);
-      modelInfo := MODEL_INFO(name, "", directory, vars, info, functions, {}, {}, {}, 0, 0, true, {}, {});
+      info := VarInfo.create(vars, simCodeIndices);
+      modelInfo := MODEL_INFO(name, "", directory, vars, info, functions, {}, {}, {}, 0, 0, true, linearLoops, nonlinearLoops);
     end create;
 
     function convert
@@ -403,8 +457,8 @@ public
         nClocks                         = modelInfo.nClocks,
         nSubClocks                      = modelInfo.nSubClocks,
         hasLargeLinearEquationSystems   = modelInfo.hasLargeLinearEquationSystems,
-        linearSystems                   = SimStrongComponent.Block.convertList(modelInfo.linearSystems),
-        nonLinearSystems                = SimStrongComponent.Block.convertList(modelInfo.nonLinearSystems),
+        linearSystems                   = SimStrongComponent.Block.convertList(modelInfo.linearLoops),
+        nonLinearSystems                = SimStrongComponent.Block.convertList(modelInfo.nonlinearLoops),
         unitDefinitions                 = {} // ToDo: add this once unit definitions are supported
       );
     end convert;
@@ -448,7 +502,7 @@ public
 
     function create
       input SimVars vars;
-      input Integer numEquations;
+      input SimCodeIndices simCodeIndices;
       output VarInfo varInfo;
     algorithm
       varInfo := VAR_INFO(
@@ -473,9 +527,9 @@ public
         numStringAlgVars            = listLength(vars.stringAlgVars),
         numStringParamVars          = listLength(vars.stringParamVars),
         numStringAliasVars          = listLength(vars.stringAliasVars),
-        numEquations                = numEquations,
-        numLinearSystems            = 0,
-        numNonLinearSystems         = 0,
+        numEquations                = simCodeIndices.equationIndex,
+        numLinearSystems            = simCodeIndices.linearSystemIndex,
+        numNonLinearSystems         = simCodeIndices.nonlinearSystemIndex,
         numMixedSystems             = 0,
         numStateSets                = 0,
         numJacobians                = 0,
@@ -552,12 +606,12 @@ public
     function create
       input list<System.System> systems;
       output Option<DaeModeData> data;
-      input output Integer uniqueEquationIndex;
+      input output SimCodeIndices simCodeIndices;
     protected
       list<list<SimStrongComponent.Block>> blcks;
-      list<SimVar> residualVars;
+      list<SimVar> residualVars, algebraicVars;
     algorithm
-      (blcks, residualVars, uniqueEquationIndex) := SimStrongComponent.Block.createDAEModeBlocks(systems, uniqueEquationIndex);
+      (blcks, residualVars, simCodeIndices) := SimStrongComponent.Block.createDAEModeBlocks(systems, simCodeIndices);
       data := SOME(DAE_MODE_DATA(blcks, NONE(), residualVars, {}, {}, DaeModeConfig.ALL));
     end create;
 
@@ -584,6 +638,28 @@ public
         case DaeModeConfig.DYNAMIC  then OldSimCode.DYNAMIC_EQUATIONS();
       end match;
     end convertMode;
+
+    function addAlgebraicsAndAuxiliaries
+      input output Option<DaeModeData> daeModeDataOpt;
+      input ModelInfo modelInfo;
+    algorithm
+      daeModeDataOpt := match daeModeDataOpt
+        local
+          DaeModeData daeModeData;
+
+        case SOME(daeModeData)
+          algorithm
+            daeModeData.algebraicVars := modelInfo.vars.algVars;
+            daeModeData.auxiliaryVars := {}; // this needs to be updated in the future
+        then SOME(daeModeData);
+
+        else
+          algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+        then fail();
+
+      end match;
+    end addAlgebraicsAndAuxiliaries;
   end DaeModeData;
 
   type DaeModeConfig = enumeration(ALL, DYNAMIC);

@@ -307,6 +307,7 @@ if true then /* Suppress output */
     "../NBackEnd/Modules/3_Post/NBTearing.mo",
 
   // "NSimCode"
+    "../NSimCode/HashTableSimCode.mo",
     "../NSimCode/NSimCode.mo",
     "../NSimCode/NSimStrongComponent.mo",
     "../NSimCode/NSimVar.mo",
