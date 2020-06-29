@@ -120,7 +120,8 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 *.sh \
-Makefile
+Makefile \
+msl32-models.txt
 
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

@@ -28,22 +28,23 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile \
-ExtObj.c \
-ExtObj.h \
-ExtObjStringParam.ext.c \
-ExtObjStringParam.ext.h \
-ExternalFunc1.c \
 ExternalFunc1_ext.h \
+ExternalFunc1.c \
 ExternalFunc2.c \
 ExternalFunc2.h \
 ExternalRHSFlag.c \
+ExtObj.c \
+ExtObj.h \
+ExtObjOrder.h \
+ExtObjStringParam.ext.c \
+ExtObjStringParam.ext.h \
 Func.c \
 Func.h \
 InOutStrings_fkn1.cc \
 InOutStrings_fkn2.cc \
+ModelicaUtilities.myExtFunction.c \
+QualifiedCrefArg-f.c \
 testTables.txt \
-ModelicaUtilities.myExtFunction.c
-
 
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
