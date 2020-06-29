@@ -1606,6 +1606,7 @@ public
 
       case CREF() then ComponentRef.toFlatString(exp.cref);
       case TYPENAME() then Type.typenameString(Type.arrayElementType(exp.ty));
+      case ARRAY(elements={}) then "fill("+toFlatString(makeZero(Type.elementType(exp.ty)))+", " + Type.dimensionsToFlatString(exp.ty) + ")";
       case ARRAY() then "{" + stringDelimitList(list(toFlatString(e) for e in exp.elements), ", ") + "}";
       case MATRIX() then "[" + stringDelimitList(list(stringDelimitList(list(toFlatString(e) for e in el), ", ") for el in exp.elements), "; ") + "]";
 

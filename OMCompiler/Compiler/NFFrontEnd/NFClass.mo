@@ -718,15 +718,15 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
   protected
     String name;
   algorithm
-    name := AbsynUtil.pathString(InstNode.scopePath(clsNode));
+    name := Util.makeQuotedIdentifier(AbsynUtil.pathString(InstNode.scopePath(clsNode)));
 
     s := match cls
       case INSTANCED_CLASS()
         algorithm
           s := IOStream.append(s, Restriction.toString(cls.restriction));
-          s := IOStream.append(s, " '");
+          s := IOStream.append(s, " ");
           s := IOStream.append(s, name);
-          s := IOStream.append(s, "'\n");
+          s := IOStream.append(s, "\n");
 
           for comp in ClassTree.getComponents(cls.elements) loop
             s := IOStream.append(s, "  ");
@@ -734,9 +734,8 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
             s := IOStream.append(s, ";\n");
           end for;
 
-          s := IOStream.append(s, "end '");
+          s := IOStream.append(s, "end ");
           s := IOStream.append(s, name);
-          s := IOStream.append(s, "'");
         then
           s;
 
@@ -751,11 +750,10 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
       case TYPED_DERIVED()
         algorithm
           s := IOStream.append(s, Restriction.toString(cls.restriction));
-          s := IOStream.append(s, " '");
+          s := IOStream.append(s, " ");
           s := IOStream.append(s, name);
-          s := IOStream.append(s, "' = '");
-          s := IOStream.append(s, AbsynUtil.pathString(InstNode.scopePath(cls.baseClass)));
-          s := IOStream.append(s, "'");
+          s := IOStream.append(s, " = ");
+          s := IOStream.append(s, Util.makeQuotedIdentifier(AbsynUtil.pathString(InstNode.scopePath(cls.baseClass))));
         then
           s;
 
