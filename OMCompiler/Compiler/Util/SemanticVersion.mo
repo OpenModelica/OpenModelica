@@ -55,7 +55,7 @@ protected
   Integer n;
   String major, minor, patch, prerelease, meta, nextString, versions;
   list<String> prereleaseLst, metaLst, matches, split, versionsLst;
-  constant String semverRegex = "^([0-9]*\\.?[0-9]*\\.?[0-9]*)([+-][0-9A-Za-z.-]*)?$";
+  constant String semverRegex = "^([0-9][0-9]*\\.?[0-9]*\\.?[0-9]*)([+-][0-9A-Za-z.-]*)?$";
 algorithm
   (n, matches) := System.regex(s, semverRegex, maxMatches=5, extended=true);
   if n < 2 then
