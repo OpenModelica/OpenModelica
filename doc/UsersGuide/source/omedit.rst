@@ -451,21 +451,42 @@ Move towards the end connector and click when cursor changes to cross cursor.
 Simulating a Model
 ------------------
 
+The simulation process in OMEdit is split into three main phases:
+
+1. The Modelica model is translated into C/C++ code. The model is first instantiated by the 
+   frontend, which turns it into a flat set of variables, parameters, equations,
+   algorithms, and functions. The backend then analyzes the mathematical structure
+   of the flat model, applies symbolic simplifications and determines how the equations can be solved efficiently.
+   Finally, based on this information, model-specific C/C++ code is generated. This part of
+   the process can be influenced by setting *Translation Flags* (a.k.a. *Command Line Options*),
+   e.g. deciding which kind of structural simplifications should be performed during the 
+   translation phase.
+2. The C/C++ code is compiled and linked into an executable simulation code. Additional *C/C++ compiler
+   flags* can be given to influence this part of the process, e.g. by setting compiler optimizations
+   such as ``-O3``. Since multiple C/C++ source code files are generated for a given model, they
+   are compiled in parallel by OMEdit, exploiting the power of multi-core CPUs.
+3. The simulation executable is started and produces the simulation results in a `.mat` or
+   `.csv` file. The runtime behaviour can be influenced by *Simulation Flags*, e.g. by choosing 
+   specific solvers, or changing the output file name. Note that it it possible to re-simulate a model
+   multiple times, changing parameter values from the Variables Browser and/or changing some
+   Simulation Flags. In this case, only Phase 3. is repeated, skipping Phases 1. and 2., which 
+   enables much faster iterations.  
+
 The simulation options for each model are stored inside the OMEdit data structure.
-They have the following sequence,
+They are set according to the following sequence,
 
--  Each model has its own simulation options.
+-  Each model has its own translation and simulation options.
 
--  If the model is opened for the first time then the simulation options
-   are set to default.
+-  If the model is opened for the first time then the translation and simulation options
+   are set to defaults, that can be customized in Tools | Options | Simulation.
 
--  ``experiment`` and ``__OpenModelica_simulationFlags`` annotations are
-   applied if the model contains them.
+-  ``experiment``,  ``__OpenModelica_commandLineOptions`` and ``__OpenModelica_simulationFlags``
+   annotations are applied if the model contains them.
 
--  After that all the changes done via Simulation Setup window are
+-  After that all the changes done via Simulation Setup window for a certain model are
    preserved for the whole session. If you want to use the same settings in
-   the future sessions then you should store them inside ``experiment`` and
-   ``__OpenModelica_simulationFlags``.
+   future sessions then you should store them inside ``experiment``, ``__OpenModelica_commandLineOptions``, and ``__OpenModelica_simulationFlags``
+   annotations.
 
 The OMEdit Simulation Setup can be launched by,
 
