@@ -704,9 +704,11 @@ clean_g_2 :
 	$(MAKE) -C simulation/modelica/NFunitcheck -f Makefile clean
 
 clean_g_3 :
-	$(MAKE) -C flattening/libraries/msl22/modelicaAdditions -f Makefile clean
+	if [ -d "flattening/libraries/msl22/" ]; then \
+	  $(MAKE) -C flattening/libraries/msl22/modelicaAdditions -f Makefile clean \
+	  $(MAKE) -C flattening/libraries/msl22 -f Makefile clean; \
+	fi
 	$(MAKE) -C flattening/libraries/biochem -f Makefile clean
-	$(MAKE) -C flattening/libraries/msl22 -f Makefile clean
 	$(MAKE) -C openmodelica/bootstrapping -f Makefile clean
 	$(MAKE) -C openmodelica/linearization -f Makefile clean
 	$(MAKE) -C openmodelica/modelicaML -f Makefile clean
@@ -717,10 +719,16 @@ clean_g_4:
 	$(MAKE) -C flattening/libraries/3rdParty/PlanarMechanics -f Makefile clean
 	$(MAKE) -C flattening/libraries/3rdParty/siemens -f Makefile clean
 	$(MAKE) -C flattening/libraries/3rdParty/SiemensPower -f Makefile clean
-	$(MAKE) -C flattening/libraries/msl31 -f Makefile clean
-	$(MAKE) -C flattening/libraries/msl31/multibody -f Makefile clean
-	$(MAKE) -C flattening/libraries/msl32 -f Makefile clean
-	$(MAKE) -C flattening/libraries/msl32_cpp -f Makefile clean
+	if [ -d "flattening/libraries/msl31/" ]; then \
+	  $(MAKE) -C flattening/libraries/msl31 -f Makefile clean \
+	  $(MAKE) -C flattening/libraries/msl31/multibody -f Makefile clean; \
+	fi
+	if [ -d "flattening/libraries/msl32/" ]; then \
+	  $(MAKE) -C flattening/libraries/msl32 -f Makefile clean; \
+	fi
+	if [ -d "flattening/libraries/msl32_cpp/" ]; then \
+	  $(MAKE) -C flattening/libraries/msl32_cpp -f Makefile clean; \
+	fi
 	$(MAKE) -C openmodelica/cppruntime/libraries/msl32 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/CoSimulation/2.0 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/CoSimulationStandAlone -f Makefile clean

@@ -5,7 +5,7 @@ defaultMakefileTarget = Makefile.unix
 all: @ALL_TARGETS@ @OMLIBRARY_TARGET@
 
 .PRECIOUS: Makefile
-.PHONY: omc omlibrary-all omlibrary-core omplot omedit omedit-testsuite omparser omnotebook omoptim omshell omc-diff omsimulator ReferenceFiles libs-for-testing testsuite-depends omsens_qt
+.PHONY: omc omlibrary-all omlibrary-core omplot omedit omedit-testsuite omparser omnotebook omoptim omshell omc-diff omsimulator ReferenceFiles libs-for-testing test fast-test testsuite-depends omsens_qt
 
 omc: omc.skip
 omc.skip:
@@ -51,7 +51,15 @@ ReferenceFiles.skip:
 libs-for-testing: libs-for-testing.skip
 libs-for-testing.skip: omc
 	$(MAKE) -C testsuite/libraries-for-testing/
-testsuite-depends: omc-diff ReferenceFiles libs-for-testing
+testsuite-depends: omc-diff ReferenceFiles libs-for-testing omsimulator
+test: testsuite-depends
+	$(MAKE) omc-diff
+	cd testsuite/partest && echo "Running all $(./runtests.pl -counttests) tests"
+	cd testsuite/partest && ./runtests.pl -with-txt
+fast-test: testsuite-depends
+	$(MAKE) omc-diff
+	cd testsuite/partest && echo "Running $(./runtests.pl -f -counttests) fast tests"
+	cd testsuite/partest && ./runtests.pl -f -with-txt
 omsens_qt: omsens_qt.skip
 omsens_qt.skip:
 	$(MAKE) -f $(defaultMakefileTarget) -C OMSens_Qt || true

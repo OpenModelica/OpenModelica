@@ -78,8 +78,7 @@ make
 After the compilation the results are in the path/to/trunk/build.
 To run the testsuite, you need to use the superproject [OpenModelica.git](https://github.com/OpenModelica/OpenModelica), or clone [OpenModelica-testsuite.git](https://github.com/OpenModelica/OpenModelica-testsuite) into the root directory under the name `testsuite`.
 ```
-make -C testsuite omc-diff ReferenceFiles
-cd testsuite/runtests && ./runtests.pl
+make test
 ```
 
 If you run into problems read the GENERAL NOTES below and if that does not help, subscribe to the [OpenModelicaInterest list](https://www.openmodelica.org/index.php/home/mailing-list) and then sent us an email at [OpenModelicaInterest@ida.liu.se](mailto:OpenModelicaInterest@ida.liu.se).

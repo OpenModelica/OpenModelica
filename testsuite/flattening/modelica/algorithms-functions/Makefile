@@ -140,6 +140,7 @@ Vectorizable2.mo
 # Add them here or they will be cleaned.
 DEPENDENCIES = \
 *.mo \
+*.mos \
 Makefile
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
