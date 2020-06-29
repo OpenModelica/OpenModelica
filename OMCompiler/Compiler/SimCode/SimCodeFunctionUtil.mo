@@ -1915,7 +1915,7 @@ protected function lookForExtFunctionLibrary
 protected
   list<String> dirs2;
 algorithm
-  dirs2 := "/usr/lib/"+Autoconf.triple::"/lib/"+Autoconf.triple::"/usr/lib/"::"/lib/"::dirs; // We could also try to look in ldconfig, etc for system libraries
+  dirs2 := Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple + "/omc"::"/usr/lib/"+Autoconf.triple::"/lib/"+Autoconf.triple::"/usr/lib/"::"/lib/"::dirs; // We could also try to look in ldconfig, etc for system libraries
   if not max(System.regularFileExists(d+"/"+n) for d in dirs2, n in names) then
     _ := match resources
       local

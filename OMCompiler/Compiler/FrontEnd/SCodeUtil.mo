@@ -91,6 +91,22 @@ algorithm
   end match;
 end filterSubMods;
 
+function filterGivenSubModNames
+  input SCode.SubMod submod;
+  input list<String> namesToKeep;
+  output Boolean keep;
+algorithm
+  keep := listMember(submod.ident, namesToKeep);
+end filterGivenSubModNames;
+
+function removeGivenSubModNames
+  input SCode.SubMod submod;
+  input list<String> namesToRemove;
+  output Boolean keep;
+algorithm
+  keep := not listMember(submod.ident, namesToRemove);
+end removeGivenSubModNames;
+
 function getElementNamed
 "Return the Element with the name given as first argument from the Class."
   input SCode.Ident inIdent;
@@ -2689,6 +2705,20 @@ algorithm
   end match;
 end getStatementInfo;
 
+public function prependSubModToMod
+  input SCode.SubMod subMod;
+  input output SCode.Mod mod;
+algorithm
+  mod := match mod
+    case SCode.NOMOD()
+      then SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {subMod}, NONE(), Error.dummyInfo);
+    case SCode.MOD()
+      algorithm
+        mod.subModLst := subMod :: mod.subModLst;
+      then mod;
+  end match;
+end prependSubModToMod;
+
 public function addElementToClass
   "Adds a given element to a class definition. Only implemented for PARTS."
   input SCode.Element inElement;
@@ -5097,10 +5127,10 @@ functions, destructor and constructor. "
 algorithm
   res := if listLength(els) == 3 then
            hasExtendsOfExternalObject(els)
-	   and hasExternalObjectDestructor(els)
-	   and hasExternalObjectConstructor(els)
+     and hasExternalObjectDestructor(els)
+     and hasExternalObjectConstructor(els)
          else
-	   false;
+     false;
 end isExternalObject;
 
 protected function hasExtendsOfExternalObject

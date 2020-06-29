@@ -752,7 +752,7 @@ public
 
       case CREF()
         algorithm
-          str := InstNode.name(cref.node) + Subscript.toFlatStringList(cref.subscripts);
+          str := Util.escapeQuotes(InstNode.name(cref.node)) + Subscript.toFlatStringList(cref.subscripts);
 
           if Type.isRecord(cref.ty) and not listEmpty(strl) then
             strl := ("'" + listHead(strl)) :: listRest(strl);

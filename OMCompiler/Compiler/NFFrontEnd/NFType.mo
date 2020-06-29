@@ -849,13 +849,13 @@ public
       case Type.STRING() then "String";
       case Type.BOOLEAN() then "Boolean";
       case Type.CLOCK() then "Clock";
-      case Type.ENUMERATION() then "'" + AbsynUtil.pathString(ty.typePath) + "'";
+      case Type.ENUMERATION() then Util.makeQuotedIdentifier(AbsynUtil.pathString(ty.typePath));
       case Type.ENUMERATION_ANY() then "enumeration(:)";
       case Type.ARRAY() then toFlatString(ty.elementType) + "[" + stringDelimitList(List.map(ty.dimensions, Dimension.toFlatString), ", ") + "]";
       case Type.TUPLE() then "(" + stringDelimitList(List.map(ty.types, toFlatString), ", ") + ")";
       case Type.NORETCALL() then "()";
       case Type.UNKNOWN() then "unknown()";
-      case Type.COMPLEX() then "'" + AbsynUtil.pathString(InstNode.scopePath(ty.cls)) + "'";
+      case Type.COMPLEX() then Util.makeQuotedIdentifier(AbsynUtil.pathString(InstNode.scopePath(ty.cls)));
       case Type.FUNCTION() then Function.typeString(ty.fn);
       case Type.METABOXED() then "#" + toFlatString(ty.ty);
       case Type.POLYMORPHIC() then "<" + ty.name + ">";
@@ -869,6 +869,20 @@ public
     end match;
   end toFlatString;
 
+  function dimensionsToFlatString
+    input Type ty;
+    output String str;
+  algorithm
+    str := match ty
+      case Type.ARRAY() then stringDelimitList(List.map(ty.dimensions, Dimension.toFlatString), ", ");
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got unknown or not array type: " + anyString(ty), sourceInfo());
+        then
+          fail();
+    end match;
+  end dimensionsToFlatString;
+
   function toFlatDeclarationStream
     input Type ty;
     input output IOStream.IOStream s;
@@ -876,12 +890,17 @@ public
     s := match ty
       local
         Integer index;
+        String name;
+        ComplexType complexTy;
+        Absyn.Path path;
+        InstNode constructor, destructor;
+        Function f;
 
       case ENUMERATION()
         algorithm
-          s := IOStream.append(s, "type '");
-          s := IOStream.append(s, AbsynUtil.pathString(ty.typePath));
-          s := IOStream.append(s, "' = enumeration(");
+          s := IOStream.append(s, "type ");
+          s := IOStream.append(s, Util.makeQuotedIdentifier(AbsynUtil.pathString(ty.typePath)));
+          s := IOStream.append(s, " = enumeration(");
 
           if not listEmpty(ty.literals) then
             s := IOStream.append(s, listHead(ty.literals));
@@ -899,11 +918,27 @@ public
       case COMPLEX(complexTy = ComplexType.RECORD())
         then InstNode.toFlatStream(ty.cls, s);
 
+      case COMPLEX(complexTy = complexTy as ComplexType.EXTERNAL_OBJECT())
+        algorithm
+          path := InstNode.scopePath(ty.cls);
+          name := Util.makeQuotedIdentifier(AbsynUtil.pathString(path));
+          s := IOStream.append(s, "class ");
+          s := IOStream.append(s, name);
+          s := IOStream.append(s, "\n  extends ExternalObject;\n\n");
+          {f} := Function.typeNodeCache(complexTy.constructor);
+          s := Function.toFlatStream(f, s, overrideName="constructor");
+          s := IOStream.append(s, ";\n\n");
+          {f} := Function.typeNodeCache(complexTy.destructor);
+          s := Function.toFlatStream(f, s, overrideName="destructor");
+          s := IOStream.append(s, ";\n\nend ");
+          s := IOStream.append(s, name);
+        then s;
+
       case SUBSCRIPTED()
         algorithm
-          s := IOStream.append(s, "function '");
-          s := IOStream.append(s, ty.name);
-          s := IOStream.append(s, "'\n");
+          s := IOStream.append(s, "function ");
+          s := IOStream.append(s, Util.makeQuotedIdentifier(ty.name));
+          s := IOStream.append(s, "\n");
 
           s := IOStream.append(s, "  input ");
           s := IOStream.append(s, toString(ty.ty));
@@ -926,9 +961,8 @@ public
             stringDelimitList(list("s" + String(i) for i in 1:listLength(ty.subs)), ","));
           s := IOStream.append(s, "];\n");
 
-          s := IOStream.append(s, "end '");
-          s := IOStream.append(s, ty.name);
-          s := IOStream.append(s, "'");
+          s := IOStream.append(s, "end ");
+          s := IOStream.append(s, Util.makeQuotedIdentifier(ty.name));
         then
           s;
 

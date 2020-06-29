@@ -164,7 +164,8 @@ uncertainties.log \
 scodeinst.log \
 xml.log \
 xogeny.log \
-openmodelicadiff.log
+openmodelicadiff.log \
+flatmodelica.log
 
 .PHONY : all omc-diff ReferenceFiles failingtest test fast fast.logs $(FASTLOGS) $(SLOWLOGS) $(SIMULATIONLOGS) slow.logs threaded
 
@@ -601,6 +602,9 @@ requirements.log: omc-diff
 	@echo $@ done
 device.log: omc-diff
 	$(MAKE) -C simulation/libraries/3rdParty/Modelica_DeviceDrivers -f Makefile test > $@
+	@echo $@ done
+flatmodelica.log: omc-diff
+	$(MAKE) -C openmodelica/flatmodelica -f Makefile test > $@
 	@echo $@ done
 
 failingtest: omc-diff
