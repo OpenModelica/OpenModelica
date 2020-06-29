@@ -371,7 +371,8 @@ protected
     // check if all discrete real variables are assigned in when bodys
     for variable in flatModel.variables loop
       // check variability and not type for discrete variables
-      if Variable.variability(variable) == Variability.DISCRETE and Type.isReal(variable.ty) and not BaseHashTable.hasKey(variable.name, hashTable) then
+      // remove all subscripts to handle arrays
+      if Variable.variability(variable) == Variability.DISCRETE and Type.isReal(variable.ty) and not BaseHashTable.hasKey(ComponentRef.stripSubscriptsAll(variable.name), hashTable) then
         illegal_discrete_vars := variable :: illegal_discrete_vars;
       end if;
     end for;
@@ -428,7 +429,8 @@ protected
 
       case Equation.CREF_EQUALITY(lhs = cref as ComponentRef.CREF(ty = ty)) guard(Type.isReal(ty))
         algorithm
-          hashTable := BaseHashTable.add((cref, 0), hashTable);
+          // remove all subscripts to handle arrays
+          hashTable := BaseHashTable.add((ComponentRef.stripSubscriptsAll(cref), 0), hashTable);
       then hashTable;
 
       // traverse nested if equations. It suffices if the variable is defined in ANY branch.
@@ -517,7 +519,7 @@ protected
 
   function checkDiscreteRealExp
     "author: kabdelhak 2020-06
-    collects all single discrete real crefs of a expression which represents the LHS."
+    collects all single discrete real crefs of an expression which represents the LHS."
     input Expression exp;
     input output HashTable hashTable;
   algorithm
@@ -532,7 +534,8 @@ protected
       // Type.isDiscrete does always return false for REAL
       case Expression.CREF(ty = ty, cref = cref) guard(Type.isReal(ty))
         algorithm
-          hashTable := BaseHashTable.add((cref, 0), hashTable);
+          // remove all subscripts to handle arrays
+          hashTable := BaseHashTable.add((ComponentRef.stripSubscriptsAll(cref), 0), hashTable);
       then hashTable;
 
       case Expression.TUPLE(elements = elements)
