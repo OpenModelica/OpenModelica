@@ -453,24 +453,23 @@ Simulating a Model
 
 The simulation process in OMEdit is split into three main phases:
 
-1. The Modelica model is translated into C/C++ code. The model is first instantiated by the 
+#. The Modelica model is translated into C/C++ code. The model is first instantiated by the
    frontend, which turns it into a flat set of variables, parameters, equations,
    algorithms, and functions. The backend then analyzes the mathematical structure
    of the flat model, applies symbolic simplifications and determines how the equations can be solved efficiently.
    Finally, based on this information, model-specific C/C++ code is generated. This part of
-   the process can be influenced by setting *Translation Flags* (a.k.a. *Command Line Options*),
-   e.g. deciding which kind of structural simplifications should be performed during the 
-   translation phase.
-2. The C/C++ code is compiled and linked into an executable simulation code. Additional *C/C++ compiler
-   flags* can be given to influence this part of the process, e.g. by setting compiler optimizations
+   the process can be influenced by setting :ref:`Translation Flags <omedit-options-simulation-translationflags>` (a.k.a. *Command Line Options*),
+   e.g. deciding which kind of structural simplifications should be performed during the translation phase.
+#. The C/C++ code is compiled and linked into an executable simulation code. Additional :ref:`C/C++ compiler flags <omedit-C-Compiler-flags>`
+   can be given to influence this part of the process, e.g. by setting compiler optimizations
    such as ``-O3``. Since multiple C/C++ source code files are generated for a given model, they
    are compiled in parallel by OMEdit, exploiting the power of multi-core CPUs.
-3. The simulation executable is started and produces the simulation results in a `.mat` or
-   `.csv` file. The runtime behaviour can be influenced by *Simulation Flags*, e.g. by choosing 
+#. The simulation executable is started and produces the simulation results in a `.mat` or
+   `.csv` file. The runtime behaviour can be influenced by *Simulation Flags*, e.g. by choosing
    specific solvers, or changing the output file name. Note that it it possible to re-simulate a model
    multiple times, changing parameter values from the Variables Browser and/or changing some
-   Simulation Flags. In this case, only Phase 3. is repeated, skipping Phases 1. and 2., which 
-   enables much faster iterations.  
+   Simulation Flags. In this case, only Phase 3. is repeated, skipping Phases 1. and 2., which
+   enables much faster iterations.
 
 The simulation options for each model are stored inside the OMEdit data structure.
 They are set according to the following sequence,
@@ -499,10 +498,8 @@ The OMEdit Simulation Setup can be launched by,
 -  Right clicking the model from the Libraries Browser and choosing
    Simulation Setup.
 
-.. _omedit-general-tab :
-
-General Tab
-~~~~~~~~~~~
+General
+~~~~~~~
 
 -  Simulation Interval
 
@@ -514,19 +511,13 @@ General Tab
 
   -  *Interval* – the length of one interval (i.e., stepsize)
 
--  :ref:`omedit-interactive`
-
-  -  Simulate with steps (makes the interactive simulation synchronous; plots nicer curves at the expense of performance)
-
-  -  Simulation server port
-
 -  Integration
 
   -  *Method* – the simulation solver. See section :ref:`cruntime-integration-methods` for solver details.
 
   -  *Tolerance* – the simulation tolerance.
 
-  -  *Jacobian* - the jacobain method to use.
+  -  *Jacobian* - the jacobian method to use.
 
   -  DASSL/IDA Options
 
@@ -540,6 +531,8 @@ General Tab
 
     -  *Maximum Integration Order*
 
+.. _omedit-C-Compiler-flags :
+
 -  *C/C++ Compiler Flags (Optional)* – the optional C/C++ compiler flags.
 
 -  *Number of Processors* – the number of processors used to build the simulation.
@@ -552,29 +545,18 @@ General Tab
 
 -  *Launch Animation* – launches the 3d animation window.
 
-Output Tab
-~~~~~~~~~~
+:ref:`omedit-interactive`
+~~~~~~~~~~~~~~~~~~~~~~~~
 
--  *Output Format* – the simulation result file output format.
+-  Simulate with steps (makes the interactive simulation synchronous; plots nicer curves at the expense of performance)
 
--  *Single Precision* - Output results in single precision (only for mat output format).
+-  Simulation server port
 
--  *File Name Prefix (Optional)* – the name is used as a prefix for the output files.
+:ref:`Translation Flags <omedit-options-simulation-translationflags>`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--  *Result File (Optional)* - the simulation result file name.
-
--  *Variable Filter (Optional)*
-
--  *Protected Variables –* adds the protected variables in result file.
-
--  *Equidistant Time Grid –* output the internal steps given by dassl instead of interpolating results into an equidistant time grid as given by stepSize or numberOfIntervals
-
--  *Store Variables at Events –* adds the variables at time events.
-
--  *Show Generated File* – displays the generated files in a dialog box.
-
-Simulation Flags Tab
-~~~~~~~~~~~~~~~~~~~~
+Simulation Flags
+~~~~~~~~~~~~~~~~
 
 -  *Model Setup File (Optional)* – specifies a new setup XML file to the generated simulation code.
 
@@ -646,11 +628,31 @@ Simulation Flags Tab
   -  *LOG_UTIL*.
   -  *LOG_ZEROCROSSINGS* - additional information about the zerocrossings.
 
--  *Additional Simulation Flags (Optional)* – specify any other
-   simulation flag.
+-  *Additional Simulation Flags (Optional)* – specify any other simulation flag.
 
-Archived Simulations Tab
-~~~~~~~~~~~~~~~~~~~~~~~~
+Output
+~~~~~~
+
+-  *Output Format* – the simulation result file output format.
+
+-  *Single Precision* - Output results in single precision (only for mat output format).
+
+-  *File Name Prefix (Optional)* – the name is used as a prefix for the output files.
+
+-  *Result File (Optional)* - the simulation result file name.
+
+-  *Variable Filter (Optional)*
+
+-  *Protected Variables –* adds the protected variables in result file.
+
+-  *Equidistant Time Grid –* output the internal steps given by dassl instead of interpolating results into an equidistant time grid as given by stepSize or numberOfIntervals
+
+-  *Store Variables at Events –* adds the variables at time events.
+
+-  *Show Generated File* – displays the generated files in a dialog box.
+
+Archived Simulations
+~~~~~~~~~~~~~~~~~~~~
 
 Shows the list of simulations already finished or running.
 Double clicking on any of them opens the simulation output window.
@@ -865,8 +867,7 @@ Interactive Simulation
 .. warning ::
   Interactive simulation is an experimental feature.
 
-Interactive simulation is enabled by selecting interactive
-simulation in the :ref:`General <omedit-general-tab>` tab of the simulation setup.
+Interactive simulation is enabled by selecting interactive simulation in the simulation setup.
 
 There are two main modes of execution: asynchronous and synchronous
 (simulate with steps). The difference is that in synchronous (step mode),
@@ -1246,6 +1247,7 @@ Simulation
 
 -  Simulation
 
+.. _omedit-options-simulation-translationflags :
   -  Translation Flags
 
     -  *Matching Algorithm* – sets the matching algorithm for simulation.
