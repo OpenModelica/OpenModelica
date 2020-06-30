@@ -192,7 +192,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_IDA_SCALING */                  "enable scaling of the IDA solver",
   /* FLAG_IDAS */                         "flag to add sensitivity information to the result files",
   /* FLAG_IGNORE_HIDERESULT */            "ignore HideResult=true annotation",
-  /* FLAG_IIF */                          "value specifies an external file for the initialization of the model",
+  /* FLAG_IIF */                          "value specifies an external file for the initialization of the model relative to -inputPath",
   /* FLAG_IIM */                          "value specifies the initialization method",
   /* FLAG_IIT */                          "[double] value specifies a time for the initialization of the model",
   /* FLAG_ILS */                          "[int (default 4)] number of lambda steps for homotopy methods",

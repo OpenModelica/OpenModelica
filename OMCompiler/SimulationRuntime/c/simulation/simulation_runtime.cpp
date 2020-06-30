@@ -542,7 +542,16 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     init_initMethod = omc_flagValue[FLAG_IIM];
   }
   if(omc_flag[FLAG_IIF]) {
-    init_file = omc_flagValue[FLAG_IIF];
+    if (omc_flag[FLAG_INPUT_PATH]) {
+      const char *tmp_filename;
+      if (0 > GC_asprintf(&tmp_filename, "%s/%s", omc_flagValue[FLAG_INPUT_PATH], omc_flagValue[FLAG_IIF])) {
+        throwStreamPrint(NULL, "simulation_runtime.cpp: Error: can not allocate memory.");
+      }
+      init_file = tmp_filename;
+    }
+    else {
+      init_file = omc_flagValue[FLAG_IIF];
+    }
   }
   if(omc_flag[FLAG_IIT]) {
     init_time_string = omc_flagValue[FLAG_IIT];
