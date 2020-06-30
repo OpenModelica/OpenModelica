@@ -5744,7 +5744,7 @@ algorithm
     case (_,NONE()) then inModOuter;
     case (SOME(SCode.ANNOTATION(mod1)),SOME(SCode.ANNOTATION(mod2)))
       equation
-        mod = SCodeUtil.mergeSCodeMods(mod1,mod2);
+        mod = mergeSCodeMods(mod1,mod2);
       then SOME(SCode.ANNOTATION(mod));
   end match;
 end mergeSCodeOptAnn;
@@ -5762,6 +5762,7 @@ algorithm
       Option<Absyn.Exp> b1, b2;
       SourceInfo info;
 
+    case (SCode.NOMOD(), _) then inModInner;
     case (_, SCode.NOMOD()) then inModOuter;
 
     case (SCode.MOD(f1, e1, subMods1, b1, info),
