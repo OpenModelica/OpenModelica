@@ -1596,7 +1596,7 @@ public
     str := match exp
       case INTEGER() then intString(exp.value);
       case REAL() then realString(exp.value);
-      case STRING() then "\"" + exp.value + "\"";
+      case STRING() then "\"" + Util.escapeModelicaStringToCString(exp.value) + "\"";
       case BOOLEAN() then boolString(exp.value);
 
       case ENUM_LITERAL(ty = t as Type.ENUMERATION())
