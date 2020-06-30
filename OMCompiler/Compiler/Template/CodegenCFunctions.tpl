@@ -2684,14 +2684,14 @@ template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls, Text &auxFunc
   case SIMEXTARG(cref=c, outputIndex=oi, type_=T_INTEGER(__)) then
     // Always prefix fortran arguments with &.
     let suffix = if oi then "_ext"
-    '(int*) &<%contextCrefNoPrevExp(c,contextFunction,&auxFunction)%><%suffix%>'
+    '(int*) &<%contextCrefNoPrevExp(appendStringFirstIdent(suffix, c),contextFunction,&auxFunction)%>'
   case SIMEXTARG(cref=c, outputIndex=oi, type_ = T_STRING(__)) then
     // modelica_string SHOULD NOT BE PREFIXED by &!
     '(char*)MMC_STRINGDATA(<%contextCrefNoPrevExp(c,contextFunction,&auxFunction)%>)'
   case SIMEXTARG(cref=c, outputIndex=oi, type_=t) then
     // Always prefix fortran arguments with &.
     let suffix = if oi then "_ext"
-    '&<%contextCrefNoPrevExp(c,contextFunction, &auxFunction)%><%suffix%>'
+    '&<%contextCrefNoPrevExp(appendStringFirstIdent(suffix, c), contextFunction, &auxFunction)%>'
   case SIMEXTARGEXP(exp=exp, type_ = T_STRING(__)) then
     // modelica_string SHOULD NOT BE PREFIXED by &!
     let texp = daeExp(exp, contextFunction, &preExp, &varDecls, &auxFunction)
