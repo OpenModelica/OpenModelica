@@ -8,13 +8,16 @@ clear();
 loadFile("Tables.mo");getErrorString();
 setCommandLineOptions("--std=experimental");
 setCommandLineOptions("-d=nonewInst");
-simulate('ModelicaTest.Tables.CombiTable1D.Test33', fileNamePrefix="Tables");getErrorString();
+echo(false);
+res := simulate('ModelicaTest.Tables.CombiTable1D.Test33', fileNamePrefix="Tables");
+echo(true);
+getErrorString();
+res.resultFile;
 
 // Result:
 // true
 // ""
 // true
-// true
 // ""
 // true
 // true
@@ -22,4 +25,9 @@ simulate('ModelicaTest.Tables.CombiTable1D.Test33', fileNamePrefix="Tables");get
 // true
 // true
 // ""
+// true
+// true
+// true
+// ""
+// "Tables_res.mat"
 // endResult
