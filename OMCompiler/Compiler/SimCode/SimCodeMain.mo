@@ -985,8 +985,11 @@ algorithm
     /* new backend - also activates new frontend by default */
     case (graph, filenameprefix) guard(Flags.getConfigBool(Flags.NEW_BACKEND))
       algorithm
-        // calculate stuff that we need to create SimCode data structure
 
+        // set daeMode to true for now - only allow daeMode!
+        FlagsUtil.setConfigBool(Flags.DAE_MODE, false);
+
+        // calculate stuff that we need to create SimCode data structure
         /* ================================
                        FRONTEND
            ================================ */

@@ -38,6 +38,7 @@ encapsulated package NBModule
 
   *** MAIN
    - partitioningInterface
+   - daeModeInterface
 
   *** PRE (Mandatory)
    - detectStatesInterface
@@ -88,6 +89,14 @@ public
     input BEquation.EquationPointers equations;
     output list<System.System> systems;
   end partitioningInterface;
+
+//                               DAEMODE
+// *************************************************************************
+  partial function daeModeInterface
+    "DAEMode
+     This function is only allowed to create a list of new systems for dae Mode."
+    input output list<System.System> systems;
+  end daeModeInterface;
 
 // =========================================================================
 //                         MANDATORY PRE-OPT MODULES

@@ -75,13 +75,16 @@ public
     NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PUBLIC, NFComponent.DEFAULT_ATTR,
     {}, NONE(), SCodeUtil.dummyInfo, NFBackendExtension.DUMMY_BACKEND_INFO);
 
-  constant String DERIVATIVE_STR = "$DER";
-  constant String PREVIOUS_STR = "$PRE";
-  constant String AUXILIARY_STR = "$AUX";
-  constant String START_STR = "$START";
-  constant String RESIDUAL_STR = "$RES";
-  constant String TEMPORARY_STR = "$TMP";
-  constant String SEED_STR = "$SEED";
+  constant String DERIVATIVE_STR          = "$DER";
+  constant String DUMMY_DERIVATIVE_STR    = "$dDER";
+  constant String PARTIAL_DERIVATIVE_STR  = "$pDER";
+  constant String FUNCTION_DERIVATIVE_STR = "$fDER";
+  constant String PREVIOUS_STR            = "$PRE";
+  constant String AUXILIARY_STR           = "$AUX";
+  constant String START_STR               = "$START";
+  constant String RESIDUAL_STR            = "$RES";
+  constant String TEMPORARY_STR           = "$TMP";
+  constant String SEED_STR                = "$SEED";
 
   function toString
     input Variable var;
@@ -117,35 +120,59 @@ public
   function getVarPointer
     input ComponentRef cref;
     output Pointer<Variable> var;
+  protected
+    String err_str;
   algorithm
     var := match cref
       local
         Pointer<Variable> varPointer;
       case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer)) then varPointer;
       else algorithm
-        if Flags.isSet(Flags.FAILTRACE) then
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + ", because of wrong InstNode (not VAR_NODE).
-          Please use NBVariable.getVarSafe if it should not fail here."});
+        if ComponentRef.isTime(cref) then
+          err_str := "there is no variable for the time cref, please treat differently.";
+        else
+          err_str := "because of wrong InstNode (not VAR_NODE). Please use NBVariable.getVarSafe if it should not fail here.";
         end if;
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + ", " + err_str});
       then fail();
     end match;
   end getVarPointer;
 
   function isState
     input Pointer<Variable> var;
-    output Boolean isstate;
+    output Boolean b;
   algorithm
-    isstate := match Pointer.access(var)
+    b := match Pointer.access(var)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE())) then true;
       else false;
     end match;
   end isState;
 
+  function isAlgebraic
+    input Pointer<Variable> var;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.ALGEBRAIC())) then true;
+      else false;
+    end match;
+  end isAlgebraic;
+
+  function isStart
+    input Pointer<Variable> var;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.START())) then true;
+      else false;
+    end match;
+  end isStart;
+
   function isDiscreteState
     input Pointer<Variable> var;
-    output Boolean isstate;
+    output Boolean b;
   algorithm
-    isstate := match Pointer.access(var)
+    b := match Pointer.access(var)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE_STATE())) then true;
       else false;
     end match;
@@ -153,13 +180,57 @@ public
 
   function isDiscrete
     input Pointer<Variable> var;
-    output Boolean isstate;
+    output Boolean b;
   algorithm
-    isstate := match Pointer.access(var)
+    b := match Pointer.access(var)
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE())) then true;
       else false;
     end match;
   end isDiscrete;
+
+  function isDummyState
+    input Pointer<Variable> var;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DUMMY_STATE())) then true;
+      else false;
+    end match;
+  end isDummyState;
+
+  function isDummyDer
+    input Pointer<Variable> var;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DUMMY_DER())) then true;
+      else false;
+    end match;
+  end isDummyDer;
+
+  function isInput
+    input Pointer<Variable> var;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(var)
+      local
+        Component.Direction direction;
+      case Variable.VARIABLE(attributes = Component.Attributes.ATTRIBUTES(direction = NFComponent.Direction.INPUT)) then true;
+      else false;
+    end match;
+  end isInput;
+
+  function isOutput
+    input Pointer<Variable> var;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(var)
+      local
+        Component.Direction direction;
+      case Variable.VARIABLE(attributes = Component.Attributes.ATTRIBUTES(direction = NFComponent.Direction.OUTPUT)) then true;
+      else false;
+    end match;
+  end isOutput;
 
   function isParamOrConstant
     input Pointer<Variable> var;
@@ -171,6 +242,17 @@ public
       else false;
     end match;
   end isParamOrConstant;
+
+  function isKnown
+    input Pointer<Variable> var;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER())) then true;
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.CONSTANT())) then true;
+      else false;
+    end match;
+  end isKnown;
 
   function setVariableKind
     input output Variable var;
@@ -225,6 +307,20 @@ public
     Pointer.update(varPointer, var);
   end makeStateVar;
 
+  function makeAlgStateVar
+    "Updates a variable pointer to be an algebraic state.
+    Only if it currently is an algebraic variable, required for DAEMode."
+    input output Pointer<Variable> varPointer;
+  protected
+    Variable var;
+  algorithm
+    if isAlgebraic(varPointer) then
+      var := Pointer.access(varPointer);
+      var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.ALG_STATE());
+      Pointer.update(varPointer, var);
+    end if;
+  end makeAlgStateVar;
+
   function makeDerVar
     "Creates a derivative variable pointer from the state cref.
     e.g. height -> $DER.height"
@@ -254,7 +350,7 @@ public
   end makeDerVar;
 
   function getDerCref
-    "Returns the derivative variable component reference from a state componet reference.
+    "Returns the derivative variable component reference from a state component reference.
     Only works after the state has been detected by the DetectStates module and fails for non-state crefs!"
     input output ComponentRef cref;
   algorithm
@@ -276,6 +372,30 @@ public
       then fail();
     end match;
   end getDerCref;
+
+  function getDummyDerCref
+    "Returns the dummy derivative variable component reference from a dummy state component reference.
+    Only works after the dummy state has been created by the IndexReduction module and fails for non-dummy-state crefs!"
+    input output ComponentRef cref;
+  algorithm
+    cref := match cref
+      local
+        Pointer<Variable> dummy_state, dummy_derivative;
+        Variable dummy_derVar;
+      case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = dummy_state)) then match Pointer.access(dummy_state)
+        case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DUMMY_STATE(dummy_der = dummy_derivative)))
+          algorithm
+            dummy_derVar := Pointer.access(dummy_derivative);
+        then dummy_derVar.name;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + " because of wrong variable kind."});
+        then fail();
+      end match;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + " because of wrong InstNode type."});
+      then fail();
+    end match;
+  end getDummyDerCref;
 
   function makeDiscreteStateVar
     "Updates a discrete variable pointer to be a discrete state, requires the pointer to its left limit (pre) variable."
@@ -452,6 +572,28 @@ public
         end if;
       end for;
     end map;
+
+    function mapPtr
+      "Traverses all variables as pointers and applies a function to them.
+       NOTE: Do not changes names with this, it will mess up the HashTable.
+       Introduce new variables and delete old variables for that!
+       Also does not check for referenceEq, the function has to update the
+       pointer itself!"
+      input output VariablePointers variables;
+      input MapFunc func;
+      partial function MapFunc
+        input output Pointer<Variable> v;
+      end MapFunc;
+    protected
+      Pointer<Variable> var_ptr;
+    algorithm
+      for i in 1:ExpandableArray.getLastUsedIndex(variables.varArr) loop
+        if ExpandableArray.occupied(i, variables.varArr) then
+          var_ptr := ExpandableArray.get(i, variables.varArr);
+          func(var_ptr);
+        end if;
+      end for;
+    end mapPtr;
 
     function empty
       "Creates an empty VariablePointers using given size * 1.4."

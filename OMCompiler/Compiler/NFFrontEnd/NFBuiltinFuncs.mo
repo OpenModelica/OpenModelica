@@ -219,6 +219,11 @@ constant InstNode STRING_NODE = InstNode.CLASS_NODE("String",
 constant ComponentRef STRING_CREF =
   ComponentRef.CREF(STRING_NODE, {}, Type.INTEGER(), Origin.CREF, ComponentRef.EMPTY());
 
+constant Function LOG_REAL = Function.FUNCTION(Path.IDENT("log"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
 constant Function ABS_REAL = Function.FUNCTION(Path.IDENT("abs"),
   InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
     Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},

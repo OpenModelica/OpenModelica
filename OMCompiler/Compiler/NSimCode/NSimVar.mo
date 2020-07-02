@@ -339,7 +339,7 @@ public
           Option<DAE.ComponentRef> oldCrefOpt;
           DAE.ComponentRef oldCref;
 
-        case BackendExtension.ALGEBRAIC() then OldBackendDAE.VARIABLE();
+        case BackendExtension.ALGEBRAIC()               then OldBackendDAE.VARIABLE();
         case qual as BackendExtension.STATE()
           algorithm
             if isSome(qual.derivative) then
@@ -349,36 +349,37 @@ public
               oldCrefOpt := NONE();
             end if;
         then OldBackendDAE.STATE(qual.index, oldCrefOpt, qual.natural);
-        case BackendExtension.STATE_DER() then OldBackendDAE.STATE_DER();
-        case BackendExtension.DUMMY_DER() then OldBackendDAE.DUMMY_DER();
-        case BackendExtension.DUMMY_STATE() then OldBackendDAE.DUMMY_STATE();
-        case BackendExtension.DISCRETE() then OldBackendDAE.DISCRETE();
+        case BackendExtension.STATE_DER()               then OldBackendDAE.STATE_DER();
+        case BackendExtension.DUMMY_DER()               then OldBackendDAE.DUMMY_DER();
+        case BackendExtension.DUMMY_STATE()             then OldBackendDAE.DUMMY_STATE();
+        case BackendExtension.DISCRETE()                then OldBackendDAE.DISCRETE();
         case qual as BackendExtension.DISCRETE_STATE()
           algorithm
             var := Pointer.access(qual.previous);
             oldCref := ComponentRef.toDAE(var.name);
         then OldBackendDAE.CLOCKED_STATE(oldCref, qual.fixed);
-        case BackendExtension.PREVIOUS() then OldBackendDAE.DISCRETE();
-        case BackendExtension.PARAMETER() then OldBackendDAE.PARAM();
-        case BackendExtension.CONSTANT() then OldBackendDAE.CONST();
-        case BackendExtension.START() then OldBackendDAE.VARIABLE(); //ToDo: check this! is this correct? need typechecking?
-        case qual as BackendExtension.EXTOBJ() then OldBackendDAE.EXTOBJ(qual.fullClassName);
-        case BackendExtension.JAC_VAR() then OldBackendDAE.JAC_VAR();
-        case BackendExtension.JAC_DIFF_VAR() then OldBackendDAE.JAC_DIFF_VAR();
-        case BackendExtension.SEED_VAR() then OldBackendDAE.SEED_VAR();
-        case BackendExtension.OPT_CONSTR() then OldBackendDAE.OPT_CONSTR();
-        case BackendExtension.OPT_FCONSTR() then OldBackendDAE.OPT_FCONSTR();
-        case BackendExtension.OPT_INPUT_WITH_DER() then OldBackendDAE.OPT_INPUT_WITH_DER();
-        case BackendExtension.OPT_INPUT_DER() then OldBackendDAE.OPT_INPUT_DER();
-        case BackendExtension.OPT_TGRID() then OldBackendDAE.OPT_TGRID();
-        case qual as BackendExtension.OPT_LOOP_INPUT() then OldBackendDAE.OPT_LOOP_INPUT(ComponentRef.toDAE(qual.replaceCref));
+        case BackendExtension.PREVIOUS()                then OldBackendDAE.DISCRETE();
+        case BackendExtension.PARAMETER()               then OldBackendDAE.PARAM();
+        case BackendExtension.CONSTANT()                then OldBackendDAE.CONST();
+        //ToDo: check this! is this correct? need typechecking?
+        case BackendExtension.START()                   then OldBackendDAE.VARIABLE();
+        case qual as BackendExtension.EXTOBJ()          then OldBackendDAE.EXTOBJ(qual.fullClassName);
+        case BackendExtension.JAC_VAR()                 then OldBackendDAE.JAC_VAR();
+        case BackendExtension.JAC_DIFF_VAR()            then OldBackendDAE.JAC_DIFF_VAR();
+        case BackendExtension.SEED_VAR()                then OldBackendDAE.SEED_VAR();
+        case BackendExtension.OPT_CONSTR()              then OldBackendDAE.OPT_CONSTR();
+        case BackendExtension.OPT_FCONSTR()             then OldBackendDAE.OPT_FCONSTR();
+        case BackendExtension.OPT_INPUT_WITH_DER()      then OldBackendDAE.OPT_INPUT_WITH_DER();
+        case BackendExtension.OPT_INPUT_DER()           then OldBackendDAE.OPT_INPUT_DER();
+        case BackendExtension.OPT_TGRID()               then OldBackendDAE.OPT_TGRID();
+        case qual as BackendExtension.OPT_LOOP_INPUT()  then OldBackendDAE.OPT_LOOP_INPUT(ComponentRef.toDAE(qual.replaceCref));
         // ToDo maybe deprecated:
-        case BackendExtension.ALG_STATE() then OldBackendDAE.ALG_STATE();
-        case BackendExtension.ALG_STATE_OLD() then OldBackendDAE.ALG_STATE_OLD();
-        case BackendExtension.DAE_RESIDUAL_VAR() then OldBackendDAE.DAE_RESIDUAL_VAR();
-        case BackendExtension.DAE_AUX_VAR() then OldBackendDAE.DAE_AUX_VAR();
-        case BackendExtension.LOOP_ITERATION() then OldBackendDAE.LOOP_ITERATION();
-        case BackendExtension.LOOP_SOLVED() then OldBackendDAE.LOOP_SOLVED();
+        case BackendExtension.ALG_STATE()               then OldBackendDAE.ALG_STATE();
+        case BackendExtension.ALG_STATE_OLD()           then OldBackendDAE.ALG_STATE_OLD();
+        case BackendExtension.DAE_RESIDUAL_VAR()        then OldBackendDAE.DAE_RESIDUAL_VAR();
+        case BackendExtension.DAE_AUX_VAR()             then OldBackendDAE.DAE_AUX_VAR();
+        case BackendExtension.LOOP_ITERATION()          then OldBackendDAE.LOOP_ITERATION();
+        case BackendExtension.LOOP_SOLVED()             then OldBackendDAE.LOOP_SOLVED();
         case BackendExtension.FRONTEND_DUMMY()
           algorithm
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong VariableKind FRONTEND_DUMMY(). This should not exist after frontend."});

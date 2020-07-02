@@ -3734,6 +3734,17 @@ public
     end match;
   end isInteger;
 
+  function isConstNumber
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case INTEGER() then true;
+      case REAL() then true;
+      else false;
+    end match;
+  end isConstNumber;
+
   function isBoolean
     input Expression exp;
     output Boolean isBool;
@@ -3858,9 +3869,9 @@ public
 
   function makeOne
     input Type ty;
-    output Expression zeroExp;
+    output Expression oneExp;
   algorithm
-    zeroExp := match ty
+    oneExp := match ty
       case Type.REAL() then REAL(1.0);
       case Type.INTEGER() then INTEGER(1);
       case Type.ARRAY()

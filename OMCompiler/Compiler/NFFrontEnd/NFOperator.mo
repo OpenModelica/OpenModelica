@@ -499,5 +499,96 @@ public
     outOp := OPERATOR(op.ty, neg_op);
   end negate;
 
+  type MathClassification = enumeration(ADDITION, SUBTRACTION, MULTIPLICATION, DIVISION, POWER, LOGICAL);
+  type SizeClassification = enumeration(SCALAR, ELEMENT_WISE, ARRAY_SCALAR, SCALAR_ARRAY, MATRIX, VECTOR_MATRIX, MATRIX_VECTOR, LOGICAL);
+  type Classification = tuple<MathClassification, SizeClassification>;
+
+  function classify
+    input Operator op;
+    output Classification cl;
+  algorithm
+    cl := match op.op
+      case Op.ADD                 then (MathClassification.ADDITION,        SizeClassification.SCALAR);
+      case Op.SUB                 then (MathClassification.SUBTRACTION,     SizeClassification.SCALAR);
+      case Op.MUL                 then (MathClassification.MULTIPLICATION,  SizeClassification.SCALAR);
+      case Op.DIV                 then (MathClassification.DIVISION,        SizeClassification.SCALAR);
+      case Op.POW                 then (MathClassification.POWER,           SizeClassification.SCALAR);
+      case Op.ADD_EW              then (MathClassification.ADDITION,        SizeClassification.ELEMENT_WISE);
+      case Op.SUB_EW              then (MathClassification.SUBTRACTION,     SizeClassification.ELEMENT_WISE);
+      case Op.MUL_EW              then (MathClassification.MULTIPLICATION,  SizeClassification.ELEMENT_WISE);
+      case Op.DIV_EW              then (MathClassification.DIVISION,        SizeClassification.ELEMENT_WISE);
+      case Op.POW_EW              then (MathClassification.POWER,           SizeClassification.ELEMENT_WISE);
+      case Op.MUL_ARRAY_SCALAR    then (MathClassification.MULTIPLICATION,  SizeClassification.ARRAY_SCALAR);
+      case Op.ADD_ARRAY_SCALAR    then (MathClassification.ADDITION,        SizeClassification.ARRAY_SCALAR);
+      case Op.SUB_SCALAR_ARRAY    then (MathClassification.SUBTRACTION,     SizeClassification.SCALAR_ARRAY);
+      case Op.SCALAR_PRODUCT      then (MathClassification.MULTIPLICATION,  SizeClassification.SCALAR);
+      case Op.MATRIX_PRODUCT      then (MathClassification.MULTIPLICATION,  SizeClassification.MATRIX);
+      case Op.MUL_VECTOR_MATRIX   then (MathClassification.MULTIPLICATION,  SizeClassification.VECTOR_MATRIX);
+      case Op.MUL_MATRIX_VECTOR   then (MathClassification.MULTIPLICATION,  SizeClassification.MATRIX_VECTOR);
+      case Op.DIV_ARRAY_SCALAR    then (MathClassification.DIVISION,        SizeClassification.ARRAY_SCALAR);
+      case Op.DIV_SCALAR_ARRAY    then (MathClassification.DIVISION,        SizeClassification.SCALAR_ARRAY);
+      case Op.POW_ARRAY_SCALAR    then (MathClassification.POWER,           SizeClassification.ARRAY_SCALAR);
+      case Op.POW_SCALAR_ARRAY    then (MathClassification.POWER,           SizeClassification.SCALAR_ARRAY);
+      case Op.POW_MATRIX          then (MathClassification.POWER,           SizeClassification.MATRIX);
+      case Op.AND                 then (MathClassification.LOGICAL,         SizeClassification.LOGICAL);
+      case Op.OR                  then (MathClassification.LOGICAL,         SizeClassification.LOGICAL);
+      case Op.NOT                 then (MathClassification.LOGICAL,         SizeClassification.LOGICAL);
+      case Op.LESS                then (MathClassification.LOGICAL,         SizeClassification.LOGICAL);
+      case Op.LESSEQ              then (MathClassification.LOGICAL,         SizeClassification.LOGICAL);
+      case Op.GREATER             then (MathClassification.LOGICAL,         SizeClassification.LOGICAL);
+      case Op.GREATEREQ           then (MathClassification.LOGICAL,         SizeClassification.LOGICAL);
+      case Op.EQUAL               then (MathClassification.LOGICAL,         SizeClassification.LOGICAL);
+      case Op.NEQUAL              then (MathClassification.LOGICAL,         SizeClassification.LOGICAL);
+      else algorithm
+        Error.addInternalError(getInstanceName() + ": Don't know how to handle " + String(op.op), sourceInfo());
+      then fail();
+    end match;
+  end classify;
+
+  function fromClassification
+    "Only works for non-logical operators!"
+    input Classification cl "mathematical and size classification";
+    input Type ty           "Type information";
+    output Operator result        "Resulting operator";
+  protected
+    Op op;
+  algorithm
+    op := match cl
+      case (MathClassification.ADDITION,        SizeClassification.SCALAR)                  then Op.ADD;
+      case (MathClassification.SUBTRACTION,     SizeClassification.SCALAR)                  then Op.SUB;
+      case (MathClassification.MULTIPLICATION,  SizeClassification.SCALAR)                  then Op.MUL;
+      case (MathClassification.DIVISION,        SizeClassification.SCALAR)                  then Op.DIV;
+      case (MathClassification.POWER,           SizeClassification.SCALAR)                  then Op.POW;
+      case (MathClassification.ADDITION,        SizeClassification.ELEMENT_WISE)            then Op.ADD_EW;
+      case (MathClassification.SUBTRACTION,     SizeClassification.ELEMENT_WISE)            then Op.SUB_EW;
+      case (MathClassification.MULTIPLICATION,  SizeClassification.ELEMENT_WISE)            then Op.MUL_EW;
+      case (MathClassification.DIVISION,        SizeClassification.ELEMENT_WISE)            then Op.DIV_EW;
+      case (MathClassification.POWER,           SizeClassification.ELEMENT_WISE)            then Op.POW_EW;
+      case (MathClassification.MULTIPLICATION,  SizeClassification.ARRAY_SCALAR)            then Op.MUL_ARRAY_SCALAR;
+      case (MathClassification.ADDITION,        SizeClassification.ARRAY_SCALAR)            then Op.ADD_ARRAY_SCALAR;
+      case (MathClassification.SUBTRACTION,     SizeClassification.SCALAR_ARRAY)            then Op.SUB_SCALAR_ARRAY;
+      case (MathClassification.MULTIPLICATION,  SizeClassification.SCALAR)                  then Op.SCALAR_PRODUCT;
+      case (MathClassification.MULTIPLICATION,  SizeClassification.MATRIX)                  then Op.MATRIX_PRODUCT;
+      case (MathClassification.MULTIPLICATION,  SizeClassification.VECTOR_MATRIX)           then Op.MUL_VECTOR_MATRIX;
+      case (MathClassification.MULTIPLICATION,  SizeClassification.MATRIX_VECTOR)           then Op.MUL_MATRIX_VECTOR;
+      case (MathClassification.DIVISION,        SizeClassification.ARRAY_SCALAR)            then Op.DIV_ARRAY_SCALAR;
+      case (MathClassification.DIVISION,        SizeClassification.SCALAR_ARRAY)            then Op.DIV_SCALAR_ARRAY;
+      case (MathClassification.POWER,           SizeClassification.ARRAY_SCALAR)            then Op.POW_ARRAY_SCALAR;
+      case (MathClassification.POWER,           SizeClassification.SCALAR_ARRAY)            then Op.POW_SCALAR_ARRAY;
+      case (MathClassification.POWER,           SizeClassification.MATRIX)                  then Op.POW_MATRIX;
+      else algorithm
+        Error.addInternalError(getInstanceName() + ": Don't know how to handle math class and size class combination.", sourceInfo());
+      then fail();
+    end match;
+    result := OPERATOR(ty, op);
+  end fromClassification;
+
+  function getMathClassification
+    input Operator op;
+    output MathClassification mcl;
+  algorithm
+    (mcl, _) := classify(op);
+  end getMathClassification;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFOperator;

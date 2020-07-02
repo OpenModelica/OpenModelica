@@ -85,8 +85,12 @@ public
       Pointer<Variable> state               "Original state";
       Option<Pointer<Expression>> alias     "Optional alias state expression. Result of differentiating the state if existant!";
     end STATE_DER;
-    record DUMMY_DER end DUMMY_DER;
-    record DUMMY_STATE end DUMMY_STATE; // ToDo: maybe dynamic state for dynamic state seleciton in index reduction
+    record DUMMY_DER
+      Pointer<Variable> dummy_state         "corresponding dummy state";
+    end DUMMY_DER;
+    record DUMMY_STATE
+      Pointer<Variable> dummy_der           "corresponding dummy derivative";
+    end DUMMY_STATE; // ToDo: maybe dynamic state for dynamic state seleciton in index reduction
     record DISCRETE end DISCRETE;
     record DISCRETE_STATE
       Pointer<Variable> previous            "Pointer to the left limit if existant.";

@@ -213,12 +213,14 @@ public
     bdae := RemoveSimpleEquations.main(bdae);
     bdae := Partitioning.main(bdae, NBSystem.SystemType.ODE);
     bdae := Causalize.main(bdae, NBSystem.SystemType.ODE);
-    //Jacobian.main(bdae);
+
     bdae := Initialization.main(bdae);
     // only if dae mode, but force it for now
     bdae := DAEMode.main(bdae);
+
     // do Tearing at the very end
     bdae := Tearing.main(bdae, NBSystem.SystemType.ODE);
+    bdae := Jacobian.main(bdae, NBSystem.SystemType.ODE);
   end solve;
 
 protected

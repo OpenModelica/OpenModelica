@@ -78,6 +78,9 @@ public
             for i in 1:arrayLength(comps) loop
               str := str + StrongComponent.toString(comps[i], i) + "\n";
             end for;
+            if isSome(system.jacobian) then
+              str := str + Jacobian.toString(Util.getOption(system.jacobian)) + "\n";
+            end if;
         then str;
 
         else

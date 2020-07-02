@@ -1353,6 +1353,15 @@ public
     output Boolean b = firstName(cref) == "time";
   end isTime;
 
+  function isTopLevel
+    input ComponentRef cref;
+    output Boolean b;
+  algorithm
+    b := match cref
+      case CREF(restCref = EMPTY()) then true;
+      else false;
+    end match;
+  end isTopLevel;
   /* ========================================
       Backend Extension functions
   ========================================= */

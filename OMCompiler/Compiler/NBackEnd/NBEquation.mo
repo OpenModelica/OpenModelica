@@ -44,6 +44,7 @@ public
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import InstNode = NFInstNode.InstNode;
+  import SimplifyExp = NFSimplifyExp;
   import Variable = NFVariable;
 
   // Old Backend imports
@@ -181,16 +182,16 @@ public
         local
           EquationAttributes tmp;
           Equation body;
-        case SCALAR_EQUATION(attr = tmp) then tmp;
-        case ARRAY_EQUATION(attr = tmp) then tmp;
-        case SIMPLE_EQUATION(attr = tmp) then tmp;
-        case RECORD_EQUATION(attr = tmp) then tmp;
-        case ALGORITHM(attr = tmp) then tmp;
-        case IF_EQUATION(attr = tmp) then tmp;
-        case FOR_EQUATION(attr = tmp) then tmp;
-        case WHEN_EQUATION(attr = tmp) then tmp;
-        case AUX_EQUATION(body = SOME(body)) then getAttributes(body);
-        else EQ_ATTR_DEFAULT_UNKNOWN;
+        case SCALAR_EQUATION(attr = tmp)      then tmp;
+        case ARRAY_EQUATION(attr = tmp)       then tmp;
+        case SIMPLE_EQUATION(attr = tmp)      then tmp;
+        case RECORD_EQUATION(attr = tmp)      then tmp;
+        case ALGORITHM(attr = tmp)            then tmp;
+        case IF_EQUATION(attr = tmp)          then tmp;
+        case FOR_EQUATION(attr = tmp)         then tmp;
+        case WHEN_EQUATION(attr = tmp)        then tmp;
+        case AUX_EQUATION(body = SOME(body))  then getAttributes(body);
+                                              else EQ_ATTR_DEFAULT_UNKNOWN;
       end match;
     end getAttributes;
 
@@ -321,7 +322,7 @@ public
       end match;
     end map;
 
-    public function getRHS
+    function getRHS
       "gets the right hand side expression of an equation."
       input Equation eq;
       output Expression rhs;
@@ -329,15 +330,15 @@ public
       rhs := match(eq)
         local
           ComponentRef cref;
-        case SCALAR_EQUATION(rhs = rhs) then rhs;
-        case ARRAY_EQUATION(rhs = rhs) then rhs;
-        case RECORD_EQUATION(rhs = rhs) then rhs;
-        case SIMPLE_EQUATION(rhs = cref) then Expression.fromCref(cref);
+        case SCALAR_EQUATION(rhs = rhs)   then rhs;
+        case ARRAY_EQUATION(rhs = rhs)    then rhs;
+        case RECORD_EQUATION(rhs = rhs)   then rhs;
+        case SIMPLE_EQUATION(rhs = cref)  then Expression.fromCref(cref);
         else fail();
       end match;
     end getRHS;
 
-    public function getLHS
+    function getLHS
       "gets the left hand side expression of an equation."
       input Equation eq;
       output Expression lhs;
@@ -345,13 +346,44 @@ public
       lhs := match(eq)
         local
           ComponentRef cref;
-        case SCALAR_EQUATION(lhs = lhs) then lhs;
-        case ARRAY_EQUATION(lhs = lhs) then lhs;
-        case RECORD_EQUATION(lhs = lhs) then lhs;
-        case SIMPLE_EQUATION(lhs = cref) then Expression.fromCref(cref);
+        case SCALAR_EQUATION(lhs = lhs)   then lhs;
+        case ARRAY_EQUATION(lhs = lhs)    then lhs;
+        case RECORD_EQUATION(lhs = lhs)   then lhs;
+        case SIMPLE_EQUATION(lhs = cref)  then Expression.fromCref(cref);
         else fail();
       end match;
     end getLHS;
+
+    function simplify
+      input output Equation eq;
+    algorithm
+      eq := match eq
+        local
+          Equation qual;
+        case qual as SCALAR_EQUATION() algorithm
+          qual.lhs := SimplifyExp.simplify(qual.lhs);
+          qual.rhs := SimplifyExp.simplify(qual.rhs);
+        then qual;
+        case qual as ARRAY_EQUATION() algorithm
+          qual.lhs := SimplifyExp.simplify(qual.lhs);
+          qual.rhs := SimplifyExp.simplify(qual.rhs);
+        then qual;
+        case SIMPLE_EQUATION() then eq;
+        case qual as RECORD_EQUATION() algorithm
+          qual.lhs := SimplifyExp.simplify(qual.lhs);
+          qual.rhs := SimplifyExp.simplify(qual.rhs);
+        then qual;
+        // ToDo: implement the following correctly:
+        case qual as ALGORITHM()        then qual;
+        case qual as IF_EQUATION()      then qual;
+        case qual as FOR_EQUATION()     then qual;
+        case qual as WHEN_EQUATION()    then qual;
+        case qual as AUX_EQUATION()     then qual;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Equation.toString(eq)});
+        then fail();
+      end match;
+    end simplify;
   end Equation;
 
   uniontype IfEquationBody
@@ -659,7 +691,8 @@ public
   uniontype EquationPointers
     record EQUATION_POINTERS
       "author: kabdelhak 2020
-      This uniontype is not really necessary, but it makes it easier maintanable
+      This uniontype is not really necessary, since it only wraps an expandable
+      array of pointers to equations, but it makes it easier maintanable
       since all utility functions are in the same place. Also it mirrors
       VariablePointers behavior."
       ExpandableArray<Pointer<Equation>> eqArr;
@@ -677,6 +710,11 @@ public
       end for;
     end toString;
 
+    function empty
+      input Integer size = 0;
+      output EquationPointers equationPointers = EQUATION_POINTERS(ExpandableArray.new(size, Pointer.create(DUMMY_EQUATION())));
+    end empty;
+
     function toList
       "Creates a EquationPointer list from EquationPointers."
       input EquationPointers equations;
@@ -689,7 +727,7 @@ public
       input list<Pointer<Equation>> eq_lst;
       output EquationPointers equationPointers;
     algorithm
-      equationPointers := EQUATION_POINTERS(ExpandableArray.new(listLength(eq_lst), Pointer.create(DUMMY_EQUATION())));
+      equationPointers := empty(listLength(eq_lst));
       equationPointers := addList(eq_lst, equationPointers);
     end fromList;
 

@@ -290,6 +290,7 @@ if true then /* Suppress output */
     "../NBackEnd/NBAdjacencyMatrix.mo",
     "../NBackEnd/NBDifferentiate.mo",
     "../NBackEnd/NBEquation.mo",
+    "../NBackEnd/NBHashTableCrToCr.mo",
     "../NBackEnd/NBHashTableCrToCrEqLst.mo",
     "../NBackEnd/NBStrongComponent.mo",
     "../NBackEnd/NBSystem.mo",

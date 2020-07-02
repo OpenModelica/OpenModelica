@@ -39,33 +39,65 @@ public
 
 protected
   import BackendDAE = NBackendDAE;
+  import BVariable = NBVariable;
   import Causalize = NBCausalize;
+  import Jacobian = NBJacobian;
   import System = NBSystem;
   import Tearing = NBTearing;
 
 public
   function main extends Module.wrapper;
+  protected
+    Module.daeModeInterface func;
   algorithm
-    // for now just copy the dae
-    bdae := match bdae
-      local
-        BackendDAE qual;
-        list<System.System> ode;
+    try
+      func := getModule();
+	    // for now just copy the dae
+	    bdae := match bdae
+	      local
+	        BackendDAE qual;
+	        list<System.System> ode;
 
-      case qual as BackendDAE.BDAE(ode = ode)
-        algorithm
-          qual.dae := SOME(ode);
-      then qual;
+	      case qual as BackendDAE.BDAE(ode = ode)
+	        algorithm
+	          qual.dae := SOME(func(ode));
+	      then qual;
 
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed due to wrong BackendDAE record!"});
-      then fail();
-    end match;
+	      else algorithm
+	        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed due to wrong BackendDAE record!"});
+	      then fail();
+	    end match;
 
-    // Modules
-    bdae := Causalize.main(bdae, NBSystem.SystemType.DAE);
-    bdae := Tearing.main(bdae, NBSystem.SystemType.DAE);
+	    // Modules
+	    bdae := Causalize.main(bdae, NBSystem.SystemType.DAE);
+	    bdae := Tearing.main(bdae, NBSystem.SystemType.DAE);
+	    bdae := Jacobian.main(bdae, NBSystem.SystemType.ODE);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+    end try;
   end main;
+
+  function getModule
+    "Returns the module function that was chosen by the user."
+    output Module.daeModeInterface func;
+  protected
+    String flag = "default"; //Flags.getConfigString(Flags.DAE_MODE)
+  algorithm
+    func := match flag
+      case "default" then daeModeDefault;
+      /* ... New dae mode modules have to be added here */
+      else fail();
+    end match;
+  end getModule;
+
+protected
+  function daeModeDefault extends Module.daeModeInterface;
+  algorithm
+    // for now only make all algebraic variables algebraic states
+    for syst in systems loop
+      BVariable.VariablePointers.mapPtr(syst.unknowns, function BVariable.makeAlgStateVar());
+    end for;
+  end daeModeDefault;
 
   annotation(__OpenModelica_Interface="backend");
 end NBDAEMode;
