@@ -374,6 +374,8 @@ pipeline {
             }
             sh '''
             export OPENMODELICAHOME=$PWD/build
+            test ! -d $PWD/build/lib/omlibrary
+            cp -a testsuite/libraries-for-testing/.openmodelica/libraries $PWD/build/lib/omlibrary
             for target in html pdf epub; do
               if ! make -C doc/UsersGuide $target; then
                 killall omc || true
