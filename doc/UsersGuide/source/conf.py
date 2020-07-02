@@ -24,6 +24,7 @@ sys.setrecursionlimit(2000)
 
 if not 'OPENMODELICAHOME' in os.environ:
   os.environ['OPENMODELICAHOME'] = os.path.abspath('../../../build')
+os.environ['PATH'] = "%s/build/bin:%s" % (os.environ['OPENMODELICAHOME'],os.environ['PATH'])
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -45,6 +46,7 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinxcontrib.bibtex',
     'sphinxcontrib.inlinesyntaxhighlight',
+    'sphinxcontrib.programoutput',
     'sphinxcontribopenmodelica'
 ]
 

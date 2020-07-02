@@ -4,4 +4,5 @@ natsort
 sphinx
 sphinxcontrib-bibtex
 sphinxcontrib-inlinesyntaxhighlight
+sphinxcontrib-programoutput
 ompython
