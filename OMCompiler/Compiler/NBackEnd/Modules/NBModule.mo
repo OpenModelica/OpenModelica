@@ -173,12 +173,13 @@ public
       and is allowed to manipulate the function tree.
       [!] This function can not only be used as an optimization module but also for
       nonlinear systems, state sets, linearization and dynamic optimization."
-      input String name                           "Name of jacobian";
-      input BVariable.VariablePointers unknowns   "Variable array of unknowns";
-      input BEquation.EquationPointers equations  "Equations array";
-      input BVariable.VariablePointers knowns     "Variable array of knowns";
-      output Option<Jacobian> jacobian            "Resulting jacobian";
-      input output FunctionTree funcTree          "Function call bodies";
+      input String name                                     "Name of jacobian";
+      input BVariable.VariablePointers unknowns             "Variable array of unknowns";
+      input Option<BVariable.VariablePointers> daeUnknowns  "Variable array of unknowns in the case of dae mode";
+      input BEquation.EquationPointers equations            "Equations array";
+      input BVariable.VariablePointers knowns               "Variable array of knowns";
+      output Option<Jacobian> jacobian                      "Resulting jacobian";
+      input output FunctionTree funcTree                    "Function call bodies";
     end jacobianInterface;
 
 // =========================================================================

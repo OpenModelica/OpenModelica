@@ -57,6 +57,7 @@ public
   import BVariable = NBVariable;
   import NBEquation.Equation;
   import NBEquation.EquationPointers;
+  import NBEquation.EquationAttributes;
   import NBEquation.IfEquationBody;
   import NBEquation.WhenEquationBody;
   import NBEquation.WhenStatement;
@@ -143,46 +144,54 @@ public
         IfEquationBody ifBody;
         WhenEquationBody whenBody;
         Pointer<DifferentiationArguments> diffArguments_ptr;
+        EquationAttributes attr;
 
       // ToDo: Element source stuff (see old backend)
       case qual as Equation.SCALAR_EQUATION() algorithm
         (lhs, diffArguments) := differentiateExpression(qual.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(qual.rhs, diffArguments);
-      then (Equation.SCALAR_EQUATION(lhs, rhs, qual.source, qual.attr), diffArguments);
+        attr := differentiateEquationAttributes(qual.attr, diffArguments);
+      then (Equation.SCALAR_EQUATION(lhs, rhs, qual.source, attr), diffArguments);
 
       case qual as Equation.ARRAY_EQUATION() algorithm
         (lhs, diffArguments) := differentiateExpression(qual.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(qual.rhs, diffArguments);
-      then (Equation.ARRAY_EQUATION(qual.dimSize, lhs, rhs, qual.source, qual.attr, qual.recordSize), diffArguments);
+        attr := differentiateEquationAttributes(qual.attr, diffArguments);
+      then (Equation.ARRAY_EQUATION(qual.dimSize, lhs, rhs, qual.source, attr, qual.recordSize), diffArguments);
 
       case qual as Equation.SIMPLE_EQUATION() algorithm
         (lhs, diffArguments) := differentiateComponentRef(Expression.fromCref(qual.lhs), diffArguments);
         (rhs, diffArguments) := differentiateComponentRef(Expression.fromCref(qual.rhs), diffArguments);
+        attr := differentiateEquationAttributes(qual.attr, diffArguments);
         res := match (lhs, rhs)
           // If both are still a componentRef, create simple equation.
           case (Expression.CREF(cref = lhs_cref), Expression.CREF(cref = rhs_cref))
-          then Equation.SIMPLE_EQUATION(lhs_cref, rhs_cref, qual.source, qual.attr);
+          then Equation.SIMPLE_EQUATION(lhs_cref, rhs_cref, qual.source, attr);
           // else create regular equation: ToDo check array?
-          else Equation.SCALAR_EQUATION(lhs, rhs, qual.source, qual.attr);
+          else Equation.SCALAR_EQUATION(lhs, rhs, qual.source, attr);
         end match;
       then (res, diffArguments);
 
       case qual as Equation.RECORD_EQUATION() algorithm
         (lhs, diffArguments) := differentiateExpression(qual.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(qual.rhs, diffArguments);
-      then (Equation.RECORD_EQUATION(qual.size, lhs, rhs, qual.source, qual.attr), diffArguments);
+        attr := differentiateEquationAttributes(qual.attr, diffArguments);
+      then (Equation.RECORD_EQUATION(qual.size, lhs, rhs, qual.source, attr), diffArguments);
 
       case qual as Equation.IF_EQUATION() algorithm
         (ifBody, diffArguments_ptr) := differentiateIfEquationBody(qual.body, Pointer.create(diffArguments));
-      then (Equation.IF_EQUATION(qual.size, ifBody, qual.source, qual.attr), Pointer.access(diffArguments_ptr));
+        attr := differentiateEquationAttributes(qual.attr, diffArguments);
+      then (Equation.IF_EQUATION(qual.size, ifBody, qual.source, attr), Pointer.access(diffArguments_ptr));
 
       case qual as Equation.FOR_EQUATION() algorithm
         (res, diffArguments) := differentiateEquation(qual.body, diffArguments);
-      then (Equation.FOR_EQUATION(qual.iter, qual.range, res, qual.source, qual.attr), diffArguments);
+        attr := differentiateEquationAttributes(qual.attr, diffArguments);
+      then (Equation.FOR_EQUATION(qual.iter, qual.range, res, qual.source, attr), diffArguments);
 
       case qual as Equation.WHEN_EQUATION() algorithm
         (whenBody, diffArguments) := differentiateWhenEquationBody(qual.body, diffArguments);
-      then (Equation.WHEN_EQUATION(qual.size, whenBody, qual.source, qual.attr), diffArguments);
+        attr := differentiateEquationAttributes(qual.attr, diffArguments);
+      then (Equation.WHEN_EQUATION(qual.size, whenBody, qual.source, attr), diffArguments);
 
       else algorithm
         // maybe add failtrace here and allow failing
@@ -666,6 +675,33 @@ public
     end match;
     // simplify?
   end differentiateBinary;
+
+  function differentiateEquationAttributes
+    "Differentiates the residual variable, if it exists.
+    The cref has to be saved in the jacobianHT for this to work.
+    Only apply if diffType is JACOBIAN
+    ToDo: needs to be adapted for torn/inner equations"
+    input output EquationAttributes attr;
+    input DifferentiationArguments diffArguments;
+  algorithm
+    if diffArguments.diffType == DifferentiationType.JACOBIAN then
+      attr := match (attr, diffArguments)
+        local
+          EquationAttributes qual;
+          Pointer<Variable> residualVar, diffedResidualVar;
+          HashTableCrToCr.HashTable jacobianHT;
+
+        case (qual as EquationAttributes.EQUATION_ATTRIBUTES(residualVar = SOME(residualVar)), DIFFERENTIATION_ARGUMENTS(jacobianHT = SOME(jacobianHT)))
+          guard(BaseHashTable.hasKey(BVariable.getVarName(residualVar), jacobianHT))
+          algorithm
+            diffedResidualVar := BVariable.getVarPointer(BaseHashTable.get(BVariable.getVarName(residualVar), jacobianHT));
+        then EquationAttributes.EQUATION_ATTRIBUTES(qual.differentiated, qual.kind, qual.evalStages, SOME(diffedResidualVar));
+
+        else attr;
+
+      end match;
+    end if;
+  end differentiateEquationAttributes;
 
   protected
     function minusOne

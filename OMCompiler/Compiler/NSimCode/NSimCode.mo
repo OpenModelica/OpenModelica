@@ -231,7 +231,9 @@ public
             jacobians := {};
             crefToSimVarHT := HashTableSimCode.empty(); // fill this!
             if isSome(qual.dae) then
+              // ToDo: Remove the residual generation of simcode and move to backend!
               (daeModeData, simCodeIndices) := DaeModeData.create(Util.getOption(qual.dae), simCodeIndices);
+              daeModeData := NONE();
             else
               daeModeData := NONE();
             end if;

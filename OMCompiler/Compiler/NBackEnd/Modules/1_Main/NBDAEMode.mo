@@ -38,7 +38,12 @@ public
   import Module = NBModule;
 
 protected
+  // NF imports
+  import Variable = NFVariable;
+
+  // Backend imports
   import BackendDAE = NBackendDAE;
+  import BEquation = NBEquation;
   import BVariable = NBVariable;
   import Causalize = NBCausalize;
   import Jacobian = NBJacobian;
@@ -52,26 +57,26 @@ public
   algorithm
     try
       func := getModule();
-	    // for now just copy the dae
-	    bdae := match bdae
-	      local
-	        BackendDAE qual;
-	        list<System.System> ode;
+      // for now just copy the dae
+      bdae := match bdae
+        local
+          BackendDAE qual;
+          list<System.System> ode;
 
-	      case qual as BackendDAE.BDAE(ode = ode)
-	        algorithm
-	          qual.dae := SOME(func(ode));
-	      then qual;
+        case qual as BackendDAE.BDAE(ode = ode)
+          algorithm
+            qual.dae := SOME(func(ode));
+        then qual;
 
-	      else algorithm
-	        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed due to wrong BackendDAE record!"});
-	      then fail();
-	    end match;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed due to wrong BackendDAE record!"});
+        then fail();
+      end match;
 
-	    // Modules
-	    bdae := Causalize.main(bdae, NBSystem.SystemType.DAE);
-	    bdae := Tearing.main(bdae, NBSystem.SystemType.DAE);
-	    bdae := Jacobian.main(bdae, NBSystem.SystemType.ODE);
+      // Modules
+      bdae := Causalize.main(bdae, NBSystem.SystemType.DAE);
+      bdae := Tearing.main(bdae, NBSystem.SystemType.DAE);
+      bdae := Jacobian.main(bdae, NBSystem.SystemType.DAE);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
     end try;
@@ -92,11 +97,22 @@ public
 
 protected
   function daeModeDefault extends Module.daeModeInterface;
+  protected
+    list<System.System> new_systems = {};
+    Pointer<list<Pointer<Variable>>> residual_vars = Pointer.create({});
+    Pointer<Integer> idx = Pointer.create(0);
   algorithm
-    // for now only make all algebraic variables algebraic states
     for syst in systems loop
+      // move unknowns
+      syst.daeUnknowns := SOME(syst.unknowns);
+      // convert all algebraic variables to algebraic states
       BVariable.VariablePointers.mapPtr(syst.unknowns, function BVariable.makeAlgStateVar());
+      // convert all residual equations to dae residuals
+      BEquation.EquationPointers.map(syst.equations, function BEquation.Equation.createResidual(context = "DAE", residual_vars = residual_vars, idx = idx));
+      syst.unknowns := BVariable.VariablePointers.fromList(listReverse(Pointer.access(residual_vars)));
+      new_systems := syst :: new_systems;
     end for;
+    systems := listReverse(new_systems);
   end daeModeDefault;
 
   annotation(__OpenModelica_Interface="backend");

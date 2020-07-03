@@ -162,26 +162,6 @@ public
       Pointer.update(uniqueIndexPtr, Pointer.access(uniqueIndexPtr) + 1);
     end traverseCreate;
 
-    function createResidualVar
-      "Creates a residual variable pointer from a unique index and context name.
-      e.g. (4, \"DAE\") --> $RES_DAE_4"
-      input String name                 "context name e.g. DAE";
-      input Integer uniqueIndex         "unique identifier index";
-      output SimVar var                 "new SimVar";
-      output ComponentRef cref          "new component reference";
-    protected
-      InstNode node;
-    algorithm
-      // create inst node with dummy variable pointer and create cref from it
-      node := InstNode.VAR_NODE(NBVariable.RESIDUAL_STR + "_" + name + "_" + intString(uniqueIndex), Pointer.create(NBVariable.DUMMY_VARIABLE));
-      // Type for residuals is always REAL() !
-      cref := ComponentRef.CREF(node, {}, Type.REAL(), NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
-      // create variable and set its kind to dae_residual (change name?)
-      var := SIMVAR(cref, BackendExtension.DAE_RESIDUAL_VAR(), "", "", "", uniqueIndex, NONE(), NONE(), NONE(), NONE(), false,
-                Type.REAL(), false, NONE(), Alias.NO_ALIAS(), TplAbsyn.dummySourceInfo, NONE(), SOME(uniqueIndex), SOME(uniqueIndex),
-                {}, true, false, false, NONE(), NONE(), NONE(), NONE(), NONE());
-    end createResidualVar;
-
     function convert
       input SimVar simVar;
       output OldSimCodeVar.SimVar oldSimVar;

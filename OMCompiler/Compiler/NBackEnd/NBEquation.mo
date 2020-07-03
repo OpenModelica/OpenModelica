@@ -42,15 +42,19 @@ public
   // New Frontend imports
   import Algorithm = NFAlgorithm;
   import ComponentRef = NFComponentRef;
+  import Dimension = NFDimension;
   import Expression = NFExpression;
   import InstNode = NFInstNode.InstNode;
   import SimplifyExp = NFSimplifyExp;
+  import Type = NFType;
+  import Operator = NFOperator;
   import Variable = NFVariable;
 
   // Old Backend imports
   import OldBackendDAE = BackendDAE;
 
   // New Backend imports
+  import BVariable = NBVariable;
 
   // Util imports
   import ExpandableArray;
@@ -137,11 +141,11 @@ public
       str := match eq
         local
           Equation qualEq;
-        case qualEq as SCALAR_EQUATION() then str + "[SCAL] " + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
-        case qualEq as ARRAY_EQUATION()  then str + "[ARRY] " + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
-        case qualEq as SIMPLE_EQUATION() then str + "[SIMP] " + ComponentRef.toString(qualEq.lhs) + " = " + ComponentRef.toString(qualEq.rhs);
-        case qualEq as RECORD_EQUATION() then str + "[RECD] " + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
-        case qualEq as ALGORITHM()       then str + "[ALGO] size " + intString(qualEq.size) + "\n" + Algorithm.toString(qualEq.alg, str + "[----] ");
+        case qualEq as SCALAR_EQUATION() then str + "[SCAL] " + EquationAttributes.toString(qualEq.attr) + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
+        case qualEq as ARRAY_EQUATION()  then str + "[ARRY] " + EquationAttributes.toString(qualEq.attr) + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
+        case qualEq as SIMPLE_EQUATION() then str + "[SIMP] " + EquationAttributes.toString(qualEq.attr) + ComponentRef.toString(qualEq.lhs) + " = " + ComponentRef.toString(qualEq.rhs);
+        case qualEq as RECORD_EQUATION() then str + "[RECD] " + EquationAttributes.toString(qualEq.attr) + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
+        case qualEq as ALGORITHM()       then str + "[ALGO] size " + intString(qualEq.size) + " " + EquationAttributes.toString(qualEq.attr) + "\n" + Algorithm.toString(qualEq.alg, str + "[----] ");
         case qualEq as IF_EQUATION()     then str + IfEquationBody.toString(qualEq.body, str + "[----] ", "[-IF-] ");
         case qualEq as FOR_EQUATION()    then str + forEquationToString(qualEq.iter, qualEq.range, qualEq.body, "", str + "[----] ", "[FOR-] ");
         case qualEq as WHEN_EQUATION()   then str + WhenEquationBody.toString(qualEq.body, str + "[----] ", "[WHEN] ");
@@ -384,6 +388,49 @@ public
         then fail();
       end match;
     end simplify;
+
+    function createResidual
+      "Creates a residual equation from a regular equation.
+      Expample (for DAEMode): $RES_DAE_idx := rhs.
+      Does not solve the equation, only saves the residual term!"
+      input output Equation eqn;
+      input String context;
+      input Pointer<list<Pointer<Variable>>> residual_vars;
+      input Pointer<Integer> idx;
+    protected
+      Pointer<Variable> residualVar;
+    algorithm
+      // create residual var and update pointers
+      (residualVar, _) := BVariable.makeResidualVar(context, Pointer.access(idx));
+      Pointer.update(residual_vars, residualVar :: Pointer.access(residual_vars));
+      Pointer.update(idx, Pointer.access(idx) + 1);
+
+      // update equation attributes
+      eqn := match eqn
+        local
+          Equation qual;
+
+        case qual as SCALAR_EQUATION() algorithm
+            qual.attr := EquationAttributes.setResidualVar(qual.attr, residualVar);
+        then qual;
+
+        case qual as ARRAY_EQUATION() algorithm
+            qual.attr := EquationAttributes.setResidualVar(qual.attr, residualVar);
+        then qual;
+
+        case qual as SIMPLE_EQUATION() algorithm
+            qual.attr := EquationAttributes.setResidualVar(qual.attr, residualVar);
+        then qual;
+
+        // ToDo: add all other cases!
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(eqn)});
+        then fail();
+
+      end match;
+    end createResidual;
+
   end Equation;
 
   uniontype IfEquationBody
@@ -614,11 +661,43 @@ public
   end WhenStatement;
 
   uniontype EquationAttributes
-    record EQUATION_ATTRIBUTES
+    record EQUATION_ATTRIBUTES // ToDo: replace differentiated by optional equation pointer to diffed eq (only TIME!)
       Boolean differentiated "true if the equation was differentiated, and should not be differentiated again to avoid equal equations";
       EquationKind kind;
       EvaluationStages evalStages;
+      Option<Pointer<Variable>> residualVar;
     end EQUATION_ATTRIBUTES;
+
+    function toString
+      input EquationAttributes attr;
+      output String str;
+    algorithm
+      str := match attr
+        local
+          Pointer<Variable> residualVar;
+        case EQUATION_ATTRIBUTES(residualVar = SOME(residualVar))
+        then "(" + ComponentRef.toString(BVariable.getVarName(residualVar)) + ") ";
+        else "";
+      end match;
+    end toString;
+
+    function setResidualVar
+      input output EquationAttributes attr;
+      input Pointer<Variable> residualVar;
+    algorithm
+      attr.residualVar := SOME(residualVar);
+    end setResidualVar;
+
+    function getResidualVar
+      input EquationAttributes attr;
+      output Pointer<Variable> residualVar;
+    algorithm
+      try
+        SOME(residualVar) := attr.residualVar;
+      else
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of missing residualVar!"});
+      end try;
+    end getResidualVar;
 
     function convert
       input EquationAttributes attributes;
@@ -631,12 +710,12 @@ public
     end convert;
   end EquationAttributes;
 
-  constant EquationAttributes EQ_ATTR_DEFAULT_DYNAMIC = EQUATION_ATTRIBUTES(false, DYNAMIC_EQUATION(), DEFAULT_EVALUATION_STAGES);
-  constant EquationAttributes EQ_ATTR_DEFAULT_BINDING = EQUATION_ATTRIBUTES(false, BINDING_EQUATION(), DEFAULT_EVALUATION_STAGES);
-  constant EquationAttributes EQ_ATTR_DEFAULT_INITIAL = EQUATION_ATTRIBUTES(false, INITIAL_EQUATION(), DEFAULT_EVALUATION_STAGES);
-  constant EquationAttributes EQ_ATTR_DEFAULT_DISCRETE = EQUATION_ATTRIBUTES(false, DISCRETE_EQUATION(), DEFAULT_EVALUATION_STAGES);
-  constant EquationAttributes EQ_ATTR_DEFAULT_AUX = EQUATION_ATTRIBUTES(false, AUX_EQUATION(), DEFAULT_EVALUATION_STAGES);
-  constant EquationAttributes EQ_ATTR_DEFAULT_UNKNOWN = EQUATION_ATTRIBUTES(false, UNKNOWN_EQUATION_KIND(), DEFAULT_EVALUATION_STAGES);
+  constant EquationAttributes EQ_ATTR_DEFAULT_DYNAMIC = EQUATION_ATTRIBUTES(false, DYNAMIC_EQUATION(), DEFAULT_EVALUATION_STAGES, NONE());
+  constant EquationAttributes EQ_ATTR_DEFAULT_BINDING = EQUATION_ATTRIBUTES(false, BINDING_EQUATION(), DEFAULT_EVALUATION_STAGES, NONE());
+  constant EquationAttributes EQ_ATTR_DEFAULT_INITIAL = EQUATION_ATTRIBUTES(false, INITIAL_EQUATION(), DEFAULT_EVALUATION_STAGES, NONE());
+  constant EquationAttributes EQ_ATTR_DEFAULT_DISCRETE = EQUATION_ATTRIBUTES(false, DISCRETE_EQUATION(), DEFAULT_EVALUATION_STAGES, NONE());
+  constant EquationAttributes EQ_ATTR_DEFAULT_AUX = EQUATION_ATTRIBUTES(false, AUX_EQUATION(), DEFAULT_EVALUATION_STAGES, NONE());
+  constant EquationAttributes EQ_ATTR_DEFAULT_UNKNOWN = EQUATION_ATTRIBUTES(false, UNKNOWN_EQUATION_KIND(), DEFAULT_EVALUATION_STAGES, NONE());
 
   uniontype EquationKind
     record BINDING_EQUATION end BINDING_EQUATION;

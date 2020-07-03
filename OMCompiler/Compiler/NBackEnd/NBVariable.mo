@@ -138,6 +138,16 @@ public
     end match;
   end getVarPointer;
 
+  function getVarName
+    input Pointer<Variable> var_ptr;
+    output ComponentRef name;
+  protected
+    Variable var;
+  algorithm
+    var := Pointer.access(var_ptr);
+    name := var.name;
+  end getVarName;
+
   function isState
     input Pointer<Variable> var;
     output Boolean b;
@@ -495,6 +505,41 @@ public
     end match;
   end makeSeedVar;
 
+  function makePDerVar
+    "Creates a partial derivative variable pointer from a cref. Used in NBJacobian and NBHessian
+    to represent generic gradient equations.
+    e.g: (speed, 'Jac') -> $pDer_Jac.speed"
+    input output ComponentRef cref    "old component reference to new component reference";
+    input String name                 "name of the matrix this partial derivative belongs to";
+    output Pointer<Variable> var_ptr  "pointer to new variable";
+  algorithm
+    _ := match ComponentRef.node(cref)
+      local
+        InstNode qual;
+        Pointer<Variable> old_var_ptr;
+        Variable var;
+      case qual as InstNode.VAR_NODE()
+        algorithm
+          // get the variable pointer from the old cref to later on link back to it
+          old_var_ptr := BVariable.getVarPointer(cref);
+          // prepend the seed str and the matrix name and create the new cref
+          qual.name := PARTIAL_DERIVATIVE_STR + "_" + name;
+          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
+          var := BVariable.fromCref(cref);
+          // update the variable to be a seed and pass the pointer to the original variable
+          var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.JAC_DIFF_VAR());
+          // create the new variable pointer and safe it to the component reference
+          var_ptr := Pointer.create(var);
+          cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
+      then ();
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
+      then fail();
+    end match;
+  end makePDerVar;
+
+
   function makeStartVar
     "Creates a start variable pointer from a cref. Used in NBInitialization.
     e.g: angle -> $START.angle"
@@ -526,6 +571,25 @@ public
       then fail();
     end match;
   end makeStartVar;
+
+  function makeResidualVar
+    "Creates a residual variable pointer from a unique index and context name.
+    e.g. (\"DAE\", 4) --> $RES_DAE_4"
+    input String name                 "context name e.g. DAE";
+    input Integer uniqueIndex         "unique identifier index";
+    output Pointer<Variable> var_ptr  "pointer to new variable";
+    output ComponentRef cref          "new component reference";
+  protected
+    InstNode node;
+  algorithm
+    // create inst node with dummy variable pointer and create cref from it
+    node := InstNode.VAR_NODE(RESIDUAL_STR + "_" + name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
+    // Type for residuals is always REAL() !
+    cref := ComponentRef.CREF(node, {}, Type.REAL(), NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
+    // create variable and set its kind to dae_residual (change name?)
+    var_ptr := Pointer.create(Variable.fromCref(cref));
+    cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
+  end makeResidualVar;
 
   // ==========================================================================
   //                        Variable Array Stuff

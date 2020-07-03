@@ -775,6 +775,7 @@ uniontype InstNode
   algorithm
     component := match node
       case COMPONENT_NODE() then Pointer.access(node.component);
+      case VAR_NODE()       then Component.WILD();
     end match;
   end component;
 

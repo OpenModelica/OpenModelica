@@ -55,6 +55,7 @@ public
     record SYSTEM
       SystemType systemType                           "Type of system: ODE, INIT or DAE";
       BVariable.VariablePointers unknowns             "Variable array of unknowns, subset of full variable array";
+      Option<BVariable.VariablePointers> daeUnknowns  "Variable array of unknowns in the case of dae mode";
       BEquation.EquationPointers equations            "Equations array, subset of the full equation array";
       Option<AdjacencyMatrix> adjacencyMatrix         "Adjacency matrix with all additional information";
       Option<Matching> matching                       "Matching (see 2.5)";

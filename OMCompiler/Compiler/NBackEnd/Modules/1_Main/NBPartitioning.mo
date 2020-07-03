@@ -97,7 +97,7 @@ protected
   function partitioningDefault extends Module.partitioningInterface;
   algorithm
     // ToDo: actually do partitioning! For now just create one system with everything inside.
-    systems := {System.SYSTEM(systemType, variables, equations, NONE(), NONE(), NONE(), System.PartitionKind.UNKNOWN, NONE(), NONE())};
+    systems := {System.SYSTEM(systemType, variables, NONE(), equations, NONE(), NONE(), NONE(), System.PartitionKind.UNKNOWN, NONE(), NONE())};
   end partitioningDefault;
 
 annotation(__OpenModelica_Interface="backend");

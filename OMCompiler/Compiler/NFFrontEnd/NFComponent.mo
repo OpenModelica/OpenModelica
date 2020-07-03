@@ -220,6 +220,8 @@ public
     Component component;
   end DELETED_COMPONENT;
 
+  record WILD "needed for new crefs in the backend" end WILD;
+
   function new
     input SCode.Element definition;
     output Component component;
@@ -434,6 +436,7 @@ public
     attr := match component
       case UNTYPED_COMPONENT() then component.attributes;
       case TYPED_COMPONENT() then component.attributes;
+      else DEFAULT_ATTR;
     end match;
   end getAttributes;
 

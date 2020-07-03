@@ -53,6 +53,7 @@ protected
 
   // Backend imports
   import BEquation = NBEquation;
+  import BVariable = NBVariable;
   import StrongComponent = NBStrongComponent;
   import System = NBSystem;
   import Tearing = NBTearing;
@@ -234,7 +235,7 @@ public
       list<Block> tmp;
     algorithm
       for system in systems loop
-        (tmp, simCodeIndices, _) := fromSystem(system, simCodeIndices);
+        (tmp, simCodeIndices) := fromSystem(system, simCodeIndices);
         blcks := tmp :: blcks;
       end for;
       blcks := listReverse(blcks);
@@ -248,7 +249,7 @@ public
       list<Block> tmp;
     algorithm
       for system in systems loop
-        (tmp, simCodeIndices, _) := fromSystem(system, simCodeIndices);
+        (tmp, simCodeIndices) := fromSystem(system, simCodeIndices);
         blcks := listAppend(blcks, tmp);
       end for;
       blcks := listReverse(blcks);
@@ -260,12 +261,17 @@ public
       output list<SimVar> vars = {};
       input output SimCode.SimCodeIndices simCodeIndices;
     protected
+      Pointer<Integer> idx_ptr = Pointer.create(simCodeIndices.daeModeResidualIndex);
+      Pointer<list<SimVar>> vars_ptr = Pointer.create({});
       list<Block> tmp;
     algorithm
       for system in systems loop
-        (tmp, simCodeIndices, vars) := fromSystem(system, simCodeIndices, true, vars);
+        BVariable.VariablePointers.map(system.unknowns, function SimVar.traverseCreate(acc = vars_ptr, uniqueIndexPtr = idx_ptr));
+        (tmp, simCodeIndices) := fromSystem(system, simCodeIndices, true);
         blcks := tmp :: blcks;
       end for;
+      vars := Pointer.access(vars_ptr);
+      simCodeIndices.daeModeResidualIndex := Pointer.access(idx_ptr);
       blcks := listReverse(blcks);
     end createDAEModeBlocks;
 
@@ -273,9 +279,7 @@ public
       input System.System system;
       output list<Block> blcks;
       input output SimCode.SimCodeIndices simCodeIndices;
-      // these inputs and outputs are only relevant for DAEMode
       input Boolean daeMode = false;
-      input output list<SimVar> residual_vars = {};
     algorithm
       blcks := match system.strongComponents
         local
@@ -284,7 +288,7 @@ public
         case SOME(comps)
           algorithm
             for i in 1:arrayLength(comps) loop
-              (tmp, simCodeIndices, residual_vars) := fromStrongComponent(comps[i], simCodeIndices, daeMode, residual_vars);
+              (tmp, simCodeIndices) := fromStrongComponent(comps[i], simCodeIndices, daeMode);
               result := listAppend(result, tmp);
             end for;
         then listReverse(result);
@@ -299,9 +303,7 @@ public
       input StrongComponent comp;
       output list<Block> blck_lst;
       input output SimCode.SimCodeIndices simCodeIndices;
-      // these inputs and outputs are only relevant for DAEMode
       input Boolean daeMode;
-      input output list<SimVar> residual_vars;
     algorithm
       blck_lst := match comp
         local
@@ -317,7 +319,7 @@ public
           algorithm
             if daeMode then
               for eqn_ptr in strict.residual_eqns loop
-                (tmp, residual_vars, simCodeIndices) := createDAEModeResidual(Pointer.access(eqn_ptr), residual_vars, simCodeIndices);
+                (tmp, simCodeIndices) := createDAEModeResidual(Pointer.access(eqn_ptr), simCodeIndices);
                 result := tmp :: result;
               end for;
             else
@@ -354,14 +356,14 @@ public
 
         case qual as BEquation.SCALAR_EQUATION()
           algorithm
-            operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.ADD);
+            operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.SUB);
             tmp := RESIDUAL(simCodeIndices.equationIndex, Expression.BINARY(qual.lhs, operator ,qual.rhs), qual.source, qual.attr);
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
         case qual as BEquation.ARRAY_EQUATION()
           algorithm
-            operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.ADD);
+            operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.SUB);
             tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, Expression.BINARY(qual.lhs, operator, qual.rhs), qual.source, qual.attr);
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
@@ -369,7 +371,7 @@ public
         case qual as BEquation.SIMPLE_EQUATION()
           algorithm
             ty := ComponentRef.getComponentType(qual.lhs);
-            operator := Operator.OPERATOR(ty, NFOperator.Op.ADD);
+            operator := Operator.OPERATOR(ty, NFOperator.Op.SUB);
             lhs := Expression.fromCref(qual.lhs);
             rhs := Expression.fromCref(qual.rhs);
             if Type.isArray(ty) then
@@ -395,7 +397,6 @@ public
       $RES_DAE_idx := rhs"
       input BEquation.Equation eqn;
       output Block blck;
-      input output list<SimVar> residual_vars;
       input output SimCode.SimCodeIndices simCodeIndices;
     algorithm
       blck := match eqn
@@ -403,47 +404,40 @@ public
           BEquation.Equation qual;
           Type ty;
           Operator operator;
-          SimVar residualVar;
-          ComponentRef residualCref;
+          Variable residualVar;
           Expression lhs, rhs;
           Block tmp;
 
         case qual as BEquation.SCALAR_EQUATION()
           algorithm
             operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.SUB);
-            (residualVar, residualCref) := SimVar.createResidualVar("DAE", simCodeIndices.daeModeResidualIndex);
-            residual_vars := residualVar :: residual_vars;
-            tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, residualCref, Expression.BINARY(qual.lhs, operator, qual.rhs), qual.source, qual.attr);
+            residualVar := Pointer.access(BEquation.EquationAttributes.getResidualVar(qual.attr));
+            tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, residualVar.name, Expression.BINARY(qual.lhs, operator, qual.rhs), qual.source, qual.attr);
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
-            simCodeIndices.daeModeResidualIndex := simCodeIndices.daeModeResidualIndex + 1;
         then tmp;
 
         case qual as BEquation.ARRAY_EQUATION()
           algorithm
-            operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.ADD);
-            (residualVar, residualCref) := SimVar.createResidualVar("DAE", simCodeIndices.daeModeResidualIndex); // array type?
-            residual_vars := residualVar :: residual_vars;
-            tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(residualCref), Expression.BINARY(qual.lhs, operator, qual.rhs), qual.source, qual.attr);
+            operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.SUB);
+            residualVar := Pointer.access(BEquation.EquationAttributes.getResidualVar(qual.attr));
+            tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(residualVar.name), Expression.BINARY(qual.lhs, operator, qual.rhs), qual.source, qual.attr);
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
-            simCodeIndices.daeModeResidualIndex := simCodeIndices.daeModeResidualIndex + 1;
         then tmp;
 
         // remove simple equations should remove this, but if it is not activated we need this
         case qual as BEquation.SIMPLE_EQUATION()
           algorithm
             ty := ComponentRef.getComponentType(qual.lhs);
-            operator := Operator.OPERATOR(ty, NFOperator.Op.ADD);
+            operator := Operator.OPERATOR(ty, NFOperator.Op.SUB);
             lhs := Expression.fromCref(qual.lhs);
             rhs := Expression.fromCref(qual.rhs);
-            (residualVar, residualCref) := SimVar.createResidualVar("DAE", simCodeIndices.daeModeResidualIndex);
-            residual_vars := residualVar :: residual_vars;
+            residualVar := Pointer.access(BEquation.EquationAttributes.getResidualVar(qual.attr));
             if Type.isArray(ty) then
-              tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(residualCref), Expression.BINARY(lhs, operator, rhs), qual.source, qual.attr);
+              tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(residualVar.name), Expression.BINARY(lhs, operator, rhs), qual.source, qual.attr);
             else
-              tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, residualCref, Expression.BINARY(lhs, operator, rhs), qual.source, qual.attr);
+              tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, residualVar.name, Expression.BINARY(lhs, operator, rhs), qual.source, qual.attr);
             end if;
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
-            simCodeIndices.daeModeResidualIndex := simCodeIndices.daeModeResidualIndex + 1;
         then tmp;
 
         // ToDo: add all other cases!
@@ -454,6 +448,50 @@ public
 
       end match;
     end createDAEModeResidual;
+
+    function createAssignment
+      "Creates an assignment equation."
+      input BEquation.Equation eqn;
+      output Block blck;
+      input output SimCode.SimCodeIndices simCodeIndices;
+    algorithm
+      blck := match eqn
+        local
+          BEquation.Equation qual;
+          Type ty;
+          Operator operator;
+          SimVar residualVar;
+          ComponentRef cref;
+          Expression lhs, rhs;
+          Block tmp;
+
+        case qual as BEquation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref))
+          algorithm
+            tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, cref, qual.rhs, qual.source, qual.attr);
+            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then tmp;
+
+        case qual as BEquation.ARRAY_EQUATION(lhs = Expression.CREF(cref = cref))
+          algorithm
+            tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, cref, qual.rhs, qual.source, qual.attr);
+            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then tmp;
+
+        // remove simple equations should remove this, but if it is not activated we need this
+        case qual as BEquation.SIMPLE_EQUATION()
+          algorithm
+            tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, qual.lhs, Expression.fromCref(qual.rhs), qual.source, qual.attr);
+            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then tmp;
+
+        // ToDo: add all other cases!
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + BEquation.Equation.toString(eqn)});
+        then fail();
+
+      end match;
+    end createAssignment;
 
     function collectAlgebraicLoops
       input list<list<Block>> blcks;
