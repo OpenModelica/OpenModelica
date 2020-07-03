@@ -295,9 +295,7 @@ void OMSSimulationDialog::saveSimulationSettings()
   OMSProxy::instance()->setStopTime(mModelCref, mpStopTimeTextBox->text().toDouble());
   OMSProxy::instance()->setResultFile(mModelCref, mpResultFileTextBox->text(), mpResultFileBufferSizeSpinBox->value());
   OMSProxy::instance()->setLoggingInterval(mModelCref, mpLoggingIntervalTextBox->text().toDouble());
-  if (!mpSignalFilterTextBox->text().isEmpty()) {
-    OMSProxy::instance()->setSignalFilter(mModelCref, mpSignalFilterTextBox->text());
-  }
+  OMSProxy::instance()->setSignalFilter(mModelCref, mpSignalFilterTextBox->text());
 
   ModelWidget *pModelWidget = mpLibraryTreeItem->getModelWidget();
   pModelWidget->createOMSimulatorUndoCommand(QString("Simulation setup %1").arg(mModelCref));
