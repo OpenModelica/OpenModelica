@@ -1086,7 +1086,7 @@ QString Element::getPlacementAnnotation(bool ModelicaSyntax)
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
       // first get the component from diagram view and get the transformations
       Element *pElement;
-      pElement = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getComponentObject(getName());
+      pElement = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getElementObject(getName());
       if (pElement) {
         placementAnnotationString.append(", ").append(pElement->getTransformationAnnotation(ModelicaSyntax));
       }
@@ -1097,7 +1097,7 @@ QString Element::getPlacementAnnotation(bool ModelicaSyntax)
       placementAnnotationString.append(", ").append(getTransformationAnnotation(ModelicaSyntax));
       // then get the icon transformations
       Element *pElement;
-      pElement = mpGraphicsView->getModelWidget()->getIconGraphicsView()->getComponentObject(getName());
+      pElement = mpGraphicsView->getModelWidget()->getIconGraphicsView()->getElementObject(getName());
       if (pElement) {
         placementAnnotationString.append(", ").append(pElement->getTransformationAnnotation(ModelicaSyntax));
       }
@@ -1158,7 +1158,7 @@ QString Element::getOMCPlacementAnnotation(QPointF position)
     if (mpGraphicsView->getViewType() == StringHandler::Icon) {
       // first get the component from diagram view and get the transformations
       Element *pElement;
-      pElement = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getComponentObject(getName());
+      pElement = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getElementObject(getName());
       if (pElement) {
         placementAnnotationString.append(",").append(pElement->getOMCTransformationAnnotation(position));
       } else {
@@ -1171,7 +1171,7 @@ QString Element::getOMCPlacementAnnotation(QPointF position)
       placementAnnotationString.append(",").append(getOMCTransformationAnnotation(position));
       // then get the icon transformations
       Element *pElement;
-      pElement = mpGraphicsView->getModelWidget()->getIconGraphicsView()->getComponentObject(getName());
+      pElement = mpGraphicsView->getModelWidget()->getIconGraphicsView()->getElementObject(getName());
       if (pElement) {
         placementAnnotationString.append(",").append(pElement->getOMCTransformationAnnotation(position));
       } else {
@@ -1278,12 +1278,12 @@ void Element::createClassElements()
       MainWindow *pMainWindow = MainWindow::instance();
       pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
     }
-    mpLibraryTreeItem->getModelWidget()->loadComponents();
-    foreach (Element *pElement, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getComponentsList()) {
+    mpLibraryTreeItem->getModelWidget()->loadElements();
+    foreach (Element *pElement, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getElementsList()) {
       mElementsList.append(new Element(pElement, this, getRootParentComponent()));
     }
     mpLibraryTreeItem->getModelWidget()->loadDiagramView();
-    foreach (Element *pElement, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
+    foreach (Element *pElement, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getElementsList()) {
       if (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isConnector()) {
         continue;
       }
@@ -1469,7 +1469,7 @@ QString Element::getParameterDisplayString(QString parameterName)
   if (displayString.isEmpty() || typeName.isEmpty()) {
     if (mpLibraryTreeItem) {
       mpLibraryTreeItem->getModelWidget()->loadDiagramView();
-      foreach (Element *pElement, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
+      foreach (Element *pElement, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getElementsList()) {
         if (pElement->getElementInfo()->getName().compare(parameterName) == 0) {
           if (displayString.isEmpty()) {
             displayString = pElement->getElementInfo()->getParameterValue(pOMCProxy, mpLibraryTreeItem->getNameStructure());
@@ -1934,7 +1934,7 @@ void Element::drawOMSElement()
     // draw shapes first
     createClassShapes();
     // draw connectors now
-    foreach (Element *pElement, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getComponentsList()) {
+    foreach (Element *pElement, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getElementsList()) {
       Element *pNewElement = new Element(pElement, this, getRootParentComponent());
       mElementsList.append(pNewElement);
     }
@@ -2422,7 +2422,7 @@ QString Element::getParameterDisplayStringFromExtendsParameters(QString paramete
         MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pInheritedElement->getLibraryTreeItem(), false);
       }
       pInheritedElement->getLibraryTreeItem()->getModelWidget()->loadDiagramView();
-      foreach (Element *pElement, pInheritedElement->getLibraryTreeItem()->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
+      foreach (Element *pElement, pInheritedElement->getLibraryTreeItem()->getModelWidget()->getDiagramGraphicsView()->getElementsList()) {
         if (pElement->getElementInfo()->getName().compare(parameterName) == 0) {
           OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
           /* Ticket:4204
@@ -2559,7 +2559,7 @@ void Element::updatePlacementAnnotation()
       } else {
         pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
       }
-      Element *pElement = pGraphicsView->getComponentObject(getName());
+      Element *pElement = pGraphicsView->getElementObject(getName());
       if (pElement) {
         pElement->mTransformation.setOrigin(mTransformation.getOrigin());
         pElement->setTransform(pElement->mTransformation.getTransformationMatrix());
@@ -2923,7 +2923,7 @@ void Element::displayTextChangedRecursive()
 void Element::deleteMe()
 {
   // delete the component from model
-  mpGraphicsView->deleteComponent(this);
+  mpGraphicsView->deleteElement(this);
 }
 
 /*!
@@ -2938,16 +2938,16 @@ void Element::duplicate()
     // get the model defaultElementName
     QString defaultName = pMainWindow->getOMCProxy()->getDefaultComponentName(mpLibraryTreeItem->getNameStructure());
     if (defaultName.isEmpty()) {
-      name = mpGraphicsView->getUniqueComponentName(StringHandler::toCamelCase(mpLibraryTreeItem->getName()));
+      name = mpGraphicsView->getUniqueElementName(StringHandler::toCamelCase(mpLibraryTreeItem->getName()));
     } else {
-      if (mpGraphicsView->checkComponentName(defaultName)) {
+      if (mpGraphicsView->checkElementName(defaultName)) {
         name = defaultName;
       } else {
-        name = mpGraphicsView->getUniqueComponentName(defaultName);
+        name = mpGraphicsView->getUniqueElementName(defaultName);
       }
     }
   } else {
-    name = mpGraphicsView->getUniqueComponentName(StringHandler::toCamelCase(getName()));
+    name = mpGraphicsView->getUniqueElementName(StringHandler::toCamelCase(getName()));
   }
   QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5, mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
   // add component
@@ -2955,12 +2955,12 @@ void Element::duplicate()
   ElementInfo *pElementInfo = new ElementInfo(mpElementInfo);
   pElementInfo->setName(name);
   mpGraphicsView->addComponentToView(name, mpLibraryTreeItem, getOMCPlacementAnnotation(gridStep), QPointF(0, 0), pElementInfo, true, true, true);
-  Element *pDiagramElement = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getComponentsList().last();
+  Element *pDiagramElement = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getElementsList().last();
   setSelected(false);
   if (mpGraphicsView->getViewType() == StringHandler::Diagram) {
     pDiagramElement->setSelected(true);
   } else {
-    Element *pIconElement = mpGraphicsView->getModelWidget()->getIconGraphicsView()->getComponentsList().last();
+    Element *pIconElement = mpGraphicsView->getModelWidget()->getIconGraphicsView()->getElementsList().last();
     pIconElement->setSelected(true);
   }
 }
