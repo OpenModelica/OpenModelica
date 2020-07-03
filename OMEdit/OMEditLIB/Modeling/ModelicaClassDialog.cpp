@@ -2247,7 +2247,7 @@ void ComponentNameDialog::updateComponentName()
     return;
   }
   // check for existing component name
-  if (!mpGraphicsView->checkComponentName(mpNameTextBox->text())) {
+  if (!mpGraphicsView->checkElementName(mpNameTextBox->text())) {
     QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information),
                              GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME).arg(mpNameTextBox->text()), Helper::ok);
     return;
