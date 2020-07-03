@@ -989,9 +989,9 @@ void LibraryTreeItem::handleComponentAdded(Element *pComponent)
 {
   if (mpModelWidget) {
     if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector()) {
-      mpModelWidget->getIconGraphicsView()->addInheritedComponentToList(mpModelWidget->createInheritedComponent(pComponent, mpModelWidget->getIconGraphicsView()));
+      mpModelWidget->getIconGraphicsView()->addInheritedElementToList(mpModelWidget->createInheritedComponent(pComponent, mpModelWidget->getIconGraphicsView()));
     }
-    mpModelWidget->getDiagramGraphicsView()->addInheritedComponentToList(mpModelWidget->createInheritedComponent(pComponent, mpModelWidget->getDiagramGraphicsView()));
+    mpModelWidget->getDiagramGraphicsView()->addInheritedElementToList(mpModelWidget->createInheritedComponent(pComponent, mpModelWidget->getDiagramGraphicsView()));
   }
   emit componentAdded(pComponent);
 }
@@ -3728,7 +3728,7 @@ void LibraryTreeView::callFunction()
   if (!pLibraryTreeItem->getModelWidget()) {
     mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem, false);
   }
-  pLibraryTreeItem->getModelWidget()->loadComponents();
+  pLibraryTreeItem->getModelWidget()->loadElements();
 
   FunctionArgumentDialog functionArgumentDialog(pLibraryTreeItem, MainWindow::instance());
 
@@ -5267,7 +5267,7 @@ bool LibraryWidget::saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryT
     for (int i = 0; i < subModels.size(); i++) {
       QDomElement subModel = subModels.at(i).toElement();
       QString directoryName = subModel.attribute("Name");
-      Element *pComponent = pGraphicsView->getComponentObject(directoryName);
+      Element *pComponent = pGraphicsView->getElementObject(directoryName);
       QString modelFile;
       if (pComponent && pComponent->getLibraryTreeItem()) {
         modelFile = pComponent->getLibraryTreeItem()->getFileName();

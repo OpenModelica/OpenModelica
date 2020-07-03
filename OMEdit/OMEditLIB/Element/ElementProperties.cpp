@@ -880,7 +880,7 @@ void ElementParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeItem 
   }
   int insertIndex = 0;
   pLibraryTreeItem->getModelWidget()->loadDiagramView();
-  foreach (Element *pComponent, pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
+  foreach (Element *pComponent, pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getElementsList()) {
     /* Ticket #2531
      * Do not show the protected & final parameters.
      */
@@ -1472,7 +1472,7 @@ void ElementAttributes::updateComponentAttributes()
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   /* Check the same component name problem before setting any attributes. */
   if (mpComponent->getComponentInfo()->getName().compare(mpNameTextBox->text()) != 0) {
-    if (!mpComponent->getGraphicsView()->checkComponentName(mpNameTextBox->text())) {
+    if (!mpComponent->getGraphicsView()->checkElementName(mpNameTextBox->text())) {
       QMessageBox::information(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::information),
                                GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME).arg(mpNameTextBox->text()), Helper::ok);
       return;

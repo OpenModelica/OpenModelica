@@ -438,7 +438,7 @@ AddBusDialog::AddBusDialog(QList<Element *> components, LibraryTreeItem *pLibrar
   ConnectorItem *pOutputsConnectorItem = mpInputConnectorsTreeModel->createConnectorItem(0, mpOutputConnectorsTreeModel->getRootConnectorItem());
   pOutputsConnectorItem->setText("Output Connectors");
   // add the connectors to input and output connectors tree views
-  foreach (Element* pComponent, mpGraphicsView->getComponentsList()) {
+  foreach (Element* pComponent, mpGraphicsView->getElementsList()) {
     if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getOMSConnector()
         && (!pComponent->isInBus() || pComponent->getBusComponent()->getLibraryTreeItem() == mpLibraryTreeItem)) {
       ConnectorItem *pConnectorItem = 0;
@@ -663,7 +663,7 @@ AddTLMBusDialog::AddTLMBusDialog(QList<Element *> components, LibraryTreeItem *p
   ConnectorItem *pOutputsConnectorItem = mpInputConnectorsTreeModel->createConnectorItem(0, mpOutputConnectorsTreeModel->getRootConnectorItem());
   pOutputsConnectorItem->setText("Output Connectors");
   // add the connectors to input and output connectors tree views
-  foreach (Element* pComponent, mpGraphicsView->getComponentsList()) {
+  foreach (Element* pComponent, mpGraphicsView->getElementsList()) {
     if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getOMSConnector()
         && (!pComponent->isInBus() || pComponent->getBusComponent()->getLibraryTreeItem() == mpLibraryTreeItem)) {
       ConnectorItem *pConnectorItem = 0;
@@ -1554,7 +1554,7 @@ void BusConnectionDialog::deleteAtomicConnection(QString startConnectorName, QSt
   if (pBusStartComponent && pBusStartComponent->getRootParentComponent()) {
     pStartComponent = mpGraphicsView->getModelWidget()->getConnectorComponent(pBusStartComponent->getRootParentComponent(), startConnectorName);
   } else if (pBusStartComponent) {
-    pStartComponent = mpGraphicsView->getComponentObject(startConnectorName);
+    pStartComponent = mpGraphicsView->getElementObject(startConnectorName);
   }
   // get end connector
   Element *pEndComponent = 0;
@@ -1562,7 +1562,7 @@ void BusConnectionDialog::deleteAtomicConnection(QString startConnectorName, QSt
   if (pBusEndComponent && pBusEndComponent->getRootParentComponent()) {
     pEndComponent = mpGraphicsView->getModelWidget()->getConnectorComponent(pBusEndComponent->getRootParentComponent(), endConnectorName);
   } else if (pBusEndComponent) {
-    pEndComponent = mpGraphicsView->getComponentObject(endConnectorName);
+    pEndComponent = mpGraphicsView->getElementObject(endConnectorName);
   }
   // delete connection once we have both start and end connectors
   if (pStartComponent && pEndComponent) {
@@ -1604,7 +1604,7 @@ void BusConnectionDialog::addAtomicConnection(QString startConnectorName, QStrin
   if (pBusStartComponent && pBusStartComponent->getRootParentComponent()) {
     pStartComponent = mpGraphicsView->getModelWidget()->getConnectorComponent(pBusStartComponent->getRootParentComponent(), startConnectorName);
   } else if (pBusStartComponent) {
-    pStartComponent = mpGraphicsView->getComponentObject(startConnectorName);
+    pStartComponent = mpGraphicsView->getElementObject(startConnectorName);
   }
   // get end connector
   LibraryTreeItem *pEndLibraryTreeItem = mpConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem();
@@ -1613,7 +1613,7 @@ void BusConnectionDialog::addAtomicConnection(QString startConnectorName, QStrin
   if (pBusEndComponent && pBusEndComponent->getRootParentComponent()) {
     pEndComponent = mpGraphicsView->getModelWidget()->getConnectorComponent(pBusEndComponent->getRootParentComponent(), endConnectorName);
   } else if (pBusEndComponent) {
-    pEndComponent = mpGraphicsView->getComponentObject(endConnectorName);
+    pEndComponent = mpGraphicsView->getElementObject(endConnectorName);
   }
   // add connection once we have both start and end connectors
   if (pStartComponent && pEndComponent) {
