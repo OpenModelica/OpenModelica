@@ -1523,7 +1523,7 @@ template simulationMainRunScript(SimCode simCode ,Text& extraFuncs,Text& extraFu
     let moLib     =  makefileParams.compileDir
     let home      = makefileParams.omhome
   let outputformat = settings.outputFormat
-    let execParameters = '-S <%start%> -E <%end%> -H <%stepsize%> -G <%intervals%> -P <%outputformat%> -T <%tol%> -I <%solver%> -R <%simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%> -M <%moLib%> -r <%simulationResults(getRunningTestsuite(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>'
+    let execParameters = '-S <%start%> -E <%end%> -H <%stepsize%> -G <%intervals%> -P <%outputformat%> -T <%tol%> -I <%solver%> -R <%simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%> -M <%moLib%> -r <%simulationResults(Testsuite.isRunning(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>'
     let outputParameter = if (stringEq(settings.outputFormat, "empty")) then "-O none" else ""
     let fileNamePrefixx = fileNamePrefix
 
@@ -1657,7 +1657,7 @@ int _tmain(int argc, const _TCHAR* argv[])
       opts["-i"] = "<%solver%>";
       opts["-r"] = "<%simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
       opts["-m"] = "<%moLib%>";
-      opts["-R"] = "<%simulationResults(getRunningTestsuite(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
+      opts["-R"] = "<%simulationResults(Testsuite.isRunning(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
 
 
 
@@ -2282,7 +2282,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       opts["-P"] = "<%outputtype%>";
       opts["-R"] = "<%simulationLibDir(simulationCodeTarget(), simCode, &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
       opts["-M"] = "<%moLib%>";
-      opts["-F"] = "<%simulationResults(getRunningTestsuite(), simCode, &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
+      opts["-F"] = "<%simulationResults(Testsuite.isRunning(), simCode, &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
       opts["--solver-threads"] = "<%if(intGt(getConfigInt(NUM_PROC), 0)) then getConfigInt(NUM_PROC) else 1%>";
       <%if (stringEq(settings.outputFormat, "empty")) then 'opts["-O"] = "none";' else ""%>
       <%
@@ -2944,23 +2944,23 @@ template funParamDecl2(Variable var, SimCode simCode ,Text& extraFuncs,Text& ext
  match var
 case var as VARIABLE(__) then
   let varName = '<%contextCref(var.name, contextFunction, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
-  //let instDimsInit = (instDims |> exp => daeExp(exp, contextFunction, &varInits , &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator=",")
+  //let instDimsInit = (instDims |> dim => daeDimension(dim, contextFunction, &varInits , &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator=",")
   funParamDecl3(var,varName,instDims,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 
 end funParamDecl2;
 
 
 
-template funParamDecl3(Variable var,String varName, list<DAE.Exp> instDims, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template funParamDecl3(Variable var,String varName, list<DAE.Dimension> instDims, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
  let &varDecls = buffer "" /*BUFD*/ //should be empty
   let &varInits = buffer "" /*BUFD*/ //should be empty
-  let instDimsInit = (instDims |> exp => daeExp(exp, contextFunction, &varInits , &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator=",")
+  let instDimsInit = (instDims |> dim => daeDimension(dim, contextFunction, &varInits , &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator=",")
   match var
   case var as VARIABLE(__) then
   let type = '<%varType(var)%>'
-  let testinstDimsInit = (instDims |> exp => testDaeDimensionExp(exp);separator="")
-  let instDimsInit = (instDims |> exp => daeExp(exp, contextFunction, &varInits , &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator=",")
+  let testinstDimsInit = (instDims |> dim => testDaeDimension(dim);separator="")
+  let instDimsInit = (instDims |> dim => daeDimension(dim, contextFunction, &varInits , &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator=",")
   let arrayexpression1 = (if instDims then 'StatArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>,<%instDimsInit%>> <%varName%>;/*testarray*/<%\n%>'
   else '<%type%> <%varName%>')
   let arrayexpression2 = (if instDims then 'DynArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>> <%varName%>;<%\n%>'
@@ -3015,10 +3015,10 @@ match var
 case var as VARIABLE(__) then
   let varName = '<%contextCref(var.name, contextFunction, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
 
-  let instDimsInit = (instDims |> exp => daeExp(exp, contextFunction, &varInits, &varDecls,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator=",")
+  let instDimsInit = (instDims |> dim => daeDimension(dim, contextFunction, &varInits, &varDecls,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator=",")
 
   if instDims then
-    let testinstDimsInit = (instDims |> exp => testDaeDimensionExp(exp);separator="")
+    let testinstDimsInit = (instDims |> dim => testDaeDimension(dim);separator="")
     let temp = setDims(testinstDimsInit, varName , &varInits, instDimsInit)
 
 
@@ -5189,8 +5189,7 @@ template extFunCallBiVar(Variable var, Text &preExp, Text &varDecls, SimCode sim
       else ""
     if instDims then
       let nDims = listLength(instDims)
-      let dims = (instDims |> exp =>
-        daeExp(exp, contextFunction, &preExp, &varDecls, simCode,
+      let dims = (instDims |> dim => daeDimension(dim, contextFunction, &preExp, &varDecls, simCode,
                &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,
                stateDerVectorName, useFlatArrayNotation);
         separator=", ")
@@ -5350,8 +5349,7 @@ case var as VARIABLE(__) then
   let marker = '<%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
   let &varInits += '/* varOutputTuple varInits(<%marker%>) */ <%\n%>'
   let &varAssign += '// varOutput varAssign(<%marker%>) <%\n%>'
-  let instDimsInit = (instDims |> exp =>
-      daeExp(exp, contextFunction, &varInits, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  let instDimsInit = (instDims |> dim => daeDimension(dim, contextFunction, &varInits, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     ;separator=",")
   let assginBegin = 'get<<%ix%>>'
   if instDims then
@@ -5372,17 +5370,17 @@ let &varAssign += '/*iregendwas*/'
 end varOutputTuple;
 
 
-template varDeclForVarInit(Variable var,String varName, list<DAE.Exp> instDims, Text &varDecls, Text &varInits, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template varDeclForVarInit(Variable var,String varName, list<DAE.Dimension> instDims, Text &varDecls, Text &varInits, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
-  //let instDimsInit = (instDims |> exp => daeExp(exp, contextFunction, &varInits, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName,  useFlatArrayNotation);separator=",")
-  let instDimsInit = checkExpDimension(instDims)
+  //let instDimsInit = (instDims |> dim => daeDimension(dim, contextFunction, &varInits, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName,  useFlatArrayNotation);separator=",")
+  let instDimsInit = checkDimension(instDims)
     match var
         case var as VARIABLE(__) then
             let type = '<%varType(var)%>'
             let initVar =  match type case "modelica_metatype" then ' = NULL' else ''
             let addRoot =  match type case "modelica_metatype" then ' mmc_GC_add_root(&<%varName%>, mmc_GC_local_state, "<%varName%>");' else ''
-            //let testinstDimsInit = (instDims |> exp => testDaeDimensionExp(exp);separator="")
-            //let instDimsInit = (instDims |> exp => daeExp(exp, contextFunction, &varInits, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator=",")
+            //let testinstDimsInit = (instDims |> dim => testDaeDimension(dim);separator="")
+            //let instDimsInit = (instDims |> dim => daeDimension(dim, contextFunction, &varInits, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator=",")
             let arrayexpression1 = (if instDims then 'StatArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>,<%instDimsInit%>> <%varName%>;/*testarray5*/<%\n%>'
         else '<%type%> <%varName%><%initVar%>;<%addRoot%><%\n%>')
             let arrayexpression2 = (if instDims then 'DynArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>> <%varName%>;<%\n%>'
@@ -5416,14 +5414,14 @@ case var as VARIABLE(__) then
   <%preExp%>
   <%recordInit%>
   >>
-  let instDimsInit = (instDims |> exp => daeExp(exp, contextFunction, &varInits , &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator=",")
+  let instDimsInit = (instDims |> dim => daeDimension(dim, contextFunction, &varInits , &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator=",")
 
 
   //let varName = if outStruct then 'ToDo: outStruct not implemented' else '<%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl, stateDerVectorName, extraFuncsNamespace)%>'
   let _ = varDeclForVarInit(var, varName, instDims, &varDecls, &varInits, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 
   if instDims then
-    let testinstDimsInit = (instDims |> exp => testDaeDimensionExp(exp);separator="")
+    let testinstDimsInit = (instDims |> dim => testDaeDimension(dim);separator="")
     let temp = setDims(testinstDimsInit, varName , &varInits, instDimsInit)
 
 
@@ -5640,7 +5638,7 @@ case var as VARIABLE(__) then
      /* uses StatArrray if possible else Dynarray as function array argument types
      let &varDecls = buffer ""
      let &varInits = buffer ""
-     let testinstDimsInit = (instDims |> exp => testDaeDimensionExp(exp);separator="")
+     let testinstDimsInit = (instDims |> dim => testDaeDimension(dim);separator="")
 
      match testinstDimsInit
      case "" then
@@ -5665,8 +5663,8 @@ case var as VARIABLE(__) then
       /*uses StatArrray if possible else Dynarray as function array argument types  */
      let &varDecls = buffer ""
      let &varInits = buffer ""
-     let DimsTest = (instDims |> exp => daeDimensionExp(exp);separator="")
-     let instDimsInit = (instDims |> exp => daeExp(exp, contextFunction, &varInits, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator=",")
+     let DimsTest = (instDims |> dim => testDaeDimension(dim);separator="")
+     let instDimsInit = (instDims |> dim => daeDimension(dim, contextFunction, &varInits, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator=",")
      match DimsTest
         case "" then if instDims then 'StatArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>, <%instDimsInit%>>& ' else expTypeFlag(var.ty, 5)
         else if instDims then 'DynArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>>&' else expTypeFlag(var.ty, 5)
@@ -5682,11 +5680,11 @@ case var as VARIABLE(__) then
       */
      let &varDecls = buffer "" /*should be empty herer*/
      let &varInits = buffer "" /*should be empty herer*/
-     let testinstDimsInit = (instDims |> exp => testDaeDimensionExp(exp);separator="")
+     let testinstDimsInit = (instDims |> dim => testDaeDimension(dim);separator="")
+     let instDimsInit = (instDims |> dim => daeDimension(dim, contextFunction, &varInits, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, "stateDerVectorName_not_given", false /*is false the default?*/);separator=",")
 
      match testinstDimsInit
      case "" then
-      let instDimsInit = (instDims |> exp => daeDimensionExp(exp);separator=",")
      if instDims then 'StatArrayDim<%listLength(instDims)%>< <%expTypeShort(var.ty)%>, <%instDimsInit%>> /*testarray2*/' else expTypeArrayIf(var.ty)
      else
      if instDims then 'DynArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>> ' else expTypeArrayIf(var.ty)
@@ -11569,6 +11567,18 @@ template equationForLoop(SimEqSystem eq, Context context, Text &varDecls, SimCod
       >>
 end equationForLoop;
 
+// Previously unknown dims were set to ICONST(-1) at SimCode creation
+// we do not do that anymore.
+// This used to return '' for ICONST no matter the value. I am not sure
+// if that is the right thing to do. For now we will just call the function
+// that was used to convert dims to expressions in SimCode creation
+// here as well, i.e., will still return '' for UNKNOWN_DIM since it
+// will be converted to DAE.ICONST(-1).
+template testDaeDimension(DAE.Dimension dim)
+ "Generates code for an expression."
+::=
+  testDaeDimensionExp(Expression.dimensionSizeExpHandleUnkown(dim))
+end testDaeDimension;
 
 template testDaeDimensionExp(Exp exp)
  "Generates code for an expression."
@@ -11601,6 +11611,13 @@ template testDaeDimensionExp(Exp exp)
   case e as SHARED_LITERAL(__)  then '-1'
   else '-1'
 end testDaeDimensionExp;
+
+template daeDimension(DAE.Dimension dim, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName, Boolean useFlatArrayNotation)
+ "Generates code for an expression."
+::=
+  daeExp(Expression.dimensionSizeExpHandleUnkown(dim), context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+end daeDimension;
+
 
 template assertCommon(Exp condition, Exp message,Exp level, Context context, Text &varDecls, builtin.SourceInfo info, SimCode simCode,
                       Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)

@@ -43,13 +43,13 @@
 //   - Code after a case should be indented with 2 spaces if not written on the
 //     same line
 
-package CodegenFMUCpp
+package CodegenFMUCppOld
 
 import interface SimCodeTV;
 import interface SimCodeBackendTV;
 import CodegenUtil.*;
-import CodegenCpp.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
-import CodegenCppCommon.*;
+import CodegenCppOld.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
+import CodegenCppCommonOld.*;
 import CodegenFMU.*;
 import CodegenCppInit;
 import CodegenFMUCommon;
@@ -57,7 +57,7 @@ import CodegenFMU2;
 
 template translateModel(SimCode simCode, String FMUVersion, String FMUType, list<String> sourceFiles)
  "Generates C++ code and Makefile for compiling an FMU of a Modelica model.
-  Calls CodegenCpp.translateModel for the actual model code."
+  Calls CodegenCppOld.translateModel for the actual model code."
 ::=
 match simCode
 case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
@@ -73,8 +73,8 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let numBoolVars = numBoolvars(modelInfo)
   let numStringVars = numStringvars(modelInfo)
 
-  let _ = Flags.set(Flags.HARDCODED_START_VALUES, true)
-  let cpp = CodegenCpp.translateModel(simCode)
+  let _ = FlagsUtil.set(Flags.HARDCODED_START_VALUES, true)
+  let cpp = CodegenCppOld.translateModel(simCode)
   let()= textFile(fmuWriteOutputHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
   let()= textFile(fmuModelHeaderFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.h')
   let()= textFile(fmuModelCppFile(simCode, extraFuncs, extraFuncsDecl, "",guid, FMUVersion), 'OMCpp<%fileNamePrefix%>FMU.cpp')
@@ -83,6 +83,8 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(fmudeffile(simCode, FMUVersion), '<%fileNamePrefix%>.def')
   let()= textFile(fmuMakefile(target,simCode, extraFuncs, extraFuncsDecl, "", FMUVersion, "", "", "", ""), '<%fileNamePrefix%>_FMU.makefile')
   let()= textFile(fmuCalcHelperMainfile(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
+  let _ = FlagsUtil.set(Flags.HARDCODED_START_VALUES, false)
+
  ""
    // Return empty result since result written to files directly
 end translateModel;
@@ -290,7 +292,7 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, algVars=algVa
   // value references of real discrete states and outputs
   unsigned int <%modelShortName%>FMU::_outputRefs[] = {<%algVars |> var =>
     match var case SIMVAR(name=name, type_=T_REAL(), varKind=CLOCKED_STATE())
-      case SIMVAR(name=name, type_=T_REAL(), causality=OUTPUT()) then
+      case SIMVAR(name=name, type_=T_REAL(), causality=SOME(OUTPUT())) then
       intSub(getVariableIndex(cref2simvar(name, simCode)), 1) ;separator=", "%>};
 
   // constructor
@@ -621,7 +623,7 @@ case SIMCODE(modelInfo=MODELINFO(), modelStructure=fmiModelStructure) then
       const unsigned int vrKnown[], size_t nKnown,
       const double dvKnown[], double dvUnknown[])
   {
-  <% if CodegenFMUCommon.providesDirectionalDerivative(simCode) then
+  <% if providesDirectionalDerivative(simCode) then
   <<
     unsigned int idx, *ref_p, ref_1;
     int dimStates = _dimContinuousStates + <%dimDiscreteStates%>;
@@ -861,6 +863,6 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 end fmuMakefile;
 
 annotation(__OpenModelica_Interface="backend");
-end CodegenFMUCpp;
+end CodegenFMUCppOld;
 
 // vim: filetype=susan sw=2 sts=2

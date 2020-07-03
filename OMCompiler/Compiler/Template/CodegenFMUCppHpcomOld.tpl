@@ -116,12 +116,12 @@ template fmuMakefile(String target, SimCode simCode, Text& extraFuncs, Text& ext
   let &additionalLinkerFlags_GCC += if boolOr(stringEq(type,"pthreads"), stringEq(type,"pthreads_spin")) then " -lboost_thread" else ""
 
   <<
-  <%CodegenCppHpcom.getAdditionalMakefileFlags(additionalCFlags_GCC, additionalCFlags_MSVC, additionalLinkerFlags_GCC, additionalLinkerFlags_MSVC)%>
-  <%CodegenFMUCpp.fmuMakefile(target, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, FMUVersion, additionalLinkerFlags_GCC, additionalLinkerFlags_MSVC, additionalCFlags_GCC, additionalCFlags_MSVC)%>
+  <%CodegenCppHpcomOld.getAdditionalMakefileFlags(additionalCFlags_GCC, additionalCFlags_MSVC, additionalLinkerFlags_GCC, additionalLinkerFlags_MSVC)%>
+  <%CodegenFMUCppOld.fmuMakefile(target, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, FMUVersion, additionalLinkerFlags_GCC, additionalLinkerFlags_MSVC, additionalCFlags_GCC, additionalCFlags_MSVC)%>
   >>
 end fmuMakefile;
 
 annotation(__OpenModelica_Interface="backend");
-end CodegenFMUCppHpcom;
+end CodegenFMUCppHpcomOld;
 
 // vim: filetype=susan sw=2 sts=2
