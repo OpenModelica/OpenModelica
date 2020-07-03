@@ -1670,7 +1670,7 @@ void ExpandableConnectorTreeModel::createExpandableConnectorTreeItem(Element *pC
   pParentExpandableConnectorTreeItem->insertChild(row, pExpandableConnectorTreeItem);
   endInsertRows();
   if (pComponent->getLibraryTreeItem()) {
-    foreach (Element *pChildComponent, pComponent->getLibraryTreeItem()->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
+    foreach (Element *pChildComponent, pComponent->getLibraryTreeItem()->getModelWidget()->getDiagramGraphicsView()->getElementsList()) {
       createExpandableConnectorTreeItem(pChildComponent, pExpandableConnectorTreeItem);
     }
   }

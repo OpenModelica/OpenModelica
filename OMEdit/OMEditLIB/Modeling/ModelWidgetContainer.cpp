@@ -164,8 +164,8 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
   mpClickedState = 0;
   setIsMovingComponentsAndShapes(false);
   setRenderingLibraryPixmap(false);
-  mComponentsList.clear();
-  mOutOfSceneComponentsList.clear();
+  mElementsList.clear();
+  mOutOfSceneElementsList.clear();
   mConnectionsList.clear();
   mOutOfSceneConnectionsList.clear();
   mTransitionsList.clear();
@@ -174,7 +174,7 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
   mOutOfSceneInitialStatesList.clear();
   mShapesList.clear();
   mOutOfSceneShapesList.clear();
-  mInheritedComponentsList.clear();
+  mInheritedElementsList.clear();
   mInheritedConnectionsList.clear();
   mInheritedShapesList.clear();
   mpConnectionLineAnnotation = 0;
@@ -299,8 +299,8 @@ void GraphicsView::setDragModeInternal(bool enable, bool updateCursor)
 void GraphicsView::setItemsFlags(bool enable)
 {
   // set components, shapes and connection flags accordingly
-  foreach(Element *pComponent, mComponentsList) {
-    pComponent->setElementFlags(enable);
+  foreach(Element *pElement, mElementsList) {
+    pElement->setElementFlags(enable);
   }
   foreach(ShapeAnnotation *pShapeAnnotation, mShapesList){
     pShapeAnnotation->setShapeFlags(enable);
@@ -344,7 +344,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
       if (isClassDroppedOnItself(pLibraryTreeItem)) {
         return false;
       }
-      QString name = getUniqueComponentName(StringHandler::toCamelCase(pLibraryTreeItem->getName()));
+      QString name = getUniqueElementName(StringHandler::toCamelCase(pLibraryTreeItem->getName()));
       ElementInfo *pComponentInfo = new ElementInfo;
       QFileInfo fileInfo(pLibraryTreeItem->getFileName());
       // create StartCommand depending on the external model file extension.
@@ -396,9 +396,9 @@ bool GraphicsView::addComponent(QString className, QPointF position)
       QString defaultName = pMainWindow->getOMCProxy()->getDefaultComponentName(pLibraryTreeItem->getNameStructure());
       QString name;
       if (!defaultName.isEmpty()) {
-        name = getUniqueComponentName(StringHandler::toCamelCase(defaultName));
+        name = getUniqueElementName(StringHandler::toCamelCase(defaultName));
       } else {
-        name = getUniqueComponentName(StringHandler::toCamelCase(pLibraryTreeItem->getName()));
+        name = getUniqueElementName(StringHandler::toCamelCase(pLibraryTreeItem->getName()));
       }
       // Allow user to change the component name if always ask for component name settings is true.
       if (pOptionsDialog->getNotificationsPage()->getAlwaysAskForDraggedComponentName()->isChecked()) {
@@ -485,7 +485,7 @@ void GraphicsView::addComponentToView(QString name, LibraryTreeItem *pLibraryTre
   }
 }
 
-void GraphicsView::addComponentToClass(Element *pComponent)
+void GraphicsView::addElementToClass(Element *pElement)
 {
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::Modelica) {
     MainWindow *pMainWindow = MainWindow::instance();
@@ -494,11 +494,11 @@ void GraphicsView::addComponentToClass(Element *pComponent)
      * Always send the full path so that addComponent API doesn't fail when it makes a call to getDefaultPrefixes.
      * I updated the addComponent API to make path relative.
      */
-    pMainWindow->getOMCProxy()->addComponent(pComponent->getName(), pComponent->getComponentInfo()->getClassName(),
-                                             mpModelWidget->getLibraryTreeItem()->getNameStructure(), pComponent->getPlacementAnnotation());
+    pMainWindow->getOMCProxy()->addComponent(pElement->getName(), pElement->getComponentInfo()->getClassName(),
+                                             mpModelWidget->getLibraryTreeItem()->getNameStructure(), pElement->getPlacementAnnotation());
     LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
     // get the toplevel class of dragged component
-    QString packageName = StringHandler::getFirstWordBeforeDot(pComponent->getLibraryTreeItem()->getNameStructure());
+    QString packageName = StringHandler::getFirstWordBeforeDot(pElement->getLibraryTreeItem()->getNameStructure());
     LibraryTreeItem *pPackageLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(packageName);
     // get the top level class of current class
     QString topLevelClassName = StringHandler::getFirstWordBeforeDot(mpModelWidget->getLibraryTreeItem()->getNameStructure());
@@ -526,13 +526,13 @@ void GraphicsView::addComponentToClass(Element *pComponent)
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
     // add SubModel Element
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
-    pCompositeModelEditor->addSubModel(pComponent);
+    pCompositeModelEditor->addSubModel(pElement);
     /* We need to iterate over Component childrens
      * because if user deletes a submodel for which interfaces are already fetched
      * then undoing the delete operation reaches here and we should add the interfaces back.
      */
-    foreach (Element *pInterfaceComponent, pComponent->getElementsList()) {
-      pCompositeModelEditor->addInterface(pInterfaceComponent, pComponent->getName());
+    foreach (Element *pInterfaceComponent, pElement->getElementsList()) {
+      pCompositeModelEditor->addInterface(pInterfaceComponent, pElement->getName());
     }
   }
 }
@@ -542,9 +542,9 @@ void GraphicsView::addComponentToClass(Element *pComponent)
  * Delete the component and its corresponding connections from the components list and OMC.
  * \param component is the object to be deleted.
  */
-void GraphicsView::deleteComponent(Element *pComponent)
+void GraphicsView::deleteElement(Element *pElement)
 {
-  // First Remove the connections associated to this component
+  // First Remove the connections associated to this element
   int i = 0;
   while(i != mConnectionsList.size()) {
     QString startComponentName = StringHandler::getFirstWordBeforeDot(mConnectionsList[i]->getStartComponentName());
@@ -555,100 +555,100 @@ void GraphicsView::deleteComponent(Element *pComponent)
     if (endComponentName.contains("[")) {
       endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
     }
-    if (startComponentName == pComponent->getName() || endComponentName == pComponent->getName()) {
+    if (startComponentName == pElement->getName() || endComponentName == pElement->getName()) {
       deleteConnection(mConnectionsList[i]);
       i = 0;   //Restart iteration if map has changed
     } else {
       ++i;
     }
   }
-  pComponent->setSelected(false);
+  pElement->setSelected(false);
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-    OMSProxy::instance()->omsDelete(pComponent->getLibraryTreeItem()->getNameStructure());
-    pComponent->emitDeleted();
+    OMSProxy::instance()->omsDelete(pElement->getLibraryTreeItem()->getNameStructure());
+    pElement->emitDeleted();
   } else {
-    mpModelWidget->getUndoStack()->push(new DeleteComponentCommand(pComponent, this));
+    mpModelWidget->getUndoStack()->push(new DeleteComponentCommand(pElement, this));
   }
 }
 
 /*!
- * \brief GraphicsView::deleteComponentObject
- * Deletes the Component.
+ * \brief GraphicsView::deleteElementObject
+ * Deletes the Element.
  * \param pComponent
  */
-void GraphicsView::deleteComponentFromClass(Element *pComponent)
+void GraphicsView::deleteElementFromClass(Element *pElement)
 {
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     // delete the component from OMC
-    pOMCProxy->deleteComponent(pComponent->getName(), mpModelWidget->getLibraryTreeItem()->getNameStructure());
+    pOMCProxy->deleteComponent(pElement->getName(), mpModelWidget->getLibraryTreeItem()->getNameStructure());
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
-    pCompositeModelEditor->deleteSubModel(pComponent->getName());
+    pCompositeModelEditor->deleteSubModel(pElement->getName());
   }
 }
 
 /*!
- * \brief GraphicsView::getComponentObject
- * Finds the Component
+ * \brief GraphicsView::getElementObject
+ * Finds the Element
  * \param componentName
  * \return
  */
-Element* GraphicsView::getComponentObject(QString componentName)
+Element* GraphicsView::getElementObject(QString elementName)
 {
-  // look in inherited components
-  foreach (Element *pInheritedComponent, mInheritedComponentsList) {
-    if (pInheritedComponent->getName().compare(componentName) == 0) {
-      return pInheritedComponent;
+  // look in inherited elements
+  foreach (Element *pInheritedElement, mInheritedElementsList) {
+    if (pInheritedElement->getName().compare(elementName) == 0) {
+      return pInheritedElement;
     }
   }
-  // look in components
-  foreach (Element *pComponent, mComponentsList) {
-    if (pComponent->getName().compare(componentName) == 0) {
-      return pComponent;
+  // look in elements
+  foreach (Element *pElement, mElementsList) {
+    if (pElement->getName().compare(elementName) == 0) {
+      return pElement;
     }
   }
   return 0;
 }
 
 /*!
- * \brief GraphicsView::getUniqueComponentName
- * Creates a unique component name.
+ * \brief GraphicsView::getUniqueElementName
+ * Creates a unique element name.
  * \param componentName
  * \param number
  * \return
  */
-QString GraphicsView::getUniqueComponentName(QString componentName, int number)
+QString GraphicsView::getUniqueElementName(QString elementName, int number)
 {
-  QString name = componentName;
+  QString name = elementName;
   if (number > 0) {
-    name = QString("%1%2").arg(componentName).arg(number);
+    name = QString("%1%2").arg(elementName).arg(number);
   }
 
-  if (!checkComponentName(name)) {
-    name = getUniqueComponentName(componentName, ++number);
+  if (!checkElementName(name)) {
+    name = getUniqueElementName(elementName, ++number);
   }
   return name;
 }
 
 /*!
- * \brief GraphicsView::checkComponentName
- * Checks the component name against the Modelica keywords as well.
- * Checks if the component with the same name already exists or not.
- * \param componentName
+ * \brief GraphicsView::checkElementName
+ * Checks the element name against the Modelica keywords as well.
+ * Checks if the element with the same name already exists or not.
+ * \param elementName
  * \return
  */
-bool GraphicsView::checkComponentName(QString componentName)
+bool GraphicsView::checkElementName(QString elementName)
 {
   // if component name is any keyword of Modelica
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    if (ModelicaHighlighter::getKeywords().contains(componentName)) {
+    if (ModelicaHighlighter::getKeywords().contains(elementName)) {
       return false;
     }
   }
   // if component with same name exists
-  foreach (Element *pComponent, mComponentsList) {
-    if (pComponent->getName().compare(componentName, Qt::CaseSensitive) == 0) {
+  foreach (Element *pElement, mElementsList) {
+    if (pElement->getName().compare(elementName, Qt::CaseSensitive) == 0) {
       return false;
     }
   }
@@ -1209,7 +1209,7 @@ void GraphicsView::clearGraphicsView()
   removeOutOfSceneClassComponents();
   removeInheritedClassShapes();
   removeInheritedClassConnections();
-  removeInheritedClassComponents();
+  removeInheritedClassElements();
   scene()->clear();
   mAllItems.clear();
 }
@@ -1220,14 +1220,14 @@ void GraphicsView::clearGraphicsView()
  */
 void GraphicsView::removeClassComponents()
 {
-  foreach (Element *pComponent, mComponentsList) {
-    pComponent->removeChildren();
-    deleteComponentFromList(pComponent);
-    removeItem(pComponent->getOriginItem());
-    delete pComponent->getOriginItem();
-    removeItem(pComponent);
-    pComponent->emitDeleted();
-    delete pComponent;
+  foreach (Element *pElement, mElementsList) {
+    pElement->removeChildren();
+    deleteElementFromList(pElement);
+    removeItem(pElement->getOriginItem());
+    delete pElement->getOriginItem();
+    removeItem(pElement);
+    pElement->emitDeleted();
+    delete pElement;
   }
 }
 
@@ -1237,9 +1237,9 @@ void GraphicsView::removeClassComponents()
  */
 void GraphicsView::removeOutOfSceneClassComponents()
 {
-  foreach (Element *pComponent, mOutOfSceneComponentsList) {
+  foreach (Element *pComponent, mOutOfSceneElementsList) {
     pComponent->removeChildren();
-    deleteComponentFromOutOfSceneList(pComponent);
+    deleteElementFromOutOfSceneList(pComponent);
     delete pComponent->getOriginItem();
     pComponent->emitDeleted();
     delete pComponent;
@@ -1261,19 +1261,19 @@ void GraphicsView::removeInheritedClassShapes()
 }
 
 /*!
- * \brief GraphicsView::removeInheritedClassComponents
- * Removes all the class inherited components.
+ * \brief GraphicsView::removeInheritedClassElements
+ * Removes all the class inherited elements.
  */
-void GraphicsView::removeInheritedClassComponents()
+void GraphicsView::removeInheritedClassElements()
 {
-  foreach (Element *pComponent, mInheritedComponentsList) {
-    pComponent->removeChildren();
-    deleteInheritedComponentFromList(pComponent);
-    removeItem(pComponent->getOriginItem());
-    delete pComponent->getOriginItem();
-    removeItem(pComponent);
-    pComponent->emitDeleted();
-    delete pComponent;
+  foreach (Element *pElement, mInheritedElementsList) {
+    pElement->removeChildren();
+    deleteInheritedElementFromList(pElement);
+    removeItem(pElement->getOriginItem());
+    delete pElement->getOriginItem();
+    removeItem(pElement);
+    pElement->emitDeleted();
+    delete pElement;
   }
 }
 
@@ -1574,8 +1574,8 @@ void GraphicsView::adjustInitializeDraw(ShapeAnnotation* shapeAnnotation)
 QRectF GraphicsView::itemsBoundingRect()
 {
   QRectF rect;
-  foreach (Element *pComponent, mComponentsList) {
-    rect |= pComponent->itemsBoundingRect();
+  foreach (Element *pElement, mElementsList) {
+    rect |= pElement->itemsBoundingRect();
   }
   foreach (QGraphicsItem *item, mShapesList) {
     if (TextAnnotation *pTextAnnotation = dynamic_cast<TextAnnotation*>(item)) {
@@ -1587,8 +1587,8 @@ QRectF GraphicsView::itemsBoundingRect()
   foreach (QGraphicsItem *item, mConnectionsList) {
     rect |= item->sceneBoundingRect();
   }
-  foreach (Element *pComponent, mInheritedComponentsList) {
-    rect |= pComponent->itemsBoundingRect();
+  foreach (Element *pElement, mInheritedElementsList) {
+    rect |= pElement->itemsBoundingRect();
   }
   foreach (QGraphicsItem *item, mInheritedShapesList) {
     rect |= item->sceneBoundingRect();
@@ -1657,8 +1657,8 @@ bool GraphicsView::hasAnnotation()
   if (!mInheritedShapesList.isEmpty()) {
     return true;
   }
-  foreach (Element *pInheritedComponent, mInheritedComponentsList) {
-    if (pInheritedComponent->hasShapeAnnotation(pInheritedComponent) && pInheritedComponent->isVisible()) {
+  foreach (Element *pInheritedElement, mInheritedElementsList) {
+    if (pInheritedElement->hasShapeAnnotation(pInheritedElement) && pInheritedElement->isVisible()) {
       return true;
     }
   }
@@ -1666,8 +1666,8 @@ bool GraphicsView::hasAnnotation()
   if (!mShapesList.isEmpty()) {
     return true;
   }
-  foreach (Element *pComponent, mComponentsList) {
-    if (pComponent->hasShapeAnnotation(pComponent) && pComponent->isVisible()) {
+  foreach (Element *pElement, mElementsList) {
+    if (pElement->hasShapeAnnotation(pElement) && pElement->isVisible()) {
       return true;
     }
   }
@@ -2800,15 +2800,15 @@ void GraphicsView::pasteItems()
       // paste the components
       foreach (Element *pComponent, pMimeData->getComponents()) {
         QString name = pComponent->getName();
-        if (!checkComponentName(name)) {
-          name = getUniqueComponentName(StringHandler::toCamelCase(pComponent->getLibraryTreeItem()->getName()));
+        if (!checkElementName(name)) {
+          name = getUniqueElementName(StringHandler::toCamelCase(pComponent->getLibraryTreeItem()->getName()));
           renamedComponents.insert(pComponent, name);
         }
         ElementInfo *pComponentInfo = new ElementInfo(pComponent->getComponentInfo());
         pComponentInfo->setName(name);
         addComponentToView(name, pComponent->getLibraryTreeItem(), pComponent->getOMCPlacementAnnotation(QPointF(0, 0)), QPointF(0, 0), pComponentInfo, true, true, true);
-        Element *pNewComponent = mComponentsList.last();
-        pNewComponent->setSelected(true);
+        Element *pNewElement = mElementsList.last();
+        pNewElement->setSelected(true);
       }
       // paste the connections
       foreach (LineAnnotation *pConnectionLineAnnotation, pMimeData->getConnections()) {
@@ -3288,9 +3288,9 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
     // this flag is just used to have separate identity for if statement in mouse release event of graphicsview
     setIsMovingComponentsAndShapes(true);
     // save the position of all components
-    foreach (Element *pComponent, mComponentsList) {
-      pComponent->setOldPosition(pComponent->pos());
-      pComponent->setOldScenePosition(pComponent->scenePos());
+    foreach (Element *pElement, mElementsList) {
+      pElement->setOldPosition(pElement->pos());
+      pElement->setOldScenePosition(pElement->scenePos());
     }
     // save the position of all shapes
     foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
@@ -3425,17 +3425,17 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
     bool hasComponentMoved = false;
     bool hasShapeMoved = false;
     bool beginMacro = false;
-    // if component position is really changed then update component annotation
-    foreach (Element *pComponent, mComponentsList) {
-      if (pComponent->getOldPosition() != pComponent->pos()) {
+    // if component position is really changed then update element annotation
+    foreach (Element *pElement, mElementsList) {
+      if (pElement->getOldPosition() != pElement->pos()) {
         if (!beginMacro) {
           mpModelWidget->beginMacro("Move items by mouse");
           beginMacro = true;
         }
-        Transformation oldTransformation = pComponent->mTransformation;
-        QPointF positionDifference = pComponent->scenePos() - pComponent->getOldScenePosition();
-        pComponent->mTransformation.adjustPosition(positionDifference.x(), positionDifference.y());
-        pComponent->updateComponentTransformations(oldTransformation, true);
+        Transformation oldTransformation = pElement->mTransformation;
+        QPointF positionDifference = pElement->scenePos() - pElement->getOldScenePosition();
+        pElement->mTransformation.adjustPosition(positionDifference.x(), positionDifference.y());
+        pElement->updateComponentTransformations(oldTransformation, true);
         hasComponentMoved = true;
       }
     }
@@ -4350,14 +4350,14 @@ void ModelWidget::reDrawModelWidgetInheritedClasses()
   drawModelInheritedClassShapes(this, StringHandler::Icon);
   mpIconGraphicsView->reOrderShapes();
   if (mComponentsLoaded) {
-    mpIconGraphicsView->removeInheritedClassComponents();
+    mpIconGraphicsView->removeInheritedClassElements();
     drawModelInheritedClassComponents(this, StringHandler::Icon);
   }
   if (mDiagramViewLoaded) {
     mpDiagramGraphicsView->removeInheritedClassShapes();
     drawModelInheritedClassShapes(this, StringHandler::Diagram);
     mpDiagramGraphicsView->reOrderShapes();
-    mpDiagramGraphicsView->removeInheritedClassComponents();
+    mpDiagramGraphicsView->removeInheritedClassElements();
     drawModelInheritedClassComponents(this, StringHandler::Diagram);
   }
   if (mConnectionsLoaded) {
@@ -4525,10 +4525,10 @@ LineAnnotation* ModelWidget::createInheritedConnection(LineAnnotation *pConnecti
 }
 
 /*!
- * \brief ModelWidget::loadComponents
- * Loads the model components if they are not loaded before.
+ * \brief ModelWidget::loadElements
+ * Loads the model elements if they are not loaded before.
  */
-void ModelWidget::loadComponents()
+void ModelWidget::loadElements()
 {
   if (!mComponentsLoaded) {
     drawModelInheritedClassComponents(this, StringHandler::Icon);
@@ -4536,8 +4536,8 @@ void ModelWidget::loadComponents()
      * and we want to display them.
      */
     if (mpLibraryTreeItem->getAccess() >= LibraryTreeItem::icon) {
-      getModelComponents();
-      drawModelIconComponents();
+      getModelElements();
+      drawModelIconElements();
     }
     mComponentsLoaded = true;
   }
@@ -4549,7 +4549,7 @@ void ModelWidget::loadComponents()
  */
 void ModelWidget::loadDiagramView()
 {
-  loadComponents();
+  loadElements();
   if (!mDiagramViewLoaded) {
     drawModelInheritedClassShapes(this, StringHandler::Diagram);
     getModelIconDiagramShapes(StringHandler::Diagram);
@@ -4558,7 +4558,7 @@ void ModelWidget::loadDiagramView()
      * and we add them to diagram layer so that we can see and set the parameters in the parameters window.
      */
     if (mpLibraryTreeItem->getAccess() >= LibraryTreeItem::icon) {
-      drawModelDiagramComponents();
+      drawModelDiagramElements();
     }
     mDiagramViewLoaded = true;
     /*! @note The following is not needed if we load the connectors alongwith the icon/diagram annotation.
@@ -4624,7 +4624,7 @@ void ModelWidget::addConnection(QStringList connectionList, QString connectionAn
     if (startComponentName.contains("[")) {
       startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
     }
-    pStartComponent = mpDiagramGraphicsView->getComponentObject(startComponentName);
+    pStartComponent = mpDiagramGraphicsView->getElementObject(startComponentName);
   }
   // get start connector
   Element *pStartConnectorComponent = 0;
@@ -4662,7 +4662,7 @@ void ModelWidget::addConnection(QStringList connectionList, QString connectionAn
     if (endComponentName.contains("[")) {
       endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
     }
-    pEndComponent = mpDiagramGraphicsView->getComponentObject(endComponentName);
+    pEndComponent = mpDiagramGraphicsView->getElementObject(endComponentName);
   }
   // get the end connector
   if (pEndComponent) {
@@ -5149,11 +5149,11 @@ void ModelWidget::reDrawModelWidget()
     drawModelInheritedClassShapes(this, StringHandler::Icon);
     getModelIconDiagramShapes(StringHandler::Icon);
     // clear the components and their annotations
-    mComponentsList.clear();
-    mComponentsAnnotationsList.clear();
+    mElementsList.clear();
+    mElementsAnnotationsList.clear();
     mComponentsLoaded = false;
-    // get the model components
-    loadComponents();
+    // get the model elements
+    loadElements();
     // invalidate the simulation options
     mpLibraryTreeItem->mSimulationOptions.setIsValid(false);
     // update the icon
@@ -5487,7 +5487,7 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
     // write result file header
     resultFile << "\"" << "time\",";
     int nActiveInterfaces = 0;
-    foreach (Element *pSubModelComponent, mpDiagramGraphicsView->getComponentsList()) {
+    foreach (Element *pSubModelComponent, mpDiagramGraphicsView->getElementsList()) {
       foreach (Element *pInterfaceComponent, pSubModelComponent->getComponentsList()) {
         QString name = QString("%1.%2").arg(pSubModelComponent->getName()).arg(pInterfaceComponent->getName());
         /*!
@@ -5513,7 +5513,7 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
     // write just single data for result file
     resultFile << "\n" << "0,";
     nActiveInterfaces = 0;
-    foreach (Element *pSubModelComponent, mpDiagramGraphicsView->getComponentsList()) {
+    foreach (Element *pSubModelComponent, mpDiagramGraphicsView->getElementsList()) {
       foreach (Element *pInterfaceComponent, pSubModelComponent->getComponentsList()) {
         /*!
          * \note Don't check for connection.
@@ -5611,7 +5611,7 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
   }
   // can we write visual xml file.
   if (!canWriteVisualXMLFile) {
-    foreach (Element *pSubModelComponent, mpDiagramGraphicsView->getComponentsList()) {
+    foreach (Element *pSubModelComponent, mpDiagramGraphicsView->getElementsList()) {
       if (!pSubModelComponent->getComponentInfo()->getGeometryFile().isEmpty()) {
         canWriteVisualXMLFile = true;
       }
@@ -5785,7 +5785,7 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
     QColor selectedColor(255, 192, 203); // pink
     int i = 0;
 
-    foreach (Element *pSubModelComponent, mpDiagramGraphicsView->getComponentsList()) {
+    foreach (Element *pSubModelComponent, mpDiagramGraphicsView->getElementsList()) {
       // if no geometry file then continue.
       if (pSubModelComponent->getComponentInfo()->getGeometryFile().isEmpty()) {
         continue;
@@ -6173,7 +6173,7 @@ void ModelWidget::associateBusWithConnector(QString busName, QString connectorNa
   associateBusWithConnector(busName, connectorName, mpIconGraphicsView);
   associateBusWithConnector(busName, connectorName, mpDiagramGraphicsView);
   // get the connector component
-  Element *pConnectorComponent = mpIconGraphicsView->getComponentObject(connectorName);
+  Element *pConnectorComponent = mpIconGraphicsView->getElementObject(connectorName);
   if (pConnectorComponent) {
     pConnectorComponent->emitDeleted();
   }
@@ -6190,7 +6190,7 @@ void ModelWidget::dissociateBusWithConnector(QString busName, QString connectorN
   dissociateBusWithConnector(busName, connectorName, mpIconGraphicsView);
   dissociateBusWithConnector(busName, connectorName, mpDiagramGraphicsView);
   // get the connector component
-  Element *pConnectorComponent = mpIconGraphicsView->getComponentObject(connectorName);
+  Element *pConnectorComponent = mpIconGraphicsView->getElementObject(connectorName);
   if (pConnectorComponent) {
     pConnectorComponent->emitAdded();
   }
@@ -6204,9 +6204,9 @@ void ModelWidget::dissociateBusWithConnector(QString busName, QString connectorN
 void ModelWidget::associateBusWithConnectors(QString busName)
 {
   // get the bus component
-  Element *pIconBusComponent = mpIconGraphicsView->getComponentObject(busName);
+  Element *pIconBusComponent = mpIconGraphicsView->getElementObject(busName);
   associateBusWithConnectors(pIconBusComponent, mpIconGraphicsView);
-  Element *pDiagramBusComponent = mpDiagramGraphicsView->getComponentObject(busName);
+  Element *pDiagramBusComponent = mpDiagramGraphicsView->getElementObject(busName);
   associateBusWithConnectors(pDiagramBusComponent, mpDiagramGraphicsView);
 }
 
@@ -6229,7 +6229,7 @@ QList<QVariant> ModelWidget::toOMSensData()
   const QString modelicaBlocksInterfacesRealInput = "Modelica.Blocks.Interfaces.RealInput";
   const QString modelicaBlocksInterfacesRealOutput = "Modelica.Blocks.Interfaces.RealOutput";
   QList<Element*> pInheritedAndComposedComponents;
-  QList<Element*> pTopMostComponents = mpDiagramGraphicsView->getComponentsList() + mpDiagramGraphicsView->getInheritedElementsList();
+  QList<Element*> pTopMostComponents = mpDiagramGraphicsView->getElementsList() + mpDiagramGraphicsView->getInheritedElementsList();
   for (Element *pComponent : pTopMostComponents) {
     pInheritedAndComposedComponents = pComponent->getComponentsList() + pComponent->getInheritedElementsList();
     pInheritedAndComposedComponents.append(pComponent);
@@ -6560,7 +6560,7 @@ void ModelWidget::drawModelInheritedClassComponents(ModelWidget *pModelWidget, S
       drawModelInheritedClassComponents(pLibraryTreeItem->getModelWidget(), viewType);
       GraphicsView *pInheritedGraphicsView, *pGraphicsView;
       if (viewType == StringHandler::Icon) {
-        pLibraryTreeItem->getModelWidget()->loadComponents();
+        pLibraryTreeItem->getModelWidget()->loadElements();
         pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
         pGraphicsView = mpIconGraphicsView;
       } else {
@@ -6568,37 +6568,37 @@ void ModelWidget::drawModelInheritedClassComponents(ModelWidget *pModelWidget, S
         pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
         pGraphicsView = mpDiagramGraphicsView;
       }
-      foreach (Element *pInheritedComponent, pInheritedGraphicsView->getComponentsList()) {
-        pGraphicsView->addInheritedComponentToList(createInheritedComponent(pInheritedComponent, pGraphicsView));
+      foreach (Element *pInheritedComponent, pInheritedGraphicsView->getElementsList()) {
+        pGraphicsView->addInheritedElementToList(createInheritedComponent(pInheritedComponent, pGraphicsView));
       }
     }
   }
 }
 
 /*!
- * \brief ModelWidget::getModelComponents
- * Gets the components of the model and their annotations.
+ * \brief ModelWidget::getModelElements
+ * Gets the elements of the model and their annotations.
  */
-void ModelWidget::getModelComponents()
+void ModelWidget::getModelElements()
 {
   MainWindow *pMainWindow = MainWindow::instance();
   // get the components
-  mComponentsList = pMainWindow->getOMCProxy()->getComponents(mpLibraryTreeItem->getNameStructure());
+  mElementsList = pMainWindow->getOMCProxy()->getComponents(mpLibraryTreeItem->getNameStructure());
   // get the components annotations
-  if (!mComponentsList.isEmpty()) {
-    mComponentsAnnotationsList = pMainWindow->getOMCProxy()->getComponentAnnotations(mpLibraryTreeItem->getNameStructure());
+  if (!mElementsList.isEmpty()) {
+    mElementsAnnotationsList = pMainWindow->getOMCProxy()->getComponentAnnotations(mpLibraryTreeItem->getNameStructure());
   }
 }
 
 /*!
- * \brief ModelWidget::drawModelIconComponents
- * Draw the components for icon view and place them in the icon GraphicsView.
+ * \brief ModelWidget::drawModelIconElements
+ * Draw the elements for icon view and place them in the icon GraphicsView.
  */
-void ModelWidget::drawModelIconComponents()
+void ModelWidget::drawModelIconElements()
 {
   MainWindow *pMainWindow = MainWindow::instance();
   int i = 0;
-  foreach (ElementInfo *pComponentInfo, mComponentsList) {
+  foreach (ElementInfo *pComponentInfo, mElementsList) {
     // if the component type is one of the builtin type then don't try to load it here. we load it when loading diagram view.
     if (pMainWindow->getOMCProxy()->isBuiltinType(pComponentInfo->getClassName())) {
       i++;
@@ -6615,7 +6615,7 @@ void ModelWidget::drawModelIconComponents()
       if (!pLibraryTreeItem->isNonExisting() && !pLibraryTreeItem->getModelWidget()) {
         pLibraryTreeModel->showModelWidget(pLibraryTreeItem, false);
       }
-      QString annotation = mComponentsAnnotationsList.size() > i ? mComponentsAnnotationsList.at(i) : "";
+      QString annotation = mElementsAnnotationsList.size() > i ? mElementsAnnotationsList.at(i) : "";
       if (StringHandler::getPlacementAnnotation(annotation).isEmpty()) {
         annotation = StringHandler::removeFirstLastCurlBrackets(annotation);
         annotation = QString("{%1, Placement(false,0.0,0.0,-10.0,-10.0,10.0,10.0,0.0,-,-,-,-,-,-,)}").arg(annotation);
@@ -6630,11 +6630,11 @@ void ModelWidget::drawModelIconComponents()
  * \brief ModelWidget::drawModelDiagramComponents
  * Draw the components for diagram view and place them in the diagram GraphicsView.
  */
-void ModelWidget::drawModelDiagramComponents()
+void ModelWidget::drawModelDiagramElements()
 {
   MainWindow *pMainWindow = MainWindow::instance();
   int i = 0;
-  foreach (ElementInfo *pComponentInfo, mComponentsList) {
+  foreach (ElementInfo *pComponentInfo, mElementsList) {
     LibraryTreeItem *pLibraryTreeItem = 0;
     // if the component type is one of the builtin type then don't try to load it.
     if (!pMainWindow->getOMCProxy()->isBuiltinType(pComponentInfo->getClassName())) {
@@ -6652,7 +6652,7 @@ void ModelWidget::drawModelDiagramComponents()
         pLibraryTreeModel->showModelWidget(pLibraryTreeItem, false);
       }
     }
-    QString annotation = mComponentsAnnotationsList.size() > i ? mComponentsAnnotationsList.at(i) : "";
+    QString annotation = mElementsAnnotationsList.size() > i ? mElementsAnnotationsList.at(i) : "";
     if (StringHandler::getPlacementAnnotation(annotation).isEmpty()) {
       annotation = StringHandler::removeFirstLastCurlBrackets(annotation);
       annotation = QString("{%1, Placement(false,0.0,0.0,-10.0,-10.0,10.0,10.0,0.0,-,-,-,-,-,-,)}").arg(annotation);
@@ -6690,7 +6690,7 @@ void ModelWidget::getModelTransitions()
   for (int i = 0 ; i < transitions.size() ; i++) {
     QStringList transition = transitions.at(i);
     // get start component
-    Element *pStartComponent = mpDiagramGraphicsView->getComponentObject(transition.at(0));
+    Element *pStartComponent = mpDiagramGraphicsView->getElementObject(transition.at(0));
     // show error message if start component is not found.
     if (!pStartComponent) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
@@ -6700,7 +6700,7 @@ void ModelWidget::getModelTransitions()
       continue;
     }
     // get end component
-    Element *pEndComponent = mpDiagramGraphicsView->getComponentObject(transition.at(1));
+    Element *pEndComponent = mpDiagramGraphicsView->getElementObject(transition.at(1));
     // show error message if end component is not found.
     if (!pEndComponent) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
@@ -6741,7 +6741,7 @@ void ModelWidget::getModelInitialStates()
   for (int i = 0 ; i < initialStates.size() ; i++) {
     QStringList initialState = initialStates.at(i);
     // get initial state component
-    Element *pInitialStateComponent = mpDiagramGraphicsView->getComponentObject(initialState.at(0));
+    Element *pInitialStateComponent = mpDiagramGraphicsView->getElementObject(initialState.at(0));
     // show error message if initial state component is not found.
     if (!pInitialStateComponent) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
@@ -6775,16 +6775,16 @@ void ModelWidget::getModelInitialStates()
  */
 void ModelWidget::detectMultipleDeclarations()
 {
-  for (int i = 0 ; i < mComponentsList.size() ; i++) {
-    for (int j = 0 ; j < mComponentsList.size() ; j++) {
+  for (int i = 0 ; i < mElementsList.size() ; i++) {
+    for (int j = 0 ; j < mElementsList.size() ; j++) {
       if (i == j) {
         j++;
         continue;
       }
-      if (mComponentsList[i]->getName().compare(mComponentsList[j]->getName()) == 0) {
+      if (mElementsList[i]->getName().compare(mElementsList[j]->getName()) == 0) {
         MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                               GUIMessages::getMessage(GUIMessages::MULTIPLE_DECLARATIONS_COMPONENT)
-                                                              .arg(mComponentsList[i]->getName()),
+                                                              .arg(mElementsList[i]->getName()),
                                                               Helper::scriptingKind, Helper::errorLevel));
         return;
       }
@@ -6890,7 +6890,7 @@ void ModelWidget::getCompositeModelConnections()
     if (startConnectionList.size() < 2) {
       continue;
     }
-    Element *pStartSubModelComponent = mpDiagramGraphicsView->getComponentObject(startConnectionList.at(0));
+    Element *pStartSubModelComponent = mpDiagramGraphicsView->getElementObject(startConnectionList.at(0));
     if (!pStartSubModelComponent) {
       pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                  GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION).arg(startConnectionList.at(0))
@@ -6910,7 +6910,7 @@ void ModelWidget::getCompositeModelConnections()
     if (endConnectionList.size() < 2) {
       continue;
     }
-    Element *pEndSubModelComponent = mpDiagramGraphicsView->getComponentObject(endConnectionList.at(0));
+    Element *pEndSubModelComponent = mpDiagramGraphicsView->getElementObject(endConnectionList.at(0));
     if (!pEndSubModelComponent) {
       pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                  GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION).arg(endConnectionList.at(0))
@@ -7098,13 +7098,13 @@ void ModelWidget::drawOMSElement(LibraryTreeItem *pLibraryTreeItem, const QStrin
     Element *pIconComponent = new Element(pLibraryTreeItem->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo, mpIconGraphicsView);
     mpIconGraphicsView->addItem(pIconComponent);
     mpIconGraphicsView->addItem(pIconComponent->getOriginItem());
-    mpIconGraphicsView->addComponentToList(pIconComponent);
+    mpIconGraphicsView->addElementToList(pIconComponent);
   }
   // add the element to diagram view
   Element *pDiagramComponent = new Element(pLibraryTreeItem->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo, mpDiagramGraphicsView);
   mpDiagramGraphicsView->addItem(pDiagramComponent);
   mpDiagramGraphicsView->addItem(pDiagramComponent->getOriginItem());
-  mpDiagramGraphicsView->addComponentToList(pDiagramComponent);
+  mpDiagramGraphicsView->addElementToList(pDiagramComponent);
 }
 
 /*!
@@ -7123,7 +7123,7 @@ void ModelWidget::drawOMSModelConnections()
         if (startConnectionList.size() < 1) {
           continue;
         }
-        Element *pStartComponent = mpDiagramGraphicsView->getComponentObject(startConnectionList.at(0));
+        Element *pStartComponent = mpDiagramGraphicsView->getElementObject(startConnectionList.at(0));
         if (!pStartComponent) {
           pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
                                                      .arg(startConnectionList.at(0), pConnections[i]->conA), Helper::scriptingKind, Helper::errorLevel));
@@ -7148,7 +7148,7 @@ void ModelWidget::drawOMSModelConnections()
         if (endConnectionList.size() < 1) {
           continue;
         }
-        Element *pEndComponent = mpDiagramGraphicsView->getComponentObject(endConnectionList.at(0));
+        Element *pEndComponent = mpDiagramGraphicsView->getElementObject(endConnectionList.at(0));
         if (!pEndComponent) {
           pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
                                                      .arg(endConnectionList.at(0), pConnections[i]->conB), Helper::scriptingKind, Helper::errorLevel));
@@ -7243,9 +7243,9 @@ void ModelWidget::drawOMSModelConnections()
 void ModelWidget::associateBusWithConnector(QString busName, QString connectorName, GraphicsView *pGraphicsView)
 {
   // get the bus component
-  Element *pBusComponent = pGraphicsView->getComponentObject(busName);
+  Element *pBusComponent = pGraphicsView->getElementObject(busName);
   // get the connector component
-  Element *pConnectorComponent = pGraphicsView->getComponentObject(connectorName);
+  Element *pConnectorComponent = pGraphicsView->getElementObject(connectorName);
   if (pBusComponent && pConnectorComponent) {
     pConnectorComponent->setBusComponent(pBusComponent);
   }
@@ -7261,8 +7261,8 @@ void ModelWidget::associateBusWithConnector(QString busName, QString connectorNa
 void ModelWidget::dissociateBusWithConnector(QString busName, QString connectorName, GraphicsView *pGraphicsView)
 {
   // get the bus component
-  Element *pBusComponent = pGraphicsView->getComponentObject(busName);
-  Element *pConnectorComponent = pGraphicsView->getComponentObject(connectorName);
+  Element *pBusComponent = pGraphicsView->getElementObject(busName);
+  Element *pConnectorComponent = pGraphicsView->getElementObject(connectorName);
   if (pBusComponent && pConnectorComponent) {
     pConnectorComponent->setBusComponent(0);
   }
@@ -7280,7 +7280,7 @@ void ModelWidget::associateBusWithConnectors(Element *pBusComponent, GraphicsVie
     oms_busconnector_t *pBusConnector = pBusComponent->getLibraryTreeItem()->getOMSBusConnector();
     if (pBusConnector->connectors) {
       for (int i = 0 ; pBusConnector->connectors[i] ; i++) {
-        Element *pConnectorComponent = pGraphicsView->getComponentObject(QString(pBusConnector->connectors[i]));
+        Element *pConnectorComponent = pGraphicsView->getElementObject(QString(pBusConnector->connectors[i]));
         if (pConnectorComponent) {
           pConnectorComponent->setBusComponent(pBusComponent);
         }
@@ -7290,7 +7290,7 @@ void ModelWidget::associateBusWithConnectors(Element *pBusComponent, GraphicsVie
     oms_tlmbusconnector_t *pTLMBusConnector = pBusComponent->getLibraryTreeItem()->getOMSTLMBusConnector();
     if (pTLMBusConnector->connectornames) {
       for (int i = 0 ; pTLMBusConnector->connectornames[i] ; i++) {
-        Element *pConnectorComponent = pGraphicsView->getComponentObject(QString(pTLMBusConnector->connectornames[i]));
+        Element *pConnectorComponent = pGraphicsView->getElementObject(QString(pTLMBusConnector->connectornames[i]));
         if (pConnectorComponent) {
           pConnectorComponent->setBusComponent(pBusComponent);
         }
@@ -7925,7 +7925,7 @@ void ModelWidgetContainer::getCurrentModelWidgetSelectedComponents(QStringList *
   ModelWidget *pModelWidget = getCurrentModelWidget();
 
   if (pModelWidget && pModelWidget->getIconGraphicsView()) {
-    foreach (Element *pComponent, pModelWidget->getIconGraphicsView()->getComponentsList()) {
+    foreach (Element *pComponent, pModelWidget->getIconGraphicsView()->getElementsList()) {
       if (pComponent->isSelected()) {
         pIconSelectedItemsList->append(pComponent->getName());
       }
@@ -7933,7 +7933,7 @@ void ModelWidgetContainer::getCurrentModelWidgetSelectedComponents(QStringList *
   }
 
   if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
-    foreach (Element *pComponent, pModelWidget->getDiagramGraphicsView()->getComponentsList()) {
+    foreach (Element *pComponent, pModelWidget->getDiagramGraphicsView()->getElementsList()) {
       if (pComponent->isSelected()) {
         pDiagramSelectedItemsList->append(pComponent->getName());
       }
@@ -7953,7 +7953,7 @@ void ModelWidgetContainer::selectCurrentModelWidgetComponents(QStringList iconSe
 
   if (pModelWidget && pModelWidget->getIconGraphicsView()) {
     foreach (QString iconSelectedItem, iconSelectedItemsList) {
-      Element *pComponent = pModelWidget->getIconGraphicsView()->getComponentObject(iconSelectedItem);
+      Element *pComponent = pModelWidget->getIconGraphicsView()->getElementObject(iconSelectedItem);
       if (pComponent) {
         pComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
         pComponent->setSelected(true);
@@ -7964,7 +7964,7 @@ void ModelWidgetContainer::selectCurrentModelWidgetComponents(QStringList iconSe
 
   if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
     foreach (QString diagramSelectedItem, diagramSelectedItemsList) {
-      Element *pComponent = pModelWidget->getDiagramGraphicsView()->getComponentObject(diagramSelectedItem);
+      Element *pComponent = pModelWidget->getDiagramGraphicsView()->getElementObject(diagramSelectedItem);
       if (pComponent) {
         pComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
         pComponent->setSelected(true);

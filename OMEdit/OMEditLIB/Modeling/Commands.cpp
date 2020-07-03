@@ -258,19 +258,19 @@ void AddComponentCommand::redoInternal()
     // Connector type components exists on icon view as well
     mpIconGraphicsView->addItem(mpIconComponent);
     mpIconGraphicsView->addItem(mpIconComponent->getOriginItem());
-    mpIconGraphicsView->addComponentToList(mpIconComponent);
-    mpIconGraphicsView->deleteComponentFromOutOfSceneList(mpIconComponent);
+    mpIconGraphicsView->addElementToList(mpIconComponent);
+    mpIconGraphicsView->deleteElementFromOutOfSceneList(mpIconComponent);
     mpIconComponent->emitAdded();
     // hide the component if it is connector and is protected
     mpIconComponent->setVisible(!mpComponentInfo->getProtected());
   }
   mpDiagramGraphicsView->addItem(mpDiagramComponent);
   mpDiagramGraphicsView->addItem(mpDiagramComponent->getOriginItem());
-  mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
-  mpDiagramGraphicsView->deleteComponentFromOutOfSceneList(mpDiagramComponent);
+  mpDiagramGraphicsView->addElementToList(mpDiagramComponent);
+  mpDiagramGraphicsView->deleteElementFromOutOfSceneList(mpDiagramComponent);
   mpDiagramComponent->emitAdded();
   if (mAddObject) {
-    mpDiagramGraphicsView->addComponentToClass(mpDiagramComponent);
+    mpDiagramGraphicsView->addElementToClass(mpDiagramComponent);
     UpdateComponentAttributesCommand::updateComponentModifiers(mpDiagramComponent, *mpDiagramComponent->getComponentInfo());
   }
 }
@@ -287,16 +287,16 @@ void AddComponentCommand::undo()
     // Connector type components exists on icon view as well
     mpIconGraphicsView->removeItem(mpIconComponent);
     mpIconGraphicsView->removeItem(mpIconComponent->getOriginItem());
-    mpIconGraphicsView->deleteComponentFromList(mpIconComponent);
-    mpIconGraphicsView->addComponentToOutOfSceneList(mpIconComponent);
+    mpIconGraphicsView->deleteElementFromList(mpIconComponent);
+    mpIconGraphicsView->addElementToOutOfSceneList(mpIconComponent);
     mpIconComponent->emitDeleted();
   }
   mpDiagramGraphicsView->removeItem(mpDiagramComponent);
   mpDiagramGraphicsView->removeItem(mpDiagramComponent->getOriginItem());
-  mpDiagramGraphicsView->deleteComponentFromList(mpDiagramComponent);
-  mpDiagramGraphicsView->addComponentToOutOfSceneList(mpDiagramComponent);
+  mpDiagramGraphicsView->deleteElementFromList(mpDiagramComponent);
+  mpDiagramGraphicsView->addElementToOutOfSceneList(mpDiagramComponent);
   mpDiagramComponent->emitDeleted();
-  mpDiagramGraphicsView->deleteComponentFromClass(mpDiagramComponent);
+  mpDiagramGraphicsView->deleteElementFromClass(mpDiagramComponent);
 }
 
 UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommand(Element *pComponent, const Transformation &oldTransformation, const Transformation &newTransformation,
@@ -326,7 +326,7 @@ void UpdateComponentTransformationsCommand::redoInternal()
     } else {
       pGraphicsView = pModelWidget->getIconGraphicsView();
     }
-    Element *pComponent = pGraphicsView->getComponentObject(mpComponent->getName());
+    Element *pComponent = pGraphicsView->getElementObject(mpComponent->getName());
     if (pComponent && (mOldTransformation == pComponent->mTransformation)) {
       pComponent->resetTransform();
       bool state = pComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
@@ -364,7 +364,7 @@ void UpdateComponentTransformationsCommand::undo()
     } else {
       pGraphicsView = pModelWidget->getIconGraphicsView();
     }
-    Element *pComponent = pGraphicsView->getComponentObject(mpComponent->getName());
+    Element *pComponent = pGraphicsView->getElementObject(mpComponent->getName());
     if (pComponent && (mpComponent->mTransformation == pComponent->mTransformation)) {
       pComponent->resetTransform();
       bool state = pComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
@@ -453,7 +453,7 @@ void UpdateComponentAttributesCommand::updateComponentAttributes(Element *pCompo
       }
     } else {
       Element *pIconComponent = 0;
-      pIconComponent = pComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getComponentObject(pComponent->getName());
+      pIconComponent = pComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getElementObject(pComponent->getName());
       if (pIconComponent) {
         if (pIconComponent->getComponentInfo()->getProtected()) {
           pIconComponent->setVisible(false);
@@ -478,13 +478,13 @@ void UpdateComponentAttributesCommand::updateComponentAttributes(Element *pCompo
       if (pComponent->getLibraryTreeItem()->isConnector()) {
         if (pComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
           Element *pDiagramComponent = 0;
-          pDiagramComponent = pComponent->getGraphicsView()->getModelWidget()->getDiagramGraphicsView()->getComponentObject(pComponent->getName());
+          pDiagramComponent = pComponent->getGraphicsView()->getModelWidget()->getDiagramGraphicsView()->getElementObject(pComponent->getName());
           if (pDiagramComponent) {
             pDiagramComponent->componentCommentHasChanged();
           }
         } else {
           Element *pIconComponent = 0;
-          pIconComponent = pComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getComponentObject(pComponent->getName());
+          pIconComponent = pComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getElementObject(pComponent->getName());
           if (pIconComponent) {
             pIconComponent->componentCommentHasChanged();
           }
@@ -506,13 +506,13 @@ void UpdateComponentAttributesCommand::updateComponentAttributes(Element *pCompo
       if (pComponent->getLibraryTreeItem()->isConnector()) {
         if (pComponent->getGraphicsView()->getViewType() == StringHandler::Icon) {
           Element *pDiagramComponent = 0;
-          pDiagramComponent = pComponent->getGraphicsView()->getModelWidget()->getDiagramGraphicsView()->getComponentObject(pComponent->getName());
+          pDiagramComponent = pComponent->getGraphicsView()->getModelWidget()->getDiagramGraphicsView()->getElementObject(pComponent->getName());
           if (pDiagramComponent) {
             pDiagramComponent->componentNameHasChanged();
           }
         } else {
           Element *pIconComponent = 0;
-          pIconComponent = pComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getComponentObject(pComponent->getName());
+          pIconComponent = pComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getElementObject(pComponent->getName());
           if (pIconComponent) {
             pIconComponent->componentNameHasChanged();
           }
@@ -681,21 +681,21 @@ void DeleteComponentCommand::redoInternal()
     } else {
       pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
     }
-    Element *pComponent = pGraphicsView->getComponentObject(mpComponent->getName());
+    Element *pComponent = pGraphicsView->getElementObject(mpComponent->getName());
     if (pComponent) {
       pGraphicsView->removeItem(pComponent);
       pGraphicsView->removeItem(pComponent->getOriginItem());
-      pGraphicsView->deleteComponentFromList(pComponent);
-      pGraphicsView->addComponentToOutOfSceneList(pComponent);
+      pGraphicsView->deleteElementFromList(pComponent);
+      pGraphicsView->addElementToOutOfSceneList(pComponent);
       pComponent->emitDeleted();
     }
   }
   mpGraphicsView->removeItem(mpComponent);
   mpGraphicsView->removeItem(mpComponent->getOriginItem());
-  mpGraphicsView->deleteComponentFromList(mpComponent);
-  mpGraphicsView->addComponentToOutOfSceneList(mpComponent);
+  mpGraphicsView->deleteElementFromList(mpComponent);
+  mpGraphicsView->addElementToOutOfSceneList(mpComponent);
   mpComponent->emitDeleted();
-  mpGraphicsView->deleteComponentFromClass(mpComponent);
+  mpGraphicsView->deleteElementFromClass(mpComponent);
 }
 
 /*!
@@ -714,21 +714,21 @@ void DeleteComponentCommand::undo()
     } else {
       pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
     }
-    Element *pComponent = pGraphicsView->getComponentObject(mpComponent->getName());
+    Element *pComponent = pGraphicsView->getElementObject(mpComponent->getName());
     if (pComponent) {
       pGraphicsView->addItem(pComponent);
       pGraphicsView->addItem(pComponent->getOriginItem());
-      pGraphicsView->addComponentToList(pComponent);
-      pGraphicsView->deleteComponentFromOutOfSceneList(pComponent);
+      pGraphicsView->addElementToList(pComponent);
+      pGraphicsView->deleteElementFromOutOfSceneList(pComponent);
       pComponent->emitAdded();
     }
   }
   mpGraphicsView->addItem(mpComponent);
   mpGraphicsView->addItem(mpComponent->getOriginItem());
-  mpGraphicsView->addComponentToList(mpComponent);
-  mpGraphicsView->deleteComponentFromOutOfSceneList(mpComponent);
+  mpGraphicsView->addElementToList(mpComponent);
+  mpGraphicsView->deleteElementFromOutOfSceneList(mpComponent);
   mpComponent->emitAdded();
-  mpGraphicsView->addComponentToClass(mpComponent);
+  mpGraphicsView->addElementToClass(mpComponent);
   UpdateComponentAttributesCommand::updateComponentModifiers(mpComponent, *mpComponent->getComponentInfo());
   // Restore sub-model parameters for composite models
   if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {

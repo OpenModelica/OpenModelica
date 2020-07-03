@@ -109,9 +109,9 @@ private:
   Element *mpClickedState;
   bool mIsMovingComponentsAndShapes;
   bool mRenderingLibraryPixmap;
-  QList<Element*> mComponentsList;
+  QList<Element*> mElementsList;
   // A list of components that are not deleted but are removed from scene.
-  QList<Element*> mOutOfSceneComponentsList;
+  QList<Element*> mOutOfSceneElementsList;
   QList<LineAnnotation*> mConnectionsList;
   QList<LineAnnotation*> mOutOfSceneConnectionsList;
   QList<LineAnnotation*> mTransitionsList;
@@ -120,7 +120,7 @@ private:
   QList<LineAnnotation*> mOutOfSceneInitialStatesList;
   QList<ShapeAnnotation*> mShapesList;
   QList<ShapeAnnotation*> mOutOfSceneShapesList;
-  QList<Element*> mInheritedComponentsList;
+  QList<Element*> mInheritedElementsList;
   QList<LineAnnotation*> mInheritedConnectionsList;
   QList<ShapeAnnotation*> mInheritedShapesList;
   LineAnnotation *mpConnectionLineAnnotation;
@@ -208,20 +208,20 @@ public:
   bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
                           ElementInfo *pComponentInfo, bool addObject, bool openingClass, bool emitComponentAdded);
-  void addComponentToList(Element *pComponent) {mComponentsList.append(pComponent);}
-  void addComponentToOutOfSceneList(Element *pComponent) {mOutOfSceneComponentsList.append(pComponent);}
-  void addInheritedComponentToList(Element *pComponent) {mInheritedComponentsList.append(pComponent);}
-  void addComponentToClass(Element *pComponent);
-  void deleteComponent(Element *pComponent);
-  void deleteComponentFromClass(Element *pComponent);
-  void deleteComponentFromList(Element *pComponent) {mComponentsList.removeOne(pComponent);}
-  void deleteComponentFromOutOfSceneList(Element *pComponent) {mOutOfSceneComponentsList.removeOne(pComponent);}
-  void deleteInheritedComponentFromList(Element *pComponent) {mInheritedComponentsList.removeOne(pComponent);}
-  Element* getComponentObject(QString componentName);
-  QString getUniqueComponentName(QString componentName, int number = 0);
-  bool checkComponentName(QString componentName);
-  QList<Element*> getComponentsList() {return mComponentsList;}
-  QList<Element*> getInheritedElementsList() {return mInheritedComponentsList;}
+  void addElementToList(Element *pElement) {mElementsList.append(pElement);}
+  void addElementToOutOfSceneList(Element *pElement) {mOutOfSceneElementsList.append(pElement);}
+  void addInheritedElementToList(Element *pElement) {mInheritedElementsList.append(pElement);}
+  void addElementToClass(Element *pElement);
+  void deleteElement(Element *pElement);
+  void deleteElementFromClass(Element *pElement);
+  void deleteElementFromList(Element *pElement) {mElementsList.removeOne(pElement);}
+  void deleteElementFromOutOfSceneList(Element *pElement) {mOutOfSceneElementsList.removeOne(pElement);}
+  void deleteInheritedElementFromList(Element *pElement) {mInheritedElementsList.removeOne(pElement);}
+  Element* getElementObject(QString elementName);
+  QString getUniqueElementName(QString elementName, int number = 0);
+  bool checkElementName(QString elementName);
+  QList<Element*> getElementsList() {return mElementsList;}
+  QList<Element*> getInheritedElementsList() {return mInheritedElementsList;}
   QList<LineAnnotation*> getConnectionsList() {return mConnectionsList;}
   QList<LineAnnotation*> getInheritedConnectionsList() {return mInheritedConnectionsList;}
   void addConnectionToView(LineAnnotation *pConnectionLineAnnotation);
@@ -269,7 +269,7 @@ public:
   void removeClassComponents();
   void removeOutOfSceneClassComponents();
   void removeInheritedClassShapes();
-  void removeInheritedClassComponents();
+  void removeInheritedClassElements();
   void removeInheritedClassConnections();
   void removeAllShapes() {mShapesList.clear();}
   void removeOutOfSceneShapes();
@@ -522,7 +522,7 @@ public:
   QList<LibraryTreeItem*> getInheritedClassesList() {return mInheritedClassesList;}
   QMap<int, IconDiagramMap> getInheritedClassIconMap() {return mInheritedClassesIconMap;}
   QMap<int, IconDiagramMap> getInheritedClassDiagramMap() {return mInheritedClassesDiagramMap;}
-  const QList<ElementInfo*> &getComponentsList() {return mComponentsList;}
+  const QList<ElementInfo*> &getComponentsList() {return mElementsList;}
   QMap<QString, QString> getExtendsModifiersMap(QString extendsClass);
   QMap<QString, QString> getDerivedClassModifiersMap();
   void fetchExtendsModifiers(QString extendsClass);
@@ -533,7 +533,7 @@ public:
   static ShapeAnnotation* createInheritedShape(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   Element* createInheritedComponent(Element *pComponent, GraphicsView *pGraphicsView);
   LineAnnotation* createInheritedConnection(LineAnnotation *pConnectionLineAnnotation);
-  void loadComponents();
+  void loadElements();
   void loadDiagramView();
   void loadConnections();
   void getModelConnections();
@@ -598,8 +598,8 @@ private:
   QList<LibraryTreeItem*> mInheritedClassesList;
   QMap<int, IconDiagramMap> mInheritedClassesIconMap;
   QMap<int, IconDiagramMap> mInheritedClassesDiagramMap;
-  QList<ElementInfo*> mComponentsList;
-  QStringList mComponentsAnnotationsList;
+  QList<ElementInfo*> mElementsList;
+  QStringList mElementsAnnotationsList;
 
   void createUndoStack();
   void handleCanUndoRedoChanged();
@@ -609,9 +609,9 @@ private:
   void getModelIconDiagramShapes(StringHandler::ViewType viewType);
   void readCoOrdinateSystemFromInheritedClass(ModelWidget *pModelWidget, GraphicsView *pGraphicsView);
   void drawModelInheritedClassComponents(ModelWidget *pModelWidget, StringHandler::ViewType viewType);
-  void getModelComponents();
-  void drawModelIconComponents();
-  void drawModelDiagramComponents();
+  void getModelElements();
+  void drawModelIconElements();
+  void drawModelDiagramElements();
   void drawModelInheritedClassConnections(ModelWidget *pModelWidget);
   void getModelTransitions();
   void getModelInitialStates();

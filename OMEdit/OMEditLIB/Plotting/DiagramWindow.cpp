@@ -84,21 +84,39 @@ void DiagramWindow::drawDiagram(ModelWidget *pModelWidget)
     mpGraphicsView->mMergedCoOrdinateSystem = pModelWidget->getDiagramGraphicsView()->mMergedCoOrdinateSystem;
     mpGraphicsView->setExtentRectangle(pModelWidget->getDiagramGraphicsView()->mMergedCoOrdinateSystem.getExtentRectangle());
     mpMainLayout->addWidget(mpGraphicsView);
-
+    // draw inherited shapes
+    foreach (ShapeAnnotation *pReferenceShapeAnnotation, pModelWidget->getDiagramGraphicsView()->getInheritedShapesList()) {
+      ShapeAnnotation *pShapeAnnotation = ModelWidget::createInheritedShape(pReferenceShapeAnnotation, mpGraphicsView);
+      mpGraphicsView->addShapeToList(pShapeAnnotation);
+      connect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)), pShapeAnnotation, SLOT(updateDynamicSelect(double)));
+    }
+    // draw shapes
     foreach (ShapeAnnotation *pReferenceShapeAnnotation, pModelWidget->getDiagramGraphicsView()->getShapesList()) {
       ShapeAnnotation *pShapeAnnotation = ModelWidget::createInheritedShape(pReferenceShapeAnnotation, mpGraphicsView);
       mpGraphicsView->addShapeToList(pShapeAnnotation);
-      connect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)),
-              pShapeAnnotation, SLOT(updateDynamicSelect(double)));
+      connect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)), pShapeAnnotation, SLOT(updateDynamicSelect(double)));
     }
-
-    foreach (Element *pReferenceComponent, pModelWidget->getDiagramGraphicsView()->getComponentsList()) {
-      Element *pComponent = new Element(pReferenceComponent, mpGraphicsView);
-      mpGraphicsView->addComponentToList(pComponent);
-      connect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)),
-              pComponent, SLOT(updateDynamicSelect(double)));
+    // draw inherited elements
+    foreach (Element *pReferenceComponent, pModelWidget->getDiagramGraphicsView()->getInheritedElementsList()) {
+      Element *pElement = new Element(pReferenceComponent, mpGraphicsView);
+      mpGraphicsView->addElementToList(pElement);
+      connect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)), pElement, SLOT(updateDynamicSelect(double)));
     }
-
+    // draw elements
+    foreach (Element *pReferenceComponent, pModelWidget->getDiagramGraphicsView()->getElementsList()) {
+      Element *pElement = new Element(pReferenceComponent, mpGraphicsView);
+      mpGraphicsView->addElementToList(pElement);
+      connect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)), pElement, SLOT(updateDynamicSelect(double)));
+    }
+    // draw inherited connections
+    foreach (LineAnnotation *pConnectionLineAnnotation, pModelWidget->getDiagramGraphicsView()->getInheritedConnectionsList()) {
+      LineAnnotation *pNewConnectionLineAnnotation = new LineAnnotation(pConnectionLineAnnotation, mpGraphicsView);
+      pNewConnectionLineAnnotation->drawCornerItems();
+      pNewConnectionLineAnnotation->setCornerItemsActiveOrPassive();
+      pNewConnectionLineAnnotation->applyTransformation();
+      mpGraphicsView->addConnectionToList(pNewConnectionLineAnnotation);
+    }
+    // draw connections
     foreach (LineAnnotation *pConnectionLineAnnotation, pModelWidget->getDiagramGraphicsView()->getConnectionsList()) {
       LineAnnotation *pNewConnectionLineAnnotation = new LineAnnotation(pConnectionLineAnnotation, mpGraphicsView);
       pNewConnectionLineAnnotation->drawCornerItems();
@@ -106,7 +124,7 @@ void DiagramWindow::drawDiagram(ModelWidget *pModelWidget)
       pNewConnectionLineAnnotation->applyTransformation();
       mpGraphicsView->addConnectionToList(pNewConnectionLineAnnotation);
     }
-
+    // draw transitions
     foreach (LineAnnotation *pTransitionLineAnnotation, pModelWidget->getDiagramGraphicsView()->getTransitionsList()) {
       LineAnnotation *pNewTransitionLineAnnotation = new LineAnnotation(pTransitionLineAnnotation, mpGraphicsView);
       pNewTransitionLineAnnotation->updateToolTip();
