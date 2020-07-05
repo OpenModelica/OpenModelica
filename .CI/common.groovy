@@ -167,7 +167,7 @@ void buildOMC(CC, CXX, extraFlags) {
      echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
      echo cd \${MSYS_WORKSPACE}
      echo export MAKETHREADS=-j16
-     echo set -e
+     echo set -ex
      echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
      echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/build/lib/omlibrary"
      echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omc testsuite-depends
@@ -183,7 +183,7 @@ void buildOMC(CC, CXX, extraFlags) {
      echo export PATH=\$PATH:../build/bin/:../build/lib/omc/omsicpp:../build/lib/omc/cpp
      echo ./M
      echo ./M -l=1.0
-     echo ls linear_M.m
+     echo ls linearized_model.m
      echo ls M.fmu
      echo rm -rf M* OMCppM* linear_M*
      echo ../build/bin/omc --simCodeTarget=Cpp testSanity.mos
@@ -210,7 +210,7 @@ void buildOMC(CC, CXX, extraFlags) {
      echo export PATH=\$PATH:../build/bin/:../build/lib/omc/omsicpp:../build/lib/omc/cpp
      echo ./M
      echo ./M -l=1.0
-     echo ls linear_M.m
+     echo ls linearized_model.m
      echo ls M.fmu
      echo rm -rf M* OMCppM* linear_M*
      echo ../build/bin/omc --simCodeTarget=Cpp testSanity.mos
