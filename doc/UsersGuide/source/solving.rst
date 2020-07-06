@@ -158,6 +158,142 @@ with :ref:`SUNDIALS/IDA <sundials_ida>` integrator and with enabled
 automatically by default, when a simulation run is started.
 
 
+.. _initialization :
+
+Initialization
+--------------
+
+To simulate an ODE representation of an Modelica model with one of the methods
+shown in :ref:`cruntime-integration-methods` a valid initial state is needed.
+Equations from an initial equation or initial algorithm block define a desired
+initial system.
+
+Choosing start values
+~~~~~~~~~~~~
+
+Only non-linear iteration variables in non-linear strong components require
+start values. All other start values will have no influence on convergence of
+the initial system.
+
+Use `-d=initialization` to show additional information from the initialization
+process. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call
+setCommandLineOptions("-d=initialization")
+
+.. figure :: media/piston.png
+
+  piston.mo
+
+.. omc-loadstring ::
+
+model piston
+  Modelica.Mechanics.MultiBody.Parts.Fixed fixed1 annotation(
+    Placement(visible = true, transformation(origin = {-80, 70}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Mechanics.MultiBody.Parts.Body body1(m = 1)  annotation(
+    Placement(visible = true, transformation(origin = {30, 70}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Mechanics.MultiBody.Parts.FixedTranslation fixedTranslation1(r = {0.3, 0, 0})  annotation(
+    Placement(visible = true, transformation(origin = {-10, 70}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Mechanics.MultiBody.Parts.FixedTranslation fixedTranslation2(r = {0.8, 0, 0})  annotation(
+    Placement(visible = true, transformation(origin = {10, 20}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
+  Modelica.Mechanics.MultiBody.Parts.Fixed fixed2(animation = false, r = {1.1, 0, 0})  annotation(
+    Placement(visible = true, transformation(origin = {70, -60}, extent = {{-10, -10}, {10, 10}}, rotation = 180)));
+  Modelica.Mechanics.MultiBody.Parts.Body body2(m = 1)  annotation(
+    Placement(visible = true, transformation(origin = {30, -30}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  inner Modelica.Mechanics.MultiBody.World world annotation(
+    Placement(visible = true, transformation(origin = {-70, -50}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Mechanics.MultiBody.Joints.Prismatic prismatic(animation = true)  annotation(
+    Placement(visible = true, transformation(origin = {30, -60}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Mechanics.MultiBody.Joints.RevolutePlanarLoopConstraint revolutePlanar annotation(
+    Placement(visible = true, transformation(origin = {-50, 70}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Mechanics.MultiBody.Joints.Revolute revolute1(a(fixed = false),phi(fixed = false), w(fixed = false))  annotation(
+    Placement(visible = true, transformation(origin = {10, 48}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
+  Modelica.Mechanics.MultiBody.Joints.Revolute revolute2 annotation(
+    Placement(visible = true, transformation(origin = {10, -10}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
+equation
+  connect(prismatic.frame_b, fixed2.frame_b) annotation(
+    Line(points = {{40, -60}, {60, -60}, {60, -60}, {60, -60}}, color = {95, 95, 95}));
+  connect(fixed1.frame_b, revolutePlanar.frame_a) annotation(
+    Line(points = {{-70, 70}, {-60, 70}, {-60, 70}, {-60, 70}}));
+  connect(revolutePlanar.frame_b, fixedTranslation1.frame_a) annotation(
+    Line(points = {{-40, 70}, {-20, 70}, {-20, 70}, {-20, 70}}, color = {95, 95, 95}));
+  connect(fixedTranslation1.frame_b, revolute1.frame_a) annotation(
+    Line(points = {{0, 70}, {10, 70}, {10, 58}, {10, 58}}, color = {95, 95, 95}));
+  connect(revolute1.frame_b, fixedTranslation2.frame_a) annotation(
+    Line(points = {{10, 38}, {10, 38}, {10, 30}, {10, 30}}, color = {95, 95, 95}));
+  connect(revolute2.frame_b, prismatic.frame_a) annotation(
+    Line(points = {{10, -20}, {10, -20}, {10, -60}, {20, -60}, {20, -60}}));
+  connect(revolute2.frame_b, body2.frame_a) annotation(
+    Line(points = {{10, -20}, {10, -20}, {10, -30}, {20, -30}, {20, -30}}, color = {95, 95, 95}));
+  connect(revolute2.frame_a, fixedTranslation2.frame_b) annotation(
+    Line(points = {{10, 0}, {10, 0}, {10, 10}, {10, 10}}, color = {95, 95, 95}));
+  connect(fixedTranslation1.frame_b, body1.frame_a) annotation(
+    Line(points = {{0, 70}, {18, 70}, {18, 70}, {20, 70}}));
+end piston;
+
+.. omc-mos ::
+
+  setCommandLineOptions("-d=initialization");
+  buildModel(piston);
+
+Note how OpenModelica will inform the user about relevant and irrelevant start
+values for this model and for which variables a fixed default start value is
+assumed.
+The model has four joints but only one degree of freedom, so one of the joints
+`revolutePlanar` or `prismatic` must be initialized.
+
+
+So, initializing `phi` and `w` of `revolutePlanar` will give a sensible start
+system.
+
+.. omc-loadString ::
+
+  model pistonInitialize
+    extends piston(revolute1.phi.fixed = true, revolute1.phi.start = -1.221730476396031, revolute1.w.fixed = true, revolute1.w.start = 5);
+  equation
+  end pistonInitialize;
+
+.. omc-mos ::
+
+  setCommandLineOptions("-d=initialization");
+  simulate(pistonInitialize, stopTime=2.0);
+
+
+.. omc-gnuplot :: piston
+  :caption: Vertical movement of mass body2.
+
+  body2.frame_a.r_0[1]
+
+Homotopy Method
+~~~~~~~~~~~~~~~
+
+For complex start conditions OpenModelica can have trouble finding a solution
+for the initialization problem with the default newton method.
+
+Modelica offers the homotopy operator [#f5]_ to formulate a actual and
+simplified expression for equations. OpenModelica has differen solvers
+available for non-linear systems. If the homotopy operator is used inside the
+model or simulation flag :ref:` homotopyOnFirstTry <simflag-homotopyOnFirstTry>`
+is set OpenModelica will use the homotopy method on the first try.
+For more details on the homotpy method see :cite:`openmodelica.org:doc-extra:ochel2013initialization`.
+
+Several compiler and simulation flags influence initialization with homotopy:
+:ref:`--homotopyApproach <omcflag-homotopyApproach>`,
+:ref:`-homAdaptBend <simflag-homAdaptBend>`,
+:ref:`-homBacktraceStrategy <simflag-homBacktraceStrategy>`,
+:ref:`-homHEps <simflag-homHEps>`,
+:ref:`-homMaxLambdaSteps <simflag-homMaxLambdaSteps>`,
+:ref:`-homMaxNewtonSteps <simflag-homMaxNewtonSteps>`,
+:ref:`-homMaxTries <simflag-homMaxTries>`,
+:ref:`-homNegStartDir <simflag-homNegStartDir>`,
+:ref:`-homotopyOnFirstTry <simflag-homotopyOnFirstTry>`,
+:ref:`-homTauDecFac <simflag-homTauDecFac>`,
+:ref:`-homTauDecFacPredictor <simflag-homTauDecFacPredictor>`,
+:ref:`-homTauIncFac <simflag-homTauIncFac>`,
+:ref:`-homTauIncThreshold <simflag-homTauIncThreshold>`,
+:ref:`-homTauMax <simflag-homTauMax>`,
+:ref:`-homTauMin <simflag-homTauMin>`,
+:ref:`-homTauStart <simflag-homTauStart>`,
+:ref:`-ils <simflag-ils>`.
+
 References
 ~~~~~~~~~~
 .. bibliography:: openmodelica.bib extrarefs.bib
@@ -168,3 +304,5 @@ References
 .. [#f2] `Sundials Webpage <http://computation.llnl.gov/projects/sundials-suite-nonlinear-differential-algebraic-equation-solvers>`__
 .. [#f3] `DASPK Webpage <https://cse.cs.ucsb.edu/software>`__
 .. [#f4] `Cdaskr source <https://github.com/wibraun/Cdaskr>`__
+.. [#f5] `Modelica Association, Modelica® - A Unified Object-Oriented Language for Systems Modeling Language Specification - Version 3.4, 2017`
+.. [#f6] `Lennart A. Ochel, Bernhard Bachmann, Initialization of Equation-based Hybrid Models within OpenModelica , Proceedings of the 5th International Workshop on Equation-Based Object-Oriented Modeling Languages and Tools, 2013`
