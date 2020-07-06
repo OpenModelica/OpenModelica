@@ -44,6 +44,7 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 public import BaseHashTable;
 import ComponentRef = NFComponentRef;
 import NSimVar.SimVar;
+import NSimVar.SimVars;
 
 public type Key = ComponentRef;
 public type Value = SimVar;
@@ -76,16 +77,61 @@ partial function FuncSimVarStr
   output String res;
 end FuncSimVarStr;
 
-public function empty
-"
-  Returns an empty HashTable.
-  Using the default bucketsize, if nothing else is provided.
-"
-  input Integer size = BaseHashTable.defaultBucketSize;
-  output HashTable hashTable;
-algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentRef.hash,ComponentRef.isEqual,ComponentRef.toString, function SimVar.toString(str = "")));
-end empty;
+public
+  function empty
+  "
+    Returns an empty HashTable.
+    Using the default bucketsize, if nothing else is provided.
+  "
+    input Integer size = BaseHashTable.defaultBucketSize;
+    output HashTable hashTable;
+  algorithm
+    hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentRef.hash,ComponentRef.isEqual,ComponentRef.toString, function SimVar.toString(str = "")));
+  end empty;
+
+  function create
+    input SimVars simVars;
+    output HashTable ht = empty(SimVars.size(simVars));
+  algorithm
+    ht := addList(simVars.stateVars, ht);
+    ht := addList(simVars.derivativeVars, ht);
+    ht := addList(simVars.algVars, ht);
+    ht := addList(simVars.discreteAlgVars, ht);
+    ht := addList(simVars.intAlgVars, ht);
+    ht := addList(simVars.boolAlgVars, ht);
+    ht := addList(simVars.inputVars, ht);
+    ht := addList(simVars.outputVars, ht);
+    ht := addList(simVars.aliasVars, ht);
+    ht := addList(simVars.intAliasVars, ht);
+    ht := addList(simVars.boolAliasVars, ht);
+    ht := addList(simVars.paramVars, ht);
+    ht := addList(simVars.intParamVars, ht);
+    ht := addList(simVars.boolParamVars, ht);
+    ht := addList(simVars.stringAlgVars, ht);
+    ht := addList(simVars.stringParamVars, ht);
+    ht := addList(simVars.stringAliasVars, ht);
+    ht := addList(simVars.extObjVars, ht);
+    ht := addList(simVars.constVars, ht);
+    ht := addList(simVars.intConstVars, ht);
+    ht := addList(simVars.boolConstVars, ht);
+    ht := addList(simVars.stringConstVars, ht);
+    ht := addList(simVars.jacobianVars, ht);
+    ht := addList(simVars.seedVars, ht);
+    ht := addList(simVars.realOptimizeConstraintsVars, ht);
+    ht := addList(simVars.realOptimizeFinalConstraintsVars, ht);
+    ht := addList(simVars.sensitivityVars, ht);
+    ht := addList(simVars.dataReconSetcVars, ht);
+    ht := addList(simVars.dataReconinputVars, ht);
+  end create;
+
+  function addList
+    input list<SimVar> simVars;
+    input output HashTable ht;
+  algorithm
+    for var in simVars loop
+      ht := BaseHashTable.add((SimVar.getName(var), var), ht);
+    end for;
+  end addList;
 
 annotation(__OpenModelica_Interface="backend");
 end HashTableSimCode;

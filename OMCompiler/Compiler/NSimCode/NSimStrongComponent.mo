@@ -40,6 +40,7 @@ protected
   import DAE;
 
   // NF imports
+  import BackendExtension = NFBackendExtension;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import InstNode = NFInstNode.InstNode;
@@ -267,7 +268,7 @@ public
     algorithm
       for system in systems loop
         BVariable.VariablePointers.map(system.unknowns, function SimVar.traverseCreate(acc = vars_ptr, uniqueIndexPtr = idx_ptr));
-        (tmp, simCodeIndices) := fromSystem(system, simCodeIndices, true);
+        (tmp, simCodeIndices) := fromSystem(system, simCodeIndices);
         blcks := tmp :: blcks;
       end for;
       vars := Pointer.access(vars_ptr);
@@ -279,17 +280,17 @@ public
       input System.System system;
       output list<Block> blcks;
       input output SimCode.SimCodeIndices simCodeIndices;
-      input Boolean daeMode = false;
     algorithm
       blcks := match system.strongComponents
         local
           array<StrongComponent> comps;
-          list<Block> result = {}, tmp = {};
+          Block tmp;
+          list<Block> result = {};
         case SOME(comps)
           algorithm
             for i in 1:arrayLength(comps) loop
-              (tmp, simCodeIndices) := fromStrongComponent(comps[i], simCodeIndices, daeMode);
-              result := listAppend(result, tmp);
+              (tmp, simCodeIndices) := fromStrongComponent(comps[i], simCodeIndices);
+              result := tmp :: result;
             end for;
         then listReverse(result);
 
@@ -301,11 +302,10 @@ public
 
     function fromStrongComponent
       input StrongComponent comp;
-      output list<Block> blck_lst;
+      output Block blck;
       input output SimCode.SimCodeIndices simCodeIndices;
-      input Boolean daeMode;
     algorithm
-      blck_lst := match comp
+      blck := match comp
         local
           StrongComponent qual;
           Tearing strict;
@@ -313,31 +313,37 @@ public
           list<Block> result = {}, eqns = {};
           list<ComponentRef> crefs = {};
           Block tmp;
+          Pointer<Variable> varPtr;
           Variable var;
+
+        case qual as StrongComponent.SINGLE_EQUATION()
+          algorithm
+            (tmp, simCodeIndices) := createEquation(Pointer.access(qual.var), Pointer.access(qual.eqn), simCodeIndices);
+        then tmp;
+
+        case qual as StrongComponent.SINGLE_ARRAY(vars = {varPtr})
+          algorithm
+            (tmp, simCodeIndices) := createEquation(Pointer.access(varPtr), Pointer.access(qual.eqn), simCodeIndices);
+        then tmp;
 
         case qual as StrongComponent.TORN_LOOP(strict = strict)
           algorithm
-            if daeMode then
-              for eqn_ptr in strict.residual_eqns loop
-                (tmp, simCodeIndices) := createDAEModeResidual(Pointer.access(eqn_ptr), simCodeIndices);
-                result := tmp :: result;
-              end for;
-            else
-              for eqn_ptr in strict.residual_eqns loop
-                (tmp, simCodeIndices) := createResidual(Pointer.access(eqn_ptr), simCodeIndices);
-                eqns := tmp :: eqns;
-              end for;
-              for var_ptr in strict.iteration_vars loop
-                var := Pointer.access(var_ptr);
-                crefs := var.name :: crefs;
-              end for;
-              // ToDo: correct the following values: size, homotopy, torn
-              system := NONLINEAR_SYSTEM(simCodeIndices.equationIndex, listReverse(eqns), listReverse(crefs), simCodeIndices.nonlinearSystemIndex, listLength(crefs), NONE(), false, qual.mixed, true);
-              simCodeIndices.nonlinearSystemIndex := simCodeIndices.nonlinearSystemIndex + 1;
-              result := {NONLINEAR(system, NONE())};
-            end if;
+            for eqn_ptr in strict.residual_eqns loop
+              (tmp, simCodeIndices) := createResidual(Pointer.access(eqn_ptr), simCodeIndices);
+              eqns := tmp :: eqns;
+            end for;
+            for var_ptr in strict.iteration_vars loop
+              var := Pointer.access(var_ptr);
+              var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.LOOP_ITERATION());
+              Pointer.update(var_ptr, var);
+              crefs := var.name :: crefs;
+            end for;
+            // ToDo: correct the following values: size, homotopy, torn
+            system := NONLINEAR_SYSTEM(simCodeIndices.equationIndex, listReverse(eqns), listReverse(crefs), simCodeIndices.nonlinearSystemIndex, listLength(crefs), NONE(), false, qual.mixed, true);
+            simCodeIndices.nonlinearSystemIndex := simCodeIndices.nonlinearSystemIndex + 1;
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
-        then result;
+        then NONLINEAR(system, NONE());
+
       end match;
     end fromStrongComponent;
 
@@ -391,10 +397,9 @@ public
       end match;
     end createResidual;
 
-    function createDAEModeResidual
-      "Creates a residual equation for DAE mode. It does not use the regular
-      RESIDUAL structure, but a simple ASSIGN structure of the form
-      $RES_DAE_idx := rhs"
+    function createEquation
+      "Creates a single equation"
+      input BVariable.Variable var;
       input BEquation.Equation eqn;
       output Block blck;
       input output SimCode.SimCodeIndices simCodeIndices;
@@ -404,23 +409,20 @@ public
           BEquation.Equation qual;
           Type ty;
           Operator operator;
-          Variable residualVar;
           Expression lhs, rhs;
           Block tmp;
 
         case qual as BEquation.SCALAR_EQUATION()
           algorithm
             operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.SUB);
-            residualVar := Pointer.access(BEquation.EquationAttributes.getResidualVar(qual.attr));
-            tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, residualVar.name, Expression.BINARY(qual.lhs, operator, qual.rhs), qual.source, qual.attr);
+            tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, Expression.BINARY(qual.lhs, operator, qual.rhs), qual.source, qual.attr);
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
         case qual as BEquation.ARRAY_EQUATION()
           algorithm
             operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.SUB);
-            residualVar := Pointer.access(BEquation.EquationAttributes.getResidualVar(qual.attr));
-            tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(residualVar.name), Expression.BINARY(qual.lhs, operator, qual.rhs), qual.source, qual.attr);
+            tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(var.name), Expression.BINARY(qual.lhs, operator, qual.rhs), qual.source, qual.attr);
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
@@ -431,11 +433,10 @@ public
             operator := Operator.OPERATOR(ty, NFOperator.Op.SUB);
             lhs := Expression.fromCref(qual.lhs);
             rhs := Expression.fromCref(qual.rhs);
-            residualVar := Pointer.access(BEquation.EquationAttributes.getResidualVar(qual.attr));
             if Type.isArray(ty) then
-              tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(residualVar.name), Expression.BINARY(lhs, operator, rhs), qual.source, qual.attr);
+              tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(var.name), Expression.BINARY(lhs, operator, rhs), qual.source, qual.attr);
             else
-              tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, residualVar.name, Expression.BINARY(lhs, operator, rhs), qual.source, qual.attr);
+              tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, Expression.BINARY(lhs, operator, rhs), qual.source, qual.attr);
             end if;
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
@@ -447,7 +448,29 @@ public
         then fail();
 
       end match;
-    end createDAEModeResidual;
+    end createEquation;
+
+    function traverseCreateEquation
+      "Only works, if the variable to solve for is saved in equation attributes!
+      used for jacobians and hessians."
+      input output BEquation.Equation eqn;
+      input Pointer<list<Block>> acc;
+      input Pointer<SimCode.SimCodeIndices> indices_ptr;
+    protected
+      Pointer<Variable> residualVar;
+      Block blck;
+      SimCode.SimCodeIndices indices;
+    algorithm
+      try
+        residualVar := BEquation.EquationAttributes.getResidualVar(BEquation.Equation.getAttributes(eqn));
+        (blck, indices) := createEquation(Pointer.access(residualVar), eqn, Pointer.access(indices_ptr));
+        Pointer.update(acc, blck :: Pointer.access(acc));
+        Pointer.update(indices_ptr, indices);
+      else
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + BEquation.Equation.toString(eqn)});
+        fail();
+      end try;
+    end traverseCreateEquation;
 
     function createAssignment
       "Creates an assignment equation."

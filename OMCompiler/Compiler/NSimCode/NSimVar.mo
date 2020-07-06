@@ -162,6 +162,16 @@ public
       Pointer.update(uniqueIndexPtr, Pointer.access(uniqueIndexPtr) + 1);
     end traverseCreate;
 
+    function getName
+      input SimVar var;
+      output ComponentRef name = var.name;
+    end getName;
+
+    function getIndex
+      input SimVar var;
+      output Integer index = var.index;
+    end getIndex;
+
     function convert
       input SimVar simVar;
       output OldSimCodeVar.SimVar oldSimVar;
@@ -201,10 +211,9 @@ public
       input list<SimVar> simVar_lst;
       output list<OldSimCodeVar.SimVar> oldSimVar_lst = {};
     algorithm
-      for simVar in simVar_lst loop
+      for simVar in listReverse(simVar_lst) loop
         oldSimVar_lst := convert(simVar) :: oldSimVar_lst;
       end for;
-      oldSimVar_lst := listReverse(oldSimVar_lst);
     end convertList;
 
   protected
@@ -506,6 +515,40 @@ public
         realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars,
         sensitivityVars, dataReconSetcVars, dataReconinputVars);
     end create;
+
+    function size
+      input SimVars simVars;
+      output Integer size = listLength(simVars.stateVars)
+                          + listLength(simVars.derivativeVars)
+                          + listLength(simVars.algVars)
+                          + listLength(simVars.discreteAlgVars)
+                          + listLength(simVars.intAlgVars)
+                          + listLength(simVars.boolAlgVars)
+                          + listLength(simVars.inputVars)
+                          + listLength(simVars.outputVars)
+                          + listLength(simVars.aliasVars)
+                          + listLength(simVars.intAliasVars)
+                          + listLength(simVars.boolAliasVars)
+                          + listLength(simVars.paramVars)
+                          + listLength(simVars.intParamVars)
+                          + listLength(simVars.boolParamVars)
+                          + listLength(simVars.stringAlgVars)
+                          + listLength(simVars.stringParamVars)
+                          + listLength(simVars.stringAliasVars)
+                          + listLength(simVars.extObjVars)
+                          + listLength(simVars.constVars)
+                          + listLength(simVars.intConstVars)
+                          + listLength(simVars.boolConstVars)
+                          + listLength(simVars.stringConstVars)
+                          + listLength(simVars.stringAlgVars)
+                          + listLength(simVars.jacobianVars)
+                          + listLength(simVars.seedVars)
+                          + listLength(simVars.realOptimizeConstraintsVars)
+                          + listLength(simVars.realOptimizeFinalConstraintsVars)
+                          + listLength(simVars.sensitivityVars)
+                          + listLength(simVars.dataReconSetcVars)
+                          + listLength(simVars.dataReconinputVars);
+    end size;
 
     function convert
       input SimVars simVars;

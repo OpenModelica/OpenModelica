@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated package NBHashTableCrToCrEqLst
+encapsulated package NBHashTableCrToCr
 
 /* Below is the instance specific code. For each hashtable the user must define:
 
@@ -41,24 +41,19 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 
 /* HashTable instance specific code */
 
-import HashTableCrToCrEqLst = NBHashTableCrToCrEqLst;
-
 public
   import BaseHashTable;
 protected
   // NF imports
   import ComponentRef = NFComponentRef;
 
-  // Backend imports
-  import BEquation = NBEquation;
-
   // util imports
   import List;
 
 public type Key = ComponentRef;
-public type Value = list<tuple<ComponentRef,BEquation.Equation>>;
+public type Value = ComponentRef;
 
-public type HashTableCrefFunctionsType = tuple<FuncHashCref,FuncCrefEqual,FuncCrefStr,FuncExpStr>;
+public type HashTableCrefFunctionsType = tuple<FuncHashCref,FuncCrefEqual,FuncCrefStr,FuncCrefStr>;
 public type HashTable = tuple<
   array<list<tuple<Key,Integer>>>,
   tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>,
@@ -83,47 +78,17 @@ partial function FuncCrefStr
   output String res;
 end FuncCrefStr;
 
-partial function FuncExpStr
-  input Value exp;
-  output String res;
-end FuncExpStr;
-
-public function emptyHashTable
+public function empty
 "
   Returns an empty HashTable.
-  Using the default bucketsize..
+  Using the default bucketsize
+  if no size is declared.
 "
+  input Integer size = BaseHashTable.defaultBucketSize;
   output HashTable hashTable;
 algorithm
-  hashTable := emptyHashTableSized(BaseHashTable.defaultBucketSize);
-end emptyHashTable;
-
-public function emptyHashTableSized
-"Returns an empty HashTable.
- Using the bucketsize size."
-  input Integer size;
-  output HashTable hashTable;
-algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentRef.hash,ComponentRef.isEqual,ComponentRef.toString,printTupleComponentRefEqListStr));
-end emptyHashTableSized;
-
-public function printTupleComponentRefEqListStr
-  input list<tuple<ComponentRef, BEquation.Equation>> cr_eq_lst;
-  output String res;
-algorithm
-  res := stringDelimitList(List.map(cr_eq_lst, printTupleComponentRefEqStr), ",");
-end printTupleComponentRefEqListStr;
-
-public function printTupleComponentRefEqStr
-  input tuple<ComponentRef, BEquation.Equation> cr_eq;
-  output String res;
-protected
-  ComponentRef cr;
-  BEquation.Equation eq;
-algorithm
-  (cr, eq) := cr_eq;
-  res := "{" + ComponentRef.toString(cr) + "," + BEquation.Equation.toString(eq)  + "}";
-end printTupleComponentRefEqStr;
+  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentRef.hash,ComponentRef.isEqual,ComponentRef.toString,ComponentRef.toString));
+end empty;
 
 annotation(__OpenModelica_Interface="backend");
-end NBHashTableCrToCrEqLst;
+end NBHashTableCrToCr;

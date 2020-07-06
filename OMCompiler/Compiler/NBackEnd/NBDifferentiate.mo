@@ -468,7 +468,7 @@ public
       // Types: (ALL)
       // Known variables, except top for level inputs have a 0-derivative
       case (qual as Expression.CREF(), _)
-        guard(BVariable.isKnown(BVariable.getVarPointer(qual.cref)) and
+        guard(BVariable.isParamOrConst(BVariable.getVarPointer(qual.cref)) and
               not (ComponentRef.isTopLevel(qual.cref) and BVariable.isInput(BVariable.getVarPointer(qual.cref))))
       then (Expression.makeZero(qual.ty), diffArguments);
 

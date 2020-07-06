@@ -290,8 +290,6 @@ if true then /* Suppress output */
     "../NBackEnd/NBAdjacencyMatrix.mo",
     "../NBackEnd/NBDifferentiate.mo",
     "../NBackEnd/NBEquation.mo",
-    "../NBackEnd/NBHashTableCrToCr.mo",
-    "../NBackEnd/NBHashTableCrToCrEqLst.mo",
     "../NBackEnd/NBStrongComponent.mo",
     "../NBackEnd/NBSystem.mo",
     "../NBackEnd/NBVariable.mo",
@@ -306,10 +304,15 @@ if true then /* Suppress output */
     "../NBackEnd/Modules/2_Pre/NBRemoveSimpleEquations.mo",
     "../NBackEnd/Modules/3_Post/NBJacobian.mo",
     "../NBackEnd/Modules/3_Post/NBTearing.mo",
+  // "NBackend Util"
+    "../NBackEnd/Util/NBHashTableCrToCr.mo",
+    "../NBackEnd/Util/NBHashTableCrToCrEqLst.mo",
+    "../NBackEnd/Util/NBHashTableCrToCrLst.mo",
 
   // "NSimCode"
     "../NSimCode/HashTableSimCode.mo",
     "../NSimCode/NSimCode.mo",
+    "../NSimCode/NSimJacobian.mo",
     "../NSimCode/NSimStrongComponent.mo",
     "../NSimCode/NSimVar.mo",
 

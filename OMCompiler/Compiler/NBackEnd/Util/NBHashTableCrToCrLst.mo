@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated package NBHashTableCrToCr
+encapsulated package NBHashTableCrToCrLst
 
 /* Below is the instance specific code. For each hashtable the user must define:
 
@@ -41,8 +41,6 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 
 /* HashTable instance specific code */
 
-import HashTableCrToCrEqLst = NBHashTableCrToCrEqLst;
-
 public
   import BaseHashTable;
 protected
@@ -53,9 +51,9 @@ protected
   import List;
 
 public type Key = ComponentRef;
-public type Value = ComponentRef;
+public type Value = list<ComponentRef>;
 
-public type HashTableCrefFunctionsType = tuple<FuncHashCref,FuncCrefEqual,FuncCrefStr,FuncCrefStr>;
+public type HashTableCrefFunctionsType = tuple<FuncHashCref,FuncCrefEqual,FuncCrefStr,FuncCrefLstStr>;
 public type HashTable = tuple<
   array<list<tuple<Key,Integer>>>,
   tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>,
@@ -80,6 +78,11 @@ partial function FuncCrefStr
   output String res;
 end FuncCrefStr;
 
+partial function FuncCrefLstStr
+  input Value crs;
+  output String res;
+end FuncCrefLstStr;
+
 public function empty
 "
   Returns an empty HashTable.
@@ -89,8 +92,8 @@ public function empty
   input Integer size = BaseHashTable.defaultBucketSize;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentRef.hash,ComponentRef.isEqual,ComponentRef.toString,ComponentRef.toString));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentRef.hash,ComponentRef.isEqual,ComponentRef.toString,ComponentRef.listToString));
 end empty;
 
 annotation(__OpenModelica_Interface="backend");
-end NBHashTableCrToCr;
+end NBHashTableCrToCrLst;

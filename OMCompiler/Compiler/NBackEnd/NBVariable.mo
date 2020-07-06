@@ -218,6 +218,16 @@ public
     end match;
   end isDummyDer;
 
+  function isDAEResidual
+    input Pointer<Variable> var;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DAE_RESIDUAL_VAR())) then true;
+      else false;
+    end match;
+  end isDAEResidual;
+
   function isInput
     input Pointer<Variable> var;
     output Boolean b;
@@ -242,7 +252,7 @@ public
     end match;
   end isOutput;
 
-  function isParamOrConstant
+  function isParamOrConst
     input Pointer<Variable> var;
     output Boolean b;
   algorithm
@@ -251,18 +261,7 @@ public
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.CONSTANT())) then true;
       else false;
     end match;
-  end isParamOrConstant;
-
-  function isKnown
-    input Pointer<Variable> var;
-    output Boolean b;
-  algorithm
-    b := match Pointer.access(var)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER())) then true;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.CONSTANT())) then true;
-      else false;
-    end match;
-  end isKnown;
+  end isParamOrConst;
 
   function setVariableKind
     input output Variable var;
@@ -320,7 +319,7 @@ public
   function makeAlgStateVar
     "Updates a variable pointer to be an algebraic state.
     Only if it currently is an algebraic variable, required for DAEMode."
-    input output Pointer<Variable> varPointer;
+    input Pointer<Variable> varPointer;
   protected
     Variable var;
   algorithm
@@ -522,12 +521,13 @@ public
         algorithm
           // get the variable pointer from the old cref to later on link back to it
           old_var_ptr := BVariable.getVarPointer(cref);
-          // prepend the seed str and the matrix name and create the new cref
+          // prepend the seed str and the matrix name and create the new cref_DIFF_DIFF
           qual.name := PARTIAL_DERIVATIVE_STR + "_" + name;
           cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
           var := BVariable.fromCref(cref);
-          // update the variable to be a seed and pass the pointer to the original variable
-          var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.JAC_DIFF_VAR());
+          // update the variable to be a jac var and pass the pointer to the original variable
+          // ToDo: tmps will get JAC_DIFF_VAR !
+          var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.JAC_VAR());
           // create the new variable pointer and safe it to the component reference
           var_ptr := Pointer.create(var);
           cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
@@ -538,7 +538,6 @@ public
       then fail();
     end match;
   end makePDerVar;
-
 
   function makeStartVar
     "Creates a start variable pointer from a cref. Used in NBInitialization.
@@ -581,13 +580,18 @@ public
     output ComponentRef cref          "new component reference";
   protected
     InstNode node;
+    Variable var;
   algorithm
     // create inst node with dummy variable pointer and create cref from it
     node := InstNode.VAR_NODE(RESIDUAL_STR + "_" + name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
     // Type for residuals is always REAL() !
     cref := ComponentRef.CREF(node, {}, Type.REAL(), NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
     // create variable and set its kind to dae_residual (change name?)
-    var_ptr := Pointer.create(Variable.fromCref(cref));
+    var := BVariable.fromCref(cref);
+    // update the variable to be a seed and pass the pointer to the original variable
+    var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.DAE_RESIDUAL_VAR(uniqueIndex));
+    // create the new variable pointer and safe it to the component reference
+    var_ptr := Pointer.create(var);
     cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
   end makeResidualVar;
 
@@ -646,7 +650,7 @@ public
       input output VariablePointers variables;
       input MapFunc func;
       partial function MapFunc
-        input output Pointer<Variable> v;
+        input Pointer<Variable> v;
       end MapFunc;
     protected
       Pointer<Variable> var_ptr;
@@ -797,6 +801,17 @@ public
       end try;
     end getVarSafe;
 
+    function getVarNames
+      "returns a list of crefs representing the names of all variables"
+      input VariablePointers variables;
+      output list<ComponentRef> names;
+    protected
+      Pointer<list<ComponentRef>> acc = Pointer.create({});
+    algorithm
+      map(variables, function getVarNameTraverse(acc = acc));
+      names := Pointer.access(acc);
+    end getVarNames;
+
     function size
       input VariablePointers variables;
       output Integer i;
@@ -905,6 +920,8 @@ public
       Option<VariablePointers> lambdaVars "Lambda variables for optimization";
     end VAR_DATA_HES;
 
+    record VAR_DATA_EMPTY end VAR_DATA_EMPTY;
+
     function toString
       input VarData varData;
       input Integer level = 0;
@@ -913,9 +930,10 @@ public
       str := if level == 0 then match varData
           local
             VarData qualVarData;
-          case qualVarData as VAR_DATA_SIM() then VariablePointers.toString(varData.variables, "Simulation");
-          case qualVarData as VAR_DATA_JAC() then VariablePointers.toString(varData.variables, "Jacobian");
-          case qualVarData as VAR_DATA_HES() then VariablePointers.toString(varData.variables, "Hessian");
+          case qualVarData as VAR_DATA_SIM()  then VariablePointers.toString(varData.variables, "Simulation");
+          case qualVarData as VAR_DATA_JAC()  then VariablePointers.toString(varData.variables, "Jacobian");
+          case qualVarData as VAR_DATA_HES()  then VariablePointers.toString(varData.variables, "Hessian");
+          case VAR_DATA_EMPTY()               then "Empty variable Data!\n";
           else fail();
         end match
       elseif level == 1 then toStringVerbose(varData, false)
@@ -1034,6 +1052,13 @@ protected
     CREFINDEX(cref = cr2) := crefIndex;
     outMatch := ComponentRef.isEqual(cr1, cr2);
   end crefIndexEqualCref;
+
+  function getVarNameTraverse
+    input output Variable var;
+    input Pointer<list<ComponentRef>> acc;
+  algorithm
+    Pointer.update(acc, var.name :: Pointer.access(acc));
+  end getVarNameTraverse;
 
   annotation(__OpenModelica_Interface="backend");
 end NBVariable;

@@ -60,14 +60,12 @@ public
 
       case (System.SystemType.ODE, qual as BackendDAE.BDAE(ode = systems))
         algorithm
-          // ToDo: For now everything is DAE-Mode, change later on!
-          qual.ode := List.map(systems, causalizeDAEMode);
+          qual.ode := List.map(systems, causalizeDefault);
       then qual;
 
       case (System.SystemType.INIT, qual as BackendDAE.BDAE(init = systems))
         algorithm
-          // ToDo: For now everything is DAE-Mode, change later on!
-          qual.init := List.map(systems, causalizeDAEMode);
+          qual.init := List.map(systems, causalizeDefault);
       then qual;
 
       case (System.SystemType.DAE, qual as BackendDAE.BDAE(dae = SOME(systems)))
@@ -83,8 +81,7 @@ public
   end main;
 
 protected
-  function causalizeDAEMode
-    input output System.System system;
+  function causalizeDefault extends Module.causalizeInterface;
   protected
     list<Pointer<Variable>> var_lst;
     list<Pointer<Equation>> eqn_lst;
@@ -95,6 +92,16 @@ protected
     eqn_lst := BEquation.EquationPointers.toList(system.equations);
     comp := StrongComponent.ALGEBRAIC_LOOP(var_lst, eqn_lst, NONE(), false);
     system.strongComponents := SOME(arrayCreate(1, comp));
+  end causalizeDefault;
+
+  function causalizeDAEMode extends Module.causalizeInterface;
+  protected
+    Pointer<list<StrongComponent>> acc = Pointer.create({});
+  algorithm
+    // create all components as residuals for now
+    // ToDo: use tearing to get inner/tmp equations
+    BEquation.EquationPointers.mapPtr(system.equations, function StrongComponent.makeDAEModeResidualTraverse(acc = acc));
+    system.strongComponents := SOME(listArray(listReverse(Pointer.access(acc))));
   end causalizeDAEMode;
 
   annotation(__OpenModelica_Interface="backend");

@@ -79,11 +79,12 @@ public
   uniontype SimCodeIndices
     record SIM_CODE_INDICES
       "Unique simulation code indices"
-	    Integer variableIndex;
-	    Integer equationIndex;
-	    Integer linearSystemIndex;
-	    Integer nonlinearSystemIndex;
-	    Integer daeModeResidualIndex;
+      Integer variableIndex;
+      Integer equationIndex;
+      Integer linearSystemIndex;
+      Integer nonlinearSystemIndex;
+      Integer jacobianIndex;
+      Integer daeModeResidualIndex;
     end SIM_CODE_INDICES;
   end SimCodeIndices;
 
@@ -197,7 +198,7 @@ public
         case qual as BackendDAE.BDAE()
           algorithm
             // somehow this cannot be set at definition (metamodelica bug?)
-            simCodeIndices := SIM_CODE_INDICES(0, 0, 0, 0, 0);
+            simCodeIndices := SIM_CODE_INDICES(0, 0, 0, 0, 0, 0);
             // ToDo:
             // this has to be adapted at some point SimCodeFuntion needs to be translated
             // to new simcode and literals have to be based on new Expressions.
@@ -233,7 +234,6 @@ public
             if isSome(qual.dae) then
               // ToDo: Remove the residual generation of simcode and move to backend!
               (daeModeData, simCodeIndices) := DaeModeData.create(Util.getOption(qual.dae), simCodeIndices);
-              daeModeData := NONE();
             else
               daeModeData := NONE();
             end if;

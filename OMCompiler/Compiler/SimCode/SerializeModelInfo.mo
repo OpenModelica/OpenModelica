@@ -1156,6 +1156,10 @@ algorithm
       equation
         File.write(file,"helper variable transform ode for symSolver");
       then ();
+    case BackendDAE.LOOP_ITERATION()
+      equation
+        File.write(file,"iteration variable for solving an algebraic loop");
+      then ();
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"serializeVarKind failed"});

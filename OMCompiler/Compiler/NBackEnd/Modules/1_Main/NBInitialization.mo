@@ -89,7 +89,6 @@ public
 	    bdae := Partitioning.main(bdae, NBSystem.SystemType.INIT);
 	    bdae := Causalize.main(bdae, NBSystem.SystemType.INIT);
 	    bdae := Tearing.main(bdae, NBSystem.SystemType.INIT);
-	    bdae := Jacobian.main(bdae, NBSystem.SystemType.INIT);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
     end try;

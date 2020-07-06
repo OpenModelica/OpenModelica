@@ -123,7 +123,10 @@ public
     // ToDo maybe deprecated:
     record ALG_STATE        "algebraic state used by inline solver" end ALG_STATE;
     record ALG_STATE_OLD    "algebraic state old value used by inline solver" end ALG_STATE_OLD;
-    record DAE_RESIDUAL_VAR "variable kind used for DAEmode" end DAE_RESIDUAL_VAR;
+    record DAE_RESIDUAL_VAR
+      "variable kind used for DAEmode"
+      Integer index;
+    end DAE_RESIDUAL_VAR;
     record DAE_AUX_VAR      "auxiliary variable used for DAEmode" end DAE_AUX_VAR;
     record LOOP_ITERATION   "used in SIMCODE, iteration variables in algebraic loops" end LOOP_ITERATION;
     record LOOP_SOLVED      "used in SIMCODE, inner variables of a torn algebraic loop" end LOOP_SOLVED;

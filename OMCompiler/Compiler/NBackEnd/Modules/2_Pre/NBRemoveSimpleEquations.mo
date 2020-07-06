@@ -248,7 +248,7 @@ protected
       case(_,(_,_,_,_,cont)) guard(not cont) algorithm return; then (exp, cont, tpl);
       case(_,(_,vars,count,_,_)) guard(count<0) then(exp, false, ({},vars,-1,-1,false));
       case (Expression.CREF(cref=cr),(cr_lst,vars,count,paramCount,true))
-        guard(count < 2 and not (ComponentRef.isTime(cr)) and not BVariable.isParamOrConstant(BVariable.getVarPointer(cr)))
+        guard(count < 2 and not (ComponentRef.isTime(cr)) and not BVariable.isParamOrConst(BVariable.getVarPointer(cr)))
       then (exp, true, (cr::cr_lst,vars,count+1,paramCount,true));
       case (Expression.CREF(cref=cr),(cr_lst,vars,count,paramCount,true))
         guard(count < 2 and not (ComponentRef.isTime(cr)))

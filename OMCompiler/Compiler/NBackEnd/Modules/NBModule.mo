@@ -37,6 +37,7 @@ encapsulated package NBModule
   This file contains following module wrappers:
 
   *** MAIN
+   - causalizeInterface
    - partitioningInterface
    - daeModeInterface
 
@@ -89,6 +90,14 @@ public
     input BEquation.EquationPointers equations;
     output list<System.System> systems;
   end partitioningInterface;
+
+//                               Causalize
+// *************************************************************************
+  partial function causalizeInterface
+    "Causalize
+     This function is only allowed to add strong components."
+    input output System.System system;
+  end causalizeInterface;
 
 //                               DAEMODE
 // *************************************************************************
@@ -178,6 +187,7 @@ public
       input Option<BVariable.VariablePointers> daeUnknowns  "Variable array of unknowns in the case of dae mode";
       input BEquation.EquationPointers equations            "Equations array";
       input BVariable.VariablePointers knowns               "Variable array of knowns";
+      input Option<array<StrongComponent>> strongComponents "Strong Components";
       output Option<Jacobian> jacobian                      "Resulting jacobian";
       input output FunctionTree funcTree                    "Function call bodies";
     end jacobianInterface;

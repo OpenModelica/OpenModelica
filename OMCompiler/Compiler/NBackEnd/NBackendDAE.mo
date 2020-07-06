@@ -90,8 +90,11 @@ public
   end BDAE;
 
   record JAC
-    BVariable.VarData varData     "Variable data.";
-    BEquation.EqData eqData       "Equation data.";
+    String name                                 "unique matrix name";
+    BVariable.VarData varData                   "Variable data.";
+    BEquation.EqData eqData                     "Equation data.";
+    Jacobian.SparsityPattern sparsityPattern    "Sparsity pattern for the jacobian";
+    Jacobian.SparsityColoring sparsityColoring  "Coloring information";
   end JAC;
 
   record HESS
@@ -137,9 +140,10 @@ public
           end if;
       then tmp;
 
-      case qual as JAC() then StringUtil.headline_1("Jacobian: " + str) + "\n" +
+      case qual as JAC() then StringUtil.headline_1("Jacobian " + qual.name + ": " + str) + "\n" +
                               BVariable.VarData.toString(qual.varData, 1) + "\n" +
-                              BEquation.EqData.toString(qual.eqData, 1);
+                              BEquation.EqData.toString(qual.eqData, 1) + "\n" +
+                              Jacobian.SparsityPattern.toString(qual.sparsityPattern, qual.sparsityColoring);
 
       case qual as HESS() then StringUtil.headline_1("Hessian: " + str) + "\n" +
                               BVariable.VarData.toString(qual.varData, 1) + "\n" +

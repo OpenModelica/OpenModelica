@@ -39,11 +39,15 @@ protected
   import StrongComponent = NBStrongComponent;
 
   // NF imports
+  import ComponentRef = NFComponentRef;
   import Variable = NFVariable;
 
   // Backend imports
   import BackendDAE = NBackendDAE;
+  import BVariable = NBVariable;
   import NBEquation.Equation;
+  import NBEquation.EquationAttributes;
+  import HashTableCrToCrLst = NBHashTableCrToCrLst;
   import Tearing = NBTearing;
 
   // Util imports
@@ -193,6 +197,131 @@ public
       then fail();
     end match;
   end toString;
+
+  function makeDAEModeResidualTraverse
+    " update later to do both inner and residual equations "
+    input Pointer<Equation> eq_ptr;
+    input Pointer<list<StrongComponent>> acc;
+  protected
+    StrongComponent comp;
+  algorithm
+    comp := match Pointer.access(eq_ptr)
+      local
+        Pointer<Variable> residualVar;
+
+      case Equation.SCALAR_EQUATION(attr = EquationAttributes.EQUATION_ATTRIBUTES(residualVar = SOME(residualVar)))
+      then SINGLE_EQUATION(residualVar, eq_ptr);
+
+      case Equation.ARRAY_EQUATION(attr = EquationAttributes.EQUATION_ATTRIBUTES(residualVar = SOME(residualVar)))
+      then SINGLE_ARRAY({residualVar}, eq_ptr);
+
+      // maybe check for type SINGLE // ARRAY ?
+      case Equation.SIMPLE_EQUATION(attr = EquationAttributes.EQUATION_ATTRIBUTES(residualVar = SOME(residualVar)))
+      then SINGLE_EQUATION(residualVar, eq_ptr);
+
+      /* are other residuals possible? */
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+      then fail();
+    end match;
+
+    Pointer.update(acc, comp :: Pointer.access(acc));
+  end makeDAEModeResidualTraverse;
+
+  function getDependentCrefs
+    "Collects dependent crefs in current comp and saves them in the
+    HashTable. Saves both directions."
+    input StrongComponent comp                    "strong component to be analyzed";
+    input output HashTableCrToCrLst.HashTable ht  "hash table to save the dependencies";
+  algorithm
+    ht := match comp
+      local
+        StrongComponent qual;
+        list<ComponentRef> dependencies = {}, loop_vars = {}, tmp;
+        Tearing strict;
+
+      case qual as SINGLE_EQUATION() algorithm
+        dependencies := Equation.collectCrefs(Pointer.access(qual.eqn), function getDependentCref(ht = ht));
+      then updateDependencyHashTable(BVariable.getVarName(qual.var), dependencies, ht);
+
+      case qual as SINGLE_ARRAY() algorithm
+        dependencies := Equation.collectCrefs(Pointer.access(qual.eqn), function getDependentCref(ht = ht));
+        for var in qual.vars loop
+          ht := updateDependencyHashTable(BVariable.getVarName(var), dependencies, ht);
+        end for;
+      then ht;
+
+      case TORN_LOOP(strict = strict) algorithm
+        // collect iteration loop vars
+        for var in strict.iteration_vars loop
+          loop_vars := BVariable.getVarName(var) :: loop_vars;
+        end for;
+
+        // traverse residual equations and collect dependencies
+        for eqn in strict.residual_eqns loop
+          tmp := Equation.collectCrefs(Pointer.access(eqn), function getDependentCref(ht = ht));
+          dependencies := listAppend(tmp, dependencies);
+        end for;
+
+        // traverse inner equations and collect loop vars and dependencies
+        for i in 1:arrayLength(strict.innerEquations) loop
+          // collect inner equation dependencies
+          tmp := Equation.collectCrefs(Pointer.access(strict.innerEquations[i].eqn), function getDependentCref(ht = ht));
+          dependencies := listAppend(tmp, dependencies);
+
+          // collect inner loop variables
+          for var in strict.innerEquations[i].vars loop
+            loop_vars := BVariable.getVarName(var) :: loop_vars;
+          end for;
+        end for;
+
+        // add all dependencies
+        for cref in loop_vars loop
+          ht := updateDependencyHashTable(cref, dependencies, ht);
+        end for;
+      then ht;
+
+      /* ToDo add the others and let else case fail! */
+
+      else ht;
+    end match;
+  end getDependentCrefs;
+
+protected
+  function getDependentCref
+    input output ComponentRef cref          "the cref to check";
+    input Pointer<list<ComponentRef>> acc   "accumulator for relevant crefs";
+    input HashTableCrToCrLst.HashTable ht   "hash table to check for relevance";
+  protected
+    list<ComponentRef> dependencies;
+  algorithm
+    if BaseHashTable.hasKey(cref, ht) then
+      dependencies := BaseHashTable.get(cref, ht);
+      if listEmpty(dependencies) then
+        // if no previous dependencies are found, it is an independent variable
+        Pointer.update(acc, cref :: Pointer.access(acc));
+      else
+        // if previous dependencies are found, it is a temporary inner variable
+        // recursively add all their dependencies
+        Pointer.update(acc, listAppend(dependencies, Pointer.access(acc)));
+      end if;
+    end if;
+  end getDependentCref;
+
+  function updateDependencyHashTable
+    input ComponentRef cref                       "cref representing current equation";
+    input list<ComponentRef> dependencies         "the dependency crefs";
+    input output HashTableCrToCrLst.HashTable ht  "hash table to save the dependencies";
+  algorithm
+    try
+      // update the current value (res/tmp) --> {independent vars}
+      BaseHashTable.update((cref, dependencies), ht);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+    end try;
+  end updateDependencyHashTable;
+
 
     annotation(__OpenModelica_Interface="backend");
 end NBStrongComponent;

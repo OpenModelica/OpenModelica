@@ -326,6 +326,48 @@ public
       end match;
     end map;
 
+    function collectCrefs
+      "filters all crefs of an equation and adds them
+      to a list of crefs. needs cref filter function."
+      input Equation eq;
+      input filterCref filter;
+      output list<ComponentRef> cref_lst;
+
+      partial function filterCref
+        "partial function that needs to be provided.
+        decides if the the cref is added to the list pointer."
+        input output ComponentRef cref;
+        input Pointer<list<ComponentRef>> cref_lst_ptr;
+      end filterCref;
+
+      function filterExp
+        "wrapper function that applies filter cref to
+        a cref expression."
+        input output Expression exp;
+        input filterCref filter;
+        input Pointer<list<ComponentRef>> cref_lst_ptr;
+      algorithm
+        _ := match exp
+          local
+            ComponentRef cref;
+            filterCref func;
+          case Expression.CREF(cref = cref) algorithm
+            filter(cref, cref_lst_ptr);
+          then ();
+          else ();
+        end match;
+      end filterExp;
+
+    protected
+      Pointer<list<ComponentRef>> cref_lst_ptr = Pointer.create({});
+    algorithm
+      // map with the expression and cref filter functions
+      _ := map(eq, function filterExp(filter = filter, cref_lst_ptr = cref_lst_ptr),
+              SOME(function filter(cref_lst_ptr = cref_lst_ptr)));
+      cref_lst := Pointer.access(cref_lst_ptr);
+    end collectCrefs;
+
+  public
     function getRHS
       "gets the right hand side expression of an equation."
       input Equation eq;
@@ -790,8 +832,14 @@ public
     end toString;
 
     function empty
-      input Integer size = 0;
-      output EquationPointers equationPointers = EQUATION_POINTERS(ExpandableArray.new(size, Pointer.create(DUMMY_EQUATION())));
+      "Creates an empty EquationPointers using given size."
+      input Integer size = BaseHashTable.bigBucketSize;
+      output EquationPointers equationPointers;
+    protected
+      Integer arr_size;
+    algorithm
+      arr_size := max(size, BaseHashTable.lowBucketSize);
+      equationPointers := EQUATION_POINTERS(ExpandableArray.new(arr_size, Pointer.create(DUMMY_EQUATION())));
     end empty;
 
     function toList
@@ -842,6 +890,26 @@ public
         end if;
       end for;
     end map;
+
+    function mapPtr
+      "Traverses all equations wrapped in pointers and applies a function to them.
+      Note: the equation can only be updated if the function itself updates it!"
+      input output EquationPointers equations;
+      input MapFunc func;
+      partial function MapFunc
+        input Pointer<Equation> e;
+      end MapFunc;
+    protected
+      Pointer<Equation> eq_ptr;
+      Equation eq, new_eq;
+    algorithm
+      for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
+        if ExpandableArray.occupied(i, equations.eqArr) then
+          eq_ptr := ExpandableArray.get(i, equations.eqArr);
+          func(eq_ptr);
+         end if;
+      end for;
+    end mapPtr;
 
     function mapExp
       "Traverses all expressions of all equations and applies a function to it.
@@ -898,6 +966,8 @@ public
       EquationPointers auxiliaries  "Auxiliary equations";
     end EQ_DATA_HESS;
 
+    record EQ_DATA_EMPTY end EQ_DATA_EMPTY;
+
     function toString
       input EqData eqData;
       input Integer level = 0;
@@ -907,6 +977,7 @@ public
         local
           EqData qualEqData;
           String tmp;
+
         case qualEqData as EQ_DATA_SIM()
           algorithm
             if level == 0 then
@@ -918,6 +989,7 @@ public
                       EquationPointers.toString(qualEqData.auxiliaries, "Auxiliary");
             end if;
         then tmp;
+
         case qualEqData as EQ_DATA_JAC()
           algorithm
             if level == 0 then
@@ -928,6 +1000,7 @@ public
                       EquationPointers.toString(qualEqData.auxiliaries, "Auxiliary");
             end if;
         then tmp;
+
         case qualEqData as EQ_DATA_HESS()
           algorithm
             if level == 0 then
@@ -939,6 +1012,8 @@ public
                       EquationPointers.toString(qualEqData.auxiliaries, "Auxiliary");
             end if;
         then tmp;
+
+        case EQ_DATA_EMPTY() then "Empty equation Data!\n";
 
       else getInstanceName() + " failed!\n";
       end match;

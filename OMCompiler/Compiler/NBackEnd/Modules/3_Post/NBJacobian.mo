@@ -51,11 +51,14 @@ protected
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
   import HashTableCrToCr = NBHashTableCrToCr;
+  import HashTableCrToCrLst = NBHashTableCrToCrLst;
   import Jacobian = NBackendDAE.BackendDAE;
+  import StrongComponent = NBStrongComponent;
   import System = NBSystem;
 
   // Util imports
   import AvlSetPath;
+  import StringUtil;
   import Util;
 
 public
@@ -81,15 +84,17 @@ public
         algorithm
           (oldSystems, name) := match systemType
             case NBSystem.SystemType.ODE  then (bdae.ode, "ODEJac");
-            case NBSystem.SystemType.INIT then (bdae.init, "INIJac");
             case NBSystem.SystemType.DAE  then (Util.getOption(bdae.dae), "DAEJac");
+            else algorithm
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + System.System.systemTypeString(systemType)});
+            then fail();
           end match;
 
           for syst in oldSystems loop
             (jacobian, funcTree) := match syst
               local
                 System.System qual;
-              case qual as System.SYSTEM() then func(name + intString(idx), qual.unknowns, qual.daeUnknowns, qual.equations , knowns, funcTree);
+              case qual as System.SYSTEM() then func(name + intString(idx), qual.unknowns, qual.daeUnknowns, qual.equations , knowns, qual.strongComponents, funcTree);
             end match;
             syst.jacobian := jacobian;
             newSystems := syst::newSystems;
@@ -98,7 +103,6 @@ public
 
         _ := match systemType
           case NBSystem.SystemType.ODE  algorithm bdae.ode  := listReverse(newSystems);       then ();
-          case NBSystem.SystemType.INIT algorithm bdae.init := listReverse(newSystems);       then ();
           case NBSystem.SystemType.DAE  algorithm bdae.dae  := SOME(listReverse(newSystems)); then ();
         end match;
         bdae.funcTree := funcTree;
@@ -119,14 +123,150 @@ public
     String flag = "default"; //Flags.getConfigString(Flags.JACOBIAN)
   algorithm
     (func) := match flag
-      case "default" then (jacobianDefault);
+      case "default"  then (jacobianSymbolic);
+      case "symbolic" then (jacobianSymbolic);
+      case "numeric"  then (jacobianNumeric);
       /* ... New jacobian modules have to be added here */
     else fail();
     end match;
   end getModule;
 
+  type SparsityPatternCol = tuple<ComponentRef, list<ComponentRef>> "residual, {independents}";
+  type SparsityPatternRow = SparsityPatternCol                      "independent, {residuals}";
+
+  uniontype SparsityPattern
+    record SPARSITY_PATTERN
+      list<SparsityPatternCol> col_wise_pattern   "colum-wise sparsity pattern";
+      list<SparsityPatternRow> row_wise_pattern   "row-wise sparsity pattern";
+      list<ComponentRef> independent_vars         "independent variables solved here";
+      list<ComponentRef> residual_vars            "residual vars e.g. $RES_DAE_0";
+      Integer nnz                                 "number of nonzero elements";
+    end SPARSITY_PATTERN;
+
+    function toString
+      input SparsityPattern pattern;
+      input SparsityColoring coloring;
+      output String str = StringUtil.headline_3("Sparsity Pattern (nnz: " + intString(pattern.nnz) + ")");
+    protected
+      ComponentRef cref;
+      list<ComponentRef> dependencies;
+    algorithm
+      if not listEmpty(pattern.col_wise_pattern) then
+        for col in pattern.col_wise_pattern loop
+          (cref, dependencies) := col;
+          str := str + "(" + ComponentRef.toString(cref) + ")\t" + ComponentRef.listToString(dependencies) + "\n";
+        end for;
+      else
+        str := str + "<empty sparsity pattern>\n";
+      end if;
+      str := str + "\n" + StringUtil.headline_3("Sparsity Coloring Groups");
+      if not listEmpty(coloring) then
+        for group in coloring loop
+          str := str + ComponentRef.listToString(group) + "\n";
+        end for;
+      else
+        str := str + "<empty sparsity coloring>\n";
+      end if;
+    end toString;
+
+    function create
+      input BVariable.VariablePointers independentVars;
+      input BVariable.VariablePointers residualVars;
+      input BEquation.EquationPointers equations;
+      input Option<array<StrongComponent>> strongComponents "Strong Components";
+      output SparsityPattern sparsityPattern;
+      output SparsityColoring sparsityColoring;
+    algorithm
+      sparsityPattern := match strongComponents
+        local
+          array<StrongComponent> comps;
+          list<ComponentRef> independent_vars, residual_vars, tmp;
+          HashTableCrToCrLst.HashTable ht;
+          list<SparsityPatternCol> cols = {};
+          list<SparsityPatternRow> rows = {};
+          Integer nnz = 0;
+
+        case SOME(comps) algorithm
+          // get all relevant crefs
+          residual_vars := BVariable.VariablePointers.getVarNames(residualVars);
+          independent_vars := BVariable.VariablePointers.getVarNames(independentVars);
+
+          // create a sufficiant big hash table
+          ht := HashTableCrToCrLst.empty(listLength(independent_vars) + listLength(residual_vars));
+
+          // save all relevant crefs to know later on if a cref should be added
+          for var in independent_vars loop
+            ht := BaseHashTable.add((var, {}), ht);
+          end for;
+          for var in residual_vars loop
+            ht := BaseHashTable.add((var, {}), ht);
+          end for;
+
+          // traverse all components and save cref dependencies (only column-wise)
+          for i in 1:arrayLength(comps) loop
+            ht := StrongComponent.getDependentCrefs(comps[i], ht);
+          end for;
+
+          // create column-wise sparsity pattern
+          for cref in residual_vars loop
+            tmp := List.unique(BaseHashTable.get(cref, ht));
+            cols := (cref, tmp) :: cols;
+            for dep in tmp loop
+              // also add inverse dependency (indep var) --> (res/tmp) :: rest
+              BaseHashTable.update((dep, cref :: BaseHashTable.get(dep, ht)), ht);
+            end for;
+          end for;
+
+          // create row-wise sparsity pattern
+          for cref in independent_vars loop
+            rows := (cref, List.unique(BaseHashTable.get(cref, ht))) :: rows;
+          end for;
+
+          // find number of nonzero elements
+          for col in cols loop
+            (_, tmp) := col;
+            nnz := nnz + listLength(tmp);
+          end for;
+        then SPARSITY_PATTERN(cols, rows, independent_vars, residual_vars, nnz);
+
+        case NONE() algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of missing strong components."});
+        then fail();
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+        then fail();
+
+      end match;
+
+      // create coloring
+      sparsityColoring := createEmptyColoring(sparsityPattern);
+    end create;
+
+    function createEmpty
+      output SparsityPattern sparsityPattern = EMPTY_SPARSITY_PATTERN;
+      output SparsityColoring sparsityColoring = createEmptyColoring(sparsityPattern);
+    end createEmpty;
+
+    function createEmptyColoring
+      "creates an empty coloring that just groups each independent variable individually"
+      input SparsityPattern sparsityPattern;
+      output SparsityColoring sparsityColoring = {};
+    algorithm
+      for cref in sparsityPattern.independent_vars loop
+        sparsityColoring := {cref} :: sparsityColoring;
+      end for;
+      sparsityColoring := listReverse(sparsityColoring);
+    end createEmptyColoring;
+
+  end SparsityPattern;
+
+  constant SparsityPattern EMPTY_SPARSITY_PATTERN = SPARSITY_PATTERN({}, {}, {}, {}, 0);
+
+  type SparsityColoring = list<list<ComponentRef>>  "list of independent variable groups belonging to the same color";
+
 protected
-  function jacobianDefault extends Module.jacobianInterface;
+  function jacobianSymbolic extends Module.jacobianInterface;
   protected
     BVariable.VariablePointers seedCandidates, partialCandidates;
     Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
@@ -139,9 +279,11 @@ protected
 
     list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, tmp_vars, seed_vars;
     BVariable.VarData varDataJac;
+    SparsityPattern sparsityPattern;
+    SparsityColoring sparsityColoring;
   algorithm
     // ToDo: apply tearing to split residual/inner variables and equations
-    // add inner/tmp cref tuples to HT
+    // add inner / tmp cref tuples to HT
     (seedCandidates, partialCandidates) := if isSome(daeUnknowns) then (Util.getOption(daeUnknowns), unknowns) else (unknowns, BVariable.VariablePointers.empty());
 
     BVariable.VariablePointers.map(seedCandidates, function makeSeedTraverse(name = name, seed_vars_ptr = seed_vars_ptr, jacobianHT = jacobianHT));
@@ -192,8 +334,43 @@ protected
       seedVars      = NBVariable.VariablePointers.fromList(seed_vars)
     );
 
-    jacobian := SOME(Jacobian.JAC(varDataJac, eqDataJac));
-  end jacobianDefault;
+    // ToDo: what if there are no daeUnknowns? i guess these have to be called residuals in general and present for each loop/stateset etc.
+    if isSome(daeUnknowns) then
+      (sparsityPattern, sparsityColoring) := SparsityPattern.create(Util.getOption(daeUnknowns), unknowns, equations, strongComponents);
+    else
+      (sparsityPattern, sparsityColoring) := SparsityPattern.createEmpty();
+      Error.addMessage(Error.COMPILER_WARNING,{getInstanceName() + " failed. Sparsity pattern is currently only supported for DAE Systems."});
+    end if;
+
+    jacobian := SOME(Jacobian.JAC(
+      name              = name,
+      varData           = varDataJac,
+      eqData            = eqDataJac,
+      sparsityPattern   = sparsityPattern,
+      sparsityColoring  = sparsityColoring
+    ));
+  end jacobianSymbolic;
+
+  function jacobianNumeric extends Module.jacobianInterface;
+  protected
+    SparsityPattern sparsityPattern;
+    SparsityColoring sparsityColoring;
+  algorithm
+    // ToDo: what if there are no daeUnknowns? i guess these have to be called residuals in general and present for each loop/stateset etc.
+    if isSome(daeUnknowns) then
+      (sparsityPattern, sparsityColoring) := SparsityPattern.create(Util.getOption(daeUnknowns), unknowns, equations, strongComponents);
+    else
+      (sparsityPattern, sparsityColoring) := SparsityPattern.createEmpty();
+      Error.addMessage(Error.COMPILER_WARNING,{getInstanceName() + " failed. Sparsity pattern is currently only supported for DAE Systems."});
+    end if;
+    jacobian := SOME(Jacobian.JAC(
+      name              = name,
+      varData           = BVariable.VAR_DATA_EMPTY(),
+      eqData            = BEquation.EQ_DATA_EMPTY(),
+      sparsityPattern   = sparsityPattern,
+      sparsityColoring  = sparsityColoring
+    ));
+  end jacobianNumeric;
 
   function makeSeedTraverse
     input output Variable var;
