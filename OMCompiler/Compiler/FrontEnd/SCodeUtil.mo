@@ -5776,5 +5776,21 @@ algorithm
   end match;
 end mergeSCodeMods;
 
+function hasNamedExternalCall
+  input String name;
+  input SCode.ClassDef def;
+  output Boolean hasCall;
+algorithm
+  hasCall := match def
+    local
+      String fn_name;
+
+    case SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(funcName = SOME(fn_name))))
+      then fn_name == name;
+    case SCode.CLASS_EXTENDS() then hasNamedExternalCall(name, def.composition);
+    else false;
+  end match;
+end hasNamedExternalCall;
+
 annotation(__OpenModelica_Interface="frontend");
 end SCodeUtil;
