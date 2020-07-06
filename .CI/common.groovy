@@ -185,11 +185,11 @@ void buildOMC(CC, CXX, extraFlags) {
      echo ./M -l=1.0
      echo ls linearized_model.m
      echo ls M.fmu
-     echo rm -rf M* OMCppM* linear_M*
+     echo rm -rf ./M* ./OMCppM* ./linear_M* ./linearized_model.m
      echo ../build/bin/omc --simCodeTarget=Cpp testSanity.mos
      echo ./M
      echo ls M.fmu
-     echo rm -rf M* OMCppM*
+     echo rm -rf ./M* ./OMCppM*
      echo cd ..
      echo rm -rf .sanity-check
      echo cd testsuite/flattening/libraries/biochem
@@ -212,11 +212,11 @@ void buildOMC(CC, CXX, extraFlags) {
      echo ./M -l=1.0
      echo ls linearized_model.m
      echo ls M.fmu
-     echo rm -rf M* OMCppM* linear_M*
+     echo rm -rf ./M* ./OMCppM* ./linear_M* ./linearized_model.m
      echo ../build/bin/omc --simCodeTarget=Cpp testSanity.mos
      echo ./M
      echo ls M.fmu
-     echo rm -rf M* OMCppM*
+     echo rm -rf ./M* ./OMCppM*
      echo cd ..
      echo rm -rf .sanity-check
      echo mv build/ ../.
@@ -239,10 +239,18 @@ void buildOMC(CC, CXX, extraFlags) {
   mv build build.sanity-check
   mkdir .sanity-check
   cd .sanity-check
-  echo 'loadString("model M end M;");getErrorString();buildModel(M);getErrorString();' > test.mos
-  cat test.mos
-  ../build.sanity-check/bin/omc test.mos
+  cp ../testsuite/sanity-check/testSanity.mos .
+  cat testSanity.mos
+  ../build.sanity-check/bin/omc --linearizationDumpLanguage=matlab testSanity.mos
   ./M
+  ./M -l=1.0
+  ls linearized_model.m
+  ls M.fmu
+  rm -rf ./M* ./OMCppM* ./linear_M* ./linearized_model.m
+  ../build.sanity-check/bin/omc --simCodeTarget=Cpp testSanity.mos
+  ./M
+  ls M.fmu
+  rm -rf ./M* ./OMCppM*
   cd ..
   mv build.sanity-check build
   rm -rf .sanity-check
