@@ -202,7 +202,7 @@ QMdiSubWindow* PlotWindowContainer::getDiagramSubWindowFromMdi()
  */
 bool PlotWindowContainer::isPlotWindow(QObject *pObject)
 {
-  if (0 != pObject->objectName().compare("animationWindow")
+  if (pObject && 0 != pObject->objectName().compare("animationWindow")
       && 0 != pObject->objectName().compare("diagramWindow")) {
     return true;
   }
@@ -217,7 +217,7 @@ bool PlotWindowContainer::isPlotWindow(QObject *pObject)
  */
 bool PlotWindowContainer::isAnimationWindow(QObject *pObject)
 {
-  if (0 == pObject->objectName().compare("animationWindow")) {
+  if (pObject && 0 == pObject->objectName().compare("animationWindow")) {
     return true;
   }
   return false;
@@ -231,7 +231,7 @@ bool PlotWindowContainer::isAnimationWindow(QObject *pObject)
  */
 bool PlotWindowContainer::isDiagramWindow(QObject *pObject)
 {
-  if (0 == pObject->objectName().compare("diagramWindow")) {
+  if (pObject && 0 == pObject->objectName().compare("diagramWindow")) {
     return true;
   }
   return false;
