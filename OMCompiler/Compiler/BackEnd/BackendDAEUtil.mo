@@ -1866,12 +1866,13 @@ algorithm
 end reduceEqSystem;
 
 public function introduceOutputAliases
+"Find top level output variables and replace them with alias variables."
   input output BackendDAE.BackendDAE dae;
 protected
   BackendDAE.EqSystems systems, returnSysts = {};
   BackendDAE.Variables vars, newVars;
-  BackendDAE.EquationArray eqs;
-  list<BackendDAE.Equation> newEqns;
+  BackendDAE.EquationArray eqs, removedEqs;
+  list<BackendDAE.Equation> newEqns, newRemovedEqs;
   DAE.ComponentRef newCref, cref;
   BackendDAE.Var newVar;
   BackendDAE.Equation newEqn;
@@ -1881,9 +1882,12 @@ algorithm
   for system in systems loop
     eqs := system.orderedEqs;
     vars := system.orderedVars;
+    removedEqs := system.removedEqs;
     newVars := BackendVariable.emptyVarsSized(realInt(intReal(BackendVariable.varsSize(vars)) * 1.4));
     newEqns := {};
+    newRemovedEqs := {};
 
+    // Add alias variable and alias equation
     for v in BackendVariable.varList(vars) loop
       if not BackendVariable.isVarOnTopLevelAndOutput(v) then
         newVars := BackendVariable.addVar(v, newVars);
@@ -1909,10 +1913,16 @@ algorithm
       end if;
     end for;
 
+    // Replace variable with alias variable in all equations
     _ := traverseBackendDAEExpsEqns(eqs, introduceOutputAliases_eqs, topLevelOutputs);
     eqs := BackendEquation.addList(newEqns, eqs);
+    _ := traverseBackendDAEExpsEqns(removedEqs, introduceOutputAliases_eqs, topLevelOutputs);
+    removedEqs := BackendEquation.addList(newRemovedEqs, removedEqs);
+
+    // Update system
     system.orderedVars := newVars;
     system.orderedEqs := eqs;
+    system.removedEqs := removedEqs;
     returnSysts := system::returnSysts;
   end for;
 
@@ -1940,7 +1950,7 @@ algorithm
       DAE.Exp e1;
       DAE.ComponentRef cr, newCref;
 
-    // replace der(cr) with der(<outputAliasPrefix> + cr)
+    // replace cr with <outputAliasPrefix>+cr
     case e1 as DAE.CREF(componentRef=cr) guard BaseHashSet.has(cr, inStates) algorithm
       newCref := ComponentReference.prependStringCref(BackendDAE.outputAliasPrefix, cr);
       e1.componentRef := newCref;
