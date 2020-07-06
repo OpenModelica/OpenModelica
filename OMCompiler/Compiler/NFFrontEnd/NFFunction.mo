@@ -2146,7 +2146,7 @@ protected
         DAE.InlineType inline_ty;
         DAE.FunctionBuiltin builtin;
 
-      // External function.
+      // External builtin function.
       case SCode.FunctionRestriction.FR_EXTERNAL_FUNCTION(is_impure)
         algorithm
           in_params := list(InstNode.name(i) for i in inputs);
@@ -2194,6 +2194,10 @@ protected
               Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') or
               not listEmpty(outputs)) or
             SCodeUtil.commentHasBooleanNamedAnnotation(cmt, "__ModelicaAssociation_Impure");
+
+          if SCodeUtil.hasNamedExternalCall("ModelicaError", SCodeUtil.getClassDef(def)) then
+            is_impure := false;
+          end if;
         then
           DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(cmt), is_impure, is_partial,
             getBuiltin(def), DAE.FP_NON_PARALLEL());
