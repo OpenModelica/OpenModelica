@@ -517,10 +517,10 @@ vector<const char *> OMCFactory::handleArgumentsToReplace(int argc, const char* 
             }
             key = iter->second;
 
+
+            optv.push_back(strdup(key.c_str()));
             if(sep > 0)
-                arg = key + " " + value;
-            else
-                arg = key;
+                optv.push_back(strdup(value.c_str()));
         }
         else
         {
@@ -528,13 +528,9 @@ vector<const char *> OMCFactory::handleArgumentsToReplace(int argc, const char* 
               arg = key + "=" + value;
           else
               arg = key;
+          optv.push_back(strdup(arg.c_str()));
         }
 
-        //maybe we have replaced a simple through a complex value with spaces
-        vector<string> strs;
-        boost::split(strs, arg, boost::is_any_of(" "));
-        for(int j = 0; j < strs.size(); j++)
-          optv.push_back(strdup(strs[j].c_str()));
     }
 
     return optv;
@@ -675,7 +671,7 @@ shared_ptr<ISimController> OMCFactory::loadSimControllerLib(PATH simcontroller_p
   LOADERRESULT result = LoadLibrary(simcontroller_path, simcontroller_type_map);
 
   if (result != LOADER_SUCCESS)
-    throw ModelicaSimulationError(MODEL_FACTORY,string("Failed loading SimConroller library!") + simcontroller_path);
+    throw ModelicaSimulationError(MODEL_FACTORY,string("Failed loading SimController library from path ") + simcontroller_path);
 
   map<string, factory<ISimController,PATH,PATH> >::iterator iter;
   map<string, factory<ISimController,PATH,PATH> >& factories(simcontroller_type_map.get());
