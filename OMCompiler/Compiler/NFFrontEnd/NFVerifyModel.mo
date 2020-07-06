@@ -43,6 +43,8 @@ protected
   import Equation = NFEquation;
   import Expression = NFExpression;
   import ExpandExp = NFExpandExp;
+  import NFInstNode.InstNode;
+  import Record = NFRecord;
   import Variable = NFVariable;
   import Algorithm = NFAlgorithm;
   import Statement = NFStatement;
@@ -421,6 +423,7 @@ protected
         Expression lhs;
         Type ty;
         ComponentRef cref;
+        InstNode cls;
         list<Equation> body;
         list<Equation.Branch> branches;
 
@@ -432,6 +435,9 @@ protected
           // remove all subscripts to handle arrays
           hashTable := BaseHashTable.add((ComponentRef.stripSubscriptsAll(cref), 0), hashTable);
       then hashTable;
+
+      case Equation.CREF_EQUALITY(lhs = cref as ComponentRef.CREF(ty = ty as Type.COMPLEX(cls = cls))) guard(Type.isRecord(ty))
+      then checkDiscreteRealRecord(cref, cls, hashTable);
 
       // traverse nested if equations. It suffices if the variable is defined in ANY branch.
       case Equation.IF(branches = branches)
@@ -528,6 +534,7 @@ protected
          Type ty;
          ComponentRef cref;
          list<Expression> elements;
+         InstNode cls;
 
       // only add if it is a real variable, we cannot check for discrete here
       // since only the variable has variablity information
@@ -537,6 +544,9 @@ protected
           // remove all subscripts to handle arrays
           hashTable := BaseHashTable.add((ComponentRef.stripSubscriptsAll(cref), 0), hashTable);
       then hashTable;
+
+      case Expression.CREF(ty = ty as Type.COMPLEX(cls = cls), cref = cref) guard(Type.isRecord(ty))
+      then checkDiscreteRealRecord(cref, cls, hashTable);
 
       case Expression.TUPLE(elements = elements)
         algorithm
@@ -549,6 +559,24 @@ protected
 
     end match;
   end checkDiscreteRealExp;
+
+  function checkDiscreteRealRecord
+    input ComponentRef cref;
+    input InstNode cls;
+    input output HashTable hashTable;
+  protected
+    ComponentRef element;
+    list<InstNode> inputs;
+  algorithm
+    // remove all subscripts to handle arrays
+    hashTable := BaseHashTable.add((ComponentRef.stripSubscriptsAll(cref), 0), hashTable);
+    // also add all record elements
+    (inputs, _, _) := Record.collectRecordParams(cls);
+    for node in inputs loop
+      element := ComponentRef.prefixCref(node, InstNode.getType(node), {}, cref);
+      hashTable := BaseHashTable.add((ComponentRef.stripSubscriptsAll(element), 0), hashTable);
+    end for;
+  end checkDiscreteRealRecord;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFVerifyModel;
