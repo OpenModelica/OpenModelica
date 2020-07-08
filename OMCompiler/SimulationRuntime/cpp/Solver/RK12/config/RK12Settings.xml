@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<!DOCTYPE boost_serialization>
+<boost_serialization signature="serialization::archive"
+                     version="5">
+  <EulerSettings class_id="0"
+                 tracking_level="0"
+                 version="0">
+    <SolverSettings class_id="1"
+                    tracking_level="0"
+                    version="0">
+      <HInit>1e-4</HInit>
+      <LowerLimit>1e-12</LowerLimit>
+      <UpperLimit>1</UpperLimit>
+      <EndTimeTol>1e-6</EndTimeTol>
+      <ZeroTol>1e-6</ZeroTol>
+      <ZeroTimeTol>1e-12</ZeroTimeTol>
+    </SolverSettings>
+    <EulerMethod>0</EulerMethod>
+    <ZeroSearchMethod>1</ZeroSearchMethod>
+    <UseDenseOutput>1</UseDenseOutput>
+    <UseNewtonIteration>1</UseNewtonIteration>
+    <UseSturm>0</UseSturm>
+  </EulerSettings>
+</boost_serialization>
