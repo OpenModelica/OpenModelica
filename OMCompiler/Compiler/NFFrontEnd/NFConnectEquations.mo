@@ -137,7 +137,10 @@ algorithm
             case Absyn.IDENT("inStream")
               then evaluateInStream(Expression.toCref(listHead(call.arguments)), sets, setsArray, ctable);
             case Absyn.IDENT("actualStream")
-              then evaluateActualStream(Expression.toCref(listHead(call.arguments)), sets, setsArray, ctable);
+              algorithm
+                evalExp := evaluateActualStream(Expression.toCref(listHead(call.arguments)), sets, setsArray, ctable);
+              then
+                evalExp;
             case Absyn.IDENT("cardinality")
               then CardinalityTable.evaluateCardinality(listHead(call.arguments), ctable);
             else Expression.mapShallow(exp,
@@ -825,16 +828,15 @@ protected function evaluateActualStream
   input ConnectionSets.Sets sets;
   input array<list<Connector>> setsArray;
   input CardinalityTable.Table ctable;
-  input Option<ComponentRef> mulCref = NONE();
   output Expression exp;
+  output ComponentRef flowCref;
 protected
   Integer flow_dir;
-  ComponentRef flow_cr;
   Expression flow_exp, stream_exp, instream_exp;
   Operator op;
 algorithm
-  flow_cr := associatedFlowCref(streamCref);
-  flow_dir := evaluateFlowDirection(flow_cr);
+  flowCref := associatedFlowCref(streamCref);
+  flow_dir := evaluateFlowDirection(flowCref);
 
   // Select a branch if we know the flow direction, otherwise generate the whole
   // if-equation.
@@ -843,21 +845,16 @@ algorithm
   elseif flow_dir == -1 then
     exp := Expression.fromCref(streamCref);
   else
-    // actualStream(stream_var) = smooth(0, if flow_var > 0 then inStream(stream_var)
-    //                                                      else stream_var);
-    flow_exp := Expression.fromCref(flow_cr);
+    // actualStream(stream_var) = if flow_var > 0 then inStream(stream_var) else stream_var);
+    flow_exp := Expression.fromCref(flowCref);
     stream_exp := Expression.fromCref(streamCref);
     instream_exp := evaluateInStream(streamCref, sets, setsArray, ctable);
-    op := Operator.makeGreater(ComponentRef.nodeType(flow_cr));
+    op := Operator.makeGreater(ComponentRef.nodeType(flowCref));
 
     exp := Expression.IF(
       Type.REAL(),
       Expression.RELATION(flow_exp, op, Expression.REAL(0.0)),
       instream_exp, stream_exp);
-
-    if isNone(mulCref) or not ComponentRef.isEqual(flow_cr, Util.getOption(mulCref)) then
-      exp := makeSmoothCall(exp, 0);
-    end if;
   end if;
 end evaluateActualStream;
 
@@ -876,12 +873,12 @@ protected
   ComponentRef cr, flow_cr;
 algorithm
   e1 as Expression.CREF(cref = cr) := evaluateOperators(crefExp, sets, setsArray, ctable);
-  e2 := evaluateActualStream(Expression.toCref(actualStreamArg), sets, setsArray, ctable, SOME(cr));
+  (e2, flow_cr) := evaluateActualStream(Expression.toCref(actualStreamArg), sets, setsArray, ctable);
   outExp := Expression.BINARY(e1, op, e2);
 
   // Wrap the expression in smooth if the result would be flow_cr * (if flow_cr > 0 then ...)
   outExp := match e2
-    case Expression.IF() then makeSmoothCall(outExp, 0);
+    case Expression.IF() guard ComponentRef.isEqual(cr, flow_cr) then makeSmoothCall(outExp, 0);
     else outExp;
   end match;
 end evaluateActualStreamMul;
