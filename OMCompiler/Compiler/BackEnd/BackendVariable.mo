@@ -1874,8 +1874,15 @@ public function setVarKind "author: PA
   input BackendDAE.VarKind inVarKind;
   output BackendDAE.Var outVar = inVar;
 algorithm
-  outVar.varKind := inVarKind;
-  // referenceUpdate(inVar, 2, new_kind);
+  // kabdelhak: state select always variables cannot be dummy states
+  // ticket #3689
+  outVar.varKind := match inVarKind
+    case BackendDAE.DUMMY_STATE() guard(varStateSelectAlways(inVar))
+      algorithm
+        Error.addMessage(Error.NON_STATE_STATESELECT_ALWAYS, {ComponentReference.crefStr(BackendVariable.varCref(inVar))});
+    then fail();
+    else inVarKind;
+  end match;
 end setVarKind;
 
 public function setVarTS "Sets the BackendDAE.TearingSelect of a variable"
