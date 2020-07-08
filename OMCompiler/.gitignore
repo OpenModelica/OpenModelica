@@ -91,6 +91,12 @@ SimulationRuntime/OMSICpp/Build_*/
 SimulationRuntime/OMSICpp/Debug/
 SimulationRuntime/OMSICpp/.cproject
 SimulationRuntime/OMSICpp/confdefs.h
+SimulationRuntime/cpp/Makefile
+SimulationRuntime/cpp/Makefile.env
+SimulationRuntime/cpp/Build_*/
+SimulationRuntime/cpp/Debug/
+SimulationRuntime/cpp/.cproject
+SimulationRuntime/cpp/confdefs.h
 SimulationRuntime/ParModelica/Makefile
 SimulationRuntime/ParModelica/auto/Makefile
 SimulationRuntime/ParModelica/explicit/Makefile
@@ -168,12 +174,17 @@ Parser/ParModelica_Lexer_BaseModelica_Lexer.h
 SimulationRuntime/c/RuntimeSources.mo
 SimulationRuntime/**/test_files/*.jar
 SimulationRuntime/OMSICpp/build_msvc/
+SimulationRuntime/cpp/build_msvc/
 # Visual Studio 2015/2017 cache/options directory
 
 SimulationRuntime/OMSICpp/.vs/
 SimulationRuntime/OMSICpp/CMakeSettings.json
 SimulationRuntime/OMSICpp/omcWrapper/.vs
 SimulationRuntime/OMSICpp/omcWrapper/CMakeSettings.json
+SimulationRuntime/cpp/.vs/
+SimulationRuntime/cpp/CMakeSettings.json
+SimulationRuntime/cpp/omcWrapper/.vs
+SimulationRuntime/cpp/omcWrapper/CMakeSettings.json
 SimulationRuntime/OMSI/.vs/
 SimulationRuntime/OMSI/CMakeSettings.json
 tags
