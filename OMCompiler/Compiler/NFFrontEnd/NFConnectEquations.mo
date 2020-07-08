@@ -928,7 +928,7 @@ function makeSmoothCall
   output Expression callExp;
 algorithm
   callExp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.SMOOTH,
-    {DAE.INTEGER(order), arg}, Expression.variability(arg)));
+    {Expression.INTEGER(order), arg}, Expression.variability(arg)));
 end makeSmoothCall;
 
 protected function removeStreamSetElement
