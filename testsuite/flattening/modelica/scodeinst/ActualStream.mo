@@ -39,7 +39,7 @@ end ActualStream;
 // equation
 //   a.s1.r = a.s2.r;
 //   a.s2.f + a.s1.f = 0.0;
-//   actual_stream_s1 = smooth(0, if a.s1.f > 0.0 then a.s2.s else a.s1.s);
-//   actual_stream_s2 = smooth(0, if a.s2.f > 0.0 then a.s1.s else a.s2.s);
+//   actual_stream_s1 = if a.s1.f > 0.0 then a.s2.s else a.s1.s;
+//   actual_stream_s2 = if a.s2.f > 0.0 then a.s1.s else a.s2.s;
 // end ActualStream;
 // endResult
