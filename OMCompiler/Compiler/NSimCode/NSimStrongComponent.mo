@@ -64,6 +64,7 @@ protected
 
   // SimCode imports
   import SimCode = NSimCode;
+  import NSimJacobian.SimJacobian;
   import NSimVar.SimVar;
 
   // Util imports
@@ -582,7 +583,7 @@ public
       list<tuple<Integer, Integer, Block>> simJac; // ToDo: is this the old jacobian structure?
       /* solver linear tearing system */
       list<Block> residual;
-      Option<Jacobian> jacobian;
+      Option<SimJacobian> jacobian;
       list<DAE.ElementSource> sources;
       Integer indexSystem;
       Integer size "Number of variables that are solved in this system. Needed because 'crefs' only contains the iteration variables.";
@@ -629,7 +630,7 @@ public
       list<ComponentRef> crefs;
       Integer indexSystem;
       Integer size "Number of variables that are solved in this system. Needed because 'crefs' only contains the iteration variables.";
-      Option<Jacobian> jacobian;
+      Option<SimJacobian> jacobian;
       Boolean homotopy;
       Boolean mixed;
       Boolean torn;
@@ -665,12 +666,6 @@ public
         );
     end convert;
   end NonlinearSystem;
-
-  uniontype Jacobian
-    record JACOBIAN
-      // ToDo
-    end JACOBIAN;
-  end Jacobian;
 
   annotation(__OpenModelica_Interface="backend");
 end NSimStrongComponent;

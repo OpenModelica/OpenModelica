@@ -70,6 +70,7 @@ public
     input System.SystemType systemType;
   protected
     constant Module.jacobianInterface func = getModule();
+    String oldName;
   algorithm
     bdae := match bdae
       local
@@ -84,17 +85,22 @@ public
         algorithm
           (oldSystems, name) := match systemType
             case NBSystem.SystemType.ODE  then (bdae.ode, "ODEJac");
+            case NBSystem.SystemType.INIT then (bdae.ode, "INITJac");
             case NBSystem.SystemType.DAE  then (Util.getOption(bdae.dae), "DAEJac");
             else algorithm
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + System.System.systemTypeString(systemType)});
             then fail();
           end match;
 
+          // kabdelhak: i would really like these names, but for now we need A, B, C, D
+          name := "A";
+          oldName := "A";
+
           for syst in oldSystems loop
             (jacobian, funcTree) := match syst
               local
                 System.System qual;
-              case qual as System.SYSTEM() then func(name + intString(idx), qual.unknowns, qual.daeUnknowns, qual.equations , knowns, qual.strongComponents, funcTree);
+              case qual as System.SYSTEM() then func(name, qual.unknowns, qual.daeUnknowns, qual.equations , knowns, qual.strongComponents, funcTree);
             end match;
             syst.jacobian := jacobian;
             newSystems := syst::newSystems;
@@ -103,6 +109,7 @@ public
 
         _ := match systemType
           case NBSystem.SystemType.ODE  algorithm bdae.ode  := listReverse(newSystems);       then ();
+          case NBSystem.SystemType.INIT algorithm bdae.init := listReverse(newSystems);       then ();
           case NBSystem.SystemType.DAE  algorithm bdae.dae  := SOME(listReverse(newSystems)); then ();
         end match;
         bdae.funcTree := funcTree;
@@ -339,7 +346,7 @@ protected
       (sparsityPattern, sparsityColoring) := SparsityPattern.create(Util.getOption(daeUnknowns), unknowns, equations, strongComponents);
     else
       (sparsityPattern, sparsityColoring) := SparsityPattern.createEmpty();
-      Error.addMessage(Error.COMPILER_WARNING,{getInstanceName() + " failed. Sparsity pattern is currently only supported for DAE Systems."});
+      //Error.addMessage(Error.COMPILER_WARNING,{getInstanceName() + " failed. Sparsity pattern is currently only supported for DAE Systems."});
     end if;
 
     jacobian := SOME(Jacobian.JAC(
