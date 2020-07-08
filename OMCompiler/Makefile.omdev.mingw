@@ -285,17 +285,29 @@ endif
 	(cp -pufr $(OMDEVMSYS)/tools/xsltproc $(builddir_lib)/omc/libexec/)
 	(cp -pufr $(OMDEVMSYS)/tools/gnuplot $(builddir_lib)/omc/libexec/)
 
-copycppheader:
+copycppheader: copycppheader_old
 	echo Copying needed header files to the $(OMBUILDDIR)/include/omc/omsicpp directory
 	(mkdir -p $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/gcc/boost)
 	(cp -puf $(BOOST_PATH)/boost/*.hpp              $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/gcc/boost)
 	(cp -pufr $(BOOST_PATH)/boost/*                 $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/gcc/boost)
 
-copycppmsvcheader: getMSVCversion
+copycppmsvcheader: getMSVCversion copycppmsvcheader_old
 	echo Copying needed header files to the $(OMBUILDDIR)/include/omc/omsicpp/ directory
 	(mkdir -p $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/msvc/boost)
 	(cp -puf $(BOOST_PATH_MSVC)/boost/*.hpp              $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/msvc/boost)
 	(cp -pufr $(BOOST_PATH_MSVC)/boost/*                 $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/msvc/boost)
+
+copycppheader_old:
+	echo Copying needed header files to the $(OMBUILDDIR)/include/omc/cpp directory
+	(mkdir -p $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/gcc/boost)
+	(cp -puf $(BOOST_PATH)/boost/*.hpp              $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/gcc/boost)
+	(cp -pufr $(BOOST_PATH)/boost/*                 $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/gcc/boost)
+
+copycppmsvcheader_old: getMSVCversion
+	echo Copying needed header files to the $(OMBUILDDIR)/include/omc/cpp/ directory
+	(mkdir -p $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/msvc/boost)
+	(cp -puf $(BOOST_PATH_MSVC)/boost/*.hpp              $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/msvc/boost)
+	(cp -pufr $(BOOST_PATH_MSVC)/boost/*                 $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/msvc/boost)
 
 omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(IPOPT_TARGET) graphstream $(SEMLA_LIB) OMSI
 	(time $(MAKE) -f $(defaultMakefileTarget) CFLAGS="$(CFLAGS)" omc-bootstrapped OMBUILDDIR=$(OMBUILDDIR))

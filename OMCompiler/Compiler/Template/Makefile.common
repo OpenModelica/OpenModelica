@@ -1,7 +1,12 @@
 .PHONY : all check_tabs
 
 GENERATED_FILES_BOOT_STAGE2=AbsynDumpTpl.mo CodegenUtil.mo DAEDumpTpl.mo ExpressionDumpTpl.mo Unparsing.mo SCodeDumpTpl.mo GenerateAPIFunctionsTpl.mo CodegenCFunctions.mo AbsynToJulia.mo AbsynJLDumpTpl.mo
-GENERATED_FILES=$(GENERATED_FILES_BOOT_STAGE2) CodegenC.mo CodegenUtilSimulation.mo CodegenEmbeddedC.mo CodegenFMUCommon.mo CodegenFMU.mo CodegenFMU1.mo CodegenFMU2.mo CodegenCSharp.mo CodegenCppCommon.mo CodegenCpp.mo CodegenCppHpcom.mo CodegenFMUCpp.mo CodegenOMSI_common.mo CodegenOMSIC.mo CodegenOMSICpp.mo CodegenOMSIC_Equations.mo CodegenFMUCppHpcom.mo CodegenCppInit.mo CodegenMidToC.mo CodegenModelica.mo GraphvizDump.mo GraphMLDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo CodegenAdevs.mo CodegenSparseFMI.mo CodegenXML.mo CodegenJava.mo CodegenJS.mo TaskSystemDump.mo VisualXMLTpl.mo
+GENERATED_FILES=$(GENERATED_FILES_BOOT_STAGE2) CodegenC.mo CodegenUtilSimulation.mo CodegenEmbeddedC.mo CodegenFMUCommon.mo \
+CodegenFMU.mo CodegenFMU1.mo CodegenFMU2.mo CodegenCSharp.mo CodegenCppCommon.mo CodegenCpp.mo CodegenCppHpcom.mo CodegenFMUCpp.mo \
+CodegenOMSI_common.mo CodegenOMSIC.mo CodegenOMSICpp.mo CodegenOMSIC_Equations.mo CodegenFMUCppHpcom.mo CodegenCppInit.mo \
+CodegenMidToC.mo CodegenModelica.mo GraphvizDump.mo GraphMLDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo CodegenAdevs.mo CodegenSparseFMI.mo \
+CodegenXML.mo CodegenJava.mo CodegenJS.mo TaskSystemDump.mo VisualXMLTpl.mo \
+CodegenCppCommonOld.mo CodegenCppHpcomOld.mo CodegenCppOld.mo CodegenFMUCppHpcomOld.mo CodegenFMUCppOld.mo
 UNUSED=../boot/find-unused-import.sh
 
 
@@ -82,15 +87,23 @@ CodegenFMUCpp.mo : CodegenFMUCpp.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenC.t
 	@echo " ** CodegenFMUCpp template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " " && ($(UNUSED) "$@" || true)
+CodegenFMUCppOld.mo : CodegenFMUCppOld.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenUtil.tpl CodegenCppOld.tpl  CodegenCppCommonOld.tpl CodegenFMU.tpl
+	@echo " ** CodegenFMUCppOld template compilation ** "
+	$(OMC) $< > $@.log || (cat $@.log && false)
+	@echo " " && ($(UNUSED) "$@" || true)
 CodegenOMSICpp.mo : CodegenOMSICpp.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenUtil.tpl CodegenCpp.tpl  CodegenCppCommon.tpl CodegenFMU.tpl
 	@echo " ** CodegenOMSICpp template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " " && ($(UNUSED) "$@" || true)
-
 CodegenFMUCppHpcom.mo : CodegenFMUCppHpcom.tpl CodegenFMUCpp.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenCppHpcom.tpl CodegenUtil.tpl CodegenCppCommon.tpl CodegenCpp.tpl CodegenFMU.tpl
 	@echo " ** CodegenFMUCppHpcom template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " " && ($(UNUSED) "$@" || true)
+CodegenFMUCppHpcomOld.mo : CodegenFMUCppHpcomOld.tpl CodegenFMUCppOld.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenCppHpcomOld.tpl CodegenUtil.tpl CodegenCppCommonOld.tpl CodegenCppOld.tpl CodegenFMU.tpl
+	@echo " ** CodegenFMUCppHpcomOld template compilation ** "
+	$(OMC) $< > $@.log || (cat $@.log && false)
+	@echo " " && ($(UNUSED) "$@" || true)
+
 
 # OMSI
 CodegenOMSI_common.mo : CodegenOMSI_common.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenUtil.tpl CodegenUtilSimulation.tpl CodegenCFunctions.tpl
@@ -141,6 +154,17 @@ CodegenCppHpcom.mo : CodegenCppHpcom.tpl SimCodeTV.mo SimCodeBackendTV.mo Codege
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " " && ($(UNUSED) "$@" || true)
 
+CodegenCppOld.mo : CodegenCppOld.tpl SimCodeTV.mo CodegenUtil.tpl CodegenCppInit.tpl CodegenCppCommonOld.tpl
+	@echo " ** CodegenCppOld template compilation ** "
+	$(OMC) $< > $@.log || (cat $@.log && false)
+	@echo " " && ($(UNUSED) "$@" || true)
+
+CodegenCppHpcomOld.mo : CodegenCppHpcomOld.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenCppOld.tpl CodegenUtil.tpl
+	@echo " ** CodegenCppHpcom template compilation ** "
+	$(OMC) $< > $@.log || (cat $@.log && false)
+	@echo " " && ($(UNUSED) "$@" || true)
+
+
 CodegenCppInit.mo : CodegenCppInit.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenUtil.tpl CodegenFMUCommon.tpl
 	@echo " ** CodegenCppInit template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
@@ -149,6 +173,11 @@ CodegenCppCommon.mo : CodegenCppCommon.tpl SimCodeTV.mo
 	@echo " ** CodegenCppCommon template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " " && ($(UNUSED) "$@" || true)
+CodegenCppCommonOld.mo : CodegenCppCommonOld.tpl SimCodeTV.mo
+	@echo " ** CodegenCppCommonOld template compilation ** "
+	$(OMC) $< > $@.log || (cat $@.log && false)
+	@echo " " && ($(UNUSED) "$@" || true)
+
 
 ExpressionDumpTpl.mo : ExpressionDumpTpl.tpl ExpressionDumpTV.mo DAEDumpTpl.tpl
 	@echo " ** ExpressionDumpTpl template compilation ** "
