@@ -58,6 +58,39 @@ public
       list<ErrorTypes.TotalMessage> errors;
     end INVALID_BRANCH;
 
+    function mapExp
+      input output Branch branch;
+      input MapExpFn func;
+      input Boolean mapBody = true;
+    protected
+      Expression cond;
+      list<Equation> eql;
+    algorithm
+      branch := match branch
+        case Branch.BRANCH()
+          algorithm
+            cond := func(branch.condition);
+
+            if mapBody then
+              eql := list(Equation.mapExp(e, func) for e in branch.body);
+            else
+              eql := branch.body;
+            end if;
+          then
+            Branch.BRANCH(cond, branch.conditionVar, eql);
+
+        case Branch.INVALID_BRANCH()
+          algorithm
+            // The body of an invalid branch might not be safe to traverse, but
+            // the condition still needs to be valid and should be traversed.
+            branch.branch := mapExp(branch.branch, func, mapBody = false);
+          then
+            branch;
+
+        else branch;
+      end match;
+    end mapExp;
+
     function toStream
       input Branch branch;
       input String indent;
@@ -518,13 +551,13 @@ public
 
       case IF()
         algorithm
-          eq.branches := list(mapExpBranch(b, func) for b in eq.branches);
+          eq.branches := list(Branch.mapExp(b, func) for b in eq.branches);
         then
           eq;
 
       case WHEN()
         algorithm
-          eq.branches := list(mapExpBranch(b, func) for b in eq.branches);
+          eq.branches := list(Branch.mapExp(b, func) for b in eq.branches);
         then
           eq;
 
@@ -560,25 +593,6 @@ public
       else eq;
     end match;
   end mapExp;
-
-  function mapExpBranch
-    input output Branch branch;
-    input MapExpFn func;
-  protected
-    Expression cond;
-    list<Equation> eql;
-  algorithm
-    branch := match branch
-      case Branch.BRANCH()
-        algorithm
-          cond := func(branch.condition);
-          eql := list(mapExp(e, func) for e in branch.body);
-        then
-          Branch.BRANCH(cond, branch.conditionVar, eql);
-
-      else branch;
-    end match;
-  end mapExpBranch;
 
   function foldExpList<ArgT>
     input list<Equation> eq;
