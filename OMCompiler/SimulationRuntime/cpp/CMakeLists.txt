@@ -803,7 +803,7 @@ ENDIF(USE_MICO)
 #Write the defines into the ADDITIONAL_DEFINES variable
 # GET_DIRECTORY_PROPERTY(ADDITIONAL_DEFINES DEFINITIONS)
 # message(STATUS "Generated compile definitions: ${ADDITIONAL_DEFINES}")
-
+SET(Boost_Library_folder  ${Boost_LIBRARY_DIRS} CACHE STRING "library directory" )
 link_directories ( ${Boost_LIBRARY_DIRS} )
 
 
