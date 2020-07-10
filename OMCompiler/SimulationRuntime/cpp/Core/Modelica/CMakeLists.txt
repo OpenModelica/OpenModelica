@@ -7,6 +7,7 @@ add_library( ${ModelicaName}  STATIC Modelica.cpp)
 
 if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${ModelicaName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
+
 endif(NOT BUILD_SHARED_LIBS)
 
 target_link_libraries(${ModelicaName} ${Boost_LIBRARIES})
@@ -42,7 +43,7 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 #set(Boost_SYSTEM_LIBRARY_NAME ${libboostSystemNAME})
 
 set (BOOST_INCLUDE ${Boost_INCLUDE_DIRS})
-set (BOOST_LIBS ${Boost_LIBRARY_DIRS})
+
 set (MODELICA_SYSTEM_LIB_EXT ${libModelicaSystemNameExt})
 
 #Fix to enable debugging for gcc
@@ -60,7 +61,7 @@ FUNCTION(prepareBoostVar targetVar releaseVar debugVar)
 		SET(targetVar_ ${debugVar})
 	ENDIF(CMAKE_BUILD_TYPE MATCHES "RELEASE")
 	GET_FILENAME_COMPONENT(${targetVar_} "${${targetVar_}}" NAME_WE)
-	STRING(REGEX REPLACE "^lib" "" ${targetVar_} ${${targetVar_}})
+	STRING(REGEX REPLACE "^lib" "" "${targetVar_}" "${${targetVar_}}")
 	SET(${targetVar} ${${targetVar_}} PARENT_SCOPE)
 ENDFUNCTION()
 
@@ -122,10 +123,10 @@ IF(WIN32)
 	SET(SUNDIALS_INCLUDE_DIR_ "$(OMHOME)/include/omc/cpp/sundials")
 	SET(LAPACK_LIBS_ "$(OMHOME)/bin")
 ELSE(WIN32)
-	IF("${Boost_LIBRARY_DIR}" STREQUAL "")
+	IF("${Boost_LIBRARY_DIRS}" STREQUAL "")
 		SET(Boost_LIBS_ ".")
 	ELSE()
-		SET(Boost_LIBS_ ${Boost_LIBRARY_DIR})
+		SET(Boost_LIBS_ ${Boost_Library_folder})
 	ENDIF()
 	IF("${Boost_INCLUDE_DIR}" STREQUAL "" OR
 	   "${Boost_INCLUDE_DIR}" STREQUAL "/usr/include")
@@ -175,7 +176,13 @@ ENDIF()
 
 SET(Boost_LIBRARIES_NEW)
 FOREACH(lib ${Boost_LIBRARIES_})
+  # Convert "Boost:SomeCrazyLib" to "-lboost_SomeCrazyLib" for ModelicaConfig_gcc.inc
+  IF (${CMAKE_VERSION} VERSION_GREATER "3.16.0") # support newer cmake >= 3.16
+    GET_TARGET_PROPERTY(libNew "${lib}" LOCATION)
+    GET_FILENAME_COMPONENT(libNew "${libNew}" NAME_WE)
+  ELSE(${CMAKE_VERSION} VERSION_GREATER "3.16.0") # support older cmake <= 3.16
   GET_FILENAME_COMPONENT(libNew "${lib}" NAME_WE)
+  ENDIF(${CMAKE_VERSION} VERSION_GREATER "3.16.0")
   STRING(REGEX REPLACE "^lib" "" libNew ${libNew})
   SET(Boost_LIBRARIES_NEW "${Boost_LIBRARIES_NEW} ${LINKER_LIB_PREFIX}${libNew}")
 ENDFOREACH()
@@ -212,7 +219,7 @@ ENDFOREACH(lib ${SUITESPARSE_UMFPACK_LIBRARIES_OMC})
 
 MESSAGE(STATUS " ")
 MESSAGE(STATUS "Values for *.inc files:")
-MESSAGE(STATUS "--BOOST_LIBS = ${Boost_LIBS_}")
+MESSAGE(STATUS "--BOOST_LIBS = ${Boost_LIBS_} " - " ${Boost_Library_folder}")
 MESSAGE(STATUS "--BOOST_INCLUDE = ${Boost_INCLUDE_}")
 MESSAGE(STATUS "--BOOST_LIBRARIES = ${Boost_LIBRARIES_}")
 MESSAGE(STATUS "--SUNDIALS_LIBS = ${SUNDIALS_LIBS_}")
