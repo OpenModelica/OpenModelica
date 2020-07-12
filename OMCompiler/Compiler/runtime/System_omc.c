@@ -50,8 +50,14 @@ extern "C"
 #include "openmodelica.h"
 #include "meta/meta_modelica.h"
 #include "ModelicaUtilities.h"
+
 #define ADD_METARECORD_DEFINITIONS static
-#include "OpenModelicaBootstrappingHeader.h"
+#if defined(OMC_BOOTSTRAPPING)
+  #include "../boot/tarball-include/OpenModelicaBootstrappingHeader.h"
+#else
+  #include "../OpenModelicaBootstrappingHeader.h"
+#endif
+
 #include "systemimpl.c"
 
 extern void System_writeFile(const char* filename, const char* data)
