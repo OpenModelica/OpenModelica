@@ -197,7 +197,7 @@ goto rule ## func ## Ex; }}
   #define ARRAY_REDUCTION_NAME "\$array"
 
   #if !defined(OMJULIA)
-  #include "meta_modelica.h"
+  #include "meta/meta_modelica.h"
   #include "OpenModelicaBootstrappingHeader.h"
   parser_members members;
   void* mmc_mk_box_eat_all(int ix, ...) {return NULL;}

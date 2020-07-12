@@ -32,11 +32,11 @@ extern "C" {
 
 
 #include "openmodelica.h"
-#include "meta_modelica.h"
+#include "meta/meta_modelica.h"
 #include "util/modelica_string.h"
 #define ADD_METARECORD_DEFINITIONS static
 #include "OpenModelicaBootstrappingHeader.h"
-#include "ModelicaUtilitiesExtra.h"
+#include "util/ModelicaUtilitiesExtra.h"
 
 #if !defined(Util__notrans)
 #define Util__notrans Gettext__notrans
