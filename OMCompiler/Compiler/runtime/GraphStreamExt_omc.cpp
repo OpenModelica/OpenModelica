@@ -36,7 +36,7 @@
 #include <stdlib.h>
 
 extern "C" {
-#include "meta_modelica.h"
+#include "meta/meta_modelica.h"
 #define ADD_METARECORD_DEFINITIONS static
 #include "OpenModelicaBootstrappingHeader.h"
 }
