@@ -33,6 +33,7 @@ set(OM_PARSE_SOURCES ${OM_PARSE_SOURCES} ${GNERATED_DIRECTORY}/ModelicaParser.c)
 
 ######################### add libomparser ###########################
 add_library(omparse STATIC ${OM_PARSE_SOURCES})
+add_library(omc::parser ALIAS omparse)
 target_link_libraries(omparse PUBLIC Intl)
 target_link_libraries(omparse PUBLIC omc::compiler::runtime)
 target_link_libraries(omparse PUBLIC omc::3rd::omantlr3)
