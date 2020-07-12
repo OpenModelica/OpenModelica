@@ -45,10 +45,10 @@ extern "C"
 #include <ctype.h> /* for toupper */
 #include <limits.h>
 #include <stdlib.h>
-#include "omc_msvc.h"
-#include "omc_file.h"
+#include "util/omc_msvc.h"
+#include "util/omc_file.h"
 #include "openmodelica.h"
-#include "meta_modelica.h"
+#include "meta/meta_modelica.h"
 #include "ModelicaUtilities.h"
 #define ADD_METARECORD_DEFINITIONS static
 #include "OpenModelicaBootstrappingHeader.h"

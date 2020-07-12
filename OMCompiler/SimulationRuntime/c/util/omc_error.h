@@ -56,8 +56,8 @@ typedef struct _FILE_INFO
 #define omc_dummyFileInfo {"",0,0,0,0,0}
 
 DLLExport extern void printInfo(FILE *stream, FILE_INFO info);
-// DLLExport extern void (*omc_assert)(threadData_t*, FILE_INFO, const char*, ...) __attribute__ ((noreturn));
-// DLLExport extern void (*omc_assert_warning)(FILE_INFO, const char*, ...);
+DLLExport extern void (*omc_assert)(threadData_t*, FILE_INFO, const char*, ...) __attribute__ ((noreturn));
+DLLExport extern void (*omc_assert_warning)(FILE_INFO, const char*, ...);
 DLLExport extern void (*omc_terminate)(FILE_INFO, const char*, ...);
 DLLExport extern void (*omc_throw)(threadData_t*) __attribute__ ((noreturn));
 
@@ -68,11 +68,7 @@ void initDumpSystem();
 void deactivateLogging();
 void reactivateLogging();
 void omc_assert_function(threadData_t*,FILE_INFO info, const char *msg, ...) __attribute__ ((noreturn));
-#define omc_assert(...) omc_assert_function(__VA_ARGS__)
-
 void omc_assert_warning_function(FILE_INFO info,  const char *msg, ...);
-#define omc_assert_warning(...) omc_assert_warning_function(__VA_ARGS__)
-
 void omc_terminate_function(FILE_INFO info, const char *msg, ...);
 void omc_throw_function(threadData_t*) __attribute__ ((noreturn));
 

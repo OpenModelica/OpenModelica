@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "printimpl.h"
-#include "meta_modelica.h"
+#include "meta/meta_modelica.h"
 
 #include "omc_config.h"
 #include "printimpl.c"
