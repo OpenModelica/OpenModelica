@@ -42,10 +42,7 @@ target_link_libraries(omparse PUBLIC OpenModelicaRuntimeC)
 
 target_include_directories(omparse PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_include_directories(omparse PUBLIC ${OMCompiler_SOURCE_DIR}/Compiler) #for OpenModelicaBootstrappingHeader.h :/
-target_include_directories(omparse PUBLIC ${OMCompiler_SOURCE_DIR}/Compiler/runtime) #for systemimpl.h :/
-target_include_directories(omparse PUBLIC ${SimulationRuntimeC_SOURCE_DIR}) #for openmodelica.h :/
-target_include_directories(omparse PUBLIC ${OMCompiler_SOURCE_DIR}) #for revision.h, openmodelica.h :/
+target_include_directories(omparse PRIVATE ${OMCompiler_SOURCE_DIR}) #for revision.h :/
 ######################### end libomparser ###########################
 
 
@@ -64,8 +61,5 @@ target_compile_definitions(omparse-boot PRIVATE OMC_BOOTSTRAPPING)
 # target_include_directories(omparse SYSTEM PRIVATE ${GNERATED_DIRECTORY})
 target_include_directories(omparse-boot PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_include_directories(omparse-boot PUBLIC ${OMCompiler_SOURCE_DIR}/Compiler) #for OpenModelicaBootstrappingHeader.h :/
-target_include_directories(omparse-boot PUBLIC ${OMCompiler_SOURCE_DIR}/Compiler/runtime) #for systemimpl.h :/
-target_include_directories(omparse-boot PUBLIC ${SimulationRuntimeC_SOURCE_DIR}) #for openmodelica.h :/
-target_include_directories(omparse-boot PUBLIC ${OMCompiler_SOURCE_DIR}) #for revision.h
+target_include_directories(omparse-boot PRIVATE ${OMCompiler_SOURCE_DIR}) #for revision.h
 ######################### end libomparser-boot ###########################
