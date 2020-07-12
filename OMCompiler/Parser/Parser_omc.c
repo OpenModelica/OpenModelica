@@ -33,7 +33,7 @@
  #include <windows.h>
 #endif
 
-#include "meta_modelica.h"
+#include "meta/meta_modelica.h"
 #include "parse.c"
 
 void* ParserExt_parse(const char* filename, const char* infoname, int acceptedGrammar, int langStd, const char* encoding, int runningTestsuite, const char* libraryPath, void* lveInstance)

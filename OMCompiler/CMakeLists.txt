@@ -15,7 +15,7 @@ omc_add_to_report(CMAKE_BUILD_TYPE)
 omc_add_subdirectory(3rdParty)
 omc_add_subdirectory(SimulationRuntime)
 omc_add_subdirectory(Compiler)
-# omc_add_subdirectory(Parser)
+omc_add_subdirectory(Parser)
 
 
 message(STATUS "--------------------------------------------------------------------------")
