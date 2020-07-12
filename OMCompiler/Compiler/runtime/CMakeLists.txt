@@ -2,6 +2,7 @@
 find_package(curl REQUIRED)
 find_package(Intl REQUIRED)
 find_package(Iconv REQUIRED)
+find_package(BLAS REQUIRED)
 # find_package(ZLIB REQUIRED) # We use the minizip lib from 3rdParty/FMIL
 
 set(OMC_RUNTIIME_SOURCES Error_omc.cpp Print_omc.c ErrorMessage.cpp
@@ -21,6 +22,7 @@ target_compile_features(omcruntime PRIVATE cxx_std_11)
 target_link_libraries(omcruntime PUBLIC curl)
 target_link_libraries(omcruntime PUBLIC Intl)
 target_link_libraries(omcruntime PUBLIC iconv)
+target_link_libraries(omcruntime PUBLIC BLAS::BLAS)
 target_link_libraries(omcruntime PUBLIC OpenModelicaRuntimeC)
 target_link_libraries(omcruntime PUBLIC omc::3rd::lpsolve55)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
