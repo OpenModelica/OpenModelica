@@ -36,8 +36,6 @@ add_library(OpenModelicaFMIRuntimeC ${libOpenModelicaFMIRuntimeC_BUILD_TYPE}
                                     ${OMC_SIMRT_FMI_SOURCES})
 
 
-# FMIL is BAD at using cmake. We need things like this.
-target_include_directories(OpenModelicaFMIRuntimeC PUBLIC ${FMILibrary_SOURCE_DIR}/install/include)
 target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::fmilib::shared)
 target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC OpenModelicaRuntimeC)
 target_compile_options(OpenModelicaFMIRuntimeC PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Werror=implicit-function-declaration>)
