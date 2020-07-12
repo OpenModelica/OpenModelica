@@ -273,7 +273,7 @@ simplified expression for equations. OpenModelica has different solvers
 available for non-linear systems. If the homotopy operator is used inside the
 model or simulation flag :ref:` homotopyOnFirstTry <simflag-homotopyOnFirstTry>`
 is set OpenModelica will use the homotopy method on the first try.
-For more details on the homotpy method see :cite:`openmodelica.org:doc-extra:ochel2013initialization`.
+For more details on the homotopy method see :cite:`openmodelica.org:doc-extra:ochel2013initialization`.
 
 Several compiler and simulation flags influence initialization with homotopy:
 :ref:`--homotopyApproach <omcflag-homotopyApproach>`,
