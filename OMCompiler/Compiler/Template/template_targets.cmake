@@ -16,7 +16,7 @@ macro(omc_add_template_target)
     set(depends_on ${TPL_MACRO_ARGS_DEPENDS})
     # message(STATUS "${template_file} : ${depends_on}")
 
-    get_filename_component(file_name_no_ext ${template_file} NAME_WE)
+    get_filename_component(file_name_no_ext ${template_file} NAME_WLE)
     set(output_mo_file ${file_name_no_ext}.mo)
     # omc generates the mo file in the current dir. So we might as well put the log
     # there for now.
@@ -30,9 +30,7 @@ macro(omc_add_template_target)
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 
         DEPENDS ${template_file} ${depends_on}
-        COMMAND ${OMC_EXE} -d=failtrace
-        ARGS ${template_file} > ${output_log_file}
-                || (cat ${output_log_file} && false)
+        COMMAND ${OMC_EXE} -d=failtrace ${template_file} > ${output_log_file} || (cat ${output_log_file} && false)
 
         OUTPUT ${output_mo_file}
         COMMENT "Generating ${output_mo_file} from ${template_file}"
@@ -47,7 +45,7 @@ macro(omc_add_template_target)
     # Add the output to the list of all mo files generated from templates.
     set(TPL_OUTPUT_MO_FILES ${TPL_OUTPUT_MO_FILES} ${output_mo_file})
 
-    message(STATUS "added Susan template target ${template_file} dependent on ${depends_on}")
+    message(STATUS "Added Susan template target ${template_file} dependent on ${depends_on}")
 
 endmacro(omc_add_template_target)
 
