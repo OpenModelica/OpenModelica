@@ -3,7 +3,8 @@ cmake_minimum_required(VERSION 3.14)
 # project(OMParser)
 
 find_package(Java REQUIRED Runtime)
-omc_add_to_report(Java_JAVA_EXECUTABLE)
+# omc_add_to_report(Java_JAVA_EXECUTABLE)
+find_package(Intl REQUIRED)
 
 
 
@@ -31,13 +32,13 @@ set(OM_PARSE_SOURCES ${OM_PARSE_SOURCES} ${GNERATED_DIRECTORY}/ModelicaParser.c)
 
 
 ######################### add libomparser ###########################
-add_library(omparse SHARED ${OM_PARSE_SOURCES})
-target_link_libraries(omparse PUBLIC omantlr3)
+add_library(omparse STATIC ${OM_PARSE_SOURCES})
+target_link_libraries(omparse PUBLIC Intl)
+target_link_libraries(omparse PUBLIC omc::compiler::runtime)
+target_link_libraries(omparse PUBLIC omc::3rd::omantlr3)
 target_link_libraries(omparse PUBLIC OpenModelicaRuntimeC)
 
-# # to find the generated antlr headers
-# # SYSTEM to disable warnings on the generated code.
-# target_include_directories(omparse SYSTEM PRIVATE ${GNERATED_DIRECTORY})
+
 target_include_directories(omparse PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_include_directories(omparse PUBLIC ${OMCompiler_SOURCE_DIR}/Compiler) #for OpenModelicaBootstrappingHeader.h :/
@@ -49,7 +50,9 @@ target_include_directories(omparse PUBLIC ${OMCompiler_SOURCE_DIR}) #for revisio
 
 ######################### add libomparser-boot ###########################
 add_library(omparse-boot STATIC ${OM_PARSE_SOURCES})
-target_link_libraries(omparse-boot PUBLIC omantlr3)
+target_link_libraries(omparse-boot PUBLIC Intl)
+target_link_libraries(omparse-boot PUBLIC omc::compiler::runtime)
+target_link_libraries(omparse-boot PUBLIC omc::3rd::omantlr3)
 target_link_libraries(omparse-boot PUBLIC OpenModelicaRuntimeC)
 
 # Define OMC_BOOTSTRAPPING for the boot lib.

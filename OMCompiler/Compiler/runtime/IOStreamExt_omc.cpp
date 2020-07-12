@@ -42,7 +42,7 @@
 
 #include "IOStreamExt.c"
 #include "openmodelica.h"
-#include "meta_modelica.h"
+#include "meta/meta_modelica.h"
 
 extern "C" {
 

@@ -42,7 +42,7 @@ void FindAndReplace( std::string& tInput, std::string tFind, std::string tReplac
 extern "C" {
 
 #include <string.h>
-#include "meta_modelica.h"
+#include "meta/meta_modelica.h"
 
   char* _replace(const char* source_str, const char* search_str, const char* replace_str)
   {

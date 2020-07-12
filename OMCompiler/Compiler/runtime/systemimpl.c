@@ -44,7 +44,7 @@ extern "C" {
 #include <unistd.h>
 #endif
 
-#include "meta_modelica.h"
+#include "meta/meta_modelica.h"
 #include <limits.h>
 #include "ModelicaUtilities.h"
 
@@ -54,7 +54,7 @@ extern "C" {
 #include <time.h>
 #include <math.h>
 
-#include "rtclock.h"
+#include "util/rtclock.h"
 #include "omc_config.h"
 #include "errorext.h"
 #include "settingsimpl.h"
@@ -2493,7 +2493,7 @@ extern const char* SystemImpl__iconv(const char * str, const char *from, const c
   return buf;
 }
 
-#include <tinymt64.h>
+#include "util/tinymt64.h"
 
 static tinymt64_t system_random_seed = {{0,0},0,0,0};
 
@@ -2635,7 +2635,7 @@ int System_getTerminalWidth(void)
 #endif
 }
 
-#include "simulation_options.h"
+#include "util/simulation_options.h"
 
 #define SB_SIZE 8192*4
 #define SB_SIZE_MINUS_ONE (SB_SIZE-1)

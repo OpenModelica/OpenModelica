@@ -49,7 +49,7 @@ extern "C"
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include "omc_msvc.h" /* For INFINITY and NAN */
+#include "util/omc_msvc.h" /* For INFINITY and NAN */
 #include "ptolemyio.h"
 #include "errorext.h"
 
