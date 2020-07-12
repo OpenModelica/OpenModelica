@@ -384,7 +384,7 @@ $(builddir_lib_omc)/$(LIBCMINPACKLIB): 3rdParty/CMinpack/build/Makefile
 3rdParty/CMinpack/build/Makefile: 3rdParty/CMinpack/CMakeLists.txt
 	test -d 3rdParty/CMinpack
 	mkdir -p 3rdParty/CMinpack/build
-	(cd 3rdParty/CMinpack/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -D CMAKE_AR:String="$(AR)" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DBUILD_SHARED_LIBS:Bool=$(CMINPACKLIB_SHARED) -DCMAKE_INSTALL_PREFIX:String=../install -DCMINPACK_LIB_INSTALL_DIR:String=../install .. -G $(CMAKE_TARGET))
+	(cd 3rdParty/CMinpack/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -D CMAKE_AR:String="$(AR)" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DCMINPACK_BUILD_SHARED_LIBS:Bool=$(CMINPACKLIB_SHARED) -DCMAKE_INSTALL_PREFIX:String=../install -DCMINPACK_LIB_INSTALL_DIR:String=../install .. -G $(CMAKE_TARGET))
 CMinpack-clean:
 	rm -rf 3rdParty/CMinpack/install
 	#This is a bad idea, because the cache contains the absolute path to cmake that was used for build -> if the cmake location has changed, the clean command will fail
@@ -592,7 +592,7 @@ sundials: umfpack
 	$(MAKE) -f $(defaultMakefileTarget) $(builddir_lib_omc)/libsundials_ida.a
 $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials/CMakeLists.txt
 	mkdir -p 3rdParty/sundials/build
-	cd 3rdParty/sundials/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX="`pwd`" -DKLU_ENABLE:Bool=ON -DKLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse/Include/" -DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" $(SUITESPARSE_LIBS) $(IS_MINGW32) $(IS_MINGW64) -DSUITESPARSECONFIG_LIBRARY="" -DLAPACK_ENABLE:Bool=ON
+	cd 3rdParty/sundials/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX="`pwd`" -DSUNDIALS_KLU_ENABLE:Bool=ON -DKLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse/Include/" -DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" $(SUITESPARSE_LIBS) $(IS_MINGW32) $(IS_MINGW64) -DSUITESPARSECONFIG_LIBRARY="" -DSUNDIALS_LAPACK_ENABLE:Bool=ON
 	$(MAKE) -C 3rdParty/sundials/build install
 	# adrpo: do not copy the headers as they are not needed!
 	mkdir -p $(OMBUILDDIR)/include/omc/c/sundials
