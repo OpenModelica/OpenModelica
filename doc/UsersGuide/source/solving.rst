@@ -269,7 +269,7 @@ For complex start conditions OpenModelica can have trouble finding a solution
 for the initialization problem with the default newton method.
 
 Modelica offers the homotopy operator [#f5]_ to formulate actual and
-simplified expression for equations. OpenModelica has differen solvers
+simplified expression for equations. OpenModelica has different solvers
 available for non-linear systems. If the homotopy operator is used inside the
 model or simulation flag :ref:` homotopyOnFirstTry <simflag-homotopyOnFirstTry>`
 is set OpenModelica will use the homotopy method on the first try.
