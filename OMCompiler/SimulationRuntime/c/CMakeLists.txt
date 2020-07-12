@@ -27,7 +27,7 @@ target_link_libraries(OpenModelicaRuntimeC PUBLIC omc::3rd::gc regex dbghelp)
 target_compile_options(OpenModelicaRuntimeC PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Werror=implicit-function-declaration>)
 # target_link_libraries(OpenModelicaRuntimeC PUBLIC $<$<CXX_COMPILER_ID:gcc>:dbghelp>)
 
-target_include_directories(OpenModelicaRuntimeC PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(OpenModelicaRuntimeC INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 
 

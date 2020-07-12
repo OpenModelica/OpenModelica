@@ -197,15 +197,17 @@ goto rule ## func ## Ex; }}
   #define ARRAY_REDUCTION_NAME "\$array"
 
   #if !defined(OMJULIA)
-  #include "meta/meta_modelica.h"
-  #include "OpenModelicaBootstrappingHeader.h"
-  parser_members members;
-  void* mmc_mk_box_eat_all(int ix, ...) {return NULL;}
-  #if defined(OMC_BOOTSTRAPPING)
-  #endif
+    #include "meta/meta_modelica.h"
+    #if defined(OMC_BOOTSTRAPPING)
+      #include "../Compiler/boot/tarball-include/OpenModelicaBootstrappingHeader.h"
+    #else
+      #include "../Compiler/OpenModelicaBootstrappingHeader.h"
+    #endif
+    parser_members members;
+    void* mmc_mk_box_eat_all(int ix, ...) {return NULL;}
   #else /* Julia */
-  #include "OpenModelicaJuliaHeader.h"
-  #include "MetaModelicaJuliaLayer.h"
+    #include "OpenModelicaJuliaHeader.h"
+    #include "MetaModelicaJuliaLayer.h"
   #endif
 }
 

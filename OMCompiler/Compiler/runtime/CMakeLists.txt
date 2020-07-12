@@ -27,6 +27,7 @@ target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
 target_link_libraries(omcruntime PUBLIC omc::3rd::FMIL::minizip) # We use the minizip lib from 3rdParty/FMIL
 # target_link_libraries(omcruntime PUBLIC omc::3rd::gc)
 
+target_include_directories(omcruntime INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(omcruntime PRIVATE ${OMCompiler_SOURCE_DIR}) #for revision.h
 
 
@@ -44,6 +45,7 @@ target_link_libraries(omcbackendruntime PUBLIC OpenModelicaRuntimeC)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::fmilib::shared) # We use the minizip lib from 3rdParty/FMIL
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::gc)
 
+target_include_directories(omcbackendruntime INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(omcbackendruntime PRIVATE ${OMCompiler_SOURCE_DIR}) #for revision.h
 
 
