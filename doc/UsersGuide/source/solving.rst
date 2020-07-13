@@ -270,10 +270,10 @@ for the initialization problem with the default newton method.
 
 Modelica offers the homotopy operator [#f5]_ to formulate actual and
 simplified expression for equations. OpenModelica has different solvers
-available for non-linear systems. If the homotopy operator is used inside the
-model or simulation flag :ref:` homotopyOnFirstTry <simflag-homotopyOnFirstTry>`
-is set OpenModelica will use the homotopy method on the first try.
-For more details on the homotopy method see :cite:`openmodelica.org:doc-extra:ochel2013initialization`.
+available for non-linear systems. Initializing with homotopy on the first try
+is default if a homotopy operator is used. It can be switched off with
+:ref:`noHomotopyOnFirstTry <simflag-noHomotopyOnFirstTry>`. For more details on
+the homotopy method see :cite:`openmodelica.org:doc-extra:ochel2013initialization`.
 
 Several compiler and simulation flags influence initialization with homotopy:
 :ref:`--homotopyApproach <omcflag-homotopyApproach>`,
