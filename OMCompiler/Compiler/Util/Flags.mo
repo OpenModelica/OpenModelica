@@ -1350,12 +1350,15 @@ constant ConfigFlag ZEROMQ_SERVER_ID = CONFIG_FLAG(138, "zeroMQServerID",
 constant ConfigFlag ZEROMQ_CLIENT_ID = CONFIG_FLAG(139, "zeroMQClientID",
   NONE(), EXTERNAL(), STRING_FLAG("empty"), NONE(),
   Gettext.gettext("Configures the ID with which the client application is labelled for zeroMQ communication."));
+
 constant ConfigFlag FMI_VERSION = CONFIG_FLAG(140,
   "", NONE(), INTERNAL(), STRING_FLAG(""), NONE(),
   Gettext.gettext("returns the FMI Version either 1.0 or 2.0."));
+
 constant ConfigFlag FLAT_MODELICA = CONFIG_FLAG(141, "flatModelica",
   SOME("f"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Outputs experimental flat Modelica."));
+
 constant ConfigFlag FMI_FILTER = CONFIG_FLAG(142, "fmiFilter", NONE(), EXTERNAL(),
   ENUM_FLAG(FMI_INTERNAL, {("none", FMI_NONE), ("internal", FMI_INTERNAL), ("protected", FMI_PROTECTED), ("blackBox", FMI_BLACKBOX)}),
   SOME(STRING_DESC_OPTION({
@@ -1365,6 +1368,7 @@ constant ConfigFlag FMI_FILTER = CONFIG_FLAG(142, "fmiFilter", NONE(), EXTERNAL(
     ("blackBox", Gettext.gettext("This option is used to hide everything except for inputs and outputs. Additional variables that need to be present in the modelDescription file for structrial reasons will have concealed names."))
     })),
   Gettext.gettext("Specifies which model variables get exposed by the modelDescription.xml"));
+
 constant ConfigFlag FMI_SOURCES = CONFIG_FLAG(143, "fmiSources", NONE(), EXTERNAL(),
   BOOL_FLAG(true), NONE(),
   Gettext.gettext("Defines if FMUs will be exported with sources or not. --fmiFilter=blackBox might override this, because black box FMUs do never contain their source code."));
@@ -1372,6 +1376,10 @@ constant ConfigFlag FMI_SOURCES = CONFIG_FLAG(143, "fmiSources", NONE(), EXTERNA
 constant ConfigFlag FMI_FLAGS = CONFIG_FLAG(144, "fmiFlags", NONE(), EXTERNAL(),
   STRING_LIST_FLAG({}), NONE(),
   Gettext.gettext("Add simulation flags to FMU. Will create <fmiPrefix>_flags.json in resources folder with given flags. Use --fmiFlags or --fmiFlags=none to disable [default]. Use --fmiFlags=default for the default simulation flags. To pass flags use e.g. --fmiFlags=s:cvode,nls:homotopy or --fmiFlags=path/to/yourFlags.json."));
+
+constant ConfigFlag NEW_BACKEND = CONFIG_FLAG(145, "newBackend",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Gettext.gettext("Activates experimental new backend for better array handling. This also activates the new frontend. [WIP]"));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
