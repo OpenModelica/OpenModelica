@@ -401,7 +401,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.FLAT_MODELICA,
   Flags.FMI_FILTER,
   Flags.FMI_SOURCES,
-  Flags.FMI_FLAGS
+  Flags.FMI_FLAGS,
+  Flags.NEW_BACKEND
 };
 
 public function new
