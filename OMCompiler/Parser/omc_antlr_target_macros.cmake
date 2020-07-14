@@ -8,7 +8,7 @@ macro(ADD_ANTLR_GRAMMAR_TARGET input_file output_dir)
     SOURCE ${input_file}
     COMMAND ${Java_JAVA_EXECUTABLE}
     ARGS -cp ${OMAntlr3_ANTLRJAR}
-          org.antlr.Tool -Xconversiontimeout 10000 -report
+          org.antlr.Tool -Xconversiontimeout 10000
           -o ${output_dir}
           ${input_file}
     COMMENT "Generating ${output_file_path_no_ext}.c/h for ANTLR file ${input_file}."
