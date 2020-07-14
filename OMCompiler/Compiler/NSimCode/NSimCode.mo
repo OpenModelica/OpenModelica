@@ -52,7 +52,6 @@ protected
 
   // SimCode imports
   import HashTableSimCode;
-  import SimCodeMain;
   import NSimJacobian.SimJacobian;
   import SimStrongComponent = NSimStrongComponent;
   import NSimVar.SimVar;
@@ -369,6 +368,7 @@ public
         crefToClockIndexHT            = crefToClockIndexHT,
         backendMapping                = NONE(), // This needs to be added?
         modelStructure                = NONE(), // FMI stuff
+        fmiSimulationFlags            = NONE(), // FMI stuff
         partitionData                 = OldSimCode.PARTITIONDATA(-1,{},{},{}),
         daeModeData                   = if isSome(simCode.daeModeData) then SOME(DaeModeData.convert(Util.getOption(simCode.daeModeData))) else NONE(),
         inlineEquations               = {},

@@ -70,7 +70,6 @@ public
     input System.SystemType systemType;
   protected
     constant Module.jacobianInterface func = getModule();
-    String oldName;
   algorithm
     bdae := match bdae
       local
@@ -94,7 +93,6 @@ public
 
           // kabdelhak: i would really like these names, but for now we need A, B, C, D
           name := "A";
-          oldName := "A";
 
           for syst in oldSystems loop
             (jacobian, funcTree) := match syst

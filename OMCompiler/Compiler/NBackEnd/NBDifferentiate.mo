@@ -36,7 +36,6 @@ encapsulated package NBDifferentiate
 "
 public
   // OF imports
-  import Absyn;
   import AvlSetPath;
   import DAE;
 

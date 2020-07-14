@@ -36,7 +36,6 @@ encapsulated package NSimVar
 "
 protected
   // OF imports
-  import TplAbsyn;
   import DAE;
   import SCode;
 
