@@ -36,12 +36,12 @@ class File
   function constructor<T> "File constructor."
     input Option<Integer> fromID = noReference() "Never pass this an actual Option<Integer>. Only use File.getReference(file) or File.noReference(). Determines if we should restore from another File object or create a new File.";
     output File file;
-  external "C" file=om_file_new(fromID) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
+  external "C" file=om_file_new(fromID) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file_ext.h\"");
   end constructor;
 
   function destructor
     input File file;
-  external "C" om_file_free(file) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
+  external "C" om_file_free(file) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file_ext.h\"");
   end destructor;
 end File;
 
@@ -51,27 +51,27 @@ function open
   input File file;
   input String filename;
   input Mode mode = Mode.Read;
-external "C" om_file_open(file,filename,mode) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
+external "C" om_file_open(file,filename,mode) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file_ext.h\"");
 end open;
 
 function write
   input File file;
   input String data;
-external "C" om_file_write(file,data) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
+external "C" om_file_write(file,data) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file_ext.h\"");
 end write;
 
 function writeInt
   input File file;
   input Integer data;
   input String format="%d";
-external "C" om_file_write_int(file,data,format) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
+external "C" om_file_write_int(file,data,format) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file_ext.h\"");
 end writeInt;
 
 function writeReal
   input File file;
   input Real data;
   input String format="%.15g";
-external "C" om_file_write_real(file,data,format) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
+external "C" om_file_write_real(file,data,format) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file_ext.h\"");
 end writeReal;
 
 type Escape = enumeration(None "No escape string",
@@ -83,7 +83,7 @@ function writeEscape
   input File file;
   input String data;
   input Escape escape;
-external "C" om_file_write_escape(file,data,escape) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
+external "C" om_file_write_escape(file,data,escape) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file_ext.h\"");
 end writeEscape;
 
 type Whence = enumeration(Set "SEEK_SET 0=start of file",Current "SEEK_CUR 0=current byte",End "SEEK_END 0=end of file");
@@ -93,35 +93,35 @@ function seek
   input Integer offset;
   input Whence whence = Whence.Set;
   output Boolean success;
-external "C" success = om_file_seek(file,offset,whence) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
+external "C" success = om_file_seek(file,offset,whence) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file_ext.h\"");
 end seek;
 
 function tell
   input File file;
   output Integer pos;
-external "C" pos = om_file_tell(file) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
+external "C" pos = om_file_tell(file) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file_ext.h\"");
 end tell;
 
 function getFilename
   input Option<Integer> file;
-  output String fileName;
-external "C" fileName = om_file_get_filename(file) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
+  output String fileName2;
+external "C" fileName2 = om_file_get_filename(file) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file_ext.h\"");
 end getFilename;
 
 function noReference "Returns NULL (an opaque pointer; not actually Option<Integer>)"
   output Option<Integer> reference;
-external "C" reference = om_file_no_reference() annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
+external "C" reference = om_file_no_reference() annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file_ext.h\"");
 end noReference;
 
 function getReference "Returns an opaque pointer (not actually Option<Integer>)"
   input File file;
   output Option<Integer> reference;
-external "C" reference = om_file_get_reference(file) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
+external "C" reference = om_file_get_reference(file) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file_ext.h\"");
 end getReference;
 
 function releaseReference
   input File file;
-external "C" om_file_release_reference(file) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file.h\"");
+external "C" om_file_release_reference(file) annotation(IncludeDirectory="modelica://File/", Include="#include \"omc_file_ext.h\"");
 end releaseReference;
 
 function writeSpace
