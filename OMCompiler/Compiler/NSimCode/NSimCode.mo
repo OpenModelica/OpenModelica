@@ -39,11 +39,18 @@ protected
   // OF imports
   import Absyn;
   import AbsynUtil;
+  import OldExpression = Expression;
+  import SCode;
 
   // NF imports
+  import BuiltinCall = NFBuiltinCall;
+  import Call = NFCall;
   import ComponentRef = NFComponentRef;
-  import Expression = NFExpression;
   import ConvertDAE = NFConvertDAE;
+  import NFTyping.ExpOrigin;
+  import Expression = NFExpression;
+  import NFFunction.Function;
+  import NFInstNode.InstNode;
 
   // Backend imports
   import BackendDAE = NBackendDAE;
@@ -79,14 +86,26 @@ public
   uniontype SimCodeIndices
     record SIM_CODE_INDICES
       "Unique simulation code indices"
-      Integer variableIndex;
+      Integer realVarIndex;
+      Integer integerVarIndex;
+      Integer booleanVarIndex;
+      Integer stringVarIndex;
+
+      Integer realParamIndex;
+      Integer integerParamIndex;
+      Integer booleanParamIndex;
+      Integer stringParamIndex;
+
       Integer equationIndex;
       Integer linearSystemIndex;
       Integer nonlinearSystemIndex;
+
       Integer jacobianIndex;
       Integer daeModeResidualIndex;
     end SIM_CODE_INDICES;
   end SimCodeIndices;
+
+  constant SimCodeIndices EMPTY_SIM_CODE_INDICES = SIM_CODE_INDICES(0,0,0,0,0,0,0,0,0,0,0,0,0);
 
   uniontype SimCode
     record SIM_CODE
@@ -199,7 +218,7 @@ public
         case qual as BackendDAE.BDAE()
           algorithm
             // somehow this cannot be set at definition (metamodelica bug?)
-            simCodeIndices := SIM_CODE_INDICES(0, 0, 0, 0, 0, 0);
+            simCodeIndices := EMPTY_SIM_CODE_INDICES;
             // ToDo:
             // this has to be adapted at some point SimCodeFuntion needs to be translated
             // to new simcode and literals have to be based on new Expressions.
@@ -241,13 +260,12 @@ public
             inlineEquations := {};
 
             (linearLoops, nonlinearLoops) := collectAlgebraicLoops(init, daeModeData);
-            modelInfo := ModelInfo.create(qual.varData, name, directory, functions, simCodeIndices, linearLoops, nonlinearLoops);
+            (modelInfo, simCodeIndices) := ModelInfo.create(qual.varData, name, directory, functions, linearLoops, nonlinearLoops, simCodeIndices);
             crefToSimVarHT := HashTableSimCode.create(modelInfo.vars);
 
             // This needs to be done after the variables have been created by ModelInfo.create()
             if isSome(qual.dae) then
-              (daeModeData, jacA, crefToSimVarHT, simCodeIndices) := DaeModeData.createSparsityJacobian(daeModeData, modelInfo, Util.getOption(qual.dae), crefToSimVarHT, simCodeIndices);
-              //(jacA, simCodeIndices) := SimJacobian.empty("A", simCodeIndices);
+              (daeModeData, modelInfo, jacA, crefToSimVarHT, simCodeIndices) := DaeModeData.createSparsityJacobian(daeModeData, modelInfo, Util.getOption(qual.dae), crefToSimVarHT, simCodeIndices);
             else
               (jacA, simCodeIndices) := SimJacobian.empty("A", simCodeIndices);
             end if;
@@ -256,7 +274,6 @@ public
             (jacC, simCodeIndices) := SimJacobian.empty("C", simCodeIndices);
             (jacD, simCodeIndices) := SimJacobian.empty("D", simCodeIndices);
             (jacF, simCodeIndices) := SimJacobian.empty("F", simCodeIndices);
-
             jacobians := {jacA, jacB, jacC, jacD, jacF};
 
             simCode := SIM_CODE(
@@ -438,18 +455,35 @@ public
       input Absyn.Path name;
       input String directory;
       input list<OldSimCodeFunction.Function> functions;
-      input SimCodeIndices simCodeIndices;
       input list<SimStrongComponent.Block> linearLoops;
       input list<SimStrongComponent.Block> nonlinearLoops;
       output ModelInfo modelInfo;
+      input output SimCodeIndices simCodeIndices;
     protected
       SimVars vars;
       VarInfo info;
     algorithm
-      vars := SimVars.create(varData);
+      (vars, simCodeIndices) := SimVars.create(varData, simCodeIndices);
       info := VarInfo.create(vars, simCodeIndices);
       modelInfo := MODEL_INFO(name, "", directory, vars, info, functions, {}, {}, {}, 0, 0, true, linearLoops, nonlinearLoops);
     end create;
+
+    function setSeedVars
+      input output ModelInfo modelInfo;
+      input list<SimVar> seedVars;
+    algorithm
+      modelInfo := match modelInfo
+        local
+          SimVars vars;
+        case MODEL_INFO(vars = vars) algorithm
+          vars.seedVars := seedVars;
+          modelInfo.vars := vars;
+        then modelInfo;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+        then fail();
+      end match;
+    end setSeedVars;
 
     function convert
       input ModelInfo modelInfo;
@@ -638,9 +672,17 @@ public
     function convert
       input DaeModeData data;
       output OldSimCode.DaeModeData oldData;
+    protected
+      list<list<OldSimCode.SimEqSystem>> simEqSystems = {};
     algorithm
+      /* is this not needed?
+      for sys_lst in listReverse(SimStrongComponent.Block.convertListList(data.blcks)) loop
+        simEqSystems := List.map(sys_lst, replaceDerCrefSES) :: simEqSystems;
+      end for;
+      */
+      simEqSystems := SimStrongComponent.Block.convertListList(data.blcks);
       oldData := OldSimCode.DAEMODEDATA(
-        daeEquations    = SimStrongComponent.Block.convertListList(data.blcks),
+        daeEquations    = simEqSystems,
         sparsityPattern = SimJacobian.convertOpt(data.sparsityPattern),
         residualVars    = SimVar.SimVar.convertList(data.residualVars),
         algebraicVars   = SimVar.SimVar.convertList(data.algebraicVars),
@@ -661,7 +703,7 @@ public
 
     function createSparsityJacobian
       input output Option<DaeModeData> daeModeDataOpt;
-      input ModelInfo modelInfo;
+      input output ModelInfo modelInfo;
       input list<System.System> systems;
       output SimJacobian jacobian;
       input output HashTableSimCode.HashTable simulationHT;
@@ -670,16 +712,22 @@ public
       daeModeDataOpt := match daeModeDataOpt
         local
           DaeModeData daeModeData;
+          SimJacobian jac;
           Option<SimJacobian> daeModeJac;
 
         case SOME(daeModeData)
           algorithm
             daeModeData.algebraicVars := modelInfo.vars.algVars;
             daeModeData.auxiliaryVars := {}; // this needs to be updated in the future
+
+            // get sparsity pattern jacobian and update the hashtable and the jacobian
             simulationHT := HashTableSimCode.addList(daeModeData.residualVars, simulationHT);
-            (daeModeJac, simCodeIndices) := SimJacobian.fromSystemsSparsity(systems, daeModeData.sparsityPattern, simulationHT, simCodeIndices);
-            daeModeData.sparsityPattern := daeModeJac;
-            if isSome(daeModeJac) then
+            if isSome(daeModeData.sparsityPattern) then
+              SOME(jac) := daeModeData.sparsityPattern;
+              simulationHT := HashTableSimCode.addList(jac.seedVars, simulationHT);
+              modelInfo := ModelInfo.setSeedVars(modelInfo, jac.seedVars);
+              (daeModeJac, simCodeIndices) := SimJacobian.fromSystemsSparsity(systems, daeModeData.sparsityPattern, simulationHT, simCodeIndices);
+              daeModeData.sparsityPattern := daeModeJac;
               jacobian := Util.getOption(daeModeJac);
             else
               (jacobian, simCodeIndices) := SimJacobian.empty("A", simCodeIndices);
@@ -690,9 +738,43 @@ public
           algorithm
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
         then fail();
-
       end match;
     end createSparsityJacobian;
+
+    function replaceDerCrefSES
+      input output OldSimCode.SimEqSystem sys;
+    algorithm
+      sys := match sys
+        local
+          OldSimCode.SimEqSystem qual;
+
+        case qual as OldSimCode.SES_RESIDUAL() algorithm
+          (qual.exp, _) := OldExpression.traverseExpTopDown(qual.exp, replaceDerCref, 0);
+        then qual;
+
+        case qual as OldSimCode.SES_SIMPLE_ASSIGN() algorithm
+          (qual.exp, _) := OldExpression.traverseExpTopDown(qual.exp, replaceDerCref, 0);
+        then qual;
+      end match;
+    end replaceDerCrefSES;
+
+    function replaceDerCref
+      "this is very bad. temporary fix please remove.
+      the old structure needs a der() call instead of $DER variable for DAEMode."
+      input output DAE.Exp exp;
+      output Boolean b;
+      input output Integer i;
+    algorithm
+      (exp, b) := match exp
+        local
+          DAE.ComponentRef cref;
+
+        case DAE.CREF(componentRef = DAE.CREF_QUAL(ident="$DER",componentRef=cref))
+        then (DAE.CALL(Absyn.IDENT("der"), {DAE.CREF(cref, ComponentReference.crefTypeFull(cref))}, DAE.callAttrBuiltinReal), false);
+
+        else (exp, true);
+      end match;
+    end replaceDerCref;
   end DaeModeData;
 
   type DaeModeConfig = enumeration(ALL, DYNAMIC);

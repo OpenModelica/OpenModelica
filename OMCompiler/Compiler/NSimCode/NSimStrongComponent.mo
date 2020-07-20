@@ -66,6 +66,7 @@ protected
   import SimCode = NSimCode;
   import NSimJacobian.SimJacobian;
   import NSimVar.SimVar;
+  import NSimVar.VarType;
 
   // Util imports
   import Error;
@@ -216,6 +217,30 @@ public
       end match;
     end toString;
 
+    function map
+      "ToDo: other blocks and cref func"
+      input output Block blck;
+      input expFunc func;
+      partial function expFunc
+        input output Expression exp;
+      end expFunc;
+    algorithm
+      blck := match blck
+        local
+          Block qual;
+
+        case qual as RESIDUAL() algorithm
+          qual.exp := Expression.map(qual.exp, func);
+        then qual;
+
+        case qual as SIMPLE_ASSIGN() algorithm
+          qual.rhs := Expression.map(qual.rhs, func);
+        then qual;
+
+        else blck;
+      end match;
+    end map;
+
     function listToString
       input list<Block> blcks;
       input output String str = "";
@@ -263,17 +288,16 @@ public
       output list<SimVar> vars = {};
       input output SimCode.SimCodeIndices simCodeIndices;
     protected
-      Pointer<Integer> idx_ptr = Pointer.create(simCodeIndices.daeModeResidualIndex);
+      Pointer<SimCode.SimCodeIndices> indices_ptr = Pointer.create(simCodeIndices);
       Pointer<list<SimVar>> vars_ptr = Pointer.create({});
       list<Block> tmp;
     algorithm
       for system in systems loop
-        BVariable.VariablePointers.map(system.unknowns, function SimVar.traverseCreate(acc = vars_ptr, uniqueIndexPtr = idx_ptr));
-        (tmp, simCodeIndices) := fromSystem(system, simCodeIndices);
+        BVariable.VariablePointers.map(system.unknowns, function SimVar.traverseCreate(acc = vars_ptr, indices_ptr = indices_ptr, varType = VarType.DAE_MODE_RESIDUAL));
+        (tmp, simCodeIndices) := fromSystem(system, Pointer.access(indices_ptr));
         blcks := tmp :: blcks;
       end for;
       vars := Pointer.access(vars_ptr);
-      simCodeIndices.daeModeResidualIndex := Pointer.access(idx_ptr);
       blcks := listReverse(blcks);
     end createDAEModeBlocks;
 
@@ -335,7 +359,8 @@ public
             end for;
             for var_ptr in strict.iteration_vars loop
               var := Pointer.access(var_ptr);
-              var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.LOOP_ITERATION());
+              // This does not seem to be correct
+              //var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.LOOP_ITERATION());
               Pointer.update(var_ptr, var);
               crefs := var.name :: crefs;
             end for;
@@ -364,14 +389,14 @@ public
         case qual as BEquation.SCALAR_EQUATION()
           algorithm
             operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.SUB);
-            tmp := RESIDUAL(simCodeIndices.equationIndex, Expression.BINARY(qual.lhs, operator ,qual.rhs), qual.source, qual.attr);
+            tmp := RESIDUAL(simCodeIndices.equationIndex, Expression.BINARY(qual.rhs, operator ,qual.lhs), qual.source, qual.attr);
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
         case qual as BEquation.ARRAY_EQUATION()
           algorithm
             operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.SUB);
-            tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, Expression.BINARY(qual.lhs, operator, qual.rhs), qual.source, qual.attr);
+            tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, Expression.BINARY(qual.rhs, operator, qual.lhs), qual.source, qual.attr);
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
@@ -382,9 +407,9 @@ public
             lhs := Expression.fromCref(qual.lhs);
             rhs := Expression.fromCref(qual.rhs);
             if Type.isArray(ty) then
-              tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, Expression.BINARY(lhs, operator, rhs), qual.source, qual.attr);
+              tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, Expression.BINARY(rhs, operator, lhs), qual.source, qual.attr);
             else
-              tmp := RESIDUAL(simCodeIndices.equationIndex, Expression.BINARY(lhs, operator ,rhs), qual.source, qual.attr);
+              tmp := RESIDUAL(simCodeIndices.equationIndex, Expression.BINARY(rhs, operator ,lhs), qual.source, qual.attr);
             end if;
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
@@ -416,14 +441,14 @@ public
         case qual as BEquation.SCALAR_EQUATION()
           algorithm
             operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.SUB);
-            tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, Expression.BINARY(qual.lhs, operator, qual.rhs), qual.source, qual.attr);
+            tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, Expression.BINARY(qual.rhs, operator, qual.lhs), qual.source, qual.attr);
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
         case qual as BEquation.ARRAY_EQUATION()
           algorithm
             operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.SUB);
-            tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(var.name), Expression.BINARY(qual.lhs, operator, qual.rhs), qual.source, qual.attr);
+            tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(var.name), Expression.BINARY(qual.rhs, operator, qual.lhs), qual.source, qual.attr);
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
@@ -435,9 +460,9 @@ public
             lhs := Expression.fromCref(qual.lhs);
             rhs := Expression.fromCref(qual.rhs);
             if Type.isArray(ty) then
-              tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(var.name), Expression.BINARY(lhs, operator, rhs), qual.source, qual.attr);
+              tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(var.name), Expression.BINARY(rhs, operator, lhs), qual.source, qual.attr);
             else
-              tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, Expression.BINARY(lhs, operator, rhs), qual.source, qual.attr);
+              tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, Expression.BINARY(rhs, operator, lhs), qual.source, qual.attr);
             end if;
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;

@@ -158,6 +158,16 @@ public
     end match;
   end isState;
 
+  function isStateDerivative
+    input Pointer<Variable> var;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE_DER())) then true;
+      else false;
+    end match;
+  end isStateDerivative;
+
   function isAlgebraic
     input Pointer<Variable> var;
     output Boolean b;
@@ -357,6 +367,30 @@ public
       then fail();
     end match;
   end makeDerVar;
+
+  function getStateCref
+    "Returns the state variable component reference from a state derivative component reference.
+    Only works after the state has been detected by the DetectStates module and fails for non-state derivative crefs!"
+    input output ComponentRef cref;
+  algorithm
+    cref := match cref
+      local
+        Pointer<Variable> state, derivative;
+        Variable stateVar;
+      case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = derivative)) then match Pointer.access(derivative)
+        case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE_DER(state = state)))
+          algorithm
+            stateVar := Pointer.access(state);
+        then stateVar.name;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + " because of wrong variable kind."});
+        then fail();
+      end match;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + " because of wrong InstNode type."});
+      then fail();
+    end match;
+  end getStateCref;
 
   function getDerCref
     "Returns the derivative variable component reference from a state component reference.

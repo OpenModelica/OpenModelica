@@ -318,7 +318,7 @@ protected
     unknown_vars  := listReverse(Pointer.access(pDer_vars_ptr));
     all_vars      := unknown_vars; // add other vars later on
 
-    seed_vars     := listReverse(Pointer.access(seed_vars_ptr));
+    seed_vars     := Pointer.access(seed_vars_ptr);
     aux_vars      := seed_vars; // add other auxiliaries later on
     alias_vars    := {};
     depend_vars   := {};

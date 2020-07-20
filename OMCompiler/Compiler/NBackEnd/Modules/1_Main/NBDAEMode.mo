@@ -106,7 +106,7 @@ protected
       // move unknowns
       syst.daeUnknowns := SOME(syst.unknowns);
       // convert all algebraic variables to algebraic states
-      BVariable.VariablePointers.mapPtr(syst.unknowns, function BVariable.makeAlgStateVar());
+      // BVariable.VariablePointers.mapPtr(syst.unknowns, function BVariable.makeAlgStateVar());
       // convert all residual equations to dae residuals
       BEquation.EquationPointers.map(syst.equations, function BEquation.Equation.createResidual(context = "DAE", residual_vars = residual_vars, idx = idx));
       syst.unknowns := BVariable.VariablePointers.fromList(listReverse(Pointer.access(residual_vars)));

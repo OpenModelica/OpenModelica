@@ -56,6 +56,9 @@ protected
   // Old Simcode imports
   import OldSimCodeVar = SimCodeVar;
 
+  // SimCode imports
+  import SimCode = NSimCode;
+
   // Util imports
   import Error;
   import Pointer;
@@ -146,7 +149,7 @@ public
         then result;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for variable " + Variable.toString(var) + "."});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for variable " + ComponentRef.toString(var.name) + "."});
         then fail();
 
       end match;
@@ -155,10 +158,34 @@ public
     function traverseCreate
       input output Variable var;
       input Pointer<list<SimVar>> acc;
-      input Pointer<Integer> uniqueIndexPtr;
+      input Pointer<SimCode.SimCodeIndices> indices_ptr;
+      input VarType varType = VarType.SIMULATION;
+    protected
+      SimCode.SimCodeIndices simCodeIndices = Pointer.access(indices_ptr);
     algorithm
-      Pointer.update(acc, create(var, Pointer.access(uniqueIndexPtr)) :: Pointer.access(acc));
-      Pointer.update(uniqueIndexPtr, Pointer.access(uniqueIndexPtr) + 1);
+      _ := match varType
+
+        case VarType.SIMULATION algorithm
+          Pointer.update(acc, create(var, simCodeIndices.realVarIndex) :: Pointer.access(acc));
+          simCodeIndices.realVarIndex := simCodeIndices.realVarIndex +1;
+        then ();
+
+        case VarType.PARAMETER algorithm
+          Pointer.update(acc, create(var, simCodeIndices.realParamIndex) :: Pointer.access(acc));
+          simCodeIndices.realParamIndex := simCodeIndices.realParamIndex +1;
+        then ();
+
+        case VarType.DAE_MODE_RESIDUAL algorithm
+          Pointer.update(acc, create(var, simCodeIndices.daeModeResidualIndex) :: Pointer.access(acc));
+          simCodeIndices.daeModeResidualIndex := simCodeIndices.daeModeResidualIndex +1;
+        then ();
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for variable " + ComponentRef.toString(var.name) + "."});
+        then fail();
+
+      end match;
+      Pointer.update(indices_ptr, simCodeIndices);
     end traverseCreate;
 
     function getName
@@ -466,14 +493,15 @@ public
     function create
       input BVariable.VarData varData;
       output SimVars simVars;
+      input output SimCode.SimCodeIndices simCodeIndices;
     protected
-      Integer uniqueIndex = 0;
-      list<SimVar> stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars;
+      list<SimVar> stateVars = {}, derivativeVars = {}, algVars = {};
+      list<SimVar> discreteAlgVars = {}, intAlgVars = {}, boolAlgVars = {}, stringAlgVars = {};
       list<SimVar> inputVars = {};
       list<SimVar> outputVars = {};
-      list<SimVar> aliasVars, intAliasVars, boolAliasVars, stringAliasVars;
-      list<SimVar> paramVars, intParamVars, boolParamVars, stringParamVars;
-      list<SimVar> constVars, intConstVars, boolConstVars, stringConstVars;
+      list<SimVar> aliasVars = {}, intAliasVars = {}, boolAliasVars = {}, stringAliasVars = {};
+      list<SimVar> paramVars = {}, intParamVars = {}, boolParamVars = {}, stringParamVars = {};
+      list<SimVar> constVars = {}, intConstVars = {}, boolConstVars = {}, stringConstVars = {};
       list<SimVar> extObjVars = {};
       list<SimVar> jacobianVars = {};
       list<SimVar> seedVars = {};
@@ -489,13 +517,13 @@ public
 
         case qual as BVariable.VAR_DATA_SIM()
           algorithm
-            ({stateVars}, uniqueIndex) := createSimVarLists(qual.states, uniqueIndex);
-            ({derivativeVars}, uniqueIndex) := createSimVarLists(qual.derivatives, uniqueIndex);
-            ({algVars}, uniqueIndex) := createSimVarLists(qual.algebraics, uniqueIndex);
-            ({discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars}, uniqueIndex) := createSimVarLists(qual.discretes, uniqueIndex, SplitType.TYPE);
-            ({aliasVars, intAliasVars, boolAliasVars, stringAliasVars}, uniqueIndex) := createSimVarLists(qual.aliasVars, uniqueIndex, SplitType.TYPE);
-            ({paramVars, intParamVars, boolParamVars, stringParamVars}, uniqueIndex) := createSimVarLists(qual.parameters, uniqueIndex, SplitType.TYPE);
-            ({constVars, intConstVars, boolConstVars, stringConstVars}, uniqueIndex) := createSimVarLists(qual.constants, uniqueIndex, SplitType.TYPE);
+            ({stateVars}, simCodeIndices)                                               := createSimVarLists(qual.states, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+            ({derivativeVars}, simCodeIndices)                                          := createSimVarLists(qual.derivatives, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+            ({algVars}, simCodeIndices)                                                 := createSimVarLists(qual.algebraics, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+            ({discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars}, simCodeIndices) := createSimVarLists(qual.discretes, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
+            ({aliasVars, intAliasVars, boolAliasVars, stringAliasVars}, simCodeIndices) := createSimVarLists(qual.aliasVars, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
+            ({paramVars, intParamVars, boolParamVars, stringParamVars}, simCodeIndices) := createSimVarLists(qual.parameters, simCodeIndices, SplitType.TYPE, VarType.PARAMETER);
+            ({constVars, intConstVars, boolConstVars, stringConstVars}, simCodeIndices) := createSimVarLists(qual.constants, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
         then ();
 
         case qual as BVariable.VAR_DATA_JAC() then ();
@@ -506,13 +534,37 @@ public
         then fail();
       end match;
 
-      simVars := SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars,
-        intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars,
-        boolAliasVars, paramVars, intParamVars, boolParamVars, stringAlgVars,
-        stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars,
-        boolConstVars, stringConstVars, jacobianVars, seedVars,
-        realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars,
-        sensitivityVars, dataReconSetcVars, dataReconinputVars);
+      simVars := SIMVARS(
+        stateVars                           = stateVars,
+        derivativeVars                      = derivativeVars,
+        algVars                             = algVars,
+        discreteAlgVars                     = discreteAlgVars,
+        intAlgVars                          = intAlgVars,
+        boolAlgVars                         = boolAlgVars,
+        inputVars                           = inputVars,
+        outputVars                          = outputVars,
+        aliasVars                           = aliasVars,
+        intAliasVars                        = intAliasVars,
+        boolAliasVars                       = boolAliasVars,
+        paramVars                           = paramVars,
+        intParamVars                        = intParamVars,
+        boolParamVars                       = boolParamVars,
+        stringAlgVars                       = stringAlgVars,
+        stringParamVars                     = stringParamVars,
+        stringAliasVars                     = stringAliasVars,
+        extObjVars                          = extObjVars,
+        constVars                           = constVars,
+        intConstVars                        = intConstVars,
+        boolConstVars                       = boolConstVars,
+        stringConstVars                     = stringConstVars,
+        jacobianVars                        = jacobianVars,
+        seedVars                            = seedVars,
+        realOptimizeConstraintsVars         = realOptimizeConstraintsVars,
+        realOptimizeFinalConstraintsVars    = realOptimizeFinalConstraintsVars,
+        sensitivityVars                     = sensitivityVars,
+        dataReconSetcVars                   = dataReconSetcVars,
+        dataReconinputVars                  = dataReconinputVars
+      );
     end create;
 
     function size
@@ -585,35 +637,33 @@ public
         dataReconinputVars                = SimVar.convertList(simVars.dataReconinputVars));
     end convert;
 
-  protected
-    type SplitType = enumeration(NONE, TYPE);
-
     function createSimVarLists
       "creates a list of simvar lists. SplitType.NONE always returns a list with only
       one list as its element and SplitType.TYPE returns a list with four lists."
       input BVariable.VariablePointers vars;
       output list<list<SimVar>> simVars = {};
-      input output Integer uniqueIndex;
+      input output SimCode.SimCodeIndices simCodeIndices;
       input SplitType splitType = SplitType.NONE;
+      input VarType varType = VarType.SIMULATION;
     protected
       Pointer<list<SimVar>> acc = Pointer.create({});
       Pointer<list<SimVar>> real_lst = Pointer.create({});
       Pointer<list<SimVar>> int_lst = Pointer.create({});
       Pointer<list<SimVar>> bool_lst = Pointer.create({});
       Pointer<list<SimVar>> string_lst = Pointer.create({});
-      Pointer<Integer> uniqueIndexPtr = Pointer.create(uniqueIndex);
+      Pointer<SimCode.SimCodeIndices> indices_ptr = Pointer.create(simCodeIndices);
     algorithm
       if splitType == SplitType.NONE then
         // Do not split and return everything as one single list
-        BVariable.VariablePointers.map(vars, function SimVar.traverseCreate(acc = acc, uniqueIndexPtr = uniqueIndexPtr));
+        BVariable.VariablePointers.map(vars, function SimVar.traverseCreate(acc = acc, indices_ptr = indices_ptr, varType = varType));
         simVars := {Pointer.access(acc)};
-        uniqueIndex := Pointer.access(uniqueIndexPtr);
+        simCodeIndices := Pointer.access(indices_ptr);
       elseif splitType == SplitType.TYPE then
         // Split the variables by basic type (real, integer, boolean, string)
         // and return a list for each type
-        BVariable.VariablePointers.map(vars, function splitByType(real_lst = real_lst, int_lst = int_lst, bool_lst = bool_lst, string_lst = string_lst, uniqueIndexPtr = uniqueIndexPtr));
+        BVariable.VariablePointers.map(vars, function splitByType(real_lst = real_lst, int_lst = int_lst, bool_lst = bool_lst, string_lst = string_lst, indices_ptr = indices_ptr, varType = varType));
         simVars := {Pointer.access(real_lst), Pointer.access(int_lst), Pointer.access(bool_lst), Pointer.access(string_lst)};
-        uniqueIndex := Pointer.access(uniqueIndexPtr);
+        simCodeIndices := Pointer.access(indices_ptr);
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of invalid splitType."});
       end if;
@@ -626,43 +676,83 @@ public
       input Pointer<list<SimVar>> int_lst;
       input Pointer<list<SimVar>> bool_lst;
       input Pointer<list<SimVar>> string_lst;
-      input Pointer<Integer> uniqueIndexPtr;
+      input Pointer<SimCode.SimCodeIndices> indices_ptr;
+      input VarType varType;
+    protected
+      SimCode.SimCodeIndices simCodeIndices = Pointer.access(indices_ptr);
     algorithm
-      _ := match var.ty
-        case Type.REAL()
+      _ := match (var.ty, varType)
+
+        case (Type.REAL(), VarType.SIMULATION)
           algorithm
-            Pointer.update(real_lst, SimVar.create(var, Pointer.access(uniqueIndexPtr)) :: Pointer.access(real_lst));
-            Pointer.update(uniqueIndexPtr, Pointer.access(uniqueIndexPtr) + 1);
+            Pointer.update(real_lst, SimVar.create(var, simCodeIndices.realVarIndex) :: Pointer.access(real_lst));
+            simCodeIndices.realVarIndex := simCodeIndices.realVarIndex + 1;
+            Pointer.update(indices_ptr, simCodeIndices);
         then ();
 
-        case Type.INTEGER()
+        case (Type.INTEGER(), VarType.SIMULATION)
           algorithm
-            Pointer.update(int_lst, SimVar.create(var, Pointer.access(uniqueIndexPtr)) :: Pointer.access(int_lst));
-            Pointer.update(uniqueIndexPtr, Pointer.access(uniqueIndexPtr) + 1);
+            Pointer.update(int_lst, SimVar.create(var, simCodeIndices.integerVarIndex) :: Pointer.access(int_lst));
+            simCodeIndices.integerVarIndex := simCodeIndices.integerVarIndex + 1;
+            Pointer.update(indices_ptr, simCodeIndices);
         then ();
 
-        case Type.BOOLEAN()
+        case (Type.BOOLEAN(), VarType.SIMULATION)
           algorithm
-            Pointer.update(bool_lst, SimVar.create(var, Pointer.access(uniqueIndexPtr)) :: Pointer.access(bool_lst));
-            Pointer.update(uniqueIndexPtr, Pointer.access(uniqueIndexPtr) + 1);
+            Pointer.update(bool_lst, SimVar.create(var, simCodeIndices.booleanVarIndex) :: Pointer.access(bool_lst));
+            simCodeIndices.booleanVarIndex := simCodeIndices.booleanVarIndex + 1;
+            Pointer.update(indices_ptr, simCodeIndices);
         then ();
 
-        case Type.STRING()
+        case (Type.STRING(), VarType.SIMULATION)
           algorithm
-            Pointer.update(string_lst, SimVar.create(var, Pointer.access(uniqueIndexPtr)) :: Pointer.access(string_lst));
-            Pointer.update(uniqueIndexPtr, Pointer.access(uniqueIndexPtr) + 1);
+            Pointer.update(string_lst, SimVar.create(var, simCodeIndices.stringVarIndex) :: Pointer.access(string_lst));
+            simCodeIndices.stringVarIndex := simCodeIndices.stringVarIndex + 1;
+            Pointer.update(indices_ptr, simCodeIndices);
         then ();
 
-        else ();
+        case (Type.REAL(), VarType.PARAMETER)
+          algorithm
+            Pointer.update(real_lst, SimVar.create(var, simCodeIndices.realParamIndex) :: Pointer.access(real_lst));
+            simCodeIndices.realParamIndex := simCodeIndices.realParamIndex + 1;
+            Pointer.update(indices_ptr, simCodeIndices);
+        then ();
+
+        case (Type.INTEGER(), VarType.PARAMETER)
+          algorithm
+            Pointer.update(int_lst, SimVar.create(var, simCodeIndices.integerParamIndex) :: Pointer.access(int_lst));
+            simCodeIndices.integerParamIndex := simCodeIndices.integerParamIndex + 1;
+            Pointer.update(indices_ptr, simCodeIndices);
+        then ();
+
+        case (Type.BOOLEAN(), VarType.PARAMETER)
+          algorithm
+            Pointer.update(bool_lst, SimVar.create(var, simCodeIndices.booleanParamIndex) :: Pointer.access(bool_lst));
+            simCodeIndices.booleanParamIndex := simCodeIndices.booleanParamIndex + 1;
+            Pointer.update(indices_ptr, simCodeIndices);
+        then ();
+
+        case (Type.STRING(), VarType.PARAMETER)
+          algorithm
+            Pointer.update(string_lst, SimVar.create(var, simCodeIndices.stringParamIndex) :: Pointer.access(string_lst));
+            simCodeIndices.stringParamIndex := simCodeIndices.stringParamIndex + 1;
+            Pointer.update(indices_ptr, simCodeIndices);
+        then ();
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unhandled Variable " + ComponentRef.toString(var.name) + "."});
+        then fail();
 
       end match;
     end splitByType;
 
   end SimVars;
 
-  constant SimVars emptySimVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {},
-    {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
+  constant SimVars emptySimVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+   {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
 
+  type SplitType  = enumeration(NONE, TYPE);
+  type VarType    = enumeration(SIMULATION, PARAMETER, DAE_MODE_RESIDUAL); // ToDo: PRE, OLD, RELATIONS...
 
   annotation(__OpenModelica_Interface="backend");
 end NSimVar;

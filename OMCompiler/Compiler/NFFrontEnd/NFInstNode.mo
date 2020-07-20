@@ -894,8 +894,9 @@ uniontype InstNode
     output Type ty;
   algorithm
     ty := match node
-      case CLASS_NODE() then Class.getType(Pointer.access(node.cls), node);
+      case CLASS_NODE()     then Class.getType(Pointer.access(node.cls), node);
       case COMPONENT_NODE() then Component.getType(Pointer.access(node.component));
+      case VAR_NODE()       then Type.ANY();
     end match;
   end getType;
 

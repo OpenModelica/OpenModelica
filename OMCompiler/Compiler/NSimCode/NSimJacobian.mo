@@ -38,6 +38,8 @@ encapsulated package NSimJacobian
 public
   // NF imports
   import ComponentRef = NFComponentRef;
+  import NFInstNode.InstNode;
+  import Type = NFType;
 
   // Backend imports
   import BackendDAE = NBackendDAE;
@@ -51,12 +53,13 @@ public
   import SimCode = NSimCode;
   import SimStrongComponent = NSimStrongComponent;
   import SimVar = NSimVar;
-
-  // Util imports
-  import StringUtil;
+  import NSimVar.VarType;
 
   // Old SimCode imports
   import OldSimCode = SimCode;
+
+  // Util imports
+  import StringUtil;
 
   type SparsityPattern = list<tuple<Integer, list<Integer>>>;
   type SparsityColoring = list<list<Integer>>;
@@ -178,8 +181,8 @@ public
         case qual as BackendDAE.JAC(varData = varData as BVariable.VAR_DATA_JAC(), eqData = eqData as BEquation.EQ_DATA_JAC()) algorithm
           BEquation.EquationPointers.map(eqData.equations, function SimStrongComponent.Block.traverseCreateEquation(acc = columnEqns, indices_ptr = indices_ptr));
 
-          BVariable.VariablePointers.map(varData.unknowns, function SimVar.SimVar.traverseCreate(acc = columnVars_ptr, uniqueIndexPtr = Pointer.create(0)));
-          BVariable.VariablePointers.map(varData.seedVars, function SimVar.SimVar.traverseCreate(acc = seedVars_ptr, uniqueIndexPtr = Pointer.create(0)));
+          BVariable.VariablePointers.map(varData.unknowns, function SimVar.SimVar.traverseCreate(acc = columnVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES), varType =  VarType.SIMULATION));
+          BVariable.VariablePointers.map(varData.seedVars, function SimVar.SimVar.traverseCreate(acc = seedVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES), varType =  VarType.SIMULATION));
           columnVars := listReverse(Pointer.access(columnVars_ptr));
           seedVars := listReverse(Pointer.access(seedVars_ptr));
 
@@ -225,14 +228,17 @@ public
           Jacobian.SparsityPattern pattern;
           Jacobian.SparsityColoring coloring;
           SimJacobian tmp;
+          ComponentRef seedCref;
 
         case (_, NONE()) then NONE();
 
         case (BackendDAE.JAC(sparsityPattern = pattern, sparsityColoring = coloring), SOME(tmp))
           algorithm
-            tmp.sparsity := createSparsityPattern(pattern.col_wise_pattern, simulationHT);
-            tmp.sparsityT := createSparsityPattern(pattern.row_wise_pattern, simulationHT);
-            tmp.coloring := createSparsityColoring(coloring, simulationHT);
+            // the seed cref for correct index lookup
+            seedCref := ComponentRef.fromNode(InstNode.VAR_NODE(NBVariable.SEED_STR + "_" + tmp.name, Pointer.create(NBVariable.DUMMY_VARIABLE)), Type.UNKNOWN());
+            tmp.sparsity := createSparsityPattern(pattern.col_wise_pattern, simulationHT, seedCref, true);
+            tmp.sparsityT := createSparsityPattern(pattern.row_wise_pattern, simulationHT, seedCref, false);
+            tmp.coloring := createSparsityColoring(coloring, simulationHT, seedCref);
             tmp.numColors := listLength(coloring);
         then SOME(tmp);
 
@@ -245,15 +251,22 @@ public
     function createSparsityPattern
       input list<Jacobian.SparsityPatternCol> cols    "columns that need to be generated (can be used for rows too)";
       input HashTableSimCode.HashTable simulationHT   "hash table cr --> simVar";
+      input ComponentRef seedCref                     "if not transposed than it needs the prepending seed cref";
+      input Boolean transposed;
       output SparsityPattern simPattern = {};
     protected
       ComponentRef cref;
       list<ComponentRef> dependencies;
+      Option<ComponentRef> optSeed;
     algorithm
       for col in listReverse(cols) loop
         (cref, dependencies) := col;
         try
-          simPattern := (SimVar.SimVar.getIndex(BaseHashTable.get(cref, simulationHT)), getCrefListIndices(dependencies, simulationHT)) :: simPattern;
+          if not transposed then
+            cref := ComponentRef.append(cref, seedCref);
+          end if;
+          optSeed := if transposed then SOME(seedCref) else NONE();
+          simPattern := (SimVar.SimVar.getIndex(BaseHashTable.get(cref, simulationHT)), getCrefListIndices(dependencies, simulationHT, optSeed)) :: simPattern;
         else
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to get index for cref: " + ComponentRef.toString(cref)});
         end try;
@@ -263,6 +276,7 @@ public
     function createSparsityColoring
       input Jacobian.SparsityColoring coloring;
       input HashTableSimCode.HashTable simulationHT;
+      input ComponentRef seedCref                     "it needs the prepending seed cref";
       output SparsityColoring simColoring = {};
     protected
       list<Integer> tmp;
@@ -271,7 +285,7 @@ public
         tmp := {};
         for cref in listReverse(group) loop
           try
-            tmp := SimVar.SimVar.getIndex(BaseHashTable.get(cref, simulationHT)) :: tmp;
+            tmp := SimVar.SimVar.getIndex(BaseHashTable.get(ComponentRef.append(cref, seedCref), simulationHT)) :: tmp;
           else
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to get index for cref: " + ComponentRef.toString(cref)});
           end try;
@@ -295,7 +309,7 @@ public
       output OldSimCode.JacobianMatrix oldJac;
     algorithm
       oldJac := OldSimCode.JAC_MATRIX(
-        columns         = {OldSimCode.JAC_COLUMN({}, {}, 0, {})},
+        columns         = {OldSimCode.JAC_COLUMN({}, {}, simJac.numberOfResultVars, {})},
         seedVars        = SimVar.SimVar.convertList(simJac.seedVars),
         matrixName      = simJac.name,
         sparsity        = simJac.sparsity,
@@ -328,13 +342,16 @@ public
     function getCrefListIndices
       input list<ComponentRef> crefs;
       input HashTableSimCode.HashTable simulationHT   "hash table cr --> simVar";
+      input Option<ComponentRef> seedCref;
       output list<Integer> indices = {};
     algorithm
       for cref in listReverse(crefs) loop
+        if isSome(seedCref) then
+          cref := ComponentRef.append(cref, Util.getOption(seedCref));
+        end if;
         indices := SimVar.SimVar.getIndex(BaseHashTable.get(cref, simulationHT)) :: indices;
       end for;
     end getCrefListIndices;
-
   end SimJacobian;
 
   constant SimJacobian EMPTY_SIM_JAC = SIM_JAC("", 0, 0, 0, {}, {}, {}, {}, {}, {}, {}, 0, NONE());
