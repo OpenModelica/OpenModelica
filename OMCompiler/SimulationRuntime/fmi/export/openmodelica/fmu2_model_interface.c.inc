@@ -647,8 +647,10 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
     }
   }
 
-  /* TODO: Simulation stop time is needed to calculate the sample events beforehand. */
-  initSample(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, 100 /*should be stopTime*/);
+  /* use defined stopTime, if stopTimeDefined is given to calculate the sample events beforehand.
+   * TODO: when stopTime is not defined we use an arbitrary constant 100.0, maybe issue a warning
+   */
+  initSample(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, comp->stopTimeDefined ? comp->stopTime : 100.0 /* default stopTime */);
 #if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
   initDelay(comp->fmuData, comp->fmuData->localData[0]->timeValue);
 #endif
@@ -1438,10 +1440,10 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
   eventInfo.nextEventTimeDefined              = fmi2False;
   eventInfo.nextEventTime                     = -0.0;
 
-  if (comp->stopTimeDefined)
-    tEnd = comp->stopTime;
-  else
-    tEnd = currentCommunicationPoint + communicationStepSize;
+  tEnd = currentCommunicationPoint + communicationStepSize;
+  if (comp->stopTimeDefined && (tEnd > comp->stopTime))
+    status=fmi2Error;
+
   tCommunication = currentCommunicationPoint;
 
   fmi2EnterEventMode(c);
