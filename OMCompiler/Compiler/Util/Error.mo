@@ -995,7 +995,7 @@ public constant ErrorTypes.Message NF_CAT_FIRST_ARG_EVAL = ErrorTypes.MESSAGE(59
   Gettext.gettext("The first argument of cat must be possible to evaluate during compile-time. Expression %s has variability %s."));
 public constant ErrorTypes.Message COMMA_OPERATOR_DIFFERENT_SIZES = ErrorTypes.MESSAGE(591, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Arguments of concatenation comma operator have different sizes for the first dimension: %s has dimension %s and %s has dimension %s."));
-public constant ErrorTypes.Message NON_STATE_STATESELECT_ALWAYS = ErrorTypes.MESSAGE(592, ErrorTypes.SYMBOLIC(), ErrorTypes.ERROR(),
+public constant ErrorTypes.Message NON_STATE_STATESELECT_ALWAYS = ErrorTypes.MESSAGE(592, ErrorTypes.SYMBOLIC(), ErrorTypes.WARNING(),
   Gettext.gettext("Variable %s has attribute stateSelect=StateSelect.always, but can't be selected as a state."));
 public constant ErrorTypes.Message STATE_STATESELECT_NEVER = ErrorTypes.MESSAGE(593, ErrorTypes.SYMBOLIC(), ErrorTypes.WARNING(),
   Gettext.gettext("Variable %s has attribute stateSelect=StateSelect.never, but was selected as a state"));
