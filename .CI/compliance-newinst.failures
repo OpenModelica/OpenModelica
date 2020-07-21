@@ -14,6 +14,7 @@ ModelicaCompliance.Classes.Declarations.Long.QuotedIdentifiers.?abfnrtv
 ModelicaCompliance.Classes.Declarations.PartialSimulationModel
 ModelicaCompliance.Classes.Declarations.Short.PartialClass
 ModelicaCompliance.Classes.Enumeration.EnumUnspecified
+ModelicaCompliance.Classes.Predefined.AttributeStateSelectInvalidAlways
 ModelicaCompliance.Classes.Predefined.AttributeStateSelectInvalidNever
 ModelicaCompliance.Classes.Predefined.ReservedBooleanComp
 ModelicaCompliance.Classes.Predefined.ReservedClass.Boolean
