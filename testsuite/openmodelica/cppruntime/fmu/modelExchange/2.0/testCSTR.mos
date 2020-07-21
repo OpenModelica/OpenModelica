@@ -52,8 +52,8 @@ getErrorString();
 // true
 // ""
 // "CSTRModel.fmu"
-// "[openmodelica/cppruntime/fmu/modelExchange/2.0/CSTR.mo:24:3-28:72:writable] Error: Variable cA has attribute stateSelect=StateSelect.always, but can't be selected as a state.
-// [openmodelica/cppruntime/fmu/modelExchange/2.0/CSTR.mo:24:3-28:72:writable] Error: Variable $outputAlias_cA.$pDERFMIDER.dummyVarFMIDER has attribute stateSelect=StateSelect.always, but can't be selected as a state.
+// "[openmodelica/cppruntime/fmu/modelExchange/2.0/CSTR.mo:24:3-28:72:writable] Warning: Variable cA has attribute stateSelect=StateSelect.always, but can't be selected as a state.
+// [openmodelica/cppruntime/fmu/modelExchange/2.0/CSTR.mo:24:3-28:72:writable] Warning: Variable $outputAlias_cA.$pDERFMIDER.dummyVarFMIDER has attribute stateSelect=StateSelect.always, but can't be selected as a state.
 // "
 // 0
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
