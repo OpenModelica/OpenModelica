@@ -9,9 +9,9 @@ include_directories(${MODELICAEXTERNALCDIR})
 add_definitions(-DDUMMY_FUNCTION_USERTAB) # yet an extra flag
 
 add_library(${ModelicaExternalName} STATIC ${MODELICAEXTERNALCDIR}/ModelicaFFT.c ${MODELICAEXTERNALCDIR}/ModelicaInternal.c ${MODELICAEXTERNALCDIR}/ModelicaRandom.c ${MODELICAEXTERNALCDIR}/ModelicaStrings.c)
-add_library(${ModelicaTablesName} STATIC ${MODELICAEXTERNALCDIR}/ModelicaStandardTables.c)
+add_library(${ModelicaTablesName} STATIC ${MODELICAEXTERNALCDIR}/ModelicaStandardTables.c ${MODELICAEXTERNALCDIR}/ModelicaStandardTablesUsertab.c)
 add_library(${ModelicaIOName} STATIC ${MODELICAEXTERNALCDIR}/ModelicaIO.c)
-add_library(${ModelicaMatIOName} STATIC ${MODELICAEXTERNALCDIR}/ModelicaMatIO.c)
+add_library(${ModelicaMatIOName} STATIC ${MODELICAEXTERNALCDIR}/ModelicaMatIO.c ${MODELICAEXTERNALCDIR}/snprintf.c)
 add_library(${LibZName} STATIC ${MODELICAEXTERNALCDIR}/zlib/adler32.c ${MODELICAEXTERNALCDIR}/zlib/compress.c ${MODELICAEXTERNALCDIR}/zlib/crc32.c ${MODELICAEXTERNALCDIR}/zlib/deflate.c ${MODELICAEXTERNALCDIR}/zlib/gzclose.c ${MODELICAEXTERNALCDIR}/zlib/gzlib.c ${MODELICAEXTERNALCDIR}/zlib/gzread.c ${MODELICAEXTERNALCDIR}/zlib/gzwrite.c ${MODELICAEXTERNALCDIR}/zlib/infback.c ${MODELICAEXTERNALCDIR}/zlib/inffast.c ${MODELICAEXTERNALCDIR}/zlib/inflate.c ${MODELICAEXTERNALCDIR}/zlib/inftrees.c ${MODELICAEXTERNALCDIR}/zlib/trees.c ${MODELICAEXTERNALCDIR}/zlib/uncompr.c ${MODELICAEXTERNALCDIR}/zlib/zutil.c)
 
 install(TARGETS ${ModelicaExternalName} DESTINATION ${LIBINSTALLEXT})
