@@ -1,13 +1,307 @@
 // script to test the sanity of the OpenModelica compiler
 
-// load the model
+// so that Clock class is not seen as synch construct
+setCommandLineOptions({"--std=3.2"}); getErrorString();
+
 loadString("
-model M
-  Real x(start=1.0, fixed=true);
-  parameter Real a = -1.0;
+  // taken from ModelicaTest.Tables.CombiTable1D.Test1
+partial model Test0
+  Modelica.Blocks.Tables.CombiTable1D t_new;
+  Modelica.Blocks.Continuous.Der d_t_new;
+  Modelica.Blocks.Sources.Clock clock;
 equation
-  der(x) = a * x;
-end M;"); getErrorString();
+  connect(t_new.y[1], d_t_new.u);
+  connect(clock.y, t_new.u[1]);
+end Test0;
+
+model M  \"Single row, t_min = 0\"
+  extends Modelica.Icons.Example;
+  extends Test0(t_new(table = {{0, 1}}));
+  annotation(experiment(StartTime = 0, StopTime = 2.5));
+end M;
+
+package Modelica  \"Modelica Standard Library - Version 3.2.3\"
+  extends Modelica.Icons.Package;
+
+  package Blocks  \"Library of basic input/output control blocks (continuous, discrete, logical, table blocks)\"
+    extends Modelica.Icons.Package;
+
+    package Continuous  \"Library of continuous control blocks with internal states\"
+      extends Modelica.Icons.Package;
+
+      block Der  \"Derivative of input (= analytic differentiations)\"
+        extends .Modelica.Blocks.Interfaces.SISO;
+      equation
+        y = der(u);
+      end Der;
+    end Continuous;
+
+    package Interfaces  \"Library of connectors and partial models for input/output blocks\"
+      extends Modelica.Icons.InterfacesPackage;
+      connector RealInput = input Real \"'input Real' as connector\";
+      connector RealOutput = output Real \"'output Real' as connector\";
+
+      partial block SO  \"Single Output continuous control block\"
+        extends Modelica.Blocks.Icons.Block;
+        RealOutput y \"Connector of Real output signal\";
+      end SO;
+
+      partial block SISO  \"Single Input Single Output continuous control block\"
+        extends Modelica.Blocks.Icons.Block;
+        RealInput u \"Connector of Real input signal\";
+        RealOutput y \"Connector of Real output signal\";
+      end SISO;
+
+      partial block MIMOs  \"Multiple Input Multiple Output continuous control block with same number of inputs and outputs\"
+        extends Modelica.Blocks.Icons.Block;
+        parameter Integer n = 1 \"Number of inputs (= number of outputs)\";
+        RealInput[n] u \"Connector of Real input signals\";
+        RealOutput[n] y \"Connector of Real output signals\";
+      end MIMOs;
+
+      partial block SignalSource  \"Base class for continuous signal source\"
+        extends SO;
+        parameter Real offset = 0 \"Offset of output signal y\";
+        parameter .Modelica.SIunits.Time startTime = 0 \"Output y = offset for time < startTime\";
+      end SignalSource;
+    end Interfaces;
+
+    package Sources  \"Library of signal source blocks generating Real, Integer and Boolean signals\"
+      extends Modelica.Icons.SourcesPackage;
+
+      block Clock  \"Generate actual time signal\"
+        extends .Modelica.Blocks.Interfaces.SignalSource;
+      equation
+        y = offset + (if time < startTime then 0 else time - startTime);
+      end Clock;
+    end Sources;
+
+    package Tables  \"Library of blocks to interpolate in one and two-dimensional tables\"
+      extends Modelica.Icons.Package;
+
+      block CombiTable1D  \"Table look-up in one dimension (matrix/file) with n inputs and n outputs\"
+        extends Modelica.Blocks.Interfaces.MIMOs(final n = size(columns, 1));
+        parameter Boolean tableOnFile = false \"= true, if table is defined on file or in function usertab\";
+        parameter Real[:, :] table = fill(0.0, 0, 2) \"Table matrix (grid = first column; e.g., table=[0, 0; 1, 1; 2, 4])\";
+        parameter String tableName = \"NoName\" \"Table name on file or in function usertab (see docu)\";
+        parameter String fileName = \"NoName\" \"File where matrix is stored\";
+        parameter Boolean verboseRead = true \"= true, if info message that file is loading is to be printed\";
+        parameter Integer[:] columns = 2:size(table, 2) \"Columns of table to be interpolated\";
+        parameter Modelica.Blocks.Types.Smoothness smoothness = Modelica.Blocks.Types.Smoothness.LinearSegments \"Smoothness of table interpolation\";
+        parameter Modelica.Blocks.Types.Extrapolation extrapolation = Modelica.Blocks.Types.Extrapolation.LastTwoPoints \"Extrapolation of data outside the definition range\";
+        parameter Boolean verboseExtrapolation = false \"= true, if warning messages are to be printed if table input is outside the definition range\";
+        final parameter Real u_min = Internal.getTable1DAbscissaUmin(tableID) \"Minimum abscissa value defined in table\";
+        final parameter Real u_max = Internal.getTable1DAbscissaUmax(tableID) \"Maximum abscissa value defined in table\";
+      protected
+        parameter Modelica.Blocks.Types.ExternalCombiTable1D tableID = Modelica.Blocks.Types.ExternalCombiTable1D(if tableOnFile then tableName else \"NoName\", if tableOnFile and fileName <> \"NoName\" and not Modelica.Utilities.Strings.isEmpty(fileName) then fileName else \"NoName\", table, columns, smoothness, extrapolation, if tableOnFile then verboseRead else false) \"External table object\";
+      equation
+        if tableOnFile then
+          assert(tableName <> \"NoName\", \"tableOnFile = true and no table name given\");
+        else
+          assert(size(table, 1) > 0 and size(table, 2) > 0, \"tableOnFile = false and parameter table is an empty matrix\");
+        end if;
+        if verboseExtrapolation and (extrapolation == Modelica.Blocks.Types.Extrapolation.LastTwoPoints or extrapolation == Modelica.Blocks.Types.Extrapolation.HoldLastPoint) then
+          for i in 1:n loop
+            assert(noEvent(u[i] >= u_min), \"
+      Extrapolation warning: The value u[\" + String(i) + \"] (=\" + String(u[i]) + \") must be greater or equal
+      than the minimum abscissa value u_min (=\" + String(u_min) + \") defined in the table.
+            \", AssertionLevel.warning);
+            assert(noEvent(u[i] <= u_max), \"
+      Extrapolation warning: The value u[\" + String(i) + \"] (=\" + String(u[i]) + \") must be less or equal
+      than the maximum abscissa value u_max (=\" + String(u_max) + \") defined in the table.
+            \", AssertionLevel.warning);
+          end for;
+        end if;
+        if smoothness == Modelica.Blocks.Types.Smoothness.ConstantSegments then
+          for i in 1:n loop
+            y[i] = Internal.getTable1DValueNoDer(tableID, i, u[i]);
+          end for;
+        else
+          for i in 1:n loop
+            y[i] = Internal.getTable1DValue(tableID, i, u[i]);
+          end for;
+        end if;
+      end CombiTable1D;
+
+      package Internal  \"Internal external object definitions for table functions that should not be directly utilized by the user\"
+        extends Modelica.Icons.InternalPackage;
+
+        function getTable1DValue  \"Interpolate 1-dim. table defined by matrix\"
+          extends Modelica.Icons.Function;
+          input Modelica.Blocks.Types.ExternalCombiTable1D tableID;
+          input Integer icol;
+          input Real u;
+          output Real y;
+          external \"C\" y = ModelicaStandardTables_CombiTable1D_getValue(tableID, icol, u) annotation(Library = {\"ModelicaStandardTables\", \"ModelicaIO\", \"ModelicaMatIO\", \"zlib\"}, derivative = getDerTable1DValue);
+          annotation(derivative = getDerTable1DValue);
+        end getTable1DValue;
+
+        function getTable1DValueNoDer  \"Interpolate 1-dim. table defined by matrix (but do not provide a derivative function)\"
+          extends Modelica.Icons.Function;
+          input Modelica.Blocks.Types.ExternalCombiTable1D tableID;
+          input Integer icol;
+          input Real u;
+          output Real y;
+          external \"C\" y = ModelicaStandardTables_CombiTable1D_getValue(tableID, icol, u) annotation(Library = {\"ModelicaStandardTables\", \"ModelicaIO\", \"ModelicaMatIO\", \"zlib\"});
+        end getTable1DValueNoDer;
+
+        function getDerTable1DValue  \"Derivative of interpolated 1-dim. table defined by matrix\"
+          extends Modelica.Icons.Function;
+          input Modelica.Blocks.Types.ExternalCombiTable1D tableID;
+          input Integer icol;
+          input Real u;
+          input Real der_u;
+          output Real der_y;
+          external \"C\" der_y = ModelicaStandardTables_CombiTable1D_getDerValue(tableID, icol, u, der_u) annotation(Library = {\"ModelicaStandardTables\", \"ModelicaIO\", \"ModelicaMatIO\", \"zlib\"});
+        end getDerTable1DValue;
+
+        function getTable1DAbscissaUmin  \"Return minimum abscissa value of 1-dim. table defined by matrix\"
+          extends Modelica.Icons.Function;
+          input Modelica.Blocks.Types.ExternalCombiTable1D tableID;
+          output Real uMin \"Minimum abscissa value in table\";
+          external \"C\" uMin = ModelicaStandardTables_CombiTable1D_minimumAbscissa(tableID) annotation(Library = {\"ModelicaStandardTables\", \"ModelicaIO\", \"ModelicaMatIO\", \"zlib\"});
+        end getTable1DAbscissaUmin;
+
+        function getTable1DAbscissaUmax  \"Return maximum abscissa value of 1-dim. table defined by matrix\"
+          extends Modelica.Icons.Function;
+          input Modelica.Blocks.Types.ExternalCombiTable1D tableID;
+          output Real uMax \"Maximum abscissa value in table\";
+          external \"C\" uMax = ModelicaStandardTables_CombiTable1D_maximumAbscissa(tableID) annotation(Library = {\"ModelicaStandardTables\", \"ModelicaIO\", \"ModelicaMatIO\", \"zlib\"});
+        end getTable1DAbscissaUmax;
+      end Internal;
+    end Tables;
+
+    package Types  \"Library of constants, external objects and types with choices, especially to build menus\"
+      extends Modelica.Icons.TypesPackage;
+      type Smoothness = enumeration(LinearSegments \"Table points are linearly interpolated\", ContinuousDerivative \"Table points are interpolated (by Akima splines) such that the first derivative is continuous\", ConstantSegments \"Table points are not interpolated, but the value from the previous abscissa point is returned\", MonotoneContinuousDerivative1 \"Table points are interpolated (by Fritsch-Butland splines) such that the monotonicity is preserved and the first derivative is continuous\", MonotoneContinuousDerivative2 \"Table points are interpolated (by Steffen splines) such that the monotonicity is preserved and the first derivative is continuous\") \"Enumeration defining the smoothness of table interpolation\";
+      type Extrapolation = enumeration(HoldLastPoint \"Hold the first/last table point outside of the table scope\", LastTwoPoints \"Extrapolate by using the derivative at the first/last table points outside of the table scope\", Periodic \"Repeat the table scope periodically\", NoExtrapolation \"Extrapolation triggers an error\") \"Enumeration defining the extrapolation of table interpolation\";
+
+      class ExternalCombiTable1D  \"External object of 1-dim. table defined by matrix\"
+        extends ExternalObject;
+
+        function constructor  \"Initialize 1-dim. table defined by matrix\"
+          extends Modelica.Icons.Function;
+          input String tableName \"Table name\";
+          input String fileName \"File name\";
+          input Real[:, :] table;
+          input Integer[:] columns;
+          input Modelica.Blocks.Types.Smoothness smoothness;
+          input Modelica.Blocks.Types.Extrapolation extrapolation = Modelica.Blocks.Types.Extrapolation.LastTwoPoints;
+          input Boolean verboseRead = true \"= true: Print info message; = false: No info message\";
+          output ExternalCombiTable1D externalCombiTable1D;
+          external \"C\" externalCombiTable1D = ModelicaStandardTables_CombiTable1D_init2(fileName, tableName, table, size(table, 1), size(table, 2), columns, size(columns, 1), smoothness, extrapolation, verboseRead) annotation(Library = {\"ModelicaStandardTables\", \"ModelicaIO\", \"ModelicaMatIO\", \"zlib\"});
+        end constructor;
+
+        function destructor  \"Terminate 1-dim. table defined by matrix\"
+          extends Modelica.Icons.Function;
+          input ExternalCombiTable1D externalCombiTable1D;
+          external \"C\" ModelicaStandardTables_CombiTable1D_close(externalCombiTable1D) annotation(Library = {\"ModelicaStandardTables\", \"ModelicaIO\", \"ModelicaMatIO\", \"zlib\"});
+        end destructor;
+      end ExternalCombiTable1D;
+    end Types;
+
+    package Icons  \"Icons for Blocks\"
+      extends Modelica.Icons.IconsPackage;
+
+      partial block Block  \"Basic graphical layout of input/output block\" end Block;
+    end Icons;
+  end Blocks;
+
+  package Utilities  \"Library of utility functions dedicated to scripting (operating on files, streams, strings, system)\"
+    extends Modelica.Icons.UtilitiesPackage;
+
+    package Strings  \"Operations on strings\"
+      extends Modelica.Icons.FunctionsPackage;
+
+      function length  \"Return length of string\"
+        extends Modelica.Icons.Function;
+        input String string;
+        output Integer result \"Number of characters of string\";
+        external \"C\" result = ModelicaStrings_length(string) annotation(Library = \"ModelicaExternalC\");
+      end length;
+
+      function isEmpty  \"Return true if a string is empty (has only white space characters)\"
+        extends Modelica.Icons.Function;
+        input String string;
+        output Boolean result \"True, if string is empty\";
+      protected
+        Integer nextIndex;
+        Integer len;
+      algorithm
+        nextIndex := Strings.Advanced.skipWhiteSpace(string);
+        len := Strings.length(string);
+        if len < 1 or nextIndex > len then
+          result := true;
+        else
+          result := false;
+        end if;
+      end isEmpty;
+
+      package Advanced  \"Advanced scanning functions\"
+        extends Modelica.Icons.FunctionsPackage;
+
+        function skipWhiteSpace  \"Scan white space\"
+          extends Modelica.Icons.Function;
+          input String string;
+          input Integer startIndex(min = 1) = 1;
+          output Integer nextIndex;
+          external \"C\" nextIndex = ModelicaStrings_skipWhiteSpace(string, startIndex) annotation(Library = \"ModelicaExternalC\");
+        end skipWhiteSpace;
+      end Advanced;
+    end Strings;
+  end Utilities;
+
+  package Icons  \"Library of icons\"
+    extends Icons.Package;
+
+    partial model Example  \"Icon for runnable examples\" end Example;
+
+    partial package Package  \"Icon for standard packages\" end Package;
+
+    partial package InterfacesPackage  \"Icon for packages containing interfaces\"
+      extends Modelica.Icons.Package;
+    end InterfacesPackage;
+
+    partial package SourcesPackage  \"Icon for packages containing sources\"
+      extends Modelica.Icons.Package;
+    end SourcesPackage;
+
+    partial package UtilitiesPackage  \"Icon for utility packages\"
+      extends Modelica.Icons.Package;
+    end UtilitiesPackage;
+
+    partial package TypesPackage  \"Icon for packages containing type definitions\"
+      extends Modelica.Icons.Package;
+    end TypesPackage;
+
+    partial package FunctionsPackage  \"Icon for packages containing functions\"
+      extends Modelica.Icons.Package;
+    end FunctionsPackage;
+
+    partial package IconsPackage  \"Icon for packages containing icons\"
+      extends Modelica.Icons.Package;
+    end IconsPackage;
+
+    partial package InternalPackage  \"Icon for an internal package (indicating that the package should not be directly utilized by user)\" end InternalPackage;
+
+    partial function Function  \"Icon for functions\" end Function;
+  end Icons;
+
+  package SIunits  \"Library of type and unit definitions based on SI units according to ISO 31-1992\"
+    extends Modelica.Icons.Package;
+    type Time = Real(final quantity = \"Time\", final unit = \"s\");
+  end SIunits;
+  annotation(version = \"3.2.3\", versionBuild = 4, versionDate = \"2019-01-23\", dateModified = \"2020-05-12 22:00:00Z\");
+end Modelica;
+
+model M_total  \"Single row, t_min = 0\"
+  extends M;
+ annotation(experiment(StartTime = 0, StopTime = 2.5));
+end M_total;
+"); getErrorString();
+
+
+saveTotalSCode("m.mo", M); getErrorString();
 
 // build and FMU out of the model
 buildModelFMU(M); getErrorString();

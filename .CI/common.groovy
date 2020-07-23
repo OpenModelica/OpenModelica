@@ -247,10 +247,11 @@ void buildOMC(CC, CXX, extraFlags) {
   ls linearized_model.m
   ls M.fmu
   rm -rf ./M* ./OMCppM* ./linear_M* ./linearized_model.m
-  # not working yet ../build.sanity-check/bin/omc --simCodeTarget=Cpp testSanity.mos
-  # ./M
-  # ls M.fmu
-  # rm -rf ./M* ./OMCppM*
+  # do not do this on Mac as it doesn't work yet
+  test `uname` = Darwin || ../build.sanity-check/bin/omc --simCodeTarget=Cpp testSanity.mos
+  test `uname` = Darwin || ./M
+  test `uname` = Darwin || ls M.fmu
+  test `uname` = Darwin || rm -rf ./M* ./OMCppM*
   cd ..
   mv build.sanity-check build
   rm -rf .sanity-check
