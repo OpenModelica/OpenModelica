@@ -1,0 +1,65 @@
+// name:  testCombiTable2D
+// keywords: FMI export with tables #4772, #5227, #5963
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml *TableTest*
+//
+
+setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadString("
+model TableTest
+  extends Modelica.Blocks.Tables.CombiTable2D(
+      table = [0.0,   1.0,   2.0,   3.0;
+               1.0,   1.0,   3.0,   5.0;
+               2.0,   2.0,   4.0,   6.0]);
+  annotation(uses(Modelica(version=\"3.2.3\")));
+end TableTest;
+");
+getErrorString();
+
+// enable directional derivatives
+setCommandLineOptions("-d=-disableDirectionalDerivatives"); getErrorString();
+
+translateModelFMU(TableTest, version="2.0"); getErrorString();
+
+importFMU("TableTest.fmu"); getErrorString();
+loadFile("TableTest_me_FMU.mo"); getErrorString();
+
+setCommandLineOptions("--simCodeTarget=C"); getErrorString();
+simulate(TableTest_me_FMU, stopTime=1.0, simflags="-override=u1=0,u2=0"); getErrorString();
+
+// inputs
+val(u1, 0);
+val(u2, 0);
+// outputs
+val(y, 0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "TableTest.fmu"
+// ""
+// "TableTest_me_FMU.mo"
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TableTest_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TableTest_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=u1=0,u2=0'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// 0.0
+// -2.0
+// endResult
