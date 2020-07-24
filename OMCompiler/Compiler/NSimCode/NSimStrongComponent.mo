@@ -292,13 +292,12 @@ public
       Pointer<list<SimVar>> vars_ptr = Pointer.create({});
       list<Block> tmp;
     algorithm
-      for system in systems loop
+      for system in listReverse(systems) loop
         BVariable.VariablePointers.map(system.unknowns, function SimVar.traverseCreate(acc = vars_ptr, indices_ptr = indices_ptr, varType = VarType.DAE_MODE_RESIDUAL));
         (tmp, simCodeIndices) := fromSystem(system, Pointer.access(indices_ptr));
         blcks := tmp :: blcks;
       end for;
-      vars := Pointer.access(vars_ptr);
-      blcks := listReverse(blcks);
+      vars := listReverse(Pointer.access(vars_ptr));
     end createDAEModeBlocks;
 
     function fromSystem

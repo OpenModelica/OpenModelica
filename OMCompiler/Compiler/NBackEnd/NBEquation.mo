@@ -807,7 +807,7 @@ public
     end convert;
   end EvaluationStages;
 
-  constant EvaluationStages DEFAULT_EVALUATION_STAGES = EVALUATION_STAGES(true,false,false,true);
+  constant EvaluationStages DEFAULT_EVALUATION_STAGES = EVALUATION_STAGES(true,true,false,true);
 
   uniontype EquationPointers
     record EQUATION_POINTERS

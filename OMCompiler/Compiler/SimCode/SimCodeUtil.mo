@@ -8767,7 +8767,7 @@ algorithm
   _ := match(inDaeModedata)
   local
     SimCode.DaeModeData dmd;
-    SimCode.SparsityPattern sparsityT;
+    SimCode.SparsityPattern sparsity, sparsityT;
   case(SOME(dmd)) algorithm
     print("\ndaeMode: \n" + UNDERLINE + "\n");
     str := "residual Equations:\n"+UNDERLINE+"\n";
@@ -8779,7 +8779,10 @@ algorithm
     if isSome(dmd.sparsityPattern) then
       str := "Sparsity Pattern:\n"+UNDERLINE+"\n";
       print(str);
-      SimCode.JAC_MATRIX(sparsityT=sparsityT) := Util.getOption(dmd.sparsityPattern);
+      SimCode.JAC_MATRIX(sparsity = sparsity, sparsityT=sparsityT) := Util.getOption(dmd.sparsityPattern);
+      dumpSparsePatternInt(sparsity);
+      str := "Sparsity Pattern Transposed:\n"+UNDERLINE+"\n";
+      print(str);
       dumpSparsePatternInt(sparsityT);
     end if;
   then ();

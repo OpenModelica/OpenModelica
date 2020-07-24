@@ -212,19 +212,19 @@ public
             ht := StrongComponent.getDependentCrefs(comps[i], ht);
           end for;
 
-          // create column-wise sparsity pattern
+          // create row-wise sparsity pattern
           for cref in residual_vars loop
             tmp := List.unique(BaseHashTable.get(cref, ht));
-            cols := (cref, tmp) :: cols;
+            rows := (cref, tmp) :: rows;
             for dep in tmp loop
               // also add inverse dependency (indep var) --> (res/tmp) :: rest
               BaseHashTable.update((dep, cref :: BaseHashTable.get(dep, ht)), ht);
             end for;
           end for;
 
-          // create row-wise sparsity pattern
+          // create column-wise sparsity pattern
           for cref in independent_vars loop
-            rows := (cref, List.unique(BaseHashTable.get(cref, ht))) :: rows;
+            cols := (cref, List.unique(BaseHashTable.get(cref, ht))) :: cols;
           end for;
 
           // find number of nonzero elements

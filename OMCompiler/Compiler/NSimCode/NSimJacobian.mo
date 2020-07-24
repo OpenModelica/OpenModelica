@@ -236,8 +236,8 @@ public
           algorithm
             // the seed cref for correct index lookup
             seedCref := ComponentRef.fromNode(InstNode.VAR_NODE(NBVariable.SEED_STR + "_" + tmp.name, Pointer.create(NBVariable.DUMMY_VARIABLE)), Type.UNKNOWN());
-            tmp.sparsity := createSparsityPattern(pattern.col_wise_pattern, simulationHT, seedCref, true);
-            tmp.sparsityT := createSparsityPattern(pattern.row_wise_pattern, simulationHT, seedCref, false);
+            tmp.sparsity := listReverse(createSparsityPattern(pattern.col_wise_pattern, simulationHT, seedCref, false));
+            tmp.sparsityT := createSparsityPattern(pattern.row_wise_pattern, simulationHT, seedCref, true);
             tmp.coloring := createSparsityColoring(coloring, simulationHT, seedCref);
             tmp.numColors := listLength(coloring);
         then SOME(tmp);
@@ -258,6 +258,7 @@ public
       ComponentRef cref;
       list<ComponentRef> dependencies;
       Option<ComponentRef> optSeed;
+      list<Integer> dep_indices;
     algorithm
       for col in listReverse(cols) loop
         (cref, dependencies) := col;
@@ -266,7 +267,8 @@ public
             cref := ComponentRef.append(cref, seedCref);
           end if;
           optSeed := if transposed then SOME(seedCref) else NONE();
-          simPattern := (SimVar.SimVar.getIndex(BaseHashTable.get(cref, simulationHT)), getCrefListIndices(dependencies, simulationHT, optSeed)) :: simPattern;
+          dep_indices := getCrefListIndices(dependencies, simulationHT, optSeed);
+          simPattern := (SimVar.SimVar.getIndex(BaseHashTable.get(cref, simulationHT)), List.sort(dep_indices, intGt)) :: simPattern;
         else
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to get index for cref: " + ComponentRef.toString(cref)});
         end try;

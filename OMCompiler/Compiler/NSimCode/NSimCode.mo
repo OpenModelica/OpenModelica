@@ -40,7 +40,6 @@ protected
   import Absyn;
   import AbsynUtil;
   import OldExpression = Expression;
-  import SCode;
 
   // NF imports
   import BuiltinCall = NFBuiltinCall;
@@ -51,6 +50,7 @@ protected
   import Expression = NFExpression;
   import NFFunction.Function;
   import NFInstNode.InstNode;
+  import Type = NFType;
 
   // Backend imports
   import BackendDAE = NBackendDAE;
@@ -581,7 +581,7 @@ public
         numNonLinearSystems         = simCodeIndices.nonlinearSystemIndex,
         numMixedSystems             = 0,
         numStateSets                = 0,
-        numJacobians                = 0,
+        numJacobians                = simCodeIndices.nonlinearSystemIndex + 5, // #nonlinSystems + 5 simulation jacs (add state sets later!)
         numOptimizeConstraints      = 0,
         numOptimizeFinalConstraints = 0,
         numSensitivityParameters    = 0,
@@ -717,15 +717,14 @@ public
 
         case SOME(daeModeData)
           algorithm
-            daeModeData.algebraicVars := modelInfo.vars.algVars;
-            daeModeData.auxiliaryVars := {}; // this needs to be updated in the future
-
             // get sparsity pattern jacobian and update the hashtable and the jacobian
             simulationHT := HashTableSimCode.addList(daeModeData.residualVars, simulationHT);
             if isSome(daeModeData.sparsityPattern) then
               SOME(jac) := daeModeData.sparsityPattern;
               simulationHT := HashTableSimCode.addList(jac.seedVars, simulationHT);
               modelInfo := ModelInfo.setSeedVars(modelInfo, jac.seedVars);
+              daeModeData.algebraicVars := rewriteAlgebraicVarsIdx(modelInfo.vars.algVars, simulationHT);
+              daeModeData.auxiliaryVars := {}; // this needs to be updated in the future
               (daeModeJac, simCodeIndices) := SimJacobian.fromSystemsSparsity(systems, daeModeData.sparsityPattern, simulationHT, simCodeIndices);
               daeModeData.sparsityPattern := daeModeJac;
               jacobian := Util.getOption(daeModeJac);
@@ -740,6 +739,23 @@ public
         then fail();
       end match;
     end createSparsityJacobian;
+
+    function rewriteAlgebraicVarsIdx
+      input list<SimVar> simulationAlgVars;
+      input HashTableSimCode.HashTable simulationHT;
+      output list<SimVar> daeModeAlgVars = {};
+    protected
+      ComponentRef seedCref, cref;
+    algorithm
+      BaseHashTable.dumpHashTable(simulationHT);
+      seedCref := ComponentRef.fromNode(InstNode.VAR_NODE(NBVariable.SEED_STR + "_A", Pointer.create(NBVariable.DUMMY_VARIABLE)), Type.UNKNOWN());
+      for var in listReverse(simulationAlgVars) loop
+        cref := ComponentRef.append(var.name, seedCref);
+        print("Searching for: " + ComponentRef.toString(cref) + "\n");
+        var.index := SimVar.getIndex(BaseHashTable.get(cref, simulationHT));
+        daeModeAlgVars := var :: daeModeAlgVars;
+      end for;
+    end rewriteAlgebraicVarsIdx;
 
     function replaceDerCrefSES
       input output OldSimCode.SimEqSystem sys;
