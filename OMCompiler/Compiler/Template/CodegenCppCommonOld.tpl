@@ -226,17 +226,32 @@ template representationCref(ComponentRef inCref, SimCode simCode ,Text& extraFun
   cref2simvar(inCref, simCode) |> var as SIMVAR(varKind=varKind, index=i, matrixName=matrixName) =>
   match varKind
     case STATE() then
+    if Flags.isSet(NF_SCALARIZE) then
       '__z[<%i%>]'
-    case STATE_DER() then
+    else
+      '<%cref(inCref, useFlatArrayNotation)%><%representationCrefSubscripts(inCref, useFlatArrayNotation)%>'
+  case STATE_DER() then
+    if Flags.isSet(NF_SCALARIZE) then
       '__zDot[<%i%>]'
-    case DAE_RESIDUAL_VAR() then
-      '__daeResidual[<%i%>]'
-    case JAC_VAR() then
+    else
+      '<%cref(inCref, useFlatArrayNotation)%><%representationCrefSubscripts(inCref, useFlatArrayNotation)%>'
+  case DAE_RESIDUAL_VAR() then
+    '__daeResidual[<%i%>]'
+  case JAC_VAR() then
+    if Flags.isSet(NF_SCALARIZE) then
       '<%contextSystem(context)%>_<%getOption(matrixName)%>jac_y(<%i%>)'
-    case JAC_DIFF_VAR() then
+    else
+      '<%cref(inCref, useFlatArrayNotation)%><%representationCrefSubscripts(inCref, useFlatArrayNotation)%>'
+  case JAC_DIFF_VAR() then
+    if Flags.isSet(NF_SCALARIZE) then
       '<%contextSystem(context)%>_<%getOption(matrixName)%>jac_tmp(<%i%>)'
-    case SEED_VAR() then
+    else
+      '<%cref(inCref, useFlatArrayNotation)%><%representationCrefSubscripts(inCref, useFlatArrayNotation)%>'
+  case SEED_VAR() then
+    if Flags.isSet(NF_SCALARIZE) then
       '<%contextSystem(context)%>_<%getOption(matrixName)%>jac_x(<%i%>)'
+    else
+      '<%cref(inCref, useFlatArrayNotation)%><%representationCrefSubscripts(inCref, useFlatArrayNotation)%>'
     case VARIABLE() then
       match var
         case SIMVAR(index=-2) then
@@ -255,6 +270,32 @@ template representationCref(ComponentRef inCref, SimCode simCode ,Text& extraFun
     else
       '<%contextSystem(context)%><%cref(inCref, useFlatArrayNotation)%>'
 end representationCref;
+
+template representationCrefSubscripts(ComponentRef inCref, Boolean useFlatArrayNotation)
+""
+::=
+  match inCref
+  case CREF_IDENT(subscriptLst=subs)
+    then subscriptsToCStr(subs, useFlatArrayNotation)
+  case CREF_QUAL(componentRef=cr, subscriptLst={})
+    then representationCrefSubscripts(cr, useFlatArrayNotation)
+  case CREF_QUAL(componentRef=cr, subscriptLst=subs)
+    then '(<%subs |> s => subscriptToCStr(s) ;separator=","%><%representationCrefSubscriptsHelper(cr, useFlatArrayNotation)%>)'
+end representationCrefSubscripts;
+
+template representationCrefSubscriptsHelper(ComponentRef inCref, Boolean useFlatArrayNotation)
+""
+::=
+  match inCref
+  case CREF_IDENT(subscriptLst={})
+    then ''
+  case CREF_IDENT(subscriptLst=subs)
+    then ',<%subs |> s => subscriptToCStr(s) ;separator=","%>'
+  case CREF_QUAL(componentRef=cr, subscriptLst={})
+    then '<%representationCrefSubscriptsHelper(cr, useFlatArrayNotation)%>'
+  case CREF_QUAL(componentRef=cr, subscriptLst=subs)
+    then ',<%subs |> s => subscriptToCStr(s) ;separator=","%><%representationCrefSubscriptsHelper(cr, useFlatArrayNotation)%>'
+end representationCrefSubscriptsHelper;
 
 template crefToCStrWithoutIndexOperator(ComponentRef cr)
  "Helper function to cref."
@@ -491,7 +532,7 @@ template daeExpCrefRhsArrayBox2(Text arrayData, DAE.Type ty, Boolean isRowMajorD
     let &tmpdecl = buffer "" /*BUFD*/
     let arrayVar = tempDecl(arrayType, &tmpdecl /*BUFD*/)
     let arrayAssign = if isRowMajorData then
-      'assignRowMajorData(&<%arrayData%>, <%arrayVar%>)' else
+      'assignRowMajorData(&<%arrayData%>_arr, <%arrayVar%>)' else
       '<%arrayVar%>.assign(&<%arrayData%>)'
     let &preExp +=
       <<
@@ -1790,7 +1831,11 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     '<%var%>'
 
   case CALL(path=IDENT(name="der"), expLst={arg as CREF(__)}) then
-    let var = cref2simvar(arg.componentRef, simCode) |> SIMVAR(index=i) => '__zDot[<%i%>]'
+    let var = cref2simvar(arg.componentRef, simCode) |> SIMVAR(index=i, name=crName) =>
+    if Flags.isSet(NF_SCALARIZE) then
+      '__zDot[<%i%>]'
+    else
+      '<%cref(ComponentReference.crefPrefixDer(crName), useFlatArrayNotation)%><%representationCrefSubscripts(crName, useFlatArrayNotation)%>'
     '<%var%>'
 
   case CALL(path=IDENT(name="print"), expLst={e1}) then
@@ -2774,7 +2819,7 @@ template assignJacArray(String lhsStr, String rhsStr, DAE.Type ty)
     let arrayWrapper = 'tmp<%System.tmpTick()%>'
     <<
     /*assign through wrapper array*/
-    StatArrayDim<%nDimsFlat(dims, elty, 0)%><<%expTypeShort(elty)%>, <%dimstr%>, true> <%arrayWrapper%>(&<%lhsStr%>);
+    StatArrayDim<%nDimsFlat(dims, elty, 0)%><<%expTypeShort(elty)%>, <%dimstr%>, true> <%arrayWrapper%>(&<%lhsStr%>_arr);
     assignRowMajorData(<%rhsStr%>.getData(), <%arrayWrapper%>);
     >>
 end assignJacArray;

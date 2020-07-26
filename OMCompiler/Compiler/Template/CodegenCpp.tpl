@@ -307,7 +307,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     >>
     %>
 
-    <%variableDefinitionsJacobians(jacobianMatrixes, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)%>
+    <%if Flags.isSet(NF_SCALARIZE) then '' else variableDefinitionsJacobians(jacobianMatrixes, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)%>
 
     /*testmaessig aus der Cruntime*/
     void initializeColoredJacobianA();
@@ -496,7 +496,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
    <%algloopfilesInclude(listAppend(listAppend(allEquations, initialEquations), getClockedEquations(getSubPartitions(clockedPartitions))), simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
-   
+
 
    <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(shared_ptr<IGlobalSettings> globalSettings)
    : <%lastIdentOfPath(modelInfo.name)%>WriteOutput(globalSettings)
@@ -701,7 +701,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        : <%lastIdentOfPath(modelInfo.name)%>StateSelection(globalSettings)
    {
 
-      
+
       shared_ptr<IExtendedSimObjects> extended_simObjects = dynamic_pointer_cast<IExtendedSimObjects>( getSimObjects());
 
         if (extended_simObjects)
@@ -711,8 +711,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
             string error = string("Simulation data was not found for model <%lastIdentOfPath(modelInfo.name)%> ");
             throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
         }
-      
-     
+
+
 
    }
 
@@ -740,7 +740,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
          <<
              if(getGlobalSettings()->getOutputPointType()!= OPT_NONE)
              {
-              
+
                 _writeOutput->init();
                 _writeOutput->clear();
              }
@@ -3340,7 +3340,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let constVariableInitialize = simulationInitFile(simCode, &extraFuncsDecl, stateDerVectorName, false)
 
     <<
-   
+
 
     /* Constructor */
     <%className%>::<%className%>(shared_ptr<IGlobalSettings> globalSettings)
@@ -5626,7 +5626,7 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__),init
       >>
       %>
 
-  
+
 
       /*Start complex expressions */
       <%complexStartExpressions%>
@@ -6564,7 +6564,7 @@ template generateHeaderIncludeString(SimCode simCode ,Text& extraFuncs,Text& ext
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   <<
- 
+
 
   <%
   match(getConfigString(PROFILING_LEVEL))
@@ -6595,8 +6595,8 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
        >>
   end match
   %>
-    
-  
+
+
   #if defined(FMU_BUILD)
     #include <Core/System/SystemDefaultImplementation.h>
     #define BASECLASS  SystemDefaultImplementation
@@ -6680,7 +6680,7 @@ match modelInfo
   <<
   #define MEASURETIME_MODELFUNCTIONS
   >>%>
- 
+
   class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent, public IStepEvent, public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>  ,public BASECLASS
   {
   <%friendclasses%>
@@ -9858,7 +9858,7 @@ case SIMCODE(modelInfo = MODELINFO(__))
 then
 let store_delay_expr = functionStoreDelay(delayedExps, simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   <<
-   
+
   bool <%lastIdentOfPath(modelInfo.name)%>::stepCompleted(double time)
   {
 
@@ -9999,13 +9999,13 @@ template generateStepStarted(list<SimEqSystem> allEquations,SimCode simCode ,Tex
   match simCode
 case SIMCODE(modelInfo = MODELINFO(__))
 then
-  
-       
+
+
 
   <<
   bool <%lastIdentOfPath(modelInfo.name)%>::stepStarted(double time)
   {
- 
+
   return true;
   }
   >>
@@ -12971,9 +12971,6 @@ end generateJacobianMatrix;
 template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text &jacobianVarsInit, Boolean createDebugCode)
  "Generates defines for jacobian vars."
 ::=
-if Flags.isSet(NF_SCALARIZE) then
-  ''
-else
   let analyticVars = (JacobianMatrixes |> JAC_MATRIX(__) =>
     let seedVarsResult = (seedVars |> var => jacobianVarDefine(var, &jacobianVarsInit, createDebugCode)
       ;separator="\n";empty)
