@@ -8849,7 +8849,7 @@ algorithm
     case(SimCode.SES_FOR_LOOP(index=idx,iter=iterator, startIt=startIt, endIt=endIt, cref=cref, exp=exp))
       equation
         s = intString(idx) +" FOR-LOOP: "+" for "+ExpressionDump.printExpStr(iterator)+" in ("+ExpressionDump.printExpStr(startIt)+":"+ExpressionDump.printExpStr(endIt)+") loop\n";
-        s = s+ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp)+" [" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]\n";
+        s = s+ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp) + "[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]\n";
         s = s+"end for;";
     then s;
 

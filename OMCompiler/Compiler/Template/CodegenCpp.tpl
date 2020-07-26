@@ -302,7 +302,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     >>
     %>
 
-    <%variableDefinitionsJacobians(jacobianMatrixes, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)%>
+    <%if Flags.isSet(NF_SCALARIZE) then '' else variableDefinitionsJacobians(jacobianMatrixes, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)%>
 
     /*testmaessig aus der Cruntime*/
     void initializeColoredJacobianA();
@@ -12899,9 +12899,6 @@ end generateJacobianMatrix;
 template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text &jacobianVarsInit, Boolean createDebugCode)
  "Generates defines for jacobian vars."
 ::=
-if Flags.isSet(NF_SCALARIZE) then
-  ''
-else
   let analyticVars = (JacobianMatrixes |> JAC_MATRIX(__) =>
     let seedVarsResult = (seedVars |> var => jacobianVarDefine(var, &jacobianVarsInit, createDebugCode)
       ;separator="\n";empty)
