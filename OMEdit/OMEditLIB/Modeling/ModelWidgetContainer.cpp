@@ -690,17 +690,21 @@ void GraphicsView::addConnectionToView(LineAnnotation *pConnectionLineAnnotation
 {
   // Add the start component connection details.
   Element *pStartComponent = pConnectionLineAnnotation->getStartComponent();
-  if (pStartComponent->getRootParentComponent()) {
-    pStartComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
-  } else {
-    pStartComponent->addConnectionDetails(pConnectionLineAnnotation);
+  if (pStartComponent) {
+    if (pStartComponent->getRootParentComponent()) {
+      pStartComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
+    } else {
+      pStartComponent->addConnectionDetails(pConnectionLineAnnotation);
+    }
   }
   // Add the end component connection details.
   Element *pEndComponent = pConnectionLineAnnotation->getEndComponent();
-  if (pEndComponent->getRootParentComponent()) {
-    pEndComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
-  } else {
-    pEndComponent->addConnectionDetails(pConnectionLineAnnotation);
+  if (pEndComponent) {
+    if (pEndComponent->getRootParentComponent()) {
+      pEndComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
+    } else {
+      pEndComponent->addConnectionDetails(pConnectionLineAnnotation);
+    }
   }
   pConnectionLineAnnotation->updateToolTip();
   addConnectionToList(pConnectionLineAnnotation);
@@ -2014,7 +2018,7 @@ Element* GraphicsView::stateComponentAtPosition(QPoint position)
 bool GraphicsView::updateComponentConnectorSizingParameter(GraphicsView *pGraphicsView, QString className, Element *pComponent)
 {
   // if connectorSizing then set a new value for the connectorSizing parameter.
-  if (pComponent->isConnectorSizing()) {
+  if (pComponent && pComponent->isConnectorSizing()) {
     QString parameter = pComponent->getComponentInfo()->getArrayIndex();
     int numberOfComponentConnections = pGraphicsView->numberOfComponentConnections(pComponent);
     QString modifierKey = QString("%1.%2").arg(pComponent->getRootParentComponent()->getName()).arg(parameter);
