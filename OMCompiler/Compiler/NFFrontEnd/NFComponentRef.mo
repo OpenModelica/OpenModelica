@@ -136,7 +136,7 @@ public
 
   function makeIterator
     input InstNode node;
-    input Type ty;
+    input Type ty = InstNode.getType(node);
     output ComponentRef cref = CREF(node, {}, ty, Origin.ITERATOR, EMPTY());
   end makeIterator;
 

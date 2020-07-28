@@ -37,6 +37,7 @@ encapsulated uniontype NFAlgorithm
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import HashSet = NFHashSet;
+  import NFInstNode.InstNode;
   import Statement = NFStatement;
   import Type = NFType;
 
@@ -178,7 +179,7 @@ public
     HashSet.HashSet outputs_hs = HashSet.emptyHashSet();
   algorithm
     try
-      (inputs_hs, outputs_hs) := List.fold(statements, function statementInputsOutputs(), (inputs_hs, outputs_hs));
+      (inputs_hs, outputs_hs) := List.fold(statements, function statementInputsOutputs(iters = HashSet.emptyHashSet()), (inputs_hs, outputs_hs));
       inputs_lst := BaseHashSet.hashSetList(inputs_hs);
       outputs_lst := BaseHashSet.hashSetList(outputs_hs);
     else
@@ -190,6 +191,7 @@ protected
   function statementInputsOutputs "Helper for getInputsOutputs.
     Traverse statements and find inputs and outputs"
     input Statement statement;
+    input HashSet.HashSet iters "iterators from FOR-loops";
     input output tuple<HashSet.HashSet, HashSet.HashSet> hashSets "inputs and outputs";
   algorithm
     hashSets := match statement
@@ -199,6 +201,8 @@ protected
         list<Expression> elements;
         list<Statement> stmts;
         list<tuple<Expression, list<Statement>>> branches;
+        InstNode iterator;
+        HashSet.HashSet iters_;
 
       // a := expr;
       case Statement.ASSIGNMENT(lhs = lhs as Expression.CREF(), rhs = rhs)
@@ -206,30 +210,29 @@ protected
           (inputs_hs, outputs_hs) := hashSets;
           // TODO extend for array, matrix?
           // TODO has to be scalarized if scalarize
-          inputs_hs := Expression.fold(rhs, function expressionInputs(outputs_hs = outputs_hs), inputs_hs);
-      then expressionOutput(lhs, (inputs_hs, outputs_hs));
+          inputs_hs := Expression.fold(rhs, function expressionInputs(iters = iters, outputs_hs = outputs_hs), inputs_hs);
+      then expressionOutput(lhs, iters, (inputs_hs, outputs_hs));
 
       // (a, b, c, ...) := expr;
       case Statement.ASSIGNMENT(lhs = Expression.TUPLE(elements = elements), rhs = rhs)
         algorithm
           (inputs_hs, outputs_hs) := hashSets;
           // TODO extend for array, matrix?
-          inputs_hs := Expression.fold(rhs, function expressionInputs(outputs_hs = outputs_hs), inputs_hs);
+          inputs_hs := Expression.fold(rhs, function expressionInputs(iters = iters, outputs_hs = outputs_hs), inputs_hs);
           hashSets := (inputs_hs, outputs_hs);
           for exp in elements loop
-            hashSets := expressionOutput(exp, hashSets);
+            hashSets := expressionOutput(exp, iters, hashSets);
           end for;
       then hashSets;
 
       // ToDo: Statement.ASSIGNMENT(lhs=lhs as Expression.RECORD_ELEMENT())
 
-      case Statement.FOR(body = stmts)
+      case Statement.FOR(body = stmts, iterator = iterator)
         algorithm
-          // add iterator to inputs?
+          iters_ := BaseHashSet.add(ComponentRef.makeIterator(iterator), iters);
           for stmt in stmts loop
-            hashSets := statementInputsOutputs(stmt, hashSets);
+            hashSets := statementInputsOutputs(stmt, iters_, hashSets);
           end for;
-          // remove iterator from inputs?
       then hashSets;
 
       case Statement.IF(branches = branches)
@@ -238,7 +241,7 @@ protected
             (_, stmts) := branch;
             // what about using unassigned outputs in condition?
             for stmt in stmts loop
-              hashSets := statementInputsOutputs(stmt, hashSets);
+              hashSets := statementInputsOutputs(stmt, iters, hashSets);
             end for;
           end for;
           // TODO input in one branch can't be output in another etc...
@@ -250,7 +253,7 @@ protected
             (_, stmts) := branch;
             // what about using unassigned outputs in condition?
             for stmt in stmts loop
-              hashSets := statementInputsOutputs(stmt, hashSets);
+              hashSets := statementInputsOutputs(stmt, iters, hashSets);
             end for;
           end for;
           // TODO input in one branch can't be output in another etc...
@@ -260,7 +263,7 @@ protected
         algorithm
           // what about using unassigned outputs in condition?
           for stmt in stmts loop
-            hashSets := statementInputsOutputs(stmt, hashSets);
+            hashSets := statementInputsOutputs(stmt, iters, hashSets);
           end for;
       then hashSets;
 
@@ -289,6 +292,7 @@ protected
   function expressionInputs
     "finds all inputs on the rhs of a statement"
     input Expression exp;
+    input HashSet.HashSet iters "iterators from FOR-loops";
     input HashSet.HashSet outputs_hs "outputs from previous statements";
     input output HashSet.HashSet inputs_hs;
   algorithm
@@ -302,6 +306,11 @@ protected
 
       // Skip external Objects
       case Expression.CREF(ty = ty) guard(Type.isExternalObject(ty)) then inputs_hs;
+
+      // Skip iterators
+      case Expression.CREF(cref = cr)
+        guard ComponentRef.isIterator(cr) and BaseHashSet.has(cr, iters)
+      then inputs_hs;
 
       case Expression.CREF(cref = cr)
         algorithm
@@ -319,6 +328,7 @@ protected
   function expressionOutput "author: Frenkel TUD 2012-06
     detects outputs by looking at crefs in the lhs of a statement"
     input Expression exp "should be a cref, otherwise fail";
+    input HashSet.HashSet iters "iterators from FOR-loops";
     input output tuple<HashSet.HashSet, HashSet.HashSet> hashSets "inputs and outputs";
   algorithm
     hashSets := match exp
@@ -334,6 +344,13 @@ protected
       case Expression.CREF(cref = cr) guard(ComponentRef.isTime(cr))
         algorithm
           Error.addMessage(Error.COMPILER_ERROR, {"Trying to assign to time."});
+      then fail();
+
+      // Iterators are not outputs in algorithms
+      case Expression.CREF(cref = cr)
+        guard ComponentRef.isIterator(cr) and BaseHashSet.has(cr, iters)
+        algorithm
+          Error.addMessage(Error.COMPILER_ERROR, {"Trying to assign to iterator " + ComponentRef.toString(cr) + "."});
       then fail();
 
       // Skip external Objects
