@@ -142,7 +142,7 @@ algorithm
   end if;
   // handle alias equations
   (vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns) := handleAliasEquations(aliaseqns, vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns);
-  (ieqns, eqns, reqns, extAliasVars, extVars) := getExternalObjectAlias(ieqns, eqns, reqns, extVars);
+  (ieqns, eqns, reqns, extAliasVars, globalKnownVars, extVars) := getExternalObjectAlias(ieqns, eqns, reqns, globalKnownVars, extVars);
   aliasVars := BackendVariable.addVariables(extAliasVars,aliasVars);
 
   vars_1 := detectImplicitDiscrete(vars, globalKnownVars, eqns);
@@ -195,11 +195,13 @@ author: waurich TUD 2016-10"
   input list<BackendDAE.Equation> inInitEqs;
   input list<BackendDAE.Equation> inEqs;
   input list<BackendDAE.Equation> inRemEqs;
+  input BackendDAE.Variables globalVarsIn;
   input BackendDAE.Variables extVars;
   output list<BackendDAE.Equation> oInitEqs;
   output list<BackendDAE.Equation> oEqs;
   output list<BackendDAE.Equation> oRemEqs;
   output BackendDAE.Variables extAliasVars;
+  output BackendDAE.Variables globalVarsOut;
   output BackendDAE.Variables extVarsOut;
 protected
   list<DAE.ComponentRef> extCrefs;
@@ -232,6 +234,7 @@ algorithm
   (oEqs,_) := BackendVarTransform.replaceEquations(oEqs,repl,NONE());
   (oInitEqs,_) := BackendVarTransform.replaceEquations(oInitEqs,repl,NONE());
   (oRemEqs,_) := BackendVarTransform.replaceEquations(oRemEqs,repl,NONE());
+  (globalVarsOut, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(globalVarsIn, BackendVarTransform.replaceVarTraverser, repl);
 
   oEqs := listReverse(oEqs);
   oInitEqs := listReverse(oInitEqs);
