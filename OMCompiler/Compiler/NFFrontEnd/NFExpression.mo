@@ -3734,6 +3734,16 @@ public
     end match;
   end isInteger;
 
+  function isReal
+    input Expression exp;
+    output Boolean isReal;
+  algorithm
+    isReal := match exp
+      case REAL() then true;
+      else false;
+    end match;
+  end isReal;
+
   function isConstNumber
     input Expression exp;
     output Boolean b;

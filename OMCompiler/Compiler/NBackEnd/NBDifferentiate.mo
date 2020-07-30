@@ -603,10 +603,11 @@ public
         algorithm
           (_, sizeClass) := Operator.classify(operator);
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
+          subOp := Operator.fromClassification((NFOperator.MathClassification.SUBTRACTION, sizeClass), operator.ty);
       then (Expression.BINARY(
               exp2,                                             // r
               mulOp,                                            // *
-              Expression.BINARY(exp1, operator, minusOne(exp2)) // x^(r-1)
+              Expression.BINARY(exp1, operator, minusOne(exp2, subOp)) // x^(r-1)
             ),
             diffArguments);
 
@@ -704,14 +705,17 @@ public
 
   protected
     function minusOne
-      input output Expression exp "has to be Expression.REAL() or Expression.INTEGER()";
+      input output Expression exp;
+      input Operator op;
     algorithm
       exp := match exp
         local
           Real r;
           Integer i;
-        case Expression.REAL(value = r)     then Expression.REAL(r - 1.0);
-        case Expression.INTEGER(value = i)  then Expression.INTEGER(i - 1);
+        case Expression.REAL(value = r)         then Expression.REAL(r - 1.0);
+        case Expression.INTEGER(value = i)      then Expression.INTEGER(i - 1);
+        case _ guard(Expression.isReal(exp))    then Expression.BINARY(exp, op, Expression.REAL(1.0));
+        case _ guard(Expression.isInteger(exp)) then Expression.BINARY(exp, op, Expression.INTEGER(1));
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + ". Only substract one from REAL() or INTEGER()."});
         then fail();
@@ -719,7 +723,7 @@ public
     end minusOne;
 
     function expLog
-      input output Expression exp "has to be Expression.REAL() or Expression.INTEGER()";
+      input output Expression exp;
     algorithm
       exp := match exp
         local
@@ -727,9 +731,7 @@ public
           Integer i;
         case Expression.REAL(value = r)     then Expression.REAL(log(r));
         case Expression.INTEGER(value = i)  then Expression.REAL(log(i));
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + ". Only substract one from REAL() or INTEGER()."});
-        then fail();
+        else Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.LOG_REAL, {exp}, Expression.variability(exp)));
       end match;
     end expLog;
 
