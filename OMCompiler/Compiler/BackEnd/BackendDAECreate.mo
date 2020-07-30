@@ -937,6 +937,42 @@ algorithm
   end matchcontinue;
 end lowerKnownVar;
 
+public function lowerKnownVarSingle
+  "author: kabdelhak
+  lowers a single known variable (used for function bodies)"
+  input DAE.Element element;
+  output Option<BackendDAE.Var> var_opt;
+algorithm
+  var_opt := match element
+    local
+      DAE.Element elem;
+      Boolean visibility;
+      BackendDAE.Var var;
+    case elem as DAE.VAR() guard(DAEUtil.isParamOrConstVarKind(elem.kind))
+      algorithm
+        visibility := DAEUtil.boolVarVisibility(elem.protection);
+        var := BackendDAE.VAR(
+          varName               = elem.componentRef,
+          varKind               = lowerKnownVarkind(elem.kind, elem.componentRef, elem.direction, elem.connectorType, elem.protection),
+          varDirection          = elem.direction,
+          varParallelism        = elem.parallelism,
+          varType               = lowerType(elem.ty),
+          bindExp               = elem.binding,
+          tplExp                = NONE(),
+          arryDim               = element.dims,
+          source                = element.source,
+          values                = setMinMaxFromEnumeration(elem.ty, DAEUtil.setProtectedAttr(elem.variableAttributesOption, visibility)),
+          tearingSelectOption   = NONE(),
+          hideResult            = BackendDAEUtil.setHideResultAttribute(element.comment, visibility, elem.componentRef),
+          comment               = element.comment,
+          connectorType         = element.connectorType,
+          innerOuter            = DAEUtil.toDAEInnerOuter(element.innerOuter),
+          unreplaceable         = false
+        );
+    then SOME(var);
+    else NONE();
+  end match;
+end lowerKnownVarSingle;
 
 protected function buildAssertAlgorithms "builds BackendDAE.ALGORITHM out of the given assert statements
 author:Waurich TUD 2013-10"

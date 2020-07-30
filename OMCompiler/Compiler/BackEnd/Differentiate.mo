@@ -2060,6 +2060,40 @@ algorithm
       then
         (e, funcs);
 
+    // added for ticket #6068
+    // (p is a parameter)
+    // x^p
+    case DAE.BINARY(exp1 = e1,operator = DAE.POW(tp),exp2 = (e2 as DAE.CREF(componentRef = cr)))
+      guard(isParamOrConstant(cr, inInputData))
+      equation
+        etmp = match tp
+          case DAE.T_INTEGER()  then DAE.BINARY(e2, DAE.SUB(tp), DAE.ICONST(1));
+          else DAE.BINARY(e2, DAE.SUB(tp), DAE.RCONST(1.0));
+        end match;
+        (de1, funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
+        e = DAE.BINARY(DAE.BINARY(e2,DAE.MUL(tp),
+                       DAE.BINARY(e1,DAE.POW(tp),etmp)),
+                       DAE.MUL(tp),de1);
+      then
+        (e, funcs);
+
+    // added for ticket #6068
+    // (p is a parameter)
+    // der(p^x)  = p^x*ln(p)*der(x)
+    // if p == 0 then 0;
+    case e0 as DAE.BINARY(exp1 = e1 as DAE.CREF(componentRef = cr), operator = DAE.POW(tp), exp2 = e2)
+      guard(isParamOrConstant(cr, inInputData))
+      equation
+        (de2, funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
+        etmp = Expression.makePureBuiltinCall("log", {e1}, tp);
+        // if p is equal to zero, then return zero (do not search for event)
+        e = Expression.addNoEventToRelations(
+          DAE.IFEXP(DAE.RELATION(e1, DAE.EQUAL(tp), DAE.RCONST(0.0), -1, NONE()), DAE.RCONST(0.0),
+          DAE.BINARY(DAE.BINARY(e0,DAE.MUL(tp),etmp),DAE.MUL(tp),de2)));
+      then
+        (e, funcs);
+
+
     // der(x^y) = x^(y-1) * ( x*ln(x)*der(y)+(y*der(x)))
     // if x == 0 then 0;
     case DAE.BINARY(exp1 = e1,operator = DAE.POW(tp), exp2 = e2)
@@ -2067,6 +2101,7 @@ algorithm
         (de1, funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
         (de2, funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
         etmp = Expression.makePureBuiltinCall("log", {e1}, tp);
+        // if x is equal to zero, then return zero (do not search for event)
         e = Expression.addNoEventToRelations(DAE.IFEXP(DAE.RELATION(e1, DAE.EQUAL(tp), DAE.RCONST(0.0), -1, NONE()),
                        DAE.RCONST(0.0), DAE.BINARY(DAE.BINARY(e1, DAE.POW(tp), DAE.BINARY(e2, DAE.SUB(tp), DAE.RCONST(1.0))),
                        DAE.MUL(tp), DAE.BINARY(DAE.BINARY(DAE.BINARY(e1, DAE.MUL(tp), etmp), DAE.MUL(tp), de2),
@@ -2420,6 +2455,40 @@ algorithm
   end matchcontinue;
 end differentiateFunctionCallPartial;
 
+function addFunctionConstantsAndParameters
+  input output Option<BackendDAE.Variables> knownVars_opt;
+  input DAE.Function func;
+algorithm
+  knownVars_opt := match func
+    local
+      list<DAE.Element> body;
+      Option<BackendDAE.Var> var_opt;
+      list<BackendDAE.Var> body_knowns = {};
+
+    case DAE.FUNCTION(functions = DAE.FUNCTION_DEF(body = body)::_)
+      algorithm
+        for element in body loop
+          var_opt := BackendDAECreate.lowerKnownVarSingle(element);
+          if isSome(var_opt) then
+            body_knowns := Util.getOption(var_opt) :: body_knowns;
+          end if;
+        end for;
+        if listEmpty(body_knowns) then
+          // basically do nothing, just for visualization
+          knownVars_opt := knownVars_opt;
+        elseif isSome(knownVars_opt) then
+          // add to current variable vector
+          knownVars_opt := SOME(BackendVariable.addVars(body_knowns, Util.getOption(knownVars_opt)));
+        else
+          // create new variable vector
+          knownVars_opt := SOME(BackendVariable.listVar(body_knowns));
+        end if;
+    then knownVars_opt;
+
+    else knownVars_opt;
+  end match;
+end addFunctionConstantsAndParameters;
+
 function tryZeroDiff
   input output list<DAE.Exp> explist;
   input output DAE.FunctionTree functions;
@@ -2709,6 +2778,7 @@ algorithm
         dumpInputData(inputData);
       end if;
 
+      inputData.knownVars = addFunctionConstantsAndParameters(inputData.knownVars, func);
 
       // differentiate algorithm statemeants
       //print("Function diff: statemeants");
@@ -3247,6 +3317,29 @@ algorithm
      print("diffCrefs:\n" + ComponentReference.printComponentRefListStr(inDiffData.diffCrefs) + "\n");
    end if;
 end dumpInputData;
+
+protected function isParamOrConstant
+  input DAE.ComponentRef cref;
+  input BackendDAE.DifferentiateInputData diffData;
+  output Boolean b;
+algorithm
+  b := match diffData
+    local
+      BackendDAE.Variables knownVars;
+      Option<list<BackendDAE.Var>> var_lst;
+      BackendDAE.Var var;
+    case BackendDAE.DIFFINPUTDATA(knownVars = SOME(knownVars)) algorithm
+      var_lst := BackendVariable.getVarTryHard(cref, knownVars);
+      if isSome(var_lst) then
+        var :: _ := Util.getOption(var_lst);
+        b := BackendVariable.isParamOrConstant(var);
+      else
+        b := false;
+      end if;
+    then b;
+    else false;
+  end match;
+end isParamOrConstant;
 
 annotation(__OpenModelica_Interface="backend");
 end Differentiate;
