@@ -49,6 +49,7 @@ public
   import Binding = NFBinding.Binding;
   import Component = NFComponent;
   import ComponentRef = NFComponentRef;
+  import Expression = NFExpression;
   import InstNode = NFInstNode.InstNode;
   import Prefixes = NFPrefixes;
   import Type = NFType;
@@ -628,6 +629,29 @@ public
     var_ptr := Pointer.create(var);
     cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
   end makeResidualVar;
+
+  // ==========================================================================
+  //                        Other type wrappers
+  //
+  // ==========================================================================
+
+  function checkExp
+    input Expression exp;
+    input checkFunc func;
+    output Boolean b;
+    partial function checkFunc
+      input Pointer<Variable> var;
+      output Boolean b;
+    end checkFunc;
+  algorithm
+    b := match exp
+      local
+        ComponentRef cref;
+      case Expression.CREF(cref = cref)
+      then func(getVarPointer(cref));
+      else false;
+    end match;
+  end checkExp;
 
   // ==========================================================================
   //                        Variable Array Stuff

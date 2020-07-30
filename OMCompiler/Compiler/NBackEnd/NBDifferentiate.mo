@@ -599,7 +599,7 @@ public
       // (x^r)' = r*(x^(r-1))
       case (Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2), _)
         guard((Operator.getMathClassification(operator) == NFOperator.MathClassification.POWER) and
-              Expression.isConstNumber(exp2))
+              (Expression.isConstNumber(exp2) or BVariable.checkExp(exp2, BVariable.isParamOrConst)))
         algorithm
           (_, sizeClass) := Operator.classify(operator);
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
@@ -616,7 +616,7 @@ public
       // (r^x)'  = r^x*ln(r)*x'
       case (Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2), _)
         guard((Operator.getMathClassification(operator) == NFOperator.MathClassification.POWER) and
-              Expression.isConstNumber(exp1))
+              (Expression.isConstNumber(exp1) or BVariable.checkExp(exp1, BVariable.isParamOrConst)))
         algorithm
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
           (_, sizeClass) := Operator.classify(operator);
