@@ -3245,6 +3245,34 @@ algorithm
   end matchcontinue;
 end getVarSingle;
 
+public function getVarTryHard
+  "author: kabdelhak
+  This function tries to get a variable with from a given cref as hard as possible
+  by removing subscripts and considering array representations. Should be replaced
+  with proper array handling."
+  input DAE.ComponentRef cref;
+  input BackendDAE.Variables vars;
+  output Option<list<BackendDAE.Var>> var_lst_opt;
+protected
+  BackendDAE.Var var;
+  list<BackendDAE.Var> var_lst;
+  DAE.ComponentRef strippedCref;
+algorithm
+  try
+    (var, _) := getVarSingle(cref, vars);
+    var_lst_opt := SOME({var});
+  else try
+    (var_lst, _) := getVar(cref, vars);
+    var_lst_opt := SOME(var_lst);
+  else try
+    strippedCref := ComponentReference.crefStripSubsExceptModelSubs(cref);
+    var := BackendVariable.getVarSingle(strippedCref, vars);
+    var_lst_opt := SOME({var});
+  else
+    var_lst_opt := NONE();
+  end try; end try; end try;
+end getVarTryHard;
+
 protected function replaceVarWithWholeDim
   "Helper function to traverseExp. Traverses any expressions in a
   component reference (i.e. in it's subscripts)."
