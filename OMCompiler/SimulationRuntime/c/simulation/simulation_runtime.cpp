@@ -741,6 +741,7 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
       )
   {
     solverID = S_EULER;
+    infoStreamPrint(LOG_SOLVER, 0, "No states present, continuing without ODE solver.");
     if (compiledInDAEMode)
     {
       simData->callback->functionDAE = evaluateDAEResiduals_wrapperEventUpdate;
