@@ -962,8 +962,6 @@ The following examples assume omc is on the PATH; if it is not, you can run :cod
 Example Session 1 – obtaining information about command line parameters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. command-output :: sh -c 'env | grep ^PATH='
-
 .. command-output :: omc --help
   :ellipsis: 6,-2
 
