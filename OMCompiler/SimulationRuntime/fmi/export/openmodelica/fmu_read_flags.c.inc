@@ -192,6 +192,13 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
     solverInfo->solverMethod = S_EULER;
   }
 
+  /* If no states are present, we can use Euler's method since it is doing nothing. */
+  if (data->modelData->nStates < 1)
+  {
+    FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2Instantiate: No states present, continuing without ODE solver.")
+    solverInfo->solverMethod = S_EULER;
+  }
+
   switch (solverInfo->solverMethod)
   {
     case S_EULER:
