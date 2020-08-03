@@ -174,6 +174,8 @@ void buildOMC(CC, CXX, extraFlags) {
      echo cd \${MSYS_WORKSPACE}
      echo make -f Makefile.omdev.mingw \${MAKETHREADS} BUILDTYPE=Release all-runtimes
      echo echo Check that omc can be started and a model can be build for NF OF with runtimes C Cpp FMU
+     echo echo Unset OPENMODELICALIBRARY to make sure the default is used
+     echo unset OPENMODELICALIBRARY
      echo echo Attempt to build things using \$OPENMODELICAHOME
      echo ./build/bin/omc --version
      echo mkdir .sanity-check
@@ -199,7 +201,6 @@ void buildOMC(CC, CXX, extraFlags) {
      echo mkdir -p ./path\\ with\\ space/
      echo mv build ./path\\ with\\ space/
      echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/path with space/build"
-     echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/path with space/build/lib/omlibrary"
      echo echo Attempt to build things using \$OPENMODELICAHOME
      echo ./path\\ with\\ space/build/bin/omc --version
      echo cd ./path\\ with\\ space/
@@ -315,8 +316,6 @@ void buildAndRunOMEditTestsuite(stash) {
      echo cd \${MSYS_WORKSPACE}
      echo export MAKETHREADS=-j16
      echo set -e
-     echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
-     echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/build/lib/omlibrary"
      echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omedit-testsuite
      echo export "APPDATA=\${PWD}/testsuite/libraries-for-testing"
      echo cd build/bin
