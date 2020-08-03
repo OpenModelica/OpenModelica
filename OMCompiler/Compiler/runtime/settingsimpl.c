@@ -199,8 +199,8 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
   }
 
   {
-
-    const char *path = getenv("OPENMODELICALIBRARY");
+    /* if we are running the testsuite, use the default */
+    const char *path = runningTestsuite ? NULL : getenv("OPENMODELICALIBRARY");
     if (path != NULL)
     {
         omc_modelicaPath = strdup(path);
