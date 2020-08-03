@@ -36,8 +36,8 @@ encapsulated package NBSystem
 "
 
 public
-  import NBAdjacencyMatrix.AdjacencyMatrix;
-  import NBAdjacencyMatrix.Matching;
+  import NBCausalize.AdjacencyMatrix;
+  import NBCausalize.Matching;
   import StrongComponent = NBStrongComponent;
 
 protected

@@ -940,6 +940,15 @@ public
         end if;
       end for;
     end mapExp;
+
+    function getEqnAt
+      "Returns the equation pointer at given index. If there is none it fails."
+      input EquationPointers equations;
+      input Integer index;
+      output Pointer<Equation> eqn;
+    algorithm
+      eqn := ExpandableArray.get(index, equations.eqArr);
+    end getEqnAt;
   end EquationPointers;
 
   uniontype EqData

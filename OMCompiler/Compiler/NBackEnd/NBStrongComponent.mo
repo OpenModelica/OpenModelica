@@ -44,7 +44,9 @@ protected
 
   // Backend imports
   import BackendDAE = NBackendDAE;
+  import Causalize = NBCausalize;
   import BVariable = NBVariable;
+  import BEquation = NBEquation;
   import NBEquation.Equation;
   import NBEquation.EquationAttributes;
   import HashTableCrToCrLst = NBHashTableCrToCrLst;
@@ -198,6 +200,27 @@ public
     end match;
   end toString;
 
+  function create
+    input list<Integer> comp_indices;
+    input Causalize.Matching matching;
+    input BVariable.VariablePointers vars;
+    input BEquation.EquationPointers eqns;
+    output StrongComponent comp;
+  algorithm
+    comp := match matching
+        local
+          Causalize.Matching qual;
+      case qual as Causalize.SCALAR_MATCHING() algorithm
+      then createScalar(comp_indices, qual.eqn_to_var, vars, eqns);
+      case qual as Causalize.ARRAY_MATCHING() algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array strong components are not yet supported."});
+      then fail();
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+      then fail();
+    end match;
+  end create;
+
   function makeDAEModeResidualTraverse
     " update later to do both inner and residual equations "
     input Pointer<Equation> eq_ptr;
@@ -289,6 +312,54 @@ public
   end getDependentCrefs;
 
 protected
+  function createScalar
+    input list<Integer> comp_indices;
+    input array<Integer> eqn_to_var;
+    input BVariable.VariablePointers vars;
+    input BEquation.EquationPointers eqns;
+    output StrongComponent comp;
+  algorithm
+    // ToDo: add all other cases!
+    comp := match comp_indices
+      local
+        Integer i;
+        list<Pointer<Variable>> acc_vars = {};
+        list<Pointer<Equation>> acc_eqns = {};
+
+      case {i} then SINGLE_EQUATION(
+                      var = BVariable.VariablePointers.getVarAt(vars, eqn_to_var[i]),
+                      eqn = BEquation.EquationPointers.getEqnAt(eqns, i)
+                    );
+
+      case _ algorithm
+        for i in comp_indices loop
+          (acc_vars, acc_eqns) := getLoopPair(i, eqn_to_var, vars, eqns, acc_vars, acc_eqns);
+        end for;
+      then ALGEBRAIC_LOOP(
+          vars    = acc_vars,
+          eqns    = acc_eqns,
+          jac     = NONE(),
+          mixed   = false
+        );
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+      then fail();
+    end match;
+  end createScalar;
+
+  function getLoopPair
+    input Integer idx;
+    input array<Integer> eqn_to_var;
+    input BVariable.VariablePointers vars;
+    input BEquation.EquationPointers eqns;
+    input output list<Pointer<Variable>> acc_vars;
+    input output list<Pointer<Equation>> acc_eqns;
+  algorithm
+    acc_vars := BVariable.VariablePointers.getVarAt(vars, eqn_to_var[idx]) :: acc_vars;
+    acc_eqns := BEquation.EquationPointers.getEqnAt(eqns, idx) :: acc_eqns;
+  end getLoopPair;
+
   function getDependentCref
     input output ComponentRef cref          "the cref to check";
     input Pointer<list<ComponentRef>> acc   "accumulator for relevant crefs";
@@ -321,7 +392,6 @@ protected
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
     end try;
   end updateDependencyHashTable;
-
 
     annotation(__OpenModelica_Interface="backend");
 end NBStrongComponent;

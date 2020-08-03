@@ -867,7 +867,7 @@ public
       Pointer<list<ComponentRef>> acc = Pointer.create({});
     algorithm
       map(variables, function getVarNameTraverse(acc = acc));
-      names := Pointer.access(acc);
+      names := listReverse(Pointer.access(acc));
     end getVarNames;
 
     function size

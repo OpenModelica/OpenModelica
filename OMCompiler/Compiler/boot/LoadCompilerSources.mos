@@ -287,7 +287,6 @@ if true then /* Suppress output */
 
   // "NBackend"
     "../NBackEnd/NBackendDAE.mo",
-    "../NBackEnd/NBAdjacencyMatrix.mo",
     "../NBackEnd/NBDifferentiate.mo",
     "../NBackEnd/NBEquation.mo",
     "../NBackEnd/NBStrongComponent.mo",
@@ -308,6 +307,7 @@ if true then /* Suppress output */
     "../NBackEnd/Util/NBHashTableCrToCr.mo",
     "../NBackEnd/Util/NBHashTableCrToCrEqLst.mo",
     "../NBackEnd/Util/NBHashTableCrToCrLst.mo",
+    "../NBackEnd/Util/NBHashTableCrToInt.mo",
 
   // "NSimCode"
     "../NSimCode/HashTableSimCode.mo",
