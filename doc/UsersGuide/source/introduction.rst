@@ -231,7 +231,7 @@ If you do not see the error-message when running the example, use the command :c
     Integer a;
     Real b;
   equation
-    der(a) = b;
+    der(a) = b; // der(a) is illegal since a is not a Real number
     der(b) = 12.0;
   end C;
 
@@ -961,6 +961,8 @@ The following examples assume omc is on the PATH; if it is not, you can run :cod
 
 Example Session 1 – obtaining information about command line parameters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. command-output :: sh -c 'env | grep ^PATH='
 
 .. command-output :: omc --help
   :ellipsis: 6,-2
