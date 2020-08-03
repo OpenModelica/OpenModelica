@@ -190,6 +190,7 @@ char* Settings_getHomeDir(int runningTestsuite)
 
 /*
  * - if already set, use it
+ * - if not set, use OPENMODELICALIBRARY
  * - if not set, get the installation path and use that
  */
 char* SettingsImpl__getModelicaPath(int runningTestsuite) {
@@ -198,24 +199,33 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
   }
 
   {
-    /* get the install directory */
-    const char *omhome = SettingsImpl__getInstallationDirectoryPath();
-    if (omhome == NULL)
-      return NULL;
-    int lenOmhome = strlen(omhome);
-    const char *homePath = Settings_getHomeDir(0);
-    assert(homePath != NULL || !runningTestsuite);
-    if (runningTestsuite) {
-      int lenHome = strlen(homePath);
-      omc_modelicaPath = (char*) malloc(lenHome+26);
-      snprintf(omc_modelicaPath, lenHome+26,"%s/.openmodelica/libraries/", homePath);
-    } else if (homePath == NULL) {
-      omc_modelicaPath = (char*) malloc(lenOmhome+15);
-      snprintf(omc_modelicaPath, lenOmhome+15,"%s/lib/omlibrary", omhome);
-    } else {
-      int lenHome = strlen(homePath);
-      omc_modelicaPath = (char*) omc_alloc_interface.malloc_atomic(lenOmhome+lenHome+41);
-      snprintf(omc_modelicaPath, lenOmhome+lenHome+41,"%s/lib/omlibrary%s%s/.openmodelica/libraries/", omhome, OMC_GROUP_DELIMITER, homePath);
+
+    const char *path = getenv("OPENMODELICALIBRARY");
+    if (path != NULL)
+    {
+        omc_modelicaPath = strdup(path);
+    }
+    else
+    {
+      /* get the install directory */
+      const char *omhome = SettingsImpl__getInstallationDirectoryPath();
+      if (omhome == NULL)
+        return NULL;
+      int lenOmhome = strlen(omhome);
+      const char *homePath = Settings_getHomeDir(0);
+      assert(homePath != NULL || !runningTestsuite);
+      if (runningTestsuite) {
+        int lenHome = strlen(homePath);
+        omc_modelicaPath = (char*)malloc(lenHome+26);
+        snprintf(omc_modelicaPath, lenHome+26,"%s/.openmodelica/libraries/", homePath);
+      } else if (homePath == NULL) {
+        omc_modelicaPath = (char*)malloc(lenOmhome+15);
+        snprintf(omc_modelicaPath, lenOmhome+15,"%s/lib/omlibrary", omhome);
+      } else {
+        int lenHome = strlen(homePath);
+        omc_modelicaPath = (char*)omc_alloc_interface.malloc_atomic(lenOmhome+lenHome+41);
+        snprintf(omc_modelicaPath, lenOmhome+lenHome+41,"%s/lib/omlibrary%s%s/.openmodelica/libraries/", omhome, OMC_GROUP_DELIMITER, homePath);
+      }
     }
 
     omc_modelicaPath = covertToForwardSlashesInPlace(omc_modelicaPath);
