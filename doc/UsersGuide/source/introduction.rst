@@ -231,7 +231,7 @@ If you do not see the error-message when running the example, use the command :c
     Integer a;
     Real b;
   equation
-    der(a) = b;
+    der(a) = b; // der(a) is illegal since a is not a Real number
     der(b) = 12.0;
   end C;
 
