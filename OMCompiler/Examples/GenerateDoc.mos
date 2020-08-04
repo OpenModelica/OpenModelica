@@ -373,7 +373,7 @@ touch FindFiles.log.tmp
 OMLIBRARY=\""+getInstallationDirectoryPath()+"/lib/omlibrary\"
 for f in `sort -u tidy.links`; do
   link=`echo $f | cut '-d!' -f2-`
-  link=`python -c \"import sys, urllib as ul; print ul.unquote_plus(sys.argv[1])\" \"$link\"`
+  link=`python -c \"import sys, urllib as ul; print ul.unquote(sys.argv[1])\" \"$link\"`
   if test -f \"$OMLIBRARY/$link\"; then
     d=`dirname \"$link\"`
     mkdir -p \"$d\"
