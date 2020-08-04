@@ -72,38 +72,6 @@
 /* max object size on 32/64 bit systems in bytes */
 #define MMC_MAX_OBJECT_SIZE_BYTES MMC_WORDS_TO_BYTES(MMC_MAX_SLOTS)
 
-#if defined(_LP64)
-#define MMC_SIZE_DBL 8
-#define MMC_SIZE_INT 8
-#define MMC_LOG2_SIZE_INT 3
-#define PRINT_MMC_SINT_T "ld"
-#define PRINT_MMC_UINT_T "lu"
-typedef unsigned long mmc_uint_t;
-typedef long mmc_sint_t;
-#elif defined(_LLP64) || defined(_WIN64) || defined(__MINGW64__)
-#define MMC_SIZE_DBL 8
-#define MMC_SIZE_INT 8
-#define MMC_LOG2_SIZE_INT 3
-#ifndef PRIu64
-#define PRIu64 "I64u"
-#endif
-#ifndef PRId64
-#define PRId64 "I64d"
-#endif
-#define PRINT_MMC_SINT_T PRId64
-#define PRINT_MMC_UINT_T PRIu64
-typedef unsigned long long mmc_uint_t;
-typedef long long mmc_sint_t;
-#else
-#define MMC_SIZE_DBL 8
-#define MMC_SIZE_INT 4
-#define MMC_LOG2_SIZE_INT 2
-#define PRINT_MMC_SINT_T "ld"
-#define PRINT_MMC_UINT_T "lu"
-typedef unsigned int mmc_uint_t;
-typedef int mmc_sint_t;
-#endif
-
 /* adrpo: circumvent MinGW GCC 4.4.0 bugs with optimization */
 #if defined(__MINGW32__)
 #define GCC_VERSION (__GNUC__ * 10000 \
