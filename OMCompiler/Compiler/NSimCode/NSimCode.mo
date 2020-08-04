@@ -49,6 +49,7 @@ protected
   import NFTyping.ExpOrigin;
   import Expression = NFExpression;
   import NFFunction.Function;
+  import FunctionTree = NFFlatten.FunctionTree;
   import NFInstNode.InstNode;
   import Type = NFType;
 
@@ -190,6 +191,7 @@ public
       simCode := match bdae
         local
           BackendDAE qual;
+          FunctionTree funcTree;
           // old SimCode strcutures
           Absyn.Program program;
           list<String> libs, includes, includeDirs, libPaths;
@@ -219,14 +221,7 @@ public
           algorithm
             // somehow this cannot be set at definition (metamodelica bug?)
             simCodeIndices := EMPTY_SIM_CODE_INDICES;
-            // ToDo:
-            // this has to be adapted at some point SimCodeFuntion needs to be translated
-            // to new simcode and literals have to be based on new Expressions.
-            // Will probably be mostly the same in all other regards
-            program := SymbolTable.getAbsyn();
-            (libs, libPaths, _, includeDirs, recordDecls, functions, _) := SimCodeUtil.createFunctions(program, ConvertDAE.convertFunctionTree(BackendDAE.getFunctionTree(bdae)));
-            makefileParams := OldSimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
-            directory := CevalScriptBackend.getFileDir(AbsynUtil.pathToCref(name), program);
+            funcTree := BackendDAE.getFunctionTree(bdae);
 
             // for now approximate number of equations
             literals := {};
@@ -241,7 +236,7 @@ public
             algorithms := {};
             zero_cross_blocks := {};
             jac_blocks := {};
-            (init, simCodeIndices) := SimStrongComponent.Block.createInitialBlocks(qual.init, simCodeIndices);
+            (init, simCodeIndices, funcTree) := SimStrongComponent.Block.createInitialBlocks(qual.init, simCodeIndices, funcTree);
             init_0 := {};
             init_no_ret := {};
             start := {};
@@ -250,14 +245,23 @@ public
             jacobians := {};
             if isSome(qual.dae) then
               ode := {};
-              (daeModeData, simCodeIndices) := DaeModeData.create(Util.getOption(qual.dae), simCodeIndices);
-
+              (daeModeData, simCodeIndices, funcTree) := DaeModeData.create(Util.getOption(qual.dae), simCodeIndices, funcTree);
             else
-              (ode, simCodeIndices) := SimStrongComponent.Block.createBlocks(qual.ode, simCodeIndices);
+              (ode, simCodeIndices, funcTree) := SimStrongComponent.Block.createBlocks(qual.ode, simCodeIndices, funcTree);
               daeModeData := NONE();
             end if;
             // ToDo add event system
             inlineEquations := {};
+
+
+            // ToDo:
+            // this has to be adapted at some point SimCodeFuntion needs to be translated
+            // to new simcode and literals have to be based on new Expressions.
+            // Will probably be mostly the same in all other regards
+            program := SymbolTable.getAbsyn();
+            directory := CevalScriptBackend.getFileDir(AbsynUtil.pathToCref(name), program);
+            (libs, libPaths, _, includeDirs, recordDecls, functions, _) := SimCodeUtil.createFunctions(program, ConvertDAE.convertFunctionTree(funcTree));
+            makefileParams := OldSimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
 
             (linearLoops, nonlinearLoops) := collectAlgebraicLoops(init, daeModeData);
             (modelInfo, simCodeIndices) := ModelInfo.create(qual.varData, name, directory, functions, linearLoops, nonlinearLoops, simCodeIndices);
@@ -659,13 +663,14 @@ public
       input list<System.System> systems;
       output Option<DaeModeData> data;
       input output SimCodeIndices simCodeIndices;
+      input output FunctionTree funcTree;
     protected
       list<list<SimStrongComponent.Block>> blcks;
       list<SimVar> residualVars, algebraicVars;
       Option<SimJacobian> daeModeJac;
     algorithm
-      (blcks, residualVars, simCodeIndices) := SimStrongComponent.Block.createDAEModeBlocks(systems, simCodeIndices);
-      (daeModeJac, simCodeIndices) := SimJacobian.fromSystems(systems, simCodeIndices);
+      (blcks, residualVars, simCodeIndices, funcTree) := SimStrongComponent.Block.createDAEModeBlocks(systems, simCodeIndices, funcTree);
+      (daeModeJac, simCodeIndices, funcTree) := SimJacobian.fromSystems(systems, simCodeIndices, funcTree);
       data := SOME(DAE_MODE_DATA(blcks, daeModeJac, residualVars, {}, {}, DaeModeConfig.ALL));
     end create;
 

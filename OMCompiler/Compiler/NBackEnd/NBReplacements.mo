@@ -28,11 +28,11 @@
 * See the full OSMC Public License conditions for more details.
 *
 */
-encapsulated uniontype NBVariableReplacements
-"file:        NBVariableReplacements.mo
- package:     NBVariableReplacements
+encapsulated uniontype NBReplacements
+"file:        NBReplacements.mo
+ package:     NBReplacements
  description:
-  VariableReplacements consists of a mapping between variables and expressions, the first binary tree of this type.
+  Replacements consists of a mapping between variables and expressions, the first binary tree of this type.
   To eliminate a variable from an equation system a replacement rule varname->expression is added to this
   datatype.
   To be able to update these replacement rules incrementally a backward lookup mechanism is also required.
@@ -42,7 +42,7 @@ encapsulated uniontype NBVariableReplacements
 
 protected
   // rename self import
-  import VariableReplacements = NBVariableReplacements;
+  import Replacements = NBReplacements;
 
   // NF imports
   import ComponentRef = NFComponentRef;
@@ -54,8 +54,23 @@ protected
   // Util imports
   import BaseHashTable;
 
-
 public
+  function single
+    input output Expression exp   "Replacement happens inside this expression";
+    input Expression old          "Replaced by new";
+    input Expression new          "Replaces old";
+  algorithm
+    exp := Expression.map(exp, function singleTraverse(old = old, new = new));
+  end single;
+
+  function singleTraverse
+    input output Expression exp   "Replacement happens inside this expression";
+    input Expression old          "Replaced by new";
+    input Expression new          "Replaces old";
+  algorithm
+    exp := if Expression.isEqual(exp, old) then new else exp;
+  end singleTraverse;
+
   record REPLACEMENTS
     HashTableCrToExp.HashTable hashTable        "src -> dst, used for replacing. src is variable, dst is expression.";
     //HashTableCrToLst.HashTable invHashTable     "dst -> list of sources. dst is a variable, sources are variables.";
@@ -66,7 +81,7 @@ public
 
   function empty
     "Returns an empty set of replacement rules"
-    output VariableReplacements variableReplacements;
+    output Replacements variableReplacements;
     input Integer size = BaseHashTable.defaultBucketSize;
   protected
     HashTableCrToExp.HashTable hashTable;
@@ -77,7 +92,7 @@ public
   end empty;
 
   function add
-    input output VariableReplacements replacements;
+    input output Replacements replacements;
     input ComponentRef src;
     input Expression dst;
   algorithm
@@ -93,7 +108,7 @@ public
   end add;
 
   function addList
-    input output VariableReplacements replacements;
+    input output Replacements replacements;
     input list<tuple<ComponentRef, Expression>> tpl_lst;
   protected
     ComponentRef src;
@@ -110,11 +125,11 @@ public
     If a replacement rule a->b already exists and we add a new rule b->c then
     the rule a->b is updated to a->c. This is done using the make_transitive
     function."
-    input VariableReplacements replacements;
+    input Replacements replacements;
     input ComponentRef src;
     input Expression dst;
     //input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
-    output VariableReplacements outRepl;
+    output Replacements outRepl;
   algorithm
     outRepl:= match (repl,inSrc,inDst,inFuncTypeExpExpToBooleanOption)
       local
@@ -152,7 +167,7 @@ public
   function remove
     "removes the replacement for a given key using BaseHashTable.delete
     the extendhashSet is not updated"
-    input VariableReplacements replacements   "replacements object";
+    input Replacements replacements   "replacements object";
     input ComponentRef src                    "cref to remove";
   algorithm
     _ := match replacements
@@ -176,7 +191,7 @@ public
   end remove;
 
   function removeList
-    input VariableReplacements replacements "replacements object";
+    input Replacements replacements "replacements object";
     input list<ComponentRef> src_lst        "cref list to remove";
   algorithm
     for src in src_lst loop
@@ -188,7 +203,7 @@ protected
   function removeInv
     "Helper function to remove
     removes the inverse rule of a replacement in the second binary tree
-    of VariableReplacements."
+    of Replacements."
     input HashTableCrToLst.HashTable invHashTable;
     input Expression dst;
   algorithm
@@ -199,4 +214,4 @@ protected
 */
 
   annotation(__OpenModelica_Interface="backend");
-end NBVariableReplacements;
+end NBReplacements;

@@ -39,6 +39,7 @@ public
   // NF imports
   import ComponentRef = NFComponentRef;
   import NFInstNode.InstNode;
+  import FunctionTree = NFFlatten.FunctionTree;
   import Type = NFType;
 
   // Backend imports
@@ -124,13 +125,14 @@ public
       input list<System.System> systems;
       output Option<SimJacobian> simJacobian;
       input output SimCode.SimCodeIndices indices;
+      input output FunctionTree funcTree;
     algorithm
-      (simJacobian, indices) := match systems
+      (simJacobian, indices, funcTree) := match systems
         local
           BackendDAE jacobian;
 
-        case {System.SYSTEM(jacobian = NONE())}           then (NONE(), indices);
-        case {System.SYSTEM(jacobian = SOME(jacobian))}   then create(jacobian, indices);
+        case {System.SYSTEM(jacobian = NONE())}           then (NONE(), indices, funcTree);
+        case {System.SYSTEM(jacobian = SOME(jacobian))}   then create(jacobian, indices, funcTree);
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed! Partitioned systems are not yet supported by this function."});
         then fail();
@@ -162,6 +164,7 @@ public
       input BackendDAE jacobian;
       output Option<SimJacobian> simJacobian;
       input output SimCode.SimCodeIndices indices;
+      input output FunctionTree funcTree;
     algorithm
       simJacobian := match jacobian
         local
@@ -170,6 +173,7 @@ public
           BVariable.VarData varData;
           Pointer<list<SimStrongComponent.Block>> columnEqns = Pointer.create({});
           Pointer<SimCode.SimCodeIndices> indices_ptr = Pointer.create(indices);
+          Pointer<FunctionTree> funcTree_ptr = Pointer.create(funcTree);
           Pointer<list<SimVar.SimVar>> columnVars_ptr = Pointer.create({});
           Pointer<list<SimVar.SimVar>> seedVars_ptr = Pointer.create({});
           list<SimVar.SimVar> columnVars, seedVars;
@@ -179,7 +183,7 @@ public
           SimJacobian jac;
 
         case qual as BackendDAE.JAC(varData = varData as BVariable.VAR_DATA_JAC(), eqData = eqData as BEquation.EQ_DATA_JAC()) algorithm
-          BEquation.EquationPointers.map(eqData.equations, function SimStrongComponent.Block.traverseCreateEquation(acc = columnEqns, indices_ptr = indices_ptr));
+          BEquation.EquationPointers.map(eqData.equations, function SimStrongComponent.Block.traverseCreateEquation(acc = columnEqns, indices_ptr = indices_ptr, funcTree_ptr = funcTree_ptr));
 
           BVariable.VariablePointers.map(varData.unknowns, function SimVar.SimVar.traverseCreate(acc = columnVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES), varType =  VarType.SIMULATION));
           BVariable.VariablePointers.map(varData.seedVars, function SimVar.SimVar.traverseCreate(acc = seedVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES), varType =  VarType.SIMULATION));
@@ -191,6 +195,7 @@ public
           jacobianHT := HashTableSimCode.addList(seedVars, jacobianHT);
 
           indices := Pointer.access(indices_ptr);
+          funcTree := Pointer.access(funcTree_ptr);
 
           jac := SIM_JAC(
             name                = qual.name,

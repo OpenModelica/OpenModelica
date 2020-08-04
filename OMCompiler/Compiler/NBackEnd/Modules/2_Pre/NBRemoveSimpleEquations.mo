@@ -53,7 +53,7 @@ protected
   import BEquation = NBEquation;
   import BVariable = NBVariable;
   import HashTableCrToCrEqLst = NBHashTableCrToCrEqLst;
-  import VariableReplacements = NBVariableReplacements;
+  import Replacements = NBReplacements;
 public
   function main
     "Wrapper function for any detect states function. This will be
@@ -99,7 +99,7 @@ protected
         Integer size;
         HashTableCrToCrEqLst.HashTable HTCrToCrEqLst;
         HashTableCrToExp.HashTable HTCrToExp;
-        VariableReplacements repl;
+        Replacements repl;
 
       case (BVariable.VAR_DATA_SIM(variables = variables, aliasVars = aliasVars), BEquation.EQ_DATA_SIM(simulation = simulation, initials = initials))
         algorithm
@@ -108,7 +108,7 @@ protected
           size := intMax(BaseHashTable.defaultBucketSize, realInt(realMul(intReal(size), 0.7)));
           HTCrToExp := HashTableCrToExp.emptyHashTableSized(size);
           HTCrToCrEqLst := HashTableCrToCrEqLst.emptyHashTableSized(size);
-          repl := VariableReplacements.empty(size);
+          repl := Replacements.empty(size);
 
       then ();
       else ();

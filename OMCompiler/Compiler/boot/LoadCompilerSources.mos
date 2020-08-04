@@ -289,10 +289,11 @@ if true then /* Suppress output */
     "../NBackEnd/NBackendDAE.mo",
     "../NBackEnd/NBDifferentiate.mo",
     "../NBackEnd/NBEquation.mo",
+    "../NBackEnd/NBSolve.mo",
     "../NBackEnd/NBStrongComponent.mo",
     "../NBackEnd/NBSystem.mo",
     "../NBackEnd/NBVariable.mo",
-    "../NBackEnd/NBVariableReplacements.mo",
+    "../NBackEnd/NBReplacements.mo",
     "../NBackEnd/Modules/NBModule.mo",
   // "NBackend Modules"
     "../NBackEnd/Modules/1_Main/NBCausalize.mo",

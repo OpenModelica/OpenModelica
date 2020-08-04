@@ -368,6 +368,22 @@ public
     end collectCrefs;
 
   public
+    function getLHS
+      "gets the left hand side expression of an equation."
+      input Equation eq;
+      output Expression lhs;
+    algorithm
+      lhs := match(eq)
+        local
+          ComponentRef cref;
+        case SCALAR_EQUATION(lhs = lhs)   then lhs;
+        case ARRAY_EQUATION(lhs = lhs)    then lhs;
+        case RECORD_EQUATION(lhs = lhs)   then lhs;
+        case SIMPLE_EQUATION(lhs = cref)  then Expression.fromCref(cref);
+        else fail();
+      end match;
+    end getLHS;
+
     function getRHS
       "gets the right hand side expression of an equation."
       input Equation eq;
@@ -384,21 +400,69 @@ public
       end match;
     end getRHS;
 
-    function getLHS
-      "gets the left hand side expression of an equation."
-      input Equation eq;
-      output Expression lhs;
+    function setLHS
+      "sets the left hand side expression of an equation."
+      input output Equation eq;
+      input Expression lhs;
     algorithm
-      lhs := match(eq)
+      eq := match(eq)
         local
           ComponentRef cref;
-        case SCALAR_EQUATION(lhs = lhs)   then lhs;
-        case ARRAY_EQUATION(lhs = lhs)    then lhs;
-        case RECORD_EQUATION(lhs = lhs)   then lhs;
-        case SIMPLE_EQUATION(lhs = cref)  then Expression.fromCref(cref);
+        case SCALAR_EQUATION()
+          algorithm
+            eq.lhs := lhs;
+        then eq;
+        case ARRAY_EQUATION()
+          algorithm
+            eq.lhs := lhs;
+        then eq;
+        case RECORD_EQUATION()
+          algorithm
+            eq.lhs := lhs;
+        then eq;
+        case SIMPLE_EQUATION()
+          algorithm
+            eq.lhs := match lhs
+              local ComponentRef cr;
+              case Expression.CREF(cref = cr) then cr;
+              else fail();
+            end match;
+        then eq;
         else fail();
       end match;
-    end getLHS;
+    end setLHS;
+
+    function setRHS
+      "sets the right hand side expression of an equation."
+      input output Equation eq;
+      input Expression rhs;
+    algorithm
+      eq := match(eq)
+        local
+          ComponentRef cref;
+        case SCALAR_EQUATION()
+          algorithm
+            eq.rhs := rhs;
+        then eq;
+        case ARRAY_EQUATION()
+          algorithm
+            eq.rhs := rhs;
+        then eq;
+        case RECORD_EQUATION()
+          algorithm
+            eq.rhs := rhs;
+        then eq;
+        case SIMPLE_EQUATION()
+          algorithm
+            eq.rhs := match rhs
+              local ComponentRef cr;
+              case Expression.CREF(cref = cr) then cr;
+              else fail();
+            end match;
+        then eq;
+        else fail();
+      end match;
+    end setRHS;
 
     function simplify
       input output Equation eq;
@@ -473,6 +537,30 @@ public
       end match;
     end createResidual;
 
+    function getResidualExp
+      input Equation eqn;
+      output Expression exp;
+    algorithm
+      exp := match eqn
+        local
+          Operator operator;
+        case Equation.SCALAR_EQUATION() algorithm
+          operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.SUB);
+        then Expression.BINARY(eqn.rhs, operator, eqn.lhs);
+        case Equation.ARRAY_EQUATION()  algorithm
+          operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.SUB);
+        then Expression.BINARY(eqn.rhs, operator, eqn.lhs);
+        case Equation.SIMPLE_EQUATION() algorithm
+          operator := Operator.OPERATOR(ComponentRef.getComponentType(eqn.lhs), NFOperator.Op.SUB);
+        then Expression.BINARY(Expression.fromCref(eqn.rhs), operator, Expression.fromCref(eqn.lhs));
+        case Equation.RECORD_EQUATION() algorithm
+          operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.SUB);
+        then Expression.BINARY(eqn.rhs, operator, eqn.lhs);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+        then fail();
+      end match;
+    end getResidualExp;
   end Equation;
 
   uniontype IfEquationBody

@@ -429,17 +429,17 @@ public
         Expression qual, res;
         HashTableCrToCr.HashTable jacobianHT;
 
-      // Types: (TIME, SIMPLE, FUNCTION) or short (not JACOBIAN)
+      // Types: (TIME)
       // differentiate time cref => 1
       case (qual as Expression.CREF(), _)
-        guard(not (diffArguments.diffType == DifferentiationType.JACOBIAN) and
+        guard(diffArguments.diffType == DifferentiationType.TIME and
               ComponentRef.isTime(qual.cref))
       then (Expression.makeOne(qual.ty), diffArguments);
 
-      // Types: (JACOBIAN)
+      // Types: not (TIME)
       // differentiate time cref => 0
       case (qual as Expression.CREF(), _)
-        guard((diffArguments.diffType == DifferentiationType.JACOBIAN) and
+        guard(not (diffArguments.diffType == DifferentiationType.TIME) and
               ComponentRef.isTime(qual.cref))
       then (Expression.makeZero(qual.ty), diffArguments);
 
@@ -451,10 +451,10 @@ public
 
       // ToDo: Records, Arrays, WILD (?)
 
-      // Types: (TIME, SIMPLE, FUNCTION) or short (not JACOBIAN)
+      // Types: (SIMPLE)
       //  D(x)/dx => 1
       case (qual as Expression.CREF(), _)
-        guard(not (diffArguments.diffType == DifferentiationType.JACOBIAN) and
+        guard((diffArguments.diffType == DifferentiationType.SIMPLE) and
               ComponentRef.isEqual(qual.cref, diffArguments.diffCref))
       then (Expression.makeOne(qual.ty), diffArguments);
 

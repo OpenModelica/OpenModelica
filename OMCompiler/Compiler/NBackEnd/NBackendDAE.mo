@@ -220,7 +220,9 @@ public
 
     bdae := Initialization.main(bdae);
     // only if dae mode, but force it for now
-    bdae := DAEMode.main(bdae);
+    if Flags.getConfigBool(Flags.DAE_MODE) then
+      bdae := DAEMode.main(bdae);
+    end if;
 
     // do Tearing at the very end
     bdae := Tearing.main(bdae, NBSystem.SystemType.ODE);

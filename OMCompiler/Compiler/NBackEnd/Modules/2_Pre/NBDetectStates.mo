@@ -78,7 +78,9 @@ public
         BEquation.EqData eqData                         "Data containing equation pointers";
       case BackendDAE.BDAE(varData = varData, eqData = eqData)
         algorithm
-          mainFunc(varData, eqData, contFunc, discFunc);
+          (varData, eqData) := mainFunc(varData, eqData, contFunc, discFunc);
+          bdae.varData := varData;
+          bdae.eqData := eqData;
         then bdae;
     end match;
   end main;

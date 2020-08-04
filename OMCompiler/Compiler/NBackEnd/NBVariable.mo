@@ -58,6 +58,7 @@ public
 
   // Backend Imports
   import BackendDAE = NBackendDAE;
+  import HashTableCrToInt = NBHashTableCrToInt;
   import BVariable = NBVariable;
 
   //Util Imports
@@ -659,8 +660,7 @@ public
   // ==========================================================================
   uniontype VariablePointers
     record VARIABLE_POINTERS
-      Integer bucketSize;
-      array<list<CrefIndex>> crefIndices "HashTB, cref->indx";
+      HashTableCrToInt.HashTable ht             "Hash table for cref->index";
       ExpandableArray<Pointer<Variable>> varArr "Array of variable pointers";
     end VARIABLE_POINTERS;
 
@@ -730,7 +730,7 @@ public
     algorithm
       arr_size := max(size, BaseHashTable.lowBucketSize);
       bucketSize :=  realInt(intReal(arr_size) * 1.4);
-      variables := VARIABLE_POINTERS(bucketSize, arrayCreate(bucketSize, {}), ExpandableArray.new(arr_size, Pointer.create(DUMMY_VARIABLE)));
+      variables := VARIABLE_POINTERS(HashTableCrToInt.empty(bucketSize), ExpandableArray.new(arr_size, Pointer.create(DUMMY_VARIABLE)));
     end empty;
 
     function toList
@@ -773,22 +773,16 @@ public
       input output VariablePointers variables;
     protected
       Variable var;
-      Integer hash_idx, arr_idx, new_idx;
-      list<CrefIndex> indices;
+      Integer idx;
     algorithm
       var := Pointer.access(varPointer);
-      hash_idx := ComponentRef.hash(var.name, variables.bucketSize) + 1;
-      indices := arrayGet(variables.crefIndices, hash_idx);
-
-      try
-        // If the variable already exists, overwrite it
-        CREFINDEX(index = arr_idx) := List.getMemberOnTrue(var.name, indices, crefIndexEqualCref);
-        ExpandableArray.set(arr_idx + 1, varPointer, variables.varArr);
+      if BaseHashTable.hasKey(var.name, variables.ht) then
+        idx := BaseHashTable.get(var.name, variables.ht);
+        ExpandableArray.set(idx, varPointer, variables.varArr);
       else
-        // otherwise create new variable at the end of the array and expand if neccessary
-        (_, new_idx) := ExpandableArray.add(varPointer, variables.varArr);
-        arrayUpdate(variables.crefIndices, hash_idx, (CREFINDEX(var.name, new_idx - 1) :: indices));
-      end try;
+        (_, idx) := ExpandableArray.add(varPointer, variables.varArr);
+        variables.ht := BaseHashTable.add((var.name, idx), variables.ht);
+      end if;
     end add;
 
     function remove
@@ -797,40 +791,36 @@ public
       input output VariablePointers variables "only an output for mapping";
     protected
       Variable var;
-      Integer hash_idx, arr_idx;
-      list<CrefIndex> indices;
+      Integer idx;
     algorithm
       var := Pointer.access(var_ptr);
-      hash_idx := ComponentRef.hash(var.name, variables.bucketSize) + 1;
-      indices := arrayGet(variables.crefIndices, hash_idx);
-
-      try
-        // If the variable exists, delete it
-        CREFINDEX(index = arr_idx) := List.getMemberOnTrue(var.name, indices, crefIndexEqualCref);
-        ExpandableArray.delete(arr_idx + 1, variables.varArr);
-        indices := List.deleteMemberOnTrue(var.name, indices, crefIndexEqualCref);
-        arrayUpdate(variables.crefIndices, hash_idx, indices);
-      else
-        // otherwise do nothing
-      end try;
+      if BaseHashTable.hasKey(var.name, variables.ht) then
+        idx := BaseHashTable.get(var.name, variables.ht);
+        ExpandableArray.delete(idx, variables.varArr);
+        BaseHashTable.delete(var.name, variables.ht);
+      end if;
     end remove;
 
     function setVarAt
       "Sets a Variable pointer at a specific index in the VariablePointers."
       input VariablePointers variables;
-      input Integer index;
-      input Pointer<Variable> var;
+      input Integer idx;
+      input Pointer<Variable> var_ptr;
+    protected
+      Variable var;
     algorithm
-      ExpandableArray.set(index, var, variables.varArr);
+      ExpandableArray.set(idx, var_ptr, variables.varArr);
+      var := Pointer.access(var_ptr);
+      variables.ht := BaseHashTable.add((var.name, idx), variables.ht);
     end setVarAt;
 
     function getVarAt
       "Returns the variable pointer at given index. If there is none it fails."
       input VariablePointers variables;
-      input Integer index;
+      input Integer idx;
       output Pointer<Variable> var;
     algorithm
-      var := ExpandableArray.get(index, variables.varArr);
+      var := ExpandableArray.get(idx, variables.varArr);
     end getVarAt;
 
     function getVarSafe
@@ -838,25 +828,16 @@ public
       ComponentRef. Fails if the component ref cannot be found."
       input ComponentRef cref;
       input VariablePointers variables;
-      output Pointer<Variable> var;
-    protected
-      Integer hash_idx, index;
-      list<CrefIndex> cr_indices;
-      ComponentRef cr;
+      output Pointer<Variable> var_ptr;
     algorithm
-      try
-        hash_idx := ComponentRef.hash(cref, variables.bucketSize) + 1;
-        cr_indices := variables.crefIndices[hash_idx];
-        CREFINDEX(index = index) := List.getMemberOnTrue(cref, cr_indices, crefIndexEqualCref);
-        var := getVarAt(variables, index + 1);
-        NFVariable.VARIABLE(name = cr) := Pointer.access(var);
-        true := ComponentRef.isEqual(cr, cref);
+      if BaseHashTable.hasKey(cref, variables.ht) then
+        var_ptr := ExpandableArray.get(BaseHashTable.get(cref, variables.ht), variables.varArr);
       else
         if Flags.isSet(Flags.FAILTRACE) then
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
         end if;
         fail();
-      end try;
+      end if;
     end getVarSafe;
 
     function getVarNames
@@ -877,14 +858,6 @@ public
       i := ExpandableArray.getNumberOfElements(variables.varArr);
     end size;
   end VariablePointers;
-
-  uniontype CrefIndex
-    "Component Reference Index"
-    record CREFINDEX
-      ComponentRef cref;
-      Integer index;
-    end CREFINDEX;
-  end CrefIndex;
 
   // ==========================================================================
   //                        Variable Data
@@ -1098,19 +1071,6 @@ public
   //                      Protected utility functions
   // ==========================================================================
 protected
-  function crefIndexEqualCref
-    "Checks the component reference of a CrefIndex object and a reference cref
-    for equality."
-    input ComponentRef cr1;
-    input CrefIndex crefIndex;
-    output Boolean outMatch;
-  protected
-    ComponentRef cr2;
-  algorithm
-    CREFINDEX(cref = cr2) := crefIndex;
-    outMatch := ComponentRef.isEqual(cr1, cr2);
-  end crefIndexEqualCref;
-
   function getVarNameTraverse
     input output Variable var;
     input Pointer<list<ComponentRef>> acc;

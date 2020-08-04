@@ -196,30 +196,21 @@ public
       input BEquation.EquationPointers eqs;
       output AdjacencyMatrix adj;
     protected
-      list<ComponentRef> cref_lst, dependencies;
+      list<ComponentRef> dependencies;
       list<Pointer<BEquation.Equation>> eqn_lst;
-      NBHashTableCrToInt.HashTable ht;
       array<list<Integer>> m, mT;
       Integer var_idx = 1, eqn_idx = 1;
+      list<ComponentRef> var_names;
     algorithm
-      cref_lst := BVariable.VariablePointers.getVarNames(vars);
       eqn_lst := BEquation.EquationPointers.toList(eqs);
-      // create a sufficiant big hash table and add all vars names with index for lookup
-      // kabdelhak: this should replace the crefIndex list in variable vector at some point!
-      ht := NBHashTableCrToInt.empty(listLength(cref_lst));
-      for cref in cref_lst loop
-        ht := BaseHashTable.add((cref, var_idx), ht);
-        var_idx := var_idx + 1;
-      end for;
-
       // create empty adjacency matrix and traverse equations to fill it
       m := arrayCreate(listLength(eqn_lst), {});
       for eqn in eqn_lst loop
-        dependencies := BEquation.Equation.collectCrefs(Pointer.access(eqn), function getDependentCref(ht = ht));
-        m[eqn_idx] := getDependentCrefIndices(dependencies, ht);
+        dependencies := BEquation.Equation.collectCrefs(Pointer.access(eqn), function getDependentCref(ht = vars.ht));
+        m[eqn_idx] := getDependentCrefIndices(dependencies, vars.ht);
         eqn_idx := eqn_idx + 1;
       end for;
-      mT := transposeScalar(m, listLength(cref_lst));
+      mT := transposeScalar(m, ExpandableArray.getLastUsedIndex(vars.varArr));
       adj := SCALAR_ADJACENCY_MATRIX(m, mT);
     end createScalar;
 
@@ -249,7 +240,7 @@ public
     function getDependentCref
       input output ComponentRef cref          "the cref to check";
       input Pointer<list<ComponentRef>> acc   "accumulator for relevant crefs";
-      input NBHashTableCrToInt.HashTable ht   "hash table to check for relevance";
+      input HashTableCrToInt.HashTable ht     "hash table to check for relevance";
     algorithm
       if BaseHashTable.hasKey(cref, ht) then
         Pointer.update(acc, cref :: Pointer.access(acc));
@@ -258,7 +249,7 @@ public
 
     function getDependentCrefIndices
       input list<ComponentRef> dependencies   "dependent var crefs";
-      input NBHashTableCrToInt.HashTable ht   "hash table to check for relevance";
+      input HashTableCrToInt.HashTable ht     "hash table to check for relevance";
       output list<Integer> indices = {};
     algorithm
       for cref in dependencies loop

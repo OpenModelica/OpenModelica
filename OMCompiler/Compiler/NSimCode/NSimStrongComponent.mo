@@ -43,6 +43,7 @@ protected
   import BackendExtension = NFBackendExtension;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
+  import FunctionTree = NFFlatten.FunctionTree;
   import InstNode = NFInstNode.InstNode;
   import Operator = NFOperator;
   import Statement = NFStatement;
@@ -55,6 +56,7 @@ protected
   // Backend imports
   import BEquation = NBEquation;
   import BVariable = NBVariable;
+  import Solve = NBSolve;
   import StrongComponent = NBStrongComponent;
   import System = NBSystem;
   import Tearing = NBTearing;
@@ -258,11 +260,12 @@ public
       input list<System.System> systems;
       output list<list<Block>> blcks = {};
       input output SimCode.SimCodeIndices simCodeIndices;
+      input output FunctionTree funcTree;
     protected
       list<Block> tmp;
     algorithm
       for system in systems loop
-        (tmp, simCodeIndices) := fromSystem(system, simCodeIndices);
+        (tmp, simCodeIndices, funcTree) := fromSystem(system, simCodeIndices, funcTree);
         blcks := tmp :: blcks;
       end for;
       blcks := listReverse(blcks);
@@ -272,11 +275,12 @@ public
       input list<System.System> systems;
       output list<Block> blcks = {};
       input output SimCode.SimCodeIndices simCodeIndices;
+      input output FunctionTree funcTree;
     protected
       list<Block> tmp;
     algorithm
       for system in systems loop
-        (tmp, simCodeIndices) := fromSystem(system, simCodeIndices);
+        (tmp, simCodeIndices, funcTree) := fromSystem(system, simCodeIndices, funcTree);
         blcks := listAppend(blcks, tmp);
       end for;
       blcks := listReverse(blcks);
@@ -287,6 +291,7 @@ public
       output list<list<Block>> blcks = {};
       output list<SimVar> vars = {};
       input output SimCode.SimCodeIndices simCodeIndices;
+      input output FunctionTree funcTree;
     protected
       Pointer<SimCode.SimCodeIndices> indices_ptr = Pointer.create(simCodeIndices);
       Pointer<list<SimVar>> vars_ptr = Pointer.create({});
@@ -294,7 +299,7 @@ public
     algorithm
       for system in listReverse(systems) loop
         BVariable.VariablePointers.map(system.unknowns, function SimVar.traverseCreate(acc = vars_ptr, indices_ptr = indices_ptr, varType = VarType.DAE_MODE_RESIDUAL));
-        (tmp, simCodeIndices) := fromSystem(system, Pointer.access(indices_ptr));
+        (tmp, simCodeIndices, funcTree) := fromSystem(system, Pointer.access(indices_ptr), funcTree);
         blcks := tmp :: blcks;
       end for;
       vars := listReverse(Pointer.access(vars_ptr));
@@ -304,6 +309,7 @@ public
       input System.System system;
       output list<Block> blcks;
       input output SimCode.SimCodeIndices simCodeIndices;
+      input output FunctionTree funcTree;
     algorithm
       blcks := match system.strongComponents
         local
@@ -313,7 +319,7 @@ public
         case SOME(comps)
           algorithm
             for i in 1:arrayLength(comps) loop
-              (tmp, simCodeIndices) := fromStrongComponent(comps[i], simCodeIndices);
+              (tmp, simCodeIndices, funcTree) := fromStrongComponent(comps[i], simCodeIndices, funcTree);
               result := tmp :: result;
             end for;
         then listReverse(result);
@@ -328,6 +334,7 @@ public
       input StrongComponent comp;
       output Block blck;
       input output SimCode.SimCodeIndices simCodeIndices;
+      input output FunctionTree funcTree;
     algorithm
       blck := match comp
         local
@@ -342,12 +349,12 @@ public
 
         case qual as StrongComponent.SINGLE_EQUATION()
           algorithm
-            (tmp, simCodeIndices) := createEquation(Pointer.access(qual.var), Pointer.access(qual.eqn), simCodeIndices);
+            (tmp, simCodeIndices, funcTree) := createEquation(Pointer.access(qual.var), Pointer.access(qual.eqn), simCodeIndices, funcTree);
         then tmp;
 
         case qual as StrongComponent.SINGLE_ARRAY(vars = {varPtr})
           algorithm
-            (tmp, simCodeIndices) := createEquation(Pointer.access(varPtr), Pointer.access(qual.eqn), simCodeIndices);
+            (tmp, simCodeIndices, funcTree) := createEquation(Pointer.access(varPtr), Pointer.access(qual.eqn), simCodeIndices, funcTree);
         then tmp;
 
         case qual as StrongComponent.TORN_LOOP(strict = strict)
@@ -379,36 +386,30 @@ public
     algorithm
       blck := match eqn
         local
-          BEquation.Equation qual;
           Type ty;
           Operator operator;
           Expression lhs, rhs;
           Block tmp;
 
-        case qual as BEquation.SCALAR_EQUATION()
+        case BEquation.SCALAR_EQUATION()
           algorithm
-            operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.SUB);
-            tmp := RESIDUAL(simCodeIndices.equationIndex, Expression.BINARY(qual.rhs, operator ,qual.lhs), qual.source, qual.attr);
+            tmp := RESIDUAL(simCodeIndices.equationIndex, BEquation.Equation.getResidualExp(eqn), eqn.source, eqn.attr);
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
-        case qual as BEquation.ARRAY_EQUATION()
+        case BEquation.ARRAY_EQUATION()
           algorithm
-            operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.SUB);
-            tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, Expression.BINARY(qual.rhs, operator, qual.lhs), qual.source, qual.attr);
+            tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, BEquation.Equation.getResidualExp(eqn), eqn.source, eqn.attr);
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
-        case qual as BEquation.SIMPLE_EQUATION()
+        case BEquation.SIMPLE_EQUATION()
           algorithm
-            ty := ComponentRef.getComponentType(qual.lhs);
-            operator := Operator.OPERATOR(ty, NFOperator.Op.SUB);
-            lhs := Expression.fromCref(qual.lhs);
-            rhs := Expression.fromCref(qual.rhs);
+            ty := ComponentRef.getComponentType(eqn.lhs);
             if Type.isArray(ty) then
-              tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, Expression.BINARY(rhs, operator, lhs), qual.source, qual.attr);
+              tmp := ARRAY_RESIDUAL(simCodeIndices.equationIndex, BEquation.Equation.getResidualExp(eqn), eqn.source, eqn.attr);
             else
-              tmp := RESIDUAL(simCodeIndices.equationIndex, Expression.BINARY(rhs, operator ,lhs), qual.source, qual.attr);
+              tmp := RESIDUAL(simCodeIndices.equationIndex, BEquation.Equation.getResidualExp(eqn), eqn.source, eqn.attr);
             end if;
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
@@ -428,40 +429,38 @@ public
       input BEquation.Equation eqn;
       output Block blck;
       input output SimCode.SimCodeIndices simCodeIndices;
+      input output FunctionTree funcTree;
+    protected
+      BEquation.Equation solved;
     algorithm
-      blck := match eqn
+      solved := Solve.solve(eqn, var.name, funcTree);
+      blck := match solved
         local
-          BEquation.Equation qual;
           Type ty;
           Operator operator;
           Expression lhs, rhs;
           Block tmp;
 
-        case qual as BEquation.SCALAR_EQUATION()
+        case BEquation.SCALAR_EQUATION()
           algorithm
-            operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.SUB);
-            tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, Expression.BINARY(qual.rhs, operator, qual.lhs), qual.source, qual.attr);
+            tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, solved.rhs, solved.source, solved.attr);
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
-        case qual as BEquation.ARRAY_EQUATION()
+        case BEquation.ARRAY_EQUATION()
           algorithm
-            operator := Operator.OPERATOR(Expression.typeOf(qual.lhs), NFOperator.Op.SUB);
-            tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(var.name), Expression.BINARY(qual.rhs, operator, qual.lhs), qual.source, qual.attr);
+            tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(var.name), solved.rhs, solved.source, solved.attr);
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
         // remove simple equations should remove this, but if it is not activated we need this
-        case qual as BEquation.SIMPLE_EQUATION()
+        case BEquation.SIMPLE_EQUATION()
           algorithm
-            ty := ComponentRef.getComponentType(qual.lhs);
-            operator := Operator.OPERATOR(ty, NFOperator.Op.SUB);
-            lhs := Expression.fromCref(qual.lhs);
-            rhs := Expression.fromCref(qual.rhs);
+            ty := ComponentRef.getComponentType(solved.lhs);
             if Type.isArray(ty) then
-              tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(var.name), Expression.BINARY(rhs, operator, lhs), qual.source, qual.attr);
+              tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(var.name), Expression.fromCref(solved.rhs), solved.source, solved.attr);
             else
-              tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, Expression.BINARY(rhs, operator, lhs), qual.source, qual.attr);
+              tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, Expression.fromCref(solved.rhs), solved.source, solved.attr);
             end if;
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
@@ -469,7 +468,7 @@ public
         // ToDo: add all other cases!
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + BEquation.Equation.toString(eqn)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + BEquation.Equation.toString(solved)});
         then fail();
 
       end match;
@@ -481,16 +480,19 @@ public
       input output BEquation.Equation eqn;
       input Pointer<list<Block>> acc;
       input Pointer<SimCode.SimCodeIndices> indices_ptr;
+      input Pointer<FunctionTree> funcTree_ptr;
     protected
       Pointer<Variable> residualVar;
       Block blck;
       SimCode.SimCodeIndices indices;
+      FunctionTree funcTree;
     algorithm
       try
         residualVar := BEquation.EquationAttributes.getResidualVar(BEquation.Equation.getAttributes(eqn));
-        (blck, indices) := createEquation(Pointer.access(residualVar), eqn, Pointer.access(indices_ptr));
+        (blck, indices, funcTree) := createEquation(Pointer.access(residualVar), eqn, Pointer.access(indices_ptr), Pointer.access(funcTree_ptr));
         Pointer.update(acc, blck :: Pointer.access(acc));
         Pointer.update(indices_ptr, indices);
+        Pointer.update(funcTree_ptr, funcTree);
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + BEquation.Equation.toString(eqn)});
         fail();
