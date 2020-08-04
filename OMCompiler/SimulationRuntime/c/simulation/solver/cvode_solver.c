@@ -92,7 +92,6 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype 
  */
 int cvodeRightHandSideODEFunction(realtype time, N_Vector y, N_Vector ydot, void *userData)
 {
-
   /* Variables */
   CVODE_SOLVER *cvodeData;
   DATA *data;
@@ -141,8 +140,8 @@ int cvodeRightHandSideODEFunction(realtype time, N_Vector y, N_Vector ydot, void
     rt_accumulate(SIM_TIMER_SOLVER);
 #ifndef OMC_FMI_RUNTIME
   externalInputUpdate(data);
-#endif
   data->callback->input_function(data, threadData);
+#endif
   if (measure_time_flag)
     rt_tick(SIM_TIMER_SOLVER);
 
@@ -566,7 +565,8 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   }
   cvodeData->absoluteTolerance = N_VMake_Serial(data->modelData->nStates, abstol_tmp);
   assertStreamPrint(threadData, NULL != cvodeData->absoluteTolerance, "SUNDIALS_ERROR: N_VMake_Serial failed - returned NULL pointer.");
-  CVodeSVtolerances(cvodeData->cvode_mem, data->simulationInfo->tolerance, cvodeData->absoluteTolerance);
+  flag = CVodeSVtolerances(cvodeData->cvode_mem, data->simulationInfo->tolerance, cvodeData->absoluteTolerance);
+  assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVodeSVtolerances failed with flag %i", flag);
   infoStreamPrint(LOG_SOLVER, 0, "CVODE Using relative error tolerance %e", data->simulationInfo->tolerance);
 
   /* Provide cvodeData as user data */
@@ -676,7 +676,7 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
 
 /**
  * @brief Reinitialize CVODE solver
- * * Provide required problem specifications and reinitialize CVODE.
+ * Provide required problem specifications and reinitialize CVODE.
  * If scaling is used y will be scaled accordingly.
  *
  * @param data              Runtime data struckt.
@@ -887,8 +887,8 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
       rt_accumulate(SIM_TIMER_SOLVER);
 #ifndef OMC_FMI_RUNTIME
     externalInputUpdate(data);
-#endif
     data->callback->input_function(data, threadData);
+#endif
     if (measure_time_flag)
       rt_tick(SIM_TIMER_SOLVER);
 
@@ -986,10 +986,10 @@ int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
     return -1;
   }
   flag = CVode(cvodeData->cvode_mem,
-          tNext,
-          cvodeData->y,
-          &(solverInfo->currentTime),
-          CV_NORMAL);
+               tNext,
+               cvodeData->y,
+               &(solverInfo->currentTime),
+               CV_NORMAL);
   /* Error handling */
   if ((flag == CV_SUCCESS || flag == CV_TSTOP_RETURN) && solverInfo->currentTime >= tNext)
   {
