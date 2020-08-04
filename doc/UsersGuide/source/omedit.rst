@@ -107,18 +107,13 @@ protected classes are not shown by default. If you want to see the
 protected classes then you must enable the Show Protected Classes
 option, see section :ref:`omedit-options-general`.
 
-.. figure :: media/omedit-libraries-browser.png
-
-  Libraries Browser.
-
 Documentation Browser
 ~~~~~~~~~~~~~~~~~~~~~
 
 Displays the HTML documentation of Modelica classes. It contains the
 navigation buttons for moving forward and backward. It also contains
 a WYSIWYG editor which allows writing class documentation in HTML format.
-To see documentation of any class, right click the Modelica class
-in Libraries Browser and choose View Documentation.
+To view the Documentation Browser click View > Windows > Documentation Browser.
 
 .. figure :: media/omedit-documentation-browser.png
 
