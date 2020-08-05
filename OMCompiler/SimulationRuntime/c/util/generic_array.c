@@ -48,13 +48,15 @@ static int generic_array_ndims_eq(const base_array_t* src, const base_array_t* d
     return 1;
 }
 
+#define omc_FORMAT "src->dim_size[%d] != dst->dim_size[%d], %" PRINT_MMC_SINT_T " != %" PRINT_MMC_SINT_T "\n"
+
 static int generic_array_dimsizes_eq(const base_array_t* src, const base_array_t* dst, int print_error)
 {
     int i;
     for(i = 0; i < src->ndims; ++i) {
         if(src->dim_size[i] != dst->dim_size[i]) {
             if (print_error) {
-                fprintf(stderr, "src->dim_size[%d] != dst->dim_size[%d], %ld != %ld\n",
+                fprintf(stderr, omc_FORMAT,
                         i, i, src->dim_size[i], dst->dim_size[i]);
             }
             return 0;
