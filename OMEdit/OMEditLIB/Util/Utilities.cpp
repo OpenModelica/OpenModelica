@@ -65,6 +65,7 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   // create the filter text box
   mpFilterTextBox = new QLineEdit;
   mpFilterTextBox->installEventFilter(this);
+  connect(this, SIGNAL(clearFilter(QString)), mpFilterTextBox, SIGNAL(textEdited(QString)));
   // filter timer
   mpFilterTimer = new QTimer;
   mpFilterTimer->setSingleShot(true);
@@ -117,7 +118,7 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
 
 /*!
  * \brief TreeSearchFilters::eventFilter
- * Handles the ESC key press for search text box
+ * Handles the ESC key press for filter text box
  * \param pObject
  * \param pEvent
  * \return
@@ -125,13 +126,17 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
 bool TreeSearchFilters::eventFilter(QObject *pObject, QEvent *pEvent)
 {
   /* Ticket #3987
-   * Clear contents of search field by clicking ESC key.
+   * Clear contents of filter field by clicking ESC key.
    */
-  QLineEdit *pSearchTextBox = qobject_cast<QLineEdit*>(pObject);
-  if (pSearchTextBox && pEvent->type() == QEvent::KeyPress) {
+  QLineEdit *pFilterTextBox = qobject_cast<QLineEdit*>(pObject);
+  if (pFilterTextBox && pEvent->type() == QEvent::KeyPress) {
     QKeyEvent *pKeyEvent = static_cast<QKeyEvent*>(pEvent);
     if (pKeyEvent && pKeyEvent->key() == Qt::Key_Escape) {
-      pSearchTextBox->clear();
+      pFilterTextBox->clear();
+      /* Ticket #5998
+       * Emit clearFilter signal which calls textEdited signal of mpFilterTextBox to reset filter.
+       */
+      emit clearFilter("");
       return true;
     }
   }
