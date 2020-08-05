@@ -910,7 +910,7 @@ public
     function toString
       input EquationPointers equations;
       input output String str = "";
-      input Boolean printEmpty = false;
+      input Boolean printEmpty = true;
     protected
       Integer numberOfElements = ExpandableArray.getNumberOfElements(equations.eqArr);
     algorithm
@@ -919,6 +919,7 @@ public
         for i in 1:numberOfElements loop
           str := str + "(" + intString(i) + ")" + Equation.toString(Pointer.access(ExpandableArray.get(i, equations.eqArr)), "\t") + "\n";
         end for;
+        str := str + "\n";
       else
         str := "";
       end if;
@@ -1091,35 +1092,35 @@ public
         case qualEqData as EQ_DATA_SIM()
           algorithm
             if level == 0 then
-              tmp :=  EquationPointers.toString(qualEqData.equations, "Simulation");
+              tmp :=  EquationPointers.toString(qualEqData.equations, "Simulation", false);
             else
-              tmp :=  EquationPointers.toString(qualEqData.continuous, "Continuous") + "\n" +
-                      EquationPointers.toString(qualEqData.discretes, "Discrete") + "\n" +
-                      EquationPointers.toString(qualEqData.initials, "(Exclusively) Initial") + "\n" +
-                      EquationPointers.toString(qualEqData.auxiliaries, "Auxiliary");
+              tmp :=  EquationPointers.toString(qualEqData.continuous, "Continuous", false) +
+                      EquationPointers.toString(qualEqData.discretes, "Discrete", false) +
+                      EquationPointers.toString(qualEqData.initials, "(Exclusively) Initial", false) +
+                      EquationPointers.toString(qualEqData.auxiliaries, "Auxiliary", false);
             end if;
         then tmp;
 
         case qualEqData as EQ_DATA_JAC()
           algorithm
             if level == 0 then
-              tmp :=  EquationPointers.toString(qualEqData.equations, "Jacobian");
+              tmp :=  EquationPointers.toString(qualEqData.equations, "Jacobian", false);
             else
-              tmp :=  EquationPointers.toString(qualEqData.results, "Result") + "\n" +
-                      EquationPointers.toString(qualEqData.temporary, "Temporary Inner") + "\n" +
-                      EquationPointers.toString(qualEqData.auxiliaries, "Auxiliary");
+              tmp :=  EquationPointers.toString(qualEqData.results, "Result", false) +
+                      EquationPointers.toString(qualEqData.temporary, "Temporary Inner", false) +
+                      EquationPointers.toString(qualEqData.auxiliaries, "Auxiliary", false);
             end if;
         then tmp;
 
         case qualEqData as EQ_DATA_HESS()
           algorithm
             if level == 0 then
-              tmp :=  EquationPointers.toString(qualEqData.equations, "Hessian");
+              tmp :=  EquationPointers.toString(qualEqData.equations, "Hessian", false);
             else
               tmp :=  StringUtil.headline_4("Result Equation Pointer") + "\n" +
                       Equation.toString(Pointer.access(qualEqData.result)) + "\n" +
-                      EquationPointers.toString(qualEqData.temporary, "Temporary Inner") + "\n" +
-                      EquationPointers.toString(qualEqData.auxiliaries, "Auxiliary");
+                      EquationPointers.toString(qualEqData.temporary, "Temporary Inner", false) +
+                      EquationPointers.toString(qualEqData.auxiliaries, "Auxiliary", false);
             end if;
         then tmp;
 

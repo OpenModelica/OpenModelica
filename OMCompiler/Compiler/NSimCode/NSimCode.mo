@@ -254,7 +254,6 @@ public
             // ToDo add event system
             inlineEquations := {};
 
-
             // ToDo:
             // this has to be adapted at some point SimCodeFuntion needs to be translated
             // to new simcode and literals have to be based on new Expressions.

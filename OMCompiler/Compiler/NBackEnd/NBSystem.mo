@@ -79,9 +79,6 @@ public
             for i in 1:arrayLength(comps) loop
               str := str + StrongComponent.toString(comps[i], i) + "\n";
             end for;
-            if isSome(system.jacobian) then
-              str := str + Jacobian.toString(Util.getOption(system.jacobian)) + "\n";
-            end if;
         then str;
 
         else
@@ -90,11 +87,17 @@ public
                           BEquation.EquationPointers.toString(system.equations, "Equations") + "\n";
         then str;
       end match;
+
       if isSome(system.adjacencyMatrix) then
         str := str + AdjacencyMatrix.toString(Util.getOption(system.adjacencyMatrix)) + "\n";
       end if;
+
       if isSome(system.matching) then
         str := str + Matching.toString(Util.getOption(system.matching)) + "\n";
+      end if;
+
+      if isSome(system.jacobian) then
+        str := str + Jacobian.toString(Util.getOption(system.jacobian)) + "\n";
       end if;
     end toString;
 
