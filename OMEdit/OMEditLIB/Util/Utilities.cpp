@@ -65,6 +65,7 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   // create the filter text box
   mpFilterTextBox = new QLineEdit;
   mpFilterTextBox->installEventFilter(this);
+  connect(this, SIGNAL(clearFilter(QString)), mpFilterTextBox, SIGNAL(textEdited(QString)));
   // filter timer
   mpFilterTimer = new QTimer;
   mpFilterTimer->setSingleShot(true);
@@ -133,9 +134,9 @@ bool TreeSearchFilters::eventFilter(QObject *pObject, QEvent *pEvent)
     if (pKeyEvent && pKeyEvent->key() == Qt::Key_Escape) {
       pFilterTextBox->clear();
       /* Ticket #5998
-       * Emit textEdited signal of mpFilterTextBox to reset filter.
+       * Emit clearFilter signal which calls textEdited signal of mpFilterTextBox to reset filter.
        */
-      emit pFilterTextBox->textEdited("");
+      emit clearFilter("");
       return true;
     }
   }
