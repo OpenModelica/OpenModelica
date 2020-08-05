@@ -135,6 +135,7 @@ void makeLibsAndCache(libs='core') {
   {
     // do nothing
   } else {
+  sh "test ! -z '${env.LIBRARIES}'"
   // If we don't have any result, copy to the master to get a somewhat decent cache
   sh "cp -f ${env.RUNTESTDB}/${cacheBranchEscape()}/runtest.db.* testsuite/ || " +
      "cp -f ${env.RUNTESTDB}/master/runtest.db.* testsuite/ || true"
@@ -142,6 +143,7 @@ void makeLibsAndCache(libs='core') {
   sh "mkdir -p '${env.LIBRARIES}/om-pkg-cache'"
   sh "mkdir -p testsuite/libraries-for-testing/.openmodelica/"
   sh "ln -s '${env.LIBRARIES}/om-pkg-cache' testsuite/libraries-for-testing/.openmodelica/"
+  sh "ls -lh testsuite/libraries-for-testing/.openmodelica/cache"
   generateTemplates()
   sh "touch omc.skip"
   def cmd = "${makeCommand()} -j${numLogicalCPU()} --output-sync=recurse libs-for-testing ReferenceFiles omc-diff"
