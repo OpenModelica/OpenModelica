@@ -123,6 +123,8 @@ private:
   QPushButton *mpCollapseAllButton;
 private slots:
   void showHideFilters(bool On);
+signals:
+  void clearFilter(const QString &);
 };
 
 class FileDataNotifier : public QThread
