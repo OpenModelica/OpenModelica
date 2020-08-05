@@ -312,6 +312,12 @@ protected
         guard ComponentRef.isIterator(cr) and BaseHashSet.has(cr, iters)
       then inputs_hs;
 
+      // Skip iterators from list comprehensions
+      // FixMe: this currently skips all iterators blindly
+      case Expression.CREF(cref = cr)
+        guard ComponentRef.isIterator(cr)
+      then inputs_hs;
+
       case Expression.CREF(cref = cr)
         algorithm
           // since outputs get stripped, also strip inputs
@@ -375,7 +381,9 @@ protected
           phannebohm: This is very weird behavior. TODO change the spec!
           */
           if BaseHashSet.has(cr, inputs_hs) then
-            Error.addMessage(Error.COMPILER_WARNING, {"Using output variable in RHS before it is assigned (former occurences will be set to initial value): " + Expression.toString(exp)});
+            if Flags.isSet(Flags.FAILTRACE) then
+              Error.addMessage(Error.COMPILER_WARNING, {"Using output variable in RHS before it is assigned (former occurences will be set to initial value): " + Expression.toString(exp)});
+            end if;
             inputs_hs := BaseHashSet.delete(cr, inputs_hs);
             outputs_hs := BaseHashSet.add(cr, outputs_hs);
           else
