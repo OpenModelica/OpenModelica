@@ -384,7 +384,7 @@ algorithm
   end matchcontinue;
 end createSimCode;
 
-function generateNewModelCodeDAEMode
+function generateModelCodeNewBackend
   input NBackendDAE.BackendDAE bdae;
   input Absyn.Path className;
   input Option<SimCode.SimulationSettings> simSettingsOpt;
@@ -428,7 +428,7 @@ algorithm
     StackOverflow.clearStacktraceMessages();
     fail();
   end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
-end generateNewModelCodeDAEMode;
+end generateModelCodeNewBackend;
 
 protected
 partial function PartialRunTpl
@@ -1014,8 +1014,7 @@ algorithm
           print(NBackendDAE.toString(bdae, "(After Solve)"));
         end if;
 
-        // for now only dae mode
-        (libs, file_dir, timeSimCode, timeTemplates) := generateNewModelCodeDAEMode(bdae, className, inSimSettingsOpt);
+        (libs, file_dir, timeSimCode, timeTemplates) := generateModelCodeNewBackend(bdae, className, inSimSettingsOpt);
 
     then (true, libs, file_dir);
 

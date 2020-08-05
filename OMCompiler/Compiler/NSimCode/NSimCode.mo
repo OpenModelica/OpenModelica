@@ -227,7 +227,6 @@ public
             literals := {};
             externalFunctionIncludes := {};
             independent := {};
-            allSim := {};
             nominal := {};
             min := {};
             max := {};
@@ -250,6 +249,8 @@ public
               (ode, simCodeIndices, funcTree) := SimStrongComponent.Block.createBlocks(qual.ode, simCodeIndices, funcTree);
               daeModeData := NONE();
             end if;
+            allSim := List.flatten(ode);
+
             // ToDo add event system
             inlineEquations := {};
 
