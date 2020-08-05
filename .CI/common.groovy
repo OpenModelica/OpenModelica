@@ -140,10 +140,15 @@ void makeLibsAndCache(libs='core') {
   sh "cp -f ${env.RUNTESTDB}/${cacheBranchEscape()}/runtest.db.* testsuite/ || " +
      "cp -f ${env.RUNTESTDB}/master/runtest.db.* testsuite/ || true"
   // env.WORKSPACE is null in the docker agent, so link the svn/git cache afterwards
-  sh "mkdir -p '${env.LIBRARIES}/om-pkg-cache'"
-  sh "mkdir -p testsuite/libraries-for-testing/.openmodelica/cache"
-  sh "ln -s '${env.LIBRARIES}/om-pkg-cache' testsuite/libraries-for-testing/.openmodelica/cache"
-  sh "ls -lh testsuite/libraries-for-testing/.openmodelica/cache"
+  sh label: 'Create directory for omlibrary cache', script: """
+  mkdir -p '${env.LIBRARIES}/om-pkg-cache'
+  # Remove the symbolic link, or if it's a directory there... the entire thing
+  rm testsuite/libraries-for-testing/.openmodelica/cache || rm -rf testsuite/libraries-for-testing/.openmodelica/cache
+  mkdir -p testsuite/libraries-for-testing/.openmodelica/
+  test ! -e testsuite/libraries-for-testing/.openmodelica/cache
+  ln -s '${env.LIBRARIES}/om-pkg-cache' testsuite/libraries-for-testing/.openmodelica/cache
+  ls -lh testsuite/libraries-for-testing/.openmodelica/cache
+  """
   generateTemplates()
   sh "touch omc.skip"
   def cmd = "${makeCommand()} -j${numLogicalCPU()} --output-sync=recurse libs-for-testing ReferenceFiles omc-diff"
