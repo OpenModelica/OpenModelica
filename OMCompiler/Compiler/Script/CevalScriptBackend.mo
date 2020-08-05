@@ -1536,10 +1536,10 @@ algorithm
           end try;
 
           compileDir := System.pwd() + Autoconf.pathDelimiter;
-           executable := filenameprefix;
+          executable := filenameprefix;
           initfilename := filenameprefix + "_init_xml";
-      simflags:="";
-      resultValues:={};
+          simflags:="";
+          resultValues:={};
         elseif not Config.simCodeTarget() == "omsic" then
           (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals) := buildModel(cache,env,vals,msg);
         else
@@ -1554,9 +1554,9 @@ algorithm
            result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
             // result file might have been set by simflags (-r ...)
 
-      result_file := selectResultFile(result_file, simflags);
+           result_file := selectResultFile(result_file, simflags);
 
-      executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
+            executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
             logFile := stringAppend(executable,".log");
             // adrpo: log file is deleted by buildModel! do NOT DELETE IT AGAIN!
             // we should really have different log files for simulation/compilation!
@@ -1568,7 +1568,7 @@ algorithm
             System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
             SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
 
-      resI := System.systemCall(sim_call,logFile);
+            resI := System.systemCall(sim_call,logFile);
 
             timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
 
@@ -5474,11 +5474,13 @@ algorithm
         (inCache,simValue);
     else
       equation
-        true = System.regularFileExists(logFile);
-        res = System.readFile(logFile);
+        res = if System.regularFileExists(logFile) then System.readFile(logFile) else (logFile + " does not exist");
         str = AbsynUtil.pathString(className);
         res = stringAppendList({"Simulation execution failed for model: ", str, "\n", res});
-        simValue = createSimulationResult("", simOptionsAsString(inVals), res, resultValues);
+        simValue = createSimulationResult("", simOptionsAsString(inVals), res,
+          ("timeTotal", Values.REAL(timeTotal)) ::
+          ("timeSimulation", Values.REAL(timeSimulation)) ::
+          resultValues);
       then
         (inCache,simValue);
   end matchcontinue;
