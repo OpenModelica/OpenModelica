@@ -9927,7 +9927,7 @@ algorithm
   end for;
 end getNoDerivativeInputPosition;
 
-public function checkAdjacencyMatrixSolvability "Performs a limited matching algorithm to sometimes figure out which equations are superflours or which variables are never solved for."
+public function checkAdjacencyMatrixSolvability "Performs a limited matching algorithm to sometimes figure out which equations are superfluous or which variables are never solved for."
   input BackendDAE.EqSystem syst;
   input DAE.FunctionTree functionTree;
   input Boolean isInitial;
@@ -9974,8 +9974,8 @@ algorithm
     count := listLength(arrayGet(m, i));
     if eqSize > count then
       str := stringDelimitList(list(ComponentReference.printComponentRefStr(BackendVariable.varCref(BackendVariable.getVarAt(varsArray, j))) for j in arrayGet(m, i)), ", ");
-      Error.addInternalError(BackendDump.equationString(_equation) + " has size size " + String(eqSize) + " but " + String(count) + " variables ("+ str +")", info);
-      return;
+      Error.addSourceMessage(Error.EQUATION_NOT_SOLVABLE_DIFFERENT_COUNT, {BackendDump.equationString(_equation), String(eqSize), String(count), str}, info);
+      fail();
     end if;
   end for;
 
