@@ -667,10 +667,15 @@ public
     function toString
       input VariablePointers variables;
       input output String str = "";
+      input Boolean printEmpty = false;
     protected
       Pointer<Variable> var;
     algorithm
-       str := ExpandableArray.toString(variables.varArr, str + " Variables", function Pointer.applyFold(func = function BVariable.toString()), false);
+      if printEmpty or ExpandableArray.getNumberOfElements(variables.varArr) > 0 then
+        str := ExpandableArray.toString(variables.varArr, str + " Variables", function Pointer.applyFold(func = function BVariable.toString()), false);
+      else
+        str := "";
+      end if;
     end toString;
 
     function map
@@ -733,6 +738,38 @@ public
       variables := VARIABLE_POINTERS(HashTableCrToInt.empty(bucketSize), ExpandableArray.new(arr_size, Pointer.create(DUMMY_VARIABLE)));
     end empty;
 
+    function compress"O(n)
+      Reorders the elements in order to remove all the gaps.
+      Be careful: This changes the indices of the elements.
+      Cannot use ExpandableArray.compress since it needs to
+      update the HashTable."
+      input output VariablePointers vars;
+    protected
+      Integer numberOfElements = MetaModelica.Dangerous.arrayGetNoBoundsChecking(vars.varArr.numberOfElements, 1);
+      Integer lastUsedIndex = MetaModelica.Dangerous.arrayGetNoBoundsChecking(vars.varArr.lastUsedIndex, 1);
+      array<Option<Pointer<Variable>>> data = ExpandableArray.getData(vars.varArr);
+      Integer i = 0;
+      Pointer<Variable> moved_var;
+    algorithm
+      while lastUsedIndex > numberOfElements loop
+        i := i + 1;
+        if isNone(MetaModelica.Dangerous.arrayGetNoBoundsChecking(data, i)) then
+          // update the array element which is NONE()
+          SOME(moved_var) := MetaModelica.Dangerous.arrayGetNoBoundsChecking(data, lastUsedIndex);
+          MetaModelica.Dangerous.arrayUpdateNoBoundsChecking(data, i, SOME(moved_var));
+          // update the last element which got moved
+          MetaModelica.Dangerous.arrayUpdateNoBoundsChecking(data, lastUsedIndex, NONE());
+          // update the last used index until an element is found
+          while isNone(MetaModelica.Dangerous.arrayGetNoBoundsChecking(data, lastUsedIndex)) loop
+            lastUsedIndex := lastUsedIndex-1;
+          end while;
+          // udpate HashTable element
+          BaseHashTable.update((getVarName(moved_var), i), vars.ht);
+        end if;
+      end while;
+      MetaModelica.Dangerous.arrayUpdateNoBoundsChecking(vars.varArr.lastUsedIndex, 1, lastUsedIndex);
+    end compress;
+
     function toList
       "Creates a VariablePointer list from VariablePointers."
       input VariablePointers variables;
@@ -781,8 +818,8 @@ public
         ExpandableArray.set(idx, varPointer, variables.varArr);
       else
         (_, idx) := ExpandableArray.add(varPointer, variables.varArr);
-        variables.ht := BaseHashTable.add((var.name, idx), variables.ht);
       end if;
+      variables.ht := BaseHashTable.add((var.name, idx), variables.ht);
     end add;
 
     function remove

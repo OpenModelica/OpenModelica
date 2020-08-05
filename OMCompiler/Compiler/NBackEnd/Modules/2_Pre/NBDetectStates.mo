@@ -123,7 +123,21 @@ protected
     BEquation.EQ_DATA_SIM(equations = equations, discretes = disc_eqns) := eqData;
     (variables, equations, unknowns, knowns, initials, states, derivatives, algebraics) := continuousFunc(variables, equations, unknowns, knowns, initials, states, derivatives, algebraics);
     (variables, disc_eqns, knowns, initials, discretes, previous) := discreteFunc(variables, disc_eqns, knowns, initials, discretes, previous);
-    varData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, states, auxiliaries, aliasVars, derivatives, algebraics, discretes, previous, parameters, constants);
+    varData := BVariable.VAR_DATA_SIM(
+      variables     = variables,
+      unknowns      = unknowns,
+      knowns        = knowns,
+      initials      = initials,
+      auxiliaries   = auxiliaries,
+      aliasVars     = aliasVars,
+      derivatives   = derivatives,
+      algebraics    = algebraics,
+      discretes     = discretes,
+      previous      = previous,
+      states        = states,
+      parameters    = parameters,
+      constants     = constants
+    );
     eqData := BEquation.EqData.setEquations(eqData, equations);
   end detectStatesDefault;
 
@@ -133,7 +147,7 @@ protected
     Pointer<list<Pointer<Variable>>> acc_derivatives = Pointer.create({});
   algorithm
     BEquation.EquationPointers.mapExp(equations, function collectStatesAndDerivatives(acc_states = acc_states, acc_derivatives = acc_derivatives));
-    (variables, unknowns, knowns, states, derivatives, algebraics) := updateStatesAndDerivatives(variables, unknowns, knowns, initials, states, derivatives, algebraics, Pointer.access(acc_states), Pointer.access(acc_derivatives));
+    (variables, unknowns, knowns, initials, states, derivatives, algebraics) := updateStatesAndDerivatives(variables, unknowns, knowns, initials, states, derivatives, algebraics, Pointer.access(acc_states), Pointer.access(acc_derivatives));
   end detectContinuousStatesDefault;
 
   function detectDiscreteStatesDefault extends Module.detectDiscreteStatesInterface;
@@ -142,7 +156,7 @@ protected
     Pointer<list<Pointer<Variable>>> acc_previous = Pointer.create({});
   algorithm
     BEquation.EquationPointers.mapExp(equations, function collectDiscreteStatesAndPrevious(acc_discrete_states = acc_discrete_states, acc_previous = acc_previous));
-    (variables, knowns, discretes, previous) := updateDiscreteStatesAndPrevious(variables, knowns, initials, discretes, previous, Pointer.access(acc_discrete_states), Pointer.access(acc_previous));
+    (variables, knowns, initials, discretes, previous) := updateDiscreteStatesAndPrevious(variables, knowns, initials, discretes, previous, Pointer.access(acc_discrete_states), Pointer.access(acc_previous));
   end detectDiscreteStatesDefault;
 
   function collectStatesAndDerivatives

@@ -90,7 +90,12 @@ public
                           BEquation.EquationPointers.toString(system.equations, "Equations") + "\n";
         then str;
       end match;
-      // ToDo: add adjacency and matching etc.
+      if isSome(system.adjacencyMatrix) then
+        str := str + AdjacencyMatrix.toString(Util.getOption(system.adjacencyMatrix)) + "\n";
+      end if;
+      if isSome(system.matching) then
+        str := str + Matching.toString(Util.getOption(system.matching)) + "\n";
+      end if;
     end toString;
 
     function systemTypeString

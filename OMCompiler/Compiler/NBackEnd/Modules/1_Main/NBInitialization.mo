@@ -62,33 +62,33 @@ public
     BEquation.EquationPointers initialEqs;
   algorithm
     try
-	    bdae := match bdae
-	      local
-	        BackendDAE.BackendDAE qual;
-	        BVariable.VarData varData;
-	        BEquation.EqData eqData;
-	      case qual as BackendDAE.BDAE( varData = varData as BVariable.VAR_DATA_SIM(variables = variables, states = states),
-	                                    eqData = eqData as BEquation.EQ_DATA_SIM(equations = equations, initials = initialEqs))
-	        algorithm
-	          (variables, equations, initialEqs) := createStartEquations(states, variables, equations, initialEqs);
+      bdae := match bdae
+        local
+          BackendDAE.BackendDAE qual;
+          BVariable.VarData varData;
+          BEquation.EqData eqData;
+        case qual as BackendDAE.BDAE( varData = varData as BVariable.VAR_DATA_SIM(variables = variables, states = states),
+                                      eqData = eqData as BEquation.EQ_DATA_SIM(equations = equations, initials = initialEqs))
+          algorithm
+            (variables, equations, initialEqs) := createStartEquations(states, variables, equations, initialEqs);
 
-	          varData.variables := variables;
-	          eqData.equations := equations;
-	          eqData.initials := initialEqs;
+            varData.variables := variables;
+            eqData.equations := equations;
+            eqData.initials := initialEqs;
 
-	          qual.varData := varData;
-	          qual.eqData := eqData;
-	      then qual;
+            qual.varData := varData;
+            qual.eqData := eqData;
+        then qual;
 
-	      else algorithm
-	        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
-	      then fail();
-	    end match;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+        then fail();
+      end match;
 
-	    // Modules
-	    bdae := Partitioning.main(bdae, NBSystem.SystemType.INIT);
-	    bdae := Causalize.main(bdae, NBSystem.SystemType.INIT);
-	    bdae := Tearing.main(bdae, NBSystem.SystemType.INIT);
+      // Modules
+      bdae := Partitioning.main(bdae, NBSystem.SystemType.INIT);
+      bdae := Causalize.main(bdae, NBSystem.SystemType.INIT);
+      bdae := Tearing.main(bdae, NBSystem.SystemType.INIT);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
     end try;

@@ -910,13 +910,18 @@ public
     function toString
       input EquationPointers equations;
       input output String str = "";
+      input Boolean printEmpty = false;
     protected
       Integer numberOfElements = ExpandableArray.getNumberOfElements(equations.eqArr);
     algorithm
-      str := StringUtil.headline_4(str + " EquationPointers (" + intString(numberOfElements) + ")");
-      for i in 1:numberOfElements loop
-        str := str + "(" + intString(i) + ")" + Equation.toString(Pointer.access(ExpandableArray.get(i, equations.eqArr)), "\t") + "\n";
-      end for;
+      if printEmpty or numberOfElements > 0 then
+        str := StringUtil.headline_4(str + " EquationPointers (" + intString(numberOfElements) + ")");
+        for i in 1:numberOfElements loop
+          str := str + "(" + intString(i) + ")" + Equation.toString(Pointer.access(ExpandableArray.get(i, equations.eqArr)), "\t") + "\n";
+        end for;
+      else
+        str := "";
+      end if;
     end toString;
 
     function empty
@@ -929,6 +934,14 @@ public
       arr_size := max(size, BaseHashTable.lowBucketSize);
       equationPointers := EQUATION_POINTERS(ExpandableArray.new(arr_size, Pointer.create(DUMMY_EQUATION())));
     end empty;
+
+    function compress "O(n)
+      Reorders the elements in order to remove all the gaps.
+      Be careful: This changes the indices of the elements."
+      input output EquationPointers equations;
+    algorithm
+      equations.eqArr := ExpandableArray.compress(equations.eqArr);
+    end compress;
 
     function toList
       "Creates a EquationPointer list from EquationPointers."

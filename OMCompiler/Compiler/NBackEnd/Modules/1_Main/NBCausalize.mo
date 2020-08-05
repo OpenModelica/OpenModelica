@@ -97,20 +97,17 @@ protected
     list<StrongComponent> comps;
     StrongComponent comp;
   algorithm
+    // compress the arrays to remove gaps
+    system.unknowns := BVariable.VariablePointers.compress(system.unknowns);
+    system.equations := BEquation.EquationPointers.compress(system.equations);
+
     // create scalar adjacency matrix for now
     adj := AdjacencyMatrix.create(system.unknowns, system.equations, AdjacencyMatrixType.SCALAR);
     matching := Matching.regular(adj);
     comps := Sorting.tarjan(adj, matching, system.unknowns, system.equations);
-    if Flags.isSet(Flags.BLT_DUMP) then
-      print(AdjacencyMatrix.toString(adj, "Causalize "));
-      print(Matching.toString(matching, "Causalize"));
-    end if;
 
-    // For now only create one block containing everything
-    //var_lst := BVariable.VariablePointers.toList(system.unknowns);
-    //eqn_lst := BEquation.EquationPointers.toList(system.equations);
-
-    //comp := StrongComponent.ALGEBRAIC_LOOP(var_lst, eqn_lst, NONE(), false);
+    system.adjacencyMatrix := SOME(adj);
+    system.matching := SOME(matching);
     system.strongComponents := SOME(listArray(comps));
   end causalizeScalar;
 
