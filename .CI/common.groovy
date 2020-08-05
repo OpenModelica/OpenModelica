@@ -112,8 +112,8 @@ void partest(cache=true, extraArgs='') {
   + (cache ?
   """
   if test \$CODE = 0; then
-    mkdir -p "${env.RUNTESTDB}/"
-    cp ../runtest.db.* "${env.RUNTESTDB}/"
+    mkdir -p "${env.RUNTESTDB}/${cacheBranchEscape()}/"
+    cp ../runtest.db.* "${env.RUNTESTDB}/${cacheBranchEscape()}/"
   fi
   """ : ''))
 
@@ -147,7 +147,7 @@ void makeLibsAndCache(libs='core') {
   mkdir -p testsuite/libraries-for-testing/.openmodelica/
   test ! -e testsuite/libraries-for-testing/.openmodelica/cache
   ln -s '${env.LIBRARIES}/om-pkg-cache' testsuite/libraries-for-testing/.openmodelica/cache
-  ls -lh testsuite/libraries-for-testing/.openmodelica/cache
+  ls -lh testsuite/libraries-for-testing/.openmodelica/cache/
   """
   generateTemplates()
   sh "touch omc.skip"
