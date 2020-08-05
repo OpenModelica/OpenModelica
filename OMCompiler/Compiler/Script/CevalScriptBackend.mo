@@ -250,27 +250,6 @@ algorithm
     "resultFile"::"simulationOptions"::"messages"::fields,-1);
 end createSimulationResult;
 
-public function createDrModelicaSimulationResult
-  input String resultFile;
-  input String options;
-  input String message;
-  input list<tuple<String,Values.Value>> inAddResultValues "additional values in reversed order; expected values see in CevalScript.simulationResultType_full";
-  output Values.Value res;
-protected
-  list<tuple<String,Values.Value>> resultValues;
-  list<Values.Value> vals;
-  list<String> fields;
-  Boolean isTestType,notest;
-algorithm
-  resultValues := listReverse(inAddResultValues);
-  //TODO: maybe we should test if the fields are the ones in simulationResultType_full
-  notest := not Testsuite.isRunning();
-  fields := if notest then List.map(resultValues, Util.tuple21) else {};
-  vals := if notest then List.map(resultValues, Util.tuple22) else {};
-  res := Values.RECORD(Absyn.IDENT("SimulationResult"),Values.STRING(message)::
-    vals, "messages"::fields,-1);
-end createDrModelicaSimulationResult;
-
 public function createSimulationResultFailure
   input String message;
   input String options;
@@ -281,17 +260,6 @@ protected
 algorithm
   res := createSimulationResult("", options, message, zeroAdditionalSimulationResultValues);
 end createSimulationResultFailure;
-
-public function createDrModelicaSimulationResultFailure
-  input String message;
-  input String options;
-  output Values.Value res;
-protected
-  list<Values.Value> vals;
-  list<String> fields;
-algorithm
-  res := createDrModelicaSimulationResult("", options, message, {});
-end createDrModelicaSimulationResultFailure;
 
 protected function buildCurrentSimulationResultExp
   output DAE.Exp outExp;
