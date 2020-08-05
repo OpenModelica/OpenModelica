@@ -49,7 +49,8 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:v1.16-qt4-xenial'
               label 'linux'
               alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
           }
           environment {
@@ -67,7 +68,8 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:v1.16'
               label 'linux'
               alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
           }
           steps {
@@ -143,7 +145,8 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:v1.16'
               label 'linux'
               alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
           }
           steps {
@@ -176,7 +179,8 @@ pipeline {
                */
               label 'linux'
               args "--mount type=volume,source=runtest-clang-cache,target=/cache/runtest " +
-                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
           }
           environment {
@@ -204,7 +208,8 @@ pipeline {
               dir '.CI/cache-xenial'
               label 'linux'
               args "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest " +
-                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
           }
           environment {
@@ -273,7 +278,8 @@ pipeline {
                * the tests run on a particular node, they might execute slightly slower
                */
               label 'linux'
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
           }
           environment {
@@ -302,7 +308,8 @@ pipeline {
                * the tests run on a particular node, they might execute slightly slower
                */
               label 'linux'
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
           }
           environment {
@@ -358,7 +365,8 @@ pipeline {
               additionalBuildArgs '--pull'
               dir '.CI/cache'
               label 'linux'
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
           }
           environment {
@@ -458,7 +466,8 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:v1.16'
               label 'linux'
               args "--mount type=volume,source=runtest-clang-icon-generator,target=/cache/runtest " +
-                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
           }
           environment {
