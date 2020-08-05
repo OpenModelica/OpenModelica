@@ -141,8 +141,8 @@ void makeLibsAndCache(libs='core') {
      "cp -f ${env.RUNTESTDB}/master/runtest.db.* testsuite/ || true"
   // env.WORKSPACE is null in the docker agent, so link the svn/git cache afterwards
   sh "mkdir -p '${env.LIBRARIES}/om-pkg-cache'"
-  sh "mkdir -p testsuite/libraries-for-testing/.openmodelica/"
-  sh "ln -s '${env.LIBRARIES}/om-pkg-cache' testsuite/libraries-for-testing/.openmodelica/"
+  sh "mkdir -p testsuite/libraries-for-testing/.openmodelica/cache"
+  sh "ln -s '${env.LIBRARIES}/om-pkg-cache' testsuite/libraries-for-testing/.openmodelica/cache"
   sh "ls -lh testsuite/libraries-for-testing/.openmodelica/cache"
   generateTemplates()
   sh "touch omc.skip"
