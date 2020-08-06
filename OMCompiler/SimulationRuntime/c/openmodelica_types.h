@@ -59,7 +59,8 @@ typedef void* modelica_fnptr;
 /* When MetaModelica grammar is enabled, all strings are boxed */
 typedef modelica_metatype modelica_string;
 
-#if defined(_LP64)
+#if defined(_LP64) /* linux 64bit*/
+
 #define MMC_SIZE_DBL 8
 #define MMC_SIZE_INT 8
 #define MMC_LOG2_SIZE_INT 3
@@ -67,7 +68,9 @@ typedef modelica_metatype modelica_string;
 #define PRINT_MMC_UINT_T "lu"
 typedef unsigned long mmc_uint_t;
 typedef long mmc_sint_t;
-#elif defined(_LLP64) || defined(_WIN64) || defined(__MINGW64__)
+
+#elif defined(_LLP64) || defined(_WIN64) || defined(__MINGW64__) /* windows 64bit */
+
 #define MMC_SIZE_DBL 8
 #define MMC_SIZE_INT 8
 #define MMC_LOG2_SIZE_INT 3
@@ -81,14 +84,17 @@ typedef long mmc_sint_t;
 #define PRINT_MMC_UINT_T PRIu64
 typedef unsigned long long mmc_uint_t;
 typedef long long mmc_sint_t;
-#else
+
+#else /* 32bit platforms */
+
 #define MMC_SIZE_DBL 8
 #define MMC_SIZE_INT 4
 #define MMC_LOG2_SIZE_INT 2
-#define PRINT_MMC_SINT_T "ld"
-#define PRINT_MMC_UINT_T "lu"
+#define PRINT_MMC_SINT_T "d"
+#define PRINT_MMC_UINT_T "u"
 typedef unsigned int mmc_uint_t;
 typedef int mmc_sint_t;
+
 #endif
 
 typedef double            m_real;
