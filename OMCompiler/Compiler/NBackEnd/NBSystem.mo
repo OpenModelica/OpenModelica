@@ -103,7 +103,7 @@ public
 
     function systemTypeString
       input SystemType systemType;
-      output String str;
+      output String str = "";
     algorithm
       str := match systemType
         case SystemType.ODE   then "ODE";
@@ -122,6 +122,9 @@ public
         case PartitionKind.UNSPECIFIED  then "UNSPECIFIED";
         case PartitionKind.CLOCKED      then "CLOCKED";
         case PartitionKind.CONTINUOUS   then "CONTINUOUS";
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Unknown case in match."});
+          then fail();
       end match;
     end partitionKindString;
 
