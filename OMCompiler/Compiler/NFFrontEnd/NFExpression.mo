@@ -5033,7 +5033,7 @@ public
     input ComponentRef cref;
     output Boolean b;
   algorithm
-    b := Expression.fold(exp, function isCrefEqual(cref = cref), false);
+    b := fold(exp, function isCrefEqual(cref = cref), false);
   end containsCref;
 
   function isCrefEqual
@@ -5041,8 +5041,8 @@ public
     input output Boolean b;
     input ComponentRef cref;
   algorithm
-    b := match exp
-      case CREF() then ComponentRef.isEqual(exp.cref ,cref);
+    b := match (b, exp)
+      case (false, CREF()) then ComponentRef.isEqual(exp.cref, cref);
       else b;
     end match;
   end isCrefEqual;
