@@ -91,7 +91,7 @@ public
 
   function create
     input SimVars simVars;
-    output HashTable ht = empty(SimVars.size(simVars));
+    output HashTable ht = empty(intMax(SimVars.size(simVars), 1));
   algorithm
     ht := addList(simVars.stateVars, ht);
     ht := addList(simVars.derivativeVars, ht);

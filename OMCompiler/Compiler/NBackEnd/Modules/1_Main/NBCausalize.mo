@@ -134,6 +134,9 @@ public
       array<list<Integer>> mT;
     end SCALAR_ADJACENCY_MATRIX;
 
+    record EMPTY_ADJACENCY_MATRIX
+    end EMPTY_ADJACENCY_MATRIX;
+
     function create
       input BVariable.VariablePointers vars;
       input BEquation.EquationPointers eqs;
@@ -172,6 +175,7 @@ public
           end if;
           str := str + "\n";
         then str;
+        case EMPTY_ADJACENCY_MATRIX() then str + StringUtil.headline_4("Empty Adjacency Matrix") + "\n";
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown adjacency matrix type."});
         then fail();
@@ -199,16 +203,20 @@ public
       Integer var_idx = 1, eqn_idx = 1;
       list<ComponentRef> var_names;
     algorithm
-      eqn_lst := BEquation.EquationPointers.toList(eqs);
-      // create empty adjacency matrix and traverse equations to fill it
-      m := arrayCreate(listLength(eqn_lst), {});
-      for eqn in eqn_lst loop
-        dependencies := BEquation.Equation.collectCrefs(Pointer.access(eqn), function getDependentCref(ht = vars.ht));
-        m[eqn_idx] := getDependentCrefIndices(dependencies, vars.ht);
-        eqn_idx := eqn_idx + 1;
-      end for;
-      mT := transposeScalar(m, ExpandableArray.getLastUsedIndex(vars.varArr));
-      adj := SCALAR_ADJACENCY_MATRIX(m, mT);
+      if ExpandableArray.getNumberOfElements(eqs.eqArr) > 0 then
+        eqn_lst := BEquation.EquationPointers.toList(eqs);
+        // create empty adjacency matrix and traverse equations to fill it
+        m := arrayCreate(listLength(eqn_lst), {});
+        for eqn in eqn_lst loop
+          dependencies := BEquation.Equation.collectCrefs(Pointer.access(eqn), function getDependentCref(ht = vars.ht));
+          m[eqn_idx] := getDependentCrefIndices(dependencies, vars.ht);
+          eqn_idx := eqn_idx + 1;
+        end for;
+        mT := transposeScalar(m, ExpandableArray.getLastUsedIndex(vars.varArr));
+        adj := SCALAR_ADJACENCY_MATRIX(m, mT);
+      else
+        adj := EMPTY_ADJACENCY_MATRIX();
+      end if;
     end createScalar;
 
     function transposeScalar
@@ -352,21 +360,25 @@ public
       array<Integer> eqn_to_var;
     end SCALAR_MATCHING;
 
+    record EMPTY_MATCHING
+    end EMPTY_MATCHING;
+
     function toString
       input Matching matching;
       input output String str = "";
     algorithm
-      str := StringUtil.headline_2(str + "Matching") + "\n";
       str := match matching
         local
           Matching qual;
         case qual as SCALAR_MATCHING() algorithm
+          str := str + StringUtil.headline_2(str + "Scalar Matching") + "\n";
           str := str + toStringSingle(qual.var_to_eqn, false) + "\n";
           str := str + toStringSingle(qual.eqn_to_var, true) + "\n";
         then str;
         case qual as ARRAY_MATCHING() algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array matching is not yet supported."});
         then fail();
+        case EMPTY_MATCHING() then str + StringUtil.headline_2(str + "Empty Matching") + "\n";
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
         then fail();
@@ -381,12 +393,11 @@ public
       output Matching matching;
     algorithm
       matching := match adj
-        local
-          AdjacencyMatrix qual;
-        case qual as SCALAR_ADJACENCY_MATRIX() then scalarRegular(qual.m, qual.mT);
-        case qual as ARRAY_ADJACENCY_MATRIX() algorithm
+        case SCALAR_ADJACENCY_MATRIX() then scalarRegular(adj.m, adj.mT);
+        case ARRAY_ADJACENCY_MATRIX() algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array matching is not yet supported."});
         then fail();
+        case EMPTY_ADJACENCY_MATRIX() then EMPTY_MATCHING();
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
         then fail();
@@ -443,8 +454,10 @@ public
       end for;
 
       // free auxiliary arrays
-      GC.free(var_marks);
-      GC.free(eqn_marks);
+      if nEqns > 0 then
+        GC.free(var_marks);
+        GC.free(eqn_marks);
+      end if;
 
       // create the matching structure
       matching := SCALAR_MATCHING(var_to_eqn, eqn_to_var);
@@ -505,18 +518,19 @@ public
     algorithm
       comps := match (adj, matching)
         local
-          AdjacencyMatrix qualAdj;
-          Matching qualMatching;
           list<list<Integer>> comps_indices;
 
-        case (qualAdj as AdjacencyMatrix.SCALAR_ADJACENCY_MATRIX(), qualMatching as Matching.SCALAR_MATCHING()) algorithm
-          comps_indices := tarjanScalar(qualAdj.m, qualMatching.var_to_eqn);
+        case (AdjacencyMatrix.SCALAR_ADJACENCY_MATRIX(), Matching.SCALAR_MATCHING()) algorithm
+          comps_indices := tarjanScalar(adj.m, matching.var_to_eqn);
           comps := list(StrongComponent.create(idx_lst, matching, vars, eqns) for idx_lst in comps_indices);
         then comps;
 
-        case (qualAdj as AdjacencyMatrix.ARRAY_ADJACENCY_MATRIX(), qualMatching as Matching.ARRAY_MATCHING()) algorithm
+        case (AdjacencyMatrix.ARRAY_ADJACENCY_MATRIX(), Matching.ARRAY_MATCHING()) algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array sorting is not yet supported."});
         then fail();
+
+        case (AdjacencyMatrix.EMPTY_ADJACENCY_MATRIX(), Matching.EMPTY_MATCHING()) algorithm
+        then {};
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because adjacency matrix and matching have different types."});

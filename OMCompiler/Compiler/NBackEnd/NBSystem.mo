@@ -116,6 +116,9 @@ public
         case SystemType.ODE   then "ODE";
         case SystemType.INIT  then "INIT";
         case SystemType.DAE   then "DAE";
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Unknown system type in match."});
+        then fail();
       end match;
     end systemTypeString;
 
@@ -130,7 +133,7 @@ public
         case PartitionKind.CLOCKED      then "CLOCKED";
         case PartitionKind.CONTINUOUS   then "CONTINUOUS";
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Unknown case in match."});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Unknown partition kind in match."});
           then fail();
       end match;
     end partitionKindString;
