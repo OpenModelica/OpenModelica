@@ -101,6 +101,13 @@ public
       end if;
     end toString;
 
+    function sort
+      input output System system;
+    algorithm
+      system.unknowns := BVariable.VariablePointers.sort(system.unknowns);
+      system.equations := BEquation.EquationPointers.sort(system.equations);
+    end sort;
+
     function systemTypeString
       input SystemType systemType;
       output String str = "";

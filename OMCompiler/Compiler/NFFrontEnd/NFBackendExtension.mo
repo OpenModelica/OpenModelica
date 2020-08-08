@@ -70,6 +70,13 @@ public
     algorithm
       binfo.varKind := varKind;
     end setVarKind;
+
+    function toString
+      input BackendInfo backendInfo;
+      output String str;
+    algorithm
+      str := VariableKind.toString(backendInfo.varKind) + " " + VariableAttributes.toString(backendInfo.attributes);
+    end toString;
   end BackendInfo;
 
   constant BackendInfo DUMMY_BACKEND_INFO = BACKEND_INFO(FRONTEND_DUMMY(), NONE());

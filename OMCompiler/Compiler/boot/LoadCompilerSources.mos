@@ -305,6 +305,7 @@ if true then /* Suppress output */
     "../NBackEnd/Modules/3_Post/NBJacobian.mo",
     "../NBackEnd/Modules/3_Post/NBTearing.mo",
   // "NBackend Util"
+    "../NBackEnd/Util/NBBackendUtil.mo",
     "../NBackEnd/Util/NBHashTableCrToCr.mo",
     "../NBackEnd/Util/NBHashTableCrToCrEqLst.mo",
     "../NBackEnd/Util/NBHashTableCrToCrLst.mo",

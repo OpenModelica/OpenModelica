@@ -57,6 +57,7 @@ public
   import BVariable = NBVariable;
 
   // Util imports
+  import BackendUtil = NBBackendUtil;
   import ExpandableArray;
   import StringUtil;
 
@@ -936,14 +937,6 @@ public
       equationPointers := EQUATION_POINTERS(ExpandableArray.new(arr_size, Pointer.create(DUMMY_EQUATION())));
     end empty;
 
-    function compress "O(n)
-      Reorders the elements in order to remove all the gaps.
-      Be careful: This changes the indices of the elements."
-      input output EquationPointers equations;
-    algorithm
-      equations.eqArr := ExpandableArray.compress(equations.eqArr);
-    end compress;
-
     function toList
       "Creates a EquationPointer list from EquationPointers."
       input EquationPointers equations;
@@ -1051,6 +1044,55 @@ public
     algorithm
       eqn := ExpandableArray.get(index, equations.eqArr);
     end getEqnAt;
+
+    function compress "O(n)
+      Reorders the elements in order to remove all the gaps.
+      Be careful: This changes the indices of the elements."
+      input output EquationPointers equations;
+    algorithm
+      equations.eqArr := ExpandableArray.compress(equations.eqArr);
+    end compress;
+
+     function sort
+      "author: kabdelhak
+      Sorts the equations solely by cref and operator attributes and type hash.
+      Does not use the name! Used for reproduceable heuristic behavior independent of names."
+      input output EquationPointers equations;
+    protected
+      Integer size;
+      list<tuple<Integer, Pointer<Equation>>> hash_lst;
+      Pointer<list<tuple<Integer, Pointer<Equation>>>> hash_lst_ptr = Pointer.create({});
+      Pointer<Equation> eqn_ptr;
+    algorithm
+      // use number of elements
+      size := ExpandableArray.getNumberOfElements(equations.eqArr);
+      // hash all equations and create hash - equation tpl list
+      mapPtr(equations, function createSortHashTpl(mod = realInt(size * log(size)), hash_lst_ptr = hash_lst_ptr));
+      hash_lst := List.sort(Pointer.access(hash_lst_ptr), BackendUtil.indexTplGt);
+      // create new variables and add them one by one in sorted order
+      equations := empty(size);
+      for tpl in hash_lst loop
+        (_, eqn_ptr) := tpl;
+        equations.eqArr := ExpandableArray.add(eqn_ptr, equations.eqArr);
+      end for;
+    end sort;
+
+  protected
+    function createSortHashTpl
+      "Helper function for sort(). Creates the hash value without considering the names and
+      adds it as a tuple to the list in pointer."
+      input Pointer<Equation> eqn_ptr;
+      input Integer mod;
+      input Pointer<list<tuple<Integer, Pointer<Equation>>>> hash_lst_ptr;
+    protected
+      Equation eqn;
+      Integer hash;
+    algorithm
+      eqn := Pointer.access(eqn_ptr);
+      // create hash only from attributes
+      hash := BackendUtil.noNameHashEq(eqn, mod);
+      Pointer.update(hash_lst_ptr, (hash, eqn_ptr) :: Pointer.access(hash_lst_ptr));
+    end createSortHashTpl;
   end EquationPointers;
 
   uniontype EqData

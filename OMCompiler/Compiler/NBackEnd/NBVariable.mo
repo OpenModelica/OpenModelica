@@ -58,6 +58,7 @@ public
 
   // Backend Imports
   import BackendDAE = NBackendDAE;
+  import BackendUtil = NBBackendUtil;
   import HashTableCrToInt = NBHashTableCrToInt;
   import BVariable = NBVariable;
 
@@ -738,38 +739,6 @@ public
       variables := VARIABLE_POINTERS(HashTableCrToInt.empty(bucketSize), ExpandableArray.new(arr_size, Pointer.create(DUMMY_VARIABLE)));
     end empty;
 
-    function compress"O(n)
-      Reorders the elements in order to remove all the gaps.
-      Be careful: This changes the indices of the elements.
-      Cannot use ExpandableArray.compress since it needs to
-      update the HashTable."
-      input output VariablePointers vars;
-    protected
-      Integer numberOfElements = MetaModelica.Dangerous.arrayGetNoBoundsChecking(vars.varArr.numberOfElements, 1);
-      Integer lastUsedIndex = MetaModelica.Dangerous.arrayGetNoBoundsChecking(vars.varArr.lastUsedIndex, 1);
-      array<Option<Pointer<Variable>>> data = ExpandableArray.getData(vars.varArr);
-      Integer i = 0;
-      Pointer<Variable> moved_var;
-    algorithm
-      while lastUsedIndex > numberOfElements loop
-        i := i + 1;
-        if isNone(MetaModelica.Dangerous.arrayGetNoBoundsChecking(data, i)) then
-          // update the array element which is NONE()
-          SOME(moved_var) := MetaModelica.Dangerous.arrayGetNoBoundsChecking(data, lastUsedIndex);
-          MetaModelica.Dangerous.arrayUpdateNoBoundsChecking(data, i, SOME(moved_var));
-          // update the last element which got moved
-          MetaModelica.Dangerous.arrayUpdateNoBoundsChecking(data, lastUsedIndex, NONE());
-          // update the last used index until an element is found
-          while isNone(MetaModelica.Dangerous.arrayGetNoBoundsChecking(data, lastUsedIndex)) loop
-            lastUsedIndex := lastUsedIndex-1;
-          end while;
-          // udpate HashTable element
-          BaseHashTable.update((getVarName(moved_var), i), vars.ht);
-        end if;
-      end while;
-      MetaModelica.Dangerous.arrayUpdateNoBoundsChecking(vars.varArr.lastUsedIndex, 1, lastUsedIndex);
-    end compress;
-
     function toList
       "Creates a VariablePointer list from VariablePointers."
       input VariablePointers variables;
@@ -894,6 +863,79 @@ public
     algorithm
       i := ExpandableArray.getNumberOfElements(variables.varArr);
     end size;
+
+    function compress"O(n)
+      Reorders the elements in order to remove all the gaps.
+      Be careful: This changes the indices of the elements.
+      Cannot use ExpandableArray.compress since it needs to
+      update the HashTable."
+      input output VariablePointers vars;
+    protected
+      Integer numberOfElements = MetaModelica.Dangerous.arrayGetNoBoundsChecking(vars.varArr.numberOfElements, 1);
+      Integer lastUsedIndex = MetaModelica.Dangerous.arrayGetNoBoundsChecking(vars.varArr.lastUsedIndex, 1);
+      array<Option<Pointer<Variable>>> data = ExpandableArray.getData(vars.varArr);
+      Integer i = 0;
+      Pointer<Variable> moved_var;
+    algorithm
+      while lastUsedIndex > numberOfElements loop
+        i := i + 1;
+        if isNone(MetaModelica.Dangerous.arrayGetNoBoundsChecking(data, i)) then
+          // update the array element which is NONE()
+          SOME(moved_var) := MetaModelica.Dangerous.arrayGetNoBoundsChecking(data, lastUsedIndex);
+          MetaModelica.Dangerous.arrayUpdateNoBoundsChecking(data, i, SOME(moved_var));
+          // update the last element which got moved
+          MetaModelica.Dangerous.arrayUpdateNoBoundsChecking(data, lastUsedIndex, NONE());
+          // update the last used index until an element is found
+          while isNone(MetaModelica.Dangerous.arrayGetNoBoundsChecking(data, lastUsedIndex)) loop
+            lastUsedIndex := lastUsedIndex-1;
+          end while;
+          // udpate HashTable element
+          BaseHashTable.update((getVarName(moved_var), i), vars.ht);
+        end if;
+      end while;
+      MetaModelica.Dangerous.arrayUpdateNoBoundsChecking(vars.varArr.lastUsedIndex, 1, lastUsedIndex);
+    end compress;
+
+    function sort
+      "author: kabdelhak
+      Sorts the variables solely by their attributes and type hash.
+      Does not use the name! Used for reproduceable heuristic behavior independent of names."
+      input output VariablePointers variables;
+    protected
+      Integer size;
+      list<tuple<Integer, Pointer<Variable>>> hash_lst;
+      Pointer<list<tuple<Integer, Pointer<Variable>>>> hash_lst_ptr = Pointer.create({});
+      Pointer<Variable> var_ptr;
+    algorithm
+      // use number of elements
+      size := ExpandableArray.getNumberOfElements(variables.varArr);
+      // hash all variables and create hash - variable tpl list
+      mapPtr(variables, function createSortHashTpl(mod = realInt(size * log(size)), hash_lst_ptr = hash_lst_ptr));
+      hash_lst := List.sort(Pointer.access(hash_lst_ptr), BackendUtil.indexTplGt);
+      // create new variables and add them one by one in sorted order
+      variables := empty(size);
+      for tpl in hash_lst loop
+        (_, var_ptr) := tpl;
+        variables := add(var_ptr, variables);
+      end for;
+    end sort;
+
+  protected
+    function createSortHashTpl
+      "Helper function for sort(). Creates the hash value without considering the name and
+      adds it as a tuple to the list in pointer."
+      input Pointer<Variable> var_ptr;
+      input Integer mod;
+      input Pointer<list<tuple<Integer, Pointer<Variable>>>> hash_lst_ptr;
+    protected
+      Variable var;
+      Integer hash;
+    algorithm
+      var := Pointer.access(var_ptr);
+      // create hash only from backendinfo
+      hash := stringHashDjb2Mod(BackendExtension.BackendInfo.toString(var.backendinfo), mod);
+      Pointer.update(hash_lst_ptr, (hash, var_ptr) :: Pointer.access(hash_lst_ptr));
+    end createSortHashTpl;
   end VariablePointers;
 
   // ==========================================================================
