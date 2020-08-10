@@ -105,6 +105,11 @@ public
     list<ErrorTypes.TotalMessage> errors;
   end INVALID_BINDING;
 
+  record EVALUATING_BINDING
+    "Used by the constant evaluation to detect recursive bindings."
+    Binding binding;
+  end EVALUATING_BINDING;
+
 public
   function fromAbsyn
     input Option<Absyn.Exp> bindingExp;
