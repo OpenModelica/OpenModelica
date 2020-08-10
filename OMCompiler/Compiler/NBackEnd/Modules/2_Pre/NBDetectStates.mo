@@ -31,7 +31,7 @@
 encapsulated package NBDetectStates
 " file:         NBDetectStates.mo
   package:      NBDetectStates
-  description:  This file contains all functions for the detection of continous
+  description:  This file contains all functions for the detection of continuous
                 and discrete state variables.
 "
 
@@ -81,7 +81,11 @@ public
           (varData, eqData) := mainFunc(varData, eqData, contFunc, discFunc);
           bdae.varData := varData;
           bdae.eqData := eqData;
-        then bdae;
+      then bdae;
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+      then fail();
     end match;
   end main;
 

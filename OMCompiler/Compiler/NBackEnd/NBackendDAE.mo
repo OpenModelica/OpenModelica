@@ -64,8 +64,8 @@ protected
   import Equation = NBEquation.Equation;
   import Initialization = NBInitialization;
   import Jacobian = NBJacobian;
-  import RemoveSimpleEquations = NBRemoveSimpleEquations;
   import Partitioning = NBPartitioning;
+  import RemoveSimpleEquations = NBRemoveSimpleEquations;
   import Tearing = NBTearing;
 
   // Util imports
@@ -110,27 +110,26 @@ public
     str := match bdae
       local
         String tmp;
-        BackendDAE qual;
         list<System> dae;
-      case qual as BDAE()
+      case BDAE()
         algorithm
-          if listEmpty(qual.ode) or not Flags.isSet(Flags.BLT_DUMP) then
+          if listEmpty(bdae.ode) or not Flags.isSet(Flags.BLT_DUMP) then
             tmp := StringUtil.headline_1("Not partitioned BackendDAE: " + str) + "\n";
-            tmp := tmp +  BVariable.VarData.toString(qual.varData, 2) + "\n" +
-                          BEquation.EqData.toString(qual.eqData, 1);
+            tmp := tmp +  BVariable.VarData.toString(bdae.varData, 2) + "\n" +
+                          BEquation.EqData.toString(bdae.eqData, 1);
           else
             tmp := StringUtil.headline_1("[ODE] Simulation: " + str) + "\n";
-            for syst in qual.ode loop
+            for syst in bdae.ode loop
               tmp := tmp + System.toString(syst);
             end for;
-            if not listEmpty(qual.init) then
+            if not listEmpty(bdae.init) then
               tmp := tmp + StringUtil.headline_1("[INIT] Initialization: " + str) + "\n";
-              for syst in qual.init loop
+              for syst in bdae.init loop
                 tmp := tmp + System.toString(syst);
               end for;
             end if;
-            if isSome(qual.dae) then
-              SOME(dae) := qual.dae;
+            if isSome(bdae.dae) then
+              SOME(dae) := bdae.dae;
               tmp := tmp + StringUtil.headline_1("[DAE] DAEMode: " + str) + "\n";
               for syst in dae loop
                 tmp := tmp + System.toString(syst);
@@ -140,14 +139,14 @@ public
           end if;
       then tmp;
 
-      case qual as JAC() then StringUtil.headline_1("Jacobian " + qual.name + ": " + str) + "\n" +
-                              BVariable.VarData.toString(qual.varData, 1) + "\n" +
-                              BEquation.EqData.toString(qual.eqData, 1) + "\n" +
-                              Jacobian.SparsityPattern.toString(qual.sparsityPattern, qual.sparsityColoring);
+      case JAC() then StringUtil.headline_1("Jacobian " + bdae.name + ": " + str) + "\n" +
+                              BVariable.VarData.toString(bdae.varData, 1) + "\n" +
+                              BEquation.EqData.toString(bdae.eqData, 1) + "\n" +
+                              Jacobian.SparsityPattern.toString(bdae.sparsityPattern, bdae.sparsityColoring);
 
-      case qual as HESS() then StringUtil.headline_1("Hessian: " + str) + "\n" +
-                              BVariable.VarData.toString(qual.varData, 1) + "\n" +
-                              BEquation.EqData.toString(qual.eqData, 1);
+      case HESS() then StringUtil.headline_1("Hessian: " + str) + "\n" +
+                              BVariable.VarData.toString(bdae.varData, 1) + "\n" +
+                              BEquation.EqData.toString(bdae.eqData, 1);
     end match;
   end toString;
 
@@ -156,11 +155,9 @@ public
     output BVariable.VarData varData;
   algorithm
     varData := match bdae
-      local
-        BackendDAE qual;
-      case qual as BDAE() then qual.varData;
-      case qual as JAC() then qual.varData;
-      case qual as HESS() then qual.varData;
+      case BDAE() then bdae.varData;
+      case JAC() then bdae.varData;
+      case HESS() then bdae.varData;
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
       then fail();
@@ -172,11 +169,9 @@ public
     output BEquation.EqData eqData;
   algorithm
     eqData := match bdae
-      local
-        BackendDAE qual;
-      case qual as BDAE() then qual.eqData;
-      case qual as JAC() then qual.eqData;
-      case qual as HESS() then qual.eqData;
+      case BDAE() then bdae.eqData;
+      case JAC() then bdae.eqData;
+      case HESS() then bdae.eqData;
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
       then fail();
@@ -188,7 +183,7 @@ public
     output FunctionTree funcTree;
   algorithm
     funcTree := match bdae
-      case BackendDAE.BDAE(funcTree = funcTree) then funcTree;
+      case BDAE(funcTree = funcTree) then funcTree;
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed! Only the record type BDAE() has a function tree."});
       then fail();
@@ -300,9 +295,9 @@ protected
         then ();
 
         /* other cases should not occur up until now */
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Variable.toString(var)});
-      then fail();
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Variable.toString(var)});
+        then fail();
 
       end match;
     end for;
@@ -365,12 +360,12 @@ protected
       // variable -> artificial state if it has stateSelect = StateSelect.always
       case (NFPrefixes.Variability.CONTINUOUS, SOME(BackendExtension.VAR_ATTR_REAL(stateSelect = SOME(NFBackendExtension.StateSelect.ALWAYS))), _)
         guard(variability == NFPrefixes.Variability.CONTINUOUS)
-        then BackendExtension.STATE(1, NONE(), false);
+      then BackendExtension.STATE(1, NONE(), false);
 
       // variable -> artificial state if it has stateSelect = StateSelect.prefer
       /* I WANT TO REMOVE THIS AND CATCH IT PROPERLY IN STATE SELECTION!
       case (Prefixes.Variability.CONTINUOUS(), SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.PREFER()))))
-        then BackendExtension.STATE(1, NONE(), false);
+      then BackendExtension.STATE(1, NONE(), false);
       */
 
       // is this just a hack? Do we need those cases, or do we need even more?
@@ -406,7 +401,7 @@ protected
     output BEquation.EqData eqData;
   protected
     list<Pointer<Equation>> equation_lst, continuous_lst = {}, discretes_lst = {}, initials_lst = {}, auxiliaries_lst = {}, simulation_lst = {};
-    BEquation.EquationPointers equations, continuous, discretes, initials, auxiliaries, simulation;
+    BEquation.EquationPointers equations;
     Pointer<Equation> eq;
   algorithm
     equation_lst := lowerEquationsAndAlgorithms(eq_lst, al_lst, init_eq_lst, init_al_lst);
@@ -442,19 +437,20 @@ protected
 
           else
             algorithm
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Equation.toString(Pointer.access(eq))});
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + Equation.toString(Pointer.access(eq))});
           then fail();
         end match;
       end if;
     end for;
 
-    simulation := BEquation.EquationPointers.fromList(simulation_lst);
-    continuous := BEquation.EquationPointers.fromList(continuous_lst);
-    discretes := BEquation.EquationPointers.fromList(discretes_lst);
-    initials := BEquation.EquationPointers.fromList(initials_lst);
-    auxiliaries := BEquation.EquationPointers.fromList(auxiliaries_lst);
-
-    eqData := BEquation.EQ_DATA_SIM(equations, simulation, continuous, discretes, initials, auxiliaries);
+    eqData := BEquation.EQ_DATA_SIM(
+      equations   = equations,
+      simulation  = BEquation.EquationPointers.fromList(simulation_lst),
+      continuous  = BEquation.EquationPointers.fromList(continuous_lst),
+      discretes   = BEquation.EquationPointers.fromList(discretes_lst),
+      initials    = BEquation.EquationPointers.fromList(initials_lst),
+      auxiliaries = BEquation.EquationPointers.fromList(auxiliaries_lst)
+    );
   end lowerEquationData;
 
   function lowerEquationsAndAlgorithms
@@ -563,10 +559,10 @@ protected
       case FEquation.NORETCALL() algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for NORETCALL expression without condition:\n" + FEquation.toString(frontend_equation)});
       then fail();
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + FEquation.toString(frontend_equation)});
-      then fail();
 
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + FEquation.toString(frontend_equation)});
+      then fail();
     end match;
   end lowerEquation;
 
@@ -590,7 +586,7 @@ protected
       then BEquation.IF_EQUATION(0, ifEqBody, source, attr);
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + FEquation.toString(frontend_equation)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + FEquation.toString(frontend_equation)});
       then fail();
 
     end match;
@@ -613,14 +609,14 @@ protected
       case branch::rest
         algorithm
           (eqns, condition) := lowerIfBranch(branch, init);
-          // just exit when a condition is found to be true because following
-          // branches can never be reached. Also the last plain else case
-          // has default Boolean true value in the NF.
-          // discard a branch and continue with the rest if a condition is
-          // found to be false, because it can never be reached.
           if Expression.isTrue(condition) then
+            // finish recursion when a condition is found to be true because
+            // following branches can never be reached. Also the last plain else
+            // case has default Boolean true value in the NF.
             result := SOME(BEquation.IF_EQUATION_BODY(Expression.END(), eqns, NONE()));
           elseif Expression.isFalse(condition) then
+            // discard a branch and continue with the rest if a condition is
+            // found to be false, because it can never be reached.
             result := lowerIfEquationBody(rest, init);
           else
             result := SOME(BEquation.IF_EQUATION_BODY(condition, eqns, lowerIfEquationBody(rest, init)));

@@ -60,13 +60,12 @@ public
       // for now just copy the dae
       bdae := match bdae
         local
-          BackendDAE qual;
           list<System.System> ode;
 
-        case qual as BackendDAE.BDAE(ode = ode)
+        case BackendDAE.BDAE(ode = ode)
           algorithm
-            qual.dae := SOME(func(ode));
-        then qual;
+            bdae.dae := SOME(func(ode));
+        then bdae;
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed due to wrong BackendDAE record!"});

@@ -62,40 +62,35 @@ public
   algorithm
     bdae := match (systemType, bdae)
       local
-        BackendDAE.BackendDAE qual;
         list<System.System> systems;
 
-      case (System.SystemType.ODE, qual as BackendDAE.BDAE(ode = systems))
+      case (System.SystemType.ODE, BackendDAE.BDAE(ode = systems))
         algorithm
-          qual.ode := List.map(systems, causalizeScalar);
-      then qual;
+          bdae.ode := List.map(systems, causalizeScalar);
+      then bdae;
 
-      case (System.SystemType.INIT, qual as BackendDAE.BDAE(init = systems))
+      case (System.SystemType.INIT, BackendDAE.BDAE(init = systems))
         algorithm
-          qual.init := List.map(systems, causalizeScalar);
-      then qual;
+          bdae.init := List.map(systems, causalizeScalar);
+      then bdae;
 
-      case (System.SystemType.DAE, qual as BackendDAE.BDAE(dae = SOME(systems)))
+      case (System.SystemType.DAE, BackendDAE.BDAE(dae = SOME(systems)))
         algorithm
-          qual.dae := SOME(List.map(systems, causalizeDAEMode));
-      then qual;
+          bdae.dae := SOME(List.map(systems, causalizeDAEMode));
+      then bdae;
 
-    else algorithm
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with system type " + System.System.systemTypeString(systemType) + "!"});
-    then fail();
-
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with system type " + System.System.systemTypeString(systemType) + "!"});
+      then fail();
     end match;
   end main;
 
 protected
   function causalizeScalar extends Module.causalizeInterface;
   protected
-    list<Pointer<Variable>> var_lst;
-    list<Pointer<Equation>> eqn_lst;
     AdjacencyMatrix adj;
     Matching matching;
     list<StrongComponent> comps;
-    StrongComponent comp;
   algorithm
     // compress the arrays to remove gaps
     system.unknowns := BVariable.VariablePointers.compress(system.unknowns);
@@ -160,18 +155,16 @@ public
     algorithm
       str := StringUtil.headline_2(str + "AdjacencyMatrix") + "\n";
       str := match adj
-        local
-          AdjacencyMatrix qual;
-        case qual as ARRAY_ADJACENCY_MATRIX() then str + "\n ARRAY NOT YET SUPPORTED \n";
-        case qual as SCALAR_ADJACENCY_MATRIX() algorithm
-          if arrayLength(qual.m) > 0 then
+        case ARRAY_ADJACENCY_MATRIX() then str + "\n ARRAY NOT YET SUPPORTED \n";
+        case SCALAR_ADJACENCY_MATRIX() algorithm
+          if arrayLength(adj.m) > 0 then
             str := str + StringUtil.headline_4("Normal Adjacency Matrix (row = equation)");
-            str := str + toStringSingle(qual.m);
+            str := str + toStringSingle(adj.m);
           end if;
           str := str + "\n";
-          if arrayLength(qual.mT) > 0 then
+          if arrayLength(adj.mT) > 0 then
             str := str + StringUtil.headline_4("Transposed Adjacency Matrix (row = variable)");
-            str := str + toStringSingle(qual.mT);
+            str := str + toStringSingle(adj.mT);
           end if;
           str := str + "\n";
         then str;
@@ -200,8 +193,7 @@ public
       list<ComponentRef> dependencies;
       list<Pointer<BEquation.Equation>> eqn_lst;
       array<list<Integer>> m, mT;
-      Integer var_idx = 1, eqn_idx = 1;
-      list<ComponentRef> var_names;
+      Integer eqn_idx = 1;
     algorithm
       if ExpandableArray.getNumberOfElements(eqs.eqArr) > 0 then
         eqn_lst := BEquation.EquationPointers.toList(eqs);
@@ -368,14 +360,12 @@ public
       input output String str = "";
     algorithm
       str := match matching
-        local
-          Matching qual;
-        case qual as SCALAR_MATCHING() algorithm
+        case SCALAR_MATCHING() algorithm
           str := str + StringUtil.headline_2(str + "Scalar Matching") + "\n";
-          str := str + toStringSingle(qual.var_to_eqn, false) + "\n";
-          str := str + toStringSingle(qual.eqn_to_var, true) + "\n";
+          str := str + toStringSingle(matching.var_to_eqn, false) + "\n";
+          str := str + toStringSingle(matching.eqn_to_var, true) + "\n";
         then str;
-        case qual as ARRAY_MATCHING() algorithm
+        case ARRAY_MATCHING() algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array matching is not yet supported."});
         then fail();
         case EMPTY_MATCHING() then str + StringUtil.headline_2(str + "Empty Matching") + "\n";

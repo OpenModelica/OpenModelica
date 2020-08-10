@@ -60,19 +60,18 @@ public
 
     bdae := match (systemType, bdae)
       local
-        BackendDAE.BackendDAE qual;
         BVariable.VariablePointers variables;
         BEquation.EquationPointers equations;
 
-      case (System.SystemType.ODE, qual as BackendDAE.BDAE(varData = BVariable.VAR_DATA_SIM(unknowns = variables), eqData = BEquation.EQ_DATA_SIM(simulation = equations)))
+      case (System.SystemType.ODE, BackendDAE.BDAE(varData = BVariable.VAR_DATA_SIM(unknowns = variables), eqData = BEquation.EQ_DATA_SIM(simulation = equations)))
         algorithm
-          qual.ode := func(systemType, variables, equations);
-        then qual;
+          bdae.ode := func(systemType, variables, equations);
+        then bdae;
 
-      case (System.SystemType.INIT, qual as BackendDAE.BDAE(varData = BVariable.VAR_DATA_SIM(initials = variables), eqData = BEquation.EQ_DATA_SIM(equations = equations)))
+      case (System.SystemType.INIT, BackendDAE.BDAE(varData = BVariable.VAR_DATA_SIM(initials = variables), eqData = BEquation.EQ_DATA_SIM(equations = equations)))
         algorithm
-          qual.init := func(systemType, variables, equations);
-        then qual;
+          bdae.init := func(systemType, variables, equations);
+        then bdae;
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
@@ -89,7 +88,7 @@ public
     (func) := match flag
       case "default" then (partitioningDefault);
       /* ... New detect states modules have to be added here */
-    else fail();
+      else fail();
     end match;
   end getModule;
 

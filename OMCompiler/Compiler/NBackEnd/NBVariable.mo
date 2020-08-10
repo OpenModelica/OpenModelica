@@ -735,7 +735,7 @@ public
       Integer arr_size, bucketSize;
     algorithm
       arr_size := max(size, BaseHashTable.lowBucketSize);
-      bucketSize :=  realInt(intReal(arr_size) * 1.4);
+      bucketSize := realInt(intReal(arr_size) * 1.4);
       variables := VARIABLE_POINTERS(HashTableCrToInt.empty(bucketSize), ExpandableArray.new(arr_size, Pointer.create(DUMMY_VARIABLE)));
     end empty;
 

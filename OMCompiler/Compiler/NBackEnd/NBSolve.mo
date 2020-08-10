@@ -43,6 +43,7 @@ public
   import FunctionTree = NFFlatten.FunctionTree;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
+  import Type = NFType;
 
   // backend imports
   import Differentiate = NBDifferentiate;
@@ -68,9 +69,10 @@ protected
     input ComponentRef cref;
     input output FunctionTree funcTree;
   protected
-    Expression residual, derivative, crefExp, zeroExp, numerator;
+    Expression residual, derivative, crefExp, numerator;
     Differentiate.DifferentiationArguments diffArgs;
     Operator divOp, uminOp;
+    Type ty;
   algorithm
     residual := Equation.getResidualExp(eqn);
     diffArgs := Differentiate.DIFFERENTIATION_ARGUMENTS(
@@ -85,10 +87,10 @@ protected
     if not Expression.containsCref(derivative, cref) then
       funcTree := diffArgs.funcTree;
       crefExp := Expression.fromCref(cref);
-      zeroExp := Expression.makeZero(ComponentRef.getComponentType(cref));
-      numerator := Replacements.single(residual, crefExp, zeroExp);
-      divOp := Operator.OPERATOR(ComponentRef.getComponentType(cref), NFOperator.Op.DIV);
-      uminOp := Operator.OPERATOR(ComponentRef.getComponentType(cref), NFOperator.Op.UMINUS);
+      ty := ComponentRef.getComponentType(cref);
+      numerator := Replacements.single(residual, crefExp, Expression.makeZero(ty));
+      divOp := Operator.OPERATOR(ty, NFOperator.Op.DIV);
+      uminOp := Operator.OPERATOR(ty, NFOperator.Op.UMINUS);
       eqn := Equation.setLHS(eqn, crefExp);
       eqn := Equation.setRHS(eqn, Expression.UNARY(uminOp, Expression.BINARY(numerator, divOp, derivative)));
       eqn := Equation.simplify(eqn);

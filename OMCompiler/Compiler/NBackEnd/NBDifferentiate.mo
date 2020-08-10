@@ -51,7 +51,6 @@ public
   import NFPrefixes.Variability;
   import Variable = NFVariable;
 
-
   // Backend imports
   import BVariable = NBVariable;
   import NBEquation.Equation;
@@ -137,7 +136,7 @@ public
   algorithm
     (eq, diffArguments) := match eq
       local
-        Equation qual, res;
+        Equation res;
         Expression lhs, rhs;
         ComponentRef lhs_cref, rhs_cref;
         IfEquationBody ifBody;
@@ -146,51 +145,51 @@ public
         EquationAttributes attr;
 
       // ToDo: Element source stuff (see old backend)
-      case qual as Equation.SCALAR_EQUATION() algorithm
-        (lhs, diffArguments) := differentiateExpression(qual.lhs, diffArguments);
-        (rhs, diffArguments) := differentiateExpression(qual.rhs, diffArguments);
-        attr := differentiateEquationAttributes(qual.attr, diffArguments);
-      then (Equation.SCALAR_EQUATION(lhs, rhs, qual.source, attr), diffArguments);
+      case Equation.SCALAR_EQUATION() algorithm
+        (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
+        (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
+        attr := differentiateEquationAttributes(eq.attr, diffArguments);
+      then (Equation.SCALAR_EQUATION(lhs, rhs, eq.source, attr), diffArguments);
 
-      case qual as Equation.ARRAY_EQUATION() algorithm
-        (lhs, diffArguments) := differentiateExpression(qual.lhs, diffArguments);
-        (rhs, diffArguments) := differentiateExpression(qual.rhs, diffArguments);
-        attr := differentiateEquationAttributes(qual.attr, diffArguments);
-      then (Equation.ARRAY_EQUATION(qual.dimSize, lhs, rhs, qual.source, attr, qual.recordSize), diffArguments);
+      case Equation.ARRAY_EQUATION() algorithm
+        (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
+        (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
+        attr := differentiateEquationAttributes(eq.attr, diffArguments);
+      then (Equation.ARRAY_EQUATION(eq.dimSize, lhs, rhs, eq.source, attr, eq.recordSize), diffArguments);
 
-      case qual as Equation.SIMPLE_EQUATION() algorithm
-        (lhs, diffArguments) := differentiateComponentRef(Expression.fromCref(qual.lhs), diffArguments);
-        (rhs, diffArguments) := differentiateComponentRef(Expression.fromCref(qual.rhs), diffArguments);
-        attr := differentiateEquationAttributes(qual.attr, diffArguments);
+      case Equation.SIMPLE_EQUATION() algorithm
+        (lhs, diffArguments) := differentiateComponentRef(Expression.fromCref(eq.lhs), diffArguments);
+        (rhs, diffArguments) := differentiateComponentRef(Expression.fromCref(eq.rhs), diffArguments);
+        attr := differentiateEquationAttributes(eq.attr, diffArguments);
         res := match (lhs, rhs)
           // If both are still a componentRef, create simple equation.
           case (Expression.CREF(cref = lhs_cref), Expression.CREF(cref = rhs_cref))
-          then Equation.SIMPLE_EQUATION(lhs_cref, rhs_cref, qual.source, attr);
+          then Equation.SIMPLE_EQUATION(lhs_cref, rhs_cref, eq.source, attr);
           // else create regular equation: ToDo check array?
-          else Equation.SCALAR_EQUATION(lhs, rhs, qual.source, attr);
+          else Equation.SCALAR_EQUATION(lhs, rhs, eq.source, attr);
         end match;
       then (res, diffArguments);
 
-      case qual as Equation.RECORD_EQUATION() algorithm
-        (lhs, diffArguments) := differentiateExpression(qual.lhs, diffArguments);
-        (rhs, diffArguments) := differentiateExpression(qual.rhs, diffArguments);
-        attr := differentiateEquationAttributes(qual.attr, diffArguments);
-      then (Equation.RECORD_EQUATION(qual.size, lhs, rhs, qual.source, attr), diffArguments);
+      case Equation.RECORD_EQUATION() algorithm
+        (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
+        (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
+        attr := differentiateEquationAttributes(eq.attr, diffArguments);
+      then (Equation.RECORD_EQUATION(eq.size, lhs, rhs, eq.source, attr), diffArguments);
 
-      case qual as Equation.IF_EQUATION() algorithm
-        (ifBody, diffArguments_ptr) := differentiateIfEquationBody(qual.body, Pointer.create(diffArguments));
-        attr := differentiateEquationAttributes(qual.attr, diffArguments);
-      then (Equation.IF_EQUATION(qual.size, ifBody, qual.source, attr), Pointer.access(diffArguments_ptr));
+      case Equation.IF_EQUATION() algorithm
+        (ifBody, diffArguments_ptr) := differentiateIfEquationBody(eq.body, Pointer.create(diffArguments));
+        attr := differentiateEquationAttributes(eq.attr, diffArguments);
+      then (Equation.IF_EQUATION(eq.size, ifBody, eq.source, attr), Pointer.access(diffArguments_ptr));
 
-      case qual as Equation.FOR_EQUATION() algorithm
-        (res, diffArguments) := differentiateEquation(qual.body, diffArguments);
-        attr := differentiateEquationAttributes(qual.attr, diffArguments);
-      then (Equation.FOR_EQUATION(qual.iter, qual.range, res, qual.source, attr), diffArguments);
+      case Equation.FOR_EQUATION() algorithm
+        (res, diffArguments) := differentiateEquation(eq.body, diffArguments);
+        attr := differentiateEquationAttributes(eq.attr, diffArguments);
+      then (Equation.FOR_EQUATION(eq.iter, eq.range, res, eq.source, attr), diffArguments);
 
-      case qual as Equation.WHEN_EQUATION() algorithm
-        (whenBody, diffArguments) := differentiateWhenEquationBody(qual.body, diffArguments);
-        attr := differentiateEquationAttributes(qual.attr, diffArguments);
-      then (Equation.WHEN_EQUATION(qual.size, whenBody, qual.source, attr), diffArguments);
+      case Equation.WHEN_EQUATION() algorithm
+        (whenBody, diffArguments) := differentiateWhenEquationBody(eq.body, diffArguments);
+        attr := differentiateEquationAttributes(eq.attr, diffArguments);
+      then (Equation.WHEN_EQUATION(eq.size, whenBody, eq.source, attr), diffArguments);
 
       else algorithm
         // maybe add failtrace here and allow failing
@@ -225,7 +224,7 @@ public
 
   function differentiateIfEquationBody
     input output IfEquationBody body;
-    input output Pointer<DifferentiationArguments>  diffArguments_ptr;
+    input output Pointer<DifferentiationArguments> diffArguments_ptr;
   protected
     list<Pointer<Equation>> then_eqns;
     IfEquationBody else_if;
@@ -234,7 +233,7 @@ public
     // ToDo: this is a little ugly
     // 1. why are the then_eqns Pointers? no need for that
     // 2. we could just traverse it regularly without creating a pointer for diffArguments
-    then_eqns:= List.map(body.then_eqns, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr));
+    then_eqns := List.map(body.then_eqns, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr));
     if isSome(body.else_if) then
       (else_if, diffArguments_ptr) := differentiateIfEquationBody(Util.getOption(body.else_if), diffArguments_ptr);
       else_if_opt := SOME(else_if);
@@ -268,13 +267,12 @@ public
   algorithm
     (stmt, diffArguments) := match stmt
       local
-        WhenStatement qual;
         Expression lhs, rhs;
       // Only differentiate assignments
-      case qual as WhenStatement.ASSIGN() algorithm
-        (lhs, diffArguments) := differentiateExpression(qual.lhs, diffArguments);
-        (rhs, diffArguments) := differentiateExpression(qual.rhs, diffArguments);
-      then (WhenStatement.ASSIGN(lhs, rhs, qual.source), diffArguments);
+      case WhenStatement.ASSIGN() algorithm
+        (lhs, diffArguments) := differentiateExpression(stmt.lhs, diffArguments);
+        (rhs, diffArguments) := differentiateExpression(stmt.rhs, diffArguments);
+      then (WhenStatement.ASSIGN(lhs, rhs, stmt.source), diffArguments);
       else (stmt, diffArguments);
     end match;
   end differentiateWhenStatement;
@@ -285,7 +283,7 @@ public
   algorithm
   (exp, diffArguments) := match exp
     local
-      Expression qual, elem1, elem2;
+      Expression elem1, elem2;
       list<Expression> new_elements = {};
       list<list<Expression>> new_matrix_elements = {};
 
@@ -300,18 +298,18 @@ public
     case Expression.CREF() then differentiateComponentRef(exp, diffArguments);
 
     // [a, b, c, ...]' = [a', b', c', ...]
-    case qual as Expression.ARRAY() algorithm
-      for element in qual.elements loop
+    case Expression.ARRAY() algorithm
+      for element in exp.elements loop
         (element, diffArguments) := differentiateExpression(element, diffArguments);
         new_elements := element :: new_elements;
       end for;
-    then (Expression.ARRAY(qual.ty, listReverse(new_elements), qual.literal), diffArguments);
+    then (Expression.ARRAY(exp.ty, listReverse(new_elements), exp.literal), diffArguments);
 
     // |a, b, c|'   |a', b', c'|
     // |d, e, f|  = |d', e', f'|
     // |g, h, i|    |g', h', i'|
-    case qual as Expression.MATRIX() algorithm
-      for element_lst in qual.elements loop
+    case Expression.MATRIX() algorithm
+      for element_lst in exp.elements loop
         new_elements := {};
         for element in element_lst loop
           (element, diffArguments) := differentiateExpression(element, diffArguments);
@@ -322,70 +320,70 @@ public
     then (Expression.MATRIX(listReverse(new_matrix_elements)), diffArguments);
 
     // (a, b, c, ...)' = (a', b', c', ...)
-    case qual as Expression.TUPLE() algorithm
-      for element in qual.elements loop
+    case Expression.TUPLE() algorithm
+      for element in exp.elements loop
         (element, diffArguments) := differentiateExpression(element, diffArguments);
         new_elements := element :: new_elements;
       end for;
-    then (Expression.TUPLE(qual.ty, listReverse(new_elements)), diffArguments);
+    then (Expression.TUPLE(exp.ty, listReverse(new_elements)), diffArguments);
 
     // REC(a, b, c, ...)' = REC(a', b', c', ...)
-    case qual as Expression.RECORD() algorithm
-      for element in qual.elements loop
+    case Expression.RECORD() algorithm
+      for element in exp.elements loop
         (element, diffArguments) := differentiateExpression(element, diffArguments);
         new_elements := element :: new_elements;
       end for;
-    then (Expression.RECORD(qual.path, qual.ty, listReverse(new_elements)), diffArguments);
+    then (Expression.RECORD(exp.path, exp.ty, listReverse(new_elements)), diffArguments);
 
     // (if c then a else b)' = if c then a' else b'
-    case qual as Expression.IF() algorithm
-      (elem1, diffArguments) := differentiateExpression(qual.trueBranch, diffArguments);
-      (elem2, diffArguments) := differentiateExpression(qual.falseBranch, diffArguments);
-    then (Expression.IF(qual.ty, qual.condition, elem1, elem2), diffArguments);
+    case Expression.IF() algorithm
+      (elem1, diffArguments) := differentiateExpression(exp.trueBranch, diffArguments);
+      (elem2, diffArguments) := differentiateExpression(exp.falseBranch, diffArguments);
+    then (Expression.IF(exp.ty, exp.condition, elem1, elem2), diffArguments);
 
     // e.g. (fg)' = fg' + f'g (more rules in differentiateBinary)
     case Expression.BINARY() then differentiateBinary(exp, diffArguments);
 
     // (-x)' = -(x')
-    case qual as Expression.UNARY() algorithm
-      (elem1, diffArguments) := differentiateExpression(qual.exp, diffArguments);
-    then (Expression.UNARY(qual.operator, elem1), diffArguments);
+    case Expression.UNARY() algorithm
+      (elem1, diffArguments) := differentiateExpression(exp.exp, diffArguments);
+    then (Expression.UNARY(exp.operator, elem1), diffArguments);
 
     // ((Real) x)' = (Real) x'
-    case qual as Expression.CAST() algorithm
-      (elem1, diffArguments) := differentiateExpression(qual.exp, diffArguments);
-    then (Expression.CAST(qual.ty, elem1), diffArguments);
+    case Expression.CAST() algorithm
+      (elem1, diffArguments) := differentiateExpression(exp.exp, diffArguments);
+    then (Expression.CAST(exp.ty, elem1), diffArguments);
 
     // BOX(x)' = BOX(x')
-    case qual as Expression.BOX() algorithm
-      (elem1, diffArguments) := differentiateExpression(qual.exp, diffArguments);
+    case Expression.BOX() algorithm
+      (elem1, diffArguments) := differentiateExpression(exp.exp, diffArguments);
     then (Expression.BOX(elem1), diffArguments);
 
     // UNBOX(x)' = UNBOX(x')
-    case qual as Expression.UNBOX() algorithm
-      (elem1, diffArguments) := differentiateExpression(qual.exp, diffArguments);
-    then (Expression.UNBOX(elem1, qual.ty), diffArguments);
+    case Expression.UNBOX() algorithm
+      (elem1, diffArguments) := differentiateExpression(exp.exp, diffArguments);
+    then (Expression.UNBOX(elem1, exp.ty), diffArguments);
 
     // (x(1))' = x'(1)
-    case qual as Expression.SUBSCRIPTED_EXP() algorithm
-      (elem1, diffArguments) := differentiateExpression(qual.exp, diffArguments);
-    then (Expression.SUBSCRIPTED_EXP(elem1, qual.subscripts, qual.ty), diffArguments);
+    case Expression.SUBSCRIPTED_EXP() algorithm
+      (elem1, diffArguments) := differentiateExpression(exp.exp, diffArguments);
+    then (Expression.SUBSCRIPTED_EXP(elem1, exp.subscripts, exp.ty), diffArguments);
 
     // (..., a_i ,...)' = (..., a'_i, ...)
-    case qual as Expression.TUPLE_ELEMENT() algorithm
-      (elem1, diffArguments) := differentiateExpression(qual.tupleExp, diffArguments);
-    then (Expression.TUPLE_ELEMENT(elem1, qual.index, qual.ty), diffArguments);
+    case Expression.TUPLE_ELEMENT() algorithm
+      (elem1, diffArguments) := differentiateExpression(exp.tupleExp, diffArguments);
+    then (Expression.TUPLE_ELEMENT(elem1, exp.index, exp.ty), diffArguments);
 
     // REC(i, ...)' = REC(i', ...)
     // ToDo: does this suffice? Check with old backend RSUB()!
-    case qual as Expression.RECORD_ELEMENT() algorithm
-      (elem1, diffArguments) := differentiateExpression(qual.recordExp, diffArguments);
-    then (Expression.RECORD_ELEMENT(elem1, qual.index, qual.fieldName, qual.ty), diffArguments);
+    case Expression.RECORD_ELEMENT() algorithm
+      (elem1, diffArguments) := differentiateExpression(exp.recordExp, diffArguments);
+    then (Expression.RECORD_ELEMENT(elem1, exp.index, exp.fieldName, exp.ty), diffArguments);
 
     // x(..., (y = z)', ...) = x(..., y = z', ...)
-    case qual as Expression.BINDING_EXP() algorithm
-      (elem1, diffArguments) := differentiateExpression(qual.exp, diffArguments);
-    then (Expression.BINDING_EXP(elem1, qual.expType, qual.bindingType, qual.parents, qual.isEach), diffArguments);
+    case Expression.BINDING_EXP() algorithm
+      (elem1, diffArguments) := differentiateExpression(exp.exp, diffArguments);
+    then (Expression.BINDING_EXP(elem1, exp.expType, exp.bindingType, exp.parents, exp.isEach), diffArguments);
 
     // Binary expressions, conditions and placeholders are not differentiated and left as they are
     case Expression.LBINARY()       then (exp, diffArguments);
@@ -426,50 +424,50 @@ public
   algorithm
     (exp, diffArguments) := match (exp, diffArguments)
       local
-        Expression qual, res;
+        Expression res;
         HashTableCrToCr.HashTable jacobianHT;
 
       // Types: (TIME)
       // differentiate time cref => 1
-      case (qual as Expression.CREF(), _)
-        guard(diffArguments.diffType == DifferentiationType.TIME and
-              ComponentRef.isTime(qual.cref))
-      then (Expression.makeOne(qual.ty), diffArguments);
+      case (Expression.CREF(), _)
+        guard((diffArguments.diffType == DifferentiationType.TIME) and
+              ComponentRef.isTime(exp.cref))
+      then (Expression.makeOne(exp.ty), diffArguments);
 
       // Types: not (TIME)
       // differentiate time cref => 0
-      case (qual as Expression.CREF(), _)
+      case (Expression.CREF(), _)
         guard(not (diffArguments.diffType == DifferentiationType.TIME) and
-              ComponentRef.isTime(qual.cref))
-      then (Expression.makeZero(qual.ty), diffArguments);
+              ComponentRef.isTime(exp.cref))
+      then (Expression.makeZero(exp.ty), diffArguments);
 
       // Types: (ALL)
       // differentiate start cref => 0
-      case (qual as Expression.CREF(), _)
-        guard(BVariable.isStart(BVariable.getVarPointer(qual.cref)))
-      then (Expression.makeZero(qual.ty), diffArguments);
+      case (Expression.CREF(), _)
+        guard(BVariable.isStart(BVariable.getVarPointer(exp.cref)))
+      then (Expression.makeZero(exp.ty), diffArguments);
 
       // ToDo: Records, Arrays, WILD (?)
 
       // Types: (SIMPLE)
       //  D(x)/dx => 1
-      case (qual as Expression.CREF(), _)
+      case (Expression.CREF(), _)
         guard((diffArguments.diffType == DifferentiationType.SIMPLE) and
-              ComponentRef.isEqual(qual.cref, diffArguments.diffCref))
-      then (Expression.makeOne(qual.ty), diffArguments);
+              ComponentRef.isEqual(exp.cref, diffArguments.diffCref))
+      then (Expression.makeOne(exp.ty), diffArguments);
 
       // Types: (SIMPLE)
       // D(y)/dx => 0
-      case (qual as Expression.CREF(), _)
+      case (Expression.CREF(), _)
         guard(diffArguments.diffType == DifferentiationType.SIMPLE)
-      then (Expression.makeZero(qual.ty), diffArguments);
+      then (Expression.makeZero(exp.ty), diffArguments);
 
       // Types: (ALL)
       // Known variables, except top for level inputs have a 0-derivative
-      case (qual as Expression.CREF(), _)
-        guard(BVariable.isParamOrConst(BVariable.getVarPointer(qual.cref)) and
-              not (ComponentRef.isTopLevel(qual.cref) and BVariable.isInput(BVariable.getVarPointer(qual.cref))))
-      then (Expression.makeZero(qual.ty), diffArguments);
+      case (Expression.CREF(), _)
+        guard(BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref)) and
+              not (ComponentRef.isTopLevel(exp.cref) and BVariable.isInput(BVariable.getVarPointer(exp.cref))))
+      then (Expression.makeZero(exp.ty), diffArguments);
 
       // -------------------------------------
       //    Special rules for Type: TIME
@@ -477,17 +475,17 @@ public
 
       // Types: (TIME)
       // D(discrete)/d(x) = 0
-      case (qual as Expression.CREF(), _)
+      case (Expression.CREF(), _)
         guard((diffArguments.diffType == DifferentiationType.TIME) and
-              (BVariable.isDiscrete(BVariable.getVarPointer(qual.cref)) or BVariable.isDiscreteState(BVariable.getVarPointer(qual.cref))))
-      then (Expression.makeZero(qual.ty), diffArguments);
+              (BVariable.isDiscrete(BVariable.getVarPointer(exp.cref)) or BVariable.isDiscreteState(BVariable.getVarPointer(exp.cref))))
+      then (Expression.makeZero(exp.ty), diffArguments);
 
       // Types: (TIME)
       // DUMMY_STATES => DUMMY_DER
-      case (qual as Expression.CREF(), _)
+      case (Expression.CREF(), _)
         guard((diffArguments.diffType == DifferentiationType.TIME) and
-              (BVariable.isDummyState(BVariable.getVarPointer(qual.cref))))
-      then (Expression.fromCref(BVariable.getDummyDerCref(qual.cref)), diffArguments);
+              (BVariable.isDummyState(BVariable.getVarPointer(exp.cref))))
+      then (Expression.fromCref(BVariable.getDummyDerCref(exp.cref)), diffArguments);
 
       // ToDo: Types: (TIME) D(y)/dtime --> der(y) --> $DER.y (make y a state)
 
@@ -503,16 +501,16 @@ public
 
       // Types: (JACOBIAN)
       // cref in jacobianHT => get $SEED or $pDER variable from HashTable
-      case (qual as Expression.CREF(), DIFFERENTIATION_ARGUMENTS(jacobianHT = SOME(jacobianHT)))
+      case (Expression.CREF(), DIFFERENTIATION_ARGUMENTS(jacobianHT = SOME(jacobianHT)))
         guard((diffArguments.diffType == DifferentiationType.JACOBIAN) and
-              BaseHashTable.hasKey(qual.cref, jacobianHT))
-      then (Expression.fromCref(BaseHashTable.get(qual.cref, jacobianHT)), diffArguments);
+              BaseHashTable.hasKey(exp.cref, jacobianHT))
+      then (Expression.fromCref(BaseHashTable.get(exp.cref, jacobianHT)), diffArguments);
 
       // Types: (JACOBIAN)
       // Everything that is not in jacobianHT gets differentiated to zero
-      case (qual as Expression.CREF(), _)
+      case (Expression.CREF(), _)
         guard(diffArguments.diffType == DifferentiationType.JACOBIAN)
-      then (Expression.makeZero(qual.ty), diffArguments);
+      then (Expression.makeZero(exp.ty), diffArguments);
 
       else algorithm
         // maybe add failtrace here and allow failing
@@ -526,7 +524,7 @@ public
     input output Expression exp "Has to be Expression.BINARY()";
     input output DifferentiationArguments diffArguments;
   algorithm
-    (exp, diffArguments) := match (exp, diffArguments)
+    (exp, diffArguments) := match exp
       local
         Expression exp1, exp2, diffExp1, diffExp2, call;
         Operator operator, addOp, subOp, mulOp;
@@ -534,7 +532,7 @@ public
 
       // Dash calculations (ADD, SUB, ADD_EW, SUB_EW, ...)
       // (f + g)' = f' + g'
-      case (Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2), _)
+      case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard((Operator.getMathClassification(operator) == NFOperator.MathClassification.ADDITION) or
               (Operator.getMathClassification(operator) == NFOperator.MathClassification.SUBTRACTION))
         algorithm
@@ -544,7 +542,7 @@ public
 
       // Multiplication (MUL, MUL_EW, ...)
       // (f * g)' =  fg' + f'g
-      case (Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2), _)
+      case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
         algorithm
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
@@ -561,7 +559,7 @@ public
 
       // Division (DIV, DIV_EW, ...)
       // (f / g)' = (f'g - fg') / g^2
-      case (Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2), _)
+      case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.DIVISION)
         algorithm
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
@@ -583,21 +581,21 @@ public
 
       // Power (POW, POW_EW, ...) with base zero
       // (0^r)' = 0
-      case (Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2), _)
+      case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard((Operator.getMathClassification(operator) == NFOperator.MathClassification.POWER) and
               Expression.isZero(exp1))
       then (Expression.makeZero(operator.ty), diffArguments);
 
       // Power (POW, POW_EW, ...) with constant exponent and constant base
       // (r1^r2)' = 0
-      case (Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2), _)
+      case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard((Operator.getMathClassification(operator) == NFOperator.MathClassification.POWER) and
               Expression.isConstNumber(exp1) and Expression.isConstNumber(exp2))
       then (Expression.makeZero(operator.ty), diffArguments);
 
       // Power (POW, POW_EW, ...) with constant exponent
       // (x^r)' = r*(x^(r-1))
-      case (Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2), _)
+      case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard((Operator.getMathClassification(operator) == NFOperator.MathClassification.POWER) and
               (Expression.isConstNumber(exp2) or BVariable.checkExp(exp2, BVariable.isParamOrConst)))
         algorithm
@@ -614,7 +612,7 @@ public
       // Power (POW, POW_EW, ...) with constant base
       // ToDo: what is the most optimal constellation for this?
       // (r^x)'  = r^x*ln(r)*x'
-      case (Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2), _)
+      case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard((Operator.getMathClassification(operator) == NFOperator.MathClassification.POWER) and
               (Expression.isConstNumber(exp1) or BVariable.checkExp(exp1, BVariable.isParamOrConst)))
         algorithm
@@ -631,7 +629,7 @@ public
       // Power (POW, POW_EW, ...) regular case
       // ToDo: what is the most optimal constellation for this?
       // (x^y)' = x^(y-1) * ( x*ln(x)*y'+(y*x'))
-      case (Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2), _)
+      case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.POWER)
         algorithm
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
@@ -663,7 +661,7 @@ public
             diffArguments);
 
       // Logical operators => just return as is
-      case (Expression.BINARY(operator = operator), _)
+      case Expression.BINARY(operator = operator)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.LOGICAL)
       then (exp, diffArguments);
 
@@ -687,15 +685,14 @@ public
     if diffArguments.diffType == DifferentiationType.JACOBIAN then
       attr := match (attr, diffArguments)
         local
-          EquationAttributes qual;
           Pointer<Variable> residualVar, diffedResidualVar;
           HashTableCrToCr.HashTable jacobianHT;
 
-        case (qual as EquationAttributes.EQUATION_ATTRIBUTES(residualVar = SOME(residualVar)), DIFFERENTIATION_ARGUMENTS(jacobianHT = SOME(jacobianHT)))
+        case (EquationAttributes.EQUATION_ATTRIBUTES(residualVar = SOME(residualVar)), DIFFERENTIATION_ARGUMENTS(jacobianHT = SOME(jacobianHT)))
           guard(BaseHashTable.hasKey(BVariable.getVarName(residualVar), jacobianHT))
           algorithm
             diffedResidualVar := BVariable.getVarPointer(BaseHashTable.get(BVariable.getVarName(residualVar), jacobianHT));
-        then EquationAttributes.EQUATION_ATTRIBUTES(qual.differentiated, qual.kind, qual.evalStages, SOME(diffedResidualVar));
+        then EquationAttributes.EQUATION_ATTRIBUTES(attr.differentiated, attr.kind, attr.evalStages, SOME(diffedResidualVar));
 
         else attr;
 
@@ -717,7 +714,7 @@ public
         case _ guard(Expression.isReal(exp))    then Expression.BINARY(exp, op, Expression.REAL(1.0));
         case _ guard(Expression.isInteger(exp)) then Expression.BINARY(exp, op, Expression.INTEGER(1));
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + ". Only substract one from REAL() or INTEGER()."});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + ". Only subtract one from REAL() or INTEGER()."});
         then fail();
       end match;
     end minusOne;

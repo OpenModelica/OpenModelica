@@ -45,9 +45,9 @@ public
   import Dimension = NFDimension;
   import Expression = NFExpression;
   import InstNode = NFInstNode.InstNode;
+  import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
   import Type = NFType;
-  import Operator = NFOperator;
   import Variable = NFVariable;
 
   // Old Backend imports
@@ -140,19 +140,17 @@ public
       input output String str = "";
     algorithm
       str := match eq
-        local
-          Equation qualEq;
-        case qualEq as SCALAR_EQUATION() then str + "[SCAL] " + EquationAttributes.toString(qualEq.attr) + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
-        case qualEq as ARRAY_EQUATION()  then str + "[ARRY] " + EquationAttributes.toString(qualEq.attr) + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
-        case qualEq as SIMPLE_EQUATION() then str + "[SIMP] " + EquationAttributes.toString(qualEq.attr) + ComponentRef.toString(qualEq.lhs) + " = " + ComponentRef.toString(qualEq.rhs);
-        case qualEq as RECORD_EQUATION() then str + "[RECD] " + EquationAttributes.toString(qualEq.attr) + Expression.toString(qualEq.lhs) + " = " + Expression.toString(qualEq.rhs);
-        case qualEq as ALGORITHM()       then str + "[ALGO] size " + intString(qualEq.size) + " " + EquationAttributes.toString(qualEq.attr) + "\n" + Algorithm.toString(qualEq.alg, str + "[----] ");
-        case qualEq as IF_EQUATION()     then str + IfEquationBody.toString(qualEq.body, str + "[----] ", "[-IF-] ");
-        case qualEq as FOR_EQUATION()    then str + forEquationToString(qualEq.iter, qualEq.range, qualEq.body, "", str + "[----] ", "[FOR-] ");
-        case qualEq as WHEN_EQUATION()   then str + WhenEquationBody.toString(qualEq.body, str + "[----] ", "[WHEN] ");
-        case qualEq as AUX_EQUATION()    then str + "[AUX-] Auxiliary equation for " + Variable.toString(Pointer.access(qualEq.auxiliary));
-        case qualEq as DUMMY_EQUATION()  then str + "[DUMY] Dummy equation.";
-        else                                  str + "[FAIL] " + getInstanceName() +  " failed!";
+        case SCALAR_EQUATION() then str + "[SCAL] " + EquationAttributes.toString(eq.attr) + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs);
+        case ARRAY_EQUATION()  then str + "[ARRY] " + EquationAttributes.toString(eq.attr) + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs);
+        case SIMPLE_EQUATION() then str + "[SIMP] " + EquationAttributes.toString(eq.attr) + ComponentRef.toString(eq.lhs) + " = " + ComponentRef.toString(eq.rhs);
+        case RECORD_EQUATION() then str + "[RECD] " + EquationAttributes.toString(eq.attr) + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs);
+        case ALGORITHM()       then str + "[ALGO] size " + intString(eq.size) + " " + EquationAttributes.toString(eq.attr) + "\n" + Algorithm.toString(eq.alg, str + "[----] ");
+        case IF_EQUATION()     then str + IfEquationBody.toString(eq.body, str + "[----] ", "[-IF-] ");
+        case FOR_EQUATION()    then str + forEquationToString(eq.iter, eq.range, eq.body, "", str + "[----] ", "[FOR-] ");
+        case WHEN_EQUATION()   then str + WhenEquationBody.toString(eq.body, str + "[----] ", "[WHEN] ");
+        case AUX_EQUATION()    then str + "[AUX-] Auxiliary equation for " + Variable.toString(Pointer.access(eq.auxiliary));
+        case DUMMY_EQUATION()  then str + "[DUMY] Dummy equation.";
+        else                        str + "[FAIL] " + getInstanceName() + " failed!";
       end match;
     end toString;
 
@@ -217,7 +215,7 @@ public
     algorithm
       eq := match eq
         local
-          Equation qualEq, body;
+          Equation body;
           MapFuncCref funcCref;
           Expression lhs, rhs, range;
           ComponentRef lhs_cref, rhs_cref;
@@ -226,104 +224,104 @@ public
           WhenEquationBody whenEqBody;
           Equation body, new_body;
 
-        case qualEq as SCALAR_EQUATION()
+        case SCALAR_EQUATION()
           algorithm
-            lhs := Expression.map(qualEq.lhs, funcExp);
-            rhs := Expression.map(qualEq.rhs, funcExp);
-            if not referenceEq(lhs, qualEq.lhs) then
-              qualEq.lhs := lhs;
+            lhs := Expression.map(eq.lhs, funcExp);
+            rhs := Expression.map(eq.rhs, funcExp);
+            if not referenceEq(lhs, eq.lhs) then
+              eq.lhs := lhs;
             end if;
-            if not referenceEq(rhs, qualEq.rhs) then
-              qualEq.rhs := rhs;
+            if not referenceEq(rhs, eq.rhs) then
+              eq.rhs := rhs;
             end if;
-        then qualEq;
+        then eq;
 
-        case qualEq as ARRAY_EQUATION()
+        case ARRAY_EQUATION()
           algorithm
-            lhs := Expression.map(qualEq.lhs, funcExp);
-            rhs := Expression.map(qualEq.rhs, funcExp);
-            if not referenceEq(lhs, qualEq.lhs) then
-              qualEq.lhs := lhs;
+            lhs := Expression.map(eq.lhs, funcExp);
+            rhs := Expression.map(eq.rhs, funcExp);
+            if not referenceEq(lhs, eq.lhs) then
+              eq.lhs := lhs;
             end if;
-            if not referenceEq(rhs, qualEq.rhs) then
-              qualEq.rhs := rhs;
+            if not referenceEq(rhs, eq.rhs) then
+              eq.rhs := rhs;
             end if;
-        then qualEq;
+        then eq;
 
-        case qualEq as SIMPLE_EQUATION()
+        case SIMPLE_EQUATION()
           algorithm
             if isSome(funcCrefOpt) then
               SOME(funcCref) := funcCrefOpt;
-              lhs_cref := funcCref(qualEq.lhs);
-              rhs_cref := funcCref(qualEq.rhs);
-              if not referenceEq(lhs_cref, qualEq.lhs) then
-                qualEq.lhs := lhs_cref;
+              lhs_cref := funcCref(eq.lhs);
+              rhs_cref := funcCref(eq.rhs);
+              if not referenceEq(lhs_cref, eq.lhs) then
+                eq.lhs := lhs_cref;
               end if;
-              if not referenceEq(rhs_cref, qualEq.rhs) then
-                qualEq.rhs := rhs_cref;
+              if not referenceEq(rhs_cref, eq.rhs) then
+                eq.rhs := rhs_cref;
               end if;
             end if;
-        then qualEq;
+        then eq;
 
-        case qualEq as RECORD_EQUATION()
+        case RECORD_EQUATION()
           algorithm
-            lhs := Expression.map(qualEq.lhs, funcExp);
-            rhs := Expression.map(qualEq.rhs, funcExp);
-            if not referenceEq(lhs, qualEq.lhs) then
-              qualEq.lhs := lhs;
+            lhs := Expression.map(eq.lhs, funcExp);
+            rhs := Expression.map(eq.rhs, funcExp);
+            if not referenceEq(lhs, eq.lhs) then
+              eq.lhs := lhs;
             end if;
-            if not referenceEq(rhs, qualEq.rhs) then
-              qualEq.rhs := rhs;
+            if not referenceEq(rhs, eq.rhs) then
+              eq.rhs := rhs;
             end if;
-        then qualEq;
+        then eq;
 
-        case qualEq as ALGORITHM()
+        case ALGORITHM()
           algorithm
-            alg := Algorithm.mapExp(qualEq.alg, funcExp);
+            alg := Algorithm.mapExp(eq.alg, funcExp);
             if isSome(funcCrefOpt) then
               SOME(funcCref) := funcCrefOpt;
               // ToDo referenceEq for lists?
               //alg.inputs := List.map(alg.inputs, funcCref);
               alg.outputs := List.map(alg.outputs, funcCref);
             end if;
-            qualEq.alg := alg;
-        then qualEq;
+            eq.alg := alg;
+        then eq;
 
-        case qualEq as IF_EQUATION()
+        case IF_EQUATION()
           algorithm
-            ifEqBody := IfEquationBody.map(qualEq.body, funcExp, funcCrefOpt);
-            if not referenceEq(ifEqBody, qualEq.body) then
-              qualEq.body := ifEqBody;
+            ifEqBody := IfEquationBody.map(eq.body, funcExp, funcCrefOpt);
+            if not referenceEq(ifEqBody, eq.body) then
+              eq.body := ifEqBody;
             end if;
-        then qualEq;
+        then eq;
 
-        case qualEq as FOR_EQUATION()
+        case FOR_EQUATION()
           algorithm
-            range := Expression.map(qualEq.range, funcExp);
-            body := map(qualEq.body, funcExp, funcCrefOpt);
-            if not referenceEq(range, qualEq.range) then
-              qualEq.range := range;
+            range := Expression.map(eq.range, funcExp);
+            body := map(eq.body, funcExp, funcCrefOpt);
+            if not referenceEq(range, eq.range) then
+              eq.range := range;
             end if;
-            if not referenceEq(body, qualEq.body) then
-              qualEq.body := body;
+            if not referenceEq(body, eq.body) then
+              eq.body := body;
             end if;
-        then qualEq;
+        then eq;
 
-        case qualEq as WHEN_EQUATION()
+        case WHEN_EQUATION()
           algorithm
-            whenEqBody := WhenEquationBody.map(qualEq.body, funcExp, funcCrefOpt);
-            if not referenceEq(whenEqBody, qualEq.body) then
-              qualEq.body := whenEqBody;
+            whenEqBody := WhenEquationBody.map(eq.body, funcExp, funcCrefOpt);
+            if not referenceEq(whenEqBody, eq.body) then
+              eq.body := whenEqBody;
             end if;
-        then qualEq;
+        then eq;
 
-        case qualEq as AUX_EQUATION(body = SOME(body))
+        case AUX_EQUATION(body = SOME(body))
           algorithm
             new_body := map(body, funcExp, funcCrefOpt);
             if not referenceEq(new_body, body) then
-              qualEq.body := SOME(new_body);
+              eq.body := SOME(new_body);
             end if;
-        then qualEq;
+        then eq;
       end match;
     end map;
 
@@ -469,27 +467,25 @@ public
       input output Equation eq;
     algorithm
       eq := match eq
-        local
-          Equation qual;
-        case qual as SCALAR_EQUATION() algorithm
-          qual.lhs := SimplifyExp.simplify(qual.lhs);
-          qual.rhs := SimplifyExp.simplify(qual.rhs);
-        then qual;
-        case qual as ARRAY_EQUATION() algorithm
-          qual.lhs := SimplifyExp.simplify(qual.lhs);
-          qual.rhs := SimplifyExp.simplify(qual.rhs);
-        then qual;
+        case SCALAR_EQUATION() algorithm
+          eq.lhs := SimplifyExp.simplify(eq.lhs);
+          eq.rhs := SimplifyExp.simplify(eq.rhs);
+        then eq;
+        case ARRAY_EQUATION() algorithm
+          eq.lhs := SimplifyExp.simplify(eq.lhs);
+          eq.rhs := SimplifyExp.simplify(eq.rhs);
+        then eq;
         case SIMPLE_EQUATION() then eq;
-        case qual as RECORD_EQUATION() algorithm
-          qual.lhs := SimplifyExp.simplify(qual.lhs);
-          qual.rhs := SimplifyExp.simplify(qual.rhs);
-        then qual;
+        case RECORD_EQUATION() algorithm
+          eq.lhs := SimplifyExp.simplify(eq.lhs);
+          eq.rhs := SimplifyExp.simplify(eq.rhs);
+        then eq;
         // ToDo: implement the following correctly:
-        case qual as ALGORITHM()        then qual;
-        case qual as IF_EQUATION()      then qual;
-        case qual as FOR_EQUATION()     then qual;
-        case qual as WHEN_EQUATION()    then qual;
-        case qual as AUX_EQUATION()     then qual;
+        case ALGORITHM()       then eq;
+        case IF_EQUATION()     then eq;
+        case FOR_EQUATION()    then eq;
+        case WHEN_EQUATION()   then eq;
+        case AUX_EQUATION()    then eq;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Equation.toString(eq)});
         then fail();
@@ -514,20 +510,17 @@ public
 
       // update equation attributes
       eqn := match eqn
-        local
-          Equation qual;
+        case SCALAR_EQUATION() algorithm
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
 
-        case qual as SCALAR_EQUATION() algorithm
-            qual.attr := EquationAttributes.setResidualVar(qual.attr, residualVar);
-        then qual;
+        case ARRAY_EQUATION() algorithm
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
 
-        case qual as ARRAY_EQUATION() algorithm
-            qual.attr := EquationAttributes.setResidualVar(qual.attr, residualVar);
-        then qual;
-
-        case qual as SIMPLE_EQUATION() algorithm
-            qual.attr := EquationAttributes.setResidualVar(qual.attr, residualVar);
-        then qual;
+        case SIMPLE_EQUATION() algorithm
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
 
         // ToDo: add all other cases!
 
@@ -736,55 +729,54 @@ public
     algorithm
       stmt := match stmt
         local
-          WhenStatement qual;
           MapFuncCref funcCref;
           Expression lhs, rhs, value, condition;
           ComponentRef stateVar;
 
-        case qual as ASSIGN()
+        case ASSIGN()
           algorithm
-            lhs := Expression.map(qual.lhs, funcExp);
-            rhs := Expression.map(qual.rhs, funcExp);
-            if not referenceEq(lhs, qual.lhs) then
-              qual.lhs := lhs;
+            lhs := Expression.map(stmt.lhs, funcExp);
+            rhs := Expression.map(stmt.rhs, funcExp);
+            if not referenceEq(lhs, stmt.lhs) then
+              stmt.lhs := lhs;
             end if;
-            if not referenceEq(rhs, qual.rhs) then
-              qual.rhs := rhs;
+            if not referenceEq(rhs, stmt.rhs) then
+              stmt.rhs := rhs;
             end if;
-        then qual;
+        then stmt;
 
-        case qual as REINIT()
+        case REINIT()
           algorithm
             if isSome(funcCrefOpt) then
               SOME(funcCref) := funcCrefOpt;
-              stateVar := funcCref(qual.stateVar);
-              if not referenceEq(stateVar, qual.stateVar) then
-                qual.stateVar := stateVar;
+              stateVar := funcCref(stmt.stateVar);
+              if not referenceEq(stateVar, stmt.stateVar) then
+                stmt.stateVar := stateVar;
               end if;
             end if;
-            value := Expression.map(qual.value, funcExp);
-            if not referenceEq(value, qual.value) then
-              qual.value := value;
+            value := Expression.map(stmt.value, funcExp);
+            if not referenceEq(value, stmt.value) then
+              stmt.value := value;
             end if;
-        then qual;
+        then stmt;
 
-        case qual as ASSERT()
+        case ASSERT()
           algorithm
-            condition := Expression.map(qual.condition, funcExp);
-            if not referenceEq(condition, qual.condition) then
-              qual.condition := condition;
+            condition := Expression.map(stmt.condition, funcExp);
+            if not referenceEq(condition, stmt.condition) then
+              stmt.condition := condition;
             end if;
-        then qual;
+        then stmt;
 
-        case qual as TERMINATE() then qual;
+        case TERMINATE() then stmt;
 
-        case qual as NORETCALL()
+        case NORETCALL()
           algorithm
-            value := Expression.map(qual.exp, funcExp);
-            if not referenceEq(value, qual.exp) then
-              qual.exp := value;
+            value := Expression.map(stmt.exp, funcExp);
+            if not referenceEq(value, stmt.exp) then
+              stmt.exp := value;
             end if;
-        then qual;
+        then stmt;
 
         else stmt;
       end match;
@@ -994,14 +986,10 @@ public
       partial function MapFunc
         input Pointer<Equation> e;
       end MapFunc;
-    protected
-      Pointer<Equation> eq_ptr;
-      Equation eq, new_eq;
     algorithm
       for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
         if ExpandableArray.occupied(i, equations.eqArr) then
-          eq_ptr := ExpandableArray.get(i, equations.eqArr);
-          func(eq_ptr);
+          func(ExpandableArray.get(i, equations.eqArr));
          end if;
       end for;
     end mapPtr;
@@ -1069,7 +1057,7 @@ public
       // hash all equations and create hash - equation tpl list
       mapPtr(equations, function createSortHashTpl(mod = realInt(size * log(size)), hash_lst_ptr = hash_lst_ptr));
       hash_lst := List.sort(Pointer.access(hash_lst_ptr), BackendUtil.indexTplGt);
-      // create new variables and add them one by one in sorted order
+      // add the equations one by one in sorted order
       equations := empty(size);
       for tpl in hash_lst loop
         (_, eqn_ptr) := tpl;
@@ -1128,41 +1116,40 @@ public
     algorithm
       str := match eqData
         local
-          EqData qualEqData;
           String tmp;
 
-        case qualEqData as EQ_DATA_SIM()
+        case EQ_DATA_SIM()
           algorithm
             if level == 0 then
-              tmp :=  EquationPointers.toString(qualEqData.equations, "Simulation", false);
+              tmp :=  EquationPointers.toString(eqData.equations, "Simulation", false);
             else
-              tmp :=  EquationPointers.toString(qualEqData.continuous, "Continuous", false) +
-                      EquationPointers.toString(qualEqData.discretes, "Discrete", false) +
-                      EquationPointers.toString(qualEqData.initials, "(Exclusively) Initial", false) +
-                      EquationPointers.toString(qualEqData.auxiliaries, "Auxiliary", false);
+              tmp :=  EquationPointers.toString(eqData.continuous, "Continuous", false) +
+                      EquationPointers.toString(eqData.discretes, "Discrete", false) +
+                      EquationPointers.toString(eqData.initials, "(Exclusively) Initial", false) +
+                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", false);
             end if;
         then tmp;
 
-        case qualEqData as EQ_DATA_JAC()
+        case EQ_DATA_JAC()
           algorithm
             if level == 0 then
-              tmp :=  EquationPointers.toString(qualEqData.equations, "Jacobian", false);
+              tmp :=  EquationPointers.toString(eqData.equations, "Jacobian", false);
             else
-              tmp :=  EquationPointers.toString(qualEqData.results, "Result", false) +
-                      EquationPointers.toString(qualEqData.temporary, "Temporary Inner", false) +
-                      EquationPointers.toString(qualEqData.auxiliaries, "Auxiliary", false);
+              tmp :=  EquationPointers.toString(eqData.results, "Result", false) +
+                      EquationPointers.toString(eqData.temporary, "Temporary Inner", false) +
+                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", false);
             end if;
         then tmp;
 
-        case qualEqData as EQ_DATA_HESS()
+        case EQ_DATA_HESS()
           algorithm
             if level == 0 then
-              tmp :=  EquationPointers.toString(qualEqData.equations, "Hessian", false);
+              tmp :=  EquationPointers.toString(eqData.equations, "Hessian", false);
             else
-              tmp :=  StringUtil.headline_4("Result Equation Pointer") + "\n" +
-                      Equation.toString(Pointer.access(qualEqData.result)) + "\n" +
-                      EquationPointers.toString(qualEqData.temporary, "Temporary Inner", false) +
-                      EquationPointers.toString(qualEqData.auxiliaries, "Auxiliary", false);
+              tmp :=  StringUtil.headline_4("Result Equation") + "\n" +
+                      Equation.toString(Pointer.access(eqData.result)) + "\n" +
+                      EquationPointers.toString(eqData.temporary, "Temporary Inner", false) +
+                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", false);
             end if;
         then tmp;
 
@@ -1177,11 +1164,9 @@ public
       input EquationPointers equations;
     algorithm
       eqData := match eqData
-        local
-          EqData qual;
-        case qual as EQ_DATA_SIM() algorithm qual.equations := equations; then qual;
-        case qual as EQ_DATA_JAC() algorithm qual.equations := equations; then qual;
-        case qual as EQ_DATA_HESS() algorithm qual.equations := equations; then qual;
+        case EQ_DATA_SIM() algorithm eqData.equations := equations; then eqData;
+        case EQ_DATA_JAC() algorithm eqData.equations := equations; then eqData;
+        case EQ_DATA_HESS() algorithm eqData.equations := equations; then eqData;
       end match;
     end setEquations;
   end EqData;

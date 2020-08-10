@@ -123,7 +123,7 @@ public
       - DetectDiscreteStates"
     input output BVariable.VarData varData                "Data containing variable pointers";
     input output BEquation.EqData eqData                  "Data containing equation pointers";
-    input detectContinuousStatesInterface continuousFunc  "Subroutine for continous states";
+    input detectContinuousStatesInterface continuousFunc  "Subroutine for continuous states";
     input detectDiscreteStatesInterface discreteFunc      "Subroutine for discrete states";
   end detectStatesInterface;
 

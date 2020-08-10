@@ -124,7 +124,7 @@ public
     (func) := match flag
       case "none" then (tearingNone);
       /* ... New tearing modules have to be added here */
-    else fail();
+      else fail();
     end match;
   end getModule;
 
@@ -160,17 +160,16 @@ protected
   algorithm
     comp := match comp
       local
-        StrongComponent qual;
         Tearing tearingSet;
         InnerEquation dummy;
 
       // apply tearing if it is an algebraic loop
-      case qual as StrongComponent.ALGEBRAIC_LOOP()
+      case StrongComponent.ALGEBRAIC_LOOP()
         algorithm
           // for now do not apply tearing
           dummy := BEquation.INNER_EQUATION(Pointer.create(Equation.DUMMY_EQUATION()), {});
-          tearingSet := TEARING_SET(qual.vars, qual.eqns, arrayCreate(0, dummy), NONE());
-      then StrongComponent.TORN_LOOP(tearingSet, NONE(), false, qual.mixed);
+          tearingSet := TEARING_SET(comp.vars, comp.eqns, arrayCreate(0, dummy), NONE());
+      then StrongComponent.TORN_LOOP(tearingSet, NONE(), false, comp.mixed);
 
       // do nothing otherwise
       else comp;

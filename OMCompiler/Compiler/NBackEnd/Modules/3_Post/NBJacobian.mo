@@ -63,9 +63,8 @@ protected
 
 public
   function main
-    "Wrapper function for any jacobian function. This will be
-    called during simulation and gets the corresponding subfunction from
-    Config."
+    "Wrapper function for any jacobian function. This will be called during
+     simulation and gets the corresponding subfunction from Config."
     extends Module.wrapper;
     input System.SystemType systemType;
   protected
@@ -78,7 +77,6 @@ public
         Option<Jacobian> jacobian                       "Resulting jacobian";
         FunctionTree funcTree                           "Function call bodies";
         list<System.System> oldSystems, newSystems = {} "Equation systems before and afterwards";
-        Integer idx = 1;
 
       case BackendDAE.BDAE(varData = BVariable.VAR_DATA_SIM(knowns = knowns), funcTree = funcTree)
         algorithm
@@ -96,21 +94,19 @@ public
 
           for syst in oldSystems loop
             (jacobian, funcTree) := match syst
-              local
-                System.System qual;
-              case qual as System.SYSTEM() then func(name, qual.unknowns, qual.daeUnknowns, qual.equations , knowns, qual.strongComponents, funcTree);
+              case System.SYSTEM() then func(name, syst.unknowns, syst.daeUnknowns, syst.equations, knowns, syst.strongComponents, funcTree);
             end match;
             syst.jacobian := jacobian;
             newSystems := syst::newSystems;
-            idx := idx + 1;
           end for;
+          newSystems := listReverse(newSystems);
 
-        _ := match systemType
-          case NBSystem.SystemType.ODE  algorithm bdae.ode  := listReverse(newSystems);       then ();
-          case NBSystem.SystemType.INIT algorithm bdae.init := listReverse(newSystems);       then ();
-          case NBSystem.SystemType.DAE  algorithm bdae.dae  := SOME(listReverse(newSystems)); then ();
-        end match;
-        bdae.funcTree := funcTree;
+          _ := match systemType
+            case NBSystem.SystemType.ODE  algorithm bdae.ode  := newSystems;       then ();
+            case NBSystem.SystemType.INIT algorithm bdae.init := newSystems;       then ();
+            case NBSystem.SystemType.DAE  algorithm bdae.dae  := SOME(newSystems); then ();
+          end match;
+          bdae.funcTree := funcTree;
       then bdae;
 
       else algorithm
@@ -132,7 +128,7 @@ public
       case "symbolic" then (jacobianSymbolic);
       case "numeric"  then (jacobianNumeric);
       /* ... New jacobian modules have to be added here */
-    else fail();
+      else fail();
     end match;
   end getModule;
 

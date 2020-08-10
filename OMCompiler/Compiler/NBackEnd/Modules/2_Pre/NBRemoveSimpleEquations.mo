@@ -72,7 +72,11 @@ public
       case BackendDAE.BDAE(varData = varData, eqData = eqData)
         algorithm
           func(varData, eqData);
-        then bdae;
+      then bdae;
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+      then fail();
     end match;
   end main;
 

@@ -49,8 +49,8 @@ protected
   import Causalize = NBCausalize;
   import Jacobian = NBJacobian;
   import Module = NBModule;
-  import System = NBSystem;
   import Partitioning = NBPartitioning;
+  import System = NBSystem;
   import Tearing = NBTearing;
 
 public
@@ -64,11 +64,10 @@ public
     try
       bdae := match bdae
         local
-          BackendDAE.BackendDAE qual;
           BVariable.VarData varData;
           BEquation.EqData eqData;
-        case qual as BackendDAE.BDAE( varData = varData as BVariable.VAR_DATA_SIM(variables = variables, states = states),
-                                      eqData = eqData as BEquation.EQ_DATA_SIM(equations = equations, initials = initialEqs))
+        case BackendDAE.BDAE( varData = varData as BVariable.VAR_DATA_SIM(variables = variables, states = states),
+                              eqData = eqData as BEquation.EQ_DATA_SIM(equations = equations, initials = initialEqs))
           algorithm
             (variables, equations, initialEqs) := createStartEquations(states, variables, equations, initialEqs);
 
@@ -76,9 +75,9 @@ public
             eqData.equations := equations;
             eqData.initials := initialEqs;
 
-            qual.varData := varData;
-            qual.eqData := eqData;
-        then qual;
+            bdae.varData := varData;
+            bdae.eqData := eqData;
+        then bdae;
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
