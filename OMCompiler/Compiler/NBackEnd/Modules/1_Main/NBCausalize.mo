@@ -54,6 +54,7 @@ protected
   import Error;
   import GC;
   import HashTableCrToInt = NBHashTableCrToInt;
+  import List;
   import StringUtil;
 
 public
@@ -113,7 +114,7 @@ protected
     // create all components as residuals for now
     // ToDo: use tearing to get inner/tmp equations
     BEquation.EquationPointers.mapPtr(system.equations, function StrongComponent.makeDAEModeResidualTraverse(acc = acc));
-    system.strongComponents := SOME(listArray(listReverse(Pointer.access(acc))));
+    system.strongComponents := SOME(List.listArrayReverse(Pointer.access(acc)));
   end causalizeDAEMode;
 
 public

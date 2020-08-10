@@ -254,10 +254,7 @@ public
       input SparsityPattern sparsityPattern;
       output SparsityColoring sparsityColoring = {};
     algorithm
-      for cref in sparsityPattern.independent_vars loop
-        sparsityColoring := {cref} :: sparsityColoring;
-      end for;
-      sparsityColoring := listReverse(sparsityColoring);
+      sparsityColoring := list({cref} for cref in sparsityPattern.independent_vars);
     end createEmptyColoring;
 
   end SparsityPattern;

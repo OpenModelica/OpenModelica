@@ -65,9 +65,9 @@ protected
   // Backend imports
   import BEquation = NBEquation;
   import Jacobian = NBackendDAE;
-  import BVariable = NBVariable;
   import StrongComponent = NBStrongComponent;
   import System = NBSystem;
+  import BVariable = NBVariable;
 
 public
   partial function wrapper

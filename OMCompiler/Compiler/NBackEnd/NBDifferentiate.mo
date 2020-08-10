@@ -228,7 +228,6 @@ public
   protected
     list<Pointer<Equation>> then_eqns;
     IfEquationBody else_if;
-    Option<IfEquationBody> else_if_opt;
   algorithm
     // ToDo: this is a little ugly
     // 1. why are the then_eqns Pointers? no need for that
@@ -236,11 +235,10 @@ public
     then_eqns := List.map(body.then_eqns, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr));
     if isSome(body.else_if) then
       (else_if, diffArguments_ptr) := differentiateIfEquationBody(Util.getOption(body.else_if), diffArguments_ptr);
-      else_if_opt := SOME(else_if);
+      body := IfEquationBody.IF_EQUATION_BODY(body.condition, then_eqns, SOME(else_if));
     else
-      else_if_opt := NONE();
+      body := IfEquationBody.IF_EQUATION_BODY(body.condition, then_eqns, NONE());
     end if;
-    body := IfEquationBody.IF_EQUATION_BODY(body.condition, then_eqns, else_if_opt);
   end differentiateIfEquationBody;
 
   function differentiateWhenEquationBody
@@ -249,16 +247,14 @@ public
   protected
     list<WhenStatement> when_stmts;
     WhenEquationBody else_when;
-    Option<WhenEquationBody> else_when_opt;
   algorithm
     (when_stmts, diffArguments) := List.mapFold(body.when_stmts, function differentiateWhenStatement(), diffArguments);
     if isSome(body.else_when) then
       (else_when, diffArguments) := differentiateWhenEquationBody(Util.getOption(body.else_when), diffArguments);
-      else_when_opt := SOME(else_when);
+      body := WhenEquationBody.WHEN_EQUATION_BODY(body.condition, when_stmts, SOME(else_when));
     else
-      else_when_opt := NONE();
+      body := WhenEquationBody.WHEN_EQUATION_BODY(body.condition, when_stmts, NONE());
     end if;
-    body := WhenEquationBody.WHEN_EQUATION_BODY(body.condition, when_stmts, else_when_opt);
   end differentiateWhenEquationBody;
 
   function differentiateWhenStatement
