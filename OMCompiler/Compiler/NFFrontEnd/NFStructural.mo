@@ -51,7 +51,8 @@ public
     input Component.Attributes compAttrs;
     input Binding compBinding;
     input InstNode compNode;
-    input Boolean evalAllParams;
+    input Boolean compEval "If the component has an Evaluate=true annotation";
+    input Boolean parentEval "If any parent has an Evaluate=true annotation";
     output Boolean isStructural;
   protected
     Boolean is_fixed;
@@ -59,10 +60,10 @@ public
     if compAttrs.variability <> Variability.PARAMETER then
       // Only parameters can be structural.
       isStructural := false;
-    elseif evalAllParams or Component.getEvaluateAnnotation(component) then
-      // If -d=evaluateAllParameters is set or the parameter has an Evaluate=true
-      // annotation we should probably evaluate the parameter, which we do by
-      // marking it as structural.
+    elseif compEval or parentEval then
+      // If the component or any of its parents has an Evaluate=true annotation
+      // we should probably evaluate the parameter, which we do by marking it as
+      // structural.
       if not Component.getFixedAttribute(component) then
         // Except non-fixed parameters.
         isStructural := false;
@@ -71,7 +72,7 @@ public
         isStructural := false;
       elseif not InstNode.hasBinding(compNode) then
         // Except parameters with no bindings.
-        if not evalAllParams and not Flags.getConfigBool(Flags.CHECK_MODEL) then
+        if not parentEval and not Flags.getConfigBool(Flags.CHECK_MODEL) then
           // Print a warning if a parameter has an Evaluate=true annotation but no binding.
           Error.addSourceMessage(Error.UNBOUND_PARAMETER_EVALUATE_TRUE,
             {InstNode.name(compNode)}, InstNode.info(compNode));
