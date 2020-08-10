@@ -734,6 +734,7 @@ RecordConstructor2.mo \
 RecordExtends1.mo \
 RecordExtends2.mo \
 RecordUnknownDim1.mo \
+RecursiveConstants1.mo \
 RecursiveExtends1.mo \
 RecursiveExtends3.mo \
 RecursiveInst1.mo \
