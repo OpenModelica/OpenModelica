@@ -3262,7 +3262,7 @@ end insertGeneratedInners;
 
 function updateImplicitVariability
   input InstNode node;
-  input Boolean evalAllParams;
+  input Boolean parentEval;
 protected
   Class cls = InstNode.getClass(node);
   ClassTree cls_tree;
@@ -3271,7 +3271,7 @@ algorithm
     case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
         for c in cls_tree.components loop
-          updateImplicitVariabilityComp(c, evalAllParams);
+          updateImplicitVariabilityComp(c, parentEval);
         end for;
 
         Sections.apply(cls.sections,
@@ -3286,14 +3286,14 @@ algorithm
           Structural.markDimension(dim);
         end for;
 
-        updateImplicitVariability(cls.baseClass, evalAllParams);
+        updateImplicitVariability(cls.baseClass, parentEval);
       then
         ();
 
     case Class.INSTANCED_BUILTIN(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
         for c in cls_tree.components loop
-          updateImplicitVariabilityComp(c, evalAllParams);
+          updateImplicitVariabilityComp(c, parentEval);
         end for;
       then
         ();
@@ -3304,7 +3304,7 @@ end updateImplicitVariability;
 
 function updateImplicitVariabilityComp
   input InstNode component;
-  input Boolean evalAllParams;
+  input Boolean parentEval;
 protected
   InstNode node = InstNode.resolveOuter(component);
   Component c = InstNode.component(node);
@@ -3312,10 +3312,13 @@ algorithm
   () := match c
     local
       Binding binding, condition;
+      Boolean eval;
 
     case Component.UNTYPED_COMPONENT(binding = binding, condition = condition)
       algorithm
-        if Structural.isStructuralComponent(c, c.attributes, binding, node, evalAllParams) then
+        eval := Component.getEvaluateAnnotation(c);
+
+        if Structural.isStructuralComponent(c, c.attributes, binding, node, eval, parentEval) then
           Structural.markComponent(c, node);
         end if;
 
@@ -3334,7 +3337,7 @@ algorithm
           Structural.markExp(Binding.getUntypedExp(condition));
         end if;
 
-        updateImplicitVariability(c.classInst, evalAllParams);
+        updateImplicitVariability(c.classInst, eval or parentEval);
       then
         ();
 
