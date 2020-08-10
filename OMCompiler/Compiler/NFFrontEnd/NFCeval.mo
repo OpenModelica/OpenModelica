@@ -65,6 +65,7 @@ import TypeCheck = NFTypeCheck;
 import ExpandExp = NFExpandExp;
 import ElementSource;
 import Flags;
+import Prefixes = NFPrefixes;
 
 public
 uniontype EvalTarget
@@ -399,6 +400,11 @@ algorithm
         if binding.evaluated then
           exp := binding.bindingExp;
         else
+          // Mark the binding as currently being evaluated, to detect loops due
+          // to mutually dependent constants/parameters.
+          comp := Component.setBinding(Binding.EVALUATING_BINDING(binding), comp);
+          InstNode.updateComponent(comp, node);
+
           exp := evalExp_impl(binding.bindingExp, target);
 
           binding.bindingExp := exp;
@@ -416,6 +422,14 @@ algorithm
         printUnboundError(comp, target, defaultExp);
       then
         (defaultExp, false);
+
+    case Binding.EVALUATING_BINDING()
+      algorithm
+        Error.addSourceMessage(Error.CIRCULAR_PARAM,
+          {InstNode.name(node), Prefixes.variabilityString(Component.variability(comp))},
+          InstNode.info(node));
+      then
+        fail();
 
     else
       algorithm
