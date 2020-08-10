@@ -284,8 +284,8 @@ protected
     // add inner / tmp cref tuples to HT
     (seedCandidates, partialCandidates) := if isSome(daeUnknowns) then (Util.getOption(daeUnknowns), unknowns) else (unknowns, BVariable.VariablePointers.empty());
 
-    BVariable.VariablePointers.map(seedCandidates, function makeSeedTraverse(name = name, seed_vars_ptr = seed_vars_ptr, jacobianHT = jacobianHT));
-    BVariable.VariablePointers.map(partialCandidates, function makePartialDerivativeTraverse(name = name, pDer_vars_ptr = pDer_vars_ptr, jacobianHT = jacobianHT));
+    BVariable.VariablePointers.map(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, ht = jacobianHT, makeVar = BVariable.makeSeedVar));
+    BVariable.VariablePointers.map(partialCandidates, function makeVarTraverse(name = name, vars_ptr = pDer_vars_ptr, ht = jacobianHT, makeVar = BVariable.makePDerVar));
 
     // Build differentiation argument structure
     diffArguments := Differentiate.DIFFERENTIATION_ARGUMENTS(
@@ -370,37 +370,28 @@ protected
     ));
   end jacobianNumeric;
 
-  function makeSeedTraverse
+  function makeVarTraverse
     input output Variable var;
     input String name;
-    input Pointer<list<Pointer<Variable>>> seed_vars_ptr;
-    input Pointer<HashTableCrToCr.HashTable> jacobianHT;
-  protected
-    ComponentRef seedCref;
-    Pointer<Variable> seedVar;
-  algorithm
-    (seedCref, seedVar) := BVariable.makeSeedVar(var.name, name);
-    // add $SEED_Jac.x variable pointer to the seed variables
-    Pointer.update(seed_vars_ptr, seedVar :: Pointer.access(seed_vars_ptr));
-    // add x -> $SEED_Jac.x to the hashTable for later lookup
-    Pointer.update(jacobianHT, BaseHashTable.add((var.name, seedCref), Pointer.access(jacobianHT)));
-  end makeSeedTraverse;
+    input Pointer<list<Pointer<Variable>>> vars_ptr;
+    input Pointer<HashTableCrToCr.HashTable> ht;
+    input Func makeVar;
 
-  function makePartialDerivativeTraverse
-    input output Variable var;
-    input String name;
-    input Pointer<list<Pointer<Variable>>> pDer_vars_ptr;
-    input Pointer<HashTableCrToCr.HashTable> jacobianHT;
+    partial function Func
+      input output ComponentRef cref;
+      input String name;
+      output Pointer<Variable> var_ptr;
+    end Func;
   protected
-    ComponentRef pDerCref;
-    Pointer<Variable> pDerVar;
+    ComponentRef cref;
+    Pointer<Variable> var_ptr;
   algorithm
-    (pDerCref, pDerVar) := BVariable.makePDerVar(var.name, name);
-    // add $pDer_Jac.x variable pointer to the partial derivative variables
-    Pointer.update(pDer_vars_ptr, pDerVar :: Pointer.access(pDer_vars_ptr));
-    // add x -> $pDer_Jac.x to the hashTable for later lookup
-    Pointer.update(jacobianHT, BaseHashTable.add((var.name, pDerCref), Pointer.access(jacobianHT)));
-  end makePartialDerivativeTraverse;
+    (cref, var_ptr) := makeVar(var.name, name);
+    // add $<new>.x variable pointer to the variables
+    Pointer.update(vars_ptr, var_ptr :: Pointer.access(vars_ptr));
+    // add x -> $<new>.x to the hashTable for later lookup
+    Pointer.update(ht, BaseHashTable.add((var.name, cref), Pointer.access(ht)));
+  end makeVarTraverse;
 
   annotation(__OpenModelica_Interface="backend");
 end NBJacobian;
