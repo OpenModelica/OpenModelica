@@ -3234,7 +3234,7 @@ algorithm
           fail();
         elseif isCastMatch(ty_match) then
           binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.eachType,
-            binding.evaluated, binding.isFlattened, binding.info);
+            binding.evalState, binding.isFlattened, binding.info);
         end if;
       then
         ();
