@@ -1493,7 +1493,7 @@ algorithm
         if Config.simCodeTarget() == "omsicpp" then
 
          filenameprefix := AbsynUtil.pathString(className);
-          try
+         try
              (cache, Values.STRING(str)) := buildModelFMU(cache, env, className, "2.0", "me", "<default>", true, {"static"});
             if stringEmpty(str) then
               fail();
@@ -1502,7 +1502,7 @@ algorithm
           else
             b := false;
           end try;
-
+          
           compileDir := System.pwd() + Autoconf.pathDelimiter;
           executable := filenameprefix;
           initfilename := filenameprefix + "_init_xml";
@@ -3532,6 +3532,7 @@ algorithm
 
   CC := System.getCCompiler();
   CFLAGS := "-Os "+System.stringReplace(System.getCFlags(),"${MODELICAUSERCFLAGS}","");
+
   LDFLAGS := ("-L"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+Autoconf.triple+"/omc"+dquote+" "+
               "-Wl,-rpath,"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+Autoconf.triple+"/omc"+dquote+" "+
               System.getLDFlags()+" ");
@@ -3724,7 +3725,9 @@ protected
   Boolean needs3rdPartyLibs;
   String FMUType = inFMUType;
   Boolean debug = false;
+
 algorithm
+  
   cache := inCache;
   if not FMI.checkFMIVersion(FMUVersion) then
     outValue := Values.STRING("");
@@ -3790,8 +3793,8 @@ algorithm
     end if;
     return;
   end if;
-
-  if not ((Config.simCodeTarget() == "omsic") or (Config.simCodeTarget() == "omsicpp")) then
+  /*Temporary disabled omsicpp*/
+  if not ((Config.simCodeTarget() == "omsic")/* or (Config.simCodeTarget() == "omsicpp")*/) then
     CevalScript.compileModel(filenameprefix+"_FMU" , libs);
     ExecStat.execStat("buildModelFMU: Generate the FMI files");
   else
@@ -5296,6 +5299,8 @@ algorithm
         (_,vals) := getListFirstShowError(vals, "while retreaving the tolerance (5 arg) from the buildModel arguments");
         (_,vals) := getListFirstShowError(vals, "while retreaving the method (6 arg) from the buildModel arguments");
         (Values.STRING(filenameprefix),vals) := getListFirstShowError(vals, "while retreaving the fileNamePrefix (7 arg) from the buildModel arguments");
+       
+        
         (_,vals) := getListFirstShowError(vals, "while retreaving the options (8 arg) from the buildModel arguments");
         (_,vals) := getListFirstShowError(vals, "while retreaving the outputFormat (9 arg) from the buildModel arguments");
         (_,vals) := getListFirstShowError(vals, "while retreaving the variableFilter (10 arg) from the buildModel arguments");

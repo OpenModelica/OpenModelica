@@ -4497,7 +4497,7 @@ template contextCref(ComponentRef cr, Context context, Text &preExp, Text &varDe
   case JACOBIAN_CONTEXT(jacHT=SOME(_))
     then (match Config.simCodeTarget()
           case "omsic" then crefOMSI(cr, context)
-           case "omsicpp" then crefOMSI(cr, context)
+           /*deactivated case "omsicpp" then crefOMSI(cr, context)*/
           else jacCrefs(cr, context, 0))
 
   case OMSI_CONTEXT(__) then crefOMSI(cr, context)
@@ -4963,7 +4963,7 @@ end daeExp;
   case e as ICONST(__)          then
      let int_type = match Config.simCodeTarget()
          case "omsic" then "omsi_int"
-         case "omsicpp" then "omsi_int"
+         /*deactivated case "omsicpp" then "omsi_int"*/
          else "modelica_integer"
        end match
      '((<%int_type%>) <%integer%>)' /* Yes, we need to cast int to long on 64-bit arch... */
@@ -5870,8 +5870,8 @@ case rel as RELATION(__) then
         match  Config.simCodeTarget()
           case "omsic" then
             'omsi_function_zero_crossings(this_function, <%res%>, <%rel.index%>, omsic_get_model_state())'
-           case "omsicpp" then
-            'omsi_function_zero_crossings(this_function, <%res%>, <%rel.index%>, omsic_get_model_state())'
+           /*deactivated case "omsicpp" then
+            'omsi_function_zero_crossings(this_function, <%res%>, <%rel.index%>, omsic_get_model_state())'*/
         end match
   case JACOBIAN_CONTEXT(__)
   case DAE_MODE_CONTEXT(__)
@@ -6574,8 +6574,8 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     match Config.simCodeTarget()
       case "omsic" then
         'omsi_on_sample_event(this_function, <%intSub(index,1)%>, omsic_get_model_state())'
-      case "omsicpp" then
-        'omsi_on_sample_event(this_function, <%intSub(index,1)%>, omsic_get_model_state())'
+      /*deactivated case "omsicpp" then
+        'omsi_on_sample_event(this_function, <%intSub(index,1)%>, omsic_get_model_state())'*/
       else
         'data->simulationInfo->samples[<%intSub(index, 1)%>]'
     end match
@@ -7616,7 +7616,7 @@ template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isSta
 ::=
   match Config.simCodeTarget()
     case "omsic"
-    case "omsicpp"
+    /*deactivated case "omsicpp"*/
     then
       match var
         case SIMVAR(varKind=PARAM())
