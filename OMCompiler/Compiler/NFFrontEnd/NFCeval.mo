@@ -397,21 +397,44 @@ algorithm
   (exp, evaluated) := match binding
     case Binding.TYPED_BINDING()
       algorithm
-        if binding.evaluated then
-          exp := binding.bindingExp;
-        else
-          // Mark the binding as currently being evaluated, to detect loops due
-          // to mutually dependent constants/parameters.
-          comp := Component.setBinding(Binding.EVALUATING_BINDING(binding), comp);
-          InstNode.updateComponent(comp, node);
+        exp := match Mutable.access(binding.evalState)
+          // A not yet evaluated binding.
+          case NFBinding.EvalState.NOT_EVALUATED
+            algorithm
+              // Mark the binding as currently being evaluated, to detect loops due
+              // to mutually dependent constants/parameters.
+              Mutable.update(binding.evalState, NFBinding.EvalState.EVALUATING);
 
-          exp := evalExp_impl(binding.bindingExp, target);
+              // Evaluate the binding expression.
+              try
+                exp := evalExp_impl(binding.bindingExp, target);
+              else
+                // Reset the flag if the evaluation failed.
+                Mutable.update(binding.evalState, NFBinding.EvalState.NOT_EVALUATED);
+                fail();
+              end try;
 
-          binding.bindingExp := exp;
-          binding.evaluated := true;
-          comp := Component.setBinding(binding, comp);
-          InstNode.updateComponent(comp, node);
-        end if;
+              // Update the binding expression in the component and mark the
+              // binding as evaluated.
+              binding.bindingExp := exp;
+              comp := Component.setBinding(binding, comp);
+              InstNode.updateComponent(comp, node);
+              Mutable.update(binding.evalState, NFBinding.EvalState.EVALUATED);
+            then
+              exp;
+
+          // An already evaluated binding.
+          case NFBinding.EvalState.EVALUATED then binding.bindingExp;
+
+          // A binding that's being evaluated => evaluation loop.
+          else
+            algorithm
+              Error.addSourceMessage(Error.CIRCULAR_PARAM,
+                {InstNode.name(node), Prefixes.variabilityString(Component.variability(comp))},
+                InstNode.info(node));
+            then
+              fail();
+        end match;
       then
         (exp, true);
 
@@ -422,14 +445,6 @@ algorithm
         printUnboundError(comp, target, defaultExp);
       then
         (defaultExp, false);
-
-    case Binding.EVALUATING_BINDING()
-      algorithm
-        Error.addSourceMessage(Error.CIRCULAR_PARAM,
-          {InstNode.name(node), Prefixes.variabilityString(Component.variability(comp))},
-          InstNode.info(node));
-      then
-        fail();
 
     else
       algorithm

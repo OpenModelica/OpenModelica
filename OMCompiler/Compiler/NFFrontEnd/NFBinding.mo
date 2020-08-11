@@ -37,6 +37,7 @@ public
   import Type = NFType;
   import NFPrefixes.Variability;
   import ErrorTypes;
+  import Mutable;
 
 protected
   import Binding = NFBinding;
@@ -50,6 +51,12 @@ public
     NOT_EACH,
     EACH,
     REPEAT
+  );
+
+  type EvalState = enumeration(
+    NOT_EVALUATED,
+    EVALUATING,
+    EVALUATED
   );
 
   record UNBOUND
@@ -83,7 +90,7 @@ public
     Type bindingType;
     Variability variability;
     EachType eachType;
-    Boolean evaluated;
+    Mutable<EvalState> evalState;
     Boolean isFlattened;
     SourceInfo info;
   end TYPED_BINDING;
@@ -313,7 +320,7 @@ public
           ty := Expression.typeOf(exp);
           var := Expression.variability(exp);
         then
-          TYPED_BINDING(exp, ty, var, fieldBinding.eachType, fieldBinding.evaluated,
+          TYPED_BINDING(exp, ty, var, fieldBinding.eachType, fieldBinding.evalState,
                         fieldBinding.isFlattened, fieldBinding.info);
 
       case FLAT_BINDING()

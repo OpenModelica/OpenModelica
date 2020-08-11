@@ -1065,7 +1065,8 @@ algorithm
           each_ty := NFBinding.EachType.NOT_EACH;
         end if;
       then
-        Binding.TYPED_BINDING(exp, ty, var, each_ty, false, false, binding.info);
+        Binding.TYPED_BINDING(exp, ty, var, each_ty,
+          Mutable.create(NFBinding.EvalState.NOT_EVALUATED), false, binding.info);
 
     case Binding.TYPED_BINDING() then binding;
     case Binding.UNBOUND() then binding;
@@ -1128,7 +1129,8 @@ algorithm
           fail();
         end if;
       then
-        Binding.TYPED_BINDING(exp, ty, var, NFBinding.EachType.NOT_EACH, false, false, info);
+        Binding.TYPED_BINDING(exp, ty, var, NFBinding.EachType.NOT_EACH,
+          Mutable.create(NFBinding.EvalState.NOT_EVALUATED), false, info);
 
   end match;
 end typeComponentCondition;
