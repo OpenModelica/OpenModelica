@@ -1385,6 +1385,14 @@ template fmuSourceMakefile(SimCode simCode, String FMUVersion)
   <%\t%>rm -f <%fileNamePrefix%>.fmutmp/sources/<%fileNamePrefix%>_init.xml<%/*Already translated to .c*/%>
   <%\t%>cp -a "<%makefileParams.omhome%>/share/omc/runtime/c/fmi/buildproject/"* <%fileNamePrefix%>.fmutmp/sources
   <%\t%>cp -a <%fileNamePrefix%>_FMU.libs <%fileNamePrefix%>.fmutmp/sources/
+  <%if boolNot(boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64"))) then
+     match  Config.simCodeTarget()
+     case "omsicpp" then
+     <<
+     <%\t%>chmod +x <%fileNamePrefix%>.sh
+     >>
+     end match
+  %>
   <%\n%>
   >>
 end fmuSourceMakefile;

@@ -77,7 +77,8 @@ algorithm
       list<SimCode.SimEqSystem> eqs;
     case SimCode.SIMCODE(modelInfo=mi as SimCode.MODELINFO(vars=vars))
       equation
-        if (Config.simCodeTarget() == "omsic") or (Config.simCodeTarget() ==  "omsicpp") then
+        /*Temporary disabled omsicpp*/
+        if (Config.simCodeTarget() == "omsic") /*or (Config.simCodeTarget() ==  "omsicpp") */ then
           fileName = code.fullPathPrefix + Autoconf.pathDelimiter + code.fileNamePrefix + "_info.json";
         else
           fileName = code.fileNamePrefix + "_info.json";
