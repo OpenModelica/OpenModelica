@@ -175,7 +175,8 @@ protected
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := AbsynUtil.pathToCref(className);
-  if ((Config.simCodeTarget() ==  "omsic") or (Config.simCodeTarget() == "omsicpp")) then
+  /*Temporary disabled omsicpp*/
+  if ((Config.simCodeTarget() ==  "omsic") /*or (Config.simCodeTarget() == "omsicpp")*/) then
     fileDir := listHead(AbsynUtil.pathToStringList(className))+".tmp";
   else
     fileDir := CevalScriptBackend.getFileDir(a_cref, p);
@@ -191,7 +192,12 @@ algorithm
   ExecStat.execStat("SimCode");
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
-  callTargetTemplatesFMU(simCode, Config.simCodeTarget(), FMUVersion, FMUType);
+  /*Temporary disabled omsi fmu and generate C-fmu for omsicpp simcodetarget*/  
+  if Config.simCodeTarget() == "omsicpp" then
+     callTargetTemplatesFMU(simCode, "C", FMUVersion, FMUType);
+   else
+    callTargetTemplatesFMU(simCode, Config.simCodeTarget(), FMUVersion, FMUType);
+  end if;
   timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
 end generateModelCodeFMU;
 
@@ -280,13 +286,14 @@ algorithm
   fileDir := CevalScriptBackend.getFileDir(a_cref, p);
 
   (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) := SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
+   /*Temporary disabled omsicpp
    if Config.simCodeTarget() ==  "omsicpp" then
      fmuVersion:="2.0";
      simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, p, simSettingsOpt, recordDecls, literals, args,isFMU=true, FMUVersion=fmuVersion,
     fmuTargetName=listHead(AbsynUtil.pathToStringList(className)), inFMIDer=inFMIDer);
-   else
+   else*/
     simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, p, simSettingsOpt, recordDecls, literals, args,inFMIDer=inFMIDer);
-   end if;
+   /*end if;*/
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   ExecStat.execStat("SimCode");
 
@@ -686,7 +693,7 @@ algorithm
     fmuVersion:="2.0";
     fmuType:="me";
    Tpl.tplNoret3(CodegenOMSICpp.translateModel, iSimCode, fmuVersion, fmuType);
-   callTargetTemplatesFMU(iSimCode,"omsic",fmuVersion,fmuType);
+   callTargetTemplatesFMU(iSimCode,"C",fmuVersion,fmuType);
 end callTargetTemplatesOMSICpp;
 
 protected function callTargetTemplatesFMU
@@ -696,6 +703,7 @@ protected function callTargetTemplatesFMU
   input String FMUVersion;
   input String FMUType;
 algorithm
+ 
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
   _ := match (simCode,target)
     local
@@ -810,6 +818,10 @@ algorithm
                       txt=Tpl.redirectToFile(Tpl.emptyTxt, simCode.fileNamePrefix+".fmutmp/sources/Makefile.in")));
         Tpl.closeFile(Tpl.tplCallWithFailError(CodegenFMU.settingsfile, simCode,
                       txt=Tpl.redirectToFile(Tpl.emptyTxt, simCode.fileNamePrefix+".fmutmp/sources/omc_simulation_settings.h")));
+        /*Temporary generate extra files for omsicpp simcodetarget, additionaly to C-fmu code*/
+        if Config.simCodeTarget() ==  "omsicpp" then
+         runTpl(func = function CodegenOMSICpp.translateModel(a_simCode=simCode, a_FMUVersion=FMUVersion, a_FMUType=FMUType));
+         end if;
       then ();
     case (_,"omsic")
        algorithm
@@ -840,6 +852,7 @@ algorithm
 
         runTpl(func = function CodegenOMSI_common.generateEquationsCode(a_simCode=simCode, a_FileNamePrefix=fileprefix));
       then ();
+      /*Temporarily disabled
       case (_,"omsicpp")
        algorithm
         guid := System.getUUIDStr();
@@ -871,7 +884,7 @@ algorithm
 
            runTpl(func = function CodegenOMSICpp.translateModel(a_simCode=simCode, a_FMUVersion=FMUVersion, a_FMUType=FMUType));
       then ();
-
+*/
     case (_,"Cpp")
       equation
         if(Flags.isSet(Flags.HPCOM)) then
@@ -943,6 +956,7 @@ algorithm
       list<Option<Integer>> allRoots;
 
     case (graph, _, filenameprefix, _, _, _) algorithm
+    
       // calculate stuff that we need to create SimCode data structure
       System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
       ExecStat.execStatReset();
@@ -1037,6 +1051,7 @@ algorithm
           then (libs, file_dir, timeSimCode, timeTemplates);
         case TranslateModelKind.FMU()
           algorithm
+         
             (libs,file_dir,timeSimCode,timeTemplates) := generateModelCodeFMU(dlow, initDAE, initDAE_lambda0, fmiDer, removedInitialEquationLst, SymbolTable.getAbsyn(), className, FMI.getFMIVersionString(), kind.kind, filenameprefix, kind.targetName, inSimSettingsOpt);
           then (libs, file_dir, timeSimCode, timeTemplates);
         case TranslateModelKind.XML()

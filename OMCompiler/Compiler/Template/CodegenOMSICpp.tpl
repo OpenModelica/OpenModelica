@@ -62,7 +62,8 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
 
   let &extraFuncs = buffer "" /*BUFD*/
   let &extraFuncsDecl = buffer "" /*BUFD*/
-  let()= textFile(simulationOMSUCPPMainRunScript(simCode , &extraFuncs , &extraFuncsDecl, "", "", "", "exec"), '<%fileNamePrefix%><%simulationMainRunScriptSuffix(simCode , &extraFuncs , &extraFuncsDecl, "")%>')
+  
+  let()= textFile(simulationOMSUCPPMainRunScript(simCode , &extraFuncs , &extraFuncsDecl, "", "", "", "exec"), '<%dotPath(modelInfo.name)%><%simulationMainRunScriptSuffix(simCode , &extraFuncs , &extraFuncsDecl, "")%>')
 
  ""
 end translateModel;

@@ -176,9 +176,11 @@ void OMSUSystem::initialize()
     fs::path resources_foler("resources");
     fs::path resource_location = fs::path(_osu_working_dir);
     resource_location /= resources_foler;
+    string path = string("file:") + resource_location.string();
+    
     jm_status_enu_t instantiateModelStatus = fmi2_import_instantiate(
         _osu_me->instance, _osu_name.c_str(), fmi2_model_exchange,
-        resource_location.string().c_str(), fmi2_false);
+        path.c_str(), fmi2_false);
     if (instantiateModelStatus == jm_status_error)
     {
         _osu_me->solving_mode = omsi_none_mode;
