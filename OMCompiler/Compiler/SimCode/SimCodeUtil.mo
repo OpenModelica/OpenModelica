@@ -305,11 +305,10 @@ algorithm
     if Flags.isSet(Flags.ITERATION_VARS) then
       BackendDAEOptimize.listAllIterationVariables(dlow);
     end if;
-
     // initialization stuff
     // ********************
 
-    if not ((Config.simCodeTarget() == "omsic") or (Config.simCodeTarget() ==  "omsicpp"))
+    if not ((Config.simCodeTarget() == "omsic") /*or (Config.simCodeTarget() ==  "omsicpp")*/)
     then
       // generate equations for initDAE
       (initialEquations, uniqueEqIndex, tempvars) := createInitialEquations(inInitDAE, uniqueEqIndex, {});
@@ -365,9 +364,9 @@ algorithm
     end if;
 
 
-    if not ((Config.simCodeTarget() == "omsic")or (Config.simCodeTarget() ==  "omsicpp"))
+    if not ((Config.simCodeTarget() == "omsic")/*or (Config.simCodeTarget() ==  "omsicpp")*/)
     then
-      (uniqueEqIndex, odeEquations, algebraicEquations, localKnownVars, allEquations, equationsForZeroCrossings, tempvars,
+     (uniqueEqIndex, odeEquations, algebraicEquations, localKnownVars, allEquations, equationsForZeroCrossings, tempvars,
         equationSccMapping, eqBackendSimCodeMapping, backendMapping, sccOffset) :=
            createEquationsForSystems(contSysts, shared, uniqueEqIndex, zeroCrossings, tempvars, 1, backendMapping, true);
       omsiOptData := NONE();
@@ -672,7 +671,7 @@ algorithm
 
     // Set fullPathPrefix for FMUs
     if isFMU then
-      if (Config.simCodeTarget()=="omsic")  or (Config.simCodeTarget() ==  "omsicpp")then
+      if (Config.simCodeTarget()=="omsic") /* or (Config.simCodeTarget() ==  "omsicpp")*/ then
         fullPathPrefix := filenamePrefix+".fmutmp";
       else
         fullPathPrefix := filenamePrefix+".fmutmp/sources/";
@@ -3885,7 +3884,6 @@ protected
 algorithm
   // Add empty hash table to omsiAllEquations
   omsiAllEquations.context := SimCodeFunction.OMSI_CONTEXT(SOME(HashTableCrefSimVar.emptyHashTableSized(1013)));
-
   for constSyst in constSysts loop
     try
       BackendDAE.MATCHING(comps=components) := constSyst.matching;
@@ -3925,6 +3923,7 @@ protected
   Boolean debug=false;
   Option<Integer> clockIndex;
 algorithm
+  
   clockIndex := partitionKindToClockIndex(constSyst.partitionKind);
   for component in components loop
     tmpEqns := {};
@@ -4318,6 +4317,7 @@ protected function appendOMSIFunction
   input output SimCode.OMSIFunction omsiFunction_1;
   input SimCode.OMSIFunction omsiFunction_2;
 algorithm
+    
     omsiFunction_1.equations := listAppend(omsiFunction_1.equations, omsiFunction_2.equations);
 
     omsiFunction_1.inputVars := listAppend(omsiFunction_1.inputVars, omsiFunction_2.inputVars);
@@ -14008,7 +14008,8 @@ algorithm
       getDefaultValueReference(inSimVar, inSimCode.modelInfo.varInfo);
     case (_, _, _) guard(stringEqual(Config.simCodeTarget(), "Cpp")
                         or stringEqual(Config.simCodeTarget(), "omsic")
-            or stringEqual(Config.simCodeTarget(), "omsicpp"))
+            /*Temporary disabled omsicpp*/
+            /*or stringEqual(Config.simCodeTarget(), "omsicpp")*/)
     algorithm
       // resolve aliases to get multi-dimensional arrays right
       // (this should possibly be done in getVarIndexByMapping?)

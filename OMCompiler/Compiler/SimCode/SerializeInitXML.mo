@@ -81,10 +81,11 @@ algorithm
 	algorithm
       File.open(file, simCode.fullPathPrefix+"/"+simCode.fileNamePrefix + "_init.xml", File.Mode.Write);
       then();
-	case "omsicpp"
+	/*Temporary disabled omsicpp
+    case "omsicpp"
 	algorithm
       File.open(file, simCode.fullPathPrefix+"/"+simCode.fileNamePrefix + "_init.xml", File.Mode.Write);
-      then();
+      then();*/
     else algorithm
       File.open(file, simCode.fileNamePrefix + "_init.xml", File.Mode.Write);
       then();
