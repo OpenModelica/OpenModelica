@@ -564,11 +564,11 @@ constant DebugFlag DUMP_DATARECONCILIATION = DEBUG_FLAG(194, "dataReconciliation
   Gettext.gettext("Dumps all the dataReconciliation extraction algorithm procedure"));
 /* LLVM */
 constant DebugFlag JIT_EVAL_FUNC = DEBUG_FLAG(195, "jit_eval_func", false,
- Util.gettext("Turns on/off JIT compilation"));
+ Gettext.gettext("Turns on/off JIT compilation"));
 constant DebugFlag JIT_DUMP_IR = DEBUG_FLAG(196, "jit_dump_ir", false,
- Util.gettext("Dumps LLVM-IR before execution"));
+ Gettext.gettext("Dumps LLVM-IR before execution"));
 constant DebugFlag JIT_NO_OPT = DEBUG_FLAG(197, "jit_no_opt", false,
- Util.gettext("Generates LLVM-IR without optimization."));
+ Gettext.gettext("Generates LLVM-IR without optimization."));
 constant DebugFlag DUMP_MIDCODE = DEBUG_FLAG(198, "dumpMidCode", false,
  Gettext.gettext("Dumps MidCode after generation in a human readble format"));
 public
