@@ -323,7 +323,6 @@ algorithm
   end match;
 end isAllocStmt;
 
-/*TODO, Taken from Simcode util. They are note available to use it seem, did not want to break your code.*/
 function variableName
   input SimCodeFunction.Variable v;
   output String s;

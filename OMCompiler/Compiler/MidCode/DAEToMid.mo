@@ -165,7 +165,7 @@ algorithm
     stateTerminate(labelNext,MidCode.CALL(Absyn.IDENT(extName)
                                           ,true
                                           ,{}
-                                          ,List.map(midOutVars,varToOutVar)
+                                          ,List.map(midOutVars, MidCodeUtil.varToOutVar)
                                           ,labelNext
                                           ,DAE.T_REAL_DEFAULT /* Should be output variable */)
                    ,state);
@@ -522,7 +522,7 @@ algorithm
     end match;
 end genRecordDecl;
 
-function DAEFunctionsToMid
+public function DAEFunctionsToMid
   input list<SimCodeFunction.Function> simfuncs;
   output list<MidCode.Function> midfuncs;
 algorithm
