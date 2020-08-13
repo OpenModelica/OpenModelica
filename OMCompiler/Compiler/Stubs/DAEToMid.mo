@@ -31,6 +31,8 @@
 
 encapsulated package DAEToMid
 
+import MidCode;
+
 function DAEFunctionsToMid<T>
   input list<T> simfuncs;
   output list<Integer> midfuncs;
@@ -38,7 +40,15 @@ algorithm
   assert(false, getInstanceName() + " is stubbed away");
 end DAEFunctionsToMid;
 
+function daeProgramToMid<T1,T2>
+  input String name;
+  input list<T1> simFuncs;
+  input list<T2> recordDeclarations;
+  output MidCode.Program outProgram;
+algorithm
+  assert(false, getInstanceName() + " is stubbed away");
+end daeProgramToMid;
+
 annotation(__OpenModelica_Interface="backend");
 
 end DAEToMid;
-
