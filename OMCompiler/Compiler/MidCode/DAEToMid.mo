@@ -196,7 +196,6 @@ import Absyn;
 import AbsynUtil;
 import BaseHashTable;
 import ComponentReference;
-import CodegenUtil;
 import DAE;
 import DAEDump;
 import DAEUtil;

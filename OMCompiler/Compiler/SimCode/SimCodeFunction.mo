@@ -263,7 +263,7 @@ constant list<Variable> boxedRecordOutVars = VARIABLE(DAE.CREF_IDENT("",DAE.T_CO
 protected
 import BaseHashTable;
 import CodegenCFunctions;
-import CodegenMidToC;
+//import CodegenMidToC;
 import Global;
 import SimCodeFunctionUtil;
 import MidCode;
