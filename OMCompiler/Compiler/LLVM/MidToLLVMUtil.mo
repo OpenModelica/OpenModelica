@@ -9,7 +9,6 @@ import CodegenUtil.{underscorePath,dotPath};
 import EXT_LLVM;
 import List;
 import MidCode;
-import MidCodeUtil;
 import System;
 import Tpl.{Text,textString};
 import Values;
