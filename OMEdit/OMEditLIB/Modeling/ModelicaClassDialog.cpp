@@ -1675,10 +1675,14 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
   // construct a new CoOrdinateSystem
   CoOrdinateSystem newCoOrdinateSystem;
   if (!mpLeftTextBox->text().isEmpty() || !mpBottomTextBox->text().isEmpty() || !mpRightTextBox->text().isEmpty() || !mpTopTextBox->text().isEmpty()) {
-    newCoOrdinateSystem.setLeft(qMin(mpLeftTextBox->text().toDouble(), mpRightTextBox->text().toDouble()));
-    newCoOrdinateSystem.setBottom(qMin(mpBottomTextBox->text().toDouble(), mpTopTextBox->text().toDouble()));
-    newCoOrdinateSystem.setRight(qMax(mpLeftTextBox->text().toDouble(), mpRightTextBox->text().toDouble()));
-    newCoOrdinateSystem.setTop(qMax(mpBottomTextBox->text().toDouble(), mpTopTextBox->text().toDouble()));
+    QString left = mpLeftTextBox->text().isEmpty() ? mpLeftTextBox->placeholderText() : mpLeftTextBox->text();
+    QString bottom = mpBottomTextBox->text().isEmpty() ? mpBottomTextBox->placeholderText() : mpBottomTextBox->text();
+    QString right = mpRightTextBox->text().isEmpty() ? mpRightTextBox->placeholderText() : mpRightTextBox->text();
+    QString top = mpTopTextBox->text().isEmpty() ? mpTopTextBox->placeholderText() : mpTopTextBox->text();
+    newCoOrdinateSystem.setLeft(qMin(left.toDouble(), right.toDouble()));
+    newCoOrdinateSystem.setBottom(qMin(bottom.toDouble(), top.toDouble()));
+    newCoOrdinateSystem.setRight(qMax(left.toDouble(), right.toDouble()));
+    newCoOrdinateSystem.setTop(qMax(bottom.toDouble(), top.toDouble()));
   }
   if (!mpPreserveAspectRatioComboBox->lineEdit()->text().isEmpty()) {
     newCoOrdinateSystem.setPreserveAspectRatio(mpPreserveAspectRatioComboBox->currentText());
