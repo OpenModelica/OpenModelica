@@ -76,6 +76,11 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
       input Prefixes prefs2;
       output Boolean isEqual = valueEq(prefs1, prefs2);
     end isEqual;
+
+    function isPartial
+      input Prefixes prefs;
+      output Boolean isPartial = SCodeUtil.partialBool(prefs.partialPrefix);
+    end isPartial;
   end Prefixes;
 
   record NOT_INSTANTIATED end NOT_INSTANTIATED;
@@ -114,6 +119,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     Type ty;
     ClassTree elements;
     Sections sections;
+    Prefixes prefixes;
     Restriction restriction;
   end INSTANCED_CLASS;
 
@@ -167,7 +173,8 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     ClassTree tree;
   algorithm
     tree := ClassTree.fromRecordConstructor(fields, out);
-    cls := INSTANCED_CLASS(Type.UNKNOWN(), tree, Sections.EMPTY(), Restriction.RECORD_CONSTRUCTOR());
+    cls := INSTANCED_CLASS(Type.UNKNOWN(), tree, Sections.EMPTY(),
+      DEFAULT_PREFIXES, Restriction.RECORD_CONSTRUCTOR());
   end makeRecordConstructor;
 
   function initExpandedClass
@@ -196,7 +203,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
   algorithm
     cls := match cls
       case INSTANCED_CLASS()
-        then INSTANCED_CLASS(cls.ty, cls.elements, sections, cls.restriction);
+        then INSTANCED_CLASS(cls.ty, cls.elements, sections, cls.prefixes, cls.restriction);
     end match;
   end setSections;
 
@@ -616,6 +623,9 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
       case PARTIAL_BUILTIN() then cls.prefixes;
       case EXPANDED_CLASS() then cls.prefixes;
       case EXPANDED_DERIVED() then cls.prefixes;
+      case INSTANCED_CLASS() then cls.prefixes;
+      case TYPED_DERIVED() then getPrefixes(InstNode.getClass(cls.baseClass));
+      else DEFAULT_PREFIXES;
     end match;
   end getPrefixes;
 
@@ -650,6 +660,11 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
       else false;
     end match;
   end isEncapsulated;
+
+  function isPartial
+    input Class cls;
+    output Boolean isPartial = Prefixes.isPartial(getPrefixes(cls));
+  end isPartial;
 
   function lastBaseClass
     input output InstNode node;

@@ -543,6 +543,11 @@ algorithm
 
   if not selfReference then
     node := Inst.instPackage(node);
+
+    if InstNode.isPartial(node) then
+      state := LookupState.ERROR(LookupState.PARTIAL_CLASS());
+      return;
+    end if;
   end if;
 
   // Look up the path in the scope.
@@ -603,6 +608,13 @@ algorithm
   // the MSL, then it's already being instantiated here.
   if not selfReference then
     node := Inst.instPackage(node);
+
+    // Disabled due to the MSL containing classes that extends from classes
+    // inside partial packages.
+    //if InstNode.isPartial(node) then
+    //  state := LookupState.ERROR(LookupState.PARTIAL_CLASS());
+    //  return;
+    //end if;
   end if;
 
   // Look up the path in the scope.
@@ -787,10 +799,16 @@ algorithm
     return;
   end if;
 
-  scope := match node
-    case InstNode.CLASS_NODE() then Inst.instPackage(node);
-    else node;
-  end match;
+  scope := node;
+
+  if InstNode.isClass(scope) then
+    scope := Inst.instPackage(node);
+
+    if InstNode.isPartial(scope) then
+      state := LookupState.ERROR(LookupState.PARTIAL_CLASS());
+      return;
+    end if;
+  end if;
 
   name := AbsynUtil.crefFirstIdent(cref);
   cls := InstNode.getClass(scope);

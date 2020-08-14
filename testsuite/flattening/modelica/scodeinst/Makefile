@@ -709,6 +709,12 @@ ParameterBug.mos \
 PartialApplication1.mo \
 PartialApplicationInvalidArg1.mo \
 PartialApplicationInvalidArg2.mo \
+PartialClass1.mo \
+PartialFunction1.mo \
+PartialLookup1.mo \
+PartialType1.mo \
+PartialType2.mo \
+PartialType3.mo \
 Prefix1.mo \
 Prefix2.mo \
 Prefix3.mo \
@@ -953,7 +959,6 @@ InvalidExpandableConnector1.mo \
 InvalidVariability1.mo \
 InvalidVariability2.mo \
 loop4.mo \
-PartialInst.mo \
 PropagateRedeclareMod1.mo \
 RecursiveExtends2.mo \
 redeclare8.mo \

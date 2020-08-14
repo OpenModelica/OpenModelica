@@ -331,6 +331,12 @@ uniontype Function
   algorithm
     fn_ref := lookupFunction(functionName, scope, info);
     (fn_ref, fn_node, specialBuiltin) := instFunctionRef(fn_ref, info);
+
+    if InstNode.isClass(ComponentRef.node(fn_ref)) and InstNode.isPartial(fn_node) then
+      Error.addSourceMessage(Error.PARTIAL_FUNCTION_CALL,
+        {InstNode.name(fn_node)}, info);
+      fail();
+    end if;
   end instFunction;
 
   function instFunctionRef
@@ -364,6 +370,7 @@ uniontype Function
   function instFunctionNode
     "Instantiates the given InstNode as a function."
     input output InstNode node;
+    input SourceInfo info;
   protected
     CachedData cache;
   algorithm
@@ -373,7 +380,7 @@ uniontype Function
       case CachedData.FUNCTION() then ();
       else
         algorithm
-          node := instFunction2(InstNode.scopePath(node, includeRoot = true), node, InstNode.info(node));
+          node := instFunction2(InstNode.scopePath(node, includeRoot = true), node, info);
         then
           ();
     end match;
@@ -399,21 +406,21 @@ uniontype Function
 
       case SCode.CLASS() guard SCodeUtil.isOperatorRecord(def)
         algorithm
-          fnNode := instFunction3(fnNode);
+          fnNode := instFunction3(fnNode, info);
           fnNode := OperatorOverloading.instConstructor(fnPath, fnNode, info);
         then
           (fnNode, false);
 
       case SCode.CLASS() guard SCodeUtil.isRecord(def)
         algorithm
-          fnNode := instFunction3(fnNode);
+          fnNode := instFunction3(fnNode, info);
           fnNode := Record.instDefaultConstructor(fnPath, fnNode, info);
         then
           (fnNode, false);
 
       case SCode.CLASS(restriction = SCode.R_OPERATOR(), classDef = cdef as SCode.PARTS())
         algorithm
-          fnNode := instFunction3(fnNode);
+          fnNode := instFunction3(fnNode, info);
           fnNode := OperatorOverloading.instOperatorFunctions(fnNode, info);
         then
           (fnNode, false);
@@ -437,7 +444,7 @@ uniontype Function
           end if;
 
           fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(parent), fnNode);
-          fnNode := instFunction3(fnNode);
+          fnNode := instFunction3(fnNode, info);
           fn := new(fnPath, fnNode);
           specialBuiltin := isSpecialBuiltin(fn);
           fn.derivatives := FunctionDerivative.instDerivatives(fnNode, fn);
@@ -450,8 +457,10 @@ uniontype Function
 
   function instFunction3
     input output InstNode fnNode;
+    input SourceInfo info;
   algorithm
-    fnNode := Inst.instantiate(fnNode);
+    fnNode := Inst.instantiate(fnNode, instPartial = true);
+
     // Set up an empty function cache to signal that this function is
     // currently being instantiated, so recursive functions can be handled.
     InstNode.cacheInitFunc(fnNode);

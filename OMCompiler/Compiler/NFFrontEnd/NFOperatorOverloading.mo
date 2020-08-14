@@ -101,7 +101,7 @@ public
           for op in mclss loop
             //path := InstNode.scopePath(op, includeRoot = true);
             //Function.instFunction2(path, op, info);
-            Function.instFunctionNode(op);
+            Function.instFunctionNode(op, info);
             funcs := Function.getCachedFuncs(op);
             allfuncs := listAppend(funcs, allfuncs);
           end for;

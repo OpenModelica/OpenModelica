@@ -123,7 +123,7 @@ algorithm
     ctor_node := InstNode.replaceClass(Class.NOT_INSTANTIATED(), node);
   end try;
 
-  ctor_node := Inst.instantiate(ctor_node);
+  ctor_node := Inst.instantiate(ctor_node, instPartial = true);
   Inst.instExpressions(ctor_node);
 
   // Collect the record fields.
