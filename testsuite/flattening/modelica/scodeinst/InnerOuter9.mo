@@ -12,7 +12,7 @@ partial model PartialPump
   PartialHeatTransfer heatTransfer;
 end PartialPump;
 
-partial model PartialHeatTransfer  
+model PartialHeatTransfer
   parameter Real T_ambient = system.T_ambient;
   outer System system;
 end PartialHeatTransfer;

@@ -1591,7 +1591,7 @@ uniontype InstNode
     output Boolean isPartial;
   algorithm
     isPartial := match node
-      case CLASS_NODE() then SCodeUtil.isPartial(node.definition);
+      case CLASS_NODE() then Class.isPartial(Pointer.access(node.cls));
       else false;
     end match;
   end isPartial;

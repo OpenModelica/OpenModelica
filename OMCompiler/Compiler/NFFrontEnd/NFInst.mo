@@ -142,7 +142,9 @@ algorithm
   top := InstNode.setInnerOuterCache(top, CachedData.TOP_SCOPE(NodeTree.new(), cls));
 
   // Instantiate the class.
-  inst_cls := instantiate(cls);
+  inst_cls := instantiate(cls, instPartial = Flags.getConfigBool(Flags.CHECK_MODEL));
+  checkPartialClass(cls);
+
   insertGeneratedInners(inst_cls, top);
   execStat("NFInst.instantiate(" + name + ")");
 
@@ -199,9 +201,13 @@ end instClassInProgram;
 function instantiate
   input output InstNode node;
   input InstNode parent = InstNode.EMPTY_NODE();
+  input Boolean instPartial = false "Whether to instantiate a partial class or not.";
 algorithm
   node := expand(node);
-  node := instClass(node, Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, true, 0, parent);
+
+  if instPartial or not InstNode.isPartial(node) then
+    node := instClass(node, Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, true, 0, parent);
+  end if;
 end instantiate;
 
 function expand
@@ -678,6 +684,12 @@ algorithm
   // Fetch the needed information from the class definition and construct a EXPANDED_DERIVED.
   cls := InstNode.getClass(node);
   prefs := Class.getPrefixes(cls);
+
+  // A short class definition deriving from a partial class is itself partial.
+  if not Class.Prefixes.isPartial(prefs) and InstNode.isPartial(ext_node) then
+    prefs.partialPrefix := SCode.Partial.PARTIAL();
+  end if;
+
   attrs := instDerivedAttributes(sattrs);
   dims := list(Dimension.RAW_DIM(d) for d in AbsynUtil.typeSpecDimensions(ty));
   mod := Class.getModifier(cls);
@@ -906,6 +918,7 @@ function instExternalObjectStructors
   input InstNode parent;
 protected
   InstNode constructor, destructor, par;
+  SourceInfo info;
 algorithm
   // The constructor and destructor have function parameters that are instances
   // of the external object class, and we instantiate the structors when we
@@ -915,8 +928,9 @@ algorithm
 
   if not (InstNode.isClass(par) and Class.isExternalObject(InstNode.getClass(par))) then
     Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT(constructor, destructor)) := ty;
-    Function.instFunctionNode(constructor);
-    Function.instFunctionNode(destructor);
+    info := InstNode.info(parent);
+    Function.instFunctionNode(constructor, info);
+    Function.instFunctionNode(destructor, info);
   end if;
 end instExternalObjectStructors;
 
@@ -942,9 +956,12 @@ algorithm
         InstNode.setPackageCache(node, CachedData.PACKAGE(node));
         // Instantiate the node.
         inst := instantiate(node);
+
         // Cache the instantiated node and instantiate expressions in it too.
-        InstNode.setPackageCache(node, CachedData.PACKAGE(inst));
-        instExpressions(inst);
+        if not InstNode.isPartial(inst) then
+          InstNode.setPackageCache(node, CachedData.PACKAGE(inst));
+          instExpressions(inst);
+        end if;
       then
         inst;
 
@@ -1482,11 +1499,15 @@ algorithm
         (ty_node, ty_attr) := instTypeSpec(component.typeSpec, mod, attr,
           useBinding and not Binding.isBound(binding), parent, node, info, instLevel);
         ty := InstNode.getClass(ty_node);
+        res := Class.restriction(ty);
+
+        if not isRedeclared then
+          checkPartialComponent(node, attr, ty_node, Class.isPartial(ty), res, info);
+        end if;
 
         // Update the component's variability based on its type (e.g. Integer is discrete).
         ty_attr := updateComponentVariability(ty_attr, ty, ty_node);
         // Update the component's connector type now that we have its type.
-        res := Class.restriction(InstNode.getClass(ty_node));
         ty_attr := updateComponentConnectorType(ty_attr, res, isRedeclared, node);
 
         if not referenceEq(attr, ty_attr) then
@@ -1560,6 +1581,30 @@ algorithm
     attributes.connectorType := ConnectorType.unsetFlowStream(cty);
   end if;
 end updateComponentConnectorType;
+
+function checkPartialComponent
+  input InstNode compNode;
+  input Component.Attributes compAttr;
+  input InstNode clsNode;
+  input Boolean isPartial;
+  input Restriction res;
+  input SourceInfo info;
+algorithm
+  if Restriction.isFunction(res) then
+    if not isPartial then
+      // The type of a function pointer must be a partial function.
+      Error.addSourceMessage(Error.META_FUNCTION_TYPE_NO_PARTIAL_PREFIX,
+        {AbsynUtil.pathString(InstNode.scopePath(clsNode))}, info);
+      fail();
+    end if;
+  elseif isPartial and compAttr.innerOuter <> InnerOuter.OUTER then
+    // The type of a component may not be a partial class.
+    Error.addMultiSourceMessage(Error.PARTIAL_COMPONENT_TYPE,
+      {AbsynUtil.pathString(InstNode.scopePath(compNode)), InstNode.name(clsNode)},
+      {InstNode.info(clsNode), info});
+    fail();
+  end if;
+end checkPartialComponent;
 
 function redeclareComponent
   input InstNode redeclareNode;
@@ -2125,7 +2170,7 @@ algorithm
         end if;
 
         cls_tree := ClassTree.flatten(cls_tree);
-        inst_cls := Class.INSTANCED_CLASS(ty, cls_tree, Sections.EMPTY(), cls.restriction);
+        inst_cls := Class.INSTANCED_CLASS(ty, cls_tree, Sections.EMPTY(), cls.prefixes, cls.restriction);
         InstNode.updateClass(inst_cls, node);
       then
         ();
@@ -2148,7 +2193,7 @@ algorithm
         sections := instSections(node, scope, sections, Restriction.isFunction(cls.restriction));
 
         ty := makeComplexType(cls.restriction, node, cls);
-        inst_cls := Class.INSTANCED_CLASS(ty, cls.elements, sections, cls.restriction);
+        inst_cls := Class.INSTANCED_CLASS(ty, cls.elements, sections, cls.prefixes, cls.restriction);
         InstNode.updateClass(inst_cls, node);
 
         instComplexType(ty);
@@ -3530,6 +3575,15 @@ algorithm
   end match;
 end markImplicitWhenExp_traverser;
 
+function checkPartialClass
+  input InstNode node;
+algorithm
+  if InstNode.isPartial(node) and not Flags.getConfigBool(Flags.CHECK_MODEL) then
+    Error.addSourceMessage(Error.INST_PARTIAL_CLASS,
+      {InstNode.name(node)}, InstNode.info(node));
+    fail();
+  end if;
+end checkPartialClass;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFInst;

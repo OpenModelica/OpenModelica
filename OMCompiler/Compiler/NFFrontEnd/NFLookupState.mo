@@ -99,6 +99,7 @@ uniontype LookupState
   record PREDEF_COMP "A predefined component." end PREDEF_COMP;
   record PREDEF_CLASS "A predefined class." end PREDEF_CLASS;
   record IMPORT end IMPORT;
+  record PARTIAL_CLASS "A partial class." end PARTIAL_CLASS;
   record ERROR "An error occured during lookup."
     LookupState errorState;
   end ERROR;
@@ -292,6 +293,13 @@ uniontype LookupState
           name_str := InstNode.name(node);
           Error.addSourceMessage(Error.IMPORT_IN_COMPOSITE_NAME,
             {name_str, LookupStateName.toString(name)}, info);
+        then
+          fail();
+
+      case (ERROR(errorState = PARTIAL_CLASS()), _)
+        algorithm
+          Error.addSourceMessage(Error.LOOKUP_IN_PARTIAL_CLASS,
+            {InstNode.name(node)}, info);
         then
           fail();
 

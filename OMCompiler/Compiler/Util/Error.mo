@@ -820,6 +820,10 @@ public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS_NEWER = ErrorTy
   Gettext.gettext("Requested package %1 of version %2, but this package was already loaded with version %3. There are no conversion annotations for this version but %2 is newer than %3. There is a possibility that %3 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this."));
 public constant ErrorTypes.Message EQUATION_NOT_SOLVABLE_DIFFERENT_COUNT = ErrorTypes.MESSAGE(374, ErrorTypes.SYMBOLIC(), ErrorTypes.ERROR(),
   Gettext.gettext("%s has size %s but %s variables (%s)"));
+public constant ErrorTypes.Message PARTIAL_COMPONENT_TYPE = ErrorTypes.MESSAGE(375, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Component ‘%s‘ has partial type ‘%s‘."));
+public constant ErrorTypes.Message PARTIAL_FUNCTION_CALL = ErrorTypes.MESSAGE(376, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Called function ‘%s‘ is partial."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
