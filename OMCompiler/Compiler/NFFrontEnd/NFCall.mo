@@ -1980,7 +1980,7 @@ protected
           fold_id := Util.getTempVariableIndex();
           res_id := Util.getTempVariableIndex();
           default_exp := reductionDefaultValue(fn, ty);
-          fold_exp := reductionFoldExpression(fn, ty, variability, fold_id, res_id);
+          fold_exp := reductionFoldExpression(fn, ty, variability, fold_id, res_id, info);
           fold_tuple := (fold_exp, fold_id, res_id);
         then
           (TYPED_REDUCTION(fn, ty, variability, arg, iters, default_exp, fold_tuple), ty, variability);
@@ -2023,6 +2023,7 @@ protected
     input Variability reductionVar;
     input String foldId;
     input String resultId;
+    input SourceInfo info;
     output Option<Expression> foldExp;
   protected
     Type ty;
@@ -2035,7 +2036,7 @@ protected
           algorithm
             Type.COMPLEX(cls = op_node) := reductionType;
             op_node := Class.lookupElement("'+'", InstNode.getClass(op_node));
-            Function.instFunctionNode(op_node);
+            Function.instFunctionNode(op_node, info);
             {fn} := Function.typeNodeCache(op_node);
           then
             SOME(Expression.CALL(makeTypedCall(fn,
