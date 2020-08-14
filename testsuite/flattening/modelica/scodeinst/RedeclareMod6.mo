@@ -11,7 +11,7 @@ record Generic
   extends BaseCable;
 end Generic;
 
-partial model PartialBaseLine
+model PartialBaseLine
   replaceable parameter Generic commercialCable;
 end PartialBaseLine;
 

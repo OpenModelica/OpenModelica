@@ -323,13 +323,6 @@ algorithm
         guard InstNode.isComponent(instanceNode)
       algorithm
         fn :: _ := Function.typeNodeCache(clsNode);
-
-        if not Function.isPartial(fn) then
-          Error.addSourceMessage(Error.META_FUNCTION_TYPE_NO_PARTIAL_PREFIX,
-            {AbsynUtil.pathString(Function.name(fn))}, InstNode.info(instanceNode));
-          fail();
-        end if;
-
         ty := Type.FUNCTION(fn, NFType.FunctionType.FUNCTIONAL_PARAMETER);
         cls.ty := ty;
         InstNode.updateClass(cls, clsNode);

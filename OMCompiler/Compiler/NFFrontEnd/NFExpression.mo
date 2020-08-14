@@ -3731,7 +3731,7 @@ public
     Function.Function fn;
   algorithm
     op_node := Class.lookupElement("'0'", InstNode.getClass(recordNode));
-    Function.Function.instFunctionNode(op_node);
+    Function.Function.instFunctionNode(op_node, InstNode.info(InstNode.parent(op_node)));
     {fn} := Function.Function.typeNodeCache(op_node);
     zeroExp := Expression.CALL(Call.makeTypedCall(fn, {}, Variability.CONSTANT));
     zeroExp := Ceval.evalExp(zeroExp);
