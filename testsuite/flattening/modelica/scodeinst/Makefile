@@ -683,6 +683,7 @@ OperationPowEW1.mo \
 OperationRelational1.mo \
 OperationSub1.mo \
 OperationSubEW1.mo \
+OperationSubEW2.mo \
 OperationUnary1.mo \
 OperationVectorMatrixProduct1.mo \
 OperationVectorProduct1.mo \

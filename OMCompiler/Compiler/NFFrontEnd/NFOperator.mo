@@ -140,7 +140,8 @@ public
   function toDAE
     input Operator op;
     output DAE.Operator daeOp;
-    output Boolean swapArguments=false "The DAE structure only has array*scalar, not scalar*array, etc";
+    output Boolean swapArguments = false "The DAE structure only has array*scalar, not scalar*array, etc";
+    output Boolean negate = false "The second argument should be negated.";
   protected
     DAE.Type ty;
   algorithm
@@ -154,7 +155,8 @@ public
       case Op.ADD_SCALAR_ARRAY  algorithm swapArguments := true; then DAE.ADD_ARRAY_SCALAR(ty);
       case Op.ADD_ARRAY_SCALAR  then DAE.ADD_ARRAY_SCALAR(ty);
       case Op.SUB_SCALAR_ARRAY  then DAE.SUB_SCALAR_ARRAY(ty);
-      case Op.SUB_ARRAY_SCALAR  algorithm Error.addInternalError(getInstanceName() + ": Don't know how to handle " + String(op.op), sourceInfo()); then DAE.SUB(ty);
+      // array .- scalar is handled as array .+ (-scalar)
+      case Op.SUB_ARRAY_SCALAR  algorithm negate := true; then DAE.ADD_ARRAY_SCALAR(ty);
       case Op.MUL_SCALAR_ARRAY  algorithm swapArguments := true; then DAE.MUL_ARRAY_SCALAR(ty);
       case Op.MUL_ARRAY_SCALAR  then DAE.MUL_ARRAY_SCALAR(ty);
       case Op.MUL_VECTOR_MATRIX then DAE.MUL_MATRIX_PRODUCT(ty);
