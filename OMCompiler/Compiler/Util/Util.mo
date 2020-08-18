@@ -780,6 +780,12 @@ algorithm
   end if;
 end intPow;
 
+public function realNegative
+  "Returns true if the Real value is negative, otherwise false."
+  input Real v;
+  output Boolean res = v < 0;
+end realNegative;
+
 public function realCompare
   "Compares two reals and return -1 if the first is smallest, 1 if the second
    is smallest, or 0 if they are equal."
@@ -1668,6 +1674,38 @@ external "C" result = referenceCompareExt(ref1, ref2) annotation(Include="
   }
 ");
 end referenceCompare;
+
+function gcd
+  "Returns the greatest common divisor of two integers."
+  input Integer a;
+  input Integer b;
+  output Integer res;
+algorithm
+  res := if b == 0 then a else gcd(b, intMod(a, b));
+end gcd;
+
+function lcm
+  "Returns the least common multiplier of two integers."
+  input Integer a;
+  input Integer b;
+  output Integer res;
+algorithm
+  res := if a < 0 or b < 0 then -1 else intDiv((a * b), gcd(a, b));
+end lcm;
+
+function msb
+  "Returns the one-based index of the most significant set bit in an integer > 0,
+   or 0 for an integer <= 0."
+  input Integer n;
+  output Integer res = 0;
+protected
+  Integer i = n;
+algorithm
+  while i > 0 loop
+    i := intBitRShift(i, 1);
+    res := res + 1;
+  end while;
+end msb;
 
 annotation(__OpenModelica_Interface="util");
 end Util;

@@ -2134,7 +2134,7 @@ algorithm
         end if;
 
         if variability <= Variability.STRUCTURAL_PARAMETER and
-           not Expression.containsIterator(index, origin) then
+           not Expression.containsAnyIterator(index, origin) then
           // Evaluate the index if it's a constant.
           index := Ceval.evalExp(index, Ceval.EvalTarget.IGNORE_ERRORS());
 

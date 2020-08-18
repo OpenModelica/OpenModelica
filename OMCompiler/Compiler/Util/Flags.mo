@@ -562,6 +562,8 @@ constant DebugFlag DUMP_FORCE_FMI_ATTRIBUTES = DEBUG_FLAG(193, "force-fmi-attrib
   Gettext.gettext("Force to export all fmi attributes to the modelDescription.xml, including those which have default values"));
 constant DebugFlag DUMP_DATARECONCILIATION = DEBUG_FLAG(194, "dataReconciliation", false,
   Gettext.gettext("Dumps all the dataReconciliation extraction algorithm procedure"));
+constant DebugFlag ARRAY_CONNECT = DEBUG_FLAG(195, "arrayConnect", false,
+  Gettext.gettext("Use experimental array connection handler."));
 
 public
 // CONFIGURATION FLAGS

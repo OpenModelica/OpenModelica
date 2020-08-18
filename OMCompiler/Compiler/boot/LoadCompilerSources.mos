@@ -209,7 +209,6 @@ if true then /* Suppress output */
     "../Util/Socket.mo",
     "../Util/System.mo",
     "../Util/Testsuite.mo",
-    "../Util/UnorderedSet.mo",
     "../Util/Util.mo",
     "../Util/VarTransform.mo",
     "../Util/ZeroMQ.mo",
@@ -314,6 +313,7 @@ if true then /* Suppress output */
 
   // "NFFrontEnd";
     "../NFFrontEnd/NFAlgorithm.mo",
+    "../NFFrontEnd/NFArrayConnections.mo",
     "../NFFrontEnd/NFBinding.mo",
     "../NFFrontEnd/NFBuiltin.mo",
     "../NFFrontEnd/NFBuiltinCall.mo",
@@ -454,6 +454,7 @@ if true then /* Suppress output */
     "../Util/AvlTreeString.mo",
     "../Util/AvlSetInt.mo",
 
+    "../Util/AdjacencyList.mo",
     "../Util/Curl.mo",
     "../Util/DiffAlgorithm.mo",
     "../Util/FMI.mo",
@@ -472,9 +473,19 @@ if true then /* Suppress output */
     "../Util/HashTableStringToUnit.mo",
     "../Util/HashTableUnitToString.mo",
     "../Util/PriorityQueue.mo",
+    "../Util/SBAtomicSet.mo",
+    "../Util/SBFunctions.mo",
+    "../Util/SBInterval.mo",
+    "../Util/SBLinearMap.mo",
+    "../Util/SBMultiInterval.mo",
+    "../Util/SBPWAtomicLinearMap.mo",
+    "../Util/SBPWLinearMap.mo",
+    "../Util/SBSet.mo",
     "../Util/SimulationResults.mo",
     "../Util/TaskGraphResults.mo",
+    "../Util/UnorderedSet.mo",
     "../Util/Unzip.mo",
+    "../Util/Vector.mo",
 
     "../../SimulationRuntime/c/RuntimeSources.mo"
   };

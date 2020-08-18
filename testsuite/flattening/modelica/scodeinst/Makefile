@@ -15,6 +15,9 @@ ArrayBounds3.mo \
 ArrayBoundsAlg1.mo \
 ArrayBoundsBinding1.mo \
 ArrayBoundsEq1.mo\
+ArrayConnect1.mo \
+ArrayConnect2.mo \
+ArrayConnect3.mo \
 ArrayConstructorComplex1.mo \
 arrfunc.mo \
 Assert1.mo \

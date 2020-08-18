@@ -12,8 +12,7 @@ JSONParser.mos \
 PriorityQueue.mos \
 SimplifyTest.mos \
 System.mos \
-UtilTest.mos \
-VectorTest.mos
+UtilTest.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

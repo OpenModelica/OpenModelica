@@ -92,6 +92,7 @@ import ExpandableConnectors = NFExpandableConnectors;
 import SCodeUtil;
 import DAE;
 import Structural = NFStructural;
+import ArrayConnections = NFArrayConnections;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;
@@ -123,6 +124,14 @@ encapsulated package FunctionTreeImpl
   redeclare function addConflictDefault = addConflictKeep;
 end FunctionTreeImpl;
 
+uniontype FlattenSettings
+  record SETTINGS
+    Boolean scalarize;
+    Boolean arrayConnect;
+    Boolean nfAPI;
+  end SETTINGS;
+end FlattenSettings;
+
 function flatten
   input InstNode classInst;
   input String name;
@@ -134,15 +143,21 @@ protected
   list<Algorithm> alg, ialg;
   DAE.ElementSource src;
   Option<SCode.Comment> cmt;
-  Boolean scalarize = Flags.isSet(Flags.NF_SCALARIZE);
+  FlattenSettings settings;
 algorithm
+  settings := FlattenSettings.SETTINGS(
+    Flags.isSet(Flags.NF_SCALARIZE),
+    Flags.isSet(Flags.ARRAY_CONNECT),
+    Flags.isSet(Flags.NF_API)
+  );
+
   sections := Sections.EMPTY();
   src := ElementSource.createElementSource(InstNode.info(classInst));
   src := ElementSource.addCommentToSource(src,
     SCodeUtil.getElementComment(InstNode.definition(classInst)));
 
   (vars, sections) := flattenClass(InstNode.getClass(classInst), ComponentRef.EMPTY(),
-    Visibility.PUBLIC, NONE(), {}, sections, scalarize);
+    Visibility.PUBLIC, NONE(), {}, sections, settings);
   vars := listReverseInPlace(vars);
 
   flatModel := match sections
@@ -159,7 +174,12 @@ algorithm
   end match;
 
   execStat(getInstanceName());
-  flatModel := resolveConnections(flatModel);
+
+  if settings.arrayConnect then
+    flatModel := resolveArrayConnections(flatModel);
+  else
+    flatModel := resolveConnections(flatModel);
+  end if;
 end flatten;
 
 function collectFunctions
@@ -183,7 +203,7 @@ function flattenClass
   input Option<Binding> binding;
   input output list<Variable> vars;
   input output Sections sections;
-  input Boolean scalarize;
+  input FlattenSettings settings;
 protected
   array<InstNode> comps;
   list<Binding> bindings = {};
@@ -203,23 +223,23 @@ algorithm
 
         if listEmpty(bindings) then
           for c in comps loop
-            (vars, sections) := flattenComponent(c, prefix, visibility, binding, vars, sections, scalarize);
+            (vars, sections) := flattenComponent(c, prefix, visibility, binding, vars, sections, settings);
           end for;
         else
           for c in comps loop
             b :: bindings := bindings;
-            (vars, sections) := flattenComponent(c, prefix, visibility, SOME(b), vars, sections, scalarize);
+            (vars, sections) := flattenComponent(c, prefix, visibility, SOME(b), vars, sections, settings);
           end for;
         end if;
 
-        sections := flattenSections(cls.sections, prefix, sections, scalarize);
+        sections := flattenSections(cls.sections, prefix, sections, settings);
       then
         ();
 
     case Class.TYPED_DERIVED()
       algorithm
         (vars, sections) :=
-          flattenClass(InstNode.getClass(cls.baseClass), prefix, visibility, binding, vars, sections, scalarize);
+          flattenClass(InstNode.getClass(cls.baseClass), prefix, visibility, binding, vars, sections, settings);
       then
         ();
 
@@ -241,7 +261,7 @@ function flattenComponent
   input Option<Binding> outerBinding;
   input output list<Variable> vars;
   input output Sections sections;
-  input Boolean scalarize;
+  input FlattenSettings settings;
 protected
   InstNode comp_node;
   Component c;
@@ -272,10 +292,10 @@ algorithm
 
         if isComplexComponent(ty) then
           (vars, sections) := flattenComplexComponent(comp_node, c, cls, ty,
-            vis, outerBinding, prefix, vars, sections, scalarize);
+            vis, outerBinding, prefix, vars, sections, settings);
         else
           (vars, sections) := flattenSimpleComponent(comp_node, c, vis, outerBinding,
-            Class.getTypeAttributes(cls), prefix, vars, sections);
+            Class.getTypeAttributes(cls), prefix, vars, sections, settings);
         end if;
       then
         ();
@@ -394,6 +414,7 @@ function flattenSimpleComponent
   input ComponentRef prefix;
   input output list<Variable> vars;
   input output Sections sections;
+  input FlattenSettings settings;
 protected
   InstNode comp_node = node;
   ComponentRef name;
@@ -422,7 +443,7 @@ algorithm
 
   // If the component is an array component with a binding and at least discrete variability,
   // move the binding into an equation. This avoids having to scalarize the binding.
-  if not Flags.isSet(Flags.NF_API) then
+  if not settings.nfAPI then
     if Type.isArray(ty) and Binding.isBound(binding) and var >= Variability.DISCRETE then
       name := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
       eq := Equation.ARRAY_EQUALITY(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty,
@@ -433,7 +454,7 @@ algorithm
   end if;
 
   ty := flattenType(ty, prefix);
-  name := ComponentRef.prefixScope(comp_node, ty, {}, prefix);
+  name := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
   ty_attrs := list(flattenTypeAttribute(m, name) for m in typeAttrs);
 
   // Set fixed = true for parameters that are part of a record instance whose
@@ -515,7 +536,7 @@ function flattenComplexComponent
   input ComponentRef prefix;
   input output list<Variable> vars;
   input output Sections sections;
-  input Boolean scalarize;
+  input FlattenSettings settings;
 protected
   list<Dimension> dims;
   ComponentRef name;
@@ -567,16 +588,16 @@ algorithm
     opt_binding := NONE();
   end if;
 
-  name := ComponentRef.prefixScope(node, ty, {}, prefix);
+  name := ComponentRef.prefixCref(node, ty, {}, prefix);
 
   // Flatten the class directly if the component is a scalar, otherwise scalarize it.
   if listEmpty(dims) then
-    (vars, sections) := flattenClass(cls, name, visibility, opt_binding, vars, sections, scalarize);
-  elseif scalarize then
+    (vars, sections) := flattenClass(cls, name, visibility, opt_binding, vars, sections, settings);
+  elseif settings.scalarize then
     dims := list(flattenDimension(d, name) for d in dims);
-    (vars, sections) := flattenArray(cls, dims, name, visibility, opt_binding, vars, sections);
+    (vars, sections) := flattenArray(cls, dims, name, visibility, opt_binding, vars, sections, {}, settings);
   else
-    (vars, sections) := vectorizeArray(cls, dims, name, visibility, opt_binding, vars, sections);
+    (vars, sections) := vectorizeArray(cls, dims, name, visibility, opt_binding, vars, sections, {}, settings);
   end if;
 end flattenComplexComponent;
 
@@ -589,6 +610,7 @@ function flattenArray
   input output list<Variable> vars;
   input output Sections sections;
   input list<Subscript> subscripts = {};
+  input FlattenSettings settings;
 protected
   Dimension dim;
   list<Dimension> rest_dims;
@@ -602,7 +624,7 @@ algorithm
     sub_pre := ComponentRef.setSubscripts(subs, prefix);
 
     (vars, sections) := flattenClass(cls, sub_pre, visibility,
-      subscriptBindingOpt(subs, binding), vars, sections, true);
+      subscriptBindingOpt(subs, binding), vars, sections, settings);
   else
     dim :: rest_dims := dimensions;
     range_iter := RangeIterator.fromDim(dim);
@@ -610,7 +632,7 @@ algorithm
     while RangeIterator.hasNext(range_iter) loop
       (range_iter, sub_exp) := RangeIterator.next(range_iter);
       (vars, sections) := flattenArray(cls, rest_dims, prefix, visibility,
-          binding, vars, sections, Subscript.INDEX(sub_exp) :: subscripts);
+          binding, vars, sections, Subscript.INDEX(sub_exp) :: subscripts, settings);
     end while;
   end if;
 end flattenArray;
@@ -624,12 +646,13 @@ function vectorizeArray
   input output list<Variable> vars;
   input output Sections sections;
   input list<Subscript> subscripts = {};
+  input FlattenSettings settings;
 protected
   list<Variable> vrs;
   Sections sects;
 algorithm
   // if we don't scalarize flatten the class and vectorize it
-  (vrs, sects) := flattenClass(cls, prefix, visibility, binding, {}, Sections.SECTIONS({}, {}, {}, {}), false);
+  (vrs, sects) := flattenClass(cls, prefix, visibility, binding, {}, Sections.SECTIONS({}, {}, {}, {}), settings);
 
   // add dimensions to the types
   for v in vrs loop
@@ -998,7 +1021,7 @@ function flattenSections
   input Sections sections;
   input ComponentRef prefix;
   input output Sections accumSections;
-  input Boolean scalarize;
+  input FlattenSettings settings;
 algorithm
   () := match sections
     local
@@ -1007,8 +1030,8 @@ algorithm
 
     case Sections.SECTIONS()
       algorithm
-        eq := flattenEquations(sections.equations, prefix, scalarize);
-        ieq := flattenEquations(sections.initialEquations, prefix, scalarize);
+        eq := flattenEquations(sections.equations, prefix, settings);
+        ieq := flattenEquations(sections.initialEquations, prefix, settings);
         alg := flattenAlgorithms(sections.algorithms, prefix);
         ialg := flattenAlgorithms(sections.initialAlgorithms, prefix);
         accumSections := Sections.prepend(eq, ieq, alg, ialg, accumSections);
@@ -1022,11 +1045,11 @@ end flattenSections;
 function flattenEquations
   input list<Equation> eql;
   input ComponentRef prefix;
-  input Boolean scalarize;
+  input FlattenSettings settings;
   output list<Equation> equations = {};
 algorithm
   for eq in eql loop
-    equations := flattenEquation(eq, prefix, equations, scalarize);
+    equations := flattenEquation(eq, prefix, equations, settings);
   end for;
 end flattenEquations;
 
@@ -1034,7 +1057,7 @@ function flattenEquation
   input Equation eq;
   input ComponentRef prefix;
   input output list<Equation> equations;
-  input Boolean scalarize;
+  input FlattenSettings settings;
 algorithm
   equations := match eq
     local
@@ -1050,10 +1073,12 @@ algorithm
 
     case Equation.FOR()
       algorithm
-        if scalarize then
-          eql := unrollForLoop(eq, prefix, equations);
+        if settings.arrayConnect then
+          eql := eq :: equations;
+        elseif not settings.scalarize then
+          eql := splitForLoop(eq, prefix, equations, settings);
         else
-          eql := splitForLoop(eq, prefix, equations);
+          eql := unrollForLoop(eq, prefix, equations, settings);
         end if;
       then eql;
 
@@ -1065,11 +1090,11 @@ algorithm
         Equation.CONNECT(e1, e2, eq.source) :: equations;
 
     case Equation.IF()
-      then flattenIfEquation(eq, prefix, equations, scalarize);
+      then flattenIfEquation(eq, prefix, equations, settings);
 
     case Equation.WHEN()
       algorithm
-        eq.branches := list(flattenEqBranch(b, prefix, scalarize) for b in eq.branches);
+        eq.branches := list(flattenEqBranch(b, prefix, settings) for b in eq.branches);
       then
         eq :: equations;
 
@@ -1108,7 +1133,7 @@ function flattenIfEquation
   input Equation eq;
   input ComponentRef prefix;
   input output list<Equation> equations;
-  input Boolean scalarize;
+  input FlattenSettings settings;
 protected
   Equation.Branch branch;
   list<Equation.Branch> branches, bl = {};
@@ -1137,7 +1162,7 @@ algorithm
         algorithm
           // Flatten the condition and body of the branch.
           cond := flattenExp(cond, prefix);
-          eql := flattenEquations(eql, prefix, scalarize);
+          eql := flattenEquations(eql, prefix, settings);
 
           // Evaluate structural conditions.
           if var <= Variability.STRUCTURAL_PARAMETER then
@@ -1218,7 +1243,7 @@ end isConnectEq;
 function flattenEqBranch
   input output Equation.Branch branch;
   input ComponentRef prefix;
-  input Boolean scalarize;
+  input FlattenSettings settings;
 protected
   Expression exp;
   list<Equation> eql;
@@ -1226,7 +1251,7 @@ protected
 algorithm
   Equation.Branch.BRANCH(exp, var, eql) := branch;
   exp := flattenExp(exp, prefix);
-  eql := flattenEquations(eql, prefix, scalarize);
+  eql := flattenEquations(eql, prefix, settings);
   branch := Equation.makeBranch(exp, listReverseInPlace(eql), var);
 end flattenEqBranch;
 
@@ -1234,6 +1259,7 @@ function unrollForLoop
   input Equation forLoop;
   input ComponentRef prefix;
   input output list<Equation> equations;
+  input FlattenSettings settings;
 protected
   InstNode iter;
   list<Equation> body, unrolled_body;
@@ -1253,7 +1279,7 @@ algorithm
     (range_iter, val) := RangeIterator.next(range_iter);
     unrolled_body := Equation.mapExpList(body,
       function Expression.replaceIterator(iterator = iter, iteratorValue = val));
-    unrolled_body := flattenEquations(unrolled_body, prefix, scalarize = true);
+    unrolled_body := flattenEquations(unrolled_body, prefix, settings);
     equations := listAppend(unrolled_body, equations);
   end while;
 end unrollForLoop;
@@ -1262,17 +1288,25 @@ function splitForLoop
   input Equation forLoop;
   input ComponentRef prefix;
   input output list<Equation> equations;
+  input FlattenSettings settings;
 protected
   InstNode iter;
   Option<Expression> range;
   list<Equation> body, connects, non_connects;
   DAE.ElementSource src;
+  Equation eq;
 algorithm
   Equation.FOR(iter, range, body, src) := forLoop;
   (connects, non_connects) := splitForLoop2(body);
 
   if not listEmpty(connects) then
-    equations := unrollForLoop(Equation.FOR(iter, range, connects, src), prefix, equations);
+    eq := Equation.FOR(iter, range, connects, src);
+
+    if settings.arrayConnect then
+      equations := eq :: equations;
+    else
+      equations := unrollForLoop(eq, prefix, equations, settings);
+    end if;
   end if;
 
   if not listEmpty(non_connects) then
@@ -1457,6 +1491,14 @@ algorithm
         function ConnectEquations.evaluateOperators(sets = sets, setsArray = setsArray, ctable = ctable))
     for eq in equations);
 end evaluateEquationsConnOp;
+
+function resolveArrayConnections
+  "Generates the connect equations and adds them to the equation list"
+  input output FlatModel flatModel;
+algorithm
+  flatModel := ArrayConnections.resolve(flatModel);
+  execStat(getInstanceName());
+end resolveArrayConnections;
 
 function collectComponentFuncs
   input Variable var;
