@@ -796,6 +796,109 @@ public
     res := false;
   end containsList;
 
+  function containsExp
+    input Equation eq;
+    input Predicate fn;
+    output Boolean res;
+
+    partial function Predicate
+      input Expression exp;
+      output Boolean res;
+    end Predicate;
+  algorithm
+    res := match eq
+      case Equation.EQUALITY() then fn(eq.lhs) or fn(eq.rhs);
+      case Equation.ARRAY_EQUALITY() then fn(eq.lhs) or fn(eq.rhs);
+      case Equation.CONNECT() then fn(eq.lhs) or fn(eq.rhs);
+
+      case Equation.FOR()
+        algorithm
+          res := if isSome(eq.range) then fn(Util.getOption(eq.range)) else false;
+
+          if not res then
+            res := containsExpList(eq.body, fn);
+          end if;
+        then
+          res;
+
+      case Equation.IF()
+        algorithm
+          res := false;
+          for b in eq.branches loop
+            () := match b
+              case Branch.BRANCH()
+                algorithm
+                  if fn(b.condition) then
+                    res := true;
+                    return;
+                  end if;
+
+                  if containsExpList(b.body, fn) then
+                    res := true;
+                    return;
+                  end if;
+                then
+                  ();
+
+              else ();
+            end match;
+          end for;
+        then
+          res;
+
+      case Equation.WHEN()
+        algorithm
+          res := false;
+          for b in eq.branches loop
+            () := match b
+              case Branch.BRANCH()
+                algorithm
+                  if fn(b.condition) then
+                    res := true;
+                    return;
+                  end if;
+
+                  if containsExpList(b.body, fn) then
+                    res := true;
+                    return;
+                  end if;
+                then
+                  ();
+
+              else ();
+            end match;
+          end for;
+        then
+          res;
+
+      case Equation.ASSERT() then fn(eq.condition) or fn(eq.message) or fn(eq.level);
+      case Equation.TERMINATE() then fn(eq.message);
+      case Equation.REINIT() then fn(eq.cref) or fn(eq.reinitExp);
+      case Equation.NORETCALL() then fn(eq.exp);
+      else false;
+    end match;
+  end containsExp;
+
+  function containsExpList
+    input list<Equation> eql;
+    input Predicate func;
+    output Boolean res;
+
+    partial function Predicate
+      input Expression eq;
+      output Boolean res;
+    end Predicate;
+  algorithm
+    for eq in eql loop
+      if containsExp(eq, func) then
+        res := true;
+        return;
+      end if;
+    end for;
+
+    res := false;
+  end containsExpList;
+
   function isConnect
     input Equation eq;
     output Boolean isConnect;

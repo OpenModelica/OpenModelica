@@ -227,7 +227,7 @@ algorithm
     case Dimension.EXP()
       algorithm
         if dim.var <= Variability.STRUCTURAL_PARAMETER and not
-           Expression.containsIterator(dim.exp, ExpOrigin.FOR) then
+           Expression.containsAnyIterator(dim.exp, ExpOrigin.FOR) then
           e := Ceval.evalExp(dim.exp, Ceval.EvalTarget.GENERIC(info));
         else
           e := evaluateExp(dim.exp, info);

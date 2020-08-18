@@ -992,6 +992,18 @@ public
     exp := RECORD(recordName, recordType, fields);
   end makeRecord;
 
+  function makeRange
+    input Expression start;
+    input Option<Expression> step;
+    input Expression stop;
+    output Expression rangeExp;
+  algorithm
+    rangeExp := RANGE(
+      TypeCheck.getRangeType(start, step, stop, typeOf(start), AbsynUtil.dummyInfo),
+      start, step, stop
+    );
+  end makeRange;
+
   function applySubscripts
     "Subscripts an expression with the given list of subscripts."
     input list<Subscript> subscripts;
@@ -1420,6 +1432,29 @@ public
       else exp;
     end match;
   end replaceIterator2;
+
+  function containsIterator
+    input Expression exp;
+    input InstNode iterator;
+    output Boolean res;
+  protected
+    function containsIterator2
+      input Expression exp;
+      input InstNode iterator;
+      output Boolean res;
+    algorithm
+      res := match exp
+        local
+          InstNode node;
+
+        case CREF(cref = ComponentRef.CREF(node = node))
+          then InstNode.refEqual(node, iterator);
+        else false;
+      end match;
+    end containsIterator2;
+  algorithm
+    res := contains(exp, function containsIterator2(iterator = iterator));
+  end containsIterator;
 
   function arrayFromList
     input list<Expression> inExps;
@@ -3522,7 +3557,7 @@ public
     end match;
   end isIterator;
 
-  function containsIterator
+  function containsAnyIterator
     input Expression exp;
     input ExpOrigin.Type origin;
     output Boolean iter;
@@ -3532,7 +3567,7 @@ public
     else
       iter := false;
     end if;
-  end containsIterator;
+  end containsAnyIterator;
 
   function isZero
     input Expression exp;

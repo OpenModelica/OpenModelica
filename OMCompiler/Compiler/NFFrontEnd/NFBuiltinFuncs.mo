@@ -289,6 +289,11 @@ constant Function SMOOTH = Function.FUNCTION(Path.IDENT("smooth"),
     Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
+constant Function SUM = Function.FUNCTION(Path.IDENT("sum"),
+  InstNode.EMPTY_NODE(), {}, {}, {}, {},
+    Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
 
 constant Component CLOCK_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
   Type.CLOCK(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING, NFComponent.DEFAULT_ATTR, NONE(), NONE(), AbsynUtil.dummyInfo);

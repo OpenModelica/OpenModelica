@@ -1008,7 +1008,7 @@ protected
 
       if arg_var <= Variability.STRUCTURAL_PARAMETER and
          not ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) and
-         not Expression.containsIterator(arg, origin) then
+         not Expression.containsAnyIterator(arg, origin) then
         arg := Ceval.evalExpBinding(arg);
         arg := Expression.getScalarBindingExp(arg);
         arg_ty := Expression.typeOf(arg);

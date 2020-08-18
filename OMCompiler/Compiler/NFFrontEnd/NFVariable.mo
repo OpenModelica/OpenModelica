@@ -112,6 +112,21 @@ public
     output Boolean present = not ConnectorType.isPotentiallyPresent(variable.attributes.connectorType);
   end isPresent;
 
+  function isPotential
+    input Variable variable;
+    output Boolean potential = ConnectorType.isPotential(variable.attributes.connectorType);
+  end isPotential;
+
+  function isFlow
+    input Variable variable;
+    output Boolean potential = ConnectorType.isFlow(variable.attributes.connectorType);
+  end isFlow;
+
+  function isStream
+    input Variable variable;
+    output Boolean potential = ConnectorType.isStream(variable.attributes.connectorType);
+  end isStream;
+
   function lookupTypeAttribute
     input String name;
     input Variable var;
