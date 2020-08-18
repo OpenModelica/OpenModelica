@@ -142,6 +142,8 @@ algorithm
     local
       Expression e, lhs, rhs;
       Type ty;
+      Dimension dim;
+      list<Equation> body;
 
     case Equation.EQUALITY() then simplifyEqualityEquation(eq, equations);
 
@@ -152,6 +154,31 @@ algorithm
         if not Type.isEmptyArray(ty) then
           rhs := removeEmptyFunctionArguments(SimplifyExp.simplify(eq.rhs));
           equations := Equation.ARRAY_EQUALITY(eq.lhs, rhs, ty, eq.source) :: equations;
+        end if;
+      then
+        equations;
+
+    case Equation.FOR(range = SOME(e))
+      algorithm
+        if not Equation.containsExpList(eq.body, function Expression.containsIterator(iterator = eq.iterator)) then
+          body := simplifyEquations(eq.body);
+          equations := List.append_reverse(body, equations);
+        else
+          // TODO: This causes issues with the -nfScalarize tests for some reason.
+          //dim := Type.nthDimension(Expression.typeOf(e), 1);
+
+          //if Dimension.isOne(dim) then
+          //  e := Expression.applySubscript(Subscript.INDEX(Expression.INTEGER(1)), e);
+
+          //  body := Equation.mapExpList(eq.body,
+          //    function Expression.replaceIterator(iterator = eq.iterator, iteratorValue = e));
+          //  body := simplifyEquations(body);
+          //  equations := List.append_reverse(body, equations);
+          //elseif not Dimension.isZero(dim) then
+            eq.range := SimplifyExp.simplifyOpt(eq.range);
+            eq.body := simplifyEquations(eq.body);
+            equations := eq :: equations;
+          //end if;
         end if;
       then
         equations;

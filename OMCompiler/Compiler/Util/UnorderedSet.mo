@@ -196,6 +196,28 @@ public
     fail();
   end first;
 
+  function isEqual
+    "Returns true if the sets have the same size and contain the same elements,
+     otherwise false."
+    input UnorderedSet<T> set1;
+    input UnorderedSet<T> set2;
+    output Boolean equal = true;
+  algorithm
+    if Mutable.access(set1.size) <> Mutable.access(set2.size) then
+      equal := false;
+      return;
+    end if;
+
+    for b in Mutable.access(set1.buckets) loop
+      for k in b loop
+        if not contains(k, set2) then
+          equal := false;
+          return;
+        end if;
+      end for;
+    end for;
+  end isEqual;
+
   function toList
     "Returns the elements in the set as a list in no particular order."
     input UnorderedSet<T> set;
@@ -383,6 +405,20 @@ public
     Mutable.update(set.buckets, new_buckets);
   end rehash;
 
+  function toString
+    input UnorderedSet<T> set;
+    input StringFn stringFn;
+    input String delimiter = "\n";
+    output String str;
+
+    partial function StringFn
+      input T key;
+      output String str;
+    end StringFn;
+  algorithm
+    str := stringDelimitList(list(stringFn(k) for k in toArray(set)), delimiter);
+  end toString;
+
   function dump
     "Prints the set to standard output using the given string function."
     input UnorderedSet<T> set;
@@ -393,7 +429,8 @@ public
       output String str;
     end StringFn;
   algorithm
-    print(stringDelimitList(list(stringFn(k) for k in toList(set)), "\n"));
+    print(toString(set, stringFn));
+    print("\n");
   end dump;
 
 protected

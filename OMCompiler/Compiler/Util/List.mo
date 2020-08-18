@@ -7646,5 +7646,50 @@ end allCombinations4;
     end for;
 end contains;
 
+function minElement<T>
+  "Returns the smallest element in the list, or fails if the list is empty."
+  input list<T> inList;
+  input LessFn lessFn;
+  output T res;
+
+  partial function LessFn
+    "Returns true if e1 < e2, otherwise false."
+    input T e1;
+    input T e2;
+    output Boolean res;
+  end LessFn;
+algorithm
+  res := listHead(inList);
+
+  for e in listRest(inList) loop
+    if lessFn(e, res) then
+      res := e;
+    end if;
+  end for;
+end minElement;
+
+function maxElement<T>
+  "Returns the largest element in the list, or fails if the list is empty."
+  input list<T> inList;
+  input LessFn lessFn;
+  output T res;
+
+  partial function LessFn
+    "Returns true if e1 < e2, otherwise false."
+    input T e1;
+    input T e2;
+    output Boolean res;
+  end LessFn;
+algorithm
+  res := listHead(inList);
+
+  for e in listRest(inList) loop
+    if lessFn(res, e) then
+      res := e;
+    end if;
+  end for;
+end maxElement;
+
+
 annotation(__OpenModelica_Interface="util");
 end List;
