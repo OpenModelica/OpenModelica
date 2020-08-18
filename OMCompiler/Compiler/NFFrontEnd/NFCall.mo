@@ -344,7 +344,10 @@ public
       var := Variability.IMPLICITLY_DISCRETE;
     end if;
 
-    ty := evaluateCallType(ty, func, args);
+    if ExpOrigin.flagNotSet(origin, ExpOrigin.FUNCTION) then
+      ty := evaluateCallType(ty, func, args);
+    end if;
+
     call := makeTypedCall(func, args, var, ty);
 
     // If the matching was a vectorized one then create a map call

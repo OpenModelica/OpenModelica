@@ -1439,9 +1439,9 @@ algorithm
           (e, ty, _) := typeExp(e, origin, info);
 
           if Type.isConditionalArray(ty) then
-            e := Ceval.evalExp(e, Ceval.EvalTarget.GENERIC(info));
-            Structural.markExp(e);
-            ty := Expression.typeOf(e);
+            e := Expression.map(e,
+              function evaluateArrayIf(target = Ceval.EvalTarget.GENERIC(info)));
+            (e, ty, _) := typeExp(e, origin, info);
           end if;
 
           typedExp := SOME(e);
@@ -1451,6 +1451,35 @@ algorithm
     end match;
   end if;
 end typeExpDim;
+
+function evaluateArrayIf
+  input Expression exp;
+  input Ceval.EvalTarget target;
+  output Expression outExp;
+algorithm
+  outExp := match exp
+    local
+      Expression cond;
+
+    case Expression.IF() guard Type.isConditionalArray(exp.ty)
+      algorithm
+        cond := Ceval.evalExp(exp.condition, target);
+
+        if Expression.isTrue(cond) then
+          outExp := exp.trueBranch;
+        elseif Expression.isFalse(cond) then
+          outExp := exp.falseBranch;
+        else
+          Error.addInternalError(getInstanceName() + " failed on " +
+            Expression.toString(exp), Ceval.EvalTarget.getInfo(target));
+          fail();
+        end if;
+      then
+        outExp;
+
+    else exp;
+  end match;
+end evaluateArrayIf;
 
 function typeArrayDim
   "Returns the requested dimension of an array dimension. This function is meant
