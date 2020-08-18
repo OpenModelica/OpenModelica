@@ -2267,7 +2267,7 @@ algorithm
     local
       BackendDAE.Variables vars, globalKnownVars;
       BackendDAE.EquationArray eqns, initialEqs;
-      list<BackendDAE.Equation> eqnslst, asserts;
+      list<BackendDAE.Equation> eqnslst, asserts, initial_asserts;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       Boolean systChanged;
@@ -2284,8 +2284,12 @@ algorithm
         // traverse the initial equations
         eqnslst := BackendEquation.equationList(initialEqs);
         // traverse equations in reverse order, than branch equations of if equaitions need no reverse
-        ((eqnslst,asserts,true)) := List.fold31(listReverse(eqnslst), simplifyIfEquationsFinder, globalKnownVars, {},{},systChanged);
-        shared.initialEqs := BackendEquation.listEquation(eqnslst);
+        ((eqnslst,initial_asserts,true)) := List.fold31(listReverse(eqnslst), simplifyIfEquationsFinder, globalKnownVars, {},{},systChanged);
+
+        // ticket #5599
+        // leave initial asserts in the initial equation block
+        // this just removes the surrounding unnecessary if condition
+        shared.initialEqs := BackendEquation.listEquation(listAppend(initial_asserts, eqnslst));
 
         syst := BackendDAEUtil.clearEqSyst(syst);
         syst := BackendEquation.requationsAddDAE(asserts, syst);
