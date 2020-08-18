@@ -1841,7 +1841,7 @@ public
       local
         Type ty;
         DAE.Operator daeOp;
-        Boolean swap;
+        Boolean swap, negate;
         DAE.Exp dae1, dae2;
         list<String> names;
         Function.Function fn;
@@ -1890,9 +1890,9 @@ public
 
       case BINARY()
         algorithm
-          (daeOp, swap) := Operator.toDAE(exp.operator);
+          (daeOp, swap, negate) := Operator.toDAE(exp.operator);
           dae1 := toDAE(exp.exp1);
-          dae2 := toDAE(exp.exp2);
+          dae2 := toDAE(if negate then Expression.negate(exp.exp2) else exp.exp2);
         then
           DAE.BINARY(if swap then dae2 else dae1, daeOp, if swap then dae1 else dae2);
 
