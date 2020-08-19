@@ -37,6 +37,6 @@ end Pow;
 //   l = 3.0 * pr ^ 2.0;
 //   m = 3.0;
 //   n = time ^ 8.0;
-//   o = time ^ 6.0;
+//   o = abs(time) ^ 6.0;
 // end Pow;
 // endResult
