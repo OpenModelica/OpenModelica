@@ -4685,6 +4685,12 @@ algorithm
         true = List.exist(exp_lst,Expression.isConstValue);
         exp_lst_1 = simplifyBinaryDistributePow(exp_lst, e2);
       then Expression.makeProductLst(exp_lst_1);
+
+    // ticket #6068 (second issue)
+    // (e1^e2)^e3 => abs(e1)^(e2*e3) if e2 is even
+    case (_,DAE.POW(),DAE.BINARY(e1,DAE.POW(),e2),e3,_,_) guard Expression.isEven(e2)
+      then DAE.BINARY(Expression.makePureBuiltinCall("abs", {e1}, Expression.typeof(e1)),DAE.POW(DAE.T_REAL_DEFAULT),DAE.BINARY(e2,DAE.MUL(DAE.T_REAL_DEFAULT),e3));
+
     // (e1^e2)^e3 => e1^(e2*e3)
     case (_,DAE.POW(),DAE.BINARY(e1,DAE.POW(),e2),e3,_,_)
       then DAE.BINARY(e1,DAE.POW(DAE.T_REAL_DEFAULT),DAE.BINARY(e2,DAE.MUL(DAE.T_REAL_DEFAULT),e3));
