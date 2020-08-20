@@ -70,6 +70,7 @@ public
   import Values;
   import Record = NFRecord;
   import ClockKind = NFClockKind;
+  import ExpressionIterator = NFExpressionIterator;
 
   record INTEGER
     Integer value;
@@ -1105,7 +1106,7 @@ public
 
       subscriptedExp := match ty
         case Type.BOOLEAN() guard idx <= 2
-          then if idx == 1 then Expression.BOOLEAN(false) else Expression.BOOLEAN(true);
+          then if idx == 1 then BOOLEAN(false) else BOOLEAN(true);
 
         case Type.ENUMERATION() then nthEnumLiteral(ty, idx);
       end match;
@@ -1260,22 +1261,22 @@ public
     Real ridx;
   algorithm
     subscriptedExp := match (startExp, stepExp)
-      case (Expression.INTEGER(), SOME(Expression.INTEGER(iidx)))
-        then Expression.INTEGER(startExp.value + (index - 1) * iidx);
+      case (INTEGER(), SOME(INTEGER(iidx)))
+        then INTEGER(startExp.value + (index - 1) * iidx);
 
-      case (Expression.INTEGER(), _)
-        then Expression.INTEGER(startExp.value + index - 1);
+      case (INTEGER(), _)
+        then INTEGER(startExp.value + index - 1);
 
-      case (Expression.REAL(), SOME(Expression.REAL(ridx)))
-        then Expression.REAL(startExp.value + (index - 1) * ridx);
+      case (REAL(), SOME(REAL(ridx)))
+        then REAL(startExp.value + (index - 1) * ridx);
 
-      case (Expression.REAL(), _)
-        then Expression.REAL(startExp.value + index - 1.0);
+      case (REAL(), _)
+        then REAL(startExp.value + index - 1.0);
 
-      case (Expression.BOOLEAN(), _)
+      case (BOOLEAN(), _)
         then if index == 1 then startExp else stopExp;
 
-      case (Expression.ENUM_LITERAL(index = iidx), _)
+      case (ENUM_LITERAL(index = iidx), _)
         algorithm
           iidx := iidx + index - 1;
         then
@@ -1358,12 +1359,12 @@ public
     Expression cond, tb, fb;
     Type ty;
   algorithm
-    Expression.IF(ty, cond, tb, fb) := exp;
+    IF(ty, cond, tb, fb) := exp;
     tb := applySubscript(subscript, tb, restSubscripts);
     fb := applySubscript(subscript, fb, restSubscripts);
     ty := if Type.isConditionalArray(ty) then
       Type.setConditionalArrayTypes(ty, typeOf(tb), typeOf(fb)) else typeOf(tb);
-    outExp := Expression.IF(ty, cond, tb, fb);
+    outExp := IF(ty, cond, tb, fb);
   end applySubscriptIf;
 
   function makeSubscriptedExp
@@ -1379,8 +1380,8 @@ public
     // If the expression is already a SUBSCRIPTED_EXP we need to concatenate the
     // old subscripts with the new. Otherwise we just create a new SUBSCRIPTED_EXP.
     (e, subs, ty) := match exp
-      case SUBSCRIPTED_EXP() then (exp.exp,exp.subscripts, Expression.typeOf(exp.exp));
-      else (exp, {}, Expression.typeOf(exp));
+      case SUBSCRIPTED_EXP() then (exp.exp,exp.subscripts, typeOf(exp.exp));
+      else (exp, {}, typeOf(exp));
     end match;
 
     dim_count := Type.dimensionCount(ty);
@@ -1389,7 +1390,7 @@ public
     // Check that the expression has enough dimensions to be subscripted.
     if not listEmpty(extra_subs) then
       Error.assertion(false, getInstanceName() + ": too few dimensions in " +
-        Expression.toString(exp) + " to apply subscripts " + Subscript.toStringList(subscripts), sourceInfo());
+        toString(exp) + " to apply subscripts " + Subscript.toStringList(subscripts), sourceInfo());
     end if;
 
     ty := Type.subscript(ty, subs);
@@ -1579,7 +1580,7 @@ public
       case EMPTY() then "#EMPTY#";
       case PARTIAL_FUNCTION_APPLICATION()
         then "function " + ComponentRef.toString(exp.fn) + "(" + stringDelimitList(
-          list(n + " = " + Expression.toString(a) threaded for a in exp.args, n in exp.argNames), ", ") + ")";
+          list(n + " = " + toString(a) threaded for a in exp.args, n in exp.argNames), ", ") + ")";
       case BINDING_EXP() then toString(exp.exp);
 
       else anyString(exp);
@@ -1659,7 +1660,7 @@ public
       case EMPTY() then "#EMPTY#";
       case PARTIAL_FUNCTION_APPLICATION()
         then "function " + ComponentRef.toFlatString(exp.fn) + "(" + stringDelimitList(
-          list(n + " = " + Expression.toFlatString(a) threaded for a in exp.args, n in exp.argNames), ", ") + ")";
+          list(n + " = " + toFlatString(a) threaded for a in exp.args, n in exp.argNames), ", ") + ")";
       case BINDING_EXP() then toFlatString(exp.exp);
 
       else anyString(exp);
@@ -1892,7 +1893,7 @@ public
         algorithm
           (daeOp, swap, negate) := Operator.toDAE(exp.operator);
           dae1 := toDAE(exp.exp1);
-          dae2 := toDAE(if negate then Expression.negate(exp.exp2) else exp.exp2);
+          dae2 := toDAE(if negate then negate(exp.exp2) else exp.exp2);
         then
           DAE.BINARY(if swap then dae2 else dae1, daeOp, if swap then dae1 else dae2);
 
@@ -2427,6 +2428,7 @@ public
       case ARRAY()
         algorithm
           exp.elements := list(mapArrayElements(e, func) for e in exp.elements);
+          exp.literal := List.all(exp.elements, isLiteral);
         then
           exp;
 
@@ -3500,14 +3502,14 @@ public
     input ComponentRef cref;
     output Expression exp;
   algorithm
-    exp := Expression.CREF(ComponentRef.getSubscriptedType(cref), cref);
+    exp := CREF(ComponentRef.getSubscriptedType(cref), cref);
   end fromCref;
 
   function toCref
     input Expression exp;
     output ComponentRef cref;
   algorithm
-    Expression.CREF(cref = cref) := exp;
+    CREF(cref = cref) := exp;
   end toCref;
 
   function isIterator
@@ -3515,7 +3517,7 @@ public
     output Boolean isIterator;
   algorithm
     isIterator := match exp
-      case Expression.CREF() then ComponentRef.isIterator(exp.cref);
+      case CREF() then ComponentRef.isIterator(exp.cref);
       else false;
     end match;
   end isIterator;
@@ -3572,6 +3574,11 @@ public
     end match;
   end isNegative;
 
+  function isScalar
+    input Expression exp;
+    output Boolean scalar = Type.isScalar(typeOf(exp));
+  end isScalar;
+
   function isScalarLiteral
     input Expression exp;
     output Boolean literal;
@@ -3596,7 +3603,7 @@ public
       case STRING() then true;
       case BOOLEAN() then true;
       case ENUM_LITERAL() then true;
-      case ARRAY() then List.all(exp.elements, isLiteral);
+      case ARRAY() then exp.literal or List.all(exp.elements, isLiteral);
       case RECORD() then List.all(exp.elements, isLiteral);
       case RANGE() then isLiteral(exp.start) and
                         isLiteral(exp.stop) and
@@ -3664,7 +3671,7 @@ public
       end for;
 
       arr_ty := Type.liftArrayLeft(arr_ty, dim);
-      exp := Expression.makeArray(arr_ty, expl, literal = isLiteral(exp));
+      exp := makeArray(arr_ty, expl, literal = isLiteral(exp));
     end for;
   end fillType;
 
@@ -3682,7 +3689,7 @@ public
     end for;
 
     arrayType := Type.liftArrayLeft(arrayType, dim);
-    exp := Expression.makeArray(arrayType, expl, literal = isLiteral(exp));
+    exp := makeArray(arrayType, expl, literal = isLiteral(exp));
   end liftArray;
 
   function liftArrayList
@@ -3703,7 +3710,7 @@ public
       end for;
 
       arrayType := Type.liftArrayLeft(arrayType, dim);
-      exp := Expression.makeArray(arrayType, expl, literal = is_literal);
+      exp := makeArray(arrayType, expl, literal = is_literal);
     end for;
   end liftArrayList;
 
@@ -3733,7 +3740,7 @@ public
     op_node := Class.lookupElement("'0'", InstNode.getClass(recordNode));
     Function.Function.instFunctionNode(op_node, InstNode.info(InstNode.parent(op_node)));
     {fn} := Function.Function.typeNodeCache(op_node);
-    zeroExp := Expression.CALL(Call.makeTypedCall(fn, {}, Variability.CONSTANT));
+    zeroExp := CALL(Call.makeTypedCall(fn, {}, Variability.CONSTANT));
     zeroExp := Ceval.evalExp(zeroExp);
   end makeOperatorRecordZero;
 
@@ -3791,9 +3798,9 @@ public
     output Expression boxedExp;
   algorithm
     boxedExp := match exp
-      case Expression.STRING() then exp;
-      case Expression.RECORD()
-        then Expression.RECORD(exp.path, Type.box(exp.ty), list(box(e) for e in exp.elements));
+      case STRING() then exp;
+      case RECORD()
+        then RECORD(exp.path, Type.box(exp.ty), list(box(e) for e in exp.elements));
       case BOX() then exp;
       else BOX(exp);
     end match;
@@ -3811,9 +3818,9 @@ public
 
       else
         algorithm
-          ty := Expression.typeOf(boxedExp);
+          ty := typeOf(boxedExp);
         then
-          if Type.isBoxed(ty) then Expression.UNBOX(boxedExp, Type.unbox(ty)) else boxedExp;
+          if Type.isBoxed(ty) then UNBOX(boxedExp, Type.unbox(ty)) else boxedExp;
 
     end match;
   end unbox;
@@ -3847,7 +3854,7 @@ public
     input Expression array;
     output list<Expression> elements;
   algorithm
-    Expression.ARRAY(elements = elements) := array;
+    ARRAY(elements = elements) := array;
   end arrayElements;
 
   function arrayScalarElements
@@ -4202,19 +4209,19 @@ public
       local
         Type ety;
 
-      case Expression.TUPLE() then listGet(exp.elements, index);
+      case TUPLE() then listGet(exp.elements, index);
 
-      case Expression.ARRAY()
+      case ARRAY()
         algorithm
           ety := Type.unliftArray(ty);
           exp.elements := list(tupleElement(e, ety, index) for e in exp.elements);
         then
           exp;
 
-      case Expression.BINDING_EXP()
+      case BINDING_EXP()
         then bindingExpMap(exp, function tupleElement(ty = ty, index = index));
 
-      else Expression.TUPLE_ELEMENT(exp, index, ty);
+      else TUPLE_ELEMENT(exp, index, ty);
     end match;
   end tupleElement;
 
@@ -4265,13 +4272,13 @@ public
         algorithm
           index := Class.lookupComponentIndex(elementName, InstNode.getClass(node));
           expl := list(nthRecordElement(index, e) for e in recordExp.elements);
-          ty := Type.liftArrayLeft(Expression.typeOf(listHead(expl)),
+          ty := Type.liftArrayLeft(typeOf(listHead(expl)),
                                    Dimension.fromInteger(listLength(expl)));
         then
-          Expression.makeArray(ty, expl, recordExp.literal);
+          makeArray(ty, expl, recordExp.literal);
 
       case BINDING_EXP()
-        then Expression.bindingExpMap(recordExp,
+        then bindingExpMap(recordExp,
           function recordElement(elementName = elementName));
 
       case SUBSCRIPTED_EXP()
@@ -4319,7 +4326,7 @@ public
         algorithm
           expl := list(nthRecordElement(index, e) for e in recordExp.elements);
         then
-          makeArray(Type.setArrayElementType(recordExp.ty, Expression.typeOf(listHead(expl))), expl);
+          makeArray(Type.setArrayElementType(recordExp.ty, typeOf(listHead(expl))), expl);
 
       case RECORD_ELEMENT(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
         algorithm
@@ -4418,7 +4425,7 @@ public
     input Integer n;
     output Expression exp;
   algorithm
-    exp := Expression.ENUM_LITERAL(ty, Type.nthEnumLiteral(ty, n), n);
+    exp := ENUM_LITERAL(ty, Type.nthEnumLiteral(ty, n), n);
   end nthEnumLiteral;
 
   function isBindingExp
@@ -4556,7 +4563,7 @@ public
         expl := e :: expl;
       end while;
 
-      outExp := Expression.makeExpArray(listReverseInPlace(expl));
+      outExp := makeExpArray(listReverseInPlace(expl));
     end if;
   end vectorize;
 
@@ -4633,7 +4640,7 @@ public
         Integer prop_count;
         list<Subscript> prop_subs;
 
-      case Expression.BINDING_EXP()
+      case BINDING_EXP()
         algorithm
           prop_count := propagatedDimCount(exp);
           prop_subs := List.lastN(subs, prop_count);
@@ -4654,8 +4661,7 @@ public
     output Integer maxPropCount;
   algorithm
     // TODO: Optimize this, there's no need to check for bindings in e.g. literal arrays.
-    (maxPropCount, maxPropExp) :=
-      Expression.fold(exp, mostPropagatedSubExp_traverser, (-1, exp));
+    (maxPropCount, maxPropExp) := fold(exp, mostPropagatedSubExp_traverser, (-1, exp));
   end mostPropagatedSubExp;
 
   function mostPropagatedSubExpBinary
@@ -4669,10 +4675,8 @@ public
     output Integer maxPropCount;
   algorithm
     // TODO: Optimize this, there's no need to check for bindings in e.g. literal arrays.
-    (maxPropCount, maxPropExp) :=
-      Expression.fold(exp1, mostPropagatedSubExp_traverser, (-1, exp1));
-    (maxPropCount, maxPropExp) :=
-      Expression.fold(exp2, mostPropagatedSubExp_traverser, (maxPropCount, maxPropExp));
+    (maxPropCount, maxPropExp) := fold(exp1, mostPropagatedSubExp_traverser, (-1, exp1));
+    (maxPropCount, maxPropExp) := fold(exp2, mostPropagatedSubExp_traverser, (maxPropCount, maxPropExp));
   end mostPropagatedSubExpBinary;
 
   function mostPropagatedSubExp_traverser
@@ -4681,7 +4685,7 @@ public
   protected
     Integer max_prop, exp_prop;
   algorithm
-    if Expression.isBindingExp(exp) then
+    if isBindingExp(exp) then
       (max_prop, _) := mostPropagated;
       exp_prop := propagatedDimCount(exp);
 
@@ -4705,6 +4709,83 @@ public
       else ();
     end match;
   end addBindingExpParent;
+
+  function foldReduction
+    input Expression exp;
+    input list<tuple<InstNode, Expression>> iterators;
+    input Expression foldExp;
+    input MapFn mapFn;
+    input FoldFn foldFn;
+    output Expression result;
+
+    partial function MapFn
+      input output Expression exp;
+    end MapFn;
+
+    partial function FoldFn
+      input Expression exp1;
+      input Expression exp2;
+      output Expression result;
+    end FoldFn;
+  protected
+    InstNode node;
+    Expression e, range;
+    Mutable<Expression> iter;
+    list<Expression> ranges = {};
+    list<Mutable<Expression>> iters = {};
+  algorithm
+    e := exp;
+    for i in iterators loop
+      (node, range) := i;
+      iter := Mutable.create(INTEGER(0));
+      e := replaceIterator(e, node, MUTABLE(iter));
+      iters := iter :: iters;
+      ranges := range :: ranges;
+    end for;
+
+    result := foldReduction2(e, ranges, iters, foldExp, mapFn, foldFn);
+  end foldReduction;
+
+  function foldReduction2
+    input Expression exp;
+    input list<Expression> ranges;
+    input list<Mutable<Expression>> iterators;
+    input Expression foldExp;
+    input MapFn mapFn;
+    input FoldFn foldFn;
+    output Expression result;
+
+    partial function MapFn
+      input output Expression exp;
+    end MapFn;
+
+    partial function FoldFn
+      input Expression exp1;
+      input Expression exp2;
+      output Expression result;
+    end FoldFn;
+  protected
+    Expression range, value;
+    list<Expression> ranges_rest, el;
+    Mutable<Expression> iter;
+    list<Mutable<Expression>> iters_rest;
+    ExpressionIterator range_iter;
+  algorithm
+    if listEmpty(ranges) then
+      result := foldFn(foldExp, mapFn(exp));
+    else
+      range :: ranges_rest := ranges;
+      iter :: iters_rest := iterators;
+      range_iter := ExpressionIterator.fromExp(range);
+      result := foldExp;
+
+      while ExpressionIterator.hasNext(range_iter) loop
+        (range_iter, value) := ExpressionIterator.next(range_iter);
+        Mutable.update(iter, value);
+        result := foldReduction2(exp, ranges_rest, iters_rest, result, mapFn, foldFn);
+      end while;
+    end if;
+  end foldReduction2;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;
