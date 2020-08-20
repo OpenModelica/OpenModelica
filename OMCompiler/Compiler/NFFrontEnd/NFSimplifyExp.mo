@@ -54,6 +54,7 @@ import AbsynUtil;
 import ErrorExt;
 import Flags;
 import Debug;
+import MetaModelica.Dangerous.listReverseInPlace;
 
 public
 
@@ -233,9 +234,10 @@ algorithm
       then
         exp;
 
-    case "sum"     then   simplifySumProduct(listHead(args), call, isSum = true);
-    case "product" then   simplifySumProduct(listHead(args), call, isSum = false);
+    case "sum"       then simplifySumProduct(listHead(args), call, isSum = true);
+    case "product"   then simplifySumProduct(listHead(args), call, isSum = false);
     case "transpose" then simplifyTranspose(listHead(args), call);
+    case "vector"    then simplifyVector(listHead(args), call);
 
     else Expression.CALL(call);
   end match;
@@ -291,6 +293,29 @@ algorithm
     else Expression.CALL(call);
   end match;
 end simplifyTranspose;
+
+function simplifyVector
+  input Expression arg;
+  input Call call;
+  output Expression exp;
+protected
+  list<Expression> expl;
+  Boolean is_literal;
+algorithm
+  expl := Expression.arrayScalarElements(arg);
+  is_literal := Expression.isLiteral(arg);
+
+  if is_literal then
+    // Ranges count as literals, make sure they're expanded.
+    expl := ExpandExp.expandList(expl);
+  end if;
+
+  if is_literal or List.all(expl, Expression.isScalar) then
+    exp := Expression.makeExpArray(expl);
+  else
+    exp := Expression.CALL(call);
+  end if;
+end simplifyVector;
 
 function simplifyArrayConstructor
   input Call call;
@@ -373,6 +398,9 @@ algorithm
           then
             outExp;
 
+        case _
+          then simplifyReduction2(AbsynUtil.pathString(Function.name(call.fn)), call.exp, iters);
+
         else
           algorithm
             call.exp := simplify(call.exp);
@@ -383,6 +411,39 @@ algorithm
       end matchcontinue;
   end match;
 end simplifyReduction;
+
+function simplifyReduction2
+  input String name;
+  input Expression exp;
+  input list<tuple<InstNode, Expression>> iterators;
+  output Expression outExp;
+protected
+  InstNode iter;
+  Expression range, default_exp;
+  Boolean expanded = true;
+  list<tuple<InstNode, Expression>> iters = {};
+  Type ty;
+  Operator op;
+algorithm
+  ty := Expression.typeOf(exp);
+  // Operator records are problematic since the start value isn't simplified
+  // away currently.
+  false := Type.isRecord(Type.arrayElementType(ty));
+
+  (default_exp, op) := match name
+    case "sum" then (Expression.makeZero(ty), Operator.makeAdd(ty));
+    case "product" then (Expression.makeOne(ty), Operator.makeMul(ty));
+  end match;
+
+  for i in iterators loop
+    (iter, range) := i;
+    (range, true) := ExpandExp.expand(range);
+    iters := (iter, range) :: iters;
+  end for;
+
+  outExp := Expression.foldReduction(simplify(exp), listReverseInPlace(iters),
+    default_exp, simplify, function simplifyBinaryOp(op = op));
+end simplifyReduction2;
 
 function simplifySize
   input output Expression sizeExp;
