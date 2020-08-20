@@ -1163,7 +1163,7 @@ function evalBinaryArrayScalar
 algorithm
   exp := match arrayExp
     case Expression.ARRAY()
-      then Expression.ARRAY(arrayExp.ty,
+      then Expression.makeArray(arrayExp.ty,
         list(evalBinaryArrayScalar(e, scalarExp, opFunc) for e in arrayExp.elements),
         literal = true);
 
@@ -2898,21 +2898,9 @@ protected
   list<Expression> expl;
   Type ty;
 algorithm
-  expl := Expression.fold(arg, evalBuiltinVector2, {});
-  ty := Type.liftArrayLeft(Type.arrayElementType(Expression.typeOf(arg)),
-    Dimension.fromInteger(listLength(expl)));
-  result := Expression.makeArray(ty, listReverse(expl), literal = true);
+  expl := Expression.arrayScalarElements(arg);
+  result := Expression.makeExpArray(expl, isLiteral = true);
 end evalBuiltinVector;
-
-function evalBuiltinVector2
-  input Expression exp;
-  input output list<Expression> expl;
-algorithm
-  expl := match exp
-    case Expression.ARRAY() then expl;
-    else exp :: expl;
-  end match;
-end evalBuiltinVector2;
 
 function evalBuiltinZeros
   input list<Expression> args;
@@ -3196,13 +3184,18 @@ protected
   Function fn;
   Expression exp, default_exp;
   list<tuple<InstNode, Expression>> iters;
-  list<Mutable<Expression>> iter_exps;
-  list<Expression> ranges;
   Type ty;
   ReductionFn red_fn;
+
+  function reductionFn
+    input Expression exp1;
+    input Expression exp2;
+    input EvalTarget target;
+    input ReductionFn fn;
+    output Expression result = fn(exp1, evalExp_impl(exp2, target));
+  end reductionFn;
 algorithm
   Expression.CALL(call = Call.TYPED_REDUCTION(fn = fn, exp = exp, iters = iters)) := callExp;
-  (exp, ranges, iter_exps) := createIterationRanges(exp, iters);
   ty := Expression.typeOf(exp);
 
   (red_fn, default_exp) := match AbsynUtil.pathString(Function.name(fn))
@@ -3218,40 +3211,9 @@ algorithm
         fail();
   end match;
 
-  result := evalReduction2(exp, ranges, iter_exps, default_exp, red_fn);
+  result := Expression.foldReduction(exp, iters, default_exp,
+    function evalExp_impl(target = EvalTarget.IGNORE_ERRORS()), red_fn);
 end evalReduction;
-
-function evalReduction2
-  input Expression exp;
-  input list<Expression> ranges;
-  input list<Mutable<Expression>> iterators;
-  input Expression foldExp;
-  input ReductionFn fn;
-  output Expression result;
-protected
-  Expression range;
-  list<Expression> ranges_rest, expl = {};
-  Mutable<Expression> iter;
-  list<Mutable<Expression>> iters_rest;
-  ExpressionIterator range_iter;
-  Expression value;
-  Type el_ty;
-algorithm
-  if listEmpty(ranges) then
-    result := fn(foldExp, evalExp_impl(exp, EvalTarget.IGNORE_ERRORS()));
-  else
-    range :: ranges_rest := ranges;
-    iter :: iters_rest := iterators;
-    range_iter := ExpressionIterator.fromExp(range);
-    result := foldExp;
-
-    while ExpressionIterator.hasNext(range_iter) loop
-      (range_iter, value) := ExpressionIterator.next(range_iter);
-      Mutable.update(iter, value);
-      result := evalReduction2(exp, ranges_rest, iters_rest, result, fn);
-    end while;
-  end if;
-end evalReduction2;
 
 function evalSize
   input Expression exp;

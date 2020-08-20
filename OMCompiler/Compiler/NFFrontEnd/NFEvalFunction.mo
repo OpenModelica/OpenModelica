@@ -1101,7 +1101,7 @@ algorithm
       algorithm
         dims := ModelicaExternalC.ModelicaIO_readMatrixSizes(s1, s2);
       then
-        Expression.ARRAY(Type.ARRAY(Type.INTEGER(), {Dimension.fromInteger(2)}),
+        Expression.makeArray(Type.ARRAY(Type.INTEGER(), {Dimension.fromInteger(2)}),
                          {Expression.INTEGER(dims[1]), Expression.INTEGER(dims[2])}, true);
 
     case ("ModelicaIO_readRealMatrix",
@@ -1169,11 +1169,11 @@ algorithm
     for c in 1:ncol loop
       row := Expression.REAL(matrix[r, c]) :: row;
     end for;
-    rows := Expression.ARRAY(ty, row, literal = true) :: rows;
+    rows := Expression.makeArray(ty, row, literal = true) :: rows;
   end for;
 
   ty := Type.liftArrayLeft(ty, Dimension.fromInteger(nrow));
-  result := Expression.ARRAY(ty, rows, literal = true);
+  result := Expression.makeArray(ty, rows, literal = true);
 end evaluateModelicaIO_readRealMatrix;
 
 function evaluateExternal2
