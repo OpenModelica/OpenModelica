@@ -166,8 +166,6 @@ SET(SIMSTER_BUILD OFF)
 
 SET(Boost_USE_MULTITHREADED ON)
 
-#Currently only mingw is supported for the model reduction algorithm
-
 
 #IF(MINGW)
 #    SET(REDUCE_DAE ON)
@@ -346,7 +344,7 @@ IF(WIN32)
       SET(BOOST_ROOT $ENV{OMDEV}"/lib/3rdParty/boost-1_55/")
     ENDIF(MSVC_VERSION GREATER 1700)
   ENDIF(IS_MINGW32)
-  MESSAGE(STATUS "Boost root:")
+  MESSAGE(STATUS "Boost root for cpp runtime:")
   MESSAGE(STATUS ${BOOST_ROOT})
   SET(BLAS_blas_LIBRARY $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.dll CACHE FILEPATH "Blas library")
   SET(LAPACK_lapack_LIBRARY  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.dll CACHE FILEPATH "Lapack library")
@@ -483,7 +481,7 @@ ENDIF(FMU_TARGET AND NOT MSVC)
 
 SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
 SET(Boost_LIBRARIES ${Boost_LIBRARIES_TMP})
-MESSAGE(STATUS "Boost Libraries")
+MESSAGE(STATUS "Boost Libraries for cpp runtime")
 MESSAGE(STATUS ${Boost_LIBRARIES})
 
 # Find Lapack and Blas

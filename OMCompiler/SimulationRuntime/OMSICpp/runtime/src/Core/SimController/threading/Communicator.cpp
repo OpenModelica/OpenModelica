@@ -112,14 +112,15 @@ bool Communicator::waitForAllThreadsStarted(int timeout)
 */
 bool Communicator::startThreads(shared_ptr<SimManager> simManager, shared_ptr<IGlobalSettings> global_settings, shared_ptr<IMixedSystem> system, shared_ptr<ISimObjects> sim_objects, string modelKey)
 {
-
-
+  
   
     //If the simulation is not running
     if (isStoped())
     {
         _end_time = global_settings->getEndTime();
         shared_ptr<IWriteOutput> writeoutput_system = dynamic_pointer_cast<IWriteOutput>(system);
+       
+       
         _history = writeoutput_system->getHistory();
 
         shared_ptr < SimulationThread> sim_thread = shared_ptr < SimulationThread>(new SimulationThread(this));

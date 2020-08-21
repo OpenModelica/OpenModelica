@@ -211,12 +211,14 @@ SET(SIMSTER_BUILD OFF)
 
 SET(Boost_USE_MULTITHREADED ON)
 
+
 #Currently only mingw is supported for the model reduction algorithm
 #IF(MINGW)
 #    SET(REDUCE_DAE ON)
 #ELSE()
 #    SET(REDUCE_DAE OFF)
 #ENDIF()
+
 
 IF(USE_BOOST_REALPATHS)
   MESSAGE(STATUS "Using boost real paths")
@@ -347,8 +349,8 @@ set(Boost_DEBUG 1)
         SET(BOOST_ROOT $ENV{OMDEV}"/lib/3rdParty/boost-1_55/")
      endif()
   ENDIF(IS_MINGW32)
-  MESSAGE(STATUS "Boost root:")
-  MESSAGE(STATUS ${BOOST_ROOT} $ENV{OMDEV})
+  MESSAGE(STATUS "Boost root for omsicpp runtime:")
+  MESSAGE(STATUS ${BOOST_ROOT} )
   SET(BLAS_blas_LIBRARY $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.dll CACHE FILEPATH "Blas library")
   SET(LAPACK_lapack_LIBRARY  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.dll CACHE FILEPATH "Lapack library")
   SET(BLAS_DIRY "$ENV{OMDEV}/lib/3rdParty/Lapack/Lib/" CACHE LOCATION "where was yarp built?")
@@ -486,7 +488,8 @@ ENDIF(FMU_TARGET AND NOT MSVC)
 
 SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
 SET(Boost_LIBRARIES ${Boost_LIBRARIES_TMP})
-MESSAGE(STATUS "Boost Libraries")
+MESSAGE(STATUS "using boost include for omsicpp runtime:  ${Boost_INCLUDE_DIR}")
+MESSAGE(STATUS "Boost Libraries for omsicpp runtime")
 MESSAGE(STATUS ${Boost_LIBRARIES})
 
 # Find Lapack and Blas
@@ -928,6 +931,7 @@ IF(ZeroMQ_FOUND AND cppzmq_FOUND)
     message (STATUS "Using CPPZMQ Header ${cppzmq_INCLUDE_DIR}" )
 ELSE(ZeroMQ_FOUND AND cppzmq_FOUND)
     SET(USE_ZEROMQ OFF)
+    message (STATUS "Using not ZMQ library " )
 ENDIF(ZeroMQ_FOUND AND cppzmq_FOUND)
 
 #Write the defines into the ADDITIONAL_DEFINES variable
