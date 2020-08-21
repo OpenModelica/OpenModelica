@@ -73,7 +73,8 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenEm
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenUtil.tpl)
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMUCommon.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo SimCodeBackendTV.mo
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo
+						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeBackendTV.mo
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenC.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenCFunctions.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenUtil.tpl)
@@ -90,13 +91,17 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFM
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMU1.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo
-						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMUCommon.tpl CodegenFMUCommon.mo SimCodeBackendTV.mo
+						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMUCommon.tpl
+						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMUCommon.mo
+						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeBackendTV.mo
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenC.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenUtil.tpl)
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMU2.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo
-						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMUCommon.tpl CodegenFMUCommon.mo SimCodeBackendTV.mo
+						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMUCommon.tpl
+						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMUCommon.mo
+						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeBackendTV.mo
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenC.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenUtil.tpl)
 
@@ -122,17 +127,20 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenCp
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenCppCommonOld.tpl)
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenCppHpcom.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo SimCodeBackendTV.mo
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo
+						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeBackendTV.mo
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenCpp.tpl
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenUtil.tpl)
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenCppHpcomOld.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo SimCodeBackendTV.mo
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo
+						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeBackendTV.mo
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenCppOld.tpl
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenUtil.tpl)
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMUCpp.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo SimCodeBackendTV.mo
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo
+						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeBackendTV.mo
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenC.tpl
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenUtil.tpl
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenCpp.tpl
@@ -140,7 +148,8 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFM
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMU.tpl)
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMUCppOld.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo SimCodeBackendTV.mo
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo
+						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeBackendTV.mo
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenC.tpl
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenUtil.tpl
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenCppOld.tpl
@@ -148,20 +157,23 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFM
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMU.tpl)
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenOMSI_common.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo SimCodeBackendTV.mo
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo
+						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeBackendTV.mo
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenUtil.tpl
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenUtilSimulation.tpl
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenCFunctions.tpl)
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenOMSIC.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo SimCodeBackendTV.mo
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo
+						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeBackendTV.mo
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenOMSI_common.tpl
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenUtil.tpl
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenUtilSimulation.tpl
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMU.tpl)
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenOMSICpp.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo SimCodeBackendTV.mo
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo
+						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeBackendTV.mo
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenC.tpl
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenUtil.tpl
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenCpp.tpl
@@ -169,7 +181,8 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenOM
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMU.tpl)
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenOMSIC_Equations.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo SimCodeBackendTV.mo
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo
+						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeBackendTV.mo
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenC.tpl
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenCFunctions.tpl
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenUtil.tpl
@@ -177,14 +190,16 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenOM
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMUCppHpcom.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo
-						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMUCpp.tpl SimCodeBackendTV.mo
+						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMUCpp.tpl
+						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeBackendTV.mo
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenCppHpcom.tpl
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenUtil.tpl
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenCppCommon.tpl)
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMUCppHpcomOld.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo
-						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMUCppOld.tpl SimCodeBackendTV.mo
+						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMUCppOld.tpl
+						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeBackendTV.mo
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenCppHpcomOld.tpl
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenUtil.tpl
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenCppCommonOld.tpl
@@ -192,15 +207,18 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFM
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMU.tpl)
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenCppInit.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo SimCodeBackendTV.mo
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo
+						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeBackendTV.mo
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenUtil.tpl
 						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenFMUCommon.tpl)
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenMidToC.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo MidCodeTV.mo)
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo
+						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/MidCodeTV.mo)
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/GraphvizDump.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo SimCodeBackendTV.mo)
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeTV.mo
+						DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SimCodeBackendTV.mo)
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/GraphMLDumpTpl.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/GraphMLDumpTplTV.mo)
@@ -240,4 +258,5 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/VisualXML
 
 # omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/../Template/CodegenModelica.tpl
 #                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../Template/GraphvizDump.tpl)
+
 
