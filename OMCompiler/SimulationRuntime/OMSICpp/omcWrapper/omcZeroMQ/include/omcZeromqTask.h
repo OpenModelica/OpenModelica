@@ -10,7 +10,7 @@ typedef struct OMCData;
 
 class omcZeromqTask {
 public:
-    omcZeromqTask(int pub_port, int sub_port, OMCData* omc2, string workingDirectory, string openmodelica_home, string simulation_id, string client_id, string zeromq_options);
+    omcZeromqTask(int pub_port, int sub_port, OMCData* omc2, string workingDirectory, string openmodelica_home, string simulation_id, string client_id, string zeromq_options,bool debug);
    
     void run();
     
@@ -33,5 +33,6 @@ private:
     string _zeromq_options;
     string _simulation_id;
     string _client_id;
+    bool _debug;
 
 };

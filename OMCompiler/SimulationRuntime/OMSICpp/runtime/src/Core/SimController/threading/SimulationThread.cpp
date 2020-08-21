@@ -2,9 +2,10 @@
 
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
+#include <Core/System/IExtendedSimObjects.h>
 #include <Core/SimController/threading/SimulationThread.h>
 
-#include <Core/SimController/SimObjects.h>
+
 
 
 SimulationThread::SimulationThread(Communicator* communicator)
@@ -67,9 +68,19 @@ void SimulationThread::Run(shared_ptr<SimManager> simManager, shared_ptr<IGlobal
 
            if (global_settings->getOutputFormat() == BUFFER)
            {
+               
+               shared_ptr<IExtendedSimObjects> extended_simObjects = dynamic_pointer_cast<IExtendedSimObjects>(sim_objects);
+
+               if (!extended_simObjects)
+               {
+                   string error = string("Simulation data was not found for model: ") + modelKey;
+                   throw ModelicaSimulationError(SIMMANAGER, error);
+               }
+               shared_ptr<ISimData> simData = extended_simObjects->getSimData(modelKey);
+               
                shared_ptr<IWriteOutput> writeoutput_system = dynamic_pointer_cast<IWriteOutput>(system);
 
-               shared_ptr<ISimData> simData = sim_objects->getSimData(modelKey);
+              
                simData->clearResults();
                //get history object to query simulation results
                shared_ptr<IHistory> history = writeoutput_system->getHistory();
