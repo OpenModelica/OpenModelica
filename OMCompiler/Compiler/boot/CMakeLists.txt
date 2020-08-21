@@ -26,7 +26,7 @@ macro(add_compile_script mo_source_file)
 endmacro(add_compile_script)
 
 
-add_executable(dep_scanner dep_scanner.cpp)
+add_executable(dep_scanner ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/dep_scanner.cpp)
 target_compile_features(dep_scanner PRIVATE cxx_std_11)
 
 
@@ -103,10 +103,8 @@ endmacro(add_compile_step)
 
 
 
-include(template_compilation.cmake)
-
-
-include(meta_modelica_source_list.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/template_compilation.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/meta_modelica_source_list.cmake)
 
 foreach(OMC_MM_SOURCE ${OMC_MM_ALWAYS_SOURCES})
     add_interface_check_step(${OMC_MM_SOURCE})
