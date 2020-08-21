@@ -21,10 +21,10 @@
 using std::string;
 
 
-//#define GC_THREADS
-//#include "gc.h"
+#define GC_THREADS
+#include "gc.h"
 
-omcZeromqTask::omcZeromqTask(int pub_port, int sub_port, OMCData* omc2, string workingDirectory, string openmodelica_home, string simulation_id, string client_id, string zeromq_options)
+omcZeromqTask::omcZeromqTask(int pub_port, int sub_port, OMCData* omc2, string workingDirectory, string openmodelica_home, string simulation_id, string client_id, string zeromq_options,bool debug)
     : ctx_(1),
     _omc(omc2),
     _pub_port(pub_port),
@@ -36,7 +36,8 @@ omcZeromqTask::omcZeromqTask(int pub_port, int sub_port, OMCData* omc2, string w
     _openmodelica_home(openmodelica_home),
     _zeromq_options(zeromq_options),
     _simulation_id(simulation_id),
-    _client_id(_client_id)
+    _client_id(client_id),
+    _debug(debug)
  {
    
 }
@@ -44,18 +45,25 @@ omcZeromqTask::omcZeromqTask(int pub_port, int sub_port, OMCData* omc2, string w
 void omcZeromqTask::run()
 {
 
-   /* GC_stack_base sb;
+    GC_stack_base sb;
     GC_get_stack_base(&sb);
-    GC_register_my_thread(&sb);*/
+    GC_register_my_thread(&sb);
 
+    try
+     {
+        //set up connection for send data
+        publisher_.connect("tcp://127.0.0.1:" + std::to_string(_pub_port));
 
-    //set up connection for send data
-    publisher_.connect("tcp://127.0.0.1:" + std::to_string(_pub_port));
-
-    //set up connection for receive data
-    subscriber_.connect("tcp://127.0.0.1:" + std::to_string(_sub_port));
-    //register for OMCSimulator notifications
-    subscriber_.setsockopt(ZMQ_SUBSCRIBE, _simulation_id.c_str(), 12);
+        //set up connection for receive data
+        subscriber_.connect("tcp://127.0.0.1:" + std::to_string(_sub_port));
+        //register for OMCSimulator notifications
+        subscriber_.setsockopt(ZMQ_SUBSCRIBE, _simulation_id.c_str(), 12);
+    }
+    catch(std::exception& ex)
+    {
+         std::cout << "zeroMQ connection failed" << ex.what() <<  std::endl;
+         throw;
+    }
     string zeromq_simultaion_thread_id = _simulation_id + string("Thread");
     
     // Create a root
@@ -75,14 +83,16 @@ void omcZeromqTask::run()
     
     
     //Load MSL
+    if(_debug)
+        std::cout << "load MSL" << std::endl;
     status = loadMSL(_omc);
   
-    if (!status)
+    if (status<0)
     {
         GetError(_omc, &errorMsg);
-        string error_msg = "Coudl not load MSL " + string(errorMsg);
-        throw std::invalid_argument(error_msg);
-
+        string  error_msg  = "Coudl not load MSL " + string(errorMsg);
+        //throw std::invalid_argument(error_msg);
+        std::cout << "load MSL error " << error_msg <<  std::endl;
     }
 
 
@@ -90,9 +100,8 @@ void omcZeromqTask::run()
         
         
        
-        /*test output*/
-        std::cout << "test wait for message" << std::endl;
-        /*test output end*/
+        if(_debug)
+           std::cout << "Waiting for user commands" << std::endl;
         string jobId;
        
         //  Read envelope with address
@@ -108,9 +117,13 @@ void omcZeromqTask::run()
         jobId = root.get < std::string >("jobId");
        
         
-        /*test output*/
-        std::cout << "topic: " << topic << ", Type: " << type << ", Message:" << message << std::endl;
-        /*test output end*/
+        if(_debug)
+        { 
+            std::cout << "Received user command with: " << std::endl;
+            std::cout << "\t Topic: " << topic <<  std::endl;
+            std::cout << "\t Type: " << type  <<  std::endl; 
+            std::cout << "\t Message: " << message << std::endl;
+        }
 
 
         
@@ -131,9 +144,10 @@ void omcZeromqTask::run()
         }
         else if (type == "SimulationThreadWatingForID")
         {
-            // Sleep(40000);
-            std::cout << "simulation Thread started: " << std::endl;
-
+            if(_debug)
+            { 
+                std::cout << "simulation Thread started: " << std::endl;
+            }
             s_sendmore(publisher_, zeromq_simultaion_thread_id);
             s_sendmore(publisher_, "StartSimulationThread");
             s_send(publisher_, "{\"jobId\":\"" + jobId + "\"}");
@@ -147,18 +161,23 @@ void omcZeromqTask::run()
         else if (type == "StopSimulation")
         {
 
-            std::cout << "simulation Thread stoped: " << std::endl;
-
+            if(_debug)
+            { 
+                std::cout << "simulation Thread stoped: " << std::endl;
+            }
             s_sendmore(publisher_, zeromq_simultaion_thread_id);
             s_send(publisher_, "StopSimulationThread");
             s_send(publisher_, "{\"jobId\":\"" + jobId + "\"}");
 
         }
     }
-    //GC_unregister_my_thread();
+    GC_unregister_my_thread();
 }
 void omcZeromqTask::startSimulation(pt::ptree& node)
 {
+    GC_stack_base sb;
+    GC_get_stack_base(&sb);
+    GC_register_my_thread(&sb);
   
     std::string classPath;
     char* errorMsg = 0;
@@ -166,8 +185,11 @@ void omcZeromqTask::startSimulation(pt::ptree& node)
    
     //read model name
     classPath = node.get < std::string >("classPath");
-    
-      
+    if(_debug)
+    { 
+        std::cout << "startSimulation for: " << classPath << std::endl;
+    }
+   
     //read modelica file names which has to be loaded
     BOOST_FOREACH(const pt::ptree::value_type & child,
         node.get_child("moFiles"))
@@ -193,13 +215,18 @@ void omcZeromqTask::startSimulation(pt::ptree& node)
         throw std::invalid_argument(error_msg);
     }
     status = simulateModel(_omc, classPath, node, _working_directory, results, error);
-    std::cout << results;
+    if(_debug)
+    { 
+        std::cout << "received simulatoin results: " << std::endl;
+        std::cout << "\t" << results;
+    }
     if (!status)
     {
 
         string error_msg = "Could not simulate model " + string(classPath) + string(" with error: ") + string(results) + string(error);
         throw std::invalid_argument(error_msg);
     }
+    GC_unregister_my_thread();
 }
 int  omcZeromqTask::setModelParameter(OMCData* omc, string model_name, pt::ptree& node,string& error)
 {
@@ -283,6 +310,10 @@ int  omcZeromqTask::setModelParameter(OMCData* omc, string model_name, pt::ptree
             error = string("parameter type ") + type + string("is not yet supported");
             return -1;
         }
+        if(_debug)
+        {
+            std::cout << "set model paramter : " << set_parameter << std::endl;
+        }
         status = SendCommand(omc, set_parameter.c_str(), &result);
         if (!status)
         {
@@ -305,15 +336,17 @@ int omcZeromqTask::loadMSL(OMCData* omc)
     status = LoadModel(omc, "Modelica");
 
     return status;
-    /*Test output*/
     if (status > 0)
-        std::cout << "load MSL: ok " << std::endl;
+     if(_debug)
+     {    
+            std::cout << "loaded MSL " << std::endl;
+     }
     else
     {
         std::cout << "load MSL: failed" << std::endl;
         return -1;
     }
-    /*Test output*/
+    
 
     status = GetError(omc, &errorMsg);
 
@@ -357,6 +390,11 @@ int omcZeromqTask::simulateModel(OMCData* omc, string model_name, pt::ptree& nod
     string set_method;
     if (!method.empty())
         set_method = method + string("\"");
+    if(_debug)
+    {    
+      std::cout << "read simulation settings : " << std::endl; 
+      std::cout << "\t " << set_method << std::endl;
+    }
     status = SetWorkingDirectory(omc, tmp_dir.c_str(), &change_dir_results);
     if (!status)
     {
@@ -364,9 +402,31 @@ int omcZeromqTask::simulateModel(OMCData* omc, string model_name, pt::ptree& nod
         error_msg = string("Cannot set working directory") + string(change_dir_results);
 
     }
+    if(_debug)
+    { 
+     std::cout << "changed working directory : "<< std::endl;
+     std::cout << "\t" << tmp_dir << std::endl;
+    }
+        
     string simulate_model = string("simulate(") + model_name + string(",startTime=") + std::to_string(start_time) + string(",stopTime=") + std::to_string(stop_time) +  set_method + string(",tolerance =") + std::to_string(tolerance) + string(",numberOfIntervals =") + std::to_string(number_of_intervalls)  + string( ")");
+    if(_debug)
+    {
+        std::cout << "start simulation : " << std::endl; 
+        std::cout << "\t" << simulate_model << std::endl;
+    }
     status = SendCommand(omc, simulate_model.c_str(), &simulateResult);
     results_msg = string(simulateResult);
+    if(_debug)
+    {
+       std::cout << "simulation finished: " << status << std::endl; 
+       std::cout << "\t" << results_msg;
+    }
+    GetError(omc, &errorMsg);
+    if(_debug)
+    {
+      std::cout << "received  errors: " << std::endl; 
+      std::cout <<  "\t" << errorMsg << std::endl; 
+    }
     if (!status)
     {
         GetError(omc, &errorMsg);

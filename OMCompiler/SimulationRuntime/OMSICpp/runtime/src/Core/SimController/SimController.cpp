@@ -34,6 +34,7 @@ SimController::SimController(PATH library_path, PATH modelicasystem_path, bool s
 
 
 {
+    
 
     _config = shared_ptr<Configuration>(new Configuration(_library_path, _config_path, modelicasystem_path));
 
@@ -99,6 +100,12 @@ weak_ptr<IMixedSystem> SimController::LoadSystem(string modelLib, string modelKe
     }
     //create system
     shared_ptr<IMixedSystem> system = createSystem(modelLib, modelKey, _config->getGlobalSettings());
+
+    if (system)
+        std::cout << "1 system  is here " << modelKey << std::endl;
+    else
+        std::cout << "1 no system is here " << modelKey << std::endl;
+
     _systems[modelKey] = system;
     return system;
 }
@@ -170,9 +177,7 @@ void SimController::Start(SimSettings simsettings, string modelKey)
 #endif
 
 
-        shared_ptr<IMixedSystem> mixedsystem = getSystem(modelKey);
-
-
+        mixedsystem = getSystem(modelKey);
         global_settings = _config->getGlobalSettings();
 
         global_settings->setStartTime(simsettings.start_time);
@@ -200,11 +205,7 @@ void SimController::Start(SimSettings simsettings, string modelKey)
 
 
         global_settings->setInitfilePath(simsettings.initFile);
-
         _simMgr = shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));
-
-
-
         ISolverSettings* solver_settings = _config->getSolverSettings();
         solver_settings->setLowerLimit(simsettings.lower_limit);
         solver_settings->sethInit(simsettings.lower_limit);
@@ -236,6 +237,7 @@ void SimController::Start(SimSettings simsettings, string modelKey)
     if (_startZeroMQ)
     {
 #if defined(USE_ZEROMQ)
+
         _communicator->initialize(global_settings->getZeroMQPubPort(), global_settings->getZeroMQSubPort(), global_settings->getZeroMQJobiID(), global_settings->getZeroMQServerID(), global_settings->getZeroMQClientID());
         _communicator->startThreads(_simMgr, global_settings, mixedsystem, _sim_objects, modelKey);
         _communicator->waitForAllThreads(120);

@@ -731,7 +731,7 @@ algorithm
       list<tuple<Diff, list<SimpleModelicaParser.ParseTree>>> treeDiffs;
       SourceInfo info;
       SymbolTable forkedSymbolTable;
-
+      SimCode.SimulationSettings simSettings;
     case (cache,_,"runScriptParallel",{Values.ARRAY(valueLst=vals),Values.INTEGER(i),Values.BOOL(true)},_)
       equation
         strs = List.map(vals,ValuesUtil.extractValueString);
@@ -1493,8 +1493,9 @@ algorithm
         if Config.simCodeTarget() == "omsicpp" then
 
          filenameprefix := AbsynUtil.pathString(className);
+         (cache,simSettings) := calculateSimulationSettings(cache, env, vals, msg);
          try
-             (cache, Values.STRING(str)) := buildModelFMU(cache, env, className, "2.0", "me", "<default>", true, {"static"});
+             (cache, Values.STRING(str)) := buildModelFMU(cache, env, className, "2.0", "me", "<default>", true, {"static"},SOME(simSettings));
             if stringEmpty(str) then
               fail();
             end if;
@@ -3721,6 +3722,7 @@ protected function buildModelFMU
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input list<String> platforms = {"static"};
+  input Option<SimCode.SimulationSettings> inSimSettings = NONE();
   output FCore.Cache cache;
   output Values.Value outValue;
 protected
@@ -3762,8 +3764,12 @@ algorithm
   //       The scripting environment from a user's perspective is like that. fmuTargetName is the name of the .fmu in the templates, etc.
   filenameprefix := Util.stringReplaceChar(if inFileNamePrefix == "<default>" then AbsynUtil.pathString(className) else inFileNamePrefix, ".", "_");
   fmuTargetName := if FMUVersion == "1.0" then filenameprefix else (if inFileNamePrefix == "<default>" then AbsynUtil.pathString(className) else inFileNamePrefix);
-  defaulSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, filenameprefix, SOME(defaultSimulationOptions));
-  simSettings := convertSimulationOptionsToSimCode(defaulSimOpt);
+  if isSome(inSimSettings)  then
+    SOME(simSettings) := inSimSettings;
+  else
+    defaulSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, filenameprefix, SOME(defaultSimulationOptions));
+    simSettings := convertSimulationOptionsToSimCode(defaulSimOpt);
+  end if;
   FlagsUtil.setConfigBool(Flags.BUILDING_FMU, true);
   FlagsUtil.setConfigString(Flags.FMI_VERSION, FMUVersion);
   try
@@ -4000,6 +4006,8 @@ algorithm
         stoptime_r = ValuesUtil.valueReal(stoptime_v);
         tolerance_r = ValuesUtil.valueReal(tolerance_v);
         outSimSettings = SimCodeMain.createSimulationSettings(starttime_r,stoptime_r,interval_i,tolerance_r,method_str,options_str,outputFormat_str,variableFilter_str,cflags);
+                      
+ 
       then
         (cache, outSimSettings);
     else

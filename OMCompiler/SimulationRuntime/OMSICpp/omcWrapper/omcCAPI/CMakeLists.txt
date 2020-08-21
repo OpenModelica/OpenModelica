@@ -31,9 +31,6 @@ MESSAGE(STATUS "using omc paths")
 MESSAGE(STATUS ${OMC_PATH})
 MESSAGE(STATUS ${OMC_LIB_PATH})
 
-#set OpenModelica include directories
-INCLUDE_DIRECTORIES(${OMC_PATH}/include/omc/c)
-INCLUDE_DIRECTORIES(${OMC_PATH}/include/omc/)
 
 
 INCLUDE_DIRECTORIES(./include)
