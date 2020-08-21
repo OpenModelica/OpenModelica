@@ -1,3 +1,3 @@
 
 omc_add_subdirectory(runtime)
-omc_add_subdirectory(Template)
+omc_add_subdirectory(boot)
