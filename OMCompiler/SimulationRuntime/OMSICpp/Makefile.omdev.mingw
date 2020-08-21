@@ -215,8 +215,8 @@ omcCAPIinstall:
 	mkdir -p Build_CAPI;
 	(cd ./Build_CAPI; echo "change to Build_CAPI"; \
 	mkdir -p tmp; \
-	  cmake -G "MSYS Makefiles"  -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE -DBUILD_SHARED_LIBS=TRUE -DPLATFORM=$(PLATFORM)  -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DLIB_OMC=$(LIB_OMC) -DOMC_PATH="$(OMBUILDDIR)"  -DCMAKE_INSTALL_PREFIX:PATH="./tmp"  -DOMCAPI_ROOT="../../Build_CAPI/tmp" MAKE_CXX_COMPILER=g++ ../omcWrapper/; \
-	  $(MAKE) install; )
+	  cmake -G "MSYS Makefiles"  -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE   $(IS_MINGW32) $(IS_MINGW64) -DCMAKE_BUILD_TYPE=$(BUILDTYPE) -DBUILD_SHARED_LIBS=TRUE -DPLATFORM=$(PLATFORM)  -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DLIB_OMC=$(LIB_OMC) -DOMC_PATH="$(OMBUILDDIR)"  -DCMAKE_INSTALL_PREFIX:PATH="./tmp"  -DOMCAPI_ROOT="../../Build_CAPI/tmp" MAKE_CXX_COMPILER=g++ ../omcWrapper/; \
+	   $(MAKE) install; )
 	
 	(cp -puf Build_CAPI/tmp/lib/*.dll* $(OMBUILDDIR)/bin/)
 	(cp -puf Build_CAPI/tmp/lib/*.dll* $(OMBUILDDIR)/lib/omc/)

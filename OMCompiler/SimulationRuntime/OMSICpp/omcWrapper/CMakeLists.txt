@@ -17,6 +17,9 @@ INCLUDE(../CMake/CheckCXX11.cmake)
 
 
 
+#set OpenModelica include directories
+INCLUDE_DIRECTORIES(${OMC_PATH}/include/omc/c)
+INCLUDE_DIRECTORIES(${OMC_PATH}/include/omc/)
 
 
 
@@ -41,14 +44,15 @@ find_package(cppzmq )
 
 #include gc library header
 #include_directories ("D:\\OpenModelica\\omc\\omc_x64_cloudsim\\build\\include\\omc\\c")
-
+ message (STATUS "zeromq and cppmq found: ${ZeroMQ_FOUND}  ${cppzmq_FOUND} ")
 IF(ZeroMQ_FOUND AND cppzmq_FOUND)
   message (STATUS "zeromq type: ${CMAKE_BUILD_TYPE}")
     IF((MSVC) AND (CMAKE_BUILD_TYPE MATCHES Debug))# workarround, find_package(ZeroMQ)  fails because wrong filename under windows and VS projects
       get_target_property(ZeroMQ_LIB libzmq  IMPORTED_IMPLIB_DEBUG)
        message (STATUS "Using workarround for ${ZeroMQ_LIB} " )
     ELSE((MSVC) AND (CMAKE_BUILD_TYPE MATCHES Debug))
-      set(ZeroMQ_LIB  ${ZeroMQ_LIBRARY})
+            set(ZeroMQ_LIB  ${ZeroMQ_LIBRARY})
+
     ENDIF((MSVC) AND (CMAKE_BUILD_TYPE MATCHES Debug))
 
     message (STATUS "Using ZMQ library ${ZeroMQ_LIBRARY} ${ZeroMQ_LIB} " )
