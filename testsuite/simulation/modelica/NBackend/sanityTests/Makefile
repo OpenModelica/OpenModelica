@@ -1,7 +1,14 @@
-TEST = ../../../rtest -v
+TEST = ../../../../rtest -v
 
 TESTFILES = \
-sanity.mos \
+emptyModel.mos \
+simpleForLoop.mos \
+
+
+# test that currently fail. Move up when fixed.
+# Run make failingtest
+FAILINGTESTFILES = \
+
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
@@ -10,10 +17,9 @@ DEPENDENCIES = \
 *.mos \
 Makefile \
 
-
 CLEAN = `ls | grep -w -v -f deps.tmp`
 
-.PHONY : test clean getdeps
+.PHONY : test clean getdeps failingtest
 
 test:
 	@echo
@@ -23,7 +29,7 @@ test:
 	@$(TEST) $(TESTFILES)
 
 # Cleans all files that are not listed as dependencies
-clean :
+clean:
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
 	@rm -f $(CLEAN)
 
@@ -39,9 +45,8 @@ getdeps:
 	@echo Dependency list saved in deps.txt.
 	@echo Copy the list from deps.txt and add it to the Makefile @DEPENDENCIES
 
-failingtest :
+failingtest:
 	@echo
 	@echo Running failing tests...
 	@echo
 	@$(TEST) $(FAILINGTESTFILES)
-
