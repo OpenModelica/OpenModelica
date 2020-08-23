@@ -116,6 +116,11 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../Script/CevalScriptOMSimulator.mo
 
 # "Template";
+    ${CMAKE_CURRENT_SOURCE_DIR}/../Template/TplAbsyn.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/../Template/TplMain.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/../Template/Tpl.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/../Template/TplParser.mo
+
     ${CMAKE_CURRENT_SOURCE_DIR}/../Template/AbsynDumpTpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/../Template/AbsynJLDumpTpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/../Template/AbsynToJulia.mo
@@ -125,12 +130,8 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../Template/ExpressionDumpTpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/../Template/GenerateAPIFunctionsTpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/../Template/SCodeDumpTpl.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/../Template/TplAbsyn.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/../Template/TplCodegen.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/../Template/TplMain.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/../Template/Tpl.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/../Template/TplParser.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/../Template/Unparsing.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/../susan_codegen/TplCodegen.mo
 
   # "Global";
     ${CMAKE_CURRENT_SOURCE_DIR}/../Global/Global.mo
