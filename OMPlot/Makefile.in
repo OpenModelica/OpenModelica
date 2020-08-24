@@ -18,7 +18,7 @@ $(buildlib)/libomqwt.so: mkbuilddirs qwt-build
 	cp -a qwt/lib/libomqwt.so* $(buildlib)/
 $(buildlib)/libomqwt.dylib: mkbuilddirs qwt-build
 	cp -a qwt/lib/libomqwt*dylib $(buildlib)/
-	install_name_tool -id @rpath/libomqwt.6.2.0.dylib $(buildlib)/libomqwt.6.2.0.dylib
+	install_name_tool -id @rpath/libomqwt.6.1.5.dylib $(buildlib)/libomqwt.6.1.5.dylib
 
 install:
 ifeq (@APP@,)

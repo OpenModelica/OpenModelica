@@ -16,6 +16,8 @@ CONFIG           += warn_on
 CONFIG           += no_keywords
 # CONFIG           += silent
 
+DEFINES += QT_NO_DEPRECATED_WARNINGS # not fixing those before Qwt 6.2
+
 ######################################################################
 # release/debug mode
 ######################################################################
@@ -51,6 +53,9 @@ linux-g++ | linux-g++-64 {
     #QMAKE_CXXFLAGS   *= -Wlogical-op
     #QMAKE_CXXFLAGS   *= -Werror=format-security
     #QMAKE_CXXFLAGS   *= -std=c++11
+
+    # avoid warnings since gcc9
+    # QMAKE_CXXFLAGS   *= -Wno-deprecated-copy
 
     # when using the gold linker ( Qt < 4.8 ) - might be
     # necessary on non linux systems too

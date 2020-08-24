@@ -83,7 +83,7 @@ public:
     void setHandleSize( const QSize & );
     QSize handleSize() const;
 
-    void setBorderWidth( int bw );
+    void setBorderWidth( int );
     int borderWidth() const;
 
     void setSpacing( int );
@@ -111,9 +111,6 @@ protected:
     virtual void paintEvent ( QPaintEvent * );
     virtual void changeEvent( QEvent * );
     virtual void timerEvent( QTimerEvent * );
-
-    virtual bool event( QEvent * );
-
 
     virtual void scaleChange();
 

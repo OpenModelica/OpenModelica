@@ -1,7 +1,7 @@
 /* -*- mode: C++ ; c-file-style: "stroustrup" -*- *****************************
  * Qwt Widget Library
  * Copyright (C) 1997   Josef Wilgen
- * Copyright (C) 2003   Uwe Rathmann
+ * Copyright (C) 2002   Uwe Rathmann
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the Qwt License, Version 1.0
@@ -85,14 +85,15 @@ public:
         const QString fontKey = font.key();
 
         QMap<QString, int>::const_iterator it =
-            d_ascentCache.find( fontKey );
-        if ( it == d_ascentCache.end() )
-        {
-            int ascent = findAscent( font );
-            it = d_ascentCache.insert( fontKey, ascent );
-        }
+            d_ascentCache.constFind( fontKey );
 
-        return ( *it );
+        if ( it != d_ascentCache.constEnd() )
+            return *it;
+
+        const int ascent = findAscent( font );
+        d_ascentCache.insert( fontKey, ascent );
+
+        return ascent;
     }
 
 private:
@@ -115,7 +116,7 @@ private:
         int row = 0;
         for ( row = 0; row < img.height(); row++ )
         {
-            const QRgb *line = reinterpret_cast<const QRgb *>( 
+            const QRgb *line = reinterpret_cast<const QRgb *>(
                 img.scanLine( row ) );
 
             const int w = pm.width();
@@ -181,7 +182,7 @@ double QwtPlainTextEngine::heightForWidth( const QFont& font, int flags,
   \param flags Bitwise OR of the flags used like in QPainter::drawText
   \param text Text to be rendered
 
-  \return Caluclated size
+  \return Calculated size
 */
 QSizeF QwtPlainTextEngine::textSize( const QFont &font,
     int flags, const QString& text ) const
@@ -270,7 +271,7 @@ double QwtRichTextEngine::heightForWidth( const QFont& font, int flags,
   \param flags Bitwise OR of the flags used like in QPainter::drawText()
   \param text Text to be rendered
 
-  \return Caluclated size
+  \return Calculated size
 */
 
 QSizeF QwtRichTextEngine::textSize( const QFont &font,

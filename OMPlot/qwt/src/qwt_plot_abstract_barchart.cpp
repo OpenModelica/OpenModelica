@@ -180,8 +180,8 @@ int QwtPlotAbstractBarChart::margin() const
 /*!
    \brief Set the baseline
 
-   The baseline is the origin for the chart. Each bar is 
-   painted from the baseline in the direction of the sample 
+   The baseline is the origin for the chart. Each bar is
+   painted from the baseline in the direction of the sample
    value. In case of a horizontal orientation() the baseline
    is interpreted as x - otherwise as y - value.
 
@@ -200,7 +200,7 @@ void QwtPlotAbstractBarChart::setBaseline( double value )
     }
 }
 
-/*! 
+/*!
    \return Value for the origin of the bar chart
    \sa setBaseline(), QwtPlotSeriesItem::orientation()
  */
@@ -256,6 +256,7 @@ double QwtPlotAbstractBarChart::sampleWidth( const QwtScaleMap &map,
 
             width = qwtTransformWidth( map, value, w );
             width -= d_data->spacing;
+            width = qMax( width, d_data->layoutHint );
         }
     }
 
@@ -284,7 +285,7 @@ double QwtPlotAbstractBarChart::sampleWidth( const QwtScaleMap &map,
    \sa layoutPolicy(), layoutHint(), QwtPlotItem::Margins
        QwtPlot::getCanvasMarginsHint(), QwtPlot::updateCanvasMargins()
  */
-void QwtPlotAbstractBarChart::getCanvasMarginHint( const QwtScaleMap &xMap, 
+void QwtPlotAbstractBarChart::getCanvasMarginHint( const QwtScaleMap &xMap,
     const QwtScaleMap &yMap, const QRectF &canvasRect,
     double &left, double &top, double &right, double &bottom ) const
 {
@@ -346,7 +347,7 @@ void QwtPlotAbstractBarChart::getCanvasMarginHint( const QwtScaleMap &xMap,
                 w = canvasRect.height();
             }
 
-            const double sampleWidthP = ( w - spacing * ds ) 
+            const double sampleWidthP = ( w - spacing * ( numSamples - 1 ) )
                 * sampleWidthS / ( ds + sampleWidthS );
 
             hint = 0.5 * sampleWidthP;
