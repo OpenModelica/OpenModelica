@@ -126,14 +126,34 @@ void QwtPlotMagnifier::rescale( double factor )
 
     for ( int axisId = 0; axisId < QwtPlot::axisCnt; axisId++ )
     {
-        const QwtScaleDiv &scaleDiv = plt->axisScaleDiv( axisId );
         if ( isAxisEnabled( axisId ) )
         {
-            const double center =
-                scaleDiv.lowerBound() + scaleDiv.range() / 2;
-            const double width_2 = scaleDiv.range() / 2 * factor;
+            const QwtScaleMap scaleMap = plt->canvasMap( axisId );
 
-            plt->setAxisScale( axisId, center - width_2, center + width_2 );
+            double v1 = scaleMap.s1();
+            double v2 = scaleMap.s2();
+
+            if ( scaleMap.transformation() )
+            {
+                // the coordinate system of the paint device is always linear
+
+                v1 = scaleMap.transform( v1 ); // scaleMap.p1()
+                v2 = scaleMap.transform( v2 ); // scaleMap.p2()
+            }
+
+            const double center = 0.5 * ( v1 + v2 );
+            const double width_2 = 0.5 * ( v2 - v1 ) * factor;
+
+            v1 = center - width_2;
+            v2 = center + width_2;
+
+            if ( scaleMap.transformation() )
+            {
+                v1 = scaleMap.invTransform( v1 );
+                v2 = scaleMap.invTransform( v2 );
+            }
+
+            plt->setAxisScale( axisId, v1, v2 );
             doReplot = true;
         }
     }

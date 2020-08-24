@@ -10,7 +10,7 @@
 #include "qwt_plot_shapeitem.h"
 #include "qwt_scale_map.h"
 #include "qwt_painter.h"
-#include "qwt_weeding_curve_fitter.h"
+#include "qwt_curve_fitter.h"
 #include "qwt_clipper.h"
 
 static QPainterPath qwtTransformPath( const QwtScaleMap &xMap,
@@ -207,7 +207,7 @@ QRectF QwtPlotShapeItem::boundingRect() const
   \param rect Rectangle
   \sa setShape(), setPolygon(), shape()
  */
-void QwtPlotShapeItem::setRect( const QRectF &rect ) 
+void QwtPlotShapeItem::setRect( const QRectF &rect )
 {
     QPainterPath path;
     path.addRect( rect );
@@ -262,21 +262,21 @@ QPainterPath QwtPlotShapeItem::shape() const
     return d_data->shape;
 }
 
-/*! 
+/*!
   Build and assign a pen
-    
+
   In Qt5 the default pen width is 1.0 ( 0.0 in Qt4 ) what makes it
   non cosmetic ( see QPen::isCosmetic() ). This method has been introduced
   to hide this incompatibility.
-    
+
   \param color Pen color
   \param width Pen width
   \param style Pen style
-    
+
   \sa pen(), brush()
- */ 
+ */
 void QwtPlotShapeItem::setPen( const QColor &color, qreal width, Qt::PenStyle style )
-{   
+{
     setPen( QPen( color, width, style ) );
 }
 
@@ -335,7 +335,7 @@ QBrush QwtPlotShapeItem::brush() const
 /*!
   \brief Set the tolerance for the weeding optimization
 
-  After translating the shape into target device coordinate 
+  After translating the shape into target device coordinate
   ( usually widget geometries ) the painter path can be simplified
   by a point weeding algorithm ( Douglas-Peucker ).
 
@@ -383,68 +383,74 @@ void QwtPlotShapeItem::draw( QPainter *painter,
     if ( d_data->shape.isEmpty() )
         return;
 
-    if ( d_data->pen.style() == Qt::NoPen 
+    if ( d_data->pen.style() == Qt::NoPen
         && d_data->brush.style() == Qt::NoBrush )
     {
         return;
     }
 
-    const QRectF cRect = QwtScaleMap::invTransform(
+    const QRectF cr = QwtScaleMap::invTransform(
         xMap, yMap, canvasRect.toRect() );
 
-    if ( d_data->boundingRect.intersects( cRect ) )
+    const QRectF &br = d_data->boundingRect;
+
+    if ( ( br.left() > cr.right() ) || ( br.right() < cr.left() )
+        || ( br.top() > cr.bottom() ) || ( br.bottom() < cr.top() ) )
     {
-        const bool doAlign = QwtPainter::roundingAlignment( painter );
-
-        QPainterPath path = qwtTransformPath( xMap, yMap, 
-            d_data->shape, doAlign );
-
-        if ( testPaintAttribute( QwtPlotShapeItem::ClipPolygons ) )
-        {
-            qreal pw = qMax( qreal( 1.0 ), painter->pen().widthF());
-            QRectF clipRect = canvasRect.adjusted( -pw, -pw, pw, pw );
-
-            QPainterPath clippedPath;
-            clippedPath.setFillRule( path.fillRule() );
-
-            const QList<QPolygonF> polygons = path.toSubpathPolygons();
-            for ( int i = 0; i < polygons.size(); i++ )
-            {
-                const QPolygonF p = QwtClipper::clipPolygonF(
-                    clipRect, polygons[i], true );
-
-                clippedPath.addPolygon( p );
-
-            }
-
-            path = clippedPath;
-        }
-
-        if ( d_data->renderTolerance > 0.0 )
-        {
-            QwtWeedingCurveFitter fitter( d_data->renderTolerance );
-
-            QPainterPath fittedPath;
-            fittedPath.setFillRule( path.fillRule() );
-
-            const QList<QPolygonF> polygons = path.toSubpathPolygons();
-            for ( int i = 0; i < polygons.size(); i++ )
-                fittedPath.addPolygon( fitter.fitCurve( polygons[ i ] ) );
-
-            path = fittedPath;
-        }
-
-        painter->setPen( d_data->pen );
-        painter->setBrush( d_data->brush );
-
-        painter->drawPath( path );
+        // outside the visisble area
+        return;
     }
+
+    const bool doAlign = QwtPainter::roundingAlignment( painter );
+
+    QPainterPath path = qwtTransformPath( xMap, yMap,
+        d_data->shape, doAlign );
+
+    if ( testPaintAttribute( QwtPlotShapeItem::ClipPolygons ) )
+    {
+        qreal pw = qMax( qreal( 1.0 ), painter->pen().widthF());
+        QRectF clipRect = canvasRect.adjusted( -pw, -pw, pw, pw );
+
+        QPainterPath clippedPath;
+        clippedPath.setFillRule( path.fillRule() );
+
+        const QList<QPolygonF> polygons = path.toSubpathPolygons();
+        for ( int i = 0; i < polygons.size(); i++ )
+        {
+            const QPolygonF p = QwtClipper::clipPolygonF(
+                clipRect, polygons[i], true );
+
+            clippedPath.addPolygon( p );
+
+        }
+
+        path = clippedPath;
+    }
+
+    if ( d_data->renderTolerance > 0.0 )
+    {
+        QwtWeedingCurveFitter fitter( d_data->renderTolerance );
+
+        QPainterPath fittedPath;
+        fittedPath.setFillRule( path.fillRule() );
+
+        const QList<QPolygonF> polygons = path.toSubpathPolygons();
+        for ( int i = 0; i < polygons.size(); i++ )
+            fittedPath.addPolygon( fitter.fitCurve( polygons[ i ] ) );
+
+        path = fittedPath;
+    }
+
+    painter->setPen( d_data->pen );
+    painter->setBrush( d_data->brush );
+
+    painter->drawPath( path );
 }
 
 /*!
   \return A rectangle filled with the color of the brush ( or the pen )
 
-  \param index Index of the legend entry 
+  \param index Index of the legend entry
                 ( usually there is only one )
   \param size Icon size
 

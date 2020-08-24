@@ -8,8 +8,8 @@
 ################################################################
 
 QWT_VER_MAJ      = 6
-QWT_VER_MIN      = 2
-QWT_VER_PAT      = 0
+QWT_VER_MIN      = 1
+QWT_VER_PAT      = 5
 QWT_VERSION      = $${QWT_VER_MAJ}.$${QWT_VER_MIN}.$${QWT_VER_PAT}
 
 ######################################################################
@@ -17,7 +17,7 @@ QWT_VERSION      = $${QWT_VER_MAJ}.$${QWT_VER_MIN}.$${QWT_VER_PAT}
 ######################################################################
 
 # Do not use the qwt hard coded install path
-INSTALL_PREFIX = $$PWD/build
+QWT_INSTALL_PREFIX = $$PWD/build
 
 #QWT_INSTALL_PREFIX = $$[QT_INSTALL_PREFIX]
 
@@ -29,9 +29,9 @@ INSTALL_PREFIX = $$PWD/build
 #    QWT_INSTALL_PREFIX    = C:/Qwt-$$QWT_VERSION-svn
 #}
 
-QWT_INSTALL_DOCS      = $${INSTALL_PREFIX}/doc
-QWT_INSTALL_HEADERS   = $${INSTALL_PREFIX}/include
-QWT_INSTALL_LIBS      = $${INSTALL_PREFIX}/lib
+QWT_INSTALL_DOCS      = $${QWT_INSTALL_PREFIX}/doc
+QWT_INSTALL_HEADERS   = $${QWT_INSTALL_PREFIX}/include
+QWT_INSTALL_LIBS      = $${QWT_INSTALL_PREFIX}/lib
 
 ######################################################################
 # Designer plugin
@@ -43,7 +43,7 @@ QWT_INSTALL_LIBS      = $${INSTALL_PREFIX}/lib
 # runtime environment of designer/creator.
 ######################################################################
 
-QWT_INSTALL_PLUGINS   = $${INSTALL_PREFIX}/plugins/designer
+QWT_INSTALL_PLUGINS   = $${QWT_INSTALL_PREFIX}/plugins/designer
 
 # linux distributors often organize the Qt installation
 # their way and QT_INSTALL_PREFIX doesn't offer a good
@@ -64,7 +64,7 @@ QWT_INSTALL_PLUGINS   = $${INSTALL_PREFIX}/plugins/designer
 # with every Qt upgrade.
 ######################################################################
 
-QWT_INSTALL_FEATURES  = $${INSTALL_PREFIX}/features
+QWT_INSTALL_FEATURES  = $${QWT_INSTALL_PREFIX}/features
 # QWT_INSTALL_FEATURES  = $$[QT_INSTALL_PREFIX]/features
 
 ######################################################################
@@ -164,6 +164,16 @@ QWT_CONFIG     += QwtSvg
 ######################################################################
 
 #macx:!static:CONFIG(qt_framework, qt_framework|qt_no_framework) {
-
+#
 #    QWT_CONFIG += QwtFramework
+#}
+
+######################################################################
+# Create and install pc files for pkg-config
+# See http://www.freedesktop.org/wiki/Software/pkg-config/
+######################################################################
+
+#unix {
+#
+#    #QWT_CONFIG     += QwtPkgConfig
 #}

@@ -89,7 +89,7 @@ QString QwtTextLabel::plainText() const
 
   \sa QwtText
 */
-void QwtTextLabel::setText( const QString &text, 
+void QwtTextLabel::setText( const QString &text,
     QwtText::TextFormat textFormat )
 {
     d_data->text.setText( text, textFormat );
@@ -146,7 +146,7 @@ void QwtTextLabel::setIndent( int indent )
     updateGeometry();
 }
 
-//! Return label's text indent in pixels
+//! Return label's text margin in pixels
 int QwtTextLabel::margin() const
 {
     return d_data->margin;
@@ -164,7 +164,7 @@ void QwtTextLabel::setMargin( int margin )
     updateGeometry();
 }
 
-//! Return label's margin in pixels
+//! Return a size hint
 QSize QwtTextLabel::sizeHint() const
 {
     return minimumSizeHint();
