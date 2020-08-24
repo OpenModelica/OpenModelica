@@ -384,24 +384,26 @@ ELSE(MPI_FOUND)
   SET(USE_MPI_ "OFF")
 ENDIF(MPI_FOUND)
 
-# Find CMinpack
-# Note: Visual Studio libs are located in install/msvc, libs for gcc are directly in install
-IF(MSVC)
+if(NOT FMU_TARGET)
+  # Find CMinpack
+  # Note: Visual Studio libs are located in install/msvc, libs for gcc are directly in install
+  IF(MSVC)
     SET(CMinpack_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/install_msvc")
-ELSE(MSVC)
+  ELSE(MSVC)
     SET(CMinpack_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/build")
-ENDIF(MSVC)
+  ENDIF(MSVC)
 
-FIND_PATH(CMINPACK_INCLUDE_DIR cminpack.h
-          HINTS ${CMinpack_Path}
-          PATH_SUFFIXES include include/cminpack include/cminpack-1 ..)
+  FIND_PATH(CMINPACK_INCLUDE_DIR cminpack.h
+            HINTS ${CMinpack_Path}
+            PATH_SUFFIXES include include/cminpack include/cminpack-1 ..)
 
-FIND_LIBRARY(CMINPACK_LIBRARY
-             NAMES cminpack
-             HINTS ${CMinpack_Path}
-             PATH_SUFFIXES lib lib64)
+  FIND_LIBRARY(CMINPACK_LIBRARY
+               NAMES cminpack
+               HINTS ${CMinpack_Path}
+               PATH_SUFFIXES lib lib64)
 
-INCLUDE_DIRECTORIES(${CMINPACK_INCLUDE_DIR})
+  INCLUDE_DIRECTORIES(${CMINPACK_INCLUDE_DIR})
+endif(NOT FMU_TARGET)
 
 # Find Intel TBB
 FIND_PACKAGE(TBB)
@@ -833,11 +835,9 @@ IF(USE_DGESV)
   GET_FILENAME_COMPONENT(libDgesvName ${libDgesv} NAME)
 ENDIF(USE_DGESV)
 
+# add base definitions for generating a target
 # adrpo: make sure this is first for the precompiled headers!
-if(NOT FMU_TARGET)
-  # add projects for generating a simulator
-  add_subdirectory(Core/Modelica)
-endif(NOT FMU_TARGET)
+add_subdirectory(Core/Modelica)
 
 # add system default implemention project
 add_subdirectory(Core/System)
@@ -849,14 +849,15 @@ add_subdirectory(Core/Utils/Modelica)
 add_subdirectory(Core/Utils/extension)
 add_subdirectory(Core/ModelicaExternalC)
 
-if(NOT FMU_TARGET)
-  # add projects for generating a simulator
+# add projects for generating a simulator
+# (add them to FMU_TARGET as well due to include dependencies)
+#if(NOT FMU_TARGET)
   add_subdirectory(SimCoreFactory/OMCFactory)
   add_subdirectory(Core/DataExchange)
   add_subdirectory(Core/SimulationSettings)
   add_subdirectory(Core/SimController)
   #add_subdirectory(ModelicaCompiler)
-endif(NOT FMU_TARGET)
+#endif(NOT FMU_TARGET)
 
 # add Newton solver
 add_subdirectory(Solver/Newton)
