@@ -233,7 +233,17 @@ MESSAGE(STATUS "--UMFPACK_LIBRARIES = ${UMFPACK_LIBRARIES_}")
 MESSAGE(STATUS " ")
 
 if(BUILD_SHARED_LIBS)
+  # tweak SYSTEM_CFLAGS for precompiled headers
   create_precompiled_header(${ModelicaName} Include/Core/Modelica.h)
+else(BUILD_SHARED_LIBS)
+  # set SYSTEM_CFLAGS from cmake variables
+  STRING(TOUPPER "CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}" _flags_var_name)
+  SET(_compiler_flags ${${_flags_var_name}})
+  IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    set(_compiler_flags "${_compiler_flags} -fPIC ")
+  ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  GET_DIRECTORY_PROPERTY(_directory_flags DEFINITIONS)
+  SET(SYSTEM_CFLAGS "${_compiler_flags} ${_directory_flags}")
 endif(BUILD_SHARED_LIBS)
 
 IF(MSVC)
