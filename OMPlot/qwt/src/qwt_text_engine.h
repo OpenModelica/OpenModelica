@@ -1,7 +1,7 @@
 /* -*- mode: C++ ; c-file-style: "stroustrup" -*- *****************************
  * Qwt Widget Library
  * Copyright (C) 1997   Josef Wilgen
- * Copyright (C) 2003   Uwe Rathmann
+ * Copyright (C) 2002   Uwe Rathmann
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the Qwt License, Version 1.0
@@ -25,10 +25,10 @@ class QPainter;
   specific text format. They are used by QwtText to render a text.
 
   QwtPlainTextEngine and QwtRichTextEngine are part of the Qwt library.
-  The implementation of QwtMathMLTextEngine uses code from the 
+  The implementation of QwtMathMLTextEngine uses code from the
   Qt solution package. Because of license implications it is built into
   a separate library.
- 
+
   \sa QwtText::setTextEngine()
 */
 

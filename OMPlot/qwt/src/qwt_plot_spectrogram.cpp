@@ -23,6 +23,12 @@
 #include <qtconcurrentrun.h>
 #endif
 
+#define DEBUG_RENDER 0
+
+#if DEBUG_RENDER
+#include <QElapsedTimer>
+#endif
+
 class QwtPlotSpectrogram::PrivateData
 {
 public:
@@ -155,22 +161,22 @@ const QwtColorMap *QwtPlotSpectrogram::colorMap() const
     return d_data->colorMap;
 }
 
-/*! 
+/*!
   Build and assign the default pen for the contour lines
-    
+
   In Qt5 the default pen width is 1.0 ( 0.0 in Qt4 ) what makes it
   non cosmetic ( see QPen::isCosmetic() ). This method has been introduced
   to hide this incompatibility.
-    
+
   \param color Pen color
   \param width Pen width
   \param style Pen style
-    
+
   \sa pen(), brush()
- */ 
-void QwtPlotSpectrogram::setDefaultContourPen( 
+ */
+void QwtPlotSpectrogram::setDefaultContourPen(
     const QColor &color, qreal width, Qt::PenStyle style )
-{   
+{
     setDefaultContourPen( QPen( color, width, style ) );
 }
 
@@ -356,7 +362,7 @@ QwtInterval QwtPlotSpectrogram::interval(Qt::Axis axis) const
    \brief Pixel hint
 
    The geometry of a pixel is used to calculated the resolution and
-   alignment of the rendered image. 
+   alignment of the rendered image.
 
    The default implementation returns data()->pixelHint( rect );
 
@@ -365,7 +371,7 @@ QwtInterval QwtPlotSpectrogram::interval(Qt::Axis axis) const
 
    \return Bounding rectangle of a pixel
 
-   \sa QwtPlotRasterItem::pixelHint(), QwtRasterData::pixelHint(), 
+   \sa QwtPlotRasterItem::pixelHint(), QwtRasterData::pixelHint(),
        render(), renderImage()
 */
 QRectF QwtPlotSpectrogram::pixelHint( const QRectF &area ) const
@@ -396,7 +402,7 @@ QImage QwtPlotSpectrogram::renderImage(
     const QwtScaleMap &xMap, const QwtScaleMap &yMap,
     const QRectF &area, const QSize &imageSize ) const
 {
-    if ( imageSize.isEmpty() || d_data->data == NULL 
+    if ( imageSize.isEmpty() || d_data->data == NULL
         || d_data->colorMap == NULL )
     {
         return QImage();
@@ -415,6 +421,11 @@ QImage QwtPlotSpectrogram::renderImage(
         image.setColorTable( d_data->colorMap->colorTable( intensityRange ) );
 
     d_data->data->initRaster( area, image.size() );
+
+#if DEBUG_RENDER
+    QElapsedTimer time;
+    time.start();
+#endif
 
 #if QT_VERSION >= 0x040400 && !defined(QT_NO_QFUTURE)
     uint numThreads = renderThreadCount();
@@ -449,6 +460,11 @@ QImage QwtPlotSpectrogram::renderImage(
 #else // QT_VERSION < 0x040400
     const QRect tile( 0, 0, image.width(), image.height() );
     renderTile( xMap, yMap, tile, &image );
+#endif
+
+#if DEBUG_RENDER
+    const qint64 elapsed = time.elapsed();
+    qDebug() << "renderImage" << imageSize << elapsed;
 #endif
 
     d_data->data->discardRaster();
@@ -530,7 +546,7 @@ void QwtPlotSpectrogram::renderTile(
 
    \sa drawContourLines(), QwtRasterData::contourLines()
 */
-QSize QwtPlotSpectrogram::contourRasterSize( 
+QSize QwtPlotSpectrogram::contourRasterSize(
     const QRectF &area, const QRect &rect ) const
 {
     QSize raster = rect.size() / 2;

@@ -10,20 +10,12 @@
 #ifndef QWT_GLOBAL_H
 #define QWT_GLOBAL_H
 
-#if defined(_MSC_VER)
-#  define QT_STATIC_CONST static
-#  define QT_STATIC_CONST_IMPL
-#else
-#  define QT_STATIC_CONST static const
-#  define QT_STATIC_CONST_IMPL const
-#endif
-
 #include <qglobal.h>
 
 // QWT_VERSION is (major << 16) + (minor << 8) + patch.
 
-#define QWT_VERSION       0x060200
-#define QWT_VERSION_STR   "6.2.0"
+#define QWT_VERSION       0x060105
+#define QWT_VERSION_STR   "6.1.5"
 
 #if defined(_MSC_VER) /* MSVC Compiler */
 /* template-class specialization 'identifier' is already instantiated */
@@ -34,10 +26,10 @@
 
 #ifdef QWT_DLL
 
-#if defined(QWT_MAKEDLL)     // create a Qwt DLL library 
+#if defined(QWT_MAKEDLL)     // create a Qwt DLL library
 #define QWT_EXPORT Q_DECL_EXPORT
 #else                        // use a Qwt DLL library
-#define QWT_EXPORT Q_DECL_IMPORT 
+#define QWT_EXPORT Q_DECL_IMPORT
 #endif
 
 #endif // QWT_DLL
@@ -46,4 +38,4 @@
 #define QWT_EXPORT
 #endif
 
-#endif 
+#endif

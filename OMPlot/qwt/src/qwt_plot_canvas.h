@@ -19,7 +19,7 @@ class QPixmap;
 
 /*!
   \brief Canvas of a QwtPlot.
-  
+
    Canvas is the widget where all plot items are displayed
 
   \sa QwtPlot::setCanvas(), QwtPlotGLCanvas
@@ -42,8 +42,8 @@ public:
     enum PaintAttribute
     {
         /*!
-          \brief Paint double buffered reusing the content 
-                 of the pixmap buffer when possible. 
+          \brief Paint double buffered reusing the content
+                 of the pixmap buffer when possible.
 
           Using a backing store might improve the performance
           significantly, when working with widget overlays ( like rubber bands ).
@@ -59,15 +59,15 @@ public:
                  of the plot canvas
 
           When using styled backgrounds Qt assumes, that the
-          canvas doesn't fill its area completely 
+          canvas doesn't fill its area completely
           ( f.e because of rounded borders ) and fills the area
           below the canvas. When this is done with gradients it might
           result in a serious performance bottleneck - depending on the size.
 
           When the Opaque attribute is enabled the canvas tries to
-          identify the gaps with some heuristics and to fill those only. 
+          identify the gaps with some heuristics and to fill those only.
 
-          \warning Will not work for semitransparent backgrounds 
+          \warning Will not work for semitransparent backgrounds
          */
         Opaque       = 2,
 
@@ -94,38 +94,7 @@ public:
 
           \sa replot(), QWidget::repaint(), QWidget::update()
          */
-        ImmediatePaint = 8,
-
-        /*!
-          \brief Render the canvas via an OpenGL buffer
-
-          In OpenGL mode the plot scene will be rendered to a temporary 
-          OpenGL buffer ( pixel buffer with Qt4, frame buffer object for Qt >= 5 ), 
-          that will be translated to a QImage afterwards. 
-          Then this image will be painted to the canvas.
-
-          This mode might be useful for "heavy" plots on platforms to achieve 
-          hardware acceleration on platforms, where the raster paint engine 
-          ( = software renderer ) ould be used otherwise.
-          But the penalty of copying out the image makes this mode less optimal for
-          "normal" plots.
-
-          On a hardware accelerated graphics system ( f.e. Qt4/X11 "native" ) 
-          using this mode does not make much sense. Unfortunately those systems have 
-          been removed from Qt5.
-
-          \note Using QwtPlotGLCanvas is an hardware accelerated alternative without 
-                suffering from the extra roundtrip of the rendered image. But this 
-                type of canvas does not have a backing store, that helps to avoid
-                replots in combination with of overlay widgets ( f.e the 
-                rubberband of a zoomer ).
-
-          \note The OpenGLBuffer mode has no effect, when "QwtOpenGL" has been disabled in 
-                qwtconfig.pri.
-
-          \sa QwtPlotGLCanvas
-         */
-        OpenGLBuffer = 16
+        ImmediatePaint = 8
     };
 
     //! Paint attributes
@@ -134,7 +103,7 @@ public:
     /*!
       \brief Focus indicator
       The default setting is NoFocusIndicator
-      \sa setFocusIndicator(), focusIndicator(), paintFocus()
+      \sa setFocusIndicator(), focusIndicator(), drawFocusIndicator()
     */
 
     enum FocusIndicator
@@ -144,7 +113,7 @@ public:
 
         /*!
           The focus is related to the complete canvas.
-          Paint the focus indicator using paintFocus()
+          Paint the focus indicator using drawFocusIndicator()
          */
         CanvasFocusIndicator,
 

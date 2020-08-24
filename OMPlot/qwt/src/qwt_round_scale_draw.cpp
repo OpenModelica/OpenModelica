@@ -145,16 +145,16 @@ void QwtRoundScaleDraw::setAngleRange( double angle1, double angle2 )
 */
 void QwtRoundScaleDraw::drawLabel( QPainter *painter, double value ) const
 {
-    const QwtText label = tickLabel( painter->font(), value );
-    if ( label.isEmpty() )
-        return;
-
     const double tval = scaleMap().transform( value );
     if ( ( tval >= d_data->startAngle + 360.0 )
         || ( tval <= d_data->startAngle - 360.0 ) )
     {
         return;
     }
+
+    const QwtText label = tickLabel( painter->font(), value );
+    if ( label.isEmpty() )
+        return;
 
     double radius = d_data->radius;
     if ( hasComponent( QwtAbstractScaleDraw::Ticks ) ||
@@ -184,7 +184,7 @@ void QwtRoundScaleDraw::drawLabel( QPainter *painter, double value ) const
 
    \param painter Painter
    \param value Value of the tick
-   \param len Lenght of the tick
+   \param len Length of the tick
 
    \sa drawBackbone(), drawLabel()
 */
@@ -200,7 +200,7 @@ void QwtRoundScaleDraw::drawTick( QPainter *painter, double value, double len ) 
     const double radius = d_data->radius;
 
     if ( ( tval < d_data->startAngle + 360.0 )
-        || ( tval > d_data->startAngle - 360.0 ) )
+        && ( tval > d_data->startAngle - 360.0 ) )
     {
         const double arc = qwtRadians( tval );
 
@@ -267,14 +267,14 @@ double QwtRoundScaleDraw::extent( const QFont &font ) const
             if ( !sd.contains( value ) )
                 continue;
 
-            const QwtText label = tickLabel( font, value );
-            if ( label.isEmpty() )
-                continue;
-
             const double tval = scaleMap().transform( value );
             if ( ( tval < d_data->startAngle + 360 )
                 && ( tval > d_data->startAngle - 360 ) )
             {
+                const QwtText label = tickLabel( font, value );
+                if ( label.isEmpty() )
+                    continue;
+
                 const double arc = qwtRadians( tval );
 
                 const QSizeF sz = label.textSize( font );

@@ -286,7 +286,7 @@ QPointF QwtSyntheticPointData::sample( size_t index ) const
    equidistant steps. If !interval().isValid() the
    interval is calculated from the "rectangle of interest".
 
-   \param index Index of the requested point 
+   \param index Index of the requested point
    \return Calculated x coordinate
 
    \sa interval(), rectOfInterest(), y()
@@ -296,9 +296,12 @@ double QwtSyntheticPointData::x( uint index ) const
     const QwtInterval &interval = d_interval.isValid() ?
         d_interval : d_intervalOfInterest;
 
-    if ( !interval.isValid() || d_size == 0 || index >= d_size )
+    if ( !interval.isValid() )
         return 0.0;
 
-    const double dx = interval.width() / d_size;
+    if ( d_size <= 1 )
+        return interval.minValue();
+
+    const double dx = interval.width() / ( d_size - 1 );
     return interval.minValue() + index * dx;
 }

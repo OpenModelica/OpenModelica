@@ -8,35 +8,94 @@
  *****************************************************************************/
 
 #ifndef QWT_SPLINE_H
-#define QWT_SPLINE_H 1
+#define QWT_SPLINE_H
 
 #include "qwt_global.h"
 #include <qpolygon.h>
-#include <qpainterpath.h>
+#include <qvector.h>
 
-namespace QwtSplineAkima
+/*!
+  \brief A class for spline interpolation
+
+  The QwtSpline class is used for cubical spline interpolation.
+  Two types of splines, natural and periodic, are supported.
+
+  \par Usage:
+  <ol>
+  <li>First call setPoints() to determine the spline coefficients
+      for a tabulated function y(x).
+  <li>After the coefficients have been set up, the interpolated
+      function value for an argument x can be determined by calling
+      QwtSpline::value().
+  </ol>
+
+  \par Example:
+  \code
+#include <qwt_spline.h>
+
+QPolygonF interpolate(const QPolygonF& points, int numValues)
 {
-    QWT_EXPORT QPainterPath path( const QPolygonF & );
-    QWT_EXPORT QPainterPath path( const QPolygonF &,
-        double slopeStart, double slopeEnd );
-}
+    QwtSpline spline;
+    if ( !spline.setPoints(points) )
+        return points;
 
-namespace QwtSplineHarmonicMean
+    QPolygonF interpolatedPoints(numValues);
+
+    const double delta =
+        (points[numPoints - 1].x() - points[0].x()) / (points.size() - 1);
+    for(i = 0; i < points.size(); i++)  / interpolate
+    {
+        const double x = points[0].x() + i * delta;
+        interpolatedPoints[i].setX(x);
+        interpolatedPoints[i].setY(spline.value(x));
+    }
+    return interpolatedPoints;
+}
+  \endcode
+*/
+
+class QWT_EXPORT QwtSpline
 {
-    QWT_EXPORT QPainterPath path( const QPolygonF & );
-    QWT_EXPORT QPainterPath path( const QPolygonF &, 
-        double slopeStart, double slopeEnd );
-}
+public:
+    //! Spline type
+    enum SplineType
+    {
+        //! A natural spline
+        Natural,
 
-namespace QwtSplineNatural
-{
-    // derivatives at each point
-    QWT_EXPORT QVector<double> derivatives( const QPolygonF & );
+        //! A periodic spline
+        Periodic
+    };
 
-    QWT_EXPORT QPolygonF polygon( const QPolygonF &, int numPoints );
+    QwtSpline();
+    QwtSpline( const QwtSpline & );
 
-    // interpolated spline as bezier curve
-    QWT_EXPORT QPainterPath path( const QPolygonF & );
-}
+    ~QwtSpline();
+
+    QwtSpline &operator=( const QwtSpline & );
+
+    void setSplineType( SplineType );
+    SplineType splineType() const;
+
+    bool setPoints( const QPolygonF& points );
+    QPolygonF points() const;
+
+    void reset();
+
+    bool isValid() const;
+    double value( double x ) const;
+
+    const QVector<double> &coefficientsA() const;
+    const QVector<double> &coefficientsB() const;
+    const QVector<double> &coefficientsC() const;
+
+protected:
+    bool buildNaturalSpline( const QPolygonF & );
+    bool buildPeriodicSpline( const QPolygonF & );
+
+private:
+    class PrivateData;
+    PrivateData *d_data;
+};
 
 #endif
