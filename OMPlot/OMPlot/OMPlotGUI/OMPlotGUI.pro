@@ -31,12 +31,12 @@ HEADERS += OMPlot.h \
 win32 {
   QMAKE_LFLAGS += -Wl,--enable-auto-import
   CONFIG(debug, debug|release){
-    LIBS += -L$$(OMBUILDDIR)/lib/omc -lOMPlot -lomqwtd
+    LIBS += -L$$(OMBUILDDIR)/lib/omc -lOMPlot -lqwtd
   }
   else {
-    LIBS += -L$$(OMBUILDDIR)/lib/omc -lOMPlot -lomqwt
+    LIBS += -L$$(OMBUILDDIR)/lib/omc -lOMPlot -lqwt
   }
-  INCLUDEPATH += $$(OMBUILDDIR)/include/omplot/qwt $$(OMBUILDDIR)/include/omc/c
+  INCLUDEPATH += $$(OMBUILDDIR)/include/omc/c
 } else {
   include(OMPlotGUI.config)
   LIBS += -lOMPlot

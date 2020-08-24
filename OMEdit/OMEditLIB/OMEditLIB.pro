@@ -72,10 +72,10 @@ CONFIG(release, debug|release) { # release
   include(OMEditLIB.unix.config.pri)
 }
 
+# ppenguin: remove internal qwt include, use the system's version
 INCLUDEPATH += ../ \
   $$OPENMODELICAHOME/include \
   $$OPENMODELICAHOME/include/omplot \
-  $$OPENMODELICAHOME/include/omplot/qwt \
   $$OPENMODELICAHOME/include/$$host_short/omc/antlr3 \
   $$OPENMODELICAHOME/include/omc/scripting-API \
   $$OPENMODELICAHOME/include/omc/c \
