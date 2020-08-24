@@ -15,9 +15,10 @@
 class QwtLinearColorMap::ColorStops
 {
 public:
-    ColorStops()
+    ColorStops():
+        d_doAlpha( false )
     {
-        _stops.reserve( 256 );
+        d_stops.reserve( 256 );
     }
 
     void insert( double pos, const QColor &color );
@@ -38,20 +39,50 @@ private:
 
         ColorStop( double p, const QColor &c ):
             pos( p ),
-            rgb( c.rgb() )
+            rgb( c.rgba() )
         {
             r = qRed( rgb );
             g = qGreen( rgb );
             b = qBlue( rgb );
+            a = qAlpha( rgb );
+
+            /*
+                when mapping a value to rgb we will have to calcualate:
+                   - const int v = int( ( s1.v0 + ratio * s1.vStep ) + 0.5 );
+
+                Thus adding 0.5 ( for rounding ) can be done in advance
+             */
+            r0 = r + 0.5;
+            g0 = g + 0.5;
+            b0 = b + 0.5;
+            a0 = a + 0.5;
+
+            rStep = gStep = bStep = aStep = 0.0;
+            posStep = 0.0;
+        }
+
+        void updateSteps( const ColorStop &nextStop )
+        {
+            rStep = nextStop.r - r;
+            gStep = nextStop.g - g;
+            bStep = nextStop.b - b;
+            aStep = nextStop.a - a;
+            posStep = nextStop.pos - pos;
         }
 
         double pos;
         QRgb rgb;
-        int r, g, b;
+        int r, g, b, a;
+
+        // precalculated values
+        double rStep, gStep, bStep, aStep;
+        double r0, g0, b0, a0;
+        double posStep;
     };
 
     inline int findUpper( double pos ) const;
-    QVector<ColorStop> _stops;
+    QVector<ColorStop> d_stops;
+    bool d_doAlpha;
 };
 
 void QwtLinearColorMap::ColorStops::insert( double pos, const QColor &color )
@@ -63,40 +94,48 @@ void QwtLinearColorMap::ColorStops::insert( double pos, const QColor &color )
         return;
 
     int index;
-    if ( _stops.size() == 0 )
+    if ( d_stops.size() == 0 )
     {
         index = 0;
-        _stops.resize( 1 );
+        d_stops.resize( 1 );
     }
     else
     {
         index = findUpper( pos );
-        if ( index == _stops.size() ||
-                qAbs( _stops[index].pos - pos ) >= 0.001 )
+        if ( index == d_stops.size() ||
+                qAbs( d_stops[index].pos - pos ) >= 0.001 )
         {
-            _stops.resize( _stops.size() + 1 );
-            for ( int i = _stops.size() - 1; i > index; i-- )
-                _stops[i] = _stops[i-1];
+            d_stops.resize( d_stops.size() + 1 );
+            for ( int i = d_stops.size() - 1; i > index; i-- )
+                d_stops[i] = d_stops[i-1];
         }
     }
 
-    _stops[index] = ColorStop( pos, color );
+    d_stops[index] = ColorStop( pos, color );
+    if ( color.alpha() != 255 )
+        d_doAlpha = true;
+
+    if ( index > 0 )
+        d_stops[index-1].updateSteps( d_stops[index] );
+
+    if ( index < d_stops.size() - 1 )
+        d_stops[index].updateSteps( d_stops[index+1] );
 }
 
 inline QVector<double> QwtLinearColorMap::ColorStops::stops() const
 {
-    QVector<double> positions( _stops.size() );
-    for ( int i = 0; i < _stops.size(); i++ )
-        positions[i] = _stops[i].pos;
+    QVector<double> positions( d_stops.size() );
+    for ( int i = 0; i < d_stops.size(); i++ )
+        positions[i] = d_stops[i].pos;
     return positions;
 }
 
 inline int QwtLinearColorMap::ColorStops::findUpper( double pos ) const
 {
     int index = 0;
-    int n = _stops.size();
+    int n = d_stops.size();
 
-    const ColorStop *stops = _stops.data();
+    const ColorStop *stops = d_stops.data();
 
     while ( n > 0 )
     {
@@ -119,27 +158,41 @@ inline QRgb QwtLinearColorMap::ColorStops::rgb(
     QwtLinearColorMap::Mode mode, double pos ) const
 {
     if ( pos <= 0.0 )
-        return _stops[0].rgb;
+        return d_stops[0].rgb;
     if ( pos >= 1.0 )
-        return _stops[ _stops.size() - 1 ].rgb;
+        return d_stops[ d_stops.size() - 1 ].rgb;
 
     const int index = findUpper( pos );
     if ( mode == FixedColors )
     {
-        return _stops[index-1].rgb;
+        return d_stops[index-1].rgb;
     }
     else
     {
-        const ColorStop &s1 = _stops[index-1];
-        const ColorStop &s2 = _stops[index];
+        const ColorStop &s1 = d_stops[index-1];
 
-        const double ratio = ( pos - s1.pos ) / ( s2.pos - s1.pos );
+        const double ratio = ( pos - s1.pos ) / ( s1.posStep );
 
-        const int r = s1.r + qRound( ratio * ( s2.r - s1.r ) );
-        const int g = s1.g + qRound( ratio * ( s2.g - s1.g ) );
-        const int b = s1.b + qRound( ratio * ( s2.b - s1.b ) );
+        const int r = int( s1.r0 + ratio * s1.rStep );
+        const int g = int( s1.g0 + ratio * s1.gStep );
+        const int b = int( s1.b0 + ratio * s1.bStep );
 
-        return qRgb( r, g, b );
+        if ( d_doAlpha )
+        {
+            if ( s1.aStep )
+            {
+                const int a = int( s1.a0 + ratio * s1.aStep );
+                return qRgba( r, g, b, a );
+            }
+            else
+            {
+                return qRgba( r, g, b, s1.a );
+            }
+        }
+        else
+        {
+            return qRgb( r, g, b );
+        }
     }
 }
 
@@ -292,7 +345,7 @@ QVector<double> QwtLinearColorMap::colorStops() const
 */
 QColor QwtLinearColorMap::color1() const
 {
-    return QColor( d_data->colorStops.rgb( d_data->mode, 0.0 ) );
+    return QColor::fromRgba( d_data->colorStops.rgb( d_data->mode, 0.0 ) );
 }
 
 /*!
@@ -301,7 +354,7 @@ QColor QwtLinearColorMap::color1() const
 */
 QColor QwtLinearColorMap::color2() const
 {
-    return QColor( d_data->colorStops.rgb( d_data->mode, 1.0 ) );
+    return QColor::fromRgba( d_data->colorStops.rgb( d_data->mode, 1.0 ) );
 }
 
 /*!
@@ -316,14 +369,13 @@ QRgb QwtLinearColorMap::rgb(
     const QwtInterval &interval, double value ) const
 {
     if ( qIsNaN(value) )
-        return qRgba(0, 0, 0, 0);
+        return 0u;
 
     const double width = interval.width();
+    if ( width <= 0.0 )
+        return 0u;
 
-    double ratio = 0.0;
-    if ( width > 0.0 )
-        ratio = ( value - interval.minValue() ) / width;
-
+    const double ratio = ( value - interval.minValue() ) / width;
     return d_data->colorStops.rgb( d_data->mode, ratio );
 }
 
@@ -352,7 +404,7 @@ unsigned char QwtLinearColorMap::colorIndex(
     if ( d_data->mode == FixedColors )
         index = static_cast<unsigned char>( ratio * 255 ); // always floor
     else
-        index = static_cast<unsigned char>( qRound( ratio * 255 ) );
+        index = static_cast<unsigned char>( ratio * 255 + 0.5 );
 
     return index;
 }
@@ -362,6 +414,7 @@ class QwtAlphaColorMap::PrivateData
 public:
     QColor color;
     QRgb rgb;
+    QRgb rgbMax;
 };
 
 
@@ -373,8 +426,7 @@ QwtAlphaColorMap::QwtAlphaColorMap( const QColor &color ):
     QwtColorMap( QwtColorMap::RGB )
 {
     d_data = new PrivateData;
-    d_data->color = color;
-    d_data->rgb = color.rgb() & qRgba( 255, 255, 255, 0 );
+    setColor( color );
 }
 
 //! Destructor
@@ -392,7 +444,8 @@ QwtAlphaColorMap::~QwtAlphaColorMap()
 void QwtAlphaColorMap::setColor( const QColor &color )
 {
     d_data->color = color;
-    d_data->rgb = color.rgb();
+    d_data->rgb = color.rgb() & qRgba( 255, 255, 255, 0 );
+    d_data->rgbMax = d_data->rgb | ( 255 << 24 );
 }
 
 /*!
@@ -415,19 +468,21 @@ QColor QwtAlphaColorMap::color() const
 */
 QRgb QwtAlphaColorMap::rgb( const QwtInterval &interval, double value ) const
 {
-    const double width = interval.width();
-    if ( !qIsNaN(value) && width >= 0.0 )
-    {
-        const double ratio = ( value - interval.minValue() ) / width;
-        int alpha = qRound( 255 * ratio );
-        if ( alpha < 0 )
-            alpha = 0;
-        if ( alpha > 255 )
-            alpha = 255;
+    if ( qIsNaN(value) )
+        return 0u;
 
-        return d_data->rgb | ( alpha << 24 );
-    }
-    return d_data->rgb;
+    const double width = interval.width();
+    if ( width <= 0.0 )
+        return 0u;
+
+    if ( value <= interval.minValue() )
+        return d_data->rgb;
+
+    if ( value >= interval.maxValue() )
+        return d_data->rgbMax;
+
+    const double ratio = ( value - interval.minValue() ) / width;
+    return d_data->rgb | ( qRound( 255 * ratio ) << 24 );
 }
 
 /*!

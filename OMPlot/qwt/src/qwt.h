@@ -17,6 +17,6 @@
 */
 namespace Qwt
 {
-};
+}
 
 #endif
