@@ -64,6 +64,7 @@ protected
   import Equation = NBEquation.Equation;
   import Initialization = NBInitialization;
   import Jacobian = NBJacobian;
+  import ParameterSystem = NBParameterSystem;
   import Partitioning = NBPartitioning;
   import RemoveSimpleEquations = NBRemoveSimpleEquations;
   import Tearing = NBTearing;
@@ -80,6 +81,7 @@ public
     list<System> ode              "Systems for simulation";
     list<System> event            "Systems for event iteration";
     list<System> init             "Systems for Initialization";
+    list<System> param            "Systems for Parameters";
     Option<list<System>> init_0   "Systems for lambda 0 (homotopy) Initialization";
     Option<list<System>> dae      "Systems for dae mode";
 
@@ -201,7 +203,7 @@ public
   algorithm
     variableData := lowerVariableData(flatModel.variables);
     equationData := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, BVariable.VarData.getVariables(variableData));
-    bdae := BDAE({}, {}, {}, NONE(), NONE(), variableData, equationData, funcTree);
+    bdae := BDAE({}, {}, {}, {}, NONE(), NONE(), variableData, equationData, funcTree);
   end lower;
 
   function solve
@@ -213,6 +215,7 @@ public
     bdae := Partitioning.main(bdae, NBSystem.SystemType.ODE);
     bdae := Causalize.main(bdae, NBSystem.SystemType.ODE);
 
+    bdae := ParameterSystem.main(bdae);
     bdae := Initialization.main(bdae);
     // only if dae mode, but force it for now
     if Flags.getConfigBool(Flags.DAE_MODE) then

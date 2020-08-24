@@ -41,6 +41,8 @@ public
 
   // New Frontend imports
   import Algorithm = NFAlgorithm;
+  import Binding = NFBinding;
+  import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
@@ -198,7 +200,6 @@ public
       end match;
     end getAttributes;
 
-    // TODO! use referenceEq when updating stuff
     function map
       "Traverses all expressions of the equations and applies a function to it.
       Optional second input to also traverse crefs, only needed for simple
@@ -463,6 +464,22 @@ public
       end match;
     end setRHS;
 
+    function fromLHSandRHS
+      input Expression lhs;
+      input Expression rhs;
+      input EquationAttributes attr = EQ_ATTR_DEFAULT_UNKNOWN;
+      input DAE.ElementSource source = DAE.emptyElementSource;
+      output Equation eq;
+    protected
+      Type ty;
+    algorithm
+      ty := Expression.typeOf(lhs);
+      eq := match ty
+        case Type.ARRAY() then ARRAY_EQUATION(List.map(ty.dimensions, Dimension.size), lhs, rhs, source, attr, NONE());
+        else SCALAR_EQUATION(lhs, rhs, source, attr);
+      end match;
+    end fromLHSandRHS;
+
     function simplify
       input output Equation eq;
     algorithm
@@ -555,6 +572,64 @@ public
         then fail();
       end match;
     end getResidualExp;
+
+    function isParameterEquation
+      input Equation eqn;
+      output Boolean b = true;
+    protected
+      Pointer<Boolean> b_ptr = Pointer.create(b);
+    algorithm
+      Equation.map(eqn, function expIsParamOrConst(b_ptr = b_ptr), SOME(function crefIsParamOrConst(b_ptr = b_ptr)));
+      b := Pointer.access(b_ptr);
+    end isParameterEquation;
+
+    function expIsParamOrConst
+      input output Expression exp;
+      input Pointer<Boolean> b_ptr;
+    algorithm
+      if Pointer.access(b_ptr) then
+        _ := match exp
+          // set b_ptr to false on impure functions
+          case Expression.CREF() algorithm
+            crefIsParamOrConst(exp.cref, b_ptr);
+          then ();
+          case Expression.CALL() algorithm
+            Pointer.update(b_ptr, Call.isImpure(exp.call));
+          then ();
+          else ();
+        end match;
+      end if;
+    end expIsParamOrConst;
+
+    function crefIsParamOrConst
+      input output ComponentRef cref;
+      input Pointer<Boolean> b_ptr;
+    algorithm
+      if Pointer.access(b_ptr) and not ComponentRef.isTime(cref) then
+        Pointer.update(b_ptr, BVariable.isParamOrConst(BVariable.getVarPointer(cref)));
+      end if;
+    end crefIsParamOrConst;
+
+    function generateBindingEquation
+      input Pointer<Variable> var_ptr;
+      output Pointer<Equation> eqn;
+    protected
+      Variable var;
+      Expression lhs, rhs;
+    algorithm
+      var := Pointer.access(var_ptr);
+      lhs := Expression.fromCref(var.name);
+      rhs := match var.binding
+        local
+          Binding qual;
+        case qual as Binding.TYPED_BINDING() then Expression.getBindingExp(qual.bindingExp);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong binding type!"});
+        then fail();
+      end match;
+      eqn := Pointer.create(Equation.fromLHSandRHS(lhs, rhs, EQ_ATTR_DEFAULT_INITIAL));
+    end generateBindingEquation;
+
   end Equation;
 
   uniontype IfEquationBody

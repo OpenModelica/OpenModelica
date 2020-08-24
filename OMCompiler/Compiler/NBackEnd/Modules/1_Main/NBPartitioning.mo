@@ -73,6 +73,9 @@ public
           bdae.init := func(systemType, variables, equations);
         then bdae;
 
+      // nothing needs to be done here for now
+      case (System.SystemType.PARAM, _) then bdae;
+
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
       then fail();

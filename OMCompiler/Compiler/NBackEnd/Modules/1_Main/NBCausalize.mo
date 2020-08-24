@@ -75,6 +75,11 @@ public
           bdae.init := List.map(systems, causalizeScalar);
       then bdae;
 
+      case (System.SystemType.PARAM, BackendDAE.BDAE(param = systems))
+        algorithm
+          bdae.param := List.map(systems, causalizeScalar);
+      then bdae;
+
       case (System.SystemType.DAE, BackendDAE.BDAE(dae = SOME(systems)))
         algorithm
           bdae.dae := SOME(List.map(systems, causalizeDAEMode));

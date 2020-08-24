@@ -230,7 +230,7 @@ public
             nominal := {};
             min := {};
             max := {};
-            param := {};
+            param := SimStrongComponent.Block.createInitialBlocks(qual.param, simCodeIndices, funcTree);
             no_ret := {};
             algorithms := {};
             zero_cross_blocks := {};

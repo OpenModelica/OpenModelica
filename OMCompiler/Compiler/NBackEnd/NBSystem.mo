@@ -53,7 +53,7 @@ protected
 public
   uniontype System
     record SYSTEM
-      SystemType systemType                           "Type of system: ODE, INIT or DAE";
+      SystemType systemType                           "Type of system: ODE, INIT, DAE or PARAM";
       BVariable.VariablePointers unknowns             "Variable array of unknowns, subset of full variable array";
       Option<BVariable.VariablePointers> daeUnknowns  "Variable array of unknowns in the case of dae mode";
       BEquation.EquationPointers equations            "Equations array, subset of the full equation array";
@@ -113,9 +113,10 @@ public
       output String str = "";
     algorithm
       str := match systemType
-        case SystemType.ODE   then "ODE";
-        case SystemType.INIT  then "INIT";
-        case SystemType.DAE   then "DAE";
+        case SystemType.ODE     then "ODE";
+        case SystemType.INIT    then "INIT";
+        case SystemType.DAE     then "DAE";
+        case SystemType.PARAM   then "PARAM";
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Unknown system type in match."});
         then fail();
@@ -141,7 +142,7 @@ public
   end System;
 
   // ToDo: Expand with Jacobian and Hessian later on
-  type SystemType = enumeration(ODE, DAE, INIT);
+  type SystemType = enumeration(ODE, DAE, INIT, PARAM);
   type PartitionKind = enumeration(UNKNOWN, UNSPECIFIED, CLOCKED, CONTINUOUS);
 
 
