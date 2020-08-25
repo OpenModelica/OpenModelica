@@ -2,7 +2,6 @@
 // keywords: NewBackend
 // status: correct
 
-
 loadString("
 model helloWorld
   parameter Real a = 0.5;

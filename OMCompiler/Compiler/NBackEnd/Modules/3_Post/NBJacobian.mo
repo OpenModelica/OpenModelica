@@ -81,9 +81,10 @@ public
       case BackendDAE.BDAE(varData = BVariable.VAR_DATA_SIM(knowns = knowns), funcTree = funcTree)
         algorithm
           (oldSystems, name) := match systemType
-            case NBSystem.SystemType.ODE  then (bdae.ode, "ODEJac");
-            case NBSystem.SystemType.INIT then (bdae.ode, "INITJac");
-            case NBSystem.SystemType.DAE  then (Util.getOption(bdae.dae), "DAEJac");
+            case NBSystem.SystemType.ODE    then (bdae.ode, "ODEJac");
+            case NBSystem.SystemType.INIT   then (bdae.ode, "INITJac");
+            case NBSystem.SystemType.PARAM  then (bdae.param, "PARAMJac");
+            case NBSystem.SystemType.DAE    then (Util.getOption(bdae.dae), "DAEJac");
             else algorithm
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + System.System.systemTypeString(systemType)});
             then fail();
@@ -102,9 +103,10 @@ public
           newSystems := listReverse(newSystems);
 
           _ := match systemType
-            case NBSystem.SystemType.ODE  algorithm bdae.ode  := newSystems;       then ();
-            case NBSystem.SystemType.INIT algorithm bdae.init := newSystems;       then ();
-            case NBSystem.SystemType.DAE  algorithm bdae.dae  := SOME(newSystems); then ();
+            case NBSystem.SystemType.ODE    algorithm bdae.ode    := newSystems;        then ();
+            case NBSystem.SystemType.INIT   algorithm bdae.init   := newSystems;        then ();
+            case NBSystem.SystemType.PARAM  algorithm bdae.param  := newSystems;        then ();
+            case NBSystem.SystemType.DAE    algorithm bdae.dae    := SOME(newSystems);  then ();
           end match;
           bdae.funcTree := funcTree;
       then bdae;
@@ -187,6 +189,9 @@ public
           list<SparsityPatternRow> rows = {};
           Integer nnz = 0;
 
+        case SOME(comps) guard(arrayEmpty(comps)) algorithm
+        then EMPTY_SPARSITY_PATTERN;
+
         case SOME(comps) algorithm
           // get all relevant crefs
           residual_vars := BVariable.VariablePointers.getVarNames(residualVars);
@@ -266,9 +271,11 @@ public
 protected
   function jacobianSymbolic extends Module.jacobianInterface;
   protected
-    BVariable.VariablePointers seedCandidates, partialCandidates;
+    BVariable.VariablePointers seedCandidates, partialCandidates, residuals;
     Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
     Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
+    Pointer<list<Pointer<Variable>>> residual_vars_ptr = Pointer.create({});
+    Pointer<Integer> idx = Pointer.create(0);
     Pointer<HashTableCrToCr.HashTable> jacobianHT = Pointer.create(HashTableCrToCr.empty());
     Differentiate.DifferentiationArguments diffArguments;
 
@@ -332,12 +339,13 @@ protected
       seedVars      = NBVariable.VariablePointers.fromList(seed_vars)
     );
 
-    // ToDo: what if there are no daeUnknowns? i guess these have to be called residuals in general and present for each loop/stateset etc.
     if isSome(daeUnknowns) then
       (sparsityPattern, sparsityColoring) := SparsityPattern.create(Util.getOption(daeUnknowns), unknowns, equations, strongComponents);
     else
-      (sparsityPattern, sparsityColoring) := SparsityPattern.createEmpty();
-      //Error.addMessage(Error.COMPILER_WARNING,{getInstanceName() + " failed. Sparsity pattern is currently only supported for DAE Systems."});
+      BEquation.EquationPointers.map(equations, function BEquation.Equation.createResidual(context = "SIM", residual_vars = residual_vars_ptr, idx = idx));
+      residuals := BVariable.VariablePointers.fromList(listReverse(Pointer.access(residual_vars_ptr)));
+      (sparsityPattern, sparsityColoring) := SparsityPattern.create(unknowns, residuals, equations, strongComponents);
+      // safe residuals somewhere?
     end if;
 
     jacobian := SOME(Jacobian.JAC(
@@ -353,13 +361,18 @@ protected
   protected
     SparsityPattern sparsityPattern;
     SparsityColoring sparsityColoring;
+  protected
+    BVariable.VariablePointers residuals;
+    Pointer<list<Pointer<Variable>>> residual_vars_ptr = Pointer.create({});
+    Pointer<Integer> idx = Pointer.create(0);
   algorithm
-    // ToDo: what if there are no daeUnknowns? i guess these have to be called residuals in general and present for each loop/stateset etc.
     if isSome(daeUnknowns) then
       (sparsityPattern, sparsityColoring) := SparsityPattern.create(Util.getOption(daeUnknowns), unknowns, equations, strongComponents);
     else
-      (sparsityPattern, sparsityColoring) := SparsityPattern.createEmpty();
-      Error.addMessage(Error.COMPILER_WARNING,{getInstanceName() + " failed. Sparsity pattern is currently only supported for DAE Systems."});
+      BEquation.EquationPointers.map(equations, function BEquation.Equation.createResidual(context = "SIM", residual_vars = residual_vars_ptr, idx = idx));
+      residuals := BVariable.VariablePointers.fromList(listReverse(Pointer.access(residual_vars_ptr)));
+      (sparsityPattern, sparsityColoring) := SparsityPattern.create(unknowns, residuals, equations, strongComponents);
+      // safe residuals somewhere?
     end if;
     jacobian := SOME(Jacobian.JAC(
       name              = name,

@@ -60,9 +60,16 @@ protected
 public
   uniontype BackendInfo
     record BACKEND_INFO
-      VariableKind varKind                  "Structural kind: state, algebraic...";
-      Option<VariableAttributes> attributes "values on built-in attributes";
+      VariableKind varKind            "Structural kind: state, algebraic...";
+      VariableAttributes attributes   "values on built-in attributes";
     end BACKEND_INFO;
+
+    function toString
+      input BackendInfo backendInfo;
+      output String str;
+    algorithm
+      str := VariableKind.toString(backendInfo.varKind) + " " + VariableAttributes.toString(backendInfo.attributes);
+    end toString;
 
     function setVarKind
       input output BackendInfo binfo;
@@ -71,15 +78,9 @@ public
       binfo.varKind := varKind;
     end setVarKind;
 
-    function toString
-      input BackendInfo backendInfo;
-      output String str;
-    algorithm
-      str := VariableKind.toString(backendInfo.varKind) + " " + VariableAttributes.toString(backendInfo.attributes);
-    end toString;
   end BackendInfo;
 
-  constant BackendInfo DUMMY_BACKEND_INFO = BACKEND_INFO(FRONTEND_DUMMY(), NONE());
+  constant BackendInfo DUMMY_BACKEND_INFO = BACKEND_INFO(FRONTEND_DUMMY(), EMPTY_VAR_ATTR_REAL);
 
   uniontype VariableKind
     record ALGEBRAIC end ALGEBRAIC;
@@ -249,40 +250,34 @@ public
     end VAR_ATTR_ENUMERATION;
 
     function toString
-      "For usability this takes an option instead of the object itself."
-      input Option<VariableAttributes> optAttributes;
+      input VariableAttributes attributes;
       output String str;
-    protected
-      VariableAttributes attributes;
     algorithm
-      if isSome(optAttributes) then
-        SOME(attributes) := optAttributes;
-        str := match attributes
-          local
-            VariableAttributes qual;
-          case qual as VAR_ATTR_REAL()
-            then "(" + attributesToString({("fixed", qual.fixed), ("start", qual.start), ("min", qual.min), ("max", qual.max), ("nominal", qual.nominal)}, qual.stateSelect, qual.tearingSelect) + ")";
+      str := match attributes
+        local
+          VariableAttributes qual;
+        case qual as VAR_ATTR_REAL()
+          then "(" + attributesToString({("fixed", qual.fixed), ("start", qual.start), ("min", qual.min), ("max", qual.max), ("nominal", qual.nominal)}, qual.stateSelect, qual.tearingSelect) + ")";
 
-          case qual as VAR_ATTR_INT()
-            then "(" + attributesToString({("fixed", qual.fixed), ("start", qual.start), ("min", qual.min), ("max", qual.max)}, NONE(), NONE()) + ")";
+        case qual as VAR_ATTR_INT()
+          then "(" + attributesToString({("fixed", qual.fixed), ("start", qual.start), ("min", qual.min), ("max", qual.max)}, NONE(), NONE()) + ")";
 
-          case qual as VAR_ATTR_BOOL()
-            then "(" + attributesToString({("fixed", qual.fixed), ("start", qual.start)}, NONE(), NONE()) + ")";
+        case qual as VAR_ATTR_BOOL()
+          then "(" + attributesToString({("fixed", qual.fixed), ("start", qual.start)}, NONE(), NONE()) + ")";
 
-          case VAR_ATTR_CLOCK()
-            then "";
+        case VAR_ATTR_CLOCK()
+          then "";
 
-          case qual as VAR_ATTR_STRING()
-            then "(" + attributesToString({("fixed", qual.fixed), ("start", qual.start)}, NONE(), NONE()) + ")";
+        case qual as VAR_ATTR_STRING()
+          then "(" + attributesToString({("fixed", qual.fixed), ("start", qual.start)}, NONE(), NONE()) + ")";
 
-          case qual as VAR_ATTR_ENUMERATION()
-            then "(" + attributesToString({("fixed", qual.fixed), ("start", qual.start), ("min", qual.min), ("max", qual.max)}, NONE(), NONE()) + ")";
+        case qual as VAR_ATTR_ENUMERATION()
+          then "(" + attributesToString({("fixed", qual.fixed), ("start", qual.start), ("min", qual.min), ("max", qual.max)}, NONE(), NONE()) + ")";
 
-          else "(" + getInstanceName() + " failed. Attribute string could not be created.)";
-        end match;
-      else
-        str := "";
-      end if;
+        else "(" + getInstanceName() + " failed. Attribute string could not be created.)";
+      end match;
+    // remove the string if it is only brackets
+    str := if stringCompare(str,"()") then "" else str;
     end toString;
 
     function create
@@ -290,34 +285,55 @@ public
       input Type ty;
       input Component.Attributes compAttrs;
       input Option<SCode.Comment> comment;
-      output Option<VariableAttributes> attributes;
+      output VariableAttributes attributes;
     protected
       Boolean is_final;
-      Option<Boolean> is_final_opt;
       Type elTy;
       Boolean is_array = false;
     algorithm
       is_final := compAttrs.isFinal or
                   compAttrs.variability == Variability.STRUCTURAL_PARAMETER;
 
-      if listEmpty(attrs) and not is_final then
-        // kabdelhak: i think we should create a default one here and do not have it as an option
-        // more robust in the backend than always checking for NONE() and having to interprete it
-        attributes := NONE();
-        return;
-      end if;
-
-      is_final_opt := SOME(is_final);
-
       attributes := match Type.arrayElementType(ty)
-        case Type.REAL() then createReal(attrs, is_final_opt, comment);
-        case Type.INTEGER() then createInt(attrs, is_final_opt);
-        case Type.BOOLEAN() then createBool(attrs, is_final_opt);
-        case Type.STRING() then createString(attrs, is_final_opt);
-        case Type.ENUMERATION() then createEnum(attrs, is_final_opt);
-        else NONE();
+        case Type.REAL()        then createReal(attrs, is_final, comment);
+        case Type.INTEGER()     then createInt(attrs, is_final);
+        case Type.BOOLEAN()     then createBool(attrs, is_final);
+        case Type.STRING()      then createString(attrs, is_final);
+        case Type.ENUMERATION() then createEnum(attrs, is_final);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Type.toString(ty) + "."});
+        then fail();
       end match;
     end create;
+
+    function setFixedIfNone
+      input output VariableAttributes attributes;
+      input Boolean b = true;
+    algorithm
+      attributes := match attributes
+        case VAR_ATTR_REAL(fixed = NONE()) algorithm
+          attributes.fixed := SOME(Expression.BOOLEAN(b));
+        then attributes;
+
+        case VAR_ATTR_INT(fixed = NONE()) algorithm
+          attributes.fixed := SOME(Expression.BOOLEAN(b));
+        then attributes;
+
+        case VAR_ATTR_BOOL(fixed = NONE()) algorithm
+          attributes.fixed := SOME(Expression.BOOLEAN(b));
+        then attributes;
+
+        case VAR_ATTR_STRING(fixed = NONE()) algorithm
+          attributes.fixed := SOME(Expression.BOOLEAN(b));
+        then attributes;
+
+        case VAR_ATTR_ENUMERATION(fixed = NONE()) algorithm
+          attributes.fixed := SOME(Expression.BOOLEAN(b));
+        then attributes;
+
+        else attributes;
+      end match;
+    end setFixedIfNone;
 
   protected
     function attributesToString
@@ -401,9 +417,9 @@ public
 
     function createReal
       input list<tuple<String, Binding>> attrs;
-      input Option<Boolean> isFinal;
+      input Boolean isFinal;
       input Option<SCode.Comment> comment;
-      output Option<VariableAttributes> attributes;
+      output VariableAttributes attributes;
     protected
       String name;
       Binding b;
@@ -412,166 +428,186 @@ public
       Option<StateSelect> state_select = NONE();
       Option<TearingSelect> tearing_select = NONE();
     algorithm
-      for attr in attrs loop
-        (name, b) := attr;
-        () := match name
-          case "displayUnit"    algorithm displayUnit := createAttribute(b); then ();
-          case "fixed"          algorithm fixed := createAttribute(b); then ();
-          case "max"            algorithm max := createAttribute(b); then ();
-          case "min"            algorithm min := createAttribute(b); then ();
-          case "nominal"        algorithm nominal := createAttribute(b); then ();
-          case "quantity"       algorithm quantity := createAttribute(b); then ();
-          case "start"          algorithm start := createAttribute(b); then ();
-          case "stateSelect"    algorithm state_select := createStateSelect(b); then ();
-          // TODO: VAR_ATTR_REAL has no field for unbounded.
-          case "unbounded"      then ();
-          case "unit"           algorithm unit := createAttribute(b); then ();
+      if listEmpty(attrs) and not isFinal then
+        attributes := EMPTY_VAR_ATTR_REAL;
+      else
+        for attr in attrs loop
+          (name, b) := attr;
+          () := match name
+            case "displayUnit"    algorithm displayUnit := createAttribute(b); then ();
+            case "fixed"          algorithm fixed := createAttribute(b); then ();
+            case "max"            algorithm max := createAttribute(b); then ();
+            case "min"            algorithm min := createAttribute(b); then ();
+            case "nominal"        algorithm nominal := createAttribute(b); then ();
+            case "quantity"       algorithm quantity := createAttribute(b); then ();
+            case "start"          algorithm start := createAttribute(b); then ();
+            case "stateSelect"    algorithm state_select := createStateSelect(b); then ();
+            // TODO: VAR_ATTR_REAL has no field for unbounded.
+            case "unbounded"      then ();
+            case "unit"           algorithm unit := createAttribute(b); then ();
 
-          // The attributes should already be type checked, so we shouldn't get any
-          // unknown attributes here.
-          else
-            algorithm
-              Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
-            then
-              fail();
-        end match;
-      end for;
-      tearing_select := createTearingSelect(comment);
+            // The attributes should already be type checked, so we shouldn't get any
+            // unknown attributes here.
+            else
+              algorithm
+                Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+              then
+                fail();
+          end match;
+        end for;
+        tearing_select := createTearingSelect(comment);
 
-      attributes := SOME(VariableAttributes.VAR_ATTR_REAL(
-        quantity, unit, displayUnit, min, max, start, fixed, nominal,
-        state_select, tearing_select, NONE(), NONE(), NONE(), NONE(), isFinal, NONE()));
+        attributes := VariableAttributes.VAR_ATTR_REAL(
+          quantity, unit, displayUnit, min, max, start, fixed, nominal,
+          state_select, tearing_select, NONE(), NONE(), NONE(), NONE(), SOME(isFinal), NONE());
+        end if;
     end createReal;
 
     function createInt
       input list<tuple<String, Binding>> attrs;
-      input Option<Boolean> isFinal;
-      output Option<VariableAttributes> attributes;
+      input Boolean isFinal;
+      output VariableAttributes attributes;
     protected
       String name;
       Binding b;
       Option<Expression> quantity = NONE(), min = NONE(), max = NONE();
       Option<Expression> start = NONE(), fixed = NONE();
     algorithm
-      for attr in attrs loop
-        (name, b) := attr;
+      if listEmpty(attrs) and not isFinal then
+        attributes := EMPTY_VAR_ATTR_INT;
+      else
+        for attr in attrs loop
+          (name, b) := attr;
 
-        () := match name
-          case "quantity" algorithm quantity := createAttribute(b); then ();
-          case "min"      algorithm min := createAttribute(b); then ();
-          case "max"      algorithm max := createAttribute(b); then ();
-          case "start"    algorithm start := createAttribute(b); then ();
-          case "fixed"    algorithm fixed := createAttribute(b); then ();
+          () := match name
+            case "quantity" algorithm quantity := createAttribute(b); then ();
+            case "min"      algorithm min := createAttribute(b); then ();
+            case "max"      algorithm max := createAttribute(b); then ();
+            case "start"    algorithm start := createAttribute(b); then ();
+            case "fixed"    algorithm fixed := createAttribute(b); then ();
 
-          // The attributes should already be type checked, so we shouldn't get any
-          // unknown attributes here.
-          else
-            algorithm
-              Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
-            then
-              fail();
-        end match;
-      end for;
+            // The attributes should already be type checked, so we shouldn't get any
+            // unknown attributes here.
+            else
+              algorithm
+                Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+              then
+                fail();
+          end match;
+        end for;
 
-      attributes := SOME(VariableAttributes.VAR_ATTR_INT(
-        quantity, min, max, start, fixed,
-        NONE(), NONE(), NONE(), NONE(), isFinal, NONE()));
+        attributes := VariableAttributes.VAR_ATTR_INT(
+          quantity, min, max, start, fixed,
+          NONE(), NONE(), NONE(), NONE(), SOME(isFinal), NONE());
+      end if;
     end createInt;
 
     function createBool
       input list<tuple<String, Binding>> attrs;
-      input Option<Boolean> isFinal;
-      output Option<VariableAttributes> attributes;
+      input Boolean isFinal;
+      output VariableAttributes attributes;
     protected
       String name;
       Binding b;
       Option<Expression> quantity = NONE(), start = NONE(), fixed = NONE();
     algorithm
-      for attr in attrs loop
-        (name, b) := attr;
+      if listEmpty(attrs) and not isFinal then
+        attributes := EMPTY_VAR_ATTR_BOOL;
+      else
+        for attr in attrs loop
+          (name, b) := attr;
 
-        () := match name
-          case "quantity" algorithm quantity := createAttribute(b); then ();
-          case "start"    algorithm start := createAttribute(b); then ();
-          case "fixed"    algorithm fixed := createAttribute(b); then ();
+          () := match name
+            case "quantity" algorithm quantity := createAttribute(b); then ();
+            case "start"    algorithm start := createAttribute(b); then ();
+            case "fixed"    algorithm fixed := createAttribute(b); then ();
 
-          // The attributes should already be type checked, so we shouldn't get any
-          // unknown attributes here.
-          else
-            algorithm
-              Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
-            then
-              fail();
-        end match;
-      end for;
+            // The attributes should already be type checked, so we shouldn't get any
+            // unknown attributes here.
+            else
+              algorithm
+                Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+              then
+                fail();
+          end match;
+        end for;
 
-      attributes := SOME(VariableAttributes.VAR_ATTR_BOOL(
-        quantity, start, fixed, NONE(), NONE(), isFinal, NONE()));
+        attributes := VariableAttributes.VAR_ATTR_BOOL(
+          quantity, start, fixed, NONE(), NONE(), SOME(isFinal), NONE());
+      end if;
     end createBool;
 
     function createString
       input list<tuple<String, Binding>> attrs;
-      input Option<Boolean> isFinal;
-      output Option<VariableAttributes> attributes;
+      input Boolean isFinal;
+      output VariableAttributes attributes;
     protected
       String name;
       Binding b;
       Option<Expression> quantity = NONE(), start = NONE(), fixed = NONE();
     algorithm
-      for attr in attrs loop
-        (name, b) := attr;
+      if listEmpty(attrs) and not isFinal then
+        attributes := EMPTY_VAR_ATTR_STRING;
+      else
+        for attr in attrs loop
+          (name, b) := attr;
 
-        () := match name
-          case "quantity" algorithm quantity := createAttribute(b); then ();
-          case "start"    algorithm start := createAttribute(b); then ();
-          case "fixed"    algorithm fixed := createAttribute(b); then ();
+          () := match name
+            case "quantity" algorithm quantity := createAttribute(b); then ();
+            case "start"    algorithm start := createAttribute(b); then ();
+            case "fixed"    algorithm fixed := createAttribute(b); then ();
 
-          // The attributes should already be type checked, so we shouldn't get any
-          // unknown attributes here.
-          else
-            algorithm
-              Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
-            then
-              fail();
-        end match;
-      end for;
+            // The attributes should already be type checked, so we shouldn't get any
+            // unknown attributes here.
+            else
+              algorithm
+                Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+              then
+                fail();
+          end match;
+        end for;
 
-      attributes := SOME(VariableAttributes.VAR_ATTR_STRING(
-        quantity, start, fixed, NONE(), NONE(), isFinal, NONE()));
+        attributes := VariableAttributes.VAR_ATTR_STRING(
+          quantity, start, fixed, NONE(), NONE(), SOME(isFinal), NONE());
+      end if;
     end createString;
 
     function createEnum
       input list<tuple<String, Binding>> attrs;
-      input Option<Boolean> isFinal;
-      output Option<VariableAttributes> attributes;
+      input Boolean isFinal;
+      output VariableAttributes attributes;
     protected
       String name;
       Binding b;
       Option<Expression> quantity = NONE(), min = NONE(), max = NONE();
       Option<Expression> start = NONE(), fixed = NONE();
     algorithm
-      for attr in attrs loop
-        (name, b) := attr;
+      if listEmpty(attrs) and not isFinal then
+        attributes := EMPTY_VAR_ATTR_REAL;
+      else
+        for attr in attrs loop
+          (name, b) := attr;
 
-        () := match name
-          case "fixed"       algorithm fixed := createAttribute(b); then ();
-          case "max"         algorithm max := createAttribute(b); then ();
-          case "min"         algorithm min := createAttribute(b); then ();
-          case "quantity"    algorithm quantity := createAttribute(b); then ();
-          case "start"       algorithm start := createAttribute(b); then ();
+          () := match name
+            case "fixed"       algorithm fixed := createAttribute(b); then ();
+            case "max"         algorithm max := createAttribute(b); then ();
+            case "min"         algorithm min := createAttribute(b); then ();
+            case "quantity"    algorithm quantity := createAttribute(b); then ();
+            case "start"       algorithm start := createAttribute(b); then ();
 
-          // The attributes should already be type checked, so we shouldn't get any
-          // unknown attributes here.
-          else
-            algorithm
-              Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
-            then
-              fail();
-        end match;
-      end for;
+            // The attributes should already be type checked, so we shouldn't get any
+            // unknown attributes here.
+            else
+              algorithm
+                Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+              then
+                fail();
+          end match;
+        end for;
 
-      attributes := SOME(VariableAttributes.VAR_ATTR_ENUMERATION(
-        quantity, min, max, start, fixed, NONE(), NONE(), isFinal, NONE()));
+        attributes := VariableAttributes.VAR_ATTR_ENUMERATION(
+          quantity, min, max, start, fixed, NONE(), NONE(), SOME(isFinal), NONE());
+      end if;
     end createEnum;
 
     function createAttribute
@@ -658,8 +694,12 @@ public
 
   end VariableAttributes;
 
-  constant VariableAttributes emptyVarAttrReal = VAR_ATTR_REAL(NONE(),NONE(),NONE(), NONE(), NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
-  constant VariableAttributes emptyVarAttrBool = VAR_ATTR_BOOL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+  constant VariableAttributes EMPTY_VAR_ATTR_REAL         = VAR_ATTR_REAL(NONE(),NONE(),NONE(), NONE(), NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+  constant VariableAttributes EMPTY_VAR_ATTR_INT          = VAR_ATTR_INT(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+  constant VariableAttributes EMPTY_VAR_ATTR_BOOL         = VAR_ATTR_BOOL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+  constant VariableAttributes EMPTY_VAR_ATTR_CLOCK        = VAR_ATTR_CLOCK(NONE(),NONE());
+  constant VariableAttributes EMPTY_VAR_ATTR_STRING       = VAR_ATTR_STRING(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+  constant VariableAttributes EMPTY_VAR_ATTR_ENUMERATION  = VAR_ATTR_ENUMERATION(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
 
   type StateSelect = enumeration(NEVER, AVOID, DEFAULT, PREFER, ALWAYS);
   type TearingSelect = enumeration(NEVER, AVOID, DEFAULT, PREFER, ALWAYS);

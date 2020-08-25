@@ -622,9 +622,10 @@ public
       rhs := match var.binding
         local
           Binding qual;
-        case qual as Binding.TYPED_BINDING() then Expression.getBindingExp(qual.bindingExp);
+        case qual as Binding.TYPED_BINDING()  then Expression.getBindingExp(qual.bindingExp);
+        case qual as Binding.UNBOUND()        then Expression.makeZero(Expression.typeOf(lhs));
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong binding type!"});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong binding type: " + Binding.toString(var.binding) + " for variable " + Variable.toString(Pointer.access(var_ptr))});
         then fail();
       end match;
       eqn := Pointer.create(Equation.fromLHSandRHS(lhs, rhs, EQ_ATTR_DEFAULT_INITIAL));

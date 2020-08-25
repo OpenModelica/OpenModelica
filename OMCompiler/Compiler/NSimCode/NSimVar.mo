@@ -41,9 +41,11 @@ protected
 
   // NF imports
   import BackendExtension = NFBackendExtension;
+  import Binding = NFBinding;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
+  import Prefixes = NFPrefixes;
   import Type = NFType;
   import Variable = NFVariable;
 
@@ -133,18 +135,48 @@ public
           Option<Expression> max;
           Option<Expression> start;
           Option<Expression> nominal;
-          Boolean isFixed;
-          Boolean isDiscrete;
-          Boolean isProtected;
+          Boolean isFixed, isDiscrete, isProtected, isValueChangeable;
+          Causality causality;
           SimVar result;
 
         case qual as Variable.VARIABLE()
           algorithm
             comment := parseComment(qual.comment);
-            (varKind, unit, displayUnit, min, max, start, nominal, isFixed, isDiscrete, isProtected) := parseAttributes(qual.backendinfo);
-            result := SIMVAR(qual.name, varKind, comment, unit, displayUnit, uniqueIndex, min, max, start, nominal, isFixed, qual.ty,
-                      isDiscrete, NONE(), Alias.NO_ALIAS(), qual.info, NONE(), SOME(uniqueIndex), SOME(uniqueIndex), {}, true,
-                      isProtected, false, NONE(), NONE(), NONE(), NONE(), NONE());
+            (varKind, unit, displayUnit, min, max, start, nominal, isFixed, isDiscrete, isProtected)
+              := parseAttributes(qual.backendinfo);
+            // for parameters the binding supersedes the start value if it exists and is constant
+            // ToDo: also for other cases? (constant, struct param ...)
+            (start, isValueChangeable, causality) := parseBinding(start, var);
+            result := SIMVAR(
+              name                = qual.name,
+              varKind             = varKind,
+              comment             = comment,
+              unit                = unit,
+              displayUnit         = displayUnit,
+              index               = uniqueIndex,
+              min                 = min,
+              max                 = max,
+              start               = start,
+              nominal             = nominal,
+              isFixed             = isFixed,
+              type_               = qual.ty,
+              isDiscrete          = isDiscrete,
+              arrayCref           = NONE(),
+              aliasvar            = Alias.NO_ALIAS(),
+              info                = qual.info,
+              causality           = SOME(causality),
+              variable_index      = SOME(uniqueIndex),
+              fmi_index           = SOME(uniqueIndex),
+              numArrayElement     = {},
+              isValueChangeable   = isValueChangeable,
+              isProtected         = isProtected,
+              hideResult          = false,
+              inputIndex          = NONE(),
+              matrixName          = NONE(),
+              variability         = NONE(),
+              initial_            = NONE(),
+              exportVar           = NONE()
+            );
             uniqueIndex := uniqueIndex + 1;
         then result;
 
@@ -260,9 +292,7 @@ public
         local
           BackendExtension.VariableAttributes varAttr;
 
-        case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = NONE()) then ();
-
-        case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = SOME(varAttr as BackendExtension.VAR_ATTR_REAL()))
+        case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = varAttr as BackendExtension.VAR_ATTR_REAL())
           algorithm
             if isSome(varAttr.unit) then
               unit := Expression.stringValue(Util.getOption(varAttr.unit));
@@ -282,7 +312,7 @@ public
             end if;
         then ();
 
-        case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = SOME(varAttr as BackendExtension.VAR_ATTR_INT()))
+        case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = varAttr as BackendExtension.VAR_ATTR_INT())
           algorithm
             min := varAttr.min;
             max := varAttr.max;
@@ -293,7 +323,7 @@ public
             end if;
         then ();
 
-        case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = SOME(varAttr as BackendExtension.VAR_ATTR_BOOL()))
+        case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = varAttr as BackendExtension.VAR_ATTR_BOOL())
           algorithm
             start := varAttr.start;
             isDiscrete := true;
@@ -302,14 +332,14 @@ public
             end if;
         then ();
 
-        case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = SOME(varAttr as BackendExtension.VAR_ATTR_CLOCK()))
+        case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = varAttr as BackendExtension.VAR_ATTR_CLOCK())
           algorithm
             if isSome(varAttr.isProtected) then
               SOME(isProtected) := varAttr.isProtected;
             end if;
         then ();
 
-        case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = SOME(varAttr as BackendExtension.VAR_ATTR_STRING()))
+        case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = varAttr as BackendExtension.VAR_ATTR_STRING())
           algorithm
             isDiscrete := true;
             if isSome(varAttr.isProtected) then
@@ -317,7 +347,7 @@ public
             end if;
         then ();
 
-        case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = SOME(varAttr as BackendExtension.VAR_ATTR_ENUMERATION()))
+        case BackendExtension.BACKEND_INFO(varKind = varKind, attributes = varAttr as BackendExtension.VAR_ATTR_ENUMERATION())
           algorithm
             isDiscrete := true;
             if isSome(varAttr.isProtected) then
@@ -328,6 +358,15 @@ public
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the BackendInfo could not be parsed."});
         then fail();
+      end match;
+      isDiscrete := match varKind
+        case BackendExtension.DISCRETE()        then true;
+        case BackendExtension.DISCRETE_STATE()  then true;
+        case BackendExtension.PREVIOUS()        then true;
+        case BackendExtension.PARAMETER()       then true;
+        case BackendExtension.CONSTANT()        then true;
+        case BackendExtension.START()           then true;
+                                                else false;
       end match;
     end parseAttributes;
 
@@ -340,6 +379,35 @@ public
         else "";
       end match;
     end parseComment;
+
+    function parseBinding
+      "returns the binding expression if the variable is a parameter and the binding is constant
+       returns the original start expression otherwise. Only if the binding is constant and used
+       as initial"
+      input output Option<Expression> start;
+      output Boolean isValueChangeable;
+      output Causality causality;
+      input Variable var;
+    algorithm
+      (start, isValueChangeable, causality) := match var
+        local
+          Expression bindingExp;
+
+        // parameter with constant binding -> start value is updated to the binding value. Value can be changed after sim
+        case Variable.VARIABLE(binding = Binding.TYPED_BINDING(variability = NFPrefixes.Variability.CONSTANT, bindingExp = bindingExp),
+          backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER()))
+        then (SOME(Expression.getBindingExp(bindingExp)), true, Causality.PARAMETER);
+
+        // parameter with non constant binding -> normal start value. Value cannot be changed after simulation
+        case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER()))
+        then (start, false, Causality.CALCULATED_PARAMETER);
+
+        // other variables -> regular start value and it can be changed after simulation
+        else (start, true, Causality.LOCAL);
+
+        // ToDo: more cases!
+      end match;
+    end parseBinding;
 
     function convertVarKind
       "Usually this function would belong to NFBackendExtension, but we want to

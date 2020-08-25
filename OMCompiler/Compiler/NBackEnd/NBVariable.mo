@@ -231,6 +231,17 @@ public
     end match;
   end isDummyDer;
 
+  function isParamOrConst
+    input Pointer<Variable> var;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER())) then true;
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.CONSTANT())) then true;
+      else false;
+    end match;
+  end isParamOrConst;
+
   function isDAEResidual
     input Pointer<Variable> var;
     output Boolean b;
@@ -240,6 +251,20 @@ public
       else false;
     end match;
   end isDAEResidual;
+
+  function setVariableKind
+    input output Variable var;
+    input BackendExtension.VariableKind varKind;
+  algorithm
+    var := match var
+      local
+        BackendExtension.BackendInfo backendinfo;
+      case NFVariable.VARIABLE(backendinfo = backendinfo) algorithm
+        backendinfo.varKind := varKind;
+        var.backendinfo := backendinfo;
+      then var;
+    end match;
+  end setVariableKind;
 
   function isInput
     input Pointer<Variable> var;
@@ -265,34 +290,25 @@ public
     end match;
   end isOutput;
 
-  function isParamOrConst
+  function isFixed
     input Pointer<Variable> var;
     output Boolean b;
   algorithm
     b := match Pointer.access(var)
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER())) then true;
-      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.CONSTANT())) then true;
+      local
+        Expression fixed;
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_REAL(fixed = SOME(fixed))))         then Expression.isTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_INT(fixed = SOME(fixed))))          then Expression.isTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_BOOL(fixed = SOME(fixed))))         then Expression.isTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_STRING(fixed = SOME(fixed))))       then Expression.isTrue(fixed);
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_ENUMERATION(fixed = SOME(fixed))))  then Expression.isTrue(fixed);
       else false;
     end match;
-  end isParamOrConst;
-
-  function setVariableKind
-    input output Variable var;
-    input BackendExtension.VariableKind varKind;
-  algorithm
-    var := match var
-      local
-        BackendExtension.BackendInfo backendinfo;
-      case NFVariable.VARIABLE(backendinfo = backendinfo) algorithm
-        backendinfo.varKind := varKind;
-        var.backendinfo := backendinfo;
-      then var;
-    end match;
-  end setVariableKind;
+  end isFixed;
 
   function setVariableAttributes
     input output Variable var;
-    input Option<BackendExtension.VariableAttributes> variableAttributes;
+    input BackendExtension.VariableAttributes variableAttributes;
   algorithm
     var := match var
       local
@@ -632,6 +648,24 @@ public
     cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
   end makeResidualVar;
 
+  function getBindingVariability
+    "returns the variability of the binding, fails if it has the wrong type.
+    unbound variables return the most restrictive variability because they have
+    to be solved by the system."
+    input Pointer<Variable> var_ptr;
+    output Prefixes.Variability variability;
+  algorithm
+    variability := match Pointer.access(var_ptr)
+      local
+        Prefixes.Variability tmp;
+      case Variable.VARIABLE(binding = Binding.TYPED_BINDING(variability = tmp))  then tmp;
+      case Variable.VARIABLE(binding = Binding.UNBOUND()) then NFPrefixes.Variability.CONTINUOUS;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong binding."});
+      then fail();
+    end match;
+  end getBindingVariability;
+
   // ==========================================================================
   //                        Other type wrappers
   //
@@ -953,7 +987,7 @@ public
       VariablePointers unknowns           "All state derivatives, algebraic variables,
                                           discrete variables";
       VariablePointers knowns             "Parameters, constants, states";
-      VariablePointers initials           "All initial unknowns (unknowns + states + previous)";
+      VariablePointers initials           "All initial unknowns (unknowns + states + previous + parameters(non const binding))";
       VariablePointers auxiliaries        "Variables created by the backend known to be solved
                                           by given binding. E.g. $cse";
       VariablePointers aliasVars          "Variables removed due to alias removal";

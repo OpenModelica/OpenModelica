@@ -57,7 +57,9 @@ public
   function main extends Module.wrapper;
   protected
     BVariable.VariablePointers variables;
+    BVariable.VariablePointers initialVars;
     BVariable.VariablePointers states;
+    BVariable.VariablePointers parameters;
     BEquation.EquationPointers equations;
     BEquation.EquationPointers initialEqs;
   algorithm
@@ -66,12 +68,14 @@ public
         local
           BVariable.VarData varData;
           BEquation.EqData eqData;
-        case BackendDAE.BDAE( varData = varData as BVariable.VAR_DATA_SIM(variables = variables, states = states),
+        case BackendDAE.BDAE( varData = varData as BVariable.VAR_DATA_SIM(variables = variables, initials = initialVars, states = states, parameters = parameters),
                               eqData = eqData as BEquation.EQ_DATA_SIM(equations = equations, initials = initialEqs))
           algorithm
             (variables, equations, initialEqs) := createStartEquations(states, variables, equations, initialEqs);
+            (equations, initialEqs, initialVars) := createParameterEquations(parameters, equations, initialEqs, initialVars);
 
             varData.variables := variables;
+            varData.initials := initialVars;
             eqData.equations := equations;
             eqData.initials := initialEqs;
 
@@ -128,7 +132,7 @@ protected
         Pointer<Variable> start_var;
         Pointer<BEquation.Equation> start_eq;
         Option<Expression> start;
-      case Variable.VARIABLE(name = name, backendinfo = BackendExtension.BACKEND_INFO(attributes = SOME(BackendExtension.VAR_ATTR_REAL(fixed = SOME(Expression.BOOLEAN(value = true)), start = start))))
+      case Variable.VARIABLE(name = name, backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_REAL(fixed = SOME(Expression.BOOLEAN(value = true)), start = start)))
         algorithm
           (start_name, start_var) := BVariable.makeStartVar(name);
           start_eq := Pointer.create(BEquation.Equation.makeStartEq(name, start_name));
@@ -138,6 +142,31 @@ protected
       else ();
     end match;
   end createStartEquation;
+
+  function createParameterEquations
+    input BVariable.VariablePointers parameters;
+    input output BEquation.EquationPointers equations;
+    input output BEquation.EquationPointers initialEqs;
+    input output BVariable.VariablePointers initialVars;
+  protected
+    list<Pointer<BEquation.Equation>> parameter_eqs = {};
+    list<Pointer<Variable>> initial_param_vars = {};
+  algorithm
+    for var in BVariable.VariablePointers.toList(parameters) loop
+      // only consider non constant parameter bindings
+      if (BVariable.getBindingVariability(var) <> NFPrefixes.Variability.CONSTANT) then
+        // add variable to initial unknowns
+        initial_param_vars := var :: initial_param_vars;
+        // generate equation only if variable is fixed
+        if BVariable.isFixed(var) then
+          parameter_eqs := BEquation.Equation.generateBindingEquation(var) :: parameter_eqs;
+        end if;
+      end if;
+    end for;
+    equations := BEquation.EquationPointers.addList(parameter_eqs, equations);
+    initialEqs := BEquation.EquationPointers.addList(parameter_eqs, initialEqs);
+    initialVars := BVariable.VariablePointers.addList(initial_param_vars, initialVars);
+  end createParameterEquations;
 
   annotation(__OpenModelica_Interface="backend");
 end NBInitialization;

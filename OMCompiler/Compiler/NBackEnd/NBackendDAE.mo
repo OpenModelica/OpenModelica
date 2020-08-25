@@ -44,6 +44,7 @@ protected
   // New Frontend imports
   import Algorithm = NFAlgorithm;
   import BackendExtension = NFBackendExtension;
+  import Binding = NFBinding;
   import ComponentRef = NFComponentRef;
   import ConvertDAE = NFConvertDAE;
   import Dimension = NFDimension;
@@ -210,12 +211,12 @@ public
     input output BackendDAE bdae;
   algorithm
     // Modules
+    //bdae := ParameterSystem.main(bdae);
     bdae := DetectStates.main(bdae);
     bdae := RemoveSimpleEquations.main(bdae);
     bdae := Partitioning.main(bdae, NBSystem.SystemType.ODE);
     bdae := Causalize.main(bdae, NBSystem.SystemType.ODE);
 
-    bdae := ParameterSystem.main(bdae);
     bdae := Initialization.main(bdae);
     // only if dae mode, but force it for now
     if Flags.getConfigBool(Flags.DAE_MODE) then
@@ -321,6 +322,11 @@ protected
     parameters := BVariable.VariablePointers.fromList(parameters_lst);
     constants := BVariable.VariablePointers.fromList(constants_lst);
 
+    /* lower the variable bindings */
+    BVariable.VariablePointers.map(variables, function lowerVariableBinding(variables = variables));
+
+    // ToDo: lower component references in other Expression based attributes
+
     /* create variable data */
     variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, auxiliaries, aliasVars,
                     derivatives, algebraics, discretes, previous, states, parameters, constants);
@@ -329,13 +335,13 @@ protected
   function lowerVariable
     input output Variable var;
   protected
-    Option<BackendExtension.VariableAttributes> attributes;
+    BackendExtension.VariableAttributes attributes;
     BackendExtension.VariableKind varKind;
   algorithm
     // ToDo! extract tearing select option
     try
       attributes := BackendExtension.VariableAttributes.create(var.typeAttributes, var.ty, var.attributes, var.comment);
-      varKind := lowerVariableKind(Variable.variability(var), attributes, var.ty);
+      (varKind, attributes) := lowerVariableKind(Variable.variability(var), attributes, var.ty);
       var.backendinfo := BackendExtension.BACKEND_INFO(varKind, attributes);
 
       // This creates a cyclic dependency, be aware of that!
@@ -354,14 +360,14 @@ protected
       /* Consider toplevel inputs as known unless they are protected. Ticket #5591 */
       false := DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType, protection);"
     input Prefixes.Variability variability;
-    input Option<BackendExtension.VariableAttributes> attributes;
-    input Type ty;
     output BackendExtension.VariableKind varKind;
+    input output BackendExtension.VariableAttributes attributes;
+    input Type ty;
   algorithm
     varKind := match(variability, attributes, ty)
 
       // variable -> artificial state if it has stateSelect = StateSelect.always
-      case (NFPrefixes.Variability.CONTINUOUS, SOME(BackendExtension.VAR_ATTR_REAL(stateSelect = SOME(NFBackendExtension.StateSelect.ALWAYS))), _)
+      case (NFPrefixes.Variability.CONTINUOUS, BackendExtension.VAR_ATTR_REAL(stateSelect = SOME(NFBackendExtension.StateSelect.ALWAYS)), _)
         guard(variability == NFPrefixes.Variability.CONTINUOUS)
       then BackendExtension.STATE(1, NONE(), false);
 
@@ -389,7 +395,29 @@ protected
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
       then fail();
     end match;
+
+    // make adjustments to attributes based on variable kind
+    attributes := match varKind
+      case BackendExtension.PARAMETER() then BackendExtension.VariableAttributes.setFixedIfNone(attributes);
+      else attributes;
+    end match;
   end lowerVariableKind;
+
+  function lowerVariableBinding
+    input output Variable var;
+    input BVariable.VariablePointers variables;
+  algorithm
+    var := match var
+      local
+        Binding binding;
+      case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING())
+        algorithm
+          binding.bindingExp := Expression.map(binding.bindingExp, function lowerComponentReferenceExp(variables = variables));
+          var.binding := binding;
+      then var;
+      else var;
+    end match;
+  end lowerVariableBinding;
 
   function lowerEquationData
     "Lowers all equations to backend structure.

@@ -230,7 +230,9 @@ public
             nominal := {};
             min := {};
             max := {};
-            param := SimStrongComponent.Block.createInitialBlocks(qual.param, simCodeIndices, funcTree);
+            // all non constant parameter equations will be added to the initial system.
+            // There is no actual need for parameter equations block
+            param := {};
             no_ret := {};
             algorithms := {};
             zero_cross_blocks := {};

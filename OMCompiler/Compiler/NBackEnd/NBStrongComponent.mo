@@ -257,22 +257,32 @@ public
     HashTable. Saves both directions."
     input StrongComponent comp                    "strong component to be analyzed";
     input output HashTableCrToCrLst.HashTable ht  "hash table to save the dependencies";
+    input Boolean jacobian = true                 "true if the analysis is for jacobian sparsity pattern";
   algorithm
     ht := match comp
       local
-        StrongComponent qual;
         list<ComponentRef> dependencies = {}, loop_vars = {}, tmp;
+        BEquation.EquationAttributes attr;
+        Pointer<Variable> dependentVar;
         Tearing strict;
 
-      case qual as SINGLE_EQUATION() algorithm
-        dependencies := Equation.collectCrefs(Pointer.access(qual.eqn), function getDependentCref(ht = ht));
-      then updateDependencyHashTable(BVariable.getVarName(qual.var), dependencies, ht);
+      case SINGLE_EQUATION() algorithm
+        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(ht = ht));
+        attr := BEquation.Equation.getAttributes(Pointer.access(comp.eqn));
+        dependentVar := if jacobian then BEquation.EquationAttributes.getResidualVar(attr) else comp.var;
+      then updateDependencyHashTable(BVariable.getVarName(dependentVar), dependencies, ht);
 
-      case qual as SINGLE_ARRAY() algorithm
-        dependencies := Equation.collectCrefs(Pointer.access(qual.eqn), function getDependentCref(ht = ht));
-        for var in qual.vars loop
-          ht := updateDependencyHashTable(BVariable.getVarName(var), dependencies, ht);
-        end for;
+      case SINGLE_ARRAY() algorithm
+        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(ht = ht));
+        if jacobian then
+          attr := BEquation.Equation.getAttributes(Pointer.access(comp.eqn));
+          dependentVar := BEquation.EquationAttributes.getResidualVar(attr);
+          ht := updateDependencyHashTable(BVariable.getVarName(dependentVar), dependencies, ht);
+        else
+          for var in comp.vars loop
+            ht := updateDependencyHashTable(BVariable.getVarName(var), dependencies, ht);
+          end for;
+        end if;
       then ht;
 
       case TORN_LOOP(strict = strict) algorithm

@@ -92,7 +92,7 @@ public function empty
   input Integer size = BaseHashTable.defaultBucketSize;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentRef.hash,ComponentRef.isEqual,ComponentRef.toString,ComponentRef.listToString));
+  hashTable := BaseHashTable.emptyHashTableWork(max(BaseHashTable.lowBucketSize, size),(ComponentRef.hash,ComponentRef.isEqual,ComponentRef.toString,ComponentRef.listToString));
 end empty;
 
 annotation(__OpenModelica_Interface="backend");
