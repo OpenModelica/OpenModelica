@@ -144,7 +144,8 @@ uniontype Modifier
     SCode.Final finalPrefix;
     SCode.Each eachPrefix;
     InstNode element;
-    Modifier mod;
+    Modifier innerMod;
+    Modifier outerMod;
   end REDECLARE;
 
   record NOMOD end NOMOD;
@@ -190,7 +191,7 @@ public
             Inst.partialInstClass(node);
           end if;
         then
-          REDECLARE(mod.finalPrefix, mod.eachPrefix, node, NOMOD());
+          REDECLARE(mod.finalPrefix, mod.eachPrefix, node, NOMOD(), NOMOD());
 
     end match;
   end create;
@@ -418,13 +419,13 @@ public
 
       case (REDECLARE(), MODIFIER())
         algorithm
-          outerMod.mod := merge(outerMod.mod, innerMod);
+          outerMod.innerMod := merge(outerMod.innerMod, innerMod);
         then
           outerMod;
 
       case (MODIFIER(), REDECLARE())
         algorithm
-          innerMod.mod := merge(outerMod, innerMod.mod);
+          innerMod.outerMod := merge(outerMod, innerMod.outerMod);
         then
           innerMod;
 

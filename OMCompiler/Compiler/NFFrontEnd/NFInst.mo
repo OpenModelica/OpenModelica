@@ -1182,7 +1182,7 @@ algorithm
           mod := Class.getModifier(cls);
 
           if Modifier.isRedeclare(mod) then
-            Modifier.REDECLARE(element = redecl_node, mod = mod) := mod;
+            Modifier.REDECLARE(element = redecl_node, outerMod = mod) := mod;
             cls_node := redeclareClass(redecl_node, cls_node, mod);
             Mutable.update(cls_ptr, cls_node);
           end if;
@@ -1393,7 +1393,7 @@ protected
   Component comp;
   SCode.Element def;
   InstNode comp_node, rdcl_node;
-  Modifier outer_mod, cc_mod = innerMod;
+  Modifier outer_mod, inner_mod, cc_mod = innerMod;
   SCode.Mod cc_smod;
   String name;
   InstNode parent;
@@ -1413,10 +1413,11 @@ algorithm
 
   if Modifier.isRedeclare(outer_mod) then
     checkOuterComponentMod(outer_mod, def, comp_node);
-    instComponentDef(def, Modifier.NOMOD(), Modifier.NOMOD(), NFComponent.DEFAULT_ATTR,
-      useBinding, comp_node, parent, instLevel, originalAttr, isRedeclared = true);
 
-    Modifier.REDECLARE(element = rdcl_node, mod = outer_mod) := outer_mod;
+    Modifier.REDECLARE(element = rdcl_node, innerMod = inner_mod, outerMod = outer_mod) := outer_mod;
+
+    instComponentDef(def, Modifier.NOMOD(), inner_mod, NFComponent.DEFAULT_ATTR,
+      useBinding, comp_node, parent, instLevel, originalAttr, isRedeclared = true);
 
     cc_smod := SCodeUtil.getConstrainingMod(def);
     if not SCodeUtil.isEmptyMod(cc_smod) then
