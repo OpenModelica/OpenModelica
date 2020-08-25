@@ -87,7 +87,7 @@ int OMC_DLL InitOMCWithZeroMQ(data** omcDataPtr, const char* compiler, const cha
     std::cout << "set OpenModelica home path " << set_openmodelica_home << result << std::endl;
      */
     
-    std::string options = "+d=execstat"; /* --simCodeTarget=Cpp --target=" + std::string(compiler) + " "+ std::string(zeromqOptions);*/
+    std::string options = "-d=execstat,newInst"; 
 
 
    

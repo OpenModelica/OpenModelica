@@ -149,7 +149,7 @@ CMAKE_FLAGS=-DCMAKE_BUILD_TYPE=$(BUILDTYPE) $(BOOST_STATIC_LINKING_COMMAND) $(BO
 
 
 
-runtimeCpp: omcCAPIinstall
+runtimeCpp: 
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  mkdir -p Build_$(PLATFORM); \
 	  (cd ./Build_$(PLATFORM); echo "change to Build_$(PLATFORM)"; \
