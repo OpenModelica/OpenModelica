@@ -142,7 +142,7 @@ algorithm
   top := InstNode.setInnerOuterCache(top, CachedData.TOP_SCOPE(NodeTree.new(), cls));
 
   // Instantiate the class.
-  inst_cls := instantiate(cls, instPartial = Flags.getConfigBool(Flags.CHECK_MODEL));
+  inst_cls := instantiate(cls, instPartial = Flags.getConfigBool(Flags.CHECK_MODEL) or Flags.isSet(Flags.NF_API));
   checkPartialClass(cls);
 
   insertGeneratedInners(inst_cls, top);
@@ -205,7 +205,7 @@ function instantiate
 algorithm
   node := expand(node);
 
-  if instPartial or not InstNode.isPartial(node) then
+  if instPartial or not InstNode.isPartial(node) or Flags.isSet(Flags.NF_API) then
     node := instClass(node, Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, true, 0, parent);
   end if;
 end instantiate;
@@ -958,7 +958,7 @@ algorithm
         inst := instantiate(node);
 
         // Cache the instantiated node and instantiate expressions in it too.
-        if not InstNode.isPartial(inst) then
+        if not InstNode.isPartial(inst) or Flags.isSet(Flags.NF_API) then
           InstNode.setPackageCache(node, CachedData.PACKAGE(inst));
           instExpressions(inst);
         end if;
@@ -1501,7 +1501,7 @@ algorithm
         ty := InstNode.getClass(ty_node);
         res := Class.restriction(ty);
 
-        if not isRedeclared then
+        if not isRedeclared and not Flags.isSet(Flags.NF_API) then
           checkPartialComponent(node, attr, ty_node, Class.isPartial(ty), res, info);
         end if;
 
@@ -3578,7 +3578,7 @@ end markImplicitWhenExp_traverser;
 function checkPartialClass
   input InstNode node;
 algorithm
-  if InstNode.isPartial(node) and not Flags.getConfigBool(Flags.CHECK_MODEL) then
+  if InstNode.isPartial(node) and not (Flags.getConfigBool(Flags.CHECK_MODEL) or Flags.isSet(Flags.NF_API)) then
     Error.addSourceMessage(Error.INST_PARTIAL_CLASS,
       {InstNode.name(node)}, InstNode.info(node));
     fail();

@@ -544,7 +544,8 @@ algorithm
   if not selfReference then
     node := Inst.instPackage(node);
 
-    if InstNode.isPartial(node) then
+    // allow lookup in partial nodes if -d=nfAPI is on
+    if InstNode.isPartial(node) and not Flags.isSet(Flags.NF_API) then
       state := LookupState.ERROR(LookupState.PARTIAL_CLASS());
       return;
     end if;
