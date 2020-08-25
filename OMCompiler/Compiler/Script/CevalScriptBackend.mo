@@ -3344,6 +3344,7 @@ function runFrontEndWorkNF
 protected
   Absyn.Program placement_p;
   SCode.Program builtin_p, scode_p, graphic_p;
+  Boolean b;
 algorithm
   (_, builtin_p) := FBuiltin.getInitialFunctions();
   scode_p := listAppend(builtin_p, SymbolTable.getSCode());
@@ -3356,7 +3357,16 @@ algorithm
     scode_p := listAppend(scode_p, graphic_p);
   end if;
 
-  (flatModel, functions, flatString) := NFInst.instClassInProgram(className, scode_p, dumpFlat);
+  // make sure we don't run the default instantiateModel using -d=nfAPI
+  // only the stuff going via NFApi.mo should have this flag activated
+  b := FlagsUtil.set(Flags.NF_API, false);
+  try
+    (flatModel, functions, flatString) := NFInst.instClassInProgram(className, scode_p, dumpFlat);
+	FlagsUtil.set(Flags.NF_API, b);
+  else
+    FlagsUtil.set(Flags.NF_API, b);
+	fail();
+  end try;
 end runFrontEndWorkNF;
 
 protected function translateModel " author: x02lucpo
