@@ -346,7 +346,8 @@ protected
 algorithm
   exp := match cref
     case ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE())
-      guard not ComponentRef.isIterator(cref)
+      guard not ComponentRef.isIterator(cref) and
+            ComponentRef.nodeVariability(cref) <= Variability.PARAMETER
       then evalComponentBinding(c, cref, defaultExp, target, evalSubscripts);
 
     else defaultExp;
