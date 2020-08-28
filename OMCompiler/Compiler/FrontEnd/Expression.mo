@@ -11641,7 +11641,7 @@ public function checkExpDimensionSizes
   output Boolean value;
 algorithm
   value := match(dim)
-    case DAE.ICONST() then if dim.integer > 0 then true else false;
+    case DAE.ICONST() then dim.integer > 0;
     else
      false;
   end match;

@@ -545,7 +545,7 @@ algorithm
           if(hasPreferred) then //handle preferred bindings
           e_list := applyModifiersPreferred(components, exp2, instance_name,  pathInClass, finalPrefix, redeclareKeywords ,innerOuter, info , constrainClass, attributes, tSpec, preferred);
           else
-          newName := if (listLength(exp2) == 1) then false else true;
+          newName := listLength(exp2) <> 1;
           e_list := applyModifiers(components, exp2, instance_name, 0, finalPrefix, redeclareKeywords ,innerOuter, info , constrainClass, attributes, tSpec, newName);
           end if;
           else
