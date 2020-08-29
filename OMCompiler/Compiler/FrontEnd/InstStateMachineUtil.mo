@@ -647,7 +647,7 @@ algorithm
       then fail();
   end match;
 
-  outResult := if ComponentReference.crefEqual(crefCorrespondingFlatSMGroup, smInitialCref) then true else false;
+  outResult := ComponentReference.crefEqual(crefCorrespondingFlatSMGroup, smInitialCref);
 end isInFlatSM;
 
 protected function isSMComp "

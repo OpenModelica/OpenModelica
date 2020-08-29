@@ -777,7 +777,7 @@ algorithm
   // 150M for Windows, 300M for others makes the GC try to unmap less and so it crashes less.
   // Disabling unmap is another alternative that seems to work well (but could cause the memory consumption to not be released, and requires manually calling collect and unmap
   if true then
-    GC.setForceUnmapOnGcollect(if Autoconf.os == "Windows_NT" then true else false);
+    GC.setForceUnmapOnGcollect(Autoconf.os == "Windows_NT");
   else
     GC.expandHeap(if Autoconf.os == "Windows_NT"
                       then 1024*1024*150
