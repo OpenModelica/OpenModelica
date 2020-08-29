@@ -1199,7 +1199,7 @@ algorithm
 
     case (cache,_,"deleteFile",{Values.STRING(str)},_)
       equation
-        b = if System.removeFile(str) == 0 then true else false;
+        b = System.removeFile(str) == 0;
       then
         (cache,Values.BOOL(b));
 
