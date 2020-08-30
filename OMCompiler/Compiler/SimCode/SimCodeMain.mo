@@ -192,7 +192,7 @@ algorithm
   ExecStat.execStat("SimCode");
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
-  /*Temporary disabled omsi fmu and generate C-fmu for omsicpp simcodetarget*/  
+  /*Temporary disabled omsi fmu and generate C-fmu for omsicpp simcodetarget*/
   if Config.simCodeTarget() == "omsicpp" then
      callTargetTemplatesFMU(simCode, "C", FMUVersion, FMUType);
    else
@@ -703,7 +703,7 @@ protected function callTargetTemplatesFMU
   input String FMUVersion;
   input String FMUType;
 algorithm
- 
+
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
   _ := match (simCode,target)
     local
@@ -956,7 +956,7 @@ algorithm
       list<Option<Integer>> allRoots;
 
     case (graph, _, filenameprefix, _, _, _) algorithm
-    
+
       // calculate stuff that we need to create SimCode data structure
       System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
       ExecStat.execStatReset();
@@ -1051,7 +1051,7 @@ algorithm
           then (libs, file_dir, timeSimCode, timeTemplates);
         case TranslateModelKind.FMU()
           algorithm
-         
+
             (libs,file_dir,timeSimCode,timeTemplates) := generateModelCodeFMU(dlow, initDAE, initDAE_lambda0, fmiDer, removedInitialEquationLst, SymbolTable.getAbsyn(), className, FMI.getFMIVersionString(), kind.kind, filenameprefix, kind.targetName, inSimSettingsOpt);
           then (libs, file_dir, timeSimCode, timeTemplates);
         case TranslateModelKind.XML()
@@ -1085,7 +1085,7 @@ algorithm
           timeFrontend := System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
         elseif state==State.backend then
           timeBackend := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
-        elseif state==State.backend then
+        elseif state==State.simcode then
           timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
         else
           timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
