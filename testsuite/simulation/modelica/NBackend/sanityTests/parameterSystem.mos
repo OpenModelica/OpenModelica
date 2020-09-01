@@ -1,0 +1,26 @@
+// name: parameterSystem
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model PS
+  parameter Real a = 2;
+  parameter Real b = a + 1;
+  parameter Real c = d;
+  parameter Real d(fixed=false), e(fixed=false);
+initial equation
+  d = b;
+  e = a + 2;
+end PS;
+
+"); getErrorString();
+
+//setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(PS); getErrorString();
+
+val(a,0.0);
+val(b,0.0);
+val(c,0.0);
+val(d,0.0);
+val(e,0.0);

@@ -3,7 +3,7 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 emptyModel.mos \
 simpleForLoop.mos \
-
+parameterSystem.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
