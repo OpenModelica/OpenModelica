@@ -64,7 +64,8 @@ public
 protected
   function solveLinear
     "author: kabdelhak, phannebohm
-    solves a linear equation with one newton step"
+    solves a linear equation with one newton step
+    0 = f(x)  ---> x = -f(0)/f`(0)"
     input output Equation eqn;
     input ComponentRef cref;
     input output FunctionTree funcTree;
@@ -84,6 +85,7 @@ protected
     );
     (derivative, diffArgs) := Differentiate.differentiateExpression(residual, diffArgs);
     derivative := SimplifyExp.simplify(derivative);
+    // if expression still contains the cref it is nonlinear
     if not Expression.containsCref(derivative, cref) then
       funcTree := diffArgs.funcTree;
       crefExp := Expression.fromCref(cref);

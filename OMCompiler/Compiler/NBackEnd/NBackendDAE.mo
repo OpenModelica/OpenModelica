@@ -65,7 +65,6 @@ protected
   import Equation = NBEquation.Equation;
   import Initialization = NBInitialization;
   import Jacobian = NBJacobian;
-  import ParameterSystem = NBParameterSystem;
   import Partitioning = NBPartitioning;
   import RemoveSimpleEquations = NBRemoveSimpleEquations;
   import Tearing = NBTearing;
@@ -211,7 +210,6 @@ public
     input output BackendDAE bdae;
   algorithm
     // Modules
-    //bdae := ParameterSystem.main(bdae);
     bdae := DetectStates.main(bdae);
     bdae := RemoveSimpleEquations.main(bdae);
     bdae := Partitioning.main(bdae, NBSystem.SystemType.ODE);
@@ -252,7 +250,7 @@ protected
     // ToDo! kabdelhak: use already existing hash values for this?
 
     // routine to prepare the lists for pointer arrays
-    for var in varList loop
+    for var in listReverse(varList) loop
       lowVar := lowerVariable(var);
       lowVar_ptr := Pointer.create(lowVar);
       variables := BVariable.VariablePointers.add(lowVar_ptr, variables);

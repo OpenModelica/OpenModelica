@@ -283,7 +283,6 @@ public
         (tmp, simCodeIndices, funcTree) := fromSystem(system, simCodeIndices, funcTree);
         blcks := listAppend(blcks, tmp);
       end for;
-      blcks := listReverse(blcks);
     end createInitialBlocks;
 
     function createDAEModeBlocks

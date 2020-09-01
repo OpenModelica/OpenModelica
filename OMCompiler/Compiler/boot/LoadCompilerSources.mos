@@ -299,7 +299,6 @@ if true then /* Suppress output */
     "../NBackEnd/Modules/1_Main/NBCausalize.mo",
     "../NBackEnd/Modules/1_Main/NBDAEMode.mo",
     "../NBackEnd/Modules/1_Main/NBInitialization.mo",
-    "../NBackEnd/Modules/1_Main/NBParameterSystem.mo",
     "../NBackEnd/Modules/1_Main/NBPartitioning.mo",
     "../NBackEnd/Modules/2_Pre/NBDetectStates.mo",
     "../NBackEnd/Modules/2_Pre/NBRemoveSimpleEquations.mo",

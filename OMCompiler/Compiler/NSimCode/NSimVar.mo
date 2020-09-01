@@ -730,7 +730,10 @@ public
         // Split the variables by basic type (real, integer, boolean, string)
         // and return a list for each type
         BVariable.VariablePointers.map(vars, function splitByType(real_lst = real_lst, int_lst = int_lst, bool_lst = bool_lst, string_lst = string_lst, indices_ptr = indices_ptr, varType = varType));
-        simVars := {Pointer.access(real_lst), Pointer.access(int_lst), Pointer.access(bool_lst), Pointer.access(string_lst)};
+        simVars := {listReverse(Pointer.access(real_lst)),
+                    listReverse(Pointer.access(int_lst)),
+                    listReverse(Pointer.access(bool_lst)),
+                    listReverse(Pointer.access(string_lst))};
         simCodeIndices := Pointer.access(indices_ptr);
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of invalid splitType."});

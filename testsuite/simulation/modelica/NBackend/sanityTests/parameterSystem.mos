@@ -5,12 +5,12 @@
 loadString("
 model PS
   parameter Real a = 2;
-  parameter Real b = a + 1;
-  parameter Real c = d;
+  parameter Real b = a + 3;
+  parameter Real c = d + 7;
   parameter Real d(fixed=false), e(fixed=false);
 initial equation
-  d = b;
-  e = a + 2;
+  d = b + 5;
+  e = a + 100000000;
 end PS;
 
 "); getErrorString();
