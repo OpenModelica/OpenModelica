@@ -54,23 +54,8 @@ public
     input output Equation eqn;
     input ComponentRef cref;
     input output FunctionTree funcTree;
-  algorithm
-    try
-      (eqn, funcTree) := solveLinear(eqn, cref, funcTree);
-    else
-    end try;
-  end solve;
-
-protected
-  function solveLinear
-    "author: kabdelhak, phannebohm
-    solves a linear equation with one newton step
-    0 = f(x)  ---> x = -f(0)/f`(0)"
-    input output Equation eqn;
-    input ComponentRef cref;
-    input output FunctionTree funcTree;
   protected
-    Expression residual, derivative, crefExp, numerator;
+    Expression residual, derivative;
     Differentiate.DifferentiationArguments diffArgs;
     Operator divOp, uminOp;
     Type ty;
@@ -84,21 +69,45 @@ protected
       diffedFunctions = AvlSetPath.new()
     );
     (derivative, diffArgs) := Differentiate.differentiateExpression(residual, diffArgs);
-    derivative := SimplifyExp.simplify(derivative);
-    // if expression still contains the cref it is nonlinear
+    derivative := SimplifyExp.simplify(derivative);   // TODO: Why simplify?
+
+    // If cref is only in lhs
+
+    // If eqn is linear in cref:
     if not Expression.containsCref(derivative, cref) then
-      funcTree := diffArgs.funcTree;
-      crefExp := Expression.fromCref(cref);
-      ty := ComponentRef.getComponentType(cref);
-      numerator := Replacements.single(residual, crefExp, Expression.makeZero(ty));
-      divOp := Operator.OPERATOR(ty, NFOperator.Op.DIV);
-      uminOp := Operator.OPERATOR(ty, NFOperator.Op.UMINUS);
-      eqn := Equation.setLHS(eqn, crefExp);
-      eqn := Equation.setRHS(eqn, Expression.UNARY(uminOp, Expression.BINARY(numerator, divOp, derivative)));
-      eqn := Equation.simplify(eqn);
+      (eqn, funcTree) := solveLinear(eqn, residual, derivative, diffArgs, cref, funcTree);
+    // If eqn is non-linear in cref
     else
       fail();
     end if;
+  end solve;
+
+protected
+  function solveLinear
+    "author: kabdelhak, phannebohm
+    solves a linear equation with one newton step
+    0 = f(x)  ---> x = -f(0)/f`(0)"
+    input output Equation eqn;
+    input Expression residual;
+    input Expression derivative;
+    input Differentiate.DifferentiationArguments diffArgs;
+    input ComponentRef cref;
+    input output FunctionTree funcTree;
+  protected
+    Expression crefExp, numerator;
+    Operator divOp, uminOp;
+    Type ty;
+  algorithm
+    funcTree := diffArgs.funcTree;
+    crefExp := Expression.fromCref(cref);
+    ty := ComponentRef.getComponentType(cref);
+    numerator := Replacements.single(residual, crefExp, Expression.makeZero(ty));
+    divOp := Operator.OPERATOR(ty, NFOperator.Op.DIV);
+    uminOp := Operator.OPERATOR(ty, NFOperator.Op.UMINUS);
+    // Set eqn: cref = - f/f'
+    eqn := Equation.setLHS(eqn, crefExp);
+    eqn := Equation.setRHS(eqn, Expression.UNARY(uminOp, Expression.BINARY(numerator, divOp, derivative)));
+    eqn := Equation.simplify(eqn);
   end solveLinear;
 
   annotation(__OpenModelica_Interface="backend");

@@ -4,6 +4,7 @@ TESTFILES = \
 emptyModel.mos \
 simpleForLoop.mos \
 parameterSystem.mos \
+solveSingleEquations.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

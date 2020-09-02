@@ -229,6 +229,12 @@ constant Function ABS_REAL = Function.FUNCTION(Path.IDENT("abs"),
     Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
+// TODO: Sort these functions ...
+constant Function COS_REAL = Function.FUNCTION(Path.IDENT("cos"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
 constant Function MAX_INT = Function.FUNCTION(Path.IDENT("max"),
   InstNode.EMPTY_NODE(), {INT_PARAM, INT_PARAM}, {INT_PARAM}, {}, {},
     Type.INTEGER(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},

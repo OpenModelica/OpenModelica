@@ -287,8 +287,8 @@ public
     case Expression.INTEGER()   then (Expression.INTEGER(0), diffArguments);
     case Expression.REAL()      then (Expression.REAL(0.0), diffArguments);
     // leave boolean and string expressions as is
-    case Expression.BOOLEAN()   then (exp, diffArguments);
     case Expression.STRING()    then (exp, diffArguments);
+    case Expression.BOOLEAN()   then (exp, diffArguments);
 
     // differentiate cref
     case Expression.CREF() then differentiateComponentRef(exp, diffArguments);
@@ -330,6 +330,8 @@ public
         new_elements := element :: new_elements;
       end for;
     then (Expression.RECORD(exp.path, exp.ty, listReverse(new_elements)), diffArguments);
+
+    case Expression.CALL() then differentiateCall(exp, diffArguments);
 
     // (if c then a else b)' = if c then a' else b'
     case Expression.IF() algorithm
@@ -402,10 +404,6 @@ public
   end match;
 
 /* ToDo:
-
-  record CALL
-    Call call;
-  end CALL;
 
   record PARTIAL_FUNCTION_APPLICATION
     ComponentRef fn;
@@ -518,6 +516,100 @@ public
 
     end match;
   end differentiateComponentRef;
+
+
+  // TODO: Copy Differentiate.mo function differentiateCalls
+  function differentiateCall
+  "Differentiate builtin function calls"
+    input output Expression exp "Has to be Expression.CALL()";
+    input output DifferentiationArguments diffArguments;
+  protected
+    constant Boolean debug = true;
+  algorithm
+    if debug then
+      print("\nDifferentiate Exp-Call: "+ Expression.toString(exp) + "\n");
+    end if;
+
+    (exp, diffArguments) := match exp
+      local
+        Call call;
+      case Expression.CALL(call=call) algorithm
+        _ := match call
+          local
+            String name;
+            ComponentRef inDiffwrtCref;
+          case Call.TYPED_CALL() algorithm
+            name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
+            inDiffwrtCref := diffArguments.diffCref;
+            exp := differentiateCallExp(name, exp, diffArguments);
+            then();
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Call.toString(call)});
+            then fail();
+        end match;
+
+        then (exp, diffArguments);
+      else algorithm
+        // Add failtrace here
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
+        then fail();
+    end match;
+
+    if debug then
+      print("Differentiate-ExpCall-result: " + Expression.toString(exp) + "\n");
+    end if;
+
+  end differentiateCall;
+
+  protected function differentiateCallExp
+    "This function differentiates built-in call expressions with 1 argument
+    with respect to a given variable,given as third argument."
+    input String name;
+    input output Expression exp;
+    input output DifferentiationArguments diffArguments;
+  algorithm
+    exp := match (exp)
+      local
+        Call call;
+        Expression derFuncCall, exp1, diffExp1;
+        list<Expression> arguments;
+        Operator operator, addOp, subOp, mulOp;
+        Operator.SizeClassification sizeClass;
+
+      // Builtin function call with one argument
+      case (Expression.CALL(call=call))
+      guard (listLength(Call.arguments(call)) == 1)
+      algorithm
+        arguments := Call.arguments(call);
+        exp1 := List.first(arguments);
+        diffExp1 := differentiateExpression(exp1, diffArguments);
+        // TODO: Check sizeClass for array-equations
+        sizeClass := NFOperator.SizeClassification.SCALAR;
+        mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), Type.REAL());
+        derFuncCall := differentiateNamedCall1Arg(name, exp1);
+        then(Expression.BINARY(derFuncCall, mulOp, diffExp1));
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
+        then fail();
+    end match;
+  end differentiateCallExp;
+
+  function differentiateNamedCall1Arg
+    input String name;
+    input Expression innerExp;
+    output Expression derFuncCall;
+  algorithm
+    derFuncCall := match (name)
+      // sin -> cos
+      case ("sin") algorithm
+        then Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.COS_REAL, {innerExp}, Expression.variability(innerExp)));
+      // TODO All all builtin functions with one argument here
+    else algorithm
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + name});
+      then fail();
+    end match;
+  end differentiateNamedCall1Arg;
 
   function differentiateBinary
     input output Expression exp "Has to be Expression.BINARY()";
