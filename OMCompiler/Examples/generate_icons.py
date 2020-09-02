@@ -112,6 +112,7 @@ def ask_omc(question, opt=None, parsed=True):
     try:
         if parsed:
             res = omc.execute(expression)
+            omc.clearOMParserResult()
         else:
             res = omc.sendExpression(expression, parsed=False)
     except Exception as e:
