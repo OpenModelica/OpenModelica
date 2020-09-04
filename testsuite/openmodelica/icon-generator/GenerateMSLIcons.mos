@@ -21,8 +21,14 @@ echo(true);
 res:=system_parallel(commands);
 getErrorString();
 for cl in classes loop
-  print(readFile("ModelicaIcons/"+cl+".svg") + "\n");
-  print(getErrorString() + "\n");
+  f := "ModelicaIcons/"+cl+".svg";
+  if regularFileExists(f) then
+    print(readFile(f) + "\n");
+    print(getErrorString() + "\n");
+  else
+    print(readFile(cl+".log") + "\n");
+    print(getErrorString() + "\n");
+  end if;
 end for;
 
 // Result:
