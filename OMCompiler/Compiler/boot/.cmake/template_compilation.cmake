@@ -49,7 +49,7 @@ macro(omc_add_template_target)
     # Add the output to the list of all mo files generated from templates.
     set(TPL_OUTPUT_MO_FILES ${TPL_OUTPUT_MO_FILES} ${output_mo_file})
 
-    message(STATUS "Added Susan template target ${template_file} dependent on ${depends_on}")
+    message(STATUS "Added Susan template target ${template_file}")
 
 endmacro(omc_add_template_target)
 
