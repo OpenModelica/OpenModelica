@@ -2211,32 +2211,7 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
 
       /* Try to get out of here!!! */
       error_f_sqrd        = vec2NormSqrd(solverData->n, solverData->f1);
-      if ((error_f_sqrd - solverData->error_f_sqrd)<=0)
-      {
-        //infoStreamPrint(LOG_STDOUT, 0, "No Iteration at time %g needed new f = %g  and old f1 = %g", solverData->timeValue, error_f_sqrd, solverData->error_f_sqrd);
-        if (mixedSystem && data->simulationInfo->discreteCall && isNotEqualVectorInt(((DATA*)data)->modelData->nRelations, ((DATA*)data)->simulationInfo->relations, relationsPreBackup)){}
-        else
-        {
-          success = 1;
 
-          debugString(LOG_NLS_V, "NO ITERATION NECESSARY!!!");
-          debugString(LOG_NLS_V, "******************************************************");
-          debugString(LOG_NLS_V,"SYSTEM SOLVED");
-          debugInt(LOG_NLS_V,   "number of function calls: ",solverData->numberOfFunctionEvaluations-numberOfFunctionEvaluationsOld);
-          debugString(LOG_NLS_V, "------------------------------------------------------");
-
-          vecCopy(solverData->n, solverData->x0, systemData->nlsx);
-          debugVectorDouble(LOG_NLS_V,"Solution", solverData->x0, solverData->n);
-
-          ((DATA*)data)->simulationInfo->solveContinuous = 0;
-
-          free(relationsPreBackup);
-
-          systemData->numberOfFEval = solverData->numberOfFunctionEvaluations;
-
-          return success;
-        }
-      }
       solverData->fJac_f(solverData, solverData->x0, solverData->fJac);
       vecCopy(solverData->n, solverData->f1, solverData->fJac + solverData->n*solverData->n);
       vecCopy(solverData->n*solverData->m, solverData->fJac, solverData->fJacx0);
