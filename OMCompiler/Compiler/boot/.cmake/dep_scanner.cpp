@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
 
     std::ifstream pac_list_s(file_list_file);
     if (!pac_list_s.is_open()) {
-        std::cout <<" Failed to open " << depends_files_dir << std::endl;
+        std::cout <<" Failed to open " << file_list_file << std::endl;
         return 1;
     }
 
