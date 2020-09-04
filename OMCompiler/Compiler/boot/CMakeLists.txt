@@ -123,7 +123,7 @@ add_custom_target(INTERFACE_CHECK
 
 add_custom_command(
                 DEPENDS ${OMC_MM_INTERFACE_FILES}
-                COMMAND $<TARGET_FILE:dep_scanner> ${CMAKE_CURRENT_SOURCE_DIR}/package_list.txt ${CMAKE_CURRENT_BINARY_DIR}
+                COMMAND $<TARGET_FILE:dep_scanner> ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/package_list.txt ${CMAKE_CURRENT_BINARY_DIR}
                 COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/dep_scan.stamp
                 OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dep_scan.stamp
                 COMMENT "Scanning reverse dependencies for MetaModelica sources.")
