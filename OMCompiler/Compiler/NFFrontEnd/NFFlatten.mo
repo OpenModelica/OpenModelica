@@ -1141,7 +1141,9 @@ algorithm
 
           // Evaluate structural conditions.
           if var <= Variability.STRUCTURAL_PARAMETER then
-            cond := Ceval.evalExp(cond, target);
+            if Expression.isPure(cond) then
+              cond := Ceval.evalExp(cond, target);
+            end if;
 
             // Conditions in an if-equation that contains connects must be possible to evaluate.
             if not Expression.isBoolean(cond) and has_connect then
