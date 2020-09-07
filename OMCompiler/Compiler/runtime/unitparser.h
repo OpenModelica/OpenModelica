@@ -37,8 +37,8 @@
 #include <map>
 #include <list>
 #include <set>
-#include "omc_msvc.h" /* For round() */
-#include "meta_modelica.h"
+#include "util/omc_msvc.h" /* For round() */
+#include "meta/meta_modelica.h"
 
 using namespace std;
 

@@ -41,7 +41,7 @@ extern "C" {
 #include "util/integer_array.h"
 #include "systemimpl.h"
 #include "errorext.h"
-#include "meta_modelica_builtin.h"
+#include "meta/meta_modelica_builtin.h"
 
 #define MMC_NUM_ARGS 32
 #define UNBOX_OFFSET 1
