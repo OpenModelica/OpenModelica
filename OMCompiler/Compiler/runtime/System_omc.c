@@ -45,19 +45,13 @@ extern "C"
 #include <ctype.h> /* for toupper */
 #include <limits.h>
 #include <stdlib.h>
-#include "util/omc_msvc.h"
-#include "util/omc_file.h"
+#include "omc_msvc.h"
+#include "omc_file.h"
 #include "openmodelica.h"
-#include "meta/meta_modelica.h"
+#include "meta_modelica.h"
 #include "ModelicaUtilities.h"
-
 #define ADD_METARECORD_DEFINITIONS static
-#if defined(OMC_BOOTSTRAPPING)
-  #include "../boot/tarball-include/OpenModelicaBootstrappingHeader.h"
-#else
-  #include "../OpenModelicaBootstrappingHeader.h"
-#endif
-
+#include "OpenModelicaBootstrappingHeader.h"
 #include "systemimpl.c"
 
 extern void System_writeFile(const char* filename, const char* data)

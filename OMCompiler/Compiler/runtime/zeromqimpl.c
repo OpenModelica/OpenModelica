@@ -33,8 +33,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "meta/meta_modelica.h"
-#include "util/modelica_string.h"
+#include "modelica_string.h"
 
 #include "settingsimpl.h"
 

@@ -35,7 +35,7 @@
  #include <windows.h>
 #endif
 
-#include "meta/meta_modelica.h"
+#include "meta_modelica.h"
 
 extern "C" {
 
