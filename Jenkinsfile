@@ -463,7 +463,7 @@ pipeline {
         stage('test-clang-icon-generator') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.16'
+              image 'docker.openmodelica.org/build-deps:v1.16.2'
               label 'linux'
               args "--mount type=volume,source=runtest-clang-icon-generator,target=/cache/runtest " +
                    "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
