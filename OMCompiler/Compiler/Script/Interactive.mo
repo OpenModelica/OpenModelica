@@ -933,6 +933,8 @@ protected
   GraphicEnvCache genv;
   Absyn.Exp exp;
   list<Absyn.Exp> dimensions;
+  Absyn.CodeNode cn;
+  Absyn.Element el;
 algorithm
   fn_name := getApiFunctionNameInfo(inStatement);
   p := SymbolTable.getAbsyn();
@@ -945,6 +947,19 @@ algorithm
          Absyn.CREF(componentRef = cr),
          Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))} := args;
         (p, outResult) := setComponentModifier(class_, cr, mod, p);
+      then
+        outResult;
+
+    case "setElementModifierValue"
+      algorithm
+        {Absyn.CREF(componentRef = class_),
+         Absyn.CREF(componentRef = cr),
+         Absyn.CODE(code = cn)} := args;
+        mod := match cn
+          case Absyn.C_MODIFICATION(modification = mod) then mod;
+          case Absyn.C_ELEMENT(element = el) then fail();
+        end match;
+        (p, outResult) := InteractiveUtil.setElementModifier(class_, cr, mod, p);
       then
         outResult;
 
@@ -5936,7 +5951,7 @@ algorithm
       inComponentName, inMod = inMod), false);
 end setComponentSubmodifierInClass;
 
-protected function setComponentSubmodifierInCompitems
+public function setComponentSubmodifierInCompitems
   "Helper function to setComponentSubmodifierInClass. Sets the modifier in a
    ComponentItem."
   input list<Absyn.ComponentItem> inComponents;
@@ -5987,7 +6002,7 @@ algorithm
   outContinue := true;
 end setComponentSubmodifierInCompitems;
 
-protected function propagateMod
+public function propagateMod
   input Absyn.Path inComponentName;
   input Absyn.Modification inNewMod;
   input Option<Absyn.Modification> inOldMod;
@@ -6115,10 +6130,18 @@ protected function createNestedSubMod
   input Absyn.Path inComponentName;
   input Absyn.Modification inMod;
   output Absyn.ElementArg outSubMod;
+protected
+  Absyn.ElementArg e;
 algorithm
   if AbsynUtil.pathIsIdent(inComponentName) then
-    outSubMod := Absyn.MODIFICATION(false, Absyn.NON_EACH(), inComponentName,
-        SOME(inMod), NONE(), AbsynUtil.dummyInfo);
+    outSubMod := match inMod
+      case Absyn.CLASSMOD(elementArgLst = {e as Absyn.REDECLARATION()})
+        then
+          e;
+      else
+        Absyn.MODIFICATION(false, Absyn.NON_EACH(), inComponentName,
+          SOME(inMod), NONE(), AbsynUtil.dummyInfo);
+    end match;
   else
     outSubMod := createNestedSubMod(AbsynUtil.pathRest(inComponentName), inMod);
     outSubMod := Absyn.MODIFICATION(false, Absyn.NON_EACH(),

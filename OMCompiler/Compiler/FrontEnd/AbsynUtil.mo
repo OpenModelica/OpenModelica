@@ -6448,5 +6448,115 @@ algorithm
  end match;
 end isUniontype;
 
+public function traverseClassElements<ArgT>
+  input Class inClass;
+  input FuncType inFunc;
+  input ArgT inArg;
+  output Class outClass = inClass;
+  output ArgT outArg;
+
+  partial function FuncType
+    input Element inElement;
+    input ArgT inArg;
+    output Element outElement;
+    output ArgT outArg;
+    output Boolean outContinue;
+  end FuncType;
+algorithm
+  outClass := match(outClass)
+    local
+      ClassDef body;
+
+    case CLASS()
+      algorithm
+        (body, outArg) := traverseClassDef(outClass.body,
+          function traverseClassPartElements(inFunc = inFunc), inArg);
+        if not referenceEq(body, outClass.body) then outClass.body := body; end if;
+      then
+        outClass;
+
+  end match;
+end traverseClassElements;
+
+protected function traverseClassPartElements<ArgT>
+  input ClassPart inClassPart;
+  input FuncType inFunc;
+  input ArgT inArg;
+  output ClassPart outClassPart = inClassPart;
+  output ArgT outArg = inArg;
+  output Boolean outContinue = true;
+
+  partial function FuncType
+    input Element inElement;
+    input ArgT inArg;
+    output Element outElement;
+    output ArgT outArg;
+    output Boolean outContinue;
+  end FuncType;
+algorithm
+  _ := match(outClassPart)
+    local
+      list<ElementItem> items;
+
+    case PUBLIC()
+      algorithm
+        (items, outArg, outContinue) :=
+          traverseListGeneric(outClassPart.contents,
+            function traverseElementItem(inFunc = inFunc), inArg);
+        outClassPart.contents := items;
+      then
+        ();
+
+    case PROTECTED()
+      algorithm
+        (items, outArg, outContinue) :=
+          traverseListGeneric(outClassPart.contents,
+             function traverseElementItem(inFunc = inFunc), inArg);
+        outClassPart.contents := items;
+      then
+        ();
+
+    else ();
+  end match;
+end traverseClassPartElements;
+
+protected function traverseElementItem<ArgT>
+  input ElementItem inItem;
+  input FuncType inFunc;
+  input ArgT inArg;
+  output ElementItem outItem;
+  output ArgT outArg;
+  output Boolean outContinue;
+
+  partial function FuncType
+    input Element inElement;
+    input ArgT inArg;
+    output Element outElement;
+    output ArgT outArg;
+    output Boolean outContinue;
+  end FuncType;
+algorithm
+  (outItem, outArg, outContinue) := match(inItem)
+    local
+      Element elem;
+
+    case ELEMENTITEM()
+      algorithm
+        (elem, outArg, outContinue) := inFunc(inItem.element, inArg);
+        outItem := if referenceEq(elem, inItem.element) then inItem else ELEMENTITEM(elem);
+      then
+        (outItem, outArg, outContinue);
+
+    else (inItem, inArg, true);
+  end match;
+end traverseElementItem;
+
+public function elementSpec
+  input Element el;
+  output ElementSpec elSpec;
+algorithm
+  ELEMENT(specification = elSpec) := el;
+end elementSpec;
+
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

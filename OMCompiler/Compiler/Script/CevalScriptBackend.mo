@@ -1503,7 +1503,7 @@ algorithm
           else
             b := false;
           end try;
-          
+
           compileDir := System.pwd() + Autoconf.pathDelimiter;
           executable := filenameprefix;
           initfilename := filenameprefix + "_init_xml";
@@ -2699,6 +2699,52 @@ algorithm
       then
         (cache,Values.BOOL(b));
 
+    case (cache,_,"getElementModifierNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str1)},_)
+      equation
+        strings = InteractiveUtil.getElementModifierNames(path, str1, SymbolTable.getAbsyn());
+        vals = List.map(strings, ValuesUtil.makeString);
+        v = ValuesUtil.makeArray(vals);
+      then
+        (cache,v);
+
+    case (cache,_,"getElementModifierValue",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_TYPENAME(path))},_)
+      equation
+        cr = AbsynUtil.pathToCref(path);
+        if AbsynUtil.crefIsIdent(cr) then
+          Absyn.CREF_IDENT(name = s1) = cr;
+          str = InteractiveUtil.getElementBinding(classpath, s1, SymbolTable.getAbsyn());
+        else
+          s1 = AbsynUtil.crefFirstIdent(cr);
+          cr_1 = AbsynUtil.crefStripFirst(cr);
+          str = InteractiveUtil.getElementModifierValue(AbsynUtil.pathToCref(classpath), Absyn.CREF_IDENT(s1, {}), cr_1, SymbolTable.getAbsyn());
+        end if;
+      then
+        (cache,Values.STRING(str));
+
+    case (cache,_,"getElementModifierValues",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_TYPENAME(path))},_)
+      equation
+        cr = AbsynUtil.pathToCref(path);
+        if AbsynUtil.crefIsIdent(cr) then
+          Absyn.CREF_IDENT(name = s1) = cr;
+          str = InteractiveUtil.getElementBinding(classpath, s1, SymbolTable.getAbsyn());
+        else
+          s1 = AbsynUtil.crefFirstIdent(cr);
+          cr_1 = AbsynUtil.crefStripFirst(cr);
+          str = InteractiveUtil.getElementModifierValues(AbsynUtil.pathToCref(classpath), Absyn.CREF_IDENT(s1, {}), cr_1, SymbolTable.getAbsyn());
+        end if;
+      then
+        (cache,Values.STRING(str));
+
+    case (cache,_,"removeElementModifiers",
+        Values.CODE(Absyn.C_TYPENAME(path))::
+      Values.STRING(str1)::
+      Values.BOOL(keepRedeclares)::_,_)
+      equation
+        (p,b) = InteractiveUtil.removeElementModifiers(path, str1, SymbolTable.getAbsyn(), keepRedeclares);
+        SymbolTable.setAbsyn(p);
+      then
+        (cache,Values.BOOL(b));
+
     case (cache,_,"removeExtendsModifiers",
           Values.CODE(Absyn.C_TYPENAME(classpath))::
           Values.CODE(Absyn.C_TYPENAME(baseClassPath))::
@@ -3739,7 +3785,7 @@ protected
   Boolean debug = false;
 
 algorithm
-  
+
   cache := inCache;
   if not FMI.checkFMIVersion(FMUVersion) then
     outValue := Values.STRING("");
@@ -4006,8 +4052,8 @@ algorithm
         stoptime_r = ValuesUtil.valueReal(stoptime_v);
         tolerance_r = ValuesUtil.valueReal(tolerance_v);
         outSimSettings = SimCodeMain.createSimulationSettings(starttime_r,stoptime_r,interval_i,tolerance_r,method_str,options_str,outputFormat_str,variableFilter_str,cflags);
-                      
- 
+
+
       then
         (cache, outSimSettings);
     else
@@ -5317,8 +5363,8 @@ algorithm
         (_,vals) := getListFirstShowError(vals, "while retreaving the tolerance (5 arg) from the buildModel arguments");
         (_,vals) := getListFirstShowError(vals, "while retreaving the method (6 arg) from the buildModel arguments");
         (Values.STRING(filenameprefix),vals) := getListFirstShowError(vals, "while retreaving the fileNamePrefix (7 arg) from the buildModel arguments");
-       
-        
+
+
         (_,vals) := getListFirstShowError(vals, "while retreaving the options (8 arg) from the buildModel arguments");
         (_,vals) := getListFirstShowError(vals, "while retreaving the outputFormat (9 arg) from the buildModel arguments");
         (_,vals) := getListFirstShowError(vals, "while retreaving the variableFilter (10 arg) from the buildModel arguments");
