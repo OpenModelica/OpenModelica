@@ -250,19 +250,20 @@ void ElementInfo::parseElementInfoString(QString value)
 {
   /*
   00 co/cl
-  01 type
-  02 name (component or class name)
-  03 comment
-  04 public/protected
-  05 final
-  06 flow
-  07 stream
-  08 replaceable
-  09 variability
-  10 inner
-  11 input/output
-  12 constrainedby
-  13 elementDims, TypeDims
+  01 restriction // only matters for class
+  02 type
+  03 name (component or class name)
+  04 comment
+  05 public/protected
+  06 final
+  07 flow
+  08 stream
+  09 replaceable
+  10 variability
+  11 inner
+  12 input/output
+  13 constrainedby
+  14 elementDims, TypeDims
   */
 
   if (value.isEmpty()) {
@@ -276,90 +277,96 @@ void ElementInfo::parseElementInfoString(QString value)
   } else {
     return;
   }
-  // read the class name, i.e. type name
+  // read the restriction
   if (list.size() > 1) {
-    mClassName = list.at(1);
+    mRestriction = list.at(1);
+  } else {
+    return;
+  }
+  // read the class name, i.e. type name
+  if (list.size() > 2) {
+    mClassName = list.at(2);
   } else {
     return;
   }
   // read the name
-  if (list.size() > 2) {
-    mName = list.at(2);
+  if (list.size() > 3) {
+    mName = list.at(3);
   } else {
     return;
   }
   // read the class comment
-  if (list.size() > 3) {
-    mComment = list.at(3);
+  if (list.size() > 4) {
+    mComment = list.at(4);
   } else {
     return;
   }
   // read the class access
-  if (list.size() > 4) {
-    mIsProtected = StringHandler::removeFirstLastQuotes(list.at(4)).contains("protected");
+  if (list.size() > 5) {
+    mIsProtected = StringHandler::removeFirstLastQuotes(list.at(5)).contains("protected");
   } else {
     return;
   }
   // read the final attribute
-  if (list.size() > 5) {
-    mIsFinal = list.at(5).contains("true");
+  if (list.size() > 6) {
+    mIsFinal = list.at(6).contains("true");
   } else {
     return;
   }
   // read the flow attribute
-  if (list.size() > 6) {
-    mIsFlow = list.at(6).contains("true");
+  if (list.size() > 7) {
+    mIsFlow = list.at(7).contains("true");
   } else {
     return;
   }
   // read the stream attribute
-  if (list.size() > 7) {
-    mIsStream = list.at(7).contains("true");
+  if (list.size() > 8) {
+    mIsStream = list.at(8).contains("true");
   } else {
     return;
   }
   // read the replaceable attribute
-  if (list.size() > 8) {
-    mIsReplaceable = list.at(8).contains("true");
+  if (list.size() > 9) {
+    mIsReplaceable = list.at(9).contains("true");
   } else {
     return;
   }
   // read the variability attribute
-  if (list.size() > 9) {
+  if (list.size() > 10) {
     QMap<QString, QString>::iterator variability_it;
     for (variability_it = mVariabilityMap.begin(); variability_it != mVariabilityMap.end(); ++variability_it) {
-      if (variability_it.key().compare(StringHandler::removeFirstLastQuotes(list.at(9))) == 0) {
+      if (variability_it.key().compare(StringHandler::removeFirstLastQuotes(list.at(10))) == 0) {
         mVariability = variability_it.value();
         break;
       }
     }
   }
   // read the inner attribute
-  if (list.size() > 10) {
-    mIsInner = list.at(10).contains("inner");
-    mIsOuter = list.at(10).contains("outer");
+  if (list.size() > 11) {
+    mIsInner = list.at(11).contains("inner");
+    mIsOuter = list.at(11).contains("outer");
   } else {
     return;
   }
   // read the casuality attribute
-  if (list.size() > 11) {
+  if (list.size() > 12) {
     QMap<QString, QString>::iterator casuality_it;
     for (casuality_it = mCasualityMap.begin(); casuality_it != mCasualityMap.end(); ++casuality_it) {
-      if (casuality_it.key().compare(StringHandler::removeFirstLastQuotes(list.at(11))) == 0) {
+      if (casuality_it.key().compare(StringHandler::removeFirstLastQuotes(list.at(12))) == 0) {
         mCasuality = casuality_it.value();
         break;
       }
     }
   }
   // read the constrainedby class name
-  if (list.size() > 12) {
-    mConstrainedByClassName = list.at(12);
+  if (list.size() > 13) {
+    mConstrainedByClassName = list.at(13);
   } else {
     return;
   }
   // read the array index value
-  if (list.size() > 13) {
-    setArrayIndex(list.at(13));
+  if (list.size() > 14) {
+    setArrayIndex(list.at(14));
   }
 }
 

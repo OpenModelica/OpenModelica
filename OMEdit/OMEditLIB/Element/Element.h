@@ -101,6 +101,8 @@ public:
   QString getCausality() const {return mCasuality;}
   void setIsElement(bool isElement) {mIsElement = isElement;}
   bool getIsElement() const {return mIsElement;}
+  void setRestriction(const QString &restriction) {mRestriction = restriction;}
+  QString getRestriction() const {return mRestriction;}
   void setParentClassName(const QString &parentClassName) {mParentClassName = parentClassName;}
   QString getParentClassName() const {return mParentClassName;}
   void setConstrainedByClassName(const QString &constrainedByClassName) {mConstrainedByClassName = constrainedByClassName;}
@@ -154,6 +156,7 @@ private:
   bool mIsReplaceable;
   bool mIsRedeclare;
   bool mIsElement;
+  QString mRestriction; // only matters when mIsElement is true.
   QMap<QString, QString> mVariabilityMap;
   QString mVariability;
   bool mIsInner;
