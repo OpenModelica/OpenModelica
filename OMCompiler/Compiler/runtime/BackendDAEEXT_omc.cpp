@@ -40,7 +40,7 @@
  *
  */
 
-#include "meta/meta_modelica.h"
+#include "meta_modelica.h"
 #include "BackendDAEEXT.cpp"
 #include <stdlib.h>
 #include "errorext.h"
