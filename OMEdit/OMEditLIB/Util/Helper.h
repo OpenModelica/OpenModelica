@@ -71,6 +71,7 @@ public:
   static QString matFileTypes;
   static QString csvFileTypes;
   static QString omResultFileTypes;
+  static QString omResultFileTypesRegExp;
   static QString exeFileTypes;
   static QString txtFileTypes;
   static QString figaroFileTypes;

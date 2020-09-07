@@ -571,7 +571,6 @@ void SimulationDialog::setUpForm()
                                    "If you want to change the output path then update the working directory in Options/Preferences."));
   mpResultFileNameLabel = new Label(tr("Result File (Optional):"));
   mpResultFileNameTextBox = new QLineEdit;
-  mpResultFileName = new Label;
   connect(mpFileNameTextBox, SIGNAL(textEdited(QString)), SLOT(resultFileNameChanged(QString)));
   connect(mpOutputFormatComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(resultFileNameChanged(QString)));
   // Variable filter
@@ -818,8 +817,6 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             mpRestartAfterEventCheckBox->setChecked(false);
           } else if (simulationFlag.compare("noRootFinding") == 0) {
             mpRootFindingCheckBox->setChecked(false);
-          } else if (simulationFlag.compare("outputFormat") == 0) {
-            mpOutputFormatComboBox->setCurrentIndex(mpOutputFormatComboBox->findText(value));
           } else if (simulationFlag.compare("single") == 0) {
             mpSinglePrecisionCheckBox->setChecked(true);
           } else if (simulationFlag.compare("emit_protected") == 0) {
@@ -854,7 +851,13 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             mpOutputVariablesTextBox->setText(value);
           } else if (simulationFlag.compare("r") == 0) {
             mpResultFileNameTextBox->setText(value);
-            mpResultFileName->setText(value);
+            QRegExp resultFilesRegExp(Helper::omResultFileTypesRegExp);
+            if (resultFilesRegExp.indexIn(value) != -1) {
+              int currentIndex = mpOutputFormatComboBox->findText(StringHandler::getLastWordAfterDot(value));
+              if (currentIndex > -1) {
+                mpOutputFormatComboBox->setCurrentIndex(currentIndex);
+              }
+            }
           } else if (simulationFlag.compare("s") == 0) {
             mpMethodComboBox->setCurrentIndex(mpMethodComboBox->findText(value));
           } else if (simulationFlag.compare("lv") == 0) {
@@ -1588,7 +1591,6 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   if (!mpRootFindingCheckBox->isChecked()) {
     simulationFlags.insert("noRootFinding", "()");
   }
-  simulationFlags.insert("outputFormat", mpOutputFormatComboBox->currentText());
   if ((mpOutputFormatComboBox->currentText().compare("mat") == 0) && mpSinglePrecisionCheckBox->isChecked()) {
     simulationFlags.insert("single", "()");
   }
@@ -1637,8 +1639,8 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   if (!mpOutputVariablesTextBox->text().isEmpty()) {
     simulationFlags.insert("output", mpOutputVariablesTextBox->text());
   }
-  if (!mpResultFileName->text().isEmpty()) {
-    simulationFlags.insert("r", mpResultFileName->text());
+  if (!mpResultFileNameTextBox->text().isEmpty()) {
+    simulationFlags.insert("r", mpResultFileNameTextBox->text());
   }
   simulationFlags.insert("s", mpMethodComboBox->currentText());
   QStringList logStreams;
@@ -2018,7 +2020,7 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     return;
   }
   QString workingDirectory = simulationOptions.getWorkingDirectory();
-  QRegExp regExp("\\b(mat|plt|csv)\\b");
+  QRegExp regExp(Helper::omResultFileTypesRegExp);
   bool resultFileKnown = regExp.indexIn(simulationOptions.getFullResultFileName()) != -1;
   // read the result file
   QFileInfo resultFileInfo(QString(workingDirectory).append("/").append(simulationOptions.getFullResultFileName()));
