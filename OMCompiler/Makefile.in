@@ -174,7 +174,7 @@ wine_sundials_msvc: .wine_sundials_msvc
 	# Goto build msvc directory
 	test -d 3rdParty/sundials
 
-	(test -f $@ && test -d 3rdParty/sundials/build_msvc) || (rm -rf 3rdParty/sundials/build_msvc && mkdir -p 3rdParty/sundials/build_msvc && cd 3rdParty/sundials/build_msvc && $(WINE) "$(OMDEV_CMAKE)" -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DBUILD_STATIC_LIBS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=. ../ -G  "NMake Makefiles" && $(WINE) nmake /f Makefile install)
+	(test -f $@ && test -d 3rdParty/sundials/build_msvc) || (rm -rf 3rdParty/sundials/build_msvc && mkdir -p 3rdParty/sundials/build_msvc && cd 3rdParty/sundials/build_msvc && $(WINE) "$(OMDEV_CMAKE)" -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DSUNDIALS_BUILD_STATIC_LIBS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=. ../ -G  "NMake Makefiles" && $(WINE) nmake /f Makefile install)
 	mkdir -p $(OMBUILDDIR)/include/omc/msvc/sundials
 	(cp -pufr 3rdParty/sundials/build_msvc/include/* $(OMBUILDDIR)/include/omc/msvc/sundials)
 	(cp -puf 3rdParty/sundials/build_msvc/lib/* $(OMBUILDDIR)/lib/omc/msvc/)
