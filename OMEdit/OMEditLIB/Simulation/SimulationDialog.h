@@ -198,7 +198,6 @@ private:
   QLineEdit *mpFileNameTextBox;
   Label *mpResultFileNameLabel;
   QLineEdit *mpResultFileNameTextBox;
-  Label *mpResultFileName;
   Label *mpVariableFilterLabel;
   QLineEdit *mpVariableFilterTextBox;
   QCheckBox *mpProtectedVariablesCheckBox;
