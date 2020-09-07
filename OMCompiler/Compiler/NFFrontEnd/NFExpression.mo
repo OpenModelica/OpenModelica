@@ -4787,5 +4787,21 @@ public
     end if;
   end foldReduction2;
 
+  function isPure
+    input Expression exp;
+    output Boolean isPure;
+  algorithm
+    isPure := match exp
+      case Expression.CREF() then not ComponentRef.isIterator(exp.cref);
+      case Expression.CALL()
+        then match AbsynUtil.pathFirstIdent(Call.functionName(exp.call))
+          case "Connections" then false;
+          case "cardinality" then false;
+          else not Call.isImpure(exp.call);
+        end match;
+      else true;
+    end match;
+  end isPure;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;
