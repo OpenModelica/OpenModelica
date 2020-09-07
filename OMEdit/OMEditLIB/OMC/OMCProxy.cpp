@@ -989,6 +989,10 @@ QString OMCProxy::getParameterValue(const QString &className, const QString &par
   */
 QStringList OMCProxy::getComponentModifierNames(QString className, QString name)
 {
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport())
+  {
+    mpOMCInterface->getElementModifierNames(className, name);
+  }
   return mpOMCInterface->getComponentModifierNames(className, name);
 }
 
@@ -1001,6 +1005,10 @@ QStringList OMCProxy::getComponentModifierNames(QString className, QString name)
  */
 QString OMCProxy::getComponentModifierValue(QString className, QString name)
 {
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport())
+  {
+    mpOMCInterface->getElementModifierValue(className, name);
+  }
   return mpOMCInterface->getComponentModifierValue(className, name);
 }
 
@@ -1013,13 +1021,22 @@ QString OMCProxy::getComponentModifierValue(QString className, QString name)
   */
 bool OMCProxy::setComponentModifierValue(QString className, QString modifierName, QString modifierValue)
 {
-  QString expression;
+  QString expression, sapi = QString("setComponentModifierValue");
+  bool redeclareSupport = OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport();
+
+  if (redeclareSupport)
+  {
+    sapi = QString("setElementModifierValue");
+  }
+
   if (modifierValue.isEmpty()) {
-    expression = QString("setComponentModifierValue(%1, %2, $Code(()))").arg(className).arg(modifierName);
+    expression = QString("%1(%2, %3, $Code(()))").arg(sapi).arg(className).arg(modifierName);
+  } else if (redeclareSupport && modifierValue.startsWith("redeclare")) {
+    expression = QString("%1(%2, %3, $Code((%4)))").arg(sapi).arg(className).arg(modifierName).arg(modifierValue);
   } else if (modifierValue.startsWith("(") && modifierValue.contains("=")) {
-    expression = QString("setComponentModifierValue(%1, %2, $Code(%3))").arg(className).arg(modifierName).arg(modifierValue);
+    expression = QString("%1(%2, %3, $Code(%4))").arg(sapi).arg(className).arg(modifierName).arg(modifierValue);
   } else {
-    expression = QString("setComponentModifierValue(%1, %2, $Code(=%3))").arg(className).arg(modifierName).arg(modifierValue);
+    expression = QString("%1(%2, %3, $Code(=%4))").arg(sapi).arg(className).arg(modifierName).arg(modifierValue);
   }
   sendCommand(expression);
   if (getResult().toLower().compare("ok") == 0) {
@@ -1041,6 +1058,10 @@ bool OMCProxy::setComponentModifierValue(QString className, QString modifierName
  */
 bool OMCProxy::removeComponentModifiers(QString className, QString name)
 {
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport())
+  {
+    return mpOMCInterface->removeElementModifiers(className, name, false /* do not keep redeclares */);
+  }
   return mpOMCInterface->removeComponentModifiers(className, name, true);
 }
 
@@ -1053,7 +1074,15 @@ bool OMCProxy::removeComponentModifiers(QString className, QString name)
  */
 QString OMCProxy::getComponentModifierValues(QString className, QString name)
 {
-  QString values = mpOMCInterface->getComponentModifierValues(className, name);
+  QString values;
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport())
+  {
+    values = mpOMCInterface->getElementModifierValues(className, name);
+  }
+  else
+  {
+    values = mpOMCInterface->getComponentModifierValues(className, name);
+  }
   if (values.startsWith(" = ")) {
     return values.mid(3);
   } else {
