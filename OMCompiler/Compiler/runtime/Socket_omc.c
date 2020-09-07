@@ -34,9 +34,10 @@
 #endif
 
 #include <stdio.h>
+#include <meta_modelica.h>
 
 #include "socketimpl.c"
-#include "meta/meta_modelica.h"
+#include "meta_modelica.h"
 #include "ModelicaUtilities.h"
 
 extern const char* Socket_handlerequest(int sock)

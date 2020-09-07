@@ -34,12 +34,7 @@
 #include <string.h>
 #include <assert.h>
 #include "omc_config.h"
-
-#if defined(OMC_BOOTSTRAPPING)
-  #include "../boot/tarball-include/OpenModelicaBootstrappingHeader.h"
-#else
-  #include "../OpenModelicaBootstrappingHeader.h"
-#endif
+#include "OpenModelicaBootstrappingHeader.h"
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #define OMC_GROUP_DELIMITER ";"
