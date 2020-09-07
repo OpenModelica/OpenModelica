@@ -1,13 +1,7 @@
 #include "openmodelica.h"
-#include "meta/meta_modelica.h"
-
+#include "meta_modelica.h"
 #define ADD_METARECORD_DEFINITIONS static
-#if defined(OMC_BOOTSTRAPPING)
-  #include "../boot/tarball-include/OpenModelicaBootstrappingHeader.h"
-#else
-  #include "../OpenModelicaBootstrappingHeader.h"
-#endif
-
+#include "OpenModelicaBootstrappingHeader.h"
 
 #if !defined(_MSC_VER)
 #include "HpcOmBenchmarkExt.cpp"
