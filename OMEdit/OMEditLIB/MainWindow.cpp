@@ -660,7 +660,7 @@ void MainWindow::openDroppedFile(const QMimeData *pMimeData)
     mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
     mpProgressBar->setValue(++progressValue);
     // check the file extension
-    QRegExp resultFilesRegExp("\\b(mat|plt|csv)\\b");
+    QRegExp resultFilesRegExp(Helper::omResultFileTypesRegExp);
     if (resultFilesRegExp.indexIn(fileInfo.suffix()) != -1) {
       openResultFiles(QStringList(fileInfo.absoluteFilePath()));
     } else {
