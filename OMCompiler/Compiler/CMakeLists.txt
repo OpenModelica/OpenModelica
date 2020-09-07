@@ -1,171 +1,164 @@
 
-# The MO sources
-SET(SRCMO Absyn.mo AbsynDep.mo Algorithm.mo Builtin.mo
-          Ceval.mo CevalScript.mo ClassInf.mo
-		  ClassLoader.mo Connect.mo ExpandableConnectors.mo
-		  ConnectionGraph.mo Convert.mo DAE.mo DAELow.mo
-		  DAEUtil.mo Differentiate.mo Debug.mo	DFA.mo Dump.mo
-		  DumpGraphviz.mo DynamicOptimization.mo Constants.mo Env.mo Error.mo
-		  Exp.mo SCode.mo SCodeUtil.mo Graphviz.mo HashTable.mo
-		  HashTable2.mo HashTable3.mo HashTable4.mo HashTable5.mo
-		  HashTable6.mo HashTableCG.mo HashTableStringToPath.mo
-		  Inline.mo Inst.mo InstExtends.mo Interactive.mo
-		  Lookup.mo Main.mo MMath.mo MetaUtil.mo Mod.mo
-		  PartFn.mo Patternm.mo Prefix.mo PrefixUtil.mo Static.mo
-		  SimCode.mo SimCodeC.mo SimCodeCSharp.mo
-		  Types.mo TaskGraph.mo Tpl.mo TplAbsyn.mo TplCodegen.mo
-		  TplParser.mo TplMain.mo Util.mo UnitAbsyn.mo
-		  UnitAbsynBuilder.mo UnitChecker.mo Values.mo ValuesUtil.mo
-		  VarTransform.mo BackendVarTransform.mo Refactor.mo
-		  DAEQuery.mo XMLDump.mo InstanceHierarchy.mo InnerOuter.mo
-		  ConnectUtil.mo Dependency.mo)
-
-SET(ALLMO ${SRCMO} DAEEXT.mo DynLoad.mo Print.mo System.mo Parser.mo
-		TaskGraphExt.mo Corba.mo Socket.mo ZeroMQ.mo ErrorExt.mo Settings.mo
-		UnitParserExt.mo SimulationResults.mo Serializer.mo OMSimulator.mo)
-
-# RML
-IF(NOT RML)
-  FIND_PROGRAM(RML rml DOC "Location of the RML executable"
-               PATHS ENV OMDEV ${RMLHOME}/bin
-               PATH_SUFFIXES bin tools/rml/bin)
-  MESSAGE(STATUS "-- rml is " ${RML})
-ENDIF(NOT RML)
-
-#copy all to CODEGENDIR
-FOREACH(DEP ${ALLMO})
-
-	# Datei- und Pfadname
-    GET_FILENAME_COMPONENT(DF ${DEP} NAME)
-    GET_FILENAME_COMPONENT(DFWE ${DEP} NAME_WE)
-    GET_FILENAME_COMPONENT(DP ${DEP} PATH)
-
-	# Suchen
-	FIND_FILE(${DEP}_FILE ${DF} PATHS ${DP} ${CMAKE_CURRENT_SOURCE_DIR})
-
-	# Wenn nicht gefunden, dann Original nehmen
-	STRING(COMPARE EQUAL ${${DEP}_FILE} ${DEP}_FILE-NOTFOUND FF)
-	IF(${FF})
-		SET(${DEP}_FILE "\"${DEP}\"")
-	ENDIF(${FF})
-
- 	SET(COPY_DEP  ${${DEP}_FILE})
-
-	SET(COPY_OUTPUT  ${CODEGENDIR}/${DEP})
-	# custom command for copy
-	ADD_CUSTOM_COMMAND(OUTPUT ${COPY_OUTPUT}
-                     COMMAND ${CMAKE_COMMAND} -E copy ${COPY_DEP} ${COPY_OUTPUT}
-					 DEPENDS ${COPY_DEP}
-                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                     COMMENT "copy ${COPY_DEP} to ${COPY_OUTPUT}")
-
-  # target fuer OM_OUTPUT
-  ADD_CUSTOM_TARGET(${DFWE}_cp ALL DEPENDS ${COPY_OUTPUT})
-
-  # remember
-  SET(COPY_ALL ${COPY_ALL} ${COPY_OUTPUT})
-ENDFOREACH(DEP)
-
-#.depend:
-SET(DEPENDT_OUTPUT  ${CODEGENDIR}/.depend)
-# custom command for rml to sig
-ADD_CUSTOM_COMMAND(OUTPUT ${DEPENDT_OUTPUT}
-                   COMMAND ${RML} -fdump-depends ${SRCMO} > .depend
-                   DEPENDS ${COPY_ALL}
-                   WORKING_DIRECTORY ${CODEGENDIR}
-                   COMMENT "Generate .depend")
-
-# target fuer OM_OUTPUT
-ADD_CUSTOM_TARGET(depend ALL DEPENDS ${DEPENDT_OUTPUT})
+omc_add_subdirectory(runtime)
 
 
-# generate sig files
-FOREACH(DEP ${ALLMO})
+set(OMC_EXE ${PROJECT_SOURCE_DIR}/../build/bin/omc)
 
-	# Datei- und Pfadname
-    GET_FILENAME_COMPONENT(DF ${DEP} NAME)
-    GET_FILENAME_COMPONENT(DFWE ${DEP} NAME_WE)
+# list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/.cmake")
+# enable_language(MODELICA)
 
-	# Merken
-	SET(SIG_DEP ${DFWE}.sig)
+macro(add_interface_checker_script mo_source_file)
 
-  SET(SIGX_OUTPUT  ${CODEGENDIR}/${SIG_DEP})
-  # custom command for rml to sig
-  ADD_CUSTOM_COMMAND(OUTPUT ${SIGX_OUTPUT}
-                     COMMAND ${RML} -fdump-interface ${DEP} > ${SIG_DEP}
-					 DEPENDS ${DEPENDT_OUTPUT}
-                     WORKING_DIRECTORY ${CODEGENDIR}
-                     COMMENT "Generate Sigx from ${DF}")
+    get_filename_component(file_name_no_ext ${mo_source_file} NAME_WLE)
+    get_filename_component(source_dir ${mo_source_file} DIRECTORY)
 
-  # target fuer OM_OUTPUT
-  ADD_CUSTOM_TARGET(${DFWE}_sig ALL DEPENDS ${SIGX_OUTPUT})
+    set(MM_PACKAGE_NAME ${file_name_no_ext})
+    set(MM_INPUT_SOURCE_DIR ${source_dir})
+    set(MM_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/mm_check_interface.in.mos ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.check_interface.mos)
+endmacro(add_interface_checker_script)
 
-    # remember
-  SET(SIGX_ALL ${SIGX_ALL} ${SIGX_OUTPUT} )
-ENDFOREACH(DEP)
+macro(add_compile_script mo_source_file)
+    get_filename_component(file_name_no_ext ${mo_source_file} NAME_WLE)
+    get_filename_component(source_dir ${mo_source_file} DIRECTORY)
 
-# generate *.h and *.c from *.mo files
-FOREACH(DEP ${SRCMO})
+    set(MM_PACKAGE_NAME ${file_name_no_ext})
+    set(MM_INPUT_SOURCE_DIR ${source_dir})
+    set(MM_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/mm_compile.in.mos ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.compile.mos)
+endmacro(add_compile_script)
 
-	# Datei- und Pfadname
-    GET_FILENAME_COMPONENT(DF ${DEP} NAME)
-    GET_FILENAME_COMPONENT(DFWE ${DEP} NAME_WE)
 
-	# Merken
-	SET(MOCH_DEP ${CODEGENDIR}/${DFWE}.h ${CODEGENDIR}/${DFWE}.c)
+add_executable(dep_scanner ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/dep_scanner.cpp)
+target_compile_features(dep_scanner PRIVATE cxx_std_11)
 
-  SET(MOCH_OUTPUT  ${MOCH_DEP})
-  # custom command for rml to sig
-  ADD_CUSTOM_COMMAND(OUTPUT ${MOCH_OUTPUT}
-                     COMMAND ${RML} -Eplain -ftrace ${RMLCFLAGS} ${DEP}
-					 DEPENDS ${SIGX_ALL}
-                     WORKING_DIRECTORY ${CODEGENDIR}
-                     COMMENT "Generate *.h and *.c from ${DEP}")
 
-  # target fuer OM_OUTPUT
-  ADD_CUSTOM_TARGET(${DFWE}_codegen ALL DEPENDS ${MOCH_OUTPUT})
 
-  # remember
-  SET(MOCH_ALL ${MOCH_ALL} ${MOCH_OUTPUT})
-  SET(MOCH_codegen_ALL ${MOCH_codegen_ALL} ${DFWE}_codegen)
-ENDFOREACH(DEP)
 
-ADD_SUBDIRECTORY(runtime)
-ADD_SUBDIRECTORY(absyn_builder)
-ADD_SUBDIRECTORY(modpar)
 
-if(WIN32)
-INCLUDE_DIRECTORIES($ENV{OMDEV}/tools/rml/include/plain)
-link_directories($ENV{OMDEV}/lib/antlr-win32-msvc/md-mdd ${OMCTRUNCHOME}/Compiler/runtime/lpsolve/lib/win32)
-link_directories($ENV{OMDEV}/tools/rml/lib/plain)
-#link_directories(D:/Programming/OPENMODELICA/buildmmc/runtime/plain/RelWithDebInfo)
-else(WIN32)
-INCLUDE_DIRECTORIES(${RMLHOME}/include/plain)
-link_directories(${RMLHOME}/lib/plain)
-endif(WIN32)
-INCLUDE_DIRECTORIES(${CODEGENDIR})
 
-# mico und benoetigte Bibliotheken
-IF(WIN32)
-  SET(platform_libs optimized mico2313 debug mico2313d optimized antlr debug antlrd)
-ELSE(WIN32)
-  SET(platform_libs mico2.3.13 optimized antlr debug antlrd) #ssl pthread)
-ENDIF(WIN32)
-# omc program
+macro(add_interface_check_step mo_source_file)
+    add_interface_checker_script(${mo_source_file})
 
-#add_definitions(/Ob2 /Ox /O2 /Ot /Oy /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_CRT_SECURE_NO_WARNINGS" /D "_MBCS" /FD /EHsc /MT /W3 /nologo /c /TC /wd4311 /wd4312)
-if(WIN32)
-add_definitions(/D "_CRT_SECURE_NO_WARNINGS" /D "_CONSOLE")
-endif(WIN32)
-ADD_EXECUTABLE(omc ${MOCH_ALL})
-if(WIN32)
-TARGET_LINK_LIBRARIES(omc absyn_builder libmodpar sendData c_runtime wsock32 shlwapi)
-TARGET_LINK_LIBRARIES(omc  rml)
-else(WIN32)
-TARGET_LINK_LIBRARIES(omc absyn_builder libmodpar sendData c_runtime runtime optimized lpsolve55 debug lpsolve55d ${platform_libs})
-TARGET_LINK_LIBRARIES(omc rml)
-endif(WIN32)
+    get_filename_component(file_name_no_ext ${mo_source_file} NAME_WLE)
+    get_filename_component(source_dir ${mo_source_file} DIRECTORY)
 
-# install
-INSTALL(TARGETS omc
-        RUNTIME DESTINATION bin)
+    add_custom_command(
+        DEPENDS ${mo_source_file}
+                ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.check_interface.mos
+
+        COMMAND ${OMC_EXE} -g=MetaModelica -n=1 --locale=en ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.check_interface.mos
+
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo.tmp
+        BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo
+        COMMENT "Checking interface for ${mo_source_file}"
+    )
+
+    set(OMC_MM_SOURCE_FILES ${OMC_MM_SOURCE_FILES} ${mo_source_file})
+
+    set(OMC_MM_INTERFACE_FILES ${OMC_MM_INTERFACE_FILES} ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo)
+    set(OMC_MM_STAMP_FILES ${OMC_MM_STAMP_FILES} ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo.tmp)
+
+
+    add_custom_command(
+        DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo
+        COMMAND ${CMAKE_COMMAND} -E cat ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.rev_depends
+        COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.rev_deps.stamp
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.rev_deps.stamp
+        COMMENT "Touched dependents of ${mo_source_file}"
+    )
+    set(OMC_REV_DEP_STAMP_FILES ${OMC_REV_DEP_STAMP_FILES} ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.rev_deps.stamp)
+
+endmacro(add_interface_check_step)
+
+
+
+
+macro(add_compile_step mo_source_file)
+
+    add_compile_script(${mo_source_file})
+
+    get_filename_component(file_name_no_ext ${mo_source_file} NAME_WLE)
+    get_filename_component(source_dir ${mo_source_file} DIRECTORY)
+
+    add_custom_command(
+        DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo.tmp
+                ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.compile.mos
+
+        COMMAND ${OMC_EXE} -g=MetaModelica -n=1 --locale=en ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.compile.mos
+
+        OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/c_files/${file_name_no_ext}.c
+                ${CMAKE_CURRENT_BINARY_DIR}/c_files/${file_name_no_ext}_records.c
+                ${CMAKE_CURRENT_BINARY_DIR}/c_files/${file_name_no_ext}.h
+                ${CMAKE_CURRENT_BINARY_DIR}/c_files/${file_name_no_ext}_includes.h
+
+        BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/c_files/${file_name_no_ext}.deps
+
+        COMMENT "Translating ${mo_source_file}"
+    )
+
+    set(OMC_C_SOURCE_FILES ${OMC_C_SOURCE_FILES} ${CMAKE_CURRENT_BINARY_DIR}/c_files/${file_name_no_ext}.c
+                                                   ${CMAKE_CURRENT_BINARY_DIR}/c_files/${file_name_no_ext}_records.c)
+endmacro(add_compile_step)
+
+
+
+
+
+
+include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/template_compilation.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/meta_modelica_source_list.cmake)
+
+foreach(OMC_MM_SOURCE ${OMC_MM_ALWAYS_SOURCES})
+    add_interface_check_step(${OMC_MM_SOURCE})
+    add_compile_step(${OMC_MM_SOURCE})
+endforeach()
+
+foreach(OMC_MM_SOURCE ${OMC_MM_BACKEND_SOURCES})
+    add_interface_check_step(${OMC_MM_SOURCE})
+    add_compile_step(${OMC_MM_SOURCE})
+endforeach()
+
+
+add_custom_target(INTERFACE_CHECK
+                  DEPENDS ${OMC_MM_STAMP_FILES}
+                  COMMENT "Checked interfaces of modified MetaModelica sources.")
+
+add_custom_command(
+                DEPENDS ${OMC_MM_INTERFACE_FILES}
+                COMMAND $<TARGET_FILE:dep_scanner> ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/package_list.txt ${CMAKE_CURRENT_BINARY_DIR}
+                COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/dep_scan.stamp
+                OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dep_scan.stamp
+                COMMENT "Scanning reverse dependencies for MetaModelica sources.")
+add_custom_target(DEPENDENCY_SCAN
+                  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/dep_scan.stamp
+                  COMMENT "Scanned reverse dependencies for MetaModelica sources.")
+
+
+add_custom_target(DEPENDENCY_UPDATE
+                  DEPENDS ${OMC_REV_DEP_STAMP_FILES}
+                  COMMENT "Updated dependencies for MetaModelica sources.")
+
+
+add_dependencies(DEPENDENCY_SCAN INTERFACE_CHECK)
+add_dependencies(DEPENDENCY_UPDATE DEPENDENCY_SCAN)
+
+add_library(OpenModelicaCompiler SHARED ${OMC_C_SOURCE_FILES})
+target_compile_definitions(OpenModelicaCompiler PRIVATE ADD_METARECORD_DEFINITIONS=)
+
+add_dependencies(OpenModelicaCompiler DEPENDENCY_UPDATE)
+
+include_regular_expression("^$")
+# There is a lonely omc_file.h in Util/. It belongs in runtime/. Remove this when it is moved.
+target_include_directories(OpenModelicaCompiler PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Util)
+
+# include_regular_expression("^.*$" "^$")
+
+
+target_link_libraries(OpenModelicaCompiler PUBLIC omc::parser)
+target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::runtime)
+target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::backendruntime)
+target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::graphstream)
+target_link_libraries(OpenModelicaCompiler PUBLIC OpenModelicaRuntimeC)
+target_link_libraries(OpenModelicaCompiler PUBLIC omc::3rd::modelica_external_c)
+target_link_libraries(OpenModelicaCompiler PUBLIC omc::3rd::modelica_io)

@@ -21,7 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <tinymt64.h>
+#include "util/tinymt64.h"
 
 #include "matchmaker.h"
 

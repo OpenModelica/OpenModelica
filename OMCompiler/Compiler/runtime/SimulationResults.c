@@ -1,15 +1,15 @@
-#include "read_matlab4.h"
-#include "write_matlab4.h"
+#include "util/read_matlab4.h"
+#include "util/write_matlab4.h"
 #include <stdint.h>
 #include <string.h>
 #include "errorext.h"
 #include "systemimpl.h"
 #include "ptolemyio.h"
-#include "read_csv.h"
+#include "util/read_csv.h"
 #include <math.h>
 #include <gc.h>
-#include "omc_file.h"
-#include "omc_msvc.h" /* For INFINITY and NAN */
+#include "util/omc_file.h"
+#include "util/omc_msvc.h" /* For INFINITY and NAN */
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>

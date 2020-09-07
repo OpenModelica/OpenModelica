@@ -34,7 +34,7 @@
 
 #include "errorext.h"
 #include "systemimpl.h"
-#include "meta_modelica.h"
+#include "meta/meta_modelica.h"
 
 /* this is defined in systemimplmisc.h/cpp */
 extern char* _replace(const char* source_str, const char* search_str, const char* replace_str);

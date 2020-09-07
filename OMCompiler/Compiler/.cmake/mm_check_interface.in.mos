@@ -1,0 +1,87 @@
+echo(false);
+mm_src_file := "@MM_INPUT_SOURCE_DIR@/@MM_PACKAGE_NAME@.mo";
+
+tmp_interface_file := "@MM_OUTPUT_DIR@/@MM_PACKAGE_NAME@.interface.mo.tmp";
+interface_file := "@MM_OUTPUT_DIR@/@MM_PACKAGE_NAME@.interface.mo";
+depends_file := "@MM_OUTPUT_DIR@/@MM_PACKAGE_NAME@.depends";
+public_imports_file := "@MM_OUTPUT_DIR@/@MM_PACKAGE_NAME@.public.imports";
+
+class_typename := $TypeName(@MM_PACKAGE_NAME@);
+
+
+setCommandLineOptions("-g=MetaModelica");
+setCommandLineOptions("-d=skipInputOutputSyntacticSugar");
+
+if not loadFile(mm_src_file) then
+  print("Failed to load file: " + mm_src_file + "\n" + getErrorString());
+  exit(1);
+end if;
+
+if not checkInterfaceOfPackages(class_typename, {
+  {"backendInterface", "backend", "frontend", "util", "susan"},
+  {"backend", "frontend", "util", "susan", "backendInterface"},
+  {"frontend", "util", "susan", "backendInterface", ""},
+  {"susan", "util", "", "", ""},
+  {"util", "", "", "", ""}
+}) then
+  print(getErrorString());
+  exit(1);
+end if;
+
+
+
+
+
+if classAnnotationExists(class_typename, __OpenModelica_isBaseClass) then
+  new_interface_string := OpenModelica.Scripting.readFile(mm_src_file);
+else
+  new_interface_string := OpenModelica.Scripting.list(exportKind=OpenModelica.Scripting.ExportKind.MetaModelicaInterface);
+end if;
+
+success := OpenModelica.Scripting.writeFile(tmp_interface_file, new_interface_string);
+if not success then
+  print("Failed to write file: " + tmp_interface_file + "\n" + getErrorString());
+  exit(1);
+end if;
+
+isSame := OpenModelica.Scripting.compareFiles(tmp_interface_file, interface_file);
+if isSame then
+  // print("Interface is the same\n");
+else
+  // print("Interface has changed. Updating. Dependents will be recompiled.\n");
+  success := OpenModelica.Scripting.copy(tmp_interface_file, interface_file);
+  if not success then
+    print("Failed to rename file: " + tmp_interface_file + "\n" + getErrorString());
+    exit(1);
+  end if;
+end if;
+
+(pub_imported_names, pro_imported_names) := getImportedNames(class_typename);
+getErrorString();
+
+public_imports_string := "";
+for dep in pub_imported_names loop
+  public_imports_string := public_imports_string + dep + ";";
+end for;
+
+success := OpenModelica.Scripting.writeFile(public_imports_file, public_imports_string);
+if not success then
+  print("Failed to write file: " + public_imports_file + "\n" + getErrorString());
+  exit(1);
+end if;
+
+
+dep_string := "";
+for dep in pub_imported_names loop
+  dep_string := dep_string + dep + " ";
+end for;
+
+for dep in pro_imported_names loop
+  dep_string := dep_string + dep + " ";
+end for;
+
+success := OpenModelica.Scripting.writeFile(depends_file, dep_string);
+if not success then
+  print("Failed to write file: " + depends_file + "\n" + getErrorString());
+  exit(1);
+end if;
