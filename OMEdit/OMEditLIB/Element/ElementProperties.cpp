@@ -311,6 +311,7 @@ void Parameter::createValueWidget()
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   QString className = mpComponent->getComponentInfo()->getClassName();
   QString constrainedByClassName = "$Any";
+  QString replaceable = "";
   QStringList enumerationLiterals, replaceableChoices;
   switch (mValueType) {
     case Parameter::Boolean:
@@ -347,7 +348,15 @@ void Parameter::createValueWidget()
       }
       replaceableChoices = pOMCProxy->getAllSubtypeOf(constrainedByClassName, mpComponent->getComponentInfo()->getParentClassName());
       for (i = 0 ; i < replaceableChoices.size(); i++) {
-        mpValueComboBox->addItem(replaceableChoices[i], constrainedByClassName + " / " + replaceableChoices[i]);
+        if (mValueType == Parameter::ReplaceableClass)
+        {
+          replaceable = "redeclare " + mpComponent->getComponentInfo()->getRestriction() + " " + mpComponent->getName() + " = " + replaceableChoices[i];
+        }
+        else
+        {
+          replaceable = "redeclare " + replaceableChoices[i] + " " + mpComponent->getName();
+        }
+        mpValueComboBox->addItem(replaceable, replaceable);
       }
       connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
       break;

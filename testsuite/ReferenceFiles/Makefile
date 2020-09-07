@@ -3,4 +3,4 @@ ALL_MAT := $(patsubst %.mat.xz,%.mat,$(wildcard */*.mat.xz))
 
 all: $(ALL_MAT)
 %.mat: %.mat.xz
-	xz --keep --decompress --force $<
+	xz --keep --decompress --force $< && touch $@

@@ -17,6 +17,7 @@ autom4te.cache/
 build/
 NewDocumentation/
 OMEncryption/
+OMJava/
 OMPublicKey/
 OMPython/
 OMSetup/
