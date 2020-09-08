@@ -385,7 +385,7 @@ algorithm
         // This will also update the list of bindings since they share mutable expresions.
         ReplTree.map(local_repl, function applyBindingReplacement(repl = local_repl));
       then
-        Expression.makeRecord(InstNode.scopePath(cls_node), cls.ty, bindings);
+        Expression.makeRecord(InstNode.scopePath(cls_node, includeRoot = true), cls.ty, bindings);
 
     case Class.TYPED_DERIVED() then buildRecordBinding(cls.baseClass, repl);
   end match;
