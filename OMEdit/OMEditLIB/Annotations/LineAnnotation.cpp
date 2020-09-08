@@ -98,8 +98,7 @@ LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pPare
   setAlpha("");
   setOMSConnectionType(oms_connection_single);
   setActiveState(false);
-  setPos(mOrigin);
-  setRotation(mRotation);
+  applyTransformation();
 }
 
 LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)

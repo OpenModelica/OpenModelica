@@ -675,13 +675,14 @@ void ShapeAnnotation::applyTransformation()
   // Only apply the extends coordinate extents on the shapes and not on connection, transition etc.
   // if the extends have some new coordinate extents then use it to scale the shape
   LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-  if (!(pLineAnnotation && pLineAnnotation->getLineType() != LineAnnotation::ShapeType) && mpReferenceShapeAnnotation && mpReferenceShapeAnnotation->getGraphicsView()) {
-    QList<QPointF> extendsCoOrdinateExtents = getExtentsForInheritedShapeFromIconDiagramMap(mpGraphicsView, mpReferenceShapeAnnotation);
+  GraphicsView *pGraphicsView = mpGraphicsView ? mpGraphicsView : mpReferenceShapeAnnotation->getGraphicsView();
+  if (pGraphicsView && !(pLineAnnotation && pLineAnnotation->getLineType() != LineAnnotation::ShapeType) && mpReferenceShapeAnnotation && mpReferenceShapeAnnotation->getGraphicsView()) {
+    QList<QPointF> extendsCoOrdinateExtents = getExtentsForInheritedShapeFromIconDiagramMap(pGraphicsView, mpReferenceShapeAnnotation);
 
-    qreal left = mpGraphicsView->mMergedCoOrdinateSystem.getLeft();
-    qreal bottom = mpGraphicsView->mMergedCoOrdinateSystem.getBottom();
-    qreal right = mpGraphicsView->mMergedCoOrdinateSystem.getRight();
-    qreal top = mpGraphicsView->mMergedCoOrdinateSystem.getTop();
+    qreal left = pGraphicsView->mMergedCoOrdinateSystem.getLeft();
+    qreal bottom = pGraphicsView->mMergedCoOrdinateSystem.getBottom();
+    qreal right = pGraphicsView->mMergedCoOrdinateSystem.getRight();
+    qreal top = pGraphicsView->mMergedCoOrdinateSystem.getTop();
     // map the origin to extends CoOrdinateSystem
     origin.setX(Utilities::mapToCoOrdinateSystem(mOrigin.x(), left, right, extendsCoOrdinateExtents.at(0).x(), extendsCoOrdinateExtents.at(1).x()));
     origin.setY(Utilities::mapToCoOrdinateSystem(mOrigin.y(), bottom, top, extendsCoOrdinateExtents.at(0).y(), extendsCoOrdinateExtents.at(1).y()));

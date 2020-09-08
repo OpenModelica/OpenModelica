@@ -58,8 +58,7 @@ BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Element *p
 {
   mpOriginItem = 0;
   updateShape(pShapeAnnotation);
-  setPos(mOrigin);
-  setRotation(mRotation);
+  applyTransformation();
 }
 
 BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
