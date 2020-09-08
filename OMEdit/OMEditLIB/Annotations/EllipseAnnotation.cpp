@@ -55,8 +55,7 @@ EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Element 
 {
   mpOriginItem = 0;
   updateShape(pShapeAnnotation);
-  setPos(mOrigin);
-  setRotation(mRotation);
+  applyTransformation();
 }
 
 EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)

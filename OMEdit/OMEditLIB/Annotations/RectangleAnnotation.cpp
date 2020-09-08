@@ -55,8 +55,7 @@ RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Elem
 {
   mpOriginItem = 0;
   updateShape(pShapeAnnotation);
-  setPos(mOrigin);
-  setRotation(mRotation);
+  applyTransformation();
 }
 
 RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)

@@ -55,8 +55,7 @@ PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Element 
 {
   mpOriginItem = 0;
   updateShape(pShapeAnnotation);
-  setPos(mOrigin);
-  setRotation(mRotation);
+  applyTransformation();
 }
 
 PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
