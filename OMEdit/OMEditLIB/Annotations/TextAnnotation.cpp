@@ -67,8 +67,7 @@ TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pPare
   mpOriginItem = 0;
   updateShape(pShapeAnnotation);
   initUpdateTextString();
-  setPos(mOrigin);
-  setRotation(mRotation);
+  applyTransformation();
 }
 
 TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
