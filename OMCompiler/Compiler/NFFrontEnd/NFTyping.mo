@@ -3080,25 +3080,6 @@ algorithm
   ifEq := Equation.IF(bl2, source);
 end typeIfEquation;
 
-function isNonConstantIfCondition
-  input Expression exp;
-  output Boolean isConstant;
-algorithm
-  isConstant := match exp
-    local
-      Function fn;
-
-    case Expression.CREF() then ComponentRef.isIterator(exp.cref);
-    case Expression.CALL(call = Call.TYPED_CALL(fn = fn))
-      then match AbsynUtil.pathFirstIdent(fn.path)
-        case "Connections" then true;
-        case "cardinality" then true;
-        else Call.isImpure(exp.call);
-      end match;
-    else false;
-  end match;
-end isNonConstantIfCondition;
-
 function typeWhenEquation
   input list<Equation.Branch> branches;
   input ExpOrigin.Type origin;
