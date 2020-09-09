@@ -1,5 +1,5 @@
 
-find_package(curl REQUIRED)
+find_package(CURL REQUIRED)
 find_package(Intl REQUIRED)
 find_package(Iconv REQUIRED)
 find_package(BLAS REQUIRED)
