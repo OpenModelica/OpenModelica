@@ -211,8 +211,9 @@ algorithm
 end addComponentTypeToSource;
 
 function getComponentDirection
-  "Returns the given direction if the cref refers to a top-level component or to
-   a component in a top-level connector, otherwise returns Direction.NONE."
+  "Returns the given direction if the cref refers to a top-level component,
+   a component in a top-level connector, or a component in a top-level input
+   component, otherwise returns Direction.NONE."
   input output Direction dir;
   input ComponentRef cref;
 protected
@@ -221,7 +222,7 @@ algorithm
   dir := match rest_cref
     case ComponentRef.EMPTY() then dir;
     case ComponentRef.CREF()
-      then if InstNode.isConnector(rest_cref.node) then
+      then if InstNode.isConnector(rest_cref.node) or InstNode.isInput(rest_cref.node) then
         getComponentDirection(dir, rest_cref) else Direction.NONE;
   end match;
 end getComponentDirection;
