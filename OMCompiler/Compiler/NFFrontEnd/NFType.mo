@@ -256,6 +256,17 @@ public
     end match;
   end isReal;
 
+  function isRealRecursive
+    input Type ty;
+    output Boolean isReal;
+  algorithm
+    isReal := match ty
+      case REAL()   then true;
+      case ARRAY()  then isRealRecursive(ty.elementType);
+      else false;
+    end match;
+  end isRealRecursive;
+
   function isBoolean
     input Type ty;
     output Boolean isBool;
