@@ -374,7 +374,8 @@ protected
     for variable in flatModel.variables loop
       // check variability and not type for discrete variables
       // remove all subscripts to handle arrays
-      if Variable.variability(variable) == Variability.DISCRETE and Type.isReal(variable.ty) and not BaseHashTable.hasKey(ComponentRef.stripSubscriptsAll(variable.name), hashTable) then
+      variable.name := ComponentRef.stripSubscriptsAll(variable.name);
+      if Variable.variability(variable) == Variability.DISCRETE and Type.isRealRecursive(variable.ty) and not BaseHashTable.hasKey(variable.name, hashTable) then
         illegal_discrete_vars := variable :: illegal_discrete_vars;
       end if;
     end for;
@@ -430,7 +431,7 @@ protected
       case Equation.EQUALITY(lhs = lhs)       then checkDiscreteRealExp(lhs, hashTable);
       case Equation.ARRAY_EQUALITY(lhs = lhs) then checkDiscreteRealExp(lhs, hashTable);
 
-      case Equation.CREF_EQUALITY(lhs = cref as ComponentRef.CREF(ty = ty)) guard(Type.isReal(ty))
+      case Equation.CREF_EQUALITY(lhs = cref as ComponentRef.CREF(ty = ty)) guard(Type.isRealRecursive(ty))
         algorithm
           // remove all subscripts to handle arrays
           hashTable := BaseHashTable.add((ComponentRef.stripSubscriptsAll(cref), 0), hashTable);
@@ -539,7 +540,7 @@ protected
       // only add if it is a real variable, we cannot check for discrete here
       // since only the variable has variablity information
       // Type.isDiscrete does always return false for REAL
-      case Expression.CREF(ty = ty, cref = cref) guard(Type.isReal(ty))
+      case Expression.CREF(ty = ty, cref = cref) guard(Type.isRealRecursive(ty))
         algorithm
           // remove all subscripts to handle arrays
           hashTable := BaseHashTable.add((ComponentRef.stripSubscriptsAll(cref), 0), hashTable);
