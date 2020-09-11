@@ -108,7 +108,7 @@ algorithm
     case DAE.VAR(componentRef=cr, kind = DAE.VARIABLE(), direction=dir, connectorType = ct, binding=SOME(e), source=source)
       equation
         (varSize, eqnSize, eqns, hs) = inArg;
-        b = DAEUtil.topLevelInput(cr, dir, ct, element.protection);
+        b = DAEUtil.isInput(element) and DAEUtil.isPublicVar(element);
         ce = Expression.crefExp(cr);
         size = if b then 0 else 1;
         eqns = List.consOnTrue(not b, DAE.EQUATION(ce, e, source), eqns);
@@ -119,7 +119,7 @@ algorithm
     case DAE.VAR(componentRef=cr, kind = DAE.DISCRETE(), direction=dir, connectorType = ct, binding=SOME(e), source=source)
       equation
         (varSize, eqnSize, eqns, hs) = inArg;
-        b = DAEUtil.topLevelInput(cr, dir, ct, element.protection);
+        b = DAEUtil.isInput(element) and DAEUtil.isPublicVar(element);
         ce = Expression.crefExp(cr);
         size = if b then 0 else 1;
         eqns = List.consOnTrue(not b, DAE.EQUATION(ce, e, source), eqns);
@@ -130,7 +130,7 @@ algorithm
     case DAE.VAR(componentRef=cr, kind = DAE.VARIABLE(), direction=dir, connectorType = ct)
       equation
         (varSize, eqnSize, eqns, hs) = inArg;
-        b = DAEUtil.topLevelInput(cr, dir, ct, element.protection);
+        b = DAEUtil.isInput(element) and DAEUtil.isPublicVar(element);
         size = if b then 0 else 1;
         hs = if not b then BaseHashSet.add(cr, hs) else hs;
       then (varSize+size, eqnSize, eqns, hs);
@@ -139,7 +139,7 @@ algorithm
     case DAE.VAR(componentRef=cr, kind = DAE.DISCRETE(), direction=dir, connectorType = ct)
       equation
         (varSize, eqnSize, eqns, hs) = inArg;
-        b = DAEUtil.topLevelInput(cr, dir, ct, element.protection);
+        b = DAEUtil.isInput(element) and DAEUtil.isPublicVar(element);
         size = if b then 0 else 1;
         hs = if not b then BaseHashSet.add(cr, hs) else hs;
       then (varSize+size, eqnSize, eqns, hs);
