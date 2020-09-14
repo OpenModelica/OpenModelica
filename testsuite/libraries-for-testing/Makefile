@@ -6,6 +6,7 @@ lib-for-testing: .openmodelica/libraries/$(STAMP)
 
 clean:
 	rm -rf .openmodelica/libraries
+	rm -rf .openmodelica/cache
 
 .openmodelica/libraries/$(STAMP): index.json index.mos
 	$(MAKE) clean
