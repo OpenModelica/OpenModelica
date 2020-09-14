@@ -143,7 +143,7 @@ add_custom_target(DEPENDENCY_UPDATE
 add_dependencies(DEPENDENCY_SCAN INTERFACE_CHECK)
 add_dependencies(DEPENDENCY_UPDATE DEPENDENCY_SCAN)
 
-add_library(OpenModelicaCompiler SHARED ${OMC_C_SOURCE_FILES})
+add_library(OpenModelicaCompiler STATIC ${OMC_C_SOURCE_FILES} .cmake/omc_entry_point.c)
 target_compile_definitions(OpenModelicaCompiler PRIVATE ADD_METARECORD_DEFINITIONS=)
 
 add_dependencies(OpenModelicaCompiler DEPENDENCY_UPDATE)
@@ -162,3 +162,10 @@ target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::graphstream)
 target_link_libraries(OpenModelicaCompiler PUBLIC OpenModelicaRuntimeC)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::3rd::modelica_external_c)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::3rd::modelica_io)
+
+
+
+
+# OMC Executable.
+add_executable(omc .cmake/omc_main.c)
+target_link_libraries(omc OpenModelicaCompiler)
