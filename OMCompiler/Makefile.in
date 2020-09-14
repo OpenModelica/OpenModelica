@@ -20,6 +20,7 @@ AR = @AR@
 host = @host@
 host_short = @host_short@
 FC = @FC@
+FCFLAGS = @FCFLAGS@
 
 defaultMakefileTarget = Makefile
 MAKEFILE_BOOT = LinkMain.makefile
