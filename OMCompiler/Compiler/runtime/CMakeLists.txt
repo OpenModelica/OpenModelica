@@ -52,7 +52,6 @@ target_link_libraries(omcruntime PUBLIC OpenModelicaRuntimeC)
 target_link_libraries(omcruntime PUBLIC omc::3rd::lpsolve55)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
 target_link_libraries(omcruntime PUBLIC omc::3rd::FMIL::minizip) # We use the minizip lib from 3rdParty/FMIL
-# target_link_libraries(omcruntime PUBLIC omc::3rd::gc)
 
 if(OMC_USE_CORBA AND MINGW)
     target_link_libraries(omcruntime PUBLIC omdev::omniORB::omniORB420_rt)
@@ -76,9 +75,9 @@ set(OMC_BACKENDRUNTIIME_SOURCES HpcOmSchedulerExt_omc.cpp HpcOmBenchmarkExt_omc.
 add_library(omcbackendruntime STATIC ${OMC_BACKENDRUNTIIME_SOURCES})
 add_library(omc::compiler::backendruntime ALIAS omcbackendruntime)
 
+target_link_libraries(omcbackendruntime PUBLIC Intl)
 target_link_libraries(omcbackendruntime PUBLIC OpenModelicaRuntimeC)
-target_link_libraries(omcbackendruntime PUBLIC omc::3rd::fmilib::shared)
-target_link_libraries(omcbackendruntime PUBLIC omc::3rd::gc)
+target_link_libraries(omcbackendruntime PUBLIC omc::3rd::fmilib::static)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::metis)
 
 target_include_directories(omcbackendruntime INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})

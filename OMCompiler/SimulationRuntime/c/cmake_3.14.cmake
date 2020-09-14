@@ -23,9 +23,11 @@ add_library(OpenModelicaRuntimeC ${libOpenModelicaRuntimeC_BUILD_TYPE}
                                     ${OMC_SIMRT_UTIL_SOURCES}
                                     ${OMC_SIMRT_META_SOURCES}
                                     ${OMC_SIMRT_GC_SOURCES})
-target_link_libraries(OpenModelicaRuntimeC PUBLIC omc::3rd::gc regex dbghelp)
+
+target_link_libraries(OpenModelicaRuntimeC PUBLIC dbghelp)
+target_link_libraries(OpenModelicaRuntimeC PUBLIC regex)
+target_link_libraries(OpenModelicaRuntimeC PUBLIC omc::3rd::gc)
 target_compile_options(OpenModelicaRuntimeC PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Werror=implicit-function-declaration>)
-# target_link_libraries(OpenModelicaRuntimeC PUBLIC $<$<CXX_COMPILER_ID:gcc>:dbghelp>)
 
 target_include_directories(OpenModelicaRuntimeC INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -38,7 +40,7 @@ add_library(OpenModelicaFMIRuntimeC ${libOpenModelicaFMIRuntimeC_BUILD_TYPE}
                                     ${OMC_SIMRT_FMI_SOURCES})
 
 
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::fmilib::shared)
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::fmilib::static)
 target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC OpenModelicaRuntimeC)
 target_compile_options(OpenModelicaFMIRuntimeC PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Werror=implicit-function-declaration>)
 
