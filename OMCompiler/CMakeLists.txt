@@ -18,6 +18,12 @@ if(NOT CMAKE_BUILD_TYPE)
 endif(NOT CMAKE_BUILD_TYPE)
 omc_add_to_report(CMAKE_BUILD_TYPE)
 
+# We want to make sure include directories are handled properly. C allows implicit function
+# declaration. We have to disable that so that we can be consistent and correct with our inclusions.
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_options(-Werror=implicit-function-declaration)
+endif()
+
 
 # options
 option(OMC_USE_CORBA "Should use corba." ON)
