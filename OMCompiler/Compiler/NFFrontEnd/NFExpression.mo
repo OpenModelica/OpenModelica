@@ -3806,6 +3806,8 @@ public
     b := match exp
       case INTEGER() then true;
       case REAL() then true;
+      case CAST() then isConstNumber(exp.exp);
+      case UNARY() then isConstNumber(exp.exp);
       else false;
     end match;
   end isConstNumber;

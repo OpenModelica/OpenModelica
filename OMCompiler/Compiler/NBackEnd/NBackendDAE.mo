@@ -209,6 +209,9 @@ public
   function solve
     input output BackendDAE bdae;
   algorithm
+    // first simplfy everything
+    bdae := simplify(bdae);
+
     // Modules
     bdae := DetectStates.main(bdae);
     bdae := RemoveSimpleEquations.main(bdae);
@@ -225,6 +228,21 @@ public
     bdae := Tearing.main(bdae, NBSystem.SystemType.ODE);
     bdae := Jacobian.main(bdae, NBSystem.SystemType.ODE);
   end solve;
+
+  function simplify
+    "ToDo: add simplification for bindings"
+    input output BackendDAE bdae;
+  algorithm
+    // no output needed, all pointers
+    _ := match bdae
+      local
+        BEquation.EquationPointers equations;
+      case BDAE(eqData = BEquation.EQ_DATA_SIM(equations = equations)) algorithm
+        _ := BEquation.EquationPointers.map(equations, Equation.simplify);
+      then ();
+      else ();
+    end match;
+  end simplify;
 
 protected
   function lowerVariableData

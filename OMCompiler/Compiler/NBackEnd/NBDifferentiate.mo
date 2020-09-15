@@ -342,7 +342,7 @@ public
     // e.g. (fg)' = fg' + f'g (more rules in differentiateBinary)
     case Expression.BINARY() then differentiateBinary(exp, diffArguments);
 
-    // e.g. (fgh)' = f'gh + fg'h + fgh' (more rules in differentiateMutary)
+    // e.g. (fgh)' = f'gh + fg'h + fgh' (more rules in differentiateMultary)
     case Expression.MULTARY() then differentiateMultary(exp, diffArguments);
 
     // (-x)' = -(x')
@@ -766,7 +766,7 @@ public
   end differentiateBinary;
 
   function differentiateMultary
-    "Differentiates a mutary expression. Expression.MULTARY()
+    "Differentiates a multary expression. Expression.MULTARY()
     Note: these can only contain commutative operators"
     input output Expression exp "Has to be Expression.MULTARY()";
     input output DifferentiationArguments diffArguments;
@@ -795,7 +795,7 @@ public
 
       // Multiplication (MUL, MUL_EW, ...)
       // (prod(f_i))' = sum((f_i)' * prod(f_k | k <> i))
-      // e.g. (fgh)' = f'gh + fg'h + fgh' (more rules in differentiateMutary)
+      // e.g. (fgh)' = f'gh + fg'h + fgh'
       case Expression.MULTARY(arguments = arguments, operator = operator)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
         algorithm

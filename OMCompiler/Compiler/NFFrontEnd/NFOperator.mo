@@ -590,7 +590,19 @@ public
     (mcl, _) := classify(op);
   end getMathClassification;
 
-  function isCommutative
+  function isDashClassification
+    input MathClassification mcl;
+    output Boolean b;
+  algorithm
+    b := match mcl
+      case MathClassification.ADDITION    then true;
+      case MathClassification.SUBTRACTION then true;
+      else false;
+    end match;
+  end isDashClassification;
+
+  function isSoftCommutative
+    "returns true for operators that are either commutative or have an easy rule for swapping arguments"
     input Operator operator;
     output Boolean b;
   algorithm
@@ -612,7 +624,37 @@ public
       case Op.SCALAR_PRODUCT    then true;
       else false;
     end match;
-  end isCommutative;
+  end isSoftCommutative;
+
+  function isCombineable
+    input Operator op1;
+    input Operator op2;
+    output Boolean b;
+  protected
+    MathClassification mcl1, mcl2;
+    SizeClassification scl1, scl2;
+  algorithm
+    (mcl1, scl1) := classify(op1);
+    (mcl2, scl2) := classify(op2);
+    b := isCombineableMath(mcl1, mcl2) and isCombineableSize(scl1, scl2);
+  end isCombineable;
+
+  function isCombineableMath
+    input MathClassification mcl1;
+    input MathClassification mcl2;
+    output Boolean b;
+  algorithm
+    b :=  (Util.intCompare(Integer(mcl1), Integer(mcl2)) == 0)
+          or (isDashClassification(mcl1) and isDashClassification(mcl2));
+  end isCombineableMath;
+
+  function isCombineableSize
+    input SizeClassification scl1;
+    input SizeClassification scl2;
+    output Boolean b;
+  algorithm
+    b := (Util.intCompare(Integer(scl1), Integer(scl2)) == 0);
+  end isCombineableSize;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFOperator;

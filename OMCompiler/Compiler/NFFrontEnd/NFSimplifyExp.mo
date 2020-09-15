@@ -84,20 +84,21 @@ algorithm
       then
         exp;
 
-    case Expression.CALL() then simplifyCall(exp);
-    case Expression.SIZE() then simplifySize(exp);
-    case Expression.BINARY() then simplifyBinary(exp);
-    case Expression.UNARY() then simplifyUnary(exp);
-    case Expression.LBINARY() then simplifyLogicBinary(exp);
-    case Expression.LUNARY() then simplifyLogicUnary(exp);
-    case Expression.RELATION() then simplifyRelation(exp);
-    case Expression.IF() then simplifyIf(exp);
-    case Expression.CAST() then simplifyCast(simplify(exp.exp), exp.ty);
-    case Expression.UNBOX() then Expression.UNBOX(simplify(exp.exp), exp.ty);
-    case Expression.SUBSCRIPTED_EXP() then simplifySubscriptedExp(exp);
-    case Expression.TUPLE_ELEMENT() then simplifyTupleElement(exp);
-    case Expression.BOX() then Expression.BOX(simplify(exp.exp));
-    case Expression.MUTABLE() then simplify(Mutable.access(exp.exp));
+    case Expression.CALL()              then simplifyCall(exp);
+    case Expression.SIZE()              then simplifySize(exp);
+    case Expression.MULTARY()           then simplifyMultary(exp);
+    case Expression.BINARY()            then simplifyBinary(exp);
+    case Expression.UNARY()             then simplifyUnary(exp);
+    case Expression.LBINARY()           then simplifyLogicBinary(exp);
+    case Expression.LUNARY()            then simplifyLogicUnary(exp);
+    case Expression.RELATION()          then simplifyRelation(exp);
+    case Expression.IF()                then simplifyIf(exp);
+    case Expression.CAST()              then simplifyCast(simplify(exp.exp), exp.ty);
+    case Expression.UNBOX()             then Expression.UNBOX(simplify(exp.exp), exp.ty);
+    case Expression.SUBSCRIPTED_EXP()   then simplifySubscriptedExp(exp);
+    case Expression.TUPLE_ELEMENT()     then simplifyTupleElement(exp);
+    case Expression.BOX()               then Expression.BOX(simplify(exp.exp));
+    case Expression.MUTABLE()           then simplify(Mutable.access(exp.exp));
     else exp;
   end match;
 end simplify;
@@ -490,6 +491,28 @@ algorithm
   end match;
 end simplifySize;
 
+function simplifyMultary
+  input output Expression exp;
+protected
+  Operator operator;
+  list<Expression> arguments, constArguments;
+  Expression new_const;
+algorithm
+  Expression.MULTARY(arguments = arguments, operator = operator) := exp;
+  (constArguments, arguments) := List.splitOnTrue(arguments, Expression.isConstNumber);
+  // only do something if there are constant arguments to combine
+  if listLength(constArguments) > 1 then
+    new_const := combineConstantNumbers(constArguments, operator);
+    // if there are no other arguments just return the new expression
+    if listLength(arguments) == 0 then
+      exp := new_const;
+    // return combined multary expression otherwise
+    else
+      exp := Expression.MULTARY(new_const :: arguments, operator);
+    end if;
+  end if;
+end simplifyMultary;
+
 function simplifyBinary
   input output Expression binaryExp;
 protected
@@ -852,12 +875,86 @@ algorithm
   tupleExp := Expression.tupleElement(e, ty, index);
 end simplifyTupleElement;
 
-function combineBinariesExp
+public function combineConstantNumbers
+  input list<Expression> exp_lst  "has to be a list of REAL(), INTEGER() and/or CAST()";
+  input Operator operator;
+  output Expression res;
+protected
+  Real tmp, result;
+  Boolean anyReal = false         "true if any element in the list is of type REAL() (or cast to one)";
+algorithm
+  if listLength(exp_lst) == 1 then
+    res := List.first(exp_lst);
+  else
+    result := match Operator.getMathClassification(operator)
+
+      case NFOperator.MathClassification.ADDITION algorithm
+        result := 0.0;
+        for exp in exp_lst loop
+          (tmp, anyReal) := getConstantValue(exp, anyReal);
+          result := result + tmp;
+        end for;
+      then result;
+
+      case NFOperator.MathClassification.SUBTRACTION algorithm
+        result := 0.0;
+        for exp in exp_lst loop
+          (tmp, anyReal) := getConstantValue(exp, anyReal);
+          result := result - tmp;
+        end for;
+      then result;
+
+      case NFOperator.MathClassification.MULTIPLICATION algorithm
+        result := 1.0;
+        for exp in exp_lst loop
+          (tmp, anyReal) := getConstantValue(exp, anyReal);
+          result := result * tmp;
+        end for;
+      then result;
+
+      else algorithm
+        Error.assertion(false, getInstanceName() + " detected non-commutative operator in MULTARY():" + Operator.symbol(operator), sourceInfo());
+      then fail();
+
+    end match;
+
+    res := if anyReal then REAL(result) else INTEGER(realInt(result));
+  end if;
+end combineConstantNumbers;
+
+protected function getConstantValue
+  input Expression exp "REAL(), INTEGER(), CAST(), UNARY()";
+  output Real value;
+  input output Boolean anyReal;
+algorithm
+  (value, anyReal) := match exp
+    local
+      Real r;
+      Integer i;
+      Boolean b;
+    case Expression.REAL(value = r)    then (r, true);
+    case Expression.INTEGER(value = i) then (intReal(i), anyReal);
+    case Expression.CAST() algorithm
+      (r, b) := getConstantValue(exp.exp, anyReal);
+      // negate b because it has been cast
+    then (r, anyReal or (not b));
+    case Expression.UNARY(operator = Operator.OPERATOR(op = NFOperator.Op.UMINUS)) algorithm
+      (r, b) := getConstantValue(exp.exp, anyReal);
+      // negate r because it has a minus sign
+    then (-r, anyReal or b);
+    else algorithm
+      Error.assertion(false, getInstanceName() + " expression is not known to be a constant number: " + Expression.toString(exp), sourceInfo());
+    then fail();
+  end match;
+end getConstantValue;
+
+public function combineBinariesExp
   "author: kabdelhak 09-2020
   Combines binaries for better handling in the backend.
-  NOTE: does not do any other simplification
+  NOTE: 1. does not do any other simplification
+        2. removes all subtractions and changes it to additions with negated signs
   e.g. BINARY(BINARY(2, *, y^2), *, BINARY(3, *, x))
-   --> MULTARY({2, y^2, 3, x}, +)"
+   --> MULTARY({2, y^2, 3, x}, *)"
   input output Expression exp;
 algorithm
   exp := match combineBinariesExpWork(exp, NONE())
@@ -886,129 +983,130 @@ algorithm
     // #######################################################
 
     // no previous binary/multary encountered, creating new multary expression if the operator is commutative
-    case (NONE(), Expression.BINARY()) guard(Operator.isCommutative(exp.operator)) algorithm
+    case (NONE(), Expression.BINARY()) guard(Operator.isSoftCommutative(exp.operator)) algorithm
+      op := fixMinusOperator(exp.operator);
       final_stack := listAppend(combineBinariesExpWork(exp.exp2, SOME(exp.operator)), final_stack);
-      final_stack := listAppend(combineBinariesExpWork(exp.exp1, SOME(exp.operator)), final_stack);
-    then {Expression.MULTARY(final_stack, exp.operator)};
+      final_stack := listAppend(combineBinariesExpWork(exp.exp1, SOME(op)), final_stack);
+    then {Expression.MULTARY(final_stack, op)};
 
     // handle multary the same way in the case it has to be applied again
-    case (NONE(), Expression.MULTARY()) guard(Operator.isCommutative(exp.operator)) algorithm
+    // can not contain SUBTRACTION! therefore no fixing here
+    case (NONE(), Expression.MULTARY()) guard(Operator.isSoftCommutative(exp.operator)) algorithm
       for arg in listReverse(exp.arguments) loop
         final_stack := listAppend(combineBinariesExpWork(arg, SOME(exp.operator)), final_stack);
       end for;
     then {Expression.MULTARY(final_stack, exp.operator)};
 
     // with previous binary/multary. Check if operator is the same. Return all arguments
-    case (SOME(op), Expression.BINARY()) guard(Operator.compare(op, exp.operator) == 0) algorithm
-      final_stack := listAppend(combineBinariesExpWork(exp.exp2, optOperator), final_stack);
+    case (SOME(op), Expression.BINARY()) guard(Operator.isCombineable(op, exp.operator)) algorithm
+      final_stack := listAppend(combineBinariesExpWork(exp.exp2, SOME(exp.operator)), final_stack);
       final_stack := listAppend(combineBinariesExpWork(exp.exp1, optOperator), final_stack);
     then final_stack;
 
     // handle multary the same way in the case it has to be applied again
-    case (SOME(op), Expression.MULTARY()) guard(Operator.compare(op, exp.operator) == 0) algorithm
+    case (SOME(op), Expression.MULTARY()) guard(Operator.isCombineable(op, exp.operator)) algorithm
       for arg in listReverse(exp.arguments) loop
-        final_stack := listAppend(combineBinariesExpWork(arg, optOperator), final_stack);
+        final_stack := listAppend(combineBinariesExpWork(arg, SOME(exp.operator)), final_stack);
       end for;
     then final_stack;
 
     // #######################################################
-    //      No recursion, waiting for new stack to start
+    //      Other expression that do not get combined
     // #######################################################
 
-    // no previous binary/multary encountered or wrong operator type:
     // going deeper on the different expression types
-    case (NONE(), Expression.ARRAY()) algorithm
+    case (_, Expression.ARRAY()) algorithm
       exp.elements := list(combineBinariesExp(element) for element in exp.elements);
-    then {exp};
+    then {fixMinusExpression(exp, optOperator)};
 
-    case (NONE(), Expression.RANGE()) algorithm
+    case (_, Expression.RANGE()) algorithm
       exp.start := combineBinariesExp(exp.start);
       exp.stop := combineBinariesExp(exp.stop);
       if Util.isSome(exp.step) then
         exp.step := SOME(combineBinariesExp(Util.getOption(exp.step)));
       end if;
-    then {exp};
+    then {fixMinusExpression(exp, optOperator)};
 
-    case (NONE(), Expression.TUPLE()) algorithm
+    case (_, Expression.TUPLE()) algorithm
       exp.elements := list(combineBinariesExp(element) for element in exp.elements);
-    then {exp};
+    then {fixMinusExpression(exp, optOperator)};
 
-    case (NONE(), Expression.RECORD()) algorithm
+    case (_, Expression.RECORD()) algorithm
       exp.elements := list(combineBinariesExp(element) for element in exp.elements);
-    then {exp};
+    then {fixMinusExpression(exp, optOperator)};
 
-    case (NONE(), Expression.SIZE()) algorithm
+    case (_, Expression.SIZE()) algorithm
       exp.exp := combineBinariesExp(exp.exp);
       if Util.isSome(exp.dimIndex) then
         exp.dimIndex := SOME(combineBinariesExp(Util.getOption(exp.dimIndex)));
       end if;
-    then {exp};
+    then {fixMinusExpression(exp, optOperator)};
 
-    case (NONE(), Expression.UNARY()) algorithm
+    case (_, Expression.UNARY()) algorithm
       exp.exp := combineBinariesExp(exp.exp);
-    then {exp};
+    then {fixMinusExpression(exp, optOperator)};
 
     // ToDo: rules for logical operators (LMULTARY ?)
     // For now leave them as is and traverse branches
-    case (NONE(), Expression.LBINARY()) algorithm
+    case (_, Expression.LBINARY()) algorithm
       exp.exp1 := combineBinariesExp(exp.exp1);
       exp.exp2 := combineBinariesExp(exp.exp2);
-    then {exp};
+    then {fixMinusExpression(exp, optOperator)};
 
-    case (NONE(), Expression.LUNARY()) algorithm
+    case (_, Expression.LUNARY()) algorithm
       exp.exp := combineBinariesExp(exp.exp);
-    then {exp};
+    then {fixMinusExpression(exp, optOperator)};
 
-    case (NONE(), Expression.RELATION()) algorithm
+    case (_, Expression.RELATION()) algorithm
       exp.exp1 := combineBinariesExp(exp.exp1);
       exp.exp2 := combineBinariesExp(exp.exp2);
-    then {exp};
+    then {fixMinusExpression(exp, optOperator)};
 
-    case (NONE(), Expression.IF()) algorithm
+    case (_, Expression.IF()) algorithm
       exp.condition := combineBinariesExp(exp.condition);
       exp.trueBranch := combineBinariesExp(exp.trueBranch);
       exp.falseBranch := combineBinariesExp(exp.falseBranch);
-    then {exp};
+    then {fixMinusExpression(exp, optOperator)};
 
-    case (NONE(), Expression.CAST()) algorithm
+    case (_, Expression.CAST()) algorithm
       exp.exp := combineBinariesExp(exp.exp);
-    then {exp};
+    then {fixMinusExpression(exp, optOperator)};
 
-    case (NONE(), Expression.BOX()) algorithm
+    case (_, Expression.BOX()) algorithm
       exp.exp := combineBinariesExp(exp.exp);
-    then {exp};
+    then {fixMinusExpression(exp, optOperator)};
 
-    case (NONE(), Expression.UNBOX()) algorithm
+    case (_, Expression.UNBOX()) algorithm
       exp.exp := combineBinariesExp(exp.exp);
-    then {exp};
+    then {fixMinusExpression(exp, optOperator)};
 
-    case (NONE(), Expression.SUBSCRIPTED_EXP()) algorithm
+    case (_, Expression.SUBSCRIPTED_EXP()) algorithm
       exp.exp := combineBinariesExp(exp.exp);
       exp.subscripts := list(combineBinariesSubscript(sub) for sub in exp.subscripts);
-    then {exp};
+    then {fixMinusExpression(exp, optOperator)};
 
-    case (NONE(), Expression.TUPLE_ELEMENT()) algorithm
+    case (_, Expression.TUPLE_ELEMENT()) algorithm
       exp.tupleExp := combineBinariesExp(exp.tupleExp);
-    then {exp};
+    then {fixMinusExpression(exp, optOperator)};
 
-    case (NONE(), Expression.RECORD_ELEMENT()) algorithm
+    case (_, Expression.RECORD_ELEMENT()) algorithm
       exp.recordExp := combineBinariesExp(exp.recordExp);
-    then {exp};
+    then {fixMinusExpression(exp, optOperator)};
 
-    case (NONE(), Expression.MUTABLE()) algorithm
+    case (_, Expression.MUTABLE()) algorithm
       Mutable.update(exp.exp, combineBinariesExp(Mutable.access(exp.exp)));
-    then {exp};
+    then {fixMinusExpression(exp, optOperator)};
 
-    case (NONE(), Expression.PARTIAL_FUNCTION_APPLICATION()) algorithm
+    case (_, Expression.PARTIAL_FUNCTION_APPLICATION()) algorithm
       exp.args := list(combineBinariesExp(arg) for arg in exp.args);
-    then {exp};
+    then {fixMinusExpression(exp, optOperator)};
 
-    case (NONE(), Expression.BINDING_EXP()) algorithm
+    case (_, Expression.BINDING_EXP()) algorithm
       exp.exp := combineBinariesExp(exp.exp);
-    then {exp};
+    then {fixMinusExpression(exp, optOperator)};
 
     // done on this branch
-    else {exp};
+    else {fixMinusExpression(exp, optOperator)};
   end match;
 end combineBinariesExpWork;
 
@@ -1035,6 +1133,47 @@ algorithm
     else subscript;
   end match;
 end combineBinariesSubscript;
+
+protected function fixMinusOperator
+  "Changes a minus operator to an addition operator of the same size
+  used for combining summands with different signs."
+  input output Operator operator;
+algorithm
+  operator := match Operator.classify(operator)
+    local
+      Operator.SizeClassification scl;
+    case (NFOperator.MathClassification.SUBTRACTION, scl)
+    then Operator.fromClassification((NFOperator.MathClassification.ADDITION, scl), operator.ty);
+    else operator;
+  end match;
+end fixMinusOperator;
+
+protected function fixMinusExpression
+  "Combines an expression with a minus sign if there is one.
+  used for combining summands with different signs.
+  E.g. a - b -> a + (-b)
+  Seems odd, but this is very useful for multaries"
+  input output Expression exp;
+  input Option<Operator> optOperator;
+algorithm
+  exp := match optOperator
+    local
+      Operator operator;
+    // only do something if there is an operator
+    case SOME(operator)
+    then match (Operator.getMathClassification(operator), exp)
+      // - (-a) = a
+      case (NFOperator.MathClassification.SUBTRACTION, Expression.UNARY(Operator.OPERATOR(op = NFOperator.Op.UMINUS)))
+      then exp.exp;
+      // just add the minus operator to the expressions as unary
+      case (NFOperator.MathClassification.SUBTRACTION, _)
+      then Expression.UNARY(Operator.OPERATOR(operator.ty, NFOperator.Op.UMINUS), exp);
+      // just return the expression as is
+      else exp;
+    end match;
+    else exp;
+  end match;
+end fixMinusExpression;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFSimplifyExp;
