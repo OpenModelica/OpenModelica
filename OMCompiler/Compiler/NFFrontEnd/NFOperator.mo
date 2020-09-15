@@ -590,5 +590,29 @@ public
     (mcl, _) := classify(op);
   end getMathClassification;
 
+  function isCommutative
+    input Operator operator;
+    output Boolean b;
+  algorithm
+    b := match operator.op
+      case Op.ADD               then true;
+      case Op.SUB               then true;
+      case Op.MUL               then true;
+      case Op.ADD_EW            then true;
+      case Op.SUB_EW            then true;
+      case Op.MUL_EW            then true;
+      // the following might need adaption since they depend on argument ordering
+      // furthermore weird regarding more than two arguments in Expression.MULTARY()
+      case Op.ADD_SCALAR_ARRAY  then true;
+      case Op.ADD_ARRAY_SCALAR  then true;
+      case Op.SUB_SCALAR_ARRAY  then true;
+      case Op.SUB_ARRAY_SCALAR  then true;
+      case Op.MUL_SCALAR_ARRAY  then true;
+      case Op.MUL_ARRAY_SCALAR  then true;
+      case Op.SCALAR_PRODUCT    then true;
+      else false;
+    end match;
+  end isCommutative;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFOperator;

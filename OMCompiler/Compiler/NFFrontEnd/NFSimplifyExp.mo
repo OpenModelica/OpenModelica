@@ -852,5 +852,189 @@ algorithm
   tupleExp := Expression.tupleElement(e, ty, index);
 end simplifyTupleElement;
 
+function combineBinariesExp
+  "author: kabdelhak 09-2020
+  Combines binaries for better handling in the backend.
+  NOTE: does not do any other simplification
+  e.g. BINARY(BINARY(2, *, y^2), *, BINARY(3, *, x))
+   --> MULTARY({2, y^2, 3, x}, +)"
+  input output Expression exp;
+algorithm
+  exp := match combineBinariesExpWork(exp, NONE())
+    local
+      Expression result;
+    case {result} then result;
+    else algorithm
+      Error.assertion(false, getInstanceName() + " the function finished with more than one expression on the stack.", sourceInfo());
+    then fail();
+  end match;
+end combineBinariesExp;
+
+protected function combineBinariesExpWork
+  input Expression exp;
+  input Option<Operator> optOperator;
+  output list<Expression> stack;
+algorithm
+  stack := match (optOperator, exp)
+    local
+      Operator op;
+      list<Expression> final_stack = {};
+      Expression new_exp;
+
+    // #######################################################
+    //          Building MULTARY() recursively
+    // #######################################################
+
+    // no previous binary/multary encountered, creating new multary expression if the operator is commutative
+    case (NONE(), Expression.BINARY()) guard(Operator.isCommutative(exp.operator)) algorithm
+      final_stack := listAppend(combineBinariesExpWork(exp.exp2, SOME(exp.operator)), final_stack);
+      final_stack := listAppend(combineBinariesExpWork(exp.exp1, SOME(exp.operator)), final_stack);
+    then {Expression.MULTARY(final_stack, exp.operator)};
+
+    // handle multary the same way in the case it has to be applied again
+    case (NONE(), Expression.MULTARY()) guard(Operator.isCommutative(exp.operator)) algorithm
+      for arg in listReverse(exp.arguments) loop
+        final_stack := listAppend(combineBinariesExpWork(arg, SOME(exp.operator)), final_stack);
+      end for;
+    then {Expression.MULTARY(final_stack, exp.operator)};
+
+    // with previous binary/multary. Check if operator is the same. Return all arguments
+    case (SOME(op), Expression.BINARY()) guard(Operator.compare(op, exp.operator) == 0) algorithm
+      final_stack := listAppend(combineBinariesExpWork(exp.exp2, optOperator), final_stack);
+      final_stack := listAppend(combineBinariesExpWork(exp.exp1, optOperator), final_stack);
+    then final_stack;
+
+    // handle multary the same way in the case it has to be applied again
+    case (SOME(op), Expression.MULTARY()) guard(Operator.compare(op, exp.operator) == 0) algorithm
+      for arg in listReverse(exp.arguments) loop
+        final_stack := listAppend(combineBinariesExpWork(arg, optOperator), final_stack);
+      end for;
+    then final_stack;
+
+    // #######################################################
+    //      No recursion, waiting for new stack to start
+    // #######################################################
+
+    // no previous binary/multary encountered or wrong operator type:
+    // going deeper on the different expression types
+    case (NONE(), Expression.ARRAY()) algorithm
+      exp.elements := list(combineBinariesExp(element) for element in exp.elements);
+    then {exp};
+
+    case (NONE(), Expression.RANGE()) algorithm
+      exp.start := combineBinariesExp(exp.start);
+      exp.stop := combineBinariesExp(exp.stop);
+      if Util.isSome(exp.step) then
+        exp.step := SOME(combineBinariesExp(Util.getOption(exp.step)));
+      end if;
+    then {exp};
+
+    case (NONE(), Expression.TUPLE()) algorithm
+      exp.elements := list(combineBinariesExp(element) for element in exp.elements);
+    then {exp};
+
+    case (NONE(), Expression.RECORD()) algorithm
+      exp.elements := list(combineBinariesExp(element) for element in exp.elements);
+    then {exp};
+
+    case (NONE(), Expression.SIZE()) algorithm
+      exp.exp := combineBinariesExp(exp.exp);
+      if Util.isSome(exp.dimIndex) then
+        exp.dimIndex := SOME(combineBinariesExp(Util.getOption(exp.dimIndex)));
+      end if;
+    then {exp};
+
+    case (NONE(), Expression.UNARY()) algorithm
+      exp.exp := combineBinariesExp(exp.exp);
+    then {exp};
+
+    // ToDo: rules for logical operators (LMULTARY ?)
+    // For now leave them as is and traverse branches
+    case (NONE(), Expression.LBINARY()) algorithm
+      exp.exp1 := combineBinariesExp(exp.exp1);
+      exp.exp2 := combineBinariesExp(exp.exp2);
+    then {exp};
+
+    case (NONE(), Expression.LUNARY()) algorithm
+      exp.exp := combineBinariesExp(exp.exp);
+    then {exp};
+
+    case (NONE(), Expression.RELATION()) algorithm
+      exp.exp1 := combineBinariesExp(exp.exp1);
+      exp.exp2 := combineBinariesExp(exp.exp2);
+    then {exp};
+
+    case (NONE(), Expression.IF()) algorithm
+      exp.condition := combineBinariesExp(exp.condition);
+      exp.trueBranch := combineBinariesExp(exp.trueBranch);
+      exp.falseBranch := combineBinariesExp(exp.falseBranch);
+    then {exp};
+
+    case (NONE(), Expression.CAST()) algorithm
+      exp.exp := combineBinariesExp(exp.exp);
+    then {exp};
+
+    case (NONE(), Expression.BOX()) algorithm
+      exp.exp := combineBinariesExp(exp.exp);
+    then {exp};
+
+    case (NONE(), Expression.UNBOX()) algorithm
+      exp.exp := combineBinariesExp(exp.exp);
+    then {exp};
+
+    case (NONE(), Expression.SUBSCRIPTED_EXP()) algorithm
+      exp.exp := combineBinariesExp(exp.exp);
+      exp.subscripts := list(combineBinariesSubscript(sub) for sub in exp.subscripts);
+    then {exp};
+
+    case (NONE(), Expression.TUPLE_ELEMENT()) algorithm
+      exp.tupleExp := combineBinariesExp(exp.tupleExp);
+    then {exp};
+
+    case (NONE(), Expression.RECORD_ELEMENT()) algorithm
+      exp.recordExp := combineBinariesExp(exp.recordExp);
+    then {exp};
+
+    case (NONE(), Expression.MUTABLE()) algorithm
+      Mutable.update(exp.exp, combineBinariesExp(Mutable.access(exp.exp)));
+    then {exp};
+
+    case (NONE(), Expression.PARTIAL_FUNCTION_APPLICATION()) algorithm
+      exp.args := list(combineBinariesExp(arg) for arg in exp.args);
+    then {exp};
+
+    case (NONE(), Expression.BINDING_EXP()) algorithm
+      exp.exp := combineBinariesExp(exp.exp);
+    then {exp};
+
+    // done on this branch
+    else {exp};
+  end match;
+end combineBinariesExpWork;
+
+protected function combineBinariesSubscript
+  input output Subscript subscript;
+algorithm
+  subscript := match subscript
+    case Subscript.UNTYPED() algorithm
+      subscript.exp := combineBinariesExp(subscript.exp);
+    then subscript;
+
+    case Subscript.INDEX() algorithm
+      subscript.index := combineBinariesExp(subscript.index);
+    then subscript;
+
+    case Subscript.SLICE() algorithm
+      subscript.slice := combineBinariesExp(subscript.slice);
+    then subscript;
+
+    case Subscript.EXPANDED_SLICE() algorithm
+      subscript.indices := list(combineBinariesSubscript(sub) for sub in subscript.indices);
+    then subscript;
+
+    else subscript;
+  end match;
+end combineBinariesSubscript;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFSimplifyExp;

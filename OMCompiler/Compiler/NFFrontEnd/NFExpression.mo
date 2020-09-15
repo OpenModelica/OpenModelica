@@ -148,6 +148,11 @@ public
   record END
   end END;
 
+  record MULTARY "Multary expressions with the same operator, e.g. a+b+c"
+    list<Expression> arguments;
+    Operator operator;
+  end MULTARY;
+
   record BINARY "Binary operations, e.g. a+4"
     Expression exp1;
     Operator operator;
@@ -1631,6 +1636,8 @@ public
                         ) + ")";
       case END() then "end";
 
+      case MULTARY() then stringDelimitList(list(toString(e) for e in exp.arguments), Operator.symbol(exp.operator));
+
       case BINARY() then operandString(exp.exp1, exp, true) +
                          Operator.symbol(exp.operator) +
                          operandString(exp.exp2, exp, false);
@@ -1974,6 +1981,11 @@ public
 
       // END() doesn't have a DAE representation.
 
+      case MULTARY() algorithm
+        // swapping not necessary because multary expressions have to be commutative
+        (daeOp, _) := Operator.toDAE(exp.operator);
+      then toDAEMultary(exp.arguments, daeOp);
+
       case BINARY()
         algorithm
           (daeOp, swap, negate) := Operator.toDAE(exp.operator);
@@ -2019,6 +2031,34 @@ public
 
     end match;
   end toDAE;
+
+  function toDAEMultary
+    "Converts a multary expression to a chain of binary expressions because
+    the old frontend does not have multary expressions."
+    input list<Expression> arguments;
+    input DAE.Operator daeOp;
+    output DAE.Exp daeExp;
+  algorithm
+    daeExp := match arguments
+      local
+        Expression arg;
+        list<Expression> rest;
+        DAE.Exp exp;
+
+      // no rest, just return the DAE representation of last argument
+      case arg :: {} then Expression.toDAE(arg);
+
+      // convert argument to DAE and create new binary. recurse for second argument
+      case arg :: rest algorithm
+        exp := Expression.toDAE(arg);
+      then  DAE.BINARY(exp, daeOp, toDAEMultary(rest, daeOp));
+
+      else algorithm
+        Error.assertion(false, getInstanceName() + " got unhandled argument list:
+        {" + stringDelimitList(list(toString(e) for e in arguments), ", ") + "}", sourceInfo());
+      then fail();
+    end match;
+  end toDAEMultary;
 
   function toDAERecord
     input Type ty;
@@ -2215,6 +2255,12 @@ public
         then
           if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
             then exp else BINARY(e1, exp.operator, e2);
+
+      case MULTARY()
+        algorithm
+          // ToDo: referenceEq ?
+          exp.arguments := list(func(arg) for arg in exp.arguments);
+        then exp;
 
       case UNARY()
         algorithm
@@ -2609,6 +2655,15 @@ public
           result := fold(exp.exp1, func, arg);
         then
           fold(exp.exp2, func, result);
+
+      case MULTARY()
+        algorithm
+          result := arg;
+          for argument in exp.arguments loop
+            result := fold(argument, func, result);
+          end for;
+        then
+          result;
 
       case UNARY() then fold(exp.exp, func, arg);
 

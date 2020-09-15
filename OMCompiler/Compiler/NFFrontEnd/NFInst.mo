@@ -202,6 +202,12 @@ algorithm
     flatModel := FlatModel.mapExp(flatModel, combineSubscripts);
   end if;
 
+  // Combine the binaries to multaries. For now only on new backend
+  // since the old frontend and backend do not support it
+  if Flags.getConfigBool(Flags.NEW_BACKEND) then
+    flatModel := SimplifyModel.combineBinaries(flatModel);
+  end if;
+
   if Flags.isSet(Flags.NF_DUMP_FLAT) then
     print("FlatModel:\n" + FlatModel.toString(flatModel) + "\n");
   end if;

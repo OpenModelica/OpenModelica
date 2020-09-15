@@ -340,6 +340,9 @@ public
     // e.g. (fg)' = fg' + f'g (more rules in differentiateBinary)
     case Expression.BINARY() then differentiateBinary(exp, diffArguments);
 
+    // e.g. (fgh)' = f'gh + fg'h + fgh' (more rules in differentiateMutary)
+    case Expression.MULTARY() then differentiateMultary(exp, diffArguments);
+
     // (-x)' = -(x')
     case Expression.UNARY() algorithm
       (elem1, diffArguments) := differentiateExpression(exp.exp, diffArguments);
@@ -669,6 +672,62 @@ public
     end match;
     // simplify?
   end differentiateBinary;
+
+  function differentiateMultary
+    "Differentiates a mutary expression. Expression.MULTARY()
+    Note: these can only contain commutative operators"
+    input output Expression exp "Has to be Expression.MULTARY()";
+    input output DifferentiationArguments diffArguments;
+  algorithm
+    exp := match exp
+      local
+        Expression diff_arg;
+        list<Expression> arguments, new_arguments = {};
+        Operator operator, addOp;
+        Operator.SizeClassification sizeClass;
+        Array<List<Expression>> diff_lists;
+        Integer idx = 1;
+
+      // Dash calculations (ADD, SUB, ADD_EW, SUB_EW, ...)
+      // (sum(f_i))' = sum(f_i')
+      // e.g. (f + g + h)' = f' + g' + h'
+      case Expression.MULTARY(arguments = arguments, operator = operator)
+        guard((Operator.getMathClassification(operator) == NFOperator.MathClassification.ADDITION) or
+              (Operator.getMathClassification(operator) == NFOperator.MathClassification.SUBTRACTION))
+        algorithm
+          for arg in listReverse(arguments) loop
+            (diff_arg, diffArguments) := differentiateExpression(arg, diffArguments);
+            new_arguments := diff_arg :: new_arguments;
+          end for;
+      then Expression.MULTARY(new_arguments, operator);
+
+      // Multiplication (MUL, MUL_EW, ...)
+      // (prod(f_i))' = sum((f_i)' * prod(f_k | k <> i))
+      // e.g. (fgh)' = f'gh + fg'h + fgh' (more rules in differentiateMutary)
+      case Expression.MULTARY(arguments = arguments, operator = operator)
+        guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
+        algorithm
+        diff_lists := arrayCreate(listLength(arguments), {});
+          for arg in arguments loop
+            (diff_arg, diffArguments) := differentiateExpression(arg, diffArguments);
+            for i in 1:arrayLength(diff_lists) loop
+              diff_lists[i] := if i == idx then diff_arg :: diff_lists[i] else arg :: diff_lists[i];
+            end for;
+            idx := idx + 1;
+          end for;
+          for i in arrayLength(diff_lists):-1:1 loop
+            new_arguments := Expression.MULTARY(listReverse(diff_lists[i]), operator) :: new_arguments;
+          end for;
+          (_, sizeClass) := Operator.classify(operator);
+          addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
+      then Expression.MULTARY(new_arguments, addOp);
+
+      else algorithm
+        // maybe add failtrace here and allow failing
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
+      then fail();
+    end match;
+  end differentiateMultary;
 
   function differentiateEquationAttributes
     "Differentiates the residual variable, if it exists.
