@@ -426,10 +426,10 @@ algorithm
     // SUB equal summands
     case Expression.BINARY(exp1, Operator.OPERATOR(op = Op.SUB), exp2)
       algorithm
-        (unit1 as Unit.UNIT(), htCr2U, htS2U, htU2S, fnCache, icu1) :=
-          insertUnitInEquation(exp1, unit, htCr2U, htS2U, htU2S, fnCache);
-        (unit2, htCr2U, htS2U, htU2S, fnCache, icu2) :=
-          insertUnitInEquation(exp2, unit1, htCr2U, htS2U, htU2S, fnCache);
+        (unit2 as Unit.UNIT(), htCr2U, htS2U, htU2S, fnCache, icu2) :=
+          insertUnitInEquation(exp2, unit, htCr2U, htS2U, htU2S, fnCache);
+        (unit1, htCr2U, htS2U, htU2S, fnCache, icu1) :=
+          insertUnitInEquation(exp1, unit2, htCr2U, htS2U, htU2S, fnCache);
         (true, op_unit, htCr2U) := unitTypesEqual(unit1, unit2, htCr2U);
       then
         (op_unit, List.append_reverse(icu1, icu2));
@@ -437,10 +437,10 @@ algorithm
     // SUB equal summands
     case Expression.BINARY(exp1, Operator.OPERATOR(op = Op.SUB), exp2)
       algorithm
-        (unit2, htCr2U, htS2U, htU2S, fnCache, icu1) :=
-          insertUnitInEquation(exp2, unit, htCr2U, htS2U, htU2S, fnCache);
         (unit1, htCr2U, htS2U, htU2S, fnCache, icu2) :=
-          insertUnitInEquation(exp1, unit2, htCr2U, htS2U, htU2S, fnCache);
+          insertUnitInEquation(exp1, unit, htCr2U, htS2U, htU2S, fnCache);
+        (unit2, htCr2U, htS2U, htU2S, fnCache, icu1) :=
+          insertUnitInEquation(exp2, unit1, htCr2U, htS2U, htU2S, fnCache);
         (true, op_unit, htCr2U) := unitTypesEqual(unit1, unit2, htCr2U);
       then
         (op_unit, List.append_reverse(icu1, icu2));
@@ -448,10 +448,10 @@ algorithm
     // SUB unequal summands
     case Expression.BINARY(exp1, Operator.OPERATOR(op = Op.SUB), exp2)
       algorithm
-        (unit1 as Unit.UNIT(), htCr2U, htS2U, htU2S, fnCache, icu1) :=
-          insertUnitInEquation(exp1, unit, htCr2U, htS2U, htU2S, fnCache);
-        (unit2, htCr2U, htS2U, htU2S, fnCache, icu2) :=
-          insertUnitInEquation(exp2, unit1, htCr2U, htS2U, htU2S, fnCache);
+        (unit2 as Unit.UNIT(), htCr2U, htS2U, htU2S, fnCache, icu2) :=
+          insertUnitInEquation(exp2, unit, htCr2U, htS2U, htU2S, fnCache);
+        (unit1, htCr2U, htS2U, htU2S, fnCache, icu1) :=
+          insertUnitInEquation(exp1, unit2, htCr2U, htS2U, htU2S, fnCache);
         (false, _, _) := unitTypesEqual(unit1, unit2, htCr2U);
       then
         (Unit.MASTER({}), {(exp1, unit1), (exp2, unit2)} :: List.append_reverse(icu1, icu2));
@@ -459,10 +459,10 @@ algorithm
     // SUB unequal summands
     case Expression.BINARY(exp1, Operator.OPERATOR(op = Op.SUB), exp2)
       algorithm
-        (unit2, htCr2U, htS2U, htU2S, fnCache, icu1) :=
-          insertUnitInEquation(exp2, unit, htCr2U, htS2U, htU2S, fnCache);
         (unit1, htCr2U, htS2U, htU2S, fnCache, icu2) :=
-          insertUnitInEquation(exp1, unit2, htCr2U, htS2U, htU2S, fnCache);
+          insertUnitInEquation(exp1, unit, htCr2U, htS2U, htU2S, fnCache);
+        (unit2, htCr2U, htS2U, htU2S, fnCache, icu1) :=
+          insertUnitInEquation(exp2, unit1, htCr2U, htS2U, htU2S, fnCache);
         (false, _, _) := unitTypesEqual(unit1, unit2, htCr2U);
       then
         (Unit.MASTER({}), {(exp1, unit1), (exp2, unit2)} :: List.append_reverse(icu1, icu2));
@@ -470,10 +470,10 @@ algorithm
     // ADD equal summands
     case Expression.BINARY(exp1, Operator.OPERATOR(op = Op.ADD), exp2)
       algorithm
-        (unit1 as Unit.UNIT(), htCr2U, htS2U, htU2S, fnCache, icu1) :=
-          insertUnitInEquation(exp1, unit, htCr2U, htS2U, htU2S, fnCache);
-        (unit2, htCr2U, htS2U, htU2S, fnCache, icu2) :=
-          insertUnitInEquation(exp2, unit1, htCr2U, htS2U, htU2S, fnCache);
+        (unit2 as Unit.UNIT(), htCr2U, htS2U, htU2S, fnCache, icu2) :=
+          insertUnitInEquation(exp2, unit, htCr2U, htS2U, htU2S, fnCache);
+        (unit1, htCr2U, htS2U, htU2S, fnCache, icu1) :=
+          insertUnitInEquation(exp1, unit2, htCr2U, htS2U, htU2S, fnCache);
         (true, op_unit, htCr2U) := unitTypesEqual(unit1, unit2, htCr2U);
       then
         (op_unit, List.append_reverse(icu1, icu2));
@@ -481,10 +481,10 @@ algorithm
     // ADD equal summands
     case Expression.BINARY(exp1, Operator.OPERATOR(op = Op.ADD), exp2)
       algorithm
-        (unit2, htCr2U, htS2U, htU2S, fnCache, icu1) :=
-          insertUnitInEquation(exp2, unit, htCr2U, htS2U, htU2S, fnCache);
         (unit1, htCr2U, htS2U, htU2S, fnCache, icu2) :=
-          insertUnitInEquation(exp1, unit2, htCr2U, htS2U, htU2S, fnCache);
+          insertUnitInEquation(exp1, unit, htCr2U, htS2U, htU2S, fnCache);
+        (unit2, htCr2U, htS2U, htU2S, fnCache, icu1) :=
+          insertUnitInEquation(exp2, unit1, htCr2U, htS2U, htU2S, fnCache);
         (true, op_unit, htCr2U) := unitTypesEqual(unit1, unit2, htCr2U);
       then
         (op_unit, List.append_reverse(icu1, icu2));
@@ -492,10 +492,10 @@ algorithm
     // ADD unequal summands
     case Expression.BINARY(exp1, Operator.OPERATOR(op = Op.ADD), exp2)
       algorithm
-        (unit1 as Unit.UNIT(), htCr2U, htS2U, htU2S, fnCache, icu1) :=
-          insertUnitInEquation(exp1, unit, htCr2U, htS2U, htU2S, fnCache);
-        (unit2, htCr2U, htS2U, htU2S, fnCache, icu2) :=
-          insertUnitInEquation(exp2, unit1, htCr2U, htS2U, htU2S, fnCache);
+        (unit2 as Unit.UNIT(), htCr2U, htS2U, htU2S, fnCache, icu2) :=
+          insertUnitInEquation(exp2, unit, htCr2U, htS2U, htU2S, fnCache);
+        (unit1, htCr2U, htS2U, htU2S, fnCache, icu1) :=
+          insertUnitInEquation(exp1, unit2, htCr2U, htS2U, htU2S, fnCache);
         (false, _, _) := unitTypesEqual(unit1, unit2, htCr2U);
       then
         (Unit.MASTER({}), {(exp1, unit1), (exp2, unit2)} :: List.append_reverse(icu1, icu2));
@@ -503,10 +503,10 @@ algorithm
     // ADD unequal summands
     case Expression.BINARY(exp1, Operator.OPERATOR(op = Op.ADD), exp2)
       algorithm
-        (unit2, htCr2U, htS2U, htU2S, fnCache, icu1) :=
-          insertUnitInEquation(exp2, unit, htCr2U, htS2U, htU2S, fnCache);
         (unit1, htCr2U, htS2U, htU2S, fnCache, icu2) :=
-          insertUnitInEquation(exp1, unit2, htCr2U, htS2U, htU2S, fnCache);
+          insertUnitInEquation(exp1, unit, htCr2U, htS2U, htU2S, fnCache);
+        (unit2, htCr2U, htS2U, htU2S, fnCache, icu1) :=
+          insertUnitInEquation(exp2, unit1, htCr2U, htS2U, htU2S, fnCache);
         (false, _, _) := unitTypesEqual(unit1, unit2, htCr2U);
       then
         (Unit.MASTER({}), {(exp1, unit1), (exp2, unit2)} :: List.append_reverse(icu1, icu2));
