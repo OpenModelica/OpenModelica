@@ -2272,7 +2272,7 @@ public
       case MULTARY()
         algorithm
           // ToDo: referenceEq ?
-          exp.arguments := list(func(arg) for arg in exp.arguments);
+          exp.arguments := list(map(arg, func) for arg in exp.arguments);
         then exp;
 
       case UNARY()

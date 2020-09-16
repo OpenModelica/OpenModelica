@@ -62,12 +62,13 @@ function simplifyDump
   "wrapper function for simplification to allow dumping before and afterwards"
   input output Expression exp;
   input String name = "";
+  input String indent = "";
 algorithm
   if Flags.isSet(Flags.DUMP_SIMPLIFY) then
-    print("### dumpSimplify | " + name + " ###\n");
-    print("[BEFORE] " + Expression.toString(exp) + "\n");
+    print(indent + "### dumpSimplify | " + name + " ###\n");
+    print(indent + "[BEFORE] " + Expression.toString(exp) + "\n");
     exp := simplify(exp);
-    print("[AFTER ] " + Expression.toString(exp) + "\n\n");
+    print(indent + "[AFTER ] " + Expression.toString(exp) + "\n\n");
   else
       exp := simplify(exp);
   end if;
@@ -537,7 +538,9 @@ algorithm
 
         // 0 + rest = rest (also covers subtraction since there are no multaries with -)
         case NFOperator.MathClassification.ADDITION guard(Expression.isZero(new_const))
-        then Expression.MULTARY(arguments, operator);
+        then if listLength(arguments) == 1
+          then List.first(arguments)
+          else Expression.MULTARY(arguments, operator);
 
         // 0 * rest = 0
         case NFOperator.MathClassification.MULTIPLICATION guard(Expression.isZero(new_const))
@@ -547,9 +550,15 @@ algorithm
         case NFOperator.MathClassification.MULTIPLICATION
           guard(Expression.isOne(new_const))
           algorithm
-            // simplify all signs and pull a minus to the front if one remains
-            (arguments, isNegative) := simplifyMultarySigns(arguments);
-            new_multary := Expression.MULTARY(arguments, operator);
+            if listLength(arguments) == 1 then
+              // if there is just one argument, return it
+              isNegative := false;
+              new_multary := List.first(arguments);
+            else
+              // simplify all signs and pull a minus to the front if one remains
+              (arguments, isNegative) := simplifyMultarySigns(arguments);
+              new_multary := Expression.MULTARY(arguments, operator);
+            end if;
         then if isNegative then
           Expression.UNARY(Operator.OPERATOR(operator.ty, NFOperator.Op.UMINUS), new_multary)
           else new_multary;

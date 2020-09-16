@@ -303,7 +303,7 @@ protected
       diffedFunctions = AvlSetPath.new()
     );
 
-    (diffedEquations, diffArguments) := Differentiate.differentiateEquationPointers(equations, diffArguments);
+    (diffedEquations, diffArguments) := Differentiate.differentiateEquationPointers(equations, diffArguments, getInstanceName());
 
     // create equation data for jacobian
     // ToDo: split temporary and auxiliares once tearing is applied

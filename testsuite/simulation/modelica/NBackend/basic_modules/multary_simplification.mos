@@ -35,19 +35,19 @@ simulate(M); getErrorString();
 // [BEFORE] 2.0 * (time + (-4.0) + (-3.0))
 // [AFTER ] 2.0 * ((-7.0) + time)
 //
-// ### dumpSimplify | NBDifferentiate.differentiateEquation ###
+// ### dumpSimplify | NBJacobian.jacobianSymbolic ###
 // [BEFORE] $SEED_A.x
 // [AFTER ] $SEED_A.x
 //
-// ### dumpSimplify | NBDifferentiate.differentiateEquation ###
+// ### dumpSimplify | NBJacobian.jacobianSymbolic ###
 // [BEFORE] 0.0 * ((-7.0) + time) + 2.0 * (0.0 + 0.0)
 // [AFTER ] 0.0
 //
-// ### dumpSimplify | NBDifferentiate.differentiateEquation ###
+// ### dumpSimplify | NBJacobian.jacobianSymbolic ###
 // [BEFORE] $SEED_A.y
 // [AFTER ] $SEED_A.y
 //
-// ### dumpSimplify | NBDifferentiate.differentiateEquation ###
+// ### dumpSimplify | NBJacobian.jacobianSymbolic ###
 // [BEFORE] -(0.0 * time + 8.0 * 0.0)
 // [AFTER ] 0.0
 //
@@ -56,32 +56,32 @@ simulate(M); getErrorString();
 // [AFTER ] x
 //
 // ### dumpSimplify | NBSolve.solveLinear ###
-// [BEFORE] -(2.0 * ((-7.0) + time) + (-x)) / (-1.0)
-// [AFTER ] 2.0 * ((-7.0) + time) + x
+// [BEFORE] -(2.0 * ((-7.0) + time) + (-0.0)) / (-1.0)
+// [AFTER ] 2.0 * ((-7.0) + time)
 //
 // ### dumpSimplify | NBSolve.solveLinear ###
 // [BEFORE] y
 // [AFTER ] y
 //
 // ### dumpSimplify | NBSolve.solveLinear ###
-// [BEFORE] -((-8.0 * time) + (-y)) / (-1.0)
-// [AFTER ] 8.0 * time + y
+// [BEFORE] -((-8.0 * time) + (-0.0)) / (-1.0)
+// [AFTER ] 8.0 * time
 //
 // ### dumpSimplify | NBSolve.solveLinear ###
 // [BEFORE] x
 // [AFTER ] x
 //
 // ### dumpSimplify | NBSolve.solveLinear ###
-// [BEFORE] -(2.0 * ((-7.0) + time) + (-x)) / (-1.0)
-// [AFTER ] 2.0 * ((-7.0) + time) + x
+// [BEFORE] -(2.0 * ((-7.0) + time) + (-0.0)) / (-1.0)
+// [AFTER ] 2.0 * ((-7.0) + time)
 //
 // ### dumpSimplify | NBSolve.solveLinear ###
 // [BEFORE] y
 // [AFTER ] y
 //
 // ### dumpSimplify | NBSolve.solveLinear ###
-// [BEFORE] -((-8.0 * time) + (-y)) / (-1.0)
-// [AFTER ] 8.0 * time + y
+// [BEFORE] -((-8.0 * time) + (-0.0)) / (-1.0)
+// [AFTER ] 8.0 * time
 //
 // record SimulationResult
 //     resultFile = "M_res.mat",

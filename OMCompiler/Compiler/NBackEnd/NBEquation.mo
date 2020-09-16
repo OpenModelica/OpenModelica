@@ -483,20 +483,24 @@ public
     function simplify
       input output Equation eq;
       input String name = "";
+      input String indent = "";
     algorithm
+      if Flags.isSet(Flags.DUMP_SIMPLIFY) and not stringEqual(indent, "") then
+        print("\n");
+      end if;
       eq := match eq
         case SCALAR_EQUATION() algorithm
-          eq.lhs := SimplifyExp.simplifyDump(eq.lhs, name);
-          eq.rhs := SimplifyExp.simplifyDump(eq.rhs, name);
+          eq.lhs := SimplifyExp.simplifyDump(eq.lhs, name, indent);
+          eq.rhs := SimplifyExp.simplifyDump(eq.rhs, name, indent);
         then eq;
         case ARRAY_EQUATION() algorithm
-          eq.lhs := SimplifyExp.simplifyDump(eq.lhs, name);
-          eq.rhs := SimplifyExp.simplifyDump(eq.rhs, name);
+          eq.lhs := SimplifyExp.simplifyDump(eq.lhs, name, indent);
+          eq.rhs := SimplifyExp.simplifyDump(eq.rhs, name, indent);
         then eq;
         case SIMPLE_EQUATION() then eq;
         case RECORD_EQUATION() algorithm
-          eq.lhs := SimplifyExp.simplifyDump(eq.lhs, name);
-          eq.rhs := SimplifyExp.simplifyDump(eq.rhs, name);
+          eq.lhs := SimplifyExp.simplifyDump(eq.lhs, name, indent);
+          eq.rhs := SimplifyExp.simplifyDump(eq.rhs, name, indent);
         then eq;
         // ToDo: implement the following correctly:
         case ALGORITHM()       then eq;

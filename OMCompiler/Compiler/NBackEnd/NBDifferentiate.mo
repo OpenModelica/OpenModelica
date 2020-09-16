@@ -105,12 +105,13 @@ public
     Differentiates an array of equations wrapped in pointers."
     input output EquationPointers equations;
     input output DifferentiationArguments diffArguments;
+    input String name = "";
   protected
     Pointer<DifferentiationArguments> diffArguments_ptr = Pointer.create(diffArguments);
     list<Pointer<Equation>> diffed_eqn_lst;
   algorithm
     // don't use EquationPointers.map because that would manipulate original eqn pointers
-    diffed_eqn_lst := List.map(EquationPointers.toList(equations), function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr));
+    diffed_eqn_lst := List.map(EquationPointers.toList(equations), function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr, name = name));
     equations := EquationPointers.fromList(diffed_eqn_lst);
     diffArguments := Pointer.access(diffArguments_ptr);
   end differentiateEquationPointers;
@@ -118,12 +119,13 @@ public
   function differentiateEquationPointer
     input output Pointer<Equation> eq_ptr;
     input Pointer<DifferentiationArguments> diffArguments_ptr;
+    input String name = "";
   protected
     Equation diffedEq;
     DifferentiationArguments old_diffArguments, new_diffArguments;
   algorithm
     old_diffArguments := Pointer.access(diffArguments_ptr);
-    (diffedEq, new_diffArguments) := differentiateEquation(Pointer.access(eq_ptr), old_diffArguments);
+    (diffedEq, new_diffArguments) := differentiateEquation(Pointer.access(eq_ptr), old_diffArguments, name);
     eq_ptr := Pointer.create(diffedEq);
     if not referenceEq(new_diffArguments, old_diffArguments) then
       Pointer.update(diffArguments_ptr, new_diffArguments);
@@ -133,7 +135,12 @@ public
   function differentiateEquation
     input output Equation eq;
     input output DifferentiationArguments diffArguments;
+    input String name = "";
   algorithm
+    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) and not stringEqual(name, "") then
+      print("### debugDifferentiation | " + name + " ###\n");
+      print("[BEFORE] " + Equation.toString(eq) + "\n");
+    end if;
     (eq, diffArguments) := match eq
       local
         Equation res;
@@ -197,7 +204,6 @@ public
       then fail();
 
     end match;
-    eq := Equation.simplify(eq, getInstanceName());
   /* ToDo:
     record ALGORITHM
       Integer size                    "output size";
@@ -220,6 +226,12 @@ public
     end DUMMY_EQUATION;
 
   */
+    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) and not stringEqual(name, "") then
+      eq := Equation.simplify(eq, name, "\t");
+      print("[AFTER ] " + Equation.toString(eq) + "\n\n");
+    else
+      eq := Equation.simplify(eq, name);
+    end if;
   end differentiateEquation;
 
   function differentiateIfEquationBody
@@ -232,7 +244,7 @@ public
     // ToDo: this is a little ugly
     // 1. why are the then_eqns Pointers? no need for that
     // 2. we could just traverse it regularly without creating a pointer for diffArguments
-    then_eqns := List.map(body.then_eqns, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr));
+    then_eqns := List.map(body.then_eqns, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr, name = ""));
     if isSome(body.else_if) then
       (else_if, diffArguments_ptr) := differentiateIfEquationBody(Util.getOption(body.else_if), diffArguments_ptr);
       body := IfEquationBody.IF_EQUATION_BODY(body.condition, then_eqns, SOME(else_if));
@@ -272,6 +284,23 @@ public
       else (stmt, diffArguments);
     end match;
   end differentiateWhenStatement;
+
+  function differentiateExpressionDump
+    "wrapper function for differentiation to allow dumping before and afterwards"
+    input output Expression exp;
+    input output DifferentiationArguments diffArguments;
+    input String name = "";
+    input String indent = "";
+  algorithm
+    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
+      print(indent + "### debugDifferentiation | " + name + " ###\n");
+      print(indent + "[BEFORE] " + Expression.toString(exp) + "\n");
+      exp := differentiateExpression(exp, diffArguments);
+      print(indent + "[AFTER ] " + Expression.toString(exp) + "\n\n");
+    else
+      exp := differentiateExpression(exp, diffArguments);
+    end if;
+  end differentiateExpressionDump;
 
   function differentiateExpression
     input output Expression exp;

@@ -68,7 +68,7 @@ public
       funcTree        = funcTree,
       diffedFunctions = AvlSetPath.new()
     );
-    (derivative, diffArgs) := Differentiate.differentiateExpression(residual, diffArgs);
+    (derivative, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
     derivative := SimplifyExp.simplify(derivative);   // TODO: Why simplify?
 
     // If cref is only in lhs
