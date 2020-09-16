@@ -1602,6 +1602,8 @@ public
   protected
     Type t;
     ClockKind clk;
+    Expression first;
+    list<Expression> rest;
   algorithm
     str := match exp
       case INTEGER() then intString(exp.value);
@@ -1636,7 +1638,10 @@ public
                         ) + ")";
       case END() then "end";
 
-      case MULTARY() then stringDelimitList(list(toString(e) for e in exp.arguments), Operator.symbol(exp.operator));
+      case MULTARY() algorithm
+        first :: rest := exp.arguments;
+      then operandString(first, exp, true) + Operator.symbol(exp.operator) +
+        stringDelimitList(list(operandString(e, exp, false) for e in rest), Operator.symbol(exp.operator));
 
       case BINARY() then operandString(exp.exp1, exp, true) +
                          Operator.symbol(exp.operator) +
@@ -1685,6 +1690,8 @@ public
   protected
     Type t;
     ClockKind clk;
+    Expression first;
+    list<Expression> rest;
   algorithm
     str := match exp
       case INTEGER() then intString(exp.value);
@@ -1720,6 +1727,11 @@ public
                         else ""
                         ) + ")";
       case END() then "end";
+
+      case MULTARY() algorithm
+        first :: rest := exp.arguments;
+      then operandString(first, exp, true) + Operator.symbol(exp.operator) +
+        stringDelimitList(list(operandString(e, exp, false) for e in rest), Operator.symbol(exp.operator));
 
       case BINARY() then operandFlatString(exp.exp1, exp, true) +
                          Operator.symbol(exp.operator) +
@@ -1859,6 +1871,7 @@ public
     priority := match exp
       case INTEGER() then if exp.value < 0 then 4 else 0;
       case REAL() then if exp.value < 0.0 then 4 else 0;
+      case MULTARY() then Operator.priority(exp.operator, lhs);
       case BINARY() then Operator.priority(exp.operator, lhs);
       case UNARY() then 4;
       case LBINARY() then Operator.priority(exp.operator, lhs);
@@ -3943,11 +3956,26 @@ public
       case Type.INTEGER() then INTEGER(1);
       case Type.ARRAY()
         then ARRAY(ty,
-                   List.fill(makeZero(Type.unliftArray(ty)),
+                   List.fill(makeOne(Type.unliftArray(ty)),
                              Dimension.size(listHead(ty.dimensions))),
                    literal = true);
     end match;
   end makeOne;
+
+  function makeMinusOne
+    input Type ty;
+    output Expression oneExp;
+  algorithm
+    oneExp := match ty
+      case Type.REAL() then REAL(-1.0);
+      case Type.INTEGER() then INTEGER(-1);
+      case Type.ARRAY()
+        then ARRAY(ty,
+                   List.fill(makeMinusOne(Type.unliftArray(ty)),
+                             Dimension.size(listHead(ty.dimensions))),
+                   literal = true);
+    end match;
+  end makeMinusOne;
 
   function makeMaxValue
     input Type ty;

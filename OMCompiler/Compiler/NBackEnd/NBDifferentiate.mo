@@ -573,7 +573,7 @@ public
         Call call;
         Expression derFuncCall, exp1, diffExp1;
         list<Expression> arguments;
-        Operator operator, addOp, subOp, mulOp;
+        Operator operator, addOp, mulOp;
         Operator.SizeClassification sizeClass;
 
       // Builtin function call with one argument
@@ -587,7 +587,7 @@ public
         sizeClass := NFOperator.SizeClassification.SCALAR;
         mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), Type.REAL());
         derFuncCall := differentiateNamedCall1Arg(name, exp1);
-        then(Expression.BINARY(derFuncCall, mulOp, diffExp1));
+        then(Expression.MULTARY({derFuncCall, diffExp1}, mulOp));
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
@@ -612,13 +612,15 @@ public
   end differentiateNamedCall1Arg;
 
   function differentiateBinary
+    "Some of this is depcreated because of Expression.MULTARY().
+    Will always try to convert to MULTARY whenever possible. (commutativity)"
     input output Expression exp "Has to be Expression.BINARY()";
     input output DifferentiationArguments diffArguments;
   algorithm
     (exp, diffArguments) := match exp
       local
         Expression exp1, exp2, diffExp1, diffExp2, call;
-        Operator operator, addOp, subOp, mulOp;
+        Operator operator, addOp, mulOp;
         Operator.SizeClassification sizeClass;
 
       // Dash calculations (ADD, SUB, ADD_EW, SUB_EW, ...)
@@ -629,7 +631,7 @@ public
         algorithm
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
-      then (Expression.BINARY(diffExp1, operator, diffExp2), diffArguments);
+      then (Expression.MULTARY({diffExp1, diffExp2}, operator), diffArguments);
 
       // Multiplication (MUL, MUL_EW, ...)
       // (f * g)' =  fg' + f'g
@@ -641,10 +643,10 @@ public
           // create addition operator from the size classification of original multiplication operator
           (_, sizeClass) := Operator.classify(operator);
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
-      then (Expression.BINARY(
-              Expression.BINARY(exp1, operator, diffExp2),  // fg'
-              addOp,                                        //  +
-              Expression.BINARY(diffExp1, operator, exp2)   // f'g
+      then (Expression.MULTARY(
+              {Expression.MULTARY({exp1, diffExp2}, operator),
+               Expression.MULTARY({diffExp1, exp2}, operator)},
+              addOp
             ),
             diffArguments);
 
@@ -657,16 +659,18 @@ public
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
           // create subtraction and multiplication operator from the size classification of original division operator
           (_, sizeClass) := Operator.classify(operator);
-          subOp := Operator.fromClassification((NFOperator.MathClassification.SUBTRACTION, sizeClass), operator.ty);
+          addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
       then (Expression.BINARY(
-              Expression.BINARY(
-                Expression.BINARY(exp1, mulOp, diffExp2),   // fg'
-                subOp,                                      //  -
-                Expression.BINARY(diffExp1, mulOp, exp2)    // f'g
+              Expression.MULTARY(
+                {Expression.MULTARY({exp1, diffExp2}, mulOp),             // fg'
+                 Expression.UNARY(
+                  NFOperator.OPERATOR(operator.ty, NFOperator.Op.UMINUS), // -
+                  Expression.MULTARY({diffExp1, exp2}, mulOp))},          // f'g
+                addOp                                                     //  +
               ),
-              operator,                                     //  :
-              Expression.BINARY(exp2, mulOp, exp2)          // g*g
+              operator,                                                   //  :
+              Expression.MULTARY({exp2, exp2}, mulOp)                     // g*g
             ),
             diffArguments);
 
@@ -692,11 +696,11 @@ public
         algorithm
           (_, sizeClass) := Operator.classify(operator);
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
-          subOp := Operator.fromClassification((NFOperator.MathClassification.SUBTRACTION, sizeClass), operator.ty);
-      then (Expression.BINARY(
-              exp2,                                             // r
-              mulOp,                                            // *
-              Expression.BINARY(exp1, operator, minusOne(exp2, subOp)) // x^(r-1)
+          addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
+      then (Expression.MULTARY(
+              {exp2,                                                     // r
+              Expression.BINARY(exp1, operator, minusOne(exp2, addOp))}, // x^(r-1)                                             // r
+              mulOp                                                      // *
             ),
             diffArguments);
 
@@ -710,10 +714,9 @@ public
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
           (_, sizeClass) := Operator.classify(operator);
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
-      then (Expression.BINARY(
-              exp,                                              // r^x
-              mulOp,                                            //  *
-              Expression.BINARY(expLog(exp1), mulOp, diffExp2)  // ln(r) * x
+      then (Expression.MULTARY(
+              {exp, expLog(exp1), diffExp2},    // r^x * ln(r) * x
+              mulOp                             //  *
             ),
             diffArguments);
 
@@ -728,26 +731,24 @@ public
           // create addition, subtraction and multiplication operator from the size classification of original power operator
           (_, sizeClass) := Operator.classify(operator);
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
-          subOp := Operator.fromClassification((NFOperator.MathClassification.SUBTRACTION, sizeClass), operator.ty);
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
           // create the ln(x) call
           call := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.LOG_REAL, {exp1}, Expression.variability(exp1)));
-      then (Expression.BINARY(
-              Expression.BINARY(
-                exp1,                                                           // x
-                operator,                                                       // ^
-                Expression.BINARY(exp2, subOp, Expression.makeOne(operator.ty)) // (y-1)
+      then (Expression.MULTARY(
+              {Expression.BINARY(
+                exp1,                                                   // x
+                operator,                                               // ^
+                minusOne(exp2, addOp)                                   // (y-1)
               ),
-              mulOp,                                                            // *
-              Expression.BINARY(
-                Expression.BINARY(
-                  exp1,                                                         // x
-                  mulOp,                                                        // *
-                  Expression.BINARY(call, mulOp, diffExp2)                      // ln(x) * y'
+              Expression.MULTARY(
+                {Expression.MULTARY(
+                  {exp1, call, diffExp2},                               // x * ln(x) * y'
+                  mulOp                                                 // *
                 ),
-                addOp,                                                          // +
-                Expression.BINARY(exp2, mulOp, diffExp2)                        // y * x'
-              )
+                Expression.MULTARY({exp2, diffExp1}, mulOp)},           // y * x'
+                addOp                                                   // +
+              )},
+              mulOp                                                     // *
             ),
             diffArguments);
 
@@ -858,11 +859,7 @@ public
           Integer i;
         case Expression.REAL(value = r)         then Expression.REAL(r - 1.0);
         case Expression.INTEGER(value = i)      then Expression.INTEGER(i - 1);
-        case _ guard(Expression.isReal(exp))    then Expression.BINARY(exp, op, Expression.REAL(1.0));
-        case _ guard(Expression.isInteger(exp)) then Expression.BINARY(exp, op, Expression.INTEGER(1));
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + ". Only subtract one from REAL() or INTEGER()."});
-        then fail();
+        else Expression.MULTARY({exp, Expression.makeMinusOne(op.ty)}, op);
       end match;
     end minusOne;
 

@@ -499,16 +499,40 @@ protected
   Expression new_const;
 algorithm
   Expression.MULTARY(arguments = arguments, operator = operator) := exp;
+
+  // simplify arguments first
+  arguments := list(simplify(arg) for arg in arguments);
+
+  // split them into constant and non constant arguments
   (constArguments, arguments) := List.splitOnTrue(arguments, Expression.isConstNumber);
-  // only do something if there are constant arguments to combine
-  if listLength(constArguments) > 1 then
+
+  if listLength(constArguments) == 0 then
+    // if there are no constants, just return the simplified arguments
+    exp := Expression.MULTARY(arguments, operator);
+  else
     new_const := combineConstantNumbers(constArguments, operator);
-    // if there are no other arguments just return the new expression
     if listLength(arguments) == 0 then
+      // if there are no other arguments just return the new expression
       exp := new_const;
-    // return combined multary expression otherwise
     else
-      exp := Expression.MULTARY(new_const :: arguments, operator);
+      // return combined multary expression if constant part is non trivial
+      exp := match Operator.getMathClassification(operator)
+
+        // 0 + rest = rest (also covers subtraction since there are no multaries with -)
+        case NFOperator.MathClassification.ADDITION guard(Expression.isZero(new_const))
+        then Expression.MULTARY(arguments, operator);
+
+        // 1 * rest = rest
+        case NFOperator.MathClassification.MULTIPLICATION guard(Expression.isOne(new_const))
+        then Expression.MULTARY(arguments, operator);
+
+        // 0 * rest = 0
+        case NFOperator.MathClassification.MULTIPLICATION guard(Expression.isZero(new_const))
+        then new_const;
+
+        // return the full expression
+        else Expression.MULTARY(new_const :: arguments, operator);
+      end match;
     end if;
   end if;
 end simplifyMultary;
@@ -982,21 +1006,6 @@ algorithm
     //          Building MULTARY() recursively
     // #######################################################
 
-    // no previous binary/multary encountered, creating new multary expression if the operator is commutative
-    case (NONE(), Expression.BINARY()) guard(Operator.isSoftCommutative(exp.operator)) algorithm
-      op := fixMinusOperator(exp.operator);
-      final_stack := listAppend(combineBinariesExpWork(exp.exp2, SOME(exp.operator)), final_stack);
-      final_stack := listAppend(combineBinariesExpWork(exp.exp1, SOME(op)), final_stack);
-    then {Expression.MULTARY(final_stack, op)};
-
-    // handle multary the same way in the case it has to be applied again
-    // can not contain SUBTRACTION! therefore no fixing here
-    case (NONE(), Expression.MULTARY()) guard(Operator.isSoftCommutative(exp.operator)) algorithm
-      for arg in listReverse(exp.arguments) loop
-        final_stack := listAppend(combineBinariesExpWork(arg, SOME(exp.operator)), final_stack);
-      end for;
-    then {Expression.MULTARY(final_stack, exp.operator)};
-
     // with previous binary/multary. Check if operator is the same. Return all arguments
     case (SOME(op), Expression.BINARY()) guard(Operator.isCombineable(op, exp.operator)) algorithm
       final_stack := listAppend(combineBinariesExpWork(exp.exp2, SOME(exp.operator)), final_stack);
@@ -1009,6 +1018,23 @@ algorithm
         final_stack := listAppend(combineBinariesExpWork(arg, SOME(exp.operator)), final_stack);
       end for;
     then final_stack;
+
+    // no previous binary/multary encountered or wrong operator type
+    // creating new multary expression if the operator is commutative
+    case (_, Expression.BINARY()) guard(Operator.isSoftCommutative(exp.operator)) algorithm
+      op := fixMinusOperator(exp.operator);
+      final_stack := listAppend(combineBinariesExpWork(exp.exp2, SOME(exp.operator)), final_stack);
+      final_stack := listAppend(combineBinariesExpWork(exp.exp1, SOME(op)), final_stack);
+    then {Expression.MULTARY(final_stack, op)};
+
+    // handle multary the same way in the case it has to be applied again
+    // can not contain SUBTRACTION! therefore no fixing here
+    case (_, Expression.MULTARY()) guard(Operator.isSoftCommutative(exp.operator)) algorithm
+      for arg in listReverse(exp.arguments) loop
+        final_stack := listAppend(combineBinariesExpWork(arg, SOME(exp.operator)), final_stack);
+      end for;
+    then {Expression.MULTARY(final_stack, exp.operator)};
+
 
     // #######################################################
     //      Other expression that do not get combined
