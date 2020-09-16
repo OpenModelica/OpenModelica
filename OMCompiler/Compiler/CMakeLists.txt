@@ -47,7 +47,7 @@ macro(add_interface_check_step mo_source_file)
         DEPENDS ${mo_source_file}
                 ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.check_interface.mos
 
-        COMMAND ${OMC_EXE} -g=MetaModelica -n=1 --locale=en ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.check_interface.mos
+        COMMAND ${OMC_EXE} -g=MetaModelica -n=1 ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.check_interface.mos
 
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo.tmp
         BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo
@@ -62,7 +62,7 @@ macro(add_interface_check_step mo_source_file)
 
     add_custom_command(
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo
-        COMMAND ${CMAKE_COMMAND} -E cat ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.rev_depends
+        # COMMAND ${CMAKE_COMMAND} -E cat ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.rev_depends
         COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.rev_deps.stamp
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.rev_deps.stamp
         COMMENT "Touched dependents of ${mo_source_file}"
@@ -85,7 +85,7 @@ macro(add_compile_step mo_source_file)
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo.tmp
                 ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.compile.mos
 
-        COMMAND ${OMC_EXE} -g=MetaModelica -n=1 --locale=en ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.compile.mos
+        COMMAND ${OMC_EXE} -g=MetaModelica -n=1 ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.compile.mos
 
         OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/c_files/${file_name_no_ext}.c
                 ${CMAKE_CURRENT_BINARY_DIR}/c_files/${file_name_no_ext}_records.c

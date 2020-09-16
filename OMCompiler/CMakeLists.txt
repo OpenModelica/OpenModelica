@@ -18,18 +18,19 @@ if(NOT CMAKE_BUILD_TYPE)
 endif(NOT CMAKE_BUILD_TYPE)
 omc_add_to_report(CMAKE_BUILD_TYPE)
 
-# We want to make sure include directories are handled properly. C allows implicit function
-# declaration. We have to disable that so that we can be consistent and correct with our inclusions.
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    add_compile_options(-Werror=implicit-function-declaration)
-endif()
-
 
 # options
 option(OMC_USE_CORBA "Should use corba." ON)
 
 
 omc_add_subdirectory(3rdParty)
+
+# We want to make sure include directories are handled properly. C allows implicit function
+# declaration. We have to disable that so that we can be consistent and correct with our inclusions.
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=implicit-function-declaration>)
+endif()
+
 omc_add_subdirectory(SimulationRuntime)
 omc_add_subdirectory(Parser)
 omc_add_subdirectory(Compiler)
