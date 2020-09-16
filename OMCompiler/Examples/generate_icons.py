@@ -123,9 +123,175 @@ def ask_omc(question, opt=None, parsed=True):
 
     return res
 
+def removeFirstLastCurlBrackets(value):
+    value = value.strip()
+    if (len(value) > 1 and value[0] == '{' and value[len(value) - 1] == '}'):
+        value = value[1: len(value) - 1]
+    return value
+
+def removeFirstLastParentheses(value):
+    value = value.strip()
+    if (len(value) > 1 and value[0] == '(' and value[len(value) - 1] == ')'):
+      value = value[1: len(value) - 1]
+    return value
+
+def unparseArrays(value):
+    lst = []
+    braceopen = 0
+    mainbraceopen = 0
+    i = 0
+    value = removeFirstLastCurlBrackets(value)
+    subbraceopen = 0
+
+    while i < len(value):
+      if value[i] == ' ' or value[i] == ',':
+        i+=1
+        continue # ignore any kind of space
+      if value[i] == '{' and braceopen == 0:
+        braceopen = 1
+        mainbraceopen = i
+        i+=1
+        continue
+      if value[i] == '{':
+        subbraceopen = 1
+
+      if value[i] == '}' and braceopen == 1 and subbraceopen == 0:
+        # closing of a group
+        braceopen = 0
+        lst.append(value[mainbraceopen:i+1])
+        i+=1
+        continue
+      if value[i] == '}':
+        subbraceopen = 0
+
+      # skip the whole quotes section
+      if value[i] == '"':
+        i+=1
+        while value[i] != '"':
+          i+=1
+          if value[i-1] == '\\' and value[i] == '"':
+            i+=1
+
+      i+=1
+
+    return lst
+
+def getStrings(value, start='{', end='}'):
+    lst = []
+    mask = False
+    inString = False
+    stringEnd = '\0'
+    begin = 0
+    ele = 0
+
+    for i in range(len(value)):
+      if inString:
+        if mask:
+          mask = False
+        else:
+          if value[i] == '\\':
+            mask = True
+          elif value[i] == stringEnd:
+            inString = False
+      else:
+        if value[i] == '"':
+          stringEnd = '"'
+          inString = True
+        elif value[i] == '\'':
+          stringEnd = '\''
+          inString = True
+        elif value[i] == ',':
+          if ele == 0:
+            lst.append(value[begin:i].strip())
+            begin = i+1
+        elif value[i] == start:
+          ele+=1
+        elif value[i] == end:
+          ele-=1
+
+    lst.append(value[begin:len(value) + 1].strip())
+    return lst
+
+
+def consumeChar(value, res, i):
+    if value[i] == '\\':
+      i+=1
+      if (value[i] == '\''):
+        res.append('\'')
+      elif (value[i] == '"'):
+        res.append('\"')
+      elif (value[i] == '?'):
+        res.append('\?')
+      elif (value[i] == '\\'):
+        res.append('\\')
+      elif (value[i] == 'a'):
+        res.append('\a')
+      elif (value[i] == 'b'):
+        res.append('\b')
+      elif (value[i] == 'f'):
+        res.append('\f')
+      elif (value[i] == 'n'):
+        res.append('\n')
+      elif (value[i] == 'r'):
+        res.append('\r')
+      elif (value[i] == 't'):
+        res.append('\t')
+      elif (value[i] == 'v'):
+        res.append('\v')
+    else:
+      res.append(value[i])
+
+    return res
+
+def unparseStrings(value):
+    lst = []
+    value = value.strip()
+    if value[0] != '{':
+      return lst #ERROR?
+    i = 1
+    res = []
+    while value[i] == '"':
+      i+=1
+      while value[i] != '"':
+        res = consumeChar(value, res, i)
+        i+=1
+        # if we have unexpected double quotes then, however omc should return \"
+        # remove this block once fixed in omc
+        if value[i] == '"' and value[i+1] != ',':
+          if value[i+1] != '}':
+            res = consumeChar(value, res, i)
+            i+=1
+        # remove this block once fixed in omc
+      i+=1
+      if value[i] == '}':
+        lst.append(''.join(res))
+        return lst
+      if value[i] == ',':
+        lst.append(''.join(res))
+        i+=1
+        res = []
+        while value[i] == ' ': # if we have space before next value e.g {"x", "y", "z"}
+          i+=1
+        continue
+      while value[i] != '"' and value[i] is not None:
+        i+=1
+        print("error? malformed string-list. skipping: %c" % value[i])
+
+    return lst
+
+def componentPlacement(componentAnnotations):
+    componentAnnotations = removeFirstLastCurlBrackets(componentAnnotations)
+    annotations = getStrings(componentAnnotations, '(', ')')
+    for annotation in annotations:
+        if annotation.startswith('Placement'):
+            annotation = annotation[len('Placement'):]
+            placementAnnotation = removeFirstLastParentheses(annotation)
+            if placementAnnotation.lower() == 'error':
+                return []
+            else:
+                return getStrings(placementAnnotation)
 
 graphics_cache = {}
-
 
 # get graphics objects from annotation Icon
 def getGraphicsForClass(modelicaClass):
@@ -320,116 +486,111 @@ def getGraphicsForClass(modelicaClass):
 
     return result
 
-
 def getGraphicsWithPortsForClass(modelicaClass):
     graphics = getGraphicsForClass(modelicaClass)
     graphics['className'] = modelicaClass
     graphics['ports'] = []
-    answer_full = ask_omc('getComponents', modelicaClass, parsed=False)
+    componentsList = unparseArrays(ask_omc('getComponents', modelicaClass + ', useQuotes = true', parsed=False))
+    if componentsList:
+        componentAnnotations = ask_omc('getComponentAnnotations', modelicaClass, parsed=False)
+        componentAnnotationsList = getStrings(removeFirstLastCurlBrackets(componentAnnotations))
 
-    comp_id = 0
-    for answer in answer_full[2:].split('},{'):
-        #print answer
-        comp_id += 1
-        class_name = answer[0:answer.find(',')]
-        component_name = answer[answer.find(',') + 1:][0:answer[answer.find(',') + 1:].find(',')]
+        for i in range(len(componentsList)):
+            componentInfo = unparseStrings(componentsList[i])
+            class_name = componentInfo[0]
+            component_name = componentInfo[1]
 
-        if ask_omc('isConnector', class_name):
-            try:
-                comp_annotation = ask_omc('getNthComponentAnnotation', modelicaClass + ', ' + str(comp_id))['SET2']['Set1']
-            except KeyError as ex:
-                logger.error('KeyError: {0} componentName: {1} {2}'.format(modelicaClass, component_name, str(ex)))
-                continue
+            if ask_omc('isConnector', class_name):
+                comp_annotation = componentPlacement(componentAnnotationsList[i])
 
-            # base class graphics for ports
-            g_base = []
-            base_classes = []
-            getBaseClasses(class_name, base_classes)
+                # base class graphics for ports
+                g_base = []
+                base_classes = []
+                getBaseClasses(class_name, base_classes)
 
-            for base_class in base_classes:
-                graphics_base = getGraphicsForClass(base_class)
-                g_base.append(graphics_base)
+                for base_class in base_classes:
+                    graphics_base = getGraphicsForClass(base_class)
+                    g_base.append(graphics_base)
 
-            g = getGraphicsForClass(class_name)
+                g = getGraphicsForClass(class_name)
 
-            g_this = g['graphics']
+                g_this = g['graphics']
 
-            g['graphics'] = []
-            for g_b in g_base:
-                for g_i in g_b['graphics']:
-                    g['graphics'].append(g_i)
-            for g_b in g_this:
-                g['graphics'].append(g_b)
+                g['graphics'] = []
+                for g_b in g_base:
+                    for g_i in g_b['graphics']:
+                        g['graphics'].append(g_i)
+                for g_b in g_this:
+                    g['graphics'].append(g_b)
 
-            g['id'] = component_name
-            g['className'] = class_name
+                g['id'] = component_name
+                g['className'] = class_name
 
-            desc = ask_omc('getComponentComment', modelicaClass + ', ' + component_name)
-            if type(desc) is dict:
-                g['desc'] = ''
-            else:
-                g['desc'] = desc.strip().strip('"')
+                g['desc'] = componentInfo[0]
 
-            g['classDesc'] = ask_omc('getClassComment', class_name).strip().strip('"')
+                g['classDesc'] = ask_omc('getClassComment', class_name).strip().strip('"')
 
-            minX = g['coordinateSystem']['extent'][0][0]
-            minY = g['coordinateSystem']['extent'][0][1]
-            maxX = g['coordinateSystem']['extent'][1][0]
-            maxY = g['coordinateSystem']['extent'][1][1]
+                minX = g['coordinateSystem']['extent'][0][0]
+                minY = g['coordinateSystem']['extent'][0][1]
+                maxX = g['coordinateSystem']['extent'][1][0]
+                maxY = g['coordinateSystem']['extent'][1][1]
 
-            for gs in g['graphics']:
-                # use default values if it is not there
-                if not 'extent' in gs:
-                    gs['extent'] = [[-100, -100], [100, 100]]
+                for gs in g['graphics']:
+                    # use default values if it is not there
+                    if not 'extent' in gs:
+                        gs['extent'] = [[-100, -100], [100, 100]]
 
-                if not 'origin' in gs:
-                    gs['origin'] = [0, 0]
+                    if not 'origin' in gs:
+                        gs['origin'] = [0, 0]
 
-                if minX > gs['extent'][0][0] + gs['origin'][0]:
-                    minX = gs['extent'][0][0] + gs['origin'][0]
-                if minX > gs['extent'][1][0] + gs['origin'][0]:
-                    minX = gs['extent'][1][0] + gs['origin'][0]
-                if minY > gs['extent'][0][1] + gs['origin'][1]:
-                    minY = gs['extent'][0][1] + gs['origin'][1]
-                if minY > gs['extent'][1][1] + gs['origin'][1]:
-                    minY = gs['extent'][1][1] + gs['origin'][1]
-                if maxX < gs['extent'][1][0] + gs['origin'][0]:
-                    maxX = gs['extent'][1][0] + gs['origin'][0]
-                if maxX < gs['extent'][0][0] + gs['origin'][0]:
-                    maxX = gs['extent'][0][0] + gs['origin'][0]
-                if maxY < gs['extent'][1][1] + gs['origin'][1]:
-                    maxY = gs['extent'][1][1] + gs['origin'][1]
-                if maxY < gs['extent'][0][1] + gs['origin'][1]:
-                    maxY = gs['extent'][0][1] + gs['origin'][1]
+                    if minX > gs['extent'][0][0] + gs['origin'][0]:
+                        minX = gs['extent'][0][0] + gs['origin'][0]
+                    if minX > gs['extent'][1][0] + gs['origin'][0]:
+                        minX = gs['extent'][1][0] + gs['origin'][0]
+                    if minY > gs['extent'][0][1] + gs['origin'][1]:
+                        minY = gs['extent'][0][1] + gs['origin'][1]
+                    if minY > gs['extent'][1][1] + gs['origin'][1]:
+                        minY = gs['extent'][1][1] + gs['origin'][1]
+                    if maxX < gs['extent'][1][0] + gs['origin'][0]:
+                        maxX = gs['extent'][1][0] + gs['origin'][0]
+                    if maxX < gs['extent'][0][0] + gs['origin'][0]:
+                        maxX = gs['extent'][0][0] + gs['origin'][0]
+                    if maxY < gs['extent'][1][1] + gs['origin'][1]:
+                        maxY = gs['extent'][1][1] + gs['origin'][1]
+                    if maxY < gs['extent'][0][1] + gs['origin'][1]:
+                        maxY = gs['extent'][0][1] + gs['origin'][1]
 
-            g['coordinateSystem']['extent'] = [[minX, minY], [maxX, maxY]]
+                g['coordinateSystem']['extent'] = [[minX, minY], [maxX, maxY]]
 
-            #print comp_annotation
-            index_delta = 7
-            if comp_annotation[10] == "-":
-                # fallback to diagram annotations
-                index_delta = 0
+                #print comp_annotation
+                index_delta = 7
+                if comp_annotation[10] == "-":
+                    # fallback to diagram annotations
+                    index_delta = 0
 
-            for i in [1,2,7]:
-              if comp_annotation[i + index_delta] == "-":
-                comp_annotation[i + index_delta] = 0
-            origin_x = comp_annotation[1 + index_delta]
-            origin_y = comp_annotation[2 + index_delta]
-            x0 = comp_annotation[3 + index_delta]
-            y0 = comp_annotation[4 + index_delta]
-            x1 = comp_annotation[5 + index_delta]
-            y1 = comp_annotation[6 + index_delta]
+                for i in [1,2,7]:
+                    if comp_annotation[i + index_delta] == "-":
+                        comp_annotation[i + index_delta] = 0
+                origin_x = float(comp_annotation[1 + index_delta])
+                origin_y = float(comp_annotation[2 + index_delta])
+                x0 = float(comp_annotation[3 + index_delta])
+                y0 = float(comp_annotation[4 + index_delta])
+                x1 = float(comp_annotation[5 + index_delta])
+                y1 = float(comp_annotation[6 + index_delta])
 
-            rotation = comp_annotation[7 + index_delta]
+                if comp_annotation[7 + index_delta] == "":
+                    rotation = 0.0
+                else:
+                    rotation = float(comp_annotation[7 + index_delta])
 
-            g['transformation'] = {}
-            g['transformation']['origin'] = [origin_x, origin_y]
-            g['transformation']['extent'] = [[x0, y0], [x1, y1]]
-            if isinstance(rotation,dict):
-              g['transformation']['rotation'] = 0.0
-            else:
-              g['transformation']['rotation'] = rotation
-            graphics['ports'].append(g)
+                g['transformation'] = {}
+                g['transformation']['origin'] = [origin_x, origin_y]
+                g['transformation']['extent'] = [[x0, y0], [x1, y1]]
+                if isinstance(rotation,dict):
+                    g['transformation']['rotation'] = 0.0
+                else:
+                    g['transformation']['rotation'] = rotation
+                graphics['ports'].append(g)
 
     return graphics
 
